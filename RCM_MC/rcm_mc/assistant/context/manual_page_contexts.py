@@ -2112,8 +2112,13 @@ _MANUAL: List[PageContext] = [
         "surfaces the EBITDA at risk from potential departures.",
         primary_purpose="Quantify physician flight-risk as a diligence signal "
         "and size the revenue/EBITDA exposure it implies.",
-        common_questions=["Which providers are flight risks?",
-                         "How much EBITDA is exposed to attrition?"],
+        common_questions=[
+            "Which providers are flight risks?",
+            "How much EBITDA is exposed to attrition?",
+            "Which factors drive the 18-month flight-risk score?",
+            "How does this differ from /provider-retention (DATA REQUIRED)?",
+            "Are these flight-risk probabilities trained on real outcomes?",
+        ],
         inputs=["A provider roster (demo fixture on this page) with tenure, "
                 "age, collections trend, local competition, employment type."],
         outputs=["Per page labels: total EBITDA-at-risk, band counts "
@@ -8172,7 +8177,11 @@ _BATCH8_SYSTEM = [
      ["What's the market view?", "What does the research say?"]),
     ("/fund-learning", _HOME, "Fund-learning / day-one playbook surface — "
      "lessons and standard plays for new holdings.",
-     ["What's the day-one playbook?", "What have we learned across deals?"]),
+     ["What's the day-one playbook?",
+      "What have we learned across deals?",
+      "Which standard plays have the highest realization rate?",
+      "How does this differ from /diligence/pe-reference (codified knowledge)?",
+      "How are lessons captured into the playbook?"]),
 ]
 for (_r, _cat, _sd, _cq) in _BATCH8_SYSTEM:
     if _r in {c.route for c in _MANUAL}:
@@ -8581,8 +8590,13 @@ _GUIDE_BACKFILL = [
         primary_purpose="Let a partner find and open the right PE-intelligence "
         "analytic among the full toolkit, rather than only the handful wired "
         "into the nav.",
-        common_questions=["What PE-intelligence tools exist?",
-                          "Is there a tool for X?"],
+        common_questions=[
+            "What PE-intelligence tools exist?",
+            "Is there a tool for X?",
+            "How many modules are in the catalog (~222)?",
+            "How do I run a tool on the active deal?",
+            "What's the difference between /pe-library and /pe-tool?",
+        ],
         outputs=["A grouped, searchable index of the toolkit's modules."],
         key_metrics=[], data_sources=["The pe_intelligence module registry "
                                       "(a catalog, not a dataset)."],
@@ -8603,8 +8617,13 @@ _GUIDE_BACKFILL = [
         primary_purpose="Surface the static reference knowledge — the things "
         "true regardless of a specific deal — so the team can consult vetted "
         "playbooks and watch-outs.",
-        common_questions=["What are the known partner traps here?",
-                          "Is there a playbook for this situation?"],
+        common_questions=[
+            "What are the known partner traps here?",
+            "Is there a playbook for this situation?",
+            "Which reference libraries are deal-independent?",
+            "How does this differ from /diligence/pe-library?",
+            "Where do the curated playbooks come from?",
+        ],
         outputs=["Curated reference libraries (read-only knowledge)."],
         key_metrics=[], data_sources=["pe_intelligence curated reference "
                                       "libraries (editorial knowledge)."],
@@ -8623,8 +8642,13 @@ _GUIDE_BACKFILL = [
         "deal's analysis packet.",
         primary_purpose="Execute any toolkit analytic on the active deal's data "
         "(not a sample), so the output reflects this target.",
-        common_questions=["Run tool X on this deal.",
-                          "What does this analytic say for my target?"],
+        common_questions=[
+            "Run tool X on this deal.",
+            "What does this analytic say for my target?",
+            "Why is the output dependent on packet completeness?",
+            "How do I switch which tool runs against the active deal?",
+            "Where do I see the underlying packet feeding the tool?",
+        ],
         outputs=["The selected analytic's output computed on the deal packet."],
         key_metrics=[], data_sources=["The deal's analysis packet (its real "
                                       "ingested/observed data)."],
@@ -8644,8 +8668,13 @@ _GUIDE_BACKFILL = [
         "by a real metric.",
         primary_purpose="Give a national, at-a-glance read of where a chosen "
         "metric concentrates, then click a state for its full profile.",
-        common_questions=["Which states lead/lag on this metric?",
-                          "Where is demand/supply concentrated?"],
+        common_questions=[
+            "Which states lead/lag on this metric?",
+            "Where is demand/supply concentrated?",
+            "Which metrics can I shade the map by?",
+            "How is the Albers projection different from a standard mercator?",
+            "Where do I click to see a state's full profile?",
+        ],
         outputs=["A shaded national map; click-through to per-state profiles."],
         key_metrics=[], data_sources=["The shared geo metrics registry "
                                       "(real public CMS/Census-class data)."],
