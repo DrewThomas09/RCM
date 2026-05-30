@@ -296,8 +296,12 @@ def render_medicaid_unwinding(params: dict = None) -> str:
     accel_states = sum(1 for t in r.timelines if t.current_pace == "accelerated")
     disenroll_rate = r.total_disenrolled_m / r.total_medicaid_lives_pre_phe_m if r.total_medicaid_lives_pre_phe_m else 0
 
+    # 2026-05-30 audit P5 editorial: redetermination and unwinding
+    # name the same process — eligibility checks at the end of the
+    # COVID PHE causing coverage loss. Eyebrow reads MEDICAID
+    # UNWINDING; route is /medicaid-unwinding.
     page_title = ck_page_title(
-        "Medicaid Redetermination / Coverage Unwinding Tracker",
+        "Medicaid Unwinding Tracker",
         eyebrow="MEDICAID UNWINDING",
         meta=f"{r.total_deals_exposed} portcos exposed · {r.total_medicaid_lives_pre_phe_m:.1f}M pre-PHE Medicaid lives → {r.total_disenrolled_m:.1f}M disenrolled ({disenroll_rate * 100:.0f}% rate) · ${r.total_revenue_impact_m:.1f}M net revenue impact offset by ${revenue_preserved:.1f}M preserved through {r.active_retention_programs} retention programs",
     )

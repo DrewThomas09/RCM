@@ -307,8 +307,11 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
 
     bulk_incremental = sum(b.incremental_savings_m for b in r.bulk_buys)
 
+    # 2026-05-30 audit P5 editorial: GPO is the partner-vocabulary
+    # acronym (Group Purchasing Organization) that drives the supply-
+    # chain savings the page tracks. Eyebrow reads GPO SUPPLY TRACKER.
     page_title = ck_page_title(
-        "GPO / Supply Chain Savings Tracker",
+        "GPO Supply Tracker",
         eyebrow="GPO SUPPLY TRACKER",
         meta=f"${r.total_annual_spend_m:,.1f}M annual spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.1f}M net savings at {r.average_savings_rate_pct * 100:.1f}% rate · ${r.total_rebates_m:.1f}M rebate capture · {r.contracts_active} active contracts · {len(r.bulk_buys)} bulk-buy initiatives",
     )

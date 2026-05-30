@@ -258,8 +258,11 @@ def render_debt_financing(params: dict = None) -> str:
     cov_lite_cnt = sum(1 for f in r.facilities if f.covenant_lite)
     active_marketing = sum(1 for s in r.syndications if s.status in ("clearing", "active marketing", "final allocation"))
 
+    # 2026-05-30 audit P5 editorial: LBO commitments are the dominant
+    # use of the debt financing this page tracks — the slash-dual was
+    # a restated specialization. Eyebrow already reads DEBT FINANCING.
     page_title = ck_page_title(
-        "Debt Financing / LBO Commitment Tracker",
+        "Debt Financing Tracker",
         eyebrow="DEBT FINANCING",
         meta=f"{r.total_financings} active financings · ${r.total_package_m:,.1f}M total package · SOFR+{r.avg_sofr_spread}bps at {r.avg_leverage:.2f}x average leverage · {r.cov_lite_pct * 100:.1f}% cov-lite · {active_marketing} still in syndication",
     )

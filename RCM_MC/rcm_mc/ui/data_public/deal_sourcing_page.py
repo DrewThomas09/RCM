@@ -233,8 +233,11 @@ def render_deal_sourcing(params: dict = None) -> str:
     prop_closed = sum(1 for c in r.closed_bridge if "Proprietary" in c.source or "Operating Partner" in c.source or "Portfolio" in c.source or "Co-Invest" in c.source)
     prop_value = sum(c.deal_value_m for c in r.closed_bridge if "Proprietary" in c.source or "Operating Partner" in c.source or "Portfolio" in c.source or "Co-Invest" in c.source)
     prop_pct = prop_closed / r.total_closed_ltm if r.total_closed_ltm else 0
+    # 2026-05-30 audit P5 editorial: proprietary flow is one cut of
+    # deal sourcing; the page tracks proprietary mix alongside broker
+    # leads + auction processes. Eyebrow already reads DEAL SOURCING.
     page_title = ck_page_title(
-        "Deal Sourcing / Proprietary Flow Tracker",
+        "Deal Sourcing Tracker",
         eyebrow="DEAL SOURCING",
         meta=f"{r.total_annualized_pipeline:,} annualized leads · {r.total_closed_ltm} closed LTM at ${r.total_closed_value_m:,.1f}M · {r.weighted_close_rate_pct * 100:.2f}% close rate · {prop_pct * 100:.0f}% proprietary mix on close",
     )
