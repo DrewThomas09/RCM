@@ -1790,7 +1790,10 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
                f'href="/target-screener.csv?vertical={vertical}'
                + (f'&state={_q1(qs, "state").upper()}' if _q1(qs, "state") else "")
                + '">Download CSV (this screen) ↓</a></p>'),
-            title="Ranked providers · real loader · X-Ray / Inspect / CSV")
+            # 2026-05-30 audit: drop "real loader" engineer-ese
+            # (the platform's job is to be real; partners don't need
+            # to be reassured the data isn't mocked).
+            title="Ranked providers · X-Ray / Inspect / CSV")
         + ck["panel"](
             # Wave-19: ordered list of next actions so the partner
             # reads three discrete moves instead of parsing a
@@ -1836,7 +1839,10 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             '</div>'
             '</li>'
             '</ol>',
-            title="Screen the market, then the target · next steps")
+            # 2026-05-30 audit: drop "· next steps" suffix — it's
+            # dev-TOC vocabulary. The panel content already shows
+            # the three-step list; the title just names the panel.
+            title="Screen the market, then the target")
     )
 
 
