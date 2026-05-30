@@ -245,8 +245,13 @@ def render_tax_credits(params: dict = None) -> str:
 
     pipeline_annual = sum(p.estimated_annual_benefit_m * (p.probability_pct / 100.0) for p in r.pipeline)
     qoz_deferred = sum(z.deferred_gain_m for z in r.opportunity_zones)
+    # 2026-05-30 audit P5 editorial: federal tax credits and state
+    # incentives are both shown but "tax credits" is the umbrella
+    # vocabulary partners use. Eyebrow already reads TAX CREDITS;
+    # state-incentive figures continue to appear in the meta and
+    # body tables.
     page_title = ck_page_title(
-        "Tax Credits / Incentives Tracker",
+        "Tax Credits Tracker",
         eyebrow="TAX CREDITS",
         meta=f"""${r.total_credits_gross_m:.1f}M gross federal credits · ${r.total_state_incentives_annual_m:.1f}M annual state incentives · ${r.total_annual_benefit_m:.1f}M total annual benefit · {r.total_deals} deals claiming · ${pipeline_annual:.1f}M probability-weighted pipeline — {r.corpus_deal_count:,} corpus deals""",
     )

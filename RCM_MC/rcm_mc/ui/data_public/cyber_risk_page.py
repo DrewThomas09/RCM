@@ -237,8 +237,12 @@ def render_cyber_risk(params: dict = None) -> str:
     # Replaced with score + risk tier + records-in-scope (the
     # quantitative read on cyber risk magnitude) which is what
     # partners scanning the page actually want to see.
+    # 2026-05-30 audit P5 editorial: HIPAA is one of the frameworks
+    # the scorecard tracks (alongside NIST CSF, HITRUST, SOC 2).
+    # "Cybersecurity Risk Scorecard" is the broader, accurate header;
+    # framework breakdowns continue to appear in the body tables.
     page_title = ck_page_title(
-        "Cybersecurity / HIPAA Risk Scorecard",
+        "Cybersecurity Risk Scorecard",
         eyebrow="CYBER RISK",
         meta=(
             f"cyber score {r.overall_cyber_score}/100 · "

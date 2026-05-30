@@ -302,8 +302,12 @@ def render_nsa_tracker(params: dict = None) -> str:
     provider_won = sum(1 for c in r.cases if "provider" in c.status.lower() and "awarded" in c.status.lower())
     payer_won = sum(1 for c in r.cases if "payer" in c.status.lower() and "awarded" in c.status.lower())
 
+    # 2026-05-30 audit P5 editorial: IDR (Independent Dispute
+    # Resolution) is the mechanism within the No Surprises Act —
+    # not a separate subject. "No Surprises Act Tracker" matches the
+    # eyebrow (NSA TRACKER) and the route /nsa-tracker.
     page_title = ck_page_title(
-        "No Surprises Act / IDR Tracker",
+        "No Surprises Act Tracker",
         eyebrow="NSA TRACKER",
         meta=f"""{r.total_cases} active/resolved IDR cases · ${r.total_revenue_at_risk_m:,.1f}M revenue at risk across {r.active_strategies} strategies · {r.provider_win_rate_pct * 100:.1f}% provider win rate · {provider_won} awarded provider / {payer_won} awarded payer — {r.corpus_deal_count:,} corpus deals""",
     )

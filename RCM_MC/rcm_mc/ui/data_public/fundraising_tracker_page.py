@@ -253,8 +253,12 @@ def render_fundraising_tracker(params: dict = None) -> str:
 
     hard_circle = sum(s.weighted_commitment_m for s in r.stages if s.stage in ("hard circled", "due diligence complete"))
 
+    # 2026-05-30 audit P5 editorial: the LP pipeline IS what
+    # fundraising tracks at this stage — the slash-dual was a
+    # paraphrase. "Fundraising Tracker" matches the eyebrow; LPs
+    # in pipeline continue to appear in the meta line.
     page_title = ck_page_title(
-        "Fundraising / LP Pipeline Tracker",
+        "Fundraising Tracker",
         eyebrow="FUNDRAISING TRACKER",
         meta=f"{r.active_funds} active funds targeting ${r.total_target_b:.2f}B aggregate · ${r.total_hard_circled_b:.2f}B hard-circled ({r.pct_fundraised * 100:.1f}% complete) · {r.lps_in_pipeline} LPs in pipeline · {len(r.agents)} placement agents engaged",
     )
