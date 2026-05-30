@@ -649,6 +649,17 @@ _MANUAL: List[PageContext] = [
         "estimates an RCM EBITDA-uplift opportunity per hospital.",
         primary_purpose="Rank candidate hospitals by an estimated "
         "RCM-improvement opportunity, not just raw size.",
+        common_questions=[
+            "Which hospitals look like the biggest RCM-improvement bets?",
+            "How much EBITDA uplift does the model estimate "
+            "for a target with these characteristics?",
+            "What signal is the model picking up — denial rate, "
+            "AR days, payer mix?",
+            "How do I narrow the screen to my fund's region or "
+            "size band?",
+            "Is the model's uplift estimate validated against any "
+            "realized RCM outcomes?",
+        ],
         inputs=["Region / bed / margin / minimum-uplift filters."],
         outputs=["Matching hospitals with estimated denial rate, AR days, "
                  "and total EBITDA-uplift opportunity; an aggregate uplift."],
@@ -4632,6 +4643,16 @@ _MANUAL: List[PageContext] = [
         "the real CMS Care Compare quality-measure distribution.",
         primary_purpose="Frame clinical-quality value against a real CMS "
         "quality-measure benchmark.",
+        common_questions=[
+            "What CMS quality measures matter for this sector?",
+            "How does the target's clinical-outcomes profile compare "
+            "to the sector benchmark?",
+            "What EV uplift does the calculator suggest for moving "
+            "outcomes one quartile?",
+            "Is the EV uplift figure from real outcomes data or "
+            "modeled from my inputs?",
+            "Where do I see the actual measure-by-measure CMS data?",
+        ],
         data_sources=["Illustrative outcomes model + real CMS quality-measure "
                       "rating distribution."],
         interpretation_guidance=["Calculator on your inputs; CMS benchmark is "
@@ -4785,6 +4806,14 @@ _MANUAL: List[PageContext] = [
         "/cohorts", "Cohorts",
         short_description="Group deals into cohorts for slicing and comparison.",
         primary_purpose="Define and review deal cohorts across the book.",
+        common_questions=[
+            "Which deals are in the cohort I just created?",
+            "How do my SaaS / hospital / ASC cohorts compare on "
+            "health score?",
+            "Can I tag a deal into multiple cohorts?",
+            "How do cohorts differ from tags or watchlists?",
+            "Why is my cohort empty — did I forget to tag deals?",
+        ],
         data_sources=["Live deal store (cohort membership)."],
         interpretation_guidance=["Operates on YOUR tracked deals."],
         related_routes=["/pipeline", "/portfolio", "/owners"],
@@ -4795,6 +4824,14 @@ _MANUAL: List[PageContext] = [
         "/deadlines", "Deadlines",
         short_description="Deal deadlines and key dates across the portfolio.",
         primary_purpose="Track upcoming deal/portfolio deadlines.",
+        common_questions=[
+            "What's overdue across the book right now?",
+            "Which deadlines hit in the next 7 days?",
+            "How do I filter to just my owned deals' deadlines?",
+            "Where do these deadlines come from — manual entry or "
+            "auto-generated?",
+            "Can I mark a deadline complete from this page?",
+        ],
         data_sources=["Live deal store (deadlines)."],
         interpretation_guidance=["Reflects deadlines entered for your deals; "
                                 "empty means none recorded."],
@@ -4993,6 +5030,13 @@ _MANUAL: List[PageContext] = [
         "/covenant-headroom", "Covenant Headroom",
         short_description="Covenant-headroom calculator on your inputs.",
         primary_purpose="Model covenant cushion under your assumptions.",
+        common_questions=[
+            "What's the leverage covenant cushion under the base case?",
+            "How tight is the deal's covenant headroom right now?",
+            "When does the headroom shrink below 15% in my projection?",
+            "What EBITDA swing would breach the covenant?",
+            "What's the recommended action when headroom is under 15%?",
+        ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; not a live covenant feed."],
         related_routes=["/covenant-monitor", "/debt-service", "/cap-structure"],
@@ -5002,6 +5046,13 @@ _MANUAL: List[PageContext] = [
         "/covenant-monitor", "Covenant Monitor",
         short_description="Covenant-monitoring calculator on your inputs.",
         primary_purpose="Track covenant posture under your assumptions.",
+        common_questions=[
+            "Which deals are in the 0-15% covenant cushion early-warning band?",
+            "Are any deals in technical breach?",
+            "How does covenant posture trend across the book this quarter?",
+            "What's the difference between this page and /covenant-headroom?",
+            "Where do covenant ratios come from — actuals upload or projection?",
+        ],
         data_sources=["Calculator: your inputs (+ live deal data where attached)."],
         interpretation_guidance=["Reflects your inputs / attached deal data."],
         related_routes=["/covenant-headroom", "/debt-service"],
