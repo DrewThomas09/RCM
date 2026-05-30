@@ -107,6 +107,8 @@ _MANUAL: List[PageContext] = [
             "How is the portfolio doing right now?",
             "Which deals are concerning this week?",
             "What's the weighted MOIC / IRR across the book?",
+            "How is the weighted MOIC computed — entry-EV weighted, NAV weighted, or per-deal averaged?",
+            "How does Command Center differ from /portfolio and /day-one?",
         ],
         inputs=["Live portfolio state from the SQLite store."],
         outputs=["Morning-brief panels, a KPI/returns strip, and a deals "
@@ -229,7 +231,10 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Surface and triage portfolio signals (covenant, "
         "freshness, distress) through a managed lifecycle.",
         common_questions=["What alerts are open?", "What needs escalation?",
-                         "Which deals tripped a covenant or missed plan?"],
+                         "Which deals tripped a covenant or missed plan?",
+                         "How does snoozing or acknowledging affect the lifecycle "
+                         "— does it suppress re-fire, and for how long?",
+                         "How does /alerts differ from /escalations and /portfolio/risk-scan?"],
         inputs=["Live deal snapshots from the portfolio store (optionally "
                 "filtered by owner; a show-all toggle includes acknowledged)."],
         outputs=["Active alerts grouped by severity (page labels: Critical / "
@@ -1414,7 +1419,10 @@ _MANUAL: List[PageContext] = [
         "committee-style narrative the team can review and print.",
         common_questions=["What will the committee read on this deal?",
                          "What's the base case vs the bear case?",
-                         "Is this packet finalized / signed off?"],
+                         "Is this packet finalized / signed off?",
+                         "Which sections pull from /diligence/qoe-memo, comps, "
+                         "and the bankruptcy-survivor scan?",
+                         "Are the claims figures from the deal's real data or a fixture?"],
         inputs=["A claims dataset (fixture) plus deal metadata supplied via "
                 "the query string (specialty, geography, lease terms, EHR "
                 "vendor, EV/EBITDA, recommendation, etc.)."],
@@ -1463,7 +1471,10 @@ _MANUAL: List[PageContext] = [
         "checklist items are done, in progress, or blocking.",
         common_questions=["How complete is diligence?",
                          "What P0 items are still open / blocking?",
-                         "Which items still need an owner or evidence?"],
+                         "Which items still need an owner or evidence?",
+                         "How does coverage % differ from total-done %?",
+                         "Can a partner override an auto-tracked status, and "
+                         "where would that show up?"],
         inputs=["A diligence checklist state (auto-status derived from live "
                 "analytics, per source) plus partner overrides supplied via "
                 "the URL (mark done / blocked / in-progress / clear)."],
@@ -1507,7 +1518,11 @@ _MANUAL: List[PageContext] = [
         "optionally counterfactuals) the team can print to PDF.",
         common_questions=["What's the quality of this target's earnings?",
                          "How do I generate the QoE memo?",
-                         "Is this memo finalized / signed?"],
+                         "Is this memo finalized / signed?",
+                         "What KPIs and waterfall show in the memo, and where "
+                         "do the numbers come from?",
+                         "How does this differ from /diligence/ic-packet and "
+                         "/diligence/bridge-audit?"],
         inputs=["A canonical claims dataset (fixtures on this page) plus memo "
                 "metadata via query string (deal/target name, partner and "
                 "preparer names, management-reported revenue by cohort month)."],
@@ -6259,8 +6274,10 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Estimate recoverable denied revenue to underwrite an "
         "RCM denial-management initiative into the EBITDA bridge.",
         common_questions=["How much denied revenue is recoverable?",
-                          "How good is the model?",
-                          "Is this the deal's real claims?"],
+                          "How good is the model (AUC) on this sample?",
+                          "Is this the deal's real claims, or a fixture?",
+                          "Which denial categories drive most of the recoverable $?",
+                          "How does this number feed the EBITDA bridge in /diligence/value?"],
         inputs=["A CCD (consolidated clinical document) claims feed — a fixture "
                 "sample unless the deal's own CCD is provided."],
         outputs=["Per-claim denial probabilities, AUC, denial Pareto, recoverable $."],
