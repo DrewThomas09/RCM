@@ -261,8 +261,11 @@ def render_treasury_tracker(params: dict = None) -> str:
     hedge_mtm = sum(h.mtm_value_m for h in r.hedging)
     ic_total = sum(ic.balance_m for ic in r.intercompany)
     avg_yield = sum(a.yield_pct * a.balance_m for a in r.accounts) / sum(a.balance_m for a in r.accounts) if r.accounts else 0
+    # 2026-05-30 audit P5 editorial: cash position is the central
+    # treasury metric, not a separate subject. "Treasury Tracker"
+    # matches the eyebrow and route /treasury.
     page_title = ck_page_title(
-        "Treasury / Cash Position Tracker",
+        "Treasury Tracker",
         eyebrow="TREASURY TRACKER",
         meta=f"""${r.total_portfolio_liquidity_m:,.1f}M total liquidity · ${r.total_cash_and_investments_m:,.1f}M cash + investments · {r.weighted_revolver_utilization_pct * 100:.1f}% revolver utilization · {r.at_risk_deals} deal{"s" if r.at_risk_deals != 1 else ""} at risk · {len(r.hedging)} hedging positions — {r.corpus_deal_count:,} corpus deals""",
     )
