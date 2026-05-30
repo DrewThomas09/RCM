@@ -3136,7 +3136,10 @@ _MANUAL: List[PageContext] = [
         "worst first.",
         common_questions=["Which deals need attention today?",
                          "Who tripped a covenant?",
-                         "Which deals have stale data or overdue deadlines?"],
+                         "Which deals have stale data or overdue deadlines?",
+                         "How does the aggregate risk rank combine covenant, "
+                         "alerts, freshness, and CMS quality?",
+                         "How does this differ from /alerts and /escalations?"],
         inputs=["Active deals + latest snapshots, alert evaluations, health "
                 "scores, deadlines, and CMS facility/quality/HRRP lookups."],
         outputs=["Per page labels: a summary strip (Covenant TRIPPED, deals "
@@ -3358,7 +3361,9 @@ _MANUAL: List[PageContext] = [
         "vintages, sectors, sponsors, and geographies.",
         common_questions=["Is this my portfolio or a benchmark corpus?",
                          "What does the corpus say worked?",
-                         "Where is return concentration / outlier risk?"],
+                         "Where is return concentration / outlier risk?",
+                         "What vintages and sectors are over- or under-represented?",
+                         "How is MOIC P25/P50/P75 computed across the 655-deal corpus?"],
         inputs=["The realized-deal corpus (655+ deals)."],
         outputs=["Per page labels: a scorecard (MOIC/IRR quartiles, home-run "
                  "rate, loss rate, outliers), vintage cohorts, deal-type mix, "
@@ -3485,7 +3490,9 @@ _MANUAL: List[PageContext] = [
         "time window.",
         common_questions=["How do I generate the LP update?",
                          "What's the weighted MOIC/IRR across the book?",
-                         "What changed this period?"],
+                         "What changed this period?",
+                         "What window does 'this period' use, and can I pick it?",
+                         "Is the downloaded HTML safe to send to LPs as-is, or does it need review?"],
         inputs=["The portfolio store; a window picker (e.g. 7/14/30/60/90 "
                 "days) selects the activity period."],
         outputs=["Per page labels: a KPI strip (Active Deals, Weighted MOIC, "
@@ -4164,6 +4171,7 @@ _MANUAL: List[PageContext] = [
             "Which sources are stale or missing?",
             "Where does each source come from?",
             "When was each source last ingested?",
+            "How is freshness defined per source — and what triggers a re-ingest?",
         ],
         inputs=["Local data-source inventory + ingestion metadata."],
         outputs=["Source health table (presence, freshness, status)."],
@@ -4510,7 +4518,10 @@ _MANUAL: List[PageContext] = [
         "Medicare / Medicaid / commercial payer mix.",
         common_questions=["How exposed is this target to a payer-mix shift?",
                          "Where does the starting mix come from?",
-                         "Is this the target's real mix or a placeholder?"],
+                         "Is this the target's real mix or a placeholder?",
+                         "How does the model translate a mix shift into a "
+                         "revenue / margin delta?",
+                         "How does this differ from /diligence/payer-stress and /payer-intelligence?"],
         inputs=["Optional target CCN / name (?ccn=, ?name=) resolved via "
                 "HCRIS find_hospital; payer-mix sliders."],
         outputs=["A stressed revenue/margin view and the seeded payer mix, "
@@ -4689,7 +4700,9 @@ _MANUAL: List[PageContext] = [
         "Pipeline and NOT your Portfolio.",
         common_questions=["What companies has sponsor X backed?",
                          "Which healthcare companies are sponsor-owned in state Y?",
-                         "Is this real or illustrative? Where's it from?"],
+                         "Is this real or illustrative? Where's it from?",
+                         "How does /deal-library differ from /library and /deal-library/comps?",
+                         "How fresh is the CapIQ data, and which sponsors are most thinly covered?"],
         inputs=["Filters via URL: ?sponsor= / ?state= / ?search=. Data loaded "
                 "by scripts/ingest_deal_library_exports.py from licensed exports."],
         outputs=["Total count, source breakdown, per-field missingness, Top "
