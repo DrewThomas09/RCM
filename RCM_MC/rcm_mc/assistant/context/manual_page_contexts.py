@@ -1050,6 +1050,13 @@ _MANUAL: List[PageContext] = [
         "revenue-cycle opportunity from the target's claims data.",
         primary_purpose="Quantify denial-driven leakage and the RCM uplift a "
         "buyer could capture.",
+        common_questions=[
+            "What's the predicted denial rate on the target's claims?",
+            "How much revenue is recoverable via denial reduction?",
+            "Is the prediction trained on the target's data or a corpus?",
+            "Initial vs final denial rate — which one does this show?",
+            "How does this connect to /predictive-screener?",
+        ],
         why_it_matters="Denial reduction is the core operational lever in "
         "RCM-led healthcare deals.",
         interpretation_guidance=[
