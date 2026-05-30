@@ -232,8 +232,11 @@ def render_risk_adjustment(params: dict = None) -> str:
 
     v28_total_impact = sum(v.revenue_impact_m for v in r.v28)
     program_revenue = sum(p.revenue_captured_m for p in r.programs)
+    # 2026-05-30 audit P5 editorial: HCC (Hierarchical Condition
+    # Categories) is the CMS framework for risk adjustment, not a
+    # separate subject. Eyebrow + route both read RISK ADJUSTMENT.
     page_title = ck_page_title(
-        "Risk Adjustment / HCC Tracker",
+        "Risk Adjustment Tracker",
         eyebrow="RISK ADJUSTMENT",
         meta=f"""{r.total_ma_lives_k:,.1f}K MA lives · weighted RAF {r.weighted_avg_raf:.3f} · ${r.total_ma_revenue_m:,.1f}M MA revenue · ${r.total_raf_gap_opportunity_m:.1f}M gap opportunity · ${r.radv_total_exposure_m:.1f}M max RADV exposure — {r.corpus_deal_count:,} corpus deals""",
     )

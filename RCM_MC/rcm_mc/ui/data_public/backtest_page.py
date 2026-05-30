@@ -780,7 +780,7 @@ def render_backtest() -> str:
     cal_panel = _calibration_panel(stats)
 
     page_title = ck_page_title(
-        "Model Calibration / Backtest",
+        "Model Backtest",
         eyebrow="BACKTEST",
         meta=(
             f"{stats['realized_n']} realized deals · "
@@ -818,7 +818,7 @@ def render_backtest() -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         ck_illustrative_note("backtest figures (illustrative seed corpus)") + body,
-        title="Model Calibration / Backtest",
+        title="Model Backtest",
         active_nav="/backtest",
         extra_css=_EXPLAINER_CSS,
     )
