@@ -2623,8 +2623,13 @@ _MANUAL: List[PageContext] = [
         "analyst notes saved on deals.",
         primary_purpose="Find and review the notes the team has recorded "
         "across deals.",
-        common_questions=["What did we note on this deal / topic?",
-                         "Show notes tagged X."],
+        common_questions=[
+            "What did we note on this deal / topic?",
+            "Show notes tagged X.",
+            "How do I add a note to a deal?",
+            "Are notes shared across the team or per-user?",
+            "Can I search notes by author?",
+        ],
         inputs=["A keyword query and/or tag filters (and an optional deal "
                 "scope)."],
         outputs=["Per page labels: matching notes with deal link, timestamp, "
@@ -3114,8 +3119,13 @@ _MANUAL: List[PageContext] = [
         "percentile.",
         primary_purpose="Spot, at a glance, where each deal stands against "
         "benchmarks across the key revenue-cycle metrics.",
-        common_questions=["Where does each deal stand vs benchmarks?",
-                         "Which deals are weak on which metrics?"],
+        common_questions=[
+            "Where does each deal stand vs benchmarks?",
+            "Which deals are weak on which metrics?",
+            "Which metrics are shown — denial, AR, payer mix?",
+            "How is the cell color computed — quartile, percentile?",
+            "How does this differ from /portfolio/risk-scan?",
+        ],
         inputs=["The latest analysis packet per deal (each metric's value + "
                 "benchmark percentile)."],
         outputs=["Per page labels: a deal × metric grid (denial rate, final "
@@ -3356,8 +3366,13 @@ _MANUAL: List[PageContext] = [
         "realized MOIC, and four payer-regime bands.",
         primary_purpose="Show how realized returns vary across payer-mix "
         "regimes and how strongly payer share co-moves with MOIC.",
-        common_questions=["Does payer mix relate to returns?",
-                         "How do returns differ by payer regime?"],
+        common_questions=[
+            "Does payer mix relate to returns?",
+            "How do returns differ by payer regime?",
+            "What are the four payer-regime bands?",
+            "What's the commercial-share / MOIC correlation?",
+            "How does this differ from /payer-rate-trends?",
+        ],
         inputs=["The realized-deal corpus (payer mix + realized MOIC)."],
         outputs=["Per page labels: corpus payer-mix averages, commercial/"
                  "Medicaid ↔ MOIC correlation readouts, and a four-regime "
@@ -8174,10 +8189,18 @@ _BATCH8_SYSTEM = [
       "Where does the run history get persisted?",
       "Can I re-launch a past CLI run from this page?"]),
     ("/ops", _SYS, "Operations / system status surface for the deployment.",
-     ["Is the system healthy?", "What's the operational status?"]),
+     ["Is the system healthy?",
+      "What's the operational status?",
+      "How many deals / snapshots are in the store right now?",
+      "What's the DB size on disk?",
+      "Is auth enabled in this deployment?"]),
     ("/outputs", _SYS, "Generated outputs index — exports, reports, and "
      "artifacts produced by the app.",
-     ["Where are my exports?", "What outputs were generated?"]),
+     ["Where are my exports?",
+      "What outputs were generated?",
+      "How do I re-download an artifact?",
+      "How long are outputs retained?",
+      "What output formats are supported (PDF, CSV, JSON)?"]),
     ("/search", _HOME, "Global search across deals, hospitals, and routes.",
      ["How do I search?", "Where do I find a deal/hospital?"]),
     ("/global-search", _HOME, "Global search results across the app's "
@@ -8206,9 +8229,13 @@ _BATCH8_SYSTEM = [
       "answer that way?"]),
     ("/team", _HOME, "Team dashboard — members, ownership, and activity.",
      ["Who's on the team?", "Who owns which deals?"]),
-    ("/news", _HOME, "News / activity feed relevant to the portfolio and "
+    ("/news", _HOME, "Healthcare-PE news feed relevant to the portfolio and "
      "pipeline.",
-     ["What's new?", "Any relevant news?"]),
+     ["What's new?",
+      "Any relevant news?",
+      "How is the news feed filtered — sector, sponsor, deal?",
+      "Where do the news items come from?",
+      "How fresh is the feed — minutes, hours, days?"]),
     ("/insights", _HOME, "Insights feed — surfaced highlights across the "
      "portfolio and universe.",
      ["What should I look at?", "Any notable insights?"]),
