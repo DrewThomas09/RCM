@@ -4689,6 +4689,13 @@ _MANUAL: List[PageContext] = [
         "nursing/post-acute it shows the real CMS enforcement base rate.",
         primary_purpose="Frame regulatory exposure, anchored (for SNF) to real "
         "CMS enforcement data.",
+        common_questions=[
+            "What's the base-rate enforcement risk for this sector?",
+            "How much does the average fine cost — and what's max exposure?",
+            "Is the CMS enforcement anchor SNF-only or broader?",
+            "How does this differ from /antitrust-screener?",
+            "What enforcement vectors are NOT captured by this model?",
+        ],
         data_sources=["Illustrative risk model + real CMS SNF enforcement "
                       "(45% fined, $467M total)."],
         interpretation_guidance=["Calculator on your inputs; CMS enforcement is "
@@ -5297,6 +5304,13 @@ _MANUAL: List[PageContext] = [
         "anchored to the real CMS dual-eligible population by state.",
         primary_purpose="Frame disenrollment / coverage-shift exposure against the "
         "real at-risk dual-eligible cohort.",
+        common_questions=[
+            "How exposed is this deal to Medicaid disenrollment?",
+            "What % of the dual-eligible population is at risk in this state?",
+            "How do disenrolled patients shift — back to Medicaid, ACA, self-pay?",
+            "Are the bad-debt figures from real data or modeled?",
+            "When does the unwinding pace normalize?",
+        ],
         data_sources=["Illustrative disenrollment/coverage-shift/bad-debt (labeled) + "
                       "real CMS dual-eligible share by state."],
         interpretation_guidance=["Deal-level impact figures are illustrative.",
@@ -5331,6 +5345,13 @@ _MANUAL: List[PageContext] = [
         short_description="HEI / Star-bonus model (illustrative) anchored to real CDC "
         "PLACES full-population social-determinants prevalence.",
         primary_purpose="Frame health-equity posture against real SDOH burden.",
+        common_questions=[
+            "What's the Star-bonus value of moving HEI one band?",
+            "Which SDOH factors are heaviest in this market?",
+            "How does CDC PLACES data come into the scorecard?",
+            "Is the HEI figure for this deal or a sector scaffold?",
+            "What's a realistic timeline for moving HEI metrics?",
+        ],
         data_sources=["Illustrative HEI/Star scorecard (labeled) + real CDC PLACES SDOH "
                       "(uninsured, food/transport insecurity)."],
         interpretation_guidance=["HEI/Star figures are illustrative, scaled to inputs.",
@@ -5365,6 +5386,13 @@ _MANUAL: List[PageContext] = [
         "to the real CMS HCAHPS patient-survey top-box by state.",
         primary_purpose="Frame patient-experience posture against the real HCAHPS "
         "benchmark.",
+        common_questions=[
+            "What's the HCAHPS top-box norm for this state?",
+            "How does NPS map to HCAHPS for benchmarking?",
+            "What's the revenue uplift from moving HCAHPS one band?",
+            "Where are this facility's actual scores in the body?",
+            "What drives complaint volume — is it specialty-specific?",
+        ],
         data_sources=["Illustrative NPS/complaint model (labeled) + real CMS HCAHPS "
                       "state top-box (overall 9-10, would-recommend)."],
         interpretation_guidance=["NPS/complaint figures are illustrative.",
@@ -5398,6 +5426,13 @@ _MANUAL: List[PageContext] = [
         short_description="Turnover/engagement/retention model (illustrative) anchored "
         "to real HRSA shortage areas — the retention-pressure backdrop.",
         primary_purpose="Frame retention difficulty against real labor-shortage data.",
+        common_questions=[
+            "How much harder is retention in HPSA-designated areas?",
+            "What's a healthy turnover ratio for this sector?",
+            "Which roles drive the largest turnover cost?",
+            "What's the EBITDA hit from a 5pp turnover increase?",
+            "Are the retention programs on this page illustrative or real?",
+        ],
         data_sources=["Illustrative turnover/engagement/programs (labeled) + real HRSA "
                       "HPSA shortage designations."],
         interpretation_guidance=["Turnover/engagement figures are illustrative.",
@@ -5411,6 +5446,13 @@ _MANUAL: List[PageContext] = [
         short_description="HHI / HSR / market-overlap screen computed off your deal-"
         "size input, anchored to real CMS change-of-ownership consolidation.",
         primary_purpose="Frame antitrust/HSR risk against real observed consolidation.",
+        common_questions=[
+            "Does this deal trigger an HSR filing threshold?",
+            "What's the HHI delta from this acquisition?",
+            "Is the second-request risk material here?",
+            "What CMS CHOW data signals about consolidation in this market?",
+            "What precedent deals were challenged in this sector?",
+        ],
         data_sources=["Illustrative HHI/HSR/overlap/precedent model (labeled) + real "
                       "CMS CHOW consolidation activity."],
         interpretation_guidance=["HHI/HSR/overlap compute off your deal-size input.",
