@@ -4625,6 +4625,13 @@ _MANUAL: List[PageContext] = [
         "sectors, Care Compare 5-star for nursing).",
         primary_purpose="Frame quality posture and EV uplift against a real "
         "CMS quality distribution.",
+        common_questions=[
+            "What MIPS score is competitive for this physician sector?",
+            "How much EV would a one-star improvement add for a SNF?",
+            "Is the benchmark MIPS or Care Compare for this sector?",
+            "Does the page show this deal's quality or a sector frame?",
+            "Where do I plug in the target's actual measure scores?",
+        ],
         data_sources=["Illustrative quality model + real CMS MIPS (physician) / "
                       "Care Compare 5-star (nursing) distribution."],
         interpretation_guidance=[
@@ -4683,6 +4690,13 @@ _MANUAL: List[PageContext] = [
         "to the real FDA drug-shortage signal.",
         primary_purpose="Frame supply-chain savings/risk against real active "
         "drug shortages.",
+        common_questions=[
+            "What supply-savings rate is achievable in this sector?",
+            "How does FDA drug-shortage exposure factor into the model?",
+            "Are the savings figures real or modeled from my inputs?",
+            "Which therapeutic categories have the most active shortages?",
+            "Does the calculator account for GPO membership?",
+        ],
         data_sources=["Illustrative savings model + real FDA drug shortages "
                       "(1,156 active across 58 categories)."],
         interpretation_guidance=["Calculator on your inputs; FDA shortage is a "
@@ -4698,6 +4712,13 @@ _MANUAL: List[PageContext] = [
         "anchored to the real CIVHC Colorado payer-cost trend.",
         primary_purpose="Frame payer-mix shift economics against a real "
         "all-payer cost trend.",
+        common_questions=[
+            "What's the EV impact of shifting 10pp from Medicaid to commercial?",
+            "How fast is the payer trend changing nationally?",
+            "Is the CIVHC anchor representative outside Colorado?",
+            "Where does the model assume the shifted lives go?",
+            "How does this connect to /payer-rate-trends?",
+        ],
         data_sources=["Illustrative shift model + real CIVHC CO payer-cost "
                       "trend by payer type."],
         interpretation_guidance=["Calculator on your inputs; CIVHC is Colorado "
@@ -4712,6 +4733,13 @@ _MANUAL: List[PageContext] = [
         short_description="An MA-contract economics calculator on your inputs, "
         "anchored to the real CMS MA enrollment market size.",
         primary_purpose="Frame MA contract economics against the real MA market.",
+        common_questions=[
+            "What PMPM is competitive for this MA contract structure?",
+            "How big is the MA market in this state?",
+            "Does the model account for Star Ratings or risk scores?",
+            "Where are CMS MA enrollment figures from?",
+            "How does this connect to /risk-adjustment?",
+        ],
         data_sources=["Illustrative PMPM/risk model + real CMS MA Geographic "
                       "Variation enrollment (29.7M across 53 states)."],
         interpretation_guidance=["Calculator on your inputs; MA enrollment is "
@@ -4767,6 +4795,13 @@ _MANUAL: List[PageContext] = [
         "Claims) — per-person-per-year spend by payer type over time.",
         primary_purpose="Show how payer economics actually shifted in a real "
         "all-payer market, as context for payer-mix diligence.",
+        common_questions=[
+            "How has commercial PPPY trended vs Medicaid in this market?",
+            "What years are covered by the trend data?",
+            "Is this data Colorado-only or national?",
+            "Why are some values missing — should I impute them?",
+            "How does this differ from /payer-shift?",
+        ],
         data_sources=["CIVHC CO APCD public cost-of-care (committed snapshot)."],
         key_metrics=["PPPY spend by payer type", "% change over years"],
         interpretation_guidance=[
@@ -4785,6 +4820,13 @@ _MANUAL: List[PageContext] = [
         "Medicare (CIVHC / CO APCD) — by organization, county, claim type.",
         primary_purpose="Show real commercial-vs-Medicare reimbursement ratios "
         "for benchmarking provider pricing posture.",
+        common_questions=[
+            "What % of Medicare is the target getting from commercial payers?",
+            "Is 200% of Medicare high or normal for this market?",
+            "Can I look up a specific provider's ratio by name?",
+            "How does this connect to the deal's negotiating leverage?",
+            "Why does the ratio vary by claim type or payer?",
+        ],
         data_sources=["CIVHC CO Medicare Reference-Based Pricing (committed "
                       "snapshot)."],
         key_metrics=["Hospital % of Medicare", "Claims", "Payer min/median/max"],
