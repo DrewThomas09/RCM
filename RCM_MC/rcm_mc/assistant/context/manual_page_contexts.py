@@ -1880,8 +1880,13 @@ _MANUAL: List[PageContext] = [
         "similarity, surfacing their outcomes.",
         primary_purpose="Flag historical-analogue risk — 'whose playbook does "
         "this deal most resemble, and how did theirs end?'",
-        common_questions=["Which historical deals does this most resemble?",
-                         "Are we about to repeat a known failure?"],
+        common_questions=[
+            "Which historical deals does this most resemble?",
+            "Are we about to repeat a known failure?",
+            "What 9 risk dimensions define the signature?",
+            "What outcomes did the top-similar deals have?",
+            "Is the historical library curated or auto-generated?",
+        ],
         inputs=["A target signature (from a CCD fixture or query params) over "
                 "9 risk dimensions; the curated historical deal library."],
         outputs=["Per page labels: a ranked matches table (Rank, Deal, "
@@ -2014,8 +2019,13 @@ _MANUAL: List[PageContext] = [
         "Canonical Claims Dataset (CCD).",
         primary_purpose="Turn messy multi-source claims data into one "
         "normalized CCD, with a row-level transformation log.",
-        common_questions=["How is the claims data normalized?",
-                         "What was changed or flagged during ingest?"],
+        common_questions=[
+            "How is the claims data normalized?",
+            "What was changed or flagged during ingest?",
+            "What's the schema of the Canonical Claims Dataset (CCD)?",
+            "Why is some data 'modified' vs 'unchanged' during ingest?",
+            "How do I see the row-level transformation log?",
+        ],
         inputs=["Claims source files (837/835 EDI, EHR exports, CSV/XLSX). On "
                 "this page these are demo fixtures; production uploads are "
                 "deferred per source."],
@@ -2058,8 +2068,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Support a structured read on management quality and "
         "translate it into a bridge haircut input — not pass a definitive "
         "verdict.",
-        common_questions=["How does this management team score?",
-                         "What haircut does management risk imply?"],
+        common_questions=[
+            "How does this management team score?",
+            "What haircut does management risk imply?",
+            "Which dimensions does the scorecard cover — forecast reliability, comp, tenure, reputation?",
+            "How does a red-flag override affect the per-exec score?",
+            "How is the bridge haircut computed from the aggregate score?",
+        ],
         inputs=["An executive roster (demo team on this page) scored on "
                 "forecast reliability, comp structure, tenure, and prior-role "
                 "reputation; optional target name + guidance EBITDA."],
@@ -4462,8 +4477,13 @@ _MANUAL: List[PageContext] = [
         "REQUIRED (no public source).",
         primary_purpose="Frame a target's ability to service debt from "
         "operations, using a clearly-labeled HCRIS proxy.",
-        common_questions=["Can this target cover debt service from "
-                         "operations?", "Which numbers are real vs required?"],
+        common_questions=[
+            "Can this target cover debt service from operations?",
+            "Which numbers are real vs required?",
+            "What's the HCRIS operating-cash proxy formula?",
+            "What debt-term inputs do I need to upload to get a real DSCR?",
+            "How does this connect to /cap-structure and /covenant-headroom?",
+        ],
         inputs=["Optional target CCN (?ccn=) resolved via HCRIS; user-entered "
                 "debt terms (not publicly sourced)."],
         outputs=["A real HCRIS operating-cash proxy (labeled a proxy) and "
@@ -4503,8 +4523,13 @@ _MANUAL: List[PageContext] = [
         "figures are an ILLUSTRATIVE worked example.",
         primary_purpose="Track which CMS APMs a target participates in and the "
         "policy calendar that moves its value-based revenue.",
-        common_questions=["Which CMS APMs are active and when do they sunset?",
-                         "Is the portfolio exposure shown my real data?"],
+        common_questions=[
+            "Which CMS APMs are active and when do they sunset?",
+            "Is the portfolio exposure shown my real data?",
+            "What APMs is the target eligible to participate in?",
+            "How do APM risk-track choices affect the deal economics?",
+            "Where can I see live CMMI program updates?",
+        ],
         inputs=["None required — renders the curated CMMI program catalog; "
                 "attach a real deal to map its actual APM participation."],
         outputs=["A real CMMI program catalog (MSSP, ACO REACH, PCF, MCP, "
@@ -8528,8 +8553,13 @@ _GUIDE_BACKFILL = [
         primary_purpose="Put the known reimbursement cliffs (340B, IRF, payer "
         "rate resets, sequestration, etc.) on a timeline against the hold so a "
         "thesis isn't blindsided by a scheduled rate cut.",
-        common_questions=["What reimbursement cliffs hit during the hold?",
-                          "When does the next rate reset land?"],
+        common_questions=[
+            "What reimbursement cliffs hit during the hold?",
+            "When does the next rate reset land?",
+            "Which cliffs affect 340B / IRF / sequestration?",
+            "How does a sponsored payer-rate reset translate to revenue?",
+            "How does this differ from /diligence/regulatory-calendar?",
+        ],
         outputs=["A dated calendar of reimbursement-affecting events with "
                  "magnitude/impact notes."],
         key_metrics=[], data_sources=["pe_intelligence reimbursement-cliff "
