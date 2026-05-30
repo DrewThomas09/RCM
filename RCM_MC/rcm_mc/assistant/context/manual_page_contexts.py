@@ -7469,7 +7469,9 @@ _PE_TOOLS_4 = [
      "Tracks escrow balances and earnout milestones / payouts post-close.",
      "Monitor escrow releases and earnout milestones so obligations are met "
      "and recoveries claimed.",
-     ["What's in escrow?", "When does it release?", "What earnouts are due?"],
+     ["What's in escrow?", "When does it release?", "What earnouts are due?",
+      "Are milestones / payouts persisted, and is there an event log when a release fires?",
+      "How does /escrow-earnout differ from /earnout (modeling) and /capital-call (LP cash)?"],
      ["Escrow balance", "Earnout milestones"], [], [],
      "Tracks entered escrow/earnout records; illustrative seed until "
      "populated.",
@@ -7479,7 +7481,9 @@ _PE_TOOLS_4 = [
      "Tracks LBO debt commitments, lenders, terms, and the financing process.",
      "Manage the debt-financing process from term sheets to commitment.",
      ["Who are the lenders?", "What terms are committed?", "Where's the "
-      "financing process?"],
+      "financing process?",
+      "Are covenants and pricing grids captured per-tranche, or just headline leverage?",
+      "How does /debt-financing differ from /direct-lending and /nav-loan-tracker?"],
      ["Commitment", "Leverage", "Terms"], ["leverage", "debt"], [],
      "Tracks entered financing commitments/terms; illustrative seed until "
      "populated.",
@@ -7532,7 +7536,9 @@ _PE_TOOLS_4 = [
      "fund life.",
      "Monitor realized returns and DPI as the fund matures.",
      ["What's our DPI?", "How much have we distributed?", "How realized is "
-      "the fund?"],
+      "the fund?",
+      "Is DPI here gross or net of fees and carry, and does the realization include unrealized marks?",
+      "How does /dpi-tracker differ from /lp-reporting and /capital-call?"],
      ["DPI", "Distributions", "MOIC"], ["moic"], [],
      "Tracks entered distribution/contribution records to compute DPI; "
      "illustrative seed until populated.",
@@ -7543,7 +7549,9 @@ _PE_TOOLS_4 = [
      "distributions.",
      "Produce consistent, LP-ready performance reporting from fund data.",
      ["What do we report to LPs?", "What's portfolio performance?", "What's "
-      "been distributed?"],
+      "been distributed?",
+      "Which performance measures (gross/net, fund-level/deal-level) does the report show, and is the period selectable?",
+      "How does /lp-reporting differ from /lp-update and /dpi-tracker?"],
      ["MOIC", "IRR", "DPI"], ["moic", "irr"], [],
      "Assembles reporting from portfolio/fund data; reflects whatever has "
      "been entered, illustrative until populated.",
@@ -7737,7 +7745,12 @@ for (_r, _t, _sd, _km, _mids, _extra_ds) in _MODEL_FAMILY:
         intended_users=["Deal team analyzing a specific deal."],
         common_questions=[f"What does the {_t.lower()} show for this deal?",
                           "What assumptions drive it?",
-                          "How confident is this output?"],
+                          "How confident is this output?",
+                          "Which packet inputs (CIM, claims, financials, public "
+                          "data) feed this section, and which are observed vs "
+                          "illustrative?",
+                          "How does this connect to the other /models/<type> "
+                          "views on the same deal's packet?"],
         inputs=["The selected deal's analysis packet (deal_id in the URL) — "
                 "model output over that deal's observed / entered inputs."],
         outputs=[f"The {_t.lower()} for the selected deal."],
