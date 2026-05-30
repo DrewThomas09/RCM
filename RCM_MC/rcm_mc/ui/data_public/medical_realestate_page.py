@@ -240,8 +240,11 @@ def render_medical_realestate(params: dict = None) -> str:
     ig_rent = sum(t.annual_rent_m for t in r.tenants if any(t.credit_rating.startswith(c) for c in ("A", "BBB")))
     ig_share_pct = ig_rent / r.total_annual_rent_m * 100 if r.total_annual_rent_m else 0
 
+    # 2026-05-30 audit P5 editorial: MOB (Medical Office Building) is
+    # the specific real-estate type the page tracks. "Medical Real
+    # Estate Tracker" is the umbrella partner-vocab.
     page_title = ck_page_title(
-        "Medical Real Estate / MOB Tracker",
+        "Medical Real Estate Tracker",
         eyebrow="MEDICAL REALESTATE",
         meta=f"{r.total_properties} properties at {r.total_sqft_mm:.2f}MM sqft · ${r.total_value_b:.2f}B value generating ${r.total_annual_rent_m:.1f}M annual rent at {r.weighted_cap_rate_pct:.2f}% weighted cap · {r.weighted_lease_years:.1f}y avg lease ({r.nnn_pct * 100:.0f}% NNN) · ${ig_rent:.1f}M investment-grade rent ({ig_share_pct:.0f}% of portfolio)",
     )

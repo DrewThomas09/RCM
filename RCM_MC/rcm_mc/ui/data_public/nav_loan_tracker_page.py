@@ -234,8 +234,11 @@ def render_nav_loan_tracker(params: dict = None) -> str:
 
     avg_headroom = sum(c.headroom_pct for c in r.coverage) / len(r.coverage) if r.coverage else 0
 
+    # 2026-05-30 audit P5 editorial: NAV loans are exactly the fund-
+    # level financing instrument the page tracks. Eyebrow already
+    # reads NAV LOAN TRACKER.
     page_title = ck_page_title(
-        "NAV Loan / Fund-Level Financing Tracker",
+        "NAV Loan Tracker",
         eyebrow="NAV LOAN TRACKER",
         meta=f"""{r.total_loans} active NAV loans · ${r.total_outstanding_m:,.1f}M outstanding · {r.weighted_ltv_pct * 100:.2f}% weighted LTV · SOFR+{r.weighted_spread_bps}bps · {r.loans_near_maturity} loans within 4-year maturity window — {r.corpus_deal_count:,} corpus deals""",
     )

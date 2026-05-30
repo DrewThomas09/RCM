@@ -200,8 +200,12 @@ def render_direct_lending(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # 2026-05-30 audit P5 editorial: direct lending is the dominant
+    # form of private credit this page tracks — the slash-dual was
+    # a category restatement. Eyebrow reads DIRECT LENDING; route is
+    # /direct-lending.
     page_title = ck_page_title(
-        "Private Credit / Direct Lending Tracker",
+        "Direct Lending Tracker",
         eyebrow="DIRECT LENDING",
         meta=f"${r.total_outstanding_mm:,.0f}M outstanding across {r.total_facilities} facilities · {r.blended_all_in_rate_pct:.2f}% blended all-in at {r.weighted_leverage:.2f}x leverage · {r.cov_lite_pct * 100:.1f}% cov-lite · {latest_hc_default_pct * 100:.2f}% latest HC default with {watch_count} watch-list sectors",
     )

@@ -241,8 +241,11 @@ def render_rw_insurance(params: dict = None) -> str:
     total_paid = sum(c.paid_amount_m for c in r.claims)
     total_claimed = sum(c.claimed_amount_m for c in r.claims)
     spec_prem = sum(s.premium_m for s in r.specialty)
+    # 2026-05-30 audit P5 editorial: R&W (Representations & Warranties)
+    # insurance is THE M&A insurance category — the slash-dual was an
+    # acronym + paraphrase. Eyebrow already reads RW INSURANCE.
     page_title = ck_page_title(
-        "R&W Insurance / M&A Insurance Tracker",
+        "R&W Insurance Tracker",
         eyebrow="RW INSURANCE",
         meta=f"""{r.total_policies} active policies · ${r.total_tower_limit_m:,.1f}M total tower · ${r.total_premium_m:.1f}M premium · {r.weighted_avg_rate_pct * 100:.2f}% weighted rate · {r.weighted_avg_retention_pct * 100:.2f}% avg retention · {r.open_claims} open claims — {r.corpus_deal_count:,} corpus deals""",
     )
