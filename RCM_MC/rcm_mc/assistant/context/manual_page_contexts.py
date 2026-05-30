@@ -2903,8 +2903,13 @@ _MANUAL: List[PageContext] = [
         "(falling back to corpus self-analysis when no predictions match).",
         primary_purpose="Validate how well the platform's deal predictions "
         "lined up with realized corpus outcomes.",
-        common_questions=["How accurate were the platform's predictions?",
-                         "What's the match rate against the corpus?"],
+        common_questions=[
+            "How accurate were the platform's predictions?",
+            "What's the match rate against the corpus?",
+            "What does the fallback show when no predictions exist?",
+            "Which vintage / sector cohorts have the strongest fit?",
+            "How is this different from /backtest?",
+        ],
         inputs=["Platform predictions (where available) + the realized-deal "
                 "corpus."],
         outputs=["Per page labels: KPIs (Corpus Deals, Matched %, Realized, "
@@ -4584,8 +4589,13 @@ _MANUAL: List[PageContext] = [
         "the current/prior split. Each links to its filtered company list.",
         primary_purpose="See which investors are most active across the "
         "sponsor-backed healthcare universe.",
-        common_questions=["Which sponsors back the most healthcare companies?",
-                         "How many of sponsor X's are current vs prior?"],
+        common_questions=[
+            "Which sponsors back the most healthcare companies?",
+            "How many of sponsor X's are current vs prior?",
+            "Does the index include VC and REITs, not just PE buyouts?",
+            "What's the coverage rate on sponsor parsing (~99%?)?",
+            "How does this differ from /sponsor-league?",
+        ],
         inputs=["?q= sponsor-name search; pagination via ?offset="],
         outputs=["Ranked sponsor table: companies / current / prior."],
         key_metrics=["Companies per sponsor", "Current vs prior ownership"],
@@ -4613,8 +4623,13 @@ _MANUAL: List[PageContext] = [
         "~274 / ~135 of ~12.3k).",
         primary_purpose="A benchmark multiples distribution from disclosed "
         "financials — for sanity-checking, not a curated comp set or forecast.",
-        common_questions=["What EV/Revenue / EV/EBITDA do disclosed healthcare "
-                         "companies trade at?", "How big is the sample?"],
+        common_questions=[
+            "What EV/Revenue / EV/EBITDA do disclosed healthcare companies trade at?",
+            "How big is the sample?",
+            "Are these multiples from public-company filings or private deals?",
+            "Why is the sample much smaller than the full company list?",
+            "How does this differ from /find-comps and /comparables?",
+        ],
         inputs=["None; pagination via ?offset="],
         outputs=["P25/median/P75 + sample size for EV/Revenue & EV/EBITDA, and "
                  "a company table with computed multiples."],
@@ -6039,8 +6054,13 @@ _MANUAL: List[PageContext] = [
         "demographics — the sub-state level of the geo suite.",
         primary_purpose="Sub-state targeting: see which counties carry a "
         "state's population, age mix, income, uninsured rate and rural share.",
-        common_questions=["Which Ohio counties are largest / oldest / poorest?",
-                          "What does this state look like county by county?"],
+        common_questions=[
+            "Which Ohio counties are largest / oldest / poorest?",
+            "What does this state look like county by county?",
+            "Which counties have the highest uninsured rate?",
+            "How is rural share computed for a county?",
+            "Where does the data come from — keyless ACS / SAHIE / SAIPE?",
+        ],
         inputs=["?state=OH and ?sort=<column> — validated state + sort key."],
         outputs=["A sortable county table with a state-total + population-"
                  "weighted-mean footer."],
@@ -8103,7 +8123,11 @@ _BATCH8_SYSTEM = [
      ["What runs have I done?", "Can I re-open a past run?"]),
     ("/cli-runs", _SYS, "CLI run history — records of analyses launched via the "
      "rcm-mc command line.",
-     ["What CLI runs happened?", "What did the cron jobs do?"]),
+     ["What CLI runs happened?",
+      "What did the cron jobs do?",
+      "How does this differ from /jobs (web-triggered runs)?",
+      "Where does the run history get persisted?",
+      "Can I re-launch a past CLI run from this page?"]),
     ("/ops", _SYS, "Operations / system status surface for the deployment.",
      ["Is the system healthy?", "What's the operational status?"]),
     ("/outputs", _SYS, "Generated outputs index — exports, reports, and "
@@ -8118,7 +8142,11 @@ _BATCH8_SYSTEM = [
      ["How do I query the data?", "Can I run a custom query?"]),
     ("/admin/audit-chain", _SYS, "Audit-log chain — the tamper-evident record "
      "of state-changing actions.",
-     ["What changed and who did it?", "Is the audit chain intact?"]),
+     ["What changed and who did it?",
+      "Is the audit chain intact?",
+      "How is tamper-evidence implemented — hash chain, signatures?",
+      "What gets logged vs not logged?",
+      "How does this differ from /audit?"]),
     ("/v3-status", _SYS, "Build / phase status page (v3 milestone tracking).",
      ["What's the v3 status?", "What shipped in this phase?"]),
     ("/v5-status", _SYS, "Build / phase status page (v5 milestone tracking).",
