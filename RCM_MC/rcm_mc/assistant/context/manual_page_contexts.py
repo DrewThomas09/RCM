@@ -7309,7 +7309,9 @@ _PE_TOOLS_3 = [
      "notices.",
      "Keep LP capital calls and communications organized and auditable.",
      ["What calls are outstanding?", "What have we distributed?",
-      "What's due to LPs?"],
+      "What's due to LPs?",
+      "Are calls / distributions persisted across sessions, and is there an audit trail?",
+      "How does /capital-call differ from /capital-pacing and /lp-update?"],
      ["Called", "Distributed", "Outstanding"], [], [],
      "Tracks entered call/distribution records; seed figures illustrative "
      "until populated with the fund's actuals.",
@@ -7378,7 +7380,9 @@ _PE_TOOLS_4 = [
      "entity choice) and their after-tax return impact.",
      "See how deal structure changes after-tax returns before lawyers do.",
      ["Asset or stock deal?", "What's the step-up benefit?", "How does "
-      "structure change IRR?"],
+      "structure change IRR?",
+      "Does the model assume current federal rates only, or are state and entity-level effects included?",
+      "How does /tax-structure differ from /tax-structure-analyzer (the alias) and /tax-credits?"],
      ["After-tax IRR"], ["irr"], [],
      "Computes after-tax return deltas across entered structure assumptions; "
      "illustrative, NOT tax advice.",
@@ -7389,7 +7393,9 @@ _PE_TOOLS_4 = [
      "entity choice).",
      "Compare tax structures' after-tax return impact.",
      ["Which structure is most tax-efficient?", "What's the step-up worth?",
-      "Asset vs stock trade-off?"],
+      "Asset vs stock trade-off?",
+      "This page is an alias of /tax-structure — is there any behavioral difference between the two routes?",
+      "What rate, basis, and entity assumptions should I override to match a real deal?"],
      ["After-tax IRR"], ["irr"], [],
      "Same engine as /tax-structure; computes after-tax deltas from entered "
      "assumptions. Illustrative, NOT tax advice.",
@@ -7401,7 +7407,9 @@ _PE_TOOLS_4 = [
      "Quantify what an earnout is likely to cost and how it bridges a "
      "valuation gap.",
      ["What will the earnout cost?", "How likely is it to pay out?",
-      "Does it bridge the bid-ask?"],
+      "Does it bridge the bid-ask?",
+      "How does the expected-cost calc treat correlation between earnout targets and the deal's base-case path?",
+      "How does /earnout differ from /escrow-earnout and /capital-schedule?"],
      ["Enterprise value", "EBITDA"], ["enterprise_value", "ebitda"], [],
      "Computes expected earnout cost across entered targets/probabilities; "
      "illustrative.",
@@ -7424,7 +7432,9 @@ _PE_TOOLS_4 = [
      "Builds a sources-and-uses / capital deployment schedule for a deal.",
      "Lay out exactly how capital is sourced and deployed at close.",
      ["What are the sources and uses?", "How much equity is needed?",
-      "What's the funding schedule?"],
+      "What's the funding schedule?",
+      "Which fees, OID, and reserves are included in the uses, and where can I override them?",
+      "How does /capital-schedule differ from /capital-call and /cap-structure?"],
      ["Sources", "Uses", "Equity check"], [], [],
      "Composes a sources-and-uses schedule from entered figures; illustrative "
      "until a deal's terms are supplied.",
@@ -7447,7 +7457,9 @@ _PE_TOOLS_4 = [
      "Tracks available tax credits and incentives relevant to a deal/platform.",
      "Keep tax credits and incentives organized so none are left on the table.",
      ["What credits are available?", "What's the incentive value?",
-      "What's the filing status?"],
+      "What's the filing status?",
+      "Is the credit list seeded from a static catalog or scoped by sector/state, and how should I override it for a real platform?",
+      "How does /tax-credits differ from /tax-structure (structural choice) and /tax-structure-analyzer?"],
      ["Credit value", "By type"], [], [],
      "Tracks entered credit/incentive records; illustrative seed until "
      "populated. NOT tax advice.",
