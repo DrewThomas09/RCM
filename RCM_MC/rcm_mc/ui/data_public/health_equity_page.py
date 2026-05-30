@@ -240,8 +240,12 @@ def render_health_equity(params: dict = None) -> str:
         tone="teal",
     )
 
+    # 2026-05-30 audit P5 editorial: SDOH (social determinants of
+    # health) is one framework within health equity, not a separate
+    # subject. "Health Equity Scorecard" matches the eyebrow and the
+    # SDOH framing stays in the meta line below.
     page_title = ck_page_title(
-        "Health Equity / SDOH Scorecard",
+        "Health Equity Scorecard",
         eyebrow="HEALTH EQUITY",
         meta=f"{r.total_attributed_lives:,.0f} attributed lives ({r.lis_dual_pct * 100:.1f}% LIS/Dual) · HEI score {r.overall_hei_score:.3f} ({r.hei_points_current:.0f} pts) · ${total_inv_cost:,.1f}M equity investment → ${r.hei_bonus_potential_mm:,.1f}M Star bonus potential · {disparity_segments} of {len(r.demographics)} segments flagged for disparity",
     )

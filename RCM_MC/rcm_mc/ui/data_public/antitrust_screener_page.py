@@ -292,8 +292,12 @@ def render_antitrust_screener(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     best_remediation = min(r.remediations, key=lambda x: x.timeline_months + x.financial_cost_mm * 0.5 + x.deal_value_impact_pct * 100 - x.probability_of_approval * 50)
+    # 2026-05-30 audit P5 editorial: FTC review is THE mechanism of
+    # antitrust review for the deal sizes the page screens — the
+    # slash-dual was a restatement. "Antitrust Screener" matches the
+    # eyebrow and the route /antitrust-screener.
     page_title = ck_page_title(
-        "Anti-Trust / FTC Review Screener",
+        "Antitrust Screener",
         eyebrow="ANTITRUST SCREENER",
         meta=(
             f"Risk score {r.overall_risk_score}/100 · "

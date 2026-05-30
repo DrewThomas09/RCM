@@ -272,8 +272,11 @@ def render_esg_impact(params: dict = None) -> str:
     medicaid_ge20 = sum(1 for a in r.access if a.medicaid_pct >= 0.20)
     sbti_validated = sum(1 for e in r.emissions if "validated" in e.sbti_commitment)
 
+    # 2026-05-30 audit P5 editorial: ESG impact reporting IS the
+    # subject of this page — the slash-dual was a paraphrase. The
+    # eyebrow already reads "ESG IMPACT" so the H1 follows it.
     page_title = ck_page_title(
-        "ESG / Impact Reporting Tracker",
+        "ESG Impact Reporting",
         eyebrow="ESG IMPACT",
         meta=f"{r.total_portcos} portcos at {r.avg_composite_score:.2f}/10 composite ESG (+{r.prior_year_delta:.2f} YoY) · ${r.total_charity_care_m:.1f}M charity care LTM · {r.total_scope_12_mtco2e:,.0f} MTCO2e Scope 1+2 ({sbti_validated} portcos SBTi-validated) · {r.frameworks_tracked} disclosure frameworks tracked",
     )
