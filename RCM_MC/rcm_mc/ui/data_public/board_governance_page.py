@@ -232,8 +232,11 @@ def render_board_governance(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     critical_gaps = sum(1 for g in r.gaps if g.priority == "high")
+    # 2026-05-30 audit P5 editorial: the BoD is the subject, governance
+    # is the activity — the slash-dual conflated them. "Board
+    # Governance" matches the eyebrow and the route /board-governance.
     page_title = ck_page_title(
-        "Board of Directors / Governance",
+        "Board Governance",
         eyebrow="BOARD GOVERNANCE",
         meta=(
             f"{r.total_holdcos} holdco boards · {r.total_directors} director seats · "

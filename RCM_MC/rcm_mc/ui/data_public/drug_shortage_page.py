@@ -274,8 +274,11 @@ def render_drug_shortage(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     weighted_impact = sum(p.probability_pct * p.financial_impact_mm for p in r.playbooks)
+    # 2026-05-30 audit P5 editorial: drug shortages ARE the supply-
+    # chain risk the page tracks — the slash-dual was a paraphrase.
+    # "Drug Shortage Tracker" matches the eyebrow + route.
     page_title = ck_page_title(
-        "Drug Shortage / Supply-Chain Risk Tracker",
+        "Drug Shortage Tracker",
         eyebrow="DRUG SHORTAGE",
         meta=f"{r.active_shortages} of {r.total_critical_drugs} critical drugs in active shortage · ${r.sole_source_exposure_mm:,.2f}M sole-source exposure · ${weighted_impact:,.2f}M probability-weighted shortfall exposure · {r.overall_supply_risk_score}/100 supply risk score ({r.risk_tier.upper()} tier)",
     )
