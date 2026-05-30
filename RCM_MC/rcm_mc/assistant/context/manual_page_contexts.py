@@ -2299,8 +2299,13 @@ _MANUAL: List[PageContext] = [
         "statistics.",
         primary_purpose="Benchmark a target against similar realized-deal "
         "comps by profile similarity.",
-        common_questions=["What deals are comparable to this profile?",
-                         "Where does the target sit vs the peer set?"],
+        common_questions=[
+            "What deals are comparable to this profile?",
+            "Where does the target sit vs the peer set?",
+            "What's the loss rate / 3x+ rate in the peer set?",
+            "Is the peer set drawn from real realized deals or illustrative?",
+            "How does this differ from /find-comps and /comparable-outcomes?",
+        ],
         inputs=["Query-deal characteristics via URL (sector, EV, EBITDA, hold, "
                 "commercial mix) or a free-text search; with no query it shows "
                 "recent realized corpus deals."],
@@ -2738,8 +2743,13 @@ _MANUAL: List[PageContext] = [
         "distribution.",
         primary_purpose="Provide an underwriting reality check from the "
         "realized outcomes of comparable deals.",
-        common_questions=["What did comparable deals actually return?",
-                         "Is the projected MOIC above what comps achieved?"],
+        common_questions=[
+            "What did comparable deals actually return?",
+            "Is the projected MOIC above what comps achieved?",
+            "What's the win rate (≥2.5×) in the comp set?",
+            "How is similarity ranked — sector + EV + year, or more?",
+            "How does this differ from /comparables and /find-comps?",
+        ],
         inputs=["Sector, entry EV, year, optional sponsor (or a corpus "
                 "deal_id)."],
         outputs=["Per page labels: an outcome strip (median MOIC and IRR with "
@@ -2778,8 +2788,13 @@ _MANUAL: List[PageContext] = [
         "from the deal's module outputs.",
         primary_purpose="Make the downside thesis explicit, ranked, and cited "
         "back to its source modules.",
-        common_questions=["What's the bear case on this deal?",
-                         "How much EBITDA is at risk and why?"],
+        common_questions=[
+            "What's the bear case on this deal?",
+            "How much EBITDA is at risk and why?",
+            "Which modules contributed the critical-tier evidence?",
+            "Can I drop the bear case into the IC memo?",
+            "Are these evidence items predictions or codified observations?",
+        ],
         inputs=["A deal's pipeline / module outputs (regulatory, credit, "
                 "operational, market, structural, pattern signals)."],
         outputs=["Per page labels: KPIs (EBITDA at Risk, Critical/High/Medium "
@@ -2926,8 +2941,13 @@ _MANUAL: List[PageContext] = [
         "retrodict realized MOIC across the corpus.",
         primary_purpose="Validate that a simple corpus-fitted model tracks "
         "realized returns (R² / MAE), as a calibration check.",
-        common_questions=["Do entry signals explain realized MOIC?",
-                         "What's the model's fit (R²/MAE)?"],
+        common_questions=[
+            "Do entry signals explain realized MOIC?",
+            "What's the model's fit (R²/MAE)?",
+            "Which entry signals correlate most with realized return?",
+            "How does fit vary by sector?",
+            "Is this corpus real or illustrative?",
+        ],
         inputs=["The realized-deal corpus (no platform DB required)."],
         outputs=["Per page labels: KPIs (N realized deals, P50 MOIC, model "
                  "R², MAE), predicted-vs-realized and signal-vs-MOIC "
@@ -4399,8 +4419,13 @@ _MANUAL: List[PageContext] = [
         "COGS / SG&A / labor split stays illustrative-labeled.",
         primary_purpose="Frame a target's cost base and operating efficiency "
         "against real HCRIS aggregates where available.",
-        common_questions=["What is this target's operating cost per bed / "
-                         "patient-day?", "Which figures are real vs modeled?"],
+        common_questions=[
+            "What is this target's operating cost per bed / patient-day?",
+            "Which figures are real vs modeled?",
+            "How does opex per bed compare to HCRIS sector medians?",
+            "Is the COGS / SG&A / labor split from real HCRIS or modeled?",
+            "How do I attach a CCN to get real HCRIS values?",
+        ],
         inputs=["Optional target CCN (?ccn=) resolved via HCRIS; the "
                 "illustrative cost-split assumptions otherwise."],
         outputs=["A real HCRIS fact strip (opex/bed, opex/patient-day, "
@@ -8477,8 +8502,13 @@ _GUIDE_BACKFILL = [
         primary_purpose="Show the partner exactly which analyses need their own "
         "deal/fund data and how to turn each on (upload + template), so no "
         "data-gated surface is left dark.",
-        common_questions=["What do I need to upload?",
-                          "Which analyses aren't active yet?"],
+        common_questions=[
+            "What do I need to upload?",
+            "Which analyses aren't active yet?",
+            "How many surfaces become active once I upload claims data?",
+            "Where do I download the import templates?",
+            "Who typically owns each piece of data I need to request?",
+        ],
         outputs=["A catalog of data-required surfaces with the input each needs."],
         key_metrics=[], data_sources=["Your uploaded deal/fund data (none is "
                                       "fabricated — surfaces stay inert until fed)."],
