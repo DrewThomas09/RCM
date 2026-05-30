@@ -5040,6 +5040,13 @@ _MANUAL: List[PageContext] = [
         "/cap-structure", "Capital Structure",
         short_description="Capital-structure calculator on your inputs.",
         primary_purpose="Model debt/equity structure and leverage for a deal.",
+        common_questions=[
+            "What's the leverage ratio under the base case?",
+            "How does adding $50M of mezz change the all-in cost of capital?",
+            "What does the structure look like at refinance?",
+            "What's the equity contribution required to hit a target IRR?",
+            "How does this map to the /debt-service / /covenant-headroom views?",
+        ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs."],
         related_routes=["/debt-service", "/covenant-headroom"],
@@ -5049,6 +5056,13 @@ _MANUAL: List[PageContext] = [
         "/capital-efficiency", "Capital Efficiency",
         short_description="Capital-efficiency calculator on your inputs.",
         primary_purpose="Frame capital efficiency / returns on invested capital.",
+        common_questions=[
+            "What's the ROIC the model implies for this deal?",
+            "How does the page compare reinvestment vs distribution paths?",
+            "What's a healthy capital-efficiency ratio for this sector?",
+            "How sensitive is the result to capex assumptions?",
+            "Where do I see the underlying cash-flow waterfall?",
+        ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs."],
         related_routes=["/cap-structure", "/reinvestment"],
@@ -5108,6 +5122,13 @@ _MANUAL: List[PageContext] = [
         "/deal-risk-scores", "Deal Risk Scores",
         short_description="Risk scores across the illustrative seed-deal corpus.",
         primary_purpose="Benchmark deal risk dimensions against the corpus.",
+        common_questions=[
+            "Which risk dimensions are scored — covenant, payer, regulatory?",
+            "How does this deal's risk profile compare to the corpus distribution?",
+            "Are the risk scores from real realized outcomes or illustrative?",
+            "Which corpus deals were the highest-risk outliers?",
+            "How should I use this in IC discussion vs underwriting?",
+        ],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus, not real realized deals."],
         related_routes=["/deal-quality", "/corpus-dashboard"],
@@ -5117,6 +5138,13 @@ _MANUAL: List[PageContext] = [
         "/deal-postmortem", "Deal Postmortem",
         short_description="Post-mortem analytics over the illustrative seed-deal corpus.",
         primary_purpose="Frame lessons/attribution from corpus deal outcomes.",
+        common_questions=[
+            "What killed value on the underperforming deals?",
+            "Which lever drove the most attribution variance?",
+            "How does the corpus distribution skew on EBITDA realization?",
+            "What did the top-quartile deals do differently?",
+            "Is this corpus illustrative or backed by real fund data?",
+        ],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus — directional, not real outcomes."],
         related_routes=["/fund-learning", "/deal-quality"],
@@ -5152,6 +5180,13 @@ _MANUAL: List[PageContext] = [
         "anchored to real CMS change-of-ownership consolidation by state.",
         primary_purpose="Frame market concentration / rollup whitespace against real "
         "observed consolidation activity.",
+        common_questions=[
+            "Which MSAs have the lowest HHI — best rollup whitespace?",
+            "How does CR3 differ from CR5 / HHI as a concentration measure?",
+            "What does the CMS CHOW panel tell me about consolidation pace?",
+            "Are the MSA-level operators in this page real or illustrative?",
+            "How do I use this for thesis-driven sourcing?",
+        ],
         data_sources=["Illustrative MSA HHI/operator detail (labeled) + real CMS CHOW "
                       "(5,141 SNF + 755 hospital)."],
         interpretation_guidance=["MSA tables are the structural lens (illustrative).",
@@ -5165,6 +5200,13 @@ _MANUAL: List[PageContext] = [
         short_description="CR1/CR3/CR5/HHI payer-concentration calculator on your "
         "revenue + top-payer inputs, anchored to real CMS MA enrollment.",
         primary_purpose="Frame payer concentration and the real MA-market backdrop.",
+        common_questions=[
+            "What's the payer-concentration risk on this deal — single largest payer share?",
+            "How does CR3 vs HHI tell a different story?",
+            "Where does the CMS MA enrollment panel come from?",
+            "What's a healthy payer mix to underwrite to?",
+            "How does this differ from /provider-network's payer HHI?",
+        ],
         data_sources=["Illustrative payer roster/renewals/denials (labeled) + real "
                       "CMS MA geographic enrollment (29.7M)."],
         interpretation_guidance=["Concentration metrics compute off YOUR inputs.",
