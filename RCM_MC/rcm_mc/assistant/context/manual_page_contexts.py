@@ -6663,6 +6663,8 @@ _MANUAL.extend([
             "What preset shocks are available?",
             "What does the 'payer rate cut' scenario actually change?",
             "How do I stress a deal's payer mix?",
+            "Where does a preset get applied — is this page the catalog, or does it run anything?",
+            "How does /scenarios differ from /lbo-stress and /portfolio/monte-carlo?",
         ],
         inputs=["Preset shock definitions (PRESET_SHOCKS from "
                 "scenarios/scenario_shocks.py)."],
@@ -6711,6 +6713,8 @@ _MANUAL.extend([
             "What's the fund-level EBITDA / return distribution?",
             "How much does cross-deal correlation widen the downside?",
             "Which deals drive portfolio risk?",
+            "How many deal packets need to be saved before this page is meaningful?",
+            "Where are the correlation assumptions defined and how can they be inspected?",
         ],
         inputs=["Saved analysis packets (one per deal) from the analysis store; "
                 "each carries its own EBITDA simulation p50/std."],
@@ -6763,7 +6767,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Track the operational value-creation initiatives that turn the deal "
      "thesis into realized EBITDA after close.",
      ["What's in the 100-day plan?", "How much EBITDA do the initiatives target?",
-      "Which initiatives are behind?"],
+      "Which initiatives are behind?",
+      "How is targeted EBITDA impact rolled up across initiatives, and is double-counting checked?",
+      "How does /value-creation-plan differ from /portfolio and /diligence/value?"],
      ["Initiative count", "Targeted EBITDA impact", "% complete"],
      ["value_creation_opportunity", "ebitda", "synergy_estimate"], [],
      "Composes a plan from initiative inputs and sums their targeted EBITDA "
@@ -6777,7 +6783,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Move from reported to adjusted EBITDA transparently so the team can "
      "pressure-test the earnings a valuation rests on.",
      ["What are the EBITDA add-backs?", "How does reported bridge to adjusted "
-      "EBITDA?", "Which adjustments are aggressive?"],
+      "EBITDA?", "Which adjustments are aggressive?",
+      "Which add-back categories does the analyzer split out, and how is each labeled (one-time, normalization, owner)?",
+      "How does /qoe-analyzer differ from /diligence/qoe-memo and /diligence/bridge-audit?"],
      ["Reported EBITDA", "Adjusted EBITDA", "Add-backs", "EBITDA margin"],
      ["ebitda", "adjusted_ebitda", "ebitda_margin", "revenue"], [],
      "Builds a reported→adjusted EBITDA bridge from entered add-backs/"
@@ -6792,7 +6800,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Help think about which combination of deals balances return, risk and "
      "concentration at the fund level.",
      ["What mix optimizes return vs risk?", "Where is the portfolio "
-      "concentrated?", "How diversified is this construction?"],
+      "concentrated?", "How diversified is this construction?",
+      "What corpus is the deal universe drawn from, and how many deals make a meaningful optimization?",
+      "How does this differ from /portfolio/monte-carlo and /hold-optimizer?"],
      ["MOIC", "IRR", "Concentration", "Hold period"],
      ["moic", "irr", "hold_period"], ["public_transaction_corpus"],
      "Optimization/heuristic over selected corpus deals' return profiles; "
@@ -6807,7 +6817,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Surface the hold-period sweet spot where compounding EBITDA growth still "
      "beats the IRR drag of a longer hold.",
      ["What's the optimal hold period?", "How does IRR change if we hold "
-      "longer?", "When does MOIC stop compensating for time?"],
+      "longer?", "When does MOIC stop compensating for time?",
+      "What entry profile does the model assume — and which inputs should I override for a real deal?",
+      "How does /hold-optimizer differ from /portfolio-optimizer and /exit-readiness?"],
      ["Hold period", "IRR", "MOIC", "Exit multiple"],
      ["hold_period", "irr", "moic", "exit_multiple"], [],
      "Projects exit value across candidate hold lengths from the entry profile "
