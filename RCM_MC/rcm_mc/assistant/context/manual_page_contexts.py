@@ -7904,7 +7904,9 @@ _BATCH6 = [
      "Draft an IC memo that situates the deal against comparable corpus "
      "evidence.",
      ["Draft a benchmarked IC memo", "How does this compare to the corpus?",
-      "What's the peer context?"],
+      "What's the peer context?",
+      "Which sections pull from the deal's packet vs from corpus benchmarks?",
+      "How does /corpus-ic-memo differ from /ic-memo, /ic-memo-gen, and /diligence/ic-packet?"],
      ["MOIC", "IRR", "Benchmark percentile"],
      ["moic", "irr"], ["analysis_run", "public_transaction_corpus"],
      "Composes a memo from the deal's packet plus corpus comparables; "
@@ -7947,7 +7949,9 @@ _BATCH6 = [
      "Projects future demand / volume from entered trend assumptions.",
      "Stress-test the volume assumptions a revenue thesis rests on.",
      ["What demand is assumed?", "How sensitive is revenue to volume?",
-      "Is the growth realistic?"],
+      "Is the growth realistic?",
+      "What seasonality and saturation curves does the projection use, and how should I override them?",
+      "How does /demand-forecast differ from /growth-runway and /denovo-expansion?"],
      ["Revenue growth", "Volume"], ["revenue_growth"], [],
      "Projects demand from entered trend/seasonality assumptions; "
      "illustrative.",
@@ -8043,7 +8047,9 @@ _BATCH7 = [
      "Models the savings opportunity from biosimilar substitution for a "
      "drug-spend base.",
      ["What's the biosimilar savings?", "Which molecules switch?",
-      "How big is the opportunity?"],
+      "How big is the opportunity?",
+      "What switch rate, discount, and rebate assumptions does the analyzer use, and how should I override them?",
+      "How does /biosimilars differ from /drug-pricing-340b and the broader QoE add-back tools?"],
      ["Savings opportunity"], [],
      "Biosimilar substitution is a concrete, near-term drug-cost lever.", "model"),
     ("/drug-pricing-340b", "340B Drug Pricing Analyzer",
@@ -8116,7 +8122,9 @@ _BATCH7 = [
      "Tracks de novo (greenfield) site openings — pipeline, ramp, and "
      "economics.",
      ["What de novos are planned?", "How are they ramping?", "What's the "
-      "expansion economics?"],
+      "expansion economics?",
+      "How does the tracker model ramp lag, payer enrollment, and breakeven month — and are those overridable?",
+      "How does /denovo-expansion differ from /unit-economics and /rollup-economics?"],
      ["Site count", "Revenue", "Ramp"], ["revenue", "ebitda_margin"],
      "Organic de novo growth complements M&A in a platform thesis.", "user"),
     ("/tracker-340b", "340B Pharmacy Program Tracker",
@@ -8308,7 +8316,9 @@ _BATCH8_ANALYTIC = [
      PageContextCategory.DILIGENCE_WORKSPACE,
      "Diligence checklist dashboard — workstreams, status, owners, and "
      "evidence.",
-     ["What's left to diligence?", "What's blocked?", "Who owns what?"],
+     ["What's left to diligence?", "What's blocked?", "Who owns what?",
+      "Is the checklist state persisted across sessions, and where are partner overrides logged?",
+      "How does /diligence-checklist (this route alias) differ from /diligence/checklist?"],
      ["Items complete", "By status"], [], ["checklist_state"],
      "Tracks entered checklist items through status/owner; reflects what the "
      "team has populated.",
@@ -8643,7 +8653,9 @@ if "/compare" not in {c.route for c in _MANUAL}:
         primary_purpose="Put two or more deals next to each other so the team "
         "can see where they differ at a glance.",
         common_questions=["How do these deals compare?", "Which has the better "
-                          "returns?", "Where do they diverge?"],
+                          "returns?", "Where do they diverge?",
+                          "How are the columns sorted, and can I pin a baseline deal for relative deltas?",
+                          "How does /compare differ from /diligence/compare and /similar-deals?"],
         inputs=["The selected deals (deals= query param) and their stored "
                 "packets / snapshots."],
         outputs=["A column-per-deal table of KPIs/returns plus an EBITDA "
