@@ -6834,7 +6834,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Give a structured read on whether an asset is actually ready to go to "
      "market, not just whether the numbers look good.",
      ["Is this asset ready to exit?", "What's weakest for a sale process?",
-      "What should we fix before going to market?"],
+      "What should we fix before going to market?",
+      "How are the Financial / Operational / Commercial / Governance axes weighted in the composite score?",
+      "How does /exit-readiness differ from /hold-optimizer and /qoe-analyzer?"],
      ["Readiness score", "Per-axis scores", "Gaps"],
      ["ebitda_margin", "revenue_growth"], [],
      "Weighted scorecard across readiness dimensions; the inputs are "
@@ -6847,7 +6849,9 @@ _ILLUSTRATIVE_TOOLS = [
      "rate-savings trade-off.",
      "Evaluate whether and when to refinance a portfolio company's debt.",
      ["Should we refinance now?", "How much can we cash out?", "What's the "
-      "rate-savings impact?"],
+      "rate-savings impact?",
+      "What rate / leverage / fees does the model assume — and which should I override for a real refi?",
+      "How does the cash-out vs rate-savings trade-off feed MOIC and IRR?"],
      ["Leverage", "Interest rate", "Cash-out", "EV/EBITDA"],
      ["leverage", "debt", "ev_to_ebitda"], [],
      "Computes new debt service and cash-out across entered refi assumptions; "
@@ -6861,7 +6865,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Quantify the cash tied up in working capital and the RCM levers that "
      "free it — a recurring source of hidden value in healthcare deals.",
      ["How much cash is trapped in AR?", "What's the cash conversion cycle?",
-      "Which payers drive DSO?"],
+      "Which payers drive DSO?",
+      "How does releasing AR translate to a one-time cash benefit vs ongoing margin?",
+      "How does /working-capital differ from /diligence/qoe-memo and /rcm-benchmarks?"],
      ["Days in AR", "DSO", "Cash conversion cycle", "Net collection rate"],
      ["days_in_ar", "net_collection_rate"], [],
      "Computes AR/AP/DSO/CCC and payer-level AR from entered balances; "
@@ -6875,7 +6881,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Get under the platform average to the economics of a single site or "
      "provider, where roll-up value is actually created.",
      ["What does one location earn?", "How long is the ramp to maturity?",
-      "Which providers are profitable?"],
+      "Which providers are profitable?",
+      "What does the ramp curve assume about visit/wRVU growth, payer mix, and overhead allocation?",
+      "How does /unit-economics differ from /diligence/physician-eu and /rollup-economics?"],
      ["Revenue/location", "Contribution margin", "Ramp curve"],
      ["provider_contribution_margin", "revenue", "ebitda_margin"], [],
      "Builds per-unit P&L and ramp curves from entered location/provider "
@@ -6889,7 +6897,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Show how buying add-ons below the platform multiple and capturing "
      "synergies compounds equity value.",
      ["What's the multiple-arbitrage value?", "How much synergy is needed?",
-      "What blended multiple results?"],
+      "What blended multiple results?",
+      "How is synergy capture phased in, and what realization haircut is reasonable?",
+      "How does /rollup-economics differ from /unit-economics and /portfolio-optimizer?"],
      ["EV/EBITDA", "Synergy", "Blended multiple", "MOIC"],
      ["ev_to_ebitda", "synergy_estimate", "ebitda", "moic"], [],
      "Computes blended entry multiple and equity build from platform + add-on "
@@ -6903,7 +6913,9 @@ _ILLUSTRATIVE_TOOLS = [
      "Benchmark sponsors against each other on realized performance to inform "
      "co-invest and competitive dynamics.",
      ["Which sponsors perform best?", "How does a sponsor rank?", "Who's "
-      "active in this sector?"],
+      "active in this sector?",
+      "What deal corpus drives the rank, and is sponsor coverage even across the universe?",
+      "How does /sponsor-league differ from /deal-library/sponsors and /return-attribution?"],
      ["MOIC", "IRR", "Deal count", "Hold period"],
      ["moic", "irr", "hold_period"], ["public_transaction_corpus"],
      "Aggregates realized-return metrics per sponsor from the licensed deal "
