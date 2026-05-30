@@ -885,8 +885,11 @@ class TestPostForms(unittest.TestCase):
                     for label in ("Deals", "Snapshots", "Notes", "DB Size",
                                   "deal_snapshots"):
                         self.assertIn(label, body)
-                    # Auth off in test setup → laptop-mode badge
-                    self.assertIn("laptop mode", body)
+                    # Auth off in test setup → "Auth: off" badge.
+                    # The previous "laptop mode" suffix was dropped in
+                    # the 2026-05-30 audit §4.3 cleanup (internal-only
+                    # vocabulary).
+                    self.assertIn("Auth: <em>off</em>", body)
             finally:
                 server.shutdown()
                 server.server_close()

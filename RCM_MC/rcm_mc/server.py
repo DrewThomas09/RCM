@@ -15210,11 +15210,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                         "initiative_actuals")
         )
 
+        # 2026-05-30 audit §4.3: dropped "laptop mode" — internal
+        # vocabulary that partners landing on /ops without auth
+        # don't have a frame for. Plain "Auth: off" reads as the
+        # diagnostic statement it actually is.
         auth_line = (
             f'Auth: <strong style="color:var(--sc-positive,#0a8a5f);">'
             f'enabled</strong> as <code>{html.escape(self.config.auth_user)}</code>'
             if self.config.auth_user else
-            'Auth: <em>off · laptop mode</em>'
+            'Auth: <em>off</em>'
         )
 
         # Editorial chartis_shell + ck_kpi_block + ck_panel — replaces
