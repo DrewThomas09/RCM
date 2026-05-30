@@ -74,7 +74,13 @@ RANKINGS = {
         {'route': '/deal-library/comps', 'label': 'Comps', 'total': 6.8, 'tier': 'green', 'effort': 2.5, 'useful': 4.0},
         {'route': '/deal-library/sponsors', 'label': 'Sponsors', 'total': 6.8, 'tier': 'green', 'effort': 2.5, 'useful': 4.0},
         {'route': '/deal-library', 'label': 'Deal Library', 'total': 6.8, 'tier': 'green', 'effort': 2.5, 'useful': 4.0},
-        {'route': '/library', 'label': 'Library', 'total': 6.4, 'tier': 'green', 'effort': 3.5, 'useful': 3.0},
+        # 2026-05-30 audit follow-up: was 'Library' — recursive with the
+        # 'Library' section button. Renamed to the page's own eyebrow
+        # ("DEAL CORPUS" → Title Case "Deal Corpus") so the dropdown no
+        # longer reads "Library ▾ … 05. Library". Adjacent /deal-library
+        # keeps its own label ("Deal Library") so the two stay distinct
+        # by the leading word.
+        {'route': '/library', 'label': 'Deal Corpus', 'total': 6.4, 'tier': 'green', 'effort': 3.5, 'useful': 3.0},
         {'route': '/data/catalog', 'label': 'Catalog', 'total': 6.2, 'tier': 'green', 'effort': 2.5, 'useful': 3.5},
         {'route': '/data/refresh', 'label': 'Refresh', 'total': 6.2, 'tier': 'green', 'effort': 2.5, 'useful': 3.5},
         {'route': '/methodology', 'label': 'Methodology', 'total': 5.6, 'tier': 'green', 'effort': 2.5, 'useful': 3.0},
@@ -113,7 +119,11 @@ RANKINGS = {
     'portfolio': [
         {'route': '/portfolio/regression', 'label': 'Regression', 'total': 8.2, 'tier': 'navy', 'effort': 5.0, 'useful': 3.5},
         {'route': '/portfolio/risk-scan', 'label': 'Risk Scan', 'total': 8.2, 'tier': 'green', 'effort': 3.5, 'useful': 4.5},
-        {'route': '/portfolio', 'label': 'Portfolio', 'total': 7.8, 'tier': 'green', 'effort': 3.0, 'useful': 4.5},
+        # 2026-05-30 audit follow-up: was 'Portfolio' — recursive with
+        # the 'Portfolio' section button. Renamed to "Overview" so the
+        # dropdown reads "Portfolio ▾ … Overview" instead of
+        # "Portfolio ▾ … Portfolio".
+        {'route': '/portfolio', 'label': 'Overview', 'total': 7.8, 'tier': 'green', 'effort': 3.0, 'useful': 4.5},
         {'route': '/portfolio/monitor', 'label': 'Monitor', 'total': 7.8, 'tier': 'green', 'effort': 3.0, 'useful': 4.5},
     ],
     'home': [
