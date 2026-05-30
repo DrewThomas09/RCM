@@ -240,8 +240,12 @@ def render_ma_star_tracker(params: dict = None) -> str:
     stars_up = sum(1 for p in r.plans if p.star_rating_2026 > p.star_rating_2025)
     stars_down = sum(1 for p in r.plans if p.star_rating_2026 < p.star_rating_2025)
 
+    # 2026-05-30 audit P5 editorial: Star Ratings exist only inside
+    # Medicare Advantage — the slash-dual was a category restatement.
+    # "MA Star Ratings Tracker" preserves both signals and matches
+    # the eyebrow's MA STAR TRACKER form.
     page_title = ck_page_title(
-        "Medicare Advantage / Star Ratings Tracker",
+        "MA Star Ratings Tracker",
         eyebrow="MA STAR TRACKER",
         meta=f"{r.total_plans} MA plans tracking {r.total_enrollment_m:.1f}M lives · {r.avg_star_rating:.2f}★ weighted avg · {r.pct_4star_plus * 100:.1f}% in 4+★ plans · {stars_up} improved / {stars_down} declined in 2026 cycle · ${r.total_portfolio_ma_revenue_m:,.0f}M portfolio MA revenue · ${r.total_radv_exposure_m:,.0f}M industry RADV exposure",
     )

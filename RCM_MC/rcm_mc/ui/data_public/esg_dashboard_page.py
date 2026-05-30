@@ -267,8 +267,12 @@ def render_esg_dashboard(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # 2026-05-30 audit P5 editorial: ESG and Sustainability overlap
+    # enough that the slash was a paraphrase. ESG is the established
+    # partner-vocabulary acronym; "ESG Dashboard" matches the route
+    # /esg-dashboard and the eyebrow.
     page_title = ck_page_title(
-        "ESG / Sustainability Dashboard",
+        "ESG Dashboard",
         eyebrow="ESG DASHBOARD",
         meta=f"{sector} sector · {r.overall_score:.0f}/100 ESG score ({r.tier} tier) · E {r.e_score:.0f} · S {r.s_score:.0f} · G {r.g_score:.0f} · {r.total_disclosure_gaps} LP disclosure gaps across {len(r.lp_disclosures)} framework requirements",
     )

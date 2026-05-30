@@ -251,8 +251,12 @@ def render_pmi_integration(params: dict = None) -> str:
     avg_retention = sum(x.retention_rate_pct for x in r.retention) / len(r.retention) if r.retention else 0
     high_risk = sum(1 for risk in r.risks if risk.severity == "high")
     late_milestones = sum(1 for m in r.milestones if m.variance_days > 0)
+    # 2026-05-30 audit P5 editorial: PMI is the acronym for Post-
+    # Merger Integration — the slash-dual carried no extra meaning,
+    # just expanded the abbreviation twice. Keep the spelled-out
+    # form so a partner unfamiliar with the acronym still reads it.
     page_title = ck_page_title(
-        "PMI / Post-Merger Integration Scorecard",
+        "Post-Merger Integration Scorecard",
         eyebrow="PMI INTEGRATION",
         meta=f"""{r.total_integrations} active integrations · ${r.total_synergy_target_m:.1f}M synergy target · ${r.total_synergy_realized_m:.1f}M realized ({r.weighted_realization_pct * 100:.0f}%) · ${r.total_integration_cost_m:.1f}M integration cost · {r.on_track_count}/{r.total_integrations} on track — {r.corpus_deal_count:,} corpus deals""",
     )

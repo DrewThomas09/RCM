@@ -349,8 +349,12 @@ def render_cms_apm_tracker(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # 2026-05-30 audit P5 editorial: CMS Innovation Models ARE the
+    # alternative-payment models the page catalogs — the slash-dual
+    # was a definition restated. "CMS APM Tracker" matches the route
+    # /cms-apm and the eyebrow.
     page_title = ck_page_title(
-        "CMS Innovation Models / APM Tracker",
+        "CMS APM Tracker",
         eyebrow="CMS APM",
         meta=f"{r.total_programs} active CMS APMs · {r.total_lives_covered_m:.1f}M lives covered · ${r.total_apm_payments_b:.1f}B annual Medicare payments",
     )
