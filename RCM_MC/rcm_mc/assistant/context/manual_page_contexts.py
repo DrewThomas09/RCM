@@ -6034,12 +6034,29 @@ _DR_DATA_SOURCE_IDS = {
     "/diligence/physician-eu": ["compensation_file", "provider_roster"],
 }
 for _route, _title, _upload, _who, _activates, _tmpl in _DATA_REQUIRED_GUIDE:
+    # 2026-05-30 audit follow-up: every DATA_REQUIRED page shares the
+    # same shape of partner questions ("what do I upload", "who do I
+    # ask", "what does this compute once live", "where's the import
+    # template"). The Guide answers each more crisply when those
+    # questions are wired in explicitly instead of falling back to the
+    # generic _ctx default ("What does this page do? Where does its
+    # data come from?"). The strings interpolate the per-page upload
+    # type, requester, activates summary, and template filename — so
+    # each generated entry's questions reference its specific data slot.
+    _dr_common_questions = [
+        f"What data do I need to upload to activate {_title}?",
+        f"Where do I get the {_upload} data from? ({_who} typically owns it.)",
+        f"What does {_title} compute once my data is uploaded?",
+        f"Where's the import template ({_tmpl})?",
+        f"Why is {_title} DATA REQUIRED — what data is missing?",
+    ]
     _MANUAL.append(_ctx(
         _route, _title,
         short_description=(f"{_title} activates on YOUR uploaded {_upload}; until "
                            "then it shows an illustrative scaffold (no fabricated "
                            "values), with a panel listing exactly what to provide."),
         primary_purpose=f"Once your data is uploaded: {_activates}.",
+        common_questions=_dr_common_questions,
         data_sources=[f"USER DATA REQUIRED — upload {_upload} (import template: {_tmpl})."],
         data_source_ids=_DR_DATA_SOURCE_IDS.get(_route, []),
         interpretation_guidance=[
