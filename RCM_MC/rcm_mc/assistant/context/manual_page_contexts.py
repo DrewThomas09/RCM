@@ -179,9 +179,13 @@ _MANUAL: List[PageContext] = [
         "their pulse, alerts, deadlines, and health mix.",
         primary_purpose="Show an individual team member their own deals, "
         "alerts, deadlines, and returns in one read.",
-        common_questions=["What's on my plate this week?",
-                         "Which of my deals have red alerts or overdue "
-                         "deadlines?"],
+        common_questions=[
+            "What's on my plate this week?",
+            "Which of my deals have red alerts or overdue deadlines?",
+            "How many deals do I own across the book?",
+            "What's the health-mix across my assigned deals?",
+            "Which of my deals had a stage change recently?",
+        ],
         inputs=["The owner key in the path; deals owned by that owner + their "
                 "alerts, deadlines, and latest snapshots."],
         outputs=["Per page labels: a pulse strip (My Deals, Red/Amber Alerts, "
@@ -325,9 +329,13 @@ _MANUAL: List[PageContext] = [
         "diligence questions saved across every deal the user has opened.",
         primary_purpose="Show every open diligence question across all deals "
         "in one place, and let the user export the list.",
-        common_questions=["What questions are still open across my deals?",
-                         "Can I send these to the seller / put them in the "
-                         "IC binder?"],
+        common_questions=[
+            "What questions are still open across my deals?",
+            "Can I send these to the seller / put them in the IC binder?",
+            "How do I export the open questions as CSV or print-binder?",
+            "Are these questions saved server-side or browser-local?",
+            "Why don't I see questions from a deal I opened on another machine?",
+        ],
         inputs=["Per-deal question lists the user has saved (the page reads "
                 "them from the browser's local storage — no server roundtrip)."],
         outputs=["A consolidated, deal-grouped question ledger; based on page "
@@ -392,7 +400,13 @@ _MANUAL: List[PageContext] = [
         "password rotation, and deletion.",
         primary_purpose="Manage who can access PEdesk and at what role "
         "(analyst / admin).",
-        common_questions=["Who has access?", "How do I add or remove a user?"],
+        common_questions=[
+            "Who has access?",
+            "How do I add or remove a user?",
+            "How do I rotate a user's password?",
+            "What's the difference between analyst and admin roles?",
+            "How do I revoke access without deleting the user?",
+        ],
         inputs=["New-user form (username, optional display name, password, "
                 "role); admin session."],
         outputs=["A user table (username, display name, role) with "
@@ -576,8 +590,13 @@ _MANUAL: List[PageContext] = [
         "best fits.",
         primary_purpose="Surface hospitals that fit a chosen investment thesis "
         "(e.g. rural consolidation, margin turnaround, commercial-payer mix).",
-        common_questions=["Which hospitals fit my thesis?",
-                         "What scores highest for this strategy?"],
+        common_questions=[
+            "Which hospitals fit my thesis?",
+            "What scores highest for this strategy?",
+            "What weights does the fit score use (beds vs payer mix vs margin)?",
+            "Is the fit score a predicted return or a thesis-fit ranking?",
+            "Which preset theses are available?",
+        ],
         inputs=["A selected thesis from the library; the public HCRIS hospital "
                 "universe."],
         outputs=["Per page labels: a ranked match table (Hospital, State, "
@@ -615,8 +634,13 @@ _MANUAL: List[PageContext] = [
         primary_purpose="Surface candidate hospitals from public data by "
         "user-set metric ranges (with quick presets like turnaround / "
         "large-cap / margin-expansion).",
-        common_questions=["Which hospitals match these financial criteria?",
-                         "Show me large turnaround candidates."],
+        common_questions=[
+            "Which hospitals match these financial criteria?",
+            "Show me large turnaround candidates.",
+            "What presets are available — turnaround, large-cap, margin-expansion?",
+            "How does this differ from /source's thesis-fit screen?",
+            "Where can I see the HCRIS data this filter runs against?",
+        ],
         inputs=["User filters (min/max beds, min revenue, max margin, state) "
                 "or a preset; the public HCRIS universe."],
         outputs=["Per page labels: a matches table (Hospital, State, Beds, "
@@ -735,8 +759,13 @@ _MANUAL: List[PageContext] = [
         "signal, data completeness) and returns PASS / WATCH / FAIL.",
         primary_purpose="Apply tunable screening rules across the historical "
         "deal corpus and see how the pass/watch/fail mix shifts.",
-        common_questions=["Which corpus deals pass the screen?",
-                         "What happens if I tighten the thresholds?"],
+        common_questions=[
+            "Which corpus deals pass the screen?",
+            "What happens if I tighten the thresholds?",
+            "What rules drive PASS / WATCH / FAIL?",
+            "How does this differ from /screening (workspace) and /target-screener (public)?",
+            "What's the data completeness threshold a deal needs to pass?",
+        ],
         inputs=["The historical deal corpus; tunable thresholds via query "
                 "params (max composite risk, EV/EBITDA, MOIC floor, max "
                 "Medicaid %, min EV)."],
