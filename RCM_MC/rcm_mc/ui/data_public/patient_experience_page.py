@@ -290,8 +290,12 @@ def render_patient_experience(params: dict = None) -> str:
     cell = f"background:{panel};border:1px solid {border};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
+    # 2026-05-30 audit P5 editorial: NPS is one of several patient-
+    # experience metrics this page tracks (alongside HCAHPS, Press
+    # Ganey, online reviews). "Patient Experience Tracker" reads
+    # naturally; NPS continues to appear in the meta line.
     page_title = ck_page_title(
-        "Patient Experience / NPS Tracker",
+        "Patient Experience Tracker",
         eyebrow="PATIENT EXPERIENCE",
         meta=f"""HCAHPS, Press Ganey, NPS, online reviews, retention drivers — {r.corpus_deal_count:,} corpus deals""",
     )
