@@ -2201,8 +2201,13 @@ _MANUAL: List[PageContext] = [
         "grouped by category.",
         primary_purpose="Give each metric a single authoritative definition so "
         "interpretation stays consistent across the platform.",
-        common_questions=["What does this metric mean?",
-                         "How is this number calculated?"],
+        common_questions=[
+            "What does this metric mean?",
+            "How is this number calculated?",
+            "What's the typical range for this metric in a healthcare deal?",
+            "How does this metric differ across sectors?",
+            "Which category does this metric belong to?",
+        ],
         inputs=["None — it renders a curated definition set (no deal data)."],
         outputs=["Per page labels: per-metric cards (label, units, typical "
                  "range, definition, why it matters, how calculated) with a "
@@ -2446,8 +2451,13 @@ _MANUAL: List[PageContext] = [
         "corpus (600+ deals) that powers the platform's benchmarks and comps.",
         primary_purpose="Browse and filter the corpus of deals behind the "
         "benchmarks, comps, and backtests.",
-        common_questions=["What deals are in the corpus?",
-                         "Show me realized deals in this sector / regime."],
+        common_questions=[
+            "What deals are in the corpus?",
+            "Show me realized deals in this sector / regime.",
+            "What's the corpus P50 MOIC / loss rate?",
+            "Is the corpus real public-data deals or illustrative?",
+            "How big is the corpus (600+ deals)?",
+        ],
         inputs=["Sector / regime / MOIC-bucket filters and name search."],
         outputs=["Per page labels: KPIs (Total Deals, Realized, Corpus P50 "
                  "MOIC, Loss Rate, Sectors) and a table (Deal, Sector, Year, "
@@ -2895,8 +2905,13 @@ _MANUAL: List[PageContext] = [
         "and a context-filtered healthcare-PE news feed.",
         primary_purpose="Give a target's category some public-market and "
         "transaction context.",
-        common_questions=["How are public operators priced?",
-                         "What are private multiples for this specialty?"],
+        common_questions=[
+            "How are public operators priced?",
+            "What are private multiples for this specialty?",
+            "Which news is the feed filtered to?",
+            "How fresh are the multiples — quarterly, real-time?",
+            "How does this differ from /market-intel/geo and /market-data/map?",
+        ],
         inputs=["The target's category / specialty / size (to filter the "
                 "curated comps, multiples, and news)."],
         outputs=["Per page labels: a public-comp table (ticker, name, revenue, "
@@ -8162,7 +8177,11 @@ _BATCH8_SYSTEM = [
      ["How do I switch workspace mode?", "What does PE Partner mode change?"]),
     ("/jobs", _SYS, "Background job queue — status of queued/running simulation "
      "and analysis jobs.",
-     ["What jobs are running?", "Did my simulation finish?"]),
+     ["What jobs are running?",
+      "Did my simulation finish?",
+      "How long does a typical Monte-Carlo job take?",
+      "What happens to in-flight jobs on server restart?",
+      "Where are job logs and output?"]),
     ("/runs", _SYS, "Simulation run history — past Monte-Carlo / analysis runs "
      "with parameters and results.",
      ["What runs have I done?", "Can I re-open a past run?"]),
@@ -8211,10 +8230,18 @@ _BATCH8_SYSTEM = [
      ["What's new?", "Any relevant news?"]),
     ("/insights", _HOME, "Insights feed — surfaced highlights across the "
      "portfolio and universe.",
-     ["What should I look at?", "Any notable insights?"]),
+     ["What should I look at?",
+      "Any notable insights?",
+      "What detectors fire into this feed?",
+      "How is 'priority' ordered across insights?",
+      "How does this differ from /alerts?"]),
     ("/new-deal", PageContextCategory.PIPELINE_SOURCING,
      "New-deal entry — create a deal in the pipeline (manual or import).",
-     ["How do I add a deal?", "How do I import a deal?"]),
+     ["How do I add a deal?",
+      "How do I import a deal?",
+      "What's the difference between /new-deal and /new-deal/manual?",
+      "Can I bulk-import many deals at once?",
+      "Which fields are required vs prior-filled?"]),
     ("/market-data/map", PageContextCategory.RESEARCH_BACKTESTING,
      "Geographic market-data map — public market indicators by location.",
      ["What's the geographic picture?",
