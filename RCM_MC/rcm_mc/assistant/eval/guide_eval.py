@@ -58,6 +58,15 @@ ROUTES: List[str] = [
     "/portfolio",
     "/metric-glossary",
     "/rcm-benchmarks",
+    # 2026-05-31: extend the 10-route baseline to 15 so the eval
+    # exercises one route from each major PageContextCategory the
+    # Guide actually serves — keeps the harness's per-question matrix
+    # honest across page types, not biased toward diligence/portfolio.
+    "/lp-dashboard",          # PORTFOLIO_LP — LP-facing rollup
+    "/ma-contracts",          # DILIGENCE_WORKSPACE illustrative-overlay
+    "/target-screener",       # PIPELINE_SOURCING — the Source workbench
+    "/geo-intel",             # RESEARCH_BACKTESTING geo lens
+    "/cms-sources",           # LIBRARY_REFERENCE — public-data catalog
 ]
 
 MODES = ("packet_only", "rag")
