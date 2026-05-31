@@ -165,6 +165,30 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Model logic: Needs source documentation",
                          prompt)
 
+    def test_user_prompt_includes_intended_users_when_distinct(self):
+        """The page-context block emits an 'Intended users:' clause
+        ONLY when the page's intended_users differs from the standard
+        PE deal team default. PR #1288 wires this so the Guide tailors
+        answers for the ~7 pages with a sharper persona (e.g.
+        /portfolio/monte-carlo's LP-reporting audience), without
+        bloating the prompt for the 91% default case."""
+        # /ebitda-bridge declares 'Deal team underwriting an RCM
+        # value-creation thesis.' as its intended_users.
+        packet = build_guide_context_packet("/ebitda-bridge")
+        prompt = build_guide_user_prompt("Who is this for?", packet)
+        self.assertIn("Intended users:", prompt)
+        self.assertIn("value-creation thesis", prompt)
+
+    def test_user_prompt_omits_intended_users_for_default_pages(self):
+        """When the page carries only the standard PE-deal-team
+        default, the prompt does NOT emit the clause (it would be
+        redundant with the system prompt's audience framing)."""
+        # /diligence/hcris-xray uses the default intended_users.
+        prompt = build_guide_user_prompt(
+            "Who is this for?", self.packet
+        )
+        self.assertNotIn("Intended users:", prompt)
+
     def test_user_prompt_includes_route_specific_notes_for_parameterized(self):
         """Parameterized pages (/my/AT, /diligence/risk-workbench,
         /market-data/state/CA) carry route-specific
