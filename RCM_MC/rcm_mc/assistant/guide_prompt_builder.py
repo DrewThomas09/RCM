@@ -30,6 +30,18 @@ def _bullets(items: List[str], limit: int = 0) -> str:
     return "\n".join(f"- {v}" for v in vals) if vals else "- (none documented)"
 
 
+def _dot(value: str) -> str:
+    """Strip trailing whitespace and any trailing ``.`` / ``;`` / ``,`` so
+    callers can append their own period without producing a 'foo..' or
+    'foo.;' artifact in the prompt. The registry content commonly ends in a
+    period; the prompt templates also end clauses in a period — the two
+    used to collide. Idempotent; safe on empty input."""
+    v = (value or "").rstrip()
+    while v and v[-1] in ".;,":
+        v = v[:-1].rstrip()
+    return v
+
+
 def _policy_summary(packet: GuideContextPacket) -> str:
     pol = packet.read_only_policy or {}
     allowed = pol.get("allowed_behavior") or []
@@ -227,18 +239,18 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                 # to fish it out of RAG retrieval. Guard against the legacy
                 # placeholder so we never push "Needs source documentation."
                 # into the prompt.
-                misread = (m.common_misread or "").strip()
+                misread = _dot(m.common_misread)
                 misread_line = (
-                    f" Common misread: {misread}"
+                    f" Common misread: {misread}."
                     if misread and "needs source" not in misread.lower()
                     else ""
                 )
                 # diligence_interpretation answers "how should I read this for
                 # diligence" — populated on every metric. Same placeholder
                 # guard as common_misread.
-                diligence = (m.diligence_interpretation or "").strip()
+                diligence = _dot(m.diligence_interpretation)
                 diligence_line = (
-                    f" Diligence read: {diligence}"
+                    f" Diligence read: {diligence}."
                     if diligence and "needs source" not in diligence.lower()
                     else ""
                 )
@@ -274,13 +286,20 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     if rel_routes
                     else ""
                 )
+                # Metric values commonly end in a period — strip and let
+                # the templates add their own terminator to avoid '..'
+                # artifacts where Caveats / Related metrics meet.
+                caveats = (
+                    '; '.join(_dot(c) for c in m.caveats)
+                    if m.caveats else "none"
+                )
                 out.append(
-                    f"- {m.label} ({m.metric_id}): {m.definition} "
-                    f"Formula: {m.formula} [{m.formula_confidence.value}]. "
-                    f"Why it matters: {m.why_it_matters}"
+                    f"- {m.label} ({m.metric_id}): {_dot(m.definition)}. "
+                    f"Formula: {_dot(m.formula)} [{m.formula_confidence.value}]. "
+                    f"Why it matters: {_dot(m.why_it_matters)}."
                     f"{diligence_line}"
                     f"{misread_line} "
-                    f"Caveats: {'; '.join(m.caveats) if m.caveats else 'none'}."
+                    f"Caveats: {caveats}."
                     f"{rel_metrics_line}"
                     f"{rel_routes_line}"
                 )
@@ -309,9 +328,9 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                 # surfacing it lets the model answer 'where does this come
                 # from / what should I cite?' directly. Guard against the
                 # legacy placeholder defensively.
-                prov = (s.provenance_notes or "").strip()
+                prov = _dot(s.provenance_notes)
                 prov_line = (
-                    f" Provenance: {prov}"
+                    f" Provenance: {prov}."
                     if prov and "needs source" not in prov.lower()
                     else ""
                 )
@@ -324,7 +343,7 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                 # it is GOOD AT. Filtered defensively against any stale
                 # legacy placeholder.
                 strengths = [
-                    str(v).strip() for v in (s.strengths or [])
+                    _dot(v) for v in (s.strengths or [])
                     if str(v).strip()
                     and "needs source" not in str(v).strip().lower()
                 ]
@@ -333,12 +352,22 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     if strengths
                     else ""
                 )
+                # Source values commonly end in a period (the registry
+                # convention); strip those trailing punctuation marks via
+                # _dot() before composing so the template's own clause
+                # terminators don't produce 'foo..' or 'foo.;' artifacts.
+                cadence = _dot(s.update_cadence)
+                lag = _dot(s.freshness_lag)
+                limitations = (
+                    '; '.join(_dot(v) for v in s.limitations)
+                    if s.limitations else "none"
+                )
+                description = _dot(s.description)
                 out.append(
-                    f"- {s.label} ({s.source_id}): {s.description} "
-                    f"Type: {s.source_type.value}. Cadence: {s.update_cadence}; "
-                    f"freshness lag: {s.freshness_lag}. "
-                    f"Limitations: "
-                    f"{'; '.join(s.limitations) if s.limitations else 'none'}."
+                    f"- {s.label} ({s.source_id}): {description}. "
+                    f"Type: {s.source_type.value}. Cadence: {cadence}; "
+                    f"freshness lag: {lag}. "
+                    f"Limitations: {limitations}."
                     f"{strengths_line}"
                     f"{prov_line}"
                     f"{ic_line}"

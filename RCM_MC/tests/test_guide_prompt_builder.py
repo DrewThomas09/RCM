@@ -68,6 +68,31 @@ class PromptBuilderTests(unittest.TestCase):
         )
         self.assertIn("Related metrics:", prompt)
 
+    def test_user_prompt_has_no_double_period_artifacts(self):
+        """The registry convention is for values (caveats,
+        provenance_notes, freshness_lag, etc.) to end in a period.
+        Earlier templates also appended their own period, producing
+        'foo..' / 'foo.;' artifacts where clauses met. PR #1286
+        introduced _dot() to strip trailing punctuation from values
+        before composing — this test guards against a future template
+        that re-introduces the double-terminator pattern."""
+        import re
+        prompt = build_guide_user_prompt(
+            "test", self.packet
+        )
+        # Excludes the ellipsis '...' (which is a single token, not a
+        # double-period artifact).
+        offenders = [
+            m.group() for m in re.finditer(r"\.\.+", prompt)
+            if m.group() != "..."
+        ]
+        self.assertEqual(
+            offenders, [],
+            "Double-period artifacts in prompt — likely a template "
+            "appended a period to a value that already ends in one. "
+            "Use _dot() on the value first."
+        )
+
     def test_user_prompt_includes_metric_diligence_read(self):
         """The metric-context block must surface diligence_interpretation
         directly to the model — this is what partners actually want
