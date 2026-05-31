@@ -85,6 +85,31 @@ class PromptBuilderTests(unittest.TestCase):
         # cms_hcris is ic_ready=False — the 'no' clause must appear.
         self.assertIn("IC-ready: no", prompt)
 
+    def test_user_prompt_includes_route_specific_notes_for_parameterized(self):
+        """Parameterized pages (/my/AT, /diligence/risk-workbench,
+        /market-data/state/CA) carry route-specific
+        notes_for_assistant beyond the standard _BASE_NOTES baseline.
+        PR #1270 wires that route-specific layer into the prompt so the
+        Guide knows how the trailing path segment maps to a parameter.
+        Verify /my/AT shows the 'owner identifier' note."""
+        packet = build_guide_context_packet("/my/AT")
+        prompt = build_guide_user_prompt("Whose dashboard is this?", packet)
+        self.assertIn("Route-specific assistant notes:", prompt)
+        # The /my/AT note specifically calls out the 'AT' segment.
+        self.assertIn("owner identifier", prompt)
+
+    def test_user_prompt_omits_route_specific_notes_for_standard_pages(self):
+        """Pages with only the standard 3-line _BASE_NOTES (the vast
+        majority) must NOT carry the 'Route-specific assistant notes'
+        section — those baseline notes are already covered by the
+        system prompt's policy section, so emitting them again would
+        bloat the prompt with redundant boilerplate."""
+        # /diligence/hcris-xray carries only the standard 3 base notes.
+        prompt = build_guide_user_prompt(
+            "What does this page do?", self.packet
+        )
+        self.assertNotIn("Route-specific assistant notes:", prompt)
+
     def test_user_prompt_includes_data_source_provenance(self):
         """The data-source-context block must surface provenance_notes
         so the model can answer 'where does this come from / what
