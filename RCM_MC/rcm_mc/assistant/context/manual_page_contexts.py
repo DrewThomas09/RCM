@@ -5820,6 +5820,14 @@ _MANUAL: List[PageContext] = [
             "Is the grade benchmarked against real deals or illustrative ones?",
             "How should I use this score in IC vs underwriting?",
         ],
+        inputs=["Illustrative seed corpus (each row carries the "
+                "fields used in the grade)."],
+        outputs=["Per-deal A-D grade + corpus grade distribution."],
+        key_metrics=["Grade distribution", "Weight of each grade "
+                     "dimension"],
+        diligence_use_cases=["Teaching what 'grade A vs C' looks "
+                             "like to a junior team member before "
+                             "they grade a real deal."],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Scores the illustrative corpus — not this "
                                 "market's real deals; use as a structural benchmark."],
@@ -5850,6 +5858,16 @@ _MANUAL: List[PageContext] = [
             "Which corpus deals were the highest-risk outliers?",
             "How should I use this in IC discussion vs underwriting?",
         ],
+        inputs=["Illustrative seed corpus deal rows with risk-"
+                "dimension flags (covenant, payer, regulatory, "
+                "execution, market)."],
+        outputs=["Per-deal 0-100 composite risk score + dimension "
+                 "decomposition + corpus distribution."],
+        key_metrics=["Composite risk score", "Per-dimension score",
+                     "Outlier list"],
+        diligence_use_cases=["Teaching risk-dimension reading "
+                             "against the corpus before applying to "
+                             "a real deal."],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus, not real realized deals."],
         limitations=[
@@ -6381,6 +6399,13 @@ _MANUAL: List[PageContext] = [
             "Where do I add a new deal?",
             "How does this differ from /pipeline?",
         ],
+        inputs=["Deal records from the deal store; filter inputs "
+                "(stage, sector, owner, archive flag)."],
+        outputs=["Filtered/sorted deal list + bulk-action toolbar."],
+        key_metrics=["Deal count", "By stage / sector / owner"],
+        diligence_use_cases=["Day-to-day pipeline management: "
+                             "filtering to a slice for an owner "
+                             "review or bulk-archive sweep."],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["YOUR deals — real workspace data."],
         limitations=[
@@ -6409,6 +6434,12 @@ _MANUAL: List[PageContext] = [
             "How is this different from /global-search?",
             "Why aren't my recent deals appearing?",
         ],
+        inputs=["Search query; archive-toggle; column scope "
+                "(name, sponsor, sector, owner)."],
+        outputs=["Ranked deal hits with quick-open links."],
+        key_metrics=["Hit count", "Result rank"],
+        diligence_use_cases=["Quickly opening a specific deal "
+                             "page from the keyboard."],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["Searches your own deals, not the market/corpus."],
         limitations=[
@@ -6960,6 +6991,10 @@ _MANUAL: List[PageContext] = [
         inputs=["A dataset fixture (full pipeline) OR live deal inputs "
                 "(standalone regulatory/covenant/bridge/HCRIS extractors)."],
         outputs=["Ranked risk evidence by theme + an IC-memo bear-case preview."],
+        key_metrics=["EBITDA-at-risk $", "Risk-theme rank",
+                     "Bear-case headline"],
+        diligence_use_cases=["Forcing the downside view into the IC "
+                             "memo before the committee meeting."],
         data_sources=["Fixture-driven runs are ILLUSTRATIVE; standalone runs "
                       "use real public extractors (HCRIS, regulatory). Mixed."],
         model_logic_summary="Aggregates evidence from the thesis pipeline / "
