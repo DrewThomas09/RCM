@@ -453,6 +453,37 @@ class PromptBuilderTests(unittest.TestCase):
         # builder must not crash on a missing page_context
         self.assertTrue(prompt.strip())
 
+    def test_prompt_builds_for_every_registered_page(self):
+        """Smoke test: building the Guide prompt for every page in
+        PAGE_CONTEXT_REGISTRY must complete without raising. Catches
+        any new field added to PageContext that the builder doesn't
+        handle, or any edge case (empty lists, None values, weird
+        unicode in prose) that would crash the model path. Also
+        confirms every prompt is non-empty and includes the standard
+        question terminator."""
+        from rcm_mc.assistant.context.page_context_registry import (
+            PAGE_CONTEXT_REGISTRY,
+        )
+        empty_prompts: list[str] = []
+        missing_terminator: list[str] = []
+        for route in PAGE_CONTEXT_REGISTRY:
+            packet = build_guide_context_packet(route)
+            prompt = build_guide_user_prompt("What does this page do?",
+                                              packet)
+            if not prompt.strip():
+                empty_prompts.append(route)
+            if "=== Question ===" not in prompt:
+                missing_terminator.append(route)
+        self.assertFalse(
+            empty_prompts,
+            f"Empty prompt for routes: {empty_prompts}",
+        )
+        self.assertFalse(
+            missing_terminator,
+            f"Prompt missing '=== Question ===' terminator: "
+            f"{missing_terminator}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
