@@ -10497,7 +10497,13 @@ _DATA_SOURCE_LINK_EXTEND: Dict[str, List[str]] = {
     "/diligence/payer-stress": ["cms_ma_geo"],   # MA panel context
     "/diligence/thesis-pipeline": ["cms_hcris"], # HCRIS X-ray stage
     "/methodology": ["cms_hcris"],           # methodology hub names HCRIS
-    "/state-rankings": ["cbsa_crosswalk"],   # CBSA delineation shared
+    # NOTE: an earlier draft also added cbsa_crosswalk to /state-rankings
+    # via this EXTEND, but that PRE-POPULATED data_source_ids and
+    # starved the later _GEO_SOURCE_LINKS fill-only-if-empty loop —
+    # dropping the 9 GEO_SOURCES from /state-rankings (same wire-order
+    # gotcha as /cms-apm above). cbsa_crosswalk is not a true source
+    # for /state-rankings (state-level, not CBSA-level) and was
+    # marginal anyway — removed.
 }
 for _c in _MANUAL:
     _ex = _DATA_SOURCE_LINK_EXTEND.get(_c.route)
@@ -10509,38 +10515,11 @@ for _c in _MANUAL:
             _existing.append(_sid)
     _c.data_source_ids = _existing
 
-# 2026-05-31: Back-fill data_source.related_routes from PageContext
-# data_source_ids. The forward direction (page → source) is populated
-# above via _DATA_SOURCE_LINK_PATCHES + per-page kwargs; the back-
-# reference (source → consuming pages) was empty on 6 public sources
-# (cms_care_compare, medicare_utilization, sec_edgar, fred,
-# irs_form_990, public_market_data) and several system sources.
-# Fill-only-if-empty guard preserves any explicitly-authored
-# related_routes (e.g. cms_hcris's curated list of 3).
+# Import _DSR here so it's available to subsequent loops; the actual
+# back-fill of data_source.related_routes is deferred to the very end
+# of this module (after all forward page→source wiring loops complete)
+# so the back-fill sees the FINAL set of consuming pages.
 from .data_source_registry import DATA_SOURCE_REGISTRY as _DSR  # noqa: E402
-_src_to_pages: Dict[str, List[str]] = {}
-for _c in _MANUAL:
-    for _sid in (_c.data_source_ids or []):
-        _src_to_pages.setdefault(_sid, []).append(_c.route)
-for _sid, _routes in _src_to_pages.items():
-    _src = _DSR.get(_sid)
-    if _src is None:
-        continue
-    if _src.related_routes:
-        continue
-    # Cap at 6 to keep the per-source related_routes block tight in
-    # the Guide prompt; the page-direction wiring is the source of
-    # truth for richer relationships.
-    _seen: set = set()
-    _dedup: List[str] = []
-    for _r in _routes:
-        if _r in _seen:
-            continue
-        _seen.add(_r)
-        _dedup.append(_r)
-        if len(_dedup) >= 6:
-            break
-    _src.related_routes = _dedup
 
 # Batch-2 metric links (length_of_stay, FCCR, interest_coverage, CCC, net_debt,
 # current_ratio, gross_margin, capex_intensity, cost_to_charge_ratio,
@@ -11433,6 +11412,38 @@ for _c in _MANUAL:
     if _new_pp and _c.short_description and _c.primary_purpose:
         if _c.short_description.strip() == _c.primary_purpose.strip():
             _c.primary_purpose = _new_pp
+
+
+# 2026-05-31 (PR #1326): Back-fill data_source.related_routes from
+# the final PageContext data_source_ids — runs LAST after every
+# forward page→source wiring loop (_DATA_SOURCE_LINK_PATCHES,
+# _DATA_SOURCE_LINK_EXTEND, _GEO_SOURCE_LINKS, _PUBLIC_SOURCE_LINKS)
+# so the back-fill sees the COMPLETE consuming-page set. Earlier
+# placement (right after _DATA_SOURCE_LINK_EXTEND) missed the geo
+# pages on cms_hcahps/cms_chow/cms_ma_geo/etc. because those wirings
+# get added later by _GEO_SOURCE_LINKS.
+#
+# Behavior: APPEND newly-discovered consuming pages (preserving any
+# curated head of the list) up to cap=6 to keep each source's
+# related_routes block tight in the Guide prompt.
+_src_to_pages: Dict[str, List[str]] = {}
+for _c in _MANUAL:
+    for _sid in (_c.data_source_ids or []):
+        _src_to_pages.setdefault(_sid, []).append(_c.route)
+for _sid, _routes in _src_to_pages.items():
+    _src = _DSR.get(_sid)
+    if _src is None:
+        continue
+    _seen: set = set(_src.related_routes or [])
+    _new: List[str] = list(_src.related_routes or [])
+    for _r in _routes:
+        if _r in _seen:
+            continue
+        _seen.add(_r)
+        _new.append(_r)
+        if len(_new) >= 6:
+            break
+    _src.related_routes = _new
 
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
