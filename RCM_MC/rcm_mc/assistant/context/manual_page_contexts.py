@@ -10429,6 +10429,15 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     # 2026-05-31: /medicaid-unwinding's data_sources prose names the
     # CMS dual-eligible panel (cms_ma_geo) as the at-risk-cohort anchor.
     "/medicaid-unwinding": ["cms_ma_geo"],
+    # 2026-05-31: pages whose data_sources prose names a registered
+    # source label by full name. Probed automatically via label-
+    # substring match against ctx.data_sources. Each is a real backing
+    # source the page actually reads from.
+    "/corpus-ic-memo": ["portfolio_snapshot"],
+    "/ic-memo": ["portfolio_snapshot"],
+    "/ic-memo-gen": ["portfolio_snapshot"],
+    "/portfolio": ["deal_profile"],
+    "/portfolio/monte-carlo": ["model_output"],
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
@@ -10507,6 +10516,10 @@ _METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
     # redetermination's effect on payer mix + bad-debt exposure.
     "/medicaid-unwinding": ["medicaid_exposure", "payer_mix",
                             "bad_debt_rate"],
+    # 2026-05-31: /pipeline's key_metrics 'Margin' resolves to
+    # ebitda_margin via the registry's 'margin' alias — wire the id
+    # so the Guide pulls the registry's per-metric block.
+    "/pipeline": ["ebitda_margin"],
 }
 # Extend /inpatient-rehab and /long-term-care-hospital to also include
 # medicare_spending_per_beneficiary (their key_metrics string already
