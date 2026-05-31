@@ -590,10 +590,27 @@ class TestNoDuplicateDictKeysInRegistryPatches(unittest.TestCase):
             fp = root / relpath
             tree = ast.parse(fp.read_text())
             for node in ast.walk(tree):
-                if not (isinstance(node, ast.Assign)
-                        and isinstance(node.value, ast.Dict)):
+                # Catch BOTH ast.Assign (``x = {...}``) AND ast.AnnAssign
+                # (``x: T = {...}``). PR #1309's first cut only checked
+                # Assign, which missed _ALIAS_EXTEND_COVERAGE (a typed
+                # AnnAssign) — that dict had 4 dup keys silently dropping
+                # 'days in ar', 'capex', 'capital expenditure', 'denial'
+                # until PR #1310 found + fixed them.
+                value = getattr(node, "value", None)
+                if value is None or not isinstance(value, ast.Dict):
                     continue
-                keys = [ast.unparse(k) for k in node.value.keys
+                if isinstance(node, ast.Assign):
+                    if not (node.targets and isinstance(
+                            node.targets[0], ast.Name)):
+                        continue
+                    name = node.targets[0].id
+                elif isinstance(node, ast.AnnAssign):
+                    if not isinstance(node.target, ast.Name):
+                        continue
+                    name = node.target.id
+                else:
+                    continue
+                keys = [ast.unparse(k) for k in value.keys
                         if k is not None]
                 seen = set()
                 dup = []
@@ -602,10 +619,6 @@ class TestNoDuplicateDictKeysInRegistryPatches(unittest.TestCase):
                         dup.append(k)
                     seen.add(k)
                 if dup:
-                    name = "?"
-                    if (node.targets
-                            and isinstance(node.targets[0], ast.Name)):
-                        name = node.targets[0].id
                     offenders.append(
                         f"{relpath}:{node.lineno} {name} dup keys: {dup}")
         self.assertFalse(
