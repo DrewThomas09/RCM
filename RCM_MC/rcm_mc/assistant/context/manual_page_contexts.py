@@ -5253,6 +5253,12 @@ _MANUAL: List[PageContext] = [
             "Why do some products have a blank availability field?",
             "How does drug-shortage exposure affect pharmacy / 340B operations?",
         ],
+        inputs=["The openFDA drug-shortage snapshot (committed); "
+                "therapeutic-category filter."],
+        outputs=["Active-shortage product list grouped by category, "
+                 "with availability/status flag per product."],
+        diligence_use_cases=["Reading drug-shortage exposure for a "
+                             "pharmacy-dependent target during diligence."],
         data_sources=["openFDA drug shortages (committed snapshot; no runtime "
                       "network)."],
         key_metrics=["Active shortages", "Therapeutic categories",
@@ -7024,6 +7030,9 @@ _MANUAL: List[PageContext] = [
         inputs=["A CCD (consolidated clinical document) claims feed — a fixture "
                 "sample unless the deal's own CCD is provided."],
         outputs=["Per-claim denial probabilities, AUC, denial Pareto, recoverable $."],
+        key_metrics=["AUC", "Recoverable $", "Top denial categories"],
+        diligence_use_cases=["Sizing the denial-management lever for "
+                             "the deal's value-creation bridge."],
         data_sources=["Selected CCD FIXTURE (sample claims) + a denial model trained live on it — methodology, not a live per-deal feed."],
         model_logic_summary="Naive Bayes per-claim denial model fit on the CCD; "
         "AUC reports separation; recoverable $ sums avoidable denials.",
@@ -9817,9 +9826,16 @@ _GUIDE_BACKFILL = [
             "How does a sponsored payer-rate reset translate to revenue?",
             "How does this differ from /diligence/regulatory-calendar?",
         ],
+        inputs=["The pe_intelligence reimbursement-cliff library "
+                "(curated regulatory schedule); deal hold-period "
+                "filter."],
         outputs=["A dated calendar of reimbursement-affecting events with "
                  "magnitude/impact notes."],
-        key_metrics=[], data_sources=["pe_intelligence reimbursement-cliff "
+        key_metrics=[],
+        diligence_use_cases=["Mapping known regulatory rate-cuts "
+                             "against the deal's hold window to "
+                             "frame underwriting risk."],
+        data_sources=["pe_intelligence reimbursement-cliff "
                                       "calendar (public regulatory schedule)."],
         why_it_matters="Entry/exit timing and underwriting both move on when a "
         "revenue cliff lands relative to the hold.",
@@ -9858,8 +9874,13 @@ _GUIDE_BACKFILL = [
             "How do I run a tool on the active deal?",
             "What's the difference between /pe-library and /pe-tool?",
         ],
+        inputs=["The pe_intelligence module registry; search query."],
         outputs=["A grouped, searchable index of the toolkit's modules."],
-        key_metrics=[], data_sources=["The pe_intelligence module registry "
+        key_metrics=[],
+        diligence_use_cases=["Finding the right pe_intelligence "
+                             "analytic for a specific diligence "
+                             "question."],
+        data_sources=["The pe_intelligence module registry "
                                       "(a catalog, not a dataset)."],
         why_it_matters="A 222-tool toolkit is only useful if you can find the "
         "right analytic fast.",
@@ -9896,8 +9917,14 @@ _GUIDE_BACKFILL = [
             "How does this differ from /diligence/pe-library?",
             "Where do the curated playbooks come from?",
         ],
+        inputs=["The pe_intelligence reference libraries; topic "
+                "filter (playbook / partner-trap / reference set)."],
         outputs=["Curated reference libraries (read-only knowledge)."],
-        key_metrics=[], data_sources=["pe_intelligence curated reference "
+        key_metrics=[],
+        diligence_use_cases=["Consulting house-codified playbooks "
+                             "and traps before applying a "
+                             "deal-specific tool."],
+        data_sources=["pe_intelligence curated reference "
                                       "libraries (editorial knowledge)."],
         why_it_matters="Codified house knowledge keeps diligence consistent and "
         "stops repeated mistakes.",
