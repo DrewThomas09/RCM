@@ -10590,6 +10590,12 @@ _METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
     "/cin-analyzer": ["benchmark_percentile"],        # "MSSP percentile"
     "/payer-shift": ["payer_mix",                     # the topic
                      "commercial_payer_exposure"],
+    # 2026-05-31: 3 LIBRARY_REFERENCE pages whose key_metrics prose
+    # names a real concept resolving to a registry metric.
+    "/ref-pricing": ["commercial_payer_exposure"],    # 'Hospital % of Medicare'
+    "/payer-rate-trends": ["payer_mix",               # 'PPPY spend by payer type'
+                           "commercial_payer_exposure"],
+    "/cms-apm": ["medicare_exposure"],                # APM = Medicare/Medicaid VBC
 }
 # Extend /inpatient-rehab and /long-term-care-hospital to also include
 # medicare_spending_per_beneficiary (their key_metrics string already
