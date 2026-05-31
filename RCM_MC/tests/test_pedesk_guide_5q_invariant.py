@@ -404,6 +404,46 @@ class TestDataSourcesHaveRealProvenance(unittest.TestCase):
         )
 
 
+class TestKeyMetricsResolveToWiredMetricIds(unittest.TestCase):
+    """For every PageContext.key_metrics free-form string that resolves
+    to a real METRIC_REGISTRY id via the lookup, the corresponding
+    metric_id should be present in the page's metric_ids list — so the
+    Guide's per-metric block (definition, formula, caveats,
+    common_misread, etc.) actually surfaces in the prompt.
+
+    PR #1277 wired the last 9 unwired pairs via _METRIC_LINK_EXTEND_2.
+    This test guards against a new PageContext landing with a
+    key_metrics string that mentions a registered metric (or a new
+    registry entry being added without wiring it into the pages that
+    already reference it by name)."""
+
+    def test_no_unwired_key_metrics_resolve_to_registry(self):
+        from rcm_mc.assistant.context.get_metric_context import (
+            get_metric_context,
+        )
+        unwired: list[str] = []
+        for route, ctx in MANUAL_PAGE_CONTEXTS.items():
+            existing = set(ctx.metric_ids or [])
+            for km in (ctx.key_metrics or []):
+                km_text = (km or "").strip()
+                if not km_text or "needs source" in km_text.lower():
+                    continue
+                result = get_metric_context(km_text)
+                if result.found and result.metric_id not in existing:
+                    unwired.append(
+                        f"{route}: key_metrics {km_text!r} resolves to "
+                        f"{result.metric_id!r} but it's not in metric_ids"
+                    )
+        unwired.sort()
+        self.assertFalse(
+            unwired,
+            "Pages with key_metrics strings that resolve to METRIC_REGISTRY "
+            "ids but aren't wired into metric_ids — add the id to the "
+            "page's metric_ids (or to _METRIC_LINK_EXTEND_2 at the bottom "
+            "of manual_page_contexts.py):\n  " + "\n  ".join(unwired),
+        )
+
+
 class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
     """Every MetricContext should have ≥2 related_routes so the Guide
     can always suggest at least one alternative page when a partner
