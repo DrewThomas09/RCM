@@ -346,6 +346,23 @@ class TestDataSourcesHaveRealProvenance(unittest.TestCase):
             f"Data sources referencing unknown metric_ids: {broken}",
         )
 
+    def test_page_data_source_ids_resolve(self):
+        """Every data_source_ids entry on a PageContext must resolve to
+        a real source_id in DATA_SOURCE_REGISTRY. A dangling reference
+        breaks the 'where does this come from' answer. PR #1264 wired
+        24 illustrative-overlay pages to their canonical anchor source
+        via _DATA_SOURCE_LINK_PATCHES; this guards future links."""
+        known = set(DATA_SOURCE_REGISTRY.keys())
+        broken: dict[str, list[str]] = {}
+        for route, ctx in MANUAL_PAGE_CONTEXTS.items():
+            bad = [s for s in (ctx.data_source_ids or []) if s not in known]
+            if bad:
+                broken[route] = bad
+        self.assertFalse(
+            broken,
+            f"Pages referencing unknown data_source_ids: {broken}",
+        )
+
 
 class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
     """Every MetricContext should have ≥2 related_routes so the Guide
