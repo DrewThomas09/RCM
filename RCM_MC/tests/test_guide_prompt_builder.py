@@ -135,6 +135,21 @@ class PromptBuilderTests(unittest.TestCase):
         # cms_hcris is ic_ready=False — the 'no' clause must appear.
         self.assertIn("IC-ready: no", prompt)
 
+    def test_user_prompt_includes_page_data_sources_prose(self):
+        """The page-context block surfaces the free-form data_sources
+        prose as its own 'Data sources:' bullet section. The per-source
+        contexts (resolved via data_source_ids) carry cadence /
+        provenance / etc.; the page-level prose explains how multiple
+        sources COMBINE on the page (e.g. 'Illustrative scaffold + real
+        CDC PLACES overlay.'). PR #1289 wires it. Useful especially
+        for the 155 pages where data_source_ids is empty."""
+        prompt = build_guide_user_prompt(
+            "Where does this come from?", self.packet
+        )
+        self.assertIn("Data sources:", prompt)
+        # The placeholder must never leak through.
+        self.assertNotIn("Data sources:\n- Needs source", prompt)
+
     def test_user_prompt_includes_diligence_use_cases(self):
         """The page-context block must surface diligence_use_cases so
         the Guide can answer 'what would I use this page for in

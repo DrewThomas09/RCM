@@ -214,6 +214,20 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
             if mls and "needs source" not in mls.lower():
                 out.append(f"Model logic: {mls}")
         out.append("Key metrics:\n" + _bullets(pc.key_metrics, list_limit))
+        # data_sources (free-form prose) describes HOW sources combine
+        # on the page — e.g. 'Illustrative HEI/Star scorecard + real
+        # CDC PLACES SDOH overlay.' The per-source contexts (resolved
+        # via data_source_ids) carry each source's cadence / provenance,
+        # but the page-level prose explains the BLEND. Useful for the
+        # 155 pages whose data_source_ids is empty (the prose is the
+        # only source signal) and adds shape for the rest. Skipped
+        # when truly empty or NEEDS placeholder.
+        ds_prose = [
+            v for v in (pc.data_sources or [])
+            if v and "needs source" not in (v or "").lower()
+        ]
+        if ds_prose:
+            out.append("Data sources:\n" + _bullets(ds_prose, list_limit))
         # diligence_use_cases is the direct answer to "what would I use
         # this page for in diligence?" — every page has it populated
         # after PR #1256 (the list-fields drain). Surfacing it lets the
