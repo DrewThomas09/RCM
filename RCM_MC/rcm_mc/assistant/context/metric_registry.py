@@ -1546,6 +1546,20 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
     "irr": ["weighted irr", "median irr", "after-tax irr"],
     "days_in_ar": ["days in ar"],
     "value_creation_opportunity": ["value-creation opportunity", "value-creation"],
+    # 2026-05-31: connect the partner-facing /metric-glossary keys to
+    # their registry counterparts so the Guide recognizes them too.
+    # rcm_mc/ui/metric_glossary.py has 13 entries not in the registry;
+    # these 4 map cleanly to existing concepts (the others are either
+    # genuinely distinct or operational metrics where the alias would
+    # be misleading).
+    "labor_cost_ratio": ["labor pct of npsr", "labor % of npsr",
+                         "labor_pct_of_npsr"],
+    "medicare_exposure": ["medicare day pct", "medicare day %",
+                          "medicare_day_pct"],
+    "medicaid_exposure": ["medicaid day pct", "medicaid day %",
+                          "medicaid_day_pct"],
+    "commercial_payer_exposure": ["commercial pct", "commercial day %",
+                                  "commercial_pct"],
 }
 for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
     _o = METRIC_REGISTRY.get(_mid)
