@@ -100,6 +100,21 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Diligence use cases:\n- Needs source",
                          prompt)
 
+    def test_user_prompt_includes_model_logic_summary(self):
+        """The page-context block must surface model_logic_summary so
+        the Guide can answer 'how does this page compute X?' directly.
+        PRs #1235-#1244 drained the NEEDS placeholder on this field
+        across all 360 pages; PR #1272 wires it into the prompt.
+        /diligence/hcris-xray has a real model_logic_summary; the
+        'Model logic:' clause must appear, and the legacy placeholder
+        must never appear."""
+        prompt = build_guide_user_prompt(
+            "How does this page compute the figures?", self.packet
+        )
+        self.assertIn("Model logic:", prompt)
+        self.assertNotIn("Model logic: Needs source documentation",
+                         prompt)
+
     def test_user_prompt_includes_route_specific_notes_for_parameterized(self):
         """Parameterized pages (/my/AT, /diligence/risk-workbench,
         /market-data/state/CA) carry route-specific

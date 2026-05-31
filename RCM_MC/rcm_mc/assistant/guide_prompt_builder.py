@@ -171,6 +171,15 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
         if not compact:
             out.append("Inputs:\n" + _bullets(pc.inputs))
             out.append("Outputs:\n" + _bullets(pc.outputs))
+            # model_logic_summary is the page-specific 'how does this
+            # actually compute X?' description. PR #1235-#1244 drained
+            # the NEEDS placeholder across all 360 pages, so every page
+            # carries a real, page-specific computation description.
+            # Skipped in compact mode and when truly empty (the
+            # invariant test forbids _NEEDS so empty would be rare).
+            mls = (pc.model_logic_summary or "").strip()
+            if mls and "needs source" not in mls.lower():
+                out.append(f"Model logic: {mls}")
         out.append("Key metrics:\n" + _bullets(pc.key_metrics, list_limit))
         # diligence_use_cases is the direct answer to "what would I use
         # this page for in diligence?" — every page has it populated
