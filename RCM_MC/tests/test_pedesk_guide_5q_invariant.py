@@ -22,6 +22,7 @@ import unittest
 from rcm_mc.assistant.context.manual_page_contexts import (
     MANUAL_PAGE_CONTEXTS,
 )
+from rcm_mc.assistant.context.metric_registry import METRIC_REGISTRY
 
 
 # Leaf endpoints where the Guide-context is intentionally short
@@ -104,6 +105,45 @@ class TestAnalyticPagesHaveRelatedRoutes(unittest.TestCase):
             "Analytic pages with no related_routes — add at least one "
             "sibling page so the Guide can recommend 'see also':\n  "
             + "\n  ".join(empty),
+        )
+
+
+class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
+    """Every MetricContext should have ≥2 related_routes so the Guide
+    can always suggest at least one alternative page when a partner
+    asks about a metric. The metric-related-routes series
+    (#1192-#1196, #1219-#1223) drove sparse metrics from ~29 to zero;
+    this guards against a regression that lands a new metric with
+    only one (or zero) sibling-route pointers."""
+
+    _MIN_ROUTES = 2
+
+    def test_no_metric_has_fewer_than_two_related_routes(self):
+        sparse = sorted(
+            (mid, len(m.related_routes or []))
+            for mid, m in METRIC_REGISTRY.items()
+            if len(m.related_routes or []) < self._MIN_ROUTES
+        )
+        self.assertFalse(
+            sparse,
+            "Metrics with fewer than 2 related_routes — add canonical "
+            "sibling pages so the Guide can always suggest 'see also':"
+            "\n  " + "\n  ".join(f"{mid}: n={n}" for mid, n in sparse),
+        )
+
+    def test_metric_related_routes_resolve(self):
+        """Sanity guard: every related_routes entry on a metric must
+        resolve to a real PageContext — a metric pointing to a
+        non-existent route sends the Guide to a 404."""
+        known = set(MANUAL_PAGE_CONTEXTS.keys())
+        broken = {}
+        for mid, m in METRIC_REGISTRY.items():
+            bad = [r for r in (m.related_routes or []) if r not in known]
+            if bad:
+                broken[mid] = bad
+        self.assertFalse(
+            broken,
+            f"Metrics referencing non-existent routes: {broken}",
         )
 
 
