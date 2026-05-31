@@ -9905,7 +9905,11 @@ _BATCH8_SYSTEM = [
     ("/market-intel/seeking-alpha", PageContextCategory.RESEARCH_BACKTESTING,
      "Market-intelligence reading view (Seeking-Alpha-style) over licensed "
      "research exports.",
-     ["What's the market view?", "What does the research say?"]),
+     ["What's the market view?",
+      "What does the research say?",
+      "Which sectors / companies are covered?",
+      "How current are the research notes — when was the export refreshed?",
+      "How does /market-intel/seeking-alpha differ from /news, /sector-momentum, and /market-intel/geo?"]),
     ("/fund-learning", _HOME, "Fund-learning / day-one playbook surface — "
      "lessons and standard plays for new holdings.",
      ["What's the day-one playbook?",
@@ -11112,7 +11116,13 @@ for _csv, (_parent_label, _parent_route) in _CSV_EXPORTS.items():
         primary_purpose=f"Export the {_parent_label} dataset as CSV for offline "
         "analysis (Excel, a model, a memo appendix).",
         common_questions=["What's in this export?",
-                          "How do I get this data into Excel?"],
+                          "How do I get this data into Excel?",
+                          f"Does the CSV honor the filters set on "
+                          f"{_parent_route}, or does it always export all rows?",
+                          "Are the column units the same as the parent page "
+                          "(percentages, $ in millions, etc.)?",
+                          "How do I cite this in a memo — what's the underlying "
+                          "data vintage and source?"],
         inputs=[
             f"None — the endpoint serializes the same rows {_parent_route} "
             "would render, using whatever filters / view state are set "
