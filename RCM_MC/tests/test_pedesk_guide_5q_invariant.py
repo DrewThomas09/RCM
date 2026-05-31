@@ -404,6 +404,28 @@ class TestDataSourcesHaveRealProvenance(unittest.TestCase):
         )
 
 
+class TestNoOrphanMetricsInRegistry(unittest.TestCase):
+    """Every metric in METRIC_REGISTRY should be referenced by at
+    least one PageContext.metric_ids. An orphan metric is dead
+    weight in the prompt — the Guide can't surface it because no
+    page resolves to it. PR #1279 wired the last 7 orphan metrics
+    via _METRIC_LINK_EXTEND_2; this guards a new metric landing
+    without being wired to its owning page."""
+
+    def test_every_metric_is_referenced_by_some_page(self):
+        all_used: set[str] = set()
+        for ctx in MANUAL_PAGE_CONTEXTS.values():
+            all_used.update(ctx.metric_ids or [])
+        orphans = sorted(set(METRIC_REGISTRY.keys()) - all_used)
+        self.assertFalse(
+            orphans,
+            "Orphan metrics in METRIC_REGISTRY — wire each to its "
+            "owning page's metric_ids (or add an entry to "
+            "_METRIC_LINK_EXTEND_2 at the bottom of "
+            "manual_page_contexts.py):\n  " + "\n  ".join(orphans),
+        )
+
+
 class TestKeyMetricsResolveToWiredMetricIds(unittest.TestCase):
     """For every PageContext.key_metrics free-form string that resolves
     to a real METRIC_REGISTRY id via the lookup, the corresponding

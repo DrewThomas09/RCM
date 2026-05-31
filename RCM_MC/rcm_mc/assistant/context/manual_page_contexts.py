@@ -10221,6 +10221,22 @@ _METRIC_LINK_EXTEND_2.setdefault("/inpatient-rehab", []).append(
 _METRIC_LINK_EXTEND_2.setdefault("/long-term-care-hospital", []).append(
     "medicare_spending_per_beneficiary"
 )
+
+# 2026-05-31: 7 metrics in METRIC_REGISTRY weren't referenced by any
+# PageContext. Wire each to the analytic page that conceptually owns
+# it so the Guide pulls the registry's per-metric block (definition,
+# formula, common_misread, diligence_interpretation, caveats,
+# related_metrics) when answering about those pages.
+_UNREFERENCED_METRIC_WIRINGS: Dict[str, List[str]] = {
+    "/physician-productivity": ["panel_size", "app_support_ratio"],
+    "/diligence/hcris-xray": ["medicare_cost_report_year"],
+    "/diligence/denial-prediction": ["first_pass_resolution_rate"],
+    "/payer-concentration": ["payer_diversity"],
+    "/payer-contracts": ["underpayment_rate"],
+    "/provider-network": ["referral_leakage"],
+}
+for _r, _mids in _UNREFERENCED_METRIC_WIRINGS.items():
+    _METRIC_LINK_EXTEND_2.setdefault(_r, []).extend(_mids)
 for _c in _MANUAL:
     _ext2 = _METRIC_LINK_EXTEND_2.get(_c.route)
     if _ext2:
