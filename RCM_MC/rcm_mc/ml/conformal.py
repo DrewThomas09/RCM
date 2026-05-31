@@ -65,14 +65,28 @@ class ConformalPredictor:
         y_train: np.ndarray,
         X_cal: np.ndarray,
         y_cal: np.ndarray,
+        train_weight: Optional[np.ndarray] = None,
     ) -> "ConformalPredictor":
-        """Fit base model on train split; compute margin from cal residuals."""
+        """Fit base model on train split; compute margin from cal residuals.
+
+        ``train_weight`` (default ``None`` = unweighted) is forwarded to the
+        base model's weighted fit. The split-conformal calibration step is
+        deliberately left UNweighted: its coverage guarantee is
+        distribution-free and holds for whatever point estimator the base
+        model produces, so weighting the calibration residuals would not
+        improve — and could invalidate — the coverage. We weight the
+        estimator, not the calibration.
+        """
         X_train = np.asarray(X_train, dtype=float)
         y_train = np.asarray(y_train, dtype=float)
         X_cal = np.asarray(X_cal, dtype=float)
         y_cal = np.asarray(y_cal, dtype=float)
 
-        self.base_model.fit(X_train, y_train)
+        if train_weight is None:
+            self.base_model.fit(X_train, y_train)
+        else:
+            self.base_model.fit(
+                X_train, y_train, sample_weight=np.asarray(train_weight, dtype=float))
         if len(X_cal) == 0:
             # Nothing to calibrate on — return a zero-width interval and
             # mark empty residuals. Caller should notice.
