@@ -10125,6 +10125,42 @@ _CATEGORY_OVERRIDES: Dict[str, PageContextCategory] = {
     "/data/catalog": PageContextCategory.LIBRARY_REFERENCE,
     # Admin / operational health
     "/admin/data-sources": PageContextCategory.ADMIN_SYSTEM,
+    # ── 2026-05-31 batch 2: another 31 unambiguous mappings ──
+    # Diligence workbenches + analytical calculators
+    "/diligence/xray": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/diligence/snapshot": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/diligence/comparable-outcomes": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/antitrust-screener": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/aco-economics": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/cin-analyzer": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/clinical-outcomes": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/concentration-risk": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/competitive-intel": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/cost-structure": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/debt-service": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/covenant-headroom": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/covenant-monitor": PageContextCategory.DILIGENCE_WORKSPACE,
+    "/demand-forecast": PageContextCategory.DILIGENCE_WORKSPACE,
+    # Research / backtesting (corpus-derived analytics)
+    "/backtester": PageContextCategory.RESEARCH_BACKTESTING,
+    "/base-rates": PageContextCategory.RESEARCH_BACKTESTING,
+    "/deal-corpus-analytics": PageContextCategory.RESEARCH_BACKTESTING,
+    "/deal-flow-heatmap": PageContextCategory.RESEARCH_BACKTESTING,
+    "/deal-postmortem": PageContextCategory.RESEARCH_BACKTESTING,
+    "/deal-quality": PageContextCategory.RESEARCH_BACKTESTING,
+    "/deal-risk-scores": PageContextCategory.RESEARCH_BACKTESTING,
+    "/corpus-coverage": PageContextCategory.RESEARCH_BACKTESTING,
+    "/corpus-dashboard": PageContextCategory.RESEARCH_BACKTESTING,
+    "/corpus-ic-memo": PageContextCategory.RESEARCH_BACKTESTING,
+    # Library / reference catalogs
+    "/cms-apm": PageContextCategory.LIBRARY_REFERENCE,
+    "/deal-library": PageContextCategory.LIBRARY_REFERENCE,
+    "/deal-library/sponsors": PageContextCategory.LIBRARY_REFERENCE,
+    "/deal-library/comps": PageContextCategory.LIBRARY_REFERENCE,
+    # Pipeline / sourcing
+    "/deal-origination": PageContextCategory.PIPELINE_SOURCING,
+    "/deal-sourcing": PageContextCategory.PIPELINE_SOURCING,
+    "/acq-timing": PageContextCategory.PIPELINE_SOURCING,
 }
 for _c in _MANUAL:
     _cat = _CATEGORY_OVERRIDES.get(_c.route)
