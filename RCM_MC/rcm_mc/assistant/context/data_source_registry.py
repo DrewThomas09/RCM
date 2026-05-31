@@ -84,7 +84,8 @@ _SOURCES: List[DataSourceContext] = [
        update_cadence="Periodic CMS refreshes.",
        freshness_lag="Months to a year+.",
        used_for=["Quality/outcomes benchmarking."],
-       related_metrics=["benchmark_percentile"],
+       related_metrics=["benchmark_percentile", "cms_star_rating",
+                        "readmission_rate"],
        strengths=["Standardized public quality signal."],
        limitations=["Quality measures lag and don't capture all clinical nuance."],
        provenance_notes="Public CMS Care Compare ratings; cite the specific "
