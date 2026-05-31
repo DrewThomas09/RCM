@@ -1479,6 +1479,20 @@ _MISREAD_PATCHES: Dict[str, str] = {
         "spending-efficiency ratio CMS uses for value-based "
         "programmes, not a patient-outcome measure."
     ),
+    # 2026-05-31: Added with the two new _COVERAGE_METRICS entries.
+    # The apply loop at the bottom of the file re-runs after
+    # _COVERAGE_METRICS is registered, so these entries reach the
+    # newly-added metrics.
+    "first_pass_resolution_rate": (
+        "Treating FPR as the same as clean_claim_rate — CCR tracks "
+        "acceptance, FPR tracks payment-in-full; the gap between "
+        "them is downstream underpayment / denial leak."
+    ),
+    "payer_diversity": (
+        "Reading a high index as 'safe' without checking which "
+        "payers dominate — a diverse mix that still has one payer "
+        "above 25% is still a concentrated single-renewal risk."
+    ),
 }
 for _mid, _msr in _MISREAD_PATCHES.items():
     _m_obj = METRIC_REGISTRY.get(_mid)
@@ -1535,6 +1549,58 @@ _COVERAGE_METRICS = [
                  "admission); it is not total cost of care."],
         related_metrics=["cost_per_adjusted_discharge", "readmission_rate"],
         related_routes=["/diligence/hcris-xray", "/diligence/benchmarks"],
+    ),
+    # ── 2026-05-31: Two genuinely distinct RCM / payer-mix metrics from
+    #    /metric-glossary (rcm_mc/ui/metric_glossary.py) that don't have
+    #    clean alias targets in the existing registry. Definitions /
+    #    formulas / typical ranges follow the glossary content (same PE
+    #    Desk source-of-truth, just now available to the Guide too).
+    _m(
+        "first_pass_resolution_rate", "First-Pass Resolution Rate",
+        ["fpr", "first pass resolution", "first-pass resolution",
+         "first_pass_resolution_rate"],
+        "Share of claims paid in full on the first attempt — no "
+        "resubmission, no appeal.",
+        "Catches both denial and underpayment leak in one ratio. Each 1pp "
+        "lift saves rework cost and shortens AR aging.",
+        "Tighter than clean_claim_rate because FPR tracks payment, not just "
+        "acceptance. Best-in-class is roughly 80-92%.",
+        formula="claims paid in full first-pass / total claims submitted",
+        formula_confidence=_DOC,
+        source_types=[_OBS], data_confidence=_OBS,
+        caveats=["A high clean-claim rate with a low FPR signals "
+                 "downstream underpayment / denial leak.",
+                 "Definition of 'paid in full' depends on the contract "
+                 "allowance reference; normalize before comparing."],
+        related_metrics=["clean_claim_rate", "denial_rate",
+                         "net_collection_rate", "underpayment_rate"],
+        related_routes=["/diligence/denial-prediction", "/rcm-benchmarks",
+                        "/diligence/benchmarks"],
+    ),
+    _m(
+        "payer_diversity", "Payer Diversity Index",
+        ["payer diversity", "payor diversity",
+         "inverse hhi payer", "payer concentration index"],
+        "Inverse-Herfindahl concentration index across the payer mix. "
+        "Higher value = more diverse mix; lower value = more concentrated.",
+        "Concentration is the silent revenue-durability risk: one "
+        "MA-contract renegotiation can move 15-25% of revenue. Higher "
+        "diversity = lower single-contract-loss exposure.",
+        "Range 0 (single payer) to ~0.8 (very diverse). Best-in-class is "
+        ">0.7. Use alongside HHI on the same mix for a direct cross-read.",
+        formula="1 − Σ(payer_share²) across the payer mix",
+        formula_confidence=_DOC,
+        source_types=[_OBS], data_confidence=_OBS,
+        caveats=["Pair with HHI — they're algebraically related (HHI on "
+                 "fractions = 1 − diversity) but partners read each "
+                 "differently.",
+                 "Definition of 'payer' (Medicare vs MA, by line of "
+                 "business) changes the result materially; normalize "
+                 "before comparing across deals."],
+        related_metrics=["payer_mix", "hhi", "concentration_ratio",
+                         "commercial_payer_exposure"],
+        related_routes=["/payer-concentration", "/payer-contracts",
+                        "/payer-stress"],
     ),
 ]
 for _cm in _COVERAGE_METRICS:
