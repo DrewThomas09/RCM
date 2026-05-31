@@ -93,7 +93,9 @@ _METRICS: List[MetricContext] = [
        "The number deals are actually priced on; QoE exists to vet it.",
        "Every add-back is a negotiation — scrutinize quality and recurrence.",
        source_types=[_OBS, _USR], data_confidence=_MIX,
-       caveats=["Add-backs are judgmental; aggressive add-backs inflate value."],
+       caveats=["Add-backs are judgmental; aggressive add-backs inflate value.",
+                "Run-rate adjustments assume a future that may not materialize — "
+                "discount aggressive pro-forma adjustments."],
        related_metrics=["ebitda", "ebitda_bridge", "value_creation_opportunity"],
        related_routes=["/diligence/bridge-audit", "/diligence/qoe-memo"]),
     _m("ebitda_margin", "EBITDA Margin", ["margin", "ebitda %"],
@@ -185,7 +187,9 @@ _METRICS: List[MetricContext] = [
        "Synergies underpin multiple-arbitrage and platform value-creation cases.",
        "Synergy estimates are routinely optimistic; weight by execution risk.",
        source_types=[_EST], data_confidence=_EST,
-       caveats=["Cross-sell/revenue synergies carry high execution risk."],
+       caveats=["Cross-sell/revenue synergies carry high execution risk.",
+                "Synergies are routinely over-estimated and under-delivered — "
+                "size the integration cost and dis-synergy alongside."],
        related_metrics=["value_creation_opportunity", "ebitda_bridge"],
        related_routes=["/pmi-integration", "/rollup-economics",
                        "/bolton-analyzer", "/diligence/value"]),
@@ -311,7 +315,9 @@ _METRICS: List[MetricContext] = [
        "Quantifies the core operational value-creation lever in RCM-led deals.",
        "It is a MODEL ESTIMATE of opportunity, not realized improvement.",
        source_types=[_EST], data_confidence=_EST,
-       caveats=["Estimate from current metrics vs benchmark targets; realization is uncertain."],
+       caveats=["Estimate from current metrics vs benchmark targets; realization is uncertain.",
+                "Realization timing is often 12-24 months — model the ramp, "
+                "not just steady-state."],
        related_metrics=["denial_rate", "days_in_ar", "collections_leakage",
                        "ebitda_bridge"],
        related_routes=["/diligence/denial-prediction", "/predictive-screener"]),
