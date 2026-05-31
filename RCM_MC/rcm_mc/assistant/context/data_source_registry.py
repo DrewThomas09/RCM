@@ -740,8 +740,10 @@ _PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
     # PR #1299 + 2026-05-31 round 3 merged. NOTE: each key appears
     # ONCE — Python dict literal overwrites on duplicate key, which
     # silently drops earlier aliases.
-    "cms_hcris": ["ccn", "medicare cost reports", "medicare cost"],
-    "cms_care_compare": ["cms hospital compare"],
+    "cms_hcris": ["ccn", "medicare cost reports", "medicare cost",
+                  "medicare cost reporting", "medicare cost-report"],
+    "cms_care_compare": ["cms hospital compare", "hospital quality",
+                         "hospital rating"],
     "cms_ma_geo": ["medicare advantage geo", "cms ma",
                    "ma data", "medicare advantage data",
                    "ma geo data"],
@@ -758,7 +760,8 @@ _PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
     # VDR variants; physician/professional claims = 837P.
     "sec_edgar": ["10k", "10q", "8k", "annual report",
                   "quarterly filing",
-                  "10-k", "10-q", "8-k"],
+                  "10-k", "10-q", "8-k",
+                  "edgar filings", "sec filing"],
     "data_room_export": ["vdr", "data-room"],
     "edi_837": ["physician claims", "professional claims"],
     # 2026-05-31 (round 3): more partner spellings probed against the
@@ -768,13 +771,22 @@ _PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
     "cms_provider_data_catalog": ["snf rating", "medicare provider",
                                    "medicare provider data", "pdc data",
                                    "snf five star", "snf five-star",
-                                   "snf compare"],
+                                   "snf compare",
+                                   "snf five-star data",
+                                   "cms snf rating", "cms hospital rating",
+                                   "cms_provider_data"],
     "cbsa_crosswalk": ["omb", "metro area", "cbsa data"],
     # 2026-05-31 (round 4): more partner spellings probed against the
     # resolver. Each unambiguous; ambiguous ones ('snf data',
     # 'demographics data', 'cms data') deliberately skipped.
     "cms_hcahps": ["cahps", "patient experience survey",
                    "hospital cahps"],
+    # PR #1333: round 6 — variant phrasings probed after the bulk
+    # alias coverage shipped. Each unambiguous.
+    "public_transaction_corpus": ["realized deals corpus",
+                                   "closed deals",
+                                   "transaction database",
+                                   "m&a corpus"],
     "cms_home_health_provider_data": ["home health data", "hh quality"],
     "cms_hospice_provider_data": ["hospice quality"],
     "cms_mssp_aco": ["aco data", "shared savings program"],
