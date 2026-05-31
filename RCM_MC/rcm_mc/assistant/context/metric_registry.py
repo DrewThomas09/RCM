@@ -531,7 +531,8 @@ _METRICS: List[MetricContext] = [
        "Public benchmark only — not the target's own outcomes; confirm the "
        "agencies in scope match the deal.",
        source_types=[_PUB], data_confidence=_PUB,
-       related_routes=["/home-health"]),
+       related_routes=["/home-health", "/diligence/benchmarks",
+                       "/target-screener"]),
     _m("timely_initiation_of_care", "Timely Initiation of Care",
        ["timely care", "timely initiation", "started care timely"],
        "Share of patients whose home-health team began care in a timely "
@@ -540,7 +541,7 @@ _METRICS: List[MetricContext] = [
        "staffing issues.",
        "Process measure, not outcomes or revenue; CMS-reported, not target data.",
        source_types=[_PUB], data_confidence=_PUB,
-       related_routes=["/home-health"]),
+       related_routes=["/home-health", "/diligence/benchmarks"]),
     _m("discharge_to_community", "Discharge to Community (HH)",
        ["dtc", "discharge to community rate"],
        "Risk-standardized rate of home-health patients discharged to the "
@@ -548,7 +549,8 @@ _METRICS: List[MetricContext] = [
        "A headline outcome measure for home-health quality.",
        "Risk-standardized public measure; not the target's internal results.",
        source_types=[_PUB], data_confidence=_PUB,
-       related_routes=["/home-health"]),
+       related_routes=["/home-health", "/diligence/benchmarks",
+                       "/target-screener"]),
     _m("hospice_care_index", "Hospice Care Index",
        ["hci", "care index", "hospice care index overall"],
        "CMS Hospice Care Index — a composite of ten care-pattern indicators "
@@ -558,7 +560,8 @@ _METRICS: List[MetricContext] = [
        "Composite of process/pattern indicators, not outcomes or economics; "
        "CMS-reported, not target data.",
        source_types=[_PUB], data_confidence=_PUB,
-       related_routes=["/hospice"]),
+       related_routes=["/hospice", "/diligence/benchmarks",
+                       "/target-screener"]),
     _m("hospice_composite_process", "Hospice Composite Process Measure",
        ["his composite", "composite process measure", "hospice composite"],
        "Share of patients who received all applicable HIS care processes at "
@@ -566,7 +569,7 @@ _METRICS: List[MetricContext] = [
        "A bundled admission-quality signal for hospice diligence.",
        "Process composite, not outcomes; public benchmark, not target actuals.",
        source_types=[_PUB], data_confidence=_PUB,
-       related_routes=["/hospice"]),
+       related_routes=["/hospice", "/diligence/benchmarks"]),
     _m("visits_in_last_days", "Hospice Visits in Last Days of Life",
        ["visits last days", "visits in the last days of life"],
        "Share of patients with hospice visits in the last days of life "
@@ -574,7 +577,7 @@ _METRICS: List[MetricContext] = [
        "End-of-life engagement signal relevant to hospice quality/compliance.",
        "Public process measure; not the target's own staffing/visit data.",
        source_types=[_PUB], data_confidence=_PUB,
-       related_routes=["/hospice"]),
+       related_routes=["/hospice", "/diligence/benchmarks"]),
 ]
 
 # ── Added metrics (standard textbook definitions; formula_confidence=INFERRED
