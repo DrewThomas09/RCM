@@ -352,6 +352,23 @@ class TestDataSourcesHaveRealProvenance(unittest.TestCase):
             "real lag on the _s() call:\n  " + "\n  ".join(offenders),
         )
 
+    def test_every_data_source_has_explicit_ic_ready_flag(self):
+        """Every DataSourceContext should declare ic_ready as True or
+        False — never None — so the Guide can give an honest answer to
+        'Is this IC-ready?' for any source. The 8 system-metadata /
+        uploaded-target-data sources were filled in PR #1267; this
+        guards a new _s() landing without the flag (which would
+        default to None and leave the answer ambiguous)."""
+        offenders = sorted(
+            sid for sid, s in DATA_SOURCE_REGISTRY.items()
+            if s.ic_ready is None
+        )
+        self.assertFalse(
+            offenders,
+            "Data sources with ic_ready=None — supply an explicit "
+            "True / False on the _s() call:\n  " + "\n  ".join(offenders),
+        )
+
     def test_data_source_related_metrics_resolve(self):
         """Every related_metrics entry on a data source must resolve to
         a real metric_id in METRIC_REGISTRY. A dangling reference sends

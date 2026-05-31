@@ -240,7 +240,9 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Export scope/quality varies widely by EHR and engagement."],
        provenance_notes="Target-uploaded EHR/EMR export — record the EHR "
        "vendor (Epic/Cerner/etc.), export scope, and as-of date.",
-       data_confidence=_OBS, ic_ready=None),
+       # Not stand-alone IC-ready — scope/quality vary widely; needs to be
+       # combined with claims + financials before underwriting against it.
+       data_confidence=_OBS, ic_ready=False),
     _s("provider_roster", "Provider Roster", "List of the target's providers "
        "with attributes (specialty, FTE, start dates).",
        _T.UPLOADED_TARGET_DATA, aliases=["roster", "physician roster", "provider list"],
@@ -332,7 +334,9 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Completeness/recency vary; seller controls contents."],
        provenance_notes="Documents/exports from the deal VDR — record the "
        "data-room platform, export date, and folder scope.",
-       data_confidence=_MIX, ic_ready=None),
+       # Not stand-alone IC-ready — documents are evidence, not conclusions;
+       # IC needs the analyses built on them.
+       data_confidence=_MIX, ic_ready=False),
 
     # ── Internal / system ───────────────────────────────────────────
     _s("deal_profile", "Deal Profile", "PEdesk's internal record of a deal's "
@@ -345,7 +349,8 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Only as good as what was entered/imported."],
        provenance_notes="PEdesk's internal deal-profile record — sourced from "
        "user entry / bulk import; not a primary diligence source.",
-       data_confidence=_MIX, ic_ready=None),
+       # System metadata — the workflow record, not an analytic basis for IC.
+       data_confidence=_MIX, ic_ready=False),
     _s("analysis_run", "Analysis Run", "A stored run of the analysis packet "
        "for a deal.", _T.INTERNAL_MODEL_OUTPUT, aliases=["packet", "analysis", "run"],
        update_cadence="On demand (re-run from the deal page or CLI).",
@@ -380,7 +385,8 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Only as current as the run that produced them."],
        provenance_notes="A PEdesk-generated artifact — captures the run that "
        "produced it (deal_id, params, timestamp); regenerate to refresh.",
-       data_confidence=_MIX, ic_ready=None),
+       # Artifact OF analysis; IC-readiness depends on the underlying run.
+       data_confidence=_MIX, ic_ready=False),
     _s("checklist_state", "Checklist State", "State of the diligence checklist "
        "for a deal.", _T.SYSTEM_METADATA, aliases=["checklist", "diligence checklist"],
        update_cadence="On every checklist edit (event-driven).",
@@ -391,7 +397,8 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Process state, not analytical data."],
        provenance_notes="PEdesk's diligence-checklist state per deal — "
        "user-edited workflow metadata, not analytic data.",
-       data_confidence=_OBS, ic_ready=None),
+       # Workflow state, not analytic data — never a stand-alone IC basis.
+       data_confidence=_OBS, ic_ready=False),
     _s("diligence_questions", "Diligence Questions", "The diligence-question "
        "ledger records.", _T.SYSTEM_METADATA, aliases=["questions", "question ledger"],
        update_cadence="On every question add/edit/close (event-driven).",
@@ -402,7 +409,8 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Workflow data, not analytics."],
        provenance_notes="PEdesk's diligence-question ledger — user-authored "
        "workflow records, not a primary analytic source.",
-       data_confidence=_OBS, ic_ready=None),
+       # Workflow state, not analytic data — never a stand-alone IC basis.
+       data_confidence=_OBS, ic_ready=False),
     _s("audit_log", "Audit Log", "Unified log of user/system actions.",
        _T.SYSTEM_METADATA, aliases=["audit", "activity log"],
        update_cadence="Continuous (on action).", freshness_lag="Real-time.",
@@ -412,7 +420,8 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Operational metadata, not deal analytics."],
        provenance_notes="PEdesk's unified user/system action log — hash-chain "
        "accountability record, written on every state change.",
-       data_confidence=_OBS, ic_ready=None),
+       # Operational metadata — accountability, not an analytic IC basis.
+       data_confidence=_OBS, ic_ready=False),
     _s("engagement_record", "Engagement Record", "Record of a consulting/"
        "client engagement.", _T.SYSTEM_METADATA, aliases=["engagement", "portal record"],
        update_cadence="On engagement create / edit (event-driven).",
@@ -423,7 +432,8 @@ _SOURCES: List[DataSourceContext] = [
        limitations=["Metadata; specifics need source documentation."],
        provenance_notes="PEdesk's consulting/client engagement record — "
        "internal organizing metadata, not a primary diligence source.",
-       data_confidence=_MIX, ic_ready=None),
+       # Engagement-organizing metadata — not an analytic IC basis.
+       data_confidence=_MIX, ic_ready=False),
     _s("portfolio_snapshot", "Portfolio Snapshot", "Live snapshot of the "
        "portfolio store (deal states, rollups).", _T.SYSTEM_METADATA,
        aliases=["portfolio", "snapshot", "rollup"],
