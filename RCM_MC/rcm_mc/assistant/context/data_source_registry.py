@@ -137,7 +137,10 @@ _SOURCES: List[DataSourceContext] = [
        "corpus of realized PE-healthcare deals powering comps/benchmarks.",
        _T.PUBLIC_DATASET, aliases=["deal corpus", "corpus", "transaction corpus",
                                   "realized deals"],
-       update_cadence=_NEEDS, freshness_lag=_NEEDS,
+       update_cadence="Periodic curation (additions as deals close + as "
+       "public-disclosure data emerges).",
+       freshness_lag="Realized-deal data lags closing by quarters to a "
+       "year; synthetic entries are labeled separately.",
        used_for=["Comps, market rates, percentiles, sponsor track records, backtests."],
        related_routes=["/comparables", "/market-rates", "/comparable-outcomes",
                       "/library"],
@@ -160,7 +163,10 @@ _SOURCES: List[DataSourceContext] = [
     _s("regulatory_calendar_sources", "Regulatory Calendar Sources",
        "Sources behind the regulatory-event calendar.", _T.PUBLIC_DATASET,
        aliases=["regulatory calendar", "reg calendar"],
-       update_cadence=_NEEDS, freshness_lag=_NEEDS,
+       update_cadence="As regulators publish (CMS proposed rules / final "
+       "rules / agency announcements).",
+       freshness_lag="Near-current for forward calendar; minutes-to-days "
+       "from publication.",
        used_for=["Tracking regulatory events that could move a thesis."],
        related_routes=["/regulatory-calendar"],
        strengths=["Forward calendar of regulatory risk."],
@@ -174,7 +180,9 @@ _SOURCES: List[DataSourceContext] = [
        "used as a prior to fill gaps or contextualize a target.",
        _T.BENCHMARK_PRIOR, aliases=["benchmark", "prior", "industry benchmark",
                                    "peer benchmark"],
-       update_cadence=_NEEDS, freshness_lag=_NEEDS,
+       update_cadence="Refreshed when the underlying calibration is "
+       "re-fit (quarterly review cadence).",
+       freshness_lag="As of the most recent calibration cycle.",
        used_for=["Filling missing inputs; contextualizing observed values; "
                 "stress/payer scenario priors."],
        related_routes=["/rcm-benchmarks", "/diligence/payer-stress",
@@ -224,6 +232,8 @@ _SOURCES: List[DataSourceContext] = [
     _s("ehr_export", "EHR Export", "Clinical/operational export from the "
        "target's electronic health record.", _T.UPLOADED_TARGET_DATA,
        aliases=["ehr", "emr export", "clinical export"],
+       update_cadence="Per engagement / data drop.",
+       freshness_lag="As of the EHR export date.",
        used_for=["Clinical/operational and volume context."],
        related_metrics=["panel_size", "provider_productivity"],
        strengths=["Target-specific clinical/operational data."],
@@ -234,6 +244,8 @@ _SOURCES: List[DataSourceContext] = [
     _s("provider_roster", "Provider Roster", "List of the target's providers "
        "with attributes (specialty, FTE, start dates).",
        _T.UPLOADED_TARGET_DATA, aliases=["roster", "physician roster", "provider list"],
+       update_cadence="Per engagement / data drop.",
+       freshness_lag="As of the roster upload date (a snapshot).",
        used_for=["Physician economics; attrition; productivity baselines."],
        related_routes=["/diligence/physician-eu", "/diligence/physician-attrition"],
        related_metrics=["physician_attrition", "wrvu", "panel_size",
@@ -246,6 +258,8 @@ _SOURCES: List[DataSourceContext] = [
     _s("compensation_file", "Compensation File", "Provider compensation data "
        "from the target.", _T.UPLOADED_TARGET_DATA,
        aliases=["comp file", "compensation", "physician comp"],
+       update_cadence="Per engagement / data drop.",
+       freshness_lag="As of the comp-file upload (the covered period).",
        used_for=["Physician economics; comp-to-collections."],
        related_routes=["/diligence/physician-eu"],
        related_metrics=["compensation_to_collections", "provider_contribution_margin"],
@@ -257,6 +271,8 @@ _SOURCES: List[DataSourceContext] = [
     _s("payer_contracts", "Payer Contracts", "The target's payer contract terms "
        "/ fee schedules.", _T.UPLOADED_TARGET_DATA,
        aliases=["contracts", "payer contract", "fee schedule"],
+       update_cadence="Per engagement / data drop; refreshed when contracts amend.",
+       freshness_lag="As of the contract effective dates uploaded.",
        used_for=["Payer-stress; underpayment; rate analysis."],
        related_routes=["/diligence/payer-stress"],
        related_metrics=["payer_mix", "underpayment_rate", "commercial_payer_exposure"],
@@ -281,6 +297,8 @@ _SOURCES: List[DataSourceContext] = [
        data_confidence=_OBS, ic_ready=True),
     _s("seller_cim", "Seller CIM", "The seller's confidential information "
        "memorandum.", _T.SELLER_REPORTED, aliases=["cim", "deck", "teaser", "om"],
+       update_cadence="One-shot per deal (sometimes amended versions).",
+       freshness_lag="As of the CIM issuance date.",
        used_for=["Initial framing; the seller's adjusted-EBITDA narrative."],
        related_routes=["/diligence/bridge-audit"],
        related_metrics=["adjusted_ebitda", "ebitda_bridge", "revenue"],
@@ -291,6 +309,9 @@ _SOURCES: List[DataSourceContext] = [
     _s("qoe_report", "QoE Report", "Quality-of-earnings report vetting adjusted "
        "EBITDA and add-backs.", _T.SELLER_REPORTED,
        aliases=["qoe", "quality of earnings"],
+       update_cadence="One-shot per deal (occasionally a refresh / "
+       "rebuttal version).",
+       freshness_lag="As of the QoE issuance date.",
        used_for=["Validating adjusted EBITDA / add-backs for the bridge."],
        related_routes=["/diligence/bridge-audit", "/diligence/qoe-memo"],
        related_metrics=["adjusted_ebitda", "ebitda_bridge"],
@@ -302,6 +323,9 @@ _SOURCES: List[DataSourceContext] = [
     _s("data_room_export", "Data Room Export", "Documents/exports from the "
        "deal data room.", _T.UPLOADED_TARGET_DATA,
        aliases=["data room", "vdr export", "dataroom"],
+       update_cadence="Per diligence-cycle drop (seller-controlled, "
+       "ad hoc as new documents post).",
+       freshness_lag="As of the data-room export date.",
        used_for=["Diligence document evidence."],
        related_routes=["/diligence/deal"],
        strengths=["Primary diligence documents."],
@@ -313,6 +337,8 @@ _SOURCES: List[DataSourceContext] = [
     # ── Internal / system ───────────────────────────────────────────
     _s("deal_profile", "Deal Profile", "PEdesk's internal record of a deal's "
        "key attributes.", _T.SYSTEM_METADATA, aliases=["profile", "deal record"],
+       update_cadence="On every deal-edit / import (event-driven).",
+       freshness_lag="Real-time as users edit the deal.",
        used_for=["Seeding per-deal analyses and dashboards."],
        related_routes=["/diligence/deal"],
        strengths=["Single internal handle for a deal."],
@@ -322,6 +348,8 @@ _SOURCES: List[DataSourceContext] = [
        data_confidence=_MIX, ic_ready=None),
     _s("analysis_run", "Analysis Run", "A stored run of the analysis packet "
        "for a deal.", _T.INTERNAL_MODEL_OUTPUT, aliases=["packet", "analysis", "run"],
+       update_cadence="On demand (re-run from the deal page or CLI).",
+       freshness_lag="As of the run timestamp — stale if inputs changed since.",
        used_for=["Caching/serving a deal's computed analysis."],
        related_routes=["/analysis/<dealId>"],
        related_metrics=["model_estimate", "confidence_tier"],
@@ -332,6 +360,9 @@ _SOURCES: List[DataSourceContext] = [
        data_confidence=_EST, ic_ready=False),
     _s("model_output", "Model Output", "Output of a PEdesk model/estimator.",
        _T.INTERNAL_MODEL_OUTPUT, aliases=["model", "prediction", "estimate output"],
+       update_cadence="Computed on demand when a page calls the estimator.",
+       freshness_lag="As of the computation; subject to recalibration when "
+       "priors are re-fit (quarterly review).",
        used_for=["Predictions, scores, uplift/risk estimates across pages."],
        related_metrics=["model_estimate", "rcm_uplift", "risk_score",
                        "payer_stress_impact", "bridge_realization_probability"],
@@ -342,6 +373,8 @@ _SOURCES: List[DataSourceContext] = [
        data_confidence=_EST, ic_ready=False),
     _s("generated_export", "Generated Export", "Files PEdesk generates (CSV/"
        "Excel/PDF/memos).", _T.SYSTEM_METADATA, aliases=["export", "download"],
+       update_cadence="On demand at export-button click / CLI run.",
+       freshness_lag="As of the run that produced the artifact.",
        used_for=["Deliverables (exports, memos, packets)."],
        strengths=["Shareable artifacts of platform output."],
        limitations=["Only as current as the run that produced them."],
@@ -350,6 +383,8 @@ _SOURCES: List[DataSourceContext] = [
        data_confidence=_MIX, ic_ready=None),
     _s("checklist_state", "Checklist State", "State of the diligence checklist "
        "for a deal.", _T.SYSTEM_METADATA, aliases=["checklist", "diligence checklist"],
+       update_cadence="On every checklist edit (event-driven).",
+       freshness_lag="Real-time as users edit checklist items.",
        used_for=["Tracking diligence completion."],
        related_routes=["/diligence/checklist"],
        strengths=["Process/coverage tracking."],
@@ -359,6 +394,8 @@ _SOURCES: List[DataSourceContext] = [
        data_confidence=_OBS, ic_ready=None),
     _s("diligence_questions", "Diligence Questions", "The diligence-question "
        "ledger records.", _T.SYSTEM_METADATA, aliases=["questions", "question ledger"],
+       update_cadence="On every question add/edit/close (event-driven).",
+       freshness_lag="Real-time.",
        used_for=["Tracking open diligence questions."],
        related_routes=["/diligence/questions"],
        strengths=["Running record of open items."],
@@ -378,6 +415,8 @@ _SOURCES: List[DataSourceContext] = [
        data_confidence=_OBS, ic_ready=None),
     _s("engagement_record", "Engagement Record", "Record of a consulting/"
        "client engagement.", _T.SYSTEM_METADATA, aliases=["engagement", "portal record"],
+       update_cadence="On engagement create / edit (event-driven).",
+       freshness_lag="Real-time as the engagement is updated.",
        used_for=["Scoping engagement-level views/portals."],
        related_routes=["/engagements", "/portal/<engagementId>"],
        strengths=["Engagement-level organizing record."],
@@ -416,7 +455,8 @@ _SOURCES: List[DataSourceContext] = [
     # reachable explicitly by id "unknown_source" / label "Unknown Source").
     _s("unknown_source", "Unknown Source", "Provenance not established for the "
        "data shown.", _T.UNKNOWN, aliases=[],
-       update_cadence=_NEEDS, freshness_lag=_NEEDS,
+       update_cadence="Not applicable (no source declared).",
+       freshness_lag="Not applicable (no source declared).",
        used_for=["Placeholder when a page's data lineage isn't documented."],
        strengths=["Honest about not knowing — surfaces the gap rather than "
                   "hiding it behind a fabricated source claim."],
