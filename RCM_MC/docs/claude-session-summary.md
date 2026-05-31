@@ -449,6 +449,44 @@ at 79 (was 75 at segment start). 29 invariant tests (was 24).
 Continuous-loop session cumulative: **66 PRs through #1331**
 (#1250-#1331 spanning prior + this PM continuous segment).
 
+### Continued — segment final (PRs #1333-#1337)
+
+User asked for "more, more, more" — six more PRs landed:
+
+- **#1333** Round-6 source aliases (13 more across 5 sources):
+  HCRIS hyphen-variants, Care Compare 'hospital quality'/'hospital
+  rating', EDGAR 'edgar filings'/'sec filing', PDC SNF five-star
+  variants, transaction corpus 'm&a corpus'/'closed deals'/
+  'realized deals corpus'/'transaction database'. Avoided
+  'quality rating' (collides with existing cms_star_rating).
+- **#1334** Round-6 metric aliases (27 more across 12 metrics):
+  collection/denial/bad-debt/underpayment-rate `%` variants;
+  capex `/rev` shorthand; gross/ebitda/op-margin `pct`/`mgn` variants;
+  occupancy_rate `occ rate`/`occ %`; first_pass_yield variants;
+  compensation_to_collections `comp to coll`/`physician comp ratio`.
+- **#1335** Lock 60+ aliases across rounds 1-6 by extending
+  test_partner_metric_aliases_resolve (+19) and
+  test_partner_source_aliases_resolve (+20). Same defense pattern
+  as PR #1310's restoration test — explicit enumeration so a dup
+  key can't silently drop them.
+- **#1336** Smoke test: prompt builder builds for every page in
+  PAGE_CONTEXT_REGISTRY (360 pages, ~80ms) without raising;
+  every prompt non-empty + carries '=== Question ===' terminator.
+- **#1337** Self-resolution invariants: every metric_id resolves
+  to itself; every metric label resolves to its own metric_id;
+  same for sources. Locks the floor against typo/normalizer/
+  collision regressions.
+
+Test count: 29 → 30 invariant tests. Lookup tests: 16 → 18.
+Prompt-builder tests: 34 → 35. Total Guide-context suite: 79 → 83.
+
+**Final continuous-loop session cumulative through #1337: 35 PRs
+landed (#1303-#1337)**, all green CI, all auto-deployed. Partner-
+alias probing has reached genuine saturation: round-7 probe (28
+metric + 17 source candidates) returned only 2 hits (837p/837i
+already aliased via case+space normalization), confirming the
+remaining misses correspond to concepts the registry doesn't track.
+
 ## Guardrails honored
 
 No fake data. Did not touch auth/session, Caddy, systemd, deploy workflow,
