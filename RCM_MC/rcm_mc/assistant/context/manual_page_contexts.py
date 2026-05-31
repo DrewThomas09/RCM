@@ -5007,6 +5007,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Calculator on your inputs; CMS benchmark is "
                                 "sector context, not this deal's outcomes."],
         limitations=["Deal-specific outcomes need the target's measure data."],
+        model_logic_summary=(
+            "Maps entered current outcomes against the real CMS Care "
+            "Compare quartile distribution, then computes a directional "
+            "EV uplift for moving one quartile via an entered "
+            "outcome-to-revenue conversion. Benchmark is real; the "
+            "uplift conversion is the entered model assumption."),
         related_routes=["/quality-scorecard", "/physician-productivity"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5227,6 +5233,11 @@ _MANUAL: List[PageContext] = [
             "of activity in that segment.",
             "Cohort membership is partner-defined — there's no automatic "
             "rule engine that adds new deals to existing cohorts."],
+        model_logic_summary=(
+            "Reads cohort-tag membership from the deal store; for each "
+            "cohort, aggregates the deals' summary metrics (MOIC, IRR, "
+            "health score) and ranks/compares them. No model — pure "
+            "set membership + aggregation."),
         related_routes=["/pipeline", "/portfolio", "/owners"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
@@ -5252,6 +5263,11 @@ _MANUAL: List[PageContext] = [
             "obligations don't appear here.",
             "'Overdue' is computed against today's date relative to the "
             "stored due date; timezone differences can shift edge cases."],
+        model_logic_summary=(
+            "Reads deadlines from the deal store, sorted by due date; "
+            "'overdue' = due_date < today; 'next 7 days' = today < "
+            "due_date ≤ today+7. No projection — partners must enter "
+            "deadlines manually for them to appear here."),
         related_routes=["/alerts", "/pipeline", "/day-one"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
@@ -5587,6 +5603,12 @@ _MANUAL: List[PageContext] = [
             "The early-warning band threshold (e.g. 15% cushion) is "
             "platform-default; partners should align it with the "
             "specific deal's credit agreement."],
+        model_logic_summary=(
+            "Computes per-deal cushion via the /covenant-headroom "
+            "formula, then bands deals (TRIPPED / 0-15% warning / "
+            "safe). Trend uses the entered/attached actuals over the "
+            "last N periods. No external lender feed — refresh "
+            "requires a fresh actuals upload."),
         related_routes=["/covenant-headroom", "/debt-service"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5906,6 +5928,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["HHI/HSR/overlap compute off your deal-size input.",
                                  "CHOW panel is the real serial-acquisition backdrop FTC scrutinizes."],
         limitations=["Market-overlap specifics are illustrative."],
+        model_logic_summary=(
+            "Applies HSR threshold rules (size-of-transaction, "
+            "size-of-person) to entered deal size to flag filing "
+            "requirements; computes a directional HHI delta from "
+            "entered current/post-deal market shares; overlays the "
+            "real CMS CHOW serial-acquisition map for FTC-style "
+            "scrutiny context."),
         related_routes=["/concentration-risk", "/msa-concentration", "/competitive-intel"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5926,6 +5955,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["CIN roster/contract figures are illustrative.",
                                  "MSSP panel is the real ACO/value-based benchmark."],
         limitations=["Deal CIN data requires the target's network roster."],
+        model_logic_summary=(
+            "Computes a directional shared-savings opportunity from "
+            "entered CIN size, attribution, and quality score, then "
+            "overlays the real MSSP ACO landscape (511 ACOs across "
+            "15,293 organizations) so a partner can see where the "
+            "CIN sits relative to active value-based peers."),
         related_routes=["/aco-economics", "/quality-scorecard"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
