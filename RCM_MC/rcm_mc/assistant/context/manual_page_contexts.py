@@ -5387,6 +5387,13 @@ _MANUAL: List[PageContext] = [
             "auto-generated?",
             "Can I mark a deadline complete from this page?",
         ],
+        inputs=["Deal-store deadlines (entered title, due_date, "
+                "owner, deal); time-window filter."],
+        outputs=["Sorted deadline list with overdue/next-7-days "
+                 "flagging; per-owner breakdown."],
+        key_metrics=["Overdue count", "Next-7-days count", "By owner"],
+        diligence_use_cases=["Pre-IC / pre-LP-update deadline "
+                             "review across the portfolio."],
         data_sources=["Live deal store (deadlines)."],
         interpretation_guidance=["Reflects deadlines entered for your deals; "
                                 "empty means none recorded."],
@@ -5813,6 +5820,14 @@ _MANUAL: List[PageContext] = [
             "Is the grade benchmarked against real deals or illustrative ones?",
             "How should I use this score in IC vs underwriting?",
         ],
+        inputs=["Illustrative seed corpus (each row carries the "
+                "fields used in the grade)."],
+        outputs=["Per-deal A-D grade + corpus grade distribution."],
+        key_metrics=["Grade distribution", "Weight of each grade "
+                     "dimension"],
+        diligence_use_cases=["Teaching what 'grade A vs C' looks "
+                             "like to a junior team member before "
+                             "they grade a real deal."],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Scores the illustrative corpus — not this "
                                 "market's real deals; use as a structural benchmark."],
@@ -5843,6 +5858,16 @@ _MANUAL: List[PageContext] = [
             "Which corpus deals were the highest-risk outliers?",
             "How should I use this in IC discussion vs underwriting?",
         ],
+        inputs=["Illustrative seed corpus deal rows with risk-"
+                "dimension flags (covenant, payer, regulatory, "
+                "execution, market)."],
+        outputs=["Per-deal 0-100 composite risk score + dimension "
+                 "decomposition + corpus distribution."],
+        key_metrics=["Composite risk score", "Per-dimension score",
+                     "Outlier list"],
+        diligence_use_cases=["Teaching risk-dimension reading "
+                             "against the corpus before applying to "
+                             "a real deal."],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus, not real realized deals."],
         limitations=[
@@ -5872,6 +5897,13 @@ _MANUAL: List[PageContext] = [
             "What did the top-quartile deals do differently?",
             "Is this corpus illustrative or backed by real fund data?",
         ],
+        inputs=["Illustrative seed-deal corpus + outcome labels."],
+        outputs=["Attribution patterns by outcome band; top-quartile "
+                 "vs bottom-quartile lever comparison."],
+        key_metrics=["Lever attribution variance", "Outcome distribution"],
+        diligence_use_cases=["Teaching the value-creation playbook "
+                             "from corpus patterns to apply to "
+                             "future deals."],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus — directional, not real outcomes."],
         limitations=[
@@ -6331,6 +6363,13 @@ _MANUAL: List[PageContext] = [
             "How does this differ from /pipeline?",
             "Can I filter by owner or sector here?",
         ],
+        inputs=["Active deals from the deal store with stage + "
+                "stage_entered_at + owner/sector filters."],
+        outputs=["Stage-by-stage funnel counts + SLA-flag list."],
+        key_metrics=["Active deal count", "Stage conversion rate",
+                     "SLA-stalled count"],
+        diligence_use_cases=["Weekly partner-of-record review of the "
+                             "active deal funnel."],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["YOUR deals, not the market or seed corpus."],
         limitations=[
@@ -6360,6 +6399,13 @@ _MANUAL: List[PageContext] = [
             "Where do I add a new deal?",
             "How does this differ from /pipeline?",
         ],
+        inputs=["Deal records from the deal store; filter inputs "
+                "(stage, sector, owner, archive flag)."],
+        outputs=["Filtered/sorted deal list + bulk-action toolbar."],
+        key_metrics=["Deal count", "By stage / sector / owner"],
+        diligence_use_cases=["Day-to-day pipeline management: "
+                             "filtering to a slice for an owner "
+                             "review or bulk-archive sweep."],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["YOUR deals — real workspace data."],
         limitations=[
@@ -6388,6 +6434,12 @@ _MANUAL: List[PageContext] = [
             "How is this different from /global-search?",
             "Why aren't my recent deals appearing?",
         ],
+        inputs=["Search query; archive-toggle; column scope "
+                "(name, sponsor, sector, owner)."],
+        outputs=["Ranked deal hits with quick-open links."],
+        key_metrics=["Hit count", "Result rank"],
+        diligence_use_cases=["Quickly opening a specific deal "
+                             "page from the keyboard."],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["Searches your own deals, not the market/corpus."],
         limitations=[
@@ -6535,6 +6587,12 @@ _MANUAL: List[PageContext] = [
             "Where do I see the refresh cadence per dataset?",
             "What's the difference between this page and /data?",
         ],
+        inputs=["The data-source registry; category filter."],
+        outputs=["A grouped catalog of real public datasets with "
+                 "consumer-page links."],
+        key_metrics=["Source count by category", "Pages per source"],
+        diligence_use_cases=["Tracing a Guide-cited number back to "
+                             "its public-data source."],
         data_sources=["The data-source registry (real public datasets)."],
         interpretation_guidance=["A catalog of real sources — see each source's card for detail."],
         limitations=[
@@ -6564,6 +6622,14 @@ _MANUAL: List[PageContext] = [
             "Can the Guide search inside uploaded documents?",
             "How is access controlled per deal?",
         ],
+        inputs=["Uploaded deal documents (PDF, XLSX, CSV); deal-tag "
+                "assignment."],
+        outputs=["Document list with deal/tag, type, upload date, "
+                 "and extraction status."],
+        key_metrics=["Document count", "Extraction coverage %"],
+        diligence_use_cases=["Document-by-document review during a "
+                             "diligence sweep — locating the source "
+                             "behind a packet figure."],
         data_sources=["Your uploaded deal documents (real, your workspace)."],
         interpretation_guidance=["Your real deal documents — not market data."],
         limitations=[
@@ -6925,6 +6991,10 @@ _MANUAL: List[PageContext] = [
         inputs=["A dataset fixture (full pipeline) OR live deal inputs "
                 "(standalone regulatory/covenant/bridge/HCRIS extractors)."],
         outputs=["Ranked risk evidence by theme + an IC-memo bear-case preview."],
+        key_metrics=["EBITDA-at-risk $", "Risk-theme rank",
+                     "Bear-case headline"],
+        diligence_use_cases=["Forcing the downside view into the IC "
+                             "memo before the committee meeting."],
         data_sources=["Fixture-driven runs are ILLUSTRATIVE; standalone runs "
                       "use real public extractors (HCRIS, regulatory). Mixed."],
         model_logic_summary="Aggregates evidence from the thesis pipeline / "
@@ -9701,9 +9771,18 @@ _GUIDE_BACKFILL = [
             "Where do I download the import templates?",
             "Who typically owns each piece of data I need to request?",
         ],
+        inputs=["The DATA_REQUIRED PageContext registry; activation "
+                "state per page."],
         outputs=["A catalog of data-required surfaces with the input each needs."],
-        key_metrics=[], data_sources=["Your uploaded deal/fund data (none is "
-                                      "fabricated — surfaces stay inert until fed)."],
+        key_metrics=[
+            "Total DR surfaces", "Activated count", "Outstanding requests",
+        ],
+        diligence_use_cases=[
+            "Building the P0 data-request list at the start of a "
+            "diligence engagement.",
+        ],
+        data_sources=["Your uploaded deal/fund data (none is "
+                      "fabricated — surfaces stay inert until fed)."],
         why_it_matters="A data-gated tool is useless if you don't know what it "
         "wants — this removes that friction.",
         interpretation_guidance=[
