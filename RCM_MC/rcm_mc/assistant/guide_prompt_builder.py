@@ -399,6 +399,22 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     if strengths
                     else ""
                 )
+                # related_metrics tells the model WHICH metrics this
+                # source materially feeds (e.g. cms_hcris ↔
+                # operating_margin, bed_count, cost_per_adjusted_discharge).
+                # PR #1304 + PR #1321 wired the missing back-fill on
+                # 6 sources; the remaining ~20 system-meta sources
+                # legitimately have empty lists. Surfacing only when
+                # non-empty avoids an awkward "feeds: " trailing clause.
+                rel_m = [
+                    str(v).strip() for v in (s.related_metrics or [])
+                    if str(v).strip()
+                ]
+                rel_m_line = (
+                    f" Feeds metrics: {', '.join(rel_m)}."
+                    if rel_m
+                    else ""
+                )
                 # Source values commonly end in a period (the registry
                 # convention); strip those trailing punctuation marks via
                 # _dot() before composing so the template's own clause
@@ -416,6 +432,7 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     f"freshness lag: {lag}. "
                     f"Limitations: {limitations}."
                     f"{strengths_line}"
+                    f"{rel_m_line}"
                     f"{prov_line}"
                     f"{ic_line}"
                 )
