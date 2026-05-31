@@ -1443,9 +1443,13 @@ _MANUAL: List[PageContext] = [
         data_sources=["A canonical claims dataset (fixtures on this page), the "
                       "public transaction/comps corpus, and model outputs; "
                       "deal metadata is user-entered."],
-        model_logic_summary="Appears to orchestrate the analysis pipeline and "
-        "compose the result into IC sections. Exact stage math: needs source "
-        "documentation — do not state specifics not shown in source.",
+        model_logic_summary=(
+            "Composes the IC packet from the deal's analysis-packet "
+            "stages (RCM KPIs + cash waterfall, bankruptcy-survivor "
+            "scan, counterfactual advisor, peer comps + transaction "
+            "multiple, historical deal-autopsy match). Each section "
+            "renders the same underlying outputs the standalone "
+            "diligence pages show — packet orchestration, not new math."),
         why_it_matters="It concentrates the whole deal case into the artifact "
         "a committee actually reads.",
         diligence_use_cases=["Drafting the IC narrative and pressure-testing "
@@ -1542,9 +1546,14 @@ _MANUAL: List[PageContext] = [
                      "Days in A/R"],
         data_sources=["A canonical claims dataset (fixture-based here) + "
                       "user-entered memo metadata."],
-        model_logic_summary="Ingests the claims dataset, computes a KPI bundle "
-        "and a cash waterfall (and optional counterfactuals), then renders the "
-        "memo. Exact KPI/waterfall math: needs source documentation.",
+        model_logic_summary=(
+            "Reads claims rows, computes the standard RCM KPI bundle "
+            "(NCR, GCR, days_in_AR, denial_rate, clean_claim_rate) "
+            "using the metric definitions on each MetricContext card, "
+            "and builds a cash-waterfall from charges → adjustments → "
+            "payments → AR over the cohort months in the dataset. "
+            "Optional counterfactual scenarios reapply the KPIs with "
+            "the entered shock."),
         why_it_matters="QoE is the earnings-quality backbone of financial "
         "diligence; this drafts that memo from claims data.",
         diligence_use_cases=["Drafting the QoE deliverable and reviewing "
@@ -1635,11 +1644,14 @@ _MANUAL: List[PageContext] = [
         data_sources=["A claims dataset (fixture on this page) + deal "
                       "metadata; downstream analytics add model outputs and "
                       "corpus lookups."],
-        model_logic_summary="Appears to chain multiple analytics (ingest, "
-        "benchmarks, denial prediction, bankruptcy scan, counterfactual, "
-        "attrition, autopsy, market intel, scenario assembly, Monte Carlo, "
-        "checklist) where each step is optional and failures short-circuit "
-        "only that step. Exact step math: needs source documentation.",
+        model_logic_summary=(
+            "Pipelines the deal through 10 analytic stages in order: "
+            "ingest → benchmarks → denial prediction → bankruptcy "
+            "scan → counterfactual → attrition → autopsy → market "
+            "intel → scenario assembly → Monte Carlo. Each stage's "
+            "output feeds the next; a stage failure short-circuits "
+            "only that stage and logs it. Final output is a "
+            "single-page deep-link map plus headline numbers."),
         why_it_matters="Collapses the multi-tool diligence workflow into one "
         "orchestrated run with a single headline read.",
         diligence_use_cases=["A fast full-chain pass early in diligence, then "
@@ -1882,9 +1894,13 @@ _MANUAL: List[PageContext] = [
                      "P(MOIC≥3x)"],
         data_sources=["User-supplied assumptions + model-simulated paths "
                       "(CCD-native when a fixture is picked)."],
-        model_logic_summary="Appears to draw stochastic paths over each lever "
-        "and aggregate to MOIC/IRR/EBITDA distributions. Exact driver "
-        "distributions: needs source documentation.",
+        model_logic_summary=(
+            "Draws N simulated paths (default ~10k) where each path "
+            "samples revenue growth, EBITDA margin, denial "
+            "improvement, regulatory headwind, and exit multiple "
+            "from their entered mean/σ; the deal LBO math computes "
+            "MOIC/IRR/EBITDA per path. Distributions aggregate "
+            "across paths into P50/P75 and tail bands."),
         why_it_matters="Communicates uncertainty around the base case — the "
         "tail, not just the median.",
         diligence_use_cases=["Stress-reading the downside distribution before "
@@ -1973,9 +1989,13 @@ _MANUAL: List[PageContext] = [
                      "Simulated paths", "Covenant cushion"],
         data_sources=["User capital-structure inputs + model-simulated EBITDA "
                       "paths."],
-        model_logic_summary="Appears to compose simulated EBITDA paths with "
-        "per-covenant breach-probability curves by quarter. Exact path/curve "
-        "math: needs source documentation.",
+        model_logic_summary=(
+            "Simulates per-quarter EBITDA paths from entered Y0 + "
+            "growth + volatility (geometric Brownian draws). For each "
+            "covenant, computes the share of paths breaching at each "
+            "quarter, reports the peak-breach % and the earliest "
+            "quarter where ≥50% of paths breach. Cure $ is "
+            "median path EBITDA gap × covenant denominator."),
         why_it_matters="Covenant headroom is a primary downside-risk lens in a "
         "levered deal.",
         diligence_use_cases=["Pressure-testing leverage and covenant package "
@@ -2020,9 +2040,13 @@ _MANUAL: List[PageContext] = [
                      "Probability-weighted proceeds"],
         data_sources=["User inputs + model-simulated year bands + market-intel "
                       "peer multiples + historical buyer patterns."],
-        model_logic_summary="Appears to combine Deal-MC year-band "
-        "distributions with buyer-type multiple/closing assumptions to rank "
-        "exit paths. Exact scoring: needs source documentation.",
+        model_logic_summary=(
+            "For each hold-year (Y3-Y7), takes the Deal-MC EBITDA "
+            "distribution and applies peer multiples per buyer type "
+            "(strategic, sponsor, public) plus close-certainty "
+            "discounts. Ranks the year × buyer pairs by "
+            "probability-weighted proceeds. The 'optimal' year "
+            "maximizes proceeds × close-certainty."),
         why_it_matters="Exit timing and buyer fit are major IRR levers late in "
         "the hold.",
         diligence_use_cases=["Framing a base exit plan and the buyer "
@@ -2116,10 +2140,13 @@ _MANUAL: List[PageContext] = [
                      "Recommended EBITDA haircut"],
         data_sources=["A demo executive roster (illustrative) + user-supplied "
                       "target name / guidance EBITDA."],
-        model_logic_summary="Scores each executive on four dimensions, applies "
-        "a red-flag override, aggregates, and derives a bridge haircut. The "
-        "scoring inputs are the judgment; exact weights: needs source "
-        "documentation.",
+        model_logic_summary=(
+            "Per executive: weighted average across the four "
+            "dimension scores (forecast reliability, comp structure, "
+            "tenure, reputation); a red-flag override caps the "
+            "per-exec score regardless of the average. Roster "
+            "aggregate is the weighted mean of per-exec scores, then "
+            "mapped through a 0-100 → 0-X% haircut function."),
         why_it_matters="Management quality is a core qualitative diligence "
         "axis and a real EBITDA-bridge input.",
         diligence_use_cases=["Structuring the management assessment and its "
@@ -2159,10 +2186,14 @@ _MANUAL: List[PageContext] = [
         key_metrics=["Flight-risk probability", "EBITDA at risk",
                      "Provider productivity"],
         data_sources=["A provider roster (demo fixture) scored by a model."],
-        model_logic_summary="Appears to extract per-provider features and "
-        "score an 18-month flight-risk probability (logistic regression), with "
-        "feature contributions. Exact coefficients: needs source "
-        "documentation.",
+        model_logic_summary=(
+            "Logistic regression on entered per-provider features "
+            "(tenure, age, collections trend, local competition, "
+            "employment type) → 18-month flight-risk probability; "
+            "per-provider feature contributions are returned. EBITDA-"
+            "at-risk = flight-prob × provider collections × margin. "
+            "Coefficients are platform defaults; real-deal scoring "
+            "would calibrate against the target's historical attrition."),
         why_it_matters="In provider-group deals, physician retention is a "
         "first-order driver of post-close revenue.",
         diligence_use_cases=["Prioritizing retention/comp focus on the highest "
@@ -9402,6 +9433,13 @@ _GUIDE_BACKFILL = [
             "with /diligence/regulatory-calendar for live rulemaking."],
         limitations=["A calendar of scheduled events; the dollar impact on a "
                      "specific target still needs the deal's payer mix."],
+        model_logic_summary=(
+            "No model — surfaces the curated cliff schedule from "
+            "pe_intelligence's reimbursement-cliff library, plots each "
+            "event on a timeline, and tags magnitude bands. The "
+            "Guide can answer when each cliff hits and the headline "
+            "impact category; deal-specific dollar conversion happens "
+            "downstream in the bridge."),
         related_routes=["/diligence/regulatory-calendar", "/diligence"],
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
@@ -9433,6 +9471,12 @@ _GUIDE_BACKFILL = [
             "Module groupings reflect the toolkit's authored taxonomy, "
             "not a curation judgment of which tools matter most."],
         limitations=["A catalog/navigation surface — not an analytic output."],
+        model_logic_summary=(
+            "No model — enumerates the ~222 modules in the "
+            "pe_intelligence module registry, groups them by "
+            "category and tag, and supports text search across "
+            "module names and docstrings. Each result links to "
+            "/diligence/pe-tool to execute against the active deal."),
         related_routes=["/diligence/pe-tool", "/diligence/pe-reference",
                         "/diligence"],
         metric_ids=[], data_source_ids=[],
@@ -9466,6 +9510,12 @@ _GUIDE_BACKFILL = [
             "Playbook/trap entries are editorial — partner judgment "
             "still applies to which apply to this target."],
         limitations=["Reference knowledge, not deal-specific computed output."],
+        model_logic_summary=(
+            "No model — surfaces the curated reference libraries "
+            "marked deal-independent in pe_intelligence (playbooks, "
+            "partner-trap catalogs, reference taxonomies). Content "
+            "is read-only editorial knowledge curated upstream; the "
+            "page does no computation, just retrieval and rendering."),
         related_routes=["/diligence/pe-library", "/diligence/pe-tool"],
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
@@ -9497,6 +9547,12 @@ _GUIDE_BACKFILL = [
             "deal's packet likely lacks a required input — check the "
             "checklist on /diligence/checklist."],
         limitations=["Output is only as good as the deal packet's completeness."],
+        model_logic_summary=(
+            "Imports the chosen pe_intelligence module dynamically, "
+            "passes the active deal's analysis packet as input, and "
+            "renders the module's returned dict/list/dataframe in "
+            "the page. The page itself does no math — it's the "
+            "runner shell; the math lives in the selected module."),
         related_routes=["/diligence/pe-library", "/diligence/deal"],
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
