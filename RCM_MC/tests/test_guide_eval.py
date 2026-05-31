@@ -43,10 +43,15 @@ class FixedSetsTests(unittest.TestCase):
                       QUESTIONS)
         self.assertIn("What other metrics is this paired with?",
                       QUESTIONS)
-        self.assertEqual(len(ROUTES), 10)
+        # PR #1297 extended the route baseline 10 → 15 so the eval
+        # matrix exercises one route per major PageContextCategory.
+        self.assertEqual(len(ROUTES), 15)
         for r in ("/app", "/diligence/hcris-xray", "/metric-glossary",
                   "/rcm-benchmarks", "/diligence/deal-mc",
-                  "/sponsor-track-record"):
+                  "/sponsor-track-record",
+                  # 2026-05-31 additions — category coverage
+                  "/lp-dashboard", "/ma-contracts", "/target-screener",
+                  "/geo-intel", "/cms-sources"):
             self.assertIn(r, ROUTES)
         self.assertEqual(MODES, ("packet_only", "rag"))
 
