@@ -5406,6 +5406,11 @@ _MANUAL: List[PageContext] = [
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; defaults are "
                                 "illustrative, not a specific ACO's results."],
+        limitations=[
+            "Calculator only — no live MSSP / REACH benchmark feed; "
+            "the savings rate is whatever assumption is entered.",
+            "Quality bonus and risk-track economics are simplified — "
+            "consult the CMS APM specifications for the production formula."],
         related_routes=["/cms-apm", "/risk-adjustment"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5422,6 +5427,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; illustrative defaults."],
+        limitations=[
+            "Frames a trade-off using entered macro/sector assumptions — "
+            "the answer mechanically reflects those defaults unless they "
+            "are overridden with current rate/multiple expectations.",
+            "Not a forecast — useful as a structured timing prompt, not "
+            "as a market call."],
         related_routes=["/entry-multiple", "/hold-optimizer"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5439,6 +5450,12 @@ _MANUAL: List[PageContext] = [
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; illustrative defaults, "
                                 "not a specific deal."],
+        limitations=[
+            "Accretion math is mechanical on entered platform-multiple, "
+            "bolt-on multiple, and synergy run-rate; integration risk "
+            "and disynergies are not modeled.",
+            "Multiple-arb at exit assumes the platform multiple holds — "
+            "doesn't model a multiple compression scenario by default."],
         related_routes=["/rollup-economics", "/entry-multiple"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5455,6 +5472,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs."],
+        limitations=[
+            "Structure illustrative — the actual senior/sub/mezz pricing "
+            "and OID economics depend on lender quotes; this page lets you "
+            "sketch a structure, not negotiate it.",
+            "Doesn't model refinancing frictions (call premia, makewhole) "
+            "or covenant ratchets explicitly."],
         related_routes=["/debt-service", "/covenant-headroom"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5471,6 +5494,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs."],
+        limitations=[
+            "Aggregate efficiency view — sector benchmarks for ROIC are "
+            "narrow and vary by sub-vertical; reading the result against "
+            "a peer cohort matters more than the absolute number.",
+            "Cash conversion and capex assumptions drive most of the "
+            "swing; small input changes can move the ratio materially."],
         related_routes=["/cap-structure", "/reinvestment"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5528,6 +5557,13 @@ _MANUAL: List[PageContext] = [
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Scores the illustrative corpus — not this "
                                 "market's real deals; use as a structural benchmark."],
+        limitations=[
+            "Scores an ILLUSTRATIVE seed corpus, not your live pipeline "
+            "— use as a structural benchmark for what 'grade A vs C' "
+            "looks like; not a live deal grader.",
+            "Grade weights are heuristic and stable across the corpus; "
+            "a real-deal scorer would need calibration against partner "
+            "judgment on a labeled sample."],
         related_routes=["/deal-risk-scores", "/corpus-dashboard"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
