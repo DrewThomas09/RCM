@@ -743,8 +743,9 @@ _PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
     "cms_care_compare": ["cms hospital compare"],
     "cms_ma_geo": ["medicare advantage geo", "cms ma",
                    "ma data", "medicare advantage data"],
-    "civhc_rbp": ["apcd", "reference pricing"],
-    "oig_leie": ["hhs oig", "fraud list", "sanctions list"],
+    "civhc_rbp": ["apcd", "reference pricing", "all payer claims"],
+    "oig_leie": ["hhs oig", "fraud list", "sanctions list",
+                 "oig list", "sanctioned"],
     "cms_partd_drug_spending": ["partd", "part d"],
     "openfda_drug_shortages": ["fda shortage", "shortage",
                                "open fda", "fda shortages"],
@@ -753,15 +754,25 @@ _PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
     # PR #1302: SEC filing variants without dash + common shorthand;
     # VDR variants; physician/professional claims = 837P.
     "sec_edgar": ["10k", "10q", "8k", "annual report",
-                  "quarterly filing"],
+                  "quarterly filing",
+                  "10-k", "10-q", "8-k"],
     "data_room_export": ["vdr", "data-room"],
     "edi_837": ["physician claims", "professional claims"],
     # 2026-05-31 (round 3): more partner spellings probed against the
     # resolver. Each unambiguous (no collision with another source id).
     "cms_chow": ["snf chow", "hospital chow"],
     "cms_open_payments": ["sunshine"],
-    "cms_provider_data_catalog": ["snf rating", "medicare provider"],
+    "cms_provider_data_catalog": ["snf rating", "medicare provider",
+                                   "medicare provider data", "pdc data"],
     "cbsa_crosswalk": ["omb", "metro area", "cbsa data"],
+    # 2026-05-31 (round 4): more partner spellings probed against the
+    # resolver. Each unambiguous; ambiguous ones ('snf data',
+    # 'demographics data', 'cms data') deliberately skipped.
+    "cms_hcahps": ["cahps", "patient experience survey"],
+    "cms_home_health_provider_data": ["home health data", "hh quality"],
+    "cms_hospice_provider_data": ["hospice quality"],
+    "cms_mssp_aco": ["aco data", "shared savings program"],
+    "analysis_run": ["analysis packet", "packet store"],
 }
 for _sid, _als in _PARTNER_SOURCE_ALIAS_EXTENSIONS.items():
     _src = DATA_SOURCE_REGISTRY.get(_sid)
