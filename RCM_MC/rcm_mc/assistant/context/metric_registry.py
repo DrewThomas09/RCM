@@ -1794,10 +1794,13 @@ for _cm in _COVERAGE_METRICS:
     METRIC_REGISTRY.setdefault(_cm.metric_id, _cm)
 
 # Synonym aliases → existing metrics (unambiguous; each maps to exactly one).
+# NOTE: each key appears ONCE. Python dict literals overwrite on duplicate
+# keys, which silently drops aliases. PR #1310 merged 4 duplicate keys
+# (moic, days_in_ar, capex_intensity, denial_rate) that had been lost
+# through the round-1 → round-2 alias additions.
 _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
-    "moic": ["weighted moic", "p50 moic", "median moic"],
+    # PR #1275 / earlier rounds — base aliases + glossary mappings.
     "irr": ["weighted irr", "median irr", "after-tax irr"],
-    "days_in_ar": ["days in ar"],
     "value_creation_opportunity": ["value-creation opportunity", "value-creation"],
     # 2026-05-31: connect the partner-facing /metric-glossary keys to
     # their registry counterparts so the Guide recognizes them too.
@@ -1813,36 +1816,35 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
                           "medicaid_day_pct"],
     "commercial_payer_exposure": ["commercial pct", "commercial day %",
                                   "commercial_pct"],
-    # PR #1300: 22 partner-spelled metric aliases discovered by probing
-    # 'partner says X — does the Guide resolve it?'. Each maps
-    # to an existing registry id; ambiguous terms (e.g. 'churn',
-    # 'attrition' without 'physician' qualifier) are deliberately NOT
-    # aliased to avoid wrong-metric matches.
+    # PR #1300 + #1303 + #1310: 30+ partner-spelled metric aliases
+    # discovered by probing the resolver with real partner phrasings.
+    # Each unambiguous; ambiguous terms ('churn', 'attrition' without
+    # 'physician', 'acuity', 'ctc') are deliberately omitted.
     "revenue": ["npsr", "net patient service revenue", "topline"],
     "revenue_growth": ["rev growth", "sales growth"],
-    "capex_intensity": ["capex", "capital expenditure"],
-    "denial_rate": ["denial"],
     "leverage": ["leverage ratio", "debt ratio"],
     "ev_to_ebitda": ["ev multiple", "ev mult"],
-    "moic": ["cash multiple"],
-    "dpi": ["distribution multiple"],
+    "moic": ["weighted moic", "p50 moic", "median moic", "cash multiple"],
+    "dpi": ["distribution multiple", "distributions to paid in"],
     "cms_star_rating": ["cms star", "cms rating", "hospital star",
                         "snf rating", "star"],
-    # PR #1303: round 2 — partner spellings still missing after round 1,
-    # discovered by probing the resolver with more partner phrasings.
-    # Each is unambiguous (no collision with another registry id) and
-    # maps to one canonical metric; ambiguous candidates like 'fpr' alone
-    # or 'acuity' are deliberately omitted.
     "net_collection_rate": ["net collection", "collection ratio",
                             "cash collection ratio"],
     "gross_collection_rate": ["gross collection"],
     "bad_debt_rate": ["bdr", "bad debts"],
     "underpayment_rate": ["underpayment"],
-    "days_in_ar": ["days ar", "a/r days", "days a/r"],
+    "days_in_ar": ["days in ar", "days ar", "a/r days", "days a/r"],
     "payer_mix": ["payer split", "payor split", "pay mix"],
     "clean_claim_rate": ["fpy", "first pass", "first-pass"],
-    "denial_rate": ["denials rate", "claim denials", "denial pct"],
-    "capex_intensity": ["cap ex", "capex %", "capex pct"],
+    "denial_rate": ["denial", "denials rate", "claim denials",
+                    "denial pct", "denied claims", "denial volume"],
+    "capex_intensity": ["capex", "capital expenditure", "cap ex",
+                        "capex %", "capex pct"],
+    # PR #1310: round-3 metric aliases — newly probed misses.
+    "physician_attrition": ["physician attrition rate", "md attrition",
+                            "physician churn"],
+    "days_cash_on_hand": ["cash on hand", "cash position"],
+    "referral_leakage": ["patient leakage", "referral leak"],
 }
 for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
     _o = METRIC_REGISTRY.get(_mid)
