@@ -6524,6 +6524,19 @@ for _route, _title, _upload, _who, _activates, _tmpl in _DATA_REQUIRED_GUIDE:
             f"Request the data from: {_who}.",
             "Figures currently shown are an illustrative scaffold, NOT this deal's values.",
         ],
+        # 2026-05-30: every DATA_REQUIRED page shares two real
+        # limitations. The earlier loop default left [_NEEDS] —
+        # replace it with the same template that the rest of the
+        # fields use, so the Guide can honestly answer "what should
+        # I be careful about here" without the placeholder string.
+        limitations=[
+            f"Only as complete as the uploaded {_upload} — sparse or "
+            "stale data degrades every downstream computation on this "
+            "page.",
+            f"Until that data lands, the values shown are an "
+            "illustrative scaffold — they are NOT this deal's "
+            "figures and must not be cited as such.",
+        ],
         # 2026-05-30: every DATA_REQUIRED page benefits from the same two
         # universal siblings — /diligence/checklist is where outstanding
         # uploads register as P0 blockers, and /tools is the index where
