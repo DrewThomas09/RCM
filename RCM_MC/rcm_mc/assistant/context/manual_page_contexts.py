@@ -5308,6 +5308,16 @@ _MANUAL: List[PageContext] = [
             "Why are some values missing — should I impute them?",
             "How does this differ from /payer-shift?",
         ],
+        inputs=["No user inputs — this is a transparency view on "
+                "the committed CIVHC CO APCD cost-of-care snapshot."],
+        outputs=["PPPY spend by payer type and year as a time "
+                 "series, with NaNs preserved (never zero-imputed)."],
+        diligence_use_cases=[
+            "Showing IC how commercial vs Medicaid PPPY actually "
+            "moved in a real all-payer market over the trend window.",
+            "Anchoring a payer-rate forecast to the observed CO "
+            "APCD trajectory rather than a national average.",
+        ],
         data_sources=["CIVHC CO APCD public cost-of-care (committed snapshot)."],
         key_metrics=["PPPY spend by payer type", "% change over years"],
         interpretation_guidance=[
@@ -5987,6 +5997,22 @@ _MANUAL: List[PageContext] = [
             "Are the MSA-level operators in this page real or illustrative?",
             "How do I use this for thesis-driven sourcing?",
         ],
+        inputs=["Illustrative MSA-operator shares used as the "
+                "structural lens (HHI/CR3/CR5 compute off these).",
+                "State scope so the real CMS CHOW consolidation "
+                "panel anchors to the right market."],
+        outputs=["HHI / CR3 / CR5 with a DOJ concentration band "
+                 "(unconcentrated / moderate / concentrated) + the "
+                 "real CMS CHOW consolidation backdrop by state."],
+        key_metrics=["HHI (DOJ bands)", "CR3", "CR5",
+                     "CMS CHOW filings by state (real)"],
+        diligence_use_cases=[
+            "Screening MSAs for rollup whitespace where structure "
+            "is fragmented and CHOW activity confirms a roll-up "
+            "is feasible.",
+            "Framing antitrust risk for a planned MSA-level "
+            "consolidation against the real CHOW backdrop.",
+        ],
         data_sources=["Illustrative MSA HHI/operator detail (labeled) + real CMS CHOW "
                       "(5,141 SNF + 755 hospital)."],
         interpretation_guidance=["MSA tables are the structural lens (illustrative).",
@@ -6012,6 +6038,24 @@ _MANUAL: List[PageContext] = [
             "Where does the CMS MA enrollment panel come from?",
             "What's a healthy payer mix to underwrite to?",
             "How does this differ from /provider-network's payer HHI?",
+        ],
+        inputs=["Entered top-payer revenue shares (one per payer) "
+                "for the deal — these are what CR1/CR3/HHI compute "
+                "off of.",
+                "State scope so the CMS MA enrollment overlay "
+                "anchors to the right market."],
+        outputs=["CR1 (top-payer share), CR3 (top-3 sum), and HHI "
+                 "(× 10,000) for the entered roster + the real CMS "
+                 "MA geographic enrollment market backdrop."],
+        key_metrics=["CR1 (top-payer concentration)",
+                     "CR3 (top-3 concentration)",
+                     "HHI (sum of squared shares × 10,000)",
+                     "MA enrollment by state (real)"],
+        diligence_use_cases=[
+            "Sizing single-payer-loss revenue risk on a deal whose "
+            "top payer is >30% of revenue.",
+            "Comparing the deal's payer concentration to the real "
+            "MA-market structure of the state it operates in.",
         ],
         data_sources=["Illustrative payer roster/renewals/denials (labeled) + real "
                       "CMS MA geographic enrollment (29.7M)."],
@@ -6121,6 +6165,25 @@ _MANUAL: List[PageContext] = [
             "Is the contract book on this page real or illustrative scaffold?",
             "Where do I find the actual rate sheets?",
         ],
+        inputs=["Entered contract roster (payer, %-of-Medicare, "
+                "escalator clause, renewal date) for each top "
+                "payer in the deal's book.",
+                "State scope so the CIVHC %-of-Medicare benchmark "
+                "anchors to the right market."],
+        outputs=["A renegotiation-leverage ranking of the entered "
+                 "contracts (upcoming-renewal × escalator gap) + "
+                 "the real CIVHC %-of-Medicare benchmark for "
+                 "negotiation anchor."],
+        key_metrics=["Contract %-of-Medicare (entered)",
+                     "Escalator gap vs benchmark",
+                     "Upcoming-renewal leverage",
+                     "CIVHC %-of-Medicare benchmark (real)"],
+        diligence_use_cases=[
+            "Prioritizing which payer renegotiation creates the "
+            "most rate uplift over the hold.",
+            "Anchoring negotiation asks to the observed CIVHC "
+            "commercial-%-of-Medicare distribution.",
+        ],
         data_sources=["Illustrative contract book/negotiations/escalators (labeled) + "
                       "real CIVHC / CO APCD reference-based pricing."],
         interpretation_guidance=["Contract book is illustrative scaffold.",
@@ -6208,6 +6271,22 @@ _MANUAL: List[PageContext] = [
             "What's the revenue uplift from moving HCAHPS one band?",
             "Where are this facility's actual scores in the body?",
             "What drives complaint volume — is it specialty-specific?",
+        ],
+        inputs=["Entered NPS, complaint-rate, and service-recovery-"
+                "cost assumptions plus the deal's volume.",
+                "State scope so the CMS HCAHPS top-box benchmark "
+                "panel anchors to the right market."],
+        outputs=["Revenue-uplift estimate from moving up one HCAHPS "
+                 "experience band on the entered assumptions + the "
+                 "real CMS HCAHPS top-box panel by state."],
+        key_metrics=["Revenue uplift per HCAHPS band move ($)",
+                     "NPS (entered)",
+                     "HCAHPS top-box by state (real)"],
+        diligence_use_cases=[
+            "Sizing the experience-uplift value-creation lever for "
+            "a facility with below-state HCAHPS scores.",
+            "Stress-testing a service-recovery investment against "
+            "the band-move it would have to deliver.",
         ],
         data_sources=["Illustrative NPS/complaint model (labeled) + real CMS HCAHPS "
                       "state top-box (overall 9-10, would-recommend)."],
@@ -6371,6 +6450,22 @@ _MANUAL: List[PageContext] = [
             "How does QPA (qualifying payment amount) cap revenue?",
             "Where does the CIVHC OON/QPA benchmark come from?",
             "Which specialties face the highest NSA exposure?",
+        ],
+        inputs=["Entered OON volume, balance-bill rate, and IDR-"
+                "win-probability assumptions for the deal.",
+                "State / specialty scope so the CIVHC %-of-Medicare "
+                "QPA benchmark anchors to the right market."],
+        outputs=["Post-NSA OON exposure estimate ($) under the "
+                 "entered assumptions + the real CIVHC commercial-"
+                 "%-of-Medicare benchmark IDR arbitrators reference."],
+        key_metrics=["Post-NSA OON exposure ($)",
+                     "IDR-win probability (entered)",
+                     "QPA benchmark from CIVHC (real)"],
+        diligence_use_cases=[
+            "Sizing No-Surprises-Act revenue risk for an OON-"
+            "heavy specialty (anesthesia, ED, radiology) deal.",
+            "Pressure-testing the IDR strategy against the real "
+            "CIVHC QPA distribution arbitrators benchmark to.",
         ],
         data_sources=["Illustrative OON volume/balance-bill/IDR (labeled) + real CIVHC "
                       "commercial-%-of-Medicare distribution."],
