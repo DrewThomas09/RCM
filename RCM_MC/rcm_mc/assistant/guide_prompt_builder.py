@@ -176,10 +176,23 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
             if compact:
                 out.append(f"- {m.label} ({m.metric_id})")
             else:
+                # common_misread is the highest-leverage field per token: one
+                # tight sentence describing the classic mistake when reading
+                # this number. Include it directly so the model doesn't have
+                # to fish it out of RAG retrieval. Guard against the legacy
+                # placeholder so we never push "Needs source documentation."
+                # into the prompt.
+                misread = (m.common_misread or "").strip()
+                misread_line = (
+                    f" Common misread: {misread}"
+                    if misread and "needs source" not in misread.lower()
+                    else ""
+                )
                 out.append(
                     f"- {m.label} ({m.metric_id}): {m.definition} "
                     f"Formula: {m.formula} [{m.formula_confidence.value}]. "
-                    f"Why it matters: {m.why_it_matters} "
+                    f"Why it matters: {m.why_it_matters}"
+                    f"{misread_line} "
                     f"Caveats: {'; '.join(m.caveats) if m.caveats else 'none'}"
                 )
 
