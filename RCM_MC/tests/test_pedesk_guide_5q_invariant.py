@@ -193,6 +193,66 @@ class TestNoNeedsPlaceholderInListFields(unittest.TestCase):
         )
 
 
+class TestMetricsHaveRealCommonMisread(unittest.TestCase):
+    """Every MetricContext should carry a real common_misread sentence
+    rather than the "Needs source documentation." placeholder default.
+    `common_misread` IS sent to the Ollama Guide as part of the metric
+    context block, so a placeholder degrades every answer about that
+    metric. The misread-patches series (#1257-#1258) drove all 81
+    metrics from placeholder to real; this guards against a regression
+    that adds a new metric without supplying a real common_misread on
+    the _m() call."""
+
+    _PLACEHOLDER = "needs source"
+
+    def test_no_metric_common_misread_is_placeholder(self):
+        offenders = sorted(
+            mid for mid, m in METRIC_REGISTRY.items()
+            if self._PLACEHOLDER in (m.common_misread or "").lower()
+        )
+        self.assertFalse(
+            offenders,
+            "Metrics with placeholder common_misread — supply a real, "
+            "metric-specific common_misread on the _m() call (or add "
+            "an entry to _MISREAD_PATCHES):\n  " + "\n  ".join(offenders),
+        )
+
+
+class TestMetricsHaveRelatedMetrics(unittest.TestCase):
+    """Every MetricContext should reference at least one related metric
+    so the Guide can hop between connected concepts (e.g.
+    timely_initiation_of_care → home_health_star_rating).
+    PR #1258 closed the last 6 gaps; this guards against a regression
+    that lands a new metric with no peer pointers."""
+
+    _MIN_RELATED = 1
+
+    def test_no_metric_has_empty_related_metrics(self):
+        empty = sorted(
+            mid for mid, m in METRIC_REGISTRY.items()
+            if not (m.related_metrics or [])
+        )
+        self.assertFalse(
+            empty,
+            "Metrics with no related_metrics — add at least one peer "
+            "concept so the Guide can hop:\n  " + "\n  ".join(empty),
+        )
+
+    def test_related_metrics_resolve(self):
+        """Sanity guard: every related_metrics entry must resolve to a
+        real metric_id — a dangling reference sends the Guide nowhere."""
+        known = set(METRIC_REGISTRY.keys())
+        broken = {}
+        for mid, m in METRIC_REGISTRY.items():
+            bad = [r for r in (m.related_metrics or []) if r not in known]
+            if bad:
+                broken[mid] = bad
+        self.assertFalse(
+            broken,
+            f"Metrics referencing unknown peer metric_ids: {broken}",
+        )
+
+
 class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
     """Every MetricContext should have ≥2 related_routes so the Guide
     can always suggest at least one alternative page when a partner

@@ -531,6 +531,7 @@ _METRICS: List[MetricContext] = [
        "Public benchmark only — not the target's own outcomes; confirm the "
        "agencies in scope match the deal.",
        source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["timely_initiation_of_care", "discharge_to_community"],
        related_routes=["/home-health", "/diligence/benchmarks",
                        "/target-screener"]),
     _m("timely_initiation_of_care", "Timely Initiation of Care",
@@ -541,6 +542,7 @@ _METRICS: List[MetricContext] = [
        "staffing issues.",
        "Process measure, not outcomes or revenue; CMS-reported, not target data.",
        source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["home_health_star_rating", "discharge_to_community"],
        related_routes=["/home-health", "/diligence/benchmarks"]),
     _m("discharge_to_community", "Discharge to Community (HH)",
        ["dtc", "discharge to community rate"],
@@ -549,6 +551,7 @@ _METRICS: List[MetricContext] = [
        "A headline outcome measure for home-health quality.",
        "Risk-standardized public measure; not the target's internal results.",
        source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["home_health_star_rating", "timely_initiation_of_care"],
        related_routes=["/home-health", "/diligence/benchmarks",
                        "/target-screener"]),
     _m("hospice_care_index", "Hospice Care Index",
@@ -560,6 +563,7 @@ _METRICS: List[MetricContext] = [
        "Composite of process/pattern indicators, not outcomes or economics; "
        "CMS-reported, not target data.",
        source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["hospice_composite_process", "visits_in_last_days"],
        related_routes=["/hospice", "/diligence/benchmarks",
                        "/target-screener"]),
     _m("hospice_composite_process", "Hospice Composite Process Measure",
@@ -569,6 +573,7 @@ _METRICS: List[MetricContext] = [
        "A bundled admission-quality signal for hospice diligence.",
        "Process composite, not outcomes; public benchmark, not target actuals.",
        source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["hospice_care_index", "visits_in_last_days"],
        related_routes=["/hospice", "/diligence/benchmarks"]),
     _m("visits_in_last_days", "Hospice Visits in Last Days of Life",
        ["visits last days", "visits in the last days of life"],
@@ -577,6 +582,7 @@ _METRICS: List[MetricContext] = [
        "End-of-life engagement signal relevant to hospice quality/compliance.",
        "Public process measure; not the target's own staffing/visit data.",
        source_types=[_PUB], data_confidence=_PUB,
+       related_metrics=["hospice_care_index", "hospice_composite_process"],
        related_routes=["/hospice", "/diligence/benchmarks"]),
 ]
 
@@ -1127,6 +1133,8 @@ _CAVEAT_PATCHES: Dict[str, List[str]] = {
                             "Needs real balance-sheet/AR data."],
     "net_debt": ["Not all cash is freely available (restricted/escrow) — confirm what's netted.",
                "Feeds leverage and equity value (EV − net debt)."],
+    "health_score": ["A heuristic monitoring composite, not a forecast — pair with the active-alert detail before acting.",
+                     "Weights are documented but subject to calibration review; treat as a directional read."],
 }
 for _mid, _cav in _CAVEAT_PATCHES.items():
     _m_obj = METRIC_REGISTRY.get(_mid)
@@ -1303,6 +1311,174 @@ _MISREAD_PATCHES: Dict[str, str] = {
         "Treating a snapshot rate as the operating norm — seasonal "
         "swings make a single quarter misleading."
     ),
+    # ── Batch 2: operations / CMS / fund / coverage metrics ──
+    "cost_per_adjusted_discharge": (
+        "Comparing across providers without adjusting for acuity — "
+        "CMI-heavy hospitals naturally run higher cost per discharge."
+    ),
+    "labor_cost_ratio": (
+        "Reading a temporary ratio spike as structural when it's "
+        "driven by contract/agency labor that may revert."
+    ),
+    "operating_margin": (
+        "Trusting raw HCRIS operating margin without scrubbing "
+        "filing artifacts (opex >> revenue) that distort the figure."
+    ),
+    "medicare_cost_report_year": (
+        "Treating the 'latest' HCRIS year as current — HCRIS lags "
+        "by a year or more, so newest filing != current quarter."
+    ),
+    "case_mix_index": (
+        "Reading higher CMI as worse efficiency when it usually "
+        "just reflects higher acuity (and justifies higher cost/LOS)."
+    ),
+    "risk_score": (
+        "Treating the composite as a precise probability when it's "
+        "a directional read on weighted underlying flags."
+    ),
+    "data_coverage_score": (
+        "Treating high coverage as 'good data' — coverage of wrong "
+        "or stale fields is still poor data quality."
+    ),
+    "confidence_tier": (
+        "Reading the tier as a probability of being right when it's "
+        "really a measure of how complete the underlying data is."
+    ),
+    "imputation_share": (
+        "Treating imputed values as observed — high imputation means "
+        "the figure leans on priors, not on the target's own data."
+    ),
+    "model_estimate": (
+        "Treating a model estimate as an observed value — every "
+        "estimate carries model error and depends on input quality."
+    ),
+    "benchmark_percentile": (
+        "Reading a percentile as 'good' or 'bad' without naming the "
+        "peer set — the same provider is P50 vs P25 in different sets."
+    ),
+    "bankruptcy_pattern_match": (
+        "Reading similarity to past distress as a prediction of "
+        "failure — it's a screen flag, not a probability."
+    ),
+    "payer_stress_impact": (
+        "Treating the scenario output as a forecast — it's only as "
+        "valid as the rate-cut assumption that drives it."
+    ),
+    "bridge_realization_probability": (
+        "Treating the calibrated probability as a guarantee — "
+        "realisation depends on execution the model can't see."
+    ),
+    "home_health_star_rating": (
+        "Treating the rating as a financial signal — it's a quality "
+        "measure that lags CMS's refresh schedule, not a $ figure."
+    ),
+    "timely_initiation_of_care": (
+        "Reading the rate as outcomes — it's a process measure tied "
+        "to CMS's 2-day window, not a clinical outcome."
+    ),
+    "discharge_to_community": (
+        "Comparing the published rate to a raw ratio — CMS DTC is "
+        "risk-standardised and not directly comparable."
+    ),
+    "hospice_care_index": (
+        "Reading the composite alone — the value lives in the 10 "
+        "underlying indicators that the index aggregates."
+    ),
+    "hospice_composite_process": (
+        "Reading the process measure as an outcome — process (did "
+        "they do it) != outcome (did the patient benefit)."
+    ),
+    "visits_in_last_days": (
+        "Reading the rate as a staffing/volume figure — it's an "
+        "end-of-life engagement signal defined by CMS, not "
+        "the target's internal scheduling data."
+    ),
+    "hhi": (
+        "Comparing HHI without checking the scale — 0-10,000 (%-"
+        "share squares) vs 0-1 (fraction squares) differ 10,000x."
+    ),
+    "concentration_ratio": (
+        "Reading CRn as a complete concentration picture — it "
+        "ignores the distribution below the top N; pair with HHI."
+    ),
+    "dscr": (
+        "Comparing DSCR across credits without confirming the "
+        "numerator definition — EBITDA vs OCF vs EBITDA-capex differ."
+    ),
+    "tvpi": (
+        "Reading TVPI as cash returned — it includes unrealised "
+        "NAV marks that flatter young funds; pair with DPI."
+    ),
+    "dpi": (
+        "Treating low DPI on a young fund as bad — DPI is naturally "
+        "low pre-realisations (the j-curve); judge by fund age."
+    ),
+    "rvpi": (
+        "Reading RVPI as cash — it's a mark on remaining assets "
+        "that only counts once converted via exits."
+    ),
+    "cms_star_rating": (
+        "Treating the rating as a financial metric — it's a CMS-"
+        "composite quality signal that lags CMS's refresh schedule."
+    ),
+    "days_cash_on_hand": (
+        "Reading days-cash alone — undrawn revolver/credit access "
+        "isn't included, so liquidity can look worse than it is."
+    ),
+    "length_of_stay": (
+        "Comparing LOS across providers without case mix — higher "
+        "acuity justifies a longer stay, so raw LOS misleads."
+    ),
+    "readmission_rate": (
+        "Comparing CMS's risk-adjusted rate to a raw ratio — they're "
+        "not the same measure and aren't directly comparable."
+    ),
+    "cost_to_charge_ratio": (
+        "Treating CCR as revenue — charges are list prices, not "
+        "what the payer paid; CCR varies wildly by department."
+    ),
+    "current_ratio": (
+        "Reading the current ratio as liquidity — it's a snapshot "
+        "that ignores timing and revolver access."
+    ),
+    "gross_margin": (
+        "Conflating gross margin with operating or EBITDA margin — "
+        "'cost of services' scope is defined inconsistently."
+    ),
+    "capex_intensity": (
+        "Treating year-to-year capex as smooth — it's lumpy; "
+        "separate maintenance vs growth capex over a multi-year view."
+    ),
+    "fixed_charge_coverage": (
+        "Comparing FCCR across credits without confirming the "
+        "numerator definition — every credit agreement differs."
+    ),
+    "interest_coverage": (
+        "Reading interest coverage as full debt-service capacity — "
+        "it ignores principal amortisation that DSCR/FCCR capture."
+    ),
+    "cash_conversion_cycle": (
+        "Reading CCC as inventory-heavy when most providers are "
+        "essentially an AR/AP story (inventory is small)."
+    ),
+    "net_debt": (
+        "Netting all cash against debt — restricted/escrow cash is "
+        "not freely available and shouldn't reduce net debt."
+    ),
+    "health_score": (
+        "Reading the 0-100 score as a forecast — it's a weighted "
+        "composite of current signals, not a probability of distress."
+    ),
+    "cost_to_collect": (
+        "Comparing cost-to-collect across providers without "
+        "confirming scope — vendor fees / IT / which functions are "
+        "included change the ratio."
+    ),
+    "medicare_spending_per_beneficiary": (
+        "Reading MSPB as a clinical-quality metric — it's a "
+        "spending-efficiency ratio CMS uses for value-based "
+        "programmes, not a patient-outcome measure."
+    ),
 }
 for _mid, _msr in _MISREAD_PATCHES.items():
     _m_obj = METRIC_REGISTRY.get(_mid)
@@ -1377,3 +1553,13 @@ for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
         for _a in _al:
             if _a not in _o.aliases:
                 _o.aliases.append(_a)
+
+# Re-apply _MISREAD_PATCHES so any metrics added by _COVERAGE_METRICS (defined
+# AFTER the patches dict) also get a real common_misread instead of _NEEDS.
+# Idempotent — the guard skips metrics whose common_misread is no longer the
+# placeholder.
+for _mid, _msr in _MISREAD_PATCHES.items():
+    _m_obj = METRIC_REGISTRY.get(_mid)
+    if _m_obj is not None and _msr and (
+            (_m_obj.common_misread or "").strip() == _NEEDS):
+        _m_obj.common_misread = _msr
