@@ -179,6 +179,22 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
         out.append("Page limitations:\n" + _bullets(pc.limitations))
         out.append("Related PEdesk routes:\n" + _bullets(pc.related_routes,
                                                           list_limit))
+        # Route-specific notes_for_assistant — most pages carry only the
+        # standard 3-line _BASE_NOTES (already covered by the system
+        # prompt's policy section). A small set of parameterized pages
+        # (e.g. /my/AT, /diligence/risk-workbench, /market-data/state/CA)
+        # have extra notes describing how the trailing path segment maps
+        # to a parameter or how a ?demo= flag changes the meaning.
+        # _ctx() in manual_page_contexts.py uses the convention
+        # `_BASE_NOTES + custom`, so anything beyond index 3 is the
+        # route-specific layer. Emit only those — surfaces the custom
+        # clarifications without bloating the prompt with the standard
+        # boilerplate that the system prompt already carries.
+        route_notes = list(pc.notes_for_assistant or [])[3:]
+        if route_notes:
+            out.append(
+                "Route-specific assistant notes:\n" + _bullets(route_notes)
+            )
 
     if packet.metric_contexts:
         out.append("--- Metric contexts ---")
