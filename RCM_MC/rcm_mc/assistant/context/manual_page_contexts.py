@@ -10098,6 +10098,40 @@ for _c in _MANUAL:
     if _patch and not _c.metric_ids:
         _c.metric_ids = list(_patch)
 
+# 2026-05-31: Categorize a handful of high-traffic UNKNOWN-category pages
+# whose conceptual section is unambiguous. _ctx() falls back to UNKNOWN
+# when neither the kwarg nor _ROUTE_CATEGORY supplies a category; this
+# post-construction override fixes the gap for the 11 most-obvious pages
+# without touching the 360-entry _MANUAL list or the upstream
+# DISCOVERED_TOOL_ROUTES manifest. The Guide prompt and the partner /tools
+# navigation both surface category, so wrong-or-missing UNKNOWN is a real
+# information loss.
+_CATEGORY_OVERRIDES: Dict[str, PageContextCategory] = {
+    # Diligence hub + universal CCN scanner
+    "/diligence": PageContextCategory.DILIGENCE_WORKSPACE,
+    # Sourcing workbench
+    "/target-screener": PageContextCategory.PIPELINE_SOURCING,
+    # Sector-intel CMS Care-Compare screeners (mirror /home-health pattern)
+    "/nursing-homes": PageContextCategory.RESEARCH_BACKTESTING,
+    "/dialysis": PageContextCategory.RESEARCH_BACKTESTING,
+    "/inpatient-rehab": PageContextCategory.RESEARCH_BACKTESTING,
+    "/long-term-care-hospital": PageContextCategory.RESEARCH_BACKTESTING,
+    # LP / portfolio rollups
+    "/lp-dashboard": PageContextCategory.PORTFOLIO_LP,
+    "/cohorts": PageContextCategory.PORTFOLIO_LP,
+    # Public-data catalogs / reference surfaces
+    "/cms-sources": PageContextCategory.LIBRARY_REFERENCE,
+    "/cms-data-browser": PageContextCategory.LIBRARY_REFERENCE,
+    "/data/catalog": PageContextCategory.LIBRARY_REFERENCE,
+    # Admin / operational health
+    "/admin/data-sources": PageContextCategory.ADMIN_SYSTEM,
+}
+for _c in _MANUAL:
+    _cat = _CATEGORY_OVERRIDES.get(_c.route)
+    if _cat is not None and _c.category == PageContextCategory.UNKNOWN:
+        _c.category = _cat
+
+
 # Newly-added registry metrics (hhi, dscr, tvpi/dpi/rvpi, cms_star_rating, …)
 # — APPEND to each page's links (dedup), so pages that already had links also
 # pick up the now-documentable metric.
