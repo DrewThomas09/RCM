@@ -107,12 +107,14 @@ class PromptBuilderTests(unittest.TestCase):
                          prompt)
 
     def test_user_prompt_collapses_duplicate_desc_and_purpose(self):
-        """52 PageContexts (built via the _BATCH7 / _BATCH8 loops) have
-        short_description == primary_purpose. The prompt builder must
-        emit the line only once when they match, so the prompt doesn't
-        carry a wasted-context duplicate. /biosimilars is one of the
-        canonical 52 with this property."""
-        packet = build_guide_context_packet("/biosimilars")
+        """Many PageContexts (built via the _BATCH7 / _BATCH8 loops)
+        have short_description == primary_purpose by default. The
+        prompt builder must emit the line only once when they match,
+        so the prompt doesn't carry a wasted-context duplicate.
+        /tracker-340b is a remaining dup-pair page (PR #1295 split
+        out 8 analytic pages into distinct purposes, but /tracker-340b
+        is still on the symmetric default)."""
+        packet = build_guide_context_packet("/tracker-340b")
         prompt = build_guide_user_prompt("What is this page?", packet)
         # The single combined label must appear once.
         self.assertEqual(
