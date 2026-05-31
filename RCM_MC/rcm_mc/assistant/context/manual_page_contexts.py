@@ -5800,6 +5800,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["MSA tables are the structural lens (illustrative).",
                                  "CHOW panel is real observed consolidation by state."],
         limitations=["MSA-level HHI/operators are illustrative, not this market."],
+        model_logic_summary=(
+            "Computes Herfindahl on the illustrative MSA-operator "
+            "shares to flag concentrated/moderate/unconcentrated "
+            "structures (DOJ bands); overlays the real CMS CHOW "
+            "panel (5,141 SNF + 755 hospital change-of-ownership "
+            "filings by state) as the real consolidation backdrop."),
         related_routes=["/concentration-risk", "/competitive-intel", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5820,6 +5826,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Concentration metrics compute off YOUR inputs.",
                                  "MA panel is the observed market, NOT this deal's roster."],
         limitations=["Payer roster/renewal/denial detail is illustrative."],
+        model_logic_summary=(
+            "Sorts entered payer revenue shares descending; reports "
+            "CR1 (top payer), CR3 (top 3 sum), and HHI (sum of "
+            "squared shares × 10,000). Overlays the real CMS MA "
+            "geographic enrollment (29.7M lives) as the market "
+            "backdrop. Concentration math is yours; backdrop is real."),
         related_routes=["/payer-contracts", "/payer-rate-trends", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5964,6 +5976,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["NPS/complaint figures are illustrative.",
                                  "HCAHPS panel is the real survey benchmark (not this facility)."],
         limitations=["State-level HCAHPS; national figure = state mean."],
+        model_logic_summary=(
+            "Applies entered NPS / complaint-rate / recovery-cost "
+            "assumptions to the deal's volume to estimate revenue "
+            "uplift from moving up an experience band; overlays the "
+            "real CMS HCAHPS state top-box panel so the band targets "
+            "are grounded in observed survey norms."),
         related_routes=["/quality-scorecard", "/clinical-outcomes"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6084,6 +6102,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["OON/IDR figures are illustrative.",
                                  "CIVHC ratio is the real OON/QPA rate benchmark (Colorado APCD)."],
         limitations=["Deal OON exposure requires the target's claims."],
+        model_logic_summary=(
+            "Applies entered OON volume × balance-bill rate × IDR-win "
+            "probability to estimate post-NSA exposure; the QPA cap "
+            "is anchored to the real CIVHC commercial-%-of-Medicare "
+            "distribution (Colorado APCD) as the benchmark IDR-"
+            "arbitrators reference."),
         related_routes=["/payer-contracts", "/ref-pricing"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6384,6 +6408,12 @@ _MANUAL: List[PageContext] = [
             "Calibration parameters drift over time as priors are "
             "re-fit; the page captures the current method, not a "
             "historical methodology."],
+        model_logic_summary=(
+            "No model — narrative reference page that documents the "
+            "formulas in code (EBITDA bridge in rcm_mc/pe/, MC seed "
+            "in rcm_mc/mc/, health-score in rcm_mc/deals/, "
+            "covenant cushion in rcm_mc/portfolio/). Each section is "
+            "a description, not a computation."),
         related_routes=["/methodology", "/metric-glossary"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -6408,6 +6438,11 @@ _MANUAL: List[PageContext] = [
             "Manifest-driven — newly added routes appear here once "
             "registered in the route table, but won't appear if a "
             "page is shipped without one."],
+        model_logic_summary=(
+            "No model — reads the route registration manifest, "
+            "groups routes by category, and renders a searchable "
+            "index. Filtering and sort happen client-side over the "
+            "registered set."),
         related_routes=["/tools", "/library"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
