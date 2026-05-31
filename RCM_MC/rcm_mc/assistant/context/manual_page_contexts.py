@@ -11406,6 +11406,28 @@ _PRIMARY_PURPOSE_OVERRIDES: Dict[str, str] = {
         "Right-size staffing for the deal's volume — FTE per AOB, "
         "cost band, and agency / locum reliance."
     ),
+    # 2026-05-31 (PR #1330): 4 more analytic surfaces whose
+    # short_description and primary_purpose were still identical
+    # — give each a distinct 'what's it FOR' framing the Guide can
+    # cite when answering 'what does this page do?' vs 'why use it?'
+    "/calibration": (
+        "Audit + tune the per-payer priors so the models shrink "
+        "thin-data deals toward a defensible benchmark instead of "
+        "the noisy raw rate."
+    ),
+    "/specialty-benchmarks": (
+        "Anchor what 'good' looks like for the deal's specialty mix "
+        "before benchmarking the target against it."
+    ),
+    "/tracker-340b": (
+        "Monitor 340B program participation + compliance risk on a "
+        "covered deal — site qualification, contract-pharmacy mix, "
+        "audit posture."
+    ),
+    "/fund-learning": (
+        "Surface day-one plays + cross-deal lessons so a new "
+        "holding doesn't relearn what the platform already knows."
+    ),
 }
 for _c in _MANUAL:
     _new_pp = _PRIMARY_PURPOSE_OVERRIDES.get(_c.route)

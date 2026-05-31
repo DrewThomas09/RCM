@@ -111,10 +111,11 @@ class PromptBuilderTests(unittest.TestCase):
         have short_description == primary_purpose by default. The
         prompt builder must emit the line only once when they match,
         so the prompt doesn't carry a wasted-context duplicate.
-        /tracker-340b is a remaining dup-pair page (PR #1295 split
-        out 8 analytic pages into distinct purposes, but /tracker-340b
-        is still on the symmetric default)."""
-        packet = build_guide_context_packet("/tracker-340b")
+        /news is a remaining dup-pair page (PR #1295 + #1330 split
+        out most analytic pages into distinct purposes; /news is a
+        symmetric-default operational page that legitimately doesn't
+        need a distinct 'why use it')."""
+        packet = build_guide_context_packet("/news")
         prompt = build_guide_user_prompt("What is this page?", packet)
         # The single combined label must appear once.
         self.assertEqual(
