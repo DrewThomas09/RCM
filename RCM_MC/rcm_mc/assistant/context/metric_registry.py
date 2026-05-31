@@ -1813,6 +1813,21 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
                           "medicaid_day_pct"],
     "commercial_payer_exposure": ["commercial pct", "commercial day %",
                                   "commercial_pct"],
+    # PR #1300: 22 partner-spelled metric aliases discovered by probing
+    # 'partner says X — does the Guide resolve it?'. Each maps
+    # to an existing registry id; ambiguous terms (e.g. 'churn',
+    # 'attrition' without 'physician' qualifier) are deliberately NOT
+    # aliased to avoid wrong-metric matches.
+    "revenue": ["npsr", "net patient service revenue", "topline"],
+    "revenue_growth": ["rev growth", "sales growth"],
+    "capex_intensity": ["capex", "capital expenditure"],
+    "denial_rate": ["denial"],
+    "leverage": ["leverage ratio", "debt ratio"],
+    "ev_to_ebitda": ["ev multiple", "ev mult"],
+    "moic": ["cash multiple"],
+    "dpi": ["distribution multiple"],
+    "cms_star_rating": ["cms star", "cms rating", "hospital star",
+                        "snf rating", "star"],
 }
 for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
     _o = METRIC_REGISTRY.get(_mid)
