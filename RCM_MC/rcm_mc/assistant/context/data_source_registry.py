@@ -729,3 +729,27 @@ _SOURCES: List[DataSourceContext] = [
 DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {
     s.source_id: s for s in _SOURCES
 }
+
+
+# 2026-05-31: Partner-spelled aliases for common source names that
+# weren't resolving. Discovered via probe of 'partner says X — does
+# the Guide find it?'. Same pattern as _ALIAS_EXTEND_COVERAGE in
+# metric_registry.py — fill-only-if-not-already-an-alias guard.
+_PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
+    "cms_hcris": ["ccn", "medicare cost reports"],
+    "cms_care_compare": ["cms hospital compare"],
+    "cms_ma_geo": ["medicare advantage geo", "cms ma"],
+    "civhc_rbp": ["apcd"],
+    "oig_leie": ["hhs oig"],
+    "cms_partd_drug_spending": ["partd", "part d"],
+    "openfda_drug_shortages": ["fda shortage"],
+    "clinicaltrials_gov": ["clinical trials"],
+    "chr_county_demographics": ["county health"],
+}
+for _sid, _als in _PARTNER_SOURCE_ALIAS_EXTENSIONS.items():
+    _src = DATA_SOURCE_REGISTRY.get(_sid)
+    if _src is None:
+        continue
+    for _a in _als:
+        if _a not in _src.aliases:
+            _src.aliases.append(_a)

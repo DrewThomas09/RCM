@@ -122,6 +122,38 @@ class DataSourceLookupTests(unittest.TestCase):
         self.assertTrue(r.found)
         self.assertEqual(r.source_id, "edi_837")
 
+    def test_partner_source_aliases_resolve(self):
+        """PR #1299 added partner-spelled aliases for common source
+        names that weren't resolving (e.g. 'CMS Hospital Compare',
+        'Part D', 'HHS OIG'). Verify each resolves to the expected
+        registry id."""
+        cases = [
+            ("CMS Hospital Compare", "cms_care_compare"),
+            ("CCN", "cms_hcris"),
+            ("Medicare cost reports", "cms_hcris"),
+            ("CMS MA", "cms_ma_geo"),
+            ("Medicare Advantage Geo", "cms_ma_geo"),
+            ("APCD", "civhc_rbp"),
+            ("HHS OIG", "oig_leie"),
+            ("Part D", "cms_partd_drug_spending"),
+            ("PartD", "cms_partd_drug_spending"),
+            ("FDA shortage", "openfda_drug_shortages"),
+            ("Clinical Trials", "clinicaltrials_gov"),
+            ("County Health", "chr_county_demographics"),
+        ]
+        for alias, expected in cases:
+            r = get_data_source_context(alias)
+            self.assertTrue(
+                r.found,
+                f"Source alias {alias!r} should resolve to "
+                f"{expected!r} but lookup failed.",
+            )
+            self.assertEqual(
+                r.source_id, expected,
+                f"Source alias {alias!r} resolved to "
+                f"{r.source_id!r}, expected {expected!r}.",
+            )
+
     def test_unknown_source_fallback(self):
         r = get_data_source_context("unknown")
         self.assertFalse(r.found)
