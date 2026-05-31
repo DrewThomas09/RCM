@@ -7897,7 +7897,9 @@ _BATCH6 = [
      "analysis packet.",
      "Produce a consistent, packet-backed IC memo draft instead of a "
      "from-scratch document.",
-     ["Draft the IC memo", "What goes in the memo?", "What's missing for IC?"],
+     ["Draft the IC memo", "What goes in the memo?", "What's missing for IC?",
+      "What template/sections does the generator use, and can the partner override section order or hide a section?",
+      "How does /ic-memo-gen differ from /ic-memo, /diligence/ic-memo, /corpus-ic-memo, and /diligence/ic-packet?"],
      ["MOIC", "IRR"], ["moic", "irr"], ["analysis_run"],
      "Composes memo sections from the deal's packet; surfaces missing data "
      "rather than inventing conclusions.",
@@ -7920,7 +7922,9 @@ _BATCH6 = [
     ("/ic-memo", "IC Memo",
      "Investment-committee memo view for a deal.",
      "Review the IC memo for a deal in one place.",
-     ["Show the IC memo", "What's the recommendation?", "What are the risks?"],
+     ["Show the IC memo", "What's the recommendation?", "What are the risks?",
+      "Which packet sections produce the recommendation, and how is the rec text generated vs partner-entered?",
+      "How does /ic-memo differ from /diligence/ic-memo, /ic-memo-gen, /corpus-ic-memo, and /diligence/ic-packet?"],
      ["MOIC", "IRR"], ["moic", "irr"], ["analysis_run"],
      "Renders the deal's IC memo from its packet; surfaces gaps honestly.",
      "The IC memo is where the thesis is made or broken.",
@@ -7978,7 +7982,9 @@ _BATCH6 = [
      "exit readiness.",
      "See where each holding is in its hold and which are nearing exit.",
      ["How long have we held each deal?", "Which are near exit?", "How's "
-      "value progressing?"],
+      "value progressing?",
+      "What 'near exit' threshold does the dashboard use, and is value progression based on marks or modeled?",
+      "How does /hold differ from /hold-optimizer and /exit-readiness?"],
      ["Hold period", "MOIC", "IRR"], ["hold_period", "moic", "irr"],
      ["portfolio_snapshot"],
      "Reads portfolio holdings and computes hold age / value progression from "
@@ -8126,7 +8132,9 @@ _BATCH7 = [
     ("/geo-market", "Geographic Market Analyzer",
      "Analyzes a geographic market — demand, competition, and positioning.",
      ["What's this market like?", "Who competes here?", "Is there room to "
-      "grow?"],
+      "grow?",
+      "What public data backs the demand and competitor counts, and at what geographic granularity (CBSA, county, state)?",
+      "How does /geo-market differ from /market-intel/geo and /geo-intel?"],
      ["Market size", "Competitor count"], [],
      "Geography shapes demand, competition, and reimbursement.", "model"),
     # Trackers (user-entered)
@@ -8157,14 +8165,18 @@ _BATCH7 = [
     ("/hospital-anchor", "Hospital Anchor Contract Tracker",
      "Tracks anchor hospital / health-system contracts and their terms.",
      ["What anchor contracts exist?", "When do they renew?", "What's the "
-      "concentration risk?"],
+      "concentration risk?",
+      "Are renewal dates and terms persisted with an audit trail, and does the page flag concentration above a threshold?",
+      "How does /hospital-anchor differ from /diligence/hcris-xray and /payer-stress?"],
      ["Contract count", "Concentration"], [],
      "Anchor-contract concentration is a major revenue-durability risk.",
      "user"),
     ("/ma-star", "Medicare Advantage / Star Ratings Tracker",
      "Tracks Medicare Advantage Star ratings and their revenue impact.",
      ["What are the Star ratings?", "How do they affect revenue?", "Where's "
-      "the bonus risk?"],
+      "the bonus risk?",
+      "Which Star year and CMS methodology is the page on, and how is bonus impact computed (QBP + rebate share)?",
+      "How does /ma-star differ from /diligence/payer-stress and /payer-intelligence?"],
      ["Star rating", "Bonus impact"], [],
      "Star ratings drive MA bonus payments and plan competitiveness.", "user"),
     ("/esg-impact", "ESG / Impact Reporting Tracker",
