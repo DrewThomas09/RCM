@@ -5415,6 +5415,13 @@ _MANUAL: List[PageContext] = [
             "the savings rate is whatever assumption is entered.",
             "Quality bonus and risk-track economics are simplified — "
             "consult the CMS APM specifications for the production formula."],
+        model_logic_summary=(
+            "Reads entered benchmark spending, actual spending, and "
+            "attribution count; applies the entered shared-savings rate "
+            "and risk-track haircut to compute provider revenue. The "
+            "math is straightforward — savings = benchmark − spend, "
+            "provider take = savings × rate; the assumptions, not the "
+            "formula, drive variance."),
         related_routes=["/cms-apm", "/risk-adjustment"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5437,6 +5444,12 @@ _MANUAL: List[PageContext] = [
             "are overridden with current rate/multiple expectations.",
             "Not a forecast — useful as a structured timing prompt, not "
             "as a market call."],
+        model_logic_summary=(
+            "Weighs the cost of waiting (extra hold years, opportunity "
+            "cost) against the cost of buying now (multiple, leverage) "
+            "from entered macro/sector signals. The output is a "
+            "timing prompt with a recommended-action band, not a "
+            "single 'yes/no' forecast."),
         related_routes=["/entry-multiple", "/hold-optimizer"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5460,6 +5473,12 @@ _MANUAL: List[PageContext] = [
             "and disynergies are not modeled.",
             "Multiple-arb at exit assumes the platform multiple holds — "
             "doesn't model a multiple compression scenario by default."],
+        model_logic_summary=(
+            "Computes blended-multiple accretion = (platform multiple − "
+            "bolt-on multiple) × bolt-on EBITDA, then layers entered "
+            "synergy run-rate against the platform's exit multiple to "
+            "size the equity-value uplift. Integration timeline drives "
+            "when synergies start hitting the bridge."),
         related_routes=["/rollup-economics", "/entry-multiple"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5482,6 +5501,12 @@ _MANUAL: List[PageContext] = [
             "sketch a structure, not negotiate it.",
             "Doesn't model refinancing frictions (call premia, makewhole) "
             "or covenant ratchets explicitly."],
+        model_logic_summary=(
+            "Sums entered tranches (senior, sub, mezz, equity) to get "
+            "total sources; matches against entered uses; reports "
+            "leverage = total debt / EBITDA, WACC = weighted cost of "
+            "each tranche, and equity-check = sources − non-equity. "
+            "Pricing is whatever's entered — no lender feed."),
         related_routes=["/debt-service", "/covenant-headroom"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5504,6 +5529,12 @@ _MANUAL: List[PageContext] = [
             "a peer cohort matters more than the absolute number.",
             "Cash conversion and capex assumptions drive most of the "
             "swing; small input changes can move the ratio materially."],
+        model_logic_summary=(
+            "Computes ROIC = NOPAT / invested capital from entered "
+            "operating-margin, tax-rate, and capex assumptions; "
+            "compares reinvestment vs distribution paths by rolling "
+            "the resulting cash flow forward. The result is a "
+            "structural read, not a forecast."),
         related_routes=["/cap-structure", "/reinvestment"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5527,6 +5558,12 @@ _MANUAL: List[PageContext] = [
             "real read.",
             "Cushion is point-in-time on the entered numbers; doesn't "
             "automatically reflect intra-quarter EBITDA volatility."],
+        model_logic_summary=(
+            "Cushion = (covenant max − current ratio) / covenant max, "
+            "computed against the entered covenant threshold (default "
+            "leverage). The page sweeps EBITDA down until breach to "
+            "report the swing-to-breach figure. No external covenant "
+            "feed — assumptions drive the cushion."),
         related_routes=["/covenant-monitor", "/debt-service", "/cap-structure"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
