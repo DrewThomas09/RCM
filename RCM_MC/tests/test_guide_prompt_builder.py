@@ -72,6 +72,19 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Short description:", prompt)
         self.assertNotIn("Primary purpose:", prompt)
 
+    def test_user_prompt_includes_data_source_ic_ready_flag(self):
+        """The data-source-context block must surface the ic_ready
+        flag so the model can answer 'Is this IC-ready?' directly from
+        the per-source contract. PR #1267 set the flag explicitly on
+        every source; PR #1268 wires it into the prompt. /diligence/
+        hcris-xray pulls cms_hcris (ic_ready=False) — the 'IC-ready: no'
+        clause must appear."""
+        prompt = build_guide_user_prompt(
+            "Is this data IC-ready?", self.packet
+        )
+        # cms_hcris is ic_ready=False — the 'no' clause must appear.
+        self.assertIn("IC-ready: no", prompt)
+
     def test_user_prompt_keeps_distinct_desc_and_purpose_apart(self):
         """When short_description and primary_purpose carry distinct
         text (the partner-facing case where the author wrote them

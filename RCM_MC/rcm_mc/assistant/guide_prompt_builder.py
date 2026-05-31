@@ -222,12 +222,25 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
             if compact:
                 out.append(f"- {s.label} ({s.source_id})")
             else:
+                # ic_ready is the direct answer to "Is this IC-ready?" —
+                # partners ask this constantly. PR #1267 set the flag
+                # explicitly on every source (True / False, never None),
+                # so we emit a 'yes' / 'no' clause whenever the source
+                # supplies it. The clause is a fact about the source's
+                # IC-readiness contract, not a recommendation.
+                if s.ic_ready is True:
+                    ic_line = " IC-ready: yes (stand-alone basis for IC)."
+                elif s.ic_ready is False:
+                    ic_line = " IC-ready: no (needs to be paired with other data)."
+                else:
+                    ic_line = ""
                 out.append(
                     f"- {s.label} ({s.source_id}): {s.description} "
                     f"Type: {s.source_type.value}. Cadence: {s.update_cadence}; "
                     f"freshness lag: {s.freshness_lag}. "
                     f"Limitations: "
-                    f"{'; '.join(s.limitations) if s.limitations else 'none'}"
+                    f"{'; '.join(s.limitations) if s.limitations else 'none'}."
+                    f"{ic_line}"
                 )
 
     # Always include — these carry the honesty of the answer.
