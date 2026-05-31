@@ -429,6 +429,26 @@ continuous-loop session**. All green CI, all auto-deployed, prod
 healthy across the entire segment (`https://pedesk.app/healthz` →
 `ok` throughout).
 
+### Segment final 3 PRs (#1329-#1331)
+
+- **#1329** docs: prior addendum capturing #1323-#1328.
+- **#1330** Distinct `primary_purpose` on 4 more analytic pages
+  whose short_description and primary_purpose had been identical:
+  /calibration, /specialty-benchmarks, /tracker-340b, /fund-learning.
+  Trimmed redundant-pair count 22 → 18; updated the
+  `test_user_prompt_collapses_duplicate_desc_and_purpose` fixture
+  to use /news (a stable symmetric-default operational page).
+- **#1331** Round-5 source aliases (8 more): 'co apcd' / 'colorado
+  apcd' / 'cost of care' for civhc_rbp; 'snf five star' / 'snf
+  five-star' / 'snf compare' for cms_provider_data_catalog;
+  'hospital cahps' for cms_hcahps; 'ma geo data' for cms_ma_geo.
+
+**Final segment totals: 29 PRs landed (#1303-#1331)**, all green
+CI, all auto-deployed, all squash-merged. Guide-context test suite
+at 79 (was 75 at segment start). 29 invariant tests (was 24).
+Continuous-loop session cumulative: **66 PRs through #1331**
+(#1250-#1331 spanning prior + this PM continuous segment).
+
 ## Guardrails honored
 
 No fake data. Did not touch auth/session, Caddy, systemd, deploy workflow,
