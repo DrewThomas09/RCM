@@ -1546,9 +1546,14 @@ _MANUAL: List[PageContext] = [
                      "Days in A/R"],
         data_sources=["A canonical claims dataset (fixture-based here) + "
                       "user-entered memo metadata."],
-        model_logic_summary="Ingests the claims dataset, computes a KPI bundle "
-        "and a cash waterfall (and optional counterfactuals), then renders the "
-        "memo. Exact KPI/waterfall math: needs source documentation.",
+        model_logic_summary=(
+            "Reads claims rows, computes the standard RCM KPI bundle "
+            "(NCR, GCR, days_in_AR, denial_rate, clean_claim_rate) "
+            "using the metric definitions on each MetricContext card, "
+            "and builds a cash-waterfall from charges → adjustments → "
+            "payments → AR over the cohort months in the dataset. "
+            "Optional counterfactual scenarios reapply the KPIs with "
+            "the entered shock."),
         why_it_matters="QoE is the earnings-quality backbone of financial "
         "diligence; this drafts that memo from claims data.",
         diligence_use_cases=["Drafting the QoE deliverable and reviewing "
@@ -1639,11 +1644,14 @@ _MANUAL: List[PageContext] = [
         data_sources=["A claims dataset (fixture on this page) + deal "
                       "metadata; downstream analytics add model outputs and "
                       "corpus lookups."],
-        model_logic_summary="Appears to chain multiple analytics (ingest, "
-        "benchmarks, denial prediction, bankruptcy scan, counterfactual, "
-        "attrition, autopsy, market intel, scenario assembly, Monte Carlo, "
-        "checklist) where each step is optional and failures short-circuit "
-        "only that step. Exact step math: needs source documentation.",
+        model_logic_summary=(
+            "Pipelines the deal through 10 analytic stages in order: "
+            "ingest → benchmarks → denial prediction → bankruptcy "
+            "scan → counterfactual → attrition → autopsy → market "
+            "intel → scenario assembly → Monte Carlo. Each stage's "
+            "output feeds the next; a stage failure short-circuits "
+            "only that stage and logs it. Final output is a "
+            "single-page deep-link map plus headline numbers."),
         why_it_matters="Collapses the multi-tool diligence workflow into one "
         "orchestrated run with a single headline read.",
         diligence_use_cases=["A fast full-chain pass early in diligence, then "
@@ -2178,10 +2186,14 @@ _MANUAL: List[PageContext] = [
         key_metrics=["Flight-risk probability", "EBITDA at risk",
                      "Provider productivity"],
         data_sources=["A provider roster (demo fixture) scored by a model."],
-        model_logic_summary="Appears to extract per-provider features and "
-        "score an 18-month flight-risk probability (logistic regression), with "
-        "feature contributions. Exact coefficients: needs source "
-        "documentation.",
+        model_logic_summary=(
+            "Logistic regression on entered per-provider features "
+            "(tenure, age, collections trend, local competition, "
+            "employment type) → 18-month flight-risk probability; "
+            "per-provider feature contributions are returned. EBITDA-"
+            "at-risk = flight-prob × provider collections × margin. "
+            "Coefficients are platform defaults; real-deal scoring "
+            "would calibrate against the target's historical attrition."),
         why_it_matters="In provider-group deals, physician retention is a "
         "first-order driver of post-close revenue.",
         diligence_use_cases=["Prioritizing retention/comp focus on the highest "
@@ -9459,6 +9471,12 @@ _GUIDE_BACKFILL = [
             "Module groupings reflect the toolkit's authored taxonomy, "
             "not a curation judgment of which tools matter most."],
         limitations=["A catalog/navigation surface — not an analytic output."],
+        model_logic_summary=(
+            "No model — enumerates the ~222 modules in the "
+            "pe_intelligence module registry, groups them by "
+            "category and tag, and supports text search across "
+            "module names and docstrings. Each result links to "
+            "/diligence/pe-tool to execute against the active deal."),
         related_routes=["/diligence/pe-tool", "/diligence/pe-reference",
                         "/diligence"],
         metric_ids=[], data_source_ids=[],
@@ -9492,6 +9510,12 @@ _GUIDE_BACKFILL = [
             "Playbook/trap entries are editorial — partner judgment "
             "still applies to which apply to this target."],
         limitations=["Reference knowledge, not deal-specific computed output."],
+        model_logic_summary=(
+            "No model — surfaces the curated reference libraries "
+            "marked deal-independent in pe_intelligence (playbooks, "
+            "partner-trap catalogs, reference taxonomies). Content "
+            "is read-only editorial knowledge curated upstream; the "
+            "page does no computation, just retrieval and rendering."),
         related_routes=["/diligence/pe-library", "/diligence/pe-tool"],
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
@@ -9523,6 +9547,12 @@ _GUIDE_BACKFILL = [
             "deal's packet likely lacks a required input — check the "
             "checklist on /diligence/checklist."],
         limitations=["Output is only as good as the deal packet's completeness."],
+        model_logic_summary=(
+            "Imports the chosen pe_intelligence module dynamically, "
+            "passes the active deal's analysis packet as input, and "
+            "renders the module's returned dict/list/dataframe in "
+            "the page. The page itself does no math — it's the "
+            "runner shell; the math lives in the selected module."),
         related_routes=["/diligence/pe-library", "/diligence/deal"],
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
