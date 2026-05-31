@@ -11183,6 +11183,97 @@ _PRIMARY_PURPOSE_OVERRIDES: Dict[str, str] = {
         "Project the EBITDA contribution of a de-novo expansion "
         "pipeline — site count × ramp curve × unit economics."
     ),
+    # ── 2026-05-31 batch 2: 22 more analytic pages (keeps /tracker-340b
+    # on the symmetric default so the prompt-builder dup-collapse test
+    # has a fixture). ──
+    "/analysis": (
+        "Enter a deal's analysis workspace — packet builder, bridge, "
+        "Monte Carlo, peer comp — from a single jumping-off point."
+    ),
+    "/diligence-checklist": (
+        "Track diligence completion across workstreams so coverage "
+        "gaps surface before IC."
+    ),
+    "/diligence/ic-memo": (
+        "Pull the deal's diligence into a partner-ready IC-memo "
+        "draft (one-pager + assumptions + risks)."
+    ),
+    "/diligence/regulatory-calendar": (
+        "Spot rule changes that could move the thesis before IC — "
+        "what's pending, what's confirmed, what's a kill-switch."
+    ),
+    "/diligence/sponsor-detail": (
+        "Read a sponsor's realised track record from the corpus "
+        "before partnering / co-investing / competing."
+    ),
+    "/diligence/synthesis": (
+        "Roll the diligence stack up into one read of thesis "
+        "strength — strengths, risks, and open questions in one view."
+    ),
+    "/esg-impact": (
+        "Keep ESG / impact commitments on track for LP reporting — "
+        "diff what shipped vs what was promised, period over period."
+    ),
+    "/hospital-anchor": (
+        "Surface anchor-contract concentration + renewal calendar so "
+        "revenue-loss risk is visible early."
+    ),
+    "/ma-star": (
+        "Read the MA Star posture for a deal — current band, bonus "
+        "exposure, and the path to a four-star rating."
+    ),
+    "/market-data/map": (
+        "Pick a geographic angle (state, MSA, county) and read the "
+        "market on a real CMS-public map layer."
+    ),
+    "/market-intel/seeking-alpha": (
+        "Read sector-level theses + commentary against the deal book "
+        "— second-opinion check, not the primary view."
+    ),
+    "/ml-insights": (
+        "Surface the highest-uplift candidates from public-data ML "
+        "before manual screen-down — sourcing top-of-funnel."
+    ),
+    "/model-validation": (
+        "Read held-out accuracy + calibration for each predictive "
+        "model before trusting its uplift estimates."
+    ),
+    "/new-deal": (
+        "Get a deal into the pipeline fast — manual entry or one-shot "
+        "CIM import, ready for diligence kickoff."
+    ),
+    "/phys-comp-plan": (
+        "Test a physician comp plan (wRVU vs base+incentive) for "
+        "productivity-alignment + total cost vs the current model."
+    ),
+    "/physician-labor": (
+        "Read physician-supply tightness in the target's geography — "
+        "is recruiting the binding constraint on growth?"
+    ),
+    "/portfolio-analytics": (
+        "Read corpus distributions, drivers, and cross-cuts so a "
+        "thesis or benchmark is anchored in realised evidence."
+    ),
+    "/scenario-mc": (
+        "Get an outcome DISTRIBUTION (not a point estimate) for the "
+        "deal under stochastic operating + macro assumptions."
+    ),
+    "/underwriting": (
+        "Build the entry-to-exit return base for the deal — entry × "
+        "growth × leverage × exit assumptions, MOIC / IRR out."
+    ),
+    "/value-creation": (
+        "Track each value-creation initiative's planned vs realised "
+        "EBITDA impact across the deal book."
+    ),
+    "/variance": (
+        "Diagnose where the deal is missing plan — which line items, "
+        "by how much, and against what benchmark."
+    ),
+    "/workforce-planning": (
+        "Right-size staffing for the deal's volume — FTE per AOB, "
+        "cost band, and agency / locum reliance."
+    ),
 }
 for _c in _MANUAL:
     _new_pp = _PRIMARY_PURPOSE_OVERRIDES.get(_c.route)
