@@ -281,12 +281,31 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     if prov and "needs source" not in prov.lower()
                     else ""
                 )
+                # strengths describes what this source is positively good
+                # at (e.g. cms_hcris: 'Comprehensive, free, comparable
+                # across all US hospitals.'). PR #1262 drained the lone
+                # NEEDS placeholder; every source now carries real
+                # strengths. Surfacing the list complements description
+                # (what it IS) + limitations (what it is NOT) with what
+                # it is GOOD AT. Filtered defensively against any stale
+                # legacy placeholder.
+                strengths = [
+                    str(v).strip() for v in (s.strengths or [])
+                    if str(v).strip()
+                    and "needs source" not in str(v).strip().lower()
+                ]
+                strengths_line = (
+                    f" Strengths: {'; '.join(strengths)}."
+                    if strengths
+                    else ""
+                )
                 out.append(
                     f"- {s.label} ({s.source_id}): {s.description} "
                     f"Type: {s.source_type.value}. Cadence: {s.update_cadence}; "
                     f"freshness lag: {s.freshness_lag}. "
                     f"Limitations: "
                     f"{'; '.join(s.limitations) if s.limitations else 'none'}."
+                    f"{strengths_line}"
                     f"{prov_line}"
                     f"{ic_line}"
                 )

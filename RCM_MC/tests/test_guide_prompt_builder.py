@@ -140,6 +140,23 @@ class PromptBuilderTests(unittest.TestCase):
         )
         self.assertNotIn("Route-specific assistant notes:", prompt)
 
+    def test_user_prompt_includes_data_source_strengths(self):
+        """The data-source-context block must surface the strengths
+        list so the model has 'what's this source positively good at'
+        alongside description (what it is) and limitations (what it
+        is NOT). PR #1262 ensured strengths carries real content for
+        every source; PR #1273 wires it into the prompt.
+        /diligence/hcris-xray pulls cms_hcris (strengths includes the
+        comprehensive/free/comparable phrasing). The Strengths clause
+        must appear, and the legacy placeholder must never appear."""
+        prompt = build_guide_user_prompt(
+            "What is this source good at?", self.packet
+        )
+        self.assertIn("Strengths:", prompt)
+        # Verify the placeholder never leaks through.
+        self.assertNotIn("Strengths: Needs source documentation",
+                         prompt)
+
     def test_user_prompt_includes_data_source_provenance(self):
         """The data-source-context block must surface provenance_notes
         so the model can answer 'where does this come from / what
