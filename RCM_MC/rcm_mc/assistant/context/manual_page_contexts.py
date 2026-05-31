@@ -6631,6 +6631,21 @@ for _route, _title, _upload, _who, _activates, _tmpl in _DATA_REQUIRED_GUIDE:
         # uploads register as P0 blockers, and /tools is the index where
         # a partner finds the next surface to populate.
         related_routes=["/diligence/checklist", "/tools"],
+        # 2026-05-31: every DATA_REQUIRED page shares the same shape
+        # for model_logic. Until the upload lands the page is a
+        # scaffold; once it lands the platform parses the uploaded
+        # CSV against the published import template, joins it to the
+        # deal/fund context, and lights up the analytics the
+        # "activates" string describes.
+        model_logic_summary=(
+            f"DATA_REQUIRED scaffold until the partner uploads "
+            f"{_upload} (template: {_tmpl}); on upload, the platform "
+            f"parses the CSV against the template schema, joins the "
+            f"rows to the deal/fund context, and computes "
+            f"{_activates}. No values are fabricated before that — "
+            "the panel describes what to provide rather than running "
+            "a model on empty input."
+        ),
         why_it_matters=f"{_activates} — but only once it runs on your real data, not a fabricated default.",
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
