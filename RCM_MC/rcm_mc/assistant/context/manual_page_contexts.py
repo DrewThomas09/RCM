@@ -5189,6 +5189,22 @@ _MANUAL: List[PageContext] = [
             "Where are CMS MA enrollment figures from?",
             "How does this connect to /risk-adjustment?",
         ],
+        inputs=["Entered PMPM, attribution share, risk-track haircut, "
+                "and the deal's MA-exposed lives.",
+                "State scope so the real CMS MA enrollment overlay "
+                "anchors to the right market."],
+        outputs=["Expected revenue per contract on the entered "
+                 "structure + the CMS MA enrollment panel "
+                 "(29.7M lives across 53 states) as market-scale "
+                 "context."],
+        key_metrics=["Expected MA revenue per contract ($)",
+                     "PMPM (entered)", "MA enrollment by state (real)"],
+        diligence_use_cases=[
+            "Pressure-testing an MA contract economics assumption "
+            "against the state's real MA market size.",
+            "Framing how much of the state's MA pool the deal "
+            "captures (or could capture) under a proposed contract.",
+        ],
         data_sources=["Illustrative PMPM/risk model + real CMS MA Geographic "
                       "Variation enrollment (29.7M across 53 states)."],
         interpretation_guidance=["Calculator on your inputs; MA enrollment is "
@@ -6060,6 +6076,23 @@ _MANUAL: List[PageContext] = [
             "Are the bad-debt figures from real data or modeled?",
             "When does the unwinding pace normalize?",
         ],
+        inputs=["Entered disenrollment rate and coverage-shift "
+                "splits (back-to-Medicaid / ACA / self-pay / "
+                "uninsured) and the deal's Medicaid lives.",
+                "State scope so the real CMS dual-eligible "
+                "at-risk-cohort panel anchors to the right market."],
+        outputs=["Revenue-shift and bad-debt exposure estimates on "
+                 "the entered assumptions + the real CMS dual-"
+                 "eligible share-by-state at-risk-cohort panel."],
+        key_metrics=["Revenue shift from disenrollment ($)",
+                     "Bad-debt exposure ($)",
+                     "Dual-eligible share by state (real)"],
+        diligence_use_cases=[
+            "Sizing Medicaid-redetermination revenue exposure for "
+            "a deal in a state with elevated dual-eligible share.",
+            "Stress-testing the bad-debt ramp under faster or "
+            "slower disenrollment scenarios.",
+        ],
         data_sources=["Illustrative disenrollment/coverage-shift/bad-debt (labeled) + "
                       "real CMS dual-eligible share by state."],
         interpretation_guidance=["Deal-level impact figures are illustrative.",
@@ -6201,6 +6234,23 @@ _MANUAL: List[PageContext] = [
             "What's a typical locum rate-to-permanent ratio for this specialty?",
             "How does locum spend translate into EBITDA drag?",
             "Where can I plug in the target's actual locum invoices?",
+        ],
+        inputs=["Entered locum spend, locum-share-of-labor, and "
+                "rate-premium-over-permanent assumptions for the "
+                "deal's labor base.",
+                "State / county scope so the HRSA HPSA overlay "
+                "ties demand to the right shortage geography."],
+        outputs=["EBITDA-drag estimate from locum reliance on the "
+                 "entered assumptions + the real HRSA HPSA panel "
+                 "(7,635 designated primary-care shortage areas)."],
+        key_metrics=["EBITDA drag from locum spend ($)",
+                     "Locum % of labor (entered)",
+                     "HPSA designations by state (real)"],
+        diligence_use_cases=[
+            "Sizing locum/agency reliance as a margin risk for a "
+            "deal in HPSA-heavy geography.",
+            "Pressure-testing the EBITDA impact of converting "
+            "locum coverage to permanent hires.",
         ],
         data_sources=["Illustrative locum spend/coverage/rates (labeled) + real HRSA "
                       "HPSA (7,635 designated PC shortage areas)."],
@@ -6492,6 +6542,23 @@ _MANUAL: List[PageContext] = [
             "How do I add a new initiative to a deal?",
             "Where does this data come from — manual entry or actuals upload?",
         ],
+        inputs=["Your real initiative records (target EBITDA "
+                "uplift, owner, deal scope, tolerance band).",
+                "Any monthly actuals uploaded against each "
+                "initiative — the actual-vs-plan engine needs "
+                "these to flag behind/on/at-risk."],
+        outputs=["Per-initiative target-vs-actual EBITDA uplift, "
+                 "rolled up to per-deal and portfolio totals, "
+                 "with status (behind / on plan / at risk) flags."],
+        key_metrics=["Realized EBITDA uplift from initiatives ($)",
+                     "% of initiatives on/ahead of plan",
+                     "% of initiatives at-risk"],
+        diligence_use_cases=[
+            "Reporting realized initiative value to the IC at the "
+            "quarterly portfolio review.",
+            "Spotting which value-creation theses are slipping in "
+            "time to intervene with the operator.",
+        ],
         data_sources=["Your real initiative records (SQLite)."],
         interpretation_guidance=["Your own initiatives — real workspace data."],
         limitations=[
@@ -6682,6 +6749,22 @@ _MANUAL: List[PageContext] = [
             "Where do the health-score weights come from?",
             "Is the IRR calculated with annual or quarterly compounding?",
             "How does the Monte Carlo simulation seed work?",
+        ],
+        inputs=["No user inputs — a reference/methodology surface "
+                "that documents the formulas wired into the "
+                "calculation modules elsewhere in PEdesk."],
+        outputs=["Narrative documentation of each formula "
+                 "(EBITDA bridge, covenant cushion, health "
+                 "score, IRR/MOIC, Monte Carlo seed) with "
+                 "pointers to the modules that implement it."],
+        key_metrics=["No metrics computed here — links to the "
+                     "metric glossary and to each computing page."],
+        diligence_use_cases=[
+            "Sharing the methodology read with IC / LP / auditor "
+            "to defend a number's derivation.",
+            "Cross-referencing a formula against the code path "
+            "that implements it (rcm_mc.pe / rcm_mc.mc / "
+            "rcm_mc.calibration / rcm_mc.deals).",
         ],
         data_sources=["Documentation of PEdesk's own calculation methods."],
         interpretation_guidance=["Reference/methodology, not a data surface."],
@@ -10117,9 +10200,22 @@ _GUIDE_BACKFILL = [
             "Which metrics can I rank by?",
             "How does this differ from /county-explorer?",
         ],
+        inputs=["Chosen metric from the shared geo-metrics "
+                "registry (the same registry as /state-rankings "
+                "and /county-explorer).",
+                "Optional state / CBSA-tier filter to scope the "
+                "ranking."],
         outputs=["A ranked CBSA table on the selected metric."],
-        key_metrics=[], data_sources=["The shared geo metrics registry at the "
-                                      "CBSA level (real public data)."],
+        key_metrics=["The selected geo metric, ranked across all "
+                     "CBSAs (definitions live on /geo-metrics)."],
+        diligence_use_cases=[
+            "Identifying the strongest CBSAs for a roll-up thesis "
+            "by ranking metros on a single market structure metric.",
+            "Comparing a target's home CBSA against metro peers "
+            "before sizing geographic expansion.",
+        ],
+        data_sources=["The shared geo metrics registry at the "
+                      "CBSA level (real public data)."],
         why_it_matters="Healthcare markets are local — metro-level structure "
         "matters more than state averages for siting and roll-ups.",
         interpretation_guidance=[
