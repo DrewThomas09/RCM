@@ -1796,9 +1796,14 @@ _MANUAL: List[PageContext] = [
                      "Recoverable EBITDA", "Payer leverage"],
         data_sources=["Target claims (fixture here) + synthetic contract / CMS "
                       "schedules + model outputs."],
-        model_logic_summary="Appears to map each RCM lever to an expected "
-        "EBITDA contribution given the deal shape and feed it into the value "
-        "bridge / IC memo. Exact lever math: needs source documentation.",
+        model_logic_summary=(
+            "For each of the seven RCM levers (denial, AR, "
+            "clean-claim, underpayment, cost-to-collect, payer-mix, "
+            "working capital), applies the lever's benchmark delta to "
+            "the deal's claims to estimate the recoverable revenue, "
+            "then × the deal's contribution margin = expected EBITDA "
+            "contribution. The lever-by-lever stack feeds the value-"
+            "bridge."),
         why_it_matters="It's the underwriting of the upside case — the bridge "
         "that justifies the entry price.",
         diligence_use_cases=["Underwriting the value-creation bridge and "
@@ -5139,6 +5144,13 @@ _MANUAL: List[PageContext] = [
                                 "market context, not this deal's contract."],
         limitations=["No Star Ratings / risk scores in the anchor (enrollment "
                      "+ demographics only)."],
+        model_logic_summary=(
+            "Applies entered PMPM, attribution share, and risk-track "
+            "haircut to the deal's MA-exposed lives to compute "
+            "expected revenue per contract; overlays the real CMS MA "
+            "enrollment panel (29.7M lives across 53 states) as "
+            "market-scale context. Contract terms are illustrative; "
+            "the enrollment overlay is real."),
         related_routes=["/risk-adjustment", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5192,6 +5204,13 @@ _MANUAL: List[PageContext] = [
             "Availability field is ~31% blank (preserved, not zero-filled).",
         ],
         limitations=["Product-level; build-time snapshot refreshed on re-ingest."],
+        model_logic_summary=(
+            "No model — reads the committed openFDA drug-shortage "
+            "snapshot, groups products by therapeutic category, and "
+            "ranks by active-shortage count. Availability field is "
+            "preserved verbatim (blanks not filled). The 'portfolio "
+            "risk' framing is editorial overlay; the data itself is "
+            "national/product-level, not provider-specific."),
         related_routes=["/supply-chain", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -5821,6 +5840,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Savings/contract figures are illustrative scaffold.",
                                  "Open Payments panel is real industry vendor scale."],
         limitations=["Deal GPO savings require the target's actual spend data."],
+        model_logic_summary=(
+            "Applies entered savings-rate, bulk-buy %, and rebate-"
+            "capture assumptions to the target's spend categories to "
+            "estimate GPO savings; overlays the real CMS Open "
+            "Payments vendor landscape ($3.31bn, top device/pharma "
+            "vendors) so the savings figure has a plausible vendor-"
+            "scale context."),
         related_routes=["/cost-structure"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5842,6 +5868,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Deal-level impact figures are illustrative.",
                                  "Dual-eligible panel is the real at-risk population."],
         limitations=["Deal exposure requires the target's real payer mix."],
+        model_logic_summary=(
+            "Applies entered disenrollment rate and coverage-shift "
+            "splits (back-to-Medicaid / ACA / self-pay / uninsured) "
+            "to the deal's Medicaid lives to estimate revenue "
+            "shift and bad-debt exposure; overlays the real CMS "
+            "dual-eligible share by state as the at-risk-cohort "
+            "anchor."),
         related_routes=["/payer-concentration", "/risk-adjustment"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5883,6 +5916,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["HEI/Star figures are illustrative, scaled to inputs.",
                                  "PLACES panel is real full-population SDOH (not patients)."],
         limitations=["Model-based estimates; area-level, not this deal's panel."],
+        model_logic_summary=(
+            "Applies entered HEI-band assumptions to the deal's MA "
+            "Star-bonus revenue to estimate the bonus uplift from "
+            "moving up an equity band; overlays the real CDC PLACES "
+            "SDOH-prevalence panel (uninsured, food/transport "
+            "insecurity) as the local population context. The lift "
+            "is modeled; the prevalence panel is observed."),
         related_routes=["/risk-adjustment", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5944,6 +5984,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Locum figures are illustrative.",
                                  "HPSA panel is real shortage-area designations by state."],
         limitations=["Deal locum spend requires the target's actuals."],
+        model_logic_summary=(
+            "Applies entered locum spend / locum-share / rate-"
+            "premium assumptions to the deal's labor base to estimate "
+            "EBITDA drag from agency reliance; overlays the real "
+            "HRSA HPSA panel (7,635 PC shortage areas) so the demand "
+            "side is grounded in observed shortage geography."),
         related_routes=["/workforce-planning", "/workforce-retention"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6178,6 +6224,12 @@ _MANUAL: List[PageContext] = [
             "absence of operational work.",
             "Realized EBITDA uplift requires monthly actuals to be "
             "uploaded; without them the page shows targets only."],
+        model_logic_summary=(
+            "Reads initiative records from the deal store, joins to "
+            "any attached monthly actuals, and computes target-vs-"
+            "actual EBITDA uplift per initiative and per deal. "
+            "Status (behind / on plan / at risk) is flagged from "
+            "the actual-vs-plan delta against an entered tolerance."),
         related_routes=["/portfolio", "/value-creation-plan", "/app"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6410,6 +6462,11 @@ _MANUAL: List[PageContext] = [
             "metric, all states), or /state-profile (one state).",
             "Three modes share the same metric layer but expose "
             "different verbs; what's missing is missing from all three."],
+        model_logic_summary=(
+            "No model — a navigation hub with deep-link cards into "
+            "/state-compare, /state-rankings, and /state-profile. "
+            "The three modes share the same metric registry; the "
+            "hub just picks which verb to apply."),
         related_routes=["/state-compare", "/state-rankings", "/state-profile"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -9586,6 +9643,12 @@ _GUIDE_BACKFILL = [
             "not as the lowest band — read /geo-metrics for coverage."],
         limitations=["A visualization layer; the metric definitions live in "
                      "the geo metrics reference."],
+        model_logic_summary=(
+            "Pulls the chosen metric from the shared geo-metric "
+            "registry, joins to a state FIPS lookup, and renders an "
+            "Albers-projected SVG choropleth shaded by metric value. "
+            "Click-through routes to /state-profile?state=<code>. "
+            "States with no value render neutral, not zero."),
         related_routes=["/geo-intel", "/geo-metrics", "/state-profile",
                         "/metro-markets"],
         metric_ids=[], data_source_ids=[],
@@ -9620,6 +9683,12 @@ _GUIDE_BACKFILL = [
             "render '—' for those states; the gap is in the source, "
             "not in PEdesk's computation."],
         limitations=["A reference/transparency surface, not an analysis."],
+        model_logic_summary=(
+            "No model — reads the geo-metric registry (definitions + "
+            "source IDs) and the data_source_registry (provenance + "
+            "refresh cadence), joins them, and renders a per-metric "
+            "transparency table. The page describes the data layer "
+            "the maps/rankings use; it doesn't compute the metrics."),
         related_routes=["/geo-intel", "/geo-map", "/metro-markets",
                         "/methodology"],
         metric_ids=[], data_source_ids=[],
@@ -9653,6 +9722,12 @@ _GUIDE_BACKFILL = [
             "here; for non-metro reads use /state-rankings or "
             "/county-explorer."],
         limitations=["CBSA coverage depends on the underlying public dataset."],
+        model_logic_summary=(
+            "Joins the chosen metric to the CBSA crosswalk and "
+            "ranks all CBSAs by metric value; sort direction is "
+            "metric-aware (lower-is-better metrics flip). CBSAs "
+            "with no value are listed unranked. The metric "
+            "definitions and provenance live on /geo-metrics."),
         related_routes=["/geo-intel", "/geo-map", "/geo-metrics",
                         "/state-profile"],
         metric_ids=[], data_source_ids=[],
