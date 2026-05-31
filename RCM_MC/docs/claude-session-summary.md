@@ -305,6 +305,31 @@ the model to say *'needs source documentation'* when it can't answer).
 green. Production health (https://pedesk.app/healthz) verified 200
 throughout the sprint.
 
+**Full local test suite confirmed green** at session close
+(2026-05-31 ~08:54 UTC): `12,977 passed, 68 skipped, 1 xfailed in
+1172.49s`. The two stale UI tests
+(`test_mega_menu_hidden_by_default::test_open_states_use_grid` and
+`test_topbar_dropdown::test_menu_lists_the_sections_subpages`) that
+had silently drifted past CI's reduced set were caught and fixed in
+#1278 — this is the first session in a long while where every test
+in the repo passes locally, not just the CI subset.
+
+Session totals at #1286: **37 PRs landed (#1250-#1286)** across:
+- 11 list-fields drain batches
+- 2 metric-registry hardening + 6 glossary-coverage + new metric entries
+- 1 admin-page related_routes wiring
+- 11 prompt-builder enrichment clauses
+- 4 cross-link wirings (sources↔metrics, pages↔sources)
+- 1 orphan-metrics + 1 orphan-data-sources closure
+- 2 stale-UI-test maintenance fixes
+- 1 eval question-set expansion
+- 1 prompt-builder double-period cleanup
+- 2 docs updates (session summary)
+
+24 invariant tests in `tests/test_pedesk_guide_5q_invariant.py`
+guard every gate. Test count progression across the session:
+8 → 11 → 14 → 16 → 17 → 18 → 20 → 21 → 22 → 23 → 24.
+
 ## Guardrails honored
 
 No fake data. Did not touch auth/session, Caddy, systemd, deploy workflow,
