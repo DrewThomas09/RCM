@@ -85,6 +85,21 @@ class PromptBuilderTests(unittest.TestCase):
         # cms_hcris is ic_ready=False — the 'no' clause must appear.
         self.assertIn("IC-ready: no", prompt)
 
+    def test_user_prompt_includes_data_source_provenance(self):
+        """The data-source-context block must surface provenance_notes
+        so the model can answer 'where does this come from / what
+        should I cite?' directly. PR #1262 drained every NEEDS
+        placeholder on this field; PR #1269 wires it into the prompt.
+        /diligence/hcris-xray pulls cms_hcris (provenance mentions the
+        CMS dataset + cost-report year). The Provenance clause must
+        appear, and the legacy placeholder must never appear."""
+        prompt = build_guide_user_prompt(
+            "Where does this come from?", self.packet
+        )
+        self.assertIn("Provenance:", prompt)
+        self.assertNotIn("Provenance: Needs source documentation",
+                         prompt)
+
     def test_user_prompt_keeps_distinct_desc_and_purpose_apart(self):
         """When short_description and primary_purpose carry distinct
         text (the partner-facing case where the author wrote them
