@@ -36,6 +36,15 @@ QUESTIONS: List[str] = [
     # Provenance / source-trust probes — exercise the grounding behavior.
     "Which source should I trust most on this page?",
     "How fresh is this data?",
+    # 2026-05-31: questions that exercise the prompt-builder
+    # enrichments from PRs #1260-#1274 (common_misread,
+    # diligence_interpretation, diligence_use_cases, model_logic_summary,
+    # related_metrics). Together with the 12 above, the set now covers
+    # every clause the prompt builder emits.
+    "What's the classic mistake when reading this metric?",
+    "How does this page compute its figures?",
+    "What's this page actually for in diligence?",
+    "What other metrics is this paired with?",
 ]
 
 ROUTES: List[str] = [

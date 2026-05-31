@@ -20,12 +20,28 @@ from rcm_mc.assistant.eval.guide_eval import (
 
 class FixedSetsTests(unittest.TestCase):
     def test_questions_and_routes_match_spec(self):
-        self.assertEqual(len(QUESTIONS), 12)
+        # PR #1285 grew the set 12 → 16: added four questions that
+        # exercise the prompt-builder enrichments from #1260-#1274
+        # (common_misread, model_logic_summary, diligence_use_cases,
+        # related_metrics).
+        self.assertEqual(len(QUESTIONS), 16)
         self.assertIn("What does denial rate mean?", QUESTIONS)
         self.assertIn("Can you change the assumptions?", QUESTIONS)
         self.assertIn("Is this IC-ready?", QUESTIONS)
         # provenance / source-trust probes
         self.assertIn("Which source should I trust most on this page?",
+                      QUESTIONS)
+        # 2026-05-31 additions — partner questions that target the
+        # post-#1260 prompt clauses.
+        self.assertIn(
+            "What's the classic mistake when reading this metric?",
+            QUESTIONS,
+        )
+        self.assertIn("How does this page compute its figures?",
+                      QUESTIONS)
+        self.assertIn("What's this page actually for in diligence?",
+                      QUESTIONS)
+        self.assertIn("What other metrics is this paired with?",
                       QUESTIONS)
         self.assertEqual(len(ROUTES), 10)
         for r in ("/app", "/diligence/hcris-xray", "/metric-glossary",
