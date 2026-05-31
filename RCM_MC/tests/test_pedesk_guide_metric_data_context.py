@@ -37,6 +37,35 @@ class MetricLookupTests(unittest.TestCase):
     def test_registry_substantial(self):
         self.assertGreaterEqual(len(METRIC_REGISTRY), 50)
 
+    def test_glossary_aliases_resolve(self):
+        """The /metric-glossary page (rcm_mc/ui/metric_glossary.py) has
+        13 entries not in METRIC_REGISTRY. PR #1275 adds aliases for
+        the 4 that map cleanly to existing registry concepts so the
+        Guide recognizes them when a partner uses the glossary spelling.
+        Verify each glossary alias resolves to the expected metric."""
+        cases = [
+            ("labor pct of npsr", "labor_cost_ratio"),
+            ("labor_pct_of_npsr", "labor_cost_ratio"),
+            ("medicare day pct", "medicare_exposure"),
+            ("medicare_day_pct", "medicare_exposure"),
+            ("medicaid day pct", "medicaid_exposure"),
+            ("medicaid_day_pct", "medicaid_exposure"),
+            ("commercial pct", "commercial_payer_exposure"),
+            ("commercial_pct", "commercial_payer_exposure"),
+        ]
+        for alias, expected in cases:
+            r = get_metric_context(alias)
+            self.assertTrue(
+                r.found,
+                f"Glossary alias {alias!r} should resolve to "
+                f"{expected!r} but lookup failed.",
+            )
+            self.assertEqual(
+                r.metric_id, expected,
+                f"Glossary alias {alias!r} resolved to "
+                f"{r.metric_id!r}, expected {expected!r}.",
+            )
+
 
 class DataSourceLookupTests(unittest.TestCase):
     def test_cms_hcris_by_label(self):
