@@ -1828,6 +1828,21 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
     "dpi": ["distribution multiple"],
     "cms_star_rating": ["cms star", "cms rating", "hospital star",
                         "snf rating", "star"],
+    # PR #1303: round 2 — partner spellings still missing after round 1,
+    # discovered by probing the resolver with more partner phrasings.
+    # Each is unambiguous (no collision with another registry id) and
+    # maps to one canonical metric; ambiguous candidates like 'fpr' alone
+    # or 'acuity' are deliberately omitted.
+    "net_collection_rate": ["net collection", "collection ratio",
+                            "cash collection ratio"],
+    "gross_collection_rate": ["gross collection"],
+    "bad_debt_rate": ["bdr", "bad debts"],
+    "underpayment_rate": ["underpayment"],
+    "days_in_ar": ["days ar", "a/r days", "days a/r"],
+    "payer_mix": ["payer split", "payor split", "pay mix"],
+    "clean_claim_rate": ["fpy", "first pass", "first-pass"],
+    "denial_rate": ["denials rate", "claim denials", "denial pct"],
+    "capex_intensity": ["cap ex", "capex %", "capex pct"],
 }
 for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
     _o = METRIC_REGISTRY.get(_mid)
