@@ -737,6 +737,12 @@ _MANUAL: List[PageContext] = [
             "RCM uplift = (current gap vs benchmark) × revenue × "
             "contribution margin. Filters narrow the set; the aggregate "
             "is the sum of per-hospital uplift estimates."),
+        diligence_use_cases=[
+            "Building a thesis-driven sourcing shortlist where the "
+            "estimated RCM uplift exceeds a minimum bar.",
+            "Pre-screening a target geography or size band before "
+            "spending diligence hours on individual hospitals.",
+        ],
         why_it_matters="Focuses sourcing on where RCM value-creation is "
         "likely largest.",
         interpretation_guidance=[
@@ -4971,6 +4977,25 @@ _MANUAL: List[PageContext] = [
             "Are these benchmark figures licensed MGMA or representative?",
             "How does panel size affect wRVU productivity reading?",
         ],
+        inputs=["Entered per-provider wRVU, visits, and panel "
+                "size for each provider in the group's roster.",
+                "Specialty and state scope so the benchmark "
+                "bands and HPSA overlay anchor to the right "
+                "market."],
+        outputs=["Each provider's quartile percentile vs the "
+                 "specialty benchmark + the group's quartile "
+                 "mix; real CMS MIPS and HRSA HPSA panels as the "
+                 "local context layer."],
+        key_metrics=["wRVU percentile (entered)",
+                     "Group quartile mix",
+                     "MIPS distribution by state (real)",
+                     "HRSA HPSA designations (real)"],
+        diligence_use_cases=[
+            "Spotting productivity outliers (top-decile vs "
+            "bottom-quartile) within a physician-group deal.",
+            "Sizing the productivity-uplift lever from moving the "
+            "bottom quartile to median wRVU.",
+        ],
         data_sources=["Representative MGMA/AMGA-style benchmark ranges "
                       "(illustrative); real CMS MIPS distribution; real HRSA HPSA."],
         interpretation_guidance=[
@@ -5002,6 +5027,25 @@ _MANUAL: List[PageContext] = [
             "Is the at-risk watchlist real names or illustrative scaffold?",
             "How does retention spend translate into EBITDA?",
             "Where do I plug in the target's actual HR roster?",
+        ],
+        inputs=["Entered role-level churn assumptions (annual %), "
+                "replacement-cost per role, and the target's role "
+                "mix.",
+                "State / facility scope so the CMS Care Compare "
+                "nurse-turnover overlay anchors to the right "
+                "market."],
+        outputs=["EBITDA drag estimate from replacement cost + "
+                 "productivity-dip on entered assumptions + the "
+                 "real CMS nurse-staff turnover sector benchmark "
+                 "(median ~45%)."],
+        key_metrics=["Annual provider churn % (entered)",
+                     "EBITDA drag from churn ($)",
+                     "CMS nurse-staff turnover (real, sector)"],
+        diligence_use_cases=[
+            "Sizing provider/staff retention risk for a deal in a "
+            "high-turnover sector (skilled nursing, dialysis).",
+            "Pressure-testing whether a retention-bonus program "
+            "pays back through reduced replacement cost.",
         ],
         data_sources=["Representative role-level churn assumptions (illustrative) "
                       "+ real CMS nurse-staff turnover (median ~45%)."],
@@ -5161,6 +5205,24 @@ _MANUAL: List[PageContext] = [
             "Is the CIVHC anchor representative outside Colorado?",
             "Where does the model assume the shifted lives go?",
             "How does this connect to /payer-rate-trends?",
+        ],
+        inputs=["Entered Δ-percentage-point shift between payer "
+                "types (e.g. −10pp Medicaid, +10pp commercial) "
+                "plus the deal's current payer mix and per-payer "
+                "rate factors.",
+                "State scope so the CIVHC CO payer-cost trend "
+                "overlay anchors to the right reference market."],
+        outputs=["Revenue / EV impact of the entered payer-mix "
+                 "shift + the real CIVHC Colorado all-payer cost "
+                 "trend by payer type as the directional reference."],
+        key_metrics=["Revenue Δ from payer-mix shift ($)",
+                     "EV impact at deal multiple",
+                     "CIVHC CO PPPY trend by payer (real)"],
+        diligence_use_cases=[
+            "Sizing the EV upside (or downside) of a deliberate "
+            "payer-mix shift over the hold period.",
+            "Stress-testing how a Medicaid-share decline (e.g. "
+            "unwinding tailwind) reprices a deal's revenue.",
         ],
         data_sources=["Illustrative shift model + real CIVHC CO payer-cost "
                       "trend by payer type."],
@@ -5970,6 +6032,23 @@ _MANUAL: List[PageContext] = [
             "How do I read the regime classification?",
             "Are the peer comparison numbers from real deals?",
         ],
+        inputs=["Entered payer-mix shares for the deal (one row "
+                "per payer; CR1/CR3/HHI compute off these).",
+                "State scope so the CMS FFS provider-supply "
+                "panel anchors to the right market."],
+        outputs=["Payer HHI with a DOJ-style regime classification "
+                 "(concentrated / moderate / fragmented) + the real "
+                 "CMS FFS provider-enrollment supply backdrop "
+                 "(2.98M providers)."],
+        key_metrics=["Payer HHI (DOJ bands)",
+                     "Network concentration regime",
+                     "CMS FFS provider enrollment by state (real)"],
+        diligence_use_cases=[
+            "Diagnosing whether a deal's payer book is structurally "
+            "fragile (high HHI / single-payer dependence).",
+            "Framing acquisition-into-supply context: how thin or "
+            "dense is provider supply in the deal's geography.",
+        ],
         data_sources=["Illustrative corpus peers/regime stats (labeled) + real CMS "
                       "FFS provider enrollment (2.98M)."],
         interpretation_guidance=["HHI/regime compute off YOUR payer mix.",
@@ -6682,6 +6761,22 @@ _MANUAL: List[PageContext] = [
             "How does the bridge map to /diligence/bridge-audit?",
             "Where do the bridge model inputs come from — manual or auto?",
             "Why is the bridge empty for some deals?",
+        ],
+        inputs=["A selected pipeline deal — the page resolves "
+                "from its deal_id to the bridge-engine inputs.",
+                "Entered 7-lever targets on the deal (denial, AR, "
+                "payer mix, labor, supply, leverage, refi) — same "
+                "targets that drive /ebitda-bridge."],
+        outputs=["The per-lever EBITDA-contribution stack for the "
+                 "pipeline deal, identical to /ebitda-bridge math."],
+        key_metrics=["EBITDA contribution per lever ($)",
+                     "Total bridged uplift ($)",
+                     "Lever ranking by impact"],
+        diligence_use_cases=[
+            "Jumping from a pipeline opportunity into its full "
+            "EBITDA-bridge view without leaving the pipeline flow.",
+            "Comparing two pipeline deals on lever mix to choose "
+            "which carries the cleaner value-creation thesis.",
         ],
         data_sources=["Your real deal records + the bridge model on your inputs."],
         interpretation_guidance=["Operates on YOUR deal; bridge math is model output."],
