@@ -32,18 +32,11 @@ from rcm_mc.assistant.context.metric_registry import METRIC_REGISTRY
 # because the surface is a download or single-purpose licensed
 # asset, not a partner-facing analytic page. New entries here need
 # a justification comment.
-_SHORT_OK = {
-    # .csv data dumps — answered by "what's in this file / what format"
-    "/county-explorer.csv",
-    "/metro-markets.csv",
-    "/state-compare.csv",
-    "/state-peers.csv",
-    "/state-profile.csv",
-    "/state-rankings.csv",
-    "/target-screener.csv",
-    # Licensed leaf-asset embed; the page itself is a thin viewer.
-    "/market-intel/seeking-alpha",
-}
+# PR #1313: the previously-allowlisted CSV exports + Seeking-Alpha
+# viewer were richly enriched up to the 5-Q floor, so the allowlist
+# is now empty. Keep the scaffold (and the sanity-guard test) in
+# place for future leaf endpoints that genuinely need it.
+_SHORT_OK: set[str] = set()
 
 _MIN_QUESTIONS = 5
 
