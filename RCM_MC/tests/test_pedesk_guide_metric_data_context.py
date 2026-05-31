@@ -81,6 +81,74 @@ class MetricLookupTests(unittest.TestCase):
             self.assertTrue(r.found, f"{label!r} should resolve")
             self.assertEqual(r.metric_id, expected)
 
+    def test_partner_metric_aliases_resolve(self):
+        """PRs #1300, #1303, #1310, #1311 added partner-spelled metric
+        aliases probed against the resolver. Lock a representative
+        slice from each round so a future dup-key or rename can't
+        silently drop them (PR #1310 caught exactly this — 4 keys had
+        been silently overwritten across the round-1/round-2 cycle)."""
+        cases = [
+            # PR #1300 (round 1)
+            ("NPSR", "revenue"),
+            ("net patient service revenue", "revenue"),
+            ("topline", "revenue"),
+            ("rev growth", "revenue_growth"),
+            ("debt ratio", "leverage"),
+            ("ev mult", "ev_to_ebitda"),
+            ("cash multiple", "moic"),
+            ("distribution multiple", "dpi"),
+            ("hospital star", "cms_star_rating"),
+            # PR #1303 (round 2)
+            ("net collection", "net_collection_rate"),
+            ("collection ratio", "net_collection_rate"),
+            ("gross collection", "gross_collection_rate"),
+            ("BDR", "bad_debt_rate"),
+            ("bad debts", "bad_debt_rate"),
+            ("underpayment", "underpayment_rate"),
+            ("days ar", "days_in_ar"),
+            ("a/r days", "days_in_ar"),
+            ("payer split", "payer_mix"),
+            ("FPY", "clean_claim_rate"),
+            ("first pass", "clean_claim_rate"),
+            ("claim denials", "denial_rate"),
+            ("cap ex", "capex_intensity"),
+            # PR #1310 (round 3 + restored-from-dup-key)
+            ("days in ar", "days_in_ar"),   # restored
+            ("capex", "capex_intensity"),    # restored
+            ("capital expenditure", "capex_intensity"),  # restored
+            ("denial", "denial_rate"),       # restored
+            ("weighted moic", "moic"),       # restored
+            ("physician churn", "physician_attrition"),
+            ("md attrition", "physician_attrition"),
+            ("cash on hand", "days_cash_on_hand"),
+            ("distributions to paid in", "dpi"),
+            ("denied claims", "denial_rate"),
+            ("patient leakage", "referral_leakage"),
+            ("referral leak", "referral_leakage"),
+            # PR #1311 (round 4)
+            ("top-line", "revenue"),
+            ("gross profit", "gross_margin"),
+            ("gp margin", "gross_margin"),
+            ("gpm", "gross_margin"),
+            ("EBITDAm", "ebitda_margin"),
+            ("AOB", "fte_per_aob"),
+            ("adjusted occupied beds", "fte_per_aob"),
+            ("opex per discharge", "cost_per_adjusted_discharge"),
+            ("operating profit margin", "operating_margin"),
+        ]
+        for alias, expected in cases:
+            r = get_metric_context(alias)
+            self.assertTrue(
+                r.found,
+                f"Metric alias {alias!r} should resolve to "
+                f"{expected!r} but lookup failed.",
+            )
+            self.assertEqual(
+                r.metric_id, expected,
+                f"Metric alias {alias!r} resolved to "
+                f"{r.metric_id!r}, expected {expected!r}.",
+            )
+
     def test_glossary_aliases_resolve(self):
         """The /metric-glossary page (rcm_mc/ui/metric_glossary.py) has
         13 entries not in METRIC_REGISTRY. PR #1275 adds aliases for
