@@ -237,6 +237,74 @@ Group C still has ~116 surfaces remaining. Loop continues.
    `docs/style-sweep/MIGRATION_INVENTORY.md` for the active per-batch
    worklist.
 
+## Addendum — 2026-05-31: Guide-context drain (PRs #1250-#1281)
+
+A 32-PR session that took the Guide-context layer from 'mostly populated
+with some NEEDS placeholders' to **exhaustively populated and locked by
+24 invariant tests**. Every PageContext, MetricContext, and
+DataSourceContext field that flows into the Ollama Guide's prompt is
+now real, page/metric/source-specific content — no `_NEEDS` placeholder
+text can reach the model.
+
+**Lanes drained + locked (each by a regression test in
+`tests/test_pedesk_guide_5q_invariant.py`):**
+
+- **List-fields** (`inputs` / `outputs` / `key_metrics` /
+  `diligence_use_cases`) — drained across all 360 pages
+  (PRs #1246-#1256).
+- **`limitations` / `interpretation_guidance` / `model_logic_summary`**
+  — drained on 360 pages (prior sprint).
+- **`common_misread`** — drained on all 81 metrics (#1257-#1258).
+- **`provenance_notes` + `strengths`** — drained on 51 data sources
+  (#1262).
+- **`update_cadence` + `freshness_lag`** — drained on 51 data sources
+  (#1265).
+- **`ic_ready`** — set explicitly on every data source (no `None`)
+  (#1267).
+- **Page → data source links** — 24 illustrative-overlay pages wired
+  to their canonical anchor source (#1264).
+- **Data source → metrics** — 10 public-data sources cross-linked to
+  the metrics they feed (#1263).
+- **All pages have ≥1 related_route** (#1259) + all resolve (#1259).
+- **All metrics have ≥1 related_metrics** + all resolve (#1258).
+- **All data-source related_metrics resolve** (#1263).
+- **All page data_source_ids resolve** (#1264).
+- **52 dup desc/purpose collapsed in the prompt** (#1266).
+- **Orphan metrics in registry** — 7 metrics wired to owning pages
+  (#1279); invariant guards.
+- **Orphan data sources in registry** — 3 wired to owning pages
+  (#1280); invariant guards (only `unknown_source` allowlisted).
+- **Unwired key_metrics→metric_id** — 9 pairs wired via
+  `_METRIC_LINK_EXTEND_2` (#1277); invariant guards.
+- **/metric-glossary keys** — 4 mapped as registry aliases (#1275) +
+  2 added as full new registry entries: `first_pass_resolution_rate`,
+  `payer_diversity` (#1276).
+
+**Prompt-builder enrichment** (9 new clauses added to the per-route
+prompt):
+
+- `Common misread:` per metric (#1260)
+- `Diligence read:` per metric (#1261)
+- Collapsed `Page description / primary purpose:` when duplicate (#1266)
+- `IC-ready: yes/no` per data source (#1268)
+- `Provenance:` per data source (#1269)
+- `Route-specific assistant notes:` for parameterized pages (#1270)
+- `Diligence use cases:` per page (#1271)
+- `Model logic:` per page (#1272)
+- `Strengths:` per data source (#1273)
+- `Related metrics:` per metric (#1274)
+- `Discussed on:` (metric.related_routes) (#1281)
+
+**Test-maintenance fix**: 2 stale UI tests (mega-menu + topbar
+dropdown) updated to track post-#1003/#1155 markup (#1278).
+
+**Final state**: Real NEEDS placeholders across all 3 registries = 0
+(excluding the `notes_for_assistant` lines that explicitly instruct
+the model to say *'needs source documentation'* when it can't answer).
+24 invariant tests + ~85 tests in the broader guide test suite all
+green. Production health (https://pedesk.app/healthz) verified 200
+throughout the sprint.
+
 ## Guardrails honored
 
 No fake data. Did not touch auth/session, Caddy, systemd, deploy workflow,
