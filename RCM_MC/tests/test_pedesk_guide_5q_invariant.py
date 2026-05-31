@@ -478,6 +478,53 @@ class TestNoOrphanDataSourcesInRegistry(unittest.TestCase):
         )
 
 
+class TestSourceRelatedRoutesBackFillIsComplete(unittest.TestCase):
+    """The data_source.related_routes back-fill (#1326) walks every
+    page's data_source_ids and appends consuming pages to each
+    source's related_routes (cap=6). This invariant fails if any
+    source S is referenced by ≥2 pages but S.related_routes is
+    smaller than min(consuming_pages, 6) — that means the back-fill
+    didn't run or ran before all forward wirings completed.
+
+    PR #1326 caught exactly this: the back-fill used to run right
+    after _DATA_SOURCE_LINK_EXTEND, which missed the geo pages on
+    cms_hcahps/cms_chow/cms_ma_geo/etc. that get wired later by
+    _GEO_SOURCE_LINKS. Moving it to the file-bottom (after every
+    forward loop) fixed it; this test locks the placement."""
+
+    _CAP = 6
+
+    def test_back_fill_reaches_every_consuming_page(self):
+        # Build source → set(consuming-page-routes) from the final state.
+        src_to_pages: dict[str, set[str]] = {}
+        for route, ctx in MANUAL_PAGE_CONTEXTS.items():
+            for sid in (ctx.data_source_ids or []):
+                src_to_pages.setdefault(sid, set()).add(route)
+        under_filled: list[str] = []
+        for sid, src in DATA_SOURCE_REGISTRY.items():
+            pages = src_to_pages.get(sid, set())
+            expected = min(len(pages), self._CAP)
+            cur = set(src.related_routes or [])
+            # Curated heads may include routes NOT in pages (e.g. a
+            # source listing a sibling-section index that doesn't
+            # itself wire the source); count both to be conservative.
+            reachable = cur | pages
+            if len(reachable) < expected:
+                under_filled.append(
+                    f"{sid}: rr={sorted(cur)}, "
+                    f"pages={sorted(pages)}, "
+                    f"reachable={len(reachable)} < expected={expected}"
+                )
+        self.assertFalse(
+            under_filled,
+            "Source.related_routes back-fill under-filled — the "
+            "back-fill loop may have run before all forward "
+            "page→source wirings completed. Make sure the back-fill "
+            "at the file bottom of manual_page_contexts.py runs "
+            "LAST.\n  " + "\n  ".join(under_filled),
+        )
+
+
 class TestKeyMetricsResolveToWiredMetricIds(unittest.TestCase):
     """For every PageContext.key_metrics free-form string that resolves
     to a real METRIC_REGISTRY id via the lookup, the corresponding
