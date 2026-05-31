@@ -736,21 +736,32 @@ DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {
 # the Guide find it?'. Same pattern as _ALIAS_EXTEND_COVERAGE in
 # metric_registry.py — fill-only-if-not-already-an-alias guard.
 _PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
-    "cms_hcris": ["ccn", "medicare cost reports"],
+    # PR #1299 + 2026-05-31 round 3 merged. NOTE: each key appears
+    # ONCE — Python dict literal overwrites on duplicate key, which
+    # silently drops earlier aliases.
+    "cms_hcris": ["ccn", "medicare cost reports", "medicare cost"],
     "cms_care_compare": ["cms hospital compare"],
-    "cms_ma_geo": ["medicare advantage geo", "cms ma"],
-    "civhc_rbp": ["apcd"],
-    "oig_leie": ["hhs oig"],
+    "cms_ma_geo": ["medicare advantage geo", "cms ma",
+                   "ma data", "medicare advantage data"],
+    "civhc_rbp": ["apcd", "reference pricing"],
+    "oig_leie": ["hhs oig", "fraud list", "sanctions list"],
     "cms_partd_drug_spending": ["partd", "part d"],
-    "openfda_drug_shortages": ["fda shortage"],
+    "openfda_drug_shortages": ["fda shortage", "shortage",
+                               "open fda", "fda shortages"],
     "clinicaltrials_gov": ["clinical trials"],
-    "chr_county_demographics": ["county health"],
+    "chr_county_demographics": ["county health", "health rankings"],
     # PR #1302: SEC filing variants without dash + common shorthand;
     # VDR variants; physician/professional claims = 837P.
     "sec_edgar": ["10k", "10q", "8k", "annual report",
                   "quarterly filing"],
     "data_room_export": ["vdr", "data-room"],
     "edi_837": ["physician claims", "professional claims"],
+    # 2026-05-31 (round 3): more partner spellings probed against the
+    # resolver. Each unambiguous (no collision with another source id).
+    "cms_chow": ["snf chow", "hospital chow"],
+    "cms_open_payments": ["sunshine"],
+    "cms_provider_data_catalog": ["snf rating", "medicare provider"],
+    "cbsa_crosswalk": ["omb", "metro area", "cbsa data"],
 }
 for _sid, _als in _PARTNER_SOURCE_ALIAS_EXTENSIONS.items():
     _src = DATA_SOURCE_REGISTRY.get(_sid)
