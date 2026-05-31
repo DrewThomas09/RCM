@@ -6415,6 +6415,11 @@ for _route, _title, _upload, _who, _activates, _tmpl in _DATA_REQUIRED_GUIDE:
             f"Request the data from: {_who}.",
             "Figures currently shown are an illustrative scaffold, NOT this deal's values.",
         ],
+        # 2026-05-30: every DATA_REQUIRED page benefits from the same two
+        # universal siblings — /diligence/checklist is where outstanding
+        # uploads register as P0 blockers, and /tools is the index where
+        # a partner finds the next surface to populate.
+        related_routes=["/diligence/checklist", "/tools"],
         why_it_matters=f"{_activates} — but only once it runs on your real data, not a fabricated default.",
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
