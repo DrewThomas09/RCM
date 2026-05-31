@@ -5069,6 +5069,14 @@ _MANUAL: List[PageContext] = [
             "modeled from my inputs?",
             "Where do I see the actual measure-by-measure CMS data?",
         ],
+        inputs=["Sector, entered current outcomes posture, "
+                "outcome-to-revenue conversion rate."],
+        outputs=["Sector quartile placement + EV uplift to move "
+                 "outcomes one quartile."],
+        key_metrics=["Outcome quartile", "EV uplift per quartile",
+                     "Sector benchmark band"],
+        diligence_use_cases=["Sizing clinical-quality value-creation "
+                             "for the deal's bridge."],
         data_sources=["Illustrative outcomes model + real CMS quality-measure "
                       "rating distribution."],
         interpretation_guidance=["Calculator on your inputs; CMS benchmark is "
@@ -5343,6 +5351,13 @@ _MANUAL: List[PageContext] = [
             "How do cohorts differ from tags or watchlists?",
             "Why is my cohort empty — did I forget to tag deals?",
         ],
+        inputs=["Cohort definitions and deal-tag assignments from "
+                "the deal store."],
+        outputs=["Per-cohort summary cards (deal count, weighted "
+                 "MOIC/IRR, health-score distribution)."],
+        key_metrics=["Cohort size", "Weighted MOIC", "Health-score mix"],
+        diligence_use_cases=["Comparing strategic groupings of deals "
+                             "to spot performance/risk patterns."],
         data_sources=["Live deal store (cohort membership)."],
         interpretation_guidance=["Operates on YOUR tracked deals."],
         limitations=[
@@ -5761,6 +5776,13 @@ _MANUAL: List[PageContext] = [
             "What's the difference between this page and /covenant-headroom?",
             "Where do covenant ratios come from — actuals upload or projection?",
         ],
+        inputs=["Entered/attached covenant ratios + thresholds per "
+                "deal; period window."],
+        outputs=["Per-deal cushion band (TRIPPED / 0-15% warning / "
+                 "safe) + trend over the chosen window."],
+        key_metrics=["Cushion %", "Trip count", "Warning-band count"],
+        diligence_use_cases=["Portfolio-wide covenant-posture review "
+                             "before LP update or board meeting."],
         data_sources=["Calculator: your inputs (+ live deal data where attached)."],
         interpretation_guidance=["Reflects your inputs / attached deal data."],
         limitations=[
@@ -6177,6 +6199,12 @@ _MANUAL: List[PageContext] = [
             "What CMS CHOW data signals about consolidation in this market?",
             "What precedent deals were challenged in this sector?",
         ],
+        inputs=["Deal size, current/post-deal market shares, sector."],
+        outputs=["HSR filing-requirement flag, directional HHI delta, "
+                 "CMS CHOW serial-acquisition context."],
+        key_metrics=["HSR threshold trip", "HHI delta", "Serial-CHOW count"],
+        diligence_use_cases=["Early antitrust risk read before an HSR "
+                             "filing decision."],
         data_sources=["Illustrative HHI/HSR/overlap/precedent model (labeled) + real "
                       "CMS CHOW consolidation activity."],
         interpretation_guidance=["HHI/HSR/overlap compute off your deal-size input.",
@@ -6204,6 +6232,14 @@ _MANUAL: List[PageContext] = [
             "What's the minimum scale for shared-savings to work?",
             "Where can I see the underlying MSSP performance data?",
         ],
+        inputs=["CIN size (attributed lives), entered quality score, "
+                "structure choice (CIN/ACO/IPA)."],
+        outputs=["Directional savings opportunity + MSSP-landscape "
+                 "context band."],
+        key_metrics=["Shared-savings opportunity $", "MSSP percentile",
+                     "Min scale for savings"],
+        diligence_use_cases=["Sizing the value-based-care thesis for "
+                             "a clinically-integrated network deal."],
         data_sources=["Illustrative CIN roster/contracts/quality (labeled) + real CMS "
                       "MSSP ACO landscape (511 ACOs, 15,293 orgs)."],
         interpretation_guidance=["CIN roster/contract figures are illustrative.",
@@ -6260,6 +6296,13 @@ _MANUAL: List[PageContext] = [
             "Is this feed audit-grade — can I cite it in IC?",
             "How far back does the activity log go?",
         ],
+        inputs=["Workspace audit/event log; entity-type and time-"
+                "window filters."],
+        outputs=["Reverse-chronological event stream with timestamp, "
+                 "actor, entity, and action."],
+        key_metrics=["Events per day", "Top actors", "Top entities"],
+        diligence_use_cases=["Reviewing what changed before an IC "
+                             "or LP update."],
         data_sources=["Your real workspace audit/event log (SQLite)."],
         interpretation_guidance=["This is your own real activity, not market/corpus data."],
         limitations=[
