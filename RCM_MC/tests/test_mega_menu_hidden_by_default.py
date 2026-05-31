@@ -37,13 +37,22 @@ class MegaMenuHiddenByDefaultTests(unittest.TestCase):
         self.assertIsNotNone(m)
         self.assertIn("display:none", m.group(0))
 
-    def test_open_states_use_grid(self):
-        self.assertIn(".ck-nav-group.is-open > .ck-nav-mega { display:grid; }",
+    def test_open_states_show_the_mega_panel(self):
+        # The mega-menu's outer .ck-nav-mega element is shown on the
+        # open/hover states; the actual 2fr/3fr grid lives on the inner
+        # .ck-mega-inner element (PR #1003 — full-bleed editorial mega).
+        # So 'display:block' on the outer is the post-#1003 intent, NOT
+        # 'display:grid' (which was the pre-#1003 single-container layout).
+        self.assertIn(".ck-nav-group.is-open > .ck-nav-mega { display:block; }",
                       self.css)
         # Under JS control, hover does not open a mega panel; only .is-open does.
         self.assertIn(".ck-topbar[data-menu-js] .ck-nav-group:hover > .ck-nav-mega { display:none; }",
                       self.css)
-        self.assertIn(".ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-mega { display:grid; }",
+        self.assertIn(".ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-mega { display:block; }",
+                      self.css)
+        # The actual columnar grid is on .ck-mega-inner — assert it's grid
+        # so a future regression that drops the columns gets caught.
+        self.assertIn("display:grid; grid-template-columns:2fr 3fr;",
                       self.css)
 
     def test_no_group_open_in_default_markup(self):
