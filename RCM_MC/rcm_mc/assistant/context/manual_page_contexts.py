@@ -10170,6 +10170,14 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     "/patient-experience": ["cms_hcahps"],
     "/supply-chain": ["openfda_drug_shortages"],
     "/target-screener": ["cms_hcris"],
+    # 2026-05-31: wire 3 orphan data sources to their natural pages
+    # so the Guide pulls per-source cadence/limits/provenance when
+    # answering about these pages. unknown_source is the explicit
+    # fallback for pages with no documented source — never wired here.
+    "/trial-site-econ": ["clinicaltrials_gov"],
+    "/drug-pricing-340b": ["cms_partd_drug_spending"],
+    "/tracker-340b": ["cms_partd_drug_spending"],
+    "/data-room": ["data_room_export"],
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)

@@ -426,6 +426,38 @@ class TestNoOrphanMetricsInRegistry(unittest.TestCase):
         )
 
 
+class TestNoOrphanDataSourcesInRegistry(unittest.TestCase):
+    """Every data source in DATA_SOURCE_REGISTRY should either be
+    referenced by at least one PageContext.data_source_ids OR be the
+    explicit ``unknown_source`` fallback. An orphan source is dead
+    weight in the prompt — the Guide can't surface it because no page
+    resolves to it. PR #1280 wired the last 3 real orphans
+    (clinicaltrials_gov, cms_partd_drug_spending, data_room_export)
+    via _DATA_SOURCE_LINK_PATCHES; this guards a new source landing
+    without being wired to its owning page."""
+
+    # unknown_source is intentionally orphan — it's the explicit "no
+    # documented source" fallback, never wired to a specific page.
+    _ALLOW_ORPHAN = {"unknown_source"}
+
+    def test_every_data_source_is_referenced_by_some_page(self):
+        all_used: set[str] = set()
+        for ctx in MANUAL_PAGE_CONTEXTS.values():
+            all_used.update(ctx.data_source_ids or [])
+        orphans = sorted(
+            set(DATA_SOURCE_REGISTRY.keys())
+            - all_used
+            - self._ALLOW_ORPHAN
+        )
+        self.assertFalse(
+            orphans,
+            "Orphan data sources in DATA_SOURCE_REGISTRY — wire each "
+            "to its owning page's data_source_ids (or add an entry to "
+            "_DATA_SOURCE_LINK_PATCHES at the bottom of "
+            "manual_page_contexts.py):\n  " + "\n  ".join(orphans),
+        )
+
+
 class TestKeyMetricsResolveToWiredMetricIds(unittest.TestCase):
     """For every PageContext.key_metrics free-form string that resolves
     to a real METRIC_REGISTRY id via the lookup, the corresponding
