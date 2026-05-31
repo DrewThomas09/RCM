@@ -3,12 +3,61 @@ top local chunks. Read-only; no LLM call here."""
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 from typing import Dict, List, Optional
 
 from . import vector_store
 from .embeddings import embed_query
 from .types import RagSearchResult, rag_index_path, rag_top_k
+
+
+def _normalize_text(s: str) -> str:
+    return re.sub(r"[^a-z0-9 ]+", " ", (s or "").lower())
+
+
+def metric_alias_map() -> Dict[str, str]:
+    """Map normalized metric label/alias -> metric_id, for exact-name
+    promotion. Aliases shorter than 3 chars are skipped to avoid noisy
+    substring hits. Built from the in-repo metric registry only."""
+    out: Dict[str, str] = {}
+    try:
+        from ..context.metric_registry import METRIC_REGISTRY
+    except Exception:  # noqa: BLE001 — promotion is best-effort
+        return out
+    for mid, mc in METRIC_REGISTRY.items():
+        names = [getattr(mc, "label", "")] + list(getattr(mc, "aliases", []) or [])
+        for n in names:
+            key = _normalize_text(n).strip()
+            if len(key) >= 3:
+                out.setdefault(key, mid)
+    return out
+
+
+def promote_exact_metric_match(
+    results: List[RagSearchResult], query: str,
+    alias_map: Optional[Dict[str, str]] = None,
+) -> List[RagSearchResult]:
+    """Stable-reorder ``results`` so chunks for a metric the query names by
+    label/alias come first.
+
+    Reorder only — never drops or invents results — so it cannot reduce
+    result quality or change counts. Helps "what does <metric> mean?"
+    questions surface the exact Metric Registry entry above generic
+    semantic neighbors."""
+    if not results:
+        return results
+    if alias_map is None:
+        alias_map = metric_alias_map()
+    if not alias_map:
+        return results
+    q = " " + _normalize_text(query).strip() + " "
+    hit_ids = {mid for alias, mid in alias_map.items() if (" " + alias + " ") in q}
+    if not hit_ids:
+        return results
+    front = [r for r in results if r.metric_id in hit_ids]
+    rest = [r for r in results if r.metric_id not in hit_ids]
+    return front + rest if front else results
 
 
 def index_exists(path: Optional[str] = None) -> bool:
@@ -106,4 +155,7 @@ def search(query: str, top_k: Optional[int] = None,
         raw = vector_store.search_similar(con, vec, fetch_k)
     finally:
         con.close()
+    # Promote an exact metric-name match before the diversity trim so the
+    # named metric's registry entry survives into the returned top-k.
+    raw = promote_exact_metric_match(raw, q)
     return dedupe_keep_diverse(raw, k)

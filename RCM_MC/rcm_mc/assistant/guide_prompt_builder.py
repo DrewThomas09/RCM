@@ -114,7 +114,13 @@ def build_guide_system_prompt(packet: GuideContextPacket) -> str:
         "check. If a figure you'd want isn't in the context, say what you'd "
         "need rather than inventing it.\n"
         "- When retrieved Guide context informed the answer, name the source "
-        "title in-line (e.g. 'per the Metric Registry — Denial Rate')."
+        "title in-line (e.g. 'per the Metric Registry — Denial Rate').\n"
+        "- If asked to DO something you cannot (change an assumption, run a "
+        "model, simulate, export, create a task, or give a buy/sell call), "
+        "decline in one short sentence — say PEdesk Guide is read-only — then "
+        "redirect to what you CAN do: explain where that value or assumption "
+        "comes from, how it is computed, or which page controls it. Do not "
+        "lecture or stack disclaimers."
     )
 
 

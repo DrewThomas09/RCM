@@ -100,6 +100,16 @@ class PromptBuilderTests(unittest.TestCase):
         # Readability guidance must not weaken the read-only contract.
         self.assertIn("final investment recommendations", sysp)
 
+    def test_system_prompt_has_refusal_redirect_guidance(self):
+        sysp = build_guide_system_prompt(self.packet).lower()
+        # Decline actions briefly, then redirect to an explanation.
+        self.assertIn("read-only", sysp)
+        self.assertIn("decline", sysp)
+        self.assertIn("redirect to what you can do", sysp)
+        # Still forbids the actual actions (contract intact).
+        self.assertIn("run models", sysp)
+        self.assertIn("change assumptions", sysp)
+
     def test_system_prompt_has_retrieved_context_rule(self):
         sysp = build_guide_system_prompt(self.packet).lower()
         self.assertIn("retrieved", sysp)

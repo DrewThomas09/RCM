@@ -266,5 +266,53 @@ class RetrievalDedupeTests(unittest.TestCase):
         self.assertEqual(len(out), 2)
 
 
+class ExactMetricPromotionTests(unittest.TestCase):
+    """Reorder-only promotion of an exactly-named metric."""
+
+    def _r(self, title, stype, score, **ids):
+        return RagSearchResult(title=title, source_type=stype, text="x",
+                               score=score, **ids)
+
+    ALIASES = {"denial rate": "denial_rate", "clean dar": "clean_dar"}
+
+    def test_named_metric_is_promoted_to_front(self):
+        from rcm_mc.assistant.rag.retrieval import promote_exact_metric_match
+        results = [
+            self._r("Some doc", "doc", 0.92, source_id="d1"),
+            self._r("Denial Rate", "metric", 0.71, metric_id="denial_rate"),
+        ]
+        out = promote_exact_metric_match(
+            results, "What does denial rate mean?", self.ALIASES)
+        self.assertEqual(out[0].metric_id, "denial_rate")
+        self.assertEqual(len(out), len(results))  # reorder only, no drops
+
+    def test_no_named_metric_keeps_order(self):
+        from rcm_mc.assistant.rag.retrieval import promote_exact_metric_match
+        results = [
+            self._r("Doc", "doc", 0.9, source_id="d1"),
+            self._r("Metric", "metric", 0.8, metric_id="denial_rate"),
+        ]
+        out = promote_exact_metric_match(
+            results, "How is the platform doing overall?", self.ALIASES)
+        self.assertEqual([r.title for r in out], ["Doc", "Metric"])
+
+    def test_substring_does_not_falsely_match(self):
+        # "moderate" must not trigger the "rate" family; aliases match as
+        # whole space-delimited phrases only.
+        from rcm_mc.assistant.rag.retrieval import promote_exact_metric_match
+        results = [self._r("Doc", "doc", 0.9, source_id="d1")]
+        out = promote_exact_metric_match(
+            results, "is growth moderate here?", {"rate": "denial_rate"})
+        self.assertEqual([r.title for r in out], ["Doc"])
+
+    def test_alias_map_built_from_registry(self):
+        from rcm_mc.assistant.rag.retrieval import metric_alias_map
+        m = metric_alias_map()
+        self.assertIsInstance(m, dict)
+        self.assertTrue(m)  # registry has metrics
+        # values are metric_ids (strings)
+        self.assertTrue(all(isinstance(v, str) for v in m.values()))
+
+
 if __name__ == "__main__":
     unittest.main()

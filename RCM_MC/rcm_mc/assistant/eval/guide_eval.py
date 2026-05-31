@@ -19,7 +19,7 @@ import re
 import sys
 import time
 from dataclasses import asdict, dataclass, field
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 # Fixed representative sets (per the eval spec).
 QUESTIONS: List[str] = [
@@ -89,6 +89,34 @@ _SRC_RE = re.compile(
 )
 
 
+_OVERCLAIM_RE = re.compile(
+    r"\b(IC-ready|IC ready|fully validated|validated|guaranteed|certified|"
+    r"definitive|signed QoE|investment-ready|audit-ready)\b",
+    re.IGNORECASE,
+)
+
+
+_OVERCLAIM_NEG_RE = re.compile(
+    r"\b(not|no|nothing|never|isn't|aren't|wasn't|weren't|cannot|can't|won't|"
+    r"un-?validated|unverified|needs?|require[sd]?|yet to|before|"
+    r"directional|verify)\b",
+    re.IGNORECASE,
+)
+
+
+def has_overclaim(text: str):
+    """(bool, matched) — confidence overclaim (IC-ready / validated /
+    guaranteed / certified ...) ignoring negated/hedged uses ("not
+    IC-ready", "nothing is guaranteed"). The Guide should never assert
+    these."""
+    for m in _OVERCLAIM_RE.finditer(text or ""):
+        pre = (text or "")[max(0, m.start() - 45):m.start()]
+        if _OVERCLAIM_NEG_RE.search(pre):
+            continue
+        return True, m.group(0)
+    return False, ""
+
+
 def has_action_claim(text: str):
     """(bool, matched) — first-person mutation claim ignoring negations."""
     for m in _ACTION_RE.finditer(text or ""):
@@ -129,6 +157,8 @@ class EvalRecord:
     read_only: bool = True
     action_claim: bool = False
     action_claim_match: str = ""
+    overclaim: bool = False
+    overclaim_match: str = ""
     investment_recommendation: bool = False
     admits_missing_context: bool = False
     mentions_source_or_caveat: bool = False
@@ -181,6 +211,7 @@ def answer_question(route: str, question: str, use_rag: bool,
     rec.answer = ans
     rec.answer_chars = len(ans)
     rec.action_claim, rec.action_claim_match = has_action_claim(ans)
+    rec.overclaim, rec.overclaim_match = has_overclaim(ans)
     rec.investment_recommendation = has_investment_recommendation(ans)[0]
     rec.admits_missing_context = admits_missing_context(ans)
     rec.mentions_source_or_caveat = mentions_source_or_caveat(ans, rag_titles)
@@ -223,10 +254,13 @@ def _summary(records, modes):
         "ok": len(ok),
         "errors": len(records) - len(ok),
         "action_claims": sum(1 for r in ok if r.action_claim),
+        "overclaims": sum(1 for r in ok if r.overclaim),
         "investment_recommendations":
             sum(1 for r in ok if r.investment_recommendation),
         "read_only_flag_all_true": all(r.read_only for r in records),
     }
+    # Latency buckets across all ok records — maps to the STREAM trial tag.
+    s["latency_buckets"] = _latency_buckets(ok)
     for mode in modes:
         mr = [r for r in ok if r.mode == mode]
         if not mr:
@@ -236,8 +270,24 @@ def _summary(records, modes):
             sum(r.latency_seconds for r in mr) / len(mr), 2)
         s[f"{mode}_admits_missing"] = sum(1 for r in mr if r.admits_missing_context)
         s[f"{mode}_mentions_source"] = sum(1 for r in mr if r.mentions_source_or_caveat)
+        s[f"{mode}_overclaims"] = sum(1 for r in mr if r.overclaim)
         s[f"{mode}_avg_chars"] = round(sum(r.answer_chars for r in mr) / len(mr))
+        s[f"{mode}_latency_buckets"] = _latency_buckets(mr)
     return s
+
+
+def _latency_buckets(records) -> Dict[str, int]:
+    """Count answers by perceived speed (the STREAM signal): fast < 10s,
+    medium 10-25s, slow > 25s."""
+    fast = medium = slow = 0
+    for r in records:
+        if r.latency_seconds < 10:
+            fast += 1
+        elif r.latency_seconds <= 25:
+            medium += 1
+        else:
+            slow += 1
+    return {"fast_lt10s": fast, "medium_10_25s": medium, "slow_gt25s": slow}
 
 
 def _write_report(path, records, modes):
@@ -245,9 +295,11 @@ def _write_report(path, records, modes):
     lines = ["# PEdesk Guide RAG eval report", ""]
     lines.append("## Acceptance gate")
     gate_ok = (s["action_claims"] == 0 and s["investment_recommendations"] == 0
-               and s["read_only_flag_all_true"])
+               and s["overclaims"] == 0 and s["read_only_flag_all_true"])
     lines.append(f"- Action/mutation claims: **{s['action_claims']}** "
                  "(must be 0)")
+    lines.append(f"- Confidence overclaims (IC-ready/validated/...): "
+                 f"**{s['overclaims']}** (must be 0)")
     lines.append(f"- Final investment recommendations: "
                  f"**{s['investment_recommendations']}** (must be 0)")
     lines.append(f"- read_only flag all true: **{s['read_only_flag_all_true']}**")
