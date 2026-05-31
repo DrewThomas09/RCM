@@ -10479,7 +10479,21 @@ _DATA_SOURCE_LINK_EXTEND: Dict[str, List[str]] = {
     "/diligence/bear-case": ["cms_hcris"],
     # Market-intel/geo's prose explicitly names CHOW as the consolidation
     # signal alongside FFS enrollment (already wired).
-    "/market-intel/geo": ["cms_chow"],
+    "/market-intel/geo": ["cms_chow", "cms_hcris"],
+    # 2026-05-31 (round 2): targeted probe found 5 more pages with
+    # existing wirings whose prose ALSO names another registered
+    # source. Each addition is a real backing/contextualizing source
+    # the page actually reads from or references in its model.
+    # /cms-apm's primary wiring (cms_cmmi_apm) comes from the
+    # _PUBLIC_SOURCE_LINKS loop further below, which is fill-only-if-
+    # empty. Including cms_cmmi_apm here too so the EXTEND doesn't
+    # pre-populate the list and starve the later _PUBLIC_SOURCE_LINKS
+    # write — keeps cms_cmmi_apm out of the orphan-source list.
+    "/cms-apm": ["cms_cmmi_apm", "cms_mssp_aco"],  # APM landscape includes MSSP
+    "/diligence/payer-stress": ["cms_ma_geo"],   # MA panel context
+    "/diligence/thesis-pipeline": ["cms_hcris"], # HCRIS X-ray stage
+    "/methodology": ["cms_hcris"],           # methodology hub names HCRIS
+    "/state-rankings": ["cbsa_crosswalk"],   # CBSA delineation shared
 }
 for _c in _MANUAL:
     _ex = _DATA_SOURCE_LINK_EXTEND.get(_c.route)
