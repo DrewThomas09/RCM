@@ -259,6 +259,21 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     if rel_metrics
                     else ""
                 )
+                # related_routes on the metric points to OTHER PEdesk
+                # pages that discuss this metric — distinct from the
+                # page's own related_routes block. Lets the Guide say
+                # 'to dig deeper into denial_rate, see
+                # /diligence/denial-prediction'. Every metric has at
+                # least 2 (locked by TestMetricsHaveTwoOrMoreRelatedRoutes).
+                rel_routes = [
+                    str(r).strip() for r in (m.related_routes or [])
+                    if str(r).strip()
+                ]
+                rel_routes_line = (
+                    f" Discussed on: {', '.join(rel_routes)}."
+                    if rel_routes
+                    else ""
+                )
                 out.append(
                     f"- {m.label} ({m.metric_id}): {m.definition} "
                     f"Formula: {m.formula} [{m.formula_confidence.value}]. "
@@ -267,6 +282,7 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     f"{misread_line} "
                     f"Caveats: {'; '.join(m.caveats) if m.caveats else 'none'}."
                     f"{rel_metrics_line}"
+                    f"{rel_routes_line}"
                 )
 
     if packet.data_source_contexts:

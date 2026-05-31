@@ -43,6 +43,18 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Common misread: Needs source documentation",
                          prompt)
 
+    def test_user_prompt_includes_metric_related_routes(self):
+        """The metric-context block must surface the metric's
+        related_routes ('Discussed on: …') so the Guide can suggest
+        other pages where the metric is explained. Distinct from the
+        page's own related_routes block. PR #1281 wires this in;
+        TestMetricsHaveTwoOrMoreRelatedRoutes guarantees every metric
+        has ≥2 entries already."""
+        prompt = build_guide_user_prompt(
+            "Where else can I see denial_rate?", self.packet
+        )
+        self.assertIn("Discussed on:", prompt)
+
     def test_user_prompt_includes_metric_related_metrics(self):
         """The metric-context block must surface related_metrics so
         the Guide can hop between paired concepts (e.g. denial_rate ↔
