@@ -610,6 +610,11 @@ _MANUAL: List[PageContext] = [
             "comparable across verticals.",
             "Nothing here is investment advice; it is a screening signal.",
         ],
+        limitations=[
+            "Public CMS data only — universes are filing-derived and lag "
+            "real-time by a quarter to a year depending on the loader.",
+            "A target's score depends on which filters and view you have "
+            "active; tighter filters can hide otherwise-relevant providers."],
         related_routes=["/diligence/xray", "/diligence/hcris-xray", "/geo-intel",
                         "/market-intel/geo", "/pipeline", "/source", "/screen",
                         "/predictive-screener"],
@@ -5212,6 +5217,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Live deal store (cohort membership)."],
         interpretation_guidance=["Operates on YOUR tracked deals."],
+        limitations=[
+            "Cohorts aggregate whatever's currently tracked in the deal "
+            "store; an empty cohort reflects tagging gaps, not absence "
+            "of activity in that segment.",
+            "Cohort membership is partner-defined — there's no automatic "
+            "rule engine that adds new deals to existing cohorts."],
         related_routes=["/pipeline", "/portfolio", "/owners"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
@@ -5231,6 +5242,12 @@ _MANUAL: List[PageContext] = [
         data_sources=["Live deal store (deadlines)."],
         interpretation_guidance=["Reflects deadlines entered for your deals; "
                                 "empty means none recorded."],
+        limitations=[
+            "Shows only deadlines a partner has entered into the deal "
+            "store — this is not a calendar feed; undocumented "
+            "obligations don't appear here.",
+            "'Overdue' is computed against today's date relative to the "
+            "stored due date; timezone differences can shift edge cases."],
         related_routes=["/alerts", "/pipeline", "/day-one"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
@@ -5470,6 +5487,13 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; not a live covenant feed."],
+        limitations=[
+            "Illustrative covenant model from entered assumptions — the "
+            "actual covenant grid, basket math, and step-down schedule "
+            "live in the credit agreement and must be supplied for a "
+            "real read.",
+            "Cushion is point-in-time on the entered numbers; doesn't "
+            "automatically reflect intra-quarter EBITDA volatility."],
         related_routes=["/covenant-monitor", "/debt-service", "/cap-structure"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5879,6 +5903,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["YOUR deals — real workspace data."],
+        limitations=[
+            "Shows only deals tracked in the local store; archived/"
+            "deleted records are filtered out by default — toggle "
+            "show-all to see them.",
+            "Filters work over what's been entered; sparse tags or "
+            "missing stage labels make filters silently exclude deals."],
         related_routes=["/pipeline", "/deal-search", "/app"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -5914,6 +5944,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real initiative records (SQLite)."],
         interpretation_guidance=["Your own initiatives — real workspace data."],
+        limitations=[
+            "Tracks entered initiative records plus any monthly actuals "
+            "attached — an empty view reflects what's been logged, not "
+            "absence of operational work.",
+            "Realized EBITDA uplift requires monthly actuals to be "
+            "uploaded; without them the page shows targets only."],
         related_routes=["/portfolio", "/value-creation-plan", "/app"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
