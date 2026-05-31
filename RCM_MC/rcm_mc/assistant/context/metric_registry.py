@@ -839,7 +839,10 @@ _METRICS.extend([
                "calibration review each quarter.",
        formula_confidence=_INF, source_types=[_OBS], data_confidence=_MIX,
        related_metrics=["covenant_cushion", "ebitda", "adjusted_ebitda"],
-       related_routes=["/portfolio/monitor", "/my/AT", "/dashboard",
+       # /dashboard redirects to /app in v3-active mode; point at the
+       # canonical Command Center PageContext directly so the Guide
+       # resolves the link cleanly.
+       related_routes=["/portfolio/monitor", "/my/AT", "/app",
                        "/watchlist"]),
 ])
 
