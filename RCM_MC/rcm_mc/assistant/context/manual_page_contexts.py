@@ -10178,6 +10178,22 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     "/drug-pricing-340b": ["cms_partd_drug_spending"],
     "/tracker-340b": ["cms_partd_drug_spending"],
     "/data-room": ["data_room_export"],
+    # 2026-05-31: 8 analytic pages with metric_ids but no data_source_ids
+    # whose data_sources prose names a registered source. Linking each
+    # lets the Guide pull source-level cadence/limits/provenance when
+    # answering 'where does this come from?' — even for partner-data
+    # pages (deal_profile / portfolio_snapshot / benchmark_prior etc).
+    # Skipped: /metric-glossary (reference page, not a data surface)
+    # and /industry (needs a new ibisworld source entry that doesn't
+    # exist yet — out of scope).
+    "/benchmarks": ["benchmark_prior"],
+    "/concentration-risk": ["public_transaction_corpus"],
+    "/lp-dashboard": ["portfolio_snapshot"],
+    "/cohorts": ["portfolio_snapshot"],
+    "/dpi-tracker": ["portfolio_snapshot"],
+    "/debt-financing": ["deal_profile"],
+    "/denovo-expansion": ["deal_profile"],
+    "/physician-labor": ["provider_roster"],
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
