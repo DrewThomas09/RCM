@@ -172,6 +172,16 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
             out.append("Inputs:\n" + _bullets(pc.inputs))
             out.append("Outputs:\n" + _bullets(pc.outputs))
         out.append("Key metrics:\n" + _bullets(pc.key_metrics, list_limit))
+        # diligence_use_cases is the direct answer to "what would I use
+        # this page for in diligence?" — every page has it populated
+        # after PR #1256 (the list-fields drain). Surfacing it lets the
+        # Guide give a concrete answer instead of paraphrasing why_it_matters.
+        # Skipped only when truly empty (which the invariant test now
+        # forbids on new pages anyway).
+        if pc.diligence_use_cases:
+            out.append("Diligence use cases:\n" + _bullets(
+                pc.diligence_use_cases, list_limit
+            ))
         out.append(
             "Interpretation guidance:\n" + _bullets(pc.interpretation_guidance)
         )
