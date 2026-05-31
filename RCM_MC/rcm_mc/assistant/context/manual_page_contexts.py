@@ -10449,6 +10449,20 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     "/revenue-leakage": ["edi_835"],     # "835 remittance" upload target
     "/initiatives": ["monthly_actuals"], # "joins to … monthly actuals"
     "/industry": ["cms_hcris"],          # "real CMS/HCRIS data"
+    # 2026-05-31: deal-pipeline / screening pages whose data_sources
+    # prose says "Your real deal records (SQLite)" — that's
+    # deal_profile in the source registry. Wires the partner-data
+    # source on each so the Guide can pull cadence/provenance.
+    "/deal-pipeline": ["deal_profile"],
+    "/deal-search": ["deal_profile"],
+    "/deals": ["deal_profile"],
+    "/screening": ["deal_profile"],
+    "/screening/dashboard": ["deal_profile"],
+    # /pipeline/bridge prose: "Your real deal records + the bridge
+    # model on your inputs."
+    "/pipeline/bridge": ["deal_profile", "model_output"],
+    # /activity prose: "Your real workspace audit/event log (SQLite)."
+    "/activity": ["audit_log"],
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
