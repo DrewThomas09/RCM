@@ -5011,6 +5011,12 @@ _MANUAL: List[PageContext] = [
             "CMS turnover is a sector benchmark, NOT this deal's roster.",
         ],
         limitations=["Deal-specific retention requires the target's HR roster."],
+        model_logic_summary=(
+            "Applies entered role-level churn assumptions to the "
+            "target's role mix to estimate EBITDA drag (replacement "
+            "cost + productivity dip) and projects an at-risk "
+            "watchlist. Overlays the real CMS nurse-staff turnover "
+            "(median ~45%) as the sector benchmark."),
         related_routes=["/physician-productivity", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5037,6 +5043,12 @@ _MANUAL: List[PageContext] = [
         ],
         limitations=["Benchmark picked by sector; deal-specific quality needs "
                      "the target's measure data."],
+        model_logic_summary=(
+            "Maps entered quality posture into the right CMS "
+            "distribution per sector (MIPS for physician groups, "
+            "Care Compare 5-star for nursing/post-acute); computes "
+            "EV uplift via entered quality-to-revenue conversion. "
+            "Benchmark is real; the conversion is the entered model."),
         related_routes=["/clinical-outcomes", "/physician-productivity"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5090,6 +5102,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Calculator on your inputs; CMS enforcement is "
                                 "a sector base rate, not this deal's exposure."],
         limitations=["Enforcement anchor is nursing-sector only."],
+        model_logic_summary=(
+            "Applies entered violation-frequency, avg-fine, and "
+            "compliance-cost assumptions to the deal's facility "
+            "count; for SNF, overlays the real CMS enforcement base "
+            "rate (45% of facilities fined, $467M total). For non-"
+            "SNF sectors, only the calculator runs — no public "
+            "enforcement anchor."),
         related_routes=["/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5112,6 +5131,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Calculator on your inputs; FDA shortage is a "
                                 "national product-level signal, not this deal's book."],
         limitations=["Shortage data is product-level, not provider-specific."],
+        model_logic_summary=(
+            "Applies entered savings-rate, GPO membership, and spend "
+            "base to compute supply savings; overlays the real FDA "
+            "drug-shortage panel (1,156 active across 58 categories) "
+            "so risk concentration in the deal's therapeutic mix is "
+            "visible alongside the savings estimate."),
         related_routes=["/drug-shortage", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5195,6 +5220,13 @@ _MANUAL: List[PageContext] = [
         ],
         limitations=["RAF model is illustrative; real coding intensity needs "
                      "the target's encounter data."],
+        model_logic_summary=(
+            "Illustrative fixed-RAF scaffold for MA risk-adjustment "
+            "intensity; overlays the real CMS MA population panel "
+            "(dual-eligible share, age 65+ mix by state) so the "
+            "demographic drivers of RAF — not RAF itself — are "
+            "anchored in observed CMS data. Real coding intensity "
+            "needs the target's encounter file."),
         related_routes=["/ma-contracts", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5808,6 +5840,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["HHI/regime compute off YOUR payer mix.",
                                  "Supply panel is the market backdrop, NOT this deal's roster."],
         limitations=["Peer/regime comps are illustrative seed-corpus."],
+        model_logic_summary=(
+            "Computes payer-HHI on entered payer-mix shares; "
+            "classifies into network regimes (concentrated / "
+            "moderate / fragmented) using DOJ-style thresholds. "
+            "Overlays the real CMS FFS provider-enrollment panel "
+            "(2.98M providers) as the market-supply context."),
         related_routes=["/workforce-planning", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5990,6 +6028,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Visit economics are illustrative.",
                                  "PLACES panel is real access-barrier prevalence by state."],
         limitations=["Model-based estimates; area-level."],
+        model_logic_summary=(
+            "Applies entered telehealth visit P&L (rate-parity, "
+            "duration, no-show rate, panel growth) to estimate "
+            "incremental EV per market; overlays the real CDC PLACES "
+            "access-barrier prevalence (transportation, uninsured) "
+            "as the demand-side signal."),
         related_routes=["/health-equity"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6063,6 +6107,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Turnover/engagement figures are illustrative.",
                                  "HPSA panel is real shortage data (deeper shortage = harder retention)."],
         limitations=["Deal turnover requires the target's HR roster."],
+        model_logic_summary=(
+            "Applies entered role-turnover and replacement-cost "
+            "assumptions to the deal's labor base to estimate EBITDA "
+            "drag from a turnover delta; overlays the real HRSA "
+            "shortage-area panel so retention difficulty is grounded "
+            "in observed labor scarcity by geography."),
         related_routes=["/locum-tracker", "/workforce-planning"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6342,6 +6392,12 @@ _MANUAL: List[PageContext] = [
             "/target-screener.",
             "Saved screens are per-workspace; not shared across users "
             "or environments by default."],
+        model_logic_summary=(
+            "Filter engine over the workspace candidates table — "
+            "entered criteria become SQL WHERE clauses (sector, "
+            "size, geography, score thresholds), and matching "
+            "candidates can be saved as a reusable screen. No model — "
+            "deterministic set membership."),
         related_routes=["/screening/dashboard", "/target-screener", "/pipeline"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6365,6 +6421,12 @@ _MANUAL: List[PageContext] = [
             "the market is dry.",
             "Conversion-rate metrics need enough screen-volume to be "
             "stable; thin pipelines make the rate noisy week-to-week."],
+        model_logic_summary=(
+            "Aggregates across all saved screens: counts at each "
+            "stage (screened / shortlisted / advanced / closed), "
+            "stage-to-stage conversion rates over the chosen window, "
+            "and per-screen movement. No model — workflow aggregation "
+            "over the screening tables."),
         related_routes=["/screening", "/target-screener", "/pipeline"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6508,6 +6570,12 @@ _MANUAL: List[PageContext] = [
             "Verticals covered are the CMS-Care-Compare set; private "
             "settings (e.g. ASCs, multi-specialty groups) are not "
             "directly covered as standalone verticals here."],
+        model_logic_summary=(
+            "No model — a vertical-navigation hub. Lists the CMS-"
+            "Care-Compare-anchored verticals (dialysis, home health, "
+            "hospice, SNF, IRF, LTCH, hospital) with deep-link cards "
+            "to each vertical's analytic page. Each linked page does "
+            "the real-data work; this page is just routing."),
         related_routes=["/dialysis", "/home-health", "/hospice", "/nursing-homes"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
