@@ -5007,6 +5007,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Calculator on your inputs; CMS benchmark is "
                                 "sector context, not this deal's outcomes."],
         limitations=["Deal-specific outcomes need the target's measure data."],
+        model_logic_summary=(
+            "Maps entered current outcomes against the real CMS Care "
+            "Compare quartile distribution, then computes a directional "
+            "EV uplift for moving one quartile via an entered "
+            "outcome-to-revenue conversion. Benchmark is real; the "
+            "uplift conversion is the entered model assumption."),
         related_routes=["/quality-scorecard", "/physician-productivity"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5227,6 +5233,11 @@ _MANUAL: List[PageContext] = [
             "of activity in that segment.",
             "Cohort membership is partner-defined — there's no automatic "
             "rule engine that adds new deals to existing cohorts."],
+        model_logic_summary=(
+            "Reads cohort-tag membership from the deal store; for each "
+            "cohort, aggregates the deals' summary metrics (MOIC, IRR, "
+            "health score) and ranks/compares them. No model — pure "
+            "set membership + aggregation."),
         related_routes=["/pipeline", "/portfolio", "/owners"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
@@ -5252,6 +5263,11 @@ _MANUAL: List[PageContext] = [
             "obligations don't appear here.",
             "'Overdue' is computed against today's date relative to the "
             "stored due date; timezone differences can shift edge cases."],
+        model_logic_summary=(
+            "Reads deadlines from the deal store, sorted by due date; "
+            "'overdue' = due_date < today; 'next 7 days' = today < "
+            "due_date ≤ today+7. No projection — partners must enter "
+            "deadlines manually for them to appear here."),
         related_routes=["/alerts", "/pipeline", "/day-one"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
@@ -5587,6 +5603,12 @@ _MANUAL: List[PageContext] = [
             "The early-warning band threshold (e.g. 15% cushion) is "
             "platform-default; partners should align it with the "
             "specific deal's credit agreement."],
+        model_logic_summary=(
+            "Computes per-deal cushion via the /covenant-headroom "
+            "formula, then bands deals (TRIPPED / 0-15% warning / "
+            "safe). Trend uses the entered/attached actuals over the "
+            "last N periods. No external lender feed — refresh "
+            "requires a fresh actuals upload."),
         related_routes=["/covenant-headroom", "/debt-service"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5658,6 +5680,12 @@ _MANUAL: List[PageContext] = [
             "Lever attribution depends on the corpus's modeled bridges — "
             "the page can't disentangle correlated drivers reliably with "
             "this sample size."],
+        model_logic_summary=(
+            "Groups corpus deals by realized-outcome band, then ranks "
+            "the bridge levers that varied most between bands. The "
+            "result is descriptive attribution against an illustrative "
+            "corpus — useful as a playbook pattern, not as causal "
+            "inference on real funds."),
         related_routes=["/fund-learning", "/deal-quality"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
@@ -5906,6 +5934,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["HHI/HSR/overlap compute off your deal-size input.",
                                  "CHOW panel is the real serial-acquisition backdrop FTC scrutinizes."],
         limitations=["Market-overlap specifics are illustrative."],
+        model_logic_summary=(
+            "Applies HSR threshold rules (size-of-transaction, "
+            "size-of-person) to entered deal size to flag filing "
+            "requirements; computes a directional HHI delta from "
+            "entered current/post-deal market shares; overlays the "
+            "real CMS CHOW serial-acquisition map for FTC-style "
+            "scrutiny context."),
         related_routes=["/concentration-risk", "/msa-concentration", "/competitive-intel"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5926,6 +5961,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["CIN roster/contract figures are illustrative.",
                                  "MSSP panel is the real ACO/value-based benchmark."],
         limitations=["Deal CIN data requires the target's network roster."],
+        model_logic_summary=(
+            "Computes a directional shared-savings opportunity from "
+            "entered CIN size, attribution, and quality score, then "
+            "overlays the real MSSP ACO landscape (511 ACOs across "
+            "15,293 organizations) so a partner can see where the "
+            "CIN sits relative to active value-based peers."),
         related_routes=["/aco-economics", "/quality-scorecard"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5973,6 +6014,11 @@ _MANUAL: List[PageContext] = [
             "not appear here.",
             "Audit-grade for the local workspace, but not a system-of-"
             "record for legal/regulatory purposes."],
+        model_logic_summary=(
+            "No model — reads the workspace audit log in reverse "
+            "chronological order, filtering on entity type (deal/note/"
+            "alert/escalation) and the chosen time window. Events are "
+            "the same ones the app's hash-chained audit table records."),
         related_routes=["/app", "/alerts", "/escalations"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -5996,6 +6042,12 @@ _MANUAL: List[PageContext] = [
             "here, it's missing from /pipeline too.",
             "SLA flags use the entered stage_entered_at; deals without "
             "that timestamp don't flag stalled."],
+        model_logic_summary=(
+            "Groups active deals from the deal store by stage; "
+            "computes per-stage count, conversion to next stage "
+            "(closed-won / closed-lost / advanced) over the chosen "
+            "window, and flags deals exceeding the per-stage SLA. "
+            "No projection — descriptive only."),
         related_routes=["/pipeline", "/app", "/deals"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6160,6 +6212,11 @@ _MANUAL: List[PageContext] = [
             "Public datasets here lag their underlying filings (e.g. "
             "HCRIS by 1-2+ years, HPSA by quarter); refresh cadence "
             "varies per source."],
+        model_logic_summary=(
+            "No model — enumerates the data_source_registry entries, "
+            "groups them by category (CMS/HRSA/CDC/CIVHC/Census), and "
+            "links each to the pages that consume it. Freshness/"
+            "ingestion status is delegated to /admin/data-sources."),
         related_routes=["/cms-sources", "/data", "/data/catalog"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -6185,6 +6242,11 @@ _MANUAL: List[PageContext] = [
             "Document-level search depends on each file's extractable "
             "text; image-only PDFs and scans won't be searchable until "
             "OCR is run upstream."],
+        model_logic_summary=(
+            "No model — a document-management surface. Lists uploaded "
+            "deal documents from the local workspace, tags them by "
+            "deal, and exposes extracted text for the Guide's "
+            "downstream retrieval where extraction succeeded."),
         related_routes=["/diligence/ingest", "/diligence/deal", "/upload"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -9271,6 +9333,12 @@ _GUIDE_BACKFILL = [
             "If a category here is empty, every page in that category "
             "is already activated for your workspace."],
         limitations=["A directory of what-to-upload, not an analysis itself."],
+        model_logic_summary=(
+            "No model — enumerates every DATA_REQUIRED PageContext in "
+            "the registry, groups them by the upload type each needs, "
+            "and surfaces the import-template filename. The page "
+            "doesn't ingest data itself; it tells the partner what to "
+            "feed the downstream surfaces."),
         related_routes=["/tools", "/diligence/ingest"],
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
