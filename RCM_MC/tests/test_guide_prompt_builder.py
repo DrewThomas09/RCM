@@ -43,6 +43,19 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Common misread: Needs source documentation",
                          prompt)
 
+    def test_user_prompt_includes_metric_related_metrics(self):
+        """The metric-context block must surface related_metrics so
+        the Guide can hop between paired concepts (e.g. denial_rate ↔
+        net_collection_rate). PR #1258's invariant ensures every metric
+        ships ≥1 related_metrics entry that resolves; PR #1274 wires
+        the list into the prompt as a tight comma-separated clause.
+        /diligence/hcris-xray resolves multiple metrics with populated
+        related_metrics."""
+        prompt = build_guide_user_prompt(
+            "What's related to denial rate?", self.packet
+        )
+        self.assertIn("Related metrics:", prompt)
+
     def test_user_prompt_includes_metric_diligence_read(self):
         """The metric-context block must surface diligence_interpretation
         directly to the model — this is what partners actually want

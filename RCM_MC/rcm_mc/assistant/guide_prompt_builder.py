@@ -242,13 +242,31 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     if diligence and "needs source" not in diligence.lower()
                     else ""
                 )
+                # related_metrics lets the model hop between paired concepts
+                # (e.g. denial_rate ↔ net_collection_rate ↔
+                # underpayment_rate). PR #1258's
+                # TestMetricsHaveRelatedMetrics::test_no_metric_has_empty
+                # guarantees every metric ships ≥1 entry and they all
+                # resolve. Surfacing it as a short comma-separated list
+                # adds 30-50 chars per metric — well within the prompt
+                # budget for typical pages.
+                rel_metrics = [
+                    str(r).strip() for r in (m.related_metrics or [])
+                    if str(r).strip()
+                ]
+                rel_metrics_line = (
+                    f" Related metrics: {', '.join(rel_metrics)}."
+                    if rel_metrics
+                    else ""
+                )
                 out.append(
                     f"- {m.label} ({m.metric_id}): {m.definition} "
                     f"Formula: {m.formula} [{m.formula_confidence.value}]. "
                     f"Why it matters: {m.why_it_matters}"
                     f"{diligence_line}"
                     f"{misread_line} "
-                    f"Caveats: {'; '.join(m.caveats) if m.caveats else 'none'}"
+                    f"Caveats: {'; '.join(m.caveats) if m.caveats else 'none'}."
+                    f"{rel_metrics_line}"
                 )
 
     if packet.data_source_contexts:
