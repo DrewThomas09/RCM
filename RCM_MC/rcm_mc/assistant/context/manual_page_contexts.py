@@ -10432,6 +10432,39 @@ for _c in _MANUAL:
     if _sp and not _c.data_source_ids:
         _c.data_source_ids = list(_sp)
 
+# 2026-05-31: Back-fill data_source.related_routes from PageContext
+# data_source_ids. The forward direction (page → source) is populated
+# above via _DATA_SOURCE_LINK_PATCHES + per-page kwargs; the back-
+# reference (source → consuming pages) was empty on 6 public sources
+# (cms_care_compare, medicare_utilization, sec_edgar, fred,
+# irs_form_990, public_market_data) and several system sources.
+# Fill-only-if-empty guard preserves any explicitly-authored
+# related_routes (e.g. cms_hcris's curated list of 3).
+from .data_source_registry import DATA_SOURCE_REGISTRY as _DSR  # noqa: E402
+_src_to_pages: Dict[str, List[str]] = {}
+for _c in _MANUAL:
+    for _sid in (_c.data_source_ids or []):
+        _src_to_pages.setdefault(_sid, []).append(_c.route)
+for _sid, _routes in _src_to_pages.items():
+    _src = _DSR.get(_sid)
+    if _src is None:
+        continue
+    if _src.related_routes:
+        continue
+    # Cap at 6 to keep the per-source related_routes block tight in
+    # the Guide prompt; the page-direction wiring is the source of
+    # truth for richer relationships.
+    _seen: set = set()
+    _dedup: List[str] = []
+    for _r in _routes:
+        if _r in _seen:
+            continue
+        _seen.add(_r)
+        _dedup.append(_r)
+        if len(_dedup) >= 6:
+            break
+    _src.related_routes = _dedup
+
 # Batch-2 metric links (length_of_stay, FCCR, interest_coverage, CCC, net_debt,
 # current_ratio, gross_margin, capex_intensity, cost_to_charge_ratio,
 # readmission_rate). Append (dedup); only applies to routes already documented.
