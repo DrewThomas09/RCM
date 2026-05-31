@@ -1796,9 +1796,14 @@ _MANUAL: List[PageContext] = [
                      "Recoverable EBITDA", "Payer leverage"],
         data_sources=["Target claims (fixture here) + synthetic contract / CMS "
                       "schedules + model outputs."],
-        model_logic_summary="Appears to map each RCM lever to an expected "
-        "EBITDA contribution given the deal shape and feed it into the value "
-        "bridge / IC memo. Exact lever math: needs source documentation.",
+        model_logic_summary=(
+            "For each of the seven RCM levers (denial, AR, "
+            "clean-claim, underpayment, cost-to-collect, payer-mix, "
+            "working capital), applies the lever's benchmark delta to "
+            "the deal's claims to estimate the recoverable revenue, "
+            "then × the deal's contribution margin = expected EBITDA "
+            "contribution. The lever-by-lever stack feeds the value-"
+            "bridge."),
         why_it_matters="It's the underwriting of the upside case — the bridge "
         "that justifies the entry price.",
         diligence_use_cases=["Underwriting the value-creation bridge and "
@@ -5192,6 +5197,13 @@ _MANUAL: List[PageContext] = [
             "Availability field is ~31% blank (preserved, not zero-filled).",
         ],
         limitations=["Product-level; build-time snapshot refreshed on re-ingest."],
+        model_logic_summary=(
+            "No model — reads the committed openFDA drug-shortage "
+            "snapshot, groups products by therapeutic category, and "
+            "ranks by active-shortage count. Availability field is "
+            "preserved verbatim (blanks not filled). The 'portfolio "
+            "risk' framing is editorial overlay; the data itself is "
+            "national/product-level, not provider-specific."),
         related_routes=["/supply-chain", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -5821,6 +5833,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Savings/contract figures are illustrative scaffold.",
                                  "Open Payments panel is real industry vendor scale."],
         limitations=["Deal GPO savings require the target's actual spend data."],
+        model_logic_summary=(
+            "Applies entered savings-rate, bulk-buy %, and rebate-"
+            "capture assumptions to the target's spend categories to "
+            "estimate GPO savings; overlays the real CMS Open "
+            "Payments vendor landscape ($3.31bn, top device/pharma "
+            "vendors) so the savings figure has a plausible vendor-"
+            "scale context."),
         related_routes=["/cost-structure"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6410,6 +6429,11 @@ _MANUAL: List[PageContext] = [
             "metric, all states), or /state-profile (one state).",
             "Three modes share the same metric layer but expose "
             "different verbs; what's missing is missing from all three."],
+        model_logic_summary=(
+            "No model — a navigation hub with deep-link cards into "
+            "/state-compare, /state-rankings, and /state-profile. "
+            "The three modes share the same metric registry; the "
+            "hub just picks which verb to apply."),
         related_routes=["/state-compare", "/state-rankings", "/state-profile"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -9586,6 +9610,12 @@ _GUIDE_BACKFILL = [
             "not as the lowest band — read /geo-metrics for coverage."],
         limitations=["A visualization layer; the metric definitions live in "
                      "the geo metrics reference."],
+        model_logic_summary=(
+            "Pulls the chosen metric from the shared geo-metric "
+            "registry, joins to a state FIPS lookup, and renders an "
+            "Albers-projected SVG choropleth shaded by metric value. "
+            "Click-through routes to /state-profile?state=<code>. "
+            "States with no value render neutral, not zero."),
         related_routes=["/geo-intel", "/geo-metrics", "/state-profile",
                         "/metro-markets"],
         metric_ids=[], data_source_ids=[],
@@ -9620,6 +9650,12 @@ _GUIDE_BACKFILL = [
             "render '—' for those states; the gap is in the source, "
             "not in PEdesk's computation."],
         limitations=["A reference/transparency surface, not an analysis."],
+        model_logic_summary=(
+            "No model — reads the geo-metric registry (definitions + "
+            "source IDs) and the data_source_registry (provenance + "
+            "refresh cadence), joins them, and renders a per-metric "
+            "transparency table. The page describes the data layer "
+            "the maps/rankings use; it doesn't compute the metrics."),
         related_routes=["/geo-intel", "/geo-map", "/metro-markets",
                         "/methodology"],
         metric_ids=[], data_source_ids=[],
