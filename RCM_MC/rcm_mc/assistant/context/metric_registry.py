@@ -1827,7 +1827,12 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
     # Each unambiguous; ambiguous terms ('churn', 'attrition' without
     # 'physician', 'acuity', 'ctc') are deliberately omitted.
     "revenue": ["npsr", "net patient service revenue", "topline",
-                "top-line"],
+                "top-line",
+                # /metric-glossary uses 'net_patient_revenue' (underscore
+                # form) as its key — the existing 'net patient revenue'
+                # alias only matches the space-form because the resolver's
+                # _norm doesn't translate underscores to spaces.
+                "net_patient_revenue"],
     "revenue_growth": ["rev growth", "sales growth"],
     "leverage": ["leverage ratio", "debt ratio"],
     "ev_to_ebitda": ["ev multiple", "ev mult"],

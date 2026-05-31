@@ -556,6 +556,32 @@ class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
             f"Metrics referencing non-existent routes: {broken}",
         )
 
+    def test_every_metric_glossary_key_resolves_via_guide(self):
+        """The /metric-glossary page is the partner-facing definition
+        set; the Guide must be able to look up every glossary key
+        (e.g. 'net_patient_revenue' = revenue alias, 'fte_per_aob' =
+        registered metric) so partners get matching answers between
+        the glossary tooltip and a Guide question. PR #1324 closed
+        the last gap ('net_patient_revenue' missed because the
+        resolver's _norm doesn't translate underscores to spaces and
+        the existing 'net patient revenue' alias only matched the
+        space-form). Lock the floor."""
+        from rcm_mc.ui.metric_glossary import list_metrics
+        from rcm_mc.assistant.context.get_metric_context import (
+            get_metric_context,
+        )
+        unresolved = []
+        for key in list_metrics():
+            if not get_metric_context(key).found:
+                unresolved.append(key)
+        self.assertFalse(
+            unresolved,
+            "Glossary keys the Guide cannot resolve — either add the "
+            "key as an alias on the matching metric or add a new "
+            "_m() entry; do NOT remove from the glossary. "
+            f"Unresolved: {unresolved}",
+        )
+
     def test_every_metric_has_at_least_two_caveats(self):
         """Every metric should carry at least 2 caveats — partners
         ask 'what should I be careful about?' constantly, and a
