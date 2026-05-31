@@ -155,8 +155,18 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
         out.append(f"Category: {pc.category.value}")
         out.append(f"Source confidence: {pc.source_confidence.value}")
         out.append(f"Data confidence: {pc.data_confidence.value}")
-        out.append(f"Short description: {pc.short_description}")
-        out.append(f"Primary purpose: {pc.primary_purpose}")
+        # 52 PageContexts have short_description == primary_purpose (the
+        # _BATCH7 / _BATCH8 loops set both to the same _sd literal). Emitting
+        # both produces a wasted-context duplicate; collapse to one labelled
+        # line when they match so the prompt stays tight without losing
+        # information.
+        sd = (pc.short_description or "").strip()
+        pp = (pc.primary_purpose or "").strip()
+        if sd and sd == pp:
+            out.append(f"Page description / primary purpose: {sd}")
+        else:
+            out.append(f"Short description: {pc.short_description}")
+            out.append(f"Primary purpose: {pc.primary_purpose}")
         out.append(f"Why it matters: {pc.why_it_matters}")
         if not compact:
             out.append("Inputs:\n" + _bullets(pc.inputs))

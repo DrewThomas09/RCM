@@ -56,6 +56,37 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Diligence read: Needs source documentation",
                          prompt)
 
+    def test_user_prompt_collapses_duplicate_desc_and_purpose(self):
+        """52 PageContexts (built via the _BATCH7 / _BATCH8 loops) have
+        short_description == primary_purpose. The prompt builder must
+        emit the line only once when they match, so the prompt doesn't
+        carry a wasted-context duplicate. /biosimilars is one of the
+        canonical 52 with this property."""
+        packet = build_guide_context_packet("/biosimilars")
+        prompt = build_guide_user_prompt("What is this page?", packet)
+        # The single combined label must appear once.
+        self.assertEqual(
+            prompt.count("Page description / primary purpose:"), 1
+        )
+        # And the two separate labels must NOT appear (collapsed away).
+        self.assertNotIn("Short description:", prompt)
+        self.assertNotIn("Primary purpose:", prompt)
+
+    def test_user_prompt_keeps_distinct_desc_and_purpose_apart(self):
+        """When short_description and primary_purpose carry distinct
+        text (the partner-facing case where the author wrote them
+        intentionally), the prompt builder must keep both lines so the
+        model sees both angles. /diligence/hcris-xray is a real example
+        with two distinct lines."""
+        prompt = build_guide_user_prompt(
+            "What does this page do?", self.packet
+        )
+        # The combined line must NOT appear.
+        self.assertNotIn("Page description / primary purpose:", prompt)
+        # Both separate labels must appear.
+        self.assertIn("Short description:", prompt)
+        self.assertIn("Primary purpose:", prompt)
+
     def test_system_prompt_has_readonly_policy_and_rules(self):
         sysp = build_guide_system_prompt(self.packet).lower()
         # explicit disallowed behaviors
