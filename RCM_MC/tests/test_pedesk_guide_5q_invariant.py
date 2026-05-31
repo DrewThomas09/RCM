@@ -329,6 +329,29 @@ class TestDataSourcesHaveRealProvenance(unittest.TestCase):
             + "\n  ".join(offenders),
         )
 
+    def test_no_data_source_update_cadence_is_placeholder(self):
+        offenders = sorted(
+            sid for sid, s in DATA_SOURCE_REGISTRY.items()
+            if self._PLACEHOLDER in (s.update_cadence or "").lower()
+        )
+        self.assertFalse(
+            offenders,
+            "Data sources with placeholder update_cadence — supply a "
+            "real refresh cadence on the _s() call:\n  "
+            + "\n  ".join(offenders),
+        )
+
+    def test_no_data_source_freshness_lag_is_placeholder(self):
+        offenders = sorted(
+            sid for sid, s in DATA_SOURCE_REGISTRY.items()
+            if self._PLACEHOLDER in (s.freshness_lag or "").lower()
+        )
+        self.assertFalse(
+            offenders,
+            "Data sources with placeholder freshness_lag — supply a "
+            "real lag on the _s() call:\n  " + "\n  ".join(offenders),
+        )
+
     def test_data_source_related_metrics_resolve(self):
         """Every related_metrics entry on a data source must resolve to
         a real metric_id in METRIC_REGISTRY. A dangling reference sends
