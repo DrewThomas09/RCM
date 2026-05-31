@@ -206,6 +206,16 @@ class PromptBuilderTests(unittest.TestCase):
         )
         self.assertNotIn("Intended users:", prompt)
 
+    def test_user_prompt_omits_intended_users_for_deal_team_variant(self):
+        """PR #1298 widened the skip-set to include the second common
+        default 'Deal team analyzing a specific deal.' which 25 pages
+        carry. The prompt should NOT emit Intended users: for those
+        either. /models/lbo is one of the 25."""
+        from rcm_mc.assistant.context import build_guide_context_packet
+        packet = build_guide_context_packet("/models/lbo")
+        prompt = build_guide_user_prompt("Who is this for?", packet)
+        self.assertNotIn("Intended users:", prompt)
+
     def test_user_prompt_includes_route_specific_notes_for_parameterized(self):
         """Parameterized pages (/my/AT, /diligence/risk-workbench,
         /market-data/state/CA) carry route-specific

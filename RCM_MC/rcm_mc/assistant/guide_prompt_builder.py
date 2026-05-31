@@ -22,11 +22,21 @@ _REPETITIVE_PREAMBLE_RE = re.compile(
 
 _OMITTED_NOTE = "Some context was omitted for length."
 
-# The standard `intended_users` value applied by `_ctx()` to the 91%
-# of pages that don't customise it. Used by the prompt builder to
-# decide whether to emit an `Intended users:` clause (skipped when
-# the value matches this default — the system prompt already implies
-# the PE-deal-team audience).
+# The standard `intended_users` values applied by `_ctx()` (and by
+# the per-deal scaffolds) to ~98% of pages. Used by the prompt
+# builder to decide whether to emit an `Intended users:` clause —
+# skipped when the value matches one of these near-default phrasings
+# (the system prompt already implies the PE-deal-team audience).
+# Adding to this set should require evidence that the new phrasing
+# carries no targeting info beyond what the system prompt has.
+_DEFAULT_INTENDED_USERS_VARIANTS: frozenset = frozenset({
+    ("PE deal team (partners, principals, associates).",),
+    # PR #1298: 25 pages carry this slight variation; same effective
+    # audience — the deal team. Skip so the clause only fires when
+    # the page declares a sharper persona.
+    ("Deal team analyzing a specific deal.",),
+})
+# Kept as a backward-compatible alias so existing imports still work.
 _DEFAULT_INTENDED_USERS = [
     "PE deal team (partners, principals, associates).",
 ]
@@ -189,17 +199,19 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
             out.append(f"Short description: {pc.short_description}")
             out.append(f"Primary purpose: {pc.primary_purpose}")
         out.append(f"Why it matters: {pc.why_it_matters}")
-        # intended_users: the standard 91% of pages carry the default
-        # "PE deal team (partners, principals, associates)." which the
-        # system prompt already implies. Surface ONLY when the page
-        # specifies a more targeted persona (e.g. /portfolio/monte-carlo
-        # → "Partners and LP-reporting staff assessing fund-level risk.";
-        # /ebitda-bridge → "Deal team underwriting an RCM value-creation
-        # thesis."). Lets the Guide tailor answers for the few pages
-        # whose audience is sharper than the default, without bloating
-        # the prompt for the 91% default case.
+        # intended_users: the standard 98% of pages carry one of the
+        # near-default phrasings (`PE deal team (partners, principals,
+        # associates).` or `Deal team analyzing a specific deal.`) —
+        # the system prompt already implies that audience. Surface
+        # ONLY when the page specifies a more targeted persona
+        # (e.g. /portfolio/monte-carlo → "Partners and LP-reporting
+        # staff assessing fund-level risk."; /ebitda-bridge → "Deal
+        # team underwriting an RCM value-creation thesis."). Lets the
+        # Guide tailor answers for the few pages whose audience is
+        # sharper than the default, without bloating the prompt for
+        # the 98% default case.
         iu = list(pc.intended_users or [])
-        if iu and iu != _DEFAULT_INTENDED_USERS:
+        if iu and tuple(iu) not in _DEFAULT_INTENDED_USERS_VARIANTS:
             out.append(f"Intended users: {'; '.join(_dot(u) for u in iu)}.")
         if not compact:
             out.append("Inputs:\n" + _bullets(pc.inputs))
