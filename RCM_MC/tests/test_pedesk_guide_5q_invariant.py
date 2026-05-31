@@ -404,6 +404,33 @@ class TestDataSourcesHaveRealProvenance(unittest.TestCase):
         )
 
 
+class TestNoUnknownCategoryPages(unittest.TestCase):
+    """Every PageContext should declare a real category — not the
+    UNKNOWN fallback that ``_ctx()`` falls back to when neither the
+    kwarg nor the DISCOVERED_TOOL_ROUTES manifest supplies one. The
+    category surfaces in the Guide prompt (``Category: ...``) and
+    the partner /tools navigation; UNKNOWN means real information
+    loss.
+
+    PRs #1290-#1293 categorized all 182 starting-UNKNOWN pages via
+    ``_CATEGORY_OVERRIDES``; this test guards against a new
+    ``_ctx()`` call that lands with no category."""
+
+    def test_no_page_has_unknown_category(self):
+        from rcm_mc.assistant.context.types import PageContextCategory
+        offenders = sorted(
+            route for route, ctx in MANUAL_PAGE_CONTEXTS.items()
+            if ctx.category == PageContextCategory.UNKNOWN
+        )
+        self.assertFalse(
+            offenders,
+            "Pages with category=UNKNOWN — add a real category to "
+            "the _ctx() call OR add an entry to _CATEGORY_OVERRIDES "
+            "at the bottom of manual_page_contexts.py:\n  "
+            + "\n  ".join(offenders),
+        )
+
+
 class TestNoOrphanMetricsInRegistry(unittest.TestCase):
     """Every metric in METRIC_REGISTRY should be referenced by at
     least one PageContext.metric_ids. An orphan metric is dead
