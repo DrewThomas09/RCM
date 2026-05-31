@@ -5541,6 +5541,15 @@ _MANUAL: List[PageContext] = [
             "How sensitive is the deal economics to risk-track choice?",
             "Where are the inputs vs the defaults documented?",
         ],
+        inputs=["Benchmark spending, actual spending, attribution "
+                "count, shared-savings rate, risk-track choice."],
+        outputs=["Estimated ACO revenue, savings opportunity, break-"
+                 "even attribution count, sensitivity to risk track."],
+        key_metrics=["Shared savings", "Provider revenue",
+                     "Break-even attribution"],
+        diligence_use_cases=["Sizing the ACO/value-based contribution "
+                             "to deal economics under different "
+                             "risk-track assumptions."],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; defaults are "
                                 "illustrative, not a specific ACO's results."],
@@ -5570,6 +5579,14 @@ _MANUAL: List[PageContext] = [
             "How does interest-rate forecast affect the timing answer?",
             "Where do I see the macro / sector signals feeding the model?",
         ],
+        inputs=["Sector, entry multiple, leverage, expected hold, "
+                "macro/rate forecast assumptions."],
+        outputs=["Buy-now vs wait recommendation band + structured "
+                 "cost-of-waiting vs cost-of-buying-now read."],
+        key_metrics=["Cost of waiting", "Cost of buying now",
+                     "Recommended action band"],
+        diligence_use_cases=["Pressure-testing entry timing for a "
+                             "specific deal against current macro signals."],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; illustrative defaults."],
         limitations=[
@@ -5598,6 +5615,15 @@ _MANUAL: List[PageContext] = [
             "What's a realistic integration timeline assumption?",
             "How does the bolt-on affect platform leverage?",
         ],
+        inputs=["Platform entry multiple, bolt-on multiple, bolt-on "
+                "EBITDA, synergy run-rate, integration timeline, "
+                "leverage assumptions."],
+        outputs=["Blended-multiple accretion $, break-even synergy, "
+                 "multiple-arb at exit, post-deal leverage change."],
+        key_metrics=["Multiple-arbitrage accretion", "Break-even synergy",
+                     "Post-deal leverage"],
+        diligence_use_cases=["Underwriting a bolt-on candidate against "
+                             "the platform's economics."],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; illustrative defaults, "
                                 "not a specific deal."],
@@ -5627,6 +5653,15 @@ _MANUAL: List[PageContext] = [
             "What's the equity contribution required to hit a target IRR?",
             "How does this map to the /debt-service / /covenant-headroom views?",
         ],
+        inputs=["Tranche sizes (senior, sub, mezz, equity), pricing "
+                "per tranche, EBITDA Y0, refi assumptions."],
+        outputs=["Leverage (debt/EBITDA), WACC, equity-check, refi-"
+                 "case capital structure."],
+        key_metrics=["Leverage ratio", "WACC", "Equity check",
+                     "Senior/sub/mezz mix"],
+        diligence_use_cases=["Sketching a financing structure before "
+                             "engaging lenders, or comparing two "
+                             "competing structure proposals."],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs."],
         limitations=[
@@ -5648,6 +5683,12 @@ _MANUAL: List[PageContext] = [
         "/capital-efficiency", "Capital Efficiency",
         short_description="Capital-efficiency calculator on your inputs.",
         primary_purpose="Frame capital efficiency / returns on invested capital.",
+        inputs=["Operating margin, tax rate, capex intensity, "
+                "reinvestment / distribution-path assumptions."],
+        outputs=["ROIC band, reinvest-vs-distribute path comparison."],
+        key_metrics=["ROIC", "Capital efficiency ratio", "NOPAT"],
+        diligence_use_cases=["Framing how capital-efficient a target "
+                             "is before underwriting return uplift."],
         common_questions=[
             "What's the ROIC the model implies for this deal?",
             "How does the page compare reinvestment vs distribution paths?",
@@ -5683,6 +5724,14 @@ _MANUAL: List[PageContext] = [
             "What EBITDA swing would breach the covenant?",
             "What's the recommended action when headroom is under 15%?",
         ],
+        inputs=["Current leverage, EBITDA, covenant threshold "
+                "(default = max leverage), projection assumptions."],
+        outputs=["Cushion % band, swing-to-breach $, recommended-"
+                 "action flag at the 15% early-warning band."],
+        key_metrics=["Covenant cushion %", "Swing to breach",
+                     "Quarter to first-trip"],
+        diligence_use_cases=["Pressure-testing the proposed financing "
+                             "structure's headroom before signing."],
         data_sources=["Calculator: your inputs + illustrative defaults."],
         interpretation_guidance=["Computes off YOUR inputs; not a live covenant feed."],
         limitations=[
