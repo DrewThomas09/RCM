@@ -1841,17 +1841,22 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
     "cms_star_rating": ["cms star", "cms rating", "hospital star",
                         "snf rating", "star"],
     "net_collection_rate": ["net collection", "collection ratio",
-                            "cash collection ratio"],
-    "gross_collection_rate": ["gross collection"],
-    "bad_debt_rate": ["bdr", "bad debts"],
-    "underpayment_rate": ["underpayment"],
+                            "cash collection ratio",
+                            "net collection %", "collection %",
+                            "collection percent"],
+    "gross_collection_rate": ["gross collection", "gross collection %"],
+    "bad_debt_rate": ["bdr", "bad debts", "bad debt %", "bad debt ratio"],
+    "underpayment_rate": ["underpayment", "underpayment ratio",
+                          "underpayment percent"],
     "days_in_ar": ["days in ar", "days ar", "a/r days", "days a/r"],
     "payer_mix": ["payer split", "payor split", "pay mix"],
     "clean_claim_rate": ["fpy", "first pass", "first-pass"],
     "denial_rate": ["denial", "denials rate", "claim denials",
-                    "denial pct", "denied claims", "denial volume"],
+                    "denial pct", "denied claims", "denial volume",
+                    "denials %", "denial percentage", "denial ratio"],
     "capex_intensity": ["capex", "capital expenditure", "cap ex",
-                        "capex %", "capex pct"],
+                        "capex %", "capex pct",
+                        "capex/rev", "capex to revenue"],
     # PR #1310: round-3 metric aliases — newly probed misses.
     "physician_attrition": ["physician attrition rate", "md attrition",
                             "physician churn"],
@@ -1860,12 +1865,21 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
     # PR #1311: round-4 — more partner spellings probed against the
     # resolver. 'opm' (Open Payments Manufacturer vs Operating Profit
     # Margin) deliberately skipped as ambiguous.
-    "gross_margin": ["gross profit", "gp margin", "gpm"],
-    "ebitda_margin": ["ebitda margin %", "ebitdam"],
+    "gross_margin": ["gross profit", "gp margin", "gpm",
+                     "gross margin pct", "gross mgn"],
+    "ebitda_margin": ["ebitda margin %", "ebitdam",
+                      "ebitda margin pct", "ebitda mgn", "ebitda%"],
     "fte_per_aob": ["aob", "adjusted occupied beds"],
     "cost_per_adjusted_discharge": ["opex per discharge",
                                     "expense per discharge"],
-    "operating_margin": ["operating profit margin", "op margin %"],
+    "operating_margin": ["operating profit margin", "op margin %",
+                         "op margin pct", "op mgn"],
+    # PR #1334: round 6 — variant phrasings probed; each unambiguous.
+    "occupancy_rate": ["occ rate", "occupancy rate %", "occ %"],
+    "first_pass_resolution_rate": ["first pass yield rate",
+                                   "first pass yield %"],
+    "compensation_to_collections": ["comp to coll",
+                                    "physician comp ratio"],
 }
 for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
     _o = METRIC_REGISTRY.get(_mid)
