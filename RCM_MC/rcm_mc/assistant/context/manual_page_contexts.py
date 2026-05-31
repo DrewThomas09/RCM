@@ -5144,6 +5144,13 @@ _MANUAL: List[PageContext] = [
                                 "market context, not this deal's contract."],
         limitations=["No Star Ratings / risk scores in the anchor (enrollment "
                      "+ demographics only)."],
+        model_logic_summary=(
+            "Applies entered PMPM, attribution share, and risk-track "
+            "haircut to the deal's MA-exposed lives to compute "
+            "expected revenue per contract; overlays the real CMS MA "
+            "enrollment panel (29.7M lives across 53 states) as "
+            "market-scale context. Contract terms are illustrative; "
+            "the enrollment overlay is real."),
         related_routes=["/risk-adjustment", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5861,6 +5868,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Deal-level impact figures are illustrative.",
                                  "Dual-eligible panel is the real at-risk population."],
         limitations=["Deal exposure requires the target's real payer mix."],
+        model_logic_summary=(
+            "Applies entered disenrollment rate and coverage-shift "
+            "splits (back-to-Medicaid / ACA / self-pay / uninsured) "
+            "to the deal's Medicaid lives to estimate revenue "
+            "shift and bad-debt exposure; overlays the real CMS "
+            "dual-eligible share by state as the at-risk-cohort "
+            "anchor."),
         related_routes=["/payer-concentration", "/risk-adjustment"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5902,6 +5916,13 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["HEI/Star figures are illustrative, scaled to inputs.",
                                  "PLACES panel is real full-population SDOH (not patients)."],
         limitations=["Model-based estimates; area-level, not this deal's panel."],
+        model_logic_summary=(
+            "Applies entered HEI-band assumptions to the deal's MA "
+            "Star-bonus revenue to estimate the bonus uplift from "
+            "moving up an equity band; overlays the real CDC PLACES "
+            "SDOH-prevalence panel (uninsured, food/transport "
+            "insecurity) as the local population context. The lift "
+            "is modeled; the prevalence panel is observed."),
         related_routes=["/risk-adjustment", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -5963,6 +5984,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Locum figures are illustrative.",
                                  "HPSA panel is real shortage-area designations by state."],
         limitations=["Deal locum spend requires the target's actuals."],
+        model_logic_summary=(
+            "Applies entered locum spend / locum-share / rate-"
+            "premium assumptions to the deal's labor base to estimate "
+            "EBITDA drag from agency reliance; overlays the real "
+            "HRSA HPSA panel (7,635 PC shortage areas) so the demand "
+            "side is grounded in observed shortage geography."),
         related_routes=["/workforce-planning", "/workforce-retention"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6197,6 +6224,12 @@ _MANUAL: List[PageContext] = [
             "absence of operational work.",
             "Realized EBITDA uplift requires monthly actuals to be "
             "uploaded; without them the page shows targets only."],
+        model_logic_summary=(
+            "Reads initiative records from the deal store, joins to "
+            "any attached monthly actuals, and computes target-vs-"
+            "actual EBITDA uplift per initiative and per deal. "
+            "Status (behind / on plan / at risk) is flagged from "
+            "the actual-vs-plan delta against an entered tolerance."),
         related_routes=["/portfolio", "/value-creation-plan", "/app"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -9689,6 +9722,12 @@ _GUIDE_BACKFILL = [
             "here; for non-metro reads use /state-rankings or "
             "/county-explorer."],
         limitations=["CBSA coverage depends on the underlying public dataset."],
+        model_logic_summary=(
+            "Joins the chosen metric to the CBSA crosswalk and "
+            "ranks all CBSAs by metric value; sort direction is "
+            "metric-aware (lower-is-better metrics flip). CBSAs "
+            "with no value are listed unranked. The metric "
+            "definitions and provenance live on /geo-metrics."),
         related_routes=["/geo-intel", "/geo-map", "/geo-metrics",
                         "/state-profile"],
         metric_ids=[], data_source_ids=[],
