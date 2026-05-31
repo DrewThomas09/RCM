@@ -10567,6 +10567,11 @@ _METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
     # ebitda_margin via the registry's 'margin' alias — wire the id
     # so the Guide pulls the registry's per-metric block.
     "/pipeline": ["ebitda_margin"],
+    # 2026-05-31: /target-screener's key_metrics explicitly names
+    # "hospital operating margin" as one of the vertical-specific
+    # quality slots — wire operating_margin so the Guide pulls the
+    # formula/caveats/common_misread when answering about it.
+    "/target-screener": ["operating_margin"],
 }
 # Extend /inpatient-rehab and /long-term-care-hospital to also include
 # medicare_spending_per_beneficiary (their key_metrics string already
