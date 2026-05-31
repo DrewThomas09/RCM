@@ -9439,6 +9439,18 @@ for _csv, (_parent_label, _parent_route) in _CSV_EXPORTS.items():
         key_metrics=[], data_sources=[f"The same data as the {_parent_label} "
                                       "page (real public/source data)."],
         why_it_matters="Lets the team take the data into their own tools.",
+        # 2026-05-31: universal guidance for every CSV export endpoint —
+        # the CSV is the raw data from the parent page; for the
+        # interpreted view (units, what '—' means, ranking direction),
+        # the partner must open the parent route.
+        interpretation_guidance=[
+            f"This is a CSV download — the interpreted view "
+            f"(units, sort direction, what '—' means) lives on "
+            f"{_parent_route}.",
+            "CSV faithfully reflects whatever the parent page would "
+            "render; column meaning matches the parent page's headers "
+            "and tooltips.",
+        ],
         limitations=["A data export, not an analytic surface — open the parent "
                      "page for the interpreted view."],
         related_routes=[_parent_route],
