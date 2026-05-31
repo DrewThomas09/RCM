@@ -19,6 +19,9 @@ from __future__ import annotations
 
 import unittest
 
+from rcm_mc.assistant.context.data_source_registry import (
+    DATA_SOURCE_REGISTRY,
+)
 from rcm_mc.assistant.context.manual_page_contexts import (
     MANUAL_PAGE_CONTEXTS,
 )
@@ -286,6 +289,44 @@ class TestMetricsHaveRelatedMetrics(unittest.TestCase):
         self.assertFalse(
             broken,
             f"Metrics referencing unknown peer metric_ids: {broken}",
+        )
+
+
+class TestDataSourcesHaveRealProvenance(unittest.TestCase):
+    """Every DataSourceContext should carry real provenance_notes +
+    strengths instead of the "Needs source documentation." placeholder
+    default. Provenance is what makes a Guide answer about data
+    lineage honest — placeholders short-circuit the trust chain.
+    The drain landed in PR #1262 (23 provenance + 1 strengths cleared);
+    this guards a new _s() call that lands without overriding the
+    _NEEDS defaults."""
+
+    _PLACEHOLDER = "needs source"
+
+    def test_no_data_source_provenance_is_placeholder(self):
+        offenders = sorted(
+            sid for sid, s in DATA_SOURCE_REGISTRY.items()
+            if self._PLACEHOLDER in (s.provenance_notes or "").lower()
+        )
+        self.assertFalse(
+            offenders,
+            "Data sources with placeholder provenance_notes — supply a "
+            "real, source-specific provenance_notes kwarg on the _s() "
+            "call (where it came from, how it's identified, what to "
+            "cite):\n  " + "\n  ".join(offenders),
+        )
+
+    def test_no_data_source_strengths_carry_placeholder(self):
+        offenders = sorted(
+            sid for sid, s in DATA_SOURCE_REGISTRY.items()
+            if any(self._PLACEHOLDER in (v or "").lower()
+                   for v in (s.strengths or []))
+        )
+        self.assertFalse(
+            offenders,
+            "Data sources with placeholder strengths — supply real, "
+            "source-specific strengths on the _s() call:\n  "
+            + "\n  ".join(offenders),
         )
 
 

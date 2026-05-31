@@ -87,6 +87,8 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["benchmark_percentile"],
        strengths=["Standardized public quality signal."],
        limitations=["Quality measures lag and don't capture all clinical nuance."],
+       provenance_notes="Public CMS Care Compare ratings; cite the specific "
+       "dataset (Hospital/HH/SNF/Hospice Compare) + the rating refresh date.",
        source_confidence=_INFP, data_confidence=_PUB, ic_ready=False),
     _s("medicare_utilization", "Medicare Utilization", "CMS Medicare claims/"
        "utilization datasets (provider/service volumes).", _T.PUBLIC_DATASET,
@@ -96,6 +98,8 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["provider_productivity", "referral_leakage"],
        strengths=["Population-level Medicare volume signal."],
        limitations=["Medicare-only; lags; not commercial volume."],
+       provenance_notes="Public CMS Medicare claims/utilization datasets; "
+       "cite the specific Provider Utilization PUF release year.",
        source_confidence=_INFP, data_confidence=_PUB, ic_ready=False),
     _s("sec_edgar", "SEC EDGAR", "Public SEC filings (for public comparables / "
        "strategic acquirers).", _T.PUBLIC_DATASET,
@@ -104,6 +108,8 @@ _SOURCES: List[DataSourceContext] = [
        used_for=["Public-comp benchmarking."],
        strengths=["Audited public-company disclosures."],
        limitations=["Only public companies; limited private-target relevance."],
+       provenance_notes="Public SEC filings; cite the specific filing (10-K, "
+       "10-Q, 8-K) + the filer + filing date.",
        source_confidence=_INFP, data_confidence=_PUB, ic_ready=False),
     _s("fred", "FRED", "Federal Reserve economic data (macro series).",
        _T.PUBLIC_DATASET, aliases=["federal reserve", "macro data"],
@@ -111,6 +117,8 @@ _SOURCES: List[DataSourceContext] = [
        used_for=["Macro context (rates, inflation)."],
        strengths=["Authoritative macro series."],
        limitations=["Macro context only; not deal-specific."],
+       provenance_notes="Federal Reserve Economic Data (FRED) — cite the "
+       "specific series ID + as-of observation date.",
        source_confidence=_INFP, data_confidence=_PUB, ic_ready=False),
     _s("irs_form_990", "IRS Form 990", "Nonprofit tax filings (for nonprofit "
        "health systems).", _T.PUBLIC_DATASET,
@@ -119,6 +127,8 @@ _SOURCES: List[DataSourceContext] = [
        used_for=["Nonprofit-system financial context."],
        strengths=["Public financials for nonprofits not in HCRIS detail."],
        limitations=["Nonprofits only; lags; format inconsistencies."],
+       provenance_notes="IRS Form 990 public filings; cite the EIN + filing "
+       "year + the specific schedule (A/H/J) the figure came from.",
        source_confidence=_INFP, data_confidence=_PUB, ic_ready=False),
     _s("public_transaction_corpus", "Public Transaction Corpus", "PEdesk's "
        "corpus of realized PE-healthcare deals powering comps/benchmarks.",
@@ -141,6 +151,8 @@ _SOURCES: List[DataSourceContext] = [
        used_for=["Market context / public-comp pricing."],
        strengths=["Market-based reference."],
        limitations=["Public-market relevance to private deals is limited."],
+       provenance_notes="Public-market pricing/trading data; cite the "
+       "specific exchange/feed + as-of date when used in an analysis.",
        source_confidence=_NV, data_confidence=_PUB, ic_ready=False),
     _s("regulatory_calendar_sources", "Regulatory Calendar Sources",
        "Sources behind the regulatory-event calendar.", _T.PUBLIC_DATASET,
@@ -150,6 +162,9 @@ _SOURCES: List[DataSourceContext] = [
        related_routes=["/regulatory-calendar"],
        strengths=["Forward calendar of regulatory risk."],
        limitations=["Coverage/recency need source documentation."],
+       provenance_notes="Public regulatory-event sources (CMS proposed/final "
+       "rules, FTC/DOJ announcements, congressional calendars); cite the "
+       "specific source per event entry.",
        source_confidence=_NV, data_confidence=_PUB, ic_ready=False),
 
     _s("benchmark_prior", "Benchmark Prior", "Peer/industry benchmark values "
@@ -210,6 +225,8 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["panel_size", "provider_productivity"],
        strengths=["Target-specific clinical/operational data."],
        limitations=["Export scope/quality varies widely by EHR and engagement."],
+       provenance_notes="Target-uploaded EHR/EMR export — record the EHR "
+       "vendor (Epic/Cerner/etc.), export scope, and as-of date.",
        data_confidence=_OBS, ic_ready=None),
     _s("provider_roster", "Provider Roster", "List of the target's providers "
        "with attributes (specialty, FTE, start dates).",
@@ -220,6 +237,8 @@ _SOURCES: List[DataSourceContext] = [
                        "app_support_ratio"],
        strengths=["Ground truth for provider headcount/mix."],
        limitations=["Point-in-time; may not capture pending departures."],
+       provenance_notes="Target-supplied provider roster — record the source "
+       "system (HRIS / credentialing / payroll) and as-of date.",
        data_confidence=_OBS, ic_ready=True),
     _s("compensation_file", "Compensation File", "Provider compensation data "
        "from the target.", _T.UPLOADED_TARGET_DATA,
@@ -229,6 +248,8 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["compensation_to_collections", "provider_contribution_margin"],
        strengths=["Actual comp for physician-economics analysis."],
        limitations=["Comp structures are complex (bonus, draws); confirm scope."],
+       provenance_notes="Target-supplied compensation file — confirm whether "
+       "it covers base + bonus + draws + benefits and the period it spans.",
        data_confidence=_OBS, ic_ready=True),
     _s("payer_contracts", "Payer Contracts", "The target's payer contract terms "
        "/ fee schedules.", _T.UPLOADED_TARGET_DATA,
@@ -238,6 +259,9 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["payer_mix", "underpayment_rate", "commercial_payer_exposure"],
        strengths=["Authoritative contracted rates."],
        limitations=["Often incomplete; renegotiation timing matters."],
+       provenance_notes="Target-supplied payer contracts / fee schedules — "
+       "record each payer, contract effective dates, and which version "
+       "(amended vs original) was uploaded.",
        data_confidence=_OBS, ic_ready=True),
     _s("monthly_actuals", "Monthly Actuals", "The target's/portfolio company's "
        "monthly actual financials.", _T.UPLOADED_TARGET_DATA,
@@ -248,6 +272,9 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["revenue", "ebitda", "adjusted_ebitda", "synergy_estimate"],
        strengths=["Most current observed financials."],
        limitations=["Unaudited; classification/cutoff can shift month to month."],
+       provenance_notes="Portfolio-company-supplied monthly financial actuals "
+       "— record reporting period, accounting basis (GAAP/cash/management), "
+       "and whether figures are reviewed.",
        data_confidence=_OBS, ic_ready=True),
     _s("seller_cim", "Seller CIM", "The seller's confidential information "
        "memorandum.", _T.SELLER_REPORTED, aliases=["cim", "deck", "teaser", "om"],
@@ -266,6 +293,8 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["adjusted_ebitda", "ebitda_bridge"],
        strengths=["Independent-ish scrutiny of the earnings base."],
        limitations=["Scope/independence vary; confirm who commissioned it."],
+       provenance_notes="QoE report — record which advisor produced it, who "
+       "commissioned it (seller vs buyer), and the date of issuance.",
        data_confidence=_MIX, ic_ready=True),
     _s("data_room_export", "Data Room Export", "Documents/exports from the "
        "deal data room.", _T.UPLOADED_TARGET_DATA,
@@ -274,6 +303,8 @@ _SOURCES: List[DataSourceContext] = [
        related_routes=["/diligence/deal"],
        strengths=["Primary diligence documents."],
        limitations=["Completeness/recency vary; seller controls contents."],
+       provenance_notes="Documents/exports from the deal VDR — record the "
+       "data-room platform, export date, and folder scope.",
        data_confidence=_MIX, ic_ready=None),
 
     # ── Internal / system ───────────────────────────────────────────
@@ -283,6 +314,8 @@ _SOURCES: List[DataSourceContext] = [
        related_routes=["/diligence/deal"],
        strengths=["Single internal handle for a deal."],
        limitations=["Only as good as what was entered/imported."],
+       provenance_notes="PEdesk's internal deal-profile record — sourced from "
+       "user entry / bulk import; not a primary diligence source.",
        data_confidence=_MIX, ic_ready=None),
     _s("analysis_run", "Analysis Run", "A stored run of the analysis packet "
        "for a deal.", _T.INTERNAL_MODEL_OUTPUT, aliases=["packet", "analysis", "run"],
@@ -291,6 +324,8 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["model_estimate", "confidence_tier"],
        strengths=["Reproducible, audit-able computed output."],
        limitations=["A computed snapshot — re-run if inputs changed."],
+       provenance_notes="PEdesk's stored analysis-packet run — a computed "
+       "snapshot keyed by deal_id; re-run to refresh after inputs change.",
        data_confidence=_EST, ic_ready=False),
     _s("model_output", "Model Output", "Output of a PEdesk model/estimator.",
        _T.INTERNAL_MODEL_OUTPUT, aliases=["model", "prediction", "estimate output"],
@@ -307,6 +342,8 @@ _SOURCES: List[DataSourceContext] = [
        used_for=["Deliverables (exports, memos, packets)."],
        strengths=["Shareable artifacts of platform output."],
        limitations=["Only as current as the run that produced them."],
+       provenance_notes="A PEdesk-generated artifact — captures the run that "
+       "produced it (deal_id, params, timestamp); regenerate to refresh.",
        data_confidence=_MIX, ic_ready=None),
     _s("checklist_state", "Checklist State", "State of the diligence checklist "
        "for a deal.", _T.SYSTEM_METADATA, aliases=["checklist", "diligence checklist"],
@@ -314,6 +351,8 @@ _SOURCES: List[DataSourceContext] = [
        related_routes=["/diligence/checklist"],
        strengths=["Process/coverage tracking."],
        limitations=["Process state, not analytical data."],
+       provenance_notes="PEdesk's diligence-checklist state per deal — "
+       "user-edited workflow metadata, not analytic data.",
        data_confidence=_OBS, ic_ready=None),
     _s("diligence_questions", "Diligence Questions", "The diligence-question "
        "ledger records.", _T.SYSTEM_METADATA, aliases=["questions", "question ledger"],
@@ -321,6 +360,8 @@ _SOURCES: List[DataSourceContext] = [
        related_routes=["/diligence/questions"],
        strengths=["Running record of open items."],
        limitations=["Workflow data, not analytics."],
+       provenance_notes="PEdesk's diligence-question ledger — user-authored "
+       "workflow records, not a primary analytic source.",
        data_confidence=_OBS, ic_ready=None),
     _s("audit_log", "Audit Log", "Unified log of user/system actions.",
        _T.SYSTEM_METADATA, aliases=["audit", "activity log"],
@@ -329,6 +370,8 @@ _SOURCES: List[DataSourceContext] = [
        related_routes=["/audit"],
        strengths=["Tamper-evident accountability."],
        limitations=["Operational metadata, not deal analytics."],
+       provenance_notes="PEdesk's unified user/system action log — hash-chain "
+       "accountability record, written on every state change.",
        data_confidence=_OBS, ic_ready=None),
     _s("engagement_record", "Engagement Record", "Record of a consulting/"
        "client engagement.", _T.SYSTEM_METADATA, aliases=["engagement", "portal record"],
@@ -336,6 +379,8 @@ _SOURCES: List[DataSourceContext] = [
        related_routes=["/engagements", "/portal/<engagementId>"],
        strengths=["Engagement-level organizing record."],
        limitations=["Metadata; specifics need source documentation."],
+       provenance_notes="PEdesk's consulting/client engagement record — "
+       "internal organizing metadata, not a primary diligence source.",
        data_confidence=_MIX, ic_ready=None),
     _s("portfolio_snapshot", "Portfolio Snapshot", "Live snapshot of the "
        "portfolio store (deal states, rollups).", _T.SYSTEM_METADATA,
@@ -347,6 +392,9 @@ _SOURCES: List[DataSourceContext] = [
        related_metrics=["revenue", "ebitda", "moic", "irr"],
        strengths=["Current observed state of tracked deals."],
        limitations=["Reflects only what's tracked; single-machine store."],
+       provenance_notes="PEdesk's live portfolio-store snapshot — current "
+       "tracked-deal state, no external lag; reflects only deals tracked "
+       "in this workspace.",
        data_confidence=_OBS, ic_ready=True),
 
     # ── Special ─────────────────────────────────────────────────────
@@ -367,9 +415,12 @@ _SOURCES: List[DataSourceContext] = [
        "data shown.", _T.UNKNOWN, aliases=[],
        update_cadence=_NEEDS, freshness_lag=_NEEDS,
        used_for=["Placeholder when a page's data lineage isn't documented."],
-       strengths=[_NEEDS],
+       strengths=["Honest about not knowing — surfaces the gap rather than "
+                  "hiding it behind a fabricated source claim."],
        limitations=["Provenance unknown — do not assert where the data came from."],
-       provenance_notes=_NEEDS,
+       provenance_notes="Provenance not established — this is the explicit "
+       "fallback when a page does not declare a documented source. Treat "
+       "it as 'source not established', never as a real dataset.",
        source_confidence=_NV, data_confidence=_UNK, ic_ready=False),
 
     # ── Sector Intelligence: CMS Provider Data Catalog (public) ──────
