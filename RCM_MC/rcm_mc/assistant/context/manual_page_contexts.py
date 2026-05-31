@@ -5596,6 +5596,13 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus — directional, not real outcomes."],
+        limitations=[
+            "Attribution patterns reflect the seed corpus's labels, not a "
+            "real fund's deals; useful for teaching the playbook, not for "
+            "rendering verdicts on the user's own portfolio.",
+            "Lever attribution depends on the corpus's modeled bridges — "
+            "the page can't disentangle correlated drivers reliably with "
+            "this sample size."],
         related_routes=["/fund-learning", "/deal-quality"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
@@ -5905,6 +5912,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real workspace audit/event log (SQLite)."],
         interpretation_guidance=["This is your own real activity, not market/corpus data."],
+        limitations=[
+            "Activity feed reflects events the app emits — actions that "
+            "bypass the standard flow (direct DB edits, file imports) may "
+            "not appear here.",
+            "Audit-grade for the local workspace, but not a system-of-"
+            "record for legal/regulatory purposes."],
         related_routes=["/app", "/alerts", "/escalations"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -5922,6 +5935,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["YOUR deals, not the market or seed corpus."],
+        limitations=[
+            "An alias of /pipeline — same backing data, slightly "
+            "different UI emphasis on funnel/stage; if a deal is missing "
+            "here, it's missing from /pipeline too.",
+            "SLA flags use the entered stage_entered_at; deals without "
+            "that timestamp don't flag stalled."],
         related_routes=["/pipeline", "/app", "/deals"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6003,6 +6022,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real deal records + the bridge model on your inputs."],
         interpretation_guidance=["Operates on YOUR deal; bridge math is model output."],
+        limitations=[
+            "Bridge model output is only as good as the entered lever "
+            "targets — empty bridges mean the deal lacks initiative "
+            "scoping, not that there's no value to create.",
+            "Probability-weighting on levers is not done by default; "
+            "raw lever impact may overstate realized uplift."],
         related_routes=["/pipeline", "/ebitda-bridge/", "/diligence/bridge-audit"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6021,6 +6046,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real candidate/target records + screening criteria."],
         interpretation_guidance=["Operates on your workspace candidates."],
+        limitations=[
+            "Workspace-only — screens here run against tracked candidates "
+            "in your store; for a market-wide universe screen use "
+            "/target-screener.",
+            "Saved screens are per-workspace; not shared across users "
+            "or environments by default."],
         related_routes=["/screening/dashboard", "/target-screener", "/pipeline"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6038,6 +6069,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real candidate/target records + screening criteria."],
         interpretation_guidance=["Your workspace screening, not the market/corpus."],
+        limitations=[
+            "Dashboard view of YOUR screening activity — empty/sparse "
+            "panels mean few candidates have moved through, not that "
+            "the market is dry.",
+            "Conversion-rate metrics need enough screen-volume to be "
+            "stable; thin pipelines make the rate noisy week-to-week."],
         related_routes=["/screening", "/target-screener", "/pipeline"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
