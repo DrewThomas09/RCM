@@ -85,6 +85,21 @@ class PromptBuilderTests(unittest.TestCase):
         # cms_hcris is ic_ready=False — the 'no' clause must appear.
         self.assertIn("IC-ready: no", prompt)
 
+    def test_user_prompt_includes_diligence_use_cases(self):
+        """The page-context block must surface diligence_use_cases so
+        the Guide can answer 'what would I use this page for in
+        diligence?' directly. PR #1256 drained the NEEDS placeholder
+        on this field across all 360 pages; PR #1271 wires it into the
+        prompt. /diligence/hcris-xray has multiple use-case entries —
+        the 'Diligence use cases:' label must appear, and the legacy
+        placeholder must never appear."""
+        prompt = build_guide_user_prompt(
+            "What is this page for?", self.packet
+        )
+        self.assertIn("Diligence use cases:", prompt)
+        self.assertNotIn("Diligence use cases:\n- Needs source",
+                         prompt)
+
     def test_user_prompt_includes_route_specific_notes_for_parameterized(self):
         """Parameterized pages (/my/AT, /diligence/risk-workbench,
         /market-data/state/CA) carry route-specific
