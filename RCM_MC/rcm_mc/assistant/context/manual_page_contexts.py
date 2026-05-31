@@ -1686,9 +1686,13 @@ _MANUAL: List[PageContext] = [
                      "Cost to collect"],
         data_sources=["Target claims (computed KPIs) + external peer benchmark "
                       "bands (e.g. HFMA-style quartiles)."],
-        model_logic_summary="Computes KPIs from the claims dataset and "
-        "compares each to peer bands, showing the signed delta to the peer "
-        "median. Exact KPI definitions: needs source documentation.",
+        model_logic_summary=(
+            "Computes RCM KPIs from the claims dataset using the same "
+            "definitions documented on each metric's MetricContext "
+            "card (denial_rate, days_in_ar, clean_claim_rate, "
+            "net_collection_rate, cost_to_collect). For each, "
+            "compares against built-in HFMA-style peer-quartile bands "
+            "and shows the signed delta to the peer median."),
         why_it_matters="Benchmarking turns raw KPIs into a 'better or worse "
         "than peers' read that frames where the RCM upside is.",
         diligence_use_cases=["Spotting which revenue-cycle metrics lag peers "
@@ -1828,10 +1832,13 @@ _MANUAL: List[PageContext] = [
                      "Estimated $ impact"],
         data_sources=["Target claims (fixture here) + caller-supplied "
                       "metadata; model outputs."],
-        model_logic_summary="Appears to solve, per lever, the smallest change "
-        "that flips the verdict band, tagging feasibility and dollar impact. "
-        "A sensitivity / what-if analysis. Exact solver logic: needs source "
-        "documentation.",
+        model_logic_summary=(
+            "Per lever, performs a 1-D root-find on the current "
+            "verdict band's edge (RED/YELLOW threshold or "
+            "YELLOW/GREEN threshold) holding all other levers fixed; "
+            "reports the minimum lever shift, an entered feasibility "
+            "tag, and the $ impact at the shifted lever. Sensitivity, "
+            "not joint-optimization."),
         why_it_matters="Turns a verdict into an action map — it names the "
         "binding constraints that diligence should target.",
         diligence_use_cases=["Staging the 'what we're waiting for' list — the "
@@ -5634,6 +5641,12 @@ _MANUAL: List[PageContext] = [
             "Grade weights are heuristic and stable across the corpus; "
             "a real-deal scorer would need calibration against partner "
             "judgment on a labeled sample."],
+        model_logic_summary=(
+            "For each corpus deal, computes a weighted blend of "
+            "data-completeness scores (presence of key fields, "
+            "evidence depth, scenario coverage) and maps to A-D "
+            "grade bands. Weights are platform defaults; the page is "
+            "a teaching benchmark, not a calibrated scorer."),
         related_routes=["/deal-risk-scores", "/corpus-dashboard"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
@@ -5657,6 +5670,12 @@ _MANUAL: List[PageContext] = [
             "Composite score depends on dimension weights that are "
             "stable defaults; a real underwriter would calibrate them "
             "to their own loss-experience."],
+        model_logic_summary=(
+            "Scores each corpus deal on each risk dimension "
+            "(covenant, payer, regulatory, execution, market) using "
+            "platform-default weightings, then composes a 0-100 "
+            "composite. The output is a structural risk-pattern read, "
+            "not a calibrated probability of distress."),
         related_routes=["/deal-quality", "/corpus-dashboard"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
@@ -6071,6 +6090,11 @@ _MANUAL: List[PageContext] = [
             "show-all to see them.",
             "Filters work over what's been entered; sparse tags or "
             "missing stage labels make filters silently exclude deals."],
+        model_logic_summary=(
+            "No model — a list/filter/sort view over the deals "
+            "table. Filters are SQL WHERE clauses on entered "
+            "stage/sector/owner; bulk operations write to the same "
+            "store with an audit-log entry per change."),
         related_routes=["/pipeline", "/deal-search", "/app"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6094,6 +6118,11 @@ _MANUAL: List[PageContext] = [
             "/global-search if the deal isn't appearing.",
             "Matches over indexed columns (name, sponsor, sector, "
             "owner) — full-text search across notes is not done here."],
+        model_logic_summary=(
+            "Substring + indexed-column matches against the deals "
+            "table; results are ranked by exact prefix > substring > "
+            "fuzzy. No semantic matching — for searching inside "
+            "notes/documents see /global-search."),
         related_routes=["/deals", "/pipeline", "/global-search"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
