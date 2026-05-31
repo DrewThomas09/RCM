@@ -42,7 +42,11 @@ class TopbarDropdownTests(unittest.TestCase):
         for item in top:
             self.assertIn(item["label"], self.html)
         self.assertIn('class="ck-mega-item" role="menuitem"', self.html)
-        self.assertIn(">01.<", self.html)              # numbered
+        # PR #1155 removed the "01. 02. …" mono-ordinal prefix; the items
+        # are now plain links carrying the label + description.
+        # The post-#1155 marker that survives is the per-item body span.
+        self.assertIn('class="ck-mega-it-body"', self.html)
+        self.assertIn('class="ck-mega-it-label"', self.html)
         if has_more:
             self.assertIn("All Research tools", self.html)  # More → link
 
