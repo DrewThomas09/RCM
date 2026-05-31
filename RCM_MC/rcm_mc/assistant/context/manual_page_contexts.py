@@ -10442,7 +10442,7 @@ _METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
     "/covenant-monitor": ["interest_coverage"],
     "/cost-structure": ["cost_to_charge_ratio"],
     "/unit-economics": ["gross_margin"],
-    "/cap-structure": ["net_debt"],
+    "/cap-structure": ["net_debt", "leverage"],
     "/treasury": ["current_ratio"],
     "/capex-budget": ["capex_intensity"],
     "/inpatient-rehab": ["length_of_stay", "readmission_rate"],
