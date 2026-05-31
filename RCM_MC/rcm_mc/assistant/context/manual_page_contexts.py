@@ -10143,6 +10143,33 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     "/lp-reporting": ["portfolio_snapshot"],
     "/deal-library/comps": ["public_transaction_corpus"],
     "/diligence/bear-case": ["analysis_run"],
+    # ── 2026-05-31 extension: pages with an illustrative scaffold + a
+    #    named real public-data anchor. The data_source_id resolves to the
+    #    anchor source (cadence/limits/provenance), not the scaffold. ──
+    "/aco-economics": ["cms_mssp_aco"],
+    "/cin-analyzer": ["cms_mssp_aco"],
+    "/antitrust-screener": ["cms_chow"],
+    "/msa-concentration": ["cms_chow"],
+    "/clinical-outcomes": ["cms_care_compare"],
+    "/quality-scorecard": ["cms_care_compare"],
+    "/provider-retention": ["cms_care_compare"],
+    "/gpo-supply": ["cms_open_payments"],
+    "/health-equity": ["cdc_places"],
+    "/telehealth-econ": ["cdc_places"],
+    "/locum-tracker": ["hrsa_hpsa"],
+    "/workforce-retention": ["hrsa_hpsa"],
+    "/physician-productivity": ["hrsa_hpsa"],
+    "/ma-contracts": ["cms_ma_geo"],
+    "/ma-star": ["cms_ma_geo"],
+    "/payer-concentration": ["cms_ma_geo"],
+    "/nsa-tracker": ["civhc_rbp"],
+    "/payer-contracts": ["civhc_rbp"],
+    "/payer-shift": ["civhc_rbp"],
+    "/market-intel/geo": ["cms_ffs_provider_enrollment"],
+    "/provider-network": ["cms_ffs_provider_enrollment"],
+    "/patient-experience": ["cms_hcahps"],
+    "/supply-chain": ["openfda_drug_shortages"],
+    "/target-screener": ["cms_hcris"],
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
