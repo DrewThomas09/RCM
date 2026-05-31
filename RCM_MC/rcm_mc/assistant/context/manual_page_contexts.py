@@ -9933,9 +9933,18 @@ for _csv, (_parent_label, _parent_route) in _CSV_EXPORTS.items():
         "analysis (Excel, a model, a memo appendix).",
         common_questions=["What's in this export?",
                           "How do I get this data into Excel?"],
+        inputs=[
+            f"None — the endpoint serializes the same rows {_parent_route} "
+            "would render, using whatever filters / view state are set "
+            "on the parent page.",
+        ],
         outputs=["A CSV file of the parent page's rows."],
         key_metrics=[], data_sources=[f"The same data as the {_parent_label} "
                                       "page (real public/source data)."],
+        diligence_use_cases=[
+            f"Pulling the {_parent_label} rows into Excel / a model / "
+            "a memo appendix for partner-side analysis.",
+        ],
         why_it_matters="Lets the team take the data into their own tools.",
         # 2026-05-31: universal guidance for every CSV export endpoint —
         # the CSV is the raw data from the parent page; for the
