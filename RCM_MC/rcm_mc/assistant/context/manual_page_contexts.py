@@ -629,6 +629,10 @@ _MANUAL: List[PageContext] = [
         related_routes=["/diligence/xray", "/diligence/hcris-xray", "/geo-intel",
                         "/market-intel/geo", "/pipeline", "/source", "/screen",
                         "/predictive-screener"],
+        # /target-screener is the Source workbench over real CMS public
+        # universes — the explicit data_confidence is PUBLIC_BENCHMARK_DATA
+        # (was inheriting the UNKNOWN default).
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
         "/source", "Deal Sourcing",
