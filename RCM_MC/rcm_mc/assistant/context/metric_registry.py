@@ -1135,6 +1135,182 @@ for _mid, _cav in _CAVEAT_PATCHES.items():
         _m_obj.caveats = list(_cav)
 
 
+# ── Common-misread completion (2026-05-31) ─────────────────────────────────
+# `common_misread` IS sent to the model (guide_prompt_builder), so a
+# placeholder degrades answers. Fill every metric still on the default with
+# one tight, honest "classic mistake when reading this number" sentence —
+# domain knowledge, never fabricated specifics. Applied only where
+# common_misread is still the _NEEDS placeholder.
+_MISREAD_PATCHES: Dict[str, str] = {
+    "revenue": (
+        "Treating gross charges as revenue — the cash-realizable net "
+        "figure (after contractuals + bad debt) is what matters."
+    ),
+    "revenue_growth": (
+        "Reading the headline rate as organic; in healthcare PE most "
+        "of it is usually acquisition-driven roll-up growth."
+    ),
+    "ebitda": (
+        "Conflating reported EBITDA with adjusted EBITDA — the gap "
+        "(add-backs) can be most of the figure."
+    ),
+    "adjusted_ebitda": (
+        "Trusting the add-back list without scrutinising each item — "
+        "aggressive add-backs are how a deal looks cheaper than it is."
+    ),
+    "ebitda_margin": (
+        "Comparing margins across sub-sectors as if they're peers — "
+        "SNF, dialysis, and physician groups carry very different "
+        "margin norms."
+    ),
+    "enterprise_value": (
+        "Confusing enterprise value with equity value — they differ "
+        "by net debt, which can be large in PE-backed providers."
+    ),
+    "ev_to_ebitda": (
+        "Reading a low multiple as 'cheap' when it's actually pricing "
+        "real concentration or rate risk."
+    ),
+    "leverage": (
+        "Citing gross leverage when the credit agreement defines net — "
+        "the two can differ by a full turn."
+    ),
+    "debt": (
+        "Quoting the principal level only and missing the maturity "
+        "calendar — a low-debt company with a near-term wall is fragile."
+    ),
+    "covenant_cushion": (
+        "Treating a thin cushion as 'fine' — small EBITDA misses can "
+        "flip it to a breach, especially with seasonal/cyclical revenue."
+    ),
+    "moic": (
+        "Reading gross MOIC as the LP outcome — net of fees/carry can "
+        "shave 0.3-0.5x for a typical fund."
+    ),
+    "irr": (
+        "Citing IRR without realised cash — early distributions can "
+        "flatter an IRR that won't survive the eventual exit."
+    ),
+    "exit_multiple": (
+        "Underwriting multiple expansion as the base case — the "
+        "disciplined assumption is flat-to-down vs entry."
+    ),
+    "hold_period": (
+        "Modelling the plan hold as the actual hold — realised holds "
+        "routinely exceed plan and drag IRR even as MOIC compounds."
+    ),
+    "synergy_estimate": (
+        "Treating synergy targets as locked outcomes — they are "
+        "routinely over-estimated and under-delivered."
+    ),
+    "value_creation_opportunity": (
+        "Reading the modelled upside as a commitment instead of a "
+        "pre-execution ceiling that needs an execution discount."
+    ),
+    "ebitda_bridge": (
+        "Summing all 7 lever contributions as additive when some "
+        "overlap (e.g. denial + collections) and would double-count."
+    ),
+    "denial_rate": (
+        "Comparing an INITIAL denial rate to peers' FINAL denial "
+        "rate — the two differ materially after rework."
+    ),
+    "net_collection_rate": (
+        "Reading a near-ceiling rate as healthy — by definition there "
+        "is little improvement headroom from this lever."
+    ),
+    "gross_collection_rate": (
+        "Comparing gross collection rates across providers — they are "
+        "driven by charge-master pricing, which varies wildly."
+    ),
+    "days_in_ar": (
+        "Comparing without adjusting for payer mix — Medicaid-heavy AR "
+        "books run materially longer than commercial-heavy ones."
+    ),
+    "clean_claim_rate": (
+        "Trusting a high clean-claim rate as proof of low denials — "
+        "clean claims can still be denied downstream by the payer."
+    ),
+    "bad_debt_rate": (
+        "Reading a rate-change as operational improvement when it's "
+        "actually a reclassification between bad debt and charity care."
+    ),
+    "underpayment_rate": (
+        "Flagging legitimate contractual adjustments as underpayments "
+        "because the contract model is incomplete."
+    ),
+    "payer_mix": (
+        "Reading day-based mix as if it drives economics — revenue-"
+        "based mix is the figure that matters for margin."
+    ),
+    "medicare_exposure": (
+        "Reading the exposure as static — Medicare rate updates lag "
+        "inflation in many years, so high exposure is a margin risk."
+    ),
+    "medicaid_exposure": (
+        "Comparing Medicaid exposure across states as equivalent — "
+        "state-by-state Medicaid rates and policy vary widely."
+    ),
+    "commercial_payer_exposure": (
+        "Reading high commercial share as unambiguously good — "
+        "concentration in a single commercial payer is a renewal risk."
+    ),
+    "rcm_uplift": (
+        "Treating the modelled uplift estimate as realised EBITDA — "
+        "it's a benchmark-gap scaling, not committed value."
+    ),
+    "collections_leakage": (
+        "Summing denial + underpayment + write-off leakage estimates "
+        "without checking for overlap between the buckets."
+    ),
+    "physician_attrition": (
+        "Reading a small-group attrition rate as a stable trend — a "
+        "few departures can swing the number sharply."
+    ),
+    "provider_productivity": (
+        "Comparing wRVU-based productivity to visit-based productivity "
+        "as if they're the same metric — they aren't."
+    ),
+    "wrvu": (
+        "Reading wRVU as a revenue figure — it measures work, not "
+        "what the payer actually paid for it."
+    ),
+    "compensation_to_collections": (
+        "Comparing ratios across providers without confirming the "
+        "compensation model (wRVU vs collections) is the same."
+    ),
+    "provider_contribution_margin": (
+        "Reading a negative contribution as a hard sell-or-cut signal "
+        "when the provider may be strategically justified (referrals)."
+    ),
+    "panel_size": (
+        "Comparing panel sizes computed by claims attribution vs "
+        "roster attribution — the two methods can differ by 20-30%."
+    ),
+    "referral_leakage": (
+        "Counting clinically appropriate referrals out-of-network as "
+        "leakage — some leakage is the right clinical decision."
+    ),
+    "app_support_ratio": (
+        "Citing a universal 'optimal' ratio — the right ratio is "
+        "specialty-specific and state-scope-of-practice-dependent."
+    ),
+    "bed_count": (
+        "Reading licensed bed count as the operational figure — staffed "
+        "beds is what actually drives census economics."
+    ),
+    "occupancy_rate": (
+        "Treating a snapshot rate as the operating norm — seasonal "
+        "swings make a single quarter misleading."
+    ),
+}
+for _mid, _msr in _MISREAD_PATCHES.items():
+    _m_obj = METRIC_REGISTRY.get(_mid)
+    if _m_obj is not None and _msr and (
+            (_m_obj.common_misread or "").strip() == _NEEDS):
+        _m_obj.common_misread = _msr
+
+
 # ── Coverage backfill (2026-05-27) ─────────────────────────────────────────
 # Standard RCM / CMS metrics that live pages reference but the registry lacked,
 # so the Guide can now explain them quantitatively (real definitions, no
