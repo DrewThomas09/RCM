@@ -10572,6 +10572,24 @@ _METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
     # quality slots — wire operating_margin so the Guide pulls the
     # formula/caveats/common_misread when answering about it.
     "/target-screener": ["operating_margin"],
+    # 2026-05-31: 10 DILIGENCE_WORKSPACE pages whose key_metrics
+    # prose names a real concept that resolves to a registry metric
+    # but the metric_id wasn't wired. Wires the canonical metric(s)
+    # so the Guide pulls each metric's full block (formula, common
+    # misread, caveats) when answering about these pages.
+    "/provider-retention": ["physician_attrition"],   # "provider churn / nurse-staff turnover"
+    "/workforce-retention": ["physician_attrition",   # "turnover rate"
+                             "labor_cost_ratio"],
+    "/locum-tracker": ["labor_cost_ratio",            # "locum % of labor"
+                       "physician_attrition"],
+    "/ma-contracts": ["medicare_exposure"],           # MA = Medicare Advantage
+    "/patient-experience": ["cms_star_rating"],       # HCAHPS feeds CMS Stars
+    "/quality-scorecard": ["cms_star_rating"],        # "Care Compare 5-star"
+    "/clinical-outcomes": ["readmission_rate"],       # clinical-outcome metric
+    "/antitrust-screener": ["hhi"],                   # "HHI delta"
+    "/cin-analyzer": ["benchmark_percentile"],        # "MSSP percentile"
+    "/payer-shift": ["payer_mix",                     # the topic
+                     "commercial_payer_exposure"],
 }
 # Extend /inpatient-rehab and /long-term-care-hospital to also include
 # medicare_spending_per_beneficiary (their key_metrics string already
