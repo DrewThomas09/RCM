@@ -8002,7 +8002,9 @@ _BATCH6 = [
      "Tracks actual vs plan, lever by lever, for value-creation initiatives.",
      "Hold post-close execution accountable against the value-creation plan.",
      ["Are we hitting the plan?", "Which levers are behind?", "What's the "
-      "EBITDA gap to plan?"],
+      "EBITDA gap to plan?",
+      "How is 'plan' versioned, and does the page diff against the entry plan, the latest re-plan, or both?",
+      "How does /value-tracker differ from /value-creation, /value-creation-plan, and /variance?"],
      ["Value-creation opportunity", "EBITDA", "Actual vs plan"],
      ["value_creation_opportunity", "ebitda"], ["monthly_actuals"],
      "Compares entered monthly actuals against the plan per lever; only "
@@ -8093,7 +8095,9 @@ _BATCH7 = [
      "Models the economics of running clinical-trial sites — per-site revenue "
      "and contribution.",
      ["What does a trial site earn?", "Is the contribution positive?",
-      "How many sites to break even?"],
+      "How many sites to break even?",
+      "What study mix, enrollment rate, and per-patient revenue does the model assume — and how should I override them?",
+      "How does /trial-site-econ differ from /unit-economics and /denovo-expansion?"],
      ["Revenue/site", "Contribution margin"],
      ["revenue", "provider_contribution_margin"],
      "Trial revenue is a distinct, often-overlooked provider income stream.",
@@ -8120,7 +8124,9 @@ _BATCH7 = [
     ("/workforce-planning", "Workforce Planning Analyzer",
      "Models staffing levels, labor cost, and workforce gaps.",
      ["What's the labor cost ratio?", "Where are staffing gaps?", "What's the "
-      "right staffing level?"],
+      "right staffing level?",
+      "Does the page model agency / locum reliance separately from employed FTEs, and what target ratio does it use?",
+      "How does /workforce-planning differ from /diligence/physician-eu and /physician-labor?"],
      ["Labor cost ratio", "FTE gap"], ["labor_cost_ratio"],
      "Labor is the dominant operating cost in provider businesses.", "model"),
     ("/esg-dashboard", "ESG Dashboard",
@@ -8162,7 +8168,9 @@ _BATCH7 = [
     ("/tracker-340b", "340B Pharmacy Program Tracker",
      "Tracks 340B program participation, contract pharmacies, and compliance.",
      ["What's our 340B footprint?", "Which contract pharmacies?", "Any "
-      "compliance gaps?"],
+      "compliance gaps?",
+      "Are program audit logs and HRSA recertification dates captured, with alerting on lapses?",
+      "How does /tracker-340b differ from /drug-pricing-340b and /tax-credits?"],
      ["Site count", "Savings"], [],
      "340B compliance is high-scrutiny; tracking it protects the savings.",
      "user"),
@@ -8290,7 +8298,9 @@ _BATCH8_ANALYTIC = [
      "Value-creation view — initiative impact and progress toward the EBITDA "
      "plan.",
      ["What value are we creating?", "Which levers matter most?", "Are we on "
-      "plan?"],
+      "plan?",
+      "How is initiative impact attributed — claimed by initiative, normalized for overlap, or simple sum?",
+      "How does /value-creation differ from /value-tracker and /value-creation-plan?"],
      ["Value-creation opportunity", "EBITDA"],
      ["value_creation_opportunity", "ebitda"], ["monthly_actuals"],
      "Aggregates initiative impact vs plan; meaningful once a deal's plan and "
@@ -8302,7 +8312,9 @@ _BATCH8_ANALYTIC = [
      "Underwriting view — base-case return from entry, growth, leverage, and "
      "exit assumptions.",
      ["What does this underwrite to?", "What has to be true?", "How sensitive "
-      "is the return?"],
+      "is the return?",
+      "What sensitivity ranges does the page show by default, and where can I override the bands?",
+      "How does /underwriting differ from /underwriting-model and /lbo-stress?"],
      ["MOIC", "IRR", "EV/EBITDA", "Leverage"],
      ["moic", "irr", "ev_to_ebitda", "leverage"], [],
      "LBO underwriting arithmetic over entered assumptions; illustrative "
