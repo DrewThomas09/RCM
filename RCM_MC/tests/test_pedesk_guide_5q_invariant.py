@@ -564,5 +564,58 @@ class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
         )
 
 
+class TestNoDuplicateDictKeysInRegistryPatches(unittest.TestCase):
+    """Python dict literals silently overwrite on duplicate keys —
+    we hit this in PR #1308 where a second ``cms_hcris: [...]`` in
+    ``_PARTNER_SOURCE_ALIAS_EXTENSIONS`` wiped PR #1299's 'CCN' alias.
+    Caught by ``test_partner_source_aliases_resolve`` only because
+    that test names the lost aliases explicitly. Lock the failure
+    mode structurally — scan the three registry modules' AST and
+    fail if ANY dict literal has a duplicated key, so the next
+    aliases sprint can't reintroduce the same gotcha."""
+
+    REGISTRY_FILES = [
+        "rcm_mc/assistant/context/metric_registry.py",
+        "rcm_mc/assistant/context/data_source_registry.py",
+        "rcm_mc/assistant/context/manual_page_contexts.py",
+    ]
+
+    def test_no_duplicate_keys_in_any_dict_literal(self):
+        import ast
+        import pathlib
+        import rcm_mc
+        root = pathlib.Path(rcm_mc.__file__).resolve().parent.parent
+        offenders = []
+        for relpath in self.REGISTRY_FILES:
+            fp = root / relpath
+            tree = ast.parse(fp.read_text())
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Assign)
+                        and isinstance(node.value, ast.Dict)):
+                    continue
+                keys = [ast.unparse(k) for k in node.value.keys
+                        if k is not None]
+                seen = set()
+                dup = []
+                for k in keys:
+                    if k in seen:
+                        dup.append(k)
+                    seen.add(k)
+                if dup:
+                    name = "?"
+                    if (node.targets
+                            and isinstance(node.targets[0], ast.Name)):
+                        name = node.targets[0].id
+                    offenders.append(
+                        f"{relpath}:{node.lineno} {name} dup keys: {dup}")
+        self.assertFalse(
+            offenders,
+            "Duplicate keys in registry dict literals — Python silently "
+            "drops earlier values, which loses aliases. Merge the lists "
+            "in place under one key. Offenders:\n  "
+            + "\n  ".join(offenders),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
