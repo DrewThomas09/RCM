@@ -6966,6 +6966,32 @@ for _route, _title, _upload, _who, _activates, _tmpl in _DATA_REQUIRED_GUIDE:
                            "values), with a panel listing exactly what to provide."),
         primary_purpose=f"Once your data is uploaded: {_activates}.",
         common_questions=_dr_common_questions,
+        # 2026-05-31: real defaults for the four list-shaped fields
+        # the loop wasn't passing (was inheriting [_NEEDS] for each).
+        # Every DR page's inputs/outputs/key_metrics/diligence_use_cases
+        # share the same shape once you frame them around the upload
+        # and the activated computation.
+        inputs=[
+            f"YOUR {_upload}, uploaded via /import or the page's "
+            f"upload widget using template {_tmpl}.",
+            f"Optional metadata that scopes the analysis to one "
+            "deal or fund (e.g. deal_id, fund_id) — see the page's "
+            "request panel for which scopes apply.",
+        ],
+        outputs=[
+            f"Once data is loaded: {_activates}.",
+            "Until then: an illustrative scaffold + a request panel "
+            "describing exactly what to upload.",
+        ],
+        key_metrics=[
+            f"Driven by the loaded {_upload} — the analytic surfaces "
+            "the metrics that the upload makes computable.",
+        ],
+        diligence_use_cases=[
+            f"Activating {_title} for a deal/fund as part of the "
+            "DATA_REQUIRED diligence sweep.",
+            f"Requesting {_upload} from {_who} as a P0 diligence task.",
+        ],
         data_sources=[f"USER DATA REQUIRED — upload {_upload} (import template: {_tmpl})."],
         data_source_ids=_DR_DATA_SOURCE_IDS.get(_route, []),
         interpretation_guidance=[
@@ -9907,9 +9933,18 @@ for _csv, (_parent_label, _parent_route) in _CSV_EXPORTS.items():
         "analysis (Excel, a model, a memo appendix).",
         common_questions=["What's in this export?",
                           "How do I get this data into Excel?"],
+        inputs=[
+            f"None — the endpoint serializes the same rows {_parent_route} "
+            "would render, using whatever filters / view state are set "
+            "on the parent page.",
+        ],
         outputs=["A CSV file of the parent page's rows."],
         key_metrics=[], data_sources=[f"The same data as the {_parent_label} "
                                       "page (real public/source data)."],
+        diligence_use_cases=[
+            f"Pulling the {_parent_label} rows into Excel / a model / "
+            "a memo appendix for partner-side analysis.",
+        ],
         why_it_matters="Lets the team take the data into their own tools.",
         # 2026-05-31: universal guidance for every CSV export endpoint —
         # the CSV is the raw data from the parent page; for the
