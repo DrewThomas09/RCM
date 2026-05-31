@@ -556,6 +556,26 @@ class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
             f"Metrics referencing non-existent routes: {broken}",
         )
 
+    def test_every_metric_has_at_least_two_caveats(self):
+        """Every metric should carry at least 2 caveats — partners
+        ask 'what should I be careful about?' constantly, and a
+        single-caveat answer reads thin. PR #1319 closed the last
+        3 single-caveat metrics (adjusted_ebitda, synergy_estimate,
+        rcm_uplift); lock the floor so it doesn't regress."""
+        sparse = sorted(
+            (mid, len(m.caveats or []))
+            for mid, m in METRIC_REGISTRY.items()
+            if len(m.caveats or []) < 2
+        )
+        self.assertFalse(
+            sparse,
+            "Metrics with fewer than 2 caveats — every metric needs "
+            "at least a 'first thing to be careful about' AND a "
+            "'second nuance partners commonly miss' so the Guide's "
+            "answer to 'what should I be careful about?' is honest:"
+            "\n  " + "\n  ".join(f"{mid}: n={n}" for mid, n in sparse),
+        )
+
 
 class TestNoDuplicateDictKeysInRegistryPatches(unittest.TestCase):
     """Python dict literals silently overwrite on duplicate keys —
