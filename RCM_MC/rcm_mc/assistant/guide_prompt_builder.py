@@ -22,6 +22,15 @@ _REPETITIVE_PREAMBLE_RE = re.compile(
 
 _OMITTED_NOTE = "Some context was omitted for length."
 
+# The standard `intended_users` value applied by `_ctx()` to the 91%
+# of pages that don't customise it. Used by the prompt builder to
+# decide whether to emit an `Intended users:` clause (skipped when
+# the value matches this default — the system prompt already implies
+# the PE-deal-team audience).
+_DEFAULT_INTENDED_USERS = [
+    "PE deal team (partners, principals, associates).",
+]
+
 
 def _bullets(items: List[str], limit: int = 0) -> str:
     vals = [str(i).strip() for i in (items or []) if str(i).strip()]
@@ -180,6 +189,18 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
             out.append(f"Short description: {pc.short_description}")
             out.append(f"Primary purpose: {pc.primary_purpose}")
         out.append(f"Why it matters: {pc.why_it_matters}")
+        # intended_users: the standard 91% of pages carry the default
+        # "PE deal team (partners, principals, associates)." which the
+        # system prompt already implies. Surface ONLY when the page
+        # specifies a more targeted persona (e.g. /portfolio/monte-carlo
+        # → "Partners and LP-reporting staff assessing fund-level risk.";
+        # /ebitda-bridge → "Deal team underwriting an RCM value-creation
+        # thesis."). Lets the Guide tailor answers for the few pages
+        # whose audience is sharper than the default, without bloating
+        # the prompt for the 91% default case.
+        iu = list(pc.intended_users or [])
+        if iu and iu != _DEFAULT_INTENDED_USERS:
+            out.append(f"Intended users: {'; '.join(_dot(u) for u in iu)}.")
         if not compact:
             out.append("Inputs:\n" + _bullets(pc.inputs))
             out.append("Outputs:\n" + _bullets(pc.outputs))
