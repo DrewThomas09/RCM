@@ -1493,6 +1493,38 @@ _MISREAD_PATCHES: Dict[str, str] = {
         "payers dominate — a diverse mix that still has one payer "
         "above 25% is still a concentrated single-renewal risk."
     ),
+    # 2026-05-31: misreads for the 6 new hospital/financial glossary
+    # metrics. Each is the classic mistake when reading that metric.
+    "debt_to_revenue": (
+        "Treating debt/revenue as interchangeable with debt/EBITDA "
+        "— a thin-margin provider can look fine on revenue leverage "
+        "and breach on EBITDA leverage."
+    ),
+    "fte_per_aob": (
+        "Reading low FTE/AOB as 'efficient' without checking the "
+        "quality / turnover side — lean staffing often masks a "
+        "service or safety problem that surfaces downstream."
+    ),
+    "revenue_per_bed": (
+        "Comparing revenue/bed across settings (rural critical "
+        "access vs urban academic) without acuity adjustment — the "
+        "metric is only fair within a setting/payer-mix peer group."
+    ),
+    "expense_per_bed": (
+        "Treating high expense/bed as the cost-cut opportunity "
+        "without separating labor vs supply; the underlying lever is "
+        "usually one or the other, not both."
+    ),
+    "total_patient_days": (
+        "Reading patient-days as a margin or quality signal — it's "
+        "a volume baseline. The ratios that normalize against it "
+        "(occupancy, CMI, cost-per-day) carry the read."
+    ),
+    "net_to_gross_ratio": (
+        "Conflating net-to-gross with gross_collection_rate — N/G "
+        "is the contractual-allowance ratio, GCR is cash-collected "
+        "over gross; movement in one isn't movement in the other."
+    ),
 }
 for _mid, _msr in _MISREAD_PATCHES.items():
     _m_obj = METRIC_REGISTRY.get(_mid)
@@ -1601,6 +1633,161 @@ _COVERAGE_METRICS = [
                          "commercial_payer_exposure"],
         related_routes=["/payer-concentration", "/payer-contracts",
                         "/payer-stress"],
+    ),
+    # ── 2026-05-31: The remaining 6 hospital / financial RCM metrics
+    #    from /metric-glossary (rcm_mc/ui/metric_glossary.py) that
+    #    didn't have clean alias targets. Same content the partner-
+    #    facing glossary page already exposes, brought into the Guide
+    #    layer so the model can answer about them too. ──
+    _m(
+        "debt_to_revenue", "Debt to Revenue",
+        ["debt to revenue", "debt/revenue", "ltd to revenue",
+         "long-term debt to revenue"],
+        "Long-term debt as a multiple of net patient service revenue.",
+        ">1.0x typically requires above-average margin to service. "
+        "Drives covenant attention from lenders and rating agencies.",
+        "Typical 0.2-1.5x; >1.0x is elevated. Pair with EBITDA-based "
+        "leverage — debt/revenue and debt/EBITDA can diverge sharply "
+        "for thin-margin providers.",
+        formula="long-term debt / net patient service revenue (NPSR)",
+        formula_confidence=_INF,
+        source_types=[_OBS], data_confidence=_OBS,
+        caveats=["Confirm whether 'debt' includes operating leases "
+                 "under ASC 842 — the two readings differ materially "
+                 "for lease-heavy providers.",
+                 "Revenue-based leverage hides margin risk; pair with "
+                 "debt-to-EBITDA before underwriting."],
+        related_metrics=["leverage", "debt", "net_debt",
+                         "interest_coverage"],
+        related_routes=["/cap-structure", "/debt-service",
+                        "/covenant-monitor"],
+    ),
+    _m(
+        "fte_per_aob", "FTE per Adjusted Occupied Bed",
+        ["fte per aob", "fte/aob", "staff per bed", "labor density",
+         "staffing intensity"],
+        "Full-time-equivalent staff per adjusted occupied bed — the "
+        "canonical hospital staffing-intensity metric.",
+        ">7.0 typically flags overstaffing (right-sizing opportunity); "
+        "<4.5 is lean (often a quality risk). The single best summary "
+        "of labor density for acute hospitals.",
+        "Typical 4.5-7.0; outside this band, dig into acuity, "
+        "service-line mix, and contract-labor share before drawing "
+        "the cost-cut conclusion.",
+        formula="total FTEs / adjusted occupied beds "
+                "(HCRIS Worksheet S-3 Parts I + II)",
+        formula_confidence=_DOC,
+        source_types=[_OBS, _PUB], data_confidence=_MIX,
+        caveats=["Adjusted occupied beds normalizes for outpatient "
+                 "volume — definition varies by HCRIS year and audit "
+                 "scrubber.",
+                 "Lean staffing (<4.5) can hide a quality / safety "
+                 "problem that surfaces as bad outcomes or turnover."],
+        related_metrics=["labor_cost_ratio", "occupancy_rate",
+                         "bed_count", "case_mix_index"],
+        related_routes=["/workforce-planning", "/diligence/hcris-xray",
+                        "/diligence/physician-eu"],
+    ),
+    _m(
+        "revenue_per_bed", "Revenue per Bed",
+        ["revenue per bed", "npsr per bed", "npsr/bed"],
+        "Net patient revenue normalized by licensed bed count.",
+        "Captures pricing × throughput in one number. Best-in-class "
+        "acute hospitals run $1.5-2.5M per bed; lower suggests under-"
+        "occupancy or weak payer mix; higher suggests outpatient "
+        "skew or premium-market positioning.",
+        "Typical $0.8M-$2.5M/bed for acute care. Read alongside "
+        "expense_per_bed — the gap is where margin opens. Don't "
+        "compare across very different settings (rural critical "
+        "access ≠ urban academic) without acuity adjustment.",
+        formula="net patient revenue / licensed bed count",
+        formula_confidence=_DOC,
+        source_types=[_OBS, _PUB], data_confidence=_MIX,
+        caveats=["Licensed beds vs staffed beds — the metric "
+                 "convention is licensed; staffed will look better "
+                 "for under-utilized facilities.",
+                 "Outpatient-heavy hospitals look high; not a fair "
+                 "cross-setting benchmark without adjustment."],
+        related_metrics=["revenue", "bed_count", "occupancy_rate",
+                         "operating_margin"],
+        related_routes=["/diligence/hcris-xray", "/cost-structure",
+                        "/unit-economics"],
+    ),
+    _m(
+        "expense_per_bed", "Expense per Bed",
+        ["expense per bed", "opex per bed", "opex/bed", "cost per bed"],
+        "Total operating expense normalized by licensed bed count.",
+        "Cost-density benchmark. High expense/bed with low revenue/"
+        "bed signals labor or supply inefficiency — the canonical "
+        "synergy / cost-out diligence target.",
+        "Typical $0.7M-$2.0M/bed. Pair with revenue_per_bed — the "
+        "delta is where operating margin sits. Lots of caveats on "
+        "outpatient mix.",
+        formula="operating expenses / licensed bed count "
+                "(HCRIS Worksheet G-3)",
+        formula_confidence=_DOC,
+        source_types=[_OBS, _PUB], data_confidence=_MIX,
+        caveats=["Mixes labor + non-labor opex; for an RCM thesis "
+                 "split into labor_cost_ratio + supply chain.",
+                 "Filing-year artifacts in HCRIS opex (one-time write-"
+                 "offs, restructuring charges) can distort the read."],
+        related_metrics=["bed_count", "labor_cost_ratio",
+                         "cost_per_adjusted_discharge",
+                         "operating_margin"],
+        related_routes=["/diligence/hcris-xray", "/cost-structure"],
+    ),
+    _m(
+        "total_patient_days",
+        "Total Patient Days",
+        ["total patient days", "patient days", "inpatient days"],
+        "Annual total of inpatient days across all service lines.",
+        "Volume baseline for occupancy, payer-mix calculations, and "
+        "capacity-planning. The denominator most other partner ratios "
+        "are normalized against.",
+        "Read as the inpatient-volume backbone — not a quality or "
+        "margin signal on its own. Confirm whether observation stays "
+        "and swing beds are included in the count (HCRIS conventions "
+        "vary).",
+        formula="sum of daily inpatient census across the fiscal year "
+                "(HCRIS Worksheet S-3 Part I)",
+        formula_confidence=_DOC,
+        source_types=[_OBS, _PUB], data_confidence=_MIX,
+        caveats=["Definition (observation, swing beds, SNF days) "
+                 "varies by HCRIS filing — normalize before comparing.",
+                 "Volume metric, not a margin or quality signal — "
+                 "always paired with a ratio that reads it (occupancy, "
+                 "CMI, cost-per-day)."],
+        related_metrics=["bed_count", "occupancy_rate",
+                         "case_mix_index", "length_of_stay"],
+        related_routes=["/diligence/hcris-xray", "/cost-structure"],
+    ),
+    _m(
+        "net_to_gross_ratio", "Net-to-Gross Ratio",
+        ["net to gross", "net/gross", "realization rate",
+         "net to gross ratio"],
+        "Net patient revenue as a fraction of gross charges — the "
+        "realization rate of contractual allowances against the "
+        "charge master.",
+        "Payer-mix-driven; highly stable within a hospital. Sudden "
+        "compression signals contract loss or payer aggression. Wide "
+        "variance vs peers (>5pp) warrants a contract-by-contract "
+        "walk.",
+        "Typical 22-38% for acute care; shifts here are early signals "
+        "of payer-mix or contract change. Distinct from gross_"
+        "collection_rate (which measures cash collected, not the "
+        "allowance ratio).",
+        formula="net patient revenue / gross charges",
+        formula_confidence=_DOC,
+        source_types=[_OBS], data_confidence=_OBS,
+        caveats=["Distinct from gross_collection_rate — net-to-gross "
+                 "is the allowance ratio, GCR is cash-collected ÷ "
+                 "gross.",
+                 "Charge-master strategy (sticker-price level) drives "
+                 "the ratio more than collection efficiency does."],
+        related_metrics=["gross_collection_rate", "net_collection_rate",
+                         "payer_mix", "underpayment_rate"],
+        related_routes=["/payer-contracts", "/ref-pricing",
+                        "/payer-rate-trends"],
     ),
 ]
 for _cm in _COVERAGE_METRICS:

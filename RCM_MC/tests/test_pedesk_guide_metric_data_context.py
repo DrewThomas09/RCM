@@ -54,6 +54,33 @@ class MetricLookupTests(unittest.TestCase):
             self.assertTrue(r.found, f"{q!r} should resolve")
             self.assertEqual(r.metric_id, "payer_diversity")
 
+    def test_six_remaining_glossary_metrics_in_registry(self):
+        """PR #1284 added the final 6 hospital/financial glossary
+        metrics as full _m() entries: debt_to_revenue, fte_per_aob,
+        revenue_per_bed, expense_per_bed, total_patient_days,
+        net_to_gross_ratio. Verify each resolves by id and by its
+        canonical label spelling."""
+        for mid in (
+            "debt_to_revenue", "fte_per_aob", "revenue_per_bed",
+            "expense_per_bed", "total_patient_days",
+            "net_to_gross_ratio",
+        ):
+            r = get_metric_context(mid)
+            self.assertTrue(r.found, f"{mid!r} should resolve")
+            self.assertEqual(r.metric_id, mid)
+        label_cases = [
+            ("Debt to Revenue", "debt_to_revenue"),
+            ("FTE per AOB", "fte_per_aob"),
+            ("Revenue per Bed", "revenue_per_bed"),
+            ("Expense per Bed", "expense_per_bed"),
+            ("Total Patient Days", "total_patient_days"),
+            ("Net-to-Gross Ratio", "net_to_gross_ratio"),
+        ]
+        for label, expected in label_cases:
+            r = get_metric_context(label)
+            self.assertTrue(r.found, f"{label!r} should resolve")
+            self.assertEqual(r.metric_id, expected)
+
     def test_glossary_aliases_resolve(self):
         """The /metric-glossary page (rcm_mc/ui/metric_glossary.py) has
         13 entries not in METRIC_REGISTRY. PR #1275 adds aliases for
