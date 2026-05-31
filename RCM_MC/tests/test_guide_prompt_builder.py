@@ -43,6 +43,19 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertNotIn("Common misread: Needs source documentation",
                          prompt)
 
+    def test_user_prompt_includes_metric_diligence_read(self):
+        """The metric-context block must surface diligence_interpretation
+        directly to the model — this is what partners actually want
+        ('how should I read this for diligence'). Every metric in the
+        registry has it populated; this guards against the prompt
+        builder dropping it like it used to drop common_misread."""
+        prompt = build_guide_user_prompt(
+            "How should I read operating margin here?", self.packet
+        )
+        self.assertIn("Diligence read:", prompt)
+        self.assertNotIn("Diligence read: Needs source documentation",
+                         prompt)
+
     def test_system_prompt_has_readonly_policy_and_rules(self):
         sysp = build_guide_system_prompt(self.packet).lower()
         # explicit disallowed behaviors

@@ -188,10 +188,20 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     if misread and "needs source" not in misread.lower()
                     else ""
                 )
+                # diligence_interpretation answers "how should I read this for
+                # diligence" — populated on every metric. Same placeholder
+                # guard as common_misread.
+                diligence = (m.diligence_interpretation or "").strip()
+                diligence_line = (
+                    f" Diligence read: {diligence}"
+                    if diligence and "needs source" not in diligence.lower()
+                    else ""
+                )
                 out.append(
                     f"- {m.label} ({m.metric_id}): {m.definition} "
                     f"Formula: {m.formula} [{m.formula_confidence.value}]. "
                     f"Why it matters: {m.why_it_matters}"
+                    f"{diligence_line}"
                     f"{misread_line} "
                     f"Caveats: {'; '.join(m.caveats) if m.caveats else 'none'}"
                 )
