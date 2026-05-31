@@ -9910,6 +9910,36 @@ _BATCH8_SYSTEM = [
       "How does this differ from /diligence/pe-reference (codified knowledge)?",
       "How are lessons captured into the playbook?"]),
 ]
+# Sibling routes per system/admin/home surface — keeps the Guide's "see also"
+# suggestion useful instead of dead-ending on these utility pages. Picked from
+# the natural workflow neighbours (settings family, status pages, search peers,
+# admin / audit family, etc.). Falls back to /tools + /app for any surface not
+# listed.
+_BATCH8_SIBLINGS = {
+    "/settings": ["/settings/ai", "/settings/workspace", "/users", "/audit"],
+    "/settings/ai": ["/settings", "/settings/workspace", "/guide/context-debug"],
+    "/settings/workspace": ["/settings", "/settings/ai"],
+    "/jobs": ["/runs", "/cli-runs", "/ops", "/outputs"],
+    "/runs": ["/jobs", "/cli-runs", "/outputs"],
+    "/cli-runs": ["/jobs", "/runs", "/outputs"],
+    "/ops": ["/jobs", "/admin/audit-chain", "/settings"],
+    "/outputs": ["/runs", "/jobs", "/exports"],
+    "/search": ["/global-search", "/deal-search", "/target-screener"],
+    "/global-search": ["/search", "/deal-search"],
+    "/query": ["/global-search", "/search", "/admin/audit-chain"],
+    "/admin/audit-chain": ["/audit", "/users", "/ops", "/settings"],
+    "/v3-status": ["/v5-status", "/ops", "/tools"],
+    "/v5-status": ["/v3-status", "/ops", "/tools"],
+    "/guide/context-debug": ["/settings/ai", "/module-index", "/tools"],
+    "/team": ["/users", "/audit", "/app"],
+    "/news": ["/insights", "/sector-momentum", "/portfolio"],
+    "/insights": ["/news", "/alerts", "/portfolio"],
+    "/new-deal": ["/pipeline", "/import", "/target-screener"],
+    "/market-data/map": ["/geo-map", "/market-intel/geo", "/geo-intel"],
+    "/market-intel/seeking-alpha": ["/market-intel/geo", "/news", "/sector-momentum"],
+    "/fund-learning": ["/diligence/pe-reference", "/portfolio", "/initiatives"],
+}
+
 for (_r, _cat, _sd, _cq) in _BATCH8_SYSTEM:
     if _r in {c.route for c in _MANUAL}:
         continue
@@ -9933,7 +9963,7 @@ for (_r, _cat, _sd, _cq) in _BATCH8_SYSTEM:
                                 "analytic output — don't read figures here as "
                                 "diligence findings."],
         limitations=["Not an analytic dataset; reflects current app state."],
-        related_routes=[],
+        related_routes=_BATCH8_SIBLINGS.get(_r, ["/tools", "/app"]),
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=_DC.MIXED,
