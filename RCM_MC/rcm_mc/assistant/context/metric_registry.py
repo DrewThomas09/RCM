@@ -1820,7 +1820,8 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
     # discovered by probing the resolver with real partner phrasings.
     # Each unambiguous; ambiguous terms ('churn', 'attrition' without
     # 'physician', 'acuity', 'ctc') are deliberately omitted.
-    "revenue": ["npsr", "net patient service revenue", "topline"],
+    "revenue": ["npsr", "net patient service revenue", "topline",
+                "top-line"],
     "revenue_growth": ["rev growth", "sales growth"],
     "leverage": ["leverage ratio", "debt ratio"],
     "ev_to_ebitda": ["ev multiple", "ev mult"],
@@ -1845,6 +1846,15 @@ _ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = {
                             "physician churn"],
     "days_cash_on_hand": ["cash on hand", "cash position"],
     "referral_leakage": ["patient leakage", "referral leak"],
+    # PR #1311: round-4 — more partner spellings probed against the
+    # resolver. 'opm' (Open Payments Manufacturer vs Operating Profit
+    # Margin) deliberately skipped as ambiguous.
+    "gross_margin": ["gross profit", "gp margin", "gpm"],
+    "ebitda_margin": ["ebitda margin %", "ebitdam"],
+    "fte_per_aob": ["aob", "adjusted occupied beds"],
+    "cost_per_adjusted_discharge": ["opex per discharge",
+                                    "expense per discharge"],
+    "operating_margin": ["operating profit margin", "op margin %"],
 }
 for _mid, _al in _ALIAS_EXTEND_COVERAGE.items():
     _o = METRIC_REGISTRY.get(_mid)
