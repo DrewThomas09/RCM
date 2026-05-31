@@ -759,3 +759,35 @@ for _sid, _als in _PARTNER_SOURCE_ALIAS_EXTENSIONS.items():
     for _a in _als:
         if _a not in _src.aliases:
             _src.aliases.append(_a)
+
+
+# 2026-05-31: Back-fill related_metrics for sources that left it empty
+# but materially feed (or contextualize) at least one registry metric.
+# Same fill-only-if-empty guard pattern as related_routes — does not
+# overwrite real curated lists. Sources with no clean metric tie
+# (fred macro, regulatory_calendar, cbsa_crosswalk geo, clinicaltrials
+# trial-volume, oig_leie fraud-base-rate, openfda shortages, etc.)
+# are deliberately left empty — wiring them would be misleading.
+_SOURCE_RELATED_METRIC_BACKFILL: Dict[str, List[str]] = {
+    # Public-comp pricing → multiple/return metrics it benchmarks.
+    "public_market_data": ["ev_to_ebitda", "moic"],
+    # The umbrella PDC hosts the per-care-setting CMS datasets that
+    # feed the star/care-index quality metrics on Sector Intelligence.
+    "cms_provider_data_catalog": [
+        "home_health_star_rating", "hospice_care_index",
+        "cms_star_rating",
+    ],
+    # SDOH burden tracks Medicaid mix more closely than commercial,
+    # so use it as the demand-side proxy.
+    "cdc_places": ["medicaid_exposure"],
+    # ACS county demographics → age 65+ drives Medicare panel; income
+    # /uninsured drive Medicaid mix.
+    "chr_county_demographics": ["medicare_exposure", "medicaid_exposure"],
+    # CMMI APM landscape is mostly Medicare/Medicaid VBC programs.
+    "cms_cmmi_apm": ["medicare_exposure"],
+}
+for _sid, _mids in _SOURCE_RELATED_METRIC_BACKFILL.items():
+    _src = DATA_SOURCE_REGISTRY.get(_sid)
+    if _src is None or _src.related_metrics:
+        continue
+    _src.related_metrics = list(_mids)
