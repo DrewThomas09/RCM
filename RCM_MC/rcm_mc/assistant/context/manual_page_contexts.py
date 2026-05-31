@@ -8431,7 +8431,9 @@ _BATCH8_ANALYTIC = [
      "Actual-vs-plan / actual-vs-benchmark variance drill-down for portfolio "
      "deals.",
      ["Where are we off plan?", "What's driving the variance?", "Which deals "
-      "are behind?"],
+      "are behind?",
+      "Is the variance shown vs the original entry plan, the most recent re-plan, or against a peer benchmark?",
+      "How does /variance differ from /value-tracker and /portfolio/risk-scan?"],
      ["Variance", "EBITDA", "Actual vs plan"], ["ebitda"],
      ["monthly_actuals", "portfolio_snapshot"],
      "Computes variance between entered actuals and plan/benchmark from stored "
