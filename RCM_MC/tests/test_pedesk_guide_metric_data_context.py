@@ -37,6 +37,23 @@ class MetricLookupTests(unittest.TestCase):
     def test_registry_substantial(self):
         self.assertGreaterEqual(len(METRIC_REGISTRY), 50)
 
+    def test_new_glossary_metrics_in_registry(self):
+        """PR #1276 added first_pass_resolution_rate and payer_diversity
+        as full _m() entries in METRIC_REGISTRY — these are real RCM
+        metrics from /metric-glossary that didn't have clean alias
+        targets in the existing registry. Verify both are now
+        resolvable by id and via their canonical alias spellings."""
+        for q in ("first_pass_resolution_rate", "fpr",
+                  "first-pass resolution"):
+            r = get_metric_context(q)
+            self.assertTrue(r.found, f"{q!r} should resolve")
+            self.assertEqual(r.metric_id, "first_pass_resolution_rate")
+        for q in ("payer_diversity", "payer diversity",
+                  "inverse hhi payer"):
+            r = get_metric_context(q)
+            self.assertTrue(r.found, f"{q!r} should resolve")
+            self.assertEqual(r.metric_id, "payer_diversity")
+
     def test_glossary_aliases_resolve(self):
         """The /metric-glossary page (rcm_mc/ui/metric_glossary.py) has
         13 entries not in METRIC_REGISTRY. PR #1275 adds aliases for
