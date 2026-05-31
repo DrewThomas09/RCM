@@ -10438,11 +10438,40 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     "/ic-memo-gen": ["portfolio_snapshot"],
     "/portfolio": ["deal_profile"],
     "/portfolio/monte-carlo": ["model_output"],
+    # 2026-05-31: targeted probe (specific-label match) caught 4 more
+    # pages whose short_description / primary_purpose explicitly names
+    # a real public dataset that backs the page.
+    "/risk-adjustment": ["cms_ma_geo"],  # "real CMS MA …panel"
+    "/revenue-leakage": ["edi_835"],     # "835 remittance" upload target
+    "/initiatives": ["monthly_actuals"], # "joins to … monthly actuals"
+    "/industry": ["cms_hcris"],          # "real CMS/HCRIS data"
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
     if _sp and not _c.data_source_ids:
         _c.data_source_ids = list(_sp)
+
+# 2026-05-31: Additive (extend, not replace) data-source wirings for
+# pages that already have at least one wired source but whose prose
+# names another real public dataset feeding the page. Append-only with
+# dedup; deliberately separate from the empty-only patch above so the
+# semantics stay obvious.
+_DATA_SOURCE_LINK_EXTEND: Dict[str, List[str]] = {
+    # Bear case auto-pulls HCRIS through the standalone extractor.
+    "/diligence/bear-case": ["cms_hcris"],
+    # Market-intel/geo's prose explicitly names CHOW as the consolidation
+    # signal alongside FFS enrollment (already wired).
+    "/market-intel/geo": ["cms_chow"],
+}
+for _c in _MANUAL:
+    _ex = _DATA_SOURCE_LINK_EXTEND.get(_c.route)
+    if not _ex:
+        continue
+    _existing = list(_c.data_source_ids or [])
+    for _sid in _ex:
+        if _sid not in _existing:
+            _existing.append(_sid)
+    _c.data_source_ids = _existing
 
 # 2026-05-31: Back-fill data_source.related_routes from PageContext
 # data_source_ids. The forward direction (page → source) is populated
