@@ -392,6 +392,43 @@ Sprint cumulative through #1322: **57+ PRs landed in current
 continuous-loop session** (#1250–#1322 spanning prior segments +
 this PM continuous segment). All green CI, all auto-deployed.
 
+## Addendum 2 — 2026-05-31 (PM continued): PRs #1323-#1328
+
+Six more PRs landed continuing the same continuous-loop segment:
+
+- **#1323** docs: this session-summary update through #1322.
+- **#1324** Last unresolved `/metric-glossary` key closed
+  (`net_patient_revenue` added as alias on revenue) + locked the
+  floor with `TestNoUnresolvedGlossaryKeys`. All 24 glossary keys
+  now resolve via the Guide.
+- **#1325** Wired `/diligence/pe-tool` → `analysis_run` (prose names
+  "the deal's analysis packet").
+- **#1326** Two-part fix to `data_source.related_routes` back-fill:
+  (a) EXTEND-with-cap=6 instead of fill-only-if-empty so the 30+
+  page-wirings from PRs #1304-#1325 actually flow back-side too;
+  (b) move the back-fill to run LAST (after `_GEO_SOURCE_LINKS` +
+  `_PUBLIC_SOURCE_LINKS`) so it sees the complete consuming-page
+  set. Source distribution improved from {1:27, 2:9, 3:5, 4:5, 5:1,
+  6:3, 0:1} to {1:13, 2:9, 3:4, 4:2, 5:3, 6:18, 7:1, 0:1} — 18
+  sources hit cap=6 vs 3 before. Also reverted a marginal #1322
+  entry that hit the same wire-order gotcha as `/cms-apm` (caught
+  by the no-orphan-source invariant).
+- **#1327** `TestSourceRelatedRoutesBackFillIsComplete` locks the
+  wire-order regression structurally so a future reorder can't
+  silently re-break it.
+- **#1328** Prompt-builder enrichment: per-source `Feeds metrics: a, b, c.`
+  clause closes the symmetry gap with the per-metric block (which
+  already surfaced "Related metrics" + "Discussed on"). Skips when
+  `related_metrics` is empty (the ~20 system-meta sources).
+
+Test count: 27 → 29 invariant tests (added: glossary-keys-resolve,
+source-back-fill-completeness). Guide-context suite: 77 → 79+.
+
+Sprint cumulative through #1328: **63+ PRs landed in current
+continuous-loop session**. All green CI, all auto-deployed, prod
+healthy across the entire segment (`https://pedesk.app/healthz` →
+`ok` throughout).
+
 ## Guardrails honored
 
 No fake data. Did not touch auth/session, Caddy, systemd, deploy workflow,
