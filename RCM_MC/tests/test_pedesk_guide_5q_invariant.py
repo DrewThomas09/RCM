@@ -329,6 +329,23 @@ class TestDataSourcesHaveRealProvenance(unittest.TestCase):
             + "\n  ".join(offenders),
         )
 
+    def test_data_source_related_metrics_resolve(self):
+        """Every related_metrics entry on a data source must resolve to
+        a real metric_id in METRIC_REGISTRY. A dangling reference sends
+        the Guide nowhere when a partner asks 'what metrics does this
+        source feed?'. Added in PR #1263 when public CMS sources were
+        wired to their consuming metrics."""
+        known = set(METRIC_REGISTRY.keys())
+        broken: dict[str, list[str]] = {}
+        for sid, s in DATA_SOURCE_REGISTRY.items():
+            bad = [m for m in (s.related_metrics or []) if m not in known]
+            if bad:
+                broken[sid] = bad
+        self.assertFalse(
+            broken,
+            f"Data sources referencing unknown metric_ids: {broken}",
+        )
+
 
 class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
     """Every MetricContext should have ≥2 related_routes so the Guide
