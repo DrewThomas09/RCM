@@ -7937,7 +7937,9 @@ _BATCH6 = [
      "Get an instant approximate read where running the full MC would be too "
      "slow.",
      ["What's the quick EBITDA-drag estimate?", "How close is it to the full "
-      "MC?", "When should I run the real sim?"],
+      "MC?", "When should I run the real sim?",
+      "What was the surrogate trained on, and is the calibration error reported alongside the estimate?",
+      "How does /surrogate differ from /portfolio/monte-carlo and /scenario-mc?"],
      ["EBITDA drag (approx)"], [], [],
      "A trained/stubbed surrogate approximating the MC's mean output; an "
      "approximation, not the full simulation — use the MC for decisions.",
@@ -7949,7 +7951,9 @@ _BATCH6 = [
      "assumptions.",
      "See where a deal breaks under stress before committing capital.",
      ["How does this hold up under stress?", "What breaks the deal?",
-      "Where's the fragility?"],
+      "Where's the fragility?",
+      "Which preset shocks does it apply by default, and can I layer multiple shocks at once?",
+      "How does /pressure differ from /lbo-stress, /scenarios, and /diligence/payer-stress?"],
      ["EBITDA under stress", "Risk score"], ["ebitda", "risk_score"], [],
      "Applies adverse-scenario shocks to entered assumptions and reports the "
      "outcome; illustrative unless deal inputs are supplied.",
@@ -8079,7 +8083,9 @@ _BATCH7 = [
      "Models a healthcare sale-leaseback / REIT scenario — cap rate, proceeds, "
      "and rent drag.",
      ["What does a sale-leaseback yield?", "What's the rent drag on EBITDA?",
-      "Is the cap rate attractive?"],
+      "Is the cap rate attractive?",
+      "What rent-escalator and tenor does the page assume, and how do master-lease vs single-property structures change the answer?",
+      "How does /reit-analyzer differ from /capital-schedule and /cap-structure?"],
      ["Proceeds", "EBITDA", "Enterprise value"], ["ebitda", "enterprise_value"],
      "Real-estate monetization can fund a deal but burdens future EBITDA.",
      "model"),
@@ -8095,7 +8101,9 @@ _BATCH7 = [
     ("/specialty-benchmarks", "Specialty Benchmarks Library",
      "A library of operating benchmarks by clinical specialty.",
      ["What are typical margins for this specialty?", "How does this specialty "
-      "benchmark?", "What's the productivity norm?"],
+      "benchmark?", "What's the productivity norm?",
+      "What's the source vintage of these benchmarks (MGMA, AAMC, corpus-derived), and how often is the library refreshed?",
+      "How does /specialty-benchmarks differ from /diligence/benchmarks and /diligence/physician-eu?"],
      ["EBITDA margin", "Revenue"], ["ebitda_margin", "revenue"],
      "Specialty norms anchor what 'good' looks like for a target.", "model"),
     ("/phys-comp-plan", "Physician Compensation Plan Designer",
@@ -8306,7 +8314,9 @@ _BATCH8_ANALYTIC = [
      "Monte-Carlo scenario analyzer — outcome distribution under stochastic "
      "assumptions.",
      ["What's the outcome distribution?", "What's the P10/P90?", "How risky "
-      "is this scenario?"],
+      "is this scenario?",
+      "What input distributions and correlation structure does the page assume, and is the seed deterministic?",
+      "How does /scenario-mc differ from /portfolio/monte-carlo, /scenarios, and /pressure?"],
      ["EBITDA distribution", "P10/P50/P90"], ["ebitda", "moic"], [],
      "Draws many scenarios from entered distributions and reports the outcome "
      "spread; illustrative unless deal inputs are supplied.",
@@ -8926,7 +8936,10 @@ if "/tools" not in {c.route for c in _MANUAL}:
         primary_purpose="Let a partner jump straight to any surface without "
         "trawling URLs — the catalog of everything the platform can do.",
         common_questions=["What tools are available?", "Where do I find X?",
-                          "How do I open the command palette?"],
+                          "How do I open the command palette?",
+                          "What does each honesty-circle color (GREEN / NAVY / "
+                          "DATA_REQUIRED / RED) mean on this page?",
+                          "How does /tools differ from /best/<section> and the top-nav rails?"],
         inputs=["The platform's registered surfaces / command-palette modules."],
         outputs=["A grouped, searchable list of tools with links."],
         key_metrics=[],
