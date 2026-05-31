@@ -1457,8 +1457,9 @@ _MANUAL: List[PageContext] = [
         ],
         limitations=["No version control, approval, or 'finalized' state in "
                      "the page source; the deliverable is a printable view.",
-                     "A separate standalone export path may exist but is not "
-                     "invoked by this page — needs source confirmation."],
+                     "Packet sections stitch together fixtures/inputs from "
+                     "across the deal — a 'consistent IC packet' depends on "
+                     "the partner verifying each section's source first."],
         related_routes=["/diligence/deal", "/diligence/qoe-memo"],
         metric_ids=["enterprise_value", "ev_to_ebitda", "exit_multiple",
                     "adjusted_ebitda"],
@@ -5539,6 +5540,13 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Calculator: your inputs (+ live deal data where attached)."],
         interpretation_guidance=["Reflects your inputs / attached deal data."],
+        limitations=[
+            "Monitors covenant posture from entered/attached actuals, "
+            "not a live lender feed — a fresh actuals upload or input "
+            "is needed each period to keep the view current.",
+            "The early-warning band threshold (e.g. 15% cushion) is "
+            "platform-default; partners should align it with the "
+            "specific deal's credit agreement."],
         related_routes=["/covenant-headroom", "/debt-service"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MODEL_ESTIMATE,
     ),
@@ -5580,6 +5588,13 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus, not real realized deals."],
+        limitations=[
+            "Scores the illustrative seed corpus, not your live "
+            "pipeline — use to learn risk-dimension patterns, not as "
+            "a real-deal scorer.",
+            "Composite score depends on dimension weights that are "
+            "stable defaults; a real underwriter would calibrate them "
+            "to their own loss-experience."],
         related_routes=["/deal-quality", "/corpus-dashboard"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
@@ -5981,6 +5996,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["Searches your own deals, not the market/corpus."],
+        limitations=[
+            "Searches workspace-tracked deals only — archived/deleted "
+            "records are excluded by default; use show-all or "
+            "/global-search if the deal isn't appearing.",
+            "Matches over indexed columns (name, sponsor, sector, "
+            "owner) — full-text search across notes is not done here."],
         related_routes=["/deals", "/pipeline", "/global-search"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
@@ -6093,6 +6114,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["The data-source registry (real public datasets)."],
         interpretation_guidance=["A catalog of real sources — see each source's card for detail."],
+        limitations=[
+            "Catalog only — this page lists data sources; their "
+            "freshness and ingestion status live on /admin/data-sources.",
+            "Public datasets here lag their underlying filings (e.g. "
+            "HCRIS by 1-2+ years, HPSA by quarter); refresh cadence "
+            "varies per source."],
         related_routes=["/cms-sources", "/data", "/data/catalog"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -6111,6 +6138,13 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Your uploaded deal documents (real, your workspace)."],
         interpretation_guidance=["Your real deal documents — not market data."],
+        limitations=[
+            "Stores your uploaded documents in the local workspace; "
+            "not a multi-party data-room product, no permissioning by "
+            "external counsel/banker out of the box.",
+            "Document-level search depends on each file's extractable "
+            "text; image-only PDFs and scans won't be searchable until "
+            "OCR is run upstream."],
         related_routes=["/diligence/ingest", "/diligence/deal", "/upload"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
