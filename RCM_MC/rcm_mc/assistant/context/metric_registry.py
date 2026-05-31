@@ -129,7 +129,8 @@ _METRICS: List[MetricContext] = [
        formula="net debt / EBITDA", formula_confidence=_INF,
        source_types=[_OBS, _EST], data_confidence=_MIX,
        related_metrics=["debt", "covenant_cushion", "ebitda"],
-       related_routes=["/diligence/covenant-stress"]),
+       related_routes=["/diligence/covenant-stress", "/leverage-intel",
+                       "/lbo-stress", "/refi-optimizer"]),
     _m("debt", "Debt", ["total debt", "gross debt", "borrowings"],
        "Total/net interest-bearing debt in the capital structure.",
        "The denominator of deleveraging and the covenant base.",
@@ -144,7 +145,8 @@ _METRICS: List[MetricContext] = [
        "Cushion shrinks fast under stress — read it against the stress scenarios.",
        source_types=[_EST], data_confidence=_MIX,
        related_metrics=["leverage", "debt", "payer_stress_impact"],
-       related_routes=["/diligence/covenant-stress"]),
+       related_routes=["/diligence/covenant-stress", "/alerts",
+                       "/portfolio/risk-scan", "/covenant-headroom"]),
     _m("moic", "MOIC", ["multiple of invested capital", "multiple", "moc", "cash on cash"],
        "Total value returned to equity divided by equity invested.",
        "The dollar-return headline, less hold-sensitive than IRR.",
@@ -159,7 +161,8 @@ _METRICS: List[MetricContext] = [
        "IRR is hold-sensitive and flatters early distributions; pair with MOIC.",
        source_types=[_EST], data_confidence=_EST,
        related_metrics=["moic", "hold_period"],
-       related_routes=["/irr-dispersion"]),
+       related_routes=["/irr-dispersion", "/portfolio", "/lp-update",
+                       "/fund-attribution", "/return-attribution"]),
     _m("exit_multiple", "Exit Multiple", ["exit ev/ebitda", "terminal multiple"],
        "The EV/EBITDA assumed at exit.",
        "Multiple expansion/compression is a major returns driver and assumption risk.",
@@ -203,7 +206,8 @@ _METRICS: List[MetricContext] = [
        source_types=[_EST], data_confidence=_EST,
        related_metrics=["adjusted_ebitda", "value_creation_opportunity",
                        "bridge_realization_probability", "rcm_uplift"],
-       related_routes=["/diligence/bridge-audit"]),
+       related_routes=["/diligence/bridge-audit", "/ebitda-bridge",
+                       "/models/bridge", "/diligence/value"]),
 
     # ── Revenue cycle ───────────────────────────────────────────────
     _m("denial_rate", "Denial Rate", ["initial denial rate", "idr", "denials"],
@@ -213,7 +217,8 @@ _METRICS: List[MetricContext] = [
        formula="denied claims / total claims submitted", formula_confidence=_INF,
        source_types=[_OBS, _PUB], data_confidence=_MIX,
        related_metrics=["clean_claim_rate", "rcm_uplift", "collections_leakage"],
-       related_routes=["/diligence/denial-prediction"]),
+       related_routes=["/diligence/denial-prediction", "/rcm-benchmarks",
+                       "/diligence/value", "/revenue-leakage"]),
     _m("net_collection_rate", "Net Collection Rate", ["ncr", "net collections"],
        "Net payments collected as a share of the amount allowed to be collected.",
        "Measures how much of collectible revenue actually lands.",
@@ -1151,6 +1156,7 @@ _COVERAGE_METRICS = [
                  "Episode window is fixed (3 days pre to 30 days post "
                  "admission); it is not total cost of care."],
         related_metrics=["cost_per_adjusted_discharge", "readmission_rate"],
+        related_routes=["/diligence/hcris-xray", "/diligence/benchmarks"],
     ),
 ]
 for _cm in _COVERAGE_METRICS:
