@@ -745,6 +745,12 @@ _PARTNER_SOURCE_ALIAS_EXTENSIONS: Dict[str, List[str]] = {
     "openfda_drug_shortages": ["fda shortage"],
     "clinicaltrials_gov": ["clinical trials"],
     "chr_county_demographics": ["county health"],
+    # PR #1302: SEC filing variants without dash + common shorthand;
+    # VDR variants; physician/professional claims = 837P.
+    "sec_edgar": ["10k", "10q", "8k", "annual report",
+                  "quarterly filing"],
+    "data_room_export": ["vdr", "data-room"],
+    "edi_837": ["physician claims", "professional claims"],
 }
 for _sid, _als in _PARTNER_SOURCE_ALIAS_EXTENSIONS.items():
     _src = DATA_SOURCE_REGISTRY.get(_sid)
