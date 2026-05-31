@@ -10463,6 +10463,10 @@ _DATA_SOURCE_LINK_PATCHES: Dict[str, List[str]] = {
     "/pipeline/bridge": ["deal_profile", "model_output"],
     # /activity prose: "Your real workspace audit/event log (SQLite)."
     "/activity": ["audit_log"],
+    # /diligence/pe-tool prose: "the deal's analysis packet (its real
+    # ingested/observed data)" — wires analysis_run so the Guide pulls
+    # the source's cadence/limits/provenance.
+    "/diligence/pe-tool": ["analysis_run"],
 }
 for _c in _MANUAL:
     _sp = _DATA_SOURCE_LINK_PATCHES.get(_c.route)
