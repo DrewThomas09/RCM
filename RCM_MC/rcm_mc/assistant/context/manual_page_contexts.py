@@ -7838,7 +7838,9 @@ _BATCH6 = [
      "See the range of fund-level outcomes a portfolio construction could "
      "produce.",
      ["What's the portfolio outcome range?", "What's the downside?",
-      "How does construction change the distribution?"],
+      "How does construction change the distribution?",
+      "How many draws does the simulator use, and is the seed deterministic across reloads?",
+      "How does /portfolio-sim differ from /portfolio/monte-carlo and /lbo-stress?"],
      ["MOIC", "IRR", "Downside"], ["moic", "irr"],
      ["public_transaction_corpus"],
      "Monte-Carlo draws from corpus return distributions to build a "
@@ -8100,7 +8102,9 @@ _BATCH7 = [
      "Models physician compensation plan structures (wRVU, base+incentive) and "
      "their cost.",
      ["What does this comp plan cost?", "Is comp aligned to production?",
-      "How does wRVU-based pay compare?"],
+      "How does wRVU-based pay compare?",
+      "Which specialty benchmarks does the designer use, and how should I override the wRVU conversion factor?",
+      "How does /phys-comp-plan differ from /diligence/physician-eu and /workforce-planning?"],
      ["Comp-to-collections", "Productivity"],
      ["compensation_to_collections", "provider_productivity"],
      "Physician comp is the largest cost line and the key retention lever.",
@@ -8157,7 +8161,9 @@ _BATCH7 = [
     ("/physician-labor", "Physician Labor Market Tracker",
      "Tracks physician supply, attrition, and recruiting in target markets.",
      ["What's physician attrition?", "Is the market tight?", "What's the "
-      "recruiting pipeline?"],
+      "recruiting pipeline?",
+      "Is attrition computed from the entered roster or imputed from market data, and what defines 'tight'?",
+      "How does /physician-labor differ from /diligence/physician-attrition and /workforce-planning?"],
      ["Attrition", "Productivity"],
      ["physician_attrition", "provider_productivity"],
      "Physician supply/retention is a first-order risk in provider deals.",
@@ -8248,7 +8254,9 @@ _BATCH8_ANALYTIC = [
      "Machine-learning analysis over the public hospital universe — predicted "
      "KPIs and drivers.",
      ["What does ML say about this universe?", "Which features drive "
-      "outcomes?", "How confident are the predictions?"],
+      "outcomes?", "How confident are the predictions?",
+      "How is the universe filtered (year, geography, bed band) before training, and is the page deterministic across reloads?",
+      "How does /ml-insights differ from /quant-lab and /model-validation?"],
      ["Predicted KPIs", "Feature importance"],
      ["denial_rate", "operating_margin", "model_estimate"], ["cms_hcris"],
      "Runs the ML stack (ridge/conformal, feature importance) over HCRIS; "
@@ -8260,7 +8268,9 @@ _BATCH8_ANALYTIC = [
      "Validation dashboard for the predictive models — held-out accuracy, "
      "calibration, and drift.",
      ["Are the models accurate?", "What's the held-out error?", "Are "
-      "predictions calibrated?"],
+      "predictions calibrated?",
+      "How is the CV split done (random, time-aware, group-aware), and how is calibration measured (reliability diagram, Brier)?",
+      "How does /model-validation differ from /models/quality, /models/validate, and /ml-insights?"],
      ["CV R²/AUC", "Calibration", "Confidence tier"],
      ["model_estimate", "confidence_tier"], ["cms_hcris"],
      "Reports cross-validated/held-out metrics for the models; numbers are "
@@ -8385,7 +8395,9 @@ _BATCH8_ANALYTIC = [
      "Analytics across the licensed deal corpus — distributions, drivers, and "
      "cross-cuts.",
      ["What does the corpus say overall?", "What drives returns?", "How do "
-      "cuts compare?"],
+      "cuts compare?",
+      "This route is a legacy alias that redirects to /deal-corpus-analytics — should I use the canonical one?",
+      "How does /portfolio-analytics differ from /portfolio and /deal-corpus-analytics?"],
      ["MOIC", "IRR", "EV/EBITDA"], ["moic", "irr", "ev_to_ebitda"],
      ["public_transaction_corpus"],
      "Cross-sectional analytics over the corpus; descriptive, reflects "
