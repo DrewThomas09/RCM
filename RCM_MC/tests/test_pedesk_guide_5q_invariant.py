@@ -108,6 +108,42 @@ class TestAnalyticPagesHaveRelatedRoutes(unittest.TestCase):
         )
 
 
+class TestAllPagesHaveRelatedRoutes(unittest.TestCase):
+    """Stricter than TestAnalyticPagesHaveRelatedRoutes: EVERY page —
+    even admin / settings / status / utility surfaces — should carry at
+    least one related_route so the Guide never dead-ends. PR #1259
+    filled the last 22 system pages via _BATCH8_SIBLINGS; this guards
+    against a new _ctx() or system-batch entry landing with no peer
+    pointer."""
+
+    def test_no_page_has_empty_related_routes(self):
+        empty = sorted(
+            route
+            for route, ctx in MANUAL_PAGE_CONTEXTS.items()
+            if not (ctx.related_routes or [])
+        )
+        self.assertFalse(
+            empty,
+            "Pages with no related_routes — add at least one sibling "
+            "page (workflow / admin / settings family) so the Guide "
+            "can recommend 'see also':\n  " + "\n  ".join(empty),
+        )
+
+    def test_related_routes_resolve(self):
+        """Every related_routes entry must resolve to a real
+        PageContext — a dangling reference sends the Guide to a 404."""
+        known = set(MANUAL_PAGE_CONTEXTS.keys())
+        broken: dict[str, list[str]] = {}
+        for route, ctx in MANUAL_PAGE_CONTEXTS.items():
+            bad = [r for r in (ctx.related_routes or []) if r not in known]
+            if bad:
+                broken[route] = bad
+        self.assertFalse(
+            broken,
+            f"Pages referencing non-existent routes: {broken}",
+        )
+
+
 class TestNoNeedsPlaceholderInLimitations(unittest.TestCase):
     """Every PageContext should carry real, page-specific limitations,
     interpretation_guidance, and model_logic_summary rather than the
