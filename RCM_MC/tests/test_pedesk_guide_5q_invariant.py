@@ -110,11 +110,13 @@ class TestAnalyticPagesHaveRelatedRoutes(unittest.TestCase):
 
 class TestNoNeedsPlaceholderInLimitations(unittest.TestCase):
     """Every PageContext should carry real, page-specific limitations
-    rather than the "Needs source documentation." scaffold default.
-    The placeholder cleanup series (#1225-#1230) drove this to zero;
-    this guards against a regression that lands a new _ctx() call
-    without an explicit limitations= kwarg (which would inherit
-    the [_NEEDS] default and surface placeholder text in the Guide)."""
+    and interpretation_guidance rather than the "Needs source
+    documentation." scaffold default. The placeholder cleanup series
+    (#1225-#1233) drove both fields to zero; this guards against a
+    regression that lands a new _ctx() call without an explicit
+    limitations= or interpretation_guidance= kwarg, which would
+    inherit the [_NEEDS] default and surface placeholder text in
+    the Guide."""
 
     _PLACEHOLDER = "needs source"
 
@@ -129,6 +131,21 @@ class TestNoNeedsPlaceholderInLimitations(unittest.TestCase):
             offenders,
             "PageContexts with placeholder limitations — supply a "
             "real, page-specific limitations=[...] kwarg on the _ctx() "
+            "call:\n  " + "\n  ".join(offenders),
+        )
+
+    def test_no_interpretation_guidance_carries_needs_placeholder(self):
+        offenders = sorted(
+            route
+            for route, ctx in MANUAL_PAGE_CONTEXTS.items()
+            if any(self._PLACEHOLDER in (l or "").lower()
+                   for l in (ctx.interpretation_guidance or []))
+        )
+        self.assertFalse(
+            offenders,
+            "PageContexts with placeholder interpretation_guidance — "
+            "supply a real, page-specific "
+            "interpretation_guidance=[...] kwarg on the _ctx() "
             "call:\n  " + "\n  ".join(offenders),
         )
 
