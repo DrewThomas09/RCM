@@ -603,6 +603,14 @@ _MANUAL: List[PageContext] = [
         why_it_matters="Replaces three overlapping screeners with one workbench "
         "that screens every real provider universe, keeps market data distinct "
         "from your deals, and is honest about what is missing.",
+        diligence_use_cases=[
+            "Building a thesis-driven shortlist across every onboarded CMS "
+            "provider universe in one workflow (Source → Screener → "
+            "Just-missed → Saved → X-Ray → Pipeline).",
+            "Comparing candidates across or within a vertical on quality + "
+            "size before opening an X-Ray.",
+            "Auditing what data is missing for a target before promoting it.",
+        ],
         interpretation_guidance=[
             "This is CMS PUBLIC DATA (the market), not your pipeline/portfolio; "
             "promote a result into the Pipeline to track it.",
@@ -3701,7 +3709,8 @@ _MANUAL: List[PageContext] = [
         inputs=["A static, hand-maintained sector status list (no data load)."],
         outputs=["Sector cards tagged Live or Roadmap, each with its data "
                  "status; live sectors link to their pages."],
-        key_metrics=[_NEEDS],
+        key_metrics=["Live-sector count", "Roadmap-sector count",
+                     "Per-sector CMS data status"],
         data_sources=["Navigation/status surface — links to sector pages; "
                       "underlying data is CMS Provider Data Catalog per sector."],
         model_logic_summary="Static directory; no computation.",
@@ -5215,6 +5224,23 @@ _MANUAL: List[PageContext] = [
             "Which therapeutic categories have the most active shortages?",
             "Does the calculator account for GPO membership?",
         ],
+        inputs=["Entered savings-rate, GPO membership flag, and "
+                "spend base for the deal's supply categories.",
+                "Therapeutic-category mix so the FDA drug-"
+                "shortage overlay anchors to the deal's exposure."],
+        outputs=["Annual supply-savings estimate on the entered "
+                 "assumptions + the real FDA drug-shortage panel "
+                 "(1,156 active products across 58 categories) "
+                 "highlighting risk concentration."],
+        key_metrics=["Annual supply savings ($)",
+                     "Savings rate (entered)",
+                     "Active FDA shortages by category (real)"],
+        diligence_use_cases=[
+            "Sizing the supply-savings lever for a deal with "
+            "meaningful drug or device spend.",
+            "Flagging therapeutic-category shortage exposure when "
+            "the target depends on at-risk products.",
+        ],
         data_sources=["Illustrative savings model + real FDA drug shortages "
                       "(1,156 active across 58 categories)."],
         interpretation_guidance=["Calculator on your inputs; FDA shortage is a "
@@ -6396,6 +6422,25 @@ _MANUAL: List[PageContext] = [
             "Where do the access-barrier figures come from?",
             "How sensitive is the EV to parity / reimbursement assumptions?",
         ],
+        inputs=["Entered telehealth visit P&L assumptions (rate-"
+                "parity factor, duration, no-show rate, panel "
+                "growth) for the deal's footprint.",
+                "State scope so the CDC PLACES access-barrier "
+                "panel (transportation, uninsured) anchors to "
+                "the right market."],
+        outputs=["Incremental EV estimate from telehealth visit "
+                 "economics on the entered assumptions + the real "
+                 "CDC PLACES access-barrier prevalence as the "
+                 "demand-side signal."],
+        key_metrics=["Telehealth EV uplift ($)",
+                     "Rate parity (entered, %)",
+                     "CDC PLACES access barriers by state (real)"],
+        diligence_use_cases=[
+            "Sizing the telehealth value-creation thesis for a "
+            "deal in a market with high access-barrier prevalence.",
+            "Pressure-testing how a post-PHE parity reset reprices "
+            "the visit-economics opportunity.",
+        ],
         data_sources=["Illustrative visit P&L / parity / productivity (labeled) + real "
                       "CDC PLACES access barriers."],
         interpretation_guidance=["Visit economics are illustrative.",
@@ -6507,6 +6552,25 @@ _MANUAL: List[PageContext] = [
             "Which roles drive the largest turnover cost?",
             "What's the EBITDA hit from a 5pp turnover increase?",
             "Are the retention programs on this page illustrative or real?",
+        ],
+        inputs=["Entered role-level turnover rates and "
+                "replacement-cost assumptions for the deal's "
+                "labor base.",
+                "State scope so the HRSA HPSA overlay anchors "
+                "retention difficulty to the right shortage "
+                "geography."],
+        outputs=["EBITDA-drag estimate from a turnover delta "
+                 "on the entered assumptions + the real HRSA "
+                 "HPSA shortage panel as the retention-"
+                 "difficulty backdrop."],
+        key_metrics=["Annual turnover rate (entered)",
+                     "EBITDA drag from turnover ($)",
+                     "HRSA HPSA shortage by state (real)"],
+        diligence_use_cases=[
+            "Sizing workforce-retention risk for a labor-"
+            "intensive deal in HPSA-heavy geography.",
+            "Pressure-testing whether a retention program's "
+            "cost is justified by the avoided replacement cost.",
         ],
         data_sources=["Illustrative turnover/engagement/programs (labeled) + real HRSA "
                       "HPSA shortage designations."],
@@ -6926,6 +6990,22 @@ _MANUAL: List[PageContext] = [
             "How does this compare to /screening?",
             "Where do I act on a top-scoring candidate?",
         ],
+        inputs=["Your workspace screening tables (saved screens, "
+                "candidates, stage assignments).",
+                "Optional time-window filter so weekly / monthly "
+                "movement can be isolated."],
+        outputs=["Funnel counts per screening stage (screened / "
+                 "shortlisted / advanced / closed), stage-to-stage "
+                 "conversion rates, and per-screen movement deltas."],
+        key_metrics=["Candidates per stage",
+                     "Stage-to-stage conversion rate",
+                     "Per-screen weekly movement"],
+        diligence_use_cases=[
+            "Weekly pipeline review — spotting which screens are "
+            "moving and which have stalled.",
+            "Reporting conversion-rate efficiency to IC over a "
+            "chosen time window.",
+        ],
         data_sources=["Your real candidate/target records + screening criteria."],
         interpretation_guidance=["Your workspace screening, not the market/corpus."],
         limitations=[
@@ -7119,6 +7199,21 @@ _MANUAL: List[PageContext] = [
             "How fresh is each vertical's CMS data?",
             "How do I compare verticals on common metrics?",
             "Which verticals share the same CMS Care Compare source?",
+        ],
+        inputs=["No user inputs — a vertical-navigation hub.",
+                "The vertical-page registry (which Care-Compare-"
+                "backed verticals are live)."],
+        outputs=["Vertical cards (dialysis, home health, hospice, "
+                 "SNF, IRF, LTCH, hospital) linking to each "
+                 "vertical's analytic page."],
+        key_metrics=["Live vertical count",
+                     "CMS Care-Compare verticals (real)"],
+        diligence_use_cases=[
+            "Choosing the right vertical entry point at the "
+            "start of a sector-specific diligence sweep.",
+            "Auditing which post-acute and acute verticals "
+            "have real CMS data live in PEdesk before assuming "
+            "coverage.",
         ],
         data_sources=["Real CMS public vertical datasets (per linked page)."],
         interpretation_guidance=["Each linked vertical uses real CMS public data."],

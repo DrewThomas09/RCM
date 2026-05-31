@@ -163,6 +163,36 @@ class TestNoNeedsPlaceholderInLimitations(unittest.TestCase):
         )
 
 
+class TestNoNeedsPlaceholderInListFields(unittest.TestCase):
+    """Every PageContext should carry real, page-specific entries in
+    inputs / outputs / key_metrics / diligence_use_cases rather than the
+    "Needs source documentation." scaffold default. The list-fields
+    cleanup series (#1246-#1256) drove all four fields to zero; this
+    guards against a regression that lands a new _ctx() call without
+    one of these kwargs, which would inherit the _NEEDS default and
+    surface placeholder text in the Guide."""
+
+    _PLACEHOLDER = "needs source"
+    _FIELDS = ("inputs", "outputs", "key_metrics", "diligence_use_cases")
+
+    def test_no_list_field_carries_needs_placeholder(self):
+        offenders = []
+        for route, ctx in MANUAL_PAGE_CONTEXTS.items():
+            for fname in self._FIELDS:
+                values = getattr(ctx, fname) or []
+                if any(self._PLACEHOLDER in (v or "").lower()
+                       for v in values):
+                    offenders.append(f"{route}: {fname}")
+        offenders.sort()
+        self.assertFalse(
+            offenders,
+            "PageContexts with placeholder inputs / outputs / "
+            "key_metrics / diligence_use_cases — supply real, "
+            "page-specific entries on the _ctx() call:\n  "
+            + "\n  ".join(offenders),
+        )
+
+
 class TestMetricsHaveTwoOrMoreRelatedRoutes(unittest.TestCase):
     """Every MetricContext should have ≥2 related_routes so the Guide
     can always suggest at least one alternative page when a partner
