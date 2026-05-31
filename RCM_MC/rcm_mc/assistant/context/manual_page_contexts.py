@@ -10193,7 +10193,34 @@ _METRIC_LINK_EXTEND_2: Dict[str, List[str]] = {
     "/long-term-care-hospital": ["length_of_stay", "readmission_rate"],
     "/deal-library/comps": ["ev_to_ebitda", "benchmark_percentile"],
     "/diligence/bear-case": ["risk_score", "bankruptcy_pattern_match"],
+    # ── 2026-05-31: 9 pages whose key_metrics strings ALREADY resolve
+    #    to METRIC_REGISTRY ids via get_metric_context() but didn't
+    #    have the metric_id wired into metric_ids. Wiring it lets the
+    #    Guide pull the registry's full per-metric context (formula,
+    #    caveats, common_misread, etc.) when answering about these
+    #    pages — without those wirings, the Guide only sees the
+    #    free-form key_metrics string. ──
+    "/diligence/benchmarks": ["cost_to_collect"],
+    "/rcm-benchmarks": ["cost_to_collect"],
+    "/portfolio/risk-scan": ["health_score"],
+    "/dialysis": ["readmission_rate"],
+    # /inpatient-rehab and /long-term-care-hospital already get
+    # length_of_stay + readmission_rate above; the registry now also
+    # has MSPB so add it on the ones whose key_metrics string mentions
+    # it.
+    "/cohorts": ["moic"],
+    "/lp-reporting": ["dpi"],
+    "/corpus-ic-memo": ["benchmark_percentile"],
 }
+# Extend /inpatient-rehab and /long-term-care-hospital to also include
+# medicare_spending_per_beneficiary (their key_metrics string already
+# mentions it; PR #1276 added the registry entry).
+_METRIC_LINK_EXTEND_2.setdefault("/inpatient-rehab", []).append(
+    "medicare_spending_per_beneficiary"
+)
+_METRIC_LINK_EXTEND_2.setdefault("/long-term-care-hospital", []).append(
+    "medicare_spending_per_beneficiary"
+)
 for _c in _MANUAL:
     _ext2 = _METRIC_LINK_EXTEND_2.get(_c.route)
     if _ext2:
