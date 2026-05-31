@@ -5079,6 +5079,24 @@ _MANUAL: List[PageContext] = [
             "Does the page show this deal's quality or a sector frame?",
             "Where do I plug in the target's actual measure scores?",
         ],
+        inputs=["Sector (physician vs nursing/post-acute), "
+                "entered current quality posture, and quality-to-"
+                "revenue conversion rate.",
+                "State scope so the right benchmark (MIPS or "
+                "Care Compare 5-star) anchors to the right "
+                "market."],
+        outputs=["Sector-aware quality percentile + EV uplift "
+                 "estimate for moving up one quality band on the "
+                 "entered conversion."],
+        key_metrics=["Quality percentile vs benchmark",
+                     "EV uplift per band move ($)",
+                     "MIPS / Care Compare 5-star distribution (real)"],
+        diligence_use_cases=[
+            "Sizing the quality-uplift lever for a physician-group "
+            "deal whose MIPS scores trail the sector median.",
+            "Sizing the Star-rating-bonus lever for a SNF deal "
+            "moving from 3-star to 4-star.",
+        ],
         data_sources=["Illustrative quality model + real CMS MIPS (physician) / "
                       "Care Compare 5-star (nursing) distribution."],
         interpretation_guidance=[
@@ -5148,6 +5166,25 @@ _MANUAL: List[PageContext] = [
             "Is the CMS enforcement anchor SNF-only or broader?",
             "How does this differ from /antitrust-screener?",
             "What enforcement vectors are NOT captured by this model?",
+        ],
+        inputs=["Entered violation-frequency, average fine, and "
+                "compliance-cost assumptions for the deal's "
+                "facility footprint.",
+                "Sector + state scope so the CMS SNF enforcement "
+                "overlay (where applicable) anchors to the right "
+                "market."],
+        outputs=["Annual regulatory-risk dollar exposure on the "
+                 "entered assumptions + the real CMS SNF "
+                 "enforcement base rate (45% of facilities fined, "
+                 "$467M total) where the sector is SNF."],
+        key_metrics=["Annual fine exposure ($)",
+                     "Compliance cost ($)",
+                     "CMS SNF enforcement base rate (real)"],
+        diligence_use_cases=[
+            "Sizing regulatory/enforcement exposure for a SNF or "
+            "post-acute deal where the base-rate fines are real.",
+            "Stress-testing how a doubling of violation rate "
+            "reprices the EBITDA bridge.",
         ],
         data_sources=["Illustrative risk model + real CMS SNF enforcement "
                       "(45% fined, $467M total)."],
@@ -5297,6 +5334,25 @@ _MANUAL: List[PageContext] = [
             "What CMS population data drives the right-side panel?",
             "Where do I get the target's actual coding intensity?",
         ],
+        inputs=["No user inputs into the RAF scaffold itself "
+                "(it is a fixed illustrative model).",
+                "State scope so the real CMS MA population panel "
+                "(dual-eligible share, age 65+ mix) anchors to "
+                "the right market."],
+        outputs=["A scaffold RAF read with the real CMS MA "
+                 "population panel — the demographic drivers of "
+                 "RAF (dual-eligible share, age 65+ mix by state) "
+                 "shown alongside the illustrative RAF figure."],
+        key_metrics=["Illustrative RAF (fixed)",
+                     "Dual-eligible share by state (real)",
+                     "Age 65+ mix by state (real)"],
+        diligence_use_cases=[
+            "Framing the demographic backdrop driving RAF — "
+            "where dual-eligible share is high, RAF and coding "
+            "intensity matter more.",
+            "Pointing diligence at the right ask: the target's "
+            "actual encounter data is what unlocks a real RAF read.",
+        ],
         data_sources=["Illustrative RAF model + real CMS MA dual-eligible / age "
                       "population mix by state."],
         interpretation_guidance=[
@@ -5409,6 +5465,22 @@ _MANUAL: List[PageContext] = [
             "Can I look up a specific provider's ratio by name?",
             "How does this connect to the deal's negotiating leverage?",
             "Why does the ratio vary by claim type or payer?",
+        ],
+        inputs=["No user inputs — this is a transparency view on "
+                "the committed CIVHC Colorado Reference-Based "
+                "Pricing snapshot.",
+                "Provider-name / county filter so a partner can "
+                "drill to a specific organization or geography."],
+        outputs=["A provider-level commercial-vs-Medicare ratio "
+                 "table (resolvable to CMS CCN by name), with "
+                 "claim-type and payer min/median/max breakouts."],
+        diligence_use_cases=[
+            "Looking up a Colorado target's real commercial-%-of-"
+            "Medicare ratio to anchor negotiating-leverage "
+            "diligence.",
+            "Comparing peer providers' ratios at the county / "
+            "claim-type level to size a payer-renegotiation "
+            "thesis.",
         ],
         data_sources=["CIVHC CO Medicare Reference-Based Pricing (committed "
                       "snapshot)."],
@@ -6808,6 +6880,23 @@ _MANUAL: List[PageContext] = [
             "What workspace data do my screens run against?",
             "Where do I export shortlisted candidates?",
         ],
+        inputs=["Your workspace candidate/target records + entered "
+                "screen criteria (sector, size band, geography, "
+                "score thresholds).",
+                "Saved-screen identifier when re-running a "
+                "previously saved screen."],
+        outputs=["A filtered candidate list with one row per match "
+                 "and the option to save the criteria as a reusable "
+                 "screen."],
+        key_metrics=["Matching candidate count",
+                     "Saved-screen count",
+                     "Criteria filters applied"],
+        diligence_use_cases=[
+            "Building a custom workspace-scoped shortlist before a "
+            "sourcing conversation.",
+            "Saving a sector / size band as a reusable screen for "
+            "weekly pipeline review.",
+        ],
         data_sources=["Your real candidate/target records + screening criteria."],
         interpretation_guidance=["Operates on your workspace candidates."],
         limitations=[
@@ -6985,6 +7074,21 @@ _MANUAL: List[PageContext] = [
             "Is there a covenant-monitoring page?",
             "How does this differ from /tools?",
             "Where do I see only the green-tier pages?",
+        ],
+        inputs=["The route registration manifest (auto-populated "
+                "by server startup; no user inputs).",
+                "Optional client-side filter / search to narrow "
+                "the index."],
+        outputs=["A searchable index of every registered route, "
+                 "grouped by category, with deep-links to each "
+                 "page."],
+        key_metrics=["Registered route count",
+                     "Category counts"],
+        diligence_use_cases=[
+            "Locating a page when only the rough topic is known "
+            "(faster than guessing URLs).",
+            "Auditing the surface area of the platform during a "
+            "review or hand-off.",
         ],
         data_sources=["The route/module manifest (system metadata)."],
         interpretation_guidance=["A navigation index, not a data surface."],
