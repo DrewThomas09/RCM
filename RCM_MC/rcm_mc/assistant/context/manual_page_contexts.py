@@ -730,8 +730,13 @@ _MANUAL: List[PageContext] = [
                      "Avg estimated denial rate", "Avg margin"],
         data_sources=["CMS HCRIS public data + the platform's RCM "
                       "quant/ML estimators."],
-        model_logic_summary="Estimates per-hospital RCM opportunity from "
-        "public attributes. Exact estimator math: Needs source documentation.",
+        model_logic_summary=(
+            "Per HCRIS hospital row, applies the platform's RCM "
+            "estimators to predict denial_rate, days_in_AR, and "
+            "clean_claim_rate from public HCRIS attributes; computes "
+            "RCM uplift = (current gap vs benchmark) × revenue × "
+            "contribution margin. Filters narrow the set; the aggregate "
+            "is the sum of per-hospital uplift estimates."),
         why_it_matters="Focuses sourcing on where RCM value-creation is "
         "likely largest.",
         interpretation_guidance=[
@@ -4974,6 +4979,13 @@ _MANUAL: List[PageContext] = [
             "providers and NOT a payment figure.",
         ],
         limitations=["Benchmark ranges are representative, not licensed MGMA."],
+        model_logic_summary=(
+            "Reads entered per-provider wRVU/visit/panel inputs; "
+            "compares each to representative MGMA-style specialty "
+            "quartile bands and reports each provider's percentile + "
+            "the group's quartile mix. Overlays the real CMS MIPS "
+            "distribution and HRSA HPSA designation as the local "
+            "context layer."),
         related_routes=["/quality-scorecard", "/clinical-outcomes", "/market-intel/geo"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5122,6 +5134,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Calculator on your inputs; CIVHC is Colorado "
                                 "all-payer market context, NOT this deal's mix."],
         limitations=["CIVHC anchor is Colorado-only."],
+        model_logic_summary=(
+            "Applies entered shift Δ-percentage points (e.g. -10pp "
+            "Medicaid, +10pp commercial) to the deal's payer mix and "
+            "recomputes revenue using each payer's rate factor. "
+            "Overlays the real CIVHC Colorado all-payer cost trend "
+            "by payer type as the directional reference."),
         related_routes=["/payer-rate-trends", "/cost-structure"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -5236,6 +5254,11 @@ _MANUAL: List[PageContext] = [
             "Missing values preserved as NaN, never zero.",
         ],
         limitations=["Colorado-only; all-payer aggregate, not provider-level."],
+        model_logic_summary=(
+            "No model — reads the committed CIVHC CO APCD cost-of-"
+            "care snapshot, groups PPPY spend by payer type and year, "
+            "and renders the time series. Missing values stay NaN. "
+            "The page is a transparency view on real all-payer data."),
         related_routes=["/payer-shift", "/cost-structure", "/ref-pricing"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -5262,6 +5285,12 @@ _MANUAL: List[PageContext] = [
             "CO-only; ~1% missing on URF/payer fields (preserved).",
         ],
         limitations=["Colorado-only; provider names resolve to CCN imperfectly."],
+        model_logic_summary=(
+            "No model — reads the CIVHC CO Reference-Based Pricing "
+            "snapshot, joins each provider's commercial-vs-Medicare "
+            "ratio at claim-type granularity, and resolves names "
+            "to CMS CCN where possible. Missing rows stay NaN; "
+            "the percentages are the real provider-vs-Medicare ratio."),
         related_routes=["/payer-rate-trends", "/cost-structure", "/payer-stress"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -5908,6 +5937,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Contract book is illustrative scaffold.",
                                  "CIVHC ratio is a real Colorado rate benchmark."],
         limitations=["Deal contracts require the target's actual rate sheets."],
+        model_logic_summary=(
+            "Reads entered contract roster (payer, %-of-Medicare, "
+            "escalator, renewal date) and ranks by upcoming-renewal "
+            "leverage + escalator gap; overlays the real CIVHC "
+            "Colorado %-of-Medicare benchmark so negotiation targets "
+            "anchor to observed market rates."),
         related_routes=["/payer-concentration", "/ref-pricing", "/payer-rate-trends"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
@@ -6277,6 +6312,12 @@ _MANUAL: List[PageContext] = [
             "scoping, not that there's no value to create.",
             "Probability-weighting on levers is not done by default; "
             "raw lever impact may overstate realized uplift."],
+        model_logic_summary=(
+            "Routes from a pipeline deal to the bridge engine: "
+            "reads entered lever targets (denial, AR, payer mix, "
+            "labor, supply, leverage, refi) for the deal, runs the "
+            "same 7-lever bridge math as /ebitda-bridge, and renders "
+            "the per-lever EBITDA contribution stack."),
         related_routes=["/pipeline", "/ebitda-bridge/", "/diligence/bridge-audit"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.MIXED,
     ),
