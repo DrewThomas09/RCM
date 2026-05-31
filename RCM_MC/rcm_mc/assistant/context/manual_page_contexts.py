@@ -487,9 +487,12 @@ _MANUAL: List[PageContext] = [
                                 "treat imported figures as inputs, not facts.",
                                 "Prior-filled fields are estimates, not the "
                                 "target's reported numbers."],
-        limitations=["Source shows a single-deal form and a JSON-array path; "
-                     "CSV support is not established in the page source — "
-                     "needs source confirmation."],
+        limitations=["Two import paths only — a single-deal form and a "
+                     "JSON-array bulk path; partners with CSV exports "
+                     "need to convert to JSON first.",
+                     "Prior-filled fields use platform-wide Bayesian "
+                     "priors, not target-specific defaults — verify each "
+                     "imported deal's filled values before underwriting."],
         related_routes=["/pipeline", "/app"],
         metric_ids=["denial_rate", "days_in_ar", "net_collection_rate",
                     "clean_claim_rate", "bed_count", "revenue"],
@@ -6163,6 +6166,13 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Documentation of PEdesk's own calculation methods."],
         interpretation_guidance=["Reference/methodology, not a data surface."],
+        limitations=[
+            "Documentation surface — the methods themselves live in "
+            "code (rcm_mc.calibration, finance.regression, pe_math, "
+            "mc.ebitda_mc); this page is the human read on them.",
+            "Calibration parameters drift over time as priors are "
+            "re-fit; the page captures the current method, not a "
+            "historical methodology."],
         related_routes=["/methodology", "/metric-glossary"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -6180,6 +6190,13 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["The route/module manifest (system metadata)."],
         interpretation_guidance=["A navigation index, not a data surface."],
+        limitations=[
+            "Module index, not a data surface — for the data tools "
+            "themselves use /tools (with honesty-tier colors) or the "
+            "per-section /best/<section> rankings.",
+            "Manifest-driven — newly added routes appear here once "
+            "registered in the route table, but won't appear if a "
+            "page is shipped without one."],
         related_routes=["/tools", "/library"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -6198,6 +6215,12 @@ _MANUAL: List[PageContext] = [
         ],
         data_sources=["Real CMS public vertical datasets (per linked page)."],
         interpretation_guidance=["Each linked vertical uses real CMS public data."],
+        limitations=[
+            "Vertical hub — the linked pages carry the real data and "
+            "source labels; this page just routes.",
+            "Verticals covered are the CMS-Care-Compare set; private "
+            "settings (e.g. ASCs, multi-specialty groups) are not "
+            "directly covered as standalone verticals here."],
         related_routes=["/dialysis", "/home-health", "/hospice", "/nursing-homes"],
         source_confidence=SourceConfidence.DOCUMENTED, data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -6222,6 +6245,12 @@ _MANUAL: List[PageContext] = [
                                  "the real data and the source labels."],
         why_it_matters="Makes the all-real-data state trio discoverable from "
         "the Source nav for origination screening.",
+        limitations=[
+            "Hub page — no data of its own; for state-level reads use "
+            "/state-compare (head-to-head), /state-rankings (one "
+            "metric, all states), or /state-profile (one state).",
+            "Three modes share the same metric layer but expose "
+            "different verbs; what's missing is missing from all three."],
         related_routes=["/state-compare", "/state-rankings", "/state-profile"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -6292,6 +6321,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["States with no value on record are listed "
                                  "as 'no data on record', not ranked.",
                                  "Area-level signal, not a deal-level figure."],
+        limitations=[
+            "Ranks one metric at a time — for a multi-metric read "
+            "use /state-compare (head-to-head) or /state-profile "
+            "(one state, all metrics).",
+            "State-level only; no county or CBSA cuts here. Use "
+            "/county-explorer for sub-state targeting."],
         related_routes=["/geo-intel", "/state-compare", "/state-profile"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -6323,6 +6358,12 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["'unranked' means no value on record for that "
                                  "metric — not a zero or a bottom rank.",
                                  "Area-level public data, not the deal's catchment."],
+        limitations=[
+            "Single-state dossier — for a head-to-head between two or "
+            "more states use /state-compare; for one metric across "
+            "all states use /state-rankings.",
+            "State-level only; no sub-state cuts. Use /county-explorer "
+            "for county-level demographics on a chosen state."],
         related_routes=["/geo-intel", "/state-compare", "/state-rankings"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -6361,6 +6402,12 @@ _MANUAL: List[PageContext] = [
                                  "not a deal-level judgment.",
                                  "States with too few shared metrics are listed "
                                  "separately, never given a misleading score."],
+        limitations=[
+            "RMS-distance heuristic on standardized z-scores — "
+            "captures structural similarity but not regulatory or "
+            "competitive context (e.g. one-payer dominance, CON laws).",
+            "States with fewer than 6 shared metrics are excluded "
+            "from scoring rather than given a low-confidence number."],
         related_routes=["/geo-intel", "/state-profile", "/state-compare"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
@@ -6397,6 +6444,14 @@ _MANUAL: List[PageContext] = [
         interpretation_guidance=["Area-level survey estimates, not deal-level "
                                  "figures.",
                                  "'—' means no value on record for that county."],
+        limitations=[
+            "ACS/SAHIE/SAIPE survey-based — county estimates carry "
+            "margins of error (especially in small-population counties) "
+            "that the page doesn't surface inline; consult the upstream "
+            "source for MOEs.",
+            "Demographics only here — no provider supply or quality "
+            "cuts at county level; use /geo-intel and /target-screener "
+            "for those views."],
         related_routes=["/geo-intel", "/state-profile", "/state-compare"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
