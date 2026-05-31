@@ -5387,6 +5387,13 @@ _MANUAL: List[PageContext] = [
             "auto-generated?",
             "Can I mark a deadline complete from this page?",
         ],
+        inputs=["Deal-store deadlines (entered title, due_date, "
+                "owner, deal); time-window filter."],
+        outputs=["Sorted deadline list with overdue/next-7-days "
+                 "flagging; per-owner breakdown."],
+        key_metrics=["Overdue count", "Next-7-days count", "By owner"],
+        diligence_use_cases=["Pre-IC / pre-LP-update deadline "
+                             "review across the portfolio."],
         data_sources=["Live deal store (deadlines)."],
         interpretation_guidance=["Reflects deadlines entered for your deals; "
                                 "empty means none recorded."],
@@ -5872,6 +5879,13 @@ _MANUAL: List[PageContext] = [
             "What did the top-quartile deals do differently?",
             "Is this corpus illustrative or backed by real fund data?",
         ],
+        inputs=["Illustrative seed-deal corpus + outcome labels."],
+        outputs=["Attribution patterns by outcome band; top-quartile "
+                 "vs bottom-quartile lever comparison."],
+        key_metrics=["Lever attribution variance", "Outcome distribution"],
+        diligence_use_cases=["Teaching the value-creation playbook "
+                             "from corpus patterns to apply to "
+                             "future deals."],
         data_sources=["Bundled ILLUSTRATIVE seed-deal corpus (labeled)."],
         interpretation_guidance=["Illustrative corpus — directional, not real outcomes."],
         limitations=[
@@ -6331,6 +6345,13 @@ _MANUAL: List[PageContext] = [
             "How does this differ from /pipeline?",
             "Can I filter by owner or sector here?",
         ],
+        inputs=["Active deals from the deal store with stage + "
+                "stage_entered_at + owner/sector filters."],
+        outputs=["Stage-by-stage funnel counts + SLA-flag list."],
+        key_metrics=["Active deal count", "Stage conversion rate",
+                     "SLA-stalled count"],
+        diligence_use_cases=["Weekly partner-of-record review of the "
+                             "active deal funnel."],
         data_sources=["Your real deal records (SQLite)."],
         interpretation_guidance=["YOUR deals, not the market or seed corpus."],
         limitations=[
@@ -6535,6 +6556,12 @@ _MANUAL: List[PageContext] = [
             "Where do I see the refresh cadence per dataset?",
             "What's the difference between this page and /data?",
         ],
+        inputs=["The data-source registry; category filter."],
+        outputs=["A grouped catalog of real public datasets with "
+                 "consumer-page links."],
+        key_metrics=["Source count by category", "Pages per source"],
+        diligence_use_cases=["Tracing a Guide-cited number back to "
+                             "its public-data source."],
         data_sources=["The data-source registry (real public datasets)."],
         interpretation_guidance=["A catalog of real sources — see each source's card for detail."],
         limitations=[
@@ -6564,6 +6591,14 @@ _MANUAL: List[PageContext] = [
             "Can the Guide search inside uploaded documents?",
             "How is access controlled per deal?",
         ],
+        inputs=["Uploaded deal documents (PDF, XLSX, CSV); deal-tag "
+                "assignment."],
+        outputs=["Document list with deal/tag, type, upload date, "
+                 "and extraction status."],
+        key_metrics=["Document count", "Extraction coverage %"],
+        diligence_use_cases=["Document-by-document review during a "
+                             "diligence sweep — locating the source "
+                             "behind a packet figure."],
         data_sources=["Your uploaded deal documents (real, your workspace)."],
         interpretation_guidance=["Your real deal documents — not market data."],
         limitations=[
@@ -9701,9 +9736,18 @@ _GUIDE_BACKFILL = [
             "Where do I download the import templates?",
             "Who typically owns each piece of data I need to request?",
         ],
+        inputs=["The DATA_REQUIRED PageContext registry; activation "
+                "state per page."],
         outputs=["A catalog of data-required surfaces with the input each needs."],
-        key_metrics=[], data_sources=["Your uploaded deal/fund data (none is "
-                                      "fabricated — surfaces stay inert until fed)."],
+        key_metrics=[
+            "Total DR surfaces", "Activated count", "Outstanding requests",
+        ],
+        diligence_use_cases=[
+            "Building the P0 data-request list at the start of a "
+            "diligence engagement.",
+        ],
+        data_sources=["Your uploaded deal/fund data (none is "
+                      "fabricated — surfaces stay inert until fed)."],
         why_it_matters="A data-gated tool is useless if you don't know what it "
         "wants — this removes that friction.",
         interpretation_guidance=[
