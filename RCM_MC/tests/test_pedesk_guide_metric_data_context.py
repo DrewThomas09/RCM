@@ -169,6 +169,31 @@ class MetricLookupTests(unittest.TestCase):
                 f"{r.metric_id!r}, expected {expected!r}.",
             )
 
+    def test_every_metric_id_and_label_resolves(self):
+        """Sanity floor: every registered metric_id and every metric
+        label MUST resolve via get_metric_context to its own id. A
+        regression here would mean either a typo, a normalizer bug,
+        or two metrics sharing a label/alias (collision). Lock the
+        property since the full registry already passes."""
+        id_misses = []
+        label_misses = []
+        for mid, m in METRIC_REGISTRY.items():
+            r = get_metric_context(mid)
+            if not r.found or r.metric_id != mid:
+                id_misses.append((mid, r.metric_id if r.found else "MISS"))
+            r = get_metric_context(m.label)
+            if not r.found or r.metric_id != mid:
+                label_misses.append((mid, m.label,
+                                    r.metric_id if r.found else "MISS"))
+        self.assertFalse(
+            id_misses,
+            f"Metric ids that don't resolve to own id: {id_misses}",
+        )
+        self.assertFalse(
+            label_misses,
+            f"Metric labels that don't resolve to own id: {label_misses}",
+        )
+
     def test_glossary_aliases_resolve(self):
         """The /metric-glossary page (rcm_mc/ui/metric_glossary.py) has
         13 entries not in METRIC_REGISTRY. PR #1275 adds aliases for
@@ -281,6 +306,30 @@ class DataSourceLookupTests(unittest.TestCase):
         self.assertFalse(r.found)
         self.assertIsNone(r.context)
         self.assertIn("No PEdesk Guide data-source", r.fallback_message)
+
+    def test_every_source_id_and_label_resolves(self):
+        """Sanity floor: every registered source_id and every source
+        label MUST resolve via get_data_source_context to its own
+        id. Parallel to test_every_metric_id_and_label_resolves —
+        same defense against normalizer/collision regressions."""
+        id_misses = []
+        label_misses = []
+        for sid, s in DATA_SOURCE_REGISTRY.items():
+            r = get_data_source_context(sid)
+            if not r.found or r.source_id != sid:
+                id_misses.append((sid, r.source_id if r.found else "MISS"))
+            r = get_data_source_context(s.label)
+            if not r.found or r.source_id != sid:
+                label_misses.append((sid, s.label,
+                                    r.source_id if r.found else "MISS"))
+        self.assertFalse(
+            id_misses,
+            f"Source ids that don't resolve to own id: {id_misses}",
+        )
+        self.assertFalse(
+            label_misses,
+            f"Source labels that don't resolve to own id: {label_misses}",
+        )
 
     def test_registry_substantial(self):
         self.assertGreaterEqual(len(DATA_SOURCE_REGISTRY), 30)
