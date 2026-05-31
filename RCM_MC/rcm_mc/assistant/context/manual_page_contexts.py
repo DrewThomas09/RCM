@@ -9213,6 +9213,11 @@ _GUIDE_BACKFILL = [
                                       "fabricated — surfaces stay inert until fed)."],
         why_it_matters="A data-gated tool is useless if you don't know what it "
         "wants — this removes that friction.",
+        interpretation_guidance=[
+            "This is an index, not an analysis — clicking through to "
+            "each entry takes you to the page that needs that upload.",
+            "If a category here is empty, every page in that category "
+            "is already activated for your workspace."],
         limitations=["A directory of what-to-upload, not an analysis itself."],
         related_routes=["/tools", "/diligence/ingest"],
         metric_ids=[], data_source_ids=[],
@@ -9240,6 +9245,12 @@ _GUIDE_BACKFILL = [
                                       "calendar (public regulatory schedule)."],
         why_it_matters="Entry/exit timing and underwriting both move on when a "
         "revenue cliff lands relative to the hold.",
+        interpretation_guidance=[
+            "Cliffs are scheduled events; the magnitude shown is "
+            "generic — the deal-specific dollar impact depends on "
+            "the target's payer mix and revenue base.",
+            "An event slipping or being deferred is common — pair "
+            "with /diligence/regulatory-calendar for live rulemaking."],
         limitations=["A calendar of scheduled events; the dollar impact on a "
                      "specific target still needs the deal's payer mix."],
         related_routes=["/diligence/regulatory-calendar", "/diligence"],
@@ -9267,6 +9278,11 @@ _GUIDE_BACKFILL = [
                                       "(a catalog, not a dataset)."],
         why_it_matters="A 222-tool toolkit is only useful if you can find the "
         "right analytic fast.",
+        interpretation_guidance=[
+            "Library is a catalog — open a module via /diligence/pe-tool "
+            "to run it against the active deal's packet.",
+            "Module groupings reflect the toolkit's authored taxonomy, "
+            "not a curation judgment of which tools matter most."],
         limitations=["A catalog/navigation surface — not an analytic output."],
         related_routes=["/diligence/pe-tool", "/diligence/pe-reference",
                         "/diligence"],
@@ -9294,6 +9310,12 @@ _GUIDE_BACKFILL = [
                                       "libraries (editorial knowledge)."],
         why_it_matters="Codified house knowledge keeps diligence consistent and "
         "stops repeated mistakes.",
+        interpretation_guidance=[
+            "Reference knowledge — true regardless of the active deal; "
+            "for deal-specific analytics, run the same module via "
+            "/diligence/pe-tool against the packet.",
+            "Playbook/trap entries are editorial — partner judgment "
+            "still applies to which apply to this target."],
         limitations=["Reference knowledge, not deal-specific computed output."],
         related_routes=["/diligence/pe-library", "/diligence/pe-tool"],
         metric_ids=[], data_source_ids=[],
@@ -9319,6 +9341,12 @@ _GUIDE_BACKFILL = [
                                       "ingested/observed data)."],
         why_it_matters="Connects the broad toolkit to the deal in front of you "
         "— the analytic runs on real target data, not a demo.",
+        interpretation_guidance=[
+            "Output is computed on THIS deal's packet — re-run after "
+            "uploading new data to refresh.",
+            "If a tool errors or produces a blank result, the active "
+            "deal's packet likely lacks a required input — check the "
+            "checklist on /diligence/checklist."],
         limitations=["Output is only as good as the deal packet's completeness."],
         related_routes=["/diligence/pe-library", "/diligence/deal"],
         metric_ids=[], data_source_ids=[],
@@ -9345,6 +9373,12 @@ _GUIDE_BACKFILL = [
                                       "(real public CMS/Census-class data)."],
         why_it_matters="Geographic concentration drives sourcing and roll-up "
         "strategy — the map makes it legible fast.",
+        interpretation_guidance=[
+            "Map color encodes one chosen metric; lighter ≠ better "
+            "or worse universally — direction depends on the metric "
+            "(see /geo-metrics for each metric's polarity).",
+            "States with no value on record render as a neutral shade, "
+            "not as the lowest band — read /geo-metrics for coverage."],
         limitations=["A visualization layer; the metric definitions live in "
                      "the geo metrics reference."],
         related_routes=["/geo-intel", "/geo-metrics", "/state-profile",
@@ -9373,6 +9407,13 @@ _GUIDE_BACKFILL = [
                                       "underlying public datasets."],
         why_it_matters="Defensibility — a geographic claim is only usable if you "
         "can cite its source and coverage.",
+        interpretation_guidance=[
+            "Use this page when reading a /geo-map or a state ranking "
+            "— it lets you confirm what the metric actually measures "
+            "and which states report it.",
+            "Coverage gaps on a metric mean the maps and rankings "
+            "render '—' for those states; the gap is in the source, "
+            "not in PEdesk's computation."],
         limitations=["A reference/transparency surface, not an analysis."],
         related_routes=["/geo-intel", "/geo-map", "/metro-markets",
                         "/methodology"],
@@ -9399,6 +9440,13 @@ _GUIDE_BACKFILL = [
                                       "CBSA level (real public data)."],
         why_it_matters="Healthcare markets are local — metro-level structure "
         "matters more than state averages for siting and roll-ups.",
+        interpretation_guidance=[
+            "CBSAs (Core Based Statistical Areas) are OMB-defined "
+            "labor-market regions — closer to where a deal competes "
+            "than a state line.",
+            "Rural areas outside CBSA boundaries are not represented "
+            "here; for non-metro reads use /state-rankings or "
+            "/county-explorer."],
         limitations=["CBSA coverage depends on the underlying public dataset."],
         related_routes=["/geo-intel", "/geo-map", "/geo-metrics",
                         "/state-profile"],
