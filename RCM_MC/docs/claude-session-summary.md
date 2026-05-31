@@ -330,6 +330,68 @@ Session totals at #1286: **37 PRs landed (#1250-#1286)** across:
 guard every gate. Test count progression across the session:
 8 → 11 → 14 → 16 → 17 → 18 → 20 → 21 → 22 → 23 → 24.
 
+## Addendum — 2026-05-31 (PM): continuous-work loop, PRs #1303-#1322
+
+User requested explicit "no wakeups, do not stop, work" mode. Twenty
+PRs landed in one continuous segment (#1303–#1322), no ScheduleWakeup
+calls between them. Mix of feature wirings, partner-alias coverage,
+two silent-bug fixes caught by structural tests, and four new
+invariant tests.
+
+**Partner-alias coverage**: probed the resolver against actual partner
+phrasings across 4 rounds for metrics and 4 rounds for sources.
+~78 new aliases total (~40 metric, ~38 source); each unambiguous and
+locked in `test_partner_metric_aliases_resolve` (40+ cases) +
+`test_partner_source_aliases_resolve`.
+
+**Silent bug 1 (PR #1308 → PR #1310)**: `_PARTNER_SOURCE_ALIAS_EXTENSIONS`
+allowed duplicate keys — a second `'cms_hcris': [...]` literal silently
+wiped PR #1299's `'CCN'` and `'medicare cost reports'` aliases (Python
+dict literals overwrite on duplicate keys). Fixed by merging the
+lists; PR #1309 added a structural AST scan that fails on any dict
+literal with duplicated keys across the three registry modules.
+
+**Silent bug 2 (PR #1310)**: PR #1309's dup-key scan only walked
+`ast.Assign` nodes — but `_ALIAS_EXTEND_COVERAGE` is a typed
+`ast.AnnAssign` (`_ALIAS_EXTEND_COVERAGE: Dict[str, List[str]] = ...`).
+The wider scan found 4 more duplicate keys (moic, days_in_ar,
+capex_intensity, denial_rate) that had silently dropped 5 more
+aliases over the round-1 → round-2 transitions. Fix + scan widened to
+also handle `AnnAssign`. All 5 lost aliases restored ("days in ar",
+"capex", "capital expenditure", "denial", "weighted moic") and locked
+in tests.
+
+**Page-wiring sweeps**: 27 more page → metric / page → source wirings
+landed across `_METRIC_LINK_EXTEND_2`, `_DATA_SOURCE_LINK_PATCHES`,
+and the new `_DATA_SOURCE_LINK_EXTEND` (append-not-replace) dict
+introduced in #1307. Notable: `/medicaid-unwinding`, `/risk-adjustment`,
+`/revenue-leakage`, `/initiatives`, `/industry`, `/diligence/bear-case`,
+`/market-intel/geo`, 7 deal-pipeline/screening pages (#1315), 10
+diligence pages (#1317), 3 payer-reference pages (#1318), and
+6 source-link-extend pages (#1322).
+
+**Content enrichments**: every metric now carries ≥2 caveats (PR #1319
+closed the last 3 single-caveat metrics; PR #1320 locked the floor).
+`cms_care_compare` extended with `cms_star_rating + readmission_rate`
+related metrics (#1321). All 8 short-allowlisted pages (7 CSV exports
++ Seeking-Alpha viewer) bumped to the 5-Q floor (#1313); `_SHORT_OK`
+now empty.
+
+**Subtle wiring-order gotcha** (PR #1322): the `_DATA_SOURCE_LINK_EXTEND`
+loop runs BEFORE the later `_PUBLIC_SOURCE_LINKS` fill-only-if-empty
+loop. Adding `/cms-apm → cms_mssp_aco` via EXTEND pre-populated
+`data_source_ids`, which then made `_PUBLIC_SOURCE_LINKS` skip the
+later `cms_cmmi_apm` write — caught by the no-orphan-source invariant.
+Fixed by also naming `cms_cmmi_apm` in the EXTEND.
+
+Test count: 24 → 27 invariant tests (added: no-dup-keys-in-AnnAssign,
+2+ caveats per metric, partner-metric-aliases-resolve). Total
+guide-context suite: 75 → 77 across this segment.
+
+Sprint cumulative through #1322: **57+ PRs landed in current
+continuous-loop session** (#1250–#1322 spanning prior segments +
+this PM continuous segment). All green CI, all auto-deployed.
+
 ## Guardrails honored
 
 No fake data. Did not touch auth/session, Caddy, systemd, deploy workflow,
