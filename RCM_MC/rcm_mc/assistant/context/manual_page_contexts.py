@@ -1443,9 +1443,13 @@ _MANUAL: List[PageContext] = [
         data_sources=["A canonical claims dataset (fixtures on this page), the "
                       "public transaction/comps corpus, and model outputs; "
                       "deal metadata is user-entered."],
-        model_logic_summary="Appears to orchestrate the analysis pipeline and "
-        "compose the result into IC sections. Exact stage math: needs source "
-        "documentation — do not state specifics not shown in source.",
+        model_logic_summary=(
+            "Composes the IC packet from the deal's analysis-packet "
+            "stages (RCM KPIs + cash waterfall, bankruptcy-survivor "
+            "scan, counterfactual advisor, peer comps + transaction "
+            "multiple, historical deal-autopsy match). Each section "
+            "renders the same underlying outputs the standalone "
+            "diligence pages show — packet orchestration, not new math."),
         why_it_matters="It concentrates the whole deal case into the artifact "
         "a committee actually reads.",
         diligence_use_cases=["Drafting the IC narrative and pressure-testing "
@@ -1882,9 +1886,13 @@ _MANUAL: List[PageContext] = [
                      "P(MOIC≥3x)"],
         data_sources=["User-supplied assumptions + model-simulated paths "
                       "(CCD-native when a fixture is picked)."],
-        model_logic_summary="Appears to draw stochastic paths over each lever "
-        "and aggregate to MOIC/IRR/EBITDA distributions. Exact driver "
-        "distributions: needs source documentation.",
+        model_logic_summary=(
+            "Draws N simulated paths (default ~10k) where each path "
+            "samples revenue growth, EBITDA margin, denial "
+            "improvement, regulatory headwind, and exit multiple "
+            "from their entered mean/σ; the deal LBO math computes "
+            "MOIC/IRR/EBITDA per path. Distributions aggregate "
+            "across paths into P50/P75 and tail bands."),
         why_it_matters="Communicates uncertainty around the base case — the "
         "tail, not just the median.",
         diligence_use_cases=["Stress-reading the downside distribution before "
@@ -1973,9 +1981,13 @@ _MANUAL: List[PageContext] = [
                      "Simulated paths", "Covenant cushion"],
         data_sources=["User capital-structure inputs + model-simulated EBITDA "
                       "paths."],
-        model_logic_summary="Appears to compose simulated EBITDA paths with "
-        "per-covenant breach-probability curves by quarter. Exact path/curve "
-        "math: needs source documentation.",
+        model_logic_summary=(
+            "Simulates per-quarter EBITDA paths from entered Y0 + "
+            "growth + volatility (geometric Brownian draws). For each "
+            "covenant, computes the share of paths breaching at each "
+            "quarter, reports the peak-breach % and the earliest "
+            "quarter where ≥50% of paths breach. Cure $ is "
+            "median path EBITDA gap × covenant denominator."),
         why_it_matters="Covenant headroom is a primary downside-risk lens in a "
         "levered deal.",
         diligence_use_cases=["Pressure-testing leverage and covenant package "
@@ -2020,9 +2032,13 @@ _MANUAL: List[PageContext] = [
                      "Probability-weighted proceeds"],
         data_sources=["User inputs + model-simulated year bands + market-intel "
                       "peer multiples + historical buyer patterns."],
-        model_logic_summary="Appears to combine Deal-MC year-band "
-        "distributions with buyer-type multiple/closing assumptions to rank "
-        "exit paths. Exact scoring: needs source documentation.",
+        model_logic_summary=(
+            "For each hold-year (Y3-Y7), takes the Deal-MC EBITDA "
+            "distribution and applies peer multiples per buyer type "
+            "(strategic, sponsor, public) plus close-certainty "
+            "discounts. Ranks the year × buyer pairs by "
+            "probability-weighted proceeds. The 'optimal' year "
+            "maximizes proceeds × close-certainty."),
         why_it_matters="Exit timing and buyer fit are major IRR levers late in "
         "the hold.",
         diligence_use_cases=["Framing a base exit plan and the buyer "
@@ -2116,10 +2132,13 @@ _MANUAL: List[PageContext] = [
                      "Recommended EBITDA haircut"],
         data_sources=["A demo executive roster (illustrative) + user-supplied "
                       "target name / guidance EBITDA."],
-        model_logic_summary="Scores each executive on four dimensions, applies "
-        "a red-flag override, aggregates, and derives a bridge haircut. The "
-        "scoring inputs are the judgment; exact weights: needs source "
-        "documentation.",
+        model_logic_summary=(
+            "Per executive: weighted average across the four "
+            "dimension scores (forecast reliability, comp structure, "
+            "tenure, reputation); a red-flag override caps the "
+            "per-exec score regardless of the average. Roster "
+            "aggregate is the weighted mean of per-exec scores, then "
+            "mapped through a 0-100 → 0-X% haircut function."),
         why_it_matters="Management quality is a core qualitative diligence "
         "axis and a real EBITDA-bridge input.",
         diligence_use_cases=["Structuring the management assessment and its "
@@ -9402,6 +9421,13 @@ _GUIDE_BACKFILL = [
             "with /diligence/regulatory-calendar for live rulemaking."],
         limitations=["A calendar of scheduled events; the dollar impact on a "
                      "specific target still needs the deal's payer mix."],
+        model_logic_summary=(
+            "No model — surfaces the curated cliff schedule from "
+            "pe_intelligence's reimbursement-cliff library, plots each "
+            "event on a timeline, and tags magnitude bands. The "
+            "Guide can answer when each cliff hits and the headline "
+            "impact category; deal-specific dollar conversion happens "
+            "downstream in the bridge."),
         related_routes=["/diligence/regulatory-calendar", "/diligence"],
         metric_ids=[], data_source_ids=[],
         source_confidence=SourceConfidence.DOCUMENTED,
