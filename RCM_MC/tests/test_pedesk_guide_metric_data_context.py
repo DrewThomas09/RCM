@@ -135,6 +135,26 @@ class MetricLookupTests(unittest.TestCase):
             ("adjusted occupied beds", "fte_per_aob"),
             ("opex per discharge", "cost_per_adjusted_discharge"),
             ("operating profit margin", "operating_margin"),
+            # PR #1334 (round 6)
+            ("net collection %", "net_collection_rate"),
+            ("collection percent", "net_collection_rate"),
+            ("gross collection %", "gross_collection_rate"),
+            ("bad debt %", "bad_debt_rate"),
+            ("bad debt ratio", "bad_debt_rate"),
+            ("underpayment ratio", "underpayment_rate"),
+            ("denials %", "denial_rate"),
+            ("denial percentage", "denial_rate"),
+            ("capex/rev", "capex_intensity"),
+            ("capex to revenue", "capex_intensity"),
+            ("gross margin pct", "gross_margin"),
+            ("ebitda margin pct", "ebitda_margin"),
+            ("op margin pct", "operating_margin"),
+            ("op mgn", "operating_margin"),
+            ("occ rate", "occupancy_rate"),
+            ("occ %", "occupancy_rate"),
+            ("first pass yield rate", "first_pass_resolution_rate"),
+            ("comp to coll", "compensation_to_collections"),
+            ("physician comp ratio", "compensation_to_collections"),
         ]
         for alias, expected in cases:
             r = get_metric_context(alias)
@@ -191,11 +211,13 @@ class DataSourceLookupTests(unittest.TestCase):
         self.assertEqual(r.source_id, "edi_837")
 
     def test_partner_source_aliases_resolve(self):
-        """PR #1299 added partner-spelled aliases for common source
-        names that weren't resolving (e.g. 'CMS Hospital Compare',
-        'Part D', 'HHS OIG'). Verify each resolves to the expected
-        registry id."""
+        """PR #1299 + #1302 + #1308 + #1314 + #1331 + #1333 added
+        partner-spelled aliases for common source names. Lock a
+        representative slice from each round so a future dup-key or
+        rename can't silently drop them (same defense pattern as
+        test_partner_metric_aliases_resolve)."""
         cases = [
+            # PR #1299
             ("CMS Hospital Compare", "cms_care_compare"),
             ("CCN", "cms_hcris"),
             ("Medicare cost reports", "cms_hcris"),
@@ -208,6 +230,38 @@ class DataSourceLookupTests(unittest.TestCase):
             ("FDA shortage", "openfda_drug_shortages"),
             ("Clinical Trials", "clinicaltrials_gov"),
             ("County Health", "chr_county_demographics"),
+            # PR #1302
+            ("10K", "sec_edgar"),
+            ("annual report", "sec_edgar"),
+            ("VDR", "data_room_export"),
+            ("professional claims", "edi_837"),
+            # PR #1308 (round 3)
+            ("medicare cost", "cms_hcris"),
+            ("ma data", "cms_ma_geo"),
+            ("sunshine", "cms_open_payments"),
+            ("snf chow", "cms_chow"),
+            ("hospital chow", "cms_chow"),
+            ("snf rating", "cms_provider_data_catalog"),
+            ("metro area", "cbsa_crosswalk"),
+            # PR #1314 (round 4)
+            ("cahps", "cms_hcahps"),
+            ("hospice quality", "cms_hospice_provider_data"),
+            ("aco data", "cms_mssp_aco"),
+            ("analysis packet", "analysis_run"),
+            ("8-k", "sec_edgar"),
+            # PR #1331 (round 5)
+            ("co apcd", "civhc_rbp"),
+            ("cost of care", "civhc_rbp"),
+            ("snf five-star", "cms_provider_data_catalog"),
+            ("hospital cahps", "cms_hcahps"),
+            # PR #1333 (round 6)
+            ("hospital quality", "cms_care_compare"),
+            ("hospital rating", "cms_care_compare"),
+            ("medicare cost-report", "cms_hcris"),
+            ("edgar filings", "sec_edgar"),
+            ("realized deals corpus", "public_transaction_corpus"),
+            ("closed deals", "public_transaction_corpus"),
+            ("m&a corpus", "public_transaction_corpus"),
         ]
         for alias, expected in cases:
             r = get_data_source_context(alias)
