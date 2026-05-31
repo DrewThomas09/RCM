@@ -26,6 +26,23 @@ class PromptBuilderTests(unittest.TestCase):
         self.assertIn("limitations", prompt.lower())
         self.assertIn("Where does this data come from?", prompt)
 
+    def test_user_prompt_includes_metric_common_misread(self):
+        """The metric-context block must surface the 'classic mistake'
+        line directly to the model. PR #1257-#1258 filled the
+        common_misread field for all 81 metrics; the prompt builder must
+        actually include it (it used to drop it). A metric that resolves
+        on the page (HCRIS X-Ray pulls operating_margin, bed_count,
+        etc.) is the simplest path to verify."""
+        prompt = build_guide_user_prompt(
+            "How should I read operating margin here?", self.packet
+        )
+        # At least one resolved metric on this page should carry the
+        # 'Common misread:' label inside the metric-contexts block.
+        self.assertIn("Common misread:", prompt)
+        # And the placeholder should never leak through to the prompt.
+        self.assertNotIn("Common misread: Needs source documentation",
+                         prompt)
+
     def test_system_prompt_has_readonly_policy_and_rules(self):
         sysp = build_guide_system_prompt(self.packet).lower()
         # explicit disallowed behaviors
