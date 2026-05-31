@@ -234,12 +234,25 @@ def _render_context(packet: GuideContextPacket, compact: bool) -> str:
                     ic_line = " IC-ready: no (needs to be paired with other data)."
                 else:
                     ic_line = ""
+                # provenance_notes tells the partner WHAT TO CITE when
+                # using this source — dataset id, release year, filing
+                # type, etc. PR #1262 drained every NEEDS placeholder here;
+                # surfacing it lets the model answer 'where does this come
+                # from / what should I cite?' directly. Guard against the
+                # legacy placeholder defensively.
+                prov = (s.provenance_notes or "").strip()
+                prov_line = (
+                    f" Provenance: {prov}"
+                    if prov and "needs source" not in prov.lower()
+                    else ""
+                )
                 out.append(
                     f"- {s.label} ({s.source_id}): {s.description} "
                     f"Type: {s.source_type.value}. Cadence: {s.update_cadence}; "
                     f"freshness lag: {s.freshness_lag}. "
                     f"Limitations: "
                     f"{'; '.join(s.limitations) if s.limitations else 'none'}."
+                    f"{prov_line}"
                     f"{ic_line}"
                 )
 
