@@ -11139,4 +11139,56 @@ for _c in _MANUAL:
     _c.related_routes = _fixed
 
 
+# 2026-05-31: Distinct primary_purpose for analytic pages whose
+# _BATCH7 / _BATCH8 loop body hard-coded short_description == primary_
+# purpose (52 pages total; 32 are analytic and benefit from a sharper
+# 'what question does this answer for diligence' line). The
+# prompt-builder dedup added in PR #1266 collapses identical pairs to
+# one bullet so the Guide doesn't see redundancy; this dict gives a
+# distinct purpose so the Guide sees TWO angles instead of one.
+# Only applied when short_description and primary_purpose are still
+# equal — never overrides an explicit purpose. Same fill-only-if-empty
+# guard pattern as the other _OVERRIDES dicts.
+_PRIMARY_PURPOSE_OVERRIDES: Dict[str, str] = {
+    "/biosimilars": (
+        "Size the biosimilar-substitution lever for a deal with "
+        "meaningful branded-biologic spend — switch rate × discount × "
+        "rebate capture."
+    ),
+    "/drug-pricing-340b": (
+        "Quantify the 340B-margin uplift for an eligible deal — site "
+        "qualification × discount × contract-pharmacy capture."
+    ),
+    "/reit-analyzer": (
+        "Test whether monetising the real estate creates net value — "
+        "proceeds-now vs rent-drag-forever, with cap rate as the lever."
+    ),
+    "/trial-site-econ": (
+        "Size a clinical-trial-site income stream as a distinct, often-"
+        "overlooked provider revenue diversifier."
+    ),
+    "/esg-dashboard": (
+        "Frame ESG posture for LP / buyer expectations — what stage is "
+        "the platform at on the SASB / TCFD axes."
+    ),
+    "/fraud-detection": (
+        "Surface FWA red flags worth a compliance look — patterns vs "
+        "base rates, not point accusations."
+    ),
+    "/geo-market": (
+        "Frame a target's geographic market structure (demand × supply "
+        "× competition) before sizing a roll-up or de-novo thesis."
+    ),
+    "/denovo-expansion": (
+        "Project the EBITDA contribution of a de-novo expansion "
+        "pipeline — site count × ramp curve × unit economics."
+    ),
+}
+for _c in _MANUAL:
+    _new_pp = _PRIMARY_PURPOSE_OVERRIDES.get(_c.route)
+    if _new_pp and _c.short_description and _c.primary_purpose:
+        if _c.short_description.strip() == _c.primary_purpose.strip():
+            _c.primary_purpose = _new_pp
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
