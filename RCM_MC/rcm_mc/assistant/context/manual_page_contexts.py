@@ -6023,6 +6023,15 @@ _MANUAL: List[PageContext] = [
             "How do bulk-buys and rebate-capture differ?",
             "Where can I plug in the target's actual spend?",
         ],
+        inputs=["Entered target spend categories + savings-rate, "
+                "bulk-buy %, rebate-capture assumptions."],
+        outputs=["Estimated GPO savings $ + Open Payments vendor-"
+                 "landscape context."],
+        key_metrics=["GPO savings $", "Top device/pharma vendors "
+                     "($3.31bn)"],
+        diligence_use_cases=["Sizing the GPO/supply-chain value-"
+                             "creation lever for a deal with "
+                             "meaningful product spend."],
         data_sources=["Illustrative GPO savings/contracts/bulk-buys (labeled) + real "
                       "CMS Open Payments ($3.31bn, top vendors)."],
         interpretation_guidance=["Savings/contract figures are illustrative scaffold.",
@@ -6105,6 +6114,14 @@ _MANUAL: List[PageContext] = [
             "Is the HEI figure for this deal or a sector scaffold?",
             "What's a realistic timeline for moving HEI metrics?",
         ],
+        inputs=["Entered HEI-band assumption, deal MA Star-bonus "
+                "revenue, sector context."],
+        outputs=["Star-bonus uplift estimate + CDC PLACES SDOH "
+                 "prevalence panel."],
+        key_metrics=["Star-bonus uplift $", "HEI band", "SDOH burden"],
+        diligence_use_cases=["Sizing the equity/Star uplift "
+                             "opportunity for a value-based-care "
+                             "thesis."],
         data_sources=["Illustrative HEI/Star scorecard (labeled) + real CDC PLACES SDOH "
                       "(uninsured, food/transport insecurity)."],
         interpretation_guidance=["HEI/Star figures are illustrative, scaled to inputs.",
@@ -6757,6 +6774,13 @@ _MANUAL: List[PageContext] = [
                           "What public data backs the three state modes — and "
                           "what's the vintage of each source?",
                           "How does /geo-intel differ from /market-intel/geo?"],
+        inputs=["No inputs of its own — the three linked verb pages "
+                "each take state/metric query params."],
+        outputs=["Navigation cards linking to /state-compare, "
+                 "/state-rankings, /state-profile."],
+        diligence_use_cases=["Picking the right state-analysis verb "
+                             "at the start of a geographic-thesis "
+                             "diligence pass."],
         data_sources=["Navigation surface only — links to the three modes; "
                       "renders no data itself."],
         key_metrics=["(none — hub page)"],
@@ -9960,8 +9984,14 @@ _GUIDE_BACKFILL = [
             "How do I switch which tool runs against the active deal?",
             "Where do I see the underlying packet feeding the tool?",
         ],
+        inputs=["The selected pe_intelligence module's identifier; "
+                "the active deal's analysis packet."],
         outputs=["The selected analytic's output computed on the deal packet."],
-        key_metrics=[], data_sources=["The deal's analysis packet (its real "
+        key_metrics=[],
+        diligence_use_cases=["Running any of the 222 pe_intelligence "
+                             "modules against the active deal's real "
+                             "data instead of a sample."],
+        data_sources=["The deal's analysis packet (its real "
                                       "ingested/observed data)."],
         why_it_matters="Connects the broad toolkit to the deal in front of you "
         "— the analytic runs on real target data, not a demo.",
@@ -9998,8 +10028,13 @@ _GUIDE_BACKFILL = [
             "How is the Albers projection different from a standard mercator?",
             "Where do I click to see a state's full profile?",
         ],
+        inputs=["?metric=<key> — one of the 15 registered geo metrics."],
         outputs=["A shaded national map; click-through to per-state profiles."],
-        key_metrics=[], data_sources=["The shared geo metrics registry "
+        key_metrics=[],
+        diligence_use_cases=["Spotting where a metric concentrates "
+                             "geographically before drilling into "
+                             "a specific state via /state-profile."],
+        data_sources=["The shared geo metrics registry "
                                       "(real public CMS/Census-class data)."],
         why_it_matters="Geographic concentration drives sourcing and roll-up "
         "strategy — the map makes it legible fast.",
@@ -10038,8 +10073,13 @@ _GUIDE_BACKFILL = [
             "How often does each dataset refresh?",
             "Is the coverage gap on this metric material for my thesis?",
         ],
+        inputs=["The geo-metric registry; data_source_registry."],
         outputs=["A per-metric table: definition, source, coverage."],
-        key_metrics=[], data_sources=["The shared geo metrics registry and its "
+        key_metrics=[],
+        diligence_use_cases=["Citing a geographic claim — confirming "
+                             "the source and coverage of a metric "
+                             "before quoting it to IC."],
+        data_sources=["The shared geo metrics registry and its "
                                       "underlying public datasets."],
         why_it_matters="Defensibility — a geographic claim is only usable if you "
         "can cite its source and coverage.",
