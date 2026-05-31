@@ -9514,6 +9514,15 @@ for _csv, (_parent_label, _parent_route) in _CSV_EXPORTS.items():
             "render; column meaning matches the parent page's headers "
             "and tooltips.",
         ],
+        # 2026-05-31: every CSV export shares the same model logic —
+        # serialize the parent page's row set into CSV. No model, no
+        # transformation; the columns and ordering match the parent.
+        model_logic_summary=(
+            f"No model — the endpoint serializes the same row set the "
+            f"{_parent_label} page renders, in the same column order, "
+            "as CSV. Filters and view state on the parent page carry "
+            "through to the export."
+        ),
         limitations=["A data export, not an analytic surface — open the parent "
                      "page for the interpreted view."],
         related_routes=[_parent_route],
