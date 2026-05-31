@@ -10258,7 +10258,26 @@ _UNREFERENCED_METRIC_WIRINGS: Dict[str, List[str]] = {
     "/payer-concentration": ["payer_diversity"],
     "/payer-contracts": ["underpayment_rate"],
     "/provider-network": ["referral_leakage"],
+    # 2026-05-31: wire the 6 new glossary-derived metrics (PR #1284)
+    # to their natural owning pages so the no-orphan-metrics invariant
+    # stays green and the Guide pulls each metric's registry block
+    # when the page is the topic.
+    "/cap-structure": ["debt_to_revenue"],
+    "/workforce-planning": ["fte_per_aob"],
 }
+# revenue_per_bed + expense_per_bed + total_patient_days all share
+# /diligence/hcris-xray as their natural owner (cost-density + volume
+# fundamentals); net_to_gross_ratio belongs on /payer-contracts.
+_UNREFERENCED_METRIC_WIRINGS["/diligence/hcris-xray"].extend([
+    "revenue_per_bed", "expense_per_bed", "total_patient_days",
+])
+_UNREFERENCED_METRIC_WIRINGS["/payer-contracts"].append("net_to_gross_ratio")
+# /cost-structure's key_metrics 'Opex per bed' now resolves to the new
+# expense_per_bed registry entry via the 'opex per bed' alias. Wire it
+# so the resolve-to-wired invariant stays green.
+_UNREFERENCED_METRIC_WIRINGS.setdefault("/cost-structure", []).append(
+    "expense_per_bed"
+)
 for _r, _mids in _UNREFERENCED_METRIC_WIRINGS.items():
     _METRIC_LINK_EXTEND_2.setdefault(_r, []).extend(_mids)
 for _c in _MANUAL:
