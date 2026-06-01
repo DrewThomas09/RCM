@@ -2989,6 +2989,100 @@ def ck_threshold_gauge(
     )
 
 
+def ck_signal_chip(
+    label: Optional[str],
+    *,
+    tone: str = "neutral",
+    icon: Optional[str] = None,
+    title: Optional[str] = None,
+    show_dot: bool = True,
+    size: str = "sm",
+) -> str:
+    """Compact tone-colored pill with optional leading glyph/icon.
+
+    Smaller, denser sibling to ``ck_signal_badge``. Where badge is for
+    page-header status callouts (KPI cards, deal banner), chip is for
+    tight table cells, inline-flow text, and metric row gutters where
+    a 14-20px tone-colored marker is enough.
+
+    ``tone`` controls the palette:
+
+      * ``positive`` — mint bg, deep green fg
+      * ``warning``  — parchment-amber bg, sepia fg
+      * ``negative`` — blush bg, brick fg
+      * ``info``     — sky bg, navy fg
+      * ``neutral``  (default) — parchment-gray bg, ink-mute fg
+
+    ``icon`` is an optional 1-2 char glyph that prefixes the label
+    (use unicode arrows, asterisks, ratings stars, etc.). When
+    ``show_dot=True`` (default), a small colored dot renders before
+    the icon/label as the universal 'category=here' indicator.
+
+    ``size`` is ``'sm'`` (default, 11px) or ``'md'`` (12px) — anything
+    larger should use ``ck_signal_badge`` instead.
+
+    Silent-fallback contract:
+      * ``label`` is None / empty / whitespace-only → returns ""
+      * Caller can drop the cell when there is no signal to convey.
+    """
+    if label is None:
+        return ""
+    text = str(label).strip()
+    if not text:
+        return ""
+    tone = (tone or "neutral").lower()
+    palettes = {
+        "positive": ("#dff2e7", "#0a6b48"),
+        "warning":  ("#fbeed1", "#7a4f12"),
+        "negative": ("#fbe1da", "#7a1f10"),
+        "info":     ("#dde9f5", "#143560"),
+        "neutral":  ("#ece8df", "#5a544c"),
+    }
+    if tone not in palettes:
+        tone = "neutral"
+    bg, fg = palettes[tone]
+    size = (size or "sm").lower()
+    font_size = "11px" if size != "md" else "12px"
+    pad_y = "2px" if size != "md" else "3px"
+    pad_x = "7px" if size != "md" else "9px"
+    parts = []
+    if show_dot:
+        parts.append(
+            f'<span class="ck-chip-dot" aria-hidden="true" '
+            f'style="width:5px;height:5px;border-radius:50%;'
+            f'background:{fg};display:inline-block;"></span>'
+        )
+    if icon:
+        # The icon glyph rides at the same baseline. Force tabular
+        # alignment so multiple chips in a column line up.
+        parts.append(
+            f'<span class="ck-chip-icon" aria-hidden="true" '
+            f'style="font-family:\'JetBrains Mono\',monospace;'
+            f'line-height:1;display:inline-block;">'
+            f'{_esc(str(icon))}</span>'
+        )
+    parts.append(
+        f'<span class="ck-chip-label">{_esc(text)}</span>'
+    )
+    tooltip = title if title else text
+    return (
+        f'<span class="ck-signal-chip ck-chip-{tone} ck-chip-{size}" '
+        f'role="status" '
+        f'aria-label="{_esc(tooltip)}" '
+        f'title="{_esc(tooltip)}" '
+        f'style="display:inline-flex;align-items:center;gap:4px;'
+        f'padding:{pad_y} {pad_x};border-radius:999px;'
+        f'background:{bg};color:{fg};'
+        f'font-family:\'Inter Tight\',sans-serif;'
+        f'font-size:{font_size};font-weight:500;line-height:1.4;'
+        f'letter-spacing:0.02em;'
+        f'font-variant-numeric:tabular-nums;'
+        f'vertical-align:middle;">'
+        + "".join(parts)
+        + '</span>'
+    )
+
+
 def ck_micro_ranking_strip(
     rank: Optional[int],
     cohort_size: Optional[int],
