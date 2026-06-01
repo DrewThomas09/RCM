@@ -1894,6 +1894,172 @@ def ck_distribution_strip(
     return svg
 
 
+def ck_trajectory_strip(
+    values: Sequence[float],
+    *,
+    direction: str = "positive",
+    width: int = 80,
+    height: int = 18,
+    threshold_amber_pct: float = 5.0,
+    threshold_red_pct: float = 15.0,
+) -> str:
+    """Inline trajectory micro-line — N-year time series rendered as
+    a single polyline, slope-colored by improvement direction.
+
+    Built for the HCRIS X-ray '3-year per metric' use case but
+    generalizes to any short time series where the slope direction
+    carries the editorial story (improving vs decaying for THIS
+    metric, given the metric's improvement direction).
+
+    Color follows ``direction`` + the per-period % change between
+    the FIRST and LAST observation:
+
+      - improving (positive direction → up, negative direction → down):
+        teal (positive tone)
+      - slight degradation (between 0 and ``threshold_amber_pct``):
+        neutral teal-faded
+      - moderate degradation (``threshold_amber_pct`` < |pct| ≤
+        ``threshold_red_pct``): warning amber
+      - significant degradation (> ``threshold_red_pct``):
+        negative red
+
+    Designed to sit RIGHT of a distribution strip in a composite
+    visual: ``ck_dual_strip()`` does that composition with a hairline
+    separator. Solo, it works as a row-level mini-trend.
+
+    ``values`` of length <2 returns empty (can't draw a trajectory
+    from a single point); non-numeric / NaN values are filtered.
+    """
+    if not values:
+        return ""
+    nums: List[float] = []
+    for v in values:
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            continue
+        if _math.isfinite(f):
+            nums.append(f)
+    if len(nums) < 2:
+        return ""
+    mn = min(nums)
+    mx = max(nums)
+    rng = (mx - mn) if mx > mn else 1.0
+    # Compute end-to-end percent change so we can color the line
+    # by editorial improvement direction.
+    first = nums[0]
+    last = nums[-1]
+    direction = (direction or "positive").lower()
+    if direction not in ("positive", "negative"):
+        direction = "positive"
+    if abs(first) > 1e-12:
+        pct = (last - first) / abs(first) * 100.0
+    else:
+        # First value at-or-near zero — no defensible %-change.
+        # Fall back to absolute-delta sign.
+        pct = 100.0 if last > first else (-100.0 if last < first else 0.0)
+    # 'improving' depends on metric direction.
+    if direction == "positive":
+        improving = pct > 0
+    else:
+        improving = pct < 0
+    abs_pct = abs(pct)
+    palette = {
+        "positive": "#0a8a5f",
+        "warning":  "#b8732a",
+        "negative": "#b5321e",
+        "neutral":  "#155752",
+    }
+    if improving:
+        tone = "positive"
+    elif abs_pct <= threshold_amber_pct:
+        tone = "neutral"
+    elif abs_pct <= threshold_red_pct:
+        tone = "warning"
+    else:
+        tone = "negative"
+    stroke = palette[tone]
+    # Build the polyline points.
+    pts: List[str] = []
+    for i, v in enumerate(nums):
+        x = i / (len(nums) - 1) * (width - 4) + 2  # 2px padding each side
+        y = height - 2 - ((v - mn) / rng) * (height - 4)
+        pts.append(f"{x:.1f},{y:.1f}")
+    poly = " ".join(pts)
+    title_text = (
+        f"{first:.2f} → {last:.2f} ({'+' if pct >= 0 else ''}{pct:.1f}%) · "
+        f"n={len(nums)} pts · "
+        f"{'improving' if improving else 'degrading'}"
+    )
+    svg = (
+        f'<svg class="ck-traj-strip" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="trajectory micro-chart">'
+        f'<title>{_esc(title_text)}</title>'
+        f'<polyline points="{poly}" fill="none" stroke="{stroke}" '
+        f'stroke-width="1.5" stroke-linecap="round" '
+        f'stroke-linejoin="round"/>'
+        '</svg>'
+    )
+    return svg
+
+
+def ck_dual_strip(
+    *,
+    trajectory_values: Sequence[float],
+    distribution_values: Sequence[float],
+    target_value: Optional[float],
+    direction: str = "positive",
+    trajectory_width: int = 80,
+    distribution_width: int = 50,
+    height: int = 18,
+    label: Optional[str] = None,
+) -> str:
+    """Composite trajectory + distribution strip — the Iter-8 spec
+    bundles them side-by-side with a 1px hairline separator so a
+    table cell shows BOTH 'where it's headed' and 'where it stands
+    today' in one ~130-px composite.
+
+    Renders ``ck_trajectory_strip`` on the left, a 1px hairline
+    separator, then ``ck_distribution_strip`` on the right — three
+    inline SVGs in a single ``<span class="ck-dual-strip">``
+    wrapper so the composite stays inline-flow.
+
+    Either side may degrade to empty (per its own helper's rules);
+    if BOTH are empty the composite returns an empty string so
+    table cells don't get a bare separator.
+    """
+    traj = ck_trajectory_strip(
+        trajectory_values,
+        direction=direction,
+        width=trajectory_width,
+        height=height,
+    )
+    dist = ck_distribution_strip(
+        distribution_values,
+        target_value,
+        direction=direction,
+        width=distribution_width,
+        height=height,
+        label=label,
+    )
+    if not traj and not dist:
+        return ""
+    sep = (
+        f'<span class="ck-dual-strip-sep" '
+        f'style="display:inline-block;width:1px;height:{height}px;'
+        f'background:#cfc5b1;vertical-align:middle;'
+        f'margin:0 2px;"></span>'
+        if traj and dist else ""
+    )
+    return (
+        '<span class="ck-dual-strip" '
+        'style="display:inline-flex;align-items:center;line-height:1;">'
+        + traj + sep + dist
+        + '</span>'
+    )
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
