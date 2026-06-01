@@ -2212,6 +2212,173 @@ def ck_waterfall_strip(
     return svg
 
 
+# Editorial palette for payer-mix microbars — semantic, not arbitrary.
+# Each payer color reflects its reimbursement-rate position in the
+# pre-trace partner mental model (Medicare gray = baseline, Commercial
+# blue = premium, Medicaid muted = below-cost, Self-pay beige = risk).
+_PAYER_MIX_COLORS: Dict[str, str] = {
+    # Public-payer family (gray / muted blue)
+    "medicare":          "#7a7a7a",
+    "medicare advantage": "#9a9a9a",
+    "ma":                "#9a9a9a",
+    "medicaid":          "#c1cad8",
+    "medicaid managed":  "#a8b3c4",
+    # Commercial / premium family (saturated blue)
+    "commercial":        "#3b6ea5",
+    "commercial pos":    "#5483b5",
+    "self-funded":       "#2c5680",
+    # Self-pay + other (beige + warning amber)
+    "self-pay":          "#c9b27a",
+    "self pay":          "#c9b27a",
+    "selfpay":           "#c9b27a",
+    "uninsured":         "#c9b27a",
+    "bad debt":          "#b8732a",
+    # Specialty / VBC (teal)
+    "aco":               "#155752",
+    "value-based":       "#2a8881",
+    "vbc":               "#2a8881",
+    # Catch-all
+    "other":             "#a8a8a8",
+}
+
+
+def ck_payer_mix_microbar(
+    shares: Mapping[str, float],
+    *,
+    width: int = 100,
+    height: int = 12,
+    sort: str = "preferred",
+    show_labels: bool = False,
+    label_threshold: float = 0.10,
+) -> str:
+    """Compact 3–N segment horizontal stacked bar for payer mix —
+    the editorial answer to 'show me payer concentration without a
+    chart legend taking half the row'.
+
+    Iter-7 FQHC spec + reused everywhere payer mix is part of the
+    underwriting story (provider groups, ASCs, dialysis, etc.).
+    Each segment width is proportional to the payer's share of the
+    mix; color comes from the semantic palette (Medicare = neutral
+    gray, Commercial = premium blue, Medicaid = muted, Self-pay =
+    beige risk).
+
+    Optional inline labels render the payer name + share when the
+    share exceeds ``label_threshold`` — keeps small slivers from
+    crowding into label collisions.
+
+    ``shares`` keys are case-insensitive payer names; unknown payers
+    fall back to a neutral gray. Values < 0 are clamped to 0; values
+    are normalized to sum to 1 so callers can pass either fractions
+    (0.4) or percent-points (40) without prep.
+
+    Sort options:
+      - 'preferred' (default): canonical order — Medicare, Medicare
+        Advantage, Medicaid, Commercial, Self-pay, Other; mirrors
+        how a partner reads a payer table top-to-bottom
+      - 'desc': largest share first
+      - 'asc': smallest first
+      - 'as_given': preserves insertion order of the input mapping
+
+    Returns inline SVG; empty string for empty input or zero-sum
+    shares.
+    """
+    if not shares:
+        return ""
+    # Normalize + clamp.
+    cleaned: List[tuple] = []
+    for raw_name, raw_share in shares.items():
+        try:
+            share = float(raw_share)
+        except (TypeError, ValueError):
+            continue
+        if not _math.isfinite(share) or share <= 0:
+            continue
+        cleaned.append((str(raw_name), share))
+    if not cleaned:
+        return ""
+    total = sum(s for _, s in cleaned)
+    if total <= 0:
+        return ""
+    cleaned = [(n, s / total) for n, s in cleaned]
+    # Sort.
+    sort_mode = (sort or "preferred").lower()
+    if sort_mode == "desc":
+        cleaned.sort(key=lambda x: -x[1])
+    elif sort_mode == "asc":
+        cleaned.sort(key=lambda x: x[1])
+    elif sort_mode == "as_given":
+        pass  # preserve insertion order
+    else:
+        # 'preferred' (default) + any unknown sort string → canonical
+        # order. Anchor known payers, append unknowns at end.
+        order = [
+            "medicare", "medicare advantage", "ma",
+            "medicaid", "medicaid managed",
+            "commercial", "commercial pos", "self-funded",
+            "self-pay", "self pay", "selfpay", "uninsured",
+            "aco", "value-based", "vbc",
+            "other",
+        ]
+        order_idx = {k: i for i, k in enumerate(order)}
+        cleaned.sort(key=lambda x: order_idx.get(
+            x[0].lower(), len(order)))
+    # Render segments.
+    parts: List[str] = []
+    x = 0.0
+    label_parts: List[str] = []
+    for name, share in cleaned:
+        seg_w = share * width
+        if seg_w < 0.5:
+            # sub-pixel skip; share is < 0.5% — too small for honest
+            # rendering, drop rather than fake a 1px slice.
+            x += seg_w
+            continue
+        color = _PAYER_MIX_COLORS.get(name.lower(), "#a8a8a8")
+        pct_int = int(round(share * 100))
+        tooltip = f"{name}: {pct_int}%"
+        parts.append(
+            f'<g><title>{_esc(tooltip)}</title>'
+            f'<rect x="{x:.1f}" y="0" width="{seg_w:.1f}" '
+            f'height="{height}" fill="{color}" '
+            f'stroke="#ffffff" stroke-width="0.5"/>'
+            '</g>'
+        )
+        if show_labels and share >= label_threshold:
+            label_x = x + seg_w / 2
+            # White or dark text depending on segment lightness —
+            # simple test: beige + muted-blue are 'light', use ink.
+            light_fills = {
+                "#c1cad8", "#a8b3c4", "#c9b27a", "#9a9a9a",
+                "#a8a8a8",
+            }
+            text_color = "#1a2332" if color in light_fills else "#ffffff"
+            label_parts.append(
+                f'<text x="{label_x:.1f}" y="{height * 0.72:.1f}" '
+                f'text-anchor="middle" '
+                f'font-family="Inter Tight, sans-serif" '
+                f'font-size="{height * 0.55:.1f}" '
+                f'fill="{text_color}" pointer-events="none">'
+                f'{pct_int}%</text>'
+            )
+        x += seg_w
+    if not parts:
+        return ""
+    # Composite tooltip — full mix in order.
+    composite = " · ".join(
+        f"{n} {int(round(s * 100))}%" for n, s in cleaned
+    )
+    svg = (
+        f'<svg class="ck-payer-mix" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="payer mix microbar">'
+        f'<title>{_esc(composite)}</title>'
+        + ''.join(parts)
+        + ''.join(label_parts)
+        + '</svg>'
+    )
+    return svg
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
