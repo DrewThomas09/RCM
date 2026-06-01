@@ -2529,6 +2529,137 @@ def ck_spread_strip(
     return svg
 
 
+# Built-in band palettes for ck_band_dot — semantic 4-color bands
+# matching the editorial severity scale. Caller can override.
+_BAND_PALETTE_LETTER_GRADE: Dict[str, str] = {
+    "A": "#0a8a5f",  # positive
+    "B": "#5ba383",
+    "C": "#b8732a",  # warning
+    "D": "#b5321e",  # negative
+    "F": "#8a1d12",  # deeper red for failure tier
+}
+_BAND_PALETTE_STAR_RATING: Dict[str, str] = {
+    "5": "#0a8a5f",
+    "4": "#5ba383",
+    "3": "#b8732a",
+    "2": "#b5321e",
+    "1": "#8a1d12",
+}
+_BAND_PALETTE_TERTILE: Dict[str, str] = {
+    "high":   "#0a8a5f",
+    "medium": "#b8732a",
+    "low":    "#b5321e",
+}
+_BAND_PALETTE_QUARTILE: Dict[str, str] = {
+    "top":    "#0a8a5f",
+    "upper":  "#5ba383",
+    "lower":  "#b8732a",
+    "bottom": "#b5321e",
+}
+_BAND_PALETTE_YESNO: Dict[str, str] = {
+    "yes":  "#0a8a5f",
+    "no":   "#b5321e",
+    "n/a":  "#a8a8a8",
+    "—":    "#a8a8a8",
+}
+
+_BAND_PALETTES = {
+    "letter":   _BAND_PALETTE_LETTER_GRADE,
+    "grade":    _BAND_PALETTE_LETTER_GRADE,
+    "star":     _BAND_PALETTE_STAR_RATING,
+    "tertile":  _BAND_PALETTE_TERTILE,
+    "quartile": _BAND_PALETTE_QUARTILE,
+    "yesno":    _BAND_PALETTE_YESNO,
+    "binary":   _BAND_PALETTE_YESNO,
+}
+
+
+def ck_band_dot(
+    band: Any,
+    *,
+    palette: Any = "letter",
+    diameter: int = 10,
+    label: Optional[str] = None,
+    show_label_inline: bool = False,
+) -> str:
+    """8–12px categorical band marker — a single colored circle for
+    'A grade', '4-star rating', 'IC-ready: yes', etc.
+
+    The smallest reusable signal in the chartis vocabulary. Sits in
+    a table cell (or beside a row label) and conveys a categorical
+    quality / IC-ready / star rating without consuming a full
+    column for text. Pairs naturally with ``ck_distribution_strip``
+    for snapshot + categorical signal in the same row.
+
+    ``band`` is the category value — case-insensitive lookup against
+    the chosen palette. None / empty / unknown values render a
+    neutral gray dot (catches 'no signal yet' without omitting the
+    cell entirely; partner sees they need to drill in for the value
+    rather than wondering whether the column failed to load).
+
+    ``palette`` accepts:
+      - 'letter' / 'grade': A B C D F → green/teal/amber/red/deep-red
+      - 'star': '5'/'4'/'3'/'2'/'1' → same severity scale
+      - 'tertile': high/medium/low
+      - 'quartile': top/upper/lower/bottom
+      - 'yesno' / 'binary': yes/no/n/a
+      - a dict {band_key: hex_color} for custom palettes
+
+    ``label`` overrides the hover tooltip (defaults to the band
+    value itself). ``show_label_inline=True`` renders a small
+    JetBrains Mono caption to the right of the dot — only useful
+    when there's space and the band value adds information beyond
+    color.
+
+    Returns inline SVG; no JS for the tooltip (native <title>).
+    """
+    # Resolve palette.
+    if isinstance(palette, str):
+        pal = _BAND_PALETTES.get(palette.lower())
+        if pal is None:
+            pal = _BAND_PALETTE_LETTER_GRADE
+    elif isinstance(palette, Mapping):
+        pal = dict(palette)
+    else:
+        pal = _BAND_PALETTE_LETTER_GRADE
+    # Normalize band value.
+    if band is None:
+        band_str = ""
+    else:
+        band_str = str(band).strip()
+    # Case-insensitive lookup, with original-case fallback so custom
+    # palettes with mixed-case keys still work.
+    color = (pal.get(band_str)
+             or pal.get(band_str.lower())
+             or pal.get(band_str.upper())
+             or "#a8a8a8")
+    # Tooltip.
+    tip = label if label is not None else (band_str or "no data")
+    diameter = max(4, int(diameter))
+    radius = diameter / 2.0
+    svg = (
+        f'<svg class="ck-band-dot" width="{diameter}" height="{diameter}" '
+        f'viewBox="0 0 {diameter} {diameter}" role="img" '
+        f'aria-label="{_esc(tip)}">'
+        f'<title>{_esc(tip)}</title>'
+        f'<circle cx="{radius:.1f}" cy="{radius:.1f}" r="{radius - 0.5:.1f}" '
+        f'fill="{color}" stroke="#ffffff" stroke-width="0.5"/>'
+        '</svg>'
+    )
+    if show_label_inline and band_str:
+        return (
+            '<span class="ck-band-dot-wrap" '
+            'style="display:inline-flex;align-items:center;gap:4px;">'
+            + svg
+            + f'<span class="ck-band-dot-label" '
+            f'style="font-family:\'JetBrains Mono\',monospace;'
+            f'font-size:10px;color:#1a2332;">'
+            f'{_esc(band_str)}</span>'
+            '</span>'
+        )
+    return svg
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
