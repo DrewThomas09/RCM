@@ -2060,6 +2060,158 @@ def ck_dual_strip(
     )
 
 
+def ck_waterfall_strip(
+    segments: Sequence[Mapping[str, Any]],
+    *,
+    width: int = 600,
+    height: int = 24,
+    show_grade_footer: bool = True,
+) -> str:
+    """Risk-adjusted EBITDA-bridge waterfall — horizontal stacked bar
+    where each segment's WIDTH = planned dollar impact and OPACITY =
+    realization probability. An optional 5px footer bar below each
+    segment encodes the realization letter grade (A/B/C/D).
+
+    Iter-9 foundation: lets a partner see lever magnitude, probability,
+    AND quality grade at a glance — no stacked charts, no legend, no
+    cognitive overhead beyond width / opacity / footer color.
+
+    ``segments`` is a sequence of dicts with these keys:
+      - ``name``: lever name (e.g. 'denial_reduction'), shown in tooltip
+      - ``impact``: planned dollar impact (positive contributions only;
+        negative-impact levers are filtered out — show them in a
+        separate strip if your editorial story includes them)
+      - ``realization`` (optional): probability in [0, 1], defaults to
+        1.0 (full realization). Controls opacity.
+      - ``grade`` (optional): one of 'A', 'B', 'C', 'D' — colors the
+        footer bar. Missing → no footer band for that segment.
+      - ``color`` (optional): hex stroke for the segment. Defaults to
+        cycling through a teal-anchored palette.
+
+    Returns inline SVG; empty string when no positive-impact segments
+    or total impact ≤ 0 (no defensible width allocation).
+
+    Renders inline; designed to sit ABOVE a bridge table at full row
+    width (default 600px works for most chartis tables — pass ``width``
+    matching your container otherwise).
+    """
+    if not segments:
+        return ""
+    # Filter to positive-impact only; tolerate dict-like inputs that
+    # are missing keys / carry non-numeric impact.
+    valid: List[Dict[str, Any]] = []
+    for s in segments:
+        if not isinstance(s, Mapping):
+            continue
+        try:
+            impact = float(s.get("impact", 0))
+        except (TypeError, ValueError):
+            continue
+        if not _math.isfinite(impact) or impact <= 0:
+            continue
+        # Defensive: realization clamped to [0, 1]
+        try:
+            real = float(s.get("realization", 1.0))
+        except (TypeError, ValueError):
+            real = 1.0
+        if not _math.isfinite(real):
+            real = 1.0
+        real = max(0.0, min(1.0, real))
+        valid.append({
+            "name": str(s.get("name") or "lever"),
+            "impact": impact,
+            "realization": real,
+            "grade": str(s.get("grade") or "").upper(),
+            "color": s.get("color"),
+        })
+    if not valid:
+        return ""
+    total = sum(s["impact"] for s in valid)
+    if total <= 0:
+        return ""
+    # Default per-segment color palette — teal-anchored, desaturated.
+    default_palette = [
+        "#155752", "#1f6f6a", "#2a8881", "#3aa39d",
+        "#4ec0b9", "#69ddd5", "#a3e5dd", "#155752",
+    ]
+    grade_colors = {
+        "A": "#0a8a5f",
+        "B": "#5ba383",
+        "C": "#b8732a",
+        "D": "#b5321e",
+    }
+    bar_h = height - (5 if show_grade_footer else 0)
+    # Build the SVG segments.
+    parts: List[str] = []
+    x = 0.0
+    for i, seg in enumerate(valid):
+        seg_w = seg["impact"] / total * width
+        if seg_w < 0.5:
+            # Below sub-pixel; skip to avoid invisible <rect> noise.
+            x += seg_w
+            continue
+        fill = seg["color"] or default_palette[i % len(default_palette)]
+        opacity = max(0.20, seg["realization"])  # never fully transparent
+        # Realization tooltip.
+        risk_adj = seg["impact"] * seg["realization"]
+        tooltip = (
+            f"{seg['name']} · planned ${seg['impact']/1e6:.2f}M · "
+            f"realized {int(round(seg['realization'] * 100))}%"
+            f" · risk-adjusted ${risk_adj/1e6:.2f}M"
+            + (f" · grade {seg['grade']}" if seg["grade"] in grade_colors else "")
+        )
+        # Segment rect.
+        parts.append(
+            f'<g><title>{_esc(tooltip)}</title>'
+            f'<rect x="{x:.1f}" y="0" width="{seg_w:.1f}" '
+            f'height="{bar_h:.1f}" fill="{fill}" '
+            f'fill-opacity="{opacity:.2f}" '
+            f'stroke="#ffffff" stroke-width="0.5"/>'
+        )
+        # Optional hatched overlay when realization is low — gives the
+        # eye a second cue beyond opacity (per Iter-9 PE-critic note).
+        if seg["realization"] < 0.70:
+            parts.append(
+                f'<rect x="{x:.1f}" y="0" width="{seg_w:.1f}" '
+                f'height="{bar_h:.1f}" '
+                f'fill="url(#ck-wf-hatch)" pointer-events="none"/>'
+            )
+        # Grade footer bar.
+        if show_grade_footer and seg["grade"] in grade_colors:
+            parts.append(
+                f'<rect x="{x:.1f}" y="{bar_h:.1f}" width="{seg_w:.1f}" '
+                f'height="5" fill="{grade_colors[seg["grade"]]}"/>'
+            )
+        parts.append('</g>')
+        x += seg_w
+    # Hatch pattern definition (shared across all low-realization segs).
+    defs = (
+        '<defs><pattern id="ck-wf-hatch" patternUnits="userSpaceOnUse" '
+        'width="4" height="4">'
+        '<path d="M0,4 L4,0" stroke="#ffffff" stroke-width="0.6" '
+        'opacity="0.55"/>'
+        '</pattern></defs>'
+    )
+    # Composite tooltip with gross + risk-adjusted total.
+    gross_total = total
+    ra_total = sum(s["impact"] * s["realization"] for s in valid)
+    total_title = (
+        f"Bridge: ${gross_total/1e6:.2f}M gross · "
+        f"${ra_total/1e6:.2f}M risk-adjusted "
+        f"({int(round(ra_total / gross_total * 100))}% realization)"
+    )
+    svg = (
+        f'<svg class="ck-waterfall" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="risk-adjusted bridge waterfall">'
+        f'<title>{_esc(total_title)}</title>'
+        + defs
+        + ''.join(parts)
+        + '</svg>'
+    )
+    return svg
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
