@@ -2660,6 +2660,152 @@ def ck_band_dot(
     return svg
 
 
+def ck_growth_arrow(
+    current: Optional[float],
+    prior: Optional[float],
+    *,
+    direction: str = "positive",
+    height: int = 14,
+    show_pct: bool = True,
+    precision: int = 1,
+    neutral_threshold_pct: float = 0.5,
+    unit_suffix: str = "%",
+) -> str:
+    """Compact arrow + %-change indicator for 'vs prior period' cells.
+
+    Used everywhere a table cell needs to say 'this number moved
+    +N% / -N% since last period' without consuming a full column.
+    Pairs naturally with the row's current value: the value is the
+    headline, the arrow is the delta.
+
+    Color follows the metric's improvement direction:
+      - direction='positive' (e.g. revenue): up arrow + teal,
+        down arrow + red
+      - direction='negative' (e.g. denial_rate, days_in_ar):
+        up arrow + red (worsened), down arrow + teal (improved)
+
+    Within ``neutral_threshold_pct`` (default ±0.5%) the change is
+    considered flat and renders as a neutral horizontal dash —
+    avoids the noise of '+0.04%' arrows on basically-flat metrics.
+
+    Degrades silently when either value is None / non-numeric / non-
+    finite (returns empty string — caller can drop the cell).
+
+    Zero prior → percent change undefined. The arrow direction still
+    shows (current > 0 = up, < 0 = down) but the pct caption shows
+    a dash '—'.
+    """
+    if current is None or prior is None:
+        return ""
+    try:
+        cur = float(current)
+        pri = float(prior)
+    except (TypeError, ValueError):
+        return ""
+    if not (_math.isfinite(cur) and _math.isfinite(pri)):
+        return ""
+    direction = (direction or "positive").lower()
+    if direction not in ("positive", "negative"):
+        direction = "positive"
+    # Compute the % change (NaN-safe via the explicit zero check).
+    if abs(pri) > 1e-12:
+        pct = (cur - pri) / abs(pri) * 100.0
+    else:
+        # Zero baseline — use absolute-sign as a fallback so the
+        # arrow direction is still meaningful.
+        pct = 100.0 if cur > pri else (-100.0 if cur < pri else 0.0)
+    abs_pct = abs(pct)
+    # Neutral band — flat changes render as a dash.
+    if abs_pct < neutral_threshold_pct:
+        glyph_path = (
+            # Horizontal dash
+            f'<line x1="2" y1="{height/2:.1f}" x2="{height-2}" '
+            f'y2="{height/2:.1f}" stroke="#7a7a7a" stroke-width="1.6" '
+            f'stroke-linecap="round"/>'
+        )
+        text_color = "#7a7a7a"
+        tone_word = "flat"
+    else:
+        # Pick arrow direction by raw delta (regardless of metric
+        # improvement-direction — caller's eye needs to see UP for
+        # 'went up' even on negative-direction metrics; the COLOR
+        # carries the editorial good/bad signal).
+        rising = pct > 0
+        # Color by editorial improvement direction.
+        if direction == "positive":
+            color = "#0a8a5f" if rising else "#b5321e"
+        else:
+            color = "#b5321e" if rising else "#0a8a5f"
+        text_color = color
+        # Arrow path — 7×7 chevron centered in the SVG, pointing
+        # up or down. Sized to the helper's height arg.
+        cx = height / 2.0
+        if rising:
+            # Up arrow: triangle vertices (top, bottom-left, bottom-right)
+            top_y = 2.5
+            bot_y = height - 2.5
+            half = (height - 6) / 2.0
+            glyph_path = (
+                f'<path d="M {cx:.1f} {top_y:.1f} L {cx - half:.1f} '
+                f'{bot_y:.1f} L {cx + half:.1f} {bot_y:.1f} Z" '
+                f'fill="{color}"/>'
+            )
+        else:
+            top_y = 2.5
+            bot_y = height - 2.5
+            half = (height - 6) / 2.0
+            glyph_path = (
+                f'<path d="M {cx:.1f} {bot_y:.1f} L {cx - half:.1f} '
+                f'{top_y:.1f} L {cx + half:.1f} {top_y:.1f} Z" '
+                f'fill="{color}"/>'
+            )
+        tone_word = "improving" if (
+            (direction == "positive" and rising) or
+            (direction == "negative" and not rising)
+        ) else "degrading"
+    # Build SVG + optional caption.
+    arrow_svg = (
+        f'<svg class="ck-growth-arrow" width="{height}" '
+        f'height="{height}" '
+        f'viewBox="0 0 {height} {height}" role="img" '
+        f'aria-label="growth arrow">'
+        + glyph_path
+        + '</svg>'
+    )
+    if show_pct and abs(pri) > 1e-12:
+        sign = "+" if pct >= 0 else ""
+        pct_text = f"{sign}{pct:.{precision}f}{unit_suffix}"
+    elif show_pct and abs(pri) <= 1e-12:
+        pct_text = "—"
+    else:
+        pct_text = None
+    tooltip = (
+        f"{pri:.{precision}f} → {cur:.{precision}f}"
+        + (f" ({pct_text})" if pct_text and pct_text != "—" else "")
+        + f" · {tone_word}"
+    )
+    wrapped_arrow = (
+        f'<span title="{_esc(tooltip)}" '
+        f'style="display:inline-flex;align-items:center;'
+        f'vertical-align:middle;">'
+        + arrow_svg
+        + '</span>'
+    )
+    if pct_text is not None:
+        return (
+            '<span class="ck-growth" '
+            'style="display:inline-flex;align-items:center;gap:3px;">'
+            + wrapped_arrow
+            + f'<span class="ck-growth-pct" '
+            f'style="font-family:\'JetBrains Mono\',monospace;'
+            f'font-size:11px;font-variant-numeric:tabular-nums;'
+            f'color:{text_color};">'
+            f'{_esc(pct_text)}</span>'
+            '</span>'
+        )
+    return wrapped_arrow
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
