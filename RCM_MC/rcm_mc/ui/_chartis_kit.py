@@ -2989,6 +2989,141 @@ def ck_threshold_gauge(
     )
 
 
+def ck_status_meter(
+    score: Optional[float],
+    *,
+    width: int = 120,
+    height: int = 10,
+    scale_min: float = 0.0,
+    scale_max: float = 100.0,
+    direction: str = "positive",
+    show_caption: bool = True,
+    caption_template: Optional[str] = None,
+    precision: int = 0,
+    label: Optional[str] = None,
+) -> str:
+    """Compact 0-100 score gauge with traffic-light tone bands.
+
+    Sibling to ``ck_threshold_gauge`` (which takes explicit warning/
+    breach thresholds) — this is the simpler 'score on a fixed scale'
+    visualization. Tone bands divide the scale into thirds by default:
+
+      * positive direction (higher is better, e.g. health score):
+        bottom third → red, middle → amber, top → green
+      * negative direction (lower is better, e.g. risk score):
+        bands invert
+
+    Use anywhere a 0-100 score lives in a row and the partner needs a
+    color-coded gut-feel: health score per deal, MIPS composite,
+    HCAHPS percentile, data-confidence index, deal-readiness rating.
+
+    The horizontal bar fills left-to-right with the score's zone
+    color (translucent); a darker marker line drops on the value. A
+    small caption to the right reads ``'N/100'`` by default (override
+    with ``caption_template`` for custom phrasing — placeholders
+    ``{score}`` and ``{max}``).
+
+    Silent-fallback contract (returns ""):
+      * ``score`` is None / non-numeric / non-finite
+      * ``scale_max <= scale_min`` (degenerate axis)
+    """
+    if score is None:
+        return ""
+    try:
+        s = float(score)
+    except (TypeError, ValueError):
+        return ""
+    if not _math.isfinite(s):
+        return ""
+    if scale_max <= scale_min:
+        return ""
+    width = max(40, int(width))
+    height = max(6, int(height))
+
+    # Clamp score to scale.
+    s_clamped = max(scale_min, min(scale_max, s))
+    frac = (s_clamped - scale_min) / (scale_max - scale_min)
+    direction = (direction or "positive").lower()
+    if direction not in ("positive", "negative"):
+        direction = "positive"
+
+    # Zone tone — thirds of the scale.
+    if direction == "positive":
+        if frac >= 2.0 / 3.0:
+            zone, zone_color = "green", "#0a8a5f"
+        elif frac >= 1.0 / 3.0:
+            zone, zone_color = "amber", "#b8732a"
+        else:
+            zone, zone_color = "red", "#b5321e"
+    else:
+        if frac <= 1.0 / 3.0:
+            zone, zone_color = "green", "#0a8a5f"
+        elif frac <= 2.0 / 3.0:
+            zone, zone_color = "amber", "#b8732a"
+        else:
+            zone, zone_color = "red", "#b5321e"
+
+    # Geometry.
+    fill_w = frac * width
+    marker_x = max(0.5, min(width - 0.5, fill_w))
+
+    svg = (
+        f'<svg class="ck-status-meter" width="{width}" '
+        f'height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="status meter ({zone} zone)" '
+        f'style="display:inline-block;vertical-align:middle;">'
+        # Background ribbon
+        f'<rect x="0" y="0" width="{width}" height="{height}" '
+        f'fill="#e8e1d3"/>'
+        # Filled portion in zone color (translucent)
+        f'<rect x="0" y="0" width="{fill_w:.1f}" height="{height}" '
+        f'fill="{zone_color}" fill-opacity="0.32"/>'
+        # Marker line at the score position
+        f'<line x1="{marker_x:.1f}" y1="0" x2="{marker_x:.1f}" '
+        f'y2="{height}" stroke="{zone_color}" stroke-width="2"/>'
+        f'</svg>'
+    )
+
+    if not show_caption:
+        if label:
+            return (
+                f'<span class="ck-status-meter-wrap" '
+                f'role="group" aria-label="{_esc(label)}" '
+                f'title="{_esc(label)}" '
+                f'style="display:inline-flex;align-items:center;'
+                f'gap:6px;vertical-align:middle;">'
+                + svg
+                + '</span>'
+            )
+        return svg
+
+    # Caption text.
+    if caption_template is not None:
+        caption = caption_template.format(score=s_clamped, max=scale_max)
+    else:
+        caption = f"{s_clamped:.{precision}f}/{int(scale_max)}"
+
+    tooltip = label if label else caption
+    if label:
+        tooltip = f"{label}: {caption}"
+
+    return (
+        f'<span class="ck-status-meter-wrap" role="group" '
+        f'aria-label="{_esc(tooltip)}" '
+        f'title="{_esc(tooltip)}" '
+        f'style="display:inline-flex;align-items:center;'
+        f'gap:6px;vertical-align:middle;">'
+        + svg
+        + f'<span class="ck-status-meter-caption" '
+        f'style="font-family:\'JetBrains Mono\',monospace;'
+        f'font-size:11px;color:{zone_color};font-weight:600;'
+        f'font-variant-numeric:tabular-nums;">'
+        f'{_esc(caption)}</span>'
+        '</span>'
+    )
+
+
 def ck_arrow_bridge(
     start_value: Any,
     end_value: Any,
