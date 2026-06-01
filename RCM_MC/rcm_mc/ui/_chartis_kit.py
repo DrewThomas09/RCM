@@ -2989,6 +2989,139 @@ def ck_threshold_gauge(
     )
 
 
+def ck_tier_chip(
+    tier: Optional[str],
+    *,
+    palette: str = "letter",
+    label: Optional[str] = None,
+    show_label: bool = True,
+    size: str = "sm",
+) -> str:
+    """Pill-shaped graded tier indicator (sibling to ``ck_band_dot``).
+
+    Where ``ck_band_dot`` is a single 8-12px colored circle for cells
+    too tight for any other glyph, this is the next density tier up:
+    a small pill that shows the tier letter (or label override) plus
+    a leading colored dot — keeping the letter readable while still
+    fitting in a row gutter.
+
+    Palette aliases match ``ck_band_dot``:
+
+      * ``letter`` / ``grade`` — A, B, C, D, F
+      * ``star`` — 1..5
+      * ``tertile`` — low / mid / high
+      * ``quartile`` — top / upper / lower / bottom
+      * ``yesno`` / ``binary`` — yes / no / n/a / —
+      * dict — custom palette mapping band → color hex
+
+    Unknown tier / palette → neutral gray pill (NOT empty string;
+    partner needs to see the cell exists with a 'no signal' marker).
+
+    Size 'sm' (11px) is the default; 'md' (12px) for inline-with-prose.
+    Larger callers should reach for ``ck_signal_badge``.
+    """
+    # Unknown / None / empty / whitespace → neutral gray fallback.
+    if tier is None:
+        return _tier_chip_unknown(label=label, show_label=show_label,
+                                  size=size, raw_tier=tier)
+    tier_str = str(tier).strip()
+    if not tier_str:
+        return _tier_chip_unknown(label=label, show_label=show_label,
+                                  size=size, raw_tier=tier)
+
+    # Resolve palette (mirror ck_band_dot's resolution).
+    if isinstance(palette, dict):
+        palette_dict = palette
+    else:
+        palette_key = (str(palette) or "letter").lower()
+        if palette_key in ("grade", "letter"):
+            palette_dict = _BAND_PALETTE_LETTER_GRADE
+        elif palette_key == "star":
+            palette_dict = _BAND_PALETTE_STAR_RATING
+        elif palette_key == "tertile":
+            palette_dict = _BAND_PALETTE_TERTILE
+        elif palette_key == "quartile":
+            palette_dict = _BAND_PALETTE_QUARTILE
+        elif palette_key in ("yesno", "binary"):
+            palette_dict = _BAND_PALETTE_YESNO
+        else:
+            palette_dict = _BAND_PALETTE_LETTER_GRADE
+    # Lookup tier color (case-insensitive on the key).
+    lookup = tier_str
+    if lookup not in palette_dict:
+        lookup_lower = tier_str.lower()
+        if lookup_lower in palette_dict:
+            lookup = lookup_lower
+        else:
+            lookup_upper = tier_str.upper()
+            if lookup_upper in palette_dict:
+                lookup = lookup_upper
+            else:
+                # Unknown tier within a known palette → neutral gray.
+                return _tier_chip_unknown(
+                    label=label, show_label=show_label, size=size,
+                    raw_tier=tier_str,
+                )
+    color = palette_dict[lookup]
+    return _tier_chip_render(
+        tier=tier_str, color=color, label=label,
+        show_label=show_label, size=size,
+    )
+
+
+def _tier_chip_unknown(
+    *, label: Optional[str], show_label: bool, size: str,
+    raw_tier: Any,
+) -> str:
+    # Neutral gray fallback. raw_tier may be None.
+    display_text = label if label else (
+        str(raw_tier).strip() if raw_tier else "—"
+    )
+    return _tier_chip_render(
+        tier=display_text or "—", color="#a8a8a8", label=label,
+        show_label=show_label, size=size,
+    )
+
+
+def _tier_chip_render(
+    *, tier: str, color: str, label: Optional[str],
+    show_label: bool, size: str,
+) -> str:
+    size = (size or "sm").lower()
+    font_size = "12px" if size == "md" else "11px"
+    pad_y = "3px" if size == "md" else "2px"
+    pad_x = "9px" if size == "md" else "7px"
+    display_label = label if label is not None else tier
+    tooltip = label if label else tier
+    body = (
+        f'<span class="ck-tier-chip-dot" aria-hidden="true" '
+        f'style="width:6px;height:6px;border-radius:50%;'
+        f'background:{color};display:inline-block;'
+        f'margin-right:5px;"></span>'
+    )
+    if show_label:
+        body += (
+            f'<span class="ck-tier-chip-label" '
+            f'style="font-family:\'JetBrains Mono\',monospace;'
+            f'font-weight:600;letter-spacing:0.04em;'
+            f'font-size:{font_size};">'
+            f'{_esc(str(display_label))}</span>'
+        )
+    return (
+        f'<span class="ck-tier-chip ck-tier-chip-{size}" '
+        f'role="img" aria-label="{_esc(tooltip)}" '
+        f'title="{_esc(tooltip)}" '
+        f'style="display:inline-flex;align-items:center;'
+        f'padding:{pad_y} {pad_x};border-radius:999px;'
+        f'background:rgba(0,0,0,0.04);'
+        f'border:1px solid rgba(0,0,0,0.06);'
+        f'color:#1a2332;line-height:1.4;'
+        f'vertical-align:middle;">'
+        + body
+        + "</span>"
+    )
+
+
 def ck_status_meter(
     score: Optional[float],
     *,
