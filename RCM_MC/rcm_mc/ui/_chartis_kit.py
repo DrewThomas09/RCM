@@ -2989,6 +2989,171 @@ def ck_threshold_gauge(
     )
 
 
+def ck_micro_ranking_strip(
+    rank: Optional[int],
+    cohort_size: Optional[int],
+    *,
+    width: int = 100,
+    height: int = 14,
+    direction: str = "positive",
+    label_template: Optional[str] = None,
+    show_caption: bool = True,
+) -> str:
+    """Inline peer-rank visualization with quartile tone + cohort size.
+
+    Generalizes the 'where does this target sit in its peer set?' answer
+    into a reusable strip. Use anywhere a row needs to say 'Top 12% of
+    47 peers' or 'Bottom quartile, 9 of 32' without consuming a chart:
+
+      * Care Compare 5-star: 'rank 3 of 4500 hospitals'
+      * MIPS percentile: 'top 8% of physician group cohort'
+      * SimplyAnalytics market score: 'rank 42 of 312 ZIPs'
+      * Just-missed screener: 'closest 17 of 423 targets'
+
+    Visual:
+      * 100×14 strip with a parchment background ribbon
+      * Filled portion left-of-position colored by quartile tone
+      * Subtle gray fill right-of-position to convey 'remaining cohort'
+      * Solid dark marker at the exact rank position
+      * Right-of-strip caption: 'Top N% of M' or 'N of M'
+
+    Quartile tone:
+      * direction='positive' (lower rank = better, e.g. 'rank 1'):
+        Top quartile (rank ≤ Q1) → teal #0a8a5f
+        Q2                       → mid-teal #155752
+        Q3                       → amber  #b8732a
+        Bottom Q4                → red    #b5321e
+      * direction='negative' (lower rank = worse, e.g. lower score):
+        tone palette inverts
+
+    Silent-fallback contract (returns ""):
+      * rank or cohort_size is None / non-numeric / not int-coercible
+      * cohort_size <= 0
+      * rank < 1 or rank > cohort_size (out of range)
+    """
+    # ---- validate ----
+    if rank is None or cohort_size is None:
+        return ""
+    try:
+        r = int(rank)
+        n = int(cohort_size)
+    except (TypeError, ValueError):
+        return ""
+    if n <= 0 or r < 1 or r > n:
+        return ""
+    width = max(40, int(width))
+    height = max(8, int(height))
+    direction = (direction or "positive").lower()
+    if direction not in ("positive", "negative"):
+        direction = "positive"
+
+    # ---- quartile tone ----
+    pct = (r - 1) / n * 100.0  # percentile rank (0% = top, 100% = bottom)
+    # Choose tone based on which quartile r lands in.
+    if pct <= 25.0:
+        positive_tone = "#0a8a5f"   # top → green
+        negative_tone = "#b5321e"
+    elif pct <= 50.0:
+        positive_tone = "#155752"   # 2nd quartile → mid-teal
+        negative_tone = "#b8732a"
+    elif pct <= 75.0:
+        positive_tone = "#b8732a"
+        negative_tone = "#155752"
+    else:
+        positive_tone = "#b5321e"
+        negative_tone = "#0a8a5f"
+    tone = positive_tone if direction == "positive" else negative_tone
+
+    # ---- geometry ----
+    # x position of the marker — proportional to (r-1)/(n-1) so rank=1
+    # sits at the left edge and rank=n at the right edge.
+    if n <= 1:
+        pos_frac = 0.0
+    else:
+        pos_frac = (r - 1) / (n - 1)
+    marker_x = 0.5 + pos_frac * (width - 1.0)
+
+    # Pre-position filled portion = everything to the LEFT of marker
+    # gets the quartile tone (translucent); to the right gets a faint
+    # parchment-gray fill conveying 'unfilled cohort'.
+    filled_w = marker_x
+    remaining_w = width - marker_x
+
+    parts = [
+        # Background ribbon
+        f'<rect x="0" y="0" width="{width}" height="{height}" '
+        f'fill="#e8e1d3"/>',
+        # Filled portion (left of marker)
+        f'<rect x="0" y="0" width="{filled_w:.1f}" height="{height}" '
+        f'fill="{tone}" fill-opacity="0.32"/>',
+        # Remaining portion (right of marker)
+        f'<rect x="{marker_x:.1f}" y="0" width="{remaining_w:.1f}" '
+        f'height="{height}" fill="#d5cdbf" fill-opacity="0.45"/>',
+        # Marker line
+        f'<line x1="{marker_x:.1f}" y1="1" x2="{marker_x:.1f}" '
+        f'y2="{height - 1}" stroke="{tone}" stroke-width="2.5" '
+        f'stroke-linecap="round"/>',
+    ]
+    # Decile ticks every 25% to anchor the eye.
+    for q in (0.25, 0.50, 0.75):
+        tx = 0.5 + q * (width - 1.0)
+        parts.append(
+            f'<line x1="{tx:.1f}" y1="{height - 2:.1f}" '
+            f'x2="{tx:.1f}" y2="{height}" stroke="#a8a8a8" '
+            f'stroke-width="0.6"/>'
+        )
+
+    # Caption: 'Top X% of M' if in top half (positive direction) or
+    # bottom half (negative direction); otherwise 'N of M'.
+    if label_template is not None:
+        caption_text = label_template.format(
+            rank=r, n=n, pct=pct,
+            top_pct=100.0 - pct,
+            bottom_pct=pct,
+        )
+    else:
+        if direction == "positive":
+            top_pct = (r / n) * 100.0
+            if top_pct <= 50.0:
+                caption_text = f"Top {top_pct:.0f}% of {n}"
+            else:
+                caption_text = f"{r} of {n}"
+        else:
+            bot_pct = (1 - (r - 1) / n) * 100.0
+            if bot_pct <= 50.0:
+                caption_text = f"Bottom {bot_pct:.0f}% of {n}"
+            else:
+                caption_text = f"{r} of {n}"
+    aria_label = f"rank {r} of {n} ({caption_text})"
+    tooltip = aria_label
+
+    svg = (
+        f'<svg class="ck-micro-ranking" width="{width}" '
+        f'height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="{_esc(aria_label)}">'
+        f'<title>{_esc(tooltip)}</title>'
+        + "".join(parts)
+        + '</svg>'
+    )
+
+    if not show_caption:
+        return svg
+
+    return (
+        '<span class="ck-micro-ranking-wrap" '
+        'style="display:inline-flex;align-items:center;gap:6px;'
+        'vertical-align:middle;">'
+        + svg
+        + f'<span class="ck-micro-ranking-caption" '
+        f'style="font-family:\'JetBrains Mono\',monospace;'
+        f'font-size:11px;color:{tone};font-weight:500;'
+        f'font-variant-numeric:tabular-nums;">'
+        f'{_esc(caption_text)}</span>'
+        '</span>'
+    )
+
+
 def ck_progress_dot_track(
     completed: Optional[int],
     total: Optional[int],
