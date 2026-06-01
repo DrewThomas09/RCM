@@ -2989,6 +2989,119 @@ def ck_threshold_gauge(
     )
 
 
+def ck_stat_tile_with_tag(
+    label: Optional[str],
+    value: Any,
+    *,
+    tag: Optional[str] = None,
+    tag_tone: str = "neutral",
+    sub: Optional[str] = None,
+    href: Optional[str] = None,
+    width: Optional[str] = None,
+) -> str:
+    """Compact stat tile: label up top, big numeric value in the middle,
+    optional categorical tag bottom-right, optional sub-line below.
+
+    Densest 'KPI block' variant in the chartis family. Where
+    ``ck_kpi_block`` is for hero stats on a section header (~120px
+    tall, 32px numerical), this tile is ~80px and fits four-across
+    in a dashboard row. The tag is the differentiating feature — a
+    small categorical pill (Tier A, Stage III, IC-ready, Top quartile)
+    that adds context the value alone can't carry.
+
+    Tag tone palette matches ``ck_signal_chip`` (positive / warning /
+    negative / info / neutral). Tile body uses parchment background
+    (#f5f1ea) by default to sit in editorial pages.
+
+    Optional ``href`` wraps the tile in an anchor — partner clicks the
+    tile to drill into the source. The chrome stays the same, but the
+    cursor + hover-underline appear.
+
+    Silent-fallback contract:
+      * ``label`` is None / empty → returns "" (no tile to render —
+        a tile without a label can't communicate its identity in a
+        dashboard row)
+
+    ``value`` is rendered as-is (trusted markup expected; caller must
+    escape any partner-supplied string with ``html.escape`` before
+    passing in). ``label``, ``sub``, and ``tag`` are escaped here.
+    """
+    if label is None:
+        return ""
+    label_text = str(label).strip()
+    if not label_text:
+        return ""
+    # Resolve tag tone palette (mirrors ck_signal_chip).
+    palettes = {
+        "positive": ("#dff2e7", "#0a6b48"),
+        "warning":  ("#fbeed1", "#7a4f12"),
+        "negative": ("#fbe1da", "#7a1f10"),
+        "info":     ("#dde9f5", "#143560"),
+        "neutral":  ("#ece8df", "#5a544c"),
+    }
+    tone = (tag_tone or "neutral").lower()
+    if tone not in palettes:
+        tone = "neutral"
+    tag_bg, tag_fg = palettes[tone]
+    # ---- compose body parts ----
+    parts = [
+        f'<div class="ck-stat-tile-label" '
+        f'style="font-family:\'Inter Tight\',sans-serif;'
+        f'font-size:10px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#5a544c;margin-bottom:4px;">'
+        f'{_esc(label_text)}</div>',
+        f'<div class="ck-stat-tile-value" '
+        f'style="font-family:\'Source Serif 4\',serif;'
+        f'font-size:24px;font-weight:600;line-height:1.05;'
+        f'color:#1a2332;font-variant-numeric:tabular-nums;">'
+        f'{value if value is not None else "—"}</div>',
+    ]
+    if sub:
+        parts.append(
+            f'<div class="ck-stat-tile-sub" '
+            f'style="font-family:\'Inter Tight\',sans-serif;'
+            f'font-size:11px;color:#5a544c;margin-top:4px;'
+            f'font-variant-numeric:tabular-nums;">'
+            f'{_esc(str(sub))}</div>'
+        )
+    if tag:
+        parts.append(
+            f'<div class="ck-stat-tile-tag-row" '
+            f'style="margin-top:6px;">'
+            f'<span class="ck-stat-tile-tag ck-tile-tag-{tone}" '
+            f'style="display:inline-flex;align-items:center;'
+            f'padding:1px 6px;border-radius:999px;'
+            f'background:{tag_bg};color:{tag_fg};'
+            f'font-family:\'Inter Tight\',sans-serif;'
+            f'font-size:10px;font-weight:600;letter-spacing:0.04em;'
+            f'text-transform:uppercase;line-height:1.5;">'
+            f'{_esc(str(tag))}</span>'
+            f'</div>'
+        )
+    width_css = f"width:{width};" if width else "min-width:120px;"
+    tile_style = (
+        f"display:inline-block;{width_css}"
+        f"padding:12px 14px;border-radius:10px;"
+        f"background:#f5f1ea;border:1px solid #e8e1d3;"
+        f"vertical-align:top;text-align:left;"
+        f"margin:0 8px 8px 0;"
+    )
+    inner = (
+        f'<div class="ck-stat-tile" style="{tile_style}">'
+        + "".join(parts)
+        + '</div>'
+    )
+    if href:
+        return (
+            f'<a href="{_esc(str(href))}" class="ck-stat-tile-link" '
+            f'style="text-decoration:none;color:inherit;'
+            f'display:inline-block;">'
+            + inner
+            + '</a>'
+        )
+    return inner
+
+
 def ck_signal_chip(
     label: Optional[str],
     *,
