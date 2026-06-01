@@ -2989,6 +2989,143 @@ def ck_threshold_gauge(
     )
 
 
+def ck_data_freshness_pill(
+    age_seconds: Optional[float],
+    *,
+    fresh_threshold_hours: float = 24.0,
+    stale_threshold_hours: float = 168.0,
+    label_prefix: str = "Updated",
+    show_ago_suffix: bool = True,
+    none_label: str = "Never updated",
+) -> str:
+    """Compact colored pill encoding the freshness of a dataset / metric.
+
+    The single most universal partner-facing 'is this number current?'
+    signal. Use anywhere a value has a refresh timestamp:
+
+      * Refreshed Xh ago      (green — within fresh window)
+      * Updated 3d ago        (amber — stale, between fresh and stale)
+      * Updated 14d ago       (red — past stale window)
+      * Never updated         (gray — no timestamp at all)
+
+    Default thresholds: fresh ≤ 24h, stale > 168h (7 days). Callers
+    that need a tighter SLA (e.g. CMS hospital compare = daily;
+    payer-mix snapshots = monthly) pass their own.
+
+    Age is taken in seconds (epoch-delta) so callers can pass
+    ``time.time() - last_updated_ts`` directly. Negative ages
+    (timestamp in the future, clock skew) clamp to fresh.
+
+    Silent-fallback contract:
+      * age_seconds is None / non-numeric / non-finite → renders the
+        ``none_label`` text inside a neutral-gray pill (NOT empty
+        string — partner needs the cell to read 'unknown', not
+        'invisible').
+
+    Pill text uses JetBrains Mono for the age numeral and Source Serif
+    fall-back for the prefix/suffix so it sits next to other ck_* cells
+    without breaking the editorial rhythm.
+    """
+    # ---- pick palette + label ----
+    fresh_bg, fresh_fg = "#dff2e7", "#0a6b48"    # mint, positive deep
+    warn_bg,  warn_fg  = "#fbeed1", "#7a4f12"    # parchment-amber, sepia
+    red_bg,   red_fg   = "#fbe1da", "#7a1f10"    # blush, deep brick
+    gray_bg,  gray_fg  = "#ece8df", "#6e6862"    # parchment-gray, ink-mute
+
+    def _safe_finite(x):
+        try:
+            f = float(x)
+        except (TypeError, ValueError):
+            return None
+        if not _math.isfinite(f):
+            return None
+        return f
+
+    a = _safe_finite(age_seconds)
+    if a is None:
+        return (
+            f'<span class="ck-freshness-pill ck-freshness-none" '
+            f'style="display:inline-flex;align-items:center;gap:4px;'
+            f'padding:2px 8px;border-radius:999px;'
+            f'background:{gray_bg};color:{gray_fg};'
+            f'font-family:\'Inter Tight\',sans-serif;'
+            f'font-size:11px;font-weight:500;'
+            f'line-height:1.4;letter-spacing:0.02em;" '
+            f'title="{_esc(none_label)}">'
+            f'<span class="ck-freshness-dot" aria-hidden="true" '
+            f'style="width:6px;height:6px;border-radius:50%;'
+            f'background:{gray_fg};display:inline-block;"></span>'
+            f'<span>{_esc(none_label)}</span>'
+            f'</span>'
+        )
+
+    # Clock skew → clamp to fresh
+    if a < 0:
+        a = 0.0
+
+    fresh_s = float(fresh_threshold_hours) * 3600.0
+    stale_s = float(stale_threshold_hours) * 3600.0
+
+    if a <= fresh_s:
+        bg, fg, tone = fresh_bg, fresh_fg, "fresh"
+    elif a <= stale_s:
+        bg, fg, tone = warn_bg, warn_fg, "stale"
+    else:
+        bg, fg, tone = red_bg, red_fg, "very stale"
+
+    # ---- format human age ----
+    if a < 60:
+        # < 1m
+        age_text = "just now"
+    elif a < 3600:
+        n = int(round(a / 60.0))
+        age_text = f"{n}m"
+    elif a < 86400:
+        # Hours, single decimal only if < 10h.
+        hours = a / 3600.0
+        if hours < 10:
+            age_text = f"{hours:.1f}h"
+        else:
+            age_text = f"{int(round(hours))}h"
+    elif a < 86400 * 30:
+        days = a / 86400.0
+        if days < 10:
+            age_text = f"{days:.1f}d"
+        else:
+            age_text = f"{int(round(days))}d"
+    elif a < 86400 * 365:
+        months = a / (86400.0 * 30.0)
+        age_text = f"{int(round(months))}mo"
+    else:
+        years = a / (86400.0 * 365.0)
+        age_text = f"{years:.1f}y"
+
+    if age_text == "just now":
+        body = age_text
+    else:
+        body = (
+            f"{label_prefix} {age_text}"
+            + (" ago" if show_ago_suffix else "")
+        )
+    tooltip = body if tone == "fresh" else f"{body} ({tone})"
+
+    return (
+        f'<span class="ck-freshness-pill ck-freshness-{tone.replace(" ", "-")}" '
+        f'style="display:inline-flex;align-items:center;gap:4px;'
+        f'padding:2px 8px;border-radius:999px;'
+        f'background:{bg};color:{fg};'
+        f'font-family:\'Inter Tight\',sans-serif;font-size:11px;'
+        f'font-weight:500;line-height:1.4;letter-spacing:0.02em;' \
+        f'font-variant-numeric:tabular-nums;" '
+        f'title="{_esc(tooltip)}">'
+        f'<span class="ck-freshness-dot" aria-hidden="true" '
+        f'style="width:6px;height:6px;border-radius:50%;'
+        f'background:{fg};display:inline-block;"></span>'
+        f'<span>{_esc(body)}</span>'
+        f'</span>'
+    )
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
