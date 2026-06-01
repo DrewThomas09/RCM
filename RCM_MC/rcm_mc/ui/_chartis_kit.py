@@ -2989,6 +2989,144 @@ def ck_threshold_gauge(
     )
 
 
+def ck_inline_diff(
+    old_value: Any,
+    new_value: Any,
+    *,
+    direction: str = "positive",
+    show_delta: bool = True,
+    delta_template: Optional[str] = None,
+    precision: int = 2,
+    strikethrough_old: bool = True,
+) -> str:
+    """Compact text-only ``old → new`` value diff cell.
+
+    Smaller, denser sibling to ``ck_arrow_bridge`` — where bridge is a
+    full-tile transition with eyebrow labels and SVG arrow, this is
+    the lean single-line diff that lives inside table cells. Three
+    parts in one line:
+
+      1. ``old_value`` — strikethrough, dimmed gray
+      2. unicode arrow ``→`` — tone-colored by direction
+      3. ``new_value`` — full ink, tone-colored
+
+    Optional delta caption appears in trailing parens, e.g.
+    ``(+0.50, +12.5%)`` — formatted only when both values are numeric.
+
+    Use anywhere a row already has dense text and a partner needs to
+    see a 'changed from X to Y' in a single line: variance audit
+    deltas, plan-vs-actual rows, before-after overrides, calibration
+    diffs.
+
+    Both values are rendered as-is (trusted markup expected; caller
+    must html-escape any partner-supplied string before passing in).
+
+    Silent-fallback contract:
+      * either value is None → returns ""
+    """
+    if old_value is None or new_value is None:
+        return ""
+    direction = (direction or "positive").lower()
+    if direction == "positive":
+        # If we can compare numerically, color by the editorial signal.
+        tone_neutral = "#155752"
+        tone_pos = "#0a8a5f"
+        tone_neg = "#b5321e"
+    elif direction == "negative":
+        # Numerical comparison inverts.
+        tone_neutral = "#155752"
+        tone_pos = "#b5321e"
+        tone_neg = "#0a8a5f"
+    elif direction == "warning":
+        tone_neutral = "#b8732a"
+        tone_pos = "#b8732a"
+        tone_neg = "#b8732a"
+    else:
+        tone_neutral = "#155752"
+        tone_pos = "#155752"
+        tone_neg = "#155752"
+
+    # Resolve tone + delta caption from numeric comparison if possible.
+    delta_str = None
+    tone = tone_neutral
+    try:
+        old_num = float(old_value)
+        new_num = float(new_value)
+        if _math.isfinite(old_num) and _math.isfinite(new_num):
+            diff = new_num - old_num
+            if abs(diff) < 1e-12:
+                tone = tone_neutral
+            elif diff > 0:
+                tone = tone_pos
+            else:
+                tone = tone_neg
+            if show_delta:
+                if delta_template is not None:
+                    delta_str = delta_template.format(
+                        diff=diff, old=old_num, new=new_num,
+                    )
+                else:
+                    sign = "+" if diff >= 0 else ""
+                    if abs(old_num) > 1e-12:
+                        pct = (diff / abs(old_num)) * 100.0
+                        delta_str = (
+                            f"{sign}{diff:.{precision}f}, "
+                            f"{sign}{pct:.1f}%"
+                        )
+                    else:
+                        # Zero baseline → pct undefined.
+                        delta_str = f"{sign}{diff:.{precision}f}"
+    except (TypeError, ValueError):
+        # Non-numeric — no delta caption, neutral tone.
+        pass
+
+    # Old span — strikethrough + dimmed.
+    old_style = "color:#7a7468;font-variant-numeric:tabular-nums;"
+    if strikethrough_old:
+        old_style += "text-decoration:line-through;"
+    old_html = (
+        f'<span class="ck-diff-old" style="{old_style}">'
+        f'{old_value}</span>'
+    )
+    arrow_html = (
+        f'<span class="ck-diff-arrow" aria-hidden="true" '
+        f'style="color:{tone};font-weight:600;'
+        f'margin:0 4px;">→</span>'
+    )
+    new_html = (
+        f'<span class="ck-diff-new" '
+        f'style="color:{tone};font-weight:600;'
+        f'font-variant-numeric:tabular-nums;">'
+        f'{new_value}</span>'
+    )
+    delta_html = ""
+    if delta_str is not None:
+        delta_html = (
+            f' <span class="ck-diff-delta" '
+            f'style="color:{tone};font-family:\'JetBrains Mono\',monospace;'
+            f'font-size:11px;font-variant-numeric:tabular-nums;">'
+            f'({_esc(delta_str)})</span>'
+        )
+
+    aria_label = f"{old_value} to {new_value}"
+    if delta_str:
+        aria_label += f" ({delta_str})"
+    return (
+        f'<span class="ck-inline-diff" role="text" '
+        f'aria-label="{_esc(aria_label)}" '
+        f'title="{_esc(aria_label)}" '
+        f'style="display:inline-flex;align-items:baseline;'
+        f'gap:0;font-family:\'Inter Tight\',sans-serif;'
+        f'font-size:12px;line-height:1.4;'
+        f'vertical-align:middle;">'
+        + old_html
+        + arrow_html
+        + new_html
+        + delta_html
+        + '</span>'
+    )
+
+
 def ck_tier_chip(
     tier: Optional[str],
     *,
