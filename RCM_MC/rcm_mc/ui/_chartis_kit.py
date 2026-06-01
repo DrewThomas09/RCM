@@ -2379,6 +2379,156 @@ def ck_payer_mix_microbar(
     return svg
 
 
+def ck_spread_strip(
+    target_value: Optional[float],
+    benchmark_value: Optional[float],
+    *,
+    direction: str = "positive",
+    width: int = 120,
+    height: int = 18,
+    target_label: str = "Target",
+    benchmark_label: str = "Benchmark",
+    unit_prefix: str = "",
+    unit_suffix: str = "",
+    range_min: Optional[float] = None,
+    range_max: Optional[float] = None,
+) -> str:
+    """Inline 'target vs benchmark' spread strip — two ticks on a
+    shared axis with the gap between them shaded by improvement
+    direction.
+
+    The visual answer to 'is my number above or below the bench, and
+    how big is the gap?' — designed to sit in a table cell next to
+    the raw numbers, replacing the conventional ``[Target] [Bench]
+    [Δ%]`` three-column pattern with one scannable mark.
+
+    Color semantics:
+      - target on the FAVORABLE side of benchmark (per ``direction``)
+        → teal-positive shading in the gap; target tick stays
+        neutral; benchmark tick is a faded reference
+      - target on the WRONG side → red-negative shading; tick colors
+        flip to warn the eye
+      - target == benchmark → no shading (just the two ticks
+        overlapping)
+
+    Use cases:
+      - FQHC per-visit cost (target) vs PPS rate (benchmark),
+        direction='negative' (lower cost = better)
+      - Hospital operating margin vs state P50 (positive direction)
+      - Physician wRVU vs specialty cohort median (positive)
+      - Planned uplift vs actual achieved (positive)
+
+    ``range_min``/``range_max`` override the axis range; default uses
+    both ticks' span with 15% padding so the marks don't sit on the
+    edges. Out-of-range ticks clamp to 0.5/width-0.5px to stay
+    visible.
+
+    Returns inline SVG; empty string when either value is None /
+    non-numeric / non-finite (we don't fabricate the gap).
+    """
+    if target_value is None or benchmark_value is None:
+        return ""
+    try:
+        target = float(target_value)
+        bench = float(benchmark_value)
+    except (TypeError, ValueError):
+        return ""
+    if not (_math.isfinite(target) and _math.isfinite(bench)):
+        return ""
+    direction = (direction or "positive").lower()
+    if direction not in ("positive", "negative"):
+        direction = "positive"
+    # Compute axis range — caller can override.
+    if range_min is None or range_max is None:
+        lo = min(target, bench)
+        hi = max(target, bench)
+        span = hi - lo if hi > lo else max(abs(hi), 1.0)
+        pad = span * 0.15
+        axis_min = range_min if range_min is not None else lo - pad
+        axis_max = range_max if range_max is not None else hi + pad
+    else:
+        axis_min, axis_max = range_min, range_max
+    axis_rng = (axis_max - axis_min) if axis_max > axis_min else 1.0
+    # Tick positions, clamped to [0.5, width-0.5].
+    def _x(v: float) -> float:
+        x = (v - axis_min) / axis_rng * width
+        return max(0.5, min(float(width) - 0.5, x))
+    tx = _x(target)
+    bx = _x(bench)
+    # Is the target favorable?
+    if direction == "positive":
+        favorable = target > bench
+        adverse = target < bench
+    else:
+        favorable = target < bench
+        adverse = target > bench
+    if favorable:
+        gap_fill = "#0a8a5f"
+        gap_opacity = 0.15
+        target_color = "#0a8a5f"
+        bench_color = "#9aa5b1"
+    elif adverse:
+        gap_fill = "#b5321e"
+        gap_opacity = 0.15
+        target_color = "#b5321e"
+        bench_color = "#9aa5b1"
+    else:
+        gap_fill = "#155752"
+        gap_opacity = 0.0
+        target_color = "#155752"
+        bench_color = "#155752"
+    # Diff for tooltip.
+    diff = target - bench
+    if abs(bench) > 1e-12:
+        pct = diff / abs(bench) * 100.0
+        pct_str = f"{'+' if pct >= 0 else ''}{pct:.1f}%"
+    else:
+        pct_str = "—"
+    sign = "+" if diff >= 0 else ""
+    diff_str = f"{sign}{unit_prefix}{diff:.2f}{unit_suffix}"
+    tooltip = (
+        f"{target_label}: {unit_prefix}{target:.2f}{unit_suffix} · "
+        f"{benchmark_label}: {unit_prefix}{bench:.2f}{unit_suffix} · "
+        f"Δ {diff_str} ({pct_str})"
+    )
+    # Gap rect from lower x to higher x.
+    gap_x = min(tx, bx)
+    gap_w = max(tx, bx) - gap_x
+    # Ribbon background (the axis line) — desaturated parchment band,
+    # like ck_distribution_strip.
+    svg = (
+        f'<svg class="ck-spread-strip" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="target vs benchmark spread strip">'
+        f'<title>{_esc(tooltip)}</title>'
+        # Background axis ribbon
+        f'<rect x="0" y="{height * 0.40:.1f}" width="{width}" '
+        f'height="{height * 0.20:.1f}" '
+        f'fill="#e8e1d3" stroke="#cfc5b1" stroke-width="0.5"/>'
+        # Gap shading
+        + (
+            f'<rect x="{gap_x:.1f}" y="2" width="{gap_w:.1f}" '
+            f'height="{height - 4}" fill="{gap_fill}" '
+            f'fill-opacity="{gap_opacity:.2f}"/>'
+            if gap_w >= 0.5 else ""
+        )
+        # Benchmark tick — thinner, lighter (reference)
+        + (
+            f'<line x1="{bx:.1f}" y1="3" x2="{bx:.1f}" '
+            f'y2="{height - 3}" stroke="{bench_color}" '
+            f'stroke-width="1" stroke-dasharray="2,1.5"/>'
+        )
+        # Target tick — bolder, primary
+        + (
+            f'<line x1="{tx:.1f}" y1="2" x2="{tx:.1f}" '
+            f'y2="{height - 2}" stroke="{target_color}" '
+            f'stroke-width="2" stroke-linecap="round"/>'
+        )
+        + '</svg>'
+    )
+    return svg
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
