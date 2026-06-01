@@ -2989,6 +2989,146 @@ def ck_threshold_gauge(
     )
 
 
+def ck_progress_dot_track(
+    completed: Optional[int],
+    total: Optional[int],
+    *,
+    diameter: int = 8,
+    gap: int = 4,
+    direction: str = "positive",
+    show_caption: bool = True,
+    caption_position: str = "right",
+    label_singular: str = "step",
+    label_plural: str = "steps",
+) -> str:
+    """N-of-M discrete progress track — a row of dots, filled vs empty.
+
+    Use anywhere a partner-facing surface tracks 'how far along' on a
+    countable journey: diligence-docs received (3 of 5), IC checklist
+    items satisfied (6 of 9), deal-stage progression (2 of 6 stages
+    completed), tour walkthroughs done (4 of 7).
+
+    Filled dots are positive-tone (teal/green by convention); empty
+    dots are a faint parchment-gray. Always sized to the same diameter
+    + gap, so two tracks in different rows align vertically when total
+    is the same.
+
+    Direction semantics (color of the filled dots):
+      * ``positive`` (default): completed = good (teal #155752)
+      * ``negative``: completed = bad (red #b5321e) — e.g. tracking
+        denial-resubmit cycles where more is worse
+      * ``warning``: completed = caution (amber #b8732a) — e.g.
+        tracking exceptions cleared
+
+    Caption appears either to the right of the dots (default) or
+    below, depending on ``caption_position``. Set ``show_caption=False``
+    for ultra-compact cells (just the dot row).
+
+    Silent-fallback contract:
+      * ``completed`` or ``total`` is None / non-numeric / non-integer-ish
+        → returns "" (caller can drop the cell)
+      * ``total <= 0`` → returns "" (no track to draw)
+      * ``completed > total`` is clamped to total (no overflow row)
+      * ``completed < 0`` is clamped to 0
+      * ``total`` is capped at 50 to keep the row inside a table cell
+        (callers who need a finer track should use a progress bar)
+    """
+    # ---- validate ----
+    if completed is None or total is None:
+        return ""
+    try:
+        c = int(completed)
+        t = int(total)
+    except (TypeError, ValueError):
+        return ""
+    if t <= 0:
+        return ""
+    if t > 50:
+        t = 50
+    if c > t:
+        c = t
+    if c < 0:
+        c = 0
+    diameter = max(4, int(diameter))
+    gap = max(0, int(gap))
+    # ---- pick fill color ----
+    direction = (direction or "positive").lower()
+    if direction == "negative":
+        filled_color = "#b5321e"
+    elif direction == "warning":
+        filled_color = "#b8732a"
+    else:
+        filled_color = "#155752"
+    empty_color = "#d5cdbf"   # subdued parchment-gray
+    # ---- assemble dots ----
+    dots = []
+    for i in range(t):
+        color = filled_color if i < c else empty_color
+        dots.append(
+            f'<span class="ck-dot {"ck-dot-on" if i < c else "ck-dot-off"}" '
+            f'aria-hidden="true" '
+            f'style="display:inline-block;'
+            f'width:{diameter}px;height:{diameter}px;'
+            f'border-radius:50%;background:{color};'
+            f'margin-right:{gap}px;"></span>'
+        )
+    pct = (c / t * 100.0) if t else 0.0
+    caption = (
+        f"{c} of {t} "
+        + (label_plural if t != 1 else label_singular)
+        + f" complete ({pct:.0f}%)"
+    )
+    tooltip = caption
+    caption_position = (caption_position or "right").lower()
+    if not show_caption:
+        # No caption — just the dot row, wrapped in a span carrying
+        # the tooltip + the aria-label.
+        return (
+            f'<span class="ck-progress-track" role="img" '
+            f'aria-label="{_esc(caption)}" '
+            f'title="{_esc(tooltip)}" '
+            f'style="display:inline-flex;align-items:center;'
+            f'vertical-align:middle;">'
+            + "".join(dots)
+            + "</span>"
+        )
+    caption_html = (
+        f'<span class="ck-progress-caption" '
+        f'style="font-family:\'JetBrains Mono\',monospace;'
+        f'font-size:11px;color:#3a3a3a;'
+        f'font-variant-numeric:tabular-nums;'
+        f'margin-left:6px;">'
+        f'{_esc(f"{c}/{t}")}</span>'
+    )
+    if caption_position == "below":
+        return (
+            f'<span class="ck-progress-track ck-progress-stacked" '
+            f'role="img" aria-label="{_esc(caption)}" '
+            f'title="{_esc(tooltip)}" '
+            f'style="display:inline-flex;flex-direction:column;'
+            f'align-items:flex-start;gap:2px;">'
+            f'<span style="display:inline-flex;align-items:center;">'
+            + "".join(dots)
+            + "</span>"
+            f'<span class="ck-progress-caption" '
+            f'style="font-family:\'JetBrains Mono\',monospace;'
+            f'font-size:10px;color:#3a3a3a;'
+            f'font-variant-numeric:tabular-nums;">'
+            f'{_esc(f"{c}/{t}")}</span>'
+            "</span>"
+        )
+    return (
+        f'<span class="ck-progress-track" role="img" '
+        f'aria-label="{_esc(caption)}" '
+        f'title="{_esc(tooltip)}" '
+        f'style="display:inline-flex;align-items:center;'
+        f'vertical-align:middle;">'
+        + "".join(dots)
+        + caption_html
+        + "</span>"
+    )
+
+
 def ck_data_freshness_pill(
     age_seconds: Optional[float],
     *,
