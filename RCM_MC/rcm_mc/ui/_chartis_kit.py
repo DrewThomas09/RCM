@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import html as _html
 import json
+import math as _math
 import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
@@ -1759,6 +1760,138 @@ def ck_sparkline(
         + value_html
         + '</span>'
     )
+
+
+def ck_distribution_strip(
+    values: Sequence[float],
+    target_value: Optional[float],
+    *,
+    direction: str = "positive",
+    width: int = 120,
+    height: int = 18,
+    label: Optional[str] = None,
+) -> str:
+    """Inline distribution strip — a percentile ribbon with a tick
+    marking where ``target_value`` sits in the ``values`` cohort.
+
+    The cohort distribution is rendered as a low-saturation parchment
+    background bar (the eye doesn't catch it). The target's tick is
+    the only saturated mark — color from the severity palette based on
+    which quartile the target lands in, GIVEN the metric's improvement
+    direction:
+
+      - ``direction='positive'`` (higher = better; e.g. operating_margin)
+        → top quartile teal, P50-P75 neutral, P25-P50 warning, bottom red
+      - ``direction='negative'`` (lower = better; e.g. labor_cost_ratio)
+        → bottom quartile teal, etc. (mirrored)
+
+    A native SVG ``<title>`` element provides the hover tooltip
+    (``p{NN} of n={NNN}``) — no JS, no tooltip framework.
+
+    ``values`` is the cohort distribution (e.g. all 3,000 hospitals'
+    operating_margin values for the comparison year). Less than 4
+    values → returns empty string (no defensible percentile).
+    NaN/non-numeric values are silently dropped before computing.
+
+    ``target_value`` of None → returns empty string (no tick to render).
+
+    Designed to sit inside an existing table cell at 120×18 px without
+    pushing the row height; pairs naturally with ``ck_sparkline`` for
+    trajectory + snapshot at glance.
+    """
+    if target_value is None:
+        return ""
+    try:
+        target = float(target_value)
+    except (TypeError, ValueError):
+        return ""
+    if not _math.isfinite(target):
+        return ""
+    nums: List[float] = []
+    for v in (values or []):
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            continue
+        if _math.isfinite(f):
+            nums.append(f)
+    if len(nums) < 4:
+        return ""
+    nums.sort()
+    mn = nums[0]
+    mx = nums[-1]
+    rng = (mx - mn) if mx > mn else 1.0
+    # Quartile cuts for tone classification (interpolated).
+    n = len(nums)
+    def _q(p: float) -> float:
+        # Linear-interp percentile, matches numpy.percentile default.
+        idx = p * (n - 1)
+        lo = int(idx)
+        hi = min(lo + 1, n - 1)
+        frac = idx - lo
+        return nums[lo] + frac * (nums[hi] - nums[lo])
+    q25, q50, q75 = _q(0.25), _q(0.50), _q(0.75)
+    # Tone by quartile, mirrored for negative-direction metrics.
+    direction = (direction or "positive").lower()
+    if direction not in ("positive", "negative"):
+        direction = "positive"
+    if direction == "positive":
+        if target >= q75:
+            tone = "positive"
+        elif target >= q50:
+            tone = "neutral"
+        elif target >= q25:
+            tone = "warning"
+        else:
+            tone = "negative"
+    else:
+        if target <= q25:
+            tone = "positive"
+        elif target <= q50:
+            tone = "neutral"
+        elif target <= q75:
+            tone = "warning"
+        else:
+            tone = "negative"
+    palette = {
+        "positive": "#0a8a5f",
+        "warning":  "#b8732a",
+        "negative": "#b5321e",
+        "neutral":  "#155752",
+    }
+    tick_color = palette[tone]
+    # Position the tick along the cohort range; clamp into [0, width]
+    # so an out-of-range target still shows at the edge.
+    tick_x = (target - mn) / rng * width
+    tick_x = max(0.5, min(float(width) - 0.5, tick_x))
+    # Compute the rendered percentile (rounded) for the tooltip.
+    # Use rank-based (not interpolated) so the partner-facing number
+    # matches what they'd see if they sorted the cohort by hand.
+    rank_below = sum(1 for v in nums if v <= target)
+    pct = int(round(100 * rank_below / n))
+    pct = max(0, min(100, pct))
+    direction_word = "lower=better" if direction == "negative" else "higher=better"
+    title_text = (
+        f"p{pct} of n={n}"
+        f"{(' · ' + label) if label else ''}"
+        f" · {direction_word}"
+    )
+    # Background distribution ribbon — desaturated parchment band.
+    # Tick — vertical line, severity-toned.
+    svg = (
+        f'<svg class="ck-dist-strip" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="percentile distribution strip">'
+        f'<title>{_esc(title_text)}</title>'
+        f'<rect x="0" y="{height * 0.35:.1f}" width="{width}" '
+        f'height="{height * 0.30:.1f}" '
+        f'fill="#e8e1d3" stroke="#cfc5b1" stroke-width="0.5"/>'
+        f'<line x1="{tick_x:.1f}" y1="2" x2="{tick_x:.1f}" '
+        f'y2="{height - 2}" stroke="{tick_color}" stroke-width="2" '
+        f'stroke-linecap="round"/>'
+        '</svg>'
+    )
+    return svg
 
 
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
