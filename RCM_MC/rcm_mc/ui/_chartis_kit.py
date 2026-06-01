@@ -2806,6 +2806,189 @@ def ck_growth_arrow(
     return wrapped_arrow
 
 
+def ck_threshold_gauge(
+    value: Optional[float],
+    *,
+    warning_threshold: Optional[float],
+    breach_threshold: Optional[float],
+    direction: str = "positive",
+    width: int = 140,
+    height: int = 18,
+    value_label: Optional[str] = None,
+    threshold_label: Optional[str] = None,
+    range_min: Optional[float] = None,
+    range_max: Optional[float] = None,
+    unit_prefix: str = "",
+    unit_suffix: str = "",
+    precision: int = 2,
+) -> str:
+    """Horizontal value-vs-threshold gauge with safe/warning/breach zones.
+
+    Generalizes the 'covenant cushion' / 'margin headroom' / 'A/R aging
+    risk' pattern: a single value placed on a 3-zone strip so a partner
+    can see at a glance whether the metric is comfortably safe, in the
+    warning band, or in breach.
+
+    Zone semantics follow ``direction``:
+
+      * ``positive`` (e.g. DSCR, margin, cushion): higher is better.
+        Safe = above ``warning_threshold``; Warning = between ``breach``
+        and ``warning``; Breach = below ``breach_threshold``.
+      * ``negative`` (e.g. days_in_AR, denial_rate, leverage_ratio):
+        higher is worse. Zones invert — Safe = below ``warning``;
+        Warning = between ``warning`` and ``breach``; Breach = above
+        ``breach``.
+
+    For ``direction='positive'`` the helper requires
+    ``warning_threshold > breach_threshold``; for ``direction='negative'``
+    the opposite (``breach > warning``). Misordered thresholds return
+    an empty string rather than guessing the operator's intent.
+
+    Axis range defaults to ``[min(value, breach) - pad, max(value,
+    warning) + pad]`` with 20% padding so both the value tick and the
+    threshold lines sit comfortably inside the strip. Callers can pin
+    the range with ``range_min`` / ``range_max``.
+
+    Tooltip carries the value, both thresholds, and which zone the
+    value falls in. Used for any place a single number wants context
+    against an editorial gate without spending a full chart.
+
+    Silent-fallback contract (returns ""): value or either threshold
+    is None / non-numeric / non-finite, or thresholds misordered for
+    the stated direction.
+    """
+    # ---- validate ----
+    if value is None or warning_threshold is None or breach_threshold is None:
+        return ""
+    try:
+        v = float(value)
+        w = float(warning_threshold)
+        b = float(breach_threshold)
+    except (TypeError, ValueError):
+        return ""
+    if not (_math.isfinite(v) and _math.isfinite(w) and _math.isfinite(b)):
+        return ""
+    direction = (direction or "positive").lower()
+    if direction not in ("positive", "negative"):
+        direction = "positive"
+    # Threshold ordering must match the direction.
+    if direction == "positive" and not (w > b):
+        return ""
+    if direction == "negative" and not (b > w):
+        return ""
+    width = max(40, int(width))
+    height = max(10, int(height))
+    # ---- compute axis range ----
+    lo_data = min(v, w, b)
+    hi_data = max(v, w, b)
+    span = hi_data - lo_data
+    if span <= 0:
+        span = max(abs(hi_data), 1.0)
+    pad = span * 0.20
+    axis_min = range_min if range_min is not None else lo_data - pad
+    axis_max = range_max if range_max is not None else hi_data + pad
+    if axis_max <= axis_min:
+        # Degenerate axis — bail rather than divide by zero.
+        return ""
+    axis_span = axis_max - axis_min
+
+    def _x(coord: float) -> float:
+        # Clamp to [0.5, width-0.5] so out-of-range values still
+        # render visibly at the strip edge instead of vanishing.
+        frac = (coord - axis_min) / axis_span
+        frac = max(0.0, min(1.0, frac))
+        return 0.5 + frac * (width - 1.0)
+
+    # ---- zone fills ----
+    safe_color = "#0a8a5f"   # positive green
+    warn_color = "#b8732a"   # warning amber
+    breach_color = "#b5321e"  # negative red
+    if direction == "positive":
+        # axis: ... breach | warning | safe ...  (left → right)
+        breach_x0 = _x(axis_min)
+        breach_x1 = _x(b)
+        warn_x0 = _x(b)
+        warn_x1 = _x(w)
+        safe_x0 = _x(w)
+        safe_x1 = _x(axis_max)
+    else:
+        # axis: ... safe | warning | breach ...  (left → right)
+        safe_x0 = _x(axis_min)
+        safe_x1 = _x(w)
+        warn_x0 = _x(w)
+        warn_x1 = _x(b)
+        breach_x0 = _x(b)
+        breach_x1 = _x(axis_max)
+    # ---- determine current zone ----
+    if direction == "positive":
+        zone = "safe" if v >= w else ("warning" if v >= b else "breach")
+    else:
+        zone = "safe" if v <= w else ("warning" if v <= b else "breach")
+    zone_color = {"safe": safe_color, "warning": warn_color,
+                  "breach": breach_color}[zone]
+    # ---- build zone rects (skip any with sub-pixel width) ----
+
+    def _rect(x0: float, x1: float, color: str, label: str) -> str:
+        w_px = x1 - x0
+        if w_px < 0.5:
+            return ""
+        return (
+            f'<rect x="{x0:.1f}" y="0" width="{w_px:.1f}" '
+            f'height="{height}" fill="{color}" fill-opacity="0.22" '
+            f'aria-label="{label}"/>'
+        )
+    rects = []
+    rects.append(_rect(safe_x0, safe_x1, safe_color, "safe zone"))
+    rects.append(_rect(warn_x0, warn_x1, warn_color, "warning zone"))
+    rects.append(_rect(breach_x0, breach_x1, breach_color, "breach zone"))
+    # ---- threshold tick lines (warning + breach) ----
+    warn_x = _x(w)
+    breach_x = _x(b)
+    threshold_ticks = (
+        # Warning tick (dashed amber)
+        f'<line x1="{warn_x:.1f}" y1="2" x2="{warn_x:.1f}" '
+        f'y2="{height - 2}" stroke="{warn_color}" stroke-width="1" '
+        f'stroke-dasharray="2,1.5"/>'
+        # Breach tick (dashed red)
+        f'<line x1="{breach_x:.1f}" y1="2" x2="{breach_x:.1f}" '
+        f'y2="{height - 2}" stroke="{breach_color}" stroke-width="1" '
+        f'stroke-dasharray="2,1.5"/>'
+    )
+    # ---- value tick (solid, colored by zone) ----
+    value_x = _x(v)
+    value_tick = (
+        f'<line x1="{value_x:.1f}" y1="1" x2="{value_x:.1f}" '
+        f'y2="{height - 1}" stroke="{zone_color}" stroke-width="2.5" '
+        f'stroke-linecap="round"/>'
+    )
+
+    # ---- format value + thresholds for tooltip ----
+    def _fmt(x: float) -> str:
+        return f"{unit_prefix}{x:.{precision}f}{unit_suffix}"
+    vlabel = value_label or "Value"
+    tlabel = threshold_label or "Threshold"
+    tooltip = (
+        f"{vlabel}: {_fmt(v)}\n"
+        f"{tlabel} (warning): {_fmt(w)}\n"
+        f"{tlabel} (breach): {_fmt(b)}\n"
+        f"Zone: {zone}"
+    )
+    return (
+        f'<svg class="ck-threshold-gauge" width="{width}" '
+        f'height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="value vs threshold gauge ({zone} zone)">'
+        f'<title>{_esc(tooltip)}</title>'
+        # Background ribbon
+        f'<rect x="0" y="0" width="{width}" height="{height}" '
+        f'fill="#e8e1d3"/>'
+        + "".join(rects)
+        + threshold_ticks
+        + value_tick
+        + '</svg>'
+    )
+
+
 def ck_progress_checklist(items: Sequence[Mapping[str, str]]) -> str:
     """Editorial 'your platform journey' progress checklist.
 
