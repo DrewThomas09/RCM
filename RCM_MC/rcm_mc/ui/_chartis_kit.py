@@ -2989,6 +2989,168 @@ def ck_threshold_gauge(
     )
 
 
+def ck_arrow_bridge(
+    start_value: Any,
+    end_value: Any,
+    *,
+    start_label: Optional[str] = None,
+    end_label: Optional[str] = None,
+    mid_label: Optional[str] = None,
+    direction: str = "positive",
+    width: int = 200,
+    height: int = 28,
+) -> str:
+    """Two-state transition: start → arrow → end with optional intermediate label.
+
+    Use anywhere a partner-facing cell needs to read 'this went from
+    A to B' without consuming a chart cell. Common patterns:
+
+      * baseline → target ($4.0M → $5.5M)
+      * Q1 ranking → Q4 ranking (Bottom quartile → Top quartile)
+      * pre-deal → post-deal margin (8% → 14%)
+      * IC-ready → Signed (with months-elapsed mid_label)
+
+    Visual:
+      * Start value on the left (24px Source Serif, dimmed gray)
+      * Arrow glyph in the center, tone-colored by editorial direction
+      * End value on the right (24px Source Serif, full ink)
+      * Optional mid_label rides above the arrow as a small caption
+        (e.g. '+18 mo' or '+37%')
+
+    Tone follows direction-of-improvement:
+      * direction='positive' (e.g. margin going up) → green arrow
+      * direction='negative' (e.g. denial rate going up) → red arrow
+      * direction='neutral' → teal arrow (no editorial signal)
+
+    Silent-fallback contract:
+      * start_value or end_value is None → returns "" (no transition
+        to display)
+
+    Both values are rendered as-is (trusted markup expected; caller
+    must html-escape any partner-supplied string before passing in).
+    """
+    if start_value is None or end_value is None:
+        return ""
+    direction = (direction or "positive").lower()
+    if direction == "positive":
+        arrow_color = "#0a8a5f"
+    elif direction == "negative":
+        arrow_color = "#b5321e"
+    elif direction == "warning":
+        arrow_color = "#b8732a"
+    else:
+        # neutral / unknown → editorial teal
+        arrow_color = "#155752"
+    width = max(80, int(width))
+    height = max(18, int(height))
+
+    # Optional eyebrow labels above each value.
+    start_eyebrow = (
+        f'<div class="ck-bridge-eyebrow" '
+        f'style="font-family:\'Inter Tight\',sans-serif;'
+        f'font-size:9px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#5a544c;line-height:1.2;'
+        f'margin-bottom:2px;">'
+        f'{_esc(str(start_label))}</div>'
+    ) if start_label else ""
+    end_eyebrow = (
+        f'<div class="ck-bridge-eyebrow" '
+        f'style="font-family:\'Inter Tight\',sans-serif;'
+        f'font-size:9px;font-weight:600;letter-spacing:0.08em;'
+        f'text-transform:uppercase;color:#5a544c;line-height:1.2;'
+        f'margin-bottom:2px;">'
+        f'{_esc(str(end_label))}</div>'
+    ) if end_label else ""
+
+    # Arrow SVG (24px wide chevron) — height adjusts to fit the row.
+    arrow_h = height
+    arrow_w = 28
+    arrow_svg = (
+        f'<svg class="ck-bridge-arrow" width="{arrow_w}" '
+        f'height="{arrow_h}" '
+        f'viewBox="0 0 {arrow_w} {arrow_h}" '
+        f'role="img" aria-label="transition arrow" '
+        f'style="display:inline-block;vertical-align:middle;">'
+        # Shaft (horizontal line)
+        f'<line x1="2" y1="{arrow_h/2:.1f}" x2="{arrow_w - 4:.1f}" '
+        f'y2="{arrow_h/2:.1f}" stroke="{arrow_color}" '
+        f'stroke-width="2" stroke-linecap="round"/>'
+        # Head (chevron)
+        f'<polyline points="{arrow_w - 10:.1f},{arrow_h/2 - 5:.1f} '
+        f'{arrow_w - 3:.1f},{arrow_h/2:.1f} '
+        f'{arrow_w - 10:.1f},{arrow_h/2 + 5:.1f}" '
+        f'fill="none" stroke="{arrow_color}" stroke-width="2" '
+        f'stroke-linejoin="round" stroke-linecap="round"/>'
+        f'</svg>'
+    )
+
+    mid_caption = (
+        f'<div class="ck-bridge-mid" '
+        f'style="font-family:\'JetBrains Mono\',monospace;'
+        f'font-size:10px;color:{arrow_color};'
+        f'font-variant-numeric:tabular-nums;'
+        f'font-weight:600;line-height:1;margin-bottom:1px;'
+        f'text-align:center;">'
+        f'{_esc(str(mid_label))}</div>'
+    ) if mid_label else ""
+
+    # Build the value cells.
+    value_style_dim = (
+        "font-family:'Source Serif 4',serif;font-size:18px;"
+        "font-weight:600;line-height:1.1;color:#7a7468;"
+        "font-variant-numeric:tabular-nums;"
+    )
+    value_style_full = (
+        "font-family:'Source Serif 4',serif;font-size:18px;"
+        "font-weight:600;line-height:1.1;color:#1a2332;"
+        "font-variant-numeric:tabular-nums;"
+    )
+
+    start_cell = (
+        f'<div class="ck-bridge-start" '
+        f'style="display:inline-flex;flex-direction:column;'
+        f'align-items:flex-start;">'
+        + start_eyebrow
+        + f'<div class="ck-bridge-value" style="{value_style_dim}">'
+        f'{start_value}</div>'
+        + '</div>'
+    )
+    end_cell = (
+        f'<div class="ck-bridge-end" '
+        f'style="display:inline-flex;flex-direction:column;'
+        f'align-items:flex-start;">'
+        + end_eyebrow
+        + f'<div class="ck-bridge-value" style="{value_style_full}">'
+        f'{end_value}</div>'
+        + '</div>'
+    )
+
+    arrow_column = (
+        f'<div class="ck-bridge-arrow-col" '
+        f'style="display:inline-flex;flex-direction:column;'
+        f'align-items:center;">'
+        + mid_caption
+        + arrow_svg
+        + '</div>'
+    )
+
+    aria_label = (
+        f"{start_label or 'start'}: {start_value} → "
+        f"{end_label or 'end'}: {end_value}"
+    )
+    return (
+        f'<div class="ck-arrow-bridge" role="img" '
+        f'aria-label="{_esc(aria_label)}" '
+        f'title="{_esc(aria_label)}" '
+        f'style="display:inline-flex;align-items:center;gap:12px;'
+        f'vertical-align:middle;">'
+        + start_cell
+        + arrow_column
+        + end_cell
+        + '</div>'
+    )
+
+
 def ck_stat_tile_with_tag(
     label: Optional[str],
     value: Any,
