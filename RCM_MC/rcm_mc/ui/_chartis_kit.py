@@ -7040,7 +7040,7 @@ _CSS_INLINE_FALLBACK = """
      a shadow when the static file wasn't served, drifting from the
      canonical chrome. Depth on content panels comes from paper-tone
      stacking + hairlines (Tier-4 don'ts: no shadows anywhere). */
-  .ck-panel { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; margin:0 0 var(--sc-s-5); }
+  .ck-panel { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; margin:0 0 var(--sc-s-6); }
   .ck-panel-head { display:flex; align-items:center; justify-content:space-between; background:var(--sc-navy); color:var(--sc-on-navy); padding:10px 16px; border-radius:2px 2px 0 0; }
   .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:13px; letter-spacing:0.04em; text-transform:uppercase; }
   .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-on-navy-dim); }
@@ -7879,7 +7879,7 @@ _CSS_INLINE_FALLBACK = """
    * + teal chevron-cut bottom-right corner. Mirrors chartis.com/insights. */
   /* Page title — H1-equivalent header for content pages
    * (/library, /research, /pipeline). Sits above KPIs and search. */
-  .ck-page-title { margin:0 0 var(--sc-s-6); display:flex; flex-direction:column; gap:8px; }
+  .ck-page-title { margin:0 0 var(--sc-s-7); display:flex; flex-direction:column; gap:10px; }
   .ck-page-title h1 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(28px, 3.4vw, 40px); line-height:1.1; letter-spacing:-0.015em; color:var(--sc-navy); margin:0; }
   .ck-page-title h1 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
   .ck-page-title-meta { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; }
@@ -7986,7 +7986,14 @@ _CSS_INLINE_FALLBACK = """
    * styles with these utility classes. ~500 inline-style instances
    * eliminated. (Example tags kept out of this comment so they never
    * ship as literal markup inside the served stylesheet.) */
-  .ck-page-wrap { padding:20px; max-width:min(1920px, 95vw); margin:0 auto; }
+  /* .ck-page-wrap is always nested inside .ck-main, which already
+     supplies the page's padding (--sc-s-7) + max-width + centering.
+     The legacy 20px padding here double-padded those pages AND, now
+     that the shell hoists the page title to the top of the body (above
+     this wrap), left the title and the wrapped content on different
+     left edges. Zero the redundant box so the title aligns with the
+     content beneath it and every page shares one padding source. */
+  .ck-page-wrap { padding:0; max-width:none; margin:0; }
   .ck-page-head { margin-bottom:20px; }
   .ck-page-h1 { font-size:18px; font-weight:700; color:var(--sc-text); letter-spacing:0.02em; }
   .ck-page-sub { font-size:12px; color:var(--sc-text-dim); margin-top:4px; }
@@ -10581,6 +10588,62 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
 _GLOBAL_SCALE_CSS = "<style>@media screen{html{zoom:0.98;}}</style>"
 
 
+# ── Title-first contract (2026-06 clutter audit) ──────────────────────
+#
+# A page-render audit found that 123 of 178 data_public surfaces shipped
+# editorial chrome — a ck_section_intro deck, a ck_source_purpose band,
+# or the auto-injected illustrative-data note — ABOVE the page's own
+# ck_page_title. Three things pile on top of the H1:
+#   1. editorial_intro= prepends a section-intro deck (handled below by
+#      only emitting it for pages the shell itself titles);
+#   2. renderers compose `body = ck_source_purpose(...) + body` where the
+#      body already opens with ck_page_title;
+#   3. the route-level illustrative note is prepended to the whole body.
+# The gold-standard pages (/command-center, /diligence/hcris-xray) always
+# lead with the title, then the source/purpose band, then content. These
+# helpers restore that invariant for every page without touching 178
+# renderers: the title is hoisted to the very top of the body after all
+# injection passes run.
+
+def _strip_inert(s: str) -> str:
+    """Strip <style>/<script>/comments/whitespace so an 'is anything
+    visible here?' check ignores inert markup. Used to decide whether a
+    page title is *effectively* already first (e.g. hcris_xray opens with
+    a scoped <style> block before its title — that should count as
+    title-first and skip the hoist)."""
+    import re as _re
+    s = _re.sub(r"<style\b[^>]*>.*?</style>", "", s, flags=_re.S | _re.I)
+    s = _re.sub(r"<script\b[^>]*>.*?</script>", "", s, flags=_re.S | _re.I)
+    s = _re.sub(r"<!--.*?-->", "", s, flags=_re.S)
+    return s.strip()
+
+
+def _hoist_page_title(body_html: str) -> str:
+    """Move the first ``ck_page_title`` header to the very top of the body.
+
+    Enforces the editorial 'title-first' contract: nothing renders above
+    the page H1. Idempotent — a no-op when the title is already first
+    (ignoring leading inert <style>/<script>/comment/whitespace), when
+    there is no title, or when the title can't be cleanly delimited.
+
+    Only the title ``<header>`` moves; everything else keeps its relative
+    order, so a source/purpose band or illustrative note that the page
+    placed before the title simply slides to just below it.
+    """
+    open_tag = '<header class="ck-page-title">'
+    idx = body_html.find(open_tag)
+    if idx <= 0:
+        return body_html
+    if not _strip_inert(body_html[:idx]):
+        return body_html
+    end = body_html.find("</header>", idx)
+    if end == -1:
+        return body_html
+    end += len("</header>")
+    title_block = body_html[idx:end]
+    return title_block + body_html[:idx] + body_html[end:]
+
+
 def chartis_shell(
     body_html: Optional[str] = None,
     title: Optional[str] = None,
@@ -10717,7 +10780,17 @@ def chartis_shell(
             )
             if subtitle:
                 subtitle_consumed_by_title = True
-        intro_html += ck_section_intro(**editorial_intro)
+            # Only emit the section-intro deck when the shell ALSO had to
+            # supply the title (the page carried none of its own). When a
+            # page already rendered its own ck_page_title, this prepended
+            # deck lands ABOVE that title — the single most common clutter
+            # on the data_public surface (123/178 pages in the 2026-06
+            # audit) and a generic restatement of what the page's own
+            # source/purpose band already says. Self-titled pages keep
+            # their title + their own intro band; the redundant deck is
+            # dropped. Generalises the manual de-dup already shipped on
+            # /home and /library (test_library_editorial_and_search).
+            intro_html += ck_section_intro(**editorial_intro)
     # Second pass — pages that call ck_section_intro DIRECTLY in
     # their body (instead of via the editorial_intro kwarg) still
     # render without an H1: bear_case, covenant_lab, payer_stress,
@@ -10776,6 +10849,14 @@ def chartis_shell(
         ) + body_html
         if subtitle:
             subtitle_consumed_by_title = True
+
+    # Title-first contract — after every injection pass (intro deck,
+    # illustrative note, backstop title), hoist the page title above
+    # anything a renderer prepended before it (a source/purpose band, an
+    # illustrative note, a value anchor). Nothing renders above the H1.
+    # See _hoist_page_title. Idempotent on the gold-standard pages whose
+    # title is already first.
+    body_html = _hoist_page_title(body_html)
 
     # Render the standalone subtitle_html only when the shell did
     # NOT auto-inject the subtitle into a ck_page_title AND the
