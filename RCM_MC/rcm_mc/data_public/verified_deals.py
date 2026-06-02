@@ -659,6 +659,70 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.cpfounders.com/",
         "source_note": "Chicago Pacific Founders (portfolio); Pinnacle Dermatology platform",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion — fill sponsor gaps that show up in the league
+    # (General Catalyst, Advent, Ares, Gryphon, Vista, Audax). Same bar:
+    # real, sourced; includes a marquee healthtech failure (Olive AI).
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Livongo Health", "sponsor": "General Catalyst",
+        "year": 2014, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Digital chronic-care management (diabetes etc.); General Catalyst was a lead venture/growth backer",
+        "outcome": "exited",
+        "outcome_note": "IPO 2019 (Nasdaq: LVGO); acquired by Teladoc in 2020 (~$18.5B) — a marquee digital-health exit.",
+        "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=livongo&type=S-1&dateb=&owner=include&count=40",
+        "source_note": "SEC EDGAR (Livongo 2019 IPO S-1); Teladoc 2020 acquisition",
+    },
+    {
+        "target": "Olive AI", "sponsor": "General Catalyst",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare administrative/RCM automation (RPA); peaked at a ~$4B private valuation in 2021",
+        "outcome": "distressed",
+        "outcome_note": "Wound down and sold off its business units in 2023 (RCM tools to Waystar; prior-auth to Humata Health) — a marquee healthtech failure.",
+        "source_url": "https://www.fiercehealthcare.com/health-tech/olive-ai-shuts-down-sells-clearinghouse-business-amid-broader-wind-down",
+        "source_note": "Fierce Healthcare (2023 wind-down); Axios (2021 $4B valuation)",
+    },
+    {
+        "target": "AccentCare", "sponsor": "Advent International",
+        "year": 2019, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Home health, hospice & personal care; bought from Oak Hill Capital",
+        "outcome": "active", "outcome_note": "Active; later merged with Seasons Hospice.",
+        "source_url": "https://www.adventinternational.com/",
+        "source_note": "Advent International (portfolio); 2019 AccentCare acquisition from Oak Hill",
+    },
+    {
+        "target": "DuPage Medical Group (Midwest Physician Administrative Services)", "sponsor": "Ares Management",
+        "year": 2017, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Large independent multispecialty physician group (Illinois); later rebranded Duly Health and Care",
+        "outcome": "active", "outcome_note": "Active platform.",
+        "source_url": "https://www.aresmgmt.com/",
+        "source_note": "Ares Management (portfolio); 2017 DuPage Medical Group majority investment",
+    },
+    {
+        "target": "Smile Brands", "sponsor": "Gryphon Investors",
+        "year": 2019, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Dental support organization (DSO)",
+        "outcome": "active", "outcome_note": "Active; Gryphon recapitalized the platform.",
+        "source_url": "https://www.gryphoninvestors.com/",
+        "source_note": "Gryphon Investors (portfolio); 2019 Smile Brands recapitalization",
+    },
+    {
+        "target": "Modernizing Medicine (ModMed)", "sponsor": "Vista Equity Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Specialty-specific EHR + practice-management & RCM platform",
+        "outcome": "active", "outcome_note": "Active; Vista took a majority/strategic investment.",
+        "source_url": "https://www.vistaequitypartners.com/",
+        "source_note": "Vista Equity Partners (portfolio); 2017 Modernizing Medicine investment",
+    },
+    {
+        "target": "Gastro Health", "sponsor": "Audax Group",
+        "year": 2018, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Gastroenterology physician practice management platform",
+        "outcome": "active", "outcome_note": "Active platform.",
+        "source_url": "https://www.audaxprivateequity.com/",
+        "source_note": "Audax Private Equity (portfolio); Gastro Health platform",
+    },
 ]
 
 
@@ -687,15 +751,28 @@ def verified_deals(
         q = _norm_sponsor(str(sponsor))
         if not q:
             return []
-        # Bidirectional substring: the page passes a short name ("KKR" ⊂ the
-        # deal's sponsor field) while the sponsor league passes a multi-firm
-        # buyer string ("KKR / Bain Capital / Merrill Lynch PE" ⊃ "KKR").
-        rows = [
-            d for d in rows
-            if (lambda ds: bool(ds) and (q in ds or ds in q))(
-                _norm_sponsor(d.get("sponsor", ""))
-            )
-        ]
+
+        def _matches(d: Dict) -> bool:
+            ds = _norm_sponsor(d.get("sponsor", ""))
+            if not ds:
+                return False
+            # Bidirectional substring: the page passes a short name ("KKR" ⊂
+            # the deal's sponsor field) while the league passes a multi-firm
+            # buyer string ("KKR / Bain Capital / Merrill Lynch PE" ⊃ "KKR").
+            if q in ds or ds in q:
+                return True
+            # Lead-sponsor word match, so "EQT Partners" finds a deal whose
+            # sponsor is "EQT (from Leonard Green & Partners)" (lead "EQT")
+            # and "TPG Growth" finds "TPG". Whole-word only (trailing space)
+            # to avoid matching "EQT" inside an unrelated longer token.
+            lead = _norm_sponsor(_lead_sponsor(d.get("sponsor", "")))
+            if lead and (q == lead
+                         or q.startswith(lead + " ")
+                         or lead.startswith(q + " ")):
+                return True
+            return False
+
+        rows = [d for d in rows if _matches(d)]
     return rows
 
 
