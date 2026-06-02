@@ -523,6 +523,142 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=signify+health&type=8-K&dateb=&owner=include&count=40",
         "source_note": "SEC EDGAR (Signify Health filings); CVS 2023 acquisition",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 3) — health-IT, medical supply, and more
+    # services/behavioral platforms. Same bar: real, sourced; EV only where
+    # publicly disclosed; SEC EDGAR for public-touching deals, sponsor sites
+    # for private ones.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── RCM / healthcare IT services (the platform's home sector) ──
+    {
+        "target": "NextGen Healthcare", "sponsor": "Thoma Bravo",
+        "year": 2024, "ev_usd_mm": 1800, "sector": "rcm_healthtech",
+        "subsector_note": "Ambulatory EHR / practice-management & RCM; take-private at $23.95/share",
+        "outcome": "exited", "outcome_note": "Public→private; closed Nov 2024.",
+        "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=nextgen+healthcare&type=8-K&dateb=&owner=include&count=40",
+        "source_note": "SEC EDGAR (NextGen Healthcare merger 8-K, $1.8B)",
+    },
+    {
+        "target": "Press Ganey", "sponsor": "EQT (from Leonard Green & Partners)",
+        "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Patient-experience measurement & analytics; PE-to-PE secondary (later merged with Forsta)",
+        "outcome": "active", "outcome_note": "Active; Leonard Green exited to EQT.",
+        "source_url": "https://www.eqtgroup.com/",
+        "source_note": "EQT (portfolio); 2019 Press Ganey acquisition from Leonard Green",
+    },
+    {
+        "target": "Datavant (Ciox Health)", "sponsor": "New Mountain Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Health-data exchange / de-identification; New Mountain merged Ciox with Datavant (~$7B combined valuation)",
+        "outcome": "active", "outcome_note": "Active platform.",
+        "source_url": "https://www.newmountaincapital.com/",
+        "source_note": "New Mountain Capital (portfolio); 2021 Ciox/Datavant merger",
+    },
+    {
+        "target": "HealthEdge", "sponsor": "Blackstone",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Core administrative / claims software for health plans",
+        "outcome": "active", "outcome_note": "Active platform.",
+        "source_url": "https://www.blackstone.com/",
+        "source_note": "Blackstone (portfolio); 2020 HealthEdge acquisition",
+    },
+    {
+        "target": "Net Health", "sponsor": "The Carlyle Group",
+        "year": 2018, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Specialty EHR for post-acute / rehab / wound care (with Level Equity)",
+        "outcome": "active", "outcome_note": "Active platform.",
+        "source_url": "https://www.carlyle.com/",
+        "source_note": "The Carlyle Group (portfolio); 2018 Net Health acquisition",
+    },
+    {
+        "target": "Modernizing Medicine (ModMed)", "sponsor": "Warburg Pincus",
+        "year": 2017, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Specialty-specific EHR + practice management (derm, ophtho, ortho)",
+        "outcome": "active", "outcome_note": "Active platform.",
+        "source_url": "https://www.warburgpincus.com/",
+        "source_note": "Warburg Pincus (portfolio); 2017 Modernizing Medicine investment",
+    },
+
+    # ── Medical supply / equipment services ──
+    {
+        "target": "Medline Industries", "sponsor": "Blackstone + Carlyle + Hellman & Friedman",
+        "year": 2021, "ev_usd_mm": 34000, "sector": "other_services",
+        "subsector_note": "Medical-supply manufacturing & distribution; one of the largest-ever healthcare LBOs (GIC/ADIA also invested)",
+        "outcome": "active", "outcome_note": "Founding family retained control; consortium minority-to-majority capital.",
+        "source_url": "https://www.blackstone.com/",
+        "source_note": "Blackstone (press); ~$34B EV widely reported (WSJ/Reuters)",
+    },
+    {
+        "target": "Apria Healthcare", "sponsor": "Blackstone",
+        "year": 2008, "ev_usd_mm": 1600, "sector": "home_health_hospice",
+        "subsector_note": "Home respiratory therapy & medical equipment; take-private",
+        "outcome": "exited",
+        "outcome_note": "IPO 2021 (Nasdaq: APR); acquired by Owens & Minor in 2022 (~$1.6B) — a full round-trip.",
+        "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=apria&type=8-K&dateb=&owner=include&count=40",
+        "source_note": "SEC EDGAR (Apria filings); Owens & Minor 2022 acquisition",
+    },
+    {
+        "target": "Agiliti (Universal Hospital Services)", "sponsor": "Thomas H. Lee Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Medical-equipment management & rental for health systems",
+        "outcome": "exited",
+        "outcome_note": "IPO 2021 (NYSE: AGTI); THL took it public, later re-privatized (2024).",
+        "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=agiliti&type=8-K&dateb=&owner=include&count=40",
+        "source_note": "SEC EDGAR (Agiliti filings); THL ownership",
+    },
+    {
+        "target": "Sotera Health (Sterigenics)", "sponsor": "Warburg Pincus + GTCR",
+        "year": 2015, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Sterilization & lab-testing services for medical devices/pharma",
+        "outcome": "exited",
+        "outcome_note": "IPO 2020 (Nasdaq: SHC); sponsors retained majority post-IPO.",
+        "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=sotera+health&type=S-1&dateb=&owner=include&count=40",
+        "source_note": "SEC EDGAR (Sotera Health 2020 IPO S-1)",
+    },
+
+    # ── Hospitals / behavioral / dermatology / ophthalmology ──
+    {
+        "target": "ScionHealth", "sponsor": "Apollo Global Management (via LifePoint Health)",
+        "year": 2021, "ev_usd_mm": None, "sector": "hospitals",
+        "subsector_note": "Formed from Kindred's LTAC hospitals + LifePoint community hospitals",
+        "outcome": "active", "outcome_note": "Active; created in the LifePoint/Kindred combination.",
+        "source_url": "https://www.apollo.com/",
+        "source_note": "Apollo Global Management / LifePoint Health (2021 ScionHealth formation)",
+    },
+    {
+        "target": "Acadia Healthcare", "sponsor": "Waud Capital Partners",
+        "year": 2011, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Acute psychiatric & addiction operator; went public via 2011 reverse merger (PHC Inc.)",
+        "outcome": "exited", "outcome_note": "Waud Capital founded it; now an independent public company (Nasdaq: ACHC).",
+        "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=acadia+healthcare&type=8-K&dateb=&owner=include&count=40",
+        "source_note": "SEC EDGAR (Acadia Healthcare filings); Waud Capital formation",
+    },
+    {
+        "target": "Beacon Health Options", "sponsor": "Bain Capital + Diamond Castle Holdings",
+        "year": 2014, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Managed behavioral-health organization (ValueOptions + Beacon merger)",
+        "outcome": "exited", "outcome_note": "Acquired by Anthem (Elevance) in 2020.",
+        "source_url": "https://www.baincapital.com/",
+        "source_note": "Bain Capital (portfolio); Anthem 2020 acquisition",
+    },
+    {
+        "target": "MyEyeDr (Capital Vision Services)", "sponsor": "Goldman Sachs (from Altas Partners)",
+        "year": 2019, "ev_usd_mm": 2700, "sector": "ophthalmology",
+        "subsector_note": "Optometry / vision-care retail MSO; PE-to-PE secondary",
+        "outcome": "active", "outcome_note": "Active; Altas Partners exited to Goldman Sachs.",
+        "source_url": "https://www.goldmansachs.com/",
+        "source_note": "Goldman Sachs Merchant Banking; ~$2.7B via Reuters",
+    },
+    {
+        "target": "Pinnacle Dermatology", "sponsor": "Chicago Pacific Founders",
+        "year": 2019, "ev_usd_mm": None, "sector": "dermatology",
+        "subsector_note": "Multi-state dermatology MSO platform",
+        "outcome": "active", "outcome_note": "Active platform.",
+        "source_url": "https://www.cpfounders.com/",
+        "source_note": "Chicago Pacific Founders (portfolio); Pinnacle Dermatology platform",
+    },
 ]
 
 
