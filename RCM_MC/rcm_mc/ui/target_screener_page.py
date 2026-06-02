@@ -50,7 +50,7 @@ _VIEW_KEYS = {v["key"] for v in _VIEWS}
 _VERTICALS = [
     {"key": "hospitals", "label": "Hospitals", "universe": "HCRIS",
      "loader": "data.hcris", "live": True,
-     "note": "CMS HCRIS cost-report universe — beds, revenue, margin, payer mix."},
+     "note": "CMS HCRIS cost-report dataset — beds, revenue, margin, payer mix."},
     {"key": "home_health", "label": "Home Health", "universe": "CMS HHA",
      "loader": "data.home_health", "live": True,
      "note": "CMS Home Health Compare — providers, quality, CAHPS."},
@@ -857,7 +857,7 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
             exposure_label=f"{vinfo['label']} provider count (low&nbsp;→&nbsp;high)",
             caveat_text=(
                 f"Real CMS provider counts by state for the {vinfo['label']} "
-                f"universe ({vinfo['universe']}). Click a state to filter the "
+                f"dataset ({vinfo['universe']}). Click a state to filter the "
                 "screen to it. Approximate Albers-projection SVG, not a precise "
                 "facility-location map."),
             empty_message=(
@@ -1724,7 +1724,7 @@ def _universe_kpis(vertical: str, rows: List[Dict],
     q_label = next((r.get("q_label") for r in rows if r.get("q_label")), "Quality")
     # Sub-labels swap between the unfiltered-universe story and the
     # state-scoped story so the partner reads what they're seeing.
-    scope_sub = f"in {state_scope}" if state_scope else "in this universe"
+    scope_sub = f"in {state_scope}" if state_scope else "in this dataset"
     blocks = [ck_kpi_block("Providers", f"{n:,}", scope_sub)]
     if not state_scope:
         # The "States & territories" tile is meaningless when the
@@ -1784,7 +1784,7 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     universe_panel = (
         # ── Sub-block 1: universe selector chips ──────────────
         '<div class="ts-univ-block">'
-        '<div class="ts-univ-lbl">Universe</div>'
+        '<div class="ts-univ-lbl">Dataset</div>'
         '<div class="ts-univ-prompt">'
         f'Pick one of {len(_VERTICALS)} public CMS provider screens — '
         'toggle to switch:'
@@ -1838,7 +1838,7 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
 
     return (
         ck["panel"](universe_panel,
-                    title="Choose a universe & entry point")
+                    title="Choose a dataset & entry point")
         + ck["panel"](_render_map(vertical, qs),
                       title="Provider density · click a state to filter")
         + ck["panel"](
@@ -2489,20 +2489,13 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
     # "two CMS public data things" the user reported.
     title = ck_page_title(
         "Target Screener", eyebrow="SOURCE · /target-screener · WORKBENCH",
-        meta="six screens · every public CMS/provider universe · same data, not your deals",
+        meta="six screens across the public CMS / provider datasets — market data, not your deals",
     )
 
-    source_purpose = ck_source_purpose(
-        purpose="Find acquisition targets across every public CMS/provider "
-                "universe — hospitals, home health, hospice, SNF, dialysis, IRF, "
-                "LTCH, provider supply, and markets — by filter, map, score, and "
-                "just-missed scan, before committing diligence effort.",
-        universe="cms",
-        source="Real CMS / HCRIS / provider public universes (market data, not "
-               "your deals). The historical deal corpus is never an active target.",
-        next_action="Promote a result into the Pipeline to track it",
-        next_href="/pipeline",
-    )
+    # The standalone CMS source bubble was dropped — it ate vertical space and
+    # repeated what the title meta + the active-screen caption already say.
+    # The "market data, not your deals" caveat lives in the title meta above.
+    source_purpose = ""
 
     tab_bar = _tab_bar(view, qs)
     if view == "main":
