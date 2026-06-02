@@ -114,6 +114,22 @@ class TestCorpusIntegrity(unittest.TestCase):
             f"ebitda_margin: {bad[:10]}",
         )
 
+    def test_no_known_fabricated_rows(self):
+        """The corpus is real deals (real targets, real sponsors, modeled
+        financials). One fabricated row had slipped in — "OrthoAmerica
+        Spine / Clearfield Capital" (seed_605): an invented company under an
+        invented firm "Clearfield Capital", with an empty source_url. It was
+        removed 2026-06; this guard stops it (or that sentinel firm) coming
+        back, and flags any future obvious placeholder."""
+        for d in self.corpus:
+            buyer = str(d.get("buyer") or "")
+            name = str(d.get("deal_name") or "")
+            sid = str(d.get("source_id") or "?")
+            self.assertNotIn("Clearfield Capital", buyer,
+                             f"fabricated sponsor in {sid}: {name}")
+            self.assertNotIn("OrthoAmerica", name,
+                             f"fabricated deal name in {sid}: {name}")
+
     def test_irr_moic_no_order_of_magnitude_error(self):
         """For rows carrying realized_moic + realized_irr + hold_years,
         verify (1 + irr)^hold ≈ moic within 2× / ½× — i.e. no order-

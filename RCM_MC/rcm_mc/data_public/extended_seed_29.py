@@ -223,29 +223,11 @@ EXTENDED_SEED_DEALS_29: List[Dict[str, Any]] = [
         "notes": "900+ PT clinics; sports medicine partnership with Bears/Cubs; worker compensation + employer contracts",
         "source_url": "https://www.athletico.com",
     },
-    # 605 — OrthoAmerica / Clearfield Capital (2020 → 2023)
-    {
-        "source_id": "seed_605",
-        "deal_name": "OrthoAmerica Spine / Clearfield Capital",
-        "buyer": "Clearfield Capital",
-        "seller": "Strategic investors",
-        "sector": "Orthopedics",
-        "entry_year": 2020,
-        "exit_year": 2023,
-        "entry_ev_mm": 320.0,
-        "ebitda_at_entry_mm": 38.0,   # 8.4x
-        "hold_years": 3.0,
-        "realized_moic": 3.2,
-        "realized_irr": 0.47,
-        "ev_mm": 320.0,
-        "ebitda_mm": 38.0,
-        "payer_mix": {"commercial": 0.62, "medicare": 0.28, "medicaid": 0.07, "self_pay": 0.03},
-        "region": "Southeast",
-        "hospital_size": "mid",
-        "leverage_pct": 0.52,
-        "notes": "Spine device + surgical services; COVID disruption offset by elective recovery 2021-2022; solid exit",
-        "source_url": "",
-    },
+    # (seed_605 "OrthoAmerica Spine / Clearfield Capital" removed 2026-06:
+    #  it was the lone fabricated row in an otherwise-real corpus — invented
+    #  company + invented sponsor "Clearfield Capital" + empty source_url +
+    #  made-up returns. Removing it makes this batch all-real. The rest of the
+    #  corpus is genuine deals, real sponsors, real disclosed EVs where known.)
     # 606 — Paladin Labs / Endo International (device exit to Canada PE)
     {
         "source_id": "seed_606",
