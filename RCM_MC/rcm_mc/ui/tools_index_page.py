@@ -148,6 +148,50 @@ def _view(view_id: str, sections: Sequence[Dict], *, dense: bool,
             'filters to see everything.</p></div></div>')
 
 
+def _readiness_bar(sections: Sequence[Dict]) -> str:
+    """Stacked proportion bar of the surface's data-readiness mix.
+
+    Turns the four status counts (Live / Computed / Needs data /
+    Illustrative) — previously only legible as filter-chip numbers — into
+    one at-a-glance summary visual in the masthead, so a partner can size
+    the platform's live-data coverage instantly.
+    """
+    counts: Dict[str, int] = {"live": 0, "computed": 0, "needs": 0,
+                              "illustrative": 0}
+    for sec in sections:
+        for t in sec.get("tools", []):
+            st = t.get("status") or "live"
+            if st in counts:
+                counts[st] += 1
+    total = sum(counts.values()) or 1
+    # Literal hex (not var(--ti-*)) — the masthead renders outside the
+    # .ti-page custom-property scope, so the tokens don't resolve here.
+    order = [
+        ("live", "Live data", "#1f7a5a"),
+        ("computed", "Computed", "#2e8c6c"),
+        ("needs", "Needs data", "#b8842e"),
+        ("illustrative", "Illustrative", "#7a4f6e"),
+    ]
+    segs = "".join(
+        f'<span class="ti-rb-seg" style="flex:{counts[k]};background:{col}" '
+        f'title="{lbl}: {counts[k]} ({counts[k] / total * 100:.0f}%)"></span>'
+        for k, lbl, col in order if counts[k]
+    )
+    keys = "".join(
+        f'<span class="ti-rb-key">'
+        f'<span class="ti-rb-dot" style="background:{col}"></span>'
+        f'{lbl} <b>{counts[k]}</b></span>'
+        for k, lbl, col in order
+    )
+    return (
+        '<div class="ti-readiness">'
+        f'<div class="ti-rb-cap">Data readiness · {total} tools</div>'
+        f'<div class="ti-rb-track">{segs}</div>'
+        f'<div class="ti-rb-keys">{keys}</div>'
+        '</div>'
+    )
+
+
 def render_tools_index(
     *,
     workspaces: List[Dict],
@@ -201,6 +245,7 @@ def render_tools_index(
         '<p class="ti-standfirst" data-ti-standfirst>Browse every PEdesk tool, '
         'grouped by workspace. Click any card to open it. Press <em>⌘K</em> to '
         'search the full set.</p>'
+        f'{_readiness_bar(index)}'
         '</div>'
         '<div class="ti-legend">'
         f'{legend_chips}'
@@ -300,7 +345,21 @@ _TOOLS_CSS = """
 .ti-clear:hover{color:var(--ti-green-deep);}
 /* sections */
 .ti-main{max-width:var(--ti-max);margin:0 auto;}
-.ti-section{padding:28px 0 0;}
+/* data-readiness summary bar (masthead) */
+.ti-readiness{margin-top:20px;max-width:540px;}
+.ti-rb-cap{font-family:var(--sc-mono,monospace);font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ti-muted);margin-bottom:8px;}
+.ti-rb-track{display:flex;height:12px;border-radius:6px;overflow:hidden;
+  border:1px solid var(--ti-rule);background:var(--ti-paper2);}
+.ti-rb-seg{display:block;min-width:3px;transition:flex .3s ease;}
+.ti-rb-keys{display:flex;flex-wrap:wrap;gap:7px 18px;margin-top:11px;}
+.ti-rb-key{font-family:var(--sc-sans,sans-serif);font-size:11.5px;color:var(--ti-ink2);
+  display:inline-flex;align-items:center;gap:7px;}
+.ti-rb-key b{font-family:var(--sc-mono,monospace);font-variant-numeric:tabular-nums;
+  color:var(--ti-ink);font-weight:600;}
+.ti-rb-dot{width:9px;height:9px;border-radius:2px;display:inline-block;flex-shrink:0;}
+/* Section rhythm — more air between workspace groups (was 28px). */
+.ti-section{padding:44px 0 0;}
 .ti-section.hidden{display:none;}
 .ti-sec-bar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;
   gap:24px;padding:16px 20px;background:var(--ti-paper);border:1px solid var(--ti-rule);
@@ -327,7 +386,7 @@ _TOOLS_CSS = """
 /* card grid */
 /* Workspace view: 3 wide cards/row (was 4) so each description breathes over
    fewer, longer lines instead of packing densely; roomier padding + gaps. */
-.ti-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+.ti-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;}
 .mode-index .ti-cards{grid-template-columns:repeat(6,minmax(0,1fr));}
 .ti-card{background:#ffffff;border:1px solid var(--ti-rule);
   padding:20px 20px 18px;min-height:124px;display:flex;flex-direction:column;

@@ -35,6 +35,32 @@ def _econ_chart(items) -> str:
     )
 
 
+def _comp_chart(items) -> str:
+    """Lead chart for the compensation table — specialties ranked by median
+    total comp so the highest-paid practice types surface above the 100-row
+    detail grid (a partner sees the shape before reading the table). Bar
+    width = comp relative to the top specialty; value = $K; tone marks the
+    comp tier (>=$600K green - >=$400K teal - below amber).
+    """
+    ranked = sorted(items, key=lambda b: b.median_total_comp_k, reverse=True)[:14]
+    mx = max((b.median_total_comp_k for b in ranked), default=1.0) or 1.0
+    rows = []
+    for b in ranked:
+        c = b.median_total_comp_k
+        tone = "positive" if c >= 600 else ("teal" if c >= 400 else "warning")
+        rows.append(ck_bar_row(b.specialty, f"${c:,.0f}K", c / mx * 100.0, tone=tone))
+    return (
+        '<div style="margin-bottom:14px">'
+        f'{"".join(rows)}'
+        '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+        'font-family:JetBrains Mono,monospace">'
+        f'Bar = median total compensation (relative to top) &middot; value = $K '
+        f'&middot; top 14 of {len(items)} specialties &middot; tone = comp tier '
+        '(green &ge;$600K &middot; teal &ge;$400K &middot; amber below)</div>'
+        '</div>'
+    )
+
+
 def _benchmarks_table(items) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]; acc = P["accent"]; pos = P["positive"]
@@ -202,6 +228,7 @@ def render_specialty_benchmarks(params: dict = None) -> str:
     )
 
     b_tbl = _benchmarks_table(r.benchmarks)
+    c_chart = _comp_chart(r.benchmarks)
     e_chart = _econ_chart(r.economics)
     e_tbl = _econ_table(r.economics)
     n_tbl = _np_table(r.new_patients)
@@ -232,7 +259,7 @@ def render_specialty_benchmarks(params: dict = None) -> str:
   {page_title}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="{cell}"><div style="{h3}">Physician Compensation & Productivity Benchmarks</div>{b_tbl}</div>
+  <div style="{cell}"><div style="{h3}">Physician Compensation & Productivity Benchmarks</div>{c_chart}{b_tbl}</div>
   <div style="{cell}"><div style="{h3}">Practice Economics by Specialty</div>{e_chart}{e_tbl}</div>
   <div style="{cell}"><div style="{h3}">New Patient Acquisition Benchmarks</div>{n_tbl}</div>
   <div style="{cell}"><div style="{h3}">Ancillary Revenue Opportunities</div>{a_tbl}</div>
