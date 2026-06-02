@@ -41,7 +41,9 @@ class PipelineRenderTests(unittest.TestCase):
     def test_funnel_shows_stage_conversion(self):
         # Handoff funnel includes a stage-to-stage conversion figure per row.
         self.assertIn("ck-funnel-conv", self.html)
-        self.assertIn("stage-to-stage conversion", self.html)
+        # The verbose prose wall was trimmed to a compact legend; it still
+        # defines Conv % as the share of the prior stage that advanced.
+        self.assertIn("share of the prior stage that advanced", self.html)
         # Top-of-funnel / empty-prior conversion is an honest dash, not a
         # fabricated percentage.
         self.assertIn(">&mdash;</div>", self.html.replace("—", "&mdash;"))
