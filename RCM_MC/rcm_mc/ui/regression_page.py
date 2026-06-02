@@ -59,7 +59,7 @@ _REG_CHART_CAPTION_CSS = (
 
 
 def _coefficient_forest_chart(
-    coefficients: List[Dict[str, Any]], width: int = 720, row_h: int = 26
+    coefficients: List[Dict[str, Any]], width: int = 980, row_h: int = 32
 ) -> str:
     """Diverging coefficient plot with 95% CI whiskers.
 
@@ -78,7 +78,10 @@ def _coefficient_forest_chart(
         max_abs = 1.0
     rows = sorted(rows, key=lambda c: -abs(c.get("coefficient", 0)))[:14]
 
-    pad_l, pad_r, pad_t = 180, 52, 14
+    # pad_r holds a dedicated right-hand value column so the coefficient
+    # labels never overlap the bars / CI whiskers (the old at-the-bar-tip
+    # labels collided at rel≈±1).
+    pad_l, pad_r, pad_t = 196, 74, 16
     half = (width - pad_l - pad_r) / 2.0
     mid_x = pad_l + half
     height = pad_t + row_h * len(rows) + 22
@@ -144,11 +147,11 @@ def _coefficient_forest_chart(
             f'<line x1="{x_hi:.1f}" y1="{cy - 3:.1f}" x2="{x_hi:.1f}" '
             f'y2="{cy + 3:.1f}" stroke="{txt}" stroke-width="1" opacity="0.6"/>'
         )
-        lbl_x = (x_coef + 6) if coef >= 0 else (x_coef - 6)
-        anchor = "start" if coef >= 0 else "end"
+        # Value in a fixed right-hand column (end-anchored) — decoupled from
+        # bar length so it can never overlap the bar or whisker.
         parts.append(
-            f'<text x="{lbl_x:.1f}" y="{cy + 3:.1f}" text-anchor="{anchor}" '
-            f'font-size="10" font-family="JetBrains Mono,ui-monospace,monospace" '
+            f'<text x="{width - 8:.1f}" y="{cy + 3:.1f}" text-anchor="end" '
+            f'font-size="11" font-family="JetBrains Mono,ui-monospace,monospace" '
             f'fill="{color if sig else mut}">{"+" if rel > 0 else ""}{rel:.2f}</text>'
         )
     parts.append(
@@ -4088,7 +4091,9 @@ def render_regression_page(
     )
 
     # ── Layout: 2-column for some sections ──
-    left_col = f'{coef_section}{shapley_section}{tcorr_section}{outlier_section}'
+    # coef_section renders FULL WIDTH (below) — it's the headline result and was
+    # cramped/illegible squeezed into a half-width column. The rest stay two-up.
+    left_col = f'{shapley_section}{tcorr_section}{outlier_section}'
     right_col = f'{vif_section}{state_section}{corr_section}'
 
     rg_styles = _REGRESSION_CSS
@@ -4199,12 +4204,18 @@ def render_regression_page(
     cv_anchor = f'<a id="fit"></a>{cv_section}' if cv_section else '<a id="fit"></a>'
 
     body = (
-        f'{editorial_top}{editorial_phase2}'
-        f'{rg_styles}{intro}{diagnostic_banner}{source_selector}'
-        f'{leakage_banner}{formula_related_banner}'
+        f'{editorial_top}'
+        # Inputs/controls sit right under the headline result (were buried at
+        # the bottom, after every result visual — "why are the inputs at the
+        # bottom"). leakage banners stay just below, referencing the inputs.
+        f'{rg_styles}{source_selector}{leakage_banner}{formula_related_banner}'
+        f'{editorial_phase2}'
+        f'{intro}{diagnostic_banner}'
         f'{leakage_section}{cv_anchor}{cluster_section}'
         f'{buyability_section}{segmented_section}'
         f'{kpis}{multicollinearity_banner}{intercept_section}'
+        # Headline coefficient chart + table — FULL WIDTH.
+        f'{coef_section}'
         '<div class="rg-grid">'
         f'<div>{left_col}</div><div>{right_col}</div></div>'
         f'{nav_section}{next_up}'
