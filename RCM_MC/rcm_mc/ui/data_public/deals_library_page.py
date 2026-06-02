@@ -425,7 +425,13 @@ def render_deals_library(
     # page. The results header still reports the true filtered count.
     _TABLE_CAP = 75
     total_rows = len(rows)
-    table = ck_table(rows[:_TABLE_CAP], _COLUMNS)
+    # Wrap the wide multi-column table so it scrolls horizontally inside
+    # the insights content column instead of pushing the whole page wide.
+    table = (
+        '<div class="ck-data-table-scroll">'
+        + ck_table(rows[:_TABLE_CAP], _COLUMNS)
+        + '</div>'
+    )
     if total_rows > _TABLE_CAP:
         table += (
             '<p style="margin:12px 2px 0;font-family:var(--sc-mono,monospace);'

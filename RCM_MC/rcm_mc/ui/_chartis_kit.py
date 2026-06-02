@@ -7912,6 +7912,12 @@ _CSS_INLINE_FALLBACK = """
    * ck-search-hero (above) and ck-rail-layout (below) for the full
    * Insights triplet on /library, /research, /notes. */
   .ck-rail-layout { display:grid; grid-template-columns:240px 1fr; gap:var(--sc-s-7); align-items:start; margin:0 0 var(--sc-s-6); }
+  /* Let the content column shrink below its min-content width — a grid
+     item defaults to min-width:auto, so a wide multi-column table forces
+     the 1fr column past the viewport (horizontal page scroll). With
+     min-width:0 the column fits and a wide table scrolls inside its own
+     .ck-data-table-scroll wrapper instead of overflowing the page. */
+  .ck-rail-layout > * { min-width:0; }
   @media (max-width: 880px) { .ck-rail-layout { grid-template-columns:1fr; } }
   /* top == 58px topbar + 12px. Was 88px (pre-#1014 76px topbar). */
   .ck-filter-rail { font-family:var(--sc-sans); position:sticky; top:70px; }
