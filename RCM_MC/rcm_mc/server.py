@@ -13943,10 +13943,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         picker += "</form>"
 
         body = picker + "".join(sections)
-        self._send_html(shell(
-            body=body, title="Deadlines",
-            subtitle=f"Inbox · {len(od)} overdue, {len(up)} upcoming",
-            back_href="/",
+        # Editorial chrome to match the rest of the platform (was the legacy
+        # bare shell with an orphan subtitle + "Back to index" link).
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, ck_page_actions,
+        )
+        title_block = ck_page_title(
+            "Deadlines", eyebrow="PORTFOLIO",
+            meta=f"INBOX · {len(od)} OVERDUE · {len(up)} UPCOMING",
+        )
+        page = (
+            f'<div class="ck-page-wrap">{title_block}{body}</div>'
+            + ck_page_actions()
+        )
+        self._send_html(chartis_shell(
+            page, title="Deadlines", active_nav="alerts",
         ))
 
     def _route_owners(self) -> None:
@@ -15694,11 +15705,22 @@ class RCMHandler(BaseHTTPRequestHandler):
         if kind:
             subtitle_bits.append(f"kind = {kind}")
 
-        self._send_html(shell(
-            body=body,
-            title="Portfolio activity",
-            subtitle=" · ".join(subtitle_bits),
-            back_href="/",
+        # Editorial chrome to match every other page (was the legacy bare
+        # shell with an orphan italic subtitle above the title + a stray
+        # "Back to index" link): real ck_page_title + page-wrap + actions.
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, ck_page_actions,
+        )
+        title_block = ck_page_title(
+            "Portfolio activity", eyebrow="PORTFOLIO",
+            meta=" · ".join(subtitle_bits),
+        )
+        page = (
+            f'<div class="ck-page-wrap">{title_block}{body}</div>'
+            + ck_page_actions()
+        )
+        self._send_html(chartis_shell(
+            page, title="Portfolio activity", active_nav="alerts",
         ))
 
     def _route_compare(self, deal_ids: list) -> None:
