@@ -205,7 +205,7 @@ def render_vintage_perf() -> str:
         mc = _moic_color(s.moic_p50)
         sectors_html = "".join(
             f'<span style="display:inline-block;margin:1px 2px;padding:1px 5px;border:1px solid #D6CFC0;'
-            f'font-size:8.5px;font-family:var(--ck-mono);color:#7a8699;">{_html.escape(sec[:16])}</span>'
+            f'font-size:10px;font-family:var(--ck-mono);color:#7a8699;">{_html.escape(sec[:16])}</span>'
             for sec in s.top_sectors[:3]
         )
         rows.append(f"""<tr{stripe}>

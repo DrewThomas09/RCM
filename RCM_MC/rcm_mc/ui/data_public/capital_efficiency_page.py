@@ -275,13 +275,13 @@ def render_capital_efficiency(params: Dict[str, str]) -> str:
 <div style="overflow-x:auto;margin-bottom:8px">{sec_chart}</div>
 <div style="overflow-x:auto;margin-bottom:24px">{_dim_table(result.by_sector, cp50)}</div>
 <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:24px">
-  <div style="flex:1;min-width:240px">
+  <div style="flex:1;min-width:0">
     {size_chart}
-    {_dim_table(result.by_size, cp50)}
+    <div style="overflow-x:auto">{_dim_table(result.by_size, cp50)}</div>
   </div>
-  <div style="flex:1;min-width:240px">
+  <div style="flex:1;min-width:0">
     {pr_chart}
-    {_dim_table(result.by_payer_regime, cp50)}
+    <div style="overflow-x:auto">{_dim_table(result.by_payer_regime, cp50)}</div>
   </div>
 </div>
 {ck_section_header("By Vintage Cohort")}

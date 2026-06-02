@@ -257,7 +257,7 @@ _STYLE = """
 .dir-card-route { font-family:var(--sc-mono); font-size:10.5px;
   margin-bottom:10px; letter-spacing:0.04em; }
 .dir-src { display:inline-block; margin-left:7px; padding:1px 6px;
-  font-family:var(--sc-mono); font-size:8.5px; font-weight:700;
+  font-family:var(--sc-mono); font-size:10px; font-weight:700;
   letter-spacing:0.08em; text-transform:uppercase; border-radius:2px;
   vertical-align:middle; color:var(--src-c); border:1px solid var(--src-c);
   background:color-mix(in srgb, var(--src-c) 8%, transparent); }
@@ -269,7 +269,7 @@ _STYLE = """
   padding:10px 12px; margin-bottom:10px; }
 .dir-card-stats { display:grid; gap:8px; border-top:1px solid var(--sc-rule);
   padding-top:8px; margin-top:8px; }
-.dir-card-stat-l { font-family:var(--sc-mono); font-size:8.5px;
+.dir-card-stat-l { font-family:var(--sc-mono); font-size:10px;
   letter-spacing:0.12em; text-transform:uppercase; color:var(--sc-text-faint); }
 .dir-card-stat-v { font-family:var(--sc-mono); font-size:13px; font-weight:600;
   color:var(--sc-navy); margin-top:2px; }

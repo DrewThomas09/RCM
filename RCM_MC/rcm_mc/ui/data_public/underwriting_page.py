@@ -158,26 +158,26 @@ def _results_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
     cards_html = f"""
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:var(--ck-border);margin-bottom:1px;">
   <div style="background:var(--ck-panel-alt);padding:14px 16px;">
-    <div style="font-size:8.5px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Gross MOIC</div>
+    <div style="font-size:10px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Gross MOIC</div>
     {_moic_html(result.gross_moic)}
     <div style="margin-top:6px;">{_pct_rank_bar(moic_rank)}</div>
     <div style="font-size:9px;color:var(--ck-text-faint);margin-top:3px;">vs. corpus realized</div>
   </div>
   <div style="background:var(--ck-panel-alt);padding:14px 16px;">
-    <div style="font-size:8.5px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Gross IRR</div>
+    <div style="font-size:10px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Gross IRR</div>
     {_irr_html(result.gross_irr)}
     <div style="margin-top:6px;">{_pct_rank_bar(irr_rank)}</div>
     <div style="font-size:9px;color:var(--ck-text-faint);margin-top:3px;">vs. corpus realized</div>
   </div>
   <div style="background:var(--ck-panel-alt);padding:14px 16px;">
-    <div style="font-size:8.5px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Net MOIC (after fees)</div>
+    <div style="font-size:10px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Net MOIC (after fees)</div>
     {_moic_html(result.net_moic)}
     <div style="margin-top:6px;font-size:10px;color:var(--ck-text-faint);">
       Net IRR: {_irr_html(result.net_irr).replace('22px', '13px').replace('font-weight:700', 'font-weight:500')}
     </div>
   </div>
   <div style="background:var(--ck-panel-alt);padding:14px 16px;">
-    <div style="font-size:8.5px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Entry / Exit Summary</div>
+    <div style="font-size:10px;color:var(--ck-text-faint);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Entry / Exit Summary</div>
     <div style="font-family:var(--ck-mono);font-size:10.5px;line-height:1.8;font-variant-numeric:tabular-nums;">
       <div>Entry EV/EBITDA: <strong>{result.entry_ev_ebitda:.1f}×</strong></div>
       <div>Entry Equity: ${result.entry_equity_mm:.0f}M</div>
