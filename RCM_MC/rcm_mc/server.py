@@ -4809,6 +4809,21 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_csv_df(
                 vertical_dataframe(_v, _st),
                 f"target-screener-{_v}{('-' + _st) if _st else ''}.csv")
+        if path == "/verified-deals.csv":
+            # Export the real, sourced deal set (filter-aware) for offline
+            # diligence. Static data → DataFrame → shared defanged CSV sender.
+            from .data_public.verified_deals import verified_deals as _vd
+            import pandas as _pd
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            _sec = (_q.get("sector") or [""])[0].strip().lower() or None
+            _sp = (_q.get("sponsor") or [""])[0].strip() or None
+            _cols = ["target", "sponsor", "year", "ev_usd_mm", "sector",
+                     "outcome", "outcome_note", "subsector_note",
+                     "source_url", "source_note"]
+            _rows = _vd(_sec, _sp)
+            _df = _pd.DataFrame(_rows, columns=_cols)
+            return self._send_csv_df(
+                _df, f"verified-deals{('-' + _sec) if _sec else ''}.csv")
         if path == "/metro-markets.csv":
             from .ui.data_public.metro_markets_page import _parse_sort as _mms, _parse_type as _mmt, metro_dataframe
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)

@@ -65,6 +65,29 @@ class VerifiedDealDataTests(unittest.TestCase):
             d["target"] for d in VERIFIED_DEALS).items() if c > 1]
         self.assertEqual(dups, [], f"duplicate verified-deal targets: {dups}")
 
+    def test_quality_bar(self) -> None:
+        # Lock in the sourcing/quality bar so future additions can't
+        # regress it: every row carries a substantive sponsor, the
+        # load-bearing narrative fields, a non-trivial source note, an
+        # https source, and a plausible year. (Accuracy of the specific
+        # sponsor↔target pairing is reviewed by hand; these are the
+        # mechanical guards.)
+        for d in VERIFIED_DEALS:
+            t = d.get("target", "?")
+            self.assertTrue((d.get("sponsor") or "").strip(),
+                            f"{t}: empty sponsor")
+            self.assertTrue((d.get("outcome_note") or "").strip(),
+                            f"{t}: empty outcome_note")
+            self.assertTrue((d.get("subsector_note") or "").strip(),
+                            f"{t}: empty subsector_note")
+            self.assertGreaterEqual(len((d.get("source_note") or "").strip()), 6,
+                                    f"{t}: thin source_note")
+            self.assertTrue(str(d.get("source_url", "")).startswith("https://"),
+                            f"{t}: source_url must be https")
+            y = d.get("year")
+            self.assertTrue(isinstance(y, int) and 1990 <= y <= 2027,
+                            f"{t}: implausible year {y}")
+
     def test_sector_filter_and_counts(self) -> None:
         self.assertEqual(verified_deal_count(), len(VERIFIED_DEALS))
         rcm = verified_deals("rcm_healthtech")

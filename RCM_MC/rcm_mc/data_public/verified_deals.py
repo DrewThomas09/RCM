@@ -188,7 +188,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": None, "sector": "dermatology",
         "subsector_note": "Largest US physician-led dermatology group (200+ practices)",
         "outcome": "active", "outcome_note": "OMERS PE secondary; terms undisclosed.",
-        "source_url": "http://pensionpulse.blogspot.com/2022/02/omers-sells-stake-in-forefront.html",
+        "source_url": "https://pensionpulse.blogspot.com/2022/02/omers-sells-stake-in-forefront.html",
         "source_note": "PensionPulse summarizing the OMERS→Partners Group sale (Feb 2022)",
     },
     {
