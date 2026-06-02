@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import html as _html
 from typing import Dict, Optional
+from urllib.parse import quote
 
 from ._chartis_kit import (
     P, chartis_shell, ck_editorial_head, ck_kpi_block, ck_page_actions,
@@ -53,7 +54,13 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
     if sector not in SECTORS:
         sector = ""
 
-    deals = verified_deals(sector or None)
+    sponsor = ""
+    raw_sp = params.get("sponsor", "")
+    if isinstance(raw_sp, list):
+        raw_sp = raw_sp[0] if raw_sp else ""
+    sponsor = str(raw_sp).strip()[:80]
+
+    deals = verified_deals(sector or None, sponsor or None)
     # Sort: disclosed EV first (desc), then by year desc.
     deals = sorted(
         deals,
@@ -138,16 +145,27 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
 
     lsc = list(lead_sponsor_counts().items())[:8]
     ls_max = max((v for _, v in lsc), default=1)
-    sponsor_bars = "".join(
-        _bar_row(k, v, ls_max, ac) for k, v in lsc)
+    _sp_active = sponsor.strip().lower()
+    sponsor_bars = ""
+    for k, v in lsc:
+        is_active = bool(_sp_active) and _sp_active in k.lower()
+        tone = P.get("positive", ac) if is_active else ac
+        q = "sponsor=" + quote(k)
+        if sector:
+            q = "sector=" + quote(sector) + "&" + q
+        href = _html.escape("/verified-deals?" + q, quote=True)
+        sponsor_bars += (
+            f'<a href="{href}" title="Filter to {_html.escape(k, quote=True)}" '
+            f'style="text-decoration:none;display:block">{_bar_row(k, v, ls_max, tone)}</a>'
+        )
     sponsor_panel = (
         f'<div style="border:1px solid {border};border-radius:3px;padding:14px 16px;background:{P["panel"]}">'
         f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:.06em;'
         f'text-transform:uppercase;color:{td};margin-bottom:10px">Most-seen sponsors</div>'
         + sponsor_bars
         + f'<p style="font-size:10.5px;color:{fa};margin:9px 0 0;line-height:1.5">'
-        'Lead sponsor per deal (co-sponsors collapsed). These are the firms that '
-        'recur in the verified set — every one checkable via the source links below.</p>'
+        'Lead sponsor per deal (co-sponsors collapsed). <b>Click a sponsor</b> to '
+        'filter the table to their real, sourced deals.</p>'
         '</div>'
     )
     analytics = (
@@ -201,19 +219,43 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
             f'{_html.escape(d.get("source_note","source"))} ↗</a></td>'
             '</tr>'
         )
-    table = (
-        f'<div style="overflow-x:auto;border:1px solid {border};border-radius:3px">'
-        '<table style="width:100%;border-collapse:collapse">'
-        f'<thead><tr><th style="{th}">Target</th><th style="{th}">Sponsor</th>'
-        f'<th style="{th};text-align:right">Year</th><th style="{th};text-align:right">EV</th>'
-        f'<th style="{th}">Sector</th><th style="{th}">Outcome</th>'
-        f'<th style="{th}">Source</th></tr></thead>'
-        f'<tbody>{rows}</tbody></table></div>'
-    )
+    # Active-filter indicator (sector and/or sponsor) with a clear affordance.
+    if sector or sponsor:
+        active_label = " · ".join(x for x in [
+            (_SECTOR_LABEL.get(sector, sector) if sector else ""),
+            (f"sponsor: {_html.escape(sponsor)}" if sponsor else ""),
+        ] if x)
+        filter_note = (
+            f'<div style="margin-bottom:12px;font-size:11px;color:{td}">'
+            f'Showing <b>{len(deals)}</b> of {total} — {active_label} '
+            f'<a href="/verified-deals" style="color:{ac};text-decoration:none">'
+            '&times; clear</a></div>'
+        )
+    else:
+        filter_note = ""
+
+    if not rows:
+        table = (
+            f'<div style="border:1px solid {border};border-radius:3px;'
+            f'padding:24px 16px;text-align:center;color:{fa};font-size:12px">'
+            'No verified deals match this filter yet — the set grows as we source '
+            f'more. See all <a href="/verified-deals" style="color:{ac};'
+            f'text-decoration:none">{total} deals</a>.</div>'
+        )
+    else:
+        table = (
+            f'<div style="overflow-x:auto;border:1px solid {border};border-radius:3px">'
+            '<table style="width:100%;border-collapse:collapse">'
+            f'<thead><tr><th style="{th}">Target</th><th style="{th}">Sponsor</th>'
+            f'<th style="{th};text-align:right">Year</th><th style="{th};text-align:right">EV</th>'
+            f'<th style="{th}">Sector</th><th style="{th}">Outcome</th>'
+            f'<th style="{th}">Source</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></div>'
+        )
 
     body = (
         '<div class="ck-page-wrap">'
-        + head + kpis + analytics + chip_bar + table
+        + head + kpis + analytics + chip_bar + filter_note + table
         + f'<p style="font-size:10px;color:{fa};margin-top:12px">'
         'Curated from public coverage; EV null where undisclosed. This is the '
         'foundation that replaces the synthetic seed corpus across the deal '

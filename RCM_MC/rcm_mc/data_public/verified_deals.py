@@ -662,15 +662,40 @@ VERIFIED_DEALS: List[Dict] = [
 ]
 
 
-def verified_deals(sector: Optional[str] = None) -> List[Dict]:
-    """Return the verified-deal list, optionally filtered to one sector.
+def _norm_sponsor(s: str) -> str:
+    """Lowercase + strip punctuation + collapse whitespace, so sponsor-name
+    matching survives the comma/ampersand variations in firm names
+    ("Welsh Carson" ↔ "Welsh, Carson, Anderson & Stowe")."""
+    import re
+    return " ".join(re.sub(r"[^a-z0-9 ]", " ", (s or "").lower()).split())
 
-    Every row is a real, sourced deal (see module docstring). Unknown sector
-    returns []. Never raises."""
-    if not sector:
-        return list(VERIFIED_DEALS)
-    s = str(sector).strip().lower()
-    return [d for d in VERIFIED_DEALS if d.get("sector") == s]
+
+def verified_deals(
+    sector: Optional[str] = None, sponsor: Optional[str] = None,
+) -> List[Dict]:
+    """Return the verified-deal list, optionally filtered to one sector
+    and/or one sponsor (punctuation-insensitive substring match on the
+    sponsor field).
+
+    Every row is a real, sourced deal (see module docstring). Unknown
+    sector/sponsor returns []. Never raises."""
+    rows = list(VERIFIED_DEALS)
+    if sector:
+        s = str(sector).strip().lower()
+        rows = [d for d in rows if d.get("sector") == s]
+    if sponsor:
+        q = _norm_sponsor(str(sponsor))
+        if q:
+            rows = [d for d in rows if q in _norm_sponsor(d.get("sponsor", ""))]
+        else:
+            rows = []
+    return rows
+
+
+def verified_deals_for_sponsor(name: str) -> List[Dict]:
+    """Real, sourced deals for one sponsor — used to cross-link the
+    (illustrative) sponsor surfaces to the genuine track record."""
+    return verified_deals(sponsor=name)
 
 
 def verified_deal_count() -> int:
