@@ -12,8 +12,11 @@ from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block,
 def _funnel_svg(stages) -> str:
     if not stages:
         return ""
-    w, h = 640, 280
-    pad_l, pad_r, pad_t, pad_b = 40, 40, 25, 15
+    # pad_l/pad_r must clear the stage labels (right-anchored on the left) and
+    # the conversion labels (on the right) — at 40 they overflowed the viewBox,
+    # clipping "Sourced"→"ourced", "Submitted"→"mitted", etc.
+    w, h = 800, 300
+    pad_l, pad_r, pad_t, pad_b = 134, 104, 28, 16
     inner_w = w - pad_l - pad_r
     inner_h = h - pad_t - pad_b
     row_h = inner_h / len(stages)
