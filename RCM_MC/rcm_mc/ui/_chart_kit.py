@@ -196,6 +196,83 @@ def ck_bar_chart(
     )
 
 
+def ck_hbar_chart(
+    title: str,
+    items: Sequence,
+    *,
+    value_fmt: Optional[Callable[[float], str]] = None,
+    reference: Optional[Tuple[str, float]] = None,
+    source: str = "",
+    subtitle: str = "",
+    chart_id: Optional[str] = None,
+    label_w: float = 150.0,
+) -> str:
+    """Horizontal ranked bar chart — label on the left, bar extending right,
+    value at the bar end. The right shape for many rows with long labels
+    (county rankings, screener results) where vertical bars would collide.
+    ``items``: ``(label, value, tone)``. ``reference``: optional ``(label,
+    value)`` dashed vertical line (e.g. a state weighted-mean). '' if empty."""
+    pts = _coerce(items, want_tone=True)
+    if not pts:
+        return ""
+    fmt = value_fmt or _compact
+    rowh = 21.0
+    W = 560.0
+    L, R, T, B = label_w, 56.0, 14.0, 14.0
+    H = T + B + rowh * len(pts)
+    plotw = W - L - R
+    vals = [v for _, v, _ in pts]
+    ref_v = None
+    if reference is not None:
+        try:
+            ref_v = float(reference[1])
+        except (TypeError, ValueError):
+            ref_v = None
+    top = max(vals + ([ref_v] if ref_v is not None else []) + [0.0]) or 1.0
+
+    parts = [
+        f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
+        f'style="max-width:600px;display:block" preserveAspectRatio="xMidYMid meet" '
+        f'role="img" aria-label="{_html.escape(title)}">',
+        f'<rect x="0" y="0" width="{W:.0f}" height="{H:.0f}" fill="{_PANEL}"/>',
+    ]
+    for i, (label, val, tone) in enumerate(pts):
+        cy = T + rowh * i + rowh / 2.0
+        w = max(0.0, val) / top * plotw
+        color = _tone_hex(tone)
+        parts.append(
+            f'<rect x="{L:.1f}" y="{cy - 7:.1f}" width="{max(1.0, w):.1f}" height="14" '
+            f'rx="1.5" fill="{color}"><title>{_html.escape(label)}: '
+            f'{_html.escape(fmt(val))}</title></rect>'
+        )
+        parts.append(
+            f'<text x="{L - 7:.1f}" y="{cy + 3.5:.1f}" text-anchor="end" '
+            f'font-family="{_MONO}" font-size="10.5" fill="{_DIM}">'
+            f'{_html.escape(label[:22])}</text>'
+        )
+        parts.append(
+            f'<text x="{L + w + 5:.1f}" y="{cy + 3.5:.1f}" font-family="{_MONO}" '
+            f'font-size="9.5" font-weight="600" fill="{_INK}">'
+            f'{_html.escape(fmt(val))}</text>'
+        )
+    if ref_v is not None and ref_v > 0:
+        rx = L + ref_v / top * plotw
+        ref_label = str(reference[0]) if reference and reference[0] else "ref"
+        parts.append(
+            f'<line x1="{rx:.1f}" y1="{T - 2:.1f}" x2="{rx:.1f}" y2="{H - B + 2:.1f}" '
+            f'stroke="{_FAINT}" stroke-width="1" stroke-dasharray="4 3"/>'
+        )
+        parts.append(
+            f'<text x="{rx:.1f}" y="{T - 4:.1f}" text-anchor="middle" '
+            f'font-family="{_MONO}" font-size="8" fill="{_FAINT}">'
+            f'{_html.escape(ref_label)}</text>'
+        )
+    parts.append("</svg>")
+    return ck_chart_card(
+        title, "".join(parts), source=source, subtitle=subtitle, chart_id=chart_id,
+    )
+
+
 def ck_grouped_bar(
     title: str,
     categories: Sequence[str],
