@@ -103,9 +103,9 @@ def _dim_card(dim) -> str:
   <div style="margin-bottom:8px">{_treemap_svg(dim.top_5, dim.total_n)}</div>
   <table style="width:100%;border-collapse:collapse;font-size:10px">
     <thead><tr style="background:{P['panel']}">
-      <th style="padding:3px 8px;font-size:8px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.06em;text-align:left">LABEL</th>
-      <th style="padding:3px 8px;font-size:8px;color:{P['text_dim']};font-family:{_SANS};text-align:right">DEALS</th>
-      <th style="padding:3px 8px;font-size:8px;color:{P['text_dim']};font-family:{_SANS}">SHARE</th>
+      <th style="padding:3px 8px;font-size:10px;color:{P['text_dim']};font-family:{_SANS};letter-spacing:.06em;text-align:left">LABEL</th>
+      <th style="padding:3px 8px;font-size:10px;color:{P['text_dim']};font-family:{_SANS};text-align:right">DEALS</th>
+      <th style="padding:3px 8px;font-size:10px;color:{P['text_dim']};font-family:{_SANS}">SHARE</th>
     </tr></thead>
     <tbody>{top5_rows}</tbody>
   </table>

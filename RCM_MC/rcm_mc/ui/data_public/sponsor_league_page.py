@@ -91,12 +91,12 @@ def _sector_pills(sectors: List[str]) -> str:
     for s in sectors[:3]:
         pills.append(
             f'<span style="display:inline-block;background:var(--sc-bone);border:1px solid #D6CFC0;'
-            f'border-radius:2px;padding:1px 5px;font-size:8.5px;color:#7a8699;margin:1px;">'
+            f'border-radius:2px;padding:2px 6px;font-size:10px;color:#5C6878;margin:1px;">'
             f'{_html.escape(s[:20])}</span>'
         )
     if len(sectors) > 3:
         pills.append(
-            f'<span style="font-size:8.5px;color:#465366">+{len(sectors)-3}</span>'
+            f'<span style="font-size:10px;color:#465366">+{len(sectors)-3}</span>'
         )
     return "".join(pills)
 

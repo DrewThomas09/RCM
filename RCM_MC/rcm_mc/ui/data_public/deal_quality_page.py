@@ -50,8 +50,8 @@ def _tier_badge(tier: str) -> str:
 
 def _severity_badge(severity: str) -> str:
     if severity == "error":
-        return '<span style="color:#b5321e;font-size:8.5px;font-family:var(--ck-mono);">ERR</span>'
-    return '<span style="color:#b8732a;font-size:8.5px;font-family:var(--ck-mono);">WRN</span>'
+        return '<span style="color:#b5321e;font-size:10px;font-family:var(--ck-mono);">ERR</span>'
+    return '<span style="color:#b8732a;font-size:10px;font-family:var(--ck-mono);">WRN</span>'
 
 
 def _tier_distribution_svg(tier_counts: Dict[str, int], total: int) -> str:
@@ -276,7 +276,7 @@ def render_deal_quality(tier_filter: str = "", sort_by: str = "quality_score", p
         if s.missing_fields:
             mf = s.missing_fields[:5]
             missing_html = (
-                '<span style="font-size:8.5px;color:#7a8699;font-family:var(--ck-mono);">'
+                '<span style="font-size:10px;color:#7a8699;font-family:var(--ck-mono);">'
                 + ", ".join(mf)
                 + ("…" if len(s.missing_fields) > 5 else "")
                 + "</span>"

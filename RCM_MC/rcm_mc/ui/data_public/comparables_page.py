@@ -113,7 +113,7 @@ def _payer_bars(pm: Optional[Dict[str, float]]) -> str:
         f'<rect x="{cx+mx:.1f}" y="1" width="{ax:.1f}" height="6" fill="#b8732a"/>'
         f'<rect x="{cx+mx+ax:.1f}" y="1" width="{sx:.1f}" height="6" fill="#465366"/>'
         f'</svg>'
-        f'<span style="font-family:var(--ck-mono);font-size:8.5px;color:#7a8699;margin-left:3px;">'
+        f'<span style="font-family:var(--ck-mono);font-size:10px;color:#7a8699;margin-left:3px;">'
         f'{comm*100:.0f}%C</span>'
     )
 
@@ -160,7 +160,7 @@ def _peer_stats_panel(comps: List[Dict[str, Any]], target: Optional[Dict[str, An
 
     cells_html = "".join(
         f'<div style="padding:8px 12px;border-right:1px solid #D6CFC0;">'
-        f'<div style="font-size:8.5px;color:#465366;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;">{_html.escape(k)}</div>'
+        f'<div style="font-size:10px;color:#465366;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:3px;">{_html.escape(k)}</div>'
         f'<div style="font-size:13px;">{v}</div>'
         f'</div>'
         for k, v in cells

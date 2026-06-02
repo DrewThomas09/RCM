@@ -346,9 +346,9 @@ def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
                 tot = snf_yrs.get(y, 0) + hosp_yrs.get(y, 0)
                 ht = max(2, int(tot / mx * 48))
                 cells += (f'<div style="text-align:center;flex:1">'
-                          f'<div style="font-size:8px;color:{P["text_dim"]};font-family:{_SANS}">{tot}</div>'
+                          f'<div style="font-size:10px;color:{P["text_dim"]};font-family:{_SANS}">{tot}</div>'
                           f'<div style="height:{ht}px;background:{P["accent"]};opacity:.8;margin:2px 2px 0"></div>'
-                          f'<div style="font-size:8px;color:{P["text_dim"]};margin-top:2px">{y}</div></div>')
+                          f'<div style="font-size:10px;color:{P["text_dim"]};margin-top:2px">{y}</div></div>')
             # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.
             real_panel = (
                 f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
