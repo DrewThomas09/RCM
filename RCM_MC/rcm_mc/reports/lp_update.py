@@ -142,8 +142,14 @@ def build_lp_update_html(
             f'</tr></thead><tbody>{"".join(cohort_rows)}</tbody></table></div>'
         )
 
-    body = headline + alerts_html + activity_html + cohort_html
-    return shell(
-        body=body, title=title,
-        subtitle=f"Portfolio snapshot · window {days} days",
+    # Window note rendered IN THE BODY, not via the shell ``subtitle``:
+    # chartis_shell suppresses the standalone subtitle once the body carries
+    # a page title (here the auto-injected "LP Update" h1), which silently
+    # dropped the LP digest's "window N days" meta. Rendering it in the body
+    # keeps it visible regardless of the shell's title handling.
+    window_note = (
+        f'<p class="muted" style="margin:0 0 16px;font-size:0.85rem;">'
+        f'Portfolio snapshot &middot; window {days} days</p>'
     )
+    body = window_note + headline + alerts_html + activity_html + cohort_html
+    return shell(body=body, title=title)

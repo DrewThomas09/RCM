@@ -96,6 +96,28 @@ def _evaluate_covenant(store: PortfolioStore) -> List[Alert]:
     return out
 
 
+def _fmt_usd_compact(v: object) -> str:
+    """Format a USD figure for partner/LP-facing alert detail text.
+
+    The variance-miss detail used to interpolate the raw float (e.g.
+    ``actual 10500000.0 vs plan 12000000.0``), which reads as unscaled
+    digits on the LP digest. House style is 2-decimal scaled money
+    ($10.50M). None/NaN render as ``n/a`` rather than a fabricated number.
+    """
+    try:
+        x = float(v)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return "n/a"
+    if x != x:  # NaN
+        return "n/a"
+    a = abs(x)
+    if a >= 1e6:
+        return f"${x / 1e6:.2f}M"
+    if a >= 1e3:
+        return f"${x / 1e3:.2f}K"
+    return f"${x:,.0f}"
+
+
 def _evaluate_variance(
     store: PortfolioStore,
     *,
@@ -128,7 +150,8 @@ def _evaluate_variance(
                 deal_id=did,
                 title=f"EBITDA variance {vp_f*100:+.1f}%",
                 detail=f"Quarter {latest.get('quarter')}: "
-                       f"actual {latest.get('actual')} vs plan {latest.get('plan')}",
+                       f"actual {_fmt_usd_compact(latest.get('actual'))} "
+                       f"vs plan {_fmt_usd_compact(latest.get('plan'))}",
                 triggered_at=str(latest.get("quarter")),
             ))
         elif vp_f <= -0.05:
