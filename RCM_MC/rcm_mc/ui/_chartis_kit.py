@@ -600,6 +600,32 @@ def ck_table(
     )
 
 
+# Realistic operating-margin band for HCRIS-derived hospital records.
+# A hospital operating margin = (NPR − opex) / NPR. Outside roughly
+# −40%…+30% the filing almost always has incomplete or aggregated
+# opex (a parent/CCN rollup, or partial expense lines), so the computed
+# margin is a DATA ARTIFACT rather than a real operating result — e.g.
+# a $7.86B-NPR record showing 87.9% implies opex ≈ 12% of revenue,
+# which is impossible for a real hospital. Callers use this to flag
+# such values for review instead of presenting them as confident KPIs.
+# Band agreed with the product owner.
+MARGIN_PLAUSIBLE_LO = -0.40
+MARGIN_PLAUSIBLE_HI = 0.30
+
+
+def margin_is_plausible(margin: Optional[float]) -> bool:
+    """True when an operating-margin *fraction* (0.04 == 4%) falls in
+    the realistic band for a real hospital filing. None / non-numeric
+    returns True (unknown → don't flag; never raises — partner UI)."""
+    try:
+        m = float(margin)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return True
+    if m != m:  # NaN
+        return True
+    return MARGIN_PLAUSIBLE_LO <= m <= MARGIN_PLAUSIBLE_HI
+
+
 def ck_kpi_block(
     label: str,
     value: str,
