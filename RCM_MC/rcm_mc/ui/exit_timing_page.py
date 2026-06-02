@@ -396,6 +396,7 @@ def _recommendation_block(rec: Optional[ExitRecommendation]) -> str:
         ),
         lede_italic_phrase="When to exit, and on what terms.",
         lede_body=html.escape(rec.rationale),
+        as_subhead=True,
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -635,39 +636,27 @@ def _landing() -> str:
         f'Compute exit path</button>'
         f'</form>'
     )
+    from ._chartis_kit import ck_editorial_head
     body = (
         _scoped_styles()
         + '<div class="et-wrap">'
-        + f'<div style="padding:24px 0 12px 0;">'
-        + f'<div class="et-eyebrow">RCM Diligence</div>'
-        + f'<div class="et-h1">Exit Timing + Buyer-Type Fit</div>'
-        + f'</div>'
-        + f'<div class="et-callout">'
-        f'<strong style="color:{P["text"]};">What this shows: </strong>'
-        f'Given a Deal MC scenario (equity + debt + EBITDA trajectory), '
-        f'compute an IRR/MOIC curve across candidate exit years 2-7 '
-        f'and score each buyer type (strategic / PE secondary / IPO / '
-        f'sponsor-hold-extension) against the target profile. The '
-        f'recommended exit combines the highest probability-weighted IRR '
-        f'with the buyer type most likely to close.'
-        f'</div>'
+        + ck_editorial_head(
+            eyebrow="Exit Timing + Buyer Fit",
+            title="When the deal pays you to <em>leave</em>.",
+            meta="PREDICTIVE EXIT PATH · BUYER-CHANNEL FIT",
+            lede_italic_phrase="Time the exit, name the buyer.",
+            lede_body=(
+                " Given a Deal MC scenario (equity + debt + EBITDA trajectory), "
+                "this scores an IRR/MOIC curve across candidate exit years 2–7 "
+                "and ranks each buyer channel — strategic, PE secondary, IPO, "
+                "sponsor-hold — by fit. The recommended exit pairs the highest "
+                "probability-weighted IRR with the buyer most likely to close."
+            ),
+        )
         + form
         + '</div>'
     )
-    return chartis_shell(
-        body, "RCM Diligence — Exit Timing",
-        subtitle="When + to whom · predictive exit path",
-        editorial_intro={
-            "eyebrow": "EXIT TIMING",
-            "headline": "When the deal pays you to leave.",
-            "italic_word": "leave",
-            "body": (
-                "Probabilistic IRR/MOIC across candidate exit years, "
-                "scored by buyer-channel fit. Pair the highest-IRR "
-                "year with the buyer most likely to clear the bid."
-            ),
-        },
-    )
+    return chartis_shell(body, "RCM Diligence — Exit Timing")
 
 
 def render_exit_timing_page(
@@ -723,7 +712,7 @@ def render_exit_timing_page(
 
     # Cycle 52 — KPI strip with provenance.
     from ._chartis_kit import (
-        ck_eyebrow, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
+        ck_fmt_num, ck_fmt_pct, ck_kpi_block,
         ck_provenance_tooltip, ck_source_purpose,
     )
     peak_irr = report.peak_irr_point.irr if report.peak_irr_point else 0
@@ -759,18 +748,17 @@ def render_exit_timing_page(
     )
 
     hero = (
-        ck_eyebrow("Exit Timing + Buyer Fit")
-        + kpi_strip
-        + f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
+        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
         f'{P["border"]};margin-bottom:22px;">'
         f'<div class="et-eyebrow">Exit Timing + Buyer Fit</div>'
-        f'<div class="et-h1">{html.escape(target_name)}</div>'
+        f'<h1 class="et-h1">{html.escape(target_name)}</h1>'
         f'<div style="font-size:11px;color:{P["text_faint"]};margin-top:4px;">'
         f'{len(report.curve)} candidate exit years · '
         f'{len(report.buyer_fit)} buyer types scored · '
         f'{"sector " + sentiment if sentiment else "no sector sentiment"}'
         f'</div>'
-        f'{_recommendation_block(report.recommendation)}'
+        + kpi_strip
+        + f'{_recommendation_block(report.recommendation)}'
         f'</div>'
     )
 
@@ -914,19 +902,4 @@ def render_exit_timing_page(
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(
-        body, f"Exit Timing — {target_name}",
-        subtitle="When + to whom · predictive exit path",
-        editorial_intro={
-            "eyebrow": "EXIT TIMING",
-            "headline": "When the deal pays you to leave.",
-            "italic_word": "leave",
-            "body": (
-                "IRR/MOIC across candidate exit years for "
-                f"{target_name}, scored by buyer-channel fit. "
-                "The recommended pairing combines the highest "
-                "probability-weighted IRR with the buyer most "
-                "likely to clear the bid."
-            ),
-        },
-    )
+    return chartis_shell(body, f"Exit Timing — {target_name}")

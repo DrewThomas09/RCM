@@ -29,9 +29,9 @@ from ..diligence.regulatory_calendar.killswitch import (
     DriverKillTimeline, EbitdaOverlay,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
+    P, chartis_shell, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_provenance_tooltip, ck_section_intro,
-    ck_signal_badge, ck_source_purpose,
+    ck_signal_badge,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -434,6 +434,7 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
         meta=f"VERDICT {verdict} · RISK SCORE {risk_val}",
         lede_italic_phrase="The regulatory clock for this thesis.",
         lede_body=rationale,
+        as_subhead=True,
     )
     badge = ck_signal_badge(verdict, tone=badge_tone)
     kpis = (
@@ -930,35 +931,34 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
   </div>
 </form>
 """
+    from ._chartis_kit import ck_editorial_head
     body = (
         _scoped_styles()
         + '<div class="rc-wrap">'
         + deal_context_bar(qs or {}, active_surface="reg")
-        + ck_source_purpose(
-            purpose="Map which thesis drivers face regulatory kill-switches and when — tie deal value to specific upcoming CMS/OIG/FTC/DOJ dates.",
-            universe="research",
-            source="Curated regulatory-event library (CMS / OIG / FTC / DOJ) — each event carries a primary-source citation; the margin/revenue impact figures are PEdesk scenario estimates, not regulator forecasts.",
-            next_action="Log the binding events as risks in the Risk Workbench",
-            next_href="/diligence/risk-workbench",
+        + ck_editorial_head(
+            eyebrow="Regulatory Calendar × Thesis Kill-Switch",
+            title="Which thesis drivers die, and <em>when</em>.",
+            meta="KILL-SWITCH × THESIS × CALENDAR",
+            lede_italic_phrase="Tie deal value to specific regulatory dates.",
+            lede_body=(
+                " A curated library of upcoming CMS / OIG / FTC / DOJ / NSA-IDR / "
+                "state events, mapped against your target's thesis drivers — a "
+                "gantt-style timeline of the date each driver dies, with an "
+                "EBITDA-bridge overlay on the Deal MC cone."
+            ),
+            source_note="Each event carries a primary-source citation; impact figures are PEdesk scenario estimates, not regulator forecasts.",
         )
-        + f'<div style="padding:22px 0 16px 0;">'
-        + '<div class="rc-eyebrow">Regulatory Calendar × '
-        + 'Thesis Kill-Switch</div>'
-        + '<div class="rc-h1">Which thesis drivers die, and when.</div>'
-        + f'<div class="rc-callout">Curated library of upcoming CMS / OIG / '
-        + 'FTC / DOJ / NSA-IDR / state-level events mapped against your '
-        + 'target\'s thesis drivers. The output is a gantt-style timeline '
-        + 'showing the specific calendar date on which each driver '
-        + '<em>dies</em> — plus an EBITDA bridge overlay that subtracts '
-        + 'from the Deal MC cone.</div>'
-        + '</div>'
         + form
+        + f'<p style="font-size:11px;color:{P["text_faint"]};margin-top:14px;">'
+        + 'Binding events can be logged as risks in the '
+        + f'<a href="/diligence/risk-workbench" style="color:{P["accent"]};'
+        + 'text-decoration:none;">Risk Workbench →</a></p>'
         + '</div>'
     )
     return chartis_shell(
         body, "RCM Diligence — Regulatory Calendar",
         active_nav="/regulatory-calendar",
-        subtitle="Kill-switch × thesis × calendar",
     )
 
 
@@ -1065,18 +1065,17 @@ def render_regulatory_calendar_page(
     )
 
     hero = (
-        ck_eyebrow("Regulatory Calendar")
-        + kpi_strip
-        + f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
+        f'<div style="padding:22px 0 16px 0;border-bottom:1px solid '
         f'{P["border"]};margin-bottom:22px;">'
         f'<div class="rc-eyebrow">Regulatory Calendar × Kill-Switch</div>'
-        f'<div class="rc-h1">{html.escape(target_name)}</div>'
+        f'<h1 class="rc-h1">{html.escape(target_name)}</h1>'
         f'<div style="font-size:11px;color:{P["text_faint"]};'
         f'margin-top:4px;">'
         f'{len(report.events)} events · {horizon}-month horizon · '
         f'scanned {len(report.driver_timelines)} thesis drivers'
         f'</div>'
-        f'{_verdict_card(report)}'
+        + kpi_strip
+        + f'{_verdict_card(report)}'
         f'</div>'
     )
 
