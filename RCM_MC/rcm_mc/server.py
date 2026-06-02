@@ -5599,7 +5599,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="cad-muted">{_ws_sub}</div></a>'
                 '<a href="/settings/ai" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
-                f'<h3>AI Assistant (Claude){_ai_badge}</h3>'
+                f'<h3>AI Assistant (Local Ollama){_ai_badge}</h3>'
                 f'<div class="cad-muted">{_ai_sub}</div></a>'
                 '<a href="/settings/custom-kpis" class="cad-card" '
                 'style="text-decoration:none;color:inherit;">'
