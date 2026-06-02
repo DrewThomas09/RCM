@@ -7794,26 +7794,45 @@ class RCMHandler(BaseHTTPRequestHandler):
             "min_beds": (qs.get("min_beds") or [""])[0],
             "max_beds": (qs.get("max_beds") or [""])[0],
             "min_revenue": (qs.get("min_revenue") or [""])[0],
+            "max_revenue": (qs.get("max_revenue") or [""])[0],
+            "min_margin": (qs.get("min_margin") or [""])[0],
             "max_margin": (qs.get("max_margin") or [""])[0],
             "state": (qs.get("state") or [""])[0].upper(),
+            "sort": (qs.get("sort") or [""])[0],
         }
 
-        # Preset screens
+        # Preset screens. Each is now SIZE-BOUNDED so "find targets to buy"
+        # presets return acquirable, in-range hospitals rather than every
+        # giant in the country (the old turnaround preset had no max_beds and
+        # sorted by revenue, so it surfaced 1,000-bed systems). "Large
+        # platforms" is the one deliberately-unbounded, large-cap/diligence
+        # screen. Keys here MUST stay in step with the labels in
+        # render_screen_page's preset list.
         if preset == "turnaround":
-            filters = {"min_beds": "100", "max_beds": "", "min_revenue": "50",
-                        "max_margin": "5", "state": ""}
+            # Distressed but BUYABLE: bolt-on/platform size, weak margin,
+            # sorted most-distressed-first (not biggest-first).
+            filters = {"min_beds": "50", "max_beds": "400", "min_revenue": "15",
+                       "max_revenue": "", "min_margin": "", "max_margin": "3",
+                       "state": "", "sort": "margin"}
         elif preset == "large_cap":
             filters = {"min_beds": "300", "max_beds": "", "min_revenue": "300",
-                        "max_margin": "", "state": ""}
+                       "max_revenue": "", "min_margin": "", "max_margin": "",
+                       "state": "", "sort": "revenue"}
         elif preset == "margin_expansion":
-            filters = {"min_beds": "150", "max_beds": "", "min_revenue": "100",
-                        "max_margin": "15", "state": ""}
+            # Already profitable, room to improve: 0–10% margin, mid-size.
+            filters = {"min_beds": "100", "max_beds": "500", "min_revenue": "50",
+                       "max_revenue": "", "min_margin": "0", "max_margin": "10",
+                       "state": "", "sort": "margin"}
         elif preset == "undervalued":
-            filters = {"min_beds": "200", "max_beds": "", "min_revenue": "",
-                        "max_margin": "3", "state": ""}
+            # High beds, low revenue per bed — sorted lowest rev/bed first.
+            filters = {"min_beds": "150", "max_beds": "", "min_revenue": "",
+                       "max_revenue": "", "min_margin": "", "max_margin": "",
+                       "state": "", "sort": "rev_per_bed"}
         elif preset == "small_efficient":
+            # Clean bolt-ons: small, non-negative margin.
             filters = {"min_beds": "", "max_beds": "200", "min_revenue": "",
-                        "max_margin": "", "state": ""}
+                       "max_revenue": "", "min_margin": "0", "max_margin": "",
+                       "state": "", "sort": "rev_per_bed"}
 
         has_filters = any(v for v in filters.values())
         results = None
@@ -7850,13 +7869,44 @@ class RCMHandler(BaseHTTPRequestHandler):
                         df = df[df["operating_margin"] <= float(filters["max_margin"]) / 100]
                 except ValueError:
                     pass
+            if filters.get("min_margin"):
+                try:
+                    if "operating_margin" in df.columns:
+                        df = df[df["operating_margin"] >= float(filters["min_margin"]) / 100]
+                except ValueError:
+                    pass
+            if filters.get("max_revenue"):
+                try:
+                    df = df[df[rev_col].fillna(0) <= float(filters["max_revenue"]) * 1e6]
+                except ValueError:
+                    pass
             if filters.get("state"):
                 st = filters["state"].strip()
                 if st:
                     df = df[df["state"] == st]
 
-            # Sort by revenue descending, take top 50
-            df = df.sort_values(rev_col, ascending=False).head(50)
+            # Revenue per bed — a real "is this priced like its size" signal,
+            # and the sort key behind the Undervalued preset.
+            df["rev_per_bed"] = _np_scr.where(
+                df["beds"].fillna(0) > 0,
+                df[rev_col].fillna(0) / df["beds"].replace(0, _np_scr.nan), 0.0,
+            )
+
+            # Sort by the chosen key (default revenue desc). "margin" ascending
+            # surfaces the most-distressed first so a turnaround screen returns
+            # in-range fix-it candidates rather than the biggest systems.
+            sort_key = (filters.get("sort") or "revenue").strip()
+            if sort_key == "margin" and "operating_margin" in df.columns:
+                df = df.sort_values("operating_margin", ascending=True, na_position="last")
+            elif sort_key == "beds":
+                df = df.sort_values("beds", ascending=False, na_position="last")
+            elif sort_key == "rev_per_bed":
+                df = df.sort_values("rev_per_bed", ascending=True, na_position="last")
+            else:
+                sort_key = "revenue"
+                df = df.sort_values(rev_col, ascending=False, na_position="last")
+            filters["sort"] = sort_key
+            df = df.head(50)
             results = []
             for _, row in df.iterrows():
                 results.append({
@@ -7866,6 +7916,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     "beds": int(row.get("beds", 0)),
                     "net_patient_revenue": float(row.get(rev_col, 0)),
                     "operating_margin": float(row.get("operating_margin", 0)) if "operating_margin" in row.index else 0,
+                    "rev_per_bed": float(row.get("rev_per_bed", 0) or 0),
                 })
 
         return self._send_html(render_screen_page(
