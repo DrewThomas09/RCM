@@ -362,14 +362,15 @@ def render_deal_screening(
     pass_rate = (counts.get("PASS", 0) / n_deals) if n_deals else 0.0
     explainer_html = (
         '<p class="ck-ds-explainer">'
-        '<em>How would your thesis screen a representative deal set?</em> '
+        '<em>How would your thesis screen the deal corpus?</em> '
         f"Set your thesis as thresholds — max risk, valuation ceiling (EV/EBITDA), "
         f"return floor (MOIC), payer-mix and size limits — and PE Desk runs the full "
-        f"{n_deals}-deal illustrative corpus against them. The <b>pass rate</b> is your "
-        f"thesis&rsquo;s base rate: the share of the corpus that would clear it. A high "
-        f"pass rate means a permissive thesis; a low one means you&rsquo;re selective. "
-        f"Every deal&rsquo;s PASS / WATCH / FAIL verdict and reason is below. "
-        f'For the real, source-linked deals, see '
+        f"{n_deals}-deal corpus against them: real US healthcare PE deals, with "
+        f"financial outcomes modeled where not publicly disclosed. The <b>pass rate</b> "
+        f"is your thesis&rsquo;s base rate: the share of the corpus that would clear it. "
+        f"A high pass rate means a permissive thesis; a low one means you&rsquo;re "
+        f"selective. Every deal&rsquo;s PASS / WATCH / FAIL verdict and reason is below. "
+        f'For the fully source-linked subset, see '
         f'<a href="/verified-deals" style="color:inherit;text-decoration:underline;">Verified Deals</a>.'
         '</p>'
     )

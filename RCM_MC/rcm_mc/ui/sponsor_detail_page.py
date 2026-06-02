@@ -218,7 +218,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         purpose="Compute a sponsor's realized track record (median MOIC, win rate, sectors, vintages) vs the corpus to sanity-check a pitched base case.",
         universe="corpus",
         confidence="illustrative",
-        source="Built from the platform deal-outcome corpus — an illustrative seed corpus, not a verified live-fund record. Directional context, not attribution.",
+        source="Built from the platform deal corpus — real deals with returns modeled where not publicly disclosed, not a verified live-fund record. Directional context, not attribution.",
         next_action="Compare the sponsor's deals on Comparable Outcomes",
         next_href="/diligence/comparable-outcomes",
     )
@@ -514,8 +514,8 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
             f'<p style="margin:0 0 8px;font-size:12px;color:#465366;">'
             f'{len(_vdeals)} real, source-linked deal'
             f'{"s" if len(_vdeals) != 1 else ""} for '
-            f'{_html.escape(matched_name)} — the honest counterweight to the '
-            'illustrative corpus stats above.</p>'
+            f'{_html.escape(matched_name)} — the source-linked counterweight to '
+            'the modeled corpus stats above.</p>'
             f'<ul style="margin:0;padding-left:18px;">{_v_rows}</ul>'
             '<p style="margin:10px 0 0;"><a href="/verified-deals?sponsor='
             f'{_urlparse.quote(matched_name)}" style="color:var(--sc-navy);'
@@ -525,9 +525,9 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     else:
         _v_inner = (
             '<p style="margin:0;font-size:12.5px;color:#7a8699;">'
-            f'No verified deals for {_html.escape(matched_name)} in the real-deal '
-            'set yet — so the track record above is <em>illustrative corpus</em> '
-            "data, not this sponsor's genuine record. See the "
+            f'No verified deals for {_html.escape(matched_name)} in the source-linked '
+            'set yet — so the financials above are <em>modeled from the deal '
+            "corpus</em>, not this sponsor's verified record. See the "
             f'<a href="/verified-deals" style="color:var(--sc-navy);">'
             f'{verified_deal_count()} verified deals</a> we have sourced so far.</p>'
         )

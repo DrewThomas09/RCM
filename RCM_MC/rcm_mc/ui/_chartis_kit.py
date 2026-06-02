@@ -913,8 +913,8 @@ _ILLUSTRATIVE_ANALYZER_ROUTES = frozenset({
     "/working-capital", "/zbb-tracker",
 })
 
-_ILLUSTRATIVE_ROUTE_NOTE = ("analyzer figures (built from the bundled "
-                            "illustrative seed corpus / modeled assumptions, "
+_ILLUSTRATIVE_ROUTE_NOTE = ("analyzer figures (modeled outputs over a bundled "
+                            "corpus of real deals + sample assumptions, "
                             "not your ingested portfolio)")
 
 

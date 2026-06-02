@@ -147,7 +147,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "Corpus Backtest",
         "summary": (
-            "Replay screening rules against the illustrative corpus to "
+            "Replay screening rules against the real-deal corpus to "
             "see what the platform would have surfaced."
         ),
         "href": "/corpus-backtest",

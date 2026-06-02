@@ -512,14 +512,14 @@ def render_comparable_outcomes_page(
                 purpose="Sanity-check bid pricing against realized MOIC/IRR/exit-multiple distributions on comparable deals (sector × size × hold × exit channel).",
                 universe="corpus",
                 confidence="illustrative",
-                source="Platform deal-outcome corpus — an illustrative seed corpus, not a verified live-fund benchmark. Read the distributions as directional context.",
+                source="Platform deal corpus — real deals with MOIC/IRR modeled where not publicly disclosed, not your fund's realized benchmark. Read the distributions as directional context.",
                 next_action="Carry the comp distribution into the IC narrative",
                 next_href="/diligence/ic-packet",
             )
             + ck_page_explainer(
                 'Realized outcomes on comparable deals.',
                 'Pulls the MOIC / IRR / exit-multiple distributions from the platform corpus filtered to comparables of the focused deal (sector × size × hold × exit channel). Used as a sanity check on bid pricing and to set the IC narrative on "what deals like this tend to return."',
-                source='Platform illustrative seed corpus (not real fund history).',
+                source='Platform deal corpus — real deals; MOIC/IRR modeled where not publicly disclosed (not your fund\'s realized history).',
             )
         )
         explainer_html = (
@@ -554,8 +554,8 @@ def render_comparable_outcomes_page(
             )
         verified_note = (
             '<p style="margin:10px 2px 0;font-size:11.5px;color:#7a8699;">'
-            'These comparables are from the illustrative corpus. For real, '
-            f'source-linked deals, see {_vd_link}</p>'
+            'These comparables are real deals from the corpus, with modeled '
+            f'financials. For the fully source-linked subset, see {_vd_link}</p>'
         )
         inner = (
             page_title_block

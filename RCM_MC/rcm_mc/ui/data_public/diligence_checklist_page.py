@@ -226,7 +226,8 @@ def render_diligence_checklist(params: dict) -> str:
         f'<b>Risk Wt.</b> is a heuristic weight derived from each item’s '
         f'status (CRITICAL/WARNING/MISSING/PASS) — not a measured corpus '
         f'failure frequency. Returns benchmarks (MOIC/IRR/leverage vs corpus) '
-        f'and the corpus-deal count are computed against the illustrative deal corpus.'
+        f'and the corpus-deal count are computed against the deal corpus '
+        f'(real deals; financials modeled where not publicly disclosed).'
         f'</p>'
     )
 
