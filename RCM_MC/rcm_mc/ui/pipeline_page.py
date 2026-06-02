@@ -195,18 +195,22 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     def _kpi_link(href: str, block: str, active: bool = False) -> str:
         cls = "ck-kpi-link" + (" ck-kpi-link-active" if active else "")
         return f'<a class="{cls}" href="{href}">{block}</a>'
+    # Every tile is a link so the whole strip responds (Active + Saved Searches
+    # were dead plain blocks — "the top bar isn't working fully"). Active jumps
+    # to the deals table; Saved Searches to the saved-searches section.
     kpis = (
         '<div class="ck-kpi-strip">'
         + _kpi_link("/pipeline", ck_kpi_block("In Pipeline", f"{total}"),
                     active=sel_stage is None)
-        + ck_kpi_block("Active", f"{active}")
+        + _kpi_link("/pipeline#pp-deals", ck_kpi_block("Active", f"{active}"))
         + _kpi_link("/pipeline?stage=diligence",
                     ck_kpi_block("In Diligence", f"{summary.get('diligence', 0)}"),
                     active=sel_stage == "diligence")
         + _kpi_link("/pipeline?stage=closed",
                     ck_kpi_block("Closed", f"{summary.get('closed', 0)}"),
                     active=sel_stage == "closed")
-        + ck_kpi_block("Saved Searches", f"{len(searches)}")
+        + _kpi_link("/pipeline#pp-saved",
+                    ck_kpi_block("Saved Searches", f"{len(searches)}"))
         + '</div>'
     )
 
@@ -413,18 +417,15 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     funnel = (
         f'{funnel_css}'
         + ck_panel(
-            '<p class="ck-section-body">'
-            'How prospects flow from screening to close. <strong>Conv %</strong> '
-            'is stage-to-stage conversion (share of the prior stage that '
-            'advanced; "—" at the top of the funnel or when the prior stage '
-            'is empty). <strong>Med d</strong> is the median days hospitals '
-            'in this stage have been sitting on it (computed from the last '
-            'stage-change or add). <strong>Stalled</strong> counts hospitals '
-            'with no activity in the last 30 days; the number flips coral '
-            'when &gt; 0. Empty stages remain visible at low opacity so the '
-            'funnel shape stays readable.</p>'
+            # Lead with the actionable verdict; the column definitions are a
+            # compact one-line legend (was a ~10-line prose wall).
             f'<p class="ck-section-body" style="color:var(--ink-2,#2b3e54);">'
             f'<strong>Velocity:</strong> {velocity_verdict}</p>'
+            '<p class="ck-section-body" style="font-size:11px;'
+            'color:var(--ink-3,#506478);margin-top:2px;">'
+            'Conv % = share of the prior stage that advanced · '
+            'Med d = median days in stage · '
+            'Stalled = no activity in 30 days (coral when &gt; 0).</p>'
             # Wrap the fixed 6-column funnel grid so it scrolls horizontally
             # within the viewport on phones instead of widening the page
             # (inert on desktop, where it fits).
@@ -662,9 +663,9 @@ border-radius:2px;transition:background 0.12s;}
     body = (
         pp_styles + title_block + explainer_html + actions_row + kpis
         + '<div class="pp-grid">'
-        + f'<div>{funnel}{search_section}</div>'
+        + f'<div>{funnel}<span id="pp-saved"></span>{search_section}</div>'
         + f'<div>{activity_section}</div></div>'
-        + f'{pipeline_table}{next_up}{nav}{back_to_top}'
+        + f'<span id="pp-deals"></span>{pipeline_table}{next_up}{nav}{back_to_top}'
     )
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
