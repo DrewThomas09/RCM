@@ -77,12 +77,13 @@ def _hsr_table(items) -> str:
             ("Filing Required","center"),("Waiting Period (days)","right"),("Filing Fee ($k)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((t.current_value_mm for t in items), default=1.0) or 1.0
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         f_c = neg if t.filing_required else pos
         cells = [
             f'{ck_data_cell(f"""{_html.escape(t.threshold)}""", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""${t.current_value_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${t.current_value_mm:,.2f}""", align="right", mono=True, weight=700, bar=t.current_value_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""${t.threshold_value_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{f_c};font-weight:700">{"REQUIRED" if t.filing_required else "No"}</td>',
             f'{ck_data_cell(f"""{t.waiting_period_days}""", align="right", mono=True, tone="dim")}',

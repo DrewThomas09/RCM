@@ -52,6 +52,7 @@ def _deals_table(items) -> str:
             ("EV / Rev","right"),("EV / EBITDA","right"),("D/E","right"),("Type","center"),("Advisor","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((d.deal_size_m for d in items), default=1.0) or 1.0
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         e_c = pos if d.ev_ebitda_x >= 16 else (acc if d.ev_ebitda_x >= 13 else text_dim)
@@ -60,7 +61,7 @@ def _deals_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(d.target)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text};font-weight:600">{_html.escape(d.buyer)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.sector)}</td>',
-            f'{ck_data_cell(f"""${d.deal_size_m:,.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${d.deal_size_m:,.1f}M""", align="right", mono=True, weight=700, bar=d.deal_size_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${d.revenue_m:,.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${d.ebitda_m:,.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{d.ev_revenue_x:.2f}x""", align="right", mono=True, tone="acc", weight=600)}',

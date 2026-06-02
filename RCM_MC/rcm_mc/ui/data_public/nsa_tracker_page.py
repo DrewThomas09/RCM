@@ -66,6 +66,7 @@ def _cases_table(items) -> str:
             ("Selected","center"),("Days","right"),("Status","center"),("Admin Fee","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.claim_amount for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _selected_color(c.idr_selected)
@@ -75,7 +76,7 @@ def _cases_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text};font-weight:600">{_html.escape(c.deal)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.specialty)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(c.payer)}</td>',
-            f'{ck_data_cell(f"""${c.claim_amount:,.0f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.claim_amount:,.0f}""", align="right", mono=True, weight=700, bar=c.claim_amount / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.qpa:,.0f}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${c.offer_provider:,.0f}""", align="right", mono=True, tone="pos")}',
             f'{ck_data_cell(f"""${c.offer_payer:,.0f}""", align="right", mono=True, tone="dim")}',

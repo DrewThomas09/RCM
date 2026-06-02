@@ -42,6 +42,7 @@ def _sites_table(items) -> str:
             ("Stab EBITDA ($M)","right"),("Ramp (mo)","right"),("Payback (yr)","right"),("Y1 Rev ($M)","right"),("Y3 Rev ($M)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((s.stabilized_ebitda_mm for s in items), default=1.0) or 1.0
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         pb_c = pos if s.payback_years <= 2.7 else (acc if s.payback_years <= 3.2 else warn)
@@ -50,7 +51,7 @@ def _sites_table(items) -> str:
             f'{ck_data_cell(f"""${s.buildout_capex_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${s.working_cap_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]};font-weight:600">${s.total_investment_mm:,.2f}</td>',
-            f'{ck_data_cell(f"""${s.stabilized_ebitda_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${s.stabilized_ebitda_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=s.stabilized_ebitda_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{s.ramp_months}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pb_c};font-weight:700">{s.payback_years:.2f}</td>',
             f'{ck_data_cell(f"""${s.y1_revenue_mm:,.2f}""", align="right", mono=True, tone="acc")}',

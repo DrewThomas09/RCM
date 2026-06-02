@@ -94,6 +94,7 @@ def _exposures_table(items) -> str:
             ("Capitation ($M)","right"),("Shared Savings ($M)","right"),("Quality ($M)","right"),("Total MA Revenue ($M)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((e.annual_capitation_m for e in items), default=1.0) or 1.0
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
@@ -101,7 +102,7 @@ def _exposures_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(e.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(e.primary_ma_partners)}</td>',
             f'{ck_data_cell(f"""{e.at_risk_lives_k:.1f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${e.annual_capitation_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${e.annual_capitation_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=e.annual_capitation_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${e.shared_savings_m:.1f}M""", align="right", mono=True, tone="acc", weight=600)}',
             f'{ck_data_cell(f"""${e.quality_incentive_m:.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${e.total_ma_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',

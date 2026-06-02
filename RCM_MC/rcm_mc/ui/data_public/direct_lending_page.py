@@ -37,13 +37,14 @@ def _facilities_table(items) -> str:
             ("Spread (bps)","right"),("All-In Rate","right"),("Tenor (yr)","right"),("Cov-Lite","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((f.outstanding_mm for f in items), default=1.0) or 1.0
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'{ck_data_cell(f"""{_html.escape(f.lender)}""", mono=True, weight=600)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(f.lender_type)}</td>',
             f'{ck_data_cell(f"""${f.commitment_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${f.outstanding_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${f.outstanding_mm:,.2f}""", align="right", mono=True, weight=700, bar=f.outstanding_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{f.spread_sofr_bps}""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""{f.all_in_rate_pct:.2f}%""", align="right", mono=True, tone="neg", weight=700)}',
             f'{ck_data_cell(f"""{f.tenor_years}""", align="right", mono=True, tone="dim")}',

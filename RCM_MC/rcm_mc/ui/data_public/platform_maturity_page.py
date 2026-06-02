@@ -72,6 +72,7 @@ def _paths_table(items) -> str:
             ("Multiple","right"),("Advantages","left"),("Risks","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((p.expected_ev_mm for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         r_c = pos if p.readiness_score >= 85 else (acc if p.readiness_score >= 75 else text_dim)
@@ -79,7 +80,7 @@ def _paths_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(p.path)}""", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{p.readiness_score}</td>',
             f'{ck_data_cell(f"""{p.timing_months}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${p.expected_ev_mm:,.0f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${p.expected_ev_mm:,.0f}""", align="right", mono=True, tone="pos", weight=700, bar=p.expected_ev_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{p.expected_multiple:.2f}x""", align="right", mono=True, tone="acc", weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.advantages)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.risks)}</td>',

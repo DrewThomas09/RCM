@@ -56,6 +56,7 @@ def _escrows_table(items) -> str:
             ("Claims #","right"),("Claims Paid","right"),("Expected Release","right"),("Status","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((e.escrow_size_m for e in items), default=1.0) or 1.0
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _escrow_status_color(e.status)
@@ -66,7 +67,7 @@ def _escrows_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(e.sector)}</td>',
             f'{ck_data_cell(f"""{e.vintage}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(e.escrow_type)}</td>',
-            f'{ck_data_cell(f"""${e.escrow_size_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${e.escrow_size_m:.1f}M""", align="right", mono=True, weight=700, bar=e.escrow_size_m / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{h_c};font-weight:700">{e.held_pct * 100:.0f}%</td>',
             f'{ck_data_cell(f"""{_html.escape(e.release_date)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c}">{e.months_to_release}</td>',

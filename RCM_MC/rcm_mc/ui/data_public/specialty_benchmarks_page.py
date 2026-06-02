@@ -69,12 +69,13 @@ def _benchmarks_table(items) -> str:
             ("Patients/Day","right"),("Overhead %","right"),("Collections/wRVU","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((b.median_total_comp_k for b in items), default=1.0) or 1.0
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'{ck_data_cell(f"""{_html.escape(b.specialty)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(b.category)}</td>',
-            f'{ck_data_cell(f"""${b.median_total_comp_k:,.1f}K""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${b.median_total_comp_k:,.1f}K""", align="right", mono=True, tone="pos", weight=700, bar=b.median_total_comp_k / _bar_max * 100)}',
             f'{ck_data_cell(f"""${b.p25_comp_k:,.0f} / ${b.p75_comp_k:,.0f}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{b.median_wrvu_production:,}""", align="right", mono=True, tone="acc", weight=600)}',
             f'{ck_data_cell(f"""${b.median_wrvu_comp_per_rvu:.2f}""", align="right", mono=True)}',

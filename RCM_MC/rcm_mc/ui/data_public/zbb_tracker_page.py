@@ -31,13 +31,14 @@ def _categories_table(items) -> str:
             ("Captured ($M)","right"),("Remaining ($M)","right"),("% of Rev","right"),("Benchmark","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.current_run_rate_mm for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         bench_c = pos if c.pct_of_revenue <= c.benchmark_pct else neg
         cells = [
             f'{ck_data_cell(f"""{_html.escape(c.category)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""${c.pre_zbb_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${c.current_run_rate_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.current_run_rate_mm:,.2f}""", align="right", mono=True, weight=700, bar=c.current_run_rate_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.target_run_rate_mm:,.2f}""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""${c.savings_captured_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'{ck_data_cell(f"""${c.savings_potential_mm:,.2f}""", align="right", mono=True, tone="acc")}',

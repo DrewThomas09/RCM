@@ -31,6 +31,7 @@ def _cohorts_table(items) -> str:
             ("Synergy Capture","right"),("Integ Time (mo)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.total_deployed_mm for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
@@ -38,7 +39,7 @@ def _cohorts_table(items) -> str:
             f'{ck_data_cell(f"""{c.targets_closed}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""{c.avg_entry_multiple:.2f}x""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""${c.avg_ev_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${c.total_deployed_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.total_deployed_mm:,.2f}""", align="right", mono=True, weight=700, bar=c.total_deployed_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{c.synergy_capture_pct * 100:.1f}%""", align="right", mono=True, tone="pos")}',
             f'{ck_data_cell(f"""{c.time_to_full_integration_months}""", align="right", mono=True, tone="dim")}',
         ]

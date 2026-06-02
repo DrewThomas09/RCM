@@ -30,6 +30,7 @@ def _drugs_table(items) -> str:
             ("Annual Volume","right"),("Substitute","center"),("Spend ($M)","right"),("Days on Hand","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((d.platform_spend_mm for d in items), default=1.0) or 1.0
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = neg if "active" in d.shortage_status or "intermittent" in d.shortage_status or "rolling" in d.shortage_status else (warn if "resolved" in d.shortage_status else pos)
@@ -43,7 +44,7 @@ def _drugs_table(items) -> str:
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{ss_c};font-weight:700">{"YES" if d.sole_source else "NO"}</td>',
             f'{ck_data_cell(f"""{d.annual_volume_doses:,}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{sub_c}">{"YES" if d.substitution_available else "NO"}</td>',
-            f'{ck_data_cell(f"""${d.platform_spend_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${d.platform_spend_mm:,.2f}""", align="right", mono=True, weight=700, bar=d.platform_spend_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{doh_c};font-weight:600">{d.days_on_hand}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')

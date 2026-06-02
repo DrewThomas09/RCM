@@ -77,13 +77,14 @@ def _cash_table(items) -> str:
             ("Availability ($M)","right"),("Days of Opex","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.operating_cash_m for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         d_c = pos if c.days_of_opex >= 90 else (acc if c.days_of_opex >= 60 else warn)
         u_c = warn if (c.revolver_capacity_m > 0 and c.revolver_drawn_m / c.revolver_capacity_m >= 0.70) else text_dim
         cells = [
             f'{ck_data_cell(f"""{_html.escape(c.deal)}""", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""${c.operating_cash_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.operating_cash_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=c.operating_cash_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.restricted_cash_m:.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${c.investments_m:.1f}M""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""${c.total_liquidity_m:.1f}M""", align="right", mono=True, weight=700)}',

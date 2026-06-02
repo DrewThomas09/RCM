@@ -57,6 +57,7 @@ def _scenarios_table(items) -> str:
             ("NPV Benefit ($M)","right"),("Tax Gain ($M)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((s.sale_proceeds_mm for s in items), default=1.0) or 1.0
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         npv_c = pos if s.npv_benefit_mm > 0 else neg
@@ -64,7 +65,7 @@ def _scenarios_table(items) -> str:
         cells = [
             f'{ck_data_cell(f"""{_html.escape(s.scenario)}""", mono=True, weight=700)}',
             f'{ck_data_cell(f"""{_html.escape(s.asset_type)}""", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${s.sale_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${s.sale_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=s.sale_proceeds_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""${s.initial_rent_mm:,.2f}""", align="right", mono=True, tone="neg")}',
             f'{ck_data_cell(f"""{s.rent_escalation_pct * 100:.2f}%""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{s.term_years}""", align="right", mono=True, tone="dim")}',

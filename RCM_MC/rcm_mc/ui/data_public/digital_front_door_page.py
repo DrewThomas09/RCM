@@ -96,6 +96,7 @@ def _telehealth_table(items) -> str:
             ("Completion %","right"),("Avg Duration (min)","right"),("Satisfaction","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((t.telehealth_revenue_m for t in items), default=1.0) or 1.0
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         c_c = pos if t.completion_rate_pct >= 0.90 else (acc if t.completion_rate_pct >= 0.85 else P["warning"])
@@ -103,7 +104,7 @@ def _telehealth_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(t.deal)}""", mono=True, weight=700)}',
             f'{ck_data_cell(f"""{t.telehealth_visits_monthly_k}""", align="right", mono=True, tone="acc", weight=700)}',
             f'{ck_data_cell(f"""{t.pct_of_total_visits * 100:.0f}%""", align="right", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""${t.telehealth_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${t.telehealth_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=t.telehealth_revenue_m / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{t.completion_rate_pct * 100:.0f}%</td>',
             f'{ck_data_cell(f"""{t.avg_duration_min:.1f}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{t.patient_satisfaction:.1f}""", align="right", mono=True, tone="pos", weight=700)}',

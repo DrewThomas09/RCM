@@ -50,6 +50,7 @@ def _deals_table(items) -> str:
             ("Hurdle","right"),("Expected Close","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((d.equity_check_m for d in items), default=1.0) or 1.0
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(d.allocation_status)
@@ -58,7 +59,7 @@ def _deals_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(d.deal)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(d.sponsor)}</td>',
-            f'{ck_data_cell(f"""${d.equity_check_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${d.equity_check_m:.1f}M""", align="right", mono=True, weight=700, bar=d.equity_check_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${d.coinvest_allocation_m:.1f}M""", align="right", mono=True, tone="acc", weight=700)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(d.allocation_status)}</span>""", align="center")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{f_c};font-weight:600">{d.management_fee_pct:.2f}%</td>',

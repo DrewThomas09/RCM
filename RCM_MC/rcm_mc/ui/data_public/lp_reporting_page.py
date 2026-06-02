@@ -72,12 +72,13 @@ def _marks_table(items) -> str:
             ("Distribs ($M)","right"),("Cum DPI","right"),("Cum TVPI","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((m.nav_mm for m in items), default=1.0) or 1.0
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         d_c = pos if m.quarterly_value_change_pct >= 0.03 else (acc if m.quarterly_value_change_pct >= 0.02 else neg)
         cells = [
             f'{ck_data_cell(f"""{_html.escape(m.quarter)}""", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""${m.nav_mm:,.1f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${m.nav_mm:,.1f}""", align="right", mono=True, weight=700, bar=m.nav_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{d_c};font-weight:600">{m.quarterly_value_change_pct * 100:+.2f}%</td>',
             f'{ck_data_cell(f"""${m.contributions_mm:,.1f}""", align="right", mono=True, tone="neg")}',
             f'{ck_data_cell(f"""${m.distributions_mm:,.1f}""", align="right", mono=True, tone="pos", weight=700)}',

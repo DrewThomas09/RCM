@@ -89,13 +89,14 @@ def _categories_table(items) -> str:
             ("Median Spend ($k)","right"),("Top Vendor","left"),("Concentration","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.total_spend_mm for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cc_c = P["warning"] if c.concentration_pct > 0.50 else text_dim
         cells = [
             f'{ck_data_cell(f"""{_html.escape(c.category)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""{c.total_deals}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${c.total_spend_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.total_spend_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=c.total_spend_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.median_spend_k:,.0f}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{_html.escape(c.top_vendor)}""", mono=True, tone="acc")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cc_c};font-weight:600">{c.concentration_pct * 100:.1f}%</td>',

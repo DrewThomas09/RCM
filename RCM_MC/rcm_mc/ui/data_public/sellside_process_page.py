@@ -86,6 +86,7 @@ def _engagements_table(items) -> str:
             ("Stage","center"),("IOI ($M)","right"),("Key Conditions","left"),("Advance %","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((e.ioi_amount_m for e in items), default=1.0) or 1.0
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _stage_color(e.stage)
@@ -96,7 +97,7 @@ def _engagements_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(e.buyer_type)}</td>',
             f'{ck_data_cell(f"""{_html.escape(e.first_touch)}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.stage)}</span>""", align="center")}',
-            f'{ck_data_cell(f"""${e.ioi_amount_m:,.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${e.ioi_amount_m:,.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=e.ioi_amount_m / _bar_max * 100)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:320px">{_html.escape(e.key_conditions)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{a_c};font-weight:700">{e.probability_advance_pct}%</td>',
         ]
