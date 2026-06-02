@@ -660,6 +660,34 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
             return "—"
         return v
 
+    def _fmt_kpi_val(kpi, v):
+        """Format a variance actual/plan by KPI unit. The deal page used to
+        render the raw value (e.g. '13000000.0' for EBITDA) instead of
+        $13.00M; rate KPIs as %, DAR as days, everything else 2dp."""
+        if v is None or (isinstance(v, float) and v != v):
+            return "—"
+        try:
+            x = float(v)
+        except (TypeError, ValueError):
+            return html.escape(str(v))
+        k = (kpi or "").lower()
+        if any(t in k for t in ("ebitda", "npsr", "revenue", "_usd",
+                                "_mm", "impact")):
+            a = abs(x)
+            if a >= 1e9:
+                return f"${x / 1e9:.2f}B"
+            if a >= 1e6:
+                return f"${x / 1e6:.2f}M"
+            if a >= 1e3:
+                return f"${x / 1e3:.2f}K"
+            return f"${x:,.0f}"
+        if any(t in k for t in ("rate", "denial", "writeoff",
+                                "write_off", "margin")):
+            return f"{x * 100:.1f}%"
+        if "dar" in k:
+            return f"{x:.1f}"
+        return f"{x:,.2f}"
+
     # Severity → tone mapping shared by variance + initiative tables
     def _severity_pill(sev: str) -> str:
         s = (sev or "").lower()
@@ -730,8 +758,8 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
                 f'<td class="ck-deal-mono">'
                 f'{html.escape(str(r.get("quarter") or ""))}</td>'
                 f"<td>{html.escape(str(r.get('kpi') or ''))}</td>"
-                f"<td class='r ck-deal-mono'>{r.get('actual')}</td>"
-                f"<td class='r ck-deal-mono'>{_fmt(r.get('plan'))}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt_kpi_val(r.get('kpi'), r.get('actual'))}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt_kpi_val(r.get('kpi'), r.get('plan'))}</td>"
                 f"<td class='r ck-deal-mono'>{varp_str}</td>"
                 f"<td>{_severity_pill(str(r.get('severity') or ''))}</td>"
                 f"</tr>"
@@ -751,8 +779,8 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
                 f"<tr>"
                 f"<td><strong style='color:var(--sc-navy,#0b2341);'>"
                 f"{html.escape(str(r.get('initiative_id') or ''))}</strong></td>"
-                f"<td class='r ck-deal-mono'>{r.get('cumulative_actual')}</td>"
-                f"<td class='r ck-deal-mono'>{_fmt(r.get('cumulative_plan'))}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt_kpi_val('ebitda', r.get('cumulative_actual'))}</td>"
+                f"<td class='r ck-deal-mono'>{_fmt_kpi_val('ebitda', r.get('cumulative_plan'))}</td>"
                 f"<td class='r ck-deal-mono'>{varp_str}</td>"
                 f"<td>{_severity_pill(str(r.get('severity') or ''))}</td>"
                 f"<td class='r ck-deal-mono'>{r.get('quarters_active')}</td>"
