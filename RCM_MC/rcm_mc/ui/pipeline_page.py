@@ -425,7 +425,10 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
             'funnel shape stays readable.</p>'
             f'<p class="ck-section-body" style="color:var(--ink-2,#2b3e54);">'
             f'<strong>Velocity:</strong> {velocity_verdict}</p>'
-            f'{_funnel_head}{funnel_bars}',
+            # Wrap the fixed 6-column funnel grid so it scrolls horizontally
+            # within the viewport on phones instead of widening the page
+            # (inert on desktop, where it fits).
+            f'<div style="overflow-x:auto">{_funnel_head}{funnel_bars}</div>',
             title="Pipeline Funnel",
         )
     )
@@ -623,6 +626,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     pp_styles = """
 <style>
 .pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media (max-width:640px){ .pp-grid{ grid-template-columns:1fr; } }
 .pp-advance-form{display:inline;}
 .pp-advance-btn{background:none;border:none;color:var(--cad-link);
 cursor:pointer;font-size:10px;padding:0;

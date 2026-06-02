@@ -125,7 +125,7 @@ def _vintage_payer_trend_svg(corpus: List[Dict], w: int = 500, h: int = 180) -> 
     parts.append(f'<rect x="{w-120}" y="{pad_t+14}" width="10" height="4" fill="{P["warning"]}"/>')
     parts.append(f'<text x="{w-106}" y="{pad_t+20}" fill="{P["warning"]}" font-size="8" font-family="{_SANS}">Gov % (MC+MCD)</text>')
 
-    return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
+    return f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" style="max-width:100%;height:auto">{"".join(parts)}</svg>'
 
 
 def _comm_moic_scatter(corpus: List[Dict], w: int = 320, h: int = 200) -> str:
@@ -173,7 +173,7 @@ def _comm_moic_scatter(corpus: List[Dict], w: int = 320, h: int = 200) -> str:
     parts.append(f'<text x="{pad_l+cw//2}" y="{h-2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}">Commercial Payer %</text>')
     parts.append(f'<text x="10" y="{pad_t+ch//2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}" transform="rotate(-90,10,{pad_t+ch//2})">MOIC</text>')
 
-    return f'<svg width="{w}" height="{h}">{"".join(parts)}</svg>'
+    return f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" style="max-width:100%;height:auto">{"".join(parts)}</svg>'
 
 
 def _payer_regime_shift_table(corpus: List[Dict]) -> str:
@@ -275,11 +275,11 @@ def _colorado_payer_trend_section() -> str:
         f'<div style="font-size:11px;font-weight:600;letter-spacing:0.08em;'
         f'text-transform:uppercase;color:{P["text_dim"]};margin-bottom:8px">'
         f'Colorado payer cost trend (PPPY) · LIVE (CIVHC)</div>{hdr}'
-        f'<table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
+        f'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-family:\'JetBrains Mono\',monospace;font-size:11px">'
         f'<thead><tr style="border-bottom:1px solid {P["border"]};color:{P["text_dim"]}">'
         f'<th style="padding:4px 10px;text-align:left">Payer</th>{head}'
         f'<th style="padding:4px 10px;text-align:right">Δ 17→21</th></tr></thead>'
-        f'<tbody>{"".join(rows)}</tbody></table>'
+        f'<tbody>{"".join(rows)}</tbody></table></div>'
         f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">'
         f'Real all-payer <b>market</b> per-person-per-year cost trajectory in '
         f'Colorado — <b>not</b> contracted reimbursement rates and <b>not</b> '
