@@ -482,8 +482,11 @@ def render_step3(session: WizardSession) -> str:
         '</div></form>',
         title="Drag and drop seller files",
     )
+    # Built as locals — the empty-state fallback's escaped quotes can't live
+    # in an f-string expression part on Python < 3.12 (PEP 701 backslash rule).
+    uploads_html = ''.join(uploaded_html) or '<div class="empty-hint">No uploads yet.</div>'
     files_panel = ck_panel(
-        f"<div>{''.join(uploaded_html) or '<div class=\"empty-hint\">No uploads yet.</div>'}</div>"
+        f"<div>{uploads_html}</div>"
         f'<div class="ow-mt-8 ow-section-sub">Extracted {extracted_count} metric(s) total.</div>',
         title=f"Files processed so far ({len(session.uploaded_files)})",
     )

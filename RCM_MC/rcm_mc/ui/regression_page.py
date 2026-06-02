@@ -2384,6 +2384,150 @@ def _rge_interpretation(
     )
 
 
+# Regression-page styles — hoisted to module level (2026-06 UI fix) so the
+# early-return states (no data / empty universe / insufficient n) can apply
+# them. Previously assigned as a local late in render_regression_page, so the
+# guard-clause returns shipped the universe pills + checkbox toggles with no
+# CSS — they rendered as an unreadable run-together row of links.
+_REGRESSION_CSS = """
+<style>
+.rg-selector-form{display:flex;flex-wrap:wrap;gap:14px 18px;
+align-items:flex-end;}
+.rg-selector-label{font-size:12px;color:var(--cad-text2);
+display:block;margin-bottom:4px;}
+.rg-selector-input{padding:7px 12px;border:1px solid var(--cad-border);
+border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;
+transition:border-color 120ms ease, box-shadow 120ms ease;min-width:220px;}
+.rg-selector-input:focus{outline:none;border-color:var(--cad-link);
+box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
+.rg-selector-submit{align-self:flex-end;}
+/* Form-layout fix: 6 checkbox toggles in a single column made
+ * the form tall and squished the dropdowns inline. 2-column
+ * grid wraps to 1-column on narrow viewports. */
+.rg-selector-toggles{display:grid;
+grid-template-columns:repeat(2, minmax(220px, 1fr));
+gap:6px 18px;align-self:flex-end;padding-bottom:2px;
+flex:1 1 460px;}
+.rg-selector-checkbox{font-size:12px;color:var(--cad-text);
+display:flex;align-items:flex-start;gap:6px;cursor:pointer;
+line-height:1.4;}
+.rg-selector-checkbox input{flex-shrink:0;margin-top:2px;}
+.rg-pills-row{display:flex;align-items:baseline;gap:14px;margin:0 0 14px;
+flex-wrap:wrap;}
+/* Sub-row (BY SEGMENT) — slightly muted to signal it's the
+ * power-user drill-in below the 5 preset universes. */
+.rg-pills-row-sub{margin-top:-8px;opacity:0.85;}
+.rg-pills-row-sub .rg-pill{font-size:11px;padding:3px 10px;}
+.rg-pills-label{font-family:var(--sc-mono,monospace);font-size:10px;
+font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+color:var(--sc-text-faint,#7a8699);min-width:88px;}
+.rg-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.rg-pill{display:inline-block;padding:5px 12px;font-family:var(--sc-sans,Inter);
+font-size:11.5px;font-weight:500;border:1px solid var(--sc-rule,#d6cfc0);
+background:#fff;color:var(--sc-navy,#0b2341);text-decoration:none;
+border-radius:14px;transition:border-color 120ms ease,background 120ms ease;}
+.rg-pill:hover{border-color:var(--sc-teal-ink,#155752);}
+.rg-pill-active{background:var(--sc-navy,#0b2341);color:#fff;
+border-color:var(--sc-navy,#0b2341);}
+.rg-diagnostic-banner{display:flex;align-items:baseline;gap:12px;
+padding:14px 18px;margin:0 0 16px;background:#fff;
+border:1px solid var(--sc-rule,#d6cfc0);
+border-left:3px solid var(--sc-teal-ink,#155752);}
+.rg-diagnostic-tag{font-family:var(--sc-mono,monospace);font-size:11px;
+font-weight:700;letter-spacing:0.14em;color:var(--sc-teal-ink,#155752);
+flex-shrink:0;}
+.rg-diagnostic-text{font-size:14px;color:var(--sc-text,#1a2332);
+line-height:1.55;}
+.rg-diagnostic-text em{color:var(--sc-teal-ink,#155752);font-style:italic;}
+/* Leakage alert banner — fires when drop_leakage=off + critical
+ * leaks exist. Red border + parchment background so partners can't
+ * miss the inflated-R² warning the inline panel was burying. */
+.rg-leakage-banner{display:flex;align-items:baseline;gap:14px;
+padding:14px 18px;margin:0 0 16px;background:#fff;
+border:1px solid #b5321e;border-left:5px solid #b5321e;}
+.rg-leakage-banner-tag{font-family:var(--sc-mono,monospace);font-size:11px;
+font-weight:700;letter-spacing:0.14em;color:#b5321e;flex-shrink:0;}
+.rg-leakage-banner-text{font-size:14px;color:var(--sc-text,#1a2332);
+line-height:1.55;}
+.rg-leakage-banner-text strong{color:#b5321e;}
+/* Amber sibling — fires when FORMULA_RELATED (accounting-cousin)
+ * features are in the fit. Not a critical leak but the R² is still
+ * suspect because the feature shares atomic inputs with the target.
+ * Softer tone than the red banner so the partner can tell at a
+ * glance which severity bucket they're in. */
+.rg-leakage-banner.warn{border-color:#b8732a;border-left-color:#b8732a;}
+.rg-leakage-banner.warn .rg-leakage-banner-tag{color:#b8732a;}
+.rg-leakage-banner.warn .rg-leakage-banner-text strong{color:#b8732a;}
+/* Readability bump (user-reported "text is impossible to read"):
+ * the panel description paragraphs were unstyled bare <p>s that
+ * picked up the browser default (12-13px). Bump to 14px + 1.6
+ * line-height so the multi-line descriptions on the leakage,
+ * cluster, segmented, buyability, and outliers panels are
+ * comfortable to read. Restricted to .ck-panel-body so it doesn't
+ * leak into other surfaces. */
+.ck-panel-body .ck-section-body{
+  font-size:14px;line-height:1.6;color:var(--sc-text,#1a2332);
+  margin:0 0 12px;max-width:88ch;
+}
+.ck-panel-body .ck-section-body strong{color:var(--sc-navy,#0b2341);}
+.ck-panel-body .ck-section-body em{
+  color:var(--sc-teal-ink,#155752);font-style:italic;
+}
+/* Bump the inline reason cells in the leakage + insufficient_n
+ * tables — were 12px and squished. */
+.ck-panel-body td[style*="font-size:12px"]{font-size:13px !important;}
+.rg-segment-chip{display:inline-block;padding:2px 8px;font-family:var(--sc-mono,monospace);
+font-size:10px;font-weight:600;letter-spacing:0.04em;color:var(--sc-teal-ink,#155752);
+background:var(--sc-parchment,#f2ede3);border:1px solid var(--sc-rule,#d6cfc0);
+border-radius:2px;}
+.rg-seg-baseline{background:var(--sc-parchment,#f2ede3);}
+.rg-seg-baseline td{border-top:2px solid var(--sc-rule,#d6cfc0);}
+.rg-leak-badge{display:inline-block;padding:2px 8px;
+font-family:var(--sc-mono,monospace);font-size:10px;font-weight:700;
+letter-spacing:0.08em;border-radius:2px;border:1px solid transparent;}
+.rg-leak-critical{color:#b5321e;background:#fff;
+border-color:#b5321e;}
+.rg-leak-warning{color:#b8732a;background:#fff;border-color:#b8732a;}
+.rg-leak-ok{color:#0a8a5f;background:#fff;border-color:#0a8a5f;}
+.rg-leak-info{color:var(--sc-text-faint,#7a8699);background:#fff;
+border-color:var(--sc-rule,#d6cfc0);}
+/* Transitive chip — small mono pill that sits next to a
+ * FORMULA_RELATED badge when the verdict came from the multi-hop
+ * atomic-input walk (PR #248) rather than a 1-hop direct shared
+ * input. Subtle teal-ink tone so partners can read the distinction
+ * without the chip competing with the verdict badge itself. */
+.rg-leak-transitive-chip{display:inline-block;margin-left:6px;
+padding:1px 6px;font-family:var(--sc-mono,monospace);font-size:9px;
+font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+color:var(--sc-teal-ink,#155752);background:var(--sc-parchment,#f2ede3);
+border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;
+cursor:help;}
+.rg-influence-badge{display:inline-block;padding:2px 8px;
+font-family:var(--sc-mono,monospace);font-size:10px;font-weight:600;
+letter-spacing:0.04em;border-radius:2px;border:1px solid transparent;}
+.rg-influence-legitimate{color:var(--sc-teal-ink,#155752);
+background:#fff;border-color:var(--sc-teal-ink,#155752);}
+.rg-influence-opportunity{color:#0a8a5f;background:#fff;
+border-color:#0a8a5f;}
+.rg-influence-data-issue{color:#b5321e;background:#fff;
+border-color:#b5321e;}
+.rg-influence-high{color:#b8732a;background:#fff;
+border-color:#b8732a;}
+.rg-influence-ok{color:var(--sc-text-faint,#7a8699);background:#fff;
+border-color:var(--sc-rule,#d6cfc0);}
+.rg-influence-info{color:var(--sc-text-faint,#7a8699);background:#fff;
+border-color:var(--sc-rule,#d6cfc0);}
+.rg-subhead{font-family:var(--sc-sans,Inter);font-size:13px;font-weight:600;
+letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
+.rg-bar-track{background:var(--cad-bg3);border-radius:4px;height:10px;}
+.rg-bar-track-sm{height:8px;width:120px;}
+.rg-bar-fill{border-radius:4px;height:10px;}
+.rg-bar-fill-sm{height:8px;border-radius:4px;}
+.rg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+</style>
+"""
+
+
 def render_regression_page(
     data_source: str = "hcris",
     target: str = "net_patient_revenue",
@@ -2591,7 +2735,7 @@ def render_regression_page(
             "then reload this page."
         )
         body = (
-            f'{source_selector}'
+            _REGRESSION_CSS + f'{source_selector}'
             + ck_panel(
                 '<p class="ck-section-body">'
                 '<strong>No data loaded yet.</strong> Regression Analysis fits '
@@ -2612,7 +2756,7 @@ def render_regression_page(
         df = filter_to_universe(df, universe)
         if df.empty:
             body = (
-                f'{source_selector}'
+                _REGRESSION_CSS + f'{source_selector}'
                 + ck_panel(
                     '<p class="ck-section-body">'
                     f'No rows in universe <code>{_html.escape(universe)}</code>. '
@@ -2651,7 +2795,7 @@ def render_regression_page(
 
     if result is None:
         body = (
-            f'{source_selector}'
+            _REGRESSION_CSS + f'{source_selector}'
             + ck_panel(
                 '<p class="ck-section-body">'
                 'Insufficient data for regression. Need at least 3 observations with '
@@ -3947,142 +4091,7 @@ def render_regression_page(
     left_col = f'{coef_section}{shapley_section}{tcorr_section}{outlier_section}'
     right_col = f'{vif_section}{state_section}{corr_section}'
 
-    rg_styles = """
-<style>
-.rg-selector-form{display:flex;flex-wrap:wrap;gap:14px 18px;
-align-items:flex-end;}
-.rg-selector-label{font-size:12px;color:var(--cad-text2);
-display:block;margin-bottom:4px;}
-.rg-selector-input{padding:7px 12px;border:1px solid var(--cad-border);
-border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;
-transition:border-color 120ms ease, box-shadow 120ms ease;min-width:220px;}
-.rg-selector-input:focus{outline:none;border-color:var(--cad-link);
-box-shadow:0 0 0 2px rgba(21,87,82,0.18);}
-.rg-selector-submit{align-self:flex-end;}
-/* Form-layout fix: 6 checkbox toggles in a single column made
- * the form tall and squished the dropdowns inline. 2-column
- * grid wraps to 1-column on narrow viewports. */
-.rg-selector-toggles{display:grid;
-grid-template-columns:repeat(2, minmax(220px, 1fr));
-gap:6px 18px;align-self:flex-end;padding-bottom:2px;
-flex:1 1 460px;}
-.rg-selector-checkbox{font-size:12px;color:var(--cad-text);
-display:flex;align-items:center;gap:6px;cursor:pointer;
-white-space:nowrap;}
-.rg-pills-row{display:flex;align-items:baseline;gap:14px;margin:0 0 14px;
-flex-wrap:wrap;}
-/* Sub-row (BY SEGMENT) — slightly muted to signal it's the
- * power-user drill-in below the 5 preset universes. */
-.rg-pills-row-sub{margin-top:-8px;opacity:0.85;}
-.rg-pills-row-sub .rg-pill{font-size:11px;padding:3px 10px;}
-.rg-pills-label{font-family:var(--sc-mono,monospace);font-size:10px;
-font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
-color:var(--sc-text-faint,#7a8699);min-width:88px;}
-.rg-pills{display:flex;flex-wrap:wrap;gap:6px;}
-.rg-pill{display:inline-block;padding:5px 12px;font-family:var(--sc-sans,Inter);
-font-size:11.5px;font-weight:500;border:1px solid var(--sc-rule,#d6cfc0);
-background:#fff;color:var(--sc-navy,#0b2341);text-decoration:none;
-border-radius:14px;transition:border-color 120ms ease,background 120ms ease;}
-.rg-pill:hover{border-color:var(--sc-teal-ink,#155752);}
-.rg-pill-active{background:var(--sc-navy,#0b2341);color:#fff;
-border-color:var(--sc-navy,#0b2341);}
-.rg-diagnostic-banner{display:flex;align-items:baseline;gap:12px;
-padding:14px 18px;margin:0 0 16px;background:#fff;
-border:1px solid var(--sc-rule,#d6cfc0);
-border-left:3px solid var(--sc-teal-ink,#155752);}
-.rg-diagnostic-tag{font-family:var(--sc-mono,monospace);font-size:11px;
-font-weight:700;letter-spacing:0.14em;color:var(--sc-teal-ink,#155752);
-flex-shrink:0;}
-.rg-diagnostic-text{font-size:14px;color:var(--sc-text,#1a2332);
-line-height:1.55;}
-.rg-diagnostic-text em{color:var(--sc-teal-ink,#155752);font-style:italic;}
-/* Leakage alert banner — fires when drop_leakage=off + critical
- * leaks exist. Red border + parchment background so partners can't
- * miss the inflated-R² warning the inline panel was burying. */
-.rg-leakage-banner{display:flex;align-items:baseline;gap:14px;
-padding:14px 18px;margin:0 0 16px;background:#fff;
-border:1px solid #b5321e;border-left:5px solid #b5321e;}
-.rg-leakage-banner-tag{font-family:var(--sc-mono,monospace);font-size:11px;
-font-weight:700;letter-spacing:0.14em;color:#b5321e;flex-shrink:0;}
-.rg-leakage-banner-text{font-size:14px;color:var(--sc-text,#1a2332);
-line-height:1.55;}
-.rg-leakage-banner-text strong{color:#b5321e;}
-/* Amber sibling — fires when FORMULA_RELATED (accounting-cousin)
- * features are in the fit. Not a critical leak but the R² is still
- * suspect because the feature shares atomic inputs with the target.
- * Softer tone than the red banner so the partner can tell at a
- * glance which severity bucket they're in. */
-.rg-leakage-banner.warn{border-color:#b8732a;border-left-color:#b8732a;}
-.rg-leakage-banner.warn .rg-leakage-banner-tag{color:#b8732a;}
-.rg-leakage-banner.warn .rg-leakage-banner-text strong{color:#b8732a;}
-/* Readability bump (user-reported "text is impossible to read"):
- * the panel description paragraphs were unstyled bare <p>s that
- * picked up the browser default (12-13px). Bump to 14px + 1.6
- * line-height so the multi-line descriptions on the leakage,
- * cluster, segmented, buyability, and outliers panels are
- * comfortable to read. Restricted to .ck-panel-body so it doesn't
- * leak into other surfaces. */
-.ck-panel-body .ck-section-body{
-  font-size:14px;line-height:1.6;color:var(--sc-text,#1a2332);
-  margin:0 0 12px;max-width:88ch;
-}
-.ck-panel-body .ck-section-body strong{color:var(--sc-navy,#0b2341);}
-.ck-panel-body .ck-section-body em{
-  color:var(--sc-teal-ink,#155752);font-style:italic;
-}
-/* Bump the inline reason cells in the leakage + insufficient_n
- * tables — were 12px and squished. */
-.ck-panel-body td[style*="font-size:12px"]{font-size:13px !important;}
-.rg-segment-chip{display:inline-block;padding:2px 8px;font-family:var(--sc-mono,monospace);
-font-size:10px;font-weight:600;letter-spacing:0.04em;color:var(--sc-teal-ink,#155752);
-background:var(--sc-parchment,#f2ede3);border:1px solid var(--sc-rule,#d6cfc0);
-border-radius:2px;}
-.rg-seg-baseline{background:var(--sc-parchment,#f2ede3);}
-.rg-seg-baseline td{border-top:2px solid var(--sc-rule,#d6cfc0);}
-.rg-leak-badge{display:inline-block;padding:2px 8px;
-font-family:var(--sc-mono,monospace);font-size:10px;font-weight:700;
-letter-spacing:0.08em;border-radius:2px;border:1px solid transparent;}
-.rg-leak-critical{color:#b5321e;background:#fff;
-border-color:#b5321e;}
-.rg-leak-warning{color:#b8732a;background:#fff;border-color:#b8732a;}
-.rg-leak-ok{color:#0a8a5f;background:#fff;border-color:#0a8a5f;}
-.rg-leak-info{color:var(--sc-text-faint,#7a8699);background:#fff;
-border-color:var(--sc-rule,#d6cfc0);}
-/* Transitive chip — small mono pill that sits next to a
- * FORMULA_RELATED badge when the verdict came from the multi-hop
- * atomic-input walk (PR #248) rather than a 1-hop direct shared
- * input. Subtle teal-ink tone so partners can read the distinction
- * without the chip competing with the verdict badge itself. */
-.rg-leak-transitive-chip{display:inline-block;margin-left:6px;
-padding:1px 6px;font-family:var(--sc-mono,monospace);font-size:9px;
-font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
-color:var(--sc-teal-ink,#155752);background:var(--sc-parchment,#f2ede3);
-border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;
-cursor:help;}
-.rg-influence-badge{display:inline-block;padding:2px 8px;
-font-family:var(--sc-mono,monospace);font-size:10px;font-weight:600;
-letter-spacing:0.04em;border-radius:2px;border:1px solid transparent;}
-.rg-influence-legitimate{color:var(--sc-teal-ink,#155752);
-background:#fff;border-color:var(--sc-teal-ink,#155752);}
-.rg-influence-opportunity{color:#0a8a5f;background:#fff;
-border-color:#0a8a5f;}
-.rg-influence-data-issue{color:#b5321e;background:#fff;
-border-color:#b5321e;}
-.rg-influence-high{color:#b8732a;background:#fff;
-border-color:#b8732a;}
-.rg-influence-ok{color:var(--sc-text-faint,#7a8699);background:#fff;
-border-color:var(--sc-rule,#d6cfc0);}
-.rg-influence-info{color:var(--sc-text-faint,#7a8699);background:#fff;
-border-color:var(--sc-rule,#d6cfc0);}
-.rg-subhead{font-family:var(--sc-sans,Inter);font-size:13px;font-weight:600;
-letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
-.rg-bar-track{background:var(--cad-bg3);border-radius:4px;height:10px;}
-.rg-bar-track-sm{height:8px;width:120px;}
-.rg-bar-fill{border-radius:4px;height:10px;}
-.rg-bar-fill-sm{height:8px;border-radius:4px;}
-.rg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-</style>
-"""
+    rg_styles = _REGRESSION_CSS
     next_up = ck_next_section(
         "Open the portfolio for context",
         "/portfolio",

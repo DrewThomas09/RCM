@@ -205,9 +205,13 @@ def _sub_nav(ccn: str, active_slug: str) -> str:
             href = f"/deals/{ccn_safe}/{s.slug}"
             soon_badge = '<span class="ds-nav-soon" aria-hidden="true">soon</span>' \
                 if not s.built else ''
+            # Built as a local — an f-string expression part can't contain the
+            # backslash-escaped quotes of an inline aria-current attribute on
+            # Python < 3.12 (PEP 701 backslash restriction).
+            aria_current = ' aria-current="page"' if s.slug == active_slug else ''
             parts.append(
                 f'<li><a class="{" ".join(classes)}" href="{href}"'
-                f'{" aria-current=\"page\"" if s.slug == active_slug else ""}'
+                f'{aria_current}'
                 f'>{_html.escape(s.label)}{soon_badge}</a></li>'
             )
         parts.append('</ul></div>')
