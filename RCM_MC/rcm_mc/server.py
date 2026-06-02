@@ -8955,8 +8955,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                 con.commit()
         except Exception as exc:
             return self._error_page("Pipeline Error", str(exc)[:200])
+        # Confirm with a toast and return to where the partner was (e.g. the
+        # screener), instead of silently bouncing to /pipeline with no feedback.
+        back = form.get("return_to", "") or "/pipeline"
+        if not back.startswith("/") or back.startswith("//"):
+            back = "/pipeline"
+        dest = self._with_flash(back, f"Added {name} to pipeline", "success")
         self.send_response(HTTPStatus.FOUND)
-        self.send_header("Location", "/pipeline")
+        self.send_header("Location", dest)
         self.end_headers()
 
     def _route_save_search(self) -> None:
@@ -8980,8 +8986,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 con.commit()
         except Exception as exc:
             return self._error_page("Save Error", str(exc)[:200])
+        back = form.get("return_to", "") or "/pipeline"
+        if not back.startswith("/") or back.startswith("//"):
+            back = "/pipeline"
+        dest = self._with_flash(back, f"Saved screen “{name}”", "success")
         self.send_response(HTTPStatus.FOUND)
-        self.send_header("Location", "/pipeline")
+        self.send_header("Location", dest)
         self.end_headers()
 
     def _route_pipeline_stage(self) -> None:

@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_data_universe, ck_kpi_block, ck_next_section,
-    ck_page_title, ck_panel, ck_source_purpose, ck_value_anchor,
+    chartis_shell, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_value_anchor, margin_is_plausible,
 )
 
 _EXPLAINER_CSS = """
@@ -24,6 +24,16 @@ _EXPLAINER_CSS = """
 color:var(--sc-text-dim);max-width:68ch;
 margin:var(--sc-s-4) 0 var(--sc-s-6);}
 .ck-ps-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+/* Contrast callout — what this scanner does that the Target Screener doesn't.
+   Replaces the old CMS "source/purpose" bubble (kept the honesty caveat,
+   dropped the bulky box). */
+.ck-ps-contrast{font-size:12.5px;line-height:1.6;color:var(--sc-text-dim,#5b6b7a);
+max-width:74ch;border-left:2px solid var(--sc-teal,#155752);
+padding:2px 0 2px 14px;margin:var(--sc-s-3,10px) 0 var(--sc-s-5,18px);}
+.ck-ps-contrast b{color:var(--sc-ink,#1a2332);}
+.ck-ps-contrast em{color:var(--sc-teal-ink,#0f3d39);font-style:normal;font-weight:600;}
+.ck-ps-contrast a{color:var(--sc-teal,#155752);}
+.ps-dq{opacity:.5;cursor:help;}
 """
 from .brand import PALETTE
 
@@ -161,11 +171,21 @@ def render_predictive_screener(
         max_margin = max(-2, min(2, float((qs.get("max_margin") or ["1"])[0])))
     except (ValueError, TypeError):
         max_margin = 1.0
+    _min_margin_raw = (qs.get("min_margin") or [""])[0]
+    try:
+        min_margin = max(-2, min(2, float(_min_margin_raw))) if _min_margin_raw else None
+    except (ValueError, TypeError):
+        min_margin = None
     try:
         min_uplift = max(0, float((qs.get("min_uplift") or ["0"])[0]))
     except (ValueError, TypeError):
         min_uplift = 0.0
+    state_filter = (qs.get("state") or [""])[0].upper()[:2]
     sort_by = (qs.get("sort") or ["est_uplift"])[0][:20]
+    # Where the pipeline buttons return to: this exact screen (so adding a
+    # candidate keeps the user's screen + shows a confirmation toast, instead
+    # of silently bouncing them to /pipeline).
+    _return_to = "/predictive-screener" + (("?" + query_string) if query_string else "")
 
     df = _add_features(hcris_df)
 
@@ -179,9 +199,10 @@ def render_predictive_screener(
         mask &= df["beds"].fillna(0) <= max_beds
     if max_margin < 1:
         mask &= df["operating_margin"].fillna(0) <= max_margin
-    if "state" in qs:
-        st = qs["state"][0].upper()[:2]
-        mask &= df["state"] == st
+    if min_margin is not None:
+        mask &= df["operating_margin"].fillna(0) >= min_margin
+    if state_filter:
+        mask &= df["state"] == state_filter
 
     filtered = df[mask].copy()
 
@@ -226,16 +247,22 @@ def render_predictive_screener(
         f'<input class="cad-input ps-input-sm" type="number" name="min_beds" value="{min_beds}" min="0"></div>'
         '<div class="cad-field"><label>Max Beds</label>'
         f'<input class="cad-input ps-input-sm" type="number" name="max_beds" value="{max_beds if max_beds < 9999 else ""}" placeholder="9999"></div>'
+        '<div class="cad-field"><label>Min Margin</label>'
+        f'<input class="cad-input ps-input-md" type="number" name="min_margin" value="{min_margin if min_margin is not None else ""}" step="0.01" placeholder="-0.05"></div>'
         '<div class="cad-field"><label>Max Margin</label>'
         f'<input class="cad-input ps-input-md" type="number" name="max_margin" value="{max_margin if max_margin < 1 else ""}" step="0.01" placeholder="0.05"></div>'
+        '<div class="cad-field"><label>State</label>'
+        f'<input class="cad-input ps-input-sm" type="text" name="state" value="{_html.escape(state_filter)}" maxlength="2" placeholder="TX"></div>'
         '<div class="cad-field"><label>Min Uplift ($)</label>'
         f'<input class="cad-input ps-input-lg" type="number" name="min_uplift" value="{int(min_uplift) if min_uplift > 0 else ""}" placeholder="3000000"></div>'
         '<div class="cad-field"><label>Sort By</label>'
         '<select name="sort" class="cad-select ps-select-md">'
-        f'<option value="est_uplift"{_sel("est_uplift", sort_by)}>Est. Uplift</option>'
-        f'<option value="est_denial"{_sel("est_denial", sort_by)}>Denial Rate</option>'
-        f'<option value="est_ar_days"{_sel("est_ar_days", sort_by)}>AR Days</option>'
-        f'<option value="operating_margin"{_sel("operating_margin", sort_by)}>Margin</option>'
+        f'<option value="est_uplift"{_sel("est_uplift", sort_by)}>Est. Uplift (high&rarr;low)</option>'
+        f'<option value="est_denial"{_sel("est_denial", sort_by)}>Est. Denial Rate</option>'
+        f'<option value="est_ar_days"{_sel("est_ar_days", sort_by)}>Est. AR Days</option>'
+        f'<option value="operating_margin"{_sel("operating_margin", sort_by)}>Margin (low&rarr;high)</option>'
+        f'<option value="net_patient_revenue"{_sel("net_patient_revenue", sort_by)}>Revenue (high&rarr;low)</option>'
+        f'<option value="revenue_per_bed"{_sel("revenue_per_bed", sort_by)}>Revenue per Bed</option>'
         f'<option value="beds"{_sel("beds", sort_by)}>Bed Count</option>'
         '</select></div>'
         '<div class="cad-field"><label>&nbsp;</label>'
@@ -262,16 +289,23 @@ def render_predictive_screener(
         return f"${v:,.0f}"
 
     title_block = ck_page_title(
-        "Predictive Deal Screener", eyebrow="PREDICTIVE SCREENER",
+        "Predictive Deal Scanner", eyebrow="PREDICTIVE · MODELED RCM UPLIFT",
         meta=f"{total_matches:,} matches · {len(hcris_df):,} hospitals in universe",
-    ) + '<div style="margin:8px 0 0;">' + ck_data_universe("cms") + '</div>'
-    source_purpose = ck_source_purpose(
-        purpose="Surface acquisition candidates from the public hospital universe by their MODEL-ESTIMATED RCM opportunity, before committing diligence effort.",
-        universe="cms",
-        confidence="derived",
-        source="CMS HCRIS public universe + PEdesk RCM quant stack. The denial/AR/uplift figures are MODEL ESTIMATES from public financials — not observed RCM performance (which isn't public). Confirm against a target's own claims before underwriting.",
-        next_action="Open a candidate's HCRIS X-Ray, then promote to Pipeline",
-        next_href="/diligence/hcris-xray",
+    )
+    # Replaces the old CMS "source/purpose" bubble: a tight contrast callout
+    # that says how this differs from the Target Screener (the user's question)
+    # and folds in the model-estimate caveat without the bulky box.
+    contrast = (
+        '<div class="ck-ps-contrast">'
+        '<b>How this differs from the Target Screener.</b> '
+        'The <a href="/screen">Hospital / Target Screener</a> ranks hospitals on their '
+        '<em>reported</em> HCRIS financials — size, margin — to find and compare targets. '
+        'This scanner ranks the same universe by <em>modeled RCM improvement upside</em> '
+        '(estimated denial rate, AR days, and EBITDA uplift), so you see <em>where the '
+        'value-creation opportunity is</em> before spending diligence time. These are '
+        'model estimates from public financials, not observed RCM performance — confirm '
+        'against a target&rsquo;s own data before underwriting.'
+        '</div>'
     )
     explainer_html = (
         '<p class="ck-ps-explainer">'
@@ -324,6 +358,18 @@ def render_predictive_screener(
             margin_heat = "cad-heat-4"
         else:
             margin_heat = "cad-heat-5"
+        # Data-quality muting (consistent with the Hospital Screener): a junk-
+        # opex filing's margin is shown but muted + flagged, never heat-colored
+        # as if it were real.
+        _dq_ok = bool(row.get("data_quality_ok", True)) and margin_is_plausible(margin)
+        if _dq_ok:
+            margin_cell = f'<td class="num {margin_heat}">{margin:.1%}</td>'
+        else:
+            margin_cell = (
+                f'<td class="num ps-dq" title="HCRIS filing has implausible or '
+                f'incomplete opex — margin {margin:.1%} is a data artifact; review '
+                f'before relying on it.">{margin:.1%} &#9888;</td>'
+            )
 
         try:
             denial = float(row.get("est_denial", 0) or 0)
@@ -351,7 +397,7 @@ def render_predictive_screener(
             f'<td>{state}</td>'
             f'<td class="num">{beds}</td>'
             f'<td class="num">{_fm(rev)}</td>'
-            f'<td class="num {margin_heat}">{margin:.1%}</td>'
+            f'{margin_cell}'
             f'<td class="num">{denial:.1%}</td>'
             f'<td class="num {uplift_cls}">'
             f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="ck-link">{_fm(uplift)}</a></td>'
@@ -361,6 +407,7 @@ def render_predictive_screener(
             f'<input type="hidden" name="name" value="{_html.escape(raw_name)}">'
             f'<input type="hidden" name="state" value="{_html.escape(str(row.get("state", "")))}">'
             f'<input type="hidden" name="beds" value="{beds}">'
+            f'<input type="hidden" name="return_to" value="{_html.escape(_return_to)}">'
             f'<button type="submit" class="cad-btn ps-pipe-btn">+ PIPE</button></form></td>'
             f'</tr>'
         )
@@ -397,6 +444,7 @@ def render_predictive_screener(
         f'<input type="hidden" name="max_margin" value="{max_margin}">'
         f'<input type="hidden" name="min_uplift" value="{min_uplift}">'
         f'<input type="hidden" name="sort" value="{_html.escape(str(sort_by))}">'
+        f'<input type="hidden" name="return_to" value="{_html.escape(_return_to)}">'
         '<div class="cad-field ps-save-field">'
         '<label>Name this screen</label>'
         '<input class="cad-input" type="text" name="name" placeholder="e.g. SE turnarounds" required></div>'
@@ -438,7 +486,7 @@ transition:filter 120ms ease;}
         tone="teal",
     )
     body = (
-        ps_styles + title_block + source_purpose + explainer_html + lead_anchor + form
+        ps_styles + title_block + contrast + explainer_html + lead_anchor + form
         + kpis + table + save_form + quick + next_up
     )
 
