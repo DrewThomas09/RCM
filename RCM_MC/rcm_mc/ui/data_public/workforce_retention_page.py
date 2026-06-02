@@ -88,6 +88,7 @@ def _deals_table(items) -> str:
             ("Engagement","right"),("Retention Spend ($M)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _maxbar = max((d.retention_spend_m for d in items), default=1.0) or 1.0
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         t_c = neg if d.overall_turnover_pct >= 0.30 else (warn if d.overall_turnover_pct >= 0.22 else (acc if d.overall_turnover_pct >= 0.15 else pos))
@@ -102,7 +103,7 @@ def _deals_table(items) -> str:
             f'{ck_data_cell(f"""{d.support_turnover_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cl_c};font-weight:700">{d.contract_labor_pct * 100:.1f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c};font-weight:700">{d.engagement_score:.1f}</td>',
-            f'{ck_data_cell(f"""${d.retention_spend_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${d.retention_spend_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=d.retention_spend_m / _maxbar * 100)}',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
