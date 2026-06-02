@@ -531,6 +531,32 @@ def render_comparable_outcomes_page(
             "should land near the corpus P25."
             '</p>'
         )
+        # Cross-link these illustrative comparables to the real, sourced set —
+        # sponsor-aware when the partner filtered by a buyer.
+        from urllib.parse import quote as _q
+        from ..data_public.verified_deals import (
+            verified_deal_count, verified_deals_for_sponsor,
+        )
+        _buyer = str(qs.get("buyer") or "").strip()
+        _nv = len(verified_deals_for_sponsor(_buyer)) if _buyer else 0
+        if _nv:
+            _vd_link = (
+                f'<a href="/verified-deals?sponsor={_q(_buyer)}" '
+                'style="color:var(--sc-navy);font-weight:600;text-decoration:none;">'
+                f'{_nv} real, sourced {_html.escape(_buyer)} '
+                f'deal{"s" if _nv != 1 else ""} →</a>'
+            )
+        else:
+            _vd_link = (
+                '<a href="/verified-deals" style="color:var(--sc-navy);'
+                f'text-decoration:none;">the {verified_deal_count()} verified '
+                'deals →</a>'
+            )
+        verified_note = (
+            '<p style="margin:10px 2px 0;font-size:11.5px;color:#7a8699;">'
+            'These comparables are from the illustrative corpus. For real, '
+            f'source-linked deals, see {_vd_link}</p>'
+        )
         inner = (
             page_title_block
             + explainer_html
@@ -543,6 +569,7 @@ def render_comparable_outcomes_page(
                 f"Top {len(rows)} comparables — sorted by match score",
                 table + breakdown_legend, pad=False,
             )
+            + verified_note
         )
         next_up = ck_next_section(
             "Cross-check against named bear cases",
