@@ -7529,6 +7529,28 @@ _CSS_INLINE_FALLBACK = """
     .ck-pair{ grid-template-columns:1fr; }
     .ck-pair-viz{ border-right:0; border-bottom:1px solid var(--sc-rule); overflow-x:auto; }
     .ck-pair-data{ overflow-x:auto; }
+    /* Page renderers compose many side-by-side rows as inline
+       style="display:flex" without flex-wrap, so fixed-width children
+       (cards, mini-charts, stat tiles) ran off the right edge on phones.
+       Force every inline flex row to wrap on mobile — rows that already
+       fit are unaffected; rows that didn't now stack. !important is
+       required to beat the inline style, and the whole block is ≤640px
+       so desktop is untouched. */
+    [style*="display:flex"]{ flex-wrap:wrap !important; }
+    /* Inline-styled section cards (style="…border:1px solid #d6cfc0…")
+       are sized by their widest child (a chart/table), so they grew past
+       the viewport. Cap them to the viewport and let the wide child scroll
+       inside. #d6cfc0 == --sc-rule, the standard editorial card border. */
+    [style*="#d6cfc0"]{ max-width:100% !important; overflow-x:auto; }
+    [style*="#D6CFC0"]{ max-width:100% !important; overflow-x:auto; }
+    /* tables with an inline min-width (e.g. min-width:700px) must drop it
+       on mobile so .ck-main table's max-width/scroll can take effect. */
+    .ck-main table{ min-width:0 !important; }
+    /* charts scale to the column instead of forcing it wide (viewBox SVGs
+       scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio). */
+    .ck-main svg{ max-width:100%; height:auto; }
+    /* inline N-column grids stack to one column on phones. */
+    [style*="grid-template-columns:repeat"]{ grid-template-columns:1fr !important; }
     /* provenance tooltip cards are visibility:hidden (so they still occupy
        layout) with a 240px min-width — on a phone a card on a right-edge
        KPI/cell pushed the whole page wide. Drop them from flow until
