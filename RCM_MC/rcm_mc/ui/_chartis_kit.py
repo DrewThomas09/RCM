@@ -10700,9 +10700,12 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
     """
     if not crumbs:
         return ""
-    parts = []
-    for i, c in enumerate(crumbs):
-        # Normalise to (label, href)
+    # Normalise to (label, href), then collapse a crumb that repeats the
+    # previous label (case-insensitive). Home-section pages were emitting
+    # "Home / Home / Alerts" — the top-level Home crumb plus the "home"
+    # section crumb, both labelled Home.
+    norm: list = []
+    for c in crumbs:
         if isinstance(c, tuple) or isinstance(c, list):
             label = c[0] if len(c) > 0 else ""
             href = c[1] if len(c) > 1 else None
@@ -10712,6 +10715,15 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
         else:
             # Unknown shape — render as plain text rather than crash
             label, href = str(c), None
+        if norm and str(label).strip().lower() == str(norm[-1][0]).strip().lower():
+            # Same label as the previous crumb — drop the dup, but keep an
+            # href if the previous crumb lacked one.
+            if href and not norm[-1][1]:
+                norm[-1] = (norm[-1][0], href)
+            continue
+        norm.append((label, href))
+    parts = []
+    for i, (label, href) in enumerate(norm):
         if i:
             parts.append('<span class="sep">/</span>')
         if href:
