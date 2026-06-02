@@ -192,7 +192,9 @@ def render_deal_origination(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
-    funnel_svg = _funnel_svg(r.velocity)
+    # Sourcing-funnel viz removed — it was a fabricated, low-signal graphic
+    # (screened→diligenced→closed) that added no real insight. The pipeline,
+    # banker, win/loss, and velocity tables carry the substance.
     pl_tbl = _pipeline_table(r.pipeline)
     pl_chart = _pipeline_chart(r.pipeline)
     bk_tbl = _bankers_table(r.bankers)
@@ -233,7 +235,6 @@ def render_deal_origination(params: dict = None) -> str:
   {ck_illustrative_note("pipeline figures")}
   {lead_anchor}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  <div style="{cell}"><div style="{h3}">Sourcing Funnel — Latest Quarter</div>{funnel_svg}</div>
   <div style="{cell}"><div style="{h3}">Active Pipeline — Stage, Probability, Weighted EV</div>{pl_chart}{pl_tbl}</div>
   <div style="{cell}"><div style="{h3}">Banker Relationship Matrix — LTM Performance</div>{bk_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sector Whitespace &amp; Expansion Targets</div>{ws_tbl}</div>

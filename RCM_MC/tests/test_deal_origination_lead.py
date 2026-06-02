@@ -24,11 +24,14 @@ class DealOriginationLeadAnchorTests(unittest.TestCase):
         self.assertIn("ORIGINATION PIPELINE", html)
         self.assertIn("weighted pipeline", html)
 
-    def test_anchor_leads_before_funnel_and_bottom_thesis(self):
+    def test_anchor_leads_before_content_and_bottom_thesis(self):
+        # The fabricated "Sourcing Funnel" viz was removed; the first content
+        # section is now the Active Pipeline. The lead anchor still leads.
         html = self._html()
+        self.assertNotIn("Sourcing Funnel", html)
         self.assertLess(
             html.index("ck-value-anchor"),
-            html.index("Sourcing Funnel"),
+            html.index("Active Pipeline"),
         )
         self.assertLess(
             html.index("ck-value-anchor"),

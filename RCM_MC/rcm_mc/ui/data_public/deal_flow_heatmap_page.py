@@ -37,10 +37,10 @@ def _heatmap_svg(
     sectors: List[str],
     matrix: Dict[Tuple[int, str], int],
     max_count: int,
-    cell_w: int = 28,
-    cell_h: int = 18,
-    pad_l: int = 160,
-    pad_t: int = 40,
+    cell_w: int = 44,
+    cell_h: int = 30,
+    pad_l: int = 184,
+    pad_t: int = 48,
 ) -> str:
     w = pad_l + len(years) * cell_w + 8
     h = pad_t + len(sectors) * cell_h + 16
@@ -51,8 +51,8 @@ def _heatmap_svg(
     for j, yr in enumerate(years):
         x = pad_l + j * cell_w + cell_w // 2
         parts.append(
-            f'<text x="{x}" y="{pad_t-4}" text-anchor="middle" '
-            f'fill="{P["text_dim"]}" font-size="8" font-family="{_MONO}" '
+            f'<text x="{x}" y="{pad_t-7}" text-anchor="middle" '
+            f'fill="{P["text_dim"]}" font-size="11" font-family="{_MONO}" '
             f'font-variant-numeric="tabular-nums">{yr}</text>'
         )
 
@@ -61,10 +61,10 @@ def _heatmap_svg(
         y_mid = y_top + cell_h // 2
 
         # sector label
-        trunc = sector[:24]
+        trunc = sector[:26]
         parts.append(
-            f'<text x="{pad_l-6}" y="{y_mid+4}" text-anchor="end" '
-            f'fill="{P["text_dim"]}" font-size="9" font-family="{_SANS}">'
+            f'<text x="{pad_l-8}" y="{y_mid+4}" text-anchor="end" '
+            f'fill="{P["text_dim"]}" font-size="12" font-family="{_SANS}">'
             f'{html.escape(trunc)}</text>'
         )
 
@@ -100,7 +100,7 @@ def _heatmap_svg(
                 text_col = P["text"] if intensity >= 0.4 else P["text_dim"]
                 parts.append(
                     f'<text x="{x_left+cell_w//2}" y="{y_mid+4}" text-anchor="middle" '
-                    f'fill="{text_col}" font-size="8" font-family="{_MONO}" '
+                    f'fill="{text_col}" font-size="11" font-family="{_MONO}" '
                     f'font-variant-numeric="tabular-nums">{count}</text>'
                 )
 
