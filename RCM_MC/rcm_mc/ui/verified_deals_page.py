@@ -187,7 +187,22 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
     present = sorted({d["sector"] for d in verified_deals()})
     chips = _chip("", "All") + "".join(
         _chip(s, _SECTOR_LABEL.get(s, s)) for s in present)
-    chip_bar = f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">{chips}</div>'
+    # Filter-aware CSV export of the real, sourced set.
+    _csv_q = [kv for kv in [
+        ("sector=" + quote(sector)) if sector else "",
+        ("sponsor=" + quote(sponsor)) if sponsor else "",
+    ] if kv]
+    csv_href = _html.escape(
+        "/verified-deals.csv" + ("?" + "&".join(_csv_q) if _csv_q else ""),
+        quote=True)
+    csv_link = (
+        f'<a href="{csv_href}" style="font-family:JetBrains Mono,monospace;'
+        f'font-size:10.5px;color:{ac};text-decoration:none;border:1px solid '
+        f'{border};border-radius:3px;padding:4px 10px;">↓ Download CSV</a>')
+    chip_bar = (
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;'
+        f'margin-bottom:16px">{chips}'
+        f'<span style="margin-left:auto">{csv_link}</span></div>')
 
     th = (f'padding:7px 10px;border-bottom:2px solid {border};font-size:10px;'
           f'color:{td};text-transform:uppercase;letter-spacing:0.06em;'

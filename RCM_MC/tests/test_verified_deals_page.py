@@ -39,6 +39,16 @@ class VerifiedDealsPageTests(unittest.TestCase):
         # The credibility caption is present.
         self.assertIn("public-record failures", html)
 
+    def test_csv_export_link_is_filter_aware(self) -> None:
+        # The real set is exportable; the link carries the active filters so
+        # the download matches what's on screen.
+        self.assertIn("/verified-deals.csv", render_verified_deals({}))
+        self.assertIn("Download CSV", render_verified_deals({}))
+        self.assertIn("/verified-deals.csv?sponsor=KKR",
+                      render_verified_deals({"sponsor": "KKR"}))
+        self.assertIn("/verified-deals.csv?sector=hospitals",
+                      render_verified_deals({"sector": "hospitals"}))
+
     def test_grew_beyond_the_seed_set(self) -> None:
         # Guard the expansion: the verified set is no longer a token list.
         from rcm_mc.data_public.verified_deals import (
