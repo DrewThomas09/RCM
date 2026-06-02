@@ -56,6 +56,15 @@ class VerifiedDealDataTests(unittest.TestCase):
             self.assertNotIn("seed_", str(d.get("source_url", "")))
             self.assertNotEqual(d.get("sponsor"), "Clearfield Capital")
 
+    def test_no_duplicate_targets(self) -> None:
+        # A target appearing twice means a deal was double-entered (e.g.
+        # Modernizing Medicine once under Warburg and again, mistakenly,
+        # under Vista). One row per real company.
+        from collections import Counter
+        dups = [t for t, c in Counter(
+            d["target"] for d in VERIFIED_DEALS).items() if c > 1]
+        self.assertEqual(dups, [], f"duplicate verified-deal targets: {dups}")
+
     def test_sector_filter_and_counts(self) -> None:
         self.assertEqual(verified_deal_count(), len(VERIFIED_DEALS))
         rcm = verified_deals("rcm_healthtech")
