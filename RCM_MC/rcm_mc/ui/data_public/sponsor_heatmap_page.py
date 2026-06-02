@@ -218,7 +218,10 @@ def _heatmap_svg(cells, top_sponsors, leaders) -> str:
     elts.append(
         f'<text x="10" y="15" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">Sponsor × Sector MOIC Heatmap (avg across deals; green = top quartile, red = bottom)</text>'
     )
-    return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
+    # Render wide (was capped at the intrinsic width inside a half-width paired
+    # column, which scaled the text down to unreadable). Full-width up to 1040px
+    # makes the cells and labels legible.
+    return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:1040px;min-width:min(100%,640px)" xmlns="http://www.w3.org/2000/svg">'
             f'{"".join(elts)}</svg>')
 
 
@@ -273,14 +276,21 @@ def render_sponsor_heatmap(params: dict = None) -> str:
         f'{svg}'
     )
     lead_headers, lead_rows, lead_hot = _leaders_paired_rows(r.sector_leaders)
-    heatmap_paired = ck_paired_block(
-        heatmap_viz,
-        data_label="Sector leaders &middot; top sponsor + runner-up",
-        data_source="data_public/sponsor_heatmap.py",
-        headers=lead_headers,
-        rows=lead_rows,
-        hot_rows=lead_hot,
-    )
+    # Heatmap renders FULL WIDTH (below), not squeezed into ck_paired_block's
+    # 1.4fr viz column where the viewBox scaled the labels to unreadable. The
+    # sector-leaders interpretation table gets its own full-width panel.
+    def _ld_cell(c, i):
+        return ck_data_cell(str(c), mono=True, align=("left" if i == 0 else "right"),
+                            weight=(600 if i == 0 else 400), tone=("" if i == 0 else "dim"))
+    _ld_ths = "".join(
+        ck_data_cell(h, align=("left" if i == 0 else "right"), is_header=True)
+        for i, h in enumerate(lead_headers))
+    _ld_trs = "".join(
+        f'<tr>{"".join(_ld_cell(c, i) for i, c in enumerate(row))}</tr>'
+        for row in lead_rows)
+    leaders_tbl = (
+        f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{_ld_ths}</tr></thead><tbody>{_ld_trs}</tbody></table></div>')
 
     form = f"""
 <form method="GET" action="/sponsor-heatmap" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
@@ -303,7 +313,9 @@ def render_sponsor_heatmap(params: dict = None) -> str:
   {page_title}
   {form}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
-  {heatmap_paired}
+  <div style="{cell}"><div style="{h3}">Sponsor × Sector MOIC grid — green = top-quartile</div>
+    <div style="overflow-x:auto">{heatmap_viz}</div></div>
+  <div style="{cell}"><div style="{h3}">Sector leaders — top sponsor + runner-up</div>{leaders_tbl}</div>
   <div style="{cell}"><div style="{h3}">Sponsor × Sector Matrix Detail (top 50)</div>{cells_tbl}</div>
   <div style="{cell}"><div style="{h3}">Top Sponsor Profiles</div>{profiles_chart}{profiles_tbl}</div>
   <div style="{cell}"><div style="{h3}">Vintage Cuts — 2016-2019 vs 2020-2024</div>{vintage_tbl}</div>
