@@ -213,12 +213,18 @@ def _shell(body: str, *, title: str = "New Deal", step: int = 1) -> str:
     skip-to-content anchor + step nav stay inside the body wrapper.
     """
     from ._chartis_kit import chartis_shell
+    # Wrap in .wizard so the wizard-local CSS (all scoped `.wizard …`) actually
+    # applies under chartis_shell — without it the form grid, input widths,
+    # buttons, and step chips render unstyled (cramped inline fields) and the
+    # skip-link leaks as visible text. This single wrapper styles all 5 steps.
     page_body = (
+        '<div class="wizard">'
         '<a class="skip-link" href="#main-content">Skip to content</a>'
         '<div class="wrap">'
         + _render_step_nav(step)
         + '<main id="main-content" tabindex="-1">' + body + '</main>'
         + '</div>'
+        '</div>'
     )
     return chartis_shell(
         page_body,
