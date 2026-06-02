@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 
 from ._chartis_kit import (
     chartis_shell,
-    ck_eyebrow,
     ck_fmt_num,
     ck_kpi_block,
     ck_next_section,
@@ -77,8 +76,7 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
     )
 
     body = (
-        ck_eyebrow("Scenario Explorer")
-        + kpi_strip
+        kpi_strip
         + f'<div class="cad-card">'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
         f'Preset payer policy shock scenarios. Select a deal and apply any scenario to '
@@ -123,7 +121,7 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
             "PAYER-POLICY OVERLAY"
         ),
         lede_italic_phrase=(
-            "Where the deal breaks under policy shocks."
+            "Stress the bridge before you commit."
         ),
         lede_body=(
             "Preset payer-policy shocks the platform applies "
