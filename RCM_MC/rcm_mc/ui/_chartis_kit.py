@@ -7521,9 +7521,19 @@ _CSS_INLINE_FALLBACK = """
       display:block; max-width:100%; overflow-x:auto;
       -webkit-overflow-scrolling:touch; }
     .ck-data-table-scroll{ max-width:100%; }
-    /* the viz | data pair stacks instead of sitting side-by-side */
+    /* the viz | data pair stacks instead of sitting side-by-side; a wide
+       chart inside scrolls within the panel rather than widening the page */
     .ck-pair{ grid-template-columns:1fr; }
-    .ck-pair-viz{ border-right:0; border-bottom:1px solid var(--sc-rule); }
+    .ck-pair-viz{ border-right:0; border-bottom:1px solid var(--sc-rule); overflow-x:auto; }
+    .ck-pair-data{ overflow-x:auto; }
+    /* provenance tooltip cards are visibility:hidden (so they still occupy
+       layout) with a 240px min-width — on a phone a card on a right-edge
+       KPI/cell pushed the whole page wide. Drop them from flow until
+       opened, then anchor inside the viewport. Desktop hover is unchanged
+       (this whole block is ≤640px only). */
+    .ck-prov-tt-card{ display:none; min-width:0; max-width:86vw; left:auto; right:0; }
+    .ck-prov-tt:hover .ck-prov-tt-card,
+    .ck-prov-tt:focus-within .ck-prov-tt-card{ display:block; }
   }
   .ck-nav a:hover { color:var(--tb-green); }
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
