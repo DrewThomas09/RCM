@@ -42,6 +42,7 @@ def _billing_table(items) -> str:
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sev_c = {"critical": neg, "high": neg, "medium": warn, "low": text_dim}
+    _max_exp = max((b.dollar_exposure_k for b in items), default=1.0) or 1.0
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         sc = sev_c.get(b.severity, text_dim)
@@ -52,7 +53,7 @@ def _billing_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.billing_pattern)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{b.anomaly_score}</td>',
             f'{ck_data_cell(f"""P{b.peer_comparison_percentile}""", align="right", mono=True, tone="neg", weight=600)}',
-            f'{ck_data_cell(f"""${b.dollar_exposure_k:,.1f}""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""${b.dollar_exposure_k:,.1f}""", align="right", mono=True, tone="neg", weight=700, bar=b.dollar_exposure_k / _max_exp * 100)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.severity)}</span>""", align="center")}',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')

@@ -65,6 +65,9 @@ def _affiliations_table(items) -> str:
             ("Realized Savings ($M)","right"),("Savings %","right"),("Rebate %","right"),
             ("Contracts","right"),("Tier","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
+    # Data-bar on the realized-savings column ranks the GPOs visually so the
+    # biggest savings contributors read at a glance without a separate chart.
+    _max_sav = max((a.realized_savings_m for a in items), default=1.0) or 1.0
     trs = []
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
@@ -75,7 +78,7 @@ def _affiliations_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(a.parent)}</td>',
             f'{ck_data_cell(f"""{a.portfolio_deals}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""${a.annual_spend_m:.1f}M""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""${a.realized_savings_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${a.realized_savings_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=a.realized_savings_m / _max_sav * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{a.savings_rate_pct * 100:.1f}%</td>',
             f'{ck_data_cell(f"""{a.rebate_rate_pct * 100:.1f}%""", align="right", mono=True, tone="acc", weight=600)}',
             f'{ck_data_cell(f"""{a.contract_count}""", align="right", mono=True, tone="dim")}',

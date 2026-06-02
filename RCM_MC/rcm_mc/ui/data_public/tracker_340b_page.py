@@ -71,6 +71,7 @@ def _entity_table(items) -> str:
             ("Enrolled","right"),("CE ID","center"),("Spend ($M)","right"),("Savings ($M)","right"),("Compliance","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _max_sav = max((e.annual_savings_m for e in items), default=1.0) or 1.0
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         c_c = pos if e.compliance_score >= 8.8 else (acc if e.compliance_score >= 8.3 else P["warning"])
@@ -82,7 +83,7 @@ def _entity_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(e.enrolled_date)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(e.ce_id)}</td>',
             f'{ck_data_cell(f"""${e.annual_340b_spend_m:.1f}M""", align="right", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""${e.annual_savings_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${e.annual_savings_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=e.annual_savings_m / _max_sav * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{e.compliance_score:.2f}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')

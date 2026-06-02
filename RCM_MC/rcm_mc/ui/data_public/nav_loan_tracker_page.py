@@ -58,6 +58,7 @@ def _loans_table(items) -> str:
             ("Closed","right"),("Use of Proceeds","left"),("Status","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _max_loan = max((l.loan_size_m for l in items), default=1.0) or 1.0
     for i, l in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         lt_c = pos if l.ltv_pct <= 0.10 else (acc if l.ltv_pct <= 0.14 else warn)
@@ -66,7 +67,7 @@ def _loans_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(l.sponsor)}</td>',
             f'{ck_data_cell(f"""{l.vintage}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${l.nav_at_close_b:.2f}B""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${l.loan_size_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${l.loan_size_m:.1f}M""", align="right", mono=True, weight=700, bar=l.loan_size_m / _max_loan * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{lt_c};font-weight:700">{l.ltv_pct * 100:.2f}%</td>',
             f'{ck_data_cell(f"""{l.sofr_spread_bps}bps""", align="right", mono=True, weight=600)}',
             f'{ck_data_cell(f"""{l.maturity_years}y""", align="right", mono=True, tone="dim")}',

@@ -6635,6 +6635,7 @@ def ck_data_cell(
     tone: Optional[str] = None,
     weight: Optional[int] = None,
     is_header: bool = False,
+    bar: Optional[float] = None,
 ) -> str:
     """One styled ``<td>`` (or ``<th>``) for the data_public table
     archetype. Replaces the ~1200 hand-rolled inline-styled cells
@@ -6680,6 +6681,22 @@ def ck_data_cell(
     if weight in (600, 700):
         cls_parts.append(f"ck-cell-w-{weight}")
     tag = "th" if is_header else "td"
+    # Opt-in in-cell data bar: a subtle teal fill behind the value, width
+    # proportional to ``bar`` (0–100). Turns a ranking column into a visual
+    # at-a-glance ranking without adding a separate chart / page length —
+    # the "easy to review" conditional-format pattern.
+    if bar is not None and not is_header:
+        try:
+            pct = max(0.0, min(100.0, float(bar)))
+        except (TypeError, ValueError):
+            pct = 0.0
+        cls_parts.append("ck-cell-databar")
+        cls = " ".join(cls_parts)
+        return (
+            f'<{tag} class="{cls}">'
+            f'<span class="ck-cell-databar-fill" style="width:{pct:.1f}%"></span>'
+            f'<span class="ck-cell-databar-v">{value}</span></{tag}>'
+        )
     cls = " ".join(cls_parts)
     return f'<{tag} class="{cls}">{value}</{tag}>'
 
@@ -8048,6 +8065,14 @@ _CSS_INLINE_FALLBACK = """
   .ck-cell.tone-acc { color:var(--sc-teal-ink); }
   .ck-cell-w-600 { font-weight:600; }
   .ck-cell-w-700 { font-weight:700; }
+  /* In-cell data bar (ck_data_cell bar=…): a subtle teal fill behind the
+     value so a ranking column reads as a visual ranking at a glance —
+     no separate chart, no added row height. */
+  .ck-cell-databar { position:relative; }
+  .ck-cell-databar-fill { position:absolute; left:0; top:3px; bottom:3px;
+    background:var(--sc-teal-soft,#d4e4e2); border-radius:2px; z-index:0;
+    pointer-events:none; }
+  .ck-cell-databar-v { position:relative; z-index:1; }
 
   /* Page-header chrome — replaces the per-page page-wrapper that
    * data_public pages used to roll by hand with an inline-styled
