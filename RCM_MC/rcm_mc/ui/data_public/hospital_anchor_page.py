@@ -62,6 +62,7 @@ def _contracts_table(items) -> str:
             ("Prod-Based %","right"),("Exclusive","center"),("Renewal Prob %","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.contract_value_annual_m for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         ex_c = pos if c.exclusivity else warn
@@ -72,7 +73,7 @@ def _contracts_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.service_line)}</td>',
             f'{ck_data_cell(f"""{_html.escape(c.contract_start)}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{_html.escape(c.contract_end)}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${c.contract_value_annual_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.contract_value_annual_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=c.contract_value_annual_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.stipend_m:.1f}M""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""${c.guaranteed_compensation_m:.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{c.productivity_based_pct * 100:.0f}%""", align="right", mono=True)}',

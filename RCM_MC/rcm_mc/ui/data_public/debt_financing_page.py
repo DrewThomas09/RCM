@@ -74,6 +74,7 @@ def _facilities_table(items) -> str:
             ("Tenor","center"),("Call Protection","left"),("Cov-Lite","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((f.size_m for f in items), default=1.0) or 1.0
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cl_c = pos if f.covenant_lite else P["warning"]
@@ -81,7 +82,7 @@ def _facilities_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(f.deal)}""", mono=True, weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.sector)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(f.tranche)}</td>',
-            f'{ck_data_cell(f"""${f.size_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${f.size_m:.1f}M""", align="right", mono=True, weight=700, bar=f.size_m / _bar_max * 100)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(f.lead_arranger)}</td>',
             f'{ck_data_cell(f"""{f.sofr_spread_bps}bps""", align="right", mono=True, weight=700)}',
             f'{ck_data_cell(f"""{f.floor_bps}bps""", align="right", mono=True, tone="dim")}',

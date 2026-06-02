@@ -50,6 +50,7 @@ def _programs_table(items) -> str:
             ("Through","right"),("Status","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((p.total_payments_b for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(p.status)
@@ -59,7 +60,7 @@ def _programs_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.program_type)}</td>',
             f'{ck_data_cell(f"""{p.lives_covered_m:.2f}""", align="right", mono=True, weight=700)}',
             f'{ck_data_cell(f"""{p.participants:,}""", align="right", mono=True, tone="acc")}',
-            f'{ck_data_cell(f"""${p.total_payments_b:.1f}B""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${p.total_payments_b:.1f}B""", align="right", mono=True, tone="pos", weight=700, bar=p.total_payments_b / _bar_max * 100)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.risk_structure)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{sv_c};font-weight:700">{p.savings_rate_pct:.2f}%</td>',
             f'{ck_data_cell(f"""{_html.escape(p.active_through)}""", align="right", mono=True, tone="dim")}',

@@ -32,6 +32,7 @@ def _contracts_table(items) -> str:
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     risk_c = {"low": pos, "medium": warn, "high": neg}
+    _bar_max = max((c.annual_revenue_mm for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         rc = risk_c.get(c.churn_risk, text_dim)
@@ -40,7 +41,7 @@ def _contracts_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(c.industry)}""", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{c.covered_lives:,}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""{_html.escape(c.contract_type)}""", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${c.annual_revenue_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.annual_revenue_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=c.annual_revenue_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{c.utilization_rate * 100:.2f}%""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${c.pmpy_rev:,.0f}""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""{c.renewal_year}""", align="right", mono=True, tone="dim")}',

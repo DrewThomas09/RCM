@@ -63,6 +63,7 @@ def _contracts_table(items) -> str:
             ("CPI Cap %","right"),("Stage","center"),("Lives (K)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.annual_revenue_m for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _stage_color(c.renegotiation_stage)
@@ -72,7 +73,7 @@ def _contracts_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(c.deal)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc};font-weight:600">{_html.escape(c.payer)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.contract_type)}</td>',
-            f'{ck_data_cell(f"""${c.annual_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.annual_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=c.annual_revenue_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""{_html.escape(c.effective_date)}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{_html.escape(c.expires)}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c};font-weight:700">+{c.rate_escalator_pct * 100:.2f}%</td>',

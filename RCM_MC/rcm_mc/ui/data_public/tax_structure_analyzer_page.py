@@ -51,6 +51,7 @@ def _scenarios_table(items) -> str:
             ("Net ($M)","right"),("After-Tax MOIC","right"),("After-Tax IRR","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((s.after_tax_proceeds_mm for s in items), default=1.0) or 1.0
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         m_c = pos if s.after_tax_moic >= 3.0 else (acc if s.after_tax_moic >= 2.6 else text_dim)
@@ -59,7 +60,7 @@ def _scenarios_table(items) -> str:
             f'{ck_data_cell(f"""${s.gross_proceeds_mm:,.2f}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""${s.federal_tax_mm:,.2f}""", align="right", mono=True, tone="neg")}',
             f'{ck_data_cell(f"""${s.state_tax_mm:,.2f}""", align="right", mono=True, tone="neg")}',
-            f'{ck_data_cell(f"""${s.after_tax_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${s.after_tax_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=s.after_tax_proceeds_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.after_tax_moic:,.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.after_tax_irr * 100:+.1f}%</td>',
         ]
