@@ -200,6 +200,9 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     from ..data_public.sponsor_track_record import (
         build_sponsor_records,
     )
+    from ..data_public.verified_deals import (
+        verified_deal_count, verified_deals_for_sponsor,
+    )
 
     header = ck_page_title(
         "Sponsor track record",
@@ -491,6 +494,46 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         + '</div>'
     )
 
+    # Real, sourced deals for this sponsor — the honest counterweight to the
+    # illustrative corpus track record above. Always shown (with deals if we
+    # have them, else an explicit "this is illustrative" note) so the partner
+    # never mistakes the corpus stats for the sponsor's genuine record.
+    _vdeals = verified_deals_for_sponsor(matched_name)
+    if _vdeals:
+        _v_rows = "".join(
+            '<li style="margin:4px 0;font-size:12.5px;color:#1a2332;">'
+            f'<strong>{_html.escape(d["target"])}</strong> '
+            f'<span style="color:#7a8699;">({d["year"]} · '
+            f'{_html.escape(d.get("sector", ""))} · {_html.escape(d["outcome"])})</span> '
+            f'<a href="{_html.escape(d.get("source_url", ""), quote=True)}" '
+            'target="_blank" rel="noopener" '
+            'style="color:var(--sc-navy);font-size:11px;">source ↗</a></li>'
+            for d in sorted(_vdeals, key=lambda x: -(x.get("year") or 0))
+        )
+        _v_inner = (
+            f'<p style="margin:0 0 8px;font-size:12px;color:#465366;">'
+            f'{len(_vdeals)} real, source-linked deal'
+            f'{"s" if len(_vdeals) != 1 else ""} for '
+            f'{_html.escape(matched_name)} — the honest counterweight to the '
+            'illustrative corpus stats above.</p>'
+            f'<ul style="margin:0;padding-left:18px;">{_v_rows}</ul>'
+            '<p style="margin:10px 0 0;"><a href="/verified-deals?sponsor='
+            f'{_urlparse.quote(matched_name)}" style="color:var(--sc-navy);'
+            'font-size:12px;font-weight:600;text-decoration:none;">'
+            'Browse on Verified Deals →</a></p>'
+        )
+    else:
+        _v_inner = (
+            '<p style="margin:0;font-size:12.5px;color:#7a8699;">'
+            f'No verified deals for {_html.escape(matched_name)} in the real-deal '
+            'set yet — so the track record above is <em>illustrative corpus</em> '
+            "data, not this sponsor's genuine record. See the "
+            f'<a href="/verified-deals" style="color:var(--sc-navy);">'
+            f'{verified_deal_count()} verified deals</a> we have sourced so far.</p>'
+        )
+    verified_panel = _wc.section_card(
+        "Real, sourced deals for this sponsor", _v_inner)
+
     inner = (
         ck_eyebrow("Sponsor Track Record")
         + kpi_strip
@@ -500,6 +543,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         + f'<h2 style="font-size:18px;margin:8px 0 12px;'
         f'color:#1a2332;">{_html.escape(matched_name)}</h2>'
         + stats
+        + verified_panel
         + vintage_card
         + sector_card
         + _wc.section_card(
