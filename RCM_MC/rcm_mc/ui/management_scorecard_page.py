@@ -393,33 +393,10 @@ def _hero(report: ManagementReport, target_name: str) -> str:
                 f'≈ ${hc.dollar_adjustment_usd:,.0f} EBITDA adjustment'
             )
 
-    # 2026-05-28 batch 22 · universal strict 5-block head.
-    from ._chartis_kit import ck_editorial_head
-    # as_subhead=True: this page also renders a top-of-body
-    # ck_page_title (the H1). The editorial deck is the section
-    # head under that H1 — render as H2 so the page satisfies the
-    # One-H1 invariant (audit 2026-05-29).
-    intro = ck_editorial_head(
-        eyebrow="Management Scorecard",
-        title=html.escape(target_name),
-        meta=(
-            f"{report.team_size} EXECUTIVE"
-            f"{'S' if report.team_size != 1 else ''} · "
-            f"{report.aggregate_confidence.upper()} CONFIDENCE · "
-            f"{report.aggregate_overall}/100 AGGREGATE · "
-            f"{report.red_flag_count} RED FLAGS "
-            f"({report.critical_flag_count} CRITICAL)"
-        ),
-        lede_italic_phrase="How the management team scores.",
-        lede_body=(
-            f"{report.team_size} executive"
-            f"{'s' if report.team_size != 1 else ''} scored · "
-            f"{report.aggregate_confidence} confidence · "
-            f"{report.red_flag_count} red flags "
-            f"({report.critical_flag_count} critical)"
-        ),
-        as_subhead=True,
-    )
+    # Hero is the summary callout + aggregate KPIs. The page H1
+    # (ck_page_title "Management Scorecard") already names the target in
+    # its meta line, so a second editorial headline here was a redundant
+    # stacked header — dropped 2026-06.
     kpis = (
         '<div class="ck-kpi-strip">'
         + ck_kpi_block(
@@ -441,7 +418,6 @@ def _hero(report: ManagementReport, target_name: str) -> str:
         + "</div>"
     )
     return (
-        f'{intro}'
         f'<div class="ms-callout {banner_class}">'
         f'{html.escape(report.summary)}</div>'
         f'{kpis}'
