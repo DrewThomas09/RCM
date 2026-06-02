@@ -108,12 +108,9 @@ def _landing() -> str:
         f'<option value="{html.escape(n)}">{html.escape(l)}</option>'
         for n, l in AVAILABLE_FIXTURES
     )
-    # 2026-05-28 batch 22 · universal strict 5-block head.
+    # Single editorial head (real <h1>): this is the sole masthead, so the
+    # shell does NOT auto-inject a generic "RCM Diligence — …" title above it.
     from ._chartis_kit import ck_editorial_head
-    # as_subhead=True: chartis_shell's editorial_intro path below
-    # already emits the page ck_page_title (the H1). This editorial
-    # deck is the section deck under that H1 — render as H2 so the
-    # page satisfies the One-H1 invariant (audit 2026-05-29).
     intro = ck_editorial_head(
         eyebrow="IC Packet Assembler",
         title="One-click IC Memo",
@@ -131,7 +128,6 @@ def _landing() -> str:
             "100-day plan + open questions + walkaway conditions + "
             "signature block. Single URL-reproducible memo."
         ),
-        as_subhead=True,
     )
     form = (
         '<form method="GET" action="/diligence/ic-packet" class="ic-form">'
@@ -167,21 +163,7 @@ def _landing() -> str:
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(
-        body, "RCM Diligence — IC Packet Assembler",
-        subtitle="One-click IC deliverable",
-        editorial_intro={
-            "eyebrow": "IC PACKET ASSEMBLER",
-            "headline": "Where the IC packet writes itself.",
-            "italic_word": "writes",
-            "body": (
-                "Pick a target hospital fixture and the platform "
-                "assembles the IC packet end-to-end: thesis, "
-                "base case, bear case, comparables, exit path. "
-                "Use as a draft anchor; the partner adds judgment."
-            ),
-        },
-    )
+    return chartis_shell(body, "RCM Diligence — IC Packet Assembler")
 
 
 def _split_list(raw: str) -> List[str]:
