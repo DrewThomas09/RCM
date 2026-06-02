@@ -53,7 +53,18 @@ def _sparkline(vintage_moic: Dict[int, List[float]], width: int = 80, height: in
         vals = sorted(vintage_moic[yr])
         pts.append((yr, vals[len(vals) // 2]))
     if len(pts) < 2:
-        return f'<svg width="{width}" height="{height}"></svg>'
+        # A single vintage point can't draw a trend line — but render a
+        # baseline + a center dot rather than an empty <svg> (a blank box
+        # where a sparkline should be). Mirrors the no-data baseline above.
+        cy = height // 2
+        return (
+            f'<svg width="{width}" height="{height}" '
+            f'xmlns="http://www.w3.org/2000/svg">'
+            f'<line x1="0" y1="{cy}" x2="{width}" y2="{cy}" '
+            f'stroke="#BFB6A2" stroke-width="1"/>'
+            f'<circle cx="{width // 2}" cy="{cy}" r="2" fill="#155752"/>'
+            f'</svg>'
+        )
     min_y = min(p[1] for p in pts)
     max_y = max(p[1] for p in pts)
     rng = max(0.1, max_y - min_y)

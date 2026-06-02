@@ -198,6 +198,13 @@ def _split_bar(w: WaterfallSplit) -> str:
         "repeating-linear-gradient(45deg,#b8842e 0 6px,#ecdfb4 6px 12px)"
         if stripe else "#0b2341"
     )
+    # 'pref not cleared' note — built as a local because an inline f-string
+    # conditional whose branch contains escaped-quote HTML can't sit in an
+    # f-string expression part on Python < 3.12 (backslash restriction).
+    pref_note = (
+        '' if w.pref_cleared
+        else ' — <em style="color:#b8842e;">pref not cleared</em>'
+    )
     return (
         '<div style="display:flex;border:1px solid #c9c1ac;height:36px;'
         'overflow:hidden;background:#faf6ec;">'
@@ -218,7 +225,7 @@ def _split_bar(w: WaterfallSplit) -> str:
         f'<div>Return of capital → LP <strong>{_fmt_money(w.invested)}</strong></div>'
         f'<div>Preferred return ({w.pref_rate*100:.0f}% × {w.hold_years}y simple) '
         f'→ LP <strong>{_fmt_money(w.pref_amount)}</strong>'
-        f'{"" if w.pref_cleared else " — <em style=\"color:#b8842e;\">pref not cleared</em>"}'
+        f'{pref_note}'
         '</div>'
         f'<div>GP catch-up → GP <strong>{_fmt_money(w.catch_up)}</strong></div>'
         f'<div>Profit above catch-up → split '

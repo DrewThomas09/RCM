@@ -223,15 +223,22 @@ def render_gp_benchmarking(params: Dict[str, str]) -> str:
                 moic = d.get("realized_moic")
                 irr  = d.get("realized_irr")
                 moic_col = P["positive"] if (moic or 0) >= 2.5 else (P["warning"] if (moic or 0) >= 2.0 else P["text"])
+                # Pre-format the EV / hold cells: a nested f-string with a
+                # dict subscript (d['ev_mm']) can't be embedded inside this
+                # single-quoted outer f-string on Python < 3.12 (PEP 701) —
+                # the inner quote collides either with the outer ' or the
+                # nested " and the module fails to import. Compute as locals.
+                ev_disp = f"${d['ev_mm']:,.0f}M" if d.get("ev_mm") else "—"
+                hold_disp = f"{d['hold_years']:.1f}y" if d.get("hold_years") else "—"
                 rows += (
                     f'<tr>'
                     f'<td style="padding:4px 8px;font-size:11px">{_deal_name_cell(d, 44)}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;color:{P["text_dim"]}">{html.escape((d.get("sector") or "—")[:24])}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d.get("year","—")}</td>'
-                    f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"${d["ev_mm"]:,.0f}M" if d.get("ev_mm") else "—"}</td>'
+                    f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{ev_disp}</td>'
                     f'<td style="padding:4px 8px;font-size:12px;font-family:{_MONO};text-align:right;font-weight:700;color:{moic_col};font-variant-numeric:tabular-nums">{f"{moic:.2f}×" if moic else "—"}</td>'
                     f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{irr*100:.1f}%" if irr else "—"}</td>'
-                    f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{f"{d["hold_years"]:.1f}y" if d.get("hold_years") else "—"}</td>'
+                    f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{hold_disp}</td>'
                     f'</tr>'
                 )
 
