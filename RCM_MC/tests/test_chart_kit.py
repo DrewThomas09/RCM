@@ -22,6 +22,7 @@ from rcm_mc.ui._chart_kit import (
     ck_chart_grid,
     ck_diverging_bar,
     ck_grouped_bar,
+    ck_hbar_chart,
 )
 
 
@@ -69,6 +70,23 @@ class GroupedBarTests(unittest.TestCase):
         self.assertEqual(
             ck_grouped_bar("X", ["A"], [("s", [None], None)]), ""
         )
+
+
+class HBarChartTests(unittest.TestCase):
+    def test_hbar_renders_card_with_long_labels(self) -> None:
+        out = ck_hbar_chart(
+            "Top counties — Population",
+            [("Los Angeles County", 9829544, "teal"),
+             ("San Diego County", 3286069, "teal")],
+            reference=("State wtd-mean", 500000),
+        )
+        self.assertIn("<svg", out)
+        self.assertIn("ck-chart-card", out)
+        self.assertIn("ck-chart-dl", out)
+        self.assertIn("State wtd-mean", out)
+
+    def test_hbar_empty_returns_blank(self) -> None:
+        self.assertEqual(ck_hbar_chart("X", []), "")
 
 
 class DivergingBarTests(unittest.TestCase):

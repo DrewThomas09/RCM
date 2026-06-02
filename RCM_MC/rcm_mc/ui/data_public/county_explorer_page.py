@@ -15,6 +15,7 @@ import html as _html
 from typing import Dict, List
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chart_kit import ck_chart_assets, ck_chart_grid, ck_hbar_chart
 from rcm_mc.ui.data_public.state_compare_page import _VALID
 from rcm_mc.ui.data_public.state_profile_page import _STATE_NAMES
 
@@ -131,6 +132,57 @@ def _county_kpi_strip(rows, footer, name) -> str:
     return strip + '</div>'
 
 
+def _county_top_bar(key: str, rows, footer, n: int = 12) -> str:
+    """Top-N counties on one metric as a horizontal ranked bar, with the
+    state population-weighted mean as a dashed reference. '' when no data."""
+    col = _COL_BY_KEY.get(key)
+    if not col:
+        return ""
+    _k, label, fmt, _h, _frac = col
+    present = [(r["name"], r[key]) for r in rows if r.get(key) is not None]
+    if not present:
+        return ""
+    present.sort(key=lambda t: t[1], reverse=True)
+    top = present[:n]
+    items = [(nm, v, "teal") for nm, v in top]
+    mref = footer.get(key)
+    ref = ("State wtd-mean", mref) if (mref is not None and mref == mref) else None
+    return ck_hbar_chart(
+        f"Top {len(top)} counties — {label}", items, value_fmt=fmt,
+        reference=ref, subtitle=f"of {len(present)} counties with data",
+        source="County Health Rankings / Census ACS",
+        chart_id="ckc-county-" + key,
+    )
+
+
+def _county_chart_builder(state, sort_key, cmetric):
+    """'+ Chart a metric' control — pick a county metric, render its top-N
+    ranked bar. Reuses the current state; submits (GET) to /county-explorer."""
+    P_ = P
+    td = P_["text_dim"]; ac = P_["accent"]; border = P_["border"]
+    sel = (f'background:{P_["panel_alt"]};color:{P_["text"]};border:1px solid {border};'
+           f'padding:6px 8px;font-family:Inter Tight,sans-serif;font-size:12px;border-radius:2px')
+    opts = "".join(
+        f'<option value="{_html.escape(k)}"{" selected" if k == cmetric else ""}>'
+        f'{_html.escape(lbl)}</option>' for k, lbl, *_ in _COLS)
+    return (
+        f'<details class="ce-chart-builder"{" open" if cmetric else ""} '
+        f'style="margin:0 0 14px;border:1px solid {border};border-radius:4px;padding:0 14px">'
+        f'<summary style="cursor:pointer;padding:10px 0;font-family:JetBrains Mono,monospace;'
+        f'font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:{ac}">'
+        f'＋ Chart a metric (top counties)</summary>'
+        f'<form method="get" action="/county-explorer" style="display:flex;gap:10px;'
+        f'align-items:flex-end;flex-wrap:wrap;padding:4px 0 14px">'
+        f'<input type="hidden" name="state" value="{state}">'
+        f'<input type="hidden" name="sort" value="{_html.escape(sort_key)}">'
+        f'<label style="font-size:11px;color:{td}">Metric<br>'
+        f'<select name="cmetric" style="{sel};margin-top:4px;min-width:200px">{opts}</select></label>'
+        f'<button type="submit" style="background:{ac};color:#fff;border:none;padding:7px 16px;'
+        f'font-family:JetBrains Mono,monospace;font-size:12px;border-radius:2px;cursor:pointer">'
+        f'Chart top counties</button></form></details>'
+    )
+
+
 def render_county_explorer(params: Dict = None) -> str:
     state = _parse_state(params)
     sort_key = _parse_sort(params)
@@ -196,6 +248,23 @@ def render_county_explorer(params: Dict = None) -> str:
         fcells += (f'<td style="padding:6px 10px;text-align:right;font-family:JetBrains Mono,monospace;'
                    f'font-size:12px;font-variant-numeric:tabular-nums;color:{td};border-top:2px solid {border}">{_html.escape(s)}{lab}</td>')
 
+    # ── Visual summary: top-N counties on the sorted metric (tracks the
+    # column you click) + an optional metric the partner charts. Same real
+    # rows as the table; each card exports to PNG.
+    def _qp(n, d=""):
+        v = (params or {}).get(n, d)
+        return (v[0] if isinstance(v, list) and v else v if not isinstance(v, list) else d)
+    cmetric = str(_qp("cmetric")).strip()
+    custom_chart = _county_top_bar(cmetric, rows, footer) if cmetric in _COL_BY_KEY else ""
+    default_chart = _county_top_bar(sort_key, rows, footer)
+    charts_html = (
+        f'<div class="ce-charts" style="margin:4px 0 10px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:11px;letter-spacing:.06em;'
+        f'text-transform:uppercase;color:{td};margin-bottom:8px">Visual summary</div>'
+        f'{_county_chart_builder(state, sort_key, cmetric)}'
+        f'{ck_chart_grid(custom_chart) if custom_chart else ""}'
+        f'{ck_chart_grid(default_chart) if default_chart else ""}</div>'
+    )
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title(f"County Explorer — {name}", eyebrow="MARKET INTEL", meta=f"{len(rows)} {name} counties on real Census/ACS demographics — click a column to sort")}
@@ -207,6 +276,7 @@ def render_county_explorer(params: Dict = None) -> str:
     Counties missing a value show &ldquo;&mdash;&rdquo;; nothing is fabricated.
   </p>
   {form}
+  {charts_html}
   <div style="overflow-x:auto;border:1px solid {border};border-radius:3px">
   <table style="width:100%;border-collapse:collapse">
     <thead><tr>{th}</tr></thead>
@@ -224,5 +294,5 @@ def render_county_explorer(params: Dict = None) -> str:
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
     from .._chartis_kit import ck_page_actions
-    body = body + ck_page_actions()
+    body = body + ck_chart_assets() + ck_page_actions()
     return chartis_shell(body, f"County Explorer — {name}", active_nav="/county-explorer")

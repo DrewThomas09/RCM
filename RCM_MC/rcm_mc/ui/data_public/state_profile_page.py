@@ -15,6 +15,9 @@ import html as _html
 from typing import Dict, List, Tuple
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chart_kit import (
+    ck_bar_chart, ck_chart_assets, ck_chart_grid, ck_diverging_bar,
+)
 from rcm_mc.ui.data_public.state_compare_page import (
     _METRIC_BY_KEY,
     _METRICS,
@@ -90,6 +93,58 @@ def profile_dataframe(state: str):
                      "NationalRank": pos, "Of": len(pairs), "Source": source})
     return _pd.DataFrame(rows, columns=["Metric", "Value", "VsUSMedianPct",
                                         "NationalRank", "Of", "Source"])
+
+
+def _profile_diverging(state: str, name: str, ranked) -> str:
+    """Headline visual: this state's signed gap vs the U.S. median across every
+    directional metric, sorted strongest→weakest. Bar direction = above/below
+    median; color = better (green) / worse (amber) given the metric's
+    direction — the exact semantics of the table's 'vs U.S. median' column."""
+    items = []
+    for key, label, _src, _f, higher in _METRICS:
+        pairs = ranked.get(key, [])
+        val = next((v for s, v in pairs if s == state), None)
+        med = _us_median([v for _, v in pairs])
+        if val is None or med is None or med == 0:
+            continue
+        delta = (val - med) / abs(med) * 100.0
+        if higher is None:
+            tone = "muted"
+        else:
+            better = (delta > 0) if higher else (delta < 0)
+            tone = "positive" if (delta != 0 and better) else ("warning" if delta != 0 else "muted")
+        items.append((label, delta, tone))
+    items.sort(key=lambda t: t[1], reverse=True)
+    return ck_diverging_bar(
+        f"{name} vs U.S. median", items,
+        value_fmt=lambda x: f"{x:+.0f}%",
+        subtitle="bar = above/below median · green better, amber worse",
+        source="PEdesk geographic layers", chart_id="ckc-profile-diverging",
+        center_label="U.S. median", height=300,
+    )
+
+
+def _profile_spotlight(key: str, state: str, ranked) -> str:
+    """Builder output: where this state ranks on one metric — the leading
+    states (best-first) plus this state highlighted, with a U.S.-median ref."""
+    m = _METRIC_BY_KEY.get(key)
+    pairs = ranked.get(key, [])
+    if not m or not pairs:
+        return ""
+    _k, label, source, fmt, _higher = m
+    top = list(pairs[:7])
+    if state not in [s for s, _ in top]:
+        this = next(((s, v) for s, v in pairs if s == state), None)
+        if this:
+            top = list(pairs[:6]) + [this]
+    items = [(s, v, "navy" if s == state else "teal") for s, v in top]
+    med = _us_median([v for _, v in pairs])
+    ref = ("U.S.", med) if (med is not None and med == med) else None
+    return ck_bar_chart(
+        f"{label} — national ranking", items, value_fmt=fmt, reference=ref,
+        subtitle=f"{state} highlighted · best states first", source=source,
+        chart_id="ckc-spotlight-" + key,
+    )
 
 
 def render_state_profile(params: Dict = None) -> str:
@@ -215,6 +270,44 @@ def render_state_profile(params: Dict = None) -> str:
                        (f"{_above}/{_direc}" if _direc else "—"))
         + '</div>'
     )
+
+    # ── Visual summary: a headline diverging chart (this state vs the U.S.
+    # median across all directional metrics) + an optional metric spotlight
+    # the partner builds. Same real values as the table; each card → PNG.
+    def _qp(n, d=""):
+        v = (params or {}).get(n, d)
+        return (v[0] if isinstance(v, list) and v else v if not isinstance(v, list) else d)
+    smetric = str(_qp("smetric")).strip()
+    diverging = _profile_diverging(state, name, ranked)
+    spotlight = _profile_spotlight(smetric, state, ranked) if smetric in _METRIC_BY_KEY else ""
+    sel_b = (f'background:{P["panel_alt"]};color:{tp};border:1px solid {border};'
+             f'padding:6px 8px;font-family:Inter Tight,sans-serif;font-size:12px;border-radius:2px')
+    builder_opts = "".join(
+        f'<option value="{_html.escape(k)}"{" selected" if k == smetric else ""}>'
+        f'{_html.escape(lbl)}</option>' for k, lbl, *_ in _METRICS)
+    builder = (
+        f'<details class="sp-chart-builder"{" open" if smetric else ""} '
+        f'style="margin:0 0 14px;border:1px solid {border};border-radius:4px;padding:0 14px">'
+        f'<summary style="cursor:pointer;padding:10px 0;font-family:JetBrains Mono,monospace;'
+        f'font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:{ac}">'
+        f'＋ Spotlight a metric (national ranking)</summary>'
+        f'<form method="get" action="/state-profile" style="display:flex;gap:10px;'
+        f'align-items:flex-end;flex-wrap:wrap;padding:4px 0 14px">'
+        f'<input type="hidden" name="state" value="{state}">'
+        f'<label style="font-size:11px;color:{td}">Metric<br>'
+        f'<select name="smetric" style="{sel_b};margin-top:4px;min-width:220px">'
+        f'{builder_opts}</select></label>'
+        f'<button type="submit" style="background:{ac};color:#fff;border:none;padding:7px 16px;'
+        f'font-family:JetBrains Mono,monospace;font-size:12px;border-radius:2px;cursor:pointer">'
+        f'Show ranking</button></form></details>'
+    )
+    charts_html = (
+        f'<div class="sp-charts" style="margin:4px 0 10px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:11px;letter-spacing:.06em;'
+        f'text-transform:uppercase;color:{td};margin-bottom:8px">Visual summary</div>'
+        f'{builder}{ck_chart_grid(spotlight) if spotlight else ""}'
+        f'{ck_chart_grid(diverging) if diverging else ""}</div>'
+    )
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title(f"State Profile — {name}", eyebrow="MARKET INTEL", meta=f"Every real public-data metric for {name} ({state}), with its national rank")}
@@ -228,6 +321,7 @@ def render_state_profile(params: Dict = None) -> str:
     left unranked, never fabricated.
   </p>
   {form}
+  {charts_html}
   <div style="overflow-x:auto;border:1px solid {border};border-radius:3px">
   <table style="width:100%;border-collapse:collapse">
     <thead><tr>
@@ -249,7 +343,7 @@ def render_state_profile(params: Dict = None) -> str:
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
     from .._chartis_kit import ck_page_actions
-    body = body + ck_page_actions()
+    body = body + ck_chart_assets() + ck_page_actions()
     return chartis_shell(body, f"State Profile — {name}", active_nav="/state-profile")
 
 
