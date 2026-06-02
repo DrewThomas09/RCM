@@ -6947,6 +6947,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "pe-intel",    "title": "PE Intelligence",      "route": "/pe-intelligence"},
     {"id": "deal-screen", "title": "Deal Screening",       "route": "/deal-screening"},
     {"id": "find-comps",  "title": "Find Comps",           "route": "/find-comps"},
+    {"id": "verified-deals", "title": "Verified Deals · real, sourced healthcare PE deals", "route": "/verified-deals"},
     {"id": "conferences", "title": "Conferences",          "route": "/conferences"},
     # Diligence playbook
     {"id": "deal-profile",  "title": "Deal Profile",       "route": "/diligence/deal"},

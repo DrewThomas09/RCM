@@ -4420,6 +4420,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 results.append(_d)
             results.sort(key=lambda d: -(float(d.get("realized_moic") or 0)))
             return self._send_json({"count": len(results), "limit": limit, "deals": results[:limit]})
+        if path == "/verified-deals":
+            from .ui.verified_deals_page import render_verified_deals
+            _vqs = urllib.parse.parse_qs(parsed.query)
+            _vqp = {k: v[0] for k, v in _vqs.items() if v}
+            return self._send_html(render_verified_deals(_vqp))
         if path == "/deal-search":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qs1(k, d=""): return (_qs.get(k, [d]) or [d])[0]
