@@ -7500,6 +7500,41 @@ _CSS_INLINE_FALLBACK = """
   @media (max-width:1320px){ .ck-nav a { padding:0 10px; font-size:13.5px; }
     .ck-topbar-inner { padding:0 22px; } }
   @media (max-width:1180px){ .ck-nav a { padding:0 8px; font-size:13px; } }
+  /* ── Mobile (≤640px) — eliminate horizontal page scroll ──────────────
+     A 2026-06 mobile audit found ~50 pages forced horizontal page scroll
+     on a 390px viewport from two systemic causes: (1) the topbar's
+     wordmark + 7 nav links + search + buttons never wrapped (~600px), and
+     (2) wide data tables overflowed their column. Both are fixed here,
+     scoped to ≤640px so the desktop layout (the product's primary target)
+     is byte-for-byte unchanged. The topbar wraps to a compact stack (its
+     dropdowns stay position:absolute, so wrapping doesn't clip them);
+     wide tables scroll horizontally within the viewport instead of
+     widening the page. */
+  @media (max-width:640px){
+    .ck-topbar-inner{ flex-wrap:wrap; min-height:0; padding:8px 16px; row-gap:2px; }
+    .ck-wordmark{ padding-right:16px; margin-right:12px; }
+    /* let the 7 nav links wrap to multiple rows rather than forcing the
+       bar (and the page) ~480px wide; each link keeps its own no-wrap. */
+    .ck-nav{ flex-wrap:wrap; }
+    .ck-nav a{ height:auto; padding:6px 10px; }
+    .ck-table, .ck-data-table, .cad-table{
+      display:block; max-width:100%; overflow-x:auto;
+      -webkit-overflow-scrolling:touch; }
+    .ck-data-table-scroll{ max-width:100%; }
+    /* the viz | data pair stacks instead of sitting side-by-side; a wide
+       chart inside scrolls within the panel rather than widening the page */
+    .ck-pair{ grid-template-columns:1fr; }
+    .ck-pair-viz{ border-right:0; border-bottom:1px solid var(--sc-rule); overflow-x:auto; }
+    .ck-pair-data{ overflow-x:auto; }
+    /* provenance tooltip cards are visibility:hidden (so they still occupy
+       layout) with a 240px min-width — on a phone a card on a right-edge
+       KPI/cell pushed the whole page wide. Drop them from flow until
+       opened, then anchor inside the viewport. Desktop hover is unchanged
+       (this whole block is ≤640px only). */
+    .ck-prov-tt-card{ display:none; min-width:0; max-width:86vw; left:auto; right:0; }
+    .ck-prov-tt:hover .ck-prov-tt-card,
+    .ck-prov-tt:focus-within .ck-prov-tt-card{ display:block; }
+  }
   .ck-nav a:hover { color:var(--tb-green); }
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
     border-bottom-color:var(--tb-green); margin-bottom:-1px; }
