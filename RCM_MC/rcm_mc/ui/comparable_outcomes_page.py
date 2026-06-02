@@ -518,8 +518,8 @@ def render_comparable_outcomes_page(
             )
             + ck_page_explainer(
                 'Realized outcomes on comparable deals.',
-                'Pulls the realized MOIC / IRR / exit-multiple distributions from the platform corpus filtered to comparables of the focused deal (sector × size × hold × exit channel). Used as a sanity check on bid pricing and to set the IC narrative on "what funds like ours have actually done with deals like this."',
-                source='Platform corpus of historical deals.',
+                'Pulls the MOIC / IRR / exit-multiple distributions from the platform corpus filtered to comparables of the focused deal (sector × size × hold × exit channel). Used as a sanity check on bid pricing and to set the IC narrative on "what deals like this tend to return."',
+                source='Platform illustrative seed corpus (not real fund history).',
             )
         )
         explainer_html = (
