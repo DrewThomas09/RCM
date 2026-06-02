@@ -91,7 +91,11 @@ def _hsr_table(items) -> str:
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
-            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+            f'<div style="font-size:10px;color:{P.get("text_faint", text_dim)};'
+            f'margin-top:6px;font-family:JetBrains Mono,monospace">'
+            f'Bar = transaction value relative to the largest threshold shown — '
+            f'a longer bar clears a bigger HSR tier.</div>')
 
 
 def _overlaps_table(items) -> str:
@@ -254,9 +258,15 @@ def render_antitrust_screener(params: dict = None) -> str:
         except (ValueError, TypeError): return default
 
     deal_size = _f("deal_size", 485.0)
+    acquirer_size = _f("acquirer_size", 1850.0)
+    combined_share = _f("combined_share", 50.0)
+    state = str(params.get("state", "TX") or "TX")[:24]
 
     from rcm_mc.data_public.antitrust_screener import compute_antitrust_screener
-    r = compute_antitrust_screener(deal_size_mm=deal_size)
+    r = compute_antitrust_screener(
+        deal_size_mm=deal_size, acquirer_size_mm=acquirer_size,
+        combined_share_pct=combined_share, state=state,
+    )
 
     bg = P["bg"]; panel = P["panel"]; panel_alt = P["panel_alt"]
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
@@ -275,11 +285,29 @@ def render_antitrust_screener(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
+    _inp = (f"background:{panel};border:1px solid {border};color:{text};"
+            f"padding:5px 8px;font-size:11px;font-family:JetBrains Mono,monospace")
+    _state_opts = "".join(
+        f'<option value="{_html.escape(sv)}"{" selected" if state.upper() == sv else ""}>{_html.escape(sv)} · {_html.escape(lbl)}</option>'
+        for sv, lbl in (
+            ("CA", "active scrutiny"), ("OR", "active scrutiny"), ("NY", "active scrutiny"),
+            ("MA", "active review"), ("WA", "standard"), ("CT", "standard"),
+            ("IL", "standard"), ("CO", "standard"), ("TX", "minimal"), ("FL", "minimal"),
+        )
+    )
     form = f"""
-<form method="GET" action="/antitrust-screener" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
-  <label style="font-size:11px;color:{text_dim}">Deal Size ($M)<input name="deal_size" value="{deal_size}" type="number" step="25" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace;width:100px"/></label>
-  <button type="submit" style="background:{border};color:{text};border:1px solid {border};padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Screen</button>
-</form>"""
+<form method="GET" action="/antitrust-screener" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px">
+  <label style="font-size:11px;color:{text_dim};display:flex;flex-direction:column;gap:3px">Deal size ($M)<input name="deal_size" value="{deal_size:.0f}" type="number" step="25" min="0" style="{_inp};width:96px"/></label>
+  <label style="font-size:11px;color:{text_dim};display:flex;flex-direction:column;gap:3px">Acquirer size ($M)<input name="acquirer_size" value="{acquirer_size:.0f}" type="number" step="100" min="0" style="{_inp};width:104px"/></label>
+  <label style="font-size:11px;color:{text_dim};display:flex;flex-direction:column;gap:3px">Top-market combined share (%)<input name="combined_share" value="{combined_share:.0f}" type="number" step="5" min="0" max="100" style="{_inp};width:130px"/></label>
+  <label style="font-size:11px;color:{text_dim};display:flex;flex-direction:column;gap:3px">Primary review state<select name="state" style="{_inp};min-width:150px">{_state_opts}</select></label>
+  <button type="submit" style="background:{acc};color:#fff;border:1px solid {acc};padding:7px 16px;font-size:11px;font-weight:600;font-family:JetBrains Mono,monospace;cursor:pointer">Screen &rarr;</button>
+</form>
+<div style="font-size:10.5px;color:{text_dim};margin:-8px 0 16px;line-height:1.5;max-width:74ch">
+  Risk responds to all four levers: <strong style="color:{text}">combined market share</strong> is the dominant
+  driver (&gt;50% is presumptively anticompetitive under the 2023 Merger Guidelines), then deal size (scrutiny + HSR
+  fee tier), acquirer footprint (post-USAP serial-acquisition theory), and the primary review state&rsquo;s AG posture.
+</div>"""
 
     h_chart = _hhi_chart(r.hhi_analysis)
     h_tbl = _hhi_table(r.hhi_analysis)
