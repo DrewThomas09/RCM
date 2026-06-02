@@ -1,4 +1,4 @@
-"""Settings → AI Assistant (Claude) page.
+"""Settings → AI Assistant (Local Ollama) page.
 
 Surfaces the status of the Anthropic Claude integration that backs
 the AI-assist features:
@@ -362,7 +362,7 @@ def render_ai_settings(store: Any) -> str:
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="AI ASSISTANT",
-        title="Where Claude plugs into the deal work.",
+        title="Where the local AI assistant plugs into the deal work.",
         meta=(
             f"{'CONNECTED' if key_set else 'NOT CONNECTED'} · "
             f"{stats['total_calls']:,} CALL"
@@ -371,7 +371,7 @@ def render_ai_settings(store: Any) -> str:
             f"{len(stats['by_model'])} MODEL"
             f"{'S' if len(stats['by_model']) != 1 else ''}"
         ),
-        lede_italic_phrase="Where Claude plugs into the deal work.",
+        lede_italic_phrase="Where the local AI assistant plugs into the deal work.",
         lede_body=(
             "On-box Ollama plus the Anthropic API back the "
             "platform's AI-assist features — IC memo drafting, "
@@ -387,9 +387,9 @@ def render_ai_settings(store: Any) -> str:
         + kpi_strip
         + ck_section_header("LOCAL OLLAMA", "on-box model — connection & config")
         + _ollama_config_card()
-        + ck_section_header("FEATURES", "what Claude powers on this platform")
+        + ck_section_header("FEATURES", "what the assistant powers on this platform")
         + _features_card()
-        + ck_section_header("MODELS", "Claude 4 lineup")
+        + ck_section_header("MODELS", "local Ollama models · Anthropic fallback")
         + _models_table(active_id=None)
         + ck_section_header("SETUP", "how to connect your key")
         + _setup_instructions()
@@ -407,7 +407,7 @@ def render_ai_settings(store: Any) -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="AI Assistant — Claude",
+        title="AI Assistant — Local Ollama",
         active_nav="/settings",
         subtitle=("Connected" if key_set else "Not yet connected"),
     )
