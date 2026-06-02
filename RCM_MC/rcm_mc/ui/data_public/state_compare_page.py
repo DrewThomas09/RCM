@@ -15,6 +15,9 @@ import html as _html
 from typing import Dict, List
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title
+from rcm_mc.ui._chart_kit import (
+    ck_bar_chart, ck_chart_assets, ck_chart_grid, ck_diverging_bar,
+)
 
 _DEFAULT = ["CA", "TX", "FL"]
 _VALID = {
@@ -229,6 +232,121 @@ def national_medians() -> Dict[str, float]:
     return out
 
 
+# Pre-suggested headline charts shown when the partner hasn't built one —
+# high-signal directional metrics that make the side-by-side spread obvious
+# at a glance. Only those with data for the selected states actually render.
+_SUGGESTED = [
+    "median_income", "uninsured_acs", "providers_per_1k",
+    "ma_enrollment", "obesity", "hcahps_overall",
+]
+
+
+def _best_worst(key, states, raws, higher):
+    """Direction-aware (best, worst) state for a metric — mirrors the table's
+    highlight so the chart tells the same story. Returns (None, None) when
+    there's no real spread to call."""
+    present = [(s, raws[s][key]) for s in states
+               if raws[s].get(key) is not None and raws[s][key] == raws[s][key]]
+    if higher is None or len(present) < 2:
+        return None, None
+    vals = [v for _, v in present]
+    if max(vals) == min(vals):
+        return None, None
+    best_v = max(vals) if higher else min(vals)
+    worst_v = min(vals) if higher else max(vals)
+    best_s = next(s for s, v in present if v == best_v)
+    worst_s = next(s for s, v in present if v == worst_v)
+    return best_s, worst_s
+
+
+def _bar_for_metric(key, states, raws, meds):
+    """A by-state bar chart for one metric: bars = selected states (best tinted
+    green, weakest amber), with a dashed U.S.-median reference. '' if no data."""
+    m = _METRIC_BY_KEY.get(key)
+    if not m:
+        return ""
+    _k, label, source, fmt, higher = m
+    best_s, worst_s = _best_worst(key, states, raws, higher)
+    items = []
+    for s in states:
+        v = raws[s].get(key)
+        if v is None or v != v:
+            continue
+        tone = "positive" if s == best_s else "warning" if s == worst_s else "teal"
+        items.append((s, v, tone))
+    if not items:
+        return ""
+    mv = meds.get(key)
+    ref = ("U.S.", mv) if (mv is not None and mv == mv) else None
+    return ck_bar_chart(
+        label, items, value_fmt=fmt, reference=ref, source=source,
+        chart_id="ckc-" + key,
+    )
+
+
+def _diverging_for_metric(key, states, raws, meds):
+    """Each state's % gap vs the U.S. median for one metric — a diverging
+    bar around the national benchmark. '' when the median is absent/zero."""
+    m = _METRIC_BY_KEY.get(key)
+    mv = meds.get(key)
+    if not m or mv is None or mv != mv or mv == 0:
+        return ""
+    _k, label, _source, _fmt, _higher = m
+    items = []
+    for s in states:
+        v = raws[s].get(key)
+        if v is None or v != v:
+            continue
+        items.append((s, (v - mv) / abs(mv) * 100.0, "teal"))
+    if not items:
+        return ""
+    return ck_diverging_bar(
+        f"{label} — vs U.S. median", items,
+        value_fmt=lambda x: f"{x:+.0f}%", source=_METRIC_BY_KEY[key][2],
+        chart_id="ckc-delta-" + key, center_label="U.S. median",
+    )
+
+
+def _chart_builder_form(states, cmetric, ctype):
+    """The '+ Create a chart' control: pick a metric + chart type, reuse the
+    current states, submit (GET) to re-render with that custom chart on top.
+    Pre-open when a custom chart is active so the partner sees their selection."""
+    td = P["text_dim"]; ac = P["accent"]; border = P["border"]
+    sel = (f'background:{P["panel_alt"]};color:{P["text"]};border:1px solid {border};'
+           f'padding:6px 8px;font-family:JetBrains Mono,monospace;font-size:12px;'
+           f'border-radius:2px')
+    opts = "".join(
+        f'<option value="{_html.escape(k)}"'
+        f'{" selected" if k == cmetric else ""}>{_html.escape(lbl)}</option>'
+        for k, lbl, *_ in _METRICS
+    )
+    type_opts = "".join(
+        f'<option value="{v}"{" selected" if v == ctype else ""}>{lbl}</option>'
+        for v, lbl in (("bar", "Bars by state"), ("delta", "Δ vs U.S. median"))
+    )
+    open_attr = " open" if cmetric else ""
+    return (
+        f'<details class="sc-chart-builder"{open_attr} '
+        f'style="margin:0 0 16px;border:1px solid {border};border-radius:4px;'
+        f'padding:0 14px">'
+        f'<summary style="cursor:pointer;padding:10px 0;font-family:JetBrains Mono,'
+        f'monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;'
+        f'color:{ac}">＋ Create a chart</summary>'
+        f'<form method="get" action="/state-compare" '
+        f'style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;'
+        f'padding:4px 0 14px">'
+        f'<input type="hidden" name="states" value="{_html.escape(",".join(states))}">'
+        f'<label style="font-size:11px;color:{td}">Metric<br>'
+        f'<select name="cmetric" style="{sel};margin-top:4px;min-width:200px">{opts}</select></label>'
+        f'<label style="font-size:11px;color:{td}">Chart type<br>'
+        f'<select name="ctype" style="{sel};margin-top:4px">{type_opts}</select></label>'
+        f'<button type="submit" style="background:{ac};color:#fff;border:none;'
+        f'padding:7px 16px;font-family:JetBrains Mono,monospace;font-size:12px;'
+        f'border-radius:2px;cursor:pointer">Build &amp; preview</button>'
+        f'</form></details>'
+    )
+
+
 def render_state_compare(params: Dict = None) -> str:
     states = _parse_states(params)
     data = {s: _collect(s) for s in states}
@@ -335,6 +453,38 @@ def render_state_compare(params: Dict = None) -> str:
             _html.escape(_lead_state))
         + '</div>'
     )
+
+    # ── Dynamic visual summary: an optional partner-built chart on top of a
+    # pre-suggested grid. Built from the same real values as the table (best
+    # state tinted green, weakest amber, dashed U.S.-median reference), so the
+    # charts and the table tell one story. Each card exports to PNG.
+    def _qp(name, default=""):
+        v = (params or {}).get(name, default)
+        return (v[0] if isinstance(v, list) and v else v if not isinstance(v, list) else default)
+    cmetric = str(_qp("cmetric")).strip()
+    ctype = str(_qp("ctype", "bar")).strip() or "bar"
+    custom_chart = ""
+    if cmetric in _METRIC_BY_KEY:
+        custom_chart = (
+            _diverging_for_metric(cmetric, states, raws, meds) if ctype == "delta"
+            else _bar_for_metric(cmetric, states, raws, meds)
+        )
+    suggested = [
+        c for c in (_bar_for_metric(k, states, raws, meds) for k in _SUGGESTED) if c
+    ][:4]
+    custom_html = (
+        f'<div style="margin-bottom:4px">{ck_chart_grid(custom_chart)}</div>'
+        if custom_chart else ""
+    )
+    grid_html = ck_chart_grid(*suggested) if suggested else ""
+    charts_html = (
+        f'<div class="sc-charts" style="margin:4px 0 10px">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:11px;'
+        f'letter-spacing:.06em;text-transform:uppercase;color:{td};margin-bottom:8px">'
+        f'Visual summary &mdash; selected states vs U.S. median</div>'
+        f'{_chart_builder_form(states, cmetric, ctype)}'
+        f'{custom_html}{grid_html}</div>'
+    )
     body = f"""
 <div class="ck-page-wrap">
   {ck_page_title("State Comparison", eyebrow="MARKET INTEL", meta="Side-by-side across every real state-keyed public dataset — CMS · CDC · HRSA · Census")}
@@ -349,6 +499,7 @@ def render_state_compare(params: Dict = None) -> str:
     nothing is fabricated, and states without data on record show &ldquo;&mdash;&rdquo;.
   </p>
   {form}
+  {charts_html}
   <div style="overflow-x:auto;border:1px solid {border};border-radius:3px">
   <table style="width:100%;border-collapse:collapse"><thead><tr>{th}</tr></thead><tbody>{rows}</tbody></table>
   </div>
@@ -364,5 +515,5 @@ def render_state_compare(params: Dict = None) -> str:
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
     from .._chartis_kit import ck_page_actions
-    body = body + ck_page_actions()
+    body = body + ck_chart_assets() + ck_page_actions()
     return chartis_shell(body, "State Comparison", active_nav="/state-compare")
