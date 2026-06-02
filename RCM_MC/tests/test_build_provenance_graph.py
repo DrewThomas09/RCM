@@ -65,8 +65,11 @@ class BuildProvenanceGraphHcrisOnlyTests(unittest.TestCase):
         self.assertAlmostEqual(
             g.nodes["observed:operating_margin"].value, 0.04,
         )
+        # operating_margin is a 0..1 fraction → "fraction" unit so
+        # the explainer renders 0.04 as "4.0%" (×100), matching the
+        # KPI card. "pct" (no ×100) would mis-render it as "0.0%".
         self.assertEqual(
-            g.nodes["observed:operating_margin"].unit, "pct",
+            g.nodes["observed:operating_margin"].unit, "fraction",
         )
 
     def test_explain_resolves_built_node(self) -> None:
@@ -78,7 +81,10 @@ class BuildProvenanceGraphHcrisOnlyTests(unittest.TestCase):
         ui = explain_for_ui(g, "operating_margin")
         self.assertNotIn("error", ui)
         self.assertEqual(ui["node_type"], "SOURCE")
-        self.assertEqual(ui["unit"], "pct")
+        self.assertEqual(ui["unit"], "fraction")
+        # Regression guard: the tooltip must agree with the KPI —
+        # 0.04 → "4.0%", never the old "0.0%" (missing ×100).
+        self.assertIn("4.0%", ui["explanation_short"])
 
 
 class BuildProvenanceGraphMlPathTests(unittest.TestCase):
