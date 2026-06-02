@@ -40,13 +40,14 @@ def _policies_table(items) -> str:
             ("Rate %","right"),("Period (y)","right"),("Primary Carrier","left"),("Broker","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((p.deal_size_m for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         r_c = pos if p.rate_pct <= 0.028 else (acc if p.rate_pct <= 0.032 else P["warning"])
         cells = [
             f'{ck_data_cell(f"""{_html.escape(p.deal)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.policy_type)}</td>',
-            f'{ck_data_cell(f"""${p.deal_size_m:,.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${p.deal_size_m:,.1f}M""", align="right", mono=True, weight=700, bar=p.deal_size_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${p.primary_limit_m:.1f}M""", align="right", mono=True)}',
             f'{ck_data_cell(f"""${p.total_tower_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'{ck_data_cell(f"""${p.retention_m:.2f}M""", align="right", mono=True, tone="dim")}',

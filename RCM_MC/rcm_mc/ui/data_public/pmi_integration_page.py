@@ -63,6 +63,7 @@ def _integrations_table(items) -> str:
             ("Realization %","right"),("Integration Cost ($M)","right"),("Status","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((d.deal_value_m for d in items), default=1.0) or 1.0
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(d.integration_status)
@@ -72,7 +73,7 @@ def _integrations_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc};font-weight:600">{_html.escape(d.bolt_on)}</td>',
             f'{ck_data_cell(f"""{_html.escape(d.close_date)}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{d.months_post_close}""", align="right", mono=True, tone="acc")}',
-            f'{ck_data_cell(f"""${d.deal_value_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${d.deal_value_m:.1f}M""", align="right", mono=True, weight=700, bar=d.deal_value_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${d.synergy_target_m:.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${d.synergy_realized_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{d.realization_pct * 100:.0f}%</td>',

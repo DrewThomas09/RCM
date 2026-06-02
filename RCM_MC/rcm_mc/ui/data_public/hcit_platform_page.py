@@ -44,6 +44,7 @@ def _segments_table(items) -> str:
             ("NRR","right"),("Gross Churn","right"),("LTV ($k)","right"),("CAC Payback (mo)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((s.annual_arr_mm for s in items), default=1.0) or 1.0
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         nrr_c = pos if s.nrr_pct >= 1.12 else (acc if s.nrr_pct >= 1.06 else warn)
@@ -52,7 +53,7 @@ def _segments_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(s.segment)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""{s.customer_count}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""${s.acv_k:,.1f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${s.annual_arr_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${s.annual_arr_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=s.annual_arr_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{nrr_c};font-weight:700">{s.nrr_pct:.2f}x</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">{s.gross_churn_pct * 100:.1f}%</td>',
             f'{ck_data_cell(f"""${s.ltv_k:,.0f}""", align="right", mono=True)}',

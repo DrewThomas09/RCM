@@ -54,6 +54,7 @@ def _cohorts_table(items) -> str:
             ("Net IRR","right"),("Gross IRR","right"),("Benchmark TVPI","right"),("Quartile","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.total_deployed_m for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         q_c = _quartile_color(c.quartile_vs_cambridge)
@@ -62,7 +63,7 @@ def _cohorts_table(items) -> str:
         cells = [
             f'{ck_data_cell(f"""{c.vintage_year}""", align="right", mono=True, weight=700)}',
             f'{ck_data_cell(f"""{c.deals}""", align="right", mono=True, tone="acc")}',
-            f'{ck_data_cell(f"""${c.total_deployed_m:,.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.total_deployed_m:,.1f}M""", align="right", mono=True, weight=700, bar=c.total_deployed_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.total_nav_m:,.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${c.total_distributed_m:,.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos if c.dpi >= 1.0 else acc};font-weight:700">{c.dpi:.2f}x</td>',

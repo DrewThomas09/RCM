@@ -120,13 +120,14 @@ def _threats_table(items) -> str:
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     p_c = {"very high": neg, "high": neg, "medium": warn, "low": text_dim}
+    _bar_max = max((t.financial_impact_mm for t in items), default=1.0) or 1.0
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         pc = p_c.get(t.probability_ltm, text_dim)
         cells = [
             f'{ck_data_cell(f"""{_html.escape(t.vector)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{pc};border:1px solid {pc};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.probability_ltm)}</span>""", align="center")}',
-            f'{ck_data_cell(f"""${t.financial_impact_mm:,.2f}""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""${t.financial_impact_mm:,.2f}""", align="right", mono=True, tone="neg", weight=700, bar=t.financial_impact_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{warn}">{t.industry_incidence_pct * 100:.1f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{acc}">{_html.escape(t.mitigation_status)}</td>',
         ]

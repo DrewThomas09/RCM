@@ -72,13 +72,14 @@ def _attribution_table(items) -> str:
             ("What Went Right","left"),("What Went Wrong","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((a.realized_mm for a in items), default=1.0) or 1.0
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         r_c = pos if a.capture_rate_pct >= 0.80 else (acc if a.capture_rate_pct >= 0.65 else (warn if a.capture_rate_pct >= 0.50 else neg))
         cells = [
             f'{ck_data_cell(f"""{_html.escape(a.lever)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""${a.planned_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${a.realized_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${a.realized_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=a.realized_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{a.capture_rate_pct * 100:.0f}%</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{pos}">{_html.escape(a.what_went_right)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{neg}">{_html.escape(a.what_went_wrong)}</td>',

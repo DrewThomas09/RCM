@@ -139,6 +139,7 @@ def _vendors_table(items) -> str:
             ("SOC 2 Current","center"),("Last Review","right"),("Spend ($M)","right"),("Tier","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((v.contract_spend_m for v in items), default=1.0) or 1.0
     for i, v in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         t_c = _tier_color(v.risk_tier)
@@ -151,7 +152,7 @@ def _vendors_table(items) -> str:
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{s_c};font-weight:700">{v.risk_score:.1f}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{soc_c};font-weight:700">{"YES" if v.soc2_current else "NO"}</td>',
             f'{ck_data_cell(f"""{_html.escape(v.last_review)}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${v.contract_spend_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${v.contract_spend_m:.1f}M""", align="right", mono=True, weight=700, bar=v.contract_spend_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{t_c};border:1px solid {t_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(v.risk_tier)}</span>""", align="center")}',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')

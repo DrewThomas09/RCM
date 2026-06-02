@@ -137,6 +137,7 @@ def _roi_table(items) -> str:
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     sv_c = {"high": pos, "medium": acc, "low": text_dim}
+    _bar_max = max((b.savings_mm for b in items), default=1.0) or 1.0
     for i, b in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         svc = sv_c.get(b.strategic_value, text_dim)
@@ -144,7 +145,7 @@ def _roi_table(items) -> str:
         cells = [
             f'{ck_data_cell(f"""{_html.escape(b.bucket)}""", mono=True, weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">${b.spend_mm:,.2f}</td>',
-            f'{ck_data_cell(f"""${b.savings_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${b.savings_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=b.savings_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{roi_c};font-weight:700">{b.roi_multiple:.2f}x</td>',
             f'{ck_data_cell(f"""{b.payback_months}""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{svc};border:1px solid {svc};border-radius:2px;letter-spacing:0.06em">{_html.escape(b.strategic_value)}</span>""", align="center")}',

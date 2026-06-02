@@ -46,6 +46,7 @@ def _portfolio_table(items) -> str:
     trs = []
     w_c = {"priority": neg, "in-window": acc, "approaching-window": warn, "long-dated": text_dim}
     c_c = {"maintenance": acc, "cov-lite": pos}
+    _bar_max = max((p.current_balance_mm for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         wc = w_c.get(p.refi_window_status, text_dim)
@@ -54,7 +55,7 @@ def _portfolio_table(items) -> str:
         cells = [
             f'{ck_data_cell(f"""{_html.escape(p.holdco)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""{_html.escape(p.sector)}""", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${p.current_balance_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${p.current_balance_mm:,.2f}""", align="right", mono=True, weight=700, bar=p.current_balance_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{p.current_rate_pct:.2f}%</td>',
             f'{ck_data_cell(f"""{p.maturity_year}""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""{p.years_remaining:.1f}""", align="right", mono=True, tone="dim")}',

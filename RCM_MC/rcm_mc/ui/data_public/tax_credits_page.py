@@ -43,6 +43,7 @@ def _credits_table(items) -> str:
             ("Remaining ($M)","right"),("Expires","right"),("Counsel","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.gross_credit_m for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
@@ -50,7 +51,7 @@ def _credits_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc};font-weight:600">{_html.escape(c.credit_type)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:340px">{_html.escape(c.credit_name)}</td>',
             f'{ck_data_cell(f"""{c.tax_year}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${c.gross_credit_m:.2f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.gross_credit_m:.2f}M""", align="right", mono=True, weight=700, bar=c.gross_credit_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.carryforward_m:.2f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${c.utilized_m:.2f}M""", align="right", mono=True, tone="pos")}',
             f'{ck_data_cell(f"""${c.remaining_m:.2f}M""", align="right", mono=True, tone="acc", weight=700)}',

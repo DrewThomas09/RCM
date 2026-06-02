@@ -60,6 +60,7 @@ def _deals_table(items) -> str:
             ("→ Self-Pay %","right"),("→ Back Medicaid %","right"),("Rev Impact ($M)","right"),("Mitigation","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((d.revenue_impact_m for d in items), default=1.0) or 1.0
     for i, d in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
@@ -72,7 +73,7 @@ def _deals_table(items) -> str:
             f'{ck_data_cell(f"""{d.coverage_shift_pct.get("commercial_employer", 0) * 100:.0f}%""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""{d.coverage_shift_pct.get("self_pay", 0) * 100:.0f}%""", align="right", mono=True, tone="neg", weight=600)}',
             f'{ck_data_cell(f"""{d.coverage_shift_pct.get("back_medicaid", 0) * 100:.0f}%""", align="right", mono=True, tone="pos", weight=600)}',
-            f'{ck_data_cell(f"""${d.revenue_impact_m:+.1f}M""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""${d.revenue_impact_m:+.1f}M""", align="right", mono=True, tone="neg", weight=700, bar=d.revenue_impact_m / _bar_max * 100)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:280px">{_html.escape(d.mitigation)}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')

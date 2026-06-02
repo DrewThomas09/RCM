@@ -50,6 +50,7 @@ def _funds_table(items) -> str:
             ("Net IRR","right"),("Qtile","center"),("Benchmark DPI","right"),("Gap","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((f.fund_size_b for f in items), default=1.0) or 1.0
     for i, f in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         q_c = _quartile_color(f.quartile)
@@ -61,7 +62,7 @@ def _funds_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(f.sponsor)}""", mono=True, weight=700)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(f.fund_name)}</td>',
             f'{ck_data_cell(f"""{f.vintage}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${f.fund_size_b:.1f}B""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${f.fund_size_b:.1f}B""", align="right", mono=True, weight=700, bar=f.fund_size_b / _bar_max * 100)}',
             f'{ck_data_cell(f"""{f.called_pct * 100:.0f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{dp_c};font-weight:700">{f.dpi:.2f}x</td>',
             f'{ck_data_cell(f"""{f.rvpi:.2f}x""", align="right", mono=True)}',

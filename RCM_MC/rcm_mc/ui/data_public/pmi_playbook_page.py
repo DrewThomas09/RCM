@@ -81,6 +81,7 @@ def _synergy_table(items) -> str:
     trs = []
     t_c = {"ahead": pos, "on track": acc, "behind": neg}
     r_c = {"low": pos, "medium": warn, "high": neg}
+    _bar_max = max((s.run_rate_achieved_mm for s in items), default=1.0) or 1.0
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         tc = t_c.get(s.timing_status, text_dim)
@@ -89,7 +90,7 @@ def _synergy_table(items) -> str:
         cells = [
             f'{ck_data_cell(f"""{_html.escape(s.synergy_category)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""${s.annualized_target_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${s.run_rate_achieved_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${s.run_rate_achieved_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=s.run_rate_achieved_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:700">{s.pct_of_target * 100:.0f}%</td>',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{tc};border:1px solid {tc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.timing_status)}</span>""", align="center")}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{rc};border:1px solid {rc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.risk_level)}</span>""", align="center")}',

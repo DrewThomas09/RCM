@@ -89,11 +89,12 @@ def _tranches_table(items) -> str:
             ("All-In Rate","right"),("Maturity","right"),("Covenant Type","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((t.balance_mm for t in items), default=1.0) or 1.0
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'{ck_data_cell(f"""{_html.escape(t.tranche)}""", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""${t.balance_mm:,.2f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${t.balance_mm:,.2f}""", align="right", mono=True, weight=700, bar=t.balance_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{_html.escape(t.rate_type)}""", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{t.spread_bps if t.spread_bps else "—"}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{t.all_in_rate_pct:,.2f}%""", align="right", mono=True, tone="neg", weight=600)}',

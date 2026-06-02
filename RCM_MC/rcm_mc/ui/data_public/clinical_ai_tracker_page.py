@@ -71,6 +71,7 @@ def _systems_table(items) -> str:
             ("Sites","right"),("Monthly Cases (K)","right"),("License ($M)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((s.annual_license_m for s in items), default=1.0) or 1.0
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         f_c = _fda_color(s.fda_status)
@@ -84,7 +85,7 @@ def _systems_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(s.deployment_date)}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{s.sites_deployed}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""{s.monthly_cases_k}""", align="right", mono=True, tone="acc", weight=600)}',
-            f'{ck_data_cell(f"""${s.annual_license_m:.2f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${s.annual_license_m:.2f}M""", align="right", mono=True, tone="pos", weight=700, bar=s.annual_license_m / _bar_max * 100)}',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'

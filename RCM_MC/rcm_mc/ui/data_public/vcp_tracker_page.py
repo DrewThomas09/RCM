@@ -67,6 +67,7 @@ def _levers_table(items) -> str:
             ("Status","center"),("Owner","left"),("Target Close","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((l.realized_ebitda_m for l in items), default=1.0) or 1.0
     for i, l in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(l.status)
@@ -77,7 +78,7 @@ def _levers_table(items) -> str:
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(l.lever_category)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:340px">{_html.escape(l.initiative)}</td>',
             f'{ck_data_cell(f"""${l.target_ebitda_m:.1f}M""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${l.realized_ebitda_m:.1f}M""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""${l.realized_ebitda_m:.1f}M""", align="right", mono=True, tone="acc", weight=700, bar=l.realized_ebitda_m / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{r_c};font-weight:700">{l.realization_pct * 100:.1f}%</td>',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(l.status)}</span>""", align="center")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(l.owner)}</td>',

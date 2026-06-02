@@ -89,6 +89,7 @@ def _tas_table(items) -> str:
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     grow_c = {"accelerating": pos, "accelerating (GLP-1)": pos, "accelerating (psychedelics)": pos, "stable": text_dim}
+    _bar_max = max((t.median_revenue_per_site_mm for t in items), default=1.0) or 1.0
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         gc = grow_c.get(t.growth_trajectory, text_dim)
@@ -96,7 +97,7 @@ def _tas_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(t.area)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""{t.site_count}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""{t.active_trials}""", align="right", mono=True, tone="acc")}',
-            f'{ck_data_cell(f"""${t.median_revenue_per_site_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${t.median_revenue_per_site_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=t.median_revenue_per_site_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{t.median_enrollment_rate_pct * 100:.2f}%""", align="right", mono=True, tone="acc", weight=600)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{gc};border:1px solid {gc};border-radius:2px;letter-spacing:0.06em">{_html.escape(t.growth_trajectory)}</span>""", align="center")}',
         ]

@@ -32,6 +32,7 @@ def _pipeline_table(items) -> str:
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
     stage_c = {"Screening": text_dim, "Diligence": acc, "IC Review": warn, "LOI": pos, "Closing": pos}
+    _bar_max = max((p.weighted_ev_mm for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         sc = stage_c.get(p.stage, text_dim)
@@ -44,7 +45,7 @@ def _pipeline_table(items) -> str:
             f'{ck_data_cell(f"""${p.target_ebitda_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{p.entry_multiple_proposed:.2f}x""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{prob_c};font-weight:700">{p.probability_pct * 100:.0f}%</td>',
-            f'{ck_data_cell(f"""${p.weighted_ev_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${p.weighted_ev_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=p.weighted_ev_mm / _bar_max * 100)}',
             f'{ck_data_cell(f"""{_html.escape(p.source)}""", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{_html.escape(p.owner)}""", align="center", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.next_milestone_date)}</td>',
