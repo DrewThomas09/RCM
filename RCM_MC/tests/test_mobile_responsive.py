@@ -40,10 +40,10 @@ class MobileResponsiveShellTests(unittest.TestCase):
             ".ck-prov-tt-card{ display:none",     # tooltip leaves layout
         ):
             self.assertIn(frag, self.html, f"missing mobile rule: {frag}")
-        # wide tables scroll in place rather than widening the page
+        # every content table scrolls in place rather than widening the page
         self.assertTrue(
-            re.search(r"\.ck-data-table[^}]*overflow-x:auto", self.html),
-            "data tables must scroll-x on mobile",
+            re.search(r"\.ck-main table\{[^}]*overflow-x:auto", self.html),
+            "content tables must scroll-x on mobile",
         )
 
     def test_mobile_rules_are_scoped_to_small_screens(self):
