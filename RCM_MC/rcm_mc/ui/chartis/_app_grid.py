@@ -309,7 +309,9 @@ def render_app_grid(
     # "of N" is real when we have deals; the risk count is real from rollup.
     cov_v = (f'{at_risk}<span class="cc-kpi-of">of {dc}</span>'
              if dc else None)
-    cov_sub = (f"{trips} tripped &middot; {tight} tight" if dc else "")
+    # Literal "·" (not the &middot; entity): _kpi_card html-escapes ``sub``,
+    # so an entity would render as the literal text "&middot;".
+    cov_sub = (f"{trips} tripped · {tight} tight" if dc else "")
 
     cards: List[str] = []
     cards.append(_kpi_card(tag="Fund return", color="green", title="Weighted MOIC",

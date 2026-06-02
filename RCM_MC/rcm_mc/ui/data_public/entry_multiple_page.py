@@ -241,7 +241,7 @@ def render_entry_multiple() -> str:
 
     body = f"""
 <div style="padding:16px 20px;max-width:1200px">
-  {ck_section_header("ENTRY MULTIPLE ANALYSIS", f"EV/EBITDA at entry — {len(corpus)} corpus transactions", None)}
+  {ck_section_header("Headline entry multiples", f"EV/EBITDA at entry — {len(corpus)} corpus transactions", None)}
   {kpi_strip}
 
   {value_anchor}

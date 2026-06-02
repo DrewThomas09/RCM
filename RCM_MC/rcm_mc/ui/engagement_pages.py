@@ -94,19 +94,21 @@ def render_engagement_list(
         f'text-transform:uppercase;cursor:pointer;">Create engagement</button>'
         f'</form></details>'
     )
+    from ._chartis_kit import ck_editorial_head
     body = (
-        f'<div style="padding:24px 0 12px 0;">'
-        f'  <div style="font-size:11px;color:{P["text_faint"]};letter-spacing:.75px;'
-        f'text-transform:uppercase;margin-bottom:6px;">Engagement Workspace</div>'
-        f'  <div style="font-size:20px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:8px;">Engagements</div>'
-        f'  <div style="font-size:13px;color:{P["text_dim"]};max-width:720px;'
-        f'line-height:1.55;">Each engagement carries its own members, '
-        f'deliverables, and comment stream. Client viewers use the '
-        f'<code>/portal/&lt;engagement_id&gt;</code> route to see only '
-        f'published deliverables.</div>'
-        f'</div>'
-        f'<table style="width:100%;border-collapse:collapse;font-size:12px;'
+        ck_editorial_head(
+            eyebrow="Engagement Workspace",
+            title="Engagements",
+            meta="CROSS-ENGAGEMENT WORKSPACE",
+            lede_italic_phrase="One workspace per client engagement.",
+            lede_body=(
+                " Each carries its own members, deliverables, and comment "
+                "stream; client viewers use the "
+                "<code>/portal/&lt;engagement_id&gt;</code> route to see only "
+                "published deliverables."
+            ),
+        )
+        + f'<table style="width:100%;border-collapse:collapse;font-size:12px;'
         f'margin-top:12px;">'
         f'<thead><tr style="color:{P["text_dim"]};">'
         f'<th style="text-align:left;padding:8px 10px;border-bottom:1px solid {P["border"]};">ID</th>'
@@ -126,7 +128,6 @@ def render_engagement_list(
     )
     return chartis_shell(
         body, "RCM Diligence — Engagements",
-        subtitle="Cross-engagement workspace",
         active_nav="/engagements",
         breadcrumbs=[
             ("Home", "/app"),

@@ -42,22 +42,22 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             return str(vals[0]).strip()
         return default
 
+    from ._chartis_kit import ck_editorial_head
     body = (
         deal_context_bar(qs, active_surface="deal_mc")
-        + f'<div style="padding:24px 0 12px 0;">'
-        f'<div style="font-size:11px;color:{P["text_faint"]};letter-spacing:1.5px;'
-        f'text-transform:uppercase;margin-bottom:6px;font-weight:600;">'
-        f'Deal Monte Carlo</div>'
-        f'<div style="font-size:22px;color:{P["text"]};font-weight:600;'
-        f'margin-bottom:4px;">5-Year Forward EBITDA + MOIC + IRR</div>'
-        f'<div style="font-size:12px;color:{P["text_dim"]};max-width:760px;'
-        f'line-height:1.55;">Runs 3,000 Monte Carlo scenarios over every '
-        f'lever — organic growth, denial improvement, regulatory headwind '
-        f'realization, lease escalator, physician attrition, cyber '
-        f'incidents, V28 compression, exit multiple. Produces MOIC / '
-        f'IRR distributions, driver attribution, and sensitivity tornado. '
-        f'&lt;1 second runtime.</div>'
-        f'</div>'
+        + ck_editorial_head(
+            eyebrow="Deal Monte Carlo",
+            title="5-Year Forward EBITDA + MOIC + IRR",
+            meta="5-YEAR FORWARD · MOIC + IRR · DRIVER ATTRIBUTION",
+            lede_italic_phrase="Every lever, three thousand times.",
+            lede_body=(
+                " Runs 3,000 Monte Carlo scenarios over every lever — organic "
+                "growth, denial improvement, regulatory headwind, lease escalator, "
+                "physician attrition, cyber incidents, V28 compression, exit "
+                "multiple — producing MOIC / IRR distributions, driver attribution, "
+                "and a sensitivity tornado. &lt;1 second runtime."
+            ),
+        )
     )
     body += (
         f'<form method="GET" action="/diligence/deal-mc" '
@@ -103,10 +103,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         f'text-transform:uppercase;font-weight:700;cursor:pointer;">'
         f'Run Monte Carlo</button></form>'
     )
-    return chartis_shell(
-        body, "RCM Diligence — Deal Monte Carlo",
-        subtitle="5-year forward EBITDA + MOIC + IRR",
-    )
+    return chartis_shell(body, "RCM Diligence — Deal Monte Carlo")
 
 
 def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
@@ -173,6 +170,7 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
         ),
         lede_italic_phrase="Range of outcomes for this thesis.",
         lede_body=summary,
+        as_subhead=True,
     )
     kpis = (
         '<div class="ck-kpi-strip">'

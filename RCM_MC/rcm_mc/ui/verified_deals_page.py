@@ -16,7 +16,8 @@ from ._chartis_kit import (
     P, chartis_shell, ck_editorial_head, ck_kpi_block, ck_page_actions,
 )
 from ..data_public.verified_deals import (
-    SECTORS, disclosed_ev_count, verified_deal_count, verified_deals,
+    SECTORS, disclosed_ev_count, disclosed_ev_total_mm, lead_sponsor_counts,
+    outcome_counts, verified_deal_count, verified_deals,
 )
 
 _SECTOR_LABEL = {
@@ -61,8 +62,13 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
         reverse=True,
     )
     total = verified_deal_count()
-    n_bankrupt = sum(1 for d in verified_deals() if d["outcome"] == "bankrupt")
+    oc = outcome_counts()
+    n_bankrupt = oc.get("bankrupt", 0)
+    n_failures = n_bankrupt + oc.get("distressed", 0)
     n_sectors = len({d["sector"] for d in verified_deals()})
+    ev_total_mm = disclosed_ev_total_mm()
+    ev_total = (f"${ev_total_mm / 1000:.1f}B" if ev_total_mm >= 1000
+                else f"${ev_total_mm:,.0f}M")
 
     border = P["border"]; tp = P["text"]; td = P["text_dim"]; fa = P.get("text_faint", td)
     ac = P["accent"]
@@ -70,7 +76,7 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
     head = ck_editorial_head(
         eyebrow="REAL · SOURCED",
         title="Verified Deals",
-        meta=f"{total} REAL DEALS · {disclosed_ev_count()} WITH DISCLOSED EV · EVERY ROW SOURCED",
+        meta=f"{total} REAL DEALS · {ev_total} DISCLOSED EV · {n_failures} PUBLIC-RECORD FAILURES · EVERY ROW SOURCED",
         lede_italic_phrase="Real deals, every one source-linked.",
         lede_body=(
             "A hand-curated set of genuine US healthcare-services PE / M&A deals "
@@ -86,10 +92,68 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
     kpis = (
         '<div class="ck-kpi-grid" style="margin-bottom:18px">'
         + ck_kpi_block("Verified deals", str(total), "real + sourced")
-        + ck_kpi_block("Disclosed EV", str(disclosed_ev_count()), f"of {total}")
-        + ck_kpi_block("Bankruptcies", str(n_bankrupt), "public-record outcomes")
+        + ck_kpi_block("Disclosed EV", ev_total, f"across {disclosed_ev_count()} deals")
+        + ck_kpi_block("Failures", str(n_failures),
+                       f"{n_bankrupt} bankrupt + {oc.get('distressed', 0)} distressed")
         + ck_kpi_block("Sectors", str(n_sectors), "services verticals")
         + '</div>'
+    )
+
+    # Outcome mix + sponsor leaderboard — the analytical read on the real set.
+    # Bars are inline-styled (no chart-kit asset dependency) so the page stays
+    # self-contained. Outcome bars use the same tone map as the table badges.
+    def _bar_row(label: str, n: int, denom: int, tone: str, sub: str = "") -> str:
+        pct = (n / denom * 100.0) if denom else 0.0
+        sub_html = (f'<span style="color:{fa};font-size:9.5px;margin-left:6px">{_html.escape(sub)}</span>'
+                    if sub else "")
+        return (
+            '<div style="display:grid;grid-template-columns:118px 1fr 30px;'
+            'align-items:center;gap:9px;margin:5px 0">'
+            f'<div style="font-size:11px;color:{tp};text-align:right">{_html.escape(label)}{sub_html}</div>'
+            f'<div style="height:13px;background:{P["panel_alt"]};border-radius:2px;overflow:hidden">'
+            f'<div style="height:100%;width:{pct:.1f}%;background:{tone};border-radius:2px"></div></div>'
+            f'<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:{tp};'
+            f'text-align:right;font-variant-numeric:tabular-nums">{n}</div>'
+            '</div>'
+        )
+
+    _OUTCOME_LABEL = {"bankrupt": "Bankrupt", "distressed": "Distressed",
+                      "active": "Active", "exited": "Exited", "unknown": "Unknown"}
+    om = outcome_counts()
+    om_max = max(om.values()) if om else 1
+    outcome_bars = "".join(
+        _bar_row(_OUTCOME_LABEL.get(k, k), v, om_max, _OUTCOME_TONE.get(k, td))
+        for k, v in om.items())
+    outcome_panel = (
+        f'<div style="border:1px solid {border};border-radius:3px;padding:14px 16px;background:{P["panel"]}">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:.06em;'
+        f'text-transform:uppercase;color:{td};margin-bottom:10px">Outcome mix</div>'
+        + outcome_bars
+        + f'<p style="font-size:10.5px;color:{fa};margin:9px 0 0;line-height:1.5">'
+        f'{n_failures} of {total} are public-record failures (bankrupt or distressed). '
+        'A real track record contains losses — that mix is the point, not a curve '
+        'of invented winners.</p>'
+        '</div>'
+    )
+
+    lsc = list(lead_sponsor_counts().items())[:8]
+    ls_max = max((v for _, v in lsc), default=1)
+    sponsor_bars = "".join(
+        _bar_row(k, v, ls_max, ac) for k, v in lsc)
+    sponsor_panel = (
+        f'<div style="border:1px solid {border};border-radius:3px;padding:14px 16px;background:{P["panel"]}">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:.06em;'
+        f'text-transform:uppercase;color:{td};margin-bottom:10px">Most-seen sponsors</div>'
+        + sponsor_bars
+        + f'<p style="font-size:10.5px;color:{fa};margin:9px 0 0;line-height:1.5">'
+        'Lead sponsor per deal (co-sponsors collapsed). These are the firms that '
+        'recur in the verified set — every one checkable via the source links below.</p>'
+        '</div>'
+    )
+    analytics = (
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));'
+        'gap:16px;margin-bottom:18px">'
+        + outcome_panel + sponsor_panel + '</div>'
     )
 
     # Sector filter chips.
@@ -149,7 +213,7 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
 
     body = (
         '<div class="ck-page-wrap">'
-        + head + kpis + chip_bar + table
+        + head + kpis + analytics + chip_bar + table
         + f'<p style="font-size:10px;color:{fa};margin-top:12px">'
         'Curated from public coverage; EV null where undisclosed. This is the '
         'foundation that replaces the synthetic seed corpus across the deal '
