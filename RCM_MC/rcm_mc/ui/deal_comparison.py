@@ -305,6 +305,26 @@ _EXPLAINER_CSS = """
 color:var(--sc-text-dim);max-width:68ch;
 margin:var(--sc-s-4) 0 var(--sc-s-6);}
 .ck-hs-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+/* Preset screens as labelled cards (not bare chips) so intent is explicit:
+   which buy in-range vs which is the large-cap/diligence screen. */
+.hs-presets{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:8px;margin-bottom:16px;}
+.hs-preset{display:flex;flex-direction:column;gap:3px;text-decoration:none;
+padding:9px 12px;border:1px solid var(--cad-border,#d6cfc0);border-radius:5px;
+background:var(--cad-bg3,#faf7f0);transition:border-color 90ms,background 90ms;}
+.hs-preset:hover{border-color:var(--sc-teal,#155752);}
+.hs-preset-active{border-color:var(--sc-teal,#155752);
+background:var(--sc-teal-soft,#d4e4e2);}
+.hs-preset-label{font-family:var(--sc-sans,Inter Tight),sans-serif;font-weight:600;
+font-size:12.5px;color:var(--cad-text,#1a2332);}
+.hs-preset-desc{font-size:10.5px;line-height:1.4;color:var(--cad-text2,#5b6b7a);}
+/* Active-criteria chips — what "in range" actually means for this screen. */
+.hs-chips{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 14px;}
+.hs-chip{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:10px;
+letter-spacing:.02em;color:var(--sc-teal-ink,#0f3d39);background:var(--sc-teal-soft,#d4e4e2);
+border-radius:3px;padding:3px 8px;}
+.hs-dq{opacity:.5;cursor:help;}
+.hs-field-help{font-size:9.5px;color:var(--cad-text3,#7a8699);}
 """
 
 
@@ -315,60 +335,119 @@ def render_screen_page(
     total_scanned: int = 0,
 ) -> str:
     """GET /screen — metric-based hospital screener."""
-    from ._chartis_kit import chartis_shell, ck_page_title
+    from ._chartis_kit import chartis_shell, ck_page_title, margin_is_plausible
     from .brand import PALETTE
 
     filters = filters or {}
 
-    # Predefined screen buttons
+    # Predefined screens — each labelled card states its SIZE range so the
+    # intent is explicit: which presets find acquirable in-range targets vs
+    # the one large-cap/diligence screen. (Old "Turnaround" had no size bound
+    # and surfaced 1,000-bed systems.) Keys mirror the filter map in
+    # server.py:_route_screener_page.
     presets = [
-        ("turnaround", "Turnaround Targets", "Denial >15%, AR >55 days — biggest improvement opportunity"),
-        ("large_cap", "Large Hospitals", "300+ beds, $300M+ revenue — platform acquisitions"),
-        ("margin_expansion", "Margin Expansion", "Positive margin, denial 10-18% — room to grow"),
-        ("undervalued", "Undervalued", "High beds, low revenue per bed — pricing opportunity"),
-        ("small_efficient", "Efficient Small", "<200 beds, AR <45 days — bolt-on candidates"),
+        ("turnaround", "Turnaround — acquirable",
+         "50–400 beds · margin ≤3% · most-distressed first. Buyable fix-it targets, not giant systems."),
+        ("large_cap", "Large platforms",
+         "300+ beds · $300M+ NPR. Platform-scale & large-cap diligence — where big turnarounds live."),
+        ("margin_expansion", "Margin expansion",
+         "100–500 beds · margin 0–10%. Profitable already, clear room to grow."),
+        ("undervalued", "Undervalued",
+         "150+ beds · lowest revenue-per-bed first. Priced below its capacity."),
+        ("small_efficient", "Efficient bolt-ons",
+         "<200 beds · margin ≥0%. Small, clean add-ons."),
     ]
-    preset_html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">'
+    preset_html = '<div class="hs-presets">'
     for key, label, desc in presets:
-        active = f'background:{PALETTE["brand_accent"]};color:white;border-color:{PALETTE["brand_accent"]};' if predefined == key else ""
+        active = " hs-preset-active" if predefined == key else ""
         preset_html += (
-            f'<a href="/screen?preset={key}" class="cad-btn" '
-            f'style="text-decoration:none;{active}" title="{_esc(desc)}">{_esc(label)}</a>'
+            f'<a href="/screen?preset={key}" class="hs-preset{active}">'
+            f'<span class="hs-preset-label">{_esc(label)}</span>'
+            f'<span class="hs-preset-desc">{_esc(desc)}</span></a>'
         )
     preset_html += '</div>'
 
-    # Filter form
+    # Filter form — explicit min/max RANGES so "in range" is unambiguous, each
+    # with a one-line gloss. (NPR = net patient revenue; margin = operating
+    # margin.) The max-beds / max-revenue ceilings are what keep a screen from
+    # returning giant systems.
     filter_fields = [
-        ("min_beds", "Min Beds", filters.get("min_beds", ""), "e.g. 200"),
-        ("max_beds", "Max Beds", filters.get("max_beds", ""), "e.g. 500"),
-        ("min_revenue", "Min Revenue ($M)", filters.get("min_revenue", ""), "e.g. 100"),
-        ("max_margin", "Max Margin (%)", filters.get("max_margin", ""), "e.g. 5 (find struggling)"),
-        ("state", "State", filters.get("state", ""), "e.g. AL, TX"),
+        ("min_beds", "Beds — min", filters.get("min_beds", ""), "e.g. 50", "smallest bed count"),
+        ("max_beds", "Beds — max", filters.get("max_beds", ""), "e.g. 400", "ceiling — caps giant systems"),
+        ("min_revenue", "NPR $M — min", filters.get("min_revenue", ""), "e.g. 25", "revenue floor"),
+        ("max_revenue", "NPR $M — max", filters.get("max_revenue", ""), "e.g. 500", "revenue ceiling"),
+        ("min_margin", "Margin % — min", filters.get("min_margin", ""), "e.g. 0", "operating-margin floor"),
+        ("max_margin", "Margin % — max", filters.get("max_margin", ""), "e.g. 3", "ceiling — low = struggling"),
+        ("state", "State", filters.get("state", ""), "e.g. TX", "2-letter code"),
     ]
     filter_inputs = ""
-    for name, label, val, placeholder in filter_fields:
+    for name, label, val, placeholder, helptext in filter_fields:
         filter_inputs += (
             f'<div>'
             f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
             f'{_esc(label)}</label>'
             f'<input name="{name}" value="{_esc(val)}" placeholder="{_esc(placeholder)}" '
             f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-            f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;"></div>'
+            f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;">'
+            f'<div class="hs-field-help">{_esc(helptext)}</div></div>'
         )
+
+    # Sort control — "Margin (most distressed first)" is what turns a screen
+    # into a list of fix-it candidates rather than the biggest hospitals.
+    sort_val = filters.get("sort", "") or "revenue"
+    sort_opts = [
+        ("revenue", "Revenue (largest first)"),
+        ("margin", "Margin (most distressed first)"),
+        ("beds", "Beds (most first)"),
+        ("rev_per_bed", "Revenue per bed (lowest first)"),
+    ]
+    sort_select = (
+        f'<div><label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
+        f'Sort by</label>'
+        f'<select name="sort" style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
+        f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;">'
+        + "".join(
+            f'<option value="{v}"{" selected" if v == sort_val else ""}>{_esc(lbl)}</option>'
+            for v, lbl in sort_opts)
+        + '</select><div class="hs-field-help">order of matches</div></div>'
+    )
 
     form = (
         f'<div class="cad-card">'
         f'<h2>Filter by Metrics</h2>'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
-        f'Find hospitals from {total_scanned:,} HCRIS records by financial and operational criteria. '
-        f'Use presets for common screens or build custom filters.</p>'
+        f'Find hospitals from {total_scanned:,} HCRIS records by financial size and margin. '
+        f'Pick a preset, or set your own ranges — the <b>max</b> fields are what keep results '
+        f'in an acquirable range instead of returning the biggest systems.</p>'
         f'{preset_html}'
         f'<form method="GET" action="/screen">'
-        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">'
-        f'{filter_inputs}</div>'
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">'
+        f'{filter_inputs}{sort_select}</div>'
         f'<div style="margin-top:12px;">'
         f'<button type="submit" class="cad-btn cad-btn-primary">Run Screen</button></div>'
         f'</form></div>'
+    )
+
+    # Active-criteria chips — make "in range" concrete: exactly what's being
+    # screened, so a result set is never a mystery.
+    def _chip(t: str) -> str:
+        return f'<span class="hs-chip">{_esc(t)}</span>'
+    _range_keys = ("min_beds", "max_beds", "min_revenue", "max_revenue",
+                   "min_margin", "max_margin", "state")
+    chips = []
+    if filters.get("min_beds") or filters.get("max_beds"):
+        chips.append(_chip(f"Beds {filters.get('min_beds') or '0'}–{filters.get('max_beds') or '∞'}"))
+    if filters.get("min_revenue") or filters.get("max_revenue"):
+        chips.append(_chip(f"NPR ${filters.get('min_revenue') or '0'}M–${filters.get('max_revenue') or '∞'}M"))
+    if filters.get("min_margin") or filters.get("max_margin"):
+        chips.append(_chip(f"Margin {filters.get('min_margin') or '−∞'}%–{filters.get('max_margin') or '∞'}%"))
+    if filters.get("state"):
+        chips.append(_chip(f"State {filters['state']}"))
+    chips.append(_chip(f"Sorted: {dict(sort_opts).get(sort_val, sort_val)}"))
+    chips_html = (
+        f'<div class="hs-chips"><span style="font-size:10px;color:{PALETTE["text_muted"]};'
+        f'align-self:center;">IN RANGE →</span>{"".join(chips)}</div>'
+        if any(filters.get(k) for k in _range_keys) else ""
     )
 
     # Results
@@ -381,17 +460,31 @@ def render_screen_page(
             state = _esc(str(r.get("state", "")))
             beds = r.get("beds", r.get("bed_count", 0))
             rev = r.get("net_patient_revenue", r.get("revenue", r.get("net_revenue", 0)))
+            rpb = r.get("rev_per_bed", 0) or 0
             margin = r.get("operating_margin", 0)
             margin = float(margin) if margin else 0
-            margin_color = PALETTE["positive"] if margin > 0.05 else (
-                PALETTE["warning"] if margin > 0 else PALETTE["negative"])
+            if margin_is_plausible(margin):
+                margin_color = PALETTE["positive"] if margin > 0.05 else (
+                    PALETTE["warning"] if margin > 0 else PALETTE["negative"])
+                margin_cell = f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
+            else:
+                # Junk-opex artifact: show it, but mute + flag rather than let
+                # it read as a real result (see margin_is_plausible).
+                margin_cell = (
+                    f'<td class="num hs-dq" title="Margin {margin:.1%} is outside the '
+                    f'realistic -40% to +30% band — this HCRIS filing likely has '
+                    f'incomplete or aggregated opex; review before relying on it.">'
+                    f'{margin:.1%} &#9888;</td>'
+                )
+            rpb_str = f'${rpb/1e3:,.0f}K' if rpb else '&mdash;'
             rows_html += (
                 f'<tr>'
                 f'<td><a href="/hospital/{ccn}" style="font-weight:500;">{name}</a></td>'
                 f'<td>{state}</td>'
                 f'<td class="num">{int(beds):,}</td>'
                 f'<td class="num">${float(rev)/1e6:,.0f}M</td>'
-                f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
+                f'<td class="num">{rpb_str}</td>'
+                f'{margin_cell}'
                 f'<td style="white-space:nowrap;">'
                 f'<a href="/hospital/{ccn}" class="cad-badge cad-badge-blue" '
                 f'style="text-decoration:none;">Profile</a> '
@@ -407,7 +500,7 @@ def render_screen_page(
             f'</div>'
             f'<table class="cad-table"><thead><tr>'
             f'<th>Hospital</th><th>State</th><th>Beds</th><th>NPR</th>'
-            f'<th>Margin</th><th>Actions</th></tr></thead>'
+            f'<th>NPR/Bed</th><th>Margin</th><th>Actions</th></tr></thead>'
             f'<tbody>{rows_html}</tbody></table></div>'
         )
 
@@ -422,13 +515,15 @@ def render_screen_page(
     explainer_html = (
         '<p class="ck-hs-explainer">'
         '<em>Where the universe filters down to candidates.</em> '
-        "Filter the HCRIS universe by bed count, revenue, margins, "
-        "and state to source new deals or find peers for an existing "
-        "target. Use a preset screen or build custom criteria — each "
-        "match links directly to the hospital profile and diligence flow."
+        "Screen the HCRIS universe by size (beds, revenue) and operating "
+        "margin. To <b>find targets to buy</b>, keep a bed/revenue "
+        "<b>max</b> so results stay in an acquirable range and sort by "
+        "<em>margin (most distressed first)</em>; to <b>run diligence on a "
+        "large turnaround</b>, use the <em>Large platforms</em> preset. Each "
+        "match links to its profile and the diligence flow."
         '</p>'
     )
-    body = title_block + explainer_html + form + results_block
+    body = title_block + explainer_html + form + chips_html + results_block
     return chartis_shell(
         body, "Hospital Screener", active_nav="/screen",
         extra_css=_EXPLAINER_CSS,
