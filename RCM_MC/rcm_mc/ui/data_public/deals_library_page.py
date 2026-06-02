@@ -418,7 +418,21 @@ def render_deals_library(
         page_key="library",
     )
     kpis = _kpi_bar(deals, rows)
-    table = ck_table(rows, _COLUMNS)
+    # Cap the rendered table. The corpus is 650+ deals; rendering every
+    # row produced a ~56,000px-tall page (no pagination) — an unusable
+    # wall of scroll. Show a sensible window and let partners narrow with
+    # the sector / regime / MOIC filters + search + sort already on the
+    # page. The results header still reports the true filtered count.
+    _TABLE_CAP = 75
+    total_rows = len(rows)
+    table = ck_table(rows[:_TABLE_CAP], _COLUMNS)
+    if total_rows > _TABLE_CAP:
+        table += (
+            '<p style="margin:12px 2px 0;font-family:var(--sc-mono,monospace);'
+            'font-size:11px;letter-spacing:.04em;color:var(--sc-text-faint,#7a8699);">'
+            f'Showing first {_TABLE_CAP} of {total_rows:,} deals · '
+            'narrow with the filters, search, or sort above.</p>'
+        )
 
     # 2026-05-29 audit follow-up: the page previously built a
     # local `page_title = ck_page_title("Deals Library", ...)` and
