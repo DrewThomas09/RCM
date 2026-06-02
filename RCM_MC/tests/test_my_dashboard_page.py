@@ -64,15 +64,16 @@ class MyDashboardEditorialChromeTests(unittest.TestCase):
         self.assertIn("My Work", html)
 
     def test_subtitle_pluralizes_correctly(self):
-        # 0 deals, 0 alerts, 0 overdue, 0 upcoming → "0 deals · 0 alerts"
+        # The deals/alerts/overdue/upcoming summary lives in the editorial
+        # head's meta line (under the title), NOT an orphan shell subtitle
+        # above it. Pluralization still holds there.
         html = render_my_dashboard(store=_fresh_store(), owner="alice")
-        # Subtitle is rendered by chartis_shell as `ck-subtitle` div
-        # Fragments rather than the whole string for resilience to
-        # whitespace.
-        self.assertIn("0 deals", html)
-        self.assertIn("0 alerts", html)
-        self.assertIn("0 overdue", html)
-        self.assertIn("0 upcoming", html)
+        self.assertIn("0 DEALS", html)
+        self.assertIn("0 ALERTS", html)
+        self.assertIn("0 OVERDUE", html)
+        self.assertIn("0 UPCOMING", html)
+        # and it is NOT floating above the title as a standalone subtitle
+        self.assertNotIn('class="ck-subtitle"', html)
 
     def test_owner_with_no_deals_shows_browse_corpus_cta(self):
         html = render_my_dashboard(store=_fresh_store(), owner="alice")

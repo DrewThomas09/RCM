@@ -372,11 +372,9 @@ def render_my_dashboard(
         body,
         title=f"My work · {owner}",
         active_nav="alerts",
-        subtitle=(
-            f"{len(my_deals)} deal{'' if len(my_deals) == 1 else 's'} · "
-            f"{len(my_alerts)} alert{'' if len(my_alerts) == 1 else 's'} · "
-            f"{len(my_od)} overdue · {len(my_up)} upcoming"
-        ),
+        # No subtitle= — the editorial head's meta line already carries the
+        # deals/alerts/overdue/upcoming summary under the title. A shell
+        # subtitle would render orphaned ABOVE the page's own title.
         breadcrumbs=[
             ("Home", "/"),
             ("My Work", None),

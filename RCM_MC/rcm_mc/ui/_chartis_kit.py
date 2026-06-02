@@ -10994,7 +10994,18 @@ def chartis_shell(
     # both as an italic line at the very top AND inside the title
     # meta — the duplicate partners flagged on physician-eu /
     # market-analysis / many other pages.
-    body_has_page_title = 'class="ck-page-title"' in body_html
+    # Suppress the standalone subtitle whenever the body already carries its
+    # OWN heading — ck_page_title OR any <h1> (e.g. ck_editorial_head, which
+    # doesn't use the ck-page-title class). The standalone subtitle renders at
+    # the very top of the page, so above a page's own title it shows as orphan
+    # "stuff above the title" (escalations' "0 red alerts open…", pressure
+    # test's "stress scenarios…"). The page's own head already carries a meta
+    # line; the live count also shows in the results header. Pages with no
+    # heading at all still get the backstop-injected title (which folds the
+    # subtitle into its meta), so the standalone never needs to render there.
+    body_has_page_title = (
+        'class="ck-page-title"' in body_html or "<h1" in body_html
+    )
     subtitle_html = (
         f'<div class="ck-subtitle" style="font-size:13px;'
         f'color:var(--ck-text-muted,#5C6878);margin:0 0 14px;'
