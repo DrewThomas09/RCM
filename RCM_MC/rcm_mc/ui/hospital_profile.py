@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro, ck_signal_badge,
+    ck_section_intro, ck_signal_badge, margin_is_plausible,
 )
 from .data_public.state_profile_page import state_context_panel
 from ._provenance_tooltip import provenance_tooltip
@@ -60,6 +60,36 @@ def render_hospital_profile(
         db_path=db_path,
     )
 
+    # Operating-margin data-quality guard. A margin outside the realistic
+    # -40%…+30% band is almost always a junk-opex HCRIS record (a parent/
+    # CCN rollup or partial expense lines), not a real operating result —
+    # so we MUTE the value and surface a "review" caveat rather than let
+    # an artifact like 87.9% read as a confident KPI. The number stays
+    # visible (faithful to the filing); we just stop trusting it silently.
+    _op_margin_tt = provenance_tooltip(
+        label="Operating Margin", value=f"{margin:.1%}",
+        graph=prov_graph, metric_key="operating_margin",
+    )
+    if margin_is_plausible(margin):
+        _op_margin_value = _op_margin_tt
+        _op_margin_sub: Optional[str] = None
+    else:
+        _dq_title = html.escape(
+            f"Computed (NPR - opex) / NPR = {margin:.1%}, outside the "
+            f"realistic -40% to +30% band. This HCRIS filing almost "
+            f"certainly has incomplete or aggregated operating expenses "
+            f"(a parent/CCN rollup or partial expense lines), so the "
+            f"margin is a data artifact — review before relying on it."
+        )
+        _op_margin_value = (
+            f'<span class="hp-dq-muted" title="{_dq_title}">'
+            f'{_op_margin_tt}</span>'
+        )
+        _op_margin_sub = (
+            f'<span class="hp-dq-caveat" title="{_dq_title}">'
+            f'⚠ Data quality: review</span>'
+        )
+
     grade = score.grade if hasattr(score, "grade") else "—"
     score_val = score.score if hasattr(score, "score") else 0
     # Editorial severity palette (PALETTE-driven, not neon hex). The
@@ -102,6 +132,12 @@ def render_hospital_profile(
 letter-spacing:0.12em;color:{PALETTE["text_muted"]};text-transform:uppercase;}}
 .cad-deal-ident .ident-key{{color:{PALETTE["text_muted"]};}}
 .cad-deal-ident .ident-val{{color:{PALETTE["text_primary"]};font-weight:600;}}
+/* Operating-margin data-quality flag — mute an implausible (junk-opex)
+   margin so it doesn't read as a confident KPI, and badge it for review. */
+.hp-dq-muted{{opacity:.5;cursor:help;}}
+.hp-dq-caveat{{display:inline-block;font-family:var(--cad-mono,monospace);
+font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+color:{PALETTE["warning"]};cursor:help;}}
 .cad-deal-ident .ident-sep{{color:{PALETTE["border_light"]};padding:0 8px;}}
 .hp-grade-block{{display:flex;flex-direction:column;align-items:center;
 padding:12px 22px;border:1px solid {PALETTE["border"]};
@@ -258,14 +294,17 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         )
         + ck_kpi_block(
             "Operating Margin",
-            provenance_tooltip(label="Operating Margin", value=f"{margin:.1%}", graph=prov_graph, metric_key="operating_margin"),
+            _op_margin_value,
+            sub=_op_margin_sub,
             help={
                 "definition": (
                     "Operating income divided by total revenue. "
                     "Community-hospital margins typically run 2-4%; "
                     "regional hospitals 4-7%; academic medical "
                     "centers can run negative on operations and "
-                    "make it back on research / grants."
+                    "make it back on research / grants. Margins outside "
+                    "-40%…+30% are flagged — the underlying HCRIS filing "
+                    "likely has incomplete or aggregated expenses."
                 ),
             },
         )
