@@ -1167,7 +1167,8 @@ _RGE_STYLES = """
 .rge-hero .x-axis{display:flex;justify-content:space-between;
   font:500 9.5px/1 var(--sc-mono,monospace);letter-spacing:.12em;
   text-transform:uppercase;color:var(--rge-muted);margin-top:10px;}
-.rge-cal{position:relative;height:200px;background:var(--rge-paper-2);
+.rge-cal{position:relative;height:200px;width:200px;max-width:100%;
+  margin:0 auto;background:var(--rge-paper-2);
   border:1px solid var(--rge-rule-soft);overflow:hidden;}
 .rge-cal .grid{position:absolute;background:var(--rge-rule-soft);}
 .rge-cal .grid.h{left:0;right:0;height:1px;}
@@ -1361,29 +1362,32 @@ def _rge_hero_grid(result: Dict[str, Any]) -> str:
     # CALIBRATION tile -------------------------------------------------
     deciles = result.get("calibration_deciles") or []
     if deciles:
-        # Normalize to a 0–1 scatter on the 200px canvas. The 45° line
-        # is rendered by CSS; dots sit at (predicted_norm, actual_norm).
-        vals = []
-        for d in deciles:
-            vals.append(d.get("mean_predicted", 0.0))
-            vals.append(d.get("mean_actual", 0.0))
-        lo = min(vals) if vals else 0.0
-        hi = max(vals) if vals else 1.0
-        rng = (hi - lo) or 1.0
+        # RANK-based positioning. The deciles are already ordered by predicted,
+        # so x is the evenly-spaced predicted-decile position; y is the actual
+        # value's RANK among the deciles. Linear value-scaling collapsed every
+        # low decile into the corner because revenue is heavily right-skewed
+        # (one $7B D10 set the whole scale → the "useless graph"). Rank
+        # positioning spreads all 10 dots and reads cleanly: dots on the 45°
+        # line = actual rises monotonically with predicted (good calibration);
+        # a dot off the line = that decile's actual rank breaks the order.
+        n = len(deciles)
+        denom = max(1, n - 1)
+        actual_order = sorted(range(n), key=lambda i: deciles[i]["mean_actual"])
+        y_rank = {idx: r for r, idx in enumerate(actual_order)}
         pts = ""
-        for d in deciles:
-            pred_n = (d["mean_predicted"] - lo) / rng
-            act_n = (d["mean_actual"] - lo) / rng
-            # Outlier dot if residual > 25% relative
+        for i, d in enumerate(deciles):
+            # Outlier dot if the decile's actual breaks rank vs its predicted
+            # position by more than 2 ranks, or relative value error > 25%.
             rel_err = (
                 abs(d["mean_actual"] - d["mean_predicted"])
                 / max(1.0, abs(d["mean_predicted"]))
             )
-            cls = "pt out" if rel_err > 0.25 else "pt"
-            left = max(0.0, min(1.0, pred_n)) * 100
-            bottom = max(0.0, min(1.0, act_n)) * 100
+            cls = "pt out" if (abs(y_rank[i] - i) >= 2 or rel_err > 0.25) else "pt"
+            left = (i / denom) * 100
+            bottom = (y_rank[i] / denom) * 100
             pts += (
-                f'<span class="{cls}" '
+                f'<span class="{cls}" title="Decile {i+1}: predicted '
+                f'{_fmt_num(d["mean_predicted"])} · actual {_fmt_num(d["mean_actual"])}" '
                 f'style="left:{left:.1f}%;bottom:{bottom:.1f}%"></span>'
             )
         # Verdict — calibrated if median decile error is < 15%.
@@ -1397,9 +1401,6 @@ def _rge_hero_grid(result: Dict[str, Any]) -> str:
             "● Calibrated through middle 80%" if med_err < 0.15
             else f"● Median decile error {med_err*100:.0f}%"
         )
-        # X-axis: D1 vs D10 mean predicted, formatted by _fmt_num
-        d1 = deciles[0]["mean_predicted"]
-        d10 = deciles[-1]["mean_predicted"]
         cal_body = (
             '<div class="rge-cal">'
             '<span class="grid h" style="top:25%"></span>'
@@ -1412,9 +1413,9 @@ def _rge_hero_grid(result: Dict[str, Any]) -> str:
             f'{pts}'
             '</div>'
             '<div class="x-axis">'
-            f'<span>D1 {_fmt_num(d1)}</span>'
-            '<span>Predicted →</span>'
-            f'<span>D10 {_fmt_num(d10)}</span>'
+            '<span>D1 lowest predicted</span>'
+            '<span>predicted decile → · y = actual rank</span>'
+            '<span>D10 highest</span>'
             '</div>'
         )
     else:
@@ -2394,6 +2395,15 @@ def _rge_interpretation(
 # CSS — they rendered as an unreadable run-together row of links.
 _REGRESSION_CSS = """
 <style>
+/* Collapsible definition/method notes — keep the dense explainer text out of
+   the way so the chart + table lead; click to expand. */
+.rg-defs{margin:2px 0 12px;}
+.rg-defs > summary{cursor:pointer;font-family:var(--sc-mono,monospace);
+font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+color:var(--sc-teal,#155752);list-style:none;}
+.rg-defs > summary::-webkit-details-marker{display:none;}
+.rg-defs > summary::before{content:"▸ ";}
+.rg-defs[open] > summary::before{content:"▾ ";}
 .rg-selector-form{display:flex;flex-wrap:wrap;gap:14px 18px;
 align-items:flex-end;}
 .rg-selector-label{font-size:12px;color:var(--cad-text2);
@@ -3151,70 +3161,48 @@ def render_regression_page(
         f'&middot; bar = effect, whisker = confidence interval</div>'
         f'{_coef_chart}'
     ) if _coef_chart else ""
-    # Inference-method note: SEs are HC1-robust; report the Breusch–Pagan
-    # verdict so the reader knows whether the robustness actually mattered.
+    # Diagnostics condensed to terse one-liners (were 3 multi-clause
+    # paragraphs that buried the chart). Full method detail goes in a
+    # collapsible below.
     _bp = result.get("breusch_pagan") or {}
     if _bp.get("heteroskedastic") is True:
-        _bp_verdict = (
-            f'Breusch&ndash;Pagan F={_bp.get("f_stat", 0):.1f}, '
-            f'p={_bp.get("p_value", 1):.4f} &mdash; <strong>heteroskedasticity '
-            'detected</strong>, so the robust SEs (wider, honest) are what you '
-            'should read here, not the classical ones.'
-        )
+        _bp_verdict = (f'<strong>Heteroskedasticity</strong> detected '
+                       f'(BP p={_bp.get("p_value", 1):.3f}) — read the robust SEs.')
     elif _bp.get("heteroskedastic") is False:
-        _bp_verdict = (
-            f'Breusch&ndash;Pagan p={_bp.get("p_value", 1):.3f} &mdash; no '
-            'heteroskedasticity detected; robust and classical SEs agree.'
-        )
+        _bp_verdict = f'No heteroskedasticity (BP p={_bp.get("p_value", 1):.2f}).'
     else:
-        _bp_verdict = "Heteroskedasticity test not available for this fit."
-    # Ramsey RESET: is the linear form the right shape?
+        _bp_verdict = ""
     _rs = result.get("ramsey_reset") or {}
     if _rs.get("misspecified") is True:
-        _reset_verdict = (
-            f' <strong>Ramsey RESET</strong> (F={_rs.get("f_stat", 0):.1f}, '
-            f'p={_rs.get("p_value", 1):.4f}) flags <strong>functional-form '
-            'misspecification</strong> — the linear shape is missing curvature; '
-            'a transform (the log toggle) or a nonlinear term would fit better.'
-        )
+        _reset_verdict = (' · <strong>Linear form misspecified</strong> '
+                          f'(RESET p={_rs.get("p_value", 1):.3f}) — try the log toggle.')
     elif _rs.get("misspecified") is False:
-        _reset_verdict = (
-            f' Ramsey RESET (p={_rs.get("p_value", 1):.2f}) finds no '
-            'functional-form misspecification — the linear shape is adequate.'
-        )
+        _reset_verdict = ' · Linear form adequate (RESET).'
     else:
         _reset_verdict = ""
-    # Jarque–Bera: are the residuals normal enough to trust the small-sample
-    # t/F p-values? (With robust SEs and large n this is informational.)
     _jb = result.get("jarque_bera") or {}
     if _jb.get("normal") is False:
-        _jb_verdict = (
-            f' <strong>Jarque&ndash;Bera</strong> (JB={_jb.get("jb_stat", 0):.1f}, '
-            f'p={_jb.get("p_value", 1):.4f}; skew={_jb.get("skewness", 0):.2f}, '
-            f'kurt={_jb.get("kurtosis", 3):.2f}) flags <strong>non-normal '
-            'residuals</strong> — lean on the robust SEs and the effect '
-            'direction rather than a borderline p-value.'
-        )
+        _jb_verdict = (' · <strong>Non-normal residuals</strong> '
+                       f'(JB p={_jb.get("p_value", 1):.3f}) — trust effect direction '
+                       'over a borderline p.')
     elif _jb.get("normal") is True:
-        _jb_verdict = (
-            f' Jarque&ndash;Bera (p={_jb.get("p_value", 1):.2f}) finds residuals '
-            'consistent with normality — the t/F inference is well-grounded.'
-        )
+        _jb_verdict = ' · Residuals ≈ normal (JB).'
     else:
         _jb_verdict = ""
     coef_section = ck_panel(
         '<p class="ck-section-body">'
         f'Target: <strong>{_html.escape(target.replace("_", " ").title())}</strong>. '
-        'Standardized coefficients (-1.0 to +1.0): a one-SD increase in the feature produces '
+        'Standardized coefficients (−1.0 to +1.0): a one-SD increase produces '
         'this fraction of the strongest effect. '
         '*** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05.</p>'
-        '<p class="ck-section-body" style="font-size:12px;">'
-        'Standard errors are <strong>HC1 heteroskedasticity-robust</strong> '
-        '(White sandwich). P-values use the <strong>exact Student-t</strong> '
-        f'distribution (df={int(result.get("resid_df", 0))}) and the 95% CIs use '
-        f't<sub>0.975</sub>={result.get("t_critical", 1.96):.2f} &mdash; honest '
-        'at small sample sizes, not the 1.96 normal value. '
-        f'{_bp_verdict}{_reset_verdict}{_jb_verdict}</p>'
+        f'<p class="ck-section-body" style="font-size:12px;">{_bp_verdict}'
+        f'{_reset_verdict}{_jb_verdict}</p>'
+        '<details class="rg-defs"><summary>Inference method</summary>'
+        '<p class="ck-section-body" style="margin-top:6px;font-size:12px;">'
+        'SEs are HC1 heteroskedasticity-robust (White sandwich). P-values use '
+        f'the exact Student-t (df={int(result.get("resid_df", 0))}); 95% CIs use '
+        f't<sub>0.975</sub>={result.get("t_critical", 1.96):.2f} — honest at small '
+        'n, not the 1.96 normal value.</p></details>'
         f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
         '<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'
@@ -3570,26 +3558,23 @@ def render_regression_page(
         'and inflating R². Toggle "Drop leakage features" above.</em>'
         if leak_count else ''
     )
+    # Concise lede (was a ~10-line wall defining every verdict inline). The
+    # essentials only; the per-verdict definitions live in a collapsible note
+    # so the table — the actual content — leads.
     leakage_section = ck_panel(
         '<p class="ck-section-body">'
-        f'Per-feature leakage classification for target = '
-        f'<strong>{_html.escape(target.replace("_", " ").title())}</strong>'
-        f'{leak_header_note}{drop_state_note}. '
-        '<strong>LEAKS</strong> = feature is mathematically derived '
-        'from the target (or vice-versa) per its registered formula '
-        '— fitting target ~ this feature inflates R² without '
-        'predicting anything. <strong>FORMULA_RELATED</strong> = '
-        'feature and target are accounting-identity cousins (they '
-        'share underlying inputs but neither contains the other) — '
-        'softer warning; kept by default. A '
-        '<span class="rg-leak-transitive-chip">transitive</span> '
-        'chip means the cousin relationship was detected via the '
-        'multi-hop atomic-input walk (one or both go through an '
-        'intermediate derived feature) rather than a 1-hop direct '
-        'shared input. <strong>SAFE</strong> = no algebraic path. '
-        '<strong>SELF</strong> = feature IS the target. '
-        '<strong>UNKNOWN</strong> = no provenance record (caller '
-        'decides; defaults to staying in the fit).</p>'
+        f'Which features are mathematically derived from '
+        f'<strong>{_html.escape(target.replace("_", " ").title())}</strong> '
+        f'(so they inflate R&sup2; without predicting anything)'
+        f'{leak_header_note}{drop_state_note}.</p>'
+        '<details class="rg-defs"><summary>What the verdicts mean</summary>'
+        '<p class="ck-section-body" style="margin-top:6px">'
+        '<strong>LEAKS</strong> — derived from the target; dropped when the '
+        'toggle is on. <strong>FORMULA_RELATED</strong> — shares inputs with '
+        'the target (a <span class="rg-leak-transitive-chip">transitive</span> '
+        'chip = detected via a multi-hop input walk); softer, kept by default. '
+        '<strong>SAFE</strong> — no algebraic link. <strong>SELF</strong> — is '
+        'the target. <strong>UNKNOWN</strong> — no provenance record.</p></details>'
         '<table class="cad-table"><thead><tr>'
         '<th>Feature</th><th>Verdict</th>'
         '<th>Reason</th><th>Status</th>'
