@@ -373,7 +373,56 @@ _CSS = """
  text-transform:uppercase;color:var(--sc-warning,#b8732a);}
 .tsw-scaffold ul{margin:8px 0 0 18px;font-family:var(--sc-serif);font-size:13.5px;
  line-height:1.6;color:var(--sc-text,#2a3a4a);}
+/* ── Light section frame (replaces the heavy full-width navy panel head).
+   A teal tick + mono kicker + hairline rule reads as an editorial section
+   marker instead of a dominating navy block, so the page stops looking
+   boxed-in and the eye flows to the content. ── */
+.ts-sec{background:#fff;border:1px solid var(--sc-rule,#d6cfc0);border-radius:3px;
+ margin:0 0 22px;overflow:hidden;}
+.ts-sec-head{display:flex;align-items:center;gap:11px;padding:12px 20px 10px;
+ border-bottom:1px solid var(--sc-rule,#e4ddca);}
+.ts-sec-head::before{content:"";flex:none;width:22px;height:2px;
+ background:var(--sc-teal,#155752);}
+.ts-sec-kicker{font-family:var(--sc-mono,monospace);font-size:11px;font-weight:700;
+ letter-spacing:.13em;text-transform:uppercase;color:var(--sc-navy,#15202b);}
+.ts-sec-code{font-family:var(--sc-mono,monospace);font-size:9px;letter-spacing:.1em;
+ color:var(--sc-text-faint,#8b94a0);margin-left:auto;}
+.ts-sec-body{padding:18px 20px;}
+@media (max-width:640px){ .ts-sec-body,.ts-sec-head{padding-left:14px;padding-right:14px;} }
 """
+
+
+def _section_panel(
+    body_html: str,
+    *,
+    title: Optional[str] = None,
+    code: Optional[str] = None,
+    anchor_id: Optional[str] = None,
+) -> str:
+    """Light section frame — drop-in for ``ck_panel`` on this page.
+
+    Same signature as ``ck_panel`` so it swaps in via the page's ``ck``
+    dict, but renders an editorial section marker (teal tick + mono
+    kicker + hairline rule) instead of the heavy full-width navy header
+    band. Keeps the white card so content stays grouped, but stops the
+    page reading as a stack of dominating navy boxes.
+    """
+    import html as _h
+    aid = f' id="{_h.escape(anchor_id)}"' if anchor_id else ""
+    head = ""
+    if title:
+        code_chip = (
+            f'<span class="ts-sec-code">[{_h.escape(code)}]</span>' if code else ""
+        )
+        head = (
+            '<div class="ts-sec-head">'
+            f'<span class="ts-sec-kicker">{_h.escape(title)}</span>'
+            f'{code_chip}</div>'
+        )
+    return (
+        f'<section class="ts-sec"{aid}>'
+        f'{head}<div class="ts-sec-body">{body_html}</div></section>'
+    )
 
 
 # Map layers. ``provider_count`` is always real (derived from the active
@@ -1292,9 +1341,10 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             f'<td style="padding:5px 8px;">{loc}</td>'
             f'{own_td}{size_td}{q_td}{src_td}'
             f'<td style="padding:5px 8px;white-space:nowrap;">'
-            f'<a class="ts-act" href="{xray}">X-Ray</a>'
+            f'<span class="ts-actions">'
+            f'<a class="ts-act ts-act-primary" href="{xray}">X-Ray</a>'
             f'<a class="ts-act" href="{insp}">Inspect</a>'
-            f'<a class="ts-act" href="{cmp_href}">+Cmp</a></td>'
+            f'<a class="ts-act" href="{cmp_href}">+Cmp</a></span></td>'
             '</tr>'
         )
     scope = f" · {state}" if state else ""
@@ -1313,12 +1363,19 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         '.ts-screen-table tbody tr:nth-child(even){background:var(--sc-paper,#faf6ec);}'
         '.ts-screen-table tbody tr:hover{background:var(--sc-bone,#ece5d6);}'
         '.ts-screen-table td,.ts-screen-table th{vertical-align:middle;}'
-        '.ts-act{display:inline-block;font-family:var(--sc-mono);font-size:10px;'
-        'letter-spacing:.03em;padding:2px 7px;border:1px solid var(--sc-rule,#c9c1ac);'
-        'border-radius:3px;text-decoration:none;color:var(--sc-teal,#155752);'
-        'background:#fff;margin:0 4px 0 0;white-space:nowrap;}'
+        '.ts-actions{display:inline-flex;gap:5px;}'
+        '.ts-act{display:inline-flex;align-items:center;font-family:var(--sc-sans,Inter Tight,sans-serif);'
+        'font-size:11px;font-weight:500;letter-spacing:.01em;padding:3px 10px;'
+        'border:1px solid var(--sc-rule,#c9c1ac);border-radius:4px;text-decoration:none;'
+        'color:var(--sc-teal-ink,#155752);background:#fff;white-space:nowrap;'
+        'transition:background .12s ease,color .12s ease,border-color .12s ease;}'
         '.ts-act:hover{background:var(--sc-teal,#155752);color:#fff;'
         'border-color:var(--sc-teal,#155752);}'
+        '.ts-act:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}'
+        # X-Ray is the primary drill-in — quietly emphasized (tinted, not a
+        # full fill, so 150 rows of buttons don\'t shout).
+        '.ts-act-primary{background:var(--sc-teal-soft,#d4e4e2);'
+        'border-color:var(--sc-teal,#155752);color:var(--sc-teal-ink,#155752);font-weight:600;}'
         '</style>'
     )
     # Wave-5: top-N quick-toggle (10 / 25 / 50 / 100 / 150). Each chip
@@ -2422,7 +2479,9 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
     vertical = _q1(qs, "vertical", "hospitals")
     if vertical not in _VERTICAL_KEYS:
         vertical = "hospitals"
-    ck = {"panel": ck_panel}
+    # Light section frame instead of ck_panel's heavy navy header band —
+    # the page reads as editorial sections, not a stack of navy boxes.
+    ck = {"panel": _section_panel}
 
     # 2026-05-28 layout fix: drop the standalone CMS chip after the
     # title. The ck_source_purpose strip below already renders a CMS

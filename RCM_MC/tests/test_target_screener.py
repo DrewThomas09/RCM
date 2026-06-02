@@ -159,16 +159,20 @@ class WorkbenchShellTests(unittest.TestCase):
     # separate vertical-bar / Active-universe / modes panels, the
     # "jumbled" feedback the user described will return.
 
-    def test_main_view_has_four_ck_panels(self):
-        # Main view should render exactly 4 panels: merged universe
+    def test_main_view_has_four_sections(self):
+        # Main view should render exactly 4 sections: merged universe
         # panel, map, table, next-steps. The pre-redesign page had
         # 5+ and the partner reported it as visually noisy.
+        # 2026-06 redesign: the heavy navy ck-panel header band was
+        # swapped for a light editorial section frame (teal tick + mono
+        # kicker + hairline rule), so the section label now renders as
+        # ts-sec-kicker, not ck-panel-title. The "exactly 4" contract holds.
         import re
         h = self._render()
-        titles = re.findall(r'class="ck-panel-title">([^<]+)<', h)
+        titles = re.findall(r'class="ts-sec-kicker">([^<]+)<', h)
         self.assertEqual(
             len(titles), 4,
-            f"expected 4 panels in main view, got {len(titles)}: {titles}")
+            f"expected 4 sections in main view, got {len(titles)}: {titles}")
 
     def test_merged_universe_panel_has_four_sub_blocks(self):
         # The merged panel groups four named sub-blocks (universe
