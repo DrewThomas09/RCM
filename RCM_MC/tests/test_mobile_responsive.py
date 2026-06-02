@@ -37,13 +37,19 @@ class MobileResponsiveShellTests(unittest.TestCase):
             ".ck-topbar-inner{ flex-wrap:wrap",   # topbar wraps
             ".ck-nav{ flex-wrap:wrap",            # nav links wrap
             ".ck-pair{ grid-template-columns:1fr",  # viz|data stacks
-            ".ck-prov-tt-card{ display:none",     # tooltip leaves layout
         ):
             self.assertIn(frag, self.html, f"missing mobile rule: {frag}")
         # every content table scrolls in place rather than widening the page
         self.assertTrue(
             re.search(r"\.ck-main table\{[^}]*overflow-x:auto", self.html),
             "content tables must scroll-x on mobile",
+        )
+        # absolutely-positioned hover cards (provenance tooltip + help
+        # popover) drop from flow on mobile so they stop widening the page;
+        # asserted by regex so the rule can group selectors freely.
+        self.assertTrue(
+            re.search(r"\.ck-prov-tt-card[^}]*display:none", self.html),
+            "tooltip/popover cards must leave flow (display:none) on mobile",
         )
 
     def test_mobile_rules_are_scoped_to_small_screens(self):
@@ -64,8 +70,9 @@ class MobileResponsiveShellTests(unittest.TestCase):
                     break
             j += 1
         block = self.html[start:j]
-        self.assertIn(".ck-prov-tt-card{ display:none", block)
         self.assertIn(".ck-pair{ grid-template-columns:1fr", block)
+        self.assertIn(".ck-main table{", block)
+        self.assertTrue(re.search(r"\.ck-prov-tt-card[^}]*display:none", block))
 
 
 if __name__ == "__main__":
