@@ -127,6 +127,7 @@ def _sparkline_moics(moics: List[float], width: int = 60, height: int = 14) -> s
 def _build_table(records: List[Any]) -> str:
     """Build the sponsor league table HTML."""
     from rcm_mc.data_public.sponsor_track_record import build_sponsor_records
+    from rcm_mc.data_public.verified_deals import verified_deals_for_sponsor
     import importlib
 
     corps = _load_corpus()
@@ -172,9 +173,21 @@ def _build_table(records: List[Any]) -> str:
             "/diligence/sponsor-detail?sponsor="
             + _urlparse.quote(rec.sponsor)
         )
+        # Cross-link to the real, sourced deals for this sponsor (the honest
+        # counterweight to these illustrative corpus stats). Only shown when
+        # the verified set actually has deals for the sponsor.
+        n_real = len(verified_deals_for_sponsor(rec.sponsor))
+        verified_badge = (
+            f' <a href="/verified-deals?sponsor={_urlparse.quote(rec.sponsor)}" '
+            f'title="See {n_real} real, sourced deal{"s" if n_real != 1 else ""} '
+            f'for this sponsor" style="font-family:var(--sc-mono),monospace;'
+            f'font-size:9px;color:var(--ck-accent);border:1px solid var(--ck-accent);'
+            f'border-radius:2px;padding:0 4px;text-decoration:none;white-space:nowrap;">'
+            f'{n_real} real ↗</a>'
+        ) if n_real else ""
         rows_html.append(f"""
 <tr{stripe}>
-  <td style="padding:7px 8px;font-size:11px;"><a href="{sponsor_href}" style="color:var(--ck-accent);text-decoration:none;">{_html.escape(rec.sponsor)}</a></td>
+  <td style="padding:7px 8px;font-size:11px;"><a href="{sponsor_href}" style="color:var(--ck-accent);text-decoration:none;">{_html.escape(rec.sponsor)}</a>{verified_badge}</td>
   <td class="mono" style="text-align:right;padding:7px 6px;">{rec.deal_count}</td>
   <td class="mono dim" style="text-align:right;padding:7px 6px;">{rec.realized_count}</td>
   <td style="text-align:right;padding:7px 6px;">{_fmt_moic(rec.moic_p25)}</td>

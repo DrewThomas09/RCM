@@ -685,10 +685,17 @@ def verified_deals(
         rows = [d for d in rows if d.get("sector") == s]
     if sponsor:
         q = _norm_sponsor(str(sponsor))
-        if q:
-            rows = [d for d in rows if q in _norm_sponsor(d.get("sponsor", ""))]
-        else:
-            rows = []
+        if not q:
+            return []
+        # Bidirectional substring: the page passes a short name ("KKR" ⊂ the
+        # deal's sponsor field) while the sponsor league passes a multi-firm
+        # buyer string ("KKR / Bain Capital / Merrill Lynch PE" ⊃ "KKR").
+        rows = [
+            d for d in rows
+            if (lambda ds: bool(ds) and (q in ds or ds in q))(
+                _norm_sponsor(d.get("sponsor", ""))
+            )
+        ]
     return rows
 
 
