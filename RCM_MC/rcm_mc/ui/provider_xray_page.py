@@ -85,6 +85,14 @@ border:1px solid var(--sc-rule,#c9c1ac);min-width:80px;}
 .ck-xr-coef{position:absolute;top:0;bottom:0;left:0;}
 .ck-xr-coef.pos{background:var(--sc-positive,#0a8a5f);}
 .ck-xr-coef.neg{background:var(--sc-negative,#b5321e);}
+/* Landing two-column layout — mirrors the HCRIS X-Ray landing (identify panel
+   on the left, "what you'll get" sample preview on the right). */
+.ck-xr-landing-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;
+margin-top:var(--sc-s-4,12px);}
+@media (max-width:820px){.ck-xr-landing-grid{grid-template-columns:1fr;}}
+.ck-xr-sec{font-family:var(--sc-mono);font-size:11px;font-weight:700;
+letter-spacing:.1em;text-transform:uppercase;color:var(--sc-teal,#155752);
+border-bottom:1px solid var(--sc-rule,#d6cfc0);padding-bottom:6px;margin-bottom:14px;}
 """
 
 
@@ -125,19 +133,59 @@ def _resolver_table(matches: List[ProviderMatch]) -> str:
 def render_xray_landing(q: str = "", state: str = "",
                         resolver: Optional[List[ProviderMatch]] = None,
                         not_found: bool = False) -> str:
-    from ._chartis_kit import chartis_shell, ck_page_title, ck_panel
-    title = ck_page_title(
-        "CMS X-Ray", eyebrow="DILIGENCE · /diligence/xray",
-        meta="universal CMS provider diligence scanner")
-    hero = (
-        '<p class="ck-xr-hero">Enter a CCN, provider ID, or facility name. '
-        'PEdesk resolves the provider across every live CMS vertical '
-        '(Hospital, SNF, Home Health, Hospice, Dialysis, IRF, LTCH), '
-        'benchmarks it against peers, and turns the public data into a '
-        'transparent diligence read — <em>not</em> an investment '
+    from ._chartis_kit import chartis_shell, ck_panel, ck_editorial_head
+    # Mirror the HCRIS X-Ray landing: editorial head + lede, a sourced line,
+    # and a two-column "identify the provider" / "what you'll get" layout — so
+    # the two sibling diligence scanners share one visual grammar.
+    head = ck_editorial_head(
+        eyebrow="CMS-NATIVE PROVIDER X-RAY",
+        title="CMS X-Ray",
+        meta="EVERY LIVE CMS VERTICAL · BENCHMARKED VS PEERS",
+        lede_italic_phrase="One provider, x-rayed against its peers.",
+        lede_body=(
+            "Enter a CCN, provider ID, or facility name. PEdesk resolves the "
+            "provider across every live CMS vertical (Hospital, SNF, Home "
+            "Health, Hospice, Dialysis, IRF, LTCH), benchmarks it against "
+            "peers, and turns the public data into a transparent diligence "
+            "read — not an investment recommendation."
+        ),
+    )
+    source_line = (
+        '<p class="ck-xr-prov">SOURCE: CMS public provider datasets — '
+        'refreshed from cms.gov. Area-level public data; descriptive, not a '
         'recommendation.</p>'
     )
-    body = title + hero + _search_form(q, state)
+    # Left — the search/identify panel.
+    left = (
+        '<div><div class="ck-xr-sec">&#9312; Identify the provider</div>'
+        + _search_form(q, state)
+        + '</div>'
+    )
+    # Right — a "what you'll get" sample of the X-Ray output (parallels HCRIS
+    # X-Ray's SAMPLE OUTPUT). Illustrative; a real run renders live CMS values.
+    sample = (
+        '<div class="ck-xr-sig green"><div class="ck-xr-sig-name">Peer benchmarks'
+        '<span class="ck-xr-sev green">SAMPLE</span></div>'
+        '<div class="ck-xr-sig-detail">Quality, outcomes, and cost metrics vs '
+        'national / state / locality / ownership peers — each with a percentile '
+        'and a z-score, suppressed when fewer than 5 peers report.</div></div>'
+        '<div class="ck-xr-sig amber"><div class="ck-xr-sig-name">Risk indicators'
+        '<span class="ck-xr-sev amber">SAMPLE</span></div>'
+        '<div class="ck-xr-sig-detail">Transparent, rule-based leading signals '
+        '(staffing, deficiencies, ownership churn) — flagged for review, never a '
+        'forecast.</div></div>'
+        '<div class="ck-xr-sig gray"><div class="ck-xr-sig-name">Diligence questions'
+        '<span class="ck-xr-sev gray">SAMPLE</span></div>'
+        '<div class="ck-xr-sig-detail">A tailored question set + evidence and '
+        'limitations, ready to carry into the diligence workflow.</div></div>'
+    )
+    right = (
+        '<div><div class="ck-xr-sec">What you&rsquo;ll get</div>'
+        f'<div class="ck-xr-signals">{sample}</div>'
+        '<p class="ck-xr-prov">Illustrative — a real run renders live CMS '
+        'values for the matched provider and its peer cohort.</p></div>'
+    )
+    body = head + source_line + f'<div class="ck-xr-landing-grid">{left}{right}</div>'
     if not_found:
         body += ck_panel(
             '<p class="ck-xr-empty">No provider matched '
