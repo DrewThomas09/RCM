@@ -7092,9 +7092,13 @@ _CSS_INLINE_FALLBACK = """
      canonical chrome. Depth on content panels comes from paper-tone
      stacking + hairlines (Tier-4 don'ts: no shadows anywhere). */
   .ck-panel { background:#fff; border:1px solid var(--sc-rule); border-radius:2px; margin:0 0 var(--sc-s-6); }
-  .ck-panel-head { display:flex; align-items:center; justify-content:space-between; background:var(--sc-navy); color:var(--sc-on-navy); padding:10px 16px; border-radius:2px 2px 0 0; }
-  .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:13px; letter-spacing:0.04em; text-transform:uppercase; }
-  .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-on-navy-dim); }
+  /* Light editorial panel header (was a heavy navy band). The navy boxes
+     stacked down a page read as cluttered and off the Command Center / X-Ray
+     gold standard; this is a calm parchment header with a hairline rule and a
+     teal-ink mono-ish kicker. Single change → lifts every ck_panel page. */
+  .ck-panel-head { display:flex; align-items:center; justify-content:space-between; background:var(--sc-parchment-2,#efe9dd); color:var(--sc-text,#1a2332); padding:10px 16px; border-bottom:1px solid var(--sc-rule,#d6cfc0); border-radius:2px 2px 0 0; }
+  .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-teal-ink,#0f3d39); }
+  .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-teal,#155752); }
   .ck-panel-body { padding:var(--sc-s-6); }
   /* Default link affordance inside editorial chrome — every <a> nested
    * in a panel body or section-intro body picks up teal-ink + hover
@@ -8323,12 +8327,17 @@ _CSS_INLINE_FALLBACK = """
   .ck-data-panel-body { padding:14px; }
 
   /* BarRow — label / value / proportional bar / pct */
-  .ck-bar-row { display:grid; grid-template-columns:120px 48px 1fr 56px;
+  /* Value column grows to fit its content (min 48px) and never wraps — a long
+     composite value like "3.34x · 29% IRR · 4 deals" used to stack vertically
+     into an unreadable column. Short numeric values still sit at 48px so rows
+     stay aligned. */
+  .ck-bar-row { display:grid; grid-template-columns:120px minmax(48px,max-content) 1fr 56px;
     gap:10px; align-items:center; padding:5px 0; font-size:12px;
     font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
   .ck-bar-row-label { color:var(--sc-text-dim); overflow:hidden;
     text-overflow:ellipsis; white-space:nowrap; }
-  .ck-bar-row-value { text-align:right; color:var(--sc-text); font-weight:600; }
+  .ck-bar-row-value { text-align:right; color:var(--sc-text); font-weight:600;
+    white-space:nowrap; }
   .ck-bar-row-track { height:5px; background:var(--sc-bone); position:relative; }
   .ck-bar-row-fill { position:absolute; left:0; top:0; bottom:0; }
   .ck-bar-row-pct { text-align:right; color:var(--sc-text-faint); font-size:11px; }
