@@ -198,7 +198,53 @@ def _build_remediations() -> List[RemediationOption]:
     ]
 
 
-def compute_antitrust_screener(deal_size_mm: float = 485.0) -> AntitrustResult:
+# State-AG posture → a 0-20 review-risk contribution. The most aggressive
+# merger-review states (CA OHCA, OR, NY) drive real timeline + challenge risk.
+_STATE_POSTURE_RISK = {
+    "active scrutiny": 20.0,
+    "active review": 12.0,
+    "standard review": 6.0,
+    "minimal scrutiny": 2.0,
+}
+
+
+def _state_posture(state_reviews: List[StateReview], state: str) -> tuple:
+    """Resolve a 2-letter / name state input to (matched_review, posture).
+    Falls back to 'standard review' for states not in the illustrative set."""
+    s = (state or "").strip().lower()
+    if not s:
+        return None, "standard review"
+    for rv in state_reviews:
+        full = rv.state.lower()
+        # match on the leading state name or a parenthetical 2-letter-ish token
+        if full.startswith(s) or f"({s}" in full or s in full.split(" (")[0]:
+            return rv, rv.state_ag_posture
+    # common abbreviations → posture even if not in the table
+    abbr = {
+        "ca": "active scrutiny", "or": "active scrutiny", "ny": "active scrutiny",
+        "ma": "active review", "wa": "standard review", "ct": "standard review",
+        "il": "standard review", "co": "standard review", "tx": "minimal scrutiny",
+        "fl": "minimal scrutiny",
+    }
+    return None, abbr.get(s, "standard review")
+
+
+def compute_antitrust_screener(
+    deal_size_mm: float = 485.0,
+    *,
+    acquirer_size_mm: float = 1850.0,
+    combined_share_pct: float = None,
+    state: str = "TX",
+) -> AntitrustResult:
+    """Input-driven antitrust risk.
+
+    The headline risk now genuinely responds to the levers a partner can
+    change — deal size, acquirer size, the deal's top-market combined share
+    (the real concentration signal), and the primary review state — instead of
+    being dominated by a fixed Texas-anesthesiology scenario (which left the
+    score unchanged no matter the deal size). The MSA/HHI/overlap tables below
+    remain an illustrative worked example; the SCORE is computed from inputs.
+    """
     corpus = _load_corpus()
 
     hhi = _build_hhi()
@@ -208,16 +254,40 @@ def compute_antitrust_screener(deal_size_mm: float = 485.0) -> AntitrustResult:
     state_reviews = _build_state_reviews()
     remediations = _build_remediations()
 
-    hsr_req = deal_size_mm >= 119.5
-    severe_overlaps = sum(1 for o in overlaps if "severe" in o.overlap_severity)
-    second_req_prob = min(0.95, 0.15 + severe_overlaps * 0.25 + max(0, (deal_size_mm - 500) / 2000))
+    # Combined market share is the dominant antitrust driver. If the caller
+    # doesn't supply one, fall back to the worked example's worst market.
+    if combined_share_pct is None:
+        combined_share_pct = max((o.combined_share_pct for o in overlaps), default=40.0)
+    combined_share_pct = max(0.0, min(100.0, float(combined_share_pct)))
 
-    # Risk score 0-100
-    max_hhi_delta = max((h.delta_hhi for h in hhi), default=0)
-    hhi_risk = min(40, max_hhi_delta / 50)
-    overlap_risk = min(30, severe_overlaps * 12)
-    state_risk = min(15, sum(1 for s in state_reviews if s.state_ag_posture == "active scrutiny"))
-    risk_score = min(100, int(hhi_risk + overlap_risk + state_risk + second_req_prob * 30))
+    hsr_req = deal_size_mm >= 119.5
+
+    # ── Risk components, each genuinely input-driven (sum capped at 100) ──
+    # Concentration (0-45): <25% benign; 35-50% material; >50% presumptively
+    # anticompetitive under the 2023 Merger Guidelines (30%+ share + HHI bump).
+    share_risk = max(0.0, min(45.0, (combined_share_pct - 25.0) * 1.45))
+    # Deal size (0-20): bigger transactions draw more scrutiny + HSR fee tiers.
+    size_risk = max(0.0, min(20.0, (deal_size_mm - 119.5) / 70.0))
+    # Serial acquirer (0-15): post-USAP/Welsh Carson, large sponsors with big
+    # existing footprints face serial-acquisition theory.
+    serial_risk = max(0.0, min(15.0, acquirer_size_mm / 350.0))
+    # Primary-state AG posture (0-20).
+    _matched, posture = _state_posture(state_reviews, state)
+    state_risk = _STATE_POSTURE_RISK.get(posture, 6.0)
+
+    risk_score = int(round(min(100.0, share_risk + size_risk + serial_risk + state_risk)))
+
+    # Second-Request probability rises with concentration, size, and a
+    # serial-acquirer footprint; HSR is a precondition.
+    if not hsr_req:
+        second_req_prob = 0.02
+    else:
+        second_req_prob = min(0.95, max(
+            0.05,
+            (combined_share_pct / 100.0) * 0.70
+            + max(0.0, (deal_size_mm - 500.0) / 4000.0)
+            + min(0.15, acquirer_size_mm / 12000.0),
+        ))
 
     recommended_timeline = 6 if second_req_prob < 0.25 else (12 if second_req_prob < 0.5 else 18)
 
