@@ -84,6 +84,7 @@ def _projects_table(items) -> str:
             ("Finish","right"),("ROI","right"),("Payback (mo)","right"),("Status","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _maxbar = max((p.budget_m for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(p.status)
@@ -94,7 +95,7 @@ def _projects_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text};font-weight:600">{_html.escape(p.deal)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.category)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};max-width:300px">{_html.escape(p.description)}</td>',
-            f'{ck_data_cell(f"""${p.budget_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${p.budget_m:.1f}M""", align="right", mono=True, weight=700, bar=p.budget_m / _maxbar * 100)}',
             f'{ck_data_cell(f"""${p.spent_m:.1f}M""", align="right", mono=True, tone="pos", weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{c_c};font-weight:700">{p.percent_complete * 100:.0f}%</td>',
             f'{ck_data_cell(f"""{_html.escape(p.planned_finish)}""", align="right", mono=True, tone="dim")}',

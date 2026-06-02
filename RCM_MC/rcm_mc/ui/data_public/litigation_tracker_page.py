@@ -58,6 +58,7 @@ def _matters_table(items) -> str:
             ("SPA Indemnity ($M)","right"),("Exposure ($M)","right"),("Stage","center"),("Counsel","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _maxbar = max((m.alleged_amount_m for m in items), default=1.0) or 1.0
     for i, m in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _stage_color(m.stage)
@@ -68,7 +69,7 @@ def _matters_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:280px">{_html.escape(m.case_name)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(m.court)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(m.matter_type)}</td>',
-            f'{ck_data_cell(f"""${m.alleged_amount_m:.1f}M""", align="right", mono=True, tone="neg", weight=700)}',
+            f'{ck_data_cell(f"""${m.alleged_amount_m:.1f}M""", align="right", mono=True, tone="neg", weight=700, bar=m.alleged_amount_m / _maxbar * 100)}',
             f'{ck_data_cell(f"""${m.accrued_m:.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${m.insurance_coverage_m:.1f}M""", align="right", mono=True, tone="pos")}',
             f'{ck_data_cell(f"""${m.spa_indemnity_coverage_m:.1f}M""", align="right", mono=True, tone="acc")}',

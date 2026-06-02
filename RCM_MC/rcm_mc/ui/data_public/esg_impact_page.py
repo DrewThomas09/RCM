@@ -82,13 +82,14 @@ def _access_table(items) -> str:
             ("Sliding-Scale (K)","right"),("Avg Wait (days)","right"),("No-Show %","right"),("Languages","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _maxbar = max((a.uninsured_charity_care_m for a in items), default=1.0) or 1.0
     for i, a in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         m_c = pos if a.medicaid_pct >= 0.30 else (acc if a.medicaid_pct >= 0.15 else text_dim)
         cells = [
             f'{ck_data_cell(f"""{_html.escape(a.deal)}""", mono=True, weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{a.medicaid_pct * 100:.1f}%</td>',
-            f'{ck_data_cell(f"""${a.uninsured_charity_care_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${a.uninsured_charity_care_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=a.uninsured_charity_care_m / _maxbar * 100)}',
             f'{ck_data_cell(f"""{a.sliding_scale_patients_k:.1f}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""{a.avg_wait_days:.1f}""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""{a.no_show_rate_pct * 100:.1f}%""", align="right", mono=True, tone="dim")}',

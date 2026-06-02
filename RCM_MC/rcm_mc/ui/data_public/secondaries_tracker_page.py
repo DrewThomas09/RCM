@@ -63,6 +63,7 @@ def _transactions_table(items) -> str:
             ("Vintage","right"),("Close Year","right"),("Size ($M)","right"),("NAV Premium/Disc","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _max_size = max((t.transaction_size_mm for t in items), default=1.0) or 1.0
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         p_c = pos if t.nav_premium_discount_pct >= 0 else (neg if t.nav_premium_discount_pct <= -0.08 else text_dim)
@@ -73,7 +74,7 @@ def _transactions_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.asset)}</td>',
             f'{ck_data_cell(f"""{t.vintage}""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""{t.close_year}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${t.transaction_size_mm:,.0f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${t.transaction_size_mm:,.0f}""", align="right", mono=True, tone="pos", weight=700, bar=t.transaction_size_mm / _max_size * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{p_c};font-weight:600">{t.nav_premium_discount_pct * 100:+.1f}%</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
