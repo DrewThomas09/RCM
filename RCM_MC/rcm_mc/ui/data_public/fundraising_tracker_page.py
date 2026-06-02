@@ -77,12 +77,13 @@ def _targets_table(items) -> str:
             ("Committed ($M)","right"),("Hard Circled ($M)","right"),("Status","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((t.target_size_b for t in items), default=1.0) or 1.0
     for i, t in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(t.status)
         cells = [
             f'{ck_data_cell(f"""{_html.escape(t.fund_name)}""", mono=True, weight=700)}',
-            f'{ck_data_cell(f"""${t.target_size_b:.2f}B""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${t.target_size_b:.2f}B""", align="right", mono=True, weight=700, bar=t.target_size_b / _bar_max * 100)}',
             f'{ck_data_cell(f"""${t.hard_cap_b:.2f}B""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(t.strategy)}</td>',
             f'{ck_data_cell(f"""{_html.escape(t.launch_date)}""", align="right", mono=True, tone="dim")}',

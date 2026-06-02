@@ -60,6 +60,7 @@ def _portfolios_table(items) -> str:
             ("$ per RAF pt","right"),("Coding Intensity","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((p.ma_revenue_m for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         ci_c = _intensity_color(p.coding_intensity)
@@ -71,7 +72,7 @@ def _portfolios_table(items) -> str:
             f'{ck_data_cell(f"""{p.avg_raf:.3f}""", align="right", mono=True, tone="acc", weight=700)}',
             f'{ck_data_cell(f"""{p.prior_year_raf:.3f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{t_c};font-weight:700">+{p.raf_trend * 100:.1f}%</td>',
-            f'{ck_data_cell(f"""${p.ma_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${p.ma_revenue_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=p.ma_revenue_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""${p.revenue_per_raf_point_m:.2f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{ci_c};border:1px solid {ci_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(p.coding_intensity)}</span>""", align="center")}',
         ]

@@ -90,6 +90,7 @@ def _placements_table(items) -> str:
             ("Source","left"),("Comp ($M)","right"),("Equity %","right"),("Status","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((e.comp_package_m for e in items), default=1.0) or 1.0
     for i, e in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         s_c = _status_color(e.status)
@@ -99,7 +100,7 @@ def _placements_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(e.role)}</td>',
             f'{ck_data_cell(f"""{_html.escape(e.placement_date)}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(e.source)}</td>',
-            f'{ck_data_cell(f"""${e.comp_package_m:.2f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${e.comp_package_m:.2f}M""", align="right", mono=True, tone="pos", weight=700, bar=e.comp_package_m / _bar_max * 100)}',
             f'{ck_data_cell(f"""{e.equity_pct * 100:.2f}%""", align="right", mono=True, tone="acc", weight=600)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{s_c};border:1px solid {s_c};border-radius:2px;letter-spacing:0.06em">{_html.escape(e.status)}</span>""", align="center")}',
         ]

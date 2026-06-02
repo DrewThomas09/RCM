@@ -30,6 +30,7 @@ def _sensitivity_table(items) -> str:
             ("Net Debt ($M)","right"),("Equity Proceeds ($M)","right"),("MOIC","right"),("IRR %","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((s.exit_ev_mm for s in items), default=1.0) or 1.0
     for i, s in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         m_c = pos if s.moic >= 2.5 else (acc if s.moic >= 1.8 else warn)
@@ -37,7 +38,7 @@ def _sensitivity_table(items) -> str:
         cells = [
             f'{ck_data_cell(f"""{s.exit_multiple:.1f}x""", align="right", mono=True, weight=700)}',
             f'{ck_data_cell(f"""${s.exit_ebitda_mm:,.2f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${s.exit_ev_mm:,.2f}""", align="right", mono=True, tone="acc", weight=700)}',
+            f'{ck_data_cell(f"""${s.exit_ev_mm:,.2f}""", align="right", mono=True, tone="acc", weight=700, bar=s.exit_ev_mm / _bar_max * 100)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]}">${s.net_debt_at_exit_mm:,.2f}</td>',
             f'{ck_data_cell(f"""${s.equity_proceeds_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{m_c};font-weight:700">{s.moic:,.2f}x</td>',

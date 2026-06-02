@@ -81,6 +81,7 @@ def _contracts_table(items) -> str:
             ("Shared Savings %","right"),("Quality Weight","right"),("Expected Savings ($M)","right"),("Distribution ($M)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.expected_distribution_mm for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
@@ -91,7 +92,7 @@ def _contracts_table(items) -> str:
             f'{ck_data_cell(f"""{c.shared_savings_pct * 100:.1f}%""", align="right", mono=True, tone="acc")}',
             f'{ck_data_cell(f"""{c.quality_weight * 100:.0f}%""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${c.expected_savings_mm:,.2f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""${c.expected_distribution_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${c.expected_distribution_mm:,.2f}""", align="right", mono=True, tone="pos", weight=700, bar=c.expected_distribution_mm / _bar_max * 100)}',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'

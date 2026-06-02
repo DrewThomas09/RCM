@@ -67,6 +67,7 @@ def _calls_table(items) -> str:
             ("Purpose","left"),("Unfunded Before","right"),("Unfunded After","right"),("LTM Called","right"),("Default","center")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.amount_m for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         d_c = neg if c.defaulted_lp else pos
@@ -74,7 +75,7 @@ def _calls_table(items) -> str:
             f'{ck_data_cell(f"""{_html.escape(c.fund)}""", mono=True, weight=700)}',
             f'{ck_data_cell(f"""{_html.escape(c.call_date)}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{c.call_number}""", align="right", mono=True, tone="acc")}',
-            f'{ck_data_cell(f"""${c.amount_m:.1f}M""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.amount_m:.1f}M""", align="right", mono=True, weight=700, bar=c.amount_m / _bar_max * 100)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:11px;color:{text_dim};max-width:340px">{_html.escape(c.purpose)}</td>',
             f'{ck_data_cell(f"""${c.unfunded_before_m:,.1f}M""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${c.unfunded_after_m:,.1f}M""", align="right", mono=True, tone="acc", weight=700)}',

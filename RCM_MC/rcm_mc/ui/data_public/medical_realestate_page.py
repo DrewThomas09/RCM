@@ -42,6 +42,7 @@ def _properties_table(items) -> str:
             ("Lease Type","center"),("Lease Yrs","right"),("Cap Rate","right"),("Value ($M)","right")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((p.annual_rent_m for p in items), default=1.0) or 1.0
     for i, p in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         c_c = _credit_color(p.tenant_credit)
@@ -55,7 +56,7 @@ def _properties_table(items) -> str:
             f'{ck_data_cell(f"""{p.sqft:,}""", align="right", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{acc}">{_html.escape(p.tenant)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{c_c};font-weight:700">{_html.escape(p.tenant_credit)}</td>',
-            f'{ck_data_cell(f"""${p.annual_rent_m:.1f}M""", align="right", mono=True, tone="pos", weight=700)}',
+            f'{ck_data_cell(f"""${p.annual_rent_m:.1f}M""", align="right", mono=True, tone="pos", weight=700, bar=p.annual_rent_m / _bar_max * 100)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(p.nnn_or_gross)}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{l_c};font-weight:600">{p.lease_years_remaining:.1f}y</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{cap_c};font-weight:700">{p.cap_rate_pct:.2f}%</td>',

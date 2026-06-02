@@ -185,11 +185,12 @@ def _comp_table(items) -> str:
             ("Bottom Quartile ($k)","right"),("Equity %","right"),("Typical Vesting","left")]
     ths = "".join(ck_data_cell(f"""{c}""", align=a, is_header=True) for c, a in cols)
     trs = []
+    _bar_max = max((c.median_comp_k for c in items), default=1.0) or 1.0
     for i, c in enumerate(items):
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'{ck_data_cell(f"""{_html.escape(c.role)}""", mono=True, weight=600)}',
-            f'{ck_data_cell(f"""${c.median_comp_k:,.1f}""", align="right", mono=True, weight=700)}',
+            f'{ck_data_cell(f"""${c.median_comp_k:,.1f}""", align="right", mono=True, weight=700, bar=c.median_comp_k / _bar_max * 100)}',
             f'{ck_data_cell(f"""${c.quartile_top_k:,.1f}""", align="right", mono=True, tone="pos")}',
             f'{ck_data_cell(f"""${c.quartile_bottom_k:,.1f}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{c.equity_pct * 100:.2f}%""", align="right", mono=True, tone="acc", weight=700)}',
