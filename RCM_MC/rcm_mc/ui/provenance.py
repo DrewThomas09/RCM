@@ -38,10 +38,18 @@ _SOURCE_TO_NODE_TYPE = {
 # recognizes "pct", "USD", "days", "fraction", "index". The
 # "count" hint maps to "" (no unit suffix in the explainer).
 _FMT_TO_UNIT = {
-    "dollars": "USD",
-    "pct":     "pct",
-    "days":    "days",
-    "count":   "",
+    "dollars":  "USD",
+    "pct":      "pct",
+    # Ratio metrics stored as a 0..1 fraction (operating_margin,
+    # denial_rate, occupancy, …). The provenance explainer's "pct"
+    # formatter appends "%" *without* ×100, which renders a 0.879
+    # operating margin as "0.9%" — contradicting the KPI's "87.9%".
+    # "fraction" is the ×100 unit, so these metrics now agree with
+    # the card value. (Distinct from "pct" used for point-valued
+    # metrics elsewhere.)
+    "fraction": "fraction",
+    "days":     "days",
+    "count":    "",
 }
 
 
@@ -345,13 +353,15 @@ def _hcris_metric_format_hints() -> Dict[str, Tuple[str, str]]:
         "operating_expenses": ("Operating Expenses", "dollars"),
         "net_income": ("Net Income", "dollars"),
         "beds": ("Beds", "count"),
-        "medicare_day_pct": ("Medicare Day %", "pct"),
-        "medicaid_day_pct": ("Medicaid Day %", "pct"),
+        # These ratios are stored as 0..1 fractions → "fraction"
+        # (×100), matching the KPI cards. See _FMT_TO_UNIT note.
+        "medicare_day_pct": ("Medicare Day %", "fraction"),
+        "medicaid_day_pct": ("Medicaid Day %", "fraction"),
         "total_patient_days": ("Total Patient Days", "count"),
-        "occupancy_rate": ("Occupancy Rate", "pct"),
-        "operating_margin": ("Operating Margin", "pct"),
+        "occupancy_rate": ("Occupancy Rate", "fraction"),
+        "operating_margin": ("Operating Margin", "fraction"),
         "revenue_per_bed": ("Revenue per Bed", "dollars"),
-        "net_to_gross_ratio": ("Net-to-Gross Ratio", "pct"),
+        "net_to_gross_ratio": ("Net-to-Gross Ratio", "fraction"),
     }
 
 
@@ -359,10 +369,12 @@ def _rcm_metric_label_hints() -> Dict[str, Tuple[str, str]]:
     """RCM metrics — predicted from HCRIS features unless seller
     or calibrated data is available."""
     return {
-        "denial_rate":         ("Denial Rate", "pct"),
+        # Rates stored as 0..1 fractions → "fraction" (×100) so the
+        # provenance tooltip matches the KPI. See _FMT_TO_UNIT note.
+        "denial_rate":         ("Denial Rate", "fraction"),
         "days_in_ar":          ("Days in AR", "days"),
-        "clean_claim_rate":    ("Clean Claim Rate", "pct"),
-        "collection_rate":     ("Net Collection Rate", "pct"),
+        "clean_claim_rate":    ("Clean Claim Rate", "fraction"),
+        "collection_rate":     ("Net Collection Rate", "fraction"),
     }
 
 
