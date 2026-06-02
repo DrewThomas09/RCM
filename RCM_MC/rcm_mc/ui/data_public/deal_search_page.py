@@ -176,7 +176,7 @@ def render_deal_search(
         explainer=(
             f"Median realized MOIC across the {total} deals "
             f"matching the active filter. Color: green >2.5x, "
-            f"amber 1.5-2.5x, red below. Compares to corpus "
+            f"amber 1.5-2.5x, red below. Compares to the all-deals "
             f"baseline at the top of /market-rates."
         ),
     )
@@ -184,7 +184,7 @@ def render_deal_search(
         "Filter results",
         ck_fmt_num(total),
         explainer=(
-            f"Out of {len(corpus):,} corpus deals. Filters AND "
+            f"Out of all {len(corpus):,} deals. Filters AND "
             f"together (sector + year + EV + MOIC range + deal "
             f"type) - drop a chip from the row above to widen "
             f"the result set."
@@ -193,7 +193,7 @@ def render_deal_search(
     )
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Results", results_value, f"of {ck_fmt_num(len(corpus))} corpus")
+        + ck_kpi_block("Results", results_value, f"of {ck_fmt_num(len(corpus))} deals")
         + ck_kpi_block("P50 MOIC", p50_value, "filtered set")
         + ck_kpi_block("Avg EV", f"${avg_ev:.0f}M", "filtered set")
         + ck_kpi_block("Page", f"{page}/{total_pages}", f"{PAGE_SIZE} per page")
@@ -377,11 +377,11 @@ def render_deal_search(
 
     explainer = render_page_explainer(
         what=(
-            "Full-text search across the 655-deal corpus with filters "
+            f"Full-text search across all {len(corpus):,} deals with filters "
             "on sector, vintage year range, EV range, MOIC range, "
             "payer regime, and deal type, sortable by any column."
         ),
-        source="data_public/deal_search.py (corpus query engine).",
+        source="data_public/deal_search.py (deal query engine).",
         page_key="deal-search",
     )
     body = explainer + kpis + form_html + table + page_links
@@ -392,7 +392,7 @@ def render_deal_search(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="Deal Search",
+        title="Find Deals",
         active_nav="/deal-search",
         subtitle=(
             f"{total:,} of {len(corpus):,} deals"
@@ -401,14 +401,14 @@ def render_deal_search(
             + f" · sorted by {sort_by.replace('_', ' ')}"
         ),
         editorial_intro={
-            "eyebrow": "DEAL SEARCH",
-            "headline": "Where the corpus is searchable.",
-            "italic_word": "searchable",
+            "eyebrow": "FIND DEALS",
+            "headline": "Find any deal, fast.",
+            "italic_word": "any",
             "body": (
-                "Full-text search across the realized-deal corpus "
-                "with sector / vintage / EV / MOIC / payer-regime "
-                "filters. Sortable by any column - the table is the "
-                "primary surface, the KPI strip the summary."
+                "Full-text search across every realized deal with "
+                "sector / vintage / EV / MOIC / payer-regime filters. "
+                "Sortable by any column — the table is the primary "
+                "surface, the KPI strip the summary."
             ),
         },
     )
