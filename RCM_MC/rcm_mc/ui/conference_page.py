@@ -17,9 +17,50 @@ from .brand import PALETTE
 
 _EXPLAINER_CSS = """
 .ck-cr-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
-color:var(--sc-text-dim);max-width:68ch;
-margin:var(--sc-s-4) 0 var(--sc-s-6);}
+color:var(--sc-text-dim);max-width:70ch;
+margin:var(--sc-s-4) 0 var(--sc-s-5);}
 .ck-cr-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+/* Conference Intelligence — recaps + macro threads (the "what happened"
+   research layer above the forward calendar). */
+.cr-section-label{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:11px;
+font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+color:var(--sc-teal,#155752);margin:26px 0 10px;
+padding-bottom:5px;border-bottom:1px solid var(--sc-rule,#d6cfc0);}
+.cr-threads{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:12px;margin-bottom:8px;}
+.cr-thread{border-left:2px solid var(--sc-teal,#155752);padding:2px 0 2px 12px;}
+.cr-thread-t{font-family:var(--sc-sans,Inter Tight),sans-serif;font-weight:600;
+font-size:13px;color:var(--sc-ink,#1a2332);margin-bottom:3px;}
+.cr-thread-b{font-size:12px;line-height:1.5;color:var(--sc-text-dim,#5b6b7a);}
+.cr-recap{border:1px solid var(--sc-rule,#d6cfc0);border-radius:6px;
+padding:16px 18px;margin-bottom:14px;background:var(--sc-paper,#faf7f0);}
+.cr-recap-head{display:flex;justify-content:space-between;align-items:flex-start;
+gap:12px;flex-wrap:wrap;}
+.cr-recap-name{font-family:var(--sc-serif,Source Serif 4),serif;font-size:18px;
+font-weight:600;color:var(--sc-ink,#1a2332);line-height:1.15;}
+.cr-recap-meta{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:10.5px;
+letter-spacing:.04em;color:var(--sc-text-faint,#7a8699);margin-top:3px;}
+.cr-sent{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:10px;
+font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+border-radius:3px;padding:3px 9px;white-space:nowrap;align-self:flex-start;}
+.cr-lede{font-family:var(--sc-serif,Source Serif 4),serif;font-size:14px;
+line-height:1.55;color:var(--sc-ink,#1a2332);margin:9px 0 4px;}
+.cr-note{font-size:12px;line-height:1.5;color:var(--sc-text-dim,#5b6b7a);
+font-style:italic;margin:0 0 12px;}
+.cr-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.cr-h{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:9.5px;
+font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+color:var(--sc-text-faint,#7a8699);margin:10px 0 5px;}
+.cr-list{margin:0;padding-left:16px;font-size:12px;line-height:1.55;
+color:var(--sc-text-dim,#5b6b7a);}
+.cr-list li{margin-bottom:4px;}
+.cr-list b{color:var(--sc-ink,#1a2332);}
+.cr-dilig{font-size:12px;line-height:1.55;color:var(--sc-ink,#1a2332);
+border-left:2px solid var(--sc-teal,#155752);padding:2px 0 2px 11px;}
+.cr-sources{font-size:10.5px;line-height:1.6;color:var(--sc-text-faint,#7a8699);
+margin-top:12px;padding-top:9px;border-top:1px solid var(--sc-rule,#d6cfc0);}
+.cr-sources a{color:var(--sc-teal,#155752);text-decoration:none;}
+@media (max-width:640px){.cr-cols{grid-template-columns:1fr;}}
 """
 
 CONFERENCES = [
@@ -281,6 +322,80 @@ TIER_BADGE = {
 }
 
 
+_SENTIMENT_HEX = {
+    "positive": "#0a8a5f", "warning": "#b8732a",
+    "negative": "#b5321e", "muted": "#7a8699",
+}
+_SENTIMENT_LABEL = {
+    "bullish": "Bullish", "optimistic": "Cautiously optimistic",
+    "mixed": "Mixed", "cautious": "Cautious", "bearish": "Bearish",
+}
+
+
+def _sentiment_badge(sentiment: str) -> str:
+    from .conference_recaps import SENTIMENT_TONE
+    tone = SENTIMENT_TONE.get(sentiment, "muted")
+    color = _SENTIMENT_HEX.get(tone, "#7a8699")
+    label = _SENTIMENT_LABEL.get(sentiment, sentiment.title())
+    return (
+        f'<span class="cr-sent" style="color:{color};border:1px solid {color};">'
+        f'{_html.escape(label)}</span>'
+    )
+
+
+def _render_recaps() -> str:
+    """Macro threads + curated conference recaps — the 'what happened / why it
+    matters' research layer that sits above the forward calendar."""
+    from .conference_recaps import CONFERENCE_RECAPS, MACRO_THREADS
+
+    threads = "".join(
+        f'<div class="cr-thread"><div class="cr-thread-t">{_html.escape(t["title"])}</div>'
+        f'<div class="cr-thread-b">{_html.escape(t["body"])}</div></div>'
+        for t in MACRO_THREADS
+    )
+    macro = (
+        '<div class="cr-section-label">Macro threads · 2025 → 2026</div>'
+        f'<div class="cr-threads">{threads}</div>'
+    )
+
+    cards = ""
+    for r in CONFERENCE_RECAPS:
+        themes = "".join(
+            f'<li><b>{_html.escape(t)}</b> — {_html.escape(d)}</li>'
+            for t, d in r["themes"]
+        )
+        anns = "".join(f'<li>{_html.escape(a)}</li>' for a in r["announcements"])
+        impact = "".join(f'<li>{_html.escape(m)}</li>' for m in r["market_impact"])
+        sources = " · ".join(
+            f'<a href="{_html.escape(url, quote=True)}" target="_blank" '
+            f'rel="noopener">{_html.escape(title)}</a>'
+            for title, url in r["sources"]
+        )
+        cards += (
+            '<div class="cr-recap">'
+            '<div class="cr-recap-head"><div>'
+            f'<div class="cr-recap-name">{_html.escape(r["name"])}</div>'
+            f'<div class="cr-recap-meta">{_html.escape(r["edition"])} · {_html.escape(r["held"])}</div>'
+            '</div>'
+            f'{_sentiment_badge(r["sentiment"])}</div>'
+            f'<p class="cr-lede">{_html.escape(r["one_line"])}</p>'
+            f'<p class="cr-note">{_html.escape(r["sentiment_note"])}</p>'
+            '<div class="cr-cols">'
+            f'<div><div class="cr-h">Key themes</div><ul class="cr-list">{themes}</ul>'
+            f'<div class="cr-h">Notable announcements</div><ul class="cr-list">{anns}</ul></div>'
+            f'<div><div class="cr-h">Market impact</div><ul class="cr-list">{impact}</ul>'
+            f'<div class="cr-h">Diligence read</div><div class="cr-dilig">{_html.escape(r["diligence"])}</div></div>'
+            '</div>'
+            f'<div class="cr-sources">Sources: {sources}</div>'
+            '</div>'
+        )
+    recaps = (
+        '<div class="cr-section-label">What happened — conference recaps</div>'
+        f'{cards}'
+    )
+    return macro + recaps
+
+
 def render_conference_roadmap(category: str = "all") -> str:
     """Render the conference roadmap page."""
     events = sorted(CONFERENCES, key=lambda e: e["date"])
@@ -431,26 +546,33 @@ def render_conference_roadmap(category: str = "all") -> str:
         eyebrow="Continue —",
         italic_word="sourcing",
     )
-    body = (
+    from .conference_recaps import CONFERENCE_RECAPS
+    # Recaps are the unfiltered "what happened" research layer — shown on the
+    # default view. The category tabs filter the forward calendar only, so a
+    # category-filtered view drops the recaps and focuses the roadmap.
+    recaps_html = _render_recaps() if category == "all" else ""
+    calendar_html = (
+        '<div class="cr-section-label">Conference Roadmap — what&rsquo;s next</div>'
         f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">{cat_tabs}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 300px;gap:16px;">'
         f'<div>{timeline_html}</div>'
         f'<div>{summary}{planning_tips}</div>'
         f'</div>'
-        f'{next_up}'
     )
+    body = recaps_html + calendar_html + next_up
 
     title_block = ck_page_title(
-        "Conference Roadmap", eyebrow="CONFERENCE ROADMAP",
-        meta=f"{len(events)} events · healthcare PE diligence calendar",
+        "Conference Intelligence", eyebrow="CONFERENCE INTELLIGENCE",
+        meta=f"{len(CONFERENCE_RECAPS)} recaps · {len(CONFERENCES)} upcoming · healthcare PE",
     )
     explainer_html = (
         '<p class="ck-cr-explainer">'
-        '<em>Where the deal flow surfaces.</em> '
-        "Healthcare PE conference calendar — JPM, HLTH, specialty "
-        "events, and partner-attendance planning. Conferences are "
-        "where bankers introduce buy-side and where the next "
-        "quarter's deal flow gets previewed."
+        '<em>What happened at the big events — and what it means.</em> '
+        "Curated, sourced recaps of the major healthcare conferences (JPM, "
+        "HLTH, HIMSS, HFMA, Becker&rsquo;s, McGuireWoods HCPE, AHA, ViVE) — "
+        "themes, notable announcements, market impact, and the diligence read "
+        "— above the forward calendar of what&rsquo;s next. Every recap is "
+        "source-linked and refreshed as events conclude."
         '</p>'
     )
     tab_css = (
@@ -469,7 +591,7 @@ def render_conference_roadmap(category: str = "all") -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         title_block + explainer_html + body,
-        "Conference Roadmap",
+        "Conference Intelligence",
         active_nav="/conferences",
         extra_css=_EXPLAINER_CSS + tab_css,
     )
