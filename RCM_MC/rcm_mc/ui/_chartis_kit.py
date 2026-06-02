@@ -5398,16 +5398,18 @@ _CK_SHARE_LINK_JS = """
 
 _CK_SHARE_LINK_CSS = """
 <style>
-.ck-share-btn{font:500 11px/1 var(--sc-sans,Inter),sans-serif;
-  letter-spacing:.08em;text-transform:uppercase;
-  color:var(--ink,#16263a);background:var(--paper-card,#fefcf3);
-  border:1px solid var(--rule,#c9bf9c);border-radius:2px;
-  padding:9px 14px;text-decoration:none;cursor:pointer;
-  transition:background .12s,border-color .12s;}
-.ck-share-btn:hover{background:var(--paper-hi,#fbf6e8);
-  border-color:var(--rule-hi,#b6a87f);}
-.ck-share-btn:focus-visible{outline:2px solid var(--green-deep,#154e36);
-  outline-offset:-1px;}
+/* Matches the print / shortcuts / glossary / methodology pills exactly so
+   the page-action row reads as one consistent set (was sans + taller). */
+.ck-share-btn{display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px;font-family:var(--sc-mono,monospace);
+  font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  font-weight:600;background:#fff;color:var(--sc-text,#2a3a4a);
+  border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
+  text-decoration:none;cursor:pointer;}
+.ck-share-btn:hover{border-color:var(--sc-teal,#155752);
+  color:var(--sc-teal,#155752);}
+.ck-share-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);
+  outline-offset:1px;}
 </style>
 """
 
@@ -5791,8 +5793,14 @@ def ck_page_actions(
         parts.append(ck_back_to_top_button())
     parts.append(
         "<style>"
+        # Give the action row real breathing room from the content above and a
+        # hairline separator — it was crowding the data / italic lede on many
+        # pages. (Top margin + padding + rule; print hides it.)
         ".ck-page-actions{display:flex;flex-wrap:wrap;gap:8px;"
-        "align-items:center;margin:0 0 var(--sc-s-4,12px);}"
+        "align-items:center;margin:var(--sc-s-8,44px) 0 var(--sc-s-5,18px);"
+        "padding-top:var(--sc-s-5,18px);"
+        "border-top:1px solid var(--sc-rule,#d6cfc0);}"
+        "@media print{.ck-page-actions{display:none !important;}}"
         "</style>"
     )
     return "".join(parts)
@@ -10986,7 +10994,18 @@ def chartis_shell(
     # both as an italic line at the very top AND inside the title
     # meta — the duplicate partners flagged on physician-eu /
     # market-analysis / many other pages.
-    body_has_page_title = 'class="ck-page-title"' in body_html
+    # Suppress the standalone subtitle whenever the body already carries its
+    # OWN heading — ck_page_title OR any <h1> (e.g. ck_editorial_head, which
+    # doesn't use the ck-page-title class). The standalone subtitle renders at
+    # the very top of the page, so above a page's own title it shows as orphan
+    # "stuff above the title" (escalations' "0 red alerts open…", pressure
+    # test's "stress scenarios…"). The page's own head already carries a meta
+    # line; the live count also shows in the results header. Pages with no
+    # heading at all still get the backstop-injected title (which folds the
+    # subtitle into its meta), so the standalone never needs to render there.
+    body_has_page_title = (
+        'class="ck-page-title"' in body_html or "<h1" in body_html
+    )
     subtitle_html = (
         f'<div class="ck-subtitle" style="font-size:13px;'
         f'color:var(--ck-text-muted,#5C6878);margin:0 0 14px;'
