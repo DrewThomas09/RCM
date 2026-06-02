@@ -7517,7 +7517,10 @@ _CSS_INLINE_FALLBACK = """
        bar (and the page) ~480px wide; each link keeps its own no-wrap. */
     .ck-nav{ flex-wrap:wrap; }
     .ck-nav a{ height:auto; padding:6px 10px; }
-    .ck-table, .ck-data-table, .cad-table{
+    /* every content table scrolls within the viewport rather than
+       widening the page (covers bare <table>, .ck-table, .ck-data-table,
+       .cad-table, and any page-local class — they all live in .ck-main). */
+    .ck-main table{
       display:block; max-width:100%; overflow-x:auto;
       -webkit-overflow-scrolling:touch; }
     .ck-data-table-scroll{ max-width:100%; }
@@ -7531,9 +7534,12 @@ _CSS_INLINE_FALLBACK = """
        KPI/cell pushed the whole page wide. Drop them from flow until
        opened, then anchor inside the viewport. Desktop hover is unchanged
        (this whole block is ≤640px only). */
-    .ck-prov-tt-card{ display:none; min-width:0; max-width:86vw; left:auto; right:0; }
+    .ck-prov-tt-card, .ck-help-popover{ display:none; min-width:0; max-width:86vw; }
+    .ck-prov-tt-card{ left:auto; right:0; }
     .ck-prov-tt:hover .ck-prov-tt-card,
-    .ck-prov-tt:focus-within .ck-prov-tt-card{ display:block; }
+    .ck-prov-tt:focus-within .ck-prov-tt-card,
+    .ck-help:hover .ck-help-popover,
+    .ck-help:focus-within .ck-help-popover{ display:block; }
   }
   .ck-nav a:hover { color:var(--tb-green); }
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
