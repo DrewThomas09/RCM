@@ -253,10 +253,22 @@ def render_deal_risk_scores(params: Dict[str, str]) -> str:
         f'<option value="{t}" {"selected" if t == tier_filter else ""}>{t}</option>'
         for t in ["Low", "Medium", "High", "Critical"]
     )
+    # Explicit Apply button so the filter works on click even when the
+    # onchange auto-submit doesn't fire (the "button not working" report);
+    # a Clear link resets to All Tiers. onchange kept for one-click convenience.
+    _clear = ('<a href="/deal-risk-scores" class="ck-filter-clear" '
+              'style="font-size:11px;color:var(--sc-teal,#155752);margin-left:8px;'
+              'text-decoration:none">Clear</a>') if tier_filter else ""
     filter_bar = f"""
-<form method="get" action="/deal-risk-scores" class="ck-filters">
+<form method="get" action="/deal-risk-scores" class="ck-filters"
+  style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
   <span class="ck-filter-label">Filter by Tier</span>
   <select name="tier" class="ck-sel" onchange="this.form.submit()">{tier_opts}</select>
+  <button type="submit" class="ck-sel"
+    style="cursor:pointer;background:var(--sc-teal,#155752);color:#fff;
+    border:1px solid var(--sc-teal,#155752);padding:5px 14px;font-size:11px;
+    font-family:JetBrains Mono,monospace">Apply</button>
+  {_clear}
 </form>"""
 
     # Cycle 36 — provenance wraps on the two scoring KPIs that
