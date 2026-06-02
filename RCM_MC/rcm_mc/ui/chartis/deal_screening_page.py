@@ -39,9 +39,37 @@ from ._sanity import render_number
 
 _EXPLAINER_CSS = """
 .ck-ds-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
-color:var(--sc-text-dim);max-width:68ch;
-margin:var(--sc-s-4) 0 var(--sc-s-6);}
+color:var(--sc-text-dim);max-width:70ch;
+margin:var(--sc-s-4) 0 var(--sc-s-5);}
 .ck-ds-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+/* "How it works" 3-step framing — make the mental model explicit:
+   your thesis = thresholds → corpus pass rate. */
+.ds-howto{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 var(--sc-s-5,18px);}
+.ds-step{flex:1;min-width:190px;border:1px solid var(--sc-rule,#d6cfc0);
+border-radius:5px;padding:11px 14px;background:var(--sc-paper,#faf7f0);}
+.ds-step-n{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:10px;
+font-weight:700;letter-spacing:.1em;color:var(--sc-teal,#155752);}
+.ds-step-t{font-family:var(--sc-sans,Inter Tight),sans-serif;font-weight:600;
+font-size:13px;color:var(--sc-ink,#1a2332);margin:3px 0 2px;}
+.ds-step-d{font-size:11.5px;line-height:1.45;color:var(--sc-text-dim,#5b6b7a);}
+/* Bigger, clearer screening controls (were 10px labels / 100px inputs). */
+.ds-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:14px 16px;align-items:end;}
+.ds-field{display:flex;flex-direction:column;gap:5px;}
+.ds-field-label{font-family:var(--sc-sans,Inter Tight),sans-serif;font-size:12px;
+font-weight:600;color:var(--sc-text-dim,#5b6b7a);line-height:1.25;}
+.ds-field-label .ds-unit{color:var(--sc-text-faint,#7a8699);font-weight:400;
+font-size:10.5px;}
+.ds-input,.ds-select{width:100%;box-sizing:border-box;background:var(--sc-paper,#faf7f0);
+border:1px solid var(--sc-rule,#d6cfc0);color:var(--sc-ink,#1a2332);
+font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:13.5px;
+padding:9px 11px;border-radius:5px;}
+.ds-input:focus,.ds-select:focus{outline:none;border-color:var(--sc-teal,#155752);}
+.ds-submit{background:var(--sc-teal,#155752);color:#fff;border:none;
+font-family:var(--sc-sans,Inter Tight),sans-serif;font-size:12.5px;font-weight:600;
+letter-spacing:.02em;padding:10px 20px;border-radius:5px;cursor:pointer;
+align-self:end;}
+.ds-submit:hover{filter:brightness(1.06);}
 """
 
 
@@ -50,7 +78,7 @@ def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -
         meta = f"{n_pass} pass · {n_watch} watch · {n_fail} fail · {total} deals"
     else:
         meta = "PASS / WATCH / FAIL decision per corpus deal"
-    return ck_page_title("Deal Screening", eyebrow="DEAL SCREENING", meta=meta)
+    return ck_page_title("Thesis Screening", eyebrow="THESIS SCREENING", meta=meta)
 
 
 _DECISION_COLORS = {
@@ -77,60 +105,47 @@ def _controls_form(
     config: Dict[str, Any],
     filter_decision: str,
 ) -> str:
+    # (key, label, unit-hint, one-line plain-English gloss). Labels carry the
+    # gloss so a partner knows exactly which thesis lever each control is.
     fields = [
-        ("max_composite_risk_score", "Max Risk Score", "0-100"),
-        ("watch_composite_risk_score", "Watch Threshold", "0-100"),
-        ("max_ev_ebitda", "Max EV/EBITDA", "x"),
-        ("watch_ev_ebitda", "Watch EV/EBITDA", "x"),
-        ("min_moic_threshold", "Min MOIC", "x"),
-        ("max_medicaid_pct", "Max Medicaid %", "0-1"),
-        ("min_ev_mm", "Min EV ($M)", ""),
+        ("max_composite_risk_score", "Max risk score", "0–100", "reject above"),
+        ("watch_composite_risk_score", "Watch risk score", "0–100", "flag above"),
+        ("max_ev_ebitda", "Max EV/EBITDA", "×", "valuation ceiling"),
+        ("watch_ev_ebitda", "Watch EV/EBITDA", "×", "flag above"),
+        ("min_moic_threshold", "Min MOIC", "×", "return floor"),
+        ("max_medicaid_pct", "Max Medicaid", "0–1", "payer-mix ceiling"),
+        ("min_ev_mm", "Min EV", "$M", "size floor"),
     ]
     inputs = []
-    for key, label, unit in fields:
+    for key, label, unit, gloss in fields:
         val = config.get(key, "")
+        unit_html = f' <span class="ds-unit">· {_html.escape(unit)}</span>' if unit else ""
+        gloss_html = f'<br><span class="ds-unit">{_html.escape(gloss)}</span>' if gloss else ""
         inputs.append(
-            f'<label style="display:flex;flex-direction:column;gap:2px;'
-            f'font-family:var(--ck-mono);font-size:10px;color:{P["text_faint"]};">'
-            f'<span style="letter-spacing:0.10em;">{_html.escape(label)}'
-            + (
-                f' <span style="color:{P["text_faint"]};font-size:9px;">· {unit}</span>'
-                if unit else ""
-            )
-            + f'</span>'
-            f'<input name="{key}" value="{val}" type="number" step="any" '
-            f'style="width:100px;background:{P["panel_alt"]};'
-            f'border:1px solid {P["border"]};color:{P["text"]};'
-            f'font-family:var(--ck-mono);font-size:11px;padding:4px 6px;'
-            f'border-radius:2px;">'
-            f'</label>'
+            f'<div class="ds-field">'
+            f'<span class="ds-field-label">{_html.escape(label)}{unit_html}{gloss_html}</span>'
+            f'<input class="ds-input" name="{key}" value="{val}" type="number" step="any">'
+            f'</div>'
         )
     decision_options = "".join(
-        f'<option value="{v}"{" selected" if v == filter_decision else ""}>{_html.escape(v or "All")}</option>'
+        f'<option value="{v}"{" selected" if v == filter_decision else ""}>{_html.escape(v or "All decisions")}</option>'
         for v in ("", "FAIL", "WATCH", "PASS")
     )
-    decision_input = (
-        f'<label style="display:flex;flex-direction:column;gap:2px;'
-        f'font-family:var(--ck-mono);font-size:10px;color:{P["text_faint"]};">'
-        f'<span style="letter-spacing:0.10em;">Show Decision</span>'
-        f'<select name="decision" style="background:{P["panel_alt"]};'
-        f'border:1px solid {P["border"]};color:{P["text"]};'
-        f'font-family:var(--ck-mono);font-size:11px;padding:4px 6px;'
-        f'border-radius:2px;min-width:100px;">{decision_options}</select>'
-        f'</label>'
+    inputs.append(
+        f'<div class="ds-field">'
+        f'<span class="ds-field-label">Show decision<br>'
+        f'<span class="ds-unit">filter results</span></span>'
+        f'<select class="ds-select" name="decision">{decision_options}</select>'
+        f'</div>'
     )
-    inputs.append(decision_input)
-    submit = (
-        f'<button type="submit" style="background:{P["accent"]};color:#fff;'
-        f'border:none;font-family:var(--ck-mono);font-size:10px;'
-        f'font-weight:600;letter-spacing:0.10em;padding:6px 14px;'
-        f'border-radius:3px;align-self:flex-end;cursor:pointer;'
-        f'text-transform:uppercase;">Re-run Screen</button>'
+    inputs.append(
+        '<div class="ds-field">'
+        '<button type="submit" class="ds-submit">Re-run screen &rarr;</button>'
+        '</div>'
     )
     return (
-        f'<form method="get" action="/deal-screening" '
-        f'style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">'
-        f'{"".join(inputs)}{submit}</form>'
+        f'<form method="get" action="/deal-screening" class="ds-controls">'
+        f'{"".join(inputs)}</form>'
     )
 
 
@@ -232,7 +247,7 @@ def render_deal_screening(
             code="ERR",
         )
         return chartis_shell(
-            _title() + body, title="Deal Screening",
+            _title() + body, title="Thesis Screening",
             active_nav="/deal-screening",
             extra_css=_EXPLAINER_CSS,
         )
@@ -252,7 +267,7 @@ def render_deal_screening(
             code="NIL",
         )
         return chartis_shell(
-            _title() + body, title="Deal Screening",
+            _title() + body, title="Thesis Screening",
             active_nav="/deal-screening",
             extra_css=_EXPLAINER_CSS,
         )
@@ -270,7 +285,7 @@ def render_deal_screening(
             code="ERR",
         )
         return chartis_shell(
-            _title() + body, title="Deal Screening",
+            _title() + body, title="Thesis Screening",
             active_nav="/deal-screening",
             extra_css=_EXPLAINER_CSS,
         )
@@ -318,9 +333,9 @@ def render_deal_screening(
     }
 
     form_panel = small_panel(
-        "Screening controls",
+        "Your thesis — set the thresholds",
         _controls_form(config_fields, filter_decision),
-        code="CFG",
+        code="FIT",
     )
 
     decision_strip = _decision_strip(counts, len(results))
@@ -343,20 +358,40 @@ def render_deal_screening(
         counts.get("PASS", 0), counts.get("WATCH", 0),
         counts.get("FAIL", 0), len(results),
     )
+    n_deals = len(results)
+    pass_rate = (counts.get("PASS", 0) / n_deals) if n_deals else 0.0
     explainer_html = (
         '<p class="ck-ds-explainer">'
-        '<em>What the deal screen reveals on the corpus.</em> '
-        "Runs every corpus deal through a rules-based screen — composite "
-        "risk score, EV/EBITDA multiple, MOIC floor, Medicaid exposure, "
-        "and heuristic signal — and returns PASS, WATCH, or FAIL. "
-        "Tighten thresholds below to shift the decision mix; filter to a "
-        "specific decision to narrow the comparable population."
+        '<em>How would your thesis have screened real deals?</em> '
+        f"Set your thesis as thresholds — max risk, valuation ceiling (EV/EBITDA), "
+        f"return floor (MOIC), payer-mix and size limits — and PE Desk runs the full "
+        f"{n_deals}-deal historical corpus against them. The <b>pass rate</b> is your "
+        f"thesis&rsquo;s base rate: the share of real deals that would clear it. A high "
+        f"pass rate means a permissive thesis; a low one means you&rsquo;re selective. "
+        f"Every deal&rsquo;s PASS / WATCH / FAIL verdict and reason is below."
         '</p>'
+    )
+    howto = (
+        '<div class="ds-howto">'
+        '<div class="ds-step"><div class="ds-step-n">STEP 1</div>'
+        '<div class="ds-step-t">Set your thesis</div>'
+        '<div class="ds-step-d">Enter the thresholds a deal must clear — risk, '
+        'EV/EBITDA, MOIC, Medicaid, size.</div></div>'
+        '<div class="ds-step"><div class="ds-step-n">STEP 2</div>'
+        '<div class="ds-step-t">Screen the corpus</div>'
+        f'<div class="ds-step-d">PE Desk scores all {n_deals} historical deals against '
+        'your thesis and labels each PASS / WATCH / FAIL.</div></div>'
+        '<div class="ds-step"><div class="ds-step-n">STEP 3</div>'
+        '<div class="ds-step-t">Read the pass rate</div>'
+        f'<div class="ds-step-d">{pass_rate:.0%} of deals clear this thesis — your base '
+        'rate. Tighten a lever and watch it move.</div></div>'
+        '</div>'
     )
 
     body = (
         title_block
         + explainer_html
+        + howto
         + kpi_strip
         + form_panel
         + ck_section_header(
@@ -380,7 +415,7 @@ def render_deal_screening(
 
     return chartis_shell(
         body,
-        title="Deal Screening",
+        title="Thesis Screening",
         active_nav="/deal-screening",
         extra_css=_EXPLAINER_CSS,
     )
