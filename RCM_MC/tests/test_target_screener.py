@@ -29,17 +29,20 @@ class TargetScreenerRenderTests(unittest.TestCase):
 
     def test_unified_header_and_cms_label(self):
         self.assertIn("Target Screener", self.h)
-        self.assertIn("CMS PUBLIC DATA", self.h)        # market data, not deals
+        # The bulky CMS source bubble was dropped (it ate vertical space); the
+        # 'market data, not your deals' caveat now lives in the title meta.
+        self.assertIn("not your deals", self.h)
+        self.assertNotIn("CMS PUBLIC DATA", self.h)
 
     def test_three_modes_route_to_existing_screeners(self):
         for href in ("/source", "/screen", "/predictive-screener"):
             self.assertIn(f'href="{href}"', self.h)
 
-    def test_explains_same_universe(self):
+    def test_explains_same_data_caveat(self):
         low = self.h.lower()
         self.assertIn("same", low)
-        self.assertIn("universe", low)
-        self.assertIn("promote", low)                   # path into Pipeline
+        self.assertIn("dataset", low)                   # reworded from 'universe'
+        self.assertIn("not your deals", low)
 
     def test_active_mode_highlights(self):
         from rcm_mc.ui.target_screener_page import render_target_screener
@@ -114,16 +117,16 @@ class WorkbenchShellTests(unittest.TestCase):
     # ranked-providers table. Each of these is now load-bearing
     # behavior — pin them so the bugs can't quietly come back.
 
-    def test_only_one_cms_pill_renders(self):
-        # The page must render exactly one CMS PUBLIC DATA pill (the one
-        # inside the ck_source_purpose strip). A second standalone pill
-        # underneath the title was the "two CMS public data things"
-        # the user reported.
+    def test_no_cms_source_bubble(self):
+        # The CMS PUBLIC DATA source bubble was removed entirely — it ate
+        # vertical space and duplicated the title meta. Pin that it stays gone
+        # (no CMS pill, no bubble text).
         import re
         h = self._render()
         chips = re.findall(r'<span class="ck-universe ck-universe-cms"', h)
-        self.assertEqual(len(chips), 1,
-                         f"expected exactly one CMS pill, got {len(chips)}")
+        self.assertEqual(len(chips), 0,
+                         f"CMS source bubble should be gone, got {len(chips)} pill(s)")
+        self.assertNotIn("CMS PUBLIC DATA", h)
 
     def test_workbench_tabs_have_tsw_meta_css(self):
         # .tsw-meta is the flex-column wrapper that stacks each tab's
@@ -471,7 +474,7 @@ class WorkbenchShellTests(unittest.TestCase):
 
     def test_unfiltered_kpis_describe_whole_universe(self):
         h = self._render()
-        self.assertIn("in this universe", h)
+        self.assertIn("in this dataset", h)   # reworded from 'in this universe'
         # The 'States & territories' tile is present without a state
         # filter.
         self.assertTrue(
