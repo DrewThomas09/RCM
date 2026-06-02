@@ -7549,8 +7549,9 @@ _CSS_INLINE_FALLBACK = """
     /* charts scale to the column instead of forcing it wide (viewBox SVGs
        scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio). */
     .ck-main svg{ max-width:100%; height:auto; }
-    /* inline N-column grids stack to one column on phones. */
-    [style*="grid-template-columns:repeat"]{ grid-template-columns:1fr !important; }
+    /* any inline multi-column grid (repeat(), "1fr 300px" sidebar
+       layouts, etc.) stacks to one column on phones. */
+    [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }
     /* provenance tooltip cards are visibility:hidden (so they still occupy
        layout) with a 240px min-width — on a phone a card on a right-edge
        KPI/cell pushed the whole page wide. Drop them from flow until
