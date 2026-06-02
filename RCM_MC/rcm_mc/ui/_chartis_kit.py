@@ -187,6 +187,7 @@ _SUB_NAV = {
     "library": [
         {"label": "Deal Library",        "href": "/deal-library"},
         {"label": "Deals Library",       "href": "/deals-library"},
+        {"label": "Verified Deals",      "href": "/verified-deals"},
         {"label": "Methodology",         "href": "/methodology"},
         {"label": "Metric Glossary",     "href": "/metric-glossary"},
         {"label": "RCM Benchmarks",      "href": "/rcm-benchmarks"},
@@ -10407,6 +10408,7 @@ _SUB_SECTION_MAP = {
     # Moved to Research: Find Comps (corpus comps) + PE Intelligence (generic).
     "/find-comps": "research", "/pe-intelligence": "research",
     "/library": "library", "/deals-library": "library", "/deal-library": "library",
+    "/verified-deals": "library",
     "/deal-library/sponsors": "library", "/deal-library/comps": "library",
     "/methodology": "library", "/metric-glossary": "library",
     "/data": "library", "/comparables": "library",
