@@ -5398,16 +5398,18 @@ _CK_SHARE_LINK_JS = """
 
 _CK_SHARE_LINK_CSS = """
 <style>
-.ck-share-btn{font:500 11px/1 var(--sc-sans,Inter),sans-serif;
-  letter-spacing:.08em;text-transform:uppercase;
-  color:var(--ink,#16263a);background:var(--paper-card,#fefcf3);
-  border:1px solid var(--rule,#c9bf9c);border-radius:2px;
-  padding:9px 14px;text-decoration:none;cursor:pointer;
-  transition:background .12s,border-color .12s;}
-.ck-share-btn:hover{background:var(--paper-hi,#fbf6e8);
-  border-color:var(--rule-hi,#b6a87f);}
-.ck-share-btn:focus-visible{outline:2px solid var(--green-deep,#154e36);
-  outline-offset:-1px;}
+/* Matches the print / shortcuts / glossary / methodology pills exactly so
+   the page-action row reads as one consistent set (was sans + taller). */
+.ck-share-btn{display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px;font-family:var(--sc-mono,monospace);
+  font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  font-weight:600;background:#fff;color:var(--sc-text,#2a3a4a);
+  border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;
+  text-decoration:none;cursor:pointer;}
+.ck-share-btn:hover{border-color:var(--sc-teal,#155752);
+  color:var(--sc-teal,#155752);}
+.ck-share-btn:focus-visible{outline:2px solid var(--sc-teal,#155752);
+  outline-offset:1px;}
 </style>
 """
 
@@ -5791,8 +5793,14 @@ def ck_page_actions(
         parts.append(ck_back_to_top_button())
     parts.append(
         "<style>"
+        # Give the action row real breathing room from the content above and a
+        # hairline separator — it was crowding the data / italic lede on many
+        # pages. (Top margin + padding + rule; print hides it.)
         ".ck-page-actions{display:flex;flex-wrap:wrap;gap:8px;"
-        "align-items:center;margin:0 0 var(--sc-s-4,12px);}"
+        "align-items:center;margin:var(--sc-s-8,44px) 0 var(--sc-s-5,18px);"
+        "padding-top:var(--sc-s-5,18px);"
+        "border-top:1px solid var(--sc-rule,#d6cfc0);}"
+        "@media print{.ck-page-actions{display:none !important;}}"
         "</style>"
     )
     return "".join(parts)
