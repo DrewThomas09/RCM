@@ -168,6 +168,38 @@ class UIRenderTests(unittest.TestCase):
             "no citation keys rendered",
         )
 
+    def test_single_h1_on_every_render_path(self):
+        """The verdict card stacks under a masthead (the fast-path
+        _bc_head, or the chartis_shell title on the full path), so it must
+        render its headline as <h2>. Regression: the fast-path showed two
+        <h1> (masthead + verdict) and the full path showed two (shell title
+        + verdict)."""
+        import re
+        from rcm_mc.ui.bear_case_page import render_bear_case_page
+        base = {
+            "deal_name": ["UI Test"], "specialty": ["HOSPITAL"],
+            "revenue_year0_usd": ["450000000"],
+            "ebitda_year0_usd": ["67500000"],
+        }
+        paths = {
+            "landing": {},
+            "fastpath_no_ccd": base,
+            "full_pipeline": {
+                **base, "dataset": ["hospital_04_mixed_payer"],
+                "enterprise_value_usd": ["600000000"],
+                "equity_check_usd": ["250000000"], "debt_usd": ["350000000"],
+                "medicare_share": ["0.45"], "landlord": ["MPT"],
+                "hopd_revenue_annual_usd": ["45000000"], "n_runs": ["100"],
+            },
+        }
+        for name, qs in paths.items():
+            with self.subTest(path=name):
+                html = render_bear_case_page(qs)
+                self.assertEqual(
+                    len(re.findall(r"<h1[ >]", html)), 1,
+                    f"{name} path must have exactly one <h1>",
+                )
+
     def test_invalid_dataset_returns_friendly_error(self):
         from rcm_mc.ui.bear_case_page import render_bear_case_page
         # Unknown dataset — pipeline will fail silently on CCD ingest
