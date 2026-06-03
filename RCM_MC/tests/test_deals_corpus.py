@@ -912,7 +912,9 @@ class TestScraperFallbacks(unittest.TestCase):
 class TestExtendedSeed(unittest.TestCase):
 
     def test_extended_seed_count(self):
-        self.assertGreaterEqual(len(EXTENDED_SEED_DEALS), 20)
+        # Base extended batch was 20; now 19 after a duplicate (ext_001)
+        # was removed in dedup. Floor guards against a gutted batch.
+        self.assertGreaterEqual(len(EXTENDED_SEED_DEALS), 19)
 
     def test_extended_seed_unique_ids(self):
         ids = [d["source_id"] for d in EXTENDED_SEED_DEALS]
