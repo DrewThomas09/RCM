@@ -3511,6 +3511,88 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/verified-deals", "Verified Deals",
+        short_description="A browseable, source-linked table of real, "
+        "publicly-disclosed healthcare-PE deals — target, sponsor, year, "
+        "entry EV, sector, and outcome, each row carrying a citation URL.",
+        primary_purpose="Provide the externally-verifiable backbone behind "
+        "the modeled corpus: every deal links to its public source (SEC "
+        "filing, press release, PE-firm site, or news), so a partner can "
+        "confirm the platform's deals are real, not fabricated.",
+        common_questions=[
+            "Which deals are independently verifiable?",
+            "What's the source for this deal?",
+            "How many verified deals does each sponsor have?",
+            "What's the outcome mix (active / exited / bankrupt / distressed)?",
+            "How does this differ from the modeled deal corpus?",
+        ],
+        inputs=["The hand-curated VERIFIED_DEALS set; each entry carries a "
+                "source URL and a disclosed/undisclosed EV."],
+        outputs=["KPIs (verified deal count, disclosed-EV total, distinct "
+                 "sponsors), an outcome-mix bar, a clickable sponsor "
+                 "leaderboard, a sector/sponsor-filterable source-linked "
+                 "table, and a CSV download."],
+        key_metrics=["Verified deal count", "Disclosed EV total",
+                     "Outcome mix", "Lead-sponsor counts"],
+        data_sources=["VERIFIED_DEALS — public SEC filings, press releases, "
+                      "PE-firm sites, and reputable news, cited per row."],
+        model_logic_summary="No modeling — these are the real disclosed "
+        "figures. Fields that were never publicly disclosed render as '—' "
+        "rather than an estimate.",
+        why_it_matters="It is the platform's credibility anchor: the "
+        "externally-checkable evidence that the deals are genuine, with "
+        "honest nulls where the public record is silent.",
+        diligence_use_cases=["Spot-checking that a sponsor's deals are real; "
+                             "sourcing a comparable's disclosed EV."],
+        interpretation_guidance=[
+            "A '—' means the figure was not publicly disclosed — not zero.",
+            "Outcome labels (active/exited/bankrupt/distressed) are "
+            "point-in-time per the cited source.",
+        ],
+        limitations=["Coverage is the curated verified set, not exhaustive; "
+                     "disclosed EV appears only where it is public."],
+        related_routes=["/sponsor-track-record", "/deal-library",
+                       "/comparable-outcomes", "/library"],
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/verified-deals.csv", "Verified Deals (CSV export)",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="The Verified Deals table as a downloadable, "
+        "filter-aware CSV (spreadsheet-injection-defanged).",
+        primary_purpose="Export the verified, source-linked deal set — "
+        "optionally narrowed by sector or sponsor — for offline analysis.",
+        common_questions=[
+            "How do I download the verified deals?",
+            "Can I export just one sponsor's or sector's verified deals?",
+            "What columns are in the verified-deals CSV?",
+            "Does the export include the source URL for each deal?",
+            "Is the CSV the same data as the /verified-deals page?",
+        ],
+        inputs=["The same VERIFIED_DEALS set as /verified-deals, honoring "
+                "any ?sector= / ?sponsor= filter."],
+        outputs=["A CSV file: target, sponsor, year, EV, sector, outcome, "
+                 "and the source URL for each row."],
+        key_metrics=["Rows exported"],
+        data_sources=["VERIFIED_DEALS (same public-sourced rows as the page)."],
+        model_logic_summary="Straight serialization of the verified rows; no "
+        "modeling. Cells are defanged for Excel formula injection.",
+        why_it_matters="Lets a partner take the source-linked evidence into "
+        "their own workbook without re-keying.",
+        diligence_use_cases=["Pulling the verified comp set into a model or "
+                            "IC appendix."],
+        interpretation_guidance=["Same honesty rules as the page: blank "
+                                "cells mean undisclosed, not zero."],
+        limitations=["Mirrors the page's coverage."],
+        related_routes=["/verified-deals"],
+        data_source_ids=["public_transaction_corpus"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/payer-intelligence", "Payer Intelligence",
         short_description="Corpus-wide payer-mix analysis — average mix, the "
         "rank correlation of commercial / Medicaid / self-pay share with "
