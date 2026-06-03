@@ -94,6 +94,27 @@
   --cad-text3:      var(--sc-text-faint);
   --cad-border:     var(--sc-rule);
 
+  /* Legacy chartis-kit (--ck-*) → editorial. These were defined only in
+   * _chartis_kit_legacy.py's _BASE_CSS, which the modern shell no longer
+   * injects — so ~18 renderers still referencing var(--ck-mono)/(--ck-accent)
+   * /etc. (incl. the Portfolio-Sim button background) resolved to nothing.
+   * Forward them here, where chartis_tokens.css is loaded on every page. */
+  --ck-bg:          var(--sc-parchment);
+  --ck-panel:       #ffffff;
+  --ck-panel-alt:   var(--sc-bone);
+  --ck-border:      var(--sc-rule);
+  --ck-border-dim:  var(--sc-rule);
+  --ck-text:        var(--sc-text);
+  --ck-text-dim:    var(--sc-text-dim);
+  --ck-text-faint:  var(--sc-text-faint);
+  --ck-accent:      var(--sc-teal);
+  --ck-pos:         var(--sc-positive);
+  --ck-neg:         var(--sc-negative);
+  --ck-warn:        var(--sc-warning);
+  --ck-stripe:      var(--sc-bone);
+  --ck-mono:        var(--sc-mono);
+  --ck-sans:        var(--sc-sans);
+
   /* v3 marketing tokens → editorial (so marketing_page.py + chartis
    * shell share the same palette and the bridge from / to /home is
    * visually continuous instead of a regression).

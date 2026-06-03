@@ -278,7 +278,7 @@ def render_telehealth_econ(params: dict = None) -> str:
     page_title = ck_page_title(
         "Telehealth Economics Analyzer",
         eyebrow="TELEHEALTH ECON",
-        meta=f"""Visit-level P&amp;L · provider productivity · state parity · tech stack · PHE cliff exposure · DTC comparables — {r.corpus_deal_count:,} corpus deals""",
+        meta=f"""Visit-level P&L · provider productivity · state parity · tech stack · PHE cliff exposure · DTC comparables — {r.corpus_deal_count:,} corpus deals""",
     )
     
     value_anchor = ck_value_anchor(

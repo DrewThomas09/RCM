@@ -305,7 +305,7 @@ def render_sponsor_heatmap(params: dict = None) -> str:
     page_title = ck_page_title(
         "Sponsor × Sector Performance Heatmap",
         eyebrow="SPONSOR HEATMAP",
-        meta=f"""2-D performance grid — which sponsors win in which sectors · vintage &amp; hold cuts — {r.corpus_deal_count:,} normalized deals""",
+        meta=f"""2-D performance grid — which sponsors win in which sectors · vintage & hold cuts — {r.corpus_deal_count:,} normalized deals""",
     )
     
     body = f"""
