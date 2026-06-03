@@ -164,5 +164,42 @@ class CopyShareLinkButtonContractTests(unittest.TestCase):
                 )
 
 
+class ReportPathMetaNotEscapedTests(unittest.TestCase):
+    """The verdict-header meta line on the *report* path must show a plain
+    score, not the provenance() <span> dumped as escaped text.
+
+    The score is wrapped in provenance() for the KPI block (trusted markup),
+    but the meta field of _cv_head / _ps_head is plain text and gets
+    html.escape()-d — so passing the span there printed a literal
+    "<SPAN DATA-PROVENANCE=…>" in the headline (CSS-uppercased). Regression
+    for both pages; the landing path (other test class) never had the score.
+    """
+
+    def test_covenant_report_meta_is_clean(self) -> None:
+        from rcm_mc.ui.covenant_lab_page import render_covenant_lab_page
+        html = render_covenant_lab_page({
+            "deal_name": ["Test"], "ebitda_y0": ["67500000"],
+            "total_debt_usd": ["350000000"],
+        })
+        self.assertIn("MAX BREACH PROB", html)
+        self.assertIsNone(re.search(r"MAX BREACH PROB\s*&lt;", html))
+        self.assertRegex(html, r"MAX BREACH PROB\s*\d")
+        self.assertIn("data-provenance=", html)  # tooltip survives on KPI
+        self.assertEqual(len(re.findall(r"<h1[ >]", html)), 1)
+
+    def test_payer_stress_report_meta_is_clean(self) -> None:
+        from rcm_mc.ui.payer_stress_page import render_payer_stress_page
+        html = render_payer_stress_page({
+            "target_name": ["Test"], "total_npr_usd": ["450000000"],
+            "total_ebitda_usd": ["67500000"],
+            "mix": ["Medicare, 40%\nCommercial, 45%\nMedicaid, 15%"],
+        })
+        self.assertIn("RISK SCORE", html)
+        self.assertIsNone(re.search(r"RISK SCORE\s*&lt;", html))
+        self.assertRegex(html, r"RISK SCORE\s*\d")
+        self.assertIn("data-provenance=", html)  # tooltip survives on KPI
+        self.assertEqual(len(re.findall(r"<h1[ >]", html)), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

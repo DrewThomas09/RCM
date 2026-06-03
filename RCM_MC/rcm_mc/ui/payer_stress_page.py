@@ -848,7 +848,7 @@ def _verdict_card(report: PayerStressReport) -> str:
         eyebrow=f"Payer Stress · {verdict}",
         title=html.escape(report.headline),
         meta=(
-            f"VERDICT {verdict} · RISK SCORE {risk_val} · "
+            f"VERDICT {verdict} · RISK SCORE {report.risk_score:.0f} · "
             f"{len(report.per_payer)} PAYER"
             f"{'S' if len(report.per_payer) != 1 else ''}"
         ),

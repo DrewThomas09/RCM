@@ -554,7 +554,7 @@ def _verdict_card(res: CovenantStressResult) -> str:
         eyebrow=f"Covenant Stress · {verdict}",
         title=html.escape(res.headline),
         meta=(
-            f"VERDICT {verdict} · MAX BREACH PROB {max_prob_val} · "
+            f"VERDICT {verdict} · MAX BREACH PROB {max_prob*100:.0f}% · "
             f"{res.n_paths:,} PATHS · EARLIEST 50% {early_label}"
         ),
         lede_italic_phrase=(
