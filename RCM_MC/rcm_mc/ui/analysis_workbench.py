@@ -40,7 +40,7 @@ from ..analysis.packet import (
 # Module-level import (not call-time) because the chip helper is used
 # on hot render paths (metric table, risk flags, diligence questions)
 # where a function-scope import would re-resolve on every row.
-from ._chartis_kit import ck_aggregate, ck_prediction_chip
+from ._chartis_kit import ck_aggregate, ck_json_for_script, ck_prediction_chip
 
 
 # ── Palette & CSS ────────────────────────────────────────────────────
@@ -1674,7 +1674,8 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
             f'<div class="slider-label">{_esc(imp.metric_key)}</div>'
             f'<input type="range" class="wb-slider" id="{slider_id}" '
             f'min="{lo}" max="{hi}" step="{step}" value="{imp.target_value}" '
-            f'data-current="{imp.current_value}" data-metric="{_esc(imp.metric_key)}">'
+            f'data-current="{imp.current_value}" data-target="{imp.target_value}" '
+            f'data-metric="{_esc(imp.metric_key)}">'
             f'<div class="slider-target" id="{slider_id}-val">{imp.target_value:.2f}</div>'
             f'<div class="slider-delta dim" id="{slider_id}-delta">—</div>'
             f'</div>'
@@ -1746,7 +1747,7 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
       <div class="wb-card">
         <div id="wb-bridge-summary">{summary_line}</div>
       </div>
-      <script id="wb-bridge-bootstrap" type="application/json">{_esc(bootstrap)}</script>
+      <script id="wb-bridge-bootstrap" type="application/json">{ck_json_for_script(bootstrap)}</script>
     </div>
     """
 
@@ -2850,10 +2851,29 @@ _WORKBENCH_JS = r"""
     });
   });
 
-  // Presets just trigger a recompute; caller UI would seed slider values
-  // (preset math not wired — placeholder so the button clicks are visible).
+  // Presets seed every slider to a fraction of the current→target
+  // value-creation gap, then let each slider's own input handler update the
+  // readout and recompute the waterfall. "Aggressive" underwrites the full
+  // modelled target; "Conservative"/"Moderate" capture a third / two-thirds
+  // of it; "Reset" returns every slider to its current (as-is) baseline.
+  // Direction is implicit in the target (e.g. a denial-rate target sits
+  // below current), so interpolating current→target moves each metric the
+  // correct way regardless of whether higher or lower is better.
+  function wbApplyPreset(name) {
+    const fracs = {conservative: 0.33, moderate: 0.67, aggressive: 1.0, reset: 0.0};
+    const frac = (name in fracs) ? fracs[name] : 0;
+    document.querySelectorAll('.analysis-workbench input.wb-slider').forEach(el => {
+      const cur = parseFloat(el.dataset.current);
+      const tgt = parseFloat(el.dataset.target);
+      if (isNaN(cur) || isNaN(tgt)) return;
+      // The range input snaps to step and clamps to min/max on assignment.
+      el.value = cur + frac * (tgt - cur);
+      // Reuse the slider's input handler (updates readout + debounced recompute).
+      el.dispatchEvent(new Event('input', {bubbles: true}));
+    });
+  }
   document.querySelectorAll('.analysis-workbench [data-preset]').forEach(btn => {
-    btn.addEventListener('click', () => { postBridge(); });
+    btn.addEventListener('click', () => { wbApplyPreset(btn.dataset.preset); });
   });
 
   // Scenarios tab — add-scenario form.
@@ -3210,7 +3230,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         '<div id="ep-body"></div>'
         '</div>'
         f'<script id="wb-explain-data" type="application/json">'
-        f'{_esc(explain_data)}</script>'
+        f'{ck_json_for_script(explain_data)}</script>'
     )
     next_up = ck_next_section(
         "Back to the deal profile",
