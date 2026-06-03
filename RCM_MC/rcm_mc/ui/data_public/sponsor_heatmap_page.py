@@ -191,14 +191,14 @@ def _heatmap_svg(cells, top_sponsors, leaders) -> str:
         y = label_t - 5
         elts.append(
             f'<text x="{x}" y="{y}" fill="{text_dim}" font-size="9" text-anchor="end" '
-            f'font-family="JetBrains Mono,monospace" transform="rotate(-45 {x} {y})">{_html.escape(sect[:22])}</text>'
+            f'font-family="JetBrains Mono,monospace" transform="rotate(-45 {x} {y})"><title>{_html.escape(sect)}</title>{_html.escape(sect if len(sect) <= 22 else sect[:21] + "…")}</text>'
         )
     # Row headers (sponsors)
     for i, sp in enumerate(top_sp_names):
         y = label_t + i * cell_h + cell_h * 0.7
         elts.append(
             f'<text x="{label_l - 8}" y="{y}" fill="{text_dim}" font-size="10" text-anchor="end" '
-            f'font-family="JetBrains Mono,monospace">{_html.escape(sp[:18])}</text>'
+            f'font-family="JetBrains Mono,monospace"><title>{_html.escape(sp)}</title>{_html.escape(sp if len(sp) <= 18 else sp[:17] + "…")}</text>'
         )
     # Cells
     for i, sp in enumerate(top_sp_names):

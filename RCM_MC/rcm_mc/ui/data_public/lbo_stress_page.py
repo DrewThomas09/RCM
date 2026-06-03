@@ -162,8 +162,12 @@ def _tornado_svg(items) -> str:
     elts.append(f'<line x1="{center_x:.1f}" y1="{pad_t}" x2="{center_x:.1f}" y2="{h - pad_b}" stroke="{text_dim}" stroke-width="1" stroke-dasharray="3,3"/>')
     for i, t in enumerate(sorted_items):
         y = pad_t + i * (bar_h + 4)
-        # Label
-        elts.append(f'<text x="{pad_l - 8}" y="{y + bar_h * 0.7}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(t.driver[:22])}</text>')
+        # Label — the 180px label gutter fits ~28 mono chars at 10px; the
+        # old [:22] cut full-fitting names mid-word with no ellipsis (e.g.
+        # "Operating Margin (EBIT"). Fit the gutter, ellipsis when longer,
+        # full driver name in a <title> for hover.
+        _drv_disp = t.driver if len(t.driver) <= 28 else t.driver[:27] + "…"
+        elts.append(f'<text x="{pad_l - 8}" y="{y + bar_h * 0.7}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace"><title>{_html.escape(t.driver)}</title>{_html.escape(_drv_disp)}</text>')
         # Downside bar
         down_swing = t.base_moic - t.downside_moic
         down_w = (down_swing / max_swing) * (inner_w / 2)

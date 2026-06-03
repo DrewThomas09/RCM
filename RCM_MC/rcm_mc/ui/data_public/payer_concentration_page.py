@@ -205,7 +205,7 @@ def _payer_share_svg(payers) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.85"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">{p.revenue_share_pct * 100:.1f}%</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="8" text-anchor="end" font-family="JetBrains Mono,monospace" transform="rotate(-35 {x + bar_w / 2} {h - pad_b + 14})">{_html.escape(p.payer_name[:22])}</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="8" text-anchor="end" font-family="JetBrains Mono,monospace" transform="rotate(-35 {x + bar_w / 2} {h - pad_b + 14})"><title>{_html.escape(p.payer_name)}</title>{_html.escape(p.payer_name if len(p.payer_name) <= 22 else p.payer_name[:21] + "…")}</text>'
         )
     return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
             f'<rect width="{w}" height="{h}" fill="{bg}"/>{"".join(bars)}'

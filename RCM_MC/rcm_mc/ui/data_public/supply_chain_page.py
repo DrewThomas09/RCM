@@ -22,7 +22,7 @@ def _spend_bars_svg(cats) -> str:
         bw = c.annual_spend_mm / max_v * inner_w
         color = var_colors.get(c.variance, text_dim)
         bars.append(
-            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.category[:26])}</text>'
+            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace"><title>{_html.escape(c.category)}</title>{_html.escape(c.category if len(c.category) <= 26 else c.category[:25] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">${c.annual_spend_mm:,.2f}M · {c.pct_of_revenue * 100:.1f}%</text>'
         )
@@ -48,7 +48,7 @@ def _savings_svg(levers) -> str:
         bw = l.annual_savings_mm / max_v * inner_w
         rc = risk_colors.get(l.risk, text_dim)
         bars.append(
-            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(l.lever[:35])}</text>'
+            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace"><title>{_html.escape(l.lever)}</title>{_html.escape(l.lever if len(l.lever) <= 35 else l.lever[:34] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">${l.annual_savings_mm:,.2f}M</text>'
             f'<text x="{w - 4}" y="{y + bh - 1}" fill="{rc}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{l.risk}</text>'
