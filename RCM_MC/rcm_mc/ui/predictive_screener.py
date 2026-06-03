@@ -16,7 +16,8 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section,
-    ck_page_title, ck_panel, ck_value_anchor, margin_is_plausible,
+    ck_page_title, ck_panel, ck_source_purpose, ck_value_anchor,
+    margin_is_plausible,
 )
 
 _EXPLAINER_CSS = """
@@ -485,8 +486,24 @@ transition:filter 120ms ease;}
         target=f"avg denial {avg_denial:.1%} · margin {avg_margin:.1%}",
         tone="teal",
     )
+    # Structured data-basis band (the platform-standard honesty marker the
+    # diligence-source-purpose guard enforces). The contrast callout below
+    # is complementary — it differentiates this from the Target Screener.
+    source_purpose = ck_source_purpose(
+        purpose="Rank the public hospital universe by MODELED RCM-improvement "
+        "upside (estimated denial rate, AR days, EBITDA uplift) to surface "
+        "candidates before spending diligence time.",
+        universe="cms",
+        confidence="illustrative",
+        source="CMS HCRIS public financials + quant-stack RCM model estimates "
+        "— modeled estimates from public data, NOT observed RCM performance; "
+        "confirm against a target's own data before underwriting.",
+        next_action="Compare a target on the Hospital / Target Screener",
+        next_href="/screen",
+    )
     body = (
-        ps_styles + title_block + contrast + explainer_html + lead_anchor + form
+        ps_styles + title_block + source_purpose + contrast + explainer_html
+        + lead_anchor + form
         + kpis + table + save_form + quick + next_up
     )
 
