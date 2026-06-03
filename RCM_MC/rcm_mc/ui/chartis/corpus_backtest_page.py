@@ -404,7 +404,9 @@ def _match_results_panel(results: List[Any]) -> str:
     matched = [r for r in results if getattr(r, "platform_deal_id", None)]
     for r in matched[:100]:
         corpus_name = _html.escape(str(getattr(r, "corpus_deal_name", "—")))
-        corpus_year = getattr(r, "corpus_year", "—")
+        # `or "—"` handles a present-but-None year (getattr's default only
+        # fires when the attribute is absent) so the cell never reads "None".
+        corpus_year = getattr(r, "corpus_year", None) or "—"
         real_moic = getattr(r, "corpus_realized_moic", None)
         pred_moic = getattr(r, "predicted_moic", None)
         err = getattr(r, "moic_error", None)

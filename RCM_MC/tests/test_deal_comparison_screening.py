@@ -177,6 +177,20 @@ class TestScreenPage(unittest.TestCase):
         self.assertIn("Acme", html)
         self.assertIn("TX", html)
 
+    def test_nan_revenue_row_renders_em_dash_not_nan(self):
+        # Some presets (e.g. undervalued) surface hospitals that report beds
+        # but no revenue (NaN). The revenue cell must be an em-dash, never
+        # "$nanM".
+        import re
+        html = render_screen_page([
+            {"name": "No-Revenue Med", "state": "WI", "ccn": "520087",
+             "beds": 260, "net_patient_revenue": float("nan"),
+             "operating_margin": 0.0},
+        ])
+        self.assertIn("No-Revenue Med", html)
+        self.assertEqual(re.findall(r"\$nan|nanM|nan%", html, re.I), [],
+                         "screener row must not render a formatted NaN")
+
 
 # ── Heatmap ───────────────────────────────────────────────────────
 
