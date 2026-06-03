@@ -266,6 +266,13 @@ def render_pe_intelligence_hub(
     current_user: Optional[str] = None,
 ) -> str:
     """Render the PE Intelligence Brain landing page."""
+    # Dynamic corpus count — a hardcoded "655 deals" went stale when the
+    # corpus was deduped; len(corpus) self-corrects.
+    try:
+        from ._helpers import load_corpus_deals
+        _corpus_n = len(load_corpus_deals())
+    except Exception:  # noqa: BLE001 — landing copy is best-effort
+        _corpus_n = 0
     title_block = _title(current_user)
     explainer_html = (
         '<p class="ck-pei-explainer">'
@@ -350,9 +357,9 @@ def render_pe_intelligence_hub(
         f'<span style="color:{P["accent"]};">Partner Review</span> '
         f'from the deal dashboard — that page links into every drill-down '
         f'below. Need historical comps first? Browse '
-        f'<a href="/library" style="color:{P["accent"]};">the corpus</a> '
-        f'(655 deals).'
-        f'</div></div>'
+        f'<a href="/library" style="color:{P["accent"]};">the corpus</a>'
+        + (f' ({_corpus_n} deals).' if _corpus_n else '.')
+        + f'</div></div>'
     )
 
     body = (
