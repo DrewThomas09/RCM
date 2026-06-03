@@ -87,7 +87,15 @@ APP_GRID_CSS = """
 }
 @media (max-width:768px){
   .cc-grid{grid-template-columns:1fr;grid-auto-rows:auto;}
-  .cc-grid>*{grid-column:1/-1 !important;grid-row:auto !important;min-height:140px;}
+  /* min-width:0 lets the single 1fr column actually shrink to the
+     viewport: grid items default to min-width:auto, so a card whose
+     content has a wide min-content size (a KPI hero, a chart) would
+     otherwise force the column — and the whole page — wider than the
+     screen (the prior ~856px blow-out at 375px). overflow-x:auto then
+     keeps any genuinely-wide card content scrolling INSIDE the card. */
+  .cc-grid>*{grid-column:1/-1 !important;grid-row:auto !important;min-height:140px;min-width:0;}
+  .cc-card{min-width:0;}
+  .cc-body{overflow-x:auto;}
 }
 /* Dossier card */
 .cc-card{position:relative;background:var(--cc-paper);border:1px solid var(--cc-rule);
