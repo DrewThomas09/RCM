@@ -23,8 +23,10 @@ _SECTORS = [
 # ---------------------------------------------------------------------------
 
 def _waterfall_svg(breakdowns, reported: float, adjusted: float) -> str:
-    W, H = 760, 220
-    pad_l, pad_r, pad_t, pad_b = 140, 20, 20, 40
+    W, H = 805, 220
+    # pad_l fits the right-anchored category labels (truncated to 28 chars,
+    # ~168px in 10px mono); 140 clipped "Owner Comp Normalization" etc.
+    pad_l, pad_r, pad_t, pad_b = 185, 20, 20, 40
     chart_w = W - pad_l - pad_r
     chart_h = H - pad_t - pad_b
 
