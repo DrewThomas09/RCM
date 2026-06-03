@@ -459,10 +459,16 @@ def render_screen_page(
             name = _esc(str(r.get("name", ""))[:45])
             state = _esc(str(r.get("state", "")))
             beds = r.get("beds", r.get("bed_count", 0))
+            _beds = int(beds) if (beds is not None and beds == beds) else 0
             rev = r.get("net_patient_revenue", r.get("revenue", r.get("net_revenue", 0)))
+            # NaN-/None-safe revenue cell — a filing with no reported revenue
+            # shows an em-dash, never "$nanM" (some presets, e.g. undervalued,
+            # surface hospitals that report beds but no revenue).
+            rev_cell = (f"${float(rev)/1e6:,.0f}M"
+                        if (rev is not None and rev == rev) else "&mdash;")
             rpb = r.get("rev_per_bed", 0) or 0
             margin = r.get("operating_margin", 0)
-            margin = float(margin) if margin else 0
+            margin = float(margin) if (margin and margin == margin) else 0
             if margin_is_plausible(margin):
                 margin_color = PALETTE["positive"] if margin > 0.05 else (
                     PALETTE["warning"] if margin > 0 else PALETTE["negative"])
@@ -481,8 +487,8 @@ def render_screen_page(
                 f'<tr>'
                 f'<td><a href="/hospital/{ccn}" style="font-weight:500;">{name}</a></td>'
                 f'<td>{state}</td>'
-                f'<td class="num">{int(beds):,}</td>'
-                f'<td class="num">${float(rev)/1e6:,.0f}M</td>'
+                f'<td class="num">{_beds:,}</td>'
+                f'<td class="num">{rev_cell}</td>'
                 f'<td class="num">{rpb_str}</td>'
                 f'{margin_cell}'
                 f'<td style="white-space:nowrap;">'
