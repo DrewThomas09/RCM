@@ -217,6 +217,12 @@ class UIRenderTests(unittest.TestCase):
             any(v in html for v in
                 ("PASS", "CAUTION", "WARNING", "FAIL")),
         )
+        # Single-h1 invariant on the RESULTS view: the verdict card head is
+        # a subhead (h2) under the page masthead — it used to render a 2nd h1.
+        import re
+        self.assertEqual(
+            len(re.findall(r"<h1[ >]", html)), 1,
+            "results view must keep exactly one <h1>")
 
     def test_empty_mix_shows_friendly_error(self):
         from rcm_mc.ui.payer_stress_page import render_payer_stress_page

@@ -307,6 +307,10 @@ def _verdict_card(report: BridgeAuditReport) -> str:
         ),
         lede_italic_phrase="What the sell-side bridge claims, audited.",
         lede_body=html.escape(report.rationale),
+        # The results page already carries the tool-name h1 (chartis_shell
+        # title); render the verdict headline as an h2 so the page keeps a
+        # single h1 (the platform's editorial-head invariant).
+        as_subhead=True,
     )
     badge = ck_signal_badge(verdict, tone=badge_tone)
     kpis = (

@@ -272,6 +272,12 @@ class UIRenderTests(unittest.TestCase):
         )
         self.assertIn("data-sortable", html)
         self.assertIn("data-export-json", html)
+        # Single-h1 invariant on the RESULTS view: the verdict card head is
+        # a subhead (h2) under the tool-name h1 — it used to render a 2nd h1.
+        import re
+        self.assertEqual(
+            len(re.findall(r"<h1[ >]", html)), 1,
+            "results view must keep exactly one <h1>")
 
 
 class HTTPEndpointTests(unittest.TestCase):
