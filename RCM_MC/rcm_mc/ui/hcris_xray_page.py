@@ -379,6 +379,9 @@ def _target_card(
             f"Federally-reported financials for "
             f"{html.escape(target.name)}, FY{target.fiscal_year}."
         ),
+        # Sits under the "HCRIS X-Ray" page masthead — render as a subhead
+        # so the page keeps a single <h1>.
+        as_subhead=True,
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -795,18 +798,28 @@ def _peer_table(peers: List[PeerMatch]) -> str:
     ]
     rows = []
     sort_keys = []
+
+    def _pf(v, spec, *, mul=1.0, suf="", dash="—"):
+        """Peer-cell formatter — NaN/None render as an em-dash, never 'nan'.
+        (A dataless peer was leaking a literal 'nan' into the Distance and
+        NPR columns.) ``v == v`` is False only for NaN."""
+        if v is None or v != v:
+            return dash
+        return format(v * mul, spec) + suf
+
     for p in peers:
         h = p.hospital
         # Color the op margin by band so analysts spot negative-margin
-        # peers instantly when scanning for comparables
+        # peers instantly when scanning for comparables. NaN sorts to neutral.
+        om = h.operating_margin_on_npr
         op_color = (
-            P["negative"] if h.operating_margin_on_npr < 0
-            else P["positive"] if h.operating_margin_on_npr > 0.08
+            P["negative"] if (om == om and om < 0)
+            else P["positive"] if (om == om and om > 0.08)
             else P["text_dim"]
         )
         op_cell = (
             f'<span style="color:{op_color};font-weight:700;">'
-            f'{h.operating_margin_on_npr*100:+.1f}%</span>'
+            f'{_pf(om, "+.1f", mul=100, suf="%")}</span>'
         )
         ccn_link = (
             f'<a href="/diligence/hcris-xray?ccn={html.escape(h.ccn)}" '
@@ -818,12 +831,14 @@ def _peer_table(peers: List[PeerMatch]) -> str:
             ccn_link,
             html.escape(h.name[:45]),
             h.state,
-            f"{h.beds:,}",
-            str(h.fiscal_year),
-            f"{h.medicare_day_pct*100:.1f}%",
+            _pf(h.beds, ",.0f"),
+            str(h.fiscal_year)
+            if (h.fiscal_year is not None and h.fiscal_year == h.fiscal_year)
+            else "—",
+            _pf(h.medicare_day_pct, ".1f", mul=100, suf="%"),
             op_cell,
-            f"{h.net_patient_revenue/1e6:,.1f}",
-            f"{p.distance:.3f}",
+            _pf(h.net_patient_revenue, ",.1f", mul=1 / 1e6),
+            _pf(p.distance, ".3f"),
             "✓" if p.same_state else "",
             "✓" if p.same_region else "",
         ])
@@ -1185,6 +1200,9 @@ def render_hcris_xray_page(
             f"{len(report.peers)} peers · {report.peer_filter_used} · "
             f"benchmarked on {len(report.metrics)} metrics."
         ),
+        # The peer-benchmark block sits below the page masthead + target card;
+        # render as a subhead so the page keeps a single <h1>.
+        as_subhead=True,
     )
     # A v2 · Headline: lead with the single most material real finding.
     top_finding = _xray_top_finding(report, top_under, top_over)
