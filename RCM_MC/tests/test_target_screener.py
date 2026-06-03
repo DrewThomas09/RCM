@@ -157,7 +157,7 @@ class WorkbenchShellTests(unittest.TestCase):
 
     # ── 2026-05-28 better-fitted redesign pins ──────────────────────
     # Stop the layout from quietly drifting back to 5+ stacked navy
-    # panels. The merged "Choose a universe & entry point" panel is
+    # panels. The merged "Choose a dataset & entry point" panel is
     # the load-bearing top-of-page surface; if it splinters back into
     # separate vertical-bar / Active-universe / modes panels, the
     # "jumbled" feedback the user described will return.
@@ -193,7 +193,11 @@ class WorkbenchShellTests(unittest.TestCase):
         sub_blocks = re.findall(r'<div class="ts-univ-block">', h)
         self.assertEqual(len(sub_blocks), 4,
                          f"expected 4 ts-univ-block sub-blocks, got {len(sub_blocks)}")
-        for lbl in ("Universe", "Active screen",
+        # "Dataset" (not "Universe"): #1423 deliberately de-jargoned the
+        # user-facing label — "universe" is PE/finance argot, "Dataset"
+        # reads plainly for the "Pick one of N public CMS provider
+        # screens" picker. Internal data-model keys stayed "universe".
+        for lbl in ("Dataset", "Active screen",
                     "Or start with a pre-set entry point",
                     "Map layer"):
             self.assertIn(f'class="ts-univ-lbl">{lbl}<', h, lbl)
