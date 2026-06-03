@@ -232,13 +232,28 @@ def shell(
     # callers that already emit their own h1 (e.g. via ck_page_title)
     # are detected and untouched, so this never produces a double-h1.
     # Skip when caller explicitly opts out via omit_h1=True.
+    #
+    # When we inject the h1 we also render the subtitle right below it:
+    # chartis_shell suppresses its standalone `subtitle=` once the body
+    # carries a title/h1 (the LP-update behavior), so passing it through
+    # would silently drop it. Rendering it inline here keeps it visible.
+    _subtitle_inline = False
     if not omit_h1 and "<h1" not in body:
+        _sub_block = (
+            f'<p class="ck-page-sub" '
+            f'style="font-family:var(--sc-sans,Inter Tight,sans-serif);'
+            f'font-size:13px;color:var(--sc-text-dim,#465366);'
+            f'margin:-4px 0 14px;">{_html.escape(subtitle)}</p>'
+            if subtitle else ""
+        )
+        _subtitle_inline = bool(_sub_block)
         body = (
             f'<h1 class="ck-page-h1" '
             f'style="font-family:Source Serif 4,Georgia,serif;'
             f'font-weight:600;font-size:28px;line-height:1.18;'
             f'color:var(--sc-ink,#1a2332);margin:0 0 12px;">'
             f'{_html.escape(title)}</h1>'
+            f'{_sub_block}'
         ) + body
     # Prepend the editorial overlay — it's a <style> block so order
     # doesn't matter, but conceptually it belongs above the body so
@@ -247,7 +262,9 @@ def shell(
     return chartis_shell(
         body,
         title,
-        subtitle=subtitle or "",
+        # Already rendered inline above (with the injected h1); don't
+        # also pass it here or chartis_shell would suppress/duplicate it.
+        subtitle="" if _subtitle_inline else (subtitle or ""),
         extra_css=extra_css,
         extra_js=extra_js,
         active_nav=active_nav,
