@@ -169,7 +169,7 @@ def _mv_vs_bv_svg(assets) -> str:
             f'<rect x="{x:.1f}" y="{y_b:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{text_dim}" opacity="0.85"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y_m - 4:.1f}" fill="{pos}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:700">${a.market_value_mm:.0f}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(a.asset_id)}</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(a.asset_type[:16])}</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(a.asset_type if len(a.asset_type) <= 16 else a.asset_type[:15] + "…")}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{a.cap_rate_implied * 100:.2f}% cap</text>'
         )
     legend = (

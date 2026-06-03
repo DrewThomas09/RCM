@@ -21,7 +21,7 @@ def _cohort_svg(cohorts) -> str:
         bw = c.turnover_12mo_pct / max_churn * inner_w
         color = sev_colors.get(c.severity, text_dim)
         bars.append(
-            f'<text x="{pad_l - 6}" y="{y + bh - 2}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.role[:22])}</text>'
+            f'<text x="{pad_l - 6}" y="{y + bh - 2}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.role if len(c.role) <= 22 else c.role[:21] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 2}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">{c.turnover_12mo_pct * 100:.1f}% · {c.expected_departures} dep.</text>'
         )
@@ -47,7 +47,7 @@ def _roi_svg(levers) -> str:
         bw = min(l.roi_multiple / max_v, 1) * inner_w
         pc = prio_colors.get(l.priority, text_dim)
         bars.append(
-            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(l.lever[:34])}</text>'
+            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(l.lever if len(l.lever) <= 34 else l.lever[:33] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">{l.roi_multiple:.1f}x</text>'
             f'<text x="{w - 4}" y="{y + bh - 1}" fill="{pc}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{l.priority}</text>'

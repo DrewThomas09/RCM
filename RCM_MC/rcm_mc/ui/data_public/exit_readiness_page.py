@@ -61,7 +61,7 @@ def _spider_svg(dimensions) -> str:
         ly = cy + (r_max + 18) * math.sin(a) + 3
         dots_labels.append(
             f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(d.dimension[:11])}</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(d.dimension if len(d.dimension) <= 11 else d.dimension[:10] + "…")}</text>'
             f'<text x="{lx:.1f}" y="{ly + 12:.1f}" fill="{P["text"]}" font-size="10" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">{d.score:.0f}</text>'
         )

@@ -25,7 +25,7 @@ def _scenario_bars_svg(scenarios, entry_equity: float) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.85"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{P["text_dim"]}" font-size="12" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">{s.equity_moic:.2f}x</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario[:18])}</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario if len(s.scenario) <= 18 else s.scenario[:17] + "…")}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 28}" fill="{P["positive"]}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">IRR {s.equity_irr * 100:.1f}%</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 40}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{s.boltons_acquired} bolt-on(s)</text>'
         )

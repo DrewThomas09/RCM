@@ -54,7 +54,7 @@ def _mix_bar_svg(start_mix, target_mix) -> str:
         ly = h - 5
         legend += (
             f'<rect x="{lx}" y="{ly - 9}" width="8" height="8" fill="{colors[i % len(colors)]}" opacity="0.85"/>'
-            f'<text x="{lx + 12}" y="{ly - 2}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">{_html.escape(m.payer[:10])}</text>'
+            f'<text x="{lx + 12}" y="{ly - 2}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">{_html.escape(m.payer if len(m.payer) <= 10 else m.payer[:9] + "…")}</text>'
         )
 
     return (
@@ -90,7 +90,7 @@ def _scenario_svg(scenarios) -> str:
         xr = center_x if s.ev_impact_mm >= 0 else center_x - bw
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh / 2 + 3}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(s.label[:26])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(s.label if len(s.label) <= 26 else s.label[:25] + "…")}</text>'
             f'<rect x="{xr:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.85"/>'
             f'<text x="{xr + bw + 4 if s.ev_impact_mm >= 0 else xr - 4:.1f}" y="{y + bh / 2 + 3}" fill="{color}" '
             f'font-size="10" text-anchor="{"start" if s.ev_impact_mm >= 0 else "end"}" '

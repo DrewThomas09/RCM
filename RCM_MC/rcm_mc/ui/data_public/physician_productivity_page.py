@@ -53,7 +53,7 @@ def _benchmark_svg(benchmarks) -> str:
 
         bars.append(
             f'<text x="{pad_l - 8}" y="{y + 5}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(b.specialty[:20])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(b.specialty if len(b.specialty) <= 20 else b.specialty[:19] + "…")}</text>'
             # Range bar (P25-P75)
             f'<rect x="{x25:.1f}" y="{y}" width="{(x75 - x25):.1f}" height="8" fill="{P["border_dim"]}" stroke="{border}"/>'
             # Median tick

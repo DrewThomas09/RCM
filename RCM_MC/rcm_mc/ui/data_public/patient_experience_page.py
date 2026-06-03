@@ -59,7 +59,7 @@ def _review_stars_svg(reviews) -> str:
         bw = r.avg_rating / 5.0 * inner_w
         color = P["positive"] if r.avg_rating >= 4.5 else (P["accent"] if r.avg_rating >= 4.0 else P["warning"])
         bars.append(
-            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(r.platform[:22])}</text>'
+            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(r.platform if len(r.platform) <= 22 else r.platform[:21] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">{r.avg_rating:.2f} ({r.volume_total:,} rev)</text>'
         )

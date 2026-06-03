@@ -77,7 +77,7 @@ def _timeline_svg(milestones) -> str:
             f'<line x1="{pad_l}" y1="{y:.1f}" x2="{x:.1f}" y2="{y:.1f}" stroke="{border}" stroke-width="1"/>'
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="{color}"/>'
             f'<text x="{x + 8:.1f}" y="{y + 3:.1f}" fill="{P["text_dim"]}" font-size="9" '
-            f'font-family="JetBrains Mono,monospace">{_html.escape(m.milestone[:36])}</text>'
+            f'font-family="JetBrains Mono,monospace">{_html.escape(m.milestone if len(m.milestone) <= 36 else m.milestone[:35] + "…")}</text>'
             f'<text x="{x + 8:.1f}" y="{y + 14:.1f}" fill="{color}" font-size="8" '
             f'font-family="JetBrains Mono,monospace">{_html.escape(m.status)}</text>'
         )

@@ -209,7 +209,7 @@ def _time_series_svg(
             lx, ly = pts[-1]
             lines.append(
                 f'<text x="{lx+5}" y="{ly+4}" font-size="8" fill="{color}" '
-                f'font-family="Inter,sans-serif">{_html.escape(ts.sector[:12])}</text>'
+                f'font-family="Inter,sans-serif">{_html.escape(ts.sector if len(ts.sector) <= 12 else ts.sector[:11] + "…")}</text>'
             )
 
     lines.append("</svg>")

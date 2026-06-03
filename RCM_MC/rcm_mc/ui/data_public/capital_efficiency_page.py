@@ -97,7 +97,7 @@ def _bar_chart_svg(
             f'<text x="{ml - 4}" y="{y + bar_h//2 + 4}" '
             f'text-anchor="end" font-size="9" fill="{P["text_dim"]}" '
             f'font-family="Inter,sans-serif">'
-            f'{_html.escape(str(d.label)[:18])}</text>'
+            f'{_html.escape(str(d.label) if len(str(d.label)) <= 18 else str(d.label)[:17] + "…")}</text>'
         )
         label = format(v, fmt) + ("×" if "moic" in value_key.lower() else "")
         lines.append(

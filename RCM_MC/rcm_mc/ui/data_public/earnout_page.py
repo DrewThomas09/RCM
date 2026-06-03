@@ -35,7 +35,7 @@ def _milestone_waterfall_svg(milestones) -> str:
         full_w = m.max_payout_mm / max_v * max_w
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 2}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(m.milestone[:28])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(m.milestone if len(m.milestone) <= 28 else m.milestone[:27] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{full_w:.1f}" height="{bh}" fill="{warn}" opacity="0.35"/>'
             f'<rect x="{pad_l}" y="{y}" width="{exp_w:.1f}" height="{bh}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{pad_l + full_w + 4:.1f}" y="{y + bh - 2}" fill="{P["text_dim"]}" font-size="9" '
@@ -86,7 +86,7 @@ def _scenario_dist_svg(scenarios) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{P["text_dim"]}" font-size="10" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${s.total_consideration_mm:,.0f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario[:12])}</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario if len(s.scenario) <= 12 else s.scenario[:11] + "…")}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{pos}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">{s.probability * 100:.0f}% prob</text>'
         )

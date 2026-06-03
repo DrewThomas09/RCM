@@ -146,7 +146,7 @@ def _sector_coverage_svg(by_sector: dict) -> str:
         y = pad_t + i * row_h
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bar_h - 1}" fill="{text_dim}" font-size="9" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(sector[:24])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(sector if len(sector) <= 24 else sector[:23] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw}" height="{bar_h}" fill="{acc}" opacity="0.7"/>'
             f'<text x="{pad_l + bw + 4}" y="{y + bar_h - 1}" fill="{text_faint}" font-size="9" '
             f'font-family="JetBrains Mono,monospace">{count}</text>'
