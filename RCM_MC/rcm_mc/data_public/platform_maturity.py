@@ -93,7 +93,7 @@ def _build_dimensions() -> List[MaturityDimension]:
         ("Revenue Predictability (Recurring %)", 78, 85, 72, 65, "Strong, but 12% long-tail churn in smaller contracts"),
         ("Management Team Depth", 72, 85, 75, 68, "CFO transitioning; COO solid; need Chief Legal Officer"),
         ("Customer/Payer Concentration", 68, 85, 70, 65, "Top payer at 22% — below risk threshold but monitoring"),
-        ("Data &amp; Tech Infrastructure", 82, 90, 78, 72, "Consolidated EHR complete; analytics platform ramping"),
+        ("Data & Tech Infrastructure", 82, 90, 78, 72, "Consolidated EHR complete; analytics platform ramping"),
         ("Compliance / Legal", 85, 92, 85, 80, "Clean audit trail; no active DOJ/OIG matters"),
         ("Clinical Quality Metrics", 78, 85, 78, 72, "Top-quartile on 6 of 8 HEDIS measures"),
         ("ESG / Impact Narrative", 65, 80, 70, 60, "SDOH reporting in progress; no greenwashing exposure"),

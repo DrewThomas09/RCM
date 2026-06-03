@@ -358,7 +358,7 @@ def render_ref_pricing(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     page_title = ck_page_title(
-        "Reference Pricing &amp; Payer Contract Analyzer",
+        "Reference Pricing & Payer Contract Analyzer",
         eyebrow="REF PRICING",
         meta=f"""CPT-level rate benchmarking vs Medicare / Commercial P50 / P75, contract calendar, uplift scenarios — {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )
