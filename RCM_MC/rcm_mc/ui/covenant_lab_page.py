@@ -61,6 +61,10 @@ _CV_HEAD_CSS = """
   background:var(--green-deep,#154e36);}
 .cv-head h1{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
   letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+/* Verdict-card subhead (as_subhead): smaller than the page heading so the
+   results view reads page-title then verdict, keeping one page heading. */
+.cv-head h2{font:400 27px/1.1 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.01em;color:var(--ink,#16263a);margin:0 0 12px;}
 .cv-head .meta{font:500 11px/1 var(--sc-mono,monospace);
   letter-spacing:.14em;text-transform:uppercase;
   color:var(--muted,#7a8595);margin:0 0 18px;}
@@ -135,8 +139,13 @@ def _cv_head(
     lede_italic_phrase: str,
     lede_body: str,
     actions_html: str = "",
+    as_subhead: bool = False,
 ) -> str:
     """Strict Tier-1 5-block head for a covenant-lab render path.
+
+    ``as_subhead`` renders the title as an ``<h2>`` (subhead size) — used by
+    the verdict card on the results view, which sits under the page
+    masthead, so the page keeps a single ``<h1>`` (editorial-head invariant).
 
     ``actions_html`` is optional extra HTML for the right-side actions
     column (Copy share link, Open in IC memo, etc.). Use the
@@ -147,6 +156,7 @@ def _cv_head(
         f'<div class="head-actions">{actions_html}</div>'
         if actions_html else ""
     )
+    _tag = "h2" if as_subhead else "h1"
     return (
         _CV_HEAD_CSS
         + '<header class="cv-head">'
@@ -154,7 +164,7 @@ def _cv_head(
         '<div class="head-left">'
         f'<div class="eyebrow"><span class="dash"></span>'
         f'{html.escape(eyebrow)}</div>'
-        f'<h1>{title}</h1>'
+        f'<{_tag}>{title}</{_tag}>'
         f'<div class="meta">{html.escape(meta)}</div>'
         f'<p class="lede"><em>{html.escape(lede_italic_phrase)}</em> '
         f'{lede_body}</p>'
@@ -552,6 +562,9 @@ def _verdict_card(res: CovenantStressResult) -> str:
         ),
         lede_body=html.escape(res.rationale),
         actions_html=actions_html,
+        # Verdict card sits under the page masthead on the results view —
+        # render as a subhead (h2) so the page keeps a single <h1>.
+        as_subhead=True,
     )
     badge = ck_signal_badge(verdict, tone=badge_tone)
     kpis = (
