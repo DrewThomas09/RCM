@@ -95,7 +95,7 @@ body.wizard { margin:0; padding:0; background:#0F1C2E; color:#0F1C2E;
   text-decoration:none; font-weight:600; }
 .wizard .skip-link:focus { top:16px; }
 .wizard .wrap { max-width:960px; margin:0 auto; padding:32px 24px; }
-.wizard .steps { display:flex; gap:6px; margin-bottom:24px;
+.wizard .steps { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px;
   font-size: 11px; text-transform:uppercase; letter-spacing:.08em; }
 .wizard .steps .step { padding:6px 12px; border:1px solid #D6CFC0;
   border-radius:3px; color:#8A92A0; }
