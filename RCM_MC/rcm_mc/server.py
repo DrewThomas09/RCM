@@ -7900,14 +7900,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                 df["operating_margin"] = _np_scr.where(r > 1e5, (r - o) / r, 0)
                 df["operating_margin"] = df["operating_margin"].clip(-1, 1)
 
+            # Beds bounds require a KNOWN bed count: a filing that didn't
+            # report beds is not a "≥50" or "≤200" match. Pre-fix the
+            # fillna(0) let NaN-beds filings slip through a max-only bound
+            # (the small_efficient preset bounds only max_beds), and they
+            # then crashed int(NaN) at row-build below → a 500 on
+            # /screen?preset=small_efficient.
             if filters.get("min_beds"):
                 try:
-                    df = df[df["beds"].fillna(0) >= float(filters["min_beds"])]
+                    df = df[df["beds"].notna() & (df["beds"] >= float(filters["min_beds"]))]
                 except ValueError:
                     pass
             if filters.get("max_beds"):
                 try:
-                    df = df[df["beds"].fillna(0) <= float(filters["max_beds"])]
+                    df = df[df["beds"].notna() & (df["beds"] <= float(filters["max_beds"]))]
                 except ValueError:
                     pass
             if filters.get("min_revenue"):
@@ -7958,7 +7964,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 sort_key = "revenue"
                 df = df.sort_values(rev_col, ascending=False, na_position="last")
             filters["sort"] = sort_key
-            df = df.head(50)
+            df = df.head(50).copy()
+            # Defensive: a NaN-beds filing only reaches here on a screen with
+            # no beds bound (a custom margin/revenue-only filter); coerce so
+            # int() below can never raise the way it did for small_efficient.
+            if "beds" in df.columns:
+                df["beds"] = df["beds"].fillna(0)
             results = []
             for _, row in df.iterrows():
                 results.append({
