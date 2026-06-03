@@ -465,6 +465,34 @@ ck_fmt_num = ck_fmt_number
 ck_fmt_pct = ck_fmt_percent
 
 
+def ck_json_for_script(obj: Any) -> str:
+    """Serialise ``obj`` for embedding inside a ``<script>`` element.
+
+    A ``<script>`` is an HTML *raw-text* element: the parser does NOT
+    decode character references in its content. So ``html.escape()``-ing
+    a JSON blob leaves literal ``&quot;`` in the text, and the browser's
+    ``JSON.parse(el.textContent)`` throws ``SyntaxError`` — which silently
+    aborts any bootstrap IIFE that reads it. This exact mistake had killed
+    the analysis-workbench bridge sliders + explain panel (the IIFE
+    ``return``-ed on the failed parse, so nothing past it ever bound).
+
+    The fix is to ``json.dumps`` normally and escape ONLY the characters
+    that could terminate the element (``<`` → ``</script>``) or split the
+    JS source (U+2028/U+2029); ``JSON.parse`` decodes the ``\\uXXXX`` back.
+    Mirrors Django's ``json_script`` escape set. ``obj`` may already be a
+    JSON string (passed straight through ``json.dumps``-of-a-str would
+    double-encode), so accept both: strings are treated as pre-serialised.
+    """
+    text = obj if isinstance(obj, str) else json.dumps(obj, default=str)
+    return (
+        text.replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026")
+            .replace(" ", "\\u2028")
+            .replace(" ", "\\u2029")
+    )
+
+
 # ---------------------------------------------------------------------------
 # Panel primitives
 # ---------------------------------------------------------------------------

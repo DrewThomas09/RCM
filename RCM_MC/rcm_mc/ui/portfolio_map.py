@@ -136,7 +136,8 @@ def render_portfolio_map(
 ) -> str:
     """Full-page HTML with the editorial dossier portfolio map (handoff)."""
     from ._chartis_kit import (chartis_shell, ck_data_universe,
-                               ck_next_section, ck_page_title)
+                               ck_json_for_script, ck_next_section,
+                               ck_page_title)
     from .us_map import STATE_NAMES
     from .us_geo_map import render_us_geo_map
 
@@ -283,7 +284,10 @@ def render_portfolio_map(
         "counts": state_counts,
         "deals": state_deals,
     }
-    data_json = json.dumps(pm_data, separators=(",", ":"))
+    # Script-safe so a hospital name containing "</script>" can't break out
+    # of the embed; ck_json_for_script also keeps JSON.parse working (plain
+    # html.escape would corrupt it — see the helper's docstring).
+    data_json = ck_json_for_script(json.dumps(pm_data, separators=(",", ":")))
 
     grid = (
         '<div class="ck-pm-grid">'

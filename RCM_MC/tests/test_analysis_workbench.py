@@ -292,7 +292,6 @@ class TestSliderJS(unittest.TestCase):
         self.assertIn("classList.toggle('active'", html)
 
     def test_bridge_bootstrap_payload_is_valid_json(self):
-        import html as _html
         import json as _json
         page = render_workbench(_full_packet())
         # Extract the script block's inner text.
@@ -301,7 +300,15 @@ class TestSliderJS(unittest.TestCase):
             page, re.DOTALL,
         )
         self.assertIsNotNone(m)
-        raw = _html.unescape(m.group(1))
+        raw = m.group(1)
+        # Regression: parse the RAW content with NO html.unescape — a
+        # <script> is a raw-text element, so the browser feeds exactly this
+        # bytes-as-text to JSON.parse(el.textContent). html.escape()-ing the
+        # blob leaves literal &quot; that JSON.parse chokes on, which had
+        # silently aborted the whole bridge IIFE (dead sliders + presets).
+        # An earlier version of this test called html.unescape() first and so
+        # never caught it. Mirror the browser: load the raw text directly.
+        self.assertNotIn("&quot;", raw)
         payload = _json.loads(raw)
         self.assertEqual(payload["deal_id"], "acme")
         self.assertEqual(len(payload["assumptions"]), 2)
@@ -310,6 +317,41 @@ class TestSliderJS(unittest.TestCase):
         self.assertIn("metric", first)
         self.assertIn("current", first)
         self.assertIn("target", first)
+
+    def test_explain_data_payload_is_valid_json(self):
+        """The explain-panel blob is read the same way (JSON.parse of a
+        <script> textContent), so it must survive the raw-text round-trip
+        too — same root cause that broke the bridge bootstrap."""
+        import json as _json
+        page = render_workbench(_full_packet())
+        m = re.search(
+            r'<script id="wb-explain-data"[^>]*>(.*?)</script>',
+            page, re.DOTALL,
+        )
+        self.assertIsNotNone(m)
+        raw = m.group(1)
+        self.assertNotIn("&quot;", raw)
+        _json.loads(raw)  # must not raise
+
+    def test_bridge_presets_seed_sliders(self):
+        """Conservative/Moderate/Aggressive/Reset must actually move the
+        sliders, not just recompute the current values. Each slider carries
+        data-target (== its initial value) and data-current, and the JS reads
+        dataset.target so the presets interpolate current→target. Guards the
+        regression where every preset just called postBridge() (a no-op)."""
+        page = render_workbench(_full_packet())
+        # All four preset buttons present.
+        for name in ("conservative", "moderate", "aggressive", "reset"):
+            self.assertIn(f'data-preset="{name}"', page)
+        # Every slider exposes both endpoints of the interpolation.
+        sliders = re.findall(r'<input type="range" class="wb-slider"[^>]*>', page)
+        self.assertEqual(len(sliders), 2)
+        for s in sliders:
+            self.assertRegex(s, r'data-current="[-0-9.]+"')
+            self.assertRegex(s, r'data-target="[-0-9.]+"')
+        # The wiring must read dataset.target (not be a bare recompute).
+        self.assertIn("wbApplyPreset", page)
+        self.assertIn("dataset.target", page)
 
 
 # ── End-to-end via the builder ──────────────────────────────────────
