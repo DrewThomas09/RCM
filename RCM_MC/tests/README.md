@@ -1,6 +1,6 @@
 # tests/
 
-Test suite for the RCM-MC / PE Desk platform. **339 files** — mostly 1:1 test-per-feature with the rest being numbered regression tests + end-to-end integration tests.
+Test suite for the RCM-MC / PE Desk platform. **895 files** — mostly 1:1 test-per-feature with the rest being numbered regression tests + end-to-end integration tests.
 
 ## Running
 
@@ -18,19 +18,18 @@ Test suite for the RCM-MC / PE Desk platform. **339 files** — mostly 1:1 test-
     tests/test_thesis_pipeline.py -q
 ```
 
-Expected: ~2,970+ passing.
+Expected: ~14,500 tests, almost all passing locally. A few need optional services (Ollama for the Guide's RAG, network for the live CMS/NPPES API clients) and will skip or fail without them; CI runs a core subset on every push.
 
 ## File naming patterns
 
 | Pattern | Count | Description |
 |---------|-------|-------------|
-| `test_<feature>.py` | 310 | One file per backend feature/module |
-| `test_bug_fixes_b<N>.py` | 15 | **Numbered regression tests** — B146 through B162. Filename doubles as bug ticket reference. |
+| `test_<feature>.py` | 855 | One file per backend feature/module |
+| `test_bug_fixes_b<N>.py` | 22 | **Numbered regression tests** — B146 through B169. Filename doubles as bug ticket reference. |
+| `test_cms_*.py` | 11 | CMS pipeline integration |
+| `test_ui_*.py` | 4 | UI-specific integration |
+| `test_api_*.py` | 2 | API contract |
 | `test_integration_*.py` | 1 | **End-to-end** via real HTTP server on a free port |
-| `test_ui_*.py` | 2 | UI-specific integration |
-| `test_api_*.py` | 1 | API contract |
-| `test_pe_intelligence_*.py` | 1 | Partner-brain integration |
-| `test_cms_*.py` | 1 | CMS pipeline integration |
 | `conftest.py` | 1 | Shared pytest fixtures |
 
 ## Conventions (enforced)

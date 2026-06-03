@@ -517,11 +517,19 @@ def _kpi_strip(store: Any, db_path: str) -> str:
         ),
         inject_css=False,
     )
+    # PE-Intel module count derived live (shared helper) — a hardcoded "278"
+    # had already drifted to 277 and would keep drifting as the brain grows.
+    try:
+        from .pe_intelligence_hub_page import _brain_facts
+        _n_mod = _brain_facts()[0]
+    except Exception:  # noqa: BLE001 — landing copy is best-effort
+        _n_mod = 0
     tiles = (
         ck_kpi_block("Active Deals", deals_value, "in portfolio")
         + ck_kpi_block("Unacked Alerts", alerts_value, "across portfolio")
         + ck_kpi_block("Corpus Deals", corpus_value, "benchmarkable comps")
-        + ck_kpi_block("PE Intel Modules", "278", "partner reflexes codified")
+        + (ck_kpi_block("PE Intel Modules", f"{_n_mod:,}", "across the brain package")
+           if _n_mod else "")
     )
     return f'<div class="ck-kpi-grid">{tiles}</div>'
 

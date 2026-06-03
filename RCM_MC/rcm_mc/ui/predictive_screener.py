@@ -293,9 +293,12 @@ def render_predictive_screener(
         "Predictive Deal Scanner", eyebrow="PREDICTIVE · MODELED RCM UPLIFT",
         meta=f"{total_matches:,} matches · {len(hcris_df):,} hospitals in universe",
     )
-    # Replaces the old CMS "source/purpose" bubble: a tight contrast callout
-    # that says how this differs from the Target Screener (the user's question)
-    # and folds in the model-estimate caveat without the bulky box.
+    # A tight contrast callout that says how this differs from the Target
+    # Screener (the user's question) and keeps the model-estimate caveat
+    # (pinned by test_contrast_callout_explains_difference). The standard
+    # ck_source_purpose band above (source_purpose) carries the same caveat
+    # for the diligence-source guard; the brief echo here is deliberate —
+    # the honesty note should survive even if a reader skims past the band.
     contrast = (
         '<div class="ck-ps-contrast">'
         '<b>How this differs from the Target Screener.</b> '
