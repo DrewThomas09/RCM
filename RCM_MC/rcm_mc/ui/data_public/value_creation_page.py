@@ -29,7 +29,10 @@ _LEVER_COLORS = {
 
 def _bridge_svg(r) -> str:
     W, H = 760, 160
-    pad_l, pad_r, pad_t, pad_b = 50, 60, 20, 40
+    # pad_l holds the (left, end-anchored) lever names — "Organic Revenue
+    # Growth", "Debt Paydown / Deleveraging", etc. (up to 22 chars ≈ 135px).
+    # At pad_l=50 they ran ~135px off the left edge.
+    pad_l, pad_r, pad_t, pad_b = 170, 60, 20, 40
     chart_w = W - pad_l - pad_r
     chart_h = H - pad_t - pad_b
 

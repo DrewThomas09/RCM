@@ -13,7 +13,9 @@ def _share_landscape_svg(competitors, our_share: float) -> str:
     if not competitors:
         return ""
     w, h = 540, max(180, len(competitors) * 28 + 70)
-    pad_l, pad_r, pad_t = 200, 80, 40
+    # pad_r holds the "X.X% · <tier>" label trailing the longest share bar;
+    # at pad_r=80 the longest ("· Strategic") clipped the right edge.
+    pad_l, pad_r, pad_t = 200, 106, 40
     inner_w = w - pad_l - pad_r
     row_h = 24
 

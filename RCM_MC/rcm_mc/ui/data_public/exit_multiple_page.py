@@ -30,7 +30,9 @@ _SCENARIO_COLORS = {
 
 def _scenario_chart_svg(scenarios, entry_multiple: float) -> str:
     W, H = 700, 160
-    pad_l, pad_r, pad_t, pad_b = 50, 120, 20, 40
+    # pad_l holds the (left, end-anchored) scenario names — "Strategic Exit",
+    # "Secondary Buyout", etc.; at pad_l=50 they ran off the left edge.
+    pad_l, pad_r, pad_t, pad_b = 150, 120, 20, 40
     chart_w = W - pad_l - pad_r
     chart_h = H - pad_t - pad_b
 
