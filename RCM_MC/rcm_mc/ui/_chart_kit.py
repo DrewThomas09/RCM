@@ -57,6 +57,16 @@ def _tone_hex(tone: Optional[str]) -> str:
     return _TONE.get(tone or "teal", _TEAL)
 
 
+def _trunc(s: object, n: int) -> str:
+    """Truncate a chart axis/legend label with an ellipsis so a clipped
+    label READS as clipped ("Operating Margin (EBITDA…") instead of
+    silently losing characters mid-word ("Operating Margin (EBIT") — the
+    latter looks like the real label and misleads. Callers pair this with a
+    <title> carrying the full text for hover recovery."""
+    s = str(s)
+    return s if len(s) <= n else s[:n - 1].rstrip() + "…"
+
+
 def _compact(v: float) -> str:
     """Axis/value tick formatter — compact, partner-readable."""
     a = abs(v)
@@ -248,7 +258,7 @@ def ck_hbar_chart(
         parts.append(
             f'<text x="{L - 7:.1f}" y="{cy + 3.5:.1f}" text-anchor="end" '
             f'font-family="{_MONO}" font-size="10.5" fill="{_DIM}">'
-            f'{_html.escape(label[:22])}</text>'
+            f'{_html.escape(_trunc(label, 22))}</text>'
         )
         parts.append(
             f'<text x="{L + w + 5:.1f}" y="{cy + 3.5:.1f}" font-family="{_MONO}" '
@@ -363,7 +373,8 @@ def ck_grouped_bar(
         )
         parts.append(
             f'<text x="{lx + 13:.1f}" y="22" font-family="{_MONO}" font-size="10" '
-            f'fill="{_DIM}">{_html.escape(name[:16])}</text>'
+            f'fill="{_DIM}"><title>{_html.escape(name)}</title>'
+            f'{_html.escape(_trunc(name, 16))}</text>'
         )
         lx += 22 + min(16, len(name)) * 6.2
     parts.append("</svg>")
@@ -432,7 +443,7 @@ def ck_diverging_bar(
         parts.append(
             f'<text x="{L - 8:.1f}" y="{cy + 3.5:.1f}" text-anchor="end" '
             f'font-family="{_MONO}" font-size="10.5" fill="{_DIM}">'
-            f'{_html.escape(label[:22])}</text>'
+            f'{_html.escape(_trunc(label, 22))}</text>'
         )
         vx = (bx + w + 5) if val >= 0 else (bx - 5)
         anchor = "start" if val >= 0 else "end"
