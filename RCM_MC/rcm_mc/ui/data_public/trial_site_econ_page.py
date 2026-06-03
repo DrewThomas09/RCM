@@ -268,7 +268,7 @@ def render_trial_site_econ(params: dict = None) -> str:
     page_title = ck_page_title(
         "Clinical Trial Site Economics",
         eyebrow="TRIAL SITE ECON",
-        meta=f"""Site-level P&amp;L · therapeutic area mix · phase economics · sponsor relationship · cost structure — {r.corpus_deal_count:,} corpus deals""",
+        meta=f"""Site-level P&L · therapeutic area mix · phase economics · sponsor relationship · cost structure — {r.corpus_deal_count:,} corpus deals""",
     )
     
     body = f"""

@@ -277,7 +277,7 @@ def render_mgmt_comp(params: dict = None) -> str:
     page_title = ck_page_title(
         "Management Compensation Analyzer",
         eyebrow="MGMT COMP",
-        meta=f"""Rollover equity, options, MIP economics &amp; sponsor alignment — {r.size_bucket} deal — {r.corpus_deal_count:,} corpus deals""",
+        meta=f"""Rollover equity, options, MIP economics & sponsor alignment — {r.size_bucket} deal — {r.corpus_deal_count:,} corpus deals""",
     )
     
     body = f"""
