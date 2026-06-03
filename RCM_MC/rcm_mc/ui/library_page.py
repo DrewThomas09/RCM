@@ -2,7 +2,7 @@
 
 Central hub for PE diligence frameworks, benchmark data, model
 documentation, and methodology references. Served at /methodology.
-The legacy /library route now surfaces the 655-deal corpus.
+The legacy /library route now surfaces the deal corpus.
 """
 from __future__ import annotations
 

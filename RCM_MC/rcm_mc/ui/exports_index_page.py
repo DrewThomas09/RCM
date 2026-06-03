@@ -46,7 +46,7 @@ _DATA_EXPORTS: List[Tuple[str, str, str]] = [
      "Ranked table of healthcare PE sponsors by realized corpus MOIC."),
     ("Corpus dashboard",
      "/corpus-dashboard",
-     "Executive summary of the 635+ deal corpus — browsable tables."),
+     "Executive summary of the deal corpus — browsable tables."),
     ("Deal search",
      "/deal-search",
      "Full-text search across every corpus deal — browser-side filters."),

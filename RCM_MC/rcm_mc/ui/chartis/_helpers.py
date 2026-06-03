@@ -225,7 +225,12 @@ def flat_get(obj: Any, *keys: str, default: Any = None) -> Any:
 
 
 def load_corpus_deals() -> List[Dict[str, Any]]:
-    """Return the full 655-deal seed corpus (35 base + 620 extended).
+    """Return the full seed corpus (35 base + extended batches).
+
+    Real deals with modeled financials, deduplicated of repeat entries
+    (the same deal had been entered across multiple batches; see
+    tests/test_corpus_no_exact_duplicates.py). Prefer ``len(...)`` over a
+    hardcoded count — it drifts as batches and dedup change.
 
     Mirrors the loader in ``ui/data_public/deals_library_page.py`` —
     kept here so every chartis portfolio-level page can call it
