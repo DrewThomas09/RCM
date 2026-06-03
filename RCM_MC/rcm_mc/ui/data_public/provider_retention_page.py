@@ -9,7 +9,9 @@ def _cohort_svg(cohorts) -> str:
     if not cohorts: return ""
     w = 540; row_h = 30
     h = len(cohorts) * row_h + 30
-    pad_l = 190; pad_r = 90
+    # pad_r reserves room for the "XX.X% · XX dep." label trailing the
+    # longest bar; at 90 it clipped a few px off the right edge.
+    pad_l = 190; pad_r = 110
     inner_w = w - pad_l - pad_r
     max_churn = max(c.turnover_12mo_pct for c in cohorts) or 1
     bg = P["panel"]; text_dim = P["text_dim"]; text_faint = P["text_faint"]

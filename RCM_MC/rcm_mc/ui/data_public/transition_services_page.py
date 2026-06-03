@@ -73,12 +73,18 @@ def _timeline_svg(milestones) -> str:
         y = pad_t + i * row_h + row_h / 2
         x = pad_l + (m.days_from_close / max_days) * inner_w
         color = stat_colors.get(m.status, text_dim)
+        # Place the label to the right of the dot, but flip it to the left for
+        # points in the right portion so a late milestone's name doesn't run
+        # off the right edge (it overflowed ~120px before).
+        right_side = x > pad_l + inner_w * 0.55
+        lx = x - 8 if right_side else x + 8
+        anchor = "end" if right_side else "start"
         items.append(
             f'<line x1="{pad_l}" y1="{y:.1f}" x2="{x:.1f}" y2="{y:.1f}" stroke="{border}" stroke-width="1"/>'
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="{color}"/>'
-            f'<text x="{x + 8:.1f}" y="{y + 3:.1f}" fill="{P["text_dim"]}" font-size="9" '
+            f'<text x="{lx:.1f}" y="{y + 3:.1f}" fill="{P["text_dim"]}" font-size="9" text-anchor="{anchor}" '
             f'font-family="JetBrains Mono,monospace">{_html.escape(m.milestone if len(m.milestone) <= 36 else m.milestone[:35] + "…")}</text>'
-            f'<text x="{x + 8:.1f}" y="{y + 14:.1f}" fill="{color}" font-size="8" '
+            f'<text x="{lx:.1f}" y="{y + 14:.1f}" fill="{color}" font-size="8" text-anchor="{anchor}" '
             f'font-family="JetBrains Mono,monospace">{_html.escape(m.status)}</text>'
         )
 

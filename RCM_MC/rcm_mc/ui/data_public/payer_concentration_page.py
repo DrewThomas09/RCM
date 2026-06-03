@@ -187,7 +187,10 @@ def _oon_table(items) -> str:
 def _payer_share_svg(payers) -> str:
     if not payers: return ""
     w, h = 560, 220
-    pad_l, pad_r, pad_t, pad_b = 50, 20, 30, 80
+    # pad_l shifts the first bar in far enough that its rotated x-axis label
+    # (the highest-share payer, -35°, anchored bottom-right) doesn't run off
+    # the left edge; at pad_l=50 a long payer name clipped the left margin.
+    pad_l, pad_r, pad_t, pad_b = 92, 20, 30, 80
     inner_w = w - pad_l - pad_r
     inner_h = h - pad_t - pad_b
     sorted_p = sorted(payers, key=lambda p: p.revenue_share_pct, reverse=True)

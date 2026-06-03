@@ -61,7 +61,10 @@ def _roi_bubbles_svg(projects) -> str:
     if not projects:
         return ""
     w, h = 540, 280
-    pad_l, pad_r, pad_t, pad_b = 50, 30, 25, 40
+    # pad_l/pad_r reserve half a project label (~60px) each so a bubble at the
+    # cost-axis extremes keeps its centred name inside the chart (the
+    # right-most bubble's label clipped the edge before).
+    pad_l, pad_r, pad_t, pad_b = 64, 64, 25, 40
     inner_w = w - pad_l - pad_r
     inner_h = h - pad_t - pad_b
 

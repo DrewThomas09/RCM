@@ -14,7 +14,10 @@ def _market_nested_svg(sizes) -> str:
     if not sizes:
         return ""
     w, h = 540, 180
-    pad_l, pad_r, pad_t = 170, 20, 35
+    # pad_l fits the TAM/SAM/SOM "(… Market)" category labels; pad_r reserves
+    # room for the "Share: X.XX%" label trailing the full-width TAM bar — at
+    # 170/20 both ends clipped (category off the left, share 100px off right).
+    pad_l, pad_r, pad_t = 192, 84, 35
     inner_w = w - pad_l - pad_r
     row_h = 34
 
@@ -36,7 +39,7 @@ def _market_nested_svg(sizes) -> str:
             f'<text x="{pad_l + 6}" y="{y + bh / 2 + 4}" fill="{P["text"]}" font-size="11" '
             f'font-family="JetBrains Mono,monospace;font-weight:600">${s.size_mm:,.0f}M</text>'
             f'<text x="{pad_l + bw + 6:.1f}" y="{y + bh / 2 + 4}" fill="{text_dim}" font-size="10" '
-            f'font-family="JetBrains Mono,monospace">Current share: {s.current_capture_pct:.2f}%</text>'
+            f'font-family="JetBrains Mono,monospace">Share: {s.current_capture_pct:.2f}%</text>'
         )
 
     return (
