@@ -128,7 +128,8 @@ def _sector_bar_svg(exposures) -> str:
         return ""
     top = exposures[:12]
     w, h = 500, max(180, len(top) * 24 + 30)
-    pad_l, pad_r, pad_t, pad_b = 140, 20, 20, 10
+    # pad_r holds the "XX.X%" label trailing the longest bar (clipped at 20).
+    pad_l, pad_r, pad_t, pad_b = 140, 44, 20, 10
     inner_w = w - pad_l - pad_r
     bar_h = 14
     row_h = 22

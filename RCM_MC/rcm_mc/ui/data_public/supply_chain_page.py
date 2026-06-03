@@ -10,7 +10,11 @@ def _spend_bars_svg(cats) -> str:
     sorted_c = sorted(cats, key=lambda c: -c.annual_spend_mm)
     w = 540; row_h = 24
     h = len(sorted_c) * row_h + 30
-    pad_l = 220; pad_r = 60
+    # pad_r reserves room for the value label that trails the longest bar
+    # ("$XX.XXM · XX.X%" ≈ 16 mono chars). At pad_r=60 the longest bar's
+    # label overflowed the chart's right edge (the "% of revenue" was
+    # clipped to "· ·"); 108 fits a 16-char label with margin.
+    pad_l = 220; pad_r = 108
     inner_w = w - pad_l - pad_r
     max_v = max(c.annual_spend_mm for c in sorted_c) or 1
     bg = P["panel"]; text_dim = P["text_dim"]; text_faint = P["text_faint"]

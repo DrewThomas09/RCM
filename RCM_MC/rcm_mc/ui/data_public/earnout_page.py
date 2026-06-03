@@ -16,7 +16,9 @@ def _milestone_waterfall_svg(milestones) -> str:
     row_h = 28
     h = len(milestones) * row_h + 30
     pad_l = 220
-    pad_r = 40
+    # Reserve room for the value label trailing the longest bar
+    # ("$XX.XM / XX%"); at pad_r=40 it overflowed the chart's right edge.
+    pad_r = 96
     inner_w = w - pad_l - pad_r
 
     max_v = max(m.max_payout_mm for m in milestones) or 1
