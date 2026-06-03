@@ -54,6 +54,58 @@ class TestHospitalProfileNaNBeds(unittest.TestCase):
         self.assertIn("240", html)
 
 
+class TestCaduceusScoreNaN(unittest.TestCase):
+    def test_score_with_nan_beds_does_not_crash(self):
+        # compute_caduceus_score runs in the /hospital route BEFORE the
+        # renderer; int(beds) on a NaN crashed it (the real source of the
+        # /hospital/<ccn> 500 for no-beds filings).
+        from rcm_mc.intelligence.caduceus_score import compute_caduceus_score
+        s = compute_caduceus_score(_hosp("010001", float("nan")))
+        self.assertIsNotNone(s)
+
+    def test_score_with_nan_revenue_does_not_render_nan(self):
+        from rcm_mc.intelligence.caduceus_score import compute_caduceus_score
+        s = compute_caduceus_score(
+            {"ccn": "010001", "beds": float("nan"),
+             "net_patient_revenue": float("nan")})
+        # the breakdown strings must not contain a literal "nan"
+        for v in (getattr(s, "breakdown", {}) or {}).values():
+            self.assertNotIn("nan", str(v).lower())
+
+
+class TestPayerMixNaN(unittest.TestCase):
+    def test_unreported_payer_mix_shows_not_reported_not_nan(self):
+        # A filing with revenue but no payer-day mix must not render "nan%"
+        # (and must not assert a false "100% commercial" by coercing to 0).
+        h = _hosp("010001", 220.0)
+        h["medicare_day_pct"] = float("nan")
+        h["medicaid_day_pct"] = float("nan")
+        html = render_hospital_profile(h, None)
+        self.assertNotIn("nan%", html.lower())
+        self.assertIn("not reported", html.lower())
+
+
+class TestPartialFilingFullRender(unittest.TestCase):
+    def test_real_partial_filing_has_no_formatted_nan(self):
+        # A real HCRIS filing with revenue but no bed count drives the full
+        # /hospital render path — caduceus score + thesis-card signal bars,
+        # where distress_prob came out NaN and rendered "Safety nan%". Assert
+        # no *formatted* nan ($nanM / nan% / nanM); plain-word "nan" inside
+        # covenant/finance/etc. is fine.
+        import re
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        from rcm_mc.intelligence.caduceus_score import compute_caduceus_score
+        df = _get_latest_per_ccn()
+        partial = df[df["beds"].isna() & df["net_patient_revenue"].notna()]
+        if partial.empty:
+            self.skipTest("no partial (NaN-beds, real-NPR) filing in current data")
+        h = partial.iloc[0].to_dict()
+        html = render_hospital_profile(h, compute_caduceus_score(h), hcris_df=df)
+        self.assertEqual(
+            re.findall(r"\$nan|nan%|nanM|>nan<", html, re.I), [],
+            "partial-filing profile must not render a formatted NaN")
+
+
 class TestStateDetailNaNBeds(unittest.TestCase):
     def test_state_with_nan_beds_hospital_renders(self):
         df = pd.DataFrame([

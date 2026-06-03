@@ -42,8 +42,15 @@ def render_hospital_profile(
     ni = float(hospital.get("net_income", 0))
     margin = (npr - opex) / npr if npr > 1e5 and opex > 0 else 0
     margin = max(-1.0, min(1.0, margin))
-    med_pct = float(hospital.get("medicare_day_pct", 0))
-    mcd_pct = float(hospital.get("medicaid_day_pct", 0))
+    # Payer-day mix may be NaN for filings that didn't report it; track
+    # whether it's known so the panel reads "not reported" rather than
+    # "nan%" — and never a false "100% commercial" from coercing to 0.
+    _med_raw = hospital.get("medicare_day_pct")
+    _mcd_raw = hospital.get("medicaid_day_pct")
+    _payer_known = (_med_raw is not None and _med_raw == _med_raw
+                    and _mcd_raw is not None and _mcd_raw == _mcd_raw)
+    med_pct = float(_med_raw) if _payer_known else 0.0
+    mcd_pct = float(_mcd_raw) if _payer_known else 0.0
     comm_pct = max(0, 1.0 - med_pct - mcd_pct)
 
     # Phase 4C: build a ProvenanceGraph for "explain this number"
@@ -351,20 +358,28 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         + '</div>'
     )
 
-    # Payer Mix
-    payer_mix = ck_panel(
-        '<div class="hp-payer-bar">'
-        f'<div style="width:{med_pct*100:.0f}%;background:{PALETTE["brand_accent"]};"></div>'
-        f'<div style="width:{mcd_pct*100:.0f}%;background:{PALETTE["warning"]};"></div>'
-        f'<div style="width:{comm_pct*100:.0f}%;background:{PALETTE["positive"]};"></div>'
-        '</div>'
-        '<div class="hp-payer-legend">'
-        f'<span style="color:{PALETTE["brand_accent"]};">■ MEDICARE · {med_pct:.0%}</span>'
-        f'<span style="color:{PALETTE["warning"]};">■ MEDICAID · {mcd_pct:.0%}</span>'
-        f'<span style="color:{PALETTE["positive"]};">■ COMMERCIAL · {comm_pct:.0%}</span>'
-        '</div>',
-        title="Payer Mix",
-    )
+    # Payer Mix — bar + legend when reported, else an honest "not reported".
+    if _payer_known:
+        payer_mix = ck_panel(
+            '<div class="hp-payer-bar">'
+            f'<div style="width:{med_pct*100:.0f}%;background:{PALETTE["brand_accent"]};"></div>'
+            f'<div style="width:{mcd_pct*100:.0f}%;background:{PALETTE["warning"]};"></div>'
+            f'<div style="width:{comm_pct*100:.0f}%;background:{PALETTE["positive"]};"></div>'
+            '</div>'
+            '<div class="hp-payer-legend">'
+            f'<span style="color:{PALETTE["brand_accent"]};">■ MEDICARE · {med_pct:.0%}</span>'
+            f'<span style="color:{PALETTE["warning"]};">■ MEDICAID · {mcd_pct:.0%}</span>'
+            f'<span style="color:{PALETTE["positive"]};">■ COMMERCIAL · {comm_pct:.0%}</span>'
+            '</div>',
+            title="Payer Mix",
+        )
+    else:
+        payer_mix = ck_panel(
+            '<p style="font-family:var(--cad-mono);font-size:12px;'
+            f'color:{PALETTE["text_muted"]};margin:0;">'
+            'Payer-day mix not reported in this HCRIS filing.</p>',
+            title="Payer Mix",
+        )
 
     # Quality metrics (from CMS Care Compare when available)
     star = hospital.get("star_rating")

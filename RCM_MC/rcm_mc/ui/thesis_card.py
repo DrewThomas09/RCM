@@ -241,8 +241,10 @@ def render_thesis_card(
         r_color = "var(--cad-pos)" if realization_pct >= 0.80 else ("var(--cad-warn)" if realization_pct >= 0.60 else "var(--cad-neg)")
         signal_bars += _signal_bar("Realization", realization_pct * 100, 100, r_color, f"{realization_pct:.0%}")
 
-    # Distress bar (inverted: low distress = good)
-    if distress_prob is not None:
+    # Distress bar (inverted: low distress = good). Guard against NaN as
+    # well as None — distress_prob is NaN for incomplete HCRIS filings, and
+    # NaN is not None, so it slipped through and rendered "nan%".
+    if distress_prob is not None and distress_prob == distress_prob:
         safety = 1 - distress_prob
         d_color = "var(--cad-pos)" if safety > 0.7 else ("var(--cad-warn)" if safety > 0.4 else "var(--cad-neg)")
         signal_bars += _signal_bar("Safety", safety * 100, 100, d_color, f"{safety:.0%}")
