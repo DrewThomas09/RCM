@@ -31,7 +31,7 @@ from ..diligence.regulatory_calendar.killswitch import (
 from ._chartis_kit import (
     P, chartis_shell, ck_fmt_num, ck_kpi_block,
     ck_next_section, ck_provenance_tooltip, ck_section_intro,
-    ck_signal_badge,
+    ck_signal_badge, ck_source_purpose,
 )
 from .power_ui import (
     benchmark_chip, bookmark_hint, deal_context_bar,
@@ -1199,6 +1199,18 @@ def render_regulatory_calendar_page(
         + '<div class="rc-wrap">'
         + deal_context_bar(qs, active_surface="reg")
         + hero
+        + ck_source_purpose(
+            purpose="Map a deal's thesis drivers to the dated CMS / OIG / "
+            "FTC / DOJ regulatory events that could impair them, scored "
+            "against PE-healthcare peer-exposure norms.",
+            universe="illustrative",
+            confidence="illustrative",
+            source="Public CMS / OIG / FTC / DOJ regulatory-calendar dates + "
+            "illustrative PE-healthcare peer-exposure norms; the per-deal "
+            "exposure mapping is a modeled estimate, not legal advice.",
+            next_action="Stress-test these dates against the EBITDA bridge",
+            next_href="/diligence/bridge-audit",
+        )
         + market_block
         + timeline_panel
         + _overlay_panel(report)
