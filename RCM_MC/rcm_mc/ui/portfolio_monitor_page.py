@@ -341,8 +341,9 @@ def render_portfolio_monitor(store: Any) -> str:
             alert_items += (
                 '<div class="pm-alert-row">'
                 f'<span class="pm-alert-sev {sev_cls}">{_html.escape(sev)}</span>'
-                f'<a href="/deal/{_html.escape(did)}" class="ck-link pm-alert-name">'
-                f'<strong>{_html.escape(name[:20])}</strong></a>'
+                f'<a href="/deal/{_html.escape(did)}" class="ck-link pm-alert-name" '
+                f'title="{_html.escape(name)}">'
+                f'<strong>{_html.escape(name if len(name) <= 20 else name[:19] + "…")}</strong></a>'
                 f'<span class="pm-alert-msg">{_html.escape(str(ar[3] or "")[:80])}</span>'
                 '</div>'
             )
@@ -526,7 +527,8 @@ def render_portfolio_monitor(store: Any) -> str:
             warning_items += (
                 '<div class="pm-warn-row">'
                 f'<span class="pm-warn-sev {sev_cls}">●</span>'
-                f'<span class="pm-warn-name"><strong>{_html.escape(name[:20])}</strong></span>'
+                f'<span class="pm-warn-name" title="{_html.escape(name)}">'
+                f'<strong>{_html.escape(name if len(name) <= 20 else name[:19] + "…")}</strong></span>'
                 f'<span>{_html.escape(msg)}</span>'
                 '</div>'
             )
