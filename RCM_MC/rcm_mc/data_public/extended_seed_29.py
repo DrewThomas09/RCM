@@ -275,28 +275,6 @@ EXTENDED_SEED_DEALS_29: List[Dict[str, Any]] = [
         "source_url": "https://www.radpartners.com",
     },
     # 608 — Apria Healthcare (home care) / Blackstone → Owens & Minor (2022 strategic exit)
-    {
-        "source_id": "seed_608",
-        "deal_name": "Apria Healthcare / Blackstone → Owens & Minor",
-        "buyer": "Owens & Minor (strategic)",
-        "seller": "Blackstone",
-        "sector": "Home Health",
-        "entry_year": 2014,
-        "exit_year": 2022,
-        "entry_ev_mm": 2_200.0,
-        "ebitda_at_entry_mm": 210.0,  # ~10.5x
-        "hold_years": 8.0,
-        "realized_moic": 2.5,
-        "realized_irr": 0.12,
-        "ev_mm": 2_200.0,
-        "ebitda_mm": 210.0,
-        "payer_mix": {"medicare": 0.55, "commercial": 0.30, "medicaid": 0.12, "self_pay": 0.03},
-        "region": "National",
-        "hospital_size": "large",
-        "leverage_pct": 0.60,
-        "notes": "Home respiratory + DME; long hold required to work through post-IPO issues; adequate but not spectacular return",
-        "source_url": "https://www.apria.com",
-    },
     # 609 — Help at Home / Centerbridge (2016 → ongoing)
     {
         "source_id": "seed_609",
@@ -344,28 +322,6 @@ EXTENDED_SEED_DEALS_29: List[Dict[str, Any]] = [
         "source_url": "https://www.patientpoint.com",
     },
     # 611 — Alignment Healthcare / Warburg (2021 IPO)
-    {
-        "source_id": "seed_611",
-        "deal_name": "Alignment Healthcare / Warburg Pincus → IPO",
-        "buyer": "Public market investors",
-        "seller": "Warburg Pincus",
-        "sector": "Medicare Advantage",
-        "entry_year": 2021,
-        "exit_year": 2024,
-        "entry_ev_mm": 4_500.0,
-        "ebitda_at_entry_mm": -80.0,   # pre-profit at IPO
-        "hold_years": 3.0,
-        "realized_moic": 1.2,
-        "realized_irr": 0.06,
-        "ev_mm": 4_500.0,
-        "ebitda_mm": -80.0,
-        "payer_mix": {"medicare": 0.90, "commercial": 0.08, "medicaid": 0.02},
-        "region": "California",
-        "hospital_size": "mid",
-        "leverage_pct": 0.15,
-        "notes": "MA plan model; CMS rate resets created headwind; underwhelming IPO return; pivoting to profitability 2024",
-        "source_url": "https://www.alignmenthealthcare.com/investors",
-    },
     # 612 — ChenMed / Welsh Carson (2019 minority investment)
     {
         "source_id": "seed_612",
@@ -413,28 +369,6 @@ EXTENDED_SEED_DEALS_29: List[Dict[str, Any]] = [
         "source_url": "https://www.agiliti.com",
     },
     # 614 — Kindred Healthcare / TPG + Welsh Carson (2018 → joint venture with Humana)
-    {
-        "source_id": "seed_614",
-        "deal_name": "Kindred Healthcare / TPG + Welsh Carson",
-        "buyer": "TPG Capital + Welsh Carson",
-        "seller": "Public shareholders (take-private)",
-        "sector": "Post-Acute / LTAC",
-        "entry_year": 2018,
-        "exit_year": 2021,
-        "entry_ev_mm": 4_100.0,
-        "ebitda_at_entry_mm": 380.0,  # ~10.8x
-        "hold_years": 3.0,
-        "realized_moic": 2.2,
-        "realized_irr": 0.24,
-        "ev_mm": 4_100.0,
-        "ebitda_mm": 380.0,
-        "payer_mix": {"medicare": 0.60, "medicaid": 0.25, "commercial": 0.12, "self_pay": 0.03},
-        "region": "National",
-        "hospital_size": "large",
-        "leverage_pct": 0.65,
-        "notes": "LTAC + rehab split; divested home health to Humana JV (Kindred at Home); LTAC census recovery + COVID disruption",
-        "source_url": "https://www.kindredhealthcare.com",
-    },
     # 615 — Marathon Health / Morgan Health / JMB Capital (2022)
     {
         "source_id": "seed_615",
