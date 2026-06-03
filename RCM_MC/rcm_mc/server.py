@@ -634,7 +634,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         title_html = ck_page_title(
             deal_name,
             eyebrow="DEAL",
-            meta=f"slug: {deal_id} · no snapshots yet",
+            meta=f"{deal_id} · no snapshots yet",
         )
         body = (
             f"{title_html}"
@@ -875,11 +875,15 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     title_html = ck_page_title(
         deal_name,
         eyebrow=_deal_eyebrow,
+        # Partner-facing identity strip: the deal's short code as a
+        # ticker-style lead token, then stage + snapshot depth. Dropped
+        # the "slug:" dev-jargon label and the "reading <file>.db" backend
+        # filename — neither is meaningful provenance to a partner (the
+        # platform's data lineage is HCRIS/CMS, not a local SQLite path).
         meta=(
-            f"slug: {deal_id} · "
+            f"{deal_id} · "
             f"stage: {str(stage).title()} · "
-            f"{len(snaps)} snapshot{'s' if len(snaps) != 1 else ''} · "
-            f"reading {os.path.basename(config.db_path)}"
+            f"{len(snaps)} snapshot{'s' if len(snaps) != 1 else ''}"
         ),
     )
     action_row = (
