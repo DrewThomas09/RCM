@@ -13,7 +13,12 @@
  * _chartis_kit_editorial.chartis_shell().
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Offline-first: no external font CDN. The response CSP is
+   style-src 'self' / font-src 'self', so this @import of Google Fonts
+   was refused on every page (a console error per render) while still
+   attempting egress to a third party. The font-family declarations
+   below carry local fallbacks (Georgia / system-sans / Consolas), so
+   dropping the @import is visually a no-op but removes the error. */
 
 :root {
   /* surfaces */

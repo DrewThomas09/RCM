@@ -443,14 +443,10 @@ _STYLE = """
 </style>
 """
 
-_FONTS = (
-    '<link rel="preconnect" href="https://fonts.googleapis.com">'
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-    '<link href="https://fonts.googleapis.com/css2?'
-    'family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700'
-    '&family=Inter:wght@400;500;600;700'
-    '&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">'
-)
+# Offline-first: no external font CDN. The response CSP (style-src
+# 'self' / font-src 'self') blocked these on every render, and the
+# preconnect leaked egress to a third party. The marketing _STYLE block
+# uses the same local font fallbacks the app does.
 
 
 # ── Section builders ────────────────────────────────────────────────
@@ -876,7 +872,6 @@ def render_marketing_page(basic_auth: bool = False) -> str:
         'customer signals, benchmarks, competitive context, client '
         'priorities, and source-backed notes — organized around the '
         'opportunity at hand.">'
-        + _FONTS
         + _STYLE
         + '</head><body>'
         + _topbar()
