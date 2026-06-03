@@ -658,18 +658,27 @@ def render_state_detail(
         # /market-data/state/HI) or asserting a false "0 beds".
         _beds_raw = h.get("beds")
         beds = f"{int(_beds_raw)}" if pd.notna(_beds_raw) else "&mdash;"
-        rev = float(h.get(rev_col, 0))
+        # Revenue / margin are NaN for filings that didn't report them —
+        # show an em-dash, never "$nan" / "nan%" / a false "0.0%".
+        _rev_raw = h.get(rev_col)
+        rev = float(_rev_raw) if pd.notna(_rev_raw) else 0.0
+        rev_disp = f"${rev/1e6:,.0f}M" if pd.notna(_rev_raw) else "&mdash;"
         opex = float(h.get("operating_expenses", 0))
-        margin = (rev - opex) / rev if rev > 1e5 and opex > 0 else 0
-        margin = max(-1.0, min(1.0, margin))
-        margin_cls = "cad-pos" if margin > 0.05 else ("cad-warn" if margin > 0 else "cad-neg")
+        if rev > 1e5 and opex > 0:
+            margin = max(-1.0, min(1.0, (rev - opex) / rev))
+            margin_disp = f"{margin:.1%}"
+            margin_cls = ("cad-pos" if margin > 0.05
+                          else ("cad-warn" if margin > 0 else "cad-neg"))
+        else:
+            margin_disp = "&mdash;"
+            margin_cls = ""
 
         rows += (
             f'<tr>'
             f'<td><a href="/hospital/{ccn}" class="ck-link"><strong>{name}</strong></a></td>'
             f'<td class="num">{beds}</td>'
-            f'<td class="num">${rev/1e6:,.0f}M</td>'
-            f'<td class="num {margin_cls}">{margin:.1%}</td>'
+            f'<td class="num">{rev_disp}</td>'
+            f'<td class="num {margin_cls}">{margin_disp}</td>'
             f'<td>'
             f'<a href="/hospital/{ccn}" class="cad-badge cad-badge-blue">Profile</a> '
             f'<a href="/models/dcf/{ccn}" class="cad-badge cad-badge-muted">DCF</a></td>'

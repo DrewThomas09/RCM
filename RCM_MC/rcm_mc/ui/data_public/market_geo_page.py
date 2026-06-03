@@ -50,13 +50,26 @@ _LICENSE_CHIP = (
 
 
 def _fmt(value: Optional[float], unit: str) -> str:
-    if value is None:
+    # None- AND NaN-safe (NaN passes `is None`): a missing metric renders an
+    # em-dash, never "nan%" / "$nan".
+    if value is None or value != value:
         return "—"
     if unit == "pct":
         return f"{value*100:.1f}%"
     if unit == "usd":
         return f"${value:,.0f}"
     return f"{value:,.1f}"
+
+
+def _pct_or_dash(value: Optional[float], mult: float = 100.0, dec: int = 0) -> str:
+    """``value*mult`` as a percent, or an em-dash for None/NaN. CMS / CDC
+    geographic coverage is uneven (especially for territories), so secondary
+    measures can be absent even when the headline count is present."""
+    try:
+        v = float(value)
+        return f"{v*mult:.{dec}f}%" if v == v else "&mdash;"
+    except (TypeError, ValueError):
+        return "&mdash;"
 
 
 _ABBR_FIPS = {v: k for k, v in _FIPS_ABBR.items()}
@@ -129,13 +142,23 @@ def market_context_panel(state, P_=None) -> str:
                 f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
                 f'Medicare Advantage (CMS, real): '
                 f'<b style="color:{pal["text"]}">{int(ma["ma_enrollment"]):,}</b> MA enrollees, '
-                f'{float(ma["dual_eligible_pct"])*100:.0f}% dual-eligible, avg age '
+                f'{_pct_or_dash(ma.get("dual_eligible_pct"))} dual-eligible, avg age '
                 f'{float(ma["avg_age"]):.0f}. Payer-mix / risk-adjustment context.</p>')
     except Exception:
         ma_line = ""
 
     # Real social-determinants burden (CDC PLACES, full-population model est).
     places_line = ""
+
+    def _pct(v: Any) -> str:
+        # NaN-/None-safe percent: an em-dash for a missing value, never
+        # "nan%". CDC PLACES coverage is uneven across states, so some
+        # SDOH measures are absent even when uninsured is present.
+        try:
+            f = float(v)
+            return f"{f:.1f}%" if f == f else "&mdash;"
+        except (TypeError, ValueError):
+            return "&mdash;"
     try:
         from rcm_mc.data import cdc_places_agg as _places
         st_abbr4 = _FIPS_ABBR.get(fips, "")
@@ -144,9 +167,9 @@ def market_context_panel(state, P_=None) -> str:
             places_line = (
                 f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
                 f'Social determinants (CDC PLACES, real): '
-                f'<b style="color:{pal["text"]}">{float(pl["uninsured_18_64"]):.1f}%</b> uninsured 18–64, '
-                f'<b style="color:{pal["text"]}">{float(pl["food_insecurity"]):.1f}%</b> food-insecure, '
-                f'<b style="color:{pal["text"]}">{float(pl["lack_transportation"]):.1f}%</b> lack transport. '
+                f'<b style="color:{pal["text"]}">{_pct(pl.get("uninsured_18_64"))}</b> uninsured 18–64, '
+                f'<b style="color:{pal["text"]}">{_pct(pl.get("food_insecurity"))}</b> food-insecure, '
+                f'<b style="color:{pal["text"]}">{_pct(pl.get("lack_transportation"))}</b> lack transport. '
                 f'Full-population SDOH burden — demand-mix / equity context.</p>')
     except Exception:
         places_line = ""
@@ -371,7 +394,7 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
         ma = _ma.ma_state(st_abbr) if st_abbr else {}
         if ma.get("ma_enrollment"):
             kpis += ck_kpi_block("MA Enrollment", f'{int(ma["ma_enrollment"]):,}',
-                                 f'{float(ma["dual_eligible_pct"])*100:.0f}% dual · CMS', "")
+                                 f'{_pct_or_dash(ma.get("dual_eligible_pct"))} dual · CMS', "")
     except Exception:
         pass
     # Export-required variables for transparency

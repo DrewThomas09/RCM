@@ -94,6 +94,40 @@ class StateDetailHospitalPointsTests(unittest.TestCase):
         self.assertNotIn("Hospital locations in CA", html)     # no forced map
         self.assertIn("Hospitals in CA", html)                 # table still there
 
+    def test_nan_metric_renders_em_dash_not_formatted_nan(self):
+        # A hospital with no reported revenue/beds (NaN) must render an
+        # em-dash in the table, never "$nan" / "nan%".
+        import re
+        import numpy as _np
+        import pandas as _pd
+        from rcm_mc.ui.market_data_page import render_state_detail
+        df = _pd.DataFrame([
+            {"state": "CA", "ccn": "000001", "name": "Reported Med",
+             "beds": 180.0, "net_patient_revenue": 1.8e8,
+             "operating_expenses": 1.7e8},
+            {"state": "CA", "ccn": "000002", "name": "No-Data Filing",
+             "beds": _np.nan, "net_patient_revenue": _np.nan,
+             "operating_expenses": _np.nan},
+        ])
+        html = render_state_detail("CA", df)
+        self.assertIn("Reported Med", html)
+        self.assertEqual(re.findall(r"\$nan|nan%|nanM", html, re.I), [],
+                         "state-detail table must not render a formatted NaN")
+
+    def test_sparse_territory_state_detail_no_formatted_nan(self):
+        # Territories (e.g. PR) have sparse CMS-MA / CDC-PLACES geographic
+        # coverage, so secondary metrics (dual-eligible %, food-insecurity %)
+        # are NaN in the real data — they must render an em-dash, not "nan%".
+        import re
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        from rcm_mc.ui.market_data_page import render_state_detail
+        df = _get_latest_per_ccn()
+        for st in ("PR", "HI", "AK"):
+            html = render_state_detail(st, df)
+            self.assertEqual(
+                re.findall(r"\$nan|nan%|nanM", html, re.I), [],
+                f"/market-data/state/{st} must not render a formatted NaN")
+
 
 if __name__ == "__main__":
     unittest.main()
