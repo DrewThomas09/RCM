@@ -281,6 +281,17 @@ class TestNo500Sweep(unittest.TestCase):
             "/api/global-search?q=denial",
             "/api/global-search?q=",
             "/exports",
+            # Hospital-screener presets. small_efficient bounds only
+            # max_beds, so HCRIS filings with no reported bed count (NaN)
+            # slipped through fillna(0)<=200 and crashed int(NaN) at
+            # row-build — a live 500. All five presets, plus a
+            # no-beds-bound custom filter, must render.
+            "/screen?preset=turnaround",
+            "/screen?preset=large_cap",
+            "/screen?preset=margin_expansion",
+            "/screen?preset=undervalued",
+            "/screen?preset=small_efficient",
+            "/screen?max_margin=2",
         ]
         failures = []
         for path in endpoints:
