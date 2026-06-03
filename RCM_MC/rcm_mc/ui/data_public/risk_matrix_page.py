@@ -138,7 +138,7 @@ def _risk_return_scatter(
         if x_lo <= x <= x_hi and y_lo <= y <= y_hi:
             color = _sector_color(sector)
             cx, cy = tx(x), ty(y)
-            escaped_name = _html.escape(name[:40])
+            escaped_name = _html.escape(name)
             escaped_sector = _html.escape(sector[:25])
             dots.append(
                 f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.2" fill="{color}" fill-opacity="0.75" '

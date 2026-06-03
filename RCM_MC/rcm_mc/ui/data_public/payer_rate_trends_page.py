@@ -168,7 +168,7 @@ def _comm_moic_scatter(corpus: List[Dict], w: int = 320, h: int = 200) -> str:
         cx = xp(comm)
         cy = yp(moic)
         col = P["positive"] if comm >= 0.5 and moic >= 2.0 else (P["negative"] if moic < 1.5 else P["text_dim"])
-        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3" fill="{col}" fill-opacity="0.7"><title>{html.escape(name[:40])}: comm {comm*100:.0f}%, MOIC {moic:.2f}×</title></circle>')
+        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3" fill="{col}" fill-opacity="0.7"><title>{html.escape(name)}: comm {comm*100:.0f}%, MOIC {moic:.2f}×</title></circle>')
 
     parts.append(f'<text x="{pad_l+cw//2}" y="{h-2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}">Commercial Payer %</text>')
     parts.append(f'<text x="10" y="{pad_t+ch//2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}" transform="rotate(-90,10,{pad_t+ch//2})">MOIC</text>')

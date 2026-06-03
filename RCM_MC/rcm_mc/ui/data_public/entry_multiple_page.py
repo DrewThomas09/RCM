@@ -120,7 +120,7 @@ def _multiple_moic_scatter(corpus: List[Dict], w: int = 340, h: int = 220) -> st
         cx = xp(mult)
         cy = yp(moic)
         col = P["positive"] if mult < 10 and moic >= 2.5 else (P["negative"] if mult > 14 and moic < 2.0 else P["text_dim"])
-        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.5" fill="{col}" fill-opacity="0.65"><title>{html.escape(name[:40])}: {mult:.1f}×, MOIC {moic:.2f}×</title></circle>')
+        parts.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="3.5" fill="{col}" fill-opacity="0.65"><title>{html.escape(name)}: {mult:.1f}×, MOIC {moic:.2f}×</title></circle>')
 
     parts.append(f'<text x="{pad_l+cw//2}" y="{h-2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}">Entry EV/EBITDA</text>')
     parts.append(f'<text x="10" y="{pad_t+ch//2}" text-anchor="middle" fill="{P["text_dim"]}" font-size="8" font-family="{_SANS}" transform="rotate(-90,10,{pad_t+ch//2})">MOIC</text>')
