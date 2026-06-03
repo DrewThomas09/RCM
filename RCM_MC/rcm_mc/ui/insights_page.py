@@ -27,11 +27,9 @@ def render_insights_page(db_path: str) -> str:
     header = ck_page_title(
         "All insights",
         eyebrow="PORTFOLIO · CROSS-DEAL SIGNALS",
-        meta=(
-            "Every cross-portfolio signal the tool can compute, "
-            "ranked highest-priority first. The /dashboard card "
-            "shows only the top one."
-        ),
+        # Short scannable meta (the row is CSS-uppercased — a full
+        # sentence renders as a dense all-caps block).
+        meta="Every cross-deal signal, ranked highest-priority first",
     )
 
     if not insights:

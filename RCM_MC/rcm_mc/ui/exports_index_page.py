@@ -120,10 +120,9 @@ def render_exports_index(db_path: str) -> str:
     header = ck_page_title(
         "Downloads",
         eyebrow="EXPORTS · PORTFOLIO SCOPE",
-        meta=(
-            "Every export in one place. For deal-specific memos + "
-            "data, open a deal first and use its export menu."
-        ),
+        # Short scannable meta (the row is CSS-uppercased — a full
+        # sentence renders as a dense all-caps block).
+        meta="Portfolio-scope exports · open a deal for deal-specific memos",
     )
 
     portfolio_card = _wc.section_card(
