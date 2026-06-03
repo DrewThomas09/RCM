@@ -63,24 +63,6 @@ EXTENDED_SEED_DEALS_26 = [
                  "CVS acquired 2023 at $9.5B (2.2x from IPO); medical loss ratio discipline critical.",
     },
     {
-        "source_id": "seed_539",
-        "source": "seed",
-        "deal_name": "Iora Health — Humana Acquisition",
-        "year": 2021,
-        "buyer": "One Medical (NASDAQ: ONEM)",
-        "seller": "Iora Health Founders / Khosla Ventures / Flatiron Health",
-        "sector": "managed_care",
-        "ev_mm": 1_500,
-        "ebitda_at_entry_mm": 50,
-        "hold_years": 6.0,
-        "realized_moic": 3.0,
-        "realized_irr": 0.20,
-        "payer_mix": {"medicare": 0.90, "medicaid": 0.04, "commercial": 0.04, "self_pay": 0.02},
-        "notes": "Value-based primary care for Medicare patients; 40+ clinics. "
-                 "One Medical acquired at ~30x revenue; Khosla 6-year hold ~3.0x. "
-                 "Amazon then acquired One Medical + Iora for $3.9B in 2023.",
-    },
-    {
         "source_id": "seed_540",
         "source": "seed",
         "deal_name": "Compassus — Warburg Pincus Majority Investment",

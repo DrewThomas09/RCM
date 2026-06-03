@@ -90,26 +90,6 @@ EXTENDED_SEED_DEALS_8 = [
         ),
     },
     # 180 — Amedisys / UnitedHealth Group merger
-    {
-        "source_id": "seed_180",
-        "source": "seed",
-        "deal_name": "Amedisys – UnitedHealth Group / Optum Acquisition",
-        "year": 2023,
-        "buyer": "UnitedHealth Group / Optum",
-        "seller": "Amedisys shareholders (public)",
-        "ev_mm": 3300.0,
-        "ebitda_at_entry_mm": 168.0,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": {
-            "medicare": 0.78, "medicaid": 0.12, "commercial": 0.10, "selfpay": 0.00
-        },
-        "notes": (
-            "Largest home health acquisition; DOJ challenged + cleared; "
-            "~19.6x EBITDA; Optum home-based care strategy anchor"
-        ),
-    },
     # 181 — Behavioral Health Group / Webster Equity
     {
         "source_id": "seed_181",

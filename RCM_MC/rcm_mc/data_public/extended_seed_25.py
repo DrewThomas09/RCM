@@ -351,23 +351,4 @@ EXTENDED_SEED_DEALS_25 = [
                  "Ambient AI documentation sector: Dragon Ambient eXperience (DAX) + others. "
                  "Not a PE deal; VC benchmark for health IT ambient AI at ~$250M early valuation.",
     },
-    {
-        "source_id": "seed_535",
-        "source": "seed",
-        "deal_name": "Teladoc Health — Blackstone / HHBF Acquisition",
-        "year": 2020,
-        "buyer": "Teladoc Health (NASDAQ: TDOC) + Livongo merger",
-        "seller": "Livongo Health Shareholders",
-        "sector": "health_it",
-        "ev_mm": 18_500,
-        "ebitda_at_entry_mm": 200,
-        "hold_years": 3.0,
-        "realized_moic": 0.2,
-        "realized_irr": None,
-        "payer_mix": {"medicare": 0.10, "medicaid": 0.05, "commercial": 0.75, "self_pay": 0.10},
-        "notes": "Teladoc/Livongo merger at peak COVID telehealth hype ($18.5B EV). "
-                 "$6.6B goodwill write-down 2022; stock declined 85% from merger peak. "
-                 "Pre-revenue SaaS multiples (92x EBITDA!) unwound as growth decelerated. "
-                 "Warning: telehealth EV/revenue multiples unsustainable without EBITDA path.",
-    },
 ]

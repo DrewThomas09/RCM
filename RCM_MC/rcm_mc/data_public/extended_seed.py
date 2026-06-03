@@ -21,22 +21,6 @@ from typing import Any, Dict, List
 
 EXTENDED_SEED_DEALS: List[Dict[str, Any]] = [
     {
-        "source_id": "ext_001",
-        "source": "seed",
-        "deal_name": "Kindred at Home – TPG / Welsh Carson Partial Exit via JV with Humana",
-        "year": 2018,
-        "buyer": "Humana (40% JV stake)",
-        "seller": "Kindred Healthcare (post-buyout carve-out)",
-        "ev_mm": 4_000,
-        "ebitda_at_entry_mm": 280,
-        "hold_years": 3.0,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": {"medicare": 0.74, "medicaid": 0.06, "commercial": 0.18, "self_pay": 0.02},
-        "notes": "Home health JV formation step; Humana bought 40% at $800M; "
-                 "full acquisition completed 2021; structure allowed PE partial liquidity.",
-    },
-    {
         "source_id": "ext_002",
         "source": "seed",
         "deal_name": "HealthSpring – Cigna Acquisition",

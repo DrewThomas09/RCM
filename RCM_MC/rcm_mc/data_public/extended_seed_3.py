@@ -70,26 +70,6 @@ EXTENDED_SEED_DEALS_3 = [
     # ------------------------------------------------------------------
     # 78. Envision Healthcare / KKR take-private (2018) then bankruptcy (2023)
     # ------------------------------------------------------------------
-    {
-        "source_id": "seed_078",
-        "source": "seed",
-        "deal_name": "Envision Healthcare – KKR Take-Private",
-        "year": 2018,
-        "buyer": "KKR",
-        "seller": "Public shareholders",
-        "ev_mm": 9900,
-        "ebitda_at_entry_mm": 900,
-        "hold_years": 5.0,
-        "realized_moic": 0.2,
-        "realized_irr": -0.28,
-        "payer_mix": json.dumps({
-            "medicare": 0.30, "medicaid": 0.20,
-            "commercial": 0.45, "self_pay": 0.05,
-        }),
-        "notes": "KKR take-private at $46/share (~11x EBITDA). Surprise billing legislation "
-                 "(No Surprises Act) devastated emergency medicine revenue. Filed Chapter 11 May 2023. "
-                 "Cautionary tale on regulatory/legislative exposure in physician staffing.",
-    },
     # ------------------------------------------------------------------
     # 79. R1 RCM / New Mountain Capital take-private (2023)
     # ------------------------------------------------------------------
@@ -139,26 +119,6 @@ EXTENDED_SEED_DEALS_3 = [
     # ------------------------------------------------------------------
     # 81. Surgical Care Affiliates (SCA) / UnitedHealth (2017)
     # ------------------------------------------------------------------
-    {
-        "source_id": "seed_081",
-        "source": "seed",
-        "deal_name": "Surgical Care Affiliates (SCA) – UnitedHealth",
-        "year": 2017,
-        "buyer": "UnitedHealth Group / Optum",
-        "seller": "BCPE Empire Holdings (Warburg Pincus + AMSURG)",
-        "ev_mm": 2300,
-        "ebitda_at_entry_mm": 190,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": json.dumps({
-            "medicare": 0.30, "medicaid": 0.05,
-            "commercial": 0.62, "self_pay": 0.03,
-        }),
-        "notes": "Optum acquires ASC platform at ~12x EBITDA; 200+ surgery centers, "
-                 "10k+ physicians. Payer-provider vertical integration play. "
-                 "High commercial mix drives attractive margin profile.",
-    },
     # ------------------------------------------------------------------
     # 82. Steward Health Care / Medical Properties Trust restructuring (2024)
     # ------------------------------------------------------------------
@@ -255,26 +215,6 @@ EXTENDED_SEED_DEALS_3 = [
     # ------------------------------------------------------------------
     # 86. LifePoint Health / RCCH HealthCare Partners merger (2018)
     # ------------------------------------------------------------------
-    {
-        "source_id": "seed_086",
-        "source": "seed",
-        "deal_name": "LifePoint Health – RCCH HealthCare Partners Merger",
-        "year": 2018,
-        "buyer": "Apollo Global / RCCH",
-        "seller": "LifePoint Health (public)",
-        "ev_mm": 5600,
-        "ebitda_at_entry_mm": 560,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": json.dumps({
-            "medicare": 0.42, "medicaid": 0.25,
-            "commercial": 0.28, "self_pay": 0.05,
-        }),
-        "notes": "Apollo-backed RCCH merges with LifePoint at ~10x EBITDA. "
-                 "Combined 89 hospital campuses in 30 states, predominantly rural and non-urban. "
-                 "Renamed LifePoint Health (private). Significant rural Medicare/Medicaid exposure.",
-    },
     # ------------------------------------------------------------------
     # 87. Sound Physicians / TPG Growth (2017)
     # ------------------------------------------------------------------

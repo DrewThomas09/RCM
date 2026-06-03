@@ -132,26 +132,6 @@ EXTENDED_SEED_DEALS_6 = [
         ),
     },
     # 142 — Labcorp / Ascension health system labs
-    {
-        "source_id": "seed_142",
-        "source": "seed",
-        "deal_name": "Labcorp – Ascension Health Laboratory Services Acquisition",
-        "year": 2021,
-        "buyer": "Labcorp",
-        "seller": "Ascension Health",
-        "ev_mm": 400.0,
-        "ebitda_at_entry_mm": 40.0,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": {
-            "medicare": 0.45, "medicaid": 0.20, "commercial": 0.35, "selfpay": 0.00
-        },
-        "notes": (
-            "Health system lab divestiture; Labcorp strategic national lab expansion; "
-            "15-year PSA included; ~10x EBITDA"
-        ),
-    },
     # 143 — USPH (US Physical Therapy) / Upstream Rehab
     {
         "source_id": "seed_143",
@@ -338,26 +318,6 @@ EXTENDED_SEED_DEALS_6 = [
         ),
     },
     # 152 — Apria Healthcare / O&M Group
-    {
-        "source_id": "seed_152",
-        "source": "seed",
-        "deal_name": "Apria Healthcare – Owens & Minor Acquisition",
-        "year": 2022,
-        "buyer": "Owens & Minor",
-        "seller": "Apria Healthcare shareholders (public)",
-        "ev_mm": 1600.0,
-        "ebitda_at_entry_mm": 180.0,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": {
-            "medicare": 0.65, "medicaid": 0.12, "commercial": 0.23, "selfpay": 0.00
-        },
-        "notes": (
-            "Home respiratory therapy + DME; Owens & Minor strategic diversification; "
-            "Medicare DME competitive bidding pressure; ~8.9x EBITDA"
-        ),
-    },
     # 153 — Integrated Oncology Network / BDT Capital
     {
         "source_id": "seed_153",
