@@ -156,6 +156,14 @@ class LabelTruncationTests(unittest.TestCase):
         self.assertIn(">Revenue</text>", out)
         self.assertNotIn("…", out)
 
+    def test_vertical_bar_labels_adapt_to_band_width(self) -> None:
+        # Many bars → each category label truncates to fit its band so
+        # adjacent labels don't overlap; full text stays in the bar <title>.
+        items = [(f"CategoryNumber{i}XYZ", i + 1, "teal") for i in range(10)]
+        out = ck_bar_chart("T", items)
+        self.assertIn("…", out)
+        self.assertIn("<title>CategoryNumber0XYZ:", out)
+
 
 if __name__ == "__main__":
     unittest.main()
