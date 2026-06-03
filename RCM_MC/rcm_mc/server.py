@@ -6936,6 +6936,25 @@ class RCMHandler(BaseHTTPRequestHandler):
                 status=HTTPStatus.NOT_FOUND,
             )
         hospital = match.iloc[0].to_dict()
+        # A few HCRIS CCNs filed but reported nothing usable — no bed count
+        # AND no revenue. A full profile for those is all "—"/"$0M"
+        # placeholders (and used to 500 on int(NaN) beds). Show an honest
+        # "limited data" notice instead. Filings with one of the two (e.g.
+        # beds missing but revenue present) still render a real profile.
+        import math as _math
+
+        def _missing(v: Any) -> bool:
+            return (v is None
+                    or (isinstance(v, float) and _math.isnan(v))
+                    or v == 0)
+        if _missing(hospital.get("beds")) and _missing(
+                hospital.get("net_patient_revenue")):
+            return self._send_html(
+                f'<h1>Limited data for CCN {html.escape(ccn)}</h1>'
+                '<p>This HCRIS filing reported no bed count and no patient '
+                'revenue, so there is no profile to show — it is most likely '
+                'a non-operating or administrative CCN. '
+                '<a href="/screen">Browse hospitals with reported data &rarr;</a></p>')
         score = compute_caduceus_score(hospital)
         state = hospital.get("state", "")
         comps = []

@@ -61,8 +61,14 @@ def compute_caduceus_score(
     name = str(profile.get("name") or "")
     breakdown: Dict[str, str] = {}
 
-    beds = float(profile.get("beds") or profile.get("bed_count") or 0)
-    npr = float(profile.get("net_patient_revenue") or profile.get("net_revenue") or 0)
+    # NaN-safe: profile.get("beds") is NaN for HCRIS filings with no reported
+    # bed count, and NaN is truthy — so `or 0` did NOT catch it. The NaN then
+    # crashed int(beds) below (a 500 on /hospital/<ccn> for the 104 no-beds
+    # filings) and rendered "$nanM NPR". Pick the first present, non-NaN value.
+    beds = next((float(v) for v in (profile.get("beds"), profile.get("bed_count"))
+                 if v is not None and v == v), 0.0)
+    npr = next((float(v) for v in (profile.get("net_patient_revenue"), profile.get("net_revenue"))
+                if v is not None and v == v), 0.0)
 
     # ── Market Position (0-35 pts) ──
     # Continuous: beds component saturates at 500, NPR component saturates at $1B.
@@ -78,7 +84,7 @@ def compute_caduceus_score(
     else:
         npr_pts = 0.0
     market_score = beds_pts + npr_pts
-    breakdown["beds"] = f"{int(beds)} beds (+{beds_pts:.1f})"
+    breakdown["beds"] = (f"{int(beds)} beds" if beds > 0 else "— beds") + f" (+{beds_pts:.1f})"
     breakdown["revenue"] = f"${npr/1e6:.0f}M NPR (+{npr_pts:.1f})"
 
     # ── Financial Health (0-25 pts) ──

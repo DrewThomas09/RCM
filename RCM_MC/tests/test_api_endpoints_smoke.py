@@ -292,6 +292,14 @@ class TestNo500Sweep(unittest.TestCase):
             "/screen?preset=undervalued",
             "/screen?preset=small_efficient",
             "/screen?max_margin=2",
+            # Hospital profiles for incomplete HCRIS filings: 014006 reports
+            # no beds AND no revenue (renders a "limited data" notice);
+            # 070039 reports revenue but no bed count (renders a profile with
+            # an em-dash bed count). Both used to 500 on int(NaN). If a data
+            # refresh ever fills or drops these CCNs the route still 200/404s
+            # — the guard is "never 500".
+            "/hospital/014006",
+            "/hospital/070039",
         ]
         failures = []
         for path in endpoints:
