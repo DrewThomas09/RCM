@@ -157,11 +157,9 @@ def render_data_refresh_page(db_path: str) -> str:
     header = ck_page_title(
         "Data refresh",
         eyebrow="PUBLIC DATA · INGEST",
-        meta=(
-            "Pull fresh data from CMS HCRIS, Care Compare, IRS 990, "
-            "and other public sources. Rate-limited to 1 refresh per "
-            "source per hour."
-        ),
+        # Short scannable meta (the row is CSS-uppercased — a full
+        # sentence renders as a dense all-caps block).
+        meta="CMS HCRIS · Care Compare · IRS 990 + more · max 1 refresh / source / hour",
     )
 
     # Pull status rows from the data_source_status table.

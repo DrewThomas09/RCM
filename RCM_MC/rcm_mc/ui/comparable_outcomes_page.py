@@ -269,12 +269,11 @@ def render_comparable_outcomes_page(
     header = ck_page_title(
         "Comparable-deal outcomes",
         eyebrow="DILIGENCE · MARKET COMPARABLES",
-        meta=(
-            "For a target deal profile (sector + EV + year), surface "
-            "the most-similar realized PE deals in the corpus and "
-            "their MOIC / IRR distribution. The "
-            "\"what would this trade for?\" answer in one screen."
-        ),
+        # Keep the meta a short scannable label — the meta row is
+        # CSS-uppercased, so a full sentence here renders as a dense
+        # all-caps block. The "what would this trade for?" explanation
+        # lives in the readable Tip card below in normal case.
+        meta="Realized MOIC / IRR on the most-similar corpus deals",
     )
 
     form = _input_form(qs)

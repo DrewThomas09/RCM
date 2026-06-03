@@ -207,13 +207,11 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     header = ck_page_title(
         "Sponsor track record",
         eyebrow="DILIGENCE · SPONSOR INTELLIGENCE",
-        meta=(
-            "Type a sponsor name. The tool computes their full "
-            "track record from the corpus — every realized deal, "
-            "median MOIC, win rate, sector breakdown, vintage "
-            "timeline. Use when evaluating a sponsor's pitched "
-            "base case."
-        ),
+        # Short scannable meta — the row is CSS-uppercased, so a full
+        # sentence renders as a dense all-caps block. The instruction
+        # ("type a sponsor name") is obvious from the form and the full
+        # purpose is in the ck_source_purpose card below.
+        meta="Median MOIC · win rate · sector mix · vintage timeline, vs the corpus",
     ) + ck_source_purpose(
         purpose="Compute a sponsor's realized track record (median MOIC, win rate, sectors, vintages) vs the corpus to sanity-check a pitched base case.",
         universe="corpus",
