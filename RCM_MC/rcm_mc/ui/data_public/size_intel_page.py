@@ -68,7 +68,7 @@ def _log_scale_scatter(points: List[Tuple[float, float, str]], width: int = 500,
     for ev, moic, name in points:
         cx = sx(ev); cy = sy(moic)
         color = _moic_color(moic)
-        elements.append(f'<circle cx="{cx}" cy="{cy}" r="2.5" fill="{color}" opacity="0.7"><title>{_html.escape(name[:40])} · ${ev:.0f}M · {moic:.2f}x</title></circle>')
+        elements.append(f'<circle cx="{cx}" cy="{cy}" r="2.5" fill="{color}" opacity="0.7"><title>{_html.escape(name)} · ${ev:.0f}M · {moic:.2f}x</title></circle>')
 
     elements.append(f'<text x="{margin["l"]+W//2}" y="{height-2}" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">EV (log scale)</text>')
     elements.append(f'<text x="9" y="{margin["t"]+H//2}" text-anchor="middle" transform="rotate(-90,9,{margin["t"]+H//2})" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">MOIC</text>')
