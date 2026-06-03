@@ -653,7 +653,11 @@ def render_state_detail(
     for _, h in sdf.sort_values(rev_col, ascending=False).head(50).iterrows():
         ccn = html.escape(str(h.get("ccn", "")))
         name = html.escape(str(h.get("name", ""))[:50])
-        beds = int(h.get("beds", 0))
+        # beds is NaN for filings that didn't report a count — show an
+        # em-dash rather than crashing int(NaN) (a HI hospital 500'd
+        # /market-data/state/HI) or asserting a false "0 beds".
+        _beds_raw = h.get("beds")
+        beds = f"{int(_beds_raw)}" if pd.notna(_beds_raw) else "&mdash;"
         rev = float(h.get(rev_col, 0))
         opex = float(h.get("operating_expenses", 0))
         margin = (rev - opex) / rev if rev > 1e5 and opex > 0 else 0
