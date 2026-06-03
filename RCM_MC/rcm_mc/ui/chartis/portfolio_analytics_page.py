@@ -1,7 +1,7 @@
 """Deal Corpus Analytics — /deal-corpus-analytics (Research).
 
 Renamed/moved from "Portfolio Analytics" under Portfolio: this renders the
-655-deal BENCHMARK CORPUS, which is NOT the user's active portfolio.
+deal BENCHMARK CORPUS, which is NOT the user's active portfolio.
 /portfolio-analytics now redirects here.
 
 Combines ``data_public/portfolio_analytics.py`` (corpus scorecard,
@@ -652,7 +652,7 @@ def render_portfolio_analytics(
     explainer_html = (
         '<p class="ck-pa-explainer">'
         '<em>Where the corpus tells you what worked.</em> '
-        "Corpus-wide views across the 655-deal universe: scorecard "
+        "Corpus-wide views across the full deal corpus: scorecard "
         "(MOIC/IRR quartiles, home-run rate, loss rate), vintage "
         "cohorts, deal-type mix, sector/geography/sponsor "
         "concentration, and realized-MOIC outliers. Read the cohort "

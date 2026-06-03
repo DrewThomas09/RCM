@@ -397,7 +397,7 @@ def render_deals_library(
 
     explainer = render_page_explainer(
         what=(
-            "Browsable 655-deal healthcare-PE corpus — name, sponsor, "
+            "Browsable healthcare-PE deal corpus — name, sponsor, "
             "entry year, sector, EV / EBITDA multiple, realized MOIC "
             "and IRR, hold period, commercial-payer %, vintage regime, "
             "and data grade per row."

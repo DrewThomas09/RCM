@@ -2,7 +2,7 @@
 
 Top-level portfolio-scope page that surfaces
 ``data_public/sponsor_track_record.py`` — sortable league table of
-every PE sponsor in the 655-deal corpus with:
+every PE sponsor in the deal corpus with:
 
   - deal count + realized count
   - MOIC (p25/p50/mean/p75)
@@ -302,7 +302,7 @@ def render_sponsor_track_record(
     explainer_html = (
         '<p class="ck-str-explainer">'
         '<em>What the sponsor track record reveals.</em> '
-        "Sortable league table of every PE sponsor in the 655-deal "
+        "Sortable league table of every PE sponsor in the deal "
         "corpus: MOIC quartiles, IRR, hold years, loss rate, home-run "
         "rate, and a 0–1 consistency score blending MOIC + IRR "
         "dispersion. A high median MOIC with low consistency is a "
@@ -334,7 +334,7 @@ def render_sponsor_track_record(
             empty_note(
                 "No corpus loaded. The deals corpus seeds live at "
                 "rcm_mc/data_public/_SEED_DEALS + extended_seed_*.py "
-                "and should total 655 deals."
+                "and should total the full deal corpus."
             ),
             code="NIL",
         )
@@ -366,7 +366,7 @@ def render_sponsor_track_record(
 
     kpis = (
         ck_kpi_block("Sponsors Tracked", str(total_sponsors), f"min {2} deals")
-        + ck_kpi_block("Deals Counted", str(total_deals), "across 655-deal corpus")
+        + ck_kpi_block("Deals Counted", str(total_deals), "across the deal corpus")
         + ck_kpi_block("Realized", str(realized),
                         f"{realized/total_deals*100:.0f}% of tracked" if total_deals else "—")
         + ck_kpi_block("Overall Median MOIC",
