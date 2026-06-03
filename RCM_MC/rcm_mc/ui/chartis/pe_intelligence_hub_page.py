@@ -1,17 +1,51 @@
 """PE Intelligence Brain hub — /pe-intelligence.
 
-Landing page for the rcm_mc.pe_intelligence package (278 modules).
-Surfaces the seven partner reflexes from the brain's README, links
-to the archetype library, reasonableness matrix, red-flag catalog,
-and bear book. This is the "what can the brain do" page — per-deal
-output lives at /deal/<id>/partner-review and /deal/<id>/red-flags.
+Landing page for the rcm_mc.pe_intelligence package. Surfaces the
+seven partner reflexes from the brain's README, links to the archetype
+library, reasonableness matrix, red-flag catalog, and bear book. This
+is the "what can the brain do" page — per-deal output lives at
+/deal/<id>/partner-review and /deal/<id>/red-flags.
 """
 from __future__ import annotations
 
+import functools
 import html as _html
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title, ck_section_header
+
+
+@functools.lru_cache(maxsize=1)
+def _brain_facts() -> Tuple[int, int]:
+    """``(module_count, public_export_count)`` for the
+    ``rcm_mc.pe_intelligence`` package, derived live so the landing-page
+    headline figures can't go stale the way the old hardcoded "278
+    modules · 2,970 tests" did (the suite is now ~14.6k tests, and the
+    module count drifts as the brain grows). ``module_count`` = ``.py``
+    files in the package tree; ``exports`` = ``len(package.__all__)``.
+    Cached once per process — the numbers don't change while the server
+    is up. Falls back to ``(0, 0)`` if the package can't be inspected, in
+    which case callers omit the figure rather than print a wrong one."""
+    import pathlib
+    try:
+        import rcm_mc.pe_intelligence as _pi
+        pkg_dir = pathlib.Path(_pi.__file__).resolve().parent
+        n_mod = sum(1 for _ in pkg_dir.rglob("*.py"))
+        n_exp = len(getattr(_pi, "__all__", ()) or ())
+        return n_mod, n_exp
+    except Exception:  # noqa: BLE001 — landing copy is best-effort
+        return 0, 0
+
+
+def _title(current_user: "Optional[str]") -> str:
+    n_mod, _ = _brain_facts()
+    n_ref = len(_SEVEN_REFLEXES)
+    facts = (f"{n_mod} modules · " if n_mod else "") + f"{n_ref} partner reflexes"
+    meta = (
+        f"Signed in as {_html.escape(current_user)} · {facts}"
+        if current_user else facts
+    )
+    return ck_page_title("PE Intelligence", eyebrow="PE INTELLIGENCE", meta=meta)
 
 _EXPLAINER_CSS = """
 .ck-pei-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
@@ -19,14 +53,6 @@ color:var(--sc-text-dim);max-width:68ch;
 margin:var(--sc-s-4) 0 var(--sc-s-6);}
 .ck-pei-explainer em{color:var(--sc-teal-ink);font-style:italic;}
 """
-
-
-def _title(current_user: "Optional[str]") -> str:
-    meta = (
-        f"Signed in as {_html.escape(current_user)} · 278 modules · 7 reflexes"
-        if current_user else "278 modules · 2,970 tests · 7 partner reflexes"
-    )
-    return ck_page_title("PE Intelligence", eyebrow="PE INTELLIGENCE", meta=meta)
 
 
 _SEVEN_REFLEXES: List[Dict[str, str]] = [
@@ -274,10 +300,24 @@ def render_pe_intelligence_hub(
     except Exception:  # noqa: BLE001 — landing copy is best-effort
         _corpus_n = 0
     title_block = _title(current_user)
+    # Headline figures are derived live (see _brain_facts) so they can't go
+    # stale: the old hardcoded "278 modules · 2,970 tests · 1,455+ exports"
+    # had drifted (277 modules now, and the suite is ~14.6k tests — the
+    # "2,970 tests" figure was ~5x low). The unit-test count is dropped
+    # entirely: it's not intrinsic to the shipped package and "passing"
+    # can't be verified at render time. Modules / reflexes / public exports
+    # are intrinsic and self-correcting.
+    n_mod, n_exp = _brain_facts()
+    n_ref = len(_SEVEN_REFLEXES)
+    _mod_clause = (
+        f"{n_mod} modules organised around {n_ref} partner reflexes"
+        if n_mod else
+        f"A deep module library organised around {n_ref} partner reflexes"
+    )
     explainer_html = (
         '<p class="ck-pei-explainer">'
         '<em>Where senior-PE judgment is codified.</em> '
-        "278 modules organised around 7 partner reflexes — sniff test "
+        f"{_mod_clause} — sniff test "
         "before math, archetype on sight, named-failure pattern match, "
         "dot-connect packet signals, recurring vs one-time discipline, "
         "specific regulatory dollar-impact, and partner voice. "
@@ -287,13 +327,13 @@ def render_pe_intelligence_hub(
         "specific per-deal read."
         '</p>'
     )
-    kpis = (
-        ck_kpi_block("Modules", "278", "partner reflexes codified")
-        + ck_kpi_block("Tests", "2,970", "unit tests passing")
-        + ck_kpi_block("Reflexes", "7", "senior-partner judgment layers")
-        + ck_kpi_block("Exports", "1,455+", "public symbols")
-    )
-    kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
+    _kpi_blocks = []
+    if n_mod:
+        _kpi_blocks.append(ck_kpi_block("Modules", f"{n_mod:,}", "across the brain package"))
+    _kpi_blocks.append(ck_kpi_block("Reflexes", str(n_ref), "senior-partner judgment layers"))
+    if n_exp:
+        _kpi_blocks.append(ck_kpi_block("Exports", f"{n_exp:,}", "public symbols"))
+    kpi_strip = f'<div class="ck-kpi-grid">{"".join(_kpi_blocks)}</div>'
 
     # Seven reflexes grid (2 columns)
     reflex_header = ck_section_header(
