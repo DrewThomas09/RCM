@@ -627,6 +627,12 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     pp_styles = """
 <style>
 .pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+/* min-width:0 lets a column shrink below its content's intrinsic width.
+   Without it the funnel panel (a fixed 6-col grid ~462px wide) keeps its
+   min-content size, blows the 1fr track past the viewport on phones, and
+   the funnel's own overflow-x:auto wrapper never gets a constrained width
+   to scroll within. */
+.pp-grid>*{min-width:0;}
 @media (max-width:640px){ .pp-grid{ grid-template-columns:1fr; } }
 .pp-advance-form{display:inline;}
 .pp-advance-btn{background:none;border:none;color:var(--cad-link);
