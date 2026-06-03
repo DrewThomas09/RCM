@@ -10864,14 +10864,15 @@ def chartis_shell(
     if title is None:
         title = "PE Desk"
 
-    fonts = (
-        '<link rel="preconnect" href="https://fonts.googleapis.com">'
-        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-        '<link href="https://fonts.googleapis.com/css2?'
-        'family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&'
-        'family=Inter+Tight:wght@400;500;600;700&'
-        'family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">'
-    )
+    # Offline-first: no external font CDN. The product runs air-gapped
+    # ("no external services" — see CLAUDE.md) and the response CSP is
+    # style-src 'self' / font-src 'self', so a Google Fonts <link> was
+    # blocked on every page (a console error per render) AND the
+    # preconnect still reached out to Google, leaking usage of a PE
+    # diligence tool. The --sc-serif/sans/mono tokens carry robust local
+    # fallbacks (Georgia / system-sans / Consolas), so dropping the CDN
+    # links is a no-op visually but removes the error + the egress.
+    fonts = ""
     palette_html = ""
     # Palette + tour + quick-capture + shortcuts overlay + topbar
     # menu JS are all chrome-coupled: they have nothing to operate
