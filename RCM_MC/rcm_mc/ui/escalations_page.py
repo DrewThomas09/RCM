@@ -200,7 +200,7 @@ def render_escalations(
             f"RED ALERTS · OPEN > {min_days} DAYS · OLDEST FIRST"
         ),
         lede_italic_phrase=(
-            "What stayed open longer than it should."
+            "The red alerts the clock is running on."
         ),
         lede_body=(
             "Red-severity alerts sorted by days-open, oldest first. "

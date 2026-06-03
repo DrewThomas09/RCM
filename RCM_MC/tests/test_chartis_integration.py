@@ -345,7 +345,7 @@ class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
         self._assert_renders(
             "/deal-screening",
             expect_title="Deal Screening",
-            expect_substrings=("DECISION MIX", "Screening controls"),
+            expect_substrings=("DECISION MIX", "Your thesis — set the thresholds"),
         )
 
     def test_portfolio_analytics_renders(self):
@@ -377,8 +377,13 @@ class TestChartisPhase2CScreeningIntegration(unittest.TestCase):
             # Results table has rows (not the UNAVAILABLE / error banner)
             self.assertNotIn("Deal screening unavailable", body)
             self.assertNotIn("Screening run failed", body)
-            # Sanity: corpus-size KPI shows a 3-digit count
-            self.assertIn("655", body, "expected 655 corpus deals KPI")
+            # Sanity: corpus-size KPI shows the LIVE corpus count — dynamic,
+            # not hardcoded (the corpus changes; e.g. the fabricated seed_605
+            # row was removed, so it's 654 now, not 655).
+            from rcm_mc.ui.chartis._helpers import load_corpus_deals
+            n_corpus = len(load_corpus_deals())
+            self.assertIn(str(n_corpus), body,
+                          f"expected {n_corpus} corpus deals KPI")
             # The pass/watch/fail tiles must all render
             self.assertIn(">PASS<", body)
             self.assertIn(">WATCH<", body)
