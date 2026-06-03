@@ -1228,12 +1228,15 @@ def render_hcris_xray_page(
         title="Peer roster",
     )
 
-    # Real EBITDA from HCRIS when positive; fallback to 10% placeholder
-    # for deals with negative operating margins (common in hospitals)
-    actual_ebitda = max(
-        target.net_patient_revenue * target.operating_margin_on_npr,
-        target.net_patient_revenue * 0.05,
-    )
+    # EBITDA proxy = HCRIS-filed NPR x filed operating margin. Hospitals
+    # frequently file negative operating margins, which would seed the
+    # cross-linked LBO models with a non-runnable (<=0) EBITDA — so floor the
+    # *seed* at 5% of NPR. Track whether the floor bit so the display says so
+    # honestly instead of implying the figure came from the filed margin.
+    filed_ebitda = target.net_patient_revenue * target.operating_margin_on_npr
+    floor_ebitda = target.net_patient_revenue * 0.05
+    actual_ebitda = max(filed_ebitda, floor_ebitda)
+    ebitda_is_floored = filed_ebitda < floor_ebitda
     # Public-comp context — target vs HCA / THC / UHS op margin
     public_comp_block = _public_comp_context(target)
 
@@ -1272,7 +1275,10 @@ def render_hcris_xray_page(
         '</p>'
         '<p class="ck-eyebrow">'
         f'EV <code>${default_ev/1e6:,.0f}M</code> (9.0× '
-        f'${actual_ebitda/1e6:,.1f}M EBITDA) · Equity '
+        f'${actual_ebitda/1e6:,.1f}M EBITDA'
+        + (f' — 5% NPR floor, filed op. margin '
+           f'{target.operating_margin_on_npr*100:.1f}%' if ebitda_is_floored else "")
+        + ') · Equity '
         f'<code>${default_equity/1e6:,.0f}M</code> · Debt '
         f'<code>${default_debt/1e6:,.0f}M</code> · override '
         'any of these on the destination page.</p>',
