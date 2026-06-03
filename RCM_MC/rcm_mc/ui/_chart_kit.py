@@ -180,11 +180,15 @@ def ck_bar_chart(
             f'font-family="{_MONO}" font-size="10.5" font-weight="600" '
             f'fill="{_INK}">{_html.escape(fmt(val))}</text>'
         )
-        # category label below baseline
+        # category label below baseline — truncate to what fits this bar's
+        # band (~6.5px per mono char at 11px) so adjacent labels never
+        # overlap when there are many bars, with an ellipsis + full-text
+        # <title> (on the bar above) for recovery.
+        _lbl_max = max(4, int(band / 6.5))
         parts.append(
             f'<text x="{cx:.1f}" y="{T + ploth + 16:.1f}" text-anchor="middle" '
             f'font-family="{_MONO}" font-size="11" fill="{_DIM}">'
-            f'{_html.escape(label[:14])}</text>'
+            f'{_html.escape(_trunc(label, _lbl_max))}</text>'
         )
     # reference line (US median)
     if ref_v is not None and ref_v > 0:
