@@ -432,7 +432,7 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
     intro = ck_editorial_head(
         eyebrow=f"Regulatory Calendar · {verdict}",
         title=headline,
-        meta=f"VERDICT {verdict} · RISK SCORE {risk_val}",
+        meta=f"VERDICT {verdict} · RISK SCORE {report.risk_score:.0f}",
         lede_italic_phrase="The regulatory clock for this thesis.",
         lede_body=rationale,
         as_subhead=True,
