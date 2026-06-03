@@ -230,26 +230,6 @@ EXTENDED_SEED_DEALS_2 = [
     # ------------------------------------------------------------------
     # 66. Surgical Care Affiliates – United Health Group (2017)
     # ------------------------------------------------------------------
-    {
-        "source_id": "seed_066",
-        "source": "seed",
-        "deal_name": "Surgical Care Affiliates – UnitedHealth Group / Optum",
-        "year": 2017,
-        "buyer": "UnitedHealth Group / Optum",
-        "seller": "Public shareholders (NASDAQ: SCAI)",
-        "ev_mm": 2350,
-        "ebitda_at_entry_mm": 310,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": json.dumps({
-            "medicare": 0.28, "medicaid": 0.05,
-            "commercial": 0.63, "self_pay": 0.04,
-        }),
-        "notes": "ASC platform take-private by Optum at 7.6x. "
-                 "Strategic acquisition for vertical integration into ambulatory care. "
-                 "Included as strategic buyer comp for ASC multiples.",
-    },
     # ------------------------------------------------------------------
     # 67. Mednax – Pediatrix Medical Group spinoff (2021)
     # ------------------------------------------------------------------

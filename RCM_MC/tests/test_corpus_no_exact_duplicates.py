@@ -47,6 +47,27 @@ def _ev(deal: dict) -> float:
         return 0.0
 
 
+# Tokens that are NOT a target identity — deal-structure words and common
+# corporate suffixes. The buyer's own words are stripped per-deal too, so a
+# pair only matches on a shared *target* token, not a shared sponsor name.
+_GENERIC_TOKENS = {
+    "health", "healthcare", "group", "inc", "llc", "corp", "corporation",
+    "partners", "systems", "system", "holdings", "holding", "services",
+    "service", "the", "merger", "acquisition", "buyout", "take", "private",
+    "lbo", "platform", "recap", "secondary", "deal", "physician", "staffing",
+    "capital", "management", "company", "associates", "round", "preipo", "ipo",
+}
+
+
+def _target_tokens(name: str, buyer: str) -> set:
+    buyer_tokens = set(re.findall(r"[a-z]{4,}", (buyer or "").lower()))
+    return {
+        t
+        for t in re.findall(r"[a-z]{4,}", (name or "").lower())
+        if t not in _GENERIC_TOKENS and t not in buyer_tokens
+    }
+
+
 class CorpusNoExactDuplicatesTest(unittest.TestCase):
     def test_no_exact_duplicate_deals(self) -> None:
         deals = load_corpus_deals()
@@ -77,6 +98,43 @@ class CorpusNoExactDuplicatesTest(unittest.TestCase):
             dupes,
             [],
             "exact-duplicate deals re-introduced into the corpus:\n  "
+            + "\n  ".join(dupes),
+        )
+
+    def test_no_cross_side_duplicate_deals(self) -> None:
+        """Catch the same deal entered from BOTH sides of the transaction.
+
+        The target-name check above misses these because "Teladoc–Livongo"
+        and "Livongo / Teladoc Merger" normalize to different targets. They
+        share, instead, the same buyer + year + entry EV AND a non-sponsor
+        target token. Distinct deals by one sponsor in a year (e.g. Waud
+        Capital's Acadia vs Healogics, both 2011/$300M) don't share a target
+        token, so they are not flagged.
+        """
+        deals = load_corpus_deals()
+        groups: dict = collections.defaultdict(list)
+        for d in deals:
+            if _ev(d) > 0 and d.get("year") is not None:
+                groups[(_norm_buyer(d.get("buyer")), d.get("year"))].append(d)
+
+        dupes = []
+        for (_buyer, year), ds in groups.items():
+            for i in range(len(ds)):
+                for j in range(i + 1, len(ds)):
+                    a, b = _ev(ds[i]), _ev(ds[j])
+                    shared = _target_tokens(
+                        ds[i].get("deal_name"), ds[i].get("buyer")
+                    ) & _target_tokens(ds[j].get("deal_name"), ds[j].get("buyer"))
+                    if a > 0 and b > 0 and 0.94 <= a / b <= 1.064 and shared:
+                        dupes.append(
+                            f"{year} {sorted(shared)}: "
+                            f"{ds[i].get('source_id')} ~ {ds[j].get('source_id')}"
+                        )
+
+        self.assertEqual(
+            dupes,
+            [],
+            "cross-side-named duplicate deals re-introduced:\n  "
             + "\n  ".join(dupes),
         )
 
