@@ -367,7 +367,7 @@ def ck_grouped_bar(
         parts.append(
             f'<text x="{L + band * ci + band / 2.0:.1f}" y="{T + ploth + 16:.1f}" '
             f'text-anchor="middle" font-family="{_MONO}" font-size="10.5" '
-            f'fill="{_DIM}">{_html.escape(cat[:12])}</text>'
+            f'fill="{_DIM}">{_html.escape(_trunc(cat, 12))}</text>'
         )
     # legend (top)
     lx = L
