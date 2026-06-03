@@ -141,7 +141,9 @@ def _time_series_svg(
     """Multi-line chart of avg MOIC per year per sector."""
     if not ts_list or not all_years:
         return ""
-    ml, mr, mt, mb = 40, 20, 10, 28
+    # mr holds the series name printed past the last data point (right edge);
+    # at mr=20 a 12-char sector label overran the right margin.
+    ml, mr, mt, mb = 40, 84, 10, 28
     W = width - ml - mr
     H = height - mt - mb
 

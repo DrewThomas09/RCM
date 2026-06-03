@@ -36,7 +36,9 @@ def _star_trajectory_svg(progression) -> str:
     if not progression:
         return f'<div style="padding:20px;color:{P["text_dim"]};font-size:11px">No MA Star trajectory for this sector</div>'
     w, h = 540, 200
-    pad_l, pad_r, pad_t, pad_b = 50, 30, 30, 40
+    # pad_r holds the right-edge benchmark line labels ("4.0 — Bonus",
+    # "4.5 — Top") that sit just past the plot; at pad_r=30 they overran.
+    pad_l, pad_r, pad_t, pad_b = 50, 78, 30, 40
     inner_w = w - pad_l - pad_r
     inner_h = h - pad_t - pad_b
 

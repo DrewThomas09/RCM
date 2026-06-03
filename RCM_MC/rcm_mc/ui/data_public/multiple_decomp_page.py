@@ -19,7 +19,10 @@ def _waterfall_svg(components: List[Any], total: float, width: int = 640, height
     """Stacked horizontal bar decomposing EV/EBITDA into components."""
     if not components:
         return ""
-    ml, mr, mt, mb = 20, 60, 10, 30
+    # ml holds the (left, end-anchored) component names — "Unexplained
+    # Premium", "Payer Mix Adjustment" (~20 chars ≈ 130px); at ml=20 they ran
+    # ~100px off the left. mr holds the "+X.X× (XX%)" value past the bar end.
+    ml, mr, mt, mb = 150, 80, 10, 30
     W = width - ml - mr
     bar_h = 38
     gap = 8

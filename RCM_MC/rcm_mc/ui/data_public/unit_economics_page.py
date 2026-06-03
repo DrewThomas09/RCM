@@ -87,7 +87,9 @@ def _site_scenario_svg(scenarios) -> str:
     if not scenarios:
         return ""
     w, h = 480, 200
-    pad_l, pad_r, pad_t, pad_b = 120, 30, 20, 30
+    # pad_l holds the (left, end-anchored) scenario names ("Underperforming
+    # Site", ~120px); pad_r holds the "$+X.XXM" delta past the diverging bar.
+    pad_l, pad_r, pad_t, pad_b = 142, 52, 20, 30
     inner_w = w - pad_l - pad_r
     inner_h = h - pad_t - pad_b
     row_h = (inner_h - 10) / len(scenarios)
