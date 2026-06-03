@@ -30,7 +30,13 @@ def render_hospital_profile(
     name = html.escape(str(hospital.get("name", "Unknown Hospital")))
     city = html.escape(str(hospital.get("city", "")))
     state = html.escape(str(hospital.get("state", "")))
-    beds = int(hospital.get("beds", 0))
+    # beds is NaN for filings that didn't report a count; keep it numeric
+    # (0) for the rev/bed math, but render an em-dash — never a false
+    # "0 beds" — and never crash int(NaN) (which 500'd the profile of the
+    # 104 no-beds-reported hospitals, and any profile listing one as a comp).
+    _beds_raw = hospital.get("beds")
+    beds = int(_beds_raw) if (_beds_raw is not None and _beds_raw == _beds_raw) else 0
+    beds_disp = f"{beds:,}" if beds > 0 else "—"
     npr = float(hospital.get("net_patient_revenue", 0))
     opex = float(hospital.get("operating_expenses", 0))
     ni = float(hospital.get("net_income", 0))
@@ -113,7 +119,7 @@ def render_hospital_profile(
         f'<span class="ident-sep">|</span>'
         f'<span class="ident-key">LOC</span> <span class="ident-val">{city}, {state}</span>'
         f'<span class="ident-sep">|</span>'
-        f'<span class="ident-key">BEDS</span> <span class="ident-val">{beds:,}</span>'
+        f'<span class="ident-key">BEDS</span> <span class="ident-val">{beds_disp}</span>'
         f'<span class="ident-sep">|</span>'
         f'<span class="ident-key">NPR</span> <span class="ident-val">${npr/1e6:,.1f}M</span>'
         f'<span class="ident-sep">|</span>'
@@ -226,12 +232,12 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         f'<div class="eyebrow"><span class="dash"></span>'
         f'HOSPITAL PROFILE · CCN {ccn}</div>'
         f'<h1>{name}</h1>'
-        f'<div class="meta">{city}, {state} · {beds:,} BEDS · '
+        f'<div class="meta">{city}, {state} · {beds_disp} BEDS ·'
         f'${npr/1e6:,.1f}M NPR · {margin:.1%} OP MARGIN · '
         f'PE DESK SCORE {score_val}/100 ({grade})</div>'
         f'<p class="lede">'
         f'<em>{name}</em> — {city}, {state}.'
-        f' {beds:,} licensed beds, ${npr/1e6:,.1f}M net patient '
+        f' {beds_disp} licensed beds, ${npr/1e6:,.1f}M net patient'
         f'revenue, {margin:.1%} operating margin.{verdict_extras}'
         '</p>'
         '<ul class="legend">'
@@ -323,7 +329,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         )
         + ck_kpi_block(
             "Licensed Beds",
-            provenance_tooltip(label="Licensed Beds", value=f"{beds}", graph=prov_graph, metric_key="beds"),
+            provenance_tooltip(label="Licensed Beds", value=f"{beds_disp}", graph=prov_graph, metric_key="beds"),
         )
         + ck_kpi_block(
             "Revenue per Bed",
@@ -440,7 +446,9 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         for c in comparables[:5]:
             c_ccn = html.escape(str(c.get("ccn", "")))
             c_name = html.escape(str(c.get("name", ""))[:40])
-            c_beds = int(c.get("beds", 0))
+            _cb_raw = c.get("beds")
+            _cb = int(_cb_raw) if (_cb_raw is not None and _cb_raw == _cb_raw) else 0
+            c_beds = f"{_cb:,}" if _cb > 0 else "—"
             c_rev = float(c.get("revenue", 0))
             comp_rows += (
                 f'<tr>'
@@ -449,7 +457,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
                 f'<td><a href="/hospital/{c_ccn}" '
                 f'style="color:{PALETTE["text_primary"]};text-decoration:none;font-weight:600;">'
                 f'{c_name}</a></td>'
-                f'<td class="num">{c_beds:,}</td>'
+                f'<td class="num">{c_beds}</td>'
                 f'<td class="num">${c_rev/1e6:,.0f}M</td></tr>'
             )
         comp_html = ck_panel(
@@ -579,5 +587,5 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
     return chartis_shell(
         body, name,
         active_nav="/market-data/map",
-        subtitle=f"CCN {ccn} — {city}, {state} — {beds} beds",
+        subtitle=f"CCN {ccn} — {city}, {state} — {beds_disp} beds",
     )
