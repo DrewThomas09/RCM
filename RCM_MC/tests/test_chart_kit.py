@@ -129,5 +129,33 @@ class GridAndAssetsTests(unittest.TestCase):
         self.assertNotIn("var(--", svg)
 
 
+class LabelTruncationTests(unittest.TestCase):
+    LONG = "Operating Margin (EBITDA %)"   # 26 chars — exceeds the 22 cap
+
+    def test_hbar_truncates_with_ellipsis_and_full_title(self) -> None:
+        out = ck_hbar_chart("T", [(self.LONG, 2.5, "teal")])
+        self.assertIn("…", out)                              # clipped, visibly
+        self.assertIn(f"<title>{self.LONG}", out)            # full text on hover
+        # never the silent mid-word cut that reads like the real label
+        self.assertNotIn("Operating Margin (EBIT<", out)
+
+    def test_diverging_truncates_with_ellipsis_and_full_title(self) -> None:
+        out = ck_diverging_bar("T", [(self.LONG, 1.5), ("Short", -0.4)])
+        self.assertIn("…", out)
+        self.assertIn(f"<title>{self.LONG}", out)
+
+    def test_grouped_legend_truncates_with_tooltip(self) -> None:
+        out = ck_grouped_bar(
+            "T", ["A", "B"],
+            [("Medicare Advantage Penetration", [1, 2], "teal")])
+        self.assertIn("…", out)
+        self.assertIn("<title>Medicare Advantage Penetration</title>", out)
+
+    def test_short_label_is_untouched(self) -> None:
+        out = ck_hbar_chart("T", [("Revenue", 5, "teal")])
+        self.assertIn(">Revenue</text>", out)
+        self.assertNotIn("…", out)
+
+
 if __name__ == "__main__":
     unittest.main()
