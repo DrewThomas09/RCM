@@ -41,7 +41,7 @@ def _coverage_svg(coverages) -> str:
         bw = c.annual_premium_mm / max_v * inner_w
         tc = trend_colors.get(c.market_trend, text_dim)
         bars.append(
-            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.coverage_type[:34])}</text>'
+            f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace"><title>{_html.escape(c.coverage_type)}</title>{_html.escape(c.coverage_type if len(c.coverage_type) <= 34 else c.coverage_type[:33] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{tc}" opacity="0.80"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" font-family="JetBrains Mono,monospace">${c.annual_premium_mm:,.2f}M</text>'
             f'<text x="{w - 4}" y="{y + bh - 1}" fill="{tc}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{c.market_trend}</text>'

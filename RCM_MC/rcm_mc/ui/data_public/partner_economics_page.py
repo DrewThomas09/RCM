@@ -47,7 +47,7 @@ def _tier_svg(tiers) -> str:
         bw_salary = t.base_salary_k / max_comp * inner_w
         bw_total = t.annual_total_comp_k / max_comp * inner_w
         bars.append(
-            f'<text x="{pad_l - 6}" y="{y + bh + 8}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(t.tier[:22])}</text>'
+            f'<text x="{pad_l - 6}" y="{y + bh + 8}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace"><title>{_html.escape(t.tier)}</title>{_html.escape(t.tier if len(t.tier) <= 22 else t.tier[:21] + "…")}</text>'
             f'<text x="{pad_l - 6}" y="{y + bh + 20}" fill="{text_faint}" font-size="9" text-anchor="end" font-family="JetBrains Mono,monospace">{t.target_partners} partners</text>'
             # Total bar (base)
             f'<rect x="{pad_l}" y="{y}" width="{bw_total:.1f}" height="{bh}" fill="{acc}" opacity="0.55"/>'
