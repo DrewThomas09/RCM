@@ -329,7 +329,7 @@ def render_sponsor_heatmap(params: dict = None) -> str:
 
     explainer = render_page_explainer(
         what=(
-            "Sponsor × sector MOIC heatmap over the 655-deal corpus. "
+            "Sponsor × sector MOIC heatmap over the deal corpus. "
             "Cells show average MOIC, median MOIC, IRR, total EV, and "
             "realized count for every sponsor-sector pair with at "
             "least two deals, colored by performance tier."
