@@ -329,7 +329,8 @@ def render_portfolio_bridge(
         bar_pct = min(100, abs(total_val) / max_lever * 80)
         lever_bars += (
             '<div class="pb-bar-row">'
-            f'<div class="pb-bar-name">{_html.escape(lever_name[:22])}</div>'
+            f'<div class="pb-bar-name" title="{_html.escape(lever_name)}">'
+            f'{_html.escape(lever_name)}</div>'
             '<div class="pb-bar-track">'
             f'<div class="pb-bar-fill" style="width:{bar_pct:.0f}%;">'
             f'{_fm(total_val)}</div></div></div>'
@@ -417,7 +418,8 @@ def render_portfolio_bridge(
 <style>
 .pb-bar-row{display:flex;align-items:center;gap:8px;padding:5px 0;
 border-bottom:1px solid var(--cad-border);}
-.pb-bar-name{width:160px;font-size:12px;font-weight:500;}
+.pb-bar-name{width:160px;font-size:12px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pb-bar-track{flex:1;background:var(--cad-bg3);border-radius:3px;height:16px;}
 .pb-bar-fill{background:var(--cad-pos);border-radius:3px;
 height:16px;display:flex;align-items:center;justify-content:flex-end;
