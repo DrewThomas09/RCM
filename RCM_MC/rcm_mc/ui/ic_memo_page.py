@@ -448,10 +448,15 @@ def render_ic_memo(
     # diligence readout. Headline + body are unchanged.
     from ._workspace_mode import current_workspace_mode, CONSULTING
     _is_consulting = current_workspace_mode() == CONSULTING
+    # Authored in title case; the .ck-eh-eyebrow class already applies
+    # text-transform:uppercase, so this renders visually identical to the
+    # old SHOUTING literals while keeping the phrase readable in the HTML
+    # source — and matching how the sibling IC modules (ic_memo_generator,
+    # ic_packet) spell "Investment Committee Memorandum".
     _memo_eyebrow = (
-        f"COMMERCIAL DILIGENCE READOUT · CCN {_html.escape(ccn)}"
+        f"Commercial Diligence Readout · CCN {_html.escape(ccn)}"
         if _is_consulting
-        else f"INVESTMENT COMMITTEE MEMORANDUM · CCN {_html.escape(ccn)}"
+        else f"Investment Committee Memorandum · CCN {_html.escape(ccn)}"
     )
     # 2026-05-28 batch 22 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
