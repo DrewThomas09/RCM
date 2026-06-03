@@ -53,6 +53,18 @@ class TestHospitalProfileNaNBeds(unittest.TestCase):
         html = render_hospital_profile(_hosp("010001", 240.0), None)
         self.assertIn("240", html)
 
+    def test_comparable_revenue_uses_net_patient_revenue_key(self):
+        # Real comps come from an HCRIS row to_dict(), keyed
+        # "net_patient_revenue" (not "revenue") — the peer table must show
+        # that, not a false "$0M" from a missed key lookup.
+        html = render_hospital_profile(
+            _hosp("010001", 220.0), None,
+            comparables=[{"ccn": "010002", "name": "Peer Med", "beds": 200.0,
+                          "net_patient_revenue": 1.5e8}])
+        self.assertIn("Peer Med", html)
+        self.assertIn("$150M", html)
+        self.assertNotIn("$0M", html)
+
 
 class TestCaduceusScoreNaN(unittest.TestCase):
     def test_score_with_nan_beds_does_not_crash(self):

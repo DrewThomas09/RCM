@@ -464,7 +464,16 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
             _cb_raw = c.get("beds")
             _cb = int(_cb_raw) if (_cb_raw is not None and _cb_raw == _cb_raw) else 0
             c_beds = f"{_cb:,}" if _cb > 0 else "—"
-            c_rev = float(c.get("revenue", 0))
+            # Comparables come from to_dict() of an HCRIS row, which keys
+            # revenue as "net_patient_revenue" — the old c.get("revenue", 0)
+            # always missed and rendered a false "$0M" for every peer. Fall
+            # back through the real keys; em-dash if genuinely absent.
+            _crev = c.get("revenue")
+            if _crev is None:
+                _crev = c.get("net_patient_revenue", c.get("gross_patient_revenue"))
+            c_rev_disp = (f"${float(_crev)/1e6:,.0f}M"
+                          if (_crev is not None and _crev == _crev
+                              and float(_crev) > 0) else "&mdash;")
             comp_rows += (
                 f'<tr>'
                 f'<td><a href="/hospital/{c_ccn}" class="cad-ticker-id" '
@@ -473,7 +482,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
                 f'style="color:{PALETTE["text_primary"]};text-decoration:none;font-weight:600;">'
                 f'{c_name}</a></td>'
                 f'<td class="num">{c_beds}</td>'
-                f'<td class="num">${c_rev/1e6:,.0f}M</td></tr>'
+                f'<td class="num">{c_rev_disp}</td></tr>'
             )
         comp_html = ck_panel(
             '<table class="cad-table crosshair"><thead><tr>'
