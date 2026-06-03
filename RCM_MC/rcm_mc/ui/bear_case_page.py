@@ -50,6 +50,8 @@ _BC_HEAD_CSS = """
   background:var(--green-deep,#154e36);}
 .bc-head h1{font:400 40px/1.05 var(--sc-serif,Georgia),serif;
   letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.bc-head h2{font:400 30px/1.1 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.012em;color:var(--ink,#16263a);margin:0 0 14px;}
 .bc-head .meta{font:500 11px/1 var(--sc-mono,monospace);
   letter-spacing:.14em;text-transform:uppercase;
   color:var(--muted,#7a8595);margin:0 0 18px;}
@@ -66,7 +68,8 @@ _BC_HEAD_CSS = """
 .bc-head .legend .dot.computed{background:var(--ink-deep,#0e1a29);}
 .bc-head .legend .dot.needs{background:var(--coral,#b04a3a);}
 .bc-head .legend .dot.illustrative{background:var(--gold,#a08227);}
-@media (max-width:960px){.bc-head h1{font-size:32px;}}
+@media (max-width:960px){.bc-head h1{font-size:32px;}
+  .bc-head h2{font-size:25px;}}
 </style>
 """
 
@@ -78,14 +81,22 @@ def _bc_head(
     meta: str,
     lede_italic_phrase: str,
     lede_body: str,
+    as_subhead: bool = False,
 ) -> str:
-    """Strict Tier-1 5-block head for a bear-case render path."""
+    """Strict Tier-1 5-block head for a bear-case render path.
+
+    ``as_subhead`` renders the title as ``<h2>`` instead of ``<h1>`` so a
+    results view that already carries a page masthead keeps a single
+    ``<h1>`` (the fast-path stacks a ``_bc_head`` masthead above the verdict
+    card, which would otherwise emit two h1s).
+    """
+    heading = f'<h2>{title}</h2>' if as_subhead else f'<h1>{title}</h1>'
     return (
         _BC_HEAD_CSS
         + '<header class="bc-head">'
         f'<div class="eyebrow"><span class="dash"></span>'
         f'{html.escape(eyebrow)}</div>'
-        f'<h1>{title}</h1>'
+        f'{heading}'
         f'<div class="meta">{html.escape(meta)}</div>'
         f'<p class="lede"><em>{html.escape(lede_italic_phrase)}</em> '
         f'{lede_body}</p>'
@@ -213,6 +224,8 @@ _THEME_COLORS = {
 def _verdict_card(
     report: BearCaseReport,
     run_rate_ebitda_usd: Optional[float] = None,
+    *,
+    as_subhead: bool = False,
 ) -> str:
     n_crit = report.critical_count
     tone = "crit" if n_crit >= 3 else "hi" if n_crit >= 1 else "lo"
@@ -267,6 +280,7 @@ def _verdict_card(
         ),
         lede_italic_phrase="What could break this thesis.",
         lede_body=html.escape(report.top_line_summary),
+        as_subhead=as_subhead,
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -600,6 +614,9 @@ def _render_bear_case_no_ccd(
         + _verdict_card(
             report,
             run_rate_ebitda_usd=fnum("ebitda_year0_usd"),
+            # fastpath_hero above is the page masthead (<h1>); render the
+            # verdict card as a subhead (<h2>) so this path keeps one <h1>.
+            as_subhead=True,
         )
         + interpret_callout(
             "How to use this:",
@@ -806,6 +823,10 @@ def render_bear_case_page(
         + _verdict_card(
             report,
             run_rate_ebitda_usd=fnum("ebitda_year0_usd"),
+            # chartis_shell injects the page <h1> from the title on this
+            # path; render the verdict card as a subhead (<h2>) so the page
+            # keeps a single <h1> (was a dual-h1 with the shell title).
+            as_subhead=True,
         )
         + interpret_callout(
             "How to use this:", plain, tone="bad",
