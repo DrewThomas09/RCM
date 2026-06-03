@@ -354,6 +354,43 @@ class UIRenderTests(unittest.TestCase):
         self.assertIn("Kill-switch timeline", html)
         self.assertIn("EBITDA Bridge Overlay", html)
 
+    def test_peer_multiple_assumed_is_disclosed(self):
+        """With no EV supplied, the peer snapshot anchors on an assumed 9.0x
+        entry — which makes the target multiple circular (always 9.00x). It
+        must be LABELLED "Assumed Entry Multiple" and carry a disclosure, not
+        masquerade as a measured "Target Implied Multiple"."""
+        from rcm_mc.ui.regulatory_calendar_page import (
+            render_regulatory_calendar_page,
+        )
+        html = render_regulatory_calendar_page({
+            "specialties": ["HOSPITAL,ACUTE_HOSPITAL"],
+            "revenue_usd": ["450000000"],
+            "ebitda_usd": ["67500000"],
+            "target_name": ["NoEV Health"],
+        })
+        self.assertIn("Assumed Entry Multiple", html)
+        self.assertNotIn("Target Implied Multiple", html)
+        self.assertIn("Entry multiple assumed at 9.0x EBITDA", html)
+
+    def test_peer_multiple_is_real_when_ev_supplied(self):
+        """When an EV is supplied the multiple is a real measurement: it is
+        labelled "Target Implied Multiple", reflects EV/EBITDA (810/67.5 =
+        12.00x), and the assumed-entry disclosure is gone."""
+        from rcm_mc.ui.regulatory_calendar_page import (
+            render_regulatory_calendar_page,
+        )
+        html = render_regulatory_calendar_page({
+            "specialties": ["HOSPITAL,ACUTE_HOSPITAL"],
+            "revenue_usd": ["450000000"],
+            "ebitda_usd": ["67500000"],
+            "ev_usd": ["810000000"],
+            "target_name": ["WithEV Health"],
+        })
+        self.assertIn("Target Implied Multiple", html)
+        self.assertNotIn("Assumed Entry Multiple", html)
+        self.assertNotIn("Entry multiple assumed at", html)
+        self.assertIn("12.00x", html)
+
 
 class HTTPEndpointTests(unittest.TestCase):
 

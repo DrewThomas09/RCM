@@ -737,14 +737,26 @@ def _market_context_block(
         return ""
 
     category = _infer_peer_category(target)
-    ev_usd = target.get("ebitda_usd")
-    # Rough implied EV — in this view we don't always have an explicit
-    # EV input, so use EBITDA × a 9× placeholder only for the peer-
-    # comparison math; the resulting "implied" value clearly flags
-    # itself as back-of-envelope.
-    implied_ev = None
-    if ev_usd:
-        implied_ev = float(ev_usd) * 9.0
+    # Prefer a real EV when the caller supplies one — only then is "Target
+    # Implied Multiple" an actual measurement. Otherwise anchor the peer math
+    # on an assumed 9.0x entry, which makes the target multiple circular
+    # (9x EBITDA / EBITDA = 9.00x exactly) — so the panel must SAY it's
+    # assumed rather than present 9.00x as a measured valuation.
+    ASSUMED_ENTRY_MULTIPLE = 9.0
+    ebitda_usd = target.get("ebitda_usd")
+
+    def _num(v):
+        try:
+            f = float(v)
+            return f if f > 0 else None
+        except (TypeError, ValueError):
+            return None
+
+    implied_ev = _num(target.get("ev_usd")) or _num(target.get("enterprise_value_usd"))
+    ev_is_assumed = False
+    if implied_ev is None and ebitda_usd:
+        implied_ev = (_num(ebitda_usd) or 0) * ASSUMED_ENTRY_MULTIPLE
+        ev_is_assumed = implied_ev > 0
 
     try:
         snap = compute_peer_snapshot(
@@ -833,8 +845,13 @@ def _market_context_block(
             f'{html.escape(str(sentiment_label))}</span></div>'
         )
 
+    # These flags assert the target "is priced at a premium/discount to
+    # peers" as fact — only honest when the multiple came from a real EV, not
+    # the assumed 9.0x entry. Suppress them when the multiple is assumed.
     killed_note = ""
-    if report.killed_driver_count > 0 and snap.assessment == "PREMIUM":
+    if ev_is_assumed:
+        killed_note = ""
+    elif report.killed_driver_count > 0 and snap.assessment == "PREMIUM":
         killed_note = (
             f'<div style="margin-top:10px;padding:8px 12px;'
             f'background:{P["panel_alt"]};border-left:3px solid '
@@ -871,7 +888,9 @@ def _market_context_block(
         f'  <div><div class="rc-kpi__label">Peer Category</div>'
         f'       <div class="rc-kpi__val" style="font-size:14px;">'
         f'{html.escape(snap.category or "—")}</div></div>'
-        f'  <div><div class="rc-kpi__label">Target Implied Multiple</div>'
+        f'  <div><div class="rc-kpi__label">'
+        f'{"Assumed Entry Multiple" if ev_is_assumed else "Target Implied Multiple"}'
+        f'</div>'
         f'       <div class="rc-kpi__val">{target_mult_str}</div></div>'
         f'  <div><div class="rc-kpi__label">Peer Median</div>'
         f'       <div class="rc-kpi__val">{median_str}</div></div>'
@@ -882,7 +901,14 @@ def _market_context_block(
         f'       <div class="rc-kpi__val" style="color:{tone};'
         f'font-size:14px;">{snap.assessment}</div></div>'
         f'</div>'
-        f'<div style="margin-top:10px;font-size:12px;color:{P["text_dim"]};'
+        + (f'<div style="margin-top:8px;font-size:11px;color:{P["text_dim"]};'
+           f'line-height:1.55;max-width:880px;font-style:italic;">'
+           f'Entry multiple assumed at {ASSUMED_ENTRY_MULTIPLE:.1f}x EBITDA — '
+           f'no enterprise value supplied, so the target multiple and '
+           f'&Delta; vs peers are indicative only, not a measured valuation. '
+           f'Add an EV to the target for a real read.</div>'
+           if ev_is_assumed else "")
+        + f'<div style="margin-top:10px;font-size:12px;color:{P["text_dim"]};'
         f'line-height:1.6;max-width:880px;">'
         f'{html.escape(snap.summary or "")}</div>'
         f'{sentiment_line}'
@@ -1004,6 +1030,9 @@ def _parse_target(qs: Dict[str, List[str]]) -> Dict[str, Any]:
         "has_reit_landlord": b("has_reit_landlord"),
         "revenue_usd": f("revenue_usd"),
         "ebitda_usd": f("ebitda_usd"),
+        # Optional: when supplied, the peer snapshot reports a real implied
+        # multiple instead of the assumed 9.0x entry anchor.
+        "ev_usd": f("ev_usd") or f("enterprise_value_usd"),
     }
 
 
