@@ -8,24 +8,6 @@ from __future__ import annotations
 
 EXTENDED_SEED_DEALS_7 = [
     # 156 — Optum / Change Healthcare (blocked then unwound)
-    {
-        "source_id": "seed_156",
-        "source": "seed",
-        "deal_name": "Change Healthcare – UnitedHealth Group / Optum Acquisition",
-        "year": 2022,
-        "buyer": "UnitedHealth Group / Optum",
-        "seller": "Change Healthcare shareholders (public)",
-        "ev_mm": 13000.0,
-        "ebitda_at_entry_mm": 680.0,
-        "hold_years": 1.0,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": None,
-        "notes": (
-            "DOJ challenged; cleared by courts 2022; largest healthcare IT acquisition; "
-            "HCIT network integration + clearinghouse synergies; ~19x EBITDA"
-        ),
-    },
     # 157 — Specialty Pharma: Shields Health Solutions / WBA
     {
         "source_id": "seed_157",

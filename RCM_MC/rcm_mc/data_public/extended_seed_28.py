@@ -125,28 +125,6 @@ EXTENDED_SEED_DEALS_28: List[Dict[str, Any]] = [
         "source_url": "https://www.omersprivateequity.com/portfolio/cps",
     },
     # 581 — VillageMD / Walgreens (2021 strategic)
-    {
-        "source_id": "seed_581",
-        "deal_name": "VillageMD / Walgreens Health",
-        "buyer": "Walgreens Boots Alliance (strategic)",
-        "seller": "VillageMD / Kinsey Hill / management",
-        "sector": "Primary Care",
-        "entry_year": 2021,
-        "exit_year": 2024,
-        "entry_ev_mm": 5_200.0,
-        "ebitda_at_entry_mm": 85.0,   # negative → ~61x adj on slim margin
-        "hold_years": 3.0,
-        "realized_moic": 0.3,
-        "realized_irr": None,
-        "ev_mm": 5_200.0,
-        "ebitda_mm": 85.0,
-        "payer_mix": {"commercial": 0.50, "medicare": 0.30, "medicaid": 0.15, "self_pay": 0.05},
-        "region": "National",
-        "hospital_size": "large",
-        "leverage_pct": 0.20,
-        "notes": "Strategic disaster — Walgreens wrote down $5.8B; retail clinic model failed at scale; 160 clinics closed 2024",
-        "source_url": "https://www.walgreens.com/topic/newsroom/villagemd",
-    },
     # 582 — BrightSpring Health Services / KKR (2020 IPO attempt → 2024 IPO)
     {
         "source_id": "seed_582",
@@ -309,28 +287,6 @@ EXTENDED_SEED_DEALS_28: List[Dict[str, Any]] = [
         "source_url": "https://www.alerislife.com",
     },
     # 589 — Cano Health / InTandem Capital (2020 SPAC → 2023 bankruptcy)
-    {
-        "source_id": "seed_589",
-        "deal_name": "Cano Health / SPAC / Chapter 11",
-        "buyer": "InTandem Capital / SPAC",
-        "seller": "Cano Health founders",
-        "sector": "Primary Care",
-        "entry_year": 2021,
-        "exit_year": 2024,
-        "entry_ev_mm": 4_400.0,  # SPAC valuation
-        "ebitda_at_entry_mm": 60.0,  # ~73x — pure growth valuation
-        "hold_years": 3.0,
-        "realized_moic": 0.05,
-        "realized_irr": None,
-        "ev_mm": 4_400.0,
-        "ebitda_mm": 60.0,
-        "payer_mix": {"medicare": 0.70, "medicaid": 0.20, "commercial": 0.10},
-        "region": "Southeast",
-        "hospital_size": "mid",
-        "leverage_pct": 0.35,
-        "notes": "Medicare Advantage primary care; Chapter 11 filed March 2024; execution failures + SPAC valuation overreach",
-        "source_url": "https://www.canohealth.com",
-    },
     # 590 — Quartet Health (mental health coordination) / Oak HC/FT (2018 → 2022)
     {
         "source_id": "seed_590",
@@ -424,28 +380,6 @@ EXTENDED_SEED_DEALS_28: List[Dict[str, Any]] = [
         "source_url": "https://www.nthrive.com",
     },
     # 594 — Waystar (formerly ZirMed + Navicure) / EQT (2019 → 2024 IPO)
-    {
-        "source_id": "seed_594",
-        "deal_name": "Waystar / EQT Partners",
-        "buyer": "EQT Partners",
-        "seller": "Bain Capital / HGGC",
-        "sector": "Revenue Cycle Management",
-        "entry_year": 2019,
-        "exit_year": 2024,
-        "entry_ev_mm": 2_700.0,
-        "ebitda_at_entry_mm": 220.0,  # ~12.3x
-        "hold_years": 5.0,
-        "realized_moic": 3.8,
-        "realized_irr": 0.31,
-        "ev_mm": 2_700.0,
-        "ebitda_mm": 220.0,
-        "payer_mix": {"commercial": 0.65, "medicare": 0.22, "medicaid": 0.10, "self_pay": 0.03},
-        "region": "National",
-        "hospital_size": "large",
-        "leverage_pct": 0.58,
-        "notes": "Healthcare payments network; IPO June 2024 at $21/share; Change Healthcare outage created short-term tailwind",
-        "source_url": "https://www.waystar.com/investors",
-    },
     # 595 — Ensemble Health Partners / Golden Gate + CD&R (2022 recapitalization)
     {
         "source_id": "seed_595",

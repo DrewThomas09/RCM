@@ -10,24 +10,6 @@ from __future__ import annotations
 
 EXTENDED_SEED_DEALS_22 = [
     {
-        "source_id": "seed_456",
-        "source": "seed",
-        "deal_name": "Envision Healthcare — KKR Take-Private (post-IPO re-LBO)",
-        "year": 2018,
-        "buyer": "KKR",
-        "seller": "AMSURG / Envision Public Shareholders",
-        "sector": "physician_group",
-        "ev_mm": 9_900,
-        "ebitda_at_entry_mm": 850,
-        "hold_years": 5.0,
-        "realized_moic": 0.1,
-        "realized_irr": None,
-        "payer_mix": {"medicare": 0.38, "medicaid": 0.12, "commercial": 0.46, "self_pay": 0.04},
-        "notes": "Emergency medicine + anesthesia MSO; NSA surprise billing legislation "
-                 "destroyed revenue model post-close; filed Ch.11 May 2023. "
-                 "Entry EV/EBITDA ~11.6x; complete write-off for KKR equity.",
-    },
-    {
         "source_id": "seed_457",
         "source": "seed",
         "deal_name": "Kindred at Home — Humana Majority Buyout",
@@ -224,24 +206,6 @@ EXTENDED_SEED_DEALS_22 = [
         "notes": "8-hospital community health system in NM/NJ/TX/OK; IPO June 2024 at ~$3.6B EV. "
                  "Long hold (9 yrs); Ardent scale acquisitions drove EBITDA growth. "
                  "Real estate monetized via sale-leaseback to Ventas during hold.",
-    },
-    {
-        "source_id": "seed_468",
-        "source": "seed",
-        "deal_name": "Surgery Partners — H.I.G. Capital Buyout",
-        "year": 2015,
-        "buyer": "H.I.G. Capital / NSH Partners",
-        "seller": "NSH Surgical",
-        "sector": "asc",
-        "ev_mm": 760,
-        "ebitda_at_entry_mm": 72,
-        "hold_years": 1.0,
-        "realized_moic": 2.2,
-        "realized_irr": 1.20,
-        "payer_mix": {"medicare": 0.45, "medicaid": 0.08, "commercial": 0.44, "self_pay": 0.03},
-        "notes": "Surgery Partners IPO Sept 2015 on NASDAQ at ~$900M EV; H.I.G. partial exit at IPO. "
-                 "One of fastest PE→IPO timelines in ASC sector; H.I.G. retained ~60% post-IPO. "
-                 "Subsequent Bain Capital stake acquisition 2017 at $19/share.",
     },
     {
         "source_id": "seed_469",

@@ -4,27 +4,6 @@ from typing import Any, Dict, List
 
 EXTENDED_SEED_DEALS_16: List[Dict[str, Any]] = [
     {
-        "source_id": "seed_336",
-        "deal_name": "Kindred Healthcare / TPG + Humana LBO",
-        "buyer": "TPG Capital / Humana",
-        "seller": "Public shareholders",
-        "year": 2018,
-        "deal_type": "take-private",
-        "sector": "ltach_post_acute",
-        "ev_mm": 4100.0,
-        "ev_ebitda": 10.8,
-        "ebitda_mm": 380.0,
-        "revenue_mm": 7200.0,
-        "realized_moic": 2.6,
-        "realized_irr": 0.19,
-        "hold_years": 4.0,
-        "payer_mix": {"medicare": 0.70, "medicaid": 0.15, "commercial": 0.12, "self_pay": 0.03},
-        "geography": "National",
-        "hospital_beds": 80000,
-        "source": "seed",
-        "notes": "Largest LTACH operator take-private; split into home health (Kindred at Home) and hospital divisions",
-    },
-    {
         "source_id": "seed_337",
         "deal_name": "Behavioral Health Group / Frontenac add-on acquisition",
         "buyer": "Frontenac Company",

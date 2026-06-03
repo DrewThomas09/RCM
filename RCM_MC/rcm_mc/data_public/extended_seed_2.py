@@ -158,26 +158,6 @@ EXTENDED_SEED_DEALS_2 = [
     # ------------------------------------------------------------------
     # 62. Diplomat Pharmacy / PharMerica – Kindred spinoff (2017)
     # ------------------------------------------------------------------
-    {
-        "source_id": "seed_062",
-        "source": "seed",
-        "deal_name": "BrightSpring Health Services – KKR",
-        "year": 2019,
-        "buyer": "KKR",
-        "seller": "ResCare management buyout / sale",
-        "ev_mm": 1750,
-        "ebitda_at_entry_mm": 175,
-        "hold_years": 4.5,
-        "realized_moic": 1.8,
-        "realized_irr": 0.13,
-        "payer_mix": json.dumps({
-            "medicare": 0.22, "medicaid": 0.55,
-            "commercial": 0.18, "self_pay": 0.05,
-        }),
-        "notes": "Home and community-based services. IPO Jan 2024. "
-                 "High Medicaid concentration introduced rate-risk drag on returns. "
-                 "IPO at modest valuation given mixed Medicaid outlook.",
-    },
     # ------------------------------------------------------------------
     # 63. Centra Health / Ballad Health – Appalachian system merger (2018)
     # ------------------------------------------------------------------
@@ -389,26 +369,6 @@ EXTENDED_SEED_DEALS_2 = [
     # ------------------------------------------------------------------
     # 72. VillageMD / Walgreens – Village Practice Management (2021)
     # ------------------------------------------------------------------
-    {
-        "source_id": "seed_072",
-        "source": "seed",
-        "deal_name": "VillageMD – Walgreens Boots Alliance Strategic Investment",
-        "year": 2021,
-        "buyer": "Walgreens Boots Alliance",
-        "seller": "Existing PE investors",
-        "ev_mm": 5200,
-        "ebitda_at_entry_mm": 90,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": json.dumps({
-            "medicare": 0.28, "medicaid": 0.18,
-            "commercial": 0.48, "self_pay": 0.06,
-        }),
-        "notes": "Primary care + clinic platform backed by Walgreens. "
-                 "Strategic buyer (not PE); included as clinic model comp. "
-                 "WBA wrote down ~$5.8B in 2023 — entry multiple proved too high.",
-    },
     # ------------------------------------------------------------------
     # 73. Radiology Partners – New Mountain Capital (2023)
     # ------------------------------------------------------------------

@@ -180,8 +180,8 @@ EXTENDED_SEED_DEALS_4 = [
                  "Episodes of care model; risk stratification for payers.",
     },
     # ------------------------------------------------------------------
-    # 103. Envision Healthcare bankruptcy exit / KKR loss (see seed_078 companion)
-    # Already covered in seed_078 — this is the post-reorg entity
+    # 103. Envision Healthcare bankruptcy exit / KKR loss (see seed_007 companion)
+    # Already covered in seed_007 (Envision/KKR 2018 take-private) — this is the post-reorg entity
     # ------------------------------------------------------------------
     {
         "source_id": "seed_103",

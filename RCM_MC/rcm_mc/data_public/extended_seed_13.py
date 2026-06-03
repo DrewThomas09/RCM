@@ -30,26 +30,6 @@ EXTENDED_SEED_DEALS_13: list[dict] = [
         "notes": "Anatomic pathology + clinical lab; Medicare Part B; consolidation play in fragmented lab market",
     },
     # 277 — Oncology specialty pharmacy
-    {
-        "source_id": "seed_277",
-        "deal_name": "US Oncology / McKesson Acquisition",
-        "source": "seed",
-        "buyer": "McKesson Corporation",
-        "seller": "Welsh Carson Anderson & Stowe",
-        "deal_type": "strategic_acquisition",
-        "year": 2010,
-        "ev_mm": 2160.0,
-        "ebitda_mm": 180.0,
-        "ev_ebitda": 12.0,
-        "hold_years": 7.0,
-        "realized_moic": 3.2,
-        "realized_irr": 0.20,
-        "payer_mix": {"medicare": 0.48, "medicaid": 0.08, "commercial": 0.42, "self_pay": 0.02},
-        "hospital_beds": None,
-        "region": "National",
-        "state": "TX",
-        "notes": "Oncology practice management + GPO + specialty pharmacy; Welsh Carson 7-year hold",
-    },
     # 278 — Hospital-at-home / acute-level care
     {
         "source_id": "seed_278",
@@ -282,26 +262,6 @@ EXTENDED_SEED_DEALS_13: list[dict] = [
         "notes": "Integrative primary care + telehealth; concierge + employer benefit model; high self-pay",
     },
     # 289 — Occupational health / employer services
-    {
-        "source_id": "seed_289",
-        "deal_name": "Concentra / Humana Acquisition",
-        "source": "seed",
-        "buyer": "Humana",
-        "seller": "Select Medical / Welsh Carson",
-        "deal_type": "strategic_acquisition",
-        "year": 2015,
-        "ev_mm": 1055.0,
-        "ebitda_mm": 88.0,
-        "ev_ebitda": 12.0,
-        "hold_years": 9.0,
-        "realized_moic": 3.1,
-        "realized_irr": 0.14,
-        "payer_mix": {"medicare": 0.05, "medicaid": 0.02, "commercial": 0.65, "self_pay": 0.28},
-        "hospital_beds": None,
-        "region": "National",
-        "state": None,
-        "notes": "Occupational health + urgent care; employer-sponsored; workers' comp-heavy; Humana eventual buyer",
-    },
     # 290 — Physician practice roll-up (multispecialty)
     {
         "source_id": "seed_290",
