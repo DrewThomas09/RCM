@@ -121,11 +121,14 @@ def render_sector_intelligence() -> str:
                 "The healthcare-services sectors PEdesk covers."
             ),
             lede_body=(
+                # No internal repo doc-path in partner-facing copy: it read
+                # as leaked dev internals and, being a 40-char unbreakable
+                # token, forced the explainer ~60px past the viewport on
+                # phones (no spaces to wrap on).
                 "PE deal flow spans far more than hospitals. This is the "
                 "honest coverage map: only sectors marked Live have data and "
                 "pages today; the rest are planned, each labeled with the "
-                "public data it can (and can't) answer. Build plan: "
-                "docs/PEDESK_SECTOR_INTELLIGENCE_ROADMAP.md."
+                "public data it can (and can't) answer."
             ),
         )
         + grid
