@@ -232,7 +232,7 @@ def render_covenant_headroom(params: dict = None) -> str:
     st_headers, st_rows, st_hot = _stress_paired_rows(r.stress_scenarios)
     stress_paired = ck_paired_block(
         stress_viz,
-        data_label="EBITDA stress scenarios &middot; covenant impact",
+        data_label="EBITDA stress scenarios · covenant impact",
         data_source="data_public/covenant_headroom.py",
         headers=st_headers,
         rows=st_rows,

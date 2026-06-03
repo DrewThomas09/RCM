@@ -260,7 +260,7 @@ def render_real_estate(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{text_dim};text-transform:uppercase;margin-bottom:10px"
 
     page_title = ck_page_title(
-        "Real Estate &amp; Sale-Leaseback Analyzer",
+        "Real Estate & Sale-Leaseback Analyzer",
         eyebrow="REAL ESTATE",
         meta=f"""Property inventory, lease terms, SLB scenarios for {_html.escape(sector)} — {r.corpus_deal_count:,} corpus deals""",
     )

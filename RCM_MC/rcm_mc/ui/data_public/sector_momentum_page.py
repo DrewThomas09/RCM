@@ -300,7 +300,7 @@ def render_sector_momentum(recent_years: int = 5) -> str:
     grow_headers, grow_rows, grow_hot = _paired_sector_rows(top_growing)
     paired_growing = ck_paired_block(
         bar_viz,
-        data_label=f"Accelerating sectors &middot; top 10 ({window_label})",
+        data_label=f"Accelerating sectors · top 10 ({window_label})",
         data_source="deals corpus",
         headers=grow_headers,
         rows=grow_rows,

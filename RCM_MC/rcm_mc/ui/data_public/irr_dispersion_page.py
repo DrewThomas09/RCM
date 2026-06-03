@@ -330,7 +330,7 @@ def render_irr_dispersion() -> str:
     sec_headers, sec_rows, sec_hot = _sector_irr_rows(corpus)
     irr_paired = ck_paired_block(
         hist_viz,
-        data_label="IRR by sector &middot; >=3 realized deals",
+        data_label="IRR by sector · >=3 realized deals",
         data_source="deals corpus",
         headers=sec_headers,
         rows=sec_rows,
