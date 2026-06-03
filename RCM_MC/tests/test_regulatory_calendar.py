@@ -7,6 +7,7 @@ render, and the HTTP endpoint.
 from __future__ import annotations
 
 import json
+import re
 import unittest
 from datetime import date
 from typing import Any, Dict
@@ -353,6 +354,30 @@ class UIRenderTests(unittest.TestCase):
         self.assertIn("KILLED", html)
         self.assertIn("Kill-switch timeline", html)
         self.assertIn("EBITDA Bridge Overlay", html)
+
+    def test_risk_score_meta_is_not_escaped_markup(self):
+        """The head meta line must show a plain risk score, not the raw
+        provenance <span> dumped as escaped text. The score is wrapped in a
+        provenance() span for the KPI block (which renders trusted markup),
+        but ck_editorial_head's meta field ESCAPES its content — so passing
+        the span there printed a literal "RISK SCORE <SPAN DATA-PROVENANCE…>40
+        </SPAN>" in the verdict header. Regression for that."""
+        from rcm_mc.ui.regulatory_calendar_page import (
+            render_regulatory_calendar_page,
+        )
+        html = render_regulatory_calendar_page({
+            "specialties": ["HOSPITAL,ACUTE_HOSPITAL"],
+            "revenue_usd": ["450000000"],
+            "ebitda_usd": ["67500000"],
+            "target_name": ["Meadowbrook"],
+        })
+        # The bug signature: an escaped <span …> dumped right after the label
+        # (the meta line is CSS-uppercased, so it showed as raw "<SPAN …>").
+        self.assertIsNone(re.search(r"RISK SCORE\s*&lt;", html))
+        # The clean meta reads "RISK SCORE <number>".
+        self.assertRegex(html, r"RISK SCORE\s*\d")
+        # …and the working provenance tooltip still rides on the KPI block.
+        self.assertIn("data-provenance=", html)
 
     def test_peer_multiple_assumed_is_disclosed(self):
         """With no EV supplied, the peer snapshot anchors on an assumed 9.0x
