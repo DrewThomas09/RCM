@@ -28,24 +28,6 @@ EXTENDED_SEED_DEALS_22 = [
                  "TPG/WCAS earned ~2.4x on 3-year hold; Humana strategic rationale.",
     },
     {
-        "source_id": "seed_458",
-        "source": "seed",
-        "deal_name": "DaVita Medical Group — UnitedHealth Group Acquisition",
-        "year": 2019,
-        "buyer": "UnitedHealth Group / Optum",
-        "seller": "DaVita Inc",
-        "sector": "physician_group",
-        "ev_mm": 4_900,
-        "ebitda_at_entry_mm": 280,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": {"medicare": 0.35, "medicaid": 0.08, "commercial": 0.52, "self_pay": 0.05},
-        "notes": "Strategic acquisition by Optum; ~300 clinics, 1.7M patients in VBC arrangements; "
-                 "EV/EBITDA ~17.5x; not a PE deal but benchmark for physician MSO valuations. "
-                 "Regulatory scrutiny from FTC; closed Sept 2019.",
-    },
-    {
         "source_id": "seed_459",
         "source": "seed",
         "deal_name": "CareMore Health — Anthem Strategic Acquisition",
@@ -314,24 +296,5 @@ EXTENDED_SEED_DEALS_22 = [
         "notes": "IDD/ABI residential and day services; strong HCBS waiver cash flows. "
                  "Medicaid-dependent but politically defensible (disability community advocacy). "
                  "Rebranded Sevita; sold to Cinven 2024 at ~$5.1B EV.",
-    },
-    {
-        "source_id": "seed_475",
-        "source": "seed",
-        "deal_name": "Acute Care / TeamHealth — Blackstone Recap / Secondary",
-        "year": 2016,
-        "buyer": "Blackstone Group",
-        "seller": "Hellman & Friedman / IPC Holdings",
-        "sector": "physician_group",
-        "ev_mm": 6_100,
-        "ebitda_at_entry_mm": 480,
-        "hold_years": 7.0,
-        "realized_moic": 1.4,
-        "realized_irr": 0.05,
-        "payer_mix": {"medicare": 0.35, "medicaid": 0.12, "commercial": 0.47, "self_pay": 0.06},
-        "notes": "Emergency medicine / hospitalist / anesthesia staffing MSO. "
-                 "NSA surprise billing ban devastated commercial rate leverage; "
-                 "lost major health system contracts post-regulation. "
-                 "Blackstone entry at ~12.7x; struggled to exit at acceptable returns.",
     },
 ]

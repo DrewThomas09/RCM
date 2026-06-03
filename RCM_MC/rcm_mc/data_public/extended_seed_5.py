@@ -239,26 +239,6 @@ EXTENDED_SEED_DEALS_5 = [
         ),
     },
     # 127
-    {
-        "source_id": "seed_127",
-        "source": "seed",
-        "deal_name": "Mednax Radiology Solutions – Radiology Partners Carve-out",
-        "year": 2020,
-        "buyer": "Radiology Partners",
-        "seller": "Mednax",
-        "ev_mm": 885.0,
-        "ebitda_at_entry_mm": 88.0,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": {
-            "medicare": 0.40, "medicaid": 0.10, "commercial": 0.50, "selfpay": 0.00
-        },
-        "notes": (
-            "Mednax radiology division carve-out to Radiology Partners (NMC-backed); "
-            "national footprint; AI-assisted reads roll-in thesis"
-        ),
-    },
     # 128
     {
         "source_id": "seed_128",
