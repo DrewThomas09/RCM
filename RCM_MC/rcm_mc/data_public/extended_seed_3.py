@@ -96,26 +96,6 @@ EXTENDED_SEED_DEALS_3 = [
     # ------------------------------------------------------------------
     # 80. TeamHealth / Blackstone take-private (2016)
     # ------------------------------------------------------------------
-    {
-        "source_id": "seed_080",
-        "source": "seed",
-        "deal_name": "TeamHealth – Blackstone Take-Private",
-        "year": 2016,
-        "buyer": "Blackstone",
-        "seller": "Public shareholders (NYSE: TMH)",
-        "ev_mm": 6100,
-        "ebitda_at_entry_mm": 480,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": json.dumps({
-            "medicare": 0.28, "medicaid": 0.22,
-            "commercial": 0.45, "self_pay": 0.05,
-        }),
-        "notes": "Blackstone take-private at $43.50/share (~12.7x EBITDA). "
-                 "Emergency medicine + hospital medicine outsourcing platform. "
-                 "No Surprises Act material revenue headwind post-2022. Refinancing challenges.",
-    },
     # ------------------------------------------------------------------
     # 81. Surgical Care Affiliates (SCA) / UnitedHealth (2017)
     # ------------------------------------------------------------------

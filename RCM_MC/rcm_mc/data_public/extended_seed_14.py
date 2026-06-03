@@ -197,26 +197,6 @@ EXTENDED_SEED_DEALS_14: list[dict] = [
         "notes": "BH inpatient + PHP/IOP + SUD residential; PA-concentrated; parity law compliance track record",
     },
     # 305 — Telehealth chronic disease management
-    {
-        "source_id": "seed_305",
-        "deal_name": "Livongo Health / Teladoc Merger",
-        "source": "seed",
-        "buyer": "Teladoc Health",
-        "seller": "Public (Livongo shareholders)",
-        "deal_type": "strategic_acquisition",
-        "year": 2020,
-        "ev_mm": 18500.0,
-        "ebitda_mm": None,
-        "ev_ebitda": None,
-        "hold_years": 2.0,
-        "realized_moic": 0.3,
-        "realized_irr": -0.45,
-        "payer_mix": {"medicare": 0.08, "medicaid": 0.05, "commercial": 0.80, "self_pay": 0.07},
-        "hospital_beds": None,
-        "region": "National",
-        "state": "CA",
-        "notes": "Diabetes/hypertension AI coaching platform; $18.5B merger at pandemic peak; rapid value destruction",
-    },
     # 306 — Physical medicine / PM&R
     {
         "source_id": "seed_306",

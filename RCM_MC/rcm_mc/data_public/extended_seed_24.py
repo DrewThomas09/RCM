@@ -226,24 +226,6 @@ EXTENDED_SEED_DEALS_24 = [
                  "ASC-focused RCM tech is high-margin SaaS with strong switching costs.",
     },
     {
-        "source_id": "seed_508",
-        "source": "seed",
-        "deal_name": "Kindred Healthcare — Humana Full Acquisition",
-        "year": 2018,
-        "buyer": "Humana",
-        "seller": "Kindred Healthcare Public Shareholders",
-        "sector": "home_health",
-        "ev_mm": 4_100,
-        "ebitda_at_entry_mm": 290,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": {"medicare": 0.62, "medicaid": 0.12, "commercial": 0.22, "self_pay": 0.04},
-        "notes": "Full Kindred Healthcare take-private by Humana + TPG + WCAS at $9/share. "
-                 "Then split: home health/hospice (Kindred at Home) retained; "
-                 "hospital segment sold. Strategic benchmark: ~14.1x EBITDA for integrated LTAC/HH.",
-    },
-    {
         "source_id": "seed_509",
         "source": "seed",
         "deal_name": "Sutter Health / Catholic Health — Non-Profit Benchmark",
