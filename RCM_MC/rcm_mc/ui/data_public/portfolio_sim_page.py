@@ -87,7 +87,7 @@ def _scenario_table(scenarios: List[Any]) -> str:
         is_base = sc.scenario_id == "base"
         delta = round(sc.portfolio_moic_p50 - (base.portfolio_moic_p50 if base else sc.portfolio_moic_p50), 3)
         delta_html = (
-            '<span class="mn" style="color:var(--ck-text-dim)">—</span>'
+            '<span class="mn" style="color:var(--sc-text-dim, #465366)">—</span>'
             if is_base
             else (
                 f'<span class="mn pos">+{delta:.3f}×</span>'
@@ -281,17 +281,17 @@ def render_portfolio_sim(params: Dict[str, str]) -> str:
     extra_css = """
 .ck-form { margin-bottom: 24px; }
 .ck-form-group { display:flex; flex-direction:column; gap:4px; }
-.ck-label { font-size:11px; color:var(--ck-text-dim); text-transform:uppercase; letter-spacing:.06em; }
+.ck-label { font-size:11px; color:var(--sc-text-dim, #465366); text-transform:uppercase; letter-spacing:.06em; }
 .ck-input {
-  background:var(--ck-panel-alt); border:1px solid var(--ck-border);
-  color:var(--ck-text); padding:6px 10px; font-size:12px; border-radius:3px;
+  background:var(--sc-parchment-2, #efe9dd); border:1px solid var(--sc-rule, #d6cfc0);
+  color:var(--sc-text, #1a2332); padding:6px 10px; font-size:12px; border-radius:3px;
 }
 .ck-btn {
-  background:var(--ck-accent); color:#fff; border:none; padding:7px 18px;
+  background:var(--sc-teal, #155752); color:#fff; border:none; padding:7px 18px;
   font-size:12px; border-radius:3px; cursor:pointer;
 }
 .ck-btn:hover { filter:brightness(1.15); }
-.ck-link { color:var(--ck-accent); text-decoration:none; }
+.ck-link { color:var(--sc-teal, #155752); text-decoration:none; }
 .ck-link:hover { text-decoration:underline; }
 """
 
