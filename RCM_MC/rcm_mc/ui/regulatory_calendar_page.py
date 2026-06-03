@@ -244,7 +244,8 @@ def _timeline_svg(
             f'<text x="{pad_l - 10}" y="{yc + 4:.1f}" '
             f'text-anchor="end" font-size="11" '
             f'fill="{P["text"]}" font-weight="600">'
-            f'{html.escape(tl.driver_label[:22])}</text>'
+            f'<title>{html.escape(tl.driver_label)}</title>'
+            f'{html.escape(tl.driver_label if len(tl.driver_label) <= 22 else tl.driver_label[:21] + "…")}</text>'
         )
         rows.append(
             f'<rect x="{pad_l - 8}" y="{yc - 5:.1f}" width="4" '
