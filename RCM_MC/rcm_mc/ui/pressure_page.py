@@ -127,10 +127,12 @@ def render_pressure_page(
         eyebrow="PRESSURE TEST",
         title="Where the deal cracks under shocks.",
         meta=head_meta,
-        lede_italic_phrase="Where the deal cracks under shocks.",
-        lede_body=(
+        lede_italic_phrase=(
             "Apply scenario shocks to the deal's bridge and "
-            "surface the risk flags that fire. The number "
+            "surface the risk flags that fire."
+        ),
+        lede_body=(
+            "The number "
             "and severity of flags tell you how much "
             "diligence this deal still needs before IC."
         ),

@@ -489,11 +489,11 @@ def render_questions_aggregator(
             "NO SERVER ROUNDTRIP"
         ),
         lede_italic_phrase=(
-            "Every question, every deal, one ledger."
+            "Reads your browser's saved question lists across every "
+            "deal you've opened."
         ),
         lede_body=(
-            "Reads your browser's saved question lists across every "
-            "deal you've opened. Filter by category or status; copy "
+            "Filter by category or status; copy "
             "the lot as Markdown to send to the seller; download a "
             "CSV for the IC binder. No server roundtrip — your notes "
             "stay on your machine."

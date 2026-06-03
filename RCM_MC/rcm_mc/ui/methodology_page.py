@@ -82,12 +82,12 @@ def render_methodology() -> str:
         title="How every number on the platform can be audited.",
         meta="EVERY NUMBER TRACEABLE · PUBLIC DATA + MODELS",
         lede_italic_phrase=(
-            "How every number on the platform can be audited."
-        ),
-        lede_body=(
             "PE Desk combines public hospital data with "
             "proprietary analytical models to generate diligence-grade "
-            "intelligence for healthcare PE. Every number on this "
+            "intelligence for healthcare PE."
+        ),
+        lede_body=(
+            "Every number on this "
             "platform traces back to a specific data source and "
             "calculation — you should be able to audit any output "
             "end-to-end."

@@ -581,11 +581,13 @@ def render_market_data(
         eyebrow="MARKET DATA",
         title="National Hospital Market Intelligence",
         meta="HCRIS-DERIVED STATE-LEVEL DATA · 50 STATES + DC",
-        lede_italic_phrase="National hospital market intelligence.",
-        lede_body=(
+        lede_italic_phrase=(
             "HCRIS-derived state-level operating margin, payer mix, "
             "concentration (HHI), and revenue distribution across "
-            "all 50 states + DC. Heatmap on margin / HHI / Medicare "
+            "all 50 states + DC."
+        ),
+        lede_body=(
+            "Heatmap on margin / HHI / Medicare "
             "lets partners spot the markets most exposed to rate "
             "compression, payer concentration, or pricing power."
         ),

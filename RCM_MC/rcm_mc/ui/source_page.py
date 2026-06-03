@@ -128,10 +128,12 @@ def render_source_page(
             f"{n_theses} THES{'ES' if n_theses != 1 else 'IS'} · "
             f"~6,000 HOSPITAL HCRIS UNIVERSE"
         ),
-        lede_italic_phrase="Where the next deal might be hiding.",
-        lede_body=(
+        lede_italic_phrase=(
             "Pick an investment thesis and the platform "
-            "ranks the HCRIS universe against it. Use this "
+            "ranks the HCRIS universe against it."
+        ),
+        lede_body=(
+            "Use this "
             "before screening — thesis-first sourcing finds "
             "deals that fit the fund, not deals that look "
             "good in isolation."

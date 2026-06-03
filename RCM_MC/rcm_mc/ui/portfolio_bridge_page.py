@@ -146,7 +146,6 @@ def render_portfolio_bridge(
             eyebrow="PORTFOLIO BRIDGE",
             title="No pipeline hospitals yet.",
             meta="0 ACTIVE · ADD FROM SCREENER",
-            lede_italic_phrase="No pipeline hospitals yet.",
             lede_body=(
                 "Add hospitals to the pipeline from the Deal "
                 "Screener to see the portfolio-level EBITDA bridge."
@@ -246,9 +245,6 @@ def render_portfolio_bridge(
             f"{_fm(total_revenue)} REVENUE · "
             f"+{_fm(total_uplift)} EBITDA UPLIFT · "
             f"{_cur_pct:.1f}% → {_new_pct:.1f}% MARGIN"
-        ),
-        lede_italic_phrase=(
-            "Where the partner sees the whole pipeline at once."
         ),
         lede_body=(
             f"{n_deals} active pipeline deals · {_fm(total_revenue)} "

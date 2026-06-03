@@ -162,10 +162,12 @@ def render_team_dashboard(db_path: str) -> str:
             f"{n_hospitals} PIPELINE DEAL"
             f"{'S' if n_hospitals != 1 else ''}"
         ),
-        lede_italic_phrase="Where the team's work shows up.",
-        lede_body=(
+        lede_italic_phrase=(
             "Active partners, recent actions, and the deals "
-            "each team member is moving forward. Use this "
+            "each team member is moving forward."
+        ),
+        lede_body=(
+            "Use this "
             "to read team velocity and to see whether any "
             "deals are stuck waiting on a single owner."
         ),

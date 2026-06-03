@@ -97,7 +97,6 @@ def render_my_dashboard(
             f" · {n_red} RED · {n_amber} AMBER · "
             f"{len(my_od)} OVERDUE · {len(my_up)} UPCOMING (14d)"
         ),
-        lede_italic_phrase="Your week, in one read.",
         lede_body=(
             f"Active deals, alerts, and deadlines assigned to "
             f"{safe_owner}, refreshed each request. The pulse strip "

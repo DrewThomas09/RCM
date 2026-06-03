@@ -495,7 +495,6 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             f"12 MODELS · "
             f"DISTRESS AUC {auc:.3f} (N={n_train:,})"
         ),
-        lede_italic_phrase="Where the analytical moat lives.",
         lede_body=(
             f"{len(hcris_df):,} hospitals, {len(markets)} markets, "
             "12 quantitative models — from Bayesian calibration "

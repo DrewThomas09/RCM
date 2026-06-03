@@ -511,7 +511,6 @@ def render_seeking_alpha_page(
             f"{len(news)} CURATED HEADLINES · "
             "QUARTERLY REFRESH"
         ),
-        lede_italic_phrase="Healthcare public-market + PE snapshot.",
         lede_body=(
             f"{len(comps)} public comps · {len(txs)} PE "
             f"transactions · {len(news)} curated headlines · "

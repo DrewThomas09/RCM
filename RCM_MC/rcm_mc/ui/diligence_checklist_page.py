@@ -371,7 +371,6 @@ def _hero(state: DealChecklistState) -> str:
             f"{state.done}/{state.total} ITEMS DONE · "
             f"AUTO-TRACKED · URL-SHARABLE STATE"
         ),
-        lede_italic_phrase="Coverage + open questions for IC.",
         lede_body=(
             f"{html.escape(banner)} Auto-tracked from live analytics; "
             "partner overrides URL-encoded so you can share a state "
