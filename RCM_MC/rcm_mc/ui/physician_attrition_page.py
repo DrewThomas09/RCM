@@ -185,43 +185,49 @@ def _demo_roster() -> Dict[str, Any]:
     """Returns (providers, metadata dicts). Partners can override via
     Deal Profile writeback eventually; for now this seeds the page
     when no roster is supplied."""
+    # Synthetic sample roster (P001–P008). These are illustrative
+    # provider records, not real physicians, so they intentionally
+    # carry no NPI — fabricating NPPES identifiers would be a
+    # credibility tell and could collide with real registry numbers.
+    # When a partner supplies a real roster, the card renders the
+    # supplied NPI.
     providers = [
-        Provider(provider_id="P001", npi="1234567890",
+        Provider(provider_id="P001",
                  specialty="ORTHOPEDIC_SURGERY",
                  employment_status="W2",
                  base_salary_usd=450_000, wrvus_annual=7500,
                  collections_annual_usd=2_400_000),
-        Provider(provider_id="P002", npi="1234567891",
+        Provider(provider_id="P002",
                  specialty="CARDIOLOGY",
                  employment_status="PARTNER",
                  base_salary_usd=600_000, wrvus_annual=10_000,
                  collections_annual_usd=3_200_000),
-        Provider(provider_id="P003", npi="1234567892",
+        Provider(provider_id="P003",
                  specialty="FAMILY_MEDICINE",
                  employment_status="W2",
                  base_salary_usd=280_000, wrvus_annual=5500,
                  collections_annual_usd=850_000),
-        Provider(provider_id="P004", npi="1234567893",
+        Provider(provider_id="P004",
                  specialty="EMERGENCY_MEDICINE",
                  employment_status="1099",
                  base_salary_usd=420_000, wrvus_annual=8000,
                  collections_annual_usd=1_600_000),
-        Provider(provider_id="P005", npi="1234567894",
+        Provider(provider_id="P005",
                  specialty="ANESTHESIOLOGY",
                  employment_status="LOCUM",
                  base_salary_usd=500_000, wrvus_annual=6500,
                  collections_annual_usd=1_900_000),
-        Provider(provider_id="P006", npi="1234567895",
+        Provider(provider_id="P006",
                  specialty="GASTROENTEROLOGY",
                  employment_status="PARTNER",
                  base_salary_usd=650_000, wrvus_annual=9000,
                  collections_annual_usd=2_800_000),
-        Provider(provider_id="P007", npi="1234567896",
+        Provider(provider_id="P007",
                  specialty="UROLOGY",
                  employment_status="W2",
                  base_salary_usd=500_000, wrvus_annual=7000,
                  collections_annual_usd=2_100_000),
-        Provider(provider_id="P008", npi="1234567897",
+        Provider(provider_id="P008",
                  specialty="INTERNAL_MEDICINE",
                  employment_status="W2",
                  base_salary_usd=290_000, wrvus_annual=5200,
@@ -726,8 +732,8 @@ def _card(
         f'<div class="pa-card__head">'
         f'<div class="pa-card__meta">'
         f'<div class="pa-card__top">'
-        f'{html.escape(score.specialty.replace("_", " "))} · '
-        f'{html.escape(score.npi or "no NPI")}</div>'
+        f'{html.escape(score.specialty.replace("_", " "))}'
+        f'{(" · NPI " + html.escape(score.npi)) if score.npi else ""}</div>'
         f'<div class="pa-card__title">{html.escape(score.provider_id)}</div>'
         f'<div class="pa-card__band-row">'
         f'{_band_badge(score.band)}'
