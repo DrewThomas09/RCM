@@ -2561,10 +2561,8 @@ def render_dashboard(db_path: str, *,
     header = ck_page_title(
         "Dashboard",
         eyebrow=_eyebrow,
-        meta=(
-            "Curated analyses, recent runs, system status, "
-            "and data freshness — one view."
-        ),
+        # Short scannable meta (the row is CSS-uppercased).
+        meta="Curated analyses · recent runs · system status · data freshness",
     )
     # Discoverability hint for the command palette — kbd tags need to
     # render as HTML, which page_header's subtitle escapes, so emit

@@ -281,8 +281,9 @@ def render_sponsors_index(store: Any, params: Optional[Dict[str, str]] = None) -
     title = ck_page_title(
         "Sponsors — Deal Library",
         eyebrow="SPONSOR ACTIVITY INDEX",
-        meta=("Investors backing the sponsor-backed healthcare universe "
-              "(VC / accelerator / REIT / PE) · current & prior owners"
+        # Short scannable meta — the row is CSS-uppercased, so the prior
+        # 134-char sentence wrapped to a dense all-caps block.
+        meta=("VC · accelerator · REIT · PE backers — current & prior owners"
               if total_companies else "no export ingested yet"),
     )
     back = (f'<p style="margin:0 0 8px"><a href="/deal-library" '
