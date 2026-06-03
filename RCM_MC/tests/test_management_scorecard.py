@@ -225,12 +225,12 @@ class ManagementScorecardPageTests(unittest.TestCase):
 
     def test_demo_roster_surfaces_ceo(self):
         h = self._render()
-        self.assertIn("Jane Doe", h)
+        self.assertIn("Helen Marsh", h)
         self.assertIn("CEO", h)
 
     def test_critical_flag_visible(self):
         h = self._render()
-        # Jane Doe's Steward prior → CRITICAL flag
+        # Helen Marsh's Steward prior → CRITICAL flag
         self.assertIn("CRITICAL", h)
 
     def test_haircut_lever_renders_with_guidance(self):

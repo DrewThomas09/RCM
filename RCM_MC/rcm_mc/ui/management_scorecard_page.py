@@ -103,7 +103,7 @@ def _demo_team() -> List[Executive]:
     """An 4-exec demo C-suite with a mix of strengths + red flags."""
     return [
         Executive(
-            name="Jane Doe",
+            name="Helen Marsh",
             role=Role.CEO,
             years_in_role=3.5,
             years_at_facility=3.5,
@@ -478,11 +478,11 @@ def render_management_scorecard_page(
     report = analyze_team(team, guidance_ebitda_usd=guidance)
 
     # Demo-data banner. The page currently renders against a fixed
-    # 3-executive demo roster (Jane Doe / Robert Smith / Patricia
-    # Okafor — see _demo_team above). There is no CIM-ingest or
-    # CMS-public-data input flow yet, so every visit shows the
-    # same three names. Without this banner partners can read the
-    # scores as if they applied to the target deal — they don't.
+    # 4-executive demo roster (Helen Marsh / Robert Smith / Marcus
+    # Chen / Patricia Okafor — see _demo_team above). There is no
+    # CIM-ingest or CMS-public-data input flow yet, so every visit
+    # shows the same four names. Without this banner partners can read
+    # the scores as if they applied to the target deal — they don't.
     demo_banner = (
         f'<div style="background:#fef6e8;border:1px solid #b8732a;'
         f'border-left:4px solid #b8732a;padding:12px 18px;'
@@ -491,7 +491,7 @@ def render_management_scorecard_page(
         f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
         f'letter-spacing:1.6px;text-transform:uppercase;font-weight:700;'
         f'color:#b8732a;margin-bottom:4px;">Demo data</div>'
-        f'<strong style="color:#2d1d05;">The three executives below are '
+        f'<strong style="color:#2d1d05;">The four executives below are '
         f'demonstration fixtures.</strong> Names, tenure, comp, and '
         f'forecast-miss histories are illustrative — they do not reflect '
         f'the target deal. The 4-dimension scoring framework (forecast '
