@@ -115,11 +115,13 @@ def render_surrogate_page(
             f"{'S' if n_targets != 1 else ''} · "
             f"{'TRAINED' if model_ready else 'AWAITING TRAINING'}"
         ),
-        lede_italic_phrase="What the model predicts in milliseconds.",
-        lede_body=(
+        lede_italic_phrase=(
             "A trained surrogate fits cached analysis runs "
             "and produces fast EBITDA-drag predictions for "
-            "screening and what-if work. Use as a triage "
+            "screening and what-if work."
+        ),
+        lede_body=(
+            "Use as a triage "
             "filter, not as a substitute for the full "
             "DealAnalysisPacket."
         ),

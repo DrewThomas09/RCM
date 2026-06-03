@@ -194,10 +194,12 @@ def render_fund_learning(db_path: str) -> str:
             f"{accuracy.fund_realization_pct:.0%} REALIZATION · "
             f"{len(accuracy.lever_biases)} LEVERS TRACKED"
         ),
-        lede_italic_phrase="What the fund knows now that it didn't.",
-        lede_body=(
+        lede_italic_phrase=(
             "Per-fund lever biases learned from realized "
-            "outcomes vs. underwriting projections. Use this "
+            "outcomes vs. underwriting projections."
+        ),
+        lede_body=(
+            "Use this "
             "to calibrate the next deal's bridge — if your "
             "fund consistently over-projects RCM uplift by "
             "20%, the next underwriting should reflect that."

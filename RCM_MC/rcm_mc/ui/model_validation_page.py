@@ -194,10 +194,12 @@ def render_model_validation(
             f"MAE {avg_mae:.3f} · "
             f"TOP GRADE {top_grade}"
         ),
-        lede_italic_phrase="Where every prediction earns its trust.",
-        lede_body=(
+        lede_italic_phrase=(
             "Every metric prediction is logged with its confidence "
-            "interval; actuals get matched as deals close. The "
+            "interval; actuals get matched as deals close."
+        ),
+        lede_body=(
+            "The "
             "scorecard below shows R², 90%-CI coverage, MAE, and "
             "bias per metric — partner-defensible because each "
             "number is reproducible from the prediction ledger."

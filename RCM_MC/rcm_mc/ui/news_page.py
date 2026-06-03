@@ -489,11 +489,13 @@ def render_news(category: str = "all") -> str:
             f"{'IES' if n_categories != 1 else 'Y'} · "
             f"HEALTHCARE PE COVERAGE"
         ),
-        lede_italic_phrase="What the market is saying about the deal universe.",
-        lede_body=(
+        lede_italic_phrase=(
             "Curated healthcare PE coverage by sector and "
             "deal type — bankruptcies, transactions, "
-            "regulatory moves. Use this as the partner-day "
+            "regulatory moves."
+        ),
+        lede_body=(
+            "Use this as the partner-day "
             "context check before opening any deal page."
         ),
     )

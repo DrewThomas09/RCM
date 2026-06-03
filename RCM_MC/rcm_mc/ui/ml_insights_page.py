@@ -568,11 +568,10 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f"{n_distressed} HIGH-RISK"
         ),
         lede_italic_phrase=(
-            "What the model sees that the spreadsheet misses."
+            "Hospital archetypes, distress prediction, and RCM "
+            "opportunity scoring across the full HCRIS corpus."
         ),
         lede_body=(
-            "Hospital archetypes, distress prediction, and RCM "
-            "opportunity scoring across the full HCRIS corpus. "
             "Each model carries its training cutoff and AUC so "
             "the partner sees the ground beneath each call."
         ),

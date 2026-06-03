@@ -162,12 +162,14 @@ def render_v5_status() -> str:
             f"{counts.v3} V5-CHROMED ({pct_chrome:.0f}%) · "
             f"{counts.packet_driven} PACKET-DRIVEN ({pct_packet:.0f}%)"
         ),
-        lede_italic_phrase="Where the chartis transformation stands.",
-        lede_body=(
+        lede_italic_phrase=(
             "Live campaign progress against the v5 editorial "
             "chrome targets — shell adoption, primitive "
             "density, italic-serif coverage, fmt-helper use, "
-            "provenance density. The numbers come from the "
+            "provenance density."
+        ),
+        lede_body=(
+            "The numbers come from the "
             "audit, not from claimed status."
         ),
     )

@@ -172,11 +172,13 @@ def render_metric_glossary() -> str:
         eyebrow="METRIC GLOSSARY",
         title="Where every number has a definition.",
         meta=f"{len(keys)} METRICS · DEFINITION + RATIONALE + FORMULA",
-        lede_italic_phrase="Where every number has a definition.",
-        lede_body=(
+        lede_italic_phrase=(
             "Cross-reference every number the platform "
             "surfaces — definition, rationale, formula, and "
-            "the source documents that back it. Use this as "
+            "the source documents that back it."
+        ),
+        lede_body=(
+            "Use this as "
             "the canonical answer when a partner asks 'where "
             "does that number come from?'."
         ),

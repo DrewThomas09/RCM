@@ -261,9 +261,11 @@ def render_v3_status() -> str:
             f"{counts.v3} V3 ({pct_v3:.0f}%) · "
             f"{counts.packet_driven} PACKET-DRIVEN ({pct_packet:.0f}%)"
         ),
-        lede_italic_phrase="Where the v3 transformation landed.",
+        lede_italic_phrase=(
+            "Predecessor to the v5 editorial campaign."
+        ),
         lede_body=(
-            "Predecessor to the v5 editorial campaign. v3 "
+            "v3 "
             "ported every renderer to chartis_shell; v5 added "
             "italic-serif headlines, primitive density, "
             "provenance, and ck_fmt_* discipline on top. "

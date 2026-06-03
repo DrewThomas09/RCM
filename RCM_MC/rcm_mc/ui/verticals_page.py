@@ -205,11 +205,12 @@ def render_verticals() -> str:
             f"{'S' if len(verticals) != 1 else ''} · "
             "ACUTE CARE · ASC · BH · MSO"
         ),
-        lede_italic_phrase="Where the playbook actually changes.",
-        lede_body=(
+        lede_italic_phrase=(
             "Acute care, ASC, behavioral health, MSO, and "
             "specialty practices each have their own value "
-            "bridge, key metrics, and diligence framework. "
+            "bridge, key metrics, and diligence framework."
+        ),
+        lede_body=(
             "Pick the right vertical first; the analysis "
             "modules calibrate themselves accordingly."
         ),

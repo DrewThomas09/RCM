@@ -136,9 +136,6 @@ def render_portfolio_monitor(store: Any) -> str:
                 eyebrow="PORTFOLIO MONITOR",
                 title="No active deals in portfolio.",
                 meta="0 ACTIVE · IMPORT TO POPULATE",
-                lede_italic_phrase=(
-                    "No active deals in portfolio."
-                ),
                 lede_body="Import deals to start monitoring.",
             ),
             "Portfolio Monitor", subtitle="No active deals",
@@ -254,9 +251,6 @@ def render_portfolio_monitor(store: Any) -> str:
             f"{green}G / {amber}A / {red}R · "
             f"{n_alerts} OPEN ALERT"
             f"{'S' if n_alerts != 1 else ''}"
-        ),
-        lede_italic_phrase=(
-            "What needs the partner's attention this week."
         ),
         lede_body=(
             f"{n_deals} active deals · {n_with_actuals} with quarterly "

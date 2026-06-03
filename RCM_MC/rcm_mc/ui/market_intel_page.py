@@ -203,7 +203,6 @@ def _hero(category: Optional[str], specialty: Optional[str]) -> str:
         eyebrow="MARKET INTELLIGENCE",
         title="Public comps & market context.",
         meta="PUBLIC-MARKET OVERLAY · QUARTERLY REFRESH",
-        lede_italic_phrase="Public comps & market context.",
         lede_body=sub,
     )
 

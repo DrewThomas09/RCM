@@ -371,12 +371,14 @@ def render_ai_settings(store: Any) -> str:
             f"{len(stats['by_model'])} MODEL"
             f"{'S' if len(stats['by_model']) != 1 else ''}"
         ),
-        lede_italic_phrase="Where the local AI assistant plugs into the deal work.",
-        lede_body=(
+        lede_italic_phrase=(
             "On-box Ollama plus the Anthropic API back the "
             "platform's AI-assist features — IC memo drafting, "
             "document Q&amp;A, and conversational portfolio "
-            "queries. Cost, cache hit-rate, and per-model "
+            "queries."
+        ),
+        lede_body=(
+            "Cost, cache hit-rate, and per-model "
             "volume live in the strip below; rotate the key "
             "or change the Ollama host without leaving this page."
         ),
