@@ -194,7 +194,7 @@ def _plan_margin_svg(plans) -> str:
             f'<rect x="{x:.1f}" y="{y_rev:.1f}" width="{bar_w:.1f}" height="{rev_h:.1f}" fill="{acc}" opacity="0.35"/>'
             f'<rect x="{x:.1f}" y="{y_margin:.1f}" width="{bar_w:.1f}" height="{margin_h:.1f}" fill="{pos}" opacity="0.9"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y_rev - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${p.annual_revenue_mm:.0f}M</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.plan_name[:16])}</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.plan_name if len(p.plan_name) <= 16 else p.plan_name[:15] + "…")}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.plan_type)}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">★ {p.star_rating:.1f}</text>'
         )

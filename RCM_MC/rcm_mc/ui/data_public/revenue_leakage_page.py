@@ -34,7 +34,7 @@ def _leakage_bars_svg(buckets) -> str:
         recov_w = b.recoverable_mm / max_v * inner_w
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(b.category[:28])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(b.category if len(b.category) <= 28 else b.category[:27] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{leak_w:.1f}" height="{bh}" fill="{neg}" opacity="0.65"/>'
             f'<rect x="{pad_l}" y="{y}" width="{recov_w:.1f}" height="{bh}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{pad_l + leak_w + 6:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '

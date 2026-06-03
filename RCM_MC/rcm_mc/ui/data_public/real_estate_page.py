@@ -66,7 +66,7 @@ def _slb_waterfall_svg(scenarios) -> str:
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{P["text_dim"]}" font-size="11" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${s.total_slb_proceeds_mm:,.1f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario[:22])}</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario if len(s.scenario) <= 22 else s.scenario[:21] + "…")}</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{pos}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">+{s.implied_moic_lift * 100:.1f}% MOIC</text>'
         )

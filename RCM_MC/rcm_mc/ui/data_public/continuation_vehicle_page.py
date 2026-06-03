@@ -52,7 +52,7 @@ def _pricing_svg(pricing, current_nav: float) -> str:
         color = pos if p.implied_price_mm >= current_nav else (neg if p.implied_price_mm < current_nav * 0.95 else acc)
         markers.append(
             f'<text x="{pad_l - 6}" y="{y + 8}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(p.methodology[:24])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(p.methodology if len(p.methodology) <= 24 else p.methodology[:23] + "…")}</text>'
             f'<circle cx="{x:.1f}" cy="{y + 4}" r="6" fill="{color}" opacity="0.85"/>'
             f'<text x="{x:.1f}" y="{y - 2}" fill="{P["text_dim"]}" font-size="9" '
             f'text-anchor="middle" font-family="JetBrains Mono,monospace">${p.implied_price_mm:,.0f}M</text>'
@@ -96,7 +96,7 @@ def _gp_waterfall_svg(gp_econ) -> str:
             f'font-size="10" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">'
             f'{"+" if g.delta_mm >= 0 else ""}${g.delta_mm:,.1f}M</text>'
             f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" '
-            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(g.item[:22])}</text>'
+            f'text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(g.item if len(g.item) <= 22 else g.item[:21] + "…")}</text>'
         )
 
     return (

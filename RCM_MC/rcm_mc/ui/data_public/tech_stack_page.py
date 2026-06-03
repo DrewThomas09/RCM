@@ -39,7 +39,7 @@ def _modernness_heatmap_svg(systems) -> str:
         bw = s.modernness_score / 100 * inner_w
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(s.system_type[:26])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(s.system_type if len(s.system_type) <= 26 else s.system_type[:25] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
             f'font-family="JetBrains Mono,monospace">{s.modernness_score}</text>'
@@ -81,7 +81,7 @@ def _roi_bubbles_svg(projects) -> str:
         bubbles.append(
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r:.1f}" fill="{color}" opacity="0.65" stroke="{P["text"]}" stroke-width="0.5"/>'
             f'<text x="{x:.1f}" y="{y + r + 11:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" '
-            f'font-family="JetBrains Mono,monospace">{_html.escape(p.project[:20])}</text>'
+            f'font-family="JetBrains Mono,monospace">{_html.escape(p.project if len(p.project) <= 20 else p.project[:19] + "…")}</text>'
         )
 
     return (

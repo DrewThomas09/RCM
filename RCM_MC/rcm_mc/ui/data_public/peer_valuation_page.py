@@ -44,7 +44,7 @@ def _football_field_svg(ranges) -> str:
 
         bars.append(
             f'<text x="{pad_l - 8}" y="{y + bar_h / 2 + 4}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(r.methodology[:28])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(r.methodology if len(r.methodology) <= 28 else r.methodology[:27] + "…")}</text>'
             # Range bar
             f'<rect x="{x_low:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bar_h:.1f}" fill="{acc}" opacity="0.35"/>'
             # Median line

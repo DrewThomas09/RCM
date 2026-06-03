@@ -133,7 +133,7 @@ def _driver_svg(drivers) -> str:
         cc = conf_colors.get(d.confidence, text_dim)
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(d.driver[:30])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(d.driver if len(d.driver) <= 30 else d.driver[:29] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{cc}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
             f'font-family="JetBrains Mono,monospace">${d.implied_revenue_uplift_mm:,.0f}M</text>'

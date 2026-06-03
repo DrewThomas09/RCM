@@ -44,10 +44,10 @@ def _share_landscape_svg(competitors, our_share: float) -> str:
         tc = threat_colors.get(c.threat_level, text_dim)
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + 14}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.name[:26])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.name if len(c.name) <= 26 else c.name[:25] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y + 2}" width="{bw:.1f}" height="14" fill="{tc}" opacity="0.75"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + 14}" fill="{P["text_dim"]}" font-size="10" '
-            f'font-family="JetBrains Mono,monospace">{c.est_market_share_pct:.1f}% · {_html.escape(c.ownership[:14])}</text>'
+            f'font-family="JetBrains Mono,monospace">{c.est_market_share_pct:.1f}% · {_html.escape(c.ownership if len(c.ownership) <= 14 else c.ownership[:13] + "…")}</text>'
         )
 
     return (
@@ -79,7 +79,7 @@ def _gap_svg(vs_us) -> str:
         comp_w = v.top_competitor_score / 100 * inner_w
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(v.dimension[:28])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(v.dimension if len(v.dimension) <= 28 else v.dimension[:27] + "…")}</text>'
             # Competitor bar (background)
             f'<rect x="{pad_l}" y="{y}" width="{comp_w:.1f}" height="{bh}" fill="{text_faint}" opacity="0.35"/>'
             # Our bar (accent)

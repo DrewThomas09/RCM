@@ -79,7 +79,7 @@ def _metrics_by_cat_svg(metrics, category: str, color: str) -> str:
         bw = m.score / 100 * inner_w
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + 8}" fill="{text_dim}" font-size="9" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(m.metric[:22])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(m.metric if len(m.metric) <= 22 else m.metric[:21] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="10" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + 8}" fill="{P["text_dim"]}" font-size="9" '
             f'font-family="JetBrains Mono,monospace">{m.score:.0f}</text>'

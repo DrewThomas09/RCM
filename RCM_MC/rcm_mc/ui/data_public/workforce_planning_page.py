@@ -33,7 +33,7 @@ def _role_spend_svg(inventory) -> str:
         turnover_c = P["positive"] if r.turnover_rate < 0.15 else (P["warning"] if r.turnover_rate < 0.25 else P["negative"])
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(r.role[:26])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(r.role if len(r.role) <= 26 else r.role[:25] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{acc}" opacity="0.75"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
             f'font-family="JetBrains Mono,monospace">${r.annual_spend_mm:,.2f}M</text>'
@@ -74,7 +74,7 @@ def _initiatives_svg(initiatives) -> str:
         rc = risk_colors.get(init.risk, text_dim)
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(init.initiative[:34])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(init.initiative if len(init.initiative) <= 34 else init.initiative[:33] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{pos}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
             f'font-family="JetBrains Mono,monospace">${init.annual_savings_mm:,.2f}M</text>'

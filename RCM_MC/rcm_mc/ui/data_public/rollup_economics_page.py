@@ -219,7 +219,7 @@ def _ebitda_walk_svg(walk) -> str:
         y_top = base_y - total_h
         bars.append(
             f'<text x="{x + bar_w / 2:.1f}" y="{y_top - 4:.1f}" fill="{text}" font-size="10" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:700">${p.total_ebitda_mm:,.0f}M</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.period[:10])}</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(p.period if len(p.period) <= 10 else p.period[:9] + "…")}</text>'
         )
     legend = (
         f'<rect x="10" y="{h - 22}" width="10" height="10" fill="{text_dim}"/><text x="24" y="{h - 13}" fill="{text_dim}" font-size="9" font-family="JetBrains Mono,monospace">standalone</text>'

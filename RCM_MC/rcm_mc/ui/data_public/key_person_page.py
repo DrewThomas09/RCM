@@ -94,7 +94,7 @@ def _revenue_share_svg(key_persons) -> str:
         color = risk_colors.get(kp.departure_risk, text_dim)
         bars.append(
             f'<text x="{pad_l - 6}" y="{y + bh - 1}" fill="{text_dim}" font-size="10" '
-            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(kp.role[:22])}</text>'
+            f'text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(kp.role if len(kp.role) <= 22 else kp.role[:21] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bh}" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4:.1f}" y="{y + bh - 1}" fill="{P["text_dim"]}" font-size="10" '
             f'font-family="JetBrains Mono,monospace">{kp.revenue_share_pct * 100:.1f}%</text>'

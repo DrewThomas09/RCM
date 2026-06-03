@@ -121,7 +121,7 @@ def _severity_svg(categories) -> str:
         bw = c.weighted_score / max_v * inner_w
         color = neg if c.weighted_score >= 65 else (warn if c.weighted_score >= 40 else pos)
         bars.append(
-            f'<text x="{pad_l - 8}" y="{y + bar_h * 0.7}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.category[:18])}</text>'
+            f'<text x="{pad_l - 8}" y="{y + bar_h * 0.7}" fill="{text_dim}" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">{_html.escape(c.category if len(c.category) <= 18 else c.category[:17] + "…")}</text>'
             f'<rect x="{pad_l}" y="{y}" width="{bw:.1f}" height="{bar_h:.1f}" fill="{color}" opacity="0.85"/>'
             f'<text x="{pad_l + bw + 4}" y="{y + bar_h * 0.7}" fill="{text_dim}" font-size="10" font-family="JetBrains Mono,monospace;font-weight:700">{c.weighted_score:.1f}</text>'
         )
