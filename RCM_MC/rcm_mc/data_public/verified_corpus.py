@@ -56,6 +56,8 @@ _SECTOR_MAP: Dict[str, str] = {
     "asc": "asc",
     "dialysis": "dialysis",
     "urgent_care": "urgent_care",
+    "veterinary": "veterinary",
+    "value_based_care": "value_based_care",
     "other_services": "other_services",
 }
 
@@ -126,12 +128,14 @@ def _adapt(v: Dict[str, Any], idx: int) -> Dict[str, Any]:
 def _build() -> List[Dict[str, Any]]:
     from .verified_deals import VERIFIED_DEALS
     existing = _existing_real_keys()
+    seen: set = set()  # also guard against duplicate rows WITHIN verified_deals
     out: List[Dict[str, Any]] = []
     idx = 1
     for v in VERIFIED_DEALS:
         key = (_norm_name(v.get("target", "")), v.get("year"))
-        if key in existing:
-            continue  # true duplicate of a seed-corpus deal
+        if key in existing or key in seen:
+            continue  # duplicate of a seed-corpus deal, or already emitted
+        seen.add(key)
         out.append(_adapt(v, idx))
         idx += 1
     return out
