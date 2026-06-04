@@ -3660,6 +3660,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.riversidecompany.com/investment-portfolio/the-derm-group/",
         "source_note": "The Riverside Company (The Derm Group / The Dermatology Group, Jan 2016)",
     },
+    {
+        "target": "Elevate Patient Financial Solutions", "sponsor": "Audax Private Equity",
+        "year": 2025, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Front-end eligibility/enrollment + back-end RCM tech & services (fka MedData); Audax + Parthenon from Frazier Healthcare",
+        "outcome": "active", "outcome_note": "Active; Audax Private Equity & Parthenon Capital acquired from Frazier July 2025 ($565M senior facility).",
+        "source_url": "https://www.businesswire.com/news/home/20250804211867/en/Frazier-Healthcare-Partners-Announces-the-Sale-of-Elevate-Patient-Financial-Solutions-to-Audax-Private-Equity-and-Parthenon-Capital",
+        "source_note": "Audax Private Equity & Parthenon Capital (Elevate Patient Financial Solutions from Frazier, July 2025)",
+    },
+    {
+        "target": "Meridian Behavioral Health", "sponsor": "Audax Private Equity",
+        "year": 2015, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Residential + outpatient addiction (SUD) treatment provider; Audax from Triton Pacific Capital Partners",
+        "outcome": "active", "outcome_note": "Active; Audax Private Equity acquired from Triton Pacific 2015 (20+ facilities by 2025).",
+        "source_url": "https://www.audaxprivateequity.com/portfolio/meridian-behavioral-health",
+        "source_note": "Audax Private Equity (Meridian Behavioral Health from Triton Pacific, 2015)",
+    },
 ]
 
 
