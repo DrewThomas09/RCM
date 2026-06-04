@@ -7460,16 +7460,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-kpi-grid,
   .ck-kpi-strip { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0; border-top:1px solid var(--sc-rule); }
   .ck-kpi-grid .ck-kpi,
-  .ck-kpi-strip .ck-kpi { padding:14px 18px; border-top:0; border-right:1px solid var(--sc-rule); }
+  .ck-kpi-strip .ck-kpi { padding:16px 18px; border-top:0; border-right:1px solid var(--sc-rule); }
   .ck-kpi-grid .ck-kpi:last-child,
   .ck-kpi-strip .ck-kpi:last-child { border-right:0; }
-  .ck-kpi-label { font-family:var(--sc-sans); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin-bottom:4px; }
-  .ck-kpi-value { font-family:var(--sc-serif); font-size:22px; font-weight:500; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
+  .ck-kpi-label { font-family:var(--sc-sans); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin-bottom:6px; }
+  .ck-kpi-value { font-family:var(--sc-serif); font-size:22px; font-weight:600; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
   .ck-kpi-trend { font-family:var(--sc-mono); font-size:12px; }
   .ck-kpi-trend.tone-positive { color:var(--sc-positive); }
   .ck-kpi-trend.tone-negative { color:var(--sc-negative); }
   .ck-kpi-trend.tone-neutral  { color:var(--sc-text-faint); }
-  .ck-kpi-sub { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); margin-top:4px; }
+  .ck-kpi-sub { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); margin-top:5px; }
   .ck-kpi-code { position:absolute; top:var(--sc-s-4); right:0; font-family:var(--sc-mono); font-size:10px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   /* Data-universe label chips (ck_data_universe) — declare which data
    * universe a page shows so corpus is never mistaken for portfolio. */
