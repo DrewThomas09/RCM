@@ -3956,6 +3956,46 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.businesswire.com/news/home/20211130005656/en/Trinity-Life-Sciences-Recapitalizes-With-Kohlberg-Company",
         "source_note": "Kohlberg & Company (Trinity Life Sciences from Parthenon, Nov 2021)",
     },
+    {
+        "target": "Real Chemistry", "sponsor": "New Mountain Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "AI-enabled healthcare marketing / medical communications + engagement for biopharma (~$560M rev); New Mountain majority",
+        "outcome": "active", "outcome_note": "Active; New Mountain Capital majority investment 2019 (single-asset continuation fund later).",
+        "source_url": "https://www.newmountaincapital.com/portfolio/real-chemistry/",
+        "source_note": "New Mountain Capital (Real Chemistry, 2019)",
+    },
+    {
+        "target": "Lumanity", "sponsor": "Arsenal Capital Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Life-sciences strategic consulting + medical/value-access communications (Cello Health, BresMed, Guidemark, etc.); Arsenal-built platform",
+        "outcome": "active", "outcome_note": "Active; Arsenal Capital Partners launched Lumanity 2022 via merger of several advisory firms.",
+        "source_url": "https://www.arsenalcapital.com/news/introducing-lumanity-an-organization-dedicated-to-accelerating-and-optimizing-access-to-medical-advances",
+        "source_note": "Arsenal Capital Partners (Lumanity, 2022)",
+    },
+    {
+        "target": "Allucent", "sponsor": "Water Street Healthcare Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Specialty / full-service clinical research organization (CRO) for biotech (CATO SMS + Pharm-Olam); Water Street platform",
+        "outcome": "active", "outcome_note": "Active; Water Street Healthcare Partners merged CATO SMS + Pharm-Olam to form Allucent 2022.",
+        "source_url": "https://waterstreet.com/companies/cato-research",
+        "source_note": "Water Street Healthcare Partners (Allucent / CATO SMS + Pharm-Olam, 2022)",
+    },
+    {
+        "target": "OPEN Health", "sponsor": "Astorg",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Global medical-communications + market-access services platform for biopharma; Astorg from Amulet Capital Partners",
+        "outcome": "active", "outcome_note": "Active; Astorg acquired from Amulet Capital Partners July 2022.",
+        "source_url": "https://www.astorg.com/news/astorg-completes-acquisition-of-open-health-from-amulet-capital-partners",
+        "source_note": "Astorg (OPEN Health from Amulet Capital, July 2022)",
+    },
+    {
+        "target": "Two Labs", "sponsor": "Excellere Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Pharma commercialization / product-launch + market-access services; Excellere platform (exited to Envision Pharma / GHO Capital 2020)",
+        "outcome": "exited", "outcome_note": "Excellere Partners invested Jan 2017; exited to Envision Pharma Group (GHO Capital) 2020.",
+        "source_url": "https://excellere.com/investment/two-labs-marketing/",
+        "source_note": "Excellere Partners (Two Labs, Jan 2017; exited to Envision/GHO 2020)",
+    },
 ]
 
 
