@@ -274,10 +274,56 @@ def _pages_source(
     return out
 
 
+def _corpus_source(
+    store: Any, query: str,
+) -> List[SearchResult]:
+    """Search the verified, source-cited real-deal corpus by target or sponsor.
+
+    Why: global search previously indexed only the partner's own portfolio +
+    platform pages + metrics, so the ~500 real PE-healthcare deals in
+    ``verified_deals`` (the credible reference corpus) were invisible to search
+    — a partner typing 'Cano' or 'MedeAnalytics' got nothing. This makes every
+    verified deal findable and links to the filtered Verified Deals table.
+    Capped so a broad query can't flood the result set; scored only on
+    target/sponsor (not weak sector-substring matches).
+    """
+    from urllib.parse import quote
+    out: List[SearchResult] = []
+    try:
+        from ..data_public.verified_deals import VERIFIED_DEALS, _lead_sponsor
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("corpus source failed: %s", exc)
+        return out
+    for v in VERIFIED_DEALS:
+        target = str(v.get("target", "") or "")
+        sponsor = str(v.get("sponsor", "") or "")
+        sector = str(v.get("sector", "") or "").replace("_", " ")
+        year = v.get("year")
+        # Match the deal name first; fall back to the sponsor name. Sublabel
+        # text isn't scored here to avoid flooding on common sector words.
+        score = _score(query, target, "", "deal")
+        if score == 0:
+            score = _score(query, sponsor, "", "deal")
+            if score:
+                score -= 10  # sponsor-only matches rank below name matches
+        if score > 0:
+            lead = _lead_sponsor(sponsor) if sponsor else ""
+            url = ("/verified-deals?sponsor=" + quote(lead)) if lead else "/verified-deals"
+            out.append(SearchResult(
+                label=target,
+                sublabel=" · ".join(p for p in (sponsor, str(year) if year else "", sector, "verified corpus") if p),
+                url=url,
+                category="deal",
+                score=max(score, 1)))
+    out.sort(key=lambda r: r.score, reverse=True)
+    return out[:12]
+
+
 # Default source set. Callers can swap or extend.
 DEFAULT_SOURCES: List[
     Callable[[Any, str], List[SearchResult]]] = [
     _deals_source,
+    _corpus_source,
     _packets_source,
     _metrics_source,
     _pages_source,
