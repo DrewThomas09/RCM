@@ -1451,6 +1451,67 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.dentistryiq.com/practice-management/dsos-and-corporate-dentistry/article/14205397/affordable-care-acquired-by-harvest-partners",
         "source_note": "DentistryIQ (Affordable Care acquired by Harvest Partners, 2021)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 9) — ENT/allergy, ophthalmology, ABA/autism,
+    # aesthetics, IDD/disability services. Each web-validated this sprint.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "SENTA Partners", "sponsor": "Shore Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "ENT + allergy + sleep-medicine MSO; Shore Capital platform",
+        "outcome": "active", "outcome_note": "Active ENT/allergy platform.",
+        "source_url": "https://www.shorecp.com/companies/senta",
+        "source_note": "Shore Capital Partners (SENTA company page)",
+    },
+    {
+        "target": "Spectrum Vision Partners (OCLI Vision)", "sponsor": "Blue Sea Capital",
+        "year": 2017, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Ophthalmology + optometry MSO (NY-anchored); Blue Sea platform",
+        "outcome": "active", "outcome_note": "Active ophthalmology platform.",
+        "source_url": "https://blueseacapital.com/spectrum-vision-partners-announces-ninth-affiliation-and-first-affiliation-in-new-jersey-eyecare-20-20/",
+        "source_note": "Blue Sea Capital (Spectrum Vision Partners, 2017)",
+    },
+    {
+        "target": "Action Behavior Centers", "sponsor": "Charlesbank Capital Partners",
+        "year": 2022, "ev_usd_mm": 840, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy; Charlesbank bought from NexPhase (~$840M)",
+        "outcome": "active", "outcome_note": "Active ABA platform.",
+        "source_url": "https://bhbusiness.com/2022/08/17/charlesbank-capital-partners-wins-auction-to-acquire-action-behavior-centers/",
+        "source_note": "Behavioral Health Business (Charlesbank/ABC, 2022, ~$840M)",
+    },
+    {
+        "target": "Acorn Health", "sponsor": "Ontario Teachers' Pension Plan",
+        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy; OTPP bought from MBF Healthcare Partners",
+        "outcome": "active", "outcome_note": "Active ABA platform.",
+        "source_url": "https://www.businesswire.com/news/home/20210827005006/en/MBF-Healthcare-Partners-II-L.P.-Announces-Sale-of-Acorn-Health-LLC-A-National-Leader-In-The-Provision-of-Best-In-Class-Autism-Services",
+        "source_note": "BusinessWire (MBF sells Acorn Health to OTPP, Aug 2021)",
+    },
+    {
+        "target": "LEARN Behavioral", "sponsor": "Gryphon Investors",
+        "year": 2019, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy; Gryphon bought majority from LLR Partners",
+        "outcome": "active", "outcome_note": "Active ABA platform.",
+        "source_url": "https://www.prnewswire.com/news-releases/gryphon-investors-announces-majority-investment-in-learn-behavioral-300814388.html",
+        "source_note": "PRNewswire (Gryphon majority in LEARN Behavioral, Mar 2019)",
+    },
+    {
+        "target": "LaserAway", "sponsor": "Ares Management + Seidler Equity Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "dermatology",
+        "subsector_note": "Aesthetic-dermatology / laser-treatment chain; Ares strategic investment",
+        "outcome": "active", "outcome_note": "Active aesthetic-dermatology platform.",
+        "source_url": "https://www.businesswire.com/news/home/20211021006090/en/LaserAway-Announces-Strategic-Investment-by-Ares-Management",
+        "source_note": "BusinessWire (Ares invests in LaserAway, Oct 2021)",
+    },
+    {
+        "target": "Sevita", "sponsor": "Centerbridge Partners + The Vistria Group",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "IDD/disability + behavioral home-and-community services (fka The MENTOR Network)",
+        "outcome": "active", "outcome_note": "Active; Madison Dearborn bought 25% in 2022 (~$3B valuation).",
+        "source_url": "https://bhbusiness.com/2022/01/20/madison-dearborn-to-buy-25-of-sevita-at-roughly-3b-valuation/",
+        "source_note": "Behavioral Health Business (Centerbridge/Vistria 2019; Madison Dearborn 2022 ~$3B)",
+    },
 ]
 
 
