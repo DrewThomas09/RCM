@@ -97,6 +97,65 @@ def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str
 </a>"""
 
 
+def _real_outcome_panel(min_known: int = 5) -> str:
+    """Distress base rates on the **verified real corpus** with Wilson 95% CIs.
+
+    Always computed on the real tier regardless of the page's universe toggle —
+    so even in the illustrative (synthetic-skewed) view a partner sees the
+    credible, source-cited outcome base rates as a counterweight. Sectors with
+    fewer than ``min_known`` disclosed outcomes are excluded as noise (mirrors
+    the Top-Sectors single-deal exclusion) and counted in the footnote.
+    """
+    from rcm_mc.data_public.corpus_outcome_stats import corpus_outcome_summary
+    summ = corpus_outcome_summary("real")
+    ov = summ["overall"]
+    rate, (lo, hi) = ov["distress_rate"], ov["ci"]
+    if rate is None:
+        return ""
+    sectors = [s for s in summ["by_sector"]
+               if s["n_known"] >= min_known and s["distress_rate"] is not None]
+    low_n = sum(1 for s in summ["by_sector"] if s["n_known"] < min_known)
+
+    rows = []
+    for i, s in enumerate(sectors):
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
+        dr, (clo, chi) = s["distress_rate"], s["ci"]
+        col = "#b5321e" if dr > 0.2 else "#b8732a" if dr > 0.1 else "#0a8a5f"
+        rows.append(f"""<tr{stripe}>
+  <td style="padding:4px 8px;font-size:10px;">{_html.escape(s['label'][:30].replace('_',' '))}</td>
+  <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{s['n_known']}</td>
+  <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:{col}">{dr*100:.1f}%</td>
+  <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;color:#465366;">{clo*100:.0f}&ndash;{chi*100:.0f}%</td>
+</tr>""")
+
+    return f"""
+<div class="ck-panel">
+  <div class="ck-panel-title">Distress incidence by sector &mdash; verified deals only</div>
+  <div style="padding:6px 16px;font-size:11px;color:#1a2332;line-height:1.4;">
+    Overall <b>{rate*100:.1f}%</b> of {ov['n_known']} verified deals with a disclosed outcome
+    reached distress or bankruptcy
+    <span style="color:#465366;">(95% CI {lo*100:.1f}&ndash;{hi*100:.1f}% &middot;
+    {ov['n_bankrupt']} bankrupt, {ov['n_distressed']} distressed)</span>.
+    A base rate over disclosed outcomes &mdash; not a realized IRR/MOIC loss rate.
+  </div>
+  <div class="ck-table-wrap">
+    <table class="ck-table" style="width:100%;">
+      <thead><tr>
+        <th style="padding:5px 8px;color:#7a8699;">Sector</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Known</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">Distress</th>
+        <th style="padding:5px 8px;color:#7a8699;text-align:right;">95% CI</th>
+      </tr></thead>
+      <tbody>{''.join(rows)}</tbody>
+    </table>
+  </div>
+  <div style="padding:0 16px 8px;font-size:9px;color:#465366;">
+    sectors with &ge;{min_known} disclosed outcomes ({low_n} low-n sectors excluded as noise)
+    &middot; Wilson score 95% intervals &middot; verified real corpus
+  </div>
+</div>"""
+
+
 def render_corpus_dashboard(universe: str = "all") -> str:
     from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_section_header, ck_illustrative_note
     from rcm_mc.ui.chartis._helpers import render_page_explainer
@@ -434,6 +493,8 @@ def render_corpus_dashboard(universe: str = "all") -> str:
         + tiles
         + ck_section_header("BENCHMARKS", "sector and vintage summary")
         + f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">{sector_table}{vintage_table}</div>'
+        + ck_section_header("OUTCOME BASE RATES", "verified-only distress incidence with 95% confidence intervals")
+        + _real_outcome_panel()
     )
 
     explainer = render_page_explainer(
