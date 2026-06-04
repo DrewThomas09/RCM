@@ -1512,6 +1512,60 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://bhbusiness.com/2022/01/20/madison-dearborn-to-buy-25-of-sevita-at-roughly-3b-valuation/",
         "source_note": "Behavioral Health Business (Centerbridge/Vistria 2019; Madison Dearborn 2022 ~$3B)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 10) — health-IT + diagnostics/device
+    # take-privates, PBM, addiction. Each web-validated; several large
+    # disclosed EVs (Ortho $4.15B, NextGen $1.8B, Natus $1.2B).
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Imprivata", "sponsor": "Thoma Bravo",
+        "year": 2016, "ev_usd_mm": 544, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare identity / access-management software; take-private (~$544M)",
+        "outcome": "active", "outcome_note": "Active health-IT security platform.",
+        "source_url": "https://www.thomabravo.com/",
+        "source_note": "Thoma Bravo (Imprivata take-private, 2016, ~$544M)",
+    },
+    {
+        "target": "Ortho Clinical Diagnostics", "sponsor": "The Carlyle Group",
+        "year": 2014, "ev_usd_mm": 4150, "sector": "lab",
+        "subsector_note": "In-vitro diagnostics; Carlyle carve-out from Johnson & Johnson (~$4.15B)",
+        "outcome": "exited", "outcome_note": "IPO 2021 (DGX peer); merged with Quidel to form QuidelOrtho in 2022.",
+        "source_url": "https://www.carlyle.com/media-room/news-release-archive/carlyle-group-completes-acquisition-ortho-clinical-diagnostics-inc",
+        "source_note": "Carlyle (Ortho Clinical from J&J, 2014, ~$4.15B); 2021 IPO; 2022 Quidel",
+    },
+    {
+        "target": "Natus Medical", "sponsor": "ArchiMed",
+        "year": 2022, "ev_usd_mm": 1200, "sector": "other_services",
+        "subsector_note": "Neurodiagnostic + newborn-care medical devices; take-private at $33.50/share",
+        "outcome": "exited", "outcome_note": "Public→private; ArchiMed (~$1.2B).",
+        "source_url": "https://www.archimed.group/news/archimed-acquires-natus-medical-incorporated/",
+        "source_note": "ArchiMed (Natus Medical take-private, 2022, ~$1.2B)",
+    },
+    {
+        "target": "naviHealth", "sponsor": "Clayton, Dubilier & Rice",
+        "year": 2018, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Post-acute-care management software; CD&R bought 55% from Cardinal Health (~$650M)",
+        "outcome": "exited", "outcome_note": "Acquired by UnitedHealth's Optum in 2020.",
+        "source_url": "https://www.massdevice.com/cardinal-health-deals-majority-stake-in-navihealth-to-pe-shop-cdr/",
+        "source_note": "MassDevice (CD&R buys 55% of naviHealth, 2018, ~$650M); Optum 2020",
+    },
+    {
+        "target": "Tabula Rasa HealthCare", "sponsor": "Nautic Partners",
+        "year": 2023, "ev_usd_mm": 570, "sector": "rcm_healthtech",
+        "subsector_note": "PBM + medication-risk-management software; take-private (~$570M)",
+        "outcome": "exited", "outcome_note": "Public→private; later merged with ExactCare (2025).",
+        "source_url": "https://www.modernhealthcare.com/mergers-acquisitions/nautic-partners-tabula-rasa-pbm/",
+        "source_note": "Modern Healthcare (Nautic take-private of Tabula Rasa, 2023, ~$570M)",
+    },
+    {
+        "target": "ARC Health (Advanced Recovery Concepts)", "sponsor": "Thurston Group",
+        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Outpatient mental-health + addiction MSO; Thurston-formed platform",
+        "outcome": "active", "outcome_note": "Active behavioral-health platform.",
+        "source_url": "https://bhbusiness.com/2023/01/26/thurston-group-backed-arc-health-doubles-down-on-ma-strategy/",
+        "source_note": "Behavioral Health Business (Thurston Group-backed ARC Health, formed 2021)",
+    },
 ]
 
 
