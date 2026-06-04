@@ -410,15 +410,6 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.leonardgreen.com/",
         "source_note": "Leonard Green & Partners (portfolio); 2015 Aspen Dental majority investment",
     },
-    {
-        "target": "Affordable Care (Affordable Dentures & Implants)", "sponsor": "TPG (from Berkshire Partners)",
-        "year": 2021, "ev_usd_mm": None, "sector": "dental",
-        "subsector_note": "Dental-implant / denture DSO; PE-to-PE secondary",
-        "outcome": "active", "outcome_note": "Active; Berkshire Partners exited to TPG.",
-        "source_url": "https://www.tpg.com/",
-        "source_note": "TPG (portfolio); 2021 Affordable Care acquisition from Berkshire Partners",
-    },
-
     # ── Dermatology ──
     {
         "target": "Advanced Dermatology & Cosmetic Surgery", "sponsor": "Harvest Partners",
@@ -692,14 +683,6 @@ VERIFIED_DEALS: List[Dict] = [
         "outcome": "active", "outcome_note": "Active; later merged with Seasons Hospice.",
         "source_url": "https://www.adventinternational.com/",
         "source_note": "Advent International (portfolio); 2019 AccentCare acquisition from Oak Hill",
-    },
-    {
-        "target": "DuPage Medical Group (Midwest Physician Administrative Services)", "sponsor": "Ares Management",
-        "year": 2017, "ev_usd_mm": None, "sector": "physician_practices",
-        "subsector_note": "Large independent multispecialty physician group (Illinois); later rebranded Duly Health and Care",
-        "outcome": "active", "outcome_note": "Active platform.",
-        "source_url": "https://www.aresmgmt.com/",
-        "source_note": "Ares Management (portfolio); 2017 DuPage Medical Group majority investment",
     },
     {
         "target": "Smile Brands", "sponsor": "Gryphon Investors",
