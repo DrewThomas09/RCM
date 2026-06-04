@@ -2573,6 +2573,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.baincapital.com/news/citiustech-receives-strategic-investment-bain-capital",
         "source_note": "Bain Capital (CitiusTech, 2022)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 26) — ABA/autism + behavioral managed care
+    # (incl. a bankruptcy), behavioral-health software, dental. Web-validated.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Autism Learning Partners", "sponsor": "FFL Partners",
+        "year": 2018, "ev_usd_mm": 270, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy; FFL platform (~$270M+)",
+        "outcome": "active", "outcome_note": "Active ABA platform.",
+        "source_url": "https://www.fflpartners.com/portfolio/autism-learning-partners",
+        "source_note": "FFL Partners (Autism Learning Partners, 2018, ~$270M)",
+    },
+    {
+        "target": "Proud Moments ABA", "sponsor": "Audax Private Equity",
+        "year": 2019, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy (Northeast); Audax platform",
+        "outcome": "exited", "outcome_note": "Audax exited to Nautic Partners in 2025 — a PE-to-PE exit.",
+        "source_url": "https://www.audaxprivateequity.com/news/audax-private-equity-completes-exit-of-proud-moments",
+        "source_note": "Audax Private Equity (Proud Moments ABA, 2019); Nautic 2025",
+    },
+    {
+        "target": "Therapy Brands", "sponsor": "KKR",
+        "year": 2021, "ev_usd_mm": 1200, "sector": "rcm_healthtech",
+        "subsector_note": "Behavioral-health + rehab practice-management / EHR software (~$1.2B)",
+        "outcome": "active", "outcome_note": "Active care-software platform (from Lightyear/Providence).",
+        "source_url": "https://www.kkr.com/invest/portfolio",
+        "source_note": "KKR (Therapy Brands, 2021, ~$1.2B)",
+    },
+    {
+        "target": "Wellpath (Correct Care Solutions)", "sponsor": "H.I.G. Capital",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Correctional + behavioral healthcare (CCS + Correctional Medical Group merger)",
+        "outcome": "bankrupt", "outcome_note": "Filed Chapter 11 in Nov 2024 under heavy debt — a documented correctional-healthcare PE failure.",
+        "source_url": "https://www.healthcaredive.com/news/wellpath-chapter-11-bankruptcy-prison-healthcare/733401/",
+        "source_note": "Healthcare Dive (Wellpath Ch.11, 2024); H.I.G. Capital (CCS, 2018)",
+    },
+    {
+        "target": "Mid-Atlantic Dental Partners", "sponsor": "CRG + S.C. Goldman",
+        "year": 2016, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Mid-Atlantic DSO; later folded into Sonrava Health (2022)",
+        "outcome": "exited", "outcome_note": "Acquired by Sonrava Health (New Mountain) in 2022.",
+        "source_url": "https://www.prnewswire.com/news-releases/crg-commits-70-million-to-mid-atlantic-dental-partners-300778944.html",
+        "source_note": "CRG + S.C. Goldman (Mid-Atlantic Dental Partners, 2016); Sonrava 2022",
+    },
 ]
 
 
