@@ -648,6 +648,157 @@ _SEED_DEALS: List[Dict[str, Any]] = [
                  "(Enhabit, NYSE: EHAB) 2022; dominant Medicare payer mix for IRF segment; "
                  "FIM/WeeFIM documentation compliance is critical RCM risk.",
     },
+    # ── Healthcare-IT / RCM / services + recent downside ──────────────────
+    # Added to broaden the verified-real tier in this platform's core domain
+    # (RCM, health-IT, physician/home services) and recent vintages. Identity
+    # facts (sponsor, target, year, EV) are publicly disclosed M&A; EBITDA at
+    # entry is ESTIMATED from EV at a sector-typical multiple where the figure
+    # was not separately disclosed (flagged per-deal). realized_moic is set
+    # only where the outcome is unambiguous (Air Methods Ch.11 ~ total loss);
+    # exits with undisclosed sponsor returns keep realized_moic = None.
+    {
+        "source_id": "seed_036",
+        "source": "seed",
+        "deal_name": "R1 RCM – TowerBrook / Clayton Dubilier & Rice Take-Private",
+        "year": 2024,
+        "buyer": "TowerBrook Capital Partners / Clayton, Dubilier & Rice",
+        "seller": "Public shareholders (NASDAQ: RCM) + New Mountain Capital",
+        "ev_mm": 8_900,
+        "ebitda_at_entry_mm": 600,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.38, "medicaid": 0.18, "commercial": 0.37, "self_pay": 0.07},
+        "notes": "Largest pure-play revenue-cycle-management take-private (~$8.9B EV, "
+                 "announced 2024); directly the RCM domain this platform models. EBITDA "
+                 "estimated from ~$600M disclosed adj. EBITDA (EV/EBITDA ~14.8x). Payer "
+                 "mix reflects the served provider market, not own revenue. Unrealized.",
+    },
+    {
+        "source_id": "seed_037",
+        "source": "seed",
+        "deal_name": "athenahealth – Veritas Capital / Evergreen (Elliott) Take-Private",
+        "year": 2019,
+        "buyer": "Veritas Capital / Evergreen Coast Capital (Elliott)",
+        "seller": "Public shareholders (NASDAQ: ATHN)",
+        "ev_mm": 5_700,
+        "ebitda_at_entry_mm": 380,
+        "hold_years": 3.0,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.36, "medicaid": 0.16, "commercial": 0.40, "self_pay": 0.08},
+        "notes": "$5.7B take-private 2019 (ambulatory EHR + RCM); sold to Bain Capital + "
+                 "Hellman & Friedman 2022 at $17B EV — a strong sponsor return, though the "
+                 "exact MOIC was not disclosed (realized_moic left None). EBITDA estimated "
+                 "from EV at ~15x. Payer mix is served-market.",
+    },
+    {
+        "source_id": "seed_038",
+        "source": "seed",
+        "deal_name": "Cotiviti – Veritas Capital Take-Private",
+        "year": 2018,
+        "buyer": "Veritas Capital",
+        "seller": "Advent International (NYSE: COTV)",
+        "ev_mm": 4_900,
+        "ebitda_at_entry_mm": 310,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.40, "medicaid": 0.20, "commercial": 0.35, "self_pay": 0.05},
+        "notes": "$4.9B take-private 2018 (payment-integrity + analytics for payers); "
+                 "Veritas sold ~half to KKR in 2024 at a ~$11B valuation — strong markup, "
+                 "exact MOIC undisclosed (realized_moic None). EBITDA estimated at ~16x EV.",
+    },
+    {
+        "source_id": "seed_039",
+        "source": "seed",
+        "deal_name": "Press Ganey – EQT / CPPIB Take-Private",
+        "year": 2016,
+        "buyer": "EQT Partners / CPP Investments",
+        "seller": "Public shareholders (NYSE: PGND)",
+        "ev_mm": 2_350,
+        "ebitda_at_entry_mm": 120,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.38, "medicaid": 0.18, "commercial": 0.37, "self_pay": 0.07},
+        "notes": "$2.35B take-private 2016 (patient-experience measurement + analytics); "
+                 "recapitalized 2019 (Leonard Green joined). Held. EBITDA estimated at "
+                 "~20x EV; payer mix is served-market. realized_moic None (not exited).",
+    },
+    {
+        "source_id": "seed_040",
+        "source": "seed",
+        "deal_name": "Signify Health – New Mountain Capital → CVS Acquisition",
+        "year": 2022,
+        "buyer": "CVS Health (strategic)",
+        "seller": "New Mountain Capital + public (NYSE: SGFY)",
+        "ev_mm": 8_000,
+        "ebitda_at_entry_mm": 200,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.55, "medicaid": 0.10, "commercial": 0.32, "self_pay": 0.03},
+        "notes": "New Mountain-built in-home health-evaluation + value-based platform; "
+                 "IPO 2021; acquired by CVS Sept 2022 at $8.0B ($30.50/sh) — strong "
+                 "exit, exact sponsor MOIC undisclosed (realized_moic None). High Medicare "
+                 "Advantage exposure (HRA model). EBITDA estimated.",
+    },
+    {
+        "source_id": "seed_041",
+        "source": "seed",
+        "deal_name": "Air Methods – American Securities Take-Private (→ Chapter 11)",
+        "year": 2017,
+        "buyer": "American Securities",
+        "seller": "Public shareholders (NASDAQ: AIRM)",
+        "ev_mm": 2_500,
+        "ebitda_at_entry_mm": 300,
+        "hold_years": 6.0,
+        "realized_moic": 0.05,
+        "realized_irr": -0.45,
+        "payer_mix": {"medicare": 0.30, "medicaid": 0.25, "commercial": 0.40, "self_pay": 0.05},
+        "notes": "$2.5B take-private 2017 (air-ambulance); filed Chapter 11 Oct 2023 with "
+                 "equity effectively wiped — a documented PE healthcare loss. Out-of-network "
+                 "balance billing was gutted by the No Surprises Act (2022). realized_moic "
+                 "~0.05x (near-total equity loss). EBITDA estimated at entry.",
+    },
+    {
+        "source_id": "seed_042",
+        "source": "seed",
+        "deal_name": "One Medical (1Life Healthcare) – Carlyle → Amazon Acquisition",
+        "year": 2023,
+        "buyer": "Amazon (strategic)",
+        "seller": "The Carlyle Group + public (NASDAQ: ONEM)",
+        "ev_mm": 3_900,
+        "ebitda_at_entry_mm": None,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.25, "medicaid": 0.05, "commercial": 0.65, "self_pay": 0.05},
+        "notes": "Amazon acquired One Medical for $3.9B (closed Feb 2023); Carlyle was the "
+                 "lead pre-IPO sponsor (IPO 2020). Membership primary care; not EBITDA-"
+                 "positive at acquisition (priced on revenue/strategic value) so "
+                 "ebitda_at_entry left None. realized_moic None (undisclosed).",
+    },
+    {
+        "source_id": "seed_043",
+        "source": "seed",
+        "deal_name": "Change Healthcare (Emdeon) – Blackstone / Hellman & Friedman",
+        "year": 2011,
+        "buyer": "Blackstone Group / Hellman & Friedman",
+        "seller": "Public shareholders (NYSE: EM, Emdeon)",
+        "ev_mm": 3_000,
+        "ebitda_at_entry_mm": 250,
+        "hold_years": 11.0,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.38, "medicaid": 0.18, "commercial": 0.37, "self_pay": 0.07},
+        "notes": "Blackstone take-private of Emdeon 2011 (~$3B, healthcare payments/RCM "
+                 "clearinghouse); combined with McKesson's IT unit 2017 to form Change "
+                 "Healthcare; IPO 2019; acquired by UnitedHealth/Optum 2022 (~$13B incl. "
+                 "debt). Long multi-step hold; sponsor returns undisclosed (realized_moic "
+                 "None). EBITDA estimated at entry.",
+    },
 ]
 
 
