@@ -3548,6 +3548,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.martiscapital.com/martis-capital-makes-growth-investment-in-dcn-dx/",
         "source_note": "Martis Capital (DCN Dx, Nov 2020)",
     },
+    {
+        "target": "Clarest Health", "sponsor": "Sverica Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Long-term-care pharmacy + medication-management services; Sverica majority (acquired Remedi SeniorCare 2024)",
+        "outcome": "active", "outcome_note": "Active; Sverica Capital acquired majority 2020.",
+        "source_url": "https://sverica.com/portfolio-2/clarest-health/",
+        "source_note": "Sverica Capital (Clarest Health, 2020)",
+    },
+    {
+        "target": "CenterPointe Behavioral Health System", "sponsor": "NaviMed Capital",
+        "year": 2021, "ev_usd_mm": 139, "sector": "behavioral_health",
+        "subsector_note": "Multi-site inpatient/outpatient behavioral health; NaviMed Capital + Health Enterprise Partners (exited to Acadia)",
+        "outcome": "exited", "outcome_note": "Acquired by Acadia Healthcare Dec 2021 (~$139M) from NaviMed Capital / Health Enterprise Partners.",
+        "source_url": "https://navimed.com/navimed-portfolio-company-centerpointe-behavioral-health-system-acquired-by-acadia-healthcare/",
+        "source_note": "NaviMed Capital (CenterPointe Behavioral Health; exited to Acadia Dec 2021, ~$139M)",
+    },
+    {
+        "target": "Renaissance Lakewood", "sponsor": "RoundTable Healthcare Partners",
+        "year": 2012, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Pharma CDMO — nasal-spray + sterile injectable fill-finish; RoundTable platform (built via Confab 2010 / DPT Labs 2012)",
+        "outcome": "exited", "outcome_note": "RoundTable-built CDMO (DPT Laboratories 2012 core); exited to LTS Lohmann (announced Oct 2025).",
+        "source_url": "https://roundtablehp.com/news/2025/roundtablehealthcarepartnersannouncessaleofrenaissancelakewoodllc.html",
+        "source_note": "RoundTable Healthcare Partners (Renaissance Lakewood / DPT Labs, 2012; exited to LTS 2025)",
+    },
 ]
 
 
