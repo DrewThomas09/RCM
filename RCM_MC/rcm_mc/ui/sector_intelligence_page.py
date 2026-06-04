@@ -110,8 +110,8 @@ def render_sector_intelligence() -> str:
         # 2026-05-28 batch 24 · universal strict 5-block head.
         # Replaces the previous ck_page_title + ck_section_intro pair.
         ck_editorial_head(
-            eyebrow="SECTOR INTELLIGENCE",
-            title="The healthcare-services sectors PEdesk covers.",
+            eyebrow="RESEARCH · SECTOR INTELLIGENCE",
+            title="Sector Intelligence",
             meta=(
                 f"{n_live} LIVE · "
                 f"{len(_SECTORS) - n_live} ON ROADMAP · "
