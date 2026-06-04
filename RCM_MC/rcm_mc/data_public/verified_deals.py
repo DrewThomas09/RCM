@@ -3740,6 +3740,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://waterstreet.com/news/water-street-partners-with-brundage-group",
         "source_note": "Water Street Healthcare Partners (Brundage Group, April 2026)",
     },
+    {
+        "target": "XiFin", "sponsor": "GTCR",
+        "year": 2014, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Cloud/SaaS revenue-cycle-management + workflow automation for diagnostic labs / imaging / pathology; GTCR platform",
+        "outcome": "active", "outcome_note": "Active; GTCR acquired July 2014.",
+        "source_url": "https://www.xifin.com/news-and-events/press-release/gtcr-acquires-XiFin/",
+        "source_note": "GTCR (XiFin, July 2014)",
+    },
+    {
+        "target": "United BioSource", "sponsor": "Avista Capital Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Pharmaceutical & patient-support services (pharmacovigilance, REMS, patient access/adherence) for life-science cos; Avista carve-out from Express Scripts",
+        "outcome": "active", "outcome_note": "Active; Avista Capital Partners carved out from Express Scripts Nov 2017.",
+        "source_url": "https://www.prnewswire.com/news-releases/avista-capital-partners-to-acquire-express-scripts-subsidiary-united-biosource-300561642.html",
+        "source_note": "Avista Capital Partners (United BioSource from Express Scripts, Nov 2017)",
+    },
 ]
 
 
