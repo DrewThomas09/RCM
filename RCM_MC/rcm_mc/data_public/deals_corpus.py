@@ -799,6 +799,121 @@ _SEED_DEALS: List[Dict[str, Any]] = [
                  "debt). Long multi-step hold; sponsor returns undisclosed (realized_moic "
                  "None). EBITDA estimated at entry.",
     },
+    # ── Value-based care / home / PACE — under-covered segments + a downside ──
+    # Same discipline: disclosed M&A identity facts; EBITDA estimated from EV
+    # where not disclosed (flagged); realized_moic only for the unambiguous
+    # Cano Health Chapter-11 loss. Several are framed as the well-documented
+    # strategic-acquisition exit (year = transaction year, buyer = acquirer),
+    # consistent with the corpus's existing acquisition entries.
+    {
+        "source_id": "seed_044",
+        "source": "seed",
+        "deal_name": "Oak Street Health – General Atlantic → CVS Acquisition",
+        "year": 2023,
+        "buyer": "CVS Health (strategic)",
+        "seller": "General Atlantic / Newlight Partners + public (NYSE: OSH)",
+        "ev_mm": 10_600,
+        "ebitda_at_entry_mm": None,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.80, "medicaid": 0.12, "commercial": 0.06, "self_pay": 0.02},
+        "notes": "CVS acquired Oak Street Health for $10.6B (closed May 2023); General "
+                 "Atlantic / Newlight were lead pre-IPO sponsors (IPO 2020). Value-based "
+                 "primary care for Medicare Advantage seniors — not yet EBITDA-positive at "
+                 "acquisition (priced on capitated-lives / strategic value) so "
+                 "ebitda_at_entry left None. realized_moic None (undisclosed).",
+    },
+    {
+        "source_id": "seed_045",
+        "source": "seed",
+        "deal_name": "Summit Health / CityMD – Warburg Pincus → VillageMD/Walgreens",
+        "year": 2023,
+        "buyer": "VillageMD (Walgreens Boots Alliance-backed)",
+        "seller": "Warburg Pincus + CityMD physicians",
+        "ev_mm": 8_900,
+        "ebitda_at_entry_mm": 400,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.30, "medicaid": 0.10, "commercial": 0.55, "self_pay": 0.05},
+        "notes": "VillageMD (Walgreens-backed) acquired Summit Health-CityMD for ~$8.9B "
+                 "(closed Jan 2023); Warburg Pincus was lead sponsor. Multispecialty + "
+                 "urgent-care platform (commercial-heavy). EBITDA estimated; realized_moic "
+                 "None (undisclosed sponsor return).",
+    },
+    {
+        "source_id": "seed_046",
+        "source": "seed",
+        "deal_name": "Cano Health – Sternlicht/Jaws de-SPAC (→ Chapter 11)",
+        "year": 2021,
+        "buyer": "Jaws Acquisition Corp (Barry Sternlicht SPAC)",
+        "seller": "InTandem Capital + founders",
+        "ev_mm": 4_400,
+        "ebitda_at_entry_mm": 150,
+        "hold_years": 3.0,
+        "realized_moic": 0.0,
+        "realized_irr": -1.0,
+        "payer_mix": {"medicare": 0.78, "medicaid": 0.16, "commercial": 0.04, "self_pay": 0.02},
+        "notes": "Value-based primary care; went public via Jaws Acquisition (Barry "
+                 "Sternlicht) de-SPAC June 2021 at ~$4.4B; filed Chapter 11 Feb 2024 with "
+                 "common equity wiped — a documented value-based-care downside. "
+                 "realized_moic ~0.0 (equity loss). EBITDA estimated at de-SPAC.",
+    },
+    {
+        "source_id": "seed_047",
+        "source": "seed",
+        "deal_name": "Option Care Health – Madison Dearborn / BioScrip Merger",
+        "year": 2019,
+        "buyer": "Madison Dearborn Partners (Option Care) + BioScrip merger",
+        "seller": "BioScrip public shareholders (NASDAQ: BIOS)",
+        "ev_mm": 3_600,
+        "ebitda_at_entry_mm": 150,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.30, "medicaid": 0.15, "commercial": 0.53, "self_pay": 0.02},
+        "notes": "Madison Dearborn's Option Care combined with public BioScrip in 2019 to "
+                 "form Option Care Health (NASDAQ: OPCH), the largest independent home- and "
+                 "alternate-site infusion provider (~$3.6B combined). EBITDA estimated; "
+                 "realized_moic None (sponsor still holding / undisclosed).",
+    },
+    {
+        "source_id": "seed_048",
+        "source": "seed",
+        "deal_name": "Aveanna Healthcare – Bain Capital / J.H. Whitney Platform",
+        "year": 2017,
+        "buyer": "Bain Capital / J.H. Whitney",
+        "seller": "PSA Healthcare + Epic Health Services (merger)",
+        "ev_mm": 1_300,
+        "ebitda_at_entry_mm": 110,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.10, "medicaid": 0.78, "commercial": 0.10, "self_pay": 0.02},
+        "notes": "Bain + J.H. Whitney merged PSA Healthcare and Epic Health Services (2017) "
+                 "to form Aveanna, the largest pediatric home-health platform; IPO 2021 "
+                 "(NASDAQ: AVAH). Very high Medicaid mix (pediatric private-duty nursing). "
+                 "Entry EV/EBITDA estimated; realized_moic None.",
+    },
+    {
+        "source_id": "seed_049",
+        "source": "seed",
+        "deal_name": "InnovAge – Apax Partners Recap (→ IPO)",
+        "year": 2021,
+        "buyer": "Public (IPO); Apax Partners majority since 2016",
+        "seller": "Apax Partners + Welltower (partial)",
+        "ev_mm": 3_500,
+        "ebitda_at_entry_mm": 90,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.50, "medicaid": 0.48, "commercial": 0.01, "self_pay": 0.01},
+        "notes": "PACE (Program of All-Inclusive Care for the Elderly) operator for dual-"
+                 "eligible seniors; Apax took a majority 2016, IPO March 2021 (NASDAQ: INNV, "
+                 "~$3.5B EV at IPO). Near-even Medicare/Medicaid (duals). EV at IPO; "
+                 "ebitda estimated; realized_moic None (partial monetization via IPO).",
+    },
 ]
 
 
