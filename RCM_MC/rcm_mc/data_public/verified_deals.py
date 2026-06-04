@@ -3636,6 +3636,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.businesswire.com/news/home/20231204589710/en/Carisk-Partners-Recapitalizes-with-Lee-Equity-Partners-and-Elements-Health-Investors",
         "source_note": "Lee Equity Partners (Carisk Partners recap, Dec 2023)",
     },
+    {
+        "target": "Integrated Oncology Network", "sponsor": "Silver Oak Services Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Community-based oncology network (50+ locations, 10 states); Silver Oak recap from Comvest (exited to Cardinal Health $1.115B 2025)",
+        "outcome": "exited", "outcome_note": "Silver Oak recapitalized Oct 2018 (from Comvest); exited to Cardinal Health for $1.115B Feb 2025.",
+        "source_url": "https://www.silveroaksp.com/news-article/silver-oak-services-partners-completes-sale-of-integrated-oncology-network-to-cardinal-health-for-1115-billion",
+        "source_note": "Silver Oak Services Partners (Integrated Oncology Network, Oct 2018; exited to Cardinal Health $1.115B 2025)",
+    },
+    {
+        "target": "Physicians Endoscopy", "sponsor": "Pamlico Capital",
+        "year": 2013, "ev_usd_mm": None, "sector": "asc",
+        "subsector_note": "Developer/manager of single-specialty GI endoscopy ambulatory surgery centers (now PE GI Solutions); Pamlico from Silver Oak (exited to Kelso 2016)",
+        "outcome": "exited", "outcome_note": "Pamlico Capital acquired Aug 2013; exited to Kelso & Company 2016.",
+        "source_url": "https://www.pamlicocapital.com/news/physicians-endoscopy-attracts-growth-investment-from-pamlico-capital",
+        "source_note": "Pamlico Capital (Physicians Endoscopy, Aug 2013; exited to Kelso 2016)",
+    },
+    {
+        "target": "The Derm Group", "sponsor": "The Riverside Company",
+        "year": 2016, "ev_usd_mm": None, "sector": "dermatology",
+        "subsector_note": "Northern/Central New Jersey dermatology MSO (clinical/surgical/cosmetic/dermatopathology, 16 locations); Riverside platform",
+        "outcome": "active", "outcome_note": "Active; The Riverside Company invested Jan 2016 (~$7M LTM EBITDA at entry).",
+        "source_url": "https://www.riversidecompany.com/investment-portfolio/the-derm-group/",
+        "source_note": "The Riverside Company (The Derm Group / The Dermatology Group, Jan 2016)",
+    },
 ]
 
 
