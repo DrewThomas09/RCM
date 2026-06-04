@@ -1080,7 +1080,7 @@ def render_physician_attrition_page(
     if compare_ids:
         compare_title = ck_page_title(
             "Physician Attrition · Compare",
-            eyebrow="PHYSICIAN ATTRITION",
+            eyebrow="DILIGENCE · PHYSICIAN ATTRITION",
             meta=f"Target: {html.escape(target_name)} · {len(compare_ids)}-way provider comparison",
         )
         body = (
@@ -1190,7 +1190,7 @@ def render_physician_attrition_page(
         _scoped_styles()
         + ck_page_title(
             "Physician Attrition",
-            eyebrow="PHYSICIAN ATTRITION",
+            eyebrow="DILIGENCE · PHYSICIAN ATTRITION",
             meta=f"Target: {html.escape(target_name)} · predictive churn analytic",
         )
         + explainer_html
