@@ -471,7 +471,7 @@ def render_corpus_backtest(
             ("Tools", "/methodology"),
             ("Dataset Backtest", None),
         ],
-            subtitle="Corpus unavailable",
+            subtitle="Dataset unavailable",
         )
 
     # Attempt the real prediction-vs-realized backtest first. Requires

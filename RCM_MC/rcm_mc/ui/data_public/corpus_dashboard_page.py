@@ -531,7 +531,7 @@ def render_corpus_dashboard(universe: str = "all") -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         page_title + universe_toggle + explainer + universe_note + body,
-        title="Corpus Dashboard",
+        title="Dataset Dashboard",
         active_nav="/corpus-dashboard",
         subtitle=(
             f"{n:,} deals ({universe_lbl}) · P50 MOIC {moic_p50:.2f}x · P50 IRR {irr_p50*100:.1f}% · "
