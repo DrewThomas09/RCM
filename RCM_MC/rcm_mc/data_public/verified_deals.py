@@ -2909,6 +2909,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.blackrock.com/",
         "source_note": "BlackRock Long Term Private Capital (Comprehensive Pharmacy Services, 2019)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 34) — respiratory devices (incl. a bankruptcy),
+    # CDMO, perioperative services, AR software, dental. Web-validated.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Vyaire Medical", "sponsor": "Apax Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Respiratory / ventilation devices; Apax JV with BD (full control 2018)",
+        "outcome": "bankrupt", "outcome_note": "Filed Chapter 11 in 2024 (post-COVID demand collapse) — a device-PE downside.",
+        "source_url": "https://www.fiercebiotech.com/medtech/ventilator-maker-vyaire-medical-files-bankruptcy",
+        "source_note": "Apax Partners (Vyaire Medical, 2016 JV with BD); Ch.11 2024",
+    },
+    {
+        "target": "CordenPharma", "sponsor": "Astorg",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Pharma CDMO (peptides, lipids, small molecules); Astorg from ICIG",
+        "outcome": "active", "outcome_note": "Active CDMO platform.",
+        "source_url": "https://www.astorg.com/portfolio/",
+        "source_note": "Astorg (CordenPharma, 2022)",
+    },
+    {
+        "target": "SpecialtyCare", "sponsor": "Kohlberg & Company",
+        "year": 2017, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outsourced perioperative services (perfusion, neuromonitoring, surgical assist)",
+        "outcome": "active", "outcome_note": "Active perioperative-services platform.",
+        "source_url": "https://www.kohlberg.com/",
+        "source_note": "Kohlberg & Company (SpecialtyCare, 2017)",
+    },
+    {
+        "target": "Finvi (Ontario Systems)", "sponsor": "New Mountain Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare AR / collections + patient-payment software",
+        "outcome": "active", "outcome_note": "Active RCM-software platform.",
+        "source_url": "https://www.newmountaincapital.com/portfolio/",
+        "source_note": "New Mountain Capital (Ontario Systems/Finvi, 2021)",
+    },
+    {
+        "target": "Risas Dental and Braces", "sponsor": "Blue Wolf Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Hispanic-focused DSO (Southwest); Blue Wolf-backed",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.bluewolfcapital.com/portfolio/",
+        "source_note": "Blue Wolf Capital Partners (Risas Dental, 2021)",
+    },
 ]
 
 
