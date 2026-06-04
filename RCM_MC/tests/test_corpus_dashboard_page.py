@@ -66,6 +66,30 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         # The verified deal count (≈68) is far below the full corpus.
         self.assertIn("68 deals", html)
 
+    def test_top_sectors_excludes_singledeal_noise(self):
+        """Regression: the all-mode 'Top Sectors by P50 MOIC' table ranked
+        flukey 1-deal micro-sectors (e.g. a lone 5.1x 'women's health') above
+        well-populated sectors. The ranking must require >=5 realized deals and
+        say so, so a partner doesn't read single-deal noise as a top sector."""
+        from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+        import re
+        html = render_corpus_dashboard()  # all mode
+        self.assertIn("realized deals", html)
+        self.assertIn("single-deal sectors excluded", html)
+        # Every deal-count cell in the Top Sectors table must be >= 5.
+        m = re.search(r"Top Sectors by P50 MOIC.*?<tbody>(.*?)</tbody>", html, re.S)
+        self.assertIsNotNone(m)
+        rows = re.findall(r"<tr.*?</tr>", m.group(1), re.S)
+        self.assertTrue(rows)
+        for row in rows:
+            cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+            # cells: [sector, n_deals, P50 MOIC, P50 IRR, loss%]
+            n_deals = int(re.sub(r"[^0-9]", "", cells[1]))
+            self.assertGreaterEqual(
+                n_deals, 5,
+                f"single-/low-deal sector leaked into Top Sectors: {cells}",
+            )
+
     def test_verified_mode_sector_table_nonempty(self):
         """Regression: the real seed deals were unclassified (no `sector`),
         so verified-mode sector analysis was silently empty. The canonical

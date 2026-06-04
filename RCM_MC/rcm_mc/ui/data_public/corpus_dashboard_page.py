@@ -145,8 +145,17 @@ def render_corpus_dashboard(universe: str = "all") -> str:
 
     # Sector stats
     sector_stats = compute_sector_stats(corpus)
-    top_sectors  = sector_stats[:5]
     n_sectors    = len(sector_stats)
+    # Rank "top sectors" only among those with enough realized deals to be
+    # meaningful. In the full illustrative corpus a P50 MOIC computed off a
+    # single deal is noise — 63 of 156 sectors are single-deal — so ranking
+    # them as "top" puts flukes (e.g. a lone 5.1x "women's health" row) above
+    # well-populated sectors and misleads a partner. Require >=5 realized
+    # deals there. The verified subset is small and every deal is sourced, so
+    # show all of it (a 1-deal real sector is an honest data point, not noise).
+    min_sector_n = 1 if verified_mode else 5
+    ranked_sectors = [s for s in sector_stats if s.n_deals >= min_sector_n]
+    top_sectors  = ranked_sectors[:5]
 
     # Vintage stats
     vintage_stats = compute_vintage_stats(corpus)
@@ -349,7 +358,7 @@ def render_corpus_dashboard(universe: str = "all") -> str:
 
     # Top sectors table
     top_sector_rows = []
-    for i, s in enumerate(sector_stats[:15]):
+    for i, s in enumerate(ranked_sectors[:15]):
         stripe = ' style="background:var(--sc-bone)"' if i % 2 == 1 else ""
         mc = _moic_color(s.moic_p50)
         top_sector_rows.append(f"""<tr{stripe}>
@@ -377,7 +386,11 @@ def render_corpus_dashboard(universe: str = "all") -> str:
     </table>
   </div>
   <div style="padding:0 16px 8px;font-size:9px;color:#465366;">
-    <a href="/sector-intel" style="color:#1F7A75;text-decoration:none;">→ Full sector intelligence</a>
+    {("all " + str(len(ranked_sectors)) + " verified sectors"
+      if verified_mode else
+      "ranked among " + str(len(ranked_sectors)) + " sectors with &ge;" + str(min_sector_n)
+      + " realized deals (single-deal sectors excluded as noise)")}
+    · <a href="/sector-intel" style="color:#1F7A75;text-decoration:none;">→ Full sector intelligence</a>
   </div>
 </div>"""
 
