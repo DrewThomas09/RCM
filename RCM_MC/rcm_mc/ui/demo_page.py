@@ -94,16 +94,26 @@ def render_demo_page(loaded: bool = False, deal_count: int = 0) -> str:
     # --- Step-by-step tutorial ------------------------------------------------
     steps = [
         ("Load the demo", "Click <b>Load KKR demo portfolio</b> above. The workspace fills with KKR's "
-         "real healthcare deals."),
+         "real healthcare deals; the command center, map, alerts and every deal page populate at once. "
+         "A <b>Demo mode</b> banner appears on the home page so you always know you're in the demo — and "
+         "you can <b>unload</b> it from here in one click when you're done."),
         ("Open the command center", "Go to <a href='/app' style='color:#155752'>the command center</a> — "
-         "the home view now shows KKR's portfolio: health bands, alerts, top movers, EBITDA at risk."),
-        ("Explore the portfolio map &amp; cohorts", "<a href='/portfolio/map' style='color:#155752'>Portfolio map</a>, "
-         "<a href='/cohorts' style='color:#155752'>cohorts</a>, and <a href='/watchlist' style='color:#155752'>watchlist</a> "
+         "the home view now shows KKR's portfolio: pipeline funnel, active alerts, the health-band "
+         "distribution (green winners through the red Envision write-off), recent deals and deadlines."),
+        ("Explore the portfolio map &amp; cohorts", "The <a href='/portfolio/map' style='color:#155752'>portfolio map</a> "
+         "shades the real US states the deals sit in (16 deals across 12 states, CON jurisdictions flagged); "
+         "<a href='/portfolio/heatmap' style='color:#155752'>heatmap</a>, "
+         "<a href='/cohorts' style='color:#155752'>cohorts</a> and <a href='/watchlist' style='color:#155752'>watchlist</a> "
          "all resolve to these KKR deals."),
-        ("Drill into a deal", "Open any deal (e.g. Cotiviti, or the distressed Envision) for the snapshot trail, "
-         "variance, RCM profile, PE bridge, covenant headroom and health trend."),
-        ("Check the alerts", "<a href='/alerts' style='color:#155752'>Alerts</a> fire on the stressed deals "
-         "(Envision's tripped covenant, the amber names) — ack / snooze / escalate to see the lifecycle."),
+        ("Drill into a deal", "Open <b>Cotiviti</b> (a healthy compounder) and the distressed <b>Envision</b> "
+         "side by side: snapshot trail, the seven-quarter EBITDA trajectory + variance, RCM profile, the PE "
+         "bridge with its modeled improvement opportunity, covenant headroom and the health trend. Envision "
+         "tells the honest downside (covenant tripped, EBITDA sliding ~30% below plan into Chapter 11); "
+         "<b>Gland Pharma</b> is the ~4x upside bookend."),
+        ("Work the alerts &amp; deadlines", "<a href='/alerts' style='color:#155752'>Alerts</a> are already "
+         "mid-lifecycle — one acked, one snoozed, and Envision's covenant breach left live — so you can see "
+         "ack / snooze / escalate end to end. <a href='/deadlines' style='color:#155752'>Deadlines</a> show "
+         "upcoming and overdue items (restructuring review, covenant tests)."),
         ("(Optional) inspect the data", "Download the ingestion files below to see the exact import format, "
          "or hand them to a colleague."),
     ]
