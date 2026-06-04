@@ -7,8 +7,10 @@ into a real HTTP server and asserts that every demo-critical surface returns
 200, never renders a Python traceback, and (for the data-bearing pages)
 actually contains KKR portfolio content.
 
-If a future change empties a surface or 500s it under demo data, this test
-fails loudly — that's the "all demo pages work, fully done" guarantee.
+It checks two layers: a curated set of portfolio/landing/demo surfaces, and
+*every* deal in the portfolio across the core deal-detail routes — so a
+regression that breaks a single deal, or any one surface, fails loudly. This
+is the "all demo pages work, fully done" guarantee for the whole demo arc.
 """
 from __future__ import annotations
 
@@ -28,39 +30,24 @@ def _free_port() -> int:
         return s.getsockname()[1]
 
 
-# Surfaces grouped by expectation. (path, must_contain_KKR_content?)
-# Deal-specific paths use cotiviti (healthy) and envision (distressed).
+# Curated surfaces. (path, must_contain_KKR_content?)
 _SURFACES = [
-    # Landing + portfolio roll-ups — must show KKR deals.
-    ("/app", True),
-    ("/home", True),
-    ("/portfolio", True),
-    ("/portfolio/map", False),          # geographic — shades states, not names
-    ("/portfolio/heatmap", True),
-    ("/portfolio/monitor", True),
-    ("/cohorts", False),                # cohort aggregates
-    ("/alerts", True),
-    ("/watchlist", False),
-    ("/deals", False),                  # Deal Pipeline (sourcing stage); demo
-                                        # deals are held, so correctly not here
-    ("/deadlines", False),              # labels, not deal names, in the rail
-    # Demo control surface + downloads.
-    ("/demo", True),
-    ("/demo/download/kkr-deals.json", True),
+    ("/app", True), ("/home", True), ("/portfolio", True),
+    ("/portfolio/map", False), ("/portfolio/heatmap", True),
+    ("/portfolio/monitor", True), ("/portfolio/regression", False),
+    ("/portfolio/risk-scan", False), ("/portfolio/monte-carlo", False),
+    ("/cohorts", False), ("/alerts", True), ("/watchlist", False),
+    ("/deals", False), ("/deadlines", False), ("/covenant-monitor", False),
+    ("/hold-analysis", False), ("/runs", False), ("/lp-update", False),
+    ("/compare", False),
+    ("/demo", True), ("/demo/download/kkr-deals.json", True),
     ("/demo/download/kkr-deals.csv", True),
-    # Owner / personal dashboards.
-    ("/my/SB", False),
-    ("/owner/JD", False),
-    # Deal-specific deep links (cotiviti = green, envision = distressed).
-    ("/deal/cotiviti", True),
-    ("/deal/envision", True),
-    ("/analysis/cotiviti", False),
-    ("/hold/cotiviti", False),
-    ("/ebitda-bridge/cotiviti", False),
-    ("/value-tracker/cotiviti", False),
-    ("/models/returns/cotiviti", False),
-    ("/models/bridge/cotiviti", False),
+    ("/my/SB", False), ("/owner/JD", False),
 ]
+
+# Every deal is exercised across these core deal-detail routes.
+_DEAL_ROUTES = ["/deal/{}", "/analysis/{}", "/hold/{}", "/ebitda-bridge/{}",
+                "/models/returns/{}", "/models/bridge/{}"]
 
 _KKR_MARKERS = ("Cotiviti", "Envision", "BrightSpring", "Heartland", "KKR",
                 "Gland", "PetVet", "Geode")
@@ -70,13 +57,14 @@ class TestDemoSmoke(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from rcm_mc.portfolio.store import PortfolioStore
-        from rcm_mc.demo.kkr_demo import seed_kkr_demo
-        from rcm_mc.server import build_server
+        from rcm_mc.demo.kkr_demo import seed_kkr_demo, KKR_DEMO_DEALS
         cls.tmp = tempfile.TemporaryDirectory()
         db = os.path.join(cls.tmp.name, "p.db")
         store = PortfolioStore(db)
         store.init_db()
         seed_kkr_demo(store, run_dir=os.path.join(cls.tmp.name, "runs"))
+        cls.deal_ids = [s["id"] for s in KKR_DEMO_DEALS]
+        from rcm_mc.server import build_server
         cls.port = _free_port()
         cls.srv, _ = build_server(port=cls.port, db_path=db, host="127.0.0.1")
         cls.th = threading.Thread(target=cls.srv.serve_forever, daemon=True)
@@ -96,19 +84,30 @@ class TestDemoSmoke(unittest.TestCase):
         except urllib.error.HTTPError as e:
             return e.code, e.read().decode("utf-8", "replace")
 
-    def test_all_demo_surfaces_render(self):
+    def test_curated_surfaces_render(self):
         failures = []
         for path, needs_kkr in _SURFACES:
             code, body = self._fetch(path)
             if code != 200:
                 failures.append(f"{path}: HTTP {code}")
-                continue
-            if "Traceback (most recent call last)" in body:
-                failures.append(f"{path}: server traceback in body")
-                continue
-            if needs_kkr and not any(m in body for m in _KKR_MARKERS):
+            elif "Traceback (most recent call last)" in body:
+                failures.append(f"{path}: traceback")
+            elif needs_kkr and not any(m in body for m in _KKR_MARKERS):
                 failures.append(f"{path}: no KKR content")
-        self.assertEqual(failures, [], "demo surfaces with problems:\n  "
+        self.assertEqual(failures, [], "surfaces with problems:\n  "
+                         + "\n  ".join(failures))
+
+    def test_every_deal_renders(self):
+        failures = []
+        for did in self.deal_ids:
+            for tmpl in _DEAL_ROUTES:
+                path = tmpl.format(did)
+                code, body = self._fetch(path)
+                if code != 200:
+                    failures.append(f"{path}: HTTP {code}")
+                elif "Traceback (most recent call last)" in body:
+                    failures.append(f"{path}: traceback")
+        self.assertEqual(failures, [], "deal surfaces with problems:\n  "
                          + "\n  ".join(failures))
 
 
