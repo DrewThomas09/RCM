@@ -51,6 +51,7 @@ def render_world_map(
     notes: Optional[Dict[str, str]] = None,
     accent: Optional[set] = None,
     accent_label: str = "accent market",
+    country_link_template: str = "",
     empty_message: str = "No country-level data yet.",
     legend_label: str = "low → high",
     caveat_text: str = (
@@ -89,10 +90,16 @@ def render_world_map(
             alabel += f"; {accent_label}"
         note = notes.get(iso2, "")
         title = _esc(alabel + (f" · {note}" if note else ""))
-        paths.append(
+        path_svg = (
             f'<path class="{cls}" data-iso="{iso2}" d="{rec["d"]}" fill="{fill}">'
             f"<title>{title}</title></path>"
         )
+        # Make a country click through when a link template is given AND it has
+        # a value (so only profiled markets are interactive, never dead links).
+        if country_link_template and v is not None:
+            href = _esc(country_link_template.replace("{iso2}", iso2))
+            path_svg = f'<a href="{href}">{path_svg}</a>'
+        paths.append(path_svg)
 
     # Legend gradient (only meaningful with data).
     if has_data:
@@ -115,6 +122,7 @@ def render_world_map(
         f"#{cid} svg{{width:100%;height:auto;display:block;}}"
         f"#{cid} .wgeo-c{{stroke:#fff;stroke-width:.4;transition:opacity .12s;}}"
         f"#{cid} .wgeo-c:hover{{opacity:.78;}}"
+        f"#{cid} a .wgeo-c{{cursor:pointer;}}"
         f"#{cid} .wgeo-accent{{stroke:{_ACCENT};stroke-width:1.1;}}"
         f"#{cid} .wgeo-legend{{display:flex;align-items:center;gap:8px;margin-top:8px;"
         "font-family:var(--sc-mono,monospace);font-size:10px;color:var(--sc-text-dim,#6a7480);}"

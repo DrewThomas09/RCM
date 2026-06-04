@@ -123,6 +123,40 @@ class TestGlobalMarketsRoute(unittest.TestCase):
         self.assertIn("Health expenditure as % of GDP", b)
         self.assertIn("Mean spend by region", b)
         self.assertGreaterEqual(b.count("<svg"), 2)   # map + chart
+        # INT-3: the map links each profiled country to its deep-dive page.
+        self.assertIn("/markets/country/DE", b)
+
+    def test_country_profile_route(self):
+        with urllib.request.urlopen(self.base + "/markets/country/DE",
+                                    timeout=30) as r:
+            code = r.getcode()
+            b = r.read().decode("utf-8", "replace")
+        self.assertEqual(code, 200)
+        self.assertNotIn("Traceback (most recent call last)", b)
+        self.assertIn("Germany", b)
+        self.assertIn("Global rank", b)
+        self.assertIn("Europe markets", b)   # regional peer chart
+
+    def test_unknown_country_graceful(self):
+        with urllib.request.urlopen(self.base + "/markets/country/ZZ",
+                                    timeout=30) as r:
+            code = r.getcode()
+            b = r.read().decode("utf-8", "replace")
+        self.assertEqual(code, 200)
+        self.assertIn("Market not tracked", b)
+        self.assertNotIn("Traceback (most recent call last)", b)
+
+
+class TestCountryDetailData(unittest.TestCase):
+    def test_country_detail(self):
+        from rcm_mc.data_public.global_health_markets import country_detail
+        d = country_detail("de")   # case-insensitive
+        self.assertIsNotNone(d)
+        self.assertEqual(d["iso2"], "DE")
+        self.assertEqual(d["name"], "Germany")
+        self.assertTrue(1 <= d["rank"] <= d["n_total"])
+        self.assertTrue(any(p["iso2"] == "DE" for p in d["region_peers"]))
+        self.assertIsNone(country_detail("ZZ"))
 
 
 if __name__ == "__main__":
