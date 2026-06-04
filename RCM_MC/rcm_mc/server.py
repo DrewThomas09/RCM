@@ -3797,6 +3797,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/markets/global":
             from .ui.data_public.global_markets_page import render_global_markets
             return self._send_html(render_global_markets())
+        if path.startswith("/markets/country/"):
+            iso2 = urllib.parse.unquote(path[len("/markets/country/"):]).strip("/")
+            from .ui.data_public.global_markets_page import render_country_profile
+            return self._send_html(render_country_profile(iso2))
         if path == "/payer-concentration":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

@@ -86,6 +86,23 @@ def ranked_markets() -> List[Dict[str, Any]]:
     return rows
 
 
+def country_detail(iso2: str):
+    """Profile dict for one market (or None): its record + rank among all
+    markets by health-spend share + its regional peers (ranked). Derived from
+    the dataset — no new figures."""
+    iso2 = (iso2 or "").upper()
+    rec = HEALTH_MARKETS.get(iso2)
+    if not rec:
+        return None
+    ranked = ranked_markets()
+    rank = next((i for i, r in enumerate(ranked, 1) if r["iso2"] == iso2), None)
+    peers = [r for r in ranked if r["region"] == rec["region"]]
+    return {
+        "iso2": iso2, **rec, "rank": rank, "n_total": len(ranked),
+        "region_peers": peers,
+    }
+
+
 def _mean(xs: List[float]) -> float:
     return sum(xs) / len(xs) if xs else 0.0
 
