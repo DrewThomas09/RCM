@@ -171,14 +171,20 @@ KKR_DEMO_DEALS: List[Dict[str, Any]] = [
 
 # Per-tier RCM KPI baselines (percent metrics on a 0-100 scale, matching the
 # RCM_METRIC_REGISTRY benchmark scale used by demo.py). Worse tiers -> higher
-# denial / AR / cost-to-collect; better tiers -> cleaner.
+# denial / AR / cost-to-collect; better tiers -> cleaner. Calibrated so the
+# derived RCM EBITDA-bridge opportunity lands in a *credible* band (red ~5%,
+# amber ~4%, green ~2.4% of net revenue) rather than the implausible double-
+# digit figure that an exaggerated gap-to-benchmark would imply. The dramatic
+# red/amber/green health spread comes from covenant + variance signals (see
+# health_score.py), not these KPIs, so a tight, believable RCM spread here
+# doesn't flatten the command center.
 _TIER_RCM = {
-    "red":   {"denial_rate": 14.2, "final_denial_rate": 6.1, "days_in_ar": 58.4,
-              "ar_over_90_pct": 22.4, "clean_claim_rate": 84.2, "net_collection_rate": 91.8,
-              "dnfb_days": 7.8, "charge_lag_days": 4.2, "cost_to_collect": 4.1},
-    "amber": {"denial_rate": 11.2, "final_denial_rate": 4.2, "days_in_ar": 51.0,
-              "ar_over_90_pct": 17.2, "clean_claim_rate": 88.6, "net_collection_rate": 94.0,
-              "dnfb_days": 6.0, "charge_lag_days": 3.4, "cost_to_collect": 3.3},
+    "red":   {"denial_rate": 8.6, "final_denial_rate": 3.3, "days_in_ar": 46.0,
+              "ar_over_90_pct": 14.0, "clean_claim_rate": 90.8, "net_collection_rate": 94.7,
+              "dnfb_days": 5.2, "charge_lag_days": 3.0, "cost_to_collect": 3.0},
+    "amber": {"denial_rate": 8.0, "final_denial_rate": 2.9, "days_in_ar": 44.5,
+              "ar_over_90_pct": 13.2, "clean_claim_rate": 91.8, "net_collection_rate": 95.4,
+              "dnfb_days": 4.8, "charge_lag_days": 2.7, "cost_to_collect": 2.85},
     "green": {"denial_rate": 7.4, "final_denial_rate": 2.1, "days_in_ar": 41.2,
               "ar_over_90_pct": 11.0, "clean_claim_rate": 93.0, "net_collection_rate": 96.5,
               "dnfb_days": 4.0, "charge_lag_days": 2.3, "cost_to_collect": 2.5},
@@ -209,6 +215,47 @@ def entry_ebitda_mm(spec: Dict[str, Any]) -> int:
     return int(round(spec["ev_mm"] / mult))
 
 
+# Headquarters US state for the geographic portfolio map (/portfolio/map shades
+# states by deal count). Real HQ where disclosed; otherwise the company's
+# principal US location. Gland Pharma is India-based (Hyderabad) so it carries
+# no US state and is honestly omitted from the US map rather than faked.
+_HQ_STATE = {
+    "envision": "TN", "cotiviti": "GA", "brightspring": "KY", "petvet": "CT",
+    "ivirma": "NJ", "covenant": "TN", "heartland": "IL", "gmr": "CO",
+    "therapy_brands": "AL", "headlands": "CA", "bluesprig": "TX", "geode": "IL",
+    "infinx": "CA", "gland_pharma": "", "one_call": "FL", "contacts1800": "UT",
+    "clarify_health": "CA",
+}
+
+# Sector-typical EBITDA margin used only to back into an illustrative net
+# revenue base for the RCM EBITDA-bridge dollar math (the platform's core
+# value lever). Software/health-tech run richer margins than capital-intensive
+# services. Default 0.15 for clinical-services roll-ups.
+_SECTOR_MARGIN = {"rcm_healthtech": 0.30, "ems": 0.12, "other_services": 0.13}
+# Blended net revenue per patient encounter / claim ($), to size claims volume.
+_REV_PER_CLAIM = 300.0
+
+
+def bridge_financials(spec: Dict[str, Any]) -> Dict[str, float]:
+    """Illustrative net-revenue base + claims volume for the RCM EBITDA bridge.
+
+    Backed into from entry EBITDA at a sector-typical margin so the bridge's
+    dollar opportunity (denial-rate / AR / cost-to-collect uplift) is non-zero
+    and scaled to the deal — worse-tier deals carry worse RCM KPIs and so a
+    larger improvement opportunity. Modeled, not disclosed; seeded as analyst
+    overrides so the figure survives the server's packet rebuilds."""
+    eb_mm = entry_ebitda_mm(spec)
+    if eb_mm <= 0:
+        # Growth-equity / pre-profit (e.g. a VBC analytics platform): use an
+        # EV-implied revenue proxy rather than an EBITDA-margin back-in.
+        net_rev_mm = round(spec["ev_mm"] * 0.30)
+    else:
+        margin = _SECTOR_MARGIN.get(spec["sector"], 0.15)
+        net_rev_mm = round(eb_mm / margin)
+    net_rev = float(net_rev_mm) * 1e6
+    return {"net_revenue": net_rev, "claims_volume": float(int(net_rev / _REV_PER_CLAIM))}
+
+
 def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
     """Seed the KKR demo portfolio into ``store`` (idempotent upserts).
 
@@ -231,6 +278,17 @@ def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
         from ..deals.watchlist import star_deal
     except Exception:  # noqa: BLE001
         star_deal = None
+    # Optional: seed an analysis packet per deal so the packet-driven surfaces
+    # (geographic /portfolio/map, /portfolio/heatmap, the analysis workbench
+    # cache) light up — list_packets() only returns *persisted* packets, and
+    # nothing in the base seed builds one. Built with the same args the server
+    # uses (skip_simulation=True) so the seeded row is a warm cache hit later.
+    try:
+        from ..analysis.analysis_store import get_or_build_packet
+        from ..analysis.deal_overrides import set_override
+    except Exception:  # noqa: BLE001
+        get_or_build_packet = None
+        set_override = None
 
     if run_dir is None:
         run_dir = tempfile.mkdtemp(prefix="kkr_demo_")
@@ -242,18 +300,22 @@ def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
         ebitda = entry_ebitda_mm(spec) * 1e6
         ev = spec["ev_mm"] * 1e6
         # Deal record + RCM observed metrics + light provenance profile.
-        store.upsert_deal(
-            did, name=spec["name"],
-            profile={
-                "observed_metrics": _rcm_for(spec["tier"], idx),
-                "sector": spec["sector"],
-                "sponsor": "KKR",
-                "vintage": spec["year"],
-                "source_url": spec["src"],
-                "ev_disclosed": bool(spec["ev_real"]),
-                "demo": "kkr",
-            },
-        )
+        profile = {
+            "observed_metrics": _rcm_for(spec["tier"], idx),
+            "sector": spec["sector"],
+            "sponsor": "KKR",
+            "vintage": spec["year"],
+            "source_url": spec["src"],
+            "ev_disclosed": bool(spec["ev_real"]),
+            "demo": "kkr",
+        }
+        # HQ state powers the geographic /portfolio/map (it shades states by
+        # deal count). Only set when known — Gland Pharma (India) stays off the
+        # US map rather than being placed in a fake state.
+        st = _HQ_STATE.get(did, "")
+        if st:
+            profile["state"] = st
+        store.upsert_deal(did, name=spec["name"], profile=profile)
         # Stage PE artifacts the snapshot reader consumes (demo.py format).
         ddir = os.path.join(run_dir, did + "_run")
         os.makedirs(ddir, exist_ok=True)
@@ -290,6 +352,28 @@ def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
         if star_deal and spec["tier"] in ("red", "amber"):
             try:
                 star_deal(store, did)
+            except Exception:  # noqa: BLE001
+                pass
+
+        # Illustrative revenue base → non-zero RCM EBITDA-bridge opportunity.
+        # Seeded as bridge-namespace overrides so the figure persists through
+        # the server's packet rebuilds (overrides are part of the cache key).
+        if set_override is not None:
+            try:
+                fin = bridge_financials(spec)
+                set_override(store, did, "bridge.net_revenue",
+                             fin["net_revenue"], set_by="demo",
+                             reason="KKR demo — illustrative net revenue base")
+                set_override(store, did, "bridge.claims_volume",
+                             fin["claims_volume"], set_by="demo",
+                             reason="KKR demo — illustrative claims volume")
+            except Exception:  # noqa: BLE001
+                pass
+        # Persist the analysis packet (warms the cache; lights up the map /
+        # heatmap / workbench). Best-effort: never let it break the seed.
+        if get_or_build_packet is not None:
+            try:
+                get_or_build_packet(store, did, skip_simulation=True)
             except Exception:  # noqa: BLE001
                 pass
 

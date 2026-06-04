@@ -9,8 +9,18 @@ This is the feedback loop that makes every closed deal improve the
 next underwrite.
 
 Tables:
-- value_creation_plans: the frozen EBITDA bridge at close
+- value_tracker_plans: the frozen EBITDA bridge at close
 - value_creation_actuals: quarterly realized impact per lever
+
+NB the plans table is ``value_tracker_plans`` — *not* ``value_creation_plans``.
+A separate feature (``pe.value_creation_plan`` — the versioned, zlib-compressed
+value-creation-plan document used by the hold dashboard, exit package and
+playbook) owns ``value_creation_plans`` with an incompatible schema (BLOB
+plan_json, no ``total_planned_uplift``). Because both used ``CREATE TABLE IF
+NOT EXISTS``, whichever ran first won and silently broke the other — e.g.
+viewing a deal's hold dashboard (which touches ``value_creation_plans``) then
+opening its value tracker raised ``no such column: total_planned_uplift``. The
+two features now own distinct tables. See store.py's delete-child-table list.
 """
 from __future__ import annotations
 
@@ -24,7 +34,7 @@ import numpy as np
 
 
 _SCHEMA = """
-CREATE TABLE IF NOT EXISTS value_creation_plans (
+CREATE TABLE IF NOT EXISTS value_tracker_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     deal_id TEXT NOT NULL,
     ccn TEXT NOT NULL,
@@ -34,7 +44,7 @@ CREATE TABLE IF NOT EXISTS value_creation_plans (
     created_at TEXT NOT NULL,
     UNIQUE(deal_id)
 );
-CREATE INDEX IF NOT EXISTS ix_vcp_deal ON value_creation_plans(deal_id);
+CREATE INDEX IF NOT EXISTS ix_vcp_deal ON value_tracker_plans(deal_id);
 
 CREATE TABLE IF NOT EXISTS value_creation_actuals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -105,7 +115,7 @@ def freeze_bridge_as_plan(
     total = bridge_result.get("total_ebitda_impact", 0)
     plan_json = json.dumps(bridge_result)
     cur = con.execute(
-        "INSERT OR REPLACE INTO value_creation_plans "
+        "INSERT OR REPLACE INTO value_tracker_plans "
         "(deal_id, ccn, hospital_name, plan_json, total_planned_uplift, created_at) "
         "VALUES (?, ?, ?, ?, ?, ?)",
         (deal_id, ccn, hospital_name, plan_json, total, now),
@@ -118,7 +128,7 @@ def get_plan(con: sqlite3.Connection, deal_id: str) -> Optional[Dict[str, Any]]:
     _ensure_tables(con)
     row = con.execute(
         "SELECT plan_json, total_planned_uplift, hospital_name, ccn, created_at "
-        "FROM value_creation_plans WHERE deal_id = ?",
+        "FROM value_tracker_plans WHERE deal_id = ?",
         (deal_id,),
     ).fetchone()
     if not row:

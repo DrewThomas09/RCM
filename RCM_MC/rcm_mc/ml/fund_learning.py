@@ -51,7 +51,7 @@ def compute_fund_accuracy(db_path: str) -> Optional[FundAccuracy]:
     try:
         plans = con.execute(
             "SELECT deal_id, hospital_name, plan_json, total_planned_uplift "
-            "FROM value_creation_plans"
+            "FROM value_tracker_plans"
         ).fetchall()
     except Exception:
         con.close()
