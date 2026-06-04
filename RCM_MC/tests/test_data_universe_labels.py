@@ -17,7 +17,7 @@ class ChipHelperTests(unittest.TestCase):
             "user-deals": ("USER DEALS", "ck-universe-deals"),
             "user-portfolio": ("USER PORTFOLIO", "ck-universe-port"),
             "cms": ("CMS PUBLIC DATA", "ck-universe-cms"),
-            "corpus": ("BENCHMARK CORPUS", "ck-universe-corpus"),
+            "corpus": ("BENCHMARK DATASET", "ck-universe-corpus"),
             "research": ("RESEARCH REFERENCE", "ck-universe-ref"),
             "mixed": ("MIXED DATA", "ck-universe-mixed"),
         }
@@ -51,7 +51,7 @@ class AppliedPageTests(unittest.TestCase):
         from rcm_mc.ui.data_public.find_comps_page import render_find_comps
         h = render_find_comps({})
         self.assertIn("ck-universe-corpus", h)
-        self.assertIn("BENCHMARK CORPUS", h)
+        self.assertIn("BENCHMARK DATASET", h)
 
 
 if __name__ == "__main__":

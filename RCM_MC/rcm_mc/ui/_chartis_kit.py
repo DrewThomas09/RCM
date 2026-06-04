@@ -757,8 +757,8 @@ _DATA_UNIVERSE = {
                        "Your fund's actual owned portfolio holdings."),
     "cms":            ("CMS PUBLIC DATA", "cms",
                        "Public CMS provider/facility data — the market, not your deals."),
-    "corpus":         ("BENCHMARK CORPUS", "corpus",
-                       "Benchmark deal corpus: a small verified-historical core "
+    "corpus":         ("BENCHMARK DATASET", "corpus",
+                       "Benchmark deal dataset: a small verified-historical core "
                        "plus a larger illustrative/modeled set. Realized MOIC/IRR "
                        "are mostly illustrative, not disclosed returns. For "
                        "comparison only — NOT your portfolio."),
@@ -853,16 +853,16 @@ def ck_illustrative_note(what: str = "figures") -> str:
     """
     return (
         "<style>"
-        ".ck-illus-note{display:flex;align-items:baseline;gap:10px;"
-        "flex-wrap:wrap;margin:0 0 var(--sc-s-5,16px);padding:9px 14px;"
-        "background:var(--sc-parchment-2,#efe9dd);"
-        "border:1px solid var(--sc-rule,#d6cfc0);"
-        "border-left:3px solid var(--sc-warning,#b8732a);border-radius:2px;}"
+        # Slimmed (2026): borderless quiet line, not a parchment box — same
+        # de-clutter the source-purpose band got. Honesty tag (amber) stays.
+        ".ck-illus-note{display:flex;align-items:baseline;gap:8px;"
+        "flex-wrap:wrap;margin:0 0 14px;padding:0 0 8px;"
+        "border-bottom:1px solid var(--sc-rule,#d6cfc0);}"
         ".ck-illus-note-tag{font-family:var(--sc-mono,monospace);font-size:10px;"
         "font-weight:700;letter-spacing:0.1em;text-transform:uppercase;"
         "color:var(--sc-warning,#b8732a);white-space:nowrap;}"
-        ".ck-illus-note-body{font-family:var(--sc-sans,sans-serif);font-size:12px;"
-        "line-height:1.5;color:var(--sc-text-dim,#465366);}"
+        ".ck-illus-note-body{font-family:var(--sc-sans,sans-serif);font-size:11.5px;"
+        "line-height:1.45;color:var(--sc-text-dim,#465366);}"
         "</style>"
         '<div class="ck-illus-note" role="note">'
         '<span class="ck-illus-note-tag">Illustrative template</span>'
@@ -7488,14 +7488,19 @@ _CSS_INLINE_FALLBACK = """
   .ck-universe-illus  { color:var(--sc-warning,#b8732a); }   /* illustrative — amber */
   .ck-universe-datareq{ color:var(--sc-critical,#b5321e); } /* data required — red */
   .ck-universe-exp    { color:var(--sc-teal-ink,#155752); } /* experimental */
-  /* Diligence source-and-purpose header band */
-  .ck-sp { border:1px solid var(--sc-rule); border-left:3px solid var(--sc-teal,#155752);
-    background:var(--sc-paper,#faf6ec); padding:12px 16px; margin:0 0 var(--sc-s-5,20px); }
-  .ck-sp-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-  .ck-sp-purpose { font-family:var(--sc-serif); font-size:14.5px; line-height:1.5;
-    color:var(--sc-text,#2a3a4a); margin:0 0 6px; max-width:80ch; }
-  .ck-sp-meta { display:flex; gap:18px; flex-wrap:wrap; font-family:var(--sc-mono);
-    font-size:10.5px; letter-spacing:.04em; color:var(--sc-text-dim,#6a7480); }
+  /* Diligence source-and-purpose — SLIMMED (2026). The old beige bordered box
+   * read as a heavy stacked panel that duplicated the page lede; partners
+   * flagged "this HCRIS public-data box is everywhere and ugly". It's now a
+   * quiet, borderless provenance note: a thin bottom rule, the small data-kind
+   * tag(s) (incl. the ILLUSTRATIVE honesty marker), a muted one-liner, and the
+   * mono source — so the modeled-vs-live disclosure survives without the box. */
+  .ck-sp { border:0; background:none; padding:0 0 9px;
+    margin:0 0 16px; border-bottom:1px solid var(--sc-rule); }
+  .ck-sp-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .ck-sp-purpose { font-family:var(--sc-sans,'Inter',sans-serif); font-size:12px;
+    line-height:1.45; color:var(--sc-text-dim,#6a7480); margin:0 0 4px; max-width:92ch; }
+  .ck-sp-meta { display:flex; gap:16px; flex-wrap:wrap; font-family:var(--sc-mono);
+    font-size:10px; letter-spacing:.04em; color:var(--sc-text-faint,#8a93a0); }
   .ck-sp-src b { color:var(--sc-text,#2a3a4a); font-weight:600; }
   .ck-sp-next { color:var(--sc-teal,#155752); text-decoration:none; text-transform:uppercase;
     letter-spacing:.1em; }
