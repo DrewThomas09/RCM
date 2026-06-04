@@ -207,7 +207,7 @@ _SUB_NAV = {
     "research": [
         {"label": "Industry Intelligence", "href": "/industry"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
-        {"label": "Deal Corpus Analytics", "href": "/deal-corpus-analytics"},
+        {"label": "Deal Dataset Analytics", "href": "/deal-corpus-analytics"},
         {"label": "Find Comps",          "href": "/find-comps"},
         {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
         {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
@@ -7061,7 +7061,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
     {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
-    {"id": "corpus-back",   "title": "Corpus Backtest",    "route": "/corpus-backtest"},
+    {"id": "corpus-back",   "title": "Dataset Backtest",    "route": "/corpus-backtest"},
     {"id": "backtest",      "title": "Backtest",           "route": "/backtest"},
     # Portfolio
     {"id": "portfolio",     "title": "Portfolio",          "route": "/portfolio"},
@@ -7069,7 +7069,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "port-heat",     "title": "Portfolio Heatmap",  "route": "/portfolio/heatmap"},
     {"id": "port-risk",     "title": "Portfolio Risk Scan","route": "/portfolio/risk-scan"},
     {"id": "port-mon",      "title": "Portfolio Monitor",  "route": "/portfolio/monitor"},
-    {"id": "port-an",       "title": "Deal Corpus Analytics","route": "/deal-corpus-analytics"},
+    {"id": "port-an",       "title": "Deal Dataset Analytics","route": "/deal-corpus-analytics"},
     {"id": "sponsor-tr",    "title": "Sponsor Track Record","route": "/sponsor-track-record"},
     {"id": "payer-intel",   "title": "Payer Intelligence", "route": "/payer-intelligence"},
     {"id": "lp-update",     "title": "LP Update",          "route": "/lp-update"},
