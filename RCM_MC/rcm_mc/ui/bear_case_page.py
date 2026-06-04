@@ -498,20 +498,18 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
 """
     # 2026-05-28 sweep · strict 5-block head for the landing-form path.
     landing_hero = _bc_head(
-        eyebrow="Bear Case Auto-Generator",
-        title="What could break this thesis?",
+        eyebrow="DILIGENCE · BEAR CASE",
+        title="Bear Case Auto-Generator",
         meta=(
             "7-SOURCE SYNTHESIS · REGULATORY · COVENANT · BRIDGE · "
             "MC · AUTOPSY · EXIT"
         ),
         lede_italic_phrase="The counter-narrative every IC memo needs.",
         lede_body=(
-            "Ranked evidence from Regulatory Calendar × Covenant "
-            "Stress × Bridge Audit × Deal MC × Deal Autopsy × Exit "
-            "Timing — with citation keys, per-theme narratives, and "
-            "a print-ready IC-memo drop-in block. What partners "
-            "spend 3-5 hours writing by hand, auto-generated in "
-            "under a second."
+            "What could break this thesis? Ranked counter-evidence from "
+            "Regulatory Calendar × Covenant Stress × Bridge Audit × Deal MC × "
+            "Deal Autopsy × Exit Timing — with citation keys, per-theme "
+            "narratives, and a print-ready IC-memo drop-in block."
         ),
     )
     body = (

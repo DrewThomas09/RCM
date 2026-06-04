@@ -866,8 +866,8 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
 """
     # 2026-05-28 sweep · strict 5-block head for the landing form path.
     landing_hero = _cv_head(
-        eyebrow="Covenant & Capital Stack Stress Lab",
-        title="When does your thesis hit a covenant cliff?",
+        eyebrow="DILIGENCE · COVENANT STRESS",
+        title="Covenant & Capital Stack Stress Lab",
         meta=(
             "DEAL MC × CAPITAL STACK × COVENANT PACKAGE · "
             "PER-QUARTER BREACH PROBABILITY"
@@ -876,13 +876,11 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             "When the covenant cliff hits — by quarter."
         ),
         lede_body=(
-            "Takes the Deal MC EBITDA cone, overlays your capital "
-            "stack and covenant package, and produces per-quarter "
-            "breach-probability curves for each covenant. Optionally "
-            "applies the Regulatory Calendar overlay so partners see "
-            "exactly how a V28 cut in CY2027 tightens the 2027 "
-            "leverage covenant. Output names the first breach "
-            "quarter and sizes the equity cure."
+            "When does your thesis hit a covenant cliff? Overlays your capital "
+            "stack and covenant package on the Deal MC EBITDA cone to produce "
+            "per-quarter breach-probability curves for each covenant — naming "
+            "the first breach quarter and sizing the equity cure (optionally "
+            "with the Regulatory Calendar overlay)."
         ),
     )
     body = (
