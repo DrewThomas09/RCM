@@ -56,6 +56,14 @@ PROVENANCE_REGISTRY: Dict[str, str] = {
     # sourcing and the confirmed sample supports it.
     "extended_seed": "real",
 
+    # Batch 2 (bridge): the 79 individually source-cited deals from
+    # verified_deals.VERIFIED_DEALS, adapted to corpus schema in
+    # verified_corpus.py (66 net-new after dropping 13 that duplicate a
+    # seed-corpus deal by company+year). Every row carries a real source_url
+    # (SEC EDGAR / sponsor sites / trade press) — this is the most rigorously
+    # sourced group in the corpus, so "real" is unambiguous here.
+    "verified_corpus": "real",
+
     # --- Synthetic ---
     # Batches 2..104: extended_seed_2.py through extended_seed_104.py
     # (~1,760 deal records). Later files (41..104) openly self-

@@ -53,6 +53,9 @@ def _import_group(group: str) -> List[Dict[str, Any]]:
         if group == "extended_seed":
             mod = importlib.import_module("rcm_mc.data_public.extended_seed")
             return list(getattr(mod, "EXTENDED_SEED_DEALS", []))
+        if group == "verified_corpus":
+            mod = importlib.import_module("rcm_mc.data_public.verified_corpus")
+            return list(getattr(mod, "VERIFIED_CORPUS_DEALS", []))
         if group.startswith("extended_seed_"):
             n = group[len("extended_seed_"):]
             mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{n}")
