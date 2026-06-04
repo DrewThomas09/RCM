@@ -133,7 +133,7 @@ def render_portfolio_monitor(store: Any) -> str:
         from ._chartis_kit import ck_editorial_head
         return chartis_shell(
             ck_editorial_head(
-                eyebrow="PORTFOLIO MONITOR",
+                eyebrow="PORTFOLIO · MONITOR",
                 title="No active deals in portfolio.",
                 meta="0 ACTIVE · IMPORT TO POPULATE",
                 lede_body="Import deals to start monitoring.",
@@ -243,7 +243,7 @@ def render_portfolio_monitor(store: Any) -> str:
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
         eyebrow="PORTFOLIO MONITOR",
-        title="What needs the partner's attention this week.",
+        title="Portfolio Monitor",
         meta=(
             f"{n_deals} ACTIVE DEAL"
             f"{'S' if n_deals != 1 else ''} · "

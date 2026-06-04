@@ -78,8 +78,8 @@ def render_methodology() -> str:
     # 2026-05-28 batch 23 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     intro_hero = ck_editorial_head(
-        eyebrow="METHODOLOGY",
-        title="How every number on the platform can be audited.",
+        eyebrow="PLATFORM · METHODOLOGY",
+        title="Methodology",
         meta="EVERY NUMBER TRACEABLE · PUBLIC DATA + MODELS",
         lede_italic_phrase=(
             "PE Desk combines public hospital data with "

@@ -487,8 +487,8 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
     # 2026-05-28 batch 23 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
-        eyebrow="QUANT LAB",
-        title="Where the analytical moat lives.",
+        eyebrow="RESEARCH · QUANT LAB",
+        title="Quant Lab",
         meta=(
             f"{len(hcris_df):,} HOSPITALS · "
             f"{len(markets)} MARKETS · "

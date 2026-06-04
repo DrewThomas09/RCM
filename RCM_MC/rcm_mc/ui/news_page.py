@@ -480,8 +480,8 @@ def render_news(category: str = "all") -> str:
     # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="NEWS & RESEARCH",
-        title="What the market is saying about the deal universe.",
+        eyebrow="RESEARCH · MARKET NEWS",
+        title="News & Research",
         meta=(
             f"{len(_CURATED_ARTICLES)} CURATED ARTICLE"
             f"{'S' if len(_CURATED_ARTICLES) != 1 else ''} · "

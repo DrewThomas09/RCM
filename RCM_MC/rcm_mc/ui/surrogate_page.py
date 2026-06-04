@@ -106,8 +106,8 @@ def render_surrogate_page(
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="SURROGATE MODEL",
-        title="What the model predicts in milliseconds.",
+        eyebrow="DILIGENCE · SURROGATE MODEL",
+        title="Surrogate Model",
         meta=(
             f"{n_features} FEATURE"
             f"{'S' if n_features != 1 else ''} · "
