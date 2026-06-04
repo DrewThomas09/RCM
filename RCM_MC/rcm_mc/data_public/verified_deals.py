@@ -3772,6 +3772,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.caremetx.com/press-release/caremetx-general-atlantic-and-the-vistria-group-announce-strategic-growth-partnership",
         "source_note": "General Atlantic (CareMetx from The Vistria Group, Jan 2021)",
     },
+    {
+        "target": "Precision Medicine Group", "sponsor": "Blackstone",
+        "year": 2020, "ev_usd_mm": 2350, "sector": "other_services",
+        "subsector_note": "Life-sciences services — CRO (Precision for Medicine) + pharma commercialization; Blackstone recap from Berkshire/TPG (~$2.3-2.4bn)",
+        "outcome": "active", "outcome_note": "Active; Blackstone-led recap Nov 2020 (~$2.35bn); Berkshire/TPG since 2017.",
+        "source_url": "https://www.blackstone.com/news/press/precision-medicine-group-secures-major-investment-from-blackstone/",
+        "source_note": "Blackstone (Precision Medicine Group recap from Berkshire/TPG, Nov 2020, ~$2.35bn)",
+    },
+    {
+        "target": "Sphere", "sponsor": "Waud Capital Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare financial-technology / integrated patient payments (TrustCommerce + Health iPASS); Waud-built platform",
+        "outcome": "active", "outcome_note": "Active; Waud Capital combined TrustCommerce + Anovia Payments to form Sphere 2017.",
+        "source_url": "https://www.waudcapital.com/en/media/waud-capital-buys-payments-software-company-trustcommerce/",
+        "source_note": "Waud Capital Partners (Sphere / TrustCommerce, 2017)",
+    },
 ]
 
 
