@@ -12873,6 +12873,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_demo_load()
         if path == "/demo/unload":
             return self._route_demo_unload()
+        if path == "/app/cards":
+            return self._route_app_cards_post()
         if path == "/pipeline/add":
             return self._route_pipeline_add()
         if path == "/pipeline/save-search":
@@ -17077,6 +17079,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         selected_stage = validate_stage((qs.get("stage") or [None])[0])
         # Parallel dossier-grid preview: /app?layout=grid (default unchanged).
         layout = (qs.get("layout") or [None])[0]
+        # Customize-cards mode + the viewer's hidden-card set (cookie-persisted).
+        customize = (qs.get("customize") or [""])[0] in ("1", "true", "yes")
+        hidden_cards = self._cards_hidden_cookie()
 
         # PHI mode read here, in the handler — passed down as kwarg.
         # (Per Phase 1 correction: helpers don't read globals.)
@@ -17094,7 +17099,43 @@ class RCMHandler(BaseHTTPRequestHandler):
             phi_mode=phi_mode,
             user=user,
             layout=layout,
+            hidden_cards=hidden_cards,
+            customize=customize,
         ))
+
+    def _cards_hidden_cookie(self) -> frozenset:
+        """Parse the ck_cards_hidden cookie → frozenset of hidden card ids.
+        Empty when unset, so the default dashboard shows every card."""
+        cookie = self.headers.get("Cookie", "") or ""
+        for part in cookie.split(";"):
+            part = part.strip()
+            if part.startswith("ck_cards_hidden="):
+                raw = part.split("=", 1)[1].strip()
+                return frozenset(c for c in raw.split(",") if c)
+        return frozenset()
+
+    def _route_app_cards_post(self) -> None:
+        """POST /app/cards — persist the command-center card layout in the
+        ck_cards_hidden cookie. The form submits the *visible* card ids
+        (checkboxes); hidden = the canonical card set minus the visible ones.
+        Redirects back to the customize panel so the change is visible."""
+        from .ui.chartis._app_grid import _CARD_IDS
+        # _read_form_body collapses duplicate keys; checkboxes submit one
+        # `card=` per checked box, so parse the cached raw body with parse_qs
+        # (which keeps every value) to get the full visible set.
+        self._read_form_body()
+        raw = (getattr(self, "_raw_body_cache", b"") or b"").decode(
+            "utf-8", "replace")
+        visible = {v.strip() for v in
+                   urllib.parse.parse_qs(raw).get("card", []) if v.strip()}
+        hidden = sorted(_CARD_IDS - visible)
+        secure = self._cookie_flags()
+        cookie = (f"ck_cards_hidden={','.join(hidden)}; Path=/; SameSite=Lax; "
+                  f"Max-Age={365*24*3600}{secure}")
+        self.send_response(HTTPStatus.SEE_OTHER)
+        self.send_header("Set-Cookie", cookie)
+        self.send_header("Location", "/app?customize=1")
+        self.end_headers()
 
     def _route_upload_page(self) -> None:
         """Drop-target form for bulk CSV ingest of actuals or initiatives."""
