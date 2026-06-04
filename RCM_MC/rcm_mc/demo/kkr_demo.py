@@ -138,6 +138,34 @@ KKR_DEMO_DEALS: List[Dict[str, Any]] = [
      "tags": ["fund_8", "software", "new"],
      "note": "AI-driven revenue-cycle automation; KKR growth investment (2024).",
      "src": "https://www.infinx.com/"},
+    {"id": "gland_pharma", "name": "Gland Pharma", "sector": "other_services",
+     "year": 2017, "ev_mm": 1100, "ev_real": False, "mult": 12.0, "tier": "green",
+     "moic": 4.0, "irr": 0.40, "leverage": 3.0, "headroom": 2.6,
+     "exit_mult": 18.0, "hold": 3.0, "outcome": "exited", "owner": "JD",
+     "tags": ["fund_6", "exited", "pharma"],
+     "note": "Injectable-generics CDMO; KKR 2017, exited via 2020 IPO — a ~4x KKR win (the upside bookend to Envision).",
+     "src": "https://www.glandpharma.com/"},
+    {"id": "one_call", "name": "One Call", "sector": "other_services",
+     "year": 2019, "ev_mm": 2000, "ev_real": False, "mult": 9.0, "tier": "amber",
+     "moic": 1.3, "irr": 0.07, "leverage": 6.5, "headroom": 0.5,
+     "exit_mult": 9.0, "hold": 6.0, "outcome": "active", "owner": "AT",
+     "tags": ["fund_7", "watch"],
+     "note": "Workers'-comp specialized-care management; KKR + Blackstone Credit principal shareholders via 2019 recap.",
+     "src": "https://onecallcm.com/"},
+    {"id": "contacts1800", "name": "1-800 Contacts", "sector": "ophthalmology",
+     "year": 2020, "ev_mm": 3000, "ev_real": False, "mult": 11.0, "tier": "green",
+     "moic": 1.9, "irr": 0.14, "leverage": 5.5, "headroom": 1.7,
+     "exit_mult": 12.0, "hold": 4.0, "outcome": "active", "owner": "SB",
+     "tags": ["fund_7", "consumer"],
+     "note": "Direct-to-consumer contact-lens retail + vision tech; KKR acquired from AEA Investors 2020.",
+     "src": "https://www.1800contacts.com/"},
+    {"id": "clarify_health", "name": "Clarify Health", "sector": "rcm_healthtech",
+     "year": 2018, "ev_mm": 300, "ev_real": False, "mult": 0.0, "tier": "green",
+     "moic": 1.5, "irr": 0.16, "leverage": 0.5, "headroom": 3.0,
+     "exit_mult": 0.0, "hold": 6.0, "outcome": "active", "owner": "SB",
+     "tags": ["fund_growth", "software", "vbc"],
+     "note": "Value-based-care analytics / patient-journey intelligence; KKR-led growth financing (2018+).",
+     "src": "https://clarifyhealth.com/"},
 ]
 
 
@@ -172,8 +200,13 @@ def _rcm_for(tier: str, idx: int) -> Dict[str, Dict[str, Any]]:
 
 
 def entry_ebitda_mm(spec: Dict[str, Any]) -> int:
-    """Entry EBITDA ($M) implied by EV / entry multiple."""
-    return int(round(spec["ev_mm"] / spec["mult"]))
+    """Entry EBITDA ($M) implied by EV / entry multiple. Returns 0 for
+    growth-equity deals carried at ``mult == 0`` (pre-profit SaaS, e.g. a
+    value-based-care analytics platform) where an EBITDA multiple doesn't apply."""
+    mult = spec.get("mult") or 0
+    if mult <= 0:
+        return 0
+    return int(round(spec["ev_mm"] / mult))
 
 
 def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
