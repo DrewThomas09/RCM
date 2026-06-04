@@ -2347,6 +2347,89 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.prnewswire.com/news-releases/pharos-capitals-charter-health-care-group-acquires-generations-hospice-care-301352786.html",
         "source_note": "Pharos Capital Group (Charter Health Care Group)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 22) — veterinary, more dental DSOs, hospital/
+    # specialty pharmacy + biologics CDMO. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Veterinary ──
+    {
+        "target": "Southern Veterinary Partners", "sponsor": "Shore Capital Partners",
+        "year": 2014, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary hospital consolidator (Southeast); Shore platform (later Oak Hill stake)",
+        "outcome": "active", "outcome_note": "Active; planned 2024 merger with Mission Veterinary Partners.",
+        "source_url": "https://www.shorecp.com/",
+        "source_note": "Shore Capital Partners (Southern Veterinary Partners, 2014)",
+    },
+    {
+        "target": "American Veterinary Group", "sponsor": "Oak Hill Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary hospital group (Southeast); Oak Hill platform",
+        "outcome": "active", "outcome_note": "Active veterinary platform.",
+        "source_url": "https://oakhill.com/2021/02/22/oak-hill-capital-to-partner-with-american-veterinary-group/",
+        "source_note": "Oak Hill Capital (American Veterinary Group, Feb 2021)",
+    },
+    {
+        "target": "Encore Vet Group", "sponsor": "North Castle Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary hospital partnership; North Castle + Siguler Guff",
+        "outcome": "active", "outcome_note": "Active veterinary platform.",
+        "source_url": "https://northcastlepartners.com/portfolio/encorevet/",
+        "source_note": "North Castle Partners (Encore Vet Group, founded 2018)",
+    },
+    {
+        "target": "Destination Pet", "sponsor": "LetterOne (L1 Health)",
+        "year": 2019, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary + pet-services consolidator; L1 Health-backed",
+        "outcome": "active", "outcome_note": "Active pet-care platform.",
+        "source_url": "https://www.biospace.com/destination-pet-backed-by-letterone-completes-acquisition-of-vitalpet",
+        "source_note": "LetterOne / L1 Health (Destination Pet, 2019)",
+    },
+
+    # ── Dental DSOs ──
+    {
+        "target": "Cordental Group", "sponsor": "New MainStream Capital (NMS Capital)",
+        "year": 2017, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Midwest DSO; NMS committed ~$25M to form Cordental",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://cordentalgroup.com/project/new-mainstream-capital-announces-partnership-with-management-to-form-the-cordental-group/",
+        "source_note": "New MainStream Capital (Cordental Group, Mar 2017)",
+    },
+    {
+        "target": "Marquee Dental Partners", "sponsor": "Chicago Pacific Founders",
+        "year": 2015, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Southeast DSO; CPF-backed",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.pehub.com/cpf-backed-marquee-dental-partners-acquires-bohle-family-dentistry/",
+        "source_note": "Chicago Pacific Founders (Marquee Dental Partners, founded 2015)",
+    },
+    {
+        "target": "Lone Peak Dental Group", "sponsor": "Tailwind Capital",
+        "year": 2017, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Pediatric/Medicaid DSO; Tailwind (BlackRock Impact 2024 later)",
+        "outcome": "active", "outcome_note": "Active pediatric DSO.",
+        "source_url": "https://www.themiddlemarket.com/latest-news/blackrock-invests-in-lone-peak-dental-group",
+        "source_note": "Tailwind Capital (Lone Peak Dental Group, 2017); BlackRock 2024",
+    },
+
+    # ── Hospital / specialty pharmacy + biologics CDMO ──
+    {
+        "target": "CarepathRx", "sponsor": "Nautic Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Hospital pharmacy management + specialty pharmacy; Nautic platform",
+        "outcome": "active", "outcome_note": "Active; sold sub BioPlus to Elevance in 2022.",
+        "source_url": "https://carepathrxllc.com/2022/11/09/carepathrx-to-sell-bioplus-specialty-pharmacy-to-elevance-health/",
+        "source_note": "Nautic Partners (CarepathRx, 2020)",
+    },
+    {
+        "target": "Avid Bioservices", "sponsor": "GHO Capital + Ampersand Capital Partners",
+        "year": 2024, "ev_usd_mm": 1100, "sector": "other_services",
+        "subsector_note": "Biologics CDMO; take-private (~$1.1B)",
+        "outcome": "exited", "outcome_note": "Public→private; GHO + Ampersand (~$1.1B).",
+        "source_url": "https://avidbio.com/news/avid-bioservices-to-be-acquired-by-gho-capital-partners-and-ampersand-capital-partners-in-1-1-billion-transaction/",
+        "source_note": "GHO + Ampersand (Avid Bioservices take-private, 2024, ~$1.1B)",
+    },
 ]
 
 
