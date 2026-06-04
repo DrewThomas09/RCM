@@ -559,8 +559,8 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
     # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="ML INSIGHTS",
-        title="What the model sees that the spreadsheet misses.",
+        eyebrow="PORTFOLIO · ML INSIGHTS",
+        title="ML Insights",
         meta=(
             f"{n_hospitals:,} HOSPITALS · "
             f"{n_clusters} ARCHETYPES · "

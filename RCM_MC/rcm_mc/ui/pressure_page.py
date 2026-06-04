@@ -124,8 +124,8 @@ def render_pressure_page(
         "STRESS SCENARIOS · RISK FLAGS"
     )
     head = ck_editorial_head(
-        eyebrow="PRESSURE TEST",
-        title="Where the deal cracks under shocks.",
+        eyebrow="DILIGENCE · PRESSURE TEST",
+        title="Pressure Test",
         meta=head_meta,
         lede_italic_phrase=(
             "Apply scenario shocks to the deal's bridge and "

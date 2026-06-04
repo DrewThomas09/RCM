@@ -198,8 +198,8 @@ def render_verticals() -> str:
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="HEALTHCARE VERTICALS",
-        title="Where the playbook actually changes.",
+        eyebrow="RESEARCH · HEALTHCARE VERTICALS",
+        title="Healthcare Verticals",
         meta=(
             f"{len(verticals)} VERTICAL"
             f"{'S' if len(verticals) != 1 else ''} · "

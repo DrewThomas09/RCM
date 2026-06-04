@@ -186,8 +186,8 @@ def render_fund_learning(db_path: str) -> str:
     # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="FUND LEARNING",
-        title="What the fund knows now that it didn't.",
+        eyebrow="PORTFOLIO · FUND LEARNING",
+        title="Fund Learning",
         meta=(
             f"{accuracy.n_closed_deals} CLOSED DEAL"
             f"{'S' if accuracy.n_closed_deals != 1 else ''} · "

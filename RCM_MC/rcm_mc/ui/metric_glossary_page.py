@@ -169,8 +169,8 @@ def render_metric_glossary() -> str:
     # of the in-body universal helper.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="METRIC GLOSSARY",
-        title="Where every number has a definition.",
+        eyebrow="LIBRARY · METRIC GLOSSARY",
+        title="Metric Glossary",
         meta=f"{len(keys)} METRICS · DEFINITION + RATIONALE + FORMULA",
         lede_italic_phrase=(
             "Cross-reference every number the platform "
