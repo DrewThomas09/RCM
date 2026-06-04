@@ -36,7 +36,7 @@ def _build_db(plans=None, actuals=None) -> str:
     tmp.close()
     con = sqlite3.connect(path)
     con.execute(
-        "CREATE TABLE value_creation_plans ("
+        "CREATE TABLE value_tracker_plans ("
         "  deal_id TEXT, hospital_name TEXT, plan_json TEXT,"
         "  total_planned_uplift REAL)"
     )
@@ -47,7 +47,7 @@ def _build_db(plans=None, actuals=None) -> str:
     )
     if plans:
         con.executemany(
-            "INSERT INTO value_creation_plans VALUES (?, ?, ?, ?)",
+            "INSERT INTO value_tracker_plans VALUES (?, ?, ?, ?)",
             plans,
         )
     if actuals:

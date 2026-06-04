@@ -177,7 +177,7 @@ class PortfolioStore:
             "deal_deadlines", "deal_sim_inputs", "comments",
             "approval_requests", "alert_acks", "alert_history",
             "deal_stages", "health_scores", "watchlist",
-            "value_creation_plans", "hold_period_tracking",
+            "value_creation_plans", "value_tracker_plans", "hold_period_tracking",
             "initiative_tracking", "provenance_registry",
             "refresh_schedule", "portfolio_snapshots",
         ]
