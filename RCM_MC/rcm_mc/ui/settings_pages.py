@@ -115,7 +115,7 @@ def render_workspace_mode_page() -> str:
     title = ck_page_title(
         "Workspace Mode",
         eyebrow="SETTINGS · AUDIENCE",
-        meta="Switch between the PE-partner deal view and the Chartis "
+        meta="Switch between the PE-partner deal view and the "
              "commercial-diligence consulting view. Changes copy and "
              "framing across the platform — not the underlying data.",
     )
