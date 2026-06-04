@@ -2618,6 +2618,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.prnewswire.com/news-releases/crg-commits-70-million-to-mid-atlantic-dental-partners-300778944.html",
         "source_note": "CRG + S.C. Goldman (Mid-Atlantic Dental Partners, 2016); Sonrava 2022",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 27) — life-sciences software, cardiovascular
+    # devices, veterinary, pathology lab, multispecialty group. Web-validated.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Model N", "sponsor": "Vista Equity Partners",
+        "year": 2024, "ev_usd_mm": 1250, "sector": "rcm_healthtech",
+        "subsector_note": "Revenue-optimization / pricing software for life sciences; take-private (~$1.25B)",
+        "outcome": "exited", "outcome_note": "Public→private at $30.00/share; Vista Equity.",
+        "source_url": "https://www.vistaequitypartners.com/news/vista-equity-partners-completes-acquisition-of-model-n/",
+        "source_note": "Vista Equity Partners (Model N take-private, 2024, ~$1.25B)",
+    },
+    {
+        "target": "Cordis", "sponsor": "Hellman & Friedman",
+        "year": 2021, "ev_usd_mm": 1000, "sector": "other_services",
+        "subsector_note": "Cardiovascular + endovascular medical devices; H&F carve-out from Cardinal Health (~$1B)",
+        "outcome": "active", "outcome_note": "Active medical-device platform.",
+        "source_url": "https://www.hf.com/news/cardinal-health-completes-sale-of-cordis-to-hellman-friedman",
+        "source_note": "Hellman & Friedman (Cordis from Cardinal Health, 2021, ~$1B)",
+    },
+    {
+        "target": "National Veterinary Associates", "sponsor": "Ares Management",
+        "year": 2014, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Large veterinary hospital network; Ares (OMERS 2018, JAB 2019 later)",
+        "outcome": "exited", "outcome_note": "Ares-owned 2014-2018; sold to OMERS (2018), then JAB Holding (2019).",
+        "source_url": "https://www.aresmgmt.com/",
+        "source_note": "Ares Management (National Veterinary Associates, 2014); OMERS 2018; JAB 2019",
+    },
+    {
+        "target": "Aurora Diagnostics", "sponsor": "Summit Partners + KRG Capital Partners",
+        "year": 2010, "ev_usd_mm": None, "sector": "lab",
+        "subsector_note": "Anatomic-pathology + dermatopathology lab network",
+        "outcome": "exited", "outcome_note": "Acquired by Sonic Healthcare in 2018 (~$540M).",
+        "source_url": "https://www.summitpartners.com/companies/aurora-diagnostics",
+        "source_note": "Summit Partners + KRG Capital (Aurora Diagnostics, 2010); Sonic 2018",
+    },
+    {
+        "target": "DuPage Medical Group (Duly Health and Care)", "sponsor": "Ares Management",
+        "year": 2017, "ev_usd_mm": 1450, "sector": "physician_practices",
+        "subsector_note": "Largest independent Illinois multispecialty group; Ares (~$1.45B)",
+        "outcome": "active", "outcome_note": "Active; rebranded Duly Health and Care.",
+        "source_url": "https://www.aresmgmt.com/",
+        "source_note": "Ares Management (DuPage Medical Group, 2017, ~$1.45B)",
+    },
 ]
 
 
