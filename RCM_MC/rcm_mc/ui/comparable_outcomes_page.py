@@ -504,7 +504,7 @@ def render_comparable_outcomes_page(
         page_title_block = (
             ck_page_title(
             "Comparable Outcomes",
-            eyebrow="COMPARABLE OUTCOMES",
+            eyebrow="DILIGENCE · MARKET COMPARABLES",
             meta=f"{n_comp} matched · {sector_label}" if sector_label else f"{n_comp} matched",
         )
             + ck_source_purpose(

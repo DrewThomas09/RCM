@@ -500,7 +500,7 @@ def render_rcm_benchmarks(
 
     page_title = ck_page_title(
         "RCM Benchmarks",
-        eyebrow="RCM BENCHMARKS",
+        eyebrow="DILIGENCE · RCM BENCHMARKS",
         meta=f"{n_segments} segments · {len(_METRICS)} metrics · HFMA / Advisory Board priors",
     )
     body = (

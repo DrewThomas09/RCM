@@ -516,7 +516,7 @@ def render_screen_page(
         if results else f"{total_scanned:,} HCRIS hospitals"
     )
     title_block = ck_page_title(
-        "Hospital Screener", eyebrow="HOSPITAL SCREENER", meta=meta,
+        "Hospital Screener", eyebrow="SOURCE · HOSPITAL SCREENER", meta=meta,
     )
     explainer_html = (
         '<p class="ck-hs-explainer">'

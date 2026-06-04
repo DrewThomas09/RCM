@@ -790,7 +790,7 @@ def render_deal_autopsy_page(
             ccd = ingest_dataset(ds_path)
         except Exception as exc:  # noqa: BLE001
             err_title = ck_page_title(
-                "Deal Autopsy", eyebrow="DEAL AUTOPSY",
+                "Deal Autopsy", eyebrow="DILIGENCE · DEAL AUTOPSY",
                 meta=f"Failed to ingest {html.escape(dataset)}",
             )
             return chartis_shell(

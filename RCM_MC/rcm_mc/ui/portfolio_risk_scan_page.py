@@ -366,7 +366,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
 
     title_block = ck_page_title(
         "Portfolio Risk Scan",
-        eyebrow="PORTFOLIO RISK SCAN",
+        eyebrow="PORTFOLIO · RISK SCAN",
         meta=(
             f"{len(deals)} active deals · sorted highest-priority first"
             if deals else "no active deals yet"

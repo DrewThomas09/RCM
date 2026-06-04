@@ -872,7 +872,7 @@ def render_counterfactual_page(
         f"/api/counterfactual/{dataset}?{urlencode(download_qs)}"
     )
     results_title = ck_page_title(
-        "Counterfactual Advisor", eyebrow="COUNTERFACTUAL ADVISOR",
+        "Counterfactual Advisor", eyebrow="DILIGENCE · COUNTERFACTUAL",
         meta=f"Dataset: {html.escape(dataset)}",
     )
     results_explainer = (

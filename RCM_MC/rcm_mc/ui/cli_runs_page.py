@@ -197,7 +197,7 @@ def render_cli_runs_page(
 
     page_title = ck_page_title(
         "CLI Run History",
-        eyebrow="CLI RUN HISTORY",
+        eyebrow="PLATFORM · CLI RUN HISTORY",
         meta=f"{len(runs)} runs · most recent first · limit {limit}",
     )
     clr_explainer = (

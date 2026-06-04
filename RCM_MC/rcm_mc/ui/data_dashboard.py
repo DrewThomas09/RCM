@@ -439,7 +439,7 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     )
     page_title = ck_page_title(
         "Data Intelligence",
-        eyebrow="DATA INTELLIGENCE",
+        eyebrow="PLATFORM · DATA INTELLIGENCE",
         meta=(
             f"{n_hospitals:,} hospitals · {n_states} states · "
             f"{n_years} fiscal years · {_fmt_money(total_rev)} total NPSR"
