@@ -3836,6 +3836,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.apax.com/news-views/funds-advised-by-apax-partners-to-acquire-one-call-care-management-and-align-networks/",
         "source_note": "Apax Partners (One Call from Odyssey, 2013, ~$2.2bn)",
     },
+    {
+        "target": "CHG Healthcare", "sponsor": "Leonard Green & Partners",
+        "year": 2012, "ev_usd_mm": 1250, "sector": "other_services",
+        "subsector_note": "Largest US locum-tenens (temporary physician) staffing firm; Leonard Green & Ares LBO from J.W. Childs (~$1.25bn)",
+        "outcome": "active", "outcome_note": "Active; Leonard Green & Partners + Ares Management LBO Nov 2012 (~$1.25bn).",
+        "source_url": "https://www.pehub.com/leonard-green-ares-buys-chg-healthcare-services/",
+        "source_note": "Leonard Green & Partners + Ares (CHG Healthcare from J.W. Childs, 2012, ~$1.25bn)",
+    },
+    {
+        "target": "Enlyte", "sponsor": "Stone Point Capital",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Workers'-comp medical cost-containment + case management (Mitchell | Genex | Coventry); Stone Point-built platform (Mitchell|Genex merger 2018, Coventry 2020, rebranded Enlyte 2021)",
+        "outcome": "active", "outcome_note": "Active; Stone Point merged Mitchell + Genex 2018, added Coventry (from CVS) 2020, rebranded Enlyte 2021.",
+        "source_url": "https://www.enlyte.com/news/announcing-enlyte",
+        "source_note": "Stone Point Capital (Enlyte / Mitchell | Genex | Coventry, 2018)",
+    },
 ]
 
 
