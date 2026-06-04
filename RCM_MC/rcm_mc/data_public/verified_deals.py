@@ -2954,6 +2954,43 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.bluewolfcapital.com/portfolio/",
         "source_note": "Blue Wolf Capital Partners (Risas Dental, 2021)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 35) — rare-disease pharmacy, medtech micro-
+    # manufacturing, Medicare RCM software, ABA. Each web-validated.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "PANTHERx Rare", "sponsor": "General Atlantic + Nautic Partners + The Vistria Group",
+        "year": 2022, "ev_usd_mm": 2800, "sector": "other_services",
+        "subsector_note": "Rare-disease specialty pharmacy; consortium bought from Centene (~$2.8B w/ Magellan Rx)",
+        "outcome": "exited", "outcome_note": "Centene divestiture to a PE consortium (July 2022).",
+        "source_url": "https://vistria.com/the-vistria-group-completes-acquisition-of-pantherx-rare/",
+        "source_note": "GA + Nautic + Vistria (PANTHERx Rare from Centene, 2022, ~$2.8B)",
+    },
+    {
+        "target": "Resonetics", "sponsor": "GTCR",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Laser micro-manufacturing for medtech; GTCR (Carlyle joined 2021 ~$2.25B)",
+        "outcome": "active", "outcome_note": "Active medtech-manufacturing platform.",
+        "source_url": "https://www.gtcr.com/",
+        "source_note": "GTCR (Resonetics, 2018); Carlyle 2021 ~$2.25B",
+    },
+    {
+        "target": "eSolutions", "sponsor": "Francisco Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Medicare-focused revenue-cycle + analytics software",
+        "outcome": "exited", "outcome_note": "Acquired by Waystar in 2020 (~$1.3B).",
+        "source_url": "https://www.franciscopartners.com/media/waystar-to-acquire-esolutions-an-industry-leader-in-revenue-cycle-medicare-analytics",
+        "source_note": "Francisco Partners (eSolutions); Waystar 2020 ~$1.3B",
+    },
+    {
+        "target": "InBloom Autism Services", "sponsor": "RiverGlade Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy (Southeast); RiverGlade-backed",
+        "outcome": "active", "outcome_note": "Active ABA platform.",
+        "source_url": "https://www.riverglade.com/portfolio",
+        "source_note": "RiverGlade Capital (InBloom Autism Services, 2021)",
+    },
 ]
 
 
