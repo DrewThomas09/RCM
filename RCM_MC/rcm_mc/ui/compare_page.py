@@ -84,7 +84,7 @@ def _landing_compare() -> str:
 
     title_block = (
         ck_page_title(
-        "Compare Deals", eyebrow="DEAL COMPARE",
+        "Compare Deals", eyebrow="DILIGENCE · DEAL COMPARE",
         meta=f"{len(AVAILABLE_FIXTURES)} fixtures · KPIs / QoR / CF / bridge",
     )
         + ck_page_explainer(

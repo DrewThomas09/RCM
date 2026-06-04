@@ -964,15 +964,16 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + '<div class="rc-wrap">'
         + deal_context_bar(qs or {}, active_surface="reg")
         + ck_editorial_head(
-            eyebrow="Regulatory Calendar × Thesis Kill-Switch",
-            title="Which thesis drivers die, and <em>when</em>.",
+            eyebrow="DILIGENCE · REGULATORY CALENDAR",
+            title="Regulatory Calendar",
             meta="KILL-SWITCH × THESIS × CALENDAR",
             lede_italic_phrase="Tie deal value to specific regulatory dates.",
             lede_body=(
-                " A curated library of upcoming CMS / OIG / FTC / DOJ / NSA-IDR / "
-                "state events, mapped against your target's thesis drivers — a "
-                "gantt-style timeline of the date each driver dies, with an "
-                "EBITDA-bridge overlay on the Deal MC cone."
+                "Which thesis drivers die, and when? A curated library of "
+                "upcoming CMS / OIG / FTC / DOJ / NSA-IDR / state events, mapped "
+                "against your target's thesis drivers — a gantt-style timeline of "
+                "the date each driver dies, with an EBITDA-bridge overlay on the "
+                "Deal MC cone."
             ),
             source_note="Each event carries a primary-source citation; impact figures are PEdesk scenario estimates, not regulator forecasts.",
         )
