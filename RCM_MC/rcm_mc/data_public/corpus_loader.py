@@ -80,6 +80,16 @@ def load_corpus_deals(mode: str = "all") -> List[Dict[str, Any]]:
             f"mode must be one of {_VALID_MODES!r}, got {mode!r}"
         )
 
+    # Canonical sector backfill for the verified-real deals, which were seeded
+    # without a `sector` field (see deals_corpus.REAL_DEAL_SECTORS). Applied on
+    # the per-row COPY below so the shared seed lists stay untouched. Imported
+    # lazily to keep module import order identical to the existing importlib
+    # pattern. A missing map (e.g. partial checkout) degrades to no backfill.
+    try:
+        from .deals_corpus import REAL_DEAL_SECTORS
+    except ImportError:
+        REAL_DEAL_SECTORS = {}
+
     out: List[Dict[str, Any]] = []
     for group, tag in PROVENANCE_REGISTRY.items():
         if mode != "all" and tag != mode:
@@ -92,6 +102,11 @@ def load_corpus_deals(mode: str = "all") -> List[Dict[str, Any]]:
             enriched = dict(row)
             enriched["provenance"] = tag
             enriched.setdefault("source_group", group)
+            if not enriched.get("sector"):
+                sec = REAL_DEAL_SECTORS.get(enriched.get("source_id"))
+                if sec:
+                    enriched["sector"] = sec
+                    enriched.setdefault("sector_provenance", "curated")
             out.append(enriched)
     return out
 

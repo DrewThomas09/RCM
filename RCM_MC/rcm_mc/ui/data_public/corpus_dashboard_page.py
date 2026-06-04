@@ -97,7 +97,7 @@ def _nav_tile(title: str, href: str, subtitle: str, value: str, value_color: str
 </a>"""
 
 
-def render_corpus_dashboard() -> str:
+def render_corpus_dashboard(universe: str = "all") -> str:
     from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_section_header, ck_illustrative_note
     from rcm_mc.ui.chartis._helpers import render_page_explainer
     from rcm_mc.data_public.sector_intelligence import compute_sector_stats
@@ -105,30 +105,43 @@ def render_corpus_dashboard() -> str:
     from rcm_mc.data_public.size_analytics import compute_size_analytics
     from rcm_mc.data_public.deal_quality_score import score_corpus_quality
 
-    corpus = _load_corpus()
+    # ── Data-universe toggle ─────────────────────────────────────────────
+    # "all" (default) = the full ~1,700-deal corpus, ~96% synthetic on the
+    # realized-MOIC axis (illustrative). "verified" = only the provenance-
+    # tagged real deals (documented sponsors / EVs / outcomes). The toggle
+    # recomputes EVERY figure on the page from the chosen universe — KPIs,
+    # MOIC distribution, sector + vintage tables, quality — so a partner can
+    # flip the whole dashboard between the dense illustrative aggregate and
+    # the sparse-but-credible real read. Both numbers are honest; the toggle
+    # only controls which is foreground (with the other shown as a contrast
+    # KPI). This is the dynamic extension of the static verified-MOIC sidecar
+    # that previously sat fixed beside the illustrative median.
+    verified_mode = str(universe).strip().lower() in ("verified", "real")
 
-    # Core MOIC stats
+    full_corpus = _load_corpus()
+    real_corpus = [d for d in full_corpus if d.get("provenance") == "real"]
+    n_all, n_real = len(full_corpus), len(real_corpus)
+    corpus = real_corpus if verified_mode else full_corpus
+
+    # Foreground realized-return series (drives the whole page).
     moics = [float(d["realized_moic"]) for d in corpus if d.get("realized_moic") is not None]
     irrs  = [float(d["realized_irr"])  for d in corpus if d.get("realized_irr")  is not None]
     holds = [float(d["hold_years"])    for d in corpus if d.get("hold_years")     is not None]
     evs   = [float(d["ev_mm"])         for d in corpus if d.get("ev_mm")          is not None]
 
+    # Contrast series for the sidecar KPI — symmetric: in "all" mode the
+    # contrast is the verified-real read; in "verified" mode it's the full
+    # illustrative aggregate. Each view surfaces the other so a partner never
+    # anchors on one number without seeing its counterpart.
+    all_moics  = [float(d["realized_moic"]) for d in full_corpus if d.get("realized_moic") is not None]
+    real_moics = [float(d["realized_moic"]) for d in real_corpus if d.get("realized_moic") is not None]
+
     n = len(corpus)
-    moic_p50  = _pct(moics, 50)
-    irr_p50   = _pct(irrs, 50)
+    moic_p50  = _pct(moics, 50) if moics else 0.0
+    irr_p50   = _pct(irrs, 50) if irrs else 0.0
     hold_avg  = sum(holds) / len(holds) if holds else 0
     loss_rate = sum(1 for m in moics if m < 1.0) / len(moics) if moics else 0
-    ev_p50    = _pct(evs, 50)
-
-    # Verified-only subset (provenance == "real"): the credible read shown next
-    # to the illustrative aggregate above, which is ~96% synthetic and skews
-    # optimistic. The verified median typically runs below the illustrative one
-    # with a materially higher loss rate — surfacing it stops a partner from
-    # anchoring on the rosy synthetic figure.
-    real_moics = [float(d["realized_moic"]) for d in corpus
-                  if d.get("provenance") == "real" and d.get("realized_moic") is not None]
-    verified_p50 = _pct(real_moics, 50) if real_moics else None
-    verified_loss = (sum(1 for m in real_moics if m < 1.0) / len(real_moics)) if real_moics else None
+    ev_p50    = _pct(evs, 50) if evs else 0.0
 
     # Sector stats
     sector_stats = compute_sector_stats(corpus)
@@ -151,28 +164,94 @@ def render_corpus_dashboard() -> str:
     # With sector
     n_with_sector = sum(1 for d in corpus if d.get("sector"))
 
+    # ── Symmetric contrast KPI (the "other" universe) ────────────────────
+    if verified_mode:
+        primary_tag = "verified-historical"
+        contrast_label = "Illustrative P50 MOIC"
+        contrast_p50 = _pct(all_moics, 50) if all_moics else None
+        contrast_sub = f"{len(all_moics):,} modeled deals · synthetic-skewed"
+    else:
+        primary_tag = "illustrative"
+        contrast_label = "Verified P50 MOIC"
+        contrast_p50 = _pct(real_moics, 50) if real_moics else None
+        _vloss = (sum(1 for m in real_moics if m < 1.0) / len(real_moics)) if real_moics else None
+        contrast_sub = (f"{len(real_moics)} verified-historical deals · {_vloss*100:.0f}% loss rate"
+                        if real_moics else "no verified returns yet")
+
+    # ── Universe toggle pills ────────────────────────────────────────────
+    def _univ_pill(label: str, count_txt: str, href: str, active: bool) -> str:
+        if active:
+            return (
+                f'<span aria-current="page" style="display:inline-flex;flex-direction:column;gap:1px;'
+                f'padding:7px 13px;border:1px solid #155752;background:#155752;border-radius:3px;">'
+                f'<span style="font-family:\'Inter Tight\',Inter,sans-serif;font-size:11px;font-weight:700;'
+                f'color:#fff;letter-spacing:0.03em;">{_html.escape(label)}</span>'
+                f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;color:#bfe0db;">{_html.escape(count_txt)}</span>'
+                f'</span>'
+            )
+        return (
+            f'<a href="{_html.escape(href)}" style="display:inline-flex;flex-direction:column;gap:1px;'
+            f'padding:7px 13px;border:1px solid #D6CFC0;background:#FAF7F0;border-radius:3px;text-decoration:none;">'
+            f'<span style="font-family:\'Inter Tight\',Inter,sans-serif;font-size:11px;font-weight:600;'
+            f'color:#465366;letter-spacing:0.03em;">{_html.escape(label)}</span>'
+            f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;color:#7a8699;">{_html.escape(count_txt)}</span>'
+            f'</a>'
+        )
+
+    universe_toggle = (
+        '<div style="display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap;">'
+        '<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;text-transform:uppercase;'
+        'letter-spacing:0.1em;color:#7a8699;margin-right:2px;">Data universe</span>'
+        + _univ_pill("Illustrative corpus", f"{n_all:,} deals", "/corpus-dashboard", not verified_mode)
+        + _univ_pill("Verified only", f"{n_real} deals · sourced", "/corpus-dashboard?universe=verified", verified_mode)
+        + '</div>'
+    )
+
+    # ── Provenance note (swaps with the toggle) ──────────────────────────
+    if verified_mode:
+        _rm_n = len(real_moics)
+        _rm_med = _pct(real_moics, 50) if real_moics else 0.0
+        _rm_loss = (sum(1 for m in real_moics if m < 1.0) / _rm_n * 100) if _rm_n else 0.0
+        _detail = (f"{_rm_n} carry a realized MOIC (median {_rm_med:.2f}x, {_rm_loss:.0f}% below 1.0×)."
+                   if _rm_n else "realized MOIC is documented for only part of the set.")
+        universe_note = (
+            '<div role="note" style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;'
+            'margin:0 0 16px;padding:9px 14px;background:#eef3ef;border:1px solid #d6cfc0;'
+            'border-left:3px solid #0a8a5f;border-radius:2px;">'
+            '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;font-weight:700;'
+            'letter-spacing:0.1em;text-transform:uppercase;color:#0a8a5f;white-space:nowrap;">Verified historical</span>'
+            f'<span style="font-family:\'Inter Tight\',Inter,sans-serif;font-size:12px;line-height:1.5;color:#465366;">'
+            f'Every figure below is recomputed from the {n_real} provenance-tagged real deals — '
+            f'documented sponsors, EVs and outcomes, no synthetic/modeled rows. {_html.escape(_detail)}</span>'
+            '</div>'
+        )
+    else:
+        universe_note = ck_illustrative_note("corpus figures (illustrative seed corpus)")
+
     # Top-line KPIs
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Corpus Deals", f'<span class="mn">{n:,}</span>', "in analysis")
-        + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</span>', f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x · illustrative")
+        + ck_kpi_block("Corpus Deals", f'<span class="mn">{n:,}</span>',
+                       ("verified-historical" if verified_mode else "in analysis"))
+        + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</span>', f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x · {primary_tag}")
         + ck_kpi_block(
-            "Verified P50 MOIC",
-            (f'<span class="mn" style="color:{_moic_color(verified_p50)}">{verified_p50:.2f}x</span>'
-             if verified_p50 is not None else '<span class="mn">—</span>'),
-            (f"{len(real_moics)} verified-historical deals · {verified_loss*100:.0f}% loss rate"
-             if real_moics else "no verified returns yet"),
+            contrast_label,
+            (f'<span class="mn" style="color:{_moic_color(contrast_p50)}">{contrast_p50:.2f}x</span>'
+             if contrast_p50 is not None else '<span class="mn">—</span>'),
+            contrast_sub,
         )
-        + ck_kpi_block("P50 IRR", f'<span class="mn">{irr_p50*100:.1f}%</span>', "realized median · illustrative")
+        + ck_kpi_block("P50 IRR", f'<span class="mn">{irr_p50*100:.1f}%</span>', f"realized median · {primary_tag}")
         + ck_kpi_block("Loss Rate", f'<span class="mn" style="color:{"#b5321e" if loss_rate>0.15 else "#b8732a"}">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
         + ck_kpi_block("Avg Hold", f'<span class="mn">{hold_avg:.1f}y</span>', "years to exit")
         + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_quality:.1f}/100</span>', f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C+D:{tier_counts.get('C',0)+tier_counts.get('D',0)}")
         + '</div>'
     )
 
-    # MOIC distribution mini panel
-    moic_hist_svg = _mini_moic_hist(moics, width=300, height=70)
-    moic_panel = f"""
+    # MOIC distribution mini panel (guarded for a possibly-empty universe)
+    if moics:
+        moic_hist_svg = _mini_moic_hist(moics, width=300, height=70)
+        _ge2 = sum(1 for m in moics if m >= 2)
+        moic_panel = f"""
 <div class="ck-panel" style="grid-column:span 2;">
   <div class="ck-panel-title">MOIC Distribution — {len(moics):,} deals</div>
   <div style="padding:12px 16px;display:flex;align-items:flex-end;gap:24px;">
@@ -186,10 +265,17 @@ def render_corpus_dashboard() -> str:
     </table>
     <div style="font-size:9px;color:#465366;max-width:180px;line-height:1.6;">
       Bars: 0–1 (red) · 1–2 (amber) · 2+ (green)<br>
-      {sum(1 for m in moics if m>=2)}/{len(moics)} deals achieved ≥2× ({100*sum(1 for m in moics if m>=2)/len(moics):.0f}%)
+      {_ge2}/{len(moics)} deals achieved ≥2× ({100*_ge2/len(moics):.0f}%)
     </div>
   </div>
 </div>"""
+    else:
+        moic_panel = (
+            '<div class="ck-panel" style="grid-column:span 2;">'
+            '<div class="ck-panel-title">MOIC Distribution</div>'
+            '<div style="padding:14px 16px;color:#7a8699;font-size:11px;">'
+            'No realized MOIC in this universe.</div></div>'
+        )
 
     # Vintage trend mini
     vintage_svg = _mini_sparkline(vintage_p50s, width=160, height=40)
@@ -359,21 +445,22 @@ def render_corpus_dashboard() -> str:
     # as redundant with the new h1 post-deploy, a follow-up B11.x can
     # remove it (the "on this deal" headline is also stale copy for
     # what's actually a corpus-wide page — flag for that follow-up).
+    universe_lbl = "verified-historical only" if verified_mode else "illustrative seed corpus"
     page_title = ck_page_title(
         "Corpus Intelligence Dashboard",
         eyebrow="CORPUS",
-        meta=f"{n:,} deals · {n_sectors} sectors · P50 MOIC {moic_p50:.2f}x",
+        meta=f"{n:,} deals · {n_sectors} sectors · P50 MOIC {moic_p50:.2f}x · {universe_lbl}",
     )
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
     from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        page_title + explainer + ck_illustrative_note("corpus figures (illustrative seed corpus)") + body,
+        page_title + universe_toggle + explainer + universe_note + body,
         title="Corpus Dashboard",
         active_nav="/corpus-dashboard",
         subtitle=(
-            f"{n:,} deals · P50 MOIC {moic_p50:.2f}x · P50 IRR {irr_p50*100:.1f}% · "
+            f"{n:,} deals ({universe_lbl}) · P50 MOIC {moic_p50:.2f}x · P50 IRR {irr_p50*100:.1f}% · "
             f"loss rate {loss_rate*100:.1f}% · avg quality {avg_quality:.0f}/100"
         ),
         editorial_intro={
