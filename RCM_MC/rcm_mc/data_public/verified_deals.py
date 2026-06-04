@@ -1244,6 +1244,143 @@ VERIFIED_DEALS: List[Dict] = [
         "source_note": "BusinessWire (Deerfield/CareMax de-SPAC, 2021); 2024 Ch.11 via PESP",
     },
 
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 7) — RCM/specialty pharmacy, urgent care,
+    # fertility MSOs, post-acute, home care, wound care, behavioral health.
+    # Each web-validated this sprint (sponsor + year confirmed).
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── RCM / specialty pharmacy ──
+    {
+        "target": "Shields Health Solutions", "sponsor": "Welsh, Carson, Anderson & Stowe",
+        "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Health-system specialty-pharmacy management; WCAS + Walgreens equity",
+        "outcome": "exited", "outcome_note": "Walgreens took full control (2022); Sycamore Partners acquired it as a standalone in 2025.",
+        "source_url": "https://shieldshealthsolutions.com/shields-health-solutions-receives-equity-investments-from-welsh-carson-anderson-stowe-and-walgreen-co-2/",
+        "source_note": "Shields Health Solutions (WCAS/Walgreens 2019); 2025 Sycamore",
+    },
+    {
+        "target": "GeBBS Healthcare Solutions", "sponsor": "EQT",
+        "year": 2024, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "RCM / health-information-management BPO; EQT bought from ChrysCapital",
+        "outcome": "active", "outcome_note": "Active RCM platform.",
+        "source_url": "https://www.pehub.com/eqt-to-acquire-healthtech-biz-gebbs-healthcare-from-chryscapital/",
+        "source_note": "PE Hub (EQT/GeBBS from ChrysCapital, 2024)",
+    },
+
+    # ── Fertility MSOs ──
+    {
+        "target": "CCRM Fertility", "sponsor": "TA Associates",
+        "year": 2015, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Fertility/IVF network; PE's first fertility-services platform",
+        "outcome": "active", "outcome_note": "Active fertility platform.",
+        "source_url": "https://www.ta.com/portfolio/",
+        "source_note": "TA Associates; 2015 CCRM recapitalization",
+    },
+    {
+        "target": "Prelude Fertility", "sponsor": "Lee Equity Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Fertility network; merged with Inception Fertility (largest US platform)",
+        "outcome": "active", "outcome_note": "Active; Prelude+Inception is the largest US fertility platform.",
+        "source_url": "https://www.leeequity.com/",
+        "source_note": "Lee Equity Partners; 2016 Prelude Fertility",
+    },
+    {
+        "target": "US Fertility", "sponsor": "Amulet Capital Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Fertility MSO formed with Shady Grove Fertility",
+        "outcome": "active", "outcome_note": "Active; L Catterton bought 42.5% from Amulet in 2024 (~$1.7B).",
+        "source_url": "https://www.usfertility.com/newsroom/amulet-capital-and-shady-grove-fertility-form-us-fertility",
+        "source_note": "US Fertility (Amulet/Shady Grove formation, 2020); L Catterton 2024",
+    },
+    {
+        "target": "IVIRMA Global", "sponsor": "KKR",
+        "year": 2017, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Global fertility/IVF network (incl. Boston IVF); KKR investment",
+        "outcome": "active", "outcome_note": "Active global fertility platform.",
+        "source_url": "https://www.kkr.com/invest/portfolio",
+        "source_note": "KKR (portfolio); 2017 IVIRMA Global",
+    },
+
+    # ── Post-acute ──
+    {
+        "target": "Ernest Health", "sponsor": "One Equity Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "hospitals",
+        "subsector_note": "Inpatient rehab + LTAC hospitals; OEP + Vibra bought from Medical Properties Trust",
+        "outcome": "active", "outcome_note": "Active post-acute hospital operator.",
+        "source_url": "https://www.oneequity.com/",
+        "source_note": "One Equity Partners; 2018 Ernest Health from MPT",
+    },
+
+    # ── Home care ──
+    {
+        "target": "Elara Caring", "sponsor": "Blue Wolf Capital Partners + Kelso & Company",
+        "year": 2018, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Home health + personal care + hospice (merger of Great Lakes Caring, National Home Health, Jordan Health)",
+        "outcome": "active", "outcome_note": "Active; Ares PE + DaVita made a strategic investment in 2026.",
+        "source_url": "https://mergr.com/transaction/blue-wolf-capital-partners-acquires-elara-caring",
+        "source_note": "Mergr (Blue Wolf + Kelso + HarbourVest acquire Elara Caring, Apr 2018)",
+    },
+    {
+        "target": "Interim HealthCare (Caring Brands International)", "sponsor": "Wellspring Capital Management",
+        "year": 2021, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Home health/hospice franchisor; Wellspring bought from The Halifax Group",
+        "outcome": "active", "outcome_note": "Active home-care franchisor.",
+        "source_url": "https://homehealthcarenews.com/2021/10/wellspring-capital-management-acquires-interim-healthcare-parent-company-caring-brands-international/",
+        "source_note": "Home Health Care News (Wellspring/Caring Brands, 2021)",
+    },
+    {
+        "target": "Senior Helpers", "sponsor": "Waud Capital Partners",
+        "year": 2024, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "In-home senior care; Waud bought from Advocate Health",
+        "outcome": "active", "outcome_note": "Active senior home-care platform.",
+        "source_url": "https://www.waudcapital.com/",
+        "source_note": "Waud Capital Partners; 2024 Senior Helpers from Advocate Health",
+    },
+
+    # ── Wound care ──
+    {
+        "target": "Healogics", "sponsor": "Clayton, Dubilier & Rice",
+        "year": 2014, "ev_usd_mm": 910, "sector": "other_services",
+        "subsector_note": "Largest US wound-care services operator; CD&R bought from Metalmark (~$910M)",
+        "outcome": "active", "outcome_note": "Active; 2021 CD&R/Partners Group/Northwestern Mutual recap.",
+        "source_url": "https://www.cdr.com/news/clayton-dubilier-rice-to-acquire-healogics-the-nations-wound-care-services-leader-transaction-valued-at-910-million",
+        "source_note": "Clayton, Dubilier & Rice (Healogics, 2014, $910M)",
+    },
+    {
+        "target": "RestorixHealth", "sponsor": "Leonard Green & Partners + Cressey & Company",
+        "year": 2015, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Wound-care + hyperbarics management",
+        "outcome": "exited", "outcome_note": "Acquired by American Medical Technologies (One Equity Partners) in 2021.",
+        "source_url": "https://mergr.com/transaction/leonard-green-partners-acquires-restorixhealth",
+        "source_note": "Mergr (Leonard Green + Cressey acquire RestorixHealth, 2015); AMT 2021",
+    },
+
+    # ── Behavioral health ──
+    {
+        "target": "Eating Recovery Center", "sponsor": "Apax Partners + Oak HC/FT",
+        "year": 2021, "ev_usd_mm": 1400, "sector": "behavioral_health",
+        "subsector_note": "Eating-disorder + behavioral treatment; Apax bought from CCMP (~$1.4B)",
+        "outcome": "active", "outcome_note": "Active; CCMP owned it 2017-2021, Apax/Oak bought for ~$1.4B.",
+        "source_url": "https://bhbusiness.com/2021/10/05/apax-partners-and-oak-hc-ft-purchase-eating-recovery-center-for-1-4b/",
+        "source_note": "Behavioral Health Business (Apax/Oak buy ERC, 2021, ~$1.4B)",
+    },
+    {
+        "target": "Pyramid Healthcare", "sponsor": "Nautic Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Behavioral health + addiction treatment; Nautic bought from Clearview Capital",
+        "outcome": "active", "outcome_note": "Active behavioral-health operator.",
+        "source_url": "https://mergr.com/transaction/nautic-partners-acquires-pyramid-healthcare",
+        "source_note": "Mergr (Nautic/Pyramid Healthcare from Clearview, 2021)",
+    },
+    {
+        "target": "Family Care Center", "sponsor": "Revelstoke Capital Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Outpatient mental-health clinics (veteran-focused founding)",
+        "outcome": "active", "outcome_note": "Active outpatient mental-health platform.",
+        "source_url": "https://revelstokecapital.com/news/revelstoke-capital-partners-invests-in-affiliate-of-family-care-center-to-expand-access-to-mental-healthcare/",
+        "source_note": "Revelstoke Capital Partners (Family Care Center, Dec 2020)",
+    },
 ]
 
 
