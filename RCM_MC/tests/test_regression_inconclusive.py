@@ -35,6 +35,53 @@ class TestNoOpexPredictor(unittest.TestCase):
         self.assertIn("net_income", excl)
 
 
+class TestRatioTargetLeakage(unittest.TestCase):
+    """operating_margin = (NPR − opex) / NPR and net_to_gross = NPR / gross are
+    accounting identities of their inputs — same circular-predictor trap as
+    opex→NPR. The dollar P&L lines that DEFINE each ratio must be excluded, and
+    the curated default must be purely structural."""
+
+    def test_operating_margin_excludes_defining_pl_lines(self):
+        from rcm_mc.ui.regression_page import _COLLINEAR_PAIRS
+        excl = _COLLINEAR_PAIRS["operating_margin"]
+        for f in ("net_income", "net_patient_revenue", "operating_expenses"):
+            self.assertIn(f, excl)
+
+    def test_net_to_gross_excludes_definitional_components(self):
+        from rcm_mc.ui.regression_page import _COLLINEAR_PAIRS
+        excl = _COLLINEAR_PAIRS["net_to_gross_ratio"]
+        for f in ("net_patient_revenue", "gross_patient_revenue",
+                  "contractual_allowances"):
+            self.assertIn(f, excl)
+
+    def test_operating_margin_curated_set_is_structural(self):
+        from rcm_mc.ui.regression_page import (
+            _CURATED_DEFAULTS, _COLLINEAR_PAIRS,
+        )
+        feats = set(_CURATED_DEFAULTS["operating_margin"])
+        # No P&L dollar line bleeds into the default predictors.
+        self.assertFalse(feats & _COLLINEAR_PAIRS["operating_margin"])
+        # The structural margin drivers (payer mix) are present.
+        self.assertIn("medicare_day_pct", feats)
+        self.assertIn("medicaid_day_pct", feats)
+
+    def test_real_fit_has_no_circular_driver(self):
+        # On live HCRIS the default operating-margin fit must not regress the
+        # margin on any of its own P&L components.
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        from rcm_mc.ui.regression_page import (
+            _add_computed_features, _run_ols,
+            _CURATED_DEFAULTS, _COLLINEAR_PAIRS,
+        )
+        df = _add_computed_features(_get_latest_per_ccn())
+        feats = [f for f in _CURATED_DEFAULTS["operating_margin"]
+                 if f in df.columns]
+        res = _run_ols(df, "operating_margin", feats, log_target=False)
+        used = {c["feature"] for c in res["coefficients"]}
+        self.assertTrue(used)
+        self.assertFalse(used & _COLLINEAR_PAIRS["operating_margin"])
+
+
 class TestInconclusiveGuard(unittest.TestCase):
     def _res(self):
         return {"r2": 0.556, "condition_number": 9.4, "rmse": 0.99,

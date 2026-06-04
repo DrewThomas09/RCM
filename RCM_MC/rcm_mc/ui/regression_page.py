@@ -292,6 +292,18 @@ _COLLINEAR_PAIRS = {
     "net_patient_revenue": {"net_income", "operating_expenses", "gross_patient_revenue", "contractual_allowances"},
     "gross_patient_revenue": {"net_patient_revenue", "contractual_allowances", "operating_expenses", "net_income"},
     "contractual_allowances": {"gross_patient_revenue", "net_patient_revenue"},
+    # operating_margin = (net_patient_revenue − operating_expenses) / net_patient_revenue,
+    # so every dollar P&L line that DEFINES the margin is circular: regressing
+    # the margin on its own numerator/denominator (net_income ≈ NPR − opex)
+    # just rediscovers the accounting identity and posts a meaningless R². It's
+    # the same trap as predicting NPR from opex — exclude the components and
+    # predict the margin from STRUCTURAL drivers (payer mix, occupancy, size).
+    "operating_margin": {"net_patient_revenue", "operating_expenses", "net_income",
+                         "gross_patient_revenue", "contractual_allowances"},
+    # net_to_gross_ratio = net_patient_revenue / gross_patient_revenue, and the
+    # contractual allowance is exactly gross − net — all three are definitional.
+    "net_to_gross_ratio": {"net_patient_revenue", "gross_patient_revenue",
+                           "contractual_allowances", "operating_expenses", "net_income"},
 }
 
 # Curated low-collinearity predictor sets per target — the "strong but
@@ -318,6 +330,20 @@ _CURATED_DEFAULTS: Dict[str, List[str]] = {
     "net_patient_revenue": [
         "total_patient_days", "occupancy_rate", "medicare_day_pct",
         "medicaid_day_pct", "payer_diversity", "size_quartile",
+    ],
+    # Operating margin is NOT predicted from the P&L dollars it's built from
+    # (see _COLLINEAR_PAIRS) — it's predicted from what actually moves margin:
+    # payer mix (Medicare/Medicaid reimburse below commercial, compressing
+    # margin), occupancy / scale (operating leverage), and size.
+    "operating_margin": [
+        "occupancy_rate", "medicare_day_pct", "medicaid_day_pct",
+        "payer_diversity", "size_quartile", "total_patient_days",
+    ],
+    # Net-to-gross is set by contractual discounting, which is a payer-mix
+    # story (government payers discount gross charges hardest), plus scale.
+    "net_to_gross_ratio": [
+        "medicare_day_pct", "medicaid_day_pct", "commercial_pct",
+        "occupancy_rate", "size_quartile",
     ],
 }
 
