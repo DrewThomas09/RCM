@@ -30,6 +30,8 @@ from rcm_mc.ui.data_public import (
     transition_services_page,
     unit_economics_page,
     value_creation_page,
+    value_creation_plan_page,
+    vintage_perf_page,
 )
 
 _RENDERERS = [
@@ -48,6 +50,7 @@ _RENDERERS = [
     (competitive_intel_page, "render_competitive_intel"),
     (sector_correlation_page, "render_sector_correlation"),
     (unit_economics_page, "render_unit_economics"),
+    (value_creation_plan_page, "render_value_creation_plan"),
 ]
 
 
@@ -74,6 +77,20 @@ class TestDataPublicChartLabels(unittest.TestCase):
         (text-anchor=end) so a long name doesn't run off the right edge."""
         html = transition_services_page.render_transition_services({})
         self.assertIn('text-anchor="end"', html)
+
+    def test_vintage_perf_svgs_are_responsive(self):
+        """vintage-perf charts used a fixed <svg width="637"> with no viewBox,
+        so a narrow column clipped the right edge. They now use viewBox +
+        width=100% + max-width so they scale to fit instead of clipping."""
+        # Render the chart helpers directly so shell/icon SVGs don't interfere.
+        from rcm_mc.data_public.vintage_analytics import compute_vintage_stats
+        stats = compute_vintage_stats(vintage_perf_page._load_corpus())
+        for fn in ("_moic_bar_chart", "_deal_count_histogram", "_heatmap_svg"):
+            svg = getattr(vintage_perf_page, fn)(stats)
+            with self.subTest(chart=fn):
+                self.assertIn("viewBox", svg)
+                self.assertIn("width=\"100%\"", svg)
+                self.assertNotRegex(svg, r'<svg width="\d')
 
 
 if __name__ == "__main__":

@@ -39,7 +39,8 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
     """Horizontal bar chart: year (y-axis) × P50 MOIC (x-axis) with P25/P75 whiskers."""
     if not stats:
         return ""
-    margin = {"l": 45, "r": 10, "t": 10, "b": 20}
+    # r holds the "X.XXx" P50 value label printed past the bar end (was 10).
+    margin = {"l": 45, "r": 38, "t": 10, "b": 20}
     W = width - margin["l"] - margin["r"]
     max_moic = max(s.moic_p75 for s in stats)
     max_moic = max(max_moic, 4.0)
@@ -80,7 +81,7 @@ def _moic_bar_chart(stats: List[Any], width: int = 600, height: int = 160) -> st
         elements.append(f'<text x="{label_x}" y="{y+bar_h-1}" font-family="JetBrains Mono,monospace" font-size="7.5" fill="{color}">{s.moic_p50:.2f}x</text>')
 
     return (
-        f'<svg width="{width}" height="{actual_h}" xmlns="http://www.w3.org/2000/svg">'
+        f'<svg viewBox="0 0 {width} {actual_h}" width="100%" style="max-width:{width}px" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
         f'</svg>'
     )
@@ -106,7 +107,8 @@ def _deal_count_histogram(stats: List[Any], width: int = 600, height: int = 80) 
                 f'font-family="JetBrains Mono,monospace" font-size="7" fill="#465366">{s.year}</text>'
             )
     return (
-        f'<svg width="{W+20}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
+        # +28 right margin so the centred last-bar year label can't clip.
+        f'<svg viewBox="0 0 {W+28} {height}" width="100%" style="max-width:{W+28}px" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
         f'</svg>'
     )
@@ -131,9 +133,9 @@ def _heatmap_svg(stats: List[Any], width: int = 600) -> str:
             f'<text x="{cx+cell_w//2-1}" y="23" text-anchor="middle" '
             f'font-family="JetBrains Mono,monospace" font-size="8" fill="#1a2332">{s.moic_p50:.1f}x</text>'
         )
-    W = 20 + len(stats) * cell_w
+    W = 26 + len(stats) * cell_w  # +6 right margin for the last centred label
     return (
-        f'<svg width="{W}" height="{cell_h}" xmlns="http://www.w3.org/2000/svg">'
+        f'<svg viewBox="0 0 {W} {cell_h}" width="100%" style="max-width:{W}px" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
         f'</svg>'
     )

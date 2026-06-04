@@ -62,7 +62,9 @@ def _checkpoint_svg(checkpoints) -> str:
     row_h = 28
     h = len(checkpoints) * row_h + 40
     pad_l = 90
-    pad_r = 40
+    # pad_r holds the "$XX.XM (XX%)" value label trailing the longest bar;
+    # at 40 it clipped the right edge.
+    pad_r = 96
     inner_w = w - pad_l - pad_r
 
     max_v = max(cp.pct_of_plan for cp in checkpoints) or 1
