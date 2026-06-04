@@ -146,7 +146,14 @@ def _county_top_bar(key: str, rows, footer, n: int = 12) -> str:
     top = present[:n]
     items = [(nm, v, "teal") for nm, v in top]
     mref = footer.get(key)
-    ref = ("State wtd-mean", mref) if (mref is not None and mref == mref) else None
+    # The footer carries a population-weighted MEAN for the rate columns but a
+    # TOTAL for population. A state total isn't a per-county reference — it sits
+    # to the right of every county bar (which read as "the state mean is above
+    # all the counties?"), so only draw the dashed mean line for the rate
+    # metrics where it's genuinely comparable to the bars.
+    ref = (("State wtd-mean", mref)
+           if (key != "population" and mref is not None and mref == mref)
+           else None)
     return ck_hbar_chart(
         f"Top {len(top)} counties — {label}", items, value_fmt=fmt,
         reference=ref, subtitle=f"of {len(present)} counties with data",
