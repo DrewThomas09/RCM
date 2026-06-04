@@ -151,6 +151,25 @@ def screen_deal(
     elif ebitda and ebitda > 0:
         pass_signals.append(f"Positive EBITDA ${ebitda:.0f}M")
 
+    # --- Realized MOIC floor ---
+    # The config exposes ``min_moic_threshold`` and the module docstring
+    # promises "MOIC below threshold -> FAIL", but the check was never wired,
+    # so the screener's "Min MOIC" return-floor control had no effect on the
+    # decision. Gate only when a realized MOIC exists — an unrealized deal
+    # can't be judged against a return floor, so it is left ungated.
+    moic = _safe_float(deal.get("realized_moic"))
+    if moic is not None:
+        if moic < config.min_moic_threshold:
+            fail_reasons.append(
+                f"Realized MOIC {moic:.2f}x below return floor "
+                f"{config.min_moic_threshold:.2f}x"
+            )
+        else:
+            pass_signals.append(
+                f"Realized MOIC {moic:.2f}x clears floor "
+                f"{config.min_moic_threshold:.2f}x"
+            )
+
     # --- Medicaid concentration ---
     medicaid = _payer_share(deal, "medicaid")
     if medicaid > config.max_medicaid_pct:
