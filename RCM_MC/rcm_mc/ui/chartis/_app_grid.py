@@ -207,7 +207,8 @@ def _kpi_card(*, tag: str, color: str, title: str, em: str,
 # ── Page ────────────────────────────────────────────────────────────────────
 
 def _page_top(crumb_slug: str, *, section_label: str = "PORTFOLIO & DILIGENCE",
-              kicker_label: str = "FUND II", lede: str = "") -> str:
+              kicker_label: str = "FUND II", lede: str = "",
+              customize: bool = False) -> str:
     # Mono eyebrow carries the two-view lexicon (section · kicker · slug) so
     # the dossier grid frames partner vs consulting identically to the flat
     # page. Section/kicker are rendered uppercase exactly as passed.
@@ -217,20 +218,28 @@ def _page_top(crumb_slug: str, *, section_label: str = "PORTFOLIO & DILIGENCE",
         f'{_esc(kicker_label)} &middot; {_esc(crumb_slug)}</span></div>'
     )
     lede_html = f'<p class="cc-lede">{_esc(lede)}</p>' if lede else ''
+    # Customize / Add card are now live: they enter the customize panel
+    # (/app?customize=1) where cards are shown/hidden (persisted in a cookie).
+    if customize:
+        actions = (
+            '<a class="cc-btn cc-btn-primary" href="/app" '
+            'title="Finish customizing">&#10003; Done</a>'
+            '<a class="cc-btn" href="/app" title="Reload data">&#8635; Refresh</a>'
+        )
+    else:
+        actions = (
+            '<a class="cc-btn" href="/app?customize=1" '
+            'title="Show, hide and add cards">&#8862; Customize</a>'
+            '<a class="cc-btn" href="/app" title="Reload data">&#8635; Refresh</a>'
+            '<a class="cc-btn cc-btn-primary" href="/app?customize=1" '
+            'title="Add a card to the dashboard">+ Add card</a>'
+        )
     return (
         '<div class="cc-top">'
         + eyebrow
         + '<div class="cc-top-row">'
         '<h1 class="cc-h1">Command <span class="cc-h1-em">center</span>.</h1>'
-        '<div class="cc-actions">'
-        # No customize/add-card modes exist yet → safe disabled (honest);
-        # Refresh is a real reload of the page's data.
-        '<button type="button" class="cc-btn" disabled '
-        'title="Customize coming soon">&#8862; Customize</button>'
-        '<a class="cc-btn" href="/app" title="Reload data">&#8635; Refresh</a>'
-        '<button type="button" class="cc-btn cc-btn-primary" disabled '
-        'title="Add a card coming soon">+ Add card</button>'
-        '</div>'
+        f'<div class="cc-actions">{actions}</div>'
         '</div>'
         + lede_html
         + '</div>'
@@ -288,6 +297,71 @@ def _roster_card(deals_df: pd.DataFrame, idx: int) -> str:
                  body=rows, span="cc-7x3", idx=idx)
 
 
+# Canonical command-center card registry: (card_id, human label). Order is the
+# render order; the customize panel and the ck_cards_hidden cookie key off the
+# ids. Adding a card here (and building it in render_app_grid) makes it appear
+# in the customize toggles automatically.
+_CARD_ORDER = [
+    ("moic", "Weighted MOIC"),
+    ("irr", "Weighted IRR"),
+    ("covenants", "Covenants at risk"),
+    ("days_cash", "Days cash"),
+    ("active_deals", "Active deals (KPI)"),
+    ("initiatives", "Initiatives tracked"),
+    ("roster", "Active deals roster"),
+    ("funnel", "Pipeline funnel"),
+    ("morning_brief", "Morning brief"),
+    ("quick_access", "Quick access"),
+    ("covenant_heatmap", "Covenant heatmap"),
+    ("ebitda_drag", "EBITDA drag"),
+    ("initiative_variance", "Initiative variance"),
+    ("alerts", "Active alerts"),
+    ("deliverables", "Deliverables"),
+]
+_CARD_IDS = frozenset(cid for cid, _ in _CARD_ORDER)
+
+
+def _customize_panel(hidden: set) -> str:
+    """The customize-cards control: a checkbox per card (checked = shown).
+    Submitting POSTs the visible set to /app/cards, which persists the hidden
+    set in the ck_cards_hidden cookie. Unchecking hides a card; re-checking a
+    hidden card adds it back — that's the 'add card' path."""
+    n_shown = sum(1 for cid, _ in _CARD_ORDER if cid not in hidden)
+    toggles = "".join(
+        '<label class="cc-cz-row">'
+        f'<input type="checkbox" name="card" value="{_esc(cid)}"'
+        f'{" checked" if cid not in hidden else ""}>'
+        f'<span>{_esc(label)}</span></label>'
+        for cid, label in _CARD_ORDER
+    )
+    return (
+        '<style>'
+        '.cc-cz{border:1px solid var(--sc-rule,#c9c1ac);background:var(--sc-paper,#faf6ec);'
+        'border-radius:4px;padding:14px 18px;margin:0 0 16px;}'
+        '.cc-cz h3{font-family:var(--sc-mono,monospace);font-size:11px;letter-spacing:.1em;'
+        'text-transform:uppercase;color:#5c6878;margin:0 0 4px;}'
+        '.cc-cz .cc-cz-sub{font-size:12px;color:#465366;margin:0 0 12px;}'
+        '.cc-cz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px 16px;}'
+        '.cc-cz-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1a2332;cursor:pointer;}'
+        '.cc-cz-row input{accent-color:var(--sc-teal,#155752);}'
+        '.cc-cz-actions{margin-top:14px;display:flex;gap:10px;align-items:center;}'
+        '.cc-cz-save{background:#0b2341;color:#fff;border:none;padding:8px 18px;border-radius:3px;'
+        'font-size:12px;font-weight:600;cursor:pointer;}'
+        '.cc-cz-cancel{color:#155752;text-decoration:none;font-size:12px;padding:8px 4px;}'
+        '</style>'
+        '<form class="cc-cz" method="post" action="/app/cards">'
+        '<h3>Customize cards</h3>'
+        f'<p class="cc-cz-sub">Check the cards to show on your command center '
+        f'({n_shown} of {len(_CARD_ORDER)} shown). Unchecking hides a card; '
+        'check a hidden one to add it back. Saved to this browser.</p>'
+        f'<div class="cc-cz-grid">{toggles}</div>'
+        '<div class="cc-cz-actions">'
+        '<button type="submit" class="cc-cz-save">Save layout</button>'
+        '<a class="cc-cz-cancel" href="/app">Cancel</a>'
+        '</div></form>'
+    )
+
+
 def render_app_grid(
     *,
     store: Any,
@@ -299,8 +373,15 @@ def render_app_grid(
     section_label: str = "PORTFOLIO & DILIGENCE",
     kicker_label: str = "FUND II",
     lede: str = "",
+    hidden_cards: Optional[frozenset] = None,
+    customize: bool = False,
 ) -> str:
-    """Render the dossier-card grid body (caller wraps it in the shell)."""
+    """Render the dossier-card grid body (caller wraps it in the shell).
+
+    ``hidden_cards`` is the set of card ids the viewer has hidden (from the
+    ``ck_cards_hidden`` cookie); they're filtered out of the grid. ``customize``
+    renders the customize panel (toggle each card on/off) above the grid."""
+    hidden = set(hidden_cards or frozenset())
     r = rollup or {}
     dc = int(r.get("deal_count") or 0)
     moic = r.get("weighted_moic")
@@ -321,57 +402,59 @@ def render_app_grid(
     # so an entity would render as the literal text "&middot;".
     cov_sub = (f"{trips} tripped · {tight} tight" if dc else "")
 
-    cards: List[str] = []
-    cards.append(_kpi_card(tag="Fund return", color="green", title="Weighted MOIC",
-                           em="MOIC", value=moic_v, sub="equity-weighted",
-                           span="cc-5x2", hero=True, idx=1))
-    cards.append(_kpi_card(tag="Return", color="ink", title="Weighted IRR",
-                           em="IRR", value=irr_v, sub="equity-weighted",
-                           span="cc-4x1", idx=2))
-    cards.append(_kpi_card(tag="Risk", color="amber", title="Covenants at risk",
-                           em="risk", value=cov_v, sub=cov_sub,
-                           span="cc-3x1", idx=3))
+    # Build every card keyed by a stable card_id (the customize layout + the
+    # ck_cards_hidden cookie reference these ids). _CARD_ORDER below is the
+    # canonical render order.
+    built: Dict[str, str] = {}
+    built["moic"] = _kpi_card(tag="Fund return", color="green", title="Weighted MOIC",
+                              em="MOIC", value=moic_v, sub="equity-weighted",
+                              span="cc-5x2", hero=True, idx=1)
+    built["irr"] = _kpi_card(tag="Return", color="ink", title="Weighted IRR",
+                             em="IRR", value=irr_v, sub="equity-weighted",
+                             span="cc-4x1", idx=2)
+    built["covenants"] = _kpi_card(tag="Risk", color="amber", title="Covenants at risk",
+                                   em="risk", value=cov_v, sub=cov_sub,
+                                   span="cc-3x1", idx=3)
     # Days cash has no rollup source → honest empty state (never fabricated).
-    cards.append(_kpi_card(tag="Liquidity", color="ink", title="Days cash",
-                           em="cash", value=None, sub="", span="cc-4x1", idx=4))
-    cards.append(_kpi_card(tag="Pipeline", color="ink", title="Active deals",
-                           em="deals", value=(str(dc) if dc else None),
-                           sub="tracked", span="cc-4x1", idx=5))
+    built["days_cash"] = _kpi_card(tag="Liquidity", color="ink", title="Days cash",
+                                   em="cash", value=None, sub="", span="cc-4x1", idx=4)
+    built["active_deals"] = _kpi_card(tag="Pipeline", color="ink", title="Active deals",
+                                      em="deals", value=(str(dc) if dc else None),
+                                      sub="tracked", span="cc-4x1", idx=5)
     # Initiatives tracked: no cross-fund rollup count → honest empty.
-    cards.append(_kpi_card(tag="Operations", color="ink", title="Initiatives tracked",
-                           em="Initiatives", value=None, sub="", span="cc-4x1", idx=6))
-
+    built["initiatives"] = _kpi_card(tag="Operations", color="ink", title="Initiatives tracked",
+                                     em="Initiatives", value=None, sub="", span="cc-4x1", idx=6)
     # Roster + funnel from real data.
-    cards.append(_roster_card(deals_df, idx=7))
-    cards.append(_funnel_card(r, idx=8))
+    built["roster"] = _roster_card(deals_df, idx=7)
+    built["funnel"] = _funnel_card(r, idx=8)
 
     # Heavier analytic cards — reuse the existing real renderers (data + empty
     # states intact) inside scrollable dossier cards. Full-width by design.
-    def _embed(tag, color, title, em, html, span, idx):
-        cards.append(_card(tag=tag, color=color, title=title, em=em,
-                           body=html, span=span, scroll=True, idx=idx))
+    def _embed(cid, tag, color, title, em, html, span, idx):
+        built[cid] = _card(tag=tag, color=color, title=title, em=em,
+                           body=html, span=span, scroll=True, idx=idx)
 
-    _embed("Morning brief", "amber", "Morning brief", "brief",
+    _embed("morning_brief", "Morning brief", "amber", "Morning brief", "brief",
            render_morning_brief(r, deals_df), "cc-12x2", 9)
-    _embed("Quick access", "ink", "Quick access", "access",
+    _embed("quick_access", "Quick access", "ink", "Quick access", "access",
            render_quick_access(), "cc-12x3", 10)
-    _embed("Watchlist", "amber", "Covenant heatmap", "heatmap",
+    _embed("covenant_heatmap", "Watchlist", "amber", "Covenant heatmap", "heatmap",
            render_covenant_heatmap(store, focused_deal_id), "cc-7x3", 11)
-    _embed("Bridge", "ink", "EBITDA drag", "drag",
+    _embed("ebitda_drag", "Bridge", "ink", "EBITDA drag", "drag",
            render_ebitda_drag(focused_packet), "cc-5x3", 12)
-    _embed("Operations", "ink", "Initiative variance", "variance",
+    _embed("initiative_variance", "Operations", "ink", "Initiative variance", "variance",
            render_initiative_tracker(store, focused_deal_id), "cc-6x2", 13)
-    _embed("Alerts", "amber", "Active alerts", "alerts",
+    _embed("alerts", "Alerts", "amber", "Active alerts", "alerts",
            render_alerts(store), "cc-6x2", 14)
-    _embed("Deliverables", "navy", "Deliverables", "Deliverables",
+    _embed("deliverables", "Deliverables", "navy", "Deliverables", "Deliverables",
            render_deliverables(store, deal_id=focused_deal_id), "cc-12x2", 15)
 
-    # + Add a card placeholders (visual only).
-    addcards = "".join(
-        '<button type="button" class="cc-addcard" disabled '
-        'title="Add a card coming soon">&#65291; Add a card</button>'
-        for _ in range(4)
-    )
+    # Visible cards in canonical order, minus any the viewer has hidden.
+    visible = [built[cid] for cid, _ in _CARD_ORDER
+               if cid in built and cid not in hidden]
+
+    # Customize panel — toggle each card on/off (persisted via /app/cards).
+    panel = _customize_panel(hidden) if customize else ""
 
     # Source registry footer — same labels the flat-scroll what-block shows,
     # so the page still declares where its numbers come from.
@@ -387,8 +470,9 @@ def render_app_grid(
     return (
         '<div class="cc-page" data-cc-grid>'
         + _page_top("/command-center", section_label=section_label,
-                    kicker_label=kicker_label, lede=lede)
-        + '<div class="cc-grid">' + "".join(cards) + addcards + '</div>'
+                    kicker_label=kicker_label, lede=lede, customize=customize)
+        + panel
+        + '<div class="cc-grid">' + "".join(visible) + '</div>'
         + src_footer
         + '</div>'
     )

@@ -85,6 +85,8 @@ def render_app_page(
     phi_mode: Optional[str] = None,
     user: Optional[str] = None,
     layout: Optional[str] = None,
+    hidden_cards: Optional[frozenset] = None,
+    customize: bool = False,
 ) -> str:
     """Compose the editorial /app dashboard.
 
@@ -180,7 +182,7 @@ def render_app_page(
                 focused_deal_id=focused_deal_id,
                 selected_stage=selected_stage, focused_packet=focused_packet,
                 section_label=_cc_section_label, kicker_label=_cc_kicker_label,
-                lede=_cc_lede,
+                lede=_cc_lede, hidden_cards=hidden_cards, customize=customize,
             ),
             title="Command center",
             active_nav="PORTFOLIO",
