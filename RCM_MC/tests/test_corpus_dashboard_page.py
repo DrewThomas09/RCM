@@ -63,8 +63,13 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         # Structural panels still render off the (smaller) real corpus.
         self.assertIn("Top Sectors", html)
         self.assertIn("MOIC Distribution", html)
-        # The verified deal count (≈68) is far below the full corpus.
-        self.assertIn("68 deals", html)
+        # The verified deal count is the real-tier size and far below the
+        # full corpus — assert it dynamically so it tracks corpus growth.
+        from rcm_mc.data_public.corpus_loader import load_corpus_deals
+        n_real = len(load_corpus_deals("real"))
+        n_all = len(load_corpus_deals("all"))
+        self.assertIn(f"{n_real} deals", html)
+        self.assertLess(n_real, n_all)
 
     def test_top_sectors_excludes_singledeal_noise(self):
         """Regression: the all-mode 'Top Sectors by P50 MOIC' table ranked
