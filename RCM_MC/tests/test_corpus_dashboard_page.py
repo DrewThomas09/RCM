@@ -146,6 +146,21 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         html = render_corpus_dashboard()
         self.assertIn("Avg Quality", html)
 
+    def test_real_outcome_base_rate_panel(self):
+        """The verified-only distress base-rate panel (Wilson CIs) must render
+        in BOTH universes — it is the credible counterweight to the
+        synthetic-skewed MOIC aggregate, so it shows even in illustrative mode."""
+        from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+        for universe in ("all", "verified"):
+            html = render_corpus_dashboard(universe=universe)
+            self.assertIn("OUTCOME BASE RATES", html)
+            self.assertIn("Distress incidence by sector", html)
+            self.assertIn("95% CI", html)
+            # Honesty caveat travels with the number.
+            self.assertIn("not a realized IRR/MOIC loss rate", html)
+            # Wilson-interval provenance is stated.
+            self.assertIn("Wilson score", html)
+
 
 if __name__ == "__main__":
     unittest.main()
