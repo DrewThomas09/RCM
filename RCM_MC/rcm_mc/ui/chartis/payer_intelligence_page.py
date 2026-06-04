@@ -307,7 +307,7 @@ def render_payer_intelligence(
     def _title(meta: str) -> str:
         return ck_page_title(
             "Payer Intelligence",
-            eyebrow="PAYER INTELLIGENCE",
+            eyebrow="RESEARCH · PAYER INTELLIGENCE",
             meta=meta,
         ) + '<div style="margin:8px 0 0;">' + ck_data_universe("research") + '</div>' + ck_illustrative_note(
             "per-payer-regime MOIC/IRR distributions (drawn from the deal "
