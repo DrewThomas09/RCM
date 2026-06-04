@@ -110,9 +110,9 @@ def render_heatmap(
     # MIXED: the rows are user deals, but ranked against the benchmark corpus.
     title_block = ck_page_title(
         "Portfolio Heatmap",
-        eyebrow="PORTFOLIO HEATMAP",
+        eyebrow="PORTFOLIO · RISK HEATMAP",
         meta=(
-            f"{len(packets)} deals · percentile rank vs corpus"
+            f"{len(packets)} deals · percentile rank vs peers"
             if packets else "no deals yet"
         ),
     ) + '<div style="margin:8px 0 0;">' + ck_data_universe("mixed") + '</div>'

@@ -90,13 +90,14 @@ def render_my_dashboard(
     n_my_deals = len(my_deals)
     intro = ck_editorial_head(
         eyebrow=f"PARTNER · {safe_owner.upper()}",
-        title="Your week, in one read.",
+        title="My Dashboard",
         meta=(
             f"{n_my_deals} DEAL{'S' if n_my_deals != 1 else ''} · "
             f"{len(my_alerts)} ALERT{'S' if len(my_alerts) != 1 else ''}"
             f" · {n_red} RED · {n_amber} AMBER · "
             f"{len(my_od)} OVERDUE · {len(my_up)} UPCOMING (14d)"
         ),
+        lede_italic_phrase="Your week, in one read.",
         lede_body=(
             f"Active deals, alerts, and deadlines assigned to "
             f"{safe_owner}, refreshed each request. The pulse strip "
