@@ -3676,6 +3676,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.audaxprivateequity.com/portfolio/meridian-behavioral-health",
         "source_note": "Audax Private Equity (Meridian Behavioral Health from Triton Pacific, 2015)",
     },
+    {
+        "target": "DAS Health", "sponsor": "Coalesce Capital",
+        "year": 2025, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare IT / managed-IT / RCM / practice-management for provider organizations (Tampa); Coalesce majority from Sheridan Capital",
+        "outcome": "active", "outcome_note": "Active; Coalesce Capital acquired majority May 2025 (Sheridan Capital since 2021).",
+        "source_url": "https://www.prnewswire.com/news-releases/coalesce-capital-acquires-leading-healthcare-it-and-business-solutions-provider-das-health-302465667.html",
+        "source_note": "Coalesce Capital (DAS Health from Sheridan, May 2025)",
+    },
+    {
+        "target": "Your Behavioral Health", "sponsor": "Comvest Partners",
+        "year": 2023, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Regional mental-health + addiction treatment (adults/teens, 17 facilities, Southern California); Comvest platform",
+        "outcome": "active", "outcome_note": "Active; Comvest Partners acquired June 2023.",
+        "source_url": "https://comvest.com/comvest-partners-announces-acquisition-of-your-behavioral-health/",
+        "source_note": "Comvest Partners (Your Behavioral Health, June 2023)",
+    },
 ]
 
 
