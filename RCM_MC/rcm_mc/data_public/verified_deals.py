@@ -2048,6 +2048,89 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.businesswire.com/news/home/20220623005746/en/Iron-Path-Capital-Announces-Partnership-with-Capitol-Pain-Institute-to-Build-Nationwide-Interventional-Pain-Management-Platform",
         "source_note": "Iron Path Capital (Capitol Pain Institute, June 2022)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 17) — PT/MSK, outpatient mental health,
+    # home health/hospice. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Physical therapy / MSK ──
+    {
+        "target": "Ivy Rehab", "sponsor": "Waud Capital Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient physical-therapy + pediatric therapy network; Waud platform",
+        "outcome": "active", "outcome_note": "Active PT platform (2022 continuation fund).",
+        "source_url": "https://www.waudcapital.com/en/portfolio/ivy-rehab/",
+        "source_note": "Waud Capital Partners (Ivy Rehab, 2016)",
+    },
+    {
+        "target": "PT Solutions", "sponsor": "General Atlantic",
+        "year": 2021, "ev_usd_mm": 1200, "sector": "other_services",
+        "subsector_note": "Outpatient physical therapy; GA majority (~$1.2B), TowerBrook/Ascension minority",
+        "outcome": "active", "outcome_note": "Active PT platform (prior Lindsay Goldberg, New Harbor).",
+        "source_url": "https://www.axios.com/2022/01/07/ga-buys-pt-solutions-1-billion-valuation",
+        "source_note": "Axios (General Atlantic buys PT Solutions, ~$1.2B, 2021)",
+    },
+    {
+        "target": "H2 Health", "sponsor": "Grant Avenue Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient PT + rehab (Southeast); Grant Avenue bought from HCR ManorCare",
+        "outcome": "active", "outcome_note": "Active PT/rehab platform.",
+        "source_url": "https://www.lincolninternational.com/transactions/h2-health-a-portfolio-company-of-grant-avenue-capital-has-acquired-physical-therapy-today/",
+        "source_note": "Grant Avenue Capital (H2 Health, 2020)",
+    },
+    {
+        "target": "Empower Physical Therapy", "sponsor": "Sheridan Capital Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient physical therapy (Southwest); Sheridan-backed",
+        "outcome": "active", "outcome_note": "Active PT platform.",
+        "source_url": "https://sheridancp.com/news/sheridan-capital-partners-invests-in-empower-physical-therapy/",
+        "source_note": "Sheridan Capital Partners (Empower PT, Oct 2018)",
+    },
+
+    # ── Outpatient mental health ──
+    {
+        "target": "Newport Healthcare", "sponsor": "Onex Partners",
+        "year": 2021, "ev_usd_mm": 1300, "sector": "behavioral_health",
+        "subsector_note": "Teen/young-adult mental-health + SUD treatment; Onex bought ~60% from Carlyle (~$1.3B)",
+        "outcome": "active", "outcome_note": "Active behavioral-health platform.",
+        "source_url": "https://www.onex.com/article/2021NewsRelease-OnexCompletesNewportHealthcare-July19",
+        "source_note": "Onex Partners (Newport Healthcare from Carlyle, July 2021, ~$1.3B)",
+    },
+    {
+        "target": "Mindful Health Solutions", "sponsor": "Aisling Capital",
+        "year": 2024, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Outpatient psychiatry + TMS / interventional mental health",
+        "outcome": "active", "outcome_note": "Active mental-health platform (Norwest also invested).",
+        "source_url": "https://mergr.com/aisling-capital-acquires-mindful-health-solutions",
+        "source_note": "Aisling Capital (Mindful Health Solutions, 2024)",
+    },
+    {
+        "target": "Transformations Care Network", "sponsor": "Shore Capital Partners + Resolute Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Outpatient mental-health MSO (4-way merger)",
+        "outcome": "active", "outcome_note": "Active mental-health platform.",
+        "source_url": "https://www.shorecp.com/companies/transformations-care-network",
+        "source_note": "Shore Capital + Resolute (Transformations Care Network, Aug 2021)",
+    },
+    {
+        "target": "Lightfully Behavioral Health", "sponsor": "Regal Healthcare Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Primary mental-health treatment (CA); Regal-backed",
+        "outcome": "active", "outcome_note": "Active mental-health platform.",
+        "source_url": "https://bhbusiness.com/2024/03/20/pe-firm-regal-healthcare-capital-partners-invests-50m-in-lightfully-behavioral-health/",
+        "source_note": "Regal Healthcare Capital Partners (Lightfully, 2021)",
+    },
+
+    # ── Home health / hospice ──
+    {
+        "target": "VitalCaring Group", "sponsor": "The Vistria Group + Nautic Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Home health + hospice (April Anthony-led); Vistria + Nautic",
+        "outcome": "active", "outcome_note": "Active home-health/hospice platform.",
+        "source_url": "https://vistria.com/portfolio-items/vitalcaringgroup/",
+        "source_note": "The Vistria Group + Nautic Partners (VitalCaring, 2021)",
+    },
 ]
 
 
