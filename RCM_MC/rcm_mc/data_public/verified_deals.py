@@ -1995,6 +1995,59 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.nordiccapital.com/",
         "source_note": "Nordic Capital (United Veterinary Care)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 16) — health-IT/data take-privates + allergy/
+    # pain MSOs. Each web-validated; pre-checked. Big-ticket data deals.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Inovalon", "sponsor": "Nordic Capital + Insight Partners",
+        "year": 2021, "ev_usd_mm": 7300, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare data/analytics SaaS; take-private (~$7.3B)",
+        "outcome": "exited", "outcome_note": "Public→private (Nasdaq: INOV); consortium incl. 22C Capital.",
+        "source_url": "https://www.nordiccapital.com/news-views/press-releases/equity-consortium-led-by-nordic-capital-and-including-insight-partners-completes-acquisition-of-inovalon/",
+        "source_note": "Nordic Capital + Insight Partners (Inovalon take-private, 2021, ~$7.3B)",
+    },
+    {
+        "target": "Zelis", "sponsor": "Bain Capital + Parthenon Capital",
+        "year": 2019, "ev_usd_mm": 5700, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare payments optimization; Zelis + RedCard merger (~$5.7B)",
+        "outcome": "active", "outcome_note": "Active; minority stake marketed at ~$17B in 2024.",
+        "source_url": "https://www.zelis.com/news/zelis-completes-acquisition-redcard/",
+        "source_note": "Bain + Parthenon (Zelis/RedCard merger, 2019, ~$5.7B)",
+    },
+    {
+        "target": "Edifecs", "sponsor": "TA Associates + Francisco Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Payer/provider interoperability + data-exchange software",
+        "outcome": "exited", "outcome_note": "Acquired by Cotiviti in 2025.",
+        "source_url": "https://www.edifecs.com/newsroom/ta-associates-and-francisco-partners-announce-significant-growth-investment-in-edifecs/",
+        "source_note": "TA Associates + Francisco Partners (Edifecs, 2020); Cotiviti 2025",
+    },
+    {
+        "target": "M*Modal", "sponsor": "One Equity Partners",
+        "year": 2012, "ev_usd_mm": 1100, "sector": "rcm_healthtech",
+        "subsector_note": "Clinical documentation / medical transcription + NLP; take-private (~$1.1B)",
+        "outcome": "exited", "outcome_note": "Ch.11 2014 (over-leveraged); tech sold to 3M in 2019 — a health-IT downside.",
+        "source_url": "https://www.businesswire.com/news/home/20120702006524/en/M*Modal-to-Be-Acquired-for-Approximately-1.1-Billion-by-One-Equity-Partners",
+        "source_note": "One Equity Partners (M*Modal, 2012, ~$1.1B); 2014 Ch.11; 3M 2019",
+    },
+    {
+        "target": "AllerVie Health", "sponsor": "Summit Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Allergy + asthma + immunology MSO; Summit-backed",
+        "outcome": "active", "outcome_note": "Active allergy platform.",
+        "source_url": "https://noromoseley.com/company/allervie-health/",
+        "source_note": "Summit Partners (AllerVie Health)",
+    },
+    {
+        "target": "Capitol Pain Institute", "sponsor": "Iron Path Capital",
+        "year": 2022, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Interventional pain-management MSO; Iron Path platform",
+        "outcome": "active", "outcome_note": "Active pain-management platform.",
+        "source_url": "https://www.businesswire.com/news/home/20220623005746/en/Iron-Path-Capital-Announces-Partnership-with-Capitol-Pain-Institute-to-Build-Nationwide-Interventional-Pain-Management-Platform",
+        "source_note": "Iron Path Capital (Capitol Pain Institute, June 2022)",
+    },
 ]
 
 
