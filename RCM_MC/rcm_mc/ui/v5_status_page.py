@@ -155,8 +155,8 @@ def render_v5_status() -> str:
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="V5 STATUS",
-        title="Where the chartis transformation stands.",
+        eyebrow="PLATFORM · V5 STATUS",
+        title="V5 Status",
         meta=(
             f"{counts.total} ROUTES · "
             f"{counts.v3} V5-CHROMED ({pct_chrome:.0f}%) · "

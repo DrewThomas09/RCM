@@ -110,7 +110,7 @@ def render_escalations(
 
     section = ck_section_header(
         f"Red alerts open at least {min_days} days",
-        eyebrow="ESCALATIONS",
+        eyebrow="PORTFOLIO · ESCALATIONS",
     )
 
     # Severity panel content — one row per escalated alert. Reuse
@@ -195,7 +195,7 @@ def render_escalations(
     n_esc = len(escalated) if 'escalated' in dir() else 0
     intro = ck_editorial_head(
         eyebrow="ESCALATIONS",
-        title="What stayed open longer than it should.",
+        title="Escalations",
         meta=(
             f"RED ALERTS · OPEN > {min_days} DAYS · OLDEST FIRST"
         ),

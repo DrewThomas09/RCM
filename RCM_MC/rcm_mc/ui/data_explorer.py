@@ -290,7 +290,7 @@ def render_data_explorer(
     )
     page_title = ck_page_title(
         "Data Explorer",
-        eyebrow="DATA EXPLORER",
+        eyebrow="PLATFORM · DATA EXPLORER",
         meta=f"{loaded} modules loaded · {hcris_count:,} hospital profiles · {n_sources} sources",
     )
     de_explainer = (

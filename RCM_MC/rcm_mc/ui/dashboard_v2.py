@@ -251,7 +251,7 @@ def render_dashboard_v2(store: Any) -> str:
     )
     page_title = ck_page_title(
         "Portfolio Dashboard",
-        eyebrow="PORTFOLIO DASHBOARD",
+        eyebrow="PORTFOLIO · DASHBOARD",
         meta=f"{total_deals} active deals · {_fmt_money(total_opp)} EBITDA opp",
     )
     db_explainer = (

@@ -237,7 +237,7 @@ def render_calibration_page(store: Any) -> str:
 
     page_title = ck_page_title(
         "Calibration",
-        eyebrow="CALIBRATION",
+        eyebrow="RESEARCH · CALIBRATION",
         meta=f"{n_runs} run(s) · {len(payers)} payer(s) · per-payer IDR / FWR / DAR priors",
     )
     cal_explainer = (
