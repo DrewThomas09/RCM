@@ -15,6 +15,7 @@ import unittest
 
 from rcm_mc.ui._chartis_kit import ck_data_universe
 from rcm_mc.ui.chartis.deal_screening_page import render_deal_screening
+from rcm_mc.ui.chartis.payer_intelligence_page import render_payer_intelligence
 from rcm_mc.ui.chartis.portfolio_analytics_page import render_portfolio_analytics
 from rcm_mc.ui.chartis.sponsor_track_record_page import render_sponsor_track_record
 
@@ -41,6 +42,13 @@ class TestCorpusIllustrativeDisclosure(unittest.TestCase):
     def test_portfolio_analytics_discloses_illustrative(self):
         html = render_portfolio_analytics({})
         self.assertIn("illustrative", html.lower())
+
+    def test_payer_intelligence_discloses_illustrative(self):
+        """Per-payer-regime MOIC/IRR distributions are corpus-derived
+        (synthetic-dominated), so they must be disclosed as illustrative."""
+        html = render_payer_intelligence({})
+        self.assertIn("illustrative", html.lower())
+        self.assertIn("MOIC", html)  # it does show the corpus MOIC bands
 
 
 if __name__ == "__main__":
