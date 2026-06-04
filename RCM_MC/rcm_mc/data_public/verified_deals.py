@@ -1002,6 +1002,179 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.globenewswire.com/news-release/2023/09/28/2751390/33420/en/Syneos-Health-Closes-Transaction-with-Private-Investment-Firms.html",
         "source_note": "GlobeNewswire (Syneos close); $7.1B / $43.00 per share",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 5) — specialty-physician MSOs (GI / ortho /
+    # urology / cardiology), infusion/specialty pharmacy, and ABA/hospice.
+    # Every row web-validated this sprint (sponsor + year confirmed from the
+    # deal announcement or sponsor page). EV only where disclosed.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Gastroenterology MSOs ──
+    {
+        "target": "United Digestive", "sponsor": "Frazier Healthcare Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "GI MSO formed with Atlanta Gastroenterology Associates",
+        "outcome": "exited", "outcome_note": "Frazier sold United Digestive to Kohlberg & Company in 2023 (~$500M).",
+        "source_url": "https://www.uniteddigestive.com/atlanta-gastroenterology-associates-enters-agreement-with-frazier-healthcare-partners-to-form-united-digestive/",
+        "source_note": "United Digestive (formation, Dec 2018); Kohlberg 2023 acquisition (~$500M)",
+    },
+    {
+        "target": "Allied Digestive Health", "sponsor": "Assured Healthcare Partners",
+        "year": 2015, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "GI MSO (NJ-anchored, 200+ providers); formed by 5-practice merger",
+        "outcome": "active", "outcome_note": "Active GI platform.",
+        "source_url": "https://www.assuredhp.com/portfolio/",
+        "source_note": "Assured Healthcare Partners (portfolio); Allied Digestive Health",
+    },
+    {
+        "target": "Pinnacle GI Partners", "sponsor": "H.I.G. Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "GI MSO (Michigan); H.I.G. Growth + The Center for Digestive Health",
+        "outcome": "active", "outcome_note": "Active GI platform.",
+        "source_url": "https://hig.com/portfolio/pinnacle-gi-partners/",
+        "source_note": "H.I.G. Capital (portfolio); Dec 2020 Pinnacle GI Partners",
+    },
+
+    # ── Orthopedics / MSK MSOs ──
+    {
+        "target": "Healthcare Outcomes Performance Company (HOPCo)", "sponsor": "Linden Capital Partners + Audax Group",
+        "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Largest fully-integrated value-based MSK/ortho platform (per-member-per-month)",
+        "outcome": "active", "outcome_note": "Active; exploring a sale (2024).",
+        "source_url": "https://hopco.com/",
+        "source_note": "HOPCo; 2019 Linden + Audax investment via Physician Growth Partners",
+    },
+    {
+        "target": "U.S. Orthopaedic Partners", "sponsor": "FFL Partners + Thurston Group",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Southeast orthopedic MSO; formed Oct 2020",
+        "outcome": "active", "outcome_note": "Active ortho platform.",
+        "source_url": "https://www.fflpartners.com/u-s-orthopaedic-partners-announces-two-new-acquisitions",
+        "source_note": "FFL Partners; Oct 2020 USOP formation",
+    },
+    {
+        "target": "OrthoAlliance", "sponsor": "Revelstoke Capital Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Midwest orthopedic MSO; Revelstoke platform",
+        "outcome": "exited", "outcome_note": "SCA Health (Optum's ASC arm) acquired OrthoAlliance in 2025 (~$1.4B).",
+        "source_url": "https://revelstokecapital.com/investment/orthoalliance/",
+        "source_note": "Revelstoke Capital Partners; 2019 OrthoAlliance; 2025 SCA/Optum acquisition (~$1.4B)",
+    },
+    {
+        "target": "Spire Orthopedic Partners", "sponsor": "Kohlberg & Company",
+        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Northeast orthopedic MSO; founded 2021",
+        "outcome": "active", "outcome_note": "Active ortho platform.",
+        "source_url": "https://www.kohlberg.com/investment/spire-orthopedic-partners/",
+        "source_note": "Kohlberg & Company (investment page); 2021 Spire Orthopedic Partners",
+    },
+
+    # ── Urology MSOs ──
+    {
+        "target": "Solaris Health", "sponsor": "Lee Equity Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Largest US urology MSO; Lee Equity formed it June 2020",
+        "outcome": "active", "outcome_note": "Active; ~$1B revenue urology platform.",
+        "source_url": "https://www.leeequity.com/news-article/urology-associates-joins-solaris-health-nations-largest-urological-services-provider",
+        "source_note": "Lee Equity Partners (Solaris Health); formed June 2020",
+    },
+    {
+        "target": "United Urology Group (Chesapeake Urology)", "sponsor": "Audax Private Equity",
+        "year": 2016, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Urology MSO; Audax partnered with Chesapeake Urology (Aug 2016)",
+        "outcome": "active", "outcome_note": "Active urology platform.",
+        "source_url": "https://www.audaxprivateequity.com/portfolio",
+        "source_note": "Audax Private Equity; Aug 2016 Chesapeake Urology / United Urology Group",
+    },
+    {
+        "target": "US Urology Partners", "sponsor": "NMS Capital",
+        "year": 2018, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Urology MSO; NMS invested in Central Ohio Urology Group (2018)",
+        "outcome": "active", "outcome_note": "Active urology platform.",
+        "source_url": "https://www.nms.capital/portfolio",
+        "source_note": "NMS Capital; 2018 US Urology Partners launch",
+    },
+
+    # ── Cardiology MSOs ──
+    {
+        "target": "US Heart & Vascular", "sponsor": "Ares Management + Rubicon Founders",
+        "year": 2022, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Value-based cardiovascular MSO; Ares PE + Rubicon Founders",
+        "outcome": "active", "outcome_note": "Active cardiology platform.",
+        "source_url": "https://usheartandvascular.com/us-heart-vascular-and-rubicon-founders-announce-partnership-to-build-the-premier-cardiovascular-value-based-care-model-in-the-united-states/",
+        "source_note": "US Heart & Vascular (Rubicon Founders partnership, 2022); Ares PE",
+    },
+    {
+        "target": "Cardiovascular Logistics", "sponsor": "Lee Equity Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "National cardiovascular platform launched with Cardiovascular Institute of the South",
+        "outcome": "active", "outcome_note": "Active cardiology platform.",
+        "source_url": "https://comvest.com/comvest-credit-partners-announces-investment-in-cardiovascular-logistics/",
+        "source_note": "Comvest (credit investment); Lee Equity-backed Cardiovascular Logistics",
+    },
+
+    # ── Infusion / specialty pharmacy ──
+    {
+        "target": "IVX Health", "sponsor": "Great Hill Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient infusion centers (biologics for chronic conditions); $100M Series F",
+        "outcome": "active", "outcome_note": "Active; Linden was earlier lead, Great Hill led 2021.",
+        "source_url": "https://www.paragonventures.com/market-pulse-posts/ivx-ghp/",
+        "source_note": "Paragon Ventures (Great Hill $100M into IVX Health, Sept 2021)",
+    },
+    {
+        "target": "Paragon Healthcare", "sponsor": "Peak Rock Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Infusion centers + specialty pharmacy",
+        "outcome": "exited", "outcome_note": "Elevance Health (Anthem) acquired Paragon Healthcare in 2024 — a PE-to-payer exit.",
+        "source_url": "https://www.paragonventures.com/market-pulse-posts/soleo-health-acquired-paragon-infusion-therapy/",
+        "source_note": "Peak Rock Capital (Sept 2020); Elevance 2024 acquisition",
+    },
+    {
+        "target": "Soleo Health", "sponsor": "Court Square Capital Partners + WindRose Health Investors",
+        "year": 2025, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Specialty pharmacy + home/alternate-site infusion",
+        "outcome": "active", "outcome_note": "Active; Court Square + WindRose joint investment (2025).",
+        "source_url": "https://www.soleohealth.com/",
+        "source_note": "Soleo Health; 2025 Court Square + WindRose investment",
+    },
+
+    # ── ABA / autism (behavioral health) ──
+    {
+        "target": "BlueSprig Pediatrics", "sponsor": "KKR",
+        "year": 2017, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy; KKR-formed platform (2017)",
+        "outcome": "active", "outcome_note": "Active; grew to 160+ centers.",
+        "source_url": "https://www.kkr.com/invest/portfolio",
+        "source_note": "KKR (portfolio); 2017 BlueSprig Pediatrics formation",
+    },
+    {
+        "target": "Hopebridge", "sponsor": "Arsenal Capital Partners",
+        "year": 2019, "ev_usd_mm": 255, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy; Arsenal SBO from Baird Capital (~$255M)",
+        "outcome": "active", "outcome_note": "Active; Baird's 2017 platform sold to Arsenal in 2019.",
+        "source_url": "https://www.arsenalcapital.com/portfolio/",
+        "source_note": "Arsenal Capital Partners (portfolio); 2019 Hopebridge SBO (~$255M)",
+    },
+    {
+        "target": "Centria Autism (Centria Healthcare)", "sponsor": "Martis Capital (Capricorn Healthcare)",
+        "year": 2016, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "ABA autism therapy; largest ABA provider in Michigan, expanded to 9 states",
+        "outcome": "active", "outcome_note": "Active ABA platform.",
+        "source_url": "https://www.martiscapital.com/portfolio",
+        "source_note": "Martis Capital (fka Capricorn Healthcare); 2016 Centria platform",
+    },
+
+    # ── Hospice ──
+    {
+        "target": "Three Oaks Hospice", "sponsor": "Granite Growth Health Partners + Petra Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Hospice consolidator; backed by Granite Growth, Health Velocity, Petra Capital",
+        "outcome": "active", "outcome_note": "Active; began operating May 2019.",
+        "source_url": "https://hospicenews.com/2019/09/24/three-oaks-hospice-opens-its-doors-completes-three-acquisitions/",
+        "source_note": "Hospice News (Three Oaks launch + backers, 2019)",
+    },
 ]
 
 
