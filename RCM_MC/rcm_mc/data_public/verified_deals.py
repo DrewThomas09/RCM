@@ -3876,6 +3876,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.newmountaincapital.com/new-mountain-capital-forms-smarter-technologies-through-combination-of-smarterdx-thoughtful-ai-and-access-healthcare/",
         "source_note": "New Mountain Capital (Smarter Technologies, May 2025)",
     },
+    {
+        "target": "Pediatric Associates", "sponsor": "Summit Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Pediatric primary-care physician group (Florida origin → CA/PA/NY/NJ); Summit Partners-backed platform",
+        "outcome": "active", "outcome_note": "Active; Summit Partners-backed platform formed 2019 (later SkyKnight et al. co-invest).",
+        "source_url": "https://www.pehub.com/summit-partners-said-to-invest-in-floridas-pediatric-associates/",
+        "source_note": "Summit Partners (Pediatric Associates, 2019)",
+    },
+    {
+        "target": "MedeAnalytics", "sponsor": "JLL Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Cloud healthcare financial-performance + population-health analytics SaaS; JLL Partners from Thoma Bravo (TB held 2015–2020)",
+        "outcome": "active", "outcome_note": "Active; JLL Partners acquired from Thoma Bravo Oct 2020.",
+        "source_url": "https://www.thomabravo.com/press-releases/jll-partners-announces-acquisition-of-medeanalytics",
+        "source_note": "JLL Partners (MedeAnalytics from Thoma Bravo, Oct 2020)",
+    },
 ]
 
 
