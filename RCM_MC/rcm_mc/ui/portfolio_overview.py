@@ -178,7 +178,7 @@ def render_portfolio_overview(
         empty = (
             empty_css
             + '<header class="po-empty-head">'
-            '<div class="eyebrow"><span class="dash"></span>PORTFOLIO</div>'
+            '<div class="eyebrow"><span class="dash"></span>PORTFOLIO · OVERVIEW</div>'
             '<h1>Portfolio</h1>'
             '<p class="lede"><em>No deals tracked yet.</em> '
             'Import a deal, screen the universe, or open the national '
@@ -570,7 +570,7 @@ def render_portfolio_overview(
         _po_head_css
         + '<header class="po-head" style="overflow:auto;">'
         + share_wrap
-        + '<div class="eyebrow"><span class="dash"></span>PORTFOLIO</div>'
+        + '<div class="eyebrow"><span class="dash"></span>PORTFOLIO · OVERVIEW</div>'
         '<h1>Portfolio</h1>'
         f'<div class="meta">{html.escape(meta_line)}</div>'
         '<p class="lede">'

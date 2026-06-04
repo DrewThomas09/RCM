@@ -447,7 +447,7 @@ def render_value_tracker(
     # 2026-05-28 batch 27 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="VALUE TRACKER",
+        eyebrow="PORTFOLIO · VALUE TRACKER",
         title=f"Value tracker — {name}",
         meta=(
             # helper escapes meta; pass raw — deal_id is a
