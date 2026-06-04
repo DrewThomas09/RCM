@@ -54,7 +54,7 @@ def render_demo_page(loaded: bool = False, deal_count: int = 0) -> str:
             '<div style="margin-top:12px;">'
             '<a href="/app" style="display:inline-block;background:#0b2341;color:#fff;text-decoration:none;'
             'padding:8px 16px;border-radius:3px;font-size:12px;font-weight:600;">→ Open command center</a>'
-            '<a href="/portfolio-map" style="display:inline-block;margin-left:8px;color:#155752;'
+            '<a href="/portfolio/map" style="display:inline-block;margin-left:8px;color:#155752;'
             'text-decoration:none;padding:8px 12px;font-size:12px;">Portfolio map</a>'
             '<a href="/alerts" style="display:inline-block;margin-left:4px;color:#155752;'
             'text-decoration:none;padding:8px 12px;font-size:12px;">Alerts</a>'
@@ -85,7 +85,7 @@ def render_demo_page(loaded: bool = False, deal_count: int = 0) -> str:
          "real healthcare deals."),
         ("Open the command center", "Go to <a href='/app' style='color:#155752'>the command center</a> — "
          "the home view now shows KKR's portfolio: health bands, alerts, top movers, EBITDA at risk."),
-        ("Explore the portfolio map &amp; cohorts", "<a href='/portfolio-map' style='color:#155752'>Portfolio map</a>, "
+        ("Explore the portfolio map &amp; cohorts", "<a href='/portfolio/map' style='color:#155752'>Portfolio map</a>, "
          "<a href='/cohorts' style='color:#155752'>cohorts</a>, and <a href='/watchlist' style='color:#155752'>watchlist</a> "
          "all resolve to these KKR deals."),
         ("Drill into a deal", "Open any deal (e.g. Cotiviti, or the distressed Envision) for the snapshot trail, "
