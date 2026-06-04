@@ -58,6 +58,7 @@ _SECTOR_MAP: Dict[str, str] = {
     "urgent_care": "urgent_care",
     "veterinary": "veterinary",
     "value_based_care": "value_based_care",
+    "lab": "lab",
     "other_services": "other_services",
 }
 
