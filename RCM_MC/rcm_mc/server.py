@@ -9081,6 +9081,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         return self._redirect(self._with_flash(
             "/app", f"Loaded {n} KKR demo deals — portfolio populated.", "success"))
 
+    def _route_demo_unload(self) -> None:
+        """POST /demo/unload — remove the KKR demo portfolio (and all its child
+        rows) so a partner can return to a clean workspace after exploring the
+        demo. The inverse of /demo/load."""
+        from .demo.kkr_demo import unload_kkr_demo
+        store = PortfolioStore(self.config.db_path)
+        try:
+            n = unload_kkr_demo(store)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("demo unload failed: %s", exc)
+            return self._redirect(self._with_flash(
+                "/demo", "Demo unload failed — see server log.", "error"))
+        return self._redirect(self._with_flash(
+            "/demo", f"Removed {n} KKR demo deals — workspace cleared.", "success"))
+
     def _route_pipeline_add(self) -> None:
         """POST /pipeline/add — add a hospital to the pipeline."""
         form = self._read_form_body()
@@ -12844,6 +12859,8 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         if path == "/demo/load":
             return self._route_demo_load()
+        if path == "/demo/unload":
+            return self._route_demo_unload()
         if path == "/pipeline/add":
             return self._route_pipeline_add()
         if path == "/pipeline/save-search":

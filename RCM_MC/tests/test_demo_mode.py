@@ -114,6 +114,26 @@ class TestDemoRoutes(unittest.TestCase):
         b = body.decode("utf-8", "replace")
         self.assertIn("Demo portfolio loaded", b)
         self.assertIn("Open command center", b)
+        # And the loaded state offers a reversible unload.
+        self.assertIn('action="/demo/unload"', b)
+
+    def test_unload_clears_workspace(self):
+        # POST /demo/load then /demo/unload should return the workspace to its
+        # pre-demo state (the demo is reversible). Run after load via name order
+        # isn't guaranteed, so load explicitly first.
+        opener = urllib.request.build_opener(_NoRedirect)
+        for path in ("/demo/load", "/demo/unload"):
+            req = urllib.request.Request(self.base + path, data=b"",
+                                         method="POST")
+            try:
+                code = opener.open(req, timeout=30).getcode()
+            except urllib.error.HTTPError as e:
+                code = e.code
+            self.assertIn(code, (302, 303))
+        # After unload, /demo offers the load form again (not the loaded state).
+        _, _, body = self._get("/demo")
+        b = body.decode("utf-8", "replace")
+        self.assertIn('action="/demo/load"', b)
 
 
 if __name__ == "__main__":

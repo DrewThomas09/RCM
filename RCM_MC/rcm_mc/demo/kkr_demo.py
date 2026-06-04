@@ -441,6 +441,23 @@ def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
     return len(KKR_DEMO_DEALS)
 
 
+def unload_kkr_demo(store: Any) -> int:
+    """Remove every KKR demo deal — and its cascade of child rows — from the
+    workspace. The inverse of :func:`seed_kkr_demo`, so a partner can explore
+    the demo and then return to a clean console. Relies on ``delete_deal``
+    clearing snapshots, quarterly actuals, notes, deadlines, overrides,
+    packets, tags, owners, watchlist stars, health history and alert acks.
+    Returns the number of deals removed."""
+    removed = 0
+    for spec in KKR_DEMO_DEALS:
+        try:
+            if store.delete_deal(spec["id"]):
+                removed += 1
+        except Exception:  # noqa: BLE001
+            pass
+    return removed
+
+
 # Curated analyst notes per deal (deal_id -> [(author, body), ...]). Real
 # storylines so the deal pages + notes search read like a live workspace.
 _DEMO_NOTES: Dict[str, List[tuple]] = {

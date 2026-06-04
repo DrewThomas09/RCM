@@ -58,7 +58,19 @@ def render_demo_page(loaded: bool = False, deal_count: int = 0) -> str:
             'text-decoration:none;padding:8px 12px;font-size:12px;">Portfolio map</a>'
             '<a href="/alerts" style="display:inline-block;margin-left:4px;color:#155752;'
             'text-decoration:none;padding:8px 12px;font-size:12px;">Alerts</a>'
-            '</div></div>'
+            '</div>'
+            # Reversible: let the partner clear the demo and return to a clean
+            # workspace. Posts to /demo/unload (removes the deals + child rows).
+            '<form method="post" action="/demo/unload" style="margin-top:14px;'
+            'padding-top:12px;border-top:1px solid #cfe3d8;">'
+            '<span style="color:#465366;font-size:11px;">Done exploring? </span>'
+            '<button type="submit" style="background:none;border:1px solid #b5321e;'
+            'color:#b5321e;padding:6px 14px;border-radius:3px;font-size:11px;font-weight:600;'
+            'cursor:pointer;">Unload demo portfolio</button>'
+            '<span style="color:#7a8699;font-size:10.5px;margin-left:8px;">'
+            'Removes the KKR deals and all their data — your own deals are untouched.</span>'
+            '</form>'
+            '</div>'
         )
     else:
         warn = (f'<div style="color:#b8732a;font-size:11px;margin-top:8px;">'
