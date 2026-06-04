@@ -180,6 +180,12 @@ class PortfolioStore:
             "value_creation_plans", "value_tracker_plans", "hold_period_tracking",
             "initiative_tracking", "provenance_registry",
             "refresh_schedule", "portfolio_snapshots",
+            # These three FK deals(deal_id) without ON DELETE CASCADE, so they
+            # must be cleared here or the final DELETE FROM deals raises
+            # IntegrityError. Their omission silently broke deletion of any
+            # deal that had a snapshot, quarterly actuals, or initiative
+            # actuals — i.e. essentially every real (or demo) deal.
+            "deal_snapshots", "quarterly_actuals", "initiative_actuals",
         ]
         with self.connect() as con:
             con.execute("BEGIN IMMEDIATE")
