@@ -17,6 +17,43 @@ class TestRenderDealSearch(unittest.TestCase):
         self.assertIn("KKR", html)
         self.assertIn("Results", html)
 
+    def test_deal_type_canonicalization(self):
+        """deal_type is uncontrolled free text ('lbo', 'LBO', 'Platform LBO').
+        The canonical bucketing must collapse casing/phrasing variants so the
+        dropdown isn't fragmented and selecting a type captures them all."""
+        from rcm_mc.ui.data_public.deal_search_page import _canon_deal_type
+        self.assertEqual(_canon_deal_type("lbo"), "lbo")
+        self.assertEqual(_canon_deal_type("LBO"), "lbo")
+        self.assertEqual(_canon_deal_type("Platform LBO"), "lbo")
+        self.assertEqual(_canon_deal_type("Take-private"), "take_private")
+        self.assertEqual(_canon_deal_type("Public-to-Private"), "take_private")
+        self.assertEqual(_canon_deal_type("Corporate Carve-Out LBO"), "carve_out")
+        self.assertEqual(_canon_deal_type("Growth Equity"), "growth_equity")
+        # Missing type returns "" so the "All Types" default skips the filter.
+        self.assertEqual(_canon_deal_type(None), "")
+        self.assertEqual(_canon_deal_type(""), "")
+
+    def test_deal_type_filter_captures_variants(self):
+        """Selecting the canonical 'lbo' must return at least as many deals as
+        the old exact-string match did — the previously-stranded casing/phrasing
+        variants are now reachable, and the dropdown has no case-duplicates."""
+        from rcm_mc.ui.data_public.deal_search_page import (
+            render_deal_search, _load_corpus, _canon_deal_type,
+        )
+        corpus = _load_corpus()
+        exact = sum(1 for d in corpus if d.get("deal_type") == "lbo")
+        canon = sum(1 for d in corpus if _canon_deal_type(d.get("deal_type")) == "lbo")
+        self.assertGreaterEqual(canon, exact)
+        self.assertGreater(canon, 0)
+        # The dropdown options must be canonical (lower_snake, no spaces/caps).
+        opts = sorted({_canon_deal_type(d.get("deal_type"))
+                       for d in corpus if d.get("deal_type")})
+        for o in opts:
+            self.assertEqual(o, o.lower())
+            self.assertNotIn(" ", o)
+        html = render_deal_search(deal_type="lbo")
+        self.assertIn("Results", html)
+
     def test_sector_filter(self):
         from rcm_mc.ui.data_public.deal_search_page import render_deal_search
         html = render_deal_search(sector="Dental")
