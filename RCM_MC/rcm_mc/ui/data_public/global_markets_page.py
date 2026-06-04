@@ -14,9 +14,11 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import chartis_shell, ck_page_title
+from rcm_mc.ui._chart_kit import ck_hbar_chart
 from rcm_mc.ui.world_geo_map import render_world_map
 from rcm_mc.data_public.global_health_markets import (
     SOURCE_NOTE, health_exp_values, pe_active_markets, ranked_markets,
+    summary_stats,
 )
 
 
@@ -58,6 +60,77 @@ def render_global_markets() -> str:
         'outlined in amber.</p>'
     )
 
+    # ── Summary stats strip ──────────────────────────────────────────────
+    s = summary_stats()
+
+    def _kpi(label, val, sub):
+        return (
+            '<div style="flex:1;min-width:130px;border:1px solid var(--sc-rule,#c9c1ac);'
+            'background:var(--sc-paper,#faf6ec);padding:10px 14px;border-radius:3px;">'
+            f'<div style="font-family:var(--sc-mono,monospace);font-size:9.5px;'
+            f'letter-spacing:.1em;text-transform:uppercase;color:#8b94a0;">{_html.escape(label)}</div>'
+            f'<div style="font-family:var(--sc-serif,serif);font-size:24px;color:var(--sc-navy,#0b2341);'
+            f'font-variant-numeric:tabular-nums;">{val}</div>'
+            f'<div style="font-size:10.5px;color:#6a7480;margin-top:2px;">{_html.escape(sub)}</div></div>'
+        )
+
+    stats = (
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 18px;max-width:680px;">'
+        + _kpi("Markets", str(s["n_markets"]), "with health-spend data")
+        + _kpi("PE-active", str(s["n_pe_active"]), "sponsor markets")
+        + _kpi("Mean spend", f'{s["mean_all"]:.1f}%', "of GDP, all markets")
+        + _kpi("PE-active mean", f'{s["mean_pe_active"]:.1f}%', "of GDP")
+        + '</div>'
+    )
+
+    # ── Comparison graph: ranked health-spend, PE-active toned ───────────
+    chart_items = [
+        (r["name"], r["health_pct_gdp"], "teal" if r["pe_active"] else "muted")
+        for r in rows
+    ]
+    chart = ck_hbar_chart(
+        "Health expenditure as % of GDP — by market",
+        chart_items,
+        value_fmt=lambda v: f"{v:.1f}%",
+        reference=("mean", s["mean_all"]),
+        subtitle="Teal = active healthcare-PE market · dashed line = dataset mean",
+        source=SOURCE_NOTE,
+        label_w=130.0,
+    )
+
+    # ── Per-region breakdown ─────────────────────────────────────────────
+    rrows = "".join(
+        f'<tr><td style="padding:3px 10px;font-size:11px;">{_html.escape(b["region"])}</td>'
+        f'<td style="padding:3px 10px;font-size:11px;text-align:right;'
+        f'font-family:var(--sc-mono,monospace);">{b["count"]}</td>'
+        f'<td style="padding:3px 10px;font-size:11px;text-align:right;'
+        f'font-family:var(--sc-mono,monospace);">{b["mean"]:.1f}%</td></tr>'
+        for b in s["by_region"]
+    )
+    region_table = (
+        '<div style="border:1px solid var(--sc-rule,#c9c1ac);border-radius:3px;'
+        'overflow:hidden;max-width:340px;align-self:flex-start;">'
+        '<table style="width:100%;border-collapse:collapse;">'
+        '<thead><tr style="background:var(--sc-bone,#f3eddb);">'
+        '<th style="padding:5px 10px;text-align:left;font-size:9.5px;text-transform:uppercase;'
+        'letter-spacing:.08em;color:#6a7480;">Region</th>'
+        '<th style="padding:5px 10px;text-align:right;font-size:9.5px;text-transform:uppercase;'
+        'letter-spacing:.08em;color:#6a7480;">Markets</th>'
+        '<th style="padding:5px 10px;text-align:right;font-size:9.5px;text-transform:uppercase;'
+        'letter-spacing:.08em;color:#6a7480;">Mean %GDP</th>'
+        f'</tr></thead><tbody>{rrows}</tbody></table></div>'
+    )
+    comparison = (
+        '<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;'
+        'margin:18px 0;">'
+        f'<div style="flex:2;min-width:320px;">{chart}</div>'
+        f'<div style="flex:1;min-width:260px;">'
+        '<div style="font-family:var(--sc-mono,monospace);font-size:10px;letter-spacing:.1em;'
+        'text-transform:uppercase;color:#5c6878;margin-bottom:8px;">Mean spend by region</div>'
+        f'{region_table}</div>'
+        '</div>'
+    )
+
     # Ranked table.
     trows = []
     for i, r in enumerate(rows):
@@ -93,7 +166,7 @@ def render_global_markets() -> str:
 
     body = (
         '<div class="ck-page-wrap" style="max-width:1040px;margin:0 auto;">'
-        + title + intro + map_html + table + '</div>'
+        + title + intro + stats + map_html + comparison + table + '</div>'
     )
     return chartis_shell(body, "Global healthcare markets",
                          active_nav="/portfolio",
