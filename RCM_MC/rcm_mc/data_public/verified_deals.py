@@ -3716,6 +3716,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.ta.com/news/ta-invests-in-healthmark-group-to-support-the-next-phase-of-growth/",
         "source_note": "TA Associates (HealthMark Group, July 2025)",
     },
+    {
+        "target": "MedSpeed", "sponsor": "Water Street Healthcare Partners",
+        "year": 2024, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Healthcare logistics — intra-company medical courier / laboratory + supply transport for health systems; Water Street equity investment",
+        "outcome": "active", "outcome_note": "Active; Water Street Healthcare Partners invested Aug 2024.",
+        "source_url": "https://waterstreet.com/news/water-street-invests-in-medspeed",
+        "source_note": "Water Street Healthcare Partners (MedSpeed, Aug 2024)",
+    },
+    {
+        "target": "Southern Scripts (Liviniti)", "sponsor": "Water Street Healthcare Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Transparent pass-through pharmacy benefit manager (PBM) for employers (later renamed Liviniti); Water Street $100M commitment",
+        "outcome": "active", "outcome_note": "Active; Water Street Healthcare Partners committed $100M Jan 2021.",
+        "source_url": "https://waterstreet.com/news/southern-scripts-accelerates-expansion-with-water-street",
+        "source_note": "Water Street Healthcare Partners (Southern Scripts / Liviniti, Jan 2021)",
+    },
+    {
+        "target": "Brundage Group", "sponsor": "Water Street Healthcare Partners",
+        "year": 2026, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Physician-led clinical-documentation / revenue-integrity + denials-management services for hospitals (tech-enabled); Water Street platform",
+        "outcome": "active", "outcome_note": "Active; Water Street Healthcare Partners partnered April 2026.",
+        "source_url": "https://waterstreet.com/news/water-street-partners-with-brundage-group",
+        "source_note": "Water Street Healthcare Partners (Brundage Group, April 2026)",
+    },
 ]
 
 
