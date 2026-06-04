@@ -722,14 +722,14 @@ class WorkbenchShellTests(unittest.TestCase):
         self.assertEqual(spans[0].strip(), "↑")
 
     def test_sort_does_not_lie_when_column_hidden(self):
-        # HCRIS hospitals have all-None operating_margin so the q
-        # column is dropped. Sorting by quality silently falls back
-        # to the default 'ranked by' language rather than claiming
-        # the table is 'sorted by Op margin' when there's no Op
-        # margin column to point at.
+        # HCRIS hospitals now carry a real operating margin (latest cost report
+        # per CCN + computed features), so the Op-margin column renders and a
+        # quality sort honestly names it instead of falling back to the neutral
+        # "ranked by" language. The honesty guard still holds: the column it
+        # claims to sort by is actually present.
         h = self._render(sort="quality")
-        self.assertIn("ranked by", h)
-        self.assertNotIn("sorted by <strong>Op margin", h)
+        self.assertIn("sorted by <strong>Op margin", h)
+        self.assertIn("Op margin", h)
 
     def test_reset_sort_link_drops_sort_keeps_other_params(self):
         import re

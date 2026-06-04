@@ -311,16 +311,6 @@ def render_predictive_screener(
         'against a target&rsquo;s own data before underwriting.'
         '</div>'
     )
-    explainer_html = (
-        '<p class="ck-ps-explainer">'
-        '<em>Where the next deal hides in the universe.</em> '
-        "ML-scored filter over the public HCRIS universe — set region, "
-        "bed count, margin, and minimum uplift to surface candidates. "
-        "Each match carries an estimated RCM denial rate, AR days, and "
-        "total EBITDA uplift opportunity derived from the quant stack. "
-        "Save a screen to re-run it from the pipeline rail."
-        '</p>'
-    )
     kpis = (
         '<div class="ck-kpi-strip">'
         + ck_kpi_block("Matching Hospitals", f"{total_matches:,}")
@@ -504,8 +494,11 @@ transition:filter 120ms ease;}
         next_action="Compare a target on the Hospital / Target Screener",
         next_href="/screen",
     )
+    # One provenance line (source_purpose) + one differentiator callout
+    # (contrast) is enough — the third "Where the next deal hides" explainer
+    # was a redundant third description partners flagged as clutter.
     body = (
-        ps_styles + title_block + source_purpose + contrast + explainer_html
+        ps_styles + title_block + source_purpose + contrast
         + lead_anchor + form
         + kpis + table + save_form + quick + next_up
     )

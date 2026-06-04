@@ -279,7 +279,10 @@ def render_portfolio_bridge(
 
         deal_rows += (
             f'<tr>'
-            f'<td><a href="/ebitda-bridge/{ccn}" class="ck-link"><strong>{name}</strong></a> {seller_badge}</td>'
+            f'<td style="min-width:180px;"><a href="/ebitda-bridge/{ccn}" '
+            f'class="ck-link"><strong style="font-family:var(--sc-sans,'
+            f"'Inter Tight',Inter,sans-serif);font-weight:600;font-size:13px;"
+            f'line-height:1.3;">{name}</strong></a> {seller_badge}</td>'
             f'<td>{_html.escape(d["stage"])}</td>'
             f'<td class="num">{_fm(d["revenue"])}</td>'
             f'<td class="num {m_cls}">{d["current_margin"]:.1%}</td>'

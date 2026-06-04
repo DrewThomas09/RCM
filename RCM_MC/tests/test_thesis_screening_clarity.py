@@ -24,10 +24,12 @@ class TitleAndFramingTests(unittest.TestCase):
 
     def test_titled_thesis_screening(self) -> None:
         self.assertIn("Thesis Screening", self.html)
-        self.assertIn("THESIS SCREENING", self.html)
+        # Eyebrow is the section context, not a verbatim repeat of the title
+        # ("THESIS SCREENING" over "Thesis Screening" read as saying it twice).
+        self.assertIn("DEAL SCREENING", self.html)
 
     def test_purpose_framing_is_explicit(self) -> None:
-        self.assertIn("How would your thesis", self.html)
+        self.assertIn("Set your thesis as thresholds", self.html)
         self.assertIn("pass rate", self.html)
         # thesis = thresholds, pass rate = base rate
         self.assertIn("base rate", self.html)
