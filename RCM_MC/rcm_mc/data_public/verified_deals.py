@@ -2190,6 +2190,73 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.businesswire.com/news/home/20240520027338/en/KKR-Invests-in-Healthcare-Revenue-Solutions-Provider-Infinx",
         "source_note": "KKR (Infinx investment, May 2024)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 19) — clinical-trial site networks, behavioral
+    # residential, veterinary. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Clinical-trial site networks ──
+    {
+        "target": "Velocity Clinical Research", "sponsor": "GHO Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Integrated clinical-trial site organization; GHO platform",
+        "outcome": "active", "outcome_note": "Active clinical-research-site network.",
+        "source_url": "https://ghocapital.com/companies/velocity-clinical-research/",
+        "source_note": "GHO Capital (Velocity Clinical Research, Apr 2021)",
+    },
+    {
+        "target": "Headlands Research", "sponsor": "KKR",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Clinical-trial site network; KKR-launched (2018)",
+        "outcome": "active", "outcome_note": "Active; THL Partners agreed to buy from KKR in 2025.",
+        "source_url": "https://www.fiercebiotech.com/cro/private-equity-firm-acquires-clinical-trial-site-network-headlands-research",
+        "source_note": "KKR (Headlands Research, 2018); THL 2025",
+    },
+    {
+        "target": "CenExel Clinical Research", "sponsor": "Webster Equity Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Clinical-trial site network (centers of excellence)",
+        "outcome": "exited", "outcome_note": "Webster sold CenExel to BayPine in 2025 — a PE-to-PE exit.",
+        "source_url": "https://www.websterequitypartners.com/portfolio/",
+        "source_note": "Webster Equity Partners (CenExel); BayPine 2025",
+    },
+    {
+        "target": "Flourish Research", "sponsor": "Genstar Capital",
+        "year": 2024, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Clinical-trial site network; Genstar bought majority from NMS Capital",
+        "outcome": "active", "outcome_note": "Active clinical-research-site network.",
+        "source_url": "https://www.gencap.com/",
+        "source_note": "Genstar Capital (Flourish Research from NMS, Sept 2024)",
+    },
+
+    # ── Behavioral residential ──
+    {
+        "target": "Embark Behavioral Health", "sponsor": "Consonance Capital Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Youth/teen mental-health treatment; Consonance majority (Housatonic prior)",
+        "outcome": "active", "outcome_note": "Active behavioral-health platform (~12-15x EBITDA).",
+        "source_url": "https://bhbusiness.com/2023/02/09/consonance-capital-partners-acquires-majority-stake-in-youth-focused-embark-behavioral-health/",
+        "source_note": "Consonance Capital Partners (Embark Behavioral Health, 2022)",
+    },
+    {
+        "target": "Sandstone Care", "sponsor": "The Vistria Group",
+        "year": 2023, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Teen/young-adult mental-health + SUD treatment; Vistria ~$200M",
+        "outcome": "active", "outcome_note": "Active behavioral-health platform.",
+        "source_url": "https://vistria.com/",
+        "source_note": "The Vistria Group (Sandstone Care, ~$200M, 2023)",
+    },
+
+    # ── Veterinary ──
+    {
+        "target": "Innovetive Petcare", "sponsor": "Metalmark Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary hospital partnership; Metalmark bought from Prospect Partners",
+        "outcome": "active", "outcome_note": "Active veterinary platform.",
+        "source_url": "https://www.metalmarkcapital.com/",
+        "source_note": "Metalmark Capital (Innovetive Petcare from Prospect, 2019)",
+    },
 ]
 
 
