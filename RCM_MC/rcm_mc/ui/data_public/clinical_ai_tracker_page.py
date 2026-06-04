@@ -281,7 +281,7 @@ def render_clinical_ai_tracker(params: dict = None) -> str:
     # eyebrow already reads CLINICAL AI TRACKER.
     page_title = ck_page_title(
         "Clinical AI Tracker",
-        eyebrow="CLINICAL AI TRACKER",
+        eyebrow="MARKET DATA · CLINICAL AI",
         meta=(
             f"{r.total_systems} AI systems · {r.total_deals_with_ai} portcos · "
             f"${r.total_annual_spend_m:.1f}M license spend · {r.corpus_deal_count:,} corpus deals"

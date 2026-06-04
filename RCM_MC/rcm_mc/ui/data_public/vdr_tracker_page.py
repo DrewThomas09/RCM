@@ -265,7 +265,7 @@ def render_vdr_tracker(params: dict = None) -> str:
     # read VDR.
     page_title = ck_page_title(
         "VDR Tracker",
-        eyebrow="VDR TRACKER",
+        eyebrow="DILIGENCE · VDR TRACKER",
         meta=f"""{_html.escape(r.deal_name)} · {r.days_since_vdr_open} days since VDR open · {r.total_requests} requests across {len(r.workstreams)} workstreams · {r.overdue_count} overdue · {r.material_findings_count} material findings — {r.corpus_deal_count:,} corpus deals""",
     )
     
