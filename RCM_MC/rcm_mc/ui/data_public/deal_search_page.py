@@ -9,6 +9,7 @@ from __future__ import annotations
 import html as _html
 import importlib
 import math
+import re
 from typing import Any, Dict, List, Optional
 
 
@@ -83,13 +84,24 @@ def _match_deal(deal: Dict[str, Any], query: str, sector: str, yr_lo: Optional[i
                 moic_lo: Optional[float], moic_hi: Optional[float],
                 deal_type: str) -> bool:
     """Return True if deal matches all active filters."""
-    # Full-text search on deal_name, buyer, seller, notes, sector
+    # Full-text search on deal_name, buyer, seller, notes, sector.
+    #
+    # Token-prefix match, not raw substring: each query token must be a PREFIX
+    # of some haystack token. Raw substring matched "hca" inside "healthcare",
+    # so searching the company "HCA" returned 163 unrelated healthcare deals.
+    # Prefix-on-token kills that false positive ("healthcare" does not start
+    # with "hca") while keeping useful prefix search ("ortho" -> orthopedics)
+    # and making multi-word queries order-independent ("surgery partners" and
+    # "partners surgery" both hit "Surgery Partners").
     if query:
-        q = query.lower()
-        haystack = " ".join(str(deal.get(f, "") or "") for f in
-                            ("deal_name", "buyer", "seller", "notes", "sector")).lower()
-        if q not in haystack:
-            return False
+        q_tokens = re.findall(r"[a-z0-9]+", query.lower())
+        if q_tokens:
+            haystack = " ".join(str(deal.get(f, "") or "") for f in
+                                ("deal_name", "buyer", "seller", "notes", "sector")).lower()
+            h_tokens = re.findall(r"[a-z0-9]+", haystack)
+            for qt in q_tokens:
+                if not any(ht.startswith(qt) for ht in h_tokens):
+                    return False
 
     if sector and deal.get("sector", "") != sector:
         return False

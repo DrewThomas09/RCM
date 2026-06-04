@@ -17,6 +17,31 @@ class TestRenderDealSearch(unittest.TestCase):
         self.assertIn("KKR", html)
         self.assertIn("Results", html)
 
+    def test_query_is_token_prefix_not_substring(self):
+        """Regression: raw-substring search matched 'hca' inside 'healthcare',
+        so searching the company 'HCA' returned scores of unrelated healthcare
+        deals. Query must match on token prefixes — 'hca' must NOT match a deal
+        whose only hit is the word 'healthcare'."""
+        from rcm_mc.ui.data_public.deal_search_page import _match_deal
+        healthcare_only = {"deal_name": "Acme Healthcare Partners", "buyer": "X"}
+        real_hca = {"deal_name": "HCA Healthcare", "buyer": "KKR"}
+        # 'hca' is a substring of 'healthcare' but not a token prefix of it.
+        self.assertFalse(_match_deal(healthcare_only, "HCA", "", None, None,
+                                     None, None, None, None, ""))
+        self.assertTrue(_match_deal(real_hca, "HCA", "", None, None,
+                                    None, None, None, None, ""))
+
+    def test_query_prefix_and_multiword(self):
+        """Prefix search is preserved ('ortho' -> orthopedics) and multi-word
+        queries are order-independent (each token must prefix some token)."""
+        from rcm_mc.ui.data_public.deal_search_page import _match_deal
+        d = {"deal_name": "Orthopedic Surgery Partners", "sector": "asc"}
+        self.assertTrue(_match_deal(d, "ortho", "", None, None, None, None, None, None, ""))
+        self.assertTrue(_match_deal(d, "surgery partners", "", None, None, None, None, None, None, ""))
+        self.assertTrue(_match_deal(d, "partners surgery", "", None, None, None, None, None, None, ""))
+        # A token with no prefix hit fails the AND.
+        self.assertFalse(_match_deal(d, "surgery cardiology", "", None, None, None, None, None, None, ""))
+
     def test_deal_type_canonicalization(self):
         """deal_type is uncontrolled free text ('lbo', 'LBO', 'Platform LBO').
         The canonical bucketing must collapse casing/phrasing variants so the
