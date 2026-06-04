@@ -1528,7 +1528,7 @@ def _inject_new_deal_card(dashboard_html: str) -> str:
     )
 
 
-def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str:
+def _render_ebitda_sparkline(var_df, width: int = 960, height: int = 220) -> str:
     """Inline SVG line chart: quarterly EBITDA actual vs plan.
 
     Two paths (actual solid, plan dashed) + severity-colored dots per
@@ -1615,7 +1615,10 @@ def _render_ebitda_sparkline(var_df, width: int = 600, height: int = 180) -> str
     svg = (
         f'<svg viewBox="0 0 {width} {height}" '
         f'xmlns="http://www.w3.org/2000/svg" '
-        f'style="width: 100%; max-width: {width}px; height: auto; '
+        f'preserveAspectRatio="xMidYMid meet" '
+        # Fill the card (was capped at max-width:{width}px, leaving the chart
+        # floating centered with big empty margins in the full-width panel).
+        f'style="width: 100%; max-width: 100%; height: auto; '
         f'display: block; margin: 0 auto;">'
         # Frame lines
         f'<line x1="{pad}" y1="{pad}" x2="{pad}" y2="{height - pad}" '
