@@ -32,6 +32,52 @@ def _moic_color(m: float) -> str:
     return "#b5321e"
 
 
+# Deal-type is uncontrolled free text in the corpus — "lbo", "LBO",
+# "Platform LBO", "take_private", "take-private", "Public-to-Private" are all
+# distinct strings (60+ variants). Left raw, the filter dropdown lists every
+# variant and selecting one ("lbo") silently misses the rest ("LBO", "Platform
+# LBO", "Secondary LBO") — a fragmented control that under-returns. This
+# collapses them to a small canonical set, used for BOTH the dropdown and the
+# match, via first-match-wins keyword precedence (most specific first). Coarse
+# by design: any reasonable bucketing beats 60 fragments.
+_DEAL_TYPE_RULES = [
+    ("take_private",          ("take private", "public to private")),
+    ("secondary_buyout",      ("secondary",)),
+    ("carve_out",             ("carve", "divestiture")),
+    ("ipo",                   ("ipo",)),
+    ("spac",                  ("spac",)),
+    ("reit",                  ("reit",)),
+    ("sale_leaseback",        ("leaseback",)),
+    ("joint_venture",         ("joint venture", " jv")),
+    ("distressed",            ("distress", "restructur")),
+    ("growth_equity",         ("growth", "venture")),
+    ("recapitalization",      ("recap",)),
+    ("add_on",                ("add on", "addon")),
+    ("minority",              ("minority",)),
+    ("merger",                ("merger",)),
+    ("strategic_acquisition", ("strategic",)),
+    ("lbo",                   ("lbo", "buyout", "platform")),
+    ("public_company",        ("public",)),
+]
+
+
+def _canon_deal_type(raw: Any) -> str:
+    """Collapse a free-text deal_type to a canonical bucket (see _DEAL_TYPE_RULES).
+
+    Hyphens/slashes are flattened to spaces first so "take-private" and
+    "Public-to-Private" reach the same rule. Returns "" for a missing type
+    (so the "All Types" default skips the filter) and falls back to the
+    snake-cased raw string for any value no rule matches.
+    """
+    if not raw:
+        return ""
+    s = " ".join(str(raw).lower().replace("-", " ").replace("/", " ").split())
+    for canon, needles in _DEAL_TYPE_RULES:
+        if any(nd.strip() in s for nd in needles):
+            return canon
+    return s.replace(" ", "_")
+
+
 def _match_deal(deal: Dict[str, Any], query: str, sector: str, yr_lo: Optional[int],
                 yr_hi: Optional[int], ev_lo: Optional[float], ev_hi: Optional[float],
                 moic_lo: Optional[float], moic_hi: Optional[float],
@@ -48,7 +94,7 @@ def _match_deal(deal: Dict[str, Any], query: str, sector: str, yr_lo: Optional[i
     if sector and deal.get("sector", "") != sector:
         return False
 
-    if deal_type and deal.get("deal_type", "") != deal_type:
+    if deal_type and _canon_deal_type(deal.get("deal_type")) != deal_type:
         return False
 
     yr = deal.get("year") or deal.get("entry_year")
@@ -203,7 +249,7 @@ def render_deal_search(
     # Filter form
     # Collect unique sectors and deal types from corpus
     all_sectors   = sorted({d.get("sector") for d in corpus if d.get("sector")})
-    all_deal_types = sorted({d.get("deal_type") for d in corpus if d.get("deal_type")})
+    all_deal_types = sorted({_canon_deal_type(d.get("deal_type")) for d in corpus if d.get("deal_type")})
 
     def _esc(v: Any) -> str:
         return _html.escape(str(v) if v is not None else "")
@@ -216,7 +262,7 @@ def render_deal_search(
         _opt(s, s[:35], sector) for s in all_sectors
     )
     type_opts = '<option value="">All Types</option>' + "".join(
-        _opt(t, t, deal_type) for t in all_deal_types
+        _opt(t, t.replace("_", " "), deal_type) for t in all_deal_types
     )
 
     def _vi(name: str, val: Any, placeholder: str = "") -> str:
@@ -321,7 +367,7 @@ def render_deal_search(
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{moic_str}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(irr, '{:.1f}%' if irr is None else '{:.1%}')}</td>
   <td style="padding:4px 8px;">{_payer_mini(d.get('payer_mix'))}</td>
-  <td style="padding:4px 8px;font-size:9px;color:#7a8699;">{_esc((d.get('deal_type') or '—')[:10])}</td>
+  <td style="padding:4px 8px;font-size:9px;color:#7a8699;">{_esc((_canon_deal_type(d.get('deal_type')).replace('_', ' ') or '—')[:12])}</td>
 </tr>""")
 
     def _col_href(label: str, key: str) -> str:
