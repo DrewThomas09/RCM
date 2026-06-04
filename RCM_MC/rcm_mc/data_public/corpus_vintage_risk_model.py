@@ -89,6 +89,19 @@ _REGIME_MOIC_BENCHMARK: Dict[str, float] = {
 }
 
 
+def regime_for_year(year: Optional[int]) -> str:
+    """Public accessor for the macro-cycle regime classification of an entry
+    year ("expansion" / "peak" / "contraction" / "recovery" / "correction" /
+    "normalization", or "unknown"). Lets other modules (e.g. outcome statistics)
+    reuse the regime taxonomy without importing the private ``_REGIME_MAP``."""
+    if year is None:
+        return "unknown"
+    try:
+        return _REGIME_MAP.get(int(year), "unknown")
+    except (TypeError, ValueError):
+        return "unknown"
+
+
 # ---------------------------------------------------------------------------
 # Dataclasses
 # ---------------------------------------------------------------------------

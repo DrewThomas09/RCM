@@ -138,6 +138,33 @@ class TestBreakdowns(unittest.TestCase):
         self.assertTrue(all("-" in l for l in labels))  # range labels
         self.assertEqual(rows[0].n_total, 2)            # 2004-2006 bucket
 
+    def test_by_regime_groups_by_entry_macro_regime(self):
+        from rcm_mc.data_public.corpus_outcome_stats import outcome_stats_by_regime
+        deals = (
+            [_deal("bankrupt", year=2018)]                    # 2018 -> expansion
+            + [_deal("exited", year=2017) for _ in range(4)]  # 2017 -> expansion
+            + [_deal("active", year=2021) for _ in range(3)]  # 2021 -> peak
+            + [_deal("distressed", year=2008)]                # 2008 -> contraction
+        )
+        rows = outcome_stats_by_regime(deals, min_known=1)
+        by_label = {r.label: r for r in rows}
+        self.assertIn("expansion", by_label)
+        self.assertIn("peak", by_label)
+        self.assertIn("contraction", by_label)
+        # expansion cohort: 5 deals, 1 adverse (the 2018 bankruptcy)
+        self.assertEqual(by_label["expansion"].n_total, 5)
+        self.assertEqual(by_label["expansion"].n_adverse, 1)
+        # peak cohort: 3 active, 0 distress
+        self.assertEqual(by_label["peak"].n_adverse, 0)
+
+    def test_regime_for_year_accessor(self):
+        from rcm_mc.data_public.corpus_vintage_risk_model import regime_for_year
+        self.assertEqual(regime_for_year(2021), "peak")
+        self.assertEqual(regime_for_year(2018), "expansion")
+        self.assertEqual(regime_for_year(2008), "contraction")
+        self.assertEqual(regime_for_year(None), "unknown")
+        self.assertEqual(regime_for_year("not-a-year"), "unknown")
+
 
 class TestRealCorpusIntegration(unittest.TestCase):
     def test_summary_real_universe(self):
@@ -158,6 +185,10 @@ class TestRealCorpusIntegration(unittest.TestCase):
         self.assertGreaterEqual(hi, rate)
         self.assertTrue(summ["by_sector"])
         self.assertTrue(summ["by_vintage"])
+        self.assertTrue(summ["by_regime"])
+        # Regime rows use the macro-cycle taxonomy.
+        regimes = {r["label"] for r in summ["by_regime"]}
+        self.assertTrue(regimes & {"expansion", "peak", "contraction"})
 
     def test_report_renders(self):
         rpt = real_corpus_outcome_report()
@@ -166,8 +197,11 @@ class TestRealCorpusIntegration(unittest.TestCase):
         self.assertIn("95% CI", rpt)
         self.assertIn("By sector", rpt)
         self.assertIn("By vintage", rpt)
-        # The honesty caveat must be present.
+        self.assertIn("By entry-year macro regime", rpt)
+        # The honesty caveats must be present (incl. the right-censoring caveat
+        # so a reader doesn't misread recent low-distress regimes as "safe").
         self.assertIn("not realized IRR/MOIC losses", rpt)
+        self.assertIn("right-censored", rpt)
 
     def test_real_corpus_has_thin_moic_but_rich_outcomes(self):
         """Documents the premise: outcomes are far better populated than MOIC,

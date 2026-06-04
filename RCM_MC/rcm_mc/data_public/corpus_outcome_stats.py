@@ -229,6 +229,41 @@ def outcome_stats_by_vintage(
     return out
 
 
+# Macro-cycle regimes in rough chronological/severity order, for stable display.
+_REGIME_ORDER = (
+    "recovery", "expansion", "peak", "correction", "contraction",
+    "normalization", "unknown",
+)
+
+
+def outcome_stats_by_regime(
+    deals: List[Dict[str, Any]],
+    min_known: int = 5,
+) -> List[OutcomeStats]:
+    """Distress/outcome stats grouped by the **entry-year macro regime**
+    (expansion / peak / contraction / …) from ``corpus_vintage_risk_model``.
+
+    This tests the platform's regime-risk heuristic against realized outcomes:
+    does entering in a "peak" vintage actually correlate with more distress in
+    the verified corpus? **Caveat (right-censoring):** recent regimes (peak
+    2021-22, normalization 2023-24) are dominated by deals too young to have
+    surfaced distress, so their low observed rates reflect immaturity, not
+    safety — read alongside the vintage table, not as a hazard model.
+    """
+    from .corpus_vintage_risk_model import regime_for_year
+    by_regime: Dict[str, List[Dict[str, Any]]] = {}
+    for d in deals:
+        reg = regime_for_year(d.get("year") or d.get("entry_year"))
+        by_regime.setdefault(reg, []).append(d)
+    # Stable order: known regimes first (chronological-ish), then any extras.
+    ordered = [r for r in _REGIME_ORDER if r in by_regime]
+    ordered += [r for r in by_regime if r not in _REGIME_ORDER]
+    return [
+        compute_outcome_stats(by_regime[r], label=r, min_known=min_known)
+        for r in ordered
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Corpus-level convenience (real universe by default)
 # ---------------------------------------------------------------------------
@@ -270,6 +305,7 @@ def corpus_outcome_summary(universe: str = "real") -> Dict[str, Any]:
         "overall": _row(overall),
         "by_sector": [_row(s) for s in outcome_stats_by_sector(deals)],
         "by_vintage": [_row(s) for s in outcome_stats_by_vintage(deals)],
+        "by_regime": [_row(s) for s in outcome_stats_by_regime(deals)],
     }
 
 
@@ -331,5 +367,27 @@ def real_corpus_outcome_report(min_known: int = 5) -> str:
             f"  {s.label:<12}{s.n_total:>4}{s.n_known:>7}{_pct(s.distress_rate):>10}"
             f"  {_ci_str(s):<14}{flag}"
         )
+
+    lines += ["", "By entry-year macro regime (vs. the regime-risk heuristic):",
+              f"  {'Regime':<14}{'N':>4}{'Known':>7}{'Distress':>10}{'  95% CI':<16}{'Flag'}",
+              "  " + "-" * 62]
+    for s in outcome_stats_by_regime(deals, min_known=min_known):
+        flag = "  *low n*" if s.insufficient else ""
+        lines.append(
+            f"  {s.label:<14}{s.n_total:>4}{s.n_known:>7}{_pct(s.distress_rate):>10}"
+            f"  {_ci_str(s):<14}{flag}"
+        )
+    lines.append(
+        "  Note: recent regimes (peak '21-22, normalization '23-24) are right-censored"
+    )
+    lines.append(
+        "  — deals too young to have surfaced distress — so low rates there reflect"
+    )
+    lines.append(
+        "  immaturity, not safety. Realized distress concentrates in the mature"
+    )
+    lines.append(
+        "  2016-18 expansion cohort (value-based-care / SPAC-era failures)."
+    )
 
     return "\n".join(lines) + "\n"
