@@ -3788,6 +3788,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.waudcapital.com/en/media/waud-capital-buys-payments-software-company-trustcommerce/",
         "source_note": "Waud Capital Partners (Sphere / TrustCommerce, 2017)",
     },
+    {
+        "target": "MedRisk", "sponsor": "CVC Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Managed physical-medicine (PT) network for workers' compensation; CVC majority with Carlyle retaining a co-control stake",
+        "outcome": "active", "outcome_note": "Active; CVC Capital Partners acquired majority Feb 2021 (Carlyle co-owner, since ~2018).",
+        "source_url": "https://www.prnewswire.com/news-releases/cvc-capital-partners-fund-vii-to-invest-in-medrisk-301233497.html",
+        "source_note": "CVC Capital Partners (MedRisk, Feb 2021; Carlyle co-owner)",
+    },
+    {
+        "target": "Bamboo Health", "sponsor": "Clearlake Capital Group",
+        "year": 2021, "ev_usd_mm": 1500, "sector": "rcm_healthtech",
+        "subsector_note": "Care-coordination / real-time care-event (PDMP, e-notifications) + behavioral-health collaboration tech; Clearlake/Insight-backed Appriss+PatientPing combo",
+        "outcome": "active", "outcome_note": "Active; Clearlake + Insight combined Appriss Health + PatientPing (>$1.5bn) and renamed Bamboo Health 2021.",
+        "source_url": "https://www.prnewswire.com/news-releases/bamboo-health--combination-of-proven-care-collaboration-leaders--unveiled-to-enable-payer-provider-collaboration-for-whole-person-care-301365804.html",
+        "source_note": "Clearlake Capital Group (Bamboo Health / Appriss + PatientPing, 2021, >$1.5bn)",
+    },
 ]
 
 
