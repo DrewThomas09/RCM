@@ -1693,6 +1693,89 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.prnewswire.com/news-releases/constitution-surgery-alliance-announces-strategic-growth-investment-from-welsh-carson-anderson--stowe-302481298.html",
         "source_note": "PRNewswire (WCAS / Constitution Surgery Alliance, June 2025)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 12) — DME/complex-rehab, addiction/SUD,
+    # PT/podiatry. Each web-validated; pre-checked against existing targets.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── DME / complex rehab ──
+    {
+        "target": "AdaptHealth", "sponsor": "Deerfield Management",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Home medical equipment / DME; Deerfield SPAC (DFB Healthcare) de-SPAC",
+        "outcome": "exited", "outcome_note": "Went public via SPAC Nov 2019 (Nasdaq: AHCO).",
+        "source_url": "https://www.businesswire.com/news/home/20191108005600/en/DFB-Healthcare-Acquisitions-Corp.-Announces-Closing-Business",
+        "source_note": "BusinessWire (DFB/Deerfield de-SPAC of AdaptHealth, Nov 2019)",
+    },
+    {
+        "target": "Numotion", "sponsor": "AEA Investors",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Complex rehab technology (CRT) / wheelchairs; AEA bought from LLR + Audax",
+        "outcome": "active", "outcome_note": "Active complex-rehab platform.",
+        "source_url": "https://www.aeainvestors.com/aea-acquires-numotion/",
+        "source_note": "AEA Investors (Numotion, Nov 2018)",
+    },
+    {
+        "target": "National Seating & Mobility", "sponsor": "Cinven",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Complex rehab technology / mobility; Cinven bought from Court Square",
+        "outcome": "active", "outcome_note": "Active complex-rehab platform.",
+        "source_url": "https://www.nsm-seating.com/press-release/national-seating-mobility-owner-enters-purchase-agreement-with-international-private-equity-firm/",
+        "source_note": "NSM (Cinven acquisition from Court Square, 2019)",
+    },
+
+    # ── Addiction / SUD ──
+    {
+        "target": "Pinnacle Treatment Centers", "sponsor": "Linden Capital Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Addiction-treatment / SUD facilities operator",
+        "outcome": "active", "outcome_note": "Active SUD platform.",
+        "source_url": "https://www.linden.com/news/2016/08/linden-completes-acquistion-of-pinnacle-treatment-centers/",
+        "source_note": "Linden Capital Partners (Pinnacle Treatment Centers, Aug 2016)",
+    },
+    {
+        "target": "Recovery Centers of America", "sponsor": "Deerfield Management",
+        "year": 2015, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Addiction-treatment campuses; Deerfield committed ~$231.5M",
+        "outcome": "active", "outcome_note": "Active SUD platform.",
+        "source_url": "https://ionanalytics.com/insights/mergermarket/recovery-centers-of-america-ramps-up-ma-as-it-returns-to-scale-mode-ceo/",
+        "source_note": "ION Analytics (Deerfield-backed RCA, founded 2015)",
+    },
+    {
+        "target": "Bradford Health Services", "sponsor": "Lee Equity Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Southeast addiction-treatment provider; Lee Equity bought from Centre Partners",
+        "outcome": "active", "outcome_note": "Active SUD platform.",
+        "source_url": "https://www.leeequity.com/",
+        "source_note": "Lee Equity Partners (Bradford Health from Centre Partners, Oct 2022)",
+    },
+
+    # ── PT / podiatry ──
+    {
+        "target": "FYZICAL Therapy & Balance Centers", "sponsor": "New Harbor Capital",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Physical-therapy + balance franchise; New Harbor majority",
+        "outcome": "active", "outcome_note": "Active PT franchise platform.",
+        "source_url": "https://www.newharborcap.com/news/new-harbor-capital-acquires-majority-interest-in-fyzical/",
+        "source_note": "New Harbor Capital (FYZICAL, Jan 2018)",
+    },
+    {
+        "target": "U.S. Foot & Ankle Specialists", "sponsor": "NMS Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Podiatry MSO (~150 offices); NMS-formed platform",
+        "outcome": "active", "outcome_note": "Active podiatry platform.",
+        "source_url": "https://nms-capital.com/news/u-s-foot-ankle-specialists-expands-in-michigan-ohio-and-connecticut-with-acquisitions-of-foot-and-ankle-specialists-p-c-podiatry-inc-and-bethel-foot-and-ankle/",
+        "source_note": "NMS Capital (U.S. Foot & Ankle Specialists)",
+    },
+    {
+        "target": "Upperline Health", "sponsor": "Silversmith Capital Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Podiatry + value-based lower-extremity care MSO",
+        "outcome": "active", "outcome_note": "Active podiatry/value-based platform.",
+        "source_url": "https://www.silversmith.com/portfolio/upperline-health",
+        "source_note": "Silversmith Capital Partners (Upperline Health)",
+    },
 ]
 
 
