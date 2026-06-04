@@ -2528,6 +2528,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.permira.com/portfolio/our-portfolio/quotient-sciences",
         "source_note": "Permira (Quotient Sciences, 2019, ~$752M)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 25) — health-IT / care-software take-privates
+    # and carve-outs. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "SOC Telemed", "sponsor": "Patient Square Capital",
+        "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Acute-care telemedicine (teleneurology/ICU); take-private at $3.00/share",
+        "outcome": "exited", "outcome_note": "Public→private; Patient Square Capital.",
+        "source_url": "https://patientsquarecapital.com/soc-telemed-completes-acquisition-by-patient-square-capital/",
+        "source_note": "Patient Square Capital (SOC Telemed take-private, 2022)",
+    },
+    {
+        "target": "nThrive", "sponsor": "Clearlake Capital Group",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Revenue-cycle-management software; Clearlake carved out nThrive's tech division",
+        "outcome": "active", "outcome_note": "Active; acquired TransUnion Healthcare 2022 (~$1.7B).",
+        "source_url": "https://clearlake.com/clearlake-capital-to-acquire-nthrives-technology-division/",
+        "source_note": "Clearlake Capital (nThrive Technology, 2020)",
+    },
+    {
+        "target": "Netsmart", "sponsor": "TPG Capital + GI Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Behavioral-health + post-acute EHR; TPG/GI carve-out from Allscripts",
+        "outcome": "active", "outcome_note": "Active care-software platform.",
+        "source_url": "https://en.wikipedia.org/wiki/Netsmart_Technologies",
+        "source_note": "TPG + GI Partners (Netsmart from Allscripts, 2016)",
+    },
+    {
+        "target": "WellSky", "sponsor": "TPG Capital + Leonard Green & Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Post-acute / care-coordination software (fka Mediware); TPG, Leonard Green joined 2021",
+        "outcome": "active", "outcome_note": "Active care-software platform.",
+        "source_url": "https://www.tpg.com/",
+        "source_note": "TPG (Mediware/WellSky, 2017); Leonard Green 2021",
+    },
+    {
+        "target": "CitiusTech", "sponsor": "Bain Capital",
+        "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare-IT consulting + engineering services; Bain majority",
+        "outcome": "active", "outcome_note": "Active health-IT services platform.",
+        "source_url": "https://www.baincapital.com/news/citiustech-receives-strategic-investment-bain-capital",
+        "source_note": "Bain Capital (CitiusTech, 2022)",
+    },
 ]
 
 
