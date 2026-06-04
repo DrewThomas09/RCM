@@ -1776,6 +1776,89 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.silversmith.com/portfolio/upperline-health",
         "source_note": "Silversmith Capital Partners (Upperline Health)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 13) — CRO/clinical research, healthcare
+    # staffing, pain management, nephrology. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── CRO / clinical research ──
+    {
+        "target": "Parexel", "sponsor": "EQT + Goldman Sachs Asset Management",
+        "year": 2021, "ev_usd_mm": 8500, "sector": "other_services",
+        "subsector_note": "Contract research org (CRO); take-private (~$8.5B)",
+        "outcome": "active", "outcome_note": "Active CRO (Pamplona owned it 2017-2021).",
+        "source_url": "https://www.clinicaltrialsarena.com/features/cro-mergers-impact-clinical-trial-sponsors/",
+        "source_note": "EQT + GS (Parexel take-private, 2021, ~$8.5B)",
+    },
+    {
+        "target": "PPD", "sponsor": "The Carlyle Group + Hellman & Friedman",
+        "year": 2011, "ev_usd_mm": 3900, "sector": "other_services",
+        "subsector_note": "Contract research org (CRO); take-private (~$3.9B)",
+        "outcome": "exited", "outcome_note": "IPO 2020; acquired by Thermo Fisher in 2021 (~$17B) — a large PE round-trip.",
+        "source_url": "https://www.carlyle.com/media-room/news-release-archive/ppd-be-acquired-carlyle-group-and-hellman-and-friedman",
+        "source_note": "Carlyle + H&F (PPD take-private, 2011, ~$3.9B); Thermo 2021",
+    },
+    {
+        "target": "WCG (WIRB-Copernicus Group)", "sponsor": "Leonard Green & Partners + Arsenal Capital + Novo Holdings",
+        "year": 2019, "ev_usd_mm": 3000, "sector": "other_services",
+        "subsector_note": "Clinical-trial IRB / research compliance + tech; ~$3B recap",
+        "outcome": "active", "outcome_note": "Active clinical-research-services platform.",
+        "source_url": "https://www.leonardgreen.com/leonard-green-partners-leads-recapitalization-of-wcg-in-partnership-with-arsenal-capital-partners/",
+        "source_note": "Leonard Green (WCG recap, Nov 2019, ~$3B)",
+    },
+    {
+        "target": "Advarra", "sponsor": "Genstar Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Clinical-research IRB / compliance + tech; Genstar bought from Linden",
+        "outcome": "active", "outcome_note": "Active; Blackstone + CPPIB recap 2022 (~$5B).",
+        "source_url": "https://www.gencap.com/genstar-capital-announces-completion-of-advarra-acquisition/",
+        "source_note": "Genstar Capital (Advarra from Linden, 2019); Blackstone/CPPIB 2022",
+    },
+    {
+        "target": "Worldwide Clinical Trials", "sponsor": "Kohlberg & Company",
+        "year": 2023, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Mid-size contract research org (CRO); Kohlberg majority",
+        "outcome": "active", "outcome_note": "Active CRO.",
+        "source_url": "https://medcitynews.com/2026/01/worldwide-clinical-trials-to-buy-catalyst-another-ma-deal-between-private-equity-backed-cros/",
+        "source_note": "MedCity News (Kohlberg-backed Worldwide Clinical Trials, 2023)",
+    },
+
+    # ── Healthcare staffing ──
+    {
+        "target": "Ingenovis Health", "sponsor": "Cornell Capital + Trilantic North America",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Travel-nurse + clinician staffing platform (Fastaff/trustaff/etc.)",
+        "outcome": "active", "outcome_note": "Active staffing platform.",
+        "source_url": "https://www.prnewswire.com/news-releases/ingenovis-health-to-acquire-healthcare-support-301433038.html",
+        "source_note": "Cornell Capital + Trilantic (Ingenovis Health, 2021)",
+    },
+    {
+        "target": "Medical Solutions", "sponsor": "Centerbridge Partners + CDPQ",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Travel-nurse staffing; Centerbridge/CDPQ bought from TPG Growth",
+        "outcome": "active", "outcome_note": "Active staffing platform.",
+        "source_url": "https://www.prnewswire.com/news-releases/medical-solutions-to-be-acquired-by-centerbridge-partners-and-cdpq-301365119.html",
+        "source_note": "Centerbridge + CDPQ (Medical Solutions from TPG, Aug 2021)",
+    },
+
+    # ── Pain management / nephrology ──
+    {
+        "target": "National Spine & Pain Centers", "sponsor": "Avista Capital Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Interventional pain-management MSO; Avista bought from Sentinel",
+        "outcome": "active", "outcome_note": "Active pain-management platform.",
+        "source_url": "https://www.prnewswire.com/news-releases/avista-capital-partners-has-acquired-national-spine--pain-centers-llc-300468411.html",
+        "source_note": "Avista Capital Partners (National Spine & Pain Centers, 2017)",
+    },
+    {
+        "target": "Panoramic Health", "sponsor": "Audax Group",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Nephrology MSO + value-based kidney care; Audax platform",
+        "outcome": "active", "outcome_note": "Active nephrology platform.",
+        "source_url": "https://www.audaxprivateequity.com/portfolio/panoramic-health",
+        "source_note": "Audax Group (Panoramic Health, 2020)",
+    },
 ]
 
 
