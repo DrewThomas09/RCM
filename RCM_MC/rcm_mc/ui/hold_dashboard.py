@@ -136,9 +136,12 @@ def _render_ebitda_chart(actuals_list: List[Dict[str, Any]]) -> str:
     lo = min(all_vals) * 0.9
     hi = max(all_vals) * 1.1
     span = hi - lo if hi > lo else 1.0
-    w, h = 500, 180
+    # Wide native canvas (≈4.8:1) so the chart fills its full-width panel when
+    # scaled to 100%, instead of rendering ~500px and floating centered in a
+    # ~1160px card with big empty margins (the old 500x180 + height:180px did).
+    w, h = 960, 200
     n = len(quarters)
-    pad_x, pad_y = 50, 20
+    pad_x, pad_y = 54, 22
 
     def _x(i: int) -> float:
         return pad_x + i * (w - 2 * pad_x) / max(1, n - 1)
@@ -170,7 +173,8 @@ def _render_ebitda_chart(actuals_list: List[Dict[str, Any]]) -> str:
         )
 
     return (
-        f'<svg viewBox="0 0 {w} {h}" style="width:100%;height:{h}px;">'
+        f'<svg viewBox="0 0 {w} {h}" preserveAspectRatio="xMidYMid meet" '
+        f'style="width:100%;height:auto;display:block;">'
         f'{shading}'
         f'<polyline points="{plan_pts}" fill="none" stroke="var(--muted)" '
         f'stroke-dasharray="4,3" stroke-width="1.5"/>'
