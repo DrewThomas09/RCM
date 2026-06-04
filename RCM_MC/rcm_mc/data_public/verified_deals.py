@@ -3460,6 +3460,38 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.businesswire.com/news/home/20230706023806/en/Shore-Capital-Partners-Announces-Formation-of-Empower-Aesthetics",
         "source_note": "Shore Capital Partners (Empower Aesthetics, 2023)",
     },
+    {
+        "target": "Oceans Healthcare", "sponsor": "Webster Equity Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Inpatient + outpatient behavioral health (geriatric focus, rural Southern US); Webster Equity Partners platform",
+        "outcome": "active", "outcome_note": "Active; Webster Equity Partners acquired Feb 2022 (acquired Haven Behavioral 2025).",
+        "source_url": "https://bhbusiness.com/2022/02/02/oceans-healthcare-gets-new-investment-from-webster-equity-partners-as-it-plans-to-ramp-up-expansion/",
+        "source_note": "Webster Equity Partners (Oceans Healthcare, Feb 2022)",
+    },
+    {
+        "target": "Healthcare Associates of Texas", "sponsor": "Webster Equity Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Multi-specialty primary-care group (Dallas-Fort Worth); Webster Equity Partners Fund III (realized)",
+        "outcome": "exited", "outcome_note": "Webster Equity Partners acquired May 2016; subsequently realized.",
+        "source_url": "https://mergr.com/transaction/webster-equity-partners-acquires-healthcare-associates-of-texas",
+        "source_note": "Webster Equity Partners (Healthcare Associates of Texas, May 2016)",
+    },
+    {
+        "target": "Omni Eye Services", "sponsor": "NMS Capital",
+        "year": 2017, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Optometric-referral ophthalmology network + ASC (NJ/NY); NMS Capital (New MainStream) investment",
+        "outcome": "active", "outcome_note": "Active; NMS Capital invested July 2017 alongside founding physicians.",
+        "source_url": "https://nms-capital.com/news/new-mainstream-capital-announces-partnership-and-investment-in-omni-eye-services/",
+        "source_note": "NMS Capital (Omni Eye Services, July 2017)",
+    },
+    {
+        "target": "Xpress Wellness Urgent Care", "sponsor": "Latticework Capital Management",
+        "year": 2018, "ev_usd_mm": None, "sector": "urgent_care",
+        "subsector_note": "Rural-focused urgent-care network (OK/KS/TX); Latticework Capital platform (exited to Goldman Sachs 2024)",
+        "outcome": "exited", "outcome_note": "Latticework Capital partnered 2018; exited to Goldman Sachs Alternatives May 2024.",
+        "source_url": "https://latticeworkcapital.com/goldman-sachs-alternatives-completes-acquisition-of-xpress-wellness-from-latticework-capital-management/",
+        "source_note": "Latticework Capital Management (Xpress Wellness, 2018)",
+    },
 ]
 
 
