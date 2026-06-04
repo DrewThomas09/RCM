@@ -1859,6 +1859,81 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.audaxprivateequity.com/portfolio/panoramic-health",
         "source_note": "Audax Group (Panoramic Health, 2020)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 14) — more dental DSOs, dermatology, OB
+    # hospitalist, pediatric home care. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Dental DSOs ──
+    {
+        "target": "Specialty Dental Brands", "sponsor": "TSG Consumer Partners + Leon Capital",
+        "year": 2022, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Specialty DSO (pediatric dentistry + orthodontics + oral surgery)",
+        "outcome": "active", "outcome_note": "Active specialty DSO.",
+        "source_url": "https://www.tsgconsumer.com/news/specialty-dental-brands-tsg-consumer-partners-and-leon-capital-finalize-growth-partnership",
+        "source_note": "TSG Consumer Partners (Specialty Dental Brands, Sept 2022)",
+    },
+    {
+        "target": "Rodeo Dental & Orthodontics", "sponsor": "Bain Capital Double Impact",
+        "year": 2019, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "DSO (TX-anchored, underserved/Medicaid focus); impact-investing platform",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.baincapital.com/news/bain-capital-double-impact-and-rodeo-dental-orthodontics-partner-deliver-best-class-patient",
+        "source_note": "Bain Capital Double Impact (Rodeo Dental, 2019)",
+    },
+    {
+        "target": "Espire Dental", "sponsor": "Rallyday Partners + Ironwood Capital",
+        "year": 2023, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "DSO (Colorado-anchored); Rallyday-backed with Ironwood debt",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.rallyday.com/",
+        "source_note": "Rallyday Partners + Ironwood Capital (Espire Dental, 2023)",
+    },
+
+    # ── Dermatology ──
+    {
+        "target": "Epiphany Dermatology", "sponsor": "Leonard Green & Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "dermatology",
+        "subsector_note": "Derm MSO; Leonard Green recapitalized from CI Capital",
+        "outcome": "active", "outcome_note": "Active derm platform.",
+        "source_url": "https://www.lincolninternational.com/transactions/ci-capital-partners-has-sold-epiphany-dermatology-to-leonard-green-partners/",
+        "source_note": "Lincoln International (Leonard Green buys Epiphany from CI Capital, 2022)",
+    },
+    {
+        "target": "Anne Arundel Dermatology", "sponsor": "Ridgemont Equity Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "dermatology",
+        "subsector_note": "Mid-Atlantic + Southeast derm MSO",
+        "outcome": "active", "outcome_note": "Active derm platform.",
+        "source_url": "https://www.ridgemontep.com/press-releases/ridgemont-equity-partners-acquires-anne-arundel-dermatology/",
+        "source_note": "Ridgemont Equity Partners (Anne Arundel Dermatology, Oct 2020)",
+    },
+    {
+        "target": "Aqua Dermatology (Riverchase/Water's Edge)", "sponsor": "GTCR",
+        "year": 2019, "ev_usd_mm": None, "sector": "dermatology",
+        "subsector_note": "Southeast derm MSO (Riverchase + Water's Edge merger)",
+        "outcome": "active", "outcome_note": "Active derm platform.",
+        "source_url": "https://www.gtcr.com/",
+        "source_note": "GTCR (Riverchase/Aqua Dermatology); via Practical Dermatology coverage",
+    },
+
+    # ── OB hospitalist / pediatric home care ──
+    {
+        "target": "Ob Hospitalist Group (OBHG)", "sponsor": "Gryphon Investors",
+        "year": 2024, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "OB/GYN hospitalist staffing; Gryphon bought from Ares Management",
+        "outcome": "active", "outcome_note": "Active OB-hospitalist platform.",
+        "source_url": "https://www.gryphon-inv.com/news/gryphon-investors-to-acquire-ob-hospitalist-group-from-ares-management/",
+        "source_note": "Gryphon Investors (OBHG from Ares, 2024)",
+    },
+    {
+        "target": "Thrive Skilled Pediatric Care", "sponsor": "Summit Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Pediatric private-duty home nursing; Summit-backed",
+        "outcome": "exited", "outcome_note": "Acquired by Aveanna Healthcare in 2025.",
+        "source_url": "https://www.summitpartners.com/",
+        "source_note": "Summit Partners (Thrive Skilled Pediatric Care); Aveanna 2025 acquisition",
+    },
 ]
 
 
