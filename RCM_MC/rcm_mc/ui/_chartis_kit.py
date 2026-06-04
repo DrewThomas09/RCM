@@ -758,7 +758,10 @@ _DATA_UNIVERSE = {
     "cms":            ("CMS PUBLIC DATA", "cms",
                        "Public CMS provider/facility data — the market, not your deals."),
     "corpus":         ("BENCHMARK CORPUS", "corpus",
-                       "Historical benchmark deal corpus for comparison — NOT your portfolio."),
+                       "Benchmark deal corpus: a small verified-historical core "
+                       "plus a larger illustrative/modeled set. Realized MOIC/IRR "
+                       "are mostly illustrative, not disclosed returns. For "
+                       "comparison only — NOT your portfolio."),
     "research":       ("RESEARCH REFERENCE", "ref",
                        "Reference intelligence (payer/sponsor/sector) — not user-specific."),
     "mixed":          ("MIXED DATA", "mixed",

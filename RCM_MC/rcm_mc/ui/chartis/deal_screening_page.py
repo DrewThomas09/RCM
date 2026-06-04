@@ -24,6 +24,8 @@ from typing import Any, Dict, List, Optional
 from .._chartis_kit import (
     P,
     chartis_shell,
+    ck_data_universe,
+    ck_illustrative_note,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -78,7 +80,13 @@ def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -
         meta = f"{n_pass} pass · {n_watch} watch · {n_fail} fail · {total} deals"
     else:
         meta = "PASS / WATCH / FAIL decision per corpus deal"
-    return ck_page_title("Thesis Screening", eyebrow="THESIS SCREENING", meta=meta)
+    return (
+        ck_page_title("Thesis Screening", eyebrow="THESIS SCREENING", meta=meta)
+        + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
+        + ck_illustrative_note(
+            "screening decisions over the deal corpus (mostly an illustrative/"
+            "modeled set — realized MOIC/IRR are not disclosed returns)")
+    )
 
 
 _DECISION_COLORS = {
