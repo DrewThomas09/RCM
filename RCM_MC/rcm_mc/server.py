@@ -4858,6 +4858,42 @@ class RCMHandler(BaseHTTPRequestHandler):
             _df = _pd.DataFrame(_rows, columns=_cols)
             return self._send_csv_df(
                 _df, f"verified-deals{('-' + _sec) if _sec else ''}.csv")
+        if path == "/demo":
+            # Demo Mode landing (Settings → Demo Mode). One-click loads the
+            # curated KKR healthcare portfolio so the whole console populates.
+            from .ui.demo_page import render_demo_page
+            _loaded, _cnt = False, 0
+            try:
+                _store = PortfolioStore(self.config.db_path)
+                with _store.connect() as _con:
+                    _cnt = _con.execute(
+                        "SELECT COUNT(*) AS c FROM deals WHERE archived_at IS NULL"
+                    ).fetchone()["c"]
+                    _loaded = _con.execute(
+                        "SELECT 1 FROM deals WHERE deal_id='cotiviti' LIMIT 1"
+                    ).fetchone() is not None
+            except Exception:  # noqa: BLE001
+                pass
+            return self._send_html(render_demo_page(loaded=_loaded, deal_count=_cnt))
+        if path == "/demo/download/kkr-deals.csv":
+            import pandas as _pd
+            from .demo.kkr_demo import demo_deal_rows
+            return self._send_csv_df(_pd.DataFrame(demo_deal_rows()), "kkr-demo-deals.csv")
+        if path == "/demo/download/kkr-deals.json":
+            import json as _json
+            from .demo.kkr_demo import demo_deal_rows
+            _payload = _json.dumps(
+                {"sponsor": "KKR", "note": "Demo ingestion file — real KKR healthcare "
+                 "deals; EV disclosed where public, other metrics modeled.",
+                 "deals": demo_deal_rows()}, indent=2).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="kkr-demo-deals.json"')
+            self.send_header("Content-Length", str(len(_payload)))
+            self.end_headers()
+            self.wfile.write(_payload)
+            return
         if path == "/metro-markets.csv":
             from .ui.data_public.metro_markets_page import _parse_sort as _mms, _parse_type as _mmt, metro_dataframe
             _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -5683,6 +5719,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                 'style="text-decoration:none;color:inherit;">'
                 '<h3>Analytical Modules</h3>'
                 f'<div class="cad-muted">51 modules status and connections.</div></a>'
+                '<a href="/demo" class="cad-card" '
+                'style="text-decoration:none;color:inherit;">'
+                '<h3>Demo Mode '
+                '<span class="cad-badge cad-badge-green" '
+                'style="margin-left:8px;font-size:9px;letter-spacing:1.2px;">KKR</span></h3>'
+                '<div class="cad-muted">One-click load a credible KKR healthcare '
+                'portfolio so the command center, portfolio map, alerts and deal '
+                'pages all populate — with downloadable ingestion files and a '
+                'step-by-step tutorial.</div></a>'
                 '</div>'
             )
             return self._send_html(_shell_settings(
@@ -9017,6 +9062,24 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_portfolio_bridge(hcris, self.config.db_path))
         except Exception as exc:
             return self._error_page("Portfolio Bridge Error", str(exc)[:200])
+
+    def _route_demo_load(self) -> None:
+        """POST /demo/load — seed the curated KKR healthcare portfolio into the
+        workspace so the whole console (command center, portfolio map, alerts,
+        deal pages, PE math) populates for the feature demo. Idempotent."""
+        import os
+        from .demo.kkr_demo import seed_kkr_demo
+        store = PortfolioStore(self.config.db_path)
+        run_dir = os.path.join(
+            os.path.dirname(self.config.db_path) or ".", "demo_runs")
+        try:
+            n = seed_kkr_demo(store, run_dir=run_dir)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("demo load failed: %s", exc)
+            return self._redirect(self._with_flash(
+                "/demo", "Demo load failed — see server log.", "error"))
+        return self._redirect(self._with_flash(
+            "/app", f"Loaded {n} KKR demo deals — portfolio populated.", "success"))
 
     def _route_pipeline_add(self) -> None:
         """POST /pipeline/add — add a hospital to the pipeline."""
@@ -12779,6 +12842,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             eid, did = parts[2], parts[4]
             return self._route_engagement_publish_deliverable(eid, did)
 
+        if path == "/demo/load":
+            return self._route_demo_load()
         if path == "/pipeline/add":
             return self._route_pipeline_add()
         if path == "/pipeline/save-search":
