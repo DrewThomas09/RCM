@@ -3892,6 +3892,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.thomabravo.com/press-releases/jll-partners-announces-acquisition-of-medeanalytics",
         "source_note": "JLL Partners (MedeAnalytics from Thoma Bravo, Oct 2020)",
     },
+    {
+        "target": "BioMatrix Specialty Pharmacy", "sponsor": "Frazier Healthcare Partners",
+        "year": 2024, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Specialty + infusion pharmacy (rare/chronic disease — hemophilia, IG, etc.); Frazier from ACON / Triton Pacific",
+        "outcome": "active", "outcome_note": "Active; Frazier Healthcare Partners acquired June 2024 (ACON owner since 2016).",
+        "source_url": "https://www.businesswire.com/news/home/20240625913081/en/Frazier-Healthcare-Partners-Announces-Acquisition-of-BioMatrix",
+        "source_note": "Frazier Healthcare Partners (BioMatrix Specialty Pharmacy, June 2024)",
+    },
+    {
+        "target": "PracticeTek", "sponsor": "Lightyear Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Retail-healthcare practice-management / EHR software platform (dental, chiro, optometry, derm, orthodontics); Lightyear majority (Waud reinvested via IPS merger 2023)",
+        "outcome": "active", "outcome_note": "Active; Lightyear Capital majority investment Nov 2021 (merged with Integrated Practice Solutions 2023).",
+        "source_url": "https://www.waudcapital.com/en/media/practicetek-and-integrated-practice-solutions-merge-to-create-one-of-the-nation-s-largest-retail-healthcare-solutions-providers/",
+        "source_note": "Lightyear Capital (PracticeTek, Nov 2021)",
+    },
 ]
 
 
