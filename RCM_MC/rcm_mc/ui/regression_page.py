@@ -4221,7 +4221,9 @@ def render_regression_page(
     # are all wired to real fields on ``result`` and ``cv_res``;
     # blocks with un-computed inputs render the awaiting-data pending
     # pill per spec §4 Partial — never a hard-coded value.
-    editorial_top = (
+    # Title only — the summary metrics render BELOW the inputs now, per the
+    # "input selections first, summary right below it" layout request.
+    title_block = (
         _RGE_STYLES
         + _RGE_PHASE2_STYLES
         + ck_page_title(
@@ -4235,7 +4237,11 @@ def render_regression_page(
                 f"{' · LEAKAGE-FILTERED' if drop_leakage else ''}"
             ),
         )
-        + _rge_diagnostic_strip()
+    )
+    # The result summary (diagnostic read-this + headline R² strip + hero +
+    # verdict) — rendered after the inputs.
+    summary_block = (
+        _rge_diagnostic_strip()
         + _rge_headline_strip(result, cv_res, log_target)
         + _rge_hero_grid(result)
         + _rge_verdict_row(result, cv_res)
@@ -4264,11 +4270,13 @@ def render_regression_page(
     cv_anchor = f'<a id="fit"></a>{cv_section}' if cv_section else '<a id="fit"></a>'
 
     body = (
-        f'{editorial_top}'
-        # Inputs/controls sit right under the headline result (were buried at
-        # the bottom, after every result visual — "why are the inputs at the
-        # bottom"). leakage banners stay just below, referencing the inputs.
+        # Inputs FIRST (target · universe · filters · run), with the config
+        # warnings beside them, then the result summary right below — per the
+        # "input selections first, summary below" layout. (Was: headline summary
+        # on top, inputs buried beneath every result visual.)
+        f'{title_block}'
         f'{rg_styles}{source_selector}{leakage_banner}{formula_related_banner}'
+        f'{summary_block}'
         f'{editorial_phase2}'
         f'{intro}{diagnostic_banner}'
         f'{leakage_section}{cv_anchor}{cluster_section}'
