@@ -129,6 +129,31 @@ class TestKKRDemoSeed(unittest.TestCase):
         vdf = variance_report(self.store, "cotiviti")
         self.assertIn("net_patient_revenue", set(vdf["kpi"]))
 
+    def test_partner_workflow_seeded(self):
+        # Notes, deadlines (incl. overdue) and an alert ack + snooze should all
+        # be present so those surfaces aren't empty in the demo.
+        from rcm_mc.deals.deal_notes import list_notes
+        from rcm_mc.deals.deal_deadlines import overdue, upcoming
+
+        def n(x):
+            try:
+                return len(x)
+            except Exception:
+                return 0
+
+        self.assertGreaterEqual(n(list_notes(self.store, "envision")), 2)
+        self.assertGreaterEqual(n(overdue(self.store)), 1)
+        self.assertGreaterEqual(n(upcoming(self.store)), 1)
+        # Alert lifecycle: exactly one plain ack + one active snooze were seeded,
+        # and Envision's red covenant alert was left live (not silenced).
+        with self.store.connect() as con:
+            acks = con.execute(
+                "SELECT deal_id, snooze_until FROM alert_acks").fetchall()
+        self.assertGreaterEqual(len(acks), 2)
+        self.assertTrue(any(r["snooze_until"] for r in acks), "no snooze seeded")
+        self.assertTrue(any(not r["snooze_until"] for r in acks), "no plain ack seeded")
+        self.assertNotIn("envision", {r["deal_id"] for r in acks})
+
 
 class TestDemoRows(unittest.TestCase):
     def test_download_rows_wellformed(self):
