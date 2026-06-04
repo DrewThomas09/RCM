@@ -79,12 +79,13 @@ def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -
     if total:
         meta = f"{n_pass} pass · {n_watch} watch · {n_fail} fail · {total} deals"
     else:
-        meta = "PASS / WATCH / FAIL decision per corpus deal"
+        meta = "PASS / WATCH / FAIL decision per deal"
     return (
-        ck_page_title("Thesis Screening", eyebrow="THESIS SCREENING", meta=meta)
+        ck_page_title("Thesis Screening", eyebrow="SOURCE · DEAL SCREENING",
+                      meta=meta)
         + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
         + ck_illustrative_note(
-            "screening decisions over the deal corpus (mostly an illustrative/"
+            "screening decisions over the deal dataset (mostly an illustrative/"
             "modeled set — realized MOIC/IRR are not disclosed returns)")
     )
 
@@ -315,7 +316,7 @@ def render_deal_screening(
     display = filtered_sorted[:display_cap]
 
     kpis = (
-        ck_kpi_block("Corpus Deals", str(len(corpus)), "screened")
+        ck_kpi_block("Dataset deals", str(len(corpus)), "screened")
         + ck_kpi_block("Pass Rate",
                         fmt_pct(counts.get("PASS", 0) / len(results) if results else 0),
                         "clear all thresholds")
@@ -370,16 +371,12 @@ def render_deal_screening(
     pass_rate = (counts.get("PASS", 0) / n_deals) if n_deals else 0.0
     explainer_html = (
         '<p class="ck-ds-explainer">'
-        '<em>How would your thesis screen the deal corpus?</em> '
-        f"Set your thesis as thresholds — max risk, valuation ceiling (EV/EBITDA), "
-        f"return floor (MOIC), payer-mix and size limits — and PE Desk runs the full "
-        f"{n_deals}-deal corpus against them: real US healthcare PE deals, with "
-        f"financial outcomes modeled where not publicly disclosed. The <b>pass rate</b> "
-        f"is your thesis&rsquo;s base rate: the share of the corpus that would clear it. "
-        f"A high pass rate means a permissive thesis; a low one means you&rsquo;re "
-        f"selective. Every deal&rsquo;s PASS / WATCH / FAIL verdict and reason is below. "
-        f'For the fully source-linked subset, see '
-        f'<a href="/verified-deals" style="color:inherit;text-decoration:underline;">Verified Deals</a>.'
+        f"Set your thesis as thresholds — risk, valuation ceiling, return floor, "
+        f"payer-mix and size — and PE Desk scores the full {n_deals}-deal dataset "
+        f"against them. The <b>pass rate</b> is your base rate: the share that "
+        f"would clear it. Every PASS / WATCH / FAIL verdict is below; the "
+        f'<a href="/verified-deals" style="color:inherit;text-decoration:underline;">'
+        f'source-linked subset is here</a>.'
         '</p>'
     )
     howto = (
@@ -390,7 +387,7 @@ def render_deal_screening(
         'EV/EBITDA, MOIC, Medicaid, size.</div></div>'
         '<div class="ds-step"><div class="ds-step-n">STEP 2</div>'
         '<div class="ds-step-t">Screen the corpus</div>'
-        f'<div class="ds-step-d">PE Desk scores all {n_deals} corpus deals against '
+        f'<div class="ds-step-d">PE Desk scores all {n_deals} deals against '
         'your thesis and labels each PASS / WATCH / FAIL.</div></div>'
         '<div class="ds-step"><div class="ds-step-n">STEP 3</div>'
         '<div class="ds-step-t">Read the pass rate</div>'
@@ -407,7 +404,7 @@ def render_deal_screening(
         + form_panel
         + ck_section_header(
             "DECISION MIX",
-            f"across {len(results)} corpus deals under current thresholds",
+            f"across {len(results)} deals under current thresholds",
         )
         + decision_strip
         + ck_section_header(

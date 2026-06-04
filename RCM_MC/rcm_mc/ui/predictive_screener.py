@@ -302,24 +302,12 @@ def render_predictive_screener(
     contrast = (
         '<div class="ck-ps-contrast">'
         '<b>How this differs from the Target Screener.</b> '
-        'The <a href="/screen">Hospital / Target Screener</a> ranks hospitals on their '
-        '<em>reported</em> HCRIS financials — size, margin — to find and compare targets. '
-        'This scanner ranks the same universe by <em>modeled RCM improvement upside</em> '
-        '(estimated denial rate, AR days, and EBITDA uplift), so you see <em>where the '
-        'value-creation opportunity is</em> before spending diligence time. These are '
-        'model estimates from public financials, not observed RCM performance — confirm '
-        'against a target&rsquo;s own data before underwriting.'
+        'The <a href="/screen">Target Screener</a> ranks hospitals on their '
+        '<em>reported</em> HCRIS financials (size, margin); this scanner ranks the '
+        'same universe by <em>modeled RCM upside</em> — so you see where the '
+        'value-creation opportunity is. Model estimates from public data, not '
+        'observed RCM performance &mdash; confirm against a target&rsquo;s own data.'
         '</div>'
-    )
-    explainer_html = (
-        '<p class="ck-ps-explainer">'
-        '<em>Where the next deal hides in the universe.</em> '
-        "ML-scored filter over the public HCRIS universe — set region, "
-        "bed count, margin, and minimum uplift to surface candidates. "
-        "Each match carries an estimated RCM denial rate, AR days, and "
-        "total EBITDA uplift opportunity derived from the quant stack. "
-        "Save a screen to re-run it from the pipeline rail."
-        '</p>'
     )
     kpis = (
         '<div class="ck-kpi-strip">'
@@ -504,8 +492,11 @@ transition:filter 120ms ease;}
         next_action="Compare a target on the Hospital / Target Screener",
         next_href="/screen",
     )
+    # One provenance line (source_purpose) + one differentiator callout
+    # (contrast) is enough — the third "Where the next deal hides" explainer
+    # was a redundant third description partners flagged as clutter.
     body = (
-        ps_styles + title_block + source_purpose + contrast + explainer_html
+        ps_styles + title_block + source_purpose + contrast
         + lead_anchor + form
         + kpis + table + save_form + quick + next_up
     )
