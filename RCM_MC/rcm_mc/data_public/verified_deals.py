@@ -2475,6 +2475,59 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://en.wikipedia.org/wiki/Carelon_Health",
         "source_note": "CCMP Capital + Crystal Cove (CareMore, 2006); WellPoint 2011 ~$800M",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 24) — GI / orthopedics / primary-care MSOs +
+    # CDMO. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "US Digestive Health", "sponsor": "Amulet Capital Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Gastroenterology MSO (Mid-Atlantic); Amulet-formed",
+        "outcome": "active", "outcome_note": "Active GI platform.",
+        "source_url": "https://usdigestivehealth.com/about-us/newsroom/amulet-backed-us-digestive-health-partners-with-west-chester-gi-associates/",
+        "source_note": "Amulet Capital Partners (US Digestive Health, 2019)",
+    },
+    {
+        "target": "One GI (Gastro One)", "sponsor": "Webster Equity Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Gastroenterology MSO; Webster bought Gastro One platform",
+        "outcome": "active", "outcome_note": "Active GI platform.",
+        "source_url": "https://www.websterequitypartners.com/portfolio/",
+        "source_note": "Webster Equity Partners (One GI, early 2020)",
+    },
+    {
+        "target": "United Musculoskeletal Partners", "sponsor": "Welsh, Carson, Anderson & Stowe",
+        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Orthopedic MSO formed by Resurgens Orthopaedics (WCAS bought 60%)",
+        "outcome": "active", "outcome_note": "Active orthopedic platform.",
+        "source_url": "https://www.umpartners.com/blog/what-differentiates-1-orthopedic-mso-from-other-private-equity-backed-groups",
+        "source_note": "Welsh Carson (United Musculoskeletal Partners / Resurgens, Dec 2021)",
+    },
+    {
+        "target": "Millennium Physician Group", "sponsor": "Clayton, Dubilier & Rice",
+        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Florida independent primary-care / value-based group; CD&R + Elevance",
+        "outcome": "active", "outcome_note": "Active primary-care / value-based platform.",
+        "source_url": "https://www.pehub.com/cdr-partners-with-millennium-physician-group/",
+        "source_note": "Clayton, Dubilier & Rice (Millennium Physician Group, Mar 2021)",
+    },
+    {
+        "target": "Recipharm", "sponsor": "EQT",
+        "year": 2021, "ev_usd_mm": 2100, "sector": "other_services",
+        "subsector_note": "Global pharma CDMO; EQT take-private (~$2.1B)",
+        "outcome": "exited", "outcome_note": "Public→private; EQT (~$2.1B).",
+        "source_url": "https://eqtgroup.com/about/current-portfolio/recipharm",
+        "source_note": "EQT (Recipharm take-private, 2021, ~$2.1B)",
+    },
+    {
+        "target": "Quotient Sciences", "sponsor": "Permira",
+        "year": 2019, "ev_usd_mm": 752, "sector": "other_services",
+        "subsector_note": "Drug-development + manufacturing CDMO; Permira recap (~$752M)",
+        "outcome": "active", "outcome_note": "Active CDMO platform.",
+        "source_url": "https://www.permira.com/portfolio/our-portfolio/quotient-sciences",
+        "source_note": "Permira (Quotient Sciences, 2019, ~$752M)",
+    },
 ]
 
 
