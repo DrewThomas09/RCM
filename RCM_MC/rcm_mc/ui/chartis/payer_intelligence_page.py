@@ -25,6 +25,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_data_universe,
+    ck_illustrative_note,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -308,7 +309,10 @@ def render_payer_intelligence(
             "Payer Intelligence",
             eyebrow="PAYER INTELLIGENCE",
             meta=meta,
-        ) + '<div style="margin:8px 0 0;">' + ck_data_universe("research") + '</div>'
+        ) + '<div style="margin:8px 0 0;">' + ck_data_universe("research") + '</div>' + ck_illustrative_note(
+            "per-payer-regime MOIC/IRR distributions (drawn from the deal "
+            "corpus, which is mostly an illustrative/modeled set — realized "
+            "outcomes are not disclosed returns)")
     explainer_html = (
         '<p class="ck-pi-explainer">'
         '<em>What the payer mix is really telling you.</em> '
