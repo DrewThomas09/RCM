@@ -240,7 +240,7 @@ def render_data_sources_admin() -> str:
     active_sources = sum(1 for s in result.data_sources if s.status == "active")
     page_title = ck_page_title(
         "Data Sources Admin",
-        eyebrow="DATA SOURCES ADMIN",
+        eyebrow="PLATFORM · DATA SOURCES",
         meta=f"{len(result.data_sources)} sources ({active_sources} active) · {len(result.scraper_statuses)} scrapers · {result.total_seed_deals:,} corpus deals across {cov.sector_count} sectors · vintage {cov.year_range[0]}–{cov.year_range[1]}",
     )
 

@@ -250,7 +250,7 @@ def render_aco_economics(params: dict = None) -> str:
 
     page_title = ck_page_title(
         "ACO Economics",
-        eyebrow="ACO ECONOMICS",
+        eyebrow="MARKET DATA · ACO ECONOMICS",
         meta=f"{r.corpus_deal_count:,} corpus deals · {r.total_beneficiaries:,} beneficiaries · ${r.blended_benchmark_pmpm:,.0f}/PMPM bench",
     )
     ao_explainer = (

@@ -315,7 +315,7 @@ def render_gpo_supply_tracker(params: dict = None) -> str:
     # chain savings the page tracks. Eyebrow reads GPO SUPPLY TRACKER.
     page_title = ck_page_title(
         "GPO Supply Tracker",
-        eyebrow="GPO SUPPLY TRACKER",
+        eyebrow="MARKET DATA · GPO SUPPLY",
         meta=f"${r.total_annual_spend_m:,.1f}M annual spend across {r.portfolio_deals_covered} deals · ${r.total_realized_savings_m:.1f}M net savings at {r.average_savings_rate_pct * 100:.1f}% rate · ${r.total_rebates_m:.1f}M rebate capture · {r.contracts_active} active contracts · {len(r.bulk_buys)} bulk-buy initiatives",
     )
 

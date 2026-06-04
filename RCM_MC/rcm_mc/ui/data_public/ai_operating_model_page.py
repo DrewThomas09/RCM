@@ -213,7 +213,7 @@ def render_ai_operating_model(params: dict = None) -> str:
     total_reg_cost = sum(rr.remediation_cost_mm for rr in r.regulation)
     page_title = ck_page_title(
         "AI Operating Model",
-        eyebrow="AI OPERATING MODEL",
+        eyebrow="VALUE CREATION · AI OPERATING MODEL",
         meta=f"{r.corpus_deal_count:,} corpus deals · {r.initiatives_in_prod} initiatives in production · governance {_html.escape(r.governance_risk_tier)}",
     )
     aim_explainer = (

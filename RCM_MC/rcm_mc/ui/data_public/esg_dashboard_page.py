@@ -273,7 +273,7 @@ def render_esg_dashboard(params: dict = None) -> str:
     # /esg-dashboard and the eyebrow.
     page_title = ck_page_title(
         "ESG Dashboard",
-        eyebrow="ESG DASHBOARD",
+        eyebrow="DILIGENCE · ESG DASHBOARD",
         meta=f"{sector} sector · {r.overall_score:.0f}/100 ESG score ({r.tier} tier) · E {r.e_score:.0f} · S {r.s_score:.0f} · G {r.g_score:.0f} · {r.total_disclosure_gaps} LP disclosure gaps across {len(r.lp_disclosures)} framework requirements",
     )
 

@@ -390,7 +390,7 @@ def render_find_comps(params: Dict[str, str]) -> str:
 </div>"""
 
     title_block = ck_page_title(
-        "Find Comps", eyebrow="FIND COMPS",
+        "Find Comps", eyebrow="MARKET DATA · FIND COMPS",
         meta=f"{n:,} corpus deals · profile-distance similarity",
     ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
     explainer_html = (
