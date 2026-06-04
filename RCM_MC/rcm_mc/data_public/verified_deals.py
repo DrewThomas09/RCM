@@ -2835,6 +2835,35 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.newmountaincapital.com/portfolio/",
         "source_note": "New Mountain Capital (eMids, 2019)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 32) — dental, eating-disorder, home infusion,
+    # ophthalmology. Each web-validated; pre-checked against existing targets.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Monte Nido & Affiliates", "sponsor": "The Carlyle Group",
+        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Eating-disorder treatment (residential + outpatient); Carlyle-backed",
+        "outcome": "active", "outcome_note": "Active eating-disorder platform.",
+        "source_url": "https://www.carlyle.com/our-business/portfolio-of-investments",
+        "source_note": "The Carlyle Group (Monte Nido & Affiliates, 2021)",
+    },
+    {
+        "target": "Vital Care", "sponsor": "Pharos Capital Group",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Home / alternate-site infusion franchise network; Pharos-backed",
+        "outcome": "active", "outcome_note": "Active home-infusion platform.",
+        "source_url": "https://www.pharosfunds.com/portfolio/",
+        "source_note": "Pharos Capital Group (Vital Care, 2022)",
+    },
+    {
+        "target": "CEI Vision Partners", "sponsor": "Revelstoke Capital Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Ophthalmology MSO (Cincinnati Eye Institute-anchored); Revelstoke platform",
+        "outcome": "exited", "outcome_note": "EyeCare Partners acquired CEI Vision Partners in 2022.",
+        "source_url": "https://revelstokecapital.com/investment/cei-vision-partners/",
+        "source_note": "Revelstoke Capital Partners (CEI Vision Partners, 2019); EyeCare Partners 2022",
+    },
 ]
 
 
