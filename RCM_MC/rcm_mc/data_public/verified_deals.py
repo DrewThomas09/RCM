@@ -3596,6 +3596,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.kohlberg.com/kohlberg-company-acquire-nelipak-healthcare-packaging/",
         "source_note": "Kohlberg & Company (Nelipak Healthcare Packaging from Mason Wells, July 2019)",
     },
+    {
+        "target": "ScribeAmerica (HealthChannels)", "sponsor": "Vesey Street Capital Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Managed medical-scribe / clinical-documentation services (parent HealthChannels; 1,700+ hospital partners); Vesey Street recap",
+        "outcome": "active", "outcome_note": "Active; Vesey Street Capital Partners recapitalized Jan 2017.",
+        "source_url": "https://www.businesswire.com/news/home/20170109005375/en/Vesey-Street-Capital-Partners-Completes-Recapitalization-of-HealthChannels-Parent-Company-of-ScribeAmerica",
+        "source_note": "Vesey Street Capital Partners (ScribeAmerica / HealthChannels, Jan 2017)",
+    },
+    {
+        "target": "SCA Pharmaceuticals", "sponsor": "The Vistria Group",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "FDA 503B sterile-compounding / outsourcing facility for hospital pharmacies; Vistria + Excellere from Enhanced Healthcare Partners",
+        "outcome": "active", "outcome_note": "Active; The Vistria Group & Excellere Partners acquired from Enhanced Healthcare Jan 2021.",
+        "source_url": "https://www.businesswire.com/news/home/20210121005710/en/The-Vistria-Group-and-Excellere-Partners-Invest-in-SCA-Pharmaceuticals",
+        "source_note": "The Vistria Group & Excellere Partners (SCA Pharmaceuticals from Enhanced Healthcare, Jan 2021)",
+    },
 ]
 
 
