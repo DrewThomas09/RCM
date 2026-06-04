@@ -18,11 +18,54 @@ from rcm_mc.ui._chart_kit import ck_hbar_chart
 from rcm_mc.ui.world_geo_map import render_world_map
 from rcm_mc.data_public.global_health_markets import (
     SOURCE_NOTE, country_detail, health_exp_values, pe_active_markets,
-    ranked_markets, summary_stats,
+    portfolio_markets, ranked_markets, summary_stats,
 )
+from rcm_mc.ui._world_geo_paths import WORLD_COUNTRY_PATHS
 
 
-def render_global_markets() -> str:
+def _footprint_panel(store) -> str:
+    """'Your portfolio footprint' — the international deals the workspace holds,
+    grouped by country. Empty string when no deal carries a country tag, so the
+    panel only appears once there are international (country-tagged) deals."""
+    fp = portfolio_markets(store)
+    if not fp:
+        return ""
+    n_deals = sum(len(v) for v in fp.values())
+    # Order countries by deal count desc, then name.
+    def _cname(iso2):
+        rec = WORLD_COUNTRY_PATHS.get(iso2)
+        return rec["name"] if rec else iso2
+    rows = ""
+    for iso2 in sorted(fp, key=lambda k: (-len(fp[k]), _cname(k))):
+        deals = fp[iso2]
+        names = ", ".join(_html.escape(d["name"]) for d in deals[:6])
+        if len(deals) > 6:
+            names += f" +{len(deals) - 6} more"
+        rows += (
+            '<tr><td style="padding:4px 10px;font-size:12px;">'
+            f'<a href="/markets/country/{_html.escape(iso2)}" '
+            f'style="color:#155752;text-decoration:none;">{_html.escape(_cname(iso2))}</a></td>'
+            f'<td style="padding:4px 10px;font-size:11px;text-align:right;'
+            f'font-family:var(--sc-mono,monospace);">{len(deals)}</td>'
+            f'<td style="padding:4px 10px;font-size:11px;color:#465366;">{names}</td></tr>'
+        )
+    return (
+        '<div style="border:1px solid #b9cde6;background:#eef4fb;border-radius:4px;'
+        'padding:14px 18px;margin:4px 0 18px;max-width:760px;">'
+        '<div style="font-family:var(--sc-mono,monospace);font-size:10px;'
+        'letter-spacing:.1em;text-transform:uppercase;color:#0b2341;margin-bottom:8px;">'
+        f'Your portfolio footprint &middot; {n_deals} deals across {len(fp)} '
+        f'{"country" if len(fp) == 1 else "countries"}</div>'
+        '<table style="width:100%;border-collapse:collapse;">'
+        '<thead><tr style="color:#6a7480;">'
+        '<th style="padding:3px 10px;text-align:left;font-size:9.5px;text-transform:uppercase;">Country</th>'
+        '<th style="padding:3px 10px;text-align:right;font-size:9.5px;text-transform:uppercase;">Deals</th>'
+        '<th style="padding:3px 10px;text-align:left;font-size:9.5px;text-transform:uppercase;">Holdings</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+    )
+
+
+def render_global_markets(store=None) -> str:
     rows = ranked_markets()
     values = health_exp_values()
     accent = pe_active_markets()
@@ -167,18 +210,19 @@ def render_global_markets() -> str:
 
     body = (
         '<div class="ck-page-wrap" style="max-width:1040px;margin:0 auto;">'
-        + title + intro + stats + map_html + comparison + table + '</div>'
+        + title + intro + stats + _footprint_panel(store)
+        + map_html + comparison + table + '</div>'
     )
     return chartis_shell(body, "Global healthcare markets",
                          active_nav="/portfolio",
                          subtitle="Health-spend share across the markets PE targets")
 
 
-def render_country_profile(iso2: str) -> str:
+def render_country_profile(iso2: str, store=None) -> str:
     """Per-market deep dive — /markets/country/<iso2>. Reached by clicking a
     country on the global map. Shows the market's health-spend share, its rank
-    among all tracked markets, its region, PE-activity, and a comparison to its
-    regional peers. Derived entirely from the curated dataset."""
+    among all tracked markets, its region, PE-activity, a comparison to its
+    regional peers, and any of the workspace's own deals tagged to this market."""
     d = country_detail(iso2)
     if d is None:
         body = (
@@ -234,13 +278,32 @@ def render_country_profile(iso2: str) -> str:
         subtitle=f"{name} highlighted (navy)", label_w=130.0,
     )
 
+    # The workspace's own deals tagged to this market (international deals).
+    your_deals = ""
+    fp = portfolio_markets(store).get(d["iso2"], []) if store is not None else []
+    if fp:
+        items = "".join(
+            f'<li style="margin:4px 0;font-size:13px;">'
+            f'<a href="/deal/{_html.escape(x["deal_id"])}" style="color:#155752;'
+            f'text-decoration:none;">{_html.escape(x["name"])}</a></li>'
+            for x in fp
+        )
+        your_deals = (
+            '<div style="border:1px solid #b9cde6;background:#eef4fb;border-radius:4px;'
+            'padding:12px 16px;margin:16px 0;max-width:520px;">'
+            '<div style="font-family:var(--sc-mono,monospace);font-size:10px;'
+            'letter-spacing:.1em;text-transform:uppercase;color:#0b2341;margin-bottom:6px;">'
+            f'Your deals in {_html.escape(name)} &middot; {len(fp)}</div>'
+            f'<ul style="margin:0;padding-left:18px;">{items}</ul></div>'
+        )
+
     back = ('<div style="margin:18px 0 6px;"><a href="/markets/global" '
             'style="color:#155752;text-decoration:none;font-size:12px;">'
             '&larr; All global markets</a></div>')
 
     body = (
         '<div class="ck-page-wrap" style="max-width:900px;margin:0 auto;">'
-        + title + kpis + peer_chart + back + '</div>'
+        + title + kpis + your_deals + peer_chart + back + '</div>'
     )
     return chartis_shell(body, f"{name} — market profile",
                          active_nav="/portfolio",

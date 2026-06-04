@@ -86,6 +86,39 @@ def ranked_markets() -> List[Dict[str, Any]]:
     return rows
 
 
+def portfolio_markets(store) -> Dict[str, List[Dict[str, str]]]:
+    """The portfolio's cross-border footprint: ISO2 country -> [{deal_id,
+    name}] for every non-archived deal whose profile carries a ``country``.
+
+    This is how the platform surfaces *international deals* — any deal (demo or
+    a partner's own import) tagged with a country shows up on the global market
+    map / country pages. Best-effort + read-only; returns {} on any error."""
+    import json
+    out: Dict[str, List[Dict[str, str]]] = {}
+    if store is None:
+        return out
+    try:
+        store.init_db()
+        with store.connect() as con:
+            rows = con.execute(
+                "SELECT deal_id, name, profile_json FROM deals "
+                "WHERE archived_at IS NULL"
+            ).fetchall()
+    except Exception:  # noqa: BLE001
+        return out
+    for r in rows:
+        try:
+            prof = json.loads(r["profile_json"] or "{}")
+        except (TypeError, ValueError):
+            prof = {}
+        iso2 = str(prof.get("country") or "").upper().strip()
+        if not iso2:
+            continue
+        out.setdefault(iso2, []).append(
+            {"deal_id": r["deal_id"], "name": r["name"] or r["deal_id"]})
+    return out
+
+
 def country_detail(iso2: str):
     """Profile dict for one market (or None): its record + rank among all
     markets by health-spend share + its regional peers (ranked). Derived from
