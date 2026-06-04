@@ -745,13 +745,31 @@ def render_portfolio_analytics(
             extra_css=_EXPLAINER_CSS,
         )
 
+    # Verified-only median (provenance == "real") shown beside the illustrative
+    # corpus median, which is ~96% synthetic and skews high. Uses the
+    # authoritative provenance-tagging loader (this page's corpus comes from the
+    # legacy helper, which doesn't tag provenance); guarded so it never breaks.
+    try:
+        from ...data_public.corpus_loader import load_corpus_deals as _load_real
+        _real_moics = sorted(
+            float(d["realized_moic"]) for d in _load_real("real")
+            if d.get("realized_moic") is not None
+        )
+    except Exception:  # noqa: BLE001
+        _real_moics = []
+    verified_median = _real_moics[len(_real_moics) // 2] if _real_moics else None
+
     kpis = (
         ck_kpi_block("Total Deals", str(sc.get("total_deals", 0)), "corpus size")
         + ck_kpi_block("Realized",
                         str(sc.get("realized_deals", 0)),
                         f"{sc.get('realized_deals',0)/max(sc.get('total_deals',1),1)*100:.0f}% of corpus")
         + ck_kpi_block("Median MOIC",
-                        render_number(sc.get("moic_p50"), "moic"), "realized deals")
+                        render_number(sc.get("moic_p50"), "moic"), "realized · illustrative")
+        + ck_kpi_block("Verified Median MOIC",
+                        render_number(verified_median, "moic"),
+                        (f"{len(_real_moics)} verified-historical deals"
+                         if _real_moics else "no verified returns yet"))
         + ck_kpi_block("Home-Run Rate",
                         render_number(sc.get("home_run_rate"), "home_run_rate"), "≥ 3.0x MOIC")
         + ck_kpi_block("Loss Rate",

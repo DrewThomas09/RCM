@@ -45,6 +45,8 @@ class TestCorpusIllustrativeDisclosure(unittest.TestCase):
     def test_portfolio_analytics_discloses_illustrative(self):
         html = render_portfolio_analytics({})
         self.assertIn("illustrative", html.lower())
+        # Verified read shown beside the illustrative corpus median.
+        self.assertIn("Verified Median MOIC", html)
 
     def test_payer_intelligence_discloses_illustrative(self):
         """Per-payer-regime MOIC/IRR distributions are corpus-derived
