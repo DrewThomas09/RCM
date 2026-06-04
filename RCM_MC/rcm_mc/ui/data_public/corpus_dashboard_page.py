@@ -120,6 +120,16 @@ def render_corpus_dashboard() -> str:
     loss_rate = sum(1 for m in moics if m < 1.0) / len(moics) if moics else 0
     ev_p50    = _pct(evs, 50)
 
+    # Verified-only subset (provenance == "real"): the credible read shown next
+    # to the illustrative aggregate above, which is ~96% synthetic and skews
+    # optimistic. The verified median typically runs below the illustrative one
+    # with a materially higher loss rate — surfacing it stops a partner from
+    # anchoring on the rosy synthetic figure.
+    real_moics = [float(d["realized_moic"]) for d in corpus
+                  if d.get("provenance") == "real" and d.get("realized_moic") is not None]
+    verified_p50 = _pct(real_moics, 50) if real_moics else None
+    verified_loss = (sum(1 for m in real_moics if m < 1.0) / len(real_moics)) if real_moics else None
+
     # Sector stats
     sector_stats = compute_sector_stats(corpus)
     top_sectors  = sector_stats[:5]
@@ -145,8 +155,15 @@ def render_corpus_dashboard() -> str:
     kpis = (
         '<div class="ck-kpi-grid">'
         + ck_kpi_block("Corpus Deals", f'<span class="mn">{n:,}</span>', "in analysis")
-        + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</span>', f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x")
-        + ck_kpi_block("P50 IRR", f'<span class="mn">{irr_p50*100:.1f}%</span>', "realized median")
+        + ck_kpi_block("P50 MOIC", f'<span class="mn" style="color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</span>', f"P25: {_pct(moics,25):.2f}x · P75: {_pct(moics,75):.2f}x · illustrative")
+        + ck_kpi_block(
+            "Verified P50 MOIC",
+            (f'<span class="mn" style="color:{_moic_color(verified_p50)}">{verified_p50:.2f}x</span>'
+             if verified_p50 is not None else '<span class="mn">—</span>'),
+            (f"{len(real_moics)} verified-historical deals · {verified_loss*100:.0f}% loss rate"
+             if real_moics else "no verified returns yet"),
+        )
+        + ck_kpi_block("P50 IRR", f'<span class="mn">{irr_p50*100:.1f}%</span>', "realized median · illustrative")
         + ck_kpi_block("Loss Rate", f'<span class="mn" style="color:{"#b5321e" if loss_rate>0.15 else "#b8732a"}">{loss_rate*100:.1f}%</span>', "MOIC < 1.0×")
         + ck_kpi_block("Avg Hold", f'<span class="mn">{hold_avg:.1f}y</span>', "years to exit")
         + ck_kpi_block("Avg Quality", f'<span class="mn">{avg_quality:.1f}/100</span>', f"A:{tier_counts.get('A',0)} B:{tier_counts.get('B',0)} C+D:{tier_counts.get('C',0)+tier_counts.get('D',0)}")

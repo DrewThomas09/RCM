@@ -24,6 +24,18 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         self.assertIn("MOIC Distribution", html)
         self.assertIn("<svg", html)
 
+    def test_verified_subset_moic_shown(self):
+        """The credible verified-only MOIC must sit beside the illustrative
+        aggregate, with its deal count + loss rate — so a partner doesn't
+        anchor on the synthetic-skewed median."""
+        from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+        html = render_corpus_dashboard()
+        self.assertIn("Verified P50 MOIC", html)
+        self.assertIn("verified-historical deals", html)
+        self.assertIn("loss rate", html)
+        # The illustrative aggregate is now labelled as such.
+        self.assertIn("illustrative", html.lower())
+
     def test_nav_tiles_present(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
