@@ -38,7 +38,7 @@ SECTORS = (
     "home_health_hospice", "dental", "dermatology", "ophthalmology",
     "asc", "urgent_care", "rcm_healthtech", "dialysis", "other_services",
     # added in the 2026-06 batch-4/6 expansion
-    "veterinary", "value_based_care", "lab", "ems",
+    "veterinary", "value_based_care", "lab", "ems", "managed_care",
 )
 
 VERIFIED_DEALS: List[Dict] = [
@@ -2429,6 +2429,51 @@ VERIFIED_DEALS: List[Dict] = [
         "outcome": "exited", "outcome_note": "Public→private; GHO + Ampersand (~$1.1B).",
         "source_url": "https://avidbio.com/news/avid-bioservices-to-be-acquired-by-gho-capital-partners-and-ampersand-capital-partners-in-1-1-billion-transaction/",
         "source_note": "GHO + Ampersand (Avid Bioservices take-private, 2024, ~$1.1B)",
+    },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 23) — urgent care, medical-device contract
+    # manufacturing, managed care. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "FastMed Urgent Care", "sponsor": "ABRY Partners",
+        "year": 2015, "ev_usd_mm": None, "sector": "urgent_care",
+        "subsector_note": "Urgent-care operator; ABRY + BlueMountain (merged with NextCare 2018)",
+        "outcome": "active", "outcome_note": "Active urgent-care platform.",
+        "source_url": "https://www.fastmed.com/about-fastmed/news-and-press/abry-partners-announces-agreement-acquire-fastmed-urgent-care/",
+        "source_note": "ABRY Partners (FastMed Urgent Care, 2015)",
+    },
+    {
+        "target": "Spectrum Plastics Group", "sponsor": "AEA Investors",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Medical-device contract manufacturing (plastics/extrusion)",
+        "outcome": "exited", "outcome_note": "AEA sold Spectrum Plastics to DuPont in 2023.",
+        "source_url": "https://www.aeainvestors.com/aea-completes-sale-of-spectrum-plastics-group/",
+        "source_note": "AEA Investors (Spectrum Plastics, 2018); DuPont 2023",
+    },
+    {
+        "target": "MedPlast", "sponsor": "Water Street Healthcare Partners + JLL Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Medical-device contract manufacturing (became Viant)",
+        "outcome": "active", "outcome_note": "Active device CMO.",
+        "source_url": "https://www.prnewswire.com/news-releases/medplast-announces-agreement-to-acquire-vention-medical-device-manufacturing-business-300410203.html",
+        "source_note": "Water Street + JLL Partners (MedPlast, Dec 2016)",
+    },
+    {
+        "target": "TekniPlex", "sponsor": "Genstar Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Materials-science / medical packaging + device components",
+        "outcome": "active", "outcome_note": "Active healthcare-materials platform.",
+        "source_url": "https://www.gencap.com/",
+        "source_note": "Genstar Capital (TekniPlex, 2020)",
+    },
+    {
+        "target": "CareMore Health", "sponsor": "CCMP Capital + Crystal Cove Partners",
+        "year": 2006, "ev_usd_mm": None, "sector": "managed_care",
+        "subsector_note": "Medicare Advantage-focused integrated care; one of the early MA-PE plays",
+        "outcome": "exited", "outcome_note": "Acquired by WellPoint (Anthem/Elevance) in 2011 for ~$800M.",
+        "source_url": "https://en.wikipedia.org/wiki/Carelon_Health",
+        "source_note": "CCMP Capital + Crystal Cove (CareMore, 2006); WellPoint 2011 ~$800M",
     },
 ]
 
