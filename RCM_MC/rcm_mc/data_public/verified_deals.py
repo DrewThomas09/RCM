@@ -3820,6 +3820,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.prnewswire.com/news-releases/paradigm-announces-majority-investment-from-omers-private-equity-300715906.html",
         "source_note": "OMERS Private Equity (Paradigm from Summit Partners, Oct 2018)",
     },
+    {
+        "target": "Omega Healthcare Management", "sponsor": "Goldman Sachs Alternatives",
+        "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Tech-enabled revenue-cycle-management + clinical/coding services (US + offshore); Goldman Sachs & Everstone co-control (sold stake to OTPP 2025)",
+        "outcome": "active", "outcome_note": "Active; Goldman Sachs Alternatives & Everstone Capital co-controlled from 2019; sold a co-control stake to Ontario Teachers' 2025.",
+        "source_url": "https://www.omegahms.com/newsroom/private-equity-at-goldman-sachs-alternatives-and-everstone-capital-sell-co-control-stake-in-omega-healthcare/",
+        "source_note": "Goldman Sachs Alternatives & Everstone Capital (Omega Healthcare, 2019)",
+    },
+    {
+        "target": "One Call", "sponsor": "Apax Partners",
+        "year": 2013, "ev_usd_mm": 2200, "sector": "other_services",
+        "subsector_note": "Workers'-compensation specialized-care management / provider network; Apax from Odyssey Investment Partners (~$2.2bn; KKR/Blackstone Credit recap 2019)",
+        "outcome": "active", "outcome_note": "Active; Apax Partners acquired 2013 (~$2.2bn); 2019 recap left KKR & Blackstone Credit as principal shareholders.",
+        "source_url": "https://www.apax.com/news-views/funds-advised-by-apax-partners-to-acquire-one-call-care-management-and-align-networks/",
+        "source_note": "Apax Partners (One Call from Odyssey, 2013, ~$2.2bn)",
+    },
 ]
 
 
