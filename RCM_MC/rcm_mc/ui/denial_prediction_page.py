@@ -38,7 +38,7 @@ def _landing() -> str:
     )
     title_block = (
         ck_page_title(
-        "Predictive Denial Model", eyebrow="PREDICTIVE DENIAL MODEL",
+        "Predictive Denial Model", eyebrow="DILIGENCE · DENIAL PREDICTION",
         meta=f"{len(AVAILABLE_FIXTURES)} fixtures · Naive Bayes · claim-level",
     )
         + ck_page_explainer(

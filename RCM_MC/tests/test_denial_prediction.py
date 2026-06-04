@@ -221,7 +221,9 @@ class DenialPredictionPageTests(unittest.TestCase):
             render_denial_prediction_page,
         )
         h = render_denial_prediction_page()
-        self.assertIn("PREDICTIVE DENIAL MODEL", h)
+        # Title is the tool name; the eyebrow is now the section context
+        # ("DILIGENCE · DENIAL PREDICTION") rather than a caps repeat of it.
+        self.assertIn("Predictive Denial Model", h)
         self.assertIn("Run prediction", h)
 
     def test_landing_source_label_is_honest_about_fixture(self):

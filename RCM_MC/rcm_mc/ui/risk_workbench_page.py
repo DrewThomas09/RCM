@@ -1195,11 +1195,12 @@ def render_risk_workbench(
     # head under that H1 — render as H2 so the page satisfies the
     # One-H1 invariant (audit 2026-05-29).
     hero = _RW_CSS + ck_editorial_head(
-        eyebrow="Regulatory Risk Workbench",
-        title=(
-            f"Risk panorama — {html.escape(inp.target_name)}"
+        eyebrow="DILIGENCE · RISK WORKBENCH",
+        title="Regulatory Risk Workbench",
+        meta=(
+            f"{html.escape(inp.target_name)} · "
+            "9-PANEL TIER-1/2/3 DILIGENCE · LIVE ENGINE PER PANEL"
         ),
-        meta="9-PANEL TIER-1/2/3 DILIGENCE · LIVE ENGINE PER PANEL",
         lede_italic_phrase="Nine engines, one panorama.",
         lede_body=(
             "Live panels for the 9 Tier-1/2/3 diligence subpackages "
