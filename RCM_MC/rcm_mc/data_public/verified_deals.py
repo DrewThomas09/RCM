@@ -2302,6 +2302,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://mergr.com/transaction/frazier-healthcare-partners-acquires-vatica-health",
         "source_note": "Frazier Healthcare Partners (Vatica Health, Sept 2023)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 21) — dental specialty (oral surgery / ortho /
+    # endo) + hospice. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "U.S. Oral Surgery Management", "sponsor": "Oak Hill Capital",
+        "year": 2021, "ev_usd_mm": 700, "sector": "dental",
+        "subsector_note": "Oral & maxillofacial surgery MSO; Oak Hill (~$700M+, from Thurston)",
+        "outcome": "active", "outcome_note": "Active oral-surgery platform.",
+        "source_url": "https://oakhill.com/2021/11/08/oak-hill-capital-to-partner-with-u-s-oral-surgery-management/",
+        "source_note": "Oak Hill Capital (USOSM, Nov 2021, ~$700M+)",
+    },
+    {
+        "target": "Smile Doctors", "sponsor": "Linden Capital Partners + Thomas H. Lee Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Orthodontics DSO; Linden 2017, THL co-invested 2022",
+        "outcome": "active", "outcome_note": "Active orthodontics platform.",
+        "source_url": "https://www.linden.com/news/2017/10/linden-announces-partnership-smile-doctors-llc/",
+        "source_note": "Linden Capital Partners (Smile Doctors, 2017); THL 2022",
+    },
+    {
+        "target": "Beacon Oral Specialists", "sponsor": "Blue Sea Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Oral surgery MSO (Atlanta Oral & Facial + Bay Area); Blue Sea-formed",
+        "outcome": "active", "outcome_note": "Active oral-surgery platform.",
+        "source_url": "https://blueseacapital.com/atlanta-oral-facial-surgery-and-bay-area-oral-surgery-management-have-partnered-with-blue-sea-capital-to-form-beacon-oral-specialists/",
+        "source_note": "Blue Sea Capital (Beacon Oral Specialists, Dec 2020)",
+    },
+    {
+        "target": "U.S. Endo Partners (Specialized Dental Partners)", "sponsor": "Quad-C Management",
+        "year": 2021, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Endodontics MSO; Quad-C bought from Thurston Group (rebranded 2023)",
+        "outcome": "active", "outcome_note": "Active endodontics/specialty platform.",
+        "source_url": "https://www.quadcmanagement.com/quad-c-management-announces-investment-in-u-s-endodontics-partners/",
+        "source_note": "Quad-C Management (US Endo Partners from Thurston, 2021)",
+    },
+    {
+        "target": "Charter Health Care Group", "sponsor": "Pharos Capital Group",
+        "year": 2018, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Hospice + home health + complex care management; Pharos-backed",
+        "outcome": "active", "outcome_note": "Active hospice/home-health platform.",
+        "source_url": "https://www.prnewswire.com/news-releases/pharos-capitals-charter-health-care-group-acquires-generations-hospice-care-301352786.html",
+        "source_note": "Pharos Capital Group (Charter Health Care Group)",
+    },
 ]
 
 
