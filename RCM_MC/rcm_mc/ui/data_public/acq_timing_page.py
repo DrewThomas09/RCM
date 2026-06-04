@@ -325,7 +325,7 @@ def render_acq_timing(params: Dict[str, str]) -> str:
 
     page_title = ck_page_title(
         "Acquisition Timing",
-        eyebrow="ACQUISITION TIMING",
+        eyebrow="MARKET DATA · ACQUISITION TIMING",
         meta=f"{result.n_total} corpus deals · entry EV/EBITDA vs. realized MOIC · vintage cycle timing",
     )
     at_explainer = (

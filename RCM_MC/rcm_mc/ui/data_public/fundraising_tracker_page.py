@@ -260,7 +260,7 @@ def render_fundraising_tracker(params: dict = None) -> str:
     # in pipeline continue to appear in the meta line.
     page_title = ck_page_title(
         "Fundraising Tracker",
-        eyebrow="FUNDRAISING TRACKER",
+        eyebrow="FUND OPS · FUNDRAISING TRACKER",
         meta=f"{r.active_funds} active funds targeting ${r.total_target_b:.2f}B aggregate · ${r.total_hard_circled_b:.2f}B hard-circled ({r.pct_fundraised * 100:.1f}% complete) · {r.lps_in_pipeline} LPs in pipeline · {len(r.agents)} placement agents engaged",
     )
 

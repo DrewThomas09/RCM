@@ -236,7 +236,7 @@ def render_dpi_tracker(params: dict = None) -> str:
     # the eyebrow.
     page_title = ck_page_title(
         "DPI Tracker",
-        eyebrow="DPI TRACKER",
+        eyebrow="FUND OPS · DPI TRACKER",
         meta=f"{r.total_funds} funds at {r.weighted_dpi:.2f}x weighted DPI / {r.weighted_tvpi:.2f}x TVPI · ${r.total_distributions_b:.2f}B LTM distributions · {r.below_benchmark_funds} of {r.total_funds} funds below vintage benchmark · {active_requests} active LP liquidity requests",
     )
 

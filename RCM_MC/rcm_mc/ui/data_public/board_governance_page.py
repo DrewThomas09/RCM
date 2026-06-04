@@ -238,7 +238,7 @@ def render_board_governance(params: dict = None) -> str:
     # Governance" matches the eyebrow and the route /board-governance.
     page_title = ck_page_title(
         "Board Governance",
-        eyebrow="BOARD GOVERNANCE",
+        eyebrow="DILIGENCE · BOARD GOVERNANCE",
         meta=(
             f"{r.total_holdcos} holdco boards · {r.total_directors} director seats · "
             f"independence {r.avg_independence_pct * 100:.1f}% · "

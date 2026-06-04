@@ -239,7 +239,7 @@ def render_secondaries_tracker(params: dict = None) -> str:
     # sales). Eyebrow already reads SECONDARIES TRACKER.
     page_title = ck_page_title(
         "Secondaries Tracker",
-        eyebrow="SECONDARIES TRACKER",
+        eyebrow="FUND OPS · SECONDARIES TRACKER",
         meta=f"""Continuation vehicles · strip sales · tender offers · buyer landscape · CV economics · LP conflicts — {r.corpus_deal_count:,} corpus deals""",
     )
     
