@@ -45,7 +45,7 @@ def _title(current_user: "Optional[str]") -> str:
         f"Signed in as {_html.escape(current_user)} · {facts}"
         if current_user else facts
     )
-    return ck_page_title("PE Intelligence", eyebrow="PE INTELLIGENCE", meta=meta)
+    return ck_page_title("PE Intelligence", eyebrow="CHARTIS · PE INTELLIGENCE", meta=meta)
 
 _EXPLAINER_CSS = """
 .ck-pei-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;

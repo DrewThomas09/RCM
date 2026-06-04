@@ -297,7 +297,7 @@ def render_sponsor_track_record(
     def _title(meta: str) -> str:
         return ck_page_title(
             "Sponsor Track Record",
-            eyebrow="SPONSOR TRACK RECORD",
+            eyebrow="DILIGENCE · SPONSOR TRACK RECORD",
             meta=meta,
         ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>' + ck_illustrative_note(
             "sponsor MOIC/IRR track records (the deal corpus is mostly an "

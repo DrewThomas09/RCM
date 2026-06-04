@@ -562,7 +562,7 @@ def render_conference_roadmap(category: str = "all") -> str:
     body = recaps_html + calendar_html + next_up
 
     title_block = ck_page_title(
-        "Conference Intelligence", eyebrow="CONFERENCE INTELLIGENCE",
+        "Conference Intelligence", eyebrow="RESEARCH · CONFERENCE INTELLIGENCE",
         meta=f"{len(CONFERENCE_RECAPS)} recaps · {len(CONFERENCES)} upcoming · healthcare PE",
     )
     explainer_html = (

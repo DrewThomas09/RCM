@@ -23,7 +23,7 @@ class PortfolioRiskScanLeadAnchorTests(unittest.TestCase):
         seed_demo_db(db, deal_count=7, write_export_files=False, force=True)
         html = render_portfolio_risk_scan(db)
         self.assertIn("ck-value-anchor", html)
-        self.assertIn("PORTFOLIO RISK SCAN", html)
+        self.assertIn("Portfolio Risk Scan", html)  # H1 name (eyebrow is now "PORTFOLIO · RISK SCAN")
         self.assertIn("red-severity", html)
         self.assertLess(
             html.index("ck-value-anchor"),
