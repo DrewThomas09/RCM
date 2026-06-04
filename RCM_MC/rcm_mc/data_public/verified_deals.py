@@ -37,8 +37,8 @@ SECTORS = (
     "hospitals", "physician_practices", "behavioral_health",
     "home_health_hospice", "dental", "dermatology", "ophthalmology",
     "asc", "urgent_care", "rcm_healthtech", "dialysis", "other_services",
-    # added in the 2026-06 batch-4 expansion
-    "veterinary", "value_based_care",
+    # added in the 2026-06 batch-4/6 expansion
+    "veterinary", "value_based_care", "lab",
 )
 
 VERIFIED_DEALS: List[Dict] = [
@@ -1175,6 +1175,75 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://hospicenews.com/2019/09/24/three-oaks-hospice-opens-its-doors-completes-three-acquisitions/",
         "source_note": "Hospice News (Three Oaks launch + backers, 2019)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 6) — pharma-services/CDMO, clinical labs,
+    # value-based primary care (incl. a bankruptcy), and dialysis. Each
+    # web-validated this sprint. Introduces the "lab" sector.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Pharma services / CDMO ──
+    {
+        "target": "PCI Pharma Services", "sponsor": "Kohlberg & Company + Mubadala",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Biopharma CDMO / supply-chain; Bain Capital co-led a 2025 round valuing it ~$10B",
+        "outcome": "active", "outcome_note": "Active; 2025 Bain Capital + Kohlberg + Mubadala recap (~$10B).",
+        "source_url": "https://pci.com/strategic-investment-bain-capital-kohlberg-and-mubadala/",
+        "source_note": "PCI (2025 Bain/Kohlberg/Mubadala); Kohlberg+Mubadala since 2020",
+    },
+    {
+        "target": "Adare Pharma Solutions", "sponsor": "Thomas H. Lee Partners + Frazier Healthcare Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Oral-dosage CDMO; THL + Frazier acquired from TPG",
+        "outcome": "active", "outcome_note": "Active CDMO platform.",
+        "source_url": "https://www.thl.com/portfolio/",
+        "source_note": "Thomas H. Lee Partners (portfolio); 2021 Adare from TPG",
+    },
+
+    # ── Clinical labs / diagnostics ──
+    {
+        "target": "Aegis Sciences", "sponsor": "Metalmark Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "lab",
+        "subsector_note": "Toxicology + clinical reference lab (Nashville); Metalmark majority",
+        "outcome": "exited", "outcome_note": "ABRY Partners became owner by 2025 — a PE-to-PE transition.",
+        "source_url": "https://www.nashvillepost.com/business/finance/ny-private-equity-firm-buys-into-aegis-sciences/article_ef8a9ff2-cbac-55c9-a0af-dbc371829b2e.html",
+        "source_note": "Nashville Post (Metalmark/Aegis, 2021); ABRY 2025 ownership",
+    },
+    {
+        "target": "Inform Diagnostics", "sponsor": "Avista Capital Partners",
+        "year": 2017, "ev_usd_mm": 170, "sector": "lab",
+        "subsector_note": "Anatomic-pathology lab (fka Miraca Life Sciences); Avista from Miraca",
+        "outcome": "exited", "outcome_note": "Sold to Fulgent Genetics in 2022 for $170M.",
+        "source_url": "https://www.prnewswire.com/news-releases/avista-capital-partners-completes-sale-of-inform-diagnostics-to-fulgent-genetics-inc-301534266.html",
+        "source_note": "PRNewswire (Avista sells Inform Diagnostics to Fulgent, 2022, $170M)",
+    },
+    {
+        "target": "Discovery Life Sciences", "sponsor": "Water Street Healthcare Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "lab",
+        "subsector_note": "Biospecimen + lab services; Water Street four-company merger",
+        "outcome": "active", "outcome_note": "Active life-sciences/lab platform.",
+        "source_url": "https://waterstreet.com/companies/discovery-life-sciences",
+        "source_note": "Water Street Healthcare Partners (company page); 2018 Discovery Life Sciences",
+    },
+
+    # ── Value-based / primary care ──
+    {
+        "target": "Privia Health", "sponsor": "Goldman Sachs + Brighton Park Capital",
+        "year": 2014, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Value-based physician-enablement MSO; Goldman-led majority growth investment",
+        "outcome": "exited", "outcome_note": "IPO'd on Nasdaq (PRVA) in 2021 — a PE-to-public exit.",
+        "source_url": "https://matrixbcg.com/blogs/brief-history/priviahealth",
+        "source_note": "Privia Health history (Goldman/Brighton Park 2014); 2021 IPO",
+    },
+    {
+        "target": "CareMax", "sponsor": "Deerfield Management",
+        "year": 2021, "ev_usd_mm": None, "sector": "value_based_care",
+        "subsector_note": "Value-based senior primary care (Medicare); Deerfield SPAC de-SPAC",
+        "outcome": "bankrupt", "outcome_note": "Filed Chapter 11 in 2024 — another value-based-care/SPAC failure (cf. Cano).",
+        "source_url": "https://www.businesswire.com/news/home/20201218005517/en/Deerfield-Healthcare-Technology-Acquisitions-Corp.-Announces-Proposed-Business-Combination-to-Form-CareMax",
+        "source_note": "BusinessWire (Deerfield/CareMax de-SPAC, 2021); 2024 Ch.11 via PESP",
+    },
+
 ]
 
 
