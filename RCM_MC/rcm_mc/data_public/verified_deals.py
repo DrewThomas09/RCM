@@ -3492,6 +3492,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://latticeworkcapital.com/goldman-sachs-alternatives-completes-acquisition-of-xpress-wellness-from-latticework-capital-management/",
         "source_note": "Latticework Capital Management (Xpress Wellness, 2018)",
     },
+    {
+        "target": "Veristat", "sponsor": "WindRose Health Investors",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Global clinical research organization (CRO) for biotech / pharma; WindRose equity recapitalization",
+        "outcome": "active", "outcome_note": "Active; WindRose Health Investors recapitalized Veristat April 2021.",
+        "source_url": "https://windrose.com/news/windrose-health-investors-completes-recapitalization-of-veristat-group-inc/",
+        "source_note": "WindRose Health Investors (Veristat, April 2021)",
+    },
+    {
+        "target": "Celerion", "sponsor": "Thomas H. Lee Partners",
+        "year": 2026, "ev_usd_mm": 1800, "sector": "other_services",
+        "subsector_note": "Early-phase clinical research organization (CRO); THL majority (prior PE owners MTS/WindRose 2014, Court Square 2017, H.I.G.)",
+        "outcome": "active", "outcome_note": "Active; THL Partners announced majority investment March 2026 (~$1.8bn).",
+        "source_url": "https://thl.com/articles/celerion-announces-majority-investment-from-thl-partners/",
+        "source_note": "Thomas H. Lee Partners (Celerion, March 2026, ~$1.8bn)",
+    },
+    {
+        "target": "Enclara Pharmacia", "sponsor": "Consonance Capital Partners",
+        "year": 2014, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Hospice / palliative-care pharmacy benefit management + dispensing; Consonance-backed (excelleRx/Hospice Pharmacia roll-up)",
+        "outcome": "exited", "outcome_note": "Consonance Capital partnered 2014; exited to Humana Dec 2019 (~$700M+).",
+        "source_url": "https://www.consonancecapitalpartners.com/enclara",
+        "source_note": "Consonance Capital Partners (Enclara Pharmacia, 2014; exited to Humana 2019)",
+    },
 ]
 
 
