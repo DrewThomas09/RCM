@@ -4481,8 +4481,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 page=_qsi("page", 1),
             ))
         if path == "/corpus-dashboard":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _universe = (_qs.get("universe") or ["all"])[0]
             from .ui.data_public.corpus_dashboard_page import render_corpus_dashboard
-            return self._send_html(render_corpus_dashboard())
+            return self._send_html(render_corpus_dashboard(universe=_universe))
         if path == "/corpus-ic-memo":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

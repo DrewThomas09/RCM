@@ -917,6 +917,74 @@ _SEED_DEALS: List[Dict[str, Any]] = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# Canonical sector tags for the verified-real corpus.
+#
+# The real seed groups (``_SEED_DEALS`` + ``extended_seed``) were authored
+# WITHOUT a ``sector`` field, while the synthetic ``extended_seed_{N}`` batches
+# each carry one. That left the *credible* deals unclassified — so any
+# sector-sliced view (``/corpus-dashboard`` verified mode, ``/sector-intel``)
+# silently dropped every real deal from its sector table, because
+# ``compute_sector_stats`` skips rows with no ``sector``. This map restores the
+# classification using the corpus's existing lowercase canonical sector
+# vocabulary (``hospital``, ``health_it``, ``physician_group`` …) so the real
+# deals AGGREGATE with the synthetic rows instead of spawning duplicate
+# near-name buckets ("hospital" vs "Hospitals").
+#
+# Applied copy-safe in ``corpus_loader.load_corpus_deals`` (never mutates the
+# shared seed lists — see that module's note). Each classification is taken
+# from the deal's own business description in ``notes`` (e.g. DaVita-HealthCare
+# Partners is the capitated medical group → ``managed_care``, not dialysis;
+# Air Methods is air-medical transport → ``ems``), not guessed from the name.
+# ---------------------------------------------------------------------------
+REAL_DEAL_SECTORS: Dict[str, str] = {
+    # ── _SEED_DEALS ──
+    # hospitals / health systems
+    "seed_001": "hospital", "seed_002": "hospital", "seed_003": "hospital",
+    "seed_008": "hospital", "seed_013": "hospital", "seed_014": "hospital",
+    "seed_015": "hospital", "seed_016": "hospital", "seed_017": "hospital",
+    "seed_019": "hospital", "seed_020": "hospital", "seed_023": "hospital",
+    "seed_024": "hospital", "seed_027": "hospital", "seed_030": "hospital",
+    "seed_031": "hospital", "seed_032": "hospital", "seed_034": "hospital",
+    # post-acute / LTAC / inpatient rehab
+    "seed_004": "ltach_post_acute", "seed_011": "ltach_post_acute",
+    "seed_026": "ltach_post_acute", "seed_028": "ltach_post_acute",
+    "seed_035": "ltach_post_acute",
+    # behavioral health
+    "seed_005": "behavioral_health", "seed_018": "behavioral_health",
+    # physician staffing / practice groups
+    "seed_006": "physician_group", "seed_007": "physician_group",
+    "seed_021": "physician_group", "seed_022": "physician_group",
+    # ambulatory surgery centers
+    "seed_009": "asc", "seed_010": "asc",
+    # home health / hospice / home infusion
+    "seed_012": "home_health", "seed_029": "home_health",
+    "seed_033": "home_health", "seed_047": "home_health", "seed_048": "home_health",
+    # occupational / urgent care
+    "seed_025": "urgent_care", "seed_045": "urgent_care",
+    # RCM / health IT — the platform's home sector
+    "seed_036": "health_it", "seed_037": "health_it", "seed_038": "health_it",
+    "seed_039": "health_it", "seed_043": "health_it",
+    # value-based / senior care (capitated)
+    "seed_040": "value_based_care", "seed_044": "value_based_care",
+    "seed_046": "value_based_care", "seed_049": "value_based_care",
+    # membership primary care
+    "seed_042": "primary_care",
+    # air-medical transport
+    "seed_041": "ems",
+    # ── extended_seed (ext_*) ──
+    "ext_002": "managed_care", "ext_003": "managed_care", "ext_020": "managed_care",
+    "ext_004": "hospital", "ext_010": "hospital", "ext_012": "hospital",
+    "ext_013": "hospital", "ext_015": "hospital", "ext_016": "hospital",
+    "ext_018": "hospital",
+    "ext_005": "asc", "ext_017": "asc",
+    "ext_006": "ltach_post_acute", "ext_019": "ltach_post_acute",
+    "ext_007": "physician_group", "ext_008": "physician_group",
+    "ext_009": "behavioral_health", "ext_014": "behavioral_health",
+    "ext_011": "health_it",
+}
+
+
 class DealsCorpus:
     """SQLite-backed store for public hospital M&A deals."""
 

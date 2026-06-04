@@ -36,6 +36,45 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         # The illustrative aggregate is now labelled as such.
         self.assertIn("illustrative", html.lower())
 
+    def test_universe_toggle_present(self):
+        """The data-universe toggle lets a partner flip the whole dashboard
+        between the illustrative aggregate and the verified-only read."""
+        from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+        html = render_corpus_dashboard()
+        self.assertIn("Data universe", html)
+        self.assertIn("Illustrative corpus", html)
+        self.assertIn("Verified only", html)
+        # The verified pill links to the verified universe.
+        self.assertIn("/corpus-dashboard?universe=verified", html)
+
+    def test_verified_mode_recomputes_everything(self):
+        """In verified mode every figure is recomputed from the real subset:
+        the page foregrounds the credible (lower) median, flips the sidecar to
+        show the illustrative aggregate as the contrast, and recomputes the
+        sector table from sector-tagged real deals."""
+        from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+        html = render_corpus_dashboard(universe="verified")
+        # Verified is now the foreground; the illustrative aggregate is the
+        # contrast sidecar (the inverse of default mode).
+        self.assertIn("Illustrative P50 MOIC", html)
+        self.assertIn("Verified historical", html)
+        self.assertIn("verified-historical only", html)
+        self.assertIn("synthetic-skewed", html)
+        # Structural panels still render off the (smaller) real corpus.
+        self.assertIn("Top Sectors", html)
+        self.assertIn("MOIC Distribution", html)
+        # The verified deal count (≈68) is far below the full corpus.
+        self.assertIn("68 deals", html)
+
+    def test_verified_mode_sector_table_nonempty(self):
+        """Regression: the real seed deals were unclassified (no `sector`),
+        so verified-mode sector analysis was silently empty. The canonical
+        backfill must surface real sectors (e.g. hospital)."""
+        from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
+        html = render_corpus_dashboard(universe="verified")
+        # hospital is the largest verified sector; it must appear in the table.
+        self.assertIn("hospital", html.lower())
+
     def test_nav_tiles_present(self):
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
