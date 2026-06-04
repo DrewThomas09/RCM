@@ -299,15 +299,25 @@ _COLLINEAR_PAIRS = {
 # (which leaves VIFs in the hundreds: beds ≈ bed_days ≈ patient_days ≈
 # medicare_days, and medicare%+medicaid%+commercial% sum to 100), the
 # default fit uses ONE volume measure + occupancy + payer mix + size.
-# Verified on live HCRIS: net_patient_revenue ~ this set (log target)
-# gives R²≈0.71, 7/7 coefficients significant, max VIF ≈ 5.5, signs all
-# directionally sensible. Callers can still override `features` to fit a
-# different / wider set. Keyed by target; absent target → all-safe.
+#
+# Net patient revenue is predicted from STRUCTURAL drivers (volume,
+# occupancy, payer mix, size) — never from operating_expenses. Predicting
+# revenue from expenses is economically circular: both are P&L lines that
+# scale together with hospital size, so opex inflates R² without adding
+# independent signal (dropping it moves in-sample R² only 0.713 → 0.686 on
+# live HCRIS — it was redundant), AND it BREAKS exactly where it matters:
+# academic / safety-net hospitals carry high expenses against low or negative
+# margins (uncompensated / charity care they're forced to absorb), so an
+# expense-driven model systematically over-predicts their revenue. The honest
+# drivers of net patient revenue are volume (patient days), occupancy, payer
+# mix (Medicare/Medicaid pay below commercial), and size. Case-mix index and
+# the CMS wage index would sharpen it further but aren't in this HCRIS extract.
+# Callers can still override `features` to fit a different / wider set. Keyed
+# by target; absent target → all-safe.
 _CURATED_DEFAULTS: Dict[str, List[str]] = {
     "net_patient_revenue": [
         "total_patient_days", "occupancy_rate", "medicare_day_pct",
         "medicaid_day_pct", "payer_diversity", "size_quartile",
-        "operating_expenses",
     ],
 }
 
@@ -1285,11 +1295,21 @@ def _rge_headline_strip(
     oos_sub_html = '<div class="sub">RUN WITH CROSS-VALIDATE</div>'
     gap_val_html = '<span class="pending">Awaiting CV</span>'
     gap_sub_html = '<div class="sub">RUN WITH CROSS-VALIDATE</div>'
+    # Inconclusive guard: a negative out-of-sample R² means the model predicts
+    # WORSE than just using the mean (R²<0 ⇒ SS_res>SS_tot). That is not a
+    # "weak" model, it is an unusable one — never present the in-sample fit as
+    # if it were predictive. Common on small filtered universes (e.g. the
+    # academic subset) where OLS overfits the handful of rows.
+    inconclusive = (cv_res is not None and cv_res.mean_test_r2 < 0.0)
     if cv_res is not None:
-        oos_val_html = f'{cv_res.mean_test_r2:.1%}'
-        oos_sub_html = (
-            f'<div class="sub good">{cv_res.k}-FOLD CV</div>'
-        )
+        if inconclusive:
+            oos_val_html = f'{cv_res.mean_test_r2:.0%}'
+            oos_sub_html = '<div class="sub bad">WORSE THAN MEAN</div>'
+        else:
+            oos_val_html = f'{cv_res.mean_test_r2:.1%}'
+            oos_sub_html = (
+                f'<div class="sub good">{cv_res.k}-FOLD CV</div>'
+            )
         gap = cv_res.overfit_gap
         gap_cls = "good" if gap <= 0.05 else ("warn" if gap <= 0.15 else "bad")
         gap_label = (
@@ -1326,11 +1346,32 @@ def _rge_headline_strip(
     else:
         cond_sub_cls = "bad";  cond_sub_lbl = "HIGH MULTICOLL."
 
+    # Loud, plain-language banner when the model fails out-of-sample, so the
+    # headline R² can't be mistaken for predictive power.
+    banner = ""
+    insample_sub = '<div class="sub">IN-SAMPLE</div>'
+    if inconclusive:
+        insample_sub = '<div class="sub bad">OVERFIT — SEE OOS</div>'
+        banner = (
+            '<div class="rge-inconclusive" style="border:1px solid var(--sc-negative,#b5321e);'
+            'background:#fbeae7;border-left:4px solid var(--sc-negative,#b5321e);'
+            'border-radius:4px;padding:10px 14px;margin:0 0 12px;font-size:12.5px;'
+            'color:#1a2332;line-height:1.5;">'
+            '<b style="color:#b5321e;">⚠ Inconclusive — this model does not beat the mean.</b> '
+            f'Out-of-sample R² is {cv_res.mean_test_r2:.0%}: the {cv_res.k}-fold cross-'
+            'validated fit predicts <b>worse than simply guessing the average</b> '
+            '(R²&lt;0 ⇒ residual error exceeds the variance). The in-sample R² below is '
+            'overfitting — <b>do not use these predictions</b>. This usually means too '
+            'few rows for the feature count (a small filtered universe) or features that '
+            "don't generalise. Widen the universe, drop features, or read the cohort fits "
+            'below instead.</div>'
+        )
     return (
+        banner +
         '<div class="rge-strip rge-tokens">'
         f'<div class="cell"><div class="label">R²</div>'
         f'<div class="val">{r2:.1%}</div>'
-        '<div class="sub">IN-SAMPLE</div></div>'
+        f'{insample_sub}</div>'
         f'<div class="cell"><div class="label">OOS R²</div>'
         f'<div class="val">{oos_val_html}</div>'
         f'{oos_sub_html}</div>'
@@ -1904,6 +1945,20 @@ def _rge_cohort_grids(result: Dict[str, Any]) -> str:
         for r in display:
             r2 = r.get("r2", 0.0) * 100
             delta = r.get("delta_vs_headline", 0.0) * 100
+            # A negative cohort R² means that bucket's fit is worse than its
+            # own mean — almost always too few rows for the feature count.
+            # Show it as inconclusive rather than a nonsense "-287%" the reader
+            # might act on.
+            if r2 < 0:
+                cells += (
+                    '<div class="c lo">'
+                    f'<div class="b">{_html.escape(str(r["bucket"]))}</div>'
+                    '<div class="v" style="color:#b5321e;">n/a</div>'
+                    f'<div class="n">N = {r["n"]:,}</div>'
+                    '<div class="d">inconclusive · n too small</div>'
+                    '</div>'
+                )
+                continue
             cls = "c hi" if delta >= 5 else ("c lo" if delta <= -5 else "c")
             sign = "+" if delta >= 0 else "−"
             cells += (
