@@ -2991,6 +2991,35 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.riverglade.com/portfolio",
         "source_note": "RiverGlade Capital (InBloom Autism Services, 2021)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 36) — more behavioral-health / SUD platforms.
+    # Each web-validated; pre-checked against existing targets.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Odyssey Behavioral Healthcare", "sponsor": "The Carlyle Group",
+        "year": 2019, "ev_usd_mm": 200, "sector": "behavioral_health",
+        "subsector_note": "Eating-disorder + mental-health + SUD treatment; Carlyle from Nautic (~$200M)",
+        "outcome": "active", "outcome_note": "Active; Nautic formed it 2015, Carlyle bought 2019.",
+        "source_url": "https://mergr.com/transaction/the-carlyle-group-acquires-odyssey-behavioral-healthcare",
+        "source_note": "The Carlyle Group (Odyssey Behavioral from Nautic, 2019, ~$200M)",
+    },
+    {
+        "target": "Banyan Treatment Centers", "sponsor": "TPG (The Rise Fund)",
+        "year": 2023, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Substance-use-disorder treatment; TPG impact-fund investment",
+        "outcome": "active", "outcome_note": "Active SUD-treatment platform.",
+        "source_url": "https://www.tpg.com/news-and-insights/tpgs-rise-fund-invests-banyan-treatment-centers",
+        "source_note": "TPG / The Rise Fund (Banyan Treatment Centers, 2023)",
+    },
+    {
+        "target": "Spero Health", "sponsor": "Heritage Group",
+        "year": 2018, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Outpatient opioid / SUD treatment (value-based); Heritage Group-backed",
+        "outcome": "active", "outcome_note": "Active SUD-treatment platform.",
+        "source_url": "https://sperohealth.com/our-investors/",
+        "source_note": "Heritage Group (Spero Health)",
+    },
 ]
 
 
