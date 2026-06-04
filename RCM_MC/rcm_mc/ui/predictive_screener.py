@@ -302,13 +302,11 @@ def render_predictive_screener(
     contrast = (
         '<div class="ck-ps-contrast">'
         '<b>How this differs from the Target Screener.</b> '
-        'The <a href="/screen">Hospital / Target Screener</a> ranks hospitals on their '
-        '<em>reported</em> HCRIS financials — size, margin — to find and compare targets. '
-        'This scanner ranks the same universe by <em>modeled RCM improvement upside</em> '
-        '(estimated denial rate, AR days, and EBITDA uplift), so you see <em>where the '
-        'value-creation opportunity is</em> before spending diligence time. These are '
-        'model estimates from public financials, not observed RCM performance — confirm '
-        'against a target&rsquo;s own data before underwriting.'
+        'The <a href="/screen">Target Screener</a> ranks hospitals on their '
+        '<em>reported</em> HCRIS financials (size, margin); this scanner ranks the '
+        'same universe by <em>modeled RCM upside</em> — so you see where the '
+        'value-creation opportunity is. Model estimates from public data, not '
+        'observed RCM performance &mdash; confirm against a target&rsquo;s own data.'
         '</div>'
     )
     kpis = (

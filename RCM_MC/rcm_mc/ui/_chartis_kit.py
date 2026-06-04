@@ -7473,11 +7473,14 @@ _CSS_INLINE_FALLBACK = """
   .ck-kpi-code { position:absolute; top:var(--sc-s-4); right:0; font-family:var(--sc-mono); font-size:10px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   /* Data-universe label chips (ck_data_universe) — declare which data
    * universe a page shows so corpus is never mistaken for portfolio. */
-  .ck-universe { display:inline-flex; align-items:center; gap:6px; padding:3px 9px;
-    font-family:var(--sc-mono); font-size:10px; font-weight:600; letter-spacing:0.12em;
-    text-transform:uppercase; border:1px solid currentColor; border-radius:2px;
-    cursor:help; vertical-align:middle; }
-  .ck-universe::before { content:""; width:6px; height:6px; border-radius:50%;
+  /* De-boxed (2026): these were bordered pills ("CMS PUBLIC DATA" etc.) that
+   * stacked as visual-clutter boxes under page titles. Now a tiny dot + mono
+   * label — the data-kind / honesty marker survives without the box. */
+  .ck-universe { display:inline-flex; align-items:center; gap:5px; padding:0;
+    font-family:var(--sc-mono); font-size:9.5px; font-weight:600; letter-spacing:0.1em;
+    text-transform:uppercase; border:0; border-radius:0; cursor:help;
+    vertical-align:middle; opacity:0.82; }
+  .ck-universe::before { content:""; width:5px; height:5px; border-radius:50%;
     background:currentColor; flex:none; }
   .ck-universe-deals  { color:var(--sc-navy,#15202b); }
   .ck-universe-port   { color:var(--sc-positive,#0a8a5f); }
