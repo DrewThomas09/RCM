@@ -366,6 +366,20 @@ def render_sponsor_track_record(
         ]
         if any(r.median_moic for r in records_sorted) else None
     )
+    # Verified-only read: the sponsor-weighted median above is dominated by the
+    # illustrative corpus and skews high, so surface the deal-weighted median
+    # over the verified-historical deals next to it. Uses the authoritative
+    # provenance-tagging loader (this page's `corpus` comes from the legacy
+    # helper, which doesn't tag provenance).
+    try:
+        from ...data_public.corpus_loader import load_corpus_deals as _load_real
+        _real_moics = sorted(
+            float(d["realized_moic"]) for d in _load_real("real")
+            if d.get("realized_moic") is not None
+        )
+    except Exception:  # noqa: BLE001 — never let the verified read break the page
+        _real_moics = []
+    verified_median = _real_moics[len(_real_moics) // 2] if _real_moics else None
     consistent = [r for r in records_sorted if (r.consistency_score or 0) >= 0.70]
 
     kpis = (
@@ -374,7 +388,11 @@ def render_sponsor_track_record(
         + ck_kpi_block("Realized", str(realized),
                         f"{realized/total_deals*100:.0f}% of tracked" if total_deals else "—")
         + ck_kpi_block("Overall Median MOIC",
-                        render_number(overall_median, "moic"), "sponsor-weighted")
+                        render_number(overall_median, "moic"), "sponsor-weighted · illustrative")
+        + ck_kpi_block("Verified Median MOIC",
+                        render_number(verified_median, "moic"),
+                        (f"{len(_real_moics)} verified-historical deals"
+                         if _real_moics else "no verified returns yet"))
         + ck_kpi_block("High Consistency",
                         str(len(consistent)), "sponsors ≥ 0.70 score")
     )

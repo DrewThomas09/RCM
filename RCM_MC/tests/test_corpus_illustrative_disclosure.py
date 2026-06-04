@@ -33,6 +33,9 @@ class TestCorpusIllustrativeDisclosure(unittest.TestCase):
         self.assertIn("illustrative", html.lower())
         # The corpus universe chip rides along too.
         self.assertIn("BENCHMARK CORPUS", html)
+        # And the verified-only read is shown beside the illustrative median.
+        self.assertIn("Verified Median MOIC", html)
+        self.assertIn("verified-historical deals", html)
 
     def test_deal_screening_discloses_illustrative(self):
         html = render_deal_screening({})
