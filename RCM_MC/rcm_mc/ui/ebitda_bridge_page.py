@@ -718,8 +718,15 @@ def _compute_returns_grid(
     organic_growth: float = 0.03,
     debt_paydown_pct: float = 0.10,
 ) -> List[Dict[str, Any]]:
-    """Compute IRR/MOIC grid across entry and exit multiples."""
+    """Compute IRR/MOIC grid across entry and exit multiples.
+
+    When ``current_ebitda`` is non-positive the LBO framing doesn't apply — an
+    EV struck at an EBITDA multiple is negative, so entry equity is negative and
+    MOIC/IRR are meaningless (they collapse to 0.00x / -100%, which misreads as a
+    total loss). Rows are flagged ``not_applicable`` so the UI shows "n/a" and an
+    explanation instead of a fake -100%."""
     rows = []
+    not_applicable = current_ebitda <= 0
     for entry_m in entry_multiples:
         for exit_m in exit_multiples:
             entry_ev = current_ebitda * entry_m
@@ -754,6 +761,7 @@ def _compute_returns_grid(
                 "moic": round(moic, 2),
                 "irr": round(irr, 4),
                 "underwater": exit_equity < 0,
+                "not_applicable": not_applicable,
             })
     return rows
 

@@ -55,6 +55,20 @@ def _pct(val: float, decimals: int = 1) -> str:
     return f"{val:.{decimals}%}"
 
 
+def _lev_val(lev: Dict[str, Any], key: str) -> str:
+    """Format a lever's current/target value in its OWN unit. Most RCM levers
+    are rates (%), but days_in_ar is a day count and CMI is a case-mix index —
+    formatting those as percentages produced nonsense like "5200.0%" for a
+    52-day A/R figure."""
+    v = float(lev.get(key, 0.0) or 0.0)
+    metric = lev.get("metric", "")
+    if metric == "days_in_ar":
+        return f"{v:.0f} days"
+    if metric == "cmi":
+        return f"{v:.2f}"
+    return f"{v:.1%}"
+
+
 # ── Editorial inline-SVG charts ────────────────────────────────────
 # Tiny static SVGs that ride the editorial palette (teal-deep / amber /
 # rule color). No JS, no chart library — they substitute for "bland
@@ -251,7 +265,10 @@ _IC_MEMO_CSS = """
   color: #FAF7F0; height: 100%;
   font-family: "JetBrains Mono",monospace; font-size: .76rem;
   font-weight: 600; display: flex; align-items: center;
-  justify-content: flex-end; padding: 0 .6rem;
+  justify-content: flex-end; padding: 0 .55rem;
+  /* min-width so the in-bar value (e.g. $2.2M on a tiny lever) fits inside
+   * the fill instead of being clipped by the track's overflow:hidden. */
+  min-width: 74px; box-sizing: border-box;
   white-space: nowrap; box-shadow: 2px 0 0 rgba(15,28,46,.04);
   transition: width .35s ease;
 }
@@ -642,8 +659,8 @@ def render_ic_memo(
         lever_rows += (
             f'<tr>'
             f'<td><strong>{_html.escape(lev["name"])}</strong></td>'
-            f'<td class="num">{lev["current"]:.1%}</td>'
-            f'<td class="num cad-pos">{lev["target"]:.1%}</td>'
+            f'<td class="num">{_lev_val(lev, "current")}</td>'
+            f'<td class="num cad-pos">{_lev_val(lev, "target")}</td>'
             f'<td class="num cad-pos"><strong>{_fm(lev["ebitda_impact"])}</strong></td>'
             f'<td class="num">+{lev["margin_bps"]:.0f}bp</td>'
             f'<td class="num">{lev["ramp_months"]}mo</td>'
@@ -710,12 +727,26 @@ def render_ic_memo(
         if not grid:
             return ""
         g = grid[0]
+        cls_attr = f' class="{row_cls}"' if row_cls else ""
+        if g.get("not_applicable"):
+            # Negative current EBITDA → no priceable LBO. Show n/a, not a fake
+            # 0.00x / -100% that reads as a total wipeout.
+            return (
+                f'<tr{cls_attr}>'
+                f'<td><strong>{label}</strong></td>'
+                f'<td class="num">{g["entry_multiple"]:.1f}x</td>'
+                f'<td class="num">{g["exit_multiple"]:.1f}x</td>'
+                f'<td class="num" colspan="4" '
+                f'style="color:#8a93a0;font-style:italic;text-align:left;'
+                f'padding-left:14px;">n/a — LBO returns need positive '
+                f'current EBITDA</td>'
+                '</tr>'
+            )
         irr_cls = (
             "cad-pos" if g["irr"] > 0.20
             else "cad-warn" if g["irr"] > 0.15
             else "cad-neg"
         )
-        cls_attr = f' class="{row_cls}"' if row_cls else ""
         return (
             f'<tr{cls_attr}>'
             f'<td><strong>{label}</strong></td>'
@@ -744,7 +775,7 @@ def render_ic_memo(
         ("Bull", data["bull_grid"][:1], "pos"),
         ("Bear", data["bear_grid"][:1], "neg"),
     ):
-        if grid:
+        if grid and not grid[0].get("not_applicable"):
             g = grid[0]
             tone_resolved = (
                 "pos" if g["irr"] > 0.20
@@ -762,11 +793,21 @@ def render_ic_memo(
         '</div>'
     ) if scenario_chart else ""
 
+    _returns_na = data.get("ebitda", 0) <= 0
+    _returns_na_note = (
+        '<p class="ck-section-body" style="color:#8a1e0e;">'
+        '<strong>Returns are n/a for this target.</strong> Current EBITDA is '
+        f'negative ({_fm(data["ebitda"])}), so there is no priceable entry at an '
+        'EBITDA multiple — the LBO scenarios apply only once a turnaround '
+        'restores positive EBITDA. The bridge above sizes that turnaround.</p>'
+        if _returns_na else ''
+    )
     section6_inner = (
         '<p class="ck-section-body">'
         '5-year hold, 5.5x leverage, 3% organic growth, 10%/yr debt paydown. '
         'Base case uses 100% of predicted RCM uplift. Bull case: 130% uplift at lower entry. '
         'Bear case: 50% uplift at higher entry.</p>'
+        + _returns_na_note
         + scenario_chart + scenario_caption +
         '<table class="cad-table"><thead><tr>'
         '<th>Scenario</th><th>Entry</th><th>Exit</th><th>Equity In</th>'
