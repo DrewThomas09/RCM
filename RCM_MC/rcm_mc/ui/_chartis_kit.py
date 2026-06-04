@@ -4783,6 +4783,10 @@ _CK_TOUR_JS = """
   document.addEventListener("click", function(e) {
     var t = e.target;
     if (!t.closest) return;
+    // Any element tagged [data-ck-tour-open] launches the walkthrough — the
+    // discoverable entry point (the user-menu "Take the tour" item) so the
+    // tour isn't reachable only via the hidden "T" shortcut / ?tour=1.
+    if (t.closest("[data-ck-tour-open]")) { e.preventDefault(); open(1); }
     if (t.closest("[data-ck-tour-close]")) { close(); }
     if (t.closest("[data-ck-tour-skip]"))  { skip();  }
     if (t.closest("[data-ck-tour-next]"))  { next();  }
@@ -7739,7 +7743,7 @@ _CSS_INLINE_FALLBACK = """
     to{opacity:1; transform:translateY(0);} }
   .ck-mega-inner { max-width:var(--content-max); margin:0 auto;
     padding:14px 32px 12px; display:grid; grid-template-columns:2fr 3fr;
-    column-gap:40px; row-gap:0; align-items:start; }
+    column-gap:40px; row-gap:0; align-items:stretch; }
   /* Shown mega = block (the centered 2fr/3fr grid lives on .ck-mega-inner). */
   .ck-nav-group:hover > .ck-nav-mega,
   .ck-nav-group.is-open > .ck-nav-mega { display:block; }
@@ -7753,8 +7757,8 @@ _CSS_INLINE_FALLBACK = """
   /* LEDE column (2fr) — editorial: kicker · headline · pull-quote · anchored
      all-tools CTA. min-width:0 keeps a long blurb wrapping in-column (guarded);
      the right rule + 48px pad separate it from the listing. */
-  .ck-mega-lede { display:flex; flex-direction:column; min-width:0;
-    padding-right:36px; border-right:1px solid var(--tb-rule); }
+  .ck-mega-lede { display:flex; flex-direction:column; justify-content:center;
+    min-width:0; padding-right:36px; border-right:1px solid var(--tb-rule); }
   .ck-mega-feat { display:flex; flex-direction:column; gap:5px; padding:0;
     min-width:0; overflow:visible; background:transparent; border:0;
     text-decoration:none; }
@@ -10716,6 +10720,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<a href="/users" class="ck-user-dropdown-item">Admin</a>'
         '<a href="/audit" class="ck-user-dropdown-item">Audit Log</a>'
         '<div class="ck-user-dropdown-divider"></div>'
+        '<button type="button" class="ck-user-dropdown-item" '
+        'data-ck-tour-open>Take the tour &middot; T</button>'
         '<button type="button" class="ck-user-dropdown-item" '
         'data-ck-intro-toggle>Tutorial intros: off</button>'
         '<button type="button" class="ck-user-dropdown-item" '

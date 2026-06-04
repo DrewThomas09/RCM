@@ -554,14 +554,23 @@ def _vertical_rows(vertical: str, state: str = "",
     state = (state or "").upper()
     try:
         if vertical == "hospitals":
-            from ..data.hcris import load_hcris
-            df = load_hcris()
+            # ONE row per hospital (latest cost report per CCN), with computed
+            # features so the Op-margin column is real. The raw load_hcris()
+            # carries every fiscal-year filing (~18k rows, ~6.1k unique CCNs),
+            # which double-counted hospitals in the universe KPI and could list
+            # the same hospital twice in the ranked table; it also lacks
+            # operating_margin (a computed field), so the quality column was
+            # always "—". _get_latest_per_ccn + _add_computed_features fixes
+            # both and keeps the count consistent with the map.
+            from ..data.hcris import _get_latest_per_ccn
+            from .regression_page import _add_computed_features
+            df = _add_computed_features(_get_latest_per_ccn())
             if df is None or "ccn" not in df.columns:
                 return []
             if state:
                 df = df[df["state"].str.upper() == state]
             rows = []
-            for _, r in (df if limit is None else df.head(800)).iterrows():
+            for _, r in df.iterrows():
                 margin = r.get("operating_margin")
                 rows.append({
                     "ccn": str(r.get("ccn", "")), "name": str(r.get("name", "") or "—"),

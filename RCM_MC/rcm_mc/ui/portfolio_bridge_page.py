@@ -238,7 +238,10 @@ def render_portfolio_bridge(
     )
     intro = ck_editorial_head(
         eyebrow="PORTFOLIO BRIDGE",
-        title="Where the partner sees the whole pipeline at once.",
+        # Title is the tool NAME; the descriptive line is the lede (was
+        # swapped — the sentence sat in the title slot while the name hid in
+        # the eyebrow, and the lede merely repeated the meta counts).
+        title="Portfolio Bridge",
         meta=(
             f"{n_deals} ACTIVE DEAL"
             f"{'S' if n_deals != 1 else ''} · "
@@ -246,10 +249,10 @@ def render_portfolio_bridge(
             f"+{_fm(total_uplift)} EBITDA UPLIFT · "
             f"{_cur_pct:.1f}% → {_new_pct:.1f}% MARGIN"
         ),
+        lede_italic_phrase="Where the partner sees the whole pipeline at once.",
         lede_body=(
-            f"{n_deals} active pipeline deals · {_fm(total_revenue)} "
-            f"revenue · projected +{_fm(total_uplift)} EBITDA uplift "
-            f"({_cur_pct:.1f}% → {_new_pct:.1f}% margin)."
+            "Every pipeline hospital's EBITDA bridge in one view — current "
+            "versus pro-forma margin and the RCM levers that close the gap."
         ),
     )
     kpis = (
@@ -416,14 +419,18 @@ def render_portfolio_bridge(
 
     pb_styles = """
 <style>
-.pb-bar-row{display:flex;align-items:center;gap:8px;padding:5px 0;
+.pb-bar-row{display:flex;align-items:center;gap:10px;padding:6px 0;
 border-bottom:1px solid var(--cad-border);}
-.pb-bar-name{width:160px;font-size:12px;font-weight:500;
+.pb-bar-name{width:172px;font-size:12.5px;font-weight:500;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pb-bar-track{flex:1;background:var(--cad-bg3);border-radius:3px;height:16px;}
-.pb-bar-fill{background:var(--cad-pos);border-radius:3px;
-height:16px;display:flex;align-items:center;justify-content:flex-end;
-padding-right:4px;font-size:10px;color:#fff;font-weight:600;min-width:35px;}
+/* Taller bars so the in-bar value label (e.g. $25.0M) has room to sit
+ * legibly inside the fill instead of being squeezed against a 16px sliver.
+ * min-width keeps the label inside even for the smallest lever. */
+.pb-bar-track{flex:1;background:var(--cad-bg3);border-radius:4px;height:26px;}
+.pb-bar-fill{background:var(--cad-pos);border-radius:4px;
+height:26px;display:flex;align-items:center;justify-content:flex-end;
+padding-right:9px;font-size:11.5px;color:#fff;font-weight:700;
+letter-spacing:0.01em;min-width:58px;}
 .pb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 </style>
 """

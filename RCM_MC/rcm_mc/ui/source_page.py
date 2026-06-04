@@ -109,7 +109,7 @@ def render_source_page(
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
         + ck_kpi_block("Matches Found", matches_value, "for selected thesis")
         + ck_kpi_block("Theses Available", theses_value, "in library")
-        + ck_kpi_block("HCRIS Universe", "~6,000", "hospital corpus")
+        + ck_kpi_block("HCRIS Universe", "~6,000", "hospitals tracked")
         + '</div>'
     )
     next_up = ck_next_section(
@@ -122,7 +122,8 @@ def render_source_page(
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="DEAL SOURCING",
-        title="Where the next deal might be hiding.",
+        # Title is the tool name; the evocative line lives in the lede below.
+        title="Deal Sourcing",
         meta=(
             f"{n} MATCH{'ES' if n != 1 else ''} · "
             f"{n_theses} THES{'ES' if n_theses != 1 else 'IS'} · "
