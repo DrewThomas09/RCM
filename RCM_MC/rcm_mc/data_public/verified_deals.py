@@ -3756,6 +3756,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.prnewswire.com/news-releases/avista-capital-partners-to-acquire-express-scripts-subsidiary-united-biosource-300561642.html",
         "source_note": "Avista Capital Partners (United BioSource from Express Scripts, Nov 2017)",
     },
+    {
+        "target": "ConnectiveRx", "sponsor": "Genstar Capital",
+        "year": 2015, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Tech-enabled biopharma commercialization / patient-access + affordability ('digital hub') services for 140+ drug manufacturers; Genstar platform",
+        "outcome": "active", "outcome_note": "Active; Genstar Capital formed/invested 2015 (recap with Harvest + Blackstone 2020).",
+        "source_url": "https://www.gencap.com/genstar-capital-announces-recapitalization-of-connectiverx/",
+        "source_note": "Genstar Capital (ConnectiveRx, 2015)",
+    },
+    {
+        "target": "CareMetx", "sponsor": "General Atlantic",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Digital pharma 'hub' — patient access / reimbursement / adherence services for biopharma; General Atlantic majority from The Vistria Group (Vistria ~4.8x)",
+        "outcome": "active", "outcome_note": "Active; General Atlantic took majority Jan 2021 from The Vistria Group (Vistria since 2017, ~4.8x).",
+        "source_url": "https://www.caremetx.com/press-release/caremetx-general-atlantic-and-the-vistria-group-announce-strategic-growth-partnership",
+        "source_note": "General Atlantic (CareMetx from The Vistria Group, Jan 2021)",
+    },
 ]
 
 
