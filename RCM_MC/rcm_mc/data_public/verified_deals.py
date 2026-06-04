@@ -3804,6 +3804,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.prnewswire.com/news-releases/bamboo-health--combination-of-proven-care-collaboration-leaders--unveiled-to-enable-payer-provider-collaboration-for-whole-person-care-301365804.html",
         "source_note": "Clearlake Capital Group (Bamboo Health / Appriss + PatientPing, 2021, >$1.5bn)",
     },
+    {
+        "target": "CorroHealth", "sponsor": "Patient Square Capital",
+        "year": 2024, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Tech + clinically-led revenue-cycle-management platform for health systems / plans (15,000+ staff); Patient Square + Carlyle joint control",
+        "outcome": "active", "outcome_note": "Active; Patient Square Capital strategic investment Oct 2024 (Carlyle co-control, since 2020).",
+        "source_url": "https://patientsquarecapital.com/corrohealth-announces-strategic-partnership-with-patient-square-capital/",
+        "source_note": "Patient Square Capital (CorroHealth, Oct 2024; Carlyle co-owner)",
+    },
+    {
+        "target": "Paradigm", "sponsor": "OMERS Private Equity",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Complex / catastrophic medical management + case management for workers' compensation; OMERS majority from Summit Partners (later to Patient Square 2026)",
+        "outcome": "active", "outcome_note": "Active; OMERS Private Equity majority Oct 2018 (Summit Partners prior); Patient Square acquiring 2026.",
+        "source_url": "https://www.prnewswire.com/news-releases/paradigm-announces-majority-investment-from-omers-private-equity-300715906.html",
+        "source_note": "OMERS Private Equity (Paradigm from Summit Partners, Oct 2018)",
+    },
 ]
 
 
