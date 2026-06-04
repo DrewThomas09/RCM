@@ -432,7 +432,137 @@ def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
                                     h["band"], today=today - timedelta(days=1))
             except Exception:  # noqa: BLE001
                 pass
+
+    # Partner workflow: analyst notes, dated deadlines (some overdue), and a
+    # couple of alerts walked into their lifecycle (ack / snooze) so the notes
+    # search, deadlines inbox, personal dashboard and alert lifecycle all
+    # populate instead of showing empty states.
+    _seed_demo_workflow(store, today)
     return len(KKR_DEMO_DEALS)
+
+
+# Curated analyst notes per deal (deal_id -> [(author, body), ...]). Real
+# storylines so the deal pages + notes search read like a live workspace.
+_DEMO_NOTES: Dict[str, List[tuple]] = {
+    "envision": [
+        ("AT", "Covenant headroom gone negative — leverage 7.6x vs the 7.0x test. "
+               "No Surprises Act + the UnitedHealthcare out-of-network dispute are "
+               "compressing physician-staffing margins. Restructuring advisors engaged."),
+        ("IC", "Equity impaired; treat as the portfolio's downside case in LP reporting. "
+               "Modeling recovery scenarios ahead of the 2023 Chapter 11 filing."),
+    ],
+    "gland_pharma": [
+        ("JD", "Injectable-generics CDMO outperforming the underwrite — FDA approvals on "
+               "track, China JV ramping. Exited via the 2020 IPO at ~4x: the upside "
+               "bookend to Envision."),
+    ],
+    "cotiviti": [
+        ("SB", "Payment-integrity volumes strong; net revenue retention >110% across the "
+               "top payers. Healthy comp for the RCM / health-tech sleeve."),
+    ],
+    "heartland": [
+        ("AT", "DSO same-store growth softening and de novo pace is ahead of integration "
+               "capacity. Leverage 6.2x — watching the spring covenant test. Amber."),
+    ],
+    "gmr": [
+        ("AT", "Air-medical reimbursement pressure (NSA arbitration backlog). Capital-"
+               "intensive fleet; FCF conversion below plan. Amber — monitoring liquidity."),
+    ],
+    "brightspring": [
+        ("SB", "Home & community plus pharmacy both compounding; successful 2024 IPO. "
+               "Strong realized comp for the home-health sleeve."),
+    ],
+}
+
+# Dated deadlines per deal (deal_id -> [(label, offset_days_from_today, owner)]).
+# Negative offsets are deliberately overdue so the overdue inbox + the
+# deadline-overdue alert both have something to show.
+_DEMO_DEADLINES: Dict[str, List[tuple]] = {
+    "envision": [("Restructuring committee review", -3, "AT"),
+                 ("Lender forbearance expiry", 12, "AT")],
+    "gmr": [("NSA arbitration filing", -5, "AT"),
+            ("Liquidity review", 9, "AT")],
+    "heartland": [("Spring covenant test", 21, "AT"),
+                  ("Q2 board meeting", 40, "AT")],
+    "cotiviti": [("Annual payer repricing review", 30, "SB")],
+    "petvet": [("Add-on LOI decision", 7, "JD")],
+    "therapy_brands": [("Integration milestone check", 18, "SB")],
+    "bluesprig": [("Clinical quality audit", 25, "SB")],
+    "one_call": [("Refinancing kickoff", 45, "AT")],
+}
+
+
+def _seed_demo_workflow(store: Any, today: date) -> None:
+    """Seed notes, deadlines and a couple of alert lifecycle states.
+
+    Best-effort and idempotent: notes are skipped for a deal that already has
+    them (so re-seeding doesn't duplicate), deadlines dedupe on
+    (deal_id, label, due_date), and the alert ack/snooze targets the live
+    evaluator output so it silences exactly the right rows."""
+    # --- Notes (idempotent: skip deals that already have notes) -------------
+    try:
+        from ..deals.deal_notes import record_note, list_notes
+        for did, notes in _DEMO_NOTES.items():
+            try:
+                existing = list_notes(store, did)
+                if existing is not None and len(existing) > 0:
+                    continue
+            except Exception:  # noqa: BLE001
+                pass
+            for author, body in notes:
+                try:
+                    record_note(store, deal_id=did, body=body, author=author)
+                except Exception:  # noqa: BLE001
+                    pass
+    except Exception:  # noqa: BLE001
+        pass
+
+    # --- Deadlines (add_deadline already dedupes open rows) -----------------
+    try:
+        from ..deals.deal_deadlines import add_deadline
+        for did, items in _DEMO_DEADLINES.items():
+            for label, offset, owner in items:
+                due = (today + timedelta(days=int(offset))).isoformat()
+                try:
+                    add_deadline(store, deal_id=did, label=label,
+                                 due_date=due, owner=owner)
+                except Exception:  # noqa: BLE001
+                    pass
+    except Exception:  # noqa: BLE001
+        pass
+
+    # --- Alert lifecycle: ack one amber, snooze another (leave reds live) ---
+    try:
+        from ..alerts.alerts import evaluate_all
+        from ..alerts.alert_acks import ack_alert, trigger_key_for
+        alerts = evaluate_all(store) or []
+        amber = [a for a in alerts
+                 if getattr(a, "severity", "") == "amber"
+                 and getattr(a, "deal_id", "") != "envision"]
+        seen_deals: set = set()
+        acted = 0
+        for a in amber:
+            did = getattr(a, "deal_id", "")
+            if did in seen_deals:
+                continue
+            seen_deals.add(did)
+            tk = trigger_key_for(a)
+            try:
+                if acted == 0:
+                    ack_alert(store, kind=a.kind, deal_id=did, trigger_key=tk,
+                              note="Reviewed — within tolerance this quarter.",
+                              acked_by="SB")
+                elif acted == 1:
+                    ack_alert(store, kind=a.kind, deal_id=did, trigger_key=tk,
+                              snooze_days=10, note="Snoozed pending next reporting cycle.",
+                              acked_by="AT")
+                else:
+                    break
+                acted += 1
+            except Exception:  # noqa: BLE001
+                pass
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def demo_deal_rows() -> List[Dict[str, Any]]:
