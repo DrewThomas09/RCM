@@ -2185,8 +2185,10 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
             '<h3>Outlier matrix had no finite rows.</h3>'
             '</div>'
         )
-    W, H = 1000.0, 340.0
-    pad_l, pad_r, pad_t, pad_b = 60.0, 24.0, 16.0, 28.0
+    W, H = 1000.0, 420.0
+    # Taller panel + room below the x-ticks for the axis title (they used to
+    # collide). pad_r leaves space for the right-most dot labels.
+    pad_l, pad_r, pad_t, pad_b = 62.0, 120.0, 18.0, 52.0
     lev_arr = [float(o["leverage"]) for o in safe]
     sr_arr = [float(o["std_residual"]) for o in safe]
     lev_hi = max(lev_arr) * 1.05 or 0.05
@@ -2246,7 +2248,7 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
         "possible_opportunity": "#0a8a5f",
     }
     dots_html = ""
-    labels_html = ""
+    flagged_for_label = []
     for o in safe[:20]:  # top-20 ranked by influence
         fill = _CLASS_FILL.get(o.get("influence_class") or "", "#506478")
         x = _sx(float(o["leverage"]))
@@ -2258,15 +2260,32 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
             f'opacity="0.85"/>'
         )
         if fill != "#506478":
-            # Label only flagged points so the chart doesn't crowd
-            name = (o.get("name") or o.get("ccn") or "?")[:18]
-            labels_html += (
-                f'<text x="{x + 8:.1f}" y="{y + 3:.1f}" '
-                'font-family="JetBrains Mono,monospace" font-size="9" '
-                'fill="#0e1a29" '
-                'style="letter-spacing:.05em">'
-                f'{_html.escape(name)}</text>'
-            )
+            flagged_for_label.append((o, x, y))
+    # Label only the most influential flagged points — labeling all 20 piled
+    # clustered hospital names on top of each other (the reported "squished /
+    # unreadable" chart). Rank by Cook's D, take the top 9, place to the right
+    # of the dot (flip left near the right edge), and greedily nudge each label
+    # down until it clears the ones already placed.
+    flagged_for_label.sort(key=lambda t: -(t[0].get("cooks_d") or 0.0))
+    placed: List[Tuple[float, float]] = []
+    labels_html = ""
+    for o, x, y in flagged_for_label[:9]:
+        name = (o.get("name") or o.get("ccn") or "?")[:16]
+        right = x < (W - pad_r - 90)
+        lx = x + 8 if right else x - 8
+        anchor = "start" if right else "end"
+        ly = y + 3
+        for _ in range(10):
+            if all(abs(ly - py) > 11 or abs(lx - px) > 160 for px, py in placed):
+                break
+            ly += 12
+        placed.append((lx, ly))
+        labels_html += (
+            f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="{anchor}" '
+            'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            'fill="#0e1a29" style="letter-spacing:.03em">'
+            f'{_html.escape(name)}</text>'
+        )
 
     # Cook's D conventional cutoff at 4/n (where n is the model's n).
     n_all = result.get("n") or len(safe)
@@ -2287,10 +2306,11 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
         f'<h3>{n_flagged} hospitals carry disproportionate '
         f'weight on the fit.</h3>'
         f'<svg class="rge-lev-svg" viewBox="0 0 {W:.0f} {H:.0f}" '
-        'preserveAspectRatio="none">'
+        'preserveAspectRatio="xMidYMid meet" '
+        'style="width:100%;height:auto;display:block;">'
         f'{axis_html}{ticks_html}{dots_html}{labels_html}'
         f'<text x="{pad_l + (W - pad_l - pad_r)/2:.1f}" '
-        f'y="{H - 6:.1f}" text-anchor="middle" '
+        f'y="{H - 8:.1f}" text-anchor="middle" '
         'font-family="JetBrains Mono,monospace" font-size="10" '
         'fill="#7a8595" '
         'style="letter-spacing:.1em;text-transform:uppercase">'
