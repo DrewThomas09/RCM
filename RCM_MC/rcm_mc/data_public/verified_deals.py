@@ -3388,6 +3388,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.alarisequitypartners.com/news/article/385-alaris-equity-partners-announces-us-546-million-strategic-investment-with-brookfield-in-body-contour-centers-llc",
         "source_note": "Alaris Equity Partners (Sono Bello / Body Contour Centers, 2018)",
     },
+    {
+        "target": "Outpatient Imaging Affiliates", "sponsor": "Cranemere",
+        "year": 2021, "ev_usd_mm": 400, "sector": "other_services",
+        "subsector_note": "Hospital-JV outpatient imaging-center operator (~60 centers); Cranemere acquired from ICV Partners (~$400M)",
+        "outcome": "active", "outcome_note": "Active; Cranemere acquired from ICV Partners 2021 (~$400M); ICV held 2018–2021.",
+        "source_url": "https://www.icvpartners.com/icv-partners-announces-acquisition-of-outpatient-imaging-affiliates/",
+        "source_note": "Cranemere (Outpatient Imaging Affiliates from ICV Partners, 2021, ~$400M)",
+    },
+    {
+        "target": "Rezolut", "sponsor": "SRM Equity Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Diagnostic outpatient-imaging center platform; formed 2018 as an SRM Equity Partners (Sunny River) portfolio company",
+        "outcome": "exited", "outcome_note": "SRM-backed since 2018; exited to Envision Radiology (closed Dec 2025).",
+        "source_url": "https://www.srmequity.com/news/srm-announces-sale-of-rezolut",
+        "source_note": "SRM Equity Partners (Rezolut, formed 2018; exited to Envision Radiology 2025)",
+    },
+    {
+        "target": "United Rheumatology", "sponsor": "Linden Capital Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Rheumatology specialty network / GPO; acquired by Linden Capital-backed Specialty Networks",
+        "outcome": "exited", "outcome_note": "Acquired by Specialty Networks (Linden Capital Partners) April 2022; Specialty Networks later sold to Cardinal Health 2024.",
+        "source_url": "https://www.prnewswire.com/news-releases/specialty-networks-llc-announces-the-acquisition-of-united-rheumatology-llc-301525409.html",
+        "source_note": "Linden Capital Partners / Specialty Networks (United Rheumatology, April 2022)",
+    },
 ]
 
 
