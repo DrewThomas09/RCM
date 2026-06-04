@@ -2790,6 +2790,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.belhealth.com/portfolio-info/care-advantage",
         "source_note": "BelHealth Investment Partners (Care Advantage, 2017); Searchlight 2021",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 31) — medical-equipment management + health-
+    # plan / benefits / MA technology take-privates. Web-validated.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Agiliti", "sponsor": "Thomas H. Lee Partners",
+        "year": 2024, "ev_usd_mm": 2500, "sector": "other_services",
+        "subsector_note": "Medical-equipment management / rental for hospitals; THL take-private (~$2.5B)",
+        "outcome": "exited", "outcome_note": "Public→private; THL (had owned it pre-2021 IPO).",
+        "source_url": "https://newsroom.agilitihealth.com/news/agiliti-to-be-taken-private-by-thl-partners/",
+        "source_note": "Thomas H. Lee Partners (Agiliti take-private, 2024, ~$2.5B)",
+    },
+    {
+        "target": "Tivity Health", "sponsor": "Stone Point Capital",
+        "year": 2022, "ev_usd_mm": 2000, "sector": "other_services",
+        "subsector_note": "Fitness/health benefits (SilverSneakers); take-private at $32.50/share (~$2B)",
+        "outcome": "exited", "outcome_note": "Public→private; Stone Point Capital.",
+        "source_url": "https://www.pehub.com/stone-point-to-take-tivity-health-private-for-2bn/",
+        "source_note": "Stone Point Capital (Tivity Health take-private, 2022, ~$2B)",
+    },
+    {
+        "target": "Convey Health Solutions", "sponsor": "TPG Capital",
+        "year": 2022, "ev_usd_mm": 1100, "sector": "rcm_healthtech",
+        "subsector_note": "Medicare-Advantage / health-plan tech + services; take-private (~$1.1B)",
+        "outcome": "exited", "outcome_note": "Public→private; TPG (New Mountain owned 2019, IPO 2021).",
+        "source_url": "https://www.tpg.com/news-and-insights/tpg-partners-convey-health-solutions",
+        "source_note": "TPG Capital (Convey Health take-private, 2022, ~$1.1B)",
+    },
+    {
+        "target": "HealthComp", "sponsor": "New Mountain Capital",
+        "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Third-party benefits administrator (TPA) + analytics; from Alpine Investors",
+        "outcome": "active", "outcome_note": "Active benefits-administration platform.",
+        "source_url": "https://www.newmountaincapital.com/portfolio/",
+        "source_note": "New Mountain Capital (HealthComp from Alpine, 2022)",
+    },
+    {
+        "target": "eMids", "sponsor": "New Mountain Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare-IT services / digital engineering; New Mountain-backed",
+        "outcome": "active", "outcome_note": "Active health-IT services platform.",
+        "source_url": "https://www.newmountaincapital.com/portfolio/",
+        "source_note": "New Mountain Capital (eMids, 2019)",
+    },
 ]
 
 
