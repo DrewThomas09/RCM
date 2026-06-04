@@ -104,7 +104,7 @@ def _heatmap_svg(
                     f'font-variant-numeric="tabular-nums">{count}</text>'
                 )
 
-    return f'<svg width="{w}" height="{h}" style="display:block">{"".join(parts)}</svg>'
+    return f'<svg viewBox="0 0 {w} {h}" width="100%" style="display:block;max-width:{w}px">{"".join(parts)}</svg>'
 
 
 def _moic_heat_svg(
@@ -171,7 +171,7 @@ def _moic_heat_svg(
             if label:
                 parts.append(f'<text x="{x_left+cell_w//2}" y="{y_mid+4}" text-anchor="middle" fill="{text_col}" font-size="8" font-family="{_MONO}" font-variant-numeric="tabular-nums">{label}</text>')
 
-    return f'<svg width="{w}" height="{h}" style="display:block">{"".join(parts)}</svg>'
+    return f'<svg viewBox="0 0 {w} {h}" width="100%" style="display:block;max-width:{w}px">{"".join(parts)}</svg>'
 
 
 def render_deal_flow_heatmap(min_sector_deals: int = 3) -> str:
