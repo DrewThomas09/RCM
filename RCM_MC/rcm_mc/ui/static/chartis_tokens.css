@@ -54,17 +54,22 @@
   --sc-sans:       'Inter Tight', -apple-system, 'Segoe UI', sans-serif;
   --sc-mono:       'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
 
-  /* Spacing scale (8pt-ish, with 4 and 2 for fine control) */
+  /* Spacing scale (8pt-ish, with 4 and 2 for fine control).
+   * 2026 breathing-room pass: the layout-range tokens (s-4..s-9) were bumped
+   * ~12-17% because partners read the pages as "everything too close / text
+   * clutter — almost wants to be zoomed out 5-10%". Fine-control tokens
+   * (s-1..s-3) stay put so tight inline gaps don't drift. Every margin/padding/
+   * gap built on these tokens gains air at once, across all ~300 pages. */
   --sc-s-1: 2px;
   --sc-s-2: 4px;
   --sc-s-3: 8px;
-  --sc-s-4: 12px;
-  --sc-s-5: 16px;
-  --sc-s-6: 24px;
-  --sc-s-7: 32px;
-  --sc-s-8: 48px;
-  --sc-s-9: 64px;
-  --sc-s-10: 96px;
+  --sc-s-4: 14px;
+  --sc-s-5: 19px;
+  --sc-s-6: 28px;
+  --sc-s-7: 38px;
+  --sc-s-8: 54px;
+  --sc-s-9: 72px;
+  --sc-s-10: 104px;
 
   /* Radii — deliberately small. Institutional. */
   --sc-r-1: 2px;
@@ -180,7 +185,9 @@ body {
   color: var(--sc-text);
   background: var(--sc-parchment);
   font-size: 15px;
-  line-height: 1.55;
+  /* 2026 breathing-room pass: 1.55 → 1.62 so dense body copy reads less
+   * cramped (paired with the looser spacing scale above). */
+  line-height: 1.62;
   text-wrap: pretty;
 }
 img, svg { display: block; max-width: 100%; }

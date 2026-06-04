@@ -5610,7 +5610,7 @@ _CK_EDITORIAL_HEAD_CSS = """
  *  sb-head / cl-head). Extracted to one helper so the remaining
  * ~270 pages can adopt the same masthead with one call. Scoped to
  * `.ck-eh` so it doesn't collide with any page-local head class. */
-.ck-eh{padding:0 0 28px;margin:0 0 24px;
+.ck-eh{padding:0 0 34px;margin:0 0 32px;
   border-bottom:1px solid var(--rule-soft,#ddd1ac);}
 .ck-eh .ck-eh-row{display:flex;justify-content:space-between;
   align-items:flex-start;gap:32px;}
@@ -5630,17 +5630,17 @@ _CK_EDITORIAL_HEAD_CSS = """
 .ck-eh .ck-eh-eyebrow{font:500 11px/1 var(--sc-mono,monospace);
   letter-spacing:.18em;text-transform:uppercase;
   color:var(--green-deep,#154e36);display:flex;align-items:center;
-  gap:12px;margin:0 0 18px;}
+  gap:12px;margin:0 0 20px;}
 .ck-eh .ck-eh-eyebrow .ck-eh-dash{width:24px;height:1px;
   background:var(--green-deep,#154e36);}
-.ck-eh h1{font:400 44px/1.05 var(--sc-serif,Georgia),serif;
-  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 14px;}
+.ck-eh h1{font:400 44px/1.07 var(--sc-serif,Georgia),serif;
+  letter-spacing:-.015em;color:var(--ink,#16263a);margin:0 0 18px;}
 .ck-eh .ck-eh-meta{font:500 11px/1 var(--sc-mono,monospace);
   letter-spacing:.14em;text-transform:uppercase;
-  color:var(--muted,#7a8595);margin:0 0 18px;}
-.ck-eh .ck-eh-lede{font:400 italic 16.5px/1.55
+  color:var(--muted,#7a8595);margin:0 0 20px;}
+.ck-eh .ck-eh-lede{font:400 italic 16.5px/1.6
   var(--sc-serif,Georgia),serif;
-  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 18px;}
+  color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 22px;}
 .ck-eh .ck-eh-lede em{color:var(--green-deep,#154e36);
   font-style:italic;}
 .ck-eh .ck-eh-source{font:500 10px/1.4 var(--sc-mono,monospace);
@@ -8056,7 +8056,7 @@ _CSS_INLINE_FALLBACK = """
    * + teal chevron-cut bottom-right corner. Mirrors chartis.com/insights. */
   /* Page title — H1-equivalent header for content pages
    * (/library, /research, /pipeline). Sits above KPIs and search. */
-  .ck-page-title { margin:0 0 var(--sc-s-7); display:flex; flex-direction:column; gap:10px; }
+  .ck-page-title { margin:0 0 var(--sc-s-7); display:flex; flex-direction:column; gap:13px; }
   .ck-page-title h1 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(28px, 3.4vw, 40px); line-height:1.1; letter-spacing:-0.015em; color:var(--sc-navy); margin:0; }
   .ck-page-title h1 em { font-style:italic; font-weight:400; color:var(--sc-teal-ink); }
   .ck-page-title-meta { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.08em; text-transform:uppercase; }
