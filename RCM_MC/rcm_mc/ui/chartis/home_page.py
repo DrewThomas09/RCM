@@ -700,6 +700,7 @@ def _new_modules_index() -> str:
 
 def render_home(store: Any, db_path: str, current_user: Optional[str] = None) -> str:
     """Render the seven-panel home landing page."""
+    from ..demo_banner import demo_banner as _demo_banner
     # Single explainer: render_page_explainer below. The old bespoke
     # ck-home-explainer deck appended here was a second explainer under
     # the title.
@@ -742,7 +743,8 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         + _panel("Corpus Insights", _corpus_insights(), code="CPS")
     )
     return chartis_shell(
-        intro + explainer + kpi + quickstart + new_modules + panels,
+        intro + _demo_banner(store) + explainer + kpi + quickstart
+        + new_modules + panels,
         title="Home",
         active_nav="/home",
         breadcrumbs=[

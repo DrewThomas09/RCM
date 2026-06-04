@@ -117,6 +117,21 @@ class TestDemoRoutes(unittest.TestCase):
         # And the loaded state offers a reversible unload.
         self.assertIn('action="/demo/unload"', b)
 
+    def test_app_shows_demo_banner_after_load(self):
+        # After loading, the command center carries a 'Demo mode' banner so the
+        # partner knows they're on demo data and can reach the unload control.
+        opener = urllib.request.build_opener(_NoRedirect)
+        req = urllib.request.Request(self.base + "/demo/load", data=b"",
+                                     method="POST")
+        try:
+            opener.open(req, timeout=30)
+        except urllib.error.HTTPError:
+            pass
+        _, _, body = self._get("/app")
+        b = body.decode("utf-8", "replace")
+        self.assertIn("Demo mode", b)
+        self.assertIn("These are not your deals", b)
+
     def test_unload_clears_workspace(self):
         # POST /demo/load then /demo/unload should return the workspace to its
         # pre-demo state (the demo is reversible). Run after load via name order

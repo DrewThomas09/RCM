@@ -173,8 +173,9 @@ def render_app_page(
     # is threaded through so the two-view lexicon is preserved.
     if (layout or "").lower() != "flat":
         from ._app_grid import APP_GRID_CSS, render_app_grid
+        from ..demo_banner import demo_banner
         return editorial_chartis_shell(
-            render_app_grid(
+            demo_banner(store) + render_app_grid(
                 store=store, rollup=rollup, deals_df=deals_df,
                 focused_deal_id=focused_deal_id,
                 selected_stage=selected_stage, focused_packet=focused_packet,
@@ -286,8 +287,9 @@ def render_app_page(
         render_deliverables(store, deal_id=focused_deal_id),
     ]
 
+    from ..demo_banner import demo_banner
     return editorial_chartis_shell(
-        '<div class="page">' + "".join(body_parts) + '</div>',
+        demo_banner(store) + '<div class="page">' + "".join(body_parts) + '</div>',
         title="Command center",
         active_nav="PORTFOLIO",
         breadcrumbs=[
