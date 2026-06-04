@@ -38,7 +38,7 @@ SECTORS = (
     "home_health_hospice", "dental", "dermatology", "ophthalmology",
     "asc", "urgent_care", "rcm_healthtech", "dialysis", "other_services",
     # added in the 2026-06 batch-4/6 expansion
-    "veterinary", "value_based_care", "lab",
+    "veterinary", "value_based_care", "lab", "ems",
 )
 
 VERIFIED_DEALS: List[Dict] = [
@@ -1380,6 +1380,76 @@ VERIFIED_DEALS: List[Dict] = [
         "outcome": "active", "outcome_note": "Active outpatient mental-health platform.",
         "source_url": "https://revelstokecapital.com/news/revelstoke-capital-partners-invests-in-affiliate-of-family-care-center-to-expand-access-to-mental-healthcare/",
         "source_note": "Revelstoke Capital Partners (Family Care Center, Dec 2020)",
+    },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 8) — medical transport, medical supply,
+    # occupational/worksite health, IME, PT/rehab, imaging, dental.
+    # Each web-validated this sprint. Introduces the "ems" sector.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Global Medical Response", "sponsor": "KKR",
+        "year": 2017, "ev_usd_mm": None, "sector": "ems",
+        "subsector_note": "Air + ground ambulance (Air Medical Group $2.09B 2015 + AMR $2.4B 2017)",
+        "outcome": "active", "outcome_note": "Active; KKR air/ground EMS — same No-Surprises-Act exposure as Air Methods.",
+        "source_url": "https://www.globalmedicalresponse.com/news/amgh-and-amr-complete-transaction-and-combine-under-new-parent-company-global-medical-response",
+        "source_note": "Global Medical Response (AMGH+AMR combine under KKR, 2017)",
+    },
+    {
+        "target": "Concentra", "sponsor": "Welsh, Carson, Anderson & Stowe + Select Medical",
+        "year": 2015, "ev_usd_mm": 1055, "sector": "urgent_care",
+        "subsector_note": "Occupational-health + urgent-care clinics; WCAS/Select JV bought from Humana",
+        "outcome": "exited", "outcome_note": "IPO'd / spun off from Select Medical in 2024 (~$3.1B market value).",
+        "source_url": "https://www.concentra.com/resource-center/press-releases/concentra-sale-to-select-medical-and-welsh-carson-is-complete/",
+        "source_note": "Concentra (Humana sale to Select/WCAS, 2015); 2024 IPO",
+    },
+    {
+        "target": "Premise Health", "sponsor": "OMERS Private Equity",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Employer worksite/on-site health clinics; OMERS bought from Water Street + Walgreens",
+        "outcome": "active", "outcome_note": "Active worksite-health platform.",
+        "source_url": "https://www.omers.com/news/omers-private-equity-completes-acquisition-of-premise-health",
+        "source_note": "OMERS Private Equity (Premise Health, July 2018)",
+    },
+    {
+        "target": "ExamWorks", "sponsor": "CVC Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Independent medical exams / IME + Medicare-compliance services; CVC majority",
+        "outcome": "active", "outcome_note": "Active; Leonard Green took it private 2016, CVC bought majority 2021.",
+        "source_url": "https://www.cvc.com/media/news/2021/2021-06-22-cvc-capital-partners-viii-to-invest-in-examworks/",
+        "source_note": "CVC Capital Partners (ExamWorks, 2021); Leonard Green 2016",
+    },
+    {
+        "target": "Confluent Health", "sponsor": "Partners Group",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient physical-therapy MSO (650+ clinics)",
+        "outcome": "active", "outcome_note": "Active PT platform.",
+        "source_url": "https://www.partnersgroup.com/",
+        "source_note": "Partners Group; May 2019 Confluent Health investment",
+    },
+    {
+        "target": "Athletico Physical Therapy", "sponsor": "BDT Capital Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient physical-therapy operator; BDT bought from Harvest Partners",
+        "outcome": "active", "outcome_note": "Active PT platform (900+ clinics post-Pivot).",
+        "source_url": "https://www.bdtmsd.com/",
+        "source_note": "BDT Capital Partners; 2016 Athletico from Harvest Partners",
+    },
+    {
+        "target": "SimonMed Imaging", "sponsor": "American Securities",
+        "year": 2021, "ev_usd_mm": 600, "sector": "other_services",
+        "subsector_note": "Outpatient diagnostic-imaging centers; American Securities (~$600M)",
+        "outcome": "active", "outcome_note": "Active imaging platform.",
+        "source_url": "https://www.american-securities.com/en/our-companies",
+        "source_note": "American Securities (SimonMed, 2021, ~$600M)",
+    },
+    {
+        "target": "Affordable Care", "sponsor": "Harvest Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Dental DSO (Affordable Dentures & Implants); Harvest acquired majority",
+        "outcome": "active", "outcome_note": "Active dental platform.",
+        "source_url": "https://www.dentistryiq.com/practice-management/dsos-and-corporate-dentistry/article/14205397/affordable-care-acquired-by-harvest-partners",
+        "source_note": "DentistryIQ (Affordable Care acquired by Harvest Partners, 2021)",
     },
 ]
 
