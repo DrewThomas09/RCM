@@ -3692,6 +3692,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://comvest.com/comvest-partners-announces-acquisition-of-your-behavioral-health/",
         "source_note": "Comvest Partners (Your Behavioral Health, June 2023)",
     },
+    {
+        "target": "Office Ally", "sponsor": "New Mountain Capital",
+        "year": 2025, "ev_usd_mm": 1800, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare claims clearinghouse + practice-management / RCM software; New Mountain alongside Francisco Partners (~$1.8bn)",
+        "outcome": "active", "outcome_note": "Active; New Mountain Capital acquired stake May 2025 (~$1.8bn); Francisco Partners (since 2021) reinvested.",
+        "source_url": "https://www.businesswire.com/news/home/20250406262209/en/Office-Ally-Embarks-on-Next-Phase-of-Growth-and-Innovation-with-New-Mountain-Capital-and-Francisco-Partners",
+        "source_note": "New Mountain Capital (Office Ally, May 2025, ~$1.8bn)",
+    },
+    {
+        "target": "Emmes", "sponsor": "New Mountain Capital",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Clinical research organization (CRO) for government / biopharma sponsors; New Mountain from Behrman Capital",
+        "outcome": "active", "outcome_note": "Active; New Mountain Capital acquired from Behrman Capital July 2022.",
+        "source_url": "https://www.prnewswire.com/news-releases/behrman-capital-sells-portfolio-company-emmes-to-affiliates-of-new-mountain-capital-301571887.html",
+        "source_note": "New Mountain Capital (Emmes from Behrman Capital, July 2022)",
+    },
+    {
+        "target": "HealthMark Group", "sponsor": "TA Associates",
+        "year": 2025, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Release-of-information / medical-records retrieval + health-IT workflow services; TA Associates lead (Ridgemont Equity rolled)",
+        "outcome": "active", "outcome_note": "Active; TA Associates strategic growth investment July 2025 (from Ridgemont Equity Partners).",
+        "source_url": "https://www.ta.com/news/ta-invests-in-healthmark-group-to-support-the-next-phase-of-growth/",
+        "source_note": "TA Associates (HealthMark Group, July 2025)",
+    },
 ]
 
 
