@@ -6971,6 +6971,9 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "watchlist",   "title": "Watchlist",            "route": "/watchlist"},
     {"id": "questions-ledger", "title": "Diligence Questions · ledger",
         "route": "/diligence/questions"},
+    # International
+    {"id": "global-markets", "title": "Global Healthcare Markets",
+        "route": "/markets/global"},
     # Pipeline / sourcing
     {"id": "pipeline",    "title": "Pipeline",             "route": "/pipeline"},
     {"id": "target-screener","title": "Target Screener",    "route": "/target-screener"},
