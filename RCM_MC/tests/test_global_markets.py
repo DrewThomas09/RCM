@@ -88,6 +88,45 @@ class TestHealthMarketsData(unittest.TestCase):
         self.assertEqual(sum(b["count"] for b in s["by_region"]), s["n_markets"])
 
 
+class TestPortfolioFootprint(unittest.TestCase):
+    """INT-4: international deals — country-tagged deals surface on the global
+    market views (the demo's Gland Pharma in India)."""
+
+    def setUp(self):
+        import os
+        import tempfile
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.demo.kkr_demo import seed_kkr_demo
+        self.tmp = tempfile.TemporaryDirectory()
+        self.store = PortfolioStore(os.path.join(self.tmp.name, "p.db"))
+        self.store.init_db()
+        seed_kkr_demo(self.store, run_dir=os.path.join(self.tmp.name, "r"))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_portfolio_markets_groups_by_country(self):
+        from rcm_mc.data_public.global_health_markets import portfolio_markets
+        fp = portfolio_markets(self.store)
+        self.assertIn("US", fp)
+        self.assertIn("IN", fp)   # Gland Pharma
+        self.assertTrue(any(d["deal_id"] == "gland_pharma" for d in fp["IN"]))
+        # Empty/None store → empty footprint (no crash, no None).
+        self.assertEqual(portfolio_markets(None), {})
+
+    def test_global_page_shows_footprint(self):
+        from rcm_mc.ui.data_public.global_markets_page import render_global_markets
+        h = render_global_markets(self.store)
+        self.assertIn("Your portfolio footprint", h)
+        self.assertIn("/markets/country/IN", h)
+
+    def test_country_page_shows_your_deals(self):
+        from rcm_mc.ui.data_public.global_markets_page import render_country_profile
+        h = render_country_profile("IN", self.store)
+        self.assertIn("Your deals in India", h)
+        self.assertIn("Gland", h)
+
+
 class TestGlobalMarketsRoute(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

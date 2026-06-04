@@ -271,6 +271,11 @@ _HQ_STATE = {
     "clarify_health": "CA",
 }
 
+# Country (ISO-3166 alpha-2) per deal — powers the international /markets views
+# (the portfolio's cross-border footprint). KKR's healthcare book here is US
+# except Gland Pharma, the Indian injectable-generics CDMO. Default "US".
+_HQ_COUNTRY = {"gland_pharma": "IN"}
+
 # Sector-typical EBITDA margin used only to back into an illustrative net
 # revenue base for the RCM EBITDA-bridge dollar math (the platform's core
 # value lever). Software/health-tech run richer margins than capital-intensive
@@ -359,6 +364,8 @@ def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
         st = _HQ_STATE.get(did, "")
         if st:
             profile["state"] = st
+        # Country tag for the international market views (world map footprint).
+        profile["country"] = _HQ_COUNTRY.get(did, "US")
         store.upsert_deal(did, name=spec["name"], profile=profile)
         # Stage PE artifacts the snapshot reader consumes (demo.py format).
         ddir = os.path.join(run_dir, did + "_run")
@@ -608,6 +615,7 @@ def demo_deal_rows() -> List[Dict[str, Any]]:
         st = _HQ_STATE.get(s["id"], "")
         if st:
             profile["state"] = st
+        profile["country"] = _HQ_COUNTRY.get(s["id"], "US")
         rows.append({
             "deal_id": s["id"], "name": s["name"], "sponsor": "KKR",
             "sector": s["sector"], "vintage": s["year"],
