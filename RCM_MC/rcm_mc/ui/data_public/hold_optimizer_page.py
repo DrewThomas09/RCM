@@ -400,7 +400,7 @@ def render_hold_optimizer(params: Dict[str, str]) -> str:
         _ckn("hold-optimizer model (illustrative defaults; computes off your inputs)") + body,
         title="Hold Period Optimizer",
         active_nav="/hold-optimizer",
-        subtitle="Corpus-calibrated optimal hold period from peer deal distribution",
+        subtitle="Peer-calibrated optimal hold period from the deal distribution",
         extra_css=extra_css,
         editorial_intro={
             "eyebrow": "HOLD OPTIMIZER",

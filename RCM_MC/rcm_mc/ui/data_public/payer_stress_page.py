@@ -376,7 +376,7 @@ def render_payer_stress(params: Dict[str, str]) -> str:
         body,
         title="Payer Mix Stress Tester",
         active_nav="/payer-stress",
-        subtitle="Corpus-calibrated MOIC sensitivity to payer mix shifts",
+        subtitle="Peer-calibrated MOIC sensitivity to payer mix shifts",
         extra_css=extra_css,
         editorial_intro={
             "eyebrow": "PAYER MIX STRESS",

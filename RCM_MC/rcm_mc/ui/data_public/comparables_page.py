@@ -464,7 +464,7 @@ def render_comparables(
     body = body + ck_page_actions()
     return chartis_shell(
         ck_illustrative_note("comparables figures (illustrative seed corpus)") + body,
-        title="Corpus Comparables",
+        title="Dataset Comparables",
         active_nav="/comparables",
         extra_css=_EXPLAINER_CSS,
     )

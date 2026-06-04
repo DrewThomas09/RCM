@@ -129,7 +129,7 @@ class TestRenderCorpusDashboard(unittest.TestCase):
         # so the test guards "page renders" rather than the gone-nav.
         from rcm_mc.ui.data_public.corpus_dashboard_page import render_corpus_dashboard
         html = render_corpus_dashboard()
-        self.assertIn("Corpus Dashboard", html)
+        self.assertIn("Dataset Dashboard", html)
 
     def test_editorial_theme(self):
         # The dark-terminal `power_ui.css` shell (restored briefly by
