@@ -583,6 +583,11 @@ def _run_ols(
                 "feature": feat,
                 "coefficient": coef,
                 "unstd_coefficient": unstd_coef,
+                # Feature centre + scale, carried so the UI can write the exact
+                # prediction equation ŷ = intercept + Σ unstd·(xᵢ − meanᵢ) and a
+                # worked "+1 SD" example without re-touching the data frame.
+                "feat_mean": float(X_mean[i]),
+                "feat_std": float(X_std[i]),
                 "std_error": se_i,
                 "t_stat": t_val,
                 "p_value": p_val,
@@ -1253,6 +1258,16 @@ _RGE_STYLES = """
   .rge-verdict{grid-template-columns:1fr;}
   .rge-verdict .v{border-right:0;border-bottom:1px solid var(--rge-rule-soft);}
 }
+.rge-eq{font:600 14px/1.55 var(--sc-mono,'JetBrains Mono',monospace);
+  color:var(--rge-ink);background:var(--rge-paper-2);
+  border:1px solid var(--rge-rule-soft);border-left:3px solid var(--rge-green);
+  border-radius:3px;padding:11px 14px;margin:10px 0;overflow-x:auto;
+  white-space:nowrap;}
+.rge-eq b{color:var(--rge-ink-deep);}
+.rge-eq-b0{color:var(--rge-green-deep);}
+.rge-eq-beta{color:var(--rge-green);}
+.rge-eq-op{color:var(--rge-muted);}
+.rge-eq sub{font-size:.78em;}
 </style>
 """
 
@@ -2327,6 +2342,163 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
         'Possible opportunity</span>'
         '</div>'
         '</div>'
+    )
+
+
+def _rge_target_unit_fmt(val: float, target: str) -> str:
+    """Format a target value in human units, guessing $ / % / count from the
+    target name (the page's targets are HCRIS dollar lines, ratios, or
+    counts). Keeps the worked example readable instead of dumping raw floats."""
+    t = (target or "").lower()
+    money = any(k in t for k in (
+        "revenue", "income", "expense", "cost", "charge", "cash",
+        "asset", "liabilit", "debt", "payment",
+    ))
+    ratio = (not money) and any(k in t for k in (
+        "margin", "rate", "ratio", "pct", "occupancy", "share",
+    ))
+    if ratio:
+        return f"{val * 100:.1f}%"
+    if money:
+        return _fmt_num(val)
+    if abs(val) >= 1000:
+        return f"{val:,.0f}"
+    return f"{val:,.2f}"
+
+
+def _rge_formula_explainer(result: Dict[str, Any]) -> str:
+    """Spell out the EXACT prediction the model makes.
+
+    Partner ask: "explain the formula, like what is the exact predictions."
+    Every forecast this page makes is, literally:
+
+        ŷ_fit = intercept + Σ βᵢ · (xᵢ − meanᵢ) / sdᵢ
+        ŷ     = exp(ŷ_fit)              # when the target was log-transformed
+
+    where ``βᵢ`` is the stored standardized-x ``coefficient`` and meanᵢ/sdᵢ are
+    the feature's centre/scale. So a one-SD move in feature i shifts ŷ_fit by
+    exactly βᵢ. We reconstruct everything from the stored fit (not the
+    ``unstd_coefficient``, which carries an extra y-scale factor), so the
+    numbers shown here ARE what the model computes — not a paraphrase."""
+    import math as _math
+    coefs = [c for c in (result.get("coefficients") or []) if c.get("feature")]
+    if not coefs:
+        return ""
+    target = result.get("target", "target")
+    target_label = target.replace("_", " ").title()
+    log_target = bool(result.get("log_target"))
+    b0 = float(result.get("intercept", 0.0))
+    baseline_raw = _math.exp(b0) if log_target else b0
+
+    def _fv(v: Optional[float]) -> str:
+        if v is None:
+            return "—"
+        av = abs(v)
+        if av != 0 and av < 1:
+            return f"{v:.3f}"
+        if av >= 1000:
+            return f"{v:,.0f}"
+        return f"{v:,.2f}"
+
+    def _eff_html(coef: float) -> str:
+        # Effect on the prediction of moving this driver +1 SD, others held
+        # at average. Δŷ_fit = coef; multiplicative (percent) under a log target.
+        if log_target:
+            factor = _math.exp(coef)
+            pct = (factor - 1.0) * 100.0
+            arrow = "▲" if pct >= 0 else "▼"
+            cls = "pos" if pct >= 0 else "neg"
+            return (f'<span class="cad-{cls}">{arrow} {pct:+.1f}%</span> '
+                    f'<span style="color:var(--rge-muted)">×{factor:.2f}</span>')
+        arrow = "▲" if coef >= 0 else "▼"
+        cls = "pos" if coef >= 0 else "neg"
+        return (f'<span class="cad-{cls}">{arrow} '
+                f'{_rge_target_unit_fmt(coef, target)}</span>')
+
+    ranked = sorted(coefs, key=lambda c: -abs(c.get("coefficient", 0.0)))
+    rows = []
+    for c in ranked:
+        label = c["feature"].replace("_", " ").title()
+        rows.append(
+            f'<tr><td><strong>{_html.escape(label)}</strong></td>'
+            f'<td class="num">{_fv(c.get("feat_mean"))}</td>'
+            f'<td class="num">±{_fv(c.get("feat_std"))}</td>'
+            f'<td class="num">{_eff_html(float(c.get("coefficient", 0.0)))}</td>'
+            f'<td class="num">{_html.escape(c.get("significance") or "ns")}</td>'
+            f'</tr>'
+        )
+
+    # Worked example on the single strongest driver.
+    top = ranked[0]
+    top_label = top["feature"].replace("_", " ").title()
+    top_coef = float(top.get("coefficient", 0.0))
+    top_mean, top_std = top.get("feat_mean"), top.get("feat_std")
+    if log_target:
+        predicted = baseline_raw * _math.exp(top_coef)
+        delta_txt = (f'×{_math.exp(top_coef):.2f} '
+                     f'({(_math.exp(top_coef) - 1) * 100:+.1f}%)')
+    else:
+        predicted = baseline_raw + top_coef
+        delta_txt = _rge_target_unit_fmt(top_coef, target)
+    to_val = (_fv(top_mean + top_std)
+              if (top_mean is not None and top_std is not None) else "—")
+
+    # Symbolic equation (exact, in fit space). exp() wrapper shown only when
+    # the target is logged.
+    open_exp = "exp( " if log_target else ""
+    close_exp = " )" if log_target else ""
+    eq = (
+        f'<div class="rge-eq">predicted '
+        f'<b>{_html.escape(target_label)}</b> = {open_exp}'
+        f'<span class="rge-eq-b0">{b0:,.3f}</span>'
+        f'<span class="rge-eq-op"> + </span>'
+        f'&Sigma;<sub>i</sub> '
+        f'<span class="rge-eq-beta">&beta;<sub>i</sub></span> &middot; '
+        f'( x<sub>i</sub> &minus; mean<sub>i</sub> ) / sd<sub>i</sub>'
+        f'{close_exp}</div>'
+    )
+
+    log_note = ""
+    if log_target:
+        log_note = (
+            '<p class="ck-section-body" style="font-size:12px;">'
+            f'The model is fit on <strong>log({_html.escape(target_label)})</strong>, '
+            'so driver effects <strong>multiply</strong> rather than add — a '
+            'coefficient of +0.10 means about <strong>+10.5%</strong>, not '
+            '+0.10 units. The baseline below is the geometric-mean hospital '
+            '(every input at its average).</p>'
+        )
+
+    body = (
+        '<p class="ck-section-body">'
+        'No black box: every prediction is the anchor below plus each '
+        'driver&rsquo;s measured effect. The equation is exactly what the fit '
+        'computes &mdash; reconstruct it by hand and you get the same number.'
+        '</p>'
+        f'{eq}{log_note}'
+        '<table class="cad-table" style="margin-top:10px;"><thead><tr>'
+        '<th>Driver</th><th>Typical (mean)</th><th>One-SD step</th>'
+        '<th>Effect on prediction<br><span style="font-weight:400;'
+        'color:var(--rge-muted);">(+1 SD, others held at average)</span></th>'
+        '<th>Sig</th></tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table>'
+        '<p class="ck-section-body" style="margin-top:10px;">'
+        f'<strong>Worked example.</strong> {_eff_worked(top_label, baseline_raw, to_val, predicted, delta_txt, target)}'
+        '</p>'
+    )
+    return ck_panel(body, title="The exact prediction formula")
+
+
+def _eff_worked(top_label, baseline_raw, to_val, predicted, delta_txt, target):
+    return (
+        f'A hospital that is <strong>average on every input</strong> is '
+        f'predicted at <strong>{_rge_target_unit_fmt(baseline_raw, target)}</strong> '
+        f'(the intercept). Raise just <strong>{_html.escape(top_label)}</strong> by '
+        f'one standard deviation (to {_html.escape(str(to_val))}) and hold everything '
+        f'else at its average, and the forecast moves to '
+        f'<strong>{_rge_target_unit_fmt(predicted, target)}</strong> &mdash; a change '
+        f'of {_html.escape(str(delta_txt))}. That is the entire mechanism, one '
+        f'driver at a time.'
     )
 
 
@@ -4247,6 +4419,11 @@ def render_regression_page(
         + _rge_verdict_row(result, cv_res)
     )
 
+    # "Explain the formula / what is the exact prediction" — the literal
+    # intercept + Σβ·(x−mean)/sd equation, a per-driver +1 SD effect table,
+    # and one worked example. Sits right under the headline summary.
+    formula_block = _rge_formula_explainer(result)
+
     # ── Phase 2 supplemental sections (spec §8 / §11 / §14 / §16 / §18) ──
     # Land between the verdict row and the existing analytical detail.
     # Anchor IDs are inlined inside the helpers (interpretation owns
@@ -4277,6 +4454,7 @@ def render_regression_page(
         f'{title_block}'
         f'{rg_styles}{source_selector}{leakage_banner}{formula_related_banner}'
         f'{summary_block}'
+        f'{formula_block}'
         f'{editorial_phase2}'
         f'{intro}{diagnostic_banner}'
         f'{leakage_section}{cv_anchor}{cluster_section}'
