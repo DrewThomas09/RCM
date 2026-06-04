@@ -3940,6 +3940,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.norstella.com/press-releases/norstella-citeline-merge-to-create-5bn-pharma-tech-firm/",
         "source_note": "Welsh, Carson, Anderson & Stowe (Norstella, 2022, ~$5bn)",
     },
+    {
+        "target": "Inizio", "sponsor": "Clayton, Dubilier & Rice",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Life-sciences advisory + medical communications + commercialization (Ashfield + Huntsworth); CD&R-built via Huntsworth (2020) + UDG Healthcare (2021)",
+        "outcome": "active", "outcome_note": "Active; CD&R combined Huntsworth + Ashfield (ex-UDG) to launch Inizio 2022.",
+        "source_url": "https://www.pharmaceuticalcommerce.com/view/inizio-a-new-healthcare-communications-company-launches",
+        "source_note": "Clayton, Dubilier & Rice (Inizio / Huntsworth + Ashfield, 2022)",
+    },
+    {
+        "target": "Trinity Life Sciences", "sponsor": "Kohlberg & Company",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Life-sciences commercial strategy + analytics / market-research consulting for biopharma; Kohlberg recap from Parthenon Capital (Bain & Co minority 2022)",
+        "outcome": "active", "outcome_note": "Active; Kohlberg & Company recapitalized from Parthenon Capital Nov 2021.",
+        "source_url": "https://www.businesswire.com/news/home/20211130005656/en/Trinity-Life-Sciences-Recapitalizes-With-Kohlberg-Company",
+        "source_note": "Kohlberg & Company (Trinity Life Sciences from Parthenon, Nov 2021)",
+    },
 ]
 
 
