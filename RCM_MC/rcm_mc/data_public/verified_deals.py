@@ -3908,6 +3908,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.waudcapital.com/en/media/practicetek-and-integrated-practice-solutions-merge-to-create-one-of-the-nation-s-largest-retail-healthcare-solutions-providers/",
         "source_note": "Lightyear Capital (PracticeTek, Nov 2021)",
     },
+    {
+        "target": "Cedar Gate Technologies", "sponsor": "GTCR",
+        "year": 2014, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Value-based-care analytics + bundled-payment / population-health platform; GTCR-founded (with ex-Medco CEO David Snow)",
+        "outcome": "active", "outcome_note": "Active; GTCR established Cedar Gate 2014 (>$1bn sale process reported 2025).",
+        "source_url": "https://www.gtcr.com/gtcr-and-cedar-gate-technologies-announce-acquisition-of-deerwalk/",
+        "source_note": "GTCR (Cedar Gate Technologies, 2014)",
+    },
+    {
+        "target": "Apixio", "sponsor": "New Mountain Capital",
+        "year": 2023, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare AI — risk-adjustment / payment-integrity / clinical-data analytics for payers & providers; New Mountain carve-out from Centene",
+        "outcome": "active", "outcome_note": "Active; New Mountain Capital acquired majority from Centene June 2023.",
+        "source_url": "https://www.apixio.com/press/centene-corporation-signs-definitive-agreement-to-divest-apixio-to-new-mountain-capital/",
+        "source_note": "New Mountain Capital (Apixio from Centene, June 2023)",
+    },
 ]
 
 
