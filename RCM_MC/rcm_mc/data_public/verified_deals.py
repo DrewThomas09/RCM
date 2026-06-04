@@ -2131,6 +2131,65 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://vistria.com/portfolio-items/vitalcaringgroup/",
         "source_note": "The Vistria Group + Nautic Partners (VitalCaring, 2021)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 18) — veterinary, more dental DSOs, RCM.
+    # Each web-validated; pre-checked against existing targets.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Veterinary ──
+    {
+        "target": "PetVet Care Centers", "sponsor": "KKR",
+        "year": 2019, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary hospital network; KKR validated the vet sector",
+        "outcome": "active", "outcome_note": "Active veterinary platform.",
+        "source_url": "https://www.pehub.com/kkr-validates-veterinary-sector-with-petvet-buy/",
+        "source_note": "KKR (PetVet Care Centers, 2019)",
+    },
+    {
+        "target": "AmeriVet Veterinary Partners", "sponsor": "AEA Investors",
+        "year": 2020, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary practice partnership model; AEA-backed",
+        "outcome": "active", "outcome_note": "Active veterinary platform.",
+        "source_url": "https://amerivet.com/blog/veterinary-private-equity",
+        "source_note": "AEA Investors (AmeriVet Veterinary Partners, 2020)",
+    },
+
+    # ── Dental DSOs ──
+    {
+        "target": "Gen4 Dental Partners", "sponsor": "Thurston Group",
+        "year": 2021, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "DSO (100+ practices); Thurston-launched (2021)",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.beckersdental.com/dso-dpms/the-pe-firms-behind-15-dsos/",
+        "source_note": "Thurston Group (Gen4 Dental Partners, 2021)",
+    },
+    {
+        "target": "ProSmile", "sponsor": "TriSpan",
+        "year": 2020, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Northeast DSO; TriSpan-backed",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://livingstonepartners.com/en-us/transactions/destiny-dental-has-been-acquired-by-prosmile",
+        "source_note": "TriSpan (ProSmile, founded 2020)",
+    },
+    {
+        "target": "Dentive", "sponsor": "HGGC",
+        "year": 2023, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "DSO (Mountain West); HGGC growth investment",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://hggc.com/",
+        "source_note": "HGGC (Dentive, 2023)",
+    },
+
+    # ── RCM ──
+    {
+        "target": "Infinx", "sponsor": "KKR",
+        "year": 2024, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "AI-driven RCM / patient-access (prior-auth, eligibility); KKR minority",
+        "outcome": "active", "outcome_note": "Active RCM platform (Norwest also invested).",
+        "source_url": "https://www.businesswire.com/news/home/20240520027338/en/KKR-Invests-in-Healthcare-Revenue-Solutions-Provider-Infinx",
+        "source_note": "KKR (Infinx investment, May 2024)",
+    },
 ]
 
 
