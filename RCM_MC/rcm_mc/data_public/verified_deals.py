@@ -1566,6 +1566,133 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://bhbusiness.com/2023/01/26/thurston-group-backed-arc-health-doubles-down-on-ma-strategy/",
         "source_note": "Behavioral Health Business (Thurston Group-backed ARC Health, formed 2021)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 11) — dental DSOs, hospice, RCM, eye-care,
+    # ASC. Each web-validated; pre-checked against existing targets.
+    # ════════════════════════════════════════════════════════════════════
+
+    # ── Dental DSOs ──
+    {
+        "target": "Great Expressions Dental Centers", "sponsor": "Roark Capital Group",
+        "year": 2016, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "DSO; Roark bought from OMERS (prior: Audax 2008 -> OMERS 2011)",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.roarkcapital.com/files/Great%20Expressions%20Press%20Release%20vF.pdf",
+        "source_note": "Roark Capital (Great Expressions, 2016)",
+    },
+    {
+        "target": "DECA Dental Group", "sponsor": "The Blackstone Group",
+        "year": 2021, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "DSO; Blackstone Tactical Opportunities bought from Blue Sea Capital",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.blackstone.com/news/press/deca-dental-group-announces-strategic-investment-from-blackstone-tactical-opportunities/",
+        "source_note": "Blackstone (DECA Dental, Aug 2021)",
+    },
+    {
+        "target": "Dental365", "sponsor": "The Jordan Company",
+        "year": 2021, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Northeast DSO; The Jordan Company platform",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.thejordancompany.com/",
+        "source_note": "The Jordan Company; 2021 Dental365",
+    },
+    {
+        "target": "Sage Dental Management", "sponsor": "Linden Capital Partners",
+        "year": 2012, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Southeast DSO; Linden + Golub + Barings",
+        "outcome": "active", "outcome_note": "Active DSO.",
+        "source_url": "https://www.linden.com/portfolio/investments/current/sage-dental-management/",
+        "source_note": "Linden Capital Partners (Sage Dental, 2012)",
+    },
+
+    # ── Hospice / home health ──
+    {
+        "target": "Bristol Hospice", "sponsor": "Webster Equity Partners",
+        "year": 2017, "ev_usd_mm": 70, "sector": "home_health_hospice",
+        "subsector_note": "Hospice operator; Webster acquired (~$70M, 45 locations)",
+        "outcome": "active", "outcome_note": "Active hospice platform.",
+        "source_url": "https://websterequitypartners.com/portfolio/bristol-hospice/",
+        "source_note": "Webster Equity Partners (Bristol Hospice, 2017, ~$70M)",
+    },
+    {
+        "target": "Traditions Health", "sponsor": "Dorilton Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Home health + hospice (College Station, TX); Dorilton-backed",
+        "outcome": "exited", "outcome_note": "Broken up in 2025 — sold to four hospice buyers (Care Team / VitalCaring / LifeCare / Mission).",
+        "source_url": "https://hospicenews.com/2025/12/03/four-hospice-buyers-acquire-traditions-health/",
+        "source_note": "Hospice News (Dorilton-backed Traditions Health, 2025 breakup)",
+    },
+
+    # ── RCM ──
+    {
+        "target": "Aspirion", "sponsor": "Linden Capital Partners",
+        "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Complex-claims / denials RCM; Linden acquired Aug 2022",
+        "outcome": "active", "outcome_note": "Active RCM platform.",
+        "source_url": "https://www.linden.com/",
+        "source_note": "Linden Capital Partners (Aspirion, Aug 2022)",
+    },
+    {
+        "target": "Med-Metrix", "sponsor": "A&M Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Hospital + physician RCM; A&M Capital investment",
+        "outcome": "active", "outcome_note": "Active RCM platform.",
+        "source_url": "https://www.amcapital.com/",
+        "source_note": "A&M Capital Partners (Med-Metrix, Sept 2021)",
+    },
+
+    # ── Eye care / ophthalmology ──
+    {
+        "target": "PRISM Vision Group", "sponsor": "Quad-C Management",
+        "year": 2018, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Ophthalmology + retina MSO (Northeast); Quad-C platform",
+        "outcome": "exited", "outcome_note": "McKesson acquired a controlling interest from Quad-C in 2025 (~$850M).",
+        "source_url": "https://www.quadcmanagement.com/portfolio/prism-vision-group/",
+        "source_note": "Quad-C Management (PRISM Vision, 2018); McKesson 2025 (~$850M)",
+    },
+    {
+        "target": "US Eye", "sponsor": "Pamlico Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Ophthalmology + optometry MSO (FL-anchored); Pamlico growth investment",
+        "outcome": "active", "outcome_note": "Active eye-care platform.",
+        "source_url": "https://www.pamlicocapital.com/news/us-eye-receives-growth-investment-from-pamlico-capital",
+        "source_note": "Pamlico Capital (US Eye, 2021)",
+    },
+    {
+        "target": "Acuity Eyecare Group", "sponsor": "Riata Capital Group",
+        "year": 2017, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Optical-retail + eye-care MSO; Riata-formed (2017)",
+        "outcome": "active", "outcome_note": "Active; J.P. Morgan AM later co-invested.",
+        "source_url": "https://www.riatacapital.com/news/acuity-eyecare-group-completes-significant-acquisitions-in-colorado-and-nebraska-receives-investment-from-j-p-morgan-asset-management",
+        "source_note": "Riata Capital Group (Acuity Eyecare Group, formed 2017)",
+    },
+    {
+        "target": "EyeCare Services Partners (ESP)", "sponsor": "Harvest Partners + Varsity Healthcare Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Ophthalmology + ASC MSO; Harvest recapitalized from Varsity",
+        "outcome": "active", "outcome_note": "Active eye-care platform.",
+        "source_url": "https://varsityhealthcarepartners.com/varsity-healthcare-partners-and-harvest-partners-announce-recapitalization-of-eyecare-services-partners/",
+        "source_note": "Varsity/Harvest (EyeCare Services Partners recap, May 2017)",
+    },
+
+    # ── ASC ──
+    {
+        "target": "Regent Surgical Health", "sponsor": "TowerBrook Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "asc",
+        "subsector_note": "ASC developer/manager (health-system JV model)",
+        "outcome": "active", "outcome_note": "Active ASC platform.",
+        "source_url": "https://regentsh.com/",
+        "source_note": "TowerBrook Capital Partners (Regent Surgical Health, 2021)",
+    },
+    {
+        "target": "Constitution Surgery Alliance", "sponsor": "Welsh, Carson, Anderson & Stowe",
+        "year": 2025, "ev_usd_mm": None, "sector": "asc",
+        "subsector_note": "ASC developer/operator (hospital JV); WCAS growth investment",
+        "outcome": "active", "outcome_note": "Active ASC platform.",
+        "source_url": "https://www.prnewswire.com/news-releases/constitution-surgery-alliance-announces-strategic-growth-investment-from-welsh-carson-anderson--stowe-302481298.html",
+        "source_note": "PRNewswire (WCAS / Constitution Surgery Alliance, June 2025)",
+    },
 ]
 
 
