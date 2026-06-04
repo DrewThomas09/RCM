@@ -23,7 +23,8 @@ Optional query params:
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, List, Optional
+import statistics as _stats
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..market_intel import (
     MultipleBand, NewsItem, PublicComp, category_bands,
@@ -43,6 +44,48 @@ _SENTIMENT_COLOR = {
     "neutral":  P["text_dim"],
     "mixed":    P["warning"],
 }
+
+
+# Sub-vertical taxonomy — roll the granular `category` codes up into the
+# public-market sub-verticals a healthcare-PE desk actually screens by. The
+# second tuple element is display rank (acute first → REITs last); any code
+# not listed falls through to "Other operators".
+_SUBVERTICAL: Dict[str, Tuple[str, int]] = {
+    "MULTI_SITE_ACUTE_HOSPITAL":       ("Acute Hospitals", 0),
+    "RURAL_ACUTE_HOSPITAL":            ("Acute Hospitals", 0),
+    "MULTI_SITE_ACUTE_AND_BEHAVIORAL": ("Acute Hospitals", 0),
+    "POST_ACUTE_REHAB":                ("Post-Acute & Rehab", 1),
+    "MANAGED_CARE_PAYER":              ("Payors / Managed Care", 2),
+    "DIALYSIS":                        ("Outpatient & Services", 3),
+    "AMBULATORY_SURGERY":              ("Outpatient & Services", 3),
+    "PHYSICIAN_GROUP_ROLL_UP":         ("Outpatient & Services", 3),
+    "HEALTHCARE_REIT":                 ("Healthcare REITs", 4),
+}
+
+
+def _subvertical_of(category: Optional[str]) -> Tuple[str, int]:
+    return _SUBVERTICAL.get(category or "", ("Other operators", 9))
+
+
+def _hhi(values: List[float]) -> float:
+    """Herfindahl–Hirschman Index over a set of revenue figures, on the
+    0–10,000 merger-review scale. >2,500 reads as highly concentrated;
+    1,500–2,500 moderately; <1,500 competitive. Used here to flag how
+    top-heavy the tracked public-operator universe is (one mega-cap payer
+    dominates revenue, so the figure runs high by design)."""
+    pos = [v for v in values if v and v > 0]
+    total = sum(pos)
+    if total <= 0:
+        return 0.0
+    return sum(((v / total) * 100.0) ** 2 for v in pos)
+
+
+def _hhi_label(hhi: float) -> str:
+    if hhi >= 2500:
+        return "highly concentrated"
+    if hhi >= 1500:
+        return "moderately concentrated"
+    return "competitive"
 
 
 def _target_scatter_chart(
@@ -85,12 +128,20 @@ def _target_scatter_chart(
     if not any(x > 0 for x in xs) or not any(y > 0 for y in ys):
         return ""
 
-    x_max = max(xs) * 1.1 or 1.0
-    x_min = 0.0
+    import math as _math
+    # LOG x-axis (revenue). A few mega-cap insurers (UNH ~$434B) otherwise
+    # compress every hospital operator + services firm into an unreadable smear
+    # at the origin on a linear scale. Log space spreads the ~$1B–$450B range
+    # evenly so HCA/THC/UHS and the services names are legible.
+    x_pos = [x for x in xs if x > 0]
+    x_lo = max(min(x_pos) * 0.85, 0.5)   # floor keeps log finite/clean
+    x_hi = max(x_pos) * 1.25
+    lx_lo, lx_hi = _math.log10(x_lo), _math.log10(x_hi)
     y_max = max(ys) * 1.15 or 1.0
     y_min = min(y for y in ys if y > 0) * 0.85
 
-    def px_x(v): return pad_l + (v - x_min) / (x_max - x_min) * inner_w
+    def px_x(v):
+        return pad_l + (_math.log10(max(v, x_lo)) - lx_lo) / (lx_hi - lx_lo) * inner_w
     def px_y(v): return pad_t + inner_h - (v - y_min) / (y_max - y_min) * inner_h
 
     # Grid lines
@@ -106,28 +157,64 @@ def _target_scatter_chart(
             f'{y_t:.1f}x</text>'
         )
 
-    # Peer dots
+    # Outliers to call out distinctly (amber, larger, always labeled): the
+    # highest-revenue peer (UNH on scale) and the highest-multiple peer (WELL,
+    # a REIT whose EV/EBITDA reads high because REITs trade on FFO).
+    _out_x = max(comps_dicts, key=lambda c: c.get("revenue_ttm_usd_bn") or 0)
+    _out_y = max(comps_dicts, key=lambda c: c.get("ev_ebitda_multiple") or 0)
+    outlier_tk = {_out_x.get("ticker"), _out_y.get("ticker")}
+
+    # Peer dots — labels de-collide greedily (the cluster of services firms
+    # used to pile their tickers on top of each other). Revenue-major sort so
+    # the bigger names win label placement.
     dots = []
-    for c in comps_dicts:
+    placed: List[Tuple[float, float]] = []
+    for c in sorted(comps_dicts, key=lambda c: -(c.get("revenue_ttm_usd_bn") or 0)):
         x = c.get("revenue_ttm_usd_bn") or 0
         y = c.get("ev_ebitda_multiple") or 0
         if x <= 0 or y <= 0:
             continue
-        cx = px_x(x)
-        cy = px_y(y)
+        cx, cy = px_x(x), px_y(y)
+        tk = c.get("ticker", "")
+        is_out = tk in outlier_tk
+        fill = P["warning"] if is_out else P["accent"]
+        r = 6.5 if is_out else 4.8
+        _m = c.get("op_margin_pct")
+        if _m is None:
+            _m = c.get("operating_margin_pct")
+        if _m is None:
+            # PublicComp.to_dict() carries the margin as a fraction.
+            _frac = c.get("operating_margin")
+            if isinstance(_frac, (int, float)):
+                _m = _frac * 100.0
+        mtxt = f" · {_m:.0f}% op margin" if isinstance(_m, (int, float)) else ""
         title = (
-            f"{c.get('ticker', '')} · {c.get('name', '')} · "
-            f"${x:,.1f}B revenue · {y:.1f}x EV/EBITDA"
+            f"{tk} · {c.get('name', '')} · ${x:,.1f}B revenue · "
+            f"{y:.1f}x EV/EBITDA{mtxt}"
         )
         dots.append(
-            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" '
-            f'fill="{P["accent"]}" opacity="0.75">'
+            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r}" '
+            f'fill="{fill}" opacity="{0.92 if is_out else 0.72}" '
+            f'stroke="{P["panel"] if is_out else "none"}" stroke-width="1">'
             f'<title>{html.escape(title)}</title></circle>'
-            f'<text x="{cx + 7:.1f}" y="{cy - 6:.1f}" '
-            f'fill="{P["text_faint"]}" font-size="9" '
-            f'font-family="JetBrains Mono, monospace">'
-            f'{html.escape(c.get("ticker", ""))}</text>'
         )
+        # Label outliers always; others only if their label clears the ones
+        # already placed (greedy vertical de-collision).
+        lx, ly = cx + 8, cy - 5
+        clear = all(abs(ly - py) > 11 or abs(lx - px) > 64 for px, py in placed)
+        if is_out or clear:
+            for _ in range(6):
+                if all(abs(ly - py) > 11 or abs(lx - px) > 64 for px, py in placed):
+                    break
+                ly += 11
+            placed.append((lx, ly))
+            lab_fill = P["warning"] if is_out else P["text_faint"]
+            weight = ' font-weight="700"' if is_out else ""
+            dots.append(
+                f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{lab_fill}"{weight} '
+                f'font-size="9" font-family="JetBrains Mono, monospace">'
+                f'{html.escape(tk)}</text>'
+            )
 
     # Target marker
     target_marker = ""
@@ -148,15 +235,38 @@ def _target_scatter_chart(
             f'font-weight="700">TARGET</text>'
         )
 
-    # X axis labels
+    # X axis labels — log-spaced ticks (1× / 3× each decade) inside the range,
+    # so the eye reads $1B → $3B → $10B → … → $300B at even pixel spacing. The
+    # highest-revenue peer is always anchored near the right edge so the mega-cap
+    # (UNH) keeps a labelled tick instead of floating unmarked.
     x_axis = []
-    for x_t in (x_min, x_max / 2, x_max):
+    _ticks: List[float] = []
+    _decade = int(_math.floor(lx_lo))
+    while _decade <= int(_math.ceil(lx_hi)):
+        for _mant in (1.0, 3.0):
+            _v = _mant * (10 ** _decade)
+            if x_lo <= _v <= x_hi:
+                _ticks.append(_v)
+        _decade += 1
+    _hi_peer = max(x_pos)
+    if all(abs(_v - _hi_peer) > _hi_peer * 0.10 for _v in _ticks):
+        _ticks.append(_hi_peer)
+    for x_t in _ticks:
+        _lbl = f"${x_t:,.0f}B" if x_t >= 100 else f"${x_t:,.1f}B"
         x_axis.append(
             f'<text x="{px_x(x_t):.1f}" y="{pad_t + inner_h + 16:.1f}" '
             f'fill="{P["text_faint"]}" text-anchor="middle" '
             f'font-size="9" font-family="JetBrains Mono, monospace">'
-            f'${x_t:,.1f}B</text>'
+            f'{_lbl}</text>'
         )
+    # Axis title — flag the log scale so the spacing isn't misread as linear.
+    x_axis.append(
+        f'<text x="{pad_l + inner_w / 2:.0f}" y="{pad_t + inner_h + 34:.0f}" '
+        f'fill="{P["text_faint"]}" text-anchor="middle" font-size="9" '
+        f'font-family="Helvetica Neue, Arial, sans-serif" '
+        f'letter-spacing="1" font-style="italic">'
+        f'TTM REVENUE — LOG SCALE ($B)</text>'
+    )
 
     note = ""
     if target_marker:
@@ -171,7 +281,8 @@ def _target_scatter_chart(
 
     return (
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
-        f'style="max-width:{width}px;margin-top:8px;">'
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="max-width:{width}px;height:auto;display:block;margin-top:8px;">'
         f'<text x="{pad_l}" y="14" fill="{P["text_dim"]}" '
         f'font-size="10" font-family="Helvetica Neue, Arial, sans-serif" '
         f'font-weight="700" letter-spacing="1.5">'
@@ -234,6 +345,13 @@ def _public_comps_section(
         band = None
         fallback = ""
 
+    if not comps_dicts:
+        return ck_panel(
+            fallback or '<p class="ck-section-body">No comparable '
+            'public operators for this target.</p>',
+            title="Public Healthcare Operators",
+        )
+
     def _consensus_pill(consensus: str) -> str:
         color = {
             "BUY": P["positive"], "HOLD": P["warning"],
@@ -247,92 +365,147 @@ def _public_comps_section(
             f'{html.escape(consensus)}</span>'
         )
 
-    def _surprise_cell(pct: Optional[float]) -> str:
-        if pct is None:
+    # ---- universe snapshot (always on) -----------------------------------
+    revs = [c.get("revenue_ttm_usd_bn") or 0.0 for c in comps_dicts]
+    mults = [c["ev_ebitda_multiple"] for c in comps_dicts
+             if c.get("ev_ebitda_multiple")]
+    agg_rev = sum(revs)
+    med_mult = _stats.median(mults) if mults else 0.0
+    hhi = _hhi(revs)
+    snapshot = (
+        '<div class="ck-kpi-strip">'
+        + ck_kpi_block("Tracked operators", f"{len(comps_dicts)}",
+                       sub="public healthcare equities")
+        + ck_kpi_block("Median EV/EBITDA", f"{med_mult:.1f}x",
+                       sub="across the tracked set")
+        + ck_kpi_block("Aggregate revenue", f"${agg_rev:,.0f}B",
+                       sub="trailing-twelve-month")
+        + ck_kpi_block("Revenue HHI", f"{hhi:,.0f}",
+                       sub=f"{_hhi_label(hhi)} · 0–10,000 scale")
+        + '</div>'
+    )
+
+    # ---- sub-vertical grid ------------------------------------------------
+    groups: Dict[str, List[Dict[str, Any]]] = {}
+    rank_of: Dict[str, int] = {}
+    for c in comps_dicts:
+        label, rank = _subvertical_of(c.get("category"))
+        groups.setdefault(label, []).append(c)
+        rank_of[label] = rank
+    cards = []
+    for label in sorted(groups, key=lambda l: (rank_of[l], l)):
+        g = groups[label]
+        g_mults = [x["ev_ebitda_multiple"] for x in g
+                   if x.get("ev_ebitda_multiple")]
+        g_rev = sum(x.get("revenue_ttm_usd_bn") or 0.0 for x in g)
+        g_marg = [x["operating_margin"] for x in g
+                  if x.get("operating_margin") is not None]
+        g_med = _stats.median(g_mults) if g_mults else 0.0
+        g_margin = (_stats.median(g_marg) * 100.0) if g_marg else 0.0
+        ticks = ", ".join(sorted(x.get("ticker", "") for x in g))
+        mc = (P["positive"] if g_med >= 12
+              else P["negative"] if g_med < 8 else P["text"])
+        cards.append(
+            f'<div class="mi-vert-card">'
+            f'<div class="mi-vert-name">{html.escape(label)}</div>'
+            f'<div class="mi-vert-stat">'
+            f'<span class="mi-vert-num" style="color:{mc}">{g_med:.1f}x</span>'
+            f'<span class="mi-vert-lbl">median<br>EV/EBITDA</span></div>'
+            f'<div class="mi-vert-row"><span>{len(g)} cos</span>'
+            f'<span>${g_rev:,.0f}B rev</span>'
+            f'<span>{g_margin:.0f}% op mgn</span></div>'
+            f'<div class="mi-vert-tk">{html.escape(ticks)}</div>'
+            f'</div>'
+        )
+    grid = (
+        f'<div class="mi-section-label">Sub-verticals · '
+        f'{len(groups)} groups</div>'
+        f'<div class="mi-vert-grid">{"".join(cards)}</div>'
+    )
+
+    # ---- dense, color-coded comp table -----------------------------------
+    def _mult_cell(m: Optional[float]) -> str:
+        if not m:
             return "—"
-        color = (
-            P["positive"] if pct > 0.01
-            else P["negative"] if pct < -0.01
-            else P["text_dim"]
-        )
-        arrow = "▲" if pct > 0.01 else ("▼" if pct < -0.01 else "●")
-        return (
-            f'<span style="color:{color};font-family:\'JetBrains Mono\',monospace;">'
-            f'{arrow} {pct*100:+.1f}%</span>'
-        )
+        col = (P["positive"] if m >= 12
+               else P["negative"] if m < 8 else P["text"])
+        return (f'<span style="color:{col};font-family:\'JetBrains Mono\','
+                f'monospace;font-weight:600">{m:.1f}x</span>')
+
+    def _margin_cell(frac: Optional[float]) -> str:
+        if frac is None:
+            return "—"
+        p = frac * 100.0
+        col = (P["positive"] if p >= 15
+               else P["negative"] if p < 8 else P["text"])
+        return (f'<span style="color:{col};font-family:\'JetBrains Mono\','
+                f'monospace;font-weight:600">{p:.1f}%</span>')
 
     headers = [
-        "Ticker", "Name", "Category", "Market Cap ($bn)",
-        "EV ($bn)", "Revenue TTM ($bn)", "EBITDA TTM ($bn)",
-        "EV/EBITDA", "EV/Revenue", "Debt/EBITDA",
-        "Analyst", "Q surprise",
+        "Ticker", "Name", "Sub-vertical", "EV ($bn)", "Revenue ($bn)",
+        "EV/EBITDA", "EV/Rev", "Op margin", "Debt/EBITDA", "Analyst",
     ]
     rows = []
     sort_keys = []
-    for c in comps_dicts:
+    for c in sorted(
+        comps_dicts,
+        key=lambda c: (_subvertical_of(c.get("category"))[1],
+                       -(c.get("revenue_ttm_usd_bn") or 0.0)),
+    ):
         ac = c.get("analyst_coverage") or {}
-        el = c.get("earnings_latest") or {}
         consensus = str(ac.get("consensus") or "NONE").upper()
         price_target = ac.get("price_target_usd")
-        surprise_pct = el.get("surprise_pct")
         analyst_html = _consensus_pill(consensus)
         if price_target:
             analyst_html += (
                 f' <span style="color:{P["text_faint"]};'
                 f'font-size:10px;">PT ${price_target:,.0f}</span>'
             )
+        sv_label = _subvertical_of(c.get("category"))[0]
+        mult = c.get("ev_ebitda_multiple")
         rows.append([
             c["ticker"],
             c["name"],
-            c["category"],
-            f"${c['market_cap_usd_bn']:,.1f}",
+            sv_label,
             provenance(
                 f"${c['enterprise_value_usd_bn']:,.1f}",
                 source=f"{c['ticker']} 10-K filing, TTM balance sheet",
                 formula="market_cap + total_debt - cash",
             ),
-            f"${c['revenue_ttm_usd_bn']:,.2f}",
-            f"${c['ebitda_ttm_usd_bn']:,.2f}",
-            provenance(
-                f"{c['ev_ebitda_multiple']:.2f}x",
-                source=(
-                    f"{c['ticker']} — derived from 10-K TTM EBITDA "
-                    "(CapIQ/Seeking Alpha consensus)"
-                ),
-                formula="enterprise_value / ebitda_ttm",
-            ),
+            f"${c['revenue_ttm_usd_bn']:,.1f}",
+            _mult_cell(mult),
             f"{c['ev_revenue_multiple']:.2f}x",
+            _margin_cell(c.get("operating_margin")),
             (f"{c['debt_to_ebitda']:.2f}x"
              if c.get("debt_to_ebitda") is not None else "—"),
             analyst_html,
-            _surprise_cell(surprise_pct),
         ])
         sort_keys.append([
             c["ticker"],
             c["name"],
-            c["category"],
-            c["market_cap_usd_bn"],
+            sv_label,
             c["enterprise_value_usd_bn"],
             c["revenue_ttm_usd_bn"],
-            c["ebitda_ttm_usd_bn"],
-            c["ev_ebitda_multiple"],
+            mult or 0.0,
             c["ev_revenue_multiple"],
+            c.get("operating_margin") or 0.0,
             c.get("debt_to_ebitda") or 0.0,
             consensus,
-            surprise_pct if surprise_pct is not None else -9.9,
         ])
-    # Use the editorial `ck-table` class instead of the bespoke
-    # `rcm-comps-table` so the table inherits chartis typography
-    # (mono-uppercase headers, tabular-num numerics, parchment
-    # background) and the data-sortable attribute hooks the editorial
-    # sort JS. Partner-flagged the legacy form as "weird font + not
-    # being sorted".
     table = sortable_table(
         headers, rows,
         name="public_comps",
         sort_keys=sort_keys,
         table_class="ck-table sortable",
+        caption=(
+            "EV/EBITDA shaded green ≥12x (premium multiple) · red <8x "
+            "(discount). Op margin shaded green ≥15% · red <8%. Default "
+            "order groups by sub-vertical then revenue — click any header "
+            "to re-sort. EV = market_cap + total_debt − cash; "
+            "EV/EBITDA = EV ÷ TTM EBITDA."
+        ),
     )
+
     band_html = ""
     if band:
         kpi_strip = (
@@ -362,9 +535,10 @@ def _public_comps_section(
     )
     scatter_html = ""
     if scatter:
-        scatter_html = ck_panel(scatter, title="Target vs comps")
+        scatter_html = ck_panel(
+            scatter, title="EV/EBITDA × revenue scatter")
     return ck_panel(
-        f'{band_html}{scatter_html}{fallback}{table}',
+        f'{snapshot}{grid}{band_html}{scatter_html}{fallback}{table}',
         title="Public Healthcare Operators",
     )
 
@@ -587,7 +761,26 @@ text-decoration:none;line-height:1.4;display:block;margin-top:2px;}}
 .mi-news-tags{{margin-top:4px;}}
 .mi-section-label{{font-size:10px;color:{P["text_faint"]};
 letter-spacing:1.5px;text-transform:uppercase;font-weight:700;
-margin-bottom:10px;}}
+margin:14px 0 10px;}}
+.mi-vert-grid{{display:grid;
+grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+gap:10px;margin:0 0 16px;}}
+.mi-vert-card{{border:1px solid {P["border"]};border-radius:3px;
+padding:11px 13px;background:{P["panel"]};}}
+.mi-vert-name{{font-size:11px;font-weight:700;color:{P["text"]};
+letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px;
+min-height:26px;}}
+.mi-vert-stat{{display:flex;align-items:baseline;gap:7px;
+margin-bottom:8px;}}
+.mi-vert-num{{font-family:'JetBrains Mono',monospace;font-size:23px;
+font-weight:700;line-height:1;}}
+.mi-vert-lbl{{font-size:8.5px;color:{P["text_faint"]};
+text-transform:uppercase;letter-spacing:0.06em;line-height:1.15;}}
+.mi-vert-row{{display:flex;gap:9px;font-size:10px;color:{P["text_dim"]};
+font-family:'JetBrains Mono',monospace;margin-bottom:7px;flex-wrap:wrap;}}
+.mi-vert-tk{{font-size:10px;color:{P["text_faint"]};
+font-family:'JetBrains Mono',monospace;border-top:1px solid
+{P["border_dim"]};padding-top:6px;line-height:1.5;}}
 </style>
 """
 
@@ -644,22 +837,19 @@ def render_market_intel_page(
         eyebrow="Continue —",
         italic_word="deal",
     )
+    # Top-section cleanup: the public-comps hub is the focal point, so it
+    # renders immediately under the hero (the old "research reference / mixed
+    # data" purpose box was removed — its provenance now lives inside the comps
+    # section's own source line). The Geographic Intelligence suite is a
+    # secondary nav strip, so it drops below the comps + transactions.
     body = (
         _MI_STYLES
         + _hero(category, specialty)
-        + ck_source_purpose(
-            purpose="Frame a target against listed public-operator comps and named PE transactions — the public-market read before/around a deal.",
-            universe="research",
-            confidence="mixed",
-            source="Curated public-operator comps (HCA/THC/CYH/UHS/… from SEC filings + analyst aggregators) and a curated PE-transaction library; refreshed quarterly. Public-market context, not your deal's terms.",
-            next_action="Pull the full public-comp + PE deal flow",
-            next_href="/market-intel/seeking-alpha",
-        )
-        + _geo_intel_section()
         + _public_comps_section(
             category, revenue_usd, target_ev_usd=ev_usd,
         )
         + _transaction_multiples_section(specialty, ev_usd)
+        + _geo_intel_section()
         + _earnings_calendar_section()
         + _news_section(specialty, tickers, tags)
         + next_up

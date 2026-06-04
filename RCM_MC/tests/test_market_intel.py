@@ -349,7 +349,11 @@ class CompsTableEnrichmentTests(unittest.TestCase):
             category="MULTI_SITE_ACUTE_HOSPITAL",
         )
         self.assertIn("Analyst", h)
-        self.assertIn("Q surprise", h)
+        # The comps grid was re-cut to a valuation-focused, color-coded
+        # table: the legacy "Q surprise" column moved out to the earnings
+        # calendar, and op-margin + sub-vertical context came in.
+        self.assertIn("Op margin", h)
+        self.assertIn("Sub-vertical", h)
 
     def test_consensus_pill_rendered(self):
         h = render_market_intel_page(
