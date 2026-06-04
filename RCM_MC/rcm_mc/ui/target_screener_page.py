@@ -166,7 +166,7 @@ _CSS = """
    one ck_panel. Each sub-block carries its own eyebrow lbl + prompt
    line + content, separated by a hairline rule so the user reads it
    as one coherent surface rather than three competing announcements. */
-.ts-univ-block{padding:0 0 14px;margin:0 0 14px;
+.ts-univ-block{padding:0 0 19px;margin:0 0 19px;
  border-bottom:1px solid var(--sc-rule,#c9c1ac);}
 .ts-univ-block:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0;}
 /* Eyebrow row of a sub-block — eyebrow label on the left,
