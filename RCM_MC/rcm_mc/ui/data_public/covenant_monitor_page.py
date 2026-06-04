@@ -401,7 +401,7 @@ def render_covenant_monitor(params: dict) -> str:
     # covenants for a single asset).
     page_title = ck_page_title(
         "Covenant Monitor",
-        eyebrow="COVENANT MONITOR",
+        eyebrow="PORTFOLIO · COVENANT MONITOR",
         meta=(
             f"{sector} · ${ev_mm:,.0f}M EV · "
             f"{r.current_leverage:.2f}x leverage · "

@@ -327,7 +327,7 @@ def render_antitrust_screener(params: dict = None) -> str:
     # eyebrow and the route /antitrust-screener.
     page_title = ck_page_title(
         "Antitrust Screener",
-        eyebrow="ANTITRUST SCREENER",
+        eyebrow="DILIGENCE · ANTITRUST SCREENER",
         meta=(
             f"Risk score {r.overall_risk_score}/100 · "
             f"Second Request probability {r.second_request_probability * 100:.0f}% · "

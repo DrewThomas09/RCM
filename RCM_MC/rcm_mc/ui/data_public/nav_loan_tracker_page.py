@@ -240,7 +240,7 @@ def render_nav_loan_tracker(params: dict = None) -> str:
     # reads NAV LOAN TRACKER.
     page_title = ck_page_title(
         "NAV Loan Tracker",
-        eyebrow="NAV LOAN TRACKER",
+        eyebrow="FUND OPS · NAV LOAN TRACKER",
         meta=f"""{r.total_loans} active NAV loans · ${r.total_outstanding_m:,.1f}M outstanding · {r.weighted_ltv_pct * 100:.2f}% weighted LTV · SOFR+{r.weighted_spread_bps}bps · {r.loans_near_maturity} loans within 4-year maturity window — {r.corpus_deal_count:,} corpus deals""",
     )
     

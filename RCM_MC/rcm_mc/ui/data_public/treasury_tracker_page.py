@@ -267,7 +267,7 @@ def render_treasury_tracker(params: dict = None) -> str:
     # matches the eyebrow and route /treasury.
     page_title = ck_page_title(
         "Treasury Tracker",
-        eyebrow="TREASURY TRACKER",
+        eyebrow="FUND OPS · TREASURY TRACKER",
         meta=f"""${r.total_portfolio_liquidity_m:,.1f}M total liquidity · ${r.total_cash_and_investments_m:,.1f}M cash + investments · {r.weighted_revolver_utilization_pct * 100:.1f}% revolver utilization · {r.at_risk_deals} deal{"s" if r.at_risk_deals != 1 else ""} at risk · {len(r.hedging)} hedging positions — {r.corpus_deal_count:,} corpus deals""",
     )
     

@@ -202,7 +202,7 @@ def render_tax_structure_analyzer(params: dict = None) -> str:
 
     page_title = ck_page_title(
         "Tax Structure Analyzer",
-        eyebrow="TAX STRUCTURE ANALYZER",
+        eyebrow="FUND OPS · TAX STRUCTURE",
         meta=f"""Exit-structure options · after-tax scenarios · rollover mechanics · blocker structures · state-by-state diligence — {r.corpus_deal_count:,} corpus deals""",
     )
     
