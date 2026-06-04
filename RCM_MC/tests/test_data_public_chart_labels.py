@@ -78,6 +78,16 @@ class TestDataPublicChartLabels(unittest.TestCase):
         html = transition_services_page.render_transition_services({})
         self.assertIn('text-anchor="end"', html)
 
+    def test_deal_flow_heatmap_svgs_are_responsive(self):
+        """The two wide year×sector heatmaps used fixed <svg width="{w}">
+        (no viewBox), so at a laptop width (~1100px, 2-col page) the right
+        edge clipped ~137px. Now responsive (viewBox + width=100%)."""
+        from rcm_mc.ui.data_public import deal_flow_heatmap_page as dfh
+        html = dfh.render_deal_flow_heatmap()
+        self.assertIn("viewBox", html)
+        # The wide heatmaps now scale to the column instead of clipping.
+        self.assertIn("display:block;max-width:", html)
+
     def test_vintage_perf_svgs_are_responsive(self):
         """vintage-perf charts used a fixed <svg width="637"> with no viewBox,
         so a narrow column clipped the right edge. They now use viewBox +
