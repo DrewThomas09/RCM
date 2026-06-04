@@ -117,6 +117,31 @@ class TestDemoRoutes(unittest.TestCase):
         # And the loaded state offers a reversible unload.
         self.assertIn('action="/demo/unload"', b)
 
+    def test_json_download_round_trips_via_import(self):
+        # The tutorial claims the download is the real import format. Prove it:
+        # GET the JSON file, POST it to /api/deals/import, and confirm the deals
+        # come back profile-populated (sector/sponsor), not as bare shells.
+        _, _, jbody = self._get("/demo/download/kkr-deals.json")
+        req = urllib.request.Request(
+            self.base + "/api/deals/import", data=jbody, method="POST",
+            headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            res = json.loads(r.read())
+        self.assertGreaterEqual(res.get("imported", 0), 13)
+        self.assertIn("cotiviti", res.get("deal_ids", []))
+        # The imported deal renders its page (round-trip wasn't lossy).
+        code, _, body = self._get("/deal/cotiviti")
+        self.assertEqual(code, 200)
+        self.assertIn("Cotiviti", body.decode("utf-8", "replace"))
+
+    def test_csv_download_is_flat(self):
+        # CSV stays flat (no nested profile blob) so the CSV importer can map
+        # each column into the profile.
+        _, _, body = self._get("/demo/download/kkr-deals.csv")
+        header = body.decode("utf-8", "replace").splitlines()[0]
+        self.assertIn("deal_id", header)
+        self.assertNotIn("profile", header)
+
     def test_app_shows_demo_banner_after_load(self):
         # After loading, the command center carries a 'Demo mode' banner so the
         # partner knows they're on demo data and can reach the unload control.

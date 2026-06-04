@@ -4878,7 +4878,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/demo/download/kkr-deals.csv":
             import pandas as _pd
             from .demo.kkr_demo import demo_deal_rows
-            return self._send_csv_df(_pd.DataFrame(demo_deal_rows()), "kkr-demo-deals.csv")
+            # CSV stays flat: /api/deals/import-csv maps every non-(deal_id,name)
+            # column into the profile, so drop the nested JSON-only profile blob
+            # (it would stringify into one unusable column).
+            _df = _pd.DataFrame(demo_deal_rows()).drop(
+                columns=["profile"], errors="ignore")
+            return self._send_csv_df(_df, "kkr-demo-deals.csv")
         if path == "/demo/download/kkr-deals.json":
             import json as _json
             from .demo.kkr_demo import demo_deal_rows

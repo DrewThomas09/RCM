@@ -114,8 +114,10 @@ def render_demo_page(loaded: bool = False, deal_count: int = 0) -> str:
          "mid-lifecycle — one acked, one snoozed, and Envision's covenant breach left live — so you can see "
          "ack / snooze / escalate end to end. <a href='/deadlines' style='color:#155752'>Deadlines</a> show "
          "upcoming and overdue items (restructuring review, covenant tests)."),
-        ("(Optional) inspect the data", "Download the ingestion files below to see the exact import format, "
-         "or hand them to a colleague."),
+        ("(Optional) inspect &amp; re-import the data", "Download the ingestion files below — they're the real "
+         "import format and round-trip cleanly: feed <b>kkr-deals.json</b> to <code>/api/deals/import</code> "
+         "or <b>kkr-deals.csv</b> to the CSV importer and the KKR deals (sector, sponsor, vintage, RCM "
+         "metrics) come back. Hand them to a colleague to seed their own workspace."),
     ]
     steps_html = "".join(
         f'<li style="margin:8px 0;font-size:12.5px;color:#1a2332;line-height:1.5;">'
