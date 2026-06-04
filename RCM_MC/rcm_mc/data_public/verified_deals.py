@@ -3612,6 +3612,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.businesswire.com/news/home/20210121005710/en/The-Vistria-Group-and-Excellere-Partners-Invest-in-SCA-Pharmaceuticals",
         "source_note": "The Vistria Group & Excellere Partners (SCA Pharmaceuticals from Enhanced Healthcare, Jan 2021)",
     },
+    {
+        "target": "NextCare Urgent Care", "sponsor": "Enhanced Healthcare Partners",
+        "year": 2010, "ev_usd_mm": None, "sector": "urgent_care",
+        "subsector_note": "Multi-state urgent-care center operator (one of the original PE urgent-care platforms); Enhanced (fka Enhanced Equity)",
+        "outcome": "active", "outcome_note": "Active; Enhanced Equity (now Enhanced Healthcare Partners) invested 2010.",
+        "source_url": "https://www.enhancedhealthcare.com/nextcare-urgent-care",
+        "source_note": "Enhanced Healthcare Partners (NextCare Urgent Care, 2010)",
+    },
+    {
+        "target": "Synergy Health Partners", "sponsor": "Enhanced Healthcare Partners",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Surgicalist + specialty physician on-call staffing/management services (Synergy Surgicalists + EA Health merger); Enhanced platform",
+        "outcome": "active", "outcome_note": "Active; Enhanced Healthcare Partners formed it via Synergy Surgicalists / EA Health merger June 2020.",
+        "source_url": "https://www.enhancedhealthcare.com/news/2020/6/2/enhanced-healthcare-partners-announces-investment-in-and-simultaneous-business-merger-of-synergy-surgicalists-and-ea-health",
+        "source_note": "Enhanced Healthcare Partners (Synergy Health Partners, June 2020)",
+    },
+    {
+        "target": "Carisk Partners", "sponsor": "Lee Equity Partners",
+        "year": 2023, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Workers'-comp specialty risk-transfer + care-coordination (behavioral-health foundation); Lee Equity + Elements Health recap",
+        "outcome": "active", "outcome_note": "Active; Lee Equity Partners & Elements Health Investors recapitalized Dec 2023.",
+        "source_url": "https://www.businesswire.com/news/home/20231204589710/en/Carisk-Partners-Recapitalizes-with-Lee-Equity-Partners-and-Elements-Health-Investors",
+        "source_note": "Lee Equity Partners (Carisk Partners recap, Dec 2023)",
+    },
 ]
 
 
