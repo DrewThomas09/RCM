@@ -3924,6 +3924,22 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.apixio.com/press/centene-corporation-signs-definitive-agreement-to-divest-apixio-to-new-mountain-capital/",
         "source_note": "New Mountain Capital (Apixio from Centene, June 2023)",
     },
+    {
+        "target": "EVERSANA", "sponsor": "JLL Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "End-to-end life-sciences commercialization services (market access, agency, patient services) for biopharma; JLL + Water Street platform of 6 merged providers",
+        "outcome": "active", "outcome_note": "Active; JLL Partners + Water Street Healthcare Partners formed EVERSANA Oct 2018 (single-asset continuation fund 2022).",
+        "source_url": "https://www.jllpartners.com/our-companies/eversana/",
+        "source_note": "JLL Partners + Water Street Healthcare Partners (EVERSANA, Oct 2018)",
+    },
+    {
+        "target": "Norstella", "sponsor": "Welsh, Carson, Anderson & Stowe",
+        "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Pharma commercial-intelligence + data platform (MMIT / Evaluate / Citeline / Panalgo); Welsh Carson + Warburg Pincus + Hg + Ardian (~$5bn)",
+        "outcome": "active", "outcome_note": "Active; Welsh Carson + Warburg Pincus + Hg + Ardian backed the 2022 Norstella/Citeline merger (~$5bn).",
+        "source_url": "https://www.norstella.com/press-releases/norstella-citeline-merge-to-create-5bn-pharma-tech-firm/",
+        "source_note": "Welsh, Carson, Anderson & Stowe (Norstella, 2022, ~$5bn)",
+    },
 ]
 
 
