@@ -641,16 +641,17 @@ def _landing() -> str:
         _scoped_styles()
         + '<div class="et-wrap">'
         + ck_editorial_head(
-            eyebrow="Exit Timing + Buyer Fit",
-            title="When the deal pays you to <em>leave</em>.",
+            eyebrow="DILIGENCE · EXIT TIMING",
+            title="Exit Timing + Buyer Fit",
             meta="PREDICTIVE EXIT PATH · BUYER-CHANNEL FIT",
             lede_italic_phrase="Time the exit, name the buyer.",
             lede_body=(
-                " Given a Deal MC scenario (equity + debt + EBITDA trajectory), "
-                "this scores an IRR/MOIC curve across candidate exit years 2–7 "
-                "and ranks each buyer channel — strategic, PE secondary, IPO, "
-                "sponsor-hold — by fit. The recommended exit pairs the highest "
-                "probability-weighted IRR with the buyer most likely to close."
+                "When does the deal pay you to leave? Given a Deal MC scenario "
+                "(equity + debt + EBITDA trajectory), this scores an IRR/MOIC "
+                "curve across candidate exit years 2–7 and ranks each buyer "
+                "channel — strategic, PE secondary, IPO, sponsor-hold — by fit, "
+                "pairing the highest probability-weighted IRR with the buyer "
+                "most likely to close."
             ),
         )
         + form

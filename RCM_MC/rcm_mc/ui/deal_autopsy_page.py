@@ -587,7 +587,7 @@ def _summary_hero(
     )
     page_title = (
         ck_page_title(
-        "Deal Autopsy", eyebrow="DEAL AUTOPSY", meta=meta,
+        "Deal Autopsy", eyebrow="DILIGENCE · DEAL AUTOPSY", meta=meta,
     )
         + ck_page_explainer(
             '"You\'re about to do Steward again."',
@@ -729,7 +729,7 @@ def _landing() -> str:
         '</form>'
     )
     title_block = ck_page_title(
-        "Deal Autopsy", eyebrow="DEAL AUTOPSY",
+        "Deal Autopsy", eyebrow="DILIGENCE · DEAL AUTOPSY",
         meta=f"{len(historical_library())} historical deals · 9-feature signature match",
     )
     explainer_html = (
