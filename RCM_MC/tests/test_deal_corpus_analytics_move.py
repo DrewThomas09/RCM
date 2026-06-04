@@ -63,8 +63,8 @@ class DealCorpusAnalyticsMoveTests(unittest.TestCase):
     def test_new_route_renders(self):
         status, _, html = self._get("/deal-corpus-analytics")
         self.assertEqual(status, 200, msg=html[:400])
-        self.assertIn("Deal Corpus Analytics", html)
-        self.assertIn("BENCHMARK CORPUS", html)         # data-universe chip
+        self.assertIn("Deal Dataset Analytics", html)
+        self.assertIn("BENCHMARK DATASET", html)        # data-universe chip
 
     def test_old_route_redirects(self):
         status, location, _ = self._get("/portfolio-analytics", follow=False)

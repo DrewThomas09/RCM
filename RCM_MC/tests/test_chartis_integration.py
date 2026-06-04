@@ -328,7 +328,7 @@ class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
     def test_corpus_backtest_renders(self):
         self._assert_renders(
             "/corpus-backtest",
-            expect_title="Corpus Backtest",
+            expect_title="Dataset Backtest",
             expect_substrings=("DISAMBIGUATION", "GROUND-TRUTH CURVE"),
         )
 
@@ -350,11 +350,11 @@ class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
 
     def test_portfolio_analytics_renders(self):
         # /portfolio-analytics was deliberately renamed/redirected to
-        # "Deal Corpus Analytics" (the 655-deal benchmark CORPUS was mislabeled
+        # "Deal Dataset Analytics" (the 655-deal benchmark CORPUS was mislabeled
         # as portfolio and moved to Research). Title tracks that intended rename.
         self._assert_renders(
             "/portfolio-analytics",
-            expect_title="Deal Corpus Analytics",
+            expect_title="Deal Dataset Analytics",
         )
 
 

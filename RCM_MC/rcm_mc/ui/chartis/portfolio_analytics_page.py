@@ -646,8 +646,8 @@ def render_portfolio_analytics(
     def _title(meta: str) -> str:
         # Benchmark CORPUS, not the user's portfolio — the chip + name say so.
         return ck_page_title(
-            "Deal Corpus Analytics",
-            eyebrow="DEAL CORPUS ANALYTICS",
+            "Deal Dataset Analytics",
+            eyebrow="CHARTIS · DEAL DATASET ANALYTICS",
             meta=meta,
         ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>' + ck_illustrative_note(
             "corpus MOIC/IRR analytics (mostly an illustrative/modeled set — "
@@ -670,13 +670,13 @@ def render_portfolio_analytics(
         )
     except Exception as exc:  # noqa: BLE001
         body = small_panel(
-            "Deal Corpus Analytics unavailable",
+            "Deal Dataset Analytics unavailable",
             empty_note(f"portfolio_analytics module failed: {exc!r}"),
             code="ERR",
         )
         return chartis_shell(
             _title("module unavailable") + explainer_html + body,
-            title="Deal Corpus Analytics",
+            title="Deal Dataset Analytics",
             active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS,
         )
@@ -690,7 +690,7 @@ def render_portfolio_analytics(
         )
         return chartis_shell(
             _title("no corpus available") + explainer_html + body,
-            title="Deal Corpus Analytics",
+            title="Deal Dataset Analytics",
             active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS,
         )
@@ -723,7 +723,7 @@ def render_portfolio_analytics(
             )
         )
         return chartis_shell(
-            body, title="Deal Corpus Analytics",
+            body, title="Deal Dataset Analytics",
             active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS + _PA_FILTER_CSS,
         )
@@ -740,7 +740,7 @@ def render_portfolio_analytics(
         )
         return chartis_shell(
             _title("analysis raised an error") + explainer_html + body,
-            title="Deal Corpus Analytics",
+            title="Deal Dataset Analytics",
             active_nav="/deal-corpus-analytics",
             extra_css=_EXPLAINER_CSS,
         )
@@ -858,7 +858,7 @@ def render_portfolio_analytics(
 
     return chartis_shell(
         body,
-        title="Deal Corpus Analytics",
+        title="Deal Dataset Analytics",
         active_nav="/deal-corpus-analytics",
         extra_css=_EXPLAINER_CSS + _PA_FILTER_CSS,
     )

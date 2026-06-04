@@ -241,7 +241,7 @@ class TestRenderBacktest(unittest.TestCase):
         from rcm_mc.ui.data_public.backtest_page import render_backtest
         html = render_backtest()
         # Page identity check (legacy-nav self-link deprecated).
-        self.assertIn("Corpus Backtest", html)
+        self.assertIn("Dataset Backtest", html)
 
     def test_no_light_theme_palette(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest

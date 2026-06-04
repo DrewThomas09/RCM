@@ -464,12 +464,12 @@ def render_corpus_backtest(
             code="NIL",
         )
         return chartis_shell(
-            body, title="Corpus Backtest",
+            body, title="Dataset Backtest",
             active_nav="/corpus-backtest",
         breadcrumbs=[
             ("Home", "/app"),
             ("Tools", "/methodology"),
-            ("Corpus Backtest", None),
+            ("Dataset Backtest", None),
         ],
             subtitle="Corpus unavailable",
         )
@@ -595,8 +595,8 @@ def render_corpus_backtest(
     )
 
     page_title = ck_page_title(
-        "Corpus Backtest",
-        eyebrow="CORPUS BACKTEST",
+        "Dataset Backtest",
+        eyebrow="CHARTIS · DATASET BACKTEST",
         meta=(
             f"{len(corpus)} corpus deals · "
             f"{self_summary['n_realized']} realized · "
@@ -607,12 +607,12 @@ def render_corpus_backtest(
 
     return chartis_shell(
         body,
-        title="Corpus Backtest",
+        title="Dataset Backtest",
         active_nav="/corpus-backtest",
         breadcrumbs=[
             ("Home", "/app"),
             ("Tools", "/methodology"),
-            ("Corpus Backtest", None),
+            ("Dataset Backtest", None),
         ],
         subtitle=(
             f"{len(corpus)} corpus deals · "
