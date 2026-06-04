@@ -74,6 +74,19 @@ class TestHealthMarketsData(unittest.TestCase):
         self.assertGreaterEqual(rows[0]["health_pct_gdp"], rows[-1]["health_pct_gdp"])
         self.assertTrue(pe_active_markets())
 
+    def test_summary_stats(self):
+        from rcm_mc.data_public.global_health_markets import (
+            HEALTH_MARKETS, summary_stats,
+        )
+        s = summary_stats()
+        self.assertEqual(s["n_markets"], len(HEALTH_MARKETS))
+        self.assertGreater(s["n_pe_active"], 0)
+        self.assertLessEqual(s["n_pe_active"], s["n_markets"])
+        self.assertTrue(0 < s["mean_all"] < 25)
+        self.assertTrue(s["by_region"])
+        # region breakdown sums back to the market count
+        self.assertEqual(sum(b["count"] for b in s["by_region"]), s["n_markets"])
+
 
 class TestGlobalMarketsRoute(unittest.TestCase):
     @classmethod
@@ -106,6 +119,10 @@ class TestGlobalMarketsRoute(unittest.TestCase):
         self.assertIn("Global healthcare markets", b)
         self.assertIn("United States", b)
         self.assertIn("OECD", b)        # provenance shown
+        # INT-2: the comparison graph + region breakdown render too.
+        self.assertIn("Health expenditure as % of GDP", b)
+        self.assertIn("Mean spend by region", b)
+        self.assertGreaterEqual(b.count("<svg"), 2)   # map + chart
 
 
 if __name__ == "__main__":

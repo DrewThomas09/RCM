@@ -84,3 +84,31 @@ def ranked_markets() -> List[Dict[str, Any]]:
     rows = [{"iso2": k, **v} for k, v in HEALTH_MARKETS.items()]
     rows.sort(key=lambda r: -r["health_pct_gdp"])
     return rows
+
+
+def _mean(xs: List[float]) -> float:
+    return sum(xs) / len(xs) if xs else 0.0
+
+
+def summary_stats() -> Dict[str, Any]:
+    """Headline rollups derived from the dataset (no new figures): counts and
+    mean health-spend share overall and across the active healthcare-PE
+    markets, plus a per-region breakdown. Used by the comparison view."""
+    rows = list(HEALTH_MARKETS.values())
+    all_v = [r["health_pct_gdp"] for r in rows]
+    pe_v = [r["health_pct_gdp"] for r in rows if r.get("pe_active")]
+    regions: Dict[str, List[float]] = {}
+    for r in rows:
+        regions.setdefault(r["region"], []).append(r["health_pct_gdp"])
+    by_region = sorted(
+        ({"region": reg, "count": len(vs), "mean": round(_mean(vs), 1)}
+         for reg, vs in regions.items()),
+        key=lambda d: -d["mean"],
+    )
+    return {
+        "n_markets": len(rows),
+        "n_pe_active": sum(1 for r in rows if r.get("pe_active")),
+        "mean_all": round(_mean(all_v), 1),
+        "mean_pe_active": round(_mean(pe_v), 1),
+        "by_region": by_region,
+    }
