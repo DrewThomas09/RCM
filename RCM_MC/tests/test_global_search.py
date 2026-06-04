@@ -105,6 +105,24 @@ class TestSearch(unittest.TestCase):
         finally:
             tmp.cleanup()
 
+    def test_verified_corpus_searchable(self):
+        # The ~500 verified, source-cited real deals must be findable from
+        # global search (regression: previously only the partner's portfolio +
+        # pages were indexed, so corpus deals were invisible).
+        from rcm_mc.ui.global_search import search
+        # Deal-name match -> Verified Deals link.
+        r = search(None, "Cano Health")
+        self.assertTrue(any(
+            r_.label == "Cano Health" and r_.url.startswith("/verified-deals")
+            for r_ in r), "corpus deal name not searchable")
+        # Sponsor-name match returns multiple corpus deals, capped (<=12).
+        kkr = [x for x in search(None, "KKR") if x.url.startswith("/verified-deals")]
+        self.assertGreater(len(kkr), 0)
+        self.assertLessEqual(len(kkr), 12)
+        # A distinctive recent add is findable.
+        self.assertTrue(any(x.label == "MedeAnalytics"
+                            for x in search(None, "MedeAnalytics")))
+
     def test_empty_query_returns_empty(self):
         from rcm_mc.portfolio.store import PortfolioStore
         from rcm_mc.ui.global_search import search
