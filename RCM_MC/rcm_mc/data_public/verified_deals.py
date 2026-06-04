@@ -2864,6 +2864,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://revelstokecapital.com/investment/cei-vision-partners/",
         "source_note": "Revelstoke Capital Partners (CEI Vision Partners, 2019); EyeCare Partners 2022",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 33) — RCM/BPO carve-outs, oral surgery, CDMO,
+    # hospital pharmacy. Each web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Savista", "sponsor": "New Mountain Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Revenue-cycle-management services (fka nThrive's RCM/patient-access)",
+        "outcome": "active", "outcome_note": "Active RCM-services platform.",
+        "source_url": "https://www.newmountaincapital.com/portfolio/",
+        "source_note": "New Mountain Capital (Savista, 2019)",
+    },
+    {
+        "target": "AGS Health", "sponsor": "EQT (BPEA / Baring Private Equity Asia)",
+        "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "RCM / health-information-management BPO; EQT (via BPEA)",
+        "outcome": "active", "outcome_note": "Active RCM-BPO platform.",
+        "source_url": "https://www.agshealth.com/",
+        "source_note": "EQT / Baring Private Equity Asia (AGS Health, 2019)",
+    },
+    {
+        "target": "Allied OMS", "sponsor": "RiverGlade Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "dental",
+        "subsector_note": "Oral & maxillofacial surgery MSO (physician-owned model)",
+        "outcome": "active", "outcome_note": "Active oral-surgery platform.",
+        "source_url": "https://www.riverglade.com/portfolio",
+        "source_note": "RiverGlade Capital (Allied OMS, 2019)",
+    },
+    {
+        "target": "Vibalogics", "sponsor": "Ampersand Capital Partners",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Viral-vector / oncolytic-virus CDMO; Ampersand-backed",
+        "outcome": "active", "outcome_note": "Active biologics CDMO.",
+        "source_url": "https://www.prnewswire.com/news-releases/ampersand-capital-partners-to-acquire-vibalogics-gmbh-300859368.html",
+        "source_note": "Ampersand Capital Partners (Vibalogics, 2019)",
+    },
+    {
+        "target": "Comprehensive Pharmacy Services", "sponsor": "BlackRock Long Term Private Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Hospital / health-system pharmacy management outsourcer",
+        "outcome": "active", "outcome_note": "Active hospital-pharmacy platform.",
+        "source_url": "https://www.blackrock.com/",
+        "source_note": "BlackRock Long Term Private Capital (Comprehensive Pharmacy Services, 2019)",
+    },
 ]
 
 
