@@ -152,8 +152,8 @@ def render_team_dashboard(db_path: str) -> str:
     # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="TEAM",
-        title="Where the team's work shows up.",
+        eyebrow="WORKSPACE · TEAM",
+        title="Team",
         meta=(
             f"{len(actors)} MEMBER"
             f"{'S' if len(actors) != 1 else ''} · "

@@ -264,7 +264,7 @@ def render_data_catalog_page(store: Any) -> str:
 
     page_title = ck_page_title(
         "Data Catalog",
-        eyebrow="DATA CATALOG",
+        eyebrow="PLATFORM · DATA CATALOG",
         meta=f"{summary['n_sources']} sources · {summary['total_records']:,} records",
     )
     dc_explainer = (

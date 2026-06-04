@@ -361,8 +361,8 @@ def render_ai_settings(store: Any) -> str:
     # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="AI ASSISTANT",
-        title="Where the local AI assistant plugs into the deal work.",
+        eyebrow="SETTINGS · AI ASSISTANT",
+        title="AI Assistant",
         meta=(
             f"{'CONNECTED' if key_set else 'NOT CONNECTED'} · "
             f"{stats['total_calls']:,} CALL"

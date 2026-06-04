@@ -187,8 +187,8 @@ def render_model_validation(
     # 2026-05-28 batch 23 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
-        eyebrow="MODEL VALIDATION",
-        title="Where every prediction earns its trust.",
+        eyebrow="RESEARCH · MODEL VALIDATION",
+        title="Model Validation",
         meta=(
             f"COVERAGE {avg_coverage*100:.0f}% · "
             f"MAE {avg_mae:.3f} · "
