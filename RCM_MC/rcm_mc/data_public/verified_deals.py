@@ -3516,6 +3516,38 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.consonancecapitalpartners.com/enclara",
         "source_note": "Consonance Capital Partners (Enclara Pharmacia, 2014; exited to Humana 2019)",
     },
+    {
+        "target": "Care Hospice", "sponsor": "Martis Capital",
+        "year": 2017, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Multi-state hospice provider (60+ locations; Charlottesville VA); Martis Capital platform",
+        "outcome": "active", "outcome_note": "Active; Martis Capital invested April 2017.",
+        "source_url": "https://www.martiscapital.com/portfolio/care-hospice/",
+        "source_note": "Martis Capital (Care Hospice, April 2017)",
+    },
+    {
+        "target": "Pediatric Home Service", "sponsor": "InTandem Capital Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Pediatric home health-care / home nursing + respiratory provider; InTandem Capital partnership",
+        "outcome": "active", "outcome_note": "Active; InTandem Capital Partners partnered Dec 2018.",
+        "source_url": "https://intandemcapital.com/portfolio/",
+        "source_note": "InTandem Capital Partners (Pediatric Home Service, Dec 2018)",
+    },
+    {
+        "target": "OrthoNebraska", "sponsor": "InTandem Capital Partners",
+        "year": 2023, "ev_usd_mm": None, "sector": "physician_practices",
+        "subsector_note": "Orthopedic physician group + specialty hospital (Omaha NE); InTandem Capital partnership",
+        "outcome": "active", "outcome_note": "Active; InTandem Capital Partners invested Aug 2023.",
+        "source_url": "https://intandemcapital.com/portfolio/",
+        "source_note": "InTandem Capital Partners (OrthoNebraska, Aug 2023)",
+    },
+    {
+        "target": "DCN Dx", "sponsor": "Martis Capital",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Contract developer / manufacturer of rapid lateral-flow point-of-care diagnostic tests (Carlsbad CA); Martis growth investment",
+        "outcome": "active", "outcome_note": "Active; Martis Capital growth investment Nov 2020.",
+        "source_url": "https://www.martiscapital.com/martis-capital-makes-growth-investment-in-dcn-dx/",
+        "source_note": "Martis Capital (DCN Dx, Nov 2020)",
+    },
 ]
 
 
