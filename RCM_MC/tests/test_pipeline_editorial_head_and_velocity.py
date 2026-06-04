@@ -95,10 +95,12 @@ class PipelineEditorialHeadTests(unittest.TestCase):
         self.assertIn('class="pp-head"', self.html)
 
     def test_eyebrow_has_green_dash(self) -> None:
-        # Spec Tier-2 §2.1 — eyebrow text follows the 24×1px dash.
+        # Spec Tier-2 §2.1 — eyebrow text follows the 24×1px dash. Eyebrow is
+        # the section context ("PIPELINE · DEAL FLOW"), not a caps repeat of the
+        # H1 "Deal Pipeline".
         self.assertRegex(
             self.html,
-            r'<div class="eyebrow"><span class="dash"></span>\s*DEAL PIPELINE',
+            r'<div class="eyebrow"><span class="dash"></span>\s*PIPELINE · DEAL FLOW',
         )
 
     def test_h1_present(self) -> None:

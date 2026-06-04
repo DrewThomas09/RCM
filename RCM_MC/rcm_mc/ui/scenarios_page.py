@@ -113,8 +113,8 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
     # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
-        eyebrow="SCENARIO EXPLORER",
-        title="Where the deal breaks under policy shocks.",
+        eyebrow="DILIGENCE · SCENARIOS",
+        title="Scenario Explorer",
         meta=(
             f"{len(presets)} PRESET SHOCK"
             f"{'S' if len(presets) != 1 else ''} · "
