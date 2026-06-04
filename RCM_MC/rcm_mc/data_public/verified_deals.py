@@ -2708,6 +2708,43 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.newmountaincapital.com/portfolio/",
         "source_note": "New Mountain Capital (Ciox Health, 2018); Datavant 2021",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 29) — DME, behavioral pharmacy, and health-IT
+    # software (clinical-trial payments, PT, ASC). Web-validated; pre-checked.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Genoa Healthcare", "sponsor": "Advent International",
+        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Behavioral-health pharmacy (co-located in CMHCs); Advent platform",
+        "outcome": "exited", "outcome_note": "Acquired by UnitedHealth's Optum in 2018.",
+        "source_url": "https://www.adventinternational.com/advent-international-to-acquire-genoa-a-qol-healthcare-company/",
+        "source_note": "Advent International (Genoa Healthcare, 2016); Optum 2018",
+    },
+    {
+        "target": "Greenphire", "sponsor": "Thoma Bravo",
+        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Clinical-trial payments + participant-reimbursement software; from Riverside",
+        "outcome": "active", "outcome_note": "Active clinical-trial-software platform.",
+        "source_url": "https://www.thomabravo.com/",
+        "source_note": "Thoma Bravo (Greenphire from Riverside, June 2021)",
+    },
+    {
+        "target": "WebPT", "sponsor": "Warburg Pincus",
+        "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Physical-therapy practice-management / EMR + RCM software",
+        "outcome": "active", "outcome_note": "Active rehab-therapy software platform.",
+        "source_url": "https://www.warburgpincus.com/portfolio/",
+        "source_note": "Warburg Pincus (WebPT, 2019)",
+    },
+    {
+        "target": "HST Pathways", "sponsor": "Bain Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Ambulatory-surgery-center (ASC) management + scheduling software",
+        "outcome": "active", "outcome_note": "Active ASC-software platform.",
+        "source_url": "https://www.baincapital.com/",
+        "source_note": "Bain Capital (HST Pathways, 2021)",
+    },
 ]
 
 
