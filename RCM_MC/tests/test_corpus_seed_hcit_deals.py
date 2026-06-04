@@ -13,7 +13,9 @@ import unittest
 from rcm_mc.data_public.corpus_loader import load_corpus_deals
 from rcm_mc.data_public.deals_corpus import _SEED_DEALS
 
-_NEW_IDS = [f"seed_{n:03d}" for n in range(36, 44)]
+# seed_036–043: RCM / health-IT / services; seed_044–049: value-based care,
+# home health, home infusion, PACE (+ the Cano downside).
+_NEW_IDS = [f"seed_{n:03d}" for n in range(36, 50)]
 
 
 class TestCorpusHcitAdditions(unittest.TestCase):
@@ -50,6 +52,20 @@ class TestCorpusHcitAdditions(unittest.TestCase):
         directly the domain this platform models."""
         r1 = next(d for d in _SEED_DEALS if d["source_id"] == "seed_036")
         self.assertIn("R1 RCM", r1["deal_name"])
+
+    def test_cano_documented_loss(self):
+        """Cano Health (value-based primary care) — Chapter 11 2024, equity
+        wiped — a second documented downside."""
+        cano = next(d for d in _SEED_DEALS if d["source_id"] == "seed_046")
+        self.assertIn("Cano", cano["deal_name"])
+        self.assertEqual(cano["realized_moic"], 0.0)
+
+    def test_value_based_care_coverage_added(self):
+        """The batch broadens beyond hospitals into value-based / home /
+        PACE care — e.g. Oak Street (Medicare-heavy VBC)."""
+        oak = next(d for d in _SEED_DEALS if d["source_id"] == "seed_044")
+        self.assertIn("Oak Street", oak["deal_name"])
+        self.assertGreater(oak["payer_mix"]["medicare"], 0.5)
 
 
 if __name__ == "__main__":
