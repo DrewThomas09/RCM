@@ -3852,6 +3852,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.enlyte.com/news/announcing-enlyte",
         "source_note": "Stone Point Capital (Enlyte / Mitchell | Genex | Coventry, 2018)",
     },
+    {
+        "target": "Global Healthcare Exchange (GHX)", "sponsor": "Thoma Bravo",
+        "year": 2014, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Healthcare supply-chain SaaS / trading-partner network (providers, suppliers, GPOs); Thoma Bravo platform (sold majority to Temasek 2017, Warburg minority 2021)",
+        "outcome": "active", "outcome_note": "Active; Thoma Bravo acquired 2014; sold majority to Temasek 2017 (Warburg Pincus minority 2021).",
+        "source_url": "https://www.thomabravo.com/press-releases/healthcare-supply-chain-leader-ghx-receives-investment-from-temasek",
+        "source_note": "Thoma Bravo (Global Healthcare Exchange / GHX, 2014)",
+    },
+    {
+        "target": "Sharecare", "sponsor": "Altaris Capital",
+        "year": 2024, "ev_usd_mm": 518, "sector": "rcm_healthtech",
+        "subsector_note": "Digital-health / patient-engagement + health-data platform; Altaris take-private of Nasdaq-listed Sharecare ($1.43/share, ~$518M)",
+        "outcome": "exited", "outcome_note": "Nasdaq-listed Sharecare taken private by Altaris Capital Oct 2024 (~$518M).",
+        "source_url": "https://altariscap.com/news/altaris-acquires-sharecare",
+        "source_note": "Altaris Capital (Sharecare take-private, Oct 2024, ~$518M)",
+    },
+    {
+        "target": "Smarter Technologies", "sponsor": "New Mountain Capital",
+        "year": 2025, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "AI-enabled revenue-management automation (SmarterDx + Thoughtful.ai + Access Healthcare; ~$800M rev, 500k+ providers); New Mountain combination",
+        "outcome": "active", "outcome_note": "Active; New Mountain Capital combined SmarterDx + Thoughtful.ai + Access Healthcare to form Smarter Technologies May 2025.",
+        "source_url": "https://www.newmountaincapital.com/new-mountain-capital-forms-smarter-technologies-through-combination-of-smarterdx-thoughtful-ai-and-access-healthcare/",
+        "source_note": "New Mountain Capital (Smarter Technologies, May 2025)",
+    },
 ]
 
 
