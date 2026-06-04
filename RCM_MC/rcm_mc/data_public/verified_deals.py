@@ -3572,6 +3572,30 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://roundtablehp.com/news/2025/roundtablehealthcarepartnersannouncessaleofrenaissancelakewoodllc.html",
         "source_note": "RoundTable Healthcare Partners (Renaissance Lakewood / DPT Labs, 2012; exited to LTS 2025)",
     },
+    {
+        "target": "Physical Rehabilitation Network", "sponsor": "Gryphon Investors",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Western-US outpatient physical-therapy operator (PRN); Gryphon from Silver Oak Services Partners",
+        "outcome": "active", "outcome_note": "Active; Gryphon Investors acquired from Silver Oak Dec 2020.",
+        "source_url": "https://www.gryphon-inv.com/news/gryphon-investors-acquires-prn-a-leading-western-u-s-physical-therapy-operator/",
+        "source_note": "Gryphon Investors (Physical Rehabilitation Network from Silver Oak, Dec 2020)",
+    },
+    {
+        "target": "Meadows Behavioral Healthcare", "sponsor": "Kohlberg & Company",
+        "year": 2016, "ev_usd_mm": None, "sector": "behavioral_health",
+        "subsector_note": "Trauma / addiction / eating-disorder treatment provider (The Meadows); Kohlberg platform (Alita Care, with Sunspire)",
+        "outcome": "active", "outcome_note": "Active; Kohlberg & Company acquired May 2016, formed Alita Care with Sunspire Health.",
+        "source_url": "https://www.kohlberg.com/kohlberg-company-adds-meadows-behavioral-healthcare-to-its-behavioral-health-services-platform-enhancing-diversity-and-scale-with-acquisition-of-leading-treatment-provider/",
+        "source_note": "Kohlberg & Company (Meadows Behavioral Healthcare, May 2016)",
+    },
+    {
+        "target": "Nelipak Healthcare Packaging", "sponsor": "Kohlberg & Company",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Custom rigid/flexible medical-device + pharma drug-delivery packaging manufacturer; Kohlberg from Mason Wells (merged Bemis HC Packaging Europe)",
+        "outcome": "active", "outcome_note": "Active; Kohlberg & Company acquired from Mason Wells July 2019.",
+        "source_url": "https://www.kohlberg.com/kohlberg-company-acquire-nelipak-healthcare-packaging/",
+        "source_note": "Kohlberg & Company (Nelipak Healthcare Packaging from Mason Wells, July 2019)",
+    },
 ]
 
 
