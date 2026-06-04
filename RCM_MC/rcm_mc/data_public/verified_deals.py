@@ -2663,6 +2663,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.aresmgmt.com/",
         "source_note": "Ares Management (DuPage Medical Group, 2017, ~$1.45B)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 28) — large pharma/device/dialysis carve-outs
+    # and take-privates + DME + health-information exchange. Web-validated.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Catalent", "sponsor": "Novo Holdings",
+        "year": 2024, "ev_usd_mm": 16500, "sector": "other_services",
+        "subsector_note": "Global pharma/biologics CDMO; take-private at $63.50/share (~$16.5B)",
+        "outcome": "exited", "outcome_note": "Public→private; Novo Holdings (three sites went to Novo Nordisk).",
+        "source_url": "https://www.catalent.com/catalent-news/novo-holdings-completes-acquisition-of-catalent/",
+        "source_note": "Novo Holdings (Catalent take-private, 2024, ~$16.5B)",
+    },
+    {
+        "target": "Baxter Kidney Care (Vantive)", "sponsor": "The Carlyle Group",
+        "year": 2024, "ev_usd_mm": 3800, "sector": "dialysis",
+        "subsector_note": "Dialysis + renal-care products carve-out from Baxter (~$3.8B)",
+        "outcome": "active", "outcome_note": "Active; Carlyle + Atmas Health carve-out (Vantive).",
+        "source_url": "https://www.baxter.com/baxter-newsroom/baxter-announces-definitive-agreement-divest-its-vantive-kidney-care-segment",
+        "source_note": "The Carlyle Group (Baxter Vantive Kidney Care, 2024, ~$3.8B)",
+    },
+    {
+        "target": "Surmodics", "sponsor": "GTCR",
+        "year": 2025, "ev_usd_mm": 627, "sector": "other_services",
+        "subsector_note": "Medical-device coatings + components; take-private at $43.00/share (~$627M)",
+        "outcome": "exited", "outcome_note": "Public→private; GTCR.",
+        "source_url": "https://surmodics.gcs-web.com/news-releases/news-release-details/surmodics-enters-definitive-agreement-be-acquired-gtcr-4300",
+        "source_note": "GTCR (Surmodics take-private, 2025, ~$627M)",
+    },
+    {
+        "target": "Drive DeVilbiss Healthcare", "sponsor": "Clayton, Dubilier & Rice",
+        "year": 2013, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Durable medical equipment manufacturer; CD&R-backed",
+        "outcome": "active", "outcome_note": "Active DME manufacturer.",
+        "source_url": "https://www.cdr.com/",
+        "source_note": "Clayton, Dubilier & Rice (Drive DeVilbiss, 2013)",
+    },
+    {
+        "target": "Ciox Health", "sponsor": "New Mountain Capital",
+        "year": 2018, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "subsector_note": "Health-information management / clinical-data exchange (merged into Datavant 2021)",
+        "outcome": "active", "outcome_note": "Active; combined with Datavant in 2021.",
+        "source_url": "https://www.newmountaincapital.com/portfolio/",
+        "source_note": "New Mountain Capital (Ciox Health, 2018); Datavant 2021",
+    },
 ]
 
 
