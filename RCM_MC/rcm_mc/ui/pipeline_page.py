@@ -157,7 +157,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     title_block = (
         _pp_head_css
         + '<header class="pp-head">'
-        '<div class="eyebrow"><span class="dash"></span>DEAL PIPELINE</div>'
+        '<div class="eyebrow"><span class="dash"></span>PIPELINE · DEAL FLOW</div>'
         '<h1>Deal Pipeline</h1>'
         f'<div class="meta">{total} HOSPITAL'
         f'{"S" if total != 1 else ""} · '
@@ -167,7 +167,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         '<p class="lede">'
         '<em>How prospects flow from screening to close.</em> '
         'Track hospitals from first screen through LOI, diligence, IC, '
-        'and close. Saved searches re-run against the corpus; pipeline '
+        'and close. Saved searches re-run against the dataset; pipeline '
         'hospitals carry stage, priority, and HCRIS revenue and margin '
         'for quick-glance sizing.</p>'
         '<ul class="legend">'
