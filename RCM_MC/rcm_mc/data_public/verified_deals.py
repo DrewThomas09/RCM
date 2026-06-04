@@ -2745,6 +2745,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.baincapital.com/",
         "source_note": "Bain Capital (HST Pathways, 2021)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 30) — more ophthalmology MSOs + home care.
+    # Each web-validated; pre-checked against existing targets.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "American Vision Partners", "sponsor": "H.I.G. Capital",
+        "year": 2019, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Southwest ophthalmology MSO (Barnet Dulaney Perkins + others); H.I.G. platform",
+        "outcome": "active", "outcome_note": "Active ophthalmology platform.",
+        "source_url": "https://hig.com/portfolio/american-vision-partners/",
+        "source_note": "H.I.G. Capital (American Vision Partners)",
+    },
+    {
+        "target": "SightMD", "sponsor": "Chicago Pacific Founders",
+        "year": 2018, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Northeast ophthalmology MSO; Sight Growth Partners MSO / CPF-backed",
+        "outcome": "active", "outcome_note": "Active ophthalmology platform.",
+        "source_url": "https://www.cpfounders.com/",
+        "source_note": "Chicago Pacific Founders (SightMD, 2018)",
+    },
+    {
+        "target": "Vision Innovation Partners", "sponsor": "Centre Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "ophthalmology",
+        "subsector_note": "Mid-Atlantic ophthalmology + optometry MSO; Centre Partners-backed",
+        "outcome": "active", "outcome_note": "Active ophthalmology platform.",
+        "source_url": "https://www.centrepartners.com/portfolio/",
+        "source_note": "Centre Partners (Vision Innovation Partners, 2018)",
+    },
+    {
+        "target": "Choice Health at Home", "sponsor": "Coltala Holdings + Trive Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Home health + hospice + rehab (Texas-anchored); Coltala + Trive",
+        "outcome": "active", "outcome_note": "Active home-care platform.",
+        "source_url": "https://homehealthcarenews.com/2021/06/coltala-acquires-choice-health-at-home-we-recognized-an-opportunity-and-paid-a-good-price-for-it/",
+        "source_note": "Coltala Holdings + Trive Capital (Choice Health at Home, 2021)",
+    },
+    {
+        "target": "Care Advantage", "sponsor": "BelHealth Investment Partners",
+        "year": 2017, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "subsector_note": "Mid-Atlantic in-home personal care; BelHealth-backed",
+        "outcome": "exited", "outcome_note": "BelHealth sold Care Advantage to Searchlight Capital in 2021.",
+        "source_url": "https://www.belhealth.com/portfolio-info/care-advantage",
+        "source_note": "BelHealth Investment Partners (Care Advantage, 2017); Searchlight 2021",
+    },
 ]
 
 
