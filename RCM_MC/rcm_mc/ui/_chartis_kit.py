@@ -7554,8 +7554,13 @@ _CSS_INLINE_FALLBACK = """
      by the fixed 76px height — is a wrap/clip interaction. `min-height` (not a
      hard `height`) means that if anything ever does grow, the bar grows rather
      than clipping its top edge. */
-  .ck-topbar-inner { display:flex; flex-wrap:nowrap; align-items:center; gap:0;
-    min-height:58px; padding:0 32px; width:100%; box-sizing:border-box; }
+  /* `flex-wrap:wrap` is the anti-overlap guard: if the wordmark + nav + right
+     zone can't fit one row at a given width, the nav (or right zone) wraps to
+     a second row and the bar GROWS (min-height, not a hard height) instead of
+     items sliding on top of each other. At common desktop widths everything
+     still fits one row, so wrap is a no-op there. */
+  .ck-topbar-inner { display:flex; flex-wrap:wrap; align-items:center; gap:0;
+    row-gap:0; min-height:58px; padding:0 32px; width:100%; box-sizing:border-box; }
   .ck-wordmark { display:inline-flex; align-items:center; gap:0.5rem;
     font-family:var(--sc-serif,'Source Serif 4',Georgia,serif); font-weight:400;
     font-size:20px; color:var(--tb-ink); letter-spacing:-0.018em;
@@ -7574,7 +7579,11 @@ _CSS_INLINE_FALLBACK = """
      defeated `margin-left:auto` on the right zone and let the last nav item
      ("Portfolio") butt up against / overlap the mode chip ("PE PARTNER").
      Content-sized + a non-shrinking right zone keeps a real gap between them. */
-  .ck-nav { display:flex; flex-wrap:nowrap; gap:0; flex:0 1 auto; min-width:0; }
+  /* No `min-width:0`: that let the nav shrink below its content width so the
+     nowrap links spilled rightward and overlapped the right zone (the recurring
+     overlap bug). Natural-width (the default min-width:auto) keeps the links in
+     flow; when the row is too tight the inner wraps instead (see above). */
+  .ck-nav { display:flex; flex-wrap:nowrap; gap:0; flex:0 1 auto; }
   /* Flex-centre the label inside a fixed-height anchor so the text stays
      vertically centred even if the bar grows past 76px (a tall right-rail
      control used to leave the link text floating high because the old

@@ -5576,7 +5576,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'style="margin-left:8px;">{_ws_labels[_ws_mode].upper()}</span>'
             )
             _ws_sub = (
-                "Switch between the PE-partner deal view and the Chartis "
+                "Switch between the PE-partner deal view and the "
                 "commercial-diligence consulting view. Swaps copy + framing "
                 "platform-wide; data and routes unchanged."
             )

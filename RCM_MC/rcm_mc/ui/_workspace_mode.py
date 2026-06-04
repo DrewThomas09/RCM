@@ -37,7 +37,7 @@ _VALID = (PARTNER, CONSULTING)
 # Human labels for the toggle UI.
 MODE_LABELS = {
     PARTNER: "PE Partner",
-    CONSULTING: "Chartis Consulting",
+    CONSULTING: "Consulting",
 }
 MODE_TAGLINES = {
     PARTNER: "Fund-level deal operations",
