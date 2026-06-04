@@ -71,6 +71,23 @@ class VerifiedDealsPageTests(unittest.TestCase):
         # rollups with no public EV show "undisclosed", never a made-up number
         self.assertIn("undisclosed", html)
 
+    def test_newer_sectors_render_clean_labels(self) -> None:
+        # The corpus grew into sectors added after the original label map
+        # (veterinary, value-based care, lab, EMS, managed care). The filter
+        # chips + table must show clean human labels, not raw snake_case.
+        html = render_verified_deals({})
+        for label in ("Veterinary", "Value-based care", "Lab / pathology",
+                      "EMS", "Managed care"):
+            self.assertIn(label, html)
+        # Every sector actually present must have a non-underscore label
+        # (regression guard so future sectors don't leak snake_case to chips).
+        from rcm_mc.ui.verified_deals_page import _SECTOR_LABEL
+        from rcm_mc.data_public.verified_deals import verified_deals
+        present = {d["sector"] for d in verified_deals()}
+        for s in present:
+            self.assertIn(s, _SECTOR_LABEL, f"sector {s!r} missing a display label")
+            self.assertNotIn("_", _SECTOR_LABEL[s])
+
 
 if __name__ == "__main__":
     unittest.main()

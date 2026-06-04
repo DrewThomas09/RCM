@@ -27,6 +27,8 @@ _SECTOR_LABEL = {
     "dental": "Dental / DSO", "dermatology": "Dermatology", "ophthalmology": "Ophthalmology",
     "asc": "ASC", "urgent_care": "Urgent care", "rcm_healthtech": "RCM / health-IT",
     "dialysis": "Dialysis", "other_services": "Other services",
+    "veterinary": "Veterinary", "value_based_care": "Value-based care",
+    "lab": "Lab / pathology", "ems": "EMS", "managed_care": "Managed care",
 }
 _OUTCOME_TONE = {
     "active": P.get("positive", "#0a8a5f"), "exited": P.get("accent", "#155752"),
