@@ -24,6 +24,7 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_data_universe,
+    ck_illustrative_note,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -298,7 +299,10 @@ def render_sponsor_track_record(
             "Sponsor Track Record",
             eyebrow="SPONSOR TRACK RECORD",
             meta=meta,
-        ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
+        ) + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>' + ck_illustrative_note(
+            "sponsor MOIC/IRR track records (the deal corpus is mostly an "
+            "illustrative/modeled set — only a small verified-historical core "
+            "has disclosed returns)")
     explainer_html = (
         '<p class="ck-str-explainer">'
         '<em>What the sponsor track record reveals.</em> '

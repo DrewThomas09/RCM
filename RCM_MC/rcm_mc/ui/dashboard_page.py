@@ -977,9 +977,9 @@ def _portfolio_pulse_inputs(
         elif out["portfolio_moic_median"] is not None:
             syn = (
                 f"Predicted exit MOIC across the portfolio: "
-                f"{out['portfolio_moic_median']:.2f}x median, with "
-                f"the comparable corpus suggesting {out['n_deals']} "
-                f"deals are tracking inside the historical band."
+                f"{out['portfolio_moic_median']:.2f}x median, benchmarked "
+                f"against an illustrative deal corpus — {out['n_deals']} "
+                f"deals track inside the modeled band."
             )
         else:
             syn = (
@@ -1093,7 +1093,7 @@ def _render_portfolio_pulse_hero(
             '<div style="font-size:10px;font-weight:600;'
             'text-transform:uppercase;letter-spacing:0.08em;'
             'color:#D6E1EB;flex-shrink:0;">'
-            'Predicted exit MOIC<br/>(corpus)</div>'
+            'Predicted exit MOIC<br/>(illustrative corpus)</div>'
             f'<div style="font-size:28px;font-weight:700;'
             f'color:#fff;font-variant-numeric:tabular-nums;'
             f'flex-shrink:0;">{moic_med:.2f}x</div>'
