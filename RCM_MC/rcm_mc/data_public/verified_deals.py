@@ -2257,6 +2257,51 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.metalmarkcapital.com/",
         "source_note": "Metalmark Capital (Innovetive Petcare from Prospect, 2019)",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 20) — CDMO/pharma services, dermatology,
+    # value-based care. Each web-validated; pre-checked. Crosses 300 real.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "Cambrex", "sponsor": "Permira",
+        "year": 2019, "ev_usd_mm": 2400, "sector": "other_services",
+        "subsector_note": "Small-molecule CDMO; Permira take-private (~$2.4B)",
+        "outcome": "exited", "outcome_note": "Public→private; Permira (~$2.4B).",
+        "source_url": "https://cen.acs.org/business/outsourcing/Private-equity-ramps-pharmaceutical-services/101/i34",
+        "source_note": "C&EN (Permira/Cambrex take-private, 2019, ~$2.4B)",
+    },
+    {
+        "target": "Curia (Albany Molecular Research / AMRI)", "sponsor": "The Carlyle Group + GTCR",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Pharma CDMO + discovery services; Carlyle+GTCR (renamed Curia)",
+        "outcome": "active", "outcome_note": "Active CDMO platform.",
+        "source_url": "https://cen.acs.org/business/outsourcing/Private-equity-ramps-pharmaceutical-services/101/i34",
+        "source_note": "C&EN (Carlyle + GTCR / AMRI->Curia, 2021)",
+    },
+    {
+        "target": "Sterling Pharma Solutions", "sponsor": "GHO Capital + Partners Group",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "API / ADC CDMO; GHO majority, Partners Group minority",
+        "outcome": "active", "outcome_note": "Active CDMO platform.",
+        "source_url": "https://ghocapital.com/",
+        "source_note": "GHO Capital + Partners Group (Sterling Pharma, 2022)",
+    },
+    {
+        "target": "Platinum Dermatology Partners", "sponsor": "Sterling Partners",
+        "year": 2018, "ev_usd_mm": None, "sector": "dermatology",
+        "subsector_note": "Derm MSO (TX/AZ/NV); merged with West Dermatology in 2022",
+        "outcome": "active", "outcome_note": "Active derm platform.",
+        "source_url": "https://hl.com/about-us/transactions/houlihan-lokey-advises-platinum-dermatology-partners/",
+        "source_note": "Sterling Partners (Platinum Dermatology); West merger 2022",
+    },
+    {
+        "target": "Vatica Health", "sponsor": "Frazier Healthcare Partners",
+        "year": 2023, "ev_usd_mm": None, "sector": "value_based_care",
+        "subsector_note": "Value-based-care enablement / risk-adjustment (Frazier from Great Hill)",
+        "outcome": "active", "outcome_note": "Active VBC-enablement platform.",
+        "source_url": "https://mergr.com/transaction/frazier-healthcare-partners-acquires-vatica-health",
+        "source_note": "Frazier Healthcare Partners (Vatica Health, Sept 2023)",
+    },
 ]
 
 
