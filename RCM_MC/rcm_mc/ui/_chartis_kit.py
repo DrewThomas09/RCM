@@ -7738,7 +7738,7 @@ _CSS_INLINE_FALLBACK = """
   @keyframes ckMegaIn { from{opacity:0; transform:translateY(-4px);}
     to{opacity:1; transform:translateY(0);} }
   .ck-mega-inner { max-width:var(--content-max); margin:0 auto;
-    padding:20px 32px 16px; display:grid; grid-template-columns:2fr 3fr;
+    padding:14px 32px 12px; display:grid; grid-template-columns:2fr 3fr;
     column-gap:40px; row-gap:0; align-items:start; }
   /* Shown mega = block (the centered 2fr/3fr grid lives on .ck-mega-inner). */
   .ck-nav-group:hover > .ck-nav-mega,
@@ -7755,7 +7755,7 @@ _CSS_INLINE_FALLBACK = """
      the right rule + 48px pad separate it from the listing. */
   .ck-mega-lede { display:flex; flex-direction:column; min-width:0;
     padding-right:36px; border-right:1px solid var(--tb-rule); }
-  .ck-mega-feat { display:flex; flex-direction:column; gap:8px; padding:0;
+  .ck-mega-feat { display:flex; flex-direction:column; gap:5px; padding:0;
     min-width:0; overflow:visible; background:transparent; border:0;
     text-decoration:none; }
   .ck-mega-kicker { font-family:var(--sc-mono,monospace); font-size:9px;
@@ -7766,7 +7766,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-mega-feat-eyebrow { font-family:var(--sc-mono,monospace); font-size:9px;
     letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green); }
   .ck-mega-feat-title { font-family:var(--sc-serif,Georgia,serif); font-weight:400;
-    font-size:22px; line-height:1.06; letter-spacing:-.018em; color:var(--tb-ink);
+    font-size:17px; line-height:1.1; letter-spacing:-.018em; color:var(--tb-ink);
     text-wrap:balance; max-width:100%;
     white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
   .ck-mega-feat-title em { font-style:italic; color:var(--tb-green); }
@@ -7780,7 +7780,7 @@ _CSS_INLINE_FALLBACK = """
      "see everything" affordance. It sits in normal flow below the leaves, so
      it can never overlap the lede pull-quote or the leaves. */
   .ck-mega-listing { display:flex; flex-direction:column; min-width:0; }
-  .ck-mega-all { align-self:flex-end; margin-top:18px;
+  .ck-mega-all { align-self:flex-end; margin-top:10px;
     font-family:var(--sc-mono,monospace); font-size:11px; font-weight:600;
     letter-spacing:.14em; text-transform:uppercase; color:var(--tb-green);
     text-decoration:none; display:inline-flex; align-items:center; gap:7px;
@@ -7792,7 +7792,7 @@ _CSS_INLINE_FALLBACK = """
      a long description wrapping in-column instead of bleeding across (the v3
      overflow bug). */
   .ck-mega-items { display:grid; grid-template-columns:repeat(3, minmax(0,1fr));
-    column-gap:36px; row-gap:22px; padding:0; align-content:start; min-width:0; }
+    column-gap:32px; row-gap:13px; padding:0; align-content:start; min-width:0; }
   /* 2026-05-30: removed the 28px mono-ordinal column. The "01. 02. …"
      prefixes read like a magazine TOC, not a tool nav, and the
      numbers didn't carry meaning (they were just the ranking order,
