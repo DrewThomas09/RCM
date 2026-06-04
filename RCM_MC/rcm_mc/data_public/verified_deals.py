@@ -1934,6 +1934,67 @@ VERIFIED_DEALS: List[Dict] = [
         "source_url": "https://www.summitpartners.com/",
         "source_note": "Summit Partners (Thrive Skilled Pediatric Care); Aveanna 2025 acquisition",
     },
+
+    # ════════════════════════════════════════════════════════════════════
+    # 2026-06 expansion (batch 15) — home infusion, diagnostic imaging,
+    # veterinary. Each web-validated; pre-checked against existing targets.
+    # ════════════════════════════════════════════════════════════════════
+    {
+        "target": "InfuCare Rx", "sponsor": "One Equity Partners",
+        "year": 2023, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Home / alternate-site infusion therapy provider",
+        "outcome": "active", "outcome_note": "Active home-infusion platform.",
+        "source_url": "https://www.oneequity.com/news/one-equity-partners-completes-investment-in-infucare-rx-a-leading-home-infusion-therapy-provider/",
+        "source_note": "One Equity Partners (InfuCare Rx, 2023)",
+    },
+    {
+        "target": "KabaFusion", "sponsor": "Pritzker Private Capital",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Home infusion (IVIG / specialty) pharmacy; Pritzker family-of-companies",
+        "outcome": "active", "outcome_note": "Active home-infusion platform.",
+        "source_url": "https://www.paragonventures.com/market-pulse-posts/kabafusion-acquires-infusion-care-pharmacy-assets-from-coram/",
+        "source_note": "Pritzker Private Capital (KabaFusion)",
+    },
+    {
+        "target": "Akumin", "sponsor": "Stonepeak",
+        "year": 2024, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient + mobile diagnostic imaging / radiology; debt-to-equity take-private",
+        "outcome": "exited", "outcome_note": "Public→private; Stonepeak took full ownership Feb 2024 via restructuring.",
+        "source_url": "https://akumin.com/newsroom/press-releases/akumin-inc-completes-deleveraging-transaction-becomes-a-private-company-wholly-owned-by-stonepeak/",
+        "source_note": "Akumin (Stonepeak full ownership, Feb 2024)",
+    },
+    {
+        "target": "RAYUS Radiology (Center for Diagnostic Imaging)", "sponsor": "Wellspring Capital Management",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Outpatient diagnostic imaging; Wellspring acquired CDI (rebranded RAYUS)",
+        "outcome": "active", "outcome_note": "Active imaging platform.",
+        "source_url": "https://rayusradiology.com/blog/wellspring-capital-backed-rayus-radiology-acquires-diagnostic-centers-of-america-bolstering-its-growing-nationwide-network/",
+        "source_note": "Wellspring Capital (CDI/RAYUS, 2019)",
+    },
+    {
+        "target": "LucidHealth", "sponsor": "Excellere Partners",
+        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Radiology practice management + teleradiology; Excellere-backed",
+        "outcome": "active", "outcome_note": "Active radiology platform.",
+        "source_url": "https://lucidhealth.com/",
+        "source_note": "Excellere Partners (LucidHealth, founded 2016)",
+    },
+    {
+        "target": "Catalyst MedTech (TTG Imaging Solutions)", "sponsor": "Sentinel Capital Partners",
+        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "subsector_note": "Diagnostic-imaging equipment + service solutions for providers",
+        "outcome": "active", "outcome_note": "Active imaging-equipment/services platform.",
+        "source_url": "https://www.sentinelpartners.com/company/catalyst-medtech/",
+        "source_note": "Sentinel Capital Partners (TTG/Catalyst MedTech, Dec 2021)",
+    },
+    {
+        "target": "United Veterinary Care", "sponsor": "Nordic Capital",
+        "year": 2021, "ev_usd_mm": None, "sector": "veterinary",
+        "subsector_note": "Veterinary hospital consolidator; Nordic Capital-backed",
+        "outcome": "active", "outcome_note": "Active veterinary platform.",
+        "source_url": "https://www.nordiccapital.com/",
+        "source_note": "Nordic Capital (United Veterinary Care)",
+    },
 ]
 
 
