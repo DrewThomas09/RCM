@@ -3794,6 +3794,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.sponsor_heatmap_page import render_sponsor_heatmap
             return self._send_html(render_sponsor_heatmap(_qp))
+        if path == "/markets/global":
+            from .ui.data_public.global_markets_page import render_global_markets
+            return self._send_html(render_global_markets())
         if path == "/payer-concentration":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
