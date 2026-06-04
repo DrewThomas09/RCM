@@ -584,9 +584,30 @@ def _seed_demo_workflow(store: Any, today: date) -> None:
 
 def demo_deal_rows() -> List[Dict[str, Any]]:
     """Flat, JSON/CSV-friendly rows for the downloadable demo-ingestion files
-    (and a quick programmatic view of the portfolio)."""
+    (and a quick programmatic view of the portfolio).
+
+    Each row carries a nested ``profile`` object in the exact shape
+    ``POST /api/deals/import`` consumes (it reads ``deal_id``, ``name`` and
+    ``profile``), so the downloaded file genuinely round-trips: a colleague can
+    import it and get real, profile-populated KKR deals (sector, sponsor,
+    vintage, HQ state, RCM observed metrics) — not bare shells. The flat fields
+    alongside it stay human-readable for a spreadsheet. The full hold-period
+    analytics (snapshots, returns, variance) still come from the one-click
+    load; the import reproduces the deal roster + profiles."""
     rows = []
-    for s in KKR_DEMO_DEALS:
+    for idx, s in enumerate(KKR_DEMO_DEALS):
+        profile: Dict[str, Any] = {
+            "observed_metrics": _rcm_for(s["tier"], idx),
+            "sector": s["sector"],
+            "sponsor": "KKR",
+            "vintage": s["year"],
+            "source_url": s["src"],
+            "ev_disclosed": bool(s["ev_real"]),
+            "demo": "kkr",
+        }
+        st = _HQ_STATE.get(s["id"], "")
+        if st:
+            profile["state"] = st
         rows.append({
             "deal_id": s["id"], "name": s["name"], "sponsor": "KKR",
             "sector": s["sector"], "vintage": s["year"],
@@ -597,5 +618,6 @@ def demo_deal_rows() -> List[Dict[str, Any]]:
             "covenant_headroom_turns": s["headroom"],
             "moic": s["moic"], "irr": s["irr"], "outcome": s["outcome"],
             "performance_tier": s["tier"], "source_url": s["src"],
+            "profile": profile,
         })
     return rows
