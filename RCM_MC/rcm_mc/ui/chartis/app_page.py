@@ -150,9 +150,6 @@ def render_app_page(
         "COMMERCIAL DILIGENCE" if _is_consulting else "PORTFOLIO & DILIGENCE"
     )
     _cc_kicker_label = "CLIENT ENGAGEMENT" if _is_consulting else "FUND II"
-    _cc_breadcrumb_label = (
-        "Commercial diligence" if _is_consulting else "Portfolio & diligence"
-    )
     _cc_lede = (
         ("Engagement rollup, active diligence, screening flow — one canvas. "
          "The complete engagement view in one place.")
@@ -186,8 +183,9 @@ def render_app_page(
             ),
             title="Command center",
             active_nav="PORTFOLIO",
-            breadcrumbs=[("Home", "/"), (_cc_breadcrumb_label, None),
-                         ("Command center", None)],
+            # No breadcrumb: the editorial eyebrow head (SECTION · KICKER ·
+            # /COMMAND-CENTER) is the wayfinding — a breadcrumb stacked above it
+            # just repeats the same path (the "double header" partners flagged).
             show_chrome=True,
             show_phi_banner=True,
             phi_mode=phi_mode,
@@ -294,11 +292,7 @@ def render_app_page(
         demo_banner(store) + '<div class="page">' + "".join(body_parts) + '</div>',
         title="Command center",
         active_nav="PORTFOLIO",
-        breadcrumbs=[
-            ("Home", "/"),
-            (_cc_breadcrumb_label, None),
-            ("Command center", None),
-        ],
+        # No breadcrumb — the eyebrow head is the wayfinding (see note above).
         show_chrome=True,
         show_phi_banner=True,
         phi_mode=phi_mode,

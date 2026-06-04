@@ -2708,13 +2708,20 @@ flex-wrap:wrap;}
 font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
 color:var(--sc-text-faint,#7a8699);min-width:88px;}
 .rg-pills{display:flex;flex-wrap:wrap;gap:6px;}
-.rg-pill{display:inline-block;padding:5px 12px;font-family:var(--sc-sans,Inter);
+.rg-pill{display:inline-block;padding:6px 13px;font-family:var(--sc-sans,Inter);
 font-size:11.5px;font-weight:500;border:1px solid var(--sc-rule,#d6cfc0);
 background:#fff;color:var(--sc-navy,#0b2341);text-decoration:none;
-border-radius:14px;transition:border-color 120ms ease,background 120ms ease;}
-.rg-pill:hover{border-color:var(--sc-teal-ink,#155752);}
+border-radius:16px;transition:border-color 120ms ease,background 120ms ease,
+color 120ms ease,box-shadow 120ms ease;}
+/* Hover now shifts background + ink, not just the border, so the pills read
+ * as live controls (the border-only hover was nearly invisible). */
+.rg-pill:hover{border-color:var(--sc-teal-ink,#155752);
+background:rgba(21,87,82,0.08);color:var(--sc-teal-ink,#155752);}
 .rg-pill-active{background:var(--sc-navy,#0b2341);color:#fff;
-border-color:var(--sc-navy,#0b2341);}
+border-color:var(--sc-navy,#0b2341);
+box-shadow:0 1px 2px rgba(11,35,65,0.18);}
+.rg-pill-active:hover{background:var(--sc-navy-2,#132e53);color:#fff;
+border-color:var(--sc-navy-2,#132e53);}
 .rg-diagnostic-banner{display:flex;align-items:baseline;gap:12px;
 padding:14px 18px;margin:0 0 16px;background:#fff;
 border:1px solid var(--sc-rule,#d6cfc0);
