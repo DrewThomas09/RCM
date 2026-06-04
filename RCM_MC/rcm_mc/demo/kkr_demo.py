@@ -189,8 +189,52 @@ _TIER_RCM = {
               "ar_over_90_pct": 11.0, "clean_claim_rate": 93.0, "net_collection_rate": 96.5,
               "dnfb_days": 4.0, "charge_lag_days": 2.3, "cost_to_collect": 2.5},
 }
-# Quarterly EBITDA actual / plan factor by tier (variance showcase).
+# Quarterly EBITDA actual / plan factor by tier (variance showcase). This is
+# the *latest* quarter's headline variance — the health score reads it, so it
+# must stay put.
 _TIER_ACTUAL = {"red": 0.70, "amber": 0.93, "green": 1.05}
+
+# Operating history: the trailing quarters we seed actuals-vs-plan for so the
+# EBITDA trajectory chart, the variance drill-down and the health-trend
+# sparkline all have a real time series instead of a single point. Ends at
+# 2026Q1 (the latest), whose variance equals _TIER_ACTUAL above so the health
+# bands are unchanged from the single-quarter seed.
+_HIST_QUARTERS = ["2024Q3", "2024Q4", "2025Q1", "2025Q2",
+                  "2025Q3", "2025Q4", "2026Q1"]
+# (start, end) actual/plan ratio across the history window, per tier. ``end``
+# equals _TIER_ACTUAL. The arc tells each deal's story: greens compound a
+# beat, ambers drift from on-plan into a miss, reds slide toward distress.
+_TIER_TRAJECTORY = {"red": (0.96, 0.70), "amber": (1.02, 0.93), "green": (1.00, 1.05)}
+_PLAN_QOQ_GROWTH = 1.02  # underwritten plan steps up ~2%/quarter
+
+
+def _seed_quarterly_history(record_fn, store: Any, deal_id: str, tier: str,
+                            entry_ebitda: float, net_revenue: float) -> None:
+    """Record ``_HIST_QUARTERS`` of EBITDA + NPSR actuals-vs-plan for a deal.
+
+    The plan steps up ~2%/quarter; the actual/plan ratio walks linearly from
+    the tier's start factor to its end factor (== _TIER_ACTUAL), so the latest
+    quarter is identical to the prior single-quarter seed (health unchanged)
+    while the earlier quarters give the trajectory + variance surfaces a real
+    series to draw. Best-effort per quarter so one bad row can't abort seeding.
+    """
+    n = len(_HIST_QUARTERS)
+    start, end = _TIER_TRAJECTORY.get(tier, _TIER_TRAJECTORY["amber"])
+    last_plan_eb = round(entry_ebitda / 4 * 1.05)
+    last_plan_npsr = round(net_revenue / 4 * 1.05)
+    for i, q in enumerate(_HIST_QUARTERS):
+        frac = i / (n - 1) if n > 1 else 1.0
+        factor = start + (end - start) * frac
+        grow = _PLAN_QOQ_GROWTH ** (n - 1 - i)   # plan was lower earlier
+        plan_eb = round(last_plan_eb / grow)
+        plan_npsr = round(last_plan_npsr / grow)
+        try:
+            record_fn(store, deal_id, q,
+                      actuals={"ebitda": round(plan_eb * factor),
+                               "net_patient_revenue": round(plan_npsr * factor)},
+                      plan={"ebitda": plan_eb, "net_patient_revenue": plan_npsr})
+        except Exception:  # noqa: BLE001
+            pass
 
 
 def _rcm_for(tier: str, idx: int) -> Dict[str, Dict[str, Any]]:
@@ -340,11 +384,12 @@ def seed_kkr_demo(store: Any, run_dir: Optional[str] = None) -> int:
         register_snapshot(store, did, "hold", run_dir=ddir,
                           notes=f"{spec['year']} KKR entry · {spec['name']}")
 
-        # Quarterly actuals vs plan (variance + alerts).
-        q_plan = round(ebitda / 4 * 1.05)
-        q_actual = round(q_plan * _TIER_ACTUAL[spec["tier"]])
-        record_quarterly_actuals(store, did, "2026Q1",
-                                  actuals={"ebitda": q_actual}, plan={"ebitda": q_plan})
+        # Quarterly actuals vs plan across a trailing history window (variance
+        # drill-down + EBITDA trajectory + health-trend sparkline). The latest
+        # quarter preserves the tier's headline variance so health is unchanged.
+        _seed_quarterly_history(record_quarterly_actuals, store, did,
+                                spec["tier"], ebitda,
+                                bridge_financials(spec)["net_revenue"])
 
         for t in spec["tags"]:
             add_tag(store, deal_id=did, tag=t)

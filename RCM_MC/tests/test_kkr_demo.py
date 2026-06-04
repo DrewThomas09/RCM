@@ -102,6 +102,33 @@ class TestKKRDemoSeed(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         self.assertEqual(len([i for i in ids if i == "envision"]), 1)
 
+    def test_quarterly_history_trajectory(self):
+        # Each deal carries a multi-quarter EBITDA actuals-vs-plan series (not a
+        # single point), so the trajectory / variance / health-trend surfaces
+        # have something to draw. The arc direction matches the tier: greens
+        # improve, reds deteriorate into distress.
+        from rcm_mc.pe.hold_tracking import variance_report
+        from rcm_mc.demo.kkr_demo import _HIST_QUARTERS
+
+        def ebitda_var(did):
+            vdf = variance_report(self.store, did)
+            eb = vdf[vdf["kpi"] == "ebitda"].sort_values("quarter")
+            return [float(v) for v in eb["variance_pct"] if v == v]
+
+        cot = ebitda_var("cotiviti")   # green
+        env = ebitda_var("envision")   # red
+        self.assertGreaterEqual(len(cot), len(_HIST_QUARTERS) - 1)
+        self.assertGreaterEqual(len(env), len(_HIST_QUARTERS) - 1)
+        # Green compounds a beat (last >= first, and ends positive);
+        # red slides (last << first, and ends a deep miss).
+        self.assertGreater(cot[-1], cot[0])
+        self.assertGreaterEqual(cot[-1], 0.0)
+        self.assertLess(env[-1], env[0])
+        self.assertLessEqual(env[-1], -0.15)
+        # NPSR is tracked too (a second trajectory line).
+        vdf = variance_report(self.store, "cotiviti")
+        self.assertIn("net_patient_revenue", set(vdf["kpi"]))
+
 
 class TestDemoRows(unittest.TestCase):
     def test_download_rows_wellformed(self):
