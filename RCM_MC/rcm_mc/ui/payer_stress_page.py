@@ -718,8 +718,8 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
 """
     # 2026-05-28 sweep · strict 5-block head for the landing form path.
     landing_hero = _ps_head(
-        eyebrow="Payer Mix Stress Lab",
-        title="How fragile is your payer mix?",
+        eyebrow="RCM DILIGENCE · PAYER STRESS",
+        title="Payer Mix Stress Lab",
         meta=(
             "19 US PAYER PRIORS · HFMA / MGMA / AHA + 10-K · "
             "QUARTERLY REFRESH"
@@ -729,14 +729,10 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             "portfolio."
         ),
         lede_body=(
-            "Stress-tests the target's commercial + government payer "
-            "portfolio against empirical rate-movement priors for 19 "
-            "major US payers. Produces per-payer rate shock "
-            "distributions, aggregate NPR impact cone across the "
-            "hold, concentration penalty, and a cumulative "
-            "EBITDA-at-risk headline. Data: HFMA / MGMA / AHA sector "
-            "surveys + public-comp 10-K payer-rate commentary. "
-            "Refresh priors quarterly."
+            "How fragile is your payer mix? Stress-tests the target's payer "
+            "portfolio against rate-movement priors for 19 major US payers — "
+            "per-payer rate shocks, an NPR impact cone across the hold, a "
+            "concentration penalty, and a cumulative EBITDA-at-risk headline."
         ),
     )
     body = (

@@ -439,12 +439,12 @@ def _landing_page() -> str:
     )
     title_block = (
         ck_page_title(
-        "Counterfactual Advisor", eyebrow="COUNTERFACTUAL ADVISOR",
-        meta="What would change your mind on this deal",
+        "Counterfactual Advisor", eyebrow="DILIGENCE · COUNTERFACTUAL",
+        meta="INVERTS THE MODEL · MINIMUM BAND-FLIP INPUTS",
     )
         + ck_page_explainer(
             'What would change your mind on this deal?',
-            'Inverts the regression: instead of "what does the model predict," asks "what would the inputs need to look like for the model to flip the recommendation." Used during diligence to surface the assumptions that the thesis is most sensitive to before signing.',
+            'Inverts the regression: instead of "what does the model predict," asks "what would the inputs need to look like for the model to flip the recommendation." Used during diligence to surface the assumptions the thesis is most sensitive to before signing.',
             source='Deal packet + counterfactual generator (live).',
         )
     )
