@@ -50,31 +50,31 @@ _VIEW_KEYS = {v["key"] for v in _VIEWS}
 _VERTICALS = [
     {"key": "hospitals", "label": "Hospitals", "universe": "HCRIS",
      "loader": "data.hcris", "live": True,
-     "note": "CMS HCRIS cost-report dataset — beds, revenue, margin, payer mix."},
+     "note": "CMS HCRIS cost-report dataset: beds, revenue, margin, payer mix."},
     {"key": "home_health", "label": "Home Health", "universe": "CMS HHA",
      "loader": "data.home_health", "live": True,
-     "note": "CMS Home Health Compare — providers, quality, CAHPS."},
+     "note": "CMS Home Health Compare: providers, quality, CAHPS."},
     {"key": "hospice", "label": "Hospice", "universe": "CMS Hospice",
      "loader": "data.hospice", "live": True,
-     "note": "CMS Hospice Compare — providers, quality, CAHPS."},
+     "note": "CMS Hospice Compare: providers, quality, CAHPS."},
     {"key": "snf", "label": "SNF / Nursing", "universe": "CMS SNF",
      "loader": "data.snf", "live": True,
-     "note": "CMS Nursing Home Compare — beds, SFF status, CHOW/ownership."},
+     "note": "CMS Nursing Home Compare: beds, SFF status, CHOW/ownership."},
     {"key": "dialysis", "label": "Dialysis", "universe": "CMS Dialysis",
      "loader": "data.dialysis", "live": True,
-     "note": "CMS Dialysis Compare — stations, chain ownership, modalities."},
+     "note": "CMS Dialysis Compare: stations, chain ownership, modalities."},
     {"key": "irf", "label": "IRF", "universe": "CMS IRF",
      "loader": "data.irf", "live": True,
-     "note": "Inpatient Rehabilitation Facilities — providers, quality."},
+     "note": "Inpatient Rehabilitation Facilities: providers, quality."},
     {"key": "ltch", "label": "LTCH", "universe": "CMS LTCH",
      "loader": "data.ltch", "live": True,
-     "note": "Long-Term Care Hospitals — providers, quality."},
+     "note": "Long-Term Care Hospitals: providers, quality."},
     {"key": "provider_supply", "label": "Provider Supply", "universe": "NPPES / supply",
      "loader": "data.provider_supply", "live": True,
      "note": "Physician / provider supply density by geography."},
     {"key": "market", "label": "Market (county/state)", "universe": "Public geo",
      "loader": "geo-intel", "live": True,
-     "note": "Screen geographies (demographics, MA, SDOH, shortage) — not a "
+     "note": "Screen geographies (demographics, MA, SDOH, shortage): not a "
              "provider, a market."},
 ]
 _VERTICAL_KEYS = {v["key"] for v in _VERTICALS}
@@ -773,7 +773,7 @@ def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
             'letter-spacing:.08em;text-transform:uppercase;'
             'color:var(--sc-teal,#155752);font-weight:600;margin-bottom:7px;">'
             f'Screen which universe? &middot; {len(_VERTICALS)} CMS provider '
-            'universes — toggle to switch</div>'
+            'universes: toggle to switch</div>'
             + _vertical_chips_html(active_vertical, qs))
 
 
@@ -814,7 +814,7 @@ def _layer_subblock(qs: Dict[str, List[str]]) -> str:
         '<div class="ts-univ-lbl">Map layer</div>'
         '<div class="ts-univ-prompt">'
         'Shade the map by a provider-density or market-context layer. '
-        'Real data only — non-live layers link out to the surface that '
+        'Real data only: non-live layers link out to the surface that '
         'owns the real source rather than fabricating shade.'
         '</div>'
         + _layer_chips_html(active_layer, qs)
@@ -848,14 +848,14 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
             map_title=f"{vinfo['label']} screen · {mlabel} market layer",
             exposure_label=f"{mlabel} (low&nbsp;→&nbsp;high)",
             caveat_text=(
-                f"Real {src} — state-level {mlabel}, overlaid as market context on "
+                f"Real {src}: state-level {mlabel}, overlaid as market context on "
                 f"the {vinfo['label']} screen. Click a state to filter providers; "
                 f"the table below still lists {vinfo['label']} providers."),
             empty_message=f"No state-level {mlabel} available right now.")
         summary = (f'<p class="ck-section-body" style="margin:0 0 6px;">Map layer: '
                    f'<strong>{mlabel}</strong> (real {src}) as market context over '
                    f'the {vinfo["label"]} screen. The provider table below is '
-                   f'unchanged — {total:,} providers across {n_states} states.</p>')
+                   f'unchanged: {total:,} providers across {n_states} states.</p>')
     else:
         map_html = render_us_geo_map(
             {k: float(v) for k, v in counts.items()},
@@ -978,7 +978,7 @@ def _compare_basket_banner(vertical: str,
     plural = "" if len(cur) == 1 else "s"
     return (
         '<div class="ts-cmp-bucket" role="status" '
-        'aria-label="Compare basket — current selection">'
+        'aria-label="Compare basket, current selection">'
         '<span class="ts-cmp-bucket-lbl">Compare basket</span>'
         f'<span class="ts-cmp-bucket-count">{len(cur)} '
         f'provider{plural} queued</span>'
@@ -1185,7 +1185,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     if has_own_any:
         summary_bits.append("Ownership")
     refine_summary = (
-        "Refine — " + " · ".join(summary_bits) if summary_bits
+        "Refine: " + " · ".join(summary_bits) if summary_bits
         else "Refine"
     )
     filter_form = (
@@ -1227,7 +1227,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
                 + f'<p class="ck-section-body">No {vinfo["label"]} '
                 f'providers match these filters (of {total_universe:,} in '
                 f'{("scope " + state) if state else "the universe"}). Relax a '
-                'filter — or open Just-missed to see who narrowly failed.</p>')
+                'filter, or open Just-missed to see who narrowly failed.</p>')
     has_size = any(r.get("size") is not None for r in rows)
 
     # Optional sort (?sort=name|location|size|quality & direction=asc|desc).
@@ -1520,9 +1520,9 @@ def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     values, mlabel, fmt, source = _geo_state_values(vertical, metric)
     map_html = render_us_geo_map(
         values, metric_label=mlabel, value_format=fmt, selected_state=sel or None,
-        map_title=f"{vinfo['label']} — {mlabel} by state",
+        map_title=f"{vinfo['label']} · {mlabel} by state",
         exposure_label=f"{mlabel} (low&nbsp;→&nbsp;high)",
-        caveat_text=(f"Real {source} — state-level {mlabel}. This is a MARKET/"
+        caveat_text=(f"Real {source}: state-level {mlabel}. This is a MARKET/"
                      "geography view, not individual providers. Click a state for "
                      "its market detail. Approximate Albers SVG."),
         empty_message=f"No state-level {mlabel} available right now.")
@@ -1576,7 +1576,7 @@ def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         _vertical_bar(vertical, qs)
         + ck["panel"](
             f'<p class="ck-section-body" style="margin:0;"><strong>{vinfo["label"]}</strong> is a '
-            f'<strong>market/geography</strong> view — it screens states (and, later, counties), '
+            f'<strong>market/geography</strong> view: it screens states (and, later, counties), '
             f'not individual providers. Real {source}. Click a state to open its '
             f'<a href="/geo-intel" class="ck-link">Geographic Intelligence</a> market detail.</p>'
             + geo_kpis,
@@ -1795,7 +1795,7 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         '<div class="ts-univ-block">'
         '<div class="ts-univ-lbl">Dataset</div>'
         '<div class="ts-univ-prompt">'
-        f'Pick one of {len(_VERTICALS)} public CMS provider screens — '
+        f'Pick one of {len(_VERTICALS)} public CMS provider screens, '
         'toggle to switch:'
         '</div>'
         + _vertical_chips_html(vertical, qs)
@@ -1831,7 +1831,7 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         '<div class="ts-univ-block">'
         '<div class="ts-univ-lbl">Or start with a pre-set entry point</div>'
         '<div class="ts-univ-prompt">'
-        'All three run over the SAME public universe — pick the one that '
+        'All three run over the SAME public universe, so pick the one that '
         'matches how you want to find candidates.'
         '</div>'
         f'<div class="ts-modes">{cards}</div>'
@@ -1874,7 +1874,7 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             '<div class="ts-next-step-body">'
             '<div class="ts-next-step-head">Rank the markets first</div>'
             '<div class="ts-next-step-how">'
-            'Score the geographies before the providers — '
+            'Score the geographies before the providers: '
             '<a href="/geo-intel" class="ck-link">Geographic '
             'Intelligence</a> or <a href="/market-intel/geo" '
             'class="ck-link">Geographic Market Intelligence</a>.'
@@ -1886,7 +1886,7 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             '<div class="ts-next-step-body">'
             '<div class="ts-next-step-head">Open a candidate\'s X-Ray</div>'
             '<div class="ts-next-step-how">'
-            'Drill into a row above — the HCRIS-backed '
+            'Drill into a row above: the HCRIS-backed '
             '<a href="/diligence/hcris-xray" class="ck-link">HCRIS '
             'X-Ray</a> or the CMS-backed <a href="/diligence/xray" '
             'class="ck-link">CMS X-Ray</a>.'
@@ -1933,10 +1933,10 @@ def _screen_inspector(qs, ck) -> str:
     import html as _h
     ccn = _q1(qs, "ccn")
     if not ccn:
-        return _scaffold("Inspector — no target selected", "now", [
+        return _scaffold("Inspector · no target selected", "now", [
             "Open a row from Main (“Inspect”) or pass ?view=inspector&ccn=…&vertical=…",
             "Shows identity, source, key metrics, peer + market context, "
-            "caveats, X-Ray / market links, and Guide questions — all real.",
+            "caveats, X-Ray / market links, and Guide questions, all real.",
         ])
     r = _find_provider(ccn)
     if not r:
@@ -1972,7 +1972,7 @@ def _screen_inspector(qs, ck) -> str:
         + _kv("Ownership", _h.escape(str(r["ownership"])))
         + _kv(r.get("size_label") or "Size", f'{int(r["size"]):,}' if r.get("size") is not None else "—")
         + _kv(f"{q_label}", qcur)
-        + _kv(f"{q_label} — {state} median", qmed)
+        + _kv(f"{q_label} · {state} median", qmed)
         + _kv("Peer rank", rank_txt)
         + _kv("Source", f'<span style="font-family:var(--sc-mono);font-size:10px;">{_h.escape(r["source"])}</span>'),
         title="Selected target")
@@ -1994,7 +1994,7 @@ def _screen_inspector(qs, ck) -> str:
         title="Guide")
     caveat = ('<p class="ck-section-body" style="font-style:italic;">Real CMS '
               f'{vinfo["universe"]} data; "—" = not reported. Peer rank is within '
-              f'{state} for this vertical only — not a cross-vertical or investment '
+              f'{state} for this vertical only, not a cross-vertical or investment '
               'judgment. No notes are fabricated.</p>')
     return identity + links + guide + caveat
 
@@ -2130,7 +2130,7 @@ def _screen_columns(qs, ck) -> str:
         f'<p class="ck-section-body" style="margin:0 0 8px;">Columns for the '
         f'<strong>{vinfo["label"]}</strong> universe ({src}), grouped by category '
         f'with real source + availability across {len(rows):,} providers. Columns '
-        f'CMS doesn\'t report are dropped entirely — never shown at 0%.</p>'
+        f'CMS doesn\'t report are dropped entirely, never shown at 0%.</p>'
         + "".join(body) + extra + hidden_note
     )
 
@@ -2144,7 +2144,7 @@ def _screen_compare(qs, ck) -> str:
             "Add targets from Main with “+ Compare”, or pass "
             "?compare=ccn1,ccn2,… (CCNs from any vertical).",
             "Same-vertical targets compare on every metric; cross-vertical "
-            "targets compare only on shared metrics — vertical-specific rows "
+            "targets compare only on shared metrics: vertical-specific rows "
             "show “not comparable”, never fabricated values.",
         ])
     found = [(c, _find_provider(c)) for c in ccns]
@@ -2202,7 +2202,7 @@ def _screen_compare(qs, ck) -> str:
         note = ('<p class="ck-section-body" style="font-style:italic;margin:10px 0 0;">'
                 'Cross-vertical comparison: only shared identity/size/quality rows '
                 'are shown, and Size/Quality use each vertical&rsquo;s own metric '
-                '(labeled per cell) — they are <strong>not directly comparable</strong> '
+                '(labeled per cell): they are <strong>not directly comparable</strong> '
                 'across verticals. Stick to one vertical for full metric parity.</p>')
     miss = ""
     if missing:
@@ -2266,7 +2266,7 @@ def _screen_missed(qs, ck) -> str:
                 f'{q_label}</strong>' + (f' or <strong>minimum {size_label}</strong>'
                 if has_size else "") + ' threshold and Scan. Just-missed surfaces real '
                 f'{vinfo["label"]} providers that fail your filters by a single '
-                'criterion — and flags those excluded only because a value is '
+                'criterion, and flags those excluded only because a value is '
                 '<em>missing</em> (not because they failed). No fabricated counts.</p>')
 
     # Evaluate each provider against the active numeric filters.
@@ -2347,7 +2347,7 @@ def _screen_missed(qs, ck) -> str:
         out.append('<p class="ck-section-body">No single-criterion near-misses at these thresholds.</p>')
     if md:
         out.append(f'<p class="ck-section-body" style="margin:14px 0 4px;"><strong>Excluded only '
-                   f'for missing data</strong> ({len(missing_data)}) — these were not failed, the '
+                   f'for missing data</strong> ({len(missing_data)}): these were not failed, the '
                    f'value simply is not reported:</p>'
                    '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
                    '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
@@ -2411,8 +2411,8 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -
                 for s in saved
             )
         else:
-            cards = ('<p class="ck-section-body" style="margin:0;">No saved screens yet — '
-                     'name and save the current screen below.</p>')
+            cards = ('<p class="ck-section-body" style="margin:0;">No saved screens yet. '
+                     'Name and save the current screen below.</p>')
         save_form = (
             '<form method="post" action="/api/target-screener/save" '
             'style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap;">'
@@ -2437,7 +2437,7 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -
 
     current = ck["panel"](
         '<p class="ck-section-body" style="margin:0 0 6px;">Your current screen '
-        'is a shareable link — copy it to save or send:</p>'
+        'is a shareable link; copy it to save or send:</p>'
         f'<input type="text" readonly value="{cur_url}" '
         'onclick="this.select()" style="width:100%;font-family:var(--sc-mono);'
         'font-size:11px;padding:7px 9px;border:1px solid var(--sc-rule,#c9c1ac);'
@@ -2446,7 +2446,7 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -
         title="Current screen (shareable URL)")
 
     preset_panel = ck["panel"](
-        '<p class="ck-section-body" style="margin:0 0 8px;">Prebuilt screens — '
+        '<p class="ck-section-body" style="margin:0 0 8px;">Prebuilt screens, '
         'real query-param screens over live CMS data:</p>'
         f'<div class="ts-modes">{presets}</div>',
         title="Prebuilt screens")
@@ -2455,7 +2455,7 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -
         caveat = ck["panel"](
             '<p class="ck-section-body" style="margin:0;">Saved screens are now '
             'persisted per user (the <code>saved_screens</code> table). Each is a '
-            'stored title + query string — open it to re-run live. Alerts on '
+            'stored title + query string; open it to re-run live. Alerts on '
             'saved screens are <strong>not</strong> implemented; none are shown '
             '(no fake alerts).</p>',
             title="Persistence · live, owner-scoped")
