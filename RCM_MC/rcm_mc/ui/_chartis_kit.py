@@ -6903,15 +6903,17 @@ def ck_provenance_tooltip(
             'color:var(--sc-text-faint);font-size:10px;font-weight:600;'
             'cursor:help;font-family:var(--sc-mono);}'
             '.ck-prov-tt-card{position:absolute;left:0;top:calc(100% + 6px);'
-            'min-width:240px;max-width:340px;padding:12px 14px;'
+            'min-width:240px;max-width:min(340px, calc(100vw - 28px));padding:12px 14px;'
             'background:#fff;border:1px solid var(--sc-rule);'
             'box-shadow:var(--sc-shadow-2);border-radius:2px;'
             'font-family:var(--sc-sans);font-size:12px;line-height:1.5;'
             'color:var(--sc-text);z-index:50;'
-            'visibility:hidden;opacity:0;transition:opacity 0.1s;}'
+            # display:none (not visibility:hidden) so the closed card does
+            # not extend page scrollWidth on right-edge anchors at narrow
+            # widths. max-width clamps it to the viewport.
+            'display:none;}'
             '.ck-prov-tt:hover .ck-prov-tt-card,'
-            '.ck-prov-tt:focus-within .ck-prov-tt-card{visibility:visible;'
-            'opacity:1;}'
+            '.ck-prov-tt:focus-within .ck-prov-tt-card{display:block;}'
             '.ck-prov-tt-label{font-family:var(--sc-mono);font-size:11px;'
             'font-weight:600;letter-spacing:0.06em;text-transform:uppercase;'
             'color:var(--sc-text-dim);margin-bottom:4px;display:block;}'
@@ -7341,7 +7343,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-help-popover {
     position: absolute; bottom: calc(100% + 8px); left: 50%;
     transform: translateX(-50%);
-    min-width: 260px; max-width: 360px;
+    min-width: 260px; max-width: min(360px, calc(100vw - 28px));
     padding: 14px 16px;
     background: var(--sc-bone, #f2ede3);
     border: 1px solid var(--sc-rule, #d8d3c8);
@@ -7350,13 +7352,16 @@ _CSS_INLINE_FALLBACK = """
     z-index: 50;
     font-family: "Source Serif 4", serif;
     white-space: normal; text-align: left;
-    opacity: 0; visibility: hidden;
-    transition: opacity 120ms ease, visibility 120ms ease;
+    /* display:none (not visibility:hidden) so the closed, centered
+       popover does not extend page scrollWidth when its KPI/term anchor
+       sits near the right edge (pushed /ml-insights etc. ~167px wide at
+       768). max-width clamps it to the viewport. */
+    display: none;
     pointer-events: none;
   }
   .ck-help:focus-within .ck-help-popover,
   .ck-help:hover .ck-help-popover {
-    opacity: 1; visibility: visible; pointer-events: auto;
+    display: block; pointer-events: auto;
   }
   .ck-help-popover::after {
     content: ""; position: absolute; top: 100%; left: 50%;
