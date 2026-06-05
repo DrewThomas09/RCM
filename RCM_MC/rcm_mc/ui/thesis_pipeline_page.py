@@ -95,10 +95,10 @@ def _landing() -> str:
     explainer = (
         '<p class="tp-explainer">'
         '<em>Close the loop.</em> '
-        "Runs the full 13-step diligence chain — bankruptcy scan, CCD "
+        "Runs the full 13-step diligence chain: bankruptcy scan, CCD "
         "ingest, HFMA benchmarks, denial prediction, physician attrition, "
         "counterfactual advisor, Steward score, cyber score, deal autopsy, "
-        "market intel — and returns a populated Deal MC scenario plus "
+        "market intel, and returns a populated Deal MC scenario plus "
         "every headline number the IC Packet needs."
         '</p>'
     )
@@ -106,7 +106,7 @@ def _landing() -> str:
         '<form method="GET" action="/diligence/thesis-pipeline" class="tp-form">'
         '<label class="tp-form-label">CCD fixture</label>'
         '<select name="dataset" required class="tp-form-select">'
-        '<option value="">— pick a fixture —</option>'
+        '<option value="">(pick a fixture)</option>'
         f'{options}</select>'
         '<div class="tp-form-grid">'
     )
@@ -174,7 +174,7 @@ font-family:"JetBrains Mono",monospace;font-size:11px;}}
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Thesis Pipeline",
+        body, "RCM Diligence · Thesis Pipeline",
     )
 
 
@@ -230,7 +230,7 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
         _fmt_dollar(report.denial_recoverable_usd),
         source="DenialPredictionReport.bridge_input.recoverable_revenue_usd",
         formula="sum(predicted_denial × charge where status != DENIED)",
-        detail="Systematic misses — claims flagged but not denied.",
+        detail="Systematic misses: claims flagged but not denied.",
     )
     cf_num = provenance(
         _fmt_dollar(report.counterfactual_largest_lever_usd),
@@ -256,7 +256,7 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
                 "definition": (
                     "Median MOIC across 3000 Monte Carlo trials seeded "
                     "by the 13-step pipeline. Read alongside P(MOIC<1x) "
-                    "below — same median can hide very different "
+                    "below: same median can hide very different "
                     "tail-risk profiles. Above 2.5x median signals "
                     "a deal worth IC time."
                 ),
@@ -280,7 +280,7 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
             help={
                 "definition": (
                     "Input lever contributing the most variance to the "
-                    "MOIC distribution. Stress this one first in IC — "
+                    "MOIC distribution. Stress this one first in IC: "
                     "if the top driver is something the sponsor can "
                     "credibly hedge (rate, denial), the deal narrows; "
                     "if it's structural (payer mix, regulation), the "
@@ -297,7 +297,7 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
                     "Closest realized deal in the corpus by profile "
                     "signature (sector, size, payer mix, capital "
                     "structure). Use the analogue's actual exit "
-                    "outcome as a reality check on the underwriting — "
+                    "outcome as a reality check on the underwriting: "
                     "if the analogue lost money, ask why this deal "
                     "won't."
                 ),
@@ -334,7 +334,7 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
             help={
                 "definition": (
                     "Largest single lever that would flip the deal's "
-                    "verdict from no to yes — the 'what we're waiting "
+                    "verdict from no to yes: the 'what we're waiting "
                     "for' input to negotiate on. If the counterfactual "
                     "is bigger than what's plausibly achievable, the "
                     "thesis holds without movement."
@@ -592,7 +592,7 @@ def _checklist_preview(report: ThesisPipelineReport) -> str:
         f'{len(obs_dict)} diligence items. P0 coverage is now '
         f'<span style="color:{color};font-weight:600;">{p0_cov:.0f}%</span> '
         f'({state.open_p0} P0 items + {state.open_p1} P1 items remain '
-        f'open — mostly manual / legal / management-reference tasks). '
+        f'open, mostly manual / legal / management-reference tasks). '
         f'<a href="/diligence/checklist" style="color:{P["accent"]};">'
         f'Open Diligence Checklist →</a>'
         f'</div>'
@@ -677,7 +677,7 @@ def render_thesis_pipeline_page(
     # Hero
     hero = ck_editorial_head(
         eyebrow=f"Thesis Pipeline · {html.escape(dataset)}",
-        title=f"Full diligence chain — {html.escape(inp.deal_name)}",
+        title=f"Full diligence chain · {html.escape(inp.deal_name)}",
         meta=(
             f"{len(report.step_log)} STEPS · "
             f"{report.total_compute_ms:.0f}ms TOTAL COMPUTE"
@@ -705,7 +705,7 @@ def render_thesis_pipeline_page(
             purpose="Run the full 13-step diligence chain (intake → analysis → risk → bridge → memo) on a deal in one pass to produce an IC-ready synthesis.",
             universe="illustrative",
             confidence="derived",
-            source=f"Orchestrated over the selected '{html.escape(str(inp.dataset))}' CCD fixture + your entered deal economics — fixture claims are a sample, not the target's own. Re-run on the target's CCD before IC.",
+            source=f"Orchestrated over the selected '{html.escape(str(inp.dataset))}' CCD fixture + your entered deal economics: fixture claims are a sample, not the target's own. Re-run on the target's CCD before IC.",
             next_action="Open the IC packet",
             next_href="/diligence/ic-packet",
         )
@@ -731,7 +731,7 @@ def render_thesis_pipeline_page(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        f"Thesis Pipeline — {inp.deal_name}",
+        f"Thesis Pipeline · {inp.deal_name}",
         active_nav="/diligence/thesis-pipeline",
         subtitle="13-step orchestrator · closes the loop",
     )

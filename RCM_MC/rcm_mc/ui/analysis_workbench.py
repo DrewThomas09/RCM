@@ -1089,7 +1089,7 @@ def _partner_review_band(packet: DealAnalysisPacket) -> str:
         review = (
             "Diligence packet has not surfaced material risk flags. "
             "Recommend completing remaining metric collection before "
-            "moving the deal forward — partner-level signal is light."
+            "moving the deal forward: partner-level signal is light."
         )
         verdict_label = "MORE DATA NEEDED"
         verdict_tone = "rgba(183,121,31,0.85)"  # amber
@@ -1098,13 +1098,13 @@ def _partner_review_band(packet: DealAnalysisPacket) -> str:
             f"Critical risk flags present ({crit}); thesis "
             "should be re-tested against the named-failure library before "
             "advancing. Bridge math holds but exit-multiple sensitivity "
-            "is high — recommend HOLD pending additional evidence."
+            "is high: recommend HOLD pending additional evidence."
         )
         verdict_label = "HOLD"
         verdict_tone = "rgba(165,58,45,0.85)"  # red
     else:
         review = (
-            "Thesis validated against the corpus — bridge components "
+            "Thesis validated against the corpus: bridge components "
             "track within model tolerance, comparable set is supportive, "
             "and no critical flags fired. Recommend PROCEED with the "
             "covenant items flagged in the diligence checklist as priority "
@@ -1311,7 +1311,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
     grade = getattr(packet.completeness, "grade", "") or ""
     if grade in ("C", "D") or not grade:
         actions.append(
-            f'<div>📊 <strong>Upload more data</strong> — completeness is '
+            f'<div>📊 <strong>Upload more data</strong>: completeness is '
             f'{grade or "?"}, which limits prediction accuracy. '
             f'<a href="/new-deal/step3?deal_id={deal_id}">Upload files →</a></div>'
         )
@@ -1323,7 +1323,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
     )
     if critical_count > 0:
         actions.append(
-            f'<div>🔴 <strong>Review {critical_count} critical risk(s)</strong> — '
+            f'<div>🔴 <strong>Review {critical_count} critical risk(s)</strong>: '
             f'click the Risk & Diligence tab to see details and address '
             f'the top-priority flags.</div>'
         )
@@ -1335,7 +1335,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
         not in ("OK",)
     ):
         actions.append(
-            f'<div>🎲 <strong>Run Monte Carlo</strong> — no simulation on '
+            f'<div>🎲 <strong>Run Monte Carlo</strong>: no simulation on '
             f'this analysis yet. '
             f'<a href="/api/analysis/{deal_id}/simulate/v2" '
             f'style="color:{PALETTE["accent"]};">Run now →</a></div>'
@@ -1344,7 +1344,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
     # Missing diligence questions answered → export package.
     if packet.diligence_questions and not actions:
         actions.append(
-            f'<div>📦 <strong>Generate IC package</strong> — analysis is '
+            f'<div>📦 <strong>Generate IC package</strong>: analysis is '
             f'complete. '
             f'<a href="/api/analysis/{deal_id}/export?format=package" '
             f'style="color:{PALETTE["accent"]};">Export →</a></div>'
@@ -1352,8 +1352,8 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
 
     if not actions:
         actions.append(
-            '<div style="color:#0a8a5f;">✓ <strong>Looking good</strong> '
-            '— completeness, risks, and simulation are all in order.</div>'
+            '<div style="color:#0a8a5f;">✓ <strong>Looking good</strong>: '
+            'completeness, risks, and simulation are all in order.</div>'
         )
 
     body = "\n".join(actions[:3])
@@ -2289,7 +2289,7 @@ def _render_scenarios(packet: DealAnalysisPacket) -> str:
 
     # Overlay histogram ---------------------------------------------
     overlay_html = _render_scenario_overlay_svg(comparison) or (
-        '<div class="dim">distributions unavailable — run MC first</div>'
+        '<div class="dim">distributions unavailable: run MC first</div>'
     )
 
     # Add-scenario form — skeleton (JS wires submit). Pre-populated
@@ -2475,7 +2475,7 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
     for pri in ("P0", "P1", "P2"):
         if dq_by_priority[pri]:
             dq_html += (
-                f'<div class="wb-card-title" style="margin-top:8px;">{pri} — {len(dq_by_priority[pri])} questions</div>'
+                f'<div class="wb-card-title" style="margin-top:8px;">{pri} · {len(dq_by_priority[pri])} questions</div>'
                 + "\n".join(dq_by_priority[pri])
             )
     dq_block = dq_html or '<div class="dim">no diligence questions</div>'
@@ -3244,7 +3244,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     )
     return chartis_shell(
         shell_body,
-        f"{packet.deal_name or packet.deal_id} — Analysis Workbench",
+        f"{packet.deal_name or packet.deal_id} · Analysis Workbench",
         extra_css=_WORKBENCH_CSS,
         extra_js=_WORKBENCH_JS + _EXPLAIN_JS + _OVERRIDE_JS,
     )

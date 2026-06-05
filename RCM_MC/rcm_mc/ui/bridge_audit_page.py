@@ -243,7 +243,7 @@ def _verdict_card(report: BridgeAuditReport) -> str:
         plain = (
             "Material gap between banker claim and realistic "
             "realization. Partners should not accept the bridge "
-            "at face value — counter on price or insist on an "
+            "at face value: counter on price or insist on an "
             "earn-out structured on the overstated levers."
         )
         plain_tone = "bad"
@@ -251,7 +251,7 @@ def _verdict_card(report: BridgeAuditReport) -> str:
         verdict = "GAP"
         plain = (
             "Moderate gap. The bridge overshoots realistic "
-            "outcomes by a meaningful margin — worth a negotiation "
+            "outcomes by a meaningful margin: worth a negotiation "
             "round but not a walk."
         )
         plain_tone = "warn"
@@ -337,7 +337,7 @@ def _verdict_card(report: BridgeAuditReport) -> str:
             ),
             help={
                 "definition": (
-                    "Realisation-probability-weighted bridge — each "
+                    "Realisation-probability-weighted bridge: each "
                     "lever's claim discounted by historical "
                     "achievement rates for that lever type. The "
                     "P25-P75 band shows the range across reasonable "
@@ -353,7 +353,7 @@ def _verdict_card(report: BridgeAuditReport) -> str:
             sub=f"{report.gap_pct*100:+.0f}% of claim",
             help={
                 "definition": (
-                    "Realistic minus Banker Claim — usually "
+                    "Realistic minus Banker Claim: usually "
                     "negative. Above -20% the bridge is credible; "
                     "-20% to -40% requires structural mitigants; "
                     "below -40% the bridge is largely unsupported "
@@ -401,7 +401,7 @@ def _counter_bid_card(report: BridgeAuditReport) -> str:
         return ""
     body = (
         f"Banker asking <strong>${report.asking_price_usd/1e6:,.0f}M</strong> "
-        f"at {report.entry_multiple:.1f}× — our audit shows "
+        f"at {report.entry_multiple:.1f}×: our audit shows "
         f"<strong>${report.gap_usd/1e6:,.1f}M of realistic bridge gap</strong>. "
         f"At the entry multiple, that prices out to "
         f"<strong>${report.price_reduction_usd/1e6:,.1f}M of overpayment</strong>. "
@@ -725,7 +725,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Bridge Auto-Auditor",
+        body, "RCM Diligence · Bridge Auto-Auditor",
         subtitle="Banker bridge × realization priors × target profile",
     )
 
@@ -805,7 +805,7 @@ def render_bridge_audit_page(
             headline="Could not parse any lever rows.",
             italic_word="parse",
             body=(
-                "Expected format: 'Denial workflow, $4.2M' — one "
+                "Expected format: 'Denial workflow, $4.2M'; one "
                 "line per lever. Check punctuation or paste again."
             ),
         )
@@ -816,7 +816,7 @@ def render_bridge_audit_page(
             + '<p class="ck-section-body">'
             + '<a href="/diligence/bridge-audit" class="ck-link">'
             + '← Back to audit form</a></p></div>',
-            "RCM Diligence — Bridge Auto-Auditor",
+            "RCM Diligence · Bridge Auto-Auditor",
         )
 
     target_name = first("target_name", "Target")
@@ -856,7 +856,7 @@ def render_bridge_audit_page(
         chart_plain_parts.append(
             f"Largest single gap is "
             f"<strong style=\"color:{P['negative']};\">"
-            f"{html.escape(worst.lever.name)}</strong> — banker "
+            f"{html.escape(worst.lever.name)}</strong>: banker "
             f"claims <strong>${worst.claimed_usd/1e6:,.1f}M</strong>, "
             f"realistic capture is "
             f"<strong>${worst.realistic_median_usd/1e6:,.2f}M</strong> "
@@ -874,7 +874,7 @@ def render_bridge_audit_page(
 
     main_intro = ck_section_intro(
         eyebrow="EBITDA Bridge Auto-Auditor",
-        headline=f"{html.escape(target_name)} — bridge × realization priors",
+        headline=f"{html.escape(target_name)} · bridge × realization priors",
         italic_word="bridge",
         body=(
             f"{len(report.per_lever)} levers audited · "
@@ -909,7 +909,7 @@ def render_bridge_audit_page(
 
     narrative_panel = (
         ck_section_header(
-            "Per-lever narrative — ordered by gap",
+            "Per-lever narrative: ordered by gap",
             eyebrow="DETAIL",
         )
         + _per_lever_narrative_block(report)
@@ -945,7 +945,7 @@ def render_bridge_audit_page(
         + '<div class="ba-wrap">'
         + deal_context_bar(qs, active_surface="bridge")
         + ck_source_purpose(
-            purpose="Audit the EBITDA value-creation bridge — decompose entry→exit EBITDA into RCM, growth, margin and multiple levers — so IC sees what each lever must deliver.",
+            purpose="Audit the EBITDA value-creation bridge: decompose entry→exit EBITDA into RCM, growth, margin and multiple levers, so IC sees what each lever must deliver.",
             universe="user-deals",
             confidence="derived",
             source="Your entered deal economics + initiative assumptions; the bridge is a model of YOUR plan, not realized results.",
@@ -960,7 +960,7 @@ def render_bridge_audit_page(
         + cross_link
         + export_json_panel(
             '<div class="ba-section-label" style="margin-top:22px;">'
-            'JSON export — full audit report</div>',
+            'JSON export · full audit report</div>',
             payload=report.to_dict(),
             name=f"bridge_audit_{target_name.replace(' ', '_')}",
         )
@@ -978,7 +978,7 @@ def render_bridge_audit_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, "RCM Diligence — Bridge Auto-Auditor",
+        body, "RCM Diligence · Bridge Auto-Auditor",
         subtitle=(
             f"{target_name} · "
             f"${report.gap_usd/1e6:+.1f}M gap vs banker"
