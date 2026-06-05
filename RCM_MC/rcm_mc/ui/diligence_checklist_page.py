@@ -110,7 +110,7 @@ text-align:center;padding:2px 0;border:1px solid currentColor;
 border-radius:3px;text-transform:uppercase;}}
 .dc-oq-row__owner{{color:{tf};font-size:10px;letter-spacing:1px;
 text-transform:uppercase;text-align:right;font-weight:600;}}
-@media (max-width:720px){{.dc-item{{grid-template-columns:70px 60px 1fr;}}
+@media (max-width:960px){{.dc-item{{grid-template-columns:70px 60px 1fr;}}
 .dc-item__owner,.dc-item__category,.dc-item__action{{display:none;}}}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],

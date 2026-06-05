@@ -7628,6 +7628,8 @@ _CSS_INLINE_FALLBACK = """
      dropdowns stay position:absolute, so wrapping doesn't clip them);
      wide tables scroll horizontally within the viewport instead of
      widening the page. */
+  /* Topbar/nav wrapping is phone-only — kept at ≤640 so the 7-link nav
+     does not wrap prematurely through the tablet range. */
   @media (max-width:640px){
     .ck-topbar-inner{ flex-wrap:wrap; min-height:0; padding:8px 16px; row-gap:2px; }
     .ck-wordmark{ padding-right:16px; margin-right:12px; }
@@ -7635,6 +7637,15 @@ _CSS_INLINE_FALLBACK = """
        bar (and the page) ~480px wide; each link keeps its own no-wrap. */
     .ck-nav{ flex-wrap:wrap; }
     .ck-nav a{ height:auto; padding:6px 10px; }
+  }
+  /* Overflow-prevention safety-net — raised from ≤640 to ≤960 so the
+     641–960px tablet range is covered, not just phones. The Phase-0 crawl
+     found real horizontal page overflow at 768px (regression panel grid
+     not stacking, unwrapped .cad-table, wide inline-flex rows). Every rule
+     here only caps width / stacks / scrolls — it never resizes text and
+     never touches the desktop layout (≥961px), so widening the reach
+     removes the tablet overflow safely. */
+  @media (max-width:960px){
     /* every content table scrolls within the viewport rather than
        widening the page (covers bare <table>, .ck-table, .ck-data-table,
        .cad-table, and any page-local class — they all live in .ck-main). */
@@ -7665,8 +7676,10 @@ _CSS_INLINE_FALLBACK = """
        on mobile so .ck-main table's max-width/scroll can take effect. */
     .ck-main table{ min-width:0 !important; }
     /* charts scale to the column instead of forcing it wide (viewBox SVGs
-       scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio). */
+       scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio).
+       <img> covers matplotlib PNG charts so they shrink with the column. */
     .ck-main svg{ max-width:100%; height:auto; }
+    .ck-main img{ max-width:100%; height:auto; }
     /* any inline multi-column grid (repeat(), "1fr 300px" sidebar
        layouts, etc.) stacks to one column on phones. */
     [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }

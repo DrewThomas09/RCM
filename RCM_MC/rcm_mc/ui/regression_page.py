@@ -2817,6 +2817,11 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
 .rg-bar-fill{border-radius:4px;height:10px;}
 .rg-bar-fill-sm{height:8px;border-radius:4px;}
 .rg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+/* Stack the two-up panels below the tablet breakpoint. The panels hold
+   wide coefficient cad-tables whose min-content kept the 1fr columns from
+   shrinking, forcing the page ~497px wide at 768. minmax(0,1fr) lets the
+   single column shrink so the table scrolls inside it (shell ≤960 net). */
+@media (max-width:960px){.rg-grid{grid-template-columns:minmax(0,1fr);}}
 </style>
 """
 
