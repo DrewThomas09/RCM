@@ -546,7 +546,9 @@ class DealProfileMarketContextTests(unittest.TestCase):
         from rcm_mc.ui.deal_profile_page import render_deal_profile_page
         h = render_deal_profile_page(slug="test-deal")
         self.assertIn("data-rcm-market-context", h)
-        self.assertIn("Market Context · live from public comps", h)
+        # Labeled by the panel tab ("Market context"); the duplicate inner
+        # eyebrow was removed in the density de-dup pass.
+        self.assertIn("Market context", h)
 
     def test_deal_profile_js_calls_peer_snapshot_api(self):
         from rcm_mc.ui.deal_profile_page import render_deal_profile_page

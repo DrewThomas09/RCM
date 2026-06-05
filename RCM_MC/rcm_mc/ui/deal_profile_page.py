@@ -34,7 +34,7 @@ from urllib.parse import urlencode
 
 from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
-    P, chartis_shell, ck_eyebrow, ck_help_tooltip, ck_next_section,
+    P, chartis_shell, ck_help_tooltip, ck_next_section,
     ck_page_title, ck_panel, ck_section_header, ck_section_intro,
     ck_signal_badge, ck_sticky_toc, ck_page_explainer)
 from .power_ui import bookmark_hint
@@ -1299,8 +1299,7 @@ def _render_thesis_snapshot(slug: str) -> str:
         '<div data-rcm-thesis-snapshot class="ck-dp-thesis-card">'
         '<div class="ck-dp-thesis-head">'
         '<div>'
-        + ck_eyebrow("Investment Thesis")
-        + '<div class="ck-dp-thesis-narrative" data-rcm-thesis-narrative>'
+        '<div class="ck-dp-thesis-narrative" data-rcm-thesis-narrative>'
         'Enter deal parameters below to populate the thesis snapshot.'
         '</div>'
         '</div>'
@@ -1335,8 +1334,6 @@ def _render_market_context(slug: str) -> str:
         '<div data-rcm-market-context class="ck-dp-market-card">'
         '<div class="ck-dp-market-head">'
         '<div>'
-        + ck_eyebrow("Market Context · live from public comps")
-        +
         '<div data-rcm-market-summary class="ck-dp-market-summary"></div>'
         '</div>'
         '<div data-rcm-market-assessment class="ck-dp-market-assessment">—</div>'

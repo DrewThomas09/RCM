@@ -182,7 +182,9 @@ class ThesisSnapshotTests(unittest.TestCase):
 
     def test_thesis_snapshot_card_present(self):
         h = self._render()
-        self.assertIn("Investment Thesis", h)
+        # Labeled by the panel tab ("Investment thesis"); the duplicate
+        # inner eyebrow was removed in the density de-dup pass.
+        self.assertIn("Investment thesis", h)
         self.assertIn("data-rcm-thesis-narrative", h)
 
     def test_thesis_kpi_tiles_all_present(self):
