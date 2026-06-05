@@ -96,13 +96,13 @@ def _covid_resilience_score(trend_df: pd.DataFrame) -> Tuple[int, str]:
 
     score = int(np.mean(scores))
     if score >= 75:
-        label = "Resilient — strong COVID recovery"
+        label = "Resilient: strong COVID recovery"
     elif score >= 55:
-        label = "Moderate — some COVID impact but recovering"
+        label = "Moderate: some COVID impact but recovering"
     elif score >= 40:
-        label = "Stressed — slow recovery from COVID"
+        label = "Stressed: slow recovery from COVID"
     else:
-        label = "Distressed — significant COVID damage"
+        label = "Distressed: significant COVID damage"
 
     return score, label
 
@@ -219,7 +219,7 @@ def render_hospital_history(
 
     intro = ck_section_intro(
         eyebrow=f"HOSPITAL HISTORY · CCN {ccn_esc}",
-        headline=f"{name_esc} — multi-year financial timeline.",
+        headline=f"{name_esc}: multi-year financial timeline.",
         italic_word="timeline",
         body=(
             f"{n_years}-year revenue, margin, payer-mix, and bed "
@@ -256,7 +256,7 @@ def render_hospital_history(
                 "definition": (
                     "Compound annual growth rate of revenue across "
                     "the available HCRIS years. Healthcare margins "
-                    "are tight — partners look for 3-6% organic "
+                    "are tight: partners look for 3-6% organic "
                     "growth in community hospitals; >10% usually "
                     "means a step-change (acquisition, service-line "
                     "launch) worth understanding separately."
@@ -270,7 +270,7 @@ def render_hospital_history(
             help={
                 "definition": (
                     "Operating margin in the most-recent fiscal "
-                    "year. Read alongside the trend line below — a "
+                    "year. Read alongside the trend line below: a "
                     "high latest margin on a declining slope is "
                     "different from a stable mediocre margin."
                 ),
@@ -307,7 +307,7 @@ def render_hospital_history(
             recovery_cls = "cad-pos" if recovery > 0 else "cad-neg"
             covid_section = ck_panel(
                 '<p class="ck-section-body">'
-                f'<strong>Resilience Score: {covid_score}/100</strong> — {html.escape(covid_label)}</p>'
+                f'<strong>Resilience Score: {covid_score}/100</strong> · {html.escape(covid_label)}</p>'
                 '<p class="ck-section-body">'
                 f'Revenue recovery from FY2020 to FY{int(years[-1])}: '
                 f'<strong class="{recovery_cls}">{recovery:+.1%}</strong> '
@@ -355,7 +355,7 @@ def render_hospital_history(
             peer_inner = (
                 '<div class="ck-kpi-strip">'
                 + ck_kpi_block(
-                    f"Revenue Growth — {state_esc}",
+                    f"Revenue Growth · {state_esc}",
                     f"{rev_cagr:+.1%}",
                     sub="this hospital",
                 )
@@ -365,11 +365,11 @@ def render_hospital_history(
                     sub="state median",
                 )
                 + ck_kpi_block(
-                    "Latest Margin — this hospital",
+                    "Latest Margin · this hospital",
                     f"{margins[-1]:.1%}",
                 )
                 + ck_kpi_block(
-                    "Latest Margin — state avg",
+                    "Latest Margin · state avg",
                     f"{peer_margins[-1]:.1%}",
                 )
                 + '</div>'
@@ -437,7 +437,7 @@ border-bottom:1px solid {PALETTE['border']};}}
     )
 
     return chartis_shell(
-        body, f"{name_esc} — History",
+        body, f"{name_esc} · History",
         active_nav="/market-data/map",
         subtitle=f"CCN {ccn_esc} | {n_years}-year financial timeline | COVID resilience: {covid_score}/100",
     )
