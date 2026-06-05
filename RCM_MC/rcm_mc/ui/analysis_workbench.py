@@ -1517,7 +1517,7 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
             if getattr(pm, "log_transform_suggested", False):
                 alpha_html += (
                     f'<span class="ck-cohort-alpha" style="margin-left:4px;" '
-                    f'title="Target is right-skewed and strictly positive — a log/Box-Cox '
+                    f'title="Target is right-skewed and strictly positive, so a log/Box-Cox '
                     f'transform would likely stabilize variance and improve the fit. '
                     f'Model-quality advisory; the predicted value is unchanged.">log?</span>'
                 )

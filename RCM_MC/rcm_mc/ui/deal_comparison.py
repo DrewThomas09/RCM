@@ -478,7 +478,7 @@ def render_screen_page(
                 # it read as a real result (see margin_is_plausible).
                 margin_cell = (
                     f'<td class="num hs-dq" title="Margin {margin:.1%} is outside the '
-                    f'realistic -40% to +30% band — this HCRIS filing likely has '
+                    f'realistic -40% to +30% band; this HCRIS filing likely has '
                     f'incomplete or aggregated opex; review before relying on it.">'
                     f'{margin:.1%} &#9888;</td>'
                 )

@@ -2498,7 +2498,7 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
     # "two CMS public data things" the user reported.
     title = ck_page_title(
         "Target Screener", eyebrow="SOURCE · /target-screener · WORKBENCH",
-        meta="six screens across the public CMS / provider datasets — market data, not your deals",
+        meta="six screens across the public CMS / provider datasets · market data, not your deals",
     )
 
     # The standalone CMS source bubble was dropped — it ate vertical space and

@@ -545,7 +545,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         'transition:background 0.1s;" '
         'onmouseover="this.style.background=\'#f7f3ea\';" '
         'onmouseout="this.style.background=\'#fff\';" '
-        'title="Download today\'s scan as CSV — paste into PowerPoint, '
+        'title="Download today\'s scan as CSV to paste into PowerPoint, '
         'email, or Excel">'
         '⬇ Export CSV</a>'
     )

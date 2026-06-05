@@ -1486,7 +1486,7 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'{t["id"]}/clone" style="display:inline;margin:0;">'
             f'<input type="hidden" name="redirect" value="/dashboard">'
             f'<button type="submit" '
-            f'title="Clone — duplicate this template under a new name '
+            f'title="Clone: duplicate this template under a new name '
             f'so you can tweak it (e.g. swap the CCN)" '
             f'style="background:transparent;border:0;color:#8A92A0;'
             f'cursor:pointer;font-size:14px;padding:0 6px;'

@@ -487,7 +487,7 @@ def render_state_compare(params: Dict = None) -> str:
     )
     body = f"""
 <div class="ck-page-wrap">
-  {ck_page_title("State Comparison", eyebrow="MARKET INTEL", meta="Side-by-side across every real state-keyed public dataset — CMS · CDC · HRSA · Census")}
+  {ck_page_title("State Comparison", eyebrow="MARKET INTEL", meta="Side-by-side across every real state-keyed public dataset · CMS · CDC · HRSA · Census")}
   {kpi_strip}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
     Compare states across PEdesk's real public-data layers, with a trailing

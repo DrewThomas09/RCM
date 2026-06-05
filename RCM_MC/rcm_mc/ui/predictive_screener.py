@@ -359,7 +359,7 @@ def render_predictive_screener(
         else:
             margin_cell = (
                 f'<td class="num ps-dq" title="HCRIS filing has implausible or '
-                f'incomplete opex — margin {margin:.1%} is a data artifact; review '
+                f'incomplete opex, so margin {margin:.1%} is a data artifact; review '
                 f'before relying on it.">{margin:.1%} &#9888;</td>'
             )
 

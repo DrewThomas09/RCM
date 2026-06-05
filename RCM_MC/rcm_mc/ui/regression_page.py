@@ -3805,7 +3805,7 @@ def render_regression_page(
         # but the chip surfaces the signal without reading it.
         transitive_chip = (
             ' <span class="rg-leak-transitive-chip" '
-            'title="Detected via multi-hop atomic-input walk — '
+            'title="Detected via multi-hop atomic-input walk; '
             'feature and target share raw ancestors through an '
             'intermediate derived feature">transitive</span>'
             if getattr(v, "transitive", False) else ''

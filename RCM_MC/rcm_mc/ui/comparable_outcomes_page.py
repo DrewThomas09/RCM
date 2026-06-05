@@ -65,7 +65,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;" title="Sponsor name boosts match score '
-        'on same-sponsor deals — useful when tracking a particular '
+        'on same-sponsor deals; useful when tracking a particular '
         'PE house\'s playbook">Sponsor (optional)</label>'
         f'<input type="text" name="buyer" value="{buyer}" '
         'placeholder="e.g. New Mountain Capital" '
