@@ -44,7 +44,7 @@ class CovenantHeadCascadeTests(unittest.TestCase):
 
     def test_italic_first_phrase(self) -> None:
         self.assertIn(
-            "<em>When the covenant cliff hits — by quarter.</em>",
+            "<em>When the covenant cliff hits, by quarter.</em>",
             self.html,
         )
 
