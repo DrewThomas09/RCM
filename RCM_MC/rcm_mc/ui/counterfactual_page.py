@@ -452,7 +452,7 @@ def _landing_page() -> str:
         '<p class="ck-cf-explainer">'
         '<em>What would change your mind on this deal.</em> '
         "For every RED / CRITICAL finding, the advisor back-solves the "
-        "minimum input change that flips the band — the answer to the "
+        "minimum input change that flips the band: the answer to the "
         "partner question: is there an offer modification that fixes "
         "this? Runs across CPOM, NSA, Steward Score, TEAM, antitrust, "
         "cyber, and site-neutral."
@@ -463,7 +463,7 @@ def _landing_page() -> str:
         + title_block
         + '<form method="GET" action="/diligence/counterfactual" class="cf-form">'
         + '<label class="cf-form-label">Dataset</label>'
-        + f'<select name="dataset" required><option value="">— pick a CCD fixture —</option>{options}</select>'
+        + f'<select name="dataset" required><option value="">(pick a CCD fixture)</option>{options}</select>'
         + '<label class="cf-form-label">Structure (optional)</label>'
         + '<select name="legal_structure">'
         + '<option value="">(none)</option>'
@@ -473,9 +473,9 @@ def _landing_page() -> str:
         + '<option>PROFESSIONAL_LLC</option></select>'
         + '<label class="cf-form-label">States (comma-separated)</label>'
         + '<input name="states" placeholder="OR, WA">'
-        + '<label class="cf-form-label">Specialty (optional — enables NSA)</label>'
+        + '<label class="cf-form-label">Specialty (optional, enables NSA)</label>'
         + '<input name="specialty" placeholder="EMERGENCY_MEDICINE">'
-        + '<label class="cf-form-label">Landlord (optional — enables Steward)</label>'
+        + '<label class="cf-form-label">Landlord (optional, enables Steward)</label>'
         + '<input name="landlord" placeholder="Medical Properties Trust">'
         + ck_action_button("Run advisor")
         + '</form>'
@@ -504,7 +504,7 @@ def _render_hero(
         summary = (
             "No RED or CRITICAL findings across the risk modules. "
             "The Counterfactual Advisor has nothing structural to "
-            "recommend — proceed to the Deal MC + IC Packet without "
+            "recommend: proceed to the Deal MC + IC Packet without "
             "offer-shape modifications."
         )
     elif crit <= 2 and n_items <= 4:
@@ -520,7 +520,7 @@ def _render_hero(
         primary_color = P["negative"]
         summary = (
             f"⚠ {crit} CRITICAL-level findings + {n_items - crit} "
-            f"RED — this deal requires materially different structure "
+            f"RED: this deal requires materially different structure "
             f"to underwrite cleanly. Total bridge-lever EBITDA impact "
             f"${bridge_usd:,.0f} across the listed counterfactuals. "
             f"Read each card before proceeding to Deal MC."
@@ -574,7 +574,7 @@ def _render_hero(
                     "Smallest shifts in each input lever (rate, denial, "
                     "AR) that would flip the model's verdict. Use them "
                     "as the 'what we're waiting for' surface during "
-                    "diligence — if you can't credibly move that lever, "
+                    "diligence: if you can't credibly move that lever, "
                     "the current verdict holds."
                 ),
             },
@@ -586,7 +586,7 @@ def _render_hero(
                     "How many red-severity findings the counterfactual "
                     "levers would address if executed. Higher = a "
                     "richer set of fixable issues. Zero means the deal's "
-                    "criticals aren't reachable by lever adjustment — "
+                    "criticals aren't reachable by lever adjustment: "
                     "they're structural."
                 ),
             },
@@ -662,12 +662,12 @@ def _render_ccd_summary(summary: Dict[str, Any]) -> str:
          "sum(paid_amount) where network_status ∈ "
          "{OON, OUT_OF_NETWORK} or is_oon == True."),
         ("OON share",  f"{(summary.get('oon_share') or 0)*100:.1f}%",
-         "oon_paid / total_paid — the NSA exposure ratio compared "
+         "oon_paid / total_paid: the NSA exposure ratio compared "
          "against 20% / 35% thresholds."),
         ("HOPD revenue",
          f"${summary.get('hopd_revenue_usd', 0):,.0f}",
          "sum(paid_amount) where place_of_service == '22' or "
-         "is_hopd == True — drives the site-neutral simulator."),
+         "is_hopd == True: drives the site-neutral simulator."),
         ("Commercial HHI",
          (f"{summary.get('commercial_hhi'):,.0f}"
           if summary.get("commercial_hhi") is not None else "—"),
@@ -702,16 +702,16 @@ def _render_counterfactuals(cf_set: CounterfactualSet) -> str:
     # Plain-English explanation for each feasibility band.
     _FEASIBILITY_EXPLAINER = {
         "HIGH": (
-            "Partners have unilateral control — clean-sheet lever "
+            "Partners have unilateral control: clean-sheet lever "
             "they can quote in the bid without counterparty consent."
         ),
         "MEDIUM": (
-            "Requires seller agreement but precedented — most sellers "
+            "Requires seller agreement but precedented: most sellers "
             "will concede this to close."
         ),
         "LOW": (
             "Requires material concession from a third party (REIT "
-            "landlord, major payer, state AG) — assume the bid fails "
+            "landlord, major payer, state AG): assume the bid fails "
             "unless you have pre-signaled alignment."
         ),
     }
@@ -880,7 +880,7 @@ def render_counterfactual_page(
         '<em>What would change your mind on this deal.</em> '
         "For each lever (rate, denial, AR), the smallest shift that "
         "flips the verdict. If you can't move that lever, the verdict "
-        "holds — use this as the 'what we're waiting for' surface "
+        "holds: use this as the 'what we're waiting for' surface "
         "during diligence."
         '</p>'
     )
@@ -888,10 +888,10 @@ def render_counterfactual_page(
         _page_style()
         + results_title
         + ck_source_purpose(
-            purpose="Quantify what-if RCM interventions on a claims feed — how much each lever would have changed denials / recovery — to size value-creation levers.",
+            purpose="Quantify what-if RCM interventions on a claims feed (how much each lever would have changed denials / recovery) to size value-creation levers.",
             universe="illustrative",
             confidence="derived",
-            source=f"Counterfactual replay over the selected '{html.escape(str(dataset))}' CCD dataset (a fixture sample) — methodology, not the deal's own claims. Re-run on the target's CCD before IC.",
+            source=f"Counterfactual replay over the selected '{html.escape(str(dataset))}' CCD dataset (a fixture sample): methodology, not the deal's own claims. Re-run on the target's CCD before IC.",
             next_action="Feed the sized levers into the EBITDA bridge",
             next_href="/diligence/bridge-audit",
         )
@@ -913,7 +913,7 @@ def render_counterfactual_page(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        f"Counterfactual Advisor — {html.escape(dataset)}",
+        f"Counterfactual Advisor · {html.escape(dataset)}",
         active_nav="/diligence/counterfactual",
         extra_css=_EXPLAINER_CSS,
     )

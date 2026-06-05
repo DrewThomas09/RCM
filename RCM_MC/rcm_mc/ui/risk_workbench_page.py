@@ -220,7 +220,7 @@ _TIER_EXPLAINER = {
     "TIER_1_STEWARD_REPLAY": (
         "EBITDAR coverage + escalator profile mirrors the Steward 2016 "
         "entry signature. This is the highest-risk real-estate band in "
-        "the library — partners should walk unless the sale-leaseback is "
+        "the library: partners should walk unless the sale-leaseback is "
         "dissolvable or the escalator is capped."
     ),
     "TIER_2_LEASE_STRESS": (
@@ -233,34 +233,34 @@ _TIER_EXPLAINER = {
         "5% escalator shock in Deal MC to size the downside."
     ),
     "TIER_4_STANDARD": (
-        "Real-estate profile is in-line with peer norms — neither a "
+        "Real-estate profile is in-line with peer norms: neither a "
         "lever nor a risk. The bridge should assume no RE-driven "
         "uplift or downside."
     ),
     # Regulatory
     "RED": (
-        "Regulatory composite is RED — exposure materially impacts "
+        "Regulatory composite is RED: exposure materially impacts "
         "the thesis. Counterfactual Advisor should already be "
         "quoting the offer-shape modification that flips this "
         "finding. If not, add it as a walkaway condition."
     ),
     "YELLOW": (
-        "Regulatory composite is YELLOW — manageable but needs to "
+        "Regulatory composite is YELLOW: manageable but needs to "
         "show up in the 100-day plan. Not a walkaway; is a diligence "
         "question for the seller."
     ),
     "GREEN": (
-        "Regulatory composite is GREEN — no material exposure in the "
+        "Regulatory composite is GREEN: no material exposure in the "
         "target's footprint. No bridge adjustment needed."
     ),
     # Cyber
     "CRITICAL": (
-        "Cyber posture is CRITICAL — a Change-Healthcare-class "
+        "Cyber posture is CRITICAL: a Change-Healthcare-class "
         "incident would exceed typical bridge reserves. Add a cyber "
         "BI loss line to the bridge at the modeled dollar exposure."
     ),
     "HIGH": (
-        "Elevated findings — typically means Stark overlap or comp "
+        "Elevated findings: typically means Stark overlap or comp "
         "above FMV on the top 10% of providers. Earnout design "
         "should include Stark-compliance reps."
     ),
@@ -269,7 +269,7 @@ _TIER_EXPLAINER = {
         "defensible without restructuring."
     ),
     "UNKNOWN": (
-        "Panel not yet populated — supply inputs on Deal Profile to "
+        "Panel not yet populated: supply inputs on Deal Profile to "
         "run this diligence engine."
     ),
 }
@@ -283,7 +283,7 @@ def _explain_for(band_or_tier: str) -> Optional[str]:
 
 def _not_supplied(reason: str) -> str:
     return (
-        f'<p class="ck-eyebrow"><em>Not supplied — {html.escape(reason)}</em></p>'
+        f'<p class="ck-eyebrow"><em>Not supplied: {html.escape(reason)}</em></p>'
     )
 
 
@@ -362,10 +362,10 @@ def _panel_bankruptcy_survivor(inp: WorkbenchInput) -> str:
         ),
         "GREEN": (
             "None of the 12 named failure patterns match. Pre-NDA screen "
-            "clears — proceed to full diligence."
+            "clears: proceed to full diligence."
         ),
     }.get(scan.verdict.value.upper(),
-          "Verdict pending — supply more scan inputs on Deal Profile.")
+          "Verdict pending: supply more scan inputs on Deal Profile.")
     return _panel(
         "Bankruptcy-Survivor Scan", body,
         badge=_badge("SCAN", scan.verdict.value),
@@ -641,12 +641,12 @@ def _panel_physician_comp(inp: WorkbenchInput) -> str:
     if attrition is not None and attrition.critical_count > 0:
         attr_explain = (
             f" · {attrition.critical_count} CRITICAL flight-risk "
-            f"providers — cannot close without retention bonds on "
+            f"providers: cannot close without retention bonds on "
             f"the named CRITICAL set."
         )
     elif attrition is not None and attrition.high_count > 0:
         attr_explain = (
-            f" · {attrition.high_count} HIGH flight-risk providers — "
+            f" · {attrition.high_count} HIGH flight-risk providers: "
             f"earn-out must include retention milestones."
         )
     return _panel(
@@ -720,8 +720,8 @@ def _panel_cyber(inp: WorkbenchInput) -> str:
         ))
     cyber_explainer = {
         "RED": (
-            "Cyber posture is RED. Change-Healthcare-class exposure "
-            "— model the BI loss as a bridge reserve line, not a "
+            "Cyber posture is RED. Treat Change-Healthcare-class exposure "
+            "as a BI-loss bridge reserve line, not a "
             "background risk. A single 30-day incident can exceed the "
             "entire year's EBITDA."
         ),
@@ -763,7 +763,7 @@ def _panel_ma_dynamics(inp: WorkbenchInput) -> str:
         total_ma = inp.total_ma_revenue_usd or 1.0
         pct_impact = abs(rev_impact) / total_ma if total_ma > 0 else 0.0
         if pct_impact <= 0.01:
-            rev_peer = "< 1% — immaterial"
+            rev_peer = "< 1%: immaterial"
         elif pct_impact <= 0.03:
             rev_peer = "1-3% · peer norm"
         elif pct_impact <= 0.05:
@@ -821,7 +821,7 @@ def _panel_ma_dynamics(inp: WorkbenchInput) -> str:
             "headwind but not a thesis killer."
         ),
         "GREEN": (
-            "No material V28 exposure — target's Medicare mix is "
+            "No material V28 exposure: target's Medicare mix is "
             "low or coding already conservative."
         ),
     }.get(band, _explain_for(band))
@@ -1299,11 +1299,11 @@ def render_risk_workbench(
                 '<p class="ck-section-body" style="margin-top:-8px;'
                 'margin-bottom:12px;font-style:italic;'
                 'color:var(--sc-text-faint,#6e7787);font-size:12px;">'
-                'Tier 1 — existential risks that kill deals at IC '
+                'Tier 1: existential risks that kill deals at IC '
                 '(bankruptcy, covenants, payer concentration). '
-                'Tier 2 — material risks that erode EBITDA (physician '
+                'Tier 2: material risks that erode EBITDA (physician '
                 'attrition, denial rate, regulatory). '
-                'Tier 3 — slow-burn risks that surface in year three '
+                'Tier 3: slow-burn risks that surface in year three '
                 '(management bench, IT debt, integration drag).'
                 '</p>'
             )
@@ -1322,7 +1322,7 @@ def render_risk_workbench(
     body = body + ck_page_actions()
     return chartis_shell(
         data_required_panel(P, title="Risk Workbench", needed=[("risk","risk / regulatory item"),("category","tier 1-3 / cyber / labor / quality"),("likelihood","high / med / low"),("impact","high / med / low"),("owner","owner"),("mitigation","mitigation")], template="risk_register_template.csv", request_from="Deal team / risk owners", activates="the nine-panel risk panorama from your deal's real risk inputs")
-        + body, "RCM Diligence — Risk Workbench",
+        + body, "RCM Diligence · Risk Workbench",
         subtitle="Tier 1-3 + Counterfactual Advisor",
     )
 
