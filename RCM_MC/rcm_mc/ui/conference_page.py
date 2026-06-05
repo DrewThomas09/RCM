@@ -543,7 +543,7 @@ def render_conference_roadmap(category: str = "all") -> str:
     next_up = ck_next_section(
         "Open the deal sourcing surface",
         "/source",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="sourcing",
     )
     from .conference_recaps import CONFERENCE_RECAPS
@@ -569,9 +569,9 @@ def render_conference_roadmap(category: str = "all") -> str:
         '<p class="ck-cr-explainer">'
         '<em>What happened at the big events — and what it means.</em> '
         "Curated, sourced recaps of the major healthcare conferences (JPM, "
-        "HLTH, HIMSS, HFMA, Becker&rsquo;s, McGuireWoods HCPE, AHA, ViVE) — "
-        "themes, notable announcements, market impact, and the diligence read "
-        "— above the forward calendar of what&rsquo;s next. Every recap is "
+        "HLTH, HIMSS, HFMA, Becker&rsquo;s, McGuireWoods HCPE, AHA, ViVE): "
+        "themes, notable announcements, market impact, and the diligence read, "
+        "above the forward calendar of what&rsquo;s next. Every recap is "
         "source-linked and refreshed as events conclude."
         '</p>'
     )

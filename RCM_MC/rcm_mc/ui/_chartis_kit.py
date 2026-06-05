@@ -9861,7 +9861,7 @@ _SHORTCUTS_HTML = """
         <h3>Navigation</h3>
         <dl>
           <dt><kbd>⌘</kbd><kbd>K</kbd> &middot; <kbd>Ctrl</kbd><kbd>K</kbd></dt>
-            <dd>Open command palette &mdash; jump to any tool</dd>
+            <dd>Open command palette to jump to any tool</dd>
           <dt><kbd>Enter</kbd></dt>
             <dd>In palette: open the first matching tool</dd>
           <dt><kbd>Esc</kbd></dt>
@@ -9898,9 +9898,9 @@ _SHORTCUTS_HTML = """
           <dt><kbd>/</kbd></dt>
             <dd>Focus the topbar search field</dd>
           <dt><kbd>T</kbd></dt>
-            <dd>Open <em>The Atlas</em> &mdash; the editorial tour</dd>
+            <dd>Open <em>The Atlas</em>, the editorial tour</dd>
           <dt><kbd>Shift</kbd><kbd>Q</kbd></dt>
-            <dd>Quick capture &mdash; jot a diligence question
+            <dd>Quick capture to jot a diligence question
                 without leaving the page</dd>
         </dl>
       </section>
