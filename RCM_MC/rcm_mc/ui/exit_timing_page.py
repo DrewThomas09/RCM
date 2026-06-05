@@ -374,7 +374,7 @@ def _recommendation_block(rec: Optional[ExitRecommendation]) -> str:
         source="equity_proceeds × close_certainty",
         formula="(terminal_EV - remaining_debt) × buyer.close_certainty",
         detail=(
-            "Expected-value proceeds — adjusts for the probability "
+            "Expected-value proceeds: adjusts for the probability "
             "the bid actually clears. Strategic 75% · PE secondary "
             "85% · IPO 55%."
         ),
@@ -415,7 +415,7 @@ def _recommendation_block(rec: Optional[ExitRecommendation]) -> str:
             sub="vs 15% peer base · 20% strong",
             help={
                 "definition": (
-                    "Internal rate of return — annualized return that "
+                    "Internal rate of return: annualized return that "
                     "discounts the cash flows back to the entry equity. "
                     "Sensitive to hold period; shorter holds with same MOIC "
                     "produce higher IRR."
@@ -649,7 +649,7 @@ def _landing() -> str:
                 "When does the deal pay you to leave? Given a Deal MC scenario "
                 "(equity + debt + EBITDA trajectory), this scores an IRR/MOIC "
                 "curve across candidate exit years 2–7 and ranks each buyer "
-                "channel — strategic, PE secondary, IPO, sponsor-hold — by fit, "
+                "channel (strategic, PE secondary, IPO, sponsor-hold) by fit, "
                 "pairing the highest probability-weighted IRR with the buyer "
                 "most likely to close."
             ),
@@ -657,7 +657,7 @@ def _landing() -> str:
         + form
         + '</div>'
     )
-    return chartis_shell(body, "RCM Diligence — Exit Timing")
+    return chartis_shell(body, "RCM Diligence · Exit Timing")
 
 
 def render_exit_timing_page(
@@ -798,7 +798,7 @@ def render_exit_timing_page(
         f'(annualized return, left axis); amber dashed is '
         f'<strong style="color:{P["warning"]};">MOIC</strong> '
         f'(absolute multiple, right axis). The peak of the IRR curve '
-        f'is the fund-optimal exit year — holding past it adds MOIC '
+        f'is the fund-optimal exit year: holding past it adds MOIC '
         f'but destroys IRR. Hover any point for the exact values.'
         + (f'<br/><br/><strong style="color:{P["text"]};">Implication: '
            f'</strong>{html.escape(curve_narrative)}'
@@ -856,7 +856,7 @@ def render_exit_timing_page(
         f'Each vertex is a buyer channel (strategic / PE secondary / '
         f'IPO / sponsor-hold). Outer ring is 100/100 fit. Filled '
         f'polygon area shows where the target scores across all four '
-        f'channels — wider polygon = more optionality. '
+        f'channels: wider polygon = more optionality. '
         f'{radar_narrative}'
         f'</div>'
         f'{_score_band_legend()}'
@@ -869,7 +869,7 @@ def render_exit_timing_page(
         + '<div class="et-wrap">'
         + deal_context_bar(qs, active_surface="exit_timing")
         + ck_source_purpose(
-            purpose="Model the optimal exit window — weigh hold-value growth against multiple/market timing — to inform the hold-vs-sell decision.",
+            purpose="Model the optimal exit window (weigh hold-value growth against multiple/market timing) to inform the hold-vs-sell decision.",
             universe="user-deals",
             confidence="derived",
             source="Your entered deal economics + hold assumptions × modeled exit scenarios; a planning model, not a market forecast.",
@@ -881,11 +881,11 @@ def render_exit_timing_page(
             name="exit_timing_report",
         )
         + '<div class="et-section-label">'
-          'IRR × MOIC curve — across candidate exit years'
+          'IRR × MOIC curve · across candidate exit years'
         + '</div>'
         + curve_panel
         + '<div class="et-section-label">'
-          'Buyer-type fit — which channel clears the bid'
+          'Buyer-type fit: which channel clears the bid'
         + '</div>'
         + radar_panel
         + '<div class="et-section-label">Per-buyer playbook</div>'
@@ -903,4 +903,4 @@ def render_exit_timing_page(
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(body, f"Exit Timing — {target_name}")
+    return chartis_shell(body, f"Exit Timing · {target_name}")
