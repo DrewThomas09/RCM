@@ -44,7 +44,7 @@ def _scenario_moic_bars(results: List[Dict[str, Any]]) -> str:
         out += ck_bar_row(name, f"{moic:.2f}x", moic / best * 100.0, tone=tone)
     return ck_panel(
         '<p class="ck-section-body" style="margin:0 0 8px;">'
-        "Equity MOIC by scenario — bar is share of the strongest case.</p>"
+        "Equity MOIC by scenario: bar is share of the strongest case.</p>"
         + out,
         title="Scenario Returns · MOIC at a glance",
     )
@@ -407,7 +407,7 @@ def render_scenario_modeler(
             '<label class="sm-scenario-opt">'
             f'<input type="checkbox" name="s" value="{sc["id"]}" {checked}> '
             f'{_html.escape(sc["name"])}'
-            f'<span class="sm-scenario-desc">— {_html.escape(sc["description"][:50])}</span>'
+            f'<span class="sm-scenario-desc">· {_html.escape(sc["description"][:50])}</span>'
             f'</label>'
         )
 
@@ -430,7 +430,7 @@ def render_scenario_modeler(
     intro = ck_editorial_head(
         eyebrow=f"SCENARIO MODELER · CCN {_html.escape(ccn)}",
         title=(
-            f"Scenarios — {_html.escape(name)}"
+            f"Scenarios · {_html.escape(name)}"
         ),
         meta=(
             f"{len(selected)} SCENARIO"
@@ -454,7 +454,7 @@ def render_scenario_modeler(
             "Net Revenue", _fm(rev),
             help={
                 "definition": (
-                    "Pre-shock NPR — the baseline against which every "
+                    "Pre-shock NPR: the baseline against which every "
                     "scenario in the comparison table is differenced. "
                     "Each column shows how the scenario moves this "
                     "number under its assumed shocks."
@@ -477,7 +477,7 @@ def render_scenario_modeler(
                 "definition": (
                     "Operating margin at baseline (EBITDA / NPR). "
                     "Bank covenants test margins around base; the "
-                    "scenarios compress this number — partners read "
+                    "scenarios compress this number: partners read "
                     "the column with the lowest margin as the "
                     "covenant-stress case."
                 ),
@@ -490,7 +490,7 @@ def render_scenario_modeler(
                 "definition": (
                     "Share of inpatient days paid by Medicare. "
                     "Drives sensitivity to CMS rate updates and to "
-                    "the regulatory-calendar scenarios — higher "
+                    "the regulatory-calendar scenarios: higher "
                     "Medicare = more exposure to federal reimbursement "
                     "changes."
                 ),
@@ -666,7 +666,7 @@ padding:4px 0;cursor:pointer;}
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        f"Scenario Modeler — {_html.escape(name)}",
+        f"Scenario Modeler · {_html.escape(name)}",
         subtitle=(
             f"CCN {_html.escape(ccn)} | {len(results)} scenarios | "
             f"Best: {best['scenario']['name']} ({best['irr']:.0%} IRR, {best['moic']:.1f}x MOIC)"

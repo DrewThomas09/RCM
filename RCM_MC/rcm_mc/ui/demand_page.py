@@ -176,7 +176,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
             help={
                 "definition": (
                     "How hard it is for patients to switch to a "
-                    "competitor — proximity, network ties, surgeon "
+                    "competitor: proximity, network ties, surgeon "
                     "loyalty, payer-network exclusivity. Above 70 "
                     "= moat-like; below 40 = patients churn easily "
                     "and the hospital must compete on price/service."
@@ -189,9 +189,9 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
                 "definition": (
                     "How patient demand responds to price changes. "
                     "Negative + close to 0 = inelastic (people need "
-                    "the care regardless of price — usually acute "
+                    "the care regardless of price: usually acute "
                     "or specialty); large negative = elastic (people "
-                    "shop or delay care — common in elective "
+                    "shop or delay care: common in elective "
                     "outpatient)."
                 ),
             },
@@ -261,7 +261,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         ) if _prev_chart else ""
     prevalence_section = (
         f'<div class="cad-card">'
-        f'<h2>County Disease Prevalence — {county}, {state}</h2>'
+        f'<h2>County Disease Prevalence · {county}, {state}</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
         f'Medicare chronic condition rates in this hospital\'s county vs national average. '
         f'Higher prevalence = more inpatient demand. Acuity weight reflects revenue intensity.</p>'
@@ -411,7 +411,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="DEMAND ANALYSIS",
-        title=f"Demand analysis — {name}",
+        title=f"Demand analysis · {name}",
         meta=(
             f"{county.upper()}, {state.upper()} · "
             f"DENSITY {density:.0f} · "
@@ -425,7 +425,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
             "Per-hospital catchment demand: disease density "
             "in the population, switching cost (stickiness), "
             "and price elasticity. Structural demand is the "
-            "moat — hospitals with high stickiness and "
+            "moat: hospitals with high stickiness and "
             "inelastic pricing carry their own margin floor."
         ),
     )
@@ -436,7 +436,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Demand Analysis — {name}",
+        body, f"Demand Analysis · {name}",
         active_nav="/market-data/map",
         subtitle=f"{county}, {state} | Density: {density:.0f} | Stickiness: {stickiness:.0f} | Elasticity: {elasticity:.2f}",
     )

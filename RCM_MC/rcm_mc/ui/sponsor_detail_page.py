@@ -216,7 +216,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         purpose="Compute a sponsor's realized track record (median MOIC, win rate, sectors, vintages) vs the corpus to sanity-check a pitched base case.",
         universe="corpus",
         confidence="illustrative",
-        source="Built from the platform deal corpus — real deals with returns modeled where not publicly disclosed, not a verified live-fund record. Directional context, not attribution.",
+        source="Built from the platform deal corpus: real deals with returns modeled where not publicly disclosed, not a verified live-fund record. Directional context, not attribution.",
         next_action="Compare the sponsor's deals on Comparable Outcomes",
         next_href="/diligence/comparable-outcomes",
     )
@@ -268,7 +268,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                     f'{len(records)} sponsors in the corpus). The '
                     f'detail view shows their realized MOIC '
                     f'distribution, vintage activity, sector '
-                    f'specialization, and per-deal outcomes — '
+                    f'specialization, and per-deal outcomes: '
                     f'enough to gut-check whether their pitched '
                     f'base case is realistic.</p>'
                     f'<p style="margin:0;font-size:12px;color:#7a8699;">'
@@ -313,7 +313,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                         f'in the corpus:</p>'
                         + (suggestions or
                            '<p style="font-style:italic;color:#9b9382;">'
-                           '(none — try a different spelling)</p>')
+                           '(none, try a different spelling)</p>')
                     )
                 )
             )
@@ -365,7 +365,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                 if rec.median_hold_years else "")
         + _stat("Consistency score",
                 f"{rec.consistency_score:.0f}",
-                "0-100 — higher = predictable")
+                "0-100: higher = predictable")
         + '</div>'
     )
 
@@ -482,7 +482,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
             help={
                 "definition": (
                     "Closed/exited deals from this sponsor in the "
-                    "corpus — not their full track record, but the "
+                    "corpus: not their full track record, but the "
                     "subset where realized MOIC + hold-period data "
                     "is available. Use this count to weight the "
                     "median MOIC: thin counts swing on a single exit."
@@ -512,7 +512,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
             f'<p style="margin:0 0 8px;font-size:12px;color:#465366;">'
             f'{len(_vdeals)} real, source-linked deal'
             f'{"s" if len(_vdeals) != 1 else ""} for '
-            f'{_html.escape(matched_name)} — the source-linked counterweight to '
+            f'{_html.escape(matched_name)}: the source-linked counterweight to '
             'the modeled corpus stats above.</p>'
             f'<ul style="margin:0;padding-left:18px;">{_v_rows}</ul>'
             '<p style="margin:10px 0 0;"><a href="/verified-deals?sponsor='
@@ -524,7 +524,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
         _v_inner = (
             '<p style="margin:0;font-size:12.5px;color:#7a8699;">'
             f'No verified deals for {_html.escape(matched_name)} in the source-linked '
-            'set yet — so the financials above are <em>modeled from the deal '
+            'set yet: so the financials above are <em>modeled from the deal '
             "corpus</em>, not this sponsor's verified record. See the "
             f'<a href="/verified-deals" style="color:var(--sc-navy);">'
             f'{verified_deal_count()} verified deals</a> we have sourced so far.</p>'
