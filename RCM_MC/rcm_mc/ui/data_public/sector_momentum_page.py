@@ -108,7 +108,7 @@ def _momentum_bar_svg(sectors_data: list, w: int = 280, item_h: int = 20) -> str
         parts.append(f'<rect x="{pad_l}" y="{y+6}" width="{rw}" height="{item_h-12}" fill="{col}"/>')
 
         # labels
-        parts.append(f'<text x="{pad_l+max(rw,pw)+4}" y="{y+item_h//2+4}" fill="{col}" font-size="8" font-family="{_MONO}" font-variant-numeric="tabular-nums">{d["recent"]}/{d["prior"]}</text>')
+        parts.append(f'<text x="{pad_l+max(rw,pw)+4}" y="{y+item_h//2+4}" fill="{col}" font-size="9" font-family="{_MONO}" font-variant-numeric="tabular-nums">{d["recent"]}/{d["prior"]}</text>')
 
     return f'<svg width="{w}" height="{total_h}">{"".join(parts)}</svg>'
 

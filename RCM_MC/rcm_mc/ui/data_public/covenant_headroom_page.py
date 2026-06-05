@@ -153,7 +153,7 @@ def _amort_table(items) -> str:
 def _stress_svg(stress) -> str:
     if not stress: return ""
     w, h = 560, 220
-    pad_l, pad_r, pad_t, pad_b = 50, 20, 30, 70
+    pad_l, pad_r, pad_t, pad_b = 50, 20, 20, 70
     inner_w = w - pad_l - pad_r
     inner_h = h - pad_t - pad_b
     max_v = max(s.projected_leverage for s in stress) or 1
@@ -173,12 +173,19 @@ def _stress_svg(stress) -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.85"/>'
             f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{color}" font-size="10" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:700">{s.projected_leverage:.2f}x</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(s.scenario if len(s.scenario) <= 18 else s.scenario[:17] + "…")}</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="8" text-anchor="middle" font-family="JetBrains Mono,monospace">{s.ebitda_delta_pct * 100:+.0f}% EBITDA</text>'
+            # Axis label: drop the "(…% EBITDA)" parenthetical — it duplicated
+            # the delta sub-label below and forced an ellipsis truncation
+            # ("Base Case (no sho…"). The short names fit, so lift the font
+            # off the 8px legibility floor.
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 15}" fill="{text_dim}" font-size="9.5" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape((s.scenario.split(" (")[0])[:16])}</text>'
+            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 28}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{s.ebitda_delta_pct * 100:+.0f}% EBITDA</text>'
         )
     return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
             f'<rect width="{w}" height="{h}" fill="{bg}"/>{"".join(bars)}'
-            f'<text x="10" y="15" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">Stress-Test Leverage vs Covenant (6.25x max)</text></svg>')
+            # No in-chart title: it duplicated the panel header
+            # ("STRESS-TEST LEVERAGE VS COVENANT") and the covenant line is
+            # already labelled "covenant 6.25x".
+            f'</svg>')
 
 
 def render_covenant_headroom(params: dict = None) -> str:
