@@ -132,7 +132,7 @@ CONFERENCES = [
         "category": "Policy",
         "tier": "major",
         "description": (
-            "American Hospital Association annual gathering. Policy-focused — "
+            "American Hospital Association annual gathering. Policy-focused: "
             "Medicare/Medicaid reimbursement outlook, regulatory priorities, "
             "workforce challenges. Essential for understanding policy headwinds."
         ),
@@ -361,7 +361,7 @@ def _render_recaps() -> str:
     cards = ""
     for r in CONFERENCE_RECAPS:
         themes = "".join(
-            f'<li><b>{_html.escape(t)}</b> — {_html.escape(d)}</li>'
+            f'<li><b>{_html.escape(t)}</b>: {_html.escape(d)}</li>'
             for t, d in r["themes"]
         )
         anns = "".join(f'<li>{_html.escape(a)}</li>' for a in r["announcements"])
@@ -390,7 +390,7 @@ def _render_recaps() -> str:
             '</div>'
         )
     recaps = (
-        '<div class="cr-section-label">What happened — conference recaps</div>'
+        '<div class="cr-section-label">What happened: conference recaps</div>'
         f'{cards}'
     )
     return macro + recaps
@@ -446,7 +446,7 @@ def render_conference_roadmap(category: str = "all") -> str:
 
             date_display = date
             if end and end != date:
-                date_display = f"{date} — {end}"
+                date_display = f"{date}–{end}"
 
             cards += (
                 f'<div class="cad-card" style="margin-bottom:8px;padding:16px;">'
@@ -517,7 +517,7 @@ def render_conference_roadmap(category: str = "all") -> str:
                     "deal sourcing: J.P. Morgan Healthcare (January), "
                     "HLTH (October), Becker's HRC. Missing a flagship "
                     "year-over-year is the single biggest sourcing "
-                    "self-own — book travel + meeting slots 6-8 "
+                    "self-own: book travel + meeting slots 6-8 "
                     "weeks ahead."
                 ),
             },
@@ -534,9 +534,9 @@ def render_conference_roadmap(category: str = "all") -> str:
         f'<ul style="font-size:12px;color:var(--cad-text2);line-height:1.8;padding-left:16px;">'
         f'<li>Book J.P. Morgan meetings 6-8 weeks in advance</li>'
         f'<li>HFMA is best for RCM benchmarking conversations</li>'
-        f'<li>CMS IPPS rule release directly impacts financial models — schedule review within 48h</li>'
+        f'<li>CMS IPPS rule release directly impacts financial models: schedule review within 48h</li>'
         f'<li>HPEA Summit is highest-value per-hour for GP networking</li>'
-        f'<li>Becker\'s attracts hospital CFOs — ideal for management reference checks</li>'
+        f'<li>Becker\'s attracts hospital CFOs: ideal for management reference checks</li>'
         f'</ul></div>'
     )
 
@@ -552,7 +552,7 @@ def render_conference_roadmap(category: str = "all") -> str:
     # category-filtered view drops the recaps and focuses the roadmap.
     recaps_html = _render_recaps() if category == "all" else ""
     calendar_html = (
-        '<div class="cr-section-label">Conference Roadmap — what&rsquo;s next</div>'
+        '<div class="cr-section-label">Conference Roadmap · what&rsquo;s next</div>'
         f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">{cat_tabs}</div>'
         f'<div style="display:grid;grid-template-columns:1fr 300px;gap:16px;">'
         f'<div>{timeline_html}</div>'
@@ -567,7 +567,7 @@ def render_conference_roadmap(category: str = "all") -> str:
     )
     explainer_html = (
         '<p class="ck-cr-explainer">'
-        '<em>What happened at the big events — and what it means.</em> '
+        '<em>What happened at the big events, and what it means.</em> '
         "Curated, sourced recaps of the major healthcare conferences (JPM, "
         "HLTH, HIMSS, HFMA, Becker&rsquo;s, McGuireWoods HCPE, AHA, ViVE): "
         "themes, notable announcements, market impact, and the diligence read, "
