@@ -249,7 +249,7 @@ def keyboard_shortcuts(
         f'padding:2px 8px;border-radius:4px;font-family:'
         f'monospace;font-size:11px;border:1px solid var(--muted);">'
         f'{_html.escape(binding)}</kbd></td>'
-        f'<td style="padding:6px 14px;color:var(--border);'
+        f'<td style="padding:6px 14px;color:var(--ink);'
         f'font-size:13px;">{_html.escape(label)}</td>'
         f'</tr>' for binding, label, _ in all_shortcuts
     ])

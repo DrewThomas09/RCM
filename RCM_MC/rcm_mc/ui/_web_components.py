@@ -35,8 +35,8 @@ def web_styles() -> str:
     return """<style>
 /* ── Web UI baseline: typography, spacing, responsive ─────────── */
 .wc-container { max-width: 1100px; margin: 0 auto; padding: 24px 20px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                 Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-family: var(--sc-sans, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif);
     color: #1a2332; line-height: 1.5; font-size: 14px; }
 .wc-container h1 { font-size: 24px; margin: 0; font-weight: 600;
     letter-spacing: -0.01em; color: #1a2332; }

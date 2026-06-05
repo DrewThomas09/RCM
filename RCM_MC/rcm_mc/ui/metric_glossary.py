@@ -506,7 +506,7 @@ _TT_CSS = """
 .metric-tt-card h4{margin:0 0 6px 0;font-size:12px;
   color:var(--blue-soft);text-transform:uppercase;
   letter-spacing:0.06em;font-weight:600;}
-.metric-tt-card p{margin:0 0 8px 0;color:var(--border);}
+.metric-tt-card p{margin:0 0 8px 0;color:var(--muted);}
 .metric-tt-card .tt-section{margin-top:8px;}
 .metric-tt-card .tt-section-label{font-size:10px;
   text-transform:uppercase;letter-spacing:0.06em;
