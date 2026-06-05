@@ -119,13 +119,13 @@ def render_insights_page(db_path: str) -> str:
         kind_chip = (
             f'<span style="display:inline-block;padding:1px 8px;'
             f'background:rgba(0,0,0,0.05);color:{fg};border-radius:9999px;'
-            f'font-size:10px;font-family:monospace;'
+            f'font-size:10px;font-family:var(--sc-mono,monospace);'
             f'text-transform:uppercase;letter-spacing:0.05em;">'
             f'{_html.escape(kind)}</span>'
         )
         score_chip = (
             f'<span style="font-size:10px;color:{fg};opacity:0.65;'
-            f'font-variant-numeric:tabular-nums;font-family:monospace;">'
+            f'font-variant-numeric:tabular-nums;font-family:var(--sc-mono,monospace);">'
             f'priority {int(ins.get("score", 0))}</span>'
         )
 

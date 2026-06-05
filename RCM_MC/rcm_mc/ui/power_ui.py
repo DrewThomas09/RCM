@@ -143,11 +143,14 @@ def interpret_callout(
     }
     border = tone_colors.get(tone, tone_colors["info"])
     return (
+        # color was var(--border) (a rule colour) and the title var(--bg-tint)
+        # (a background tint) — both rendered near-invisible light-on-light on
+        # the editorial theme (~1.1 contrast). Use readable ink/muted text.
         f'<div style="background:var(--bg);padding:12px 16px;'
         f'border-left:3px solid {border};border-radius:0 3px 3px 0;'
-        f'font-size:12.5px;color:var(--border);line-height:1.65;'
+        f'font-size:12.5px;color:var(--muted,#465366);line-height:1.65;'
         f'max-width:900px;margin-top:12px;">'
-        f'<strong style="color:var(--bg-tint);">'
+        f'<strong style="color:var(--ink,#1a2332);">'
         f'{html.escape(title)}</strong> '
         f'<span>{body}</span>'
         f'</div>'
@@ -357,7 +360,7 @@ def deal_context_bar(
         f'border-bottom:1px solid var(--border);padding:8px 16px;'
         f'margin:0 -24px 18px -24px;'
         f'display:flex;flex-wrap:wrap;gap:10px;align-items:center;'
-        f'font-family:\'Helvetica Neue\',Arial,sans-serif;">'
+        f'font-family:var(--sc-sans,\'Helvetica Neue\',Arial,sans-serif);">'
         f'<div style="display:flex;align-items:baseline;gap:8px;'
         f'font-size:12px;color:var(--muted);">'
         f'<span style="font-size:10px;letter-spacing:1.4px;'

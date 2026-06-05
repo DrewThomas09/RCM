@@ -65,13 +65,13 @@ def _landing_form_style() -> str:
     return """<style>
 .bsv-landing .form-field{display:block;margin:10pt 0 4pt 0;font-size:10pt;
    color:#6b5d3c;letter-spacing:.5pt;text-transform:uppercase;
-   font-family:'Helvetica Neue',Arial,sans-serif;}
+   font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .bsv-landing input,.bsv-landing select{width:100%;padding:6pt 8pt;
    font-size:11pt;border:1px solid #c9b98a;font-family:inherit;}
 .bsv-landing button{margin-top:14pt;padding:8pt 20pt;background:#0b2341;
    color:#fff;border:0;font-size:11pt;letter-spacing:.5pt;
    text-transform:uppercase;cursor:pointer;
-   font-family:'Helvetica Neue',Arial,sans-serif;}
+   font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 </style>"""
 
 
@@ -84,18 +84,18 @@ h1{font-size:22pt;margin:0 0 6pt 0;color:#0b2341;font-weight:700;}
 h2{font-size:14pt;margin:18pt 0 4pt 0;color:#0b2341;
    border-bottom:1px solid #c9b98a;padding-bottom:2pt;}
 .eyebrow{font-size:9pt;letter-spacing:1.5pt;text-transform:uppercase;
-   color:#6b5d3c;font-family:'Helvetica Neue',Arial,sans-serif;}
+   color:#6b5d3c;font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .verdict{border:2pt solid;padding:10pt 14pt;margin:10pt 0 14pt 0;
    background:#f8f6f0;}
 .verdict-band{font-size:11pt;font-weight:700;letter-spacing:1.5pt;
-   text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;}
+   text-transform:uppercase;font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .verdict-copy{font-size:11pt;color:#1a1a1a;margin-top:4pt;}
 table.checks{width:100%;border-collapse:collapse;font-size:10pt;
    margin:6pt 0 10pt 0;}
 table.checks th{text-align:left;padding:4pt 6pt;
    border-bottom:1pt solid #0b2341;font-size:9pt;letter-spacing:.5pt;
    text-transform:uppercase;color:#6b5d3c;
-   font-family:'Helvetica Neue',Arial,sans-serif;font-weight:700;}
+   font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);font-weight:700;}
 table.checks td{padding:4pt 6pt;border-bottom:1px solid #e6dfca;}
 .sev-CRITICAL{color:#8a1e1e;font-weight:700;}
 .sev-HIGH{color:#b23a2d;font-weight:700;}
@@ -106,7 +106,7 @@ table.checks td{padding:4pt 6pt;border-bottom:1px solid #e6dfca;}
 ul{margin:6pt 0 10pt 0;padding-left:20pt;}
 li{margin:3pt 0;}
 .caveat{font-size:8pt;color:#6b5d3c;margin-top:24pt;padding-top:6pt;
-   border-top:1px solid #c9b98a;font-family:'Helvetica Neue',Arial,sans-serif;}
+   border-top:1px solid #c9b98a;font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .form-field{display:block;margin:10pt 0 4pt 0;font-size:10pt;
    color:#6b5d3c;letter-spacing:.5pt;text-transform:uppercase;}
 input,select{width:100%;padding:6pt 8pt;font-size:11pt;

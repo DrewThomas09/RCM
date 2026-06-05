@@ -813,7 +813,7 @@ margin-top:6px;line-height:1.6;}
 .ic-reg-block thead tr{background:#ece5d6;}
 .ic-reg-block th{padding:6px 10px;text-align:left;border-bottom:2px solid #d6cfc0;}
 .ic-reg-block td{padding:6px 10px;border-bottom:1px solid #e8e0d0;}
-.ic-reg-block td.mono{font-family:monospace;}
+.ic-reg-block td.mono{font-family:var(--sc-mono,monospace);}
 .ic-reg-block td.tone-killed{color:#b5321e;font-weight:600;}
 .ic-reg-block td.tone-damaged{color:#b8732a;font-weight:600;}
 .ic-reg-block td.delta-neg{color:#b5321e;}

@@ -47,7 +47,7 @@ color:var(--sc-text-dim);max-width:68ch;margin:var(--sc-s-4) 0 var(--sc-s-6);}
 
 def _scoped_styles() -> str:
     css = """
-.pa-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.pa-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .pa-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .pa-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;

@@ -116,7 +116,7 @@ def _bc_head(
 
 def _scoped_styles() -> str:
     css = """
-.bc-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.bc-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .bc-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .bc-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
@@ -193,7 +193,7 @@ font-family:var(--sc-serif,Georgia,serif);}}
 .bc-copy-btn{{display:inline-block;padding:6px 12px;background:{ac};
 color:#fff;border:0;border-radius:3px;font-size:10.5px;letter-spacing:1.2px;
 text-transform:uppercase;font-weight:700;cursor:pointer;margin-top:8px;
-font-family:"Helvetica Neue",Arial,sans-serif;}}
+font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .bc-copy-btn:hover{{filter:brightness(1.15);}}
 """.format(
         tx=P["text"], td=P["text_dim"], tf=P["text_faint"],

@@ -489,7 +489,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             f'<a href="/deal/{_html.escape(deal_id)}" '
             f'style="color:var(--sc-navy);font-weight:500;text-decoration:none;">'
             f'{_html.escape(d["name"])}</a>'
-            f'<div style="font-family:monospace;font-size:10px;'
+            f'<div style="font-family:var(--sc-mono,monospace);font-size:10px;'
             f'color:#7a8699;margin-top:2px;text-transform:uppercase;">'
             f'{_html.escape(deal_id)}</div>'
         )

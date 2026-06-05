@@ -796,7 +796,7 @@ def _market_context_block(
                 f'<tr><td style="padding:4px 8px;">{ticker}</td>'
                 f'<td style="padding:4px 8px;color:{P["text_dim"]};">'
                 f'{name}</td>'
-                f'<td style="padding:4px 8px;font-family:monospace;'
+                f'<td style="padding:4px 8px;font-family:var(--sc-mono,monospace);'
                 f'text-align:right;">{mult_str}</td></tr>'
             )
         if peer_rows:

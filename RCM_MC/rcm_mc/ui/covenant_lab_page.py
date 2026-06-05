@@ -216,7 +216,7 @@ _BLENDED_RATE_PEER_MEDIAN = 0.085
 
 def _scoped_styles() -> str:
     css = """
-.cl-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.cl-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .cl-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .cl-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;

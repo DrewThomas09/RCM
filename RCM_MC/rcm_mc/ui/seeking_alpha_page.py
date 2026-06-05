@@ -41,7 +41,7 @@ from .power_ui import (
 
 def _scoped_styles() -> str:
     css = """
-.ck-sa-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.ck-sa-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .ck-sa-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .ck-sa-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;

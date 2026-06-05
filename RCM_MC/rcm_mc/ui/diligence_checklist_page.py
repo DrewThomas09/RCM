@@ -41,7 +41,7 @@ from .power_ui import (
 
 def _scoped_styles() -> str:
     css = """
-.dc-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.dc-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .dc-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .dc-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;

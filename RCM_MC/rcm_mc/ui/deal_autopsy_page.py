@@ -79,7 +79,7 @@ def _scoped_styles() -> str:
     live colors from :data:`P`.
     """
     css = """
-.da-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.da-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .da-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .da-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;

@@ -259,7 +259,7 @@ def keyboard_shortcuts(
         '#kbd-leader-ind{position:fixed;bottom:20px;'
         'left:20px;background:var(--paper-pure);border:1px solid '
         'var(--border);border-radius:6px;padding:6px 14px;'
-        'color:var(--teal);font-family:monospace;font-size:12px;'
+        'color:var(--teal);font-family:var(--sc-mono,monospace);font-size:12px;'
         'font-weight:600;display:none;z-index:1000;}'
         '#kbd-help{position:fixed;top:0;left:0;right:0;'
         'bottom:0;background:rgba(0,0,0,0.7);'

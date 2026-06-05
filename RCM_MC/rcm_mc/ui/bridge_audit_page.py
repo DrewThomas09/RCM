@@ -38,7 +38,7 @@ from .power_ui import (
 
 def _scoped_styles() -> str:
     css = """
-.ba-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.ba-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .ba-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .ba-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;

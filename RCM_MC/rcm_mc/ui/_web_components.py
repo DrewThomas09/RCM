@@ -118,14 +118,14 @@ def web_styles() -> str:
 .wc-cmdk-input::placeholder { color: #9b9382; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
     background: #ece5d6; color: #7a8699; border-radius: 3px;
-    font-family: monospace; border: 1px solid #d6cfc0; }
+    font-family:var(--sc-mono,monospace); border: 1px solid #d6cfc0; }
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
     padding: 8px 16px; color: #1a2332; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
     background: #f7f3ea; border-left-color: var(--sc-navy); }
-.wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
+.wc-cmdk-id { font-family:var(--sc-mono,monospace); color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1a2332; }
@@ -141,7 +141,7 @@ def web_styles() -> str:
 .wc-cmdk-footer { display: flex; gap: 16px; padding: 8px 16px;
     border-top: 1px solid #ece5d6; font-size: 11px; color: #7a8699;
     background: #f7f3ea; }
-.wc-cmdk-footer kbd { font-family: monospace; padding: 1px 5px;
+.wc-cmdk-footer kbd { font-family:var(--sc-mono,monospace); padding: 1px 5px;
     background: #fff; color: #465366; border: 1px solid #d6cfc0;
     border-radius: 3px; font-size: 10px; margin: 0 2px; }
 
@@ -403,7 +403,7 @@ def universal_palette_bundle() -> str:
 .wc-cmdk-input::placeholder { color: #9b9382; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
     background: #ece5d6; color: #7a8699; border-radius: 3px;
-    font-family: monospace; border: 1px solid #d6cfc0; }
+    font-family:var(--sc-mono,monospace); border: 1px solid #d6cfc0; }
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0;
     background: #fff; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
@@ -411,7 +411,7 @@ def universal_palette_bundle() -> str:
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
     background: #f7f3ea; border-left-color: var(--sc-navy); }
-.wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
+.wc-cmdk-id { font-family:var(--sc-mono,monospace); color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1a2332; }
@@ -427,7 +427,7 @@ def universal_palette_bundle() -> str:
 .wc-cmdk-footer { display: flex; gap: 16px; padding: 8px 16px;
     border-top: 1px solid #ece5d6; font-size: 11px; color: #7a8699;
     background: #f7f3ea; }
-.wc-cmdk-footer kbd { font-family: monospace; padding: 1px 5px;
+.wc-cmdk-footer kbd { font-family:var(--sc-mono,monospace); padding: 1px 5px;
     background: #fff; color: #465366; border: 1px solid #d6cfc0;
     border-radius: 3px; font-size: 10px; margin: 0 2px; }
 </style>"""

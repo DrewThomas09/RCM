@@ -30,7 +30,7 @@ from .data_public._benchmark_panels import data_required_panel
 
 def _scoped_styles() -> str:
     css = """
-.peu-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.peu-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .peu-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .peu-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;

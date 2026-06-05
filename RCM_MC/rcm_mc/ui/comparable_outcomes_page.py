@@ -232,7 +232,7 @@ def _comparable_row(c: Dict[str, Any]) -> List[str]:
         _name_inner = f'<span style="font-weight:500;color:#1a2332;">{_name_txt}</span>'
     name = (
         f'<div>{_name_inner}'
-        f'<div style="font-family:monospace;font-size:10px;color:#7a8699;'
+        f'<div style="font-family:var(--sc-mono,monospace);font-size:10px;color:#7a8699;'
         f'text-transform:uppercase;margin-top:2px;">'
         f'{_html.escape(c.get("deal_id") or "")}</div></div>'
     )

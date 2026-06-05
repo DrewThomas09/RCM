@@ -185,7 +185,7 @@ def _ps_head(
 
 def _scoped_styles() -> str:
     css = """
-.ps-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.ps-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .ps-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .ps-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
@@ -958,20 +958,20 @@ def _yearly_table(years: List[YearlyNPRImpact]) -> str:
         )
         rows.append(
             f'<tr style="border-bottom:1px solid {P["border"]};">'
-            f'<td style="padding:6px 10px;font-family:monospace;">'
+            f'<td style="padding:6px 10px;font-family:var(--sc-mono,monospace);">'
             f'Y{y.year}</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;'
+            f'<td style="padding:6px 10px;font-family:var(--sc-mono,monospace);'
             f'color:{P["negative"]};">'
             f'${y.p10_npr_delta_usd/1e6:+,.2f}M</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;'
+            f'<td style="padding:6px 10px;font-family:var(--sc-mono,monospace);'
             f'color:{P["text"]};">'
             f'${y.p50_npr_delta_usd/1e6:+,.2f}M</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;'
+            f'<td style="padding:6px 10px;font-family:var(--sc-mono,monospace);'
             f'color:{P["positive"]};">'
             f'${y.p90_npr_delta_usd/1e6:+,.2f}M</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;">'
+            f'<td style="padding:6px 10px;font-family:var(--sc-mono,monospace);">'
             f'${y.median_ebitda_impact_usd/1e6:+,.2f}M</td>'
-            f'<td style="padding:6px 10px;font-family:monospace;'
+            f'<td style="padding:6px 10px;font-family:var(--sc-mono,monospace);'
             f'color:{P["negative"]};">'
             f'${y.p10_ebitda_impact_usd/1e6:+,.2f}M</td>'
             f'</tr>'
