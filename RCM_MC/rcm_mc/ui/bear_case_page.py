@@ -252,7 +252,7 @@ def _verdict_card(
             pct_tone = P["positive"]
             pct_label = "clears IC"
         pct_frame = (
-            f' <strong>({pct_at_risk:.0f}% of run-rate — {pct_label})</strong>'
+            f' <strong>({pct_at_risk:.0f}% of run-rate, {pct_label})</strong>'
         )
         peer_chip = benchmark_chip(
             value=pct_at_risk,
@@ -291,7 +291,7 @@ def _verdict_card(
             help={
                 "definition": (
                     "Aggregated dollar EBITDA exposure across every "
-                    "critical and high bear-case item — not a sum "
+                    "critical and high bear-case item: not a sum "
                     "of independent risks but a probability-"
                     "weighted upper bound on what could be lost if "
                     "the bear thesis plays out. Compare to the "
@@ -334,7 +334,7 @@ def _verdict_card(
             help={
                 "definition": (
                     "Number of platform analytics that contributed "
-                    "evidence to this bear case — covenant lab, "
+                    "evidence to this bear case: covenant lab, "
                     "denial prediction, regulatory calendar, "
                     "bankruptcy scan, etc. More modules = a more "
                     "defensible bear case at IC."
@@ -508,7 +508,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         lede_body=(
             "What could break this thesis? Ranked counter-evidence from "
             "Regulatory Calendar × Covenant Stress × Bridge Audit × Deal MC × "
-            "Deal Autopsy × Exit Timing — with citation keys, per-theme "
+            "Deal Autopsy × Exit Timing: with citation keys, per-theme "
             "narratives, and a print-ready IC-memo drop-in block."
         ),
     )
@@ -521,7 +521,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Bear Case Auto-Generator",
+        body, "RCM Diligence · Bear Case Auto-Generator",
         active_nav="/bear-cases",
         subtitle="Evidence synthesis × 6 source modules",
     )
@@ -591,7 +591,7 @@ def _render_bear_case_no_ccd(
     # 2026-05-28 sweep · strict 5-block head for the no-CCD fastpath.
     fastpath_hero = _bc_head(
         eyebrow="Bear Case · no CCD fixture",
-        title=f"Fast-path bear case — {html.escape(deal_name)}",
+        title=f"Fast-path bear case · {html.escape(deal_name)}",
         meta=(
             f"{len(report.evidence)} EVIDENCE ITEM"
             f"{'S' if len(report.evidence) != 1 else ''} · "
@@ -599,7 +599,7 @@ def _render_bear_case_no_ccd(
             f"{'S' if len(report.sources_active) != 1 else ''} · "
             "STANDALONE MODULES ONLY"
         ),
-        lede_italic_phrase="No claims data — standalone modules only.",
+        lede_italic_phrase="No claims data: standalone modules only.",
         lede_body=(
             f"For the full 7-source bear case supply a dataset "
             f"fixture. Otherwise this rendering uses only the "
@@ -664,7 +664,7 @@ def _render_bear_case_no_ccd(
         + '</div>'
     )
     return chartis_shell(
-        body, f"Bear Case (no CCD) — {deal_name}",
+        body, f"Bear Case (no CCD) · {deal_name}",
         subtitle=(
             f"{report.critical_count} critical · "
             f"${report.combined_ebitda_at_risk_usd/1e6:,.1f}M at risk"
@@ -776,14 +776,14 @@ def render_bear_case_page(
     if not report.evidence:
         clean_hero = ck_section_intro(
             eyebrow="Bear Case Auto-Generator",
-            headline=f"{html.escape(deal_name)} — no thesis-breaking evidence surfaced.",
+            headline=f"{html.escape(deal_name)}: no thesis-breaking evidence surfaced.",
             italic_word="no",
             body=(
                 "Every automated source module (Regulatory Calendar, "
                 "Covenant Stress, Bridge Audit, Deal MC, Autopsy) "
                 "passed screening without flagging material thesis "
                 "risk. Partners should still write a manual "
-                "counter-narrative before IC — auto-screens are not "
+                "counter-narrative before IC: auto-screens are not "
                 "a substitute for partner judgment."
             ),
         )
@@ -792,14 +792,14 @@ def render_bear_case_page(
             + '<div class="bc-wrap">'
             + clean_hero
             + '</div>',
-            f"Bear Case — {deal_name}",
+            f"Bear Case · {deal_name}",
         )
 
     # Build the hero + body
     plain = (
         "The bear case below is auto-synthesized from every source "
         "module that fired in the Thesis Pipeline. Citation keys "
-        "(R1, C1, B1, M1, A1, E1) map to the source module — click "
+        "(R1, C1, B1, M1, A1, E1) map to the source module: click "
         "'Open source →' on any evidence card for the underlying "
         "calculation. Copy the IC-memo block at the bottom directly "
         "into the deck."
@@ -808,7 +808,7 @@ def render_bear_case_page(
     runtime_ms = getattr(pipeline_report, "total_compute_ms", 0)
     full_hero = ck_section_intro(
         eyebrow="Bear Case · auto-generated",
-        headline=f"{html.escape(deal_name)} — counter-narrative synthesis",
+        headline=f"{html.escape(deal_name)} · counter-narrative synthesis",
         italic_word="counter-narrative",
         body=(
             f"{len(report.evidence)} evidence items across "
@@ -910,7 +910,7 @@ def render_bear_case_page(
                 purpose="Auto-assemble the downside / bear-case risk thesis from the deal's evidence so IC sees the strongest objections before committing.",
                 universe="illustrative",
                 confidence="mixed",
-                source=f"Evidence generated from the selected '{_html.escape(dataset)}' fixture pipeline + real public extractors (HCRIS, regulatory); fixture figures are illustrative — re-run against the target's own data before IC.",
+                source=f"Evidence generated from the selected '{_html.escape(dataset)}' fixture pipeline + real public extractors (HCRIS, regulatory); fixture figures are illustrative: re-run against the target's own data before IC.",
                 next_action="Carry the critical risks into the IC packet",
                 next_href="/diligence/ic-packet",
             )
@@ -921,7 +921,7 @@ def render_bear_case_page(
             + cross_links
             + export_json_panel(
                 '<div class="bc-section-label" style="margin-top:22px;">'
-                'JSON export — full bear-case payload</div>',
+                'JSON export · full bear-case payload</div>',
                 payload=report.to_dict(),
                 name=f"bear_case_{deal_name.replace(' ', '_')}",
             )
@@ -933,7 +933,7 @@ def render_bear_case_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Bear Case — {deal_name}",
+        body, f"Bear Case · {deal_name}",
         active_nav="/bear-cases",
         subtitle=(
             f"{report.critical_count} critical · "

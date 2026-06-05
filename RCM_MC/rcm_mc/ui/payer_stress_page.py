@@ -730,7 +730,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         ),
         lede_body=(
             "How fragile is your payer mix? Stress-tests the target's payer "
-            "portfolio against rate-movement priors for 19 major US payers — "
+            "portfolio against rate-movement priors for 19 major US payers: "
             "per-payer rate shocks, an NPR impact cone across the hold, a "
             "concentration penalty, and a cumulative EBITDA-at-risk headline."
         ),
@@ -744,7 +744,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Payer Stress Lab",
+        body, "RCM Diligence · Payer Stress Lab",
         subtitle="Payer mix × rate-movement priors × concentration amp",
     )
 
@@ -809,7 +809,7 @@ def _verdict_card(report: PayerStressReport) -> str:
         ),
     )
     plain_map = {
-        "PASS": ("Payer mix clears stress — concentration is "
+        "PASS": ("Payer mix clears stress: concentration is "
                  "balanced and tail-risk is limited. Proceed at "
                  "standard bid discipline.", "good"),
         "CAUTION": ("Top payer share is elevated. Diligence "
@@ -822,7 +822,7 @@ def _verdict_card(report: PayerStressReport) -> str:
                     "equal to the P10 EBITDA drag.", "warn"),
         "FAIL": ("Payer mix is structurally fragile. Either the "
                  "Top-1 share exceeds 40% or the P10 EBITDA drag "
-                 "is >10% of run-rate — both are IC-level red "
+                 "is >10% of run-rate: both are IC-level red "
                  "flags. Partners should walk or require a "
                  "material earn-out.", "bad"),
     }
@@ -890,7 +890,7 @@ def _verdict_card(report: PayerStressReport) -> str:
                 "definition": (
                     "Combined NPR share of the three largest payers. "
                     "Above 70% means three counterparties effectively "
-                    "set the entire revenue line — partners need a "
+                    "set the entire revenue line: partners need a "
                     "diversification plan in the 100-day plan."
                 ),
             },
@@ -900,7 +900,7 @@ def _verdict_card(report: PayerStressReport) -> str:
             sub=">2500 = concentrated",
             help={
                 "definition": (
-                    "Herfindahl-Hirschman Index — sum of squared "
+                    "Herfindahl-Hirschman Index: sum of squared "
                     "payer NPR shares (basis points). 0 = perfectly "
                     "fragmented; 10,000 = single payer. DOJ thresholds: "
                     "<1500 unconcentrated, 1500-2500 moderately, "
@@ -930,7 +930,7 @@ def _verdict_card(report: PayerStressReport) -> str:
                 "definition": (
                     "10th-percentile cumulative EBITDA impact across "
                     "the simulated rate-move cone. The reasonable "
-                    "downside — partners underwrite knowing this is "
+                    "downside: partners underwrite knowing this is "
                     "what they lose if rate negotiations go badly."
                 ),
             },
@@ -1041,8 +1041,8 @@ def render_payer_stress_page(
             meta="INPUT REJECTED · CHECK FORMAT",
             lede_italic_phrase="The payer list could not be parsed.",
             lede_body=(
-                "Expected format: <code>UnitedHealthcare, 34%</code> "
-                "— one line per payer, comma between name and "
+                "Expected format: <code>UnitedHealthcare, 34%</code>: "
+                "one line per payer, comma between name and "
                 "share. Use the back link to fix the input and "
                 "re-submit."
             ),
@@ -1111,7 +1111,7 @@ def render_payer_stress_page(
     )
     main_intro = _ps_head(
         eyebrow="Payer Mix Stress Lab",
-        title=f"Payer concentration cliff — {html.escape(target_name)}",
+        title=f"Payer concentration cliff · {html.escape(target_name)}",
         meta=(
             f"{len(mix)} PAYERS · {report.n_paths} PATHS · "
             f"{horizon}-YR HORIZON · ${total_npr/1e6:,.0f}M NPR"
@@ -1159,7 +1159,7 @@ def render_payer_stress_page(
         'Shaded band is the P10-P90 spread of cumulative NPR '
         'dollar impact in each year; solid line is P50. '
         'Values above zero = rate tailwind; below = compression. '
-        'The partner-critical reading is the P10 — the downside '
+        'The partner-critical reading is the P10: the downside '
         'tail that should be absorbed into the Deal MC '
         'base-case before signing.</p>'
         f'{_yearly_table(report.yearly_impact)}'
@@ -1207,12 +1207,12 @@ def render_payer_stress_page(
     )
     mgmt_panel = ck_panel(
         '<p class="ck-section-body">This model runs on the payer mix you entered '
-        'and <b>assumed</b> rate-move volatility — it is a directional stress, not '
+        'and <b>assumed</b> rate-move volatility: it is a directional stress, not '
         'the deal\'s real contracts. Confirm the real picture with management:</p>'
         '<ul class="ck-section-body" style="margin:6px 0 10px 18px">'
         '<li>Contracted rate escalators and method (CPI, fixed %, fee-schedule %) by top payer</li>'
         '<li>Renewal / expiry dates and any evergreen or auto-renew terms</li>'
-        '<li>Payer concentration — top-3 payers as % of NPR, and single-payer dependency</li>'
+        '<li>Payer concentration: top-3 payers as % of NPR, and single-payer dependency</li>'
         '<li>Value-based / risk arrangements (upside/downside, withholds, quality bonuses)</li>'
         '<li>Recent rate-change history (last 3 renewals) and out-of-network exposure</li>'
         '</ul>'
@@ -1240,7 +1240,7 @@ def render_payer_stress_page(
         + cross_link
         + export_json_panel(
             '<div class="ps-section-label" style="margin-top:22px;">'
-            'JSON export — full payer stress report</div>',
+            'JSON export · full payer stress report</div>',
             payload=report.to_dict(),
             name=f"payer_stress_{target_name.replace(' ', '_')}",
         )
@@ -1254,7 +1254,7 @@ def render_payer_stress_page(
         )
     )
     return chartis_shell(
-        body, f"Payer Stress — {target_name}",
+        body, f"Payer Stress · {target_name}",
         subtitle=(
             f"{report.verdict.value} · "
             f"P10 impact "
