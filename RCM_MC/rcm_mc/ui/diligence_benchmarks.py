@@ -151,7 +151,7 @@ def render_benchmarks_page(
     )
     return chartis_shell(
         body,
-        "RCM Diligence — Benchmarks",
+        "RCM Diligence · Benchmarks",
         active_nav="/diligence/benchmarks",
         subtitle=f"Phase 2 of 4 · as-of {bundle.as_of_date.isoformat()}",
     )
@@ -162,7 +162,7 @@ def render_benchmarks_page(
 def _placeholder_page() -> str:
     intro = ck_section_intro(
         eyebrow="RCM Diligence Workspace",
-        headline="Phase 2 — KPI Benchmarking & Stress Testing.",
+        headline="Phase 2: KPI Benchmarking & Stress Testing.",
         italic_word="Stress",
         body=(
             "Attach a Canonical Claims Dataset in Phase 1 to "
@@ -176,7 +176,7 @@ def _placeholder_page() -> str:
         '→ Phase 1: Ingest a CCD</a></p>',
         title="Next step",
     )
-    return chartis_shell(body, "RCM Diligence — Benchmarks",
+    return chartis_shell(body, "RCM Diligence · Benchmarks",
                         subtitle="Phase 2 of 4")
 
 
@@ -201,7 +201,7 @@ def _hero(bundle: KPIBundle) -> str:
                     f"Claims are converting to cash faster than the "
                     f"HFMA acute-hospital peer median ({peer_median:.0f} days). "
                     f"This target's working capital efficiency is "
-                    f"above average — fewer dollars tied up in unpaid "
+                    f"above average: fewer dollars tied up in unpaid "
                     f"claims than comparable hospitals."
                 )
             elif delta > 10:
@@ -209,7 +209,7 @@ def _hero(bundle: KPIBundle) -> str:
                     f"Days in A/R is {delta:.0f} days slower than the "
                     f"HFMA acute-hospital peer median ({peer_median:.0f} days). "
                     f"Every 10 days of elevated A/R is roughly 2.7% of "
-                    f"annual revenue sitting in working capital — an "
+                    f"annual revenue sitting in working capital: an "
                     f"EBITDA-bridge opportunity when modeled at the "
                     f"cost-of-capital rate."
                 )
@@ -218,7 +218,7 @@ def _hero(bundle: KPIBundle) -> str:
                     f"Days in A/R is within the HFMA acute-hospital "
                     f"peer median range ({peer_median:.0f}d ± 10). "
                     f"Working capital is neither a strength nor a bridge "
-                    f"lever — look elsewhere (denials, Medicare mix) "
+                    f"lever: look elsewhere (denials, Medicare mix) "
                     f"for upside."
                 )
         else:
@@ -599,7 +599,7 @@ def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
         '<p class="ck-eyebrow">'
         'ANSI CARC categories by dollar impact. Drill-through to underlying '
         'claim rows is available via '
-        '<a href="/diligence/root-cause" class="ck-link">Phase 3 — Root Cause</a>.'
+        '<a href="/diligence/root-cause" class="ck-link">Phase 3: Root Cause</a>.'
         '</p>'
         f'{_fig}'
         f'{"".join(items)}',
@@ -650,7 +650,7 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
                 "definition": (
                     "Realized cash ÷ gross charges across mature "
                     "claim cohorts. The single number that summarizes "
-                    "RCM performance — what % of what the hospital "
+                    "RCM performance: what % of what the hospital "
                     "billed actually became cash. PE healthcare median "
                     "is ~92-95%; below 88% flags structural RCM issues."
                 ),
@@ -717,7 +717,7 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
         'Claim-level cascade from gross charges to realized cash, cohorted '
         'by date of service. Cohorts younger than '
         f'{report.realization_window_days} days are marked '
-        '<em>insufficient data</em> — never fabricated. Drill-through to '
+        '<em>insufficient data</em>: never fabricated. Drill-through to '
         'underlying claim_ids is available in '
         '<a href="/diligence/root-cause" class="ck-link">Phase 3</a>.'
         '</p>'
@@ -752,7 +752,7 @@ _STATUS_COPY = {
     ),
     DivergenceStatus.CRITICAL.value: (
         "Critical",
-        f"Divergence ≥ {QOR_THRESHOLD_WATCH*100:,.0f}% — the claims-side "
+        f"Divergence ≥ {QOR_THRESHOLD_WATCH*100:,.0f}%: the claims-side "
         f"reconstruction disagrees with management's reported revenue by "
         f"more than the VMG/A&M QoR threshold. Partner-quotable finding.",
     ),
@@ -869,7 +869,7 @@ def _per_payer_class_table(report: CashWaterfallReport) -> str:
                 '<tr>'
                 f'<td class="mono" style="color:{P["text"]};">{html.escape(pc)}</td>'
                 f'<td colspan="6" class="ck-empty-row">'
-                f'<em>{in_flight} cohort(s) in-flight</em> — '
+                f'<em>{in_flight} cohort(s) in-flight</em>: '
                 'insufficient data'
                 f'</td>'
                 '</tr>'

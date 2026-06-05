@@ -86,7 +86,7 @@ def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -
         + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
         + ck_illustrative_note(
             "screening decisions over the deal dataset (mostly an illustrative/"
-            "modeled set — realized MOIC/IRR are not disclosed returns)")
+            "modeled set: realized MOIC/IRR are not disclosed returns)")
     )
 
 
@@ -264,11 +264,11 @@ def render_deal_screening(
     corpus = load_corpus_deals()
     if not corpus:
         body = small_panel(
-            "Deal screening — no corpus loaded",
+            "Deal screening · no corpus loaded",
             '<p style="font-size:13px;line-height:1.5;margin:0 0 8px;">'
             '<strong>No deal corpus is loaded yet.</strong> Deal Screening '
             'ranks the corpus deal library against your risk and valuation '
-            'thresholds (composite risk, EV/EBITDA, MOIC) — so it needs a '
+            'thresholds (composite risk, EV/EBITDA, MOIC): so it needs a '
             'loaded corpus before it can score anything.</p>'
             '<p style="font-size:12px;margin:0;">'
             'Load the deal corpus from the Data Catalog, then reload this '
@@ -342,7 +342,7 @@ def render_deal_screening(
     }
 
     form_panel = small_panel(
-        "Your thesis — set the thresholds",
+        "Your thesis: set the thresholds",
         _controls_form(config_fields, filter_decision),
         code="FIT",
     )
@@ -371,8 +371,8 @@ def render_deal_screening(
     pass_rate = (counts.get("PASS", 0) / n_deals) if n_deals else 0.0
     explainer_html = (
         '<p class="ck-ds-explainer">'
-        f"Set your thesis as thresholds — risk, valuation ceiling, return floor, "
-        f"payer-mix and size — and PE Desk scores the full {n_deals}-deal dataset "
+        f"Set your thesis as thresholds: risk, valuation ceiling, return floor, "
+        f"payer-mix and size, and PE Desk scores the full {n_deals}-deal dataset "
         f"against them. The <b>pass rate</b> is your base rate: the share that "
         f"would clear it. Every PASS / WATCH / FAIL verdict is below; the "
         f'<a href="/verified-deals" style="color:inherit;text-decoration:underline;">'
@@ -383,7 +383,7 @@ def render_deal_screening(
         '<div class="ds-howto">'
         '<div class="ds-step"><div class="ds-step-n">STEP 1</div>'
         '<div class="ds-step-t">Set your thesis</div>'
-        '<div class="ds-step-d">Enter the thresholds a deal must clear — risk, '
+        '<div class="ds-step-d">Enter the thresholds a deal must clear: risk, '
         'EV/EBITDA, MOIC, Medicaid, size.</div></div>'
         '<div class="ds-step"><div class="ds-step-n">STEP 2</div>'
         '<div class="ds-step-t">Screen the corpus</div>'
@@ -391,7 +391,7 @@ def render_deal_screening(
         'your thesis and labels each PASS / WATCH / FAIL.</div></div>'
         '<div class="ds-step"><div class="ds-step-n">STEP 3</div>'
         '<div class="ds-step-t">Read the pass rate</div>'
-        f'<div class="ds-step-d">{pass_rate:.0%} of deals clear this thesis — your base '
+        f'<div class="ds-step-d">{pass_rate:.0%} of deals clear this thesis: your base '
         'rate. Tighten a lever and watch it move.</div></div>'
         '</div>'
     )

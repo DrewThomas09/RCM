@@ -345,7 +345,7 @@ class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
         self._assert_renders(
             "/deal-screening",
             expect_title="Deal Screening",
-            expect_substrings=("DECISION MIX", "Your thesis — set the thresholds"),
+            expect_substrings=("DECISION MIX", "Your thesis: set the thresholds"),
         )
 
     def test_portfolio_analytics_renders(self):

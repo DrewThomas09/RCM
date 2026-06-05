@@ -48,7 +48,7 @@ class BiggerControlsTests(unittest.TestCase):
     def test_controls_use_larger_grid_classes(self) -> None:
         self.assertIn("ds-controls", self.html)
         self.assertIn("ds-input", self.html)
-        self.assertIn("Your thesis — set the thresholds", self.html)
+        self.assertIn("Your thesis: set the thresholds", self.html)
         # the old cramped 100px inline inputs are gone
         self.assertNotIn("width:100px", self.html)
 

@@ -60,7 +60,7 @@ _SEVEN_REFLEXES: List[Dict[str, str]] = [
         "n": "1",
         "title": "Sniff test before math",
         "body": (
-            "Knows what's unrealistic on the teaser — 400M rural CAH at 28% IRR, "
+            "Knows what's unrealistic on the teaser: 400M rural CAH at 28% IRR, "
             "dental DSO at 4× revenue, MA-will-cover-FFS without a named contract. "
             "14-pattern pre-math triage returning stop_work / senior_partner_review / "
             "proceed_with_diligence."
@@ -71,9 +71,9 @@ _SEVEN_REFLEXES: List[Dict[str, str]] = [
         "n": "2",
         "title": "Archetype on sight",
         "body": (
-            "Recognizes seven healthcare thesis shapes — payer-mix shift, back-office "
+            "Recognizes seven healthcare thesis shapes: payer-mix shift, back-office "
             "consolidation, outpatient migration, CMI uplift, roll-up platform, "
-            "cost-basis compression, capacity expansion — and applies the right "
+            "cost-basis compression, capacity expansion, and applies the right "
             "lever stack + named risks per shape."
         ),
         "module": "healthcare_thesis_archetype_recognizer",
@@ -84,7 +84,7 @@ _SEVEN_REFLEXES: List[Dict[str, str]] = [
         "body": (
             "Fingerprint-matches signals against 20+ dated historical failures (MA "
             "startup unwind 2023, NSA platform rate shock 2022, PDGM transition 2020) "
-            "and cites the specific lesson — not a generic 'watch out for churn.'"
+            "and cites the specific lesson: not a generic 'watch out for churn.'"
         ),
         "module": "deal_to_historical_failure_matcher",
     },
@@ -114,7 +114,7 @@ _SEVEN_REFLEXES: List[Dict[str, str]] = [
         "title": "Specific regulatory $-impact",
         "body": (
             "OBBBA / site-neutral / sequestration / state Medicaid / PAMA translated "
-            "into service-line dollar exposure over the hold — not hand-waved. "
+            "into service-line dollar exposure over the hold: not hand-waved. "
             "Reimbursement cliff calendar 2026–2029 with 12 named CMS/payer events."
         ),
         "module": "site_neutral_specific_impact_calculator",
@@ -124,7 +124,7 @@ _SEVEN_REFLEXES: List[Dict[str, str]] = [
         "title": "Partner voice",
         "body": (
             "Direct, numbers-first, willing to say pass when the math doesn't work. "
-            "Every module exposes a partner_note — short, blunt, IC-ready — and "
+            "Every module exposes a partner_note (short, blunt, IC-ready) and "
             "every report serializes to dict for LP digests and IC memo exports."
         ),
         "module": "partner_voice_variants",
@@ -204,7 +204,7 @@ _QUICK_LINKS: List[Dict[str, str]] = [
             "realizability, EBITDA quality. Verdicts: IN_BAND / STRETCH / "
             "OUT_OF_BAND / IMPLAUSIBLE."
         ),
-        "module_count": "reasonableness.py — 40+ bands",
+        "module_count": "reasonableness.py: 40+ bands",
     },
     {
         "label": "Red Flag Catalog",
@@ -317,7 +317,7 @@ def render_pe_intelligence_hub(
     explainer_html = (
         '<p class="ck-pei-explainer">'
         '<em>Where senior-PE judgment is codified.</em> '
-        f"{_mod_clause} — sniff test "
+        f"{_mod_clause}: sniff test "
         "before math, archetype on sight, named-failure pattern match, "
         "dot-connect packet signals, recurring vs one-time discipline, "
         "specific regulatory dollar-impact, and partner voice. "
@@ -395,7 +395,7 @@ def render_pe_intelligence_hub(
         f'<div style="color:{P["text_dim"]};font-size:11.5px;line-height:1.55;">'
         f'The brain runs per packet. Open a deal and follow '
         f'<span style="color:{P["accent"]};">Partner Review</span> '
-        f'from the deal dashboard — that page links into every drill-down '
+        f'from the deal dashboard: that page links into every drill-down '
         f'below. Need historical comps first? Browse '
         f'<a href="/library" style="color:{P["accent"]};">the corpus</a>'
         + (f' ({_corpus_n} deals).' if _corpus_n else '.')
