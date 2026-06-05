@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 
@@ -463,8 +464,43 @@ def sortable_table(
     # visually run together.
     final_class = table_class or "cad-table"
     attrs.append(f'class="{html.escape(final_class, quote=True)}"')
+    # Detect numeric columns so their digits right-align — a number column
+    # reads wrong left-aligned. Prefer the machine-readable sort_keys when
+    # present (display cells may be HTML-wrapped: provenance, pills) and
+    # otherwise sniff the stripped display text. cad-table's .num rule does
+    # the right-align + tabular-nums; string columns (names, tickers) stay
+    # left-aligned because their keys/text aren't numeric.
+    ncol = len(headers)
+    _numre = re.compile(r'^[$+\-(]?[\d,]+(\.\d+)?[%xX)]?$')
+
+    def _disp_is_num(v: Any) -> bool:
+        t = re.sub(r'<[^>]+>', '', str(v)).strip()
+        return bool(t) and len(t) <= 16 and bool(_numre.match(t))
+
+    numeric_col = [False] * ncol
+    for ci in range(ncol):
+        keys = (
+            [sort_keys[ri][ci] for ri in range(len(rows))
+             if ri < len(sort_keys) and ci < len(sort_keys[ri])
+             and sort_keys[ri][ci] is not None]
+            if sort_keys is not None else []
+        )
+        if keys:
+            nums = sum(1 for k in keys
+                       if isinstance(k, (int, float)) and not isinstance(k, bool))
+            numeric_col[ci] = nums >= max(1, len(keys)) * 0.8
+        else:
+            vals = [row[ci] for row in rows
+                    if ci < len(row) and row[ci] not in (None, "")]
+            numeric_col[ci] = (len(vals) >= 3 and
+                               sum(1 for v in vals if _disp_is_num(v)) >= len(vals) * 0.8)
+
+    def _num_attr(i: int) -> str:
+        return ' class="num"' if i < ncol and numeric_col[i] else ''
+
     head_cells = "".join(
-        f'<th>{html.escape(str(h))}</th>' for h in headers
+        f'<th{_num_attr(i)}>{html.escape(str(h))}</th>'
+        for i, h in enumerate(headers)
     )
     body_rows = []
     for ridx, row in enumerate(rows):
@@ -484,7 +520,7 @@ def sortable_table(
             # If the display value already contains HTML (from
             # provenance etc.) we trust it through — callers who
             # need raw HTML build the cell content themselves.
-            cells.append(f'<td{sort_attr}>{display}</td>')
+            cells.append(f'<td{_num_attr(cidx)}{sort_attr}>{display}</td>')
         body_rows.append('<tr>' + "".join(cells) + '</tr>')
     caption_html = (
         f'<caption>{html.escape(caption)}</caption>' if caption else ""
