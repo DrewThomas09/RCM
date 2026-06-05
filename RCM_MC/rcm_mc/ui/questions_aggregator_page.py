@@ -370,7 +370,7 @@ _AGG_JS = """
     var deals = readAll();
     if (deals.length === 0) return "";
     var lines = [
-      "# Diligence questions — portfolio-wide",
+      "# Diligence questions: portfolio-wide",
       "",
       "_Exported " + new Date().toISOString().slice(0, 10) +
         (openOnly ? " (open only)" : "") + " from your browser._",
@@ -389,7 +389,7 @@ _AGG_JS = """
         if (!CAT_FULL[c]) c = "other";
         var asked = r.asked ? " ✓ asked" : "";
         lines.push((i + 1) + ". **[" + CAT_FULL[c] + "]**" +
-          asked + " — " + r.text);
+          asked + ": " + r.text);
       });
     });
     return lines.join("\\n");
