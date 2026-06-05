@@ -157,7 +157,7 @@ def _entity_section(packet: Any) -> str:
         ("Fiscal year", fy),
     ]
     prose = (
-        f"{name} — a {htype.lower() if isinstance(htype, str) else 'hospital'} "
+        f"{name}: a {htype.lower() if isinstance(htype, str) else 'hospital'} "
         f"in {state}{f' with {beds:,} beds' if beds else ''}. "
         f"This profile pulls from HCRIS + Hospital Compare; "
         f"every downstream metric attributes through to a "
@@ -173,7 +173,7 @@ def _market_section(packet: Any) -> str:
         market = getattr(packet, "market", None)
     if not market:
         prose = (
-            "No market context loaded — partner can run the "
+            "No market context loaded: partner can run the "
             "Census + CDC PLACES + APCD ingestion to populate "
             "catchment demographics.")
         return _section_header(2, "Market", prose) + (
@@ -216,21 +216,21 @@ def _market_section(packet: Any) -> str:
         if score >= 0.70:
             score_read = (
                 f"{cbsa} scores {score:.2f} on the composite "
-                f"attractiveness index — top-tier market for "
+                f"attractiveness index: top-tier market for "
                 f"healthcare PE.")
         elif score >= 0.50:
             score_read = (
-                f"{cbsa} scores {score:.2f} — mid-tier market; "
+                f"{cbsa} scores {score:.2f}: mid-tier market; "
                 f"check growth and uninsured rate before "
                 f"sizing.")
         else:
             score_read = (
-                f"{cbsa} scores {score:.2f} — soft market; "
+                f"{cbsa} scores {score:.2f}: soft market; "
                 f"the thesis needs a specific reason to be "
                 f"there.")
     prose = (
         score_read or
-        f"{cbsa} catchment demographics — population, age, "
+        f"{cbsa} catchment demographics: population, age, "
         f"income, insurance coverage. The attractiveness "
         f"score weights growth (+30%), 65+ share (+20%), "
         f"income (+15%), inverse-uninsured (+15%), log-pop "
@@ -304,7 +304,7 @@ def _metrics_section(packet: Any) -> str:
     if not metrics:
         return _section_header(
             4, "Observed metrics",
-            "No observed RCM metrics — needs HCRIS + claim "
+            "No observed RCM metrics: needs HCRIS + claim "
             "data refresh."
         ) + _empty_note("No metric data on packet.")
 
@@ -333,7 +333,7 @@ def _predictions_section(packet: Any) -> str:
     if not preds:
         return _section_header(
             5, "Predictions",
-            "No model predictions yet — partner can run the "
+            "No model predictions yet: partner can run the "
             "trained predictors against the public-data feature "
             "set."
         ) + _empty_note(
@@ -357,7 +357,7 @@ def _predictions_section(packet: Any) -> str:
     prose = (
         f"{len(preds)} model-derived forward estimates. Each "
         f"prediction carries a 90% interval calibrated "
-        f"against held-out hospitals — the /models/quality "
+        f"against held-out hospitals: the /models/quality "
         f"dashboard shows actual coverage.")
     return _section_header(5, "Predictions", prose) + (
         f'<table style="width:100%;border-collapse:collapse;'
@@ -421,7 +421,7 @@ def _bridge_section(packet: Any) -> str:
     if bridge is None:
         return _section_header(
             6, "EBITDA bridge",
-            "No bridge built yet — needs RCM metrics + the "
+            "No bridge built yet: needs RCM metrics + the "
             "research-band coefficients."
         ) + _empty_note("EBITDA bridge not populated.")
 
@@ -478,7 +478,7 @@ def _scenarios_section(packet: Any) -> str:
     if not has_sim:
         return _section_header(
             7, "Scenarios",
-            "No Monte Carlo simulation run yet — bull/base/"
+            "No Monte Carlo simulation run yet: bull/base/"
             "bear scenarios populate after the simulator runs."
         ) + _empty_note("No simulation outputs.")
 
@@ -521,7 +521,7 @@ def _risks_section(packet: Any) -> str:
     if not flags:
         return _section_header(
             8, "Risks",
-            "No risk flags raised — surfacing nothing is "
+            "No risk flags raised: surfacing nothing is "
             "uncommon; double-check that the risk_flags pass "
             "ran."
         ) + _empty_note("No risks flagged.")
@@ -557,7 +557,7 @@ def _risks_section(packet: Any) -> str:
         + (f", {n_high} high-severity" if n_high
            else "")
         + ". Items left unaddressed in diligence become "
-          "post-close surprises — every flag should map to a "
+          "post-close surprises: every flag should map to a "
           "decision in the next section.")
     return _section_header(8, "Risks", prose) + (
         f'<div style="background:{_BG_SURFACE};border:'
@@ -570,7 +570,7 @@ def _actions_section(packet: Any) -> str:
     if not questions:
         return _section_header(
             9, "Actions",
-            "No diligence questions queued — typically one "
+            "No diligence questions queued: typically one "
             "per risk flag, but the auto-generation pass may "
             "not have run."
         ) + _empty_note("No actions queued.")
@@ -639,7 +639,7 @@ def render_deal_profile_v2(
         body = empty_state(
             f"No analysis packet found for {deal_id}",
             (f"Run `rcm-mc analysis {deal_id}` to build a "
-             f"packet — every section on this page (entity, "
+             f"packet: every section on this page (entity, "
              f"market, comps, predictions, EBITDA bridge) "
              f"depends on it."),
             icon="◳",

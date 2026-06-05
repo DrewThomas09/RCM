@@ -136,7 +136,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
         eyebrow="DEBT MODEL",
-        title=f"Leverage trajectory — {html.escape(deal_name)}",
+        title=f"Leverage trajectory · {html.escape(deal_name)}",
         meta=(
             f"ENTRY {entry_leverage:.1f}x → EXIT {exit_leverage:.1f}x · "
             f"${total_debt/1e6:,.0f}M TOTAL DEBT"
@@ -180,7 +180,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
                 "definition": (
                     "Aggregate debt across senior, second-lien, and "
                     "mezz tranches at close. Determines the equity "
-                    "check size given an enterprise value — and "
+                    "check size given an enterprise value, and "
                     "determines covenant covenants. Compare against "
                     "the deal's annual EBITDA × 6.5 for a quick "
                     "leverage-headroom read."
@@ -232,8 +232,8 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     interp = ck_panel(
         '<p class="ck-section-body">'
         f'Entry leverage of {entry_leverage:.1f}x deleverages to {exit_leverage:.1f}x '
-        f'over the hold period — a {deleverage:.1f}x reduction. '
-        f'{"Strong deleveraging — equity returns benefit from debt paydown." if deleverage > 2 else "Moderate deleveraging." if deleverage > 1 else "Limited deleveraging — returns must come from EBITDA growth."}</p>'
+        f'over the hold period: a {deleverage:.1f}x reduction. '
+        f'{"Strong deleveraging: equity returns benefit from debt paydown." if deleverage > 2 else "Moderate deleveraging." if deleverage > 1 else "Limited deleveraging: returns must come from EBITDA growth."}</p>'
         '<p class="ck-section-body">Check the '
         f'<a href="/models/returns/{html.escape(deal_id)}" class="ck-link">returns & covenant</a> '
         'page to see how leverage affects covenant headroom.</p>',
@@ -248,7 +248,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
         italic_word="returns",
     )
     body = f'{nav}{intro}{kpis}{table}{interp}{actions}{next_up}'
-    return chartis_shell(body, f"Debt Model — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Debt Model · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Leverage: {entry_leverage:.1f}x entry → {exit_leverage:.1f}x exit")
 
@@ -262,7 +262,7 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
         eyebrow="CHALLENGE SOLVER",
-        title=f"What would have to be true — {html.escape(deal_name)}",
+        title=f"What would have to be true · {html.escape(deal_name)}",
         meta=(
             f"TARGET EBITDA DRAG ${abs(float(target))/1e6:.1f}M · "
             f"{len(solutions)} ASSUMPTION"
@@ -284,7 +284,7 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
                     "EBITDA drag level the challenge solver was asked "
                     "to reverse-engineer. The solver finds combinations "
                     "of input assumptions that would produce this "
-                    "specific outcome — used to surface the 'what "
+                    "specific outcome: used to surface the 'what "
                     "breaks the deal?' scenarios partners want to "
                     "stress-test at IC."
                 ),
@@ -355,7 +355,7 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
         italic_word="pressure",
     )
     body = f'{nav}{intro}{kpis}{table}{interp}{next_up}'
-    return chartis_shell(body, f"Challenge Solver — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Challenge Solver · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="Reverse solver: what breaks the deal?")
 
@@ -373,7 +373,7 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
 
     intro = ck_section_intro(
         eyebrow="IRS 990 CROSS-CHECK",
-        headline=f"{html.escape(deal_name)} — non-profit reconciliation.",
+        headline=f"{html.escape(deal_name)}: non-profit reconciliation.",
         italic_word="reconciliation",
         body=(
             "Compares HCRIS cost-report figures against IRS Form 990 "
@@ -426,7 +426,7 @@ def render_irs990_crosscheck(deal_id: str, deal_name: str, data: Dict[str, Any])
 
     nav = _model_nav(deal_id, "irs990")
     body = f'{nav}{intro}{kpis}{comp_table}'
-    return chartis_shell(body, f"IRS 990 Cross-Check — {html.escape(deal_name)}",
+    return chartis_shell(body, f"IRS 990 Cross-Check · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="Non-profit hospital financial verification")
 
@@ -458,7 +458,7 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
 
     intro = ck_section_intro(
         eyebrow="TREND FORECAST",
-        headline=f"{html.escape(deal_name)} — where the metrics are heading.",
+        headline=f"{html.escape(deal_name)}: where the metrics are heading.",
         italic_word="heading",
         body=(
             f"{len(trends)} time-series trends detected · {improving} improving, "
@@ -475,7 +475,7 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
                 "definition": (
                     "Metrics with positive slope across the most-"
                     "recent four quarters. The 'winds at our back' "
-                    "set — if improving outnumbers declining 2:1, "
+                    "set: if improving outnumbers declining 2:1, "
                     "the operating team is executing; 1:1 = mixed "
                     "performance; declining-dominant = a turnaround "
                     "story the partner is still mid-execution."
@@ -488,7 +488,7 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
                 "definition": (
                     "Metrics with negative slope across the most-"
                     "recent four quarters. Watch the table below for "
-                    "which specific KPIs are dragging — a few "
+                    "which specific KPIs are dragging: a few "
                     "concentrated declines (say, denial rate + AR "
                     "days) signal a fixable RCM issue, while broad "
                     "declines across margin + volume + payer mix "
@@ -537,6 +537,6 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(body, f"Trend Forecast — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Trend Forecast · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{improving} improving, {declining} declining across {len(trends)} metrics")
