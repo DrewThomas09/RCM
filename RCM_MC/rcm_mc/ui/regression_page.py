@@ -3046,7 +3046,7 @@ def render_regression_page(
         )
         return chartis_shell(
             body, "Regression Analysis",
-            subtitle="No data loaded — add records to run a regression")
+            subtitle="No data loaded · add records to run a regression")
 
     # Phase-2: apply universe filter. Falls back to "all" if the
     # frame doesn't carry a segment_label (e.g. portfolio source).

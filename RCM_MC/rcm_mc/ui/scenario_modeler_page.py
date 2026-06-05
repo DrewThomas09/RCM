@@ -46,7 +46,7 @@ def _scenario_moic_bars(results: List[Dict[str, Any]]) -> str:
         '<p class="ck-section-body" style="margin:0 0 8px;">'
         "Equity MOIC by scenario — bar is share of the strongest case.</p>"
         + out,
-        title="Scenario Returns — MOIC at a glance",
+        title="Scenario Returns · MOIC at a glance",
     )
 from .brand import PALETTE
 from .ebitda_bridge_page import _compute_bridge, _compute_returns_grid, _fm, _safe_float, _load_data_room_overrides

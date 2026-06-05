@@ -2458,14 +2458,14 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -
             'stored title + query string — open it to re-run live. Alerts on '
             'saved screens are <strong>not</strong> implemented; none are shown '
             '(no fake alerts).</p>',
-            title="Persistence — live, owner-scoped")
+            title="Persistence · live, owner-scoped")
     else:
         caveat = ck["panel"](
             '<p class="ck-section-body" style="margin:0;"><strong>Sign in to save '
             'named screens.</strong> Persistence is owner-scoped; without a '
             'session, screens are still fully usable as shareable URLs (above). '
             'No fake saved screens or alerts are shown.</p>',
-            title="Persistence status — honest")
+            title="Persistence status · honest")
 
     return current + saved_panel + preset_panel + caveat
 

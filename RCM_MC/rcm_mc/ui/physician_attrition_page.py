@@ -890,7 +890,7 @@ def _compare_view(
             'None of the provided provider IDs were found in the '
             'current roster. Check the ?compare= parameter against '
             'the roster table below.</p>',
-            title="Compare providers — no matches",
+            title="Compare providers · no matches",
         )
 
     # Build feature-by-feature comparison table.

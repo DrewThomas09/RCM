@@ -1184,7 +1184,7 @@ def render_covenant_lab_page(
     )
     breach_panel = ck_panel(
         breach_inner,
-        title="Per-quarter breach probability — all covenants",
+        title="Per-quarter breach probability · all covenants",
     )
 
     # Plain-English read of the debt-service cliff: identify the
@@ -1226,12 +1226,12 @@ def render_covenant_lab_page(
         'floating-rate base stable; steepening = rate-path stress.</p>'
     )
     ds_panel = ck_panel(
-        ds_inner, title="Debt service cliff — quarterly stack",
+        ds_inner, title="Debt service cliff · quarterly stack",
     )
 
     cov_detail = ck_panel(
         _covenant_detail_table(res),
-        title="Covenant detail — peak breach + first-at",
+        title="Covenant detail · peak breach + first-at",
     )
 
     stack_detail = ck_panel(

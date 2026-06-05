@@ -67,7 +67,7 @@ def _accuracy_coverage_scatter(all_perfs) -> str:
     )
     if not chart:
         return ""
-    return ck_panel(chart, title="Accuracy vs Reliability — every metric")
+    return ck_panel(chart, title="Accuracy vs Reliability · every metric")
 
 
 def render_model_validation(

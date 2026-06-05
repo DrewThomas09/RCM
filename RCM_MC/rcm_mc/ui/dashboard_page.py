@@ -1062,7 +1062,7 @@ def _render_portfolio_pulse_hero(
         score_str = f"{score}" if isinstance(score, (int, float)) else "—"
         tile_html.append(
             f'<a href="/deal/{deal_id}" '
-            f'title="{name} — health {score_str}" '
+            f'title="{name} · health {score_str}" '
             f'style="display:inline-block;width:18px;height:18px;'
             f'background:{c};border-radius:3px;'
             f'transition:transform 0.1s, box-shadow 0.1s;" '
@@ -1346,7 +1346,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     f'.disabled=true;">'
                     f'{hidden}'
                     f'<input type="hidden" name="snooze_days" value="0">'
-                    f'<button type="submit" title="Acknowledge — handled" '
+                    f'<button type="submit" title="Acknowledge · handled" '
                     f'style="{btn_style}">Ack</button></form>'
                     # Snooze 7d (snooze_days=7) — partner says "I see
                     # this, but don't bother me about it for a week"
@@ -1357,7 +1357,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     f'{hidden}'
                     f'<input type="hidden" name="snooze_days" value="7">'
                     f'<button type="submit" '
-                    f'title="Snooze for 7 days — remind me later" '
+                    f'title="Snooze for 7 days · remind me later" '
                     f'style="{btn_style}background:#FFFFFF;">'
                     f'Snooze 7d</button></form>'
                     f'</span>'

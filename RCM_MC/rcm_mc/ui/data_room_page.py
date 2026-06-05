@@ -244,7 +244,7 @@ def render_data_room(
         '<th>Metric</th><th>ML Predicted</th><th>Seller</th><th>Calibrated</th>'
         '<th>90% CI</th><th>Delta</th><th>Data/Prior</th><th>Source</th>'
         f'</tr></thead><tbody>{cal_rows}</tbody></table>',
-        title="Calibrated Metrics — ML Prediction vs Seller Data",
+        title="Calibrated Metrics · ML Prediction vs Seller Data",
     )
 
     # ── Surprises ──

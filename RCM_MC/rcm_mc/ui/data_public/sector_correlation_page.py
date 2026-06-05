@@ -312,7 +312,7 @@ def render_sector_correlation(params: Dict[str, str]) -> str:
     return chartis_shell(ck_illustrative_note("sector-correlation figures — built from the bundled illustrative seed deals, not your ingested portfolio") + body,
         title="Sector Correlation Matrix",
         active_nav="/sector-correlation",
-        subtitle="Pairwise MOIC correlations across healthcare sectors — portfolio diversification lens",
+        subtitle="Pairwise MOIC correlations across healthcare sectors · portfolio diversification lens",
         editorial_intro={
             "eyebrow": "SECTOR CORRELATION",
             "headline": "Where two sectors move together.",

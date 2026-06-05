@@ -409,7 +409,7 @@ def render_ai_settings(store: Any) -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="AI Assistant — Local Ollama",
+        title="AI Assistant · Local Ollama",
         active_nav="/settings",
         subtitle=("Connected" if key_set else "Not yet connected"),
     )

@@ -707,7 +707,7 @@ def render_day_one(store: Any) -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="Day One — Monday brief",
+        title="Day One · Monday brief",
         active_nav="PORTFOLIO",
         breadcrumbs=[
             ("Home", "/"),

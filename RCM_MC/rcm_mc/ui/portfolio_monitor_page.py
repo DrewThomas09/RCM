@@ -83,7 +83,7 @@ def _value_creation_panel(store: Any) -> str:
             'plan in execution) and realized (actual EBITDA captured) '
             'value populate once a deal logs its first quarterly '
             'initiative actual.</p>',
-            title="Value Creation — Launched vs Realized",
+            title="Value Creation · Launched vs Realized",
         )
 
     capture = realized / launched if launched else 0.0
@@ -109,7 +109,7 @@ def _value_creation_panel(store: Any) -> str:
         'in execution (≥1 quarter of actuals). <em>Realized</em> = '
         'cumulative actual EBITDA impact recorded to date (run-rate, not '
         'TTM, not re-attributed). Portfolio-level.</p>',
-        title="Value Creation — Launched vs Realized",
+        title="Value Creation · Launched vs Realized",
     )
 
 

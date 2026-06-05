@@ -1123,7 +1123,7 @@ def render_ebitda_bridge(
         f'<span class="cad-pos">{_fm(bridge["total_ebitda_impact"])}</span></p>'
     )
     waterfall_section = ck_panel(
-        waterfall_inner, title="EBITDA Bridge — 7 RCM Levers",
+        waterfall_inner, title="EBITDA Bridge · 7 RCM Levers",
     )
 
     # ── Lever detail table ──
@@ -1599,7 +1599,7 @@ def render_ebitda_bridge(
             f'</tr></thead><tbody>{peer_context_rows}</tbody></table>'
         )
         peer_section = ck_panel(
-            peer_inner, title="Peer Context — Where This Hospital Sits",
+            peer_inner, title="Peer Context · Where This Hospital Sits",
         )
 
     # ── Navigation ──

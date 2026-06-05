@@ -240,7 +240,7 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
         '<p class="ck-section-body">'
         'Each lever shows gross impact, probability of achievement, and probability-weighted value.</p>'
         f'{bars}',
-        title="EBITDA Bridge — 7 Lever Model",
+        title="EBITDA Bridge · 7 Lever Model",
     )
 
     actions = ck_panel(

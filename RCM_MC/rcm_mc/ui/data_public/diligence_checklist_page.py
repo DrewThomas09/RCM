@@ -110,7 +110,7 @@ def _checklist_section(category: str, items: list) -> str:
         f'<th {hdr_l}>Priority</th>'
         f'<th {hdr_l}>Item</th>'
         f'<th {hdr_l}>Description</th>'
-        f'<th {hdr_r} title="Heuristic risk weight from item status — not a measured dataset failure rate">Risk Wt.</th>'
+        f'<th {hdr_r} title="Heuristic risk weight from item status · not a measured dataset failure rate">Risk Wt.</th>'
         f'<th {hdr_l}>Status</th>'
         f'</tr></thead>'
         f'<tbody>{"".join(rows)}</tbody>'

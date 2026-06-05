@@ -1508,7 +1508,7 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
                     and methodology_version == "b1-tuned-alpha"):
                 alpha_html = (
                     f'<span class="ck-cohort-alpha" '
-                    f'title="Ridge penalty tuned per-cohort via RidgeCV LOO — see methodology doc">'
+                    f'title="Ridge penalty tuned per-cohort via RidgeCV LOO · see methodology doc">'
                     f'α={cohort_alpha:.2f}</span>'
                 )
             # Advisory: the prediction's target was strictly positive and

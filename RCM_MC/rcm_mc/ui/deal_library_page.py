@@ -349,7 +349,7 @@ def render_sponsors_index(store: Any, params: Optional[Dict[str, str]] = None) -
     pager += "</span></div>"
 
     return chartis_shell(back + title + form + table + pager,
-                         title="Sponsors — Deal Library",
+                         title="Sponsors · Deal Library",
                          active_nav="/deal-library")
 
 
@@ -449,5 +449,5 @@ def render_deal_comps(store: Any, params: Optional[Dict[str, str]] = None) -> st
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(back + title + cards + caveat + table + pager,
-                         title="Comparables — Deal Library",
+                         title="Comparables · Deal Library",
                          active_nav="/deal-library")

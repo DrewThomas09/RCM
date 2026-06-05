@@ -183,9 +183,9 @@ def render_portfolio_map(
     actions = (
         '<div class="ck-pm-actions">'
         '<button class="ck-pm-btn" type="button" aria-disabled="true" disabled '
-        'title="Export of the current view — not wired yet">Export</button>'
+        'title="Export of the current view · not wired yet">Export</button>'
         '<button class="ck-pm-btn" type="button" aria-disabled="true" disabled '
-        'title="Pivot to a deal-major view — not wired yet">Pivot</button>'
+        'title="Pivot to a deal-major view · not wired yet">Pivot</button>'
         '<a class="ck-pm-btn primary" href="/pipeline" '
         'title="Start a new deal in the pipeline">+ Add deal</a>'
         '</div>'

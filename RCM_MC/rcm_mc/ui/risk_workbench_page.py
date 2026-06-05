@@ -1163,7 +1163,7 @@ def _counterfactual_section(inp: WorkbenchInput) -> str:
         )
     return ck_panel(
         f'{header_note}{"".join(rows)}',
-        title="Counterfactual Advisor — what would change your mind",
+        title="Counterfactual Advisor · what would change your mind",
     )
 
 

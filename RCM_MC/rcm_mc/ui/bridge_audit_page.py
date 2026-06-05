@@ -899,7 +899,7 @@ def render_bridge_audit_page(
         '~3,000 similar initiatives.  The vertical tick is the '
         'median realized outcome.  Bars where the grey sticks out '
         'past the colored band are overstated.</p>',
-        title="Claimed vs realistic — lever by lever",
+        title="Claimed vs realistic · lever by lever",
     )
 
     detail_panel = ck_panel(
@@ -924,7 +924,7 @@ def render_bridge_audit_page(
         'size behind each prior.'
         '</p>'
         + _lever_library_panel(),
-        title="Lever library — realization priors powering this audit",
+        title="Lever library · realization priors powering this audit",
     )
 
     cross_link = ck_panel(

@@ -10704,7 +10704,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # not buried in the user dropdown. data-mode drives the accent.
         f'<a class="ck-mode-chip" href="/settings/workspace" '
         f'data-mode="{_esc(current_workspace_mode())}" '
-        f'title="Workspace: {_esc(_ws_mode_label)} — click to switch">'
+        f'title="Workspace: {_esc(_ws_mode_label)} · click to switch">'
         f'{_esc(_ws_mode_label)}</a>'
         # Portfolio-wide diligence-questions pill. JS-hydrated from
         # all rcm_deal_*_questions entries on DOMContentLoaded;
@@ -10730,7 +10730,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # at shell level (see _GUIDE_*).
         '<button class="ck-guide-trigger" type="button" data-ck-guide-open '
         'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
-        'title="PEdesk Guide — explain this page">'
+        'title="PEdesk Guide · explain this page">'
         '<span class="ck-guide-glyph" aria-hidden="true">?</span>Guide</button>'
         # + New deal — primary CTA. No dedicated /deals/new route exists yet,
         # so it routes to the Pipeline section (deal sourcing/origination)

@@ -594,7 +594,7 @@ def render_questions_aggregator(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="Diligence questions — portfolio ledger",
+        title="Diligence questions · portfolio ledger",
         active_nav="DILIGENCE",
         breadcrumbs=[
             ("Home", "/"),
