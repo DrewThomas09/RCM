@@ -275,28 +275,28 @@ def _hero_strip(summary: Dict[str, Any]) -> str:
     # One-sentence narrative read
     if n_deals == 0:
         narrative = (
-            "No deals in the portfolio yet — start by "
+            "No deals in the portfolio yet: start by "
             "uploading a deal or building an analysis packet.")
     elif health is None:
         narrative = (
             f"{n_active} active deal"
             f"{'s' if n_active != 1 else ''} representing "
             f"{_fmt_money(npr)} NPR. Health scores not yet "
-            f"computed — build packets to populate.")
+            f"computed: build packets to populate.")
     elif health >= 75:
         narrative = (
             f"{n_active} active deals at {health:.0f}/100 "
-            f"weighted health — the portfolio is in good "
+            f"weighted health: the portfolio is in good "
             f"shape; focus on growth plays.")
     elif health >= 60:
         narrative = (
             f"{n_active} active deals at {health:.0f}/100 "
-            f"weighted health — mid-tier; one or two "
+            f"weighted health: mid-tier; one or two "
             f"underperformers are pulling the average down.")
     else:
         narrative = (
             f"{n_active} active deals at {health:.0f}/100 "
-            f"weighted health — material drag, "
+            f"weighted health: material drag, "
             f"restructuring conversations needed.")
 
     health_text = (f"{health:.0f}" if health is not None
@@ -323,7 +323,7 @@ def _hero_strip(summary: Dict[str, Any]) -> str:
             "Total NPR", _fmt_money(npr),
             help={
                 "definition": (
-                    "Net Patient Revenue — billed services minus "
+                    "Net Patient Revenue: billed services minus "
                     "contractual allowances, bad debt, and charity "
                     "care. The cash-realisable top line."
                 ),
@@ -370,7 +370,7 @@ def _opportunities_section(
     if not opps:
         return ck_panel(
             '<p class="ck-section-body">'
-            'No realized EBITDA uplift opportunities yet — '
+            'No realized EBITDA uplift opportunities yet: '
             'build analysis packets to populate this list.</p>',
             title="Top opportunities",
         )
@@ -392,7 +392,7 @@ def _opportunities_section(
         f"Ranked by realistic EBITDA uplift across the active "
         f"portfolio. The top {len(opps)} represent "
         f"{_fmt_money(total_uplift)} in additional EBITDA if "
-        f"value-creation plans land — start with the biggest "
+        f"value-creation plans land: start with the biggest "
         f"and work down.")
     return ck_panel(
         f'<p class="ck-section-body">{prose}</p>'
@@ -459,7 +459,7 @@ def _activity_section(
     if not activity:
         return ck_panel(
             '<p class="ck-section-body">'
-            'No changes in the last week — the portfolio data is steady.</p>',
+            'No changes in the last week: the portfolio data is steady.</p>',
             title="Recent activity",
         )
     rows = []
@@ -1157,7 +1157,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
             '<div class="dv-tour-banner-body">'
             '<span class="dv-tour-banner-prose">'
             'Take a two-minute walkthrough of every surface on '
-            'the platform — pipeline, diligence, risk, monte '
+            'the platform: pipeline, diligence, risk, monte '
             'carlo, portfolio, delivery. <em>The Atlas</em>, '
             'seven volumes.'
             '</span>'
