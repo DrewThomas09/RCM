@@ -123,7 +123,7 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
         )
         lede_html = (
             f'<em>Everything in {_h.escape(title)}, ordered best-first.</em> '
-            'Open any tool — the dot shows whether it runs on live data, '
+            'Open any tool; the dot shows whether it runs on live data, '
             'a computed model, or illustrative figures.'
         )
     else:
@@ -159,7 +159,7 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
             title="Nothing ranked",
         )
         return chartis_shell(
-            body, f"{title} — best", active_nav="/" + section,
+            body, f"{title} · best", active_nav="/" + section,
             extra_css=_CSS,
         )
 
