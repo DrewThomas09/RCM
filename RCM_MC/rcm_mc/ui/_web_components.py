@@ -25,6 +25,7 @@ no framework deps.
 from __future__ import annotations
 
 import html as _html
+import re as _re
 from typing import Iterable, List, Optional, Tuple
 
 
@@ -85,6 +86,9 @@ def web_styles() -> str:
     border-bottom: 1px solid var(--sc-rule, #d6cfc0);
     vertical-align: top; color: var(--sc-text, #1a2332); }
 .wc-table tbody tr:hover { background: var(--sc-parchment, #f5f1ea); }
+.wc-table thead th.num { text-align: right; }
+.wc-table tbody td.num { text-align: right;
+    font-family: var(--sc-mono, 'JetBrains Mono', monospace); }
 .wc-table tbody tr:last-child td { border-bottom: none; }
 
 /* Filter input above sortable tables */
@@ -256,16 +260,36 @@ def sortable_table(
         filter_placeholder: Placeholder text for the filter input.
     """
     hide_set = set(hide_columns_sm or [])
-    th_cells = []
-    for i, h in enumerate(headers):
-        cls = "wc-hide-sm" if i in hide_set else ""
-        th_cells.append(f'<th class="{cls}" data-col="{i}">{_html.escape(h)}</th>')
+    # Detect numeric columns (cells are pre-formatted strings, maybe HTML) so
+    # their digits right-align via the .wc-table .num rule above.
+    ncol = len(headers)
+    _numre = _re.compile(r'^[$+\-(]?[\d,]+(\.\d+)?[%xX)]?$')
+
+    def _is_num(v: object) -> bool:
+        t = _re.sub(r'<[^>]+>', '', str(v)).strip()
+        return bool(t) and len(t) <= 16 and bool(_numre.match(t))
+
+    numeric_col = [False] * ncol
+    for ci in range(ncol):
+        vals = [row[ci] for row in rows if ci < len(row) and str(row[ci]).strip()]
+        if len(vals) >= 3:
+            numeric_col[ci] = sum(1 for v in vals if _is_num(v)) >= len(vals) * 0.8
+
+    def _cls(i: int) -> str:
+        parts = []
+        if i in hide_set:
+            parts.append("wc-hide-sm")
+        if i < ncol and numeric_col[i]:
+            parts.append("num")
+        return " ".join(parts)
+
+    th_cells = [
+        f'<th class="{_cls(i)}" data-col="{i}">{_html.escape(h)}</th>'
+        for i, h in enumerate(headers)
+    ]
     td_rows = []
     for row in rows:
-        tds = []
-        for i, cell in enumerate(row):
-            cls = "wc-hide-sm" if i in hide_set else ""
-            tds.append(f'<td class="{cls}">{cell}</td>')
+        tds = [f'<td class="{_cls(i)}">{cell}</td>' for i, cell in enumerate(row)]
         td_rows.append(f'<tr>{"".join(tds)}</tr>')
     table_id_attr = f' id="{_html.escape(id)}"' if id else ""
     table_html = (
