@@ -120,6 +120,14 @@ code, pre, kbd, samp { font-family: var(--sc-mono, "JetBrains Mono", monospace);
 .sans { font-family: "Inter", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
 .mono { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; font-feature-settings: "tnum" on; }
 .num  { font-variant-numeric: tabular-nums; }
+/* Bespoke-table numeric utilities. `td.r`/`th.r` right-align — previously only
+   defined scoped to .pair/.app-deals-table/.cat-col, so the ~18 other bespoke
+   tables emitting <td class="r"> stayed left-aligned. `.mn` is the mono
+   tabular-num numeric style referenced by ~27 pages (class="r mn") but never
+   actually defined, so those numerics rendered in the inherited body font. */
+td.r, th.r { text-align: right; }
+.mn { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      font-feature-settings: "tnum" on; font-variant-numeric: tabular-nums; }
 
 /* Eyebrow micro-label per §4 */
 .micro {
