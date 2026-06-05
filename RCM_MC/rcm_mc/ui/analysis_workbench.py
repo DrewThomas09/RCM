@@ -780,7 +780,7 @@ body.analysis-workbench {{
   padding-bottom: 4px; border-bottom: 1px solid var(--wb-border);
 }}
 .analysis-workbench .ov-row {{
-  display: grid; grid-template-columns: 200px 1fr 90px 90px 1fr;
+  display: grid; grid-template-columns: 260px 1fr 90px 90px 1fr;
   gap: 6px; align-items: center;
   padding: 5px 0; border-bottom: 1px solid var(--wb-panel-alt);
   font-size: 12px;
@@ -792,7 +792,7 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .ov-key {{
   font-family: "JetBrains Mono", monospace; font-size: 11px;
-  color: var(--wb-text);
+  color: var(--wb-text); min-width: 0; overflow-wrap: anywhere;
 }}
 .analysis-workbench .ov-model-val {{
   color: var(--wb-text-dim); font-family: "JetBrains Mono", monospace;
