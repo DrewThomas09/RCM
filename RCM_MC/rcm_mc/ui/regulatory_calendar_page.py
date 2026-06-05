@@ -1259,7 +1259,7 @@ def render_regulatory_calendar_page(
         + ck_next_section(
             "Stress-test these dates against the bridge",
             "/diligence/bridge-audit",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bridge",
         )
     )

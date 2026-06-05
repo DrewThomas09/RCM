@@ -99,7 +99,7 @@ def render_surrogate_page(
         + ck_next_section(
             "Open the predictive screener",
             "/predictive-screener",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="screener",
         )
     )

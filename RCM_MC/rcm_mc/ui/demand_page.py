@@ -386,7 +386,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     next_up = ck_next_section(
         "Open the market analysis",
         f"/models/market/{ccn}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="market",
     )
     # Lead takeaway — surface the demand-profile read (structural

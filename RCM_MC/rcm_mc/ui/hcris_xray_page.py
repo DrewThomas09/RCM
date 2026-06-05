@@ -1397,7 +1397,7 @@ def render_hcris_xray_page(
             + ck_next_section(
                 "Move into the Risk Workbench",
                 "/diligence/risk-workbench",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="Risk",
             )
             + '</div>'

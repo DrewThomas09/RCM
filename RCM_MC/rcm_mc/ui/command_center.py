@@ -465,7 +465,7 @@ def render_command_center(
     body = "\n".join(sections) + ck_next_section(
         "Open the morning dashboard",
         "/dashboard",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="dashboard",
     )
 

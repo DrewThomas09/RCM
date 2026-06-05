@@ -357,7 +357,7 @@ border-bottom:1px solid var(--cad-border);font-size:12.5px;}
     next_up = ck_next_section(
         "Run the diligence checklist",
         "/diligence/checklist",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="checklist",
     )
     body = (

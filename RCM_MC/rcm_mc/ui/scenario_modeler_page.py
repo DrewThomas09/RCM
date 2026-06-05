@@ -649,7 +649,7 @@ padding:4px 0;cursor:pointer;}
     next_up = ck_next_section(
         "Open the EBITDA bridge for this CCN",
         f"/ebitda-bridge/{_html.escape(ccn)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="bridge",
     )
     moic_bars = _scenario_moic_bars(results)

@@ -311,7 +311,7 @@ def render_research(
         next_section_html=ck_next_section(
             "Open the metric glossary",
             "/metric-glossary",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="metric",
         ),
     )

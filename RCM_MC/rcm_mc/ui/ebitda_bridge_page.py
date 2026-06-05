@@ -1670,7 +1670,7 @@ def render_ebitda_bridge(
         + ck_next_section(
             "Run the bridge through Monte Carlo",
             "/diligence/deal-mc",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="Monte",
         )
     )

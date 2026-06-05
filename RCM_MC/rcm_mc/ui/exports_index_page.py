@@ -207,7 +207,7 @@ def render_exports_index(db_path: str) -> str:
     next_up = ck_next_section(
         "Open the LP update",
         "/lp-update",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="LP",
     )
     body = (

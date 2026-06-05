@@ -145,7 +145,7 @@ def render_team_dashboard(db_path: str) -> str:
     next_up = ck_next_section(
         "Open the portfolio for context",
         "/portfolio",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="portfolio",
     )
 

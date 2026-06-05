@@ -169,7 +169,7 @@ def render_deal_quick_view(
     next_up = ck_next_section(
         "Open the full deal profile",
         f"/deal/{did}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
     body = f'{error_html}{profile_section}{completeness}{models_section}{export_section}{next_up}'

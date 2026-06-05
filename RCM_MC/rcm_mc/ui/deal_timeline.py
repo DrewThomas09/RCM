@@ -293,7 +293,7 @@ def render_timeline(
     next_up = ck_next_section(
         "Back to the deal profile",
         f"/deal/{_esc(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
     return chartis_shell(

@@ -300,7 +300,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     next_up = ck_next_section(
         "Open the competitive intelligence view",
         f"/models/comparables/{did_esc}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="competitive",
     )
     # Lead takeaway — surface the market-position read (moat verdict +

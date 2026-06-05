@@ -550,9 +550,9 @@ def render_questions_aggregator(
     list_html = '<div data-rcm-qa-list></div>'
 
     next_up = ck_next_section(
-        "Capture a question — Shift+Q anywhere",
+        "Capture a question with Shift+Q anywhere",
         "/?v3=1",
-        eyebrow="Shortcut —",
+        eyebrow="Up next",
         italic_word="Shift",
     )
 

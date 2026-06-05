@@ -192,7 +192,7 @@ def render_verticals() -> str:
     next_up = ck_next_section(
         "Open the metric glossary",
         "/metric-glossary",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="metric",
     )
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.

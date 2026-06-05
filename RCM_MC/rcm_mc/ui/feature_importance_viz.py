@@ -239,7 +239,7 @@ def render_feature_importance_page(
         + ck_next_section(
             "Open the model quality view",
             "/models/quality",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="quality",
         )
     )

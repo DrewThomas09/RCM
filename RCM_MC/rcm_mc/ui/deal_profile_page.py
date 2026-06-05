@@ -2645,7 +2645,7 @@ def render_deal_profile_page(
     next_up = ck_next_section(
         "Open the diligence checklist",
         "/diligence/checklist",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="checklist",
     )
     # Phase MMM: print-preview affordance — partners often want a

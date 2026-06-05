@@ -145,7 +145,7 @@ def render_benchmarks_page(
         + ck_next_section(
             "Open the bridge auditor",
             "/diligence/bridge-audit",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bridge",
         )
     )

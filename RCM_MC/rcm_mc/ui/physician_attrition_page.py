@@ -1211,7 +1211,7 @@ def render_physician_attrition_page(
         + ck_next_section(
             "Open the provider economics surface",
             "/diligence/physician-eu",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="economics",
         )
     )

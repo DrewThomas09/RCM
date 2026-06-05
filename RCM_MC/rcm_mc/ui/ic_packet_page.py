@@ -756,7 +756,7 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + ck_next_section(
                 "Return to the portfolio",
                 "/portfolio",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="portfolio",
             )
         )
@@ -770,7 +770,7 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + ck_next_section(
                 "Return to the portfolio",
                 "/portfolio",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="portfolio",
             )
         )

@@ -656,7 +656,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + ck_next_section(
             "Assemble the IC packet",
             "/diligence/ic-packet",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="packet",
         )
     )

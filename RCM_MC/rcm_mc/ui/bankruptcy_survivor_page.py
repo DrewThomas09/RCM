@@ -265,7 +265,7 @@ def render_scan_landing() -> str:
         + ck_next_section(
             "Cross-check against named bear cases",
             "/bear-cases",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bear",
         )
     )

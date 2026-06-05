@@ -196,7 +196,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     next_up = ck_next_section(
         "Open the EBITDA bridge",
         f"/models/bridge/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="bridge",
     )
     # Lead takeaway — surface the computed denial-recovery opportunity

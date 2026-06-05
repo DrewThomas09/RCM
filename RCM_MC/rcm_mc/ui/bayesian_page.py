@@ -227,7 +227,7 @@ def render_bayesian_profile(
     next_up = ck_next_section(
         "Open the hospital profile",
         f"/hospital/{_html.escape(ccn)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
     page_title = ck_page_title(

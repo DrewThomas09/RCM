@@ -895,7 +895,7 @@ def render_exit_timing_page(
         + ck_next_section(
             "Take this timing back into the IC packet",
             "/diligence/ic-packet",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="IC",
         )
     )

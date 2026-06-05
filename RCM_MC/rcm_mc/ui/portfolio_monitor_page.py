@@ -570,7 +570,7 @@ overflow:hidden;margin-bottom:8px;}
     next_up = ck_next_section(
         "Open the portfolio risk scan",
         "/portfolio/risk-scan",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="risk",
     )
     value_creation = _value_creation_panel(store)

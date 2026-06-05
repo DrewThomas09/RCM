@@ -542,7 +542,7 @@ def render_denial_prediction_page(
         + ck_next_section(
             "Bridge these denials to the EBITDA impact",
             "/diligence/bridge-audit",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bridge",
         )
     )

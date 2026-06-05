@@ -1297,7 +1297,7 @@ def render_covenant_lab_page(
         + ck_next_section(
             "Stage the bear case",
             "/diligence/bear-case",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bear",
         )
         + '</div>'

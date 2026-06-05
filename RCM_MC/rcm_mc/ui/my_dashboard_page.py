@@ -360,7 +360,7 @@ def render_my_dashboard(
         + ck_next_section(
             "Open the Monday brief",
             "/day-one",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="Monday",
         )
     )

@@ -285,7 +285,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "",
     next_up = ck_next_section(
         "Open the pipeline",
         "/pipeline",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="pipeline",
     )
     return chartis_shell(

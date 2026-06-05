@@ -1216,7 +1216,7 @@ padding:12px 0;border-bottom:1px solid var(--cad-border);}
     page_body = page_body + ck_next_section(
         "Open the Monday brief",
         "/day-one",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="Monday",
     )
     return chartis_shell(

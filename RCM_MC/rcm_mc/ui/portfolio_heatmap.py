@@ -251,7 +251,7 @@ def render_heatmap(
         + ck_next_section(
             "Open the portfolio map",
             "/portfolio/map",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="map",
         )
     )

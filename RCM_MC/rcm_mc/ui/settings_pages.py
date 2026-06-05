@@ -195,7 +195,7 @@ def render_custom_kpis_page(store: Any) -> str:
         + ck_next_section(
             "Open automation rules",
             "/settings/automations",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="automation",
         )
     )
@@ -258,7 +258,7 @@ def render_automations_page(store: Any) -> str:
         + ck_next_section(
             "Open integrations",
             "/settings/integrations",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="integrations",
         )
     )
@@ -390,7 +390,7 @@ def render_integrations_page(store: Any) -> str:
         + ck_next_section(
             "Open custom KPIs",
             "/settings/custom-kpis",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="KPIs",
         )
     )

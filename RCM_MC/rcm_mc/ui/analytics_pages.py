@@ -391,7 +391,7 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
         + ck_next_section(
             "Open the counterfactual view",
             f"/models/counterfactual/{html.escape(deal_id)}",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="counterfactual",
         )
     )
@@ -619,7 +619,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
         + ck_next_section(
             "Open the causal inference view",
             f"/models/causal/{html.escape(deal_id)}",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="causal",
         )
     )

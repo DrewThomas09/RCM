@@ -298,7 +298,7 @@ def render_portfolio_map(
 
     next_up = ck_next_section(
         "Open the portfolio heatmap", "/portfolio/heatmap",
-        eyebrow="Continue —", italic_word="heatmap",
+        eyebrow="Up next", italic_word="heatmap",
     )
 
     body = (

@@ -618,7 +618,7 @@ overflow:hidden;margin-bottom:8px;}
         + ck_next_section(
             "Open the hospital screener",
             "/screen",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="screener",
         )
     )

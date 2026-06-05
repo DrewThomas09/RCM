@@ -369,7 +369,7 @@ def render_sensitivity_page(
     body = body + ck_next_section(
         "Pressure-test in the Risk Workbench",
         "/diligence/risk-workbench?demo=steward",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="Workbench",
     )
     return chartis_shell(

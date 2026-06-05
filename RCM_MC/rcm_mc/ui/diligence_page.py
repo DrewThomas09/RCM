@@ -126,7 +126,7 @@ def render_diligence_questions(deal_id: str, deal_name: str, questions: List[Dic
         + ck_next_section(
             "Open the portfolio-wide question ledger",
             "/diligence/questions",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="ledger",
         )
     )

@@ -903,7 +903,7 @@ def render_counterfactual_page(
         + ck_next_section(
             "Pressure-test these levers in the Risk Workbench",
             "/diligence/risk-workbench?demo=steward",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="Workbench",
         )
     )

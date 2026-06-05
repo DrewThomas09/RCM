@@ -191,7 +191,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     next_up = ck_next_section(
         "Pressure-test these returns",
         "/diligence/risk-workbench?demo=steward",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="pressure-test",
     )
     # Lead takeaway — surface the computed return (MOIC/IRR + the

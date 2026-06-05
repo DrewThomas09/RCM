@@ -653,7 +653,7 @@ def render_diligence_checklist_page(
         + ck_next_section(
             "Open the deal profile",
             "/diligence/deal",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="deal",
         )
     )

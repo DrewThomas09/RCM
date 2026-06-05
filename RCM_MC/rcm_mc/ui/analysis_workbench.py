@@ -3235,7 +3235,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     next_up = ck_next_section(
         "Back to the deal profile",
         f"/deal/{packet.deal_id}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
     shell_body = (

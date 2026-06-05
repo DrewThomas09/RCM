@@ -193,7 +193,7 @@ def render_metric_glossary() -> str:
         + ck_next_section(
             "Open the methodology reference",
             "/methodology",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="methodology",
         )
     )

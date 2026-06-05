@@ -406,7 +406,7 @@ def render_find_comps(params: Dict[str, str]) -> str:
     next_up = ck_next_section(
         "Open the comparable outcomes view",
         "/diligence/comparable-outcomes",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="outcomes",
     )
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

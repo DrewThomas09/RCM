@@ -429,7 +429,7 @@ def render_model_validation(
     next_up = ck_next_section(
         "Calibrate predictions against priors",
         "/calibration",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="priors",
     )
     body = (

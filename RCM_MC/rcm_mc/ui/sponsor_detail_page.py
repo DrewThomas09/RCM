@@ -553,7 +553,7 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
     next_up = ck_next_section(
         "Open the comparable outcomes view",
         "/diligence/comparable-outcomes",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="outcomes",
     )
     body = (

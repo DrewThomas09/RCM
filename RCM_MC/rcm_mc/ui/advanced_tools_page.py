@@ -244,7 +244,7 @@ def render_debt_model(deal_id: str, deal_name: str, debt: Dict[str, Any]) -> str
     next_up = ck_next_section(
         "Open returns & covenant",
         f"/models/returns/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="returns",
     )
     body = f'{nav}{intro}{kpis}{table}{interp}{actions}{next_up}'
@@ -351,7 +351,7 @@ def render_challenge_solver(deal_id: str, deal_name: str, result: Dict[str, Any]
     next_up = ck_next_section(
         "Open the pressure test",
         f"/pressure?deal_id={html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="pressure",
     )
     body = f'{nav}{intro}{kpis}{table}{interp}{next_up}'
@@ -528,7 +528,7 @@ def render_trend_forecast(deal_id: str, deal_name: str, trends: List[Dict[str, A
         + ck_next_section(
             "Open anomaly detection",
             f"/models/anomalies/{html.escape(deal_id)}",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="anomaly",
         )
     )

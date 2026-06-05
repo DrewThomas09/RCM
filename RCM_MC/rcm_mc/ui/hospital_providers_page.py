@@ -309,7 +309,7 @@ def render_hospital_providers(
     next_up = ck_next_section(
         "Cross-check against PPAM attrition predictions",
         "/diligence/physician-attrition",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="attrition",
     )
 

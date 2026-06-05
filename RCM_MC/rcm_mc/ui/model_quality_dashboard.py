@@ -374,7 +374,7 @@ def render_model_quality_dashboard(
         + ck_next_section(
             "Open the feature importance view",
             "/models/importance",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="feature",
         )
     )

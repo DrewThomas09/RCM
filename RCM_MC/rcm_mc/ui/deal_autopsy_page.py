@@ -882,7 +882,7 @@ def render_deal_autopsy_page(
         + ck_next_section(
             "Cross-check against named bear cases",
             "/bear-cases",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bear",
         )
     )

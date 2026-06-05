@@ -978,7 +978,7 @@ def render_ic_memo(
             + ck_next_section(
                 "Open the IC packet",
                 "/diligence/ic-packet",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="packet",
             )
         )

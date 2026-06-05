@@ -714,7 +714,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     next_up = ck_next_section(
         "Open the LBO model",
         f"/models/lbo/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="LBO",
     )
     # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
@@ -986,7 +986,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     next_up = ck_next_section(
         "Open the returns waterfall",
         f"/models/waterfall/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="waterfall",
     )
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
@@ -1123,7 +1123,7 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     next_up = ck_next_section(
         "Open the DCF model",
         f"/models/dcf/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="DCF",
     )
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.

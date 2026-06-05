@@ -682,7 +682,7 @@ def render_day_one(store: Any) -> str:
     next_up = ck_next_section(
         "Open the morning dashboard for the full view",
         "/?v3=1",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="dashboard",
     )
 

@@ -721,7 +721,7 @@ def render_thesis_pipeline_page(
         + ck_next_section(
             "Open the diligence checklist",
             "/diligence/checklist",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="checklist",
         )
     )

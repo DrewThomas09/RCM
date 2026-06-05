@@ -430,7 +430,7 @@ def _render_comparison(
     next_up = ck_next_section(
         "Take this comparison into the IC packet",
         "/diligence/ic-packet",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="IC",
     )
     return chartis_shell(

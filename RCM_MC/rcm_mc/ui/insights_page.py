@@ -60,7 +60,7 @@ def render_insights_page(db_path: str) -> str:
                 # routes to the morning dashboard view.
                 "Open the morning dashboard for the full view",
                 "/?v3=1",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="dashboard",
             )
         )
@@ -168,7 +168,7 @@ def render_insights_page(db_path: str) -> str:
     next_up = ck_next_section(
         "Open the day-one Monday brief",
         "/day-one",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="day",
     )
     body = (

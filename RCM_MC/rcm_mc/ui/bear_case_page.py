@@ -658,7 +658,7 @@ def _render_bear_case_no_ccd(
         + ck_next_section(
             "Assemble the IC packet",
             "/diligence/ic-packet",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="packet",
         )
         + '</div>'

@@ -570,7 +570,7 @@ def render_physician_eu_page(
         + ck_next_section(
             "Pressure-test attrition risk",
             "/diligence/physician-attrition",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="attrition",
         )
     )

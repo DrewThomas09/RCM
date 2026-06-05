@@ -106,7 +106,7 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         + ck_next_section(
             "Apply a scenario to a deal",
             "/diligence/deal",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="deal",
         )
     )

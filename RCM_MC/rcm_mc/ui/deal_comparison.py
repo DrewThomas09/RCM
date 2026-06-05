@@ -276,7 +276,7 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
         + ck_next_section(
             "Open the IC packet",
             "/diligence/ic-packet",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="IC",
         )
     )

@@ -428,7 +428,7 @@ border-bottom:1px solid {PALETTE['border']};}}
     next_up = ck_next_section(
         "Back to the hospital profile",
         f"/hospital/{ccn_esc}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
     body = (

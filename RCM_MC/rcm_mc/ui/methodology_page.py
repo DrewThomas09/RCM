@@ -372,7 +372,7 @@ def render_methodology() -> str:
     next_up = ck_next_section(
         "Open the metric glossary",
         "/metric-glossary",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="glossary",
     )
     body = (

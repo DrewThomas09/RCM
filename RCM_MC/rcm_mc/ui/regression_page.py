@@ -4370,7 +4370,7 @@ def render_regression_page(
     next_up = ck_next_section(
         "Open the portfolio for context",
         "/portfolio",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="portfolio",
     )
     # Unmissable red banner — user reported R²=83% on a fit with 4

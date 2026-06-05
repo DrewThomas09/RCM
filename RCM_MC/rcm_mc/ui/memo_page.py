@@ -108,7 +108,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     next_up = ck_next_section(
         "Open the IC packet",
         "/diligence/ic-packet",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="packet",
     )
     # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block

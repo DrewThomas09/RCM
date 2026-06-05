@@ -1249,7 +1249,7 @@ def render_payer_stress_page(
         + ck_next_section(
             "Stress-test the bridge against these payer shifts",
             "/diligence/bridge-audit",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bridge",
         )
     )

@@ -127,8 +127,8 @@ def _demo_team() -> List[Executive]:
                           outcome="CHAPTER_11"),
             ],
             reference_note=(
-                "Partner call with 2 prior board members — "
-                "credited for RegionCo turnaround; Steward role "
+                "Partner call with 2 prior board members: "
+                "credited for the RegionCo turnaround; the Steward role "
                 "was operational, not strategic."
             ),
         ),
@@ -181,7 +181,7 @@ def _demo_team() -> List[Executive]:
                           end_year=2024, outcome="IN_PROGRESS"),
             ],
             reference_note=(
-                "Recent hire — partner should ask why the prior CMO "
+                "Recent hire. Partner should ask why the prior CMO "
                 "left; comp above p90 is Stark-exposed."
             ),
         ),
@@ -493,7 +493,7 @@ def render_management_scorecard_page(
         f'color:#b8732a;margin-bottom:4px;">Demo data</div>'
         f'<strong style="color:#2d1d05;">The four executives below are '
         f'demonstration fixtures.</strong> Names, tenure, comp, and '
-        f'forecast-miss histories are illustrative — they do not reflect '
+        f'forecast-miss histories are illustrative; they do not reflect '
         f'the target deal. The 4-dimension scoring framework (forecast '
         f'reliability × comp structure × tenure × prior role) is real '
         f'and runs against whatever roster is supplied. CIM ingest + '
@@ -522,7 +522,7 @@ def render_management_scorecard_page(
         f'line-height:1.65;max-width:880px;">'
         f'<strong style="color:{P["text"]};">How to read these cards: </strong>'
         f'Each executive scores 0–100 on four dimensions. Overall score '
-        f'is a weighted average with a red-flag override — any dimension '
+        f'is a weighted average with a red-flag override: any dimension '
         f'below 30 caps overall at 40 so partners see structural '
         f'problems. Card color band reflects overall score. Hover each '
         f'dimension tile for the specific definition. Red-flag rows at '
@@ -542,7 +542,7 @@ def render_management_scorecard_page(
             purpose="Structure an executive-team read (credibility, forecast reliability, retention, alignment) into a value haircut for underwriting.",
             universe="illustrative",
             confidence="data-required",
-            source="Illustrative scaffold — the forecast-miss / retention histories are NOT this team's real record. Upload management track-record data to activate; until then read it as a framework, not findings.",
+            source="Illustrative scaffold: the forecast-miss and retention histories are NOT this team's real record. Upload management track-record data to activate; until then read it as a framework, not findings.",
             next_action="Provide management track-record + comp data to activate",
         )
         + demo_banner
@@ -556,7 +556,7 @@ def render_management_scorecard_page(
         + ck_next_section(
             "Take this read into the IC packet",
             "/diligence/ic-packet",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="IC",
         )
     )
@@ -566,7 +566,7 @@ def render_management_scorecard_page(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        f"Management Scorecard — {target_name}",
+        f"Management Scorecard · {target_name}",
         active_nav="/diligence/management",
         subtitle="Forecast reliability × comp × tenure × prior role",
     )

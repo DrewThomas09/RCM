@@ -218,7 +218,7 @@ def render_grouped_catalog(
     )
     nxt = ""
     if next_label and next_href:
-        nxt = ck_next_section(next_label, next_href, eyebrow="Continue —",
+        nxt = ck_next_section(next_label, next_href, eyebrow="Up next",
                               italic_word=next_italic or None)
     body = (
         _CSS + head

@@ -604,7 +604,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
     next_up = ck_next_section(
         "Open the methodology reference",
         "/methodology",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="methodology",
     )
     body = (

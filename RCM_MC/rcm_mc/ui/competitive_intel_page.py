@@ -545,7 +545,7 @@ def render_competitive_intel(ccn: str, hcris_df: pd.DataFrame) -> str:
     next_up = ck_next_section(
         "Take this peer view back into the deal profile",
         f"/deal/{_html.escape(ccn)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
     page_title = ck_page_title(

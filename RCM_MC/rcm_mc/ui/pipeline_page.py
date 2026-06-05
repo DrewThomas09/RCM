@@ -657,7 +657,7 @@ border-radius:2px;transition:background 0.12s;}
     next_up = ck_next_section(
         "Open a deal profile",
         "/diligence/deal",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="deal",
     )
     # 2026-05-28 usability lift · floating back-to-top button for the

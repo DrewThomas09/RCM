@@ -474,7 +474,7 @@ def render_news(category: str = "all") -> str:
     next_up = ck_next_section(
         "Open the research hub",
         "/research",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="research",
     )
     # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.

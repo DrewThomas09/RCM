@@ -627,7 +627,7 @@ def render_global_search_page(
     body = body + ck_next_section(
         "Open the diligence-questions ledger",
         "/diligence/questions",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="questions",
     )
     return chartis_shell(

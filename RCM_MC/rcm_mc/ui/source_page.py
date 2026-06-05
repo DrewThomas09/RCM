@@ -115,7 +115,7 @@ def render_source_page(
     next_up = ck_next_section(
         "Open the hospital screener",
         "/screen",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="screener",
     )
     # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.

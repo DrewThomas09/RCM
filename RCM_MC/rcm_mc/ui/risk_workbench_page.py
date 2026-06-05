@@ -1312,7 +1312,7 @@ def render_risk_workbench(
             + ck_next_section(
                 "Stage the bear case for IC",
                 "/diligence/bear-case",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="bear",
             )
         )

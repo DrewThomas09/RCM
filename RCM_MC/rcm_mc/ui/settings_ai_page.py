@@ -399,7 +399,7 @@ def render_ai_settings(store: Any) -> str:
         + ck_next_section(
             "Back to settings",
             "/settings",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="settings",
         )
     )

@@ -463,7 +463,7 @@ transition:filter 120ms ease;}
     next_up = ck_next_section(
         "Open a deal profile to act on the shortlist",
         "/diligence/deal",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="deal",
     )
     # Lead takeaway — surface the screen's aggregate opportunity (total

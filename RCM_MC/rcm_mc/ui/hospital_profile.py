@@ -592,7 +592,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
     next_up = ck_next_section(
         "Open the hospital's history",
         f"/hospital/{ccn}/history",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="history",
     )
     # Per-deal context ribbon at the top — the profile is the deal's
