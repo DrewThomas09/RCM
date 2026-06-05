@@ -249,26 +249,26 @@ def _signals_panel(returns_obj: Any, ass_obj: Any) -> str:
     if irr >= 0.25:
         bullets.append(
             f"IRR <strong>{irr*100:.1f}%</strong> clears a typical 20% hurdle "
-            "with room — defensible at this assumption set."
+            "with room: defensible at this assumption set."
         )
     elif irr >= 0.15:
         bullets.append(
-            f"IRR <strong>{irr*100:.1f}%</strong> is in the 15–25% range — "
+            f"IRR <strong>{irr*100:.1f}%</strong> is in the 15–25% range: "
             "partner-defendable but sensitive to exit multiple."
         )
     elif irr > 0:
         bullets.append(
             f"IRR <strong>{irr*100:.1f}%</strong> is below typical fund "
-            "hurdles — the deal needs an upside lever to clear."
+            "hurdles: the deal needs an upside lever to clear."
         )
     else:
         bullets.append(
             f"IRR <strong>{irr*100:.1f}%</strong> is non-positive at these "
-            "assumptions — equity is impaired in the model."
+            "assumptions: equity is impaired in the model."
         )
     if equity_exit < 0:
         bullets.append(
-            "Equity at exit is <strong>negative</strong> — the model "
+            "Equity at exit is <strong>negative</strong>: the model "
             "shows the deal unworkable at the entry assumed. The Returns "
             "surface (when it ships) will let you stress-test where it breaks."
         )
@@ -283,7 +283,7 @@ def _signals_panel(returns_obj: Any, ass_obj: Any) -> str:
     if multiple < 0:
         bullets.append(
             f"Exit multiple ({float(getattr(ass_obj, 'exit_multiple', 0) or 0):.1f}x) "
-            "is below entry — value-from-multiple is negative; the deal relies "
+            "is below entry: value-from-multiple is negative; the deal relies "
             "on EBITDA growth and deleveraging to clear."
         )
     items = "".join(f"<li>{b}</li>" for b in bullets)
@@ -350,7 +350,7 @@ def render_deal_lbo(ccn: str, hospital: Dict[str, Any]) -> str:
                'line-height:1.55;color:#2a3a4a;margin:0;">'
                'Editable assumption panel (entry/exit multiples, leverage, '
                'growth, margin path) and the year-by-year debt schedule '
-               'land in a follow-up PR; the model already supports them — '
+               'land in a follow-up PR; the model already supports them: '
                'this surface just needs the editor UI. Cross-link to '
                f'<a href="/deals/{_html.escape(ccn, quote=True)}/returns" '
                'style="color:#1f7a5a;">Returns</a> for the covenant '

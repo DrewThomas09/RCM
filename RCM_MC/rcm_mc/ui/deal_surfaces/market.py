@@ -71,23 +71,23 @@ def _moat_verdict(hhi: float, target_share: float, n_in_market: int) -> Tuple[st
     spec's build note (1500-2500 competitive, 2500+ concentrated).
     """
     if n_in_market < 5:
-        return ("No moat — sparse market", "#b8842e",
-                "Fewer than 5 hospitals in this market — confidence on every "
+        return ("No moat: sparse market", "#b8842e",
+                "Fewer than 5 hospitals in this market: confidence on every "
                 "structural read is low; treat the moat call as provisional.")
     if hhi >= 2500 and target_share >= 0.30:
         return ("Wide moat", "#1f7a5a",
-                "Concentrated market AND meaningful target share — the "
+                "Concentrated market AND meaningful target share: the "
                 "structural case for pricing power is intact.")
     if hhi >= 1500 and target_share >= 0.15:
         return ("Narrow moat", "#2d8964",
-                "Moderately concentrated market AND a top-quartile target share "
-                "— some structural advantage, but not exceptional.")
+                "Moderately concentrated market AND a top-quartile target share: "
+                "some structural advantage, but not exceptional.")
     if hhi < 1500:
-        return ("No moat — fragmented", "#b5321e",
+        return ("No moat: fragmented", "#b5321e",
                 "Market is fragmented; the hospital does not enjoy structural "
                 "pricing power. Thesis cannot rest on payer-negotiation upside.")
-    return ("No moat — small player", "#b8842e",
-            "Market is concentrated but the target is a small player — the "
+    return ("No moat: small player", "#b8842e",
+            "Market is concentrated but the target is a small player: the "
             "structural moat sits with someone else.")
 
 
@@ -341,7 +341,7 @@ def _what_this_means(market: Dict[str, Any], ccn: str) -> str:
         '(this hospital alone).</p>'
         '<p style="font-family:var(--sc-mono);font-size:10px;letter-spacing:.1em;'
         'color:#6a7480;margin:10px 0 0;">'
-        'VERDICT FROM A FINITE BAND MAP — NEVER A HALLUCINATED MARKET THESIS.</p>'
+        'VERDICT FROM A FINITE BAND MAP: NEVER A HALLUCINATED MARKET THESIS.</p>'
     )
 
 

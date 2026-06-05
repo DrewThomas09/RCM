@@ -181,7 +181,7 @@ def _hero(lbo_returns: Any, ass: Any) -> str:
         f'gap:12px;margin:0;">{cells}</dl>'
         '<p style="font-family:var(--sc-mono);font-size:10px;letter-spacing:.1em;'
         'color:#6a7480;margin:10px 0 0;">'
-        'GROSS NUMBERS BEFORE THE WATERFALL APPLIES — LP/GP SHARES ARE BELOW.</p>'
+        'GROSS NUMBERS BEFORE THE WATERFALL APPLIES: LP/GP SHARES ARE BELOW.</p>'
     )
 
 
@@ -203,7 +203,7 @@ def _split_bar(w: WaterfallSplit) -> str:
     # f-string expression part on Python < 3.12 (backslash restriction).
     pref_note = (
         '' if w.pref_cleared
-        else ' — <em style="color:#b8842e;">pref not cleared</em>'
+        else ': <em style="color:#b8842e;">pref not cleared</em>'
     )
     return (
         '<div style="display:flex;border:1px solid #c9c1ac;height:36px;'
@@ -236,7 +236,7 @@ def _split_bar(w: WaterfallSplit) -> str:
         'color:#6a7480;margin:12px 0 0;">'
         f'PREF {w.pref_rate*100:.0f}% &middot; CARRY {int((1-w.carry_split)*100)}/'
         f'{int(w.carry_split*100)} &middot; EUROPEAN WATERFALL &middot; THESE ARE '
-        'INDUSTRY-DEFAULT TERMS — OVERRIDE WITH THE ACTUAL FUND DOCS WHEN AVAILABLE.'
+        'INDUSTRY-DEFAULT TERMS: OVERRIDE WITH THE ACTUAL FUND DOCS WHEN AVAILABLE.'
         f'{" DIAGONAL-STRIPE PATTERN ON LP = RETURN-OF-CAPITAL NOT COMPLETE." if w.lp_moic < 1.0 else ""}'
         '</p>'
     )
@@ -246,20 +246,20 @@ def _what_this_means(w: WaterfallSplit, irr: float) -> str:
     bullets = []
     if not w.pref_cleared:
         bullets.append(
-            "<strong>Pref is not cleared</strong> at this exit — LP doesn't "
+            "<strong>Pref is not cleared</strong> at this exit: LP doesn't "
             "earn its 8% hurdle and GP earns zero carry. The deal needs more "
             "exit value or a longer hold before carry math matters."
         )
     elif w.gp_moic < 0.10:
         bullets.append(
-            f"GP carry / capital is <strong>{w.gp_moic:.2f}x</strong> — modest. "
+            f"GP carry / capital is <strong>{w.gp_moic:.2f}x</strong>: modest. "
             "If the GP is negotiating fund terms, this is a deal where a higher "
             "carry split (e.g. 75/25) is harder to justify."
         )
     else:
         bullets.append(
             f"GP carry / capital is <strong>{w.gp_moic:.2f}x</strong> on top of "
-            f"capital — material. Standard 80/20 terms hold up."
+            f"capital: material. Standard 80/20 terms hold up."
         )
     if irr < 0.20 and w.pref_cleared:
         bullets.append(
@@ -273,7 +273,7 @@ def _what_this_means(w: WaterfallSplit, irr: float) -> str:
         f'color:#2a3a4a;margin:0;padding-left:18px;">{items}</ul>'
         '<p style="font-family:var(--sc-mono);font-size:10px;letter-spacing:.1em;'
         'color:#6a7480;margin:10px 0 0;">'
-        'GUIDANCE DERIVED FROM REAL WATERFALL NUMBERS — NEVER A PROSE THESIS.</p>'
+        'GUIDANCE DERIVED FROM REAL WATERFALL NUMBERS: NEVER A PROSE THESIS.</p>'
     )
 
 
