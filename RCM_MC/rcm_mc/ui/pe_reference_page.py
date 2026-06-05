@@ -210,7 +210,7 @@ def _render_chain(thesis_id: str, impls: List[Any]) -> str:
 _LIBRARIES: Dict[str, Dict[str, Any]] = {
     "failures": {
         "title": "Historical Failures",
-        "intro": "Dated PE-healthcare deals that broke — thesis at entry, what "
+        "intro": "Dated PE-healthcare deals that broke: thesis at entry, what "
                  "happened, and the lesson. Pattern-match a live deal before "
                  "you repeat one.",
         "load": _combined_failures,
@@ -237,7 +237,7 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
     },
     "motivations": {
         "title": "Seller Motivations",
-        "intro": "What's really driving the sale — urgency, leverage, and the "
+        "intro": "What's really driving the sale: urgency, leverage, and the "
                  "partner play that uses it.",
         "load": _from_const("seller_motivation_decoder", "MOTIVATION_LIBRARY"),
         "spec": {
@@ -252,7 +252,7 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
     },
     "archetypes": {
         "title": "Failure Archetypes",
-        "intro": "Structural shapes a deal fails in — the mechanism and the "
+        "intro": "Structural shapes a deal fails in: the mechanism and the "
                  "counter, independent of any single named deal.",
         "load": _from_const("failure_archetype_library", "ARCHETYPES"),
         "spec": {
@@ -265,7 +265,7 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
     },
     "bidders": {
         "title": "Bidder Landscape",
-        "intro": "Buyer profiles in a process — typical behavior, the premium "
+        "intro": "Buyer profiles in a process: typical behavior, the premium "
                  "they'll pay, and the posture to take against each.",
         "load": _from_const("bidder_landscape_reader", "PROFILE_LIBRARY"),
         "spec": {
@@ -279,7 +279,7 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
     },
     "narratives": {
         "title": "Banker Narratives",
-        "intro": "The CIM and management-meeting plays a banker runs — name the "
+        "intro": "The CIM and management-meeting plays a banker runs: name the "
                  "play, know why it works, and defuse it.",
         "load": _from_const("banker_narrative_decoder", "NARRATIVE_LIBRARY"),
         "spec": {
@@ -292,7 +292,7 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
     },
     "signing": {
         "title": "Signing-to-Close Risks",
-        "intro": "What can break a deal between signing and close — frequency, "
+        "intro": "What can break a deal between signing and close: frequency, "
                  "severity, the early warnings, and the pre-close counter.",
         "load": _from_const("signing_to_close_risk_register", "RISK_LIBRARY"),
         "spec": {
@@ -308,7 +308,7 @@ _LIBRARIES: Dict[str, Dict[str, Any]] = {
         "title": "Thesis Chains",
         "intro": "Every healthcare thesis carries implicit claims. Each chain "
                  "lays out what must be true, the partner check, and the risk "
-                 "if it isn't — so the diligence plan writes itself.",
+                 "if it isn't, so the diligence plan writes itself.",
         "load": _from_chains("thesis_implications_chain", "THESIS_CHAINS"),
         "kind": "chains",
     },
@@ -360,7 +360,7 @@ def render_pe_reference_page(library: str = "") -> str:
         purpose=intro,
         universe="corpus",
         confidence="derived",
-        source="rcm_mc.pe_intelligence curated libraries — real partner "
+        source="rcm_mc.pe_intelligence curated libraries: real partner "
                "knowledge + judgment analysis (not a live data feed)",
         next_action="Run a tool on a deal",
         next_href="/diligence/pe-tool",
@@ -369,7 +369,7 @@ def render_pe_reference_page(library: str = "") -> str:
     body = (
         ck_page_title(title, eyebrow="DILIGENCE · REFERENCE",
                       meta=f"{len(items)} entries · curated knowledge base")
-        + ck_illustrative_note("a curated knowledge base — real patterns with "
+        + ck_illustrative_note("a curated knowledge base: real patterns with "
                                "partner-judgment analysis, not live data")
         + sp
         + f'<div style="margin:10px 0 14px;">{"".join(tabs)}</div>'

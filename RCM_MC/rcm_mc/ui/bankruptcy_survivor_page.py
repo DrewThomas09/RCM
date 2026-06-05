@@ -135,7 +135,7 @@ def render_scan_landing() -> str:
         "<p>A 12-pattern screen against the named PE-healthcare "
         "bankruptcy playbook (Steward, Envision, APP, Cano, "
         "Prospect, Wellpath) plus six forward-looking regulatory "
-        "vectors. Public data only — no CCD required. Result renders "
+        "vectors. Public data only: no CCD required. Result renders "
         "in &lt;30 seconds.</p>"
         "<form method='POST' action='/screening/bankruptcy-survivor'>"
         "<label class='form-field'>Target name</label>"
@@ -213,7 +213,7 @@ def render_scan_landing() -> str:
                     "Twelve falsifiable structural patterns drawn from "
                     "PE-healthcare bankruptcy precedents (Steward, "
                     "Envision, Mednax). Each pattern is a specific "
-                    "claim a partner can either confirm or rule out — "
+                    "claim a partner can either confirm or rule out: "
                     "not a vague risk theme."
                 ),
             },
@@ -252,7 +252,7 @@ def render_scan_landing() -> str:
         '<p class="ck-bs-explainer">'
         '<em>Whether the deal survives the playbook.</em> '
         "12 patterns drawn from PE-healthcare bankruptcies (Steward, "
-        "Envision, Mednax) — a rapid pre-screen against the structural "
+        "Envision, Mednax): a rapid pre-screen against the structural "
         "moves that have already broken deals. Each fired pattern is a "
         "falsifiable claim, not a verdict."
         "</p>"
@@ -298,7 +298,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         )
     questions_html = "".join(
         f"<li>{html.escape(q)}</li>" for q in scan.diligence_questions
-    ) or "<li>No structural questions generated — target profile is clean.</li>"
+    ) or "<li>No structural questions generated: target profile is clean.</li>"
 
     # Editorial port (2026-04-29): wrap the scan result body in
     # chartis_shell so it inherits the navy topbar + parchment palette
@@ -308,7 +308,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         chartis_shell, ck_kpi_block, ck_page_title, ck_provenance_tooltip,
     )
     result_title = ck_page_title(
-        f"Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}",
+        f"Bankruptcy-Survivor Scan · {html.escape(scan.target_name)}",
         eyebrow="BANKRUPTCY SURVIVOR",
         meta=f"{scan.patterns_hit}/12 patterns hit · {scan.critical_hits} critical",
     )
@@ -316,7 +316,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         '<p class="ck-bs-explainer">'
         f'<em>Verdict: {html.escape(scan.verdict.value)}.</em> '
         f"{html.escape(_VERDICT_COPY[scan.verdict])} "
-        "Each fired pattern cites a falsifiable historical precedent — "
+        "Each fired pattern cites a falsifiable historical precedent: "
         "refute or confirm before proceeding."
         "</p>"
     )
@@ -338,7 +338,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         "<h2>Diligence questions</h2>"
         f"<ul>{questions_html}</ul>"
         "<div class='caveat'>Pre-screening only. Structural pattern "
-        "matching against known historical failure modes — not a legal "
+        "matching against known historical failure modes: not a legal "
         "opinion and not a replacement for the full DealAnalysisPacket. "
         "Every case-study comparison cites the named historical deal's "
         "entry EV and outcome from the public-deals corpus.</div>"
@@ -350,7 +350,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         result_title + result_explainer + body,
-        title=f"Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}",
+        title=f"Bankruptcy-Survivor Scan · {html.escape(scan.target_name)}",
         active_nav="/screening/bankruptcy-survivor",
         extra_css=_EXPLAINER_CSS + _style(),
     )

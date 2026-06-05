@@ -55,7 +55,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
                 "definition": (
                     "Share of submitted claims initially denied by "
                     "payers before any appeals. The starting line for "
-                    "any RCM uplift — every other lever (clean DAR, "
+                    "any RCM uplift: every other lever (clean DAR, "
                     "final write-off, cash conversion) downstream of "
                     "denial reduction."
                 ),
@@ -170,10 +170,10 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
 
     # Interpretation
     dr_level = (
-        "critically high — top priority for IC discussion" if denial_rate > 18
-        else "above industry average — significant improvement opportunity" if denial_rate > 12
-        else "moderate — in line with industry norms" if denial_rate > 8
-        else "below average — strong operational performance"
+        "critically high: top priority for IC discussion" if denial_rate > 18
+        else "above industry average: significant improvement opportunity" if denial_rate > 12
+        else "moderate: in line with industry norms" if denial_rate > 8
+        else "below average: strong operational performance"
     )
     interp = (
         f'<div class="cad-card" style="border-left:3px solid {PALETTE["warning"]};">'
@@ -215,7 +215,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="DENIAL DRIVERS",
-        title=f"Denial drivers — {html.escape(deal_name)}",
+        title=f"Denial drivers · {html.escape(deal_name)}",
         meta=(
             f"DENIAL RATE {denial_rate:.1f}% · "
             f"${total_impact/1e6:.1f}M RECOVERABLE EBITDA · "
@@ -229,7 +229,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
             "Decompose this hospital's denial rate by payer, "
             "denial code, and CARC category. Recoverable "
             "EBITDA estimate weights each driver by historical "
-            "appeal-success rates — the addressable bucket, "
+            "appeal-success rates: the addressable bucket, "
             "not the gross denial rate."
         ),
     )
@@ -240,7 +240,7 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Denial Drivers — {html.escape(deal_name)}",
+        body, f"Denial Drivers · {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"Current: {denial_rate:.1f}% | Recoverable: ${total_impact/1e6:.1f}M/year",
     )

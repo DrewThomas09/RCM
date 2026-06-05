@@ -156,7 +156,7 @@ def _hero(
             f"{'s' if len(opt.candidates) != 1 else ''} "
             f"are net-negative contributors even at FMV comp. "
             f"Dropping them at close via retention structure adds "
-            f"${opt.ebitda_uplift_usd:,.0f} annual EBITDA — "
+            f"${opt.ebitda_uplift_usd:,.0f} annual EBITDA, "
             f"{opt.ebitda_uplift_pct_of_roster*100:.1f}% lift on "
             f"baseline. Quote this in the bid."
         )
@@ -218,7 +218,7 @@ def _hero(
             "call_coverage + admin) over roster"
         ),
         detail=(
-            "Gross comp — includes all directed comp that "
+            "Gross comp: includes all directed comp that "
             "flows from arrangements."
         ),
     )
@@ -286,7 +286,7 @@ def _hero(
             help={
                 "definition": (
                     "Count of providers whose comp exceeds their "
-                    "personal collections — they cost the practice "
+                    "personal collections: they cost the practice "
                     "money. The 'at FMV' column shows how many "
                     "would still be loss-makers if comp were "
                     "renegotiated to fair-market-value benchmark."
@@ -304,7 +304,7 @@ def _hero(
     # One-H1 invariant (audit 2026-05-29).
     intro = ck_editorial_head(
         eyebrow="PHYSICIAN ECONOMIC UNITS",
-        title=f"Per-provider P&L — {html.escape(target_name)}",
+        title=f"Per-provider P&L · {html.escape(target_name)}",
         meta=(
             f"OVERHEAD METHOD: "
             f"{report.overhead_method.upper().replace('_',' ')} · "
@@ -335,7 +335,7 @@ def _optimization_block(opt: RosterOptimization) -> str:
             '<strong>No drop candidates.</strong> All providers '
             'generate positive contribution when comp is restructured '
             'to specialty p50 FMV. No roster-level optimization '
-            'action required — restructure over-paid providers via '
+            'action required: restructure over-paid providers via '
             'earn-out; keep the roster intact.</p>',
             title="Roster Optimization",
         )
@@ -368,7 +368,7 @@ def _optimization_block(opt: RosterOptimization) -> str:
             f'comp ${c.total_comp_usd:,.0f} ({html.escape(fmv_text)}) · '
             f'overhead ${c.allocated_overhead_usd:,.0f}. '
             'Negative contribution persists even when comp is cut to '
-            'specialty FMV — structurally uneconomic at any comp.'
+            'specialty FMV: structurally uneconomic at any comp.'
             '</p>'
             f'</div>'
         )
@@ -545,7 +545,7 @@ def render_physician_eu_page(
         f'<strong style="color:#2d1d05;">The 8 providers ranked below '
         f'are a demonstration roster.</strong> Provider IDs, '
         f'specialties, comp, and collections numbers are '
-        f'illustrative — they do not reflect the target deal. The '
+        f'illustrative: they do not reflect the target deal. The '
         f'economic-unit model (per-provider contribution margin, '
         f'overhead allocation, FMV optimization) is real and runs '
         f'against any roster supplied. NPPES + CIM-ingest hookup are '
@@ -580,7 +580,7 @@ def render_physician_eu_page(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        f"Physician Economic Units — {target_name}",
+        f"Physician Economic Units · {target_name}",
         active_nav="/diligence/physician-eu",
         subtitle="Per-provider P&L · bridge-lever analytic",
     )
