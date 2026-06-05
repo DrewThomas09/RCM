@@ -153,7 +153,7 @@ def _dea_frontier_scatter(eff_scores: List[Any]) -> str:
                 f'{cx - size*0.4:.1f},{cy - size*0.4:.1f}" '
                 f'fill="#0a8a5f" stroke="#fff" stroke-width="1.2">'
                 f'<title>★ {_html.escape(s.hospital_name)} '
-                f'(efficiency {score:.2f}) — on the frontier</title>'
+                f'(efficiency {score:.2f}): on the frontier</title>'
                 f'</polygon>'
             )
         else:
@@ -360,7 +360,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
         f'Data Envelopment Analysis: {frontier_count} hospitals on the efficient frontier, '
         f'{bottom_count} in the bottom 30%. Inputs: beds + operating expenses. '
         'Outputs: net patient revenue + patient days. Frontier (★) is '
-        'the top-left envelope — hospitals producing the most revenue '
+        'the top-left envelope: hospitals producing the most revenue '
         'per dollar of input.</p>'
         f'{eff_scatter}'
         '<table class="cad-table"><thead><tr>'
@@ -497,7 +497,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
         ),
         lede_body=(
             f"{len(hcris_df):,} hospitals, {len(markets)} markets, "
-            "12 quantitative models — from Bayesian calibration "
+            "12 quantitative models: from Bayesian calibration "
             "through DEA efficiency frontiers, queueing theory, and "
             "distress prediction. Zero external dependencies."
         ),
@@ -511,7 +511,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             "Frontier Hospitals", f"{frontier_count}",
             help={
                 "definition": (
-                    "Hospitals on the efficiency frontier — those whose "
+                    "Hospitals on the efficiency frontier: those whose "
                     "margin/quality combination isn't dominated by any "
                     "peer in the same size band. Use these as the "
                     "operational targets when underwriting: 'what does "
@@ -524,7 +524,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
             help={
                 "definition": (
                     "Area-under-curve of the distress-prediction model "
-                    "on the labeled corpus — how well it separates "
+                    "on the labeled corpus: how well it separates "
                     "distressed from healthy hospitals. 0.50 = no "
                     "better than coin flip; 0.80+ = strong; 0.90+ = "
                     "the model rarely confuses the two classes."
@@ -538,7 +538,7 @@ def render_quant_lab(hcris_df: pd.DataFrame) -> str:
                 "definition": (
                     "Zero third-party Python packages beyond stdlib + "
                     "numpy/pandas/matplotlib. No PyTorch, no scikit "
-                    "ensemble wrappers, no Bayesian frameworks — every "
+                    "ensemble wrappers, no Bayesian frameworks: every "
                     "model is implemented in-house so the platform "
                     "stays auditable + supply-chain-safe."
                 ),

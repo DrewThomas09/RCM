@@ -114,8 +114,8 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     )
     not_note = (
         f'<p style="font-family:var(--sc-mono);font-size:11px;color:{P["text_dim"]};'
-        f'margin:6px 0 0">This is a <b>benchmark transaction/company library</b> '
-        f'— not your Pipeline (live deals) and not your Portfolio (holdings).</p>')
+        f'margin:6px 0 0">This is a <b>benchmark transaction/company library</b>: '
+        f'not your Pipeline (live deals) and not your Portfolio (holdings).</p>')
 
     title = ck_page_title(
         "Deal Library",
@@ -170,7 +170,7 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
             + f'<p style="font-family:var(--sc-mono);font-size:10px;'
               f'color:{P["text_dim"]};margin:6px 2px 0">Vertical is <b>estimated '
               f'from the company name</b> (the licensed industry field is a single '
-              f'coarse value); ~76% are unclassified and left blank — it is a '
+              f'coarse value); ~76% are unclassified and left blank: it is a '
               f'heuristic tag, not an authoritative classification.</p>'
             + f'<p style="margin:8px 2px 0;font-size:12px">'
               f'<a href="/deal-library/sponsors" style="color:{P["accent"]};'
@@ -279,11 +279,11 @@ def render_sponsors_index(store: Any, params: Optional[Dict[str, str]] = None) -
     params = {k: str(v) for k, v in (params or {}).items() if v}
     total_companies = dl.count(store)
     title = ck_page_title(
-        "Sponsors — Deal Library",
+        "Sponsors · Deal Library",
         eyebrow="SPONSOR ACTIVITY INDEX",
         # Short scannable meta — the row is CSS-uppercased, so the prior
         # 134-char sentence wrapped to a dense all-caps block.
-        meta=("VC · accelerator · REIT · PE backers — current & prior owners"
+        meta=("VC · accelerator · REIT · PE backers: current & prior owners"
               if total_companies else "no export ingested yet"),
     )
     back = (f'<p style="margin:0 0 8px"><a href="/deal-library" '
@@ -383,7 +383,7 @@ def render_deal_comps(store: Any, params: Optional[Dict[str, str]] = None) -> st
     params = {k: str(v) for k, v in (params or {}).items() if v}
     total_companies = dl.count(store)
     title = ck_page_title(
-        "Comparables — Deal Library",
+        "Comparables · Deal Library",
         eyebrow="DISCLOSED-FINANCIAL MULTIPLES",
         meta=("EV/Revenue & EV/EBITDA for the subset that discloses them"
               if total_companies else "no export ingested yet"),
@@ -405,11 +405,11 @@ def render_deal_comps(store: Any, params: Optional[Dict[str, str]] = None) -> st
     caveat = (
         f'<p style="font-family:var(--sc-mono);font-size:11px;color:{P["text_dim"]};'
         f'line-height:1.5;margin:10px 0 0">Computed only for companies that '
-        f'disclose enterprise value <b>and</b> a positive denominator — a small, '
+        f'disclose enterprise value <b>and</b> a positive denominator: a small, '
         f'mostly-public slice of the {total_companies:,}-company universe (the rest '
         f'report no public financials). Missing values are <b>excluded, never '
         f'treated as zero</b>. This is a benchmark distribution over disclosed '
-        f'financials — not a curated comp set and not a prediction.</p>')
+        f'financials: not a curated comp set and not a prediction.</p>')
 
     try:
         offset = max(0, int(params.get("offset", "0")))
