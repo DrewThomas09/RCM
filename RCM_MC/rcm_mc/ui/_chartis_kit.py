@@ -258,15 +258,15 @@ _SUB_NAV = {
 # the section landing so the panel doubles as the "open the whole section" CTA.
 _SECTION_FEATURE = {
     "home": {"eyebrow": "SECTION · HOME", "title": "Operations",
-             "blurb": "Your daily driver — alerts, escalations, watchlist, and "
+             "blurb": "Your daily driver: alerts, escalations, watchlist, and "
                       "the Command Center in one canvas.", "href": "/app"},
     "source": {"eyebrow": "SECTION · SOURCE", "title": "Target discovery",
-               "blurb": "Find targets across every public CMS/provider universe "
-                        "— the Target Screener workbench (map, table, compare, "
+               "blurb": "Find targets across every public CMS/provider universe: "
+                        "the Target Screener workbench (map, table, compare, "
                         "just-missed, saved screens) plus conferences.",
                "href": "/target-screener"},
     "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Live deals",
-                 "blurb": "Track real opportunities once promoted from Source — "
+                 "blurb": "Track real opportunities once promoted from Source: "
                           "screen, score, and move deals toward IC.",
                  "href": "/pipeline"},
     "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
@@ -281,7 +281,7 @@ _SECTION_FEATURE = {
                           "dispersion, hold analysis, and market intel.",
                  "href": "/research"},
     "portfolio": {"eyebrow": "SECTION · PORTFOLIO", "title": "The active book",
-                  "blurb": "Monitor holdings by geography and risk — map, "
+                  "blurb": "Monitor holdings by geography and risk: map, "
                            "heatmap, risk scan, analytics, and LP reporting.",
                   "href": "/portfolio"},
 }
@@ -372,7 +372,7 @@ _NAV_DESC = {
     "/app": "Glance-level morning brief", "/my/AT": "Your owned deals & pulse",
     "/alerts": "Fire / ack / snooze lifecycle", "/escalations": "What needs a partner",
     "/watchlist": "Starred deals to track",
-    "/target-screener": "Target screening workbench — 9 universes", "/source": "Thesis-driven sourcing",
+    "/target-screener": "Target screening workbench across 9 universes", "/source": "Thesis-driven sourcing",
     "/screen": "Hospital target screener",
     "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
     "/deal-screening": "Thesis-testing workspace", "/find-comps": "Comparable transactions",
