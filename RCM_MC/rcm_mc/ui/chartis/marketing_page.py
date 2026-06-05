@@ -1,4 +1,4 @@
-"""PE Desk — public marketing landing page.
+"""PE Desk, public marketing landing page.
 
 Standalone self-contained HTML served at ``GET /`` for anonymous
 visitors (under ``CHARTIS_UI_V2=1``). Port of
@@ -20,7 +20,7 @@ Sections, top to bottom:
   6. Proof grid — 8 fund-level KPI cells
   7. Modules — section header + 4-column module catalog
   8. Sources — section header + paired sources funnel / inventory
-  9. CTA strip — dark, "Bring your own model"
+  9. CTA strip, dark, "Bring your own model"
   10. Footer
 
 All CTAs route to ``/login?next=/app``. Top-nav links smooth-scroll
@@ -30,7 +30,7 @@ figures — this is a pre-login surface, not a live data view.
 """
 from __future__ import annotations
 
-# CTA target — every "sign in" / "request access" / "open console"
+# CTA target, every "sign in" / "request access" / "open console"
 # affordance on this page points here. Kept as a module constant so
 # the route is wired in exactly one place.
 _LOGIN = "/login?next=/app"
@@ -504,11 +504,10 @@ def _hero() -> str:
         '<h1 class="title">Commercial diligence,<br/>'
         '<em>personalized</em> to every deal.</h1>'
         '<p class="lede">'
-        'Built for client-facing deal teams working across markets, '
-        'clients, and targets. Create living deal profiles that '
-        'combine market research, company intelligence, customer '
-        'signals, benchmarks, interviews, and source-backed findings '
-        '&mdash; all organized around the opportunity at hand.'
+        'Built for client-facing deal teams. Create a living profile for '
+        'every target that ties market research, company intelligence, '
+        'benchmarks, interviews, and source-backed findings to the '
+        'opportunity at hand.'
         '</p>'
         '<div class="hero-actions">'
         f'<a href="{_LOGIN}" class="cta-btn">Open Deal Workspace</a>'
@@ -523,9 +522,8 @@ def _hero() -> str:
         '<div class="row"><span class="k">STATUS</span>'
         '<span class="v" style="color:var(--green)">LIVE</span></div>'
         '<div class="stamp">'
-        'Built for diligence teams who want every source, benchmark, '
-        'and client priority connected to the deal. Public sources '
-        'only &mdash; no PHI on this instance.'
+        'Every source, benchmark, and client priority, connected to the '
+        'deal. Public sources only. No PHI on this instance.'
         '</div>'
         '</div>'
         '</section>'
@@ -536,19 +534,16 @@ def _triplet() -> str:
     cells = [
         ("/01", "One profile <em>per opportunity</em>",
          "Each target gets a living intelligence layer: company facts, "
-         "market context, client priorities, competitors, benchmarks, "
-         "and open diligence questions. Enter once &mdash; every "
-         "downstream analytic opens with the deal pre-filled."),
+         "market context, client priorities, competitors, and benchmarks. "
+         "Enter it once, and every downstream analytic opens pre-filled."),
         ("/02", "Market, client, <em>and deal together</em>",
-         "Connect the target company to the broader commercial picture: "
-         "market structure, growth drivers, customer behavior, competitive "
-         "positioning, pricing, and comparable assets &mdash; all linked "
-         "to the deal."),
+         "Connect the target to the broader commercial picture: market "
+         "structure, growth drivers, customer behavior, competitive "
+         "positioning, and comparable assets, all linked to the deal."),
         ("/03", "Source-backed <em>and reusable</em>",
-         "Every claim traces back to its underlying source &mdash; "
-         "filings, research, interviews, benchmarks, notes, or prior "
-         "engagement work. Verify, reuse, and turn research into "
-         "client-ready recommendations."),
+         "Every claim traces back to its source: filings, research, "
+         "interviews, benchmarks, or prior engagement work. Verify, reuse, "
+         "and turn research into client-ready recommendations."),
     ]
     inner = "".join(
         f'<div class="trip-cell">'
@@ -562,7 +557,7 @@ def _triplet() -> str:
 
 
 def _sect(micro: str, headline: str, desc: str) -> str:
-    """Two-column section header — micro label + serif headline left,
+    """Two-column section header, micro label + serif headline left,
     descriptive paragraph right. ``headline`` may contain <em> spans."""
     return (
         '<div class="sect">'
@@ -573,7 +568,7 @@ def _sect(micro: str, headline: str, desc: str) -> str:
 
 
 def _funnel(stages: list, columns: int = 7) -> str:
-    """Pipeline funnel — one stage cell per tuple
+    """Pipeline funnel, one stage cell per tuple
     ``(name, count, sub, bar_pct, accent)``. ``accent`` is "" for
     teal (default) or a CSS color for the final hold stage."""
     cells = ""
@@ -641,11 +636,10 @@ def _platform_section() -> str:
             "THE WORKSPACE",
             "Market, client, <em>and deal</em><br/>"
             "intelligence in one place.",
-            "Create a workspace for each opportunity that combines target "
-            "profiles, market maps, commercial benchmarks, client context, "
-            "research notes, and deal history. Move from scattered "
-            "information to a clear view of what matters, what is changing, "
-            "and what the client needs to know.",
+            "One workspace per opportunity, combining target profiles, "
+            "market maps, benchmarks, client context, and deal history. "
+            "Move from scattered files to a clear view of what matters and "
+            "what is changing.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
@@ -665,7 +659,7 @@ def _proof_section() -> str:
     cells = [
         ("<em>247</em>",
          "Source-backed Claims",
-         "Across the sample profile &mdash; every claim cited"),
+         "Across the sample profile, every claim cited"),
         ("<em>42</em>",
          "Market Briefs",
          "Sector maps, demand drivers, growth signals"),
@@ -701,10 +695,9 @@ def _proof_section() -> str:
         + _sect(
             "DILIGENCE SIGNAL",
             "Insight <em>that supports</em><br/>the diligence story.",
-            "Eight tracked signals across a sample engagement &mdash; "
-            "market evidence, customer interviews, comparable transactions, "
-            "and client priorities, all carrying source citations. Click "
-            "into the workspace to see the underlying notes and references.",
+            "Eight tracked signals across a sample engagement: market "
+            "evidence, customer interviews, comparable transactions, and "
+            "client priorities, each carrying source citations.",
         )
         + f'<div class="proof">{inner}</div>'
         + '</section>'
@@ -771,8 +764,8 @@ def _catalog_section() -> str:
             "Every <em>insight</em><br/>has context.",
             "Organize research by target, market, customer segment, "
             "competitor, workstream, and client priority. The catalog is "
-            "the spine of the deal workspace &mdash; click any row in "
-            "the live app to scroll to its underlying source.",
+            "the spine of the deal workspace: every row links to its "
+            "underlying source.",
         )
         + f'<div class="catalog">{cols_html}</div>'
         + '</section>'
@@ -807,9 +800,8 @@ def _sources_section() -> str:
             "SOURCE LIBRARY",
             "Every claim, <em>cited inline</em>.",
             "Filings, market research, interviews, benchmarks, and "
-            "engagement notes &mdash; every number traces back to its "
-            "underlying source. No PHI, no proprietary data leaving the "
-            "workspace, no SaaS lock-in. The intelligence layer is yours.",
+            "engagement notes: every number traces back to its source. "
+            "No PHI, no data leaving the workspace, no SaaS lock-in.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
@@ -830,8 +822,8 @@ def _cta_strip() -> str:
         '<div class="micro">READY TO OPEN A WORKSPACE</div>'
         '<h3>Bring the <em>research</em>.<br/>'
         'Keep the <em>client view</em>.</h3>'
-        '<p>Sign in to your team workspace. Public sources are preloaded '
-        '&mdash; connect CRM, market data, or research feeds when you\'re '
+        '<p>Sign in to your team workspace. Public sources are preloaded; '
+        'connect CRM, market data, or research feeds when you\'re '
         'ready.</p>'
         '</div>'
         '<div class="cta-strip-actions">'
@@ -845,7 +837,7 @@ def _cta_strip() -> str:
 def _footer() -> str:
     return (
         '<footer>'
-        '<span>PE <em>Desk</em> v1.0.0 &mdash; Commercial diligence, '
+        '<span>PE <em>Desk</em> v1.0.0 &middot; Commercial diligence, '
         'personalized to every deal</span>'
         '<span class="mono" style="font-size:.75rem">'
         'CMS public data &middot; market reports &middot; filings '
@@ -872,13 +864,13 @@ def render_marketing_page(basic_auth: bool = False) -> str:
         '<meta charset="utf-8"/>'
         '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
         '<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>'
-        '<title>PE Desk &mdash; Commercial diligence, personalized '
+        '<title>PE Desk: Commercial diligence, personalized '
         'to every deal</title>'
         '<meta name="description" content="PE Desk is the commercial '
         'diligence intelligence layer for client-facing deal teams. '
         'Build living target-company profiles with market research, '
         'customer signals, benchmarks, competitive context, client '
-        'priorities, and source-backed notes — organized around the '
+        'priorities, and source-backed notes, organized around the '
         'opportunity at hand.">'
         + _STYLE
         + '</head><body>'
