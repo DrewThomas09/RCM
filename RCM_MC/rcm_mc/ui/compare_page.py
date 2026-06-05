@@ -59,7 +59,7 @@ def _landing_compare() -> str:
             help={
                 "definition": (
                     "Pre-built deal-fixture datasets bundled with the "
-                    "platform — each one is a complete CCD (canonical "
+                    "platform: each one is a complete CCD (canonical "
                     "claims dataset) ready to feed the diligence "
                     "engines. Use these to dry-run comparisons before "
                     "wiring a real target."
@@ -89,7 +89,7 @@ def _landing_compare() -> str:
     )
         + ck_page_explainer(
             'Side-by-side deal comparison.',
-            'Lines up two or more deals on the same metric grid — EBITDA bridge, RCM profile, payer mix, capital stack, exit assumptions — so the partner can read across rows. Used for IC bake-offs and "which one do we lead with" decisions when multiple opportunities land the same week.',
+            'Lines up two or more deals on the same metric grid: EBITDA bridge, RCM profile, payer mix, capital stack, exit assumptions, so the partner can read across rows. Used for IC bake-offs and "which one do we lead with" decisions when multiple opportunities land the same week.',
             source='Deal packets (live).',
         )
     )
@@ -353,7 +353,7 @@ def _render_comparison(
     l_oon = float(left["ccd_summary"].get("oon_share", 0) or 0)
     r_oon = float(right["ccd_summary"].get("oon_share", 0) or 0)
     if l_paid == 0 and r_paid == 0:
-        delta_narrative = "Both fixtures have zero paid amounts — check source data."
+        delta_narrative = "Both fixtures have zero paid amounts: check source data."
     else:
         paid_delta_pct = (
             (l_paid - r_paid) / max(r_paid, 1) * 100
@@ -374,7 +374,7 @@ def _render_comparison(
             )
         if not bits:
             delta_narrative = (
-                "Both fixtures are materially similar — no single "
+                "Both fixtures are materially similar: no single "
                 "driver shifts the relative attractiveness."
             )
         else:
@@ -401,7 +401,7 @@ def _render_comparison(
         f'color:{P["text_dim"]};line-height:1.6;max-width:880px;'
         f'border-radius:2px;">'
         f'<strong style="color:{P["text"]};">How to read: </strong>'
-        f'Green/red badges next to each metric show the delta — green '
+        f'Green/red badges next to each metric show the delta: green '
         f'means the left fixture is favorable on that metric, red '
         f'means unfavorable. "Higher is better" differs by metric '
         f'(e.g., total paid = higher better; OON share = lower better).'
@@ -423,7 +423,7 @@ def _render_comparison(
         purpose="Compare two candidates side-by-side on the same RCM/financial metrics to support a relative pick.",
         universe="illustrative",
         confidence="derived",
-        source="Built from the selected demo fixtures (sample deals) — methodology, not your live deals. Compare your own targets by ingesting them first.",
+        source="Built from the selected demo fixtures (sample deals): methodology, not your live deals. Compare your own targets by ingesting them first.",
         next_action="Take the comparison into the IC packet",
         next_href="/diligence/ic-packet",
     )
@@ -435,7 +435,7 @@ def _render_comparison(
     )
     return chartis_shell(
         title_html + hero + table_html + grid + next_up,
-        f"Compare — {left['name']} vs {right['name']}",
+        f"Compare · {left['name']} vs {right['name']}",
         active_nav="/diligence/compare",
         extra_css=_EXPLAINER_CSS,
     )

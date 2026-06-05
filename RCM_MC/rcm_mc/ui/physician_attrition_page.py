@@ -504,7 +504,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
     else:
         banner_class = "good"
         banner = (
-            f"Roster is stable — 0 CRITICAL, {high} HIGH. The "
+            f"Roster is stable: 0 CRITICAL, {high} HIGH. The "
             f"physician-attrition lever in the EBITDA bridge can be "
             f"modeled at the baseline specialty churn rate (~5%)."
         )
@@ -535,7 +535,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
                     f"Your roster's implied attrition rate "
                     f"({implied*100:.1f}%) is below the public-peer "
                     f"median ({peer_median*100:.1f}%, n={stats['count']} "
-                    f"disclosures) — favorable signal."
+                    f"disclosures): favorable signal."
                 )
             else:
                 peer_verdict = (
@@ -556,7 +556,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
         f"Expected collections at risk sums to "
         f"${at_risk:,.0f} ({at_risk/collections*100 if collections > 0 else 0:.1f}% of "
         f"roster revenue). The top-20% of providers concentrates "
-        f"{top_share*100:.1f}% of that risk — retention actions should "
+        f"{top_share*100:.1f}% of that risk: retention actions should "
         f"focus there.{peer_benchmark}"
     )
 
@@ -646,7 +646,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
                 "definition": (
                     "Sum of annual collections across the roster. "
                     "Used as the denominator for the at-risk "
-                    "percentage — partners read this as 'if every "
+                    "percentage: partners read this as 'if every "
                     "high-risk provider walked, how much would "
                     "stop coming in'."
                 ),
@@ -679,7 +679,7 @@ def _hero(report: AttritionReport, target_name: str) -> str:
             help={
                 "definition": (
                     "Direct EBITDA hit if expected attrition plays "
-                    "out — calculated as $ at risk × contribution "
+                    "out: calculated as $ at risk × contribution "
                     "margin × realization probability. The "
                     "confidence tag reflects how much of the "
                     "input data is provider-specific vs. roster-"
@@ -721,7 +721,7 @@ def _card(
             '<div class="pa-bond">'
             '<strong>Retention bond sizing: </strong>'
             f'<span class="pa-bond__num">${rec.suggested_bond_usd:,.0f}</span> '
-            f'({rec.retention_years}y lockup) — bonds this provider to the '
+            f'({rec.retention_years}y lockup): bonds this provider to the '
             f'target through year-{rec.retention_years}.'
             '</div>'
         )
@@ -1095,7 +1095,7 @@ def render_physician_attrition_page(
         )
         return chartis_shell(
             body,
-            f"Physician Attrition · Compare — {html.escape(target_name)}",
+            f"Physician Attrition · Compare · {html.escape(target_name)}",
             active_nav="/diligence/physician-attrition",
             extra_css=_EXPLAINER_CSS,
         )
@@ -1169,7 +1169,7 @@ def render_physician_attrition_page(
         f'color:#b8732a;margin-bottom:4px;">Demo data</div>'
         f'<strong style="color:#2d1d05;">The providers scored below '
         f'are a demonstration roster.</strong> Names, specialties, '
-        f'tenure, and collections histories are illustrative — they '
+        f'tenure, and collections histories are illustrative: they '
         f'do not reflect the target deal. The flight-risk model '
         f'(predictive churn analytic) is real and runs against any '
         f'roster supplied. NPPES + CIM-ingest hookup are the next '
@@ -1179,7 +1179,7 @@ def render_physician_attrition_page(
 
     explainer_html = (
         '<p class="ck-pa-explainer">'
-        '<em>Which physicians are most likely to leave — and what it costs.</em> '
+        '<em>Which physicians are most likely to leave, and what it costs.</em> '
         "9-feature flight-risk model (comp gap vs FMV, tenure, age inflection, "
         "productivity trend, local competitor density, Stark overlap, employment "
         "status, revenue concentration, specialty mobility) scored per provider "
@@ -1221,7 +1221,7 @@ def render_physician_attrition_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Physician Attrition — {html.escape(target_name)}",
+        body, f"Physician Attrition · {html.escape(target_name)}",
         active_nav="/diligence/physician-attrition",
         extra_css=_EXPLAINER_CSS,
     )
