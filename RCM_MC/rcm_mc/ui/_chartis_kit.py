@@ -4825,13 +4825,13 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "eyebrow": "Volume I",
         "title": "The <em>Pipeline</em>.",
         "body": (
-            "<p>Every engagement begins at the same surface — the "
+            "<p>Every engagement begins at the same surface: the "
             "deal pipeline. Hospitals enter as candidates from "
             "screening; advance through outreach, LOI, diligence, "
             "and IC; exit either to your portfolio or to the "
             "watchlist for next quarter.</p>"
-            "<p>Click any deal to open its <strong>profile</strong> "
-            "— the single source of truth for every analytic on "
+            "<p>Click any deal to open its <strong>profile</strong>: "
+            "the single source of truth for every analytic on "
             "the platform. The profile carries your deal parameters "
             "(NPR, EBITDA, specialty, state) into every downstream "
             "tool so you never re-type them.</p>"
@@ -4859,7 +4859,7 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
             "<strong>Counterfactual analysis</strong> answers "
             "<em>what would EBITDA have been without this "
             "initiative</em>. The <strong>diligence checklist</strong> "
-            "gates IC approval — items must be cleared before the "
+            "gates IC approval: items must be cleared before the "
             "deal advances.</p>"
             "<p>Click any tool from the deal profile and your deal "
             "parameters pre-fill. No re-typing.</p>"
@@ -4875,17 +4875,17 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "body": (
             "<p>The Risk Workbench groups every risk surface into "
             "three tiers of attention.</p>"
-            "<p><strong>Tier 1</strong> — bankruptcy survival, "
+            "<p><strong>Tier 1</strong>: bankruptcy survival, "
             "covenant headroom, payer concentration. Existential "
             "risks that kill deals at IC.</p>"
-            "<p><strong>Tier 2</strong> — physician attrition, "
+            "<p><strong>Tier 2</strong>: physician attrition, "
             "denial rate, regulatory exposure, cyber posture. "
             "Material risks that erode EBITDA.</p>"
-            "<p><strong>Tier 3</strong> — management bench depth, "
+            "<p><strong>Tier 3</strong>: management bench depth, "
             "IT modernization debt, M&amp;A integration drag. "
             "Slow-burn risks that show up in year three.</p>"
-            "<p>Each panel cites its source — HCRIS, CMS, public "
-            "filings — so you can audit the chain from claim to "
+            "<p>Each panel cites its source (HCRIS, CMS, public "
+            "filings) so you can audit the chain from claim to "
             "conclusion.</p>"
         ),
         "try_it": {
@@ -4950,7 +4950,7 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "body": (
             "<p>Every engagement ends in deliverables. The platform "
             "generates IC packets, exit memos, and LP digests as "
-            "editorial HTML — partner-ready, print-friendly, "
+            "editorial HTML: partner-ready, print-friendly, "
             "share-friendly.</p>"
             "<p><strong>IC memos</strong> pull from the analysis "
             "packet automatically. The <strong>bear case</strong> is "
@@ -4958,8 +4958,8 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
             "<strong>LP digest</strong> aggregates portfolio-level "
             "performance into a quarterly narrative.</p>"
             "<p>Exports are CSV (sanitised against Excel formula "
-            "injection), HTML, JSON, or — for the IC memo and "
-            "packet — print-PDF. Every export caps the chain of "
+            "injection), HTML, JSON, or (for the IC memo and "
+            "packet) print-PDF. Every export caps the chain of "
             "citation so the LP can audit any number back to its "
             "source.</p>"
         ),
@@ -4973,7 +4973,7 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "title": "Settings &amp; <em>Workflow</em>.",
         "body": (
             "<p>A handful of details that compound over time:</p>"
-            "<p><strong>Cmd+K</strong> opens the command palette — "
+            "<p><strong>Cmd+K</strong> opens the command palette: "
             "every analytic surface is one keystroke away. The "
             "<strong>deal slug</strong> (e.g. "
             "<em>/diligence/deal/aurora</em>) is bookmarkable and "
