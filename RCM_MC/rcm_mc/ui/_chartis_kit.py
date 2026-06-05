@@ -8716,8 +8716,18 @@ _GUIDE_CSS = """
 /* Metric */
 .ck-guide-metric{margin-bottom:20px;}
 .ck-guide-metric:last-child{margin-bottom:0;}
-.ck-guide-metric-head{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:6px 14px;margin-bottom:8px;}
-.ck-guide-metric-name{font-family:var(--ck-g-serif);font-size:22px;font-weight:500;letter-spacing:-.01em;color:var(--ck-g-ink);}
+/* Stack the name over the formula. The old 1fr|auto two-up grid cramped a
+   long name into a narrow column beside a long mono formula; stacked, each
+   gets the full panel width and reads on 1-2 lines. */
+.ck-guide-metric-head{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+/* word-break:normal + overflow-wrap:break-word overrides the panel-wide
+   word-break:break-word for the metric NAME. break-word (like overflow-wrap:
+   anywhere) drops min-content to a single character, so in the 1fr|auto
+   metric-head grid a long formula in the auto column starved the name to
+   one-character-per-line (vertical text). This pair keeps min-content at the
+   longest word (so the 1fr column can't collapse) while still letting a
+   genuinely over-long word break only when it would overflow. */
+.ck-guide-metric-name{font-family:var(--ck-g-serif);font-size:22px;font-weight:500;letter-spacing:-.01em;color:var(--ck-g-ink);word-break:normal;overflow-wrap:break-word;}
 .ck-guide-metric-formula{font-family:var(--ck-g-mono);font-size:12px;color:var(--ck-g-green);
   background:rgba(31,122,90,.07);padding:3px 8px;border-radius:6px;}
 .ck-guide-metric-pill{font-family:var(--ck-g-mono);font-size:10.5px;color:var(--ck-g-muted);
