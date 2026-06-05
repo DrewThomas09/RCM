@@ -234,7 +234,7 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
                         "operating data; D-F = heavy imputation, so "
                         "downstream numbers carry wider conformal "
                         "bands. Compare grades when reading two "
-                        "deals — same KPI, different confidence."
+                        "deals: same KPI, different confidence."
                     ),
                 },
             )
@@ -346,10 +346,10 @@ def render_screen_page(
     # and surfaced 1,000-bed systems.) Keys mirror the filter map in
     # server.py:_route_screener_page.
     presets = [
-        ("turnaround", "Turnaround — acquirable",
+        ("turnaround", "Turnaround · acquirable",
          "50–400 beds · margin ≤3% · most-distressed first. Buyable fix-it targets, not giant systems."),
         ("large_cap", "Large platforms",
-         "300+ beds · $300M+ NPR. Platform-scale & large-cap diligence — where big turnarounds live."),
+         "300+ beds · $300M+ NPR. Platform-scale & large-cap diligence: where big turnarounds live."),
         ("margin_expansion", "Margin expansion",
          "100–500 beds · margin 0–10%. Profitable already, clear room to grow."),
         ("undervalued", "Undervalued",
@@ -372,12 +372,12 @@ def render_screen_page(
     # margin.) The max-beds / max-revenue ceilings are what keep a screen from
     # returning giant systems.
     filter_fields = [
-        ("min_beds", "Beds — min", filters.get("min_beds", ""), "e.g. 50", "smallest bed count"),
-        ("max_beds", "Beds — max", filters.get("max_beds", ""), "e.g. 400", "ceiling — caps giant systems"),
-        ("min_revenue", "NPR $M — min", filters.get("min_revenue", ""), "e.g. 25", "revenue floor"),
-        ("max_revenue", "NPR $M — max", filters.get("max_revenue", ""), "e.g. 500", "revenue ceiling"),
-        ("min_margin", "Margin % — min", filters.get("min_margin", ""), "e.g. 0", "operating-margin floor"),
-        ("max_margin", "Margin % — max", filters.get("max_margin", ""), "e.g. 3", "ceiling — low = struggling"),
+        ("min_beds", "Beds (min)", filters.get("min_beds", ""), "e.g. 50", "smallest bed count"),
+        ("max_beds", "Beds (max)", filters.get("max_beds", ""), "e.g. 400", "ceiling: caps giant systems"),
+        ("min_revenue", "NPR $M (min)", filters.get("min_revenue", ""), "e.g. 25", "revenue floor"),
+        ("max_revenue", "NPR $M (max)", filters.get("max_revenue", ""), "e.g. 500", "revenue ceiling"),
+        ("min_margin", "Margin % (min)", filters.get("min_margin", ""), "e.g. 0", "operating-margin floor"),
+        ("max_margin", "Margin % (max)", filters.get("max_margin", ""), "e.g. 3", "ceiling: low = struggling"),
         ("state", "State", filters.get("state", ""), "e.g. TX", "2-letter code"),
     ]
     filter_inputs = ""
@@ -417,7 +417,7 @@ def render_screen_page(
         f'<h2>Filter by Metrics</h2>'
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
         f'Find hospitals from {total_scanned:,} HCRIS records by financial size and margin. '
-        f'Pick a preset, or set your own ranges — the <b>max</b> fields are what keep results '
+        f'Pick a preset, or set your own ranges: the <b>max</b> fields are what keep results '
         f'in an acquirable range instead of returning the biggest systems.</p>'
         f'{preset_html}'
         f'<form method="GET" action="/screen">'

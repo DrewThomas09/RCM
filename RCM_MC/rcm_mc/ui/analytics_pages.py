@@ -331,7 +331,7 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
     # 2026-05-28 sweep · strict 5-block head replaces ck_section_intro.
     intro = _ap_head(
         eyebrow="CAUSAL INFERENCE",
-        title=f"Causal inference — {html.escape(deal_name)}",
+        title=f"Causal inference · {html.escape(deal_name)}",
         meta=(
             f"DEAL {deal_id.upper()} · {len(estimates)} ESTIMATE"
             f"{'S' if len(estimates) != 1 else ''} · "
@@ -350,7 +350,7 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
     interp = ck_panel(
         '<p class="ck-section-body">'
         f'{sig_count} of {len(estimates)} estimates are statistically significant (p&lt;0.05). '
-        f'{"Strong evidence of initiative impact — include in IC memo." if sig_count > len(estimates) // 2 else "Limited statistical evidence — more data points needed."}</p>'
+        f'{"Strong evidence of initiative impact: include in IC memo." if sig_count > len(estimates) // 2 else "Limited statistical evidence: more data points needed."}</p>'
         '<p class="ck-section-body">Methods: Interrupted Time Series (trend break), '
         'Difference-in-Differences (vs control), and Pre-Post comparison with CIs.</p>',
         title="What This Means",
@@ -396,7 +396,7 @@ def render_causal_page(deal_id: str, deal_name: str, estimates: List[Dict[str, A
         )
     )
 
-    return chartis_shell(body, f"Causal Inference — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Causal Inference · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(estimates)} estimates, {sig_count} significant")
 
@@ -560,7 +560,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
     cum_direction = "higher" if cumulative > 0 else "lower"
     intro = _ap_head(
         eyebrow="COUNTERFACTUAL",
-        title=f"Counterfactual — {html.escape(deal_name)}",
+        title=f"Counterfactual · {html.escape(deal_name)}",
         meta=(
             f"DEAL {deal_id.upper()} · {len(actual)} PERIOD"
             f"{'S' if len(actual) != 1 else ''} · "
@@ -624,7 +624,7 @@ def render_counterfactual_page(deal_id: str, deal_name: str, result: Dict[str, A
         )
     )
 
-    return chartis_shell(body, f"Counterfactual — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Counterfactual · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Initiative impact: ${cumulative/1e6:.1f}M cumulative")
 
@@ -674,8 +674,8 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
         lede_body=(
             "Industry P50 drift across the metrics that drive the "
             "bridge. When benchmarks shift, a deal's relative "
-            "position changes even without operational improvement "
-            "— factor this into target-margin assumptions before IC."
+            "position changes even without operational improvement: "
+            "factor this into target-margin assumptions before IC."
         ),
     )
     explainer_html = ""  # subsumed into the strict head above
@@ -753,7 +753,7 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
     # 2026-05-28 sweep · strict 5-block head.
     intro = _ap_head(
         eyebrow="PREDICTED VS ACTUAL",
-        title=f"Predicted vs actual — {html.escape(deal_name)}",
+        title=f"Predicted vs actual · {html.escape(deal_name)}",
         meta=(
             f"DEAL {deal_id.upper()} · {n_metrics} METRIC"
             f"{'S' if n_metrics != 1 else ''} · "
@@ -770,8 +770,8 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
 
     interp = ck_panel(
         '<p class="ck-section-body">'
-        f'{pct_ci:.0%} of predictions fell within their confidence intervals — '
-        f'{"strong prediction accuracy, our models are well-calibrated." if pct_ci > 0.7 else "moderate accuracy, consider widening CIs or improving feature set." if pct_ci > 0.5 else "low accuracy — review model assumptions and data quality."}</p>'
+        f'{pct_ci:.0%} of predictions fell within their confidence intervals: '
+        f'{"strong prediction accuracy, our models are well-calibrated." if pct_ci > 0.7 else "moderate accuracy, consider widening CIs or improving feature set." if pct_ci > 0.5 else "low accuracy: review model assumptions and data quality."}</p>'
         '<p class="ck-section-body">'
         f'Mean absolute error: {mae:.2f}. '
         'Metrics outside CI may indicate either data quality issues or genuine operational changes '
@@ -801,6 +801,6 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
         + interp
     )
 
-    return chartis_shell(body, f"Predicted vs Actual — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Predicted vs Actual · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{pct_ci:.0%} accuracy | {n_metrics} metrics | MAE: {mae:.2f}")

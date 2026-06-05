@@ -22,7 +22,7 @@ class PresetClarityTests(unittest.TestCase):
     def test_presets_are_cards_with_size_ranges(self) -> None:
         html = render_screen_page(total_scanned=6123)
         self.assertIn("hs-preset", html)
-        self.assertIn("Turnaround — acquirable", html)
+        self.assertIn("Turnaround · acquirable", html)
         self.assertIn("50–400 beds", html)          # explicit acquirable range
         self.assertIn("Large platforms", html)       # the large-cap screen
         # the old vague label is gone
