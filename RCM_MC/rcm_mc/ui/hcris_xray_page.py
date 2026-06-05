@@ -137,7 +137,7 @@ def _xray_workstation(q: str, state_filter: str, summary: dict) -> str:
         'target 11.8%</span><span>P75 8.8%</span></div>'
         + k.xr_caveat('Illustrative SAMPLE (Stroger Hospital · CCN 140124 · '
                       'FY2022). Real runs render live HCRIS values for the '
-                      'matched peer pool — nothing here is your target.')
+                      'matched peer pool: nothing here is your target.')
         + k.xr_source(f"SOURCE: CMS HCRIS · {summary.get('total_rows', 0):,} "
                       f"filings · {len(summary.get('states', []))} states "
                       "& territories")
@@ -182,7 +182,7 @@ def _xray_top_finding(report: "XRayReport", top_under: list, top_over: list) -> 
             + k.xr_eyebrow("Top finding")
             + '<div class="xr-topfind-metric">Inside the peer band on every '
             '<em>measured</em> metric.</div>'
-            '<div class="xr-source">No P25–P75 outlier — no single headline '
+            '<div class="xr-source">No P25–P75 outlier: no single headline '
             'signal; read the full benchmark below.</div></div>')
     p25, med, p75, tgt = (bm.peer_p25, bm.peer_median, bm.peer_p75, bm.target_value)
     tone = "bad" if bad else "good"
@@ -984,7 +984,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             help={
                 "definition": (
                     "Combined count of community and regional "
-                    "hospitals — the size cohorts most PE deals "
+                    "hospitals: the size cohorts most PE deals "
                     "target. Excludes academic medical centers and "
                     "rural critical-access hospitals."
                 ),
@@ -992,7 +992,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         )
         + '</div>'
         + '<p class="ck-section-body">'
-        "HCRIS is CMS's filed Medicare cost-report dataset — "
+        "HCRIS is CMS's filed Medicare cost-report dataset: "
         'every Medicare-participating hospital files annually with '
         '2,500+ fields covering bed count, payer-day mix, patient '
         'revenue, allowances, operating expenses, and net income. '
@@ -1024,9 +1024,9 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             "focal hospital and the matched 25–50 peer hospitals (size "
             "cohort, state, payer mix, fiscal year). Surfaces where the "
             "target sits inside, above, or below the peer P25–P75 band "
-            "on 15 RCM / cost / margin metrics — used during diligence "
+            "on 15 RCM / cost / margin metrics: used during diligence "
             "to size the operational gap behind the EBITDA delta.",
-            source='CMS HCRIS — refreshed quarterly from cms.gov',
+            source='CMS HCRIS · refreshed quarterly from cms.gov',
         )
     )
     # B · Workstation landing — two-up: intake form (left) + labelled SAMPLE
@@ -1121,7 +1121,7 @@ def render_hcris_xray_page(
             + '<p class="ck-section-body">'
             + '<a href="/diligence/hcris-xray" class="ck-link">'
             + '← Back to search</a></p></div>',
-            "HCRIS X-Ray — not found",
+            "HCRIS X-Ray · not found",
             extra_css=_EXPLAINER_CSS,
         )
 
@@ -1179,7 +1179,7 @@ def render_hcris_xray_page(
     if not chart_plain_parts:
         chart_plain_parts.append(
             "Target sits squarely inside the peer P25-P75 band "
-            "on every measured metric — no outlier signal."
+            "on every measured metric: no outlier signal."
         )
     chart_plain = " ".join(chart_plain_parts)
 
@@ -1188,7 +1188,7 @@ def render_hcris_xray_page(
     from ._chartis_kit import ck_editorial_head
     main_intro = ck_editorial_head(
         eyebrow="HCRIS-Native Peer X-Ray",
-        title=f"Peer benchmark — {html.escape(target.name)}",
+        title=f"Peer benchmark · {html.escape(target.name)}",
         meta=(
             f"{len(report.peers)} PEERS · "
             f"{report.peer_filter_used.upper()} · "
@@ -1294,7 +1294,7 @@ def render_hcris_xray_page(
         '<p class="ck-eyebrow">'
         f'EV <code>${default_ev/1e6:,.0f}M</code> (9.0× '
         f'${actual_ebitda/1e6:,.1f}M EBITDA'
-        + (f' — 5% NPR floor, filed op. margin '
+        + (f': 5% NPR floor, filed op. margin '
            f'{target.operating_margin_on_npr*100:.1f}%' if ebitda_is_floored else "")
         + ') · Equity '
         f'<code>${default_equity/1e6:,.0f}M</code> · Debt '
@@ -1370,12 +1370,12 @@ def render_hcris_xray_page(
             + state_context_panel(getattr(target, "state", ""))
             + ck_panel(
                 '<p class="ck-section-body">Each percentile gap below the peer median is a '
-                '<b>value-creation hypothesis</b> the deal must support — not yet proof. '
+                '<b>value-creation hypothesis</b> the deal must support: not yet proof. '
                 'What public HCRIS shows: where this hospital sits vs peers on margin, NPR/bed, '
                 'cost structure and patient days. What it does <b>not</b> prove: the cause, the '
                 'fixability, or the deal\'s own contracts/quality.</p>'
                 '<ul class="ck-section-body" style="margin:6px 0 10px 18px">'
-                '<li>For each below-median metric: is the gap payer-mix, labor cost, case mix, or scale — and is it addressable?</li>'
+                '<li>For each below-median metric: is the gap payer-mix, labor cost, case mix, or scale, and is it addressable?</li>'
                 '<li>What management actions (RCM, staffing, service-line) close the gap, and over what horizon?</li>'
                 '<li>Which gaps are structural (market/regulatory) vs operational (fixable post-close)?</li>'
                 '</ul>'
@@ -1389,7 +1389,7 @@ def render_hcris_xray_page(
             + cross_link
             + export_json_panel(
                 '<div class="hx-section-label" style="margin-top:22px;">'
-                'JSON export — full X-Ray payload</div>',
+                'JSON export · full X-Ray payload</div>',
                 payload=report.to_dict(),
                 name=f"hcris_xray_{target.ccn}",
             )
@@ -1407,7 +1407,7 @@ def render_hcris_xray_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"HCRIS X-Ray — {target.name}",
+        body, f"HCRIS X-Ray · {target.name}",
         active_nav="/diligence/hcris-xray",
         extra_css=_EXPLAINER_CSS + _xray_kit_css() + _WORKSTATION_CSS + _TOPFIND_CSS,
     )
