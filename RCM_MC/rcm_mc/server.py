@@ -1918,15 +1918,27 @@ def _auto_breadcrumb_chain(section_label, section_href, page_label,
 def _page_has_own_head(body):
     """True when the rendered body already surfaces its own top-of-page
     wayfinding, so the fallback auto-breadcrumb must NOT be injected on
-    top of it (that stacking is the "double header" partners flagged on
-    /app). Recognised heads:
-      · an explicit ``.ck-breadcrumbs`` element, or
-      · the Command Center's ``.cc-crumb`` eyebrow, or
-      · the ``.pg-head`` SECTION · KICKER · /slug head rendered by
-        ``editorial_page_head``.
+    top of it (that stacking is the "double header" partners flagged).
+
+    Editorial pages use a few head conventions, all of which already name
+    the page's location (and the section is clickable from the top nav),
+    so the breadcrumb only repeats them:
+      · an explicit ``.ck-breadcrumbs`` element;
+      · the ``ck_page_title`` ``<header class="ck-page-title">`` family —
+        matched loosely (``ck-page-title"``) because some pages add it as
+        a second class, e.g. ``class="ip-head ck-page-title"``;
+      · the bespoke per-page editorial heads (``pp-head``, ``dp-head``,
+        ``ip-head``, ``cv-head``, ``ps-head``, ``do-head``, ...), which all
+        open their eyebrow with the ``<span class="dash">`` glyph;
+      · the Command Center's ``.cc-crumb`` eyebrow;
+      · the ``.pg-head`` head rendered by ``editorial_page_head``.
+
+    Pages with none of these keep the auto-breadcrumb as a fallback.
     """
     return (
         'class="ck-breadcrumbs"' in body
+        or 'ck-page-title"' in body
+        or '<span class="dash">' in body
         or 'class="cc-crumb"' in body
         or 'class="pg-head"' in body
     )

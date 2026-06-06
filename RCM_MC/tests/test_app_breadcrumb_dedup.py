@@ -83,6 +83,27 @@ class PageOwnHeadSuppressionTests(unittest.TestCase):
         body = '<header>...</header><div class="pg-head"><h1>X</h1></div>'
         self.assertTrue(_page_has_own_head(body))
 
+    def test_ck_page_title_head_suppresses(self):
+        # ck_page_title (the standard head on ~every content page) renders
+        # <header class="ck-page-title"> with its own eyebrow + H1.
+        body = ('<header class="ck-page-title"><div class="ck-eyebrow">'
+                'PIPELINE</div><h1>Deal Pipeline</h1></header>')
+        self.assertTrue(_page_has_own_head(body))
+
+    def test_ck_page_title_as_secondary_class_suppresses(self):
+        # Some pages add ck-page-title as a 2nd class (Insights pages):
+        # class="ip-head ck-page-title". The loose match must still catch it,
+        # but must NOT be fooled by the ck-page-title-meta sub-element.
+        self.assertTrue(_page_has_own_head('<header class="ip-head ck-page-title">x</header>'))
+        self.assertFalse(_page_has_own_head('<div class="ck-page-title-meta">just meta</div>'))
+
+    def test_bespoke_editorial_head_suppresses(self):
+        # The per-page heads (pp-head, dp-head, ip-head, cv-head, ...) all
+        # open their eyebrow with the dash glyph span.
+        body = ('<div class="pp-head"><div class="eyebrow">'
+                '<span class="dash"></span> PIPELINE</div><h1>Deal Pipeline</h1></div>')
+        self.assertTrue(_page_has_own_head(body))
+
     def test_explicit_breadcrumbs_suppresses(self):
         body = '<nav class="ck-breadcrumbs"><a>Home</a></nav>'
         self.assertTrue(_page_has_own_head(body))
