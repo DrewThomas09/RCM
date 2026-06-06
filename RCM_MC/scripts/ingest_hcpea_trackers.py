@@ -174,10 +174,19 @@ def _col_map(ws, header_row: int) -> Dict[str, int]:
 def _rec(source_file: str, sheet: str, row_id: int,
          fields: Dict[str, Any]) -> Dict[str, str]:
     """Assemble one normalized deal_library row (string-valued for CSV)."""
-    company_id = hashlib.sha1(
-        f"{_SOURCE_SYSTEM}|{source_file}|{sheet}|{row_id}".encode()
-    ).hexdigest()[:20]
     deal_date = fields.get("deal_date")
+    # Content-based id so the SAME deal collapses across overlapping
+    # workbooks (e.g. a mid-quarter snapshot + the full-quarter tracker, or
+    # a deal that straddles two quarterly files) instead of duplicating.
+    # Keyed on target + date + acquirer; the upsert keeps the last-loaded
+    # provenance. A file/row key would double-count those overlaps.
+    key = "|".join([
+        _SOURCE_SYSTEM,
+        (fields.get("company_name") or "").strip().lower(),
+        deal_date or "",
+        (fields.get("buyer_name") or "").strip().lower(),
+    ])
+    company_id = hashlib.sha1(key.encode()).hexdigest()[:20]
     rec: Dict[str, Any] = {
         "company_id": company_id,
         "source_system": _SOURCE_SYSTEM,
