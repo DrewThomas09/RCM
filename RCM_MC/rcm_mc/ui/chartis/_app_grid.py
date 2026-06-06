@@ -305,9 +305,9 @@ _CARD_ORDER = [
     ("moic", "Weighted MOIC"),
     ("irr", "Weighted IRR"),
     ("covenants", "Covenants at risk"),
-    ("days_cash", "Days cash"),
+    ("days_cash", "Capital deployed"),
     ("active_deals", "Active deals (KPI)"),
-    ("initiatives", "Initiatives tracked"),
+    ("initiatives", "Covenant headroom"),
     ("roster", "Active deals roster"),
     ("funnel", "Pipeline funnel"),
     ("morning_brief", "Morning brief"),
@@ -390,6 +390,35 @@ def render_app_grid(
     tight = int(r.get("covenant_tight") or 0)
     at_risk = trips + tight
 
+    # Two real portfolio aggregates from the already-fetched deals_df (no
+    # extra query): total capital deployed (sum of entry EV) and average
+    # covenant headroom (turns to the leverage covenant). These replace the
+    # former always-empty "Days cash" / "Initiatives tracked" placeholder
+    # cards, so the KPI row carries six live numbers instead of four.
+    cap_v = hr_v = None
+    n_sized = n_hr = 0
+    hr_avg = None
+    if deals_df is not None and not deals_df.empty:
+        if "entry_ev" in deals_df.columns:
+            _ev = pd.to_numeric(deals_df["entry_ev"], errors="coerce").dropna()
+            n_sized = int(len(_ev))
+            if n_sized:
+                _tot = float(_ev.sum())
+                if _tot >= 1e9:
+                    cap_v = f'$<span class="cc-kpi-em">{_tot / 1e9:.2f}</span>B'
+                elif _tot >= 1e6:
+                    cap_v = f'$<span class="cc-kpi-em">{_tot / 1e6:.2f}</span>M'
+                else:
+                    cap_v = f'$<span class="cc-kpi-em">{_tot:,.0f}</span>'
+        if "covenant_headroom_turns" in deals_df.columns:
+            _hr = pd.to_numeric(
+                deals_df["covenant_headroom_turns"], errors="coerce").dropna()
+            n_hr = int(len(_hr))
+            if n_hr:
+                hr_avg = float(_hr.mean())
+                hr_v = (f'<span class="cc-kpi-em">{hr_avg:.2f}</span>'
+                        '<span class="cc-kpi-x">x</span>')
+
     # KPI hero + strip — real values, honest empty states.
     moic_v = (f'<span class="cc-kpi-em">{moic:.2f}</span>'
               '<span class="cc-kpi-x">x</span>') if moic is not None else None
@@ -415,15 +444,25 @@ def render_app_grid(
     built["covenants"] = _kpi_card(tag="Risk", color="amber", title="Covenants at risk",
                                    em="risk", value=cov_v, sub=cov_sub,
                                    span="cc-3x1", idx=3)
-    # Days cash has no rollup source → honest empty state (never fabricated).
-    built["days_cash"] = _kpi_card(tag="Liquidity", color="ink", title="Days cash",
-                                   em="cash", value=None, sub="", span="cc-4x1", idx=4)
+    # Capital deployed: total entry EV across sized deals (real; honest
+    # empty when no deal carries an entry EV yet).
+    built["days_cash"] = _kpi_card(
+        tag="Capital", color="ink", title="Capital deployed", em="capital",
+        value=cap_v,
+        sub=(f"entry EV · {n_sized} sized deal{'' if n_sized == 1 else 's'}"
+             if cap_v else ""),
+        span="cc-4x1", idx=4)
     built["active_deals"] = _kpi_card(tag="Pipeline", color="ink", title="Active deals",
                                       em="deals", value=(str(dc) if dc else None),
                                       sub="tracked", span="cc-4x1", idx=5)
-    # Initiatives tracked: no cross-fund rollup count → honest empty.
-    built["initiatives"] = _kpi_card(tag="Operations", color="ink", title="Initiatives tracked",
-                                     em="Initiatives", value=None, sub="", span="cc-4x1", idx=6)
+    # Covenant headroom: average turns to the leverage covenant across deals
+    # that report it (green at >= 1 turn of cushion, amber when tighter).
+    built["initiatives"] = _kpi_card(
+        tag="Credit",
+        color=("green" if (hr_avg is not None and hr_avg >= 1.0) else "amber"),
+        title="Covenant headroom", em="headroom", value=hr_v,
+        sub=(f"avg turns · {n_hr} deal{'' if n_hr == 1 else 's'}" if hr_v else ""),
+        span="cc-4x1", idx=6)
     # Roster + funnel from real data.
     built["roster"] = _roster_card(deals_df, idx=7)
     built["funnel"] = _funnel_card(r, idx=8)

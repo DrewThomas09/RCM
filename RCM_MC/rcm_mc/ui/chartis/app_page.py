@@ -151,10 +151,10 @@ def render_app_page(
     )
     _cc_kicker_label = "CLIENT ENGAGEMENT" if _is_consulting else "FUND II"
     _cc_lede = (
-        ("Engagement rollup, active diligence, screening flow — one canvas. "
+        ("Engagement rollup, active diligence, screening flow, all on one canvas. "
          "The complete engagement view in one place.")
         if _is_consulting
-        else ("Hold-period rollup, active diligence, screening flow — "
+        else ("Hold-period rollup, active diligence, screening flow, all on "
               "one canvas. The complete hold-period view in one place.")
     )
     _cc_what_summary = (
