@@ -362,6 +362,38 @@ def _customize_panel(hidden: set) -> str:
     )
 
 
+def _default_focus_deal(deals_df: pd.DataFrame) -> Optional[str]:
+    """Pick a deal to populate the *deal-scoped* dossier panels (covenant
+    heatmap + EBITDA drag) when the partner hasn't clicked one yet.
+
+    Surfaces the deal most worth a look: tightest covenant headroom first
+    (nearest a breach), then a hold/exit-stage deal, then the first row.
+    Returns None on an empty portfolio so the panels keep their honest empty
+    state. Never raises — a bad default must not break the render.
+
+    NB: only the covenant-heatmap and EBITDA-drag panels use this. The
+    initiative-variance and deliverables panels are deliberately left
+    unfocused, because their None state is a *cross-portfolio* view (playbook
+    signals / latest exports across deals), not an empty "select a deal" box.
+    """
+    try:
+        if (deals_df is None or deals_df.empty
+                or "deal_id" not in deals_df.columns):
+            return None
+        if "covenant_headroom_turns" in deals_df.columns:
+            sized = deals_df.dropna(subset=["covenant_headroom_turns"])
+            if not sized.empty:
+                worst = sized.sort_values("covenant_headroom_turns").iloc[0]
+                return str(worst["deal_id"])
+        if "stage" in deals_df.columns:
+            hold = deals_df[deals_df["stage"].astype(str).isin(["hold", "exit"])]
+            if not hold.empty:
+                return str(hold.iloc[0]["deal_id"])
+        return str(deals_df.iloc[0]["deal_id"])
+    except Exception:  # noqa: BLE001 — defaulting must never break the render
+        return None
+
+
 def render_app_grid(
     *,
     store: Any,
@@ -477,10 +509,25 @@ def render_app_grid(
            render_morning_brief(r, deals_df), "cc-12x2", 9)
     _embed("quick_access", "Quick access", "ink", "Quick access", "access",
            render_quick_access(), "cc-12x3", 10)
+    # Covenant heatmap + EBITDA drag sit blank with a "select a deal" prompt
+    # until a deal is focused. Default them to the deal most worth a look so
+    # they carry real data on load; an explicit ?deal= still wins. (The other
+    # two deal-scoped panels keep their cross-portfolio None view — see
+    # _default_focus_deal.) Building the default deal's packet is ~35ms and
+    # then TTL-cached; an explicit focus already resolved focused_packet.
+    cov_deal_id = focused_deal_id or _default_focus_deal(deals_df)
+    drag_packet = focused_packet
+    if drag_packet is None and cov_deal_id and not focused_deal_id:
+        try:
+            from rcm_mc.analysis.analysis_store import get_or_build_packet
+            drag_packet = get_or_build_packet(store, cov_deal_id)
+        except Exception:  # noqa: BLE001 — packet absence is expected
+            drag_packet = None
+
     _embed("covenant_heatmap", "Watchlist", "amber", "Covenant heatmap", "heatmap",
-           render_covenant_heatmap(store, focused_deal_id), "cc-7x3", 11)
+           render_covenant_heatmap(store, cov_deal_id), "cc-7x3", 11)
     _embed("ebitda_drag", "Bridge", "ink", "EBITDA drag", "drag",
-           render_ebitda_drag(focused_packet), "cc-5x3", 12)
+           render_ebitda_drag(drag_packet), "cc-5x3", 12)
     _embed("initiative_variance", "Operations", "ink", "Initiative variance", "variance",
            render_initiative_tracker(store, focused_deal_id), "cc-6x2", 13)
     _embed("alerts", "Alerts", "amber", "Active alerts", "alerts",
