@@ -1915,6 +1915,23 @@ def _auto_breadcrumb_chain(section_label, section_href, page_label,
     return deduped
 
 
+def _page_has_own_head(body):
+    """True when the rendered body already surfaces its own top-of-page
+    wayfinding, so the fallback auto-breadcrumb must NOT be injected on
+    top of it (that stacking is the "double header" partners flagged on
+    /app). Recognised heads:
+      · an explicit ``.ck-breadcrumbs`` element, or
+      · the Command Center's ``.cc-crumb`` eyebrow, or
+      · the ``.pg-head`` SECTION · KICKER · /slug head rendered by
+        ``editorial_page_head``.
+    """
+    return (
+        'class="ck-breadcrumbs"' in body
+        or 'class="cc-crumb"' in body
+        or 'class="pg-head"' in body
+    )
+
+
 class RCMHandler(BaseHTTPRequestHandler):
     """Main request handler. Lightweight dispatch on ``path``."""
 
@@ -2513,14 +2530,21 @@ class RCMHandler(BaseHTTPRequestHandler):
                                 1,
                             )
                             break
-                # Auto-breadcrumbs: every editorial page should
-                # surface its location in the nav hierarchy. Derive
-                # the crumb chain from the request path (Home →
-                # Section → Page) and inject as <nav class="ck-
-                # breadcrumbs"> right after the topbar's </header>.
-                # Skipped if a renderer already provided breadcrumbs
-                # (look for an existing .ck-breadcrumbs element).
-                if 'class="ck-breadcrumbs"' not in body and section:
+                # Auto-breadcrumbs: a FALLBACK for pages that don't
+                # surface their own location. Derive the crumb chain
+                # from the request path (Home -> Section -> Page) and
+                # inject as <nav class="ck-breadcrumbs"> right after the
+                # topbar's </header>.
+                #
+                # Skipped when the renderer already provides wayfinding:
+                #   · an explicit .ck-breadcrumbs element, OR
+                #   · its own editorial page-head (the Command Center's
+                #     .cc-crumb eyebrow, or the .pg-head SECTION · KICKER
+                #     · /slug head from editorial_page_head).
+                # Injecting on top of those produced the stacked "double
+                # header" partners flagged on /app (breadcrumb + eyebrow
+                # both repeating the page name).
+                if not _page_has_own_head(body) and section:
                     section_label = ""
                     section_href = ""
                     for nav_item in _CORPUS_NAV:

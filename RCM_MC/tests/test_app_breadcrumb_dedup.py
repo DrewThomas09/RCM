@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import unittest
 
-from rcm_mc.server import _auto_breadcrumb_chain
+from rcm_mc.server import _auto_breadcrumb_chain, _page_has_own_head
 
 
 class AutoBreadcrumbChainTests(unittest.TestCase):
@@ -66,6 +66,37 @@ class AutoBreadcrumbChainTests(unittest.TestCase):
         ):
             chain = _auto_breadcrumb_chain(*args)
             self.assertIsNone(chain[-1][1], f"last crumb should be current: {chain}")
+
+
+class PageOwnHeadSuppressionTests(unittest.TestCase):
+    """The fallback auto-breadcrumb must be suppressed when the page already
+    renders its own top-of-page head, so /app stops stacking a breadcrumb on
+    top of its eyebrow head (the "double header")."""
+
+    def test_command_center_grid_head_suppresses(self):
+        # Grid /app renders the .cc-crumb eyebrow head.
+        body = '<header>...</header><div class="cc-crumb">PORTFOLIO</div>'
+        self.assertTrue(_page_has_own_head(body))
+
+    def test_editorial_page_head_suppresses(self):
+        # editorial_page_head (flat /app + others) renders .pg-head.
+        body = '<header>...</header><div class="pg-head"><h1>X</h1></div>'
+        self.assertTrue(_page_has_own_head(body))
+
+    def test_explicit_breadcrumbs_suppresses(self):
+        body = '<nav class="ck-breadcrumbs"><a>Home</a></nav>'
+        self.assertTrue(_page_has_own_head(body))
+
+    def test_plain_page_does_not_suppress(self):
+        # A page with no head of its own keeps the fallback breadcrumb.
+        body = '<header>topbar</header><main><table>...</table></main>'
+        self.assertFalse(_page_has_own_head(body))
+
+    def test_css_rule_text_does_not_falsely_suppress(self):
+        # The CSS rules (.cc-crumb { ... }) must not be mistaken for a
+        # rendered element — only class="..." attributes count.
+        body = '<style>.cc-crumb{color:red;} .pg-head{margin:0;}</style>'
+        self.assertFalse(_page_has_own_head(body))
 
 
 if __name__ == "__main__":
