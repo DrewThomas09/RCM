@@ -231,7 +231,13 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         {"key": "company_name", "label": _sort_link(params, "company_name", "Company"), "align": "left"},
         {"key": "sponsor_owner", "label": _sort_link(params, "sponsor_owner", "Sponsor"), "align": "left"},
         {"key": "industry", "label": "Vertical", "align": "left"},
+        # Transaction-deal fields (HCPEA / market trackers). Company-screen
+        # rows leave these blank (ck_table renders missing as "—"), and deal
+        # rows leave State/Revenue blank — both honest.
+        {"key": "deal_date", "label": _sort_link(params, "deal_date", "Deal date"), "align": "left"},
+        {"key": "deal_type", "label": _sort_link(params, "deal_type", "Type"), "align": "left"},
         {"key": "state", "label": _sort_link(params, "state", "State"), "align": "left"},
+        {"key": "transaction_value", "label": _sort_link(params, "transaction_value", "Deal $mm"), "align": "right", "kind": "currency"},
         {"key": "revenue", "label": _sort_link(params, "revenue", "Revenue ($mm)"), "align": "right", "kind": "currency"},
         {"key": "completeness_score", "label": _sort_link(params, "completeness_score", "Complete"), "align": "right", "kind": "percent"},
     ]
