@@ -100,16 +100,108 @@ def _sort_link(params: Dict[str, str], col: str, label: str) -> str:
             f'style="color:inherit;text-decoration:none">{_html.escape(label)}{arrow}</a>')
 
 
+def _dl_bar(label: str, n: int, max_n: int, color: str) -> str:
+    """One editorial bar row: mono label, hairline track + fill, tabular count.
+    Matches the funnel-bar idiom used elsewhere; all fonts are token stacks."""
+    pct = max(2, round(100 * n / max_n)) if max_n else 2
+    return (
+        f'<div style="display:flex;align-items:center;gap:10px;padding:3px 0;'
+        f'font-family:var(--sc-mono);font-size:11px">'
+        f'<span style="width:118px;flex:none;color:{P["text_dim"]};white-space:nowrap;'
+        f'overflow:hidden;text-overflow:ellipsis" title="{_html.escape(label)}">'
+        f'{_html.escape(label)}</span>'
+        f'<span style="flex:1;height:9px;background:{P["border_dim"]};border-radius:1px;'
+        f'overflow:hidden"><span style="display:block;height:100%;width:{pct}%;'
+        f'background:{color}"></span></span>'
+        f'<span style="width:46px;text-align:right;color:{P["text"]};'
+        f'font-variant-numeric:tabular-nums">{n:,}</span></div>'
+    )
+
+
+def _dl_chart(title: str, pairs, color: str) -> str:
+    """A titled bar chart (column of _dl_bar rows). pairs = [(label, count)]."""
+    if not pairs:
+        return ""
+    max_n = max(n for _, n in pairs) or 1
+    rows = "".join(_dl_bar(str(lbl), int(n), max_n, color) for lbl, n in pairs)
+    return (
+        f'<div style="flex:1;min-width:264px">'
+        f'<div style="font-family:var(--sc-sans);font-size:11px;font-weight:600;'
+        f'letter-spacing:.08em;text-transform:uppercase;color:{P["text_dim"]};'
+        f'margin:0 0 8px">{_html.escape(title)}</div>{rows}</div>'
+    )
+
+
+def _dl_market_overview(store: Any) -> str:
+    """Visualization layer for the tracked market deals (deal_quarter set):
+    volume by quarter, sector mix, and deal-type mix, plus a one-line KPI
+    summary. Returns "" when the library holds no transaction rows (e.g. a
+    company-screen-only DB), so company exports are unaffected."""
+    with store.connect() as c:
+        rows = lambda sql: [tuple(r) for r in c.execute(sql).fetchall()]  # noqa: E731
+        by_q = rows(
+            "SELECT deal_quarter,COUNT(*) FROM deal_library_companies "
+            "WHERE deal_quarter IS NOT NULL GROUP BY deal_quarter "
+            "ORDER BY deal_quarter")
+        if not by_q:
+            return ""
+        by_sec = rows(
+            "SELECT industry,COUNT(*) n FROM deal_library_companies "
+            "WHERE deal_quarter IS NOT NULL AND industry IS NOT NULL "
+            "GROUP BY industry ORDER BY n DESC LIMIT 10")
+        by_type = rows(
+            "SELECT deal_type,COUNT(*) n FROM deal_library_companies "
+            "WHERE deal_quarter IS NOT NULL AND deal_type IS NOT NULL "
+            "GROUP BY deal_type ORDER BY n DESC LIMIT 8")
+        n_deals = c.execute(
+            "SELECT COUNT(*) FROM deal_library_companies "
+            "WHERE deal_quarter IS NOT NULL").fetchone()[0]
+        n_spons = c.execute(
+            "SELECT COUNT(DISTINCT sponsor_owner) FROM deal_library_companies "
+            "WHERE deal_quarter IS NOT NULL AND sponsor_owner IS NOT NULL"
+        ).fetchone()[0]
+        n_sec = c.execute(
+            "SELECT COUNT(DISTINCT industry) FROM deal_library_companies "
+            "WHERE deal_quarter IS NOT NULL AND industry IS NOT NULL"
+        ).fetchone()[0]
+    by_sec = [(str(s).split(";")[0][:22], n) for s, n in by_sec]
+    kpi = (
+        f'<div style="font-family:var(--sc-mono);font-size:11px;color:{P["text_dim"]};'
+        f'margin:0 0 14px">'
+        f'<b style="color:{P["text"]}">{n_deals:,}</b> tracked deals'
+        f' &middot; <b style="color:{P["text"]}">{len(by_q)}</b> quarters '
+        f'({by_q[0][0]}&ndash;{by_q[-1][0]})'
+        f' &middot; <b style="color:{P["text"]}">{n_spons:,}</b> sponsors'
+        f' &middot; <b style="color:{P["text"]}">{n_sec:,}</b> sectors</div>')
+    charts = (
+        '<div style="display:flex;gap:28px;flex-wrap:wrap">'
+        + _dl_chart("Deal volume by quarter", by_q, P["accent"])
+        + _dl_chart("Top sectors", by_sec, P["navy"])
+        + _dl_chart("By deal type", by_type, P["positive"])
+        + '</div>')
+    head = (
+        f'<div style="font-family:var(--sc-serif);font-size:18px;color:{P["text"]};'
+        f'margin:0 0 6px">Market overview</div>'
+        f'<div style="font-family:var(--sc-mono);font-size:9.5px;letter-spacing:.06em;'
+        f'text-transform:uppercase;color:{P["text_faint"]};margin:0 0 12px">'
+        f'Tracked HCPEA deals &middot; by deal date</div>')
+    return (
+        f'<section style="margin:18px 0 6px;padding:18px 20px;background:{P["panel"]};'
+        f'border:1px solid {P["border"]};border-radius:3px">{head}{kpi}{charts}</section>')
+
+
 def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> str:
     params = {k: str(v) for k, v in (params or {}).items() if v}
     total = dl.count(store)
 
     purpose_hdr = ck_source_purpose(
-        purpose=("Browse the benchmark universe of sponsor-backed healthcare "
-                 "companies ingested from licensed Capital IQ screening exports."),
+        purpose=("Browse the benchmark universe of healthcare-PE deals and "
+                 "sponsor-backed companies ingested from licensed market-data "
+                 "exports."),
         universe="mixed", confidence="derived",
-        source=("Capital IQ company screening exports (licensed; user-provided) "
-                "+ CMS public enrichment where entity-resolved"),
+        source=("Licensed market-data exports (user-provided): HCPEA deal "
+                "trackers and Capital IQ company screens + CMS public "
+                "enrichment where entity-resolved"),
         next_action="Filter to a vertical / sponsor / geography",
     )
     not_note = (
@@ -120,8 +212,8 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     title = ck_page_title(
         "Deal Library",
         eyebrow="BENCHMARK COMPANY LIBRARY",
-        meta=(f"{total:,} sponsor-backed healthcare companies · licensed "
-              f"Capital IQ exports" if total else "no export ingested yet"),
+        meta=(f"{total:,} healthcare-PE deals & sponsor-backed companies · "
+              f"licensed market-data exports" if total else "no export ingested yet"),
     )
 
     if not total:
@@ -268,6 +360,7 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         title + purpose_hdr + not_note
         + f'<div class="ck-kpi-grid" style="margin-top:14px">{kpis}</div>'
         + prov
+        + _dl_market_overview(store)
         + _missingness_strip(miss)
         + freq
         + form
