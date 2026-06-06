@@ -64,7 +64,7 @@ class RecapRenderTests(unittest.TestCase):
         html = render_conference_roadmap()
         self.assertIn("Conference Intelligence", html)
         self.assertIn("Macro threads", html)
-        self.assertIn("What happened — conference recaps", html)
+        self.assertIn("What happened: conference recaps", html)
         self.assertIn("Diligence read", html)
         # real sourced content, sentiment badge, a real announcement
         self.assertIn("Cautiously optimistic", html)

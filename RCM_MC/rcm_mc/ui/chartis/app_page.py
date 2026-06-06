@@ -151,18 +151,22 @@ def render_app_page(
     )
     _cc_kicker_label = "CLIENT ENGAGEMENT" if _is_consulting else "FUND II"
     _cc_lede = (
-        ("Engagement rollup, active diligence, screening flow — one canvas. "
-         "The complete engagement view in one place.")
+        ("Engagement rollup, active diligence, and the screening flow on one "
+         "canvas. The morning read: what moved overnight, where the risk sits, "
+         "and what the client needs next.")
         if _is_consulting
-        else ("Hold-period rollup, active diligence, screening flow — "
-              "one canvas. The complete hold-period view in one place.")
+        else ("Hold-period rollup, active diligence, and the screening flow on "
+              "one canvas. The morning read: what moved overnight, which "
+              "covenants tightened, and where the day goes.")
     )
     _cc_what_summary = (
-        "Weighted MOIC & IRR · pipeline funnel · covenant heatmap · "
-        "EBITDA drag decomposition · initiative variance · cross-deal "
-        "playbook signals. The complete "
-        + ("engagement" if _is_consulting else "hold-period")
-        + " view in one place."
+        ("How the engagement is tracking against plan, where the diligence "
+         "risk is concentrating, and which workstream has drifted far enough "
+         "to need a call.")
+        if _is_consulting
+        else ("How the fund is tracking against plan, which deals are "
+              "tightening against their covenants, and where an initiative has "
+              "drifted far enough to need a call.")
     )
 
     # ── Command Center dossier grid (default since the design-fidelity pass) ──

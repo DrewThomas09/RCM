@@ -171,7 +171,7 @@ def _render_analyses_section() -> str:
             f'<form method="POST" action="/api/saved-analyses" '
             f'style="display:inline;margin:0;" '
             f'onsubmit="var n=prompt(\'Save this analysis as template '
-            f'— give it a name:\', \'{_html.escape(a["name"])}\');'
+            f'and give it a name:\', \'{_html.escape(a["name"])}\');'
             f'if(!n){{return false;}}'
             f'this.querySelector(\'input[name=name]\').value=n;return true;">'
             f'<input type="hidden" name="name" value="">'
@@ -351,7 +351,7 @@ def _since_yesterday_events(db_path: str,
             "at": r["at"] or "",
             "icon": icon,
             "kind": "refresh",
-            "label": f"{r['source_name']} refreshed — {records:,} rows",
+            "label": f"{r['source_name']} refreshed, {records:,} rows",
             "href": "/data/refresh",
         })
 
@@ -506,7 +506,7 @@ def _covenant_insights(
         out.append({
             "kind": "covenant_tripped",
             "headline": f"Covenant TRIPPED on {t['name']}",
-            "body": (f"Deal {t['deal_id']} is over its leverage cap — "
+            "body": (f"Deal {t['deal_id']} is over its leverage cap: "
                      f"action today. {rest}".strip()),
             "href": f"/deal/{t['deal_id']}",
             "tone": "alert",
@@ -547,7 +547,7 @@ def _health_distribution_insights(
             "headline": (f"{worst['name']} health score is "
                          f"{worst['score']} ({worst.get('band') or 'poor'})"),
             "body": (f"{worst['deal_id']} is the weakest deal in the "
-                     f"portfolio — drill into the deal page to see "
+                     f"portfolio: drill into the deal page to see "
                      f"which components are dragging the score."),
             "href": f"/deal/{worst['deal_id']}",
             "tone": "warn",
@@ -562,7 +562,7 @@ def _health_distribution_insights(
             "kind": "median_health_low",
             "headline": (f"Median health score across {len(scored)} "
                          f"deals is {median}"),
-            "body": ("Half the portfolio is below a 60 — the issue "
+            "body": ("Half the portfolio is below a 60: the issue "
                      "isn't a single bad deal. Look for systemic "
                      "drivers (sector, payer mix, vintage)."),
             "href": "/portfolio/risk-scan",
@@ -672,7 +672,7 @@ def _sponsor_concentration_insights(
                     "kind": "sponsor_concentration",
                     "headline": (f"{len(dids)} deals from sponsor "
                                  f"{sponsor}"),
-                    "body": ("Diligence on these deals is correlated — "
+                    "body": ("Diligence on these deals is correlated: "
                              "if the sponsor's playbook fails on one, "
                              "expect it to fail on the others."),
                     "href": "/sponsor-league",
@@ -949,7 +949,7 @@ def _portfolio_pulse_inputs(
     if out["n_hrrp_exposed"] >= 2:
         syn = (
             f"{out['n_hrrp_exposed']} portfolio hospitals carry CMS "
-            f"readmission penalties — combined ~"
+            f"readmission penalties: combined ~"
             f"${out['hrrp_exposure_mm']:.1f}M EBITDA at risk this fiscal "
             f"year. Discount the bid book accordingly."
         )
@@ -962,7 +962,7 @@ def _portfolio_pulse_inputs(
             syn = (
                 f"{tripped} deal{'s' if tripped != 1 else ''} have "
                 f"TRIPPED covenants in the latest snapshot. Lender "
-                f"calls land first — review the watchlist before the "
+                f"calls land first. Review the watchlist before the "
                 f"morning standup."
             )
         elif (out["band_counts"]["poor"] + out["band_counts"]["fair"]
@@ -971,19 +971,19 @@ def _portfolio_pulse_inputs(
                        + out["band_counts"]["fair"])
             syn = (
                 f"{n_below} of {len(rows)} deals scored fair-or-poor "
-                f"on health. The portfolio's middle is widening — "
+                f"on health. The portfolio's middle is widening; "
                 f"prioritize ops time on the bottom-quartile names."
             )
         elif out["portfolio_moic_median"] is not None:
             syn = (
                 f"Predicted exit MOIC across the portfolio: "
                 f"{out['portfolio_moic_median']:.2f}x median, benchmarked "
-                f"against an illustrative deal corpus — {out['n_deals']} "
+                f"against an illustrative deal corpus: {out['n_deals']} "
                 f"deals track inside the modeled band."
             )
         else:
             syn = (
-                f"Portfolio of {out['n_deals']} deals — "
+                f"Portfolio of {out['n_deals']} deals: "
                 f"{out['band_counts']['great']} great, "
                 f"{out['band_counts']['good']} good. Quiet morning. "
                 f"Use it to chase the long-tail diligence asks."
@@ -1062,7 +1062,7 @@ def _render_portfolio_pulse_hero(
         score_str = f"{score}" if isinstance(score, (int, float)) else "—"
         tile_html.append(
             f'<a href="/deal/{deal_id}" '
-            f'title="{name} — health {score_str}" '
+            f'title="{name} · health {score_str}" '
             f'style="display:inline-block;width:18px;height:18px;'
             f'background:{c};border-radius:3px;'
             f'transition:transform 0.1s, box-shadow 0.1s;" '
@@ -1346,7 +1346,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     f'.disabled=true;">'
                     f'{hidden}'
                     f'<input type="hidden" name="snooze_days" value="0">'
-                    f'<button type="submit" title="Acknowledge — handled" '
+                    f'<button type="submit" title="Acknowledge · handled" '
                     f'style="{btn_style}">Ack</button></form>'
                     # Snooze 7d (snooze_days=7) — partner says "I see
                     # this, but don't bother me about it for a week"
@@ -1357,7 +1357,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     f'{hidden}'
                     f'<input type="hidden" name="snooze_days" value="7">'
                     f'<button type="submit" '
-                    f'title="Snooze for 7 days — remind me later" '
+                    f'title="Snooze for 7 days · remind me later" '
                     f'style="{btn_style}background:#FFFFFF;">'
                     f'Snooze 7d</button></form>'
                     f'</span>'
@@ -1370,7 +1370,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
             f'<span style="flex:1;color:#FFFFFF;">{label}</span>'
             f'{ack_form}'
             f'<span style="flex-shrink:0;color:#5C6878;font-size:11px;'
-            f'font-family:monospace;white-space:nowrap;">{ts}</span>'
+            f'font-family:var(--sc-mono,monospace);white-space:nowrap;">{ts}</span>'
             f'</li>'
         )
     # Sort hint — the list is always newest-first, but without this
@@ -1486,7 +1486,7 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'{t["id"]}/clone" style="display:inline;margin:0;">'
             f'<input type="hidden" name="redirect" value="/dashboard">'
             f'<button type="submit" '
-            f'title="Clone — duplicate this template under a new name '
+            f'title="Clone: duplicate this template under a new name '
             f'so you can tweak it (e.g. swap the CCN)" '
             f'style="background:transparent;border:0;color:#8A92A0;'
             f'cursor:pointer;font-size:14px;padding:0 6px;'
@@ -1529,7 +1529,7 @@ def _render_saved_templates_section(db_path: str) -> str:
         f'<ul style="list-style:none;padding:0;margin:0;">'
         f'{"".join(rows)}</ul>'
         f'<p style="margin:10px 0 0;font-size:11px;color:#5C6878;">'
-        f'Click any template to launch — run count updates automatically. '
+        f'Click any template to launch. Run count updates automatically. '
         f'<a href="/api/saved-analyses" style="color:#155752;">API</a>'
         f'</p>'
     )
@@ -1623,7 +1623,7 @@ def _render_needs_attention_section(
         rows.append(
             f'<li style="padding:10px 0;border-bottom:1px solid #FAF7F0;'
             f'display:flex;align-items:center;gap:12px;">'
-            f'<span style="flex-shrink:0;font-family:monospace;font-size:11px;'
+            f'<span style="flex-shrink:0;font-family:var(--sc-mono,monospace);font-size:11px;'
             f'color:#5C6878;text-transform:uppercase;min-width:100px;">'
             f'{_html.escape(d["deal_id"])}</span>'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
@@ -1739,10 +1739,10 @@ def _render_exposure_section(
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin:14px 0 6px;">By chain '
         '<span style="font-weight:normal;color:#8A92A0;">'
-        '— deals where CMS POS knows the parent</span></div>'
+        '· deals where CMS POS knows the parent</span></div>'
         + (_bar_chart(chain_counts, color="#B7791F") if chain_counts
            else '<p style="margin:0;color:#8A92A0;font-size:12px;'
-                'font-style:italic;">No chain-affiliated deals — '
+                'font-style:italic;">No chain-affiliated deals: '
                 'either all independent or POS data not loaded.</p>')
     )
     body = sector_block + chain_block
@@ -1971,7 +1971,7 @@ def _render_predicted_outcomes_section(
             f'min-width:160px;flex-shrink:0;">'
             f'<div style="font-weight:500;color:#155752;font-size:13px;">'
             f'{_html.escape(name)}</div>'
-            f'<div style="font-family:monospace;font-size:10px;'
+            f'<div style="font-family:var(--sc-mono,monospace);font-size:10px;'
             f'color:#5C6878;text-transform:uppercase;margin-top:2px;">'
             f'{_html.escape(deal_id)}</div></a>'
             f'<div style="flex-shrink:0;">{bar}</div>'
@@ -2142,7 +2142,7 @@ def _render_quiet_too_long_section(db_path: str) -> str:
             f'display:flex;align-items:center;gap:14px;">'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
             f'style="flex:1;color:#155752;font-weight:500;'
-            f'text-decoration:none;font-family:monospace;font-size:12px;'
+            f'text-decoration:none;font-family:var(--sc-mono,monospace);font-size:12px;'
             f'text-transform:uppercase;letter-spacing:0.03em;">'
             f'{_html.escape(d["deal_id"])}</a>'
             f'<span style="display:inline-block;padding:1px 8px;'
@@ -2257,7 +2257,7 @@ def _render_pinned_deals_section(db_path: str) -> str:
             f'transition:border-color 0.1s;">'
             f'<div style="display:flex;align-items:baseline;'
             f'justify-content:space-between;gap:6px;">'
-            f'<span style="font-family:monospace;font-size:11px;'
+            f'<span style="font-family:var(--sc-mono,monospace);font-size:11px;'
             f'color:#5C6878;text-transform:uppercase;letter-spacing:0.03em;">'
             f'{_html.escape(deal_id)}</span>'
             f'<span style="padding:1px 8px;background:{bg};color:{fg};'
@@ -2304,14 +2304,14 @@ def _render_workflow_shortcuts_section(db_path: str) -> str:
 
     items = [
         ("Portfolio risk scan",       "/portfolio/risk-scan",
-         "One-screen scan — which deals need attention today, "
+         "One-screen scan: which deals need attention today, "
          "sorted highest-priority first. Start here on Monday.",
          ""),
         ("Pipeline & saved searches", "/pipeline",
          "Resume a saved filter or pin a new one for the morning sweep.",
          _badge(counts.get("saved_searches"))),
         ("Watchlist",                 "/watchlist",
-         "Hospitals you've starred — see freshness + recent flag changes.",
+         "Hospitals you've starred: see freshness + recent flag changes.",
          _badge(counts.get("watchlist"))),
         ("Active alerts",             "/alerts",
          "Fired alerts awaiting ack/snooze; returning-badges show "
@@ -2380,7 +2380,7 @@ def _render_recent_results_section(db_path: str) -> str:
 
     if not rows:
         body = (
-            '<p style="margin:0 0 8px;"><strong>No runs yet — '
+            '<p style="margin:0 0 8px;"><strong>No runs yet, '
             'first time here?</strong> Try one of the curated analyses '
             'above. <a href="/diligence/thesis-pipeline?dataset=hospital_04_mixed_payer" '
             'style="color:#155752;font-weight:500;">Thesis Pipeline</a> '
@@ -2573,13 +2573,13 @@ def render_dashboard(db_path: str, *,
         'padding:8px 12px;background:#FAF7F0;border:1px solid #D6E1EB;'
         'border-radius:2px;font-size:12px;color:#2C5C84;">'
         'Tip: press '
-        '<kbd style="font-family:monospace;padding:1px 5px;background:#fff;'
+        '<kbd style="font-family:var(--sc-mono,monospace);padding:1px 5px;background:#fff;'
         'color:#0F1C2E;border:1px solid #D6CFC0;border-radius:3px;'
         'font-size:11px;">⌘K</kbd> '
-        '(or <kbd style="font-family:monospace;padding:1px 5px;'
+        '(or <kbd style="font-family:var(--sc-mono,monospace);padding:1px 5px;'
         'background:#fff;color:#0F1C2E;border:1px solid #D6CFC0;'
         'border-radius:3px;font-size:11px;">Ctrl-K</kbd>) '
-        'anywhere on this page to open the command palette — '
+        'anywhere on this page to open the command palette: '
         'jump to a deal, open any page, or launch an analysis.'
         '</div>'
     )

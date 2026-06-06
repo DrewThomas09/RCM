@@ -92,7 +92,7 @@ def render_hospital_profile(
             f"realistic -40% to +30% band. This HCRIS filing almost "
             f"certainly has incomplete or aggregated operating expenses "
             f"(a parent/CCN rollup or partial expense lines), so the "
-            f"margin is a data artifact — review before relying on it."
+            f"margin is a data artifact: review before relying on it."
         )
         _op_margin_value = (
             f'<span class="hp-dq-muted" title="{_dq_title}">'
@@ -243,7 +243,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         f'${npr/1e6:,.1f}M NPR · {margin:.1%} OP MARGIN · '
         f'PE DESK SCORE {score_val}/100 ({grade})</div>'
         f'<p class="lede">'
-        f'<em>{name}</em> — {city}, {state}.'
+        f'<em>{name}</em> · {city}, {state}.'
         f' {beds_disp} licensed beds, ${npr/1e6:,.1f}M net patient'
         f'revenue, {margin:.1%} operating margin.{verdict_extras}'
         '</p>'
@@ -298,7 +298,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
             provenance_tooltip(label="Net Patient Revenue", value=f"${npr/1e6:,.1f}M", graph=prov_graph, metric_key="net_patient_revenue"),
             help={
                 "definition": (
-                    "Net Patient Revenue — billed services minus "
+                    "Net Patient Revenue: billed services minus "
                     "contractual allowances, bad debt, and charity "
                     "care. The cash-realisable top line."
                 ),
@@ -316,7 +316,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
                     "regional hospitals 4-7%; academic medical "
                     "centers can run negative on operations and "
                     "make it back on research / grants. Margins outside "
-                    "-40%…+30% are flagged — the underlying HCRIS filing "
+                    "-40%…+30% are flagged: the underlying HCRIS filing "
                     "likely has incomplete or aggregated expenses."
                 ),
             },
@@ -328,7 +328,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
                 "definition": (
                     "Bottom-line earnings after operating income, "
                     "interest, taxes, and non-operating items. "
-                    "Differs from EBITDA — which strips out the "
+                    "Differs from EBITDA: which strips out the "
                     "below-the-line items PE partners model "
                     "separately in the bridge."
                 ),
@@ -343,7 +343,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
             provenance_tooltip(label="Revenue per Bed", value=f"${rev_per_bed/1e3:,.0f}K", graph=prov_graph, metric_key="revenue_per_bed"),
             help={
                 "definition": (
-                    "Productivity proxy — NPR per licensed bed. "
+                    "Productivity proxy: NPR per licensed bed. "
                     "Compares throughput and case mix across "
                     "hospitals of different sizes. Community "
                     "hospitals run $1.2-1.8M/bed; specialty "
@@ -592,7 +592,7 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
     next_up = ck_next_section(
         "Open the hospital's history",
         f"/hospital/{ccn}/history",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="history",
     )
     # Per-deal context ribbon at the top — the profile is the deal's
@@ -611,5 +611,5 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
     return chartis_shell(
         body, name,
         active_nav="/market-data/map",
-        subtitle=f"CCN {ccn} — {city}, {state} — {beds_disp} beds",
+        subtitle=f"CCN {ccn} · {city}, {state} · {beds_disp} beds",
     )

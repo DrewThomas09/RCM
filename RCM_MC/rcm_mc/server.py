@@ -1880,6 +1880,70 @@ def _resolve_csrf_secret() -> bytes:
     return _secrets.token_bytes(32)
 
 
+def _auto_breadcrumb_chain(section_label, section_href, page_label,
+                           fallback_label):
+    """Build the auto-injected breadcrumb chain (Home -> Section -> Page).
+
+    Returns a list of ``(label, href)`` pairs with the final entry being
+    the current page (callers render the last crumb as the bold "here"
+    marker). Adjacent duplicate labels are collapsed: Home-section pages
+    (``/app``, ``/alerts``, ...) resolve their *section* to "Home" too, so
+    the hardcoded top-level Home crumb plus the Home section crumb used to
+    render "Home / Home / Page". Collapsing makes that read "Home / Page"
+    while non-Home sections keep their full "Home / Section / Page" trail.
+    """
+    chain = [("Home", "/home")]
+    if section_label and page_label:
+        chain.append((section_label, section_href))
+        chain.append((page_label, None))
+    elif section_label:
+        chain.append((section_label, None))
+    else:
+        # Section unknown — just show "Home / <path>".
+        chain.append((fallback_label, None))
+    deduped: list = []
+    for lbl, hrf in chain:
+        if deduped and str(lbl).strip().lower() == str(
+            deduped[-1][0]
+        ).strip().lower():
+            # Same label as the previous crumb — drop the dup, but keep a
+            # link if the surviving crumb lacked one.
+            if hrf and not deduped[-1][1]:
+                deduped[-1] = (deduped[-1][0], hrf)
+            continue
+        deduped.append((lbl, hrf))
+    return deduped
+
+
+def _page_has_own_head(body):
+    """True when the rendered body already surfaces its own top-of-page
+    wayfinding, so the fallback auto-breadcrumb must NOT be injected on
+    top of it (that stacking is the "double header" partners flagged).
+
+    Editorial pages use a few head conventions, all of which already name
+    the page's location (and the section is clickable from the top nav),
+    so the breadcrumb only repeats them:
+      · an explicit ``.ck-breadcrumbs`` element;
+      · the ``ck_page_title`` ``<header class="ck-page-title">`` family —
+        matched loosely (``ck-page-title"``) because some pages add it as
+        a second class, e.g. ``class="ip-head ck-page-title"``;
+      · the bespoke per-page editorial heads (``pp-head``, ``dp-head``,
+        ``ip-head``, ``cv-head``, ``ps-head``, ``do-head``, ...), which all
+        open their eyebrow with the ``<span class="dash">`` glyph;
+      · the Command Center's ``.cc-crumb`` eyebrow;
+      · the ``.pg-head`` head rendered by ``editorial_page_head``.
+
+    Pages with none of these keep the auto-breadcrumb as a fallback.
+    """
+    return (
+        'class="ck-breadcrumbs"' in body
+        or 'ck-page-title"' in body
+        or '<span class="dash">' in body
+        or 'class="cc-crumb"' in body
+        or 'class="pg-head"' in body
+    )
+
+
 class RCMHandler(BaseHTTPRequestHandler):
     """Main request handler. Lightweight dispatch on ``path``."""
 
@@ -2478,14 +2542,21 @@ class RCMHandler(BaseHTTPRequestHandler):
                                 1,
                             )
                             break
-                # Auto-breadcrumbs: every editorial page should
-                # surface its location in the nav hierarchy. Derive
-                # the crumb chain from the request path (Home →
-                # Section → Page) and inject as <nav class="ck-
-                # breadcrumbs"> right after the topbar's </header>.
-                # Skipped if a renderer already provided breadcrumbs
-                # (look for an existing .ck-breadcrumbs element).
-                if 'class="ck-breadcrumbs"' not in body and section:
+                # Auto-breadcrumbs: a FALLBACK for pages that don't
+                # surface their own location. Derive the crumb chain
+                # from the request path (Home -> Section -> Page) and
+                # inject as <nav class="ck-breadcrumbs"> right after the
+                # topbar's </header>.
+                #
+                # Skipped when the renderer already provides wayfinding:
+                #   · an explicit .ck-breadcrumbs element, OR
+                #   · its own editorial page-head (the Command Center's
+                #     .cc-crumb eyebrow, or the .pg-head SECTION · KICKER
+                #     · /slug head from editorial_page_head).
+                # Injecting on top of those produced the stacked "double
+                # header" partners flagged on /app (breadcrumb + eyebrow
+                # both repeating the page name).
+                if not _page_has_own_head(body) and section:
                     section_label = ""
                     section_href = ""
                     for nav_item in _CORPUS_NAV:
@@ -2500,32 +2571,26 @@ class RCMHandler(BaseHTTPRequestHandler):
                             if sub_href_clean == req_path_clean:
                                 page_label = sub.get("label", "")
                                 break
-                    crumbs_parts = [
-                        '<a href="/home">Home</a>',
-                        '<span class="sep">/</span>',
-                    ]
-                    if section_label:
-                        if page_label:
-                            crumbs_parts.append(
-                                f'<a href="{_h.escape(section_href, quote=True)}">'
-                                f'{_h.escape(section_label)}</a>'
-                            )
+                    # Home -> [Section] -> Current, with adjacent duplicate
+                    # labels collapsed (so Home-section pages read
+                    # "Home / Page", not "Home / Home / Page").
+                    deduped = _auto_breadcrumb_chain(
+                        section_label, section_href, page_label, req_path_clean,
+                    )
+                    crumbs_parts = []
+                    for _i, (_lbl, _hrf) in enumerate(deduped):
+                        if _i:
                             crumbs_parts.append('<span class="sep">/</span>')
+                        if _hrf and _i != len(deduped) - 1:
                             crumbs_parts.append(
-                                f'<strong style="color:var(--sc-navy);">'
-                                f'{_h.escape(page_label)}</strong>'
+                                f'<a href="{_h.escape(_hrf, quote=True)}">'
+                                f'{_h.escape(_lbl)}</a>'
                             )
                         else:
                             crumbs_parts.append(
                                 f'<strong style="color:var(--sc-navy);">'
-                                f'{_h.escape(section_label)}</strong>'
+                                f'{_h.escape(_lbl)}</strong>'
                             )
-                    else:
-                        # Section unknown — just show "Home / <path>"
-                        crumbs_parts.append(
-                            f'<strong style="color:var(--sc-navy);">'
-                            f'{_h.escape(req_path_clean)}</strong>'
-                        )
                     crumbs_html = (
                         '<nav class="ck-breadcrumbs">'
                         + "".join(crumbs_parts)

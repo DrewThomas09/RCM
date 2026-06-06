@@ -359,7 +359,7 @@ def render_predictive_screener(
         else:
             margin_cell = (
                 f'<td class="num ps-dq" title="HCRIS filing has implausible or '
-                f'incomplete opex — margin {margin:.1%} is a data artifact; review '
+                f'incomplete opex, so margin {margin:.1%} is a data artifact; review '
                 f'before relying on it.">{margin:.1%} &#9888;</td>'
             )
 
@@ -463,7 +463,7 @@ transition:filter 120ms ease;}
     next_up = ck_next_section(
         "Open a deal profile to act on the shortlist",
         "/diligence/deal",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="deal",
     )
     # Lead takeaway — surface the screen's aggregate opportunity (total

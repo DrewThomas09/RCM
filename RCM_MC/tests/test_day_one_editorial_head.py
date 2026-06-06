@@ -66,10 +66,10 @@ class DayOneEditorialHeadTests(unittest.TestCase):
         )
 
     def test_h1_carries_day_one_and_weekday(self) -> None:
-        # H1 reads "Day One — {Weekday}, {Month} {Day}"
+        # H1 reads "Day One · {Weekday}, {Month} {Day}"
         self.assertRegex(
             self.html,
-            r'<h1>Day One — [A-Z][a-z]+, [A-Z][a-z]+ \d{1,2}</h1>',
+            r'<h1>Day One · [A-Z][a-z]+, [A-Z][a-z]+ \d{1,2}</h1>',
         )
 
     def test_meta_line_quotes_week_and_date(self) -> None:

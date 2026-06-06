@@ -127,7 +127,7 @@ def market_context_panel(state, P_=None) -> str:
                 f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
                 f'SNF consolidation (CMS, real): <b style="color:{pal["text"]}">{n_chow:,}</b> '
                 f'nursing-home ownership changes {sm.get("year_min","")}–{sm.get("year_max","")}. '
-                f'M&A/consolidation signal — not a PE-specific flag.</p>')
+                f'M&A/consolidation signal: not a PE-specific flag.</p>')
     except Exception:
         chow_line = ""
 
@@ -170,7 +170,7 @@ def market_context_panel(state, P_=None) -> str:
                 f'<b style="color:{pal["text"]}">{_pct(pl.get("uninsured_18_64"))}</b> uninsured 18–64, '
                 f'<b style="color:{pal["text"]}">{_pct(pl.get("food_insecurity"))}</b> food-insecure, '
                 f'<b style="color:{pal["text"]}">{_pct(pl.get("lack_transportation"))}</b> lack transport. '
-                f'Full-population SDOH burden — demand-mix / equity context.</p>')
+                f'Full-population SDOH burden: demand-mix / equity context.</p>')
     except Exception:
         places_line = ""
 
@@ -198,7 +198,7 @@ def market_context_panel(state, P_=None) -> str:
     if score and score.get("overall_market_score") is not None:
         score_line = (f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
                       f'Market score <b style="color:{pal["text"]}">{score["overall_market_score"]:.0f}</b> '
-                      f'(partial — {miss or "none"} EXPORT REQUIRED).</p>')
+                      f'(partial: {miss or "none"} EXPORT REQUIRED).</p>')
     return (
         f'<div style="background:{pal["panel"]};border:1px solid {pal["border"]};'
         f'border-left:3px solid {pal["accent"]};padding:14px 16px;margin-bottom:16px">'
@@ -212,7 +212,7 @@ def market_context_panel(state, P_=None) -> str:
         f'<th style="padding:3px 10px;text-align:right">Pctile</th></tr></thead>'
         f'<tbody>{rows}</tbody></table>{score_line}{demo_line}{supply_line}{chow_line}{ma_line}{places_line}'
         f'<p style="font-size:11px;color:{pal["text_dim"]};margin:6px 0 0">'
-        f'Market/area context — <b>not</b> provider-specific. Combine with CMS/HCRIS/'
+        f'Market/area context: <b>not</b> provider-specific. Combine with CMS/HCRIS/'
         f'provider data before a decision. <a href="/market-intel/geo/{_html.escape(fips)}" '
         f'style="color:{pal["accent"]}">Full market profile &rarr;</a></p></div>')
 
@@ -230,7 +230,7 @@ def render_market_geo_index(params: dict = None) -> str:
     rep = _mi.report()
 
     if not var:
-        body = ck_page_title("Market Intelligence — Geographic", eyebrow="MARKET INTEL") + \
+        body = ck_page_title("Market Intelligence · Geographic", eyebrow="MARKET INTEL") + \
             f'<p style="color:{P["text_dim"]}">No market data loaded yet.</p>'
         return chartis_shell(body, "Market Intelligence", active_nav="/market-intel")
 
@@ -313,11 +313,11 @@ def render_market_geo_index(params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{P['text_dim']};text-transform:uppercase;margin-bottom:10px"
 
     body = (
-        ck_page_title("Market Intelligence — Geographic", eyebrow="MARKET INTEL",
+        ck_page_title("Market Intelligence · Geographic", eyebrow="MARKET INTEL",
                       meta=f'{len(variables)} variable(s) · {rep.get("state_values",0)} state values · SimplyAnalytics-derived')
         + ck_source_purpose(
             purpose="Score and rank geographic markets for diligence: senior "
-                    "demand, payer mix, income, provider supply — then validate "
+                    "demand, payer mix, income, provider supply: then validate "
                     "with CMS/HCRIS/provider data.",
             universe="licensed-market-derived", confidence="derived",
             source="Licensed SimplyAnalytics exports (FIPS-keyed); market/area "
@@ -326,10 +326,10 @@ def render_market_geo_index(params: dict = None) -> str:
         + f'<p style="margin:6px 0 14px">{_LICENSE_CHIP}</p>'
         + selector
         + f'<div style="{cell}"><div style="{h3}">{_html.escape(var["display_name"])} by state</div>{cmap}</div>'
-        + f'<div style="{cell}"><div style="{h3}">Top markets — {_html.escape(var["display_name"])}</div>{table}'
+        + f'<div style="{cell}"><div style="{h3}">Top markets · {_html.escape(var["display_name"])}</div>{table}'
         + f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">Percentile = national rank among states with real values. '
         + f'{_html.escape(var.get("diligence_use",""))}</p></div>'
-        + (f'<div style="{cell}"><div style="{h3}">Market opportunity ranking — demand × real CMS supply &amp; consolidation</div>{opp_panel}'
+        + (f'<div style="{cell}"><div style="{h3}">Market opportunity ranking · demand × real CMS supply &amp; consolidation</div>{opp_panel}'
            f'<p style="font-size:11px;color:{P["text_dim"]};margin:8px 0 0">States by senior demand with real CMS provider supply (FFS-enrolled) '
            f'and SNF+hospital consolidation. High demand + low supply = potential opportunity; consolidation = M&amp;A velocity (not a PE flag). '
            f'Market context, not provider-specific.</p></div>' if opp_panel else "")
@@ -337,13 +337,13 @@ def render_market_geo_index(params: dict = None) -> str:
         + f'<p style="font-size:12px;color:{P["text_dim"]};margin:0 0 8px">The map screenshots show these variables; they render '
         + f'as EXPORT REQUIRED until the underlying SimplyAnalytics export is ingested (never fabricated):</p>'
         + f'<ul style="margin:0;padding-left:18px;font-size:12px;color:{P["text"]}">{backlog}</ul></div>')
-    return chartis_shell(body, "Market Intelligence — Geographic", active_nav="/market-intel",
+    return chartis_shell(body, "Market Intelligence · Geographic", active_nav="/market-intel",
                          editorial_intro={
                              "eyebrow": "MARKET INTELLIGENCE",
                              "headline": "Which markets carry the demand.",
                              "italic_word": "demand",
                              "body": "Licensed SimplyAnalytics-derived demographic, payer, and "
-                                     "supply context by FIPS — connected to PEdesk diligence so you "
+                                     "supply context by FIPS: connected to PEdesk diligence so you "
                                      "can rank markets and validate them against real CMS/HCRIS data."})
 
 
@@ -404,10 +404,10 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{P['text_dim']};text-transform:uppercase;margin-bottom:10px"
 
     body = (
-        ck_page_title(f'{prof["geo_name"]} — Market Profile', eyebrow="MARKET INTEL",
+        ck_page_title(f'{prof["geo_name"]} · Market Profile', eyebrow="MARKET INTEL",
                       meta=f'FIPS {prof["fips"]} · {prof["geo_level"]} · SimplyAnalytics-derived')
         + ck_source_purpose(
-            purpose="Market context for this geography — combine with CMS/HCRIS/"
+            purpose="Market context for this geography: combine with CMS/HCRIS/"
                     "provider data before a decision.",
             universe="licensed-market-derived", confidence="derived",
             source="Licensed SimplyAnalytics export; market/area context, not "
@@ -415,7 +415,7 @@ def render_market_geo_detail(fips: str, params: dict = None) -> str:
             next_action="Cross-reference HCRIS X-Ray / provider profiles in this market")
         + f'<p style="margin:6px 0 14px">{_LICENSE_CHIP}</p>'
         + f'<div class="ck-kpi-grid" style="margin-bottom:16px">{kpis}</div>'
-        + (f'<div style="{cell}"><div style="{h3}">Market score — formula</div>'
+        + (f'<div style="{cell}"><div style="{h3}">Market score · formula</div>'
            f'<p style="font-size:12px;color:{P["text_dim"]};margin:0">'
            f'{_html.escape(score.get("formula",""))} Components present: '
            f'{_html.escape(", ".join(score.get("components",{}).keys()) or "none")}. '

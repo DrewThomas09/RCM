@@ -224,7 +224,7 @@ def render_cli_runs_page(
         + ck_next_section(
             "Open the calibration view",
             "/calibration",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="calibration",
         )
     )

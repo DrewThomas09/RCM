@@ -268,7 +268,7 @@ def _health_section(summary: Dict[str, Any]) -> str:
         f"deal{'s' if n_active != 1 else ''} weights individual "
         f"health scores by Net Patient Revenue."
         if health is not None else
-        "Health scores require analysis packets — build one from "
+        "Health scores require analysis packets: build one from "
         "any deal profile to populate this number."
     )
     return (
@@ -404,7 +404,7 @@ def _activity_section(
         prose = (
             "No packet builds, snapshot rolls, or pipeline "
             "advancements in the last seven days. The portfolio "
-            "is steady — a good week to catch up on diligence."
+            "is steady: a good week to catch up on diligence."
         )
     else:
         prose = (
@@ -490,7 +490,7 @@ def _journey_section() -> str:
         },
         {
             "id": "j2",
-            "title": "Start The Atlas — the editorial tour",
+            "title": "Start The Atlas: the editorial tour",
             "check": "tour_started",
         },
         {
@@ -518,7 +518,7 @@ def _journey_section() -> str:
         '<h2 class="do-h2">Five milestones, one <em>arc</em>.</h2>'
         '<p class="do-prose">'
         'The platform is a workflow, not a dashboard. Each milestone '
-        'unlocks the next surface — by the time the bar is full, '
+        'unlocks the next surface: by the time the bar is full, '
         'you\'ve touched every diligence tool that matters.'
         '</p>'
         # State-conditional one-liner — partners see different
@@ -653,15 +653,15 @@ def render_day_one(store: Any) -> str:
         + '<header class="do-head">'
         f'<div class="eyebrow"><span class="dash"></span>'
         f'{weekday.upper()} BRIEF</div>'
-        f'<h1>Day One — {weekday}, '
+        f'<h1>Day One · {weekday}, '
         f'{now.strftime("%B")} {now.day}</h1>'
         f'<div class="meta">{meta_line}</div>'
         '<p class="lede">'
         '<em>Where to start your week.</em> '
         'Five surfaces in the order partners check them. Each '
         'one is a two-minute read or a click into deeper work. '
-        'Begin with alerts — anything that needs a decision '
-        'before lunch — and end with your platform journey.</p>'
+        'Begin with alerts (anything that needs a decision '
+        'before lunch) and end with your platform journey.</p>'
         '<ul class="legend">'
         '<li><span class="dot live"></span>Live data</li>'
         '<li><span class="dot computed"></span>Computed</li>'
@@ -682,7 +682,7 @@ def render_day_one(store: Any) -> str:
     next_up = ck_next_section(
         "Open the morning dashboard for the full view",
         "/?v3=1",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="dashboard",
     )
 
@@ -707,7 +707,7 @@ def render_day_one(store: Any) -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="Day One — Monday brief",
+        title="Day One · Monday brief",
         active_nav="PORTFOLIO",
         breadcrumbs=[
             ("Home", "/"),

@@ -258,15 +258,15 @@ _SUB_NAV = {
 # the section landing so the panel doubles as the "open the whole section" CTA.
 _SECTION_FEATURE = {
     "home": {"eyebrow": "SECTION · HOME", "title": "Operations",
-             "blurb": "Your daily driver — alerts, escalations, watchlist, and "
+             "blurb": "Your daily driver: alerts, escalations, watchlist, and "
                       "the Command Center in one canvas.", "href": "/app"},
     "source": {"eyebrow": "SECTION · SOURCE", "title": "Target discovery",
-               "blurb": "Find targets across every public CMS/provider universe "
-                        "— the Target Screener workbench (map, table, compare, "
+               "blurb": "Find targets across every public CMS/provider universe: "
+                        "the Target Screener workbench (map, table, compare, "
                         "just-missed, saved screens) plus conferences.",
                "href": "/target-screener"},
     "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Live deals",
-                 "blurb": "Track real opportunities once promoted from Source — "
+                 "blurb": "Track real opportunities once promoted from Source: "
                           "screen, score, and move deals toward IC.",
                  "href": "/pipeline"},
     "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
@@ -281,7 +281,7 @@ _SECTION_FEATURE = {
                           "dispersion, hold analysis, and market intel.",
                  "href": "/research"},
     "portfolio": {"eyebrow": "SECTION · PORTFOLIO", "title": "The active book",
-                  "blurb": "Monitor holdings by geography and risk — map, "
+                  "blurb": "Monitor holdings by geography and risk: map, "
                            "heatmap, risk scan, analytics, and LP reporting.",
                   "href": "/portfolio"},
 }
@@ -372,7 +372,7 @@ _NAV_DESC = {
     "/app": "Glance-level morning brief", "/my/AT": "Your owned deals & pulse",
     "/alerts": "Fire / ack / snooze lifecycle", "/escalations": "What needs a partner",
     "/watchlist": "Starred deals to track",
-    "/target-screener": "Target screening workbench — 9 universes", "/source": "Thesis-driven sourcing",
+    "/target-screener": "Target screening workbench across 9 universes", "/source": "Thesis-driven sourcing",
     "/screen": "Hospital target screener",
     "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
     "/deal-screening": "Thesis-testing workspace", "/find-comps": "Comparable transactions",
@@ -4825,13 +4825,13 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "eyebrow": "Volume I",
         "title": "The <em>Pipeline</em>.",
         "body": (
-            "<p>Every engagement begins at the same surface — the "
+            "<p>Every engagement begins at the same surface: the "
             "deal pipeline. Hospitals enter as candidates from "
             "screening; advance through outreach, LOI, diligence, "
             "and IC; exit either to your portfolio or to the "
             "watchlist for next quarter.</p>"
-            "<p>Click any deal to open its <strong>profile</strong> "
-            "— the single source of truth for every analytic on "
+            "<p>Click any deal to open its <strong>profile</strong>: "
+            "the single source of truth for every analytic on "
             "the platform. The profile carries your deal parameters "
             "(NPR, EBITDA, specialty, state) into every downstream "
             "tool so you never re-type them.</p>"
@@ -4859,7 +4859,7 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
             "<strong>Counterfactual analysis</strong> answers "
             "<em>what would EBITDA have been without this "
             "initiative</em>. The <strong>diligence checklist</strong> "
-            "gates IC approval — items must be cleared before the "
+            "gates IC approval: items must be cleared before the "
             "deal advances.</p>"
             "<p>Click any tool from the deal profile and your deal "
             "parameters pre-fill. No re-typing.</p>"
@@ -4875,17 +4875,17 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "body": (
             "<p>The Risk Workbench groups every risk surface into "
             "three tiers of attention.</p>"
-            "<p><strong>Tier 1</strong> — bankruptcy survival, "
+            "<p><strong>Tier 1</strong>: bankruptcy survival, "
             "covenant headroom, payer concentration. Existential "
             "risks that kill deals at IC.</p>"
-            "<p><strong>Tier 2</strong> — physician attrition, "
+            "<p><strong>Tier 2</strong>: physician attrition, "
             "denial rate, regulatory exposure, cyber posture. "
             "Material risks that erode EBITDA.</p>"
-            "<p><strong>Tier 3</strong> — management bench depth, "
+            "<p><strong>Tier 3</strong>: management bench depth, "
             "IT modernization debt, M&amp;A integration drag. "
             "Slow-burn risks that show up in year three.</p>"
-            "<p>Each panel cites its source — HCRIS, CMS, public "
-            "filings — so you can audit the chain from claim to "
+            "<p>Each panel cites its source (HCRIS, CMS, public "
+            "filings) so you can audit the chain from claim to "
             "conclusion.</p>"
         ),
         "try_it": {
@@ -4950,7 +4950,7 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "body": (
             "<p>Every engagement ends in deliverables. The platform "
             "generates IC packets, exit memos, and LP digests as "
-            "editorial HTML — partner-ready, print-friendly, "
+            "editorial HTML: partner-ready, print-friendly, "
             "share-friendly.</p>"
             "<p><strong>IC memos</strong> pull from the analysis "
             "packet automatically. The <strong>bear case</strong> is "
@@ -4958,8 +4958,8 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
             "<strong>LP digest</strong> aggregates portfolio-level "
             "performance into a quarterly narrative.</p>"
             "<p>Exports are CSV (sanitised against Excel formula "
-            "injection), HTML, JSON, or — for the IC memo and "
-            "packet — print-PDF. Every export caps the chain of "
+            "injection), HTML, JSON, or (for the IC memo and "
+            "packet) print-PDF. Every export caps the chain of "
             "citation so the LP can audit any number back to its "
             "source.</p>"
         ),
@@ -4973,7 +4973,7 @@ _TOUR_VOLUMES: List[Dict[str, Any]] = [
         "title": "Settings &amp; <em>Workflow</em>.",
         "body": (
             "<p>A handful of details that compound over time:</p>"
-            "<p><strong>Cmd+K</strong> opens the command palette — "
+            "<p><strong>Cmd+K</strong> opens the command palette: "
             "every analytic surface is one keystroke away. The "
             "<strong>deal slug</strong> (e.g. "
             "<em>/diligence/deal/aurora</em>) is bookmarkable and "
@@ -6903,15 +6903,17 @@ def ck_provenance_tooltip(
             'color:var(--sc-text-faint);font-size:10px;font-weight:600;'
             'cursor:help;font-family:var(--sc-mono);}'
             '.ck-prov-tt-card{position:absolute;left:0;top:calc(100% + 6px);'
-            'min-width:240px;max-width:340px;padding:12px 14px;'
+            'min-width:240px;max-width:min(340px, calc(100vw - 28px));padding:12px 14px;'
             'background:#fff;border:1px solid var(--sc-rule);'
             'box-shadow:var(--sc-shadow-2);border-radius:2px;'
             'font-family:var(--sc-sans);font-size:12px;line-height:1.5;'
             'color:var(--sc-text);z-index:50;'
-            'visibility:hidden;opacity:0;transition:opacity 0.1s;}'
+            # display:none (not visibility:hidden) so the closed card does
+            # not extend page scrollWidth on right-edge anchors at narrow
+            # widths. max-width clamps it to the viewport.
+            'display:none;}'
             '.ck-prov-tt:hover .ck-prov-tt-card,'
-            '.ck-prov-tt:focus-within .ck-prov-tt-card{visibility:visible;'
-            'opacity:1;}'
+            '.ck-prov-tt:focus-within .ck-prov-tt-card{display:block;}'
             '.ck-prov-tt-label{font-family:var(--sc-mono);font-size:11px;'
             'font-weight:600;letter-spacing:0.06em;text-transform:uppercase;'
             'color:var(--sc-text-dim);margin-bottom:4px;display:block;}'
@@ -7341,7 +7343,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-help-popover {
     position: absolute; bottom: calc(100% + 8px); left: 50%;
     transform: translateX(-50%);
-    min-width: 260px; max-width: 360px;
+    min-width: 260px; max-width: min(360px, calc(100vw - 28px));
     padding: 14px 16px;
     background: var(--sc-bone, #f2ede3);
     border: 1px solid var(--sc-rule, #d8d3c8);
@@ -7350,13 +7352,16 @@ _CSS_INLINE_FALLBACK = """
     z-index: 50;
     font-family: "Source Serif 4", serif;
     white-space: normal; text-align: left;
-    opacity: 0; visibility: hidden;
-    transition: opacity 120ms ease, visibility 120ms ease;
+    /* display:none (not visibility:hidden) so the closed, centered
+       popover does not extend page scrollWidth when its KPI/term anchor
+       sits near the right edge (pushed /ml-insights etc. ~167px wide at
+       768). max-width clamps it to the viewport. */
+    display: none;
     pointer-events: none;
   }
   .ck-help:focus-within .ck-help-popover,
   .ck-help:hover .ck-help-popover {
-    opacity: 1; visibility: visible; pointer-events: auto;
+    display: block; pointer-events: auto;
   }
   .ck-help-popover::after {
     content: ""; position: absolute; top: 100%; left: 50%;
@@ -7623,6 +7628,8 @@ _CSS_INLINE_FALLBACK = """
      dropdowns stay position:absolute, so wrapping doesn't clip them);
      wide tables scroll horizontally within the viewport instead of
      widening the page. */
+  /* Topbar/nav wrapping is phone-only — kept at ≤640 so the 7-link nav
+     does not wrap prematurely through the tablet range. */
   @media (max-width:640px){
     .ck-topbar-inner{ flex-wrap:wrap; min-height:0; padding:8px 16px; row-gap:2px; }
     .ck-wordmark{ padding-right:16px; margin-right:12px; }
@@ -7630,6 +7637,15 @@ _CSS_INLINE_FALLBACK = """
        bar (and the page) ~480px wide; each link keeps its own no-wrap. */
     .ck-nav{ flex-wrap:wrap; }
     .ck-nav a{ height:auto; padding:6px 10px; }
+  }
+  /* Overflow-prevention safety-net — raised from ≤640 to ≤960 so the
+     641–960px tablet range is covered, not just phones. The Phase-0 crawl
+     found real horizontal page overflow at 768px (regression panel grid
+     not stacking, unwrapped .cad-table, wide inline-flex rows). Every rule
+     here only caps width / stacks / scrolls — it never resizes text and
+     never touches the desktop layout (≥961px), so widening the reach
+     removes the tablet overflow safely. */
+  @media (max-width:960px){
     /* every content table scrolls within the viewport rather than
        widening the page (covers bare <table>, .ck-table, .ck-data-table,
        .cad-table, and any page-local class — they all live in .ck-main). */
@@ -7660,8 +7676,10 @@ _CSS_INLINE_FALLBACK = """
        on mobile so .ck-main table's max-width/scroll can take effect. */
     .ck-main table{ min-width:0 !important; }
     /* charts scale to the column instead of forcing it wide (viewBox SVGs
-       scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio). */
+       scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio).
+       <img> covers matplotlib PNG charts so they shrink with the column. */
     .ck-main svg{ max-width:100%; height:auto; }
+    .ck-main img{ max-width:100%; height:auto; }
     /* any inline multi-column grid (repeat(), "1fr 300px" sidebar
        layouts, etc.) stacks to one column on phones. */
     [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }
@@ -8698,8 +8716,18 @@ _GUIDE_CSS = """
 /* Metric */
 .ck-guide-metric{margin-bottom:20px;}
 .ck-guide-metric:last-child{margin-bottom:0;}
-.ck-guide-metric-head{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:6px 14px;margin-bottom:8px;}
-.ck-guide-metric-name{font-family:var(--ck-g-serif);font-size:22px;font-weight:500;letter-spacing:-.01em;color:var(--ck-g-ink);}
+/* Stack the name over the formula. The old 1fr|auto two-up grid cramped a
+   long name into a narrow column beside a long mono formula; stacked, each
+   gets the full panel width and reads on 1-2 lines. */
+.ck-guide-metric-head{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+/* word-break:normal + overflow-wrap:break-word overrides the panel-wide
+   word-break:break-word for the metric NAME. break-word (like overflow-wrap:
+   anywhere) drops min-content to a single character, so in the 1fr|auto
+   metric-head grid a long formula in the auto column starved the name to
+   one-character-per-line (vertical text). This pair keeps min-content at the
+   longest word (so the 1fr column can't collapse) while still letting a
+   genuinely over-long word break only when it would overflow. */
+.ck-guide-metric-name{font-family:var(--ck-g-serif);font-size:22px;font-weight:500;letter-spacing:-.01em;color:var(--ck-g-ink);word-break:normal;overflow-wrap:break-word;}
 .ck-guide-metric-formula{font-family:var(--ck-g-mono);font-size:12px;color:var(--ck-g-green);
   background:rgba(31,122,90,.07);padding:3px 8px;border-radius:6px;}
 .ck-guide-metric-pill{font-family:var(--ck-g-mono);font-size:10.5px;color:var(--ck-g-muted);
@@ -9833,7 +9861,7 @@ _SHORTCUTS_HTML = """
         <h3>Navigation</h3>
         <dl>
           <dt><kbd>⌘</kbd><kbd>K</kbd> &middot; <kbd>Ctrl</kbd><kbd>K</kbd></dt>
-            <dd>Open command palette &mdash; jump to any tool</dd>
+            <dd>Open command palette to jump to any tool</dd>
           <dt><kbd>Enter</kbd></dt>
             <dd>In palette: open the first matching tool</dd>
           <dt><kbd>Esc</kbd></dt>
@@ -9870,9 +9898,9 @@ _SHORTCUTS_HTML = """
           <dt><kbd>/</kbd></dt>
             <dd>Focus the topbar search field</dd>
           <dt><kbd>T</kbd></dt>
-            <dd>Open <em>The Atlas</em> &mdash; the editorial tour</dd>
+            <dd>Open <em>The Atlas</em>, the editorial tour</dd>
           <dt><kbd>Shift</kbd><kbd>Q</kbd></dt>
-            <dd>Quick capture &mdash; jot a diligence question
+            <dd>Quick capture to jot a diligence question
                 without leaving the page</dd>
         </dl>
       </section>
@@ -10676,7 +10704,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # not buried in the user dropdown. data-mode drives the accent.
         f'<a class="ck-mode-chip" href="/settings/workspace" '
         f'data-mode="{_esc(current_workspace_mode())}" '
-        f'title="Workspace: {_esc(_ws_mode_label)} — click to switch">'
+        f'title="Workspace: {_esc(_ws_mode_label)} · click to switch">'
         f'{_esc(_ws_mode_label)}</a>'
         # Portfolio-wide diligence-questions pill. JS-hydrated from
         # all rcm_deal_*_questions entries on DOMContentLoaded;
@@ -10702,7 +10730,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # at shell level (see _GUIDE_*).
         '<button class="ck-guide-trigger" type="button" data-ck-guide-open '
         'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
-        'title="PEdesk Guide — explain this page">'
+        'title="PEdesk Guide · explain this page">'
         '<span class="ck-guide-glyph" aria-hidden="true">?</span>Guide</button>'
         # + New deal — primary CTA. No dedicated /deals/new route exists yet,
         # so it routes to the Pipeline section (deal sourcing/origination)

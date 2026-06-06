@@ -27,7 +27,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "Methodology Hub",
         "summary": (
-            "How the platform decides — every model, calibration, "
+            "How the platform decides: every model, calibration, "
             "and scoring rubric in one navigable index."
         ),
         "href": "/methodology",
@@ -47,7 +47,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "PE Intelligence Hub",
         "summary": (
-            "278 partner-reflex modules — how the platform codifies "
+            "278 partner-reflex modules: how the platform codifies "
             "judgment from screening through exit."
         ),
         "href": "/pe-intelligence",
@@ -57,7 +57,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "Bear Cases",
         "summary": (
-            "Anti-thesis catalog — why a deal might not work, sliced "
+            "Anti-thesis catalog: why a deal might not work, sliced "
             "by sector and exit regime."
         ),
         "href": "/bear-cases",
@@ -78,7 +78,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
         "title": "Regulatory Calendar",
         "summary": (
             "Upcoming healthcare-policy windows that move PE thesis "
-            "value — by sector and quarter."
+            "value: by sector and quarter."
         ),
         "href": "/regulatory-calendar",
         "topic": "Industry",
@@ -107,7 +107,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "Notes",
         "summary": (
-            "Analyst voice — running working notes, hypotheses, and "
+            "Analyst voice: running working notes, hypotheses, and "
             "open questions across the portfolio."
         ),
         "href": "/notes",
@@ -117,7 +117,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "Sector Momentum",
         "summary": (
-            "Rolling sector velocity — which healthcare verticals are "
+            "Rolling sector velocity: which healthcare verticals are "
             "accelerating, plateauing, or rolling over."
         ),
         "href": "/sector-momentum",
@@ -137,7 +137,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "Hold Analysis",
         "summary": (
-            "How long a deal should run — hold-period distributions "
+            "How long a deal should run: hold-period distributions "
             "and exit-window readouts across the corpus."
         ),
         "href": "/hold-analysis",
@@ -157,7 +157,7 @@ RESEARCH_ENTRIES: List[Dict[str, str]] = [
     {
         "title": "Backtest",
         "summary": (
-            "Single-thesis backtest — apply one rule across the "
+            "Single-thesis backtest: apply one rule across the "
             "deal universe and inspect the cohort it picks."
         ),
         "href": "/backtest",
@@ -302,7 +302,7 @@ def render_research(
             "headline": "Where the platform thinks out loud.",
             "italic_word": "thinks",
             "body": (
-                "Methodology, frameworks, deep-dives, and field notes — "
+                "Methodology, frameworks, deep-dives, and field notes: "
                 "everything the analyst voice has published since the "
                 "last fund raise. Filter by topic or format to narrow."
             ),
@@ -311,7 +311,7 @@ def render_research(
         next_section_html=ck_next_section(
             "Open the metric glossary",
             "/metric-glossary",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="metric",
         ),
     )

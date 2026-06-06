@@ -86,7 +86,7 @@ def render_hospital_providers(
             "Type-2 organization NPI registered to this hospital's "
             "practice address. Used during commercial DD to read "
             "specialty mix, provider concentration, and recruiting-"
-            "market depth — none of which HCRIS cost-report data "
+            "market depth: none of which HCRIS cost-report data "
             "captures."
         ),
     )
@@ -136,10 +136,10 @@ def render_hospital_providers(
         body = intro + freshness_panel + empty
         return chartis_shell(
             body,
-            title=f"Providers — {name_safe}",
+            title=f"Providers · {name_safe}",
             active_nav="/diligence/deal",
             subtitle=(
-                f"NPPES live cache — empty for CCN {ccn_safe}"
+                f"NPPES live cache: empty for CCN {ccn_safe}"
             ),
         )
 
@@ -169,7 +169,7 @@ def render_hospital_providers(
                 "definition": (
                     "All distinct NPIs cached for the hospital's "
                     "practice address. Bigger doesn't always mean "
-                    "better — large physician rosters at low-margin "
+                    "better: large physician rosters at low-margin "
                     "hospitals signal labor-cost overhang."
                 ),
             },
@@ -180,7 +180,7 @@ def render_hospital_providers(
             help={
                 "definition": (
                     "Individual provider NPIs (Type-1). The recruiting "
-                    "pool + concentration risk lives here — a single "
+                    "pool + concentration risk lives here: a single "
                     "specialty with 1-2 producers is structurally "
                     "fragile."
                 ),
@@ -261,7 +261,7 @@ def render_hospital_providers(
             '<p class="ck-section-body" style="margin-top:10px;'
             'font-style:italic;color:var(--cad-text-faint);">'
             'CONCENTRATION flags single specialties above 50% of the '
-            'roster — a structural-fragility signal worth understanding '
+            'roster: a structural-fragility signal worth understanding '
             'before LOI.'
             '</p>'
             if any(
@@ -309,7 +309,7 @@ def render_hospital_providers(
     next_up = ck_next_section(
         "Cross-check against PPAM attrition predictions",
         "/diligence/physician-attrition",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="attrition",
     )
 
@@ -327,7 +327,7 @@ def render_hospital_providers(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title=f"Providers — {name_safe}",
+        title=f"Providers · {name_safe}",
         active_nav="/diligence/deal",
         subtitle=(
             f"{summary['n_providers']} NPIs · "

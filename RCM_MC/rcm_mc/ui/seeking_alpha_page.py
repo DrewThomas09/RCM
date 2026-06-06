@@ -41,7 +41,7 @@ from .power_ui import (
 
 def _scoped_styles() -> str:
     css = """
-.ck-sa-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.ck-sa-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .ck-sa-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .ck-sa-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
@@ -409,7 +409,7 @@ def _category_multiple_table(
         headers, rows, sort_keys=sort_keys,
         name="public_comp_category_bands",
         caption=(
-            "Public-comp category bands — median EV/EBITDA by "
+            "Public-comp category bands: median EV/EBITDA by "
             "sub-sector, sortable · CSV export wired"
         ),
     )
@@ -495,7 +495,7 @@ def render_seeking_alpha_page(
         f"{active_sponsors}. Public hospital comp multiples are "
         f"stabilizing at "
         f"{f'{hospital_mult:.1f}×' if hospital_mult else '~9×'} "
-        f"EV/EBITDA — partners underwriting rural/mid-sized "
+        f"EV/EBITDA. Partners underwriting rural/mid-sized "
         f"acquisitions should target entry multiples at a discount "
         f"to that public band given the small-target size penalty."
     )
@@ -549,7 +549,7 @@ def render_seeking_alpha_page(
         f'Tone = dominant sentiment across curated headlines; '
         f'median multiple is the observed PE transaction EV/EBITDA '
         f'for the sector in the last 6 months. The pairing surfaces '
-        f'the gap partners need to see — a sector with positive '
+        f'the gap partners need to see: a sector with positive '
         f'sentiment but compressed multiples often signals a '
         f'buying opportunity.'
         f'</div>'
@@ -564,7 +564,7 @@ def render_seeking_alpha_page(
         f'<strong>How to read: </strong>'
         f'Each row is one closed or announced deal with sponsor, '
         f'specialty, deal size and the published EV/EBITDA '
-        f'multiple. Use this as a negotiation anchor — partners bid '
+        f'multiple. Use this as a negotiation anchor; partners bid '
         f'into a market that just priced this deal at X× six weeks '
         f'ago. Hover narratives for sponsor thesis and risk '
         f'callouts.'
@@ -578,7 +578,7 @@ def render_seeking_alpha_page(
     sponsor_callout = (
         f'<div class="ck-sa-callout">'
         f'Sponsors actively deploying capital in healthcare. Useful '
-        f'for competitive-bid forecasting — if Welsh Carson or '
+        f'for competitive-bid forecasting: if Welsh Carson or '
         f'Audax is circling the same sector, expect the auction '
         f'floor multiple to widen 50-100bps.'
         f'</div>'
@@ -595,7 +595,7 @@ def render_seeking_alpha_page(
 
     category_panel = ck_panel(
         _category_multiple_table(bands),
-        title="Public-comp category bands — EV/EBITDA by sub-sector",
+        title="Public-comp category bands · EV/EBITDA by sub-sector",
     )
 
     filter_form = ck_panel(
@@ -651,7 +651,7 @@ def render_seeking_alpha_page(
         + category_panel
         + export_json_panel(
             '<div class="ck-sa-section-label">'
-            'JSON export — full market-intel snapshot</div>',
+            'JSON export · full market-intel snapshot</div>',
             payload=payload,
             name="seeking_alpha_snapshot",
         )
@@ -659,7 +659,7 @@ def render_seeking_alpha_page(
         + ck_next_section(
             "Apply this market read to a deal",
             "/diligence/deal",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="deal",
         )
         + '</div>'
@@ -669,6 +669,6 @@ def render_seeking_alpha_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, "RCM Diligence — Seeking Alpha Market Intel",
+        body, "Seeking Alpha · Market Intel",
         subtitle="Public comps × PE deal flow × curated news",
     )

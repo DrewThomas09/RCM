@@ -489,7 +489,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
             f'<a href="/deal/{_html.escape(deal_id)}" '
             f'style="color:var(--sc-navy);font-weight:500;text-decoration:none;">'
             f'{_html.escape(d["name"])}</a>'
-            f'<div style="font-family:monospace;font-size:10px;'
+            f'<div style="font-family:var(--sc-mono,monospace);font-size:10px;'
             f'color:#7a8699;margin-top:2px;text-transform:uppercase;">'
             f'{_html.escape(deal_id)}</div>'
         )
@@ -545,7 +545,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         'transition:background 0.1s;" '
         'onmouseover="this.style.background=\'#f7f3ea\';" '
         'onmouseout="this.style.background=\'#fff\';" '
-        'title="Download today\'s scan as CSV — paste into PowerPoint, '
+        'title="Download today\'s scan as CSV to paste into PowerPoint, '
         'email, or Excel">'
         '⬇ Export CSV</a>'
     )
@@ -617,7 +617,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     next_up = ck_next_section(
         "Open the LP update",
         "/lp-update",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="LP",
     )
     # Drop the legacy `_wc.responsive_container` wrap (max-width

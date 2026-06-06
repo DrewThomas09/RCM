@@ -212,7 +212,7 @@ def render_escalations(
     next_up = ck_next_section(
         "Open the alerts triage view",
         "/alerts",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="alerts",
     )
     body = intro + search_hero + rail_layout + next_up

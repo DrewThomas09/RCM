@@ -69,7 +69,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
             "MOIC", moic_value, "exit/entry",
             help={
                 "definition": (
-                    "Multiple on invested capital — exit proceeds plus "
+                    "Multiple on invested capital: exit proceeds plus "
                     "interim distributions divided by entry equity. "
                     "Less hold-period-sensitive than IRR; 2.5x in 5 "
                     "years and 2.5x in 7 years tell different IRR "
@@ -83,7 +83,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
                 "definition": (
                     "Total equity the LPs put up at close, after debt "
                     "financing. This is the denominator for both IRR "
-                    "and MOIC — bigger entry checks need bigger exit "
+                    "and MOIC: bigger entry checks need bigger exit "
                     "proceeds to hit the same multiple."
                 ),
             },
@@ -93,7 +93,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
             "Total Distributions", f"${total_dist/1e6:.0f}M", "interim + exit",
             help={
                 "definition": (
-                    "All cash returned to LPs over the hold — exit "
+                    "All cash returned to LPs over the hold: exit "
                     "proceeds plus any interim dividends, recaps, or "
                     "tax distributions. Used for IRR/MOIC calc; "
                     "interim distributions front-load the cash flow "
@@ -118,13 +118,13 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
 
     # Interpretation
     irr_assessment = (
-        "Strong — exceeds the 20% hurdle with margin"
+        "Strong: exceeds the 20% hurdle with margin"
         if irr > 0.25 else
-        "Meets hurdle — passes the typical 20% IRR bar"
+        "Meets hurdle: passes the typical 20% IRR bar"
         if irr > 0.20 else
-        "Marginal — in the 15-20% range, needs operational upside"
+        "Marginal: in the 15-20% range, needs operational upside"
         if irr > 0.15 else
-        "Below hurdle — requires significant value creation to meet return targets"
+        "Below hurdle: requires significant value creation to meet return targets"
     )
     interp = (
         f'<div class="cad-card" style="border-left:3px solid {irr_color};">'
@@ -133,7 +133,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         f'<p><strong>{irr_assessment}.</strong> At {irr:.1%} IRR and {moic:.2f}x MOIC over '
         f'{hold:.0f} years, every $1 invested returns ${moic:.2f}.</p>'
         f'<p style="margin-top:6px;">Entry equity of ${entry_eq/1e6:.0f}M grows to '
-        f'${total_dist/1e6:.0f}M in total distributions — a ${(total_dist-entry_eq)/1e6:.0f}M gain.</p>'
+        f'${total_dist/1e6:.0f}M in total distributions: a ${(total_dist-entry_eq)/1e6:.0f}M gain.</p>'
         f'</div></div>'
     )
 
@@ -174,7 +174,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         f'<div style="margin-top:12px;font-size:12.5px;color:{PALETTE["text_secondary"]};">'
         f'<strong>Plain English:</strong> EBITDA can decline {cushion:.0%} '
         f'(from ${cov_ebitda/1e6:.0f}M to ${trips_at/1e6:.0f}M) before the {max_lev:.1f}x leverage covenant trips. '
-        f'{"This is comfortable headroom." if cushion > 0.25 else "This is tight — stress test carefully." if cushion > 0.10 else "Very thin — covenant breach risk is high."}'
+        f'{"This is comfortable headroom." if cushion > 0.25 else "This is tight: stress test carefully." if cushion > 0.10 else "Very thin: covenant breach risk is high."}'
         f'</div></div>'
     ) if cov_ebitda > 0 else ""
 
@@ -191,7 +191,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     next_up = ck_next_section(
         "Pressure-test these returns",
         "/diligence/risk-workbench?demo=steward",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="pressure-test",
     )
     # Lead takeaway — surface the computed return (MOIC/IRR + the
@@ -215,7 +215,7 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="PE RETURNS & COVENANTS",
-        title=f"Returns & covenants — {html.escape(deal_name)}",
+        title=f"Returns & covenants · {html.escape(deal_name)}",
         meta=(
             f"IRR {irr:.1%} · "
             f"MOIC {moic:.2f}x · "
@@ -236,6 +236,6 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(body, f"Returns & Covenant — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Returns & Covenant · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"IRR: {irr:.1%} | MOIC: {moic:.2f}x | Covenant cushion: {cushion:.0%}")

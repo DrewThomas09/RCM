@@ -67,7 +67,7 @@ def _accuracy_coverage_scatter(all_perfs) -> str:
     )
     if not chart:
         return ""
-    return ck_panel(chart, title="Accuracy vs Reliability — every metric")
+    return ck_panel(chart, title="Accuracy vs Reliability · every metric")
 
 
 def render_model_validation(
@@ -201,7 +201,7 @@ def render_model_validation(
         lede_body=(
             "The "
             "scorecard below shows R², 90%-CI coverage, MAE, and "
-            "bias per metric — partner-defensible because each "
+            "bias per metric: partner-defensible because each "
             "number is reproducible from the prediction ledger."
         ),
     )
@@ -214,12 +214,12 @@ def render_model_validation(
     if is_synthetic:
         synthetic_notice = ck_panel(
             '<p class="ck-section-body" style="margin:0;">'
-            "<strong>Illustrative backtest — not live validation.</strong> "
+            "<strong>Illustrative backtest: not live validation.</strong> "
             "No live deal predictions are recorded yet, so the scorecard "
             "below is a <strong>synthetic backtest on HCRIS data</strong> "
             "that demonstrates the validation methodology. These numbers "
             "do <strong>not</strong> reflect validated performance on real "
-            "deal predictions — they populate from the prediction ledger as "
+            "deal predictions: they populate from the prediction ledger as "
             "deals are underwritten.</p>",
             title="⚠ Synthetic backtest",
         )
@@ -257,7 +257,7 @@ def render_model_validation(
             "Avg R²", f"{avg_r2:.1%}",
             help={
                 "definition": (
-                    "Coefficient of determination — the share of "
+                    "Coefficient of determination: the share of "
                     "variance in actual outcomes the predictor "
                     "explains, averaged across all 38 metrics in "
                     "the registry. 100% is perfect prediction; "
@@ -270,7 +270,7 @@ def render_model_validation(
             "90% CI Coverage", f"{avg_coverage:.0%}",
             help={
                 "definition": (
-                    "Conformal-prediction coverage — the share of "
+                    "Conformal-prediction coverage: the share of "
                     "actuals that fell inside the predictor's "
                     "90% confidence band. A well-calibrated model "
                     "lands at 90% ± a few points. Lower means the "
@@ -392,7 +392,7 @@ def render_model_validation(
             + '<p class="ck-section-body">'
             'Target: 90% of actuals should fall within the 90% CI. '
             'Over-covered intervals are too wide (conservative but wastes bandwidth). '
-            'Under-covered intervals are too narrow (overconfident — dangerous for IC). '
+            'Under-covered intervals are too narrow (overconfident, dangerous for IC). '
             'Split conformal prediction guarantees finite-sample coverage, but calibration '
             'can drift if the data distribution shifts.</p>',
             title="Confidence Interval Calibration",
@@ -410,7 +410,7 @@ def render_model_validation(
         '<p class="ck-section-body">'
         f'Current state: <strong>{total_predictions:,}</strong> predictions, '
         f'<strong>{total_actuals:,}</strong> validated. Each new deal adds ~20-30 metric predictions '
-        'to the ledger. After 50+ deals, cross-deal learning kicks in — the system detects '
+        'to the ledger. After 50+ deals, cross-deal learning kicks in: the system detects '
         'that it systematically overestimates denial improvement by 15% and adjusts future predictions.</p>',
         title="The Compounding Data Moat",
     )
@@ -429,7 +429,7 @@ def render_model_validation(
     next_up = ck_next_section(
         "Calibrate predictions against priors",
         "/calibration",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="priors",
     )
     body = (

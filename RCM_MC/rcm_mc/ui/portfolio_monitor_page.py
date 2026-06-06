@@ -83,7 +83,7 @@ def _value_creation_panel(store: Any) -> str:
             'plan in execution) and realized (actual EBITDA captured) '
             'value populate once a deal logs its first quarterly '
             'initiative actual.</p>',
-            title="Value Creation — Launched vs Realized",
+            title="Value Creation · Launched vs Realized",
         )
 
     capture = realized / launched if launched else 0.0
@@ -109,7 +109,7 @@ def _value_creation_panel(store: Any) -> str:
         'in execution (≥1 quarter of actuals). <em>Realized</em> = '
         'cumulative actual EBITDA impact recorded to date (run-rate, not '
         'TTM, not re-attributed). Portfolio-level.</p>',
-        title="Value Creation — Launched vs Realized",
+        title="Value Creation · Launched vs Realized",
     )
 
 
@@ -264,7 +264,7 @@ def render_portfolio_monitor(store: Any) -> str:
             "Active Deals", f"{n_deals}",
             help={
                 "definition": (
-                    "Deals still in hold — excludes exited / "
+                    "Deals still in hold: excludes exited / "
                     "archived. The portfolio surface tracks each "
                     "one's variance vs plan; the bands below split "
                     "them by health."
@@ -276,7 +276,7 @@ def render_portfolio_monitor(store: Any) -> str:
             help={
                 "definition": (
                     "Deals with at least one quarter of actuals "
-                    "loaded. Variance bands only apply to these — "
+                    "loaded. Variance bands only apply to these: "
                     "deals with no actuals yet show neutral until "
                     "Q1 reports."
                 ),
@@ -298,7 +298,7 @@ def render_portfolio_monitor(store: Any) -> str:
             help={
                 "definition": (
                     "Deals tracking 5-15% below plan. Partner sees "
-                    "the variance, no escalation required yet — "
+                    "the variance, no escalation required yet: "
                     "the alerts panel below explains the cohort "
                     "drift."
                 ),
@@ -321,7 +321,7 @@ def render_portfolio_monitor(store: Any) -> str:
                 "definition": (
                     "Active alerts across the portfolio not yet "
                     "acked or snoozed. Click into /alerts to "
-                    "triage — each carries severity, age, and the "
+                    "triage: each carries severity, age, and the "
                     "ack form."
                 ),
             },
@@ -505,16 +505,16 @@ def render_portfolio_monitor(store: Any) -> str:
         name = ddata["name"]
         # Declining health
         if ddata["latest_health"] and ddata["latest_health"]["band"] == "red":
-            warnings.append(("red", name, "Health score in red band — immediate attention required"))
+            warnings.append(("red", name, "Health score in red band: immediate attention required"))
         # EBITDA miss
         if ddata["actuals"]:
             latest = ddata["actuals"][0]
             ea = latest["kpis"].get("ebitda", 0)
             ep = latest["plan"].get("ebitda", 0)
             if ep and ep > 0 and (ea - ep) / ep < -0.15:
-                warnings.append(("red", name, f"EBITDA {(ea-ep)/ep:+.0%} vs plan — off track"))
+                warnings.append(("red", name, f"EBITDA {(ea-ep)/ep:+.0%} vs plan: off track"))
             elif ep and ep > 0 and (ea - ep) / ep < -0.05:
-                warnings.append(("amber", name, f"EBITDA {(ea-ep)/ep:+.0%} vs plan — lagging"))
+                warnings.append(("amber", name, f"EBITDA {(ea-ep)/ep:+.0%} vs plan: lagging"))
         # Multiple alerts
         if len(ddata["alerts"]) >= 3:
             warnings.append(("amber", name, f"{len(ddata['alerts'])} unresolved alerts"))
@@ -570,7 +570,7 @@ overflow:hidden;margin-bottom:8px;}
     next_up = ck_next_section(
         "Open the portfolio risk scan",
         "/portfolio/risk-scan",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="risk",
     )
     value_creation = _value_creation_panel(store)

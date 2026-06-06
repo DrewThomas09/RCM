@@ -240,7 +240,7 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
         '<p class="ck-section-body">'
         'Each lever shows gross impact, probability of achievement, and probability-weighted value.</p>'
         f'{bars}',
-        title="EBITDA Bridge — 7 Lever Model",
+        title="EBITDA Bridge · 7 Lever Model",
     )
 
     actions = ck_panel(
@@ -276,7 +276,7 @@ def render_value_bridge(deal_id: str, deal_name: str, bridge: Dict[str, Any]) ->
     next_up = ck_next_section(
         "Open the playbook",
         f"/models/playbook/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="playbook",
     )
     body = f'{_PE_STYLES}{nav}{intro}{kpis}{bridge_section}{interp}{actions}{next_up}'
@@ -348,7 +348,7 @@ def render_comparable_hospitals(deal_id: str, deal_name: str,
         + ck_next_section(
             "Open the market analysis",
             f"/models/market/{html.escape(deal_id)}",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="market",
         )
     )
@@ -423,7 +423,7 @@ def render_anomaly_report(deal_id: str, deal_name: str,
         + ck_next_section(
             "Open the diligence questions",
             f"/models/questions/{html.escape(deal_id)}",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="questions",
         )
     )
@@ -497,7 +497,7 @@ def render_service_lines(deal_id: str, deal_name: str,
         + ck_next_section(
             "Open denial drivers",
             f"/models/denial/{html.escape(deal_id)}",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="denial",
         )
     )

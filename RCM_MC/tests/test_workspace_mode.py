@@ -76,7 +76,9 @@ class TestSettingsTogglePage(unittest.TestCase):
         from rcm_mc.ui.settings_pages import render_workspace_mode_page
         html = render_workspace_mode_page()
         self.assertIn("PE Partner", html)
-        self.assertIn("Chartis Consulting", html)
+        # #1583 dropped the "Chartis" prefix from the user-visible UI; the
+        # consulting card now renders as plain "Consulting".
+        self.assertIn("Consulting", html)
         # The toggle POSTs to /settings/workspace.
         self.assertIn('action="/settings/workspace"', html)
 

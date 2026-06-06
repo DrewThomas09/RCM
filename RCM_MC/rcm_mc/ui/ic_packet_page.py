@@ -134,7 +134,7 @@ def _landing() -> str:
         '<div class="ic-form-full">'
         '<label>Dataset</label>'
         '<select name="dataset" required>'
-        f'<option value="">— pick a CCD fixture —</option>{options}'
+        f'<option value="">(pick a CCD fixture)</option>{options}'
         '</select></div>'
     )
     for name, label, placeholder in [
@@ -163,7 +163,7 @@ def _landing() -> str:
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(body, "RCM Diligence — IC Packet Assembler")
+    return chartis_shell(body, "RCM Diligence · IC Packet Assembler")
 
 
 def _split_list(raw: str) -> List[str]:
@@ -670,10 +670,10 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
     runtime_header = (
         ck_source_purpose(
-            purpose="Assemble a one-click, IC-ready packet — KPIs, bridge, bear case, regulatory, comps — from the full diligence pipeline in one pass.",
+            purpose="Assemble a one-click, IC-ready packet (KPIs, bridge, bear case, regulatory, comps) from the full diligence pipeline in one pass.",
             universe="illustrative",
             confidence="derived",
-            source=f"Run against the '{html.escape(str(dataset))}' CCD fixture + your entered deal economics; module outputs are illustrative on fixture data — re-run on the target's own data before a real IC.",
+            source=f"Run against the '{html.escape(str(dataset))}' CCD fixture + your entered deal economics; module outputs are illustrative on fixture data: re-run on the target's own data before a real IC.",
             next_action="Export the packet / preview the print version",
         )
         + ck_section_header(
@@ -756,7 +756,7 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + ck_next_section(
                 "Return to the portfolio",
                 "/portfolio",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="portfolio",
             )
         )
@@ -770,14 +770,14 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + ck_next_section(
                 "Return to the portfolio",
                 "/portfolio",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="portfolio",
             )
         )
 
     return chartis_shell(
         body_with_toc,
-        title=f"IC Packet — {meta.deal_name}",
+        title=f"IC Packet · {meta.deal_name}",
         active_nav="/pe-intelligence",
         extra_css=extra_css,
         editorial_intro={
@@ -786,7 +786,7 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             "italic_word": "will",
             "body": (
                 "Auto-assembled IC deliverable for "
-                f"{meta.deal_name} — thesis, base case, bear case, "
+                f"{meta.deal_name}: thesis, base case, bear case, "
                 "comparables, exit path, and the questions partners "
                 "expect to be asked. Generated against the live packet."
             ),
@@ -813,7 +813,7 @@ margin-top:6px;line-height:1.6;}
 .ic-reg-block thead tr{background:#ece5d6;}
 .ic-reg-block th{padding:6px 10px;text-align:left;border-bottom:2px solid #d6cfc0;}
 .ic-reg-block td{padding:6px 10px;border-bottom:1px solid #e8e0d0;}
-.ic-reg-block td.mono{font-family:monospace;}
+.ic-reg-block td.mono{font-family:var(--sc-mono,monospace);}
 .ic-reg-block td.tone-killed{color:#b5321e;font-weight:600;}
 .ic-reg-block td.tone-damaged{color:#b8732a;font-weight:600;}
 .ic-reg-block td.delta-neg{color:#b5321e;}
@@ -875,7 +875,7 @@ def _render_regulatory_block(report: Any) -> str:
         + f'<section class="ic-reg-block ic-section" '
         f'style="--vcol:{verdict_color};">'
         '<div class="ic-reg-eyebrow">Regulatory Calendar × Kill-Switch</div>'
-        '<h2>Thesis timeline — which drivers die, and when</h2>'
+        '<h2>Thesis timeline: which drivers die, and when</h2>'
         '<div class="ic-reg-verdict">'
         f'<div class="ic-reg-verdict-label">Verdict: {report.verdict.value}</div>'
         f'<div class="ic-reg-headline">{html.escape(report.headline)}</div>'

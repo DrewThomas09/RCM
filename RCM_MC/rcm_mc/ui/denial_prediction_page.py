@@ -44,14 +44,14 @@ def _landing() -> str:
         + ck_page_explainer(
             'Claim-level denial prediction from CCD data.',
             "Predicts the per-claim probability of a payer denial using the platform's ML denial model on the deal's CCD (consolidated clinical document) feed. Used to size the recoverable revenue from a denial-management initiative before underwriting it into the EBITDA bridge.",
-            source='Selected CCD fixture (sample claims, not a live per-deal feed) + denial ML model trained live on it (rcm_mc.ml.denial_model). Fixture data is for methodology — verify against the target’s own CCD before IC use.',
+            source='Selected CCD fixture (sample claims, not a live per-deal feed) + denial ML model trained live on it (rcm_mc.ml.denial_model). Fixture data is for methodology: verify against the target’s own CCD before IC use.',
         )
     )
     explainer_html = (
         '<p class="ck-dp-explainer">'
         '<em>Where the denial revenue hides in the CCD.</em> '
         "Trains a per-claim Naive Bayes model on the CCD, scores the "
-        "held-out split, and flags systematic misses — recoverable "
+        "held-out split, and flags systematic misses: recoverable "
         "revenue the model says shouldn't have been denied. Feeds the "
         "EBITDA bridge denial-reduction lever with a data-driven target."
         "</p>"
@@ -67,7 +67,7 @@ def _landing() -> str:
         f'<select name="dataset" required style="width:100%;padding:6px 8px;'
         f'background:{P["panel_alt"]};color:{P["text"]};'
         f'border:1px solid {P["border"]};font-family:inherit;">'
-        f'<option value="">— pick a fixture —</option>{options}</select>'
+        f'<option value="">(pick a fixture)</option>{options}</select>'
         f'<label style="font-size:9px;color:{P["text_faint"]};'
         f'letter-spacing:1.5px;text-transform:uppercase;font-weight:600;'
         f'display:block;margin-top:12px;margin-bottom:4px;">'
@@ -243,7 +243,7 @@ def _hero(report: DenialPredictionReport) -> str:
         auc_label = "Moderate"
     else:
         auc_color = P["negative"]
-        auc_label = "Weak — treat outputs with caution"
+        auc_label = "Weak: treat outputs with caution"
 
     # Baseline denial rate vs. HFMA FPDR peer benchmark (8-12%).
     PEER_DENIAL_MEDIAN = 0.10
@@ -263,7 +263,7 @@ def _hero(report: DenialPredictionReport) -> str:
         source=(
             f'{report.systematic_miss_count} test-split claims '
             f'with predicted denial probability ≥ 50% that were '
-            f'NOT actually denied — sum of charge_amount.'
+            f'NOT actually denied: sum of charge_amount.'
         ),
         formula=(
             'sum(charge_amount) where predict_proba >= 0.5 '
@@ -278,13 +278,13 @@ def _hero(report: DenialPredictionReport) -> str:
     if cal.auc_rough < 0.6:
         summary = (
             f"The model's AUC of {cal.auc_rough:.2f} is below the "
-            f"0.60 floor — treat flagged claims as suggestions, not "
+            f"0.60 floor: treat flagged claims as suggestions, not "
             f"directives. Typically means too few training claims "
             f"or a highly uniform CCD."
         )
     elif report.systematic_miss_count == 0:
         summary = (
-            f"No systematic misses — the seller's denial profile "
+            f"No systematic misses: the seller's denial profile "
             f"matches what the model predicts. The denial Pareto on "
             f"the benchmarks tab remains the primary Phase-3 input."
         )
@@ -294,8 +294,8 @@ def _hero(report: DenialPredictionReport) -> str:
             f"{report.systematic_miss_count} claims "
             f"({report.systematic_miss_count / max(report.n_test,1)*100:.1f}% "
             f"of test split) that look like denials but weren't. "
-            f"${report.systematic_miss_charge_dollars:,.0f} in charges "
-            f"— audit + appeal recovery typically 60–80% of that."
+            f"${report.systematic_miss_charge_dollars:,.0f} in charges; "
+            f"audit + appeal recovery typically 60–80% of that."
         )
 
     # Editorial intro + KPI strip. The bespoke 4-tile grid is replaced
@@ -309,7 +309,7 @@ def _hero(report: DenialPredictionReport) -> str:
     intro = ck_editorial_head(
         eyebrow="DENIAL PREDICTION",
         title=(
-            f"Denial model — {report.provider_id or 'Provider'}"
+            f"Denial model · {report.provider_id or 'Provider'}"
         ),
         meta=(
             f"{report.n_claims:,} CLAIMS · "
@@ -343,7 +343,7 @@ def _hero(report: DenialPredictionReport) -> str:
             sub=f"{auc_label} · 0.5 = random, 1.0 = perfect, >0.7 usable",
             help={
                 "definition": (
-                    "Area-under-curve — how well the model separates "
+                    "Area-under-curve: how well the model separates "
                     "denied from paid claims. 0.5 = coin flip; 0.7-0.8 "
                     "= usable for prioritization; 0.9+ = the model "
                     "rarely confuses the two classes. Below 0.7 the "
@@ -359,7 +359,7 @@ def _hero(report: DenialPredictionReport) -> str:
                 "definition": (
                     "Claims the model flagged as high-denial-risk "
                     "but that ultimately got paid. Each represents a "
-                    "false alarm — wasted appeals effort. High count "
+                    "false alarm: wasted appeals effort. High count "
                     "(>5% of flags) means the model is too eager; "
                     "tune the threshold before automating workflow."
                 ),
@@ -424,7 +424,7 @@ def _calibration_block(report: DenialPredictionReport) -> str:
                 "definition": (
                     "Share of claims where the model's most-likely "
                     "class matches reality. Misleading on imbalanced "
-                    "data — a 90%-paid base rate makes "
+                    "data: a 90%-paid base rate makes "
                     "'predict-everything-paid' 90% accurate while "
                     "being useless. Read with AUC + Brier for the "
                     "real signal."
@@ -542,7 +542,7 @@ def render_denial_prediction_page(
         + ck_next_section(
             "Bridge these denials to the EBITDA impact",
             "/diligence/bridge-audit",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bridge",
         )
     )
@@ -551,7 +551,7 @@ def render_denial_prediction_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Denial Prediction — {dataset}",
+        body, f"Denial Prediction · {dataset}",
         active_nav="/diligence/denial-prediction",
         extra_css=_EXPLAINER_CSS,
     )

@@ -264,7 +264,7 @@ def render_calibration_page(store: Any) -> str:
         + ck_next_section(
             "Open the simulation run history",
             "/runs",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="run",
         )
     )

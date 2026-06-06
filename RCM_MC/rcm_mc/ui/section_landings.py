@@ -45,10 +45,10 @@ _SECTIONS: Dict[str, Dict] = {
                  {"href": "/deal-screening", "label": "Thesis Screening",
                   "blurb": "Score targets against a named investment thesis."},
                  {"href": "/source", "label": "Deal Sourcing",
-                  "blurb": "Origination workspace — promote a target to pipeline."},
+                  "blurb": "Origination workspace: promote a target to pipeline."},
              ]},
             {"title": "Geographic intelligence", "eyebrow": "WHERE TO HUNT",
-             "body": "Read the market geography behind the targets — all real "
+             "body": "Read the market geography behind the targets, all real "
              "public data.",
              "links": [
                  {"href": "/geo-intel", "label": "Geographic Intelligence",
@@ -83,7 +83,7 @@ _SECTIONS: Dict[str, Dict] = {
         "eyebrow": "LIVE DEALS",
         "explainer_head": "The live-deal workspace at a glance.",
         "explainer_body": "Track real opportunities once they're promoted from "
-        "Source — stage them toward IC, and rank the funnel by quality and risk.",
+        "Source: stage them toward IC, and rank the funnel by quality and risk.",
         "intro_headline": "Move real deals toward IC.",
         "intro_italic": "real",
         "intro_body": "The opportunities you're actively working, with the "
@@ -165,7 +165,7 @@ _SECTIONS: Dict[str, Dict] = {
         "explainer_head": "The research desk at a glance.",
         "explainer_body": "Read the market and the industry, learn from how "
         "comparable deals actually played out, backtest an edge, and frame the "
-        "regulatory + thesis view — before you underwrite.",
+        "regulatory + thesis view before you underwrite.",
         "intro_headline": "Read the market before you underwrite it.",
         "intro_italic": "before",
         "intro_body": "Market and industry intelligence, comparable outcomes, "
@@ -232,7 +232,7 @@ _SECTIONS: Dict[str, Dict] = {
         "title": "Portfolio",
         "eyebrow": "PORTFOLIO OPS",
         "explainer_head": "The portfolio console at a glance.",
-        "explainer_body": "Operate the book — health, alerts, covenants — and "
+        "explainer_body": "Operate the book (health, alerts, covenants) and "
         "analyze what drives outcomes across every holding.",
         "intro_headline": "Run the book and find what drives it.",
         "intro_italic": "drives",

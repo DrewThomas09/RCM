@@ -235,7 +235,7 @@ def render_analysis_landing(
     next_up = ck_next_section(
         "Open the diligence checklist",
         "/diligence/checklist",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="checklist",
     )
     body = f'{page_head}{kpi_strip}{deals_section}{market_tools}{next_up}'

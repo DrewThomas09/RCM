@@ -95,7 +95,7 @@ def _deal_format_guide() -> str:
         rows.append([
             (f'<code>?format={_html.escape(name)}</code>'),
             _html.escape(desc),
-            f'<span style="color:#5C6878;font-family:monospace;'
+            f'<span style="color:#5C6878;font-family:var(--sc-mono,monospace);'
             f'font-size:11px;">{_html.escape(size)}</span>',
         ])
     intro = (
@@ -207,7 +207,7 @@ def render_exports_index(db_path: str) -> str:
     next_up = ck_next_section(
         "Open the LP update",
         "/lp-update",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="LP",
     )
     body = (

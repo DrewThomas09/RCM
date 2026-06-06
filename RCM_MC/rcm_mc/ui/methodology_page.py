@@ -372,7 +372,7 @@ def render_methodology() -> str:
     next_up = ck_next_section(
         "Open the metric glossary",
         "/metric-glossary",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="glossary",
     )
     body = (
@@ -386,5 +386,5 @@ def render_methodology() -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         body, "Methodology",
-        subtitle="How every number is calculated — data sources, models & assumptions",
+        subtitle="How every number is calculated · data sources, models & assumptions",
     )

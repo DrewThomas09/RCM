@@ -440,7 +440,7 @@ letter-spacing:0.01em;min-width:58px;}
     next_up = ck_next_section(
         "Open the portfolio monitor",
         "/portfolio/monitor",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="monitor",
     )
     body = (

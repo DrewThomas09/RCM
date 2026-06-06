@@ -65,13 +65,13 @@ def _landing_form_style() -> str:
     return """<style>
 .bsv-landing .form-field{display:block;margin:10pt 0 4pt 0;font-size:10pt;
    color:#6b5d3c;letter-spacing:.5pt;text-transform:uppercase;
-   font-family:'Helvetica Neue',Arial,sans-serif;}
+   font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .bsv-landing input,.bsv-landing select{width:100%;padding:6pt 8pt;
    font-size:11pt;border:1px solid #c9b98a;font-family:inherit;}
 .bsv-landing button{margin-top:14pt;padding:8pt 20pt;background:#0b2341;
    color:#fff;border:0;font-size:11pt;letter-spacing:.5pt;
    text-transform:uppercase;cursor:pointer;
-   font-family:'Helvetica Neue',Arial,sans-serif;}
+   font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 </style>"""
 
 
@@ -84,18 +84,18 @@ h1{font-size:22pt;margin:0 0 6pt 0;color:#0b2341;font-weight:700;}
 h2{font-size:14pt;margin:18pt 0 4pt 0;color:#0b2341;
    border-bottom:1px solid #c9b98a;padding-bottom:2pt;}
 .eyebrow{font-size:9pt;letter-spacing:1.5pt;text-transform:uppercase;
-   color:#6b5d3c;font-family:'Helvetica Neue',Arial,sans-serif;}
+   color:#6b5d3c;font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .verdict{border:2pt solid;padding:10pt 14pt;margin:10pt 0 14pt 0;
    background:#f8f6f0;}
 .verdict-band{font-size:11pt;font-weight:700;letter-spacing:1.5pt;
-   text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;}
+   text-transform:uppercase;font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .verdict-copy{font-size:11pt;color:#1a1a1a;margin-top:4pt;}
 table.checks{width:100%;border-collapse:collapse;font-size:10pt;
    margin:6pt 0 10pt 0;}
 table.checks th{text-align:left;padding:4pt 6pt;
    border-bottom:1pt solid #0b2341;font-size:9pt;letter-spacing:.5pt;
    text-transform:uppercase;color:#6b5d3c;
-   font-family:'Helvetica Neue',Arial,sans-serif;font-weight:700;}
+   font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);font-weight:700;}
 table.checks td{padding:4pt 6pt;border-bottom:1px solid #e6dfca;}
 .sev-CRITICAL{color:#8a1e1e;font-weight:700;}
 .sev-HIGH{color:#b23a2d;font-weight:700;}
@@ -106,7 +106,7 @@ table.checks td{padding:4pt 6pt;border-bottom:1px solid #e6dfca;}
 ul{margin:6pt 0 10pt 0;padding-left:20pt;}
 li{margin:3pt 0;}
 .caveat{font-size:8pt;color:#6b5d3c;margin-top:24pt;padding-top:6pt;
-   border-top:1px solid #c9b98a;font-family:'Helvetica Neue',Arial,sans-serif;}
+   border-top:1px solid #c9b98a;font-family:var(--sc-sans,'Helvetica Neue',Arial,sans-serif);}
 .form-field{display:block;margin:10pt 0 4pt 0;font-size:10pt;
    color:#6b5d3c;letter-spacing:.5pt;text-transform:uppercase;}
 input,select{width:100%;padding:6pt 8pt;font-size:11pt;
@@ -135,7 +135,7 @@ def render_scan_landing() -> str:
         "<p>A 12-pattern screen against the named PE-healthcare "
         "bankruptcy playbook (Steward, Envision, APP, Cano, "
         "Prospect, Wellpath) plus six forward-looking regulatory "
-        "vectors. Public data only — no CCD required. Result renders "
+        "vectors. Public data only: no CCD required. Result renders "
         "in &lt;30 seconds.</p>"
         "<form method='POST' action='/screening/bankruptcy-survivor'>"
         "<label class='form-field'>Target name</label>"
@@ -213,7 +213,7 @@ def render_scan_landing() -> str:
                     "Twelve falsifiable structural patterns drawn from "
                     "PE-healthcare bankruptcy precedents (Steward, "
                     "Envision, Mednax). Each pattern is a specific "
-                    "claim a partner can either confirm or rule out — "
+                    "claim a partner can either confirm or rule out: "
                     "not a vague risk theme."
                 ),
             },
@@ -252,7 +252,7 @@ def render_scan_landing() -> str:
         '<p class="ck-bs-explainer">'
         '<em>Whether the deal survives the playbook.</em> '
         "12 patterns drawn from PE-healthcare bankruptcies (Steward, "
-        "Envision, Mednax) — a rapid pre-screen against the structural "
+        "Envision, Mednax): a rapid pre-screen against the structural "
         "moves that have already broken deals. Each fired pattern is a "
         "falsifiable claim, not a verdict."
         "</p>"
@@ -265,7 +265,7 @@ def render_scan_landing() -> str:
         + ck_next_section(
             "Cross-check against named bear cases",
             "/bear-cases",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bear",
         )
     )
@@ -298,7 +298,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         )
     questions_html = "".join(
         f"<li>{html.escape(q)}</li>" for q in scan.diligence_questions
-    ) or "<li>No structural questions generated — target profile is clean.</li>"
+    ) or "<li>No structural questions generated: target profile is clean.</li>"
 
     # Editorial port (2026-04-29): wrap the scan result body in
     # chartis_shell so it inherits the navy topbar + parchment palette
@@ -308,7 +308,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         chartis_shell, ck_kpi_block, ck_page_title, ck_provenance_tooltip,
     )
     result_title = ck_page_title(
-        f"Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}",
+        f"Bankruptcy-Survivor Scan · {html.escape(scan.target_name)}",
         eyebrow="BANKRUPTCY SURVIVOR",
         meta=f"{scan.patterns_hit}/12 patterns hit · {scan.critical_hits} critical",
     )
@@ -316,7 +316,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         '<p class="ck-bs-explainer">'
         f'<em>Verdict: {html.escape(scan.verdict.value)}.</em> '
         f"{html.escape(_VERDICT_COPY[scan.verdict])} "
-        "Each fired pattern cites a falsifiable historical precedent — "
+        "Each fired pattern cites a falsifiable historical precedent: "
         "refute or confirm before proceeding."
         "</p>"
     )
@@ -338,7 +338,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         "<h2>Diligence questions</h2>"
         f"<ul>{questions_html}</ul>"
         "<div class='caveat'>Pre-screening only. Structural pattern "
-        "matching against known historical failure modes — not a legal "
+        "matching against known historical failure modes: not a legal "
         "opinion and not a replacement for the full DealAnalysisPacket. "
         "Every case-study comparison cites the named historical deal's "
         "entry EV and outcome from the public-deals corpus.</div>"
@@ -350,7 +350,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         result_title + result_explainer + body,
-        title=f"Bankruptcy-Survivor Scan — {html.escape(scan.target_name)}",
+        title=f"Bankruptcy-Survivor Scan · {html.escape(scan.target_name)}",
         active_nav="/screening/bankruptcy-survivor",
         extra_css=_EXPLAINER_CSS + _style(),
     )

@@ -144,7 +144,7 @@ _ANALYTICS = [
             "revenue_usd": "revenue_year0_usd",
             "ebitda_usd": "ebitda_year0_usd",
         },
-        detail=("One-button full diligence chain — runs bankruptcy "
+        detail=("One-button full diligence chain: runs bankruptcy "
                 "scan, CCD, benchmarks, denial prediction, PPAM, "
                 "counterfactual, Steward, cyber, autopsy, deal MC. "
                 "Closes the loop from diligence to investment math."),
@@ -155,7 +155,7 @@ _ANALYTICS = [
         phase="WORKSPACE",
         href="/diligence/checklist",
         params=[],
-        detail=("Orchestration layer — coverage %, open P0/P1 "
+        detail=("Orchestration layer: coverage %, open P0/P1 "
                 "questions, auto-tracked from live analytics. "
                 "The analyst's daily workspace."),
         badge="Workspace",
@@ -197,7 +197,7 @@ _ANALYTICS = [
                 "lease_escalator_pct", "ebitdar_coverage",
                 "annual_rent_usd", "portfolio_ebitdar_usd",
                 "geography"],
-        detail=("What would change our mind — minimum offer-shape "
+        detail=("What would change our mind: minimum offer-shape "
                 "modification that flips each RED band."),
         badge="Strategy",
     ),
@@ -326,7 +326,7 @@ _ANALYTICS = [
             "per-quarter breach probability curves + equity cure "
             "sizing.  Combined with the Regulatory Calendar overlay, "
             "shows exactly when a CMS cut tightens the leverage "
-            "covenant — the answer spreadsheets can't produce."
+            "covenant: the answer spreadsheets can't produce."
         ),
         badge="Credit",
     ),
@@ -339,7 +339,7 @@ _ANALYTICS = [
             "specialty", "ma_mix_pct", "commercial_payer_share",
         ],
         param_aliases={"deal_name": "target_name"},
-        detail=("Gantt-style kill-switch timeline — maps each named "
+        detail=("Gantt-style kill-switch timeline: maps each named "
                 "thesis driver to the specific calendar date a CMS / "
                 "OIG / FTC / DOJ / NSA-IDR rulemaking event damages "
                 "or kills it. Produces an EBITDA bridge overlay that "
@@ -358,7 +358,7 @@ _ANALYTICS = [
             "debt_usd": "debt_year0_usd",
             "ebitda_usd": "ebitda_year0_usd",
         },
-        detail=("When + to whom — IRR × MOIC curve across candidate "
+        detail=("When + to whom: IRR × MOIC curve across candidate "
                 "exit years 2-7 and buyer-fit scoring for strategic "
                 "/ PE secondary / IPO. Predictive exit path."),
         badge="Predictive",
@@ -410,7 +410,7 @@ _ANALYTICS = [
             "deal_name": "target_name",
             "ebitda_usd": "guidance_ebitda_usd",
         },
-        detail=("Scored per-executive diligence — forecast "
+        detail=("Scored per-executive diligence: forecast "
                 "reliability × comp × tenure × prior-role "
                 "reputation. Surfaces the guidance haircut that "
                 "feeds the EBITDA bridge."),
@@ -422,7 +422,7 @@ _ANALYTICS = [
         href="/diligence/physician-eu",
         params=["deal_name"],
         param_aliases={"deal_name": "target_name"},
-        detail=("Per-provider economic unit — ranked contribution "
+        detail=("Per-provider economic unit: ranked contribution "
                 "margin, FMV-neutral projection, 'drop these named "
                 "loss-makers at close' EBITDA uplift lever."),
         badge="Economic",
@@ -518,7 +518,7 @@ _LANDING_JS = r"""<script>
       root.innerHTML =
         '<div class="ck-dp-saved-empty">' +
         'No saved deals yet. Enter a slug above to ' +
-        'create your first profile — it will appear here on subsequent ' +
+        'create your first profile; it will appear here on subsequent ' +
         'visits.</div>';
       return;
     }
@@ -1023,7 +1023,7 @@ def _landing_slugs() -> str:
     explainer = (
         '<p class="ck-dp-explainer">'
         '<em>One source of truth per deal.</em> '
-        "Each deal gets a unique URL — <code>/diligence/deal/&lt;slug&gt;</code>. "
+        "Each deal gets a unique URL: <code>/diligence/deal/&lt;slug&gt;</code>. "
         "Pick a slug (e.g., <em>aurora</em>), enter the deal parameters "
         "once, and every downstream analytic opens with them pre-filled. "
         "Deal state persists locally so a refresh or returning tomorrow "
@@ -1055,7 +1055,7 @@ def _landing_slugs() -> str:
         + f'{_LANDING_JS}'
     )
     return chartis_shell(
-        body, "RCM Diligence — Deal Profile",
+        body, "RCM Diligence · Deal Profile",
     )
 
 
@@ -1078,7 +1078,7 @@ def _render_form(slug: str, seed_values: Dict[str, str]) -> str:
         if input_type == "select" and key == "dataset":
             input_html = (
                 f'<select name="{key}" data-rcm-deal-field="{key}" class="ck-dp-input">'
-                f'<option value="">— none —</option>{fixture_options}'
+                f'<option value="">(none)</option>{fixture_options}'
                 '</select>'
             )
         else:
@@ -1249,13 +1249,13 @@ def _render_thesis_snapshot(slug: str) -> str:
         "Enterprise value": {
             "definition": (
                 "Total cost to buy the company free of capital "
-                "structure — equity check plus assumed debt minus "
+                "structure: equity check plus assumed debt minus "
                 "cash. The headline number the seller asks for."
             ),
         },
         "Revenue Y0": {
             "definition": (
-                "Net Patient Revenue at close — billed services "
+                "Net Patient Revenue at close: billed services "
                 "minus contractual allowances, bad debt, charity "
                 "care. The cash-realisable top line on day one."
             ),
@@ -1270,7 +1270,7 @@ def _render_thesis_snapshot(slug: str) -> str:
         },
         "Entry EV / EBITDA": {
             "definition": (
-                "The deal's entry multiple — enterprise value "
+                "The deal's entry multiple: enterprise value "
                 "divided by Year-0 EBITDA. Compare to the public-"
                 "comp band on /market-intel/seeking-alpha and the "
                 "PE-transaction band for the specialty."
@@ -1343,7 +1343,7 @@ def _render_market_context(slug: str) -> str:
         '<div class="ck-dp-market-tile-label">'
         + ck_help_tooltip(
             "Target implied",
-            "The implied entry multiple for this deal — "
+            "The implied entry multiple for this deal: "
             "enterprise value divided by Year-0 EBITDA. Compare "
             "to the peer median on the right tile.",
         )
@@ -1370,7 +1370,7 @@ def _render_market_context(slug: str) -> str:
             "Delta vs peer",
             "Target implied multiple minus the peer median. Positive "
             "= paying a premium; negative = paying a discount. Each "
-            "turn of EBITDA is one multiple point — so +1.0x on a "
+            "turn of EBITDA is one multiple point, so +1.0x on a "
             "$10M EBITDA deal is $10M of extra purchase price.",
         )
         + '</div>'
@@ -1473,7 +1473,7 @@ def _render_diligence_questions(slug: str) -> str:
         '</form>'
         '<div class="ck-dp-qs-empty" data-rcm-qs-empty hidden>'
         '<p class="ck-section-body" style="font-style:italic;">'
-        'No questions yet. Diligence is a conversation — start by '
+        'No questions yet. Diligence is a conversation, so start by '
         'noting one thing you\'d need to hear from the seller '
         'before underwriting.'
         '</p>'
@@ -2131,7 +2131,7 @@ def _inline_js(slug: str) -> str:
       operational: "Operational", other: "Other",
     };
     var lines = [
-      "# Diligence questions — " + slug,
+      "# Diligence questions: " + slug,
       "",
       "_" + rows.length + " question" + (rows.length === 1 ? "" : "s") +
         (openOnly ? " (open only)" : "") + ", exported " +
@@ -2143,7 +2143,7 @@ def _inline_js(slug: str) -> str:
       if (!CAT_LABELS_FULL[c]) c = "other";
       var asked = r.asked ? " ✓ asked" : "";
       lines.push(
-        (i + 1) + ". **[" + CAT_LABELS_FULL[c] + "]**" + asked + " — " +
+        (i + 1) + ". **[" + CAT_LABELS_FULL[c] + "]**" + asked + ": " +
         r.text
       );
     });
@@ -2645,7 +2645,7 @@ def render_deal_profile_page(
     next_up = ck_next_section(
         "Open the diligence checklist",
         "/diligence/checklist",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="checklist",
     )
     # Phase MMM: print-preview affordance — partners often want a
@@ -2694,7 +2694,7 @@ def render_deal_profile_page(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        f"Deal Profile — {slug}",
+        f"Deal Profile · {slug}",
         active_nav="/diligence/deal",
         subtitle="One source of truth",
     )

@@ -469,7 +469,7 @@ def render_deal_dashboard(
     next_up = ck_next_section(
         "Open the full deal profile",
         f"/deal/{deal_id}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
 

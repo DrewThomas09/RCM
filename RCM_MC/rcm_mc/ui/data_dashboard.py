@@ -434,7 +434,7 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     next_up = ck_next_section(
         "Refresh the public-data loaders",
         "/data/refresh",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="refresh",
     )
     page_title = ck_page_title(

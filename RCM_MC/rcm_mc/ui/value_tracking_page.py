@@ -422,7 +422,7 @@ def render_value_tracker(
     next_up = ck_next_section(
         "Open the EBITDA bridge",
         f"/ebitda-bridge/{ccn}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="bridge",
     )
     # Lead takeaway — surface the computed realization (realized vs

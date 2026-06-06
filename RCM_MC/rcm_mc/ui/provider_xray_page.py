@@ -147,11 +147,11 @@ def render_xray_landing(q: str = "", state: str = "",
             "provider across every live CMS vertical (Hospital, SNF, Home "
             "Health, Hospice, Dialysis, IRF, LTCH), benchmarks it against "
             "peers, and turns the public data into a transparent diligence "
-            "read — not an investment recommendation."
+            "read, not an investment recommendation."
         ),
     )
     source_line = (
-        '<p class="ck-xr-prov">SOURCE: CMS public provider datasets — '
+        '<p class="ck-xr-prov">SOURCE: CMS public provider datasets · '
         'refreshed from cms.gov. Area-level public data; descriptive, not a '
         'recommendation.</p>'
     )
@@ -167,12 +167,12 @@ def render_xray_landing(q: str = "", state: str = "",
         '<div class="ck-xr-sig green"><div class="ck-xr-sig-name">Peer benchmarks'
         '<span class="ck-xr-sev green">SAMPLE</span></div>'
         '<div class="ck-xr-sig-detail">Quality, outcomes, and cost metrics vs '
-        'national / state / locality / ownership peers — each with a percentile '
+        'national / state / locality / ownership peers: each with a percentile '
         'and a z-score, suppressed when fewer than 5 peers report.</div></div>'
         '<div class="ck-xr-sig amber"><div class="ck-xr-sig-name">Risk indicators'
         '<span class="ck-xr-sev amber">SAMPLE</span></div>'
         '<div class="ck-xr-sig-detail">Transparent, rule-based leading signals '
-        '(staffing, deficiencies, ownership churn) — flagged for review, never a '
+        '(staffing, deficiencies, ownership churn): flagged for review, never a '
         'forecast.</div></div>'
         '<div class="ck-xr-sig gray"><div class="ck-xr-sig-name">Diligence questions'
         '<span class="ck-xr-sev gray">SAMPLE</span></div>'
@@ -182,7 +182,7 @@ def render_xray_landing(q: str = "", state: str = "",
     right = (
         '<div><div class="ck-xr-sec">What you&rsquo;ll get</div>'
         f'<div class="ck-xr-signals">{sample}</div>'
-        '<p class="ck-xr-prov">Illustrative — a real run renders live CMS '
+        '<p class="ck-xr-prov">Illustrative: a real run renders live CMS '
         'values for the matched provider and its peer cohort.</p></div>'
     )
     body = head + source_line + f'<div class="ck-xr-landing-grid">{left}{right}</div>'
@@ -196,7 +196,7 @@ def render_xray_landing(q: str = "", state: str = "",
             title="No match")
     elif resolver:
         body += ck_panel(
-            f'<p>{len(resolver)} providers match — pick one to open its X-Ray. '
+            f'<p>{len(resolver)} providers match: pick one to open its X-Ray. '
             '(A hospital-based IRF/LTCH unit shares its CCN with the HCRIS '
             'hospital record, so a CCN can resolve to more than one vertical.)</p>'
             + _resolver_table(resolver),
@@ -226,7 +226,7 @@ def _bench_table(report: ProviderXrayReport) -> str:
         ev = report.evidence
         if ev is None:
             return ('<p class="ck-xr-empty">Peer benchmarks are not computed '
-                    'for this vertical here — open the native profile.</p>')
+                    'for this vertical here: open the native profile.</p>')
         rows = "".join(
             f'<tr><td>{_e(c.label)}</td>'
             f'<td class="num">{(str(c.raw_value)+c.suffix) if c.raw_value is not None else "—"}</td>'
@@ -331,7 +331,7 @@ def _expectation_section(sector_id: str, ccn: str):
     else:
         psev, pword = "gray", "—"
         prof_detail = (f'Structural cohort [{_e(pb.cohort_label)}] has only '
-                       f'{pb.cohort_n} rated peer(s) — expectation suppressed.')
+                       f'{pb.cohort_n} rated peer(s): expectation suppressed.')
 
     cards = (
         f'<div class="ck-xr-sig {sev}"><div class="ck-xr-sig-name">'
@@ -343,7 +343,7 @@ def _expectation_section(sector_id: str, ccn: str):
         f'{_e(pb.flag).upper()}</span></div>'
         f'<div class="ck-xr-sig-detail">{prof_detail}</div></div>')
     prov = ('<p class="ck-xr-prov">Descriptive expected-vs-actual over public '
-            'CMS data — association, not causation; not a forecast or '
+            'CMS data: association, not causation; not a forecast or '
             'recommendation. A large gap flags a provider to investigate.</p>')
     return f'<div class="ck-xr-signals">{cards}</div>{prov}'
 
@@ -369,7 +369,7 @@ def _model_section(sector_id: str):
         rows += (f'<tr><td>{_e(c.label)}</td>'
                  f'<td class="num">{c.std_coef:+.2f}</td>'
                  f'<td>{bar}</td></tr>')
-    note = ("model expectation vs. the headline is a CMS composite — its "
+    note = ("model expectation vs. the headline is a CMS composite: its "
             "sub-ratings are excluded so the fit isn't mechanical"
             if model.composite_target else "headline is a reported outcome")
     return (
@@ -406,7 +406,7 @@ def _correlations_section(sector_id: str):
         '<th>n</th></tr></thead>'
         f'<tbody>{rows}</tbody></table>'
         '<p class="ck-xr-prov">Pairwise-complete association across providers '
-        'reporting both measures — NOT causation. Both measures may track an '
+        'reporting both measures: NOT causation. Both measures may track an '
         'unmeasured factor (case mix, geography, size).</p>')
 
 

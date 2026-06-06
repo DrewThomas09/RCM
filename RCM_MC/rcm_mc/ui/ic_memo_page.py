@@ -647,7 +647,7 @@ def render_ic_memo(
     )
     sections.append(ck_panel(
         section3_inner,
-        title="3. RCM Performance Analysis — Comparable Hospitals",
+        title="3. RCM Performance Analysis · Comparable Hospitals",
         anchor_id="s3-rcm",
     ))
 
@@ -815,7 +815,7 @@ def render_ic_memo(
         f'</tr></thead><tbody>{scenarios}</tbody></table>'
     )
     sections.append(ck_panel(
-        section6_inner, title="6. Returns Analysis — Scenario Matrix",
+        section6_inner, title="6. Returns Analysis · Scenario Matrix",
         anchor_id="s6-returns",
     ))
 
@@ -978,7 +978,7 @@ def render_ic_memo(
             + ck_next_section(
                 "Open the IC packet",
                 "/diligence/ic-packet",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="packet",
             )
         )

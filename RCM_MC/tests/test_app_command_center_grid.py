@@ -18,8 +18,8 @@ from rcm_mc.portfolio.store import PortfolioStore
 from rcm_mc.ui.chartis.app_page import render_app_page
 
 _CARD_LABELS = [
-    "Weighted MOIC", "Weighted IRR", "Covenants at risk", "Days cash",
-    "Active deals", "Initiatives tracked", "Pipeline funnel", "Quick access",
+    "Weighted MOIC", "Weighted IRR", "Covenants at risk", "Capital deployed",
+    "Active deals", "Covenant headroom", "Pipeline funnel", "Quick access",
     "Covenant heatmap", "EBITDA drag", "Initiative variance", "Active alerts",
     "Deliverables",
 ]

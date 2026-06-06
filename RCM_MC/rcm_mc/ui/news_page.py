@@ -140,8 +140,8 @@ _CURATED_ARTICLES = [
             "HCA Healthcare completed the acquisition of select Steward Health Care assets "
             "for $2.1B, adding 14 hospitals across 6 states. The transaction was structured "
             "as an asset purchase from bankruptcy, allowing HCA to cherry-pick the strongest "
-            "facilities. Entry multiples averaged 8.5x trailing EBITDA — below the 10-11x "
-            "market average — reflecting the distressed seller dynamics. HCA plans $400M in "
+            "facilities. Entry multiples averaged 8.5x trailing EBITDA, below the 10-11x "
+            "market average, reflecting the distressed seller dynamics. HCA plans $400M in "
             "capital improvements over 3 years."
         ),
         "impact": "Sets distressed-asset valuation benchmarks; watch for more Steward divestitures",
@@ -224,7 +224,7 @@ _CURATED_ARTICLES = [
             "A new NBER working paper (w34521) by Gaynor, Ho, and Town analyzes 15 years of "
             "Medicare claims data across 3,400 hospital markets. Key findings: (1) markets with "
             "HHI >2500 show 3.2% higher 30-day mortality for AMI patients, (2) post-merger "
-            "price increases average 7-12% within 3 years, (3) quality effects are heterogeneous — "
+            "price increases average 7-12% within 3 years, (3) quality effects are heterogeneous: "
             "mergers between close competitors show worse outcomes than mergers between distant "
             "facilities. Implications for PE: market concentration supports pricing power but "
             "may invite regulatory scrutiny."
@@ -281,11 +281,11 @@ _CURATED_ARTICLES = [
             "inelastic (-0.01). Implications: hospitals concentrated in inelastic service lines "
             "have more defensible revenue streams against reimbursement cuts."
         ),
-        "impact": "Quantifies demand stickiness by service line — use in demand analysis",
+        "impact": "Quantifies demand stickiness by service line: use in demand analysis",
         "severity": "info",
     },
     {
-        "title": "Deloitte: 2026 Hospital M&A Outlook — From Volume to Value",
+        "title": "Deloitte: 2026 Hospital M&A Outlook · From Volume to Value",
         "subtitle": "Annual survey of 200+ health system CFOs on deal priorities",
         "category": "research",
         "source": "Deloitte Center for Health Solutions",
@@ -430,10 +430,10 @@ def render_news(category: str = "all") -> str:
         f'<div class="cad-card">'
         f'<h2>Key Dates</h2>'
         f'<div style="font-size:12px;line-height:2;">'
-        f'<div><span style="color:{PALETTE["warning"]};">Apr 30</span> — CMS IPPS Proposed Rule</div>'
-        f'<div><span style="color:{PALETTE["text_secondary"]};">May 15</span> — Q1 Earnings Season Ends</div>'
-        f'<div><span style="color:{PALETTE["text_secondary"]};">Jun 1</span> — Medicaid DSH Reduction Deadline</div>'
-        f'<div><span style="color:{PALETTE["text_secondary"]};">Aug 1</span> — CMS IPPS Final Rule</div>'
+        f'<div><span style="color:{PALETTE["warning"]};">Apr 30</span>: CMS IPPS Proposed Rule</div>'
+        f'<div><span style="color:{PALETTE["text_secondary"]};">May 15</span>: Q1 Earnings Season Ends</div>'
+        f'<div><span style="color:{PALETTE["text_secondary"]};">Jun 1</span>: Medicaid DSH Reduction Deadline</div>'
+        f'<div><span style="color:{PALETTE["text_secondary"]};">Aug 1</span>: CMS IPPS Final Rule</div>'
         f'</div></div>'
         f'<div class="cad-card" style="text-align:center;">'
         f'<a href="/conferences" style="color:var(--cad-link);text-decoration:none;'
@@ -474,7 +474,7 @@ def render_news(category: str = "all") -> str:
     next_up = ck_next_section(
         "Open the research hub",
         "/research",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="research",
     )
     # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
@@ -491,7 +491,7 @@ def render_news(category: str = "all") -> str:
         ),
         lede_italic_phrase=(
             "Curated healthcare PE coverage by sector and "
-            "deal type — bankruptcies, transactions, "
+            "deal type: bankruptcies, transactions, "
             "regulatory moves."
         ),
         lede_body=(

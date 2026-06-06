@@ -592,7 +592,7 @@ def render_portfolio_overview(
     next_up = ck_next_section(
         "Open Day One — the Monday brief",
         "/day-one",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="Day",
     )
     # Sticky right-rail TOC — the portfolio page has six distinct

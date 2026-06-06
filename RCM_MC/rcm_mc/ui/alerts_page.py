@@ -503,7 +503,7 @@ def render_alerts(
             + ck_next_section(
                 "Open the portfolio for context",
                 "/portfolio",
-                eyebrow="Continue —",
+                eyebrow="Up next",
                 italic_word="portfolio",
             )
         )

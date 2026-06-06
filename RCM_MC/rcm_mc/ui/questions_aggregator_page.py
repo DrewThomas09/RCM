@@ -370,7 +370,7 @@ _AGG_JS = """
     var deals = readAll();
     if (deals.length === 0) return "";
     var lines = [
-      "# Diligence questions — portfolio-wide",
+      "# Diligence questions: portfolio-wide",
       "",
       "_Exported " + new Date().toISOString().slice(0, 10) +
         (openOnly ? " (open only)" : "") + " from your browser._",
@@ -389,7 +389,7 @@ _AGG_JS = """
         if (!CAT_FULL[c]) c = "other";
         var asked = r.asked ? " ✓ asked" : "";
         lines.push((i + 1) + ". **[" + CAT_FULL[c] + "]**" +
-          asked + " — " + r.text);
+          asked + ": " + r.text);
       });
     });
     return lines.join("\\n");
@@ -550,9 +550,9 @@ def render_questions_aggregator(
     list_html = '<div data-rcm-qa-list></div>'
 
     next_up = ck_next_section(
-        "Capture a question — Shift+Q anywhere",
+        "Capture a question with Shift+Q anywhere",
         "/?v3=1",
-        eyebrow="Shortcut —",
+        eyebrow="Up next",
         italic_word="Shift",
     )
 
@@ -594,7 +594,7 @@ def render_questions_aggregator(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="Diligence questions — portfolio ledger",
+        title="Diligence questions · portfolio ledger",
         active_nav="DILIGENCE",
         breadcrumbs=[
             ("Home", "/"),

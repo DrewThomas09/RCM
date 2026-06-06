@@ -65,7 +65,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;" title="Sponsor name boosts match score '
-        'on same-sponsor deals — useful when tracking a particular '
+        'on same-sponsor deals; useful when tracking a particular '
         'PE house\'s playbook">Sponsor (optional)</label>'
         f'<input type="text" name="buyer" value="{buyer}" '
         'placeholder="e.g. New Mountain Capital" '
@@ -232,7 +232,7 @@ def _comparable_row(c: Dict[str, Any]) -> List[str]:
         _name_inner = f'<span style="font-weight:500;color:#1a2332;">{_name_txt}</span>'
     name = (
         f'<div>{_name_inner}'
-        f'<div style="font-family:monospace;font-size:10px;color:#7a8699;'
+        f'<div style="font-family:var(--sc-mono,monospace);font-size:10px;color:#7a8699;'
         f'text-transform:uppercase;margin-top:2px;">'
         f'{_html.escape(c.get("deal_id") or "")}</div></div>'
     )
@@ -573,7 +573,7 @@ def render_comparable_outcomes_page(
         next_up = ck_next_section(
             "Cross-check against named bear cases",
             "/bear-cases",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bear",
         )
         body = (

@@ -122,7 +122,7 @@ def render_engagement_list(
         + ck_next_section(
             "Open the diligence checklist",
             "/diligence/checklist",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="checklist",
         )
     )
@@ -173,7 +173,7 @@ def render_engagement_detail(
     body_parts.append(ck_next_section(
         "Back to all engagements",
         "/engagements",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="engagements",
     ))
     return chartis_shell(

@@ -285,7 +285,7 @@ def render_data_explorer(
     next_up = ck_next_section(
         "Open the data catalog",
         "/data",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="catalog",
     )
     page_title = ck_page_title(

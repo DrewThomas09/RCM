@@ -348,7 +348,7 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
         ),
         detail=(
             "Each curated event carries a directional pp margin "
-            "impact for affected specialties — negative = contraction."
+            "impact for affected specialties: negative = contraction."
         ),
     )
     rev_val = provenance(
@@ -383,7 +383,7 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
     if verdict == "FAIL":
         plain = (
             "Multiple thesis drivers are getting killed by named "
-            "regulatory events — partners should walk or restructure "
+            "regulatory events: partners should walk or restructure "
             "offer shape before signing. Expect a 10-20% entry "
             "multiple discount or earn-out tied to the affected "
             "drivers."
@@ -502,7 +502,7 @@ def _verdict_card(report: RegulatoryExposureReport) -> str:
                     "across all events ($M). Read alongside Margin "
                     "Impact: revenue compression at constant margin "
                     "is different from margin compression at "
-                    "constant revenue — both flow to EBITDA but "
+                    "constant revenue: both flow to EBITDA but "
                     "via different operational responses."
                 ),
             },
@@ -673,7 +673,7 @@ def _overlay_panel(report: RegulatoryExposureReport) -> str:
     return (
         f'<div class="rc-panel">'
         f'<div class="rc-section-label" style="margin-top:0;">'
-        f'EBITDA Bridge Overlay — feeds Deal MC + PE Math</div>'
+        f'EBITDA Bridge Overlay · feeds Deal MC + PE Math</div>'
         f'<div class="rc-callout">'
         f'<strong style="color:{P["text"]};">How to read: </strong>'
         f'Each row is the cumulative $ impact of all regulatory events '
@@ -796,7 +796,7 @@ def _market_context_block(
                 f'<tr><td style="padding:4px 8px;">{ticker}</td>'
                 f'<td style="padding:4px 8px;color:{P["text_dim"]};">'
                 f'{name}</td>'
-                f'<td style="padding:4px 8px;font-family:monospace;'
+                f'<td style="padding:4px 8px;font-family:var(--sc-mono,monospace);'
                 f'text-align:right;">{mult_str}</td></tr>'
             )
         if peer_rows:
@@ -862,7 +862,7 @@ def _market_context_block(
             f'regulatory kill-switch flags '
             f'{report.killed_driver_count} thesis driver'
             f'{"s" if report.killed_driver_count != 1 else ""} KILLED '
-            f'in the horizon — a compounding risk partners typically '
+            f'in the horizon: a compounding risk partners typically '
             f'price-protect with an earn-out or a lower entry.'
             f'</div>'
         )
@@ -874,7 +874,7 @@ def _market_context_block(
             f'line-height:1.55;">'
             f'<strong style="color:{P["text"]};">Partner flag:</strong> '
             f'Regulatory kill-switch clean AND target priced at a '
-            f'discount to peers — the favourable end of the '
+            f'discount to peers: the favourable end of the '
             f'risk/return distribution.'
             f'</div>'
         )
@@ -903,7 +903,7 @@ def _market_context_block(
         f'</div>'
         + (f'<div style="margin-top:8px;font-size:11px;color:{P["text_dim"]};'
            f'line-height:1.55;max-width:880px;font-style:italic;">'
-           f'Entry multiple assumed at {ASSUMED_ENTRY_MULTIPLE:.1f}x EBITDA — '
+           f'Entry multiple assumed at {ASSUMED_ENTRY_MULTIPLE:.1f}x EBITDA: '
            f'no enterprise value supplied, so the target multiple and '
            f'&Delta; vs peers are indicative only, not a measured valuation. '
            f'Add an EV to the target for a real read.</div>'
@@ -971,7 +971,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             lede_body=(
                 "Which thesis drivers die, and when? A curated library of "
                 "upcoming CMS / OIG / FTC / DOJ / NSA-IDR / state events, mapped "
-                "against your target's thesis drivers — a gantt-style timeline of "
+                "against your target's thesis drivers: a gantt-style timeline of "
                 "the date each driver dies, with an EBITDA-bridge overlay on the "
                 "Deal MC cone."
             ),
@@ -985,7 +985,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Regulatory Calendar",
+        body, "RCM Diligence · Regulatory Calendar",
         active_nav="/regulatory-calendar",
     )
 
@@ -1113,7 +1113,7 @@ def render_regulatory_calendar_page(
     timeline_panel = (
         f'<div class="rc-panel">'
         f'<div class="rc-section-label" style="margin-top:0;">'
-        f'Kill-switch timeline — thesis drivers × calendar dates</div>'
+        f'Kill-switch timeline · thesis drivers × calendar dates</div>'
         f'{_timeline_svg(report)}'
         f'<div class="rc-callout">'
         f'<strong style="color:{P["text"]};">How to read: </strong>'
@@ -1250,7 +1250,7 @@ def render_regulatory_calendar_page(
         + cross_link
         + export_json_panel(
             '<div class="rc-section-label" style="margin-top:22px;">'
-            'JSON export — full exposure report</div>',
+            'JSON export · full exposure report</div>',
             payload=report.to_dict(),
             name=f"regulatory_exposure_{target_name.replace(' ', '_')}",
         )
@@ -1259,7 +1259,7 @@ def render_regulatory_calendar_page(
         + ck_next_section(
             "Stress-test these dates against the bridge",
             "/diligence/bridge-audit",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bridge",
         )
     )
@@ -1268,7 +1268,7 @@ def render_regulatory_calendar_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, "RCM Diligence — Regulatory Calendar",
+        body, "RCM Diligence · Regulatory Calendar",
         active_nav="/regulatory-calendar",
         subtitle=f"{target_name} · kill-switch verdict {report.verdict.value}",
     )

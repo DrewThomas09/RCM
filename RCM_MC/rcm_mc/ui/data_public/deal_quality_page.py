@@ -98,7 +98,7 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
         label = f'{i*10}'
         bars.append(
             f'<text x="{bx + bar_w//2 - 2}" y="{height-1}" '
-            f'font-family="JetBrains Mono,monospace" font-size="7" fill="#7a8699">{label}</text>'
+            f'font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">{label}</text>'
         )
     # median line
     if scores:
@@ -106,7 +106,7 @@ def _quality_histogram_svg(scores: List[float], width: int = 400, height: int = 
         mx = int(10 + med / 100 * (width - 20))
         bars.append(f'<line x1="{mx}" y1="0" x2="{mx}" y2="{height-10}" stroke="#7a8699" stroke-width="1" stroke-dasharray="3,3"/>')
         bars.append(
-            f'<text x="{mx+2}" y="10" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a8699">med={med:.0f}</text>'
+            f'<text x="{mx+2}" y="10" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a8699">med={med:.0f}</text>'
         )
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'

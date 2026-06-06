@@ -834,7 +834,7 @@ def render_market_intel_page(
     next_up = ck_next_section(
         "Dig into public-comp + PE deal flow",
         "/market-intel/seeking-alpha",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="deal",
     )
     # Top-section cleanup: the public-comps hub is the focal point, so it

@@ -112,7 +112,7 @@ def _features_card() -> str:
          "confidence scores."),
         ("Multi-turn chat",
          "POST /api/chat",
-         "Conversational interface with tool-calling — asks the "
+         "Conversational interface with tool-calling: asks the "
          "platform for portfolio data and synthesizes answers."),
     ]
     rows = "".join(
@@ -139,7 +139,7 @@ def _features_card() -> str:
         f'<div style="color:{P["text_faint"]};font-size:10.5px;margin-top:10px;'
         f'line-height:1.55;">'
         f'Every feature falls back to a non-LLM template when the key '
-        f'is not set, so the platform keeps working — just without '
+        f'is not set, so the platform keeps working: just without '
         f'synthesized prose.</div>'
         f'</div>'
     )
@@ -212,7 +212,7 @@ def _setup_instructions() -> str:
         f'</ol>'
         f'<div style="color:{P["text_faint"]};font-size:10.5px;'
         f'line-height:1.55;margin-top:6px;">'
-        f'The key is read from process env only — never stored on disk '
+        f'The key is read from process env only: never stored on disk '
         f'or logged. Cost tracking in <code style="color:{P["accent"]};">'
         f'llm_calls</code> records model + token counts, not prompts.</div>'
         f'</div>'
@@ -235,7 +235,7 @@ def _ollama_config_card() -> str:
     hosts = ollama_base_urls()
     rows = [
         ("Status", "Enabled" if on
-         else "Disabled — set PEDESK_GUIDE_OLLAMA_ENABLED=1 to turn on"),
+         else "Disabled: set PEDESK_GUIDE_OLLAMA_ENABLED=1 to turn on"),
         ("Candidate hosts (tried in order, with failover)", " · ".join(hosts)),
         ("Model", ollama_default_model()),
         ("Context window (num_ctx)", str(ollama_num_ctx() or "model default")),
@@ -254,7 +254,7 @@ def _ollama_config_card() -> str:
         f'<div style="color:{P["text_dim"]};font-size:11px;line-height:1.5;'
         f'margin-top:8px;">Set <code>OLLAMA_HOST</code> (standard) or a '
         f'comma-separated <code>PEDESK_GUIDE_OLLAMA_BASE_URL</code> to reach '
-        f'Ollama wherever it runs — local, a Tailscale box, or a sidecar. The '
+        f'Ollama wherever it runs: local, a Tailscale box, or a sidecar. The '
         f'client tries each host in order and retries a slow first call.</div>'
     )
     return (
@@ -286,7 +286,7 @@ def render_ai_settings(store: Any) -> str:
         backend_name = "Local Ollama"
         backend_desc = (
             f"Running fully on-box via local Ollama (model "
-            f"<code>{_html.escape(ollama_model)}</code>) — no deal data leaves "
+            f"<code>{_html.escape(ollama_model)}</code>): no deal data leaves "
             f"the host and there is no per-call API cost."
         )
     elif key_set:
@@ -335,7 +335,7 @@ def render_ai_settings(store: Any) -> str:
         f'{status_badge}</div>'
         f'<div style="color:{P["text_dim"]};font-size:12px;line-height:1.55;'
         f'margin-top:6px;">'
-        f'Backs the AI-assist features on this platform — IC memo '
+        f'Backs the AI-assist features on this platform: IC memo '
         f'drafting, document Q&amp;A, conversational portfolio queries. '
         f'{backend_desc}</div>'
         f'{key_line}</div>'
@@ -373,7 +373,7 @@ def render_ai_settings(store: Any) -> str:
         ),
         lede_italic_phrase=(
             "On-box Ollama plus the Anthropic API back the "
-            "platform's AI-assist features — IC memo drafting, "
+            "platform's AI-assist features: IC memo drafting, "
             "document Q&amp;A, and conversational portfolio "
             "queries."
         ),
@@ -387,7 +387,7 @@ def render_ai_settings(store: Any) -> str:
         head
         + header_card
         + kpi_strip
-        + ck_section_header("LOCAL OLLAMA", "on-box model — connection & config")
+        + ck_section_header("LOCAL OLLAMA", "on-box model: connection & config")
         + _ollama_config_card()
         + ck_section_header("FEATURES", "what the assistant powers on this platform")
         + _features_card()
@@ -399,7 +399,7 @@ def render_ai_settings(store: Any) -> str:
         + ck_next_section(
             "Back to settings",
             "/settings",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="settings",
         )
     )
@@ -409,7 +409,7 @@ def render_ai_settings(store: Any) -> str:
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        title="AI Assistant — Local Ollama",
+        title="AI Assistant · Local Ollama",
         active_nav="/settings",
         subtitle=("Connected" if key_set else "Not yet connected"),
     )

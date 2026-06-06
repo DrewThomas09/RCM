@@ -67,7 +67,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         why_it_matters=(
             "Each 1pp reduction recovers ~35% × NPSR in "
             "avoidable revenue. Denials drive bad debt and "
-            "rework cost — the highest-leverage RCM lever."),
+            "rework cost: the highest-leverage RCM lever."),
         how_calculated=(
             "Denied claims / total claims submitted. "
             "Source: HFMA MAP Keys; partner-supplied or "
@@ -127,7 +127,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "RCM operating cost as a share of net patient "
             "service revenue."),
         why_it_matters=(
-            "Direct EBITDA leverage — every 1pp reduction "
+            "Direct EBITDA leverage: every 1pp reduction "
             "drops to the bottom line. Above 4% suggests "
             "automation upside."),
         how_calculated=(
@@ -187,7 +187,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         key="case_mix_index",
         label="Case Mix Index",
         definition=(
-            "Average DRG weight across discharges — a "
+            "Average DRG weight across discharges: a "
             "complexity proxy."),
         why_it_matters=(
             "Each 0.05 CMI uplift ≈ 0.75% of Medicare "
@@ -230,7 +230,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         key="interest_coverage",
         label="Interest Coverage",
         definition=(
-            "EBIT divided by interest expense — how many "
+            "EBIT divided by interest expense: how many "
             "times over EBIT covers interest."),
         why_it_matters=(
             "Below 2.0x is the credit-attention zone; <1.5x "
@@ -245,7 +245,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         key="occupancy_rate",
         label="Occupancy Rate",
         definition=(
-            "Share of staffed beds occupied — patient days "
+            "Share of staffed beds occupied: patient days "
             "/ bed-days available."),
         why_it_matters=(
             "Drives fixed-cost absorption. Below 50% the "
@@ -261,7 +261,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         label="FTE per AOB",
         definition=(
             "Full-time-equivalent staff per adjusted "
-            "occupied bed — the canonical staffing "
+            "occupied bed: the canonical staffing "
             "intensity metric."),
         why_it_matters=(
             ">7.0 = overstaffed (right-sizing opportunity); "
@@ -294,7 +294,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Share of total inpatient days attributed to "
             "Medicare beneficiaries."),
         why_it_matters=(
-            "Drives reimbursement index — higher Medicare "
+            "Drives reimbursement index: higher Medicare "
             "% means lower NPR per gross charge (~0.79 vs "
             "1.00 commercial)."),
         how_calculated=(
@@ -323,7 +323,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         label="Net Patient Revenue",
         definition=(
             "Patient-service revenue net of contractual "
-            "allowances and bad debt — the topline line "
+            "allowances and bad debt: the topline line "
             "underwriters anchor every multiple to."),
         why_it_matters=(
             "Primary scale driver. Multiples (EV/NPR, "
@@ -362,7 +362,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         why_it_matters=(
             "Cost-density benchmark. High expense/bed with "
             "low revenue/bed signals labor or supply "
-            "inefficiency — the synergy diligence target."),
+            "inefficiency: the synergy diligence target."),
         how_calculated=(
             "Operating expenses / licensed beds. "
             "Source: HCRIS Worksheet G-3."),
@@ -424,7 +424,7 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         label="Net-to-Gross Ratio",
         definition=(
             "Net patient revenue as a fraction of gross "
-            "charges — the realization rate."),
+            "charges: the realization rate."),
         why_it_matters=(
             "Payer-mix-driven; highly stable within a "
             "hospital. Sudden compression signals "
@@ -506,7 +506,7 @@ _TT_CSS = """
 .metric-tt-card h4{margin:0 0 6px 0;font-size:12px;
   color:var(--blue-soft);text-transform:uppercase;
   letter-spacing:0.06em;font-weight:600;}
-.metric-tt-card p{margin:0 0 8px 0;color:var(--border);}
+.metric-tt-card p{margin:0 0 8px 0;color:var(--muted);}
 .metric-tt-card .tt-section{margin-top:8px;}
 .metric-tt-card .tt-section-label{font-size:10px;
   text-transform:uppercase;letter-spacing:0.06em;

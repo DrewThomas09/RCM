@@ -28,7 +28,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
             "Memo Sections", f"{len(sections)}",
             help={
                 "definition": (
-                    "Distinct sections in the assembled IC memo — "
+                    "Distinct sections in the assembled IC memo: "
                     "thesis, market, comparables, risks, financial "
                     "model summary, value-creation plan, exit plan. "
                     "A complete memo runs 7-9 sections; partial "
@@ -45,7 +45,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
                     "Common: claims with no source citation, numbers "
                     "that differ between memo and packet, or "
                     "narratives that contradict packet flags. Resolve "
-                    "every warning before sending the memo to IC — "
+                    "every warning before sending the memo to IC: "
                     "untraceable claims kill credibility."
                 ),
             },
@@ -59,7 +59,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
                     "phrasing, requires read-through). Template = "
                     "deterministic from packet fields (repeatable, "
                     "no hallucination risk, but stiffer prose). Both "
-                    "use the same underlying numbers — only the "
+                    "use the same underlying numbers: only the "
                     "narrative wrapping differs."
                 ),
             },
@@ -108,7 +108,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     next_up = ck_next_section(
         "Open the IC packet",
         "/diligence/ic-packet",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="packet",
     )
     # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block
@@ -118,7 +118,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="IC MEMO",
-        title=f"IC Memo — {html.escape(deal_name)}",
+        title=f"IC Memo · {html.escape(deal_name)}",
         meta=(
             f"{len(sections)} SECTION"
             f"{'S' if len(sections) != 1 else ''} · "
@@ -136,7 +136,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     )
     body = f'{head}{nav}{kpis}{sections_html}{warning_html}{actions}{next_up}'
 
-    return chartis_shell(body, f"IC Memo — {html.escape(deal_name)}",
+    return chartis_shell(body, f"IC Memo · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{len(sections)} sections | {'AI-generated' if llm_used else 'Template-based'}")
 
@@ -173,7 +173,7 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
             "Issues", f"{len(issues)}",
             help={
                 "definition": (
-                    "Blocking validation failures — missing required "
+                    "Blocking validation failures: missing required "
                     "fields, contradictory inputs, assumption values "
                     "outside the band (e.g. terminal growth > 5%). "
                     "Cannot send to IC with unresolved issues; the "
@@ -185,7 +185,7 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
             "Warnings", f"{len(warnings)}",
             help={
                 "definition": (
-                    "Non-blocking but reviewable — assumption values "
+                    "Non-blocking but reviewable: assumption values "
                     "near band edges, fields populated from defaults, "
                     "comparables thinner than usual. Acknowledge each "
                     "in the IC discussion; partners shouldn't be "
@@ -228,7 +228,7 @@ def render_validation_page(deal_id: str, deal_name: str, validation: Dict[str, A
     nav = _model_nav(deal_id, "")
     body = f'{nav}{kpis}{issues_html}{warnings_html}'
 
-    return chartis_shell(body, f"Validation — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Validation · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"{'Valid' if is_valid else f'{len(issues)} issues'} | {len(warnings)} warnings | {fields} fields",
         editorial_intro={
@@ -302,7 +302,7 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
                 "definition": (
                     "Absolute count of registry fields with real "
                     "(non-imputed) values. The 38-metric registry is "
-                    "the platform's canonical KPI surface — every "
+                    "the platform's canonical KPI surface: every "
                     "missing field becomes a Bayesian-prior fallback "
                     "downstream, widening uncertainty bands on the "
                     "MOIC / IRR distribution."
@@ -318,7 +318,7 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
         '</div>'
         '<p class="ck-section-body">'
         f'{present} of {total} metrics in the 38-metric registry are populated. '
-        f'{"Excellent coverage — ready for full analysis." if pct > 80 else "Good coverage." if pct > 60 else "Request additional data from the seller to improve analysis accuracy."}'
+        f'{"Excellent coverage: ready for full analysis." if pct > 80 else "Good coverage." if pct > 60 else "Request additional data from the seller to improve analysis accuracy."}'
         '</p>',
         title="Data Coverage",
     )
@@ -339,7 +339,7 @@ def render_completeness_page(deal_id: str, deal_name: str, completeness: Dict[st
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(body, f"Completeness — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Completeness · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Grade: {grade} | {pct:.0f}% coverage | {present}/{total} fields",
         editorial_intro={

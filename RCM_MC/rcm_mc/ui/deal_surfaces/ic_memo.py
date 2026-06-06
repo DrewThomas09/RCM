@@ -180,7 +180,7 @@ def _target_overview(hospital: Dict[str, Any], score: Any) -> str:
         f'scoring {s}/100 on the PE Desk composite.</em> '
         f'{name} carries the financial and structural profile of a '
         f'{"Tier-A" if s >= 70 else "developmental"} acquisition target. '
-        'The KPI table at right is sourced entirely from HCRIS — every '
+        'The KPI table at right is sourced entirely from HCRIS: every '
         'figure is a real reported column or a subtotal computed from '
         'one.</p>'
     )
@@ -219,7 +219,7 @@ def _market_context(hospital: Dict[str, Any]) -> str:
         'color:#2a3a4a;margin:0;">'
         '<em style="color:#154e36;font-style:italic;">State-aggregate market '
         'context lives on the Market surface.</em> '
-        'This memo intentionally does not duplicate that analysis — the '
+        'This memo intentionally does not duplicate that analysis: the '
         'cross-link in the hero opens it directly.</p>'
     )
 
@@ -493,7 +493,7 @@ def render_deal_ic_memo(ccn: str, hospital: Dict[str, Any]) -> str:
         return deal_shell(
             ccn, hospital, active_slug="ic-memo",
             body_html=_empty(
-                f"CCN {ccn} has no positive HCRIS net revenue — the memo "
+                f"CCN {ccn} has no positive HCRIS net revenue: the memo "
                 "can't anchor any of its sections."),
             page_title=f"IC Memo · {hospital.get('name') or f'CCN {ccn}'}",
         )

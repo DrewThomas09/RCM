@@ -325,7 +325,7 @@ def render_hold_dashboard(
         + ck_next_section(
             "Open the value tracker",
             f"/value-tracker/{deal_id}",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="value",
         )
     )

@@ -51,10 +51,10 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             meta="5-YEAR FORWARD · MOIC + IRR · DRIVER ATTRIBUTION",
             lede_italic_phrase="Every lever, three thousand times.",
             lede_body=(
-                " Runs 3,000 Monte Carlo scenarios over every lever — organic "
+                " Runs 3,000 Monte Carlo scenarios over every lever (organic "
                 "growth, denial improvement, regulatory headwind, lease escalator, "
                 "physician attrition, cyber incidents, V28 compression, exit "
-                "multiple — producing MOIC / IRR distributions, driver attribution, "
+                "multiple), producing MOIC / IRR distributions, driver attribution, "
                 "and a sensitivity tornado. &lt;1 second runtime."
             ),
         )
@@ -103,7 +103,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         f'text-transform:uppercase;font-weight:700;cursor:pointer;">'
         f'Run Monte Carlo</button></form>'
     )
-    return chartis_shell(body, "RCM Diligence — Deal Monte Carlo")
+    return chartis_shell(body, "RCM Diligence · Deal Monte Carlo")
 
 
 def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
@@ -178,7 +178,7 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
             "P25 MOIC", f"{result.moic_p25:.2f}x",
             help={
                 "definition": (
-                    "25th percentile multiple on invested capital — "
+                    "25th percentile multiple on invested capital: "
                     "the downside reasonable case. Partners should "
                     "underwrite to P25 ≥ 1.5× in healthcare PE."
                 ),
@@ -208,7 +208,7 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
             "P75 MOIC", f"{result.moic_p75:.2f}x",
             help={
                 "definition": (
-                    "75th percentile multiple — the upside reasonable "
+                    "75th percentile multiple: the upside reasonable "
                     "case. Read alongside P25 to see the cone width: "
                     "narrow (P75-P25 < 1.0×) = tight thesis, wide "
                     "(> 2.0×) = thesis sensitive to execution."
@@ -239,7 +239,7 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
             "P(MOIC < 1x)", f"{result.prob_sub_1x*100:.1f}%",
             help={
                 "definition": (
-                    "Probability of losing capital — share of Monte "
+                    "Probability of losing capital: share of Monte "
                     "Carlo paths where the deal returns less than "
                     "1.0× invested equity. Anything above 10% gets "
                     "an IC explanation; above 25% kills the deal."
@@ -250,7 +250,7 @@ def _hero_stats(result: DealMCResult, scenario_name: str) -> str:
             "P(MOIC ≥ 3x)", f"{result.prob_over_3x*100:.1f}%",
             help={
                 "definition": (
-                    "Probability of a 3.0× home run — share of paths "
+                    "Probability of a 3.0× home run: share of paths "
                     "where the deal delivers 3.0× or better. Helps "
                     "partners see whether the thesis has a real "
                     "upside or is just a base-case story."
@@ -294,7 +294,7 @@ def _attribution_note(result: DealMCResult) -> str:
     return (
         f"Largest variance contributor: "
         f"{top.driver} ({top.share_of_variance*100:.1f}% of MOIC "
-        f"variance). Partners should pressure-test this driver first — "
+        f"variance). Partners should pressure-test this driver first: "
         f"small revisions to the assumption materially move the "
         f"distribution."
     )
@@ -308,7 +308,7 @@ def _sensitivity_note(result: DealMCResult) -> str:
         f"Worst-case one-shot sensitivity: {worst.shock_label} "
         f"moves MOIC by {worst.moic_impact:+.2f}x "
         f"(from {worst.base_moic:.2f}x to {worst.stressed_moic:.2f}x). "
-        f"Single-driver stress — does not compound with other "
+        f"Single-driver stress: does not compound with other "
         f"adverse moves."
     )
 
@@ -330,7 +330,7 @@ def _scenario_inputs_table(scn: DealScenario) -> str:
          f"${scn.reg_headwind_usd:,.0f}"),
         ("Reg realization Beta(α, β)",
          f"Beta({scn.reg_headwind_realization_alpha}, "
-         f"{scn.reg_headwind_realization_beta}) — mean "
+         f"{scn.reg_headwind_realization_beta}): mean "
          f"{scn.reg_headwind_realization_alpha / (scn.reg_headwind_realization_alpha + scn.reg_headwind_realization_beta):.2f}"),
         ("Lease escalator (mean, σ)",
          f"{scn.lease_escalator_mean*100:.2f}% / {scn.lease_escalator_sd*100:.2f}%"),
@@ -467,7 +467,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'<a href="/diligence/deal-mc" '
             f'style="color:{P["accent"]};">← Back to form</a>'
             f'</p></div>',
-            "Deal MC — invalid inputs",
+            "Deal MC · invalid inputs",
         )
 
     # Guard: negative entry EBITDA produces meaningless MOIC/IRR.
@@ -477,8 +477,8 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'<div style="padding:24px;">'
             f'<h2 style="font-size:20px;color:{P["negative"]};'
             f'margin-bottom:8px;">'
-            f'Entry EBITDA is {"zero" if scn.ebitda_year0_usd == 0 else "negative"} '
-            f'— Monte Carlo cannot price a deal.</h2>'
+            f'Entry EBITDA is {"zero" if scn.ebitda_year0_usd == 0 else "negative"}: '
+            f'Monte Carlo cannot price a deal.</h2>'
             f'<p style="color:{P["text_dim"]};line-height:1.6;'
             f'max-width:700px;">'
             f'You supplied Y0 EBITDA '
@@ -489,7 +489,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'loss-making, underwrite a turnaround EBITDA floor '
             f'(e.g. post-close cost takeout) and re-run with that '
             f'figure. If this came from an HCRIS cross-link, the '
-            f'target has a negative filed operating margin — '
+            f'target has a negative filed operating margin: '
             f'partners should review the distressed-deal autopsy '
             f'library before running the MC.</p>'
             f'<p style="margin-top:16px;">'
@@ -498,7 +498,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'<a href="/diligence/deal-autopsy" '
             f'style="color:{P["accent"]};">→ Deal Autopsy library</a>'
             f'</p></div>',
-            "Deal MC — negative entry EBITDA",
+            "Deal MC · negative entry EBITDA",
         )
 
     n_runs = max(200, min(10000, int_or("n_runs", 3000)))
@@ -532,7 +532,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         ),
         how_to_read=(
             "Same layout as revenue fan. Look at the spread between "
-            "P10 and P90 at year 5 — that's the width of the "
+            "P10 and P90 at year 5: that's the width of the "
             "investment-math uncertainty going into exit."
         ),
         note=(
@@ -561,7 +561,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         how_to_read=(
             "Each bar is a stochastic driver's share of total MOIC "
             "variance (corr²). The largest bar is the assumption "
-            "most worth challenging — small revisions to it move "
+            "most worth challenging: small revisions to it move "
             "the whole distribution."
         ),
         note=_attribution_note(result),
@@ -640,7 +640,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + ck_page_explainer(
                 '5-year forward EBITDA distribution.',
                 "Runs N Monte Carlo simulations on the deal's RCM initiatives + base-business assumptions to produce the 5-year EBITDA cone. Used to size the spread between base, downside, and upside cases for IC and LP reporting.",
-                source='Per-deal simulator (rcm_mc.simulator) — fully live.',
+                source='Per-deal simulator (rcm_mc.simulator): fully live.',
             )
         )
         + deal_context_bar(qs, active_surface="deal_mc")
@@ -656,7 +656,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + ck_next_section(
             "Assemble the IC packet",
             "/diligence/ic-packet",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="packet",
         )
     )
@@ -665,7 +665,7 @@ def render_deal_mc_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Deal MC — {scenario_name}",
+        body, f"Deal MC · {scenario_name}",
         active_nav="/diligence/deal-mc",
         subtitle="5-year forward distribution",
     )

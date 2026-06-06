@@ -163,7 +163,7 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
     next_up = ck_next_section(
         "Open the returns & covenant view",
         f"/models/returns/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="returns",
     )
     # Lead takeaway — surface the computed waterfall result (gross

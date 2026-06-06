@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 
@@ -143,11 +144,14 @@ def interpret_callout(
     }
     border = tone_colors.get(tone, tone_colors["info"])
     return (
+        # color was var(--border) (a rule colour) and the title var(--bg-tint)
+        # (a background tint) — both rendered near-invisible light-on-light on
+        # the editorial theme (~1.1 contrast). Use readable ink/muted text.
         f'<div style="background:var(--bg);padding:12px 16px;'
         f'border-left:3px solid {border};border-radius:0 3px 3px 0;'
-        f'font-size:12.5px;color:var(--border);line-height:1.65;'
+        f'font-size:12.5px;color:var(--muted,#465366);line-height:1.65;'
         f'max-width:900px;margin-top:12px;">'
-        f'<strong style="color:var(--bg-tint);">'
+        f'<strong style="color:var(--ink,#1a2332);">'
         f'{html.escape(title)}</strong> '
         f'<span>{body}</span>'
         f'</div>'
@@ -357,17 +361,17 @@ def deal_context_bar(
         f'border-bottom:1px solid var(--border);padding:8px 16px;'
         f'margin:0 -24px 18px -24px;'
         f'display:flex;flex-wrap:wrap;gap:10px;align-items:center;'
-        f'font-family:\'Helvetica Neue\',Arial,sans-serif;">'
+        f'font-family:var(--sc-sans,\'Helvetica Neue\',Arial,sans-serif);">'
         f'<div style="display:flex;align-items:baseline;gap:8px;'
         f'font-size:12px;color:var(--muted);">'
         f'<span style="font-size:10px;letter-spacing:1.4px;'
         f'text-transform:uppercase;font-weight:700;color:var(--muted);">'
         f'Working deal</span>'
-        f'<span style="color:var(--bg-tint);font-weight:700;font-size:13px;">'
+        f'<span style="color:var(--ink);font-weight:700;font-size:13px;">'
         f'{html.escape(deal_name)}</span>'
         f'<span style="color:var(--muted);">·</span>'
         f'<span style="font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:var(--border);">{html.escape(strip)}</span>'
+        f'font-size:11px;color:var(--muted);">{html.escape(strip)}</span>'
         f'</div>'
         f'<div style="flex:1 1 auto;"></div>'
         f'<div style="display:flex;flex-wrap:wrap;gap:6px;">'
@@ -460,8 +464,43 @@ def sortable_table(
     # visually run together.
     final_class = table_class or "cad-table"
     attrs.append(f'class="{html.escape(final_class, quote=True)}"')
+    # Detect numeric columns so their digits right-align — a number column
+    # reads wrong left-aligned. Prefer the machine-readable sort_keys when
+    # present (display cells may be HTML-wrapped: provenance, pills) and
+    # otherwise sniff the stripped display text. cad-table's .num rule does
+    # the right-align + tabular-nums; string columns (names, tickers) stay
+    # left-aligned because their keys/text aren't numeric.
+    ncol = len(headers)
+    _numre = re.compile(r'^[$+\-(]?[\d,]+(\.\d+)?[%xX)]?$')
+
+    def _disp_is_num(v: Any) -> bool:
+        t = re.sub(r'<[^>]+>', '', str(v)).strip()
+        return bool(t) and len(t) <= 16 and bool(_numre.match(t))
+
+    numeric_col = [False] * ncol
+    for ci in range(ncol):
+        keys = (
+            [sort_keys[ri][ci] for ri in range(len(rows))
+             if ri < len(sort_keys) and ci < len(sort_keys[ri])
+             and sort_keys[ri][ci] is not None]
+            if sort_keys is not None else []
+        )
+        if keys:
+            nums = sum(1 for k in keys
+                       if isinstance(k, (int, float)) and not isinstance(k, bool))
+            numeric_col[ci] = nums >= max(1, len(keys)) * 0.8
+        else:
+            vals = [row[ci] for row in rows
+                    if ci < len(row) and row[ci] not in (None, "")]
+            numeric_col[ci] = (len(vals) >= 3 and
+                               sum(1 for v in vals if _disp_is_num(v)) >= len(vals) * 0.8)
+
+    def _num_attr(i: int) -> str:
+        return ' class="num"' if i < ncol and numeric_col[i] else ''
+
     head_cells = "".join(
-        f'<th>{html.escape(str(h))}</th>' for h in headers
+        f'<th{_num_attr(i)}>{html.escape(str(h))}</th>'
+        for i, h in enumerate(headers)
     )
     body_rows = []
     for ridx, row in enumerate(rows):
@@ -481,7 +520,7 @@ def sortable_table(
             # If the display value already contains HTML (from
             # provenance etc.) we trust it through — callers who
             # need raw HTML build the cell content themselves.
-            cells.append(f'<td{sort_attr}>{display}</td>')
+            cells.append(f'<td{_num_attr(cidx)}{sort_attr}>{display}</td>')
         body_rows.append('<tr>' + "".join(cells) + '</tr>')
     caption_html = (
         f'<caption>{html.escape(caption)}</caption>' if caption else ""

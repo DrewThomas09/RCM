@@ -510,7 +510,7 @@ def render_library(q: str = "") -> str:
     next_up = ck_next_section(
         "Open the metric glossary",
         "/metric-glossary",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="glossary",
     )
     # 2026-05-28 usability lift · floating back-to-top button. The

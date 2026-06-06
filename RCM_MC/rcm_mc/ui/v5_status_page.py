@@ -147,7 +147,7 @@ def render_v5_status() -> str:
         + ck_next_section(
             "Open the v3 fidelity status",
             "/v3-status",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="v3",
         )
     )

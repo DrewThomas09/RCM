@@ -163,7 +163,7 @@ def render_fund_learning(db_path: str) -> str:
     next_up = ck_next_section(
         "Open the model validation surface",
         "/model-validation",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="validation",
     )
     # Lead takeaway — surface the fund's calibration signal (realized

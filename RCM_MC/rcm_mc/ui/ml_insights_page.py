@@ -553,7 +553,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
     next_up = ck_next_section(
         "Open the feature importance view",
         "/models/importance",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="feature",
     )
     # 2026-05-28 batch 25 · Group D sweep · universal strict 5-block head.

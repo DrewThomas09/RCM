@@ -116,7 +116,7 @@ def _scatter_svg(
         f'<line x1="{pad_l}" y1="{breakeven_y:.1f}" x2="{pad_l+pw}" y2="{breakeven_y:.1f}" '
         f'stroke="#b5321e" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.5"/>'
         f'<text x="{pad_l+pw-2}" y="{breakeven_y-3:.1f}" '
-        f'font-size="7" fill="#b5321e" text-anchor="end" opacity="0.7">1.0×</text>'
+        f'font-size="9" fill="#b5321e" text-anchor="end" opacity="0.7">1.0×</text>'
     )
 
     # Tick labels
@@ -124,28 +124,28 @@ def _scatter_svg(
     for xv in [x_lo, (x_lo + x_hi) / 2, x_hi]:
         xv_px = tx(xv)
         x_ticks.append(
-            f'<text x="{xv_px:.1f}" y="{pad_t+ph+14}" font-size="7.5" '
+            f'<text x="{xv_px:.1f}" y="{pad_t+ph+14}" font-size="9" '
             f'fill="#7a8699" text-anchor="middle">{xv:.0f}</text>'
         )
     y_ticks = []
     for yv in [y_lo, (y_lo + y_hi) / 2, y_hi]:
         yv_px = ty(yv)
         y_ticks.append(
-            f'<text x="{pad_l-4}" y="{yv_px+3:.1f}" font-size="7.5" '
+            f'<text x="{pad_l-4}" y="{yv_px+3:.1f}" font-size="9" '
             f'fill="#7a8699" text-anchor="end">{yv:.1f}x</text>'
         )
 
     # Axis labels
     xlabel_el = (
         f'<text x="{pad_l + pw/2:.1f}" y="{height-2}" '
-        f'font-size="8" fill="#7a8699" text-anchor="middle">{_html.escape(x_label)}</text>'
+        f'font-size="9" fill="#7a8699" text-anchor="middle">{_html.escape(x_label)}</text>'
     )
     ylabel_el = (
-        f'<text x="8" y="{pad_t + ph/2:.1f}" font-size="8" fill="#7a8699" '
+        f'<text x="8" y="{pad_t + ph/2:.1f}" font-size="9" fill="#7a8699" '
         f'text-anchor="middle" transform="rotate(-90,8,{pad_t+ph/2:.1f})">{_html.escape(y_label)}</text>'
     )
 
-    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+10}" font-size="7.5" fill="#465366">n={len(points)}</text>'
+    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+10}" font-size="9" fill="#465366">n={len(points)}</text>'
 
     return (
         f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" '
@@ -204,25 +204,25 @@ def _histogram_svg(
     overlays += (
         f'<line x1="{be_x:.1f}" y1="{pad_t}" x2="{be_x:.1f}" y2="{pad_t+ph}" '
         f'stroke="#b5321e" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>'
-        f'<text x="{be_x+2:.1f}" y="{pad_t+9}" font-size="7" fill="#b5321e" opacity="0.8">1×</text>'
+        f'<text x="{be_x+2:.1f}" y="{pad_t+9}" font-size="9" fill="#b5321e" opacity="0.8">1×</text>'
     )
     if ref_line is not None:
         rx = tx(ref_line)
         overlays += (
             f'<line x1="{rx:.1f}" y1="{pad_t}" x2="{rx:.1f}" y2="{pad_t+ph}" '
             f'stroke="#0a8a5f" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>'
-            f'<text x="{rx+2:.1f}" y="{pad_t+9}" font-size="7" fill="#0a8a5f" opacity="0.8">{ref_line}×</text>'
+            f'<text x="{rx+2:.1f}" y="{pad_t+9}" font-size="9" fill="#0a8a5f" opacity="0.8">{ref_line}×</text>'
         )
 
     x_ticks = []
     for xv in [x_lo, 1.0, 2.0, 3.0, x_hi]:
         if x_lo <= xv <= x_hi:
             x_ticks.append(
-                f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="7.5" '
+                f'<text x="{tx(xv):.1f}" y="{pad_t+ph+13}" font-size="9" '
                 f'fill="#7a8699" text-anchor="middle">{xv:.0f}x</text>'
             )
 
-    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+9}" font-size="7.5" fill="#465366">n={len(values)}</text>'
+    n_lbl = f'<text x="{pad_l+4}" y="{pad_t+9}" font-size="9" fill="#465366">n={len(values)}</text>'
 
     return (
         f'<svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" '

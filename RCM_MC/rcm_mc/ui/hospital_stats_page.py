@@ -395,7 +395,7 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     next_up = ck_next_section(
         "Open the hospital profile",
         f"/hospital/{_html.escape(ccn)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="profile",
     )
     profile_section = _percentile_profile(profile_data)

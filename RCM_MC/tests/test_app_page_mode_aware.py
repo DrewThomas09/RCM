@@ -47,14 +47,14 @@ class AppPageModeAwareTests(unittest.TestCase):
         html = self._render(PARTNER)
         self.assertIn("FUND II", html)
         self.assertIn("PORTFOLIO &amp; DILIGENCE", html)
-        self.assertIn("hold-period", html)
+        self.assertIn("Hold-period rollup", html)   # lede carries hold framing
         self.assertNotIn("CLIENT ENGAGEMENT", html)
 
     def test_consulting_view_uses_engagement_framing(self) -> None:
         html = self._render(CONSULTING)
         self.assertIn("CLIENT ENGAGEMENT", html)
         self.assertIn("COMMERCIAL DILIGENCE", html)
-        self.assertIn("engagement view", html)
+        self.assertIn("Engagement rollup", html)   # lede carries engagement framing
         self.assertNotIn("FUND II", html)
 
     def test_both_views_keep_command_center_title(self) -> None:

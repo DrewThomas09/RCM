@@ -80,7 +80,7 @@ def _card(tool: Dict, *, show_section: str = "") -> str:
     if auto:
         top.append('<span class="ti-auto">AUTO</span>')
     if show_section:
-        top.append(f'<span class="ti-sect">{_esc(show_section)}</span>')
+        top.append(f'<span class="ti-sect" title="{_esc(show_section)}">{_esc(show_section)}</span>')
     desc_html = f'<p class="ti-desc">{_esc(desc)}</p>' if desc else ""
     # data-search packs name+path lowercased so the JS filter is a single
     # substring test; data-route is the completeness key.
@@ -401,7 +401,11 @@ _TOOLS_CSS = """
   min-width:0;}
 .ti-sect{margin-left:auto;color:var(--ti-muted2);font-size:9px;letter-spacing:.1em;
   padding-left:8px;border-left:1px solid var(--ti-rule);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;max-width:45%;}
+  /* No fixed-percent cap: a 45% cap truncated every section tag
+     ("Home & Operations" -> "Home & Opera…") even though the left of the row
+     is just a status dot + "Live". min-width:0 lets it ellipsis-truncate only
+     when a row is genuinely too narrow; title= recovers the full text. */
+  overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .ti-auto{padding:1px 5px;border:1px solid var(--ti-rule);background:var(--ti-paper2);
   font-size:8.5px;}
 .ti-arrow{position:absolute;top:12px;right:12px;color:var(--ti-green);

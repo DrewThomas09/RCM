@@ -262,22 +262,22 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     # Interpretation
     state = target.get("state", "")
     moat_interp = (
-        "wide moat — strong competitive position, high barriers to entry" if moat_rating == "wide"
-        else "narrow moat — some competitive advantages, but vulnerable to new entrants" if moat_rating == "narrow"
-        else "no moat — commoditized market position, pricing power limited"
+        "strong competitive position, high barriers to entry" if moat_rating == "wide"
+        else "some competitive advantages, but vulnerable to new entrants" if moat_rating == "narrow"
+        else "commoditized market position, pricing power limited"
     )
     market_interp = (
-        "highly concentrated — few dominant players, potential antitrust concerns" if hhi > 2500
-        else "moderately concentrated — oligopoly dynamics, negotiating leverage exists" if hhi > 1500
-        else "competitive — many players, value creation must come from operations not market power"
+        "highly concentrated: few dominant players, potential antitrust concerns" if hhi > 2500
+        else "moderately concentrated: oligopoly dynamics, negotiating leverage exists" if hhi > 1500
+        else "competitive: many players, value creation must come from operations not market power"
     )
     did_esc = html.escape(deal_id)
     st_esc = html.escape(state)
     link_col = PALETTE["text_link"]
     implication = (
-        "Market position supports pricing power — check payer contract terms."
+        "Market position supports pricing power: check payer contract terms."
         if moat_rating == "wide"
-        else f'Operational improvements are the primary value driver — see the '
+        else f'Operational improvements are the primary value driver: see the '
              f'<a href="/models/bridge/{did_esc}" style="color:{link_col};">EBITDA bridge</a>.'
     )
     # 2026-05-28 batch 34 · Tier-4 trope removal — strip decorative
@@ -286,7 +286,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         f'<div class="cad-card">'
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
-        f'<p>This hospital has {moat_phrase} — {moat_interp}. '
+        f'<p>This hospital has {moat_phrase}: {moat_interp}. '
         f'The {state or "regional"} market is {market_interp} (HHI: {hhi:,.0f}).</p>'
         f'<p style="margin-top:6px;"><strong>Implications:</strong> {implication}'
         f' Compare against peers via '
@@ -300,7 +300,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     next_up = ck_next_section(
         "Open the competitive intelligence view",
         f"/models/comparables/{did_esc}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="competitive",
     )
     # Lead takeaway — surface the market-position read (moat verdict +
@@ -326,7 +326,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="MARKET ANALYSIS",
-        title=f"Market analysis — {html.escape(deal_name)}",
+        title=f"Market analysis · {html.escape(deal_name)}",
         meta=(
             f"{state.upper()} MARKET · "
             f"{market_size.get('hospitals', 0)} HOSPITALS · "
@@ -350,7 +350,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Market Analysis — {html.escape(deal_name)}",
+        body, f"Market Analysis · {html.escape(deal_name)}",
         active_nav="/analysis",
         subtitle=f"{state} market | {market_size.get('hospitals', 0)} hospitals | HHI: {hhi:,.0f} ({hhi_label})",
     )

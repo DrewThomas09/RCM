@@ -914,7 +914,7 @@ def render_ebitda_bridge(
         seller_badge = ck_signal_badge("Seller Data Active", tone="warning")
         provenance_banner = ck_panel(
             '<p class="ck-section-body">'
-            f'{seller_badge} — {n_overrides} metric(s) from the Data Room are '
+            f'{seller_badge}: {n_overrides} metric(s) from the Data Room are '
             'overriding ML defaults. Bridge calculations reflect '
             'Bayesian-calibrated values. '
             f'<a href="/data-room/{_html.escape(ccn)}" class="ck-link">View Data Room →</a>'
@@ -1011,7 +1011,7 @@ def render_ebitda_bridge(
             f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}",
             help={
                 "definition": (
-                    "Net Patient Revenue — billed services minus "
+                    "Net Patient Revenue: billed services minus "
                     "contractual allowances, bad debt, and charity "
                     "care. The cash-realisable top line the bridge "
                     "operates on."
@@ -1050,7 +1050,7 @@ def render_ebitda_bridge(
             "post-RCM",
             help={
                 "definition": (
-                    "Current EBITDA + RCM uplift — the projected "
+                    "Current EBITDA + RCM uplift: the projected "
                     "year-3 EBITDA after the bridge fully realises. "
                     "Compare against Monte Carlo P50 for sensitivity."
                 ),
@@ -1072,7 +1072,7 @@ def render_ebitda_bridge(
             "1x cash benefit",
             help={
                 "definition": (
-                    "Working-capital cash released from the bridge — "
+                    "Working-capital cash released from the bridge: "
                     "primarily DSO compression converting A/R to "
                     "cash. One-time benefit at the year of release, "
                     "NOT recurring like EBITDA uplift."
@@ -1123,7 +1123,7 @@ def render_ebitda_bridge(
         f'<span class="cad-pos">{_fm(bridge["total_ebitda_impact"])}</span></p>'
     )
     waterfall_section = ck_panel(
-        waterfall_inner, title="EBITDA Bridge — 7 RCM Levers",
+        waterfall_inner, title="EBITDA Bridge · 7 RCM Levers",
     )
 
     # ── Lever detail table ──
@@ -1307,7 +1307,7 @@ def render_ebitda_bridge(
                 "definition": (
                     "Debt-to-EBITDA after the RCM uplift lands. The "
                     "gap from Entry → Pro Forma is the deleveraging "
-                    "story — narrower gap = the deal relies more on "
+                    "story: narrower gap = the deal relies more on "
                     "exit-multiple expansion than operational "
                     "improvement."
                 ),
@@ -1461,7 +1461,7 @@ def render_ebitda_bridge(
             help={
                 "definition": (
                     "Enterprise value at acquisition, assuming a 10x "
-                    "EBITDA entry multiple — the PE healthcare "
+                    "EBITDA entry multiple: the PE healthcare "
                     "midpoint. Underwrite at 9-10x for community "
                     "hospitals, 11-12x for specialty platforms."
                 ),
@@ -1472,7 +1472,7 @@ def render_ebitda_bridge(
             help={
                 "definition": (
                     "Modeled EV at exit assuming a one-turn multiple "
-                    "expansion (10x → 11x). Conservative — PE buyers "
+                    "expansion (10x → 11x). Conservative: PE buyers "
                     "in healthcare have historically paid 0.5-1.5 "
                     "turns above acquirer multiples for de-risked "
                     "platforms."
@@ -1498,7 +1498,7 @@ def render_ebitda_bridge(
             help={
                 "definition": (
                     "Value from EBITDA compounding at the 3% organic "
-                    "growth rate. The 'do nothing' component — what "
+                    "growth rate. The 'do nothing' component: what "
                     "this deal would have created without any RCM "
                     "intervention or multiple expansion."
                 ),
@@ -1510,7 +1510,7 @@ def render_ebitda_bridge(
                 "definition": (
                     "Value attributable to the RCM levers the platform "
                     "underwrites (rate, denial, AR, contract terms, "
-                    "labor, supply). This is the operational alpha — "
+                    "labor, supply). This is the operational alpha: "
                     "the partner's claim that this PE sponsor adds "
                     "value beyond market-trend exposure."
                 ),
@@ -1522,7 +1522,7 @@ def render_ebitda_bridge(
                 "definition": (
                     "Value from the assumed one-turn multiple "
                     "expansion at exit. Treat as the most speculative "
-                    "component — exit multiples drift with the buyer "
+                    "component: exit multiples drift with the buyer "
                     "market, which the sponsor doesn't control. "
                     "Healthier deals lean less on this number."
                 ),
@@ -1599,7 +1599,7 @@ def render_ebitda_bridge(
             f'</tr></thead><tbody>{peer_context_rows}</tbody></table>'
         )
         peer_section = ck_panel(
-            peer_inner, title="Peer Context — Where This Hospital Sits",
+            peer_inner, title="Peer Context · Where This Hospital Sits",
         )
 
     # ── Navigation ──
@@ -1629,12 +1629,12 @@ def render_ebitda_bridge(
     page_title = ck_page_title(
         "EBITDA Bridge",
         eyebrow=f"EBITDA BRIDGE · CCN {_html.escape(ccn)}",
-        meta=f"{_html.escape(name)} — {_html.escape(state)} · {beds:.0f} beds",
+        meta=f"{_html.escape(name)} · {_html.escape(state)} · {beds:.0f} beds",
     )
     explainer_html = (
         '<p class="ck-eb-explainer">'
         f'<em>{_html.escape(name)}.</em> '
-        "7-lever RCM bridge from current EBITDA to pro-forma — "
+        "7-lever RCM bridge from current EBITDA to pro-forma: "
         "denial / underpay / DAR / coding / contract / cost "
         "discipline / cash acceleration. Each lever shows "
         "current vs benchmark target with data provenance."
@@ -1670,7 +1670,7 @@ def render_ebitda_bridge(
         + ck_next_section(
             "Run the bridge through Monte Carlo",
             "/diligence/deal-mc",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="Monte",
         )
     )
@@ -1681,6 +1681,6 @@ def render_ebitda_bridge(
     body = body + ck_page_actions()
     return chartis_shell(
         body,
-        f"EBITDA Bridge — {_html.escape(name)}",
+        f"EBITDA Bridge · {_html.escape(name)}",
         extra_css=_EXPLAINER_CSS,
     )

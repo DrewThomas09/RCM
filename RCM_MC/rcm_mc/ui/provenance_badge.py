@@ -118,7 +118,7 @@ details.pv-details > summary::-webkit-details-marker{
   margin-top:6px;color:var(--faint);font-size:11px;}
 .pv-card-row > strong{color:var(--ink);font-weight:500;
   font-variant-numeric:tabular-nums;}
-.pv-card .pv-detail{color:var(--border);margin:8px 0 0 0;}
+.pv-card .pv-detail{color:var(--muted);margin:8px 0 0 0;}
 .pv-conf{display:inline-block;padding:1px 8px;
   border-radius:4px;font-size:10px;font-weight:600;
   font-variant-numeric:tabular-nums;}

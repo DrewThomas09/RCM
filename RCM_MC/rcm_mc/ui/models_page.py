@@ -515,7 +515,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
             "PV of Terminal", _fmt_m(pv_term), "Gordon growth",
             help={
                 "definition": (
-                    "Present value of the terminal lump — what the "
+                    "Present value of the terminal lump: what the "
                     "business is worth after year 5/10. Healthy DCFs "
                     "have <70% of EV in the terminal; >80% means "
                     "you're underwriting the exit multiple, not the "
@@ -527,7 +527,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
             "Terminal Value", _fmt_m(tv), "exit-year FCF / (WACC - g)",
             help={
                 "definition": (
-                    "Undiscounted terminal — exit-year free cash flow "
+                    "Undiscounted terminal: exit-year free cash flow "
                     "÷ (WACC − terminal growth). Sensitive: a 50bp "
                     "shift in either input swings terminal by 10-15%. "
                     "Worth checking against trading-comp multiples "
@@ -539,7 +539,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
             "WACC", wacc_value, "discount rate",
             help={
                 "definition": (
-                    "Weighted average cost of capital — blended cost "
+                    "Weighted average cost of capital: blended cost "
                     "of equity and debt. PE healthcare typically uses "
                     "9-11% for community hospitals, 11-13% for "
                     "specialty platforms. Below 8% in current rate "
@@ -700,7 +700,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>At a WACC of <strong>{wacc:.1%}</strong> and terminal growth of '
         f'<strong>{growth:.1%}</strong>, enterprise value is <strong>{_fmt_m(ev)}</strong>. '
-        f'Terminal value accounts for <strong>{tv_pct:.0f}%</strong> of total EV — '
+        f'Terminal value accounts for <strong>{tv_pct:.0f}%</strong> of total EV: '
         f'{"typical range (60-80%)" if 55 < tv_pct < 85 else "consider sensitivity to terminal assumptions"}.</p>'
         f'<p style="margin-top:8px;"><strong>Next steps:</strong> '
         f'Check the <a href="/models/lbo/{html.escape(deal_id)}" style="color:{PALETTE["text_link"]};">LBO model</a> '
@@ -714,14 +714,14 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
     next_up = ck_next_section(
         "Open the LBO model",
         f"/models/lbo/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="LBO",
     )
     # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="DCF MODEL",
-        title=f"DCF — {html.escape(deal_name)}",
+        title=f"DCF · {html.escape(deal_name)}",
         meta=f"ENTERPRISE VALUE: {_fmt_m(ev).upper()}",
         lede_italic_phrase="What the cash flows are worth.",
         lede_body=(
@@ -732,7 +732,7 @@ def render_dcf_page(deal_id: str, deal_name: str, dcf: Dict[str, Any]) -> str:
         ),
     )
     body = f'{head}{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{proj_table}{interp}{sens_html}{assume_section}{actions}{next_up}'
-    return chartis_shell(body, f"DCF — {html.escape(deal_name)}",
+    return chartis_shell(body, f"DCF · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"Enterprise Value: {_fmt_m(ev)}")
 
@@ -762,7 +762,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
             "Internal rate of return to the LP equity check over "
             "a {hold}yr hold. >20% green, 15-20% amber, below "
             "15% negative. Sensitive to exit multiple, leverage, "
-            "and EBITDA growth — all tunable below."
+            "and EBITDA growth: all tunable below."
         ).replace('{hold}', str(hold_years)),
     )
     moic_value = ck_provenance_tooltip(
@@ -784,7 +784,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
                     "LBO-modeled internal rate of return on the equity "
                     "check. PE healthcare target is 20%+ at the gross "
                     "level; below 15% won't clear the hurdle. Sensitive "
-                    "to hold period — short holds need higher MOIC to "
+                    "to hold period: short holds need higher MOIC to "
                     "hit the same IRR."
                 ),
             },
@@ -793,7 +793,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
             "MOIC", moic_value, "exit / entry equity",
             help={
                 "definition": (
-                    "Multiple on invested capital — exit proceeds ÷ "
+                    "Multiple on invested capital: exit proceeds ÷ "
                     "entry equity check. Less sensitive to hold period "
                     "than IRR; a 2.5x in 5yrs and 2.5x in 7yrs return "
                     "the same dollars to the LP but very different "
@@ -805,7 +805,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
             "Entry EV", _fmt_m(entry_ev), "sources of capital",
             help={
                 "definition": (
-                    "Total enterprise value at acquisition — debt + "
+                    "Total enterprise value at acquisition: debt + "
                     "equity sources. The check the deal pays for the "
                     "business; structured at the entry-multiple × "
                     "trailing EBITDA."
@@ -827,7 +827,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
             "Equity Invested", _fmt_m(equity_invested), "LP check",
             help={
                 "definition": (
-                    "Total LP equity at close — the denominator for "
+                    "Total LP equity at close: the denominator for "
                     "both IRR and MOIC. Typical PE healthcare deal "
                     "puts in 30-40% equity, with the rest from senior + "
                     "second-lien debt."
@@ -959,9 +959,9 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
 
     # Interpretation
     irr_assessment = (
-        "exceeds the typical 20% hurdle — strong candidate" if irr and irr > 0.20
-        else "meets the 15-20% range — acceptable with operational upside" if irr and irr > 0.15
-        else "below 15% hurdle — requires significant value creation thesis" if irr
+        "exceeds the typical 20% hurdle: strong candidate" if irr and irr > 0.20
+        else "meets the 15-20% range: acceptable with operational upside" if irr and irr > 0.15
+        else "below 15% hurdle: requires significant value creation thesis" if irr
         else "could not be computed"
     )
     interp = (
@@ -986,14 +986,14 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
     next_up = ck_next_section(
         "Open the returns waterfall",
         f"/models/waterfall/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="waterfall",
     )
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="LBO MODEL",
-        title=f"LBO — {html.escape(deal_name)}",
+        title=f"LBO · {html.escape(deal_name)}",
         meta=(
             f"IRR {_fmt_pct(irr).upper()} · "
             f"MOIC {_fmt_x(moic).upper()} · "
@@ -1008,7 +1008,7 @@ def render_lbo_page(deal_id: str, deal_name: str, lbo: Dict[str, Any]) -> str:
         ),
     )
     body = f'{head}{_MODELS_CHART_CAPTION_CSS}{nav}{kpis}{su_html}{annual_html}{interp}{waterfall_html}{actions}{next_up}'
-    return chartis_shell(body, f"LBO — {html.escape(deal_name)}",
+    return chartis_shell(body, f"LBO · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle=f"IRR: {_fmt_pct(irr)} | MOIC: {_fmt_x(moic)}")
 
@@ -1123,7 +1123,7 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     next_up = ck_next_section(
         "Open the DCF model",
         f"/models/dcf/{html.escape(deal_id)}",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="DCF",
     )
     # 2026-05-28 batch 29 · Phase 3 · universal strict 5-block head.
@@ -1132,7 +1132,7 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     from ._chartis_kit import ck_editorial_head
     head = ck_editorial_head(
         eyebrow="FINANCIAL MODEL",
-        title=f"Financials — {html.escape(deal_name)}",
+        title=f"Financials · {html.escape(deal_name)}",
         meta=(
             f"3-STATEMENT MODEL · "
             f"{n_statements} OF 3 SECTIONS POPULATED · "
@@ -1151,6 +1151,6 @@ def render_financials_page(deal_id: str, deal_name: str, model: Dict[str, Any]) 
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(body, f"Financials — {html.escape(deal_name)}",
+    return chartis_shell(body, f"Financials · {html.escape(deal_name)}",
                     active_nav="/analysis",
                     subtitle="3-statement model reconstructed from HCRIS + deal profile")

@@ -79,7 +79,7 @@ def _scoped_styles() -> str:
     live colors from :data:`P`.
     """
     css = """
-.da-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.da-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .da-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .da-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
@@ -398,7 +398,7 @@ def _match_card(result: MatchResult, target: DealSignature) -> str:
     quote_html = (
         f'<div class="da-quote">'
         f'"{html.escape(deal.autopsy.partner_quote)}"'
-        f'<small>— post-mortem reflection on '
+        f'<small>Post-mortem reflection on '
         f'{html.escape(deal.name)}</small></div>'
     ) if deal.autopsy.partner_quote else ""
 
@@ -496,7 +496,7 @@ def _target_signature_panel(
             source=src,
             formula=(
                 f'Signature dimension: {FEATURE_LABELS.get(name, name)}. '
-                'Range [0.0, 1.0] — higher = more risk. '
+                'Range [0.0, 1.0]: higher = more risk. '
                 'See module docstring for provenance.'
             ),
             detail=(
@@ -516,7 +516,7 @@ def _target_signature_panel(
     fixture_tag = (
         f' · {html.escape(dataset_label)}'
     ) if dataset_label else ""
-    panel_title = f"Target signature — {html.escape(heading)}{fixture_tag}"
+    panel_title = f"Target signature · {html.escape(heading)}{fixture_tag}"
     return ck_panel(
         '<p class="ck-eyebrow">9-feature risk signature, range 0.0–1.0.</p>'
         + "".join(rows),
@@ -540,14 +540,14 @@ def _summary_hero(
         banner = (
             f'⚠ You are underwriting a deal with an '
             f'{top.similarity*100:.0f}% signature match to '
-            f'{top.deal.name} ({top.deal.autopsy.outcome_year} — '
+            f'{top.deal.name} ({top.deal.autopsy.outcome_year} · '
             f'{_OUTCOME_PRESENTATION[top.deal.autopsy.outcome][0]}).'
         )
         banner_class = "alert"
     elif top.deal.autopsy.is_negative and top.similarity >= 0.72:
         banner = (
             f'Signature is {top.similarity*100:.0f}% aligned with '
-            f'{top.deal.name} — a meaningful resemblance to a deal '
+            f'{top.deal.name}: a meaningful resemblance to a deal '
             f'that ended in '
             f'{_OUTCOME_PRESENTATION[top.deal.autopsy.outcome][0].lower()}.'
         )
@@ -555,7 +555,7 @@ def _summary_hero(
     elif not top.deal.autopsy.is_negative and top.similarity >= 0.72:
         banner = (
             f'Closest signature match is {top.deal.name} '
-            f'({top.similarity*100:.0f}%) — a successful exit '
+            f'({top.similarity*100:.0f}%): a successful exit '
             f'pattern. Survivor-type signature.'
         )
         banner_class = "good"
@@ -716,10 +716,10 @@ def _landing() -> str:
     form = (
         '<form method="GET" action="/diligence/deal-autopsy" class="da-form">'
         '<div class="da-form-eyebrow">'
-        'Fixture mode — auto-build from CCD</div>'
+        'Fixture mode · auto-build from CCD</div>'
         '<label class="da-form-label">CCD fixture</label>'
         '<select name="dataset" class="da-form-select">'
-        '<option value="">— pick a fixture (optional) —</option>'
+        '<option value="">(pick a fixture, optional)</option>'
         f'{options}</select>'
         f'<div class="da-form-grid">{form_fields}</div>'
         '<p class="ck-eyebrow">'
@@ -737,8 +737,8 @@ def _landing() -> str:
         '<em>Where the failure pattern rhymes with history.</em> '
         "The Deal Autopsy engine compares your target's 9-feature risk "
         "signature against a curated library of historical PE healthcare "
-        "deals — bankruptcies, distressed sales, delistings, and strong "
-        "exits — and surfaces the closest matches with the partner lesson "
+        "deals (bankruptcies, distressed sales, delistings, and strong "
+        "exits) and surfaces the closest matches with the partner lesson "
         "from each outcome. Treat it as a 'you're about to do X again' "
         "check layered on top of the rest of the diligence stack."
         "</p>"
@@ -882,7 +882,7 @@ def render_deal_autopsy_page(
         + ck_next_section(
             "Cross-check against named bear cases",
             "/bear-cases",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bear",
         )
     )
@@ -891,7 +891,7 @@ def render_deal_autopsy_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, f"Deal Autopsy — {heading}",
+        body, f"Deal Autopsy · {heading}",
         active_nav="/diligence/deal-autopsy",
         extra_css=_EXPLAINER_CSS,
     )

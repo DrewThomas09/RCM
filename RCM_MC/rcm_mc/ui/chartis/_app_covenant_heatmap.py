@@ -433,10 +433,9 @@ def render_covenant_heatmap(
         footnote = (
             '<div class="micro" style="color:var(--muted);'
             'padding:1rem 0 .5rem;font-style:italic;">'
-            f'{wired_count} of {total_count} covenants tracked '
-            '(Net Leverage). Remaining covenants render `—` until '
-            'the schema grows — see Q4.5 in <code style="font-style:normal">'
-            'docs/UI_REWORK_PLAN.md</code>.'
+            f'{wired_count} of {total_count} covenants tracked (Net Leverage). '
+            'The rest show a dash until those metrics are recorded for this '
+            'deal.'
             '</div>'
         )
 

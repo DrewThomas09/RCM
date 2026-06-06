@@ -43,14 +43,23 @@ _TT_CSS = """<style>
   color:var(--cad-text3,#888);font-size:9px;font-weight:600;
   font-family:var(--cad-mono,monospace);cursor:help;
   border:1px solid var(--cad-border,#333);}
-.prov-tt-card {visibility:hidden;opacity:0;position:absolute;z-index:1000;
-  bottom:calc(100% + 6px);left:0;width:320px;
-  background:var(--cad-bg2,#0e0e0e);border:1px solid var(--cad-border,#333);
-  border-radius:4px;padding:10px 12px;font-size:11.5px;line-height:1.45;
-  color:var(--cad-text,#e6e6e6);box-shadow:0 4px 14px rgba(0,0,0,0.5);
-  transition:opacity 80ms ease;pointer-events:none;}
+/* display:none (not visibility:hidden) when closed so the absolutely-
+   positioned 320px card does NOT extend the page's scrollWidth — a
+   hidden-but-laid-out card anchored on a right-edge KPI pushed every
+   hospital/regression page ~64px wide at 1280 (and ~107px at 768).
+   max-width clamps the card to the viewport so it never overflows on
+   narrow widths. Colors moved off the stale dark --cad-bg2 fallback
+   (#0e0e0e, which rendered dark-on-dark under the editorial theme) to
+   the white editorial card to match .ck-prov-tt-card. */
+.prov-tt-card {display:none;position:absolute;z-index:1000;
+  bottom:calc(100% + 6px);left:0;width:max-content;
+  max-width:min(320px, calc(100vw - 28px));
+  background:#fff;border:1px solid var(--sc-rule,#d6cfc0);
+  border-radius:2px;padding:10px 12px;font-size:11.5px;line-height:1.45;
+  color:var(--sc-text,#1a2332);box-shadow:var(--sc-shadow-2,0 6px 24px rgba(6,22,38,0.08));
+  pointer-events:none;}
 .prov-tt:hover .prov-tt-card,
-.prov-tt:focus-within .prov-tt-card {visibility:visible;opacity:1;}
+.prov-tt:focus-within .prov-tt-card {display:block;}
 .prov-tt-label {font-weight:600;color:var(--cad-text,#e6e6e6);
   margin-bottom:4px;}
 .prov-tt-type {font-family:var(--cad-mono,monospace);font-size:9.5px;

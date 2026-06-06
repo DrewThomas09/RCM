@@ -1,42 +1,43 @@
-"""PE Desk — public marketing landing page.
+"""PE Desk, public marketing landing page.
 
 Standalone self-contained HTML served at ``GET /`` for anonymous
-visitors (under ``CHARTIS_UI_V2=1``). Port of
-``marketing-handoff/reference.html`` — the Claude Design editorial
-target. This page renders its own ``<style>`` block and does NOT go
-through ``chartis_shell``: marketing pages stay standalone so the
-public front door is a single clean document with no app chrome.
+visitors (under ``CHARTIS_UI_V2=1``). This page renders its own
+``<style>`` block and does NOT go through ``chartis_shell``: the public
+front door stays a single clean document with no app chrome.
 
-Uses the refined editorial palette (warm parchment ``#F2EDE3``,
-deep editorial teal ``#1F7A75``) embedded locally — the same
-refinement that the WS3-A platform-palette PR rolls out app-wide.
+Design intent (2026 refresh): calm and editorial, not a templated SaaS
+splash. Flat parchment, hairline rules, one teal accent used sparingly,
+no gradients or animation. The copy says what the product actually does
+in plain language, names the real analytic surfaces it ships, and labels
+every illustrative figure as a worked sample rather than dressing
+fabricated numbers up as "proof".
 
 Sections, top to bottom:
-  1. Top bar — brand + nav + Sign In + Request Access
-  2. Crumbs — Home > PE Desk
-  3. Hero — eyebrow, serif H1 w/ italic, lede, 2 CTAs, mono meta col
-  4. Value-prop trio — 3 bordered cells
-  5. Platform — section header + paired funnel / conversion table
-  6. Proof grid — 8 fund-level KPI cells
-  7. Modules — section header + 4-column module catalog
-  8. Sources — section header + paired sources funnel / inventory
-  9. CTA strip — dark, "Bring your own model"
+  1. Top bar      brand + anchor nav + Sign in + Request access
+  2. Crumbs       Home > PE Desk
+  3. Hero         eyebrow, serif H1, lede, two CTAs, honest meta column
+  4. Value trio   three plain statements of how it works
+  5. Workspace    section header + sample deal funnel (labelled sample)
+  6. Capability   what the workspace actually computes (real surfaces)
+  7. Profile      section header + sample profile catalog (labelled)
+  8. Sources      section header + the real data the workspace runs on
+  9. CTA strip    "bring your own model, keep your own data" (flat dark)
   10. Footer
 
 All CTAs route to ``/login?next=/app``. Top-nav links smooth-scroll
-within the page (``#platform`` / ``#modules`` / ``#proof`` /
-``#sources``). Numbers on the page are illustrative showcase
-figures — this is a pre-login surface, not a live data view.
+within the page. Sample figures are an illustrative worked example and
+are labelled as such; the capability and source lists are real.
 """
 from __future__ import annotations
 
-# CTA target — every "sign in" / "request access" / "open console"
-# affordance on this page points here. Kept as a module constant so
-# the route is wired in exactly one place.
+# CTA target. Every "sign in" / "request access" / "open workspace"
+# affordance points here. Kept as a module constant so the route is
+# wired in exactly one place (and so basic-auth retargeting is a single
+# string replace in render_marketing_page).
 _LOGIN = "/login?next=/app"
 
 
-# ── Style block — ported verbatim from reference.html, refined palette ──
+# ── Style block — calm editorial, flat (no gradients / animation) ──
 
 _STYLE = """
 <style>
@@ -65,24 +66,8 @@ _STYLE = """
     font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.55;
     -webkit-font-smoothing: antialiased; scroll-behavior: smooth;
   }
-  body {
-    background-image:
-      radial-gradient(circle at 12% 4%, rgba(31,122,117,.07), transparent 38%),
-      radial-gradient(circle at 92% 22%, rgba(21,87,82,.05), transparent 42%),
-      linear-gradient(180deg, var(--bg) 0%, var(--bg) 100%);
-    background-attachment: fixed;
-  }
   .sans { font-family: "Inter", sans-serif; }
   .mono { font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum" on; }
-
-  @keyframes ck-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: .55; transform: scale(1.15); }
-  }
-  @keyframes ck-rise {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
 
   /* TOP BAR */
   .topbar {
@@ -113,20 +98,13 @@ _STYLE = """
   }
   .signin:hover { color: var(--ink); }
   .cta-btn {
-    background: linear-gradient(135deg, var(--ink) 0%, var(--ink-2) 100%);
-    color: var(--paper);
+    background: var(--ink); color: var(--paper);
     font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: .8rem 1.4rem; border: none; cursor: pointer; text-decoration: none;
-    display: inline-block;
-    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
-    box-shadow: 0 1px 0 rgba(15,28,46,.08);
+    display: inline-block; transition: background .18s ease;
   }
-  .cta-btn:hover {
-    background: linear-gradient(135deg, var(--teal-deep) 0%, var(--teal) 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px -8px rgba(21,87,82,.45);
-  }
+  .cta-btn:hover { background: var(--teal-deep); }
 
   /* CRUMBS */
   .crumbs {
@@ -141,39 +119,31 @@ _STYLE = """
   .page { padding: 0 2rem 4rem; max-width: 1500px; margin: 0 auto; }
   .hero {
     display: grid; grid-template-columns: 1fr 360px; gap: 3rem;
-    padding: 4rem 0 3rem; border-bottom: 1px solid var(--rule);
-    position: relative;
+    padding: 4.5rem 0 3.5rem; border-bottom: 1px solid var(--rule);
   }
-  .hero::before {
-    content: ""; position: absolute; left: -1.5rem; top: 5rem;
-    width: 3px; height: 7rem;
-    background: linear-gradient(180deg, var(--teal-deep) 0%, var(--teal) 60%, transparent 100%);
-  }
-  .hero > div:first-child { animation: ck-rise .6s ease-out; }
   .eyebrow {
     font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .14em;
     text-transform: uppercase; color: var(--muted); font-weight: 600;
-    display: flex; align-items: center; gap: .6rem; margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: .6rem; margin-bottom: 1.5rem;
   }
   .eyebrow .dot { color: var(--faint); }
   .eyebrow .slug { font-family: "JetBrains Mono", monospace; color: var(--teal-deep); letter-spacing: .04em; }
   .eyebrow::before {
     content: ""; width: 7px; height: 7px; border-radius: 50%;
     background: var(--teal); display: inline-block;
-    animation: ck-pulse 2.4s ease-in-out infinite;
-    box-shadow: 0 0 0 3px rgba(31,122,117,.12);
   }
   h1.title {
     font-family: "Source Serif 4", serif; font-weight: 400;
-    font-size: clamp(3.5rem, 6vw, 5.5rem); line-height: 0.98; letter-spacing: -0.025em;
+    font-size: clamp(3rem, 5.2vw, 4.7rem); line-height: 1.02; letter-spacing: -0.022em;
     color: var(--ink); margin: 0 0 1.5rem;
   }
   h1.title em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
   .lede {
-    font-family: "Source Serif 4", serif; font-size: 1.4rem; line-height: 1.4;
-    color: var(--muted); max-width: 620px; margin: 0 0 2rem;
+    font-family: "Source Serif 4", serif; font-size: 1.28rem; line-height: 1.5;
+    color: var(--ink-2); max-width: 640px; margin: 0 0 2rem;
   }
-  .hero-actions { display: flex; gap: 1rem; align-items: center; }
+  .lede b { font-weight: 600; color: var(--ink); }
+  .hero-actions { display: flex; gap: 1.5rem; align-items: center; }
   .ghost-btn {
     font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--ink);
@@ -186,65 +156,55 @@ _STYLE = """
     color: var(--muted); display: flex; flex-direction: column; gap: .9rem;
   }
   .hero-meta .row { display: flex; gap: .5rem; }
-  .hero-meta .row .k { color: var(--faint); width: 80px; }
+  .hero-meta .row .k { color: var(--faint); width: 92px; }
   .hero-meta .row .v { color: var(--ink); font-weight: 600; }
   .hero-meta .stamp {
     margin-top: .5rem; padding: .9rem 0;
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
     font-family: "Source Serif 4", serif; font-style: italic;
-    font-size: .9rem; color: var(--ink); line-height: 1.5;
+    font-size: .9rem; color: var(--muted); line-height: 1.5;
   }
 
-  /* VALUE PROP TRIO */
+  /* sample tag — honest "this is a worked example" marker */
+  .sample-tag {
+    font-family: "Inter", sans-serif; font-size: .58rem; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--amber);
+    border: 1px solid var(--amber); border-radius: 2px; padding: .12rem .4rem;
+    white-space: nowrap;
+  }
+
+  /* VALUE TRIO */
   .triplet {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
     background: var(--paper-pure); border: 1px solid var(--rule); margin: 3rem 0;
-    position: relative; overflow: hidden;
   }
-  .triplet::before {
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg,
-      var(--teal-deep) 0%, var(--teal) 33%,
-      var(--teal-soft) 50%, var(--teal) 67%, var(--teal-deep) 100%);
-    opacity: .85;
-  }
-  .trip-cell {
-    padding: 2rem 1.75rem; border-right: 1px solid var(--border);
-    transition: background .25s ease, transform .25s ease;
-    position: relative;
-  }
-  .trip-cell:hover {
-    background: linear-gradient(180deg, var(--teal-soft) 0%, var(--paper-pure) 80%);
-  }
-  .trip-cell:hover .trip-num { color: var(--teal); }
+  .trip-cell { padding: 2rem 1.75rem; border-right: 1px solid var(--border); }
   .trip-cell:last-child { border-right: none; }
   .trip-num {
     font-family: "JetBrains Mono", monospace; font-size: .72rem;
     color: var(--teal-deep); letter-spacing: .04em; margin-bottom: .8rem;
-    transition: color .25s ease;
   }
   .trip-h {
-    font-family: "Source Serif 4", serif; font-weight: 400; font-size: 1.4rem;
+    font-family: "Source Serif 4", serif; font-weight: 400; font-size: 1.35rem;
     line-height: 1.2; color: var(--ink); margin: 0 0 .75rem;
   }
   .trip-h em { font-style: italic; color: var(--teal-deep); }
-  .trip-p { font-size: .92rem; color: var(--muted); line-height: 1.55; margin: 0; }
+  .trip-p { font-size: .94rem; color: var(--muted); line-height: 1.6; margin: 0; }
 
   /* SECTION HEADERS */
   .sect {
     display: grid; grid-template-columns: 1fr 1.3fr; gap: 3rem; align-items: end;
     padding: 4rem 0 1.5rem; margin-top: 1rem;
-    border-top: 1px solid var(--rule);
-    position: relative;
+    border-top: 1px solid var(--rule); position: relative;
   }
   .sect::before {
-    content: ""; position: absolute; top: -1px; left: 0; width: 80px; height: 3px;
-    background: linear-gradient(90deg, var(--teal-deep), var(--teal) 70%, transparent);
+    content: ""; position: absolute; top: -1px; left: 0; width: 64px; height: 2px;
+    background: var(--teal);
   }
   .sect h2 {
     font-family: "Source Serif 4", serif; font-weight: 400;
-    font-size: clamp(2.3rem, 3.6vw, 3.4rem); line-height: 1.05;
-    letter-spacing: -0.018em; color: var(--ink); margin: .35rem 0 0;
+    font-size: clamp(2.1rem, 3.4vw, 3.1rem); line-height: 1.08;
+    letter-spacing: -0.016em; color: var(--ink); margin: .35rem 0 0;
   }
   .sect h2 em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
   .micro {
@@ -252,11 +212,11 @@ _STYLE = """
     letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
   }
   .desc {
-    font-family: "Source Serif 4", serif; font-size: 1.05rem; line-height: 1.55;
-    color: var(--muted); margin: 0; max-width: 620px;
+    font-family: "Source Serif 4", serif; font-size: 1.05rem; line-height: 1.6;
+    color: var(--muted); margin: 0; max-width: 640px;
   }
 
-  /* DATA SHOWCASE — paired viz + dataset (signature element) */
+  /* PAIRED viz + dataset (signature element) */
   .pair {
     display: grid; grid-template-columns: 1.4fr 1fr; gap: 0;
     background: var(--paper-pure); border: 1px solid var(--rule); margin: 1.5rem 0;
@@ -267,7 +227,7 @@ _STYLE = """
     padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
     font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: space-between; align-items: center; gap: .5rem;
   }
   .data-h .src {
     font-family: "JetBrains Mono", monospace; text-transform: none;
@@ -310,48 +270,36 @@ _STYLE = """
   .funnel .bar { height: 3px; background: var(--border); }
   .funnel .bar i { display: block; height: 100%; background: var(--teal); }
 
-  /* PROOF GRID */
-  .proof {
+  /* CAPABILITY GRID — what the workspace actually computes (real) */
+  .caps {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
     background: var(--paper-pure); border: 1px solid var(--rule); margin: 1.5rem 0 0;
-    background-image:
-      linear-gradient(135deg, rgba(31,122,117,.04) 0%, transparent 40%),
-      linear-gradient(315deg, rgba(31,122,117,.03) 0%, transparent 40%);
   }
-  .proof-cell {
-    padding: 1.5rem 1.25rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    transition: background .2s ease;
-    position: relative;
+  .cap {
+    padding: 1.5rem 1.4rem; border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
-  .proof-cell:hover { background: rgba(31,122,117,.045); }
-  .proof-cell:hover .proof-v em { color: var(--teal); }
-  .proof-cell:nth-child(4n) { border-right: none; }
-  .proof-cell:nth-last-child(-n+4) { border-bottom: none; }
-  .proof-v {
-    font-family: "Source Serif 4", serif; font-size: 2.2rem; line-height: 1;
-    color: var(--ink); margin-bottom: .5rem;
+  .cap:nth-child(4n) { border-right: none; }
+  .cap:nth-last-child(-n+4) { border-bottom: none; }
+  .cap-tag {
+    font-family: "JetBrains Mono", monospace; font-size: .64rem;
+    letter-spacing: .04em; color: var(--teal-deep); margin-bottom: .6rem;
   }
-  .proof-v em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
-  .proof-l {
-    font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted); font-weight: 600;
+  .cap-name {
+    font-family: "Source Serif 4", serif; font-size: 1.22rem; line-height: 1.2;
+    color: var(--ink); margin: 0 0 .5rem;
   }
-  .proof-d {
-    font-family: "Source Serif 4", serif; font-size: .88rem; color: var(--muted);
-    margin-top: .5rem; line-height: 1.45;
+  .cap-d {
+    font-family: "Source Serif 4", serif; font-size: .9rem; color: var(--muted);
+    line-height: 1.5; margin: 0;
   }
 
-  /* MODULE CATALOG */
+  /* PROFILE CATALOG */
   .catalog {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
     background: var(--paper-pure); border: 1px solid var(--rule); margin: 1.5rem 0;
   }
-  .cat-col {
-    border-right: 1px solid var(--border);
-    transition: background .25s ease;
-  }
-  .cat-col:hover .cat-h { background: var(--teal-soft); }
-  .cat-col:hover .cat-h .ttl { color: var(--teal-deep); }
+  .cat-col { border-right: 1px solid var(--border); }
   .cat-col:last-child { border-right: none; }
   .cat-h {
     padding: .9rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg);
@@ -374,32 +322,23 @@ _STYLE = """
   .cat-col tr:last-child td { border-bottom: none; }
   .cat-col td.lbl { color: var(--muted); font-family: "Inter", sans-serif; }
   .cat-col td.r { text-align: right; font-family: "JetBrains Mono", monospace; color: var(--ink); font-weight: 600; }
-  .cat-col tr:hover td { background: var(--bg-tint); }
 
-  /* CTA STRIP */
+  /* CTA STRIP — flat dark, no glow */
   .cta-strip {
-    margin: 3rem 0 0; padding: 3.5rem 2.5rem;
-    background:
-      radial-gradient(circle at 85% 30%, rgba(31,122,117,.18) 0%, transparent 55%),
-      linear-gradient(135deg, var(--ink) 0%, var(--ink-2) 100%);
+    margin: 3.5rem 0 0; padding: 3.5rem 2.5rem; background: var(--ink);
     color: var(--paper);
     display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center;
-    position: relative; overflow: hidden;
-  }
-  .cta-strip::before {
-    content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--teal) 50%, transparent);
   }
   .cta-strip h3 {
     font-family: "Source Serif 4", serif; font-weight: 400;
-    font-size: 2.6rem; line-height: 1.05; letter-spacing: -0.015em;
+    font-size: 2.4rem; line-height: 1.08; letter-spacing: -0.015em;
     color: var(--paper); margin: 0;
   }
   .cta-strip h3 em { font-style: italic; color: var(--teal-soft); }
   .cta-strip .micro { color: rgba(245, 240, 225, .6); margin-bottom: .9rem; }
   .cta-strip p {
-    font-size: .98rem; color: rgba(245, 240, 225, .75);
-    margin: 1.2rem 0 0; max-width: 520px;
+    font-size: .98rem; color: rgba(245, 240, 225, .78);
+    margin: 1.2rem 0 0; max-width: 520px; line-height: 1.6;
   }
   .cta-strip-actions { display: flex; flex-direction: column; gap: .75rem; }
   .cta-light {
@@ -407,46 +346,49 @@ _STYLE = """
     font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
+    transition: background .18s ease, color .18s ease;
   }
-  .cta-light {
-    transition: transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
-  }
-  .cta-light:hover {
-    background: var(--teal); color: var(--paper);
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px -10px rgba(31,122,117,.55);
-  }
+  .cta-light:hover { background: var(--teal); color: var(--paper); }
   .cta-outline {
-    background: transparent; border: 1px solid var(--paper); color: var(--paper);
+    background: transparent; border: 1px solid rgba(245,240,225,.4); color: var(--paper);
     font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
-    transition: background .18s ease, color .18s ease;
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
   }
-  .cta-outline:hover { background: var(--paper); color: var(--ink); }
+  .cta-outline:hover { background: var(--paper); color: var(--ink); border-color: var(--paper); }
 
   /* FOOTER */
   footer {
     margin-top: 3rem; padding: 2rem; border-top: 1px solid var(--rule);
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    flex-wrap: wrap;
     font-family: "Inter", sans-serif; font-size: .82rem; color: var(--muted);
   }
   footer em { font-style: italic; color: var(--teal-deep); }
 
   @media (max-width: 1100px) {
     .hero, .sect, .cta-strip { grid-template-columns: 1fr; gap: 2rem; }
-    .triplet, .proof, .catalog { grid-template-columns: repeat(2, 1fr); }
+    .triplet, .caps, .catalog { grid-template-columns: repeat(2, 1fr); }
+    .caps .cap:nth-child(4n) { border-right: 1px solid var(--border); }
+    .caps .cap:nth-child(2n) { border-right: none; }
     .funnel { grid-template-columns: repeat(4, 1fr); }
     .pair { grid-template-columns: 1fr; }
     .pair .viz { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+  @media (max-width: 640px) {
+    .topbar { padding: 0 1rem; gap: .5rem; height: auto; flex-wrap: wrap; padding-top: .6rem; padding-bottom: .6rem; }
+    .topnav { display: none; }
+    .page { padding: 0 1.1rem 3rem; }
+    .triplet, .caps, .catalog { grid-template-columns: 1fr; }
+    .trip-cell, .cap { border-right: none; }
   }
 </style>
 """
 
 # Offline-first: no external font CDN. The response CSP (style-src
-# 'self' / font-src 'self') blocked these on every render, and the
-# preconnect leaked egress to a third party. The marketing _STYLE block
-# uses the same local font fallbacks the app does.
+# 'self' / font-src 'self') blocked these on every render. The _STYLE
+# block uses the same local font fallbacks the app does.
 
 
 # ── Section builders ────────────────────────────────────────────────
@@ -459,14 +401,14 @@ def _topbar() -> str:
         '<div class="brand-name">PE <em>Desk</em></div>'
         '</a>'
         '<nav class="topnav">'
-        '<a href="#platform">Platform</a>'
-        '<a href="#modules">Modules</a>'
-        '<a href="#proof">Proof</a>'
-        '<a href="#sources">Data sources</a>'
+        '<a href="#workspace">Workspace</a>'
+        '<a href="#modules">What it computes</a>'
+        '<a href="#proof">Sample profile</a>'
+        '<a href="#sources">Data</a>'
         '</nav>'
         '<div class="topbar-right">'
-        f'<a href="{_LOGIN}" class="signin">SIGN IN</a>'
-        f'<a href="{_LOGIN}" class="cta-btn">Request Access</a>'
+        f'<a href="{_LOGIN}" class="signin">Sign in</a>'
+        f'<a href="{_LOGIN}" class="cta-btn">Request access</a>'
         '</div>'
         '</header>'
     )
@@ -489,35 +431,36 @@ def _hero() -> str:
         '<div class="eyebrow">'
         '<span>COMMERCIAL&nbsp;DILIGENCE</span>'
         '<span class="dot">&middot;</span>'
-        '<span>CLIENT-FACING&nbsp;INTELLIGENCE</span>'
+        '<span>HEALTHCARE</span>'
         '<span class="dot">&middot;</span>'
-        '<span class="slug">/v1.0.0</span>'
+        '<span class="slug">built on public data</span>'
         '</div>'
-        '<h1 class="title">Commercial diligence,<br/>'
-        '<em>personalized</em> to every deal.</h1>'
+        '<h1 class="title">The deal file that<br/>'
+        '<em>shows its work.</em></h1>'
         '<p class="lede">'
-        'Built for client-facing deal teams working across markets, '
-        'clients, and targets. Create living deal profiles that '
-        'combine market research, company intelligence, customer '
-        'signals, benchmarks, interviews, and source-backed findings '
-        '&mdash; all organized around the opportunity at hand.'
+        'PE Desk gives a healthcare deal team one workspace per target: '
+        'market structure, peer benchmarks, comparable transactions, '
+        'customer and competitor signals, interviews, and notes. '
+        '<b>Every figure links back to the filing, cost report, or call '
+        'it came from.</b> It runs on your own infrastructure, off public '
+        'CMS data, and nothing leaves the box.'
         '</p>'
         '<div class="hero-actions">'
-        f'<a href="{_LOGIN}" class="cta-btn">Open Deal Workspace</a>'
-        '<a href="#platform" class="ghost-btn">See a sample profile &darr;</a>'
+        f'<a href="{_LOGIN}" class="cta-btn">Open a workspace &rarr;</a>'
+        '<a href="#workspace" class="ghost-btn">See a sample profile &darr;</a>'
         '</div>'
         '</div>'
         '<div class="hero-meta">'
-        '<div class="row"><span class="k">WORKSPACE</span>'
-        '<span class="v">CCF-DILIGENCE</span></div>'
-        '<div class="row"><span class="k">KIND</span>'
-        '<span class="v">INTELLIGENCE LAYER</span></div>'
-        '<div class="row"><span class="k">STATUS</span>'
-        '<span class="v" style="color:var(--green)">LIVE</span></div>'
+        '<div class="row"><span class="k">BUILT ON</span>'
+        '<span class="v">CMS public data</span></div>'
+        '<div class="row"><span class="k">RUNS</span>'
+        '<span class="v">your infrastructure</span></div>'
+        '<div class="row"><span class="k">DATA OUT</span>'
+        '<span class="v" style="color:var(--green)">none</span></div>'
         '<div class="stamp">'
-        'Built for diligence teams who want every source, benchmark, '
-        'and client priority connected to the deal. Public sources '
-        'only &mdash; no PHI on this instance.'
+        'What follows is one worked sample profile. The figures are an '
+        'illustrative example, not a live data view; in the app, '
+        'each one links to the source behind it. No PHI on this instance.'
         '</div>'
         '</div>'
         '</section>'
@@ -526,21 +469,18 @@ def _hero() -> str:
 
 def _triplet() -> str:
     cells = [
-        ("/01", "One profile <em>per opportunity</em>",
-         "Each target gets a living intelligence layer: company facts, "
-         "market context, client priorities, competitors, benchmarks, "
-         "and open diligence questions. Enter once &mdash; every "
-         "downstream analytic opens with the deal pre-filled."),
-        ("/02", "Market, client, <em>and deal together</em>",
-         "Connect the target company to the broader commercial picture: "
-         "market structure, growth drivers, customer behavior, competitive "
-         "positioning, pricing, and comparable assets &mdash; all linked "
-         "to the deal."),
-        ("/03", "Source-backed <em>and reusable</em>",
-         "Every claim traces back to its underlying source &mdash; "
-         "filings, research, interviews, benchmarks, notes, or prior "
-         "engagement work. Verify, reuse, and turn research into "
-         "client-ready recommendations."),
+        ("/01", "Enter the deal <em>once</em>",
+         "Name the target, set the thesis, drop in the financials. Every "
+         "analytic downstream opens already filled in. Nobody re-keys the "
+         "same revenue number into five different tools."),
+        ("/02", "Read the market and the target <em>together</em>",
+         "The target sits inside its market: structure, growth, payer mix, "
+         "named competitors, and the comparable transactions that set the "
+         "multiple. Read across the page, not just down it."),
+        ("/03", "Every figure <em>shows its source</em>",
+         "Filings, CMS cost reports, interviews, benchmarks, prior-engagement "
+         "notes. Click any number to land on the document behind it, and "
+         "hand the file to the next analyst without losing the trail."),
     ]
     inner = "".join(
         f'<div class="trip-cell">'
@@ -554,7 +494,7 @@ def _triplet() -> str:
 
 
 def _sect(micro: str, headline: str, desc: str) -> str:
-    """Two-column section header — micro label + serif headline left,
+    """Two-column section header: micro label + serif headline left,
     descriptive paragraph right. ``headline`` may contain <em> spans."""
     return (
         '<div class="sect">'
@@ -565,18 +505,15 @@ def _sect(micro: str, headline: str, desc: str) -> str:
 
 
 def _funnel(stages: list, columns: int = 7) -> str:
-    """Pipeline funnel — one stage cell per tuple
-    ``(name, count, sub, bar_pct, accent)``. ``accent`` is "" for
-    teal (default) or a CSS color for the final hold stage."""
+    """Pipeline funnel, one stage cell per tuple
+    ``(name, count, sub, bar_pct, accent)``."""
     cells = ""
     grid = (
         f' style="grid-template-columns: repeat({columns}, 1fr)"'
         if columns != 7 else ""
     )
     for name, count, sub, pct, accent in stages:
-        stage_style = (
-            f' style="border-top-color:{accent}"' if accent else ""
-        )
+        stage_style = f' style="border-top-color:{accent}"' if accent else ""
         bar_style = (
             f'width:{pct}%; background:{accent}' if accent
             else f'width:{pct}%'
@@ -592,7 +529,7 @@ def _funnel(stages: list, columns: int = 7) -> str:
     return f'<div class="funnel"{grid}>{cells}</div>'
 
 
-def _platform_section() -> str:
+def _workspace_section() -> str:
     funnel = _funnel([
         ("Sourced", "14", "$3.2B", 100, ""),
         ("Screened", "9", "$2.1B", 64, ""),
@@ -628,22 +565,21 @@ def _platform_section() -> str:
         '<td class="r">&mdash;</td></tr>'
     )
     return (
-        '<section id="platform">'
+        '<section id="workspace">'
         + _sect(
             "THE WORKSPACE",
-            "Market, client, <em>and deal</em><br/>"
-            "intelligence in one place.",
-            "Create a workspace for each opportunity that combines target "
-            "profiles, market maps, commercial benchmarks, client context, "
-            "research notes, and deal history. Move from scattered "
-            "information to a clear view of what matters, what is changing, "
-            "and what the client needs to know.",
+            "From scattered files<br/>to <em>one deal view.</em>",
+            "Open a workspace per opportunity. The target profile, the "
+            "market map, the comparable set, the interview log, and the "
+            "diligence questions all live in one place and stay tied to the "
+            "deal, so the whole team is reading the same file as it moves "
+            "from sourced to close.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
         '<div class="data">'
-        '<div class="data-h"><span>SAMPLE DEAL FUNNEL</span>'
-        '<span class="src">deal.profile / funnel</span></div>'
+        '<div class="data-h"><span>Deal funnel</span>'
+        '<span class="sample-tag">Sample</span></div>'
         '<table><thead><tr><th>Stage</th><th class="r">N</th>'
         '<th class="r">EV</th><th class="r">&rarr; prior</th></tr></thead>'
         f'<tbody>{rows}</tbody></table>'
@@ -653,95 +589,89 @@ def _platform_section() -> str:
     )
 
 
-def _proof_section() -> str:
-    cells = [
-        ("<em>247</em>",
-         "Source-backed Claims",
-         "Across the sample profile &mdash; every claim cited"),
-        ("<em>42</em>",
-         "Market Briefs",
-         "Sector maps, demand drivers, growth signals"),
-        ("<em>18</em>",
-         "Client Priorities",
-         "Engagement-specific watch-list connected to the deal"),
-        ("$<em>4.2</em>B",
-         "Comparable TEV",
-         "Reference transactions matched to the target"),
-        ("<em>11.4</em>x",
-         "Median Peer Multiple",
-         "EV / EBITDA across the matched comparable set"),
-        ("<em>26</em>",
-         "Interviews Logged",
-         "Customer + channel + competitor calls, transcribed"),
-        ("<em>9</em>",
-         "Open Diligence Risks",
-         "Tracked from kickoff to readout with status updates"),
-        ("<em>4</em>/14",
-         "Targets &rarr; Long-list",
-         "29% screen-to-long-list conversion this engagement"),
+def _capability_section() -> str:
+    """What the workspace actually computes. These are the real analytic
+    surfaces the platform ships — not illustrative numbers."""
+    caps = [
+        ("Monte Carlo", "Forward EBITDA",
+         "EBITDA, MOIC and IRR distributions across thousands of trials, "
+         "with driver attribution."),
+        ("EBITDA bridge", "Value creation",
+         "Entry to exit, decomposed into the operating levers that get "
+         "you there."),
+        ("Peer X-ray", "Public data",
+         "Any hospital read against its HCRIS cost-report cohort on 15 "
+         "operating metrics."),
+        ("Comparables", "Market",
+         "Reference transactions and public comps matched to the target "
+         "by profile distance."),
+        ("Covenant stress", "Credit",
+         "Per-quarter breach probability and equity-cure sizing under "
+         "rate and EBITDA shocks."),
+        ("Regulatory calendar", "Timing",
+         "CMS, OIG and payer dates mapped to the specific thesis driver "
+         "each one moves."),
+        ("Management read", "Team",
+         "Forecast reliability, comp structure, tenure and prior-role "
+         "track record, scored."),
+        ("Source library", "Provenance",
+         "Every figure on every surface cites the public document it "
+         "was computed from."),
     ]
     inner = "".join(
-        f'<div class="proof-cell">'
-        f'<div class="proof-v">{v}</div>'
-        f'<div class="proof-l">{label}</div>'
-        f'<div class="proof-d">{desc}</div>'
+        f'<div class="cap">'
+        f'<div class="cap-tag">{tag}</div>'
+        f'<h3 class="cap-name">{name}</h3>'
+        f'<p class="cap-d">{desc}</p>'
         f'</div>'
-        for v, label, desc in cells
+        for name, tag, desc in caps
     )
     return (
-        '<section id="proof">'
+        '<section id="modules">'
         + _sect(
-            "DILIGENCE SIGNAL",
-            "Insight <em>that supports</em><br/>the diligence story.",
-            "Eight tracked signals across a sample engagement &mdash; "
-            "market evidence, customer interviews, comparable transactions, "
-            "and client priorities, all carrying source citations. Click "
-            "into the workspace to see the underlying notes and references.",
+            "WHAT IT COMPUTES",
+            "Analysis that<br/>ships <em>in the box.</em>",
+            "Every workspace carries the same analytic surfaces, run on "
+            "public data and your own inputs. No add-on modules, no "
+            "per-seat math, no waiting on a data vendor; the deal "
+            "team opens the file and the analysis is already there.",
         )
-        + f'<div class="proof">{inner}</div>'
+        + f'<div class="caps">{inner}</div>'
         + '</section>'
     )
 
 
-def _catalog_section() -> str:
+def _profile_section() -> str:
     columns = [
-        ("COMPANY PROFILE", "deal", [
+        ("COMPANY", "deal", [
             ("Revenue", "$418M", ""),
             ("Locations", "62 sites", ""),
             ("Ownership", "Sponsor-backed", ""),
-            ("Management tenure", "4.2y avg", ""),
+            ("Mgmt tenure", "4.2y avg", ""),
         ]),
-        ("MARKET LANDSCAPE", "market", [
+        ("MARKET", "market", [
             ("TAM", "$28B", ""),
             ("Growth (5y CAGR)", "+7.4%", "var(--green)"),
-            ("Top 3 share", "31%", "var(--amber)"),
+            ("Top-3 share", "31%", "var(--amber)"),
             ("Reg exposure", "Moderate", "var(--amber)"),
         ]),
-        ("COMPETITIVE SET", "market", [
+        ("COMPETITORS", "market", [
             ("Peer count", "14", ""),
             ("Peer median EV/EBITDA", "11.4x", ""),
             ("Pricing position", "Premium", "var(--green)"),
-            ("Differentiator", "Network density", ""),
+            ("Edge", "Network density", ""),
         ]),
-        ("CUSTOMER SIGNALS", "deal", [
+        ("CUSTOMERS", "deal", [
             ("Net retention", "108%", "var(--green)"),
             ("Top-10 concentration", "34%", "var(--amber)"),
             ("Referral velocity", "+12% QoQ", "var(--green)"),
-            ("Churn risk flags", "3", "var(--amber)"),
+            ("Churn flags", "3", "var(--amber)"),
         ]),
     ]
     cols_html = ""
     for title, level, rows in columns:
-        lvl_cls = (
-            "lvl fund" if level == "deal"
-            else "lvl market" if level == "market"
-            else "lvl"
-        )
-        lvl_txt = (
-            "DEAL" if level == "deal"
-            else "MARKET" if level == "market"
-            else "—"
-        )
+        lvl_cls = "lvl fund" if level == "deal" else "lvl market"
+        lvl_txt = "DEAL" if level == "deal" else "MARKET"
         row_html = "".join(
             f'<tr><td class="lbl">{label}</td>'
             f'<td class="r"'
@@ -757,57 +687,61 @@ def _catalog_section() -> str:
             '</div>'
         )
     return (
-        '<section id="modules">'
+        '<section id="proof">'
         + _sect(
-            "PROFILE CATALOG",
-            "Every <em>insight</em><br/>has context.",
-            "Organize research by target, market, customer segment, "
-            "competitor, workstream, and client priority. The catalog is "
-            "the spine of the deal workspace &mdash; click any row in "
-            "the live app to scroll to its underlying source.",
+            "A SAMPLE PROFILE",
+            "One target,<br/>four <em>angles.</em>",
+            "A profile pulls the company, its market, its competitors, and "
+            "its customers onto one screen so a reviewer can read the whole "
+            "commercial picture in a sitting. Figures below are an "
+            "illustrative example; in the app every row links to its source.",
         )
-        + f'<div class="catalog">{cols_html}</div>'
+        + '<div class="data-h" style="border:1px solid var(--rule);'
+          'border-bottom:none;background:var(--paper-pure)">'
+          '<span>Project Meridian &middot; regional services platform</span>'
+          '<span class="sample-tag">Illustrative sample</span></div>'
+        + f'<div class="catalog" style="margin-top:0">{cols_html}</div>'
         + '</section>'
     )
 
 
 def _sources_section() -> str:
     funnel = _funnel([
-        ("HCRIS", "2,847", "cost reports", 100, ""),
-        ("Market reports", "184", "sector briefs", 70, ""),
-        ("Interviews", "26", "calls logged", 35, ""),
+        ("CMS public", "2,847", "cost reports", 100, ""),
         ("Filings", "412", "10-K / S-1", 55, ""),
-        ("Internal notes", "98", "engagements", 80, ""),
+        ("Market research", "184", "sector briefs", 70, ""),
+        ("Interviews", "26", "calls logged", 35, ""),
+        ("Your notes", "98", "engagements", 80, ""),
     ], columns=5)
     rows = (
-        '<tr><td class="lbl">CMS public data (HCRIS, MA, CMS-Compare)</td>'
+        '<tr><td class="lbl">CMS public data (HCRIS, MA, CMS Compare)</td>'
         '<td class="r">2,847</td></tr>'
-        '<tr><td class="lbl">Sector + market research reports</td>'
-        '<td class="r">184</td></tr>'
-        '<tr><td class="lbl">Customer / channel / competitor interviews</td>'
-        '<td class="r">26</td></tr>'
         '<tr><td class="lbl">SEC filings (10-K, S-1, proxies)</td>'
         '<td class="r">412</td></tr>'
+        '<tr><td class="lbl">Sector &amp; market research</td>'
+        '<td class="r">184</td></tr>'
+        '<tr><td class="lbl">Customer / channel / competitor calls</td>'
+        '<td class="r">26</td></tr>'
         '<tr class="hot">'
         '<td class="lbl" style="font-weight:700; color:var(--ink)">'
-        'Internal engagement notes &amp; decks</td>'
+        'Your own engagement notes &amp; decks</td>'
         '<td class="r" style="font-weight:700">98</td></tr>'
     )
     return (
         '<section id="sources">'
         + _sect(
-            "SOURCE LIBRARY",
-            "Every claim, <em>cited inline</em>.",
-            "Filings, market research, interviews, benchmarks, and "
-            "engagement notes &mdash; every number traces back to its "
-            "underlying source. No PHI, no proprietary data leaving the "
-            "workspace, no SaaS lock-in. The intelligence layer is yours.",
+            "THE DATA",
+            "Public where it can be,<br/><em>yours</em> where it counts.",
+            "The workspace ships loaded with CMS public data and reads SEC "
+            "filings out of the box. Add your own research, interviews, and "
+            "engagement notes alongside them. Nothing you add is sent "
+            "anywhere; the file stays on your infrastructure.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
         '<div class="data">'
-        '<div class="data-h"><span>SOURCE INVENTORY</span>'
-        '<span class="src">manifest.json</span></div>'
+        '<div class="data-h"><span>Source inventory</span>'
+        '<span class="sample-tag">Sample</span></div>'
         f'<table><tbody>{rows}</tbody></table>'
         '</div>'
         '</div>'
@@ -819,16 +753,17 @@ def _cta_strip() -> str:
     return (
         '<section class="cta-strip">'
         '<div>'
-        '<div class="micro">READY TO OPEN A WORKSPACE</div>'
-        '<h3>Bring the <em>research</em>.<br/>'
-        'Keep the <em>client view</em>.</h3>'
-        '<p>Sign in to your team workspace. Public sources are preloaded '
-        '&mdash; connect CRM, market data, or research feeds when you\'re '
-        'ready.</p>'
+        '<div class="micro">GET ACCESS</div>'
+        '<h3>Bring your own <em>model</em>.<br/>'
+        'Keep your own <em>data</em>.</h3>'
+        '<p>PE Desk runs on your infrastructure with the model you choose '
+        'in local or hosted form. Public sources come preloaded; connect '
+        'your research and CRM when you are ready. No data leaves the box, '
+        'and there is no SaaS lock-in.</p>'
         '</div>'
         '<div class="cta-strip-actions">'
-        f'<a href="{_LOGIN}" class="cta-light">Sign In &rarr;</a>'
-        f'<a href="{_LOGIN}" class="cta-outline">Request Access</a>'
+        f'<a href="{_LOGIN}" class="cta-light">Open a workspace &rarr;</a>'
+        f'<a href="{_LOGIN}" class="cta-outline">Request access</a>'
         '</div>'
         '</section>'
     )
@@ -837,11 +772,11 @@ def _cta_strip() -> str:
 def _footer() -> str:
     return (
         '<footer>'
-        '<span>PE <em>Desk</em> v1.0.0 &mdash; Commercial diligence, '
-        'personalized to every deal</span>'
+        '<span>PE <em>Desk</em>: the diligence workspace for '
+        'healthcare deal teams</span>'
         '<span class="mono" style="font-size:.75rem">'
-        'CMS public data &middot; market reports &middot; filings '
-        '&middot; interviews &middot; engagement notes</span>'
+        'CMS public data &middot; SEC filings &middot; market research '
+        '&middot; interviews &middot; your notes</span>'
         '</footer>'
     )
 
@@ -864,14 +799,13 @@ def render_marketing_page(basic_auth: bool = False) -> str:
         '<meta charset="utf-8"/>'
         '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
         '<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>'
-        '<title>PE Desk &mdash; Commercial diligence, personalized '
-        'to every deal</title>'
-        '<meta name="description" content="PE Desk is the commercial '
-        'diligence intelligence layer for client-facing deal teams. '
-        'Build living target-company profiles with market research, '
-        'customer signals, benchmarks, competitive context, client '
-        'priorities, and source-backed notes — organized around the '
-        'opportunity at hand.">'
+        '<title>PE Desk: the diligence workspace for healthcare '
+        'deal teams</title>'
+        '<meta name="description" content="PE Desk gives a healthcare deal '
+        'team one workspace per target: market structure, peer benchmarks, '
+        'comparable transactions, customer and competitor signals, '
+        'interviews, and notes, with every figure cited to its source. '
+        'Built on public CMS data, run on your own infrastructure.">'
         + _STYLE
         + '</head><body>'
         + _topbar()
@@ -879,9 +813,9 @@ def render_marketing_page(basic_auth: bool = False) -> str:
         + '<div class="page">'
         + _hero()
         + _triplet()
-        + _platform_section()
-        + _proof_section()
-        + _catalog_section()
+        + _workspace_section()
+        + _capability_section()
+        + _profile_section()
         + _sources_section()
         + _cta_strip()
         + '</div>'

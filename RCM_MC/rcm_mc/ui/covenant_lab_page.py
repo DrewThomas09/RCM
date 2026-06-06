@@ -216,7 +216,7 @@ _BLENDED_RATE_PEER_MEDIAN = 0.085
 
 def _scoped_styles() -> str:
     css = """
-.cl-wrap{{font-family:"Helvetica Neue",Arial,sans-serif;}}
+.cl-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
 .cl-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .cl-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
@@ -490,7 +490,7 @@ def _verdict_card(res: CovenantStressResult) -> str:
     elif max_prob >= _BREACH_PROB_WATCH:
         breach_plain = (
             "Watch-list territory (25-50% breach). Negotiate cushion "
-            "or step-down deferral at term sheet — don't sign as-is."
+            "or step-down deferral at term sheet: don't sign as-is."
         )
         breach_tone = "warn"
     elif max_prob >= _BREACH_PROB_TIGHT:
@@ -589,7 +589,7 @@ def _verdict_card(res: CovenantStressResult) -> str:
             help={
                 "definition": (
                     "First quarter where breach probability for any "
-                    "covenant exceeds 50% — the moment the credit "
+                    "covenant exceeds 50%: the moment the credit "
                     "agreement starts forcing decisions (waiver, "
                     "amendment, or default). Earlier is worse."
                 ),
@@ -665,20 +665,20 @@ def _covenant_detail_table(res: CovenantStressResult) -> str:
         if pct >= _BREACH_PROB_FAIL:
             pct_color = P["negative"]
             interp = (
-                "FAIL — renegotiate covenant or walk"
+                "FAIL: renegotiate covenant or walk"
             )
             interp_color = P["negative"]
         elif pct >= _BREACH_PROB_WATCH:
             pct_color = P["warning"]
-            interp = "WATCH — cushion needed at term sheet"
+            interp = "WATCH: cushion needed at term sheet"
             interp_color = P["warning"]
         elif pct >= _BREACH_PROB_TIGHT:
             pct_color = P["warning"]
-            interp = "TIGHT — bankable with cushion"
+            interp = "TIGHT: bankable with cushion"
             interp_color = P["warning"]
         else:
             pct_color = P["positive"]
-            interp = "PASS — clears bank norms"
+            interp = "PASS: clears bank norms"
             interp_color = P["positive"]
 
         # Color 50%-quarter amber/red based on how soon it hits
@@ -734,7 +734,7 @@ def _covenant_detail_table(res: CovenantStressResult) -> str:
         name="covenant_stress_detail",
         caption=(
             "Green/amber/red cells reflect PE-bank underwriting "
-            "thresholds — click any column to sort, CSV exports "
+            "thresholds: click any column to sort, CSV exports "
             "auto-wired."
         ),
     )
@@ -794,7 +794,7 @@ def _equity_cure_panel(res: CovenantStressResult) -> str:
     if not rows:
         return ck_panel(
             '<p class="ck-section-body">'
-            'No covenant breaches across the simulated paths — '
+            'No covenant breaches across the simulated paths: '
             'equity cure not required in any scenario.</p>',
             title="Equity cure sizing",
         )
@@ -810,7 +810,7 @@ def _equity_cure_panel(res: CovenantStressResult) -> str:
         'that drops leverage to threshold; for coverage covenants '
         'it\'s the synthetic EBITDA add allowed by the credit '
         'agreement ("yank-the-bank" provision, capped at ~25% of '
-        'LTM EBITDA). P75 shows the right-tail scenario — the '
+        'LTM EBITDA). P75 shows the right-tail scenario: the '
         'partner should underwrite equity capacity for at least '
         'P75.</p>',
         title="Equity cure sizing · partner sponsor capital required",
@@ -873,12 +873,12 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             "PER-QUARTER BREACH PROBABILITY"
         ),
         lede_italic_phrase=(
-            "When the covenant cliff hits — by quarter."
+            "When the covenant cliff hits, by quarter."
         ),
         lede_body=(
             "When does your thesis hit a covenant cliff? Overlays your capital "
             "stack and covenant package on the Deal MC EBITDA cone to produce "
-            "per-quarter breach-probability curves for each covenant — naming "
+            "per-quarter breach-probability curves for each covenant: naming "
             "the first breach quarter and sizing the equity cure (optionally "
             "with the Regulatory Calendar overlay)."
         ),
@@ -892,7 +892,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Covenant Stress Lab",
+        body, "RCM Diligence · Covenant Stress Lab",
         subtitle="Capital stack × covenant × calendar",
     )
 
@@ -953,7 +953,7 @@ def render_covenant_lab_page(
                 f"non-zero total debt. You supplied EBITDA "
                 f"${ebitda_y0/1e6:,.1f}M and debt ${total_debt/1e6:,.0f}M. "
                 "Targets with negative operating margins cannot "
-                "service covenant-bearing debt — partners should "
+                "service covenant-bearing debt: partners should "
                 "underwrite either a restructured target or a "
                 "higher equity check before running this module."
             ),
@@ -969,7 +969,7 @@ def render_covenant_lab_page(
             + '<p class="ck-section-body">'
             + '<a href="/diligence/covenant-stress" class="ck-link">'
             + '← Back to form</a></p></div>',
-            "Covenant Stress — invalid inputs",
+            "Covenant Stress · invalid inputs",
         )
     revolver = fnum("revolver_usd", 0.0) or 0.0
     revolver_draw = fnum("revolver_draw_pct", 0.0) or 0.0
@@ -1097,7 +1097,7 @@ def render_covenant_lab_page(
     )
     main_intro = _cv_head(
         eyebrow="Covenant Stress Lab",
-        title=f"Capital-stack covenant cliff — {html.escape(deal_name)}",
+        title=f"Capital-stack covenant cliff · {html.escape(deal_name)}",
         meta=(
             f"{len(stack.tranches)} TRANCHES · "
             f"${stack.total_funded_usd/1e6:.0f}M FUNDED · "
@@ -1166,10 +1166,10 @@ def render_covenant_lab_page(
     breach_inner = (
         _breach_probability_chart(res.per_covenant_curves, quarters)
         + '<p class="ck-eyebrow">'
-        '<span class="cad-pos">● &lt;10% breach — bank comfortable</span> &nbsp; '
-        '<span class="cad-warn">● 10-25% — tight but bankable</span> &nbsp; '
-        '<span class="cad-warn">● 25-50% — negotiate cushion</span> &nbsp; '
-        '<span class="cad-neg">● ≥50% — re-price or walk</span>'
+        '<span class="cad-pos">● &lt;10% breach: bank comfortable</span> &nbsp; '
+        '<span class="cad-warn">● 10-25%: tight but bankable</span> &nbsp; '
+        '<span class="cad-warn">● 25-50%: negotiate cushion</span> &nbsp; '
+        '<span class="cad-neg">● ≥50%: re-price or walk</span>'
         '</p>'
         + interpret_callout("Plain-English read:", chart_plain)
         + '<p class="ck-section-body">'
@@ -1179,12 +1179,12 @@ def render_covenant_lab_page(
         'X-axis is quarters from close. Dashed lines mark 25%, '
         '50%, 75% probability thresholds. Hover any dot for the '
         'exact metric value. A line rising sharply through 50% '
-        'is the covenant to negotiate at the LOI — reset, cushion, '
+        'is the covenant to negotiate at the LOI: reset, cushion, '
         'or step-down deferral.</p>'
     )
     breach_panel = ck_panel(
         breach_inner,
-        title="Per-quarter breach probability — all covenants",
+        title="Per-quarter breach probability · all covenants",
     )
 
     # Plain-English read of the debt-service cliff: identify the
@@ -1221,17 +1221,17 @@ def render_covenant_lab_page(
         'Each bar is one quarter of debt service. Red is '
         'interest on outstanding balance; amber is scheduled '
         'amortization. TLB/unitranche bullets concentrate '
-        'amortization in the final year — that spike is where '
+        'amortization in the final year: that spike is where '
         'refinance risk concentrates. Flat interest early = '
         'floating-rate base stable; steepening = rate-path stress.</p>'
     )
     ds_panel = ck_panel(
-        ds_inner, title="Debt service cliff — quarterly stack",
+        ds_inner, title="Debt service cliff · quarterly stack",
     )
 
     cov_detail = ck_panel(
         _covenant_detail_table(res),
-        title="Covenant detail — peak breach + first-at",
+        title="Covenant detail · peak breach + first-at",
     )
 
     stack_detail = ck_panel(
@@ -1249,7 +1249,7 @@ def render_covenant_lab_page(
             f'{len(overlay)}-year horizon. Year-by-year overlay: '
             + ", ".join(f"Y{i+1} ${x/1e6:+.2f}M" for i, x in enumerate(overlay))
             + '. These drags subtract from EBITDA before '
-            'covenant testing — partners see the compounded '
+            'covenant testing: partners see the compounded '
             'regulatory × covenant stress in one view.</p>'
         )
         reg_note = ck_panel(
@@ -1276,7 +1276,7 @@ def render_covenant_lab_page(
             purpose="Stress-test covenant headroom (DSCR / leverage) against EBITDA and rate shocks before underwriting the debt package.",
             universe="user-deals",
             confidence="derived",
-            source="Your entered deal capital structure + covenant terms × modeled shock scenarios — a calculator on your inputs, not the lender's actual compliance certificate.",
+            source="Your entered deal capital structure + covenant terms × modeled shock scenarios: a calculator on your inputs, not the lender's actual compliance certificate.",
             next_action="Confirm the real covenant terms with management / lender",
         )
         + hero
@@ -1289,7 +1289,7 @@ def render_covenant_lab_page(
         + cross_link
         + export_json_panel(
             '<div class="cl-section-label" style="margin-top:22px;">'
-            'JSON export — full stress report</div>',
+            'JSON export · full stress report</div>',
             payload=res.to_dict(),
             name=f"covenant_stress_{deal_name.replace(' ', '_')}",
         )
@@ -1297,13 +1297,13 @@ def render_covenant_lab_page(
         + ck_next_section(
             "Stage the bear case",
             "/diligence/bear-case",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="bear",
         )
         + '</div>'
     )
     return chartis_shell(
-        body, "RCM Diligence — Covenant Stress",
+        body, "RCM Diligence · Covenant Stress",
         subtitle=(
             f"{deal_name} · max breach "
             f"{res.max_breach_probability*100:.0f}%"

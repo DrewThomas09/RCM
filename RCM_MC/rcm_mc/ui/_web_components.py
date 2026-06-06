@@ -25,6 +25,7 @@ no framework deps.
 from __future__ import annotations
 
 import html as _html
+import re as _re
 from typing import Iterable, List, Optional, Tuple
 
 
@@ -35,8 +36,8 @@ def web_styles() -> str:
     return """<style>
 /* ── Web UI baseline: typography, spacing, responsive ─────────── */
 .wc-container { max-width: 1100px; margin: 0 auto; padding: 24px 20px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                 Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-family: var(--sc-sans, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif);
     color: #1a2332; line-height: 1.5; font-size: 14px; }
 .wc-container h1 { font-size: 24px; margin: 0; font-weight: 600;
     letter-spacing: -0.01em; color: #1a2332; }
@@ -85,6 +86,9 @@ def web_styles() -> str:
     border-bottom: 1px solid var(--sc-rule, #d6cfc0);
     vertical-align: top; color: var(--sc-text, #1a2332); }
 .wc-table tbody tr:hover { background: var(--sc-parchment, #f5f1ea); }
+.wc-table thead th.num { text-align: right; }
+.wc-table tbody td.num { text-align: right;
+    font-family: var(--sc-mono, 'JetBrains Mono', monospace); }
 .wc-table tbody tr:last-child td { border-bottom: none; }
 
 /* Filter input above sortable tables */
@@ -118,14 +122,14 @@ def web_styles() -> str:
 .wc-cmdk-input::placeholder { color: #9b9382; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
     background: #ece5d6; color: #7a8699; border-radius: 3px;
-    font-family: monospace; border: 1px solid #d6cfc0; }
+    font-family:var(--sc-mono,monospace); border: 1px solid #d6cfc0; }
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
     padding: 8px 16px; color: #1a2332; text-decoration: none;
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
     background: #f7f3ea; border-left-color: var(--sc-navy); }
-.wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
+.wc-cmdk-id { font-family:var(--sc-mono,monospace); color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1a2332; }
@@ -141,7 +145,7 @@ def web_styles() -> str:
 .wc-cmdk-footer { display: flex; gap: 16px; padding: 8px 16px;
     border-top: 1px solid #ece5d6; font-size: 11px; color: #7a8699;
     background: #f7f3ea; }
-.wc-cmdk-footer kbd { font-family: monospace; padding: 1px 5px;
+.wc-cmdk-footer kbd { font-family:var(--sc-mono,monospace); padding: 1px 5px;
     background: #fff; color: #465366; border: 1px solid #d6cfc0;
     border-radius: 3px; font-size: 10px; margin: 0 2px; }
 
@@ -256,16 +260,36 @@ def sortable_table(
         filter_placeholder: Placeholder text for the filter input.
     """
     hide_set = set(hide_columns_sm or [])
-    th_cells = []
-    for i, h in enumerate(headers):
-        cls = "wc-hide-sm" if i in hide_set else ""
-        th_cells.append(f'<th class="{cls}" data-col="{i}">{_html.escape(h)}</th>')
+    # Detect numeric columns (cells are pre-formatted strings, maybe HTML) so
+    # their digits right-align via the .wc-table .num rule above.
+    ncol = len(headers)
+    _numre = _re.compile(r'^[$+\-(]?[\d,]+(\.\d+)?[%xX)]?$')
+
+    def _is_num(v: object) -> bool:
+        t = _re.sub(r'<[^>]+>', '', str(v)).strip()
+        return bool(t) and len(t) <= 16 and bool(_numre.match(t))
+
+    numeric_col = [False] * ncol
+    for ci in range(ncol):
+        vals = [row[ci] for row in rows if ci < len(row) and str(row[ci]).strip()]
+        if len(vals) >= 3:
+            numeric_col[ci] = sum(1 for v in vals if _is_num(v)) >= len(vals) * 0.8
+
+    def _cls(i: int) -> str:
+        parts = []
+        if i in hide_set:
+            parts.append("wc-hide-sm")
+        if i < ncol and numeric_col[i]:
+            parts.append("num")
+        return " ".join(parts)
+
+    th_cells = [
+        f'<th class="{_cls(i)}" data-col="{i}">{_html.escape(h)}</th>'
+        for i, h in enumerate(headers)
+    ]
     td_rows = []
     for row in rows:
-        tds = []
-        for i, cell in enumerate(row):
-            cls = "wc-hide-sm" if i in hide_set else ""
-            tds.append(f'<td class="{cls}">{cell}</td>')
+        tds = [f'<td class="{_cls(i)}">{cell}</td>' for i, cell in enumerate(row)]
         td_rows.append(f'<tr>{"".join(tds)}</tr>')
     table_id_attr = f' id="{_html.escape(id)}"' if id else ""
     table_html = (
@@ -403,7 +427,7 @@ def universal_palette_bundle() -> str:
 .wc-cmdk-input::placeholder { color: #9b9382; }
 .wc-cmdk-hint { font-size: 10px; padding: 2px 6px;
     background: #ece5d6; color: #7a8699; border-radius: 3px;
-    font-family: monospace; border: 1px solid #d6cfc0; }
+    font-family:var(--sc-mono,monospace); border: 1px solid #d6cfc0; }
 .wc-cmdk-results { max-height: 50vh; overflow-y: auto; padding: 4px 0;
     background: #fff; }
 .wc-cmdk-row { display: flex; align-items: center; gap: 12px;
@@ -411,7 +435,7 @@ def universal_palette_bundle() -> str:
     font-size: 13px; border-left: 2px solid transparent; }
 .wc-cmdk-row:hover, .wc-cmdk-row.wc-cmdk-active {
     background: #f7f3ea; border-left-color: var(--sc-navy); }
-.wc-cmdk-id { font-family: monospace; color: var(--sc-navy);
+.wc-cmdk-id { font-family:var(--sc-mono,monospace); color: var(--sc-navy);
     font-size: 11px; min-width: 90px; flex-shrink: 0;
     text-transform: uppercase; letter-spacing: 0.03em; }
 .wc-cmdk-name { flex: 1; color: #1a2332; }
@@ -427,7 +451,7 @@ def universal_palette_bundle() -> str:
 .wc-cmdk-footer { display: flex; gap: 16px; padding: 8px 16px;
     border-top: 1px solid #ece5d6; font-size: 11px; color: #7a8699;
     background: #f7f3ea; }
-.wc-cmdk-footer kbd { font-family: monospace; padding: 1px 5px;
+.wc-cmdk-footer kbd { font-family:var(--sc-mono,monospace); padding: 1px 5px;
     background: #fff; color: #465366; border: 1px solid #d6cfc0;
     border-radius: 3px; font-size: 10px; margin: 0 2px; }
 </style>"""

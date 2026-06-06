@@ -113,7 +113,7 @@ def render_pressure_page(
     next_up = ck_next_section(
         "Pressure-test in the Risk Workbench",
         "/diligence/risk-workbench?demo=steward",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="Workbench",
     )
     # 2026-05-28 batch 27 · Phase 3 · universal strict 5-block head.

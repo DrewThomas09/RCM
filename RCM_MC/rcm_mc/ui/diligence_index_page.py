@@ -332,7 +332,7 @@ def _render_diligence_index_legacy() -> str:
     next_up = ck_next_section(
         "Open the portfolio-wide question ledger",
         "/diligence/questions",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="question",
     )
     body = (

@@ -1392,17 +1392,17 @@ def _rge_headline_strip(
     banner = ""
     insample_sub = '<div class="sub">IN-SAMPLE</div>'
     if inconclusive:
-        insample_sub = '<div class="sub bad">OVERFIT — SEE OOS</div>'
+        insample_sub = '<div class="sub bad">OVERFIT: SEE OOS</div>'
         banner = (
             '<div class="rge-inconclusive" style="border:1px solid var(--sc-negative,#b5321e);'
             'background:#fbeae7;border-left:4px solid var(--sc-negative,#b5321e);'
             'border-radius:4px;padding:10px 14px;margin:0 0 12px;font-size:12.5px;'
             'color:#1a2332;line-height:1.5;">'
-            '<b style="color:#b5321e;">⚠ Inconclusive — this model does not beat the mean.</b> '
+            '<b style="color:#b5321e;">⚠ Inconclusive: this model does not beat the mean.</b> '
             f'Out-of-sample R² is {cv_res.mean_test_r2:.0%}: the {cv_res.k}-fold cross-'
             'validated fit predicts <b>worse than simply guessing the average</b> '
             '(R²&lt;0 ⇒ residual error exceeds the variance). The in-sample R² below is '
-            'overfitting — <b>do not use these predictions</b>. This usually means too '
+            'overfitting: <b>do not use these predictions</b>. This usually means too '
             'few rows for the feature count (a small filtered universe) or features that '
             "don't generalise. Widen the universe, drop features, or read the cohort fits "
             'below instead.</div>'
@@ -2034,10 +2034,10 @@ def _rge_cohort_grids(result: Dict[str, Any]) -> str:
         + _grid(bed, "By bed size",
                 "Bed-count column unavailable in this fit.", cols=5)
         + _grid(seg, "By segment",
-                "Segment taxonomy not on this frame — "
+                "Segment taxonomy not on this frame: "
                 "use the HCRIS universe for segment cohorts.", cols=5)
         + _grid(reg, "By census region",
-                "State column unavailable — region cohort cannot run.",
+                "State column unavailable: region cohort cannot run.",
                 cols=4)
     )
 
@@ -2147,12 +2147,12 @@ def _rge_learning_curve(result: Dict[str, Any]) -> str:
     tail = [pt["test_r2"] for pt in curve[-3:]]
     if len(tail) >= 3 and (max(tail) - min(tail)) < 0.01:
         plateau_text = (
-            "Both curves plateau by 80% of the universe — "
+            "Both curves plateau by 80% of the universe: "
             "more rows won't meaningfully raise out-of-sample R²."
         )
     else:
         plateau_text = (
-            "Test R² is still moving in the last fraction — "
+            "Test R² is still moving in the last fraction: "
             "more data would likely still help."
         )
 
@@ -2489,7 +2489,7 @@ def _rge_formula_explainer(result: Dict[str, Any]) -> str:
         log_note = (
             '<p class="ck-section-body" style="font-size:12px;">'
             f'The model is fit on <strong>log({_html.escape(target_label)})</strong>, '
-            'so driver effects <strong>multiply</strong> rather than add — a '
+            'so driver effects <strong>multiply</strong> rather than add: a '
             'coefficient of +0.10 means about <strong>+10.5%</strong>, not '
             '+0.10 units. The baseline below is the geometric-mean hospital '
             '(every input at its average).</p>'
@@ -2552,7 +2552,7 @@ def _rge_interpretation(
 
     if r2 >= 0.5 and sig_count == len(coefs) and coefs:
         use_for.append(
-            f"Ranking targets across the universe — R² {r2*100:.0f}% "
+            f"Ranking targets across the universe: R² {r2*100:.0f}% "
             f"with every one of the {len(coefs)} drivers significant."
         )
     elif r2 >= 0.3:
@@ -2563,7 +2563,7 @@ def _rge_interpretation(
         )
     if cv_res is not None and cv_res.overfit_gap <= 0.05:
         use_for.append(
-            f"Out-of-sample reads — the OOS R² ({cv_res.mean_test_r2*100:.0f}%) "
+            f"Out-of-sample reads: the OOS R² ({cv_res.mean_test_r2*100:.0f}%) "
             f"is within {cv_res.overfit_gap*100:.1f}pp of in-sample, "
             "so the headline survives held-out folds."
         )
@@ -2580,32 +2580,32 @@ def _rge_interpretation(
             pct = (_math.exp(p80) - 1.0) * 100
             if pct > 25:
                 skip_for.append(
-                    f"Point valuation of a single hospital — the "
+                    f"Point valuation of a single hospital: the "
                     f"80% PI half-width is ±{pct:.0f}%, so a "
                     "stand-alone forecast carries too much spread."
                 )
         else:
             if p80 > result.get("y_std", 0.0) * 0.5:
                 skip_for.append(
-                    f"Point valuation of a single hospital — the "
+                    f"Point valuation of a single hospital: the "
                     f"80% PI half-width is ±{_fmt_num(p80)}, too "
                     "wide for a stand-alone forecast."
                 )
     if share_2s > 0.08:
         skip_for.append(
-            "Reading heavy-tailed residuals as Gaussian — "
+            "Reading heavy-tailed residuals as Gaussian: "
             f"{share_2s*100:.0f}% of rows exceed ±2σ. Quote "
             "conformal PIs (above), not parametric ones."
         )
     if bp_p < 0.05:
         skip_for.append(
-            "Reporting classical SEs to LPs — the Breusch–Pagan "
+            "Reporting classical SEs to LPs: the Breusch–Pagan "
             f"test rejects homoskedasticity (p = {bp_p:.3f}). "
             "Use the HC1-robust SEs already on every coefficient."
         )
     if max_vif >= 5:
         skip_for.append(
-            f"Reading each coefficient in isolation — max VIF "
+            f"Reading each coefficient in isolation: max VIF "
             f"{max_vif:.1f} means several drivers move together. "
             "Toggle the optimized (VIF-pruned) view first."
         )
@@ -2619,7 +2619,7 @@ def _rge_interpretation(
         for r in (result.get(grid_key) or []):
             if (r.get("delta_vs_headline") or 0.0) <= -0.15:
                 skip_for.append(
-                    f"Cross-{grid_name} extrapolation — the "
+                    f"Cross-{grid_name}extrapolation: the "
                     f"{_html.escape(str(r['bucket']))} cohort fits "
                     f"at R² {r['r2']*100:.0f}% "
                     f"({(r['delta_vs_headline'])*100:+.0f}pp vs "
@@ -2631,7 +2631,7 @@ def _rge_interpretation(
     # this block to be IC-memo quotable, never half-empty.
     if not use_for:
         use_for.append(
-            "Hypothesis generation only — R² is too low to anchor "
+            "Hypothesis generation only: R² is too low to anchor "
             "a screening decision."
         )
     if not skip_for:
@@ -2817,6 +2817,11 @@ letter-spacing:0.03em;color:var(--sc-navy,#0b2341);margin:18px 0 8px;}
 .rg-bar-fill{border-radius:4px;height:10px;}
 .rg-bar-fill-sm{height:8px;border-radius:4px;}
 .rg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+/* Stack the two-up panels below the tablet breakpoint. The panels hold
+   wide coefficient cad-tables whose min-content kept the 1fr columns from
+   shrinking, forcing the page ~497px wide at 768. minmax(0,1fr) lets the
+   single column shrink so the table scrolls inside it (shell ≤960 net). */
+@media (max-width:960px){.rg-grid{grid-template-columns:minmax(0,1fr);}}
 </style>
 """
 
@@ -2996,7 +3001,7 @@ def render_regression_page(
         '<span class="rg-diagnostic-tag">DIAGNOSTIC</span>'
         '<span class="rg-diagnostic-text">'
         'By default every R² / RMSE / VIF / coefficient on this page is an '
-        '<em>in-sample explanatory fit</em> — it describes how well '
+        '<em>in-sample explanatory fit</em>: it describes how well '
         'the model fits the data it was trained on, not how it will '
         'predict an unseen hospital. For an out-of-sample read, turn on '
         '<em>Cross-validate (5-fold OOS R²)</em> above. Use these numbers for '
@@ -3041,7 +3046,7 @@ def render_regression_page(
         )
         return chartis_shell(
             body, "Regression Analysis",
-            subtitle="No data loaded — add records to run a regression")
+            subtitle="No data loaded · add records to run a regression")
 
     # Phase-2: apply universe filter. Falls back to "all" if the
     # frame doesn't carry a segment_label (e.g. portfolio source).
@@ -3142,7 +3147,7 @@ def render_regression_page(
         _clean_clause = (
             f" We automatically dropped {_n_drop} collinear "
             f"feature{'s' if _n_drop != 1 else ''} so each coefficient is "
-            f"trustworthy — see exactly why just below.")
+            f"trustworthy: see exactly why just below.")
     elif _orig_dropped:
         _clean_clause = (
             f" You're viewing the full model; {len(result.get('optimized_features') or [])} "
@@ -3170,7 +3175,7 @@ def render_regression_page(
             "R²", f"{result['r2']:.1%}",
             help={
                 "definition": (
-                    "Coefficient of determination — the share of "
+                    "Coefficient of determination: the share of "
                     "variance in the target the regression explains. "
                     "100% is perfect fit; 0% is no better than the "
                     "mean. >60% is publishable in healthcare RCM; "
@@ -3186,7 +3191,7 @@ def render_regression_page(
                     "R² penalised for the number of features in the "
                     "model. Always lower than R²; rises only when a "
                     "new feature contributes more than chance. Use "
-                    "this — not raw R² — when comparing model "
+                    "this (not raw R²) when comparing model "
                     "specifications side-by-side."
                 ),
             },
@@ -3196,12 +3201,12 @@ def render_regression_page(
             sub="lower = better",
             help={
                 "definition": (
-                    "Bayesian Information Criterion — balances fit against "
+                    "Bayesian Information Criterion: balances fit against "
                     "model size, penalising each extra parameter by ln(n). "
                     "Only meaningful as a COMPARISON: refit with more/fewer "
                     "features and the lower BIC is the better-justified model. "
                     "It penalises complexity harder than AIC, so it favours the "
-                    "parsimonious (VIF-pruned) specification — which is why a "
+                    "parsimonious (VIF-pruned) specification: which is why a "
                     "smaller model can beat a higher-R² one here."
                 ),
             },
@@ -3220,7 +3225,7 @@ def render_regression_page(
                     "together vs the null model (intercept only). "
                     "Higher F means the regression as a whole is "
                     "statistically meaningful. The p-value is the "
-                    "verdict — but note a tiny p next to a high F with "
+                    "verdict, but note a tiny p next to a high F with "
                     "few individually-significant coefficients is the "
                     "classic multicollinearity signature (see the "
                     "verdict banner)."
@@ -3255,7 +3260,7 @@ def render_regression_page(
             "RMSE (avg error)", _fmt_num(result["rmse"]),
             help={
                 "definition": (
-                    "Root-mean-square error — the standard deviation "
+                    "Root-mean-square error: the standard deviation "
                     "of residuals in target units. Read as 'the "
                     "average miss the regression makes when "
                     "predicting one hospital.' RMSE around or below "
@@ -3270,7 +3275,7 @@ def render_regression_page(
              else f"{result.get('condition_number', 0):,.0f}"),
             help={
                 "definition": (
-                    "Belsley condition number of the design matrix — the "
+                    "Belsley condition number of the design matrix: the "
                     "single-number multicollinearity diagnostic. <30 is "
                     "fine; 30–100 moderate; >100 means predictors are so "
                     "inter-correlated that individual coefficients are "
@@ -3327,7 +3332,7 @@ def render_regression_page(
                 # Structural duplicate: individually it may correlate with the
                 # target, but it carries no information beyond its family rep.
                 uni = d.get("univariate_r")
-                uni_txt = (f" — its own correlation with the target "
+                uni_txt = (f", its own correlation with the target "
                            f"(r&nbsp;{uni:.2f}) is already captured"
                            if uni is not None else "")
                 tag = "redundant transform"
@@ -3351,7 +3356,7 @@ def render_regression_page(
         _opt_html = (
             f'<div style="margin-top:8px;font-size:12.5px;line-height:1.55;'
             f'color:var(--sc-text,#1a2332);">&#10003; <b>Built you a clean '
-            f'model</b> — dropped {_n} collinear '
+            f'model</b>: dropped {_n} collinear '
             f'feature{"s" if _n != 1 else ""} so every coefficient below is '
             f'trustworthy:'
             f'{_why_dropped(_orig_dropped)}'
@@ -3373,7 +3378,7 @@ def render_regression_page(
         _opt_html = (
             '<div style="margin-top:8px;font-size:12.5px;color:'
             'var(--sc-text-dim,#465366);">&#10003; Every predictor is below the '
-            'VIF&nbsp;10 threshold — no collinear features to drop.</div>')
+            'VIF&nbsp;10 threshold: no collinear features to drop.</div>')
     # 2026-05-28 batch 40 · Tier-4 trope removal — cap radius at 2px.
     # Semantic severity border stays — it carries multicollinearity verdict.
     multicollinearity_banner = (
@@ -3403,7 +3408,7 @@ def render_regression_page(
         + ck_kpi_block("Target Mean", _fmt_num(result["y_mean"]))
         + ck_kpi_block(
             "Target Range",
-            f'{_fmt_num(result["y_min"])} — {_fmt_num(result["y_max"])}',
+            f'{_fmt_num(result["y_min"])}–{_fmt_num(result["y_max"])}',
         )
         + '</div>'
         f'<p class="ck-section-body">{_html.escape(result["intercept_meaning"])}</p>',
@@ -3447,7 +3452,7 @@ def render_regression_page(
     _bp = result.get("breusch_pagan") or {}
     if _bp.get("heteroskedastic") is True:
         _bp_verdict = (f'<strong>Heteroskedasticity</strong> detected '
-                       f'(BP p={_bp.get("p_value", 1):.3f}) — read the robust SEs.')
+                       f'(BP p={_bp.get("p_value", 1):.3f}): read the robust SEs.')
     elif _bp.get("heteroskedastic") is False:
         _bp_verdict = f'No heteroskedasticity (BP p={_bp.get("p_value", 1):.2f}).'
     else:
@@ -3455,7 +3460,7 @@ def render_regression_page(
     _rs = result.get("ramsey_reset") or {}
     if _rs.get("misspecified") is True:
         _reset_verdict = (' · <strong>Linear form misspecified</strong> '
-                          f'(RESET p={_rs.get("p_value", 1):.3f}) — try the log toggle.')
+                          f'(RESET p={_rs.get("p_value", 1):.3f}): try the log toggle.')
     elif _rs.get("misspecified") is False:
         _reset_verdict = ' · Linear form adequate (RESET).'
     else:
@@ -3463,7 +3468,7 @@ def render_regression_page(
     _jb = result.get("jarque_bera") or {}
     if _jb.get("normal") is False:
         _jb_verdict = (' · <strong>Non-normal residuals</strong> '
-                       f'(JB p={_jb.get("p_value", 1):.3f}) — trust effect direction '
+                       f'(JB p={_jb.get("p_value", 1):.3f}): trust effect direction '
                        'over a borderline p.')
     elif _jb.get("normal") is True:
         _jb_verdict = ' · Residuals ≈ normal (JB).'
@@ -3481,7 +3486,7 @@ def render_regression_page(
         '<p class="ck-section-body" style="margin-top:6px;font-size:12px;">'
         'SEs are HC1 heteroskedasticity-robust (White sandwich). P-values use '
         f'the exact Student-t (df={int(result.get("resid_df", 0))}); 95% CIs use '
-        f't<sub>0.975</sub>={result.get("t_critical", 1.96):.2f} — honest at small '
+        f't<sub>0.975</sub>={result.get("t_critical", 1.96):.2f}: honest at small '
         'n, not the 1.96 normal value.</p></details>'
         f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
@@ -3732,7 +3737,7 @@ def render_regression_page(
         'Hospitals with the largest standardized residuals. &gt;2σ = model underpredicts/overpredicts. '
         + (
             'The <strong>Segment</strong> column shows the hospital\'s '
-            'economic regime — large positive residuals concentrated in '
+            'economic regime: large positive residuals concentrated in '
             'one segment (e.g. Academic) usually mean that segment '
             'follows a different revenue equation than the baseline, '
             'not that the rows are errors. Try toggling '
@@ -3743,15 +3748,15 @@ def render_regression_page(
         )
         + (
             ' Rows are ranked by <strong>Cook\'s distance</strong> '
-            '(combines leverage and residual) — Cook\'s D &gt; 1 '
+            '(combines leverage and residual): Cook\'s D &gt; 1 '
             '= definitely influential. The <strong>Class</strong> '
             'column labels each row: <em>diff. regime</em> = '
             'academic/specialty hospital that\'s influential because '
             'it lives at the top of the distribution, not a data '
             'error (don\'t delete). <em>opportunity</em> = community/CAH '
-            'with large positive residual — actuals beat the model. '
+            'with large positive residual: actuals beat the model. '
             '<em>data issue?</em> = big residual without high '
-            'leverage — investigate the entry.'
+            'leverage: investigate the entry.'
             if has_influence else ''
         )
         + '<table class="cad-table"><thead><tr>'
@@ -3800,7 +3805,7 @@ def render_regression_page(
         # but the chip surfaces the signal without reading it.
         transitive_chip = (
             ' <span class="rg-leak-transitive-chip" '
-            'title="Detected via multi-hop atomic-input walk — '
+            'title="Detected via multi-hop atomic-input walk; '
             'feature and target share raw ancestors through an '
             'intermediate derived feature">transitive</span>'
             if getattr(v, "transitive", False) else ''
@@ -3831,10 +3836,10 @@ def render_regression_page(
         if leak_count else ''
     )
     drop_state_note = (
-        ' · <span class="cad-pos"><strong>drop_leakage ON</strong></span> '
-        '— leaky features excluded from this fit'
+        ' · <span class="cad-pos"><strong>drop_leakage ON</strong></span>: '
+        'leaky features excluded from this fit'
         if drop_leakage else
-        ' · <em>drop_leakage off — leaky features are STILL in the fit '
+        ' · <em>drop_leakage off: leaky features are STILL in the fit '
         'and inflating R². Toggle "Drop leakage features" above.</em>'
         if leak_count else ''
     )
@@ -3849,12 +3854,12 @@ def render_regression_page(
         f'{leak_header_note}{drop_state_note}.</p>'
         '<details class="rg-defs"><summary>What the verdicts mean</summary>'
         '<p class="ck-section-body" style="margin-top:6px">'
-        '<strong>LEAKS</strong> — derived from the target; dropped when the '
-        'toggle is on. <strong>FORMULA_RELATED</strong> — shares inputs with '
+        '<strong>LEAKS</strong>: derived from the target; dropped when the '
+        'toggle is on. <strong>FORMULA_RELATED</strong>: shares inputs with '
         'the target (a <span class="rg-leak-transitive-chip">transitive</span> '
         'chip = detected via a multi-hop input walk); softer, kept by default. '
-        '<strong>SAFE</strong> — no algebraic link. <strong>SELF</strong> — is '
-        'the target. <strong>UNKNOWN</strong> — no provenance record.</p></details>'
+        '<strong>SAFE</strong>: no algebraic link. <strong>SELF</strong>: is '
+        'the target. <strong>UNKNOWN</strong>: no provenance record.</p></details>'
         '<table class="cad-table"><thead><tr>'
         '<th>Feature</th><th>Verdict</th>'
         '<th>Reason</th><th>Status</th>'
@@ -3900,19 +3905,19 @@ def render_regression_page(
             if gap > 0.15:
                 gap_cls = "cad-neg"
                 gap_note = (
-                    " — substantial overfit signal; in-sample R² is "
+                    ": substantial overfit signal; in-sample R² is "
                     "reading off noise, leakage, or high-influence rows."
                 )
             elif gap > 0.05:
                 gap_cls = "cad-warn"
                 gap_note = (
-                    " — modest overfit; consider dropping leakage "
+                    ": modest overfit; consider dropping leakage "
                     "features or running segmented."
                 )
             else:
                 gap_cls = "cad-pos"
                 gap_note = (
-                    " — small gap; the in-sample fit generalises "
+                    ": small gap; the in-sample fit generalises "
                     "to held-out folds."
                 )
             # auto_reduce_k=True can knock k down when the universe
@@ -3933,7 +3938,7 @@ def render_regression_page(
                 '<p class="ck-section-body">'
                 f'k={cv_res.k} random-fold cross-validation, '
                 'seed = 42 '
-                '(deterministic — same input → same OOS numbers). '
+                '(deterministic: same input → same OOS numbers). '
                 'Test R² is the average across folds of the R² '
                 'measured on the held-out rows after fitting '
                 'on the rest. Big gap between in-sample R² and mean '
@@ -4054,7 +4059,7 @@ def render_regression_page(
                 'large nonprofit / Catholic / government systems '
                 '(Ascension, Kaiser, VA, etc.) and for '
                 'safety-net public hospitals. <strong>Heuristic '
-                'v1</strong> — treat the ordering as the reliable '
+                'v1</strong>: treat the ordering as the reliable '
                 'signal; absolute percentages are partner-friendly '
                 'summaries, not calibrated probabilities. '
                 'Combined with the financial fit via '
@@ -4136,7 +4141,7 @@ def render_regression_page(
                 'Cluster names are auto-generated from the dominant '
                 'rule-based segment + structural flavour. Use this '
                 'to surface within-segment regime differences the '
-                'taxonomy alone misses — e.g. a Large Community '
+                'taxonomy alone misses: e.g. a Large Community '
                 'cluster that\'s actually 90% Medicaid + urban '
                 'belongs in its own regression slope.</p>'
                 '<div class="rg-cluster-scatter-wrap" '
@@ -4281,7 +4286,7 @@ def render_regression_page(
                 '<p class="ck-section-body">'
                 'One OLS fit per hospital regime, plus the all-segments '
                 'baseline at the top for comparison. <strong>R² delta '
-                '↑</strong> means the segment beats the baseline — '
+                '↑</strong> means the segment beats the baseline: '
                 'evidence that this regime really does follow a '
                 'different equation than the others. <strong>↓</strong> '
                 'usually means the segment\'s variance isn\'t captured '
@@ -4314,7 +4319,7 @@ def render_regression_page(
     state_section = ck_panel(
         '<p class="ck-section-body">'
         'How well the national model predicts within each state. Low R² states have unique '
-        'market dynamics not captured by national features — consider state-specific models.</p>'
+        'market dynamics not captured by national features: consider state-specific models.</p>'
         '<table class="cad-table"><thead><tr>'
         '<th>State</th><th>n</th><th>R²</th><th>Mean Residual</th>'
         f'</tr></thead><tbody>{state_rows}</tbody></table>',
@@ -4365,7 +4370,7 @@ def render_regression_page(
     next_up = ck_next_section(
         "Open the portfolio for context",
         "/portfolio",
-        eyebrow="Continue —",
+        eyebrow="Up next",
         italic_word="portfolio",
     )
     # Unmissable red banner — user reported R²=83% on a fit with 4
@@ -4380,7 +4385,7 @@ def render_regression_page(
             '<span class="rg-leakage-banner-text">'
             f'<strong>{leak_count} leaky feature'
             f'{"s" if leak_count != 1 else ""}</strong> '
-            'still in the fit — R² is inflated by features '
+            'still in the fit: R² is inflated by features '
             'mathematically derived from the target (revenue per '
             'bed, operating margin, net-to-gross ratio, …). Toggle '
             '<strong>Drop leakage features</strong> in the Regression '
@@ -4408,7 +4413,7 @@ def render_regression_page(
             '<span class="rg-leakage-banner-text">'
             f'<strong>{formula_related_count} accounting-cousin '
             f'feature{"s" if formula_related_count != 1 else ""}</strong> '
-            'in the fit — these aren\'t direct leaks but share '
+            'in the fit: these aren\'t direct leaks but share '
             'atomic inputs with the target (e.g. operating margin '
             'vs. net-to-gross ratio both involve NPR + opex), so '
             'R² is softly inflated. Toggle <strong>Drop leakage '

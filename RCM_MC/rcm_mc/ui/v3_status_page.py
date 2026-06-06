@@ -246,7 +246,7 @@ def render_v3_status() -> str:
         + ck_next_section(
             "Open the v5 transformation status",
             "/v5-status",
-            eyebrow="Continue —",
+            eyebrow="Up next",
             italic_word="v5",
         )
     )

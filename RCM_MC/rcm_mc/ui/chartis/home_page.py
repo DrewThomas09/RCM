@@ -714,10 +714,10 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
     )
     explainer = render_page_explainer(
         what=(
-            "Seven-panel partner landing: pipeline funnel, active alerts, "
-            "portfolio-health distribution, recent deals, upcoming "
-            "deadlines (7 days), top partner-review verdicts across the "
-            "portfolio, and corpus insights."
+            "The first thing to open in the morning: the alerts that need an "
+            "answer, the deadlines inside seven days, the deals moving through "
+            "the pipeline, and the partner-review verdicts worth acting on, "
+            "gathered so nothing waits on you unseen."
         ),
         page_key="home",
     )
