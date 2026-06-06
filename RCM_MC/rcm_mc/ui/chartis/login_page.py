@@ -32,9 +32,16 @@ _LOGIN_EXTRA_CSS = """
   --pl-navy:#0d2336;--pl-navy2:#14304a;--pl-cream:#f4ecd9;--pl-paper:#fbf7ee;
   --pl-ink:#15202b;--pl-ink2:#2a3a4a;--pl-muted:#6a7480;--pl-muted2:#8b94a0;
   --pl-rule:#d9cfb8;--pl-green:#1f7a5a;--pl-amber:#b8842e;
-  --pl-serif:'Source Serif 4',Georgia,serif;
-  --pl-sans:'Inter Tight',Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
-  --pl-mono:'JetBrains Mono',ui-monospace,monospace;
+  /* Inherit the app's token font stacks (chartis_tokens.css is linked on
+     this page) so the login matches the rest of PEdesk. The page-local
+     --pl-* stack was shorter ('Source Serif 4', Georgia, serif), so on a
+     machine without Source Serif 4 it jumped straight to Georgia while the
+     app fell back to the refined Iowan Old Style — the title + the line
+     under it read as a different, heavier serif. The var() fallback keeps
+     a safe stack if the token sheet ever fails to load. */
+  --pl-serif:var(--sc-serif,'Source Serif 4','Source Serif Pro','Iowan Old Style',Georgia,serif);
+  --pl-sans:var(--sc-sans,'Inter Tight',Inter,ui-sans-serif,system-ui,-apple-system,sans-serif);
+  --pl-mono:var(--sc-mono,'JetBrains Mono',ui-monospace,monospace);
   box-sizing:border-box;min-height:100vh;width:100%;
   display:flex;align-items:center;justify-content:center;padding:40px 16px;
   background-color:var(--pl-cream);
