@@ -485,7 +485,7 @@ def _hero() -> str:
         '<span class="dot">&middot;</span>'
         '<span class="slug">built on public data</span>'
         '</div>'
-        '<h1 class="title">The deal file that<br/>'
+        '<h1 class="title">The deal file that <br/>'
         '<em>shows its work.</em></h1>'
         '<p class="lede">'
         'PE Desk gives a healthcare deal team one workspace per target: '
@@ -661,7 +661,7 @@ def _workspace_section() -> str:
         '<section id="workspace">'
         + _sect(
             "THE WORKSPACE",
-            "From scattered files<br/>to <em>one deal view.</em>",
+            "From scattered files <br/>to <em>one deal view.</em>",
             "Open a workspace per opportunity. The target profile, the "
             "market map, the comparable set, the interview log, and the "
             "diligence questions all live in one place and stay tied to the "
@@ -723,7 +723,7 @@ def _capability_section() -> str:
         '<section id="modules">'
         + _sect(
             "WHAT IT COMPUTES",
-            "Analysis that<br/>ships <em>in the box.</em>",
+            "Analysis that <br/>ships <em>in the box.</em>",
             "Every workspace carries the same analytic surfaces, run on "
             "public data and your own inputs. No add-on modules, no "
             "per-seat math, no waiting on a data vendor; the deal "
@@ -783,7 +783,7 @@ def _profile_section() -> str:
         '<section id="proof">'
         + _sect(
             "A SAMPLE PROFILE",
-            "One target,<br/>four <em>angles.</em>",
+            "One target, <br/>four <em>angles.</em>",
             "A profile pulls the company, its market, its competitors, and "
             "its customers onto one screen so a reviewer can read the whole "
             "commercial picture in a sitting. Figures below are an "
@@ -824,7 +824,7 @@ def _sources_section() -> str:
         '<section id="sources">'
         + _sect(
             "THE DATA",
-            "Public where it can be,<br/><em>yours</em> where it counts.",
+            "Public where it can be, <br/><em>yours</em> where it counts.",
             "The workspace ships loaded with CMS public data and reads SEC "
             "filings out of the box. Add your own research, interviews, and "
             "engagement notes alongside them. Nothing you add is sent "
@@ -847,7 +847,7 @@ def _cta_strip() -> str:
         '<section class="cta-strip">'
         '<div>'
         '<div class="micro">GET ACCESS</div>'
-        '<h3>Bring your own <em>model</em>.<br/>'
+        '<h3>Bring your own <em>model</em>. <br/>'
         'Keep your own <em>data</em>.</h3>'
         '<p>PE Desk runs on your infrastructure with the model you choose '
         'in local or hosted form. Public sources come preloaded; connect '
