@@ -8159,6 +8159,23 @@ _CSS_INLINE_FALLBACK = """
   .ck-page-title:has(+ .ck-page-wrap > [class*="-explainer"]:first-child),
   .ck-page-title:has(+ .ck-page-wrap > [class*="-contrast"]:first-child) {
     margin-bottom:var(--sc-s-4); }
+  /* A handful of diligence pages emit their page-local <style>(s) right after
+     ck_page_title and wrap content in a page-local div whose first child is the
+     strip, so the title's adjacent sibling is an inert <style> and the rules
+     above miss them. Collapse across the style(s) + that wrapper. Fully scoped
+     to each wrapper + a strip first-child, so no other page is touched (a
+     selector that does not match is simply inert). */
+  .ck-page-title:has(+ style + .da-wrap > .ck-da-explainer:first-child),
+  .ck-page-title:has(+ style + .ba-wrap > .ck-section-intro:first-child),
+  .ck-page-title:has(+ style + .wc-container > .ck-sp:first-child),
+  .ck-page-title:has(+ style + style + .tp-wrap > [class*="-explainer"]:first-child) {
+    margin-bottom:var(--sc-s-4); }
+  /* zero the nested first-child strip's own top margin so the collapsed title
+     margin is the whole gap (ck-sp already has none). */
+  .ck-page-title + style + .da-wrap > .ck-da-explainer:first-child,
+  .ck-page-title + style + .ba-wrap > .ck-section-intro:first-child,
+  .ck-page-title + style + style + .tp-wrap > [class*="-explainer"]:first-child {
+    margin-top:0; }
   /* kill any top push the following strip carries (explainer/section-intro
      have their own top margins for mid-page use) so the gap above is the
      title's collapsed margin alone. */
