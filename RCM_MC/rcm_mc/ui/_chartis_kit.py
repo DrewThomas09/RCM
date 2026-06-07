@@ -8149,7 +8149,16 @@ _CSS_INLINE_FALLBACK = """
      whole family by suffix so the title-gap is one rhythm whether a page uses
      the helper or its own paragraph. */
   .ck-page-title:has(+ [class*="-explainer"]),
-  .ck-page-title:has(+ [class*="-contrast"]) { margin-bottom:var(--sc-s-4); }
+  .ck-page-title:has(+ [class*="-contrast"]),
+  /* ~45 analyzer pages wrap their content in .ck-page-wrap, so the title's
+     adjacent sibling is the wrapper and the strip is the wrapper's first child.
+     Reach one level in (the wrapper has padding:0, so the title margin is the
+     whole gap) to collapse the float on those too. */
+  .ck-page-title:has(+ .ck-page-wrap > .ck-sp:first-child),
+  .ck-page-title:has(+ .ck-page-wrap > .ck-illus-note:first-child),
+  .ck-page-title:has(+ .ck-page-wrap > [class*="-explainer"]:first-child),
+  .ck-page-title:has(+ .ck-page-wrap > [class*="-contrast"]:first-child) {
+    margin-bottom:var(--sc-s-4); }
   /* kill any top push the following strip carries (explainer/section-intro
      have their own top margins for mid-page use) so the gap above is the
      title's collapsed margin alone. */
