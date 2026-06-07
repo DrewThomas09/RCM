@@ -7990,7 +7990,7 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_screener_page(self) -> None:
         """GET /screen — metric-based hospital screener with HCRIS data."""
-        from .data.hcris import _get_latest_per_ccn
+        from .data.hcris import _get_latest_per_ccn, screener_operating_margin
         from .ui.deal_comparison import render_screen_page
         import numpy as _np_scr
 
@@ -8033,8 +8033,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                        "max_revenue": "", "min_margin": "0", "max_margin": "10",
                        "state": "", "sort": "margin"}
         elif preset == "undervalued":
-            # High beds, low revenue per bed — sorted lowest rev/bed first.
-            filters = {"min_beds": "150", "max_beds": "", "min_revenue": "",
+            # High beds, low revenue per bed, sorted lowest rev/bed first. The
+            # $20M NPR floor keeps it surfacing real, sizeable hospitals priced
+            # below capacity rather than tiny/aggregated filings (which report
+            # beds but almost no patient revenue, so their margin gates out to
+            # "—" and the screen reads as a column of dashes).
+            filters = {"min_beds": "150", "max_beds": "", "min_revenue": "20",
                        "max_revenue": "", "min_margin": "", "max_margin": "",
                        "state": "", "sort": "rev_per_bed"}
         elif preset == "small_efficient":
@@ -8050,12 +8054,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             df = hcris.copy()
             rev_col = "net_patient_revenue" if "net_patient_revenue" in df.columns else "gross_patient_revenue"
 
-            # Compute margin
-            if "operating_expenses" in df.columns and rev_col in df.columns:
-                r = df[rev_col].fillna(0)
-                o = df["operating_expenses"].fillna(0)
-                df["operating_margin"] = _np_scr.where(r > 1e5, (r - o) / r, 0)
-                df["operating_margin"] = df["operating_margin"].clip(-1, 1)
+            # Operating margin, band-gated (hcris.screener_operating_margin):
+            # untrustworthy filings become NaN so they render as "—" and sort
+            # last, instead of the old (r-o)/r clamped to [-1, 1] that collapsed
+            # every junk filing to a uniform -100% and, sorted most-distressed-
+            # first, buried the real turnaround targets under that artifact wall.
+            if "operating_expenses" in df.columns and "net_patient_revenue" in df.columns:
+                df["operating_margin"] = screener_operating_margin(df)
 
             # Beds bounds require a KNOWN bed count: a filing that didn't
             # report beds is not a "≥50" or "≤200" match. Pre-fix the
@@ -8129,13 +8134,17 @@ class RCMHandler(BaseHTTPRequestHandler):
                 df["beds"] = df["beds"].fillna(0)
             results = []
             for _, row in df.iterrows():
+                # Pass margin through as None when it is missing/NaN (gated-out
+                # filing) so the renderer shows "—", never a fake 0.0%.
+                _m = row.get("operating_margin") if "operating_margin" in row.index else None
+                _m = float(_m) if (_m is not None and _m == _m) else None
                 results.append({
                     "ccn": str(row.get("ccn", "")),
                     "name": str(row.get("name", "")),
                     "state": str(row.get("state", "")),
                     "beds": int(row.get("beds", 0)),
                     "net_patient_revenue": float(row.get(rev_col, 0)),
-                    "operating_margin": float(row.get("operating_margin", 0)) if "operating_margin" in row.index else 0,
+                    "operating_margin": _m,
                     "rev_per_bed": float(row.get("rev_per_bed", 0) or 0),
                 })
 

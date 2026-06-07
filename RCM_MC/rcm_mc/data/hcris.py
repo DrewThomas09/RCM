@@ -935,6 +935,36 @@ def _add_derived_kpis(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+# Plausible operating-margin band for a hospital HCRIS filing, patient-revenue
+# basis. (net_patient_revenue - operating_expenses) / net_patient_revenue is only
+# meaningful when operating expense sits within a realistic multiple of net
+# patient revenue. Outside this band the filing is dominated by non-patient
+# funding (behavioral / safety-net / aggregated multi-facility filings) and the
+# ratio is an artifact, not distress. Mirrors ui._chartis_kit
+# MARGIN_PLAUSIBLE_LO/HI so the screener and the provider X-Ray agree.
+SCREENER_MARGIN_LO: float = -0.40
+SCREENER_MARGIN_HI: float = 0.30
+
+
+def screener_operating_margin(df: pd.DataFrame) -> pd.Series:
+    """Return trustworthy patient-basis operating margins; NaN where not.
+
+    Why a gate, not a clamp: the old /screen path computed (npr - opex)/npr and
+    clamped to [-1, 1], which collapsed every junk filing (opex >> patient
+    revenue) to a uniform -100%. Sorted "most distressed first," that buried the
+    real turnaround targets under a wall of identical -100% artifacts and read as
+    broken. Returning NaN for the filings we can't trust (net patient revenue
+    <= $1M, non-positive opex, or a ratio outside the plausible band) lets them
+    render as "—" and sort last, so the screen surfaces the genuinely distressed
+    hospitals with their real, varied margins.
+    """
+    npr = pd.to_numeric(df.get("net_patient_revenue"), errors="coerce")
+    opex = pd.to_numeric(df.get("operating_expenses"), errors="coerce")
+    m = (npr - opex) / npr.where(npr > 1e6)
+    m = m.where(opex > 0)
+    return m.where(m.between(SCREENER_MARGIN_LO, SCREENER_MARGIN_HI))
+
+
 def compute_peer_percentiles(
     target_ccn: str,
     peers: pd.DataFrame,

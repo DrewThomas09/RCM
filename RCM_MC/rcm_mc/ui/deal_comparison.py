@@ -467,21 +467,32 @@ def render_screen_page(
             rev_cell = (f"${float(rev)/1e6:,.0f}M"
                         if (rev is not None and rev == rev) else "&mdash;")
             rpb = r.get("rev_per_bed", 0) or 0
-            margin = r.get("operating_margin", 0)
-            margin = float(margin) if (margin and margin == margin) else 0
-            if margin_is_plausible(margin):
-                margin_color = PALETTE["positive"] if margin > 0.05 else (
-                    PALETTE["warning"] if margin > 0 else PALETTE["negative"])
-                margin_cell = f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
-            else:
-                # Junk-opex artifact: show it, but mute + flag rather than let
-                # it read as a real result (see margin_is_plausible).
+            mraw = r.get("operating_margin")
+            if mraw is None or (isinstance(mraw, float) and mraw != mraw):
+                # Not reported, or not trustworthy from the patient-revenue basis
+                # (gated out upstream: see hcris.screener_operating_margin). Show
+                # "—" rather than a fabricated 0.0% or a clamped -100%.
                 margin_cell = (
-                    f'<td class="num hs-dq" title="Margin {margin:.1%} is outside the '
-                    f'realistic -40% to +30% band; this HCRIS filing likely has '
-                    f'incomplete or aggregated opex; review before relying on it.">'
-                    f'{margin:.1%} &#9888;</td>'
+                    f'<td class="num" style="color:{PALETTE["text_muted"]};" '
+                    f'title="Operating margin not reportable from this filing\'s '
+                    f'patient-revenue basis.">&mdash;</td>'
                 )
+            else:
+                margin = float(mraw)
+                if margin_is_plausible(margin):
+                    margin_color = PALETTE["positive"] if margin > 0.05 else (
+                        PALETTE["warning"] if margin > 0 else PALETTE["negative"])
+                    margin_cell = f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
+                else:
+                    # Defensive backstop: an out-of-band value should already be
+                    # None upstream, but if one slips through, mute + flag it
+                    # rather than let it read as a real result.
+                    margin_cell = (
+                        f'<td class="num hs-dq" title="Margin {margin:.1%} is outside the '
+                        f'realistic -40% to +30% band; this HCRIS filing likely has '
+                        f'incomplete or aggregated opex; review before relying on it.">'
+                        f'{margin:.1%} &#9888;</td>'
+                    )
             rpb_str = f'${rpb/1e3:,.0f}K' if rpb else '&mdash;'
             rows_html += (
                 f'<tr>'
