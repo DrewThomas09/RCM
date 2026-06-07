@@ -833,20 +833,16 @@ def ck_source_purpose(*, purpose: str, universe: str, source: str,
     chips = ck_data_universe(universe)
     if confidence and confidence != universe:
         chips += ck_data_universe(confidence)
-    src = (f'<span class="ck-sp-src"><b>Source:</b> {_esc(source)}</span>'
-           if source else "")
-    nxt = ""
-    if next_action:
-        nxt = (f'<a class="ck-sp-next" href="{_esc(next_href or "#")}">'
-               f'{_esc(next_action)} &rarr;</a>') if next_href else (
-               f'<span class="ck-sp-next">{_esc(next_action)}</span>')
-    purpose_html = (f'<span class="ck-sp-purpose">{_esc(purpose)}</span>'
-                    if purpose else "")
-    meta = f'<div class="ck-sp-meta">{src}{nxt}</div>' if (src or nxt) else ""
+    # 2026 cleanup: a single quiet provenance line — the data-confidence
+    # chip(s) + the named source. The old chip-row + purpose sentence +
+    # source/next-action stack read as cluttered "in many places" (owner
+    # review); the page title + content already carry the purpose, so
+    # purpose / next_action stay in the signature for call sites but are no
+    # longer rendered.
+    src = (f'<span class="ck-sp-src">{_esc(source)}</span>' if source else "")
     return (
         '<div class="ck-sp">'
-        f'<p class="ck-sp-lead">{chips}{purpose_html}</p>'
-        f'{meta}'
+        f'<p class="ck-sp-lead">{chips}{src}</p>'
         '</div>'
     )
 
@@ -7528,6 +7524,8 @@ _CSS_INLINE_FALLBACK = """
   .ck-sp-meta { display:flex; gap:14px; flex-wrap:wrap; font-family:var(--sc-mono);
     font-size:10px; letter-spacing:.04em; color:var(--sc-text-faint,#8a93a0);
     line-height:1.4; }
+  .ck-sp-src { font-family:var(--sc-mono); font-size:11px;
+    color:var(--sc-text-faint,#8a93a0); letter-spacing:.02em; }
   .ck-sp-src b { color:var(--sc-text,#2a3a4a); font-weight:600; }
   .ck-sp-next { color:var(--sc-teal,#155752); text-decoration:none; text-transform:none;
     letter-spacing:.02em; }
