@@ -48,7 +48,14 @@ def _op_margin(h: Dict[str, Any]) -> Optional[float]:
     opex = _safe_float(h.get("operating_expenses"))
     if not npr or not opex or npr <= 1e4:
         return None
-    return (npr - opex) / npr
+    margin = (npr - opex) / npr
+    # Band-gate implausible HCRIS margins (e.g. 100% = incomplete or
+    # aggregated opex in the filing) → return None so every surface that
+    # reads this accessor (hero strip, percentile rank, peer table) shows
+    # "—" and drops it from the ranking, matching the rest of the HCRIS
+    # surfaces rather than reading as a confident comp (the one-margin rule).
+    from .._chartis_kit import margin_is_plausible
+    return margin if margin_is_plausible(margin) else None
 
 
 def _rev_per_bed(h: Dict[str, Any]) -> Optional[float]:

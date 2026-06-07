@@ -28,7 +28,7 @@ from ..diligence.hcris_xray import (
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge, ck_page_explainer,
-    ck_source_purpose)
+    ck_source_purpose, margin_is_plausible)
 from .data_public.state_profile_page import state_context_panel
 
 _EXPLAINER_CSS = """
@@ -352,16 +352,35 @@ def _target_card(
         "STRONG": P["positive"],
     }
     margin_color = margin_color_map.get(target.margin_band, P["text_faint"])
-    op_margin_val = provenance(
-        f"{target.operating_margin_on_npr*100:.1f}%",
-        source="HCRIS filing",
-        formula="(NPR − operating expenses) ÷ NPR",
-        detail=(
-            f"Fiscal year {target.fiscal_year}. "
-            f"NPR ${target.net_patient_revenue/1e6:,.1f}M; "
-            f"opex ${target.operating_expenses/1e6:,.1f}M."
-        ),
-    )
+    # Band-gate implausible HCRIS margins (e.g. 100% = opex incomplete in
+    # the filing) to a muted "—" so they don't read as a confident KPI —
+    # matching the one-margin rule used across every HCRIS surface.
+    _om = target.operating_margin_on_npr
+    if margin_is_plausible(_om):
+        op_margin_val = provenance(
+            f"{_om*100:.1f}%",
+            source="HCRIS filing",
+            formula="(NPR − operating expenses) ÷ NPR",
+            detail=(
+                f"Fiscal year {target.fiscal_year}. "
+                f"NPR ${target.net_patient_revenue/1e6:,.1f}M; "
+                f"opex ${target.operating_expenses/1e6:,.1f}M."
+            ),
+        )
+        _om_sub = target.margin_band.title()
+    else:
+        op_margin_val = provenance(
+            "—",
+            source="HCRIS filing",
+            formula="(NPR − operating expenses) ÷ NPR",
+            detail=(
+                f"Computed margin {_om*100:.1f}% falls outside the realistic "
+                f"−40% to +30% band — this filing almost certainly has "
+                f"incomplete or aggregated operating expenses, so the figure "
+                f"is suppressed rather than shown as a data artifact."
+            ),
+        )
+        _om_sub = "data review"
     trend_chip = _trend_signal_chip(trend_signal, history_len)
     # 2026-05-28 batch 22 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
@@ -406,7 +425,7 @@ def _target_card(
         )
         + ck_kpi_block(
             "Operating Margin", op_margin_val,
-            sub=target.margin_band.title(),
+            sub=_om_sub,
         )
         + ck_kpi_block(
             "Payer Diversity", f"{target.payer_diversity_index:.2f}",
@@ -760,20 +779,36 @@ def _public_comp_context(target: HospitalMetrics) -> str:
             f'<td class="num">{c.ev_ebitda_multiple:.1f}×</td>'
             '</tr>'
         )
-    verdict = (
-        "beats" if target_margin > public_median_margin
-        else "trails"
-    )
-    delta = abs(target_margin - public_median_margin) * 100
+    # Band-gate the target's HCRIS margin (e.g. 100% = incomplete opex) so the
+    # vs-public narrative doesn't anchor on a data artifact. Public comps come
+    # from 10-K/consensus, not HCRIS, so they are shown as filed.
+    if margin_is_plausible(target_margin):
+        verdict = (
+            "beats" if target_margin > public_median_margin
+            else "trails"
+        )
+        delta = abs(target_margin - public_median_margin) * 100
+        lede = (
+            '<p class="ck-section-body">'
+            f'Target operating margin <strong>{target_margin*100:+.1f}%</strong> '
+            f'{verdict} public-comp median '
+            f'<strong>{public_median_margin*100:+.1f}%</strong> by '
+            f'{delta:.1f} pp. Public comps trade at a median '
+            'EV/EBITDA of ~9x; target-implied multiple should '
+            'adjust for the margin delta + size discount.</p>'
+        )
+    else:
+        lede = (
+            '<p class="ck-section-body">'
+            'Target operating margin is <strong>—</strong> (the HCRIS filing '
+            'reports an implausible margin, almost certainly from incomplete '
+            'or aggregated opex, so it is suppressed). Public-comp median is '
+            f'<strong>{public_median_margin*100:+.1f}%</strong>; comps trade '
+            'at a median EV/EBITDA of ~9x.</p>'
+        )
     inner = (
-        '<p class="ck-section-body">'
-        f'Target operating margin <strong>{target_margin*100:+.1f}%</strong> '
-        f'{verdict} public-comp median '
-        f'<strong>{public_median_margin*100:+.1f}%</strong> by '
-        f'{delta:.1f} pp. Public comps trade at a median '
-        'EV/EBITDA of ~9x; target-implied multiple should '
-        'adjust for the margin delta + size discount.</p>'
-        '<table class="cad-table"><thead><tr>'
+        lede
+        + '<table class="cad-table"><thead><tr>'
         '<th>Ticker</th><th>Company</th>'
         '<th class="num">Op Margin</th>'
         '<th class="num">Target Δ</th>'
@@ -814,15 +849,20 @@ def _peer_table(peers: List[PeerMatch]) -> str:
         h = p.hospital
         # Color the op margin by band so analysts spot negative-margin
         # peers instantly when scanning for comparables. NaN sorts to neutral.
+        # Band-gate implausible HCRIS margins (e.g. 100% = incomplete opex in
+        # the filing) → render "—" so they match the Inspector and the rest of
+        # the HCRIS surfaces rather than reading as a confident peer figure.
         om = h.operating_margin_on_npr
+        om_ok = margin_is_plausible(om)
+        om_disp = om if om_ok else None
         op_color = (
-            P["negative"] if (om == om and om < 0)
-            else P["positive"] if (om == om and om > 0.08)
+            P["negative"] if (om_ok and om == om and om < 0)
+            else P["positive"] if (om_ok and om == om and om > 0.08)
             else P["text_dim"]
         )
         op_cell = (
             f'<span style="color:{op_color};font-weight:700;">'
-            f'{_pf(om, "+.1f", mul=100, suf="%")}</span>'
+            f'{_pf(om_disp, "+.1f", mul=100, suf="%")}</span>'
         )
         ccn_link = (
             f'<a href="/diligence/hcris-xray?ccn={html.escape(h.ccn)}" '
@@ -847,7 +887,7 @@ def _peer_table(peers: List[PeerMatch]) -> str:
         ])
         sort_keys.append([
             h.ccn, h.name, h.state, h.beds, h.fiscal_year,
-            h.medicare_day_pct, h.operating_margin_on_npr,
+            h.medicare_day_pct, om_disp,
             h.net_patient_revenue,
             p.distance,
             1 if p.same_state else 0,
