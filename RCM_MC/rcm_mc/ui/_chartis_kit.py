@@ -8170,11 +8170,19 @@ _CSS_INLINE_FALLBACK = """
   .ck-page-title + [class*="-contrast"] { margin-top:0; }
   /* explainer + section-intro carried no bottom rule; in the masthead slot
      give them the same hairline + bottom gap the sp/illus strips use, so all
-     four strip types separate from content identically. */
-  .ck-page-title + .ck-page-explainer,
-  .ck-page-title + .ck-section-intro {
+     four strip types separate from content identically. EXCEPT when the next
+     block is a KPI grid/strip (it carries its own top rule), to avoid a doubled
+     hairline. */
+  .ck-page-title + .ck-page-explainer:not(:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid))),
+  .ck-page-title + .ck-section-intro:not(:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid))) {
     padding-bottom:var(--sc-s-4); margin-bottom:var(--sc-s-5);
     border-bottom:1px solid var(--sc-rule); }
+  /* sp / illustrative strips carry a bottom rule globally; drop it when they sit
+     directly above a KPI grid/strip so the masthead shows one divider, not two
+     (also clears pre-existing doubled hairlines on those pairings). */
+  .ck-sp:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid)),
+  .ck-illus-note:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid)) {
+    border-bottom:0; }
   /* strip-on-strip (e.g. illustrative note then a section intro): the second
      strip must not re-open a big gap. Pull it tight and let it own the single
      bottom rule; the first strip drops its rule so the masthead shows one. */
