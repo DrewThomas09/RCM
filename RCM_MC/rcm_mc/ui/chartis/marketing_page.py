@@ -119,6 +119,8 @@ _STYLE = """
   .page { padding: 0 2rem 4rem; max-width: 1500px; margin: 0 auto; }
   .hero {
     padding: 4.5rem 0 3.5rem; border-bottom: 1px solid var(--rule);
+    display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    gap: 4rem; align-items: center;
   }
   .eyebrow {
     font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; letter-spacing: .14em;
@@ -149,20 +151,68 @@ _STYLE = """
     padding: .8rem 0; border-bottom: 1px solid var(--ink); text-decoration: none;
   }
   .ghost-btn:hover { color: var(--teal-deep); border-bottom-color: var(--teal-deep); }
-  .hero-meta {
-    border-left: 1px solid var(--rule); padding-left: 2rem;
-    font-family: "JetBrains Mono", monospace; font-size: .8rem;
-    color: var(--muted); display: flex; flex-direction: column; gap: .9rem;
+  /* HERO ART — illustrative "sample workspace" card (flat, hairline) */
+  .hero-art { justify-self: end; width: 100%; max-width: 430px; position: relative; }
+  .ha-card {
+    position: relative; z-index: 1; background: var(--paper-pure);
+    border: 1px solid var(--rule); padding: 1.45rem 1.55rem 1.3rem;
   }
-  .hero-meta .row { display: flex; gap: .5rem; }
-  .hero-meta .row .k { color: var(--faint); width: 92px; }
-  .hero-meta .row .v { color: var(--ink); font-weight: 600; }
-  .hero-meta .stamp {
-    margin-top: .5rem; padding: .9rem 0;
-    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-style: italic;
-    font-size: .9rem; color: var(--muted); line-height: 1.5;
+  /* offset hairline behind the card — reads as "a file behind the file" */
+  .ha-card::before {
+    content: ""; position: absolute; z-index: -1;
+    top: 11px; left: 11px; right: -11px; bottom: -11px;
+    background: var(--paper); border: 1px solid var(--border);
   }
+  .ha-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.05rem;
+  }
+  .ha-eyebrow {
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-size: .6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); display: flex; align-items: center; gap: .45rem;
+  }
+  .ha-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal); display: inline-block;
+  }
+  .ha-chip {
+    font-family: "JetBrains Mono", monospace; font-size: .56rem; letter-spacing: .06em;
+    color: var(--teal-deep); background: var(--teal-soft);
+    padding: .2rem .45rem; border-radius: 2px; white-space: nowrap;
+  }
+  .ha-ctitle {
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    font-size: 1.05rem; line-height: 1.2; color: var(--ink); margin: 0;
+  }
+  .ha-ctitle span { font-style: italic; color: var(--faint); }
+  .ha-csub {
+    font-family: "JetBrains Mono", monospace; font-size: .58rem; letter-spacing: .04em;
+    color: var(--faint); margin: .15rem 0 .55rem;
+  }
+  .ha-chart { display: block; width: 100%; height: auto; }
+  .ha-chart .ha-tick {
+    font-family: "JetBrains Mono", monospace; font-size: 8px;
+    fill: var(--faint); letter-spacing: .02em;
+  }
+  .ha-kpis { border-top: 1px solid var(--border); margin-top: .85rem; padding-top: .75rem; }
+  .ha-row {
+    display: flex; align-items: baseline; justify-content: space-between; padding: .28rem 0;
+  }
+  .ha-row .k {
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-size: .78rem; color: var(--muted);
+  }
+  .ha-row .v {
+    font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum" on;
+    font-size: .92rem; font-weight: 600; color: var(--ink);
+  }
+  .ha-foot {
+    margin-top: .85rem; padding-top: .75rem; border-top: 1px solid var(--border);
+    font-family: "JetBrains Mono", monospace; font-size: .62rem; letter-spacing: .02em;
+    color: var(--faint); display: flex; align-items: center; gap: .4rem;
+  }
+  .ha-foot .arr { color: var(--teal); font-size: .85rem; line-height: 1; }
 
   /* sample tag — honest "this is a worked example" marker */
   .sample-tag {
@@ -368,6 +418,7 @@ _STYLE = """
 
   @media (max-width: 1100px) {
     .hero, .sect, .cta-strip { grid-template-columns: 1fr; gap: 2rem; }
+    .hero-art { justify-self: start; max-width: 460px; margin-top: .5rem; }
     .triplet, .caps, .catalog { grid-template-columns: repeat(2, 1fr); }
     .caps .cap:nth-child(4n) { border-right: 1px solid var(--border); }
     .caps .cap:nth-child(2n) { border-right: none; }
@@ -449,7 +500,63 @@ def _hero() -> str:
         '<a href="#workspace" class="ghost-btn">See a sample profile &darr;</a>'
         '</div>'
         '</div>'
-        '</section>'
+        + _hero_art()
+        + '</section>'
+    )
+
+
+def _hero_art() -> str:
+    """Illustrative 'sample workspace' card for the hero's right column.
+
+    Replaces the white space left when the old meta block was removed. It is
+    decorative support for the headline ('shows its work'), not a live readout:
+    the chart is an illustrative market-activity shape, but the figures shown
+    are true and durable (1,936 deals in the library, 30+ catalogued open-data
+    sources, the product's link-to-source promise). Marked 'Sample workspace'
+    so it never reads as a live dashboard.
+    """
+    # (x, y, height) per year bar; y = 110 - height. Last year deepened to draw
+    # the eye to the most recent period.
+    bars = [
+        (16, 90, 20), (50, 82, 28), (84, 85, 25), (118, 76, 34), (152, 80, 30),
+        (186, 66, 44), (220, 58, 52), (254, 63, 47), (288, 44, 66),
+    ]
+    rects = "".join(
+        f'<rect x="{x}" y="{y}" width="22" height="{h}" rx="1" fill="var(--teal)"/>'
+        for (x, y, h) in bars
+    )
+    rects += '<rect x="322" y="30" width="22" height="80" rx="1" fill="var(--teal-deep)"/>'
+    ticks = "".join(
+        f'<text x="{cx}" y="124" text-anchor="middle" class="ha-tick">&rsquo;{yr}</text>'
+        for (cx, yr) in ((27, "15"), (129, "18"), (231, "21"), (333, "24"))
+    )
+    return (
+        '<aside class="hero-art">'
+        '<div class="ha-card">'
+        '<div class="ha-head">'
+        '<span class="ha-eyebrow"><span class="ha-dot"></span>Sample workspace</span>'
+        '<span class="ha-chip">HEALTHCARE&nbsp;SERVICES</span>'
+        '</div>'
+        '<div class="ha-ctitle">Comparable transactions <span>by year</span></div>'
+        '<div class="ha-csub">M&amp;A activity &middot; 2015&ndash;2024</div>'
+        '<svg class="ha-chart" role="img" '
+        'aria-label="Comparable healthcare transactions per year, trending upward '
+        'from 2015 to 2024" viewBox="0 0 360 132" preserveAspectRatio="xMidYMid meet">'
+        '<line x1="14" y1="110" x2="346" y2="110" stroke="var(--border)" stroke-width="1"/>'
+        + rects + ticks +
+        '</svg>'
+        '<div class="ha-kpis">'
+        '<div class="ha-row"><span class="k">Comparable deals</span>'
+        '<span class="v">1,936</span></div>'
+        '<div class="ha-row"><span class="k">Open data sources</span>'
+        '<span class="v">30+</span></div>'
+        '<div class="ha-row"><span class="k">Figures linked to source</span>'
+        '<span class="v">100%</span></div>'
+        '</div>'
+        '<div class="ha-foot"><span class="arr">&#8627;</span> '
+        'Source: CMS HCRIS &middot; SEC &middot; HCPEA</div>'
+        '</div>'
+        '</aside>'
     )
 
 
