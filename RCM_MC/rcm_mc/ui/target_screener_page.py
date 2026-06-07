@@ -569,9 +569,15 @@ def _vertical_rows(vertical: str, state: str = "",
                 return []
             if state:
                 df = df[df["state"].str.upper() == state]
+            from ._chartis_kit import margin_is_plausible
             rows = []
             for _, r in df.iterrows():
                 margin = r.get("operating_margin")
+                # Band-gate implausible HCRIS margins (e.g. 100% = opex
+                # incomplete in the filing) to None so they render "—" and sort
+                # last — matching the Inspector, not a bogus #1 rank.
+                if margin is not None and not margin_is_plausible(margin):
+                    margin = None
                 rows.append({
                     "ccn": str(r.get("ccn", "")), "name": str(r.get("name", "") or "—"),
                     "city": str(r.get("city", "") or ""), "state": str(r.get("state", "") or ""),
