@@ -154,27 +154,6 @@ EXTENDED_SEED_DEALS_5 = [
             "combined entity subsequently acquired by Optum 2022"
         ),
     },
-    # 123
-    {
-        "source_id": "seed_123",
-        "source": "seed",
-        "deal_name": "Cano Health – SPAC / Jaws Acquisition Corp",
-        "year": 2021,
-        "buyer": "Jaws Acquisition Corp (SPAC)",
-        "seller": "InTandem Capital Partners",
-        "ev_mm": 4400.0,
-        "ebitda_at_entry_mm": -42.0,
-        "hold_years": 2.5,
-        "realized_moic": 0.05,
-        "realized_irr": -0.7,
-        "payer_mix": {
-            "medicare": 0.80, "medicaid": 0.12, "commercial": 0.08, "selfpay": 0.00
-        },
-        "notes": (
-            "FL/TX capitation concentration; Chapter 11 filed 2024; "
-            "near-total equity loss; Peter Thiel-backed SPAC vehicle"
-        ),
-    },
     # 124
     {
         "source_id": "seed_124",

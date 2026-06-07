@@ -134,29 +134,6 @@ EXTENDED_SEED_DEALS_4 = [
                  "Commercial-heavy payer mix; favorable reimbursement vs hospital HOPD.",
     },
     # ------------------------------------------------------------------
-    # 101. Oak Street Health / CVS acquisition (2023)
-    # ------------------------------------------------------------------
-    {
-        "source_id": "seed_101",
-        "source": "seed",
-        "deal_name": "Oak Street Health – CVS Health Acquisition",
-        "year": 2023,
-        "buyer": "CVS Health",
-        "seller": "Oak Street Health public shareholders (OSH)",
-        "ev_mm": 10600,
-        "ebitda_at_entry_mm": 85,
-        "hold_years": None,
-        "realized_moic": None,
-        "realized_irr": None,
-        "payer_mix": json.dumps({
-            "medicare": 0.90, "medicaid": 0.06,
-            "commercial": 0.03, "self_pay": 0.01,
-        }),
-        "notes": "CVS at-risk primary care strategy; $39/share, ~125x EBITDA. "
-                 "600+ primary care centers. Payer-provider integration; CVS Aetna MA population. "
-                 "GV Healthcare, Newlight Partners, and GSAM among key early investors.",
-    },
-    # ------------------------------------------------------------------
     # 102. Signify Health / CVS acquisition (2023)
     # ------------------------------------------------------------------
     {

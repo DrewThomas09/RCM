@@ -285,27 +285,6 @@ EXTENDED_SEED_DEALS_8 = [
             "Medicare IRF classification compliance risk; national expansion"
         ),
     },
-    # 190 — 1Life Healthcare / Amazon (One Medical)
-    {
-        "source_id": "seed_190",
-        "source": "seed",
-        "deal_name": "One Medical (1Life Healthcare) – Amazon Acquisition",
-        "year": 2023,
-        "buyer": "Amazon",
-        "seller": "1Life Healthcare shareholders (public)",
-        "ev_mm": 3900.0,
-        "ebitda_at_entry_mm": -110.0,
-        "hold_years": 3.0,
-        "realized_moic": 1.5,
-        "realized_irr": 0.15,
-        "payer_mix": {
-            "medicare": 0.10, "medicaid": 0.05, "commercial": 0.85, "selfpay": 0.00
-        },
-        "notes": (
-            "Membership-based primary care; Amazon acquisition; "
-            "employer benefit + Prime integration; loss-making at acquisition"
-        ),
-    },
     # 191 — Solstice Health / Nuance (AI/clinical documentation)
     {
         "source_id": "seed_191",
