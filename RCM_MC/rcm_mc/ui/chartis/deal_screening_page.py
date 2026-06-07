@@ -43,6 +43,9 @@ _EXPLAINER_CSS = """
 color:var(--sc-text-dim);max-width:70ch;
 margin:var(--sc-s-4) 0 var(--sc-s-5);}
 .ck-ds-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+/* the BENCHMARK DATASET data-basis chip leads this sentence; give it a little
+   air so the mono label reads as a marker, not run into the serif body. */
+.ck-ds-explainer .ck-universe{margin-right:9px;}
 /* "How it works" 3-step framing — make the mental model explicit:
    your thesis = thresholds → corpus pass rate. */
 .ds-howto{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 var(--sc-s-5,18px);}
