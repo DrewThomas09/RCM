@@ -63,10 +63,10 @@ _STYLE = """
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0; background: var(--bg); color: var(--ink);
-    font-family: "Source Serif 4", Georgia, serif; font-size: 16px; line-height: 1.55;
+    font-family: "Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, serif; font-size: 16px; line-height: 1.55;
     -webkit-font-smoothing: antialiased; scroll-behavior: smooth;
   }
-  .sans { font-family: "Inter", sans-serif; }
+  .sans { font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; }
   .mono { font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum" on; }
 
   /* TOP BAR */
@@ -78,28 +78,28 @@ _STYLE = """
   .brand-mark {
     width: 38px; height: 38px; border: 1.5px solid var(--ink); border-radius: 999px;
     display: flex; align-items: center; justify-content: center;
-    font-family: "Source Serif 4", serif; font-size: 1rem; font-weight: 600;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1rem; font-weight: 600;
     color: var(--ink);
   }
-  .brand-name { font-family: "Source Serif 4", serif; font-size: 1.4rem; font-weight: 600; color: var(--ink); }
+  .brand-name { font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.4rem; font-weight: 600; color: var(--ink); }
   .brand-name em { font-style: italic; font-weight: 500; }
   .topnav {
     display: flex; gap: 0; margin-left: 2rem;
-    font-family: "Inter", sans-serif; font-size: .76rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .76rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
   }
   .topnav a { padding: 0 1.1rem; color: var(--ink); text-decoration: none; }
   .topnav a:hover { color: var(--teal-deep); }
   .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
   .signin {
-    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
     text-decoration: none; padding: 0 .75rem;
   }
   .signin:hover { color: var(--ink); }
   .cta-btn {
     background: var(--ink); color: var(--paper);
-    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: .8rem 1.4rem; border: none; cursor: pointer; text-decoration: none;
     display: inline-block; transition: background .18s ease;
@@ -109,7 +109,7 @@ _STYLE = """
   /* CRUMBS */
   .crumbs {
     background: var(--bg); padding: .9rem 2rem; border-bottom: 1px solid var(--border);
-    font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .1em;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; letter-spacing: .1em;
     text-transform: uppercase; color: var(--muted);
   }
   .crumbs .sep { margin: 0 .55rem; color: var(--faint); }
@@ -118,11 +118,10 @@ _STYLE = """
   /* HERO */
   .page { padding: 0 2rem 4rem; max-width: 1500px; margin: 0 auto; }
   .hero {
-    display: grid; grid-template-columns: 1fr 360px; gap: 3rem;
     padding: 4.5rem 0 3.5rem; border-bottom: 1px solid var(--rule);
   }
   .eyebrow {
-    font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .14em;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; letter-spacing: .14em;
     text-transform: uppercase; color: var(--muted); font-weight: 600;
     display: flex; align-items: center; gap: .6rem; margin-bottom: 1.5rem;
   }
@@ -133,19 +132,19 @@ _STYLE = """
     background: var(--teal); display: inline-block;
   }
   h1.title {
-    font-family: "Source Serif 4", serif; font-weight: 400;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400;
     font-size: clamp(3rem, 5.2vw, 4.7rem); line-height: 1.02; letter-spacing: -0.022em;
     color: var(--ink); margin: 0 0 1.5rem;
   }
   h1.title em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
   .lede {
-    font-family: "Source Serif 4", serif; font-size: 1.28rem; line-height: 1.5;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.28rem; line-height: 1.5;
     color: var(--ink-2); max-width: 640px; margin: 0 0 2rem;
   }
   .lede b { font-weight: 600; color: var(--ink); }
   .hero-actions { display: flex; gap: 1.5rem; align-items: center; }
   .ghost-btn {
-    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--ink);
     padding: .8rem 0; border-bottom: 1px solid var(--ink); text-decoration: none;
   }
@@ -161,13 +160,13 @@ _STYLE = """
   .hero-meta .stamp {
     margin-top: .5rem; padding: .9rem 0;
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    font-family: "Source Serif 4", serif; font-style: italic;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-style: italic;
     font-size: .9rem; color: var(--muted); line-height: 1.5;
   }
 
   /* sample tag — honest "this is a worked example" marker */
   .sample-tag {
-    font-family: "Inter", sans-serif; font-size: .58rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .58rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--amber);
     border: 1px solid var(--amber); border-radius: 2px; padding: .12rem .4rem;
     white-space: nowrap;
@@ -185,7 +184,7 @@ _STYLE = """
     color: var(--teal-deep); letter-spacing: .04em; margin-bottom: .8rem;
   }
   .trip-h {
-    font-family: "Source Serif 4", serif; font-weight: 400; font-size: 1.35rem;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400; font-size: 1.35rem;
     line-height: 1.2; color: var(--ink); margin: 0 0 .75rem;
   }
   .trip-h em { font-style: italic; color: var(--teal-deep); }
@@ -202,17 +201,17 @@ _STYLE = """
     background: var(--teal);
   }
   .sect h2 {
-    font-family: "Source Serif 4", serif; font-weight: 400;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400;
     font-size: clamp(2.1rem, 3.4vw, 3.1rem); line-height: 1.08;
     letter-spacing: -0.016em; color: var(--ink); margin: .35rem 0 0;
   }
   .sect h2 em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
   .micro {
-    font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
     letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
   }
   .desc {
-    font-family: "Source Serif 4", serif; font-size: 1.05rem; line-height: 1.6;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.05rem; line-height: 1.6;
     color: var(--muted); margin: 0; max-width: 640px;
   }
 
@@ -225,7 +224,7 @@ _STYLE = """
   .pair .data { background: var(--bg); }
   .data-h {
     padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
-    font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
     display: flex; justify-content: space-between; align-items: center; gap: .5rem;
   }
@@ -239,7 +238,7 @@ _STYLE = """
     text-align: left; padding: .55rem 1.25rem; color: var(--faint);
     font-weight: 600; font-size: .62rem; letter-spacing: .12em;
     text-transform: uppercase; border-bottom: 1px solid var(--border);
-    font-family: "Inter", sans-serif;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
   }
   .pair td {
     padding: .55rem 1.25rem; border-bottom: 1px solid var(--border);
@@ -247,7 +246,7 @@ _STYLE = """
   }
   .pair tr:last-child td { border-bottom: none; }
   .pair td.r { text-align: right; }
-  .pair td.lbl { color: var(--muted); font-family: "Inter", sans-serif; font-size: .9rem; }
+  .pair td.lbl { color: var(--muted); font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .9rem; }
   .pair tr.hot td { background: var(--bg-tint); }
   .pair tr.hot td:first-child { border-left: 2px solid var(--amber); }
 
@@ -255,12 +254,12 @@ _STYLE = """
   .funnel { display: grid; grid-template-columns: repeat(7, 1fr); gap: .15rem; }
   .funnel .stage { background: var(--bg); padding: 1rem .85rem; border-top: 2px solid var(--teal); }
   .funnel .nm {
-    font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
     margin-bottom: .5rem;
   }
   .funnel .ct {
-    font-family: "Source Serif 4", serif; font-size: 1.7rem; color: var(--ink);
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.7rem; color: var(--ink);
     line-height: 1; margin-bottom: .25rem;
   }
   .funnel .ev {
@@ -286,11 +285,11 @@ _STYLE = """
     letter-spacing: .04em; color: var(--teal-deep); margin-bottom: .6rem;
   }
   .cap-name {
-    font-family: "Source Serif 4", serif; font-size: 1.22rem; line-height: 1.2;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.22rem; line-height: 1.2;
     color: var(--ink); margin: 0 0 .5rem;
   }
   .cap-d {
-    font-family: "Source Serif 4", serif; font-size: .9rem; color: var(--muted);
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: .9rem; color: var(--muted);
     line-height: 1.5; margin: 0;
   }
 
@@ -306,7 +305,7 @@ _STYLE = """
     display: flex; justify-content: space-between; align-items: center;
   }
   .cat-h .ttl {
-    font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
     letter-spacing: .14em; color: var(--ink);
   }
   .cat-h .lvl {
@@ -320,7 +319,7 @@ _STYLE = """
     border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
   }
   .cat-col tr:last-child td { border-bottom: none; }
-  .cat-col td.lbl { color: var(--muted); font-family: "Inter", sans-serif; }
+  .cat-col td.lbl { color: var(--muted); font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; }
   .cat-col td.r { text-align: right; font-family: "JetBrains Mono", monospace; color: var(--ink); font-weight: 600; }
 
   /* CTA STRIP — flat dark, no glow */
@@ -330,7 +329,7 @@ _STYLE = """
     display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center;
   }
   .cta-strip h3 {
-    font-family: "Source Serif 4", serif; font-weight: 400;
+    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400;
     font-size: 2.4rem; line-height: 1.08; letter-spacing: -0.015em;
     color: var(--paper); margin: 0;
   }
@@ -343,7 +342,7 @@ _STYLE = """
   .cta-strip-actions { display: flex; flex-direction: column; gap: .75rem; }
   .cta-light {
     background: var(--paper); color: var(--ink);
-    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
     transition: background .18s ease, color .18s ease;
@@ -351,7 +350,7 @@ _STYLE = """
   .cta-light:hover { background: var(--teal); color: var(--paper); }
   .cta-outline {
     background: transparent; border: 1px solid rgba(245,240,225,.4); color: var(--paper);
-    font-family: "Inter", sans-serif; font-size: .72rem; font-weight: 700;
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
     transition: background .18s ease, color .18s ease, border-color .18s ease;
@@ -363,7 +362,7 @@ _STYLE = """
     margin-top: 3rem; padding: 2rem; border-top: 1px solid var(--rule);
     display: flex; justify-content: space-between; align-items: center; gap: 1rem;
     flex-wrap: wrap;
-    font-family: "Inter", sans-serif; font-size: .82rem; color: var(--muted);
+    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .82rem; color: var(--muted);
   }
   footer em { font-style: italic; color: var(--teal-deep); }
 
@@ -448,19 +447,6 @@ def _hero() -> str:
         '<div class="hero-actions">'
         f'<a href="{_LOGIN}" class="cta-btn">Open a workspace &rarr;</a>'
         '<a href="#workspace" class="ghost-btn">See a sample profile &darr;</a>'
-        '</div>'
-        '</div>'
-        '<div class="hero-meta">'
-        '<div class="row"><span class="k">BUILT ON</span>'
-        '<span class="v">CMS public data</span></div>'
-        '<div class="row"><span class="k">RUNS</span>'
-        '<span class="v">your infrastructure</span></div>'
-        '<div class="row"><span class="k">DATA OUT</span>'
-        '<span class="v" style="color:var(--green)">none</span></div>'
-        '<div class="stamp">'
-        'What follows is one worked sample profile. The figures are an '
-        'illustrative example, not a live data view; in the app, '
-        'each one links to the source behind it. No PHI on this instance.'
         '</div>'
         '</div>'
         '</section>'
