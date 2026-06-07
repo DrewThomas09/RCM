@@ -100,35 +100,50 @@ def _sort_link(params: Dict[str, str], col: str, label: str) -> str:
             f'style="color:inherit;text-decoration:none">{_html.escape(label)}{arrow}</a>')
 
 
-def _dl_bar(label: str, n: int, max_n: int, color: str) -> str:
+_DL_OVERVIEW_CSS = (
+    "<style>.dl-bar{transition:background .12s}"
+    ".dl-bar:hover{background:var(--sc-parchment-2,#efe9dd)}"
+    ".dl-bar:hover .dl-bar-lbl{color:var(--sc-teal,#155752)}</style>"
+)
+
+
+def _dl_bar(label: str, n: int, max_n: int, color: str,
+            href: "Optional[str]" = None) -> str:
     """One editorial bar row: mono label, hairline track + fill, tabular count.
-    Matches the funnel-bar idiom used elsewhere; all fonts are token stacks."""
+    When ``href`` is set the whole row is a click target that drills into the
+    filtered library view (with a subtle hover highlight). Token fonts only."""
     pct = max(2, round(100 * n / max_n)) if max_n else 2
-    return (
-        f'<div style="display:flex;align-items:center;gap:10px;padding:3px 0;'
-        f'font-family:var(--sc-mono);font-size:11px">'
-        f'<span style="width:118px;flex:none;color:{P["text_dim"]};white-space:nowrap;'
-        f'overflow:hidden;text-overflow:ellipsis" title="{_html.escape(label)}">'
-        f'{_html.escape(label)}</span>'
+    inner = (
+        f'<span class="dl-bar-lbl" style="width:118px;flex:none;color:{P["text_dim"]};'
+        f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .12s" '
+        f'title="{_html.escape(label)}">{_html.escape(label)}</span>'
         f'<span style="flex:1;height:9px;background:{P["border_dim"]};border-radius:1px;'
         f'overflow:hidden"><span style="display:block;height:100%;width:{pct}%;'
         f'background:{color}"></span></span>'
         f'<span style="width:46px;text-align:right;color:{P["text"]};'
-        f'font-variant-numeric:tabular-nums">{n:,}</span></div>'
+        f'font-variant-numeric:tabular-nums">{n:,}</span>'
     )
+    base = ('display:flex;align-items:center;gap:10px;padding:3px 6px;margin:0 -6px;'
+            'font-family:var(--sc-mono);font-size:11px;border-radius:2px')
+    if href:
+        return (f'<a class="dl-bar" href="{_html.escape(href)}" '
+                f'style="{base};text-decoration:none;color:inherit">{inner}</a>')
+    return f'<div class="dl-bar" style="{base}">{inner}</div>'
 
 
-def _dl_chart(title: str, pairs, color: str) -> str:
-    """A titled bar chart (column of _dl_bar rows). pairs = [(label, count)]."""
-    if not pairs:
+def _dl_chart(title: str, rows, color: str) -> str:
+    """A titled bar chart. ``rows`` = [(label, count, href_or_None)]."""
+    if not rows:
         return ""
-    max_n = max(n for _, n in pairs) or 1
-    rows = "".join(_dl_bar(str(lbl), int(n), max_n, color) for lbl, n in pairs)
+    max_n = max(r[1] for r in rows) or 1
+    bars = "".join(
+        _dl_bar(str(r[0]), int(r[1]), max_n, color,
+                r[2] if len(r) > 2 else None) for r in rows)
     return (
         f'<div style="flex:1;min-width:264px">'
         f'<div style="font-family:var(--sc-sans);font-size:11px;font-weight:600;'
         f'letter-spacing:.08em;text-transform:uppercase;color:{P["text_dim"]};'
-        f'margin:0 0 8px">{_html.escape(title)}</div>{rows}</div>'
+        f'margin:0 0 8px">{_html.escape(title)}</div>{bars}</div>'
     )
 
 
@@ -153,6 +168,10 @@ def _dl_market_overview(store: Any) -> str:
             "SELECT deal_type,COUNT(*) n FROM deal_library_companies "
             "WHERE deal_quarter IS NOT NULL AND deal_type IS NOT NULL "
             "GROUP BY deal_type ORDER BY n DESC LIMIT 8")
+        by_spons = rows(
+            "SELECT sponsor_owner,COUNT(*) n FROM deal_library_companies "
+            "WHERE deal_quarter IS NOT NULL AND sponsor_owner IS NOT NULL "
+            "GROUP BY sponsor_owner ORDER BY n DESC LIMIT 10")
         n_deals = c.execute(
             "SELECT COUNT(*) FROM deal_library_companies "
             "WHERE deal_quarter IS NOT NULL").fetchone()[0]
@@ -164,7 +183,17 @@ def _dl_market_overview(store: Any) -> str:
             "SELECT COUNT(DISTINCT industry) FROM deal_library_companies "
             "WHERE deal_quarter IS NOT NULL AND industry IS NOT NULL"
         ).fetchone()[0]
-    by_sec = [(str(s).split(";")[0][:22], n) for s, n in by_sec]
+    # Build (display_label, count, drill-down href) rows. Clicking a bar
+    # filters the table below to that quarter / sector / deal type; the
+    # overview stays as the at-a-glance picture above the filtered list.
+    def _lib(**kw):
+        return "/deal-library?" + _url.urlencode(kw)
+    q_rows = [(q, n, _lib(deal_quarter=q)) for q, n in by_q]
+    sec_rows = [(str(s).split(";")[0][:22], n, _lib(industry=str(s)))
+                for s, n in by_sec]
+    type_rows = [(t, n, _lib(deal_type=t)) for t, n in by_type]
+    spons_rows = [(str(sp).split("(")[0][:24].strip(), n, _lib(sponsor=str(sp)))
+                  for sp, n in by_spons]
     kpi = (
         f'<div style="font-family:var(--sc-mono);font-size:11px;color:{P["text_dim"]};'
         f'margin:0 0 14px">'
@@ -175,9 +204,10 @@ def _dl_market_overview(store: Any) -> str:
         f' &middot; <b style="color:{P["text"]}">{n_sec:,}</b> sectors</div>')
     charts = (
         '<div style="display:flex;gap:28px;flex-wrap:wrap">'
-        + _dl_chart("Deal volume by quarter", by_q, P["accent"])
-        + _dl_chart("Top sectors", by_sec, P["navy"])
-        + _dl_chart("By deal type", by_type, P["positive"])
+        + _dl_chart("Deal volume by quarter", q_rows, P["accent"])
+        + _dl_chart("Top sectors", sec_rows, P["navy"])
+        + _dl_chart("By deal type", type_rows, P["positive"])
+        + _dl_chart("Most active sponsors", spons_rows, P["warning"])
         + '</div>')
     head = (
         f'<div style="font-family:var(--sc-serif);font-size:18px;color:{P["text"]};'
@@ -186,7 +216,8 @@ def _dl_market_overview(store: Any) -> str:
         f'text-transform:uppercase;color:{P["text_faint"]};margin:0 0 12px">'
         f'Tracked HCPEA deals &middot; by deal date</div>')
     return (
-        f'<section style="margin:18px 0 6px;padding:18px 20px;background:{P["panel"]};'
+        _DL_OVERVIEW_CSS
+        + f'<section style="margin:18px 0 6px;padding:18px 20px;background:{P["panel"]};'
         f'border:1px solid {P["border"]};border-radius:3px">{head}{kpi}{charts}</section>')
 
 
@@ -311,6 +342,10 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         _filters["sponsor_owner"] = sponsor
     if vertical:
         _filters["healthcare_vertical_est"] = vertical
+    # Drill-down filters set by clicking a Market-overview bar.
+    for _pk in ("deal_quarter", "deal_type", "industry"):
+        if params.get(_pk):
+            _filters[_pk] = params[_pk]
     res = dl.query(
         store,
         filters=_filters or None,
@@ -319,6 +354,22 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         sort_dir=params.get("sort_dir", "asc"),
         limit=page_size, offset=offset,
     )
+    # Active drill-down chip (shows what a chart click filtered to + a clear).
+    _drill = next(((k, params[k]) for k in
+                   ("deal_quarter", "deal_type", "industry") if params.get(k)), None)
+    drill_chip = ""
+    if _drill:
+        _dlabel = {"deal_quarter": "Quarter", "deal_type": "Deal type",
+                   "industry": "Sector"}[_drill[0]]
+        drill_chip = (
+            f'<div style="margin:16px 0 0;font-family:var(--sc-mono);font-size:11px;'
+            f'display:flex;align-items:center;gap:10px">'
+            f'<span style="background:{P["accent"]};color:#fff;padding:3px 11px;'
+            f'border-radius:12px;letter-spacing:.04em">{_dlabel}: '
+            f'{_html.escape(_drill[1])}</span>'
+            f'<span style="color:{P["text_dim"]}">{res["total"]:,} deals</span>'
+            f'<a href="/deal-library" style="color:{P["accent"]};text-decoration:none">'
+            f'clear &times;</a></div>')
     cols = [
         {"key": "company_name", "label": _sort_link(params, "company_name", "Company"), "align": "left"},
         {"key": "sponsor_owner", "label": _sort_link(params, "sponsor_owner", "Sponsor"), "align": "left"},
@@ -364,6 +415,7 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
         + _missingness_strip(miss)
         + freq
         + form
+        + drill_chip
         + rollup
         + table
         + pager
