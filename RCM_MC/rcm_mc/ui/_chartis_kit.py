@@ -7813,7 +7813,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-mega-lede { display:flex; flex-direction:column; justify-content:flex-start;
     align-items:flex-start; text-align:left; gap:7px; min-width:0;
     padding-right:36px; border-right:1px solid var(--tb-rule); }
-  .ck-mega-feat { align-items:flex-start; text-align:left; }
+  .ck-mega-feat { align-items:flex-start; text-align:left; min-width:0; }
   /* Pin every lede child (kicker, title, blurb) to the column's left edge.
      align-self beats whatever cross-axis value the feat ends up with, so the
      short kicker/title can't drift to center while the wider blurb reads left
