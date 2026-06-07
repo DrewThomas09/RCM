@@ -1045,7 +1045,7 @@ def _hrsa_attrition_panel() -> str:
         f'<div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">'
         f'<div style="white-space:nowrap"><div style="font-family:JetBrains Mono,monospace;font-size:20px;'
         f'color:{tp};font-variant-numeric:tabular-nums">{total:,}</div>'
-        f'<div style="font-size:10px;color:{td};margin-bottom:8px">designated primary-care<br>shortage areas (HPSAs)</div>'
+        f'<div style="font-size:10px;color:{td};margin-bottom:8px">designated primary-care <br>shortage areas (HPSAs)</div>'
         f'<div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tp};'
         f'font-variant-numeric:tabular-nums">{med}</div>'
         f'<div style="font-size:10px;color:{td}">national median HPSA score</div></div>'
