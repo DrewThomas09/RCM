@@ -244,7 +244,7 @@ def _hpsa_retention_panel() -> str:
     <div style="white-space:nowrap">
       <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
         font-variant-numeric:tabular-nums">{total:,}</div>
-      <div style="font-size:10px;color:{tdim};margin-bottom:8px">designated primary-care<br>shortage areas (HPSAs)</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">designated primary-care <br>shortage areas (HPSAs)</div>
       <div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tprim};
         font-variant-numeric:tabular-nums">{med}</div>
       <div style="font-size:10px;color:{tdim}">national median HPSA score</div>

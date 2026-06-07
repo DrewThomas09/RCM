@@ -37,26 +37,35 @@ class TestTopbarPositioning(unittest.TestCase):
         self.assertNotIn("transform:", block)
 
 
-class TestTopbarRowDoesNotWrap(unittest.TestCase):
-    """Regression: at narrower-than-fullscreen widths the nav links wrapped to
-    a row above the wordmark and were clipped by the fixed-height bar. The row
-    must stay single-line (nowrap) and shrink gracefully."""
+class TestTopbarRowStability(unittest.TestCase):
+    """Regression: at narrower-than-fullscreen widths the nav links once wrapped
+    to a row above the wordmark and clipped on the fixed-height bar. The fix
+    (see the _chartis_kit topbar comments) keeps the row single-line at common
+    widths via the responsive nav-padding steps, and when truly cramped wraps
+    the whole inner row to a second line (the bar grows) rather than letting
+    nowrap links overlap the right zone. The earlier nowrap + min-width:0
+    approach is what caused that overlap bug, so the guard now asserts the
+    wrap + natural-width design that replaced it."""
 
-    def test_inner_row_is_nowrap(self):
+    def test_inner_row_wraps_not_overlaps(self):
+        # flex-wrap:wrap is the deliberate anti-overlap guard: a too-tight row
+        # grows to a 2nd line instead of overlapping. The row still reads as one
+        # line at common widths thanks to the responsive padding steps.
         html = _app_shell()
         m = re.search(r"\.ck-topbar-inner\s*\{[^}]*\}", html)
         self.assertIsNotNone(m)
         block = m.group(0)
-        self.assertIn("flex-wrap:nowrap", block)
-        # min-height (not a hard height) so a grown child cannot clip the top.
-        # Compact bar (2026-05-27: shrunk from 76 → 58px per "too massive").
+        self.assertIn("flex-wrap:wrap", block)
+        # min-height (not a hard height) so a wrapped child cannot clip the top.
         self.assertIn("min-height:58px", block)
 
-    def test_nav_can_shrink(self):
+    def test_nav_shrinks_by_natural_width(self):
+        # The nav shrinks via flex:0 1 auto at natural width, not min-width:0,
+        # which let nowrap links spill rightward and overlap the right zone.
         html = _app_shell()
         m = re.search(r"\.ck-nav\s*\{[^}]*\}", html)
         self.assertIsNotNone(m)
-        self.assertIn("min-width:0", m.group(0))
+        self.assertIn("flex:0 1 auto", m.group(0))
 
     def test_responsive_padding_steps_present(self):
         # Nav-link padding tightens below fullscreen so 7 links + wordmark +

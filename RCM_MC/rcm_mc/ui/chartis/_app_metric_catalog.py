@@ -51,7 +51,7 @@ def render_metric_catalog(
         '<div class="sect">'
         '<div>'
         '<div class="micro">METRIC CATALOG</div>'
-        '<h2>Fund returns<br/>at a glance</h2>'
+        '<h2>Fund returns <br/>at a glance</h2>'
         '</div>'
         '<p class="desc">Fund-level return metrics. Deal-level drag, '
         'covenants, and initiative variance are shown live in the '

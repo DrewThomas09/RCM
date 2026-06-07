@@ -18,11 +18,18 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 
-from rcm_mc.diligence.surface_status import classify_surface
-
+# Self-pathing: the audit test runs this via `python scripts/...` without
+# PYTHONPATH set, so add the repo root before importing rcm_mc. Installed/CI
+# envs already resolve the package; this just makes the subprocess robust.
 _ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from rcm_mc.diligence.surface_status import classify_surface  # noqa: E402
+
 _PAGES = _ROOT / "rcm_mc" / "ui" / "data_public"
 _JSON = _ROOT / "data_quality" / "page_data_source_audit.json"
 _MD = _ROOT / "docs" / "reports" / "PAGE_DATA_SOURCE_AUDIT.md"

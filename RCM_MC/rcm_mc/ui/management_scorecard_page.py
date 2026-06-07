@@ -477,29 +477,10 @@ def render_management_scorecard_page(
     team = _demo_team()
     report = analyze_team(team, guidance_ebitda_usd=guidance)
 
-    # Demo-data banner. The page currently renders against a fixed
-    # 4-executive demo roster (Helen Marsh / Robert Smith / Marcus
-    # Chen / Patricia Okafor — see _demo_team above). There is no
-    # CIM-ingest or CMS-public-data input flow yet, so every visit
-    # shows the same four names. Without this banner partners can read
-    # the scores as if they applied to the target deal — they don't.
-    demo_banner = (
-        f'<div style="background:#fef6e8;border:1px solid #b8732a;'
-        f'border-left:4px solid #b8732a;padding:12px 18px;'
-        f'border-radius:0 3px 3px 0;margin-bottom:14px;'
-        f'font-size:13px;color:#5a3a13;line-height:1.55;max-width:880px;">'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
-        f'letter-spacing:1.6px;text-transform:uppercase;font-weight:700;'
-        f'color:#b8732a;margin-bottom:4px;">Demo data</div>'
-        f'<strong style="color:#2d1d05;">The four executives below are '
-        f'demonstration fixtures.</strong> Names, tenure, comp, and '
-        f'forecast-miss histories are illustrative; they do not reflect '
-        f'the target deal. The 4-dimension scoring framework (forecast '
-        f'reliability × comp structure × tenure × prior role) is real '
-        f'and runs against whatever roster is supplied. CIM ingest + '
-        f'CMS public-data pulls are the next inputs to wire up.'
-        f'</div>'
-    )
+    # Demo-roster amber box removed (2026 under-title rehaul): the
+    # ck_source_purpose strip below already carries the ILLUSTRATIVE / DATA
+    # REQUIRED disclosure ("NOT this team's real record ... a framework, not
+    # findings"), so a second stacked box under the title was redundant clunk.
 
     hero_and_haircut = export_json_panel(
         _hero(report, target_name)
@@ -545,7 +526,6 @@ def render_management_scorecard_page(
             source="Illustrative scaffold: the forecast-miss and retention histories are NOT this team's real record. Upload management track-record data to activate; until then read it as a framework, not findings.",
             next_action="Provide management track-record + comp data to activate",
         )
-        + demo_banner
         + hero_and_haircut
         + howto
         + f'<div class="ms-section-label">'

@@ -378,6 +378,8 @@ def render_screen_page(
         ("max_revenue", "NPR $M (max)", filters.get("max_revenue", ""), "e.g. 500", "revenue ceiling"),
         ("min_margin", "Margin % (min)", filters.get("min_margin", ""), "e.g. 0", "operating-margin floor"),
         ("max_margin", "Margin % (max)", filters.get("max_margin", ""), "e.g. 3", "ceiling: low = struggling"),
+        ("max_medicaid", "Medicaid % (max)", filters.get("max_medicaid", ""), "e.g. 25", "payer-mix ceiling: high = reimbursement risk"),
+        ("min_medicare", "Medicare % (min)", filters.get("min_medicare", ""), "e.g. 30", "stable-payer floor"),
         ("state", "State", filters.get("state", ""), "e.g. TX", "2-letter code"),
     ]
     filter_inputs = ""
@@ -433,7 +435,8 @@ def render_screen_page(
     def _chip(t: str) -> str:
         return f'<span class="hs-chip">{_esc(t)}</span>'
     _range_keys = ("min_beds", "max_beds", "min_revenue", "max_revenue",
-                   "min_margin", "max_margin", "state")
+                   "min_margin", "max_margin", "max_medicaid", "min_medicare",
+                   "state")
     chips = []
     if filters.get("min_beds") or filters.get("max_beds"):
         chips.append(_chip(f"Beds {filters.get('min_beds') or '0'}–{filters.get('max_beds') or '∞'}"))
@@ -441,6 +444,10 @@ def render_screen_page(
         chips.append(_chip(f"NPR ${filters.get('min_revenue') or '0'}M–${filters.get('max_revenue') or '∞'}M"))
     if filters.get("min_margin") or filters.get("max_margin"):
         chips.append(_chip(f"Margin {filters.get('min_margin') or '−∞'}%–{filters.get('max_margin') or '∞'}%"))
+    if filters.get("max_medicaid"):
+        chips.append(_chip(f"Medicaid ≤{filters['max_medicaid']}%"))
+    if filters.get("min_medicare"):
+        chips.append(_chip(f"Medicare ≥{filters['min_medicare']}%"))
     if filters.get("state"):
         chips.append(_chip(f"State {filters['state']}"))
     chips.append(_chip(f"Sorted: {dict(sort_opts).get(sort_val, sort_val)}"))
@@ -467,21 +474,32 @@ def render_screen_page(
             rev_cell = (f"${float(rev)/1e6:,.0f}M"
                         if (rev is not None and rev == rev) else "&mdash;")
             rpb = r.get("rev_per_bed", 0) or 0
-            margin = r.get("operating_margin", 0)
-            margin = float(margin) if (margin and margin == margin) else 0
-            if margin_is_plausible(margin):
-                margin_color = PALETTE["positive"] if margin > 0.05 else (
-                    PALETTE["warning"] if margin > 0 else PALETTE["negative"])
-                margin_cell = f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
-            else:
-                # Junk-opex artifact: show it, but mute + flag rather than let
-                # it read as a real result (see margin_is_plausible).
+            mraw = r.get("operating_margin")
+            if mraw is None or (isinstance(mraw, float) and mraw != mraw):
+                # Not reported, or not trustworthy from the patient-revenue basis
+                # (gated out upstream: see hcris.screener_operating_margin). Show
+                # "—" rather than a fabricated 0.0% or a clamped -100%.
                 margin_cell = (
-                    f'<td class="num hs-dq" title="Margin {margin:.1%} is outside the '
-                    f'realistic -40% to +30% band; this HCRIS filing likely has '
-                    f'incomplete or aggregated opex; review before relying on it.">'
-                    f'{margin:.1%} &#9888;</td>'
+                    f'<td class="num" style="color:{PALETTE["text_muted"]};" '
+                    f'title="Operating margin not reportable from this filing\'s '
+                    f'patient-revenue basis.">&mdash;</td>'
                 )
+            else:
+                margin = float(mraw)
+                if margin_is_plausible(margin):
+                    margin_color = PALETTE["positive"] if margin > 0.05 else (
+                        PALETTE["warning"] if margin > 0 else PALETTE["negative"])
+                    margin_cell = f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
+                else:
+                    # Defensive backstop: an out-of-band value should already be
+                    # None upstream, but if one slips through, mute + flag it
+                    # rather than let it read as a real result.
+                    margin_cell = (
+                        f'<td class="num hs-dq" title="Margin {margin:.1%} is outside the '
+                        f'realistic -40% to +30% band; this HCRIS filing likely has '
+                        f'incomplete or aggregated opex; review before relying on it.">'
+                        f'{margin:.1%} &#9888;</td>'
+                    )
             rpb_str = f'${rpb/1e3:,.0f}K' if rpb else '&mdash;'
             rows_html += (
                 f'<tr>'

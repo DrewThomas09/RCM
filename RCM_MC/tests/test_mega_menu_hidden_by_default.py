@@ -50,9 +50,10 @@ class MegaMenuHiddenByDefaultTests(unittest.TestCase):
                       self.css)
         self.assertIn(".ck-topbar[data-menu-js] .ck-nav-group.is-open > .ck-nav-mega { display:block; }",
                       self.css)
-        # The actual columnar grid is on .ck-mega-inner — assert it's grid
-        # so a future regression that drops the columns gets caught.
-        self.assertIn("display:grid; grid-template-columns:2fr 3fr;",
+        # The actual columnar grid is on .ck-mega-inner: assert the two-column
+        # template so a future regression that drops the columns gets caught.
+        # (Redesigned from 2fr/3fr to a fixed feature column + fluid listing.)
+        self.assertIn("grid-template-columns:minmax(0,400px) minmax(0,1fr);",
                       self.css)
 
     def test_no_group_open_in_default_markup(self):

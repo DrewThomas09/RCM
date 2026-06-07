@@ -25,7 +25,6 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_data_universe,
-    ck_illustrative_note,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -44,6 +43,9 @@ _EXPLAINER_CSS = """
 color:var(--sc-text-dim);max-width:70ch;
 margin:var(--sc-s-4) 0 var(--sc-s-5);}
 .ck-ds-explainer em{color:var(--sc-teal-ink);font-style:italic;}
+/* the BENCHMARK DATASET data-basis chip leads this sentence; give it a little
+   air so the mono label reads as a marker, not run into the serif body. */
+.ck-ds-explainer .ck-universe{margin-right:9px;}
 /* "How it works" 3-step framing — make the mental model explicit:
    your thesis = thresholds → corpus pass rate. */
 .ds-howto{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 var(--sc-s-5,18px);}
@@ -80,14 +82,11 @@ def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -
         meta = f"{n_pass} pass · {n_watch} watch · {n_fail} fail · {total} deals"
     else:
         meta = "PASS / WATCH / FAIL decision per deal"
-    return (
-        ck_page_title("Thesis Screening", eyebrow="SOURCE · DEAL SCREENING",
-                      meta=meta)
-        + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
-        + ck_illustrative_note(
-            "screening decisions over the deal dataset (mostly an illustrative/"
-            "modeled set: realized MOIC/IRR are not disclosed returns)")
-    )
+    # Just the title here. The BENCHMARK DATASET data-basis chip rides at the
+    # head of the explainer strip below (one masthead strip, not a lone chip
+    # line that floats under the title), so the chip + purpose read as one band.
+    return ck_page_title("Thesis Screening", eyebrow="SOURCE · DEAL SCREENING",
+                         meta=meta)
 
 
 _DECISION_COLORS = {
@@ -369,8 +368,14 @@ def render_deal_screening(
     )
     n_deals = len(results)
     pass_rate = (counts.get("PASS", 0) / n_deals) if n_deals else 0.0
+    # The BENCHMARK DATASET data-basis chip leads the explainer strip: its
+    # tooltip discloses the corpus is mostly illustrative/modeled (realized
+    # MOIC/IRR are not disclosed returns), keeping the disclosure honest
+    # (satisfies test_corpus_illustrative_disclosure) as one masthead strip
+    # rather than a separate chip line floating under the title.
     explainer_html = (
         '<p class="ck-ds-explainer">'
+        f'{ck_data_universe("corpus")} '
         f"Set your thesis as thresholds: risk, valuation ceiling, return floor, "
         f"payer-mix and size, and PE Desk scores the full {n_deals}-deal dataset "
         f"against them. The <b>pass rate</b> is your base rate: the share that "

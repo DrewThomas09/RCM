@@ -7,6 +7,7 @@ page stays in that page's module.
 from __future__ import annotations
 
 import html as _html
+import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .._chartis_kit import P
@@ -224,6 +225,80 @@ def flat_get(obj: Any, *keys: str, default: Any = None) -> Any:
     return cur if cur is not None else default
 
 
+# ── Corpus de-duplication ────────────────────────────────────────────
+# The seed corpus accreted the same real deal across multiple batches with
+# modeled-figure variance (e.g. Oak Street/CVS as both seed_044 and seed_101),
+# double-counting it in every corpus analytic. The seed rows are kept (they
+# carry per-row spot-check tests in test_deals_corpus); the repeats are
+# collapsed here at load time. Dup criteria mirror
+# tests/test_corpus_no_exact_duplicates.py exactly so the guard and the loader
+# never disagree. Keep-first preserves the canonical row (real-tagged base /
+# extended_seed groups load before the later synthetic batches).
+_CORPUS_GENERIC_TOKENS = {
+    "health", "healthcare", "group", "inc", "llc", "corp", "corporation",
+    "partners", "systems", "system", "holdings", "holding", "services",
+    "service", "the", "merger", "acquisition", "buyout", "take", "private",
+    "lbo", "platform", "recap", "secondary", "deal", "physician", "staffing",
+    "capital", "management", "company", "associates", "round", "preipo", "ipo",
+}
+
+
+def _corpus_norm_target(name: str) -> str:
+    name = (name or "").lower()
+    name = re.split(r"[–—\-/(]", name)[0]
+    name = re.sub(
+        r"\b(health|healthcare|group|inc|llc|corp|partners|systems?|"
+        r"holdings?|services?|the)\b", "", name)
+    return re.sub(r"[^a-z0-9]", "", name)
+
+
+def _corpus_norm_buyer(buyer: str) -> str:
+    buyer = (buyer or "").lower()
+    buyer = re.split(r"[(/+]", buyer)[0]
+    return re.sub(r"[^a-z0-9]", "", buyer)[:12]
+
+
+def _corpus_target_tokens(name: str, buyer: str) -> set:
+    buyer_tokens = set(re.findall(r"[a-z]{4,}", (buyer or "").lower()))
+    return {t for t in re.findall(r"[a-z]{4,}", (name or "").lower())
+            if t not in _CORPUS_GENERIC_TOKENS and t not in buyer_tokens}
+
+
+def _corpus_ev(deal: Dict[str, Any]) -> float:
+    try:
+        return float(deal.get("ev_mm") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _dedup_corpus(deals: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Collapse repeat entries of the same real deal (keep-first)."""
+    kept: List[Dict[str, Any]] = []
+    meta = []  # parallel (norm_buyer, year, norm_target, ev, tokens)
+    for d in deals:
+        name = d.get("deal_name") or d.get("company_name") or ""
+        nb, yr = _corpus_norm_buyer(d.get("buyer")), d.get("year")
+        nt, ev = _corpus_norm_target(name), _corpus_ev(d)
+        toks = _corpus_target_tokens(name, d.get("buyer"))
+        dupe = False
+        for (mnb, myr, mnt, mev, mtoks) in meta:
+            if myr != yr or mnb != nb or ev <= 0 or mev <= 0:
+                continue
+            r = ev / mev
+            # same normalized target (test_no_exact_duplicate_deals)
+            if nt and nt == mnt and 0.88 <= r <= 1.136:
+                dupe = True
+                break
+            # cross-side: shared target token (test_no_cross_side_duplicate_deals)
+            if 0.94 <= r <= 1.064 and (toks & mtoks):
+                dupe = True
+                break
+        if not dupe:
+            kept.append(d)
+            meta.append((nb, yr, nt, ev, toks))
+    return kept
+
+
 def load_corpus_deals() -> List[Dict[str, Any]]:
     """Return the full seed corpus (35 base + extended batches).
 
@@ -251,7 +326,7 @@ def load_corpus_deals() -> List[Dict[str, Any]]:
             result += list(getattr(mod, f"EXTENDED_SEED_DEALS_{i}"))
         except (ImportError, AttributeError):
             pass
-    return result
+    return _dedup_corpus(result)
 
 
 def safe_dict(x: Any) -> Dict[str, Any]:

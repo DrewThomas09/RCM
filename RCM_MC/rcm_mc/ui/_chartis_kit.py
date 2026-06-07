@@ -811,13 +811,19 @@ def ck_data_universe(kind: str) -> str:
 def ck_source_purpose(*, purpose: str, universe: str, source: str,
                       confidence: str = "", next_action: str = "",
                       next_href: str = "") -> str:
-    """Diligence source-and-purpose header band.
+    """Diligence source-and-purpose header strip (ONE consistent treatment).
 
     Declares, for any analyzer/diligence page: what decision it supports
     (purpose), which data universe + confidence it uses (chips), the named
     source, and the next action. The reform contract requires every Diligence
     page to carry one so a deal team never mistakes an illustrative model for
-    live evidence. ``universe``/``confidence`` are ck_data_universe kinds."""
+    live evidence. ``universe``/``confidence`` are ck_data_universe kinds.
+
+    Collapsed (2026 under-title rehaul) to a compact strip: a lead line
+    (data-kind chips inline with the one-line purpose) and a tiny muted meta
+    line (named source + next action). The old three-block stack read as clunk
+    under every title; this is the single low-clunk pattern site-wide.
+    """
     chips = ck_data_universe(universe)
     if confidence and confidence != universe:
         chips += ck_data_universe(confidence)
@@ -828,11 +834,13 @@ def ck_source_purpose(*, purpose: str, universe: str, source: str,
         nxt = (f'<a class="ck-sp-next" href="{_esc(next_href or "#")}">'
                f'{_esc(next_action)} &rarr;</a>') if next_href else (
                f'<span class="ck-sp-next">{_esc(next_action)}</span>')
+    purpose_html = (f'<span class="ck-sp-purpose">{_esc(purpose)}</span>'
+                    if purpose else "")
+    meta = f'<div class="ck-sp-meta">{src}{nxt}</div>' if (src or nxt) else ""
     return (
         '<div class="ck-sp">'
-        f'<div class="ck-sp-chips">{chips}</div>'
-        f'<p class="ck-sp-purpose">{_esc(purpose)}</p>'
-        f'<div class="ck-sp-meta">{src}{nxt}</div>'
+        f'<p class="ck-sp-lead">{chips}{purpose_html}</p>'
+        f'{meta}'
         '</div>'
     )
 
@@ -851,23 +859,17 @@ def ck_illustrative_note(what: str = "figures") -> str:
     calm, non-alarming disclosure strip (a note, not an error) with a
     self-contained style block — call it once per page, near the title.
     """
+    # Style lives in the global shell sheet (.ck-illus-note) now, not an inline
+    # <style> here. The inline block used to sit between the page title and this
+    # note, breaking the title + .ck-illus-note adjacency the masthead rhythm
+    # relies on (an invisible <style> was the title's next sibling, so the gap
+    # never collapsed). Returning just the markup restores adjacency and dedupes
+    # the CSS across the ~70 illustrative pages that render this.
     return (
-        "<style>"
-        # Slimmed (2026): borderless quiet line, not a parchment box — same
-        # de-clutter the source-purpose band got. Honesty tag (amber) stays.
-        ".ck-illus-note{display:flex;align-items:baseline;gap:8px;"
-        "flex-wrap:wrap;margin:0 0 14px;padding:0 0 8px;"
-        "border-bottom:1px solid var(--sc-rule,#d6cfc0);}"
-        ".ck-illus-note-tag{font-family:var(--sc-mono,monospace);font-size:10px;"
-        "font-weight:700;letter-spacing:0.1em;text-transform:uppercase;"
-        "color:var(--sc-warning,#b8732a);white-space:nowrap;}"
-        ".ck-illus-note-body{font-family:var(--sc-sans,sans-serif);font-size:11.5px;"
-        "line-height:1.45;color:var(--sc-text-dim,#465366);}"
-        "</style>"
         '<div class="ck-illus-note" role="note">'
         '<span class="ck-illus-note-tag">Illustrative template</span>'
         f'<span class="ck-illus-note-body">Representative {_esc(what)} for '
-        "layout and methodology — not this portfolio's live, sourced data.</span>"
+        "layout and methodology, not this portfolio's live, sourced data.</span>"
         "</div>"
     )
 
@@ -909,7 +911,11 @@ _ILLUSTRATIVE_ANALYZER_ROUTES = frozenset({
     "/continuation-vehicle", "/corpus-coverage", "/corpus-dashboard", "/corpus-ic-memo",
     "/covenant-headroom", "/covenant-monitor",
     "/cyber-risk", "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
-    "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-screening",
+    "/deal-postmortem", "/deal-quality", "/deal-risk-scores",
+    # /deal-screening intentionally omitted: Thesis Screening self-discloses via
+    # the BENCHMARK DATASET universe chip (illustrative corpus; realized MOIC/IRR
+    # not disclosed returns), so it skips the blanket route-level note and reads
+    # as one subtle marker rather than a stacked chip + banner.
     "/deal-search", "/deal-sourcing", "/debt-financing", "/demand-forecast",
     "/denovo-expansion",
     "/digital-front-door", "/diligence-vendors", "/direct-employer", "/direct-lending",
@@ -7478,9 +7484,11 @@ _CSS_INLINE_FALLBACK = """
   .ck-kpi-code { position:absolute; top:var(--sc-s-4); right:0; font-family:var(--sc-mono); font-size:10px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   /* Data-universe label chips (ck_data_universe) — declare which data
    * universe a page shows so corpus is never mistaken for portfolio. */
-  /* De-boxed (2026): these were bordered pills ("CMS PUBLIC DATA" etc.) that
-   * stacked as visual-clutter boxes under page titles. Now a tiny dot + mono
-   * label — the data-kind / honesty marker survives without the box. */
+  /* De-boxed (2026): these data-kind labels were bordered pills that stacked
+   * as visual-clutter boxes under page titles. Now a tiny dot + mono label —
+   * the data-kind / honesty marker survives without the box. (No example
+   * label text in this comment: it ships in the global CSS and a literal
+   * universe label here would trip the screener no-bubble guards.) */
   .ck-universe { display:inline-flex; align-items:center; gap:5px; padding:0;
     font-family:var(--sc-mono); font-size:9.5px; font-weight:600; letter-spacing:0.1em;
     text-transform:uppercase; border:0; border-radius:0; cursor:help;
@@ -7504,11 +7512,16 @@ _CSS_INLINE_FALLBACK = """
    * mono source — so the modeled-vs-live disclosure survives without the box. */
   .ck-sp { border:0; background:none; padding:0 0 9px;
     margin:0 0 16px; border-bottom:1px solid var(--sc-rule); }
-  .ck-sp-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  /* lead line: data-kind chips sit inline with the one-line purpose (was a
+     separate chips row that ate a line under every title). */
+  .ck-sp-lead { display:flex; flex-wrap:wrap; align-items:baseline;
+    gap:5px 12px; margin:0 0 3px; }
+  .ck-sp-chips { display:flex; gap:6px; flex-wrap:wrap; }
   .ck-sp-purpose { font-family:var(--sc-sans,'Inter',sans-serif); font-size:12px;
-    line-height:1.45; color:var(--sc-text-dim,#6a7480); margin:0 0 4px; max-width:92ch; }
-  .ck-sp-meta { display:flex; gap:16px; flex-wrap:wrap; font-family:var(--sc-mono);
-    font-size:10px; letter-spacing:.04em; color:var(--sc-text-faint,#8a93a0); }
+    line-height:1.45; color:var(--sc-text-dim,#6a7480); margin:0; max-width:92ch; }
+  .ck-sp-meta { display:flex; gap:14px; flex-wrap:wrap; font-family:var(--sc-mono);
+    font-size:10px; letter-spacing:.04em; color:var(--sc-text-faint,#8a93a0);
+    line-height:1.4; }
   .ck-sp-src b { color:var(--sc-text,#2a3a4a); font-weight:600; }
   .ck-sp-next { color:var(--sc-teal,#155752); text-decoration:none; text-transform:uppercase;
     letter-spacing:.1em; }
@@ -7794,7 +7807,7 @@ _CSS_INLINE_FALLBACK = """
   .ck-mega-lede { display:flex; flex-direction:column; justify-content:flex-start;
     align-items:flex-start; text-align:left; gap:7px; min-width:0;
     padding-right:36px; border-right:1px solid var(--tb-rule); }
-  .ck-mega-feat { align-items:flex-start; text-align:left; }
+  .ck-mega-feat { align-items:flex-start; text-align:left; min-width:0; }
   /* Pin every lede child (kicker, title, blurb) to the column's left edge.
      align-self beats whatever cross-axis value the feat ends up with, so the
      short kicker/title can't drift to center while the wider blurb reads left
@@ -8101,6 +8114,104 @@ _CSS_INLINE_FALLBACK = """
   .ck-page-explainer-source { display:block; margin-top:8px;
     font-family:var(--sc-mono); font-size:10.5px; letter-spacing:0.06em;
     color:var(--sc-text-faint); text-transform:uppercase; }
+
+  /* Illustrative-template provenance note (ck_illustrative_note). Moved here
+   * from an inline <style> the helper used to emit, which sat between the page
+   * title and the note and broke the masthead adjacency below. Slim borderless
+   * quiet line; amber honesty tag stays. */
+  .ck-illus-note { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+    margin:0 0 14px; padding:0 0 8px; border-bottom:1px solid var(--sc-rule,#d6cfc0); }
+  .ck-illus-note-tag { font-family:var(--sc-mono,monospace); font-size:10px;
+    font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--sc-warning,#b8732a); white-space:nowrap; }
+  .ck-illus-note-body { font-family:var(--sc-sans,sans-serif); font-size:11.5px;
+    line-height:1.45; color:var(--sc-text-dim,#465366); }
+
+  /* ── Under-title rhythm (2026 masthead rehaul) ───────────────────────
+   * One rhythm site-wide. A context strip (source/purpose, illustrative
+   * note, explainer, or section intro) that immediately follows the page
+   * title reads as part of the masthead, not as a thin band floating 38px
+   * below it. The title's generous bottom margin collapses when a strip
+   * follows (the strip carries the separation), every strip type shares
+   * the same bottom hairline + gap so they read identically, and strip-on-
+   * strip stacking is pulled tight. When raw content follows the title
+   * directly (no strip), the title keeps its full 38px so the masthead
+   * breathes. Uses :has() (modern browsers); degrades to today's spacing.
+   * Before: title floated 38px above a hairline strip, and the gap differed
+   * per page depending on which strip (or how many) followed. */
+  .ck-page-title:has(+ .ck-sp),
+  .ck-page-title:has(+ .ck-illus-note),
+  .ck-page-title:has(+ .ck-page-explainer),
+  .ck-page-title:has(+ .ck-section-intro),
+  /* The standard helper is ck-page-explainer, but ~30 pages predate it with
+     their own lead-paragraph class (ck-cr-explainer, ck-ds-explainer,
+     ck-comps-explainer, ...) or a contrast callout (ck-ps-contrast). Catch the
+     whole family by suffix so the title-gap is one rhythm whether a page uses
+     the helper or its own paragraph. */
+  .ck-page-title:has(+ [class*="-explainer"]),
+  .ck-page-title:has(+ [class*="-contrast"]),
+  /* ~45 analyzer pages wrap their content in .ck-page-wrap, so the title's
+     adjacent sibling is the wrapper and the strip is the wrapper's first child.
+     Reach one level in (the wrapper has padding:0, so the title margin is the
+     whole gap) to collapse the float on those too. */
+  .ck-page-title:has(+ .ck-page-wrap > .ck-sp:first-child),
+  .ck-page-title:has(+ .ck-page-wrap > .ck-illus-note:first-child),
+  .ck-page-title:has(+ .ck-page-wrap > [class*="-explainer"]:first-child),
+  .ck-page-title:has(+ .ck-page-wrap > [class*="-contrast"]:first-child) {
+    margin-bottom:var(--sc-s-4); }
+  /* A handful of diligence pages emit their page-local <style>(s) right after
+     ck_page_title and wrap content in a page-local div whose first child is the
+     strip, so the title's adjacent sibling is an inert <style> and the rules
+     above miss them. Collapse across the style(s) + that wrapper. Fully scoped
+     to each wrapper + a strip first-child, so no other page is touched (a
+     selector that does not match is simply inert). */
+  .ck-page-title:has(+ style + .da-wrap > .ck-da-explainer:first-child),
+  .ck-page-title:has(+ style + .ba-wrap > .ck-section-intro:first-child),
+  .ck-page-title:has(+ style + .wc-container > .ck-sp:first-child),
+  .ck-page-title:has(+ style + style + .tp-wrap > [class*="-explainer"]:first-child) {
+    margin-bottom:var(--sc-s-4); }
+  /* zero the nested first-child strip's own top margin so the collapsed title
+     margin is the whole gap (ck-sp already has none). */
+  .ck-page-title + style + .da-wrap > .ck-da-explainer:first-child,
+  .ck-page-title + style + .ba-wrap > .ck-section-intro:first-child,
+  .ck-page-title + style + style + .tp-wrap > [class*="-explainer"]:first-child {
+    margin-top:0; }
+  /* kill any top push the following strip carries (explainer/section-intro
+     have their own top margins for mid-page use) so the gap above is the
+     title's collapsed margin alone. */
+  .ck-page-title + .ck-sp,
+  .ck-page-title + .ck-illus-note,
+  .ck-page-title + .ck-page-explainer,
+  .ck-page-title + .ck-section-intro,
+  .ck-page-title + [class*="-explainer"],
+  .ck-page-title + [class*="-contrast"] { margin-top:0; }
+  /* explainer + section-intro carried no bottom rule; in the masthead slot
+     give them the same hairline + bottom gap the sp/illus strips use, so all
+     four strip types separate from content identically. EXCEPT when the next
+     block is a KPI grid/strip (it carries its own top rule), to avoid a doubled
+     hairline. */
+  .ck-page-title + .ck-page-explainer:not(:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid))),
+  .ck-page-title + .ck-section-intro:not(:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid))) {
+    padding-bottom:var(--sc-s-4); margin-bottom:var(--sc-s-5);
+    border-bottom:1px solid var(--sc-rule); }
+  /* sp / illustrative strips carry a bottom rule globally; drop it when they sit
+     directly above a KPI grid/strip so the masthead shows one divider, not two
+     (also clears pre-existing doubled hairlines on those pairings). */
+  .ck-sp:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid)),
+  .ck-illus-note:has(+ :is(.ck-kpi-grid,.ck-kpi-strip,.ck-pulse-grid)) {
+    border-bottom:0; }
+  /* strip-on-strip (e.g. illustrative note then a section intro): the second
+     strip must not re-open a big gap. Pull it tight and let it own the single
+     bottom rule; the first strip drops its rule so the masthead shows one. */
+  .ck-illus-note + .ck-section-intro,
+  .ck-illus-note + .ck-page-explainer,
+  .ck-sp + .ck-section-intro,
+  .ck-sp + .ck-page-explainer { margin-top:var(--sc-s-3); }
+  .ck-illus-note:has(+ .ck-section-intro),
+  .ck-illus-note:has(+ .ck-page-explainer),
+  .ck-sp:has(+ .ck-section-intro),
+  .ck-sp:has(+ .ck-page-explainer) { border-bottom:0; padding-bottom:0;
+    margin-bottom:0; }
 
   /* Search hero — full-bleed navy panel with italic-serif label and
    * teal chevron. Sits in the page-header stack, between the KPI

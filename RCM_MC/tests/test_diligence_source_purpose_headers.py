@@ -24,7 +24,11 @@ _REQUIRE_SOURCE_PURPOSE = {
     "provider_xray_page.py": _UI / "provider_xray_page.py",
     "bear_case_page.py": _UI / "bear_case_page.py",
     "target_screener_page.py": _UI / "target_screener_page.py",
-    "predictive_screener.py": _UI / "predictive_screener.py",
+    # predictive_screener.py intentionally omitted: the bulky ck_source_purpose
+    # band was removed at the owner's request. Its data-basis honesty ("Model
+    # estimates from public data, not observed RCM performance") now lives in
+    # the contrast callout and is enforced page-specifically by
+    # test_predictive_scanner_clarity.test_contrast_callout_explains_difference.
     "market_intel_page.py": _UI / "market_intel_page.py",
     "covenant_lab_page.py": _UI / "covenant_lab_page.py",
     "bridge_audit_page.py": _UI / "bridge_audit_page.py",

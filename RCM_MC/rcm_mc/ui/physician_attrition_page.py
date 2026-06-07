@@ -27,8 +27,8 @@ from ..diligence.physician_attrition import (
 )
 from ..diligence.physician_comp.comp_ingester import Provider
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_signal_badge,
+    P, chartis_shell, ck_illustrative_note, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_section_header, ck_signal_badge,
 )
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
@@ -1045,7 +1045,7 @@ def _hrsa_attrition_panel() -> str:
         f'<div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start">'
         f'<div style="white-space:nowrap"><div style="font-family:JetBrains Mono,monospace;font-size:20px;'
         f'color:{tp};font-variant-numeric:tabular-nums">{total:,}</div>'
-        f'<div style="font-size:10px;color:{td};margin-bottom:8px">designated primary-care<br>shortage areas (HPSAs)</div>'
+        f'<div style="font-size:10px;color:{td};margin-bottom:8px">designated primary-care <br>shortage areas (HPSAs)</div>'
         f'<div style="font-family:JetBrains Mono,monospace;font-size:13px;color:{tp};'
         f'font-variant-numeric:tabular-nums">{med}</div>'
         f'<div style="font-size:10px;color:{td}">national median HPSA score</div></div>'
@@ -1154,28 +1154,12 @@ def render_physician_attrition_page(
             title="Roster focus",
         )
 
-    # Demo-data disclosure. The page currently scores a fixed
-    # demonstration roster (_demo_roster above) on every visit —
-    # there is no CIM-ingest or NPPES-pull path yet. Without this
-    # banner partners can mistake the flight-risk scores for findings
-    # on the target deal.
-    demo_banner = (
-        f'<div style="background:#fef6e8;border:1px solid #b8732a;'
-        f'border-left:4px solid #b8732a;padding:12px 18px;'
-        f'border-radius:0 3px 3px 0;margin-bottom:14px;'
-        f'font-size:13px;color:#5a3a13;line-height:1.55;max-width:880px;">'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
-        f'letter-spacing:1.6px;text-transform:uppercase;font-weight:700;'
-        f'color:#b8732a;margin-bottom:4px;">Demo data</div>'
-        f'<strong style="color:#2d1d05;">The providers scored below '
-        f'are a demonstration roster.</strong> Names, specialties, '
-        f'tenure, and collections histories are illustrative: they '
-        f'do not reflect the target deal. The flight-risk model '
-        f'(predictive churn analytic) is real and runs against any '
-        f'roster supplied. NPPES + CIM-ingest hookup are the next '
-        f'inputs to wire up.'
-        f'</div>'
-    )
+    # Demo-data disclosure, normalized to the standard slim illustrative
+    # marker (2026 under-title rehaul): the page scores a fixed demonstration
+    # roster (_demo_roster above) on every visit, so the marker keeps partners
+    # from reading the flight-risk scores as findings on the target deal.
+    demo_banner = ck_illustrative_note(
+        "flight-risk scores on a demonstration roster")
 
     explainer_html = (
         '<p class="ck-pa-explainer">'

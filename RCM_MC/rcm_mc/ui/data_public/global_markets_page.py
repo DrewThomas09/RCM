@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import chartis_shell, ck_page_title
+from rcm_mc.ui._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
 from rcm_mc.ui._chart_kit import ck_hbar_chart
 from rcm_mc.ui.world_geo_map import render_world_map
 from rcm_mc.data_public.global_health_markets import (
@@ -76,6 +76,11 @@ def render_global_markets(store=None) -> str:
         "Global healthcare markets",
         eyebrow="INTERNATIONAL · /markets/global",
         meta=f"{n} markets · health spend % of GDP · {n_active} active PE markets",
+    ) + ck_source_purpose(
+        purpose="Compare national healthcare markets by spend and structure to "
+                "frame cross-border PE opportunity.",
+        universe="research",
+        source="OECD Health Statistics + World Bank health-expenditure data (public).",
     )
 
     fmt = lambda v: f"{v:.1f}%"  # noqa: E731

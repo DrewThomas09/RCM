@@ -20,47 +20,93 @@ _EXPLAINER_CSS = """
 color:var(--sc-text-dim);max-width:70ch;
 margin:var(--sc-s-4) 0 var(--sc-s-5);}
 .ck-cr-explainer em{color:var(--sc-teal-ink);font-style:italic;}
-/* Conference Intelligence — recaps + macro threads (the "what happened"
-   research layer above the forward calendar). */
+/* Conference Intelligence — recaps + macro threads + circuit read (the
+   "what happened" research layer above the forward calendar). */
 .cr-section-label{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:11px;
-font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-color:var(--sc-teal,#155752);margin:26px 0 10px;
-padding-bottom:5px;border-bottom:1px solid var(--sc-rule,#d6cfc0);}
-.cr-threads{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-gap:12px;margin-bottom:8px;}
-.cr-thread{border-left:2px solid var(--sc-teal,#155752);padding:2px 0 2px 12px;}
+font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+color:var(--sc-teal,#155752);margin:34px 0 14px;
+padding-bottom:6px;border-bottom:1px solid var(--sc-rule,#d6cfc0);}
+
+/* Circuit read — sentiment of each event in calendar order (the page's
+   at-a-glance graph). */
+.cr-circ-dist{display:flex;align-items:center;gap:14px;margin:0 0 16px;flex-wrap:wrap;}
+.cr-circ-bar2{display:flex;height:11px;width:min(300px,55%);border-radius:6px;
+overflow:hidden;border:1px solid var(--sc-rule,#d6cfc0);}
+.cr-circ-bar2 span{display:block;height:100%;}
+.cr-circ-dist-k{font-family:var(--sc-sans,Inter Tight),sans-serif;font-size:12px;
+font-weight:600;color:var(--sc-ink,#1a2332);}
+.cr-circ-dist-v{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:11px;
+color:var(--sc-text-dim,#5b6b7a);}
+.cr-circ{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+gap:9px;margin:0 0 8px;}
+.cr-circ-cell{border:1px solid var(--sc-rule,#d6cfc0);border-radius:6px;
+padding:0 0 11px;background:var(--sc-paper,#faf7f0);overflow:hidden;}
+.cr-circ-cap{height:5px;}
+.cr-circ-name{font-family:var(--sc-sans,Inter Tight),sans-serif;font-weight:600;
+font-size:12px;color:var(--sc-ink,#1a2332);line-height:1.25;margin:10px 12px 0;}
+.cr-circ-meta{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:9px;
+color:var(--sc-text-faint,#7a8699);margin:4px 12px 0;line-height:1.4;}
+.cr-circ-sent{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:9px;
+font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin:7px 12px 0;}
+
+/* macro-thread cards — numbered, roomier. */
+.cr-threads{display:grid;grid-template-columns:repeat(auto-fit,minmax(265px,1fr));
+gap:20px 22px;margin-bottom:8px;}
+.cr-thread{border-left:2px solid var(--sc-teal,#155752);padding:1px 0 4px 14px;}
+.cr-thread-n{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:10px;
+font-weight:700;color:var(--sc-teal,#155752);letter-spacing:.06em;}
 .cr-thread-t{font-family:var(--sc-sans,Inter Tight),sans-serif;font-weight:600;
-font-size:13px;color:var(--sc-ink,#1a2332);margin-bottom:3px;}
-.cr-thread-b{font-size:12px;line-height:1.5;color:var(--sc-text-dim,#5b6b7a);}
-.cr-recap{border:1px solid var(--sc-rule,#d6cfc0);border-radius:6px;
-padding:16px 18px;margin-bottom:14px;background:var(--sc-paper,#faf7f0);}
+font-size:14px;color:var(--sc-ink,#1a2332);margin:3px 0 6px;line-height:1.3;}
+.cr-thread-b{font-size:12.5px;line-height:1.62;color:var(--sc-text-dim,#5b6b7a);}
+
+/* Recap cards — more air, clearer hierarchy. */
+.cr-recap{border:1px solid var(--sc-rule,#d6cfc0);border-radius:7px;
+padding:22px 24px;margin-bottom:18px;background:var(--sc-paper,#faf7f0);}
 .cr-recap-head{display:flex;justify-content:space-between;align-items:flex-start;
 gap:12px;flex-wrap:wrap;}
-.cr-recap-name{font-family:var(--sc-serif,Source Serif 4),serif;font-size:18px;
+.cr-recap-name{font-family:var(--sc-serif,Source Serif 4),serif;font-size:21px;
 font-weight:600;color:var(--sc-ink,#1a2332);line-height:1.15;}
 .cr-recap-meta{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:10.5px;
-letter-spacing:.04em;color:var(--sc-text-faint,#7a8699);margin-top:3px;}
+letter-spacing:.04em;color:var(--sc-text-faint,#7a8699);margin-top:4px;}
 .cr-sent{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:10px;
 font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-border-radius:3px;padding:3px 9px;white-space:nowrap;align-self:flex-start;}
-.cr-lede{font-family:var(--sc-serif,Source Serif 4),serif;font-size:14px;
-line-height:1.55;color:var(--sc-ink,#1a2332);margin:9px 0 4px;}
-.cr-note{font-size:12px;line-height:1.5;color:var(--sc-text-dim,#5b6b7a);
-font-style:italic;margin:0 0 12px;}
-.cr-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+border-radius:3px;padding:4px 11px;white-space:nowrap;align-self:flex-start;
+display:inline-flex;align-items:center;gap:6px;}
+.cr-sent::before{content:"";width:6px;height:6px;border-radius:50%;
+background:currentColor;flex:none;}
+.cr-lede{font-family:var(--sc-serif,Source Serif 4),serif;font-size:15.5px;
+line-height:1.55;color:var(--sc-ink,#1a2332);margin:14px 0 6px;max-width:92ch;}
+.cr-note{font-size:12.5px;line-height:1.55;color:var(--sc-text-dim,#5b6b7a);
+font-style:italic;margin:0 0 20px;max-width:92ch;}
+.cr-cols{display:grid;grid-template-columns:1fr 1fr;gap:30px;}
+.cr-grp{margin-bottom:20px;}
+.cr-grp:last-child{margin-bottom:0;}
 .cr-h{font-family:var(--sc-mono,JetBrains Mono),monospace;font-size:9.5px;
 font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-color:var(--sc-text-faint,#7a8699);margin:10px 0 5px;}
-.cr-list{margin:0;padding-left:16px;font-size:12px;line-height:1.55;
+margin:0 0 9px;display:flex;align-items:center;gap:7px;}
+.cr-h::before{content:"";width:9px;height:9px;border-radius:2px;
+background:currentColor;flex:none;}
+.cr-h-themes{color:var(--sc-teal,#155752);}
+.cr-h-anns{color:var(--sc-navy,#15202b);}
+.cr-h-impact{color:var(--sc-warning,#b8732a);}
+.cr-list{margin:0;padding:0;list-style:none;font-size:12.5px;line-height:1.6;
 color:var(--sc-text-dim,#5b6b7a);}
-.cr-list li{margin-bottom:4px;}
-.cr-list b{color:var(--sc-ink,#1a2332);}
-.cr-dilig{font-size:12px;line-height:1.55;color:var(--sc-ink,#1a2332);
-border-left:2px solid var(--sc-teal,#155752);padding:2px 0 2px 11px;}
+.cr-list li{position:relative;padding-left:16px;margin-bottom:9px;}
+.cr-list li:last-child{margin-bottom:0;}
+.cr-list li::before{content:"";position:absolute;left:0;top:7px;width:5px;height:5px;
+border-radius:50%;background:var(--sc-text-faint,#9aa3b0);}
+.cr-themes li::before{background:var(--sc-teal,#155752);}
+.cr-anns li::before{background:var(--sc-navy,#15202b);}
+.cr-impact li::before{background:var(--sc-warning,#b8732a);border-radius:1px;top:8px;}
+.cr-list b{color:var(--sc-ink,#1a2332);font-weight:600;}
+.cr-dilig{font-size:12.5px;line-height:1.62;color:var(--sc-ink,#1a2332);
+background:var(--sc-parchment-2,#efe9dd);border-left:3px solid var(--sc-teal,#155752);
+padding:11px 15px;border-radius:0 4px 4px 0;}
 .cr-sources{font-size:10.5px;line-height:1.6;color:var(--sc-text-faint,#7a8699);
-margin-top:12px;padding-top:9px;border-top:1px solid var(--sc-rule,#d6cfc0);}
+margin-top:18px;padding-top:12px;border-top:1px solid var(--sc-rule,#d6cfc0);}
 .cr-sources a{color:var(--sc-teal,#155752);text-decoration:none;}
-@media (max-width:640px){.cr-cols{grid-template-columns:1fr;}}
+.cr-sources a:hover{text-decoration:underline;}
+@media (max-width:720px){.cr-cols{grid-template-columns:1fr;gap:0;}}
 """
 
 CONFERENCES = [
@@ -343,19 +389,63 @@ def _sentiment_badge(sentiment: str) -> str:
     )
 
 
+def _circuit_strip(recaps) -> str:
+    """At-a-glance 'read across the circuit' — each event toned by sentiment in
+    calendar order, plus a distribution bar. The page's lead visual, derived
+    straight from the recap data so the year's mood is legible before the wall
+    of text."""
+    from collections import Counter
+    from .conference_recaps import SENTIMENT_TONE
+    n = len(recaps) or 1
+    cnt = Counter(SENTIMENT_TONE.get(r["sentiment"], "muted") for r in recaps)
+    seg = "".join(
+        f'<span style="width:{cnt[t] / n * 100:.1f}%;'
+        f'background:{_SENTIMENT_HEX.get(t, "#7a8699")}"></span>'
+        for t in ("positive", "warning", "negative", "muted") if cnt[t]
+    )
+    lab = Counter(_SENTIMENT_LABEL.get(r["sentiment"], r["sentiment"]) for r in recaps)
+    summary = ", ".join(f"{c} {label.lower()}" for label, c in lab.most_common())
+    dist = (
+        '<div class="cr-circ-dist">'
+        '<span class="cr-circ-dist-k">The read across the circuit</span>'
+        f'<span class="cr-circ-bar2">{seg}</span>'
+        f'<span class="cr-circ-dist-v">{_html.escape(summary)} &middot; {n} events</span>'
+        '</div>'
+    )
+    cells = ""
+    for r in recaps:
+        c = _SENTIMENT_HEX.get(SENTIMENT_TONE.get(r["sentiment"], "muted"), "#7a8699")
+        held = _html.escape(r["held"].split("·")[0].strip())  # date only, drop city
+        cells += (
+            '<div class="cr-circ-cell">'
+            f'<div class="cr-circ-cap" style="background:{c}"></div>'
+            f'<div class="cr-circ-name">{_html.escape(r["name"])}</div>'
+            f'<div class="cr-circ-meta">{held}</div>'
+            f'<div class="cr-circ-sent" style="color:{c}">'
+            f'{_html.escape(_SENTIMENT_LABEL.get(r["sentiment"], r["sentiment"]))}</div>'
+            '</div>'
+        )
+    return dist + f'<div class="cr-circ">{cells}</div>'
+
+
 def _render_recaps() -> str:
-    """Macro threads + curated conference recaps — the 'what happened / why it
-    matters' research layer that sits above the forward calendar."""
+    """Macro threads + circuit read + curated conference recaps — the
+    'what happened / why it matters' research layer above the forward calendar."""
     from .conference_recaps import CONFERENCE_RECAPS, MACRO_THREADS
 
     threads = "".join(
-        f'<div class="cr-thread"><div class="cr-thread-t">{_html.escape(t["title"])}</div>'
+        f'<div class="cr-thread"><div class="cr-thread-n">{i:02d}</div>'
+        f'<div class="cr-thread-t">{_html.escape(t["title"])}</div>'
         f'<div class="cr-thread-b">{_html.escape(t["body"])}</div></div>'
-        for t in MACRO_THREADS
+        for i, t in enumerate(MACRO_THREADS, 1)
     )
     macro = (
         '<div class="cr-section-label">Macro threads · 2025 → 2026</div>'
         f'<div class="cr-threads">{threads}</div>'
+    )
+    circuit = (
+        '<div class="cr-section-label">The circuit · sentiment by event</div>'
+        f'{_circuit_strip(CONFERENCE_RECAPS)}'
     )
 
     cards = ""
@@ -381,10 +471,14 @@ def _render_recaps() -> str:
             f'<p class="cr-lede">{_html.escape(r["one_line"])}</p>'
             f'<p class="cr-note">{_html.escape(r["sentiment_note"])}</p>'
             '<div class="cr-cols">'
-            f'<div><div class="cr-h">Key themes</div><ul class="cr-list">{themes}</ul>'
-            f'<div class="cr-h">Notable announcements</div><ul class="cr-list">{anns}</ul></div>'
-            f'<div><div class="cr-h">Market impact</div><ul class="cr-list">{impact}</ul>'
-            f'<div class="cr-h">Diligence read</div><div class="cr-dilig">{_html.escape(r["diligence"])}</div></div>'
+            f'<div><div class="cr-grp"><div class="cr-h cr-h-themes">Key themes</div>'
+            f'<ul class="cr-list cr-themes">{themes}</ul></div>'
+            f'<div class="cr-grp"><div class="cr-h cr-h-anns">Notable announcements</div>'
+            f'<ul class="cr-list cr-anns">{anns}</ul></div></div>'
+            f'<div><div class="cr-grp"><div class="cr-h cr-h-impact">Market impact</div>'
+            f'<ul class="cr-list cr-impact">{impact}</ul></div>'
+            f'<div class="cr-grp"><div class="cr-h cr-h-themes">Diligence read</div>'
+            f'<div class="cr-dilig">{_html.escape(r["diligence"])}</div></div></div>'
             '</div>'
             f'<div class="cr-sources">Sources: {sources}</div>'
             '</div>'
@@ -393,7 +487,7 @@ def _render_recaps() -> str:
         '<div class="cr-section-label">What happened: conference recaps</div>'
         f'{cards}'
     )
-    return macro + recaps
+    return macro + circuit + recaps
 
 
 def render_conference_roadmap(category: str = "all") -> str:
