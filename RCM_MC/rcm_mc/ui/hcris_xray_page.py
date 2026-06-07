@@ -193,8 +193,11 @@ def _xray_top_finding(report: "XRayReport", top_under: list, top_over: list) -> 
     pad = (hi - lo) * 0.12 or (abs(hi) * 0.12 or 1.0)
     band = k.xr_peer_band(lo - pad, hi + pad, p25, med, p75, tgt, state)
     fmt = bm.spec.fmt
-    delta = (f"{bm.variance_vs_median_pct*100:+.1f}% vs peer median "
-             f"{fmt(med)} · {bm.verdict}")
+    # Label the relative deviation explicitly as "variance" and lead with the
+    # verdict, so the figure below the headline value (e.g. -457%) reads as a
+    # peer-deviation, not a second margin. Median shown in parens for the base.
+    delta = (f"{bm.verdict} · variance {bm.variance_vs_median_pct*100:+.1f}% "
+             f"vs peer median ({fmt(med)})")
     label = html.escape(bm.spec.label)
     return (
         f'<div class="xr-topfind {tone}">'
