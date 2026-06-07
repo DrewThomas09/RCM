@@ -253,7 +253,7 @@ def _rbp_benchmark_panel() -> str:
     <div style="white-space:nowrap">
       <div style="font-family:JetBrains Mono,monospace;font-size:20px;color:{tprim};
         font-variant-numeric:tabular-nums">{statewide_median:.2f}x</div>
-      <div style="font-size:10px;color:{tdim};margin-bottom:8px">median commercial price<br>as % of Medicare</div>
+      <div style="font-size:10px;color:{tdim};margin-bottom:8px">median commercial price <br>as % of Medicare</div>
       <div style="font-family:JetBrains Mono,monospace;font-size:12px;color:{tdim};
         font-variant-numeric:tabular-nums">{p25:.2f}x &ndash; {p75:.2f}x IQR</div>
       <div style="font-size:10px;color:{tdim}">{n_prov} providers · {n_cty} counties</div>
