@@ -23,10 +23,16 @@ _TEXT_COLS = [
     "source_sheet", "source_row_id", "ticker", "company_name", "clean_name",
     "industry", "healthcare_vertical_est", "ownership_status", "sponsor_owner",
     "company_status", "website", "address", "geography", "state",
+    # Transaction-deal fields (added for the HCPEA / market deal trackers,
+    # which are *deals*, not company screens — the screen-only schema had no
+    # place for the deal date, type, or counterparties). _ensure_table's
+    # ALTER-loop adds these to pre-existing DBs on next open.
+    "deal_date", "deal_quarter", "deal_type", "buyer_name", "seller_name",
     "missing_fields", "provenance_note",
 ]
 _NUM_COLS = ["enterprise_value", "ebitda", "revenue", "market_cap",
-             "employees", "amount_raised", "completeness_score"]
+             "employees", "amount_raised",
+             "transaction_value", "post_valuation", "completeness_score"]
 _INT_COLS = ["duplicate_candidate"]
 _ALL_COLS = _TEXT_COLS + _NUM_COLS + _INT_COLS
 
@@ -34,9 +40,11 @@ _ALL_COLS = _TEXT_COLS + _NUM_COLS + _INT_COLS
 # injection via sort param; everything else is rejected).
 SORTABLE = {"company_name", "sponsor_owner", "industry", "state", "geography",
             "revenue", "ebitda", "enterprise_value", "amount_raised",
-            "employees", "completeness_score", "company_status"}
+            "employees", "completeness_score", "company_status",
+            "deal_date", "deal_quarter", "deal_type", "transaction_value"}
 FILTERABLE = {"source_system", "state", "company_status", "sponsor_owner",
-              "industry", "geography", "healthcare_vertical_est"}
+              "industry", "geography", "healthcare_vertical_est",
+              "deal_quarter", "deal_type"}
 
 
 def _ensure_table(store: Any) -> None:

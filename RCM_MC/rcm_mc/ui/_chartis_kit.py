@@ -7767,9 +7767,17 @@ _CSS_INLINE_FALLBACK = """
   @media (prefers-reduced-motion: reduce){ .ck-nav-mega { animation:none; } }
   @keyframes ckMegaIn { from{opacity:0; transform:translateY(-4px);}
     to{opacity:1; transform:translateY(0);} }
-  .ck-mega-inner { max-width:var(--content-max); margin:0 auto;
-    padding:14px 32px 12px; display:grid; grid-template-columns:2fr 3fr;
-    column-gap:40px; row-gap:0; align-items:stretch; }
+  /* Align the panel content to the BAR, not a separate centered max-width:
+     full width + the topbar's 32px gutters, so the lede's left edge sits
+     under the wordmark and the listing's right edge under the right rail at
+     every viewport (the old `max-width:1320; margin:auto` drifted off the
+     bar on wide screens). Lede is a fixed readable column; the listing
+     takes the rest. align-items:start tops-aligns both columns. */
+  .ck-mega-inner { width:100%; box-sizing:border-box;
+    padding:20px 32px 18px; display:grid;
+    grid-template-columns:minmax(0,400px) minmax(0,1fr);
+    column-gap:48px; row-gap:0; align-items:start; }
+  @media (max-width:1320px){ .ck-mega-inner{ padding:20px 22px 18px; column-gap:36px; } }
   /* Shown mega = block (the centered 2fr/3fr grid lives on .ck-mega-inner). */
   .ck-nav-group:hover > .ck-nav-mega,
   .ck-nav-group.is-open > .ck-nav-mega { display:block; }
@@ -7783,8 +7791,15 @@ _CSS_INLINE_FALLBACK = """
   /* LEDE column (2fr) — editorial: kicker · headline · pull-quote · anchored
      all-tools CTA. min-width:0 keeps a long blurb wrapping in-column (guarded);
      the right rule + 48px pad separate it from the listing. */
-  .ck-mega-lede { display:flex; flex-direction:column; justify-content:center;
-    min-width:0; padding-right:36px; border-right:1px solid var(--tb-rule); }
+  .ck-mega-lede { display:flex; flex-direction:column; justify-content:flex-start;
+    align-items:flex-start; text-align:left; gap:7px; min-width:0;
+    padding-right:36px; border-right:1px solid var(--tb-rule); }
+  .ck-mega-feat { align-items:flex-start; text-align:left; }
+  /* Pin every lede child (kicker, title, blurb) to the column's left edge.
+     align-self beats whatever cross-axis value the feat ends up with, so the
+     short kicker/title can't drift to center while the wider blurb reads left
+     (the misaligned-lede bug). */
+  .ck-mega-feat > * { align-self:flex-start; max-width:100%; }
   .ck-mega-feat { display:flex; flex-direction:column; gap:5px; padding:0;
     min-width:0; overflow:visible; background:transparent; border:0;
     text-decoration:none; }
