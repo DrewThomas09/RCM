@@ -8121,6 +8121,49 @@ _CSS_INLINE_FALLBACK = """
     font-family:var(--sc-mono); font-size:10.5px; letter-spacing:0.06em;
     color:var(--sc-text-faint); text-transform:uppercase; }
 
+  /* ── Under-title rhythm (2026 masthead rehaul) ───────────────────────
+   * One rhythm site-wide. A context strip (source/purpose, illustrative
+   * note, explainer, or section intro) that immediately follows the page
+   * title reads as part of the masthead, not as a thin band floating 38px
+   * below it. The title's generous bottom margin collapses when a strip
+   * follows (the strip carries the separation), every strip type shares
+   * the same bottom hairline + gap so they read identically, and strip-on-
+   * strip stacking is pulled tight. When raw content follows the title
+   * directly (no strip), the title keeps its full 38px so the masthead
+   * breathes. Uses :has() (modern browsers); degrades to today's spacing.
+   * Before: title floated 38px above a hairline strip, and the gap differed
+   * per page depending on which strip (or how many) followed. */
+  .ck-page-title:has(+ .ck-sp),
+  .ck-page-title:has(+ .ck-illus-note),
+  .ck-page-title:has(+ .ck-page-explainer),
+  .ck-page-title:has(+ .ck-section-intro) { margin-bottom:var(--sc-s-4); }
+  /* kill any top push the following strip carries (explainer/section-intro
+     have their own top margins for mid-page use) so the gap above is the
+     title's collapsed margin alone. */
+  .ck-page-title + .ck-sp,
+  .ck-page-title + .ck-illus-note,
+  .ck-page-title + .ck-page-explainer,
+  .ck-page-title + .ck-section-intro { margin-top:0; }
+  /* explainer + section-intro carried no bottom rule; in the masthead slot
+     give them the same hairline + bottom gap the sp/illus strips use, so all
+     four strip types separate from content identically. */
+  .ck-page-title + .ck-page-explainer,
+  .ck-page-title + .ck-section-intro {
+    padding-bottom:var(--sc-s-4); margin-bottom:var(--sc-s-5);
+    border-bottom:1px solid var(--sc-rule); }
+  /* strip-on-strip (e.g. illustrative note then a section intro): the second
+     strip must not re-open a big gap. Pull it tight and let it own the single
+     bottom rule; the first strip drops its rule so the masthead shows one. */
+  .ck-illus-note + .ck-section-intro,
+  .ck-illus-note + .ck-page-explainer,
+  .ck-sp + .ck-section-intro,
+  .ck-sp + .ck-page-explainer { margin-top:var(--sc-s-3); }
+  .ck-illus-note:has(+ .ck-section-intro),
+  .ck-illus-note:has(+ .ck-page-explainer),
+  .ck-sp:has(+ .ck-section-intro),
+  .ck-sp:has(+ .ck-page-explainer) { border-bottom:0; padding-bottom:0;
+    margin-bottom:0; }
+
   /* Search hero — full-bleed navy panel with italic-serif label and
    * teal chevron. Sits in the page-header stack, between the KPI
    * strip (above) and the filter rail + table (below). */
