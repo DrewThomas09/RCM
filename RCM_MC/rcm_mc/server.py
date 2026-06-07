@@ -4753,6 +4753,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             ))
         if path == "/tools":
             return self._route_tools_index()
+        # Internal open-data integrations lab (backend; not in the top nav).
+        if path == "/tools/open-data":
+            from .ui.open_data_lab_page import render_open_data_lab
+            return self._send_html(render_open_data_lab())
+        if path.startswith("/tools/open-data/"):
+            from .ui.open_data_lab_page import render_open_data_source
+            _sid = urllib.parse.unquote(
+                path[len("/tools/open-data/"):]).strip("/")
+            return self._send_html(render_open_data_source(_sid))
         if path == "/comparables":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qf(k, default=None):
