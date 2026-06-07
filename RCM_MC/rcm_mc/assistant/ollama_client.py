@@ -15,7 +15,11 @@ container) without code change, and to ride out a slow first call:
   OLLAMA_HOST                          the standard Ollama env var — also
                                        honoured, so a normal Ollama install
                                        works with no PEdesk-specific config
-  PEDESK_GUIDE_OLLAMA_MODEL            default gemma4:e4b
+  PEDESK_GUIDE_OLLAMA_MODEL            default gemma4:e4b — but if that exact
+                                       tag isn't pulled, the Guide falls back to
+                                       any installed Gemma model (then any chat
+                                       model) so a name mismatch never 503s it.
+                                       See ollama_resolve_chat_model().
   PEDESK_GUIDE_OLLAMA_TIMEOUT_SECONDS  default 30
   PEDESK_GUIDE_OLLAMA_RETRIES          transient-error retries per host
                                        (default 2 — the first call after a
@@ -96,6 +100,36 @@ def ollama_base_url() -> str:
 
 def ollama_default_model() -> str:
     return _env("PEDESK_GUIDE_OLLAMA_MODEL", DEFAULT_MODEL) or DEFAULT_MODEL
+
+
+def ollama_resolve_chat_model(preferred: Optional[str] = None) -> str:
+    """Resolve a chat model that is actually installed on a reachable host.
+
+    A configured model that was never ``ollama pull``-ed makes ``/api/chat``
+    404 and the Guide return a 503 — even when the box has a perfectly good
+    model installed. This checks the configured name against the installed list
+    (``GET /api/tags``) and, when it is missing, falls back in order: the same
+    model family (any tag), then any free **Gemma** model (the project's
+    preferred local model), then any non-embedding model. When no host is
+    reachable (or the configured model IS installed) the configured name is
+    returned unchanged, so the normal path and the clean ``OllamaError`` on a
+    dead host both behave exactly as before.
+    """
+    preferred = preferred or ollama_default_model()
+    installed = list_models()
+    if not installed or preferred in installed:
+        return preferred
+    base = preferred.split(":", 1)[0].lower()
+    for m in installed:                       # same family, any tag
+        if m.split(":", 1)[0].lower() == base:
+            return m
+    for m in installed:                       # any free Gemma model
+        if m.lower().startswith("gemma"):
+            return m
+    for m in installed:                       # any non-embedding chat model
+        if "embed" not in m.lower():
+            return m
+    return preferred
 
 
 def ollama_timeout_seconds() -> int:
@@ -228,7 +262,7 @@ def call_ollama_chat(
     if num_ctx:
         options["num_ctx"] = num_ctx
     payload = {
-        "model": model or ollama_default_model(),
+        "model": model or ollama_resolve_chat_model(),
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -324,6 +358,7 @@ def ollama_status() -> dict:
         "reachable_host": reachable,
         "healthy": bool(reachable),
         "model": ollama_default_model(),
+        "resolved_model": ollama_resolve_chat_model() if reachable else ollama_default_model(),
         "models": list_models() if reachable else [],
         "num_ctx": ollama_num_ctx(),
         "keep_alive": ollama_keep_alive(),
