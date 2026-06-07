@@ -8136,14 +8136,23 @@ _CSS_INLINE_FALLBACK = """
   .ck-page-title:has(+ .ck-sp),
   .ck-page-title:has(+ .ck-illus-note),
   .ck-page-title:has(+ .ck-page-explainer),
-  .ck-page-title:has(+ .ck-section-intro) { margin-bottom:var(--sc-s-4); }
+  .ck-page-title:has(+ .ck-section-intro),
+  /* The standard helper is ck-page-explainer, but ~30 pages predate it with
+     their own lead-paragraph class (ck-cr-explainer, ck-ds-explainer,
+     ck-comps-explainer, ...) or a contrast callout (ck-ps-contrast). Catch the
+     whole family by suffix so the title-gap is one rhythm whether a page uses
+     the helper or its own paragraph. */
+  .ck-page-title:has(+ [class*="-explainer"]),
+  .ck-page-title:has(+ [class*="-contrast"]) { margin-bottom:var(--sc-s-4); }
   /* kill any top push the following strip carries (explainer/section-intro
      have their own top margins for mid-page use) so the gap above is the
      title's collapsed margin alone. */
   .ck-page-title + .ck-sp,
   .ck-page-title + .ck-illus-note,
   .ck-page-title + .ck-page-explainer,
-  .ck-page-title + .ck-section-intro { margin-top:0; }
+  .ck-page-title + .ck-section-intro,
+  .ck-page-title + [class*="-explainer"],
+  .ck-page-title + [class*="-contrast"] { margin-top:0; }
   /* explainer + section-intro carried no bottom rule; in the masthead slot
      give them the same hairline + bottom gap the sp/illus strips use, so all
      four strip types separate from content identically. */

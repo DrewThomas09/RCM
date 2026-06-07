@@ -79,16 +79,11 @@ def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -
         meta = f"{n_pass} pass · {n_watch} watch · {n_fail} fail · {total} deals"
     else:
         meta = "PASS / WATCH / FAIL decision per deal"
-    return (
-        ck_page_title("Thesis Screening", eyebrow="SOURCE · DEAL SCREENING",
-                      meta=meta)
-        # The BENCHMARK DATASET chip is the single subtle data-basis marker: its
-        # tooltip discloses the corpus is mostly illustrative/modeled (realized
-        # MOIC/IRR are not disclosed returns). The bulky ck_illustrative_note box
-        # was removed at the owner's request; the chip keeps the disclosure
-        # honest (and satisfies test_corpus_illustrative_disclosure).
-        + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
-    )
+    # Just the title here. The BENCHMARK DATASET data-basis chip rides at the
+    # head of the explainer strip below (one masthead strip, not a lone chip
+    # line that floats under the title), so the chip + purpose read as one band.
+    return ck_page_title("Thesis Screening", eyebrow="SOURCE · DEAL SCREENING",
+                         meta=meta)
 
 
 _DECISION_COLORS = {
@@ -370,8 +365,14 @@ def render_deal_screening(
     )
     n_deals = len(results)
     pass_rate = (counts.get("PASS", 0) / n_deals) if n_deals else 0.0
+    # The BENCHMARK DATASET data-basis chip leads the explainer strip: its
+    # tooltip discloses the corpus is mostly illustrative/modeled (realized
+    # MOIC/IRR are not disclosed returns), keeping the disclosure honest
+    # (satisfies test_corpus_illustrative_disclosure) as one masthead strip
+    # rather than a separate chip line floating under the title.
     explainer_html = (
         '<p class="ck-ds-explainer">'
+        f'{ck_data_universe("corpus")} '
         f"Set your thesis as thresholds: risk, valuation ceiling, return floor, "
         f"payer-mix and size, and PE Desk scores the full {n_deals}-deal dataset "
         f"against them. The <b>pass rate</b> is your base rate: the share that "
