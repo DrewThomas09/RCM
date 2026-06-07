@@ -256,6 +256,12 @@ def render_tools_index(
         # ── footer ──
         '<footer class="ti-foot">'
         f'<span data-ti-footcount>{total_ws} tools · {len([s for s in workspaces if s.get("tools")])} workspaces</span>'
+        # Discreet entry to the backend open-data integrations lab (internal,
+        # WIP — deliberately not promoted as a front-facing tool).
+        '<a href="/tools/open-data" style="font-family:var(--sc-mono);'
+        'font-size:10px;letter-spacing:.08em;text-transform:uppercase;'
+        'color:var(--sc-text-faint,#7a8699);text-decoration:none">'
+        'Internal · open-data lab →</a>'
         '<span class="ti-foot-cta" data-ti-foot-toggle>Full A–Z index →</span>'
         '</footer>'
         '</div>'
