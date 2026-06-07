@@ -53,14 +53,23 @@ class TestCorpusLoaderModes(unittest.TestCase):
 
     def test_load_real_filters_correctly(self):
         deals = load_corpus_deals("real")
-        # Every returned row must be tagged real.
+        # Every returned row must be tagged real (the filter works).
         self.assertTrue(all(d["provenance"] == "real" for d in deals))
-        # Real corpus is small by construction (~55 deals).
         self.assertGreater(len(deals), 30,
                            "real mode should return ≥30 deals")
-        self.assertLess(len(deals), 200,
-                        "real mode should be well below 200 until "
-                        "extended_seed_2..40 is re-verified per row")
+        # ...and come only from real-tagged seed groups (no synthetic leakage).
+        from rcm_mc.data_public.corpus_provenance import PROVENANCE_REGISTRY
+        real_groups = {g for g, t in PROVENANCE_REGISTRY.items() if t == "real"}
+        self.assertTrue(all(d.get("source_group") in real_groups for d in deals),
+                        "real mode must return only real-tagged groups")
+        # Real stays the minority vs the synthetic bulk: guards against a
+        # synthetic group being mis-tagged real and ballooning the "verified"
+        # count. (Replaces a stale hard <200 cap; the source-cited
+        # verified_corpus group has since grown, so real is larger but still
+        # well below synthetic.)
+        synth = load_corpus_deals("synthetic")
+        self.assertLess(len(deals), len(synth),
+                        "real should remain the minority vs synthetic")
 
     def test_load_synthetic_filters_correctly(self):
         deals = load_corpus_deals("synthetic")
