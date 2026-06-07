@@ -859,23 +859,17 @@ def ck_illustrative_note(what: str = "figures") -> str:
     calm, non-alarming disclosure strip (a note, not an error) with a
     self-contained style block — call it once per page, near the title.
     """
+    # Style lives in the global shell sheet (.ck-illus-note) now, not an inline
+    # <style> here. The inline block used to sit between the page title and this
+    # note, breaking the title + .ck-illus-note adjacency the masthead rhythm
+    # relies on (an invisible <style> was the title's next sibling, so the gap
+    # never collapsed). Returning just the markup restores adjacency and dedupes
+    # the CSS across the ~70 illustrative pages that render this.
     return (
-        "<style>"
-        # Slimmed (2026): borderless quiet line, not a parchment box — same
-        # de-clutter the source-purpose band got. Honesty tag (amber) stays.
-        ".ck-illus-note{display:flex;align-items:baseline;gap:8px;"
-        "flex-wrap:wrap;margin:0 0 14px;padding:0 0 8px;"
-        "border-bottom:1px solid var(--sc-rule,#d6cfc0);}"
-        ".ck-illus-note-tag{font-family:var(--sc-mono,monospace);font-size:10px;"
-        "font-weight:700;letter-spacing:0.1em;text-transform:uppercase;"
-        "color:var(--sc-warning,#b8732a);white-space:nowrap;}"
-        ".ck-illus-note-body{font-family:var(--sc-sans,sans-serif);font-size:11.5px;"
-        "line-height:1.45;color:var(--sc-text-dim,#465366);}"
-        "</style>"
         '<div class="ck-illus-note" role="note">'
         '<span class="ck-illus-note-tag">Illustrative template</span>'
         f'<span class="ck-illus-note-body">Representative {_esc(what)} for '
-        "layout and methodology — not this portfolio's live, sourced data.</span>"
+        "layout and methodology, not this portfolio's live, sourced data.</span>"
         "</div>"
     )
 
@@ -8120,6 +8114,18 @@ _CSS_INLINE_FALLBACK = """
   .ck-page-explainer-source { display:block; margin-top:8px;
     font-family:var(--sc-mono); font-size:10.5px; letter-spacing:0.06em;
     color:var(--sc-text-faint); text-transform:uppercase; }
+
+  /* Illustrative-template provenance note (ck_illustrative_note). Moved here
+   * from an inline <style> the helper used to emit, which sat between the page
+   * title and the note and broke the masthead adjacency below. Slim borderless
+   * quiet line; amber honesty tag stays. */
+  .ck-illus-note { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+    margin:0 0 14px; padding:0 0 8px; border-bottom:1px solid var(--sc-rule,#d6cfc0); }
+  .ck-illus-note-tag { font-family:var(--sc-mono,monospace); font-size:10px;
+    font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+    color:var(--sc-warning,#b8732a); white-space:nowrap; }
+  .ck-illus-note-body { font-family:var(--sc-sans,sans-serif); font-size:11.5px;
+    line-height:1.45; color:var(--sc-text-dim,#465366); }
 
   /* ── Under-title rhythm (2026 masthead rehaul) ───────────────────────
    * One rhythm site-wide. A context strip (source/purpose, illustrative
