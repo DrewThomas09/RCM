@@ -21,8 +21,10 @@ class TestMegaMenuCompact(unittest.TestCase):
         self.css = chartis_shell("<p>x</p>", "T")
 
     def test_mega_inner_padding_is_compact(self):
-        # The roomy 20px/16px vertical padding was the main height driver.
-        self.assertIn("padding:14px 32px 12px", self.css)
+        # Mega-inner padding settled at 20px/18px in the full-width 2-column
+        # redesign (superseding the earlier compact 14px/12px). Pin the current
+        # value; still guard against the old roomy 20px/16px height driver.
+        self.assertIn("padding:20px 32px 18px", self.css)
         self.assertNotIn("padding:20px 32px 16px", self.css)
 
     def test_mega_headline_is_compact(self):
