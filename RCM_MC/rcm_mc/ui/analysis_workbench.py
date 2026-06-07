@@ -205,6 +205,22 @@ body.analysis-workbench {{
 .analysis-workbench .wb-utility-actions {{
   display: flex; gap: .4rem; align-items: center; flex: 1; flex-wrap: wrap;
 }}
+/* Teal-outline treatment (mirrors covenant-lab head-actions): the default
+   wb-btn renders near-white-on-parchment and effectively disappears in this
+   row, so give the navigational actions a visible teal border + teal label
+   that fills teal on hover. Warn/Delete keep their semantic amber/red. */
+.analysis-workbench .wb-utility-actions
+  .wb-btn:not(.wb-btn-warn):not(.wb-btn-danger) {{
+  background: var(--wb-panel);
+  border-color: var(--wb-accent);
+  color: var(--wb-accent);
+}}
+.analysis-workbench .wb-utility-actions
+  .wb-btn:not(.wb-btn-warn):not(.wb-btn-danger):hover {{
+  background: var(--wb-accent);
+  border-color: var(--wb-accent);
+  color: #FAF7F0;
+}}
 .analysis-workbench .wb-btn-warn {{ color: #B7791F !important; border-color: #B7791F !important; }}
 .analysis-workbench .wb-btn-danger {{ color: #A53A2D !important; border-color: #A53A2D !important; }}
 
