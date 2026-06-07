@@ -688,15 +688,18 @@ _MANUAL: List[PageContext] = [
         common_questions=[
             "Which hospitals match these financial criteria?",
             "Show me large turnaround candidates.",
+            "Can I filter by payer mix (Medicare / Medicaid share)?",
             "What presets are available — turnaround, large-cap, margin-expansion?",
             "How does this differ from /source's thesis-fit screen?",
             "Where can I see the HCRIS data this filter runs against?",
         ],
-        inputs=["User filters (min/max beds, min revenue, max margin, state) "
-                "or a preset; the public HCRIS universe."],
+        inputs=["User filters (min/max beds, min revenue, max margin, "
+                "min Medicare % / max Medicaid % payer mix, state) or a preset; "
+                "the public HCRIS universe."],
         outputs=["Per page labels: a matches table (Hospital, State, Beds, "
                  "NPR $M, Margin %) with profile / diligence links."],
-        key_metrics=["Bed count", "Net patient revenue", "Operating margin"],
+        key_metrics=["Bed count", "Net patient revenue", "Operating margin",
+                     "Medicare / Medicaid payer mix"],
         data_sources=["CMS HCRIS public hospital data (latest per CCN)."],
         model_logic_summary="Filters HCRIS rows by the supplied metric ranges "
         "(or hardcoded preset ranges) and returns matches — a metric filter, "
@@ -707,6 +710,10 @@ _MANUAL: List[PageContext] = [
                             "financial profile you want."],
         interpretation_guidance=[
             "Figures are public HCRIS, not target-reported data.",
+            "Operating margin is band-gated: it shows the real margin only "
+            "where the filing is trustworthy and renders '—' (sorted last) "
+            "otherwise, so untrustworthy filings no longer collapse to a "
+            "uniform −100% that buries genuine targets.",
             "This is a filter — it does not score or predict; see /source for "
             "thesis-fit ranking and /predictive-screener for estimates.",
         ],
