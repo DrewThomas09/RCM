@@ -811,13 +811,19 @@ def ck_data_universe(kind: str) -> str:
 def ck_source_purpose(*, purpose: str, universe: str, source: str,
                       confidence: str = "", next_action: str = "",
                       next_href: str = "") -> str:
-    """Diligence source-and-purpose header band.
+    """Diligence source-and-purpose header strip (ONE consistent treatment).
 
     Declares, for any analyzer/diligence page: what decision it supports
     (purpose), which data universe + confidence it uses (chips), the named
     source, and the next action. The reform contract requires every Diligence
     page to carry one so a deal team never mistakes an illustrative model for
-    live evidence. ``universe``/``confidence`` are ck_data_universe kinds."""
+    live evidence. ``universe``/``confidence`` are ck_data_universe kinds.
+
+    Collapsed (2026 under-title rehaul) to a compact strip: a lead line
+    (data-kind chips inline with the one-line purpose) and a tiny muted meta
+    line (named source + next action). The old three-block stack read as clunk
+    under every title; this is the single low-clunk pattern site-wide.
+    """
     chips = ck_data_universe(universe)
     if confidence and confidence != universe:
         chips += ck_data_universe(confidence)
@@ -828,11 +834,13 @@ def ck_source_purpose(*, purpose: str, universe: str, source: str,
         nxt = (f'<a class="ck-sp-next" href="{_esc(next_href or "#")}">'
                f'{_esc(next_action)} &rarr;</a>') if next_href else (
                f'<span class="ck-sp-next">{_esc(next_action)}</span>')
+    purpose_html = (f'<span class="ck-sp-purpose">{_esc(purpose)}</span>'
+                    if purpose else "")
+    meta = f'<div class="ck-sp-meta">{src}{nxt}</div>' if (src or nxt) else ""
     return (
         '<div class="ck-sp">'
-        f'<div class="ck-sp-chips">{chips}</div>'
-        f'<p class="ck-sp-purpose">{_esc(purpose)}</p>'
-        f'<div class="ck-sp-meta">{src}{nxt}</div>'
+        f'<p class="ck-sp-lead">{chips}{purpose_html}</p>'
+        f'{meta}'
         '</div>'
     )
 
@@ -909,7 +917,11 @@ _ILLUSTRATIVE_ANALYZER_ROUTES = frozenset({
     "/continuation-vehicle", "/corpus-coverage", "/corpus-dashboard", "/corpus-ic-memo",
     "/covenant-headroom", "/covenant-monitor",
     "/cyber-risk", "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
-    "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-screening",
+    "/deal-postmortem", "/deal-quality", "/deal-risk-scores",
+    # /deal-screening intentionally omitted: Thesis Screening self-discloses via
+    # the BENCHMARK DATASET universe chip (illustrative corpus; realized MOIC/IRR
+    # not disclosed returns), so it skips the blanket route-level note and reads
+    # as one subtle marker rather than a stacked chip + banner.
     "/deal-search", "/deal-sourcing", "/debt-financing", "/demand-forecast",
     "/denovo-expansion",
     "/digital-front-door", "/diligence-vendors", "/direct-employer", "/direct-lending",
@@ -7478,9 +7490,11 @@ _CSS_INLINE_FALLBACK = """
   .ck-kpi-code { position:absolute; top:var(--sc-s-4); right:0; font-family:var(--sc-mono); font-size:10px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   /* Data-universe label chips (ck_data_universe) — declare which data
    * universe a page shows so corpus is never mistaken for portfolio. */
-  /* De-boxed (2026): these were bordered pills ("CMS PUBLIC DATA" etc.) that
-   * stacked as visual-clutter boxes under page titles. Now a tiny dot + mono
-   * label — the data-kind / honesty marker survives without the box. */
+  /* De-boxed (2026): these data-kind labels were bordered pills that stacked
+   * as visual-clutter boxes under page titles. Now a tiny dot + mono label —
+   * the data-kind / honesty marker survives without the box. (No example
+   * label text in this comment: it ships in the global CSS and a literal
+   * universe label here would trip the screener no-bubble guards.) */
   .ck-universe { display:inline-flex; align-items:center; gap:5px; padding:0;
     font-family:var(--sc-mono); font-size:9.5px; font-weight:600; letter-spacing:0.1em;
     text-transform:uppercase; border:0; border-radius:0; cursor:help;
@@ -7504,11 +7518,16 @@ _CSS_INLINE_FALLBACK = """
    * mono source — so the modeled-vs-live disclosure survives without the box. */
   .ck-sp { border:0; background:none; padding:0 0 9px;
     margin:0 0 16px; border-bottom:1px solid var(--sc-rule); }
-  .ck-sp-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  /* lead line: data-kind chips sit inline with the one-line purpose (was a
+     separate chips row that ate a line under every title). */
+  .ck-sp-lead { display:flex; flex-wrap:wrap; align-items:baseline;
+    gap:5px 12px; margin:0 0 3px; }
+  .ck-sp-chips { display:flex; gap:6px; flex-wrap:wrap; }
   .ck-sp-purpose { font-family:var(--sc-sans,'Inter',sans-serif); font-size:12px;
-    line-height:1.45; color:var(--sc-text-dim,#6a7480); margin:0 0 4px; max-width:92ch; }
-  .ck-sp-meta { display:flex; gap:16px; flex-wrap:wrap; font-family:var(--sc-mono);
-    font-size:10px; letter-spacing:.04em; color:var(--sc-text-faint,#8a93a0); }
+    line-height:1.45; color:var(--sc-text-dim,#6a7480); margin:0; max-width:92ch; }
+  .ck-sp-meta { display:flex; gap:14px; flex-wrap:wrap; font-family:var(--sc-mono);
+    font-size:10px; letter-spacing:.04em; color:var(--sc-text-faint,#8a93a0);
+    line-height:1.4; }
   .ck-sp-src b { color:var(--sc-text,#2a3a4a); font-weight:600; }
   .ck-sp-next { color:var(--sc-teal,#155752); text-decoration:none; text-transform:uppercase;
     letter-spacing:.1em; }

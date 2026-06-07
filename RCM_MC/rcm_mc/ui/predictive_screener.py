@@ -16,7 +16,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section,
-    ck_page_title, ck_panel, ck_source_purpose, ck_value_anchor,
+    ck_page_title, ck_panel, ck_value_anchor,
     margin_is_plausible,
 )
 
@@ -294,19 +294,19 @@ def render_predictive_screener(
         meta=f"{total_matches:,} matches · {len(hcris_df):,} hospitals in universe",
     )
     # A tight contrast callout that says how this differs from the Target
-    # Screener (the user's question) and keeps the model-estimate caveat
-    # (pinned by test_contrast_callout_explains_difference). The standard
-    # ck_source_purpose band above (source_purpose) carries the same caveat
-    # for the diligence-source guard; the brief echo here is deliberate —
-    # the honesty note should survive even if a reader skims past the band.
+    # Screener (the user's question) and carries the model-estimate caveat
+    # ("not observed RCM performance", pinned by
+    # test_contrast_callout_explains_difference). This is the page's single
+    # data-basis disclosure now: the bulky ck_source_purpose band was removed
+    # at the owner's request, so the honesty note lives here.
     contrast = (
         '<div class="ck-ps-contrast">'
         '<b>How this differs from the Target Screener.</b> '
         'The <a href="/screen">Target Screener</a> ranks hospitals on their '
         '<em>reported</em> HCRIS financials (size, margin); this scanner ranks the '
-        'same universe by <em>modeled RCM upside</em> — so you see where the '
+        'same universe by <em>modeled RCM upside</em>, so you see where the '
         'value-creation opportunity is. Model estimates from public data, not '
-        'observed RCM performance &mdash; confirm against a target&rsquo;s own data.'
+        'observed RCM performance. Confirm against a target&rsquo;s own data.'
         '</div>'
     )
     kpis = (
@@ -477,26 +477,12 @@ transition:filter 120ms ease;}
         target=f"avg denial {avg_denial:.1%} · margin {avg_margin:.1%}",
         tone="teal",
     )
-    # Structured data-basis band (the platform-standard honesty marker the
-    # diligence-source-purpose guard enforces). The contrast callout below
-    # is complementary — it differentiates this from the Target Screener.
-    source_purpose = ck_source_purpose(
-        purpose="Rank the public hospital universe by MODELED RCM-improvement "
-        "upside (estimated denial rate, AR days, EBITDA uplift) to surface "
-        "candidates before spending diligence time.",
-        universe="cms",
-        confidence="illustrative",
-        source="CMS HCRIS public financials + quant-stack RCM model estimates "
-        "— modeled estimates from public data, NOT observed RCM performance; "
-        "confirm against a target's own data before underwriting.",
-        next_action="Compare a target on the Hospital / Target Screener",
-        next_href="/screen",
-    )
-    # One provenance line (source_purpose) + one differentiator callout
-    # (contrast) is enough — the third "Where the next deal hides" explainer
-    # was a redundant third description partners flagged as clutter.
+    # The contrast callout (below) is the single data-basis disclosure. The
+    # old ck_source_purpose chip-band ("CMS PUBLIC DATA / ILLUSTRATIVE / Source:
+    # ...") read as clutter and was removed at the owner's request; the
+    # model-estimate caveat it carried survives in the contrast callout.
     body = (
-        ps_styles + title_block + source_purpose + contrast
+        ps_styles + title_block + contrast
         + lead_anchor + form
         + kpis + table + save_form + quick + next_up
     )

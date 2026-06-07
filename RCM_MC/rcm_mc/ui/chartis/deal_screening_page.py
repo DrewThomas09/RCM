@@ -25,7 +25,6 @@ from .._chartis_kit import (
     P,
     chartis_shell,
     ck_data_universe,
-    ck_illustrative_note,
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
@@ -83,10 +82,12 @@ def _title(n_pass: int = 0, n_watch: int = 0, n_fail: int = 0, total: int = 0) -
     return (
         ck_page_title("Thesis Screening", eyebrow="SOURCE · DEAL SCREENING",
                       meta=meta)
+        # The BENCHMARK DATASET chip is the single subtle data-basis marker: its
+        # tooltip discloses the corpus is mostly illustrative/modeled (realized
+        # MOIC/IRR are not disclosed returns). The bulky ck_illustrative_note box
+        # was removed at the owner's request; the chip keeps the disclosure
+        # honest (and satisfies test_corpus_illustrative_disclosure).
         + '<div style="margin:8px 0 0;">' + ck_data_universe("corpus") + '</div>'
-        + ck_illustrative_note(
-            "screening decisions over the deal dataset (mostly an illustrative/"
-            "modeled set: realized MOIC/IRR are not disclosed returns)")
     )
 
 
