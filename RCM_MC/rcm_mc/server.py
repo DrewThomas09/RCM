@@ -8006,6 +8006,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             "max_revenue": (qs.get("max_revenue") or [""])[0],
             "min_margin": (qs.get("min_margin") or [""])[0],
             "max_margin": (qs.get("max_margin") or [""])[0],
+            "max_medicaid": (qs.get("max_medicaid") or [""])[0],
+            "min_medicare": (qs.get("min_medicare") or [""])[0],
             "state": (qs.get("state") or [""])[0].upper(),
             "sort": (qs.get("sort") or [""])[0],
         }
@@ -8093,6 +8095,21 @@ class RCMHandler(BaseHTTPRequestHandler):
                 try:
                     if "operating_margin" in df.columns:
                         df = df[df["operating_margin"] >= float(filters["min_margin"]) / 100]
+                except ValueError:
+                    pass
+            # Payer-mix filters (day-share fractions). A known payer mix is
+            # required to match, so NaN-payer-mix filings fall out — fine for a
+            # reimbursement-risk screen.
+            if filters.get("max_medicaid"):
+                try:
+                    if "medicaid_day_pct" in df.columns:
+                        df = df[df["medicaid_day_pct"] <= float(filters["max_medicaid"]) / 100]
+                except ValueError:
+                    pass
+            if filters.get("min_medicare"):
+                try:
+                    if "medicare_day_pct" in df.columns:
+                        df = df[df["medicare_day_pct"] >= float(filters["min_medicare"]) / 100]
                 except ValueError:
                     pass
             if filters.get("max_revenue"):

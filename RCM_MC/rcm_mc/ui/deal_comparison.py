@@ -378,6 +378,8 @@ def render_screen_page(
         ("max_revenue", "NPR $M (max)", filters.get("max_revenue", ""), "e.g. 500", "revenue ceiling"),
         ("min_margin", "Margin % (min)", filters.get("min_margin", ""), "e.g. 0", "operating-margin floor"),
         ("max_margin", "Margin % (max)", filters.get("max_margin", ""), "e.g. 3", "ceiling: low = struggling"),
+        ("max_medicaid", "Medicaid % (max)", filters.get("max_medicaid", ""), "e.g. 25", "payer-mix ceiling: high = reimbursement risk"),
+        ("min_medicare", "Medicare % (min)", filters.get("min_medicare", ""), "e.g. 30", "stable-payer floor"),
         ("state", "State", filters.get("state", ""), "e.g. TX", "2-letter code"),
     ]
     filter_inputs = ""
@@ -433,7 +435,8 @@ def render_screen_page(
     def _chip(t: str) -> str:
         return f'<span class="hs-chip">{_esc(t)}</span>'
     _range_keys = ("min_beds", "max_beds", "min_revenue", "max_revenue",
-                   "min_margin", "max_margin", "state")
+                   "min_margin", "max_margin", "max_medicaid", "min_medicare",
+                   "state")
     chips = []
     if filters.get("min_beds") or filters.get("max_beds"):
         chips.append(_chip(f"Beds {filters.get('min_beds') or '0'}–{filters.get('max_beds') or '∞'}"))
@@ -441,6 +444,10 @@ def render_screen_page(
         chips.append(_chip(f"NPR ${filters.get('min_revenue') or '0'}M–${filters.get('max_revenue') or '∞'}M"))
     if filters.get("min_margin") or filters.get("max_margin"):
         chips.append(_chip(f"Margin {filters.get('min_margin') or '−∞'}%–{filters.get('max_margin') or '∞'}%"))
+    if filters.get("max_medicaid"):
+        chips.append(_chip(f"Medicaid ≤{filters['max_medicaid']}%"))
+    if filters.get("min_medicare"):
+        chips.append(_chip(f"Medicare ≥{filters['min_medicare']}%"))
     if filters.get("state"):
         chips.append(_chip(f"State {filters['state']}"))
     chips.append(_chip(f"Sorted: {dict(sort_opts).get(sort_val, sort_val)}"))
