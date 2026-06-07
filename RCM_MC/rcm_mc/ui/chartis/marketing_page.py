@@ -426,6 +426,14 @@ _STYLE = """
     .pair { grid-template-columns: 1fr; }
     .pair .viz { border-right: none; border-bottom: 1px solid var(--border); }
   }
+  @media (max-width: 960px) {
+    /* the fixed-height topbar's brand + anchor-nav + CTAs overran the
+       viewport ~26px at 768; tighten padding/nav spacing so it fits the
+       tablet width (desktop ≥961 unchanged). */
+    .topbar { padding: 0 1rem; gap: .6rem; }
+    .topnav { margin-left: 1rem; }
+    .topnav a { padding: 0 .7rem; }
+  }
   @media (max-width: 640px) {
     .topbar { padding: 0 1rem; gap: .5rem; height: auto; flex-wrap: wrap; padding-top: .6rem; padding-bottom: .6rem; }
     .topnav { display: none; }
