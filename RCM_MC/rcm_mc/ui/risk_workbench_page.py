@@ -1195,7 +1195,7 @@ def render_risk_workbench(
     # head under that H1 — render as H2 so the page satisfies the
     # One-H1 invariant (audit 2026-05-29).
     hero = _RW_CSS + ck_editorial_head(
-        eyebrow="DILIGENCE · RISK WORKBENCH",
+        eyebrow="DILIGENCE · REGULATORY",
         title="Regulatory Risk Workbench",
         meta=(
             f"{html.escape(inp.target_name)} · "
@@ -1283,12 +1283,11 @@ def render_risk_workbench(
             '</div>'
         )
         body = (
-            ck_page_title(
-                "Risk Workbench",
-                eyebrow="RCM DILIGENCE",
-                meta="9-panel risk panorama · counterfactual advisor below",
-            )
-            + hero
+            # The editorial head (hero) below IS the masthead. A second
+            # ck_page_title("Risk Workbench") used to stack directly above it,
+            # duplicating the title ("Risk Workbench" + "Regulatory Risk
+            # Workbench") — the "multiple titles" problem. Dropped.
+            hero
             + print_cta
             + summary_strip
             + ck_section_header(

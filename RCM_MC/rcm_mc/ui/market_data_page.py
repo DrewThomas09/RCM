@@ -78,20 +78,26 @@ def _compute_state_stats(hcris_df: pd.DataFrame) -> List[Dict[str, Any]]:
 
 
 def _heatmap_color(value: float, low: float, high: float, invert: bool = False) -> str:
-    """Map a value to a red-yellow-green color scale."""
+    """Map a value to a DESATURATED red→amber→green scale aligned to the brand
+    severity palette (not the old neon rgb(55,255,50)). Endpoints are dark
+    enough to read as text on the parchment background: brand negative at the
+    low end, a muted amber midpoint, brand positive (teal-green) at the high."""
     if high == low:
         return PALETTE["text_muted"]
     pct = max(0, min(1, (value - low) / (high - low)))
     if invert:
         pct = 1 - pct
-    if pct > 0.5:
-        g = int(185 + (pct - 0.5) * 2 * 70)
-        r = int(255 - (pct - 0.5) * 2 * 200)
-        return f"rgb({r},{g},50)"
+    neg = (165, 50, 30)    # brand negative, darkened for text contrast
+    mid = (140, 105, 40)   # muted amber-olive
+    pos = (15, 115, 80)    # brand positive (teal-green), darkened for text
+    if pct >= 0.5:
+        t, a, b = (pct - 0.5) * 2, mid, pos
     else:
-        r = int(239 - pct * 2 * 40)
-        g = int(68 + pct * 2 * 180)
-        return f"rgb({r},{g},50)"
+        t, a, b = pct * 2, neg, mid
+    r = int(a[0] + (b[0] - a[0]) * t)
+    g = int(a[1] + (b[1] - a[1]) * t)
+    bl = int(a[2] + (b[2] - a[2]) * t)
+    return f"rgb({r},{g},{bl})"
 
 
 def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
@@ -107,12 +113,8 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
         "medicare_pct": ("Medicare %", True),
         "total_revenue": ("Total Revenue", False),
     }
-    label, invert = metric_labels.get(metric, ("Metric", False))
-
-    vals = [s[metric] for s in stats if metric in s]
-    lo, hi = (min(vals), max(vals)) if vals else (0, 1)
-
-    # Metric selector
+    # Metric selector — controls sort order. The heatmap color lives on the
+    # always-shown Avg Margin column (no duplicate selected-metric column).
     selector = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">'
     for m, (ml, _) in metric_labels.items():
         active = f'background:{PALETTE["brand_accent"]};color:white;border-color:{PALETTE["brand_accent"]};' if m == metric else ""
@@ -122,25 +124,14 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
         )
     selector += '</div>'
 
+    m_vals = [s.get("avg_margin", 0) for s in stats if "avg_margin" in s]
+    m_lo, m_hi = (min(m_vals), max(m_vals)) if m_vals else (0.0, 1.0)
+
     rows = ""
     for s in stats[:30]:
-        val = s.get(metric, 0)
-        bg = _heatmap_color(val, lo, hi, invert)
-
-        if metric == "avg_margin":
-            fmt_val = f"{val:.1%}"
-        elif metric == "total_revenue":
-            fmt_val = f"${val / 1e9:.1f}B"
-        elif metric in ("medicare_pct", "medicaid_pct", "commercial_pct"):
-            fmt_val = f"{val:.0%}"
-        elif metric == "hhi":
-            fmt_val = f"{val:,.0f}"
-        else:
-            fmt_val = f"{val:,.0f}"
-
         conc_label = "Concentrated" if s["hhi"] > 2500 else ("Moderate" if s["hhi"] > 1500 else "Competitive")
         conc_cls = "cad-badge-red" if s["hhi"] > 2500 else ("cad-badge-amber" if s["hhi"] > 1500 else "cad-badge-green")
-
+        m_color = _heatmap_color(s.get("avg_margin", 0), m_lo, m_hi)
         rows += (
             f'<tr>'
             f'<td><a href="/market-data/state/{s["state"]}" '
@@ -148,8 +139,7 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
             f'<td class="num">{s["hospitals"]}</td>'
             f'<td class="num">{s["total_beds"]:,}</td>'
             f'<td class="num">${s["total_revenue"]/1e9:.1f}B</td>'
-            f'<td class="num" style="color:{bg};font-weight:600;">{fmt_val}</td>'
-            f'<td class="num">{s["avg_margin"]:.1%}</td>'
+            f'<td class="num" style="color:{m_color};font-weight:600;">{s["avg_margin"]:.1%}</td>'
             f'<td><span class="cad-badge {conc_cls}">{conc_label}</span></td>'
             f'<td class="num">{s["medicare_pct"]:.0%}</td>'
             f'<td class="num">{s["medicaid_pct"]:.0%}</td>'
@@ -161,8 +151,8 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
         f'<table class="cad-table">'
         f'<thead><tr>'
         f'<th>State</th><th>Hospitals</th><th>Total Beds</th><th>Total NPR</th>'
-        f'<th style="background:{PALETTE["brand_primary"]}22;">{html.escape(label)}</th>'
-        f'<th>Avg Margin</th><th>Concentration</th><th>Medicare</th><th>Medicaid</th>'
+        f'<th style="background:{PALETTE["brand_primary"]}14;">Avg Margin</th>'
+        f'<th>Concentration</th><th>Medicare</th><th>Medicaid</th>'
         f'</tr></thead>'
         f'<tbody>{rows}</tbody></table>'
     )
@@ -368,20 +358,10 @@ def _top_markets_bar_chart(top_rev: List[Dict[str, Any]],
         # Cumulative line point at the END of each row (right-rail)
         cum_pts.append((cy, cum_pct))
 
-    # Cumulative overlay line (anchored to the % axis 0-100)
-    line_x = pad_l + plot_w + 40
-    line_w = 40
+    # Cumulative overlay line removed: it rendered as a stray ~40px-wide
+    # near-vertical curve with no axis or labels (read as a broken line), and
+    # the per-bar "N% cum" text already states the cumulative share.
     line_svg = ""
-    if cum_pts:
-        path = " ".join(
-            f"{'M' if j == 0 else 'L'} "
-            f"{line_x + (pct / 100) * line_w:.1f},{cy:.1f}"
-            for j, (cy, pct) in enumerate(cum_pts)
-        )
-        line_svg = (
-            f'<path d="{path}" stroke="#0F1C2E" stroke-width="1.6" '
-            f'fill="none" opacity="0.7"/>'
-        )
 
     # Legend / tone key (bottom row)
     legend_y = height - 6

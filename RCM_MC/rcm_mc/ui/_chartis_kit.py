@@ -7523,9 +7523,9 @@ _CSS_INLINE_FALLBACK = """
     font-size:10px; letter-spacing:.04em; color:var(--sc-text-faint,#8a93a0);
     line-height:1.4; }
   .ck-sp-src b { color:var(--sc-text,#2a3a4a); font-weight:600; }
-  .ck-sp-next { color:var(--sc-teal,#155752); text-decoration:none; text-transform:uppercase;
-    letter-spacing:.1em; }
-  .ck-sp-next:hover { color:var(--sc-teal-ink,#155752); }
+  .ck-sp-next { color:var(--sc-teal,#155752); text-decoration:none; text-transform:none;
+    letter-spacing:.02em; }
+  .ck-sp-next:hover { color:var(--sc-teal-ink,#155752); text-decoration:underline; }
   .ck-badge { display:inline-flex; align-items:center; padding:3px 8px; font-family:var(--sc-sans); font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; border:1px solid currentColor; border-radius:2px; }
   .ck-badge.tone-positive { color:var(--sc-positive); }
   .ck-badge.tone-warning  { color:var(--sc-warning); }

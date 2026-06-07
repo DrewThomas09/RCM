@@ -46,13 +46,13 @@ _CV_HEAD_CSS = """
 .cv-head .head-actions{display:flex;gap:8px;flex-shrink:0;
   align-items:flex-start;}
 .cv-head .head-actions a,.cv-head .head-actions button{
-  font:500 11px/1 var(--sc-sans,Inter),sans-serif;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--ink,#16263a);
-  background:var(--paper-card,#fefcf3);border:1px solid var(--rule,#c9bf9c);
+  font:600 11px/1 var(--sc-sans,Inter),sans-serif;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--green-deep,#154e36);
+  background:var(--paper-card,#fefcf3);border:1px solid var(--green-deep,#154e36);
   border-radius:2px;padding:9px 14px;text-decoration:none;cursor:pointer;
-  transition:background .12s,border-color .12s;}
+  transition:background .12s,border-color .12s,color .12s;}
 .cv-head .head-actions a:hover,.cv-head .head-actions button:hover{
-  background:var(--paper-hi,#fbf6e8);border-color:var(--rule-hi,#b6a87f);}
+  background:var(--green-deep,#154e36);border-color:var(--green-deep,#154e36);color:#fff;}
 .cv-head .eyebrow{font:500 11px/1 var(--sc-mono,monospace);
   letter-spacing:.18em;text-transform:uppercase;
   color:var(--green-deep,#154e36);display:flex;align-items:center;
