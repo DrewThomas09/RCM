@@ -597,8 +597,14 @@ def ck_table(
     and hints at cell formatting.
     """
     cls = "ck-table" + (" ck-dense" if dense else "")
+    # Header labels are developer-defined. Most are plain text (escape them),
+    # but some callers pass ready-made markup — e.g. deal-library sort links
+    # (<a href=…>Company ▲</a>). Render those raw instead of escaping the tag
+    # into literal "<A HREF=…>" text in the header.
     header_cells = "".join(
-        f'<th class="align-{_esc(c.get("align", "left"))}">{_esc(c.get("label", ""))}</th>'
+        f'<th class="align-{_esc(c.get("align", "left"))}">'
+        f'{c.get("label", "") if "<" in str(c.get("label", "")) else _esc(c.get("label", ""))}'
+        f'</th>'
         for c in columns
     )
     body_rows = []
