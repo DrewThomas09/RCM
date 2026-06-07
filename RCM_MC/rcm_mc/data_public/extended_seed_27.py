@@ -243,6 +243,35 @@ EXTENDED_SEED_DEALS_27 = [
                  "Humana strategic; avoidable ED admission reduction is MA MLR management tool. "
                  "Home acute care: 30-40% cheaper than ED visit for qualifying conditions.",
     },
+    # Phase 6 Bug #1 fix: this row is a strategic-acquirer view of
+    # the CVS/Signify transaction. The PE realization is already
+    # tracked under seed_187 (reattributed to New Mountain Capital
+    # in that fix). Keeping this row as an unrealized strategic-
+    # acquisition record — CVS Health is the buyer, but clearing
+    # the realized_moic/realized_irr fields because CVS is a
+    # strategic acquirer and does not earn a PE return on this
+    # transaction. The entry EV / sector / payer mix are preserved
+    # so deal-search + market-mix analysis still find this row.
+    {
+        "source_id": "seed_569",
+        "source": "seed",
+        "deal_name": "CVS Health / Signify Health — Strategic Acquisition",
+        "year": 2022,
+        "buyer": "CVS Health",
+        "seller": "New Mountain Capital / Signify Health (NYSE: SGFY)",
+        "sector": "managed_care",
+        "ev_mm": 8_000,
+        "ebitda_at_entry_mm": 320,
+        "hold_years": None,
+        "realized_moic": None,
+        "realized_irr": None,
+        "payer_mix": {"medicare": 0.80, "medicaid": 0.05, "commercial": 0.13, "self_pay": 0.02},
+        "notes": "In-home health evaluations for MA plans + ACO analytics. "
+                 "CVS acquired at $8.0B March 2023; the PE realization "
+                 "for this transaction is tracked under seed_187 where "
+                 "New Mountain Capital (entry ~2019 at ~$1.5B EV) "
+                 "exited at 4.5x / 46% IRR.",
+    },
     {
         "source_id": "seed_570",
         "source": "seed",
