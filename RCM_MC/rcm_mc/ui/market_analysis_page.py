@@ -5,6 +5,7 @@ Renders the market analysis (HHI, moat, competitors) as a visual page.
 from __future__ import annotations
 
 import html
+import math
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
@@ -106,9 +107,21 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     trends = analysis.get("market_trends", {})
 
     # KPIs
-    hhi = moat.get("hhi_index", 0)
-    hhi_label = "Concentrated" if hhi > 2500 else ("Moderate" if hhi > 1500 else "Competitive")
-    hhi_cls = "cad-badge-red" if hhi > 2500 else ("cad-badge-amber" if hhi > 1500 else "cad-badge-green")
+    # When a deal has no market geography on file the upstream HHI comes
+    # back as NaN; ``.get(..., 0)`` does not catch that (the key exists,
+    # the value is nan), so "{hhi:,.0f}" rendered the literal "nan".
+    # Treat a non-finite HHI as unknown and say so, rather than leaking
+    # "nan" or asserting a false "Competitive / HHI 0".
+    _hhi_raw = moat.get("hhi_index", 0)
+    hhi_known = isinstance(_hhi_raw, (int, float)) and math.isfinite(_hhi_raw)
+    hhi = float(_hhi_raw) if hhi_known else 0.0
+    hhi_str = f"{hhi:,.0f}" if hhi_known else "n/a"
+    hhi_label = ("Unknown" if not hhi_known
+                 else "Concentrated" if hhi > 2500
+                 else "Moderate" if hhi > 1500 else "Competitive")
+    hhi_cls = ("cad-badge-muted" if not hhi_known
+               else "cad-badge-red" if hhi > 2500
+               else "cad-badge-amber" if hhi > 1500 else "cad-badge-green")
     moat_rating = moat.get("moat_rating", "none")
     moat_cls = "cad-badge-green" if moat_rating == "wide" else ("cad-badge-amber" if moat_rating == "narrow" else "cad-badge-muted")
     # Readable verdict label — "none".title() would render the
@@ -130,7 +143,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     # default; this is the documented exit.)
     from ._chartis_kit import SafeHtml
     hhi_value = ck_provenance_tooltip(
-        f"Market HHI: {hhi:,.0f}",
+        f"Market HHI: {hhi_str}",
         SafeHtml(
             f'<span class="cad-badge {hhi_cls}" '
             f'style="font-size:14px;padding:4px 12px;">'
@@ -163,7 +176,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         + ck_kpi_block("Hospitals in Market", ck_fmt_num(market_size.get("hospitals", 0)), "competitive set")
         + ck_kpi_block("Total Beds", ck_fmt_num(market_size.get("total_beds", 0)), "licensed")
         + ck_kpi_block("Market Revenue", f"${market_size.get('total_revenue', 0)/1e9:.1f}B", "annual NPR")
-        + ck_kpi_block("Concentration", hhi_value, f"HHI {hhi:,.0f}")
+        + ck_kpi_block("Concentration", hhi_value, f"HHI {hhi_str}")
         + ck_kpi_block("Moat", moat_value, f"score {moat.get('moat_score', 0)}/10")
         + ck_kpi_block("Market Share Rank", f"#{moat.get('market_share_rank', 0)}", "in market")
         + '</div>'
@@ -267,7 +280,8 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         else "commoditized market position, pricing power limited"
     )
     market_interp = (
-        "highly concentrated: few dominant players, potential antitrust concerns" if hhi > 2500
+        "of undetermined concentration — no market geography on file for this deal" if not hhi_known
+        else "highly concentrated: few dominant players, potential antitrust concerns" if hhi > 2500
         else "moderately concentrated: oligopoly dynamics, negotiating leverage exists" if hhi > 1500
         else "competitive: many players, value creation must come from operations not market power"
     )
@@ -287,7 +301,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         f'<h2>What This Means</h2>'
         f'<div style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.7;">'
         f'<p>This hospital has {moat_phrase}: {moat_interp}. '
-        f'The {state or "regional"} market is {market_interp} (HHI: {hhi:,.0f}).</p>'
+        f'The {state or "regional"} market is {market_interp} (HHI: {hhi_str}).</p>'
         f'<p style="margin-top:6px;"><strong>Implications:</strong> {implication}'
         f' Compare against peers via '
         f'<a href="/models/comparables/{did_esc}" style="color:{link_col};">comparables</a> '
@@ -314,7 +328,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     lead_anchor = ck_value_anchor(
         "MARKET POSITION",
         f"{moat_label} moat",
-        delta=f"HHI {hhi:,.0f} ({hhi_label})",
+        delta=f"HHI {hhi_str} ({hhi_label})",
         opportunity=f"${market_size.get('total_revenue', 0) / 1e9:.1f}B market",
         target=(
             f"#{moat.get('market_share_rank', 0)} share rank · "
@@ -330,7 +344,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         meta=(
             f"{state.upper()} MARKET · "
             f"{market_size.get('hospitals', 0)} HOSPITALS · "
-            f"HHI {hhi:,.0f} ({hhi_label.upper()}) · "
+            f"HHI {hhi_str} ({hhi_label.upper()}) · "
             f"MOAT {moat.get('moat_score', 0)}/10"
         ),
         lede_italic_phrase=(
@@ -352,5 +366,5 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     return chartis_shell(
         body, f"Market Analysis · {html.escape(deal_name)}",
         active_nav="/analysis",
-        subtitle=f"{state} market | {market_size.get('hospitals', 0)} hospitals | HHI: {hhi:,.0f} ({hhi_label})",
+        subtitle=f"{state} market | {market_size.get('hospitals', 0)} hospitals | HHI: {hhi_str} ({hhi_label})",
     )
