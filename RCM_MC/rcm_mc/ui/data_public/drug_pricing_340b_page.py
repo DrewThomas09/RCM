@@ -114,7 +114,7 @@ def _audits_table(audits) -> str:
         cells = [
             f'{ck_data_cell(f"""{_html.escape(a.audit_area)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.finding_severity)}</span>""", align="center")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if a.exposure_mm > 0 else text_dim};font-weight:{"600" if a.exposure_mm > 0 else "400"}">${a.exposure_mm / 1000:,.3f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if a.exposure_mm > 0 else text_dim};font-weight:{"600" if a.exposure_mm > 0 else "400"}">${a.exposure_mm / 1000:,.2f}</td>',
             f'{ck_data_cell(f"""{a.remediation_days}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{_html.escape(a.last_hrsa_visit)}""", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""{_html.escape(a.status)}""", mono=True, tone="dim")}',

@@ -63,7 +63,7 @@ def _coverages_table(coverages) -> str:
         cells = [
             f'{ck_data_cell(f"""{_html.escape(c.coverage_type)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""${c.annual_premium_mm:,.2f}""", align="right", mono=True)}',
-            f'{ck_data_cell(f"""{c.pct_of_revenue * 100:.3f}%""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""{c.pct_of_revenue * 100:.2f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">${c.limits_mm:,.0f}</td>',
             f'{ck_data_cell(f"""${c.retention_mm:,.2f}""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.carrier)}</td>',
@@ -110,8 +110,8 @@ def _claims_table(claims) -> str:
             f'{ck_data_cell(f"""{_html.escape(c.claim_id)}""", mono=True)}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.specialty)}</td>',
             f'{ck_data_cell(f"""{c.accident_year}""", align="right", mono=True, tone="dim")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]};font-weight:600">${c.reserve_mm:,.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${c.case_mm:,.3f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["negative"]};font-weight:600">${c.reserve_mm:,.2f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${c.case_mm:,.2f}</td>',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;text-transform:uppercase;letter-spacing:0.06em">{c.status}</span>""")}',
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(c.projected_resolution)}</td>',
         ]

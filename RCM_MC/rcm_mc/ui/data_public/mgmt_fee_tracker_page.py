@@ -49,7 +49,7 @@ def _fee_waterfall_svg(fee_calcs) -> str:
         co = f.company[:22]
         lines.append(f'<text x="{pad_l - 6}" y="{y + bar_h - 2}" text-anchor="end" '
                      f'fill="{P["text_dim"]}">{co}</text>')
-        net_str = f"${f.net_fee_to_lp_mm:.3f}M net"
+        net_str = f"${f.net_fee_to_lp_mm:.2f}M net"
         lines.append(f'<text x="{pad_l + gross_w + 4:.1f}" y="{y + bar_h - 2}" '
                      f'fill="{P["warning"]}">{net_str}</text>')
 

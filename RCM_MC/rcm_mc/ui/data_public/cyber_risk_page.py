@@ -80,7 +80,7 @@ def _incidents_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(inc.scope)}</td>',
             f'{ck_data_cell(f"""{inc.records_affected:,}""", align="right", mono=True)}',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{hhs_c};font-weight:700">{"YES" if inc.hhs_reportable else "NO"}</td>',
-            f'{ck_data_cell(f"""${inc.remediation_cost_mm:,.3f}""", align="right", mono=True, tone="neg", weight=600)}',
+            f'{ck_data_cell(f"""${inc.remediation_cost_mm:,.2f}""", align="right", mono=True, tone="neg", weight=600)}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(inc.status)}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')

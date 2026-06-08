@@ -103,7 +103,7 @@ def _assets_table(assets) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.property_type)}</td>',
             f'{ck_data_cell(f"""{a.sqft:,}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{oc};border:1px solid {oc};border-radius:2px;letter-spacing:0.06em">{_html.escape(a.current_ownership.replace("_", " "))}</span>""")}',
-            f'{ck_data_cell(f"""${a.annual_rent_mm:,.3f}M""", align="right", mono=True)}',
+            f'{ck_data_cell(f"""${a.annual_rent_mm:,.2f}M""", align="right", mono=True)}',
             f'{ck_data_cell(f"""{a.implied_cap_rate * 100:.2f}%""", align="right", mono=True, tone="dim")}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">${a.implied_value_mm:,.2f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"] if a.slb_proceeds_mm > 0 else text_dim};font-weight:600">${a.slb_proceeds_mm:,.2f}</td>',

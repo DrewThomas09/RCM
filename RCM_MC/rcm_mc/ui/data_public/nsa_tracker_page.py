@@ -273,7 +273,7 @@ def render_nsa_tracker(params: dict = None) -> str:
 
     kpi_strip = (
         ck_kpi_block("IDR Cases (Tracked)", str(r.total_cases), "", "") +
-        ck_kpi_block("Total Disputed", f"${r.total_revenue_disputed_m:.3f}M", "", "") +
+        ck_kpi_block("Total Disputed", f"${r.total_revenue_disputed_m:.2f}M", "", "") +
         ck_kpi_block("Revenue at Risk", f"${r.total_revenue_at_risk_m:,.1f}M", "", "") +
         ck_kpi_block("Provider Win Rate", f"{r.provider_win_rate_pct * 100:.1f}%", "", "") +
         ck_kpi_block("Avg Admin Fee", f"${r.avg_admin_fee_m:.2f}", "", "") +

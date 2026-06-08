@@ -98,8 +98,8 @@ def _ramp_paired_rows(items) -> tuple:
         rows.append([
             str(r.month),
             str(r.visits_per_day),
-            f"${r.revenue_mm:,.3f}",
-            f"${r.expense_mm:,.3f}",
+            f"${r.revenue_mm:,.2f}",
+            f"${r.expense_mm:,.2f}",
             f"${r.ebitda_mm:+,.3f}",
             f"${r.cumulative_fcf_mm:+,.2f}",
         ])
