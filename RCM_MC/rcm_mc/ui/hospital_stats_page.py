@@ -142,9 +142,16 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
         pct_nat = float((nat_series < val).mean() * 100)
         pct_st = float((st_series < val).mean() * 100) if len(st_series) >= 5 else pct_nat
 
-        z_color = PALETTE["negative"] if abs(z_nat) > 2 else (PALETTE["warning"] if abs(z_nat) > 1.5 else PALETTE["text_secondary"])
+        # val (and hence z_nat) can be NaN when the metric is missing for
+        # this hospital; render "—" instead of "+nanσ".
+        z_finite = bool(np.isfinite(z_nat))
+        z_str = f"{z_nat:+.2f}σ" if z_finite else "—"
+        z_color = (
+            PALETTE["negative"] if z_finite and abs(z_nat) > 2 else (
+                PALETTE["warning"] if z_finite and abs(z_nat) > 1.5
+                else PALETTE["text_secondary"]))
 
-        if abs(z_nat) > 2:
+        if z_finite and abs(z_nat) > 2:
             direction = "above" if z_nat > 0 else "below"
             outlier_flags.append(f"{label}: {z_nat:+.1f}σ {direction} national mean")
 
@@ -156,7 +163,7 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<td class="num">{_fmt_val(val, fmt)}</td>'
             f'<td class="num">{_fmt_val(nat_median, fmt)}</td>'
             f'<td class="num">{_fmt_val(st_median, fmt)}</td>'
-            f'<td class="num" style="color:{z_color};font-weight:600;">{z_nat:+.2f}σ</td>'
+            f'<td class="num" style="color:{z_color};font-weight:600;">{z_str}</td>'
             f'<td class="num">{_percentile_badge(pct_nat)}</td>'
             f'<td class="num">{_percentile_badge(pct_st)}</td>'
             f'</tr>'
@@ -283,15 +290,21 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
             std_resid = residual / rmse if rmse > 0 else 0
 
             label = tgt.replace("_", " ").title()
-            resid_color = PALETTE["negative"] if abs(std_resid) > 2 else (
-                PALETTE["warning"] if abs(std_resid) > 1 else PALETTE["positive"])
+            # A zero-variance feature can make the standardized residual
+            # non-finite; render "—" rather than "+nanσ".
+            resid_finite = bool(np.isfinite(std_resid))
+            sig_str = f"{std_resid:+.2f}σ" if resid_finite else "—"
+            resid_color = (
+                PALETTE["negative"] if resid_finite and abs(std_resid) > 2 else (
+                    PALETTE["warning"] if resid_finite and abs(std_resid) > 1
+                    else PALETTE["positive"]))
             residual_rows += (
                 f'<tr>'
                 f'<td>{_html.escape(label)}</td>'
                 f'<td class="num">{r2:.1%}</td>'
                 f'<td class="num">{_fmt_num(actual)}</td>'
                 f'<td class="num">{_fmt_num(hosp_pred)}</td>'
-                f'<td class="num" style="color:{resid_color};font-weight:600;">{std_resid:+.2f}σ</td>'
+                f'<td class="num" style="color:{resid_color};font-weight:600;">{sig_str}</td>'
                 f'</tr>'
             )
 

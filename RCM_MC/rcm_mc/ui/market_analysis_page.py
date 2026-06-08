@@ -16,6 +16,25 @@ from .models_page import _model_nav
 from .brand import PALETTE
 
 
+def _finite(v: Any) -> bool:
+    """True only for a real, finite number. A competitor row missing
+    revenue carries NaN, and ``.get(key, 0)`` does not catch it (the key
+    exists, the value is nan), so "{share:.1%}" / "${rev/1e6:.0f}M"
+    rendered "nan%" / "$nanM" on the market page."""
+    try:
+        return v is not None and math.isfinite(v)
+    except (TypeError, ValueError):
+        return False
+
+
+def _pct(v: Any, na: str = "n/a") -> str:
+    return f"{v:.1%}" if _finite(v) else na
+
+
+def _npr(v: Any, na: str = "n/a") -> str:
+    return f"${v / 1e6:,.0f}M" if _finite(v) else na
+
+
 def _competitor_share_chart(
     competitors: List[Dict[str, Any]], width: int = 720, row_h: int = 24
 ) -> str:
@@ -30,10 +49,14 @@ def _competitor_share_chart(
             if c.get("name")]
     if not rows:
         return ""
-    rows = sorted(rows, key=lambda c: c.get("market_share_revenue", 0),
-                  reverse=True)
-    max_share = max((c.get("market_share_revenue", 0) for c in rows),
-                    default=0)
+    # Coerce a missing/NaN share to 0 for sorting + geometry so a
+    # competitor with no revenue on file doesn't poison max_share / bar
+    # widths (NaN) — the labels below still show "n/a" via _pct/_npr.
+    def _share(c: Dict[str, Any]) -> float:
+        s = c.get("market_share_revenue", 0)
+        return s if _finite(s) else 0.0
+    rows = sorted(rows, key=_share, reverse=True)
+    max_share = max((_share(c) for c in rows), default=0)
     if max_share <= 0:
         max_share = 1.0
 
@@ -59,8 +82,9 @@ def _competitor_share_chart(
     for i, c in enumerate(rows):
         name = html.escape(str(c.get("name", ""))[:32])
         share = c.get("market_share_revenue", 0)
+        share_geo = share if _finite(share) else 0.0
         y = pad_t + i * row_h
-        w = share / max_share * bar_max
+        w = share_geo / max_share * bar_max
         # Fade by rank: leader fully opaque, tail muted.
         op = 0.9 - (i / max(len(rows), 1)) * 0.55
         parts.append(
@@ -72,8 +96,8 @@ def _competitor_share_chart(
         beds = c.get("beds", 0)
         rev = c.get("revenue", 0)
         tip = html.escape(
-            f"{c.get('name', '')}: {share:.1%} revenue share · "
-            f"${rev/1e6:,.0f}M NPR · {beds:,.0f} beds"
+            f"{c.get('name', '')}: {_pct(share)} revenue share · "
+            f"{_npr(rev)} NPR · {beds:,.0f} beds"
         )
         parts.append(
             f'<rect x="{pad_l}" y="{y + 3:.1f}" width="{max(w, 0.5):.1f}" '
@@ -84,7 +108,7 @@ def _competitor_share_chart(
             f'<text x="{pad_l + w + 6:.1f}" y="{y + row_h / 2 + 3:.1f}" '
             f'text-anchor="start" font-size="10.5" '
             f'font-family="JetBrains Mono,ui-monospace,monospace" '
-            f'fill="{txt}">{share:.1%}</text>'
+            f'fill="{txt}">{_pct(share)}</text>'
         )
     parts.append("</svg>")
     return "".join(parts)
@@ -187,8 +211,8 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
     moat_fields = [
         ("Scale Advantage", moat.get("scale_advantage", "unknown")),
         ("Switching Costs", moat.get("switching_cost_indicator", "unknown")),
-        ("Market Share", f"{moat.get('market_share_pct', 0):.1%}"),
-        ("Top 3 Concentration", f"{moat.get('top3_concentration', 0):.1%}"),
+        ("Market Share", _pct(moat.get('market_share_pct', 0))),
+        ("Top 3 Concentration", _pct(moat.get('top3_concentration', 0))),
         ("Network Density", f"{moat.get('network_density', 0):.2f}"),
         ("Margin vs Market", f"{moat.get('margin_vs_market', 0):+.1%}"),
         ("Bed Util vs Market", f"{moat.get('bed_utilization_vs_market', 0):+.1%}"),
@@ -219,9 +243,9 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
             f'<td><a href="/hospital/{html.escape(str(c.get("ccn", "")))}">'
             f'{html.escape(str(c.get("name", ""))[:40])}</a></td>'
             f'<td class="num">{c.get("beds", 0)}</td>'
-            f'<td class="num">${c.get("revenue", 0)/1e6:,.0f}M</td>'
-            f'<td class="num">{c.get("market_share_revenue", 0):.1%}</td>'
-            f'<td class="num">{c.get("market_share_beds", 0):.1%}</td>'
+            f'<td class="num">{_npr(c.get("revenue", 0))}</td>'
+            f'<td class="num">{_pct(c.get("market_share_revenue", 0))}</td>'
+            f'<td class="num">{_pct(c.get("market_share_beds", 0))}</td>'
             f'</tr>'
         )
     _comp_chart = _competitor_share_chart(competitors)

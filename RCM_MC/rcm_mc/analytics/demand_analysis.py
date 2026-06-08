@@ -244,8 +244,25 @@ def compute_demand_profile(
 
     hospital = match.iloc[0]
     name = str(hospital.get("name", f"Hospital {ccn}"))
-    county = str(hospital.get("county", ""))
-    state = str(hospital.get("state", ""))
+
+    def _txt(v: object) -> str:
+        # hospital is a pandas row; a present-but-NaN county/state slips
+        # past .get's default and str(nan) → "nan", which leaked into the
+        # demand explanation ("density index of 42/100 in nan, FL").
+        if v is None:
+            return ""
+        try:
+            if isinstance(v, float) and np.isnan(v):
+                return ""
+        except (TypeError, ValueError):
+            pass
+        s = str(v).strip()
+        return "" if s.lower() == "nan" else s
+
+    county = _txt(hospital.get("county", ""))
+    state = _txt(hospital.get("state", ""))
+    # Location label for prose — never a bare ", " or "nan".
+    loc = ", ".join(p for p in (county, state) if p) or "this market"
 
     # Get county disease prevalence
     prevalence_records = get_county_prevalence(county, state, store)
@@ -307,7 +324,7 @@ def compute_demand_profile(
     # Explanations
     explanations = {
         "density": (
-            f"Disease density index of {density_index:.0f}/100 in {county}, {state}. "
+            f"Disease density index of {density_index:.0f}/100 in {loc}. "
             f"{'High chronic disease burden — strong inpatient demand driver.' if density_index > 65 else 'Moderate disease burden.' if density_index > 45 else 'Lower disease burden — demand may be more elective.'}"
         ),
         "stickiness": (

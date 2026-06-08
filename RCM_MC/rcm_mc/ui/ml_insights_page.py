@@ -26,6 +26,23 @@ from ._chartis_kit import (
 from .brand import PALETTE
 
 
+def _na(val: Any, spec: str, na: str = "—") -> str:
+    """Format ``val`` with f-string ``spec`` unless it is None/NaN/inf.
+
+    A hospital missing a feature (e.g. Medicaid Day Pct) makes the
+    distress probability and driver contributions non-finite; without this
+    guard "{prob:.1%}" / "{contribution:+.4f}" rendered "nan%" / "+nan".
+    """
+    if val is None:
+        return na
+    try:
+        if not np.isfinite(val):
+            return na
+    except (TypeError, ValueError):
+        return na
+    return format(val, spec)
+
+
 def _fmt_money(val: float) -> str:
     if abs(val) >= 1e9:
         return f"${val/1e9:.2f}B"
@@ -171,7 +188,7 @@ def _factor_contribution_chart(factors: List[Dict[str, Any]],
             f'font-family="JetBrains Mono,monospace" font-size="9.5" '
             f'font-weight="700" fill="{fill}" '
             f'text-anchor="{ "start" if is_pos else "end" }">'
-            f'{contrib:+.3f}</text>'
+            f'{_na(contrib, "+.3f")}</text>'
         )
 
     axis_svg = (
@@ -443,7 +460,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f'<td class="num">{d["beds"]}</td>'
             f'<td class="num">{_fmt_money(d["revenue"])}</td>'
             f'<td class="num" style="color:{margin_color};">{margin:.1%}</td>'
-            f'<td class="num" style="font-weight:600;">{prob:.1%}</td>'
+            f'<td class="num" style="font-weight:600;">{_na(prob, ".1%")}</td>'
             f'<td>{_risk_badge(d["risk_label"])}</td>'
             f'</tr>'
         )
@@ -680,8 +697,8 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             driver_rows += (
                 f'<tr>'
                 f'<td style="font-weight:500;">{_html.escape(d.label)}</td>'
-                f'<td class="num">{d.value:.3f}</td>'
-                f'<td class="num" style="color:{d_color};font-weight:600;">{d.contribution:+.4f}</td>'
+                f'<td class="num">{_na(d.value, ".3f")}</td>'
+                f'<td class="num" style="color:{d_color};font-weight:600;">{_na(d.contribution, "+.4f")}</td>'
                 f'<td><div style="background:var(--cad-bg3);border-radius:2px;height:8px;width:60px;">'
                 f'<div style="width:{bar_pct:.0f}%;background:{d_color};border-radius:2px;height:8px;">'
                 f'</div></div></td>'
@@ -734,7 +751,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
         prob_color = "var(--cad-pos)" if prob < 0.15 else ("var(--cad-warn)" if prob < 0.35 else "var(--cad-neg)")
         kpi_parts.append(ck_kpi_block(
             "Distress Risk",
-            f'<span style="color:{prob_color};">{prob:.1%}</span>',
+            f'<span style="color:{prob_color};">{_na(prob, ".1%")}</span>',
             "predicted probability",
         ))
     if rcm_result:
@@ -796,8 +813,8 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             factor_rows += (
                 f'<tr>'
                 f'<td>{_html.escape(f["feature"])}</td>'
-                f'<td class="num">{f["value"]:.3f}</td>'
-                f'<td class="num" style="color:{dir_color};">{f["contribution"]:+.3f}</td>'
+                f'<td class="num">{_na(f["value"], ".3f")}</td>'
+                f'<td class="num" style="color:{dir_color};">{_na(f["contribution"], "+.3f")}</td>'
                 f'<td style="color:{dir_color};font-size:11px;">'
                 f'{"&#9650; risk" if f["direction"] == "increases" else "&#9660; risk"}</td>'
                 f'</tr>'
