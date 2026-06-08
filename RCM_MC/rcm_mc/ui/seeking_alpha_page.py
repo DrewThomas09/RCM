@@ -73,9 +73,10 @@ transition:background 120ms ease;}}
 .ck-sa-ticker-grid{{display:grid;
 grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
 gap:12px;margin-top:10px;}}
-.ck-sa-ticker-card{{background:{pn};border:1px solid {bd};border-radius:2px;
-padding:12px 14px;transition:border-color 120ms;}}
-.ck-sa-ticker-card:hover{{border-color:{tf};}}
+.ck-sa-ticker-card{{display:block;background:{pn};border:1px solid {bd};
+border-radius:2px;padding:12px 14px;transition:border-color 120ms;
+text-decoration:none;color:inherit;}}
+.ck-sa-ticker-card:hover{{border-color:{ac};}}
 .ck-sa-ticker-head{{display:flex;align-items:baseline;
 justify-content:space-between;gap:8px;}}
 .ck-sa-ticker-symbol{{font-family:"JetBrains Mono",monospace;
@@ -192,8 +193,12 @@ def _ticker_card(comp: PublicComp) -> str:
         comp.ev_ebitda_multiple >= 8
         else P["negative"]
     )
+    # Whole card drills into the public-comp library (/market-intel) — the
+    # comps callout promises "click any ticker", so deliver it. Anchor
+    # inherits the card styling via the .ck-sa-ticker-card rule.
     return (
-        f'<div class="ck-sa-ticker-card">'
+        f'<a class="ck-sa-ticker-card" href="/market-intel" '
+        f'title="Open {html.escape(comp.ticker)} in the public-comp library">'
         f'<div class="ck-sa-ticker-head">'
         f'<div class="ck-sa-ticker-symbol">{html.escape(comp.ticker)}</div>'
         f'<div class="ck-sa-ticker-consensus ck-sa-ticker-{consensus}">'
@@ -213,7 +218,7 @@ def _ticker_card(comp: PublicComp) -> str:
         f'<strong>Debt/EBITDA:</strong> {comp.debt_to_ebitda:.1f}×<br/>'
         f'<strong>Analyst PT:</strong> {pt} ({rc} ratings)'
         f'</div>'
-        f'</div>'
+        f'</a>'
     )
 
 
@@ -613,8 +618,11 @@ def render_seeking_alpha_page(
         f'</div>'
         f'<button type="submit" class="ck-sa-filter-btn">'
         f'Apply filters</button>'
-        f'</form>',
-        title="Filter the snapshot",
+        f'</form>'
+        f'<p class="ck-sa-news-meta" style="margin-top:8px;">'
+        f'Scopes the transactions &amp; headlines below · the comp grid '
+        f'and sector heatmap stay full-universe.</p>',
+        title="Filter transactions & headlines",
     )
 
     # Full JSON payload for programmatic access
@@ -642,12 +650,15 @@ def render_seeking_alpha_page(
         + '<div class="ck-sa-wrap">'
         + deal_context_bar(qs, active_surface="")
         + hero
-        + filter_form
+        # Lead with the full-universe signal (comps + sector), then the
+        # filter grouped with the transactions + headlines it actually
+        # scopes, then the unfiltered sponsor / category reference.
         + comps_panel
         + sector_panel
+        + filter_form
         + tx_panel
-        + sponsor_panel
         + news_panel
+        + sponsor_panel
         + category_panel
         + export_json_panel(
             '<div class="ck-sa-section-label">'
