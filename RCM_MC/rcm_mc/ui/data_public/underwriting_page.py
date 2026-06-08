@@ -188,31 +188,40 @@ def _results_panel(result: Any, corpus: List[Dict[str, Any]]) -> str:
   </div>
 </div>"""
 
-    # Sensitivity table
+    # Sensitivity table.
+    # sensitivity_table() returns a *flat* long-format list of
+    # {exit_multiple, hold_years, <metric>} rows (one per combo) — NOT a
+    # pre-pivoted grid. The previous renderer assumed each non-hold key
+    # was an exit-multiple mapping to a dict with gross_moic, so it
+    # printed raw header keys ("Exit exit_multiple×", "Exit net_irr×")
+    # and emitted no value cells (3-col header over 1-col body). Pivot
+    # the flat rows into the Hold-Years × Exit-Multiple MOIC grid the
+    # panel title promises.
     try:
-        sens = sensitivity_table(result.assumptions)
-        sens_rows = []
-        for row in sens:
-            hold = row.get("hold_years")
-            cells = [f'<td class="mono dim" style="padding:6px 8px;">{hold:.1f}yr</td>']
-            for mult_key in sorted([k for k in row if k != "hold_years"]):
-                r = row[mult_key]
-                if isinstance(r, dict):
-                    moic = r.get("gross_moic")
-                    color = "#b5321e" if (moic or 0) < 1.0 else ("#0a8a5f" if (moic or 0) >= 2.5 else "#d6cfc0")
-                    cells.append(
-                        f'<td style="text-align:right;padding:6px 8px;">'
-                        f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{color}">'
-                        f'{moic:.2f}×</span></td>'
-                    )
-            sens_rows.append(f'<tr>{"".join(cells)}</tr>')
-
-        # Get unique exit multiples for header
-        mult_keys = sorted([k for k in (sens[0] if sens else {}) if k != "hold_years"])
+        sens = sensitivity_table(result.assumptions, metric="gross_moic")
+        holds = sorted({row["hold_years"] for row in sens})
+        mults = sorted({row["exit_multiple"] for row in sens})
+        grid = {
+            (row["hold_years"], row["exit_multiple"]): row.get("gross_moic")
+            for row in sens
+        }
         mult_headers = "".join(
-            f'<th style="text-align:right;padding:6px 8px;">Exit {k}×</th>'
-            for k in mult_keys
+            f'<th style="text-align:right;padding:6px 8px;">Exit {m:.1f}×</th>'
+            for m in mults
         )
+        sens_rows = []
+        for hy in holds:
+            cells = [f'<td class="mono dim" style="padding:6px 8px;">{hy:.1f}yr</td>']
+            for m in mults:
+                moic = grid.get((hy, m))
+                color = "#b5321e" if (moic or 0) < 1.0 else ("#0a8a5f" if (moic or 0) >= 2.5 else "#d6cfc0")
+                val = f"{moic:.2f}×" if isinstance(moic, (int, float)) else "—"
+                cells.append(
+                    f'<td style="text-align:right;padding:6px 8px;">'
+                    f'<span style="font-family:var(--ck-mono);font-variant-numeric:tabular-nums;color:{color}">'
+                    f'{val}</span></td>'
+                )
+            sens_rows.append(f'<tr>{"".join(cells)}</tr>')
         sens_html = f"""
 <div class="ck-panel" style="margin-top:0;">
   <div class="ck-panel-title">MOIC Sensitivity — Hold Years × Exit Multiple</div>
