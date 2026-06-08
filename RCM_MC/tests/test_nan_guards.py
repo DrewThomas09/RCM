@@ -14,7 +14,7 @@ import unittest
 
 from rcm_mc.ui.regression_page import _fmt_num
 from rcm_mc.ui.market_analysis_page import _finite, _npr, _pct
-from rcm_mc.ui.ml_insights_page import _na
+from rcm_mc.ui.ml_insights_page import _factor_contribution_chart, _na
 
 
 class FmtNumGuardTests(unittest.TestCase):
@@ -53,6 +53,19 @@ class MlInsightsNaGuardTests(unittest.TestCase):
         self.assertEqual(_na(None, "+.4f"), "—")
         self.assertEqual(_na(0.5, ".1%"), "50.0%")
         self.assertEqual(_na(-0.0017, "+.4f"), "-0.0017")
+
+    def test_factor_chart_geometry_survives_nan(self):
+        # Regression: a NaN contribution poisoned max_abs and the bar
+        # geometry, emitting x="nan"/width="nan" into the SVG. Geometry
+        # must stay finite; the label may read "—".
+        svg = _factor_contribution_chart([
+            {"feature": "Occupancy Rate", "contribution": 0.19,
+             "direction": "reduces"},
+            {"feature": "Medicaid Day Pct", "contribution": float("nan"),
+             "direction": "increases"},
+        ])
+        self.assertNotIn("nan", svg)
+        self.assertNotIn("NaN", svg)
 
 
 if __name__ == "__main__":

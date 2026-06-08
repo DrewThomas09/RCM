@@ -26,6 +26,14 @@ from ._chartis_kit import (
 from .brand import PALETTE
 
 
+def _fin(v: Any) -> bool:
+    """True only for a finite number (NaN/inf/None → False)."""
+    try:
+        return v is not None and np.isfinite(v)
+    except (TypeError, ValueError):
+        return False
+
+
 def _na(val: Any, spec: str, na: str = "—") -> str:
     """Format ``val`` with f-string ``spec`` unless it is None/NaN/inf.
 
@@ -164,15 +172,21 @@ def _factor_contribution_chart(factors: List[Dict[str, Any]],
     plot_w = width - pad_l - pad_r
     rows = factors[:6]
     row_h = (height - pad_t - pad_b) / max(1, len(rows))
-    max_abs = max(abs(f["contribution"]) for f in rows) or 0.01
+    # A non-finite contribution (sparse-data hospital) must not poison
+    # max_abs or the bar geometry — that rendered x="nan"/width="nan" in
+    # the SVG. Treat it as 0 for layout; the label still shows "—".
+    max_abs = max(
+        (abs(f["contribution"]) for f in rows if _fin(f.get("contribution"))),
+        default=0.0) or 0.01
     mid_x = pad_l + plot_w / 2
 
     bars_svg = ""
     for i, f in enumerate(rows):
         ry = pad_t + row_h * i + row_h / 2
         contrib = f["contribution"]
-        is_pos = f.get("direction") == "increases" or contrib > 0
-        bw = abs(contrib) / max_abs * (plot_w / 2 - 6)
+        contrib_geo = contrib if _fin(contrib) else 0.0
+        is_pos = f.get("direction") == "increases" or contrib_geo > 0
+        bw = abs(contrib_geo) / max_abs * (plot_w / 2 - 6)
         bx = mid_x if is_pos else mid_x - bw
         fill = "#A53A2D" if is_pos else "#3F7D4D"
         bars_svg += (

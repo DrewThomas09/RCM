@@ -186,8 +186,11 @@ def _plan_margin_svg(plans) -> str:
     bars = []
     for i, p in enumerate(plans):
         x = pad_l + i * (bar_w + 8)
-        rev_h = p.annual_revenue_mm / max_v * inner_h
-        margin_h = p.annual_margin_mm / max_v * inner_h
+        # Clamp to >= 0: a plan with a (near-)zero or negative margin gave
+        # a negative bar height (e.g. height="-1.7"), which is invalid SVG
+        # geometry. A loss simply shows no margin bar.
+        rev_h = max(0.0, p.annual_revenue_mm / max_v * inner_h)
+        margin_h = max(0.0, p.annual_margin_mm / max_v * inner_h)
         y_rev = (h - pad_b) - rev_h
         y_margin = (h - pad_b) - margin_h
         bars.append(
