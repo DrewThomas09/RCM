@@ -100,9 +100,7 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         f'<a href="/pressure" class="cad-btn cad-btn-primary" style="text-decoration:none;">'
         f'Pressure Test a Deal</a>'
         f'<a href="/analysis" class="cad-btn" style="text-decoration:none;">'
-        f'Analysis Workbench</a>'
-        f'<a href="/models/challenge/se" class="cad-btn" style="text-decoration:none;">'
-        f'Challenge Solver</a></div>'
+        f'Analysis Workbench</a></div>'
         + ck_next_section(
             "Apply a scenario to a deal",
             "/diligence/deal",
