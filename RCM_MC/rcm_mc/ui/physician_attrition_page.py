@@ -80,11 +80,11 @@ font-variant-numeric:tabular-nums;font-weight:700;}}
    at 2px; drops the dark box-shadow hover affordance (border-color
    hover already conveys interactivity). */
 .pa-card{{background:{pn};border:1px solid {bd};border-radius:2px;
-margin-bottom:14px;overflow:hidden;
+margin-bottom:18px;overflow:hidden;
 transition:transform 140ms ease,border-color 140ms ease;}}
 .pa-card:hover{{transform:translateY(-1px);border-color:{tf};}}
 .pa-card__band{{height:3px;}}
-.pa-card__body{{padding:16px 20px;}}
+.pa-card__body{{padding:18px 22px;}}
 .pa-card__head{{display:flex;justify-content:space-between;
 align-items:flex-start;gap:18px;flex-wrap:wrap;}}
 .pa-card__meta{{min-width:280px;}}
@@ -1180,9 +1180,11 @@ def render_physician_attrition_page(
         + explainer_html
         + '<div class="pa-wrap">'
         + demo_banner
-        + _hrsa_attrition_panel()
+        # Lead with the finding: hero KPIs + bridge, then the actionable
+        # roster. Supplementary national context (HRSA) and the
+        # cross-reference move to the bottom so they no longer push the
+        # hero down or interrupt the hero → filter → roster flow.
         + hero_and_bridge
-        + crosslink
         + _band_filter_chips(band_filter)
         + focus_block
         + ck_section_header(
@@ -1190,6 +1192,8 @@ def render_physician_attrition_page(
             eyebrow="ALL PROVIDERS",
         )
         + _roster_table(filtered, providers_by_id)
+        + _hrsa_attrition_panel()
+        + crosslink
         + '</div>'
         + bookmark_hint()
         + ck_next_section(
