@@ -264,7 +264,7 @@ def render_diligence_checklist(params: dict) -> str:
         active_nav="/diligence-checklist",
         editorial_intro={
             "eyebrow": "DILIGENCE CHECKLIST",
-            "headline": "What the diligence checklist — {sector} reveals on this deal.",
+            "headline": f"What the diligence checklist — {sector} reveals on this deal.",
             "italic_word": "reveals",
         }
     )

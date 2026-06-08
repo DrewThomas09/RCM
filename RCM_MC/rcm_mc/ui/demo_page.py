@@ -100,7 +100,7 @@ def render_demo_page(loaded: bool = False, deal_count: int = 0) -> str:
         ("Open the command center", "Go to <a href='/app' style='color:#155752'>the command center</a> — "
          "the home view now shows KKR's portfolio: pipeline funnel, active alerts, the health-band "
          "distribution (green winners through the red Envision write-off), recent deals and deadlines."),
-        ("Explore the portfolio map &amp; cohorts", "The <a href='/portfolio/map' style='color:#155752'>portfolio map</a> "
+        ("Explore the portfolio map & cohorts", "The <a href='/portfolio/map' style='color:#155752'>portfolio map</a> "
          "shades the real US states the deals sit in (16 deals across 12 states, CON jurisdictions flagged); "
          "<a href='/portfolio/heatmap' style='color:#155752'>heatmap</a>, "
          "<a href='/cohorts' style='color:#155752'>cohorts</a> and <a href='/watchlist' style='color:#155752'>watchlist</a> "
@@ -110,11 +110,11 @@ def render_demo_page(loaded: bool = False, deal_count: int = 0) -> str:
          "bridge with its modeled improvement opportunity, covenant headroom and the health trend. Envision "
          "tells the honest downside (covenant tripped, EBITDA sliding ~30% below plan into Chapter 11); "
          "<b>Gland Pharma</b> is the ~4x upside bookend."),
-        ("Work the alerts &amp; deadlines", "<a href='/alerts' style='color:#155752'>Alerts</a> are already "
+        ("Work the alerts & deadlines", "<a href='/alerts' style='color:#155752'>Alerts</a> are already "
          "mid-lifecycle — one acked, one snoozed, and Envision's covenant breach left live — so you can see "
          "ack / snooze / escalate end to end. <a href='/deadlines' style='color:#155752'>Deadlines</a> show "
          "upcoming and overdue items (restructuring review, covenant tests)."),
-        ("(Optional) inspect &amp; re-import the data", "Download the ingestion files below — they're the real "
+        ("(Optional) inspect & re-import the data", "Download the ingestion files below — they're the real "
          "import format and round-trip cleanly: feed <b>kkr-deals.json</b> to <code>/api/deals/import</code> "
          "or <b>kkr-deals.csv</b> to the CSV importer and the KKR deals (sector, sponsor, vintage, RCM "
          "metrics) come back. Hand them to a colleague to seed their own workspace."),
