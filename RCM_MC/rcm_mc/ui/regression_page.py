@@ -1109,6 +1109,15 @@ def _run_ols(
 
 
 def _fmt_num(val: float) -> str:
+    # Guard NaN/inf (e.g. a degenerate per-hospital regression where a
+    # zero-variance feature divides by zero) — formatting these printed
+    # the literal "nan" into the residual / predicted cells. "val != val"
+    # is the NaN test that works for both python and numpy floats.
+    try:
+        if val is None or val != val or val in (float("inf"), float("-inf")):
+            return "—"
+    except TypeError:
+        return "—"
     if abs(val) >= 1e9:
         return f"${val/1e9:.2f}B"
     if abs(val) >= 1e6:

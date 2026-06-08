@@ -176,12 +176,22 @@ def render_hospital_history(
                 cells += f'<td class="num">{_fmt_m(val)}</td>'
                 values.append(val)
             elif "pct" in key:
-                val = float(row.get(key, 0))
-                cells += f'<td class="num">{val:.0%}</td>'
-                values.append(val)
+                raw = row.get(key, 0)
+                # A present-but-NaN cell (e.g. Medicaid Day % missing from
+                # the filing) slips past .get's default; float(nan) then
+                # rendered the literal "nan%". Show "—" instead.
+                if pd.isna(raw):
+                    cells += '<td class="num">—</td>'
+                    values.append(0)
+                else:
+                    val = float(raw)
+                    cells += f'<td class="num">{val:.0%}</td>'
+                    values.append(val)
             else:
                 val = row.get(key, 0)
                 try:
+                    if pd.isna(val):
+                        raise ValueError
                     val = float(val)
                     cells += f'<td class="num">{val:,.0f}</td>'
                 except (TypeError, ValueError):

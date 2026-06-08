@@ -118,8 +118,18 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     """Render the full demand analysis page."""
     ccn = html.escape(str(profile.get("ccn", "")))
     name = html.escape(str(profile.get("hospital_name", "")))
-    county = html.escape(str(profile.get("county", "")))
-    state = html.escape(str(profile.get("state", "")))
+
+    def _clean_loc(v: Any) -> str:
+        # A present-but-NaN county/state (pandas nan) slips past .get's
+        # default and str(nan) → "nan", which leaked into the prose
+        # ("prevalence for nan, NY"). Drop it to empty.
+        s = "" if v is None else str(v).strip()
+        return "" if s.lower() in ("nan", "none", "") else html.escape(s)
+
+    county = _clean_loc(profile.get("county"))
+    state = _clean_loc(profile.get("state"))
+    # Combined label for prose/subtitles — never a bare ", " or "nan".
+    loc = ", ".join(p for p in (county, state) if p) or "this market"
     density = profile.get("disease_density_index", 50)
     stickiness = profile.get("stickiness_score", 50)
     elasticity = profile.get("price_elasticity", -0.3)
@@ -246,7 +256,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
             f'{PALETTE["warning"]};padding:12px 16px;margin-bottom:12px;'
             f'font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.55;">'
             f'<strong>Showing national baseline.</strong> County-specific '
-            f'prevalence for {county}, {state} is not cached, so each '
+            f'prevalence for {loc} is not cached, so each '
             f'condition mirrors the national average (delta 0). Run the '
             f'disease-density loader (<code>rcm-mc data refresh</code>) to '
             f'populate county rates and surface real demand deltas.</div>'
@@ -261,7 +271,7 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
         ) if _prev_chart else ""
     prevalence_section = (
         f'<div class="cad-card">'
-        f'<h2>County Disease Prevalence · {county}, {state}</h2>'
+        f'<h2>County Disease Prevalence · {loc}</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
         f'Medicare chronic condition rates in this hospital\'s county vs national average. '
         f'Higher prevalence = more inpatient demand. Acuity weight reflects revenue intensity.</p>'
@@ -438,5 +448,5 @@ def render_demand_analysis(profile: Dict[str, Any]) -> str:
     return chartis_shell(
         body, f"Demand Analysis · {name}",
         active_nav="/market-data/map",
-        subtitle=f"{county}, {state} | Density: {density:.0f} | Stickiness: {stickiness:.0f} | Elasticity: {elasticity:.2f}",
+        subtitle=f"{loc} | Density: {density:.0f} | Stickiness: {stickiness:.0f} | Elasticity: {elasticity:.2f}",
     )
