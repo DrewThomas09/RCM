@@ -204,6 +204,21 @@ class TestHeatmap(unittest.TestCase):
     def test_empty_deals_message(self):
         html = render_heatmap([])
         self.assertIn("No deals to display", html)
+        self.assertIn("/import", html)
+
+    def test_unanalyzed_deals_message(self):
+        # Regression: the heatmap only renders *analyzed* deals (packets).
+        # When deals exist but none are analyzed, the empty state used to
+        # say "no deals yet · Create your first deal" (→ /import), which is
+        # both wrong and points to the wrong action. It must instead invite
+        # the partner to run analysis.
+        html = render_heatmap([], total_deals=5)
+        self.assertIn("none analyzed yet", html)
+        self.assertIn("Run analysis", html)
+        self.assertIn("/analysis", html)
+        self.assertNotIn("Create your first deal", html)
+        # Singular grammar.
+        self.assertIn("1 deal,", render_heatmap([], total_deals=1))
 
     def test_trend_arrows_rendered(self):
         deltas = {"d1": {"denial_rate": -1.5}}

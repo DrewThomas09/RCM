@@ -13309,7 +13309,14 @@ class RCMHandler(BaseHTTPRequestHandler):
         deltas_map = {
             d.deal_id: d.metric_changes for d in deltas_list
         }
-        return self._send_html(render_heatmap(packets, deltas=deltas_map))
+        # Pass the full deal count so the empty state can distinguish
+        # "no deals" from "deals exist but none analyzed yet".
+        try:
+            total_deals = len(store.list_deals())
+        except Exception:  # noqa: BLE001
+            total_deals = 0
+        return self._send_html(
+            render_heatmap(packets, deltas=deltas_map, total_deals=total_deals))
 
     # Prompt 33: deal comparison + screening ──────────────────────
 
