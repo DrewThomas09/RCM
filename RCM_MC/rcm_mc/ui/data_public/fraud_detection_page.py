@@ -168,7 +168,7 @@ def _events_table(items) -> str:
             f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{_html.escape(e.date)}</td>',
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(e.type)}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{r_c}">{_html.escape(e.resolution)}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if e.financial_impact_mm > 0 else text_dim}">${e.financial_impact_mm:,.3f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{neg if e.financial_impact_mm > 0 else text_dim}">${e.financial_impact_mm:,.2f}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'

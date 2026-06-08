@@ -200,9 +200,9 @@ def _pte_table(pte) -> str:
             f'{ck_data_cell(f"""{_html.escape(p.state)}""", mono=True)}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{ac};border:1px solid {ac};border-radius:2px;letter-spacing:0.06em">{"yes" if p.pte_active else "no"}</span>""")}',
             f'{ck_data_cell(f"""{p.state_rate * 100:.2f}%""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${p.entity_deduction_mm:,.3f}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${p.federal_savings_mm:,.3f}""", align="right", mono=True, tone="dim")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos if p.net_benefit_mm else text_dim};font-weight:{"600" if p.net_benefit_mm else "400"}">${p.net_benefit_mm:,.3f}</td>',
+            f'{ck_data_cell(f"""${p.entity_deduction_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'{ck_data_cell(f"""${p.federal_savings_mm:,.2f}""", align="right", mono=True, tone="dim")}',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pos if p.net_benefit_mm else text_dim};font-weight:{"600" if p.net_benefit_mm else "400"}">${p.net_benefit_mm:,.2f}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (

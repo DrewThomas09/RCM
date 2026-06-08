@@ -143,8 +143,8 @@ def _hiring_table(plan) -> str:
             f'{ck_data_cell(f"""{p.hires_planned}""", align="right", mono=True)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">{p.hires_to_date}</td>',
             f'{ck_data_cell(f"""${p.cost_per_hire_k:,.1f}""", align="right", mono=True, tone="dim")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${p.total_quarter_cost_mm:,.3f}</td>',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${p.productivity_delay_cost_mm:,.3f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${p.total_quarter_cost_mm:,.2f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${p.productivity_delay_cost_mm:,.2f}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (

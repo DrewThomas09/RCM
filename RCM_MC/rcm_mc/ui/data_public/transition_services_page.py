@@ -119,7 +119,7 @@ def _services_table(services) -> str:
             f'{ck_data_cell(f"""{s.baseline_months}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""+{s.extension_months}""", align="right", mono=True, tone="dim")}',
             f'{ck_data_cell(f"""${s.monthly_cost_k:,.1f}""", align="right", mono=True, tone="dim")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]};font-weight:600">${s.total_cost_mm:,.3f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]};font-weight:600">${s.total_cost_mm:,.2f}</td>',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{cc};border:1px solid {cc};border-radius:2px;letter-spacing:0.06em">{s.transition_complexity}</span>""")}',
             f'{ck_data_cell(f"""<span style="display:inline-block;padding:2px 8px;font-size:10px;font-family:JetBrains Mono,monospace;color:{sc};border:1px solid {sc};border-radius:2px;letter-spacing:0.06em">{_html.escape(s.sparrow_of_termination.replace("_", " "))}</span>""")}',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.owner)}</td>',
@@ -151,7 +151,7 @@ def _bridge_table(bridge) -> str:
             f'{ck_data_cell(f"""${b.standalone_cost_k:,.0f}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""+${b.delta_k:,.0f}""", align="right", mono=True, tone="neg", weight=600)}',
             f'{ck_data_cell(f"""+{b.pct_increase * 100:.0f}%""", align="right", mono=True, tone="neg")}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${b.one_time_stand_up_mm:,.3f}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["warning"]}">${b.one_time_stand_up_mm:,.2f}</td>',
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return (

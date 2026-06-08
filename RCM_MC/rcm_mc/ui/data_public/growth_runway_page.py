@@ -166,7 +166,7 @@ def _sizes_table(sizes) -> str:
         cells = [
             f'{ck_data_cell(f"""{_html.escape(s.level)}""", mono=True, weight=600)}',
             f'{ck_data_cell(f"""${s.size_mm:,.0f}""", align="right", mono=True)}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.current_capture_pct:.3f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{s.current_capture_pct:.2f}%</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["positive"]}">${s.headroom_mm:,.0f}</td>',
             f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.definition)}</td>',
         ]
@@ -220,7 +220,7 @@ def _penetration_table(curve) -> str:
         rb = panel_alt if i % 2 == 0 else bg
         cells = [
             f'{ck_data_cell(f"""Year {p.year}""", mono=True, weight=600)}',
-            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{p.market_share_pct:.3f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["accent"]}">{p.market_share_pct:.2f}%</td>',
             f'{ck_data_cell(f"""${p.revenue_mm:,.2f}""", align="right", mono=True, weight=600)}',
             f'{ck_data_cell(f"""${p.incremental_rev_mm:+,.2f}""", align="right", mono=True, tone="pos")}',
             f'{ck_data_cell(f"""${p.cumulative_capture_mm:,.2f}""", align="right", mono=True, tone="dim")}',
@@ -285,7 +285,7 @@ def render_growth_runway(params: dict = None) -> str:
         ck_kpi_block("Sector TAM", f"${r.tam_b:,.0f}B", "", "") +
         ck_kpi_block("SAM", f"${r.sam_mm:,.0f}M", "", "") +
         ck_kpi_block("SOM", f"${r.som_mm:,.0f}M", "", "") +
-        ck_kpi_block("Current Share", f"{r.current_share_pct:.3f}%", "of SAM", "") +
+        ck_kpi_block("Current Share", f"{r.current_share_pct:.2f}%", "of SAM", "") +
         ck_kpi_block("Target Share", f"{r.target_share_pct:.2f}%", "", "") +
         ck_kpi_block("Market Growth", f"{r.market_growth_pct * 100:.1f}%", "p.a.", "") +
         ck_kpi_block("Terminal Rev", f"${r.implied_terminal_revenue_mm:,.0f}M", "", "") +
@@ -350,7 +350,7 @@ def render_growth_runway(params: dict = None) -> str:
     page_title = ck_page_title(
         "Growth Runway Analyzer",
         eyebrow="GROWTH RUNWAY",
-        meta=f"{sector} sector · ${r.tam_b:,.0f}B TAM → ${r.sam_mm:,.0f}M SAM → ${r.som_mm:,.0f}M SOM · {r.current_share_pct:.3f}% current share → {r.target_share_pct:.2f}% target · ${r.total_addressable_upside_mm:,.0f}M revenue upside at {r.moic_lift_from_growth:.2f}x MOIC lift",
+        meta=f"{sector} sector · ${r.tam_b:,.0f}B TAM → ${r.sam_mm:,.0f}M SAM → ${r.som_mm:,.0f}M SOM · {r.current_share_pct:.2f}% current share → {r.target_share_pct:.2f}% target · ${r.total_addressable_upside_mm:,.0f}M revenue upside at {r.moic_lift_from_growth:.2f}x MOIC lift",
     )
 
     body = f"""
@@ -407,7 +407,7 @@ def render_growth_runway(params: dict = None) -> str:
     padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">
     <strong style="color:{text}">Growth Runway Thesis:</strong>
     ${r.tam_b:,.0f}B TAM, ${r.sam_mm:,.0f}M SAM within footprint, ${r.som_mm:,.0f}M obtainable.
-    Current {r.current_share_pct:.3f}% SAM share → target {r.target_share_pct:.2f}% implies
+    Current {r.current_share_pct:.2f}% SAM share → target {r.target_share_pct:.2f}% implies
     ${r.total_addressable_upside_mm:,.0f}M of revenue uplift over 10 years. {r.moic_lift_from_growth:.2f}x MOIC lift
     from compounded organic + share-gain + M&amp;A. Confidence: market growth (high), M&amp;A (high),
     geographic expansion (medium).

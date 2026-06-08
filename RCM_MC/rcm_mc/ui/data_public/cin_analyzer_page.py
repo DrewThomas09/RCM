@@ -64,7 +64,7 @@ def _providers_table(items) -> str:
             f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:10px;color:{text_dim}">{_html.escape(p.specialty_category)}</td>',
             f'{ck_data_cell(f"""{p.provider_count}""", align="right", mono=True)}',
             f'{ck_data_cell(f"""{p.attributed_lives:,}""", align="right", mono=True, tone="dim")}',
-            f'{ck_data_cell(f"""${p.annual_contribution_mm:,.3f}""", align="right", mono=True, tone="acc", weight=600)}',
+            f'{ck_data_cell(f"""${p.annual_contribution_mm:,.2f}""", align="right", mono=True, tone="acc", weight=600)}',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{q_c};font-weight:700">{p.quality_score:.3f}</td>',
             f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{e_c}">{p.engagement_score}</td>',
             f'{ck_data_cell(f"""{p.tenure_years:.1f}""", align="right", mono=True, tone="dim")}',
