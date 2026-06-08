@@ -16,7 +16,9 @@ from __future__ import annotations
 import html as _html
 from typing import Dict, Optional
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_page_title, ck_source_purpose
+from rcm_mc.ui._chartis_kit import (
+    P, chartis_shell, ck_kpi_block, ck_page_title, ck_source_purpose,
+)
 from rcm_mc.ui.us_geo_map import render_us_geo_map
 from rcm_mc.data import market_intel as _mi
 
@@ -312,9 +314,16 @@ def render_market_geo_index(params: dict = None) -> str:
     cell = f"background:{P['panel']};border:1px solid {P['border']};padding:16px;margin-bottom:16px"
     h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{P['text_dim']};text-transform:uppercase;margin-bottom:10px"
 
+    # The page masthead (title + intro) is rendered once by chartis_shell's
+    # editorial_intro below; the body previously opened with a second
+    # ck_page_title, so "Market Intelligence · Geographic" rendered twice.
+    # Keep just the coverage meta as a slim provenance line here.
+    _meta = (f'{len(variables)} variable{"" if len(variables) == 1 else "s"} · '
+             f'{rep.get("state_values", 0)} state values · SimplyAnalytics-derived')
     body = (
-        ck_page_title("Market Intelligence · Geographic", eyebrow="MARKET INTEL",
-                      meta=f'{len(variables)} variable{"" if len(variables) == 1 else "s"} · {rep.get("state_values",0)} state values · SimplyAnalytics-derived')
+        f'<p style="font-family:var(--ck-mono);font-size:10.5px;'
+        f'letter-spacing:0.04em;color:{P["text_dim"]};margin:0 0 12px;'
+        f'text-transform:uppercase;">{_meta}</p>'
         + ck_source_purpose(
             purpose="Score and rank geographic markets for diligence: senior "
                     "demand, payer mix, income, provider supply: then validate "
