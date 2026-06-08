@@ -569,13 +569,18 @@ def _vertical_rows(vertical: str, state: str = "",
                 return []
             if state:
                 df = df[df["state"].str.upper() == state]
-            from ._chartis_kit import margin_is_plausible
+            from ._chartis_kit import margin_is_plausible, margin_flag
             rows = []
             for _, r in df.iterrows():
                 margin = r.get("operating_margin")
-                # Band-gate implausible HCRIS margins (e.g. 100% = opex
-                # incomplete in the filing) to None so they render "—" and sort
-                # last — matching the Inspector, not a bogus #1 rank.
+                # Verify the HCRIS margin against the plausible band. A
+                # too-high value (>+30%) almost always means opex is
+                # incomplete in the filing (a parent-CCN rollup or partial
+                # expense lines) — a DATA ARTIFACT, not a real result. We
+                # carry WHY it failed (margin_flag → "high"/"low") so the
+                # table can FLAG it for review rather than silently drop it
+                # to "—" and let it read as merely missing.
+                flag = margin_flag(margin)
                 if margin is not None and not margin_is_plausible(margin):
                     margin = None
                 rows.append({
@@ -583,7 +588,7 @@ def _vertical_rows(vertical: str, state: str = "",
                     "city": str(r.get("city", "") or ""), "state": str(r.get("state", "") or ""),
                     "ownership": str(r.get("control_type", "") or r.get("ownership", "") or "—"),
                     "size": _num_or_none(r.get("beds")), "size_label": "Beds",
-                    "q": _num_or_none(margin),
+                    "q": _num_or_none(margin), "q_flag": flag,
                     "q_label": "Op margin", "q_pct": True, "source": "CMS HCRIS",
                 })
             rows.sort(key=lambda x: (x["q"] is None, -(x["q"] or -9)))
@@ -928,6 +933,22 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
 def _fmt_q(row: Dict) -> str:
     v = row.get("q")
     if v is None:
+        # A margin that was gated out as implausible is FLAGGED (not just
+        # "—"), so a partner sees it was reviewed and rejected as a likely
+        # HCRIS filing artifact — distinct from a genuinely-absent value.
+        flag = row.get("q_flag")
+        _fst = ('color:var(--sc-warning,#b8732a);font-family:var(--sc-mono);'
+                'font-size:10.5px;cursor:help;white-space:nowrap;')
+        if flag == "high":
+            return (f'<span style="{_fst}" title="Operating margin above '
+                    '+30% — almost always an incomplete HCRIS filing (opex '
+                    'understated); flagged and excluded from the ranking.">'
+                    '⚑ &gt;30%</span>')
+        if flag == "low":
+            return (f'<span style="{_fst}" title="Operating margin below '
+                    '−40% — partial-year or state-funded filing (opex far '
+                    'exceeds patient revenue); flagged and excluded from the '
+                    'ranking.">⚑ &lt;−40%</span>')
         return '<span style="color:var(--sc-text-faint,#8b94a0)">—</span>'
     return f"{v:.1%}" if row.get("q_pct") else (f"{v:g}")
 
@@ -1445,6 +1466,19 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         f' Source: <strong>{_h.escape(uniform_source)}</strong>.'
         if uniform_source else ""
     )
+    # Verification transparency: how many margins in this universe were
+    # flagged as implausible (outside the −40%…+30% band — almost always an
+    # incomplete HCRIS filing) and excluded from the ranking. Surfacing the
+    # count is honest fact-checking — the partner sees the screen is gated,
+    # not silently dropping rows. Only the hospitals universe carries a
+    # margin flag, so the clause self-suppresses elsewhere.
+    _n_flagged = sum(1 for r in all_rows if r.get("q_flag"))
+    flagged_clause = (
+        f' <span style="color:var(--sc-warning,#b8732a);">⚑ {_n_flagged:,} '
+        f'flagged as implausible (margin outside −40%…+30%, likely a filing '
+        f'artifact) and excluded from the ranking.</span>'
+        if _n_flagged else ""
+    )
     return (
         table_css
         + filter_form
@@ -1452,7 +1486,8 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         + top_n
         + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
         f'of {match_txt} {vinfo["label"]} providers{scope} ({sort_clause}; '
-        f'real {vinfo["universe"]} data, "—" = not reported).{source_clause} '
+        f'real {vinfo["universe"]} data, "—" = not reported).{source_clause}'
+        f'{flagged_clause} '
         f'Capped at {row_limit}.{reset_link}</p>'
         '<div style="overflow-x:auto;"><table class="ts-screen-table">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}'
