@@ -75,8 +75,21 @@ _CLAUDE_STATUS_COLORS = {
 }
 
 
-def _toc(bundle: Dict[str, Any], review: Any = None) -> str:
-    """Links strip at the top — one entry per populated section."""
+def _toc(
+    bundle: Dict[str, Any],
+    review: Any = None,
+    rendered_anchors: Optional[set] = None,
+) -> str:
+    """Links strip at the top — one entry per *rendered* section.
+
+    ``rendered_anchors`` is the set of section anchors that actually
+    emitted an ``id`` in the body. Some sections (scenario_narrative,
+    board_memo, lp_pitch) carry a truthy dict whose inner text is empty,
+    so the section renderer returns "" with no anchor; keying the TOC off
+    ``bundle.get(key)`` then produced links to #scenario / #board-memo
+    that jumped nowhere. Filtering on the rendered set keeps TOC and body
+    in lockstep.
+    """
     items = []
     if review is not None:
         items.append(
@@ -87,7 +100,10 @@ def _toc(bundle: Dict[str, Any], review: Any = None) -> str:
             f'letter-spacing:0.04em;">Supplemental Review &rarr;</a>'
         )
     for key, anchor, title in _SECTION_DEFS:
-        if not bundle.get(key):
+        if rendered_anchors is not None:
+            if anchor not in rendered_anchors:
+                continue
+        elif not bundle.get(key):
             continue
         items.append(
             f'<a href="#{anchor}" '
@@ -532,7 +548,6 @@ def render_ic_packet(
     )
     kpi_strip = f'<div class="ck-kpi-grid">{kpis}</div>'
 
-    toc = _toc(b, review=review)
     ic_html = str(b.get("ic_memo") or "")
     ic_memo_section = _ic_memo_section(ic_html, "ic-memo") if ic_html else small_panel(
         "IC Memo", empty_note("ic_memo not rendered."), code="MEM",
@@ -570,6 +585,23 @@ def render_ic_packet(
     )
 
     audit_section = _audit_section(b.get("audit_trail"), "audit")
+
+    # Build the TOC from the sections that actually emitted an anchor, so a
+    # present-but-empty bundle entry can't leave a dead jump link.
+    _section_map = [
+        (ic_memo_section, "ic-memo"),
+        (cheatsheet_section, "cheatsheet"),
+        (bear_section, "bear-patterns"),
+        (regulatory_section, "regulatory"),
+        (hundred_day_section, "hundred-day"),
+        (discussion_section, "discussion"),
+        (scenario_section, "scenario"),
+        (board_section, "board-memo"),
+        (lp_section, "lp-pitch"),
+        (audit_section, "audit"),
+    ]
+    rendered_anchors = {a for sec, a in _section_map if f'id="{a}"' in sec}
+    toc = _toc(b, review=review, rendered_anchors=rendered_anchors)
 
     # TODO(phase-7): split into per-section micro-explainers as part
     # of a later documentation polish pass.
