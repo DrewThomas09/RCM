@@ -14,7 +14,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_bar_row, ck_fmt_num, ck_fmt_pct, ck_kpi_block,
-    ck_next_section, ck_panel, ck_provenance_tooltip,
+    ck_next_section, ck_panel, ck_provenance_tooltip, margin_is_plausible,
 )
 from .brand import PALETTE
 from .regression_page import _add_computed_features, _fmt_num, _COLLINEAR_PAIRS
@@ -197,15 +197,25 @@ def render_hospital_stats(ccn: str, hcris_df: pd.DataFrame) -> str:
     occ = hospital.get("occupancy_rate", 0)
 
     # Cycle 50 — port to ck_kpi_block + provenance.
+    # Band-gate implausible HCRIS margins (e.g. 100% = incomplete opex in the
+    # filing) → render "—" so this matches the rest of the HCRIS surfaces
+    # rather than reading as a confident KPI (one-margin rule).
+    _margin_ok = margin_is_plausible(margin)
     margin_value = ck_provenance_tooltip(
         "Operating margin",
-        ck_fmt_pct(margin),
+        ck_fmt_pct(margin) if _margin_ok else "—",
         explainer=(
             "Net patient revenue minus operating expenses, "
             "divided by net patient revenue. Healthcare hospital "
             "median is roughly 2-4%; below 0% flags structural "
             "distress unless the hospital is intentionally "
             "trading margin for share."
+            if _margin_ok else
+            "Net patient revenue minus operating expenses, divided by net "
+            "patient revenue. This filing's computed margin falls outside the "
+            "realistic −40% to +30% band — almost certainly incomplete or "
+            "aggregated opex — so it is suppressed rather than shown as a "
+            "data artifact."
         ),
     )
     flags_value = ck_provenance_tooltip(

@@ -13,9 +13,19 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro, ck_sparkline,
+    ck_section_intro, ck_sparkline, margin_is_plausible,
 )
 from .brand import PALETTE
+
+
+def _fmt_margin(m: Any) -> str:
+    """Format an HCRIS-derived operating margin, band-gating implausible
+    values (e.g. ±100% from incomplete/aggregated opex in the filing) to
+    "—" so the figure matches the rest of the HCRIS surfaces rather than
+    reading as a confident number (the one-margin rule)."""
+    if m is None:
+        return "—"
+    return f"{m:.1%}" if margin_is_plausible(m) else "—"
 
 
 def _fmt_m(val: Any) -> str:
@@ -265,7 +275,7 @@ def render_hospital_history(
         )
         + ck_kpi_block(
             "Latest Margin",
-            f"{margins[-1]:.1%}" if margins else "—",
+            _fmt_margin(margins[-1]) if margins else "—",
             chart=margin_spark,
             help={
                 "definition": (
@@ -366,11 +376,11 @@ def render_hospital_history(
                 )
                 + ck_kpi_block(
                     "Latest Margin · this hospital",
-                    f"{margins[-1]:.1%}",
+                    _fmt_margin(margins[-1]),
                 )
                 + ck_kpi_block(
                     "Latest Margin · state avg",
-                    f"{peer_margins[-1]:.1%}",
+                    _fmt_margin(peer_margins[-1]),
                 )
                 + '</div>'
             )
@@ -393,7 +403,7 @@ def render_hospital_history(
                     f'<tr>'
                     f'<td class="num" style="font-weight:600;">FY{yr} (proj)</td>'
                     f'<td class="num">{_fmt_m(pr)}</td>'
-                    f'<td class="num">{pm:.1%}</td>'
+                    f'<td class="num">{_fmt_margin(pm)}</td>'
                     f'</tr>'
                 )
             proj_section = ck_panel(

@@ -14,8 +14,18 @@ honest empty state with the ingest command rather than fabricating rows.
 from __future__ import annotations
 
 import html as _html
+import re as _re
 import urllib.parse as _url
 from typing import Any, Dict, List, Optional
+
+
+def _fmt_quarter(q: Any) -> str:
+    """Display a stored deal_quarter ("2019Q1") with a space ("2019 Q1").
+
+    The raw value stays untouched for drill-down hrefs and DB filters —
+    only the human-readable label gets the space, per the editorial date
+    convention (e.g. "2026 Q1")."""
+    return _re.sub(r"(?<=\d)Q(?=\d)", " Q", str(q))
 
 from rcm_mc.ui._chartis_kit import (
     chartis_shell, ck_page_title, ck_kpi_block, ck_empty_state, ck_table,
@@ -188,7 +198,9 @@ def _dl_market_overview(store: Any) -> str:
     # overview stays as the at-a-glance picture above the filtered list.
     def _lib(**kw):
         return "/deal-library?" + _url.urlencode(kw)
-    q_rows = [(q, n, _lib(deal_quarter=q)) for q, n in by_q]
+    # Label gets the editorial space ("2019 Q1"); the href keeps the raw
+    # stored value ("2019Q1") so the drill-down filter still matches the DB.
+    q_rows = [(_fmt_quarter(q), n, _lib(deal_quarter=q)) for q, n in by_q]
     sec_rows = [(str(s).split(";")[0][:22], n, _lib(industry=str(s)))
                 for s, n in by_sec]
     type_rows = [(t, n, _lib(deal_type=t)) for t, n in by_type]
@@ -199,7 +211,7 @@ def _dl_market_overview(store: Any) -> str:
         f'margin:0 0 14px">'
         f'<b style="color:{P["text"]}">{n_deals:,}</b> tracked deals'
         f' &middot; <b style="color:{P["text"]}">{len(by_q)}</b> quarters '
-        f'({by_q[0][0]}&ndash;{by_q[-1][0]})'
+        f'({_fmt_quarter(by_q[0][0])}&ndash;{_fmt_quarter(by_q[-1][0])})'
         f' &middot; <b style="color:{P["text"]}">{n_spons:,}</b> sponsors'
         f' &middot; <b style="color:{P["text"]}">{n_sec:,}</b> sectors</div>')
     charts = (
@@ -361,12 +373,14 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     if _drill:
         _dlabel = {"deal_quarter": "Quarter", "deal_type": "Deal type",
                    "industry": "Sector"}[_drill[0]]
+        _dval = (_fmt_quarter(_drill[1]) if _drill[0] == "deal_quarter"
+                 else _drill[1])
         drill_chip = (
             f'<div style="margin:16px 0 0;font-family:var(--sc-mono);font-size:11px;'
             f'display:flex;align-items:center;gap:10px">'
             f'<span style="background:{P["accent"]};color:#fff;padding:3px 11px;'
             f'border-radius:12px;letter-spacing:.04em">{_dlabel}: '
-            f'{_html.escape(_drill[1])}</span>'
+            f'{_html.escape(_dval)}</span>'
             f'<span style="color:{P["text_dim"]}">{res["total"]:,} deals</span>'
             f'<a href="/deal-library" style="color:{P["accent"]};text-decoration:none">'
             f'clear &times;</a></div>')

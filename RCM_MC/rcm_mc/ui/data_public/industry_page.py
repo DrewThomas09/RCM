@@ -143,7 +143,10 @@ def render_industry(slug: str, params: dict = None) -> str:
     iid = r["industry_id"]
     attribution = f'{_ii.ATTRIBUTION}, {r["report_title"]}, {r.get("publication_date","")}.'
     cell = f"background:{P['panel']};border:1px solid {P['border']};padding:16px;margin-bottom:16px"
-    h3 = f"font-size:11px;font-weight:600;letter-spacing:0.08em;color:{P['text_dim']};text-transform:uppercase;margin-bottom:10px"
+    h3 = f"font-family:var(--sc-sans);font-size:11px;font-weight:600;letter-spacing:0.08em;color:{P['text_dim']};text-transform:uppercase;margin-bottom:10px"
+    # Reading prose (definitions, narrative) uses the editorial serif body
+    # type — sans 12px read like UI chrome and looked off for a dossier.
+    prose = f"font-family:var(--sc-serif);font-size:14px;line-height:1.65;color:{P['text']};margin:0 0 8px"
 
     # At-a-glance KPIs
     metrics = _ii.load_industry_metrics(iid)
@@ -198,7 +201,7 @@ def render_industry(slug: str, params: dict = None) -> str:
     inc = r.get("included_services", [])
     inc_html = "".join(f'<li>{_html.escape(x)}</li>' for x in inc)
     def_panel = (f'<div style="{cell}"><div style="{h3}">Definition · NAICS {_html.escape(str(r.get("naics_code","")))}</div>'
-                 f'<p style="font-size:12px;color:{P["text"]};margin:0 0 8px">{_html.escape(r.get("summary_nonverbatim",""))}</p>'
+                 f'<p style="{prose}">{_html.escape(r.get("summary_nonverbatim",""))}</p>'
                  + (f'<div style="{h3}">Included</div><ul style="margin:0;padding-left:18px;font-size:12px">{inc_html}</ul>' if inc else "")
                  + '</div>')
 
@@ -239,7 +242,7 @@ def render_industry(slug: str, params: dict = None) -> str:
                 op_panel = (
                     f'<div style="{cell}">'
                     f'<div style="{h3}">Industry financial relationships · LIVE (CMS Open Payments {s.get("program_year","")})</div>'
-                    f'<p style="font-size:12px;color:{P["text_dim"]};margin:0 0 8px">'
+                    f'<p style="{prose};color:{P["text_dim"]}">'
                     f'<b style="color:{P["text"]}">${s["total_payments_usd"]/1e9:,.2f}bn</b> in industry '
                     f'payments/transfers of value to physicians &amp; teaching hospitals across '
                     f'{s["total_transactions"]:,} transactions ({s["reporting_entities"]:,} reporting '
@@ -291,8 +294,11 @@ def render_industry_brief(slug: str, params: dict = None) -> str:
     attribution = f'{_ii.ATTRIBUTION}, {r["report_title"]}, {r.get("publication_date","")}.'
 
     sec = f"margin:0 0 18px"
-    h = f"font-size:12px;font-weight:700;letter-spacing:0.06em;color:{P['text']};text-transform:uppercase;margin:18px 0 6px;border-bottom:1px solid {P['border']};padding-bottom:4px"
-    dim = f"font-size:12px;color:{P['text_dim']};line-height:1.6;margin:0 0 8px"
+    # Numbered section labels stay in the sans eyebrow idiom; the brief's
+    # body prose moves to the editorial serif body type so the dossier reads
+    # like an editorial brief, not a UI panel.
+    h = f"font-family:var(--sc-sans);font-size:12px;font-weight:700;letter-spacing:0.06em;color:{P['text']};text-transform:uppercase;margin:18px 0 6px;border-bottom:1px solid {P['border']};padding-bottom:4px"
+    dim = f"font-family:var(--sc-serif);font-size:14px;color:{P['text_dim']};line-height:1.65;margin:0 0 8px"
 
     def _m(name):
         row = next((x for x in metrics if x["metric_name"] == name), None)

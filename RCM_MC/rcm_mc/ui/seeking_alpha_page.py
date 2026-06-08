@@ -48,7 +48,7 @@ color:{tf};font-weight:600;}}
 margin:4px 0 0 0;letter-spacing:-.2px;}}
 .ck-sa-section-label{{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;
 font-weight:700;color:{tf};margin:22px 0 10px 0;}}
-.ck-sa-panel{{background:{pn};border:1px solid {bd};border-radius:4px;
+.ck-sa-panel{{background:{pn};border:1px solid {bd};border-radius:2px;
 padding:14px 20px;margin-bottom:16px;}}
 .ck-sa-callout{{background:{pa};padding:12px 16px;border-left:3px solid {ac};
 border-radius:0 3px 3px 0;font-size:12px;color:{td};line-height:1.65;
@@ -59,23 +59,24 @@ max-width:900px;margin-top:12px;}}
 .ck-sa-filter-label{{display:block;font-size:10px;color:{tf};letter-spacing:1.2px;
 text-transform:uppercase;font-weight:600;margin-bottom:4px;}}
 .ck-sa-filter-input{{width:100%;background:{pa};color:{tx};border:1px solid {bd};
-padding:8px 10px;border-radius:3px;
+padding:8px 10px;border-radius:2px;
 font-family:"JetBrains Mono",monospace;font-size:12px;
 transition:border-color 120ms ease, box-shadow 120ms ease;}}
 .ck-sa-filter-input:focus{{outline:none;border-color:{ac};
 box-shadow:0 0 0 2px {ac}33;}}
 .ck-sa-filter-btn{{padding:10px 18px;background:{ac};color:#fff;border:0;
-border-radius:3px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
+border-radius:2px;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;
 font-weight:700;cursor:pointer;
-transition:background 120ms ease, transform 120ms ease;}}
-.ck-sa-filter-btn:hover{{filter:brightness(1.08);transform:translateY(-1px);}}
-.ck-sa-filter-btn:active{{transform:translateY(0);filter:brightness(0.95);}}
+transition:background 120ms ease;}}
+.ck-sa-filter-btn:hover{{filter:brightness(1.08);}}
+.ck-sa-filter-btn:active{{filter:brightness(0.95);}}
 .ck-sa-ticker-grid{{display:grid;
 grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
 gap:12px;margin-top:10px;}}
-.ck-sa-ticker-card{{background:{pn};border:1px solid {bd};border-radius:4px;
-padding:12px 14px;transition:border-color 120ms, transform 120ms;}}
-.ck-sa-ticker-card:hover{{border-color:{tf};transform:translateY(-1px);}}
+.ck-sa-ticker-card{{display:block;background:{pn};border:1px solid {bd};
+border-radius:2px;padding:12px 14px;transition:border-color 120ms;
+text-decoration:none;color:inherit;}}
+.ck-sa-ticker-card:hover{{border-color:{ac};}}
 .ck-sa-ticker-head{{display:flex;align-items:baseline;
 justify-content:space-between;gap:8px;}}
 .ck-sa-ticker-symbol{{font-family:"JetBrains Mono",monospace;
@@ -87,7 +88,7 @@ border-radius:2px;}}
 .ck-sa-ticker-HOLD{{background:{wn};color:#1a1a1a;}}
 .ck-sa-ticker-SELL{{background:{ne};color:#fff;}}
 .ck-sa-ticker-NONE{{background:{pa};color:{td};border:1px solid {bd};}}
-.ck-sa-ticker-name{{font-size:11px;color:{tf};
+.ck-sa-ticker-name{{font-size:11px;color:{td};
 letter-spacing:0.5px;margin-top:2px;}}
 .ck-sa-ticker-mult{{font-family:"JetBrains Mono",monospace;
 font-size:22px;font-weight:700;color:{tx};margin-top:8px;
@@ -119,7 +120,7 @@ border:1px solid {bd};font-family:"JetBrains Mono",monospace;
 letter-spacing:0.3px;}}
 .ck-sa-sector-grid{{display:grid;
 grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;}}
-.ck-sa-sector-card{{background:{pn};border:1px solid {bd};border-radius:3px;
+.ck-sa-sector-card{{background:{pn};border:1px solid {bd};border-radius:2px;
 padding:10px 12px;border-left:3px solid var(--tone);}}
 .ck-sa-sector-name{{font-size:11px;color:{tx};font-weight:600;
 letter-spacing:0.3px;}}
@@ -192,8 +193,12 @@ def _ticker_card(comp: PublicComp) -> str:
         comp.ev_ebitda_multiple >= 8
         else P["negative"]
     )
+    # Whole card drills into the public-comp library (/market-intel) — the
+    # comps callout promises "click any ticker", so deliver it. Anchor
+    # inherits the card styling via the .ck-sa-ticker-card rule.
     return (
-        f'<div class="ck-sa-ticker-card">'
+        f'<a class="ck-sa-ticker-card" href="/market-intel" '
+        f'title="Open {html.escape(comp.ticker)} in the public-comp library">'
         f'<div class="ck-sa-ticker-head">'
         f'<div class="ck-sa-ticker-symbol">{html.escape(comp.ticker)}</div>'
         f'<div class="ck-sa-ticker-consensus ck-sa-ticker-{consensus}">'
@@ -213,7 +218,7 @@ def _ticker_card(comp: PublicComp) -> str:
         f'<strong>Debt/EBITDA:</strong> {comp.debt_to_ebitda:.1f}×<br/>'
         f'<strong>Analyst PT:</strong> {pt} ({rc} ratings)'
         f'</div>'
-        f'</div>'
+        f'</a>'
     )
 
 
@@ -613,8 +618,11 @@ def render_seeking_alpha_page(
         f'</div>'
         f'<button type="submit" class="ck-sa-filter-btn">'
         f'Apply filters</button>'
-        f'</form>',
-        title="Filter the snapshot",
+        f'</form>'
+        f'<p class="ck-sa-news-meta" style="margin-top:8px;">'
+        f'Scopes the transactions &amp; headlines below · the comp grid '
+        f'and sector heatmap stay full-universe.</p>',
+        title="Filter transactions & headlines",
     )
 
     # Full JSON payload for programmatic access
@@ -642,12 +650,15 @@ def render_seeking_alpha_page(
         + '<div class="ck-sa-wrap">'
         + deal_context_bar(qs, active_surface="")
         + hero
-        + filter_form
+        # Lead with the full-universe signal (comps + sector), then the
+        # filter grouped with the transactions + headlines it actually
+        # scopes, then the unfiltered sponsor / category reference.
         + comps_panel
         + sector_panel
+        + filter_form
         + tx_panel
-        + sponsor_panel
         + news_panel
+        + sponsor_panel
         + category_panel
         + export_json_panel(
             '<div class="ck-sa-section-label">'

@@ -49,7 +49,14 @@ XRAY_CSS = """
 .xr-btn{font-family:var(--xr-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
  padding:10px 18px;border:1px solid var(--xr-green-deep);background:var(--xr-green-deep);
  color:var(--xr-paper);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
-.xr-btn.ghost{background:transparent;border-color:var(--xr-rule);color:var(--xr-ink2);}
+/* Teal-outline ghost (mirrors covenant-lab head-actions): the old muted
+   --xr-rule border + ink text read as near-invisible white-on-parchment.
+   A green-deep border + green-deep label that fills green on hover keeps the
+   secondary actions legible without competing with the solid primary. */
+.xr-btn.ghost{background:var(--xr-paper);border-color:var(--xr-green-deep);
+ color:var(--xr-green-deep);}
+.xr-btn.ghost:hover{background:var(--xr-green-deep);border-color:var(--xr-green-deep);
+ color:var(--xr-paper);}
 .xr-btn.ink{background:var(--xr-ink);border-color:var(--xr-ink);color:var(--xr-paper);}
 .xr-btn[disabled],.xr-btn[aria-disabled=true]{opacity:.45;cursor:not-allowed;}
 .xr-chip{font-family:var(--xr-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
