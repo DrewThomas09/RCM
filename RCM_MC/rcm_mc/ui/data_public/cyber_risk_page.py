@@ -193,15 +193,33 @@ def render_cyber_risk(params: dict = None) -> str:
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
     pos = P["positive"]; acc = P["accent"]; neg = P["negative"]; warn = P["warning"]
 
+    # Avg maturity gap vs industry benchmark across control domains —
+    # surfaced in the lead KPI sub-line so the headline score carries its
+    # peer context at a glance (was an empty sub slot).
+    _avg_gap = (
+        sum(d.maturity_score - d.industry_benchmark for d in r.domains)
+        / len(r.domains)
+    ) if r.domains else 0.0
+    _vendors_assessed = len(r.vendors)
+    _vendors_at_risk = sum(1 for v in r.vendors if v.risk_score >= 50)
+
     kpi_strip = (
-        ck_kpi_block("Cyber Score", f"{r.overall_cyber_score}/100", "", "") +
-        ck_kpi_block("Risk Tier", r.risk_tier.upper()[:14], "", "") +
-        ck_kpi_block("Records in Scope", f"{r.total_records_in_scope:,}", "", "") +
-        ck_kpi_block("Insurance", f"${r.cyber_insurance_coverage_mm:,.0f}M", "", "") +
-        ck_kpi_block("Annual Spend", f"${r.annual_cyber_spend_mm:,.1f}M", "", "") +
-        ck_kpi_block("Control Domains", str(len(r.domains)), "", "") +
-        ck_kpi_block("Vendors at Risk", str(sum(1 for v in r.vendors if v.risk_score >= 50)), "", "") +
-        ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
+        ck_kpi_block("Cyber Score", f"{r.overall_cyber_score}/100",
+                     f"{_avg_gap:+.0f} pts vs benchmark", "") +
+        ck_kpi_block("Risk Tier", r.risk_tier.upper()[:14],
+                     "control maturity", "") +
+        ck_kpi_block("Records in Scope", f"{r.total_records_in_scope:,}",
+                     "PHI exposure", "") +
+        ck_kpi_block("Insurance", f"${r.cyber_insurance_coverage_mm:,.0f}M",
+                     "cyber tower", "") +
+        ck_kpi_block("Annual Spend", f"${r.annual_cyber_spend_mm:,.1f}M",
+                     "security program", "") +
+        ck_kpi_block("Control Domains", str(len(r.domains)),
+                     "NIST CSF domains", "") +
+        ck_kpi_block("Vendors at Risk", str(_vendors_at_risk),
+                     f"of {_vendors_assessed} assessed", "") +
+        ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}",
+                     "benchmark set", "")
     )
 
     d_chart = _domains_chart(r.domains)
@@ -218,10 +236,6 @@ def render_cyber_risk(params: dict = None) -> str:
     total_rem = sum(c.remediation_cost_mm for c in r.compliance)
     _va_tone = {"strong": "positive", "adequate": "teal",
                 "developing": "warning"}.get(r.risk_tier, "negative")
-    _avg_gap = (
-        sum(d.maturity_score - d.industry_benchmark for d in r.domains)
-        / len(r.domains)
-    ) if r.domains else 0.0
     value_anchor = ck_value_anchor(
         "Cyber Posture",
         f"{r.overall_cyber_score}/100",
