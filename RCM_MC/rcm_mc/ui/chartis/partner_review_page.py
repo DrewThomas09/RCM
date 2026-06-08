@@ -312,18 +312,33 @@ def _bands_table(review: Any) -> str:
                 f'{observed:.2f}' if isinstance(observed, (int, float))
                 else _html.escape(str(observed) if observed is not None else "—")
             )
+        # The band arrives as a (low, high) pair or a ``Band`` dataclass.
+        # Pull the bounds either way and format them like the observed
+        # column — never str(band), which dumps the whole dataclass repr
+        # (``Band(metric='irr', regime=…, stretch_low=None, source=…)``)
+        # into the partner-facing cell.
         band = getattr(b, "band", None)
-        band_str = ""
-        band_bullet = ""
         if isinstance(band, (list, tuple)) and len(band) == 2:
-            lo, hi = band
+            lo, hi = band[0], band[1]
+        else:
+            lo = getattr(band, "low", None)
+            hi = getattr(band, "high", None)
+
+        def _fmt_bound(v: Any) -> Optional[str]:
+            if v is None:
+                return None
+            if metric_raw in _METRIC_REGISTRY:
+                return render_number(v, metric_raw)
             try:
-                band_str = f'[{float(lo):.2f}, {float(hi):.2f}]'
-                band_bullet = _band_bullet(observed, lo, hi)
+                return f'{float(v):.2f}'
             except (TypeError, ValueError):
-                band_str = "—"
-        elif band is not None:
-            band_str = _html.escape(str(band))
+                return None
+
+        lo_s, hi_s = _fmt_bound(lo), _fmt_bound(hi)
+        band_bullet = ""
+        if lo_s is not None and hi_s is not None:
+            band_str = f'{lo_s} – {hi_s}'
+            band_bullet = _band_bullet(observed, lo, hi)
         else:
             band_str = "—"
         # Lead the Band cell with the position bullet (in-band vs out),

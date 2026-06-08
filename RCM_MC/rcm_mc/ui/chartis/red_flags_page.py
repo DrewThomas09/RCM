@@ -338,14 +338,31 @@ def _violations_section(review: Any) -> str:
                 f'{observed:.2f}' if isinstance(observed, (int, float))
                 else _html.escape(str(observed) if observed is not None else "—")
             )
+        # The band can arrive as a (low, high) pair or as a ``Band``
+        # dataclass. Pull the bounds either way and format them like the
+        # observed column — never fall back to str(band), which dumps the
+        # whole dataclass repr (``Band(metric='irr', regime=…, low=0.15,
+        # stretch_low=None, source=…)``) into the partner-facing cell.
         band = getattr(b, "band", None)
         if isinstance(band, (list, tuple)) and len(band) == 2:
+            low, high = band[0], band[1]
+        else:
+            low = getattr(band, "low", None)
+            high = getattr(band, "high", None)
+
+        def _fmt_bound(v: Any) -> Optional[str]:
+            if v is None:
+                return None
+            if metric_raw in _METRIC_REGISTRY:
+                return render_number(v, metric_raw)
             try:
-                band_str = f'[{float(band[0]):.2f}, {float(band[1]):.2f}]'
+                return f'{float(v):.2f}'
             except (TypeError, ValueError):
-                band_str = "—"
-        elif band is not None:
-            band_str = _html.escape(str(band))
+                return None
+
+        lo_s, hi_s = _fmt_bound(low), _fmt_bound(high)
+        if lo_s is not None and hi_s is not None:
+            band_str = f'{lo_s} – {hi_s}'
         else:
             band_str = "—"
         note = _html.escape(str(getattr(b, "partner_note", "") or ""))
