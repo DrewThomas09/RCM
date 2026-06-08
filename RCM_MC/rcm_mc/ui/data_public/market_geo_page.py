@@ -314,7 +314,7 @@ def render_market_geo_index(params: dict = None) -> str:
 
     body = (
         ck_page_title("Market Intelligence · Geographic", eyebrow="MARKET INTEL",
-                      meta=f'{len(variables)} variable(s) · {rep.get("state_values",0)} state values · SimplyAnalytics-derived')
+                      meta=f'{len(variables)} variable{"" if len(variables) == 1 else "s"} · {rep.get("state_values",0)} state values · SimplyAnalytics-derived')
         + ck_source_purpose(
             purpose="Score and rank geographic markets for diligence: senior "
                     "demand, payer mix, income, provider supply: then validate "

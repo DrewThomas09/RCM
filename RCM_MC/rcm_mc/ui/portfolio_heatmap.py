@@ -99,22 +99,33 @@ def render_heatmap(
     packets: List[DealAnalysisPacket],
     *,
     deltas: Optional[Dict[str, Dict[str, float]]] = None,
+    total_deals: int = 0,
 ) -> str:
     """Full-page heatmap HTML.
 
     ``deltas`` maps ``deal_id`` → ``{metric: value_change}`` from
     :func:`rcm_mc.portfolio.portfolio_monitor.compute_deltas`.
+
+    ``total_deals`` is the portfolio's full deal count. The grid only
+    renders *analyzed* deals (those with an analysis packet), so the
+    empty state must distinguish "no deals at all" from "deals exist but
+    none have been analyzed yet" — otherwise a partner with un-analyzed
+    deals is told "no deals yet · create your first deal", pointing them
+    to the wrong action.
     """
     from ._chartis_kit import chartis_shell, ck_page_title, ck_data_universe
 
+    if packets:
+        meta = f"{len(packets)} deals · percentile rank vs peers"
+    elif total_deals > 0:
+        meta = f"{total_deals} deals · none analyzed yet"
+    else:
+        meta = "no deals yet"
     # MIXED: the rows are user deals, but ranked against the benchmark corpus.
     title_block = ck_page_title(
         "Portfolio Heatmap",
         eyebrow="PORTFOLIO · RISK HEATMAP",
-        meta=(
-            f"{len(packets)} deals · percentile rank vs peers"
-            if packets else "no deals yet"
-        ),
+        meta=meta,
     ) + '<div style="margin:8px 0 0;">' + ck_data_universe("mixed") + '</div>'
     explainer = (
         '<p class="ck-ph-explainer">'
@@ -127,10 +138,27 @@ def render_heatmap(
     )
 
     if not packets:
+        if total_deals > 0:
+            # Deals exist, just none analyzed — send them to run analysis,
+            # not to create another deal.
+            empty_body = (
+                '<div class="cad-card"><p style="color:var(--cad-text3);">'
+                f'You have {total_deals} '
+                f'deal{"" if total_deals == 1 else "s"}, but none have been '
+                'analyzed yet — the heatmap ranks analyzed deals against the '
+                'benchmark corpus. '
+                '<a href="/analysis" style="color:var(--cad-link);">'
+                'Run analysis to populate the heatmap &rarr;</a></p></div>'
+            )
+        else:
+            empty_body = (
+                '<div class="cad-card"><p style="color:var(--cad-text3);">'
+                'No deals to display. '
+                '<a href="/import" style="color:var(--cad-link);">'
+                'Create your first deal &rarr;</a></p></div>'
+            )
         return chartis_shell(
-            title_block + explainer
-            + '<div class="cad-card"><p style="color:var(--cad-text3);">No deals to display. '
-            '<a href="/import" style="color:var(--cad-link);">Create your first deal &rarr;</a></p></div>',
+            title_block + explainer + empty_body,
             "Portfolio Heatmap",
             active_nav="/portfolio",
             extra_css=_EXPLAINER_CSS,

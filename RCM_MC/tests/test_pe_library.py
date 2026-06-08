@@ -74,6 +74,30 @@ class LibraryPageTests(unittest.TestCase):
         h = render_pe_library_page(category="Exit")
         self.assertIn("EXIT", h.upper())
 
+    def test_category_links_are_url_encoded(self):
+        # Regression: category filter links were HTML-escaped only, so a
+        # category like "EBITDA & quality of earnings" rendered an href with
+        # a literal space and "&amp;". The browser split the value at the
+        # ampersand, sent category="EBITDA ", and the filter matched nothing
+        # (falling back to the full unfiltered list). Query values must be
+        # percent-encoded.
+        import re
+        amp_cat = next(
+            (r["category"] for r in CATALOG if "&" in r["category"]), None)
+        self.assertIsNotNone(amp_cat, "expected a category containing '&'")
+        h = render_pe_library_page()
+        hrefs = re.findall(r'href="(/diligence/pe-library\?category=[^"]*)"', h)
+        self.assertTrue(hrefs, "no category filter links rendered")
+        for href in hrefs:
+            self.assertNotIn(" ", href, f"unencoded space in href: {href}")
+            self.assertNotIn("&amp;", href, f"unencoded amp in href: {href}")
+        # The ampersand category must round-trip through the filter.
+        from urllib.parse import quote
+        target = f"/diligence/pe-library?category={quote(amp_cat)}"
+        self.assertIn(f'href="{target}"', h)
+        filtered = render_pe_library_page(category=amp_cat)
+        self.assertIn(amp_cat.split(" &")[0].upper(), filtered.upper())
+
     def test_route_wired(self):
         src = _SERVER.read_text()
         self.assertIn('path == "/diligence/pe-library"', src)

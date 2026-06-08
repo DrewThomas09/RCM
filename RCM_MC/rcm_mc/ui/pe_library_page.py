@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import html as _html
 from typing import Dict, List, Optional
+from urllib.parse import quote
 
 from ..pe_intelligence._catalog import CATALOG
 from ._chartis_kit import (
@@ -217,7 +218,7 @@ def render_pe_library_page(q: str = "", category: str = "") -> str:
 
     # Search + category filter (GET form; read-only filtering).
     cat_links = (
-        f'<a href="/diligence/pe-library{("?q="+_html.escape(q)) if q else ""}" '
+        f'<a href="/diligence/pe-library{("?q="+quote(q)) if q else ""}" '
         f'style="font-family:var(--ck-mono);font-size:10.5px;padding:4px 9px;'
         f'margin:0 5px 5px 0;display:inline-block;border-radius:3px;'
         f'text-decoration:none;border:1px solid '
@@ -227,9 +228,14 @@ def render_pe_library_page(q: str = "", category: str = "") -> str:
     )
     for c in cats:
         on = c == category
-        href = f"/diligence/pe-library?category={_html.escape(c)}"
+        # URL-encode query values — categories contain spaces and '&'
+        # (e.g. "EBITDA & quality of earnings"); _html.escape turned '&'
+        # into '&amp;', so the browser split the value at the ampersand
+        # and the category filter silently matched nothing. quote() emits
+        # attribute-safe output (no quotes/ampersands) so no extra escape.
+        href = f"/diligence/pe-library?category={quote(c)}"
         if q:
-            href += f"&q={_html.escape(q)}"
+            href += f"&q={quote(q)}"
         cat_links += (
             f'<a href="{href}" style="font-family:var(--ck-mono);font-size:10.5px;'
             f'padding:4px 9px;margin:0 5px 5px 0;display:inline-block;'
