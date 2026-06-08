@@ -25,6 +25,7 @@ from ._chartis_kit import (
     ck_next_section,
     ck_page_title,
     ck_provenance_tooltip,
+    margin_is_plausible_series,
 )
 
 _EXPLAINER_CSS = """<style>
@@ -108,20 +109,20 @@ def render_command_center(
     n_states = 50  # Display as 50 states + DC + territories
     n_territories = max(0, n_states_raw - 51)
 
+    hcris_df = hcris_df.copy()
     if "operating_margin" not in hcris_df.columns:
         safe_rev = hcris_df["net_patient_revenue"].where(hcris_df["net_patient_revenue"] > 1e5)
-        hcris_df = hcris_df.copy()
         raw_margin = (safe_rev - hcris_df["operating_expenses"]) / safe_rev
         hcris_df["operating_margin"] = raw_margin.clip(-0.5, 1.0)
-        # Data-quality: flag hospitals whose raw margin was outside
-        # [-100%, +100%] (obvious HCRIS filing artifacts — opex 2-1000x revenue,
-        # negative revenue, etc.) so they don't inflate the distressed count.
-        hcris_df["_dq_ok_margin"] = raw_margin.between(-1.0, 1.0) | raw_margin.isna()
-    else:
-        hcris_df = hcris_df.copy()
-        hcris_df["_dq_ok_margin"] = True
+    # Data-quality gate: keep only margins inside the agreed plausible band
+    # (margin_is_plausible_series — the SAME band the per-row display gate
+    # uses). The old logic used a far looser [-100%, +100%] window (and, when
+    # operating_margin was pre-computed, no gate at all), so HCRIS filing
+    # artifacts leaked into the headline stats — they over-counted distressed
+    # hospitals by ~21% (2,890 vs 2,394) and skewed the median margin.
+    hcris_df["_dq_ok_margin"] = margin_is_plausible_series(hcris_df["operating_margin"])
 
-    # Median uses only margins that survived the clamp (excludes garbage filings)
+    # Median + distressed count use only margins that pass the plausibility gate
     dq_mask = hcris_df.get("_dq_ok_margin", pd.Series(True, index=hcris_df.index))
     clean_margins = hcris_df.loc[dq_mask.fillna(False), "operating_margin"].dropna()
     median_margin = float(clean_margins.median()) if len(clean_margins) else 0.0

@@ -661,6 +661,42 @@ def margin_is_plausible(margin: Optional[float]) -> bool:
     return MARGIN_PLAUSIBLE_LO <= m <= MARGIN_PLAUSIBLE_HI
 
 
+def margin_flag(margin: Optional[float]) -> Optional[str]:
+    """Classify *why* an operating-margin fraction is implausible, so a
+    surface can FLAG it (badge / footnote) instead of silently dropping
+    it to "—".
+
+    Returns ``"high"`` when the margin exceeds the plausible ceiling
+    (almost always a filing artifact — opex incomplete or a parent-CCN
+    rollup, so the margin is impossibly fat), ``"low"`` when it falls
+    below the floor (opex >> patient revenue — partial-year or
+    state-funded filing), and ``None`` when the margin is plausible OR
+    unknown (None / NaN / non-numeric → don't flag; never raises — this
+    feeds partner UI). The band is shared with :func:`margin_is_plausible`
+    so the verification is identical everywhere a margin is shown."""
+    try:
+        m = float(margin)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    if m != m:  # NaN
+        return None
+    if m > MARGIN_PLAUSIBLE_HI:
+        return "high"
+    if m < MARGIN_PLAUSIBLE_LO:
+        return "low"
+    return None
+
+
+def margin_is_plausible_series(s):
+    """Vectorised :func:`margin_is_plausible` for a pandas Series — True
+    where the value is inside the band OR is NaN (unknown → don't flag).
+    One source of truth for the band keeps DataFrame-level stats (medians,
+    distressed counts) honest and identical to the per-row display gate;
+    a looser local band silently let HCRIS filing artifacts (e.g. ±100%
+    margins) inflate those headline stats."""
+    return (s.between(MARGIN_PLAUSIBLE_LO, MARGIN_PLAUSIBLE_HI)) | (s.isna())
+
+
 def ck_kpi_block(
     label: str,
     value: str,
