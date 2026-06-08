@@ -239,11 +239,8 @@ def render_drug_shortage(params: dict = None) -> str:
     from rcm_mc.data_public.drug_shortage import compute_drug_shortage
     r = compute_drug_shortage()
 
-    bg = P["bg"]; panel = P["panel"]; panel_alt = P["panel_alt"]
+    panel = P["panel"]; panel_alt = P["panel_alt"]
     border = P["border"]; text = P["text"]; text_dim = P["text_dim"]
-    pos = P["positive"]; acc = P["accent"]; neg = P["negative"]; warn = P["warning"]
-
-    tier_c = neg if r.risk_tier == "elevated" else (warn if r.risk_tier == "moderate" else pos)
 
     kpi_strip = (
         ck_kpi_block("Critical Drugs", str(r.total_critical_drugs), "", "") +
@@ -292,11 +289,6 @@ def render_drug_shortage(params: dict = None) -> str:
   {ck_illustrative_note("supplier concentration, GPO performance, and scenario figures")}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
-  <div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {tier_c};padding:14px 18px;margin-bottom:16px;font-size:13px;font-family:JetBrains Mono,monospace">
-    <div style="font-size:10px;letter-spacing:0.1em;color:{text_dim};text-transform:uppercase;margin-bottom:6px">Supply Chain Posture</div>
-    <div style="color:{tier_c};font-weight:700;font-size:14px">Risk tier {_html.escape(r.risk_tier.upper())} · {r.active_shortages} active shortages · ${weighted_impact:,.2f}M probability-weighted shortfall exposure</div>
-    <div style="color:{text_dim};font-size:11px;margin-top:4px">Sole-source exposure ${r.sole_source_exposure_mm:,.2f}M · highest-risk drugs in oncology (5-FU, Cisplatin)</div>
-  </div>
   <div style="{cell}"><div style="{h3}">Critical Drug Inventory &amp; Shortage Status</div>{d_chart}{d_tbl}</div>
   <div style="{cell}"><div style="{h3}">Supplier Concentration &amp; Audit History</div>{s_chart}{s_tbl}</div>
   <div style="{cell}"><div style="{h3}">Geographic Exposure &amp; Tariff Risk</div>{g_tbl}</div>
