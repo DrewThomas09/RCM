@@ -439,7 +439,11 @@ def _add_computed_features(df: pd.DataFrame) -> pd.DataFrame:
     if "beds" in df.columns and "net_patient_revenue" in df.columns:
         df["revenue_per_bed"] = df["net_patient_revenue"] / df["beds"].replace(0, np.nan)
     if "total_patient_days" in df.columns and "bed_days_available" in df.columns:
-        df["occupancy_rate"] = df["total_patient_days"] / df["bed_days_available"].replace(0, np.nan)
+        # Gate occupancy >105% to NaN (understated-bed-days filing artifact) so
+        # this matches the HCRIS X-Ray and the screener — never a bogus 239%.
+        from ._chartis_kit import OCCUPANCY_PLAUSIBLE_HI
+        _occ = df["total_patient_days"] / df["bed_days_available"].replace(0, np.nan)
+        df["occupancy_rate"] = _occ.where(_occ <= OCCUPANCY_PLAUSIBLE_HI)
     if "medicare_day_pct" in df.columns and "medicaid_day_pct" in df.columns:
         mc = df["medicare_day_pct"].fillna(0)
         md = df["medicaid_day_pct"].fillna(0)
