@@ -16,7 +16,7 @@ import pandas as pd
 
 from ._chartis_kit import (
     chartis_shell, ck_basis_badge, ck_kpi_block, ck_next_section,
-    ck_page_title, ck_panel, ck_value_anchor,
+    ck_page_title, ck_panel, ck_source_link, ck_value_anchor,
     margin_is_plausible,
 )
 
@@ -306,7 +306,9 @@ def render_predictive_screener(
         '<em>reported</em> HCRIS financials (size, margin); this scanner ranks the '
         'same universe by <em>modeled RCM upside</em>, so you see where the '
         'value-creation opportunity is. Model estimates from public data, not '
-        'observed RCM performance. Confirm against a target&rsquo;s own data.'
+        'observed RCM performance. Confirm against a target&rsquo;s own data. '
+        'Source for the actual inputs (beds, revenue, margin): '
+        f'{ck_source_link("CMS HCRIS")}.'
         '</div>'
     )
     kpis = (

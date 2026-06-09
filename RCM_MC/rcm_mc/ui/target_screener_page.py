@@ -1338,7 +1338,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     # ACTUAL so a partner never confuses this screen with the Predictive
     # Screener's modeled columns. (The Predictive Screener marks its
     # est_* columns PREDICTED via the same ck_basis_badge.)
-    from ._chartis_kit import ck_basis_badge
+    from ._chartis_kit import ck_basis_badge, ck_source_link as _ck_source_link
     _q_header = _sh(q_label, "quality", "right")
     if show_q:
         _q_header = _q_header.replace(
@@ -1368,7 +1368,10 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
                   if show_own else "")
         q_td = (f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_fmt_q(r)}</td>'
                 if show_q else "")
-        src_td = (f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</td>'
+        # Source label links to the public CMS dataset it came from, so every
+        # value is defensible — click through to verify at the origin.
+        src_td = (f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">'
+                  f'{_ck_source_link(r["source"])}</td>'
                   if show_src else "")
         # Wave-6: data-ts-search carries a lowercased name+ccn+location
         # blob the client-side instant-filter input searches. Single
@@ -1473,7 +1476,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     # carried the same value, surface the source string once in the
     # status line instead so the provenance signal isn't lost.
     source_clause = (
-        f' Source: <strong>{_h.escape(uniform_source)}</strong>.'
+        f' Source: <strong>{_ck_source_link(uniform_source)}</strong>.'
         if uniform_source else ""
     )
     # Verification transparency: how many margins in this universe were
@@ -1982,6 +1985,7 @@ def _guide_questions() -> List[str]:
 
 def _screen_inspector(qs, ck) -> str:
     import html as _h
+    from ._chartis_kit import ck_source_link as _ck_source_link
     ccn = _q1(qs, "ccn")
     if not ccn:
         return _scaffold("Inspector · no target selected", "now", [
@@ -2025,7 +2029,7 @@ def _screen_inspector(qs, ck) -> str:
         + _kv(f"{q_label}", qcur)
         + _kv(f"{q_label} · {state} median", qmed)
         + _kv("Peer rank", rank_txt)
-        + _kv("Source", f'<span style="font-family:var(--sc-mono);font-size:10px;">{_h.escape(r["source"])}</span>'),
+        + _kv("Source", _ck_source_link(r["source"], style="font-family:var(--sc-mono);font-size:10px;")),
         title="Selected target")
     links = ck["panel"](
         f'<a class="ck-link" href="/diligence/xray?ccn={_h.escape(ccn)}&vertical={vertical}">CMS X-Ray (full diligence) →</a><br>'
@@ -2188,6 +2192,7 @@ def _screen_columns(qs, ck) -> str:
 
 def _screen_compare(qs, ck) -> str:
     import html as _h
+    from ._chartis_kit import ck_source_link as _ck_source_link
     comp = _q1(qs, "compare")
     ccns = [c.strip() for c in comp.split(",") if c.strip()][:6]
     if not ccns:
@@ -2245,7 +2250,7 @@ def _screen_compare(qs, ck) -> str:
         + _row("Ownership", lambda r: _h.escape(str(r["ownership"])))
         + _row("Size", _size_cell)
         + _row("Quality", _q_cell)
-        + _row("Source", lambda r: f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);">{_h.escape(r["source"])}</span>')
+        + _row("Source", lambda r: _ck_source_link(r["source"], style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-dim,#6a7480);"))
         + _row("Open", lambda r: f'<a class="ck-link" href="/diligence/xray?ccn={_h.escape(r["ccn"])}&vertical={_h.escape(r["vertical"])}">CMS X-Ray →</a>')
     )
     note = ""

@@ -568,10 +568,13 @@ class WorkbenchShellTests(unittest.TestCase):
 
     def test_uniform_source_surfaced_in_status_line(self):
         # When the column is dropped, the source name still has to
-        # appear so partners can cite provenance. The status line
-        # gets ' Source: <strong>CMS HCRIS</strong>.' appended.
+        # appear so partners can cite provenance — and it now links to
+        # the public CMS dataset it came from (ck_source_link), so the
+        # value is defensible, not just labelled.
         h = self._render()
-        self.assertIn("Source: <strong>CMS HCRIS</strong>", h)
+        self.assertIn("Source: <strong>", h)
+        self.assertIn(">CMS HCRIS ", h)  # label text inside the anchor
+        self.assertIn("downloadable-public-use-files/cost-reports", h)
 
     # ── 2026-05-28 Wave 19 — next-steps as ordered action list ────
     # Pre-wave-19 the 'next steps' panel was a paragraph of embedded
