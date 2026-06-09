@@ -544,6 +544,26 @@ def _num_or_none(v) -> Optional[float]:
     return None if f != f else f  # NaN != NaN
 
 
+def _quality_sort_key(r: Dict, *, rev: bool):
+    """Tiered sort key for the quality/margin column so the pre-sorted view
+    leads with DEFENSIBLE values, not artifacts.
+
+    Three tiers, ordered independently of direction:
+      0  clean       — a real value, in the trustworthy range
+      1  suspect-high — passed the gate but in the >24% tail ("verify")
+      2  missing      — gated out (implausible) or never reported → "—"
+
+    Within a tier, the value sorts by ``rev`` (desc for the default ranking).
+    Non-hospital universes carry no ``q_suspect`` flag, so they collapse to the
+    original two-tier (value, then missing-last) behaviour unchanged."""
+    q = r.get("q")
+    is_missing = q is None or not isinstance(q, (int, float))
+    is_suspect = bool(r.get("q_suspect"))
+    tier = 2 if is_missing else (1 if is_suspect else 0)
+    val = q if isinstance(q, (int, float)) else 0
+    return (tier, -val if rev else val)
+
+
 def _vertical_rows(vertical: str, state: str = "",
                    limit: Optional[int] = _TABLE_LIMIT) -> List[Dict]:
     """Normalized provider rows for the active vertical from the REAL loaders.
@@ -569,7 +589,8 @@ def _vertical_rows(vertical: str, state: str = "",
                 return []
             if state:
                 df = df[df["state"].str.upper() == state]
-            from ._chartis_kit import margin_is_plausible, margin_flag
+            from ._chartis_kit import (margin_is_plausible, margin_flag,
+                                       margin_is_suspect_high)
             rows = []
             for _, r in df.iterrows():
                 margin = r.get("operating_margin")
@@ -581,6 +602,11 @@ def _vertical_rows(vertical: str, state: str = "",
                 # table can FLAG it for review rather than silently drop it
                 # to "—" and let it read as merely missing.
                 flag = margin_flag(margin)
+                # Suspect-high: passes the gate but sits in the extreme upper
+                # tail (≥24%, ~95th pct). Kept + shown, but flagged "verify"
+                # and demoted in the default ranking so the pre-sorted top
+                # isn't a wall of near-ceiling artifacts (see _quality_sort_key).
+                suspect = margin_is_suspect_high(margin)
                 if margin is not None and not margin_is_plausible(margin):
                     margin = None
                 rows.append({
@@ -588,10 +614,10 @@ def _vertical_rows(vertical: str, state: str = "",
                     "city": str(r.get("city", "") or ""), "state": str(r.get("state", "") or ""),
                     "ownership": str(r.get("control_type", "") or r.get("ownership", "") or "—"),
                     "size": _num_or_none(r.get("beds")), "size_label": "Beds",
-                    "q": _num_or_none(margin), "q_flag": flag,
+                    "q": _num_or_none(margin), "q_flag": flag, "q_suspect": suspect,
                     "q_label": "Op margin", "q_pct": True, "source": "CMS HCRIS",
                 })
-            rows.sort(key=lambda x: (x["q"] is None, -(x["q"] or -9)))
+            rows.sort(key=lambda x: _quality_sort_key(x, rev=True))
             return rows[:limit] if limit else rows
         cfg = _VERTICAL_TABLE.get(vertical)
         if not cfg:
@@ -616,7 +642,7 @@ def _vertical_rows(vertical: str, state: str = "",
                 "size_label": size_label, "q": _num_or_none(qv), "q_label": qlabel,
                 "q_pct": False, "source": cfg["src"],
             })
-        rows.sort(key=lambda x: (x["q"] is None, -(x["q"] if isinstance(x["q"], (int, float)) else -9)))
+        rows.sort(key=lambda x: _quality_sort_key(x, rev=True))
         return rows[:limit] if limit else rows
     except Exception:  # noqa: BLE001 — loader hiccup → honest empty table
         return []
@@ -950,7 +976,16 @@ def _fmt_q(row: Dict) -> str:
                     'exceeds patient revenue); flagged and excluded from the '
                     'ranking.">⚑ &lt;−40%</span>')
         return '<span style="color:var(--sc-text-faint,#8b94a0)">—</span>'
-    return f"{v:.1%}" if row.get("q_pct") else (f"{v:g}")
+    out = f"{v:.1%}" if row.get("q_pct") else (f"{v:g}")
+    if row.get("q_suspect"):
+        # Plausible but in the >24% tail — show the value, mark it "verify"
+        # so a partner treats a near-ceiling margin with due skepticism (it
+        # ranks below clean values via _quality_sort_key).
+        out += ('<span style="color:var(--sc-warning,#b8732a);cursor:help;'
+                'margin-left:4px;" title="Unusually high for a hospital '
+                '(≥24%, ~95th percentile) — verify; may be an incomplete '
+                'HCRIS filing. Ranked below clean values.">⚠</span>')
+    return out
 
 
 def _share_link_button_html() -> str:
@@ -1266,7 +1301,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         "name": lambda r: (r.get("name") or "").lower(),
         "location": lambda r: (r.get("state") or "", (r.get("city") or "").lower()),
         "size": lambda r: (r.get("size") is None, -(r.get("size") or 0) if rev else (r.get("size") or 0)),
-        "quality": lambda r: (r.get("q") is None, -(r.get("q") or 0) if rev else (r.get("q") or 0)),
+        "quality": lambda r: _quality_sort_key(r, rev=rev),
     }
     if sort_key in _keys:
         if sort_key in ("name", "location"):
@@ -1486,11 +1521,21 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     # not silently dropping rows. Only the hospitals universe carries a
     # margin flag, so the clause self-suppresses elsewhere.
     _n_flagged = sum(1 for r in all_rows if r.get("q_flag"))
+    _n_suspect = sum(1 for r in all_rows if r.get("q_suspect"))
     flagged_clause = (
         f' <span style="color:var(--sc-warning,#b8732a);">⚑ {_n_flagged:,} '
         f'flagged as implausible (margin outside −40%…+30%, likely a filing '
         f'artifact) and excluded from the ranking.</span>'
         if _n_flagged else ""
+    )
+    # Suspect-high are kept and ranked, but demoted below clean values and
+    # marked "verify" — say so, so the partner knows why a 28% margin sits
+    # below a 14% one in the default order.
+    suspect_clause = (
+        f' <span style="color:var(--sc-warning,#b8732a);">⚠ {_n_suspect:,} '
+        f'above 24% (95th pct) — shown but flagged "verify" and ranked below '
+        f'clean values.</span>'
+        if _n_suspect else ""
     )
     return (
         table_css
@@ -1500,7 +1545,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         + f'<p class="ck-section-body" style="margin:0 0 8px;">Showing {len(rows)} '
         f'of {match_txt} {vinfo["label"]} providers{scope} ({sort_clause}; '
         f'real {vinfo["universe"]} data, "—" = not reported).{source_clause}'
-        f'{flagged_clause} '
+        f'{flagged_clause}{suspect_clause} '
         f'Capped at {row_limit}.{reset_link}</p>'
         '<div style="overflow-x:auto;"><table class="ts-screen-table">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}'

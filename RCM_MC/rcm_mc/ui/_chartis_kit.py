@@ -647,6 +647,34 @@ def ck_table(
 MARGIN_PLAUSIBLE_LO = -0.40
 MARGIN_PLAUSIBLE_HI = 0.30
 
+# Soft "verify" threshold, ABOVE which an operating margin is still inside the
+# hard plausible band (≤+30%) but already in the extreme upper tail of real
+# hospital filings — the 95th percentile of HCRIS op margins is ~24%, and the
+# median is ~-4%. Values here pass the gate (they may be a real high-margin
+# specialty/rehab hospital) but are disproportionately incomplete-opex filing
+# artifacts, so a default margin-ranked view that didn't separate them led with
+# a wall of ~29% "errors" presented as the best targets. Surfaces use this to
+# FLAG such rows "verify" and DEMOTE them below clean values in the default
+# ranking — not to hide them. Threshold agreed with the product owner.
+MARGIN_SUSPECT_HI = 0.24
+
+
+def margin_is_suspect_high(margin: Optional[float]) -> bool:
+    """True when an operating-margin fraction is plausible (≤ the +30% hard
+    ceiling) but in the suspect upper tail (≥ MARGIN_SUSPECT_HI, ~95th pct of
+    real hospitals) — i.e. show it, but flag "verify" and rank it below clean
+    values. None / NaN / non-numeric → False (unknown → don't flag; never
+    raises — partner UI). Margins already past the hard ceiling are handled by
+    margin_flag (they're gated to None), so this deliberately only fires inside
+    the kept band."""
+    try:
+        m = float(margin)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return False
+    if m != m:  # NaN
+        return False
+    return MARGIN_SUSPECT_HI <= m <= MARGIN_PLAUSIBLE_HI
+
 
 def margin_is_plausible(margin: Optional[float]) -> bool:
     """True when an operating-margin *fraction* (0.04 == 4%) falls in
