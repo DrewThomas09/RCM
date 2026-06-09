@@ -200,7 +200,12 @@ def _add_features(df: pd.DataFrame) -> pd.DataFrame:
         safe_rev = df["net_patient_revenue"].where(df["net_patient_revenue"] > 1e5)
         df["operating_margin"] = ((safe_rev - df["operating_expenses"]) / safe_rev).clip(-0.5, 1.0)
     if "occupancy_rate" not in df.columns and "total_patient_days" in df.columns and "bed_days_available" in df.columns:
-        df["occupancy_rate"] = df["total_patient_days"] / df["bed_days_available"].replace(0, np.nan)
+        # Gate occupancy >105% to NaN: bed-days available is the physical
+        # ceiling, so a higher value is an understated-bed-days filing artifact
+        # (the same gate the HCRIS X-Ray uses) — show "—", not a bogus 239%.
+        from ._chartis_kit import OCCUPANCY_PLAUSIBLE_HI
+        _occ = df["total_patient_days"] / df["bed_days_available"].replace(0, np.nan)
+        df["occupancy_rate"] = _occ.where(_occ <= OCCUPANCY_PLAUSIBLE_HI)
     if "commercial_pct" not in df.columns:
         mc = df.get("medicare_day_pct", pd.Series(0, index=df.index)).fillna(0)
         md = df.get("medicaid_day_pct", pd.Series(0, index=df.index)).fillna(0)

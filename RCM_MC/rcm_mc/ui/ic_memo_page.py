@@ -52,6 +52,10 @@ def _fm(val: float) -> str:
 
 
 def _pct(val: float, decimals: int = 1) -> str:
+    # None / NaN → "—": a value we don't have (or gated as a filing artifact)
+    # must never render as a number.
+    if val is None or val != val:  # NaN != NaN
+        return "—"
     return f"{val:.{decimals}%}"
 
 
@@ -337,8 +341,17 @@ def _build_memo_data(ccn: str, hcris_df: pd.DataFrame, db_path: Optional[str] = 
     margin = (rev - opex) / rev if rev > 1e5 else 0
     margin = max(-1, min(1, margin))
     ebitda = rev - opex
-    occupancy = days / bda if bda > 0 else 0
-    n2g = rev / gross if gross > 0 else 0.3
+    # Occupancy >105% is impossible (bed-days available is the ceiling) —
+    # gate it to None so the memo shows "—", consistent with the X-Ray /
+    # screener, never a bogus 239%.
+    from ._chartis_kit import OCCUPANCY_PLAUSIBLE_HI
+    _occ = days / bda if bda > 0 else None
+    occupancy = _occ if (_occ is not None and _occ <= OCCUPANCY_PLAUSIBLE_HI) else None
+    # Net-to-gross is only meaningful in (0, 1]: net can't exceed gross. Gross
+    # missing or gross < net = a filing artifact → None ("—"), consistent with
+    # the X-Ray; never the old fabricated 0.3 default or an impossible >100%.
+    _n2g = rev / gross if gross > 0 else None
+    n2g = _n2g if (_n2g is not None and 0 <= _n2g <= 1.005) else None
     rev_per_bed = rev / beds if beds > 0 else 0
 
     # State peers
@@ -827,11 +840,11 @@ def render_ic_memo(
         risks.append(("Heavy Medicare dependence", f"Medicare comprises {_pct(data['mc_pct'])} of days; rate updates may lag inflation. Mitigant: CDI/CMI lever directly increases Medicare reimbursement", "Medium"))
     if data["md_pct"] > 0.22:
         risks.append((f"Elevated Medicaid exposure ({_pct(data['md_pct'])})", "Medicaid reimburses below cost in most states. Mitigant: denial reduction lever has highest impact on Medicaid claims", "Medium"))
-    if data["occupancy"] < 0.35:
+    if data["occupancy"] is not None and data["occupancy"] < 0.35:
         risks.append(("Low occupancy", f"At {_pct(data['occupancy'])}, fixed costs are spread over fewer patient days. Mitigant: volume growth is an additional upside lever not modeled in base case", "Medium"))
     if distress_prob > 0.5:
         risks.append(("Elevated distress probability", f"Model estimates {_pct(distress_prob)} probability of financial distress. Mitigant: distressed entry pricing (7-9x) compensates for risk", "High"))
-    if data["n2g"] < 0.2:
+    if data["n2g"] is not None and data["n2g"] < 0.2:
         risks.append(("Low net-to-gross ratio", "Large contractual allowances suggest pricing discipline issues. Mitigant: payer renegotiation is an additional upside lever", "Low"))
 
     if not risks:
