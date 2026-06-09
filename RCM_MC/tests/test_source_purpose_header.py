@@ -40,30 +40,37 @@ class ConfidenceChipTests(unittest.TestCase):
 
 
 class SourcePurposeHeaderTests(unittest.TestCase):
-    def test_header_declares_all_facets(self):
+    # 2026 collapse (see ck_source_purpose docstring): the band was reduced to
+    # the load-bearing integrity signal — the data-universe / confidence chips
+    # + the named source. `purpose` and `next_action` stay in the signature for
+    # call-site documentation but are no longer rendered (the page title +
+    # content carry the purpose). These tests assert the CURRENT contract: the
+    # chip + source must always render so a partner never mistakes an
+    # illustrative model for live evidence. Any page-specific honesty caveat
+    # that used to live in `purpose`/`next_action` is now rendered explicitly
+    # by the page itself (see test_cost_debt_hcris_wiring / payer_stress).
+    def test_header_declares_source_and_confidence(self):
         h = ck_source_purpose(
             purpose="Size the cost gap vs HCRIS peers.",
             universe="hcris", source="CMS HCRIS", confidence="derived",
             next_action="Run X-Ray", next_href="/diligence/hcris-xray")
         self.assertIn("HCRIS PUBLIC DATA", h)        # universe chip
         self.assertIn("DERIVED", h)                  # confidence chip
-        self.assertIn("Size the cost gap", h)        # purpose
-        self.assertIn("Source:", h)
-        self.assertIn("CMS HCRIS", h)
-        self.assertIn("/diligence/hcris-xray", h)    # next action link
+        self.assertIn("CMS HCRIS", h)                # named source (rendered)
 
     def test_illustrative_page_header(self):
+        # The ILLUSTRATIVE chip is the integrity signal that must survive.
         h = ck_source_purpose(
             purpose="Illustrative payer-stress framework.",
             universe="illustrative", source="",
             next_action="Connect HCRIS payer mix")
         self.assertIn("ILLUSTRATIVE", h)
-        self.assertIn("Connect HCRIS payer mix", h)
 
     def test_escapes_strings(self):
-        h = ck_source_purpose(purpose="<x>&", universe="cms", source="<s>")
-        self.assertNotIn("<x>", h)
-        self.assertIn("&lt;x&gt;", h)
+        # The rendered field (source) must be escaped — no markup injection.
+        h = ck_source_purpose(purpose="x", universe="cms", source="<s>&")
+        self.assertNotIn("<s>", h)
+        self.assertIn("&lt;s&gt;", h)
 
 
 if __name__ == "__main__":

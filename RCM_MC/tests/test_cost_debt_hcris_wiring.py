@@ -36,6 +36,14 @@ class CostDebtHcrisTests(unittest.TestCase):
         self.assertIn("PROXY", h)                   # margin × NPR proxy, not true DSCR
         self.assertIn("DATA REQUIRED", h)           # debt terms not in HCRIS
 
+    def test_cost_structure_scopes_illustrative_split_honestly(self):
+        # Only top-line opex is real HCRIS; the COGS/SG&A/labor split is an
+        # illustrative model. That caveat lived in ck_source_purpose's purpose
+        # text, which the 2026 collapse stopped rendering — it must now be an
+        # explicit, visible note so the breakdown isn't mistaken for filed data.
+        h = render_cost_structure({"ccn": "050100"})
+        self.assertIn("not in HCRIS", h)
+
 
 if __name__ == "__main__":
     unittest.main()

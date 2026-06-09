@@ -354,6 +354,19 @@ def render_payer_stress(params: Dict[str, str]) -> str:
             confidence="derived",
             next_action="Open the full HCRIS X-Ray",
             next_href=f"/diligence/hcris-xray?ccn={hcris_target.ccn}")
+        # ck_source_purpose no longer renders its `purpose`/`next_action` text
+        # (2026 collapse), so the essential data-honesty caveat would vanish.
+        # Render it explicitly: HCRIS only splits Medicare/Medicaid days — the
+        # residual 'other' lumps commercial + self-pay, so the 'Commercial'
+        # slider is seeded from that and is NOT a true commercial-only share.
+        _sp += (
+            '<p class="ck-section-body" style="font-size:11px;'
+            'color:var(--sc-text-dim,#6a7480);margin:6px 0 0;">'
+            '<strong>Mix caveat.</strong> HCRIS reports Medicare and Medicaid '
+            'day-share; the residual &ldquo;other&rdquo; is '
+            '<strong>commercial + self-pay</strong> (HCRIS does not split them), '
+            'so the Commercial input is seeded from that combined share.</p>'
+        )
     else:
         _sp = ck_source_purpose(
             purpose="Stress-test how a deal's MOIC bends as payer mix shifts — a "
