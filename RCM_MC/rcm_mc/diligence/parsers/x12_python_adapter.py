@@ -16,7 +16,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import x12  # optional dep; import-guarded by parsers/__init__.available_adapters
+try:  # optional dep; the adapter is only SELECTED when x12 is installed
+    import x12  # (see parsers/__init__.available_adapters). Import lazily so the
+except ImportError:  # module — and its pure segment→claim helpers — stay
+    x12 = None  # importable/testable even where x12-python isn't present.
 
 from .base import (
     Delimiters,
@@ -111,7 +114,13 @@ def _claims_from_837(segs: List[Any]) -> List[Dict[str, Any]]:
                 "patient_id": pending_patient,
                 "billing_npi": pending_npi,
             }
-            pending_payer = pending_patient = pending_npi = None
+            # Payer (NM1*PR) and patient (NM1*IL/QC) are per-subscriber-loop, so
+            # they reset between claims. The billing provider (NM1*85, loop
+            # 2010AA) is a HL-level header that governs EVERY claim beneath it,
+            # so pending_npi must PERSIST across claims — a new NM1*85 overwrites
+            # it. Resetting it here dropped the NPI from the 2nd+ claim under one
+            # provider, leaving by_provider undercounted.
+            pending_payer = pending_patient = None
         elif cur is not None:
             if tag == "SV1" and e:
                 parts = e[0].split(":")

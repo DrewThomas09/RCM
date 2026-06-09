@@ -262,6 +262,7 @@ class _EdiContext:
     payer: Optional[str] = None
     paid_amount: Optional[float] = None
     status_code: Optional[str] = None  # from CLP in 835
+    billing_npi: Optional[str] = None  # from NM1*85 in 837 (billing provider)
 
 
 def read_edi(path: Path) -> ReaderResult:
@@ -298,6 +299,11 @@ def read_edi(path: Path) -> ReaderResult:
     # to the next CLM when it arrives.
     pending_payer: Optional[str] = None
     pending_patient_id: Optional[str] = None
+    # NM1*85 (billing provider) is a 2010AA loop-header that precedes the CLM
+    # segments it governs and applies to every claim under it, so it persists
+    # across claims (unlike pending_payer/patient, which are per-CLM) until a
+    # new NM1*85 replaces it.
+    current_billing_npi: Optional[str] = None
 
     for row_idx, seg in enumerate(segments, start=1):
         elems = seg.split("*")
@@ -323,6 +329,10 @@ def read_edi(path: Path) -> ReaderResult:
                 if pending_patient_id is not None:
                     ctx.patient_id = pending_patient_id
                     pending_patient_id = None
+                # Billing provider governs every claim in its loop, so stamp
+                # the current one onto each claim as it opens.
+                if current_billing_npi is not None:
+                    ctx.billing_npi = current_billing_npi
                 last_segment_ok = True
             elif tag == "NM1" and len(elems) > 3:
                 # In X12, NM1*PR (payer) and NM1*QC (patient) are loop-
@@ -337,6 +347,13 @@ def read_edi(path: Path) -> ReaderResult:
                     pending_payer = elems[3]
                 elif elems[1] == "QC" and len(elems) > 9:
                     pending_patient_id = elems[9]
+                elif elems[1] == "85" and len(elems) > 9 and elems[8] == "XX":
+                    # Billing provider NPI (NM1*85, XX qualifier at NM108).
+                    # Persist it for the claims below; also stamp an already-
+                    # open ctx in case the segment appears mid-loop.
+                    current_billing_npi = elems[9]
+                    if ctx is not None:
+                        ctx.billing_npi = current_billing_npi
                 last_segment_ok = True
             elif ctx is not None:
                 if tag == "SV1" and len(elems) > 1:
@@ -425,6 +442,7 @@ def _edi_ctx_to_row(
         "charge_amount": ctx.claim_amount,
         "paid_amount": ctx.paid_amount,
         "status_code": ctx.status_code,
+        "billing_npi": ctx.billing_npi,
     }
     return RawRow(
         row_number=row_idx,
