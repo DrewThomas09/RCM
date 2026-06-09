@@ -56,8 +56,12 @@ class HospitalMetrics:
     gross_patient_revenue: float = 0.0
     contractual_allowances: float = 0.0
     net_patient_revenue: float = 0.0
-    contractual_allowance_rate: float = 0.0   # allowances / gross
-    net_to_gross_ratio: float = 0.0           # NPR / gross
+    # allowances / gross and NPR / gross are only meaningful in [0, 1]: net
+    # patient revenue cannot exceed gross. When a filing reports gross < net
+    # (or no gross), these come out impossible (>100% net-to-gross, negative
+    # allowance rate) — that's a data artifact, so they're None, not a bogus %.
+    contractual_allowance_rate: Optional[float] = None   # allowances / gross
+    net_to_gross_ratio: Optional[float] = None           # NPR / gross
     net_revenue_per_bed: float = 0.0
     net_revenue_per_patient_day: float = 0.0
 
@@ -154,6 +158,23 @@ def _safe_div(num: float, den: float) -> float:
     return num / den
 
 
+def _bounded_ratio(num: float, den: float,
+                   lo: float = 0.0, hi: float = 1.0,
+                   tol: float = 0.005) -> Optional[float]:
+    """A ratio that is only meaningful inside ``[lo, hi]`` (e.g. net-to-gross,
+    a contractual-allowance rate). Returns None when the denominator is
+    missing/≤0 OR the result lands outside the band (+/- a small rounding
+    tolerance) — both mean the filing's inputs are inconsistent (gross
+    understated, net > gross, negative allowances), so the ratio is a data
+    artifact. None renders "—", never a bogus 230% / -90%."""
+    if not den or den <= 0:
+        return None
+    r = num / den
+    if r < lo - tol or r > hi + tol:
+        return None
+    return r
+
+
 def _payer_diversity_index(shares: List[float]) -> float:
     """1 - HHI of the day mix, normalized to 0..1.
 
@@ -228,8 +249,8 @@ def compute_metrics(row: Mapping[str, Any]) -> HospitalMetrics:
         gross_patient_revenue=gross_npr,
         contractual_allowances=allowances,
         net_patient_revenue=npr,
-        contractual_allowance_rate=_safe_div(allowances, gross_npr),
-        net_to_gross_ratio=_safe_div(npr, gross_npr),
+        contractual_allowance_rate=_bounded_ratio(allowances, gross_npr),
+        net_to_gross_ratio=_bounded_ratio(npr, gross_npr),
         net_revenue_per_bed=_safe_div(npr, beds),
         net_revenue_per_patient_day=_safe_div(npr, total_pd),
         operating_expenses=opex,

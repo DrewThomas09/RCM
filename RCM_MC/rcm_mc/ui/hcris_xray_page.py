@@ -518,8 +518,11 @@ def _box_plot(
         lo = min(peer_values)
         hi = max(peer_values)
     else:
-        lo = min(p25, target_value)
-        hi = max(p75, target_value)
+        # target_value may be None (filing artifact) — fall back to the peer
+        # band so the chart still renders without a None comparison.
+        _pts = [v for v in (p25, p75, target_value) if v is not None] or [0.0]
+        lo = min(_pts)
+        hi = max(_pts)
     # Include target value to ensure it renders
     lo = min(lo, target_value) if target_value else lo
     hi = max(hi, target_value) if target_value else hi
@@ -587,6 +590,9 @@ def _box_plot(
 
 def _variance_chip(bm: MetricBenchmark) -> str:
     """Small chip showing variance direction and semantic good/bad."""
+    if bm.target_value is None or bm.verdict.startswith("n/a"):
+        # No trustworthy target value (filing artifact) — don't imply a verdict.
+        return '<span class="hx-chip hx-chip-inside">N/A</span>'
     hib = bm.spec.higher_is_better
     if bm.verdict.startswith("above"):
         good = hib
