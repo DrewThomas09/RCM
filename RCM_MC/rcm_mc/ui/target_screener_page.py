@@ -1333,13 +1333,23 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     # colspan. Provider + Location + Open always render; Ownership /
     # Size / Quality / Source add one each when visible.
     n_cols = 3 + sum((show_own, show_size, show_q, show_src))
+    # Every target-screener value is a measured CMS filing (HCRIS margin,
+    # CMS star rating, …) — NOT a model estimate. Mark the metric column
+    # ACTUAL so a partner never confuses this screen with the Predictive
+    # Screener's modeled columns. (The Predictive Screener marks its
+    # est_* columns PREDICTED via the same ck_basis_badge.)
+    from ._chartis_kit import ck_basis_badge
+    _q_header = _sh(q_label, "quality", "right")
+    if show_q:
+        _q_header = _q_header.replace(
+            "</a></th>", "</a>" + ck_basis_badge("actual") + "</th>")
     head = (
         '<tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
         + _sh("Provider", "name")
         + _sh("Location", "location")
         + ('<th style="padding:6px 8px;text-align:left;">Ownership</th>' if show_own else "")
         + (_sh(size_label, "size", "right") if show_size else "")
-        + (_sh(q_label, "quality", "right") if show_q else "")
+        + (_q_header if show_q else "")
         + ('<th style="padding:6px 8px;text-align:left;">Source</th>' if show_src else "")
         + '<th style="padding:6px 8px;text-align:left;">Open</th></tr>'
     )

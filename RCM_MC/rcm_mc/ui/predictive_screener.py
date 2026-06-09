@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section,
+    chartis_shell, ck_basis_badge, ck_kpi_block, ck_next_section,
     ck_page_title, ck_panel, ck_value_anchor,
     margin_is_plausible,
 )
@@ -409,8 +409,16 @@ def render_predictive_screener(
         f'Showing top {min(50, total_matches)} of {total_matches:,}'
         '</p>'
         '<table class="cad-table crosshair"><thead><tr>'
-        '<th>CCN</th><th>Hospital</th><th>State</th><th>Beds</th><th>Revenue</th>'
-        '<th>Margin</th><th>Est. Denial</th><th>Est. Uplift</th><th>&nbsp;</th>'
+        '<th>CCN</th><th>Hospital</th><th>State</th>'
+        # Beds / Revenue / Margin are measured HCRIS filings; the Est.*
+        # columns are ML point estimates. Badge each so the partner sees,
+        # per-column, which numbers are real and which are modeled — the
+        # "Est." prefix alone was too easy to miss.
+        f'<th>Beds{ck_basis_badge("actual")}</th>'
+        f'<th>Revenue{ck_basis_badge("actual")}</th>'
+        f'<th>Margin{ck_basis_badge("actual")}</th>'
+        f'<th>Est. Denial{ck_basis_badge("predicted")}</th>'
+        f'<th>Est. Uplift{ck_basis_badge("predicted")}</th><th>&nbsp;</th>'
         f'</tr></thead><tbody>{result_rows}</tbody></table>',
         title=f"Screening Results ({total_matches:,})",
     )
