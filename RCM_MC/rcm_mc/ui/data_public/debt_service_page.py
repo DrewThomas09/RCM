@@ -447,6 +447,18 @@ def render_debt_service(params: dict = None) -> str:
             f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
             f'<td>${op_cash/1e6:,.1f}M</td>'
             '</tr></tbody></table></div>'
+            # ck_source_purpose no longer renders its `purpose`/`next_action`
+            # (2026 collapse), so the essential honesty caveat would vanish.
+            # Render it explicitly: the DSCR shown is a PROXY built from a real
+            # HCRIS operating-cash figure (margin × NPR); actual debt balances,
+            # interest and covenants are NOT in HCRIS, so a true DSCR is DATA
+            # REQUIRED (the partner must supply the debt terms).
+            '<p class="ck-section-body" style="font-size:11px;'
+            'color:var(--sc-text-dim,#6a7480);margin:6px 0 0;">'
+            '<strong>PROXY.</strong> Operating cash is a real HCRIS proxy '
+            '(operating margin &times; NPR). Actual debt balances, interest and '
+            'covenants are not in HCRIS &mdash; <strong>DATA REQUIRED</strong> '
+            'for a true DSCR.</p>'
         )
         body = ck_source_purpose(
             purpose=(f"{_hosp.name}'s debt-service headroom. Operating-cash inputs "

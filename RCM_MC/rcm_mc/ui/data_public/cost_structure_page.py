@@ -337,6 +337,15 @@ def render_cost_structure(params: dict = None) -> str:
             f'<td>${_hosp.opex_per_patient_day:,.0f}</td>'
             f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
             '</tr></tbody></table></div>'
+            # ck_source_purpose no longer renders its `purpose` (2026 collapse),
+            # so this essential honesty caveat would vanish: only the top-line
+            # opex above is real HCRIS — the COGS/SG&A and labor split below is
+            # an illustrative model, NOT in the HCRIS filing.
+            '<p class="ck-section-body" style="font-size:11px;'
+            'color:var(--sc-text-dim,#6a7480);margin:6px 0 0;">'
+            '<strong>Scope.</strong> Top-line opex above is real HCRIS; the '
+            'COGS / SG&amp;A and labor split below is an <strong>illustrative '
+            'model (not in HCRIS)</strong>.</p>'
         )
         body = ck_source_purpose(
             purpose=(f"{_hosp.name}'s real HCRIS cost structure. Top-line opex "
