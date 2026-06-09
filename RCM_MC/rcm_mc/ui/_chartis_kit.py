@@ -697,6 +697,34 @@ def margin_is_plausible_series(s):
     return (s.between(MARGIN_PLAUSIBLE_LO, MARGIN_PLAUSIBLE_HI)) | (s.isna())
 
 
+def ck_basis_badge(kind: str) -> str:
+    """Tiny inline pill marking whether a displayed value is an ACTUAL
+    measured/filed figure or a model PREDICTION.
+
+    A partner must never mistake a model estimate for a real filing (or
+    vice-versa) — that confusion is what turns a screen into a bad
+    diligence call. Used in screener column headers where actual and
+    predicted metrics sit side by side. ``kind`` is ``"actual"`` or
+    ``"predicted"``; anything else returns ``""`` (no badge — never
+    raises, this feeds partner UI). Colours follow the semantic palette:
+    actual → teal (trusted), predicted → warning amber (carry a caveat)."""
+    k = (kind or "").strip().lower()
+    _base = ("display:inline-block;font-family:var(--sc-mono);font-size:8.5px;"
+             "letter-spacing:0.06em;font-weight:600;padding:1px 4px;border-radius:2px;"
+             "vertical-align:middle;margin-left:5px;")
+    if k == "actual":
+        return (f'<span style="{_base}color:var(--sc-teal,#155752);'
+                'border:1px solid var(--sc-teal,#155752);" '
+                'title="Measured value from the source filing — not a model '
+                'estimate.">ACTUAL</span>')
+    if k == "predicted":
+        return (f'<span style="{_base}color:var(--sc-warning,#b8732a);'
+                'border:1px solid var(--sc-warning,#b8732a);" '
+                'title="Model estimate from public data — not a filed figure.">'
+                'PREDICTED</span>')
+    return ""
+
+
 def ck_kpi_block(
     label: str,
     value: str,
