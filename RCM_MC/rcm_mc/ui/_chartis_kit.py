@@ -725,6 +725,72 @@ def ck_basis_badge(kind: str) -> str:
     return ""
 
 
+# Canonical public origin for each data-source label shown in the UI.
+# Linking the label is what makes a displayed value *defensible*: a partner
+# (or an LP reading an export) clicks straight through to the public dataset
+# the number was derived from, rather than taking "CMS HCRIS" on faith. URLs
+# are the official CMS publisher pages — dataset-level where the loader
+# documents the dataset id (home_health 6jpm-sxkc, hospice yc9t-dgbk; see the
+# loader docstrings), the HCRIS cost-reports landing (already the canonical
+# URL in ui/data_public/cms_sources_page.py), and the Provider Data Catalog
+# topic page otherwise. This dict is the single source of truth so a given
+# label resolves to the SAME link on every surface (screener table, inspector,
+# compare view, exports).
+SOURCE_URLS: dict = {
+    "CMS HCRIS": "https://www.cms.gov/research-statistics-data-and-systems/"
+                 "downloadable-public-use-files/cost-reports",
+    "CMS Home Health Compare":
+        "https://data.cms.gov/provider-data/dataset/6jpm-sxkc",
+    "CMS Hospice Compare":
+        "https://data.cms.gov/provider-data/dataset/yc9t-dgbk",
+    "CMS Nursing Home Compare":
+        "https://data.cms.gov/provider-data/topics/nursing-homes",
+    "CMS Dialysis Compare":
+        "https://data.cms.gov/provider-data/topics/dialysis-facilities",
+    "CMS IRF Compare":
+        "https://data.cms.gov/provider-data/topics/"
+        "inpatient-rehabilitation-facilities",
+    "CMS LTCH Compare":
+        "https://data.cms.gov/provider-data/topics/long-term-care-hospitals",
+}
+
+
+def source_url(label: Optional[str]) -> Optional[str]:
+    """Canonical public URL for a data-source label, or None when unknown.
+
+    Tries an exact match first, then a substring match so a decorated label
+    (e.g. ``"CMS HCRIS · FY2023"``) still resolves to the base dataset. Never
+    raises — partner UI; an unknown label simply renders as plain text."""
+    if not label:
+        return None
+    s = str(label).strip()
+    if s in SOURCE_URLS:
+        return SOURCE_URLS[s]
+    for key, url in SOURCE_URLS.items():
+        if key in s:
+            return url
+    return None
+
+
+def ck_source_link(label: Optional[str], *, style: str = "") -> str:
+    """Render a data-source label as a link to its public origin when known,
+    else as escaped plain text.
+
+    This is the one helper every surface should use to print a source label,
+    so provenance is consistent and *defensible* — the partner can always
+    trace a value back to the dataset it came from. The label is HTML-escaped
+    (partner-safe); ``style`` is trusted server-rendered CSS (callers pass a
+    literal). Opens in a new tab with ``rel="noopener"`` and an ``↗`` cue."""
+    safe = _html.escape(str(label or "—"))
+    url = source_url(label)
+    if not url:
+        return f'<span style="{style}">{safe}</span>' if style else safe
+    return (f'<a href="{_html.escape(url)}" target="_blank" rel="noopener" '
+            f'style="{style}" title="Open the source dataset at CMS — '
+            f'verify this value at its origin.">{safe}'
+            ' <span aria-hidden="true">↗</span></a>')
+
+
 def ck_kpi_block(
     label: str,
     value: str,
