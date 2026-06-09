@@ -725,6 +725,33 @@ def margin_is_plausible_series(s):
     return (s.between(MARGIN_PLAUSIBLE_LO, MARGIN_PLAUSIBLE_HI)) | (s.isna())
 
 
+# Bed-days available (beds × days in the cost-report period) is the hard
+# physical ceiling on inpatient days, so occupancy = patient_days ÷
+# bed_days_available cannot exceed ~100% over a full year. A computed value
+# meaningfully above that means the FILING is wrong (bed_days_available
+# understated — e.g. a partial-period or single-bed-type figure), not that the
+# hospital ran over capacity. A small tolerance (5pp) absorbs licensed-vs-
+# staffed/observation quirks; beyond it the value is a data artifact, not a
+# real KPI. (Real-data check: 29 HCRIS hospitals computed >100%, up to 239%.)
+OCCUPANCY_PLAUSIBLE_HI = 1.05
+
+
+def occupancy_is_plausible(occ: Optional[float]) -> bool:
+    """True when an occupancy fraction (0.80 == 80%) is physically possible.
+
+    Flags only the impossibly-HIGH artifacts (> OCCUPANCY_PLAUSIBLE_HI); a
+    value at/under the ceiling — including 0 / missing — is left alone (the
+    caller decides how to show a genuine zero). None / NaN / non-numeric →
+    True (unknown → don't flag; never raises — partner UI)."""
+    try:
+        v = float(occ)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return True
+    if v != v:  # NaN
+        return True
+    return v <= OCCUPANCY_PLAUSIBLE_HI
+
+
 def ck_basis_badge(kind: str) -> str:
     """Tiny inline pill marking whether a displayed value is an ACTUAL
     measured/filed figure or a model PREDICTION.

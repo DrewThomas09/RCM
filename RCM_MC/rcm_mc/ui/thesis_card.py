@@ -146,7 +146,11 @@ def render_thesis_card(
         catalysts.append(f"Turnaround candidate ({turnaround_prob:.0%} probability)")
     if _safe_float(hospital.get("commercial_pct")) > 0.4:
         catalysts.append(f"Strong commercial payer mix ({_safe_float(hospital.get('commercial_pct')):.0%})")
-    if _safe_float(hospital.get("occupancy_rate")) > 0.65:
+    _occ = _safe_float(hospital.get("occupancy_rate"))
+    # Guard against impossible occupancy (>100% = understated bed-days in the
+    # filing): don't fire a "high occupancy" catalyst on a data artifact.
+    from ._chartis_kit import occupancy_is_plausible
+    if 0.65 < _occ and occupancy_is_plausible(_occ):
         catalysts.append("High occupancy supports revenue stability")
     if beds > 200:
         catalysts.append("Platform-sized facility")

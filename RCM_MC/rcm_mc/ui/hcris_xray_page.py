@@ -28,7 +28,7 @@ from ..diligence.hcris_xray import (
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge, ck_page_explainer,
-    ck_source_purpose, margin_is_plausible)
+    ck_source_purpose, margin_is_plausible, occupancy_is_plausible)
 from .data_public.state_profile_page import state_context_panel
 
 _EXPLAINER_CSS = """
@@ -413,7 +413,13 @@ def _target_card(
         )
         + ck_kpi_block(
             "Patient Days", f"{target.total_patient_days:,.0f}",
-            sub=f"{target.occupancy_rate*100:.1f}% occupancy",
+            # Occupancy >100% is physically impossible (bed-days available is
+            # the ceiling) → the filing's bed-days are understated. Flag it
+            # rather than show a bogus "239% occupancy" as a real KPI.
+            sub=(f"{target.occupancy_rate*100:.1f}% occupancy"
+                 if occupancy_is_plausible(target.occupancy_rate)
+                 else '<span style="color:var(--sc-warning,#b8732a);">occupancy '
+                      'n/a — bed-days filing artifact</span>'),
         )
         + ck_kpi_block(
             "Medicare Day Share", f"{target.medicare_day_pct*100:.1f}%",
