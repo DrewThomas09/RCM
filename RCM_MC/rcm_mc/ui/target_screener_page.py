@@ -564,6 +564,39 @@ def _quality_sort_key(r: Dict, *, rev: bool):
     return (tier, -val if rev else val)
 
 
+# Verification basis for a row's quality value — the dimension the "Basis"
+# filter slices on. Predicted values are NOT a basis here: the target screener
+# is all live CMS data; modelled margins live on /predictive-screener.
+_BASIS_LABELS = {
+    "live": "Verified live",
+    "verify": "Verify (⚠ ≥24%)",
+    "flagged": "Flagged (⚑ implausible)",
+    "missing": "Not reported",
+}
+_BASIS_OK = set(_BASIS_LABELS)
+
+
+def _row_basis(r: Dict) -> str:
+    """Classify a row by how much to trust its quality value, so a partner can
+    filter to exactly the basis they want:
+
+      live    — a real, in-band value (verified live CMS data)
+      verify  — plausible but in the suspect ≥24% tail (⚠ — verify)
+      flagged — gated out as implausible (⚑ — shown as "—")
+      missing — never reported in the filing
+
+    A flagged row also has ``q is None`` (the value was gated), so the flag
+    check must come before the missing check."""
+    q = r.get("q")
+    if r.get("q_flag"):
+        return "flagged"
+    if q is None or not isinstance(q, (int, float)):
+        return "missing"
+    if r.get("q_suspect"):
+        return "verify"
+    return "live"
+
+
 def _vertical_rows(vertical: str, state: str = "",
                    limit: Optional[int] = _TABLE_LIMIT) -> List[Dict]:
     """Normalized provider rows for the active vertical from the REAL loaders.
@@ -1022,7 +1055,7 @@ def _compare_basket_banner(vertical: str,
     # by removing ?view= from the URL or clicking the workbench tab.
     base = {"view": "compare", "vertical": vertical}
     for k in ("state", "sort", "direction", "min_quality", "min_size",
-              "ownership", "hide", "limit", "layer"):
+              "ownership", "basis", "hide", "limit", "layer"):
         v = _q1(qs, k)
         if v:
             base[k] = v
@@ -1068,7 +1101,7 @@ def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
     import html as _h
     # Carry-through params other than `limit`.
     keep_keys = ("state", "sort", "direction", "min_quality", "min_size",
-                 "ownership", "hide", "compare", "layer")
+                 "ownership", "basis", "hide", "compare", "layer")
     base = {"view": "main", "vertical": vertical}
     for k in keep_keys:
         v = _q1(qs, k)
@@ -1204,6 +1237,12 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         rows = [r for r in rows if isinstance(r.get("size"), (int, float)) and r["size"] >= min_size]
     if own:
         rows = [r for r in rows if own in str(r.get("ownership", "")).lower()]
+    # Basis filter: slice by how the quality value is sourced/verified
+    # (live / verify / flagged / missing). Validated against the known set so
+    # a stale or hostile ?basis= can't do anything but no-op.
+    basis = _q1(qs, "basis").strip().lower()
+    if basis in _BASIS_OK:
+        rows = [r for r in rows if _row_basis(r) == basis]
     n_matching = len(rows)
     # Wave-5: respect ?limit= from the top-N toggle. Validate against
     # the choice set so a hostile or stale URL can't ask for a
@@ -1238,8 +1277,29 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     # when any of its filters ARE active so the partner never loses
     # state. Active-filter chips in the universe panel still show
     # the partner what's filtered when the form is collapsed.
-    refine_open = (min_q is not None or min_size is not None or own)
+    refine_open = (min_q is not None or min_size is not None or own
+                   or basis in _BASIS_OK)
+    # Basis options that actually occur in this universe (so star-rating
+    # verticals, which have no margin tiers, only show live / not-reported).
+    from collections import Counter as _Counter
+    basis_counts = _Counter(_row_basis(r) for r in all_rows)
+    basis_present = [k for k in ("live", "verify", "flagged", "missing")
+                     if basis_counts.get(k)]
+    has_basis = len(basis_present) > 1  # nothing to filter if only one bucket
+    basis_select = ""
+    if has_basis:
+        opts = ['<option value="">All basis</option>']
+        for k in basis_present:
+            sel = " selected" if basis == k else ""
+            opts.append(f'<option value="{k}"{sel}>{_BASIS_LABELS[k]} '
+                        f'({basis_counts[k]:,})</option>')
+        basis_select = (
+            f'<label {_lbl}>Basis'
+            f'<br><select name="basis" {_inp}>' + "".join(opts) + '</select></label>'
+        )
     summary_bits: List[str] = []
+    if has_basis:
+        summary_bits.append("Basis")
     if has_q_any:
         summary_bits.append(f"Min {q_label0.lower()}")
     if has_size_any:
@@ -1260,6 +1320,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         '<input type="hidden" name="view" value="main">'
         f'<input type="hidden" name="vertical" value="{vertical}">'
         + (f'<input type="hidden" name="state" value="{_h.escape(state)}">' if state else "")
+        + basis_select
         + (f'<label {_lbl}>Min {q_label0}'
            f'<br><input name="min_quality" value="{min_q if min_q is not None else ""}" size="6" '
            f'{_inp}></label>' if has_q_any else "")
@@ -1274,7 +1335,13 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
            + (f"&state={state}" if state else "") + '">clear</a>'
            if refine_open else "")
         + '</form>'
-        '</details>'
+        # Predicted values aren't in this screen (it's all live CMS data) —
+        # point the partner to where modelled margins/uplift live.
+        + (' <p class="ck-section-body" style="font-size:11px;margin:8px 0 0;">'
+           'Looking for <em>predicted</em> margins &amp; RCM uplift? → '
+           '<a class="ck-link" href="/predictive-screener">Predictive Screener</a>.'
+           '</p>' if has_basis else "")
+        + '</details>'
     )
     size_label = size_label0
     q_label = q_label0
@@ -1494,7 +1561,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
                        f"({dir_word})")
         # Build the reset-sort link — preserve every other param.
         reset_keep = {"view": "main", "vertical": vertical}
-        for k in ("state", "min_quality", "min_size", "ownership",
+        for k in ("state", "min_quality", "min_size", "ownership", "basis",
                   "hide", "limit", "layer", "compare"):
             v = _q1(qs, k)
             if v:
