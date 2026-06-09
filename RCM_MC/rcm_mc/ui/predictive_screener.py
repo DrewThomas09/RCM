@@ -337,50 +337,69 @@ def render_predictive_screener(
         except (ValueError, TypeError):
             rev = 0
         try:
-            margin = float(row.get("operating_margin", 0) or 0)
-            margin = 0 if margin != margin else margin
+            _raw_margin = row.get("operating_margin")
+            margin = float(_raw_margin)
         except (ValueError, TypeError):
-            margin = 0
-        # 5-tier heatmap for margin
-        if margin > 0.05:
-            margin_heat = "cad-heat-1"
-        elif margin > 0.02:
-            margin_heat = "cad-heat-2"
-        elif margin > 0:
-            margin_heat = "cad-heat-3"
-        elif margin > -0.03:
-            margin_heat = "cad-heat-4"
-        else:
-            margin_heat = "cad-heat-5"
-        # Data-quality muting (consistent with the Hospital Screener): a junk-
-        # opex filing's margin is shown but muted + flagged, never heat-colored
-        # as if it were real.
-        _dq_ok = bool(row.get("data_quality_ok", True)) and margin_is_plausible(margin)
-        if _dq_ok:
-            margin_cell = f'<td class="num {margin_heat}">{margin:.1%}</td>'
-        else:
+            margin = float("nan")
+        # Honest about margins we don't have: when the filing has no operating
+        # margin (missing net patient revenue or operating expenses), show "—"
+        # — never a fabricated 0.0% heat-colored as if it were a real result.
+        if _raw_margin is None or margin != margin:  # None / NaN
             margin_cell = (
-                f'<td class="num ps-dq" title="HCRIS filing has implausible or '
-                f'incomplete opex, so margin {margin:.1%} is a data artifact; review '
-                f'before relying on it.">{margin:.1%} &#9888;</td>'
+                '<td class="num ps-na" style="color:var(--sc-text-faint,#8b94a0);" '
+                'title="No operating margin in this HCRIS filing (missing net '
+                'patient revenue or operating expenses) — not reported, not '
+                'estimated.">—</td>'
             )
+        else:
+            # 5-tier heatmap for margin
+            if margin > 0.05:
+                margin_heat = "cad-heat-1"
+            elif margin > 0.02:
+                margin_heat = "cad-heat-2"
+            elif margin > 0:
+                margin_heat = "cad-heat-3"
+            elif margin > -0.03:
+                margin_heat = "cad-heat-4"
+            else:
+                margin_heat = "cad-heat-5"
+            # Data-quality muting (consistent with the Hospital Screener): a
+            # junk-opex filing's margin is shown but muted + flagged, never
+            # heat-colored as if it were real.
+            _dq_ok = bool(row.get("data_quality_ok", True)) and margin_is_plausible(margin)
+            if _dq_ok:
+                margin_cell = f'<td class="num {margin_heat}">{margin:.1%}</td>'
+            else:
+                margin_cell = (
+                    f'<td class="num ps-dq" title="HCRIS filing has implausible or '
+                    f'incomplete opex, so margin {margin:.1%} is a data artifact; review '
+                    f'before relying on it.">{margin:.1%} &#9888;</td>'
+                )
 
-        try:
-            denial = float(row.get("est_denial", 0) or 0)
-            denial = 0 if denial != denial else denial
-        except (ValueError, TypeError):
-            denial = 0
-        try:
-            ar = float(row.get("est_ar_days", 0) or 0)
-            ar = 0 if ar != ar else ar
-        except (ValueError, TypeError):
-            ar = 0
-        try:
-            uplift = float(row.get("est_uplift", 0) or 0)
-            uplift = 0 if uplift != uplift else uplift
-        except (ValueError, TypeError):
-            uplift = 0
-        uplift_cls = "cad-pos" if uplift > 3e6 else ("cad-warn" if uplift > 1e6 else "")
+        # Honest about predictions we couldn't make: _predict_rcm_fast returns
+        # NaN when the inputs are too thin to model (no revenue/beds). Render
+        # those as "—", never a fabricated $0 / 0.0% that reads like a
+        # confident estimate of "no opportunity".
+        def _est_or_none(v):
+            try:
+                f = float(v)
+            except (ValueError, TypeError):
+                return None
+            return None if f != f else f  # NaN → None
+        denial = _est_or_none(row.get("est_denial"))
+        uplift = _est_or_none(row.get("est_uplift"))
+        _na_cell = ('<td class="num ps-na" style="color:var(--sc-text-faint,#8b94a0);" '
+                    'title="Not enough public data to estimate (missing revenue or '
+                    'beds).">—</td>')
+        denial_cell = (f'<td class="num">{denial:.1%}</td>' if denial is not None
+                       else _na_cell)
+        if uplift is None:
+            uplift_cell = _na_cell
+        else:
+            uplift_cls = "cad-pos" if uplift > 3e6 else ("cad-warn" if uplift > 1e6 else "")
+            uplift_cell = (f'<td class="num {uplift_cls}">'
+                           f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="ck-link">'
+                           f'{_fm(uplift)}</a></td>')
 
         raw_name = str(row.get("name", ""))[:40]
         result_rows += (
@@ -392,9 +411,8 @@ def render_predictive_screener(
             f'<td class="num">{beds}</td>'
             f'<td class="num">{_fm(rev)}</td>'
             f'{margin_cell}'
-            f'<td class="num">{denial:.1%}</td>'
-            f'<td class="num {uplift_cls}">'
-            f'<a href="/ebitda-bridge/{_html.escape(ccn)}" class="ck-link">{_fm(uplift)}</a></td>'
+            f'{denial_cell}'
+            f'{uplift_cell}'
             f'<td>'
             f'<form method="POST" action="/pipeline/add" class="ps-pipe-form">'
             f'<input type="hidden" name="ccn" value="{_html.escape(ccn)}">'
