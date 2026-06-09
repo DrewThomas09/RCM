@@ -56,7 +56,7 @@ def _envelope_issues(path: Path) -> List[str]:
 _PAYLOAD_KEYS = (
     "claim_id", "patient_id", "cpt_code", "icd10_primary", "payer",
     "service_date_from", "service_date_to", "charge_amount",
-    "paid_amount", "status_code",
+    "paid_amount", "status_code", "billing_npi",
 )
 
 
