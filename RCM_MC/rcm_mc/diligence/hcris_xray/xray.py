@@ -86,7 +86,7 @@ class PeerMatch:
 class MetricBenchmark:
     """Per-metric target vs peer stats."""
     spec: MetricSpec
-    target_value: float
+    target_value: Optional[float]   # None when the target's value is a filing artifact
     peer_p25: float
     peer_median: float
     peer_p75: float
@@ -339,12 +339,17 @@ def compute_benchmarks(
     """Compute per-metric target-vs-peer comparison."""
     out: List[MetricBenchmark] = []
     for spec in METRIC_CATALOG:
-        target_val = float(getattr(target, spec.attr, 0.0) or 0.0)
+        # Keep None distinct from 0.0: a None metric is a filing artifact
+        # (e.g. net-to-gross when gross < net), not a real zero. Coercing it to
+        # 0 would both skew the peer percentiles and render a bogus "0.0%" for
+        # the target — so carry None through and show "—".
+        _traw = getattr(target, spec.attr, None)
+        target_val = float(_traw) if _traw is not None else None
         peer_vals = [
-            float(getattr(p.hospital, spec.attr, 0.0) or 0.0)
-            for p in peers
+            float(v) for v in (getattr(p.hospital, spec.attr, None) for p in peers)
+            if v is not None
         ]
-        # Drop zero/null values that would skew percentiles
+        # Drop zero values that would skew percentiles
         # (especially for ratios where 0 means "undefined")
         if spec.attr in (
             "occupancy_rate", "contractual_allowance_rate",
@@ -357,16 +362,23 @@ def compute_benchmarks(
         p25 = _percentile(peer_vals, 0.25)
         med = _percentile(peer_vals, 0.50)
         p75 = _percentile(peer_vals, 0.75)
-        variance = target_val - med
-        variance_pct = (
-            variance / abs(med) if abs(med) > 1e-9 else 0.0
-        )
-        if target_val > p75:
-            verdict = "above peer P75"
-        elif target_val < p25:
-            verdict = "below peer P25"
+        if target_val is None:
+            # Target value unavailable/artifact — show peers, but no variance
+            # or above/below verdict against a number we don't trust.
+            variance = 0.0
+            variance_pct = 0.0
+            verdict = "n/a — filing gap"
         else:
-            verdict = "inside peer P25-P75 band"
+            variance = target_val - med
+            variance_pct = (
+                variance / abs(med) if abs(med) > 1e-9 else 0.0
+            )
+            if target_val > p75:
+                verdict = "above peer P75"
+            elif target_val < p25:
+                verdict = "below peer P25"
+            else:
+                verdict = "inside peer P25-P75 band"
         out.append(MetricBenchmark(
             spec=spec,
             target_value=target_val,
