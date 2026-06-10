@@ -93,5 +93,36 @@ class NestedObservedMetricsTests(unittest.TestCase):
         self.assertIn("14.2%", h)          # Avg Denial Rate too
 
 
+class RegressionOverfitGuardTests(unittest.TestCase):
+    """A 5-deal × 4-feature OLS fits (near-)exactly by construction —
+    'R-Squared 100%' is an artifact of n ≤ k+1, not a real relationship.
+    The panel must say so; a portfolio with enough deals stays clean."""
+
+    @staticmethod
+    def _portfolio(n):
+        import numpy as np
+        import pandas as pd
+        rng = np.random.default_rng(7)
+        return pd.DataFrame([{
+            "deal_id": f"d{i}", "name": f"D{i}", "created_at": "2026-01-01",
+            "denial_rate": float(8 + rng.normal(0, 2)),
+            "days_in_ar": float(45 + rng.normal(0, 6)),
+            "net_collection_rate": float(94 + rng.normal(0, 2)),
+            "clean_claim_rate": float(85 + rng.normal(0, 3)),
+            "cost_to_collect": float(3.5 + rng.normal(0, 0.5)),
+            "net_revenue": 2e8,
+        } for i in range(n)])
+
+    def test_small_portfolio_flags_degenerate_fit(self):
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        h = render_portfolio_overview(self._portfolio(5), None)
+        self.assertIn("degrees of freedom", h)
+
+    def test_larger_portfolio_not_flagged(self):
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        h = render_portfolio_overview(self._portfolio(12), None)
+        self.assertNotIn("degrees of freedom", h)
+
+
 if __name__ == "__main__":
     unittest.main()
