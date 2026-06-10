@@ -17,7 +17,7 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell, ck_basis_badge, ck_kpi_block, ck_next_section,
     ck_page_title, ck_panel, ck_source_link, ck_value_anchor,
-    margin_is_plausible, margin_is_plausible_series,
+    margin_is_plausible, margin_is_plausible_series, ck_calc_help,
 )
 
 _EXPLAINER_CSS = """
@@ -321,8 +321,16 @@ def render_predictive_screener(
     kpis = (
         '<div class="ck-kpi-strip">'
         + ck_kpi_block("Matching Hospitals", f"{total_matches:,}")
-        + ck_kpi_block("Total Est. Uplift", _fm(total_uplift))
-        + ck_kpi_block("Avg Est. Denial Rate", f"{avg_denial:.1%}")
+        + ck_kpi_block("Total Est. Uplift", _fm(total_uplift) + ck_calc_help(
+            "Total Est. Uplift",
+            ["Sum of each matching hospital's modeled annual EBITDA uplift.",
+             "Per hospital: NPR × (denial_gap × 0.5 + margin_gap × 0.3) × 0.6."],
+            benchmark="Each hospital capped at 15% of its revenue."))
+        + ck_kpi_block("Avg Est. Denial Rate", f"{avg_denial:.1%}" + ck_calc_help(
+            "Avg Est. Denial Rate",
+            ["Mean of the modeled initial-denial rate across matching hospitals.",
+             "Per hospital from payer mix, scale, net-to-gross and margin."],
+            benchmark="Each clamped to the 2%–25% industry range."))
         + ck_kpi_block("Avg Margin", f"{avg_margin:.1%}")
         + ck_kpi_block("Universe", f"{len(hcris_df):,}")
         + '</div>'
@@ -444,8 +452,26 @@ def render_predictive_screener(
         f'<th>Beds{ck_basis_badge("actual")}</th>'
         f'<th>Revenue{ck_basis_badge("actual")}</th>'
         f'<th>Margin{ck_basis_badge("actual")}</th>'
-        f'<th>Est. Denial{ck_basis_badge("predicted")}</th>'
-        f'<th>Est. Uplift{ck_basis_badge("predicted")}</th><th>&nbsp;</th>'
+        f'<th>Est. Denial{ck_basis_badge("predicted")}'
+        + ck_calc_help(
+            "Est. Denial",
+            ["Initial-denial rate modeled from payer mix, scale and pricing:",
+             "0.095 + Medicare-day% × 0.15 + Medicaid-day% × 0.20",
+             "− ln(beds) × 0.012 − net-to-gross × 0.25 − operating-margin × 0.18",
+             "(higher Medicaid share & lower realization → more denials;",
+             "larger, cleaner-collecting hospitals → fewer.)"],
+            benchmark="Clamped to the 2%–25% industry initial-denial range.")
+        + '</th>'
+        f'<th>Est. Uplift{ck_basis_badge("predicted")}'
+        + ck_calc_help(
+            "Est. Uplift",
+            ["Annual EBITDA uplift from closing the RCM gap to benchmark:",
+             "net patient revenue × (denial_gap × 0.5 + margin_gap × 0.3) × 0.6",
+             "denial_gap = max(0, est. denial − 5%)",
+             "margin_gap = max(0, 8% − operating margin)",
+             "(0.6 = realization haircut on the theoretical recovery.)"],
+            benchmark="Capped at 15% of revenue — the max credible single-lever RCM gain.")
+        + '</th><th>&nbsp;</th>'
         f'</tr></thead><tbody>{result_rows}</tbody></table>',
         title=f"Screening Results ({total_matches:,})",
     )

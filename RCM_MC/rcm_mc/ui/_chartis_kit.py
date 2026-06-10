@@ -1859,6 +1859,34 @@ def ck_help_tooltip(
     )
 
 
+def ck_calc_help(metric: str, lines: Sequence[str], *, benchmark: str = "") -> str:
+    """A circled "?" that reveals EXACTLY how a PREDICTED / derived value was
+    calculated — the formula and inputs, plus the reasonable range the
+    prediction is benchmarked (clamped) to.
+
+    Reuses the ``.ck-help`` popover (CSS-only, no JS, survives static export)
+    but emits *just* the "?" circle (no inline term) so it sits next to a
+    column header or KPI. A partner can audit a modeled number instead of
+    taking it on trust — which is the whole point of showing predictions at
+    all. ``metric`` names the value; ``lines`` are the calculation steps
+    (plain text, escaped, joined with <br>); ``benchmark`` is the sanity range
+    the value is held to (e.g. "clamped to 2–25%")."""
+    body = "<br>".join(_esc(line) for line in lines)
+    cite = (f'<span class="ck-help-cite">{_esc(benchmark)}</span>'
+            if benchmark else "")
+    return (
+        '<span class="ck-help ck-calc-help">'
+        '<button type="button" class="ck-help-trigger" aria-expanded="false" '
+        'tabindex="0" aria-label="How this is calculated">?</button>'
+        '<span class="ck-help-popover" role="tooltip">'
+        f'<span class="ck-help-term">How &ldquo;{_esc(metric)}&rdquo; is calculated</span>'
+        f'<span class="ck-help-def">{body}</span>'
+        f'{cite}'
+        '</span>'
+        '</span>'
+    )
+
+
 def ck_sparkline(
     values: Sequence[float],
     *,
