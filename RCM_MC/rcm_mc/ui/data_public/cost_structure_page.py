@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor, ck_source_purpose
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_title, ck_value_anchor, ck_source_purpose, margin_is_plausible, ck_gap_dot
 
 
 def _cost_stack_svg(cost_lines, ebitda_margin: float) -> str:
@@ -335,7 +335,14 @@ def render_cost_structure(params: dict = None) -> str:
             f'<tbody><tr><td>{_html.escape(_hosp.name)}</td>'
             f'<td>${_hosp.opex_per_bed:,.0f}</td>'
             f'<td>${_hosp.opex_per_patient_day:,.0f}</td>'
-            f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
+            # Gate the operating margin the same way the X-Ray / screener do: an
+            # out-of-band value (e.g. +87.9%) is a junk-opex filing artifact, so
+            # show "—" + the red gap dot rather than a bogus confident margin.
+            + (f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
+               if margin_is_plausible(_hosp.operating_margin_on_npr)
+               else '<td>—' + ck_gap_dot(
+                   "Operating margin outside the realistic band — incomplete/"
+                   "aggregated opex in this filing") + '</td>') +
             '</tr></tbody></table></div>'
             # ck_source_purpose no longer renders its `purpose` (2026 collapse),
             # so this essential honesty caveat would vanish: only the top-line

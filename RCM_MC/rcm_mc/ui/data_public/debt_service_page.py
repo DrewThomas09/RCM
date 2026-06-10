@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_source_purpose
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_illustrative_note, ck_value_anchor, ck_source_purpose, margin_is_plausible, ck_gap_dot
 
 
 def _dscr_trend_svg(schedule) -> str:
@@ -444,8 +444,15 @@ def render_debt_service(params: dict = None) -> str:
             '<th>Operating cash (proxy)</th></tr></thead>'
             f'<tbody><tr><td>{_html.escape(_hosp.name)}</td>'
             f'<td>${_hosp.net_patient_revenue/1e6:,.1f}M</td>'
-            f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
-            f'<td>${op_cash/1e6:,.1f}M</td>'
+            # Gate the margin like every other surface: an out-of-band value is
+            # a junk-opex artifact, so the operating-cash proxy built from it
+            # (margin × NPR) is unreliable too — flag with "—" + red dot.
+            + (f'<td>{_hosp.operating_margin_on_npr*100:+.1f}%</td>'
+               f'<td>${op_cash/1e6:,.1f}M</td>'
+               if margin_is_plausible(_hosp.operating_margin_on_npr)
+               else '<td>—' + ck_gap_dot(
+                   "Operating margin outside the realistic band — junk-opex "
+                   "filing; the cash proxy is unreliable") + '</td><td>—</td>') +
             '</tr></tbody></table></div>'
             # ck_source_purpose no longer renders its `purpose`/`next_action`
             # (2026 collapse), so the essential honesty caveat would vanish.
