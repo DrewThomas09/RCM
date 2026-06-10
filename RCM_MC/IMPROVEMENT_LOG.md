@@ -210,3 +210,35 @@
   '.prov-tt' style block present and the page rendering tooltips as ⓘ.
 - evidence: item8_insights_fixed.png (Takeaways + clean KPI strip + health
   mosaic + deals table all correct); route walk 2b: 349/361, 0 tracebacks.
+
+## Merge checkpoint 2 — items 4–9 LIVE on pedesk.app
+- merge: PR #1664 → main 59f949e9 at ~04:55Z
+- deploy: deploy.yml run #1632 completed/SUCCESS 05:00:54Z incl. LIVE
+  pedesk.app/healthz=200 + guide-health gates.
+- additional checks: route walks sweep2/2b (349/361, 0 tracebacks);
+  screenshots item8_insights_fixed.png, item9_model_card.png; tooltip-CSS
+  regression found by screenshot diff and fixed on-branch (36b1be3, rides
+  checkpoint 3).
+
+## Item 10 — H: composite demo deals anchored to real, named facilities
+- when: 2026-06-10T05:05–05:18Z (iteration 11)
+- what: each fictional demo deal now carries a facility_anchor naming a REAL
+  CCN chosen to match its archetype from the live HCRIS frame (margin band +
+  120–400 beds + $100M–$1.5B NPR): ccf→Hennepin County Medical Center (MN,
+  −11.2%), mgh→Enloe (CA, −0.5%), nyp→St. Francis NY (+2.0%), buh→Tacoma
+  General Allenmore (WA, +5.1%), sth→White Plains (NY, +8.7%). The anchor's
+  filed financials render ACTUAL + sourced + X-Ray-linked on the deal quick
+  view; the RCM metrics stay explicitly "illustrative demo values (HCRIS
+  files no denial/collection fields)". demo.py seeder writes the anchors
+  (resilient: anchor lookup failure can't break seeding); the live seeded db
+  updated in place. Bonus: profiles now carry state+ccn → the P1 active-deal
+  bar gains the X-Ray link + state-scoped screener for demo deals (meta
+  cookie verified: {"id":"ccf","state":"MN","ccn":"240004"}).
+- also fixed (found during): quick view read only flat metric keys → showed
+  "No profile metrics yet" for packet-seeded deals while nested
+  observed_metrics sat right there; now flattened (same class as the
+  list_deals fix this morning).
+- verification: 5 anchor tests + flatten test + seeder pin; meta-cookie E2E;
+  screenshot item10_anchored_bar.png. 20 green incl. deal-context + chip.
+- users: all three — the demo stops being deniable as "fake data" while
+  staying honest about what HCRIS cannot provide.

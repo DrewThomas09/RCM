@@ -166,9 +166,50 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
             k: {"value": v, "quality_flags": []}
             for k, v in rcm_metrics_per_deal.get(deal_id, {}).items()
         }
+        # Workstream H — composite demo deals: each fictional deal is
+        # ANCHORED to a real, named HCRIS facility chosen to match its
+        # archetype (covenant-tripped → a real deep-negative-margin system;
+        # healthy-beat → a real ~+9% one). The anchor's filed financials are
+        # ACTUAL public data; the RCM metrics above remain illustrative demo
+        # values (HCRIS has no denial/NCR fields) and are labeled as such.
+        # Anchors picked 2026-06-10 from the live frame (margin band +
+        # 120-400 beds + $100M-$1.5B NPR):
+        #   ccf → 240004 Hennepin County Medical Center (MN, −11.2%)
+        #   mgh → 050039 Enloe Medical Center (CA, −0.5%)
+        #   nyp → 330182 St. Francis Hospital (NY, +2.0%)
+        #   buh → 500129 Tacoma General Allenmore (WA, +5.1%)
+        #   sth → 330304 White Plains Hospital (NY, +8.7%)
+        _anchor_ccn = {"ccf": "240004", "mgh": "050039", "nyp": "330182",
+                       "buh": "500129", "sth": "330304"}.get(deal_id)
+        profile = {"observed_metrics": observed,
+                   "rcm_metrics_basis": "illustrative-demo"}
+        if _anchor_ccn:
+            try:
+                from rcm_mc.data.hcris import _get_latest_per_ccn
+                from rcm_mc.ui.regression_page import _add_computed_features
+                _row = _add_computed_features(_get_latest_per_ccn())
+                _row = _row[_row["ccn"].astype(str) == _anchor_ccn]
+                if len(_row):
+                    r = _row.iloc[0]
+                    profile["ccn"] = _anchor_ccn
+                    profile["state"] = str(r.get("state") or "")
+                    profile["facility_anchor"] = {
+                        "ccn": _anchor_ccn,
+                        "name": str(r.get("name") or ""),
+                        "state": str(r.get("state") or ""),
+                        "fiscal_year": int(r.get("fiscal_year") or 0),
+                        "beds": float(r.get("beds")) if r.get("beds") == r.get("beds") else None,
+                        "net_patient_revenue": float(r.get("net_patient_revenue"))
+                            if r.get("net_patient_revenue") == r.get("net_patient_revenue") else None,
+                        "operating_margin": float(r.get("operating_margin"))
+                            if r.get("operating_margin") == r.get("operating_margin") else None,
+                        "source": "CMS HCRIS (latest authoritative filing)",
+                    }
+            except Exception:  # noqa: BLE001 — anchor is additive; demo must seed
+                pass
         store.upsert_deal(
             deal_id, name=deal_names[deal_id],
-            profile={"observed_metrics": observed},
+            profile=profile,
         )
         ddir = os.path.join(run_dir, deal_id + "_run")
         os.makedirs(ddir, exist_ok=True)

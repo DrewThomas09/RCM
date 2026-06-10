@@ -57,6 +57,21 @@ def render_deal_quick_view(
             f'</div>'
         )
 
+    # Flatten nested observed_metrics ({metric: {"value": …}}) into the flat
+    # keys this view reads — packet-seeded deals store them nested, and the
+    # view used to show "No profile metrics yet" while the data sat right
+    # there (same shape issue fixed in store.list_deals()).
+    om = profile.get("observed_metrics") or {}
+    if isinstance(om, dict):
+        profile = dict(profile)
+        for _k, _entry in om.items():
+            if _k in profile:
+                continue
+            if isinstance(_entry, dict) and "value" in _entry:
+                profile[_k] = _entry["value"]
+            elif isinstance(_entry, (int, float)):
+                profile[_k] = _entry
+
     # Profile KPIs
     kpi_fields = [
         ("Denial Rate", profile.get("denial_rate"), "%", None, "denial_rate"),
@@ -117,7 +132,34 @@ def render_deal_quick_view(
                 label,
                 html.escape(display) + verify_flag + _peer_chip(metric_key, val))
 
+    # Workstream H — composite-demo anchor: when the deal names a REAL
+    # facility anchor, show its filed financials (ACTUAL, sourced) and say
+    # plainly that the RCM metrics below are illustrative demo values.
+    anchor = profile.get("facility_anchor") or {}
+    anchor_html = ""
+    if anchor.get("ccn"):
+        _m = anchor.get("operating_margin")
+        _npr = anchor.get("net_patient_revenue")
+        _beds = anchor.get("beds")
+        anchor_html = (
+            f'<div class="cad-card" style="margin:0 0 10px;">'
+            f'<p class="ck-section-body" style="margin:0;font-size:12px;">'
+            f'Composite demo deal — financial anchor is the real filing of '
+            f'<strong>{html.escape(str(anchor.get("name", "")))}</strong> '
+            f'(CCN <a href="/diligence/hcris-xray?ccn={html.escape(str(anchor["ccn"]))}" '
+            f'style="color:{PALETTE["text_link"]};">{html.escape(str(anchor["ccn"]))}</a>, '
+            f'{html.escape(str(anchor.get("state", "")))})'
+            f'{ck_basis_badge("actual")}: '
+            f'{f"${_npr/1e6:,.0f}M NPR" if _npr else ""}'
+            f'{f" · {int(_beds)} beds" if _beds else ""}'
+            f'{f" · {_m*100:+.1f}% operating margin" if _m is not None else ""}'
+            f' — FY{anchor.get("fiscal_year", "")} '
+            f'{html.escape(str(anchor.get("source", "")))}. '
+            f'The RCM metrics below are <strong>illustrative demo values</strong> '
+            f'(HCRIS files no denial/collection fields).</p></div>')
+
     profile_section = (
+        anchor_html +
         # Basis disclosure: these are the deal's SELF-REPORTED RCM metrics
         # (partner-entered via /import), not a public filing or a model.
         f'<p class="ck-section-body" style="margin:0 0 8px;font-size:11px;'
@@ -130,6 +172,7 @@ def render_deal_quick_view(
         f'set as active deal</a>.</p>'
         f'<div class="ck-kpi-grid">{kpi_cards}</div>'
         if kpi_cards else
+        anchor_html +
         f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'
         f'No profile metrics yet. '
         f'<a href="/import" style="color:{PALETTE["text_link"]};">Edit deal profile</a>.</p></div>'
