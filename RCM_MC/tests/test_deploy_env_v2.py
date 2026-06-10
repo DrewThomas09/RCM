@@ -1,13 +1,13 @@
 """Test the App-Service deploy-readiness behaviors landed in cycle 10.
 
 These pin the small operational guarantees needed for a clean
-Azure App Service deploy — distinct from the Docker-VM deploy
-covered by ``test_azure_deploy.py``:
+hosted-PaaS deploy compat — distinct from the Docker-VM deploy
+covered by ``test_deploy_vm.py``:
 
 - ``LOG_LEVEL`` env var configures the rcm_mc logger.
-- ``demo.py`` auto-binds ``0.0.0.0`` when Azure App Service env
+- ``demo.py`` auto-binds ``0.0.0.0`` when legacy PaaS env markers
   vars (WEBSITE_HOSTNAME / WEBSITES_PORT) are present.
-- ``/static/*`` responses carry ``Cache-Control`` so Azure CDN /
+- ``/static/*`` responses carry ``Cache-Control`` so a CDN /
   browser cache spare the origin on every page load.
 - Session + CSRF cookies set the right flag posture (HttpOnly,
   SameSite=Lax, Secure-only-on-HTTPS).
@@ -80,8 +80,8 @@ class LogLevelEnvTests(unittest.TestCase):
         self.assertEqual(self._reload_with("BOGUS"), logging.INFO)
 
 
-class AzureHostDetectionTests(unittest.TestCase):
-    """demo.py auto-binds 0.0.0.0 when Azure App Service env present."""
+class PaasHostDetectionTests(unittest.TestCase):
+    """demo.py auto-binds 0.0.0.0 when legacy PaaS env markers are present."""
 
     def _reload_demo(self):
         import sys
@@ -106,16 +106,16 @@ class AzureHostDetectionTests(unittest.TestCase):
             demo = self._reload_demo()
             self.assertEqual(demo.HOST, "127.0.0.1")
 
-    def test_azure_website_hostname_triggers_bind_all(self):
+    def test_website_hostname_triggers_bind_all(self):
         with _env(
             RCM_MC_HOST=None,
-            WEBSITE_HOSTNAME="rcm-mc.azurewebsites.net",
+            WEBSITE_HOSTNAME="legacy-paas.example.net",
             WEBSITES_PORT=None,
         ):
             demo = self._reload_demo()
             self.assertEqual(demo.HOST, "0.0.0.0")
 
-    def test_azure_websites_port_triggers_bind_all(self):
+    def test_websites_port_triggers_bind_all(self):
         with _env(
             RCM_MC_HOST=None,
             WEBSITE_HOSTNAME=None,
@@ -124,10 +124,10 @@ class AzureHostDetectionTests(unittest.TestCase):
             demo = self._reload_demo()
             self.assertEqual(demo.HOST, "0.0.0.0")
 
-    def test_explicit_rcm_mc_host_overrides_azure_default(self):
+    def test_explicit_rcm_mc_host_overrides_paas_default(self):
         with _env(
             RCM_MC_HOST="10.0.0.5",
-            WEBSITE_HOSTNAME="rcm-mc.azurewebsites.net",
+            WEBSITE_HOSTNAME="legacy-paas.example.net",
         ):
             demo = self._reload_demo()
             self.assertEqual(demo.HOST, "10.0.0.5")
@@ -252,7 +252,7 @@ class SessionCookieFlagsTests(unittest.TestCase):
 class CSRFSecretEnvTests(unittest.TestCase):
     """RCM_MC_CSRF_SECRET env var sources the CSRF HMAC secret.
 
-    Lets Azure App Service Configuration persist the secret across
+    Lets a hosted platform's configuration persist the secret across
     container restarts so partners stay logged in across deploys.
     Documented Phase-3 limitation in CLAUDE.md is that sessions
     invalidate on restart in the no-env mode; this test class pins
@@ -302,14 +302,14 @@ class CSRFSecretEnvTests(unittest.TestCase):
             self.assertEqual(secret, boundary.encode("utf-8"))
 
 
-class AzureManifestTests(unittest.TestCase):
-    """deploy/azure-app-service.json carries every required env var."""
+class EnvManifestTests(unittest.TestCase):
+    """deploy/app-env.json carries every required env var."""
 
     def _load_manifest(self):
         import json
         import pathlib
         here = pathlib.Path(__file__).parent.parent
-        manifest_path = here / "deploy" / "azure-app-service.json"
+        manifest_path = here / "deploy" / "app-env.json"
         with manifest_path.open() as f:
             return json.load(f)
 

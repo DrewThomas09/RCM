@@ -1,6 +1,6 @@
 # scripts/
 
-Shell scripts for power users. The everyday workflow is `python demo.py` (local) and `vm_setup.sh` (Azure deploy) — these scripts are for analysts who want to drive the full feature surface from the command line.
+Shell scripts for power users. The everyday workflow is `python demo.py` (local) and `vm_setup.sh` (VM deploy) — these scripts are for analysts who want to drive the full feature surface from the command line.
 
 | Script | Purpose |
 |--------|---------|

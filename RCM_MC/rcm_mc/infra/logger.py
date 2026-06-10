@@ -7,7 +7,7 @@ Usage in any module:
 
 Log level is configurable via the ``LOG_LEVEL`` environment variable
 (``DEBUG`` / ``INFO`` / ``WARNING`` / ``ERROR`` / ``CRITICAL``); when
-unset or unrecognised, falls back to ``INFO``. This lets Azure App
+unset or unrecognised, falls back to ``INFO``. This lets a hosted
 Service Configuration tighten verbosity in production without a
 code change.
 """

@@ -1853,7 +1853,7 @@ def _sanitize_profile_margins(profile: Dict[str, Any]) -> Dict[str, Any]:
 def _resolve_csrf_secret() -> bytes:
     """Source the HMAC secret used for CSRF tokens.
 
-    When ``RCM_MC_CSRF_SECRET`` is set in the environment (Azure App
+    When ``RCM_MC_CSRF_SECRET`` is set in the environment (hosted
     Service Configuration is the supported path), the secret is taken
     from there so it persists across container restarts — partners
     stay logged in across deploys. Required length: 32+ chars; an
@@ -2085,9 +2085,9 @@ class RCMHandler(BaseHTTPRequestHandler):
     # old form tokens (but sessions survive via the server_secret
     # mismatch check below).
     #
-    # Cycle 11 (Azure deploy-readiness): when ``RCM_MC_CSRF_SECRET``
+    # Cycle 11 (deploy-readiness): when ``RCM_MC_CSRF_SECRET``
     # is set in the environment, the secret is sourced from there
-    # instead of ``secrets.token_bytes`` so Azure App Service can
+    # instead of ``secrets.token_bytes`` so a hosted deploy can
     # persist it across container restarts. This stops partners from
     # being kicked back to the login screen on every deploy. Required
     # length: 32+ chars. Anything shorter falls back to the ephemeral
@@ -2466,7 +2466,7 @@ class RCMHandler(BaseHTTPRequestHandler):
     def _is_https(self) -> bool:
         """True when the request reached us over TLS.
 
-        Heroku, Azure, and every reverse-proxy deployment terminates
+        Caddy on the droplet — like every reverse-proxy deployment — terminates
         TLS at the edge and forwards the origin hop as plain HTTP —
         detection via ``X-Forwarded-Proto: https`` is the canonical
         way to tell. Direct TLS connections (none in this deployment
@@ -2730,7 +2730,7 @@ class RCMHandler(BaseHTTPRequestHandler):
 
         Static UI assets (design tokens, marketing CSS, etc.) are
         immutable per deploy and CDN-friendly — we send a one-hour
-        ``Cache-Control: public, max-age=3600`` so Azure CDN /
+        ``Cache-Control: public, max-age=3600`` so a CDN /
         browser cache spare the origin on every page load.
         """
         import pathlib
@@ -3396,7 +3396,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             # both a marketing surface AND a dashboard entry point
             # depending on auth state.
             #
-            # Web deployments (Heroku/Azure) usually want the new
+            # Hosted web deployments usually want the new
             # private-app /dashboard as the home — set
             # ``RCM_MC_HOMEPAGE=dashboard`` to redirect "/" there.
             home = (os.environ.get("RCM_MC_HOMEPAGE") or "").strip().lower()
@@ -3744,6 +3744,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
+        # CIM Cross-Check — management claims vs independent HCRIS estimates.
+        if path == "/diligence/cim-crosscheck":
+            from .ui.cim_crosscheck_page import render_cim_crosscheck
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            fmt = (_qs.get("format") or [""])[0]
+            out = render_cim_crosscheck(_qs)
+            if fmt == "memo":
+                return self._send_text(out)
+            if fmt == "csv":
+                return self._send_text(out, content_type="text/csv; charset=utf-8")
+            return self._send_html(out)
         # CMS X-Ray — universal provider diligence scanner. Resolves a
         # CCN/provider-id/name across every live CMS vertical, benchmarks it
         # (reusing cross_sector + investable_evidence), and renders a
@@ -6935,6 +6946,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_header("Location", target)
             self.end_headers()
             return
+        if path == "/pipeline/rollup":
+            from .ui.rollup_builder_page import render_rollup_builder
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            out = render_rollup_builder(_qs)
+            if (_qs.get("format") or [""])[0] == "csv":
+                return self._send_text(out, content_type="text/csv; charset=utf-8")
+            return self._send_html(out)
         if path == "/pipeline/bridge":
             return self._route_portfolio_bridge()
         if path == "/fund-learning":

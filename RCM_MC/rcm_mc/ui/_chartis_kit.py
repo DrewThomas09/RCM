@@ -183,6 +183,7 @@ _SUB_NAV = {
         {"label": "Deal Risk",           "href": "/deal-risk-scores"},
         {"label": "Deal-Flow Heatmap",   "href": "/deal-flow-heatmap"},
         {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
+        {"label": "Roll-Up Builder",     "href": "/pipeline/rollup"},
     ],
     "library": [
         {"label": "Deal Library",        "href": "/deal-library"},
@@ -246,6 +247,7 @@ _SUB_NAV = {
         {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
         {"label": "CMS X-Ray",          "href": "/diligence/xray"},
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
+        {"label": "CIM Cross-Check",    "href": "/diligence/cim-crosscheck"},
         {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
         {"label": "Cliff Calendar",     "href": "/diligence/cliff-calendar"},
         {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
@@ -396,6 +398,7 @@ _NAV_DESC = {
     "/diligence/deal": "Deal profile & identity", "/diligence/ingest": "835/837 ingestion",
     "/diligence/benchmarks": "Peer benchmark grid", "/diligence/xray": "CMS provider X-Ray",
     "/diligence/hcris-xray": "HCRIS hospital X-Ray", "/diligence/qoe-memo": "Quality-of-earnings memo",
+    "/diligence/cim-crosscheck": "CIM claims vs public data",
     "/diligence": "Every diligence surface →",
 }
 
@@ -7171,6 +7174,8 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "benchmarks",    "title": "Benchmarks",         "route": "/diligence/benchmarks"},
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
     {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
+    {"id": "cim-crosscheck", "title": "CIM Cross-Check · Variance engine", "route": "/diligence/cim-crosscheck"},
+    {"id": "rollup-builder", "title": "Roll-Up Builder · Pro-forma platform", "route": "/pipeline/rollup"},
     {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
     {"id": "value-create",  "title": "Value Creation",     "route": "/diligence/value"},
     {"id": "risk-bench",    "title": "Risk Workbench",     "route": "/diligence/risk-workbench?demo=steward"},

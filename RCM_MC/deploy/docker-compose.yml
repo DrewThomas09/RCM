@@ -1,6 +1,6 @@
 version: "3.9"
 
-# Azure VM deploy — RCM-MC origin + optional Caddy TLS terminator.
+# Docker-VM deploy — RCM-MC origin + optional Caddy TLS terminator.
 #
 # DOMAIN unset:
 #   Caddy won't start (it's gated on ${DOMAIN:?...}). `docker compose

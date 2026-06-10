@@ -227,7 +227,7 @@ Conventions for a new chart helper:
 | `tools/v5_fidelity_audit.py` | Per-renderer chartis-grade scoring. `--md docs/V5_FIDELITY_REPORT.md` to refresh the leaderboard. |
 | `tools/bulk_add_intros.py` | Mechanical addition of `editorial_intro` kwarg to existing `chartis_shell` calls. |
 | `tools/migrate_inline_cells.py` | Mechanical rewrite of inline-styled `<td>` cells to `ck_data_cell` calls. |
-| `tools/azure_smoke.py` | Post-Azure-deploy verification — `/healthz` + `/login` round-trip + `/app` chrome assertion. |
+| `tools/deploy_smoke.py` | Post-deploy verification (pedesk.app / any deploy URL) — `/healthz` + `/login` round-trip + `/app` chrome assertion. |
 
 ## Authoring conventions
 

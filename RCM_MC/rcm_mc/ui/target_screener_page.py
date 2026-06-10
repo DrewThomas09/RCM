@@ -2376,9 +2376,19 @@ def _screen_compare(qs, ck) -> str:
     if missing:
         miss = (f'<p class="ck-section-body" style="margin:8px 0 0;">Not found in any '
                 f'live universe: {_h.escape(", ".join(missing))}.</p>')
+    # Hand the basket straight to the Roll-Up Builder when it's all hospitals
+    # — the pro-forma combine only has HCRIS math behind it for that vertical.
+    rollup_link = ""
+    hosp_ccns = [c for c, r in cols if r.get("vertical") == "hospitals"]
+    if len(hosp_ccns) >= 2:
+        rollup_link = (
+            f' <a class="ck-link" href="/pipeline/rollup?ccns='
+            f'{",".join(_h.escape(c) for c in hosp_ccns)}">'
+            f'Roll-up these {len(hosp_ccns)} → pro-forma platform</a> ·')
     return (
         f'<p class="ck-section-body" style="margin:0 0 8px;">Comparing {len(cols)} '
-        f'target(s){" across " + str(len(verticals)) + " verticals" if cross else ""}. '
+        f'target(s){" across " + str(len(verticals)) + " verticals" if cross else ""}.'
+        f'{rollup_link} '
         'Real CMS data; “—” = not reported.</p>'
         '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
         'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'

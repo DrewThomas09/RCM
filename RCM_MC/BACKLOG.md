@@ -1,0 +1,26 @@
+# BACKLOG — scored items (rubric: Chartis×3 + PE-cred×3 + data-realism×2 + UX×2 + effort⁻¹×1)
+
+Each item lists: score / rationale / verification plan. Re-groomed every refill.
+
+| # | Item | Score | Verification plan |
+|---|---|---|---|
+| 1 | ✅ DONE — Azure→DO deploy purge (user-flagged) | — | grep sweep + 68 tests + deploy run green (IMPROVEMENT_LOG #1) |
+| 2 | **P2 CIM Cross-Check vertical slice** — claim entry (market size $, provider count, margin %, payer mix %, volume) → independent HCRIS/universe estimates → variance table w/ green≤10/yellow≤25/red flags + drill-to-source + memo export. Hospital subsector, one state. | 43 | Fabricate claims from real TX data ±7/18/40% → exactly green/yellow/red fire; every estimate row links source; memo exports; pytest unit tests on variance math; screenshot |
+| 3 | **P7 Roll-Up Scenario Builder slice** — pick 2–3 real HCRIS CCNs in one state → combined volumes, NPR, payer blend, state share + HHI before/after, antitrust note >Δ200 | 40 | Hand-check aggregate math vs the 3 single-facility rows; HHI delta recomputed by hand; screenshot; tests on the combine math |
+| 4 | **P4 percentile chip** — reusable ck_peer_percentile(value, dist) "p78 vs TX hospitals (n=412)" + sparkline; wire into deal quick-view + CIM estimates | 36 | Hand-check 3 facilities' percentile placement vs raw distribution; tests on percentile math incl. ties/NaN |
+| 5 | **P11 Data Quality dashboard** — one screen: registry sources × vintage, rows, null-rate on key fields, gap census (reuse gap_fill_registry), pages-consuming | 34 | Numbers match `rcm-mc data gaps` + 2 independent spot-checks; screenshot |
+| 6 | **P8b facility→rule exposure** — join provider type → applicable rules from regulatory_calendar; exposure panel on X-Ray with rule dates + source links | 33 | One hospital + one SNF-ish CCN map to correct rule sets; every headline cites its rule URL; tests on the join |
+| 7 | **P13 insight-bullet primitive** — template+significance-guard engine (suppress <0.5pp deltas); apply to /portfolio + state market page; copy-to-clipboard | 31 | 10 bullets read against panels: zero unsupported claims; guard test (tiny delta → no bullet) |
+| 8 | **P1 deal switcher** — active-deal context in nav (cookie/session), screener/X-Ray/market pre-scope to deal geography; deal home links back | 31 | Create real-CCN deal, confirm 3 modules open pre-scoped; tests on context carry |
+| 9 | **B in-UI model card** — holdout coverage + calibration summary for ridge+conformal on /methodology + predictive screener footer ("90% conformal band covered 89.3% on 2024 holdout") | 30 | Numbers reproduced by a checked-in script; never claims AI/LLM; test asserts wording |
+| 10 | **H demo-deal realism** — rebuild 1 of 5 seeded demo deals on a real named CCN (real HCRIS metrics as observed_metrics; ENTERED→ACTUAL relabel where sourced) | 29 | Seeded deal's metrics match HCRIS row for that CCN; provenance chip names CCN; walker clean |
+| 11 | **P12 entity jump** — palette: type CCN/hospital name → jump to X-Ray/profile scoped | 27 | 5 entities by partial name + by CCN land correctly; palette tests |
+| 12 | **P5 exhibit wrapper v1** — ck_exhibit(title, units, source, n) wrapper + per-deal numbering registry; apply to 3 chartable panels; print-CSS for deck capture | 27 | Export/print 3 exhibits: title/units/source/numbering present (golden-file test) |
+| 13 | **P9 vintage-diff alerts slice** — snapshot saved-screen results; on data change emit diff alerts ("2 facilities changed ownership") | 26 | Simulated vintage subset → diffs detected + accurately described; tests |
+| 14 | **est_ar_days "?" explainer** + bounds chip on predictive screener (gap from earlier pass) | 22 | "?" present; formula matches code; tests |
+| 15 | **A empty-state sweep** — top-10 pages with ?state=ZZ / empty db: consistent ck_empty_state, no dead controls | 20 | Walker variant with empty db; screenshots |
+
+## Groomed-out / blocked
+- Medicaid S-3 re-ingest + POS bed backfill: NETWORK-GATED (sources named in
+  gap_fill_registry; loaders runnable when egress opens).
+- ONC CHPL HCIT wiring: NETWORK-GATED (api named in FEATURE_MATRIX E).

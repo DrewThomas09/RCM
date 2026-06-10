@@ -1,7 +1,7 @@
 """DB schema-migration idempotency proof.
 
-Pins the cycle-12 Azure deploy-readiness row: every container
-restart on Azure App Service triggers ``build_server`` which calls
+Pins the cycle-12 deploy-readiness row: every service
+restart (systemd on the droplet, or any container platform) triggers ``build_server`` which calls
 ``infra.migrations.run_pending`` on the persistent ``portfolio.db``.
 That second-and-subsequent boot must produce **identical schema** to
 the first — otherwise restart would corrupt the live DB or crash
@@ -135,7 +135,7 @@ class CreateTableConventionTests(unittest.TestCase):
 
     A new table added without the guard would raise on the second
     boot when the table already exists from the first. Catches the
-    Azure restart-corruption scenario at PR-time, not in production.
+    restart-corruption scenario at PR-time, not in production.
     """
 
     def _walk_create_tables(self):
@@ -193,7 +193,7 @@ class CreateTableConventionTests(unittest.TestCase):
             if not guarded
         ]
         # The convention must hold across the entire package — any
-        # one violation can break Azure restart.
+        # one violation can break a service restart.
         self.assertEqual(
             unguarded, [],
             "Found CREATE TABLE statements without IF NOT EXISTS:\n"

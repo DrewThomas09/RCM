@@ -1,9 +1,18 @@
-# Deploying to `pedesk.app`
+# Deploying to `pedesk.app` (legacy Docker-VM path)
 
-Step-by-step walkthrough for a clean `hotfix-security-on-v5` deploy to
-the `pedesk.app` domain. Targets a fresh Azure Ubuntu 22.04 LTS VM
-(public IP, ports 80/443/8080 open). One-shot: ~10 minutes from
-`ssh` to live HTTPS.
+> **This is NOT how production deploys today.** `pedesk.app` runs on a
+> DigitalOcean Droplet under `pedesk.service` (systemd, behind Caddy),
+> auto-deployed by GitHub Actions on every merge to `main` — see
+> [`docs/DIGITALOCEAN_DEPLOYMENT.md`](../docs/DIGITALOCEAN_DEPLOYMENT.md)
+> (the handoff doc) and [`docs/AUTODEPLOY.md`](../docs/AUTODEPLOY.md)
+> (the merge → deploy pipeline). The former Azure deploy is fully retired.
+>
+> Keep reading only if you need the self-contained **docker-compose**
+> alternative on a generic Ubuntu VM (e.g. a scratch staging box).
+
+Step-by-step walkthrough for a clean docker-compose deploy of RCM-MC on a
+fresh Ubuntu 22.04 LTS VM (public IP, ports 80/443/8080 open). One-shot:
+~10 minutes from `ssh` to live HTTPS.
 
 The deploy stack is already in this directory:
 

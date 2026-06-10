@@ -42,28 +42,28 @@ from rcm_mc.server import build_server
 from rcm_mc.deals.watchlist import star_deal
 
 
-# Azure App Service injects ``PORT`` (and may set ``WEBSITES_PORT``)
+# Hosted PaaS platforms inject ``PORT`` (legacy App Service also set ``WEBSITES_PORT``)
 # at container start; honour both before falling back to the dev
 # default. ``RCM_MC_HOST`` is our explicit override for binding —
-# Azure expects 0.0.0.0 (the container's loopback isn't reachable
-# by the platform's HTTP front-end). Detect Azure via the canonical
+# A platform front-end expects 0.0.0.0 (the container's loopback isn't reachable
+# by the platform's HTTP front-end). Detect a PaaS via the legacy
 # ``WEBSITE_HOSTNAME`` env var that App Service always sets, and
 # default HOST to 0.0.0.0 in that case so a partner shipping an
-# Azure deploy doesn't have to remember the binding step. Local dev
-# (no Azure env vars) still binds 127.0.0.1 so a casual demo.py run
+# PaaS deploy doesn't have to remember the binding step. Local dev
+# (no PaaS env markers) still binds 127.0.0.1 so a casual demo.py run
 # isn't surprise-exposed on the LAN.
 PORT = int(
     os.environ.get("PORT")
     or os.environ.get("WEBSITES_PORT")
     or 8765
 )
-_RUNNING_ON_AZURE = bool(
+_RUNNING_ON_PAAS = bool(
     os.environ.get("WEBSITE_HOSTNAME")
     or os.environ.get("WEBSITES_PORT")
 )
 HOST = (
     os.environ.get("RCM_MC_HOST")
-    or ("0.0.0.0" if _RUNNING_ON_AZURE else "127.0.0.1")
+    or ("0.0.0.0" if _RUNNING_ON_PAAS else "127.0.0.1")
 )
 USERNAME = "demo"
 PASSWORD = "DemoPass!1"
