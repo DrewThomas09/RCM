@@ -29,7 +29,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 16 | ✅ DONE — deal-context slice 2 (cookie prefills CIM state/ccn + rollup basket) | — | LOG #12 |
 | 17 | **Roll-up exhibit row on deal page** — link saved roll-up scenarios to deals (deal_overrides or notes) | 24 | scenario persists per deal; reload shows it |
 | 18 | ✅ DONE — DQ staleness chips (CURRENT/AGING/STALE by cadence; SNF amber) | — | LOG #15 |
-| 19 | **route_walker in CI** — wire scripts/route_walker.py as a smoke job artifact on deploy gate | 22 | CI config parses; job runs in act-less dry run |
+| 19 | ✅ DONE — route_walker --discover + nan/None-leak gate, wired into weekly sweep | — | LOG #16 |
 | 20 | ✅ DONE — screener hospital row → CIM action (state+ccn scoped) | — | LOG #13 |
 
 ## Groomed-out / blocked

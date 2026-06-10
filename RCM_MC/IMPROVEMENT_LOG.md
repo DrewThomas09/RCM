@@ -337,3 +337,23 @@ existing 5 DQ tests green. Screenshot: HCRIS green CURRENT NORMAL, Home
 Health/Hospice gray DATE UNSTATED, SNF amber AGING (Apr 2026, monthly).
 **Persona check**: portfolio-ops user glances at the DQ screen and sees at a
 glance which feed is aging (SNF) without reading every cadence note.
+
+## Item 16 — route_walker self-contained --discover + wired into CI sweep (07:55Z)
+**What**: Made scripts/route_walker.py self-sufficient — a --discover flag
+pulls the exact-match GET page routes from RCMHandler._discover_all_routes()
+(no pre-written /tmp routes file), and --fail-on-leak adds a nan/None-leak
+gate on top of the existing traceback gate (exit non-zero on either). Wired a
+"Route-walker smoke" step into .github/workflows/regression-sweep.yml (the
+WEEKLY sweep, never the per-push deploy gate): it boots an open-auth server,
+walks every discovered route, surfaces pass/fail + log tail to the job
+summary, and uploads route_walk.tsv as an artifact. Placed off the deploy
+path by design so it can never block a pedesk.app deploy.
+**Verify**: tests/test_route_walker_discover.py (3: discovery includes the
+new cim/rollup/data-quality/portfolio routes and excludes /api; core routes
+render 200 with no traceback/leak); ran --discover --fail-on-leak against a
+live local server → 161/162 ok, 0 tracebacks, 0 leaks, exit 0 (the 1 non-2xx
+is /analysis on an empty DB, expected); regression-sweep.yml parses as valid
+YAML.
+**Persona check**: the deploy discipline the user asked for ("do multiple
+checks") now has an automated weekly backstop that catches a 500/leak on any
+page, with an artifact to inspect.

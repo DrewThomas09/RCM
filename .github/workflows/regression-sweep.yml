@@ -67,6 +67,38 @@ jobs:
             -q --tb=short 2>&1 | tee six_session.log
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Route-walker smoke (no tracebacks / no nan-None leaks)
+        id: route_walker
+        if: always()
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          # Boot an open-auth server (same shape as the test harness) and walk
+          # every discovered GET page route, asserting no page 500s with a
+          # traceback and no literal nan/None leaks into rendered HTML. Routes
+          # are discovered from the server module, so the catalog can't drift.
+          python - <<'PY' &
+          import os, tempfile, threading, time
+          from rcm_mc.server import build_server
+          db = os.path.join(tempfile.mkdtemp(), "walk.db")
+          srv, _ = build_server(port=8866, host="127.0.0.1", db_path=db, auth=None)
+          threading.Thread(target=srv.serve_forever, daemon=True).start()
+          time.sleep(0.5)
+          # keep the process alive for the walker
+          time.sleep(180)
+          PY
+          SRV_PID=$!
+          # wait for readiness
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8866/healthz >/dev/null 2>&1 && break
+            sleep 1
+          done
+          python scripts/route_walker.py --base http://127.0.0.1:8866 \
+            --discover --fail-on-leak --out route_walk.tsv 2>&1 | tee route_walk.log
+          rc=$?
+          kill "$SRV_PID" 2>/dev/null || true
+          exit $rc
+
       - name: Run full suite
         id: full_sweep
         if: always()
@@ -113,6 +145,16 @@ jobs:
             else
               echo ":x: **Regression in a six-session module.** See log below."
             fi
+            echo ""
+            echo "### Route-walker smoke"
+            if [ "${{ steps.route_walker.outcome }}" = "success" ]; then
+              echo ":white_check_mark: No tracebacks or nan/None leaks across discovered routes."
+            else
+              echo ":x: **Route-walker flagged a traceback or nan/None leak.** See log below."
+            fi
+            echo '```'
+            tail -10 route_walk.log 2>/dev/null || echo "(no route-walker log)"
+            echo '```'
             echo ""
             echo "### Six-session log tail"
             echo '```'
@@ -180,4 +222,6 @@ jobs:
           path: |
             six_session.log
             full_sweep.log
+            route_walk.log
+            route_walk.tsv
           retention-days: 30

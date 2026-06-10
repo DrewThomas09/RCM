@@ -64,18 +64,38 @@ def walk(base: str, routes: list[str]) -> list[dict]:
     return rows
 
 
+def _discover_routes() -> list[str]:
+    """Pull the exact-match GET page routes from the server itself, so the
+    walker is self-contained (no pre-written routes file). Used by --discover
+    and the CI smoke job — keeps the catalog automatic and drift-free."""
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from rcm_mc.server import RCMHandler
+    return list(RCMHandler._discover_all_routes())
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="http://127.0.0.1:8830")
     ap.add_argument("--routes", default="/tmp/routes_all.txt")
     ap.add_argument("--out", default="/tmp/route_walk.tsv")
+    ap.add_argument("--discover", action="store_true",
+                    help="discover routes from the server module instead of "
+                         "reading --routes (self-contained; used in CI)")
+    ap.add_argument("--fail-on-leak", action="store_true",
+                    help="also exit non-zero if any page leaks a literal "
+                         "nan/None into rendered HTML")
     args = ap.parse_args()
 
-    with open(args.routes) as f:
-        routes = [ln.strip() for ln in f
-                  if ln.strip() and not ln.startswith("/api")
-                  and not ln.strip().rstrip("/").endswith("/X")
-                  and "webhook" not in ln]
+    if args.discover:
+        raw = _discover_routes()
+    else:
+        with open(args.routes) as f:
+            raw = [ln.strip() for ln in f]
+    routes = [ln for ln in raw
+              if ln and not ln.startswith("/api")
+              and not ln.rstrip("/").endswith("/X")
+              and "webhook" not in ln]
     # de-dup trailing-slash twins
     seen, ordered = set(), []
     for r in routes:
@@ -94,9 +114,18 @@ def main() -> int:
     n_ok = sum(1 for r in rows if r["status"] == 200)
     n_err = sum(1 for r in rows if r["status"] not in (200, 302, 303))
     n_tb = sum(1 for r in rows if r.get("traceback"))
+    n_leak = sum(1 for r in rows if r.get("nan_leak") or r.get("none_leak"))
     print(f"walked {len(rows)} routes: {n_ok} ok, {n_err} non-2xx/3xx, "
-          f"{n_tb} tracebacks -> {args.out}")
-    return 0 if n_tb == 0 else 1
+          f"{n_tb} tracebacks, {n_leak} nan/None leaks -> {args.out}")
+    if n_tb:
+        print("FAIL: tracebacks on " + ", ".join(
+            r["route"] for r in rows if r.get("traceback")), file=sys.stderr)
+    if args.fail_on_leak and n_leak:
+        print("FAIL: nan/None leaks on " + ", ".join(
+            r["route"] for r in rows
+            if r.get("nan_leak") or r.get("none_leak")), file=sys.stderr)
+    bad = n_tb or (args.fail_on_leak and n_leak)
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":
