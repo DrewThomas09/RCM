@@ -69,6 +69,37 @@ def _flag_chip(flag: str) -> str:
             f'white-space:nowrap;">{label}</span>')
 
 
+def _market_backdrop(state: str) -> str:
+    """State payer-demand backdrop for the market being checked (Census/ACS):
+    65+ share, uninsured rate, median income. Lets a consultant read
+    management's market-size / payer-mix claims against the real demand
+    profile. Empty when the state has no ACS row (no fabricated backdrop)."""
+    try:
+        from ..data.county_demographics import demographics_state
+        d = demographics_state(state)
+    except Exception:  # noqa: BLE001 — additive, never breaks the page
+        return ""
+    if not d:
+        return ""
+
+    def _pct(v):
+        try:
+            return f"{float(v)*100:.1f}%"
+        except (TypeError, ValueError):
+            return "—"
+    a65, unins, inc = (d.get("pct_age_65_plus"), d.get("uninsured_rate"),
+                       d.get("median_household_income"))
+    inc_s = f"${float(inc):,.0f}" if inc not in (None, "") else "—"
+    return (
+        '<p class="ck-section-body" style="font-size:11px;margin:8px 0 0;'
+        'color:var(--sc-text-dim,#6a7480);">Market demand backdrop '
+        f'({_html.escape(state)}, Census/ACS): 65+ <strong>{_pct(a65)}</strong> '
+        f'· uninsured <strong>{_pct(unins)}</strong> · median income '
+        f'<strong>{inc_s}</strong>. Read the market-size and payer claims '
+        'against this — a high-65+/high-uninsured market caps the realistic '
+        'commercial mix. State-level ACS, not the target\'s patients.</p>')
+
+
 def _pctile_chip(row) -> str:
     """Where the CLAIM sits in the in-scope distribution — a tail claim
     (≤p10 / ≥p90) is a finding even when the variance flag is green, so the
@@ -197,7 +228,8 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + ck_kpi_block("Green", f'{c["green"]}')
             + ck_kpi_block("Yellow", f'{c["yellow"]}')
             + ck_kpi_block("Red / unverifiable", f'{c["red"]} / {c["unverifiable"]}')
-            + '</div>')
+            + '</div>'
+            + _market_backdrop(state))
         rows_html = ""
         for r in result.rows:
             est = r.estimate
