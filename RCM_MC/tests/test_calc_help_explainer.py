@@ -53,5 +53,17 @@ class PredictiveScreenerCalcHelpTests(unittest.TestCase):
         self.assertIn("border-radius: 50%", html)
 
 
+class ThesisCardCalcHelpTests(unittest.TestCase):
+    def test_predicted_kpis_have_calc_help(self):
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        from rcm_mc.ui.thesis_card import render_thesis_card
+        df = _get_latest_per_ccn()
+        html = render_thesis_card(str(df.iloc[0]["ccn"]), df)
+        # Investability score, EBITDA uplift, Margin Δ — all three modeled.
+        self.assertGreaterEqual(html.count("ck-calc-help"), 3)
+        self.assertIn("five equally-weighted pillars", html)
+        self.assertTrue("RCM EBITDA bridge" in html or "7 levers" in html)
+
+
 if __name__ == "__main__":
     unittest.main()
