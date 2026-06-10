@@ -751,3 +751,15 @@ against the target's own RCM data"). An all-real cohort gets no caveat.
 **Verify**: OpportunityBasisCaveatTests (caveat for illustrative cohort,
 absent for real); portfolio/anchor suites 17 passed. This closes the honesty
 loop I opened with W2-15.
+
+## W2-21 — /market-data card regressed to 303 (full-suite catch) (18:35Z)
+**Found by**: the window-2 full suite (15,093 passed / 2 failed). One failure
+was real: W2-1's /market-data → /map redirect turned the carded /market-data
+A-Z tile into a 303, and test_every_az_card_returns_200 requires 200. (The
+other failure, a guide-invariant, passed in isolation — a full-run
+cross-test-state flake.)
+**Fixed**: /market-data and /market-data/map now BOTH render the national-map
+page directly (not a redirect), so the card returns 200 AND the Guide/
+related-route links resolve. Updated the W2-1 test to assert a 200 render.
+**Verify**: tools-index cards 21 passed; guide-invariant + market-data + guide
+suites 56 passed.
