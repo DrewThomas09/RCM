@@ -27,7 +27,7 @@ from ..diligence.payer_stress import (
     default_hospital_mix, run_payer_stress,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+    P, chartis_shell, ck_fmt_currency, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge, ck_source_purpose,
 )
 from .power_ui import (
@@ -1114,7 +1114,7 @@ def render_payer_stress_page(
         title=f"Payer concentration cliff · {html.escape(target_name)}",
         meta=(
             f"{len(mix)} PAYERS · {report.n_paths} PATHS · "
-            f"{horizon}-YR HORIZON · ${total_npr/1e6:,.0f}M NPR"
+            f"{horizon}-YR HORIZON · {ck_fmt_currency(total_npr)} NPR"
             + (f" · {report.unclassified_share*100:.0f}% UNCLASSIFIED"
                if report.unclassified_share > 0.05 else "")
         ),
