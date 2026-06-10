@@ -793,3 +793,13 @@ fabricated backdrop). State-level, labeled as such (not the target's
 patients).
 **Verify**: MarketBackdropTests (renders on results, absent without results,
 empty for unknown state); CIM + demographics suites green.
+
+## W2-24 — community health-burden line on the X-Ray demographics panel (19:35Z)
+**What**: The service-area demographics panel gains a state-level CDC PLACES
+chronic-disease burden line (diabetes · obesity · fair/poor health) — a
+structural acute/specialty demand signal. Reuses the existing
+cdc_places_agg.places_equity_state loader; labeled state-level (coarser than
+the county block above it), NaN measures skipped. Panel code tag now
+CENSUS/ACS · CDC PLACES.
+**Verify**: HealthBurdenLineTests (renders diabetes/obesity, CDC PLACES tag,
+state-level label); X-Ray + demographics suites 302 passed.

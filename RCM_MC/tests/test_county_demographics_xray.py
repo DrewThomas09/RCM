@@ -48,3 +48,18 @@ class XrayPanelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HealthBurdenLineTests(unittest.TestCase):
+    """The demographics panel adds a state-level CDC PLACES chronic-disease
+    burden line (a real acute-demand signal), labeled state-level and
+    skipping NaN measures."""
+
+    def test_burden_line_renders_with_disease_prevalence(self):
+        from rcm_mc.ui.hcris_xray_page import render_hcris_xray_page
+        h = render_hcris_xray_page({"ccn": ["450358"]})
+        self.assertIn("Community health burden", h)
+        self.assertIn("diabetes", h)
+        self.assertIn("obesity", h)
+        self.assertIn("CDC PLACES", h)
+        self.assertIn("state-level", h)   # granularity stated
