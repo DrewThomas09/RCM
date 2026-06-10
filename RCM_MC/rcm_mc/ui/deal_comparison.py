@@ -37,6 +37,19 @@ _RADAR_METRICS = [
     "cost_to_collect", "clean_claim_rate", "case_mix_index",
 ]
 
+# Concise axis labels — the full metric names live in the column table above;
+# the radar is a glanceable shape. The verbose ``metric.replace("_"," ")``
+# labels ("net collection rate", "case mix index") overflowed the SVG viewBox
+# and rendered clipped ("net coll", "x index").
+_RADAR_AXIS_LABELS = {
+    "denial_rate": "Denial",
+    "days_in_ar": "AR days",
+    "net_collection_rate": "Net coll.",
+    "cost_to_collect": "Cost/$",
+    "clean_claim_rate": "Clean claim",
+    "case_mix_index": "CMI",
+}
+
 # Editorial categorical series colors (one per compared deal) —
 # navy / teal / amber / red, distinct but on-palette.
 _PALETTE = ["#0b2341", "#1F7A75", "#b8732a", "#b5321e"]
@@ -93,7 +106,8 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
         labels += (
             f'<text x="{lx:.0f}" y="{ly:.0f}" '
             f'text-anchor="{anchor}" fill="#7a8699" '
-            f'font-size="10">{m.replace("_", " ")}</text>'
+            f'font-size="10">{_RADAR_AXIS_LABELS.get(m, m.replace("_", " "))}'
+            f'</text>'
         )
 
     # Polygons.
@@ -116,8 +130,10 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
             f'stroke="{color}" stroke-width="1.5"/>'
         )
 
+    # viewBox padded horizontally so even the longest axis label ("Clean
+    # claim") sits inside the canvas instead of being clipped at the edge.
     return (
-        f'<svg viewBox="0 0 300 300" width="300" height="300" '
+        f'<svg viewBox="-55 -10 410 320" width="360" height="300" '
         f'style="display:block;margin:0 auto;">'
         f'{labels}{polygons}</svg>'
     )

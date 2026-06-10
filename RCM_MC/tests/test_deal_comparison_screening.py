@@ -322,3 +322,28 @@ class TestRoutes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RadarAxisLabelTests(unittest.TestCase):
+    """Radar axis labels were the verbose metric.replace('_',' ') strings
+    that overflowed the 300-wide SVG viewBox and rendered clipped ('net
+    coll', 'x index'). Concise labels + a padded viewBox keep them inside."""
+
+    def _radar(self):
+        from rcm_mc.analysis.packet import DealAnalysisPacket
+        from rcm_mc.ui.deal_comparison import _render_radar
+        a = DealAnalysisPacket(deal_id="a", deal_name="Alpha")
+        b = DealAnalysisPacket(deal_id="b", deal_name="Bravo")
+        return _render_radar([a, b])
+
+    def test_concise_labels_used_not_verbose(self):
+        svg = self._radar()
+        self.assertIn(">CMI<", svg)            # not "case mix index"
+        self.assertIn(">Net coll.<", svg)      # not "net collection rate"
+        self.assertNotIn("case mix index", svg)
+        self.assertNotIn("net collection rate", svg)
+
+    def test_viewbox_padded_for_labels(self):
+        svg = self._radar()
+        # widened/offset viewBox so edge labels aren't clipped at x=0/300
+        self.assertIn('viewBox="-55 -10 410 320"', svg)
