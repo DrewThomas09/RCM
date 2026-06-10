@@ -17,7 +17,7 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell, ck_basis_badge, ck_kpi_block, ck_next_section,
     ck_page_title, ck_panel, ck_source_link, ck_value_anchor,
-    margin_is_plausible,
+    margin_is_plausible, margin_is_plausible_series,
 )
 
 _EXPLAINER_CSS = """
@@ -276,7 +276,14 @@ def render_predictive_screener(
     if total_matches > 0 and "est_uplift" in display.columns:
         total_uplift = float(filtered["est_uplift"].sum())
         avg_denial = float(filtered["est_denial"].mean()) if "est_denial" in filtered.columns else 0
-        avg_margin = float(filtered["operating_margin"].dropna().mean()) if "operating_margin" in filtered.columns else 0
+        # Summary margin excludes out-of-band junk-opex filings (the agreed
+        # -40%…+30% band) so the headline isn't dragged by artifacts — e.g.
+        # -6.49% raw vs -3.82% on real margins.
+        if "operating_margin" in filtered.columns:
+            _mser = filtered["operating_margin"]
+            avg_margin = float(_mser[margin_is_plausible_series(_mser)].dropna().mean())
+        else:
+            avg_margin = 0
     else:
         total_uplift = 0
         avg_denial = 0

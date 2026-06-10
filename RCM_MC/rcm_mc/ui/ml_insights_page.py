@@ -314,7 +314,14 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
     n_hospitals = len(hcris_df)
     n_clusters = len(cluster_profiles)
     n_distressed = sum(1 for d in distressed_list if d["distress_prob"] > 0.5)
-    avg_margin = float(hcris_df.get("operating_margin", pd.Series(dtype=float)).dropna().median()) if "operating_margin" in df_clustered.columns else 0
+    # Median margin over the agreed plausible band (excludes junk-opex
+    # artifacts), consistent with the X-Ray / command center / market data.
+    if "operating_margin" in df_clustered.columns:
+        from ._chartis_kit import margin_is_plausible_series
+        _mser = hcris_df.get("operating_margin", pd.Series(dtype=float))
+        avg_margin = float(_mser[margin_is_plausible_series(_mser)].dropna().median())
+    else:
+        avg_margin = 0
 
     # Cycle 39 — port hero KPI strip + add provenance on AUC and
     # distress count.
