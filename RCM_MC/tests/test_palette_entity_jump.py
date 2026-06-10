@@ -36,6 +36,16 @@ class EntityJumpMarkupTests(unittest.TestCase):
         self.assertIn("/diligence/hcris-xray?ccn=", shell)
         self.assertIn("data-entity-jump", shell)
 
+    def test_js_offers_name_search_for_text_queries(self):
+        # P12b — a non-CCN query of 4+ chars routes to the CMS X-Ray name
+        # resolver (existing endpoint). Pure digit strings that aren't a CCN
+        # offer nothing (neither a name nor a CCN).
+        shell = chartis_shell("<p>x</p>", "T")
+        self.assertIn("/diligence/xray?q=", shell)
+        self.assertIn("raw.length >= 4", shell)
+        self.assertIn("Search providers for", shell)
+        self.assertIn("!/^\\d+$/.test(raw)", shell)
+
     def test_entity_item_excluded_from_text_filter_loop(self):
         # The static-item text filter must skip the synthetic row (it's driven
         # by the CCN branch, not text matching) — guard the early-continue.

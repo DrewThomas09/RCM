@@ -439,3 +439,17 @@ green confirmation ("Scenario saved to Cypress Crossing Health") → note
 visible on /deal/ccf (screenshots rollup_save_btn.png, rollup_saved.png).
 **Persona check**: VP models a 3-hospital platform, hits save, and the IC
 prep deal page now carries the scenario with every figure traceable.
+
+## Item 20 — P12b palette name-search (12:32Z)
+**What**: Completes the entity-jump: a non-CCN palette query of ≥4 chars now
+offers "→ Search providers for 'q'" routing to /diligence/xray?q=… — the
+EXISTING CMS X-Ray name resolver (cross-vertical name/CCN search), so zero
+new backend and no inlined entity list. 6-digit CCN keeps the direct X-Ray
+jump; short queries and non-CCN digit strings offer nothing.
+**Verify**: headless-browser drive of the static shell: "memorial hermann" →
+/diligence/xray?q=memorial%20hermann (visible), "450358" → hcris-xray, "mem"
+hidden, "12345" hidden. Resolver itself verified live (q=memorial+hermann →
+MEMORIAL HERMANN results). tests/test_palette_entity_jump.py extended (5);
+palette suites 33 passed.
+**Persona check**: consultant types a hospital name from a call sheet into
+⌘K and lands on the resolver's ranked matches — both halves of P12 now work.
