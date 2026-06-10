@@ -155,5 +155,34 @@ class PipelineAddBedsOverflowTests(unittest.TestCase):
             srv.shutdown(); srv.server_close(); th.join(timeout=5)
 
 
+class OwnerHeaderEncodingTests(unittest.TestCase):
+    """/my/<owner> and /owner/<owner> 500'd on a non-latin-1 owner (emoji
+    in the URL): the ValueError text echoed the owner into send_error's
+    reason phrase, which the HTTP layer encodes as latin-1. Reason phrase
+    is now ASCII-clean → a clean 400."""
+
+    def test_emoji_owner_returns_400_not_500(self):
+        import socket as _s, tempfile as _tf, threading as _th, time as _t
+        import urllib.parse as _up, urllib.request as _u2, urllib.error as _ue
+        from rcm_mc.server import build_server as _bs
+        sk = _s.socket(); sk.bind(("127.0.0.1", 0))
+        port = sk.getsockname()[1]; sk.close()
+        tmp = _tf.mkdtemp()
+        srv, _ = _bs(port=port, host="127.0.0.1",
+                     db_path=os.path.join(tmp, "p.db"), auth=None)
+        th = _th.Thread(target=srv.serve_forever, daemon=True)
+        th.start(); _t.sleep(0.2)
+        try:
+            for base in ("/my/", "/owner/"):
+                u = f"http://127.0.0.1:{port}{base}" + _up.quote("\U0001f489")
+                try:
+                    code = _u2.urlopen(u, timeout=20).status
+                except _ue.HTTPError as e:
+                    code = e.code
+                self.assertEqual(code, 400, f"{base} -> {code}")
+        finally:
+            srv.shutdown(); srv.server_close(); th.join(timeout=5)
+
+
 if __name__ == "__main__":
     unittest.main()

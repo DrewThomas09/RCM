@@ -690,3 +690,15 @@ suites 472 passed; screenshot shows $5.13B + label.
 **Persona check**: portfolio-ops user opens the book and sees $5.13B of real
 filed revenue across the cohort instead of five blanks — the anchor work from
 Item 10 now actually shows up where partners look.
+
+## W2-16 — /my and /owner 500 on non-latin-1 owner (16:55Z)
+**Found by**: 165-request GET fuzz over 15 more routes — /my/💉 500'd.
+**Root cause**: deals_by_owner raises ValueError whose text echoes the owner;
+the handler passed str(exc) to send_error's REASON PHRASE, which the HTTP
+layer encodes latin-1 → UnicodeEncodeError → 500 (the 400 path caused a 500).
+Two sites (/my, /owner). **Fixed**: ASCII-clean static reason phrase. Re-fuzz
+165/165 clean. Also cross-validated the two HHI implementations (rollup _hhi
+vs radius_hhi) agree exactly (3,888.89 hand-calc) — no divergence in the
+headline antitrust number.
+**Verify**: OwnerHeaderEncodingTests (/my + /owner emoji → 400 not 500);
+HHI cross-check; suite 6 passed.
