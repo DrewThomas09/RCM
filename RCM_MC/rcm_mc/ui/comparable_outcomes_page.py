@@ -415,7 +415,11 @@ def render_comparable_outcomes_page(
 
     # Cycle 49 — KPI strip with provenance.
     n_comp = summary.get("n_comparables", 0) if summary else 0
-    moic_p50 = summary.get("moic_p50") if summary else None
+    # The summary nests percentiles under summary["moic"]["median"|"p25"|…]
+    # (see the outcome strip above) — the old flat summary.get("moic_p50")
+    # never existed, so this headline KPI silently showed "—" while the
+    # identical figure rendered fine lower down. P50 == median.
+    moic_p50 = (summary.get("moic") or {}).get("median") if summary else None
     win_rate = summary.get("win_rate_2_5x") if summary else None
     comp_value = ck_provenance_tooltip(
         "Comparable deals matched",

@@ -702,3 +702,15 @@ vs radius_hhi) agree exactly (3,888.89 hand-calc) — no divergence in the
 headline antitrust number.
 **Verify**: OwnerHeaderEncodingTests (/my + /owner emoji → 400 not 500);
 HHI cross-check; suite 6 passed.
+
+## W2-17 — comparable-outcomes "Comp P50 MOIC" headline silently blank (17:15Z)
+**Found by**: visual review of /diligence/comparable-outcomes — the headline
+KPI strip showed "COMP P50 MOIC —" while the outcome strip below showed
+MEDIAN MOIC 2.40x. P50 == median, so the headline was failing to compute.
+**Root cause**: it read a non-existent flat summary.get("moic_p50"); the
+percentiles nest under summary["moic"]["median"|"p25"|"p75"] (as the working
+strip uses). Fixed to read summary["moic"]["median"]. Now reads 2.40x,
+consistent with the strip below.
+**Verify**: test_comp_p50_moic_kpi_matches_median (headline carries a 2-dp
+MOIC value on a populated comp set); comparable-outcomes suite 25 passed;
+screenshot shows 2.40x.
