@@ -123,7 +123,11 @@ def render_deal_quick_view(
         f'<p class="ck-section-body" style="margin:0 0 8px;font-size:11px;'
         f'color:var(--sc-text-dim,#6a7480);">Deal profile metrics'
         f'{ck_basis_badge("entered")} — '
-        f'<a href="/import" style="color:{PALETTE["text_link"]};">edit via Import</a>.</p>'
+        f'<a href="/import" style="color:{PALETTE["text_link"]};">edit via Import</a> · '
+        f'<a href="/deal-context?set={html.escape(deal_id)}&return=/deal/{html.escape(deal_id)}" '
+        f'style="color:{PALETTE["text_link"]};" title="Carry this deal as ambient '
+        f'context: every module link in the bar opens pre-scoped to it.">'
+        f'set as active deal</a>.</p>'
         f'<div class="ck-kpi-grid">{kpi_cards}</div>'
         if kpi_cards else
         f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'

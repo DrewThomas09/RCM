@@ -82,3 +82,19 @@ pages read it — maintained next to the loaders' registry entries);
 (4) registered-but-not-wired sources from data/vendor/source_registry.csv
 with their vintages. All numbers computed at render from the same loaders
 the product uses — the dashboard can't drift from reality.
+
+## P1 — Deal Workspace slice 1: active-deal context (this session)
+**Design.** The deal becomes ambient context without threading a parameter
+through 100+ chartis_shell call sites: activation endpoint
+`/deal-context?set=<deal_id>&return=<path>` resolves the deal's profile
+(name + state + ccn when present), writes two cookies —
+`pedesk_active_deal` (id) and `pedesk_active_deal_meta` (URL-encoded JSON
+{id,name,state,ccn}) — and 303s back. A small shell JS shim (house-approved
+vanilla pattern) reads the cookies on every page and renders a slim
+active-deal bar under the topbar: deal name → deal home, plus PRE-SCOPED
+module links built from the meta (screener ?state=, HCRIS X-Ray ?ccn=,
+CIM cross-check ?state=&ccn=, roll-up). `?set=` with empty value clears.
+Cookie-only UI state (no server data mutation) → GET+303 is acceptable
+(same class as the existing ?limit= prefs); logged in DECISIONS.md.
+Deal quick-view + workbench get "Set active deal" affordances.
+Slice 2 (later): modules read the cookie server-side to default their forms.

@@ -138,3 +138,25 @@
 - users: PE VP (user 2) — the reimbursement-risk question every IC memo
   opens with; Chartis (user 1) gets the sourced rule list for the policy
   section.
+
+## Item 7 — P1 Deal Workspace slice 1: ambient active-deal context
+- when: 2026-06-10T04:35–04:48Z (iteration 7)
+- what: the deal becomes ambient context WITHOUT threading a parameter
+  through 100+ shell call sites. /deal-context?set=<id>&return=<path>
+  resolves the profile (name/state/ccn when present), writes
+  pedesk_active_deal + _meta cookies (URL-encoded JSON), 303s back; an
+  open-redirect guard pins return to same-site paths. A shell JS shim (house
+  vanilla pattern) renders a slim ACTIVE DEAL bar on every chrome page from
+  the cookies, with PRE-SCOPED links: Deal home, Screener (?state= when the
+  profile has one), X-Ray (?ccn= when present), CIM cross-check. Clear ✕
+  expires the cookies. 'Set Active Deal' affordances on the live deal-detail
+  action row, deal dashboard, quick-view, and workbench hero.
+- verification: 303 + both cookies on set; Max-Age=0 on clear; open-redirect
+  rejected for //host, https://, and non-/ paths (tested); shim ships on
+  chrome pages, absent on bare pages (login) — 5 tests. Live E2E: visiting
+  the activation URL then landing on /target-screener renders the bar
+  ("ACTIVE DEAL · CYPRESS CROSSING HEALTH" + module links + clear) —
+  screenshot /tmp/session_shots/item7_active_deal_bar.png. ccf has no
+  ccn/state in its profile → bar honestly omits X-Ray and scope (by design).
+- users: all three — context-carrying is the engagement/deal organizing
+  principle (Part III); kills per-screen re-entry of market/target.

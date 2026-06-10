@@ -10899,6 +10899,48 @@ def _resolve_sub_section(active_nav: Optional[str]) -> Optional[str]:
     return None
 
 
+def _active_deal_bar_js() -> str:
+    """P1 — ambient active-deal bar, rendered client-side from the
+    pedesk_active_deal(+_meta) cookies set by /deal-context.
+
+    A cookie-driven shim (the house vanilla-JS pattern) so the bar appears on
+    every shell page WITHOUT threading deal context through 100+ call sites.
+    The meta cookie carries {id,name,state,ccn}, so the bar can offer
+    PRE-SCOPED module links (screener by state, X-Ray by CCN, CIM cross-check
+    by both, roll-up). Empty/absent cookie → renders nothing. The bar is a
+    container div + script; styling stays within the editorial tokens."""
+    return (
+        '<div id="ck-deal-bar"></div>'
+        "<script>(function(){"
+        "function gc(n){var m=document.cookie.match('(?:^|; )'+n+'=([^;]*)');"
+        "return m?decodeURIComponent(m[1]):null;}"
+        "var id=gc('pedesk_active_deal'); if(!id) return;"
+        "var meta={}; try{meta=JSON.parse(gc('pedesk_active_deal_meta')||'{}');}catch(e){}"
+        "var name=(meta.name||id), st=(meta.state||''), ccn=(meta.ccn||'');"
+        "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
+        "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
+        "var links=[['Deal home','/deal/'+encodeURIComponent(id)]];"
+        "links.push(['Screener'+(st?' · '+st:''),"
+        "'/target-screener?vertical=hospitals'+(st?'&state='+st:'')]);"
+        "if(ccn){links.push(['X-Ray · '+ccn,'/diligence/hcris-xray?ccn='+ccn]);}"
+        "links.push(['CIM cross-check',"
+        "'/diligence/cim-crosscheck'+(st||ccn?('?state='+st+(ccn?'&ccn='+ccn:'')):'')]);"
+        "var html='<div style=\"display:flex;gap:14px;align-items:center;"
+        "padding:5px 24px;background:var(--sc-parchment-2,#efe9dd);"
+        "border-bottom:1px solid var(--sc-rule,#d6cfc0);font-family:var(--sc-mono);"
+        "font-size:10.5px;\">'"
+        "+'<span style=\"letter-spacing:0.08em;color:var(--sc-teal-ink,#0f3d39);"
+        "font-weight:600;\">ACTIVE DEAL · '+esc(name).toUpperCase()+'</span>';"
+        "for(var i=0;i<links.length;i++){html+='<a class=\"ck-link\" "
+        "style=\"font-size:10.5px;\" href=\"'+links[i][1]+'\">'+esc(links[i][0])+'</a>';}"
+        "html+='<a class=\"ck-link\" style=\"font-size:10.5px;margin-left:auto;"
+        "color:var(--sc-text-dim,#6a7480);\" "
+        "href=\"/deal-context?set=&return='+encodeURIComponent("
+        "location.pathname+location.search)+'\">clear ✕</a></div>';"
+        "document.getElementById('ck-deal-bar').innerHTML=html;"
+        "})();</script>")
+
+
 def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     """Editorial topbar mirroring chartis.com chrome.
 
@@ -11321,6 +11363,7 @@ def chartis_shell(
     # show_chrome=False: bare pages (login / forgot) without topnav
     chrome_html = (
         f"{_topbar(active_nav, user_initials)}"
+        f"{_active_deal_bar_js()}"
         f"{_breadcrumbs(breadcrumbs)}"
     ) if show_chrome else ""
     # subtitle: render under the page heading inside <main>. Note —

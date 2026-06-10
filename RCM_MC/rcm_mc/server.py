@@ -892,6 +892,11 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         f'{star_btn}'
         f'<a href="/deal/{qd}?download=1" class="ck-deal-action">'
         '↓ Download HTML</a>'
+        # P1 — carry this deal as ambient context; the active-deal bar then
+        # offers pre-scoped module links on every page.
+        f'<a href="/deal-context?set={qd}&return=/deal/{qd}" '
+        'class="ck-deal-action" title="Module links in the bar open '
+        'pre-scoped to this deal on every page.">★ Set Active Deal</a>'
         '</div>'
     )
     # Health KPI value: coloured number carrying the component
@@ -3821,6 +3826,51 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_response(HTTPStatus.MOVED_PERMANENTLY)
             self.send_header("Location", target)
             self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        if path == "/deal-context":
+            # P1 — activate/clear the ambient deal context. Cookie-only UI
+            # state (no server data mutation), so GET+303 is acceptable —
+            # same class as the existing display-pref params. The meta cookie
+            # carries {id,name,state,ccn} so the shell's active-deal bar can
+            # build PRE-SCOPED module links without per-page server changes.
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            deal_id = (_qs.get("set") or [""])[0][:64]
+            ret = (_qs.get("return") or ["/portfolio"])[0]
+            # open-redirect guard: only same-site paths
+            if not ret.startswith("/") or ret.startswith("//"):
+                ret = "/portfolio"
+            self.send_response(HTTPStatus.SEE_OTHER)
+            self.send_header("Location", ret)
+            if deal_id:
+                import json as _json
+                from urllib.parse import quote as _q
+                meta = {"id": deal_id, "name": deal_id, "state": "", "ccn": ""}
+                try:
+                    store = PortfolioStore(self.config.db_path)
+                    prof = self._load_deal_profile(deal_id) or {}
+                    meta["name"] = str(prof.get("name") or deal_id)[:80]
+                    meta["state"] = str(prof.get("state") or "")[:2].upper()
+                    meta["ccn"] = str(prof.get("ccn") or "")[:10]
+                except Exception:  # noqa: BLE001 — context is best-effort
+                    pass
+                payload = _q(_json.dumps(meta, separators=(",", ":")))
+                self.send_header(
+                    "Set-Cookie",
+                    f"pedesk_active_deal={_q(deal_id)}; Max-Age=2592000; "
+                    "Path=/; SameSite=Lax")
+                self.send_header(
+                    "Set-Cookie",
+                    f"pedesk_active_deal_meta={payload}; Max-Age=2592000; "
+                    "Path=/; SameSite=Lax")
+            else:
+                self.send_header(
+                    "Set-Cookie",
+                    "pedesk_active_deal=; Max-Age=0; Path=/; SameSite=Lax")
+                self.send_header(
+                    "Set-Cookie",
+                    "pedesk_active_deal_meta=; Max-Age=0; Path=/; SameSite=Lax")
+            self._send_security_headers()
             self.end_headers()
             return
         if path == "/data-quality":
