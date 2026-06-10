@@ -593,3 +593,15 @@ renders as $13.48B per house style. Screenshot local_market.png.
 **Persona check**: consultant opens the target X-Ray and immediately sees
 it shares a campus with three $1B+ systems — the single most important
 commercial fact about that asset, previously absent from the page.
+
+## W2-9 — P9 slice-2: row-level diff detail view (14:50Z)
+**What**: The saved-screens diff line gains a "detail" link →
+?view=saved&diff=<id> renders a "What changed — <screen>" panel: ENTERED /
+LEFT lists (facility names linked to their X-Ray, capped 25) and a CHANGED
+table with field + old→new values (capped 50). Empty diff states the honesty
+thresholds explicitly so "no changes" is a verifiable claim, not a shrug.
+Owner-scoped by construction (only the owner's screens are iterated);
+hostile saved-screen titles stay escaped (test with an XSS payload).
+**Verify**: DiffDetailViewTests (4: rows with old→new + drill links;
+empty-diff threshold statement; hostile title escaped; diff line links to
+detail). Screener + snapshot suites 175 passed.

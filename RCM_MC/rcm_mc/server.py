@@ -5367,7 +5367,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             # WITH a snapshot pay the recompute; capped to the first 10 so a
             # pathological list can't stall the page.
             _snap_info = {}
+            _diff_detail = None
             if (_tsq.get("view") or [""])[0] == "saved" and _ts_owner:
+                _diff_id = self._clamp_int(
+                    (_tsq.get("diff") or ["0"])[0], default=0,
+                    min_v=0, max_v=10**9)
                 try:
                     from .portfolio.screen_snapshots import (
                         diff_results, diff_summary, latest_snapshot,
@@ -5386,11 +5390,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                             "taken_at": _snap["taken_at"],
                             "summary": diff_summary(_d),
                         }
+                        # P9 slice-2: ?diff=<id> opens the row-level detail
+                        # for that screen (owner-scoped by construction —
+                        # only the owner's screens are iterated).
+                        if _diff_id and int(_s["id"]) == _diff_id:
+                            _diff_detail = {
+                                "screen_id": int(_s["id"]),
+                                "title": _s["title"],
+                                "taken_at": _snap["taken_at"],
+                                "diff": _d,
+                            }
                 except Exception:  # noqa: BLE001 — diff is best-effort chrome
                     _snap_info = {}
+                    _diff_detail = None
             return self._send_html(render_target_screener(
                 _tsq, saved=_ts_saved, owner=_ts_owner,
-                snap_info=_snap_info))
+                snap_info=_snap_info, diff_detail=_diff_detail))
         if path == "/source":
             from .ui.source_page import render_source_page
             from .analysis.deal_sourcer import THESIS_LIBRARY, find_thesis_matches
