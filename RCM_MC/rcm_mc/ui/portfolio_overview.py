@@ -101,6 +101,11 @@ def _compute_regression(deals: pd.DataFrame) -> str:
         ss_res = np.sum((y - y_hat) ** 2)
         ss_tot = np.sum((y - y.mean()) ** 2)
         r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+        # With n deals ≤ features+1 the OLS fit is (near-)exact by
+        # construction — R² ≈ 100% says nothing about a real relationship.
+        # Show the honest caveat instead of a confident perfect score.
+        dof = len(df) - (len(available) + 1)
+        overfit = dof < 2
 
         rows = ""
         for i, feat in enumerate(available):
@@ -125,14 +130,28 @@ def _compute_regression(deals: pd.DataFrame) -> str:
             f'<span class="cad-section-code">REG</span></div>'
             f'<div style="display:flex;gap:12px;margin-bottom:12px;">'
             f'<div class="cad-kpi" style="flex:1;">'
-            f'<div class="cad-kpi-value">{r2:.0%}</div>'
-            f'<div class="cad-kpi-label">R-Squared</div></div>'
+            + (
+                # Degenerate fit: too few residual degrees of freedom for the
+                # R² to mean anything — flag it rather than print "100%".
+                f'<div class="cad-kpi-value" style="color:{PALETTE["warning"]};" '
+                f'title="With {len(df)} deals and {len(available)} features the '
+                f'OLS fit is (near-)exact by construction — R² here does not '
+                f'indicate a real relationship. Add more deals to trust it.">'
+                f'{r2:.0%}&nbsp;⚠</div>'
+                if overfit else
+                f'<div class="cad-kpi-value">{r2:.0%}</div>'
+            )
+            + f'<div class="cad-kpi-label">R-Squared</div></div>'
             f'<div class="cad-kpi" style="flex:1;">'
             f'<div class="cad-kpi-value">{len(df)}</div>'
             f'<div class="cad-kpi-label">Deals Analyzed</div></div>'
             f'</div>'
             f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
-            f'Standardized OLS coefficients. Positive = increases denial rate (bad).</p>'
+            f'Standardized OLS coefficients. Positive = increases denial rate (bad).'
+            + (f' <span style="color:{PALETTE["warning"]};">Directional only: '
+               f'{len(df)} deals vs {len(available)} features leaves too few '
+               f'degrees of freedom for a reliable fit.</span>' if overfit else '')
+            + '</p>'
             f'<table class="cad-table"><thead><tr>'
             f'<th>Variable</th><th>Coefficient</th><th>Impact</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div>'
