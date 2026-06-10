@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
-    ck_section_intro, ck_signal_badge, margin_is_plausible,
+    ck_section_intro, ck_signal_badge, margin_is_plausible, ck_gap_dot,
 )
 from .data_public.state_profile_page import state_context_panel
 from ._provenance_tooltip import provenance_tooltip
@@ -336,7 +336,8 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         )
         + ck_kpi_block(
             "Licensed Beds",
-            provenance_tooltip(label="Licensed Beds", value=f"{beds_disp}", graph=prov_graph, metric_key="beds"),
+            provenance_tooltip(label="Licensed Beds", value=f"{beds_disp}", graph=prov_graph, metric_key="beds")
+            + (ck_gap_dot("Bed count not reported on Worksheet S-3 (line 14 col 2) of this filing") if beds <= 0 else ""),
         )
         + ck_kpi_block(
             "Revenue per Bed",
@@ -377,7 +378,9 @@ margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
         payer_mix = ck_panel(
             '<p style="font-family:var(--cad-mono);font-size:12px;'
             f'color:{PALETTE["text_muted"]};margin:0;">'
-            'Payer-day mix not reported in this HCRIS filing.</p>',
+            'Payer-day mix not reported in this HCRIS filing.'
+            f'{ck_gap_dot("Payer-day mix not reported on Worksheet S-3 of this filing")}'
+            '</p>',
             title="Payer Mix",
         )
 
