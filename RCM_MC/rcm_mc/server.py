@@ -5163,6 +5163,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/bayesian/hospital/"):
             bay_ccn = path.replace("/bayesian/hospital/", "").strip("/")
             return self._route_bayesian_profile(bay_ccn)
+        if path == "/market-data" or path == "/market-data/":
+            # The bare slug 404'd while the Guide context, DQ consumer list,
+            # and 5+ related_routes all point at it — partners got a dead
+            # link. The national map is the canonical landing.
+            return self._redirect("/market-data/map")
         if path == "/market-data/map":
             return self._route_market_data_page()
         if path.startswith("/market-data/state/"):
@@ -13765,7 +13770,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         raw_ccns = (form.get("ccns", "") or "").strip()[:300]
         ccns = [c.strip() for c in raw_ccns.split(",") if c.strip()][:12]
         try:
-            ga_pct = max(0.0, min(0.30, float(form.get("ga_pct") or 0)))
+            import math as _math
+            _g = float(form.get("ga_pct") or 0)
+            # nan slips through the clamp (min(0.30, nan) → 0.30) — a
+            # non-finite synergy assumption must not become the max.
+            ga_pct = max(0.0, min(0.30, _g)) if _math.isfinite(_g) else 0.0
         except ValueError:
             ga_pct = 0.0
         back_qs = urllib.parse.urlencode(

@@ -511,3 +511,16 @@ Real bugs found & fixed by the verification discipline: provenance-tooltip
 CSS injection, corpus-seed 90× perf, session-username resolution (owner
 features invisible to ALL logged-in users), regex entity-swallow in note
 linkify. Full suite: 15,019+ passing, 0 failing at last gate.
+
+## W2-1/2/3 — bug-hunt sweep 1: dead /market-data link + non-finite 500s (13:00Z)
+**Found by**: browser console sweep over 20 routes (one 404) + a 150-request
+hostile-param fuzz over 10 routes (4× 500).
+**Fixed**:
+(1) /market-data 404'd while the Guide context, DQ consumer list and 5+
+related_routes point at the bare slug → now redirects to /market-data/map.
+(2) CIM Cross-Check 500'd on nan/Infinity/1e309 params (float() accepts
+them; int(inf) in the form echo raised) → _f_or_none rejects non-finite.
+(3) Roll-up ga_pct=nan silently became the MAX synergy (min(0.30,nan)→0.30)
+→ non-finite treated as no assumption, both in the page and save-to-deal.
+**Verify**: re-fuzz 150/150 CLEAN; NonFiniteInputTests (2), NonFiniteGaPctTests
+(1), MarketDataRedirectTests (1); suites 27+4 passed.

@@ -92,5 +92,37 @@ class CurrentUsernameTests(unittest.TestCase):
         self.assertEqual(ctx.exception.code, 401)
 
 
+class MarketDataRedirectTests(unittest.TestCase):
+    """/market-data was a dead link: the Guide context, DQ consumer list and
+    5+ related_routes point at the bare slug, but only /map and /state/<ST>
+    were served. It now redirects to the canonical national map."""
+
+    def test_bare_slug_redirects_to_map(self):
+        import socket as _s, tempfile as _tf, threading as _th, time as _t
+        import urllib.request as _u2
+        from rcm_mc.server import build_server as _bs
+        sk = _s.socket(); sk.bind(("127.0.0.1", 0))
+        port = sk.getsockname()[1]; sk.close()
+        tmp = _tf.mkdtemp()
+        srv, _ = _bs(port=port, host="127.0.0.1",
+                     db_path=os.path.join(tmp, "m.db"), auth=None)
+        th = _th.Thread(target=srv.serve_forever, daemon=True)
+        th.start(); _t.sleep(0.2)
+        try:
+            class _NR(_u2.HTTPRedirectHandler):
+                def redirect_request(self, *a, **k):
+                    return None
+            op = _u2.build_opener(_NR)
+            try:
+                r = op.open(f"http://127.0.0.1:{port}/market-data", timeout=10)
+                code, loc = r.status, r.headers.get("Location", "")
+            except _u2.HTTPError as e:
+                code, loc = e.code, e.headers.get("Location", "")
+            self.assertIn(code, (301, 302, 303))
+            self.assertEqual(loc, "/market-data/map")
+        finally:
+            srv.shutdown(); srv.server_close(); th.join(timeout=5)
+
+
 if __name__ == "__main__":
     unittest.main()

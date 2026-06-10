@@ -161,3 +161,24 @@ class PageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NonFiniteInputTests(unittest.TestCase):
+    """float() accepts 'nan'/'inf'/'1e309'; these 500'd the page (int(inf)
+    in the form echo) and would poison variance math. A non-finite claim is
+    no claim — page renders, value dropped."""
+
+    def test_nonfinite_params_render_without_500(self):
+        from rcm_mc.ui.cim_crosscheck_page import render_cim_crosscheck
+        for v in ("nan", "NaN", "Infinity", "1e309", "-inf"):
+            h = render_cim_crosscheck({
+                "state": ["TX"], "min_beds": [v], "max_beds": [v],
+                "c_market_size_dollars": [v], "ccn": [v]})
+            self.assertIn("CIM Cross-Check", h)   # page rendered
+
+    def test_nonfinite_claim_is_skipped_not_flagged(self):
+        from rcm_mc.ui.cim_crosscheck_page import _claims_from_qs
+        claims = _claims_from_qs({"c_market_size_dollars": ["inf"],
+                                  "c_provider_count": ["400"]})
+        self.assertNotIn("market_size_dollars", claims)
+        self.assertEqual(claims["provider_count"], 400.0)

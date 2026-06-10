@@ -41,9 +41,14 @@ def _f_or_none(qs: Dict[str, List[str]], key: str) -> Optional[float]:
     if not raw:
         return None
     try:
-        return float(raw)
+        f = float(raw)
     except ValueError:
         return None
+    # float() happily accepts "nan"/"inf"/"1e309" — non-finite values then
+    # 500 the page (int(inf) in the form echo, OverflowError) and would
+    # poison the variance math. A non-finite claim is no claim.
+    import math
+    return f if math.isfinite(f) else None
 
 
 def _fmt(value: Optional[float], unit: str) -> str:
