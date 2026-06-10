@@ -1,13 +1,14 @@
 # SESSION_STATE — autonomous 8h improvement session
 
 - session_start: 2026-06-10T03:37:46Z
-- latest_timestamp: 2026-06-10T06:42:00Z
-- elapsed: 3h04m (container restarted once ~06:05Z; reconciled, no work lost)
-- iteration: 12 (items 1–12 DONE; ckpt-1 + ckpt-2 LIVE on pedesk.app)
-- current_item: Item 12 done + committed; BRANCH PUSHED (rebased onto origin/main 59f949e, force-with-lease) → checkpoint 3 PR BLOCKED on GitHub MCP re-auth (OAuth URL sent to user) → then deploy verify
-- current_step: awaiting user GitHub OAuth to open checkpoint-3 draft PR; sweep-3 clean (348 ok, 0 tracebacks, no nan/none leaks); item 13 next while waiting
-- branch: claude/sharp-einstein-005lm — pushed @ HEAD includes Item 11+12+fixes+Azure-purge
-- background: dev server :8765 (demo, authed), open-auth server :8766 (b7moqpjwr, for walker/screens)
+- latest_timestamp: 2026-06-10T08:18:00Z
+- elapsed: 4h40m (container restarted once ~06:05Z; reconciled, no work lost)
+- iteration: 17 (items 1–17 DONE; ckpt-1 + ckpt-2 LIVE on pedesk.app)
+- current_item: Items 11–17 DONE + committed + PUSHED to branch. CHECKPOINT-3 PR + live pedesk.app verify BLOCKED on GitHub MCP re-auth (OAuth URL sent to user twice; MCP dropped on container restart).
+- current_step: full suite running (pre-merge gate, /tmp/fullsuite2.log, ~13%); when green + auth returns → open ONE checkpoint-3 draft PR for all of HEAD, merge, verify deploy run + screenshot pedesk.app
+- branch: claude/sharp-einstein-005lm @ 4046a5a — unmerged: ExhibitFactory(11), deal-context prefill(12), screener→CIM(13), AR-days col(14), DQ staleness(15), route_walker CI(16), entity-jump(17) + 7-failure fix batch + Azure→DO purge
+- background: dev server :8765 (demo, authed), open-auth server :8766 (bym8wlepu, walker/screens), full suite (bmogggf1t)
+- NEXT-READY backlog (when unblocked): #13 P9 vintage-diff alerts, #15 empty-state sweep, #17 roll-up persisted per deal
 
 ## Environment facts (verified earlier today, same machine)
 - Network egress 403 everywhere except pypi; WebSearch/WebFetch tools work for research.
