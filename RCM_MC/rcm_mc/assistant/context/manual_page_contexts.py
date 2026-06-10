@@ -11352,7 +11352,9 @@ _MANUAL.extend([
             "Does the CIM's market size hold up against filed revenue?",
             "Is the claimed provider count right for this state?",
             "Which claims are unverifiable from public data?",
-            "How are the variance thresholds (10% / 25%) applied?"],
+            "How are the variance thresholds (10% / 25%) applied?",
+            "How does this differ from the HCRIS X-Ray and the Roll-Up "
+            "Builder — when do I use each?"],
         inputs=["Management's claims as the CIM states them (ENTERED), a "
                 "state scope, optional target CCN and bed-size band."],
         outputs=["Variance table (claim vs independent estimate, flag per "
@@ -11380,7 +11382,7 @@ _MANUAL.extend([
                      "definition."],
         related_routes=["/diligence/hcris-xray", "/target-screener",
                         "/diligence/comparable-outcomes"],
-        metric_ids=["operating_margin", "revenue"],
+        metric_ids=["operating_margin", "revenue", "payer_mix"],
         data_source_ids=["cms_hcris"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
@@ -11399,7 +11401,9 @@ _MANUAL.extend([
             "What does the combined platform look like on filed figures?",
             "Does the combination trip the HHI structural presumption?",
             "How is the payer blend weighted?",
-            "Why is the synergy line missing?"],
+            "Why is the synergy line missing?",
+            "How does this differ from the Antitrust Screener and the CIM "
+            "Cross-Check?"],
         inputs=["A comma-separated CCN list (the Target Screener compare "
                 "basket builds one), optional G&A synergy % (ENTERED "
                 "assumption)."],
@@ -11446,7 +11450,10 @@ _MANUAL.extend([
         common_questions=[
             "Which sources are live and how current are they?",
             "What are the known gaps and their fill plans?",
-            "How bad are the null rates on key fields?"],
+            "How bad are the null rates on key fields?",
+            "What does the freshness chip (CURRENT/AGING/STALE) actually "
+            "measure?",
+            "Why does HCRIS read 'current normal' instead of stale?"],
         inputs=["None — computed live from the bundled loaders, the "
                 "gap-fill registry, and the source registry CSV."],
         outputs=["Wired-source table (rows, vintage, null rates), gap "
@@ -11480,7 +11487,10 @@ _MANUAL.extend([
                          "demos and evaluation."),
         common_questions=["How do I load the demo portfolio?",
                           "Is the demo data real?",
-                          "How do I clear it back out?"],
+                          "How do I clear it back out?",
+                          "Which fields are disclosed vs modeled in the demo "
+                          "deals?",
+                          "Will loading the demo touch my real tracked deals?"],
         inputs=["One-click load/unload actions."],
         outputs=["Seeded demo deals across the console; downloadable "
                  "CSV/JSON of the same corpus."],
@@ -11554,7 +11564,10 @@ _MANUAL.extend([
         common_questions=[
             "How does this country's health spend compare?",
             "What's the capacity picture (beds, workforce)?",
-            "Where does the data come from?"],
+            "Where does the data come from?",
+            "What vintage is each indicator, and can I compare across "
+            "countries safely?",
+            "How does this differ from the US state-level market pages?"],
         inputs=["Country selection (drill to /markets/country/<iso2>)."],
         outputs=["Country profiles and peer comparisons with per-figure "
                  "provenance notes."],
@@ -11586,7 +11599,12 @@ _MANUAL.extend([
         primary_purpose=("Show what public data exists for a question and "
                          "whether it's wired yet."),
         common_questions=["What public sources cover this vertical?",
-                          "Is this source loaded or just cataloged?"],
+                          "Is this source loaded or just cataloged?",
+                          "What's the publication cadence and licence of a "
+                          "given source?",
+                          "How do I request a cataloged source get wired?",
+                          "How does this differ from the CMS Sources page and "
+                          "the Data Quality dashboard?"],
         inputs=["Source selection (drill to /tools/open-data/<id>)."],
         outputs=["Source cards with provenance, cadence, and wiring "
                  "status."],
