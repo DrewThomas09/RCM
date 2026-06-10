@@ -141,3 +141,56 @@ def demographics_for_ccn(ccn: str) -> Dict[str, Any]:
     return _county_by_name().get(
         (c.state.upper().strip(), _norm_county(c.county)), {})
 
+
+def blended_demographics_for_ccns(ccns) -> Dict[str, Any]:
+    """Population-weighted service-area demographics across the counties of a
+    set of facilities (a roll-up platform). Weights each matched county by its
+    population so a big-metro facility dominates appropriately; de-dups
+    counties (two facilities in one county count it once). Returns
+    {pct_age_65_plus, uninsured_rate, median_household_income, population,
+    counties: [names], covered: int, n: int}; empty when none match.
+
+    Honesty: blended ACS over the platform's home counties — a service-area
+    demand profile, not the combined patient panel; coverage (covered/n) is
+    carried so the UI can say how many facilities resolved."""
+    ccns = [str(c) for c in (ccns or [])]
+    seen: set = set()
+    rows = []
+    for ccn in ccns:
+        d = demographics_for_ccn(ccn)
+        if not d:
+            continue
+        key = (str(d.get("state") or ""), str(d.get("county_name") or ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(d)
+    covered = sum(1 for ccn in ccns if demographics_for_ccn(ccn))
+    if not rows:
+        return {"covered": 0, "n": len(ccns), "counties": []}
+
+    def _wavg(field: str):
+        num = den = 0.0
+        for r in rows:
+            try:
+                v = float(r.get(field))
+                w = float(r.get("population"))
+            except (TypeError, ValueError):
+                continue
+            if v != v or w != w or w <= 0:
+                continue
+            num += v * w
+            den += w
+        return (num / den) if den else None
+
+    return {
+        "pct_age_65_plus": _wavg("pct_age_65_plus"),
+        "uninsured_rate": _wavg("uninsured_rate"),
+        "median_household_income": _wavg("median_household_income"),
+        "population": sum(float(r["population"]) for r in rows
+                          if r.get("population")),
+        "counties": [str(r.get("county_name") or "") for r in rows],
+        "covered": covered,
+        "n": len(ccns),
+    }
+

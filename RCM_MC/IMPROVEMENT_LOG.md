@@ -820,3 +820,44 @@ miss-path only) — order-independent and correct for late registration.
 bogus key still unresolved; real keys unaffected); IndexRebuildTests (2) +
 guide-invariant suite 31 passed; the 3 suspected order-trigger files run
 together 50 passed.
+
+## ───────────── WINDOW 2 SUMMARY (through checkpoint 19, 20:00Z) ─────────────
+25 fixes/wins shipped across 15 checkpoints (PRs #1667–1681), each CI-green on
+3.11/3.12/3.14 → merged → DigitalOcean deploy with the public health-check
+gate green (deploys #1635–1649). Combined with window 1 (23 items, ckpts 1–4):
+48 verified-live improvements this session.
+
+BUGS (found by console sweeps, ~600-request hostile-input fuzzing, visual
+review, and a full-suite cross-test-flake hunt):
+- dead /market-data link; CIM/roll-up non-finite-param 500s; /pipeline/add
+  beds-overflow 500; /my & /owner non-latin-1 500; /\ open-redirect bypass;
+  workbench fabricated green $0; bridge-realization in-sample accuracy;
+  comparable-outcomes blank P50 MOIC; clipped compare-radar labels; blank
+  portfolio NPR; session-username never resolving; stale metric-resolver
+  index (flaky invariant + latent prod bug); X-Ray $-format.
+CDD / DATA-INTEGRATION:
+- Local competitive context (25-mi radius geocode×HCRIS join) + radius HHI
+  (DOJ/FTC scale) + one-click local roll-up; service-area county demographics
+  (Census/ACS) + state community-health burden (CDC PLACES) on the X-Ray;
+  CIM claim-percentile chips (+ in the memo) + market-demand backdrop; P9
+  vintage-diff snapshots + row-level detail; portfolio real anchor NPR ($5.13B)
+  with illustrative-denial caveat.
+Full suite: 15,105 passing / 0 failing (flake fixed). Route walker clean
+(162/163, 0 tracebacks/leaks). All deploys green on pedesk.app.
+
+## W2-26 — blended service-area demographics on the roll-up platform (20:20Z)
+**What**: The Roll-Up Builder gains a "Blended service-area demographics"
+exhibit — population-weighted Census/ACS (65+, uninsured, median income)
+across the platform's home counties, de-duped by county, with coverage
+(covered/n facilities geocoded). The combined demand backdrop the pro-forma
+payer mix has to live with. New blended_demographics_for_ccns() helper
+(population-weighted, de-dups counties, empty when none match — never
+fabricated). Exhibit-wrapped (now Exhibit 3) with the correct Census/ACS
+source line (not the factory's HCRIS default).
+**Verify**: blend tests (de-dup Harris+Dallas, population-weight, single-
+county blend == that county, empty on no-match) + panel render; rollup +
+exhibit + demographics suites 15+9 passed. Screenshot: Harris+Dallas, 11.8%
+65+, 23.9% uninsured, $69,496, Exhibit 3, Census/ACS footer.
+**Persona check**: a partner sizing a 3-hospital platform sees the combined
+service area skews 23.9% uninsured — a bad-debt reality for the WHOLE
+platform, on the same page as the HHI and synergy math.
