@@ -2865,6 +2865,38 @@ class RCMHandler(BaseHTTPRequestHandler):
                     break
         set_workspace_mode(mode)
 
+    def _active_deal_meta(self) -> Optional[Dict[str, str]]:
+        """Decode the pedesk_active_deal_meta cookie → {id,name,state,ccn}.
+
+        Set by /deal-context (P1 ambient deal context). Used to PRE-SCOPE
+        diligence forms (CIM Cross-Check, Roll-Up) to the active deal's
+        geography/CCN so a partner who set an active deal doesn't retype it.
+        Best-effort: any decode failure returns None (the form just renders
+        blank), never raises into a route handler.
+        """
+        cookie = self.headers.get("Cookie", "") or ""
+        raw = ""
+        for part in cookie.split(";"):
+            part = part.strip()
+            if part.startswith("pedesk_active_deal_meta="):
+                raw = part.split("=", 1)[1].strip()
+                break
+        if not raw:
+            return None
+        try:
+            import json as _json
+            meta = _json.loads(urllib.parse.unquote(raw))
+        except Exception:  # noqa: BLE001 — cookie is best-effort
+            return None
+        if not isinstance(meta, dict):
+            return None
+        return {
+            "id": str(meta.get("id") or "")[:64],
+            "name": str(meta.get("name") or "")[:80],
+            "state": str(meta.get("state") or "")[:2].upper(),
+            "ccn": str(meta.get("ccn") or "")[:10],
+        }
+
     def _guide_context_route_param(self, parsed) -> Optional[str]:
         """Extract the ?route= value, or None when absent/blank.
 
@@ -3753,6 +3785,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/diligence/cim-crosscheck":
             from .ui.cim_crosscheck_page import render_cim_crosscheck
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            # Deal-context slice 2 — prefill the market/CCN from the active
+            # deal when the partner hasn't typed them, so an activated deal
+            # carries into the cross-check form. Query params always win.
+            _meta = self._active_deal_meta()
+            if _meta:
+                if not (_qs.get("state") or [""])[0] and _meta["state"]:
+                    _qs["state"] = [_meta["state"]]
+                    _qs.setdefault("_prefill_deal", [_meta["name"]])
+                if not (_qs.get("ccn") or [""])[0] and _meta["ccn"]:
+                    _qs["ccn"] = [_meta["ccn"]]
+                    _qs.setdefault("_prefill_deal", [_meta["name"]])
             fmt = (_qs.get("format") or [""])[0]
             out = render_cim_crosscheck(_qs)
             if fmt == "memo":
@@ -7002,6 +7045,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/pipeline/rollup":
             from .ui.rollup_builder_page import render_rollup_builder
             _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            # Deal-context slice 2 — seed the CCN basket with the active
+            # deal's CCN (a roll-up starts from the platform anchor) when
+            # the partner hasn't supplied a list. Query params always win.
+            _meta = self._active_deal_meta()
+            if _meta and _meta["ccn"] and not (_qs.get("ccns") or [""])[0]:
+                _qs["ccns"] = [_meta["ccn"]]
+                _qs.setdefault("_prefill_deal", [_meta["name"]])
             out = render_rollup_builder(_qs)
             if (_qs.get("format") or [""])[0] == "csv":
                 return self._send_text(out, content_type="text/csv; charset=utf-8")

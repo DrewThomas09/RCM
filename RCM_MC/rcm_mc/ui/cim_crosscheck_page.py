@@ -83,6 +83,7 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
     max_beds = _f_or_none(qs, "max_beds")
     claims = _claims_from_qs(qs)
     fmt = (qs.get("format") or [""])[0]
+    prefill_deal = (qs.get("_prefill_deal") or [""])[0].strip()
 
     result: Optional[CrossCheckResult] = None
     if state and claims:
@@ -117,7 +118,13 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'<label {_lbl}>{_html.escape(ct["label"])}'
             f'<input name="c_{ct["key"]}" value="{_html.escape(cur)}" '
             f'placeholder="{_html.escape(ct["hint"])}" {_inp}></label>')
+    prefill_note = (
+        '<p class="ck-section-body" style="margin:0 0 10px;font-size:11px;'
+        'color:var(--sc-teal,#155752);">Pre-scoped to your active deal '
+        f'<strong>{_html.escape(prefill_deal)}</strong> — edit the market or '
+        'CCN to widen the check.</p>') if prefill_deal else ""
     form = ck_panel(
+        prefill_note +
         '<p class="ck-section-body" style="margin:0 0 10px;font-size:11px;'
         'color:var(--sc-text-dim,#6a7480);">Claims are management\'s numbers '
         f'as the CIM states them{ck_basis_badge("entered")} — the engine '
@@ -154,7 +161,10 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             title="How this works")
     else:
         c = result.flag_counts()
-        export_qs = {k: v[0] for k, v in qs.items() if v and v[0]}
+        # Drop internal (underscore-prefixed) keys like _prefill_deal so
+        # they don't leak into the memo/CSV export URLs.
+        export_qs = {k: v[0] for k, v in qs.items()
+                     if v and v[0] and not k.startswith("_")}
         memo_qs = urlencode({**export_qs, "format": "memo"})
         csv_qs = urlencode({**export_qs, "format": "csv"})
         kpis = (

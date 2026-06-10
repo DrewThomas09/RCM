@@ -267,3 +267,20 @@ commit time.
 **Persona check**: Chartis consultant on a readout call prints the variance
 table straight into the appendix — numbered, sourced, vintage-stamped, no
 manual cropping.
+
+## Item 12 — Deal-context slice 2: active-deal cookie pre-scopes diligence forms (06:40Z)
+**What**: The P1 active-deal cookie (pedesk_active_deal_meta = {id,name,state,
+ccn}) now pre-scopes the CIM Cross-Check and Roll-Up forms. New
+RCMHandler._active_deal_meta() decodes the cookie (best-effort, never raises);
+the /diligence/cim-crosscheck handler fills state+ccn when the partner hasn't
+typed them, and /pipeline/rollup seeds the CCN basket with the deal's CCN as
+the platform anchor. A teal "Pre-scoped to your active deal X" note renders so
+the prefill is never silent. **Explicit query params always win** (override
+the cookie); the internal _prefill_deal key is stripped from export URLs.
+**Verify**: tests/test_deal_context_prefill.py (7: prefill state+ccn, param
+override on both pages, no-cookie → no note, malformed cookie ignored, key
+absent from export URLs); affected suites 45/45; screenshot shows TX/450076
+prefilled with the teal note on a real authed-bypass server on this SHA.
+**Persona check**: VP who set an active deal opens CIM Cross-Check and the
+market+target are already there — one less retype between "I'm looking at this
+deal" and "show me the variance."

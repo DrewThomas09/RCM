@@ -1,13 +1,13 @@
 # SESSION_STATE — autonomous 8h improvement session
 
 - session_start: 2026-06-10T03:37:46Z
-- latest_timestamp: 2026-06-10T05:36:00Z
-- elapsed: 1h58m
-- iteration: 11 (items 1–11 DONE; ckpt-1 + ckpt-2 LIVE on pedesk.app)
-- current_item: Item 11 committed → merge checkpoint 3 (new PR; deploy verify + screenshots) → Item 12 (#16 deal-context slice 2)
-- current_step: full suite running pre-commit; then commit/push, open PR
-- branch: claude/sharp-einstein-005lm (fe9a05c at start; last pushed 5ba48fd)
-- background: dev server :8765 (demo.py, bxk39yey1), full suite bbchr7dnf
+- latest_timestamp: 2026-06-10T06:42:00Z
+- elapsed: 3h04m (container restarted once ~06:05Z; reconciled, no work lost)
+- iteration: 12 (items 1–12 DONE; ckpt-1 + ckpt-2 LIVE on pedesk.app)
+- current_item: Item 12 done + committed; BRANCH PUSHED (rebased onto origin/main 59f949e, force-with-lease) → checkpoint 3 PR BLOCKED on GitHub MCP re-auth (OAuth URL sent to user) → then deploy verify
+- current_step: awaiting user GitHub OAuth to open checkpoint-3 draft PR; sweep-3 clean (348 ok, 0 tracebacks, no nan/none leaks); item 13 next while waiting
+- branch: claude/sharp-einstein-005lm — pushed @ HEAD includes Item 11+12+fixes+Azure-purge
+- background: dev server :8765 (demo, authed), open-auth server :8766 (b7moqpjwr, for walker/screens)
 
 ## Environment facts (verified earlier today, same machine)
 - Network egress 403 everywhere except pypi; WebSearch/WebFetch tools work for research.

@@ -52,6 +52,7 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
     except ValueError:
         ga_pct = 0.0
     fmt = (qs.get("format") or [""])[0]
+    prefill_deal = (qs.get("_prefill_deal") or [""])[0].strip()
 
     scenario: Optional[RollupScenario] = None
     if len(ccns) >= 2:
@@ -64,7 +65,14 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
 
     _inp = ('style="padding:5px 8px;border:1px solid var(--sc-rule,#c9c1ac);'
             'width:340px;font-variant-numeric:tabular-nums;"')
+    prefill_note = (
+        '<p class="ck-section-body" style="margin:0 0 10px;font-size:11px;'
+        'color:var(--sc-teal,#155752);">Seeded with your active deal '
+        f'<strong>{_html.escape(prefill_deal)}</strong> as the platform '
+        'anchor — add the CCNs you\'d combine with it.</p>'
+        ) if prefill_deal else ""
     form = ck_panel(
+        prefill_note +
         '<form method="get" action="/pipeline/rollup" '
         'style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;">'
         '<label style="font-family:var(--sc-mono);font-size:10px;display:block;">'

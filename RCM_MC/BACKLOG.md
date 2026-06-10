@@ -26,7 +26,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 14 | **est_ar_days "?" explainer** + bounds chip on predictive screener (gap from earlier pass) | 22 | "?" present; formula matches code; tests |
 | 15 | **A empty-state sweep** — top-10 pages with ?state=ZZ / empty db: consistent ck_empty_state, no dead controls | 20 | Walker variant with empty db; screenshots |
 
-| 16 | **CIM cross-check ← deal context slice 2** — server reads pedesk_active_deal cookie to PREFILL state/ccn on /diligence/cim-crosscheck + /pipeline/rollup forms | 28 | activate deal w/ state; open CIM page; fields prefilled; tests |
+| 16 | ✅ DONE — deal-context slice 2 (cookie prefills CIM state/ccn + rollup basket) | — | LOG #12 |
 | 17 | **Roll-up exhibit row on deal page** — link saved roll-up scenarios to deals (deal_overrides or notes) | 24 | scenario persists per deal; reload shows it |
 | 18 | **DQ dashboard staleness colors** — green/yellow/red vintage chips per source cadence | 18 | snf (monthly cadence, Apr 2026 snapshot) shows amber by Jun-2026 clock; tests |
 | 19 | **route_walker in CI** — wire scripts/route_walker.py as a smoke job artifact on deploy gate | 22 | CI config parses; job runs in act-less dry run |
