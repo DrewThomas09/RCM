@@ -245,3 +245,37 @@ class ClaimPercentileTests(unittest.TestCase):
             claim_percentile = None
             percentile_n = 0
         self.assertEqual(_pctile_chip(_Agg()), "")
+
+
+class MemoPercentileTests(unittest.TestCase):
+    """The variance memo (the consultant's deliverable) carries the claim
+    percentile, and flags a tail claim (≥p90/≤p10) for scrutiny even when
+    the variance flag is green."""
+
+    def _scope(self):
+        import pandas as pd
+        rows = []
+        for i in range(12):
+            rows.append({"ccn": f"45{i:04d}", "state": "TX", "name": f"H{i}",
+                         "beds": 100 + i, "net_patient_revenue": 1e8 * (i + 1),
+                         "operating_expenses": 1e8 * (i + 1) * 0.97,
+                         "operating_margin": (i + 1) / 100,
+                         "total_patient_days": 1e4})
+        return pd.DataFrame(rows)
+
+    def test_memo_includes_percentile_and_tail_flag(self):
+        from rcm_mc.diligence.cim_crosscheck import run_crosscheck, variance_memo
+        # claim at the very top of the margin distribution → tail
+        res = run_crosscheck(self._scope(), state="TX",
+                             claims={"median_operating_margin_pct": 50.0})
+        memo = variance_memo(res)
+        self.assertIn("Claim percentile:", memo)
+        self.assertIn("tail — scrutinize", memo)
+
+    def test_aggregate_claim_has_no_percentile_line(self):
+        from rcm_mc.diligence.cim_crosscheck import run_crosscheck, variance_memo
+        res = run_crosscheck(self._scope(), state="TX",
+                             claims={"provider_count": 12})
+        # aggregate claim → no per-facility percentile
+        memo = variance_memo(res)
+        self.assertNotIn("Claim percentile:", memo)

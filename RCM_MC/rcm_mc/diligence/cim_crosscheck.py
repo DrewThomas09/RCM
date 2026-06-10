@@ -360,6 +360,17 @@ def variance_memo(result: CrossCheckResult) -> str:
             f"   CIM claim:            {claim_s}",
             f"   Independent estimate: {est_s} (n={est.n})",
             f"   Variance:             {var_s}",
+        ]
+        # Where the claim sits in the in-scope distribution — a tail claim
+        # (≤p10/≥p90) is a finding even when the variance flag is green.
+        if r.claim_percentile is not None:
+            tail = (" ⚠ tail — scrutinize"
+                    if r.claim_percentile >= 90 or r.claim_percentile <= 10
+                    else "")
+            lines.append(
+                f"   Claim percentile:     p{r.claim_percentile} of "
+                f"n={r.percentile_n} in-scope facilities{tail}")
+        lines += [
             f"   Method:               {est.method}",
             f"   Expert-call question: {r.expert_question}",
             "",
