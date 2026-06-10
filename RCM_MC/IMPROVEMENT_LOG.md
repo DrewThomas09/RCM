@@ -671,3 +671,22 @@ hospital metro); panel renders the KPI. local-market suite 13, X-Ray 303 green.
 **Persona check**: the antitrust read a consultant needs ("is this a
 concentrated local market?") is now on the target's own page, on the DOJ
 scale, sourced to filed NPR — not buried in a separate state-proxy screen.
+
+## W2-15 — portfolio surfaces real anchor NPR (was blank) + $B rollup (16:35Z)
+**Found by**: visual pass on /portfolio — Total Net Revenue and every NPR
+column read "—" although the 5 composite demo deals are anchored to real
+CCNs carrying filed HCRIS net_patient_revenue. The data existed; the portfolio
+only read the flat key.
+**Fixed**: list_deals now surfaces facility_anchor.net_patient_revenue as the
+deal's net_revenue when no entered value exists (the deal's financial anchor
+IS that real facility — Item 10's design), marked revenue_basis=anchor-actual.
+Entered values still win (basis only marked when the anchor actually supplied
+the figure — caught + fixed a mislabel mid-build). Portfolio Total Net Revenue
+now reads $5.13B with a "filed anchor NPR" sub-label; _fmt_money rolls up to
+$B at ≥$1B (was $5,129M).
+**Verify**: AnchorRevenueSurfacingTests (3: anchor surfaces; entered wins
+without anchor mislabel; portfolio labels the basis); portfolio/store/anchor
+suites 472 passed; screenshot shows $5.13B + label.
+**Persona check**: portfolio-ops user opens the book and sees $5.13B of real
+filed revenue across the cohort instead of five blanks — the anchor work from
+Item 10 now actually shows up where partners look.

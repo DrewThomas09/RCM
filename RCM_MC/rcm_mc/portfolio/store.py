@@ -314,6 +314,22 @@ class PortfolioStore:
                         d[metric] = entry.get("value")
                     elif isinstance(entry, (int, float)):
                         d[metric] = entry
+            # Composite demo deals (Item 10) carry their REAL filed revenue in
+            # facility_anchor.net_patient_revenue — the deal's financial anchor
+            # IS that real facility. Surface it as the deal's NPR when no flat
+            # revenue was entered, so the portfolio's Total Net Revenue / NPR
+            # column reflect the sourced anchor figure instead of a blank.
+            # Flat/observed values win; this only fills a genuine gap.
+            fa = d.get("facility_anchor")
+            if isinstance(fa, dict):
+                anchor_npr = fa.get("net_patient_revenue")
+                if isinstance(anchor_npr, (int, float)) \
+                        and d.get("net_revenue") is None:
+                    # Mark the basis only when the anchor ACTUALLY supplied the
+                    # figure — not when an entered value was already present.
+                    d["net_revenue"] = anchor_npr
+                    d.setdefault("net_patient_revenue", anchor_npr)
+                    d["revenue_basis"] = "anchor-actual"
             if r["archived_at"]:
                 d["archived_at"] = r["archived_at"]
             out.append(d)

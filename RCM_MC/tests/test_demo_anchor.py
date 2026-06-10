@@ -69,3 +69,51 @@ class SeederAnchorTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AnchorRevenueSurfacingTests(unittest.TestCase):
+    """A composite demo deal's REAL filed anchor NPR must surface as the
+    deal's net_revenue (the deal's financial anchor IS that facility), so the
+    portfolio's Total Net Revenue / NPR column aren't blank. Flat/entered
+    values still win; the basis is marked anchor-actual."""
+
+    def _store(self):
+        import os, tempfile
+        from rcm_mc.portfolio.store import PortfolioStore
+        self._tmp = tempfile.TemporaryDirectory()
+        return PortfolioStore(os.path.join(self._tmp.name, "p.db"))
+
+    def test_anchor_npr_surfaces_as_net_revenue(self):
+        store = self._store()
+        store.upsert_deal("d1", name="Composite One", profile={
+            "facility_anchor": {"ccn": "240004", "name": "X",
+                                "net_patient_revenue": 1.194e9}})
+        df = store.list_deals()
+        row = df[df["deal_id"] == "d1"].iloc[0]
+        self.assertEqual(row["net_revenue"], 1.194e9)
+        self.assertEqual(row["net_patient_revenue"], 1.194e9)
+        self.assertEqual(row["revenue_basis"], "anchor-actual")
+
+    def test_entered_revenue_wins_over_anchor(self):
+        store = self._store()
+        store.upsert_deal("d2", name="Has Entered", profile={
+            "net_revenue": 5.0e8,
+            "facility_anchor": {"net_patient_revenue": 1.0e9}})
+        row = store.list_deals().query("deal_id == 'd2'").iloc[0]
+        self.assertEqual(row["net_revenue"], 5.0e8)   # entered wins
+        self.assertNotIn("anchor-actual", [row.get("revenue_basis")])
+
+    def test_portfolio_total_labels_anchor_basis(self):
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        deals = pd.DataFrame([
+            {"deal_id": "a", "name": "A", "created_at": "2026-01-01",
+             "net_revenue": 1.0e9, "revenue_basis": "anchor-actual",
+             "denial_rate": 10.0},
+            {"deal_id": "b", "name": "B", "created_at": "2026-01-01",
+             "net_revenue": 2.0e9, "revenue_basis": "anchor-actual",
+             "denial_rate": 12.0},
+        ])
+        h = render_portfolio_overview(deals, None)
+        self.assertIn("filed anchor NPR", h)
+        self.assertNotIn(">—</", h.split("Total Net Revenue")[1][:200])
