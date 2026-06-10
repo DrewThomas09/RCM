@@ -1,4 +1,4 @@
-"""Post-deploy smoke gate for an Azure App Service ship of RCM-MC.
+"""Post-deploy smoke gate for a pedesk.app ship of RCM-MC (DigitalOcean Droplet).
 
 Closes the three ship-side rows that the cycle-12 deploy-readiness
 gate left open — they couldn't be verified from local testing
@@ -14,8 +14,8 @@ because they depend on the real platform running the container:
 
 Usage::
 
-    python tools/azure_smoke.py https://rcm-mc.azurewebsites.net
-    python tools/azure_smoke.py https://staging.example.net \\
+    python tools/deploy_smoke.py https://pedesk.app
+    python tools/deploy_smoke.py https://staging.example.net \\
         --username andrewthomas@chartis.com \\
         --password ChartisDemo1 \\
         --max-healthz-ms 500 \\
@@ -251,7 +251,7 @@ def run_smoke(
 
 
 def _print_human(report: SmokeReport, out=sys.stdout) -> None:
-    out.write(f"\n  Azure smoke gate — {report.base_url}\n")
+    out.write(f"\n  Deploy smoke gate — {report.base_url}\n")
     out.write(f"  {'─' * 70}\n")
     for c in report.checks:
         flag = "PASS" if c.passed else "FAIL"
@@ -266,10 +266,10 @@ def _print_human(report: SmokeReport, out=sys.stdout) -> None:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(
-        prog="azure_smoke",
-        description="Post-deploy smoke gate for an Azure ship of RCM-MC.",
+        prog="deploy_smoke",
+        description="Post-deploy smoke gate for an RCM-MC deployment.",
     )
-    p.add_argument("base_url", help="https://<app>.azurewebsites.net")
+    p.add_argument("base_url", help="https://pedesk.app (or any deploy URL)")
     p.add_argument(
         "--username", default="andrewthomas@chartis.com",
         help="Login username (default: seeded demo partner account)",

@@ -22,7 +22,7 @@ Covers the post-deploy hardening layer:
      and absent otherwise.
 
 The threat model is a private web deployment fronted by an HTTPS
-terminator (Heroku/Azure) — not zero-trust, but enough to keep a
+terminator (Caddy on the droplet, or any PaaS) — not zero-trust, but enough to keep a
 PE tool's diligence data out of casual snooping.
 """
 from __future__ import annotations

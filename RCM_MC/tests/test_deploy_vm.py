@@ -1,4 +1,4 @@
-"""Static validation of the Azure VM deploy files.
+"""Static validation of the Docker-VM deploy files (deploy/).
 
 Doesn't boot Docker (not worth the CI cost). Instead, validates that:
 

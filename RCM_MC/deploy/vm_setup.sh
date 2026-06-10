@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time bootstrap for an Azure Ubuntu VM.
+# One-time bootstrap for an Ubuntu VM (e.g. a DigitalOcean Droplet).
 #
 # Run as:
 #   sudo bash vm_setup.sh <admin_username> <admin_password> [domain]
