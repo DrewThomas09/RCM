@@ -28,7 +28,8 @@ from ..diligence.hcris_xray import (
 from ._chartis_kit import (
     P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge, ck_page_explainer,
-    ck_source_purpose, margin_is_plausible, occupancy_is_plausible)
+    ck_source_purpose, margin_is_plausible, occupancy_is_plausible,
+    ck_gap_dot, ck_gap_count)
 from .data_public.state_profile_page import state_context_panel
 
 _EXPLAINER_CSS = """
@@ -655,7 +656,9 @@ def _metric_row(
         f'<div class="hx-metric-help">{html.escape(bm.spec.unit_help)}</div>'
         f'</div>'
         f'<div class="hx-metric-val">'
-        f'{bm.spec.fmt(bm.target_value)}</div>'
+        f'{bm.spec.fmt(bm.target_value)}'
+        f'{ck_gap_dot("Not reported in the HCRIS filing, or gated as a data artifact") if bm.target_value is None else ""}'
+        '</div>'
         f'<div class="hx-metric-peer">{bm.spec.fmt(bm.peer_p25)}</div>'
         f'<div class="hx-metric-peer hx-metric-peer-median">'
         f'{bm.spec.fmt(bm.peer_median)}</div>'
@@ -715,7 +718,11 @@ def _metrics_by_category(report: XRayReport) -> str:
         items = by_cat.get(cat) or []
         if not items:
             continue
-        blocks.append(f'<div class="hx-cat-title">{cat}</div>')
+        # Tally the data gaps (artifact/not-reported metrics) in this section
+        # so the red dots are quantified, not just scattered.
+        _n_gap = sum(1 for bm in items if bm.target_value is None)
+        blocks.append(
+            f'<div class="hx-cat-title">{cat}{ck_gap_count(_n_gap, len(items))}</div>')
         blocks.append(header)
         blocks.append(
             "".join(
