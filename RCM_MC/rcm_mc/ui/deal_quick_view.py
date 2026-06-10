@@ -10,8 +10,8 @@ import html
 from typing import Any, Dict, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_basis_badge, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_peer_percentile, ck_provenance_tooltip,
+    chartis_shell, ck_basis_badge, ck_fmt_currency, ck_fmt_num, ck_kpi_block,
+    ck_next_section, ck_peer_percentile, ck_provenance_tooltip,
 )
 
 # Which direction is good, per profile metric — drives the percentile-chip
@@ -111,7 +111,11 @@ def render_deal_quick_view(
             try:
                 v = float(val)
                 if scale:
-                    display = f"${v / scale:,.0f}M"
+                    # House style: roll up to $B at ≥$1B so a >$1B anchor deal
+                    # reads "$1.19B" not "$1,194M". ck_fmt_currency takes raw
+                    # dollars; net_revenue is stored in dollars (scale=1e6 was
+                    # only the legacy M-divisor).
+                    display = ck_fmt_currency(v)
                 elif suffix == "%":
                     display = f"{v:.1f}%"
                     lo, hi = _PCT_SANITY.get(label, (None, None))
@@ -150,7 +154,7 @@ def render_deal_quick_view(
             f'style="color:{PALETTE["text_link"]};">{html.escape(str(anchor["ccn"]))}</a>, '
             f'{html.escape(str(anchor.get("state", "")))})'
             f'{ck_basis_badge("actual")}: '
-            f'{f"${_npr/1e6:,.0f}M NPR" if _npr else ""}'
+            f'{f"{ck_fmt_currency(_npr)} NPR" if _npr else ""}'
             f'{f" · {int(_beds)} beds" if _beds else ""}'
             f'{f" · {_m*100:+.1f}% operating margin" if _m is not None else ""}'
             f' — FY{anchor.get("fiscal_year", "")} '
