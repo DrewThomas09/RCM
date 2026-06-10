@@ -357,3 +357,22 @@ YAML.
 **Persona check**: the deploy discipline the user asked for ("do multiple
 checks") now has an automated weekly backstop that catches a 500/leak on any
 page, with an artifact to inspect.
+
+## Item 17 — P12 entity jump: Cmd-K → HCRIS X-Ray by CCN (08:15Z)
+**What**: The command palette now recognises a 6-digit query as a CMS CCN and
+surfaces a synthetic "→ HCRIS X-Ray for CCN ######" result routing to
+/diligence/hcris-xray?ccn=######. Pure client-side — the route is built from
+the typed digits, so no backend call and no 6,123-row entity list inlined.
+The synthetic row starts hidden (display:none so visibleItems() ignores it),
+is revealed + highlighted only when /^\d{6}$/ matches, and Enter navigates.
+Placeholder updated to advertise it ("Jump to a page, or type a 6-digit
+CCN…"). Name-based entity search needs a backend index → deferred; CCN jump
+is the safe, high-value v1.
+**Verify**: tests/test_palette_entity_jump.py (4: hidden entity item present,
+placeholder advertises it, JS builds the X-Ray route from 6 digits, static
+text-filter loop skips the synthetic row) + command_palette/universal_palette
+regression 27 passed. Headless browser: typing 450358 reveals the highlighted
+result and Enter lands on /diligence/hcris-xray?ccn=450358 (verified URL
+transition); screenshot captured.
+**Persona check**: VP with a CCN from a data room hits ⌘K, types the 6
+digits, Enter — straight into the facility X-Ray, no menu hunting.

@@ -7315,8 +7315,17 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
     return (
         '<div class="ck-palette" id="ck-palette" hidden>'
         '<div class="ck-palette-box">'
-        '<input class="ck-palette-input" type="text" placeholder="Jump to… (⌘K)" />'
-        f'<ul class="ck-palette-list">{items}'
+        '<input class="ck-palette-input" type="text" '
+        'placeholder="Jump to a page, or type a 6-digit CCN… (⌘K)" />'
+        '<ul class="ck-palette-list">'
+        # P12 entity jump — a synthetic result the JS reveals when the query
+        # is a 6-digit CCN, routing straight to that facility's HCRIS X-Ray.
+        # No backend: the route is built client-side from the typed digits.
+        '<li class="cp-entity" data-entity-jump data-route="" hidden '
+        'style="display:none">'
+        '<span class="cp-title cp-entity-title"></span>'
+        '<span class="cp-route cp-entity-route"></span></li>'
+        f'{items}'
         # Editorial empty state when filter matches nothing —
         # surfaced by _PALETTE_JS toggling the [hidden] flag.
         '<li class="cp-noresults" data-rcm-palette-empty hidden>'
@@ -10705,8 +10714,29 @@ _PALETTE_JS = """
   function filter(q){
     q = (q || '').toLowerCase();
     var anyVisible = false;
+    /* P12 entity jump — a 6-digit query is a CMS CCN; offer a direct jump
+     * to that facility's HCRIS X-Ray, built client-side from the digits. */
+    var entity = p.querySelector('[data-entity-jump]');
+    var ccn = (q || '').trim().match(/^\d{6}$/);
+    if (entity) {
+      if (ccn) {
+        var id = ccn[0];
+        entity.setAttribute('data-route', '/diligence/hcris-xray?ccn=' + id);
+        var et = entity.querySelector('.cp-entity-title');
+        var er = entity.querySelector('.cp-entity-route');
+        if (et) et.textContent = '→ HCRIS X-Ray for CCN ' + id;
+        if (er) er.textContent = '/diligence/hcris-xray?ccn=' + id;
+        entity.hidden = false;
+        entity.style.display = '';
+        anyVisible = true;
+      } else {
+        entity.hidden = true;
+        entity.style.display = 'none';
+      }
+    }
     Array.from(p.querySelectorAll('li')).forEach(function(li){
       if (li.classList.contains('cp-noresults')) return;
+      if (li.hasAttribute('data-entity-jump')) return;  /* handled above */
       if (li.classList.contains('cp-section')) {
         /* Show the "Recent" header only when no query is active */
         li.style.display = q ? 'none' : '';
