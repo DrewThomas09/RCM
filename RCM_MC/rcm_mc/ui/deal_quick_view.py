@@ -10,9 +10,21 @@ import html
 from typing import Any, Dict, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
+    chartis_shell, ck_basis_badge, ck_fmt_num, ck_kpi_block, ck_next_section,
     ck_provenance_tooltip,
 )
+
+# Percent-point profile metrics with their realistic range (per the metric
+# glossary). Used for a soft unit-mistake check: a partner entering the
+# FRACTION (0.945) instead of percent points (94.5) — or swapping a rate into
+# the wrong field — produces an implausible display like "0.9%" net
+# collection. We show what was entered, but flag it for review.
+_PCT_SANITY = {
+    "Net Collection": (80.0, 100.0),    # glossary: typically 92–99%
+    "Clean Claim Rate": (60.0, 100.0),  # typically 75–98%
+    "Denial Rate": (0.0, 40.0),         # initial denials rarely exceed ~25%
+    "Cost to Collect": (0.0, 15.0),     # typically 2–5% of NPR
+}
 from .brand import PALETTE
 
 
@@ -54,20 +66,36 @@ def render_deal_quick_view(
     for label, val, suffix, scale in kpi_fields:
         if val is not None:
             populated += 1
+            verify_flag = ""
             try:
                 v = float(val)
                 if scale:
                     display = f"${v / scale:,.0f}M"
                 elif suffix == "%":
                     display = f"{v:.1f}%"
+                    lo, hi = _PCT_SANITY.get(label, (None, None))
+                    if lo is not None and not (lo <= v <= hi):
+                        verify_flag = (
+                            '<span style="color:var(--sc-warning,#b8732a);'
+                            'cursor:help;margin-left:4px;" title="Outside the '
+                            f'typical {lo:g}–{hi:g}% range for this metric — '
+                            'check the entry (percent points expected, e.g. '
+                            '94.5, not 0.945).">⚠</span>'
+                        )
                 else:
                     display = f"{v:,.0f}"
             except (TypeError, ValueError):
                 display = str(val)
 
-            kpi_cards += ck_kpi_block(label, html.escape(display))
+            kpi_cards += ck_kpi_block(label, html.escape(display) + verify_flag)
 
     profile_section = (
+        # Basis disclosure: these are the deal's SELF-REPORTED RCM metrics
+        # (partner-entered via /import), not a public filing or a model.
+        f'<p class="ck-section-body" style="margin:0 0 8px;font-size:11px;'
+        f'color:var(--sc-text-dim,#6a7480);">Deal profile metrics'
+        f'{ck_basis_badge("entered")} — '
+        f'<a href="/import" style="color:{PALETTE["text_link"]};">edit via Import</a>.</p>'
         f'<div class="ck-kpi-grid">{kpi_cards}</div>'
         if kpi_cards else
         f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'
