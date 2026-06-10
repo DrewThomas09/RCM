@@ -117,3 +117,24 @@
   computations (hcris len, home_health len, top gap row); render check all
   marker strings; screenshot /tmp/session_shots/item5_data_quality.png.
 - users: Chartis internal (user 1) — the 60-second pre-demo certification.
+
+## Item 6 — P8b facility→rule regulatory exposure on the X-Ray
+- when: 2026-06-10T04:31–04:42Z (iteration 6)
+- what: rcm_mc/diligence/regulatory_calendar/exposure.py — tag-based join of
+  (provider type, state) onto the curated 11-event REGULATORY_EVENTS library
+  (each event already sourced to its agency docket). State-scoped rules
+  (CT HB 5316 sale-leaseback phase-out) fire only for that state, with the
+  scoping named in the match reason. New X-Ray panel "Regulatory exposure —
+  applicable rulemakings": status chip (FINAL red / PROPOSED amber), rule
+  title + docket link, effective date, curated margin-impact pp, Σ in the
+  panel header; explicit honesty footer (curated coverage refreshed
+  quarterly, NOT an exhaustive inventory).
+- verification: TX hospital (450358) → exactly 3 rules, CT rule absent;
+  CT hospital (070002) → 4 rules incl. HB 5316 with "CT-scoped" reason;
+  dialysis → ESRD PPS only; unknown provider type → none; sort by effective
+  date tested; Σ impacts pinned to event fields. 8 tests; X-Ray suites
+  unaffected (17 green incl. nan/gap suites). Screenshot:
+  /tmp/session_shots/item6_reg_exposure_ct.png.
+- users: PE VP (user 2) — the reimbursement-risk question every IC memo
+  opens with; Chartis (user 1) gets the sourced rule list for the policy
+  section.

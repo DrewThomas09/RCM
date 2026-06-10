@@ -739,6 +739,68 @@ def _metrics_by_category(report: XRayReport) -> str:
     return "".join(blocks)
 
 
+def _regulatory_exposure(target: HospitalMetrics) -> str:
+    """P8b — which curated rulemakings touch THIS facility's revenue.
+
+    Joins the facility (hospital provider type + its state) onto the curated
+    REGULATORY_EVENTS library: dated, sourced rules only. The panel states
+    plainly that this is curated coverage refreshed quarterly, not an
+    exhaustive regulatory inventory."""
+    try:
+        from ..diligence.regulatory_calendar.exposure import (
+            applicable_events, exposure_summary)
+        matches = applicable_events("hospital", getattr(target, "state", None))
+    except Exception:  # noqa: BLE001 — exposure is additive, never breaks X-Ray
+        return ""
+    if not matches:
+        return ""
+    rev, mgn = exposure_summary(matches)
+    rows = ""
+    for m in matches:
+        e = m.event
+        status_color = ("var(--sc-negative,#b5321e)" if e.status.value == "FINAL"
+                        else "var(--sc-warning,#b8732a)")
+        eff = e.effective_date.isoformat() if e.effective_date else "—"
+        src = (f' <a class="ck-link" style="font-size:10px;" '
+               f'href="{html.escape(e.source_url)}" target="_blank" '
+               f'rel="noopener">rule ↗</a>' if e.source_url else "")
+        rows += (
+            '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+            f'<td style="padding:6px 8px;"><span style="font-family:var(--sc-mono);'
+            f'font-size:9px;color:{status_color};border:1px solid {status_color};'
+            f'padding:1px 5px;border-radius:2px;">{html.escape(e.status.value)}</span></td>'
+            f'<td style="padding:6px 8px;font-size:12px;">{html.escape(e.title)}{src}'
+            f'<div style="font-size:10px;color:var(--sc-text-dim,#6a7480);">'
+            f'{html.escape(m.reason)}</div></td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;">{html.escape(eff)}</td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;">'
+            f'{e.expected_margin_impact_pp:+.1f}pp</td>'
+            '</tr>')
+    from . import xray_kit as k
+    return (
+        '<div class="ck-panel"><div class="ck-panel-head">'
+        '<span class="ck-panel-title">Regulatory exposure — applicable rulemakings</span>'
+        f'<span class="ck-panel-code">{len(matches)} RULES · '
+        f'Σ margin {mgn:+.1f}pp</span></div>'
+        '<div class="ck-panel-body">'
+        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+        '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+        '<th style="text-align:left;padding:6px 8px;">Status</th>'
+        '<th style="text-align:left;padding:6px 8px;">Rule</th>'
+        '<th style="text-align:right;padding:6px 8px;">Effective</th>'
+        '<th style="text-align:right;padding:6px 8px;">Est. margin impact</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        '<p class="ck-section-body" style="font-size:11px;margin:8px 0 0;'
+        'color:var(--sc-text-dim,#6a7480);">Curated rule library (11 events, '
+        'refreshed quarterly), each sourced to its agency docket — coverage '
+        'of the headline rulemakings, not an exhaustive regulatory inventory. '
+        'Impact estimates are the library\'s curated readings; size them '
+        'against this facility in diligence.</p>'
+        '</div></div>')
+
+
 def _public_comp_context(target: HospitalMetrics) -> str:
     """Compare target's HCRIS operating margin against public
     hospital-system comps from the Seeking Alpha library.  Answers
@@ -1319,6 +1381,7 @@ def render_hcris_xray_page(
     ebitda_is_floored = filed_ebitda < floor_ebitda
     # Public-comp context — target vs HCA / THC / UHS op margin
     public_comp_block = _public_comp_context(target)
+    reg_exposure_block = _regulatory_exposure(target)
 
     # Build cross-links with proper URL-encoding. html.escape alone
     # leaves spaces and ampersands unencoded, which crashes downstream
@@ -1395,6 +1458,7 @@ def render_hcris_xray_page(
             + hero
             + metrics_panel
             + public_comp_block
+            + reg_exposure_block
             + peers_panel
             + '</div></div>'
         )
@@ -1430,6 +1494,7 @@ def render_hcris_xray_page(
             + hero
             + metrics_panel
             + public_comp_block
+            + reg_exposure_block
             + peers_panel
             + state_context_panel(getattr(target, "state", ""))
             + ck_panel(

@@ -1,13 +1,13 @@
 # SESSION_STATE — autonomous 8h improvement session
 
 - session_start: 2026-06-10T03:37:46Z
-- latest_timestamp: 2026-06-10T04:15:00Z
-- elapsed: 0h37m
-- iteration: 4 (items 1+2+3 DONE; merge checkpoint #1 in progress)
-- current_item: merge checkpoint (PR #1663, items 1–3) → then Item 4 (P4 percentile chip)
-- current_step: awaiting CI on 7c323cd; after merge: watch deploy.yml for merge SHA, screenshots, route_walker
+- latest_timestamp: 2026-06-10T04:31:00Z
+- elapsed: 0h53m
+- iteration: 6 (items 1–5 DONE; ckpt-1 LIVE deploy #1631; sweep-1 clean 296 passed)
+- current_item: Item 6 — P8b facility→rule exposure on X-Ray (BACKLOG #6)
+- current_step: inspect regulatory_calendar shape → join + panel
 - branch: claude/sharp-einstein-005lm (fe9a05c at start)
-- background: dev server :8834, db /tmp/rcm_seeded/portfolio.db (5 deals: sth,buh,nyp,mgh,ccf)
+- background: dev server :8835, db /tmp/rcm_seeded/portfolio.db (5 deals: sth,buh,nyp,mgh,ccf)
 
 ## Environment facts (verified earlier today, same machine)
 - Network egress 403 everywhere except pypi; WebSearch/WebFetch tools work for research.
