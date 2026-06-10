@@ -225,16 +225,18 @@ def deal_context_bar(
     ma_mix = _fnum(["ma_mix_pct"])
     commercial_share = _fnum(["commercial_payer_share"])
 
-    # Core financial strip
+    # Core financial strip. House style: roll up to $B at ≥$1B so a
+    # platform-scale NPR/EV ($1.19B) reads "$1.19B" not "$1,194M".
+    from ._chartis_kit import ck_fmt_currency
     strip_parts: List[str] = []
     if revenue:
-        strip_parts.append(f"${revenue/1e6:,.0f}M NPR")
+        strip_parts.append(f"{ck_fmt_currency(revenue)} NPR")
     if ebitda:
         margin = (
             f" ({ebitda/revenue*100:.1f}% margin)"
             if revenue and revenue > 0 else ""
         )
-        strip_parts.append(f"${ebitda/1e6:,.1f}M EBITDA{margin}")
+        strip_parts.append(f"{ck_fmt_currency(ebitda)} EBITDA{margin}")
     if enterprise_value:
         mult_bit = (
             f" · {entry_multiple:.1f}× entry"
@@ -243,7 +245,7 @@ def deal_context_bar(
             if ebitda and ebitda > 0 else ""
         )
         strip_parts.append(
-            f"${enterprise_value/1e6:,.0f}M EV{mult_bit}"
+            f"{ck_fmt_currency(enterprise_value)} EV{mult_bit}"
         )
     if specialty:
         strip_parts.append(specialty.replace("_", " "))

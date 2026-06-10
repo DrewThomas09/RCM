@@ -224,6 +224,26 @@ class UIRenderTests(unittest.TestCase):
             len(re.findall(r"<h1[ >]", html)), 1,
             "results view must keep exactly one <h1>")
 
+    def test_banner_npr_rolls_to_billions(self):
+        # House style: a >$1B target NPR (large system) must read "$1.19B NPR"
+        # in the masthead meta, not "$1,194M NPR".
+        from rcm_mc.ui.payer_stress_page import render_payer_stress_page
+        mix_text = (
+            "Medicare FFS, 40%\n"
+            "Medicaid managed, 25%\n"
+            "UnitedHealthcare, 20%\n"
+            "Anthem, 15%"
+        )
+        html = render_payer_stress_page({
+            "mix": [mix_text],
+            "target_name": ["Big System"],
+            "total_npr_usd": ["1194000000"],
+            "horizon_years": ["5"],
+            "n_paths": ["200"],
+        })
+        self.assertIn("$1.19B NPR", html)
+        self.assertNotIn("1,194M NPR", html)
+
     def test_empty_mix_shows_friendly_error(self):
         from rcm_mc.ui.payer_stress_page import render_payer_stress_page
         html = render_payer_stress_page({

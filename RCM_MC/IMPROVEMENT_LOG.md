@@ -920,3 +920,18 @@ Hennepin anchor now reads "$1.19B NPR".
 **Verify**: test_demo_anchor asserts "$1.19B NPR" present / "1,194M NPR"
 absent; render check on net_revenue=1.45e9→$1.45B and 4.5e8→$450.0M;
 deal-quick-view suites 35 passed.
+
+## W2-32 — shared deal-context strip + payer-stress banner roll to $B (22:15Z)
+**Found by**: tracing a stray "$1,194M NPR" in the Payer Stress render — it
+came from the SHARED `deal_context_bar` (power_ui.py), the financial strip on
+every analytic page that wires deal context. NPR and EV are platform-scale
+and routinely exceed $1B, but rendered "$2,500M EV" / "$1,194M NPR".
+**Fixed**: the strip's NPR / EBITDA / EV all flow through `ck_fmt_currency`
+(rolls $B/$M/$K); also routed the Payer Stress masthead total-NPR meta through
+it. Per-payer NPR figures stay $M (a single payer's share of even a $1.2B
+system is ~$0.5B — sub-$1B, and a stable scale across the payer list).
+**Verify**: deal_context_bar render → "$1.19B NPR · $179.0M EBITDA (15.0%
+margin) · $2.50B EV · 14.0× entry"; new test_payer_stress banner test
+($1.19B present / "1,194M NPR" absent); 3,042 passed across the pages that
+consume the strip (pe_intelligence, analysis_packet, hospital-profile head,
+irr_attribution, portfolio_snapshots).
