@@ -196,3 +196,17 @@
   Guide chrome, not model labeling.
 - users: PE VP + Chartis (users 1–2) — the "can I trust the band?" question
   answered with a reproducible number, not an adjective.
+
+## Sweep 2 + regression fixed — provenance-tooltip CSS never injected on /portfolio
+- when: 2026-06-10T05:00–05:08Z (iteration 10)
+- found by: regression sweep 2's screenshot diff — the three KPI provenance
+  tooltips rendered their popover content INLINE (huge serif spill) because
+  all three calls passed inject_css=False (pre-existing commit 6ecc199) and
+  nothing else injected the CSS. Invisible until this morning's
+  data-connection fix gave the KPIs real values; tonight's screenshot
+  caught it. (The interim /portfolio 500 in sweep 2 was a stale dev-server
+  process predating ck_insight_bullets — code was green; restart cleared it.)
+- fix: first tooltip injects the CSS (the documented convention); verified
+  '.prov-tt' style block present and the page rendering tooltips as ⓘ.
+- evidence: item8_insights_fixed.png (Takeaways + clean KPI strip + health
+  mosaic + deals table all correct); route walk 2b: 349/361, 0 tracebacks.

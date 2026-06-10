@@ -358,7 +358,9 @@ def render_portfolio_overview(
         )
         + ck_kpi_block(
             "Avg Denial Rate",
-            provenance_tooltip(label="Avg Denial Rate", value=(_fmt_pct(avg_denial) if avg_denial else "—"), graph=prov_graph, metric_key="denial_rate", inject_css=False),
+            # CSS must inject on the FIRST tooltip of the page — all-False left the
+            # popover content rendering inline once real values arrived.
+            provenance_tooltip(label="Avg Denial Rate", value=(_fmt_pct(avg_denial) if avg_denial else "—"), graph=prov_graph, metric_key="denial_rate", inject_css=True),
         )
         + ck_kpi_block(
             "Avg Days in AR",
