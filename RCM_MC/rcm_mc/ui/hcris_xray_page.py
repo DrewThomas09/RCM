@@ -821,6 +821,63 @@ def _radius_hhi_kpi(lm) -> str:
         f'color:var(--sc-text-dim,#6a7480);">{zone} · DOJ/FTC scale</div></div>')
 
 
+def _service_area_demographics(target: HospitalMetrics) -> str:
+    """Service-area (county) demographics — the commercial context the
+    target's own filings can't give: payer-mix demand (65+ → Medicare;
+    income → commercial), bad-debt risk (uninsured), access (rural). County
+    ACS data joined via the facility's geocoded county; exact-match only, so
+    an ungeocoded/unmatched facility shows no panel (never a guessed county).
+    """
+    try:
+        from ..data.county_demographics import demographics_for_ccn
+        d = demographics_for_ccn(getattr(target, "ccn", ""))
+    except Exception:  # noqa: BLE001 — additive panel, never breaks X-Ray
+        return ""
+    if not d:
+        return ""
+
+    def _pct(v):
+        return "—" if v is None else f"{float(v)*100:.1f}%"
+
+    def _money(v):
+        return "—" if v is None else f"${float(v):,.0f}"
+
+    # Read-with-CDD-lens: each cell pairs the figure with what it implies.
+    age65 = d.get("pct_age_65_plus")
+    unins = d.get("uninsured_rate")
+    income = d.get("median_household_income")
+    rural = d.get("pct_rural")
+    cells = [
+        ("Population", f"{float(d['population']):,.0f}" if d.get("population")
+         is not None else "—", "county"),
+        ("Age 65+", _pct(age65), "Medicare-demand proxy"),
+        ("Uninsured", _pct(unins), "bad-debt / self-pay risk"),
+        ("Median HH income", _money(income), "commercial-mix proxy"),
+        ("Rural", _pct(rural), "access / labor market"),
+    ]
+    kpis = "".join(
+        f'<div><div class="ck-eyebrow">{html.escape(lbl)}</div>'
+        f'<div class="num" style="font-size:18px;">{val}</div>'
+        f'<div style="font-family:var(--sc-mono);font-size:9px;'
+        f'color:var(--sc-text-dim,#6a7480);">{html.escape(sub)}</div></div>'
+        for lbl, val, sub in cells)
+    return (
+        '<div class="ck-panel"><div class="ck-panel-head">'
+        '<span class="ck-panel-title">Service-area demographics — '
+        f'{html.escape(str(d.get("county_name") or ""))}, '
+        f'{html.escape(str(d.get("state") or ""))}</span>'
+        '<span class="ck-panel-code">CENSUS / ACS</span></div>'
+        '<div class="ck-panel-body">'
+        '<div style="display:flex;gap:26px;flex-wrap:wrap;">' + kpis + '</div>'
+        '<p class="ck-section-body" style="font-size:11px;margin:10px 0 0;'
+        'color:var(--sc-text-dim,#6a7480);">County-level Census/ACS estimates '
+        'for the facility\'s home county (joined via its geocoded location) — '
+        'service-AREA demand and payer context, not the target\'s own patient '
+        'panel. A high 65+/uninsured share or low income shifts the realistic '
+        'payer mix regardless of what the CIM projects.</p>'
+        '</div></div>')
+
+
 def _local_market_context(target: HospitalMetrics) -> str:
     """Local competitive context — hospitals within 25 straight-line miles.
 
@@ -1513,6 +1570,7 @@ def render_hcris_xray_page(
     public_comp_block = _public_comp_context(target)
     reg_exposure_block = _regulatory_exposure(target)
     local_market_block = _local_market_context(target)
+    demographics_block = _service_area_demographics(target)
 
     # Build cross-links with proper URL-encoding. html.escape alone
     # leaves spaces and ampersands unencoded, which crashes downstream
@@ -1591,6 +1649,7 @@ def render_hcris_xray_page(
             + public_comp_block
             + reg_exposure_block
             + local_market_block
+            + demographics_block
             + peers_panel
             + '</div></div>'
         )
@@ -1628,6 +1687,7 @@ def render_hcris_xray_page(
             + public_comp_block
             + reg_exposure_block
             + local_market_block
+            + demographics_block
             + peers_panel
             + state_context_panel(getattr(target, "state", ""))
             + ck_panel(

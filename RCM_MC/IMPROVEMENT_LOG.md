@@ -763,3 +763,22 @@ page directly (not a redirect), so the card returns 200 AND the Guide/
 related-route links resolve. Updated the W2-1 test to assert a 200 render.
 **Verify**: tools-index cards 21 passed; guide-invariant + market-data + guide
 suites 56 passed.
+
+## W2-22 — Service-area demographics on the X-Ray (new data integration) (18:55Z)
+**What**: New CDD data integration — the vendored county demographics
+(Census/ACS: 65+ share, uninsured rate, median HH income, rural %; surfaced
+only in aggregate state pages before) now join to the target via its geocoded
+county and render a "Service-area demographics" panel on the HCRIS X-Ray.
+Each figure carries its CDD lens: 65+ = Medicare-demand proxy, uninsured =
+bad-debt/self-pay risk, income = commercial-mix proxy, rural = access/labor.
+Reuses the existing county_demographics loader (added a name-based CCN
+resolver: CCN → geocode county → EXACT normalized name match within state;
+98% of hospitals match, the rest show no panel — never a guessed county).
+Honesty stated on-panel: service-AREA context, not the target's patient panel.
+**Verify**: resolver tests (Methodist → Harris County 4.78M/11.7%/23.8%/
+$68.7k; unknown CCN → empty; _norm_county bridges 'DE KALB'↔'DeKalb County');
+panel renders with CDD lens + Census/ACS source + honesty note. X-Ray suites
+312 passed. Screenshot.
+**Persona check**: consultant sees the target sits in a 23.8%-uninsured county
+— a bad-debt reality that reshapes the payer-mix underwrite no matter what the
+CIM projects, surfaced on the target's own page.
