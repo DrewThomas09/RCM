@@ -109,3 +109,27 @@ class RollupSaveToDealTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoteLinkifyTests(unittest.TestCase):
+    """The reopen path in a roll-up note renders as a real anchor on the
+    deal page — linkified AFTER escaping with a strict charset so note
+    content can never smuggle markup."""
+
+    def test_reopen_path_is_clickable_and_hostile_text_is_not(self):
+        import tempfile as _tf
+        from rcm_mc.deals.deal_notes import record_note
+        from rcm_mc.server import _render_deal_notes
+        with _tf.TemporaryDirectory() as tmp:
+            store = PortfolioStore(os.path.join(tmp, "n.db"))
+            store.upsert_deal("d1", name="D1")
+            record_note(store, deal_id="d1",
+                        body="Roll-up scenario … Reopen: "
+                             "/pipeline/rollup?ccns=450076,450068&ga_pct=0.05")
+            record_note(store, deal_id="d1",
+                        body='<script>alert(1)</script> /pipeline/rollup?x="><img>')
+            h = _render_deal_notes(store, "d1")
+            self.assertIn(
+                'href="/pipeline/rollup?ccns=450076,450068&amp;ga_pct=0.05"', h)
+            self.assertNotIn("<script>", h)          # escaped, inert
+            self.assertNotIn('"><img>', h)           # strict charset stops it

@@ -1198,6 +1198,17 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         body_text = str(r.get("body") or "")
         # Preserve analyst-typed newlines as <br>; escape everything else
         escaped = html.escape(body_text).replace("\n", "<br>")
+        # Linkify ONLY internal roll-up reopen paths (the save-to-deal
+        # feature writes them as plain text). Applied AFTER escaping with a
+        # strict charset — `&` only as the full `&amp;` entity, so other
+        # entities (&quot; &gt; …) can never be swallowed into the href and
+        # note content can never smuggle markup. Deliberately not a general
+        # URL linkifier.
+        import re as _re
+        escaped = _re.sub(
+            r"(/pipeline/rollup\?(?:[A-Za-z0-9=,._%-]|&amp;)+)",
+            r'<a class="ck-link" href="\1">\1</a>',
+            escaped)
         note_id = int(r.get("note_id") or 0)
         items_html.append(
             f'<li class="ck-deal-note">'

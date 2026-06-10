@@ -464,3 +464,13 @@ coverage is never misread as covering these estimates. Missing artifact → no
 line (no claim without its source).
 **Verify**: ModelCardFooterTests (2: artifact numbers + boundary in the line;
 page renders it); ar-days suite 6 passed.
+
+## Item 22 — roll-up reopen links clickable on the deal page (12:48Z)
+**What**: The reopen path that save-to-deal writes into a note now renders as
+a real anchor on the deal page. Linkified AFTER html.escape with a strict
+charset (& only as the full &amp; entity), so other entities (&quot; &gt;)
+can never be swallowed into the href and note content can never smuggle
+markup — deliberately NOT a general URL linkifier. First regex draft cut
+mid-entity on &amp; (caught by the hostile-content test, fixed).
+**Verify**: NoteLinkifyTests — reopen path becomes href with &amp; intact;
+'<script>' stays escaped; '"><img>' can't break out. Suite 5 passed.
