@@ -954,8 +954,10 @@ def render_ebitda_bridge(
             )
             real_inner = (
                 '<p class="ck-eyebrow">'
-                f'ML model predicts what fraction of the bridge is achievable '
-                f'(accuracy: {rp.model_accuracy:.0%}, n={rp.n_training:,}).</p>'
+                f'Logistic regression (margin-outperformance proxy) — what '
+                f'fraction of the bridge is achievable. Holdout accuracy '
+                f'{rp.model_accuracy:.0%}, trained on n={rp.n_training:,} '
+                f'filings.</p>'
                 f'<p class="ck-section-body">{real_badge}</p>'
                 '<div class="ck-kpi-strip">'
                 + ck_kpi_block("Modeled Uplift", _fm(rp.raw_uplift))

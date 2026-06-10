@@ -92,10 +92,23 @@ def train_realization_model(
 
     X = clean[available].values.astype(float)
     X = np.where(np.isnan(X), 0, X)
-    x_mean = X.mean(axis=0)
-    x_std = X.std(axis=0)
+
+    # Seeded 80/20 holdout: the displayed accuracy was previously computed
+    # on the SAME rows the model trained on — in-sample accuracy presented
+    # to partners as "accuracy" overstates rigor. Train on 80%, report
+    # accuracy on the untouched 20% (same discipline as the margin model
+    # card). Fixed seed → the number is reproducible across renders.
+    rng = np.random.RandomState(13)
+    perm = rng.permutation(len(X))
+    n_test = max(1, int(len(X) * 0.20))
+    test_idx, train_idx = perm[:n_test], perm[n_test:]
+    X_tr, y_tr = X[train_idx], y[train_idx]
+    X_te, y_te = X[test_idx], y[test_idx]
+
+    x_mean = X_tr.mean(axis=0)
+    x_std = X_tr.std(axis=0)
     x_std[x_std == 0] = 1
-    X_norm = (X - x_mean) / x_std
+    X_norm = (X_tr - x_mean) / x_std
     X_aug = np.column_stack([np.ones(len(X_norm)), X_norm])
 
     # Logistic regression via gradient descent
@@ -103,15 +116,17 @@ def train_realization_model(
     lr = 0.05
     for _ in range(300):
         pred = _sigmoid(X_aug @ beta)
-        grad = X_aug.T @ (pred - y) / len(y)
+        grad = X_aug.T @ (pred - y_tr) / len(y_tr)
         grad[1:] += 0.01 * beta[1:]
         beta -= lr * grad
 
-    # Accuracy
-    preds = (_sigmoid(X_aug @ beta) > 0.5).astype(float)
-    accuracy = float((preds == y).mean())
+    # Holdout accuracy — measured on rows the model never saw.
+    Xte_norm = (X_te - x_mean) / x_std
+    Xte_aug = np.column_stack([np.ones(len(Xte_norm)), Xte_norm])
+    preds = (_sigmoid(Xte_aug @ beta) > 0.5).astype(float)
+    accuracy = float((preds == y_te).mean())
 
-    return beta, x_mean, x_std, accuracy, len(clean), available
+    return beta, x_mean, x_std, accuracy, len(train_idx), available
 
 
 def predict_realization(
