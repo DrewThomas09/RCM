@@ -286,6 +286,28 @@ def render_thesis_card(
     )
 
     # ── Build the card ──
+    # Circled "?" explainers so each MODELED headline is auditable on the spot.
+    from ._chartis_kit import ck_calc_help
+    _score_help = ck_calc_help(
+        "Investability Score",
+        ["Composite 0–100 of five equally-weighted pillars:",
+         "financial health + RCM opportunity + market position",
+         "+ demand defensibility + operational efficiency.",
+         "Financial health is nudged by the trained margin model."],
+        benchmark="Graded A ≥ 75 · B ≥ 60 · C ≥ 45 · D ≥ 30 · else F.")
+    _uplift_help = ck_calc_help(
+        "EBITDA Uplift",
+        ["Modeled annual EBITDA from closing this hospital's RCM gap to the",
+         "peer benchmark across the 7 levers (initial denials, final write-off,",
+         "clean-claim rate, days in A/R, underpayment, cost-to-collect, contract",
+         "yield) — the RCM EBITDA bridge, not a realized figure."],
+        benchmark="A model of the upside, not guaranteed EBITDA — confirm in diligence.")
+    _marginD_help = ck_calc_help(
+        "Margin Δ",
+        ["Trained margin model's predicted operating margin minus the current",
+         "filed margin — the headroom the model thinks RCM/ops could unlock.",
+         "Margin model: ridge regression on HCRIS peer features."],
+        benchmark="Predicted margin clamped to a realistic ±100% before differencing.")
     return (
         f'<div class="cad-card" style="border-left:4px solid {thesis_color};padding:16px 20px;">'
 
@@ -299,16 +321,16 @@ def render_thesis_card(
         f'<div style="text-align:center;">'
         f'<div style="font-size:28px;font-weight:700;color:{gc};font-family:var(--cad-mono);">'
         f'{invest_score:.0f}</div>'
-        f'<div style="font-size:9px;color:var(--cad-text3);">/ 100 ({invest_grade})</div>'
+        f'<div style="font-size:9px;color:var(--cad-text3);">/ 100 ({invest_grade}){_score_help}</div>'
         f'</div></div>'
 
         # Row 2: Key metrics (6 columns now)
         f'<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;'
         f'margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--cad-border);">'
         f'<div><div style="font-size:14px;font-weight:700;color:var(--cad-pos);">{uplift_str}</div>'
-        f'<div style="font-size:9px;color:var(--cad-text3);">EBITDA Uplift</div></div>'
+        f'<div style="font-size:9px;color:var(--cad-text3);">EBITDA Uplift{_uplift_help}</div></div>'
         f'<div><div style="font-size:14px;font-weight:700;">{margin_str}</div>'
-        f'<div style="font-size:9px;color:var(--cad-text3);">Margin Δ</div></div>'
+        f'<div style="font-size:9px;color:var(--cad-text3);">Margin Δ{_marginD_help}</div></div>'
         f'<div><div style="font-size:14px;font-weight:700;'
         f'color:{"var(--cad-pos)" if margin > 0 else "var(--cad-neg)"};">{margin:.1%}</div>'
         f'<div style="font-size:9px;color:var(--cad-text3);">Op Margin</div></div>'
