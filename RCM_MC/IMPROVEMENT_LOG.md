@@ -844,3 +844,20 @@ CDD / DATA-INTEGRATION:
   with illustrative-denial caveat.
 Full suite: 15,105 passing / 0 failing (flake fixed). Route walker clean
 (162/163, 0 tracebacks/leaks). All deploys green on pedesk.app.
+
+## W2-26 — blended service-area demographics on the roll-up platform (20:20Z)
+**What**: The Roll-Up Builder gains a "Blended service-area demographics"
+exhibit — population-weighted Census/ACS (65+, uninsured, median income)
+across the platform's home counties, de-duped by county, with coverage
+(covered/n facilities geocoded). The combined demand backdrop the pro-forma
+payer mix has to live with. New blended_demographics_for_ccns() helper
+(population-weighted, de-dups counties, empty when none match — never
+fabricated). Exhibit-wrapped (now Exhibit 3) with the correct Census/ACS
+source line (not the factory's HCRIS default).
+**Verify**: blend tests (de-dup Harris+Dallas, population-weight, single-
+county blend == that county, empty on no-match) + panel render; rollup +
+exhibit + demographics suites 15+9 passed. Screenshot: Harris+Dallas, 11.8%
+65+, 23.9% uninsured, $69,496, Exhibit 3, Census/ACS footer.
+**Persona check**: a partner sizing a 3-hospital platform sees the combined
+service area skews 23.9% uninsured — a bad-debt reality for the WHOLE
+platform, on the same page as the HHI and synergy math.

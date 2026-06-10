@@ -43,6 +43,47 @@ def _cov(agg) -> str:
             f'({agg.covered}/{agg.n})</span>')
 
 
+def _demographics_panel(ccns: List[str], xf) -> str:
+    """Blended (population-weighted) service-area demographics across the
+    platform's home counties — the combined demand backdrop a roll-up's payer
+    mix has to live with. Empty when no facility geocodes/matches."""
+    try:
+        from ..data.county_demographics import blended_demographics_for_ccns
+        b = blended_demographics_for_ccns(ccns)
+    except Exception:  # noqa: BLE001 — additive, never breaks the page
+        return ""
+    if not b or not b.get("counties"):
+        return ""
+
+    def _pct(v):
+        return "—" if v is None else f"{float(v)*100:.1f}%"
+    inc = b.get("median_household_income")
+    inc_s = f"${float(inc):,.0f}" if inc else "—"
+    counties = ", ".join(b["counties"][:6]) + (
+        f" +{len(b['counties'])-6}" if len(b["counties"]) > 6 else "")
+    inner = (
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Counties covered", f"{len(b['counties'])}",
+                       sub=f"{b['covered']}/{b['n']} facilities geocoded")
+        + ck_kpi_block("Blended 65+", _pct(b.get("pct_age_65_plus")),
+                       sub="population-weighted · Medicare demand")
+        + ck_kpi_block("Blended uninsured", _pct(b.get("uninsured_rate")),
+                       sub="bad-debt / self-pay risk")
+        + ck_kpi_block("Blended median income", inc_s,
+                       sub="commercial-mix proxy")
+        + '</div>'
+        '<p class="ck-section-body" style="font-size:11px;margin:8px 0 0;'
+        'color:var(--sc-text-dim,#6a7480);">Population-weighted Census/ACS '
+        f'across the platform\'s home counties ({_html.escape(counties)}) — '
+        'the combined service-AREA demand profile, not the platform\'s patient '
+        'panel. A high blended 65+/uninsured share caps the realistic '
+        'commercial mix for the combined entity.</p>')
+    return xf.wrap(inner, title="Blended service-area demographics",
+                   units="population-weighted county ACS",
+                   source="US Census / ACS county estimates",
+                   vintage="latest ACS vintage")
+
+
 def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None,
                           active_deal: Optional[Dict[str, str]] = None) -> str:
     qs = qs or {}
@@ -252,7 +293,8 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None,
                     '<span style="font-family:var(--sc-mono);font-size:9.5px;'
                     'color:var(--sc-text-dim,#6a7480);margin-left:8px;">records a '
                     'note on the deal with these facilities + figures</span></form>')
-        body_main = save_block + combined + markets + facilities_tbl
+        body_main = (save_block + combined + markets
+                     + _demographics_panel(ccns, xf) + facilities_tbl)
 
     body = (
         ck_page_title(
