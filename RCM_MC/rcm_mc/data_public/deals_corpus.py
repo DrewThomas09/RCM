@@ -1019,8 +1019,14 @@ class DealsCorpus:
     # Write
     # ------------------------------------------------------------------
 
-    def upsert(self, deal: Dict[str, Any]) -> int:
-        """Insert or replace a deal keyed by source_id. Returns deal_id."""
+    def _upsert_on(self, con: Any, deal: Dict[str, Any]) -> int:
+        """Normalise + upsert one deal on an existing connection (no commit).
+
+        Split out of ``upsert`` so ``seed`` can batch ~1,700 rows in ONE
+        transaction: the per-row connect→commit→close pattern cost ~9s of
+        fsync on a cold file-backed seed (one WAL commit per row) and pushed
+        the comparable-outcomes first render past HTTP test timeouts.
+        """
         # Normalise field aliases from newer seed file schemas:
         #   company_name → deal_name, moic → realized_moic, irr → realized_irr
         #   ebitda_mm → ebitda_at_entry_mm; auto-generate source_id when absent.
@@ -1044,55 +1050,60 @@ class DealsCorpus:
         if isinstance(payer_mix, dict):
             payer_mix = json.dumps(payer_mix)
 
+        cur = con.execute(
+            """
+            INSERT INTO public_deals
+                (source_id, source, deal_name, year, buyer, seller,
+                 ev_mm, ebitda_at_entry_mm, hold_years,
+                 realized_moic, realized_irr,
+                 payer_mix, notes, ingested_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ON CONFLICT(source_id) DO UPDATE SET
+                source             = excluded.source,
+                deal_name          = excluded.deal_name,
+                year               = excluded.year,
+                buyer              = excluded.buyer,
+                seller             = excluded.seller,
+                ev_mm              = excluded.ev_mm,
+                ebitda_at_entry_mm = excluded.ebitda_at_entry_mm,
+                hold_years         = excluded.hold_years,
+                realized_moic      = excluded.realized_moic,
+                realized_irr       = excluded.realized_irr,
+                payer_mix          = excluded.payer_mix,
+                notes              = excluded.notes,
+                ingested_at        = excluded.ingested_at
+            """,
+            (
+                source_id,
+                deal.get("source", "seed"),
+                deal_name,
+                deal.get("year"),
+                deal.get("buyer"),
+                deal.get("seller"),
+                deal.get("ev_mm"),
+                ebitda,
+                deal.get("hold_years"),
+                realized_moic,
+                realized_irr,
+                payer_mix,
+                deal.get("notes"),
+                _utcnow(),
+            ),
+        )
+        if cur.lastrowid:
+            return cur.lastrowid
+        row = con.execute(
+            "SELECT deal_id FROM public_deals WHERE source_id = ?",
+            (source_id,),
+        ).fetchone()
+        return row["deal_id"] if row else -1
+
+    def upsert(self, deal: Dict[str, Any]) -> int:
+        """Insert or replace a deal keyed by source_id. Returns deal_id."""
         with self._connect() as con:
-            cur = con.execute(
-                """
-                INSERT INTO public_deals
-                    (source_id, source, deal_name, year, buyer, seller,
-                     ev_mm, ebitda_at_entry_mm, hold_years,
-                     realized_moic, realized_irr,
-                     payer_mix, notes, ingested_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                ON CONFLICT(source_id) DO UPDATE SET
-                    source             = excluded.source,
-                    deal_name          = excluded.deal_name,
-                    year               = excluded.year,
-                    buyer              = excluded.buyer,
-                    seller             = excluded.seller,
-                    ev_mm              = excluded.ev_mm,
-                    ebitda_at_entry_mm = excluded.ebitda_at_entry_mm,
-                    hold_years         = excluded.hold_years,
-                    realized_moic      = excluded.realized_moic,
-                    realized_irr       = excluded.realized_irr,
-                    payer_mix          = excluded.payer_mix,
-                    notes              = excluded.notes,
-                    ingested_at        = excluded.ingested_at
-                """,
-                (
-                    source_id,
-                    deal.get("source", "seed"),
-                    deal_name,
-                    deal.get("year"),
-                    deal.get("buyer"),
-                    deal.get("seller"),
-                    deal.get("ev_mm"),
-                    ebitda,
-                    deal.get("hold_years"),
-                    realized_moic,
-                    realized_irr,
-                    payer_mix,
-                    deal.get("notes"),
-                    _utcnow(),
-                ),
-            )
+            deal_id = self._upsert_on(con, deal)
             con.commit()
-            if cur.lastrowid:
-                return cur.lastrowid
-            row = con.execute(
-                "SELECT deal_id FROM public_deals WHERE source_id = ?",
-                (source_id,),
-            ).fetchone()
-            return row["deal_id"] if row else -1
+            return deal_id
 
     def delete(self, source_id: str) -> bool:
         with self._connect() as con:
@@ -1314,10 +1325,13 @@ class DealsCorpus:
             if count >= unique_n:
                 return 0
 
+        # One connection, one commit for the whole batch — see _upsert_on.
         inserted = 0
-        for deal in all_seed:
-            self.upsert(deal)
-            inserted += 1
+        with self._connect() as con:
+            for deal in all_seed:
+                self._upsert_on(con, deal)
+                inserted += 1
+            con.commit()
         return inserted
 
     # ------------------------------------------------------------------
