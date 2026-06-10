@@ -524,3 +524,12 @@ them; int(inf) in the form echo raised) → _f_or_none rejects non-finite.
 → non-finite treated as no assumption, both in the page and save-to-deal.
 **Verify**: re-fuzz 150/150 CLEAN; NonFiniteInputTests (2), NonFiniteGaPctTests
 (1), MarketDataRedirectTests (1); suites 27+4 passed.
+
+## W2-4 — X-Ray dollar metrics: trailing " $" → leading "$" (13:12Z)
+**Found by**: visual pass on /diligence/hcris-xray — peer table rendered
+"2,720,593 $" (currency trailing, against the house style and how every
+other surface prints money).
+**Fixed**: MetricSpec gains a `prefix` field; the four $ metrics (NPR/bed,
+NPR/patient-day, Opex/bed, Opex/patient-day) now render "$2,720,593" in the
+peer table, top-finding band, memo and CSV (all flow through spec.fmt).
+**Verify**: fmt spot-check on all four; X-Ray suites 143 passed.
