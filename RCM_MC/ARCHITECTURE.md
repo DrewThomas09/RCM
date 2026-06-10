@@ -108,3 +108,16 @@ candidates (max 4) under a "Takeaways — computed from the figures on this
 page" header with copy-to-clipboard. No free-form generation anywhere; a
 suppressed guard yields NO bullet (silence over noise). Slice-1 consumer:
 /portfolio (spread, NCR-vs-target, AR outliers, health mix).
+
+## P5 — Exhibit Factory v1 (this session)
+**Design.** `ExhibitFactory(deal_label, source_default)` instantiated per
+render pass (thread-safe by construction — no module globals); `.wrap(
+inner_html, title, units, source, vintage)` returns the exhibit chrome:
+"Exhibit N — Title" header (numbering auto-increments within the factory),
+units stated under the title, footer "Source: … · vintage · PEdesk" — the
+deck-ready discipline (title case, units, sourced footnote, numbering).
+Print CSS: each .ck-exhibit page-breaks cleanly with chrome hidden, so
+Cmd+P → PDF gives deck-insertable pages. Consumers v1: Roll-Up Builder
+(pro-forma KPIs + concentration table) and CIM Cross-Check (variance
+table). Copy-as-image deferred (needs html2canvas-class dep — out per
+house dependency rule); print-to-PDF is the v1 capture path, stated.

@@ -17,8 +17,8 @@ from ..diligence.cim_crosscheck import (
     CLAIM_TYPES, CrossCheckResult, run_crosscheck, variance_memo,
 )
 from ._chartis_kit import (
-    chartis_shell, ck_basis_badge, ck_kpi_block, ck_page_title, ck_panel,
-    ck_source_link,
+    ExhibitFactory, chartis_shell, ck_basis_badge, ck_kpi_block,
+    ck_page_title, ck_panel, ck_source_link,
 )
 
 _FLAG_STYLE = {
@@ -188,7 +188,12 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
                 f'font-variant-numeric:tabular-nums;">{var_s}</td>'
                 f'<td style="padding:6px 8px;">{_flag_chip(r.flag)}</td>'
                 '</tr>')
-        results_html = kpis + ck_panel(
+        # Exhibit chrome (P5): the variance table IS the cross-check
+        # deliverable — wrap it as a numbered, sourced exhibit so
+        # print-to-PDF drops straight into the CDD readout deck.
+        xf = ExhibitFactory(deal_label="CIM cross-check",
+                            source_default=ck_source_link("CMS HCRIS"))
+        results_html = kpis + xf.wrap(
             '<div style="overflow-x:auto;"><table class="ck-data-table" '
             'style="width:100%;border-collapse:collapse;">'
             '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
@@ -203,7 +208,9 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'Variance memo (txt) ↓</a> · '
             f'<a class="ck-link" href="/diligence/cim-crosscheck?{csv_qs}">CSV ↓</a>'
             ' — memo includes a suggested expert-call question per claim.</p>',
-            title=f"Variance vs public data — {_html.escape(result.scope_label)}")
+            title=f"Variance vs public data — {result.scope_label}",
+            units="claims as entered; estimates from filed HCRIS values",
+            vintage="latest HCRIS filing per CCN")
 
     body = (
         ck_page_title(
