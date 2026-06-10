@@ -285,6 +285,9 @@ class MetricSpec:
     unit_help: str = ""                    # what the units mean
 
     def fmt(self, value: float) -> str:
+        # None / NaN are gaps, not numbers — render "—", never literal "nan%".
+        if value is None or (isinstance(value, float) and value != value):
+            return "—"
         try:
             return format(value, self.format_spec) + self.suffix
         except (ValueError, TypeError):
