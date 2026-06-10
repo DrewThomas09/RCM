@@ -124,5 +124,41 @@ class RegressionOverfitGuardTests(unittest.TestCase):
         self.assertNotIn("degrees of freedom", h)
 
 
+class HonestContentsTests(unittest.TestCase):
+    """The Contents rail must list only sections that rendered content — an
+    entry that scrolls to an empty anchor reads as a broken page."""
+
+    def test_empty_sections_dropped_from_toc(self):
+        import re
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        # One deal, no health/revenue data → health, opportunity, synergy and
+        # regression all have nothing to show.
+        deals = pd.DataFrame([{
+            "deal_id": "solo", "name": "Solo", "created_at": "2026-01-01",
+            "denial_rate": 9.0, "days_in_ar": 44.0,
+        }])
+        h = render_portfolio_overview(deals, None)
+        toc = re.findall(r'href="#(po-[^"]+)"', h)
+        self.assertIn("po-kpis", toc)
+        self.assertIn("po-table", toc)
+        for absent in ("po-health", "po-opportunity", "po-synergy", "po-regression"):
+            self.assertNotIn(absent, toc)
+
+    def test_health_listed_when_scores_present(self):
+        import re
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        deals = pd.DataFrame([
+            {"deal_id": f"d{i}", "name": f"D{i}", "created_at": "2026-01-01",
+             "denial_rate": 9.0, "days_in_ar": 44.0, "health_score": 80 - i * 20}
+            for i in range(3)
+        ])
+        h = render_portfolio_overview(deals, None)
+        toc = re.findall(r'href="#(po-[^"]+)"', h)
+        self.assertIn("po-health", toc)
+        self.assertIn("Health Distribution", h)
+
+
 if __name__ == "__main__":
     unittest.main()
