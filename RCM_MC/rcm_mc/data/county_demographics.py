@@ -96,3 +96,48 @@ def demographics_sources() -> List[Dict[str, str]]:
         return []
     df = pd.read_csv(reg)
     return df[df["source_id"].astype(str) == "chr_county_demographics"].to_dict("records")
+
+
+def _norm_county(name: str) -> str:
+    """Normalize a county label for name-matching: uppercase, drop the
+    County/Parish/Borough suffix and internal spaces so the geocode file's
+    'DE KALB' / 'HOUSTON' collide with the ACS file's 'DeKalb County' /
+    'Houston County'. Bridges the common label gaps WITHOUT fuzzy matching
+    (which could mis-join a target to the wrong county)."""
+    n = (name or "").upper()
+    for suf in (" COUNTY", " PARISH", " BOROUGH", " CENSUS AREA",
+                " CITY AND BOROUGH", " MUNICIPALITY"):
+        if n.endswith(suf):
+            n = n[: -len(suf)]
+    return n.replace(" ", "").strip()
+
+
+@functools.lru_cache(maxsize=1)
+def _county_by_name() -> Dict[tuple, Dict[str, Any]]:
+    """(state, normalized county-name) → county row, for joins that only have
+    a county NAME (e.g. the hospital geocode file) rather than a FIPS code."""
+    df = _county()
+    out: Dict[tuple, Dict[str, Any]] = {}
+    if not len(df) or "county_name" not in df.columns:
+        return out
+    for rec in df.to_dict("records"):
+        st = str(rec.get("state") or "").upper().strip()
+        cn = rec.get("county_name") or ""
+        if st and cn:
+            out[(st, _norm_county(cn))] = rec
+    return out
+
+
+def demographics_for_ccn(ccn: str) -> Dict[str, Any]:
+    """Resolve a hospital CCN → its vendored geocode county → county
+    demographics, by EXACT normalized name match within state. Empty dict
+    when the CCN isn't geocoded or its county doesn't match the ACS file
+    exactly — never a guessed/nearest county (a wrong county's demographics
+    would mislead diligence)."""
+    from .hospital_coords import load_hospital_coords
+    c = load_hospital_coords().get(str(ccn))
+    if c is None or not c.county or not c.state:
+        return {}
+    return _county_by_name().get(
+        (c.state.upper().strip(), _norm_county(c.county)), {})
+
