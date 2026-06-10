@@ -657,3 +657,17 @@ stays same-origin).
 **Verify**: test_open_redirect_guard.py (4: protocol-relative variants +
 header-splitting rejected, legit paths + empty preserved); deal-context
 suites 15 passed.
+
+## W2-14 — radius HHI on the local-market panel (16:10Z)
+**What**: The local-competitive-context panel gains a "RADIUS HHI (NPR)" KPI —
+Herfindahl of NPR within the 25-mile radius (target + reporting competitors),
+colored by the 2023 DOJ/FTC thresholds (green <1,500 / amber <2,500 / red
+≥2,500). The most defensible LOCAL concentration number, more granular than
+the state-proxy HHI. None when target NPR is a gap or no competitor reports —
+never a 0. Reuses the antitrust Σ(100·share)² convention.
+**Verify**: two-equal-facilities → 5,000 exactly; None without target NPR /
+when alone; Methodist Houston → 1,066 (unconcentrated, credible for a 41-
+hospital metro); panel renders the KPI. local-market suite 13, X-Ray 303 green.
+**Persona check**: the antitrust read a consultant needs ("is this a
+concentrated local market?") is now on the target's own page, on the DOJ
+scale, sourced to filed NPR — not buried in a separate state-proxy screen.

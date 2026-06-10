@@ -801,6 +801,26 @@ def _regulatory_exposure(target: HospitalMetrics) -> str:
         '</div></div>')
 
 
+def _radius_hhi_kpi(lm) -> str:
+    """Radius-HHI KPI block, colored by the 2023 DOJ/FTC thresholds
+    (>2,500 highly concentrated, >1,800 the merger-presumption line). None
+    (target NPR gap / no reporting competitor) → no block, never a 0."""
+    h = lm.radius_hhi()
+    if h is None:
+        return ""
+    if h >= 2500:
+        zone, color = "highly concentrated", "var(--sc-negative,#b5321e)"
+    elif h >= 1500:
+        zone, color = "moderately concentrated", "var(--sc-warning,#b8732a)"
+    else:
+        zone, color = "unconcentrated", "var(--sc-positive,#0a8a5f)"
+    return (
+        f'<div><div class="ck-eyebrow">RADIUS HHI (NPR)</div>'
+        f'<div class="num" style="font-size:20px;color:{color};">{h:,.0f}</div>'
+        f'<div style="font-family:var(--sc-mono);font-size:9px;'
+        f'color:var(--sc-text-dim,#6a7480);">{zone} · DOJ/FTC scale</div></div>')
+
+
 def _local_market_context(target: HospitalMetrics) -> str:
     """Local competitive context — hospitals within 25 straight-line miles.
 
@@ -871,6 +891,7 @@ def _local_market_context(target: HospitalMetrics) -> str:
             f'<div class="num" style="font-size:20px;">{share_s}</div>'
             f'<div style="font-family:var(--sc-mono);font-size:9px;'
             f'color:var(--sc-text-dim,#6a7480);">by NPR, reporting set only</div></div>'
+            + _radius_hhi_kpi(lm) +
             '</div>'
             '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
             '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'

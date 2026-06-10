@@ -87,3 +87,32 @@ class LocalRollupLinkTests(unittest.TestCase):
         self.assertEqual(ccns[0], "450358")        # target leads the basket
         self.assertEqual(len(ccns), 4)             # + 3 nearest
         self.assertIn("Model a local roll-up", h)
+
+
+class RadiusHHITests(unittest.TestCase):
+    def test_hhi_two_equal_facilities_is_5000(self):
+        lm = LocalMarket(target_ccn="x", radius_miles=25, target_npr=100.0)
+        lm.competitors = [NearbyHospital("a", "A", "C", "TX", 1.0, 100, 100.0)]
+        # two 50% shares → 50²+50² = 5000
+        self.assertAlmostEqual(lm.radius_hhi(), 5000.0, places=0)
+
+    def test_hhi_none_without_target_npr(self):
+        lm = LocalMarket(target_ccn="x", radius_miles=25, target_npr=None)
+        lm.competitors = [NearbyHospital("a", "A", "C", "TX", 1.0, 100, 100.0)]
+        self.assertIsNone(lm.radius_hhi())
+
+    def test_hhi_none_when_alone(self):
+        lm = LocalMarket(target_ccn="x", radius_miles=25, target_npr=100.0)
+        self.assertIsNone(lm.radius_hhi())   # <2 reporting → no index
+
+    def test_methodist_radius_hhi_unconcentrated(self):
+        lm = local_market("450358", 25.0)
+        h = lm.radius_hhi()
+        self.assertIsNotNone(h)
+        self.assertLess(h, 1500)   # dense Houston metro
+
+    def test_panel_shows_radius_hhi_kpi(self):
+        from rcm_mc.ui.hcris_xray_page import render_hcris_xray_page
+        h = render_hcris_xray_page({"ccn": ["450358"]})
+        self.assertIn("RADIUS HHI", h)
+        self.assertIn("DOJ/FTC scale", h)
