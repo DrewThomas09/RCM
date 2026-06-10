@@ -14,7 +14,7 @@ import pandas as pd
 
 from ._chartis_kit import chartis_shell
 from ._glossary_link import metric_label_link
-from ._provenance_tooltip import provenance_tooltip
+from ._provenance_tooltip import provenance_tooltip, provenance_tooltip_css
 from ..provenance.graph import NodeType, ProvenanceGraph, ProvenanceNode
 from .brand import PALETTE
 
@@ -349,18 +349,21 @@ def render_portfolio_overview(
             len(_hi_ar) > 0))
     insights = ck_insight_bullets(_cands)
 
-    kpis = insights + (
+    # Tooltip CSS is injected ONCE here, not via inject-on-first-call: any
+    # tooltip can degrade to plain text when its graph lookup fails (the NPR
+    # one does on real stores), and whichever call carried inject_css=True
+    # then takes the page's only CSS down with it — the popover cards of the
+    # surviving tooltips rendered inline as body text.
+    kpis = insights + provenance_tooltip_css() + (
         f'<div class="ck-kpi-grid">'
         + ck_kpi_block("Active Deals", ck_fmt_num(n))
         + ck_kpi_block(
             "Total Net Revenue",
-            provenance_tooltip(label="Total Net Revenue", value=(_fmt_money(total_rev) if total_rev else "—"), graph=prov_graph, metric_key="net_patient_revenue"),
+            provenance_tooltip(label="Total Net Revenue", value=(_fmt_money(total_rev) if total_rev else "—"), graph=prov_graph, metric_key="net_patient_revenue", inject_css=False),
         )
         + ck_kpi_block(
             "Avg Denial Rate",
-            # CSS must inject on the FIRST tooltip of the page — all-False left the
-            # popover content rendering inline once real values arrived.
-            provenance_tooltip(label="Avg Denial Rate", value=(_fmt_pct(avg_denial) if avg_denial else "—"), graph=prov_graph, metric_key="denial_rate", inject_css=True),
+            provenance_tooltip(label="Avg Denial Rate", value=(_fmt_pct(avg_denial) if avg_denial else "—"), graph=prov_graph, metric_key="denial_rate", inject_css=False),
         )
         + ck_kpi_block(
             "Avg Days in AR",

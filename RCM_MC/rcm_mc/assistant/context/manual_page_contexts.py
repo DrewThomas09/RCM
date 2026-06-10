@@ -11333,6 +11333,281 @@ for _c in _MANUAL:
     if _sids and not (getattr(_c, "data_source_ids", None) or []):
         _c.data_source_ids = list(_sids)
 
+# ── 2026-06 session surfaces (CIM cross-check, roll-up, DQ, demo, intl) ─
+# Documented contexts for the routes the 2026-06 build-out added (plus three
+# older served-but-unmapped routes the guide-blind test surfaced). Placed
+# BEFORE the hygiene/back-fill passes so related_routes get validated and
+# data_source consuming-page lists pick these up.
+_MANUAL.extend([
+    _ctx(
+        "/diligence/cim-crosscheck", "CIM Cross-Check",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description=(
+            "Pressure-tests management's CIM market claims against "
+            "independent estimates computed from CMS HCRIS filings."),
+        primary_purpose=(
+            "Catch CIM overstatement in week one: enter the claims, get the "
+            "public-data counter-evidence with variance flags."),
+        common_questions=[
+            "Does the CIM's market size hold up against filed revenue?",
+            "Is the claimed provider count right for this state?",
+            "Which claims are unverifiable from public data?",
+            "How are the variance thresholds (10% / 25%) applied?"],
+        inputs=["Management's claims as the CIM states them (ENTERED), a "
+                "state scope, optional target CCN and bed-size band."],
+        outputs=["Variance table (claim vs independent estimate, flag per "
+                 "row), variance memo (txt) with expert-call questions, CSV."],
+        key_metrics=["Market size (NPR)", "Provider count",
+                     "Operating margin", "Payer mix"],
+        data_sources=["CMS HCRIS cost-report filings (latest per CCN)."],
+        model_logic_summary=(
+            "Each claim type maps to an estimator over in-scope HCRIS rows "
+            "(sums/medians with plausibility screens); variance vs the claim "
+            "is flagged green ≤10%, yellow ≤25%, red above, UNVERIFIABLE "
+            "when the public side is a gap."),
+        why_it_matters=("A CIM claim that fails against filings is a "
+                        "diligence finding before the first expert call."),
+        diligence_use_cases=["Week-one CDD claim screening",
+                             "Building the management Q&A list"],
+        interpretation_guidance=[
+            "Claims are the user's entry of the CIM — the engine verifies "
+            "the public side only; scope (state, bed band) is printed on "
+            "the table and matters.",
+            "UNVERIFIABLE is a finding, not a pass."],
+        limitations=["HCRIS covers cost-report filers (hospitals); claims "
+                     "about non-filing sites of care can't be checked here.",
+                     "State scope is a proxy for the CIM's market "
+                     "definition."],
+        related_routes=["/diligence/hcris-xray", "/target-screener",
+                        "/diligence/comparable-outcomes"],
+        metric_ids=["operating_margin", "revenue"],
+        data_source_ids=["cms_hcris"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/pipeline/rollup", "Roll-Up Scenario Builder",
+        category=PageContextCategory.PIPELINE_SOURCING,
+        short_description=(
+            "Combines 2–12 real HCRIS facilities into a pro-forma platform: "
+            "volumes, NPR, day-weighted payer blend, state share and HHI "
+            "before/after."),
+        primary_purpose=(
+            "Size a roll-up thesis on filed numbers — including the "
+            "Merger-Guidelines concentration screen — before modeling it."),
+        common_questions=[
+            "What does the combined platform look like on filed figures?",
+            "Does the combination trip the HHI structural presumption?",
+            "How is the payer blend weighted?",
+            "Why is the synergy line missing?"],
+        inputs=["A comma-separated CCN list (the Target Screener compare "
+                "basket builds one), optional G&A synergy % (ENTERED "
+                "assumption)."],
+        outputs=["Pro-forma KPI exhibit, market-concentration exhibit "
+                 "(share, HHI before/after, screening note), facility "
+                 "table, scenario CSV."],
+        key_metrics=["Combined NPR", "HHI delta", "Combined share",
+                     "Blended payer mix"],
+        data_sources=["CMS HCRIS cost-report filings (latest per CCN)."],
+        model_logic_summary=(
+            "Arithmetic combination of filed values (coverage shown when "
+            "fields are partial); state-NPR share proxy; HHI after = "
+            "before − Σ(selected shares²) + (combined share)²; thresholds "
+            "per the 2023 DOJ/FTC Merger Guidelines §2.1. Synergy renders "
+            "only when every facility reports opex."),
+        why_it_matters=("Concentration kills roll-ups late and expensively; "
+                        "the screen belongs at sourcing, not at signing."),
+        diligence_use_cases=["Roll-up thesis sizing",
+                             "Antitrust pre-screening"],
+        interpretation_guidance=[
+            "State NPR shares are a screening proxy, not a relevant-market "
+            "analysis.",
+            "The synergy line is the user's assumption, badged ENTERED."],
+        limitations=["No service-line/geographic overlap below state level.",
+                     "Filed values lag; ownership changes since filing are "
+                     "not reflected."],
+        related_routes=["/target-screener", "/antitrust-screener",
+                        "/diligence/hcris-xray"],
+        metric_ids=["hhi", "revenue"],
+        data_source_ids=["cms_hcris"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/data-quality", "Data Quality",
+        category=PageContextCategory.ADMIN_SYSTEM,
+        short_description=(
+            "One-screen census of the platform's data: wired sources with "
+            "live row counts/vintages/null rates, the known-gap registry, "
+            "and the not-yet-wired source backlog."),
+        primary_purpose=(
+            "Answer 'how much of this is real and how fresh is it' without "
+            "spelunking loaders."),
+        common_questions=[
+            "Which sources are live and how current are they?",
+            "What are the known gaps and their fill plans?",
+            "How bad are the null rates on key fields?"],
+        inputs=["None — computed live from the bundled loaders, the "
+                "gap-fill registry, and the source registry CSV."],
+        outputs=["Wired-source table (rows, vintage, null rates), gap "
+                 "census, unwired-source backlog."],
+        key_metrics=["Row counts", "Null rates", "Vintages"],
+        data_sources=["The platform's own loaders + "
+                      "data/vendor/source_registry.csv."],
+        model_logic_summary=("Descriptive statistics over loaded frames; "
+                             "no modeling."),
+        why_it_matters=("Every analytic page inherits these numbers — "
+                        "their gaps are its gaps."),
+        diligence_use_cases=["Scoping what the platform can verify",
+                             "Explaining a gap dot to a partner"],
+        interpretation_guidance=["A listed gap means downstream pages show "
+                                 "honest blanks/flags there, not zeros."],
+        limitations=["Reports on bundled public data only — says nothing "
+                     "about data the user hasn't uploaded."],
+        related_routes=["/cms-sources", "/methodology"],
+        metric_ids=[],
+        data_source_ids=["cms_hcris"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/demo", "Demo Mode",
+        category=PageContextCategory.ADMIN_SYSTEM,
+        short_description=(
+            "Loads/unloads the curated KKR healthcare demo portfolio so "
+            "every console surface populates for a walkthrough."),
+        primary_purpose=("Stand up a populated console in one click for "
+                         "demos and evaluation."),
+        common_questions=["How do I load the demo portfolio?",
+                          "Is the demo data real?",
+                          "How do I clear it back out?"],
+        inputs=["One-click load/unload actions."],
+        outputs=["Seeded demo deals across the console; downloadable "
+                 "CSV/JSON of the same corpus."],
+        key_metrics=[],
+        data_sources=["Bundled KKR healthcare demo corpus — real deals, EV "
+                      "disclosed where public, other metrics modeled."],
+        model_logic_summary=("Seeds the deal store from the bundled corpus; "
+                             "no modeling."),
+        why_it_matters=("An empty console can't be evaluated; the demo "
+                        "corpus shows every surface working."),
+        diligence_use_cases=["Product walkthroughs", "Training"],
+        interpretation_guidance=["Demo figures mix disclosed and modeled "
+                                 "values — labeled on-page; don't quote "
+                                 "them as market data."],
+        limitations=["Demo deals are illustrative composites for non-"
+                     "disclosed fields."],
+        related_routes=["/settings", "/pipeline"],
+        metric_ids=[],
+        data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/demo/download/kkr-deals.csv", "Demo Deals CSV",
+        category=PageContextCategory.ADMIN_SYSTEM,
+        short_description=("Flat-CSV download of the KKR demo corpus, "
+                           "shaped for /api/deals/import-csv."),
+        primary_purpose=("Give users an import-ready sample file."),
+        common_questions=["What columns does the import expect?"],
+        inputs=["None — direct download."],
+        outputs=["kkr-demo-deals.csv"],
+        key_metrics=[], data_sources=["Bundled KKR demo corpus."],
+        model_logic_summary="File download; no rendering.",
+        why_it_matters="A working sample file de-risks first import.",
+        diligence_use_cases=["Trying the bulk import"],
+        interpretation_guidance=["Same honesty caveats as /demo."],
+        limitations=["Demo data — not market data."],
+        related_routes=["/demo"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/demo/download/kkr-deals.json", "Demo Deals JSON",
+        category=PageContextCategory.ADMIN_SYSTEM,
+        short_description=("JSON download of the KKR demo corpus including "
+                           "the nested profile blobs."),
+        primary_purpose=("Give users an import-ready structured sample."),
+        common_questions=["What does the JSON import schema look like?"],
+        inputs=["None — direct download."],
+        outputs=["kkr-deals.json"],
+        key_metrics=[], data_sources=["Bundled KKR demo corpus."],
+        model_logic_summary="File download; no rendering.",
+        why_it_matters="A working sample file de-risks first import.",
+        diligence_use_cases=["Trying the JSON bulk import"],
+        interpretation_guidance=["Same honesty caveats as /demo."],
+        limitations=["Demo data — not market data."],
+        related_routes=["/demo"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/markets/global", "Global Health Markets",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description=(
+            "Cross-country healthcare-market context — spend, capacity, and "
+            "system structure from OECD/World Bank public statistics."),
+        primary_purpose=("Frame non-US market questions (entry, comps, "
+                         "expansion theses) with sourced country data."),
+        common_questions=[
+            "How does this country's health spend compare?",
+            "What's the capacity picture (beds, workforce)?",
+            "Where does the data come from?"],
+        inputs=["Country selection (drill to /markets/country/<iso2>)."],
+        outputs=["Country profiles and peer comparisons with per-figure "
+                 "provenance notes."],
+        key_metrics=["Health spend %GDP", "Beds per 1k", "Spend per capita"],
+        data_sources=["OECD Health Statistics + World Bank health-"
+                      "expenditure data (public)."],
+        model_logic_summary=("Descriptive presentation of published "
+                             "statistics; no modeling."),
+        why_it_matters=("Cross-border theses need a sourced baseline, not "
+                        "anecdote."),
+        diligence_use_cases=["International expansion screening",
+                             "LP question prep"],
+        interpretation_guidance=["Vintages differ by country/indicator — "
+                                 "check the per-figure note before "
+                                 "comparing."],
+        limitations=["Country-level aggregates only; no provider-level "
+                     "data outside the US."],
+        related_routes=["/research", "/library"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/tools/open-data", "Open Data Lab",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description=(
+            "Catalog of the public datasets the platform ships or can "
+            "wire, with per-source detail pages."),
+        primary_purpose=("Show what public data exists for a question and "
+                         "whether it's wired yet."),
+        common_questions=["What public sources cover this vertical?",
+                          "Is this source loaded or just cataloged?"],
+        inputs=["Source selection (drill to /tools/open-data/<id>)."],
+        outputs=["Source cards with provenance, cadence, and wiring "
+                 "status."],
+        key_metrics=[],
+        data_sources=["The platform's source registry."],
+        model_logic_summary=("Registry presentation; no modeling."),
+        why_it_matters=("Knowing a source exists is half of filling a "
+                        "data gap."),
+        diligence_use_cases=["Scoping a data-fill", "Vendor-data triage"],
+        interpretation_guidance=["Cataloged ≠ loaded — check the wiring "
+                                 "status."],
+        limitations=["Catalog entries describe sources; figures live on "
+                     "the consuming pages."],
+        related_routes=["/cms-sources", "/data-quality"],
+        metric_ids=[], data_source_ids=[],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+])
+
+
 # ── Related-route hygiene ──────────────────────────────────────────────
 # The Guide must never hand the user a cross-link that points nowhere. Repoint
 # a few known-wrong/sub-action links to the right mapped page, normalize

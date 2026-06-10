@@ -19811,6 +19811,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/deals",                 # 301 → /pipeline (renamed)
         # Audit-window action endpoints (token-gated / redirect), not pages.
         "/audit/enter", "/audit/exit",
+        # Cookie set/clear action — 303s back to `return=`, never renders.
+        "/deal-context",
         # Internal/legacy
         "/seekingchartis", "/caduceus",
         # Source-parser false positives + test/scratch routes

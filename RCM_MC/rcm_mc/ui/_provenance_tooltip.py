@@ -104,6 +104,19 @@ def _fmt_upstream_value(val: Any, unit: str) -> str:
     return f"{v:.2f}"
 
 
+def provenance_tooltip_css() -> str:
+    """The tooltip <style> block, for pages that inject it themselves.
+
+    The inject-on-first-call convention breaks when the designated first
+    tooltip degrades to plain text (graph lookup failure returns BEFORE the
+    css concat), leaving later inject_css=False tooltips with no CSS and
+    their popover cards rendering inline — exactly what happened on
+    /portfolio once real values arrived. Pages with several tooltips should
+    emit this once unconditionally and pass inject_css=False on every call.
+    """
+    return _TT_CSS
+
+
 def provenance_tooltip(
     label: str,
     value: str,
