@@ -37,6 +37,9 @@ class AnchorPanelTests(unittest.TestCase):
         self.assertIn("hcris-xray?ccn=240004", h)
         self.assertIn(">ACTUAL</span>", h)
         self.assertIn("-11.2% operating margin", h)
+        # House style: a >$1B anchor NPR must roll to $B, not read "$1,194M".
+        self.assertIn("$1.19B NPR", h)
+        self.assertNotIn("1,194M NPR", h)
 
     def test_rcm_metrics_labeled_illustrative(self):
         h = render_deal_quick_view("ccf", _PROFILE)

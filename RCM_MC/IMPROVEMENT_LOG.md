@@ -908,3 +908,15 @@ whole dollars). Display-only — the variance math and the CSV export keep the
 raw machine-precise values (verified the CSV cells stay numeric).
 **Verify**: DollarFormatTests (scales B/M/raw; CSV stays raw multi-digit);
 CIM suite 27 passed.
+
+## W2-31 — Deal Quick-View money format: $B rollup at ≥$1B (21:55Z)
+**Found by**: continuing the money-format consistency thread — the Deal
+Quick-View's anchor panel rendered a >$1B filed NPR as "$1,194M NPR"
+(Hennepin County MC, $1.194B) and the "Net Revenue" KPI used the same
+$M-only divisor. Last hand-rolled `$M` spot at billion scale.
+**Fixed**: anchor NPR line and the Net Revenue KPI now flow through the
+canonical `ck_fmt_currency` (rolls $B at ≥$1B, $M at ≥$1M, $K at ≥$1K).
+Hennepin anchor now reads "$1.19B NPR".
+**Verify**: test_demo_anchor asserts "$1.19B NPR" present / "1,194M NPR"
+absent; render check on net_revenue=1.45e9→$1.45B and 4.5e8→$450.0M;
+deal-quick-view suites 35 passed.
