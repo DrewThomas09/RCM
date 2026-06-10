@@ -1149,6 +1149,11 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
     s = sub.add_parser("status", help="Show freshness of each data source")
     s.add_argument("--db", default="portfolio.db", help="Path to SQLite store")
 
+    sub.add_parser(
+        "gaps",
+        help="Census of HCRIS metric gaps + the researched fill source for each",
+    )
+
     # NPPES has a different shape — per-CCN, not bulk — so it gets its
     # own subcommand rather than fitting awkwardly into --source.
     n = sub.add_parser(
@@ -1169,6 +1174,34 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                    help="Max individuals to fetch per address (NPPES caps at 200)")
 
     args = ap.parse_args(argv)
+
+    if args.action == "gaps":
+        # Live gap census across the HCRIS metric universe + each gap's
+        # researched fill path, so a red dot on the UI maps to a concrete
+        # sourcing action here. No store/network needed: reads loaded metrics.
+        from .data.gap_fill_registry import gap_report
+        try:
+            from .diligence.hcris_xray import load_all_metrics
+            metrics = load_all_metrics()
+        except Exception as exc:  # noqa: BLE001
+            sys.stdout.write(f"could not load HCRIS metrics: {exc}\n")
+            return 1
+        rows = gap_report(metrics)
+        sys.stdout.write(f"HCRIS metric gaps across {len(metrics):,} hospital-years:\n\n")
+        for r in rows:
+            tag = {"reingest": "RE-INGEST", "external": "EXTERNAL",
+                   "artifact": "ARTIFACT "}.get(r["fill_kind"], r["fill_kind"])
+            sys.stdout.write(
+                f"  {r['label']:28} {r['gaps']:6,} ({r['gap_pct']:4.1f}%)  "
+                f"[{tag}] {r['status']}\n"
+                f"        ↳ {r['source']}\n")
+        sys.stdout.write(
+            "\nARTIFACT gaps are inconsistent filings (flag, don't fill); "
+            "RE-INGEST/EXTERNAL gaps have a public fill source — see "
+            "rcm_mc/data/gap_fill_registry.py.\n")
+        return 0
+
+    # refresh / status / refresh-nppes all need the store + refresh helpers.
     from .portfolio.store import PortfolioStore
     from .data import data_refresh as dr
     store = PortfolioStore(args.db)
