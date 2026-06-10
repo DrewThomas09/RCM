@@ -141,12 +141,56 @@ def _compute_regression(deals: pd.DataFrame) -> str:
         return ""
 
 
+# Metrics the overview reads as flat columns. Deal metrics live inside
+# deals.profile_json in two shapes: flat keys (quick-import:
+# {"net_collection_rate": 94.5}) or nested observed_metrics (packet/demo
+# seeds: {"observed_metrics": {"net_collection_rate": {"value": 91.8}}}).
+_PROFILE_METRICS = (
+    "denial_rate", "days_in_ar", "net_revenue", "net_collection_rate",
+    "clean_claim_rate", "cost_to_collect",
+)
+
+
+def _expand_profiles(deals: pd.DataFrame) -> pd.DataFrame:
+    """Flatten nested deal metrics into the columns this page aggregates.
+
+    store.list_deals() splats profile_json keys into the frame, so
+    quick-import deals (flat keys) already have denial_rate / net_collection_
+    rate / … columns. Packet-seeded deals instead nest everything under ONE
+    `observed_metrics` dict column ({metric: {"value": …, "quality_flags":
+    […]}}), so every headline KPI showed '—' while the data sat right there
+    (seen on the seeded demo: 5 deals, all four KPIs blank). Pull each
+    metric's .value out; existing flat columns win and only missing cells are
+    filled. Never raises — a malformed entry is just a gap."""
+    if deals.empty or "observed_metrics" not in deals.columns:
+        return deals
+    deals = deals.copy()
+
+    def _val(om, metric):
+        if not isinstance(om, dict):
+            return None
+        entry = om.get(metric)
+        if isinstance(entry, dict):
+            return entry.get("value")
+        # tolerate a plain number too ({metric: 94.5})
+        return entry if isinstance(entry, (int, float)) else None
+
+    for m in _PROFILE_METRICS:
+        filled = deals["observed_metrics"].map(lambda om, _m=m: _val(om, _m))
+        if m not in deals.columns:
+            deals[m] = filled
+        else:
+            deals[m] = deals[m].where(deals[m].notna(), filled)
+    return deals
+
+
 def render_portfolio_overview(
     deals: pd.DataFrame,
     store: Any = None,
 ) -> str:
     """Render the portfolio overview page."""
 
+    deals = _expand_profiles(deals)
     n = len(deals)
 
     if n == 0:
@@ -223,7 +267,7 @@ def render_portfolio_overview(
             node_type=NodeType.AGGREGATED,
             value=float(avg_denial), unit="pct",
             source="PORTFOLIO",
-            source_detail=f"mean across {n} deal(s)",
+            source_detail=f"mean across {n} deal(s) — partner-entered deal profiles, not a public filing",
         ))
     if avg_ar is not None:
         prov_graph.add_node(ProvenanceNode(
@@ -232,7 +276,7 @@ def render_portfolio_overview(
             node_type=NodeType.AGGREGATED,
             value=float(avg_ar), unit="days",
             source="PORTFOLIO",
-            source_detail=f"mean across {n} deal(s)",
+            source_detail=f"mean across {n} deal(s) — partner-entered deal profiles, not a public filing",
         ))
     if avg_ncr is not None:
         prov_graph.add_node(ProvenanceNode(
@@ -241,7 +285,7 @@ def render_portfolio_overview(
             node_type=NodeType.AGGREGATED,
             value=float(avg_ncr), unit="pct",
             source="PORTFOLIO",
-            source_detail=f"mean across {n} deal(s)",
+            source_detail=f"mean across {n} deal(s) — partner-entered deal profiles, not a public filing",
         ))
 
     # Cycle 46 — port cad-kpi cards to ck_kpi_block. Each value is

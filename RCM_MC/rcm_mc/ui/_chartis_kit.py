@@ -670,6 +670,15 @@ def ck_basis_badge(kind: str) -> str:
                 'border:1px solid var(--sc-warning,#b8732a);" '
                 'title="Model estimate from public data — not a filed figure.">'
                 'PREDICTED</span>')
+    if k == "entered":
+        # Deal-profile RCM metrics (net collection rate, denial rate, days in
+        # A/R, …) are PARTNER-ENTERED via /import — self-reported deal data,
+        # not a public filing and not a model. The third basis a partner must
+        # never confuse with the other two.
+        return (f'<span style="{_base}color:var(--sc-text-dim,#6a7480);'
+                'border:1px solid var(--sc-text-dim,#6a7480);" '
+                'title="Partner-entered deal data (via Import) — self-reported, '
+                'not a public filing or a model estimate.">ENTERED</span>')
     return ""
 
 
