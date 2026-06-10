@@ -23,7 +23,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 11 | **P12 entity jump** — palette: type CCN/hospital name → jump to X-Ray/profile scoped | 27 | 5 entities by partial name + by CCN land correctly; palette tests |
 | 12 | ✅ DONE — P5 ExhibitFactory v1 (+ corpus-seed batching perf fix found in pre-commit suite) | — | LOG #11 |
 | 13 | **P9 vintage-diff alerts slice** — snapshot saved-screen results; on data change emit diff alerts ("2 facilities changed ownership") | 26 | Simulated vintage subset → diffs detected + accurately described; tests |
-| 14 | **est_ar_days "?" explainer** + bounds chip on predictive screener (gap from earlier pass) | 22 | "?" present; formula matches code; tests |
+| 14 | ✅ DONE — Est. AR Days column + "?" explainer + 25–75 bound on predictive screener | — | LOG #14 |
 | 15 | **A empty-state sweep** — top-10 pages with ?state=ZZ / empty db: consistent ck_empty_state, no dead controls | 20 | Walker variant with empty db; screenshots |
 
 | 16 | ✅ DONE — deal-context slice 2 (cookie prefills CIM state/ccn + rollup basket) | — | LOG #12 |

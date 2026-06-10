@@ -301,3 +301,20 @@ none) + full screener suite 157/157; cropped screenshot shows the CIM chip on
 two TX hospital rows (Denton 23.3%, Fort Worth 22.9%).
 **Persona check**: Chartis consultant scanning the TX hospital screen clicks
 CIM on a target and lands in the variance form already set to TX + that CCN.
+
+## Item 14 — Est. AR Days column + "?" explainer on the predictive screener (07:20Z)
+**What**: est_ar_days was computed and offered as a sort option but had NO
+table column — a partner could sort by an invisible value. Added the Est. AR
+Days column between Est. Denial and Est. Uplift, PREDICTED-badged, with a "?"
+calc-explainer (ck_calc_help) stating the exact formula (45 + Medicare-day%×5
++ Medicaid-day%×8 − ln(beds)×3 − net-to-gross×10 − margin×8) and the 25–75
+day plausible bound from rcm_mc.ml.prediction_bounds. Thin-data rows show "—"
+(ps-na) like the other estimates. Header/body column counts stay balanced (10).
+**Verify**: tests/test_predictive_screener_ar_days.py (4: header has badge +
+explainer + bound, complete row shows an in-range day count, thin-data row
+shows dash, header/body column counts match); updated test_screener_basis_
+badge PREDICTED count 2→3 (now three modeled columns); related screener +
+bounds suites green. Cropped screenshot: Mercy Hospital MO renders 25 AR days
+under the PREDICTED·? header.
+**Persona check**: portfolio-ops user sorting by A/R days now actually sees
+the days, with the formula one hover away — no hidden sort key.
