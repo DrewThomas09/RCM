@@ -14,7 +14,7 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
-    ck_source_purpose,
+    ck_source_purpose, MARGIN_PLAUSIBLE_LO, MARGIN_PLAUSIBLE_HI,
 )
 from .brand import PALETTE
 
@@ -40,11 +40,15 @@ def _compute_state_stats(hcris_df: pd.DataFrame) -> List[Dict[str, Any]]:
         beds = sdf["beds"].fillna(0)
         rev = sdf[rev_col].fillna(0) if rev_col in sdf.columns else pd.Series(0, index=sdf.index)
         opex = sdf["operating_expenses"].fillna(0) if "operating_expenses" in sdf.columns else pd.Series(0, index=sdf.index)
+        # State median margin must use the SAME plausible band (-40%…+30%) as
+        # the X-Ray / command center, not a loose [-100%, +100%] window — the
+        # loose band let junk-opex filing artifacts skew the state stat (e.g.
+        # TX median +0.97% with artifacts vs +2.65% without).
         margin_vals = []
         for r, o in zip(rev, opex):
             if r > 1e5 and o > 0:
                 m = (r - o) / r
-                if -1.0 <= m <= 1.0:
+                if MARGIN_PLAUSIBLE_LO <= m <= MARGIN_PLAUSIBLE_HI:
                     margin_vals.append(m)
 
         avg_margin = float(np.median(margin_vals)) if margin_vals else 0
