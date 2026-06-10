@@ -561,3 +561,13 @@ unchanged (additive fields).
 built 10-row frame; tail ≥p90; aggregate None; n<8 None; chip renders amber
 tail / empty aggregate) + real-data spot-check (TX: margin 2.5 → p50 matching
 the green flag; revenue 2.6e9 → p99). CIM suite 21 passed. Screenshot.
+
+## W2-7 — screener state prefill from active deal (13:55Z)
+**What**: Deal-context parity for the Target Screener — a plain visit (main
+view, no state chosen) pre-scopes to the active deal's state; the state
+renders as the existing one-click-removable filter chip, so the prefill is
+visible and reversible. Params always win; saved/compare/missed views are
+never re-filtered out from under the partner.
+**Verify**: ScreenerStatePrefillTests (3: chip prefilled; explicit ?state=CA
+wins; saved view untouched); prefill suite restructured onto a fixture-only
+base (parent tests no longer run twice) — 10 passed.

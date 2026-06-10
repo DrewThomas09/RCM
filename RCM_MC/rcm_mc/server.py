@@ -5346,6 +5346,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.target_screener_page import render_target_screener
             from .portfolio.saved_screens import list_screens as _list_screens
             _tsq = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            # Deal-context parity with CIM/roll-up: a plain visit (no state
+            # chosen) pre-scopes the screen to the active deal's state. Only
+            # the main view — saved/compare/missed flows must not be
+            # re-filtered out from under the partner. Params always win, and
+            # the state renders as a one-click-removable filter chip.
+            _ts_view = (_tsq.get("view") or ["main"])[0]
+            if _ts_view in ("", "main") and not (_tsq.get("state") or [""])[0]:
+                _ts_meta = self._active_deal_meta()
+                if _ts_meta and _ts_meta["state"]:
+                    _tsq["state"] = [_ts_meta["state"]]
             _ts_owner = self._current_username() or ""
             try:
                 _ts_saved = (_list_screens(PortfolioStore(self.config.db_path),

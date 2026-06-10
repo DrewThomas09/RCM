@@ -29,7 +29,10 @@ def _meta_cookie(**kw) -> str:
         json.dumps(meta, separators=(",", ":")))
 
 
-class DealContextPrefillTests(unittest.TestCase):
+class _PrefillServerBase(unittest.TestCase):
+    """Fixture-only base — holds the shared open-mode server. Test classes
+    subclass this so the parent's tests don't run twice."""
+
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
@@ -53,6 +56,8 @@ class DealContextPrefillTests(unittest.TestCase):
         with _u.urlopen(req, timeout=20) as r:
             return r.status, r.read().decode()
 
+
+class DealContextPrefillTests(_PrefillServerBase):
     def test_cim_prefills_state_and_ccn_from_cookie(self):
         status, html = self._get("/diligence/cim-crosscheck",
                                   cookie=_meta_cookie())
@@ -103,6 +108,29 @@ class DealContextPrefillTests(unittest.TestCase):
             cookie="pedesk_active_deal_meta=not%20json")
         self.assertEqual(status, 200)
         self.assertNotIn("Pre-scoped to your active deal", html)
+
+
+class ScreenerStatePrefillTests(_PrefillServerBase):
+    """Parity: a plain screener visit pre-scopes to the active deal's state
+    (one-click-removable filter chip); explicit params and non-main views
+    are never re-filtered."""
+
+    def test_screener_main_prefills_state_chip(self):
+        status, html = self._get("/target-screener", cookie=_meta_cookie())
+        self.assertEqual(status, 200)
+        self.assertIn('ts-fchip-val">TX<', html)     # active filter chip
+
+    def test_screener_explicit_state_wins(self):
+        status, html = self._get("/target-screener?state=CA",
+                                 cookie=_meta_cookie())
+        self.assertIn('ts-fchip-val">CA<', html)
+        self.assertNotIn('ts-fchip-val">TX<', html)
+
+    def test_saved_view_not_prefiltered(self):
+        status, html = self._get("/target-screener?view=saved",
+                                 cookie=_meta_cookie())
+        self.assertEqual(status, 200)
+        self.assertNotIn('ts-fchip-val">TX<', html)
 
 
 if __name__ == "__main__":
