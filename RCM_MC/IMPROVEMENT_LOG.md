@@ -726,3 +726,14 @@ viewBox (-55 -10 410 320) so even the longest sits inside. All six now
 render fully.
 **Verify**: RadarAxisLabelTests (concise labels present, verbose ones gone,
 padded viewBox); comparison suites 24 passed; screenshot shows all 6 clean.
+
+## W2-19 — CIM variance memo carries claim percentile + tail flag (17:50Z)
+**What**: The variance memo (the txt deliverable a consultant drops into
+call-prep) now includes "Claim percentile: pNN of n=K in-scope facilities"
+per distribution-shaped claim, with "⚠ tail — scrutinize" on ≥p90/≤p10 — so
+the on-screen W2-6 percentile context survives into the export. A claim that
+passes the variance flag but sits at the top of the market is now a written
+finding. Aggregate claims (counts, market size) get no percentile line.
+**Verify**: MemoPercentileTests (tail claim → percentile + flag in memo;
+aggregate → no line); real-data check (TX revenue claim p99 → "⚠ tail");
+CIM suite 23 passed.
