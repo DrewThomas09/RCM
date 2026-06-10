@@ -3744,6 +3744,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
+        # CIM Cross-Check — management claims vs independent HCRIS estimates.
+        if path == "/diligence/cim-crosscheck":
+            from .ui.cim_crosscheck_page import render_cim_crosscheck
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            fmt = (_qs.get("format") or [""])[0]
+            out = render_cim_crosscheck(_qs)
+            if fmt == "memo":
+                return self._send_text(out)
+            if fmt == "csv":
+                return self._send_text(out, content_type="text/csv; charset=utf-8")
+            return self._send_html(out)
         # CMS X-Ray — universal provider diligence scanner. Resolves a
         # CCN/provider-id/name across every live CMS vertical, benchmarks it
         # (reusing cross_sector + investable_evidence), and renders a

@@ -26,3 +26,28 @@
     (75e1001) completed/success 03:37:20Z incl. live pedesk.app/healthz 200
 - users served: all three (deploy trust underpins everything); replaces:
   confusion about where production actually runs.
+
+## Item 2 — P2 CIM Cross-Check / Variance Engine (vertical slice, hospitals)
+- when: 2026-06-10T03:53–04:08Z (iteration 2)
+- what: NEW power feature. /diligence/cim-crosscheck — enter management's CIM
+  claims (market size $, hospital count, margin %, Medicare/Medicaid share %,
+  inpatient days, target net revenue $) → independent estimates from the
+  HCRIS universe scoped to state/bed-band → variance table with green ≤10% /
+  yellow ≤25% / red >25% / UNVERIFIABLE flags, ENTERED vs ACTUAL basis
+  badges, n + source link + method line + drill-to-rows per estimate;
+  variance-memo (txt, with a suggested expert-call question per claim) + CSV
+  exports. Pure logic in diligence/cim_crosscheck.py (UI-free); page wired
+  into route + Diligence sub-nav + Cmd-K palette.
+- verification (per plan):
+  - claims fabricated from real TX baselines (Σ NPR $97.4B, 583 hospitals,
+    16.7M days) at +7%/+18%/+40% → flags fired exactly green/yellow/red;
+    $500M revenue claim vs CCN 450358's filed $2.63B → red (live E2E).
+  - margin benchmark excludes junk-opex filings via the core plausible band
+    (unit-tested with a 90%-margin artifact row).
+  - NaN day-share filings excluded from medians, not zero-filled (tested).
+  - empty scope / unknown CCN → UNVERIFIABLE, never fabricated (tested).
+  - 20 unit/page tests in tests/test_cim_crosscheck.py; palette tests green.
+  - screenshots: /tmp/session_shots/item2_cim_crosscheck_final.png — caught
+    and fixed a real escaping bug (badge markup escaped in panel title).
+- users: Chartis consultant (user 1) — replaces the week-one manual
+  CIM-vs-public-data build; PE VP (user 2) gets the same table for IC prep.
