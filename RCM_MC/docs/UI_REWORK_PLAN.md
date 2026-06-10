@@ -1,5 +1,7 @@
 # UI Rework — Plan + Safety Rails
 
+> **NOTE (2026-06):** operational commands in this plan (ssh azureuser@…, docker compose on the VM) describe the pre-migration topology. Production now runs on the DigitalOcean droplet — see [docs/DIGITALOCEAN_DEPLOYMENT.md](DIGITALOCEAN_DEPLOYMENT.md) and [docs/AUTODEPLOY.md](AUTODEPLOY.md).
+
 **Branch:** `feat/ui-rework-v3`
 **Designer:** working with Claude Design
 **Created:** 2026-04-25

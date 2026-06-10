@@ -1,5 +1,12 @@
 # 🚀 LIFTOFF · v5 Editorial UI → pedesk.app
 
+> **HISTORICAL (PR #24 era).** This walkthrough captured the v5 launch on the
+> pre-migration VM. Production today is a **DigitalOcean droplet**; pushes to
+> `main` auto-deploy via `.github/workflows/deploy.yml`. Current operations:
+> [RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md)
+> + [RCM_MC/docs/AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md). SSH and rollback
+> commands below no longer apply.
+
 > The full walkthrough for taking the v5 editorial rebuild from a green PR to a verified production deploy on `https://pedesk.app`.
 >
 > Written 2026-05-06. Last verified: PR #24 head `cd96b96c`, CI green across Python 3.11 / 3.12 / 3.14.

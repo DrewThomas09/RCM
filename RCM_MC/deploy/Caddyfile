@@ -1,4 +1,6 @@
-# Caddy reverse-proxy config for the Azure VM deploy.
+# Caddy reverse-proxy config for the legacy docker-compose VM deploy.
+# Production (pedesk.app) runs on the DigitalOcean droplet — see
+# docs/DIGITALOCEAN_DEPLOYMENT.md for its Caddy setup.
 #
 # Caddy automatically provisions a free Let's Encrypt cert for
 # $DOMAIN and renews it on schedule. No manual cert management.
