@@ -801,6 +801,103 @@ def _regulatory_exposure(target: HospitalMetrics) -> str:
         '</div></div>')
 
 
+def _local_market_context(target: HospitalMetrics) -> str:
+    """Local competitive context — hospitals within 25 straight-line miles.
+
+    The state-proxy screens can't answer "who actually competes with this
+    facility"; the vendored geocode crosswalk + HCRIS filings can. Honesty
+    notes are explicit: straight-line distance (not drive time), a radius is
+    a screening geography (not a relevant antitrust market), and the share
+    denominator only includes competitors that report NPR."""
+    try:
+        from ..data.local_market import local_market
+        lm = local_market(getattr(target, "ccn", ""), radius_miles=25.0)
+    except Exception:  # noqa: BLE001 — additive panel, never breaks X-Ray
+        return ""
+    if lm is None:
+        # Target not geocoded — say so rather than silently omitting, since
+        # absence of competitors would otherwise read as "no competition".
+        return (
+            '<div class="ck-panel"><div class="ck-panel-head">'
+            '<span class="ck-panel-title">Local competitive context</span></div>'
+            '<div class="ck-panel-body"><p class="ck-section-body" '
+            'style="font-size:12px;margin:0;">This facility\'s address did '
+            'not geocode in the one-time Census batch, so a radius scan '
+            'isn\'t available (no approximate location is ever fabricated). '
+            'Use the <a class="ck-link" href="/target-screener?vertical='
+            f'hospitals&state={html.escape(getattr(target, "state", "") or "")}">'
+            'state screen</a> instead.</p></div></div>')
+    def _money(v):
+        if v is None:
+            return "—"
+        return (f"${v/1e9:,.2f}B" if abs(v) >= 1e9 else f"${v/1e6:,.1f}M")
+
+    rows = ""
+    for c in lm.competitors[:8]:
+        beds_s = f"{c.beds:,.0f}" if c.beds is not None else "—"
+        npr_s = _money(c.npr)
+        rows += (
+            '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+            f'<td style="padding:5px 8px;font-size:12px;">'
+            f'<a class="ck-link" href="/diligence/hcris-xray?ccn={html.escape(c.ccn)}">'
+            f'{html.escape(c.name[:40])}</a>'
+            f'<span style="font-family:var(--sc-mono);font-size:9px;'
+            f'color:var(--sc-text-faint,#8b94a0);"> · {html.escape(c.city)}</span></td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;">{c.distance_mi:.1f} mi</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;">{beds_s}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;">{npr_s}</td>'
+            '</tr>')
+    if not lm.competitors:
+        body_top = ('<p class="ck-section-body" style="font-size:12px;">'
+                    'No geocoded hospital within 25 straight-line miles — a '
+                    'sole-community footprint on this screen. Verify against '
+                    'drive-time and non-hospital sites in diligence.</p>')
+    else:
+        share = lm.target_share_of_radius
+        share_s = (f"{share:.1%}" if share is not None else "—")
+        comb_s = _money(lm.combined_competitor_npr)
+        body_top = (
+            '<div style="display:flex;gap:26px;flex-wrap:wrap;margin:0 0 10px;">'
+            f'<div><div class="ck-eyebrow">HOSPITALS ≤25 MI</div>'
+            f'<div class="num" style="font-size:20px;">{lm.n_competitors}</div></div>'
+            f'<div><div class="ck-eyebrow">THEIR COMBINED NPR</div>'
+            f'<div class="num" style="font-size:20px;">{comb_s}</div>'
+            f'<div style="font-family:var(--sc-mono);font-size:9px;'
+            f'color:var(--sc-text-dim,#6a7480);">{lm.npr_reported}/{lm.n_competitors} report NPR</div></div>'
+            f'<div><div class="ck-eyebrow">TARGET SHARE OF RADIUS</div>'
+            f'<div class="num" style="font-size:20px;">{share_s}</div>'
+            f'<div style="font-family:var(--sc-mono);font-size:9px;'
+            f'color:var(--sc-text-dim,#6a7480);">by NPR, reporting set only</div></div>'
+            '</div>'
+            '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+            '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
+            '<th style="text-align:left;padding:5px 8px;">Nearest competitors</th>'
+            '<th style="text-align:right;padding:5px 8px;">Distance</th>'
+            '<th style="text-align:right;padding:5px 8px;">Beds</th>'
+            '<th style="text-align:right;padding:5px 8px;">NPR (filed)</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table></div>')
+        if lm.n_competitors > 8:
+            body_top += (f'<p class="ck-section-body" style="font-size:10.5px;'
+                         f'margin:6px 0 0;color:var(--sc-text-dim,#6a7480);">'
+                         f'showing nearest 8 of {lm.n_competitors}</p>')
+    return (
+        '<div class="ck-panel"><div class="ck-panel-head">'
+        '<span class="ck-panel-title">Local competitive context — 25-mile radius</span>'
+        '<span class="ck-panel-code">GEOCODED · STRAIGHT-LINE</span></div>'
+        '<div class="ck-panel-body">'
+        + body_top +
+        '<p class="ck-section-body" style="font-size:11px;margin:8px 0 0;'
+        'color:var(--sc-text-dim,#6a7480);">Straight-line distance on the '
+        'one-time Census-geocoded CMS addresses (no runtime geocoding) — not '
+        'drive time, and a radius is a screening geography, not a relevant '
+        'antitrust market. Financials are each facility\'s latest filed '
+        'HCRIS values.</p>'
+        '</div></div>')
+
+
 def _public_comp_context(target: HospitalMetrics) -> str:
     """Compare target's HCRIS operating margin against public
     hospital-system comps from the Seeking Alpha library.  Answers
@@ -1382,6 +1479,7 @@ def render_hcris_xray_page(
     # Public-comp context — target vs HCA / THC / UHS op margin
     public_comp_block = _public_comp_context(target)
     reg_exposure_block = _regulatory_exposure(target)
+    local_market_block = _local_market_context(target)
 
     # Build cross-links with proper URL-encoding. html.escape alone
     # leaves spaces and ampersands unencoded, which crashes downstream
@@ -1459,6 +1557,7 @@ def render_hcris_xray_page(
             + metrics_panel
             + public_comp_block
             + reg_exposure_block
+            + local_market_block
             + peers_panel
             + '</div></div>'
         )
@@ -1495,6 +1594,7 @@ def render_hcris_xray_page(
             + metrics_panel
             + public_comp_block
             + reg_exposure_block
+            + local_market_block
             + peers_panel
             + state_context_panel(getattr(target, "state", ""))
             + ck_panel(

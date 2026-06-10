@@ -571,3 +571,25 @@ never re-filtered out from under the partner.
 **Verify**: ScreenerStatePrefillTests (3: chip prefilled; explicit ?state=CA
 wins; saved view untouched); prefill suite restructured onto a fixture-only
 base (parent tests no longer run twice) — 10 passed.
+
+## W2-8 — Local competitive context on the HCRIS X-Ray (14:30Z)
+**What**: New data integration — the vendored geocode crosswalk (4,630
+hospitals, one-time Census-geocoded CMS addresses, previously map-only) now
+joins HCRIS filings to answer the week-one CDD question state proxies can't:
+who competes with this facility LOCALLY? rcm_mc/data/local_market.py
+(haversine + LocalMarket with reporting-set share math) + a 25-mile-radius
+panel on the X-Ray: count ≤25mi, combined competitor NPR with coverage
+("37/41 report NPR"), target share-of-radius, nearest-8 table with
+distance/beds/NPR + drill links. Honesty stated on-panel: straight-line not
+drive-time, radius = screening geography not a relevant antitrust market,
+ungeocoded target → explicit note (never an approximated location), zero
+competitors → "sole-community on this screen, verify drive-time".
+**Verify**: haversine vs known NYC–LA distance (2,446 vs ~2,445); ground
+truth — Methodist Houston's nearest are CHI St. Luke's / Texas Children's /
+Memorial Hermann at 0.2–0.3mi (the Texas Medical Center, literally), 41
+competitors, share 16.3%; share math hand-built (100/400=25%, no-NPR target
+→ None). tests/test_local_market.py (7); X-Ray suites 291 passed. $≥1B
+renders as $13.48B per house style. Screenshot local_market.png.
+**Persona check**: consultant opens the target X-Ray and immediately sees
+it shares a campus with three $1B+ systems — the single most important
+commercial fact about that asset, previously absent from the page.
