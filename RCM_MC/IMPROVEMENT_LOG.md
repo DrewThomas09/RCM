@@ -621,3 +621,13 @@ overfitting, but the claim is now honest and the n no longer overstates.
 **Verify**: RealizationHoldoutTests (2: n_training == 80% split on a synthetic
 frame; seeded → identical accuracy across calls; page names the engine and
 drops "ML model predicts"); realization+bridge suites 126 passed.
+
+## W2-11 — POST fuzz: /pipeline/add beds overflow 500s (15:20Z)
+**Found by**: 63-request hostile-value fuzz over 7 POST endpoints (the GET
+fuzz was clean; POSTs were untested). /pipeline/add 500'd twice: beds=1e309
+(int(inf) → OverflowError, uncaught by the (ValueError,TypeError) handler)
+and beds=1e24 (finite, but overflows SQLite's 64-bit INTEGER on insert).
+**Fixed**: finite-check + clamp to [0, 100000] (no hospital has 100k beds) +
+OverflowError in the except. Re-fuzz: 63/63 CLEAN.
+**Verify**: PipelineAddBedsOverflowTests (4 hostile values < 500 over real
+HTTP); suite 5 passed.
