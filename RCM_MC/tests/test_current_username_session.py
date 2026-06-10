@@ -97,7 +97,7 @@ class MarketDataRedirectTests(unittest.TestCase):
     5+ related_routes point at the bare slug, but only /map and /state/<ST>
     were served. It now redirects to the canonical national map."""
 
-    def test_bare_slug_redirects_to_map(self):
+    def test_bare_slug_renders_the_map(self):
         import socket as _s, tempfile as _tf, threading as _th, time as _t
         import urllib.request as _u2
         from rcm_mc.server import build_server as _bs
@@ -113,13 +113,15 @@ class MarketDataRedirectTests(unittest.TestCase):
                 def redirect_request(self, *a, **k):
                     return None
             op = _u2.build_opener(_NR)
+            # Renders the national map directly (200) so the carded
+            # /market-data is not a dead/redirect tile.
             try:
                 r = op.open(f"http://127.0.0.1:{port}/market-data", timeout=10)
-                code, loc = r.status, r.headers.get("Location", "")
+                code, body = r.status, r.read().decode()
             except _u2.HTTPError as e:
-                code, loc = e.code, e.headers.get("Location", "")
-            self.assertIn(code, (301, 302, 303))
-            self.assertEqual(loc, "/market-data/map")
+                code, body = e.code, ""
+            self.assertEqual(code, 200)
+            self.assertIn("market", body.lower())
         finally:
             srv.shutdown(); srv.server_close(); th.join(timeout=5)
 

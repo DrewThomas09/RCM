@@ -5184,12 +5184,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path.startswith("/bayesian/hospital/"):
             bay_ccn = path.replace("/bayesian/hospital/", "").strip("/")
             return self._route_bayesian_profile(bay_ccn)
-        if path == "/market-data" or path == "/market-data/":
+        if (path == "/market-data" or path == "/market-data/"
+                or path == "/market-data/map"):
             # The bare slug 404'd while the Guide context, DQ consumer list,
-            # and 5+ related_routes all point at it — partners got a dead
-            # link. The national map is the canonical landing.
-            return self._redirect("/market-data/map")
-        if path == "/market-data/map":
+            # 5+ related_routes, AND the A-Z tools card all point at it. Render
+            # the national map page directly on both paths (not a redirect, so
+            # the carded /market-data returns 200, not 303).
             return self._route_market_data_page()
         if path.startswith("/market-data/state/"):
             st = urllib.parse.unquote(path[len("/market-data/state/"):]).strip("/")

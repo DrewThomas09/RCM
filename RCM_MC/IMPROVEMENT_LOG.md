@@ -737,3 +737,29 @@ finding. Aggregate claims (counts, market size) get no percentile line.
 **Verify**: MemoPercentileTests (tail claim → percentile + flag in memo;
 aggregate → no line); real-data check (TX revenue claim p99 → "⚠ tail");
 CIM suite 23 passed.
+
+## W2-20 — portfolio opportunity figure: illustrative-denial caveat (18:10Z)
+**Found by**: tracing the downstream effect of W2-15 — surfacing real anchor
+NPR activated the "Recoverable Revenue" opportunity block (total_rev was 0
+before, so it never rendered), which multiplies revenue × (avg denial − 8%).
+The revenue is now real but the demo cohort's denial rates are illustrative,
+so the dollar figure reads as hard when it's part-illustrative.
+**Fixed**: when any deal carries rcm_metrics_basis=illustrative-demo, the
+opportunity block appends an amber caveat ("revenue is filed anchor NPR, but
+the denial rates on these composite demo deals are illustrative — confirm
+against the target's own RCM data"). An all-real cohort gets no caveat.
+**Verify**: OpportunityBasisCaveatTests (caveat for illustrative cohort,
+absent for real); portfolio/anchor suites 17 passed. This closes the honesty
+loop I opened with W2-15.
+
+## W2-21 — /market-data card regressed to 303 (full-suite catch) (18:35Z)
+**Found by**: the window-2 full suite (15,093 passed / 2 failed). One failure
+was real: W2-1's /market-data → /map redirect turned the carded /market-data
+A-Z tile into a 303, and test_every_az_card_returns_200 requires 200. (The
+other failure, a guide-invariant, passed in isolation — a full-run
+cross-test-state flake.)
+**Fixed**: /market-data and /market-data/map now BOTH render the national-map
+page directly (not a redirect), so the card returns 200 AND the Guide/
+related-route links resolve. Updated the W2-1 test to assert a 200 render.
+**Verify**: tools-index cards 21 passed; guide-invariant + market-data + guide
+suites 56 passed.

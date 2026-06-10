@@ -533,6 +533,13 @@ def render_portfolio_overview(
     if avg_dr and avg_dr > 8 and total_rev:
         recoverable = total_rev * (avg_dr - 8) / 100 * 0.3
 
+    # Honesty: this figure multiplies revenue by the avg denial rate. When the
+    # cohort's denial rates are illustrative-demo (composite deals) the dollar
+    # output is part-illustrative — say so, since the revenue side is now real
+    # anchor NPR and the number reads as hard otherwise.
+    _denial_illustrative = (
+        "rcm_metrics_basis" in deals.columns
+        and deals["rcm_metrics_basis"].dropna().eq("illustrative-demo").any())
     opportunity = ""
     if recoverable > 0:
         # 2026-05-28 style-sweep · removed the spec-forbidden
@@ -552,7 +559,12 @@ def render_portfolio_overview(
             f'<div style="flex:1;font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
             f'Reducing portfolio avg denial rate from <strong>{avg_dr:.1f}%</strong> to the '
             f'<strong>8%</strong> industry target. Assumes 30% of excess denials recoverable through '
-            f'prior authorization, coding accuracy, and payer renegotiation.</div>'
+            f'prior authorization, coding accuracy, and payer renegotiation.'
+            + ('<br><em style="color:' + PALETTE["warning"] + ';">Illustrative: '
+               'revenue is filed anchor NPR, but the denial rates on these '
+               'composite demo deals are illustrative — confirm against the '
+               'target\'s own RCM data.</em>' if _denial_illustrative else "")
+            + '</div>'
             f'</div></div>'
         )
 
