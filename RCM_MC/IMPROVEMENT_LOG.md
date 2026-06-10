@@ -376,3 +376,15 @@ result and Enter lands on /diligence/hcris-xray?ccn=450358 (verified URL
 transition); screenshot captured.
 **Persona check**: VP with a CCN from a data room hits ⌘K, types the 6
 digits, Enter — straight into the facility X-Ray, no menu hunting.
+
+## CHECKPOINT 3 — LIVE on pedesk.app (11:55Z)
+PR #1665 (16 commits: items 11–17 + 7-failure fix batch + Guide-invariant
+fixes + Azure→DO docs purge) merged to main at f4ddae0 after CI green on
+3.11/3.12/3.14. Deploy run #1633 "Deploy PEdesk (DigitalOcean Droplet)"
+completed SUCCESS — deploy-gate tests, SSH deploy to the droplet, and the
+**public-URL health check on pedesk.app all green** (the live check of
+record; sandbox egress is blocked, per DECISIONS #1). Post-merge multiple
+checks on the same SHA locally: 6/6 feature markers (rollup exhibits, CIM
+prefill note, DQ AGING chip, AR-days column, screener CIM action, palette
+entity jump) + 6 fresh screenshots (pm_*.png) — Roll-Up shows EXHIBIT 1/2
+chrome with sourced footers exactly as designed.
