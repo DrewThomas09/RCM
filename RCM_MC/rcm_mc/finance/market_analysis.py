@@ -171,7 +171,11 @@ def analyze_market(
             opex = float(r.get("operating_expenses") or 0)
             if rev > 1e5 and opex > 0:
                 m = (rev - opex) / rev
-                if -1.0 <= m <= 1.0:
+                # Use the shared plausible band (-40%…+30%), not a loose
+                # [-100%, +100%] window, so junk-opex filing artifacts don't
+                # skew the market-median margin.
+                from ..core.margins import MARGIN_PLAUSIBLE_LO, MARGIN_PLAUSIBLE_HI
+                if MARGIN_PLAUSIBLE_LO <= m <= MARGIN_PLAUSIBLE_HI:
                     market_margins.append(m)
     avg_margin = float(np.median(market_margins)) if market_margins else 0.10
     margin_vs = target_margin - avg_margin

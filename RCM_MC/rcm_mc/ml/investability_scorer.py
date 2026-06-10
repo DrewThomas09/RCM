@@ -200,9 +200,13 @@ def compute_investability(
     all_margins = df["operating_margin"].dropna()
     margin_pctile = float((all_margins < margin).mean() * 100) if len(all_margins) > 0 else 50
 
-    # State peers
+    # State peers — benchmark median over the agreed plausible band so a few
+    # junk-opex filings don't skew the state comparison the score leans on.
+    from ..core.margins import margin_is_plausible_series
     state_df = df[df["state"] == state] if state else df
-    state_margin = float(state_df["operating_margin"].dropna().median()) if len(state_df) > 5 else 0.03
+    _sm = state_df["operating_margin"]
+    _sm = _sm[margin_is_plausible_series(_sm)].dropna()
+    state_margin = float(_sm.median()) if len(_sm) > 5 else 0.03
     n_competitors = len(state_df) - 1
 
     # County competitors
