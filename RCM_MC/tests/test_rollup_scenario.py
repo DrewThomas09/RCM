@@ -132,3 +132,19 @@ class NonFiniteGaPctTests(unittest.TestCase):
                                    "ga_pct": ["nan"]})
         self.assertNotIn("synergy at 30%", h)
         self.assertIn("Pro-forma platform", h)    # page still renders
+
+
+class MoneyFormatTests(unittest.TestCase):
+    def test_billions_rollup_house_style(self):
+        from rcm_mc.ui.rollup_builder_page import _fmt_m
+        self.assertEqual(_fmt_m(10169.2e6), "$10.17B")   # was $10,169.2M
+        self.assertEqual(_fmt_m(2.64e9), "$2.64B")
+        self.assertEqual(_fmt_m(5e8), "$500.0M")          # sub-$1B stays $M
+        self.assertEqual(_fmt_m(None), "—")
+
+    def test_combined_npr_renders_billions_on_page(self):
+        from rcm_mc.ui.rollup_builder_page import render_rollup_builder
+        h = render_rollup_builder({"ccns": ["450358,450068,450076"]})
+        # Houston TMC roll-up combined NPR is ~$10B → must show $B, not $M
+        import re
+        self.assertRegex(h, r"\$\d{1,2}\.\d{2}B")

@@ -23,7 +23,12 @@ from ._chartis_kit import (
 
 
 def _fmt_m(v: Optional[float]) -> str:
-    return "—" if v is None else f"${v/1e6:,.1f}M"
+    if v is None:
+        return "—"
+    # House style: roll up to $B at/above a billion — a multi-hospital
+    # platform's combined NPR is routinely >$1B and read better as "$10.17B"
+    # than "$10,169.2M".
+    return f"${v/1e9:,.2f}B" if abs(v) >= 1e9 else f"${v/1e6:,.1f}M"
 
 
 def _fmt_i(v: Optional[float]) -> str:
