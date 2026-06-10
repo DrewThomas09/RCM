@@ -533,3 +533,15 @@ other surface prints money).
 NPR/patient-day, Opex/bed, Opex/patient-day) now render "$2,720,593" in the
 peer table, top-finding band, memo and CSV (all flow through spec.fmt).
 **Verify**: fmt spot-check on all four; X-Ray suites 143 passed.
+
+## W2-5 — workbench fabricated green "$0" EBITDA Opportunity (13:25Z)
+**Found by**: visual pass on /analysis/ccf — the hero card showed "$0" in
+positive green with "no EV computed" beneath, i.e. a CONFIDENT zero where the
+truth is "bridge couldn't run" (grade-D completeness, no revenue baseline).
+$0 ≠ unknown — the exact fabricated-zero class this product polices.
+**Fixed**: the hero gates on the bridge's own status + per_metric_impacts
+evidence; not-run renders "—" + "not computed: <bridge reason>" (e.g. "no
+revenue baseline"). A real computed total still renders green.
+**Verify**: test_workbench_honest_hero.py (2: SKIPPED → dash+reason; OK with
+zero contributing levers → dash); workbench suites 198 passed; screenshot
+wb_hero_fixed.png shows the honest dash on the live page.
