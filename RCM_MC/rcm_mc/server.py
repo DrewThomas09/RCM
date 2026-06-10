@@ -3823,6 +3823,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        if path == "/data-quality":
+            from .ui.data_quality_page import render_data_quality
+            return self._send_html(render_data_quality())
         if path == "/cms-sources":
             from .ui.data_public.cms_sources_page import render_cms_sources
             return self._send_html(render_cms_sources())

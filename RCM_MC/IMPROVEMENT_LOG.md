@@ -101,3 +101,19 @@
   no-frame (no chip, no crash). 10 tests green; deal-profile suite green.
 - users: portfolio ops (user 3) — replaces eyeballing the book for "is this
   deal's denial rate bad *for us*".
+
+## Item 5 — P11 Data Quality dashboard
+- when: 2026-06-10T04:24–04:33Z (iteration 5)
+- what: /data-quality — internal certification screen. (1) wired sources
+  table with LIVE row counts + key-field null rates computed at render from
+  the product's own loaders (HCRIS 6,123 + 6 Compare verticals = 49,161
+  rows), vintage + the source's OWN cadence (HCRIS ~18mo lag stated as
+  normal, not staleness), consumer map per source; (2) gap census reusing
+  gap_fill_registry (same numbers as `rcm-mc data gaps`, fill-kind chips);
+  (3) the 23 registered-but-unwired sources from source_registry.csv with
+  vintages. Loader failures render as RED FINDINGS, not blank panels.
+  Route + palette wired.
+- verification: 5 tests pin displayed counts to independent loader/registry
+  computations (hcris len, home_health len, top gap row); render check all
+  marker strings; screenshot /tmp/session_shots/item5_data_quality.png.
+- users: Chartis internal (user 1) — the 60-second pre-demo certification.

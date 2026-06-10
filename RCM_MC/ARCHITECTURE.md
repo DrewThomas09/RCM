@@ -70,3 +70,15 @@ nothing. Color tones by higher_is_better when given, neutral otherwise.
 Consumers slice 1: deal quick-view profile KPIs vs the portfolio's other
 deals (user 3's daily question: where does this deal sit vs the book).
 X-Ray already has its own band component (left as-is).
+
+## P11 — Data Quality dashboard (this session, slice 1)
+**Spec.** /data-quality — the 60-second internal certification screen:
+(1) live-computed table per wired source: rows, key-field null rates,
+vintage + honest staleness vs the source's OWN cadence (HCRIS cost reports
+run ~18mo behind FY end — green within that, not "stale" by naive age);
+(2) gap census reusing data/gap_fill_registry.gap_report (counts + fill-kind
+chips, RE-INGEST/EXTERNAL/ARTIFACT); (3) consumer map per source (which
+pages read it — maintained next to the loaders' registry entries);
+(4) registered-but-not-wired sources from data/vendor/source_registry.csv
+with their vintages. All numbers computed at render from the same loaders
+the product uses — the dashboard can't drift from reality.

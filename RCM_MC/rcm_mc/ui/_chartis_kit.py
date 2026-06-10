@@ -7234,6 +7234,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
     {"id": "cim-crosscheck", "title": "CIM Cross-Check · Variance engine", "route": "/diligence/cim-crosscheck"},
     {"id": "rollup-builder", "title": "Roll-Up Builder · Pro-forma platform", "route": "/pipeline/rollup"},
+    {"id": "data-quality", "title": "Data Quality · Source certification", "route": "/data-quality"},
     {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
     {"id": "value-create",  "title": "Value Creation",     "route": "/diligence/value"},
     {"id": "risk-bench",    "title": "Risk Workbench",     "route": "/diligence/risk-workbench?demo=steward"},
