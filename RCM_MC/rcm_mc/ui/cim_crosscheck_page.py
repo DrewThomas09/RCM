@@ -55,6 +55,14 @@ def _fmt(value: Optional[float], unit: str) -> str:
     if value is None or value != value:
         return "—"
     if unit == "$":
+        # Market-size / revenue claims run to the billions; "$97.37B" reads
+        # where "$97,365,412,101" doesn't. Variance is computed on the raw
+        # values, so this is display-only. Sub-$1M shows whole dollars.
+        a = abs(value)
+        if a >= 1e9:
+            return f"${value/1e9:,.2f}B"
+        if a >= 1e6:
+            return f"${value/1e6:,.1f}M"
         return f"${value:,.0f}"
     if unit == "%":
         return f"{value:,.1f}%"

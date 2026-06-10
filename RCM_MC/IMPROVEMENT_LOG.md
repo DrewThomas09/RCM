@@ -890,3 +890,21 @@ render tests (nav + anchors present, #hx-ic unique); X-Ray suites 297 passed.
 Screenshot: the 8-chip nav row.
 **Persona check**: a partner on a 7,000px target page jumps straight to
 "Local market" or "IC takeaway" instead of scrolling through six panels.
+
+## W2-29 — roll-up money format: $B rollup at ≥$1B (21:30Z)
+**Found by**: visual consistency check vs the X-Ray/portfolio $-format I
+standardized — the Roll-Up Builder's _fmt_m rendered combined NPR as
+"$10,169.2M" (a 3-hospital Houston platform). Same house-style nit.
+**Fixed**: _fmt_m rolls up to "$X.XXB" at ≥$1B (combined NPR, facility NPR,
+synergy all flow through it); sub-$1B stays "$M".
+**Verify**: MoneyFormatTests (10169.2e6→$10.17B, 2.64e9→$2.64B, 5e8→$500.0M,
+None→—; page shows $B); rollup + exhibit suites 20 passed.
+
+## W2-30 — CIM Cross-Check $-format scales to B/M (21:35Z)
+**Found by**: the CIM variance table rendered market-size claims as
+"$97,365,412,101" — unreadable at billion scale.
+**Fixed**: the "$" formatter scales to "$97.37B" / "$500.0M" (sub-$1M stays
+whole dollars). Display-only — the variance math and the CSV export keep the
+raw machine-precise values (verified the CSV cells stay numeric).
+**Verify**: DollarFormatTests (scales B/M/raw; CSV stays raw multi-digit);
+CIM suite 27 passed.

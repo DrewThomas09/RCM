@@ -299,3 +299,19 @@ class MarketBackdropTests(unittest.TestCase):
     def test_backdrop_helper_empty_for_unknown_state(self):
         from rcm_mc.ui.cim_crosscheck_page import _market_backdrop
         self.assertEqual(_market_backdrop("ZZ"), "")
+
+
+class DollarFormatTests(unittest.TestCase):
+    def test_dollar_scales_to_b_m_but_exports_stay_raw(self):
+        from rcm_mc.ui.cim_crosscheck_page import _fmt
+        self.assertEqual(_fmt(97365412101.0, "$"), "$97.37B")
+        self.assertEqual(_fmt(2.6e9, "$"), "$2.60B")
+        self.assertEqual(_fmt(5e8, "$"), "$500.0M")
+        self.assertEqual(_fmt(450000.0, "$"), "$450,000")   # sub-$1M raw
+        # CSV export keeps machine-precise raw values (not the scaled label)
+        from rcm_mc.ui.cim_crosscheck_page import render_cim_crosscheck
+        csv = render_cim_crosscheck({
+            "state": ["TX"], "c_market_size_dollars": ["90000000000"],
+            "format": ["csv"]})
+        self.assertNotIn("B,", csv)   # no "$97.37B" in the CSV cells
+        self.assertRegex(csv, r"\d{6,}")   # raw multi-digit value present
