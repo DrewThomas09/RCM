@@ -861,3 +861,16 @@ exhibit + demographics suites 15+9 passed. Screenshot: Harris+Dallas, 11.8%
 **Persona check**: a partner sizing a 3-hospital platform sees the combined
 service area skews 23.9% uninsured — a bad-debt reality for the WHOLE
 platform, on the same page as the HHI and synergy math.
+
+## W2-27 — the REAL flake cause: test-glossary leak (20:45Z)
+**Found by**: capturing the cert-suite assertion detail — the unresolved keys
+were 'ma_penetration_test' and 'xss_test_metric', synthetic fixtures that
+test_metric_glossary.py injects via define_metric() into the process-global
+_GLOSSARY and never cleaned up. When that file ran before the guide-invariant
+(which reads list_metrics() = _GLOSSARY keys), the invariant saw two keys
+absent from METRIC_REGISTRY → fail. (W2-25's index-rebuild was a real latent-
+prod-bug fix but couldn't address this — the keys were never real metrics.)
+**Fixed**: both define_metric() tests now addCleanup(_GLOSSARY.pop, key) to
+restore the shared dict. Running the polluter file immediately before the
+invariant: 45 passed (was 1 failed).
+**Verify**: test_metric_glossary alone green; polluter→invariant order green.
