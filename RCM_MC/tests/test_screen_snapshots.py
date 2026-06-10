@@ -159,5 +159,56 @@ class SavedTabRenderTests(unittest.TestCase):
         self.assertIn("no change", h)
 
 
+class DiffDetailViewTests(unittest.TestCase):
+    """P9 slice-2 — ?diff=<id> opens row-level entered/left/changed detail."""
+
+    def _detail(self, diff, title="TX watch"):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        saved = [{"id": 7, "title": title, "query_params": "view=main",
+                  "created_at": "2026-06-01T00:00:00+00:00"}]
+        return render_target_screener(
+            {"view": ["saved"]}, saved=saved, owner="alice",
+            snap_info={7: {"taken_at": "2026-06-01T00:00:00+00:00",
+                           "summary": "+1 entered"}},
+            diff_detail={"screen_id": 7, "title": title,
+                         "taken_at": "2026-06-01T00:00:00+00:00",
+                         "diff": diff})
+
+    def test_detail_lists_rows_with_old_new(self):
+        h = self._detail({
+            "entered": [{"ccn": "450099", "name": "NEWCOMER GENERAL"}],
+            "left": [{"ccn": "450001", "name": "DEPARTED MEMORIAL"}],
+            "changed": [{"ccn": "450358", "name": "THE METHODIST HOSPITAL",
+                         "field": "ownership", "old": "Voluntary",
+                         "new": "Proprietary"}]})
+        self.assertIn("ENTERED THE SCREEN (1)", h)
+        self.assertIn("NEWCOMER GENERAL", h)
+        self.assertIn("LEFT THE SCREEN (1)", h)
+        self.assertIn("DEPARTED MEMORIAL", h)
+        self.assertIn("Voluntary", h)
+        self.assertIn("Proprietary", h)
+        self.assertIn("hcris-xray?ccn=450358", h)   # drill links
+
+    def test_empty_diff_states_thresholds(self):
+        h = self._detail({"entered": [], "left": [], "changed": []})
+        self.assertIn("No changes", h)
+        self.assertIn("5% relative", h)             # thresholds stated
+
+    def test_hostile_screen_title_is_escaped(self):
+        h = self._detail({"entered": [], "left": [], "changed": []},
+                         title='<img src=x onerror=alert(1)>')
+        self.assertNotIn("<img src=x", h)
+
+    def test_diff_line_links_to_detail(self):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        saved = [{"id": 7, "title": "T", "query_params": "view=main",
+                  "created_at": "2026-06-01T00:00:00+00:00"}]
+        h = render_target_screener(
+            {"view": ["saved"]}, saved=saved, owner="alice",
+            snap_info={7: {"taken_at": "2026-06-01T00:00:00+00:00",
+                           "summary": "+2 entered"}})
+        self.assertIn("view=saved&diff=7", h)
+
+
 if __name__ == "__main__":
     unittest.main()

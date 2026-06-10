@@ -2596,7 +2596,8 @@ _PRESET_SCREENS = [
 
 
 def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
-                  snap_info: Optional[Dict[int, Dict]] = None) -> str:
+                  snap_info: Optional[Dict[int, Dict]] = None,
+                  diff_detail: Optional[Dict] = None) -> str:
     import html as _h
     saved = saved or []
     snap_info = snap_info or {}
@@ -2633,7 +2634,9 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
                     line = (
                         f'<div style="font-family:var(--sc-mono);font-size:9.5px;'
                         f'color:var(--sc-text-dim,#6a7480);margin:2px 0 0;">'
-                        f'since {_h.escape(str(info["taken_at"])[:10])}: {body}</div>')
+                        f'since {_h.escape(str(info["taken_at"])[:10])}: {body}'
+                        f' · <a class="ck-link" href="/target-screener?view=saved'
+                        f'&diff={int(s["id"])}" style="font-size:9.5px;">detail</a></div>')
                 btn = (
                     f'<form method="post" action="/api/target-screener/snapshot" style="margin:0;">'
                     f'<input type="hidden" name="id" value="{int(s["id"])}">'
@@ -2671,7 +2674,64 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
             'style="padding:5px 8px;border:1px solid var(--sc-rule,#c9c1ac);min-width:220px;"></label>'
             '<button type="submit" class="tsw-vert" style="cursor:pointer;">Save screen</button>'
             '</form>')
-        saved_panel = ck["panel"](
+        # P9 slice-2: row-level diff detail when ?diff=<id> was requested.
+        detail_panel = ""
+        if diff_detail:
+            d = diff_detail["diff"]
+
+            def _name_rows(items):
+                return "".join(
+                    f'<li style="font-size:11.5px;padding:2px 0;">'
+                    f'<a class="ck-link" href="/diligence/hcris-xray?ccn='
+                    f'{_h.escape(i["ccn"])}">{_h.escape(i["name"] or i["ccn"])}</a>'
+                    f'<span style="font-family:var(--sc-mono);font-size:9px;'
+                    f'color:var(--sc-text-faint,#8b94a0);"> · {_h.escape(i["ccn"])}'
+                    f'</span></li>' for i in items[:25])
+
+            chg_rows = "".join(
+                '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+                f'<td style="padding:4px 8px;font-size:11.5px;">'
+                f'<a class="ck-link" href="/diligence/hcris-xray?ccn='
+                f'{_h.escape(c["ccn"])}">{_h.escape(c["name"] or c["ccn"])}</a></td>'
+                f'<td style="padding:4px 8px;font-family:var(--sc-mono);'
+                f'font-size:10px;">{_h.escape(str(c["field"]))}</td>'
+                f'<td class="num" style="padding:4px 8px;text-align:right;'
+                f'font-variant-numeric:tabular-nums;">{_h.escape(str(c["old"]))}'
+                f' &rarr; {_h.escape(str(c["new"]))}</td></tr>'
+                for c in d["changed"][:50])
+            secs = []
+            if d["entered"]:
+                secs.append(f'<div><div class="ck-eyebrow">ENTERED THE SCREEN '
+                            f'({len(d["entered"])})</div><ul style="list-style:'
+                            f'none;padding:0;margin:4px 0 0;">'
+                            f'{_name_rows(d["entered"])}</ul></div>')
+            if d["left"]:
+                secs.append(f'<div><div class="ck-eyebrow">LEFT THE SCREEN '
+                            f'({len(d["left"])})</div><ul style="list-style:'
+                            f'none;padding:0;margin:4px 0 0;">'
+                            f'{_name_rows(d["left"])}</ul></div>')
+            if chg_rows:
+                secs.append(
+                    f'<div><div class="ck-eyebrow">CHANGED &ge; THRESHOLD '
+                    f'({len(d["changed"])})</div>'
+                    '<table style="border-collapse:collapse;margin:4px 0 0;">'
+                    f'<tbody>{chg_rows}</tbody></table></div>')
+            body = ('<div style="display:flex;gap:34px;flex-wrap:wrap;">'
+                    + "".join(secs) + '</div>'
+                    if secs else
+                    '<p class="ck-section-body" style="margin:0;">No changes '
+                    'vs the snapshot &mdash; same facilities, no field moved '
+                    '&ge; the honesty thresholds (5% relative on size/quality; '
+                    'any ownership/name change).</p>')
+            detail_panel = ck["panel"](
+                body +
+                '<p class="ck-section-body" style="font-size:10.5px;margin:10px 0 0;'
+                'color:var(--sc-text-dim,#6a7480);">vs snapshot taken '
+                f'{_h.escape(str(diff_detail["taken_at"])[:10])} &middot; '
+                '<a class="ck-link" href="/target-screener?view=saved">close</a></p>',
+                title=f'What changed — {diff_detail["title"]}')
+
+        saved_panel = detail_panel + ck["panel"](
             cards + save_form,
             title=f"Your saved screens ({len(saved)})")
 
@@ -2728,7 +2788,8 @@ _SCREENS = {
 def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
                            *, saved: Optional[List[Dict]] = None,
                            owner: str = "",
-                           snap_info: Optional[Dict[int, Dict]] = None) -> str:
+                           snap_info: Optional[Dict[int, Dict]] = None,
+                           diff_detail: Optional[Dict] = None) -> str:
     from ._chartis_kit import (chartis_shell, ck_page_title,
                                ck_panel, ck_source_purpose)
     qs = qs or {}
@@ -2761,7 +2822,7 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
         screen = _screen_main(vertical, qs, ck)
     elif view == "saved":
         screen = _screen_saved(qs, ck, saved=saved or [], owner=owner,
-                               snap_info=snap_info)
+                               snap_info=snap_info, diff_detail=diff_detail)
     else:
         screen = _SCREENS[view](qs, ck)
 
