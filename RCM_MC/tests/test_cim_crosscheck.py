@@ -182,3 +182,66 @@ class NonFiniteInputTests(unittest.TestCase):
                                   "c_provider_count": ["400"]})
         self.assertNotIn("market_size_dollars", claims)
         self.assertEqual(claims["provider_count"], 400.0)
+
+
+class ClaimPercentileTests(unittest.TestCase):
+    """P4b — where the CLAIM sits in the in-scope distribution. Aggregates
+    and tiny scopes (<8) get None, never a fabricated rank; the percentile
+    population is the SAME plausible-band one the estimator describes."""
+
+    def _scope(self):
+        import pandas as pd
+        rows = []
+        # 10 facilities, margins 1%..10% (plausible), medicare 10%..55%
+        for i in range(10):
+            rows.append({"ccn": f"45{i:04d}", "state": "TX",
+                         "name": f"H{i}", "beds": 100 + i,
+                         "net_patient_revenue": 1e8 * (i + 1),
+                         "operating_expenses": 1e8 * (i + 1) * (1 - (i + 1) / 100),
+                         "operating_margin": (i + 1) / 100,
+                         "medicare_day_pct": 0.10 + i * 0.05,
+                         "total_patient_days": 1e4})
+        return pd.DataFrame(rows)
+
+    def test_median_claim_ranks_p50(self):
+        from rcm_mc.diligence.cim_crosscheck import run_crosscheck
+        r = run_crosscheck(self._scope(), state="TX",
+                           claims={"median_operating_margin_pct": 5.5})
+        row = r.rows[0]
+        self.assertEqual(row.claim_percentile, 50)   # 5 below, 0 ties, n=10
+        self.assertEqual(row.percentile_n, 10)
+
+    def test_tail_claim_ranks_high(self):
+        from rcm_mc.diligence.cim_crosscheck import run_crosscheck
+        r = run_crosscheck(self._scope(), state="TX",
+                           claims={"median_operating_margin_pct": 50.0})
+        self.assertGreaterEqual(r.rows[0].claim_percentile, 90)
+
+    def test_aggregate_claim_has_no_percentile(self):
+        from rcm_mc.diligence.cim_crosscheck import run_crosscheck
+        r = run_crosscheck(self._scope(), state="TX",
+                           claims={"provider_count": 10})
+        self.assertIsNone(r.rows[0].claim_percentile)
+
+    def test_tiny_scope_gets_none(self):
+        from rcm_mc.diligence.cim_crosscheck import run_crosscheck
+        small = self._scope().head(5)   # n=5 < 8 floor
+        r = run_crosscheck(small, state="TX",
+                           claims={"median_operating_margin_pct": 3.0})
+        self.assertIsNone(r.rows[0].claim_percentile)
+
+    def test_chip_renders_tail_amber_and_aggregate_none(self):
+        from rcm_mc.ui.cim_crosscheck_page import _pctile_chip
+
+        class _R:
+            claim_percentile = 97
+            percentile_n = 457
+        c = _pctile_chip(_R())
+        self.assertIn("p97", c)
+        self.assertIn("tail claim", c)
+        self.assertIn("b8732a", c)         # amber
+
+        class _Agg:
+            claim_percentile = None
+            percentile_n = 0
+        self.assertEqual(_pctile_chip(_Agg()), "")

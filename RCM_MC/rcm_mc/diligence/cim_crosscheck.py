@@ -64,6 +64,13 @@ class VarianceRow:
     variance: Optional[float]       # (claim - est) / est; None when unverifiable
     flag: str                       # "green" | "yellow" | "red" | "unverifiable"
     expert_question: str = ""
+    #: Where the CLAIM itself sits in the in-scope per-facility distribution
+    #: (0–100), for distribution-shaped claims only (margins, day shares,
+    #: target revenue). None for aggregates (market size, counts) and when
+    #: the distribution is too small to rank honestly (n < 8). A claim at the
+    #: p95+ tail is a finding even when the variance flag is green.
+    claim_percentile: Optional[int] = None
+    percentile_n: int = 0
 
 
 @dataclass
@@ -236,6 +243,49 @@ _EXPERT_Q = {
 }
 
 
+def _claim_distribution(key: str, scope: pd.DataFrame) -> Optional[pd.Series]:
+    """Per-facility values (in CLAIM units) for distribution-shaped claims.
+
+    Aggregate claims (market size, provider count, market days) have no
+    per-facility distribution to rank within — return None, never a
+    fabricated one. Margin uses the same plausible-band screen the estimator
+    uses, so the percentile and the estimate describe the SAME population.
+    """
+    if key == "median_operating_margin_pct":
+        if "operating_margin" in scope.columns:
+            m = scope["operating_margin"]
+        else:
+            rev = scope["net_patient_revenue"]
+            m = (rev - scope["operating_expenses"]) / rev.where(rev > 1e5)
+        return m[margin_is_plausible_series(m)].dropna() * 100
+    if key in ("medicare_share_pct", "medicaid_share_pct"):
+        col = key.replace("_share_pct", "_day_pct")
+        if col in scope.columns:
+            return scope[col].dropna() * 100
+        return None
+    if key == "target_net_revenue_dollars":
+        return scope["net_patient_revenue"].dropna()
+    return None
+
+
+_PCTILE_MIN_N = 8
+
+
+def _claim_percentile(key: str, claim_val: float,
+                      scope: pd.DataFrame) -> tuple:
+    """(percentile 0-100, n) of the claim within the in-scope distribution;
+    (None, 0) for aggregates or n < 8 (too small to rank honestly).
+    Rank = below + half of ties — the platform's percentile convention."""
+    dist = _claim_distribution(key, scope)
+    if dist is None or len(dist) < _PCTILE_MIN_N:
+        return None, 0
+    vals = dist.values
+    below = float((vals < claim_val).sum())
+    ties = float((vals == claim_val).sum())
+    pct = int(round(100.0 * (below + ties / 2.0) / len(vals)))
+    return max(0, min(100, pct)), int(len(vals))
+
+
 def run_crosscheck(
     hcris_df: pd.DataFrame,
     *,
@@ -275,9 +325,11 @@ def run_crosscheck(
             q = q.format(claim=claim_val)
         except Exception:  # noqa: BLE001 — a memo nicety, never fatal
             pass
+        pctile, pctile_n = _claim_percentile(key, claim_val, scope)
         result.rows.append(VarianceRow(
             claim_key=key, label=ct["label"], claim_value=claim_val,
-            estimate=est, variance=variance, flag=flag, expert_question=q))
+            estimate=est, variance=variance, flag=flag, expert_question=q,
+            claim_percentile=pctile, percentile_n=pctile_n))
     return result
 
 

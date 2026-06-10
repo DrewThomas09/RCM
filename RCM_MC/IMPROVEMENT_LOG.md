@@ -545,3 +545,19 @@ revenue baseline"). A real computed total still renders green.
 **Verify**: test_workbench_honest_hero.py (2: SKIPPED → dash+reason; OK with
 zero contributing levers → dash); workbench suites 198 passed; screenshot
 wb_hero_fixed.png shows the honest dash on the live page.
+
+## W2-6 — P4b: claim-percentile chips on CIM Cross-Check (13:45Z)
+**What**: Each distribution-shaped claim row now shows where the CLAIM itself
+sits in the in-scope per-facility distribution — "claim @ p50 of n=457" under
+the CIM-says value. Tails (≤p10/≥p90) render amber with "tail claim,
+scrutinize": a claim can pass the variance flag AND be a top-of-market
+assertion worth a question (e.g. claimed target revenue $2.6B @ p99 — true
+for Methodist, but the consultant should know they're underwriting a giant).
+Engine computes it (claim_percentile/percentile_n on VarianceRow) from the
+SAME plausible-band population the estimator describes; aggregates (market
+size, counts) and tiny scopes (n<8) get None — no fabricated ranks. Memo/CSV
+unchanged (additive fields).
+**Verify**: ClaimPercentileTests (5: median claim → exactly p50 on a hand-
+built 10-row frame; tail ≥p90; aggregate None; n<8 None; chip renders amber
+tail / empty aggregate) + real-data spot-check (TX: margin 2.5 → p50 matching
+the green flag; revenue 2.6e9 → p99). CIM suite 21 passed. Screenshot.
