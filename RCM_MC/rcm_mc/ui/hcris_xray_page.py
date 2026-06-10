@@ -1356,8 +1356,10 @@ def render_hcris_xray_page(
         '<p class="ck-eyebrow">'
         f'EV <code>${default_ev/1e6:,.0f}M</code> (9.0× '
         f'${actual_ebitda/1e6:,.1f}M EBITDA'
-        + (f': 5% NPR floor, filed op. margin '
-           f'{target.operating_margin_on_npr*100:.1f}%' if ebitda_is_floored else "")
+        + ((': 5% NPR floor, filed op. margin '
+            + (f'{target.operating_margin_on_npr*100:.1f}%'
+               if margin_is_plausible(target.operating_margin_on_npr) else '—'))
+           if ebitda_is_floored else "")
         + ') · Equity '
         f'<code>${default_equity/1e6:,.0f}M</code> · Debt '
         f'<code>${default_debt/1e6:,.0f}M</code> · override '
