@@ -298,6 +298,22 @@ class PortfolioStore:
             d = {"deal_id": r["deal_id"], "name": r["name"],
                  "created_at": r["created_at"],
                  **json.loads(r["profile_json"] or "{}")}
+            # Packet-seeded profiles nest metrics under ONE observed_metrics
+            # dict ({metric: {"value": …, "quality_flags": […]}}) while
+            # quick-import writes flat keys. Every consumer of this frame
+            # (portfolio overview, regression page, pressure tests, …) reads
+            # flat columns, so without flattening here those deals showed '—'
+            # everywhere their data actually existed. Flat keys win on clash;
+            # malformed entries are just gaps.
+            om = d.get("observed_metrics")
+            if isinstance(om, dict):
+                for metric, entry in om.items():
+                    if metric in d:
+                        continue
+                    if isinstance(entry, dict):
+                        d[metric] = entry.get("value")
+                    elif isinstance(entry, (int, float)):
+                        d[metric] = entry
             if r["archived_at"]:
                 d["archived_at"] = r["archived_at"]
             out.append(d)

@@ -145,6 +145,24 @@ class HonestContentsTests(unittest.TestCase):
         for absent in ("po-health", "po-opportunity", "po-synergy", "po-regression"):
             self.assertNotIn(absent, toc)
 
+    def test_store_list_deals_flattens_observed_metrics(self):
+        # The store-level fix: EVERY list_deals() consumer (overview,
+        # regression page, pressure tests, …) gets flat metric columns even
+        # for packet-seeded profiles that nest them under observed_metrics.
+        import json
+        import tempfile
+        from rcm_mc.portfolio.store import PortfolioStore
+        with tempfile.TemporaryDirectory() as td:
+            store = PortfolioStore(f"{td}/p.db")
+            store.upsert_deal("x", "X", profile={
+                "observed_metrics": {
+                    "net_collection_rate": {"value": 93.3, "quality_flags": []},
+                    "denial_rate": 12.5,   # plain-number shape tolerated too
+                }})
+            df = store.list_deals()
+            self.assertAlmostEqual(df["net_collection_rate"].iloc[0], 93.3)
+            self.assertAlmostEqual(df["denial_rate"].iloc[0], 12.5)
+
     def test_health_listed_when_scores_present(self):
         import re
         import pandas as pd
