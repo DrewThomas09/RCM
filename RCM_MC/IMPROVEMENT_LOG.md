@@ -418,3 +418,24 @@ exact flow was IMPOSSIBLE before the username fix.
 **Persona check**: VP re-opens their watched TX screen after a CMS re-vendor
 and sees "+3 entered · −1 left" instead of silently comparing against a
 different universe than last month.
+
+## Item 19 — Roll-up scenarios persisted to deals as sourced notes (12:20Z)
+**What**: A built roll-up scenario can now be SAVED to the active deal
+(backlog #17). The rollup page shows "Save scenario to <deal>" when a
+scenario is built AND a deal context exists (nothing honest to attach to
+otherwise); POST /api/rollup/save-to-deal recomputes the scenario
+server-side (form figures never trusted), requires the deal to ALREADY exist
+(record_note would silently upsert a junk deal), and records a deal note
+stating facilities + combined filed figures (ACTUAL basis stated), the
+HHI before/after per state-proxy market, the ENTERED-labeled synergy
+assumption, and a reopen link to the exact scenario URL. Notes surface on
+the deal page + notes search and are deletable like any note (soft-delete
+policy inherited).
+**Verify**: tests/test_rollup_save_to_deal.py (4: button only with active
+deal; POST records the sourced note with basis/ENTERED/reopen-link; unknown
+deal rejected with NO junk-deal upsert; <2 CCNs rejected) + rollup/prefill/
+exhibit suites 20 passed. E2E on demo server: set active deal ccf → save →
+green confirmation ("Scenario saved to Cypress Crossing Health") → note
+visible on /deal/ccf (screenshots rollup_save_btn.png, rollup_saved.png).
+**Persona check**: VP models a 3-hospital platform, hits save, and the IC
+prep deal page now carries the scenario with every figure traceable.

@@ -27,7 +27,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 15 | **A empty-state sweep** — top-10 pages with ?state=ZZ / empty db: consistent ck_empty_state, no dead controls | 20 | Walker variant with empty db; screenshots |
 
 | 16 | ✅ DONE — deal-context slice 2 (cookie prefills CIM state/ccn + rollup basket) | — | LOG #12 |
-| 17 | **Roll-up exhibit row on deal page** — link saved roll-up scenarios to deals (deal_overrides or notes) | 24 | scenario persists per deal; reload shows it |
+| 17 | ✅ DONE — roll-up scenarios saved to deals as sourced notes (recomputed server-side, basis stated) | — | LOG #19 |
 | 18 | ✅ DONE — DQ staleness chips (CURRENT/AGING/STALE by cadence; SNF amber) | — | LOG #15 |
 | 19 | ✅ DONE — route_walker --discover + nan/None-leak gate, wired into weekly sweep | — | LOG #16 |
 | 20 | ✅ DONE — screener hospital row → CIM action (state+ccn scoped) | — | LOG #13 |

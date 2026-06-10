@@ -7079,7 +7079,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             if _meta and _meta["ccn"] and not (_qs.get("ccns") or [""])[0]:
                 _qs["ccns"] = [_meta["ccn"]]
                 _qs.setdefault("_prefill_deal", [_meta["name"]])
-            out = render_rollup_builder(_qs)
+            out = render_rollup_builder(_qs, active_deal=_meta)
             if (_qs.get("format") or [""])[0] == "csv":
                 return self._send_text(out, content_type="text/csv; charset=utf-8")
             return self._send_html(out)
@@ -13064,6 +13064,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_delete_post()
         if path == "/api/target-screener/snapshot":
             return self._route_target_screener_snapshot_post()
+        if path == "/api/rollup/save-to-deal":
+            return self._route_rollup_save_to_deal_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -13736,6 +13738,68 @@ class RCMHandler(BaseHTTPRequestHandler):
             except Exception:  # noqa: BLE001 — never 500 on a snapshot hiccup
                 pass
         return self._redirect("/target-screener?view=saved")
+
+    def _route_rollup_save_to_deal_post(self) -> None:
+        """POST /api/rollup/save-to-deal — persist a built roll-up scenario
+        on an EXISTING deal as a sourced note (backlog #17).
+
+        The scenario is recomputed server-side from the posted CCN list (the
+        form's figures are never trusted), summarized with its filed-value
+        basis stated, and recorded via deal_notes so it shows on the deal
+        page / notes search and is deletable like any note. The deal must
+        already exist — record_note would silently upsert a junk deal
+        otherwise."""
+        form = self._read_form_body()
+        deal_id = (form.get("deal_id", "") or "").strip()[:128]
+        raw_ccns = (form.get("ccns", "") or "").strip()[:300]
+        ccns = [c.strip() for c in raw_ccns.split(",") if c.strip()][:12]
+        try:
+            ga_pct = max(0.0, min(0.30, float(form.get("ga_pct") or 0)))
+        except ValueError:
+            ga_pct = 0.0
+        back_qs = urllib.parse.urlencode(
+            {"ccns": ",".join(ccns), "ga_pct": ga_pct or ""})
+        if not deal_id or len(ccns) < 2:
+            return self._redirect(f"/pipeline/rollup?{back_qs}")
+        store = PortfolioStore(self.config.db_path)
+        try:
+            deals = store.list_deals(include_archived=True)
+            if deal_id not in set(deals.get("deal_id", [])):
+                return self._redirect(f"/pipeline/rollup?{back_qs}")
+            from .data.hcris import _get_latest_per_ccn
+            from .pe.rollup_scenario import build_scenario
+            s = build_scenario(_get_latest_per_ccn(), ccns)
+            if not s.facilities:
+                return self._redirect(f"/pipeline/rollup?{back_qs}")
+            facil = "; ".join(
+                f"{f.name[:40]} (CCN {f.ccn}, {f.state})"
+                for f in s.facilities)
+            npr = ("—" if s.npr.value is None
+                   else f"${s.npr.value/1e6:,.1f}M ({s.npr.covered}/{s.npr.n} report)")
+            beds = ("—" if s.beds.value is None
+                    else f"{s.beds.value:,.0f} ({s.beds.covered}/{s.beds.n})")
+            hhi = "; ".join(
+                f"{m.state}: HHI {m.hhi_before:,.0f}→{m.hhi_after:,.0f} "
+                f"({m.hhi_delta:+,.0f}), share {m.share_after:.1%}"
+                for m in s.markets) or "—"
+            syn = s.synergy_ebitda(ga_pct) if ga_pct else None
+            syn_line = (
+                f"G&A synergy assumption (ENTERED): {ga_pct:.0%} of combined "
+                f"opex = ${syn/1e6:,.1f}M/yr. " if syn is not None else
+                (f"G&A synergy at {ga_pct:.0%} NOT computed — opex coverage "
+                 f"incomplete. " if ga_pct else ""))
+            body = (
+                f"Roll-up scenario — {len(s.facilities)} facilities: {facil}. "
+                f"Combined NPR (filed, ACTUAL): {npr}; beds {beds}. "
+                f"State-proxy concentration: {hhi}. {syn_line}"
+                f"All facility figures are filed HCRIS values (latest per CCN). "
+                f"Reopen: /pipeline/rollup?{back_qs}")
+            from .deals.deal_notes import record_note
+            record_note(store, deal_id=deal_id, body=body,
+                        author=self._current_username() or "api")
+        except Exception:  # noqa: BLE001 — never 500 a save action
+            return self._redirect(f"/pipeline/rollup?{back_qs}")
+        return self._redirect(f"/pipeline/rollup?{back_qs}&saved_note=1")
 
     def _route_quick_import_post(self) -> None:
         """POST /quick-import — create a deal from browser form."""
