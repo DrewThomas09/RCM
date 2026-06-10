@@ -40,8 +40,13 @@ class TestRegistry(unittest.TestCase):
 
     def test_define_metric_at_runtime(self):
         from rcm_mc.ui.metric_glossary import (
-            define_metric, get_metric_definition,
+            _GLOSSARY, define_metric, get_metric_definition,
         )
+        # Clean up the injected key — _GLOSSARY is process-global and
+        # list_metrics() feeds the guide-invariant test, which otherwise sees
+        # this synthetic key (absent from METRIC_REGISTRY) and fails when this
+        # file runs before it. Test isolation, not optional.
+        self.addCleanup(_GLOSSARY.pop, "ma_penetration_test", None)
         define_metric(
             "ma_penetration_test",
             label="MA Penetration",
@@ -120,8 +125,9 @@ class TestMetricTooltip(unittest.TestCase):
 
     def test_html_escape_in_card(self):
         from rcm_mc.ui.metric_glossary import (
-            define_metric, metric_tooltip,
+            _GLOSSARY, define_metric, metric_tooltip,
         )
+        self.addCleanup(_GLOSSARY.pop, "xss_test_metric", None)
         define_metric(
             "xss_test_metric",
             label="<script>alert('x')</script>",
