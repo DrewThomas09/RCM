@@ -75,6 +75,21 @@ class LocalMarket:
         total = self.target_npr + comp
         return (self.target_npr / total) if total > 0 else None
 
+    def radius_hhi(self) -> Optional[float]:
+        """HHI of NPR within the radius (target + reporting competitors), on
+        the antitrust 0–10,000 scale. None when the target's NPR is a gap or
+        no competitor reports — a concentration index on a partial base would
+        mislead. This is a RADIUS screen (straight-line), more local than the
+        state-proxy HHI but still not a relevant-market analysis."""
+        if self.target_npr is None:
+            return None
+        nprs = [self.target_npr] + [c.npr for c in self.competitors
+                                    if c.npr is not None]
+        total = sum(nprs)
+        if total <= 0 or len(nprs) < 2:
+            return None
+        return float(sum((100.0 * (v / total)) ** 2 for v in nprs))
+
 
 def local_market(ccn: str, radius_miles: float = 25.0,
                  hcris_df=None) -> Optional[LocalMarket]:
