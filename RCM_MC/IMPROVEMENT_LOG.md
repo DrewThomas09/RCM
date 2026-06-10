@@ -483,3 +483,31 @@ CURRENT. Dashboard now shows 0 DATE UNSTATED / 6 CURRENT(+NORMAL) / 1 AGING
 (SNF, correctly).
 **Verify**: DQ suite 11 passed (the pure-function DATE UNSTATED tier test
 still covers the no-date path).
+
+## CHECKPOINT 4 — LIVE on pedesk.app (12:30Z)
+PR #1666 (items 18–23 + the session-username fix) merged to main at d15e3a4
+after CI green on 3.11/3.12/3.14. Deploy run #1634 "Deploy PEdesk
+(DigitalOcean Droplet)" completed SUCCESS — deploy-gate tests, SSH deploy,
+and the **public-URL health check on pedesk.app all green**. Post-merge
+multiple checks on the same SHA (authed demo server, real login):
+1. owner panel renders (username fix live) ✓
+2. save screen → snapshot → "since 2026-06-10: no change" diff line ✓
+3. roll-up save-to-deal button + EXHIBIT chrome ✓
+4. palette name-jump → /diligence/xray?q=… ✓
+5. screener modeling-discipline line with artifact numbers (91.0%) ✓
+6. DQ chips: 6 CURRENT(+NORMAL), SNF AGING, zero DATE UNSTATED ✓
+Screenshot: ckpt4_saved.png.
+
+## SESSION CLOSE-OUT (12:32Z — 8h55m elapsed)
+23 items + 2 found-bug fixes shipped across 4 checkpoints, all LIVE on
+pedesk.app via the DigitalOcean pipeline (deploys #1631–#1634, each with the
+public health-check gate green). Highlights: CIM Cross-Check variance engine,
+Roll-Up Builder with HHI screen + save-to-deal, ExhibitFactory print-ready
+exhibits, ambient deal context end-to-end (bar → prefill → save-to-deal),
+peer percentiles, DQ dashboard with cadence-true staleness chips, margin
+model card (measured 91.0% coverage on 978 holdout), P9 screen snapshots
+with honest diffs, P12 entity jump (CCN + name), Azure→DO deploy-story purge.
+Real bugs found & fixed by the verification discipline: provenance-tooltip
+CSS injection, corpus-seed 90× perf, session-username resolution (owner
+features invisible to ALL logged-in users), regex entity-swallow in note
+linkify. Full suite: 15,019+ passing, 0 failing at last gate.
