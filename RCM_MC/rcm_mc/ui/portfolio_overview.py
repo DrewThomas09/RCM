@@ -396,9 +396,12 @@ def render_portfolio_overview(
             f'</div></div>'
         )
 
-    # Deal table with vs-average comparison
-    avg_dr_val = avg_denial if avg_denial else 12
-    avg_ar_val = avg_ar if avg_ar else 48
+    # Deal table with vs-portfolio-mean comparison. Deltas only render when a
+    # REAL portfolio mean exists — the old fallbacks (12% denial / 48d AR)
+    # silently compared every deal against a fabricated baseline whenever the
+    # averages were missing. Each delta names its baseline on hover.
+    avg_dr_val = avg_denial if avg_denial is not None else None
+    avg_ar_val = avg_ar if avg_ar is not None else None
     rows = ""
     for _, d in deals.head(30).iterrows():
         did = html.escape(str(d.get("deal_id", "")))
@@ -414,19 +417,21 @@ def render_portfolio_overview(
             PALETTE["warning"] if dr and float(dr) > 12 else PALETTE["positive"]
         ) if dr else PALETTE["text_muted"]
 
-        # vs-average delta
+        # vs-portfolio-mean delta
         dr_delta = ""
         if dr is not None and avg_dr_val:
             diff = float(dr) - avg_dr_val
             dc = PALETTE["negative"] if diff > 0 else PALETTE["positive"]
-            dr_delta = f' <span style="font-size:10px;color:{dc};">({diff:+.1f})</span>'
+            dr_delta = (f' <span style="font-size:10px;color:{dc};cursor:help;" '
+                        f'title="vs portfolio mean {avg_dr_val:.1f}%">({diff:+.1f})</span>')
 
         ar_str = f'{float(ar):.0f}' if ar else "—"
         ar_delta = ""
         if ar is not None and avg_ar_val:
             diff = float(ar) - avg_ar_val
             dc = PALETTE["negative"] if diff > 0 else PALETTE["positive"]
-            ar_delta = f' <span style="font-size:10px;color:{dc};">({diff:+.0f})</span>'
+            ar_delta = (f' <span style="font-size:10px;color:{dc};cursor:help;" '
+                        f'title="vs portfolio mean {avg_ar_val:.0f} days">({diff:+.0f})</span>')
 
         rows += (
             f'<tr>'

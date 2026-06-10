@@ -124,6 +124,30 @@ class RegressionOverfitGuardTests(unittest.TestCase):
         self.assertNotIn("degrees of freedom", h)
 
 
+class DeltaBaselineTests(unittest.TestCase):
+    """Deal-table deltas compare against the REAL portfolio mean and say so —
+    never against the old hardcoded 12% / 48d fallbacks."""
+
+    def test_delta_names_its_baseline(self):
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        deals = pd.DataFrame([
+            {"deal_id": f"d{i}", "name": f"D{i}", "created_at": "2026-01-01",
+             "denial_rate": 8.0 + i, "days_in_ar": 40.0 + i}
+            for i in range(3)
+        ])
+        h = render_portfolio_overview(deals, None)
+        self.assertIn("vs portfolio mean", h)
+
+    def test_no_fabricated_delta_without_a_mean(self):
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        deals = pd.DataFrame([{"deal_id": "a", "name": "A",
+                               "created_at": "2026-01-01", "net_revenue": 1e8}])
+        h = render_portfolio_overview(deals, None)
+        self.assertNotIn("vs portfolio mean", h)
+
+
 class HonestContentsTests(unittest.TestCase):
     """The Contents rail must list only sections that rendered content — an
     entry that scrolls to an empty anchor reads as a broken page."""
