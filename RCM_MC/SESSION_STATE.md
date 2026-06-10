@@ -8,8 +8,8 @@
 - latest_timestamp: 2026-06-10T12:32:00Z
 - elapsed: window 2 begun
 - iteration: 23 items + 2 found-bug fixes; checkpoints 1–4 ALL LIVE on pedesk.app (deploys #1631–#1634 success)
-- current_item: W2-1 bug-hunt sweep (console errors + hostile inputs + visual pass)
-- current_step: sweeping
+- current_item: window 2 — 13 fixes/wins across checkpoints 5–8 LIVE (PRs #1667–1670, deploys #1635–1638). Next: #26 exhibit wrapper on X-Ray peer table
+- current_step: looping; branch==main b79e91c
 - branch: claude/sharp-einstein-005lm == main @ d15e3a4 (everything merged + deployed)
 - background: dev server :8765 (demo, authed) on the merged SHA
 
