@@ -6,9 +6,8 @@
 - iteration: 23 items + 2 found-bug fixes; checkpoints 1–4 ALL LIVE on pedesk.app (deploys #1631–#1634 success)
 - current_item: CLOSED OUT — see IMPROVEMENT_LOG.md final report
 - current_step: none — tree clean, branch == main (d15e3a4); ready backlog: #22 diff-detail view, #23 percentile-on-CIM, #26 exhibit expansion, #28 screener state prefill, #30 empty-state pass
-- branch: claude/sharp-einstein-005lm @ 4046a5a — unmerged: ExhibitFactory(11), deal-context prefill(12), screener→CIM(13), AR-days col(14), DQ staleness(15), route_walker CI(16), entity-jump(17) + 7-failure fix batch + Azure→DO purge
-- background: dev server :8765 (demo, authed), open-auth server :8766 (bym8wlepu, walker/screens), full suite (bmogggf1t)
-- NEXT-READY backlog (when unblocked): #13 P9 vintage-diff alerts, #15 empty-state sweep, #17 roll-up persisted per deal
+- branch: claude/sharp-einstein-005lm == main @ d15e3a4 (everything merged + deployed)
+- background: dev server :8765 (demo, authed) on the merged SHA
 
 ## Environment facts (verified earlier today, same machine)
 - Network egress 403 everywhere except pypi; WebSearch/WebFetch tools work for research.
