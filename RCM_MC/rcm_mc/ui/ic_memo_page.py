@@ -26,8 +26,18 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
     ck_section_header, ck_section_intro, ck_signal_badge, ck_source_purpose,
-    ck_sticky_toc,
+    ck_sticky_toc, ck_gap_dot,
 )
+
+
+def _pct_gap(val, reason: str = "Not reported or gated as a data artifact") -> str:
+    """A percent cell that pairs the '—' a None/NaN value shows with the
+    shared red gap dot, so an IC-memo data gap is marked the same way it is on
+    the X-Ray and hospital profile (one consistent gap signal site-wide)."""
+    out = _pct(val)
+    if val is None or (isinstance(val, float) and val != val):
+        out += ck_gap_dot(reason)
+    return out
 from .brand import PALETTE
 
 
@@ -559,11 +569,11 @@ def render_ic_memo(
         f'<tr><td>Operating Margin {_src_tag("computed")}</td>'
         f'<td class="num">{_pct(data["margin"])}</td></tr>'
         f'<tr><td>Occupancy {_src_tag("hcris")}</td>'
-        f'<td class="num">{_pct(data["occupancy"])}</td></tr>'
+        f'<td class="num">{_pct_gap(data["occupancy"], "Occupancy not reported, or gated as a bed-days filing artifact")}</td></tr>'
         f'<tr><td>Revenue / Bed {_src_tag("computed")}</td>'
         f'<td class="num">{_fm(data["rev_per_bed"])}</td></tr>'
         f'<tr><td>Net-to-Gross {_src_tag("hcris")}</td>'
-        f'<td class="num">{_pct(data["n2g"])}</td></tr>'
+        f'<td class="num">{_pct_gap(data["n2g"], "Gross revenue not reported, or gated (net exceeds gross)")}</td></tr>'
         f'<tr><td>Distress Probability {_src_tag("ml")}</td>'
         f'<td class="num">{_pct(distress_prob)}</td></tr>'
         '</table></div></div>'
