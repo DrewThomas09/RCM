@@ -313,8 +313,43 @@ def render_portfolio_overview(
     # tooltip helper, so the markup survives.
     from ._chartis_kit import (
         ck_kpi_block, ck_fmt_num, ck_fmt_pct, ck_fmt_currency,
+        ck_insight_bullets,
     )
-    kpis = (
+
+    # P13 — honest takeaways, computed from the SAME aggregates the KPIs
+    # show, each behind a significance guard (no bullet beats a trivial one).
+    _cands = []
+    if "denial_rate" in deals.columns and deals["denial_rate"].notna().sum() >= 2:
+        _dr = deals.dropna(subset=["denial_rate"])
+        _best = _dr.loc[_dr["denial_rate"].idxmin()]
+        _worst = _dr.loc[_dr["denial_rate"].idxmax()]
+        _spread = float(_worst["denial_rate"]) - float(_best["denial_rate"])
+        _cands.append((
+            f"Denial-rate spread across the book is "
+            f"<strong>{_spread:.1f}pp</strong> — "
+            f"{html.escape(str(_worst.get('name') or _worst.get('deal_id')))} at "
+            f"{float(_worst['denial_rate']):.1f}% vs "
+            f"{html.escape(str(_best.get('name') or _best.get('deal_id')))} at "
+            f"{float(_best['denial_rate']):.1f}%; the gap is the playbook.",
+            _spread >= 2.0))
+    if avg_ncr is not None:
+        _gap = 95.0 - float(avg_ncr)
+        _cands.append((
+            f"Average net collection of <strong>{float(avg_ncr):.1f}%</strong> "
+            f"sits {abs(_gap):.1f}pp {'below' if _gap > 0 else 'above'} the "
+            f"95% PE underwriting floor.",
+            abs(_gap) >= 0.5))
+    if "days_in_ar" in deals.columns:
+        _hi_ar = deals[deals["days_in_ar"].fillna(0) > 55]
+        _names = ", ".join(html.escape(str(r.get("name") or r.get("deal_id")))
+                           for _, r in _hi_ar.head(3).iterrows())
+        _cands.append((
+            f"<strong>{len(_hi_ar)}</strong> deal(s) carry A/R above 55 days "
+            f"({_names}) — working-capital drag worth a collections review.",
+            len(_hi_ar) > 0))
+    insights = ck_insight_bullets(_cands)
+
+    kpis = insights + (
         f'<div class="ck-kpi-grid">'
         + ck_kpi_block("Active Deals", ck_fmt_num(n))
         + ck_kpi_block(

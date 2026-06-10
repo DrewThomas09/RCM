@@ -160,3 +160,20 @@
   ccn/state in its profile → bar honestly omits X-Ray and scope (by design).
 - users: all three — context-carrying is the engagement/deal organizing
   principle (Part III); kills per-screen re-entry of market/target.
+
+## Item 8 — P13 honest insight bullets (primitive + portfolio)
+- when: 2026-06-10T04:48–04:57Z (iteration 8)
+- what: ck_insight_bullets(items) — strictly computed, guard-gated takeaways:
+  renders ≤4 SIGNIFICANT candidates under "Takeaways — computed from the
+  figures on this page" with tag-stripped copy-to-clipboard; renders NOTHING
+  when no candidate passes (silence over noise; free-form text not accepted
+  by design). Portfolio overview wired with three guarded candidates:
+  denial spread ≥2pp (names best/worst deals), avg NCR vs the 95% floor
+  (≥0.5pp guard), A/R >55d outliers (named).
+- verification: on the live seeded book the spread bullet fires (8.0pp,
+  Cypress vs Sterling — matches the table) and the NCR bullet correctly
+  SELF-SUPPRESSES (94.8% is only 0.2pp from floor < 0.5 guard) — the guard
+  demo on real data. 7 primitive/wiring tests incl. tiny-spread suppression
+  and copy-payload tag-stripping. 22 green with deal-profile suite.
+- users: Chartis (user 1) — the transcribe-chart-to-"so what" motion,
+  pre-drafted without credibility risk.

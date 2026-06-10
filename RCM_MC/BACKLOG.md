@@ -4,7 +4,13 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 
 | # | Item | Score | Verification plan |
 |---|---|---|---|
-| 1 | ✅ DONE — Azure→DO deploy purge (user-flagged) | — | grep sweep + 68 tests + deploy run green (IMPROVEMENT_LOG #1) |
+| 1 | ✅ DONE — Azure→DO purge | — | LOG #1 |
+| 2d | ✅ DONE — P2 CIM Cross-Check | — | LOG #2; live ckpt-1 |
+| 3d | ✅ DONE — P7 Roll-Up Builder | — | LOG #3; live ckpt-1 |
+| 4d | ✅ DONE — P4 percentile chip | — | LOG #4 |
+| 5d | ✅ DONE — P11 DQ dashboard | — | LOG #5 |
+| 6d | ✅ DONE — P8b reg exposure | — | LOG #6 |
+| 7d | ✅ DONE — P1 active-deal context | — | LOG #7 |
 | 2 | **P2 CIM Cross-Check vertical slice** — claim entry (market size $, provider count, margin %, payer mix %, volume) → independent HCRIS/universe estimates → variance table w/ green≤10/yellow≤25/red flags + drill-to-source + memo export. Hospital subsector, one state. | 43 | Fabricate claims from real TX data ±7/18/40% → exactly green/yellow/red fire; every estimate row links source; memo exports; pytest unit tests on variance math; screenshot |
 | 3 | **P7 Roll-Up Scenario Builder slice** — pick 2–3 real HCRIS CCNs in one state → combined volumes, NPR, payer blend, state share + HHI before/after, antitrust note >Δ200 | 40 | Hand-check aggregate math vs the 3 single-facility rows; HHI delta recomputed by hand; screenshot; tests on the combine math |
 | 4 | **P4 percentile chip** — reusable ck_peer_percentile(value, dist) "p78 vs TX hospitals (n=412)" + sparkline; wire into deal quick-view + CIM estimates | 36 | Hand-check 3 facilities' percentile placement vs raw distribution; tests on percentile math incl. ties/NaN |
@@ -19,6 +25,12 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 13 | **P9 vintage-diff alerts slice** — snapshot saved-screen results; on data change emit diff alerts ("2 facilities changed ownership") | 26 | Simulated vintage subset → diffs detected + accurately described; tests |
 | 14 | **est_ar_days "?" explainer** + bounds chip on predictive screener (gap from earlier pass) | 22 | "?" present; formula matches code; tests |
 | 15 | **A empty-state sweep** — top-10 pages with ?state=ZZ / empty db: consistent ck_empty_state, no dead controls | 20 | Walker variant with empty db; screenshots |
+
+| 16 | **CIM cross-check ← deal context slice 2** — server reads pedesk_active_deal cookie to PREFILL state/ccn on /diligence/cim-crosscheck + /pipeline/rollup forms | 28 | activate deal w/ state; open CIM page; fields prefilled; tests |
+| 17 | **Roll-up exhibit row on deal page** — link saved roll-up scenarios to deals (deal_overrides or notes) | 24 | scenario persists per deal; reload shows it |
+| 18 | **DQ dashboard staleness colors** — green/yellow/red vintage chips per source cadence | 18 | snf (monthly cadence, Apr 2026 snapshot) shows amber by Jun-2026 clock; tests |
+| 19 | **route_walker in CI** — wire scripts/route_walker.py as a smoke job artifact on deploy gate | 22 | CI config parses; job runs in act-less dry run |
+| 20 | **screener row → CIM/X-Ray deal actions** — per-row "use in CIM" link carrying state+ccn | 20 | links present + correctly scoped |
 
 ## Groomed-out / blocked
 - Medicaid S-3 re-ingest + POS bed backfill: NETWORK-GATED (sources named in

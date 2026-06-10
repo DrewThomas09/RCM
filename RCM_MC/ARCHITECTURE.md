@@ -98,3 +98,13 @@ Cookie-only UI state (no server data mutation) → GET+303 is acceptable
 (same class as the existing ?limit= prefs); logged in DECISIONS.md.
 Deal quick-view + workbench get "Set active deal" affordances.
 Slice 2 (later): modules read the cookie server-side to default their forms.
+
+## P13 — Honest insight bullets (this session, slice 1)
+**Design.** Strictly computed, guard-gated: callers build candidate bullets
+from numbers ALREADY on the page, each with a significance flag computed
+from the same stats (e.g. denial spread ≥2pp, |Δ vs target| ≥0.5pp, any
+red-health deal). `ck_insight_bullets(items)` renders only significant
+candidates (max 4) under a "Takeaways — computed from the figures on this
+page" header with copy-to-clipboard. No free-form generation anywhere; a
+suppressed guard yields NO bullet (silence over noise). Slice-1 consumer:
+/portfolio (spread, NCR-vs-target, AR outliers, health mix).

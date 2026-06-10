@@ -10899,6 +10899,45 @@ def _resolve_sub_section(active_nav: Optional[str]) -> Optional[str]:
     return None
 
 
+def ck_insight_bullets(items, *, title: str = "Takeaways") -> str:
+    """P13 — honest, template-driven takeaway bullets.
+
+    ``items`` = [(text, significant), ...] where ``text`` was built ONLY from
+    numbers already computed for the page and ``significant`` is a guard the
+    caller computed from the same stats (suppress trivia: a +0.3pp move is
+    not "growing"). Renders at most 4 significant bullets with a
+    copy-to-clipboard affordance; renders NOTHING when no candidate passes —
+    silence over noise. Free-form/LLM text is not accepted here by design:
+    every figure in a bullet must trace to the panel it sits beside."""
+    keep = [t for t, sig in items if sig][:4]
+    if not keep:
+        return ""
+    lis = "".join(
+        f'<li style="margin:0 0 6px;line-height:1.5;">{t}</li>' for t in keep)
+    plain = " • ".join(_strip_tags(t) for t in keep)
+    return (
+        '<div class="ck-insights" style="border:1px solid var(--sc-rule,#d6cfc0);'
+        'border-radius:2px;background:#fff;padding:12px 16px;margin:0 0 18px;">'
+        '<div style="display:flex;align-items:center;gap:10px;margin:0 0 8px;">'
+        f'<span style="font-family:var(--sc-mono);font-size:10px;'
+        f'letter-spacing:0.1em;color:var(--sc-teal-ink,#0f3d39);font-weight:600;'
+        f'text-transform:uppercase;">{_esc(title)}</span>'
+        '<span style="font-size:10px;color:var(--sc-text-dim,#6a7480);">'
+        'computed from the figures on this page</span>'
+        f'<button type="button" class="ck-link" style="margin-left:auto;border:0;'
+        f'background:none;cursor:pointer;font-size:10px;" '
+        f'onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.t);'
+        f'this.textContent=\'copied ✓\';" data-t="{_esc(plain)}">copy bullets</button>'
+        '</div>'
+        f'<ul style="margin:0;padding-left:18px;font-size:12.5px;">{lis}</ul>'
+        '</div>')
+
+
+def _strip_tags(t: str) -> str:
+    import re as _re
+    return _re.sub(r"<[^>]+>", "", t)
+
+
 def _active_deal_bar_js() -> str:
     """P1 — ambient active-deal bar, rendered client-side from the
     pedesk_active_deal(+_meta) cookies set by /deal-context.
