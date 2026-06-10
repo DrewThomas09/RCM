@@ -1491,7 +1491,15 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     trs = []
     for r in rows:
         ccn = _h.escape(r["ccn"])
-        xray = f'/diligence/xray?ccn={ccn}&vertical={vertical}'
+        # Hospitals drill into the rich HCRIS X-Ray (filed financials, local
+        # market, demographics) — same destination the deal page and this
+        # page's own "next step" hint use. The generic /diligence/xray
+        # provider scanner is for the non-hospital CMS verticals (home
+        # health, hospice, SNF, dialysis, …) where HCRIS doesn't apply.
+        if vertical == "hospitals":
+            xray = f'/diligence/hcris-xray?ccn={ccn}'
+        else:
+            xray = f'/diligence/xray?ccn={ccn}&vertical={vertical}'
         insp = _href("inspector", qs).split("?")[0] + f'?view=inspector&vertical={vertical}&ccn={ccn}'
         # Hospital rows get a one-click into CIM Cross-Check pre-scoped to
         # this facility's state + CCN — the screener is where a partner first
