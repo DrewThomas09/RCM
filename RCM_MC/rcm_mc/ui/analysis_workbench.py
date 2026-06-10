@@ -1201,9 +1201,25 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     else:
         comp_summary = '<span class="dim">no comparable set available</span>'
 
-    # Hero number — EBITDA total impact from bridge.
-    total_impact = float(packet.ebitda_bridge.total_ebitda_impact or 0.0)
-    ev_at_multiple = packet.ebitda_bridge.ev_impact_at_multiple or {}
+    # Hero number — EBITDA total impact from bridge. A green "$0" when the
+    # bridge couldn't actually run (no levers contributed / section not OK)
+    # is a fabricated zero — it reads as "no opportunity" when the truth is
+    # "not computed". Gate the hero on the bridge's own status + evidence.
+    _bridge = packet.ebitda_bridge
+    total_impact = float(_bridge.total_ebitda_impact or 0.0)
+    _bridge_ran = (
+        getattr(_bridge, "status", None) == SectionStatus.OK
+        and bool(_bridge.per_metric_impacts)
+    )
+    if _bridge_ran:
+        hero_html = f'<div class="hero-number pos">{_fmt_money(total_impact)}</div>'
+    else:
+        _why = _esc(getattr(_bridge, "reason", "") or
+                    "bridge inputs incomplete — upload RCM metrics")
+        hero_html = ('<div class="hero-number dim">—</div>'
+                     f'<div class="dim" style="font-size:10.5px;">'
+                     f'not computed: {_why}</div>')
+    ev_at_multiple = _bridge.ev_impact_at_multiple or {}
     ev_bits = " · ".join(
         f'<span class="dim">{k}</span> {_fmt_money(v)}'
         for k, v in list(ev_at_multiple.items())[:3]
@@ -1275,7 +1291,7 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
         <div>
           <div class="wb-card">
             <div class="kpi-label">EBITDA Opportunity</div>
-            <div class="hero-number pos">{_fmt_money(total_impact)}</div>
+            {hero_html}
             <div class="dim" style="font-size:11px;margin-top:4px;">
               current → target (moderate tier)
             </div>

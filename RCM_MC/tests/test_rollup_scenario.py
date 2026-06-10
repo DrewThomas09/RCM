@@ -121,3 +121,14 @@ class PageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NonFiniteGaPctTests(unittest.TestCase):
+    def test_nan_ga_pct_does_not_become_max_synergy(self):
+        # min(0.30, nan) returns 0.30 — a nan assumption silently became the
+        # MAX synergy. Must be treated as no assumption.
+        from rcm_mc.ui.rollup_builder_page import render_rollup_builder
+        h = render_rollup_builder({"ccns": ["450076,450068"],
+                                   "ga_pct": ["nan"]})
+        self.assertNotIn("synergy at 30%", h)
+        self.assertIn("Pro-forma platform", h)    # page still renders

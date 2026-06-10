@@ -49,7 +49,11 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None,
     raw = (qs.get("ccns") or [""])[0]
     ccns = [c.strip() for c in raw.split(",") if c.strip()][:12]
     try:
-        ga_pct = max(0.0, min(0.30, float((qs.get("ga_pct") or ["0"])[0])))
+        import math
+        _g = float((qs.get("ga_pct") or ["0"])[0])
+        # nan slips through the clamp (min(0.30, nan) → 0.30): a non-finite
+        # synergy assumption would silently become the MAX — treat as none.
+        ga_pct = max(0.0, min(0.30, _g)) if math.isfinite(_g) else 0.0
     except ValueError:
         ga_pct = 0.0
     fmt = (qs.get("format") or [""])[0]

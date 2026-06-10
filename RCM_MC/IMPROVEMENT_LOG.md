@@ -483,3 +483,91 @@ CURRENT. Dashboard now shows 0 DATE UNSTATED / 6 CURRENT(+NORMAL) / 1 AGING
 (SNF, correctly).
 **Verify**: DQ suite 11 passed (the pure-function DATE UNSTATED tier test
 still covers the no-date path).
+
+## CHECKPOINT 4 — LIVE on pedesk.app (12:30Z)
+PR #1666 (items 18–23 + the session-username fix) merged to main at d15e3a4
+after CI green on 3.11/3.12/3.14. Deploy run #1634 "Deploy PEdesk
+(DigitalOcean Droplet)" completed SUCCESS — deploy-gate tests, SSH deploy,
+and the **public-URL health check on pedesk.app all green**. Post-merge
+multiple checks on the same SHA (authed demo server, real login):
+1. owner panel renders (username fix live) ✓
+2. save screen → snapshot → "since 2026-06-10: no change" diff line ✓
+3. roll-up save-to-deal button + EXHIBIT chrome ✓
+4. palette name-jump → /diligence/xray?q=… ✓
+5. screener modeling-discipline line with artifact numbers (91.0%) ✓
+6. DQ chips: 6 CURRENT(+NORMAL), SNF AGING, zero DATE UNSTATED ✓
+Screenshot: ckpt4_saved.png.
+
+## SESSION CLOSE-OUT (12:32Z — 8h55m elapsed)
+23 items + 2 found-bug fixes shipped across 4 checkpoints, all LIVE on
+pedesk.app via the DigitalOcean pipeline (deploys #1631–#1634, each with the
+public health-check gate green). Highlights: CIM Cross-Check variance engine,
+Roll-Up Builder with HHI screen + save-to-deal, ExhibitFactory print-ready
+exhibits, ambient deal context end-to-end (bar → prefill → save-to-deal),
+peer percentiles, DQ dashboard with cadence-true staleness chips, margin
+model card (measured 91.0% coverage on 978 holdout), P9 screen snapshots
+with honest diffs, P12 entity jump (CCN + name), Azure→DO deploy-story purge.
+Real bugs found & fixed by the verification discipline: provenance-tooltip
+CSS injection, corpus-seed 90× perf, session-username resolution (owner
+features invisible to ALL logged-in users), regex entity-swallow in note
+linkify. Full suite: 15,019+ passing, 0 failing at last gate.
+
+## W2-1/2/3 — bug-hunt sweep 1: dead /market-data link + non-finite 500s (13:00Z)
+**Found by**: browser console sweep over 20 routes (one 404) + a 150-request
+hostile-param fuzz over 10 routes (4× 500).
+**Fixed**:
+(1) /market-data 404'd while the Guide context, DQ consumer list and 5+
+related_routes point at the bare slug → now redirects to /market-data/map.
+(2) CIM Cross-Check 500'd on nan/Infinity/1e309 params (float() accepts
+them; int(inf) in the form echo raised) → _f_or_none rejects non-finite.
+(3) Roll-up ga_pct=nan silently became the MAX synergy (min(0.30,nan)→0.30)
+→ non-finite treated as no assumption, both in the page and save-to-deal.
+**Verify**: re-fuzz 150/150 CLEAN; NonFiniteInputTests (2), NonFiniteGaPctTests
+(1), MarketDataRedirectTests (1); suites 27+4 passed.
+
+## W2-4 — X-Ray dollar metrics: trailing " $" → leading "$" (13:12Z)
+**Found by**: visual pass on /diligence/hcris-xray — peer table rendered
+"2,720,593 $" (currency trailing, against the house style and how every
+other surface prints money).
+**Fixed**: MetricSpec gains a `prefix` field; the four $ metrics (NPR/bed,
+NPR/patient-day, Opex/bed, Opex/patient-day) now render "$2,720,593" in the
+peer table, top-finding band, memo and CSV (all flow through spec.fmt).
+**Verify**: fmt spot-check on all four; X-Ray suites 143 passed.
+
+## W2-5 — workbench fabricated green "$0" EBITDA Opportunity (13:25Z)
+**Found by**: visual pass on /analysis/ccf — the hero card showed "$0" in
+positive green with "no EV computed" beneath, i.e. a CONFIDENT zero where the
+truth is "bridge couldn't run" (grade-D completeness, no revenue baseline).
+$0 ≠ unknown — the exact fabricated-zero class this product polices.
+**Fixed**: the hero gates on the bridge's own status + per_metric_impacts
+evidence; not-run renders "—" + "not computed: <bridge reason>" (e.g. "no
+revenue baseline"). A real computed total still renders green.
+**Verify**: test_workbench_honest_hero.py (2: SKIPPED → dash+reason; OK with
+zero contributing levers → dash); workbench suites 198 passed; screenshot
+wb_hero_fixed.png shows the honest dash on the live page.
+
+## W2-6 — P4b: claim-percentile chips on CIM Cross-Check (13:45Z)
+**What**: Each distribution-shaped claim row now shows where the CLAIM itself
+sits in the in-scope per-facility distribution — "claim @ p50 of n=457" under
+the CIM-says value. Tails (≤p10/≥p90) render amber with "tail claim,
+scrutinize": a claim can pass the variance flag AND be a top-of-market
+assertion worth a question (e.g. claimed target revenue $2.6B @ p99 — true
+for Methodist, but the consultant should know they're underwriting a giant).
+Engine computes it (claim_percentile/percentile_n on VarianceRow) from the
+SAME plausible-band population the estimator describes; aggregates (market
+size, counts) and tiny scopes (n<8) get None — no fabricated ranks. Memo/CSV
+unchanged (additive fields).
+**Verify**: ClaimPercentileTests (5: median claim → exactly p50 on a hand-
+built 10-row frame; tail ≥p90; aggregate None; n<8 None; chip renders amber
+tail / empty aggregate) + real-data spot-check (TX: margin 2.5 → p50 matching
+the green flag; revenue 2.6e9 → p99). CIM suite 21 passed. Screenshot.
+
+## W2-7 — screener state prefill from active deal (13:55Z)
+**What**: Deal-context parity for the Target Screener — a plain visit (main
+view, no state chosen) pre-scopes to the active deal's state; the state
+renders as the existing one-click-removable filter chip, so the prefill is
+visible and reversible. Params always win; saved/compare/missed views are
+never re-filtered out from under the partner.
+**Verify**: ScreenerStatePrefillTests (3: chip prefilled; explicit ?state=CA
+wins; saved view untouched); prefill suite restructured onto a fixture-only
+base (parent tests no longer run twice) — 10 passed.

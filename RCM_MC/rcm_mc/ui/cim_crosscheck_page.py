@@ -41,9 +41,14 @@ def _f_or_none(qs: Dict[str, List[str]], key: str) -> Optional[float]:
     if not raw:
         return None
     try:
-        return float(raw)
+        f = float(raw)
     except ValueError:
         return None
+    # float() happily accepts "nan"/"inf"/"1e309" — non-finite values then
+    # 500 the page (int(inf) in the form echo, OverflowError) and would
+    # poison the variance math. A non-finite claim is no claim.
+    import math
+    return f if math.isfinite(f) else None
 
 
 def _fmt(value: Optional[float], unit: str) -> str:
@@ -62,6 +67,25 @@ def _flag_chip(flag: str) -> str:
             f'letter-spacing:0.06em;font-weight:700;padding:2px 7px;'
             f'border:1px solid {color};color:{color};border-radius:2px;'
             f'white-space:nowrap;">{label}</span>')
+
+
+def _pctile_chip(row) -> str:
+    """Where the CLAIM sits in the in-scope distribution — a tail claim
+    (≤p10 / ≥p90) is a finding even when the variance flag is green, so the
+    tails render amber. Engine returns None for aggregates and n<8 (no chip,
+    never a fabricated rank)."""
+    p = getattr(row, "claim_percentile", None)
+    if p is None:
+        return ""
+    n = getattr(row, "percentile_n", 0)
+    tail = p >= 90 or p <= 10
+    color = ("var(--sc-warning,#b8732a)" if tail
+             else "var(--sc-text-dim,#6a7480)")
+    note = " — tail claim, scrutinize" if tail else ""
+    return (f'<div style="font-family:var(--sc-mono);font-size:9.5px;'
+            f'color:{color};" title="The claimed value ranks at the '
+            f'p{p} of the {n} in-scope per-facility values{note}.">'
+            f'claim @ p{p} of n={n}</div>')
 
 
 def _claims_from_qs(qs: Dict[str, List[str]]) -> Dict[str, float]:
@@ -188,7 +212,7 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
                 f'{_html.escape(est.method)}</div></td>'
                 f'<td class="num" style="padding:6px 8px;text-align:right;'
                 f'font-variant-numeric:tabular-nums;">{_fmt(r.claim_value, est.unit)}'
-                f'{ck_basis_badge("entered")}</td>'
+                f'{ck_basis_badge("entered")}{_pctile_chip(r)}</td>'
                 f'<td class="num" style="padding:6px 8px;text-align:right;'
                 f'font-variant-numeric:tabular-nums;">{_fmt(est.value, est.unit)}'
                 f'{ck_basis_badge("actual") if est.value is not None else ""}'

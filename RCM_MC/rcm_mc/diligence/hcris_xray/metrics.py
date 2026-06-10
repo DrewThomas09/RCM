@@ -281,6 +281,8 @@ class MetricSpec:
     category: str                          # "Size" / "Revenue Cycle" / ...
     format_spec: str                       # ",.0f" or ".1%" etc.
     suffix: str = ""
+    prefix: str = ""                       # e.g. "$" — house style leads
+    #                                        currency, never trails it
     higher_is_better: bool = True
     unit_help: str = ""                    # what the units mean
 
@@ -289,7 +291,7 @@ class MetricSpec:
         if value is None or (isinstance(value, float) and value != value):
             return "—"
         try:
-            return format(value, self.format_spec) + self.suffix
+            return self.prefix + format(value, self.format_spec) + self.suffix
         except (ValueError, TypeError):
             return "—"
 
@@ -325,13 +327,13 @@ METRIC_CATALOG: List[MetricSpec] = [
     # Revenue cycle
     MetricSpec("net_revenue_per_bed", "NPR per bed",
                "Revenue Cycle", ",.0f",
-               suffix=" $",
+               prefix="$",
                higher_is_better=True,
                unit_help="net patient revenue ÷ beds"),
     MetricSpec("net_revenue_per_patient_day",
                "NPR per patient day",
                "Revenue Cycle", ",.0f",
-               suffix=" $",
+               prefix="$",
                higher_is_better=True,
                unit_help="net patient revenue ÷ total patient days"),
     MetricSpec("contractual_allowance_rate",
@@ -346,13 +348,13 @@ METRIC_CATALOG: List[MetricSpec] = [
     # Cost structure
     MetricSpec("opex_per_bed", "Opex per bed",
                "Cost Structure", ",.0f",
-               suffix=" $",
+               prefix="$",
                higher_is_better=False,
                unit_help="operating expenses ÷ beds"),
     MetricSpec("opex_per_patient_day",
                "Opex per patient day",
                "Cost Structure", ",.0f",
-               suffix=" $",
+               prefix="$",
                higher_is_better=False,
                unit_help="operating expenses ÷ total patient days"),
     # Margin
