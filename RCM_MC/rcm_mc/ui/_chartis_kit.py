@@ -1899,6 +1899,64 @@ def ck_calc_help(metric: str, lines: Sequence[str], *, benchmark: str = "") -> s
     )
 
 
+def ck_peer_percentile(value, dist, *, peer_label: str,
+                       higher_is_better: Optional[bool] = None) -> str:
+    """Percentile-vs-peers chip — "p78 vs TX hospitals (n=412)" + a small
+    position track. The PE/Chartis reading of any KPI is percentile-vs-peers,
+    never the absolute; this is the one reusable way to say it.
+
+    Percentile = share of peers strictly below + half of ties (standard
+    percentile rank). NaN/None peers are excluded from n. Honesty guards:
+    a peer set under 8 real values renders "peer set too small (n=K)" —
+    a percentile against 4 peers reads as precision that isn't there — and a
+    None/NaN value renders "" so callers can concatenate unconditionally.
+    ``higher_is_better`` tones the chip (green/amber/red by quartile);
+    omitted → neutral ink."""
+    try:
+        v = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return ""
+    if v != v:
+        return ""
+    vals = []
+    for d in (dist if dist is not None else []):
+        try:
+            f = float(d)
+        except (TypeError, ValueError):
+            continue
+        if f == f:
+            vals.append(f)
+    n = len(vals)
+    if n < 8:
+        return (f'<span class="ck-pct-chip" style="font-family:var(--sc-mono);'
+                f'font-size:10px;color:var(--sc-text-dim,#6a7480);" '
+                f'title="Fewer than 8 peers report this metric — a percentile '
+                f'would overstate precision.">peer set too small (n={n})</span>')
+    below = sum(1 for x in vals if x < v)
+    ties = sum(1 for x in vals if x == v)
+    pct = (below + 0.5 * ties) / n
+    p_int = int(round(pct * 100))
+    color = "var(--sc-text,#1a2332)"
+    if higher_is_better is not None:
+        good = pct if higher_is_better else (1.0 - pct)
+        color = ("var(--sc-positive,#0a8a5f)" if good >= 0.75
+                 else "var(--sc-negative,#b5321e)" if good <= 0.25
+                 else "var(--sc-warning,#b8732a)" if good <= 0.45
+                 else "var(--sc-text,#1a2332)")
+    dot_x = max(2, min(58, round(pct * 60)))
+    track = (
+        '<svg width="60" height="8" style="vertical-align:middle;margin:0 4px;" '
+        'role="img" aria-label="percentile position">'
+        '<line x1="0" y1="4" x2="60" y2="4" '
+        'stroke="var(--sc-rule,#d6cfc0)" stroke-width="2"/>'
+        f'<circle cx="{dot_x}" cy="4" r="3" fill="{color}"/></svg>')
+    return (f'<span class="ck-pct-chip" style="font-family:var(--sc-mono);'
+            f'font-size:10px;color:{color};white-space:nowrap;" '
+            f'title="Percentile rank vs {_esc(peer_label)}: share of peers '
+            f'below + half of ties; n excludes peers not reporting the '
+            f'metric.">p{p_int}{track}vs {_esc(peer_label)} (n={n})</span>')
+
+
 def ck_sparkline(
     values: Sequence[float],
     *,

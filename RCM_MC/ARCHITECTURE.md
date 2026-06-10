@@ -59,3 +59,14 @@ combined column is arithmetic on filings (DERIVED, labeled); synergies are
 ENTERED assumptions; HHI uses NPR shares within the chosen state market and
 says so (a state is a coarse antitrust market — labeled as screening proxy,
 not a relevant-market analysis).
+
+## P4 — Peer-percentile chip (this session, slice 1)
+**Spec.** One reusable primitive `ck_peer_percentile(value, dist, *, peer_label,
+higher_is_better=None, unit_fmt=None)` → "p78 vs TX hospitals (n=412)" with a
+60px position track. Percentile = share of peers strictly below + half of
+ties (standard percentile rank), NaN peers excluded. Honesty: n<8 renders
+"peer set too small (n=K)" instead of a percentile; value None/NaN renders
+nothing. Color tones by higher_is_better when given, neutral otherwise.
+Consumers slice 1: deal quick-view profile KPIs vs the portfolio's other
+deals (user 3's daily question: where does this deal sit vs the book).
+X-Ray already has its own band component (left as-is).

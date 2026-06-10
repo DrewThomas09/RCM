@@ -11635,8 +11635,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(wb_html)
         except Exception as exc:  # noqa: BLE001
             from .ui.deal_quick_view import render_deal_quick_view
+            try:
+                _peers = store.list_deals()
+            except Exception:  # noqa: BLE001
+                _peers = None
             return self._send_html(render_deal_quick_view(
-                deal_id, profile, error_msg=str(exc)))
+                deal_id, profile, error_msg=str(exc), peer_deals=_peers))
 
     def _build_partner_review_context(self, deal_id: str) -> Tuple[Any, Optional[str], Dict[str, Any]]:
         """Shared packet-load + partner_review() wrapper.

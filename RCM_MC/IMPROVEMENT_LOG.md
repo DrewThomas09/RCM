@@ -75,3 +75,29 @@
     with screening note, filed-values facility table).
 - users: PE VP (user 2) thesis-testing; Chartis (user 1) gets the
   concentration exhibit + screening language for the market section.
+
+## Merge checkpoint 1 — items 1–3 LIVE on pedesk.app
+- merge: PR #1663 → main 7daef221 at ~04:16Z
+- deploy: deploy.yml run #1631 completed/SUCCESS 04:19:27Z — droplet
+  fast-forwarded, pedesk.service restarted, run's own gates confirmed
+  LIVE https://pedesk.app/healthz=200 + guide-health reachable.
+- additional checks (same SHA, local): route_walker 361 routes → 349 ok /
+  0 tracebacks (/tmp/route_walk_ckpt1.tsv); screenshots:
+  item2_cim_crosscheck_final.png, item3_rollup.png, live_check_cim_empty.png.
+- protocol note: sandbox egress cannot reach pedesk.app (DECISIONS.md #1);
+  the deploy run's public health gate is the live check of record.
+
+## Item 4 — P4 peer-percentile chip + deal quick-view wiring
+- when: 2026-06-10T04:16–04:26Z (iteration 4)
+- what: ck_peer_percentile(value, dist, peer_label, higher_is_better) —
+  "p73 ●——— vs portfolio deals (n=10)" chip with standard percentile-rank
+  math (below + half-ties), NaN peers excluded from n, n<8 renders an
+  honest "peer set too small (n=K)" instead of fake precision, None/NaN
+  value renders nothing. Wired into deal quick-view profile KPIs vs the
+  rest of the book (direction-aware tones); server passes list_deals().
+- verification: rank math unit-tested incl. ties (p55 case hand-computed),
+  extremes p0/p100, NaN exclusion, small-n guard, tooltip method text;
+  quick-view wiring tested at n=10 (chips) and n=5 (honest guard) and
+  no-frame (no chip, no crash). 10 tests green; deal-profile suite green.
+- users: portfolio ops (user 3) — replaces eyeballing the book for "is this
+  deal's denial rate bad *for us*".

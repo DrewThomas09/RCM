@@ -1,13 +1,13 @@
 # SESSION_STATE — autonomous 8h improvement session
 
 - session_start: 2026-06-10T03:37:46Z
-- latest_timestamp: 2026-06-10T04:10:00Z
-- elapsed: 0h32m
-- iteration: 3 (items 1+2 DONE, committed, pushed)
-- current_item: Item 3 — P7 Roll-Up Scenario Builder (BACKLOG #3)
-- current_step: spec→module; merge checkpoint of PR #1663 pending CI on 606c8f9
+- latest_timestamp: 2026-06-10T04:15:00Z
+- elapsed: 0h37m
+- iteration: 4 (items 1+2+3 DONE; merge checkpoint #1 in progress)
+- current_item: merge checkpoint (PR #1663, items 1–3) → then Item 4 (P4 percentile chip)
+- current_step: awaiting CI on 7c323cd; after merge: watch deploy.yml for merge SHA, screenshots, route_walker
 - branch: claude/sharp-einstein-005lm (fe9a05c at start)
-- background: dev server :8833, db /tmp/rcm_seeded/portfolio.db (5 deals: sth,buh,nyp,mgh,ccf)
+- background: dev server :8834, db /tmp/rcm_seeded/portfolio.db (5 deals: sth,buh,nyp,mgh,ccf)
 
 ## Environment facts (verified earlier today, same machine)
 - Network egress 403 everywhere except pypi; WebSearch/WebFetch tools work for research.
