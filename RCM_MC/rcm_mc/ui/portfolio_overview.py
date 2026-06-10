@@ -55,10 +55,14 @@ def _fmt_money(val: Any, scale: float = 1e6) -> str:
     if val is None:
         return "—"
     try:
-        v = float(val) / scale
-        return f"${v:,.0f}M"
+        raw = float(val)
     except (TypeError, ValueError):
         return "—"
+    # House style: roll up to $B at/above a billion so a portfolio total
+    # reads "$5.13B", not "$5,129M".
+    if abs(raw) >= 1e9:
+        return f"${raw / 1e9:,.2f}B"
+    return f"${raw / scale:,.0f}M"
 
 
 def _fmt_pct(val: Any) -> str:
@@ -261,6 +265,14 @@ def render_portfolio_overview(
     avg_ar = deals["days_in_ar"].dropna().mean() if "days_in_ar" in deals.columns else None
     total_rev = deals["net_revenue"].dropna().sum() if "net_revenue" in deals.columns else None
     avg_ncr = deals["net_collection_rate"].dropna().mean() if "net_collection_rate" in deals.columns else None
+    # When every contributing deal's revenue is its real anchor-facility filing
+    # (composite demo deals), say so under the KPI rather than implying entered
+    # deal financials.
+    _rev_all_anchor = (
+        "revenue_basis" in deals.columns and total_rev
+        and deals.loc[deals["net_revenue"].notna(), "revenue_basis"]
+            .eq("anchor-actual").all())
+    _rev_sub = "filed anchor NPR" if _rev_all_anchor else None
 
     # Phase 4C: build a portfolio-level provenance graph by hand —
     # build_provenance_graph is per-deal HCRIS-shaped so it isn't
@@ -360,6 +372,7 @@ def render_portfolio_overview(
         + ck_kpi_block(
             "Total Net Revenue",
             provenance_tooltip(label="Total Net Revenue", value=(_fmt_money(total_rev) if total_rev else "—"), graph=prov_graph, metric_key="net_patient_revenue", inject_css=False),
+            sub=_rev_sub,
         )
         + ck_kpi_block(
             "Avg Denial Rate",
