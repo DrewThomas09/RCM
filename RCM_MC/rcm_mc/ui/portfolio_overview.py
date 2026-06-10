@@ -336,7 +336,21 @@ def render_portfolio_overview(
         + '</div>'
     )
 
-    # Health distribution
+    # Health distribution. The deals frame almost never carries a
+    # health_score column (list_deals() doesn't compute it), so the mosaic
+    # rendered empty even though per-deal scores ARE computable — fill from
+    # the store's health engine when missing. Each compute is wrapped so a
+    # deal without snapshots is simply uncounted, never a 500.
+    if "health_score" not in deals.columns and store is not None and n <= 50:
+        from ..deals.health_score import compute_health
+        scores = []
+        for _, d in deals.iterrows():
+            try:
+                scores.append(compute_health(store, str(d.get("deal_id")))["score"])
+            except Exception:  # noqa: BLE001
+                scores.append(None)
+        deals = deals.copy()
+        deals["health_score"] = scores
     health_counts = {"green": 0, "amber": 0, "red": 0}
     if "health_score" in deals.columns:
         for _, d in deals.iterrows():
@@ -661,14 +675,20 @@ def render_portfolio_overview(
     # Sticky right-rail TOC — the portfolio page has six distinct
     # vertical sections; partners commonly jump straight to the deals
     # table or the regression instead of scrolling past the KPIs.
-    toc = ck_sticky_toc([
-        {"id": "po-kpis",        "title": "Headline numbers"},
-        {"id": "po-health",      "title": "Health mosaic"},
-        {"id": "po-opportunity", "title": "Opportunity ranking"},
-        {"id": "po-synergy",     "title": "Cross-portfolio synergies"},
-        {"id": "po-table",       "title": "Deals table"},
-        {"id": "po-regression",  "title": "Cross-deal regression"},
-    ])
+    # Only list sections that actually rendered content: a Contents entry
+    # that scrolls to an empty anchor reads as a broken page (seen on the
+    # seeded demo, where health/opportunity/synergy were all blank).
+    toc_entries = [{"id": "po-kpis", "title": "Headline numbers"}]
+    if health_bar:
+        toc_entries.append({"id": "po-health", "title": "Health mosaic"})
+    if opportunity:
+        toc_entries.append({"id": "po-opportunity", "title": "Opportunity ranking"})
+    if synergy_section:
+        toc_entries.append({"id": "po-synergy", "title": "Cross-portfolio synergies"})
+    toc_entries.append({"id": "po-table", "title": "Deals table"})
+    if regression:
+        toc_entries.append({"id": "po-regression", "title": "Cross-deal regression"})
+    toc = ck_sticky_toc(toc_entries)
     body = (
         page_head
         + '<div class="ck-toc-layout">'
