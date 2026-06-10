@@ -343,11 +343,16 @@ def compute_benchmarks(
         # (e.g. net-to-gross when gross < net), not a real zero. Coercing it to
         # 0 would both skew the peer percentiles and render a bogus "0.0%" for
         # the target — so carry None through and show "—".
-        _traw = getattr(target, spec.attr, None)
-        target_val = float(_traw) if _traw is not None else None
+        # Treat NaN the same as None: a gap, not a number. A NaN target used
+        # to render literal "nan%" and skewed the peer percentiles.
+        def _num(v):
+            if v is None or (isinstance(v, float) and v != v):
+                return None
+            return float(v)
+        target_val = _num(getattr(target, spec.attr, None))
         peer_vals = [
-            float(v) for v in (getattr(p.hospital, spec.attr, None) for p in peers)
-            if v is not None
+            fv for fv in (_num(getattr(p.hospital, spec.attr, None)) for p in peers)
+            if fv is not None
         ]
         # Drop zero values that would skew percentiles
         # (especially for ratios where 0 means "undefined")
