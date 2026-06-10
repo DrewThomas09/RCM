@@ -714,3 +714,15 @@ consistent with the strip below.
 **Verify**: test_comp_p50_moic_kpi_matches_median (headline carries a 2-dp
 MOIC value on a populated comp set); comparable-outcomes suite 25 passed;
 screenshot shows 2.40x.
+
+## W2-18 — compare radar axis labels clipped (17:30Z)
+**Found by**: visual review of /compare — radar axes read "x index", "net
+coll", "sim rate" (truncated). The labels were the verbose
+metric.replace("_"," ") strings ("case mix index", "net collection rate")
+which overflowed the 300-wide SVG viewBox and got clipped at the edges.
+**Fixed**: concise axis labels (Denial / AR days / Net coll. / Cost/$ /
+Clean claim / CMI — full names live in the column table above) + a padded
+viewBox (-55 -10 410 320) so even the longest sits inside. All six now
+render fully.
+**Verify**: RadarAxisLabelTests (concise labels present, verbose ones gone,
+padded viewBox); comparison suites 24 passed; screenshot shows all 6 clean.
