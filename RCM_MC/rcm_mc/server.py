@@ -14437,8 +14437,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self.send_error(HTTPStatus.BAD_REQUEST, "owner required")
         try:
             deals_by_owner(store, owner)  # validate; renderer re-fetches
-        except ValueError as exc:
-            return self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+        except ValueError:
+            # The exception text echoes the offending owner, which may carry
+            # non-latin-1 chars (e.g. an emoji in the URL) — feeding that to
+            # send_error's reason phrase 500'd on the latin-1 header encode.
+            # Keep the reason phrase ASCII-clean.
+            return self.send_error(
+                HTTPStatus.BAD_REQUEST,
+                "Invalid owner (use letters, digits, . _ - @, max 40 chars)")
         from .ui.my_dashboard_page import render_my_dashboard
         return self._send_html(render_my_dashboard(
             store=store, owner=owner,
@@ -14664,8 +14670,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self.send_error(HTTPStatus.BAD_REQUEST, "owner required")
         try:
             dids = deals_by_owner(store, owner)
-        except ValueError as exc:
-            return self.send_error(HTTPStatus.BAD_REQUEST, str(exc))
+        except ValueError:
+            # ASCII-clean reason phrase — the owner may carry non-latin-1
+            # chars that would 500 send_error's header encode.
+            return self.send_error(
+                HTTPStatus.BAD_REQUEST,
+                "Invalid owner (use letters, digits, . _ - @, max 40 chars)")
         if not dids:
             body = (
                 f'<div class="card">'
