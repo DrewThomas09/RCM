@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import html
 import logging
+import math
 import os
 import socketserver
 import sys
@@ -9411,8 +9412,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         name = form.get("name", f"Hospital {ccn}")[:60]
         state = form.get("state", "")[:2]
         try:
-            beds = int(float(form.get("beds", "0") or "0"))
-        except (ValueError, TypeError):
+            # int(float("1e309")) raises OverflowError (uncaught before) and
+            # huge-but-finite values overflow SQLite's 64-bit INTEGER on
+            # insert — both 500'd. No hospital has 100k beds; clamp.
+            _b = float(form.get("beds", "0") or "0")
+            beds = int(_b) if math.isfinite(_b) else 0
+            beds = max(0, min(beds, 100_000))
+        except (ValueError, TypeError, OverflowError):
             beds = 0
         try:
             from .data.pipeline import add_to_pipeline

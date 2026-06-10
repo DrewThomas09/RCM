@@ -605,3 +605,29 @@ hostile saved-screen titles stay escaped (test with an XSS payload).
 **Verify**: DiffDetailViewTests (4: rows with old→new + drill links;
 empty-diff threshold statement; hostile title escaped; diff line links to
 detail). Screener + snapshot suites 175 passed.
+
+## W2-10 — bridge-realization accuracy was IN-SAMPLE; engine named generically (15:05Z)
+**Found by**: scrutinizing the EBITDA-bridge page's claim "ML MODEL PREDICTS…
+(ACCURACY: 60%, N=5,823)". The accuracy was computed on the SAME rows the
+logistic regression trained on — in-sample accuracy presented to partners as
+"accuracy" — and "ML model" is generic where the house bar is specific
+engine naming.
+**Fixed**: seeded 80/20 holdout inside train_realization_model (train on 80%,
+report accuracy on the untouched 20%; fixed seed → reproducible number;
+n_training now reports actual training rows). UI eyebrow now reads "Logistic
+regression (margin-outperformance proxy)… Holdout accuracy 60%, trained on
+n=4,659 filings". Measured holdout: 60.0% — the simple model wasn't
+overfitting, but the claim is now honest and the n no longer overstates.
+**Verify**: RealizationHoldoutTests (2: n_training == 80% split on a synthetic
+frame; seeded → identical accuracy across calls; page names the engine and
+drops "ML model predicts"); realization+bridge suites 126 passed.
+
+## W2-11 — POST fuzz: /pipeline/add beds overflow 500s (15:20Z)
+**Found by**: 63-request hostile-value fuzz over 7 POST endpoints (the GET
+fuzz was clean; POSTs were untested). /pipeline/add 500'd twice: beds=1e309
+(int(inf) → OverflowError, uncaught by the (ValueError,TypeError) handler)
+and beds=1e24 (finite, but overflows SQLite's 64-bit INTEGER on insert).
+**Fixed**: finite-check + clamp to [0, 100000] (no hospital has 100k beds) +
+OverflowError in the except. Re-fuzz: 63/63 CLEAN.
+**Verify**: PipelineAddBedsOverflowTests (4 hostile values < 500 over real
+HTTP); suite 5 passed.

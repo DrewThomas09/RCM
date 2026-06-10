@@ -124,5 +124,36 @@ class MarketDataRedirectTests(unittest.TestCase):
             srv.shutdown(); srv.server_close(); th.join(timeout=5)
 
 
+class PipelineAddBedsOverflowTests(unittest.TestCase):
+    """POST /pipeline/add 500'd on beds=1e309 (int(inf) OverflowError,
+    uncaught) and on 1e24 (overflows SQLite 64-bit INTEGER on insert).
+    Both now clamp to [0, 100000]."""
+
+    def test_overflow_beds_values_do_not_500(self):
+        import socket as _s, tempfile as _tf, threading as _th, time as _t
+        import urllib.parse as _up, urllib.request as _u2, urllib.error as _ue
+        from rcm_mc.server import build_server as _bs
+        sk = _s.socket(); sk.bind(("127.0.0.1", 0))
+        port = sk.getsockname()[1]; sk.close()
+        tmp = _tf.mkdtemp()
+        srv, _ = _bs(port=port, host="127.0.0.1",
+                     db_path=os.path.join(tmp, "p.db"), auth=None)
+        th = _th.Thread(target=srv.serve_forever, daemon=True)
+        th.start(); _t.sleep(0.2)
+        try:
+            for v in ("1e309", "999999999999999999999999", "nan", "-5"):
+                data = _up.urlencode({"ccn": "450358", "name": "T",
+                                      "state": "TX", "beds": v}).encode()
+                req = _u2.Request(f"http://127.0.0.1:{port}/pipeline/add",
+                                  data=data, method="POST")
+                try:
+                    code = _u2.urlopen(req, timeout=20).status
+                except _ue.HTTPError as e:
+                    code = e.code
+                self.assertLess(code, 500, f"beds={v} -> {code}")
+        finally:
+            srv.shutdown(); srv.server_close(); th.join(timeout=5)
+
+
 if __name__ == "__main__":
     unittest.main()
