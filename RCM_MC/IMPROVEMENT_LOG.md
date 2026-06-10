@@ -803,3 +803,20 @@ the county block above it), NaN measures skipped. Panel code tag now
 CENSUS/ACS · CDC PLACES.
 **Verify**: HealthBurdenLineTests (renders diabetes/obesity, CDC PLACES tag,
 state-level label); X-Ray + demographics suites 302 passed.
+
+## W2-25 — flaky guide-invariant = latent prod bug: stale metric index (19:55Z)
+**Found by**: the window-2 full suite — test_every_metric_glossary_key_
+resolves_via_guide failed in the full run but passed in isolation (order-
+dependent).
+**Root cause (real bug, not just a test issue)**: get_metric_context built
+its resolver `_INDEX` ONCE at import from METRIC_REGISTRY. Other modules
+register metrics / append aliases at THEIR import time (sector-guide,
+data-source wiring), which during the full suite happens AFTER the index
+froze — so a legitimately-registered metric silently failed to resolve in
+the Guide. A metric added late would be unresolvable in production too.
+**Fixed**: the resolver rebuilds the index on a miss and retries once (cheap,
+miss-path only) — order-independent and correct for late registration.
+**Verify**: direct mechanism test (metric added after import now resolves;
+bogus key still unresolved; real keys unaffected); IndexRebuildTests (2) +
+guide-invariant suite 31 passed; the 3 suspected order-trigger files run
+together 50 passed.

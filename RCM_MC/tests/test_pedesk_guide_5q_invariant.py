@@ -725,3 +725,34 @@ class TestNoDuplicateDictKeysInRegistryPatches(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IndexRebuildTests(unittest.TestCase):
+    """get_metric_context's resolver index was frozen at import, so a metric
+    registered AFTER import (other modules append aliases / register at their
+    own import time) silently failed to resolve — surfaced as an order-
+    dependent full-suite flake and is a latent prod bug. The resolver now
+    rebuilds the index on a miss and retries."""
+
+    def test_metric_added_after_import_resolves(self):
+        import dataclasses
+        import importlib
+        mod = importlib.import_module(
+            "rcm_mc.assistant.context.get_metric_context")
+        from rcm_mc.assistant.context.metric_registry import METRIC_REGISTRY
+        sample = next(iter(METRIC_REGISTRY.values()))
+        new = dataclasses.replace(
+            sample, metric_id="zzz_late_test_metric",
+            label="Zzz Late Test Metric", aliases=())
+        METRIC_REGISTRY["zzz_late_test_metric"] = new
+        try:
+            self.assertTrue(
+                mod.get_metric_context("zzz_late_test_metric").found)
+        finally:
+            METRIC_REGISTRY.pop("zzz_late_test_metric", None)
+
+    def test_bogus_key_still_unresolved(self):
+        import importlib
+        mod = importlib.import_module(
+            "rcm_mc.assistant.context.get_metric_context")
+        self.assertFalse(mod.get_metric_context("not_a_real_metric_xyz").found)

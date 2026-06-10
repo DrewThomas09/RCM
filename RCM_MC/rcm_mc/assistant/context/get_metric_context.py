@@ -33,9 +33,20 @@ _INDEX = _build_index()
 
 
 def get_metric_context(metric_id_or_label: str) -> MetricLookupResult:
+    global _INDEX
     query = metric_id_or_label or ""
     key = _norm(query)
     mid = _INDEX.get(key)
+    if mid is None:
+        # METRIC_REGISTRY can grow AFTER this module is imported — other
+        # modules append aliases / register metrics at their own import time
+        # (e.g. the sector-guide and data-source wiring). A frozen index then
+        # fails to resolve a legitimately-registered metric, which surfaced as
+        # an order-dependent flake in the full suite (and is a latent prod bug:
+        # a metric added late wouldn't resolve). Rebuild once on a miss and
+        # retry before giving up — cheap, only on the miss path.
+        _INDEX = _build_index()
+        mid = _INDEX.get(key)
     if mid is None:
         return MetricLookupResult(False, query, None, None, _FALLBACK)
     return MetricLookupResult(True, query, mid, METRIC_REGISTRY[mid], None)
