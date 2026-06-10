@@ -5,7 +5,7 @@
 - elapsed: 4h40m (container restarted once ~06:05Z; reconciled, no work lost)
 - iteration: 17 (items 1–17 DONE; ckpt-1 + ckpt-2 LIVE on pedesk.app)
 - current_item: Items 11–17 DONE + committed + PUSHED to branch. CHECKPOINT-3 PR + live pedesk.app verify BLOCKED on GitHub MCP re-auth (OAuth URL sent to user twice; MCP dropped on container restart).
-- current_step: full suite running (pre-merge gate, /tmp/fullsuite2.log, ~13%); when green + auth returns → open ONE checkpoint-3 draft PR for all of HEAD, merge, verify deploy run + screenshot pedesk.app
+- current_step: FULL SUITE GREEN (15016 passed / 3 failed → the 3 were new-PageContext 5-Q + metric-wiring invariants, now FIXED @ 04e41d4; effectively 15019/0). Branch 15 commits ahead of main, tree clean, PR body drafted at /tmp/ckpt3_pr_body.md. ONLY blocker: GitHub MCP re-auth → then open checkpoint-3 draft PR, merge, verify deploy run + screenshot pedesk.app
 - branch: claude/sharp-einstein-005lm @ 4046a5a — unmerged: ExhibitFactory(11), deal-context prefill(12), screener→CIM(13), AR-days col(14), DQ staleness(15), route_walker CI(16), entity-jump(17) + 7-failure fix batch + Azure→DO purge
 - background: dev server :8765 (demo, authed), open-auth server :8766 (bym8wlepu, walker/screens), full suite (bmogggf1t)
 - NEXT-READY backlog (when unblocked): #13 P9 vintage-diff alerts, #15 empty-state sweep, #17 roll-up persisted per deal
