@@ -938,6 +938,41 @@ def ck_signal_badge(text: str, *, tone: str = "neutral") -> str:
     return f'<span class="ck-badge tone-{tone}">{_esc(text)}</span>'
 
 
+def ck_gap_dot(reason: str = "Not available in this data source") -> str:
+    """A subtle 6px red status dot marking a DATA GAP — a value we don't have,
+    or one that failed validation (a filing artifact gated to "—").
+
+    Deliberately quiet: a small dot, not a banner, so a partner can scan a
+    dense page and still spot exactly which cells are gaps, with the reason on
+    hover. This is the ONE gap marker site-wide — a red dot always means the
+    same thing, and because every gap renders the same span the dots can be
+    counted (see ck_gap_count) to size how much of a page is missing real data.
+    Pair it with the "—" the cell already shows; never use it on a real value."""
+    return (
+        f'<span class="ck-gap-dot" role="img" aria-label="data gap" '
+        f'title="{_esc(reason)}" style="display:inline-block;width:6px;'
+        'height:6px;border-radius:50%;background:var(--sc-negative,#b5321e);'
+        'margin-left:5px;vertical-align:middle;cursor:help;opacity:0.85;">'
+        '</span>'
+    )
+
+
+def ck_gap_count(n_gaps: int, n_total: int) -> str:
+    """Subtle inline tally of data gaps on a page/section: '● 3 of 12 not
+    reported'. Renders nothing when there are no gaps (a complete page stays
+    clean). Lets a partner — and us — see at a glance how many red dots a
+    surface carries, which is what drives sourcing work to fill them."""
+    if n_gaps <= 0:
+        return ""
+    return (
+        '<span class="ck-gap-count" style="font-family:var(--sc-mono);'
+        'font-size:10px;color:var(--sc-negative,#b5321e);opacity:0.85;'
+        'margin-left:8px;" title="Cells marked with a red dot are not '
+        'available in the underlying filing or were gated as a data '
+        f'artifact.">&#9679; {n_gaps} of {n_total} not reported</span>'
+    )
+
+
 # Data-universe label chips. Every confusing page should declare WHICH data
 # universe it shows so a partner never mistakes a benchmark corpus for their
 # own portfolio (see docs/PEDESK_ROUTE_TAXONOMY.md). Self-describing tooltip.
