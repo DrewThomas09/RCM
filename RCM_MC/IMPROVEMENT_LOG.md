@@ -318,3 +318,22 @@ bounds suites green. Cropped screenshot: Mercy Hospital MO renders 25 AR days
 under the PREDICTED·? header.
 **Persona check**: portfolio-ops user sorting by A/R days now actually sees
 the days, with the formula one hover away — no hidden sort key.
+
+## Item 15 — Data Quality staleness chips (green/amber/red by cadence) (07:38Z)
+**What**: The DQ dashboard's wired-source table now carries a deterministic
+freshness chip per source: snapshot age vs the source's OWN publication
+cadence — CURRENT (≤1.5 cycles) / AGING (≤3) / STALE (>3). HCRIS reads
+CURRENT NORMAL (its ~18-month publication lag is expected, not staleness);
+sources with no stated snapshot date read DATE UNSTATED (honest gray, never a
+fabricated green). Added structured cadence_days + snapshot_date +
+lag_tolerant fields to WiredSource (free-text cadence_note stays for display);
+pure _staleness_tier() computes the tier so it can't drift, today comes from
+datetime.now(timezone.utc). Legend added under the table.
+**Verify**: tests/test_data_quality_page.py StalenessTierTests (6: monthly
+2-month-old → AGING with age 70d per the backlog's worked SNF example,
+quarterly recent → CURRENT, very-old → STALE, HCRIS lag-tolerant → CURRENT
+NORMAL, missing date → DATE UNSTATED, dashboard renders chips + legend) +
+existing 5 DQ tests green. Screenshot: HCRIS green CURRENT NORMAL, Home
+Health/Hospice gray DATE UNSTATED, SNF amber AGING (Apr 2026, monthly).
+**Persona check**: portfolio-ops user glances at the DQ screen and sees at a
+glance which feed is aging (SNF) without reading every cadence note.

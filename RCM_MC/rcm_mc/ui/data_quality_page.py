@@ -29,6 +29,63 @@ class WiredSource:
     cadence_note: str                   # the source's own publication rhythm
     consumers: List[str]                # pages reading it
     source_label: str = "CMS HCRIS"     # ck_source_link key when known
+    # Structured staleness inputs (the cadence_note is free text for display;
+    # these drive the deterministic green/amber/red chip).
+    cadence_days: Optional[int] = None  # nominal refresh interval (31/92/365)
+    snapshot_date: Optional[str] = None  # ISO date of the vendored snapshot
+    lag_tolerant: bool = False          # True for HCRIS: an ~18mo publication
+    #                                     lag is the current normal, not staleness
+
+
+# Staleness tiers: a source is fresh within ~one publication cycle, aging by
+# two-to-three, stale beyond. HCRIS is lag-tolerant (the lag is expected), and
+# a source with no stated snapshot date reports "date unstated" rather than a
+# fabricated freshness.
+_STALE_GREEN = ("var(--sc-positive,#0a8a5f)", "CURRENT")
+_STALE_AMBER = ("var(--sc-warning,#b8732a)", "AGING")
+_STALE_RED = ("var(--sc-negative,#b5321e)", "STALE")
+_STALE_GRAY = ("var(--sc-text-dim,#6a7480)", "DATE UNSTATED")
+_STALE_NORMAL = ("var(--sc-positive,#0a8a5f)", "CURRENT NORMAL")
+
+
+def _staleness_tier(snapshot_date: Optional[str], cadence_days: Optional[int],
+                    lag_tolerant: bool, today) -> tuple:
+    """(color, label, age_days|None) for a source's freshness chip.
+
+    Compares snapshot age to its OWN publication cadence: ≤1.5× = current,
+    ≤3× = aging, >3× = stale. lag_tolerant sources (HCRIS) always read
+    'current normal' since their multi-month publication lag is expected, not
+    a defect. Missing date/cadence → 'date unstated' (honest, not green)."""
+    from datetime import date as _date
+    if lag_tolerant:
+        return (*_STALE_NORMAL, None)
+    if not snapshot_date or not cadence_days:
+        return (*_STALE_GRAY, None)
+    try:
+        y, m, d = (int(x) for x in snapshot_date.split("-"))
+        snap = _date(y, m, d)
+    except Exception:  # noqa: BLE001 — bad date string → unstated, never raise
+        return (*_STALE_GRAY, None)
+    age = (today - snap).days
+    if age < 0:
+        return (*_STALE_GRAY, None)
+    ratio = age / cadence_days
+    if ratio <= 1.5:
+        return (*_STALE_GREEN, age)
+    if ratio <= 3.0:
+        return (*_STALE_AMBER, age)
+    return (*_STALE_RED, age)
+
+
+def _staleness_chip(src: "WiredSource", today) -> str:
+    color, label, age = _staleness_tier(
+        src.snapshot_date, src.cadence_days, src.lag_tolerant, today)
+    age_bit = (f' · {age}d old' if age is not None else "")
+    return (f'<span title="Cadence: {_html.escape(src.cadence_note)}{age_bit}" '
+            f'style="font-family:var(--sc-mono);font-size:8.5px;font-weight:700;'
+            f'letter-spacing:0.05em;color:{color};border:1px solid {color};'
+            f'padding:1px 5px;border-radius:2px;white-space:nowrap;">'
+            f'{label}</span>')
 
 
 def _hcris_stats() -> dict:
@@ -60,31 +117,31 @@ WIRED: List[WiredSource] = [
                  "/command-center", "/market-data", "/predictive-screener",
                  "/pipeline/rollup", "/diligence/cim-crosscheck",
                  "/ebitda-bridge", "/regression"],
-                "CMS HCRIS"),
+                "CMS HCRIS", cadence_days=365, lag_tolerant=True),
     WiredSource("Home Health Compare", _vertical_stats(
         "home_health", "load_home_health_providers", "vendored snapshot (dataset 6jpm-sxkc)"),
         "Quarterly refresh at CMS.", ["/target-screener (home_health)"],
-        "CMS Home Health Compare"),
+        "CMS Home Health Compare", cadence_days=92),
     WiredSource("Hospice Compare", _vertical_stats(
         "hospice", "load_hospice_providers", "vendored snapshot (yc9t-dgbk)"),
         "Quarterly refresh at CMS.", ["/target-screener (hospice)"],
-        "CMS Hospice Compare"),
+        "CMS Hospice Compare", cadence_days=92),
     WiredSource("Nursing Home Care Compare", _vertical_stats(
         "snf", "load_snf_providers", "vendored snapshot (Apr 2026 NH_ProviderInfo)"),
         "Monthly refresh at CMS.", ["/target-screener (snf)"],
-        "CMS Nursing Home Compare"),
+        "CMS Nursing Home Compare", cadence_days=31, snapshot_date="2026-04-01"),
     WiredSource("Dialysis Facility Compare", _vertical_stats(
         "dialysis", "load_dialysis_providers", "vendored snapshot (Mar 2026 DFC_FACILITY)"),
         "Quarterly refresh at CMS.", ["/target-screener (dialysis)"],
-        "CMS Dialysis Compare"),
+        "CMS Dialysis Compare", cadence_days=92, snapshot_date="2026-03-01"),
     WiredSource("IRF Compare", _vertical_stats(
         "irf", "load_irf_providers", "vendored snapshot (Feb 2026)"),
         "Quarterly refresh at CMS.", ["/target-screener (irf)"],
-        "CMS IRF Compare"),
+        "CMS IRF Compare", cadence_days=92, snapshot_date="2026-02-01"),
     WiredSource("LTCH Compare", _vertical_stats(
         "ltch", "load_ltch_providers", "vendored snapshot (Feb 2026)"),
         "Quarterly refresh at CMS.", ["/target-screener (ltch)"],
-        "CMS LTCH Compare"),
+        "CMS LTCH Compare", cadence_days=92, snapshot_date="2026-02-01"),
 ]
 
 
@@ -110,6 +167,8 @@ def _registered_unwired() -> List[dict]:
 
 
 def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
+    from datetime import datetime, timezone
+    today = datetime.now(timezone.utc).date()
     # ── wired sources, live-computed ──
     rows_html = ""
     total_rows = 0
@@ -136,7 +195,8 @@ def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'{_html.escape(src.name)}</div></td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;'
             f'font-variant-numeric:tabular-nums;">{stats["rows"]:,}</td>'
-            f'<td style="padding:6px 8px;font-size:11px;">{_html.escape(stats["vintage"])}'
+            f'<td style="padding:6px 8px;font-size:11px;">'
+            f'{_staleness_chip(src, today)} {_html.escape(stats["vintage"])}'
             f'<div style="font-size:10px;color:var(--sc-text-dim,#6a7480);">'
             f'{_html.escape(src.cadence_note)}</div></td>'
             f'<td style="padding:6px 8px;font-size:10.5px;font-variant-numeric:tabular-nums;">{_html.escape(null_s)}</td>'
@@ -155,7 +215,15 @@ def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
         '<p class="ck-section-body" style="font-size:11px;margin:8px 0 0;'
         'color:var(--sc-text-dim,#6a7480);">Counts and null rates are computed '
         'at render from the same loaders the product uses — this table cannot '
-        'drift from what pages display.</p>',
+        'drift from what pages display. The freshness chip compares each '
+        'snapshot\'s age to its own publication cadence — '
+        '<strong style="color:var(--sc-positive,#0a8a5f);">CURRENT</strong> '
+        '(≤1.5 cycles) · '
+        '<strong style="color:var(--sc-warning,#b8732a);">AGING</strong> '
+        '(≤3) · '
+        '<strong style="color:var(--sc-negative,#b5321e);">STALE</strong> '
+        '(&gt;3). HCRIS reads CURRENT NORMAL because its ~18-month publication '
+        'lag is expected, not staleness.</p>',
         title="Wired sources — live stats")
 
     # ── gap census (reuse the registry the red dots map to) ──
