@@ -1,5 +1,15 @@
 # Deploy Status — v5 Editorial UI to `pedesk.app`
 
+> **HISTORICAL SNAPSHOT (PR #24 era).** This page described the v5 editorial
+> UI launch and the pre-migration VM topology. Production today is a
+> **DigitalOcean droplet** (`/opt/RCM`, `pedesk.service` systemd unit behind
+> Caddy); pushes to `main` auto-deploy via
+> [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). For current
+> operations use
+> [RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md)
+> and [RCM_MC/docs/AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md) — the SSH/rollback
+> commands below no longer apply.
+
 **Status: PR open, awaiting your merge.**
 
 PR: https://github.com/DrewThomas09/RCM/pull/24

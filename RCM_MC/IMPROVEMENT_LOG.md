@@ -196,3 +196,183 @@
   Guide chrome, not model labeling.
 - users: PE VP + Chartis (users 1–2) — the "can I trust the band?" question
   answered with a reproducible number, not an adjective.
+
+## Sweep 2 + regression fixed — provenance-tooltip CSS never injected on /portfolio
+- when: 2026-06-10T05:00–05:08Z (iteration 10)
+- found by: regression sweep 2's screenshot diff — the three KPI provenance
+  tooltips rendered their popover content INLINE (huge serif spill) because
+  all three calls passed inject_css=False (pre-existing commit 6ecc199) and
+  nothing else injected the CSS. Invisible until this morning's
+  data-connection fix gave the KPIs real values; tonight's screenshot
+  caught it. (The interim /portfolio 500 in sweep 2 was a stale dev-server
+  process predating ck_insight_bullets — code was green; restart cleared it.)
+- fix: first tooltip injects the CSS (the documented convention); verified
+  '.prov-tt' style block present and the page rendering tooltips as ⓘ.
+- evidence: item8_insights_fixed.png (Takeaways + clean KPI strip + health
+  mosaic + deals table all correct); route walk 2b: 349/361, 0 tracebacks.
+
+## Merge checkpoint 2 — items 4–9 LIVE on pedesk.app
+- merge: PR #1664 → main 59f949e9 at ~04:55Z
+- deploy: deploy.yml run #1632 completed/SUCCESS 05:00:54Z incl. LIVE
+  pedesk.app/healthz=200 + guide-health gates.
+- additional checks: route walks sweep2/2b (349/361, 0 tracebacks);
+  screenshots item8_insights_fixed.png, item9_model_card.png; tooltip-CSS
+  regression found by screenshot diff and fixed on-branch (36b1be3, rides
+  checkpoint 3).
+
+## Item 10 — H: composite demo deals anchored to real, named facilities
+- when: 2026-06-10T05:05–05:18Z (iteration 11)
+- what: each fictional demo deal now carries a facility_anchor naming a REAL
+  CCN chosen to match its archetype from the live HCRIS frame (margin band +
+  120–400 beds + $100M–$1.5B NPR): ccf→Hennepin County Medical Center (MN,
+  −11.2%), mgh→Enloe (CA, −0.5%), nyp→St. Francis NY (+2.0%), buh→Tacoma
+  General Allenmore (WA, +5.1%), sth→White Plains (NY, +8.7%). The anchor's
+  filed financials render ACTUAL + sourced + X-Ray-linked on the deal quick
+  view; the RCM metrics stay explicitly "illustrative demo values (HCRIS
+  files no denial/collection fields)". demo.py seeder writes the anchors
+  (resilient: anchor lookup failure can't break seeding); the live seeded db
+  updated in place. Bonus: profiles now carry state+ccn → the P1 active-deal
+  bar gains the X-Ray link + state-scoped screener for demo deals (meta
+  cookie verified: {"id":"ccf","state":"MN","ccn":"240004"}).
+- also fixed (found during): quick view read only flat metric keys → showed
+  "No profile metrics yet" for packet-seeded deals while nested
+  observed_metrics sat right there; now flattened (same class as the
+  list_deals fix this morning).
+- verification: 5 anchor tests + flatten test + seeder pin; meta-cookie E2E;
+  screenshot item10_anchored_bar.png. 20 green incl. deal-context + chip.
+- users: all three — the demo stops being deniable as "fake data" while
+  staying honest about what HCRIS cannot provide.
+
+## Item 11 — P5 ExhibitFactory v1 + comparable-outcomes seed batching (05:35Z)
+**What**: (a) `ExhibitFactory` in `_chartis_kit.py` — per-render numbered
+"EXHIBIT N" chrome (figure caption: deal label + number + title + units;
+footer: Source + vintage + PEdesk) with `_EXHIBIT_PRINT_CSS` shipped once in
+the shell head: print suppresses nav/topbar/forms/buttons, page-breaks keep
+each exhibit whole — Cmd+P → deck-insertable PDF. Wired into the two v1
+consumers: Roll-Up Builder (Exhibit 1 pro-forma KPIs, Exhibit 2 concentration
+table) and CIM Cross-Check (Exhibit 1 variance table). (b) While running the
+pre-commit full suite, found `/diligence/comparable-outcomes?...` timing out
+HTTP tests at >10s: `DealsCorpus.seed()` ran ~1,727 upserts each on its OWN
+connection with its own fsync'd commit (5.4s commits + 3.1s connection
+churn) — invisible on `:memory:` profiling. Split `_upsert_on(con, deal)`
+out of `upsert()`; `seed()` now batches the whole corpus in one
+connection/one commit. Route: 8,864ms → 99ms (90×).
+**Verify**: tests/test_exhibit_factory.py (9: numbering per instance,
+escaping, markup-source exemption, shell ships CSS once, both consumers
+render numbered exhibits, form-only CIM view has none);
+test_comparable_outcomes.py 24/24 in 1.0s (was 2 timeouts); corpus slice
+1,050 passed; screen + print-media screenshots of both pages (print view:
+chrome gone, exhibits + sourced footers intact). Full suite re-running at
+commit time.
+**Persona check**: Chartis consultant on a readout call prints the variance
+table straight into the appendix — numbered, sourced, vintage-stamped, no
+manual cropping.
+
+## Item 12 — Deal-context slice 2: active-deal cookie pre-scopes diligence forms (06:40Z)
+**What**: The P1 active-deal cookie (pedesk_active_deal_meta = {id,name,state,
+ccn}) now pre-scopes the CIM Cross-Check and Roll-Up forms. New
+RCMHandler._active_deal_meta() decodes the cookie (best-effort, never raises);
+the /diligence/cim-crosscheck handler fills state+ccn when the partner hasn't
+typed them, and /pipeline/rollup seeds the CCN basket with the deal's CCN as
+the platform anchor. A teal "Pre-scoped to your active deal X" note renders so
+the prefill is never silent. **Explicit query params always win** (override
+the cookie); the internal _prefill_deal key is stripped from export URLs.
+**Verify**: tests/test_deal_context_prefill.py (7: prefill state+ccn, param
+override on both pages, no-cookie → no note, malformed cookie ignored, key
+absent from export URLs); affected suites 45/45; screenshot shows TX/450076
+prefilled with the teal note on a real authed-bypass server on this SHA.
+**Persona check**: VP who set an active deal opens CIM Cross-Check and the
+market+target are already there — one less retype between "I'm looking at this
+deal" and "show me the variance."
+
+## Item 13 — Target Screener row → CIM Cross-Check action (07:05Z)
+**What**: Each hospital row in the Target Screener now carries a one-click
+"CIM" chip (alongside X-Ray · Inspect · +Cmp) that opens CIM Cross-Check
+pre-scoped to that facility's state + CCN. The screener is where a partner
+first spots a target; the independent-variance check is now one click from
+the row instead of a manual re-entry. Hospital-only by design (the
+cross-check estimators are HCRIS-hospital-shaped) — dialysis/SNF/etc. rows
+don't show it. Closes the Source→Diligence handoff alongside the deal-context
+prefill (Item 12): the link carries state+ccn as query params, which the CIM
+page already reads (params win over the active-deal cookie).
+**Verify**: tests/test_target_screener.py RowCimActionTests (2: hospital rows
+carry the scoped link with the row's state; non-hospital verticals carry
+none) + full screener suite 157/157; cropped screenshot shows the CIM chip on
+two TX hospital rows (Denton 23.3%, Fort Worth 22.9%).
+**Persona check**: Chartis consultant scanning the TX hospital screen clicks
+CIM on a target and lands in the variance form already set to TX + that CCN.
+
+## Item 14 — Est. AR Days column + "?" explainer on the predictive screener (07:20Z)
+**What**: est_ar_days was computed and offered as a sort option but had NO
+table column — a partner could sort by an invisible value. Added the Est. AR
+Days column between Est. Denial and Est. Uplift, PREDICTED-badged, with a "?"
+calc-explainer (ck_calc_help) stating the exact formula (45 + Medicare-day%×5
++ Medicaid-day%×8 − ln(beds)×3 − net-to-gross×10 − margin×8) and the 25–75
+day plausible bound from rcm_mc.ml.prediction_bounds. Thin-data rows show "—"
+(ps-na) like the other estimates. Header/body column counts stay balanced (10).
+**Verify**: tests/test_predictive_screener_ar_days.py (4: header has badge +
+explainer + bound, complete row shows an in-range day count, thin-data row
+shows dash, header/body column counts match); updated test_screener_basis_
+badge PREDICTED count 2→3 (now three modeled columns); related screener +
+bounds suites green. Cropped screenshot: Mercy Hospital MO renders 25 AR days
+under the PREDICTED·? header.
+**Persona check**: portfolio-ops user sorting by A/R days now actually sees
+the days, with the formula one hover away — no hidden sort key.
+
+## Item 15 — Data Quality staleness chips (green/amber/red by cadence) (07:38Z)
+**What**: The DQ dashboard's wired-source table now carries a deterministic
+freshness chip per source: snapshot age vs the source's OWN publication
+cadence — CURRENT (≤1.5 cycles) / AGING (≤3) / STALE (>3). HCRIS reads
+CURRENT NORMAL (its ~18-month publication lag is expected, not staleness);
+sources with no stated snapshot date read DATE UNSTATED (honest gray, never a
+fabricated green). Added structured cadence_days + snapshot_date +
+lag_tolerant fields to WiredSource (free-text cadence_note stays for display);
+pure _staleness_tier() computes the tier so it can't drift, today comes from
+datetime.now(timezone.utc). Legend added under the table.
+**Verify**: tests/test_data_quality_page.py StalenessTierTests (6: monthly
+2-month-old → AGING with age 70d per the backlog's worked SNF example,
+quarterly recent → CURRENT, very-old → STALE, HCRIS lag-tolerant → CURRENT
+NORMAL, missing date → DATE UNSTATED, dashboard renders chips + legend) +
+existing 5 DQ tests green. Screenshot: HCRIS green CURRENT NORMAL, Home
+Health/Hospice gray DATE UNSTATED, SNF amber AGING (Apr 2026, monthly).
+**Persona check**: portfolio-ops user glances at the DQ screen and sees at a
+glance which feed is aging (SNF) without reading every cadence note.
+
+## Item 16 — route_walker self-contained --discover + wired into CI sweep (07:55Z)
+**What**: Made scripts/route_walker.py self-sufficient — a --discover flag
+pulls the exact-match GET page routes from RCMHandler._discover_all_routes()
+(no pre-written /tmp routes file), and --fail-on-leak adds a nan/None-leak
+gate on top of the existing traceback gate (exit non-zero on either). Wired a
+"Route-walker smoke" step into .github/workflows/regression-sweep.yml (the
+WEEKLY sweep, never the per-push deploy gate): it boots an open-auth server,
+walks every discovered route, surfaces pass/fail + log tail to the job
+summary, and uploads route_walk.tsv as an artifact. Placed off the deploy
+path by design so it can never block a pedesk.app deploy.
+**Verify**: tests/test_route_walker_discover.py (3: discovery includes the
+new cim/rollup/data-quality/portfolio routes and excludes /api; core routes
+render 200 with no traceback/leak); ran --discover --fail-on-leak against a
+live local server → 161/162 ok, 0 tracebacks, 0 leaks, exit 0 (the 1 non-2xx
+is /analysis on an empty DB, expected); regression-sweep.yml parses as valid
+YAML.
+**Persona check**: the deploy discipline the user asked for ("do multiple
+checks") now has an automated weekly backstop that catches a 500/leak on any
+page, with an artifact to inspect.
+
+## Item 17 — P12 entity jump: Cmd-K → HCRIS X-Ray by CCN (08:15Z)
+**What**: The command palette now recognises a 6-digit query as a CMS CCN and
+surfaces a synthetic "→ HCRIS X-Ray for CCN ######" result routing to
+/diligence/hcris-xray?ccn=######. Pure client-side — the route is built from
+the typed digits, so no backend call and no 6,123-row entity list inlined.
+The synthetic row starts hidden (display:none so visibleItems() ignores it),
+is revealed + highlighted only when /^\d{6}$/ matches, and Enter navigates.
+Placeholder updated to advertise it ("Jump to a page, or type a 6-digit
+CCN…"). Name-based entity search needs a backend index → deferred; CCN jump
+is the safe, high-value v1.
+**Verify**: tests/test_palette_entity_jump.py (4: hidden entity item present,
+placeholder advertises it, JS builds the X-Ray route from 6 digits, static
+text-filter loop skips the synthetic row) + command_palette/universal_palette
+regression 27 passed. Headless browser: typing 450358 reveals the highlighted
+result and Enter lands on /diligence/hcris-xray?ccn=450358 (verified URL
+transition); screenshot captured.
+**Persona check**: VP with a CCN from a data room hits ⌘K, types the 6
+digits, Enter — straight into the facility X-Ray, no menu hunting.

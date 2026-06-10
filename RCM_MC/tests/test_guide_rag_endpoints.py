@@ -146,7 +146,14 @@ class AskWithRagTests(unittest.TestCase):
                 server.shutdown(); server.server_close()
 
     def test_ask_rag_enabled_includes_sources_used(self):
+        # index_exists is patched so the test is self-contained: the ask
+        # handler gates search on it, and the real default path
+        # (.pedesk_guide_rag.sqlite3 in CWD) only exists on machines that
+        # happen to have built an index — the test silently exercised the
+        # index-missing fallback there instead of the retrieval plumbing.
         with tempfile.TemporaryDirectory() as tmp, _ollama_on(), _rag_on(), \
+                mock.patch.object(rag_retrieval, "index_exists",
+                                  return_value=True), \
                 mock.patch.object(rag_retrieval, "search",
                                   return_value=_mock_results()), \
                 mock.patch.object(ollama_client, "call_ollama_chat",

@@ -7315,8 +7315,17 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
     return (
         '<div class="ck-palette" id="ck-palette" hidden>'
         '<div class="ck-palette-box">'
-        '<input class="ck-palette-input" type="text" placeholder="Jump to… (⌘K)" />'
-        f'<ul class="ck-palette-list">{items}'
+        '<input class="ck-palette-input" type="text" '
+        'placeholder="Jump to a page, or type a 6-digit CCN… (⌘K)" />'
+        '<ul class="ck-palette-list">'
+        # P12 entity jump — a synthetic result the JS reveals when the query
+        # is a 6-digit CCN, routing straight to that facility's HCRIS X-Ray.
+        # No backend: the route is built client-side from the typed digits.
+        '<li class="cp-entity" data-entity-jump data-route="" hidden '
+        'style="display:none">'
+        '<span class="cp-title cp-entity-title"></span>'
+        '<span class="cp-route cp-entity-route"></span></li>'
+        f'{items}'
         # Editorial empty state when filter matches nothing —
         # surfaced by _PALETTE_JS toggling the [hidden] flag.
         '<li class="cp-noresults" data-rcm-palette-empty hidden>'
@@ -10705,8 +10714,29 @@ _PALETTE_JS = """
   function filter(q){
     q = (q || '').toLowerCase();
     var anyVisible = false;
+    /* P12 entity jump — a 6-digit query is a CMS CCN; offer a direct jump
+     * to that facility's HCRIS X-Ray, built client-side from the digits. */
+    var entity = p.querySelector('[data-entity-jump]');
+    var ccn = (q || '').trim().match(/^\d{6}$/);
+    if (entity) {
+      if (ccn) {
+        var id = ccn[0];
+        entity.setAttribute('data-route', '/diligence/hcris-xray?ccn=' + id);
+        var et = entity.querySelector('.cp-entity-title');
+        var er = entity.querySelector('.cp-entity-route');
+        if (et) et.textContent = '→ HCRIS X-Ray for CCN ' + id;
+        if (er) er.textContent = '/diligence/hcris-xray?ccn=' + id;
+        entity.hidden = false;
+        entity.style.display = '';
+        anyVisible = true;
+      } else {
+        entity.hidden = true;
+        entity.style.display = 'none';
+      }
+    }
     Array.from(p.querySelectorAll('li')).forEach(function(li){
       if (li.classList.contains('cp-noresults')) return;
+      if (li.hasAttribute('data-entity-jump')) return;  /* handled above */
       if (li.classList.contains('cp-section')) {
         /* Show the "Recent" header only when no query is active */
         li.style.display = q ? 'none' : '';
@@ -10897,6 +10927,64 @@ def _resolve_sub_section(active_nav: Optional[str]) -> Optional[str]:
             if key.startswith(prefix):
                 return _SUB_SECTION_MAP[prefix]
     return None
+
+
+class ExhibitFactory:
+    """P5 — deck-exhibit chrome with per-render numbering.
+
+    One instance per render pass (no module state → thread-safe). Every
+    wrapped panel becomes "Exhibit N — Title" with units stated and a
+    sourced, vintage-stamped footer — the house exhibit discipline, so the
+    distance from screen to deliverable slide is one print-to-PDF. The
+    @media print rules give each exhibit its own clean page (site chrome
+    hidden); pixel capture beyond print is deferred (new-dependency rule).
+    """
+
+    def __init__(self, deal_label: str = "", source_default: str = ""):
+        self.deal_label = deal_label
+        self.source_default = source_default
+        self._n = 0
+
+    def wrap(self, inner_html: str, *, title: str, units: str = "",
+             source: str = "", vintage: str = "") -> str:
+        # ``source`` is trusted server-rendered markup (same documented
+        # exemption as ck_kpi_block's value/sub) so callers can embed
+        # ck_source_link(); never route partner-supplied text into it.
+        self._n += 1
+        src = source or self.source_default
+        deal_bit = f"{_esc(self.deal_label)} · " if self.deal_label else ""
+        units_bit = (f'<div style="font-family:var(--sc-mono);font-size:10px;'
+                     f'color:var(--sc-text-dim,#6a7480);margin:2px 0 0;">'
+                     f'{_esc(units)}</div>' if units else "")
+        vint_bit = f" · {_esc(vintage)}" if vintage else ""
+        return (
+            f'<figure class="ck-exhibit" style="margin:0 0 18px;border:1px solid '
+            f'var(--sc-rule,#d6cfc0);border-radius:2px;background:#fff;">'
+            f'<figcaption style="padding:10px 16px 6px;border-bottom:1px solid '
+            f'var(--sc-rule,#e4ddca);">'
+            f'<span style="font-family:var(--sc-mono);font-size:10px;'
+            f'letter-spacing:0.1em;color:var(--sc-teal-ink,#0f3d39);'
+            f'font-weight:600;">{deal_bit}EXHIBIT {self._n}</span>'
+            f'<div style="font-family:var(--sc-serif,Georgia,serif);font-size:15px;'
+            f'color:var(--sc-text,#1a2332);margin:2px 0 0;">{_esc(title)}</div>'
+            f'{units_bit}</figcaption>'
+            f'<div style="padding:12px 16px;">{inner_html}</div>'
+            f'<footer style="padding:6px 16px 10px;border-top:1px solid '
+            f'var(--sc-rule,#e4ddca);font-family:var(--sc-mono);font-size:9.5px;'
+            f'color:var(--sc-text-dim,#6a7480);">Source: {src}{vint_bit} · '
+            f'PEdesk</footer></figure>')
+
+
+# Print rules for exhibits: each on its own page, site chrome suppressed —
+# Cmd+P → PDF yields deck-insertable exhibit pages. Shipped once via the
+# shell (appended to the global style payload below).
+_EXHIBIT_PRINT_CSS = (
+    "<style>@media print{"
+    ".ck-exhibit{page-break-inside:avoid;break-inside:avoid;"
+    "margin:0 0 24px;}"
+    "nav,.ck-topbar,#ck-deal-bar,.ck-breadcrumbs,.ck-next-section,"
+    ".ts-refine,form,button{display:none !important;}"
+    "}</style>")
 
 
 def ck_insight_bullets(items, *, title: str = "Takeaways") -> str:
@@ -11585,6 +11673,11 @@ def chartis_shell(
     shortcuts_js = _SHORTCUTS_JS if show_chrome else ""
     tour_html = ck_default_tour() if show_chrome else ""
     quick_capture_html = ck_quick_capture() if show_chrome else ""
+    # Exhibit print rules are chrome-coupled too: they exist to hide the
+    # topbar/deal-bar/forms around exhibits, and chrome-less pages (login/
+    # forgot) must not even mention those selectors — test_deal_context
+    # asserts bare pages carry no "ck-deal-bar" string at all.
+    exhibit_print_css = _EXHIBIT_PRINT_CSS if show_chrome else ""
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -11596,6 +11689,7 @@ def chartis_shell(
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"
         f"{_GLOBAL_SCALE_CSS}"
+        f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
         f"{chrome_html}"

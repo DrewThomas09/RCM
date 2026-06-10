@@ -1,5 +1,10 @@
 # Azure Deploy Checklist
 
+> **HISTORICAL.** This checklist hardened the codebase for the original VM
+> deploy. The criteria (env-driven config, health endpoints, no hardcoded
+> hosts) remain satisfied, but production is now a **DigitalOcean droplet**
+> — see [../RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](../RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md).
+
 Each row is a deploy-readiness criterion. Check off when the
 codebase satisfies it. Failures get the smallest possible fix that
 makes them pass — Azure-readiness work is forward-only on `design-v5`.

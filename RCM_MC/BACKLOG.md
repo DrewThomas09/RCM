@@ -20,17 +20,17 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 8 | **P1 deal switcher** — active-deal context in nav (cookie/session), screener/X-Ray/market pre-scope to deal geography; deal home links back | 31 | Create real-CCN deal, confirm 3 modules open pre-scoped; tests on context carry |
 | 9 | **B in-UI model card** — holdout coverage + calibration summary for ridge+conformal on /methodology + predictive screener footer ("90% conformal band covered 89.3% on 2024 holdout") | 30 | Numbers reproduced by a checked-in script; never claims AI/LLM; test asserts wording |
 | 10 | **H demo-deal realism** — rebuild 1 of 5 seeded demo deals on a real named CCN (real HCRIS metrics as observed_metrics; ENTERED→ACTUAL relabel where sourced) | 29 | Seeded deal's metrics match HCRIS row for that CCN; provenance chip names CCN; walker clean |
-| 11 | **P12 entity jump** — palette: type CCN/hospital name → jump to X-Ray/profile scoped | 27 | 5 entities by partial name + by CCN land correctly; palette tests |
-| 12 | **P5 exhibit wrapper v1** — ck_exhibit(title, units, source, n) wrapper + per-deal numbering registry; apply to 3 chartable panels; print-CSS for deck capture | 27 | Export/print 3 exhibits: title/units/source/numbering present (golden-file test) |
+| 11 | ✅ DONE — P12 entity jump (Cmd-K 6-digit CCN → HCRIS X-Ray); name search deferred (needs backend index) | — | LOG #17 |
+| 12 | ✅ DONE — P5 ExhibitFactory v1 (+ corpus-seed batching perf fix found in pre-commit suite) | — | LOG #11 |
 | 13 | **P9 vintage-diff alerts slice** — snapshot saved-screen results; on data change emit diff alerts ("2 facilities changed ownership") | 26 | Simulated vintage subset → diffs detected + accurately described; tests |
-| 14 | **est_ar_days "?" explainer** + bounds chip on predictive screener (gap from earlier pass) | 22 | "?" present; formula matches code; tests |
+| 14 | ✅ DONE — Est. AR Days column + "?" explainer + 25–75 bound on predictive screener | — | LOG #14 |
 | 15 | **A empty-state sweep** — top-10 pages with ?state=ZZ / empty db: consistent ck_empty_state, no dead controls | 20 | Walker variant with empty db; screenshots |
 
-| 16 | **CIM cross-check ← deal context slice 2** — server reads pedesk_active_deal cookie to PREFILL state/ccn on /diligence/cim-crosscheck + /pipeline/rollup forms | 28 | activate deal w/ state; open CIM page; fields prefilled; tests |
+| 16 | ✅ DONE — deal-context slice 2 (cookie prefills CIM state/ccn + rollup basket) | — | LOG #12 |
 | 17 | **Roll-up exhibit row on deal page** — link saved roll-up scenarios to deals (deal_overrides or notes) | 24 | scenario persists per deal; reload shows it |
-| 18 | **DQ dashboard staleness colors** — green/yellow/red vintage chips per source cadence | 18 | snf (monthly cadence, Apr 2026 snapshot) shows amber by Jun-2026 clock; tests |
-| 19 | **route_walker in CI** — wire scripts/route_walker.py as a smoke job artifact on deploy gate | 22 | CI config parses; job runs in act-less dry run |
-| 20 | **screener row → CIM/X-Ray deal actions** — per-row "use in CIM" link carrying state+ccn | 20 | links present + correctly scoped |
+| 18 | ✅ DONE — DQ staleness chips (CURRENT/AGING/STALE by cadence; SNF amber) | — | LOG #15 |
+| 19 | ✅ DONE — route_walker --discover + nan/None-leak gate, wired into weekly sweep | — | LOG #16 |
+| 20 | ✅ DONE — screener hospital row → CIM action (state+ccn scoped) | — | LOG #13 |
 
 ## Groomed-out / blocked
 - Medicaid S-3 re-ingest + POS bed backfill: NETWORK-GATED (sources named in

@@ -403,11 +403,14 @@ def render_predictive_screener(
             return None if f != f else f  # NaN → None
         denial = _est_or_none(row.get("est_denial"))
         uplift = _est_or_none(row.get("est_uplift"))
+        ar_days = _est_or_none(row.get("est_ar_days"))
         _na_cell = ('<td class="num ps-na" style="color:var(--sc-text-faint,#8b94a0);" '
                     'title="Not enough public data to estimate (missing revenue or '
                     'beds).">—</td>')
         denial_cell = (f'<td class="num">{denial:.1%}</td>' if denial is not None
                        else _na_cell)
+        ar_days_cell = (f'<td class="num">{ar_days:.0f}</td>' if ar_days is not None
+                        else _na_cell)
         if uplift is None:
             uplift_cell = _na_cell
         else:
@@ -427,6 +430,7 @@ def render_predictive_screener(
             f'<td class="num">{_fm(rev)}</td>'
             f'{margin_cell}'
             f'{denial_cell}'
+            f'{ar_days_cell}'
             f'{uplift_cell}'
             f'<td>'
             f'<form method="POST" action="/pipeline/add" class="ps-pipe-form">'
@@ -461,6 +465,17 @@ def render_predictive_screener(
              "(higher Medicaid share & lower realization → more denials;",
              "larger, cleaner-collecting hospitals → fewer.)"],
             benchmark="Clamped to the 2%–25% industry initial-denial range.")
+        + '</th>'
+        f'<th>Est. AR Days{ck_basis_badge("predicted")}'
+        + ck_calc_help(
+            "Est. AR Days",
+            ["Days in accounts receivable modeled from payer mix, scale and pricing:",
+             "45 + Medicare-day% × 5 + Medicaid-day% × 8",
+             "− ln(beds) × 3 − net-to-gross × 10 − operating-margin × 8",
+             "(heavier government-payer mix → slower cash; larger, cleaner-",
+             "collecting hospitals → faster.)"],
+            benchmark="Clamped to the 25–75 day plausible A/R range "
+                      "(rcm_mc.ml.prediction_bounds).")
         + '</th>'
         f'<th>Est. Uplift{ck_basis_badge("predicted")}'
         + ck_calc_help(

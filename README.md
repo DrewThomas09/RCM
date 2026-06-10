@@ -11,7 +11,7 @@ This replaces the slice of healthcare diligence that firms typically outsource t
 | Goal | Go to |
 |------|-------|
 | **Install + run locally** | [§4 — Install](#4-install) |
-| **Deploy to Azure** | [AZURE_DEPLOY.md](AZURE_DEPLOY.md) — 5-command quickstart · [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md) for full assessment |
+| **Deploy to production (DigitalOcean)** | [RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md) — droplet guide · [RCM_MC/docs/AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md) for the push-to-main pipeline |
 | **See a full Monday-AM → IC-ready walkthrough** | [§5 — Deal walkthrough](#5-deal-walkthrough-mondayam--ic-ready-by-1030am) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
 | **Find a file or module** | [FILE_INDEX.md](FILE_INDEX.md) (navigation map) · [FILE_MAP.md](FILE_MAP.md) (1,659-file catalogue) |
 | **See the architecture visually** | [ARCHITECTURE_MAP.md](ARCHITECTURE_MAP.md) — 8 Mermaid diagrams (GitHub-rendered) |
@@ -139,16 +139,17 @@ Restart later:
 cd ~/Desktop/RCM/RCM_MC && source ../.venv/bin/activate && python demo.py
 ```
 
-### Production (Azure VM)
+### Production (DigitalOcean droplet)
 
-For a public-facing partner deploy, see **[AZURE_DEPLOY.md](AZURE_DEPLOY.md)**. Five commands on a fresh Azure Ubuntu VM:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/DrewThomas09/RCM/main/RCM_MC/deploy/vm_setup.sh -o /tmp/vm_setup.sh
-sudo bash /tmp/vm_setup.sh <admin_user> <admin_pass> [domain]
-```
-
-Brings up the stdlib HTTP server in Docker behind optional Caddy + Let's Encrypt TLS, with SQLite on a persistent volume mount and a systemd unit so the stack survives reboots. Full design rationale in [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md).
+Production is **https://pedesk.app** on a DigitalOcean droplet — see
+**[RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md)**.
+The app runs from `/opt/RCM` under the `pedesk.service` systemd unit behind
+Caddy (Let's Encrypt TLS); every push to `main` auto-deploys via
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) after the test
+gate — pipeline details in
+[RCM_MC/docs/AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md). The earlier
+docker-compose VM runbook is retired (see [AZURE_DEPLOY.md](AZURE_DEPLOY.md)
+tombstone).
 
 ---
 
@@ -409,8 +410,8 @@ Editorial primitives in the kit: `ck_page_title`, `ck_section_intro` (opt-in tut
 ```
 Coding Projects/
 ├── README.md                              ← you are here
-├── AZURE_DEPLOY.md                        ← 5-command Azure deploy
-├── DEPLOYMENT_PLAN.md                     ← full deploy assessment
+├── AZURE_DEPLOY.md                        ← retired (production = DigitalOcean)
+├── DEPLOYMENT_PLAN.md                     ← historical deploy assessment
 ├── FILE_INDEX.md                          ← master map of every file
 ├── ARCHITECTURE_MAP.md                    ← 8 Mermaid diagrams
 ├── WALKTHROUGH.md                         ← detailed case study
@@ -422,7 +423,7 @@ Coding Projects/
 │   ├── demo.py                            ← start here: python demo.py
 │   ├── readME/                            ← organized documentation
 │   ├── docs/                              ← deep-dive specs + 15 strategy docs
-│   ├── deploy/                            ← Azure VM deploy infra
+│   ├── deploy/                            ← legacy VM deploy infra (prod = DO droplet)
 │   │   ├── Dockerfile, docker-compose.yml
 │   │   ├── vm_setup.sh, rcm-mc.service
 │   │   └── Caddyfile
@@ -475,7 +476,7 @@ Coding Projects/
 │   └── cms_medicare/                      ← earlier CMS API exploration
 │
 └── legacy/                                ← archived (Heroku adapter, old UI handoff)
-    ├── heroku/                            ← superseded by Azure VM deploy
+    ├── heroku/                            ← superseded (prod = DigitalOcean droplet)
     └── handoff/                           ← UI rework, reverted
 ```
 
@@ -506,7 +507,7 @@ Coding Projects/
 - PE heuristics rulebook: [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md)
 - Metric provenance: [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md)
 - Architecture: [ARCHITECTURE.md](RCM_MC/docs/ARCHITECTURE.md)
-- Azure deploy: [AZURE_DEPLOY.md](AZURE_DEPLOY.md) · plan: [DEPLOYMENT_PLAN.md](DEPLOYMENT_PLAN.md)
+- Production deploy (DigitalOcean): [DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md) · auto-deploy: [AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md)
 - Cycle retros + summaries: [`RCM_MC/docs/cycle_summaries/`](RCM_MC/docs/cycle_summaries/) · `CYCLE_RETRO_*.md`
 - Changelog: [CHANGELOG.md](RCM_MC/CHANGELOG.md)
 - GitHub: https://github.com/DrewThomas09/RCM

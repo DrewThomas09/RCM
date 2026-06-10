@@ -44,10 +44,11 @@ class PredictiveScreenerBasisTests(unittest.TestCase):
         from rcm_mc.data.hcris import _get_latest_per_ccn
         from rcm_mc.ui.predictive_screener import render_predictive_screener
         html = render_predictive_screener(_get_latest_per_ccn(), "")
-        # Beds / Revenue / Margin = ACTUAL (3); Est. Denial / Est. Uplift =
-        # PREDICTED (2). The mixed table must distinguish them per-column.
+        # Beds / Revenue / Margin = ACTUAL (3); Est. Denial / Est. AR Days /
+        # Est. Uplift = PREDICTED (3). The mixed table must distinguish them
+        # per-column.
         self.assertEqual(html.count(">ACTUAL</span>"), 3)
-        self.assertEqual(html.count(">PREDICTED</span>"), 2)
+        self.assertEqual(html.count(">PREDICTED</span>"), 3)
 
 
 if __name__ == "__main__":

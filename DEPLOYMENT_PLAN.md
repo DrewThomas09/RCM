@@ -1,5 +1,13 @@
 # DEPLOYMENT_PLAN.md
 
+> **HISTORICAL.** This assessment predates the platform migration —
+> production now runs on a **DigitalOcean droplet** (`/opt/RCM`,
+> `pedesk.service` behind Caddy, push-to-main auto-deploy). Current docs:
+> [RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md)
+> and [RCM_MC/docs/AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md). Kept for the
+> architecture rationale (single-process queue, SQLite, no PaaS timeout),
+> which still applies.
+
 Private, password-gated web-app deployment of SeekingChartis / RCM-MC on **Azure VM**. Assessment + plan — no code written yet.
 
 ---

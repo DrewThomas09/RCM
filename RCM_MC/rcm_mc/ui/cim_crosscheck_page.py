@@ -17,8 +17,8 @@ from ..diligence.cim_crosscheck import (
     CLAIM_TYPES, CrossCheckResult, run_crosscheck, variance_memo,
 )
 from ._chartis_kit import (
-    chartis_shell, ck_basis_badge, ck_kpi_block, ck_page_title, ck_panel,
-    ck_source_link,
+    ExhibitFactory, chartis_shell, ck_basis_badge, ck_kpi_block,
+    ck_page_title, ck_panel, ck_source_link,
 )
 
 _FLAG_STYLE = {
@@ -83,6 +83,7 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
     max_beds = _f_or_none(qs, "max_beds")
     claims = _claims_from_qs(qs)
     fmt = (qs.get("format") or [""])[0]
+    prefill_deal = (qs.get("_prefill_deal") or [""])[0].strip()
 
     result: Optional[CrossCheckResult] = None
     if state and claims:
@@ -117,7 +118,13 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'<label {_lbl}>{_html.escape(ct["label"])}'
             f'<input name="c_{ct["key"]}" value="{_html.escape(cur)}" '
             f'placeholder="{_html.escape(ct["hint"])}" {_inp}></label>')
+    prefill_note = (
+        '<p class="ck-section-body" style="margin:0 0 10px;font-size:11px;'
+        'color:var(--sc-teal,#155752);">Pre-scoped to your active deal '
+        f'<strong>{_html.escape(prefill_deal)}</strong> — edit the market or '
+        'CCN to widen the check.</p>') if prefill_deal else ""
     form = ck_panel(
+        prefill_note +
         '<p class="ck-section-body" style="margin:0 0 10px;font-size:11px;'
         'color:var(--sc-text-dim,#6a7480);">Claims are management\'s numbers '
         f'as the CIM states them{ck_basis_badge("entered")} — the engine '
@@ -154,7 +161,10 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             title="How this works")
     else:
         c = result.flag_counts()
-        export_qs = {k: v[0] for k, v in qs.items() if v and v[0]}
+        # Drop internal (underscore-prefixed) keys like _prefill_deal so
+        # they don't leak into the memo/CSV export URLs.
+        export_qs = {k: v[0] for k, v in qs.items()
+                     if v and v[0] and not k.startswith("_")}
         memo_qs = urlencode({**export_qs, "format": "memo"})
         csv_qs = urlencode({**export_qs, "format": "csv"})
         kpis = (
@@ -188,7 +198,12 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
                 f'font-variant-numeric:tabular-nums;">{var_s}</td>'
                 f'<td style="padding:6px 8px;">{_flag_chip(r.flag)}</td>'
                 '</tr>')
-        results_html = kpis + ck_panel(
+        # Exhibit chrome (P5): the variance table IS the cross-check
+        # deliverable — wrap it as a numbered, sourced exhibit so
+        # print-to-PDF drops straight into the CDD readout deck.
+        xf = ExhibitFactory(deal_label="CIM cross-check",
+                            source_default=ck_source_link("CMS HCRIS"))
+        results_html = kpis + xf.wrap(
             '<div style="overflow-x:auto;"><table class="ck-data-table" '
             'style="width:100%;border-collapse:collapse;">'
             '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
@@ -203,7 +218,9 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'Variance memo (txt) ↓</a> · '
             f'<a class="ck-link" href="/diligence/cim-crosscheck?{csv_qs}">CSV ↓</a>'
             ' — memo includes a suggested expert-call question per claim.</p>',
-            title=f"Variance vs public data — {_html.escape(result.scope_label)}")
+            title=f"Variance vs public data — {result.scope_label}",
+            units="claims as entered; estimates from filed HCRIS values",
+            vintage="latest HCRIS filing per CCN")
 
     body = (
         ck_page_title(

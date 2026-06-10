@@ -52,6 +52,10 @@ _GREEN = frozenset({
     "/module-index", "/tools", "/benchmarks", "/diligence/benchmarks",
     "/comparable-outcomes", "/diligence/comparable-outcomes",
     "/regulatory-calendar", "/diligence/regulatory-calendar",
+    # variance engine + roll-up + DQ census: estimates/aggregates computed
+    # from filed HCRIS rows and live loader stats (claims/synergy inputs are
+    # badged ENTERED on-page; the data side is real).
+    "/diligence/cim-crosscheck", "/pipeline/rollup", "/data-quality",
     # real deal/portfolio/user workflow (operates on the user's real DB)
     "/app", "/home", "/dashboard", "/pipeline", "/deal-pipeline",
     "/diligence/deal", "/diligence/ingest", "/diligence/checklist",

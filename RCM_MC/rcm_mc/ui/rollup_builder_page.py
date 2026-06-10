@@ -17,8 +17,8 @@ from ..pe.rollup_scenario import (
     RollupScenario, antitrust_note, build_scenario, scenario_csv,
 )
 from ._chartis_kit import (
-    chartis_shell, ck_basis_badge, ck_kpi_block, ck_page_title, ck_panel,
-    ck_source_link,
+    ExhibitFactory, chartis_shell, ck_basis_badge, ck_kpi_block,
+    ck_page_title, ck_panel, ck_source_link,
 )
 
 
@@ -52,6 +52,7 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
     except ValueError:
         ga_pct = 0.0
     fmt = (qs.get("format") or [""])[0]
+    prefill_deal = (qs.get("_prefill_deal") or [""])[0].strip()
 
     scenario: Optional[RollupScenario] = None
     if len(ccns) >= 2:
@@ -64,7 +65,14 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
 
     _inp = ('style="padding:5px 8px;border:1px solid var(--sc-rule,#c9c1ac);'
             'width:340px;font-variant-numeric:tabular-nums;"')
+    prefill_note = (
+        '<p class="ck-section-body" style="margin:0 0 10px;font-size:11px;'
+        'color:var(--sc-teal,#155752);">Seeded with your active deal '
+        f'<strong>{_html.escape(prefill_deal)}</strong> as the platform '
+        'anchor — add the CCNs you\'d combine with it.</p>'
+        ) if prefill_deal else ""
     form = ck_panel(
+        prefill_note +
         '<form method="get" action="/pipeline/rollup" '
         'style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;">'
         '<label style="font-family:var(--sc-mono);font-size:10px;display:block;">'
@@ -93,6 +101,12 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
             title="How this works")
     else:
         s = scenario
+        # Exhibit chrome (P5): the pro-forma KPIs and the concentration
+        # table are the two blocks a deal team lifts into a deck, so they
+        # render as numbered, sourced exhibits — print-to-PDF ready.
+        xf = ExhibitFactory(
+            deal_label=f"{len(s.facilities)}-facility roll-up",
+            source_default=ck_source_link("CMS HCRIS"))
         # facility table — filed values
         frows = ""
         for f in s.facilities:
@@ -127,7 +141,7 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
                     f'<strong>{_fmt_m(syn)}/yr</strong> — your assumption, not '
                     'a modeled or filed figure.</p>')
 
-        combined = ck_panel(
+        combined = xf.wrap(
             '<div class="ck-kpi-grid">'
             + ck_kpi_block("Facilities", f"{len(s.facilities)}")
             + ck_kpi_block("Combined beds", _fmt_i(s.beds.value) + _cov(s.beds))
@@ -147,7 +161,9 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
             'arithmetic on the facilities\' filed HCRIS values '
             f'{ck_basis_badge("actual")} — source {ck_source_link("CMS HCRIS")}.'
             '</p>' + syn_row,
-            title="Pro-forma platform")
+            title="Pro-forma platform — combined filed figures",
+            units="NPR in USD; payer mix as % of inpatient days",
+            vintage="latest HCRIS filing per CCN")
 
         mkts = ""
         for m in s.markets:
@@ -169,7 +185,7 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
             for n in s.notes)
         export_qs = urlencode({"ccns": ",".join(ccns), "ga_pct": ga_pct or "",
                                "format": "csv"})
-        markets = ck_panel(
+        markets = xf.wrap(
             '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
             '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
             '<th style="text-align:left;padding:6px 8px;">Market (state proxy)</th>'
@@ -186,7 +202,9 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
             'screening proxy, not a relevant-market analysis; thresholds per '
             'the 2023 DOJ/FTC Merger Guidelines §2.1. '
             f'<a class="ck-link" href="/pipeline/rollup?{export_qs}">Scenario CSV ↓</a></p>',
-            title="Market concentration — before vs after")
+            title="Market concentration — before vs after",
+            units="share of state NPR (%); HHI in points (0–10,000)",
+            vintage="latest HCRIS filing per CCN")
 
         facilities_tbl = ck_panel(
             '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'

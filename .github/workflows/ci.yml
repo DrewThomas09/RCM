@@ -9,7 +9,7 @@ on:
 
 # All jobs run from the RCM_MC/ subdirectory because pyproject.toml,
 # rcm_mc/, and tests/ all live there. The repo root holds README.md,
-# AZURE_DEPLOY.md, FILE_INDEX.md, etc. but no Python code.
+# FILE_INDEX.md, deployment docs, etc. but no Python code.
 defaults:
   run:
     working-directory: ./RCM_MC

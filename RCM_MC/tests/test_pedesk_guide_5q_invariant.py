@@ -36,7 +36,14 @@ from rcm_mc.assistant.context.metric_registry import METRIC_REGISTRY
 # viewer were richly enriched up to the 5-Q floor, so the allowlist
 # is now empty. Keep the scaffold (and the sanity-guard test) in
 # place for future leaf endpoints that genuinely need it.
-_SHORT_OK: set[str] = set()
+_SHORT_OK: set[str] = {
+    # Leaf download endpoints — they serve a file (the KKR demo corpus as
+    # CSV/JSON), not a partner-facing analytic page; a single "what's the
+    # import schema" question is the whole of the partner's need. The /demo
+    # landing page they hang off carries the full 5-Q context.
+    "/demo/download/kkr-deals.csv",
+    "/demo/download/kkr-deals.json",
+}
 
 _MIN_QUESTIONS = 5
 

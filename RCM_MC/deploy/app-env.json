@@ -9,7 +9,7 @@
     "name": "RCM_MC_HOST",
     "value": "0.0.0.0",
     "slotSetting": false,
-    "comment": "Bind all interfaces so Azure App Service's HTTP front-end can reach the container. demo.py auto-detects WEBSITE_HOSTNAME and defaults to 0.0.0.0 even without this, but setting it explicitly is the supported path."
+    "comment": "Bind all interfaces so a PaaS HTTP front-end can reach the container. demo.py auto-detects PaaS hostname env vars and defaults to 0.0.0.0 even without this, but setting it explicitly is the supported path."
   },
   {
     "name": "LOG_LEVEL",
@@ -27,13 +27,13 @@
     "name": "RCM_MC_DB_PATH",
     "value": "/home/data/portfolio.db",
     "slotSetting": false,
-    "comment": "Path to the portfolio SQLite file. /home is mounted as Azure persistent storage so the file survives container restarts. The /home/data subfolder must exist (one-time mkdir during App Service setup). Without this, demo.py falls back to tempfile.mkdtemp which gets wiped on every restart."
+    "comment": "Path to the portfolio SQLite file. Point it at the platform's persistent mount so the file survives container restarts (create the subfolder once during setup). Without this, demo.py falls back to tempfile.mkdtemp which gets wiped on every restart."
   },
   {
     "name": "WEBSITES_PORT",
     "value": "8765",
     "slotSetting": false,
-    "comment": "Port the App Service front-end forwards to inside the container. demo.py reads PORT then WEBSITES_PORT then 8765 default — set whichever the platform expects (Azure App Service for Containers prefers WEBSITES_PORT)."
+    "comment": "Port the PaaS front-end forwards to inside the container. demo.py reads PORT then WEBSITES_PORT then 8765 default — set whichever the platform expects."
   },
   {
     "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
