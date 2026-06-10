@@ -6946,6 +6946,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_header("Location", target)
             self.end_headers()
             return
+        if path == "/pipeline/rollup":
+            from .ui.rollup_builder_page import render_rollup_builder
+            _qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            out = render_rollup_builder(_qs)
+            if (_qs.get("format") or [""])[0] == "csv":
+                return self._send_text(out, content_type="text/csv; charset=utf-8")
+            return self._send_html(out)
         if path == "/pipeline/bridge":
             return self._route_portfolio_bridge()
         if path == "/fund-learning":

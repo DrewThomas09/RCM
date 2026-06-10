@@ -39,3 +39,23 @@ main merge → deploy.yml (test gate → SSH droplet → restart pedesk.service 
 public pedesk.app/healthz + guide-health) → sandbox verification = deploy-run
 conclusion + local playwright screenshots + route_walker markers on the same
 SHA (sandbox egress cannot reach pedesk.app — DECISIONS.md #1).
+
+## P7 — Roll-Up Scenario Builder (this session)
+**Spec.** PE thesis-testing motion: pick N real HCRIS hospitals (CCNs) →
+pro-forma combined view: aggregate beds / inpatient days / NPR (filed,
+labeled), blended payer-day mix (day-weighted, NaN-aware), state market share
+before/after on NPR, state HHI before/after with Δ (note when post-HHI>2500
+or Δ>200 — the DOJ/FTC screening zone), per-facility table, overlap note when
+facilities share a state (county granularity backlogged — HCRIS lacks
+reliable county for all rows). Synergy toggles (G&A % of combined opex)
+clearly labeled USER ASSUMPTION, default off. Exports: scenario CSV.
+**Module layout.** Pure logic `rcm_mc/pe/rollup_scenario.py` (combine math +
+HHI before/after, unit-testable); page `rcm_mc/ui/rollup_builder_page.py` at
+/pipeline/rollup; route + Pipeline sub-nav + palette. Entry points: CCNs via
+comma list (?ccns=) — the screener's compare basket already produces such
+lists, so a "Roll-up these" link from the screener compare view comes free.
+**Honesty.** All facility figures are filed HCRIS values (ACTUAL); the
+combined column is arithmetic on filings (DERIVED, labeled); synergies are
+ENTERED assumptions; HHI uses NPR shares within the chosen state market and
+says so (a state is a coarse antitrust market — labeled as screening proxy,
+not a relevant-market analysis).

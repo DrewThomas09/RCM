@@ -51,3 +51,27 @@
     and fixed a real escaping bug (badge markup escaped in panel title).
 - users: Chartis consultant (user 1) — replaces the week-one manual
   CIM-vs-public-data build; PE VP (user 2) gets the same table for IC prep.
+
+## Item 3 — P7 Roll-Up Scenario Builder (vertical slice, hospitals)
+- when: 2026-06-10T04:10–04:26Z (iteration 3)
+- what: NEW power feature. /pipeline/rollup?ccns=a,b,c — pro-forma platform
+  from N real HCRIS facilities: combined beds/days/NPR with per-aggregate
+  coverage notes (gaps never silently zero), day-weighted payer blend
+  (NaN filings excluded from numerator AND denominator), state share + HHI
+  before/after with 2023 DOJ/FTC Merger-Guidelines screening notes
+  (structural-presumption zone, attention zone, below-threshold), in-state
+  overlap notes, USER-ASSUMPTION G&A synergy (refuses a partially-known cost
+  base), CSV export. Screener compare basket → "Roll-up these N" link.
+  Pure logic in pe/rollup_scenario.py; route + Pipeline sub-nav + palette.
+- verification:
+  - hand-checked on 3 real TX systems (MD Anderson 450076 + Memorial Hermann
+    450068 + Methodist 450358): combined NPR $10.17B and 811,814 days match
+    per-row sums; share 10.44%; HHI 109→178, Δ+69 — hand recomputation of
+    (Σs)²−Σs² matched exactly.
+  - 10 unit/page tests (aggregates, coverage gaps, NaN-aware blend, synergy
+    refusal, HHI hand math, screening-note zones, escapes); screener suite
+    165 passed with the new compare→rollup link.
+  - screenshot: /tmp/session_shots/item3_rollup.png (KPI strip, HHI table
+    with screening note, filed-values facility table).
+- users: PE VP (user 2) thesis-testing; Chartis (user 1) gets the
+  concentration exhibit + screening language for the market section.

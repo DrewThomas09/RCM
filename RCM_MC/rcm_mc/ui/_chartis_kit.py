@@ -183,6 +183,7 @@ _SUB_NAV = {
         {"label": "Deal Risk",           "href": "/deal-risk-scores"},
         {"label": "Deal-Flow Heatmap",   "href": "/deal-flow-heatmap"},
         {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
+        {"label": "Roll-Up Builder",     "href": "/pipeline/rollup"},
     ],
     "library": [
         {"label": "Deal Library",        "href": "/deal-library"},
@@ -7174,6 +7175,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
     {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
     {"id": "cim-crosscheck", "title": "CIM Cross-Check · Variance engine", "route": "/diligence/cim-crosscheck"},
+    {"id": "rollup-builder", "title": "Roll-Up Builder · Pro-forma platform", "route": "/pipeline/rollup"},
     {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
     {"id": "value-create",  "title": "Value Creation",     "route": "/diligence/value"},
     {"id": "risk-bench",    "title": "Risk Workbench",     "route": "/diligence/risk-workbench?demo=steward"},
