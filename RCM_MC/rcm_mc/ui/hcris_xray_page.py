@@ -861,12 +861,39 @@ def _service_area_demographics(target: HospitalMetrics) -> str:
         f'<div style="font-family:var(--sc-mono);font-size:9px;'
         f'color:var(--sc-text-dim,#6a7480);">{html.escape(sub)}</div></div>'
         for lbl, val, sub in cells)
+    # State-level chronic-disease burden (CDC PLACES) — a genuine demand
+    # signal for an acute provider. State granularity (coarser than the
+    # county block above), labeled as such; skip any NaN measure.
+    burden = ""
+    try:
+        from ..data.cdc_places_agg import places_equity_state
+        pe = places_equity_state(str(d.get("state") or ""))
+        bits = []
+        for key, lbl in (("diabetes", "diabetes"), ("obesity", "obesity"),
+                         ("fair_poor_health", "fair/poor health")):
+            v = pe.get(key)
+            try:
+                fv = float(v)
+                if fv == fv:   # not NaN
+                    bits.append(f"{lbl} <strong>{fv:.1f}%</strong>")
+            except (TypeError, ValueError):
+                pass
+        if bits:
+            burden = (
+                '<p class="ck-section-body" style="font-size:11px;margin:8px 0 0;'
+                'color:var(--sc-text-dim,#6a7480);">Community health burden '
+                f'({html.escape(str(d.get("state") or ""))}, CDC PLACES, '
+                'state-level): ' + " · ".join(bits) + ' — chronic-disease '
+                'prevalence is a structural demand driver for acute and '
+                'specialty volume.</p>')
+    except Exception:  # noqa: BLE001 — additive, never breaks the panel
+        burden = ""
     return (
         '<div class="ck-panel"><div class="ck-panel-head">'
         '<span class="ck-panel-title">Service-area demographics — '
         f'{html.escape(str(d.get("county_name") or ""))}, '
         f'{html.escape(str(d.get("state") or ""))}</span>'
-        '<span class="ck-panel-code">CENSUS / ACS</span></div>'
+        '<span class="ck-panel-code">CENSUS / ACS · CDC PLACES</span></div>'
         '<div class="ck-panel-body">'
         '<div style="display:flex;gap:26px;flex-wrap:wrap;">' + kpis + '</div>'
         '<p class="ck-section-body" style="font-size:11px;margin:10px 0 0;'
@@ -875,6 +902,7 @@ def _service_area_demographics(target: HospitalMetrics) -> str:
         'service-AREA demand and payer context, not the target\'s own patient '
         'panel. A high 65+/uninsured share or low income shifts the realistic '
         'payer mix regardless of what the CIM projects.</p>'
+        + burden +
         '</div></div>')
 
 
