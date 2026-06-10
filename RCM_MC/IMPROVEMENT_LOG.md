@@ -177,3 +177,22 @@
   and copy-payload tag-stripping. 22 green with deal-profile suite.
 - users: Chartis (user 1) — the transcribe-chart-to-"so what" motion,
   pre-drafted without credibility risk.
+
+## Item 9 — B: margin-model holdout card (in-UI conformal coverage)
+- when: 2026-06-10T04:50–04:58Z (iteration 9)
+- what: scripts/eval_margin_model.py — freezes a seeded 20% OUTER holdout
+  (n=978 hospitals) the model never sees, trains the production path
+  (train_margin_model: ridge + split-conformal) on the remaining 80%, and
+  measures the 90% band's empirical coverage on the holdout → writes
+  rcm_mc/ml/model_card_margin.json (coverage 91.0%, half-width ±11.4pp...
+  actual values in the artifact; MAE, n, vintage, seed, limitations).
+  /methodology gains a "Margin Predictor — holdout model card" panel that
+  reads ONLY the artifact: no artifact, no claim; engine named exactly
+  "Ridge regression with split-conformal intervals".
+- verification: eval ran live — empirical coverage 91.0% vs nominal 90% on
+  978 held-out filings; 4 tests pin artifact schema, coverage sanity band,
+  engine naming, and that the UI panel renders the artifact's numbers.
+  Confirmed the only "AI" strings on the page are the pre-existing Ollama
+  Guide chrome, not model labeling.
+- users: PE VP + Chartis (users 1–2) — the "can I trust the band?" question
+  answered with a reproducible number, not an adjective.

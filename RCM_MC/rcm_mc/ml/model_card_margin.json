@@ -1,0 +1,38 @@
+{
+  "model": "Ridge regression with split-conformal intervals",
+  "target": "operating_margin (HCRIS, latest filing per CCN)",
+  "nominal_coverage": 0.9,
+  "empirical_holdout_coverage": 0.91,
+  "conformal_half_width": 0.2762,
+  "holdout_mae": 0.1142,
+  "holdout_median_ae": 0.0784,
+  "n_train": 3913,
+  "n_test": 978,
+  "train_r2": 0.3324,
+  "features": [
+    "beds",
+    "medicare_day_pct",
+    "medicaid_day_pct",
+    "commercial_pct",
+    "occupancy_rate",
+    "net_to_gross_ratio",
+    "revenue_per_bed",
+    "payer_diversity",
+    "expense_per_bed",
+    "cost_per_day",
+    "bed_utilization_value",
+    "reimbursement_quality",
+    "state_median_margin",
+    "log_beds",
+    "occupancy_x_n2g"
+  ],
+  "data_vintage": "HCRIS FY2020\u20132022 filings",
+  "eval_seed": 7,
+  "eval_date": "2026-06-10",
+  "script": "scripts/eval_margin_model.py",
+  "limitations": [
+    "Cross-sectional model: predicts a hospital's margin from peer structure, not its own trajectory.",
+    "Trained on filings that pass the plausible-margin screen (|margin| \u2264 100%); junk-opex filings excluded.",
+    "Conformal band assumes exchangeability of filings; structural breaks (payer-mix shocks, ownership changes) void it."
+  ]
+}

@@ -242,9 +242,40 @@ def render_methodology() -> str:
         f'</tbody></table>'
     ), anchor="toc-pulse")
 
+    # ── Margin-model card — numbers from the checked-in eval, never typed ──
+    def _margin_model_card() -> str:
+        """Holdout model card for the margin predictor, read from
+        rcm_mc/ml/model_card_margin.json (written by
+        scripts/eval_margin_model.py). The UI states empirical conformal
+        coverage only when the eval artifact exists — no artifact, no claim."""
+        import json as _json
+        from pathlib import Path as _Path
+        card_path = _Path(__file__).resolve().parent.parent / "ml" / "model_card_margin.json"
+        if not card_path.exists():
+            return ""
+        try:
+            c = _json.loads(card_path.read_text())
+        except Exception:  # noqa: BLE001
+            return ""
+        lims = "".join(f"<li>{html.escape(l)}</li>" for l in c.get("limitations", []))
+        return _model_card(
+            "MGN", "Margin Predictor — holdout model card",
+            f"<strong>{html.escape(str(c.get('model','')))}</strong>. On a frozen "
+            f"{c.get('n_test', 0):,}-hospital holdout (seed {c.get('eval_seed')}), the "
+            f"90% conformal band covered <strong>"
+            f"{float(c.get('empirical_holdout_coverage', 0))*100:.1f}%</strong> of filed "
+            f"margins (half-width ±{float(c.get('conformal_half_width', 0))*100:.1f}pp); "
+            f"holdout MAE {float(c.get('holdout_mae', 0))*100:.1f}pp. Trained on "
+            f"{c.get('n_train', 0):,} filings · {html.escape(str(c.get('data_vintage','')))} · "
+            f"evaluated {html.escape(str(c.get('eval_date','')))} by "
+            f"<code>{html.escape(str(c.get('script','')))}</code> (re-run to reproduce)."
+            f"<ul style='margin:8px 0 0;padding-left:18px;font-size:11.5px;'>{lims}</ul>"
+        )
+
     # ── Models ──
     models = _section("MDL", "Financial Models", (
         '<div class="ck-card-grid">'
+        + _margin_model_card()
         + _model_card(
             "DCF", "Discounted Cash Flow",
             "5-year projection of free cash flow, discounted at WACC. Inputs: revenue base, "
