@@ -935,3 +935,20 @@ margin) · $2.50B EV · 14.0× entry"; new test_payer_stress banner test
 ($1.19B present / "1,194M NPR" absent); 3,042 passed across the pages that
 consume the strip (pe_intelligence, analysis_packet, hospital-profile head,
 irr_attribution, portfolio_snapshots).
+
+## W2-33 — Target Scanner X-Ray button routes hospitals to HCRIS X-Ray (USER-REPORTED, 22:40Z)
+**Found by**: user — "in target scanner, click on xray for hospitals doesn't
+bring me to the right place."
+**Root cause**: the per-row X-Ray button hard-coded
+`/diligence/xray?ccn=&vertical=hospitals` (the generic CMS provider scanner)
+for EVERY vertical, including hospitals — so a hospital row dropped the
+partner on the wrong page instead of the rich HCRIS X-Ray (filed financials,
+local market, demographics). The deal page and this page's own "next step"
+hint already point hospitals at `/diligence/hcris-xray`.
+**Fixed**: the button now routes by vertical — hospitals →
+`/diligence/hcris-xray?ccn=`, every non-hospital vertical (home health,
+hospice, SNF, dialysis, …) keeps the generic `/diligence/xray?ccn=&vertical=`
+scanner (HCRIS doesn't apply to them).
+**Verify**: render of AK hospitals → 24 hcris-xray row links, 0 generic;
+home_health/hospice/snf/dialysis → generic scanner retained; new
+XrayDrillRoutingTests (2) + screen-snapshot suite 20 passed.

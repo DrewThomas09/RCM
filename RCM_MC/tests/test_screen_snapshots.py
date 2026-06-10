@@ -210,5 +210,30 @@ class DiffDetailViewTests(unittest.TestCase):
         self.assertIn("view=saved&diff=7", h)
 
 
+class XrayDrillRoutingTests(unittest.TestCase):
+    """The per-row X-Ray button must route by vertical: hospitals into the
+    rich HCRIS X-Ray (filed financials), every other CMS vertical into the
+    generic provider scanner. A hospital row pointing at /diligence/xray
+    landed the partner on the wrong page (the user-reported bug)."""
+
+    def test_hospital_rows_link_to_hcris_xray(self):
+        import re
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener(
+            {"view": ["main"], "vertical": ["hospitals"], "state": ["AK"]})
+        # X-Ray buttons on hospital rows go to the HCRIS X-Ray …
+        self.assertRegex(h, r'href="/diligence/hcris-xray\?ccn=\w+"')
+        # … and NOT the generic provider scanner.
+        self.assertNotRegex(
+            h, r'href="/diligence/xray\?ccn=\w+&vertical=hospitals"')
+
+    def test_nonhospital_rows_keep_generic_xray(self):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener(
+            {"view": ["main"], "vertical": ["home_health"], "state": ["CA"]})
+        self.assertRegex(
+            h, r'href="/diligence/xray\?ccn=\w+&vertical=home_health"')
+
+
 if __name__ == "__main__":
     unittest.main()
