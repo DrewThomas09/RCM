@@ -782,3 +782,14 @@ panel renders with CDD lens + Census/ACS source + honesty note. X-Ray suites
 **Persona check**: consultant sees the target sits in a 23.8%-uninsured county
 — a bad-debt reality that reshapes the payer-mix underwrite no matter what the
 CIM projects, surfaced on the target's own page.
+
+## W2-23 — CIM Cross-Check market-demand backdrop (19:15Z)
+**What**: The CIM results now carry a state payer-demand backdrop line
+(Census/ACS): 65+ share · uninsured rate · median income, so a consultant
+reads management's market-size and payer-mix claims against the real demand
+profile ("a high-65+/high-uninsured market caps the realistic commercial
+mix"). Reuses demographics_state(); empty when the state has no ACS row (no
+fabricated backdrop). State-level, labeled as such (not the target's
+patients).
+**Verify**: MarketBackdropTests (renders on results, absent without results,
+empty for unknown state); CIM + demographics suites green.

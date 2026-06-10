@@ -279,3 +279,23 @@ class MemoPercentileTests(unittest.TestCase):
         # aggregate claim → no per-facility percentile
         memo = variance_memo(res)
         self.assertNotIn("Claim percentile:", memo)
+
+
+class MarketBackdropTests(unittest.TestCase):
+    """The CIM results carry a state payer-demand backdrop (Census/ACS) so
+    claims are read against real demographics; absent when no ACS row."""
+
+    def test_backdrop_renders_on_results(self):
+        from rcm_mc.ui.cim_crosscheck_page import render_cim_crosscheck
+        h = render_cim_crosscheck({"state": ["TX"], "c_provider_count": ["400"]})
+        self.assertIn("Market demand backdrop", h)
+        self.assertIn("uninsured", h)
+        self.assertIn("Census/ACS", h)
+
+    def test_no_backdrop_without_results(self):
+        from rcm_mc.ui.cim_crosscheck_page import render_cim_crosscheck
+        self.assertNotIn("Market demand backdrop", render_cim_crosscheck({}))
+
+    def test_backdrop_helper_empty_for_unknown_state(self):
+        from rcm_mc.ui.cim_crosscheck_page import _market_backdrop
+        self.assertEqual(_market_backdrop("ZZ"), "")
