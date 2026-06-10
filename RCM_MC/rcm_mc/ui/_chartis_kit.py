@@ -1899,6 +1899,64 @@ def ck_calc_help(metric: str, lines: Sequence[str], *, benchmark: str = "") -> s
     )
 
 
+def ck_peer_percentile(value, dist, *, peer_label: str,
+                       higher_is_better: Optional[bool] = None) -> str:
+    """Percentile-vs-peers chip — "p78 vs TX hospitals (n=412)" + a small
+    position track. The PE/Chartis reading of any KPI is percentile-vs-peers,
+    never the absolute; this is the one reusable way to say it.
+
+    Percentile = share of peers strictly below + half of ties (standard
+    percentile rank). NaN/None peers are excluded from n. Honesty guards:
+    a peer set under 8 real values renders "peer set too small (n=K)" —
+    a percentile against 4 peers reads as precision that isn't there — and a
+    None/NaN value renders "" so callers can concatenate unconditionally.
+    ``higher_is_better`` tones the chip (green/amber/red by quartile);
+    omitted → neutral ink."""
+    try:
+        v = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return ""
+    if v != v:
+        return ""
+    vals = []
+    for d in (dist if dist is not None else []):
+        try:
+            f = float(d)
+        except (TypeError, ValueError):
+            continue
+        if f == f:
+            vals.append(f)
+    n = len(vals)
+    if n < 8:
+        return (f'<span class="ck-pct-chip" style="font-family:var(--sc-mono);'
+                f'font-size:10px;color:var(--sc-text-dim,#6a7480);" '
+                f'title="Fewer than 8 peers report this metric — a percentile '
+                f'would overstate precision.">peer set too small (n={n})</span>')
+    below = sum(1 for x in vals if x < v)
+    ties = sum(1 for x in vals if x == v)
+    pct = (below + 0.5 * ties) / n
+    p_int = int(round(pct * 100))
+    color = "var(--sc-text,#1a2332)"
+    if higher_is_better is not None:
+        good = pct if higher_is_better else (1.0 - pct)
+        color = ("var(--sc-positive,#0a8a5f)" if good >= 0.75
+                 else "var(--sc-negative,#b5321e)" if good <= 0.25
+                 else "var(--sc-warning,#b8732a)" if good <= 0.45
+                 else "var(--sc-text,#1a2332)")
+    dot_x = max(2, min(58, round(pct * 60)))
+    track = (
+        '<svg width="60" height="8" style="vertical-align:middle;margin:0 4px;" '
+        'role="img" aria-label="percentile position">'
+        '<line x1="0" y1="4" x2="60" y2="4" '
+        'stroke="var(--sc-rule,#d6cfc0)" stroke-width="2"/>'
+        f'<circle cx="{dot_x}" cy="4" r="3" fill="{color}"/></svg>')
+    return (f'<span class="ck-pct-chip" style="font-family:var(--sc-mono);'
+            f'font-size:10px;color:{color};white-space:nowrap;" '
+            f'title="Percentile rank vs {_esc(peer_label)}: share of peers '
+            f'below + half of ties; n excludes peers not reporting the '
+            f'metric.">p{p_int}{track}vs {_esc(peer_label)} (n={n})</span>')
+
+
 def ck_sparkline(
     values: Sequence[float],
     *,
@@ -7176,6 +7234,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
     {"id": "cim-crosscheck", "title": "CIM Cross-Check · Variance engine", "route": "/diligence/cim-crosscheck"},
     {"id": "rollup-builder", "title": "Roll-Up Builder · Pro-forma platform", "route": "/pipeline/rollup"},
+    {"id": "data-quality", "title": "Data Quality · Source certification", "route": "/data-quality"},
     {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
     {"id": "value-create",  "title": "Value Creation",     "route": "/diligence/value"},
     {"id": "risk-bench",    "title": "Risk Workbench",     "route": "/diligence/risk-workbench?demo=steward"},
@@ -10840,6 +10899,87 @@ def _resolve_sub_section(active_nav: Optional[str]) -> Optional[str]:
     return None
 
 
+def ck_insight_bullets(items, *, title: str = "Takeaways") -> str:
+    """P13 — honest, template-driven takeaway bullets.
+
+    ``items`` = [(text, significant), ...] where ``text`` was built ONLY from
+    numbers already computed for the page and ``significant`` is a guard the
+    caller computed from the same stats (suppress trivia: a +0.3pp move is
+    not "growing"). Renders at most 4 significant bullets with a
+    copy-to-clipboard affordance; renders NOTHING when no candidate passes —
+    silence over noise. Free-form/LLM text is not accepted here by design:
+    every figure in a bullet must trace to the panel it sits beside."""
+    keep = [t for t, sig in items if sig][:4]
+    if not keep:
+        return ""
+    lis = "".join(
+        f'<li style="margin:0 0 6px;line-height:1.5;">{t}</li>' for t in keep)
+    plain = " • ".join(_strip_tags(t) for t in keep)
+    return (
+        '<div class="ck-insights" style="border:1px solid var(--sc-rule,#d6cfc0);'
+        'border-radius:2px;background:#fff;padding:12px 16px;margin:0 0 18px;">'
+        '<div style="display:flex;align-items:center;gap:10px;margin:0 0 8px;">'
+        f'<span style="font-family:var(--sc-mono);font-size:10px;'
+        f'letter-spacing:0.1em;color:var(--sc-teal-ink,#0f3d39);font-weight:600;'
+        f'text-transform:uppercase;">{_esc(title)}</span>'
+        '<span style="font-size:10px;color:var(--sc-text-dim,#6a7480);">'
+        'computed from the figures on this page</span>'
+        f'<button type="button" class="ck-link" style="margin-left:auto;border:0;'
+        f'background:none;cursor:pointer;font-size:10px;" '
+        f'onclick="navigator.clipboard&&navigator.clipboard.writeText(this.dataset.t);'
+        f'this.textContent=\'copied ✓\';" data-t="{_esc(plain)}">copy bullets</button>'
+        '</div>'
+        f'<ul style="margin:0;padding-left:18px;font-size:12.5px;">{lis}</ul>'
+        '</div>')
+
+
+def _strip_tags(t: str) -> str:
+    import re as _re
+    return _re.sub(r"<[^>]+>", "", t)
+
+
+def _active_deal_bar_js() -> str:
+    """P1 — ambient active-deal bar, rendered client-side from the
+    pedesk_active_deal(+_meta) cookies set by /deal-context.
+
+    A cookie-driven shim (the house vanilla-JS pattern) so the bar appears on
+    every shell page WITHOUT threading deal context through 100+ call sites.
+    The meta cookie carries {id,name,state,ccn}, so the bar can offer
+    PRE-SCOPED module links (screener by state, X-Ray by CCN, CIM cross-check
+    by both, roll-up). Empty/absent cookie → renders nothing. The bar is a
+    container div + script; styling stays within the editorial tokens."""
+    return (
+        '<div id="ck-deal-bar"></div>'
+        "<script>(function(){"
+        "function gc(n){var m=document.cookie.match('(?:^|; )'+n+'=([^;]*)');"
+        "return m?decodeURIComponent(m[1]):null;}"
+        "var id=gc('pedesk_active_deal'); if(!id) return;"
+        "var meta={}; try{meta=JSON.parse(gc('pedesk_active_deal_meta')||'{}');}catch(e){}"
+        "var name=(meta.name||id), st=(meta.state||''), ccn=(meta.ccn||'');"
+        "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
+        "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
+        "var links=[['Deal home','/deal/'+encodeURIComponent(id)]];"
+        "links.push(['Screener'+(st?' · '+st:''),"
+        "'/target-screener?vertical=hospitals'+(st?'&state='+st:'')]);"
+        "if(ccn){links.push(['X-Ray · '+ccn,'/diligence/hcris-xray?ccn='+ccn]);}"
+        "links.push(['CIM cross-check',"
+        "'/diligence/cim-crosscheck'+(st||ccn?('?state='+st+(ccn?'&ccn='+ccn:'')):'')]);"
+        "var html='<div style=\"display:flex;gap:14px;align-items:center;"
+        "padding:5px 24px;background:var(--sc-parchment-2,#efe9dd);"
+        "border-bottom:1px solid var(--sc-rule,#d6cfc0);font-family:var(--sc-mono);"
+        "font-size:10.5px;\">'"
+        "+'<span style=\"letter-spacing:0.08em;color:var(--sc-teal-ink,#0f3d39);"
+        "font-weight:600;\">ACTIVE DEAL · '+esc(name).toUpperCase()+'</span>';"
+        "for(var i=0;i<links.length;i++){html+='<a class=\"ck-link\" "
+        "style=\"font-size:10.5px;\" href=\"'+links[i][1]+'\">'+esc(links[i][0])+'</a>';}"
+        "html+='<a class=\"ck-link\" style=\"font-size:10.5px;margin-left:auto;"
+        "color:var(--sc-text-dim,#6a7480);\" "
+        "href=\"/deal-context?set=&return='+encodeURIComponent("
+        "location.pathname+location.search)+'\">clear ✕</a></div>';"
+        "document.getElementById('ck-deal-bar').innerHTML=html;"
+        "})();</script>")
+
+
 def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     """Editorial topbar mirroring chartis.com chrome.
 
@@ -11262,6 +11402,7 @@ def chartis_shell(
     # show_chrome=False: bare pages (login / forgot) without topnav
     chrome_html = (
         f"{_topbar(active_nav, user_initials)}"
+        f"{_active_deal_bar_js()}"
         f"{_breadcrumbs(breadcrumbs)}"
     ) if show_chrome else ""
     # subtitle: render under the page heading inside <main>. Note —

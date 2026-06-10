@@ -59,3 +59,52 @@ combined column is arithmetic on filings (DERIVED, labeled); synergies are
 ENTERED assumptions; HHI uses NPR shares within the chosen state market and
 says so (a state is a coarse antitrust market — labeled as screening proxy,
 not a relevant-market analysis).
+
+## P4 — Peer-percentile chip (this session, slice 1)
+**Spec.** One reusable primitive `ck_peer_percentile(value, dist, *, peer_label,
+higher_is_better=None, unit_fmt=None)` → "p78 vs TX hospitals (n=412)" with a
+60px position track. Percentile = share of peers strictly below + half of
+ties (standard percentile rank), NaN peers excluded. Honesty: n<8 renders
+"peer set too small (n=K)" instead of a percentile; value None/NaN renders
+nothing. Color tones by higher_is_better when given, neutral otherwise.
+Consumers slice 1: deal quick-view profile KPIs vs the portfolio's other
+deals (user 3's daily question: where does this deal sit vs the book).
+X-Ray already has its own band component (left as-is).
+
+## P11 — Data Quality dashboard (this session, slice 1)
+**Spec.** /data-quality — the 60-second internal certification screen:
+(1) live-computed table per wired source: rows, key-field null rates,
+vintage + honest staleness vs the source's OWN cadence (HCRIS cost reports
+run ~18mo behind FY end — green within that, not "stale" by naive age);
+(2) gap census reusing data/gap_fill_registry.gap_report (counts + fill-kind
+chips, RE-INGEST/EXTERNAL/ARTIFACT); (3) consumer map per source (which
+pages read it — maintained next to the loaders' registry entries);
+(4) registered-but-not-wired sources from data/vendor/source_registry.csv
+with their vintages. All numbers computed at render from the same loaders
+the product uses — the dashboard can't drift from reality.
+
+## P1 — Deal Workspace slice 1: active-deal context (this session)
+**Design.** The deal becomes ambient context without threading a parameter
+through 100+ chartis_shell call sites: activation endpoint
+`/deal-context?set=<deal_id>&return=<path>` resolves the deal's profile
+(name + state + ccn when present), writes two cookies —
+`pedesk_active_deal` (id) and `pedesk_active_deal_meta` (URL-encoded JSON
+{id,name,state,ccn}) — and 303s back. A small shell JS shim (house-approved
+vanilla pattern) reads the cookies on every page and renders a slim
+active-deal bar under the topbar: deal name → deal home, plus PRE-SCOPED
+module links built from the meta (screener ?state=, HCRIS X-Ray ?ccn=,
+CIM cross-check ?state=&ccn=, roll-up). `?set=` with empty value clears.
+Cookie-only UI state (no server data mutation) → GET+303 is acceptable
+(same class as the existing ?limit= prefs); logged in DECISIONS.md.
+Deal quick-view + workbench get "Set active deal" affordances.
+Slice 2 (later): modules read the cookie server-side to default their forms.
+
+## P13 — Honest insight bullets (this session, slice 1)
+**Design.** Strictly computed, guard-gated: callers build candidate bullets
+from numbers ALREADY on the page, each with a significance flag computed
+from the same stats (e.g. denial spread ≥2pp, |Δ vs target| ≥0.5pp, any
+red-health deal). `ck_insight_bullets(items)` renders only significant
+candidates (max 4) under a "Takeaways — computed from the figures on this
+page" header with copy-to-clipboard. No free-form generation anywhere; a
+suppressed guard yields NO bullet (silence over noise). Slice-1 consumer:
+/portfolio (spread, NCR-vs-target, AR outliers, health mix).

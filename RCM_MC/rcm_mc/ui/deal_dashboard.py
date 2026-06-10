@@ -202,6 +202,13 @@ def render_deal_dashboard(
         f'<a href="/api/deals/{did}/package" class="cad-btn" '
         'style="text-decoration:none;">Download ZIP</a>'
     )
+    # P1 — carry this deal as ambient context; module links in the
+    # active-deal bar open pre-scoped to it on every page.
+    action_links.append(
+        f'<a href="/deal-context?set={did}&return=/deal/{did}" class="cad-btn" '
+        'style="text-decoration:none;" title="Module links in the bar open '
+        'pre-scoped to this deal on every page.">Set Active Deal</a>'
+    )
     action_row = (
         '<div style="display:flex;gap:6px;margin:0 0 16px;flex-wrap:wrap;">'
         + "".join(action_links)

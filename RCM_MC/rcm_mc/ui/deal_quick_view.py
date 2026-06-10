@@ -11,8 +11,15 @@ from typing import Any, Dict, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_basis_badge, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    ck_peer_percentile, ck_provenance_tooltip,
 )
+
+# Which direction is good, per profile metric — drives the percentile-chip
+# tone. Metrics not listed render the chip in neutral ink.
+_HIGHER_IS_BETTER = {
+    "denial_rate": False, "days_in_ar": False, "cost_to_collect": False,
+    "net_collection_rate": True, "clean_claim_rate": True,
+}
 
 # Percent-point profile metrics with their realistic range (per the metric
 # glossary). Used for a soft unit-mistake check: a partner entering the
@@ -32,6 +39,7 @@ def render_deal_quick_view(
     deal_id: str,
     profile: Dict[str, Any],
     error_msg: str = "",
+    peer_deals: Any = None,
 ) -> str:
     """Render a deal overview with links to all models."""
     name = html.escape(str(profile.get("name", deal_id)))
@@ -51,19 +59,37 @@ def render_deal_quick_view(
 
     # Profile KPIs
     kpi_fields = [
-        ("Denial Rate", profile.get("denial_rate"), "%", None),
-        ("Days in AR", profile.get("days_in_ar"), "", None),
-        ("Net Collection", profile.get("net_collection_rate"), "%", None),
-        ("Clean Claim Rate", profile.get("clean_claim_rate"), "%", None),
-        ("Cost to Collect", profile.get("cost_to_collect"), "%", None),
-        ("Net Revenue", profile.get("net_revenue"), "$M", 1e6),
-        ("Bed Count", profile.get("bed_count"), "", None),
-        ("Claims Volume", profile.get("claims_volume"), "", None),
+        ("Denial Rate", profile.get("denial_rate"), "%", None, "denial_rate"),
+        ("Days in AR", profile.get("days_in_ar"), "", None, "days_in_ar"),
+        ("Net Collection", profile.get("net_collection_rate"), "%", None, "net_collection_rate"),
+        ("Clean Claim Rate", profile.get("clean_claim_rate"), "%", None, "clean_claim_rate"),
+        ("Cost to Collect", profile.get("cost_to_collect"), "%", None, "cost_to_collect"),
+        ("Net Revenue", profile.get("net_revenue"), "$M", 1e6, None),
+        ("Bed Count", profile.get("bed_count"), "", None, None),
+        ("Claims Volume", profile.get("claims_volume"), "", None, None),
     ]
+
+    def _peer_chip(metric_key: Optional[str], val: Any) -> str:
+        # P4 slice 1: percentile vs the OTHER deals in the book. Excludes
+        # this deal itself so the rank reads "vs peers", not "vs self+peers".
+        # A chip must never 500 the page — any malformed frame is just no chip.
+        if peer_deals is None or metric_key is None or val is None:
+            return ""
+        try:
+            df = peer_deals
+            if metric_key not in df.columns or "deal_id" not in df.columns:
+                return ""
+            others = df[df["deal_id"].astype(str) != str(deal_id)][metric_key]
+            chip = ck_peer_percentile(
+                val, list(others), peer_label="portfolio deals",
+                higher_is_better=_HIGHER_IS_BETTER.get(metric_key))
+            return f'<div style="margin-top:3px;">{chip}</div>' if chip else ""
+        except Exception:  # noqa: BLE001
+            return ""
 
     kpi_cards = ""
     populated = 0
-    for label, val, suffix, scale in kpi_fields:
+    for label, val, suffix, scale, metric_key in kpi_fields:
         if val is not None:
             populated += 1
             verify_flag = ""
@@ -87,7 +113,9 @@ def render_deal_quick_view(
             except (TypeError, ValueError):
                 display = str(val)
 
-            kpi_cards += ck_kpi_block(label, html.escape(display) + verify_flag)
+            kpi_cards += ck_kpi_block(
+                label,
+                html.escape(display) + verify_flag + _peer_chip(metric_key, val))
 
     profile_section = (
         # Basis disclosure: these are the deal's SELF-REPORTED RCM metrics
@@ -95,7 +123,11 @@ def render_deal_quick_view(
         f'<p class="ck-section-body" style="margin:0 0 8px;font-size:11px;'
         f'color:var(--sc-text-dim,#6a7480);">Deal profile metrics'
         f'{ck_basis_badge("entered")} — '
-        f'<a href="/import" style="color:{PALETTE["text_link"]};">edit via Import</a>.</p>'
+        f'<a href="/import" style="color:{PALETTE["text_link"]};">edit via Import</a> · '
+        f'<a href="/deal-context?set={html.escape(deal_id)}&return=/deal/{html.escape(deal_id)}" '
+        f'style="color:{PALETTE["text_link"]};" title="Carry this deal as ambient '
+        f'context: every module link in the bar opens pre-scoped to it.">'
+        f'set as active deal</a>.</p>'
         f'<div class="ck-kpi-grid">{kpi_cards}</div>'
         if kpi_cards else
         f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'

@@ -942,7 +942,7 @@ def _render_header(packet: DealAnalysisPacket) -> str:
     return f"""
     <div class="wb-hero">
       <div class="wb-hero-inner">
-        <div class="wb-hero-eyebrow">DEAL WORKBENCH &nbsp;·&nbsp; {_esc(deal_id_upper)}</div>
+        <div class="wb-hero-eyebrow">DEAL WORKBENCH &nbsp;·&nbsp; {_esc(deal_id_upper)} &nbsp;·&nbsp; <a class="ck-link" style="font-size:10px;letter-spacing:0.04em;" href="/deal-context?set={_esc(packet.deal_id)}&return=/deal/{_esc(packet.deal_id)}" title="Carry this deal as ambient context — module links in the bar open pre-scoped to it.">SET ACTIVE</a></div>
         <div class="wb-hero-row">
           <div class="wb-hero-name-block">
             <h1 class="wb-hero-name">{_esc(packet.deal_name or packet.deal_id)}</h1>
