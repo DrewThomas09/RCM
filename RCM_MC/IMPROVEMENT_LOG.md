@@ -242,3 +242,28 @@
   screenshot item10_anchored_bar.png. 20 green incl. deal-context + chip.
 - users: all three — the demo stops being deniable as "fake data" while
   staying honest about what HCRIS cannot provide.
+
+## Item 11 — P5 ExhibitFactory v1 + comparable-outcomes seed batching (05:35Z)
+**What**: (a) `ExhibitFactory` in `_chartis_kit.py` — per-render numbered
+"EXHIBIT N" chrome (figure caption: deal label + number + title + units;
+footer: Source + vintage + PEdesk) with `_EXHIBIT_PRINT_CSS` shipped once in
+the shell head: print suppresses nav/topbar/forms/buttons, page-breaks keep
+each exhibit whole — Cmd+P → deck-insertable PDF. Wired into the two v1
+consumers: Roll-Up Builder (Exhibit 1 pro-forma KPIs, Exhibit 2 concentration
+table) and CIM Cross-Check (Exhibit 1 variance table). (b) While running the
+pre-commit full suite, found `/diligence/comparable-outcomes?...` timing out
+HTTP tests at >10s: `DealsCorpus.seed()` ran ~1,727 upserts each on its OWN
+connection with its own fsync'd commit (5.4s commits + 3.1s connection
+churn) — invisible on `:memory:` profiling. Split `_upsert_on(con, deal)`
+out of `upsert()`; `seed()` now batches the whole corpus in one
+connection/one commit. Route: 8,864ms → 99ms (90×).
+**Verify**: tests/test_exhibit_factory.py (9: numbering per instance,
+escaping, markup-source exemption, shell ships CSS once, both consumers
+render numbered exhibits, form-only CIM view has none);
+test_comparable_outcomes.py 24/24 in 1.0s (was 2 timeouts); corpus slice
+1,050 passed; screen + print-media screenshots of both pages (print view:
+chrome gone, exhibits + sourced footers intact). Full suite re-running at
+commit time.
+**Persona check**: Chartis consultant on a readout call prints the variance
+table straight into the appendix — numbered, sourced, vintage-stamped, no
+manual cropping.

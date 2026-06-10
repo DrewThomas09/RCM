@@ -1,13 +1,13 @@
 # SESSION_STATE — autonomous 8h improvement session
 
 - session_start: 2026-06-10T03:37:46Z
-- latest_timestamp: 2026-06-10T04:58:00Z
-- elapsed: 1h20m
-- iteration: 10 (items 1–9 DONE; ckpt-1 LIVE; ckpt-2 merging items 4–9)
-- current_item: merge checkpoint 2 (PR #1664) → sweep-2 → Item 10 (deal-context slice 2 #16 or exhibit wrapper #12)
-- current_step: awaiting CI on d9960ae
-- branch: claude/sharp-einstein-005lm (fe9a05c at start)
-- background: dev server :8839, db /tmp/rcm_seeded/portfolio.db (5 deals: sth,buh,nyp,mgh,ccf)
+- latest_timestamp: 2026-06-10T05:36:00Z
+- elapsed: 1h58m
+- iteration: 11 (items 1–11 DONE; ckpt-1 + ckpt-2 LIVE on pedesk.app)
+- current_item: Item 11 committed → merge checkpoint 3 (new PR; deploy verify + screenshots) → Item 12 (#16 deal-context slice 2)
+- current_step: full suite running pre-commit; then commit/push, open PR
+- branch: claude/sharp-einstein-005lm (fe9a05c at start; last pushed 5ba48fd)
+- background: dev server :8765 (demo.py, bxk39yey1), full suite bbchr7dnf
 
 ## Environment facts (verified earlier today, same machine)
 - Network egress 403 everywhere except pypi; WebSearch/WebFetch tools work for research.
