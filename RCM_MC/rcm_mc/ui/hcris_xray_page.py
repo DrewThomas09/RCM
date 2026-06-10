@@ -883,6 +883,18 @@ def _local_market_context(target: HospitalMetrics) -> str:
             body_top += (f'<p class="ck-section-body" style="font-size:10.5px;'
                          f'margin:6px 0 0;color:var(--sc-text-dim,#6a7480);">'
                          f'showing nearest 8 of {lm.n_competitors}</p>')
+        # One click from "who's nearby" to "what would combining look like":
+        # seed the Roll-Up Builder with the target + its 3 nearest competitors
+        # (filed figures, HHI screen, save-to-deal all already there).
+        _near = [c.ccn for c in lm.competitors[:3]]
+        if _near:
+            _basket = ",".join([str(getattr(target, "ccn", ""))] + _near)
+            body_top += (
+                f'<p class="ck-section-body" style="font-size:11.5px;'
+                f'margin:10px 0 0;"><a class="ck-link" '
+                f'href="/pipeline/rollup?ccns={html.escape(_basket)}">'
+                f'Model a local roll-up with the {len(_near)} nearest '
+                f'competitors &rarr;</a></p>')
     return (
         '<div class="ck-panel"><div class="ck-panel-head">'
         '<span class="ck-panel-title">Local competitive context — 25-mile radius</span>'

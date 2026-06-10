@@ -631,3 +631,29 @@ and beds=1e24 (finite, but overflows SQLite's 64-bit INTEGER on insert).
 OverflowError in the except. Re-fuzz: 63/63 CLEAN.
 **Verify**: PipelineAddBedsOverflowTests (4 hostile values < 500 over real
 HTTP); suite 5 passed.
+
+## W2-12 — X-Ray → local roll-up in one click + cross-surface consistency check (15:40Z)
+**What**: (a) The local-market panel now ends with "Model a local roll-up
+with the 3 nearest competitors →" seeding /pipeline/rollup?ccns=<target,+3
+nearest> — one click from "who's nearby" to the full HHI/payer-blend/
+save-to-deal scenario. (b) Ran a cross-surface consistency check: 450358's
+filed NPR renders identically on the X-Ray and the Roll-Up facility table
+($2,628.1M, matching the HCRIS frame exactly); the screener's absence is by
+design (top-150 cap).
+**Verify**: LocalRollupLinkTests (target leads the basket, +3 nearest);
+local-market suite 8 passed.
+
+## W2-13 — open-redirect: /\evil.com bypassed the //-only guards (15:55Z)
+**Found by**: redirect-payload fuzz on the deal-context return= guard.
+`return=/\evil.com` passed (startswith("/") true, startswith("//") false) but
+browsers normalize `/\` → `//` → off-site redirect. The deal-context and
+both pipeline return_to= guards shared the //-only pattern. (The three auth
+next= guards already rejected backslash + "://" — not vulnerable.)
+**Fixed**: single _safe_local_path helper — must start with one "/", second
+char not "/" or "\", rejects control chars (header-splitting) — applied to
+all three. Legit single-slash paths preserved (verified /deal/ccf round-trips).
+The %2f%2f fuzz hit is a false positive (browsers don't decode %2f for origin,
+stays same-origin).
+**Verify**: test_open_redirect_guard.py (4: protocol-relative variants +
+header-splitting rejected, legit paths + empty preserved); deal-context
+suites 15 passed.

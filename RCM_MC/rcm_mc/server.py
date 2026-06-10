@@ -2877,6 +2877,27 @@ class RCMHandler(BaseHTTPRequestHandler):
                     break
         set_workspace_mode(mode)
 
+    @staticmethod
+    def _safe_local_path(raw: str, default: str = "/") -> str:
+        """Return ``raw`` only if it's a same-origin local path, else default.
+
+        The open-redirect guards across the app checked ``startswith("/")``
+        and rejected ``//`` — but missed ``/\\`` (and ``/%2f``…), which
+        browsers treat as protocol-relative → off-site redirect. One helper,
+        applied everywhere, so the next ``return=``/``next=`` param can't
+        reintroduce the hole: must start with a single ``/`` and the second
+        char must not be ``/`` or a backslash.
+        """
+        r = (raw or "").strip()
+        if not r.startswith("/"):
+            return default
+        if len(r) >= 2 and r[1] in ("/", "\\"):
+            return default
+        # Reject control chars / newlines that could split headers.
+        if any(ord(c) < 0x20 for c in r):
+            return default
+        return r
+
     def _active_deal_meta(self) -> Optional[Dict[str, str]]:
         """Decode the pedesk_active_deal_meta cookie → {id,name,state,ccn}.
 
@@ -3893,8 +3914,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             deal_id = (_qs.get("set") or [""])[0][:64]
             ret = (_qs.get("return") or ["/portfolio"])[0]
             # open-redirect guard: only same-site paths
-            if not ret.startswith("/") or ret.startswith("//"):
-                ret = "/portfolio"
+            ret = self._safe_local_path(ret, "/portfolio")
             self.send_response(HTTPStatus.SEE_OTHER)
             self.send_header("Location", ret)
             if deal_id:
@@ -9431,9 +9451,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._error_page("Pipeline Error", str(exc)[:200])
         # Confirm with a toast and return to where the partner was (e.g. the
         # screener), instead of silently bouncing to /pipeline with no feedback.
-        back = form.get("return_to", "") or "/pipeline"
-        if not back.startswith("/") or back.startswith("//"):
-            back = "/pipeline"
+        back = self._safe_local_path(form.get("return_to", "") or "/pipeline",
+                                     "/pipeline")
         dest = self._with_flash(back, f"Added {name} to pipeline", "success")
         self.send_response(HTTPStatus.FOUND)
         self.send_header("Location", dest)
@@ -9460,9 +9479,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 con.commit()
         except Exception as exc:
             return self._error_page("Save Error", str(exc)[:200])
-        back = form.get("return_to", "") or "/pipeline"
-        if not back.startswith("/") or back.startswith("//"):
-            back = "/pipeline"
+        back = self._safe_local_path(form.get("return_to", "") or "/pipeline",
+                                     "/pipeline")
         dest = self._with_flash(back, f"Saved screen “{name}”", "success")
         self.send_response(HTTPStatus.FOUND)
         self.send_header("Location", dest)
