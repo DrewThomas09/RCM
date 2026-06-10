@@ -453,3 +453,14 @@ MEMORIAL HERMANN results). tests/test_palette_entity_jump.py extended (5);
 palette suites 33 passed.
 **Persona check**: consultant types a hospital name from a call sheet into
 ⌘K and lands on the resolver's ranked matches — both halves of P12 now work.
+
+## Item 21 — modeling-discipline line on the predictive screener (12:40Z)
+**What**: The screener's contrast callout now ends with a model-card line read
+ONLY from rcm_mc/ml/model_card_margin.json ("its 90% conformal band covered
+91.0% on 978 held-out filings — model card → /methodology"). Honesty boundary
+stated explicitly: THIS page's Est.* columns are the simple screening formulas
+(each column's "?" shows the math), not the conformal model — the measured
+coverage is never misread as covering these estimates. Missing artifact → no
+line (no claim without its source).
+**Verify**: ModelCardFooterTests (2: artifact numbers + boundary in the line;
+page renders it); ar-days suite 6 passed.

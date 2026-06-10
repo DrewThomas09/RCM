@@ -77,5 +77,32 @@ class ArDaysColumnTests(unittest.TestCase):
                          f"header {n_th} cols vs row {n_td} cols")
 
 
+class ModelCardFooterTests(unittest.TestCase):
+    """The screener's modeling-discipline line reads ONLY the checked-in
+    model-card artifact and states the honesty boundary (this page's Est.*
+    are screening formulas, not the conformal model)."""
+
+    def test_line_states_artifact_numbers_and_boundary(self):
+        import json
+        from pathlib import Path
+        from rcm_mc.ui.predictive_screener import _model_card_line
+        card = json.loads(
+            (Path("rcm_mc/ml/model_card_margin.json")).read_text())
+        line = _model_card_line()
+        self.assertIn(f'{card["empirical_holdout_coverage"]:.1%}', line)
+        self.assertIn(f'{card["n_test"]:,}', line)
+        self.assertIn("/methodology", line)
+        self.assertIn("simpler screening formulas", line)   # boundary stated
+
+    def test_page_renders_the_line(self):
+        h = _render([
+            {"ccn": "111111", "name": "COMPLETE GENERAL", "state": "TX",
+             "beds": 200, "net_patient_revenue": 5e8,
+             "operating_expenses": 4.6e8, "gross_patient_revenue": 1.2e9,
+             **_BASE}])
+        self.assertIn("Modeling discipline", h)
+        self.assertIn("model card", h)
+
+
 if __name__ == "__main__":
     unittest.main()

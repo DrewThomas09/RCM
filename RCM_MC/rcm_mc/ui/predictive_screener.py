@@ -151,6 +151,36 @@ def _predict_rcm_fast(row: pd.Series) -> Dict[str, float]:
     }
 
 
+def _model_card_line() -> str:
+    """Modeling-discipline footnote, read ONLY from the checked-in eval
+    artifact (rcm_mc/ml/model_card_margin.json) — never a hand-typed claim.
+
+    Honesty boundary: this page's Est.* columns are the simple screening
+    formulas shown in each column's '?', NOT the conformal margin model —
+    the line says so explicitly so the card's measured coverage is never
+    misread as covering these estimates. Missing artifact → no line.
+    """
+    import json
+    from pathlib import Path
+    card_path = (Path(__file__).resolve().parent.parent / "ml"
+                 / "model_card_margin.json")
+    try:
+        c = json.loads(card_path.read_text())
+        cov = float(c["empirical_holdout_coverage"])
+        n = int(c["n_test"])
+        nominal = float(c["nominal_coverage"])
+    except Exception:  # noqa: BLE001 — no artifact, no claim
+        return ""
+    return (
+        ' <span style="display:block;margin-top:6px;font-size:11px;'
+        'color:var(--sc-text-dim,#6a7480);">Modeling discipline: the '
+        f'platform&rsquo;s margin model publishes a holdout model card — its '
+        f'{nominal:.0%} conformal band covered {cov:.1%} on {n:,} held-out '
+        f'filings (<a class="ck-link" href="/methodology">model card</a>). '
+        'The Est. columns on THIS page are simpler screening formulas — '
+        'each column&rsquo;s &ldquo;?&rdquo; shows the exact math.</span>')
+
+
 def render_predictive_screener(
     hcris_df: pd.DataFrame,
     query_string: str = "",
@@ -316,6 +346,7 @@ def render_predictive_screener(
         'observed RCM performance. Confirm against a target&rsquo;s own data. '
         'Source for the actual inputs (beds, revenue, margin): '
         f'{ck_source_link("CMS HCRIS")}.'
+        f'{_model_card_line()}'
         '</div>'
     )
     kpis = (
