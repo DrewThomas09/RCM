@@ -737,3 +737,17 @@ finding. Aggregate claims (counts, market size) get no percentile line.
 **Verify**: MemoPercentileTests (tail claim → percentile + flag in memo;
 aggregate → no line); real-data check (TX revenue claim p99 → "⚠ tail");
 CIM suite 23 passed.
+
+## W2-20 — portfolio opportunity figure: illustrative-denial caveat (18:10Z)
+**Found by**: tracing the downstream effect of W2-15 — surfacing real anchor
+NPR activated the "Recoverable Revenue" opportunity block (total_rev was 0
+before, so it never rendered), which multiplies revenue × (avg denial − 8%).
+The revenue is now real but the demo cohort's denial rates are illustrative,
+so the dollar figure reads as hard when it's part-illustrative.
+**Fixed**: when any deal carries rcm_metrics_basis=illustrative-demo, the
+opportunity block appends an amber caveat ("revenue is filed anchor NPR, but
+the denial rates on these composite demo deals are illustrative — confirm
+against the target's own RCM data"). An all-real cohort gets no caveat.
+**Verify**: OpportunityBasisCaveatTests (caveat for illustrative cohort,
+absent for real); portfolio/anchor suites 17 passed. This closes the honesty
+loop I opened with W2-15.

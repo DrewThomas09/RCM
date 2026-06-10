@@ -117,3 +117,37 @@ class AnchorRevenueSurfacingTests(unittest.TestCase):
         h = render_portfolio_overview(deals, None)
         self.assertIn("filed anchor NPR", h)
         self.assertNotIn(">—</", h.split("Total Net Revenue")[1][:200])
+
+
+class OpportunityBasisCaveatTests(unittest.TestCase):
+    """The portfolio 'Recoverable Revenue' figure multiplies revenue by the
+    denial rate. With real anchor NPR but illustrative demo denial rates, the
+    dollar output is part-illustrative and must say so; an all-real cohort
+    gets no caveat."""
+
+    def test_caveat_when_denial_illustrative(self):
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        deals = pd.DataFrame([
+            {"deal_id": "a", "name": "A", "created_at": "2026-01-01",
+             "net_revenue": 1e9, "revenue_basis": "anchor-actual",
+             "rcm_metrics_basis": "illustrative-demo", "denial_rate": 14.0},
+            {"deal_id": "b", "name": "B", "created_at": "2026-01-01",
+             "net_revenue": 2e9, "revenue_basis": "anchor-actual",
+             "rcm_metrics_basis": "illustrative-demo", "denial_rate": 12.0},
+        ])
+        h = render_portfolio_overview(deals, None)
+        self.assertIn("Recoverable Revenue", h)
+        self.assertIn("denial rates on these", h)   # illustrative caveat
+
+    def test_no_caveat_for_real_cohort(self):
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        deals = pd.DataFrame([
+            {"deal_id": "a", "name": "A", "created_at": "2026-01-01",
+             "net_revenue": 1e9, "denial_rate": 14.0},
+            {"deal_id": "b", "name": "B", "created_at": "2026-01-01",
+             "net_revenue": 2e9, "denial_rate": 12.0},
+        ])
+        h = render_portfolio_overview(deals, None)
+        self.assertNotIn("denial rates on these", h)
