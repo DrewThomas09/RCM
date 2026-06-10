@@ -479,6 +479,38 @@ def _q1(qs: Dict[str, List[str]], key: str, default: str = "") -> str:
     return (qs.get(key) or [default])[0].strip()
 
 
+def screen_results_for_params(query_params: str) -> Dict[str, Dict]:
+    """A saved screen's CURRENT result set keyed by CCN (P9 snapshot/diff).
+
+    Reuses _vertical_rows + the SAME filter semantics as the rendered table
+    (min_quality / min_size / ownership substring) so the snapshot can never
+    drift from what the partner sees on screen — no parallel implementation.
+    Returns {ccn: {name, state, ownership, size, q}}; presentation-only
+    fields (labels, flags) are dropped because the diff doesn't judge them.
+    """
+    from urllib.parse import parse_qs
+    qs = parse_qs((query_params or "").lstrip("?"))
+    vertical = _q1(qs, "vertical", "hospitals") or "hospitals"
+    rows = _vertical_rows(vertical, _q1(qs, "state"), limit=None)
+    min_q = _f_or_none(qs, "min_quality")
+    min_size = _f_or_none(qs, "min_size")
+    own = _q1(qs, "ownership").strip().lower()
+    if min_q is not None:
+        rows = [r for r in rows
+                if isinstance(r.get("q"), (int, float)) and r["q"] >= min_q]
+    if min_size is not None:
+        rows = [r for r in rows
+                if isinstance(r.get("size"), (int, float)) and r["size"] >= min_size]
+    if own:
+        rows = [r for r in rows if own in str(r.get("ownership", "")).lower()]
+    return {
+        r["ccn"]: {"name": r["name"], "state": r["state"],
+                   "ownership": r["ownership"], "size": r.get("size"),
+                   "q": r.get("q")}
+        for r in rows if r.get("ccn")
+    }
+
+
 def _find_provider(ccn: str) -> Optional[Dict]:
     """Resolve a single CCN to its normalized row across every vertical
     (first match wins). Used by Compare, which only carries CCNs in
@@ -2563,9 +2595,11 @@ _PRESET_SCREENS = [
 ]
 
 
-def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -> str:
+def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
+                  snap_info: Optional[Dict[int, Dict]] = None) -> str:
     import html as _h
     saved = saved or []
+    snap_info = snap_info or {}
     # A screen IS its shareable URL. Build the current screen's link from the
     # active params (server-first state) — paste it anywhere to reopen.
     keep = {}
@@ -2584,19 +2618,47 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "") -
     saved_panel = ""
     if owner:
         if saved:
-            cards = "".join(
-                '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;'
-                'padding:8px 0;border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-                f'<a class="ck-link" href="/target-screener?{_h.escape(s["query_params"])}">'
-                f'{_h.escape(s["title"])}</a>'
-                f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);">'
-                f'{_h.escape(str(s["created_at"])[:10])}</span>'
-                f'<form method="post" action="/api/target-screener/delete" style="margin:0;">'
-                f'<input type="hidden" name="id" value="{int(s["id"])}">'
-                f'<button type="submit" class="ck-link" style="background:none;border:0;cursor:pointer;'
-                f'font-size:11px;color:var(--sc-negative,#b5321e);">✕</button></form></div>'
-                for s in saved
-            )
+            def _snap_bits(s):
+                # P9 — vintage-diff line. When a snapshot exists, the server
+                # computed the diff vs the screen's CURRENT results; render
+                # the honest one-liner (or "no change"). Always offer the
+                # snapshot action so the partner controls the baseline.
+                info = snap_info.get(int(s["id"])) or {}
+                line = ""
+                if info.get("taken_at"):
+                    summary = info.get("summary") or ""
+                    body = (f'<span style="color:var(--sc-warning,#b8732a);">{_h.escape(summary)}</span>'
+                            if summary else
+                            '<span style="color:var(--sc-text-dim,#6a7480);">no change</span>')
+                    line = (
+                        f'<div style="font-family:var(--sc-mono);font-size:9.5px;'
+                        f'color:var(--sc-text-dim,#6a7480);margin:2px 0 0;">'
+                        f'since {_h.escape(str(info["taken_at"])[:10])}: {body}</div>')
+                btn = (
+                    f'<form method="post" action="/api/target-screener/snapshot" style="margin:0;">'
+                    f'<input type="hidden" name="id" value="{int(s["id"])}">'
+                    f'<button type="submit" class="ck-link" title="Snapshot this screen\'s '
+                    f'current results as the new diff baseline" style="background:none;border:0;'
+                    f'cursor:pointer;font-size:10px;color:var(--sc-teal,#155752);">'
+                    f'{"re-baseline" if info.get("taken_at") else "snapshot"}</button></form>')
+                return line, btn
+
+            cards = ""
+            for s in saved:
+                _line, _btn = _snap_bits(s)
+                cards += (
+                    '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;'
+                    'padding:8px 0;border-bottom:1px solid var(--sc-rule,#e4ddca);">'
+                    f'<div><a class="ck-link" href="/target-screener?{_h.escape(s["query_params"])}">'
+                    f'{_h.escape(s["title"])}</a>{_line}</div>'
+                    f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);">'
+                    f'{_h.escape(str(s["created_at"])[:10])}</span>'
+                    f'{_btn}'
+                    f'<form method="post" action="/api/target-screener/delete" style="margin:0;">'
+                    f'<input type="hidden" name="id" value="{int(s["id"])}">'
+                    f'<button type="submit" class="ck-link" style="background:none;border:0;cursor:pointer;'
+                    f'font-size:11px;color:var(--sc-negative,#b5321e);">✕</button></form></div>'
+                )
         else:
             cards = ('<p class="ck-section-body" style="margin:0;">No saved screens yet. '
                      'Name and save the current screen below.</p>')
@@ -2665,7 +2727,8 @@ _SCREENS = {
 
 def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
                            *, saved: Optional[List[Dict]] = None,
-                           owner: str = "") -> str:
+                           owner: str = "",
+                           snap_info: Optional[Dict[int, Dict]] = None) -> str:
     from ._chartis_kit import (chartis_shell, ck_page_title,
                                ck_panel, ck_source_purpose)
     qs = qs or {}
@@ -2697,7 +2760,8 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
     if view == "main":
         screen = _screen_main(vertical, qs, ck)
     elif view == "saved":
-        screen = _screen_saved(qs, ck, saved=saved or [], owner=owner)
+        screen = _screen_saved(qs, ck, saved=saved or [], owner=owner,
+                               snap_info=snap_info)
     else:
         screen = _SCREENS[view](qs, ck)
 

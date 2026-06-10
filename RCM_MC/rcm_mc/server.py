@@ -5336,8 +5336,35 @@ class RCMHandler(BaseHTTPRequestHandler):
                                            _ts_owner) if _ts_owner else [])
             except Exception:  # noqa: BLE001
                 _ts_saved = []
+            # P9 — on the saved tab, diff each snapshotted screen against its
+            # CURRENT results (same code path the table renders). Only screens
+            # WITH a snapshot pay the recompute; capped to the first 10 so a
+            # pathological list can't stall the page.
+            _snap_info = {}
+            if (_tsq.get("view") or [""])[0] == "saved" and _ts_owner:
+                try:
+                    from .portfolio.screen_snapshots import (
+                        diff_results, diff_summary, latest_snapshot,
+                    )
+                    from .ui.target_screener_page import (
+                        screen_results_for_params,
+                    )
+                    _store = PortfolioStore(self.config.db_path)
+                    for _s in _ts_saved[:10]:
+                        _snap = latest_snapshot(_store, _ts_owner, _s["id"])
+                        if _snap is None:
+                            continue
+                        _cur = screen_results_for_params(_s["query_params"])
+                        _d = diff_results(_snap["results"], _cur)
+                        _snap_info[int(_s["id"])] = {
+                            "taken_at": _snap["taken_at"],
+                            "summary": diff_summary(_d),
+                        }
+                except Exception:  # noqa: BLE001 — diff is best-effort chrome
+                    _snap_info = {}
             return self._send_html(render_target_screener(
-                _tsq, saved=_ts_saved, owner=_ts_owner))
+                _tsq, saved=_ts_saved, owner=_ts_owner,
+                snap_info=_snap_info))
         if path == "/source":
             from .ui.source_page import render_source_page
             from .analysis.deal_sourcer import THESIS_LIBRARY, find_thesis_matches
@@ -13035,6 +13062,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_save_post()
         if path == "/api/target-screener/delete":
             return self._route_target_screener_delete_post()
+        if path == "/api/target-screener/snapshot":
+            return self._route_target_screener_snapshot_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -13665,15 +13694,46 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_target_screener_delete_post(self) -> None:
         """POST /api/target-screener/delete — remove one of the current user's
-        saved screens by id."""
+        saved screens by id. Snapshots are derivative analytics of the screen,
+        so they're cleaned up in the same action (explicit — no FK chain to
+        ride; see the delete-policy matrix)."""
         from .portfolio.saved_screens import delete_screen
+        from .portfolio.screen_snapshots import delete_snapshots_for_screen
         form = self._read_form_body()
         owner = self._current_username() or ""
         sid = self._clamp_int(form.get("id", "0"), default=0, min_v=0, max_v=10**9)
         if owner and sid:
             try:
-                delete_screen(PortfolioStore(self.config.db_path), owner, sid)
+                store = PortfolioStore(self.config.db_path)
+                if delete_screen(store, owner, sid):
+                    delete_snapshots_for_screen(store, owner, sid)
             except Exception:  # noqa: BLE001
+                pass
+        return self._redirect("/target-screener?view=saved")
+
+    def _route_target_screener_snapshot_post(self) -> None:
+        """POST /api/target-screener/snapshot — P9 vintage-diff baseline.
+
+        Snapshots the saved screen's CURRENT result set (computed through the
+        same loader+filter path the table renders) so later visits to the
+        Saved-screens tab can show an honest "+N entered · −M left · K
+        changed" line when the underlying CMS data moves. Owner-scoped: the
+        screen must belong to the current user."""
+        from .portfolio.saved_screens import list_screens
+        from .portfolio.screen_snapshots import take_snapshot
+        from .ui.target_screener_page import screen_results_for_params
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        sid = self._clamp_int(form.get("id", "0"), default=0, min_v=0, max_v=10**9)
+        if owner and sid:
+            try:
+                store = PortfolioStore(self.config.db_path)
+                mine = {s["id"]: s for s in list_screens(store, owner)}
+                if sid in mine:
+                    results = screen_results_for_params(
+                        mine[sid]["query_params"])
+                    take_snapshot(store, owner, sid, results)
+            except Exception:  # noqa: BLE001 — never 500 on a snapshot hiccup
                 pass
         return self._redirect("/target-screener?view=saved")
 
@@ -14208,7 +14268,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             user = user_for_session(
                 PortfolioStore(self.config.db_path), token,
             )
-            return user.username if user else None
+            if not user:
+                return None
+            # user_for_session returns a dict — ``user.username`` raised
+            # AttributeError into the blanket except, so EVERY session
+            # user resolved to None: owner-gated features (saved screens)
+            # never rendered for logged-in partners and audit rows fell
+            # back to "api". Accept dict and object shapes.
+            if isinstance(user, dict):
+                return user.get("username") or None
+            return getattr(user, "username", None)
         except Exception:  # noqa: BLE001
             return None
 

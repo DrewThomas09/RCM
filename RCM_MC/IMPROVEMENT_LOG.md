@@ -388,3 +388,33 @@ checks on the same SHA locally: 6/6 feature markers (rollup exhibits, CIM
 prefill note, DQ AGING chip, AR-days column, screener CIM action, palette
 entity jump) + 6 fresh screenshots (pm_*.png) — Roll-Up shows EXHIBIT 1/2
 chrome with sourced footers exactly as designed.
+
+## Item 18 — P9 vintage-diff snapshots of saved screens + REAL BUG: session usernames never resolved (12:10Z)
+**What**: (a) P9 slice — saved Target-Screener screens can now be SNAPSHOTTED
+(new rcm_mc/portfolio/screen_snapshots.py: owner-scoped table, take/latest/
+delete, pure diff_results with honest thresholds: ≥5% relative move on
+size/q, string identity on ownership/name, sub-threshold wiggle is NOT a
+change), and the Saved-screens tab shows "since YYYY-MM-DD: +N entered · −M
+left · K changed" (or "no change") per snapshotted screen with a
+snapshot/re-baseline action. Current results are recomputed through the SAME
+loader+filter path the table renders (screen_results_for_params — no parallel
+implementation); diff computation is capped at 10 screens, snapshots at 1,000
+rows. Snapshots are deleted with their screen (explicit cleanup, delete-policy
+documented). New POST /api/target-screener/snapshot (owner-scoped).
+(b) **REAL BUG found by the E2E**: RCMHandler._current_username() did
+`user.username` but user_for_session returns a DICT → AttributeError swallowed
+by the blanket except → EVERY logged-in session resolved to None. Owner-gated
+features (the whole saved-screens panel) never rendered for real partners and
+audit rows fell back to "api". Fixed to accept dict/object shapes.
+**Verify**: tests/test_screen_snapshots.py (14: diff set/threshold/ownership/
+newly-reported semantics, summary silence, storage round-trip owner-scoped,
+latest-wins, delete cleanup, same-filter-semantics vs table, self-diff is
+empty, saved-tab render with/without snapshot);
+tests/test_current_username_session.py (3: real HTTP login → owner panel
+renders; anonymous still 401). Full screener+auth suites 239 passed. E2E on
+the demo server: save "TX large hospitals" → snapshot → reload shows "since
+2026-06-10: no change" + re-baseline (screenshot snap_saved_tab.png) — this
+exact flow was IMPOSSIBLE before the username fix.
+**Persona check**: VP re-opens their watched TX screen after a CMS re-vendor
+and sees "+3 entered · −1 left" instead of silently comparing against a
+different universe than last month.
