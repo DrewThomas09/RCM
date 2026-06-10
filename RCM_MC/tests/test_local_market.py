@@ -72,3 +72,18 @@ class XrayPanelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LocalRollupLinkTests(unittest.TestCase):
+    def test_xray_offers_local_rollup_with_nearest_three(self):
+        # One click from "who's nearby" to the Roll-Up Builder, seeded with
+        # target + 3 nearest (which already carries HHI screen/save-to-deal).
+        import re
+        from rcm_mc.ui.hcris_xray_page import render_hcris_xray_page
+        h = render_hcris_xray_page({"ccn": ["450358"]})
+        m = re.search(r'rollup\?ccns=([0-9,]+)', h)
+        self.assertIsNotNone(m)
+        ccns = m.group(1).split(",")
+        self.assertEqual(ccns[0], "450358")        # target leads the basket
+        self.assertEqual(len(ccns), 4)             # + 3 nearest
+        self.assertIn("Model a local roll-up", h)

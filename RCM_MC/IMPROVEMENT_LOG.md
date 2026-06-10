@@ -631,3 +631,14 @@ and beds=1e24 (finite, but overflows SQLite's 64-bit INTEGER on insert).
 OverflowError in the except. Re-fuzz: 63/63 CLEAN.
 **Verify**: PipelineAddBedsOverflowTests (4 hostile values < 500 over real
 HTTP); suite 5 passed.
+
+## W2-12 — X-Ray → local roll-up in one click + cross-surface consistency check (15:40Z)
+**What**: (a) The local-market panel now ends with "Model a local roll-up
+with the 3 nearest competitors →" seeding /pipeline/rollup?ccns=<target,+3
+nearest> — one click from "who's nearby" to the full HHI/payer-blend/
+save-to-deal scenario. (b) Ran a cross-surface consistency check: 450358's
+filed NPR renders identically on the X-Ray and the Roll-Up facility table
+($2,628.1M, matching the HCRIS frame exactly); the screener's absence is by
+design (top-150 cap).
+**Verify**: LocalRollupLinkTests (target leads the basket, +3 nearest);
+local-market suite 8 passed.
