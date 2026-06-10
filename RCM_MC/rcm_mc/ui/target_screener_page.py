@@ -1461,6 +1461,14 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         ccn = _h.escape(r["ccn"])
         xray = f'/diligence/xray?ccn={ccn}&vertical={vertical}'
         insp = _href("inspector", qs).split("?")[0] + f'?view=inspector&vertical={vertical}&ccn={ccn}'
+        # Hospital rows get a one-click into CIM Cross-Check pre-scoped to
+        # this facility's state + CCN — the screener is where a partner first
+        # spots a target, so the variance check should be one click away.
+        # Only hospitals: the cross-check estimators are HCRIS-hospital-shaped.
+        _row_state = _h.escape(str(r.get("state") or ""), quote=True)
+        cim_act = (f'<a class="ts-act" href="/diligence/cim-crosscheck?'
+                   f'state={_row_state}&ccn={ccn}">CIM</a>'
+                   if vertical == "hospitals" and r.get("state") else "")
         cmp_list = ",".join(dict.fromkeys(cur_cmp + [r["ccn"]]))  # append, de-dup
         cmp_href = f'/target-screener?view=compare&compare={cmp_list}'
         loc = _h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")
@@ -1495,6 +1503,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             f'<span class="ts-actions">'
             f'<a class="ts-act ts-act-primary" href="{xray}">X-Ray</a>'
             f'<a class="ts-act" href="{insp}">Inspect</a>'
+            f'{cim_act}'
             f'<a class="ts-act" href="{cmp_href}">+Cmp</a></span></td>'
             '</tr>'
         )

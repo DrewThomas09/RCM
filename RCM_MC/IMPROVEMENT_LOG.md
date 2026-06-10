@@ -284,3 +284,20 @@ prefilled with the teal note on a real authed-bypass server on this SHA.
 **Persona check**: VP who set an active deal opens CIM Cross-Check and the
 market+target are already there — one less retype between "I'm looking at this
 deal" and "show me the variance."
+
+## Item 13 — Target Screener row → CIM Cross-Check action (07:05Z)
+**What**: Each hospital row in the Target Screener now carries a one-click
+"CIM" chip (alongside X-Ray · Inspect · +Cmp) that opens CIM Cross-Check
+pre-scoped to that facility's state + CCN. The screener is where a partner
+first spots a target; the independent-variance check is now one click from
+the row instead of a manual re-entry. Hospital-only by design (the
+cross-check estimators are HCRIS-hospital-shaped) — dialysis/SNF/etc. rows
+don't show it. Closes the Source→Diligence handoff alongside the deal-context
+prefill (Item 12): the link carries state+ccn as query params, which the CIM
+page already reads (params win over the active-deal cookie).
+**Verify**: tests/test_target_screener.py RowCimActionTests (2: hospital rows
+carry the scoped link with the row's state; non-hospital verticals carry
+none) + full screener suite 157/157; cropped screenshot shows the CIM chip on
+two TX hospital rows (Denton 23.3%, Fort Worth 22.9%).
+**Persona check**: Chartis consultant scanning the TX hospital screen clicks
+CIM on a target and lands in the variance form already set to TX + that CCN.

@@ -1481,5 +1481,33 @@ class BackwardCompatTests(unittest.TestCase):
         self.assertIn("Highest", h)
 
 
+class RowCimActionTests(unittest.TestCase):
+    """Hospital rows carry a one-click 'CIM' action into CIM Cross-Check,
+    pre-scoped to the row's state + CCN. Non-hospital verticals don't (the
+    cross-check estimators are HCRIS-hospital-shaped)."""
+
+    def _row_cim_links(self, html: str) -> int:
+        import re
+        # row actions only — the ts-act chip, not palette/shim chrome that
+        # also references /diligence/cim-crosscheck.
+        return len(re.findall(
+            r'class="ts-act" href="/diligence/cim-crosscheck\?state=', html))
+
+    def test_hospital_rows_carry_scoped_cim_action(self):
+        import re
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener({"vertical": ["hospitals"], "state": ["TX"]})
+        self.assertGreater(self._row_cim_links(h), 0)
+        m = re.search(
+            r'class="ts-act" href="/diligence/cim-crosscheck\?state=([A-Z]{2})&ccn=(\d+)', h)
+        self.assertIsNotNone(m)
+        self.assertEqual(m.group(1), "TX")   # carries the row's state
+
+    def test_non_hospital_vertical_has_no_row_cim_action(self):
+        from rcm_mc.ui.target_screener_page import render_target_screener
+        h = render_target_screener({"vertical": ["dialysis"], "state": ["TX"]})
+        self.assertEqual(self._row_cim_links(h), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -30,7 +30,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 17 | **Roll-up exhibit row on deal page** — link saved roll-up scenarios to deals (deal_overrides or notes) | 24 | scenario persists per deal; reload shows it |
 | 18 | **DQ dashboard staleness colors** — green/yellow/red vintage chips per source cadence | 18 | snf (monthly cadence, Apr 2026 snapshot) shows amber by Jun-2026 clock; tests |
 | 19 | **route_walker in CI** — wire scripts/route_walker.py as a smoke job artifact on deploy gate | 22 | CI config parses; job runs in act-less dry run |
-| 20 | **screener row → CIM/X-Ray deal actions** — per-row "use in CIM" link carrying state+ccn | 20 | links present + correctly scoped |
+| 20 | ✅ DONE — screener hospital row → CIM action (state+ccn scoped) | — | LOG #13 |
 
 ## Groomed-out / blocked
 - Medicaid S-3 re-ingest + POS bed backfill: NETWORK-GATED (sources named in
