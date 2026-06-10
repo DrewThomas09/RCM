@@ -642,3 +642,18 @@ filed NPR renders identically on the X-Ray and the Roll-Up facility table
 design (top-150 cap).
 **Verify**: LocalRollupLinkTests (target leads the basket, +3 nearest);
 local-market suite 8 passed.
+
+## W2-13 — open-redirect: /\evil.com bypassed the //-only guards (15:55Z)
+**Found by**: redirect-payload fuzz on the deal-context return= guard.
+`return=/\evil.com` passed (startswith("/") true, startswith("//") false) but
+browsers normalize `/\` → `//` → off-site redirect. The deal-context and
+both pipeline return_to= guards shared the //-only pattern. (The three auth
+next= guards already rejected backslash + "://" — not vulnerable.)
+**Fixed**: single _safe_local_path helper — must start with one "/", second
+char not "/" or "\", rejects control chars (header-splitting) — applied to
+all three. Legit single-slash paths preserved (verified /deal/ccf round-trips).
+The %2f%2f fuzz hit is a false positive (browsers don't decode %2f for origin,
+stays same-origin).
+**Verify**: test_open_redirect_guard.py (4: protocol-relative variants +
+header-splitting rejected, legit paths + empty preserved); deal-context
+suites 15 passed.
