@@ -1398,6 +1398,43 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
 # Public entry
 # ────────────────────────────────────────────────────────────────────
 
+def _section_nav(sections):
+    """Compact in-page jump nav for the (now ~7,000px, 8-panel) X-Ray.
+
+    ``sections`` = [(anchor_id, label, block_html), ...]. Only blocks that
+    actually rendered (non-empty) get a nav chip AND an anchor — conditional
+    panels (local market, demographics) that didn't resolve simply don't
+    appear, so the nav never points at a missing section. Returns
+    (nav_html, anchored_blocks_concatenated). Non-sticky + chrome-classed so
+    the print-preview branch (which omits it) stays deck-clean."""
+    chips, body = [], []
+    for sid, label, block in sections:
+        if not block:
+            continue
+        chips.append(
+            f'<a class="hx-secnav-chip" href="#{sid}">{html.escape(label)}</a>')
+        body.append(
+            f'<div id="{sid}" style="scroll-margin-top:72px;"></div>{block}')
+    if len(chips) < 2:
+        # one section needs no nav.
+        return "", "".join(body)
+    nav = (
+        '<nav class="hx-secnav ck-next-section" aria-label="On this page" '
+        'style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;'
+        'margin:0 0 14px;padding:8px 0;border-bottom:1px solid '
+        'var(--sc-rule,#e4ddca);">'
+        '<span style="font-family:var(--sc-mono);font-size:9px;'
+        'letter-spacing:0.08em;color:var(--sc-text-dim,#6a7480);'
+        'text-transform:uppercase;margin-right:4px;">On this page</span>'
+        + "".join(chips) + '</nav>'
+        '<style>.hx-secnav-chip{font-family:var(--sc-mono);font-size:10px;'
+        'color:var(--sc-teal,#155752);border:1px solid var(--sc-rule,#d6cfc0);'
+        'border-radius:2px;padding:2px 8px;text-decoration:none;'
+        'white-space:nowrap;}.hx-secnav-chip:hover{background:'
+        'var(--sc-parchment-2,#efe9dd);}</style>')
+    return nav, "".join(body)
+
+
 def render_hcris_xray_page(
     qs: Optional[Dict[str, List[str]]] = None,
 ) -> str:
@@ -1690,6 +1727,36 @@ def render_hcris_xray_page(
             'class="ck-link">Preview print version →</a>'
             '</div>'
         )
+        _ic_takeaway = ck_panel(
+            '<p class="ck-section-body">Each percentile gap below the peer median is a '
+            '<b>value-creation hypothesis</b> the deal must support: not yet proof. '
+            'What public HCRIS shows: where this hospital sits vs peers on margin, NPR/bed, '
+            'cost structure and patient days. What it does <b>not</b> prove: the cause, the '
+            'fixability, or the deal\'s own contracts/quality.</p>'
+            '<ul class="ck-section-body" style="margin:6px 0 10px 18px">'
+            '<li>For each below-median metric: is the gap payer-mix, labor cost, case mix, or scale, and is it addressable?</li>'
+            '<li>What management actions (RCM, staffing, service-line) close the gap, and over what horizon?</li>'
+            '<li>Which gaps are structural (market/regulatory) vs operational (fixable post-close)?</li>'
+            '</ul>'
+            '<p class="ck-section-body" style="font-size:12px">Next: '
+            '<a href="/diligence/payer-stress" class="ck-link">stress the payer mix</a> · '
+            '<a href="/diligence/ic-packet" class="ck-link">build the IC packet</a> · '
+            '<a href="/diligence/risk-workbench" class="ck-link">log risks</a>.</p>',
+            title="What this means for IC")
+        # Section jump-nav for the now ~7,000px / 8-panel page. Only rendered
+        # panels get a chip + anchor (conditional ones that didn't resolve are
+        # skipped), so the nav never dangles.
+        _xray_nav, _xray_sections = _section_nav([
+            ("hx-peers", "Peer benchmark", metrics_panel),
+            ("hx-comps", "Public comps", public_comp_block),
+            ("hx-reg", "Regulatory", reg_exposure_block),
+            ("hx-local", "Local market", local_market_block),
+            ("hx-demo", "Demographics", demographics_block),
+            ("hx-roster", "Peer roster", peers_panel),
+            ("hx-state", "State context",
+             state_context_panel(getattr(target, "state", ""))),
+            ("hx-ic", "IC takeaway", _ic_takeaway),
+        ])
         body = (
             _scoped_styles()
             + ck_page_title(
@@ -1711,31 +1778,8 @@ def render_hcris_xray_page(
             )
             + print_cta
             + hero
-            + metrics_panel
-            + public_comp_block
-            + reg_exposure_block
-            + local_market_block
-            + demographics_block
-            + peers_panel
-            + state_context_panel(getattr(target, "state", ""))
-            + ck_panel(
-                '<p class="ck-section-body">Each percentile gap below the peer median is a '
-                '<b>value-creation hypothesis</b> the deal must support: not yet proof. '
-                'What public HCRIS shows: where this hospital sits vs peers on margin, NPR/bed, '
-                'cost structure and patient days. What it does <b>not</b> prove: the cause, the '
-                'fixability, or the deal\'s own contracts/quality.</p>'
-                '<ul class="ck-section-body" style="margin:6px 0 10px 18px">'
-                '<li>For each below-median metric: is the gap payer-mix, labor cost, case mix, or scale, and is it addressable?</li>'
-                '<li>What management actions (RCM, staffing, service-line) close the gap, and over what horizon?</li>'
-                '<li>Which gaps are structural (market/regulatory) vs operational (fixable post-close)?</li>'
-                '</ul>'
-                '<p class="ck-section-body" style="font-size:12px">Next: '
-                '<a href="/diligence/payer-stress" class="ck-link">stress the payer mix</a> · '
-                '<a href="/diligence/ic-packet" class="ck-link">build the IC packet</a> · '
-                '<a href="/diligence/risk-workbench" class="ck-link">log risks</a>.</p>',
-                title="What this means for IC",
-                anchor_id="hx-ic",
-            )
+            + _xray_nav
+            + _xray_sections
             + cross_link
             + export_json_panel(
                 '<div class="hx-section-label" style="margin-top:22px;">'

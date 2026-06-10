@@ -874,3 +874,19 @@ prod-bug fix but couldn't address this — the keys were never real metrics.)
 restore the shared dict. Running the polluter file immediately before the
 invariant: 45 passed (was 1 failed).
 **Verify**: test_metric_glossary alone green; polluter→invariant order green.
+
+## W2-28 — X-Ray section jump-nav (21:10Z)
+**What**: The HCRIS X-Ray grew to ~7,000px / 8 panels this window (peer
+benchmark, public comps, regulatory, local market, demographics, peer roster,
+state context, IC takeaway). Added a compact "On this page" jump-nav after
+the hero — anchored chips per section. New _section_nav() helper anchors each
+RENDERED block and builds the chip row; conditional panels that didn't resolve
+(local market / demographics on an ungeocoded facility) are skipped, so the
+nav never dangles. Nav is chrome-classed + non-sticky; the print-preview
+branch omits it (deck stays clean). The IC anchor (#hx-ic, linked from the
+source-purpose strip) moved from the ck_panel to the helper — single, unique.
+**Verify**: helper tests (skips empty blocks, no nav for a single section);
+render tests (nav + anchors present, #hx-ic unique); X-Ray suites 297 passed.
+Screenshot: the 8-chip nav row.
+**Persona check**: a partner on a 7,000px target page jumps straight to
+"Local market" or "IC takeaway" instead of scrolling through six panels.
