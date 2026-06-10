@@ -119,13 +119,16 @@ WIRED: List[WiredSource] = [
                  "/ebitda-bridge", "/regression"],
                 "CMS HCRIS", cadence_days=365, lag_tolerant=True),
     WiredSource("Home Health Compare", _vertical_stats(
-        "home_health", "load_home_health_providers", "vendored snapshot (dataset 6jpm-sxkc)"),
+        "home_health", "load_home_health_providers",
+        "vendored 2026-06-04 (dataset 6jpm-sxkc)"),
         "Quarterly refresh at CMS.", ["/target-screener (home_health)"],
-        "CMS Home Health Compare", cadence_days=92),
+        # Vendoring date from the repo history (git log on the CSV) — the
+        # CMS file itself doesn't embed a snapshot date.
+        "CMS Home Health Compare", cadence_days=92, snapshot_date="2026-06-04"),
     WiredSource("Hospice Compare", _vertical_stats(
-        "hospice", "load_hospice_providers", "vendored snapshot (yc9t-dgbk)"),
+        "hospice", "load_hospice_providers", "vendored 2026-06-04 (yc9t-dgbk)"),
         "Quarterly refresh at CMS.", ["/target-screener (hospice)"],
-        "CMS Hospice Compare", cadence_days=92),
+        "CMS Hospice Compare", cadence_days=92, snapshot_date="2026-06-04"),
     WiredSource("Nursing Home Care Compare", _vertical_stats(
         "snf", "load_snf_providers", "vendored snapshot (Apr 2026 NH_ProviderInfo)"),
         "Monthly refresh at CMS.", ["/target-screener (snf)"],

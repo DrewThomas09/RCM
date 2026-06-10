@@ -1198,6 +1198,17 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
         body_text = str(r.get("body") or "")
         # Preserve analyst-typed newlines as <br>; escape everything else
         escaped = html.escape(body_text).replace("\n", "<br>")
+        # Linkify ONLY internal roll-up reopen paths (the save-to-deal
+        # feature writes them as plain text). Applied AFTER escaping with a
+        # strict charset — `&` only as the full `&amp;` entity, so other
+        # entities (&quot; &gt; …) can never be swallowed into the href and
+        # note content can never smuggle markup. Deliberately not a general
+        # URL linkifier.
+        import re as _re
+        escaped = _re.sub(
+            r"(/pipeline/rollup\?(?:[A-Za-z0-9=,._%-]|&amp;)+)",
+            r'<a class="ck-link" href="\1">\1</a>',
+            escaped)
         note_id = int(r.get("note_id") or 0)
         items_html.append(
             f'<li class="ck-deal-note">'
@@ -5336,8 +5347,35 @@ class RCMHandler(BaseHTTPRequestHandler):
                                            _ts_owner) if _ts_owner else [])
             except Exception:  # noqa: BLE001
                 _ts_saved = []
+            # P9 — on the saved tab, diff each snapshotted screen against its
+            # CURRENT results (same code path the table renders). Only screens
+            # WITH a snapshot pay the recompute; capped to the first 10 so a
+            # pathological list can't stall the page.
+            _snap_info = {}
+            if (_tsq.get("view") or [""])[0] == "saved" and _ts_owner:
+                try:
+                    from .portfolio.screen_snapshots import (
+                        diff_results, diff_summary, latest_snapshot,
+                    )
+                    from .ui.target_screener_page import (
+                        screen_results_for_params,
+                    )
+                    _store = PortfolioStore(self.config.db_path)
+                    for _s in _ts_saved[:10]:
+                        _snap = latest_snapshot(_store, _ts_owner, _s["id"])
+                        if _snap is None:
+                            continue
+                        _cur = screen_results_for_params(_s["query_params"])
+                        _d = diff_results(_snap["results"], _cur)
+                        _snap_info[int(_s["id"])] = {
+                            "taken_at": _snap["taken_at"],
+                            "summary": diff_summary(_d),
+                        }
+                except Exception:  # noqa: BLE001 — diff is best-effort chrome
+                    _snap_info = {}
             return self._send_html(render_target_screener(
-                _tsq, saved=_ts_saved, owner=_ts_owner))
+                _tsq, saved=_ts_saved, owner=_ts_owner,
+                snap_info=_snap_info))
         if path == "/source":
             from .ui.source_page import render_source_page
             from .analysis.deal_sourcer import THESIS_LIBRARY, find_thesis_matches
@@ -7052,7 +7090,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             if _meta and _meta["ccn"] and not (_qs.get("ccns") or [""])[0]:
                 _qs["ccns"] = [_meta["ccn"]]
                 _qs.setdefault("_prefill_deal", [_meta["name"]])
-            out = render_rollup_builder(_qs)
+            out = render_rollup_builder(_qs, active_deal=_meta)
             if (_qs.get("format") or [""])[0] == "csv":
                 return self._send_text(out, content_type="text/csv; charset=utf-8")
             return self._send_html(out)
@@ -13035,6 +13073,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_save_post()
         if path == "/api/target-screener/delete":
             return self._route_target_screener_delete_post()
+        if path == "/api/target-screener/snapshot":
+            return self._route_target_screener_snapshot_post()
+        if path == "/api/rollup/save-to-deal":
+            return self._route_rollup_save_to_deal_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -13665,17 +13707,110 @@ class RCMHandler(BaseHTTPRequestHandler):
 
     def _route_target_screener_delete_post(self) -> None:
         """POST /api/target-screener/delete — remove one of the current user's
-        saved screens by id."""
+        saved screens by id. Snapshots are derivative analytics of the screen,
+        so they're cleaned up in the same action (explicit — no FK chain to
+        ride; see the delete-policy matrix)."""
         from .portfolio.saved_screens import delete_screen
+        from .portfolio.screen_snapshots import delete_snapshots_for_screen
         form = self._read_form_body()
         owner = self._current_username() or ""
         sid = self._clamp_int(form.get("id", "0"), default=0, min_v=0, max_v=10**9)
         if owner and sid:
             try:
-                delete_screen(PortfolioStore(self.config.db_path), owner, sid)
+                store = PortfolioStore(self.config.db_path)
+                if delete_screen(store, owner, sid):
+                    delete_snapshots_for_screen(store, owner, sid)
             except Exception:  # noqa: BLE001
                 pass
         return self._redirect("/target-screener?view=saved")
+
+    def _route_target_screener_snapshot_post(self) -> None:
+        """POST /api/target-screener/snapshot — P9 vintage-diff baseline.
+
+        Snapshots the saved screen's CURRENT result set (computed through the
+        same loader+filter path the table renders) so later visits to the
+        Saved-screens tab can show an honest "+N entered · −M left · K
+        changed" line when the underlying CMS data moves. Owner-scoped: the
+        screen must belong to the current user."""
+        from .portfolio.saved_screens import list_screens
+        from .portfolio.screen_snapshots import take_snapshot
+        from .ui.target_screener_page import screen_results_for_params
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        sid = self._clamp_int(form.get("id", "0"), default=0, min_v=0, max_v=10**9)
+        if owner and sid:
+            try:
+                store = PortfolioStore(self.config.db_path)
+                mine = {s["id"]: s for s in list_screens(store, owner)}
+                if sid in mine:
+                    results = screen_results_for_params(
+                        mine[sid]["query_params"])
+                    take_snapshot(store, owner, sid, results)
+            except Exception:  # noqa: BLE001 — never 500 on a snapshot hiccup
+                pass
+        return self._redirect("/target-screener?view=saved")
+
+    def _route_rollup_save_to_deal_post(self) -> None:
+        """POST /api/rollup/save-to-deal — persist a built roll-up scenario
+        on an EXISTING deal as a sourced note (backlog #17).
+
+        The scenario is recomputed server-side from the posted CCN list (the
+        form's figures are never trusted), summarized with its filed-value
+        basis stated, and recorded via deal_notes so it shows on the deal
+        page / notes search and is deletable like any note. The deal must
+        already exist — record_note would silently upsert a junk deal
+        otherwise."""
+        form = self._read_form_body()
+        deal_id = (form.get("deal_id", "") or "").strip()[:128]
+        raw_ccns = (form.get("ccns", "") or "").strip()[:300]
+        ccns = [c.strip() for c in raw_ccns.split(",") if c.strip()][:12]
+        try:
+            ga_pct = max(0.0, min(0.30, float(form.get("ga_pct") or 0)))
+        except ValueError:
+            ga_pct = 0.0
+        back_qs = urllib.parse.urlencode(
+            {"ccns": ",".join(ccns), "ga_pct": ga_pct or ""})
+        if not deal_id or len(ccns) < 2:
+            return self._redirect(f"/pipeline/rollup?{back_qs}")
+        store = PortfolioStore(self.config.db_path)
+        try:
+            deals = store.list_deals(include_archived=True)
+            if deal_id not in set(deals.get("deal_id", [])):
+                return self._redirect(f"/pipeline/rollup?{back_qs}")
+            from .data.hcris import _get_latest_per_ccn
+            from .pe.rollup_scenario import build_scenario
+            s = build_scenario(_get_latest_per_ccn(), ccns)
+            if not s.facilities:
+                return self._redirect(f"/pipeline/rollup?{back_qs}")
+            facil = "; ".join(
+                f"{f.name[:40]} (CCN {f.ccn}, {f.state})"
+                for f in s.facilities)
+            npr = ("—" if s.npr.value is None
+                   else f"${s.npr.value/1e6:,.1f}M ({s.npr.covered}/{s.npr.n} report)")
+            beds = ("—" if s.beds.value is None
+                    else f"{s.beds.value:,.0f} ({s.beds.covered}/{s.beds.n})")
+            hhi = "; ".join(
+                f"{m.state}: HHI {m.hhi_before:,.0f}→{m.hhi_after:,.0f} "
+                f"({m.hhi_delta:+,.0f}), share {m.share_after:.1%}"
+                for m in s.markets) or "—"
+            syn = s.synergy_ebitda(ga_pct) if ga_pct else None
+            syn_line = (
+                f"G&A synergy assumption (ENTERED): {ga_pct:.0%} of combined "
+                f"opex = ${syn/1e6:,.1f}M/yr. " if syn is not None else
+                (f"G&A synergy at {ga_pct:.0%} NOT computed — opex coverage "
+                 f"incomplete. " if ga_pct else ""))
+            body = (
+                f"Roll-up scenario — {len(s.facilities)} facilities: {facil}. "
+                f"Combined NPR (filed, ACTUAL): {npr}; beds {beds}. "
+                f"State-proxy concentration: {hhi}. {syn_line}"
+                f"All facility figures are filed HCRIS values (latest per CCN). "
+                f"Reopen: /pipeline/rollup?{back_qs}")
+            from .deals.deal_notes import record_note
+            record_note(store, deal_id=deal_id, body=body,
+                        author=self._current_username() or "api")
+        except Exception:  # noqa: BLE001 — never 500 a save action
+            return self._redirect(f"/pipeline/rollup?{back_qs}")
+        return self._redirect(f"/pipeline/rollup?{back_qs}&saved_note=1")
 
     def _route_quick_import_post(self) -> None:
         """POST /quick-import — create a deal from browser form."""
@@ -14208,7 +14343,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             user = user_for_session(
                 PortfolioStore(self.config.db_path), token,
             )
-            return user.username if user else None
+            if not user:
+                return None
+            # user_for_session returns a dict — ``user.username`` raised
+            # AttributeError into the blanket except, so EVERY session
+            # user resolved to None: owner-gated features (saved screens)
+            # never rendered for logged-in partners and audit rows fell
+            # back to "api". Accept dict and object shapes.
+            if isinstance(user, dict):
+                return user.get("username") or None
+            return getattr(user, "username", None)
         except Exception:  # noqa: BLE001
             return None
 

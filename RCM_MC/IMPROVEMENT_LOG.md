@@ -376,3 +376,110 @@ result and Enter lands on /diligence/hcris-xray?ccn=450358 (verified URL
 transition); screenshot captured.
 **Persona check**: VP with a CCN from a data room hits ⌘K, types the 6
 digits, Enter — straight into the facility X-Ray, no menu hunting.
+
+## CHECKPOINT 3 — LIVE on pedesk.app (11:55Z)
+PR #1665 (16 commits: items 11–17 + 7-failure fix batch + Guide-invariant
+fixes + Azure→DO docs purge) merged to main at f4ddae0 after CI green on
+3.11/3.12/3.14. Deploy run #1633 "Deploy PEdesk (DigitalOcean Droplet)"
+completed SUCCESS — deploy-gate tests, SSH deploy to the droplet, and the
+**public-URL health check on pedesk.app all green** (the live check of
+record; sandbox egress is blocked, per DECISIONS #1). Post-merge multiple
+checks on the same SHA locally: 6/6 feature markers (rollup exhibits, CIM
+prefill note, DQ AGING chip, AR-days column, screener CIM action, palette
+entity jump) + 6 fresh screenshots (pm_*.png) — Roll-Up shows EXHIBIT 1/2
+chrome with sourced footers exactly as designed.
+
+## Item 18 — P9 vintage-diff snapshots of saved screens + REAL BUG: session usernames never resolved (12:10Z)
+**What**: (a) P9 slice — saved Target-Screener screens can now be SNAPSHOTTED
+(new rcm_mc/portfolio/screen_snapshots.py: owner-scoped table, take/latest/
+delete, pure diff_results with honest thresholds: ≥5% relative move on
+size/q, string identity on ownership/name, sub-threshold wiggle is NOT a
+change), and the Saved-screens tab shows "since YYYY-MM-DD: +N entered · −M
+left · K changed" (or "no change") per snapshotted screen with a
+snapshot/re-baseline action. Current results are recomputed through the SAME
+loader+filter path the table renders (screen_results_for_params — no parallel
+implementation); diff computation is capped at 10 screens, snapshots at 1,000
+rows. Snapshots are deleted with their screen (explicit cleanup, delete-policy
+documented). New POST /api/target-screener/snapshot (owner-scoped).
+(b) **REAL BUG found by the E2E**: RCMHandler._current_username() did
+`user.username` but user_for_session returns a DICT → AttributeError swallowed
+by the blanket except → EVERY logged-in session resolved to None. Owner-gated
+features (the whole saved-screens panel) never rendered for real partners and
+audit rows fell back to "api". Fixed to accept dict/object shapes.
+**Verify**: tests/test_screen_snapshots.py (14: diff set/threshold/ownership/
+newly-reported semantics, summary silence, storage round-trip owner-scoped,
+latest-wins, delete cleanup, same-filter-semantics vs table, self-diff is
+empty, saved-tab render with/without snapshot);
+tests/test_current_username_session.py (3: real HTTP login → owner panel
+renders; anonymous still 401). Full screener+auth suites 239 passed. E2E on
+the demo server: save "TX large hospitals" → snapshot → reload shows "since
+2026-06-10: no change" + re-baseline (screenshot snap_saved_tab.png) — this
+exact flow was IMPOSSIBLE before the username fix.
+**Persona check**: VP re-opens their watched TX screen after a CMS re-vendor
+and sees "+3 entered · −1 left" instead of silently comparing against a
+different universe than last month.
+
+## Item 19 — Roll-up scenarios persisted to deals as sourced notes (12:20Z)
+**What**: A built roll-up scenario can now be SAVED to the active deal
+(backlog #17). The rollup page shows "Save scenario to <deal>" when a
+scenario is built AND a deal context exists (nothing honest to attach to
+otherwise); POST /api/rollup/save-to-deal recomputes the scenario
+server-side (form figures never trusted), requires the deal to ALREADY exist
+(record_note would silently upsert a junk deal), and records a deal note
+stating facilities + combined filed figures (ACTUAL basis stated), the
+HHI before/after per state-proxy market, the ENTERED-labeled synergy
+assumption, and a reopen link to the exact scenario URL. Notes surface on
+the deal page + notes search and are deletable like any note (soft-delete
+policy inherited).
+**Verify**: tests/test_rollup_save_to_deal.py (4: button only with active
+deal; POST records the sourced note with basis/ENTERED/reopen-link; unknown
+deal rejected with NO junk-deal upsert; <2 CCNs rejected) + rollup/prefill/
+exhibit suites 20 passed. E2E on demo server: set active deal ccf → save →
+green confirmation ("Scenario saved to Cypress Crossing Health") → note
+visible on /deal/ccf (screenshots rollup_save_btn.png, rollup_saved.png).
+**Persona check**: VP models a 3-hospital platform, hits save, and the IC
+prep deal page now carries the scenario with every figure traceable.
+
+## Item 20 — P12b palette name-search (12:32Z)
+**What**: Completes the entity-jump: a non-CCN palette query of ≥4 chars now
+offers "→ Search providers for 'q'" routing to /diligence/xray?q=… — the
+EXISTING CMS X-Ray name resolver (cross-vertical name/CCN search), so zero
+new backend and no inlined entity list. 6-digit CCN keeps the direct X-Ray
+jump; short queries and non-CCN digit strings offer nothing.
+**Verify**: headless-browser drive of the static shell: "memorial hermann" →
+/diligence/xray?q=memorial%20hermann (visible), "450358" → hcris-xray, "mem"
+hidden, "12345" hidden. Resolver itself verified live (q=memorial+hermann →
+MEMORIAL HERMANN results). tests/test_palette_entity_jump.py extended (5);
+palette suites 33 passed.
+**Persona check**: consultant types a hospital name from a call sheet into
+⌘K and lands on the resolver's ranked matches — both halves of P12 now work.
+
+## Item 21 — modeling-discipline line on the predictive screener (12:40Z)
+**What**: The screener's contrast callout now ends with a model-card line read
+ONLY from rcm_mc/ml/model_card_margin.json ("its 90% conformal band covered
+91.0% on 978 held-out filings — model card → /methodology"). Honesty boundary
+stated explicitly: THIS page's Est.* columns are the simple screening formulas
+(each column's "?" shows the math), not the conformal model — the measured
+coverage is never misread as covering these estimates. Missing artifact → no
+line (no claim without its source).
+**Verify**: ModelCardFooterTests (2: artifact numbers + boundary in the line;
+page renders it); ar-days suite 6 passed.
+
+## Item 22 — roll-up reopen links clickable on the deal page (12:48Z)
+**What**: The reopen path that save-to-deal writes into a note now renders as
+a real anchor on the deal page. Linkified AFTER html.escape with a strict
+charset (& only as the full &amp; entity), so other entities (&quot; &gt;)
+can never be swallowed into the href and note content can never smuggle
+markup — deliberately NOT a general URL linkifier. First regex draft cut
+mid-entity on &amp; (caught by the hostile-content test, fixed).
+**Verify**: NoteLinkifyTests — reopen path becomes href with &amp; intact;
+'<script>' stays escaped; '"><img>' can't break out. Suite 5 passed.
+
+## Item 23 — DQ: real snapshot dates for Home Health + Hospice (12:55Z)
+**What**: The two DATE UNSTATED sources now carry their actual vendoring date
+(2026-06-04, from `git log --follow` on the CSVs — the CMS files don't embed
+a snapshot date; provenance method noted in a code comment). Both quarterly →
+CURRENT. Dashboard now shows 0 DATE UNSTATED / 6 CURRENT(+NORMAL) / 1 AGING
+(SNF, correctly).
+**Verify**: DQ suite 11 passed (the pure-function DATE UNSTATED tier test
+still covers the no-date path).

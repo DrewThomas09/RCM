@@ -10714,18 +10714,27 @@ _PALETTE_JS = """
   function filter(q){
     q = (q || '').toLowerCase();
     var anyVisible = false;
-    /* P12 entity jump — a 6-digit query is a CMS CCN; offer a direct jump
-     * to that facility's HCRIS X-Ray, built client-side from the digits. */
+    /* P12 entity jump — a 6-digit query is a CMS CCN → direct X-Ray jump;
+     * any other query of 4+ chars offers a provider-name search via the
+     * CMS X-Ray resolver (existing endpoint, route built client-side). */
     var entity = p.querySelector('[data-entity-jump]');
-    var ccn = (q || '').trim().match(/^\d{6}$/);
+    var raw = (q || '').trim();
+    var ccn = raw.match(/^\d{6}$/);
     if (entity) {
+      var route = '', title = '';
       if (ccn) {
-        var id = ccn[0];
-        entity.setAttribute('data-route', '/diligence/hcris-xray?ccn=' + id);
+        route = '/diligence/hcris-xray?ccn=' + ccn[0];
+        title = '→ HCRIS X-Ray for CCN ' + ccn[0];
+      } else if (raw.length >= 4 && !/^\d+$/.test(raw)) {
+        route = '/diligence/xray?q=' + encodeURIComponent(raw);
+        title = '→ Search providers for “' + raw + '”';
+      }
+      if (route) {
+        entity.setAttribute('data-route', route);
         var et = entity.querySelector('.cp-entity-title');
         var er = entity.querySelector('.cp-entity-route');
-        if (et) et.textContent = '→ HCRIS X-Ray for CCN ' + id;
-        if (er) er.textContent = '/diligence/hcris-xray?ccn=' + id;
+        if (et) et.textContent = title;
+        if (er) er.textContent = route;
         entity.hidden = false;
         entity.style.display = '';
         anyVisible = true;

@@ -43,7 +43,8 @@ def _cov(agg) -> str:
             f'({agg.covered}/{agg.n})</span>')
 
 
-def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
+def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None,
+                          active_deal: Optional[Dict[str, str]] = None) -> str:
     qs = qs or {}
     raw = (qs.get("ccns") or [""])[0]
     ccns = [c.strip() for c in raw.split(",") if c.strip()][:12]
@@ -220,7 +221,34 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'</tr></thead><tbody>{frows}</tbody></table></div>',
             title="Selected facilities — filed values")
 
-        body_main = combined + markets + facilities_tbl
+        # Persist-to-deal (backlog #17): a built scenario can be recorded on
+        # the ACTIVE deal as a sourced note (visible on the deal page, in
+        # notes search, deletable like any note). Only offered when a deal
+        # context exists — there is nothing honest to attach it to otherwise.
+        save_block = ""
+        if active_deal and active_deal.get("id"):
+            if (qs.get("saved_note") or [""])[0] == "1":
+                save_block = (
+                    '<p class="ck-section-body" style="font-size:11.5px;margin:0 0 14px;'
+                    'color:var(--sc-positive,#0a8a5f);">Scenario saved to '
+                    f'<a class="ck-link" href="/deal/{_html.escape(active_deal["id"])}">'
+                    f'{_html.escape(active_deal.get("name") or active_deal["id"])}</a> '
+                    'as a note — it lists the facilities, combined figures and a '
+                    'link back to this exact scenario.</p>')
+            else:
+                save_block = (
+                    '<form method="post" action="/api/rollup/save-to-deal" '
+                    'style="margin:0 0 14px;">'
+                    f'<input type="hidden" name="ccns" value="{_html.escape(",".join(ccns))}">'
+                    f'<input type="hidden" name="ga_pct" value="{ga_pct or ""}">'
+                    f'<input type="hidden" name="deal_id" value="{_html.escape(active_deal["id"])}">'
+                    '<button type="submit" class="tsw-vert" style="cursor:pointer;'
+                    'padding:6px 12px;">Save scenario to '
+                    f'{_html.escape(active_deal.get("name") or active_deal["id"])}</button>'
+                    '<span style="font-family:var(--sc-mono);font-size:9.5px;'
+                    'color:var(--sc-text-dim,#6a7480);margin-left:8px;">records a '
+                    'note on the deal with these facilities + figures</span></form>')
+        body_main = save_block + combined + markets + facilities_tbl
 
     body = (
         ck_page_title(

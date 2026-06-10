@@ -22,15 +22,30 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 10 | **H demo-deal realism** — rebuild 1 of 5 seeded demo deals on a real named CCN (real HCRIS metrics as observed_metrics; ENTERED→ACTUAL relabel where sourced) | 29 | Seeded deal's metrics match HCRIS row for that CCN; provenance chip names CCN; walker clean |
 | 11 | ✅ DONE — P12 entity jump (Cmd-K 6-digit CCN → HCRIS X-Ray); name search deferred (needs backend index) | — | LOG #17 |
 | 12 | ✅ DONE — P5 ExhibitFactory v1 (+ corpus-seed batching perf fix found in pre-commit suite) | — | LOG #11 |
-| 13 | **P9 vintage-diff alerts slice** — snapshot saved-screen results; on data change emit diff alerts ("2 facilities changed ownership") | 26 | Simulated vintage subset → diffs detected + accurately described; tests |
+| 13 | ✅ DONE — P9 vintage-diff snapshots on saved screens (+ fixed session-username bug that hid the whole owner panel) | — | LOG #18 |
 | 14 | ✅ DONE — Est. AR Days column + "?" explainer + 25–75 bound on predictive screener | — | LOG #14 |
 | 15 | **A empty-state sweep** — top-10 pages with ?state=ZZ / empty db: consistent ck_empty_state, no dead controls | 20 | Walker variant with empty db; screenshots |
 
 | 16 | ✅ DONE — deal-context slice 2 (cookie prefills CIM state/ccn + rollup basket) | — | LOG #12 |
-| 17 | **Roll-up exhibit row on deal page** — link saved roll-up scenarios to deals (deal_overrides or notes) | 24 | scenario persists per deal; reload shows it |
+| 17 | ✅ DONE — roll-up scenarios saved to deals as sourced notes (recomputed server-side, basis stated) | — | LOG #19 |
 | 18 | ✅ DONE — DQ staleness chips (CURRENT/AGING/STALE by cadence; SNF amber) | — | LOG #15 |
 | 19 | ✅ DONE — route_walker --discover + nan/None-leak gate, wired into weekly sweep | — | LOG #16 |
 | 20 | ✅ DONE — screener hospital row → CIM action (state+ccn scoped) | — | LOG #13 |
+
+
+## Refill 2 (scored 12:25Z) — ready queue
+| # | Item | Score | Verification plan |
+|---|---|---|---|
+| 21 | **P12b palette name-search** — non-CCN query ≥4 chars adds "Search providers for 'q'" row → /diligence/xray?q= (existing resolver; zero new backend) | 26 | type partial hospital name → row appears, Enter lands on X-Ray search results; tests |
+| 22 | **P9 slice-2: diff detail view** — click the diff line → table of entered/left/changed rows with old→new values | 25 | snapshot, mutate db copy, detail view lists exact rows; tests |
+| 23 | **P4b percentile chips on CIM estimates** — ck_peer_percentile beside each independent estimate (scope = the in-scope HCRIS rows) | 24 | chip matches hand-computed percentile for 2 claims; tests |
+| 26 | **P5 expansion** — exhibit wrapper on X-Ray peer table + screener compare view | 24 | exhibits numbered/sourced on both; print check; tests |
+| 24 | **Deal-page roll-up note affordance** — render the reopen link in rollup notes as a real anchor + ROLL-UP chip | 22 | note on deal page shows clickable reopen; tests |
+| 30 | **A empty-state verification pass** — ?state=ZZ + empty-db walk, screenshot deck (carried #15) | 20 | walker empty-db variant + 4 screenshots |
+| 25 | **DQ snapshot dates for home_health/hospice** — replace DATE UNSTATED with the vendored snapshot dates from loader docs | 20 | chips turn green/amber per real dates; tests updated |
+| 29 | **Model-card link on predictive screener footer** — "90% conformal band: 91.0% on holdout (model card)" → /methodology | 18 | footer states artifact numbers, never hand-typed; test |
+| 27 | **walker cookie-context mode** — --deal-cookie flag walks with active-deal set (catches prefill 500s) | 18 | walk clean with cookie; CI-ready |
+| 28 | **Screener state prefill from active deal** — parity with CIM (cookie fills ?state= when absent) | 16 | cookie → state filter chip prefilled; params win; tests |
 
 ## Groomed-out / blocked
 - Medicaid S-3 re-ingest + POS bed backfill: NETWORK-GATED (sources named in
