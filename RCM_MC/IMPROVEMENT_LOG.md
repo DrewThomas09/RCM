@@ -474,3 +474,12 @@ markup — deliberately NOT a general URL linkifier. First regex draft cut
 mid-entity on &amp; (caught by the hostile-content test, fixed).
 **Verify**: NoteLinkifyTests — reopen path becomes href with &amp; intact;
 '<script>' stays escaped; '"><img>' can't break out. Suite 5 passed.
+
+## Item 23 — DQ: real snapshot dates for Home Health + Hospice (12:55Z)
+**What**: The two DATE UNSTATED sources now carry their actual vendoring date
+(2026-06-04, from `git log --follow` on the CSVs — the CMS files don't embed
+a snapshot date; provenance method noted in a code comment). Both quarterly →
+CURRENT. Dashboard now shows 0 DATE UNSTATED / 6 CURRENT(+NORMAL) / 1 AGING
+(SNF, correctly).
+**Verify**: DQ suite 11 passed (the pure-function DATE UNSTATED tier test
+still covers the no-date path).
