@@ -557,7 +557,7 @@ def _transaction_multiples_section(
             title="Private-market transaction multiples",
         )
     ev_range_str = (
-        f" · target EV ${ev_usd/1e6:,.0f}M" if ev_usd else ""
+        (f" · target EV ${ev_usd/1e9:,.2f}B" if ev_usd >= 1e9 else f" · target EV ${ev_usd/1e6:,.0f}M") if ev_usd else ""
     )
     inner = (
         '<p class="ck-eyebrow">'
