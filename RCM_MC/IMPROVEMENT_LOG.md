@@ -1176,6 +1176,19 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-63 — divergence map completed across the catalogue (13:40Z)
+**Sprint depth**: segment growth rates on 4 more templates —
+  - oncology: med onc +7% ★ (drug spend) vs rad onc +1%
+    (hypofractionation drag);
+  - dental: implants +8% ★ vs pediatric +2% (Medicaid-capped);
+  - physician groups: cardiology +8% ★ (the current wave) vs derm +2%
+    (mature);
+  - hospitals: large systems +6% ★ vs small/rural −1% (an honest
+    DECLINING segment inside a growing market).
+Six verticals now carry within-industry divergence (+ BH/ASC from W2-61).
+**Verify**: fastest flags pinned per vertical; small/rural negative
+renders red; test_tam_sam 44 passed.
+
 ## W2-62 — scenario presets: Conservative / Base / Aggressive (13:15Z)
 **Sprint depth**: one-click scenario toggles on every build — Conservative
 halves tailwinds and amplifies headwinds ×1.5, Aggressive mirrors, typed
