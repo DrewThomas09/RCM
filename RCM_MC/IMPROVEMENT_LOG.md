@@ -2076,3 +2076,20 @@ market-data/sector-momentum) — only Find Comps still showed "$2,000M" /
 **Fixed**: results-table EV rolls to "$X.XXB" at ev_mm ≥ 1000.
 **Verify**: render shows $1.00B–$4.35B, zero comma-M; new
 test_find_comps_ev_rolls_to_billions; 12 passed across the audit suites.
+
+## W2-106 (2026-06-11) — Denial drivers page: root-cause Pareto chart (wave #8)
+**Found**: denial_page.py was the barest remaining diligence surface —
+0 SVGs across 246 lines; the "Denial Root Causes" card was a plain
+table whose only visual was an 8px HTML div bar with no severity
+encoding and no concentration read.
+**Fixed**: `_driver_pareto_svg(drivers)` — horizontal bars sorted by
+annual dollar impact (largest first), severity-toned (high #b5321e /
+medium #b8732a / low #7a8699), per-bar $M label plus a running
+"cum %" share so the 80/20 concentration of the recovery opportunity
+is visible at a glance; legend explains tones and cum%. Derived
+entirely from the page's existing `analysis["drivers"]`; zero/empty
+impacts render "" (never fabricated geometry).
+**Verify**: DriverParetoChartTests — render pins all three tones +
+cum 100% close, sort order (Prior auth $2.0M before Eligibility
+$1.5M), chart placed before the table, empty/zero drivers render
+nothing, page survives empty analysis. 27 passed across denial suites.
