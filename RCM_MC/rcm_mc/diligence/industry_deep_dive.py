@@ -1053,6 +1053,37 @@ def hospitals_deep_dive() -> Dict[str, Any]:
     }
 
 
+
+def infusion_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="infusion",
+        sector_tokens=("infusion", "home_infusion"),
+        note=("No CMS infusion-suite facility file exists — geography "
+              "omitted rather than fabricated; the corpus infusion "
+              "deals below are real."),
+    )
+
+
+def imaging_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="imaging",
+        sector_tokens=("radiology", "radiology_imaging", "imaging"),
+        note=("The IMV imaging-center census is proprietary — geography "
+              "omitted rather than fabricated; the corpus radiology "
+              "deals below are real."),
+    )
+
+
+def physical_therapy_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="physical_therapy",
+        sector_tokens=("physical_therapy", "physical therapy"),
+        note=("No national PT-clinic facility file — geography omitted "
+              "rather than fabricated; the corpus PT deals below are "
+              "real."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1070,6 +1101,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "urgent_care": urgent_care_deep_dive,
     "hospitals": hospitals_deep_dive,
     "fertility_ivf": fertility_deep_dive,
+    "infusion": infusion_deep_dive,
+    "imaging": imaging_deep_dive,
+    "physical_therapy": physical_therapy_deep_dive,
 }
 
 

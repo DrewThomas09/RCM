@@ -606,3 +606,43 @@ class ChainHHITests(unittest.TestCase):
         h = render_tam_sam_page({"template": ["dialysis"]})
         self.assertIn("Chain-concentration", h)
         self.assertIn("highly concentrated", h)
+
+
+class NicheVerticalsBatch1Tests(unittest.TestCase):
+    """Industries #14–16 — infusion, imaging, physical therapy: the
+    niche-vertical sprint. Public-source chains, divergence, real corpus
+    trade history (geography omitted, never fabricated)."""
+
+    def test_three_chains_pin_to_public_magnitudes(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "infusion": 3_200_000 * 18 * 650,
+            "imaging": 7_000 * 21_000 * 280,
+            "physical_therapy": 38_000 * 8_300 * 105,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            # Each carries a divergence map with a flagged fastest.
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_biosimilar_headwind_named(self):
+        # The infusion template must carry the biosimilar deflation
+        # headwind — the number-one diligence question in this vertical.
+        from rcm_mc.diligence.tam_sam import compute, infusion_template
+        out = compute(infusion_template())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["Biosimilar price deflation"], 0)
+
+    def test_dives_carry_real_trade_history(self):
+        from rcm_mc.diligence.industry_deep_dive import (
+            imaging_deep_dive, infusion_deep_dive,
+            physical_therapy_deep_dive,
+        )
+        self.assertGreaterEqual(infusion_deep_dive()["sector_deals"]["n"], 2)
+        self.assertGreaterEqual(imaging_deep_dive()["sector_deals"]["n"], 5)
+        self.assertGreaterEqual(
+            physical_therapy_deep_dive()["sector_deals"]["n"], 5)
