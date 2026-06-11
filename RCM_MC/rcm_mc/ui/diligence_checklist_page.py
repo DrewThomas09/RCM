@@ -561,6 +561,62 @@ def _flat_checklist_table(state: DealChecklistState) -> str:
 # Public entry
 # ────────────────────────────────────────────────────────────────────
 
+def _category_progress_svg(state, width: int = 660) -> str:
+    """The checklist at a glance: one stacked bar per category — DONE
+    green, IN-PROGRESS amber, OPEN gray, BLOCKED red — so the blocked
+    category is visible before scrolling the roster."""
+    cats = state.by_category()
+    if not cats:
+        return ""
+    tone = {"DONE": "#0a8a5f", "IN_PROGRESS": "#b8732a",
+            "OPEN": "#9aa3ad", "BLOCKED": "#b5321e"}
+    order = ["DONE", "IN_PROGRESS", "OPEN", "BLOCKED"]
+    row_h, pad_l, pad_r = 24, 170, 86
+    pw = width - pad_l - pad_r
+    rows = list(cats.items())
+    h = len(rows) * row_h + 6
+    parts = [f'<svg width="{width}" height="{h}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Checklist progress by category">']
+    for i, (cat, items) in enumerate(rows):
+        y = i * row_h + 4
+        n = len(items) or 1
+        counts = {s: 0 for s in order}
+        for st in items:
+            counts[st.status.value] = counts.get(st.status.value, 0) + 1
+        done = counts["DONE"]
+        parts.append(
+            f'<text x="{pad_l-8}" y="{y+12}" text-anchor="end" '
+            'font-family="monospace" font-size="9.5" fill="#465366">'
+            f'{html.escape(cat.value.title()[:24])}</text>')
+        x = pad_l
+        for s in order:
+            c = counts[s]
+            if not c:
+                continue
+            w = c / n * pw
+            parts.append(
+                f'<rect x="{x:.1f}" y="{y}" width="{max(w,1):.1f}" '
+                f'height="14" fill="{tone[s]}">'
+                f'<title>{s.replace("_", " ").title()}: {c}</title>'
+                '</rect>')
+            x += w
+        parts.append(
+            f'<text x="{pad_l+pw+8}" y="{y+12}" '
+            'font-family="monospace" font-size="9.5" fill="#465366">'
+            f'{done}/{len(items)}</text>')
+    parts.append('</svg>')
+    legend = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:4px;'
+        f'margin-right:12px;font-size:10.5px;color:#465366;">'
+        f'<span style="width:9px;height:9px;background:{c};'
+        f'display:inline-block;"></span>'
+        f'{s.replace("_", " ").title()}</span>'
+        for s, c in tone.items())
+    return ("".join(parts)
+            + f'<div style="margin:2px 0 14px;">{legend}</div>')
+
+
 def render_diligence_checklist_page(
     qs: Optional[Dict[str, List[str]]] = None,
 ) -> str:
@@ -634,6 +690,7 @@ def render_diligence_checklist_page(
         + toc
         + '<div class="ck-toc-content">'
         + f'<section id="dc-hero">{hero_and_oq}</section>'
+        + _category_progress_svg(state)
         + '<section id="dc-phases">'
         + ck_section_header(
             "Items by phase · click an evidence link to drill in",

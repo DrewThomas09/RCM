@@ -312,3 +312,23 @@ class ICPacketIntegrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CategoryProgressChartTests(unittest.TestCase):
+    """Wave #6 of the diligence upgrades: the checklist at a glance —
+    one stacked bar per category (done/in-progress/open/blocked)."""
+
+    def test_chart_renders(self):
+        from rcm_mc.ui.diligence_checklist_page import (
+            render_diligence_checklist_page,
+        )
+        h = render_diligence_checklist_page({})
+        self.assertIn("Checklist progress by category", h)
+        self.assertIn("Blocked", h)   # the legend names every state
+
+    def test_empty_state_no_chart(self):
+        from rcm_mc.diligence.checklist.tracker import DealChecklistState
+        from rcm_mc.ui.diligence_checklist_page import (
+            _category_progress_svg,
+        )
+        self.assertEqual(_category_progress_svg(DealChecklistState()), "")

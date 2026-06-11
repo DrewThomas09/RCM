@@ -1176,6 +1176,15 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-104 — wave #6: checklist category progress chart (10:30Z)
+**The checklist at a glance**: one stacked bar per category — DONE
+green / IN-PROGRESS amber / OPEN gray / BLOCKED red — with done/total
+counts per row and the full-state legend; the blocked category is
+visible before scrolling the roster. Renders between the hero and the
+phase sections; empty states render nothing.
+**Verify**: chart + legend render; empty-state empty-string pinned;
+checklist suites 76+2 passed.
+
 ## W2-103 — wave #5: thesis-pipeline compute chart (10:00Z)
 **Where the pipeline spends its time**: per-step horizontal bars
 (elapsed-ms proportional), OK steps teal, FAILED steps red with the ✗
