@@ -8,13 +8,19 @@
 - latest_timestamp: 2026-06-10T12:32:00Z
 - elapsed: window 2 begun
 - iteration: 23 items + 2 found-bug fixes; checkpoints 1–4 ALL LIVE on pedesk.app (deploys #1631–#1634 success)
-- current_item: window 2 — 49 items, checkpoints 5–38 LIVE (PRs #1667–1700).
-  Recent arc (user-directed): deal-page de-dup/reorg, comparable-outcomes
-  de-clutter + entry-multiple + sponsor record, Public Market Intel rebrand
-  + live-sentiment button, /tools instant filter, federated find-anything
-  /search (hospitals→X-Ray, tools, market deals, portfolio), TAM/SAM
-  Builder with stdlib formatted-xlsx export. Looping.
-- current_step: looping; branch==main @ b9a0932 (checkpoint 38)
+- current_item: window 2 — 64 items, checkpoints 5–49 LIVE (PRs #1667–1711),
+  #1712 in CI. THE TAM/SAM SPRINT (user-directed, ongoing): 14 industry
+  builds (hospitals $868B HCRIS-grounded · physician groups $183B ·
+  oncology $165B · dental $157B · SNF $132B real-beds · BH $88.5B · ASC
+  $46B · urgent care $34B · hospice $25.5B · dialysis $20.5B · home health
+  $19.5B · IRF $8.1B · fertility $4.2B · LTCH $3.5B declining-honestly);
+  7 real-data deep dives (CMS facility files + HCRIS: state footprints,
+  whitespace, consolidation, quality medians, CHOW); ±20% tornado;
+  TAM/SAM/SOM projection chart; numbered source footnotes; scenario
+  presets (Conservative/Base/Aggressive); per-segment divergence (8
+  verticals, ★ fastest); cross-industry comparison panel; 4-sheet
+  formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
+- current_step: looping the sprint; branch==main @ 3c08c99 (checkpoint 49)
 - branch: claude/sharp-einstein-005lm == main (everything merged + deployed)
 - background: NO demo server (user: no demo runs — work everything to PE desk)
 
