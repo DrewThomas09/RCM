@@ -588,6 +588,28 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
     )
 
 
+def _jump_nav(has_dive: bool) -> str:
+    """One-line jump nav for the long build page — same pattern as the
+    X-Ray's section nav. Anchors are attached to the panels below."""
+    chips = [("#ts-compare", "Cross-industry"),
+             ("#ts-chain", "Chain"),
+             ("#ts-segments", "Segments"),
+             ("#ts-projection", "Projection"),
+             ("#ts-tornado", "Sensitivity"),
+             ("#ts-agenda", "Agenda")]
+    if has_dive:
+        chips.append(("#ts-dive", "Market data"))
+    chips.append(("#ts-sources", "Sources"))
+    links = "".join(
+        f'<a href="{h}" style="padding:4px 10px;border:1px solid '
+        'var(--sc-rule,#c9c1ac);border-radius:2px;font-size:11px;'
+        'text-decoration:none;color:var(--sc-text,#1a2332);">'
+        f'{label}</a>'
+        for h, label in chips)
+    return (f'<div style="display:flex;gap:6px;flex-wrap:wrap;'
+            f'margin:0 0 12px;">{links}</div>')
+
+
 def _industry_comparison_panel(active_key: str,
                                sort: str = "tam") -> str:
     """Every sized vertical side by side — sortable by TAM (where the
@@ -978,12 +1000,20 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
 
     body = (
         _CSS + title + src + tmpl_bar + scen_bar + basis + funnel
+        + _jump_nav(bool(_dive_for_sources(tmpl_key)))
+        + '<div id="ts-compare"></div>'
         + _industry_comparison_panel(
             tmpl_key, sort=(qs.get("sort") or ["tam"])[0])
-        + chain_panel + seg_panel + proj_panel
+        + '<div id="ts-chain"></div>' + chain_panel
+        + '<div id="ts-segments"></div>' + seg_panel
+        + '<div id="ts-projection"></div>' + proj_panel
+        + '<div id="ts-tornado"></div>'
         + _tornado_panel(model, out["tam"])
+        + '<div id="ts-agenda"></div>'
         + _diligence_agenda_panel(out)
+        + '<div id="ts-dive"></div>'
         + _industry_panels(tmpl_key)
+        + '<div id="ts-sources"></div>'
         + _sources_panel(out, _dive_for_sources(tmpl_key))
         + export_panel
         + ck_next_section(

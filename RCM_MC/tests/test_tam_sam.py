@@ -1693,3 +1693,22 @@ class GrowthSortTests(unittest.TestCase):
         # Fertility (+12.5%/yr) leads the growth sort.
         self.assertLess(seg.find("Fertility"), seg.find("Hospitals"))
         self.assertIn("sort=growth", h)
+
+
+class JumpNavTests(unittest.TestCase):
+    """The long build page gets a jump nav — same pattern as the X-Ray."""
+
+    def test_nav_chips_and_anchors(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        for anchor in ("#ts-compare", "#ts-chain", "#ts-segments",
+                       "#ts-projection", "#ts-tornado", "#ts-agenda",
+                       "#ts-sources"):
+            self.assertIn(f'href="{anchor}"', h, anchor)
+            self.assertIn(f'id="{anchor[1:]}"', h, anchor)
+
+    def test_market_data_chip_tracks_dive(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        # Dialysis has a dive → the chip renders.
+        self.assertIn('href="#ts-dive"',
+                      render_tam_sam_page({"template": ["dialysis"]}))
