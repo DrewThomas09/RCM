@@ -260,8 +260,7 @@ def render_comparable_outcomes_page(
 ) -> str:
     from . import _web_components as _wc
     from ._chartis_kit import (
-        chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
-        ck_next_section, ck_page_title, ck_provenance_tooltip, ck_page_explainer,
+        chartis_shell, ck_eyebrow, ck_next_section, ck_page_title,
         ck_source_purpose)
     from ..diligence.comparable_outcomes import benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
@@ -413,56 +412,13 @@ def render_comparable_outcomes_page(
         '</div>'
     )
 
-    # Cycle 49 — KPI strip with provenance.
+    # 2026-06-11 de-clutter (user-reported "too much data under the
+    # title"): the 3-card KPI strip duplicated the outcome strip card
+    # for card — matched count (hold-card sub), P50/median MOIC, and
+    # win rate all rendered twice within one screen. The outcome strip
+    # is the single results readout now; the matched count also lives
+    # in the title meta.
     n_comp = summary.get("n_comparables", 0) if summary else 0
-    # The summary nests percentiles under summary["moic"]["median"|"p25"|…]
-    # (see the outcome strip above) — the old flat summary.get("moic_p50")
-    # never existed, so this headline KPI silently showed "—" while the
-    # identical figure rendered fine lower down. P50 == median.
-    moic_p50 = (summary.get("moic") or {}).get("median") if summary else None
-    win_rate = summary.get("win_rate_2_5x") if summary else None
-    comp_value = ck_provenance_tooltip(
-        "Comparable deals matched",
-        ck_fmt_num(n_comp),
-        explainer=(
-            f"Realized corpus deals matching the target profile "
-            f"by sector / size / vintage. Higher count = denser "
-            f"distribution to read against. Below ~10 the bands "
-            f"start to swing on individual exits."
-        ),
-    )
-    moic_value = ck_provenance_tooltip(
-        "Comparables P50 MOIC",
-        f"{moic_p50:.2f}x" if moic_p50 else "—",
-        explainer=(
-            "Median realized MOIC across the matched comparables. "
-            "This is the underwriting reality check - if your "
-            "target's projected MOIC is above corpus P75, the "
-            "bear case has to refute that path."
-        ),
-        inject_css=False,
-    )
-    kpi_strip = (
-        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
-        + ck_kpi_block("Comparables", comp_value, "matched")
-        + ck_kpi_block("Comp P50 MOIC", moic_value, "median realized")
-        + ck_kpi_block(
-            "Win Rate (2.5x+)",
-            f"{win_rate*100:.0f}%" if win_rate else "—",
-            "share above 2.5x",
-            help={
-                "definition": (
-                    "Share of matched comparable deals that returned "
-                    "≥ 2.5x MOIC. 2.5x is the conventional PE "
-                    "healthcare 'good outcome' threshold; below 30% "
-                    "win-rate in your comp set signals a sector "
-                    "where strong outcomes are tail events, not the "
-                    "expected case."
-                ),
-            },
-        )
-        + '</div>'
-    )
 
     # Phase QQQ: print-preview affordance — partners print this
     # surface as their corpus-comparable benchmark for IC. ?print=1
@@ -519,12 +475,14 @@ def render_comparable_outcomes_page(
                 next_action="Carry the comp distribution into the IC narrative",
                 next_href="/diligence/ic-packet",
             )
-            + ck_page_explainer(
-                'Realized outcomes on comparable deals.',
-                'Pulls the MOIC / IRR / exit-multiple distributions from the platform corpus filtered to comparables of the focused deal (sector × size × hold × exit channel). Used as a sanity check on bid pricing and to set the IC narrative on "what deals like this tend to return."',
-                source='Platform deal corpus — real deals; MOIC/IRR modeled where not publicly disclosed (not your fund\'s realized history).',
-            )
         )
+        # ONE editorial lede under the title — this page stacked three
+        # near-identical explainers (source_purpose band + page_explainer
+        # + this lede), each restating "realized MOIC/IRR from the
+        # corpus, sanity-check bid pricing". The source_purpose band
+        # keeps the structured provenance; this single serif sentence
+        # keeps the editorial voice; the page_explainer (a verbatim
+        # restatement of both) is gone.
         explainer_html = (
             '<p class="ck-co-explainer">'
             '<em>What deals like this actually returned.</em> '
@@ -560,14 +518,17 @@ def render_comparable_outcomes_page(
             'These comparables are real deals from the corpus, with modeled '
             f'financials. For the fully source-linked subset, see {_vd_link}</p>'
         )
+        # Layout: identity → one lede → inputs → results together
+        # (outcome strip directly above the table it summarizes) →
+        # exports/print at the point of use → provenance footnote.
+        # The form no longer splits the results in half.
         inner = (
             page_title_block
             + explainer_html
-            + kpi_strip
             + form
-            + print_cta
             + _outcome_strip(summary)
             + export_bar
+            + print_cta
             + _wc.section_card(
                 f"Top {len(rows)} comparables — sorted by match score",
                 table + breakdown_legend, pad=False,
