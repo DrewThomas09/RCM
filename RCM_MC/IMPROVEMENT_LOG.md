@@ -1176,6 +1176,24 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-71 — niche verticals batch 5: wound care, sleep, occupational health (17:45Z)
+**Niche-vertical sprint** — industries #26–28:
+  - wound_care ($10.1B, +2.9%): 8.2M chronic-wound patients (Medicare
+    claims literature) × 25% advanced care × 1.3 episodes × $3,800;
+    office/mobile +8% ★ vs managed hospital centers +3%; the CMS
+    skin-substitute (CTP) LCD crackdown carried as the compliance
+    headwind; Healogics ~600-center context.
+  - sleep ($5.4B, +2.9%): 30M OSA adults (AASM) × 20% in care × $900;
+    the disruption told honestly — in-lab PSG −2% DECLINING inside a
+    growing market while HSAT +9% ★; PAP resupply named as the annuity;
+    the GLP-1 OSA-indication effect carried as the new bear case.
+  - occ_health ($25.6B, +3.5%): 135M workers (BLS) × $190; on-site/
+    near-site +8% ★; the secular injury-rate decline (TRIR) carried as
+    the volume headwind; Concentra ~10% context.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; PSG negative + GLP-1 effect negative pinned;
+catalogue ≥29 templates pinned; test_tam_sam 65 passed. 28 industries.
+
 ## W2-70 — niche verticals batch 4: ABA, plasma, clinical research sites (17:15Z)
 **Niche-vertical sprint** — industries #23–25, the hyper-niche layer:
   - aba ($22.6B, +5.4%): 1.8M ASD children (CDC ADDM 1-in-36) × 30%
