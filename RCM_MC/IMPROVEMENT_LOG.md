@@ -1176,6 +1176,26 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-78 — niche verticals batch 12: home care, PACE, teleradiology (21:15Z)
+**Niche-vertical sprint** — industries #47–49:
+  - home_care ($110.6B, +1.8%): 12M seniors needing ADL support (HHS) ×
+    30% paid penetration × 20 hrs × 48 wks × $32 — the family-caregiving
+    gap named as the demand reservoir; LTC insurance −1% (a DECLINING
+    funding segment inside a growing market); the caregiver supply
+    ceiling + wage pass-through as the margin truth.
+  - pace ($7.6B, +8.0%): 80K participants (NPA) × $95K dual capitation;
+    for-profit operators +12% ★; COMPLIANCE RISK PRICED AT −3 — "growth
+    is a privilege revoked on audit failure" with the InnovAge sanction
+    history named in the basis as the cautionary case study; <10%
+    penetration of eligibles = the whitespace.
+  - teleradiology ($1.7B, +5.0%): 650M studies (ACR) × 12% telerad ×
+    $22/read; daytime overflow +9% ★ (staffing gaps made daytime the
+    new market); AI triage named as productivity capture; per-click
+    commoditization + in-group recapture as headwinds.
+**Verify**: chains pinned; LTCI negative + PACE compliance ≤ −3 +
+InnovAge in basis pinned; catalogue ≥50 templates pinned; test_tam_sam
+88 passed. 49 industries.
+
 ## W2-77 — niche verticals batch 11: podiatry, ENT/allergy, anesthesia (20:45Z)
 **Niche-vertical sprint** — industries #44–46:
   - podiatry ($9.9B, +2.9%): 18K DPMs (APMA) × $550K; diabetic foot +6%

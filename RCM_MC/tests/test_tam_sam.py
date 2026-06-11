@@ -1017,3 +1017,40 @@ class NicheVerticalsBatch11Tests(unittest.TestCase):
     def test_catalogue_at_46_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 47)   # 46 + blank
+
+
+class NicheVerticalsBatch12Tests(unittest.TestCase):
+    """Industries #47–49 — non-medical home care, PACE, teleradiology."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "home_care": 12_000_000 * 0.30 * 20 * 48 * 32,
+            "pace": 80_000 * 95_000,
+            "teleradiology": 650_000_000 * 0.12 * 22,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_structural_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute, pace_template
+        # Home care: a declining funding segment (LTC insurance) inside
+        # a growing market.
+        hc = compute(TEMPLATES["home_care"]())
+        ltci = next(s for s in hc["segments"] if "LTC insurance" in s["name"])
+        self.assertLess(ltci["growth_pct"], 0)
+        # PACE: compliance risk priced large — growth is a privilege
+        # revoked on audit failure (the InnovAge lesson, in the basis).
+        out = compute(TEMPLATES["pace"]())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLessEqual(names["Compliance / audit risk"], -3.0)
+        self.assertIn("InnovAge", pace_template().basis_note)
+
+    def test_catalogue_at_49_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 50)   # 49 + blank

@@ -1378,6 +1378,36 @@ def anesthesia_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def home_care_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="home_care",
+        sector_tokens=("home_care", "personal_care", "private_duty"),
+        note=("No public personal-care agency census (state registries "
+              "are fragmented) — geography omitted rather than "
+              "fabricated."),
+    )
+
+
+def pace_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="pace",
+        sector_tokens=("pace",),
+        note=("The NPA program roster isn't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def teleradiology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="teleradiology",
+        sector_tokens=("teleradiology", "radiology", "radiology_imaging"),
+        note=("Teleradiology is delivered remotely — geography is not "
+              "the structure read; the radiology trade history below "
+              "is real."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1428,6 +1458,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "podiatry": podiatry_deep_dive,
     "ent_allergy": ent_allergy_deep_dive,
     "anesthesia": anesthesia_deep_dive,
+    "home_care": home_care_deep_dive,
+    "pace": pace_deep_dive,
+    "teleradiology": teleradiology_deep_dive,
 }
 
 

@@ -2598,6 +2598,177 @@ def anesthesia_template() -> TamSamModel:
     )
 
 
+
+def home_care_template() -> TamSamModel:
+    """Non-medical home care (private duty) sizing — the personal-care
+    layer under home health. HCAOA-anchored."""
+    return TamSamModel(
+        name="Home care · non-medical personal care market",
+        chain=[
+            DriverStep("US seniors needing ADL support at home",
+                       12_000_000, op="base", unit="seniors",
+                       source="HHS/ASPE LTSS need estimates"),
+            DriverStep("% receiving PAID home care", 0.30, op="rate",
+                       unit="of those in need",
+                       source="family caregiving fills the rest — the "
+                              "paid-penetration gap is the demand "
+                              "reservoir"),
+            DriverStep("Avg paid hours / wk", 20, op="mult",
+                       unit="hrs/wk", source="HCAOA utilization norms"),
+            DriverStep("Weeks served / yr", 48, op="mult",
+                       unit="wks/yr", source="industry standard"),
+            DriverStep("Avg bill rate / hr", 32, op="price",
+                       unit="$/hr",
+                       source="HCAOA rate surveys (private pay) × "
+                              "Medicaid HCBS blend"),
+        ],
+        segments=[
+            Segment("Private pay", 0.45, None,
+                    note="the margin segment — rate-taking power",
+                    growth_pct=6.0),
+            Segment("Medicaid HCBS / waivers", 0.40, None,
+                    note="the volume segment — state rate-setting",
+                    growth_pct=5.0),
+            Segment("VA / other government", 0.10, None,
+                    growth_pct=7.0),
+            Segment("LTC insurance", 0.05, None,
+                    note="a shrinking funding source", growth_pct=-1.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Aging-in-place demand", 4.5,
+                         "the 85+ cohort doubles by 2035; everyone "
+                         "prefers home"),
+            GrowthDriver("HCBS funding expansion", 2.0,
+                         "states rebalancing LTSS away from "
+                         "institutions"),
+            GrowthDriver("Caregiver wage inflation", -2.5,
+                         "the caregiver IS the product — wage "
+                         "pass-through compresses margin"),
+            GrowthDriver("Caregiver supply ceiling", -2.0,
+                         "recruiting/turnover (~65%+) caps served "
+                         "hours — the binding constraint"),
+        ],
+        sam_share=0.50,
+        sam_note="Metro private-pay + managed-HCBS markets",
+        som_share=0.03,
+        som_note="Home Instead/Honor + franchise systems — the "
+                 "largest holds <3%",
+        horizon_years=5,
+        basis_note="Template defaults from HHS/HCAOA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def pace_template() -> TamSamModel:
+    """PACE program sizing — capitated frail-elderly care. NPA-anchored."""
+    return TamSamModel(
+        name="PACE · program of all-inclusive care market",
+        chain=[
+            DriverStep("US PACE participants", 80_000, op="base",
+                       unit="participants",
+                       source="National PACE Association census"),
+            DriverStep("Avg capitation per participant / yr", 95_000,
+                       op="price", unit="$/participant/yr",
+                       source="Medicare + Medicaid dual capitation "
+                              "(NPA rate norms)"),
+        ],
+        segments=[
+            Segment("Nonprofit legacy programs", 0.60, None,
+                    note="the installed base — conversion candidates",
+                    growth_pct=6.0),
+            Segment("For-profit operators", 0.40, None,
+                    note="InnovAge-class — the investable layer; "
+                         "compliance is the license to grow",
+                    growth_pct=12.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Eligible-population growth", 4.0,
+                         "nursing-home-eligible duals compound with "
+                         "the 85+ wave"),
+            GrowthDriver("State PACE expansion", 5.0,
+                         "new states + service-area expansions — the "
+                         "regulatory growth gate"),
+            GrowthDriver("Penetration of eligibles", 3.0,
+                         "PACE serves <10% of eligibles — the "
+                         "whitespace"),
+            GrowthDriver("Compliance / audit risk", -3.0,
+                         "CMS sanctions halt enrollment (the InnovAge "
+                         "lesson) — growth is a privilege revoked on "
+                         "audit failure"),
+            GrowthDriver("Capitation rate risk", -1.0,
+                         "state Medicaid rate-setting cycles"),
+        ],
+        sam_share=0.40,
+        sam_note="For-profit-permitted states with expansion-friendly "
+                 "agencies",
+        som_share=0.10,
+        som_note="A concentrated niche — single programs are "
+                 "city-scale",
+        horizon_years=5,
+        basis_note="Template defaults from NPA public data — replace "
+                   "with engagement data before IC use. The InnovAge "
+                   "sanction history is the cautionary case study.",
+    )
+
+
+def teleradiology_template() -> TamSamModel:
+    """Teleradiology sizing — the read-capacity arbitrage on the
+    radiologist shortage. ACR-anchored."""
+    return TamSamModel(
+        name="Teleradiology · remote reads market",
+        chain=[
+            DriverStep("US imaging studies needing interpretation",
+                       650_000_000, op="base", unit="studies/yr",
+                       source="ACR / IMV volume estimates"),
+            DriverStep("% read via teleradiology", 0.12, op="rate",
+                       unit="of studies",
+                       source="industry estimates — overnight + "
+                              "overflow + rural coverage"),
+            DriverStep("Avg revenue per read", 22, op="price",
+                       unit="$/read",
+                       source="per-click professional-fee splits "
+                              "(modality-blended)"),
+        ],
+        segments=[
+            Segment("Overnight / nighthawk", 0.40, None,
+                    note="the original franchise — commoditized",
+                    growth_pct=3.0),
+            Segment("Daytime overflow / SLA reads", 0.35, None,
+                    note="the growth layer — staffing gaps made "
+                         "daytime the new market", growth_pct=9.0),
+            Segment("Subspecialty (neuro, MSK, peds)", 0.20, None,
+                    note="the premium layer", growth_pct=8.0),
+            Segment("AI-assisted triage adjacency", 0.05, None,
+                    growth_pct=12.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Radiologist shortage", 4.0,
+                         "vacancy rates at record highs — demand for "
+                         "remote capacity is structural"),
+            GrowthDriver("Imaging volume growth", 2.5,
+                         "scans compound with demographics"),
+            GrowthDriver("AI productivity capture", 1.5,
+                         "AI triage lifts reads/radiologist — accrues "
+                         "to platforms that own workflow"),
+            GrowthDriver("Per-click fee compression", -2.0,
+                         "commoditized nighthawk pricing — the "
+                         "chronic headwind"),
+            GrowthDriver("In-group recapture", -1.0,
+                         "radiology groups building internal remote "
+                         "pods claw volume back"),
+        ],
+        sam_share=0.60,
+        sam_note="Hospital + imaging-center outsourced reads "
+                 "(in-group remote excluded)",
+        som_share=0.06,
+        som_note="vRad/RP-class platforms hold meaningful share of "
+                 "nighthawk; daytime is open",
+        horizon_years=5,
+        basis_note="Template defaults from ACR/IMV public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -2670,6 +2841,9 @@ TEMPLATES = {
     "podiatry": podiatry_template,
     "ent_allergy": ent_allergy_template,
     "anesthesia": anesthesia_template,
+    "home_care": home_care_template,
+    "pace": pace_template,
+    "teleradiology": teleradiology_template,
     "blank": blank_template,
 }
 
