@@ -3310,3 +3310,32 @@ by building it:
 (VT<FL), TX present, J-code basket + 3-yr trend rises, live flag fails
 closed; client parses mocked Socrata payload + aggregates non-facility %
 + fails closed unresolved; +5 render needles + 1 SO WHAT. Full suite green.
+
+## W2-159 (2026-06-11) — Texas infusion: regulatory & reimbursement environment (wave #61)
+Added a comprehensive, structured regulatory + reimbursement environment
+section — every material federal/state rule an infusion platform lives
+under, tagged tailwind/headwind/neutral with the diligence implication:
+- **`regulatory_reimbursement_environment()`**: 6 categories / 23 items —
+  Medicare Part B (ASP+6→sequester ~4.3%, admin CPT 96365–96379, 2%
+  sequester); the HIT benefit (Cures Act → permanent 2021, the calendar-
+  day gap, G0068–G0070, DME/prosthetic, the Part D black hole); IRA &
+  drug pricing (Part B inflation rebates, Maximum Fair Price negotiation
+  2026→2028, biosimilar ASP+8% bump, 340B); site-of-care & UM (site-
+  neutral, white-bagging, prior auth, the 2024 MA prior-auth rule); Texas
+  & state (no CON, TSBP pharmacy licensure, Medicaid non-expansion +
+  STAR, state white-bagging patchwork flagged VERIFY); operational
+  compliance (USP <797>/<800>, ACHC/URAC/JC accreditation, DSCSA, FDA
+  shortages). 5 tailwinds / 11 headwinds / 7 neutral + a net read:
+  policy pushes VOLUME to the platform's site but squeezes the DRUG
+  SPREAD — underwrite on service margin + commercial mix + de-novo
+  runway, not the drug.
+- **Page**: a "Regulatory & reimbursement environment" section — a
+  tailwind/headwind/neutral count strip, the NET READ banner, and each
+  category's items with an impact tag (▲/▼/●), status, and the diligence
+  implication; plus a data-driven SO WHAT.
+**Verify**: +4 regulatory tests — ≥6 categories covering Part B/HIT/IRA/
+site-of-care/Texas/compliance with complete fields + valid impact tags,
+impact counts match the items, the real marquee topics present (ASP+6,
+calendar-day, MFP, biosimilar, 340B, site-neutral, white-bagging, CON,
+USP), Texas no-CON tagged tailwind; +5 render needles + 1 SO WHAT. Full
+suite green.

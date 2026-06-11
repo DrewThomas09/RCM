@@ -714,6 +714,78 @@ def _jcode_pos_section(a: Dict[str, Any]) -> str:
         f'PSPS Master File.</p>')
 
 
+_IMPACT_META = {
+    "tailwind": ("▲", _POS, "TAILWIND"),
+    "headwind": ("▼", _NEG, "HEADWIND"),
+    "neutral": ("●", _FAINT, "NEUTRAL"),
+}
+
+
+def _regulatory_section(a: Dict[str, Any]) -> str:
+    """The regulatory + reimbursement environment — federal Part B/D, the
+    HIT benefit, IRA/biosimilars/340B, site-of-care/UM, Texas rules, and
+    compliance — each item tagged tailwind/headwind/neutral with the
+    diligence implication."""
+    re_ = a.get("regulatory_environment") or {}
+    cats = re_.get("categories", [])
+    if not cats:
+        return ""
+
+    def _pill(label, n, tone):
+        return (
+            f'<div style="flex:1;min-width:90px;text-align:center;'
+            f'padding:7px 6px;border:1px solid {tone};border-radius:4px;'
+            f'background:#fff;"><div style="font-size:20px;font-weight:700;'
+            f'color:{tone};">{n}</div><div style="font-size:9px;'
+            f'letter-spacing:0.08em;color:{_FAINT};font-weight:700;">{label}'
+            f'</div></div>')
+    summary = (
+        f'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">'
+        + _pill("TAILWINDS", re_["tailwinds"], _POS)
+        + _pill("HEADWINDS", re_["headwinds"], _NEG)
+        + _pill("NEUTRAL", re_["neutral"], _FAINT)
+        + '</div>')
+    net = (
+        f'<div style="padding:9px 13px;background:#eef5f4;border-left:4px '
+        f'solid {_TEAL};border-radius:0 4px 4px 0;margin-bottom:14px;">'
+        f'<span style="font-size:9px;font-weight:800;letter-spacing:0.11em;'
+        f'color:{_TEAL};">NET READ</span> '
+        f'<span style="font-size:12px;color:#1a2332;line-height:1.55;">'
+        f'{html.escape(re_["net_read"])}</span></div>')
+    blocks = ""
+    for c in cats:
+        rows = ""
+        for it in c["items"]:
+            sym, tone, lab = _IMPACT_META.get(it["impact"],
+                                              ("●", _FAINT, ""))
+            rows += (
+                f'<div style="padding:8px 0;border-bottom:1px solid #e8e1d0;">'
+                f'<div style="display:flex;gap:8px;align-items:baseline;'
+                f'flex-wrap:wrap;">'
+                f'<span style="font-weight:700;color:{tone};font-size:11px;">'
+                f'{sym} {lab}</span>'
+                f'<span style="font-size:12.5px;font-weight:600;color:#1a2332;">'
+                f'{html.escape(it["topic"])}</span>'
+                f'<span style="margin-left:auto;font-size:9.5px;color:{_FAINT};'
+                f'font-style:italic;">{html.escape(it["status"])}</span></div>'
+                f'<div style="font-size:11.5px;color:{_DIM};line-height:1.5;'
+                f'margin-top:2px;">{html.escape(it["detail"])}</div>'
+                f'<div style="font-size:11.5px;color:#1a2332;line-height:1.5;'
+                f'margin-top:3px;padding-left:10px;border-left:2px solid '
+                f'{tone};"><strong style="color:{tone};">Implication: </strong>'
+                f'{html.escape(it["implication"])}</div></div>')
+        blocks += (
+            f'<div style="margin-bottom:14px;"><div style="font-size:11px;'
+            f'font-weight:700;letter-spacing:0.04em;color:{_NAVY};'
+            f'border-bottom:2px solid #c9c1ac;padding-bottom:3px;'
+            f'margin-bottom:4px;">{html.escape(c["category"])}</div>{rows}'
+            f'</div>')
+    return (
+        summary + net + blocks
+        + f'<p style="font-size:9.5px;color:{_FAINT};margin:4px 0 0;">'
+        f'{html.escape(re_.get("note", ""))}</p>')
+
+
 def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
     """Medicare Advantage enrollment + the site-of-care-steerage read —
     the key payer-mix force on infusion."""
@@ -2245,6 +2317,14 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"The {hopd*100:.0f}% HOPD pool migrating to AIS/home is the "
             f"growth engine — back operators positioned to RECEIVE the "
             f"steered volume, not defend a chair."),
+        "regulatory": (
+            f"{a['regulatory_environment']['tailwinds']} tailwinds vs "
+            f"{a['regulatory_environment']['headwinds']} headwinds: policy "
+            f"pushes VOLUME to the platform's site (site-neutral + HIT "
+            f"benefit) but squeezes the DRUG SPREAD (IRA, biosimilars, "
+            f"340B, white-bagging). Texas's no-CON rule is a structural "
+            f"tailwind — underwrite on service margin + commercial mix, "
+            f"not the drug."),
         "evolution": (
             f"Infusion has moved {a['site_of_care_evolution']['hopd_shift_pts']} "
             f"points out of the hospital since 2015 (HOPD "
@@ -2383,6 +2463,12 @@ def render_texas_infusion_page(
                                     "WITH OFFLINE FALLBACK")
         + _cdc_proxies_section(a)
         + _so_what(sw["cdc"])
+
+        + ck_section_header("Regulatory & reimbursement environment",
+                            eyebrow="PART B/D · HIT BENEFIT · IRA · "
+                                    "BIOSIMILARS · 340B · SITE-NEUTRAL · TEXAS")
+        + _regulatory_section(a)
+        + _so_what(sw["regulatory"])
 
         + ck_section_header("Where the risks are",
                             eyebrow="REIMBURSEMENT · RCM · MARKET — WITH THE "

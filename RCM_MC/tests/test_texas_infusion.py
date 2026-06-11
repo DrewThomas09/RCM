@@ -1033,6 +1033,60 @@ class JcodePlaceOfServiceTests(unittest.TestCase):
         self.assertFalse(jp["live"])               # no fabricated claims
 
 
+class RegulatoryEnvironmentTests(unittest.TestCase):
+    """The regulatory + reimbursement environment — structured, tagged
+    tailwind/headwind/neutral, with the diligence implication on each."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.re = self.a["regulatory_environment"]
+
+    def test_categories_and_items_complete(self):
+        cats = self.re["categories"]
+        self.assertGreaterEqual(len(cats), 6)
+        names = " ".join(c["category"] for c in cats).lower()
+        for marker in ("part b", "home infusion", "ira", "site-of-care",
+                       "texas", "compliance"):
+            self.assertIn(marker, names)
+        for c in cats:
+            self.assertTrue(c["items"])
+            for it in c["items"]:
+                for f in ("topic", "detail", "status", "impact",
+                          "implication"):
+                    self.assertTrue(it[f], f"{c['category']}/{f}")
+                self.assertIn(it["impact"],
+                              ("tailwind", "headwind", "neutral"))
+
+    def test_impact_counts_match_items(self):
+        items = [it for c in self.re["categories"] for it in c["items"]]
+        self.assertEqual(
+            self.re["tailwinds"],
+            sum(1 for it in items if it["impact"] == "tailwind"))
+        self.assertEqual(
+            self.re["headwinds"],
+            sum(1 for it in items if it["impact"] == "headwind"))
+        self.assertEqual(
+            self.re["neutral"],
+            sum(1 for it in items if it["impact"] == "neutral"))
+
+    def test_key_real_topics_present(self):
+        topics = " ".join(
+            it["topic"] for c in self.re["categories"]
+            for it in c["items"]).lower()
+        for marker in ("asp + 6", "calendar-day", "maximum fair price",
+                       "biosimilar", "340b", "site-neutral",
+                       "white-bagging", "certificate of need", "usp"):
+            self.assertIn(marker, topics)
+
+    def test_texas_no_con_is_a_tailwind(self):
+        tx_items = next(c["items"] for c in self.re["categories"]
+                        if "Texas" in c["category"])
+        con = next(it for it in tx_items
+                   if "Certificate of Need" in it["topic"])
+        self.assertEqual(con["impact"], "tailwind")
+        self.assertTrue(self.re["net_read"])
+
+
 class SoWhatTakeawayTests(unittest.TestCase):
     """Every section carries a data-driven 'SO WHAT' takeaway that
     recomputes from the analysis it summarizes."""
@@ -1098,6 +1152,9 @@ class PageRenderTests(unittest.TestCase):
             "WHAT DROVE THE DISCHARGE SHIFT", "STRUCTURAL DRIVERS",
             "J-code place of service by state", "NON-FACILITY SHARE",
             "NATIONAL FACILITY", "PSPS Master File", "J-code basket",
+            "Regulatory &amp; reimbursement environment", "NET READ",
+            "Home Infusion Therapy (HIT)", "340B drug pricing",
+            "No Certificate of Need", "Implication:",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 

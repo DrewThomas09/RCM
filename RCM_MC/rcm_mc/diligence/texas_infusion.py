@@ -1565,6 +1565,221 @@ def infusion_jcode_pos(
     }
 
 
+def regulatory_reimbursement_environment() -> Dict[str, Any]:
+    """The full regulatory + reimbursement environment an infusion
+    platform operates under — federal Part B/D mechanics, the Home
+    Infusion Therapy benefit, IRA / biosimilar / 340B drug policy,
+    site-of-care + utilization-management pressure, Texas-specific rules,
+    and operational compliance. Each item tagged tailwind / headwind /
+    neutral with the diligence implication. Sourced to the statutes,
+    CMS rules, USP standards, and Texas regulation noted; verify
+    state-specific items as of the engagement date."""
+    T, H, N = "tailwind", "headwind", "neutral"
+    cats = [
+        {"category": "Medicare Part B — buy-and-bill mechanics",
+         "items": [
+            {"topic": "ASP + 6% drug payment (≈ASP+4.3% post-sequester)",
+             "detail": "Part B pays clinician-administered drugs at the "
+                       "quarterly Average Sales Price + 6%; the 2% "
+                       "sequester on the 80% federal share nets ≈ASP+4.3%.",
+             "status": "Standing law; sequester ongoing.", "impact": H,
+             "implication": "Thin, policy-set drug spread — margin is GPO "
+                            "acquisition vs the payment limit, not list."},
+            {"topic": "Administration / infusion CPT codes (96365–96379)",
+             "detail": "Separately billable hierarchical admin codes "
+                       "(initial hour, each additional hour, push, "
+                       "sequential) on top of the drug.",
+             "status": "Standing.", "impact": N,
+             "implication": "The service fee — the AIC's non-drug revenue; "
+                            "chair throughput converts it."},
+            {"topic": "2% Medicare sequester",
+             "detail": "Across-the-board 2% cut to Medicare payments "
+                       "(incl. Part B drugs + admin).",
+             "status": "In effect.", "impact": H,
+             "implication": "Permanent haircut on every Medicare claim — "
+                            "modeled into net realization."},
+         ]},
+        {"category": "Medicare Home Infusion Therapy (HIT) benefit",
+         "items": [
+            {"topic": "Permanent HIT services benefit",
+             "detail": "21st Century Cures Act (2016) → transitional "
+                       "benefit 2019–20 → permanent benefit effective "
+                       "Jan 1 2021; per-visit professional payment to a "
+                       "qualified HIT supplier (G0068–G0070).",
+             "status": "Permanent since 2021.", "impact": T,
+             "implication": "Federal funding for home professional "
+                            "services finally exists — but see the gap."},
+            {"topic": "The calendar-day gap",
+             "detail": "HIT pays ONLY on dates a skilled professional is "
+                       "in the home — a multi-week course with one weekly "
+                       "visit is paid ~4 of 28 days.",
+             "status": "Structural to the benefit.", "impact": H,
+             "implication": "Medicare structurally under-pays home "
+                            "infusion services; commercial mix decides "
+                            "economics."},
+            {"topic": "DME + prosthetic-device benefits",
+             "detail": "External infusion pump + supplies under the DME "
+                       "infusion-pump LCD; TPN nutrients/pump under the "
+                       "prosthetic-device benefit.",
+             "status": "Standing.", "impact": N,
+             "implication": "Stable, well-defined coverage for the pump/"
+                            "TPN side — a capability, not a margin lever."},
+            {"topic": "The Part D 'black hole'",
+             "detail": "Many self-administered specialty drugs fall under "
+                       "Part D — where there is NO home-infusion "
+                       "professional-services benefit at all.",
+             "status": "Standing.", "impact": H,
+             "implication": "Nursing/per-diem effectively unfunded by "
+                            "Medicare on Part D drugs — underwrite the mix."},
+         ]},
+        {"category": "Drug-pricing policy — IRA, biosimilars, 340B",
+         "items": [
+            {"topic": "IRA Part B inflation rebates",
+             "detail": "Since 2023, manufacturers owe rebates when a Part "
+                       "B drug's price outpaces inflation; beneficiary "
+                       "coinsurance is reduced on those drugs.",
+             "status": "Effective 2023.", "impact": N,
+             "implication": "Lowers patient cost-share (access positive) "
+                            "but signals tighter drug-price ceilings."},
+            {"topic": "IRA Maximum Fair Price negotiation",
+             "detail": "First negotiated Part D prices effective 2026; "
+                       "Part B drugs enter negotiation from 2028 — some "
+                       "high-spend infused biologics in scope over time.",
+             "status": "Phasing in 2026→2028+.", "impact": H,
+             "implication": "Compresses ASP on the marquee infusion drugs "
+                            "— the buy-and-bill spread shrinks with it."},
+            {"topic": "Biosimilar ASP+8% add-on",
+             "detail": "Qualifying biosimilars paid at biosimilar ASP + "
+                       "8% of the reference product ASP (a temporary IRA "
+                       "bump from 6%, ~2022–2027) to spur uptake.",
+             "status": "Temporary through ~2027.", "impact": T,
+             "implication": "A near-term margin sweetener on biosimilar "
+                            "lines — but accelerates reference-ASP erosion."},
+            {"topic": "340B drug pricing program",
+             "detail": "340B covered entities (incl. many HOPDs) buy "
+                       "drugs at deep statutory discounts; independent "
+                       "AICs do not.",
+             "status": "Standing; contract-pharmacy disputes ongoing.",
+             "impact": H,
+             "implication": "A drug-acquisition cost disadvantage vs 340B "
+                            "hospitals — independents compete on site of "
+                            "care + service, not drug cost."},
+         ]},
+        {"category": "Site-of-care & utilization management",
+         "items": [
+            {"topic": "Site-neutral payment policy",
+             "detail": "CMS cut off-campus HOPD clinic-visit payment to "
+                       "the PFS rate (2019, upheld on appeal); ongoing "
+                       "proposals extend site-neutral to drug admin.",
+             "status": "In effect + expanding.", "impact": T,
+             "implication": "Narrows the HOPD price premium — accelerates "
+                            "volume to AIC/home, the platform's site."},
+            {"topic": "White-bagging / brown-bagging mandates",
+             "detail": "Payers require the drug be supplied by their own "
+                       "specialty pharmacy (white-bag) or the patient "
+                       "(brown-bag), stripping the buy-and-bill spread.",
+             "status": "Spreading; state-law patchwork pushes back.",
+             "impact": H,
+             "implication": "The single biggest threat to AIC drug margin "
+                            "— track the white-bagged % by payer."},
+            {"topic": "Prior authorization (commercial + MA)",
+             "detail": "High-cost infused drugs gate through prior auth; "
+                       "MA plans authorize aggressively.",
+             "status": "Pervasive.", "impact": H,
+             "implication": "Denial + AR-days exposure — the core RCM "
+                            "diligence metric on an infusion platform."},
+            {"topic": "MA prior-authorization final rule (2024)",
+             "detail": "CMS tightened MA prior-auth — continuity of care, "
+                       "decision timelines, and approval-validity rules.",
+             "status": "Effective 2024–2026.", "impact": T,
+             "implication": "Modest relief on MA friction — a small "
+                            "tailwind against the steerage headwind."},
+         ]},
+        {"category": "Texas & state-specific",
+         "items": [
+            {"topic": "No Certificate of Need (CON)",
+             "detail": "Texas has no CON regime for ambulatory infusion — "
+                       "de-novo centers face no state need-approval gate.",
+             "status": "Standing (TX is a non-CON state).", "impact": T,
+             "implication": "De-novo build-out is unconstrained — a "
+                            "structural advantage for an AIC roll-up here."},
+            {"topic": "Texas State Board of Pharmacy licensure",
+             "detail": "Class A (community) / Class E (non-resident) "
+                       "pharmacy licensure; sterile-compounding "
+                       "permitting for infusion pharmacies.",
+             "status": "Standing.", "impact": N,
+             "implication": "A compliance + capability gate (sterile "
+                            "compounding) — also a moat vs new entrants."},
+            {"topic": "Medicaid non-expansion + STAR managed care",
+             "detail": "Texas did not expand Medicaid; the highest US "
+                       "uninsured rate; Medicaid runs through STAR managed "
+                       "care.",
+             "status": "Standing.", "impact": H,
+             "implication": "Thinner safety-net coverage — payer mix "
+                            "leans commercial/Medicare, and bad-debt risk "
+                            "on the uninsured."},
+            {"topic": "State white-bagging restrictions",
+             "detail": "A growing number of states restrict white-bagging "
+                       "(provider-administered-drug protections); the "
+                       "Texas statute should be confirmed as of the "
+                       "engagement.",
+             "status": "Evolving patchwork — VERIFY TX.", "impact": N,
+             "implication": "Potential statutory protection of buy-and-"
+                            "bill — a diligence item to confirm, not "
+                            "assume."},
+         ]},
+        {"category": "Operational compliance & supply chain",
+         "items": [
+            {"topic": "USP <797> sterile + <800> hazardous compounding",
+             "detail": "Revised USP <797> (effective Nov 2023) governs "
+                       "sterile compounding; <800> governs hazardous "
+                       "(oncology) drug handling.",
+             "status": "USP <797> revised, effective 2023.", "impact": N,
+             "implication": "Raises the compounding bar — capex + a moat "
+                            "against under-capitalized entrants."},
+            {"topic": "Accreditation (ACHC / URAC / Joint Commission)",
+             "detail": "Specialty-pharmacy / home-infusion accreditation "
+                       "is table-stakes for payer network contracts.",
+             "status": "Standing.", "impact": N,
+             "implication": "A contracting prerequisite — diligence the "
+                            "target's accreditations + renewal calendar."},
+            {"topic": "DSCSA track-and-trace",
+             "detail": "Drug Supply Chain Security Act enhanced "
+                       "interoperable tracing; stabilization period ran "
+                       "into late 2024 ahead of full enforcement.",
+             "status": "Enforcement ramping post-2024.", "impact": H,
+             "implication": "Compliance cost + systems lift on drug "
+                            "handling — a cost, not a differentiator."},
+            {"topic": "FDA drug shortages",
+             "detail": "Periodic shortages of infusion essentials (IV "
+                       "fluids, TPN components, some antibiotics).",
+             "status": "Recurring (live FDA status on this page).",
+             "impact": H,
+             "implication": "Operational + sourcing risk — inventory "
+                            "discipline + sole-source exposure to manage."},
+         ]},
+    ]
+    tail = sum(1 for c in cats for i in c["items"] if i["impact"] == T)
+    head = sum(1 for c in cats for i in c["items"] if i["impact"] == H)
+    neut = sum(1 for c in cats for i in c["items"] if i["impact"] == N)
+    return {
+        "categories": cats,
+        "tailwinds": tail, "headwinds": head, "neutral": neut,
+        "net_read": (
+            "The federal trend is a TAILWIND for the platform's SITE "
+            "(site-neutral + the HIT benefit push volume to AIC/home) but "
+            "a HEADWIND for the DRUG SPREAD (IRA, biosimilars, 340B, "
+            "white-bagging all compress it). Texas adds a structural "
+            "tailwind — no CON — against a Medicaid-non-expansion payer-"
+            "mix headwind. Net: underwrite the thesis on SERVICE margin + "
+            "commercial mix + de-novo runway, not the drug margin."),
+        "note": ("Regulatory + reimbursement environment as of 2024–2025. "
+                 "Federal items sourced to statute / CMS rule / USP; "
+                 "Texas items to state regulation — confirm state-specific "
+                 "statutes (esp. white-bagging) as of the engagement date."),
+    }
+
+
 def infusion_risk_register() -> List[Dict[str, Any]]:
     """Channel-specific risk register for AIC + home infusion, each
     risk tagged with severity, who it hits, and — critically — the RCM
@@ -2682,6 +2897,7 @@ def build_texas_infusion_analysis(
         },
         "players": infusion_players(),
         "risk_register": infusion_risk_register(),
+        "regulatory_environment": regulatory_reimbursement_environment(),
         "rcm_playbook": rcm_playbook(),
         "aic_economics": aic_chair_economics(**aic_overrides),
         "aic_sensitivity": aic_sensitivity(**aic_overrides),
