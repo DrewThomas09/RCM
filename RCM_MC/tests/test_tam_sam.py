@@ -1672,3 +1672,24 @@ class ReciprocalLinkTests(unittest.TestCase):
             key = template_for_sector(s)
             self.assertIsNotNone(key, s)
             self.assertIn(key, TEMPLATES, s)
+
+
+class GrowthSortTests(unittest.TestCase):
+    """The cross-industry view sorts by TAM (biggest pieces) or growth
+    (growing fastest) — both of the user's questions, first-class."""
+
+    def test_default_sorts_by_tam(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["hospitals"]})
+        seg = h.split("Cross-industry view")[1]
+        # Hospitals ($868B) leads the TAM sort.
+        self.assertLess(seg.find("Hospitals"), seg.find("Fertility"))
+
+    def test_growth_sort_reorders(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["hospitals"],
+                                 "sort": ["growth"]})
+        seg = h.split("Cross-industry view")[1]
+        # Fertility (+12.5%/yr) leads the growth sort.
+        self.assertLess(seg.find("Fertility"), seg.find("Hospitals"))
+        self.assertIn("sort=growth", h)

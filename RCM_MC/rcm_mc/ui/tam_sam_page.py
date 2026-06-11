@@ -588,10 +588,11 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
     )
 
 
-def _industry_comparison_panel(active_key: str) -> str:
-    """Every sized vertical side by side — TAM × growth, sorted by size.
-    The cross-industry view: where the biggest pieces are, and where
-    they grow fastest. Each row links into its build."""
+def _industry_comparison_panel(active_key: str,
+                               sort: str = "tam") -> str:
+    """Every sized vertical side by side — sortable by TAM (where the
+    biggest pieces are) or composite growth (where it grows fastest).
+    Each row links into its build."""
     from ..diligence.tam_sam import TEMPLATES, compute as _compute
     rows = []
     for key, factory in TEMPLATES.items():
@@ -602,7 +603,10 @@ def _industry_comparison_panel(active_key: str) -> str:
         except Exception:  # noqa: BLE001
             continue
         rows.append((key, o["name"], o["tam"], o["composite_cagr_pct"]))
-    rows.sort(key=lambda r: -r[2])
+    if sort == "growth":
+        rows.sort(key=lambda r: -r[3])
+    else:
+        rows.sort(key=lambda r: -r[2])
     max_tam = rows[0][2] if rows else 1
     trs = ""
     for key, name, tam, cagr in rows:
@@ -628,9 +632,15 @@ def _industry_comparison_panel(active_key: str) -> str:
         '<th>Relative size</th>'
         '<th style="text-align:right;">Composite growth</th>'
         f'</tr></thead><tbody>{trs}</tbody></table>'
-        '<p class="ts2-src" style="margin:8px 0 0;">Template defaults — '
-        'each row opens its full build (chain, segments, tornado, state '
-        'data where a CMS file is vendored). Green ≥4%/yr · red = '
+        f'<p class="ts2-src" style="margin:8px 0 0;">Sort: '
+        f'<a href="/diligence/tam-sam?template={html.escape(active_key)}" '
+        f'style="font-weight:{700 if sort != "growth" else 400};'
+        'color:var(--sc-navy);">biggest pieces (TAM)</a> · '
+        f'<a href="/diligence/tam-sam?template={html.escape(active_key)}'
+        '&sort=growth" '
+        f'style="font-weight:{700 if sort == "growth" else 400};'
+        'color:var(--sc-navy);">growing fastest</a>. Template defaults — '
+        'each row opens its full build. Green ≥4%/yr · red = '
         'declining.</p>',
         title="Cross-industry view · where the biggest pieces grow "
               "fastest",
@@ -968,7 +978,8 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
 
     body = (
         _CSS + title + src + tmpl_bar + scen_bar + basis + funnel
-        + _industry_comparison_panel(tmpl_key)
+        + _industry_comparison_panel(
+            tmpl_key, sort=(qs.get("sort") or ["tam"])[0])
         + chain_panel + seg_panel + proj_panel
         + _tornado_panel(model, out["tam"])
         + _diligence_agenda_panel(out)
