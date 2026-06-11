@@ -89,6 +89,76 @@ def _demographics_panel(ccns: List[str], xf) -> str:
                    vintage="latest ACS vintage")
 
 
+def _platform_composition_svg(facilities: List[Any]) -> str:
+    """Anchor-or-equals: each facility's NPR share of the platform.
+
+    One 100% strip of the combined filed NPR — answers whether the
+    scenario is a true merger of equals or one anchor plus tuck-ins,
+    which the facility table's absolute dollars don't show directly.
+    Facilities that don't report NPR are excluded from the strip and
+    counted in the caption (shares are of *reported* NPR only — no
+    imputation). Fewer than two reporting facilities renders nothing.
+    """
+    items = [
+        (str(f.ccn), str(f.name or f.ccn), float(f.npr))
+        for f in facilities
+        if getattr(f, "npr", None) and float(f.npr) > 0
+    ]
+    if len(items) < 2:
+        return ""
+    items.sort(key=lambda t: -t[2])
+    total = sum(npr for _, _, npr in items)
+    n_missing = len(facilities) - len(items)
+
+    width, bar_h = 720, 34
+    height = bar_h + 22
+    tones = ("#0b2341", "#1F7A75", "#46617e", "#6e8b8a")
+    segs, x = [], 0.0
+    for i, (ccn, name, npr) in enumerate(items):
+        share = npr / total
+        w = width * share
+        tone = tones[i % len(tones)]
+        segs.append(
+            f'<rect x="{x:.1f}" y="0" width="{max(w - 2, 1):.1f}" '
+            f'height="{bar_h}" fill="{tone}" fill-opacity="0.9"/>'
+        )
+        if w >= 70:
+            short = name.split(" ")[0][:12]
+            segs.append(
+                f'<text x="{x + w / 2:.1f}" y="{bar_h / 2 + 3.5}" '
+                f'text-anchor="middle" font-size="10" fill="#ffffff">'
+                f'{_html.escape(short)} {share * 100:.0f}%</text>'
+            )
+        x += w
+    top_share = items[0][2] / total
+    shape = (
+        "ANCHOR + TUCK-INS" if top_share >= 0.5
+        else "BALANCED PLATFORM" if top_share <= 0.35
+        else "LEAD FACILITY + PEERS"
+    )
+    caption_bits = [
+        f"NPR SHARE OF {len(items)} REPORTING FACILITIES",
+        f"TOP FACILITY {top_share * 100:.0f}% → {shape}",
+    ]
+    if n_missing:
+        caption_bits.append(f"{n_missing} FACILIT"
+                            f"{'Y' if n_missing == 1 else 'IES'} "
+                            "WITHOUT FILED NPR EXCLUDED")
+    svg = (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Facility share of combined platform NPR">'
+        + "".join(segs)
+        + f'<text x="0" y="{height - 4}" font-size="9" letter-spacing="1" '
+        f'fill="var(--sc-text-dim,#6a7480)">{" · ".join(caption_bits)}</text>'
+        "</svg>"
+    )
+    return (
+        '<div class="ck-rollup-composition" style="margin:0 0 12px;">'
+        + svg + "</div>"
+    )
+
+
 def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None,
                           active_deal: Optional[Dict[str, str]] = None) -> str:
     qs = qs or {}
@@ -258,7 +328,8 @@ def render_rollup_builder(qs: Optional[Dict[str, List[str]]] = None,
             vintage="latest HCRIS filing per CCN")
 
         facilities_tbl = ck_panel(
-            '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+            _platform_composition_svg(s.facilities)
+            + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
             '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
             '<th style="text-align:left;padding:5px 8px;">CCN</th>'
             '<th style="text-align:left;padding:5px 8px;">Facility</th>'
