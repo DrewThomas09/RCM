@@ -538,6 +538,132 @@ class CapacityScorecardTests(unittest.TestCase):
                     self.assertLessEqual(opp["score"], 100)
 
 
+class CDCProxyTests(unittest.TestCase):
+    """CDC PLACES / ACS public-health proxies — every rate is a real
+    published value (CDC PLACES full-population or CMS Medicare), every
+    county count recomputes from real population × the proxy rate, and
+    the live API path falls back cleanly when egress is blocked."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+
+    def test_proxies_cover_named_therapy_families(self):
+        from rcm_mc.diligence.texas_infusion import texas_cdc_proxies
+        cp = texas_cdc_proxies()
+        keys = {t["key"] for t in cp["therapies"]}
+        # The user-named clinical proxies all present.
+        self.assertEqual(keys, {"rheum", "onc", "iron", "chronic"})
+        anchors = {t["key"]: t["anchor_measure"] for t in cp["therapies"]}
+        self.assertEqual(anchors["rheum"], "arthritis")
+        self.assertEqual(anchors["onc"], "cancer")
+        self.assertEqual(anchors["iron"], "kidney_disease")
+        self.assertIn(anchors["chronic"], ("diabetes", "obesity"))
+
+    def test_state_rates_are_real_sourced_values(self):
+        from rcm_mc.diligence.texas_infusion import texas_cdc_state_rates
+        from rcm_mc.data.cdc_places_agg import places_equity_state
+        rates = texas_cdc_state_rates()
+        # Diabetes/obesity rates equal the REAL vendored TX PLACES values.
+        pl = places_equity_state("TX")
+        self.assertAlmostEqual(rates["diabetes"]["rate_pct"],
+                               round(float(pl["diabetes"]), 2), places=2)
+        self.assertAlmostEqual(rates["obesity"]["rate_pct"],
+                               round(float(pl["obesity"]), 2), places=2)
+        self.assertIn("PLACES", rates["diabetes"]["source"])
+        # Arthritis/cancer/CKD from CMS Medicare (TX-adjusted), real.
+        self.assertIn("Medicare", rates["arthritis"]["source"])
+        for k in ("arthritis", "cancer", "kidney_disease"):
+            self.assertGreater(rates[k]["rate_pct"], 0)
+
+    def test_offline_falls_back_not_live(self):
+        # No egress in CI/sandbox → the live flag is False and the API
+        # client returns empty (fails closed, never fabricates).
+        self.assertFalse(self.a["cdc_proxies"]["live"])
+        from rcm_mc.data.cdc_places_api import (
+            fetch_places_counties, places_counties_by_fips)
+        self.assertEqual(fetch_places_counties("TX"), [])
+        self.assertEqual(places_counties_by_fips("ZZ"), {})
+
+    def test_county_demand_uses_correct_denominator(self):
+        from rcm_mc.diligence.texas_infusion import (
+            county_cdc_demand, texas_cdc_state_rates)
+        rates = texas_cdc_state_rates()
+        county = {"population": 1_000_000, "seniors": 130_000,
+                  "female_share": 0.50}
+        rows = {r["key"]: r for r in county_cdc_demand(
+            county, rates, None, 0.50)}
+        adults = 1_000_000 * 0.76
+        # Full-population PLACES rate (chronic/diabetes) → adults base.
+        exp_chronic = round(adults * rates["diabetes"]["rate_pct"] / 100)
+        self.assertEqual(rows["chronic"]["estimated_patients"], exp_chronic)
+        self.assertEqual(rows["chronic"]["denominator"], "adults 18+")
+        # Medicare rate (cancer) → senior (65+) base, not all adults.
+        exp_onc = round(130_000 * rates["cancer"]["rate_pct"] / 100)
+        self.assertEqual(rows["onc"]["estimated_patients"], exp_onc)
+        self.assertIn("Medicare", rows["onc"]["denominator"])
+
+    def test_iv_iron_weighted_by_female_share(self):
+        from rcm_mc.diligence.texas_infusion import (
+            county_cdc_demand, texas_cdc_state_rates)
+        rates = texas_cdc_state_rates()
+        county = {"population": 1_000_000, "seniors": 130_000}
+        low = {r["key"]: r for r in county_cdc_demand(
+            county, rates, None, 0.45)}["iron"]["estimated_patients"]
+        high = {r["key"]: r for r in county_cdc_demand(
+            county, rates, None, 0.55)}["iron"]["estimated_patients"]
+        # More women → larger anemia/IV-iron pool.
+        self.assertGreater(high, low)
+
+    def test_live_county_rate_overrides_state(self):
+        # When a PLACES county row is present, the full-population rate
+        # is used (and applied to adults), overriding the state fallback.
+        from rcm_mc.diligence.texas_infusion import (
+            county_cdc_demand, texas_cdc_state_rates)
+        rates = texas_cdc_state_rates()
+        county = {"population": 1_000_000, "seniors": 130_000}
+        places_row = {"arthritis": 25.0, "cancer": 7.0,
+                      "kidney_disease": 3.5, "diabetes": 14.0,
+                      "population": 1_000_000}
+        rows = {r["key"]: r for r in county_cdc_demand(
+            county, rates, places_row, 0.50)}
+        self.assertTrue(rows["rheum"]["rate_is_county_live"])
+        self.assertEqual(rows["rheum"]["rate_pct"], 25.0)
+        # Live arthritis applies to all adults, not seniors.
+        self.assertEqual(rows["rheum"]["estimated_patients"],
+                         round(1_000_000 * 0.76 * 25.0 / 100))
+
+    def test_payer_access_index_bounded_and_real(self):
+        from rcm_mc.diligence.texas_infusion import (
+            county_payer_access, texas_cdc_state_rates)
+        rates = texas_cdc_state_rates()
+        good = county_payer_access(
+            {"uninsured_rate": 0.05, "child_poverty_rate": 0.05}, rates)
+        bad = county_payer_access(
+            {"uninsured_rate": 0.30, "child_poverty_rate": 0.40}, rates)
+        self.assertGreaterEqual(good["score"], 0)
+        self.assertLessEqual(good["score"], 100)
+        self.assertGreater(good["score"], bad["score"])
+        self.assertIn(good["band"], ("strong", "moderate", "constrained"))
+
+    def test_metro_and_county_demand_attached_and_consistent(self):
+        for dd in self.a["metro_deepdives"]:
+            self.assertTrue(dd["cdc_demand"])
+            # Metro total per therapy = sum of its counties.
+            by_key = {r["key"]: r["estimated_patients"]
+                      for r in dd["cdc_demand"]}
+            roll = {}
+            for s in dd["suburbs"]:
+                for d in s["cdc_demand"]:
+                    roll[d["key"]] = roll.get(d["key"], 0) \
+                        + d["estimated_patients"]
+            for k, v in by_key.items():
+                self.assertEqual(v, roll.get(k))
+
+    def test_analysis_json_serializable(self):
+        import json
+        json.dumps(self.a)  # must not raise
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -560,6 +686,8 @@ class PageRenderTests(unittest.TestCase):
             "capacity by owner", "Ownership segment",
             "Texas growth scorecard", "TOP-10 COUNTY OPPORTUNITIES",
             "UNDERSUPPLIED GROWTH MARKETS", "CHAIR CAPACITY",
+            "CDC public-health demand proxies", "CDC/ACS proxy",
+            "CDC-PROXIED INFUSION DEMAND BY THERAPY", "Payer access",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 

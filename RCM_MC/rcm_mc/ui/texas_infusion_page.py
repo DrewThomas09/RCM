@@ -728,6 +728,121 @@ def _provider_segments_section(a: Dict[str, Any]) -> str:
         f'pharmacy-board / NPPES pull in diligence.</p>')
 
 
+_CDC_TONE = {"rheum": "#6e5b9e", "onc": _NEG, "iron": _TEAL,
+             "chronic": _WARN, "access": _NAVY}
+
+
+def _cdc_proxies_section(a: Dict[str, Any]) -> str:
+    """CDC PLACES / ACS public-health proxies — one row per infusion
+    therapy family with the real proxy measure, TX rate, and source.
+    A live/offline badge flags whether county rates came from the
+    Socrata API or the vendored TX state fallback."""
+    cp = a.get("cdc_proxies") or {}
+    rows_data = cp.get("therapies", [])
+    if not rows_data:
+        return (f'<p style="font-size:12px;color:{_FAINT};">CDC proxy '
+                f'data unavailable.</p>')
+    live = cp.get("live")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:{("#e6f4ee" if live else "#f3efe4")};'
+        f'color:{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">'
+        f'{"LIVE — CDC PLACES county API" if live else "OFFLINE — TX state rate (county API when egress available)"}'
+        f'</span>')
+    rows = ""
+    for t in rows_data:
+        tone = _CDC_TONE.get(t["key"], _FAINT)
+        meas = ", ".join(t["measures"])
+        rows += (
+            f'<tr>'
+            f'<td style="padding:6px 8px;"><span style="display:inline-block;'
+            f'width:9px;height:9px;border-radius:2px;background:{tone};'
+            f'margin-right:6px;"></span><strong>{html.escape(t["therapy"])}'
+            f'</strong></td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};'
+            f'font-family:monospace;">{html.escape(meas)}</td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'font-weight:700;color:{tone};">{t["rate_pct"]:.1f}%</td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_FAINT};">'
+            f'{html.escape(t["denominator"])}</td>'
+            f'<td style="padding:6px 8px;font-size:10.5px;color:{_FAINT};">'
+            f'{html.escape(t["source"])}</td>'
+            f'</tr>')
+    notes = "".join(
+        f'<li style="margin:2px 0;font-size:11px;color:{_DIM};">'
+        f'<strong style="color:{_CDC_TONE.get(t["key"], _FAINT)};">'
+        f'{html.escape(t["therapy"])}:</strong> {html.escape(t["note"])}</li>'
+        for t in rows_data)
+    return (
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0;'
+        f'max-width:680px;">{html.escape(cp.get("note", ""))}</p>{badge}</div>'
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:6px 8px;">Infusion therapy '
+        f'family</th>'
+        f'<th style="text-align:left;padding:6px 8px;">CDC/ACS proxy</th>'
+        f'<th style="text-align:right;padding:6px 8px;">TX rate</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Denominator</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Source</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<ul style="margin:10px 0 0;padding-left:18px;">{notes}</ul>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'PLACES = CDC model-based full-population crude prevalence '
+        f'(BRFSS + ACS). Arthritis / cancer / CKD shown here from CMS '
+        f'Medicare chronic-conditions (TX-adjusted) until the PLACES '
+        f'county API is reached, then full-population rates apply. '
+        f'Female share for the IV-iron pool from ACS B01001.</p>')
+
+
+def _cdc_demand_block(dd: Dict[str, Any]) -> str:
+    """Per-metro CDC-proxied therapy demand — ranked bars + a payer-
+    access read pulled from the top county."""
+    rows = dd.get("cdc_demand", [])
+    if not rows:
+        return ""
+    mx = max((r["estimated_patients"] for r in rows), default=1) or 1
+    bars = ""
+    for r in rows:
+        w = r["estimated_patients"] / mx * 100
+        tone = _CDC_TONE.get(r["key"], _FAINT)
+        bars += (
+            f'<div style="display:grid;grid-template-columns:1fr 90px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div><div style="font-size:11px;color:#1a2332;">'
+            f'{html.escape(r["therapy"])}</div>'
+            f'<div style="height:11px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;margin-top:2px;"><div style="height:100%;'
+            f'width:{w:.0f}%;background:{tone};"></div></div></div>'
+            f'<div style="font-size:11px;font-weight:700;color:{tone};'
+            f'text-align:right;">{r["estimated_patients"]:,}</div></div>')
+    # Payer access read from the largest county.
+    top = max(dd.get("suburbs", [{}]),
+              key=lambda s: s.get("infusion_patients", 0), default={})
+    pa = top.get("payer_access") or {}
+    pa_tone = (_POS if pa.get("band") == "strong" else
+               _WARN if pa.get("band") == "moderate" else _NEG)
+    pa_html = (
+        f'<div style="margin-top:8px;padding:7px 11px;background:#fff;'
+        f'border-left:3px solid {pa_tone};border-radius:0 3px 3px 0;'
+        f'font-size:11px;color:#1a2332;line-height:1.5;">'
+        f'<strong>Payer access ({html.escape(top.get("county", ""))}):</strong> '
+        f'index <strong style="color:{pa_tone};">{pa.get("score", 0):.0f}</strong> '
+        f'(<span style="color:{pa_tone};">{html.escape(pa.get("band", ""))}</span>) '
+        f'— {pa.get("uninsured_rate", 0)*100:.0f}% uninsured · '
+        f'{pa.get("child_poverty_rate", 0)*100:.0f}% child poverty · '
+        f'{pa.get("routine_checkup_pct", 0):.0f}% routine checkup</div>'
+        if pa else "")
+    return (
+        f'<div style="margin-top:10px;"><div style="font-size:10px;'
+        f'color:{_FAINT};letter-spacing:0.06em;margin-bottom:3px;">'
+        f'CDC-PROXIED INFUSION DEMAND BY THERAPY (est. patients · real '
+        f'population × proxy prevalence)</div>{bars}{pa_html}</div>')
+
+
 _SAT_TONE = {"UNDERSUPPLIED": _NEG, "balanced": _TEAL,
              "saturated": _WARN, "no local capacity": _NEG}
 
@@ -1176,6 +1291,7 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'</div>'
         + north
         + illness
+        + _cdc_demand_block(dd)
         + _county_capacity_table(dd)
         # White-space
         + f'<div style="margin-top:10px;padding:8px 12px;background:#fff;'
@@ -1238,6 +1354,11 @@ def render_texas_infusion_page(
                             eyebrow="NATIONAL/REGIONAL · HEALTH-SYSTEM · "
                                     "PHYSICIAN · INDEPENDENT AIC · HOME")
         + _provider_segments_section(a)
+
+        + ck_section_header("CDC public-health demand proxies",
+                            eyebrow="PLACES + ACS → THERAPY DEMAND · LIVE API "
+                                    "WITH OFFLINE FALLBACK")
+        + _cdc_proxies_section(a)
 
         + ck_section_header("Where the risks are",
                             eyebrow="REIMBURSEMENT · RCM · MARKET — WITH THE "

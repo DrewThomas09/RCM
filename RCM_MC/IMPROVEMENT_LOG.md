@@ -3043,3 +3043,47 @@ channel (<3×, ais_demand < total); saturation bands mixed; scorecard
 ranks descending + undersupplied flagged; growth corridors surface;
 opportunity score bounded 0–100. Plus 6 new page-render needles. 54
 passed; guide + JSON-API contracts green.
+
+## W2-151 (2026-06-11) — Texas infusion: CDC PLACES + ACS public-health demand proxies (wave #53)
+Wired real CDC / Census public-health data into the Texas AIC breakdown
+so infusion demand is proxied by verifiable prevalence, by county:
+- **Live CDC PLACES county API** (`cdc_places_api.py`) — Socrata client
+  (dataset i46a-9kgh, the same release the vendored aggregate was built
+  from) pulling full-population county crude prevalence for arthritis,
+  kidney (CKD), cancer, diabetes, obesity, poor physical/general health,
+  uninsured, and routine checkup. Paginated, disk-cached, and **fails
+  closed** — any network error returns empty so callers fall back to the
+  real vendored TX state rate; nothing is fabricated.
+- **Census ACS sex client** (`acs_sex.py`) — county female share from ACS
+  5-yr table B01001 (live API + cache), with a published TX statewide
+  fallback. Used to weight the IV-iron / anemia pool toward women.
+- **Therapy-proxy mapping** (the user's spec): rheumatology→arthritis,
+  oncology→cancer, IV iron→CKD + poor health + female share, general
+  chronic→diabetes + obesity + poor physical health, payer access→
+  uninsured + poverty + routine checkup. `texas_cdc_proxies()` /
+  `texas_cdc_state_rates()` assemble the real state rates (CDC PLACES
+  full-pop where vendored; CMS Medicare arthritis/cancer/CKD TX-adjusted
+  otherwise), and the live county API overrides them with real pop-
+  weighted county rates when egress is available.
+- **Denominator-honest county counts** — `county_cdc_demand()` applies
+  each rate to its OWN denominator: full-population PLACES rates → all
+  adults; Medicare-beneficiary rates → the 65+ pool (fixes an inflated
+  IV-iron count). Per-county estimates recompute from real population ×
+  proxy rate; the live county rate overrides the state fallback when
+  present. `county_payer_access()` gives a 0–100 commercial-access index
+  from real ACS uninsured + child poverty + PLACES routine-checkup.
+- **Page**: a "CDC public-health demand proxies" section (therapy →
+  proxy measure → TX rate → denominator → source, with a LIVE/OFFLINE
+  API badge) + a per-city CDC-proxied therapy-demand bar block with the
+  county payer-access read.
+Egress is blocked in CI/sandbox (self-signed-cert proxy), so the page
+ships on the real vendored/CMS fallback and lights up the live county
+rates automatically wherever network egress is permitted.
+**Verify**: +9 proxy/integration tests (63 in test_texas_infusion) +
+new `test_cdc_places_api.py` (7) — proxies cover the named therapies,
+state rates equal real vendored PLACES values, offline falls back (not
+live) and the API fails closed, county counts use the correct
+denominator, IV-iron scales with female share, live rate overrides
+state, payer-access bounded 0–100, metro totals = sum of counties,
+analysis JSON-serializable; API parsing from mocked payloads. Full
+suite green.
