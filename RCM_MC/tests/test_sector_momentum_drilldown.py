@@ -45,6 +45,16 @@ class DealSearchEvRollupTests(unittest.TestCase):
         self.assertIn("$2.00B", h)
         self.assertNotIn("$2000M", h)
 
+    def test_find_comps_ev_rolls_to_billions(self):
+        # Same invariant on the Find Comps results table ("$2.00B" not
+        # "$2,000M").
+        import re
+        from rcm_mc.ui.data_public.find_comps_page import render_find_comps
+        h = render_find_comps(
+            {"sector": "hospital", "ev_mm": "500", "max_n": "15"})
+        self.assertNotRegex(h, r"\$[0-9]{1,3},[0-9]{3}M\b")
+        self.assertRegex(h, r"\$[0-9.]+B\b")
+
 
 if __name__ == "__main__":
     unittest.main()
