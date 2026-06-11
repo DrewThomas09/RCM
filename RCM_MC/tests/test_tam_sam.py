@@ -336,3 +336,29 @@ class IrfLtchAndPolishTests(unittest.TestCase):
         self.assertIn("xl/worksheets/sheet4.xml", z.namelist())
         # The sheet carries the actual source strings.
         self.assertIn(b"MedPAC", z.read("xl/worksheets/sheet4.xml"))
+
+
+class BehavioralAscIndustryTests(unittest.TestCase):
+    """Industries #7–8 — behavioral health + ASC: SAMHSA/CMS-anchored
+    chains, deals-only dives (no CMS facility file → geography omitted
+    rather than fabricated)."""
+
+    def test_bh_and_asc_chains(self):
+        from rcm_mc.diligence.tam_sam import (
+            asc_template, behavioral_health_template, compute,
+        )
+        bh = compute(behavioral_health_template())
+        self.assertAlmostEqual(bh["tam"], 59_000_000 * 0.5 * 3_000,
+                               places=2)
+        names = {g["name"]: g["annual_pct"] for g in bh["growth_drivers"]}
+        self.assertLess(names["Clinician workforce shortage"], 0)
+        asc = compute(asc_template())
+        self.assertAlmostEqual(asc["tam"], 6_300 * 3_650 * 2_000, places=2)
+
+    def test_deals_only_dive_no_fabricated_geography(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        for key in ("behavioral_health", "asc"):
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn("What this sector traded for", h, key)
+            self.assertNotIn("State footprint", h, key)
+            self.assertIn("rather than fabricated", h, key)
