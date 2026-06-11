@@ -1234,6 +1234,34 @@ def hospital_at_home_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def ltc_pharmacy_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="ltc_pharmacy",
+        sector_tokens=("ltc_pharmacy", "pharmacy_ltc"),
+        note=("No public closed-door pharmacy census — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def dme_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="dme",
+        sector_tokens=("dme", "dme_home_health", "medical_equipment"),
+        note=("CMS DMEPOS supplier files aren't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def idd_services_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="idd_services",
+        sector_tokens=("idd_services", "idd", "disability_services"),
+        note=("State IDD provider rosters aren't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1269,6 +1297,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "dermatology": dermatology_deep_dive,
     "pain_management": pain_management_deep_dive,
     "hospital_at_home": hospital_at_home_deep_dive,
+    "ltc_pharmacy": ltc_pharmacy_deep_dive,
+    "dme": dme_deep_dive,
+    "idd_services": idd_services_deep_dive,
 }
 
 

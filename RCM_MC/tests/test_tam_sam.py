@@ -827,3 +827,41 @@ class NicheVerticalsBatch6Tests(unittest.TestCase):
     def test_catalogue_at_31_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 32)   # 31 + blank
+
+
+class NicheVerticalsBatch7Tests(unittest.TestCase):
+    """Industries #32–34 — LTC pharmacy, DME, IDD services."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "ltc_pharmacy": 3_100_000 * 110 * 55,
+            "dme": 16_000_000 * 3_800,
+            "idd_services": 1_500_000 * 45_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_structural_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # LTC pharmacy: generic deflation makes it near-flat (+0.9%) —
+        # the tool does not inflate it.
+        ltc = compute(TEMPLATES["ltc_pharmacy"]())
+        self.assertLess(ltc["composite_cagr_pct"], 2.0)
+        # DME: competitive bidding is the defining headwind.
+        dme = compute(TEMPLATES["dme"]())
+        names = {g["name"]: g["annual_pct"] for g in dme["growth_drivers"]}
+        self.assertLess(names["Competitive bidding rounds"], 0)
+        # IDD: the DSP workforce crisis is THE constraint.
+        idd = compute(TEMPLATES["idd_services"]())
+        names = {g["name"]: g["annual_pct"] for g in idd["growth_drivers"]}
+        self.assertLessEqual(names["DSP workforce crisis"], -3.0)
+
+    def test_catalogue_at_34_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 35)   # 34 + blank

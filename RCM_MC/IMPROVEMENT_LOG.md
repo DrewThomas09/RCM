@@ -1176,6 +1176,25 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-73 — niche verticals batch 7: LTC pharmacy, DME, IDD services (18:45Z)
+**Niche-vertical sprint** — industries #32–34:
+  - ltc_pharmacy ($18.8B, +0.9%): 3.1M LTC residents (ASCP/NIC) × 110
+    scripts × $55; AL +6% ★ as census shifts from SNF; generic deflation
+    makes the market NEAR-FLAT and the tool says so; Omnicare/PharMerica
+    ~50% duopoly with AL as the open flank.
+  - dme ($60.8B, +3.4%): 16M patients (CMS DMEPOS) × $3,800; diabetes/
+    CGM +12% ★ (the fastest line in the entire catalogue's segments);
+    competitive bidding carried as the defining headwind; respiratory
+    consolidated, diabetes + complex rehab named as the open lanes.
+  - idd_services ($67.5B, +2.4%): 1.5M supported individuals (KFF) ×
+    $45K HCBS blend; host-home +9% ★ capital-light vs staffing-exposed
+    group homes +3%; the DSP workforce crisis priced at −3 (vacancy
+    ~15%, turnover ~45% — THE constraint).
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; LTC-pharmacy near-flat pinned (<2%); bidding
+negative pinned; DSP crisis ≤ −3 pinned; catalogue ≥35 templates pinned;
+test_tam_sam 71 passed. 34 industries.
+
 ## W2-72 — niche verticals batch 6: dermatology, pain management, hospital-at-home (18:15Z)
 **Niche-vertical sprint** — industries #29–31:
   - dermatology ($18.8B, +4.0%): 12,500 dermatologists (AAD) × $1.5M

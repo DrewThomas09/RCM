@@ -1808,6 +1808,164 @@ def hospital_at_home_template() -> TamSamModel:
     )
 
 
+
+def ltc_pharmacy_template() -> TamSamModel:
+    """Long-term-care pharmacy sizing — the SNF/AL med-dispensing
+    niche. ASCP-anchored."""
+    return TamSamModel(
+        name="LTC pharmacy · institutional dispensing market",
+        chain=[
+            DriverStep("US LTC residents served (SNF+AL+IDD)",
+                       3_100_000, op="base", unit="residents",
+                       source="ASCP / NIC occupancy-based estimate"),
+            DriverStep("Avg scripts per resident / yr", 110, op="mult",
+                       unit="scripts/yr",
+                       source="ASCP (9+ meds/resident, monthly cycles)"),
+            DriverStep("Avg revenue per script", 55, op="price",
+                       unit="$/script",
+                       source="generic-heavy LTC mix + per-diem "
+                              "consulting blend"),
+        ],
+        segments=[
+            Segment("SNF (closed-door)", 0.50, None,
+                    note="Omnicare/PharMerica territory — contract "
+                         "churn risk", growth_pct=2.0),
+            Segment("Assisted living", 0.30, None,
+                    note="the growth setting — census shifting from "
+                         "SNF to AL", growth_pct=6.0),
+            Segment("IDD / behavioral group homes", 0.12, None,
+                    note="sticky contracts, regulatory moat",
+                    growth_pct=5.0),
+            Segment("Hospice / other", 0.08, None, growth_pct=4.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Senior census growth", 3.0,
+                         "the 80+ wave fills AL beds"),
+            GrowthDriver("Polypharmacy intensity", 1.5,
+                         "meds per resident still climbing"),
+            GrowthDriver("Generic deflation", -2.0,
+                         "per-script revenue deflates as generics "
+                         "deflate — the structural headwind"),
+            GrowthDriver("PBM/payer rate pressure", -1.5,
+                         "Part D plan reimbursement compression"),
+        ],
+        sam_share=0.45,
+        sam_note="Regional closed-door pharmacies + AL-focused "
+                 "platforms (national duopoly accounts excluded)",
+        som_share=0.05,
+        som_note="Omnicare (CVS) + PharMerica hold ~50% of SNF beds; "
+                 "AL is the open flank",
+        horizon_years=5,
+        basis_note="Template defaults from ASCP/NIC public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def dme_template() -> TamSamModel:
+    """Durable medical equipment sizing — home-based care's hardware
+    layer. CMS DMEPOS-anchored."""
+    return TamSamModel(
+        name="DME · home medical equipment market",
+        chain=[
+            DriverStep("US DME patients served / yr", 16_000_000,
+                       op="base", unit="patients",
+                       source="CMS DMEPOS utilization + AAHomecare"),
+            DriverStep("Avg annual DME spend per patient", 3_800,
+                       op="price", unit="$/patient/yr",
+                       source="CMS DMEPOS fee schedules × category "
+                              "mix (O2, PAP, mobility, diabetic)"),
+        ],
+        segments=[
+            Segment("Respiratory (O2, vents, PAP)", 0.40, None,
+                    note="the recurring-rental annuity — Lincare/"
+                         "AdaptHealth territory", growth_pct=5.0),
+            Segment("Diabetes (CGM, pumps)", 0.25, None,
+                    note="the fastest line — CGM adoption",
+                    growth_pct=12.0),
+            Segment("Mobility / complex rehab", 0.20, None,
+                    growth_pct=3.0),
+            Segment("Wound / urological / other", 0.15, None,
+                    growth_pct=4.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Home-shift of care", 4.0,
+                         "everything moving home needs equipment"),
+            GrowthDriver("CGM / connected-device adoption", 3.0,
+                         "diabetes tech penetration"),
+            GrowthDriver("Competitive bidding rounds", -2.5,
+                         "CMS DMEPOS bidding resets rates down — the "
+                         "defining headwind"),
+            GrowthDriver("Audit / documentation burden", -1.0,
+                         "RAC/TPE audits on medical necessity"),
+        ],
+        sam_share=0.50,
+        sam_note="Regional DME + specialty categories outside the "
+                 "national consolidators' lock",
+        som_share=0.04,
+        som_note="AdaptHealth/Lincare/Rotech rolled respiratory; "
+                 "diabetes + complex rehab are the open lanes",
+        horizon_years=5,
+        basis_note="Template defaults from CMS DMEPOS/AAHomecare "
+                   "public data — replace with engagement data before "
+                   "IC use.",
+    )
+
+
+def idd_services_template() -> TamSamModel:
+    """IDD residential + day services sizing — the Medicaid-waiver
+    niche. KFF/HCBS-anchored."""
+    return TamSamModel(
+        name="IDD services · residential + day program market",
+        chain=[
+            DriverStep("US adults with IDD receiving paid supports",
+                       1_500_000, op="base", unit="individuals",
+                       source="KFF / state IDD agency rollups"),
+            DriverStep("Avg annual spend per individual", 45_000,
+                       op="price", unit="$/individual/yr",
+                       source="HCBS waiver per-capita (residential "
+                              "$80-120K / day-only $15-25K blend)"),
+        ],
+        segments=[
+            Segment("Group-home residential", 0.55, None,
+                    note="the census base — staffing-cost exposed",
+                    growth_pct=3.0),
+            Segment("Day programs / employment", 0.20, None,
+                    growth_pct=4.0),
+            Segment("In-home / SDS supports", 0.18, None,
+                    note="the policy-preferred growth setting",
+                    growth_pct=8.0),
+            Segment("Host-home / family models", 0.07, None,
+                    note="the capital-light fastest grower",
+                    growth_pct=9.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Waiver enrollment growth", 3.0,
+                         "waitlists in 35+ states unwind slowly — "
+                         "funded demand"),
+            GrowthDriver("Rate rebasing (DSP wages)", 2.5,
+                         "states rebasing rates to fix the DSP wage "
+                         "crisis — flows through revenue"),
+            GrowthDriver("Institutional → community shift", 1.0,
+                         "remaining ICF closures feed community "
+                         "providers"),
+            GrowthDriver("DSP workforce crisis", -3.0,
+                         "direct-support staffing is THE constraint — "
+                         "vacancy ~15%+, turnover ~45%"),
+            GrowthDriver("Medicaid budget cyclicality", -1.0,
+                         "state budget cycles gate rate updates"),
+        ],
+        sam_share=0.50,
+        sam_note="States with managed/stable waiver programs + "
+                 "provider-friendly rate structures",
+        som_share=0.03,
+        som_note="Mosaic/Sevita class platforms hold low single "
+                 "digits — fragmentation persists",
+        horizon_years=5,
+        basis_note="Template defaults from KFF/HCBS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -1865,6 +2023,9 @@ TEMPLATES = {
     "dermatology": dermatology_template,
     "pain_management": pain_management_template,
     "hospital_at_home": hospital_at_home_template,
+    "ltc_pharmacy": ltc_pharmacy_template,
+    "dme": dme_template,
+    "idd_services": idd_services_template,
     "blank": blank_template,
 }
 
