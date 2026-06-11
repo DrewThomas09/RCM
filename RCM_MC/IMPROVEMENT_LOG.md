@@ -1176,6 +1176,14 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-62 — scenario presets: Conservative / Base / Aggressive (13:15Z)
+**Sprint depth**: one-click scenario toggles on every build — Conservative
+halves tailwinds and amplifies headwinds ×1.5, Aggressive mirrors, typed
+driver values always win (presets apply before explicit overrides). BH
+composite swings +1.7% / +7.6% / +13.9% across the three.
+**Verify**: ordering pinned (con < base < agg); typed override beats the
+preset (pinned); chips render with active state; test_tam_sam 44 passed.
+
 ## W2-61 — per-segment growth divergence (12:55Z)
 **Sprint depth**: the within-industry "where it's growing fastest" map.
 Segment gains growth_pct; compute() emits per-segment Y-final TAM slices

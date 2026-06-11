@@ -117,6 +117,18 @@ def model_from_qs(qs: Dict[str, List[str]]) -> TamSamModel:
     som = fnum("som_share")
     if som is not None:
         model.som_share = max(0.0, min(100.0, som)) / 100.0
+    # Scenario presets — Conservative halves tailwinds and amplifies
+    # headwinds ×1.5; Aggressive mirrors. Applied BEFORE the explicit
+    # per-driver overrides so a typed value always wins.
+    scenario = first("scenario", "base").lower()
+    if scenario in ("conservative", "aggressive"):
+        for g in model.growth_drivers:
+            if scenario == "conservative":
+                g.annual_pct = (g.annual_pct * 0.5 if g.annual_pct > 0
+                                else g.annual_pct * 1.5)
+            else:
+                g.annual_pct = (g.annual_pct * 1.5 if g.annual_pct > 0
+                                else g.annual_pct * 0.5)
     for i, g in enumerate(model.growth_drivers):
         ov = fnum(f"growth{i}")
         if ov is not None and -50.0 <= ov <= 100.0:
@@ -492,6 +504,24 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         next_href="#ts2-export",
     )
 
+    scenario = (qs.get("scenario") or ["base"])[0].lower()
+    if scenario not in ("conservative", "base", "aggressive"):
+        scenario = "base"
+    scen_bar = (
+        '<div class="ts2-tmpl" style="margin:0 0 10px;">'
+        '<span class="ts2-src" style="align-self:center;'
+        'margin-right:4px;text-transform:uppercase;letter-spacing:.1em;">'
+        'Scenario</span>'
+        + "".join(
+            f'<a href="/diligence/tam-sam?template={html.escape(tmpl_key)}'
+            f'&scenario={s}" class="{"on" if s == scenario else ""}">'
+            f'{s.title()}</a>'
+            for s in ("conservative", "base", "aggressive"))
+        + '<span class="ts2-src" style="align-self:center;">'
+        'Conservative halves tailwinds / amplifies headwinds; '
+        'Aggressive mirrors. Typed driver values always win.</span>'
+        '</div>'
+    )
     tmpl_bar = (
         '<div class="ts2-tmpl">'
         + "".join(
@@ -704,7 +734,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
 
     body = (
-        _CSS + title + src + tmpl_bar + basis + funnel
+        _CSS + title + src + tmpl_bar + scen_bar + basis + funnel
         + _industry_comparison_panel(tmpl_key)
         + chain_panel + seg_panel + proj_panel
         + _tornado_panel(model, out["tam"])

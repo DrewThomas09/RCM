@@ -496,3 +496,34 @@ class SegmentDivergenceTests(unittest.TestCase):
         # Templates without per-segment growth keep the lean table.
         h2 = render_tam_sam_page({"template": ["snf"]})
         self.assertNotIn("Growth %/yr", h2)
+
+
+class ScenarioPresetTests(unittest.TestCase):
+    """One-click Conservative / Base / Aggressive — Conservative halves
+    tailwinds and amplifies headwinds ×1.5; Aggressive mirrors; typed
+    driver overrides always win."""
+
+    def test_scenarios_order(self):
+        from rcm_mc.diligence.tam_sam import compute
+        from rcm_mc.ui.tam_sam_page import model_from_qs
+        vals = {}
+        for s in ("conservative", "base", "aggressive"):
+            out = compute(model_from_qs(
+                {"template": ["behavioral_health"], "scenario": [s]}))
+            vals[s] = out["composite_cagr_pct"]
+        self.assertLess(vals["conservative"], vals["base"])
+        self.assertLess(vals["base"], vals["aggressive"])
+
+    def test_typed_override_beats_scenario(self):
+        from rcm_mc.ui.tam_sam_page import model_from_qs
+        m = model_from_qs({"template": ["behavioral_health"],
+                           "scenario": ["conservative"],
+                           "growth0": ["9.0"]})
+        self.assertEqual(m.growth_drivers[0].annual_pct, 9.0)
+
+    def test_scenario_chips_render(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["snf"],
+                                 "scenario": ["aggressive"]})
+        self.assertIn("scenario=conservative", h)
+        self.assertIn("scenario=base", h)
