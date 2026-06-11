@@ -308,6 +308,175 @@ def summarize_coverage(state: DealChecklistState) -> str:
 
 
 # ────────────────────────────────────────────────────────────────────
+# IC-readiness gate — the auditable go/no-go decision
+# ────────────────────────────────────────────────────────────────────
+
+@dataclass
+class GateBlocker:
+    """One open P0/P1 item standing between the deal and IC.
+
+    Every field is the *verification path*: ``completion_criteria``
+    states what "done" means, ``evidence_url`` is where the analyst
+    produces that evidence, and ``auto_verifiable`` says whether the
+    tracker can confirm closure from DealObservations (no partner
+    attestation needed) or whether it requires a manual sign-off.
+    """
+    item_id: str
+    priority: str               # P0 | P1
+    category: str
+    question: str
+    owner: str
+    status: str                 # open | blocked
+    completion_criteria: str
+    evidence_url: Optional[str]
+    auto_verifiable: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+@dataclass
+class ICReadinessGate:
+    """Auditable IC go/no-go decision derived from the checklist.
+
+    The verdict is a pure function of the item statuses, so it cannot
+    drift from what the checklist displays. ``blockers`` is the
+    evidence trail: each one names the criterion + link that closes
+    it, so "why can't this go to IC" is answerable without a meeting.
+    """
+    verdict: str                # READY | CONDITIONAL | NOT_READY
+    rationale: str
+    blocking_p0: List["GateBlocker"]
+    blocking_p1: List["GateBlocker"]
+    p0_total: int
+    p0_done: int
+    p0_coverage: float
+    auto_verifiable_open: int
+    manual_attestation_open: int
+
+    @property
+    def total_blockers(self) -> int:
+        return len(self.blocking_p0) + len(self.blocking_p1)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "verdict": self.verdict,
+            "rationale": self.rationale,
+            "p0_total": self.p0_total,
+            "p0_done": self.p0_done,
+            "p0_coverage": self.p0_coverage,
+            "auto_verifiable_open": self.auto_verifiable_open,
+            "manual_attestation_open": self.manual_attestation_open,
+            "blocking_p0": [b.to_dict() for b in self.blocking_p0],
+            "blocking_p1": [b.to_dict() for b in self.blocking_p1],
+        }
+
+
+def compute_ic_readiness(state: DealChecklistState) -> ICReadinessGate:
+    """Derive the auditable IC go/no-go gate from a checklist state.
+
+    Decision rule (deliberately conservative — IC is the expensive
+    meeting):
+
+      * **NOT_READY** — any P0 item is open or blocked. P0s are the
+        hard-stop questions (bankruptcy scan, QoE, covenant model);
+        you do not burn an IC slot with one unanswered.
+      * **CONDITIONAL** — all P0s closed but P1 items remain. The deal
+        can be scheduled, but the open P1s must be named in the memo
+        as live risks with owners.
+      * **READY** — every P0 and P1 closed.
+
+    Each blocker carries its completion criterion and evidence link so
+    the gate doubles as the punch-list, and the auto-verifiable count
+    tells the partner how much of the remaining work the platform can
+    confirm itself vs. what needs a human attestation.
+    """
+    p0_open: List[GateBlocker] = []
+    p1_open: List[GateBlocker] = []
+    auto_open = 0
+    manual_open = 0
+    p0_total = 0
+    p0_done = 0
+
+    for s in state.items:
+        if s.item.priority == Priority.P0:
+            p0_total += 1
+            if s.status == ItemStatus.DONE:
+                p0_done += 1
+        if s.status not in (ItemStatus.OPEN, ItemStatus.BLOCKED):
+            continue
+        if s.item.priority not in (Priority.P0, Priority.P1):
+            continue
+        auto = s.item.auto_check_key is not None
+        if auto:
+            auto_open += 1
+        else:
+            manual_open += 1
+        blocker = GateBlocker(
+            item_id=s.item.item_id,
+            priority=s.item.priority.value,
+            category=s.item.category.value,
+            question=s.item.question,
+            owner=s.item.default_owner.value,
+            status=s.status.value.lower(),
+            completion_criteria=s.item.completion_criteria,
+            evidence_url=s.item.evidence_url,
+            auto_verifiable=auto,
+        )
+        if s.item.priority == Priority.P0:
+            p0_open.append(blocker)
+        else:
+            p1_open.append(blocker)
+
+    # Stable order: blocked before open (blocked needs unsticking
+    # first), then by phase so screening gaps lead deliverable gaps.
+    phase_by_id = {s.item.item_id: s.item.phase for s in state.items}
+
+    def _key(b: GateBlocker):
+        return (0 if b.status == "blocked" else 1,
+                phase_by_id.get(b.item_id, 99))
+
+    p0_open.sort(key=_key)
+    p1_open.sort(key=_key)
+    p0_cov = (p0_done / p0_total) if p0_total > 0 else 1.0
+
+    if p0_open:
+        verdict = "NOT_READY"
+        rationale = (
+            f"{len(p0_open)} P0 hard-stop item"
+            f"{'s' if len(p0_open) != 1 else ''} still open "
+            f"(P0 coverage {p0_cov*100:.0f}%). Do not schedule IC: "
+            f"every P0 below names the evidence that closes it."
+        )
+    elif p1_open:
+        verdict = "CONDITIONAL"
+        rationale = (
+            f"All {p0_total} P0 items closed. {len(p1_open)} P1 item"
+            f"{'s' if len(p1_open) != 1 else ''} remain — IC may be "
+            f"scheduled, but each open P1 must be named in the memo "
+            f"as a live risk with an owner."
+        )
+    else:
+        verdict = "READY"
+        rationale = (
+            f"All {p0_total} P0 and every P1 item closed. The "
+            f"diligence record clears the IC gate."
+        )
+
+    return ICReadinessGate(
+        verdict=verdict,
+        rationale=rationale,
+        blocking_p0=p0_open,
+        blocking_p1=p1_open,
+        p0_total=p0_total,
+        p0_done=p0_done,
+        p0_coverage=p0_cov,
+        auto_verifiable_open=auto_open,
+        manual_attestation_open=manual_open,
+    )
+
+
+# ────────────────────────────────────────────────────────────────────
 # IC Packet integration
 # ────────────────────────────────────────────────────────────────────
 

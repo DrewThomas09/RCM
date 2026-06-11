@@ -34,7 +34,8 @@ from .items import (
 )
 from .tracker import (
     ChecklistStatus, DealChecklistState, DealObservations,
-    ItemStatus, compute_status, open_questions_for_ic_packet,
+    GateBlocker, ICReadinessGate, ItemStatus, compute_ic_readiness,
+    compute_status, open_questions_for_ic_packet,
     summarize_coverage,
 )
 
@@ -45,10 +46,13 @@ __all__ = [
     "ChecklistStatus",
     "DealChecklistState",
     "DealObservations",
+    "GateBlocker",
+    "ICReadinessGate",
     "ItemStatus",
     "Owner",
     "Priority",
     "build_checklist",
+    "compute_ic_readiness",
     "compute_status",
     "open_questions_for_ic_packet",
     "summarize_coverage",

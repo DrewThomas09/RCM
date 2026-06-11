@@ -21,9 +21,9 @@ from typing import Any, Dict, List, Optional, Set
 
 from ..diligence.checklist import (
     CHECKLIST_ITEMS, Category, ChecklistItem, ChecklistStatus,
-    DealChecklistState, DealObservations, ItemStatus, Owner,
-    Priority, compute_status, open_questions_for_ic_packet,
-    summarize_coverage,
+    DealChecklistState, DealObservations, ICReadinessGate, ItemStatus,
+    Owner, Priority, compute_ic_readiness, compute_status,
+    open_questions_for_ic_packet, summarize_coverage,
 )
 from ..diligence.checklist.items import build_checklist
 from ._chartis_kit import (
@@ -317,6 +317,123 @@ def _action_link(item: ChecklistItem, qs: Dict[str, List[str]]) -> str:
         f'<a href="{_url_for("mark_blocked")}">Block</a>'
         f'<a href="{_url_for("mark_in_progress")}">WIP</a>'
         f'<a href="{_url_for("clear")}">Clear</a>'
+    )
+
+
+_GATE_TONE = {
+    "READY": ("#0a8a5f", "CLEARS THE IC GATE"),
+    "CONDITIONAL": ("#b8732a", "CONDITIONAL — NAME OPEN P1s IN THE MEMO"),
+    "NOT_READY": ("#b5321e", "DO NOT SCHEDULE IC"),
+}
+
+
+def _gate_blocker_row(b) -> str:
+    """One punch-list row: the blocker, its completion criterion, the
+    evidence link that closes it, and whether the platform can verify
+    closure itself."""
+    pr_color = P["negative"] if b.priority == "P0" else P["warning"]
+    status_label = "BLOCKED" if b.status == "blocked" else "OPEN"
+    verify = (
+        f'<span style="color:{P["positive"]};font-size:10px;'
+        f'font-weight:600;">AUTO-VERIFIABLE</span>'
+        if b.auto_verifiable else
+        f'<span style="color:{P["text_faint"]};font-size:10px;">'
+        f'MANUAL ATTESTATION</span>'
+    )
+    evidence = (
+        f'<a href="{html.escape(b.evidence_url, quote=True)}" '
+        f'style="color:{P["accent"]};font-size:11px;'
+        f'text-decoration:none;">Produce evidence →</a>'
+        if b.evidence_url else
+        f'<span style="color:{P["text_faint"]};font-size:11px;">'
+        f'manual workstream</span>'
+    )
+    crit = html.escape(b.completion_criteria or "—")
+    return (
+        f'<div style="padding:10px 0;border-bottom:1px solid {P["border_dim"]};">'
+        f'<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">'
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'font-weight:700;letter-spacing:0.1em;color:{pr_color};">'
+        f'{b.priority} · {status_label}</span>'
+        f'<span style="font-size:9px;letter-spacing:0.08em;'
+        f'color:{P["text_faint"]};text-transform:uppercase;">'
+        f'{html.escape(b.category)}</span>'
+        f'<span style="margin-left:auto;">{verify}</span>'
+        f'</div>'
+        f'<div style="font-size:12.5px;color:{P["text"]};font-weight:500;'
+        f'margin-top:3px;">{html.escape(b.question)}</div>'
+        f'<div style="font-size:11px;color:{P["text_dim"]};margin-top:3px;'
+        f'line-height:1.5;"><span style="color:{P["text_faint"]};">'
+        f'Closes when: </span>{crit}</div>'
+        f'<div style="margin-top:4px;">{evidence}</div>'
+        f'</div>'
+    )
+
+
+def _ic_readiness_section(gate: ICReadinessGate) -> str:
+    """The auditable IC go/no-go gate — verdict band, verifiability
+    split, and the evidence-linked punch-list of every blocker.
+
+    This is the partner's single 'can we go to IC' answer, and it is
+    self-justifying: each blocker names the criterion + link that
+    closes it, so the gate doubles as the to-do list and the audit
+    trail of why the answer is what it is.
+    """
+    tone, tagline = _GATE_TONE.get(gate.verdict, ("#7a8699", ""))
+    # Verifiability mini-bar: how much of the open work the platform
+    # can confirm from observations vs. needs a human sign-off.
+    total_open = gate.auto_verifiable_open + gate.manual_attestation_open
+    auto_pct = (gate.auto_verifiable_open / total_open * 100.0) if total_open else 0.0
+    verify_bar = (
+        f'<div style="margin-top:10px;">'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'font-size:10px;color:{P["text_faint"]};margin-bottom:3px;">'
+        f'<span>{gate.auto_verifiable_open} auto-verifiable from data</span>'
+        f'<span>{gate.manual_attestation_open} need partner attestation</span>'
+        f'</div>'
+        f'<div style="height:8px;border-radius:4px;overflow:hidden;'
+        f'background:{P["text_faint"]};background-opacity:0.2;display:flex;">'
+        f'<div style="width:{auto_pct:.0f}%;background:{P["positive"]};"></div>'
+        f'<div style="flex:1;background:{P["text_faint"]};opacity:0.35;"></div>'
+        f'</div></div>'
+    ) if total_open else ""
+
+    p0_block = ""
+    if gate.blocking_p0:
+        p0_block = (
+            f'<div style="margin-top:14px;">'
+            f'<div style="font-family:var(--ck-mono);font-size:10px;'
+            f'letter-spacing:0.12em;color:{P["negative"]};font-weight:700;'
+            f'margin-bottom:4px;">P0 HARD STOPS · {len(gate.blocking_p0)}</div>'
+            + "".join(_gate_blocker_row(b) for b in gate.blocking_p0)
+            + '</div>'
+        )
+    p1_block = ""
+    if gate.blocking_p1:
+        p1_block = (
+            f'<div style="margin-top:14px;">'
+            f'<div style="font-family:var(--ck-mono);font-size:10px;'
+            f'letter-spacing:0.12em;color:{P["warning"]};font-weight:700;'
+            f'margin-bottom:4px;">P1 — NAME IN MEMO · {len(gate.blocking_p1)}</div>'
+            + "".join(_gate_blocker_row(b) for b in gate.blocking_p1)
+            + '</div>'
+        )
+    return (
+        f'<div class="ck-panel" style="border-left:4px solid {tone};">'
+        f'<div style="display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;">'
+        f'<span style="font-family:var(--ck-mono);font-size:22px;'
+        f'font-weight:700;color:{tone};letter-spacing:0.02em;">'
+        f'{html.escape(gate.verdict.replace("_", " "))}</span>'
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.14em;color:{P["text_faint"]};">{tagline}</span>'
+        f'<span style="margin-left:auto;font-family:var(--ck-mono);'
+        f'font-size:11px;color:{P["text_dim"]};">'
+        f'P0 {gate.p0_done}/{gate.p0_total} · {gate.p0_coverage*100:.0f}%</span>'
+        f'</div>'
+        f'<p style="font-size:12.5px;color:{P["text_dim"]};line-height:1.6;'
+        f'margin:8px 0 0;">{html.escape(gate.rationale)}</p>'
+        f'{verify_bar}{p0_block}{p1_block}'
+        f'</div>'
     )
 
 
@@ -643,11 +760,19 @@ def render_diligence_checklist_page(
         for phase in sorted(by_phase.keys())
     )
 
-    # Wrap the hero + open-questions in an export_json_panel so the
-    # partner can download the live state as JSON.
+    # Auditable IC go/no-go gate — derived purely from item statuses,
+    # so it can never disagree with the checklist below it.
+    gate = compute_ic_readiness(state)
+    _payload = state.to_dict()
+    _payload["ic_readiness_gate"] = gate.to_dict()
+
+    # Wrap the hero + gate + open-questions in an export_json_panel so
+    # the partner can download the live state (incl. the gate) as JSON.
     hero_and_oq = export_json_panel(
-        _hero(state) + _open_questions_block(state),
-        payload=state.to_dict(),
+        _hero(state)
+        + _ic_readiness_section(gate)
+        + _open_questions_block(state),
+        payload=_payload,
         name="diligence_checklist_state",
     )
 
