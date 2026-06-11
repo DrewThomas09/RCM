@@ -1176,6 +1176,45 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-79 — niche verticals batch 13: correctional, locum staffing, crisis — 50-INDUSTRY MILESTONE (21:45Z)
+**Niche-vertical sprint** — industries #50–52, the milestone batch:
+  - correctional_health ($7.8B, +4.5%): 1.9M incarcerated (BJS) × 55%
+    outsourced × $7,500 (Pew/Vera); litigation-driven consent decrees
+    named as the rate escalator AND headline/litigation risk priced as
+    the existential operator risk — the diligence centerpiece, said so;
+    behavioral/MAT mandates +9%; telehealth in-reach +10% ★.
+  - locum_staffing ($6.0B, +3.4%): 9M unfilled FTE-days (SIA) × 35%
+    agency-filled × $1,900; psych staffing +9% ★ (the deepest
+    shortage); the TRAVEL-NURSE WHIPLASH precedent priced at −3 —
+    systems slash agency spend the moment census normalizes.
+  - crisis_services ($5.2B, +5.9%): 15M crisis episodes (SAMHSA/988) ×
+    25% reaching funded care × $1,400; mobile crisis +12% ★ (ARPA
+    Medicaid option); the GRANT-FUNDING CLIFF priced at −3 — the
+    sustainability question every IC asks.
+**Verify**: chains pinned; litigation/whiplash/grant-cliff negatives all
+pinned (≤ −3 where named); catalogue ≥53 templates pinned — THE
+50-INDUSTRY MILESTONE CROSSED at 52; test_tam_sam 91 passed.
+
+## W2-78 — niche verticals batch 12: home care, PACE, teleradiology (21:15Z)
+**Niche-vertical sprint** — industries #47–49:
+  - home_care ($110.6B, +1.8%): 12M seniors needing ADL support (HHS) ×
+    30% paid penetration × 20 hrs × 48 wks × $32 — the family-caregiving
+    gap named as the demand reservoir; LTC insurance −1% (a DECLINING
+    funding segment inside a growing market); the caregiver supply
+    ceiling + wage pass-through as the margin truth.
+  - pace ($7.6B, +8.0%): 80K participants (NPA) × $95K dual capitation;
+    for-profit operators +12% ★; COMPLIANCE RISK PRICED AT −3 — "growth
+    is a privilege revoked on audit failure" with the InnovAge sanction
+    history named in the basis as the cautionary case study; <10%
+    penetration of eligibles = the whitespace.
+  - teleradiology ($1.7B, +5.0%): 650M studies (ACR) × 12% telerad ×
+    $22/read; daytime overflow +9% ★ (staffing gaps made daytime the
+    new market); AI triage named as productivity capture; per-click
+    commoditization + in-group recapture as headwinds.
+**Verify**: chains pinned; LTCI negative + PACE compliance ≤ −3 +
+InnovAge in basis pinned; catalogue ≥50 templates pinned; test_tam_sam
+88 passed. 49 industries.
+
 ## W2-77 — niche verticals batch 11: podiatry, ENT/allergy, anesthesia (20:45Z)
 **Niche-vertical sprint** — industries #44–46:
   - podiatry ($9.9B, +2.9%): 18K DPMs (APMA) × $550K; diabetic foot +6%
