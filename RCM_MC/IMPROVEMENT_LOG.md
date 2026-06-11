@@ -2972,3 +2972,37 @@ present, real FDA snapshot with biologics STABLE + TPN current
 shortage, north suburbs flagged per metro (DFW=Collin+Denton), illness
 burden scales with population + maps to therapies, county illness
 population-scaled (×10 pop → ×10 patients). 42 passed.
+
+## W2-149 (2026-06-11) — Texas infusion: editable AIC assumptions + sensitivity + break-even curve (wave #51)
+More AIC depth with the "change the assumptions" capability:
+- **Payer mix is now a REAL economic lever** — when admin fee / drug
+  margin aren't explicitly overridden they BLEND from per-payer
+  anchors (commercial $260 admin / 14% spread vs Medicare $155 /
+  4.3% — MedPAC ASP+4.3 sequestered + PFS admin codes). Moving the
+  commercial-mix input moves the P&L ($176K @40% → $252K @80%
+  contribution/chair), not just a display chip. Explicit overrides
+  still win (the white-bag drug-margin→0 shock path is preserved).
+- **Editable assumptions** — a CHANGE-THE-ASSUMPTIONS form (9 inputs:
+  chairs, utilization, infusions/chair/day, drug revenue, commercial
+  mix, nurse ratio, nurse cost, overhead, RCM %) GETs back to the
+  page; `aic_assumptions_from_qs` range-clamps every value server-side
+  (999 chairs → 60; junk dropped), percent inputs human-readable;
+  an EDITED badge shows when overrides are active; the JSON API honors
+  the same qs overrides.
+- **Sensitivity tornado** — `aic_sensitivity()` swings each of 7
+  operating levers ±20% (clamped) and recomputes contribution/chair
+  through the SAME model, sorted by impact (chair utilization and
+  infusions/day dominate at ±$114K; commercial mix ±$47K). Tornado SVG.
+- **Utilization → contribution curve with break-even** —
+  `aic_utilization_curve()`: contribution across 40–95% utilization +
+  a fine-scan break-even (≈19% at benchmark — fixed nursing/overhead
+  vs per-infusion gross profit), drawn as a line SVG with the $0 line,
+  break-even marker, and a "you are here" dot. The de-novo ramp read.
+All pure recomputation through `aic_chair_economics` so the graphics
+can never disagree with the model; 16 SVGs on the page.
+**Verify**: +6 tests (48 total) — mix moves contribution + override
+wins, qs clamps/drops junk, tornado base equals model + sorted +
+throughput dominates, curve monotonic + break-even < default util,
+overrides flow analysis→page (EDITED, value=90, higher contribution),
+form + charts render by default with no EDITED badge. 48 passed;
+guide + API contracts green.

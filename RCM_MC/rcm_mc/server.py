@@ -6708,14 +6708,19 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/diligence/texas-infusion":
             # Texas infusion market — full CDD sizing + segmentation +
             # concentration + metro attractiveness, from public anchors.
+            # qs carries AIC assumption overrides (clamped in the model).
             from .ui.texas_infusion_page import render_texas_infusion_page
-            return self._send_html(render_texas_infusion_page())
+            _ti_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_texas_infusion_page(_ti_qs))
         if path == "/api/diligence/texas-infusion":
-            # JSON variant — the full analysis dict for programmatic use.
+            # JSON variant — the full analysis dict for programmatic use,
+            # honoring the same AIC assumption overrides as the page.
             from .diligence.texas_infusion import (
-                build_texas_infusion_analysis,
+                aic_assumptions_from_qs, build_texas_infusion_analysis,
             )
-            return self._send_json(build_texas_infusion_analysis())
+            _ti_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_json(build_texas_infusion_analysis(
+                aic_overrides=aic_assumptions_from_qs(_ti_qs)))
         if path == "/diligence/comparable-outcomes":
             # Comparable-deal benchmarking: target profile in,
             # corpus matches + outcome distribution out.
