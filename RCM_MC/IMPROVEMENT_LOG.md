@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-60 — industry #13: hospitals (HCRIS-grounded flagship) + cross-industry view (12:25Z)
+**Sprint flagship**:
+  - hospitals_template(): $1.4T NHE hospital-care line × 62% community
+    share (AHA) = $868B; size-tier segments naming the thesis ("the
+    PE/JV-able middle"); site-neutral payment risk as the policy headwind.
+  - hospitals_deep_dive(): computed from the REAL HCRIS universe (6,123
+    filers) — state footprint ranked by FILED NPR dollars (CA $154B / TX
+    $97B / NY $90B), size-tier structure in place of the absent ownership
+    field (honest: 4,507 small / 1,097 mid-size / 262 large), the
+    1,097-filer $250M–$1B pool by state (CA 134 / TX 92 / FL 73), state
+    median operating margins (X-Ray plausibility band, 52 states), 13
+    corpus hospital deals.
+  - CROSS-INDUSTRY VIEW: every sized vertical side by side — TAM ×
+    composite growth, size bars, sorted by TAM, each row linking into its
+    full build. "Where the biggest pieces grow fastest", answered on one
+    panel.
+**Verify**: chain pinned ($868B); dive pinned (6,123 filers, CA top >$100B
+real NPR, mid-tier present, >1K pool, margins within ±band); comparison
+panel carries ≥14 template links; test_tam_sam 39 passed. Screenshot
+delivered.
+
 ## W2-59 — ±20% driver-sensitivity tornado on every build (11:55Z)
 **Professional-modeling layer**: sensitivity(model) swings each chain
 driver ±20% (rates clamped at 100%) holding the rest at base, sorted by

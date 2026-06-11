@@ -871,6 +871,142 @@ def urgent_care_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def hospitals_deep_dive() -> Dict[str, Any]:
+    """The flagship dive — computed from the vendored HCRIS universe
+    (6.1K cost-report filers): state footprint ranked by REAL filed NPR,
+    the size-tier mix (HCRIS carries no ownership field — size is the
+    honest structure read), state median operating margins, and the
+    corpus's hospital deal history. The "pool" is the $250M–$1B
+    mid-size filers — the PE/JV-able middle the template's thesis
+    segment names."""
+    from ..data.hcris import _get_latest_per_ccn
+    df = _get_latest_per_ccn()
+
+    MID_LO, MID_HI = 250e6, 1e9
+    by_state: Dict[str, Dict[str, Any]] = defaultdict(
+        lambda: {"facilities": 0, "chain": 0, "independent": 0,
+                 "stations": 0, "npr": 0.0})
+    margins: Dict[str, List[float]] = defaultdict(list)
+    tiers: Dict[str, int] = defaultdict(int)
+    for _, r in df.iterrows():
+        st = str(r.get("state") or "").strip().upper()
+        if not st:
+            continue
+        row = by_state[st]
+        row["facilities"] += 1
+        try:
+            beds = float(r.get("beds") or 0)
+            if beds == beds:
+                row["stations"] += int(beds)
+        except (TypeError, ValueError):
+            pass
+        nprf = None
+        try:
+            nprf = float(r.get("net_patient_revenue"))
+            if nprf != nprf or nprf <= 0:
+                nprf = None
+        except (TypeError, ValueError):
+            nprf = None
+        if nprf:
+            row["npr"] += nprf
+            if nprf >= MID_HI:
+                tiers["Large (>$1B NPR)"] += 1
+            elif nprf >= MID_LO:
+                tiers["Mid-size ($250M–$1B)"] += 1
+                row["independent"] += 1   # the PE-able pool slot
+            else:
+                tiers["Small (<$250M)"] += 1
+        else:
+            tiers["NPR not filed"] += 1
+        if nprf and not (MID_LO <= nprf < MID_HI):
+            row["chain"] += 1
+        try:
+            opex = float(r.get("operating_expenses") or 0)
+            if nprf and opex and nprf > 1e5:
+                m = (nprf - opex) / nprf
+                if -0.40 <= m <= 0.30:
+                    margins[st].append(m)
+        except (TypeError, ValueError):
+            pass
+
+    states = [
+        {"state": st, **vals,
+         "independent_share": (vals["independent"] / vals["facilities"]
+                               if vals["facilities"] else 0.0)}
+        for st, vals in by_state.items()
+    ]
+    # Rank by NPR — dollars, not facility count: this is the one dive
+    # where the real revenue base is in the data.
+    states.sort(key=lambda r: -r["npr"])
+    total = sum(r["facilities"] for r in states)
+    tier_rows = sorted(
+        ({"org": t, "facilities": n, "share": n / total if total else 0}
+         for t, n in tiers.items()),
+        key=lambda r: -r["facilities"])
+
+    quality_by_state = {
+        st: {"value": _median(vals) * 100, "n_reporting": len(vals)}
+        for st, vals in margins.items() if len(vals) >= 5
+    }
+
+    sector_deals: Dict[str, Any] = {"n": 0}
+    try:
+        from ..ui.data_public.deal_search_page import _load_corpus
+        deals = [d for d in _load_corpus()
+                 if (d.get("sector") or "") == "hospital"]
+        moics = [float(d["realized_moic"]) for d in deals
+                 if d.get("realized_moic") is not None]
+        mults = []
+        for d in deals:
+            ev, eb = d.get("ev_mm"), d.get("ebitda_at_entry_mm")
+            if ev and eb and float(eb) > 0:
+                mults.append(float(ev) / float(eb))
+        years = [int(d["year"]) for d in deals if d.get("year")]
+        sector_deals = {
+            "n": len(deals), "n_realized": len(moics),
+            "median_moic": _median(moics),
+            "median_entry_multiple": _median(mults),
+            "year_min": min(years) if years else None,
+            "year_max": max(years) if years else None,
+        }
+    except Exception:  # noqa: BLE001
+        pass
+
+    n_mid = tiers.get("Mid-size ($250M–$1B)", 0)
+    return {
+        "industry": "hospitals",
+        "facility_source": ("CMS HCRIS cost reports (vendored, latest "
+                            "filing per CCN) — state NPR totals are "
+                            "real filed dollars"),
+        "n_facilities": total,
+        "states": states,
+        "top_states": states[:10],
+        "chains": tier_rows,
+        "chains_label": "NPR size tier",
+        "pool_label": "Mid-size",
+        "pool_note": ("$250M–$1B NPR filers — the PE/JV-able middle "
+                      "(HCRIS files no ownership field; size is the "
+                      "honest structure read)"),
+        "duopoly_share": None,
+        "n_independent": n_mid,
+        "whitespace_states": sorted(
+            states, key=lambda r: -r["independent"])[:10],
+        "whitespace_mode": "pool",
+        "whitespace_note": "states ranked by mid-size ($250M–$1B) filer "
+                           "count",
+        "capacity_label": "Beds",
+        "quality_label": "Op margin % (med)",
+        "quality_by_state": quality_by_state,
+        "quality_source": ("HCRIS (NPR − opex) ÷ NPR, −40%..+30% "
+                           "plausibility band; state median where ≥5 "
+                           "filers"),
+        "sector_deals": sector_deals,
+        "deals_href": "/deal-search?sector=hospital",
+        "screener_href": "/target-screener?vertical=hospitals",
+    }
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -886,6 +1022,7 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "dental": dental_deep_dive,
     "oncology": oncology_deep_dive,
     "urgent_care": urgent_care_deep_dive,
+    "hospitals": hospitals_deep_dive,
 }
 
 
