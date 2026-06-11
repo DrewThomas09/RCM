@@ -426,6 +426,62 @@ def _audit_section(audit: Any, anchor: str) -> str:
     )
 
 
+def _review_glance_svg(review: Any, width: int = 640) -> str:
+    """The packet at a glance: two stacked strips — reasonableness
+    bands (in-band green → implausible red, unknown gray) and heuristic
+    severities (critical red → low gray). Counts inline where the slice
+    is wide enough."""
+    if review is None:
+        return ""
+    try:
+        bands = review.band_counts()
+        sevs = review.severity_counts()
+    except Exception:  # noqa: BLE001
+        return ""
+    band_tone = [("IN_BAND", "#0a8a5f"), ("STRETCH", "#b8732a"),
+                 ("OUT_OF_BAND", "#b5321e"), ("IMPLAUSIBLE", "#7a1f12"),
+                 ("UNKNOWN", "#9aa3ad")]
+    sev_tone = [("CRITICAL", "#b5321e"), ("HIGH", "#b8732a"),
+                ("MEDIUM", "#a98545"), ("LOW", "#7a8699")]
+
+    def _strip(counts, tones, label, y0):
+        total = sum(counts.get(k, 0) for k, _ in tones)
+        if not total:
+            return (f'<text x="0" y="{y0+14}" font-family="monospace" '
+                    f'font-size="10" fill="#7a8699">{label}: none</text>')
+        out = [f'<text x="0" y="{y0+14}" font-family="monospace" '
+               f'font-size="9.5" fill="#7a8699">{label}</text>']
+        x = 110.0
+        pw = width - 120
+        for k, color in tones:
+            n = counts.get(k, 0)
+            if not n:
+                continue
+            w = n / total * pw
+            out.append(
+                f'<rect x="{x:.1f}" y="{y0}" width="{max(w,1):.1f}" '
+                f'height="18" fill="{color}">'
+                f'<title>{k.replace("_", " ").title()}: {n}</title>'
+                '</rect>')
+            if w >= 56:
+                out.append(
+                    f'<text x="{x + w/2:.1f}" y="{y0+13}" '
+                    'text-anchor="middle" font-family="monospace" '
+                    f'font-size="9" fill="#ffffff">'
+                    f'{k.replace("_", " ").title()[:11]} {n}</text>')
+            x += w
+        return "".join(out)
+
+    parts = [f'<svg width="{width}" height="58" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Review at a glance">']
+    parts.append(_strip(bands, band_tone, "BAND CHECKS", 2))
+    parts.append(_strip(sevs, sev_tone, "HEURISTICS", 30))
+    parts.append('</svg>')
+    return ('<div style="margin:0 0 14px;">' + "".join(parts)
+            + '</div>')
+
+
 def render_ic_packet(
     review: Any,
     deal_id: str,
@@ -503,6 +559,7 @@ def render_ic_packet(
             f'line-height:1.55;">{_html.escape(headline)}</div>' if headline else ""
         )
         + f'</div>'
+        + _review_glance_svg(review)
     )
 
     # KPI count of populated sections

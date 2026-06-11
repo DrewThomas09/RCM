@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-105 — wave #7: IC-packet review-glance strips (11:00Z)
+**The packet at a glance**: two stacked strips directly under the IC
+verdict hero — reasonableness BAND CHECKS (in-band green → implausible
+deep-red, unknown gray) and HEURISTICS by severity (critical → low),
+counts inline on wide slices, hover for exact numbers. A partner reads
+the review's shape before the first section. None-review renders
+nothing.
+**Verify**: strips render for a PartnerReview; None-empty pinned;
+ic-packet suites 29+2 passed.
+
 ## W2-104 — wave #6: checklist category progress chart (10:30Z)
 **The checklist at a glance**: one stacked bar per category — DONE
 green / IN-PROGRESS amber / OPEN gray / BLOCKED red — with done/total
