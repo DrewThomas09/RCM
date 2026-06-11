@@ -2769,6 +2769,188 @@ def teleradiology_template() -> TamSamModel:
     )
 
 
+
+def correctional_health_template() -> TamSamModel:
+    """Correctional healthcare sizing — the contracted-government
+    niche. BJS-anchored."""
+    return TamSamModel(
+        name="Correctional health · contracted care market",
+        chain=[
+            DriverStep("US incarcerated population", 1_900_000,
+                       op="base", unit="individuals",
+                       source="BJS (prisons + jails ADP)"),
+            DriverStep("% under contracted (outsourced) care", 0.55,
+                       op="rate", unit="of population",
+                       source="industry estimates — the rest is "
+                              "county/state-employed"),
+            DriverStep("Avg healthcare spend per person / yr", 7_500,
+                       op="price", unit="$/person/yr",
+                       source="Pew/Vera per-capita correctional "
+                              "health studies"),
+        ],
+        segments=[
+            Segment("State prison systems", 0.45, None,
+                    note="multi-year contracts; rebid risk "
+                         "concentrated", growth_pct=3.0),
+            Segment("County jails", 0.35, None,
+                    note="the fragmented layer — higher churn, "
+                         "higher margin", growth_pct=4.0),
+            Segment("Behavioral / MAT programs", 0.15, None,
+                    note="the growth mandate — litigation-driven "
+                         "standards", growth_pct=9.0),
+            Segment("Telehealth / specialty in-reach", 0.05, None,
+                    growth_pct=10.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Acuity / aging census", 3.0,
+                         "the incarcerated population ages faster "
+                         "than it shrinks"),
+            GrowthDriver("Litigation-driven standards", 2.5,
+                         "consent decrees force spending floors — "
+                         "court orders are the rate escalator"),
+            GrowthDriver("MAT / behavioral mandates", 2.0,
+                         "opioid-treatment requirements expand scope"),
+            GrowthDriver("Population decline", -1.5,
+                         "decarceration trends shrink the census — "
+                         "shown as one"),
+            GrowthDriver("Headline / litigation risk", -1.5,
+                         "mortality lawsuits are the existential "
+                         "operator risk — priced, not hidden"),
+        ],
+        sam_share=0.55,
+        sam_note="Outsourcing-friendly states + county consortia",
+        som_share=0.08,
+        som_note="Wellpath/YesCare/Centurion concentrated — rebids "
+                 "move share in blocks",
+        horizon_years=5,
+        basis_note="Template defaults from BJS/Pew/Vera public data — "
+                   "replace with engagement data before IC use. The "
+                   "litigation-risk driver is the diligence centerpiece "
+                   "in this vertical.",
+    )
+
+
+def locum_staffing_template() -> TamSamModel:
+    """Locum tenens / physician staffing sizing — the scarcity
+    arbitrage. SIA-anchored."""
+    return TamSamModel(
+        name="Locum tenens · physician staffing market",
+        chain=[
+            DriverStep("US physician FTE-days unfilled / yr",
+                       9_000_000, op="base", unit="FTE-days",
+                       source="SIA healthcare staffing reports + "
+                              "vacancy-rate estimates"),
+            DriverStep("% filled via locums agencies", 0.35, op="rate",
+                       unit="of unfilled days",
+                       source="SIA (vs internal float/overtime)"),
+            DriverStep("Avg agency revenue per filled day", 1_900,
+                       op="price", unit="$/day",
+                       source="bill-rate benchmarks (specialty-"
+                              "blended, incl. malpractice + travel)"),
+        ],
+        segments=[
+            Segment("Hospitalist / IM / FM", 0.30, None,
+                    growth_pct=4.0),
+            Segment("Behavioral health / psych", 0.25, None,
+                    note="the deepest shortage — rates re-rate "
+                         "fastest", growth_pct=9.0),
+            Segment("Surgical / anesthesia", 0.25, None,
+                    growth_pct=5.0),
+            Segment("Advanced practice (NP/PA)", 0.20, None,
+                    note="the leverage layer", growth_pct=7.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Physician shortage structural", 4.0,
+                         "AAMC projects 86K-physician shortfall by "
+                         "2036 — scarcity is the product"),
+            GrowthDriver("Rural / safety-net dependence", 2.0,
+                         "rural facilities run on locums permanently"),
+            GrowthDriver("Bill-rate inflation", 2.0,
+                         "scarcity pricing"),
+            GrowthDriver("Hospital cost crackdowns", -3.0,
+                         "the travel-nurse whiplash precedent: "
+                         "systems slash agency spend the moment "
+                         "census normalizes — the cyclical bear case"),
+            GrowthDriver("Direct-sourcing platforms", -1.5,
+                         "hospitals building internal float pools + "
+                         "tech disintermediation"),
+        ],
+        sam_share=0.60,
+        sam_note="Acute + behavioral demand ex the self-staffed "
+                 "mega-systems",
+        som_share=0.05,
+        som_note="CHG/AMN/Medicus class hold the brand layer; "
+                 "specialty boutiques are the targets",
+        horizon_years=5,
+        basis_note="Template defaults from SIA/AAMC public data — "
+                   "replace with engagement data before IC use. The "
+                   "travel-nurse whiplash is the cycle lesson priced "
+                   "into the headwind.",
+    )
+
+
+def crisis_services_template() -> TamSamModel:
+    """Behavioral crisis services sizing — the 988-era build-out.
+    SAMHSA-anchored."""
+    return TamSamModel(
+        name="Crisis services · behavioral crisis continuum market",
+        chain=[
+            DriverStep("US behavioral crisis episodes / yr",
+                       15_000_000, op="base", unit="episodes",
+                       source="SAMHSA + 988 contact volumes + ED "
+                              "psych-boarding estimates"),
+            DriverStep("% reaching a funded crisis service", 0.25,
+                       op="rate", unit="of episodes",
+                       source="the access gap — most crises still "
+                              "land in EDs/police; the buildout IS "
+                              "the market"),
+            DriverStep("Avg revenue per served episode", 1_400,
+                       op="price", unit="$/episode",
+                       source="mobile-crisis + stabilization per-"
+                              "episode rates (Medicaid crisis codes)"),
+        ],
+        segments=[
+            Segment("Crisis stabilization units", 0.40, None,
+                    note="the facility layer — 23-hour + short-stay",
+                    growth_pct=10.0),
+            Segment("Mobile crisis teams", 0.30, None,
+                    note="the Medicaid-mandated growth layer",
+                    growth_pct=12.0),
+            Segment("Crisis lines / 988 operations", 0.20, None,
+                    note="contract-funded; rebid risk", growth_pct=6.0),
+            Segment("Post-crisis stepdown", 0.10, None,
+                    growth_pct=8.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("988 / crisis-system buildout", 6.0,
+                         "federal + state crisis infrastructure "
+                         "funding wave"),
+            GrowthDriver("Medicaid crisis-benefit mandates", 3.0,
+                         "ARPA mobile-crisis option + state plan "
+                         "amendments"),
+            GrowthDriver("ED-diversion economics", 2.0,
+                         "payers fund alternatives to $2K psych "
+                         "boarding"),
+            GrowthDriver("Grant-funding cliff risk", -3.0,
+                         "buildout dollars are appropriations-"
+                         "dependent — the sustainability question, "
+                         "priced"),
+            GrowthDriver("Workforce scarcity", -2.0,
+                         "crisis clinicians are the binding "
+                         "constraint"),
+        ],
+        sam_share=0.45,
+        sam_note="States with Medicaid crisis benefits + managed-care "
+                 "carve-ins",
+        som_share=0.05,
+        som_note="An emerging market — Connections/RI International "
+                 "class early",
+        horizon_years=5,
+        basis_note="Template defaults from SAMHSA/988 public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -2844,6 +3026,9 @@ TEMPLATES = {
     "home_care": home_care_template,
     "pace": pace_template,
     "teleradiology": teleradiology_template,
+    "correctional_health": correctional_health_template,
+    "locum_staffing": locum_staffing_template,
+    "crisis_services": crisis_services_template,
     "blank": blank_template,
 }
 

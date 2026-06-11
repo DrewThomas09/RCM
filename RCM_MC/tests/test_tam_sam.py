@@ -1054,3 +1054,42 @@ class NicheVerticalsBatch12Tests(unittest.TestCase):
     def test_catalogue_at_49_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 50)   # 49 + blank
+
+
+class NicheVerticalsBatch13Tests(unittest.TestCase):
+    """Industries #50–52 — correctional health, locum staffing, crisis
+    services: the 50-industry milestone batch."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "correctional_health": 1_900_000 * 0.55 * 7_500,
+            "locum_staffing": 9_000_000 * 0.35 * 1_900,
+            "crisis_services": 15_000_000 * 0.25 * 1_400,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_risk_pricing_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Correctional: litigation risk priced, not hidden.
+        ch = compute(TEMPLATES["correctional_health"]())
+        names = {g["name"]: g["annual_pct"] for g in ch["growth_drivers"]}
+        self.assertLess(names["Headline / litigation risk"], 0)
+        # Staffing: the travel-nurse whiplash precedent priced large.
+        ls = compute(TEMPLATES["locum_staffing"]())
+        names = {g["name"]: g["annual_pct"] for g in ls["growth_drivers"]}
+        self.assertLessEqual(names["Hospital cost crackdowns"], -3.0)
+        # Crisis: the grant-funding cliff is the sustainability question.
+        cs = compute(TEMPLATES["crisis_services"]())
+        names = {g["name"]: g["annual_pct"] for g in cs["growth_drivers"]}
+        self.assertLessEqual(names["Grant-funding cliff risk"], -3.0)
+
+    def test_catalogue_crosses_50_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 53)   # 52 + blank
