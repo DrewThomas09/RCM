@@ -253,7 +253,7 @@ def render_deal_search(
         '<div class="ck-kpi-grid">'
         + ck_kpi_block("Results", results_value, f"of {ck_fmt_num(len(corpus))} deals")
         + ck_kpi_block("P50 MOIC", p50_value, "filtered set")
-        + ck_kpi_block("Avg EV", f"${avg_ev:.0f}M", "filtered set")
+        + ck_kpi_block("Avg EV", f"${avg_ev/1000:.2f}B" if avg_ev >= 1000 else f"${avg_ev:.0f}M", "filtered set")
         + ck_kpi_block("Page", f"{page}/{total_pages}", f"{PAGE_SIZE} per page")
         + '</div>'
     )
@@ -365,6 +365,15 @@ def render_deal_search(
             except (TypeError, ValueError):
                 return '<span style="color:#465366;">—</span>'
 
+        def _fmt_ev(v: Any) -> str:
+            # ev_mm is in $M units; roll to $B at ≥$1B (house style) so a
+            # platform deal reads "$2.00B" not "$2000M".
+            try:
+                x = float(v)
+            except (TypeError, ValueError):
+                return '<span style="color:#465366;">—</span>'
+            return f"${x/1000:.2f}B" if abs(x) >= 1000 else f"${x:.0f}M"
+
         rows.append(f"""<tr{stripe}>
   <td style="padding:4px 6px;font-size:9px;color:#7a8699;font-family:var(--ck-mono);">{_esc(d.get('source_id',''))}</td>
   <td style="padding:4px 8px;font-size:10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
@@ -373,7 +382,7 @@ def render_deal_search(
   <td style="padding:4px 8px;font-size:9.5px;color:#7a8699;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_esc((d.get('buyer') or '')[:22])}</td>
   <td style="padding:4px 8px;font-size:9.5px;color:#7a8699;">{_esc((d.get('sector') or '—')[:20])}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_esc(str(yr) if yr else '—')}</td>
-  <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev, '${:.0f}M')}</td>
+  <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt_ev(ev)}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(ev_ebitda, '{:.1f}x')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{_fmt(hold, '{:.1f}y')}</td>
   <td style="padding:4px 8px;font-family:var(--ck-mono);font-variant-numeric:tabular-nums;text-align:right;">{moic_str}</td>

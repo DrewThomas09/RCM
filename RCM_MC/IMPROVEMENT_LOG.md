@@ -1087,3 +1087,26 @@ None for empty/unknown); HTTP tests (band when buyer given — "KKR: 76
 corpus deals (61 realized) · median 3.00x · −0.25x vs comp set · IRR 21.8%
 · active 2006–2024"; absent without buyer); 39 passed across comparable
 suites. Screenshot delivered.
+
+## W2-42 — Sector Momentum drill-down into Deal Search (03:15Z)
+**Found by**: dynamics sweep — the momentum tables named 129 taxonomy
+sectors but linked nowhere; a partner spotting "dialysis +400%" had to
+retype the sector into Deal Search by hand.
+**Added**: every sector cell (accelerating paired-block via SafeHtml +
+decelerating table) links to /deal-search?sector=<name> — Deal Search
+filters on the SAME corpus sector field with an exact match, so the
+momentum read is one click from the underlying deals.
+**Verify**: 20 drill links render on the default view; link target
+resolves ("dialysis" → non-empty Deal Search results); new
+test_sector_momentum_drilldown (link presence + taxonomy-name round-trip
+into deal-search); 4 passed incl. seed-label guard.
+
+## W2-43 — Deal Search EV column rolls to $B (03:35Z)
+**Found by**: visually checking where the momentum drill-down lands — the
+Deal Search EV column showed "$2000M" / "$1100M" / "$1000M" for the
+billion-scale dialysis platform deals; Avg-EV KPI had the same ceiling.
+**Fixed**: `_fmt_ev` rolls ev_mm to "$X.XXB" at ≥1000 ($1B); sub-$1B stays
+"$540M". Avg-EV KPI rolls the same way.
+**Verify**: dialysis sector renders $2.00B/$1.10B/$1.00B rows + $460M–$939M
+below; new DealSearchEvRollupTests; 3 passed in the drilldown file; 23
+passed across deal-search-touching suites.
