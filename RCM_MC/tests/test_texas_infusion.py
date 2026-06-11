@@ -126,6 +126,79 @@ class ProviderAndMetroTests(unittest.TestCase):
         self.assertGreater(g["tx_senior_growth_pct"], g["tx_pop_growth_pct"])
 
 
+class CityDeepDiveTests(unittest.TestCase):
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.dd = {d["metro"].split("-")[0]: d
+                   for d in self.a["metro_deepdives"]}
+
+    def test_four_city_deepdives(self):
+        self.assertEqual(len(self.a["metro_deepdives"]), 4)
+
+    def test_age_bands_rebase_to_real_senior_share(self):
+        # The two senior bands sum to the metro's REAL 65+ share.
+        for d in self.a["metro_deepdives"]:
+            metro = next(m for m in self.a["metros"]
+                         if m["cbsa_code"] == d["cbsa_code"])
+            senior_share = sum(b["pop_share"] for b in d["age_bands"]
+                               if b["band"] in ("65–74", "75+"))
+            self.assertAlmostEqual(senior_share,
+                                   metro["pct_age_65_plus"], places=3)
+
+    def test_age_band_shares_sum_to_one(self):
+        for d in self.a["metro_deepdives"]:
+            self.assertAlmostEqual(
+                sum(b["pop_share"] for b in d["age_bands"]), 1.0, places=3)
+            self.assertAlmostEqual(
+                sum(b["demand_share"] for b in d["age_bands"]), 1.0,
+                places=3)
+
+    def test_age_bands_ranked_by_demand(self):
+        d = self.dd["Houston"]
+        ranks = sorted(d["age_bands"], key=lambda b: b["demand_rank"])
+        shares = [b["demand_share"] for b in ranks]
+        self.assertEqual(shares, sorted(shares, reverse=True))
+        self.assertEqual(ranks[0]["demand_rank"], 1)
+
+    def test_suburbs_are_real_member_counties_ranked(self):
+        hou = self.dd["Houston"]
+        names = {s["county"] for s in hou["suburbs"]}
+        self.assertIn("Harris", names)            # Houston anchor county
+        pts = [s["infusion_patients"] for s in hou["suburbs"]]
+        self.assertEqual(pts, sorted(pts, reverse=True))
+        self.assertEqual(hou["suburbs"][0]["demand_rank"], 1)
+        dfw = self.dd["Dallas"]
+        self.assertIn("Dallas", {s["county"] for s in dfw["suburbs"]})
+
+    def test_suburb_patients_sum_approximates_metro(self):
+        # County patients should roughly reconstruct the metro total.
+        for d in self.a["metro_deepdives"]:
+            metro = next(m for m in self.a["metros"]
+                         if m["cbsa_code"] == d["cbsa_code"])
+            csum = sum(s["infusion_patients"] for s in d["suburbs"])
+            self.assertGreater(csum, metro["infusion_patients"] * 0.85)
+            self.assertLess(csum, metro["infusion_patients"] * 1.15)
+
+    def test_operators_present_and_linked(self):
+        for d in self.a["metro_deepdives"]:
+            self.assertTrue(d["operators"])
+            for o in d["operators"]:
+                self.assertTrue(o["org"])
+                self.assertTrue(o["link"].startswith("http"))
+        # Houston (the TMC ecosystem) carries the most operators.
+        self.assertGreaterEqual(len(self.dd["Houston"]["operators"]), 5)
+
+    def test_specialty_tilt_per_city(self):
+        self.assertIn("MD Anderson", self.dd["Houston"]["specialty"])
+        self.assertIn("Youngest", self.dd["Austin"]["specialty"])
+
+    def test_whitespace_counties_have_thin_capacity(self):
+        # Whitespace = real demand with the thinnest local AIS estimate.
+        for d in self.a["metro_deepdives"]:
+            for w in d["whitespace_counties"]:
+                self.assertGreater(w["infusion_patients"], 0)
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -136,8 +209,17 @@ class PageRenderTests(unittest.TestCase):
             "Concentration", "Payer mix", "Medicare population",
             "Certificate of Need", "Sources", "562,941",
             "Home-infusion locations", "Competitive read",
+            "City deep-dives", "INFUSION DEMAND BY AGE BAND",
+            "SUBURBS / COUNTIES", "WHITESPACE SUBURBS", "Specialty tilt",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
+
+    def test_city_charts_and_operator_links_render(self):
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        self.assertGreaterEqual(h.count("<svg"), 8)        # per-city charts
+        self.assertIn('optioncarehealth.com', h)           # linked operator
+        self.assertIn('target="_blank"', h)
 
     def test_route_registered_in_palette(self):
         from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES

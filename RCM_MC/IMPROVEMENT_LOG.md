@@ -2861,3 +2861,39 @@ attractiveness with real senior counts, growth present, page renders
 all sections, palette route registered. Guide-context contract fixed
 (route added to the assistant catalogue). 318 passed across
 palette/nav/tam-sam/guide suites.
+
+## W2-146 (2026-06-11) — Texas infusion: in-depth per-city deep-dives (wave #48)
+**Extended** the Texas infusion page (W2-145) with an in-depth,
+visualized deep-dive for each of the four metros — Houston, DFW,
+Austin, San Antonio — answering the breakdown the user asked for, all
+from REAL member-county ACS data + a documented age/utilization model:
+- **Age-band demand ranking** — each metro split into 0–17 / 18–44 /
+  45–64 / 65–74 / 75+ using the metro's REAL 65+ share (the two senior
+  bands re-base to it; under-65 keeps national structure) × an
+  infusion-utilization index (rises with age) → demand share, RANKED
+  (45–64 leads at ~37%, then 18–44, 65–74, 75+, peds). SVG bars.
+- **Suburb / member-county breakdown** — every metro's real CBSA
+  member counties (the suburbs) from the crosswalk, each with
+  population, 65+, apportioned infusion patients, estimated AIS count,
+  and patients-per-AIS, RANKED by patient volume (Harris #1 Houston,
+  Dallas #1 DFW, Travis #1 Austin). County patients reconstruct the
+  metro total within ±15%. SVG bars.
+- **Big operators, linked** — known national chains present per metro
+  (Option Care, Coram, Optum, Soleo, KabaFusion, Paragon) rendered as
+  clickable external links to each company's locator (illustrative
+  presence, labeled).
+- **Early / white-space suburbs** — counties with real demand but the
+  thinnest local AIS capacity (highest patients-per-AIS, or zero local
+  AIS = fully unserved) — the de-novo targets.
+- **Specialty tilt per city** — Houston oncology (MD Anderson/TMC),
+  DFW commercial-balanced, Austin autoimmune/neuro (youngest), San
+  Antonio oncology + diabetes (older, military/Hispanic).
+Aggregated into one scannable card per city with two-up ranked SVG
+charts. Pure functions of real ACS county data + the documented model.
+**Verify**: +10 tests in test_texas_infusion.py (27 total) — four
+deepdives, senior bands re-base to real 65+ share, age + demand shares
+sum to 1, age bands ranked, suburbs are real member counties ranked
+(Harris/Dallas present), county patients reconstruct the metro ±15%,
+operators present + http-linked, specialty tilt per city, white-space
+has real demand, page renders all city sections + ≥8 SVG charts +
+operator links. 27 passed.
