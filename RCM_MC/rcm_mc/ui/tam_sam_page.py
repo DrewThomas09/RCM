@@ -155,6 +155,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'<a href="/diligence/tam-sam?template={k}" '
             f'class="{"on" if k == tmpl_key else ""}">{html.escape(lbl)}</a>'
             for k, lbl in (("fertility_ivf", "Fertility · IVF"),
+                           ("dialysis", "Dialysis · in-center"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )

@@ -138,6 +138,53 @@ def fertility_ivf_template() -> TamSamModel:
     )
 
 
+def dialysis_template() -> TamSamModel:
+    """In-center dialysis sizing — second worked template so the builder
+    reads as a general tool. Same rules: public-data magnitudes (USRDS/
+    CMS), labeled, illustrative, every value editable."""
+    return TamSamModel(
+        name="Dialysis · in-center treatment market",
+        chain=[
+            DriverStep("US ESRD patients", 810_000, op="base",
+                       unit="patients", source="USRDS annual data report"),
+            DriverStep("% on dialysis (vs functioning transplant)", 0.69,
+                       op="rate", unit="of ESRD", source="USRDS"),
+            DriverStep("% in-center hemodialysis", 0.84, op="rate",
+                       unit="of dialysis", source="USRDS modality mix"),
+            DriverStep("Treatments per patient / yr", 156, op="mult",
+                       unit="treatments/yr",
+                       source="3×/week standard of care"),
+            DriverStep("Avg revenue per treatment", 280, op="price",
+                       unit="$/treatment",
+                       source="CMS ESRD PPS base rate + commercial blend"),
+        ],
+        segments=[
+            Segment("Commercial-insured", 0.10, success_rate=None,
+                    note="~10% of patients, majority of clinic EBITDA — "
+                         "the economics segment, not a volume segment"),
+            Segment("Medicare / MA", 0.74, success_rate=None),
+            Segment("Medicaid / other", 0.16, success_rate=None),
+        ],
+        growth_drivers=[
+            GrowthDriver("ESRD incidence growth", 1.8,
+                         "diabetes/hypertension-driven"),
+            GrowthDriver("Rate updates (PPS + commercial)", 2.2,
+                         "CMS annual PPS update + commercial escalators"),
+            GrowthDriver("Home-modality shift", -1.5,
+                         "CMS pushing home dialysis pulls volume from "
+                         "in-center — a headwind, shown as one"),
+        ],
+        sam_share=0.55,
+        sam_note="Metros where an independent platform can site clinics "
+                 "(excl. the two-national-chain lock-ups)",
+        som_share=0.05,
+        som_note="Obtainable share for a regional platform at entry",
+        horizon_years=5,
+        basis_note="Template defaults from public USRDS/CMS data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -164,6 +211,7 @@ def blank_template() -> TamSamModel:
 
 TEMPLATES = {
     "fertility_ivf": fertility_ivf_template,
+    "dialysis": dialysis_template,
     "blank": blank_template,
 }
 
