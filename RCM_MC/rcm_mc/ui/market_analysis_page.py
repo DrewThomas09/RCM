@@ -121,6 +121,20 @@ _MKT_CHART_CAPTION_CSS = (
 )
 
 
+def _tam_sam_href(analysis: Dict[str, Any]) -> str:
+    """Pre-select the deal's own vertical in the builder when the
+    sector maps; the bare catalogue view otherwise — never a guessed
+    template."""
+    try:
+        from ..diligence.tam_sam import template_for_sector
+        key = template_for_sector(analysis.get("deal_specialty"))
+        if key:
+            return f"/diligence/tam-sam?template={key}"
+    except Exception:  # noqa: BLE001 — the link must never 500 a page
+        pass
+    return "/diligence/tam-sam"
+
+
 def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -> str:
     """Render market analysis as a browser page."""
     target = analysis.get("target", {})
@@ -331,7 +345,7 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         f'<a href="/models/comparables/{did_esc}" style="color:{link_col};">comparables</a>, '
         f'see the full <a href="/market-data/state/{st_esc}" style="color:{link_col};">'
         f'{st_esc} market</a>, or size the opportunity with the '
-        f'<a href="/diligence/tam-sam" style="color:{link_col};">'
+        f'<a href="{_tam_sam_href(analysis)}" style="color:{link_col};">'
         f'TAM / SAM Builder</a>.</p>'
         f'</div></div>'
     )

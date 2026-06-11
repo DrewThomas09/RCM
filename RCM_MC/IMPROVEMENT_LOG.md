@@ -1176,6 +1176,17 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-95 — deal-sector deep linking into the builder (05:55Z)
+**Dynamic deal linkage**: "size the opportunity" on a deal's Market
+Analysis now opens the TAM/SAM Builder PRE-SELECTED to the deal's own
+vertical — SECTOR_TO_TEMPLATE maps ~90 deal/corpus sector tokens onto
+the 82 templates (every mapped value pinned to a real template);
+template_for_sector() normalizes case/hyphens/spaces; unknown sectors
+fall back to the bare catalogue — never a guessed template; the link
+helper is fail-safe (never 500s a deal page).
+**Verify**: full map validated against the registry; normalization
+pinned; BH deal deep-links, unknown falls back; test_tam_sam 133 passed.
+
 ## W2-94 — full-platform sweep complete: 15,280 passed (05:30Z)
 **The regression verdict after 74 checkpoints of additions**: Q1 2,959 ·
 Q2 3,485 · Q3 5,680 · Q4 3,156 = 15,280 PASSED, 72 skipped, with exactly

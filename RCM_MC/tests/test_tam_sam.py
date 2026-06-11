@@ -1614,3 +1614,36 @@ class AgendaExportParityTests(unittest.TestCase):
         agenda_html = h.split("Diligence agenda")[1]
         q_markers = re.findall(r'margin-right:6px;">Q\d', agenda_html)
         self.assertEqual(len(q_markers), len(items))
+
+
+class SectorDeepLinkTests(unittest.TestCase):
+    """Deal-sector → template deep linking — "size the opportunity"
+    opens the builder pre-selected to the deal's own vertical."""
+
+    def test_every_mapped_template_exists(self):
+        from rcm_mc.diligence.tam_sam import SECTOR_TO_TEMPLATE, TEMPLATES
+        for sector, key in SECTOR_TO_TEMPLATE.items():
+            self.assertIn(key, TEMPLATES, sector)
+
+    def test_mapping_normalizes(self):
+        from rcm_mc.diligence.tam_sam import template_for_sector
+        self.assertEqual(template_for_sector("Behavioral Health"),
+                         "behavioral_health")
+        self.assertEqual(template_for_sector("hospital"), "hospitals")
+        self.assertIsNone(template_for_sector("nope"))
+        self.assertIsNone(template_for_sector(None))
+
+    def test_market_page_deep_links(self):
+        from rcm_mc.ui.market_analysis_page import (
+            render_market_analysis_page,
+        )
+        base = {"target": {}, "market_size": {}, "moat": {},
+                "competitors": [], "payer_mix_region": {},
+                "market_trends": {}}
+        h = render_market_analysis_page(
+            "d1", "BH Deal",
+            {**base, "deal_specialty": "behavioral_health"})
+        self.assertIn("/diligence/tam-sam?template=behavioral_health", h)
+        # Unknown sector → the bare catalogue, never a guessed template.
+        h2 = render_market_analysis_page("d2", "X", dict(base))
+        self.assertIn('href="/diligence/tam-sam"', h2)

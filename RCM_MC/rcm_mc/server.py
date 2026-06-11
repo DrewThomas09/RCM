@@ -8803,6 +8803,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             ma_dict = {"error": str(exc), "target": {}, "market_size": {},
                        "moat": {}, "competitors": [], "payer_mix_region": {},
                        "market_trends": {}}
+        # Deep-link "size the opportunity" pre-selected to the deal's
+        # own vertical (tam-sam template) when the sector maps.
+        ma_dict.setdefault("deal_specialty", profile.get("specialty")
+                           or profile.get("sector"))
         return self._send_html(render_market_analysis_page(
             deal_id, profile.get("name", deal_id), ma_dict))
 
