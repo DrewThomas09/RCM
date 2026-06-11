@@ -1176,6 +1176,30 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-52 — industry deep-dive layer: dialysis grounded in live CMS data (USER-DIRECTED SPRINT, 08:00Z)
+**User directive**: the TAM/SAM page becomes a long sprint — per industry:
+state-by-state breakdown, payer, tailwind root causes + directionality,
+whitespace, what's growing fastest, facility locations + performance, top-10
+states, real CMS/public data, visualizations.
+**Built (the per-industry pattern, dialysis first)**:
+  - diligence/industry_deep_dive.py — registry keyed by template;
+    dialysis_deep_dive() computes from the vendored CMS Dialysis Facility
+    Compare file (7,557 facilities): per-state facilities/stations/
+    independent counts + shares, top-10 states, chain landscape (DaVita
+    2,800 + Fresenius 2,772 = 74% duopoly), the 742-independent acquirable
+    pool ranked by state (NY 112 / CA 85 / FL 77), state median CMS
+    hospitalization rates (≥5 reporting), sector deal history from the
+    corpus (7 deals, 3.0x median MOIC, entry multiples). Fail-safe, never
+    fabricates, every block names its source.
+  - tam_sam_page: State-footprint panel (SVG bars, teal whitespace overlay
+    + quality column), Consolidation-map panel (duopoly + whitespace read),
+    What-this-sector-traded-for band with drill links (deal-search +
+    screener); growth drivers now carry ▲/▼ directionality with root cause.
+**Verify**: aggregates pinned (TX top, duopoly >50%, >500 independents,
+whitespace real); unknown industries → None never 500; dialysis page
+renders all three panels + drill links; fertility unaffected;
+test_tam_sam 14 passed. Screenshot delivered.
+
 ## W2-51 — dialysis template on the TAM/SAM Builder (07:20Z)
 **Found by**: one worked template reads as a demo; two read as a tool.
 **Added**: dialysis_template() — US ESRD patients (USRDS) → % on dialysis

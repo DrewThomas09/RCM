@@ -143,3 +143,42 @@ class PageAndExportTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IndustryDeepDiveTests(unittest.TestCase):
+    """The deep-dive layer under the sizing build — real CMS data, never
+    fabricated. Dialysis is the first industry in the sprint."""
+
+    def test_dialysis_dive_aggregates_real_facilities(self):
+        from rcm_mc.diligence.industry_deep_dive import dialysis_deep_dive
+        d = dialysis_deep_dive()
+        self.assertGreater(d["n_facilities"], 7000)   # 7.5K CMS facilities
+        self.assertEqual(d["top_states"][0]["state"], "TX")
+        # The duopoly is the defining market structure — pin it visible.
+        self.assertGreater(d["duopoly_share"], 0.5)
+        self.assertGreater(d["n_independent"], 500)
+        # Whitespace ranked by independent count, all real states.
+        self.assertTrue(all(s["independent"] > 0
+                            for s in d["whitespace_states"][:3]))
+
+    def test_unknown_industry_returns_none_not_500(self):
+        from rcm_mc.diligence.industry_deep_dive import deep_dive_for
+        self.assertIsNone(deep_dive_for("fertility_ivf"))
+        self.assertIsNone(deep_dive_for("nope"))
+
+    def test_dialysis_page_renders_dive_panels(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn("State footprint", h)
+        self.assertIn("Consolidation map", h)
+        self.assertIn("What this sector traded for", h)
+        self.assertIn("independents", h)
+        # Drill links into the live surfaces.
+        self.assertIn("/deal-search?sector=dialysis", h)
+        self.assertIn("/target-screener?vertical=dialysis", h)
+
+    def test_growth_drivers_show_directionality(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn("▲", h)   # tailwinds
+        self.assertIn("▼", h)   # the home-shift headwind, shown as one
