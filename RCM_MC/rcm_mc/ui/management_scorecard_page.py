@@ -362,6 +362,83 @@ def _exec_card(s: ExecutiveScore) -> str:
     )
 
 
+_MATRIX_DIMS = (
+    ("Forecast", "forecast_reliability"),
+    ("Comp", "comp_structure"),
+    ("Tenure", "tenure"),
+    ("Prior role", "prior_role_reputation"),
+    ("Overall", "overall"),
+)
+
+
+def _team_matrix_svg(scores: List[ExecutiveScore]) -> str:
+    """Team-at-a-glance heat matrix: executives × scoring dimensions.
+
+    The per-exec cards run vertically, so comparing the CFO's forecast
+    reliability against the CEO's means scrolling. This puts every
+    score on one grid — rows in the same red-flags-first order as the
+    cards, cells colored by the page's own score bands, ✗ marking
+    red-flagged executives. Empty rosters render nothing.
+    """
+    if not scores:
+        return ""
+    label_w, cell_w, cell_h, gap = 190, 86, 26, 4
+    pad_top, pad_bot = 26, 8
+    width = label_w + len(_MATRIX_DIMS) * (cell_w + gap) + 8
+    height = pad_top + len(scores) * (cell_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Executive scores by dimension">'
+    ]
+    for j, (dim_label, _) in enumerate(_MATRIX_DIMS):
+        cx = label_w + j * (cell_w + gap) + cell_w / 2
+        parts.append(
+            f'<text x="{cx:.0f}" y="16" text-anchor="middle" '
+            f'font-size="9" letter-spacing="1" '
+            f'fill="{P["text_faint"]}">{html.escape(dim_label.upper())}</text>'
+        )
+    for i, s in enumerate(scores):
+        y = pad_top + i * (cell_h + gap)
+        ty = y + cell_h / 2 + 3.5
+        name = s.executive.name
+        if len(name) > 20:
+            name = name[:19] + "…"
+        flag = " ✗" if s.is_red_flag else ""
+        name_col = P["negative"] if s.is_red_flag else P["text"]
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="{name_col}">'
+            f'{html.escape(name)}{flag}</text>'
+        )
+        for j, (_, attr) in enumerate(_MATRIX_DIMS):
+            val = int(getattr(s, attr, 0) or 0)
+            x = label_w + j * (cell_w + gap)
+            col = _score_color(val)
+            bold = 'font-weight="700" ' if attr == "overall" else ""
+            parts.append(
+                f'<rect x="{x}" y="{y}" width="{cell_w}" height="{cell_h}" '
+                f'rx="3" fill="{col}" fill-opacity="0.18" '
+                f'stroke="{col}" stroke-opacity="0.5"/>'
+                f'<text x="{x + cell_w / 2:.0f}" y="{ty:.1f}" '
+                f'text-anchor="middle" font-size="11" {bold}'
+                f'fill="{col}">{val}</text>'
+            )
+    parts.append("</svg>")
+    note = (
+        f'<div style="font-size:9.5px;letter-spacing:0.08em;'
+        f'color:{P["text_faint"]};margin-top:4px;'
+        f'font-family:var(--ck-mono,monospace);">'
+        'RED-FLAGGED EXECUTIVES MARKED ✗ · CELL COLOR = SCORE BAND · '
+        'OVERALL CARRIES THE RED-FLAG CAP</div>'
+    )
+    return (
+        '<div class="ms-team-matrix" style="margin:14px 0 6px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def _hero(report: ManagementReport, target_name: str) -> str:
     overall_color = _score_color(report.aggregate_overall)
 
@@ -530,6 +607,7 @@ def render_management_scorecard_page(
         + howto
         + f'<div class="ms-section-label">'
           f'Executive scorecards · red flags first</div>'
+        + _team_matrix_svg(critical + other)
         + focus_cards
         + '</div>'
         + bookmark_hint()
