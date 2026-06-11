@@ -1093,3 +1093,42 @@ class NicheVerticalsBatch13Tests(unittest.TestCase):
     def test_catalogue_crosses_50_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 53)   # 52 + blank
+
+
+class NicheVerticalsBatch14Tests(unittest.TestCase):
+    """Industries #53–55 — school services, mobile diagnostics,
+    community palliative."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "school_services": 7_500_000 * 0.45 * 2_400,
+            "mobile_diagnostics": 28_000_000 * 0.55 * 95,
+            "palliative": 12_000_000 * 0.05 * 4_200,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_gap_thesis_honesty(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, palliative_template,
+        )
+        # Palliative: the 5% penetration IS the thesis — and the FFS
+        # model's economic failure is priced as a negative driver.
+        self.assertLessEqual(palliative_template().chain[1].value, 0.10)
+        out = compute(TEMPLATES["palliative"]())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["FFS economics weakness"], 0)
+        # School services: the ESSER funding cliff is priced.
+        ss = compute(TEMPLATES["school_services"]())
+        names = {g["name"]: g["annual_pct"] for g in ss["growth_drivers"]}
+        self.assertLess(names["District budget cyclicality"], 0)
+
+    def test_catalogue_at_55_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 56)   # 55 + blank

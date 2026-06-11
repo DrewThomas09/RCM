@@ -2951,6 +2951,173 @@ def crisis_services_template() -> TamSamModel:
     )
 
 
+
+def school_services_template() -> TamSamModel:
+    """School-based therapy services sizing — the IDEA-funded niche.
+    NCES-anchored."""
+    return TamSamModel(
+        name="School services · special-education therapy market",
+        chain=[
+            DriverStep("US students with IEPs", 7_500_000, op="base",
+                       unit="students", source="NCES (15% of K-12)"),
+            DriverStep("% receiving related services (OT/PT/SLP/"
+                       "psych)", 0.45, op="rate", unit="of IEP students",
+                       source="IDEA Part B service-category data"),
+            DriverStep("Avg outsourced spend per served student / yr",
+                       2_400, op="price", unit="$/student/yr",
+                       source="district contract benchmarks (staffing "
+                              "+ teletherapy blend)"),
+        ],
+        segments=[
+            Segment("Speech-language pathology", 0.40, None,
+                    note="the volume service — chronic SLP shortage",
+                    growth_pct=6.0),
+            Segment("OT / PT", 0.25, None, growth_pct=5.0),
+            Segment("School psych / behavioral", 0.20, None,
+                    note="the fastest-need line post-2020",
+                    growth_pct=9.0),
+            Segment("Teletherapy delivery", 0.15, None,
+                    note="the margin model — solves rural coverage",
+                    growth_pct=11.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("IEP identification growth", 2.5,
+                         "autism + speech identification rates climb"),
+            GrowthDriver("Therapist-shortage outsourcing", 3.0,
+                         "districts can't hire — contracting IS the "
+                         "growth"),
+            GrowthDriver("Teletherapy normalization", 2.0,
+                         "post-2020 acceptance unlocked rural IEPs"),
+            GrowthDriver("District budget cyclicality", -2.0,
+                         "ESSER cliff + local levies — the funding "
+                         "headwind, shown as one"),
+            GrowthDriver("Compliance / due-process exposure", -1.0,
+                         "IDEA litigation drives service minutes but "
+                         "punishes failures"),
+        ],
+        sam_share=0.50,
+        sam_note="Districts that outsource (large urbans self-staff)",
+        som_share=0.04,
+        som_note="Presence/ProCare class — teletherapy reset the map",
+        horizon_years=5,
+        basis_note="Template defaults from NCES/IDEA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def mobile_diagnostics_template() -> TamSamModel:
+    """Mobile diagnostics sizing — portable imaging/labs to the
+    bedside. The SNF-service niche."""
+    return TamSamModel(
+        name="Mobile diagnostics · bedside imaging & labs market",
+        chain=[
+            DriverStep("US LTC/homebound diagnostic encounters / yr",
+                       28_000_000, op="base", unit="encounters",
+                       source="SNF census × imaging/lab order rates "
+                              "(claims-based estimates)"),
+            DriverStep("% served by mobile providers", 0.55, op="rate",
+                       unit="of encounters",
+                       source="vs transport-to-facility — mobile wins "
+                              "on total-cost + resident burden"),
+            DriverStep("Avg revenue per encounter", 95, op="price",
+                       unit="$/encounter",
+                       source="portable X-ray/ultrasound/EKG + "
+                              "phlebotomy fee blend (Medicare Part B)"),
+        ],
+        segments=[
+            Segment("Portable X-ray / ultrasound", 0.45, None,
+                    note="the legacy core — TridentUSA history",
+                    growth_pct=3.0),
+            Segment("Mobile phlebotomy / labs", 0.30, None,
+                    growth_pct=5.0),
+            Segment("Home-based (HaH / SNF-at-home adjacency)",
+                    0.15, None,
+                    note="the growth format — follows care home",
+                    growth_pct=10.0),
+            Segment("Mobile echo / vascular / advanced", 0.10, None,
+                    growth_pct=7.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Care-at-home migration", 4.0,
+                         "every HaH/SNF-at-home episode needs mobile "
+                         "diagnostics"),
+            GrowthDriver("Transport-cost avoidance", 2.0,
+                         "ambulance transport for an X-ray costs 5× "
+                         "the mobile visit"),
+            GrowthDriver("Part B fee pressure", -1.5,
+                         "portable-X-ray transportation-fee cuts — "
+                         "the chronic headwind"),
+            GrowthDriver("Tech route-density economics", -1.0,
+                         "windshield time caps margin without "
+                         "density"),
+        ],
+        sam_share=0.55,
+        sam_note="SNF-dense + HaH-active metros where route density "
+                 "works",
+        som_share=0.06,
+        som_note="Post-TridentUSA fragmentation — regional rebuild "
+                 "opportunity",
+        horizon_years=5,
+        basis_note="Template defaults from CMS Part B/claims public "
+                   "data — replace with engagement data before IC use.",
+    )
+
+
+def palliative_template() -> TamSamModel:
+    """Community-based palliative care sizing — the pre-hospice
+    layer. CAPC-anchored."""
+    return TamSamModel(
+        name="Palliative care · community-based market",
+        chain=[
+            DriverStep("US adults with serious illness (palliative-"
+                       "appropriate)", 12_000_000, op="base",
+                       unit="adults", source="CAPC prevalence"),
+            DriverStep("% receiving community palliative care", 0.05,
+                       op="rate", unit="of appropriate",
+                       source="CAPC — hospital programs exist; "
+                              "COMMUNITY delivery is nearly absent: "
+                              "the gap is the market"),
+            DriverStep("Avg revenue per patient / yr", 4_200,
+                       op="price", unit="$/patient/yr",
+                       source="MA supplemental + VBC PMPM + Part B "
+                              "billing blend"),
+        ],
+        segments=[
+            Segment("MA / VBC contracted (PMPM)", 0.50, None,
+                    note="the scalable model — payers fund avoided "
+                         "admissions", growth_pct=14.0),
+            Segment("Hospice-adjacent (pre-hospice)", 0.30, None,
+                    note="the referral bridge — hospices build it as "
+                         "a feeder", growth_pct=8.0),
+            Segment("FFS Part B (MD/NP visits)", 0.20, None,
+                    note="the economics-poor legacy model",
+                    growth_pct=2.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Penetration of the eligible gap", 6.0,
+                         "5% served → the whitespace is the thesis"),
+            GrowthDriver("MA supplemental-benefit adoption", 4.0,
+                         "plans add palliative benefits for the "
+                         "avoided-admission math"),
+            GrowthDriver("Hospice feeder economics", 2.0,
+                         "earlier referral lifts hospice LOS — the "
+                         "adjacency motive"),
+            GrowthDriver("FFS economics weakness", -2.0,
+                         "visit billing alone doesn't cover an IDT — "
+                         "the model fails without VBC, shown as one"),
+            GrowthDriver("Clinician scarcity", -1.5,
+                         "palliative-trained NPs/MDs are scarce"),
+        ],
+        sam_share=0.50,
+        sam_note="MA-dense markets with VBC-willing plans",
+        som_share=0.05,
+        som_note="An emerging market — no scaled pure-play yet",
+        horizon_years=5,
+        basis_note="Template defaults from CAPC public data — replace "
+                   "with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -3029,6 +3196,9 @@ TEMPLATES = {
     "correctional_health": correctional_health_template,
     "locum_staffing": locum_staffing_template,
     "crisis_services": crisis_services_template,
+    "school_services": school_services_template,
+    "mobile_diagnostics": mobile_diagnostics_template,
+    "palliative": palliative_template,
     "blank": blank_template,
 }
 
