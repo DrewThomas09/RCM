@@ -37,5 +37,14 @@ class SectorDrilldownTests(unittest.TestCase):
         self.assertNotIn("No deals match", out)
 
 
+class DealSearchEvRollupTests(unittest.TestCase):
+    def test_ev_column_rolls_to_billions(self):
+        # House style: ev_mm ≥ 1000 (i.e. ≥$1B) reads "$2.00B" not "$2000M".
+        from rcm_mc.ui.data_public.deal_search_page import render_deal_search
+        h = render_deal_search(query="", sector="dialysis")
+        self.assertIn("$2.00B", h)
+        self.assertNotIn("$2000M", h)
+
+
 if __name__ == "__main__":
     unittest.main()
