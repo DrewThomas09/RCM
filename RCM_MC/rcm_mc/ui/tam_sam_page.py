@@ -367,6 +367,52 @@ def _industry_panels(tmpl_key: str) -> str:
     return footprint + consolidation + deals_band
 
 
+def _tornado_panel(model: TamSamModel, tam: float) -> str:
+    """±20% driver sensitivity — which assumption moves the answer.
+    Horizontal low–high bars around the base TAM, sorted by impact."""
+    from ..diligence.tam_sam import sensitivity
+    rows = sensitivity(model)
+    if not rows or tam <= 0:
+        return ""
+    width, row_h, pad_l, pad_r = 640, 26, 230, 96
+    pw = width - pad_l - pad_r
+    lo_all = min(r["tam_low"] for r in rows)
+    hi_all = max(r["tam_high"] for r in rows)
+    span = (hi_all - lo_all) or 1
+    parts = [f'<svg width="{width}" height="{len(rows)*row_h + 22}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Driver sensitivity tornado">']
+    x_base = pad_l + (tam - lo_all) / span * pw
+    parts.append(
+        f'<line x1="{x_base:.1f}" y1="4" x2="{x_base:.1f}" '
+        f'y2="{len(rows)*row_h + 8}" stroke="#7a8699" '
+        'stroke-dasharray="3,3" stroke-width="1"/>')
+    for i, r in enumerate(rows):
+        y = i * row_h + 12
+        x_lo = pad_l + (r["tam_low"] - lo_all) / span * pw
+        x_hi = pad_l + (r["tam_high"] - lo_all) / span * pw
+        parts.append(
+            f'<text x="{pad_l-8}" y="{y+5}" text-anchor="end" '
+            'font-family="sans-serif" font-size="11" fill="#1a2332">'
+            f'{html.escape(r["name"][:32])}</text>'
+            f'<rect x="{x_lo:.1f}" y="{y-6}" '
+            f'width="{max(2, x_hi-x_lo):.1f}" height="12" '
+            'fill="#1F7A75" opacity="0.75"/>'
+            f'<text x="{x_hi+6:.1f}" y="{y+5}" font-family="monospace" '
+            'font-size="9.5" fill="#465366">'
+            f'{_fmt_money(r["tam_low"])}\u2013{_fmt_money(r["tam_high"])}'
+            '</text>')
+    parts.append('</svg>')
+    return ck_panel(
+        "".join(parts)
+        + '<p class="ts2-src" style="margin:8px 0 0;">Each bar swings '
+        'ONE driver \u00b120% (rates clamped at 100%) holding the rest at '
+        'base \u2014 dashed line = base TAM. Sorted by impact: the top bar '
+        'is the assumption to pressure-test first.</p>',
+        title="Driver sensitivity \u00b7 \u00b120% tornado",
+    )
+
+
 def _dive_for_sources(tmpl_key: str) -> Optional[Dict[str, Any]]:
     from ..diligence.industry_deep_dive import deep_dive_for
     return deep_dive_for(tmpl_key)
@@ -411,6 +457,10 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
                            ("ltch", "LTCH"),
                            ("behavioral_health", "Behavioral health"),
                            ("asc", "ASC · surgery"),
+                           ("physician_group", "Physician groups"),
+                           ("dental", "Dental · DSO"),
+                           ("oncology", "Oncology"),
+                           ("urgent_care", "Urgent care"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )
@@ -581,6 +631,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     body = (
         _CSS + title + src + tmpl_bar + basis + funnel
         + chain_panel + seg_panel + proj_panel
+        + _tornado_panel(model, out["tam"])
         + _industry_panels(tmpl_key)
         + _sources_panel(out, _dive_for_sources(tmpl_key))
         + export_panel

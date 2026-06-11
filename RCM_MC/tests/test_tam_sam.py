@@ -362,3 +362,75 @@ class BehavioralAscIndustryTests(unittest.TestCase):
             self.assertIn("What this sector traded for", h, key)
             self.assertNotIn("State footprint", h, key)
             self.assertIn("rather than fabricated", h, key)
+
+
+class FourMoreVerticalsTests(unittest.TestCase):
+    """Industries #9–12 — physician groups, dental, oncology, urgent
+    care. All chains anchored to named public sources; deals-only dives."""
+
+    def test_all_four_chains_pin_to_public_magnitudes(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "physician_group": 580_000 * 0.42 * 750_000,
+            "dental": 165e9 * 0.95,
+            "oncology": 2_000_000 * 0.55 * 150_000,
+            "urgent_care": 14_000 * 14_600 * 165,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            # Every template carries at least one honest headwind.
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+
+    def test_every_registered_template_renders(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        for key in TEMPLATES:
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn("TAM / SAM Builder", h, key)
+            self.assertIn("Sources", h, key)
+
+    def test_every_template_exports_valid_xlsx(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import tam_sam_xlsx
+        for key in TEMPLATES:
+            data = tam_sam_xlsx({"template": [key]})
+            z = zipfile.ZipFile(io.BytesIO(data))
+            self.assertIsNone(z.testzip(), key)
+
+
+class SensitivityTornadoTests(unittest.TestCase):
+    def test_sensitivity_math(self):
+        from rcm_mc.diligence.tam_sam import (
+            fertility_ivf_template, sensitivity,
+        )
+        rows = sensitivity(fertility_ivf_template())
+        self.assertEqual(len(rows), 4)            # one bar per driver
+        base = 3_660_000 * 0.023 * 2.5 * 20_000
+        for r in rows:
+            self.assertLess(r["tam_low"], base)
+            self.assertGreater(r["tam_high"], base)
+        # Sorted by impact descending.
+        self.assertGreaterEqual(rows[0]["impact"], rows[-1]["impact"])
+
+    def test_rate_clamps_at_100pct(self):
+        # A 95% rate swung +20% must clamp at 100%, not reach 114%.
+        from rcm_mc.diligence.tam_sam import (
+            DriverStep, TamSamModel, sensitivity,
+        )
+        m = TamSamModel(name="t", chain=[
+            DriverStep("base", 100.0, op="base"),
+            DriverStep("rate", 0.95, op="rate"),
+            DriverStep("price", 10.0, op="price"),
+        ])
+        rows = sensitivity(m)
+        rate_row = next(r for r in rows if r["name"] == "rate")
+        self.assertAlmostEqual(rate_row["tam_high"], 100 * 1.0 * 10,
+                               places=6)
+
+    def test_tornado_renders(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["snf"]})
+        self.assertIn("Driver sensitivity", h)
+        self.assertIn('aria-label="Driver sensitivity tornado"', h)

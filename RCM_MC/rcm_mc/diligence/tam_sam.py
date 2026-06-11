@@ -546,6 +546,197 @@ def asc_template() -> TamSamModel:
     )
 
 
+
+def physician_group_template() -> TamSamModel:
+    """Physician practice management sizing — AMA/MGMA-anchored."""
+    return TamSamModel(
+        name="Physician groups · practice management market",
+        chain=[
+            DriverStep("Active US physicians (office-based)", 580_000,
+                       op="base", unit="physicians",
+                       source="AMA Masterfile (office-based share)"),
+            DriverStep("% in independent / acquirable practices", 0.42,
+                       op="rate", unit="of office-based",
+                       source="AMA PRP (independent practice share, "
+                              "declining ~2pp/yr)"),
+            DriverStep("Avg practice revenue per physician", 750_000,
+                       op="price", unit="$/physician/yr",
+                       source="MGMA DataDive medians (multi-specialty "
+                              "blend)"),
+        ],
+        segments=[
+            Segment("Primary care", 0.32, None,
+                    note="VBC/MA-enablement thesis territory"),
+            Segment("Ortho / MSK", 0.14, None,
+                    note="ancillary-rich: ASC + imaging + PT"),
+            Segment("Cardiology", 0.12, None,
+                    note="the 2021+ consolidation wave"),
+            Segment("GI", 0.10, None),
+            Segment("Dermatology", 0.10, None,
+                    note="the first PPM wave — now mature"),
+            Segment("Other specialties", 0.22, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("Utilization / demographics", 2.5,
+                         "visit volume scales with 65+ growth"),
+            GrowthDriver("Ancillary capture", 2.0,
+                         "in-practice ASC/imaging/infusion revenue"),
+            GrowthDriver("Value-based contracts", 1.5,
+                         "MA risk deals add PMPM streams"),
+            GrowthDriver("Fee-schedule pressure", -1.5,
+                         "Medicare PFS conversion-factor cuts"),
+            GrowthDriver("Independent-pool shrinkage", -2.0,
+                         "hospital + payer employment drains the "
+                         "acquirable pool — the clock on the thesis"),
+        ],
+        sam_share=0.45,
+        sam_note="Specialties + geographies where the PPM model has "
+                 "proven economics",
+        som_share=0.02,
+        som_note="A large platform holds <2% of a deeply fragmented "
+                 "market",
+        horizon_years=5,
+        basis_note="Template defaults from AMA/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def dental_template() -> TamSamModel:
+    """DSO market sizing — ADA HPI-anchored."""
+    return TamSamModel(
+        name="Dental · DSO-addressable market",
+        chain=[
+            DriverStep("US dental spend / yr", 165_000_000_000, op="base",
+                       unit="$", source="CMS NHE dental services line"),
+            DriverStep("% delivered by practices (vs other settings)",
+                       0.95, op="rate", unit="of spend",
+                       source="ADA Health Policy Institute"),
+        ],
+        segments=[
+            Segment("General dentistry", 0.62, None),
+            Segment("Ortho / aligners", 0.12, None,
+                    note="consumer-demand cyclical"),
+            Segment("Oral surgery / implants", 0.12, None,
+                    note="highest-margin specialty"),
+            Segment("Pediatric", 0.08, None,
+                    note="Medicaid-funded; rate-sensitive"),
+            Segment("Endo / perio / other", 0.06, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("Price / fee growth", 3.0,
+                         "dental fees track above CPI (ADA HPI)"),
+            GrowthDriver("Utilization recovery", 1.0,
+                         "adult visit rates still below pre-2020"),
+            GrowthDriver("DSO penetration", 2.0,
+                         "DSO share of dentists ~13% and climbing — "
+                         "the consolidation runway"),
+            GrowthDriver("Insurance mix pressure", -1.0,
+                         "dental benefit caps flat for decades in "
+                         "nominal terms"),
+        ],
+        sam_share=0.50,
+        sam_note="The DSO-consolidatable practice universe (excl. "
+                 "rural solo + hospital-based)",
+        som_share=0.03,
+        som_note="Largest DSO holds ~3% — the fragmentation persists",
+        horizon_years=5,
+        basis_note="Template defaults from CMS NHE / ADA HPI public "
+                   "data — replace with engagement data before IC use.",
+    )
+
+
+def oncology_template() -> TamSamModel:
+    """Community oncology sizing — ASCO/MedPAC-anchored."""
+    return TamSamModel(
+        name="Oncology · community practice market",
+        chain=[
+            DriverStep("New US cancer cases / yr", 2_000_000, op="base",
+                       unit="cases", source="ACS Cancer Facts & Figures"),
+            DriverStep("% treated in community setting", 0.55, op="rate",
+                       unit="of cases",
+                       source="ASCO practice census (vs hospital/"
+                              "academic)"),
+            DriverStep("Avg first-year treatment revenue", 150_000,
+                       op="price", unit="$/case",
+                       source="MedPAC oncology spend per beneficiary "
+                              "(drug + services blend)"),
+        ],
+        segments=[
+            Segment("Medical oncology (drug spend)", 0.65, None,
+                    note="buy-and-bill economics — the margin engine"),
+            Segment("Radiation oncology", 0.18, None,
+                    note="capital-intensive; hypofractionation headwind"),
+            Segment("Surgical / other", 0.17, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("Incidence / demographics", 2.5,
+                         "cases scale with the 65+ wave"),
+            GrowthDriver("Drug price inflation", 4.0,
+                         "novel-agent launch prices — the dominant "
+                         "driver"),
+            GrowthDriver("Site-of-care shift to community", 1.5,
+                         "payers steer infusion out of HOPD"),
+            GrowthDriver("IRA drug-price negotiation", -1.5,
+                         "Medicare negotiation compresses buy-and-bill "
+                         "spread — a structural headwind from 2026"),
+            GrowthDriver("340B competition", -1.0,
+                         "hospital 340B economics pull volume"),
+        ],
+        sam_share=0.55,
+        sam_note="Community practices a platform can affiliate "
+                 "(excl. academic-captive)",
+        som_share=0.04,
+        som_note="Obtainable share at entry",
+        horizon_years=5,
+        basis_note="Template defaults from ACS/ASCO/MedPAC public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+def urgent_care_template() -> TamSamModel:
+    """Urgent care sizing — UCA-anchored."""
+    return TamSamModel(
+        name="Urgent care · clinic market",
+        chain=[
+            DriverStep("US urgent care centers", 14_000, op="base",
+                       unit="centers",
+                       source="Urgent Care Association census"),
+            DriverStep("Visits per center / yr", 14_600, op="mult",
+                       unit="visits/yr", source="UCA (~40/day average)"),
+            DriverStep("Avg revenue per visit", 165, op="price",
+                       unit="$/visit",
+                       source="UCA benchmarking (payer blend)"),
+        ],
+        segments=[
+            Segment("Commercial-insured", 0.55, None,
+                    note="the economics segment"),
+            Segment("Medicare / MA", 0.20, None),
+            Segment("Medicaid", 0.15, None),
+            Segment("Self-pay / occ-health", 0.10, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("ED-avoidance steerage", 3.0,
+                         "payers + consumers substitute $165 visits "
+                         "for $2,000 ED visits"),
+            GrowthDriver("Unit growth / de-novo", 2.5,
+                         "center count still compounding"),
+            GrowthDriver("Retail / telehealth competition", -1.5,
+                         "CVS/Amazon/virtual primary care skim the "
+                         "low-acuity tail"),
+            GrowthDriver("Staffing cost", -1.0,
+                         "provider coverage inflation"),
+        ],
+        sam_share=0.60,
+        sam_note="Metro + suburban catchments a platform can brand-"
+                 "build in",
+        som_share=0.05,
+        som_note="Obtainable share at entry",
+        horizon_years=5,
+        basis_note="Template defaults from UCA public census data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -580,6 +771,10 @@ TEMPLATES = {
     "ltch": ltch_template,
     "behavioral_health": behavioral_health_template,
     "asc": asc_template,
+    "physician_group": physician_group_template,
+    "dental": dental_template,
+    "oncology": oncology_template,
+    "urgent_care": urgent_care_template,
     "blank": blank_template,
 }
 
@@ -649,3 +844,39 @@ def compute(model: TamSamModel) -> Dict[str, Any]:
         "horizon_years": model.horizon_years,
         "basis_note": model.basis_note,
     }
+
+
+def sensitivity(model: TamSamModel, *, swing: float = 0.20) -> List[Dict[str, Any]]:
+    """Tornado data: TAM impact of swinging each chain driver ±swing
+    (rates clamped to [0,1]). Sorted by absolute impact — the classic
+    IC sensitivity read: which assumption moves the answer."""
+    base = compute(model)["tam"]
+    out: List[Dict[str, Any]] = []
+    for i, st in enumerate(model.chain):
+        lo_m = TamSamModel(name=model.name,
+                           chain=[DriverStep(s.name, s.value, op=s.op)
+                                  for s in model.chain],
+                           sam_share=model.sam_share,
+                           som_share=model.som_share)
+        hi_m = TamSamModel(name=model.name,
+                           chain=[DriverStep(s.name, s.value, op=s.op)
+                                  for s in model.chain],
+                           sam_share=model.sam_share,
+                           som_share=model.som_share)
+        lo_v = st.value * (1 - swing)
+        hi_v = st.value * (1 + swing)
+        if st.op == "rate":
+            lo_v = max(0.0, min(1.0, lo_v))
+            hi_v = max(0.0, min(1.0, hi_v))
+        lo_m.chain[i].value = lo_v
+        hi_m.chain[i].value = hi_v
+        tam_lo = compute(lo_m)["tam"]
+        tam_hi = compute(hi_m)["tam"]
+        out.append({
+            "name": st.name,
+            "tam_low": tam_lo,
+            "tam_high": tam_hi,
+            "impact": abs(tam_hi - tam_lo),
+        })
+    out.sort(key=lambda r: -r["impact"])
+    return out
