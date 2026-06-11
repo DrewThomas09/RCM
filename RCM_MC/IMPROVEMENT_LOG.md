@@ -1176,6 +1176,25 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-55 — industry #4: SNF template + deep dive (09:50Z)
+**Sprint continuation**: skilled nursing — the richest CMS vertical file.
+  - snf_template(): the base TAM driver is the REAL certified-bed count
+    (1.569M from the vendored file) × 77% occupancy × 365 × $300 blended
+    per-diem = $132B (the known industry size); payer segments (Medicaid
+    62% volume payer / Medicare+MA 21% margin payer / private 17%);
+    drivers incl. the federal staffing mandate, home-shift, and MA
+    penetration carried as headwinds vs the 80+ demographic wave.
+  - snf_deep_dive(): 14,699 facilities / 1,569,384 certified beds —
+    state footprint with REAL bed capacity (TX 133K / CA 115K / OH 81K
+    beds), ownership collapsed to IC buckets (10,849 for-profit), CMS
+    star-rating state medians (52 states), 12-month change-of-ownership
+    count surfaced as the live M&A turnover signal, and BED-DENSITY
+    whitespace (beds per 10K seniors, lowest first) — AK/AZ/OR/NV/WA
+    surface as the under-bedded HCBS-shift states.
+**Verify**: chain math = the known ~$132B; bed total pinned EXACTLY to the
+vendored file (1,569,384); TX top; whitespace ascending with Western states
+first; page renders Beds/CHOW/star labels; test_tam_sam 24 passed.
+
 ## W2-54 — industry #3: hospice template + deep dive (09:15Z)
 **Sprint continuation**: hospice joins — the most PE-penetrated post-acute
 vertical.

@@ -299,6 +299,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
                            ("dialysis", "Dialysis · in-center"),
                            ("home_health", "Home health"),
                            ("hospice", "Hospice"),
+                           ("snf", "SNF · nursing"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )
