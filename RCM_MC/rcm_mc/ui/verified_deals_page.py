@@ -10,7 +10,7 @@ credible). EV shows only where publicly disclosed.
 from __future__ import annotations
 
 import html as _html
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from urllib.parse import quote
 
 from ._chartis_kit import (
@@ -44,6 +44,72 @@ def _ev(d: Dict) -> str:
     if ev >= 1000:
         return f"${ev / 1000:.1f}B"
     return f"${ev:,.0f}M"
+
+
+def _vintage_svg(deals: List[Dict]) -> str:
+    """When the (filtered) deal flow actually happened.
+
+    Columns of deal count per vintage year for the current filter —
+    a sector whose verified activity clusters 2018–2021 and dries up
+    after tells a different consolidation story than a steady tape.
+    Years with no deals keep their slot so droughts stay visible.
+    Fewer than two distinct years renders nothing.
+    """
+    years = [int(d["year"]) for d in deals if d.get("year")]
+    if len(set(years)) < 2:
+        return ""
+    y0, y1 = min(years), max(years)
+    counts = {y: 0 for y in range(y0, y1 + 1)}
+    for y in years:
+        counts[y] += 1
+    max_n = max(counts.values()) or 1
+
+    width, chart_h = 720, 110
+    pad_l, pad_b, pad_t = 8, 18, 14
+    height = pad_t + chart_h + pad_b
+    n_slots = y1 - y0 + 1
+    slot = (width - 2 * pad_l) / n_slots
+    bar_w = max(3.0, slot * 0.62)
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Verified deals per vintage year">'
+        f'<line x1="{pad_l}" y1="{pad_t + chart_h}" '
+        f'x2="{width - pad_l}" y2="{pad_t + chart_h}" '
+        f'stroke="#d6cfc0" stroke-width="1"/>'
+    ]
+    for i, y in enumerate(range(y0, y1 + 1)):
+        n = counts[y]
+        x = pad_l + i * slot + (slot - bar_w) / 2
+        h = chart_h * n / max_n
+        if n:
+            parts.append(
+                f'<rect x="{x:.1f}" y="{pad_t + chart_h - h:.1f}" '
+                f'width="{bar_w:.1f}" height="{max(h, 1.5):.1f}" rx="2" '
+                f'fill="#0b2341" fill-opacity="0.85"/>'
+            )
+            if n >= max_n * 0.5:
+                parts.append(
+                    f'<text x="{x + bar_w / 2:.1f}" '
+                    f'y="{pad_t + chart_h - h - 4:.1f}" '
+                    f'text-anchor="middle" font-size="9" '
+                    f'font-weight="600" fill="#0b2341">{n}</text>'
+                )
+        if y % 2 == 0 or n_slots <= 8:
+            parts.append(
+                f'<text x="{x + bar_w / 2:.1f}" y="{height - 5}" '
+                f'text-anchor="middle" font-size="8.5" '
+                f'fill="#7a8699">{y}</text>'
+            )
+    parts.append("</svg>")
+    return (
+        '<div class="ck-vd-vintage" style="margin:6px 0 14px;">'
+        '<div style="font-size:9px;letter-spacing:1px;color:#7a8699;'
+        f'margin-bottom:2px;">DEAL VINTAGES · {len(years)} DEALS '
+        f'{y0}–{y1} · CURRENT FILTER</div>'
+        + "".join(parts) + "</div>"
+    )
 
 
 def render_verified_deals(params: Optional[Dict] = None) -> str:
@@ -174,7 +240,7 @@ def render_verified_deals(params: Optional[Dict] = None) -> str:
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));'
         'gap:16px;margin-bottom:18px">'
         + outcome_panel + sponsor_panel + '</div>'
-    )
+    ) + _vintage_svg(deals)
 
     # Sector filter chips.
     def _chip(val: str, label: str) -> str:
