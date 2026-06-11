@@ -292,3 +292,13 @@ USER DATA REQUEST: CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓ NPPES+map ✓ Part-B
 by-geo/POS J-codes+map ✓. Remaining named: Medicare Monthly Enrollment
 (total benes/county), CMS Outpatient Hospitals by provider/service
 (cms_opps_outpatient client exists, unwired).
+
+---
+## Checkpoint — wave #61 (W2-159, 2026-06-11)
+Added regulatory_reimbursement_environment(): 6 categories / 23 items
+(Part B ASP/sequester, HIT benefit + calendar-day gap, IRA/MFP/biosimilar
++8%/340B, site-neutral/white-bagging/prior-auth/MA-2024-rule, Texas
+no-CON/TSBP/Medicaid-non-expansion, USP 797/800/ACHC/DSCSA) tagged
+tailwind/headwind/neutral (5/11/7) + net read. Page: "Regulatory &
+reimbursement environment" section (count strip + NET READ + per-category
+items w/ impact tag + implication) + SO WHAT. +4 tests; full suite green.
