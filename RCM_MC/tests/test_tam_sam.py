@@ -256,3 +256,40 @@ class HospiceIndustryTests(unittest.TestCase):
         self.assertIn("State footprint", h)
         self.assertIn("Care index", h)
         self.assertIn("/deal-search?sector=hospice", h)
+
+
+class SnfIndustryTests(unittest.TestCase):
+    """Industry #4 — SNF: the richest CMS file (real beds, occupancy,
+    CHOW flags). The base TAM driver is the ACTUAL certified-bed count."""
+
+    def test_snf_template_math(self):
+        from rcm_mc.diligence.tam_sam import compute, snf_template
+        out = compute(snf_template())
+        # 1.569M beds × 77% × 365 × $300 ≈ $132B — the known industry size.
+        self.assertAlmostEqual(
+            out["tam"], 1_569_000 * 0.77 * 365 * 300, places=2)
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["Staffing mandate / labor"], 0)
+
+    def test_snf_dive_real_aggregates(self):
+        from rcm_mc.diligence.industry_deep_dive import snf_deep_dive
+        d = snf_deep_dive()
+        self.assertGreater(d["n_facilities"], 14_000)
+        # Real capacity: the bed total matches the vendored file.
+        self.assertEqual(sum(s["stations"] for s in d["states"]), 1_569_384)
+        self.assertEqual(d["top_states"][0]["state"], "TX")
+        self.assertGreater(d["n_independent"], 10_000)   # for-profit
+        # Whitespace = beds per 10K seniors ascending; the under-bedded
+        # Western (HCBS-shift) states surface first.
+        ws = d["whitespace_states"]
+        self.assertLessEqual(ws[0]["per_10k_seniors"],
+                             ws[-1]["per_10k_seniors"])
+        self.assertIn(ws[0]["state"], ("AK", "AZ", "OR", "NV", "WA", "HI"))
+
+    def test_snf_page_renders_dive(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["snf"]})
+        self.assertIn("State footprint", h)
+        self.assertIn("Beds", h)
+        self.assertIn("changed ownership", h)   # the CHOW signal
+        self.assertIn("/target-screener?vertical=snf", h)

@@ -291,6 +291,65 @@ def hospice_template() -> TamSamModel:
     )
 
 
+
+def snf_template() -> TamSamModel:
+    """Skilled nursing facility sizing. The base driver is the REAL
+    certified-bed count from the vendored CMS file; occupancy and the
+    blended per-diem anchor to NIC/MedPAC magnitudes (~$130–140B
+    industry revenue)."""
+    return TamSamModel(
+        name="SNF · skilled nursing facility market",
+        chain=[
+            DriverStep("Certified SNF beds", 1_569_000, op="base",
+                       unit="beds",
+                       source="CMS Nursing Home Care Compare (vendored "
+                              "snapshot — actual certified-bed count)"),
+            DriverStep("Average occupancy", 0.77, op="rate",
+                       unit="of beds", source="NIC MAP / CMS census"),
+            DriverStep("Patient days per occupied bed / yr", 365,
+                       op="mult", unit="days/yr", source="calendar"),
+            DriverStep("Blended revenue per patient day", 300, op="price",
+                       unit="$/day",
+                       source="Medicaid ~$250 / Medicare PDPM ~$600 / "
+                              "private blend (MedPAC, AHCA)"),
+        ],
+        segments=[
+            Segment("Medicaid (long-stay)", 0.62, None,
+                    note="the volume payer — lowest rate, custodial "
+                         "census"),
+            Segment("Medicare FFS + MA (short-stay)", 0.21, None,
+                    note="the margin payer — PDPM rehab stays fund the "
+                         "house"),
+            Segment("Private / other", 0.17, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("Demographics (80+ growth)", 3.0,
+                         "the boomer 80+ wave hits 2026–2035"),
+            GrowthDriver("Medicaid rate updates", 2.0,
+                         "state budget-driven; lags cost inflation"),
+            GrowthDriver("Occupancy recovery", 1.5,
+                         "census still rebuilding toward pre-2020 "
+                         "levels"),
+            GrowthDriver("Staffing mandate / labor", -2.0,
+                         "federal minimum-staffing rule + agency wage "
+                         "inflation — the sector's defining headwind"),
+            GrowthDriver("Site-of-care shift to home", -1.5,
+                         "HH/hospital-at-home pulls the short-stay "
+                         "rehab census"),
+            GrowthDriver("MA penetration", -1.0,
+                         "MA pays below FFS and shortens stays"),
+        ],
+        sam_share=0.55,
+        sam_note="States/metros a platform can staff and license; "
+                 "excludes hospital-based + government facilities",
+        som_share=0.03,
+        som_note="Obtainable share for a regional platform at entry",
+        horizon_years=5,
+        basis_note="Template defaults from CMS/NIC/MedPAC public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -320,6 +379,7 @@ TEMPLATES = {
     "dialysis": dialysis_template,
     "home_health": home_health_template,
     "hospice": hospice_template,
+    "snf": snf_template,
     "blank": blank_template,
 }
 
