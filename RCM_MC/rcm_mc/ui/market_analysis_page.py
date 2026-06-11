@@ -328,9 +328,11 @@ def render_market_analysis_page(deal_id: str, deal_name: str, analysis: Dict[str
         f'The {state or "regional"} market is {market_interp} (HHI: {hhi_str}).</p>'
         f'<p style="margin-top:6px;"><strong>Implications:</strong> {implication}'
         f' Compare against peers via '
-        f'<a href="/models/comparables/{did_esc}" style="color:{link_col};">comparables</a> '
-        f'or see the full <a href="/market-data/state/{st_esc}" style="color:{link_col};">'
-        f'{st_esc} market</a>.</p>'
+        f'<a href="/models/comparables/{did_esc}" style="color:{link_col};">comparables</a>, '
+        f'see the full <a href="/market-data/state/{st_esc}" style="color:{link_col};">'
+        f'{st_esc} market</a>, or size the opportunity with the '
+        f'<a href="/diligence/tam-sam" style="color:{link_col};">'
+        f'TAM / SAM Builder</a>.</p>'
         f'</div></div>'
     )
 

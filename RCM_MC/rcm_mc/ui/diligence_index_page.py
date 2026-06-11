@@ -137,6 +137,10 @@ _PILLARS: List[Mapping[str, object]] = [
             {"href": "/diligence/comparable-outcomes",
              "label": "Comparable Outcomes",
              "blurb": "How similar deals actually played out."},
+            {"href": "/diligence/tam-sam",
+             "label": "TAM / SAM Builder",
+             "blurb": "Driver-tree market sizing with formatted "
+                      "Excel export."},
             {"href": "/diligence/bear-case",
              "label": "Bear Case",
              "blurb": "The defensible bear case for this deal."},
