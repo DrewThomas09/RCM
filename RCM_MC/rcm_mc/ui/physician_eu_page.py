@@ -409,6 +409,91 @@ def _optimization_block(opt: RosterOptimization) -> str:
     )
 
 
+def _fm_short(v: float) -> str:
+    if abs(v) >= 1e6:
+        return f"${v / 1e6:.1f}M"
+    return f"${v / 1e3:.0f}K"
+
+
+def _contribution_svg(report: EconomicUnitReport) -> str:
+    """Who funds the practice and who drains it, in one chart.
+
+    Each provider's annual contribution as a signed bar from a zero
+    line — losses extend left in the table's own tones (red when the
+    provider is a loss-maker at FMV comp, amber when only at observed
+    comp), strong contributors (≥40% margin) green. Sorted by
+    contribution rank, same as the roster. Empty rosters render
+    nothing.
+    """
+    units = list(report.units or [])
+    if not units:
+        return ""
+    units.sort(key=lambda u: u.contribution_rank)
+    max_abs = max(abs(u.contribution_usd) for u in units) or 1.0
+
+    label_w, half_w, right_w = 170, 230, 90
+    cx0 = label_w + half_w
+    row_h, gap, pad_top, pad_bot = 17, 7, 10, 10
+    width = label_w + 2 * half_w + right_w
+    height = pad_top + len(units) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Annual contribution per provider, signed">'
+        f'<line x1="{cx0}" y1="{pad_top - 6}" x2="{cx0}" '
+        f'y2="{height - pad_bot}" stroke="{P["border"]}" stroke-width="1"/>'
+    ]
+    for i, u in enumerate(units):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        if u.is_loss_maker_at_fmv:
+            tone = P["negative"]
+        elif u.is_loss_maker_observed:
+            tone = P["warning"]
+        elif u.contribution_margin_pct >= 0.40:
+            tone = P["positive"]
+        else:
+            tone = P["text_dim"]
+        spec = str(u.specialty).replace("_", " ")
+        label = f"{u.provider_id} · {spec}"
+        if len(label) > 24:
+            label = label[:23] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10" fill="{P["text_dim"]}">'
+            f'{html.escape(label)}</text>'
+        )
+        v = float(u.contribution_usd)
+        w = max(2.0, half_w * abs(v) / max_abs)
+        x = cx0 if v >= 0 else cx0 - w
+        parts.append(
+            f'<rect x="{x:.1f}" y="{y}" width="{w:.1f}" height="{row_h}" '
+            f'rx="2" fill="{tone}" fill-opacity="0.85"/>'
+        )
+        vx = cx0 + w + 6 if v >= 0 else cx0 - w - 6
+        anchor = "start" if v >= 0 else "end"
+        parts.append(
+            f'<text x="{vx:.1f}" y="{ty:.1f}" text-anchor="{anchor}" '
+            f'font-size="10" font-weight="600" fill="{tone}">'
+            f'{_fm_short(v)}</text>'
+        )
+    parts.append("</svg>")
+    n_fmv = sum(1 for u in units if u.is_loss_maker_at_fmv)
+    n_obs = sum(1 for u in units
+                if u.is_loss_maker_observed and not u.is_loss_maker_at_fmv)
+    note = (
+        f'<div style="font-family:var(--ck-mono,monospace);font-size:9px;'
+        f'letter-spacing:0.08em;color:{P["text_faint"]};margin:2px 0 12px;">'
+        f'ANNUAL CONTRIBUTION AFTER COMP + ALLOCATED OVERHEAD · '
+        f'{n_fmv} LOSS-MAKER{"S" if n_fmv != 1 else ""} AT FMV · '
+        f'{n_obs} AT OBSERVED COMP ONLY · GREEN = ≥40% MARGIN</div>'
+    )
+    return (
+        '<div class="ck-eu-contribution">' + "".join(parts) + note + "</div>"
+    )
+
+
 def _roster_table(report: EconomicUnitReport) -> str:
     headers = [
         "Rank", "Provider", "Specialty", "Employment",
@@ -542,7 +627,7 @@ def render_physician_eu_page(
         + hero_and_opt
         + crosslink
         + ck_panel(
-            _roster_table(report),
+            _contribution_svg(report) + _roster_table(report),
             title="Full roster · ranked by contribution · sortable + CSV export",
         )
         + '</div>'
