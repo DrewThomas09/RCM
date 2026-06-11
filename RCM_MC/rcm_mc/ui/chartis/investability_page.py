@@ -117,6 +117,66 @@ def _subscore_bar(label: str, value: float, color: str) -> str:
     )
 
 
+_AXIS_TONE = {"opportunity": "#1F7A75", "value": "#b8732a",
+              "stability": "#0a8a5f"}
+
+
+def _score_drivers_block(
+    score: int, grade: str,
+    opportunity: float, value: float, stability: float,
+) -> str:
+    """Decompose the composite into per-axis points contributed vs.
+    lost, naming the binding constraint and the uplift from fixing it.
+    Pure function of the three sub-scores + the published axis weights."""
+    from ...pe_intelligence.investability_scorer import (
+        InvestabilityResult, analyze_score_drivers,
+    )
+    result = InvestabilityResult(
+        score=score, grade=grade, opportunity_score=opportunity,
+        value_score=value, stability_score=stability)
+    d = analyze_score_drivers(result)
+    # Stacked points: contributed (toned) + lost (faint) per axis,
+    # on a fixed 0–(weight*100) track so the bars are comparable.
+    rows = []
+    for ax in d.drivers:
+        tone = _AXIS_TONE.get(ax.axis, P["text_dim"])
+        full = ax.weight * 100.0
+        contrib_w = (ax.points_contributed / full * 100.0) if full else 0.0
+        binding = " ◀ binding" if ax.axis == d.binding_axis else ""
+        rows.append(
+            f'<div style="display:grid;grid-template-columns:96px 1fr 96px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div style="font-size:11px;color:{P["text_dim"]};'
+            f'text-transform:capitalize;text-align:right;">'
+            f'{ax.axis}<span style="color:{P["text_faint"]};font-size:9px;">'
+            f' ·{ax.weight*100:.0f}%</span></div>'
+            f'<div style="height:12px;background:{P["border_dim"]};'
+            f'border-radius:2px;overflow:hidden;display:flex;">'
+            f'<div style="width:{contrib_w:.0f}%;background:{tone};"></div>'
+            f'</div>'
+            f'<div style="font-family:var(--ck-mono);font-size:10px;'
+            f'color:{P["text_dim"]};text-align:right;'
+            f'font-variant-numeric:tabular-nums;">'
+            f'+{ax.points_contributed:.0f} / −{ax.points_lost:.0f}'
+            f'<span style="color:{P["negative"]};">{binding}</span></div>'
+            f'</div>')
+    return (
+        f'<div style="margin-bottom:12px;padding:10px 12px;'
+        f'background:{P["panel_alt"]};border-radius:3px;">'
+        f'<div style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-bottom:6px;">'
+        f'COMPOSITE DECOMPOSITION · POINTS CONTRIBUTED / LOST PER AXIS</div>'
+        + "".join(rows)
+        + f'<p style="font-size:11px;color:{P["text_dim"]};line-height:1.55;'
+        f'margin:8px 0 0;">{_html.escape(d.note)}</p>'
+        f'<p style="font-size:9px;color:{P["text_faint"]};margin:4px 0 0;">'
+        f'Composite = 0.30·opportunity + 0.40·value + 0.30·stability; '
+        f'points lost = weight × (1−score) × 100. Recomputes from the '
+        f'sub-scores above.</p>'
+        f'</div>'
+    )
+
+
 def _investability_panel(review: Any) -> str:
     inv = safe_dict(getattr(review, "investability", None))
     if not inv or inv.get("error"):
@@ -136,10 +196,13 @@ def _investability_panel(review: Any) -> str:
         + _subscore_bar("Value", value, P["warning"])
         + _subscore_bar("Stability", stability, P["positive"])
     )
+    drivers_html = _score_drivers_block(
+        score, grade, opportunity, value, stability)
 
     return (
         _score_arc(score, grade)
         + f'<div style="margin-bottom:12px;">{subscores}</div>'
+        + drivers_html
         + (
             f'<p style="color:{P["text"]};font-size:12px;line-height:1.6;'
             f'margin-bottom:12px;">{_html.escape(note)}</p>'
