@@ -563,6 +563,9 @@ def build_texas_metro_deepdive(
         # Home-infusion-eligible population by therapy (real pop × epi).
         "home_infusion": home_infusion_conditions(
             metro["population"], metro.get("seniors")),
+        # Annual home-infusion referral FLOW by therapy (new starts/yr).
+        "home_infusion_discharges": home_infusion_discharge_volumes(
+            metro["population"], metro.get("seniors")),
     }
 
 
@@ -1016,6 +1019,202 @@ def home_infusion_episode_economics() -> Dict[str, Any]:
             "it."),
         "note": "Illustrative — commercial-payer OPAT; Medicare HIT pays "
                 "less (visit-day gap). NHIA / industry per-diem anchors.",
+    }
+
+
+# ── Home-infusion discharge pipeline & therapy-volume risk ───────────
+#
+# Home infusion is a REFERRAL business: its demand is the annual FLOW of
+# new starts — mostly hospital discharges (OPAT off an inpatient stay,
+# TPN off GI surgery, inotropes off an HF admission) plus specialty-
+# clinic initiations. That flow, and the concentration of where it comes
+# from, is the core commercial diligence. Each therapy also carries a
+# different RISK profile — reimbursement, payer steerage, referral
+# concentration, clinical/readmission, and drug-supply exposure.
+
+#: Annual NEW-START / discharge flow per therapy (per 100k population or
+#: seniors) + the discharge source, 30-day readmission anchor, and a
+#: five-axis risk score (1 = low … 5 = high). Flow/readmission rates are
+#: labeled published anchors; risk axes are a documented diligence
+#: framework (not a data feed).
+_HOME_INFUSION_DISCHARGE = [
+    {"key": "opat", "therapy": "Anti-infectives (OPAT)",
+     "flow_per_100k": 90.0, "denominator": "population",
+     "flow_basis": "≈0.9 OPAT courses per 1,000/yr — discharge-driven",
+     "source": "Acute inpatient discharge — osteomyelitis, endocarditis, "
+               "bacteremia, complicated SSTI, diabetic-foot / prosthetic-"
+               "joint infection",
+     "readmission_pct": 23.0,
+     "readmit_basis": "OPAT 30-day readmission ≈20–26% (published OPAT "
+                      "cohort studies; line/ADE + relapse driven)",
+     "risk": {"reimbursement": 2, "steerage": 2, "referral_concentration": 5,
+              "clinical": 4, "supply": 3}},
+    {"key": "tpn", "therapy": "Parenteral nutrition (HPN / TPN)",
+     "flow_per_100k": 5.0, "denominator": "population",
+     "flow_basis": "Home-PN new-start incidence ≈5/100k/yr (ASPEN)",
+     "source": "GI-surgery / oncology discharge — short bowel, intestinal "
+               "failure, obstruction, severe Crohn's",
+     "readmission_pct": 18.0,
+     "readmit_basis": "HPN 30-day readmission ≈15–20% (CLABSI / sepsis, "
+                      "metabolic / refeeding, catheter complications)",
+     "risk": {"reimbursement": 2, "steerage": 2, "referral_concentration": 4,
+              "clinical": 4, "supply": 4}},
+    {"key": "ig", "therapy": "Immune globulin (IVIG / SCIG)",
+     "flow_per_100k": 7.0, "denominator": "population",
+     "flow_basis": "New IG initiations ≈7/100k/yr (PI + CIDP + autoimmune)",
+     "source": "Specialty-clinic initiation — immunology, neurology "
+               "(CIDP), hematology (ITP); some inpatient neuro discharge",
+     "readmission_pct": 8.0,
+     "readmit_basis": "Lower acuity once stable; infusion-reaction / "
+                      "thrombotic events the main events",
+     "risk": {"reimbursement": 3, "steerage": 5, "referral_concentration": 3,
+              "clinical": 2, "supply": 4}},
+    {"key": "inotrope", "therapy": "Inotropic therapy (advanced HF)",
+     "flow_per_100k": 3.0, "denominator": "seniors",
+     "flow_basis": "Stage-D HF home-inotrope starts — small senior subset",
+     "source": "Cardiology / HF-clinic discharge — stage-D heart failure "
+               "(milrinone / dobutamine bridge or palliative)",
+     "readmission_pct": 25.0,
+     "readmit_basis": "HF 30-day readmission ≈22–25% (arrhythmia, "
+                      "decompensation, line events) — high-acuity",
+     "risk": {"reimbursement": 3, "steerage": 2, "referral_concentration": 4,
+              "clinical": 5, "supply": 2}},
+    {"key": "biologic", "therapy": "Home biologics / immunology",
+     "flow_per_100k": 25.0, "denominator": "population",
+     "flow_basis": "New home-biologic starts via payer site-of-care "
+                   "steerage (RA / IBD / psoriatic)",
+     "source": "Payer steerage out of HOPD/AIC + rheum / GI clinic "
+               "referral — stable maintenance patients",
+     "readmission_pct": 5.0,
+     "readmit_basis": "Low — stable chronic maintenance; infusion "
+                      "reactions the main clinical event",
+     "risk": {"reimbursement": 4, "steerage": 5, "referral_concentration": 3,
+              "clinical": 2, "supply": 2}},
+    {"key": "rare", "therapy": "Enzyme replacement / factor / PAH",
+     "flow_per_100k": 2.0, "denominator": "population",
+     "flow_basis": "New rare-disease starts ≈2/100k/yr (LSD + factor + PAH)",
+     "source": "Academic / center-of-excellence initiation — genetics, "
+               "hematology, pulmonary hypertension clinics",
+     "readmission_pct": 6.0,
+     "readmit_basis": "Low clinical readmission; the exposure is financial "
+                      "(AR / stop-loss), not acute",
+     "risk": {"reimbursement": 5, "steerage": 4, "referral_concentration": 3,
+              "clinical": 3, "supply": 4}},
+]
+
+#: Weights for the overall at-risk score (sum to 1.0). Reimbursement and
+#: payer steerage dominate home-infusion risk; referral concentration is
+#: the commercial fragility; clinical + supply round it out.
+_RISK_WEIGHTS = {"reimbursement": 0.25, "steerage": 0.25,
+                 "referral_concentration": 0.20, "clinical": 0.15,
+                 "supply": 0.15}
+
+_RISK_AXIS_LABELS = {
+    "reimbursement": "Reimbursement (HIT gap / Part D / AR)",
+    "steerage": "Payer steerage / white-bagging",
+    "referral_concentration": "Referral-source concentration",
+    "clinical": "Clinical / readmission",
+    "supply": "Drug-supply exposure",
+}
+
+
+def home_infusion_discharge_volumes(
+    population: float, seniors: "float | None" = None,
+) -> List[Dict[str, Any]]:
+    """Annual home-infusion referral FLOW (new starts/yr) by therapy =
+    real population (or senior subpopulation) × the published new-start /
+    discharge incidence rate. This is the demand a referral-dependent
+    home-infusion business captures each year — distinct from the
+    standing prevalent pool."""
+    sen = seniors if seniors is not None else population * 0.13
+    out = []
+    for t in _HOME_INFUSION_DISCHARGE:
+        base = sen if t["denominator"] == "seniors" else population
+        out.append({
+            "key": t["key"], "therapy": t["therapy"],
+            "source": t["source"], "flow_per_100k": t["flow_per_100k"],
+            "flow_basis": t["flow_basis"], "denominator": t["denominator"],
+            "readmission_pct": t["readmission_pct"],
+            "annual_referrals": round(base * t["flow_per_100k"] / 1e5),
+        })
+    out.sort(key=lambda r: -r["annual_referrals"])
+    return out
+
+
+def home_infusion_therapy_risk() -> Dict[str, Any]:
+    """Per-therapy risk register — each scored 1–5 on five diligence
+    axes, blended into an overall at-risk score (×20 → 0–100) and ranked
+    so the most-at-risk therapies surface. A pure recompute from the
+    documented axis scores + weights."""
+    rows = []
+    for t in _HOME_INFUSION_DISCHARGE:
+        risk = t["risk"]
+        overall = sum(risk[ax] * w for ax, w in _RISK_WEIGHTS.items())
+        # The single worst axis — the headline reason it's at risk.
+        worst_ax = max(risk, key=lambda ax: risk[ax] * _RISK_WEIGHTS[ax])
+        rows.append({
+            "key": t["key"], "therapy": t["therapy"],
+            "axes": dict(risk),
+            "overall_score": round(overall, 2),
+            "overall_pct": round(overall * 20),
+            "band": ("HIGH" if overall >= 3.5 else
+                     "ELEVATED" if overall >= 2.75 else "MODERATE"),
+            "lead_risk": _RISK_AXIS_LABELS[worst_ax],
+            "readmission_pct": t["readmission_pct"],
+        })
+    rows.sort(key=lambda r: -r["overall_score"])
+    for i, r in enumerate(rows, 1):
+        r["rank"] = i
+    return {
+        "therapies": rows,
+        "axis_labels": _RISK_AXIS_LABELS,
+        "weights": _RISK_WEIGHTS,
+        "most_at_risk": rows[0]["therapy"] if rows else "",
+        "note": ("Five-axis diligence risk framework (1 = low … 5 = high), "
+                 "blended by the weights shown; readmission anchors from "
+                 "published OPAT/HPN/HF cohort studies. The axis scores are "
+                 "a documented analyst framework, not a data feed — edit "
+                 "them to your underwriting view."),
+    }
+
+
+def home_infusion_referral_sources() -> Dict[str, Any]:
+    """Where home-infusion referrals come from + the concentration risk.
+    Hospital discharge planning dominates — and that concentration is the
+    #1 commercial fragility in a home-infusion deal."""
+    sources = [
+        {"source": "Acute-care hospital discharge planning", "share": 0.58,
+         "note": "OPAT, TPN, inotrope starts off an inpatient stay — the "
+                 "dominant, and most concentrated, channel"},
+        {"source": "Physician / specialty clinics (ID, GI, heme, rheum, "
+                   "cards)", "share": 0.22,
+         "note": "Chronic initiations (IG, biologics, rare disease) — "
+                 "stickier, more diversified relationships"},
+        {"source": "SNF / LTAC step-down", "share": 0.09,
+         "note": "Post-acute transitions, often OPAT continuation"},
+        {"source": "ED / observation (direct-to-home)", "share": 0.06,
+         "note": "Avoided-admission OPAT — a growing, payer-favored path"},
+        {"source": "Wound care / other", "share": 0.05,
+         "note": "Diabetic-foot / osteomyelitis anti-infectives"},
+    ]
+    hosp = sources[0]["share"]
+    return {
+        "sources": sources,
+        "hospital_dependence": hosp,
+        "concentration_risk": (
+            f"≈{hosp*100:.0f}% of home-infusion referrals originate from "
+            "acute-hospital discharge planning, and within a branch a "
+            "single health-system relationship can be 20–40% of volume — "
+            "the #1 commercial risk to underwrite. Diversification into "
+            "ID/GI/rheum clinic relationships and direct-to-home ED OPAT "
+            "is what de-risks the referral base."),
+        "rcm_read": (
+            "Map referral concentration by source and by health system, "
+            "then the net collection rate per referral. A platform leaning "
+            "on one or two hospital discharge desks is one contract loss "
+            "from a volume cliff — quantify the top-5 source concentration "
+            "and the OPAT readmission leakage (re-hospitalized patients "
+            "stop billing)."),
     }
 
 
@@ -2126,6 +2325,9 @@ def build_texas_infusion_analysis(
             "reimbursement": home_infusion_reimbursement(),
             "episode_economics": home_infusion_episode_economics(),
             "tx_conditions": home_infusion_conditions(tx_pop, seniors),
+            "tx_discharges": home_infusion_discharge_volumes(tx_pop, seniors),
+            "therapy_risk": home_infusion_therapy_risk(),
+            "referral_sources": home_infusion_referral_sources(),
         },
         "players": infusion_players(),
         "risk_register": infusion_risk_register(),

@@ -3132,3 +3132,40 @@ networks cover all tiers + Paragon TX flag, reimbursement surfaces the
 calendar-day gap + Part D split, episode contribution recomputes
 (rev−cost, 0<margin<1), therapy reference complete (6 families), every
 metro carries home demand; +6 page-render needles. Full suite green.
+
+## W2-153 (2026-06-11) — Texas home infusion: discharge pipeline & therapy-volume risk (wave #55)
+Home infusion is a REFERRAL business — added the discharge-flow and
+risk-concentration diligence the channel turns on:
+- **Annual referral FLOW by therapy** (`home_infusion_discharge_volumes`):
+  new-starts/yr = published discharge / new-start incidence (per 100k —
+  OPAT ≈0.9/1,000, HPN ≈5/100k, IG ≈7/100k, etc.) × real population
+  (inotropes on seniors). ~27k OPAT, ~7.5k biologic, ~2.1k IG referrals/
+  yr statewide. This is the demand FLOW captured each year — distinct
+  from the standing prevalent pool — and it's smaller than the pool for
+  chronic therapies (incidence vs prevalence), which the tests assert.
+- **30-day readmission leakage** per therapy (OPAT ≈23%, HPN ≈18%, HF
+  inotropes ≈25% — published cohort anchors): re-hospitalized patients
+  stop billing, the leakage to underwrite.
+- **Therapy-volume risk register** (`home_infusion_therapy_risk`): each
+  therapy scored 1–5 on five diligence axes (reimbursement, payer
+  steerage, referral concentration, clinical/readmission, drug supply),
+  blended by documented weights into a 0–100 at-risk score and ranked.
+  Rare-disease/factor/PAH (#1, reimbursement/AR) and IG + home biologics
+  (steerage/white-bagging) surface as most-at-risk; OPAT/TPN/inotropes
+  lead on referral concentration.
+- **Referral-source concentration** (`home_infusion_referral_sources`):
+  acute-hospital discharge planning ≈58% of referrals — and within a
+  branch one health-system relationship can be 20–40% of volume, the #1
+  commercial fragility — vs diversified specialty-clinic + direct-to-home
+  ED OPAT, with the RCM read (map top-5 source concentration + net
+  collection per referral + readmission leakage).
+- **Page**: a "Home-infusion discharge pipeline & therapy risk" section
+  (referral-flow table, the most-at-risk risk heatmap, referral-source
+  concentration bars + read) and a per-metro referral-flow bar block in
+  each city deep-dive.
+**Verify**: +6 discharge/risk tests (76 in test_texas_infusion) — flow
+scales with population + has source/readmit, flow < prevalent pool for
+chronic therapies, risk score recomputes from axes×weights + ranks
+descending, IG/biologic flag steerage=5 & OPAT referral-conc=5, referral
+shares sum to 1.0 + hospital-dominant, every metro carries flow; +6
+page-render needles. Full suite green.

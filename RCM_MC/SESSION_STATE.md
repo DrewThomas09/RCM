@@ -193,3 +193,24 @@ benefit + calendar-day gap + Part D black hole + RCM read),
 infusion — therapies, networks & reimbursement" section + per-city
 home-eligible bar block. 70 texas tests + 7 cdc client tests; full suite
 green. Shipped via standard cadence.
+
+---
+## Checkpoint — wave #55 (W2-153, 2026-06-11)
+Added home-infusion discharge-pipeline & therapy-volume risk diligence.
+Engine: `home_infusion_discharge_volumes(pop,seniors)` (new-start flow/yr
+× real pop + readmission anchors), `home_infusion_therapy_risk()` (5-axis
+1–5 risk register → 0–100 at-risk, ranked; most-at-risk = rare/factor,
+then IG/biologic steerage), `home_infusion_referral_sources()` (hospital
+≈58% concentration + RCM read). Analysis `home_infusion` gains
+tx_discharges/therapy_risk/referral_sources; per-metro
+`home_infusion_discharges`. Page: "Home-infusion discharge pipeline &
+therapy risk" section (flow table + risk heatmap + referral-concentration)
++ per-city referral-flow block. 76 texas + 7 cdc tests; full suite green.
+
+NEXT (user request, wave #56+): integrate more CMS/Census/CDC data —
+CMS Medicare Outpatient Hospitals by provider & service/device, CMS ASP
+drug pricing files, MA enrollment by county, Medicare Monthly Enrollment,
+NPPES/NPI registry (+ map), Census ACS, CDC PLACES. Build live API
+clients (egress-blocked in CI → real vendored/fallback) + wire into the
+Texas infusion page. NOTE: CDC PLACES county API + Census ACS sex client
+already exist (cdc_places_api.py, acs_sex.py from wave #53).
