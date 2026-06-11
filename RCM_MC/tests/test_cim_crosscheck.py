@@ -315,3 +315,25 @@ class DollarFormatTests(unittest.TestCase):
             "format": ["csv"]})
         self.assertNotIn("B,", csv)   # no "$97.37B" in the CSV cells
         self.assertRegex(csv, r"\d{6,}")   # raw multi-digit value present
+
+
+class VarianceChartTests(unittest.TestCase):
+    """Diligence-page upgrade wave #2: the cross-check at a glance —
+    signed variance bars (claim HIGH right / LOW left), flag-toned,
+    unverifiable rows listed not drawn."""
+
+    def test_chart_renders_with_claims(self):
+        from rcm_mc.ui.cim_crosscheck_page import render_cim_crosscheck
+        h = render_cim_crosscheck({
+            "state": ["TX"],
+            "c_market_size_dollars": ["97400000000"],
+            "c_median_operating_margin_pct": ["8.5"],
+            "c_medicare_share_pct": ["38"]})
+        self.assertIn("Claim variance vs independent estimate", h)
+        self.assertIn("Bar tone", h)
+
+    def test_no_verifiable_rows_no_chart(self):
+        from rcm_mc.diligence.cim_crosscheck import CrossCheckResult
+        from rcm_mc.ui.cim_crosscheck_page import _variance_chart_svg
+        empty = CrossCheckResult(scope_label="x", state="TX", ccn="")
+        self.assertEqual(_variance_chart_svg(empty), "")

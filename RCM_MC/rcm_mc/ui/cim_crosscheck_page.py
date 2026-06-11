@@ -136,6 +136,59 @@ def _claims_from_qs(qs: Dict[str, List[str]]) -> Dict[str, float]:
     return claims
 
 
+def _variance_chart_svg(result: "CrossCheckResult",
+                        width: int = 660) -> str:
+    """The cross-check at a glance: one signed bar per VERIFIABLE claim
+    — right = management claims HIGH vs the independent estimate, left =
+    LOW; bar tone = the variance flag. Unverifiable rows are listed, not
+    drawn (no fabricated geometry). Unit-free by design: the bar is the
+    % variance, so $B and % claims share one scale honestly."""
+    rows = [r for r in result.rows if r.variance is not None]
+    if not rows:
+        return ""
+    tone = {"green": "#0a8a5f", "yellow": "#b8732a", "red": "#b5321e"}
+    row_h, pad_l, pad_r = 24, 210, 70
+    pw = width - pad_l - pad_r
+    mx = max(abs(r.variance) for r in rows) or 0.01
+    mx = max(mx, 0.10)            # never zoom tighter than ±10%
+    mid = pad_l + pw / 2
+    h = len(rows) * row_h + 26
+    parts = [f'<svg width="{width}" height="{h}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Claim variance vs independent estimate">']
+    parts.append(
+        f'<line x1="{mid:.1f}" y1="4" x2="{mid:.1f}" y2="{h-20}" '
+        'stroke="#7a8699" stroke-dasharray="3,3" stroke-width="1"/>'
+        f'<text x="{mid:.1f}" y="{h-6}" text-anchor="middle" '
+        'font-family="monospace" font-size="9.5" fill="#7a8699">'
+        'independent estimate</text>')
+    for i, r in enumerate(rows):
+        y = i * row_h + 8
+        w = (r.variance / mx) * (pw / 2)
+        x0, x1 = (mid, mid + w) if w >= 0 else (mid + w, mid)
+        parts.append(
+            f'<text x="{pad_l-8}" y="{y+10}" text-anchor="end" '
+            'font-family="sans-serif" font-size="11" fill="#1a2332">'
+            f'{_html.escape(r.label[:30])}</text>'
+            f'<rect x="{x0:.1f}" y="{y}" width="{max(abs(w),1.5):.1f}" '
+            f'height="13" fill="{tone.get(r.flag, "#7a8699")}"/>'
+            f'<text x="{(x1 if w >= 0 else x0) + (6 if w >= 0 else -6):.1f}" '
+            f'y="{y+10}" text-anchor="{"start" if w >= 0 else "end"}" '
+            'font-family="monospace" font-size="10" fill="#465366">'
+            f'{r.variance*100:+,.1f}%</text>')
+    parts.append('</svg>')
+    n_unv = sum(1 for r in result.rows if r.variance is None)
+    note = (f'<p style="margin:6px 0 12px;font-size:10.5px;'
+            f'color:#7a8699;">Right of the line = management claims '
+            f'HIGH vs the public data; left = LOW. Bar tone = the '
+            f'variance flag.'
+            + (f' {n_unv} unverifiable claim'
+               f'{"s" if n_unv != 1 else ""} not drawn — no '
+               'fabricated geometry.' if n_unv else "")
+            + '</p>')
+    return "".join(parts) + note
+
+
 def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
     qs = qs or {}
     state = (qs.get("state") or [""])[0].strip().upper()[:2]
@@ -238,6 +291,7 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
             + ck_kpi_block("Red / unverifiable", f'{c["red"]} / {c["unverifiable"]}')
             + '</div>'
             + _market_backdrop(state))
+        variance_chart = _variance_chart_svg(result)
         rows_html = ""
         for r in result.rows:
             est = r.estimate
@@ -268,7 +322,8 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
         xf = ExhibitFactory(deal_label="CIM cross-check",
                             source_default=ck_source_link("CMS HCRIS"))
         results_html = kpis + xf.wrap(
-            '<div style="overflow-x:auto;"><table class="ck-data-table" '
+            variance_chart
+            + '<div style="overflow-x:auto;"><table class="ck-data-table" '
             'style="width:100%;border-collapse:collapse;">'
             '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
             '<th style="text-align:left;padding:6px 8px;">Claim</th>'
