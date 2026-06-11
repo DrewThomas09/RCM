@@ -1521,3 +1521,25 @@ class NicheVerticalsBatch23Tests(unittest.TestCase):
     def test_catalogue_crosses_80_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 83)   # 82 + blank
+
+
+class SegmentBarTests(unittest.TestCase):
+    """The segment-composition stacked bar — one visual, every build."""
+
+    def test_every_template_renders_the_bar(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        for key in TEMPLATES:
+            if key == "blank":
+                continue
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn('aria-label="Segment composition"', h, key)
+
+    def test_fastest_star_in_bar(self):
+        from rcm_mc.ui.tam_sam_page import _segment_bar_svg
+        svg = _segment_bar_svg([
+            {"name": "Big", "share_of_volume": 0.7},
+            {"name": "Fast", "share_of_volume": 0.3, "is_fastest": True},
+        ])
+        self.assertIn("★", svg)
+        self.assertIn("70%", svg)
