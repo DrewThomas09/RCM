@@ -1391,3 +1391,43 @@ class NicheVerticalsBatch20Tests(unittest.TestCase):
     def test_catalogue_at_73_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 74)   # 73 + blank
+
+
+class NicheVerticalsBatch21Tests(unittest.TestCase):
+    """Industries #74–76 — hospitalist groups, perfusion, sterile
+    processing: the micro-niche layer."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "hospitalist": 44_000 * 0.35 * 380_000,
+            "perfusion": 450_000 * 0.45 * 1_500,
+            "sterile_processing": 180_000_000 * 0.08 * 28,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_micro_niche_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Hospitalist: the post-Envision trust deficit priced.
+        h = compute(TEMPLATES["hospitalist"]())
+        names = {g["name"]: g["annual_pct"] for g in h["growth_drivers"]}
+        self.assertLess(names["Post-Envision contract caution"], 0)
+        # Perfusion: scarcity is BOTH the constraint and the
+        # outsourcing driver — and the market is honestly tiny (<$1B).
+        p = compute(TEMPLATES["perfusion"]())
+        self.assertLess(p["tam"], 1e9)
+        # Sterile processing: a missed tray cancels a case — the
+        # logistics risk priced.
+        s = compute(TEMPLATES["sterile_processing"]())
+        names = {g["name"]: g["annual_pct"] for g in s["growth_drivers"]}
+        self.assertLess(names["Logistics cost / turnaround risk"], 0)
+
+    def test_catalogue_at_76_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 77)   # 76 + blank
