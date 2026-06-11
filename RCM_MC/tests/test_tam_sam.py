@@ -788,3 +788,42 @@ class NicheVerticalsBatch5Tests(unittest.TestCase):
     def test_catalogue_at_29_templates(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 29)   # 28 industries + blank
+
+
+class NicheVerticalsBatch6Tests(unittest.TestCase):
+    """Industries #29–31 — dermatology (a MATURE consolidation, told as
+    one), interventional pain, hospital-at-home (waiver-risk priced)."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "dermatology": 12_500 * 1_500_000,
+            "pain_management": 51_000_000 * 0.07 * 2.6 * 1_100,
+            "hospital_at_home": 3_000_000 * 0.03 * 12_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+
+    def test_maturity_and_waiver_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Derm: consolidation MATURITY is itself a headwind.
+        derm = compute(TEMPLATES["dermatology"]())
+        names = {g["name"]: g["annual_pct"]
+                 for g in derm["growth_drivers"]}
+        self.assertLess(names["Consolidation maturity"], 0)
+        # Pain: utilization management is the defining payer headwind.
+        pain = compute(TEMPLATES["pain_management"]())
+        names = {g["name"]: g["annual_pct"]
+                 for g in pain["growth_drivers"]}
+        self.assertLess(names["Utilization management"], 0)
+        # HaH: the waiver non-renewal risk is priced LARGE (≤ −5).
+        hah = compute(TEMPLATES["hospital_at_home"]())
+        names = {g["name"]: g["annual_pct"] for g in hah["growth_drivers"]}
+        self.assertLessEqual(names["Waiver non-renewal risk"], -5.0)
+
+    def test_catalogue_at_31_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 32)   # 31 + blank

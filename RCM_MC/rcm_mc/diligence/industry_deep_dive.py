@@ -1204,6 +1204,36 @@ def occ_health_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def dermatology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="dermatology",
+        sector_tokens=("dermatology", "derm"),
+        note=("No public derm-practice census — geography omitted "
+              "rather than fabricated. The corpus carries the "
+              "first-wave PPM trade history."),
+    )
+
+
+def pain_management_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="pain_management",
+        sector_tokens=("pain_management", "pain"),
+        note=("No public interventional-pain census — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def hospital_at_home_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="hospital_at_home",
+        sector_tokens=("hospital_at_home", "hah", "care_at_home"),
+        note=("CMS publishes AHCaH waiver participants but the list "
+              "isn't vendored — geography omitted rather than "
+              "fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1236,6 +1266,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "wound_care": wound_care_deep_dive,
     "sleep": sleep_deep_dive,
     "occ_health": occ_health_deep_dive,
+    "dermatology": dermatology_deep_dive,
+    "pain_management": pain_management_deep_dive,
+    "hospital_at_home": hospital_at_home_deep_dive,
 }
 
 

@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-72 — niche verticals batch 6: dermatology, pain management, hospital-at-home (18:15Z)
+**Niche-vertical sprint** — industries #29–31:
+  - dermatology ($18.8B, +4.0%): 12,500 dermatologists (AAD) × $1.5M
+    (MGMA incl. ancillaries); Mohs/surgical +6% ★; CONSOLIDATION
+    MATURITY itself priced as a headwind — the first PPM wave already
+    rolled the best markets; SOM note says the question is exit path,
+    not entry runway.
+  - pain_management ($10.2B, +3.4%): 51M chronic-pain adults (CDC) ×
+    7% interventional × 2.6 procedures × $1,100; neuromodulation +8% ★;
+    utilization management carried as the defining payer headwind.
+  - hospital_at_home ($1.1B, +6.8%): 3M eligible admissions × 3%
+    penetration × $12K — penetration is TINY and that gap is the
+    thesis; enabler/vendor layer +20% ★ (the investable slice — system
+    programs aren't acquirable, SAM 0.20 says so); the AHCaH WAIVER
+    NON-RENEWAL RISK priced at −8%/yr: a market that can halve on one
+    appropriations cycle, and the build says so.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; maturity/UM/waiver negatives pinned (waiver
+≤ −5 specifically); catalogue ≥32 templates pinned; test_tam_sam 68
+passed. 31 industries.
+
 ## W2-71 — niche verticals batch 5: wound care, sleep, occupational health (17:45Z)
 **Niche-vertical sprint** — industries #26–28:
   - wound_care ($10.1B, +2.9%): 8.2M chronic-wound patients (Medicare
