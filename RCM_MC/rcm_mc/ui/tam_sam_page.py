@@ -117,6 +117,18 @@ def model_from_qs(qs: Dict[str, List[str]]) -> TamSamModel:
     som = fnum("som_share")
     if som is not None:
         model.som_share = max(0.0, min(100.0, som)) / 100.0
+    # Scenario presets — Conservative halves tailwinds and amplifies
+    # headwinds ×1.5; Aggressive mirrors. Applied BEFORE the explicit
+    # per-driver overrides so a typed value always wins.
+    scenario = first("scenario", "base").lower()
+    if scenario in ("conservative", "aggressive"):
+        for g in model.growth_drivers:
+            if scenario == "conservative":
+                g.annual_pct = (g.annual_pct * 0.5 if g.annual_pct > 0
+                                else g.annual_pct * 1.5)
+            else:
+                g.annual_pct = (g.annual_pct * 1.5 if g.annual_pct > 0
+                                else g.annual_pct * 0.5)
     for i, g in enumerate(model.growth_drivers):
         ov = fnum(f"growth{i}")
         if ov is not None and -50.0 <= ov <= 100.0:
@@ -492,6 +504,24 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         next_href="#ts2-export",
     )
 
+    scenario = (qs.get("scenario") or ["base"])[0].lower()
+    if scenario not in ("conservative", "base", "aggressive"):
+        scenario = "base"
+    scen_bar = (
+        '<div class="ts2-tmpl" style="margin:0 0 10px;">'
+        '<span class="ts2-src" style="align-self:center;'
+        'margin-right:4px;text-transform:uppercase;letter-spacing:.1em;">'
+        'Scenario</span>'
+        + "".join(
+            f'<a href="/diligence/tam-sam?template={html.escape(tmpl_key)}'
+            f'&scenario={s}" class="{"on" if s == scenario else ""}">'
+            f'{s.title()}</a>'
+            for s in ("conservative", "base", "aggressive"))
+        + '<span class="ts2-src" style="align-self:center;">'
+        'Conservative halves tailwinds / amplifies headwinds; '
+        'Aggressive mirrors. Typed driver values always win.</span>'
+        '</div>'
+    )
     tmpl_bar = (
         '<div class="ts2-tmpl">'
         + "".join(
@@ -611,16 +641,33 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         title="Driver chain · the methodology, shown",
     )
 
+    has_seg_growth = any(s.get("growth_pct") is not None
+                         for s in out["segments"])
     seg_rows = ""
     for s in out["segments"]:
         sr = (f"{s['success_rate']*100:,.0f}%"
               if s["success_rate"] is not None else "—")
+        fastest = s.get("is_fastest")
+        row_style = (' style="background:var(--sc-bone,#ece5d6);"'
+                     if fastest else "")
+        g = s.get("growth_pct")
+        g_s = (f'{g:+.0f}%' if g is not None else "—")
+        g_tone = ("#0a8a5f" if (g or 0) >= 5
+                  else "#b5321e" if (g or 0) < 0 else "#1a2332")
+        y5 = s.get("tam_y_final")
+        growth_tds = (
+            f'<td class="r" style="color:{g_tone};font-weight:600;">'
+            f'{g_s}{" ★" if fastest else ""}</td>'
+            f'<td class="r">{_fmt_money(y5) if y5 else "—"}</td>'
+            if has_seg_growth else ""
+        )
         seg_rows += (
-            '<tr>'
+            f'<tr{row_style}>'
             f'<td>{html.escape(s["name"])}'
             f'<div class="ts2-src">{html.escape(s["note"] or "")}</div></td>'
             f'<td class="r">{s["share_of_volume"]*100:,.0f}%</td>'
             f'<td class="r">{_fmt_money(s["tam_value"])}</td>'
+            f'{growth_tds}'
             f'<td class="r">{sr}</td>'
             '</tr>'
         )
@@ -628,8 +675,16 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         '<table class="ts2-chain"><thead><tr>'
         '<th>Segment</th><th style="text-align:right;">Volume share</th>'
         '<th style="text-align:right;">TAM slice</th>'
-        '<th style="text-align:right;">Success rate</th>'
-        f'</tr></thead><tbody>{seg_rows}</tbody></table>',
+        + ('<th style="text-align:right;">Growth %/yr</th>'
+           f'<th style="text-align:right;">Y{out["horizon_years"]} '
+           'slice</th>' if has_seg_growth else "")
+        + '<th style="text-align:right;">Success rate</th>'
+        f'</tr></thead><tbody>{seg_rows}</tbody></table>'
+        + ('<p class="ts2-src" style="margin:8px 0 0;">★ = the fastest-'
+           'growing segment — where the whitespace compounds. Segment '
+           'growth rates are template defaults; the composite drivers '
+           'above govern the funnel projection.</p>'
+           if has_seg_growth else ""),
         title="Segments · the whitespace map",
     ) if out["segments"] else ""
 
@@ -679,7 +734,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     )
 
     body = (
-        _CSS + title + src + tmpl_bar + basis + funnel
+        _CSS + title + src + tmpl_bar + scen_bar + basis + funnel
         + _industry_comparison_panel(tmpl_key)
         + chain_panel + seg_panel + proj_panel
         + _tornado_panel(model, out["tam"])
