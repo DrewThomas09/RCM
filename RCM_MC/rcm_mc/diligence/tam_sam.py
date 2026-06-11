@@ -4939,6 +4939,7 @@ SECTOR_TO_TEMPLATE: Dict[str, str] = {
     "rpm": "rpm", "remote_monitoring": "rpm",
     "care_navigation": "care_navigation", "navigation": "care_navigation",
     "managed_care": "rcm_services",
+    "specialty_group": "physician_group",
 }
 
 

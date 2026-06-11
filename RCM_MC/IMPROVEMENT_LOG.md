@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-96 — reciprocal linkage: Comparable Outcomes → "Size this market" (06:20Z)
+**The loop closes both ways**: the CO results view now offers "Size this
+market in the TAM/SAM Builder →" mapped via template_for_sector (all
+five CO dropdown sectors resolve — specialty_group added to the map);
+together with W2-95 the deal page, the comps page, and the sizing
+catalogue are mutually one click apart.
+**Verify**: CO hospital results deep-link to template=hospitals; all 5
+CO sectors pinned against the registry; test_tam_sam 135 + comparable
+suites green.
+
 ## W2-95 — deal-sector deep linking into the builder (05:55Z)
 **Dynamic deal linkage**: "size the opportunity" on a deal's Market
 Analysis now opens the TAM/SAM Builder PRE-SELECTED to the deal's own
