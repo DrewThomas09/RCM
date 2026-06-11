@@ -78,6 +78,18 @@ class TestDealRender(unittest.TestCase):
             self.assertIn("Snapshot audit trail", html)
             self.assertIn("ccf_2026", html)
 
+    def test_snapshot_page_links_forward_to_analysis(self):
+        # Once a deal has snapshots this page replaces the model-tile
+        # dashboard — it must still link the partner forward to the
+        # workbench + models, or the analytics become unreachable from
+        # the deal's own page.
+        with tempfile.TemporaryDirectory() as tmp:
+            _seed(tmp)
+            RCMHandler.config.db_path = os.path.join(tmp, "p.db")
+            html = _render_deal_detail(RCMHandler.config, "ccf_2026")
+            self.assertIn('href="/analysis/ccf_2026"', html)
+            self.assertIn('href="/models/dcf/ccf_2026"', html)
+
     def test_deal_with_variance_renders_variance_card(self):
         with tempfile.TemporaryDirectory() as tmp:
             _seed(tmp)

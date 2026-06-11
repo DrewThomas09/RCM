@@ -11055,7 +11055,10 @@ def _active_deal_bar_js() -> str:
         "var name=(meta.name||id), st=(meta.state||''), ccn=(meta.ccn||'');"
         "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
         "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
-        "var links=[['Deal home','/deal/'+encodeURIComponent(id)]];"
+        # Suppress the 'Deal home' self-link when already on the deal's
+        # own page — a link to the page you're on reads as a dead link.
+        "var home='/deal/'+encodeURIComponent(id);"
+        "var links=(location.pathname===home)?[]:[['Deal home',home]];"
         "links.push(['Screener'+(st?' · '+st:''),"
         "'/target-screener?vertical=hospitals'+(st?'&state='+st:'')]);"
         "if(ccn){links.push(['X-Ray · '+ccn,'/diligence/hcris-xray?ccn='+ccn]);}"

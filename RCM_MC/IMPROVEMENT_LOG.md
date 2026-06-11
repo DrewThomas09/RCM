@@ -979,3 +979,32 @@ the bottom "Up next → Open the full deal profile" link pointed back at
 DealDashboardOrganizationTests assert title carries no NPR/EV, the strip is
 operating-not-valuation (no "Rough EV"), and the forward link is
 /analysis/<id> not the self /deal/<id>. Screenshot delivered.
+
+## W2-35 — deal pages: $B rollup on the snapshot anchor + bar self-link guard (00:05Z)
+**Found by**: continuing the user's deal-pages focus after W2-34 — the DEAL
+SNAPSHOT anchor and the DCF/Denial tiles still hand-rolled $M (a $1.98B-EV
+platform deal read "$1,982M EV"), and the ambient active-deal bar's "Deal
+home" link was a self-link when already standing on /deal/<id> (same dead-
+link class W2-34 fixed in "Up next").
+**Fixed**: anchor EV/NPR/recoverable + DCF tile inline EV + Denial tile
+recoverable all flow through ck_fmt_currency ($1.98B EV · $1.50B net
+revenue · $27.0M recoverable); the bar JS now skips the "Deal home" link
+when location.pathname is the deal's own page (links stay for Screener/
+X-Ray/CIM + clear).
+**Verify**: big-deal render → $1.98B EV / $1.50B net revenue / $27.0M
+recoverable; dashboard suite 5 passed; chartis-kit/deal sweep 656 passed.
+Also audited: deal quick-view headings (single h1, clean h2 ladder), all 16
+dashboard model-tile /models/<slug>/ routes resolve in server.py (no dead
+tiles), snapshot detail _fmt_kpi_val already rolls B/M/K.
+
+## W2-36 — snapshot deal page links forward to the analysis surfaces (00:25Z)
+**Found by**: deal-pages linkage audit — once a deal has snapshots,
+/deal/<id> renders the audit-trail detail page INSTEAD of the model-tile
+dashboard, and that page had ZERO links to the workbench or any of the 26
+models. The deeper a deal got into the pipeline, the harder its own
+analytics were to reach.
+**Fixed**: the action row now carries "Open Workbench →" (/analysis/<id>)
+and "Models" (/models/dcf/<id>) alongside Download/Set-Active — audit trail
+and analytics one click apart again.
+**Verify**: new test_snapshot_page_links_forward_to_analysis asserts both
+hrefs on a seeded snapshot deal; test_server suite 68 passed.

@@ -233,7 +233,7 @@ def render_deal_dashboard(
             "DCF", f"/models/dcf/{did}", "DCF Valuation",
             "10% WACC · 5-year projection · sensitivity grid",
             category="valuation",
-            inline_value=(f"${ev_est/1e6:,.0f}M EV" if ev_est > 0 else ""),
+            inline_value=(f"{ck_fmt_currency(ev_est)} EV" if ev_est > 0 else ""),
             inline_color=PALETTE["positive"],
         ),
         _model_tile(
@@ -283,7 +283,7 @@ def render_deal_dashboard(
         _model_tile(
             "DEN", f"/models/denial/{did}", "Denial Drivers",
             ("Root-cause decomposition · est. "
-             f"${recoverable/1e6:.1f}M recoverable" if recoverable > 0
+             f"{ck_fmt_currency(recoverable)} recoverable" if recoverable > 0
              else "Root-cause decomposition · AR bridge"),
             category="operations",
             inline_value=(f"{dr_val:.1f}% → 8%" if dr_val > 8 else ""),
@@ -470,12 +470,14 @@ def render_deal_dashboard(
     # recoverable are the same indicative estimates the KPI strip and
     # tiles show; opportunity is suppressed when there's nothing to
     # recover rather than shown as $0.
+    # ck_fmt_currency rolls to $B at ≥$1B (house style) — a platform-scale
+    # deal's EV/NPR reads "$1.19B", not "$1,194M".
     lead_anchor = ck_value_anchor(
         "DEAL SNAPSHOT",
-        f"${ev_est / 1e6:,.0f}M EV" if ev_est > 0 else "EV —",
-        delta=f"${rev_h / 1e6:,.0f}M net revenue" if rev_h > 0 else "",
+        f"{ck_fmt_currency(ev_est)} EV" if ev_est > 0 else "EV —",
+        delta=(f"{ck_fmt_currency(rev_h)} net revenue" if rev_h > 0 else ""),
         opportunity=(
-            f"${recoverable / 1e6:,.1f}M recoverable EBITDA"
+            f"{ck_fmt_currency(recoverable)} recoverable EBITDA"
             if recoverable > 0 else ""
         ),
         target=f"~{irr_est:.0%} indicative IRR" if irr_est else "",
