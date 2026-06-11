@@ -248,8 +248,11 @@ def _deadlines(db_path: str) -> str:
         with PortfolioStore(db_path).connect() as con:
             today = date.today().isoformat()
             week_out = (date.today() + timedelta(days=7)).isoformat()
+            # The deadlines column is ``label`` — the old SELECT of a
+            # phantom ``title`` column raised into the bare except, so
+            # this panel ALWAYS said "No deadlines within 7 days."
             rows = con.execute(
-                "SELECT deal_id, title, due_date, owner "
+                "SELECT deal_id, label AS title, due_date, owner "
                 "FROM deal_deadlines "
                 "WHERE completed_at IS NULL AND due_date <= ? "
                 "ORDER BY due_date ASC LIMIT 6",

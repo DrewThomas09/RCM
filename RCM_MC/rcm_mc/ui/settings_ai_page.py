@@ -67,7 +67,7 @@ def _call_stats(store: Any) -> Dict[str, Any]:
         with store.connect() as con:
             row = con.execute(
                 "SELECT COUNT(*) AS n, "
-                "COALESCE(SUM(cost_usd_estimate),0) AS cost "
+                "COALESCE(SUM(cost_usd),0) AS cost "
                 "FROM llm_calls"
             ).fetchone()
             if row:
@@ -75,7 +75,7 @@ def _call_stats(store: Any) -> Dict[str, Any]:
                 stats["total_cost"] = float(row["cost"] or 0.0)
             model_rows = con.execute(
                 "SELECT model, COUNT(*) AS n, "
-                "COALESCE(SUM(cost_usd_estimate),0) AS cost "
+                "COALESCE(SUM(cost_usd),0) AS cost "
                 "FROM llm_calls GROUP BY model ORDER BY n DESC"
             ).fetchall()
             for r in model_rows:

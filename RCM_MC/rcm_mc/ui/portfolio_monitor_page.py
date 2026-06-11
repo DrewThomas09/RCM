@@ -246,11 +246,14 @@ def render_portfolio_monitor(store: Any) -> str:
     except Exception:
         actuals_rows = []
 
-    # Load snapshots for covenant tracking
+    # Load snapshots for covenant tracking. deal_snapshots has no
+    # ``snapshot_json`` column (its fields are flat REAL/TEXT columns)
+    # — the old SELECT raised into the bare except, so the stage
+    # column on this page was always blank.
     try:
         with store.connect() as con:
             snapshots = con.execute(
-                "SELECT deal_id, stage, snapshot_json, created_at "
+                "SELECT deal_id, stage, notes, created_at "
                 "FROM deal_snapshots ORDER BY created_at DESC"
             ).fetchall()
     except Exception:
@@ -321,11 +324,7 @@ def render_portfolio_monitor(store: Any) -> str:
     for sr in snapshots:
         did = sr[0]
         if did in deal_map and deal_map[did]["latest_snapshot"] is None:
-            try:
-                snap = _json.loads(sr[2]) if sr[2] else {}
-            except Exception:
-                snap = {}
-            deal_map[did]["latest_snapshot"] = {"stage": sr[1], "data": snap}
+            deal_map[did]["latest_snapshot"] = {"stage": sr[1], "data": {}}
 
     for ar in alert_rows:
         did = ar[0]
