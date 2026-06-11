@@ -1176,6 +1176,19 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-66 — chain-concentration HHI on the consolidation map (15:05Z)
+**Sprint granularity**: the DOJ/FTC concentration metric PE diligence
+actually cites. _chain_hhi() computes the Herfindahl index over NAMED
+operators (the fragmented independent pool treated as atomized — the
+standard "how concentrated is the CHAIN layer" read). Dialysis: HHI 2,768
+→ "highly concentrated" (>2,500 threshold), color-toned by band
+(<1500 green / 1500–2500 amber / >2500 red). Rendered only on dives with
+real named operators (chains_label "Chain"); ownership-type / size-tier
+buckets correctly show no HHI.
+**Verify**: dialysis HHI >2500 pinned; HHI absent on HH/hospice/SNF/
+hospitals (buckets, not operators); page shows the band label;
+test_tam_sam 52 passed.
+
 ## W2-65 — state × payer dimension + fertility trade history (14:35Z)
 **Sprint depth — "broken down by state, by payer"**:
   - hospitals dive gains the PAYER dimension: filed Medicare day-share

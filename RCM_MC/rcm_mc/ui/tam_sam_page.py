@@ -355,6 +355,26 @@ def _industry_panels(tmpl_key: str) -> str:
         f'Top-2 chains hold <strong>{duo*100:,.0f}%</strong> of '
         'facilities; ' if duo else ""
     )
+    # Chain-concentration HHI (DOJ/FTC scale) — the standard read on how
+    # consolidated the operator layer is. <1500 unconcentrated · 1500–
+    # 2500 moderate · >2500 highly concentrated.
+    from ..diligence.industry_deep_dive import _chain_hhi
+    # HHI only means something over named OPERATORS (chains_label
+    # "Chain"); ownership-type / size-tier buckets aren't operators.
+    hhi = (_chain_hhi(dive["chains"], dive.get("pool_label", "Independent"))
+           if dive.get("chains_label") == "Chain" else None)
+    hhi_bit = ""
+    if hhi is not None:
+        band = ("highly concentrated" if hhi > 2500
+                else "moderately concentrated" if hhi >= 1500
+                else "unconcentrated")
+        tone = ("#b5321e" if hhi > 2500 else "#b8732a" if hhi >= 1500
+                else "#0a8a5f")
+        hhi_bit = (
+            f' Chain-concentration <strong style="color:{tone};">HHI '
+            f'{hhi:,.0f}</strong> ({band}, DOJ/FTC scale — named '
+            'operators only).'
+        )
     consolidation = ck_panel(
         '<table class="ts2-chain"><thead><tr>'
         f'<th>{html.escape(dive.get("chains_label", "Chain"))}</th>'
@@ -364,7 +384,7 @@ def _industry_panels(tmpl_key: str) -> str:
         f'<p class="ck-section-body" style="margin:12px 0 0;">'
         f'{duo_bit}<strong>{dive["n_independent"]:,} '
         f'{html.escape(pool_label.lower())}</strong> — '
-        f'{html.escape(dive.get("pool_note", ""))}. Whitespace '
+        f'{html.escape(dive.get("pool_note", ""))}.{hhi_bit} Whitespace '
         f'({html.escape(dive.get("whitespace_note", ""))}): '
         f'<strong>{html.escape(ws)}</strong>.</p>',
         title="Consolidation map · who owns the market",

@@ -31,6 +31,25 @@ def _median(vals: List[float]) -> Optional[float]:
     return s[mid] if n % 2 else (s[mid - 1] + s[mid]) / 2.0
 
 
+def _chain_hhi(chains: List[Dict[str, Any]], pool_label: str) -> Optional[float]:
+    """Chain-concentration HHI (DOJ/FTC scale, 0–10,000) over the NAMED
+    operators — the fragmented independent/for-profit pool is treated as
+    atomized (each unit ~0), which is the standard read: it measures how
+    concentrated the CHAIN layer is, the number PE diligence cares about.
+    None when there are no named chains to measure."""
+    named = [c for c in chains
+             if c["org"] not in (pool_label, "Independent", "For-profit",
+                                 "Not reported")
+             and "for-profit" not in c["org"].lower()
+             and "mid-size" not in c["org"].lower()
+             and "small" not in c["org"].lower()
+             and "large" not in c["org"].lower()
+             and "npr not filed" not in c["org"].lower()]
+    if not named:
+        return None
+    return round(sum((c["share"] * 100) ** 2 for c in named), 0)
+
+
 def dialysis_deep_dive() -> Dict[str, Any]:
     """CMS Dialysis Facility Compare (7.5K facilities) + deals corpus."""
     from ..data.dialysis import load_dialysis_providers
