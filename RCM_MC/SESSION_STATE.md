@@ -77,3 +77,21 @@
 basis badges (ACTUAL/PREDICTED/ENTERED), source links, prediction bounds + "?" calc
 explainers, deal-data connection fixes. SESSION_STATE_2026-05-17_chip_workstream.md
 is an ARCHIVED older doc — historical only.
+
+## Checkpoint 100 record (2026-06-11) — diligence visualization wave, surfaces 8–21
+Fourteen more diligence surfaces upgraded with derived, honest SVG
+visuals (one per cycle, each merged + deployed to pedesk.app):
+denial drivers Pareto (#1750) · red-flags category cluster map
+(#1751) · investability exit-readiness profile (#1752) · management
+scorecard team heat matrix (#1753) · market-structure 100%
+composition strip (#1754) · white-space conviction spectrum (#1755) ·
+deal-screening risk distribution with live threshold guides (#1756) ·
+data-room signed surprise chart (#1757) · portfolio risk-scan
+priority decomposition (#1758) · archetype confidence ladder
+(#1759) · provider X-ray percentile profile (#1760) · roll-up
+platform composition + shape verdict (#1761) · IC memo integrity
+strip (#1762) · counterfactual lever impact chart (this PR).
+Discipline held throughout: visual derived from the page's own data
+model, semantic severity tones, suppressed/missing data omitted
+(never imputed), empty states render "", every chart pinned by tests
+(render + ordering + empty). Improvement log entries W2-106…W2-119.
