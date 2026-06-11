@@ -1808,6 +1808,489 @@ def hospital_at_home_template() -> TamSamModel:
     )
 
 
+
+def ltc_pharmacy_template() -> TamSamModel:
+    """Long-term-care pharmacy sizing — the SNF/AL med-dispensing
+    niche. ASCP-anchored."""
+    return TamSamModel(
+        name="LTC pharmacy · institutional dispensing market",
+        chain=[
+            DriverStep("US LTC residents served (SNF+AL+IDD)",
+                       3_100_000, op="base", unit="residents",
+                       source="ASCP / NIC occupancy-based estimate"),
+            DriverStep("Avg scripts per resident / yr", 110, op="mult",
+                       unit="scripts/yr",
+                       source="ASCP (9+ meds/resident, monthly cycles)"),
+            DriverStep("Avg revenue per script", 55, op="price",
+                       unit="$/script",
+                       source="generic-heavy LTC mix + per-diem "
+                              "consulting blend"),
+        ],
+        segments=[
+            Segment("SNF (closed-door)", 0.50, None,
+                    note="Omnicare/PharMerica territory — contract "
+                         "churn risk", growth_pct=2.0),
+            Segment("Assisted living", 0.30, None,
+                    note="the growth setting — census shifting from "
+                         "SNF to AL", growth_pct=6.0),
+            Segment("IDD / behavioral group homes", 0.12, None,
+                    note="sticky contracts, regulatory moat",
+                    growth_pct=5.0),
+            Segment("Hospice / other", 0.08, None, growth_pct=4.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Senior census growth", 3.0,
+                         "the 80+ wave fills AL beds"),
+            GrowthDriver("Polypharmacy intensity", 1.5,
+                         "meds per resident still climbing"),
+            GrowthDriver("Generic deflation", -2.0,
+                         "per-script revenue deflates as generics "
+                         "deflate — the structural headwind"),
+            GrowthDriver("PBM/payer rate pressure", -1.5,
+                         "Part D plan reimbursement compression"),
+        ],
+        sam_share=0.45,
+        sam_note="Regional closed-door pharmacies + AL-focused "
+                 "platforms (national duopoly accounts excluded)",
+        som_share=0.05,
+        som_note="Omnicare (CVS) + PharMerica hold ~50% of SNF beds; "
+                 "AL is the open flank",
+        horizon_years=5,
+        basis_note="Template defaults from ASCP/NIC public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def dme_template() -> TamSamModel:
+    """Durable medical equipment sizing — home-based care's hardware
+    layer. CMS DMEPOS-anchored."""
+    return TamSamModel(
+        name="DME · home medical equipment market",
+        chain=[
+            DriverStep("US DME patients served / yr", 16_000_000,
+                       op="base", unit="patients",
+                       source="CMS DMEPOS utilization + AAHomecare"),
+            DriverStep("Avg annual DME spend per patient", 3_800,
+                       op="price", unit="$/patient/yr",
+                       source="CMS DMEPOS fee schedules × category "
+                              "mix (O2, PAP, mobility, diabetic)"),
+        ],
+        segments=[
+            Segment("Respiratory (O2, vents, PAP)", 0.40, None,
+                    note="the recurring-rental annuity — Lincare/"
+                         "AdaptHealth territory", growth_pct=5.0),
+            Segment("Diabetes (CGM, pumps)", 0.25, None,
+                    note="the fastest line — CGM adoption",
+                    growth_pct=12.0),
+            Segment("Mobility / complex rehab", 0.20, None,
+                    growth_pct=3.0),
+            Segment("Wound / urological / other", 0.15, None,
+                    growth_pct=4.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Home-shift of care", 4.0,
+                         "everything moving home needs equipment"),
+            GrowthDriver("CGM / connected-device adoption", 3.0,
+                         "diabetes tech penetration"),
+            GrowthDriver("Competitive bidding rounds", -2.5,
+                         "CMS DMEPOS bidding resets rates down — the "
+                         "defining headwind"),
+            GrowthDriver("Audit / documentation burden", -1.0,
+                         "RAC/TPE audits on medical necessity"),
+        ],
+        sam_share=0.50,
+        sam_note="Regional DME + specialty categories outside the "
+                 "national consolidators' lock",
+        som_share=0.04,
+        som_note="AdaptHealth/Lincare/Rotech rolled respiratory; "
+                 "diabetes + complex rehab are the open lanes",
+        horizon_years=5,
+        basis_note="Template defaults from CMS DMEPOS/AAHomecare "
+                   "public data — replace with engagement data before "
+                   "IC use.",
+    )
+
+
+def idd_services_template() -> TamSamModel:
+    """IDD residential + day services sizing — the Medicaid-waiver
+    niche. KFF/HCBS-anchored."""
+    return TamSamModel(
+        name="IDD services · residential + day program market",
+        chain=[
+            DriverStep("US adults with IDD receiving paid supports",
+                       1_500_000, op="base", unit="individuals",
+                       source="KFF / state IDD agency rollups"),
+            DriverStep("Avg annual spend per individual", 45_000,
+                       op="price", unit="$/individual/yr",
+                       source="HCBS waiver per-capita (residential "
+                              "$80-120K / day-only $15-25K blend)"),
+        ],
+        segments=[
+            Segment("Group-home residential", 0.55, None,
+                    note="the census base — staffing-cost exposed",
+                    growth_pct=3.0),
+            Segment("Day programs / employment", 0.20, None,
+                    growth_pct=4.0),
+            Segment("In-home / SDS supports", 0.18, None,
+                    note="the policy-preferred growth setting",
+                    growth_pct=8.0),
+            Segment("Host-home / family models", 0.07, None,
+                    note="the capital-light fastest grower",
+                    growth_pct=9.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Waiver enrollment growth", 3.0,
+                         "waitlists in 35+ states unwind slowly — "
+                         "funded demand"),
+            GrowthDriver("Rate rebasing (DSP wages)", 2.5,
+                         "states rebasing rates to fix the DSP wage "
+                         "crisis — flows through revenue"),
+            GrowthDriver("Institutional → community shift", 1.0,
+                         "remaining ICF closures feed community "
+                         "providers"),
+            GrowthDriver("DSP workforce crisis", -3.0,
+                         "direct-support staffing is THE constraint — "
+                         "vacancy ~15%+, turnover ~45%"),
+            GrowthDriver("Medicaid budget cyclicality", -1.0,
+                         "state budget cycles gate rate updates"),
+        ],
+        sam_share=0.50,
+        sam_note="States with managed/stable waiver programs + "
+                 "provider-friendly rate structures",
+        som_share=0.03,
+        som_note="Mosaic/Sevita class platforms hold low single "
+                 "digits — fragmentation persists",
+        horizon_years=5,
+        basis_note="Template defaults from KFF/HCBS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+
+def eating_disorders_template() -> TamSamModel:
+    """Eating-disorder treatment sizing — the highest-acuity BH niche.
+    Prevalence-anchored with the access-gap thesis."""
+    return TamSamModel(
+        name="Eating disorders · treatment services market",
+        chain=[
+            DriverStep("US individuals with an active ED / yr",
+                       9_000_000, op="base", unit="individuals",
+                       source="NIMH/STRIPED prevalence (~2.7% of "
+                              "population in any year)"),
+            DriverStep("% receiving specialty treatment", 0.10,
+                       op="rate", unit="of prevalent",
+                       source="access studies — ~80–90% never receive "
+                              "ED-specific care; the gap IS the thesis"),
+            DriverStep("Avg treatment spend per patient / yr", 9_000,
+                       op="price", unit="$/patient/yr",
+                       source="level-of-care blend (OP $3–6K / IOP-PHP "
+                              "$20–40K / residential $80K+ episodes)"),
+        ],
+        segments=[
+            Segment("Outpatient / virtual", 0.40, None,
+                    note="the access-expansion layer — Equip-style "
+                         "virtual FBT", growth_pct=12.0),
+            Segment("IOP / PHP", 0.30, None,
+                    note="the step-down workhorse", growth_pct=7.0),
+            Segment("Residential", 0.25, None,
+                    note="highest revenue per stay; payer scrutiny on "
+                         "length-of-stay", growth_pct=3.0),
+            Segment("Inpatient (medical stabilization)", 0.05, None,
+                    growth_pct=1.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diagnosed prevalence / awareness", 4.0,
+                         "post-2020 adolescent ED incidence step-up"),
+            GrowthDriver("Parity enforcement", 2.5,
+                         "MHPAEA litigation forces ED coverage at "
+                         "parity"),
+            GrowthDriver("Virtual access expansion", 3.0,
+                         "telehealth FBT widens the treated funnel"),
+            GrowthDriver("Clinician scarcity", -2.5,
+                         "ED-specialized clinicians are the binding "
+                         "constraint"),
+            GrowthDriver("Payer LOS management", -1.5,
+                         "residential length-of-stay compression"),
+        ],
+        sam_share=0.55,
+        sam_note="Commercially-insured + parity-enforced markets",
+        som_share=0.05,
+        som_note="A few platforms (ERC/Monte Nido/Alsana class) — "
+                 "still fragmented below the top tier",
+        horizon_years=5,
+        basis_note="Template defaults from NIMH/STRIPED public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def nephrology_template() -> TamSamModel:
+    """Nephrology practice sizing — the value-based kidney-care niche
+    (CKCC/REACH made it investable)."""
+    return TamSamModel(
+        name="Nephrology · kidney care practice market",
+        chain=[
+            DriverStep("US nephrologists (practicing)", 11_000,
+                       op="base", unit="physicians",
+                       source="ASN workforce data"),
+            DriverStep("Avg practice revenue per nephrologist",
+                       900_000, op="price", unit="$/MD/yr",
+                       source="MGMA nephrology + dialysis medical-"
+                              "directorship + VBC shared savings "
+                              "blend"),
+        ],
+        segments=[
+            Segment("FFS practice (visits, rounding)", 0.55, None,
+                    note="the base — flat economics", growth_pct=2.0),
+            Segment("Dialysis directorships / JVs", 0.20, None,
+                    note="the annuity layer", growth_pct=3.0),
+            Segment("Value-based kidney contracts (CKCC/MA)", 0.15,
+                    None, note="the thesis layer — total-cost-of-care "
+                         "shared savings", growth_pct=15.0),
+            Segment("Access centers / ancillaries", 0.10, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("CKD prevalence", 2.5,
+                         "diabetes-driven CKD pipeline"),
+            GrowthDriver("VBC contract expansion", 4.0,
+                         "CKCC + MA delegation move dollars to "
+                         "nephrologists — the structural rerating"),
+            GrowthDriver("Home-dialysis economics", 1.0,
+                         "home modality favors practice-aligned care"),
+            GrowthDriver("Fee-schedule pressure", -1.5,
+                         "MCP/visit code compression"),
+            GrowthDriver("Model-rule uncertainty", -1.5,
+                         "CMMI model parameters reset every cycle — "
+                         "the VBC thesis depends on rulemaking"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent practices in VBC-viable markets "
+                 "(dialysis-chain-employed excluded)",
+        som_share=0.05,
+        som_note="Panoramic/Evergreen/IKC class platforms early — "
+                 "land-grab phase",
+        horizon_years=5,
+        basis_note="Template defaults from ASN/MGMA/CMMI public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+def orthotics_prosthetics_template() -> TamSamModel:
+    """O&P sizing — the craft-clinical niche. AOPA-anchored."""
+    return TamSamModel(
+        name="O&P · orthotics + prosthetics market",
+        chain=[
+            DriverStep("US O&P patients served / yr", 5_500_000,
+                       op="base", unit="patients",
+                       source="AOPA industry estimates (orthotic-"
+                              "dominant volume)"),
+            DriverStep("Avg revenue per patient / yr", 1_300,
+                       op="price", unit="$/patient/yr",
+                       source="Medicare DMEPOS L-codes × commercial "
+                              "blend (prosthetic episodes $15–60K "
+                              "amortized over the orthotic base)"),
+        ],
+        segments=[
+            Segment("Orthotics (bracing)", 0.55, None,
+                    note="the volume base — OTS-vs-custom payer "
+                         "pressure", growth_pct=3.0),
+            Segment("Lower-limb prosthetics", 0.30, None,
+                    note="the margin engine — diabetic amputation "
+                         "volume", growth_pct=5.0),
+            Segment("Upper-limb / advanced (MPK, myo)", 0.10, None,
+                    note="the technology premium layer",
+                    growth_pct=8.0),
+            Segment("Pediatric / cranial", 0.05, None, growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diabetes / vascular amputations", 3.0,
+                         "the grim demand floor — ~150K amputations/yr "
+                         "and rising"),
+            GrowthDriver("Technology mix shift (MPK)", 2.0,
+                         "microprocessor knees + myoelectric upgrades "
+                         "lift revenue per case"),
+            GrowthDriver("Coverage expansion advocacy", 1.0,
+                         "'insurance fairness' state laws for "
+                         "activity-specific prostheses"),
+            GrowthDriver("OTS substitution / competitive bid", -1.5,
+                         "payers push off-the-shelf bracing — the "
+                         "orthotic margin headwind"),
+            GrowthDriver("Certified-practitioner pipeline", -1.0,
+                         "CPO supply is craft-constrained"),
+        ],
+        sam_share=0.55,
+        sam_note="Independent O&P practices (Hanger holds ~25% — the "
+                 "rest is acquirable)",
+        som_share=0.05,
+        som_note="Hanger is the only scaled platform; regional "
+                 "consolidation is open",
+        horizon_years=5,
+        basis_note="Template defaults from AOPA/CMS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+
+def ophthalmology_template() -> TamSamModel:
+    """Ophthalmology / retina sizing — the highest-revenue-per-MD
+    specialty consolidation. AAO-anchored."""
+    return TamSamModel(
+        name="Ophthalmology · surgical eye care market",
+        chain=[
+            DriverStep("US ophthalmologists (practicing)", 19_000,
+                       op="base", unit="physicians",
+                       source="AAO workforce census"),
+            DriverStep("Avg revenue per ophthalmologist", 1_800_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA ophtho medians incl. ASC + optical "
+                              "+ retina drug margin"),
+        ],
+        segments=[
+            Segment("Cataract / anterior segment", 0.40, None,
+                    note="the volume franchise — premium-IOL upsell "
+                         "is the cash-pay layer", growth_pct=4.0),
+            Segment("Retina (medical + surgical)", 0.30, None,
+                    note="the margin engine — anti-VEGF buy-and-bill; "
+                         "biosimilar exposure", growth_pct=6.0),
+            Segment("Glaucoma / cornea / other", 0.20, None,
+                    growth_pct=4.0),
+            Segment("Refractive (LASIK/SMILE, cash)", 0.10, None,
+                    note="consumer-cyclical", growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Cataract demographics", 4.0,
+                         "4M+ cataract surgeries/yr compounding with "
+                         "the 65+ wave"),
+            GrowthDriver("Premium-IOL / cash-pay mix", 2.0,
+                         "presbyopia-correcting lens adoption"),
+            GrowthDriver("Retina therapeutics pipeline", 1.5,
+                         "geographic-atrophy agents expand treatable "
+                         "volume"),
+            GrowthDriver("Anti-VEGF biosimilar erosion", -2.0,
+                         "the retina buy-and-bill spread compresses — "
+                         "shown as one"),
+            GrowthDriver("Cataract fee compression", -1.5,
+                         "Medicare PFS facility+professional cuts"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent practices + ASC co-ownership in non-"
+                 "academic metros",
+        som_share=0.05,
+        som_note="EyeCare Partners / retina consolidators class — "
+                 "mid-wave consolidation",
+        horizon_years=5,
+        basis_note="Template defaults from AAO/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def rcm_services_template() -> TamSamModel:
+    """Revenue-cycle management services sizing — the meta-vertical:
+    THIS platform's own industry. HFMA/CAQH-anchored."""
+    return TamSamModel(
+        name="RCM services · revenue cycle outsourcing market",
+        chain=[
+            DriverStep("US provider net patient revenue",
+                       2_600_000_000_000, op="base", unit="$",
+                       source="CMS NHE provider lines (hospital + "
+                              "physician + post-acute)"),
+            DriverStep("% of NPR spent on revenue cycle", 0.04,
+                       op="rate", unit="of NPR",
+                       source="HFMA cost-to-collect benchmarks "
+                              "(3–5%)"),
+            DriverStep("% outsourced (vs in-house)", 0.30, op="rate",
+                       unit="of RC spend",
+                       source="industry surveys — outsourcing "
+                              "penetration still climbing"),
+        ],
+        segments=[
+            Segment("End-to-end RCM outsourcing", 0.40, None,
+                    note="the platform deals — R1/Ensemble class",
+                    growth_pct=8.0),
+            Segment("Point solutions (coding, denials, AR)", 0.35,
+                    None, note="the tuck-in layer", growth_pct=6.0),
+            Segment("Tech-enabled / AI workflow", 0.25, None,
+                    note="the rerating layer — automation captures "
+                         "the labor arbitrage", growth_pct=12.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Outsourcing penetration", 4.0,
+                         "labor scarcity pushes RC functions out"),
+            GrowthDriver("Denial complexity growth", 2.5,
+                         "payer friction RISES — bad for providers, "
+                         "good for RCM vendors"),
+            GrowthDriver("AI automation capture", 2.0,
+                         "automation margin accrues to vendors who "
+                         "own the workflow"),
+            GrowthDriver("Pricing pressure / rebids", -2.0,
+                         "contract rebids compress take rates"),
+            GrowthDriver("In-sourcing reversals", -1.0,
+                         "systems pulling RC back in-house after "
+                         "vendor failures — churn risk"),
+        ],
+        sam_share=0.55,
+        sam_note="Mid-market + regional provider segment (the mega-"
+                 "systems negotiate direct)",
+        som_share=0.04,
+        som_note="R1 + Ensemble + Optum hold the megadeals; the "
+                 "middle market is open",
+        horizon_years=5,
+        basis_note="Template defaults from HFMA/CAQH public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def cardiology_template() -> TamSamModel:
+    """Cardiology practice sizing — the current PPM wave, standalone
+    depth. ACC-anchored."""
+    return TamSamModel(
+        name="Cardiology · practice + ancillary market",
+        chain=[
+            DriverStep("US cardiologists (practicing)", 33_000,
+                       op="base", unit="physicians",
+                       source="ACC workforce census"),
+            DriverStep("Avg revenue per cardiologist", 1_400_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA cardiology medians incl. imaging "
+                              "+ ASC/OBL ancillaries"),
+        ],
+        segments=[
+            Segment("Clinical / E&M base", 0.40, None, growth_pct=3.0),
+            Segment("Imaging (echo, nuclear, CTA)", 0.25, None,
+                    note="the in-office ancillary engine",
+                    growth_pct=5.0),
+            Segment("ASC/OBL procedures (PCI, EP)", 0.20, None,
+                    note="the thesis layer — CMS added PCI to ASC "
+                         "list; OBL economics", growth_pct=11.0),
+            Segment("Device clinic / remote monitoring", 0.15, None,
+                    growth_pct=7.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("CV disease demographics", 3.0,
+                         "prevalence compounds with age + obesity"),
+            GrowthDriver("Site-of-care shift (ASC/OBL)", 3.5,
+                         "PCI/EP migrating out of HOPD — the wave's "
+                         "engine"),
+            GrowthDriver("Remote monitoring expansion", 1.5,
+                         "RPM/device-clinic recurring revenue"),
+            GrowthDriver("Hospital employment gravity", -2.0,
+                         "~80% of cardiologists already hospital-"
+                         "employed — the acquirable pool shrinks"),
+            GrowthDriver("Fee-schedule pressure", -1.0,
+                         "PFS conversion-factor cuts"),
+        ],
+        sam_share=0.20,
+        sam_note="The ~20% still-independent pool + employed groups "
+                 "that can be lifted out — honestly small",
+        som_share=0.06,
+        som_note="CVAUSA/Novocardia-class platforms in the land-grab "
+                 "phase of a SHRINKING independent pool",
+        horizon_years=5,
+        basis_note="Template defaults from ACC/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -1865,6 +2348,15 @@ TEMPLATES = {
     "dermatology": dermatology_template,
     "pain_management": pain_management_template,
     "hospital_at_home": hospital_at_home_template,
+    "ltc_pharmacy": ltc_pharmacy_template,
+    "dme": dme_template,
+    "idd_services": idd_services_template,
+    "eating_disorders": eating_disorders_template,
+    "nephrology": nephrology_template,
+    "orthotics_prosthetics": orthotics_prosthetics_template,
+    "ophthalmology": ophthalmology_template,
+    "rcm_services": rcm_services_template,
+    "cardiology": cardiology_template,
     "blank": blank_template,
 }
 

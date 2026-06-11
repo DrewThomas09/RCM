@@ -1234,6 +1234,92 @@ def hospital_at_home_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def ltc_pharmacy_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="ltc_pharmacy",
+        sector_tokens=("ltc_pharmacy", "pharmacy_ltc"),
+        note=("No public closed-door pharmacy census — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def dme_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="dme",
+        sector_tokens=("dme", "dme_home_health", "medical_equipment"),
+        note=("CMS DMEPOS supplier files aren't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def idd_services_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="idd_services",
+        sector_tokens=("idd_services", "idd", "disability_services"),
+        note=("State IDD provider rosters aren't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+
+def eating_disorders_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="eating_disorders",
+        sector_tokens=("eating_disorders", "eating_disorder"),
+        note=("No public ED-treatment census — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def nephrology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="nephrology",
+        sector_tokens=("nephrology", "kidney_care"),
+        note=("ASN workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def orthotics_prosthetics_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="orthotics_prosthetics",
+        sector_tokens=("orthotics_prosthetics", "o_and_p", "prosthetics"),
+        note=("ABC/BOC facility rosters aren't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+
+def ophthalmology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="ophthalmology",
+        sector_tokens=("ophthalmology", "eye_care", "vision"),
+        note=("AAO workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def rcm_services_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="rcm_services",
+        sector_tokens=("rcm", "rcm_services", "health_it",
+                       "revenue_cycle"),
+        note=("The corpus health-IT/RCM deals carry the trade "
+              "history — geography is not meaningful for a services "
+              "vertical."),
+    )
+
+
+def cardiology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="cardiology",
+        sector_tokens=("cardiology", "cardiovascular"),
+        note=("ACC workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1269,6 +1355,15 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "dermatology": dermatology_deep_dive,
     "pain_management": pain_management_deep_dive,
     "hospital_at_home": hospital_at_home_deep_dive,
+    "ltc_pharmacy": ltc_pharmacy_deep_dive,
+    "dme": dme_deep_dive,
+    "idd_services": idd_services_deep_dive,
+    "eating_disorders": eating_disorders_deep_dive,
+    "nephrology": nephrology_deep_dive,
+    "orthotics_prosthetics": orthotics_prosthetics_deep_dive,
+    "ophthalmology": ophthalmology_deep_dive,
+    "rcm_services": rcm_services_deep_dive,
+    "cardiology": cardiology_deep_dive,
 }
 
 
