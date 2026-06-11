@@ -350,6 +350,97 @@ def snf_template() -> TamSamModel:
     )
 
 
+
+def irf_template() -> TamSamModel:
+    """Inpatient rehab facility sizing — anchors to MedPAC (~370K cases,
+    ~$8B Medicare spend). The 60% rule + MA steering carried as
+    constraints."""
+    return TamSamModel(
+        name="IRF · inpatient rehabilitation market",
+        chain=[
+            DriverStep("Medicare IRF discharges / yr", 370_000, op="base",
+                       unit="cases", source="MedPAC IRF chapter"),
+            DriverStep("Avg payment per discharge", 22_000, op="price",
+                       unit="$/case",
+                       source="MedPAC (CMG case-mix weighted)"),
+        ],
+        segments=[
+            Segment("Ortho / fracture", 0.25, None),
+            Segment("Stroke", 0.20, None,
+                    note="the 60%-rule anchor condition"),
+            Segment("Neurological", 0.15, None),
+            Segment("Brain injury", 0.10, None),
+            Segment("Debility / other", 0.30, None,
+                    note="the compliance-watch bucket"),
+        ],
+        growth_drivers=[
+            GrowthDriver("Demographics (65+ growth)", 3.0,
+                         "stroke + fracture incidence scale with age"),
+            GrowthDriver("Acuity shift from SNF", 1.5,
+                         "higher-acuity rehab migrating to IRF level"),
+            GrowthDriver("Rate updates", 2.5,
+                         "CMS annual IRF PPS update"),
+            GrowthDriver("MA penetration / steering", -1.5,
+                         "MA plans steer rehab to SNF — a headwind"),
+            GrowthDriver("60% rule constraint", -0.5,
+                         "compliance threshold caps case-mix expansion"),
+        ],
+        sam_share=0.60,
+        sam_note="Freestanding + JV-able units; excludes academic-"
+                 "captive units",
+        som_share=0.06,
+        som_note="Obtainable share for a platform at entry",
+        horizon_years=5,
+        basis_note="Template defaults anchored to MedPAC/CMS public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+def ltch_template() -> TamSamModel:
+    """Long-term care hospital sizing — a STRUCTURALLY SHRINKING market
+    (dual-rate site-neutral criteria), and the build says so: the
+    composite growth is negative. The tool sizes honest declines too."""
+    return TamSamModel(
+        name="LTCH · long-term care hospital market",
+        chain=[
+            DriverStep("LTCH cases / yr", 78_000, op="base",
+                       unit="cases", source="MedPAC LTCH chapter"),
+            DriverStep("Avg payment per case", 45_000, op="price",
+                       unit="$/case",
+                       source="MedPAC (standard-rate cases ~$47K)"),
+        ],
+        segments=[
+            Segment("Ventilator / pulmonary", 0.45, None,
+                    note="the criteria-compliant core"),
+            Segment("Wound / complex medical", 0.35, None),
+            Segment("Other (site-neutral exposed)", 0.20, None,
+                    note="paid at the lower site-neutral rate"),
+        ],
+        growth_drivers=[
+            GrowthDriver("Site-neutral criteria attrition", -3.0,
+                         "dual-rate payment shrinks the addressable "
+                         "case base — the defining structural decline"),
+            GrowthDriver("Demographics / acuity", 2.0,
+                         "vent-dependent census grows with age + ICU "
+                         "survival"),
+            GrowthDriver("Rate updates", 2.0,
+                         "CMS annual LTCH PPS update (standard rate)"),
+            GrowthDriver("Capacity closures", -1.5,
+                         "supply exiting — closures concentrate volume "
+                         "but shrink the market"),
+        ],
+        sam_share=0.50,
+        sam_note="Markets with referral ICU density; excludes hospital-"
+                 "within-hospital captives",
+        som_share=0.08,
+        som_note="Consolidation share in a shrinking market",
+        horizon_years=5,
+        basis_note="Template defaults anchored to MedPAC/CMS public data "
+                   "— replace with engagement data before IC use. NOTE: "
+                   "composite growth is NEGATIVE by design.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -380,6 +471,8 @@ TEMPLATES = {
     "home_health": home_health_template,
     "hospice": hospice_template,
     "snf": snf_template,
+    "irf": irf_template,
+    "ltch": ltch_template,
     "blank": blank_template,
 }
 

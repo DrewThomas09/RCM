@@ -156,6 +156,84 @@ def _state_bar_svg(states: List[Dict[str, Any]], width: int = 560) -> str:
     return "".join(parts)
 
 
+def _projection_svg(projection: List[Dict[str, Any]],
+                    width: int = 640, height: int = 220) -> str:
+    """TAM/SAM/SOM lines over the horizon — the IC's one-look growth
+    picture. Inline SVG, house palette, end-value labels."""
+    if len(projection) < 2:
+        return ""
+    pad_l, pad_r, pad_t, pad_b = 56, 110, 14, 26
+    pw, ph = width - pad_l - pad_r, height - pad_t - pad_b
+    mx = max(p["tam"] for p in projection) or 1
+    n = len(projection) - 1
+    series = [("TAM", "tam", "#0b2341"), ("SAM", "sam", "#1F7A75"),
+              ("SOM", "som", "#a08227")]
+    parts = [f'<svg width="{width}" height="{height}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="TAM SAM SOM projection">']
+    for i, p in enumerate(projection):
+        x = pad_l + i / n * pw
+        parts.append(
+            f'<text x="{x:.0f}" y="{height-8}" text-anchor="middle" '
+            'font-family="monospace" font-size="9.5" fill="#7a8699">'
+            f'Y{p["year"]}</text>')
+    for label, key, color in series:
+        pts = " ".join(
+            f"{pad_l + i / n * pw:.1f},"
+            f"{pad_t + (1 - p[key] / mx) * ph:.1f}"
+            for i, p in enumerate(projection))
+        y_end = pad_t + (1 - projection[-1][key] / mx) * ph
+        parts.append(
+            f'<polyline points="{pts}" fill="none" stroke="{color}" '
+            'stroke-width="2"/>'
+            f'<text x="{pad_l + pw + 6}" y="{y_end + 4:.1f}" '
+            'font-family="monospace" font-size="10" '
+            f'fill="{color}">{label} {_fmt_money(projection[-1][key])}'
+            '</text>')
+        y0 = pad_t + (1 - projection[0][key] / mx) * ph
+        parts.append(f'<circle cx="{pad_l}" cy="{y0:.1f}" r="2.5" '
+                     f'fill="{color}"/>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _sources_panel(out: Dict[str, Any],
+                   dive: Optional[Dict[str, Any]]) -> str:
+    """Numbered source footnotes — every default in the build traces to a
+    named public source. The defensibility layer: an IC member (or a
+    trainee) can check any number against where it came from."""
+    items: List[str] = []
+    seen = set()
+    for st in out["steps"]:
+        if st["source"] and st["source"] not in seen:
+            seen.add(st["source"])
+            items.append(f'{html.escape(st["name"])} — '
+                         f'{html.escape(st["source"])}')
+    for g in out["growth_drivers"]:
+        if g["note"] and g["note"] not in seen:
+            seen.add(g["note"])
+            items.append(f'{html.escape(g["name"])} (growth driver) — '
+                         f'{html.escape(g["note"])}')
+    if dive:
+        for k in ("facility_source", "quality_source"):
+            v = dive.get(k)
+            if v and v not in seen:
+                seen.add(v)
+                items.append(html.escape(v))
+    if out.get("basis_note"):
+        items.append(html.escape(out["basis_note"]))
+    lis = "".join(
+        f'<li style="margin:0 0 6px;"><span style="font-family:'
+        f'var(--sc-mono);color:#7a8699;">[{i+1}]</span> {t}</li>'
+        for i, t in enumerate(items))
+    return ck_panel(
+        f'<ol style="list-style:none;margin:0;padding:0;font-size:12px;'
+        f'line-height:1.5;color:#465366;">{lis}</ol>',
+        title="Sources & footnotes · every default traces to a named "
+              "public source",
+    )
+
+
 def _industry_panels(tmpl_key: str) -> str:
     """Real-data deep-dive panels under the sizing build (additive — the
     registry decides which industries have a data layer yet)."""
@@ -265,6 +343,11 @@ def _industry_panels(tmpl_key: str) -> str:
     return footprint + consolidation + deals_band
 
 
+def _dive_for_sources(tmpl_key: str) -> Optional[Dict[str, Any]]:
+    from ..diligence.industry_deep_dive import deep_dive_for
+    return deep_dive_for(tmpl_key)
+
+
 def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     qs = qs or {}
     model = model_from_qs(qs)
@@ -300,6 +383,8 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
                            ("home_health", "Home health"),
                            ("hospice", "Hospice"),
                            ("snf", "SNF · nursing"),
+                           ("irf", "IRF · rehab"),
+                           ("ltch", "LTCH"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )
@@ -432,7 +517,8 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         for p in out["projection"]
     )
     proj_panel = ck_panel(
-        '<table class="ts2-chain"><thead><tr>'
+        _projection_svg(out["projection"])
+        + '<table class="ts2-chain"><thead><tr>'
         '<th>Horizon</th><th style="text-align:right;">TAM</th>'
         '<th style="text-align:right;">SAM</th>'
         '<th style="text-align:right;">SOM</th>'
@@ -470,6 +556,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _CSS + title + src + tmpl_bar + basis + funnel
         + chain_panel + seg_panel + proj_panel
         + _industry_panels(tmpl_key)
+        + _sources_panel(out, _dive_for_sources(tmpl_key))
         + export_panel
         + ck_next_section(
             "Carry the sizing into the IC packet",
@@ -581,9 +668,29 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
          (p["som"], "money")]
         for p in out["projection"]
     ]
+    src_rows: List[List[Any]] = [
+        [("#", H), ("Item", H), ("Source", H)],
+    ]
+    n_src = 0
+    seen_src = set()
+    for st in out["steps"]:
+        if st["source"] and st["source"] not in seen_src:
+            seen_src.add(st["source"])
+            n_src += 1
+            src_rows.append([n_src, st["name"], st["source"]])
+    for g in out["growth_drivers"]:
+        if g["note"] and g["note"] not in seen_src:
+            seen_src.add(g["note"])
+            n_src += 1
+            src_rows.append([n_src, f"{g['name']} (growth driver)",
+                             g["note"]])
+    if out.get("basis_note"):
+        n_src += 1
+        src_rows.append([n_src, "Basis", out["basis_note"]])
     return write_xlsx([
         Sheet("Funnel & chain", funnel_rows,
               col_widths=[34, 8, 14, 16, 44, 16]),
         Sheet("Segments", seg_rows, col_widths=[14, 14, 16, 14, 40]),
         Sheet("Projection", proj_rows, col_widths=[34, 12, 40, 16]),
+        Sheet("Sources", src_rows, col_widths=[5, 38, 70]),
     ])

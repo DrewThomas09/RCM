@@ -1176,6 +1176,26 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-56 — industries #5–6 (IRF, LTCH) + professionalism layer (10:30Z)
+**Sprint continuation + the defensibility/training layer the user asked
+for**:
+  - irf_template ($8.1B, MedPAC; 60%-rule + MA-steering constraints) +
+    ltch_template ($3.5B, MedPAC) — LTCH's composite growth is NEGATIVE by
+    design (site-neutral criteria attrition): the tool sizes honest
+    declines, demonstrated.
+  - _simple_provider_dive() shared helper → irf_deep_dive (1,221
+    facilities, TX top, discharge-to-community state medians) +
+    ltch_deep_dive (317, 223 for-profit) with density whitespace.
+  - PROJECTION GRAPH: TAM/SAM/SOM line chart (inline SVG, house palette,
+    end-value labels) on every template — the IC's one-look growth picture.
+  - FOOTNOTES: "Sources & footnotes" panel — every chain default, growth
+    driver, dataset, and basis note numbered [1..n]; the xlsx export gains
+    a 4th "Sources" sheet carrying the same trail. The defensibility/
+    training layer: any number traces to a named public source.
+**Verify**: IRF/LTCH chain math pinned; LTCH negative CAGR pinned; all 7
+templates render chart + footnotes; xlsx 4 sheets with MedPAC strings in
+Sources; test_tam_sam 28 passed. Screenshot delivered.
+
 ## W2-55 — industry #4: SNF template + deep dive (09:50Z)
 **Sprint continuation**: skilled nursing — the richest CMS vertical file.
   - snf_template(): the base TAM driver is the REAL certified-bed count
