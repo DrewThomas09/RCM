@@ -23,12 +23,16 @@ from .evidence import (
     extract_payer_stress_evidence, extract_regulatory_evidence,
 )
 from .generator import (
-    BearCaseReport, generate_bear_case,
+    BearCaseReport, CorroborationReport, ThemeCorroboration,
+    analyze_corroboration, generate_bear_case,
     generate_bear_case_from_pipeline,
 )
 
 __all__ = [
     "BearCaseReport",
+    "CorroborationReport",
+    "ThemeCorroboration",
+    "analyze_corroboration",
     "Evidence",
     "EvidenceSeverity",
     "EvidenceSource",

@@ -2640,3 +2640,28 @@ pattern detected with the bias sign, understatement banded
 conservative not Overstated, all-unverifiable→Unsubstantiated, empty
 result, score floored at 0, to_dict round-trip, renders in page.
 76 passed across CIM suites.
+
+## W2-138 (2026-06-11) — Bear case: cross-source corroboration analysis (wave #40)
+**Found**: /diligence/bear-case ranked evidence by severity and
+grouped it by theme, but never answered the defensibility question a
+CDD lead asks before putting a risk in the memo — "is this theme
+corroborated by INDEPENDENT analyses, or is one model carrying it?"
+**Added (analysis, verifiable)**: `analyze_corroboration(report)` in
+the bear_case package → a `CorroborationReport`:
+- per theme, counts DISTINCT source engines (not evidence items, so
+  two findings from the same engine don't double-count) → `corroborated`
+  when ≥2 independent sources agree;
+- ranks themes by independent-source count then worst severity so the
+  most defensible theme leads; names the strongest corroborated theme;
+- a defensibility note distinguishing memo-ready (corroborated) from
+  single-source (seek a second confirmation) — and an honest
+  "every theme rests on one engine" verdict when nothing corroborates;
+- pure function of report.evidence; every count recomputes from the
+  cards on the page.
+Surfaced as a corroboration panel between the severity matrix and the
+per-theme evidence cards, in both bear-case render paths.
+**Verify**: test_bear_case_corroboration.py (7) — distinct-sources
+(not items) so same-engine doesn't corroborate, 2 independent
+sources do, strongest theme leads + is corroborated, all-single-source
+verdict, empty report, to_dict round-trip, renders in page.
+84 passed across bear-case suites.

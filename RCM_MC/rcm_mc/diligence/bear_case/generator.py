@@ -63,6 +63,137 @@ class BearCaseReport:
 
 
 # ────────────────────────────────────────────────────────────────────
+# Corroboration analysis — how defensible is each theme?
+# ────────────────────────────────────────────────────────────────────
+
+@dataclass
+class ThemeCorroboration:
+    """One risk theme and the independent sources that flag it.
+
+    A theme flagged by three independent analytic engines is far
+    harder for management to wave away than one flagged by a single
+    model — this is the defensibility test a CDD lead applies before
+    putting a risk in the memo. ``distinct_sources`` is the count of
+    *different* source engines (not evidence items), so two findings
+    from the same engine do not double-count as corroboration.
+    """
+    theme: str
+    distinct_sources: int
+    source_names: List[str]
+    evidence_count: int
+    worst_severity: str
+    corroborated: bool        # ≥2 independent sources
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+@dataclass
+class CorroborationReport:
+    """Theme-level corroboration read across the bear-case evidence.
+
+    Pure function of ``report.evidence`` — recomputable from the
+    cited items, so the defensibility claim is auditable.
+    """
+    themes: List[ThemeCorroboration]
+    corroborated_count: int       # themes with ≥2 independent sources
+    single_source_count: int      # themes resting on one engine
+    strongest_theme: Optional[str]
+    defensibility_note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "themes": [t.to_dict() for t in self.themes],
+            "corroborated_count": self.corroborated_count,
+            "single_source_count": self.single_source_count,
+            "strongest_theme": self.strongest_theme,
+            "defensibility_note": self.defensibility_note,
+        }
+
+
+_SEV_RANK = {
+    EvidenceSeverity.CRITICAL: 0,
+    EvidenceSeverity.HIGH: 1,
+    EvidenceSeverity.MEDIUM: 2,
+    EvidenceSeverity.LOW: 3,
+}
+
+
+def analyze_corroboration(report: BearCaseReport) -> CorroborationReport:
+    """Group the bear-case evidence by theme and count the distinct
+    independent source engines behind each.
+
+    The defensibility heuristic: a theme corroborated by ≥2 distinct
+    sources is memo-ready; a single-source theme is worth naming but
+    is softer — press for a second confirmation in the data room.
+    """
+    by_theme: Dict[str, Dict[str, Any]] = {}
+    for e in report.evidence:
+        theme = e.theme.value
+        bucket = by_theme.setdefault(
+            theme, {"sources": set(), "count": 0, "worst": 3})
+        bucket["sources"].add(e.source.value)
+        bucket["count"] += 1
+        bucket["worst"] = min(bucket["worst"], _SEV_RANK[e.severity])
+
+    sev_label = {0: "CRITICAL", 1: "HIGH", 2: "MEDIUM", 3: "LOW"}
+    themes: List[ThemeCorroboration] = []
+    for theme, b in by_theme.items():
+        n_src = len(b["sources"])
+        themes.append(ThemeCorroboration(
+            theme=theme,
+            distinct_sources=n_src,
+            source_names=sorted(b["sources"]),
+            evidence_count=b["count"],
+            worst_severity=sev_label[b["worst"]],
+            corroborated=n_src >= 2,
+        ))
+    # Rank: most independent sources first, then worst severity, then
+    # evidence volume — the most defensible theme leads.
+    sev_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+    themes.sort(key=lambda t: (
+        -t.distinct_sources,
+        sev_order.get(t.worst_severity, 9),
+        -t.evidence_count,
+    ))
+
+    corr = sum(1 for t in themes if t.corroborated)
+    single = sum(1 for t in themes if t.distinct_sources == 1)
+    strongest = themes[0].theme if (themes and themes[0].corroborated) else None
+
+    if not themes:
+        note = "No evidence — nothing to corroborate."
+    elif strongest:
+        lead = themes[0]
+        note = (
+            f"{corr} theme{'s' if corr != 1 else ''} corroborated by ≥2 "
+            f"independent engines — memo-ready. Strongest: "
+            f"{lead.theme.lower()} ({lead.distinct_sources} sources, "
+            f"{lead.worst_severity.lower()})."
+        )
+        if single:
+            note += (
+                f" {single} single-source theme"
+                f"{'s are' if single != 1 else ' is'} softer — seek a "
+                f"second confirmation in the data room."
+            )
+    else:
+        note = (
+            f"Every theme rests on a single source engine. The bear case "
+            f"is suggestive but not yet corroborated — independent "
+            f"confirmation is the next diligence step before the memo."
+        )
+
+    return CorroborationReport(
+        themes=themes,
+        corroborated_count=corr,
+        single_source_count=single,
+        strongest_theme=strongest,
+        defensibility_note=note,
+    )
+
+
+# ────────────────────────────────────────────────────────────────────
 # Ranking + dedupe + narrative
 # ────────────────────────────────────────────────────────────────────
 
