@@ -2307,3 +2307,19 @@ under the Counterfactuals section head.
 **Verify**: LeverImpactChartTests — feasibility tones + $2.4M·HIGH /
 $600K·LOW labels, impact sort, qualitative counted-not-drawn,
 all-qualitative → "". 43 passed across counterfactual suites.
+
+## W2-120 (2026-06-11) — Compare page: advantage strip (wave #22)
+**Found**: /diligence/compare's table showed a delta badge per row,
+but the bake-off verdict — who wins more rows, and by how much —
+required tallying badges by eye down the table.
+**Fixed**: `_advantage_strip_svg(pairs, left, right)` — a diverging
+chart where each metric's bar extends toward the row's winner
+(direction-aware: lower OON share wins for the lower side), sized by
+the relative gap and clamped at ±60% with a › marker. Built from the
+same (label, left, right, higher_is_better) tuples the table rows
+append, so chart and table can never disagree; caption tallies rows
+won per side; both-zero rows skipped; ties render a neutral dot.
+Placed above the metric table.
+**Verify**: AdvantageStripTests — direction-aware tally (ALPHA 1 /
+BETA 1 with a lower-is-better row), 90%› clamp label, both-zero
+skipped + tie dot, empty → "". 107 passed across compare suites.
