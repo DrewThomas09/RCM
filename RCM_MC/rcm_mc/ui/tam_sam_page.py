@@ -124,6 +124,128 @@ def model_from_qs(qs: Dict[str, List[str]]) -> TamSamModel:
     return model
 
 
+def _state_bar_svg(states: List[Dict[str, Any]], width: int = 560) -> str:
+    """Horizontal bars: facilities by state; the independent slice (the
+    acquirable pool) overlaid in teal so whitespace is visible at a
+    glance. Inline SVG, house pattern."""
+    if not states:
+        return ""
+    mx = max(s["facilities"] for s in states) or 1
+    row_h, pad_l, pad_r = 22, 46, 110
+    bar_w = width - pad_l - pad_r
+    parts = [f'<svg width="{width}" height="{len(states)*row_h + 6}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Facilities by state">']
+    for i, s in enumerate(states):
+        y = i * row_h + 4
+        w = s["facilities"] / mx * bar_w
+        w_ind = s["independent"] / mx * bar_w
+        parts.append(
+            f'<text x="{pad_l-6}" y="{y+11}" text-anchor="end" '
+            'font-family="monospace" font-size="10.5" '
+            f'fill="#465366">{html.escape(s["state"])}</text>'
+            f'<rect x="{pad_l}" y="{y}" width="{w:.1f}" height="13" '
+            'fill="#0b2341" opacity="0.85"/>'
+            f'<rect x="{pad_l}" y="{y}" width="{w_ind:.1f}" height="13" '
+            'fill="#1F7A75"/>'
+            f'<text x="{pad_l+w+6:.1f}" y="{y+11}" font-family="monospace" '
+            f'font-size="10" fill="#465366">{s["facilities"]:,} '
+            f'({s["independent"]} indep)</text>'
+        )
+    parts.append('</svg>')
+    return "".join(parts)
+
+
+def _industry_panels(tmpl_key: str) -> str:
+    """Real-data deep-dive panels under the sizing build (additive — the
+    registry decides which industries have a data layer yet)."""
+    from ..diligence.industry_deep_dive import deep_dive_for
+    dive = deep_dive_for(tmpl_key)
+    if not dive:
+        return ""
+    # 1 · State footprint — top 10 states with the whitespace overlay.
+    rows = ""
+    for s in dive["top_states"]:
+        q = dive["quality_by_state"].get(s["state"]) or {}
+        hosp = q.get("median_hospitalization_rate")
+        rows += (
+            '<tr>'
+            f'<td>{html.escape(s["state"])}</td>'
+            f'<td class="r">{s["facilities"]:,}</td>'
+            f'<td class="r">{s["stations"]:,}</td>'
+            f'<td class="r">{s["independent"]:,}</td>'
+            f'<td class="r">{s["independent_share"]*100:,.0f}%</td>'
+            f'<td class="r">{f"{hosp:,.0f}" if hosp is not None else "—"}'
+            '</td></tr>'
+        )
+    footprint = ck_panel(
+        '<div style="display:grid;grid-template-columns:minmax(0,1fr) '
+        'minmax(0,1fr);gap:24px;align-items:start;">'
+        f'<div>{_state_bar_svg(dive["top_states"])}'
+        '<p class="ts2-src" style="margin:8px 0 0;">Navy = all '
+        'facilities · teal = independents (the acquirable pool). '
+        f'{html.escape(dive["facility_source"])}.</p></div>'
+        '<table class="ts2-chain"><thead><tr>'
+        '<th>State</th><th style="text-align:right;">Facilities</th>'
+        '<th style="text-align:right;">Stations</th>'
+        '<th style="text-align:right;">Indep.</th>'
+        '<th style="text-align:right;">Indep. share</th>'
+        '<th style="text-align:right;">Hosp. rate (med)</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>'
+        '</div>'
+        f'<p class="ts2-src" style="margin:10px 0 0;">'
+        f'{html.escape(dive["quality_source"])}. '
+        f'<a class="ck-link" href="{html.escape(dive["screener_href"])}">'
+        'Open the screener for this vertical →</a></p>',
+        title=f"State footprint · top 10 of {dive['n_facilities']:,} "
+              "facilities (live CMS data)",
+    )
+    # 2 · Consolidation + whitespace.
+    chain_rows = "".join(
+        '<tr>'
+        f'<td>{html.escape(c["org"])}</td>'
+        f'<td class="r">{c["facilities"]:,}</td>'
+        f'<td class="r">{c["share"]*100:,.1f}%</td></tr>'
+        for c in dive["chains"]
+    )
+    ws = ", ".join(
+        f'{s["state"]} ({s["independent"]})'
+        for s in dive["whitespace_states"][:5])
+    consolidation = ck_panel(
+        '<table class="ts2-chain"><thead><tr>'
+        '<th>Chain</th><th style="text-align:right;">Facilities</th>'
+        '<th style="text-align:right;">Share</th>'
+        f'</tr></thead><tbody>{chain_rows}</tbody></table>'
+        f'<p class="ck-section-body" style="margin:12px 0 0;">'
+        f'Top-2 chains hold <strong>{dive["duopoly_share"]*100:,.0f}%</strong> '
+        f'of facilities; <strong>{dive["n_independent"]:,} independents</strong> '
+        'are the acquirable pool. Deepest independent pools: '
+        f'<strong>{html.escape(ws)}</strong>.</p>',
+        title="Consolidation map · who owns the market",
+    )
+    # 3 · What the sector traded for.
+    sd = dive["sector_deals"]
+    deals_band = ""
+    if sd.get("n"):
+        med = sd.get("median_moic")
+        mult = sd.get("median_entry_multiple")
+        yrs = (f", {sd['year_min']}–{sd['year_max']}"
+               if sd.get("year_min") else "")
+        med_s = f"{med:.2f}x" if med else "—"
+        mult_s = f"{mult:.1f}x" if mult else "—"
+        deals_band = ck_panel(
+            f'<p class="ck-section-body" style="margin:0;">'
+            f'<strong>{sd["n"]} corpus deals</strong> '
+            f'({sd.get("n_realized", 0)} realized{yrs}) · '
+            f'median realized MOIC <strong>{med_s}</strong> · '
+            f'median entry EV/EBITDA <strong>{mult_s}</strong> · '
+            f'<a class="ck-link" href="{html.escape(dive["deals_href"])}">'
+            'open the deals →</a></p>',
+            title="What this sector traded for",
+        )
+    return footprint + consolidation + deals_band
+
+
 def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     qs = qs or {}
     model = model_from_qs(qs)
@@ -216,15 +338,24 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         f'<td class="r">{model.som_share*100:,.1f}%</td>'
         f'<td class="r ts2-run">{_fmt_money(out["som"])}</td></tr>'
     )
-    growth_inputs = "".join(
-        '<div class="ts2-drv">'
-        f'<span>{html.escape(g["name"])}'
-        f'<div class="ts2-src">{html.escape(g["note"] or "")}</div></span>'
-        f'<span class="pct"><input name="growth{i}" '
-        f'value="{g["annual_pct"]:g}" style="width:70px;"/> %/yr</span>'
-        '</div>'
-        for i, g in enumerate(out["growth_drivers"])
-    )
+    # Directionality made visible: ▲ tailwind / ▼ headwind by sign, with
+    # the root cause (the note) under each driver name.
+    growth_inputs = ""
+    for i, g in enumerate(out["growth_drivers"]):
+        if g["annual_pct"] > 0:
+            arrow = '<span style="color:#0a8a5f;">▲</span>'
+        elif g["annual_pct"] < 0:
+            arrow = '<span style="color:#b5321e;">▼</span>'
+        else:
+            arrow = '<span style="color:#7a8699;">—</span>'
+        growth_inputs += (
+            '<div class="ts2-drv">'
+            f'<span>{arrow} {html.escape(g["name"])}'
+            f'<div class="ts2-src">{html.escape(g["note"] or "")}</div></span>'
+            f'<span class="pct"><input name="growth{i}" '
+            f'value="{g["annual_pct"]:g}" style="width:70px;"/> %/yr</span>'
+            '</div>'
+        )
     chain_panel = ck_panel(
         f'<form method="GET" action="/diligence/tam-sam">'
         f'<input type="hidden" name="template" '
@@ -315,7 +446,9 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
 
     body = (
         _CSS + title + src + tmpl_bar + basis + funnel
-        + chain_panel + seg_panel + proj_panel + export_panel
+        + chain_panel + seg_panel + proj_panel
+        + _industry_panels(tmpl_key)
+        + export_panel
         + ck_next_section(
             "Carry the sizing into the IC packet",
             "/diligence/ic-packet",
