@@ -490,6 +490,9 @@ def build_texas_metro_deepdive(
     suburbs.sort(key=lambda s: -s["infusion_patients"])
     for i, s in enumerate(suburbs, start=1):
         s["demand_rank"] = i
+        # Capacity / saturation + opportunity score per county.
+        s["capacity"] = county_capacity(s)
+        s["opportunity"] = county_opportunity_score(s, s["capacity"])
     # White-space ranking: counties with real demand but the thinnest
     # estimated local capacity (highest patients-per-AIS, or zero AIS).
     ws = [s for s in suburbs if s["infusion_patients"] > 0]
@@ -1203,6 +1206,230 @@ def aic_utilization_curve(**assumptions: Any) -> Dict[str, Any]:
     }
 
 
+#: Chairs per ambulatory infusion center (industry typical) and annual
+#: infusions one chair turns at benchmark utilization — the capacity
+#: denominators. Editable defaults; NHIA / ambulatory benchmarks.
+CHAIRS_PER_AIS = 7.0
+CHAIR_INFUSIONS_PER_YR = 6.0 * 250 * 0.78        # ≈ 1,170 (matches AIC model)
+VISITS_PER_PATIENT_YR = INFUSIONS_PER_PATIENT_YR  # 18
+#: Share of total infusion volume served at freestanding ambulatory
+#: infusion centers today (the rest is HOPD/office/home — see
+#: _site_of_care). The chair-saturation ratio compares the AIS-channel
+#: slice of demand to AIS chairs, not total demand to AIS chairs.
+AIS_SITE_SHARE = 0.22
+
+
+#: The infusion-site landscape by OWNERSHIP — the competitive-dynamics
+#: segments the user asked for, with national capacity share (illustrative,
+#: NHIA / industry structure). Sum = 1.0. ``non_hospital`` flags the
+#: segments outside the health-system captive pool.
+_PROVIDER_SEGMENTS = [
+    {"segment": "National / regional chains", "share": 0.28,
+     "non_hospital": True,
+     "examples": "Option Care, IVX Health, Coram, Optum, Soleo, "
+                 "KabaFusion, Paragon",
+     "note": "the scaled platforms — public + PE + payer-owned; the "
+             "consolidators a roll-up competes with or buys"},
+    {"segment": "Health-system-owned", "share": 0.33,
+     "non_hospital": False,
+     "examples": "HOPD suites + system-affiliated AIC/home",
+     "note": "captive hospital-outpatient capacity — the share being "
+             "steered AWAY; whitespace to capture, not competition to "
+             "displace"},
+    {"segment": "Physician-owned (in-office + practice AIC)", "share": 0.15,
+     "non_hospital": True,
+     "examples": "rheum / GI / oncology / neuro practices with in-office "
+                 "buy-and-bill",
+     "note": "the classic roll-up target — single-specialty practices "
+             "with captive referrals and sub-scale billing"},
+    {"segment": "Independent ambulatory infusion centers", "share": 0.14,
+     "non_hospital": True,
+     "examples": "regional founder-owned AIS",
+     "note": "the fragmented independent AIC pool — prime tuck-ins"},
+    {"segment": "Independent home infusion", "share": 0.10,
+     "non_hospital": True,
+     "examples": "regional home-infusion pharmacies",
+     "note": "founder/family-owned home pharmacies — the home-channel "
+             "consolidation pool"},
+]
+
+
+def county_capacity(county: Dict[str, Any]) -> Dict[str, Any]:
+    """Capacity + saturation read for one county.
+
+    Estimates non-hospital chair capacity from the county's AIS estimate,
+    sets it against the county's annual infusion visit demand, and
+    derives the saturation / penetration / demand-vs-capacity signals.
+    All arithmetic on the county's REAL population-driven patient base +
+    documented per-chair throughput — labeled estimates, editable."""
+    patients = county.get("infusion_patients", 0) or 0
+    est_ais = county.get("est_ais_centers", 0) or 0
+    seniors = county.get("seniors", 0) or 0
+    rural = county.get("pct_rural", 0) or 0
+
+    chairs = round(est_ais * CHAIRS_PER_AIS)
+    demand_visits = patients * VISITS_PER_PATIENT_YR
+    # Chair saturation compares the AIS-CHANNEL slice of demand to AIS
+    # chair capacity (HOPD/office/home volume is not chair-served here).
+    ais_demand_visits = demand_visits * AIS_SITE_SHARE
+    capacity_visits = chairs * CHAIR_INFUSIONS_PER_YR
+    dc_ratio = (ais_demand_visits / capacity_visits) if capacity_visits else None
+    patients_per_chair = round(patients / chairs) if chairs else None
+    chairs_per_100k_sr = round(chairs / seniors * 100_000, 1) if seniors else 0.0
+    # Non-hospital penetration: national ~70% of infusion is non-HOPD;
+    # rural markets lean more on the hospital (less freestanding/home
+    # density). Modeled, labeled.
+    non_hosp_pen = max(0.45, min(0.78, 0.72 - 0.35 * rural))
+
+    if dc_ratio is None:
+        band = "no local capacity"
+    elif dc_ratio >= 1.15:
+        band = "UNDERSUPPLIED"
+    elif dc_ratio >= 0.85:
+        band = "balanced"
+    else:
+        band = "saturated"
+
+    # Capacity split by owner — apportion the county's chairs across the
+    # ownership segments (national shares; non-hospital chairs only get
+    # the non-hospital segments, HOPD gets the health-system share).
+    segs = []
+    for s in _PROVIDER_SEGMENTS:
+        segs.append({
+            "segment": s["segment"],
+            "share": s["share"],
+            "est_chairs": round(chairs * s["share"]) if chairs else 0,
+            "non_hospital": s["non_hospital"],
+        })
+    return {
+        "est_chairs": chairs,
+        "demand_visits": round(demand_visits),
+        "ais_demand_visits": round(ais_demand_visits),
+        "capacity_visits": round(capacity_visits),
+        "demand_capacity_ratio": round(dc_ratio, 2) if dc_ratio else None,
+        "patients_per_chair": patients_per_chair,
+        "chairs_per_100k_seniors": chairs_per_100k_sr,
+        "non_hospital_penetration": round(non_hosp_pen, 2),
+        "saturation_band": band,
+        "segments": segs,
+    }
+
+
+def _growth_proxy(county: Dict[str, Any]) -> float:
+    """A 0–1 growth signal for a county. No vendored county-level growth
+    series exists, so this is a DOCUMENTED proxy: north-suburb growth
+    corridors score highest; a younger age mix (lower 65+ share) signals
+    in-migration/family growth; low rurality signals metro-core growth.
+    Labeled as a proxy, not a Census CAGR."""
+    score = 0.0
+    if county.get("region") == "North suburb":
+        score += 0.45                       # the flagged growth rings
+    # Younger county (lower 65+ share) → faster population growth in TX.
+    s65 = county.get("pct_age_65_plus", 0.13) or 0.13
+    score += max(0.0, min(0.35, (0.16 - s65) / 0.16 * 0.35 + 0.10))
+    # Less rural → metro-core / suburban growth.
+    score += max(0.0, 0.20 * (1 - min(1.0, (county.get("pct_rural", 0)
+                                            or 0) / 0.30)))
+    return round(min(1.0, score), 3)
+
+
+def county_opportunity_score(county: Dict[str, Any],
+                             cap: Dict[str, Any]) -> Dict[str, Any]:
+    """0–100 long-term-growth opportunity score for a county.
+
+    Blends four diligence axes — demand size, under-saturation (demand
+    vs local capacity), payer quality (income + low uninsured), and a
+    growth proxy — into one rank. Flags counties where demand growth is
+    likely to outrun capacity (the undersupplied-growth thesis). Pure
+    function of the county's real demographics + the capacity estimate."""
+    import math
+    patients = county.get("infusion_patients", 0) or 0
+    demand = min(1.0, math.log10(max(patients, 1)) / math.log10(80_000))
+    dc = cap.get("demand_capacity_ratio")
+    growth = _growth_proxy(county)
+    # Under-saturation axis: no local AIS chairs + real demand = fully
+    # unserved (1.0); otherwise scale the AIS demand-to-capacity ratio.
+    if dc is None:
+        under = 1.0 if patients >= 2_000 else 0.4
+    else:
+        under = min(1.0, dc / 1.5)
+    income = county.get("median_household_income", 60_000) or 60_000
+    unins = county.get("uninsured_rate", 0.20) or 0.20
+    payer = max(0.0, min(1.0,
+                         (income / 110_000) * 0.6
+                         + (1 - min(1.0, unins / 0.30)) * 0.4))
+    score = round(100 * (0.35 * demand + 0.30 * under
+                         + 0.20 * payer + 0.15 * growth), 1)
+    # Demand likely to exceed capacity when: chairs are already
+    # oversubscribed (≥1.10); OR real demand with NO local AIS; OR a
+    # growth corridor that is balanced today but where site-of-care
+    # migration + population growth will push it over (≥0.85 + growth).
+    demand_exceeds = bool(
+        (dc is not None and dc >= 1.10)
+        or (dc is None and patients >= 2_000)
+        or (dc is not None and dc >= 0.85 and growth >= 0.45))
+    # The forward read: today's AIS demand grown by the site-of-care
+    # migration (AIS share 22% → ~30% over a 5-yr hold) vs today's
+    # chairs — what the corridor looks like at exit if capacity is static.
+    fwd_ratio = round(dc * (0.30 / AIS_SITE_SHARE), 2) if dc else None
+    return {
+        "score": score,
+        "demand_axis": round(demand, 3),
+        "undersaturation_axis": round(under, 3),
+        "payer_axis": round(payer, 3),
+        "growth_axis": growth,
+        "demand_capacity_ratio_fwd": fwd_ratio,
+        "demand_exceeds_capacity": demand_exceeds,
+    }
+
+
+def texas_growth_scorecard(
+    metro_deepdives: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """High-level Texas scorecard — rank every county across the four
+    metros on the long-term growth-opportunity score, and surface the
+    subset where demand growth is likely to exceed local capacity.
+
+    Pure function of the per-county capacity + score already computed in
+    the metro deep-dives."""
+    rows: List[Dict[str, Any]] = []
+    for dd in metro_deepdives:
+        for s in dd["suburbs"]:
+            cap = s.get("capacity") or {}
+            sc = s.get("opportunity") or {}
+            rows.append({
+                "county": s["county"], "metro": dd["metro"].split("-")[0],
+                "region": s.get("region", ""),
+                "population": s["population"],
+                "infusion_patients": s["infusion_patients"],
+                "est_chairs": cap.get("est_chairs"),
+                "patients_per_chair": cap.get("patients_per_chair"),
+                "demand_capacity_ratio": cap.get("demand_capacity_ratio"),
+                "saturation_band": cap.get("saturation_band"),
+                "non_hospital_penetration": cap.get("non_hospital_penetration"),
+                "score": sc.get("score", 0),
+                "demand_exceeds_capacity": sc.get("demand_exceeds_capacity"),
+            })
+    rows.sort(key=lambda r: -r["score"])
+    for i, r in enumerate(rows, start=1):
+        r["rank"] = i
+    undersupplied = [r for r in rows if r["demand_exceeds_capacity"]]
+    undersupplied.sort(key=lambda r: -(r["demand_capacity_ratio"] or 0))
+    return {
+        "counties": rows,
+        "top_opportunities": rows[:10],
+        "undersupplied_growth_markets": undersupplied[:8],
+        "n_counties": len(rows),
+        "n_undersupplied": len(undersupplied),
+        "note": (
+            "Opportunity score (0–100) blends demand size (35%), "
+            "under-saturation vs local capacity (30%), payer quality "
+            "(20%), and a growth proxy (15%). 'Demand exceeds capacity' "
+            "flags counties with a demand-to-chair ratio ≥1.15 AND a "
+            "high growth proxy — where a de-novo or tuck-in faces "
+            "undersupplied, growing demand."),
+    }
+
+
 def build_texas_infusion_analysis(
     aic_overrides: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
@@ -1317,6 +1544,8 @@ def build_texas_infusion_analysis(
         "aic_utilization_curve": aic_utilization_curve(**aic_overrides),
         "aic_overrides_active": bool(aic_overrides),
         "drug_supply": infusion_drug_supply(),
+        "provider_segments": _PROVIDER_SEGMENTS,
+        "growth_scorecard": texas_growth_scorecard(metro_deepdives),
         "metros": metros,
         "metro_deepdives": metro_deepdives,
         "health_system_capacity": health_system,

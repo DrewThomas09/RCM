@@ -457,6 +457,87 @@ class CityDeepDiveTests(unittest.TestCase):
                 self.assertGreater(w["infusion_patients"], 0)
 
 
+class CapacityScorecardTests(unittest.TestCase):
+    """Per-county chair capacity, market saturation, and the Texas
+    long-term growth scorecard — all recomputed from real county
+    population × labeled site-of-care / chair assumptions."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+
+    def test_provider_segments_cover_the_market(self):
+        segs = self.a["provider_segments"]
+        self.assertEqual(len(segs), 5)
+        self.assertAlmostEqual(sum(s["share"] for s in segs), 1.0, places=4)
+        # The five owner types the request named are all present.
+        names = " ".join(s["segment"].lower() for s in segs)
+        for owner in ("national", "health-system", "physician",
+                      "independent ambulatory", "independent home"):
+            self.assertIn(owner, names)
+        # Health-system pool is captive (not part of the non-hospital
+        # roll-up pool); the rest are non-hospital.
+        hs = [s for s in segs if not s["non_hospital"]]
+        self.assertTrue(hs and all("health" in s["segment"].lower()
+                                   for s in hs))
+
+    def test_capacity_ratio_is_scoped_to_the_ais_channel(self):
+        # Demand/capacity must compare the AIS-channel slice of demand
+        # (~22% of infusion volume) to AIS chair capacity — not TOTAL
+        # infusion demand. That keeps ratios realistic (~0.5–1.5), not 4–5x.
+        for dd in self.a["metro_deepdives"]:
+            for s in dd["suburbs"]:
+                cap = s.get("capacity") or {}
+                if not cap.get("est_chairs"):
+                    continue
+                dc = cap["demand_capacity_ratio"]
+                self.assertIsNotNone(dc)
+                self.assertLess(dc, 3.0, f"{s['county']} ratio implausible")
+                # ais_demand_visits < total demand_visits.
+                self.assertLess(cap["ais_demand_visits"],
+                                cap["demand_visits"])
+
+    def test_saturation_bands_are_mixed(self):
+        # A realistic market is not uniformly one band.
+        bands = set()
+        for dd in self.a["metro_deepdives"]:
+            for s in dd["suburbs"]:
+                cap = s.get("capacity") or {}
+                if cap.get("saturation_band"):
+                    bands.add(cap["saturation_band"])
+        self.assertGreaterEqual(len(bands), 2)
+
+    def test_scorecard_ranks_descending_and_flags_growth(self):
+        sc = self.a["growth_scorecard"]
+        scores = [r["score"] for r in sc["top_opportunities"]]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        ranks = [r["rank"] for r in sc["top_opportunities"]]
+        self.assertEqual(ranks, list(range(1, len(ranks) + 1)))
+        # Undersupplied growth markets are real, and each is flagged.
+        self.assertGreaterEqual(sc["n_undersupplied"], 1)
+        for r in sc["undersupplied_growth_markets"]:
+            self.assertTrue(r["demand_exceeds_capacity"])
+        self.assertEqual(sc["n_undersupplied"],
+                         len(sc["undersupplied_growth_markets"]))
+
+    def test_growth_corridors_surface_as_undersupplied(self):
+        # North-Texas / Austin growth corridors (site-of-care migration +
+        # population growth) should appear among the undersupplied markets.
+        sc = self.a["growth_scorecard"]
+        names = {r["county"] for r in sc["undersupplied_growth_markets"]}
+        corridors = {"Williamson", "Collin", "Denton", "Montgomery",
+                     "Hays", "Comal"}
+        self.assertTrue(names & corridors,
+                        f"expected a growth corridor in {names}")
+
+    def test_opportunity_score_is_bounded(self):
+        for dd in self.a["metro_deepdives"]:
+            for s in dd["suburbs"]:
+                opp = s.get("opportunity") or {}
+                if "score" in opp:
+                    self.assertGreaterEqual(opp["score"], 0)
+                    self.assertLessEqual(opp["score"], 100)
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -476,6 +557,9 @@ class PageRenderTests(unittest.TestCase):
             "BREAKDOWN BY SECTION", "Chair contribution margin",
             "Drug supply", "STABLE", "Drug Shortage tracker",
             "North suburbs", "ILLNESS BURDEN",
+            "capacity by owner", "Ownership segment",
+            "Texas growth scorecard", "TOP-10 COUNTY OPPORTUNITIES",
+            "UNDERSUPPLIED GROWTH MARKETS", "CHAIR CAPACITY",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 

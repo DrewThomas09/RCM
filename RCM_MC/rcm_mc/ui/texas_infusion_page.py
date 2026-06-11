@@ -661,6 +661,209 @@ def _util_curve_svg(curve: Dict[str, Any]) -> str:
     return "".join(parts)
 
 
+_SEG_TONE = ["#0b2341", "#b5321e", "#6e5b9e", "#1F7A75", "#b8732a"]
+
+
+def _provider_segments_section(a: Dict[str, Any]) -> str:
+    """Competitive dynamics — infusion capacity by OWNERSHIP segment:
+    national/regional chains, health-system-owned, physician-owned,
+    independent AIC, independent home. A 100% ownership strip + a
+    table with examples and the roll-up read."""
+    segs = a["provider_segments"]
+    # 100% ownership strip.
+    strip, x = [], 0.0
+    for i, s in enumerate(segs):
+        w = s["share"] * 100
+        tone = _SEG_TONE[i % len(_SEG_TONE)]
+        strip.append(
+            f'<div style="width:{w:.0f}%;background:{tone};height:26px;'
+            f'display:inline-flex;align-items:center;justify-content:center;'
+            f'color:#fff;font-size:9.5px;font-weight:600;" '
+            f'title="{html.escape(s["segment"])} {w:.0f}%">'
+            f'{w:.0f}%</div>')
+    rows = ""
+    for i, s in enumerate(segs):
+        tone = _SEG_TONE[i % len(_SEG_TONE)]
+        tag = ('<span style="color:%s;font-weight:700;">non-hospital</span>'
+               % _POS if s["non_hospital"] else
+               '<span style="color:%s;font-weight:700;">health-system '
+               'captive</span>' % _FAINT)
+        rows += (
+            f'<tr>'
+            f'<td style="padding:6px 8px;"><span style="display:inline-block;'
+            f'width:9px;height:9px;border-radius:2px;background:{tone};'
+            f'margin-right:6px;"></span><strong>{html.escape(s["segment"])}'
+            f'</strong></td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'font-weight:600;">{s["share"]*100:.0f}%</td>'
+            f'<td style="padding:6px 8px;">{tag}</td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(s["examples"])}</td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_FAINT};">'
+            f'{html.escape(s["note"])}</td>'
+            f'</tr>')
+    return (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
+        f'margin:0 0 8px;">National infusion capacity by owner — the '
+        f'segments a roll-up competes with, buys, or steers around. '
+        f'Health-system-owned is captive (the steered-away HOPD pool); '
+        f'the other ~67% is the non-hospital landscape, and the '
+        f'independent AIC + physician-owned + independent home segments '
+        f'(~39%) are the fragmented roll-up pool.</p>'
+        f'<div style="display:flex;border-radius:3px;overflow:hidden;'
+        f'margin-bottom:10px;">{"".join(strip)}</div>'
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:6px 8px;">Ownership segment</th>'
+        f'<th style="text-align:right;padding:6px 8px;">US share</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Pool</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Examples</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Roll-up read</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'Ownership shares are national estimates (NHIA / industry '
+        f'structure), applied to each county\'s estimated chairs in the '
+        f'city deep-dives below. Illustrative — replace with a state '
+        f'pharmacy-board / NPPES pull in diligence.</p>')
+
+
+_SAT_TONE = {"UNDERSUPPLIED": _NEG, "balanced": _TEAL,
+             "saturated": _WARN, "no local capacity": _NEG}
+
+
+def _scorecard_section(a: Dict[str, Any]) -> str:
+    """The high-level Texas scorecard — counties across the 4 metros
+    ranked by long-term opportunity score, with the undersupplied
+    growth markets surfaced."""
+    sc = a["growth_scorecard"]
+    top = sc["top_opportunities"]
+    # Ranked opportunity-score bars.
+    bar_rows = [{"label": f'{r["county"]} · {r["metro"]}',
+                 "score": r["score"], "rank": r["rank"],
+                 "flag": r["demand_exceeds_capacity"]}
+                for r in top]
+    mx = max((r["score"] for r in bar_rows), default=1) or 1
+    bars = ""
+    for r in bar_rows:
+        w = r["score"] / mx * 100
+        tone = _NEG if r["flag"] else _NAVY
+        flag = (' <span style="color:%s;font-weight:700;font-size:9px;">'
+                '★ DEMAND&gt;CAPACITY</span>' % _NEG) if r["flag"] else ""
+        bars += (
+            f'<div style="display:grid;grid-template-columns:150px 1fr 44px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div style="font-size:11px;text-align:right;color:#1a2332;">'
+            f'<strong style="color:{tone};">#{r["rank"]}</strong> '
+            f'{html.escape(r["label"])}</div>'
+            f'<div style="height:14px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;"><div style="height:100%;width:{w:.0f}%;'
+            f'background:{tone};"></div></div>'
+            f'<div style="font-size:11px;font-weight:700;color:{tone};'
+            f'text-align:right;">{r["score"]:.0f}</div>'
+            f'<div style="grid-column:2/4;font-size:9px;margin-top:-2px;">'
+            f'{flag}</div></div>')
+    # Undersupplied growth-markets table.
+    us_rows = ""
+    for r in sc["undersupplied_growth_markets"]:
+        dc = r["demand_capacity_ratio"]
+        us_rows += (
+            f'<tr>'
+            f'<td style="padding:5px 8px;font-weight:600;">'
+            f'{html.escape(r["county"])} '
+            f'<span style="font-size:10px;color:{_FAINT};">'
+            f'{html.escape(r["metro"])}</span></td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;">'
+            f'{r["infusion_patients"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;">'
+            f'{r["est_chairs"]}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'color:{_NEG};font-weight:600;">{dc if dc is not None else "—"}'
+            f'</td>'
+            f'<td style="padding:5px 8px;font-size:10px;color:{_FAINT};">'
+            f'{html.escape(r["saturation_band"])}</td>'
+            f'</tr>')
+    return (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
+        f'margin:0 0 6px;">{html.escape(sc["note"])}</p>'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin:10px 0 4px;">TOP-10 COUNTY OPPORTUNITIES '
+        f'(of {sc["n_counties"]} across the 4 metros)</div>'
+        f'{bars}'
+        f'<div style="font-size:10px;color:{_NEG};letter-spacing:0.06em;'
+        f'font-weight:700;margin:14px 0 4px;">UNDERSUPPLIED GROWTH MARKETS '
+        f'— demand likely to exceed AIS chair capacity ({sc["n_undersupplied"]})'
+        f'</div>'
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:5px 8px;">County</th>'
+        f'<th style="text-align:right;padding:5px 8px;">Infusion pts</th>'
+        f'<th style="text-align:right;padding:5px 8px;">AIS chairs (est)</th>'
+        f'<th style="text-align:right;padding:5px 8px;">Demand / capacity</th>'
+        f'<th style="text-align:left;padding:5px 8px;">Saturation</th>'
+        f'</tr></thead><tbody>{us_rows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'Demand/capacity = AIS-channel slice (~22% of infusion volume) '
+        f'÷ estimated AIS chair capacity; ≥1.10 or a balanced growth '
+        f'corridor (where site-of-care migration 22%→30% + population '
+        f'growth push it over) flags ★. Score blends demand · '
+        f'under-saturation · payer quality · growth.</p>')
+
+
+def _county_capacity_table(dd: Dict[str, Any]) -> str:
+    """Per-county capacity & saturation for a metro's top counties."""
+    rows = ""
+    for s in dd["suburbs"][:8]:
+        cap = s.get("capacity") or {}
+        opp = s.get("opportunity") or {}
+        dc = cap.get("demand_capacity_ratio")
+        band = cap.get("saturation_band", "")
+        bt = _SAT_TONE.get(band, _FAINT)
+        flag = (' <span style="color:%s;font-weight:700;">★</span>' % _NEG
+                if opp.get("demand_exceeds_capacity") else "")
+        rows += (
+            f'<tr>'
+            f'<td style="padding:4px 8px;">{html.escape(s["county"])}'
+            + (' <span style="font-size:9px;color:%s;">▲N</span>' % _NAVY
+               if s.get("region") == "North suburb" else "")
+            + f'{flag}</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;">'
+            f'{s["infusion_patients"]:,}</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;">'
+            f'{cap.get("est_chairs","—")}</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;">'
+            f'{cap.get("patients_per_chair") or "—"}</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;'
+            f'color:{bt};font-weight:600;">{dc if dc is not None else "—"}</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;">'
+            f'{cap.get("non_hospital_penetration",0)*100:.0f}%</td>'
+            f'<td style="padding:4px 8px;font-size:10px;color:{bt};">'
+            f'{html.escape(band)}</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;'
+            f'font-weight:700;color:{_NAVY};">{opp.get("score",0):.0f}</td>'
+            f'</tr>')
+    return (
+        f'<div style="margin-top:10px;"><div style="font-size:10px;'
+        f'color:{_FAINT};letter-spacing:0.06em;margin-bottom:3px;">'
+        f'CHAIR CAPACITY · SATURATION · OPPORTUNITY BY COUNTY</div>'
+        f'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+        f'<thead><tr style="border-bottom:1px solid #d6cfc0;color:{_FAINT};">'
+        f'<th style="text-align:left;padding:3px 8px;">County</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Pts</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Chairs</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Pts/chair</th>'
+        f'<th style="text-align:right;padding:3px 8px;">D/C</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Non-hosp</th>'
+        f'<th style="text-align:left;padding:3px 8px;">Saturation</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Score</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>'
+        f'<p style="font-size:9px;color:{_FAINT};margin:3px 0 0;">'
+        f'D/C = AIS-channel demand ÷ chair capacity · Non-hosp = est. '
+        f'non-hospital site penetration · ▲N north suburb · ★ demand '
+        f'likely to exceed capacity.</p></div>')
+
+
 def _channel_cards(a: Dict[str, Any]) -> str:
     """Two side-by-side channel breakdowns — AIC vs home infusion."""
     cards = ""
@@ -973,6 +1176,7 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'</div>'
         + north
         + illness
+        + _county_capacity_table(dd)
         # White-space
         + f'<div style="margin-top:10px;padding:8px 12px;background:#fff;'
         f'border-left:3px solid {_WARN};border-radius:0 3px 3px 0;">'
@@ -1030,6 +1234,11 @@ def render_texas_infusion_page(
                             eyebrow="WHO COMPETES · OWNERSHIP · TX PRESENCE")
         + _players_table(a)
 
+        + ck_section_header("Competitive dynamics — capacity by owner",
+                            eyebrow="NATIONAL/REGIONAL · HEALTH-SYSTEM · "
+                                    "PHYSICIAN · INDEPENDENT AIC · HOME")
+        + _provider_segments_section(a)
+
         + ck_section_header("Where the risks are",
                             eyebrow="REIMBURSEMENT · RCM · MARKET — WITH THE "
                                     "RCM READ")
@@ -1086,6 +1295,11 @@ def render_texas_infusion_page(
                             eyebrow="AGE-BAND DEMAND · SUBURBS · OPERATORS · "
                                     "WHITESPACE")
         + "".join(_city_section(dd) for dd in a["metro_deepdives"])
+
+        + ck_section_header("Texas growth scorecard",
+                            eyebrow="COUNTY OPPORTUNITY RANKING · WHERE DEMAND "
+                                    "OUTRUNS CAPACITY")
+        + _scorecard_section(a)
 
         + ck_section_header("Concentration — operator landscape",
                             eyebrow="HHI · FRAGMENTATION → ROLL-UP")
