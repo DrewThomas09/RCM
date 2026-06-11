@@ -2339,3 +2339,19 @@ skipped; no funded tiers renders "". Placed above the tier table.
 $200.0M total caption, tier order preserved, unreached tier skipped,
 empty → "", chart precedes the tier table in the full page render.
 108 passed across waterfall suites.
+
+## W2-122 (2026-06-11) — Bayesian calibration page: interval plot (wave #24)
+**Found**: /bayesian described shrinkage in a table (prior, observed,
+posterior, % and an 80px weight bar) but never drew the geometry —
+how far each posterior moved from its prior toward the observed
+value, and how wide the 90% credible interval remains.
+**Fixed**: `_posterior_interval_svg(estimates)` — one row per metric
+on its own normalized mini-axis: 90% CI as a shaded band, posterior
+as a filled dot toned by data quality (strong green / moderate teal /
+weak amber / prior_only brick), prior as a hollow ring, observed as
+an × only when observed_n > 0. Legend explains the encoding and that
+each row has its own scale. Estimates with malformed fields skipped;
+empty renders "". Placed inside the estimates card above the table.
+**Verify**: PosteriorIntervalChartTests — quality tones, × only with
+data (prior_only row omits it), prior ring + posterior dot pinned,
+empty → "". 18 passed across bayesian suites.
