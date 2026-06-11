@@ -54,6 +54,91 @@ def _health_band_label(score: Optional[int], band: Optional[str]) -> str:
     )
 
 
+def _deadline_timeline_svg(my_od: Any, my_up: Any) -> str:
+    """The analyst's next two weeks on one time axis.
+
+    Every open deadline as a lollipop on a calendar scale running
+    from the oldest overdue item to today+14: overdue markers red and
+    left of the TODAY line (drop length = days overdue), upcoming
+    navy to the right, each labeled deal · label. The lists already
+    say what's due; this shows how the fortnight clusters. No open
+    deadlines renders nothing.
+    """
+    from datetime import date, datetime, timezone
+
+    today = datetime.now(timezone.utc).date()
+    items = []
+    for df, kind in ((my_od, "overdue"), (my_up, "upcoming")):
+        if df is None or getattr(df, "empty", True):
+            continue
+        for _, r in df.iterrows():
+            try:
+                due = date.fromisoformat(str(r["due_date"]))
+            except (TypeError, ValueError):
+                continue
+            items.append((due, str(r["deal_id"]), str(r["label"]), kind))
+    if not items:
+        return ""
+    items.sort(key=lambda t: t[0])
+    start = min(items[0][0], today)
+    end = max(today, items[-1][0])
+    span = max((end - start).days, 1)
+
+    width, axis_y = 720, 64
+    pad_l, pad_r = 14, 14
+    height = axis_y + 40
+
+    def _x(d: date) -> float:
+        return pad_l + (width - pad_l - pad_r) * (d - start).days / span
+
+    tx_today = _x(today)
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Open deadlines on a 14-day timeline">'
+        f'<line x1="{pad_l}" y1="{axis_y}" x2="{width - pad_r}" '
+        f'y2="{axis_y}" stroke="#c9c1ac" stroke-width="1"/>'
+        f'<line x1="{tx_today:.1f}" y1="{axis_y - 46}" x2="{tx_today:.1f}" '
+        f'y2="{axis_y + 14}" stroke="#0b2341" stroke-width="1.5" '
+        f'stroke-dasharray="4,3"/>'
+        f'<text x="{tx_today:.1f}" y="{axis_y + 26}" text-anchor="middle" '
+        f'font-size="9" letter-spacing="1" font-weight="700" '
+        f'fill="#0b2341">TODAY</text>'
+    ]
+    for i, (due, deal, label, kind) in enumerate(items):
+        cx = _x(due)
+        tone = "#b5321e" if kind == "overdue" else "#0b2341"
+        stem = 18 + (i % 3) * 13
+        parts.append(
+            f'<line x1="{cx:.1f}" y1="{axis_y}" x2="{cx:.1f}" '
+            f'y2="{axis_y - stem}" stroke="{tone}" stroke-width="1"/>'
+            f'<circle cx="{cx:.1f}" cy="{axis_y - stem}" r="3.5" '
+            f'fill="{tone}"/>'
+        )
+        text = f"{deal} · {label}"
+        if len(text) > 22:
+            text = text[:21] + "…"
+        anchor = "end" if cx > width * 0.75 else "start"
+        lx = cx - 6 if anchor == "end" else cx + 6
+        parts.append(
+            f'<text x="{lx:.1f}" y="{axis_y - stem - 4:.1f}" '
+            f'text-anchor="{anchor}" font-size="8.5" fill="{tone}">'
+            f'{_html.escape(text)}</text>'
+        )
+    n_od = sum(1 for *_, k in items if k == "overdue")
+    parts.append(
+        f'<text x="{pad_l}" y="{height - 2}" font-size="9" '
+        f'letter-spacing="1" fill="#7a8699">'
+        f'{n_od} OVERDUE (RED, LEFT OF TODAY) · '
+        f'{len(items) - n_od} DUE IN THE NEXT 14 DAYS</text>'
+    )
+    parts.append("</svg>")
+    return (
+        '<div class="ck-deadline-timeline" style="margin:6px 0 14px;">'
+        + "".join(parts) + "</div>"
+    )
+
+
 def render_my_dashboard(
     *,
     store: Any,
@@ -355,6 +440,7 @@ def render_my_dashboard(
         + pulse
         + health_html
         + alerts_html
+        + _deadline_timeline_svg(my_od, my_up)
         + deadlines_html
         + deals_html
         + ck_next_section(
