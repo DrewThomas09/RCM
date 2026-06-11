@@ -1044,3 +1044,17 @@ updated test_median_moic_stat_carries_value keeps the value-not-dash
 invariant; new test_results_view_has_single_results_strip pins the
 de-clutter; 34 passed across comparable suites + source-purpose guard.
 Screenshot delivered.
+
+## W2-39 — Entry EV/EBITDA distribution on Comparable Outcomes (01:55Z)
+**Found by**: the page's stated purpose includes "what would this trade
+for?" (bid-pricing sanity check) but no multiple ever rendered — the corpus
+carries ev_mm + ebitda_at_entry_mm on the disclosed deals, unaggregated.
+**Added**: summarize_outcomes computes the entry EV/EBITDA distribution
+(median/p25/p75/n) across comps disclosing BOTH fields — never imputed, n
+stated so a thin sample reads as thin; the outcome strip gains an "Entry
+EV/EBITDA" stat card ("11.0x · p25 7.8x · p75 11.1x · n disclosed"); the
+JSON API inherits entry_multiple via outcome_distribution for free.
+**Verify**: unit tests pin the math (10x median over 9/10/11x; excluded
+when EBITDA undisclosed; honest None/0-n when nothing discloses); HTTP test
+pins the strip card; 50 passed across the 4 comparable suites. Screenshot
+delivered.
