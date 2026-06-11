@@ -1113,6 +1113,38 @@ def ems_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def clinical_labs_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="clinical_labs",
+        sector_tokens=("clinical_labs", "laboratory", "diagnostics",
+                       "lab_services"),
+        note=("No public independent-lab census (CLIA certificates "
+              "aren't vendored) — geography omitted rather than "
+              "fabricated."),
+    )
+
+
+def specialty_pharmacy_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="specialty_pharmacy",
+        sector_tokens=("specialty_pharmacy", "pharmacy",
+                       "pharmacy_services"),
+        note=("NCPDP pharmacy files aren't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def vision_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="vision",
+        sector_tokens=("vision", "optometry", "ophthalmology",
+                       "eye_care"),
+        note=("No public OD-practice census — geography omitted "
+              "rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1136,6 +1168,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "veterinary": veterinary_deep_dive,
     "medspa": medspa_deep_dive,
     "ems": ems_deep_dive,
+    "clinical_labs": clinical_labs_deep_dive,
+    "specialty_pharmacy": specialty_pharmacy_deep_dive,
+    "vision": vision_deep_dive,
 }
 
 

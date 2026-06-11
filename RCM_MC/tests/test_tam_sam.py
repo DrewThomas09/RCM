@@ -690,3 +690,35 @@ class NicheVerticalsBatch2Tests(unittest.TestCase):
             z = zipfile.ZipFile(io.BytesIO(
                 tam_sam_xlsx({"template": [key]})))
             self.assertIsNone(z.testzip(), key)
+
+
+class NicheVerticalsBatch3Tests(unittest.TestCase):
+    """Industries #20–22 — clinical labs, specialty pharmacy, vision."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "clinical_labs": 14e9 * 0.35 * 14,
+            "specialty_pharmacy": 400e9 * 0.80,
+            "vision": 195_000_000 * 310,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_vertical_specific_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Labs: PAMA is the structural headwind.
+        labs = compute(TEMPLATES["clinical_labs"]())
+        names = {g["name"]: g["annual_pct"]
+                 for g in labs["growth_drivers"]}
+        self.assertLess(names["PAMA rate cuts"], 0)
+        # Specialty pharmacy: the SAM is honestly SMALL (PBM verticals
+        # own the channel) — sam_share must be well under half.
+        from rcm_mc.diligence.tam_sam import specialty_pharmacy_template
+        self.assertLessEqual(specialty_pharmacy_template().sam_share,
+                             0.25)

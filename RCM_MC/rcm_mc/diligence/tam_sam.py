@@ -1145,6 +1145,165 @@ def ems_template() -> TamSamModel:
     )
 
 
+
+def clinical_labs_template() -> TamSamModel:
+    """Independent clinical laboratory sizing — CMS CLFS/ACLA-anchored.
+    The duopoly (Quest/Labcorp) + hospital-outreach divestiture story."""
+    return TamSamModel(
+        name="Clinical labs · independent laboratory market",
+        chain=[
+            DriverStep("US lab tests / yr (clinical)", 14_000_000_000,
+                       op="base", unit="tests",
+                       source="ACLA (13–14B tests/yr; 70% of clinical "
+                              "decisions touch a lab result)"),
+            DriverStep("% via independent labs", 0.35, op="rate",
+                       unit="of tests",
+                       source="ACLA / hospital-vs-independent split"),
+            DriverStep("Avg revenue per test", 14, op="price",
+                       unit="$/test",
+                       source="CMS CLFS median × commercial blend "
+                              "(routine panel weighted)"),
+        ],
+        segments=[
+            Segment("Routine / core chemistry", 0.55, None,
+                    note="PAMA-exposed; scale game", growth_pct=1.5),
+            Segment("Molecular / genomics", 0.20, None,
+                    note="the growth engine — oncology panels, "
+                         "carrier screening, MRD", growth_pct=10.0),
+            Segment("Anatomic pathology", 0.15, None, growth_pct=3.0),
+            Segment("Toxicology / specialty", 0.10, None,
+                    note="post-2018 tox washout survivor pool",
+                    growth_pct=2.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Test-menu expansion (molecular)", 4.0,
+                         "genomics + liquid biopsy widen the order "
+                         "set"),
+            GrowthDriver("Utilization / demographics", 2.0,
+                         "chronic-disease monitoring scales with age"),
+            GrowthDriver("Hospital outreach divestitures", 1.5,
+                         "systems selling outreach books to "
+                         "independents — the M&A pipeline itself"),
+            GrowthDriver("PAMA rate cuts", -2.5,
+                         "CLFS repricing — the structural headwind on "
+                         "routine volume"),
+            GrowthDriver("Payer leakage programs", -1.0,
+                         "payers steering to in-network duopoly labs"),
+        ],
+        sam_share=0.40,
+        sam_note="Regional independents + outreach books acquirable "
+                 "outside the duopoly's lock",
+        som_share=0.05,
+        som_note="Quest + Labcorp hold ~45% of independent volume — "
+                 "the regionals are the targets",
+        horizon_years=5,
+        basis_note="Template defaults from ACLA/CMS CLFS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def specialty_pharmacy_template() -> TamSamModel:
+    """Specialty pharmacy sizing — IQVIA/Drug Channels-anchored. The
+    biggest dollar pool in the catalogue, with the thinnest margins."""
+    return TamSamModel(
+        name="Specialty pharmacy · dispensing market",
+        chain=[
+            DriverStep("US specialty drug spend / yr",
+                       400_000_000_000, op="base", unit="$",
+                       source="IQVIA / Drug Channels Institute "
+                              "(specialty ≈ 55% of net drug spend)"),
+            DriverStep("% via specialty pharmacy channel", 0.80,
+                       op="rate", unit="of spend",
+                       source="Drug Channels (vs buy-and-bill/retail)"),
+        ],
+        segments=[
+            Segment("PBM-owned (vertical) SPs", 0.70, None,
+                    note="CVS/ESI/Optum own the channel — the moat "
+                         "AGAINST independents", growth_pct=7.0),
+            Segment("Independent / health-system SPs", 0.20, None,
+                    note="the acquirable layer — limited-distribution "
+                         "drug access is the differentiator",
+                    growth_pct=9.0),
+            Segment("Hub / patient-services adjacency", 0.10, None,
+                    note="where PE actually plays — services, not "
+                         "dispensing margin", growth_pct=10.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Specialty pipeline / launches", 7.0,
+                         "cell/gene, oncology, immunology launches — "
+                         "the dominant driver"),
+            GrowthDriver("Utilization growth", 2.0,
+                         "prevalence + duration of therapy"),
+            GrowthDriver("Biosimilar / net-price deflation", -3.0,
+                         "Humira-style LOEs deflate the base — a "
+                         "structural headwind"),
+            GrowthDriver("DIR / reimbursement pressure", -1.5,
+                         "pharmacy DIR + network spread compression"),
+        ],
+        sam_share=0.20,
+        sam_note="The independent + hub/services layer investable "
+                 "outside PBM verticals",
+        som_share=0.03,
+        som_note="Dispensing margin is 2–4%; the services adjacency "
+                 "is where returns live",
+        horizon_years=5,
+        basis_note="Template defaults from IQVIA/Drug Channels public "
+                   "data — replace with engagement data before IC use.",
+    )
+
+
+def vision_template() -> TamSamModel:
+    """Vision / optometry sizing — Vision Council-anchored."""
+    return TamSamModel(
+        name="Vision · optometry + optical retail market",
+        chain=[
+            DriverStep("US adults using vision correction",
+                       195_000_000, op="base", unit="adults",
+                       source="Vision Council (~76% of adults)"),
+            DriverStep("Avg annual vision spend per user", 310,
+                       op="price", unit="$/user/yr",
+                       source="Vision Council consumer spend (exams + "
+                              "frames/lenses/contacts blend)"),
+        ],
+        segments=[
+            Segment("Optical retail (frames/lenses)", 0.45, None,
+                    note="consumer-discretionary; online competition",
+                    growth_pct=2.0),
+            Segment("Exams / clinical optometry", 0.25, None,
+                    note="the medical-optometry shift — dry eye, "
+                         "myopia management", growth_pct=5.0),
+            Segment("Contact lenses", 0.20, None, growth_pct=4.0),
+            Segment("Medical / surgical co-management", 0.10, None,
+                    note="cataract/refractive co-management — the "
+                         "ophtho adjacency", growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Demographics / presbyopia wave", 2.5,
+                         "45+ population needs progressive correction"),
+            GrowthDriver("Medical optometry expansion", 2.0,
+                         "scope expansion moves optometry up the "
+                         "acuity curve"),
+            GrowthDriver("Myopia epidemic", 1.5,
+                         "childhood myopia management — the new "
+                         "recurring-revenue line"),
+            GrowthDriver("Online / DTC disruption", -2.0,
+                         "Warby/online refraction skim the retail "
+                         "margin — the structural headwind"),
+            GrowthDriver("Vision-plan reimbursement", -1.0,
+                         "managed-vision-care fee schedules flat"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent OD practices + regional optical chains "
+                 "(excl. national verticals like Luxottica retail)",
+        som_share=0.03,
+        som_note="Largest PE platforms hold ~2% of practices — "
+                 "deeply fragmented",
+        horizon_years=5,
+        basis_note="Template defaults from Vision Council public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -1190,6 +1349,9 @@ TEMPLATES = {
     "veterinary": veterinary_template,
     "medspa": medspa_template,
     "ems": ems_template,
+    "clinical_labs": clinical_labs_template,
+    "specialty_pharmacy": specialty_pharmacy_template,
+    "vision": vision_template,
     "blank": blank_template,
 }
 
