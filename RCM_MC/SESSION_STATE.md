@@ -302,3 +302,14 @@ no-CON/TSBP/Medicaid-non-expansion, USP 797/800/ACHC/DSCSA) tagged
 tailwind/headwind/neutral (5/11/7) + net read. Page: "Regulatory &
 reimbursement environment" section (count strip + NET READ + per-category
 items w/ impact tag + implication) + SO WHAT. +4 tests; full suite green.
+
+---
+## Checkpoint — wave #62 (W2-160, 2026-06-11)
+New standalone /excel-mapping page (NOT infusion-specific): a generic
+US-state choropleth driven from a {state: percentage} dict or Excel paste
++ 3 gradient colours (low/mid/high), black serif labels, serif UI font.
+rcm_mc/ui/excel_mapping_page.py: gradient_color (3-stop interp),
+parse_values_text (Excel paste), resolve_inputs (qs over Python
+defaults), render_excel_mapping_page. Wired: server route /excel-mapping
+(GET), Research sub-nav + palette + _SUB_SECTION_MAP + ToolRouteDefinition
+(guide context). 14 tests + 522-test wiring suite green; full suite green.

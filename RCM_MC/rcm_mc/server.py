@@ -6712,6 +6712,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/excel-mapping":
+            # Excel mapping — a configurable US-state choropleth driven
+            # from a {state: percentage} dict or an Excel paste; qs
+            # carries the gradient colours, domain, and pasted values.
+            from .ui.excel_mapping_page import render_excel_mapping_page
+            _em_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_excel_mapping_page(_em_qs))
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.

@@ -3339,3 +3339,33 @@ impact counts match the items, the real marquee topics present (ASP+6,
 calendar-day, MFP, biosimilar, 340B, site-neutral, white-bagging, CON,
 USP), Texas no-CON tagged tailwind; +5 render needles + 1 SO WHAT. Full
 suite green.
+
+## W2-160 (2026-06-11) — Excel Mapping: configurable US-state choropleth page (wave #62)
+New standalone utility page at /excel-mapping — a generic state map you
+drive from a {state: percentage} dict or an Excel paste:
+- **`gradient_color(value, lo, mid, hi, c_low, c_mid, c_high)`**: a
+  3-stop gradient — low→c_low, mid→c_mid, high→c_high, linearly
+  interpolated each side of the midpoint; None → neutral grey; clamps
+  out-of-range; degenerate domain → mid colour.
+- **`parse_values_text`**: parses pasted Excel rows ("TX 61" / "TX,61" /
+  "TX\t61" / "Texas 61", trailing % ok), resolving 2-letter codes or
+  full state names; skips bad rows.
+- **Two ways to drive it**: edit `DEFAULT_STATE_VALUES` + the three
+  `DEFAULT_*_COLOR` constants in Python, OR use the page form (3 colour
+  pickers, optional low/mid/high value domain — blank = auto from data,
+  and an Excel-paste textarea). qs overrides the Python defaults.
+- **Render**: a 51-tile schematic US grid (collision-checked) coloured by
+  the gradient, each state labelled in BLACK SERIF text (with a thin
+  white halo for legibility on dark tiles), a low→mid→high legend, a
+  sorted value table, and a "how to use" panel. Serif UI font throughout.
+- **Wiring**: GET route in server.py; Research sub-nav + Cmd-K palette +
+  _SUB_SECTION_MAP entries; a ToolRouteDefinition so the Guide has page
+  context (no guide-blind page). Default values are clearly labelled
+  EXAMPLE placeholders — overwrite with your own; nothing is a data claim.
+**Verify**: new `test_excel_mapping.py` (14) — gradient hits all three
+stops + interpolates each side + clamps + None-grey + degenerate-domain,
+Excel-paste parser (codes/names/separators/%, skips bad), qs overrides
+colours+domain+data, default dict references only real states, page
+renders core elements + custom values appear, registered in palette/nav,
+route has guide context. Wiring suite (guide-context/palette/tools-index/
+nav/us_map/routes) 522 passed. Full suite green.
