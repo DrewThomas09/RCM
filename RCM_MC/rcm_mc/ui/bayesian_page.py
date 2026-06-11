@@ -22,6 +22,111 @@ _EXPLAINER_CSS = """<style>
 </style>"""
 
 
+_QUALITY_TONES = {
+    "strong": "#0a8a5f",
+    "moderate": "#1F7A75",
+    "weak": "#b8732a",
+    "prior_only": "#b5321e",
+}
+
+
+def _posterior_interval_svg(estimates: List[Any]) -> str:
+    """The shrinkage geometry the table only describes.
+
+    One row per metric on its own normalized mini-axis: the 90%
+    credible interval as a band, the posterior as a filled dot toned
+    by data quality, the prior as a hollow ring, and the observed
+    value (when any data exists) as an × — so how far the posterior
+    moved from prior toward observed, and how much uncertainty
+    remains, reads at a glance. No estimates renders nothing.
+    """
+    rows = []
+    for est in estimates:
+        try:
+            lo90, hi90 = est.credible_interval_90
+            pts = [float(est.prior_mean), float(est.posterior_mean),
+                   float(lo90), float(hi90)]
+            obs = (float(est.observed_mean)
+                   if est.observed_n and est.observed_n > 0 else None)
+        except (TypeError, ValueError, AttributeError):
+            continue
+        if obs is not None:
+            pts.append(obs)
+        vmin, vmax = min(pts), max(pts)
+        span = (vmax - vmin) or abs(vmax) or 1.0
+        vmin -= span * 0.10
+        vmax += span * 0.10
+        rows.append((est, obs, vmin, vmax))
+    if not rows:
+        return ""
+
+    label_w, axis_w, right_w = 190, 380, 30
+    row_h, gap, pad_top, pad_bot = 22, 8, 8, 8
+    width = label_w + axis_w + right_w
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Prior, observed, and posterior with credible '
+        f'interval per metric">'
+    ]
+    for i, (est, obs, vmin, vmax) in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        cy = y + row_h / 2
+
+        def _x(v: float) -> float:
+            return label_w + axis_w * (v - vmin) / (vmax - vmin)
+
+        tone = _QUALITY_TONES.get(str(est.data_quality), "#7a8699")
+        name = str(est.metric).replace("_", " ").title()
+        if len(name) > 24:
+            name = name[:23] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{cy + 3.5:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="#465366">{_html.escape(name)}</text>'
+        )
+        lo90, hi90 = est.credible_interval_90
+        parts.append(
+            f'<rect x="{_x(float(lo90)):.1f}" y="{cy - 5:.1f}" '
+            f'width="{max(_x(float(hi90)) - _x(float(lo90)), 2):.1f}" '
+            f'height="10" rx="2" fill="{tone}" fill-opacity="0.20"/>'
+        )
+        parts.append(
+            f'<circle cx="{_x(float(est.prior_mean)):.1f}" cy="{cy:.1f}" '
+            f'r="4.5" fill="none" stroke="#7a8699" stroke-width="1.5"/>'
+        )
+        if obs is not None:
+            ox = _x(obs)
+            parts.append(
+                f'<path d="M {ox - 3.5:.1f} {cy - 3.5:.1f} '
+                f'L {ox + 3.5:.1f} {cy + 3.5:.1f} '
+                f'M {ox - 3.5:.1f} {cy + 3.5:.1f} '
+                f'L {ox + 3.5:.1f} {cy - 3.5:.1f}" '
+                f'stroke="#0b2341" stroke-width="1.5"/>'
+            )
+        parts.append(
+            f'<circle cx="{_x(float(est.posterior_mean)):.1f}" '
+            f'cy="{cy:.1f}" r="4.5" fill="{tone}"/>'
+        )
+    parts.append("</svg>")
+    legend = (
+        '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10.5px;'
+        'color:var(--cad-text2);margin:4px 0 10px;">'
+        '<span><span style="display:inline-block;width:9px;height:9px;'
+        'border-radius:50%;border:1.5px solid #7a8699;"></span> prior</span>'
+        '<span style="font-weight:700;color:#0b2341;">× observed</span>'
+        '<span><span style="display:inline-block;width:9px;height:9px;'
+        'border-radius:50%;background:#1F7A75;"></span> posterior '
+        '(color = data quality)</span>'
+        '<span>shaded band = 90% credible interval · each row on its '
+        'own scale</span></div>'
+    )
+    return (
+        '<div class="ck-bayes-intervals">' + "".join(parts) + legend + "</div>"
+    )
+
+
 def render_bayesian_profile(
     ccn: str,
     hospital_name: str,
@@ -130,6 +235,8 @@ def render_bayesian_profile(
             f'<ul style="font-size:12px;padding-left:20px;">{susp_items}</ul></div>'
         )
 
+    interval_chart = _posterior_interval_svg(estimates)
+
     # ── Calibrated estimates table ──
     est_rows = ""
     for est in estimates:
@@ -184,6 +291,7 @@ def render_bayesian_profile(
     estimates_section = (
         f'<div class="cad-card">'
         f'<h2>Bayesian-Calibrated KPI Estimates</h2>'
+        f'{interval_chart}'
         f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
         f'Each metric combines peer-group prior (from {beds:.0f}-bed hospital benchmarks) '
         f'with observed data. Shrinkage shows the weight given to prior vs observed: '
