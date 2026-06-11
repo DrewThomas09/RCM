@@ -250,6 +250,7 @@ _SUB_NAV = {
         {"label": "CIM Cross-Check",    "href": "/diligence/cim-crosscheck"},
         {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
         {"label": "Cliff Calendar",     "href": "/diligence/cliff-calendar"},
+        {"label": "TX Infusion Market", "href": "/diligence/texas-infusion"},
         {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
@@ -7283,6 +7284,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "hold-analysis", "title": "Hold Analysis",      "route": "/hold-analysis"},
     {"id": "comp-outcomes", "title": "Comparable Outcomes","route": "/comparable-outcomes"},
     {"id": "tam-sam", "title": "TAM / SAM Builder", "route": "/diligence/tam-sam"},
+    {"id": "tx-infusion", "title": "Texas Infusion Market · TAM/SAM + concentration + metro ranking", "route": "/diligence/texas-infusion"},
     {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
     {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
@@ -10892,6 +10894,7 @@ _SUB_SECTION_MAP = {
     # map them to the same editorial section the wired URL belongs to.
     "/diligence/comparable-outcomes": "research",
     "/diligence/tam-sam": "diligence",
+    "/diligence/texas-infusion": "diligence",
     "/diligence/regulatory-calendar": "research",
     "/diligence/bear-case": "research",
     "/diligence/bear-cases": "research",

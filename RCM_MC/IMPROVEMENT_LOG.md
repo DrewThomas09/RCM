@@ -2815,3 +2815,49 @@ the composite, binding axis loses most + sorts first, points-lost/
 contributed formulas, uplift = weighted gap-to-best (20), near-max no
 drag, to_dict round-trip, weights sum to 1.0, renders in block.
 29 passed across investability suites.
+
+## W2-145 (2026-06-11) — Texas infusion market: full CDD diligence page (wave #47)
+**Built** a dedicated, thorough Texas infusion-therapy market sizing +
+diligence page (`/diligence/texas-infusion` + JSON API) — the generic
+per-state facility-count dives can't produce it (no vendored CMS
+infusion census), so it's built the honest way: national NHIA/MedPAC
+demand scaled to TX by REAL Census population share, then layered with
+every dimension an infusion-platform CDD turns on.
+- **Sizing** — TX patient base (US 3.2M × TX pop share 8.97%) ×18
+  infusions ×$650 → TAM $3.36B / SAM $1.95B / SOM $97M, run through
+  the SAME verified `compute()`/`sensitivity()` the TAM/SAM builder
+  uses (funnel + 8.0% composite CAGR + tornado).
+- **Therapy-form segmentation** — biologics/IVIG 40%, oncology 25%,
+  OPAT 20%, TPN 10%, neuro 5% — with growth divergence (neuro ★ +12%).
+- **Site-of-care segmentation** — home 38% (+9%), AIS 22% (+11%),
+  HOPD 30% (−3%, the steered-away/health-system-captive share),
+  office 10%; 5-yr TAM per site exposes the HOPD→home/AIS migration.
+- **Provider landscape** — TX home-infusion locations (~72) + AIS
+  (~143) derived from NHIA national anchors × pop share (labeled
+  estimates); health-system (HOPD) captive capacity surfaced as
+  whitespace, not competition.
+- **Concentration** — named-chain HHI = 517 (DOJ/FTC scale) →
+  fragmented/roll-up; Option Care ~20%, independent pool ~59%.
+- **Metro attractiveness ranking** — Houston / DFW / Austin / San
+  Antonio from REAL CBSA ACS aggregates: population, 65+ seniors,
+  apportioned infusion patients, referral density /100k, est AIS
+  count, and a 0–100 attractiveness score (senior demand log-scaled
+  + growth + rural-route penalty), RANKED. Houston #1 (92.1).
+- **Payer mix** — commercial 45% / Medicare Part B+D 35% / Medicaid
+  12% (TX non-expansion) / self-pay 8% (TX ~20% uninsured drag).
+- **Population growth** — TX +562,941 in 2024 (largest US gain,
+  Census Vintage 2024), 65+ growing ~3.5%/yr — verifiable.
+- **Structural factors** — CON-free entry, metro density, uninsured/
+  non-expansion drag, biosimilar + nurse-capacity headwinds.
+Every magnitude is a named source; the scaling, HHI, and metro ranking
+are pure arithmetic on those constants + real ACS data, so they
+recompute and audit. Wired into nav, cmd-K palette, and the assistant
+route catalogue.
+**Verify**: tests/test_texas_infusion.py (17) — population-scaled TAM
+chain, SAM/SOM nesting, segments sum to 1 + fastest, HOPD declines,
+payer sums to 1, chains sum to 1, HHI = sum of squared named shares +
+fragmented, provider counts pop-scaled, 4 metros ranked 1–4 by
+attractiveness with real senior counts, growth present, page renders
+all sections, palette route registered. Guide-context contract fixed
+(route added to the assistant catalogue). 318 passed across
+palette/nav/tam-sam/guide suites.

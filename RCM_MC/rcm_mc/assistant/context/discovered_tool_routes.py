@@ -186,6 +186,16 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Texas Infusion Market',
+        route='/diligence/texas-infusion',
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        source_group='Diligence Workspace',
+        is_auto_generated=False,
+        aliases=['texas infusion', 'infusion market', 'tx infusion',
+                 'home infusion', 'ambulatory infusion', 'infusion tam'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Ingestion',
         route='/diligence/ingest',
         category=PageContextCategory.DILIGENCE_WORKSPACE,
