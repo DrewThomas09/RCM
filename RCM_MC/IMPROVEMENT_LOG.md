@@ -2506,3 +2506,19 @@ panel above the table.
 **Verify**: ContributionChartTests — all 8 demo providers render,
 rank order pinned, negative tone present with the FMV count in the
 caption, empty → "". 186 passed across physician suites.
+
+## W2-131 (2026-06-11) — Data quality page: gap census chart (wave #33)
+**Found**: /data-quality's gap census listed gaps per metric in a
+table — which metrics are most gapped, and whether the gaps are
+fixable (re-ingest / external source) or filing artifacts, required
+reading every row.
+**Fixed**: `_gap_census_svg(rep)` — one bar per gapped metric sized
+by gap %, toned by fill kind (amber = re-ingest fixes it, ochre =
+needs an external source, gray = filing artifact, not fillable),
+labeled "12.5% · 7,650", worst-first, capped at 15 with the cap
+declared. Zero-gap metrics skipped; empty census renders "". Census
+failure keeps the existing error row (chart stays ""). Placed above
+the gap table.
+**Verify**: GapCensusChartTests — all three fill-kind tones +
+artifact legend, worst-first order, zero-gap skipped + exactly 15
+rects at the cap, empty → "". 22 passed across data-quality suites.
