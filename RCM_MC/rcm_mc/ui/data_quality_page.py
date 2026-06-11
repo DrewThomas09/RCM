@@ -169,6 +169,84 @@ def _registered_unwired() -> List[dict]:
     return out
 
 
+_FILL_KIND_TONES = {
+    "reingest": "#b8732a",
+    "external": "#a98545",
+    "artifact": "#7a8699",
+}
+
+
+def _gap_census_svg(rep: List[dict]) -> str:
+    """Which metrics carry the most red dots, at a glance.
+
+    One bar per gapped metric sized by its gap percentage, toned by
+    fill kind (amber = fixable by re-ingest, ochre = needs an
+    external source, gray = the filing itself is inconsistent — not
+    fillable). Sorted worst-first, capped at 15. Metrics with zero
+    gaps are skipped; an empty census renders nothing.
+    """
+    rows = [
+        (str(r["label"]), float(r["gap_pct"]), int(r["gaps"]),
+         str(r["fill_kind"]))
+        for r in rep if float(r.get("gap_pct", 0) or 0) > 0
+    ]
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: -r[1])
+    rows = rows[:15]
+    max_pct = rows[0][1] or 1.0
+
+    label_w, bar_w_max, right_w = 220, 330, 130
+    row_h, gap_px, pad_top, pad_bot = 15, 6, 8, 8
+    width = label_w + bar_w_max + right_w
+    height = pad_top + len(rows) * (row_h + gap_px) - gap_px + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Gap percentage per metric, worst first">'
+    ]
+    for i, (label, pct, gaps, kind) in enumerate(rows):
+        y = pad_top + i * (row_h + gap_px)
+        ty = y + row_h / 2 + 3.5
+        tone = _FILL_KIND_TONES.get(kind, "#7a8699")
+        short = label if len(label) <= 32 else label[:31] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="9.5" fill="#465366">{_html.escape(short)}</text>'
+        )
+        w = max(2.0, bar_w_max * pct / max_pct)
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{w:.1f}" height="{row_h}" '
+            f'rx="2" fill="{tone}" fill-opacity="0.85"/>'
+        )
+        parts.append(
+            f'<text x="{label_w + w + 6:.1f}" y="{ty:.1f}" font-size="9.5" '
+            f'font-weight="600" fill="{tone}">{pct:.1f}% · {gaps:,}</text>'
+        )
+    parts.append("</svg>")
+    legend = (
+        '<div style="display:flex;gap:14px;font-size:10px;'
+        'color:var(--sc-text-dim,#6a7480);margin:2px 0 10px;">'
+        + "".join(
+            f'<span><span style="display:inline-block;width:9px;height:9px;'
+            f'border-radius:2px;background:{tone};margin-right:4px;"></span>'
+            f'{lbl}</span>'
+            for lbl, tone in (
+                ("Re-ingest fixes it", _FILL_KIND_TONES["reingest"]),
+                ("Needs external source", _FILL_KIND_TONES["external"]),
+                ("Filing artifact — not fillable",
+                 _FILL_KIND_TONES["artifact"]),
+            )
+        )
+        + f'<span style="margin-left:auto;">worst {len(rows)} shown</span>'
+        '</div>'
+    )
+    return (
+        '<div class="ck-gap-census">' + "".join(parts) + legend + "</div>"
+    )
+
+
 def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
     from datetime import datetime, timezone
     today = datetime.now(timezone.utc).date()
@@ -231,10 +309,12 @@ def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
 
     # ── gap census (reuse the registry the red dots map to) ──
     gap_rows = ""
+    gap_chart = ""
     try:
         from ..data.gap_fill_registry import gap_report
         from ..diligence.hcris_xray import load_all_metrics
         rep = gap_report(load_all_metrics())
+        gap_chart = _gap_census_svg(rep)
         for r in rep:
             kind = {"reingest": "RE-INGEST", "external": "EXTERNAL",
                     "artifact": "ARTIFACT"}.get(r["fill_kind"], "?")
@@ -255,7 +335,8 @@ def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
                     f'color:var(--sc-negative,#b5321e);">gap census failed: '
                     f'{_html.escape(str(exc)[:80])}</td></tr>')
     gaps_panel = ck_panel(
-        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
+        gap_chart
+        + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">'
         '<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
         '<th style="text-align:left;padding:5px 8px;">Metric</th>'
         '<th style="text-align:right;padding:5px 8px;">Gaps (hospital-years)</th>'
