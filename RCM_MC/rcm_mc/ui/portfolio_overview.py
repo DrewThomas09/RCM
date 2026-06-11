@@ -493,7 +493,11 @@ def render_portfolio_overview(
             f'<td><span class="cad-badge cad-badge-muted">{stage}</span></td>'
             f'<td class="num" style="color:{dr_color};font-weight:600;">{_fmt_pct(dr)}{dr_delta}</td>'
             f'<td class="num">{ar_str}{ar_delta}</td>'
-            f'<td class="num">{ck_fmt_currency(rev/1e6) + "M" if rev is not None else _fmt_money(rev)}</td>'
+            # ck_fmt_currency takes RAW dollars and rolls B/M/K itself. The
+            # old `ck_fmt_currency(rev/1e6) + "M"` double-scaled: a $1.5B
+            # deal rendered "$2KM" (1500 → "$2K" → +"M") and a $500K deal
+            # rendered "$0M".
+            f'<td class="num">{ck_fmt_currency(rev) if rev is not None else _fmt_money(rev)}</td>'
             f'<td style="white-space:nowrap;">'
             f'<a href="/deal/{did}" class="cad-badge cad-badge-blue" '
             f'style="text-decoration:none;">DASH</a> '
@@ -554,7 +558,7 @@ def render_portfolio_overview(
             f'<div style="display:flex;gap:24px;align-items:center;">'
             f'<div style="min-width:170px;">'
             f'<div class="cad-kpi-value" style="color:{PALETTE["positive"]};font-size:24px;">'
-            f'${recoverable/1e6:.1f}M</div>'
+            f'{ck_fmt_currency(recoverable)}</div>'
             f'<div class="cad-kpi-label">Recoverable Revenue</div></div>'
             f'<div style="flex:1;font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
             f'Reducing portfolio avg denial rate from <strong>{avg_dr:.1f}%</strong> to the '
@@ -584,14 +588,14 @@ def render_portfolio_overview(
             f'<div style="display:flex;gap:24px;align-items:center;">'
             f'<div style="min-width:170px;">'
             f'<div class="cad-kpi-value" style="color:{PALETTE["brand_accent"]};font-size:24px;">'
-            f'${synergy_ebitda/1e6:.1f}M</div>'
+            f'{ck_fmt_currency(synergy_ebitda)}</div>'
             f'<div class="cad-kpi-label">Annual Synergy EBITDA</div></div>'
             f'<div style="flex:1;font-size:12px;color:{PALETTE["text_secondary"]};line-height:1.6;">'
             f'Shared-services model: <strong>{n}</strong> platforms × '
-            f'<strong>${rcm_cost_base/1e6:.0f}M</strong> RCM cost base × '
+            f'<strong>{ck_fmt_currency(rcm_cost_base)}</strong> RCM cost base × '
             f'<strong>{synergy_pct:.0%}</strong> savings from coding centralization, '
             f'shared denial management, payer contract leverage. '
-            f'At 11x = <strong>${synergy_ebitda * 11/1e6:.0f}M</strong> equity value.</div>'
+            f'At 11x = <strong>{ck_fmt_currency(synergy_ebitda * 11)}</strong> equity value.</div>'
             f'</div></div>'
         )
 

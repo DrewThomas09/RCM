@@ -106,6 +106,22 @@ class AnchorRevenueSurfacingTests(unittest.TestCase):
         self.assertEqual(row["net_revenue"], 5.0e8)   # entered wins
         self.assertNotIn("anchor-actual", [row.get("revenue_basis")])
 
+    def test_revenue_column_rolls_to_billions_not_2km(self):
+        # Regression: the revenue cell called ck_fmt_currency(rev/1e6)+"M",
+        # double-scaling — a $1.5B deal rendered "$2KM" and a $500K deal
+        # "$0M". Pass raw dollars; the formatter rolls B/M/K itself.
+        import pandas as pd
+        from rcm_mc.ui.portfolio_overview import render_portfolio_overview
+        deals = pd.DataFrame([
+            {"deal_id": "big", "name": "Big", "created_at": "2026-01-01",
+             "net_revenue": 1.5e9, "denial_rate": 10.0},
+            {"deal_id": "mid", "name": "Mid", "created_at": "2026-01-01",
+             "net_revenue": 8.2e8, "denial_rate": 12.0},
+        ])
+        h = render_portfolio_overview(deals, None)
+        self.assertIn("$1.50B", h)
+        self.assertNotIn("KM", h)
+
     def test_portfolio_total_labels_anchor_basis(self):
         import pandas as pd
         from rcm_mc.ui.portfolio_overview import render_portfolio_overview

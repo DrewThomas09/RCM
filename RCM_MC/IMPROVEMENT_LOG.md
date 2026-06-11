@@ -1008,3 +1008,16 @@ and "Models" (/models/dcf/<id>) alongside Download/Set-Active — audit trail
 and analytics one click apart again.
 **Verify**: new test_snapshot_page_links_forward_to_analysis asserts both
 hrefs on a seeded snapshot deal; test_server suite 68 passed.
+
+## W2-37 — portfolio revenue column "$2KM" double-scale bug (00:50Z)
+**Found by**: deal-data aggregation audit — the portfolio table's revenue
+cell called `ck_fmt_currency(rev/1e6) + "M"`, double-scaling the value: a
+$1.5B deal rendered "$2KM" (1500 → "$2K" → +"M") and a $500K deal "$0M".
+**Fixed**: pass RAW dollars — `ck_fmt_currency(rev)` rolls B/M/K itself.
+Also routed the Portfolio Value Opportunity (recoverable), Cross-Deal
+Synergy (synergy EBITDA, RCM cost base, 11x equity value) figures through
+ck_fmt_currency for the same consistency.
+**Verify**: $11B 2-deal portfolio renders $11.00B total · $6.00B/$5.00B rows
+· $165.0M recoverable · $52.8M synergy · $660.0M cost base · $580.8M equity;
+new test_revenue_column_rolls_to_billions_not_2km; 73 passed across the 8
+portfolio-overview suites.
