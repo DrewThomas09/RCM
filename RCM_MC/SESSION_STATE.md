@@ -20,7 +20,19 @@
   presets (Conservative/Base/Aggressive); per-segment divergence (8
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
-- current_step: looping the sprint; branch==main @ ae8ada1 (checkpoint 59)
+- current_step: looping the sprint; branch==main @ a0f9bea (checkpoint 69)
+- MILESTONE 2: 82-industry catalogue (checkpoints 60-69, batches 14-23):
+  + school services, mobile dx, palliative, senior living, vascular
+  access, genetic testing, NEMT, 503B, LOP medicine, dental labs, HTM,
+  interpretation, urology, rheumatology, neurology, endo/obesity,
+  pulmonology, transplant services, retail clinics (failure autopsy),
+  surgical assist, HIT consulting, hospitalist, perfusion, sterile
+  processing, air medical (broken playbook), pediatric PDN, ROI
+  services, virtual primary, RPM (code-created), care navigation.
+  Honesty taxonomy complete: policy cliffs, compliance revocation,
+  playbook obsolescence (NSA×2), substitution (AI, biosimilars,
+  offshore, Cologuard), labor ceilings, cyclical whiplash, honest
+  declines, failure autopsies, code-created-market risk.
 - MILESTONE: 52-industry TAM/SAM catalogue (checkpoints 50-59): the
   original 21 + niche batches 1-13 (infusion, imaging, PT, veterinary,
   medspa, EMS, labs, specialty Rx, vision, ABA, plasma, research sites,
@@ -31,7 +43,7 @@
   locum staffing, crisis services). Every chain footnoted to a named
   public source; every bear case priced; chain HHI; state×payer where
   vendored; scenarios; divergence ★; tornado; 4-sheet xlsx parity.
-  test_tam_sam: 91.
+  test_tam_sam: 122.
 - branch: claude/sharp-einstein-005lm == main (everything merged + deployed)
 - background: NO demo server (user: no demo runs — work everything to PE desk)
 
