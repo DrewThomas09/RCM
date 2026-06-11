@@ -676,7 +676,7 @@ def _new_modules_index() -> str:
          "19-payer rate-shock MC"),
         ("BEAR",   "Auto-Gen",         "/diligence/bear-case",
          "IC memo counter-narrative from 8 sources"),
-        ("MARKET", "Seeking Alpha",    "/market-intel/seeking-alpha",
+        ("MARKET", "Public Market Intel", "/market-intel/public-market",
          "Public comps + PE transactions"),
     ]
     cards = "".join(

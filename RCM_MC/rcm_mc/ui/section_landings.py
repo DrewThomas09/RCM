@@ -181,7 +181,7 @@ _SECTIONS: Dict[str, Dict] = {
                   "blurb": "Market intel mapped to geography."},
                  {"href": "/industry", "label": "Industry Intelligence",
                   "blurb": "Derived facts from licensed industry reports."},
-                 {"href": "/market-intel/seeking-alpha", "label": "Seeking Alpha",
+                 {"href": "/market-intel/public-market", "label": "Public Market Intel",
                   "blurb": "Public-market signal on healthcare names."},
                  {"href": "/sector-momentum", "label": "Sector Momentum",
                   "blurb": "Where sector multiples are moving."},

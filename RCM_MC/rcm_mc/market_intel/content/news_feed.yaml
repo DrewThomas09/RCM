@@ -78,7 +78,7 @@ items:
 
   - date: 2026-03-15
     title: "HCA Q1 2026: EV/EBITDA compressed to 8.9x on rate fears"
-    source: Seeking Alpha
+    source: Industry wire
     url: https://seekingalpha.com/article/hca-q1-2026
     summary: |
       HCA missed Q1 consensus EBITDA by 2.1% on site-neutral + TEAM
@@ -156,7 +156,7 @@ items:
 
   - date: 2026-04-22
     title: "Tenet Q1 2026 beats consensus on ASC pivot"
-    source: Seeking Alpha
+    source: Industry wire
     url: https://seekingalpha.com/article/thc-q1-2026
     summary: |
       Tenet posted $3.22 EPS vs $2.98 consensus, driven by the
@@ -212,7 +212,7 @@ items:
 
   - date: 2026-03-22
     title: "DaVita upgraded to Buy at 3 shops on ESRD rate stability"
-    source: Seeking Alpha
+    source: Industry wire
     url: https://seekingalpha.com/article/dva-upgrade-march-2026
     summary: |
       Three sell-side shops upgraded DaVita following CMS CY2027
@@ -240,7 +240,7 @@ items:
 
   - date: 2026-02-25
     title: "Surgery Partners Q1 beat, ASC growth outpaces guidance"
-    source: Seeking Alpha
+    source: Industry wire
     url: https://seekingalpha.com/article/sgry-q1-2026
     summary: |
       SGRY posted $0.22 EPS vs $0.19 consensus. ASC volume growth
@@ -253,7 +253,7 @@ items:
 
   - date: 2026-02-12
     title: "Privia Health reports Q4 miss; MA risk book compression cited"
-    source: Seeking Alpha
+    source: Industry wire
     url: https://seekingalpha.com/article/prva-q4-2025
     summary: |
       Privia's Q4 2025 missed EPS consensus as MA risk-bearing book

@@ -62,6 +62,12 @@ _CSS = """
  font-family:var(--sc-sans);font-size:13px;color:var(--sc-text-dim,#465366);}
 .tx-allbar a{font-family:var(--sc-mono);font-size:12px;color:var(--sc-teal,#155752);
  text-decoration:none;font-weight:600;}
+.tx-filter{width:100%;max-width:430px;padding:9px 13px;margin:2px 0 4px;
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:2px;font-size:13.5px;
+ font-family:var(--sc-sans);background:#fff;color:var(--sc-text,#1a2332);}
+.tx-filter:focus{outline:2px solid var(--sc-teal,#155752);outline-offset:-1px;}
+.tx-filter-count{font-family:var(--sc-mono);font-size:11px;
+ color:var(--sc-text-dim,#465366);min-height:16px;margin:0 0 6px;}
 """
 
 
@@ -75,8 +81,13 @@ def _ranked() -> Dict[str, List[Dict]]:
 
 def _row(r: Dict) -> str:
     color, tip = _TIER_DOT.get(r.get("tier", ""), ("#8b94a0", ""))
+    # data-tx-search powers the instant filter — label + route, lowercased,
+    # one attribute → cheap selector lookup in the JS handler (same pattern
+    # as the screener's data-ts-search).
+    blob = f'{r.get("label", "")} {r["route"]}'.lower()
     return (
-        f'<a class="tx-row" href="{_html.escape(r["route"])}">'
+        f'<a class="tx-row" href="{_html.escape(r["route"])}" '
+        f'data-tx-search="{_html.escape(blob, quote=True)}">'
         f'<span class="tx-dot" style="background:{color}" title="{_html.escape(tip)}">'
         f'</span>'
         f'<span class="tx-row-label">{_html.escape(r.get("label",""))}</span>'
@@ -109,6 +120,33 @@ def render_tools_showcase(total_surfaces: int = 0) -> str:
         '<p class="tx-intro">Every tool, grouped by workspace and ordered '
         'best-first. Open any one — or press Cmd+K to search them all.</p>'
     )
+    # Instant filter — 170+ tools is too many to scan ("a lot of good
+    # stuff in there but it is hard to get it out"). Type to narrow by
+    # name or route; sections with zero matches collapse; Esc clears.
+    filter_box = (
+        '<input type="search" id="tx-filter" class="tx-filter" '
+        'placeholder="Filter tools… (name or route)" autocomplete="off" '
+        'aria-label="Filter tools"/>'
+        '<div id="tx-filter-count" class="tx-filter-count"></div>'
+        '<script>(function(){'
+        "var inp=document.getElementById('tx-filter');if(!inp)return;"
+        "var cnt=document.getElementById('tx-filter-count');"
+        "inp.addEventListener('input',function(){"
+        "var q=inp.value.trim().toLowerCase();var n=0;"
+        "document.querySelectorAll('[data-tx-search]').forEach(function(a){"
+        "var hit=!q||a.getAttribute('data-tx-search').indexOf(q)!==-1;"
+        "a.style.display=hit?'':'none';if(hit)n++;});"
+        "document.querySelectorAll('.tx-sec').forEach(function(s){"
+        "var any=Array.prototype.some.call("
+        "s.querySelectorAll('[data-tx-search]'),"
+        "function(a){return a.style.display!=='none';});"
+        "s.style.display=any?'':'none';});"
+        "cnt.textContent=q?(n+' tool'+(n===1?'':'s')+' match'):'';});"
+        "inp.addEventListener('keydown',function(e){"
+        "if(e.key==='Escape'){inp.value='';"
+        "inp.dispatchEvent(new Event('input'));}});"
+        '})();</script>'
+    )
     legend = (
         '<div class="tx-legend">'
         + "".join(
@@ -130,7 +168,7 @@ def render_tools_showcase(total_surfaces: int = 0) -> str:
         '<a href="/tools?view=all">Full A–Z index &rarr;</a></div>'
     )
 
-    body = head + intro + legend + "".join(sections) + all_bar
+    body = head + intro + filter_box + legend + "".join(sections) + all_bar
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions

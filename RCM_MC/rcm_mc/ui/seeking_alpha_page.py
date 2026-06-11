@@ -1,6 +1,6 @@
-"""Seeking Alpha / public-market intelligence page.
+"""Public Market Intel — public-market intelligence page.
 
-Route: ``/market-intel/seeking-alpha``
+Route: ``/market-intel/public-market`` (legacy alias ``/market-intel/seeking-alpha`` still routes here)
 
 Surfaces the curated public-comp + news + PE-transactions library
 as one Bloomberg-tier market-intel dashboard:
@@ -42,6 +42,19 @@ from .power_ui import (
 def _scoped_styles() -> str:
     css = """
 .ck-sa-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
+.ck-sa-read-grid{{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);
+gap:28px;align-items:start;}}
+@media (max-width:960px){{.ck-sa-read-grid{{grid-template-columns:1fr;gap:16px;}}}}
+.ck-sa-live{{border:1px solid {bd};border-radius:2px;padding:12px 14px;
+background:var(--sc-parchment-2,#efe9dd);}}
+.ck-sa-live-label{{font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;
+font-weight:700;color:{tf};margin-bottom:8px;}}
+.ck-sa-live-btn{{padding:7px 14px;background:var(--sc-navy,#0b2341);color:#fff;
+border:0;border-radius:2px;font-size:12px;font-weight:600;cursor:pointer;}}
+.ck-sa-live-btn:disabled{{opacity:.6;cursor:wait;}}
+.ck-sa-live-out{{margin-top:10px;font-size:12.5px;line-height:1.5;}}
+.ck-sa-live-err{{color:var(--sc-warning,#b8732a);}}
+.ck-sa-live-meta{{font-size:10.5px;color:{tf};margin:8px 0 0;line-height:1.5;}}
 .ck-sa-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
 color:{tf};font-weight:600;}}
 .ck-sa-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
@@ -508,7 +521,7 @@ def render_seeking_alpha_page(
     # 2026-05-28 batch 24 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
-        eyebrow="Seeking Alpha · Market Intelligence",
+        eyebrow="Public Market Intel",
         title="Healthcare public-market + PE snapshot.",
         meta=(
             f"{len(comps)} PUBLIC COMPS · "
@@ -523,11 +536,56 @@ def render_seeking_alpha_page(
             "analyst consensus."
         ),
     )
+    # 2026-06-11 (user-reported): the market-read panel crammed the
+    # headline, callout, and benchmark chip together against a wide
+    # empty right side. Two-column layout now — the read on the left,
+    # the benchmark chip + live-sentiment control in a right rail —
+    # with real breathing room between blocks.
+    live_block = (
+        '<div class="ck-sa-live">'
+        '<div class="ck-sa-live-label">Live check</div>'
+        '<button type="button" id="ck-sa-live-btn" class="ck-sa-live-btn" '
+        'onclick="ckSaLive()">Check live sentiment now</button>'
+        '<div id="ck-sa-live-out" class="ck-sa-live-out" '
+        'aria-live="polite"></div>'
+        '<script>function ckSaLive(){'
+        "var b=document.getElementById('ck-sa-live-btn');"
+        "var o=document.getElementById('ck-sa-live-out');"
+        "b.disabled=true;b.textContent='Fetching public feeds…';"
+        "fetch('/api/market-intel/live-sentiment',{credentials:'same-origin'})"
+        ".then(function(r){return r.json();}).then(function(d){"
+        "b.disabled=false;b.textContent='Re-check live sentiment';"
+        "if(!d.ok){o.innerHTML='<span class=\"ck-sa-live-err\">'+"
+        "String(d.error||'fetch failed').replace(/[<>&]/g,'')+'</span>';return;}"
+        "var tone=d.label==='constructive'?'#0a8a5f':"
+        "(d.label==='risk-off'?'#b5321e':'#b8732a');"
+        "o.innerHTML='<div><strong style=\"color:'+tone+';\">'+d.label+"
+        "'</strong> · '+d.n_headlines+' live headlines · +'+d.n_positive+"
+        "' / −'+d.n_negative+' lexicon hits</div>'+"
+        "'<div class=\"ck-sa-live-meta\">'+String(d.source).replace(/[<>&]/g,'')+"
+        "' · fetched '+String(d.fetched_at).slice(0,16).replace('T',' ')+'Z</div>';"
+        "}).catch(function(e){b.disabled=false;"
+        "b.textContent='Check live sentiment now';"
+        "o.textContent='Live fetch failed: '+e;});}"
+        '</script>'
+        '<p class="ck-sa-live-meta">On-demand fetch of public news RSS, '
+        'scored with a transparent keyword lexicon — a coarse needle, not '
+        'a model. Falls back honestly when this install has no outbound '
+        'network.</p>'
+        '</div>'
+    )
     headline_panel = ck_panel(
-        f'<p class="ck-section-body">{html.escape(headline)}</p>'
+        '<div class="ck-sa-read-grid">'
+        '<div class="ck-sa-read-main">'
+        f'<p class="ck-section-body" style="margin:0 0 14px;">'
+        f'{html.escape(headline)}</p>'
         + interpret_callout("Market read:", plain)
-        + (f'<p class="ck-section-body">{mult_chip}</p>'
-           if mult_chip else ""),
+        + '</div>'
+        + '<div class="ck-sa-read-rail">'
+        + (f'<div style="margin:0 0 16px;">{mult_chip}</div>'
+           if mult_chip else "")
+        + live_block
+        + '</div></div>',
         title="Latest market read",
     )
     hero = intro + headline_panel
@@ -535,8 +593,8 @@ def render_seeking_alpha_page(
     comps_callout = (
         f'<div class="ck-sa-callout">'
         f'<strong>Source: </strong>'
-        f'10-K/10-Q filings, FactSet / CapIQ / Seeking Alpha '
-        f'aggregated analyst consensus. Values refresh quarterly; '
+        f'10-K/10-Q filings + aggregated public analyst '
+        f'consensus. Values refresh quarterly; '
         f'click any ticker to see the underlying comp in the '
         f'public-comp library. Multiple color-coding: '
         f'<span class="cad-pos">≥12× premium</span> · '
@@ -604,7 +662,7 @@ def render_seeking_alpha_page(
     )
 
     filter_form = ck_panel(
-        f'<form method="get" action="/market-intel/seeking-alpha" '
+        f'<form method="get" action="/market-intel/public-market" '
         f'class="ck-sa-filter-form">'
         f'<div class="ck-sa-filter-field">'
         f'<label class="ck-sa-filter-label">Filter specialty</label>'
@@ -664,7 +722,7 @@ def render_seeking_alpha_page(
             '<div class="ck-sa-section-label">'
             'JSON export · full market-intel snapshot</div>',
             payload=payload,
-            name="seeking_alpha_snapshot",
+            name="public_market_snapshot",
         )
         + bookmark_hint()
         + ck_next_section(
@@ -680,6 +738,6 @@ def render_seeking_alpha_page(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        body, "Seeking Alpha · Market Intel",
+        body, "Public Market Intel",
         subtitle="Public comps × PE deal flow × curated news",
     )

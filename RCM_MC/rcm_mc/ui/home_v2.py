@@ -13,6 +13,7 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell,
     ck_eyebrow,
+    ck_fmt_currency,
     ck_fmt_num,
     ck_fmt_pct,
     ck_kpi_block,
@@ -504,7 +505,7 @@ def render_home(
 
         ebitda_value = ck_provenance_tooltip(
             "Estimated portfolio EBITDA",
-            f"${p_ebitda/1e6:,.0f}M",
+            ck_fmt_currency(p_ebitda),
             explainer=(
                 f"Total revenue x portfolio average EBITDA margin "
                 f"({avg_m:.1%}). Falls back to a 10% margin floor "
@@ -526,7 +527,7 @@ def render_home(
 
         kpi_blocks = (
             ck_kpi_block("Active Deals", f"{n_deals}", "in portfolio")
-            + ck_kpi_block("Total Revenue", f"${p_rev/1e6:,.0f}M", "deals on file")
+            + ck_kpi_block("Total Revenue", ck_fmt_currency(p_rev), "deals on file")
             + (ck_kpi_block("Est. EBITDA", ebitda_value, "revenue x avg margin")
                if p_ebitda > 0 else "")
             + (ck_kpi_block("Avg Denial Rate", denial_value, "across portfolio")

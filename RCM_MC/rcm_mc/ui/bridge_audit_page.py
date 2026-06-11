@@ -391,6 +391,11 @@ def _verdict_card(report: BridgeAuditReport) -> str:
     )
 
 
+def _money_bm(v: float) -> str:
+    # House style: $B at >=$1B — a $1.5B ask reads "$1.50B", not "$1,500M".
+    return f"${v/1e9:,.2f}B" if abs(v) >= 1e9 else f"${v/1e6:,.0f}M"
+
+
 def _counter_bid_card(report: BridgeAuditReport) -> str:
     if (
         not report.entry_multiple
@@ -400,12 +405,12 @@ def _counter_bid_card(report: BridgeAuditReport) -> str:
     ):
         return ""
     body = (
-        f"Banker asking <strong>${report.asking_price_usd/1e6:,.0f}M</strong> "
+        f"Banker asking <strong>{_money_bm(report.asking_price_usd)}</strong> "
         f"at {report.entry_multiple:.1f}×: our audit shows "
         f"<strong>${report.gap_usd/1e6:,.1f}M of realistic bridge gap</strong>. "
         f"At the entry multiple, that prices out to "
         f"<strong>${report.price_reduction_usd/1e6:,.1f}M of overpayment</strong>. "
-        f"Counter at <strong>${report.counter_offer_usd/1e6:,.0f}M</strong>, "
+        f"Counter at <strong>{_money_bm(report.counter_offer_usd)}</strong>, "
         f"or structure <strong>${(report.earn_out_target_usd or 0)/1e6:,.1f}M "
         f"as a 24-month earn-out</strong> triggered at "
         f"<strong>${(report.earn_out_trigger_usd or 0)/1e6:,.1f}M</strong> "

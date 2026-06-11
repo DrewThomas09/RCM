@@ -74,6 +74,15 @@ _WORKSTATION_CSS = """
 """
 
 
+def _fmt_money_b(v: Optional[float]) -> str:
+    """House money format: $B at ≥$1B, else $M. A $8.1B system must read
+    "$8.12B NPR", not "$8,123.5M NPR" (the X-Ray masthead did exactly that
+    for the largest filers)."""
+    if v is None:
+        return "—"
+    return f"${v/1e9:,.2f}B" if abs(v) >= 1e9 else f"${v/1e6:,.1f}M"
+
+
 def _xray_kit_css() -> str:
     from .xray_kit import XRAY_CSS
     return XRAY_CSS
@@ -364,8 +373,8 @@ def _target_card(
             formula="(NPR − operating expenses) ÷ NPR",
             detail=(
                 f"Fiscal year {target.fiscal_year}. "
-                f"NPR ${target.net_patient_revenue/1e6:,.1f}M; "
-                f"opex ${target.operating_expenses/1e6:,.1f}M."
+                f"NPR {_fmt_money_b(target.net_patient_revenue)}; "
+                f"opex {_fmt_money_b(target.operating_expenses)}."
             ),
         )
         _om_sub = target.margin_band.title()
@@ -394,8 +403,8 @@ def _target_card(
         title=html.escape(target.name),
         meta=(
             f"{target.beds:,} BEDS · "
-            f"${target.net_patient_revenue/1e6:,.1f}M NPR · "
-            f"${target.operating_expenses/1e6:,.1f}M OPEX"
+            f"{_fmt_money_b(target.net_patient_revenue)} NPR · "
+            f"{_fmt_money_b(target.operating_expenses)} OPEX"
         ),
         lede_italic_phrase="HCRIS at a glance.",
         lede_body=(
@@ -427,7 +436,7 @@ def _target_card(
             sub="heavy" if target.is_medicare_heavy else "moderate",
         )
         + ck_kpi_block(
-            "NPR (filed)", f"${target.net_patient_revenue/1e6:,.1f}M",
+            "NPR (filed)", _fmt_money_b(target.net_patient_revenue),
             sub=f"${target.net_revenue_per_bed/1e3:,.0f}K / bed",
         )
         + ck_kpi_block(
@@ -1018,7 +1027,7 @@ def _local_market_context(target: HospitalMetrics) -> str:
 
 def _public_comp_context(target: HospitalMetrics) -> str:
     """Compare target's HCRIS operating margin against public
-    hospital-system comps from the Seeking Alpha library.  Answers
+    hospital-system comps from the public-comp library.  Answers
     the partner question: "how does this private target look
     vs the public tape?"
     """
@@ -1113,14 +1122,14 @@ def _public_comp_context(target: HospitalMetrics) -> str:
         '<p class="ck-section-body">'
         'Public-hospital comps are curated from 10-K / analyst '
         'consensus via '
-        '<a href="/market-intel/seeking-alpha" class="ck-link">'
-        '→ Seeking Alpha Market Intel</a>. '
+        '<a href="/market-intel/public-market" class="ck-link">'
+        '→ Public Market Intel</a>. '
         'Margin delta × $ of NPR ≈ the EBITDA gap between the '
         'target and the public bench.</p>'
     )
     return ck_panel(
         inner,
-        title="Public market context · Seeking Alpha hospital comps",
+        title="Public market context · hospital comps",
     )
 
 
@@ -1671,15 +1680,15 @@ def render_hcris_xray_page(
         f'<a href="{_link("/diligence/bear-case", {"deal_name": target.name, "specialty": "HOSPITAL", "revenue_year0_usd": npr, "ebitda_year0_usd": eb, "enterprise_value_usd": ev_str, "equity_check_usd": equity_str, "debt_usd": debt_str, "hcris_ccn": ccn})}" class="ck-link">→ Bear Case</a>'
         '</p>'
         '<p class="ck-eyebrow">'
-        f'EV <code>${default_ev/1e6:,.0f}M</code> (9.0× '
-        f'${actual_ebitda/1e6:,.1f}M EBITDA'
+        f'EV <code>{_fmt_money_b(default_ev)}</code> (9.0× '
+        f'{_fmt_money_b(actual_ebitda)} EBITDA'
         + ((': 5% NPR floor, filed op. margin '
             + (f'{target.operating_margin_on_npr*100:.1f}%'
                if margin_is_plausible(target.operating_margin_on_npr) else '—'))
            if ebitda_is_floored else "")
         + ') · Equity '
-        f'<code>${default_equity/1e6:,.0f}M</code> · Debt '
-        f'<code>${default_debt/1e6:,.0f}M</code> · override '
+        f'<code>{_fmt_money_b(default_equity)}</code> · Debt '
+        f'<code>{_fmt_money_b(default_debt)}</code> · override '
         'any of these on the destination page.</p>',
         title=(
             "Cross-reference · pre-seeded with HCRIS-filed NPR, "

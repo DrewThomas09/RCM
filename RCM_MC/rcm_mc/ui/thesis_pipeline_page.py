@@ -457,8 +457,8 @@ def _deeplinks_block(report: ThesisPipelineReport, inp: PipelineInput) -> str:
             f"/market-intel?{_urllib.urlencode(mi_qs)}",
         ))
         links.append((
-            "Seeking Alpha",
-            "/market-intel/seeking-alpha",
+            "Public Market Intel",
+            "/market-intel/public-market",
         ))
 
     # New diligence modules — auto-linked when the corresponding
