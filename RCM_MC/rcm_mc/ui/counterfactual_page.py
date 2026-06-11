@@ -689,6 +689,80 @@ def _render_ccd_summary(summary: Dict[str, Any]) -> str:
     )
 
 
+def _lever_impact_svg(cf_set: CounterfactualSet) -> str:
+    """Where the recoverable money is — and whether you can get it.
+
+    One bar per dollar-quantified counterfactual lever, sized by the
+    savings estimate and toned by feasibility (the page's own
+    _feasibility_color: HIGH = unilateral, LOW = third-party
+    concession). Sorted largest-first; qualitative levers are counted
+    in the caption rather than drawn at an invented size. No
+    quantified levers renders nothing.
+    """
+    rows = [
+        (str(cf.module), float(cf.estimated_dollar_impact_usd),
+         str(cf.feasibility))
+        for cf in cf_set.items
+        if cf.estimated_dollar_impact_usd > 0
+    ]
+    n_qual = sum(
+        1 for cf in cf_set.items if cf.estimated_dollar_impact_usd <= 0)
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: -r[1])
+    max_usd = rows[0][1]
+
+    label_w, bar_w_max, right_w = 200, 340, 130
+    row_h, gap, pad_top, pad_bot = 20, 7, 8, 8
+    width = label_w + bar_w_max + right_w
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Counterfactual lever savings by feasibility">'
+    ]
+    for i, (module, usd, feas) in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        tone = _feasibility_color(feas)
+        short = module if len(module) <= 26 else module[:25] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="{P["text_dim"]}">'
+            f'{html.escape(short)}</text>'
+        )
+        w = max(2.0, bar_w_max * usd / max_usd)
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{w:.1f}" height="{row_h}" '
+            f'rx="2" fill="{tone}" fill-opacity="0.85"/>'
+        )
+        usd_s = f"${usd / 1e6:.1f}M" if usd >= 1e6 else f"${usd / 1e3:.0f}K"
+        parts.append(
+            f'<text x="{label_w + w + 6:.1f}" y="{ty:.1f}" font-size="10" '
+            f'font-weight="600" fill="{tone}">{usd_s} · {html.escape(feas)}'
+            f'</text>'
+        )
+    parts.append("</svg>")
+    caption_bits = [
+        "SAVINGS ESTIMATE PER LEVER · TONE = FEASIBILITY "
+        "(HIGH UNILATERAL / LOW THIRD-PARTY)",
+    ]
+    if n_qual:
+        caption_bits.append(
+            f"{n_qual} QUALITATIVE LEVER{'S' if n_qual != 1 else ''} "
+            "NOT CHARTED")
+    note = (
+        f'<div style="font-family:var(--ck-mono,monospace);font-size:9px;'
+        f'letter-spacing:0.08em;color:{P["text_faint"]};margin-top:4px;">'
+        + " · ".join(caption_bits) + "</div>"
+    )
+    return (
+        '<div class="cf-lever-impact" style="margin:6px 0 14px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def _render_counterfactuals(cf_set: CounterfactualSet) -> str:
     if not cf_set.items:
         return (
@@ -776,6 +850,7 @@ def _render_counterfactuals(cf_set: CounterfactualSet) -> str:
         )
     return (
         f'<div class="cf-section-head">Counterfactuals</div>'
+        f'{_lever_impact_svg(cf_set)}'
         f'{"".join(rows)}'
     )
 

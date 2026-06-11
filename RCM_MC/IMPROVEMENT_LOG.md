@@ -2291,3 +2291,19 @@ words. No sections renders "". Placed above the section panels.
 (2 SECTIONS · 1 VERIFIED · 1 CHECK REQUIRED · 700 WORDS), document
 order preserved, empty → "", strip precedes section panels in the
 full page render. 184 passed across memo suites.
+
+## W2-119 (2026-06-11) — Counterfactual advisor: lever impact chart (wave #21)
+**Found**: /diligence/counterfactual rendered each offer-shape lever
+as a card — comparing savings size against feasibility across levers
+(the IC question: "where's the money and can we actually get it?")
+meant reading every card.
+**Fixed**: `_lever_impact_svg(cf_set)` — one bar per dollar-
+quantified lever sized by savings estimate, toned by the page's own
+_feasibility_color (HIGH unilateral green / MEDIUM amber / LOW
+third-party red), value + feasibility printed per bar, sorted
+largest-first. Qualitative levers are counted in the caption, never
+drawn at an invented size; no quantified levers renders "". Placed
+under the Counterfactuals section head.
+**Verify**: LeverImpactChartTests — feasibility tones + $2.4M·HIGH /
+$600K·LOW labels, impact sort, qualitative counted-not-drawn,
+all-qualitative → "". 43 passed across counterfactual suites.
