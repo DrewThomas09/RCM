@@ -1176,6 +1176,44 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-70 — niche verticals batch 4: ABA, plasma, clinical research sites (17:15Z)
+**Niche-vertical sprint** — industries #23–25, the hyper-niche layer:
+  - aba ($22.6B, +5.4%): 1.8M ASD children (CDC ADDM 1-in-36) × 30%
+    receiving × 14 hrs/wk × 46 wks × $65; center-based +10% ★; the
+    BCBA/RBT shortage carried as the binding constraint (access-
+    constrained market: supply growth IS revenue growth).
+  - plasma ($4.6B, +6.5%): 1,100 FDA centers (PPTA) × 28K donations ×
+    $150; the honest structure read — 80% fractionator-owned and NOT
+    acquirable, sam_share 0.20 says so; independent collectors +8% ★;
+    recombinant substitution as the tail risk.
+  - clinical_research ($52.5B, +7.0%): 6,000 industry trials × 25
+    sites × $350K; dedicated sites/SMOs +9% ★; biotech-funding
+    cyclicality (XBI-correlated) carried as the bear case; CRC
+    turnover as the binding constraint.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; ABA labor-shortage negative pinned; plasma
+SAM ≤0.25 pinned (fractionator-moat honesty); biotech cyclicality
+negative pinned; test_tam_sam 62 passed. 26 industries total.
+
+## W2-69 — niche verticals batch 3: clinical labs, specialty pharmacy, vision (16:45Z)
+**Niche-vertical sprint** — industries #20–22:
+  - clinical_labs ($68.6B, +3.9%): 14B tests (ACLA) × 35% independent ×
+    $14; molecular/genomics +10% ★ vs PAMA-exposed routine +1.5%; the
+    hospital-outreach divestiture pipeline named as a tailwind (it IS
+    the M&A pipeline); Quest/Labcorp ~45% duopoly context in SOM.
+  - specialty_pharmacy ($320B, +4.3%): the biggest dollar pool in the
+    catalogue with the THINNEST margins — and the honest structure read:
+    sam_share 0.20 because PBM verticals own 70% of the channel; the
+    hub/patient-services adjacency +10% ★ named as where PE actually
+    plays; Humira-class biosimilar deflation as the structural headwind.
+  - vision ($60.5B, +3.0%): 195M corrected adults (Vision Council) ×
+    $310; medical/surgical co-management +6% ★ vs online-disrupted
+    retail +2%; myopia management named as the new recurring line.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; PAMA negative pinned; specialty-pharmacy SAM
+≤0.25 pinned (the PBM-moat honesty); 23 templates render+export;
+test_tam_sam 60 passed.
+
 ## W2-68 — niche verticals batch 2: veterinary, medspa, EMS (16:10Z)
 **Niche-vertical sprint** — industries #17–19, the formats PE took
 mainstream that CDD tooling never covers:
