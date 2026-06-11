@@ -96,6 +96,7 @@ RANKINGS = {
         {'route': '/market-intel', 'label': 'Market Intel', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
         {'route': '/comparable-outcomes', 'label': 'Comparable Outcomes', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
         {'route': '/diligence/comparable-outcomes', 'label': 'Comparable Outcomes', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
+        {'route': '/diligence/tam-sam', 'label': 'TAM / SAM Builder', 'total': 7.5, 'tier': 'yellow', 'effort': 3.0, 'useful': 4.0},
         {'route': '/market-intel/geo', 'label': 'Market Intel (Geographic)', 'total': 6.8, 'tier': 'green', 'effort': 2.5, 'useful': 4.0},
         {'route': '/industry', 'label': 'Industry Intelligence', 'total': 6.8, 'tier': 'green', 'effort': 2.5, 'useful': 4.0},
         {'route': '/market-intel/public-market', 'label': 'Public Market Intel', 'total': 6.4, 'tier': 'green', 'effort': 3.5, 'useful': 3.0},

@@ -1176,6 +1176,33 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-49 — TAM/SAM Builder with formatted Excel export (USER-DIRECTED, 06:40Z)
+**User ask**: in-depth TAM/SAM builds like the healthcare-PE CDD shops do —
+the fertility example (total births → % IVF → IVF births → cycles per
+delivery → % cycles → delivery), age-band segments (<35, 35–37, …), the
+whitespace, growth decomposition (price inflation, benefit expansion,
+access-barrier mitigation, supply increase, population, utilization), and
+"go from some data to a fully formatted excel".
+**Built**:
+  - diligence/tam_sam.py — driver-chain model (base/rate/mult/price ops,
+    per-step source labels, running-value audit trail), segments with
+    success rates, TAM→SAM→SOM funnel, growth drivers composed
+    multiplicatively (decomposition preserved), N-year projection. Bundled
+    fertility_ivf_template (CDC/SART/ASRM-sourced defaults, labeled
+    illustrative) + blank scaffold. compute() returns the full build.
+  - exports/xlsx_writer.py — stdlib-only formatted .xlsx writer (zipfile +
+    XML): bold navy headers, $ and % number formats, column widths, multi-
+    sheet. No new runtime deps (openpyxl not added).
+  - ui/tam_sam_page.py + routes /diligence/tam-sam, /api/diligence/
+    tam-sam.csv|.xlsx — editable chain (every value overridable, clamped),
+    funnel KPI strip, segment table, projection, one-click exports. Wired
+    into the Cmd+K palette + surface rankings (not an island).
+**Verify**: chain math pinned (3.66M × 2.3% × 2.5 × $20K = $4.209B TAM;
+override 2.3→5.0% lifts to $9.15B live); growth composition pinned
+(1.1×1.1 = 21%, not 20%); xlsx validates (zip clean, every part well-formed
+XML, real $#,##0 numFmts, 3 sheets); hostile overrides never 500;
+test_tam_sam 8 passed; palette guard 111 passed.
+
 ## W2-44 — Find Comps EV column rolls to $B (04:05Z)
 **Found by**: global render-audit for billion-scale "$X,XXXM" leftovers
 across the research surfaces (find-comps/verified-deals/deal-search/
