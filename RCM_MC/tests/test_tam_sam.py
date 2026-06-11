@@ -1647,3 +1647,28 @@ class SectorDeepLinkTests(unittest.TestCase):
         # Unknown sector → the bare catalogue, never a guessed template.
         h2 = render_market_analysis_page("d2", "X", dict(base))
         self.assertIn('href="/diligence/tam-sam"', h2)
+
+
+class ReciprocalLinkTests(unittest.TestCase):
+    """Comparable Outcomes ↔ TAM/SAM Builder — both directions wired."""
+
+    def test_co_results_link_to_sizing(self):
+        import os
+        import tempfile
+        from rcm_mc.ui.comparable_outcomes_page import (
+            render_comparable_outcomes_page,
+        )
+        db = os.path.join(tempfile.mkdtemp(), "co.db")
+        h = render_comparable_outcomes_page(
+            {"sector": "hospital", "ev_mm": "500"}, db_path=db)
+        self.assertIn("/diligence/tam-sam?template=hospitals", h)
+        self.assertIn("Size this market", h)
+
+    def test_every_co_sector_maps(self):
+        # All five CO dropdown sectors resolve to a real template.
+        from rcm_mc.diligence.tam_sam import TEMPLATES, template_for_sector
+        for s in ("hospital", "managed_care", "post_acute",
+                  "physician_practice", "specialty_group"):
+            key = template_for_sector(s)
+            self.assertIsNotNone(key, s)
+            self.assertIn(key, TEMPLATES, s)
