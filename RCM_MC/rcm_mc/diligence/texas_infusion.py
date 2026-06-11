@@ -1218,6 +1218,61 @@ def home_infusion_referral_sources() -> Dict[str, Any]:
     }
 
 
+def texas_asp_pricing() -> Dict[str, Any]:
+    """Part B ASP buy-and-bill pricing — the marquee infusion-drug HCPCS
+    J-code reference with the live per-unit ASP payment limit (CMS ASP
+    file) filled in where reachable, plus the ASP+6 / sequestered-ASP+4.3
+    payment mechanics. The drug's payment limit minus the operator's
+    acquisition cost IS the buy-and-bill spread."""
+    from ..data.cms_asp_pricing import (
+        infusion_asp_reference, ASP_ADDON, ASP_ADDON_SEQUESTERED)
+    ref = infusion_asp_reference()
+    return {
+        "reference": ref,
+        "addon_statutory": ASP_ADDON,
+        "addon_sequestered": ASP_ADDON_SEQUESTERED,
+        "live": any(r["live"] for r in ref),
+        "note": ("Medicare Part B pays clinician-administered infusion "
+                 "drugs at ASP + 6% (sequestered to ≈ASP + 4.3%). Per-unit "
+                 "ASP payment limits are pulled live from the CMS ASP "
+                 "Pricing file when egress is available; offline the "
+                 "verifiable J-code reference + the formula are shown — no "
+                 "dollar value is fabricated. The spread vs the operator's "
+                 "GPO/channel acquisition cost is the drug margin."),
+    }
+
+
+def texas_ma_enrollment(tx_pop: float, seniors: float) -> Dict[str, Any]:
+    """Texas Medicare Advantage enrollment + a penetration proxy. MA
+    growth is the single biggest payer-side force on infusion site of
+    care — MA plans steer infusion out of HOPD into AIC / home and run
+    prior-auth + white-bagging. Real vendored CMS MA geographic-variation
+    data (state); live county penetration is available via
+    cms_ma_enrollment where egress permits."""
+    from ..data.ma_data import ma_state
+    m = ma_state("TX") or {}
+    enr = int(m.get("ma_enrollment") or 0)
+    pen = (enr / seniors) if seniors else 0.0
+    return {
+        "enrollment": enr,
+        # Penetration vs the 65+ population — a labeled PROXY (the true
+        # denominator is total Medicare incl. <65 disabled).
+        "penetration_proxy": round(pen, 3),
+        "dual_eligible_pct": float(m.get("dual_eligible_pct") or 0),
+        "female_pct": float(m.get("female_pct") or 0),
+        "avg_age": m.get("avg_age"),
+        "year": int(m.get("year") or 0),
+        "note": ("≈{:,} Texans are in Medicare Advantage (CMS geographic "
+                 "variation, {}). MA penetration (~{:.0f}% of the 65+ "
+                 "population as a proxy) is the key payer-mix force on "
+                 "infusion: MA plans steer site of care to the lowest-cost "
+                 "setting (AIC / home over HOPD) and gate biologics with "
+                 "prior-auth + white-bagging — a tailwind for independent "
+                 "AIC / home volume and a margin risk on the drug spread."
+                 ).format(enr, int(m.get("year") or 0), pen * 100),
+    }
+
+
 def infusion_risk_register() -> List[Dict[str, Any]]:
     """Channel-specific risk register for AIC + home infusion, each
     risk tagged with severity, who it hits, and — critically — the RCM
@@ -2314,6 +2369,8 @@ def build_texas_infusion_analysis(
         "tornado": tornado,
         "site_of_care": site,
         "payer_mix": payer,
+        "asp_pricing": texas_asp_pricing(),
+        "ma_enrollment": texas_ma_enrollment(tx_pop, seniors),
         "chains": chains,
         "hhi": hhi,
         "hhi_band": hhi_band,

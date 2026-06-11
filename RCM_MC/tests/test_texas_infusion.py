@@ -829,6 +829,54 @@ class HomeInfusionDischargeRiskTests(unittest.TestCase):
             self.assertTrue(dd["home_infusion_discharges"])
 
 
+class ASPandMATests(unittest.TestCase):
+    """CMS Part B ASP buy-and-bill pricing + Medicare Advantage
+    enrollment — real public data, real formula, no fabricated dollars."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+
+    def test_asp_reference_is_verifiable_jcodes(self):
+        asp = self.a["asp_pricing"]
+        ref = asp["reference"]
+        self.assertGreaterEqual(len(ref), 10)
+        codes = {r["hcpcs"] for r in ref}
+        # Marquee infusion J-codes present (public CMS facts).
+        for c in ("J1745", "J9312", "J2350", "J1569"):
+            self.assertIn(c, codes)
+        for r in ref:
+            for f in ("drug", "unit", "category", "channel"):
+                self.assertTrue(r[f])
+
+    def test_asp_formula_and_offline_no_fabrication(self):
+        from rcm_mc.data.cms_asp_pricing import (
+            payment_limit, ASP_ADDON, ASP_ADDON_SEQUESTERED,
+            fetch_asp_pricing)
+        # Sequestered ≈ ASP+4.3%, statutory ASP+6%.
+        self.assertAlmostEqual(payment_limit(100.0), 104.3, places=1)
+        self.assertAlmostEqual(
+            payment_limit(100.0, sequestered=False), 106.0, places=1)
+        self.assertEqual(ASP_ADDON, 0.06)
+        self.assertTrue(0.04 < ASP_ADDON_SEQUESTERED < 0.05)
+        # Offline: the live fetch fails closed and the page shows no
+        # fabricated dollar value (payment_limit_per_unit is None).
+        self.assertEqual(fetch_asp_pricing(["J1745"]), {})
+        self.assertFalse(self.a["asp_pricing"]["live"])
+        self.assertTrue(all(r["payment_limit_per_unit"] is None
+                            for r in self.a["asp_pricing"]["reference"]))
+
+    def test_ma_enrollment_is_real_vendored(self):
+        from rcm_mc.data.ma_data import ma_state
+        ma = self.a["ma_enrollment"]
+        # Matches the real vendored CMS MA geo file for TX.
+        self.assertEqual(ma["enrollment"],
+                         int(ma_state("TX")["ma_enrollment"]))
+        self.assertGreater(ma["enrollment"], 1_000_000)
+        self.assertTrue(0 < ma["penetration_proxy"] < 1.5)
+        self.assertGreater(ma["dual_eligible_pct"], 0)
+        self.assertIn("Medicare Advantage", ma["note"])
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -859,6 +907,8 @@ class PageRenderTests(unittest.TestCase):
             "ANNUAL REFERRAL FLOW BY THERAPY", "TX referrals/yr",
             "THERAPY-VOLUME RISK HEATMAP", "REFERRAL-SOURCE",
             "Concentration risk", "ANNUAL HOME-INFUSION REFERRALS/YR",
+            "Part B drug pricing", "ASP pay limit/unit", "J1745",
+            "Post-sequester", "Medicare Advantage", "TX MA ENROLLEES",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
