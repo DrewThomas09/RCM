@@ -1849,6 +1849,137 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'</div>')
 
 
+def _so_what(text: str, tone: str = _TEAL) -> str:
+    """A scannable 'SO WHAT' takeaway callout — the diligence implication
+    of the section it follows. Distinct from source / RCM-read notes."""
+    return (
+        f'<div style="margin:11px 0 2px;padding:9px 13px;background:#eef5f4;'
+        f'border-left:4px solid {tone};border-radius:0 4px 4px 0;">'
+        f'<span style="font-size:9px;font-weight:800;letter-spacing:0.11em;'
+        f'color:{tone};vertical-align:1px;">SO WHAT</span> '
+        f'<span style="font-size:12px;color:#1a2332;line-height:1.55;">'
+        f'{html.escape(text)}</span></div>')
+
+
+def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
+    """Build the per-section takeaways from REAL analysis values so each
+    'so what' recomputes from the data it summarizes."""
+    s = a["sizing"]
+    frag = a["fragmentation"]
+    hi = a["home_infusion"]
+    ec = hi["episode_economics"]
+    risk = hi["therapy_risk"]
+    refs = hi["referral_sources"]
+    disch = {d["key"]: d for d in hi["tx_discharges"]}
+    opat = disch.get("opat", {}).get("annual_referrals", 0)
+    aic = a["aic_economics"]
+    curve = a["aic_utilization_curve"]
+    ma = a["ma_enrollment"]
+    sc = a["growth_scorecard"]
+    pm = a["provider_map"]
+    site = {x["site"]: x["share"] for x in a["site_of_care"]}
+    home = site.get("Home infusion", 0)
+    ais = site.get("Ambulatory infusion suite (AIS)", 0)
+    hopd = next((v for k, v in site.items() if "HOPD" in k
+                 or "Hospital" in k), 0)
+    commercial = next((p["share"] for p in a["payer_mix"]
+                       if "Commercial" in p["payer"]), 0)
+    top_metro = a["metros"][0]
+    centers = sum(p["estimated_centers"] for p in pm["points"])
+    us = ", ".join(r["county"] for r in
+                   sc["undersupplied_growth_markets"][:3])
+    seg_seg = a["provider_segments"]
+    rollup_pool = sum(x["share"] for x in seg_seg
+                      if x["non_hospital"] and "Independent" in x["segment"]
+                      or x["segment"].startswith("Physician"))
+    return {
+        "sizing": (
+            f"A {_money(s['tam'])} TAM growing {s['composite_cagr_pct']:.1f}%/yr "
+            f"with {_money(s['sam'])} addressable (home + AIC) is platform-"
+            f"scale — but the CAGR depends on the site-of-care shift, so "
+            f"underwrite the demand chain and steerage, not the headline."),
+        "channels": (
+            f"Home ({home*100:.0f}%) + AIS ({ais*100:.0f}%) = "
+            f"{(home+ais)*100:.0f}% of volume already sits outside the "
+            f"hospital; the {hopd*100:.0f}% HOPD pool is white-space to "
+            f"capture by steerage, not a competitor to displace."),
+        "home": (
+            f"IG + rare-disease are the margin engine; the Medicare HIT "
+            f"calendar-day gap under-pays the rest, so the home channel "
+            f"only makes money on a strong COMMERCIAL mix — that's the "
+            f"first number to diligence."),
+        "discharge": (
+            f"~{opat:,} OPAT referrals/yr are the volume engine, but "
+            f"{refs['hospital_dependence']*100:.0f}% of referrals flow "
+            f"through hospital discharge desks — referral concentration is "
+            f"the #1 commercial risk, while {risk['most_at_risk'].split('/')[0].strip()} "
+            f"and IG/biologics carry the reimbursement + steerage risk."),
+        "players": (
+            f"No operator holds more than {frag['top_operator_share']*100:.0f}% "
+            f"nationally — the real competitive threat is payer-owned "
+            f"steerage (Optum, Paragon/Elevance), not a scale incumbent."),
+        "segments": (
+            f"~{rollup_pool*100:.0f}% of capacity is the fragmented "
+            f"independent + physician-owned roll-up pool; the health-"
+            f"system-owned third is captive (not for sale) — that split "
+            f"defines the acquirable universe."),
+        "cdc": (
+            "Real county prevalence (not just headcount) localizes demand "
+            "— CKD / diabetes / arthritis concentrations flag exactly "
+            "where IV-iron, chronic and immunology volume clusters."),
+        "aic": (
+            f"At ~{_money(aic['contribution_per_chair'])} contribution/"
+            f"chair and break-even near {curve['breakeven_util']*100:.0f}% "
+            f"utilization, chair throughput + commercial mix make or break "
+            f"the unit — de-novo ramps below break-even bleed cash."),
+        "asp": (
+            f"The drug spread is thin and policy-set (ASP + "
+            f"{a['asp_pricing']['addon_sequestered']*100:.1f}%); the real "
+            f"margin is GPO acquisition cost vs the payment limit — and "
+            f"white-bagging can erase it entirely."),
+        "site": (
+            f"The {hopd*100:.0f}% HOPD pool migrating to AIS/home is the "
+            f"growth engine — back operators positioned to RECEIVE the "
+            f"steered volume, not defend a chair."),
+        "providers": (
+            f"~{centers} estimated infusion centers across the four metros, "
+            f"fragmented and un-consolidated — the supply side has not "
+            f"rolled up, leaving the runway open."),
+        "map": (
+            f"Supply concentrates in DFW + Houston; relative to growth, "
+            f"Austin and San Antonio are thinner — the white-space metros "
+            f"for de-novo or tuck-in entry."),
+        "metro": (
+            f"{top_metro['metro'].split('-')[0]} ranks #1 on attractiveness "
+            f"({top_metro['attractiveness']:.0f}), but DFW carries the most "
+            f"supply — match entry strategy to each metro's demand-vs-"
+            f"supply balance, not a single ranking."),
+        "scorecard": (
+            f"{sc['n_undersupplied']} north / Austin-corridor counties "
+            f"({us}…) show demand outrunning AIS chair capacity — the "
+            f"priority de-novo and tuck-in targets."),
+        "concentration": (
+            f"HHI {frag['hhi']:,.0f} with the largest operator at "
+            f"{frag['top_operator_share']*100:.0f}% and a "
+            f"{frag['independent_pool_share']*100:.0f}% independent pool is "
+            f"a textbook roll-up runway — no incumbent can block a build-up."),
+        "payer": (
+            f"Commercial-heavy ({commercial*100:.0f}%) funds the economics, "
+            f"but {ma['enrollment']/1e6:.1f}M MA lives (~"
+            f"{ma['penetration_proxy']*100:.0f}%) are steering site-of-care "
+            f"and gating biologics — payer mix is the swing factor on "
+            f"margin."),
+        "demographics": (
+            "The 65+ tailwind is real, but TX's highest-in-US uninsured "
+            "rate and rural spread complicate home economics outside the "
+            "four metros — stay metro-clustered."),
+        "growth": (
+            "Site-of-care migration — not population growth alone — carries "
+            "the forecast; the thesis lives or dies on steerage to AIS/home "
+            "continuing."),
+    }
+
+
 def render_texas_infusion_page(
     qs: "Dict[str, Any] | None" = None,
 ) -> str:
@@ -1866,6 +1997,7 @@ def render_texas_infusion_page(
     a = build_texas_infusion_analysis(
         aic_overrides=overrides, nppes_live=nppes_live)
     demo = a["demographics"]
+    sw = _so_whats(a)
 
     sources = "".join(
         f'<li style="margin:3px 0;font-size:11px;color:{_DIM};">'
@@ -1893,36 +2025,43 @@ def render_texas_infusion_page(
         + ck_section_header("Market sizing — the driver chain",
                             eyebrow="TAM / SAM / SOM")
         + _sizing_chain(a)
+        + _so_what(sw["sizing"])
 
         + ck_section_header("The two channels — AIC vs home infusion",
                             eyebrow="REIMBURSEMENT · MARGIN · WORKING CAPITAL")
         + _channel_cards(a)
+        + _so_what(sw["channels"])
 
         + ck_section_header("Home infusion — therapies, networks & "
                             "reimbursement",
                             eyebrow="OPAT · IG · TPN · INOTROPES · RARE · "
                                     "THE HIT BENEFIT GAP")
         + _home_infusion_section(a)
+        + _so_what(sw["home"])
 
         + ck_section_header("Home-infusion discharge pipeline & therapy "
                             "risk",
                             eyebrow="REFERRAL FLOW · READMISSION LEAKAGE · "
                                     "WHAT'S MOST AT RISK")
         + _home_discharge_section(a)
+        + _so_what(sw["discharge"], _NEG)
 
         + ck_section_header("Players — the named operators",
                             eyebrow="WHO COMPETES · OWNERSHIP · TX PRESENCE")
         + _players_table(a)
+        + _so_what(sw["players"])
 
         + ck_section_header("Competitive dynamics — capacity by owner",
                             eyebrow="NATIONAL/REGIONAL · HEALTH-SYSTEM · "
                                     "PHYSICIAN · INDEPENDENT AIC · HOME")
         + _provider_segments_section(a)
+        + _so_what(sw["segments"])
 
         + ck_section_header("CDC public-health demand proxies",
                             eyebrow="PLACES + ACS → THERAPY DEMAND · LIVE API "
                                     "WITH OFFLINE FALLBACK")
         + _cdc_proxies_section(a)
+        + _so_what(sw["cdc"])
 
         + ck_section_header("Where the risks are",
                             eyebrow="REIMBURSEMENT · RCM · MARKET — WITH THE "
@@ -1954,11 +2093,13 @@ def render_texas_infusion_page(
            f'that gap creates the break-even. Recomputed from your '
            f'assumptions above.</p></div>')
         + '</div>'
+        + _so_what(sw["aic"])
 
         + ck_section_header("Part B drug pricing — ASP buy-and-bill",
                             eyebrow="CMS ASP+6 (SEQ. +4.3%) · INFUSION J-CODES "
                                     "· LIVE ASP FILE")
         + _asp_pricing_section(a)
+        + _so_what(sw["asp"])
 
         + ck_section_header("Drug supply & inventory",
                             eyebrow="LIVE FDA SHORTAGE STATUS — NO SYNTHETIC "
@@ -1972,18 +2113,22 @@ def render_texas_infusion_page(
         + ck_section_header("Segmentation by site of care",
                             eyebrow="THE SITE-OF-CARE SHIFT")
         + _site_table(a)
+        + _so_what(sw["site"])
 
         + ck_section_header("Provider landscape & competitiveness",
                             eyebrow="COUNTS · CAPACITY · FRAGMENTATION")
         + _provider_panel(a)
+        + _so_what(sw["providers"])
 
         + ck_section_header("Infusion-provider map",
                             eyebrow="NPPES NPI REGISTRY · SUPPLY BY METRO")
         + _provider_map_section(a)
+        + _so_what(sw["map"])
 
         + ck_section_header("Metro attractiveness ranking",
                             eyebrow="HOUSTON · DFW · AUSTIN · SAN ANTONIO")
         + _metro_table(a)
+        + _so_what(sw["metro"])
 
         + ck_section_header("City deep-dives",
                             eyebrow="AGE-BAND DEMAND · SUBURBS · OPERATORS · "
@@ -1994,16 +2139,19 @@ def render_texas_infusion_page(
                             eyebrow="COUNTY OPPORTUNITY RANKING · WHERE DEMAND "
                                     "OUTRUNS CAPACITY")
         + _scorecard_section(a)
+        + _so_what(sw["scorecard"], _NEG)
 
         + ck_section_header("Concentration — operator landscape",
                             eyebrow="HHI · FRAGMENTATION → ROLL-UP")
         + _concentration(a)
+        + _so_what(sw["concentration"])
 
         + ck_section_header("Payer mix",
                             eyebrow="COMMERCIAL-HEAVY · TX NON-EXPANSION · MA "
                                     "STEERAGE")
         + _payer_section(a)
         + _ma_enrollment_panel(a)
+        + _so_what(sw["payer"])
 
         + ck_section_header("Medicare population & demographics",
                             eyebrow="THE DEMAND TAILWIND")
@@ -2025,10 +2173,12 @@ def render_texas_infusion_page(
             f'population that complicates home-nurse route economics outside '
             f'the four big metros. Median household income '
             f'${demo["median_household_income"]:,.0f}.</p></div>')
+        + _so_what(sw["demographics"])
 
         + ck_section_header("Five-year growth drivers",
                             eyebrow="WHICH LEVER CARRIES THE GROWTH")
         + _growth_drivers(a)
+        + _so_what(sw["growth"])
 
         + ck_section_header("Texas structural factors",
                             eyebrow="WHAT'S DIFFERENT ABOUT TEXAS")

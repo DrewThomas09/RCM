@@ -922,6 +922,33 @@ class ProviderMapTests(unittest.TestCase):
         self.assertTrue(all(p["nppes_count"] is None for p in pm["points"]))
 
 
+class SoWhatTakeawayTests(unittest.TestCase):
+    """Every section carries a data-driven 'SO WHAT' takeaway that
+    recomputes from the analysis it summarizes."""
+
+    def test_takeaways_built_from_real_values(self):
+        from rcm_mc.ui.texas_infusion_page import _so_whats
+        a = build_texas_infusion_analysis()
+        sw = _so_whats(a)
+        # One per major section.
+        self.assertGreaterEqual(len(sw), 15)
+        # Each is non-empty prose.
+        for k, v in sw.items():
+            self.assertTrue(v and len(v) > 30, f"empty so-what: {k}")
+        # Data-driven: the concentration takeaway carries the real HHI,
+        # and the discharge takeaway the real OPAT referral flow.
+        self.assertIn(f"{a['fragmentation']['hhi']:,.0f}", sw["concentration"])
+        opat = next(d["annual_referrals"] for d in
+                    a["home_infusion"]["tx_discharges"] if d["key"] == "opat")
+        self.assertIn(f"{opat:,}", sw["discharge"])
+
+    def test_page_renders_so_what_callouts(self):
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        # At least 15 SO WHAT callouts on the page.
+        self.assertGreaterEqual(h.count(">SO WHAT<"), 15)
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
