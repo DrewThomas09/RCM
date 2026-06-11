@@ -341,6 +341,120 @@ def _priority_rank(deal: Dict[str, Any]) -> int:
     return score
 
 
+_PRIORITY_PARTS = (
+    ("Covenant", "#b5321e"),
+    ("Overdue deadlines", "#b8732a"),
+    ("Alerts", "#a98545"),
+    ("Health score", "#0b2341"),
+    ("Stale snapshot", "#7a8699"),
+)
+
+
+def _priority_components(deal: Dict[str, Any]) -> List[int]:
+    """The same arithmetic as _priority_rank, kept per-source."""
+    cov = 0
+    status = _safe_status_str(deal.get("covenant_status")).upper()
+    if status == "TRIPPED":
+        cov = 100
+    elif status == "TIGHT":
+        cov = 30
+    overdue = 20 * int(deal.get("overdue_deadlines") or 0)
+    alerts = 5 * int(deal.get("alerts") or 0)
+    health = 0
+    h = deal.get("score")
+    if isinstance(h, int):
+        if h < 40:
+            health = 40
+        elif h < 60:
+            health = 15
+    stale = 0
+    days = deal.get("snap_age_days")
+    if days is not None:
+        if days > 60:
+            stale = 20
+        elif days > 30:
+            stale = 10
+    return [cov, overdue, alerts, health, stale]
+
+
+def _priority_breakdown_svg(deals: List[Dict[str, Any]]) -> str:
+    """Why each deal floats to the top of the scan.
+
+    The table sorts by a composite priority score the reader never
+    sees. This decomposes it: one stacked bar per deal (top 10),
+    segments per risk source using the exact arithmetic of
+    _priority_rank, so "first row because covenant tripped" vs
+    "first row because four deadlines slipped" is visible. Deals
+    with zero priority are skipped; an all-quiet portfolio renders
+    nothing.
+    """
+    rows = []
+    for d in deals:
+        parts = _priority_components(d)
+        total = sum(parts)
+        if total <= 0:
+            continue
+        rows.append((str(d.get("name") or d.get("deal_id") or "—"),
+                     parts, total))
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: -r[2])
+    rows = rows[:10]
+    max_total = rows[0][2]
+
+    label_w, bar_w_max, right_w = 190, 380, 50
+    row_h, gap, pad_top, pad_bot = 18, 7, 8, 8
+    width = label_w + bar_w_max + right_w + 12
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts_svg = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Priority score decomposition per deal">'
+    ]
+    for i, (name, comps, total) in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        short = name if len(name) <= 26 else name[:25] + "…"
+        parts_svg.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="#465366">{_html.escape(short)}</text>'
+        )
+        x = float(label_w)
+        for (_, tone), val in zip(_PRIORITY_PARTS, comps):
+            if not val:
+                continue
+            w = bar_w_max * val / max_total
+            parts_svg.append(
+                f'<rect x="{x:.1f}" y="{y}" width="{max(w - 1, 1):.1f}" '
+                f'height="{row_h}" rx="2" fill="{tone}" fill-opacity="0.85"/>'
+            )
+            x += w
+        parts_svg.append(
+            f'<text x="{x + 6:.1f}" y="{ty:.1f}" font-size="10.5" '
+            f'font-weight="600" fill="#1a2332">{total}</text>'
+        )
+    parts_svg.append("</svg>")
+    legend = (
+        '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:10.5px;'
+        'color:#7a8699;margin-top:4px;">'
+        + "".join(
+            f'<span><span style="display:inline-block;width:9px;height:9px;'
+            f'border-radius:2px;background:{tone};margin-right:4px;"></span>'
+            f'{lbl}</span>'
+            for lbl, tone in _PRIORITY_PARTS
+        )
+        + "</div>"
+    )
+    return (
+        '<div class="rs-priority-breakdown" style="margin:10px 0 14px;">'
+        '<div style="font-size:11px;font-weight:600;color:#1a2332;'
+        'text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">'
+        "Why these deals rank first</div>"
+        + "".join(parts_svg) + legend + "</div>"
+    )
+
+
 # Pattern A — durable title + italic explainer (mirrors PR #68 /deal-profile,
 # PR #73 /portfolio/heatmap). Replaces three competing title elements:
 # the dismissible editorial_intro, a stray ck_eyebrow, and a bespoke
@@ -607,6 +721,7 @@ def render_portfolio_risk_scan(db_path: str) -> str:
         + kpi_strip
         + summary_strip
         + legend
+        + _priority_breakdown_svg(deals)
         + csv_link
         + _wc.section_card(
             f"Per-deal scan ({len(deals)} active deals)",

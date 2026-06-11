@@ -2207,3 +2207,20 @@ Placed between the surprises panel and the bridge impact.
 (lower+lower → green, higher+lower → red), magnitude sort, +80.0%›
 clamp marker, ML-only → "", empty → "". 27 passed across data-room
 suites.
+
+## W2-114 (2026-06-11) — Portfolio risk scan: priority decomposition (wave #16)
+**Found**: /portfolio/risk-scan sorts deals by a composite
+_priority_rank the reader never sees — "first row because covenant
+tripped" vs "first row because four deadlines slipped" was invisible;
+the table only showed the per-dimension chips.
+**Fixed**: `_priority_components(deal)` keeps the exact _priority_rank
+arithmetic per source (covenant 100/30, overdue ×20, alerts ×5,
+health 40/15, staleness 20/10); `_priority_breakdown_svg(deals)`
+draws the top-10 deals as stacked bars segmented by source with the
+total printed and a 5-source legend. Quiet (zero-priority) deals are
+skipped; an all-quiet portfolio renders nothing. Placed between the
+color key and the CSV link.
+**Verify**: components sum equals _priority_rank across covenant/
+alert/health/stale mixes; ranked order pinned; quiet deal absent;
+total 105 printed for TRIPPED+1 alert; all-quiet → "". 22 passed
+across risk-scan suites.
