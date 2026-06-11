@@ -156,3 +156,24 @@ Montgomery/Hays/Comal). New renderers wired into the page:
 ratio scoped to the AIS channel (~22% site share) — the realistic fix
 for the earlier 4–5× total-demand bug. 54 tests pass; guide + JSON-API
 green. Ship through standard cadence.
+
+---
+## Checkpoint — wave #53 (W2-151, 2026-06-11)
+Integrated real CDC PLACES + Census ACS public-health data into the
+Texas AIC demand breakdown. New live API clients: `cdc_places_api.py`
+(Socrata county prevalence, dataset i46a-9kgh — arthritis/kidney/cancer/
+diabetes/obesity/poor-health/uninsured/checkup; paginated, disk-cached,
+fails closed) and `acs_sex.py` (county female share from ACS B01001,
+live + state-constant fallback). Therapy-proxy mapping per the user's
+spec (rheum→arthritis, onc→cancer, IV-iron→CKD+poor-health+female,
+chronic→diabetes+obesity+poor-physical-health, payer-access→uninsured+
+poverty+checkup). `texas_cdc_proxies()`/`texas_cdc_state_rates()` build
+real TX rates (vendored PLACES full-pop + CMS Medicare arthritis/cancer/
+CKD); live county API overrides with pop-weighted county rates when
+egress allows. `county_cdc_demand()` is denominator-honest (full-pop→
+adults, Medicare→65+); `county_payer_access()` = 0–100 from real ACS
+uninsured+poverty+PLACES checkup. Page: "CDC public-health demand
+proxies" section + per-city CDC therapy-demand block. Egress blocked in
+CI/sandbox → real fallback ships; live rates light up automatically with
+network. Tests: +9 in test_texas_infusion + new test_cdc_places_api (7).
+Full suite green. Ship via standard cadence.

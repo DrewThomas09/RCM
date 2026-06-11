@@ -422,14 +422,32 @@ _METRO_SPECIALTY = {
 
 
 def build_texas_metro_deepdive(
-    metro: Dict[str, Any], tx_patients: int, tx_pop: int) -> Dict[str, Any]:
+    metro: Dict[str, Any], tx_patients: int, tx_pop: int,
+    places_county: "Dict[str, Any] | None" = None,
+    female_by_fips: "Dict[str, float] | None" = None,
+    cdc_rates: "Dict[str, Any] | None" = None,
+) -> Dict[str, Any]:
     """Assemble the in-depth per-city analysis: age-band demand ranking,
     member-county ('suburb') breakdown with white-space, known operators
     (linked), and the specialty tilt. Real ACS population per county +
-    the documented age/utilization model."""
+    the documented age/utilization model.
+
+    ``places_county`` / ``female_by_fips`` carry live CDC PLACES county
+    rates and ACS female shares (empty offline); ``cdc_rates`` is the TX
+    state proxy-rate fallback. All are fetched lazily if not supplied."""
     import pandas as pd
     from pathlib import Path
     from ..data.county_demographics import demographics_county
+    from ..data.acs_sex import female_share_for
+
+    if places_county is None:
+        from ..data.cdc_places_api import places_counties_by_fips
+        places_county = places_counties_by_fips("TX")
+    if female_by_fips is None:
+        from ..data.acs_sex import county_female_share
+        female_by_fips = county_female_share("TX", "48")
+    if cdc_rates is None:
+        cdc_rates = texas_cdc_state_rates(places_county or None)
 
     age_bands = metro_age_breakdown(metro["population"],
                                     metro["pct_age_65_plus"])
@@ -463,7 +481,9 @@ def build_texas_metro_deepdive(
             north = _NORTH_SUBURBS.get(metro["cbsa_code"], {})
             is_north = f in north.get("counties", {})
             illness = county_illness_burden(pop)
-            suburbs.append({
+            fem = female_share_for(f, "TX", female_by_fips)
+            places_row = (places_county or {}).get(f)
+            county_rec = {
                 "county": (d.get("county_name") or "")
                           .replace(" County", ""),
                 "county_fips": f,
@@ -474,6 +494,8 @@ def build_texas_metro_deepdive(
                 "seniors": round(seniors),
                 "pct_rural": float(d.get("pct_rural") or 0),
                 "uninsured_rate": float(d.get("uninsured_rate") or 0),
+                "child_poverty_rate": float(d.get("child_poverty_rate") or 0),
+                "female_share": fem,
                 "median_household_income":
                     float(d.get("median_household_income") or 0),
                 "infusion_patients": patients,
@@ -483,7 +505,14 @@ def build_texas_metro_deepdive(
                 "patients_per_ais": (round(patients / est_ais)
                                      if est_ais else None),
                 "illness_burden": illness,
-            })
+            }
+            # CDC/ACS proxy demand by therapy + the payer-access index.
+            county_rec["cdc_demand"] = county_cdc_demand(
+                county_rec, cdc_rates, places_row, fem)
+            county_rec["payer_access"] = county_payer_access(
+                county_rec, cdc_rates)
+            county_rec["cdc_live"] = bool(places_row)
+            suburbs.append(county_rec)
     except Exception:  # noqa: BLE001 — crosswalk is best-effort
         suburbs = []
 
@@ -528,7 +557,26 @@ def build_texas_metro_deepdive(
                          .get("label", ""),
         # Metro-level illness burden = sum of member-county estimates.
         "illness_burden": _aggregate_illness(suburbs),
+        # Metro-level CDC-proxy demand by therapy (sum of counties).
+        "cdc_demand": _aggregate_cdc_demand(suburbs),
+        "cdc_live": any(s.get("cdc_live") for s in suburbs),
     }
+
+
+def _aggregate_cdc_demand(suburbs: List[Dict[str, Any]]
+                          ) -> List[Dict[str, Any]]:
+    """Sum the per-county CDC-proxy therapy demand to the metro level."""
+    agg: Dict[str, Dict[str, Any]] = {}
+    for s in suburbs:
+        for d in s.get("cdc_demand", []):
+            row = agg.setdefault(d["key"], {
+                "key": d["key"], "therapy": d["therapy"],
+                "channel": d["channel"], "anchor_measure": d["anchor_measure"],
+                "measures": d["measures"], "estimated_patients": 0,
+                "note": d["note"], "any_live": False})
+            row["estimated_patients"] += d["estimated_patients"]
+            row["any_live"] = row["any_live"] or d["rate_is_county_live"]
+    return sorted(agg.values(), key=lambda r: -r["estimated_patients"])
 
 
 def _aggregate_illness(suburbs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -875,6 +923,221 @@ def county_illness_burden(population: float) -> List[Dict[str, Any]]:
             "source": c["source"],
         })
     return out
+
+
+# ── CDC PLACES / ACS public-health proxies ───────────────────────────
+#
+# The user-facing mapping: each infusion therapy family is proxied by a
+# REAL public-health measure — CDC PLACES (full-population, county-level
+# via the Socrata API; TX state value vendored) or CMS Medicare chronic-
+# conditions — plus ACS access signals. County rates come from the LIVE
+# PLACES county API when network egress is available; otherwise the real
+# TX state rate is used and the per-county VARIATION comes from real
+# population / female share / poverty. No county prevalence is invented.
+_ADULT_SHARE = 0.76                 # Census adult (18+) share proxy.
+
+_THERAPY_PROXIES = [
+    {"key": "rheum", "therapy": "Rheumatology / immunology biologics",
+     "channel": "AIC + home", "anchor": "arthritis",
+     "measures": ["arthritis"], "denominator": "adults 18+",
+     "note": "Arthritis prevalence proxies the autoimmune/inflammatory "
+             "pool (RA, IBD, PsA) behind infliximab / biologic infusions."},
+    {"key": "onc", "therapy": "Oncology infusion & supportive care",
+     "channel": "AIC / HOPD", "anchor": "cancer",
+     "measures": ["cancer"], "denominator": "adults 18+",
+     "note": "Cancer prevalence (excl. skin) proxies chemo + supportive "
+             "(hydration, growth-factor, bone-stabilizer) infusion demand."},
+    {"key": "iron", "therapy": "IV iron / anemia management",
+     "channel": "AIC + home", "anchor": "kidney_disease",
+     "measures": ["kidney_disease", "fair_poor_health", "female_share"],
+     "denominator": "female-weighted adults",
+     "note": "CKD + poor general health proxy anemia burden; iron-"
+             "deficiency anemia concentrates in women, so the pool is "
+             "weighted by ACS female share."},
+    {"key": "chronic", "therapy": "General chronic / metabolic demand",
+     "channel": "AIC + home", "anchor": "diabetes",
+     "measures": ["diabetes", "obesity", "poor_physical_health"],
+     "denominator": "adults 18+",
+     "note": "Diabetes + obesity + frequent poor-physical-health days "
+             "proxy the broad chronic-care base for infused therapy."},
+]
+
+
+def texas_cdc_state_rates(places_county: "Dict[str, Any] | None" = None
+                          ) -> Dict[str, Dict[str, Any]]:
+    """Real TX state-level prevalence for each proxy measure.
+
+    Full-population measures come from CDC PLACES (vendored TX state
+    roll-up); arthritis / cancer / CKD come from CMS Medicare chronic-
+    conditions (TX-adjusted) as a labeled Medicare-denominator proxy.
+    When a live PLACES county map is supplied, the full-population
+    measures are recomputed as a real population-weighted TX rate from
+    the county rows (and arthritis/cancer/CKD likewise if present)."""
+    from ..data.cdc_places_agg import places_equity_state
+    from ..data.disease_density import (
+        NATIONAL_PREVALENCE, _STATE_ADJUSTMENTS)
+
+    pl = places_equity_state("TX") or {}
+    adj = _STATE_ADJUSTMENTS.get("TX", 1.0)
+    rates: Dict[str, Dict[str, Any]] = {}
+
+    # CDC PLACES full-population TX state values (real, vendored).
+    _PLACES = {
+        "diabetes": "diabetes", "obesity": "obesity",
+        "poor_physical_health": "poor_physical_health",
+        "fair_poor_health": "fair_poor_health",
+        "uninsured_18_64": "uninsured_18_64",
+        "routine_checkup": "routine_checkup",
+    }
+    for key, field in _PLACES.items():
+        v = pl.get(field)
+        if v is not None and str(v) != "nan":
+            try:
+                rates[key] = {
+                    "rate_pct": round(float(v), 2),
+                    "source": "CDC PLACES (TX state, full-population)",
+                    "denominator": "adults 18+", "live": False}
+            except (TypeError, ValueError):
+                pass
+
+    # CMS Medicare chronic-conditions for arthritis / cancer / CKD.
+    for key, cond in (("arthritis", "Rheumatoid Arthritis"),
+                      ("cancer", "Cancer"),
+                      ("kidney_disease", "Chronic Kidney Disease")):
+        nat = NATIONAL_PREVALENCE.get(cond)
+        if nat:
+            rates[key] = {
+                "rate_pct": round(nat * adj, 2),
+                "source": "CMS Medicare chronic-conditions (TX-adjusted)",
+                "denominator": "Medicare beneficiaries", "live": False}
+
+    # If a live county map is present, override with a real population-
+    # weighted TX rate per measure (full-population PLACES, incl.
+    # arthritis / kidney / cancer that the vendored state file omits).
+    if places_county:
+        from ..data.cdc_places_api import MEASURES
+        for key in MEASURES:
+            num = den = 0.0
+            for row in places_county.values():
+                r = row.get(key)
+                w = row.get("population") or 0
+                if r is not None and w:
+                    num += r * w
+                    den += w
+            if den:
+                prev = rates.get(key, {})
+                rates[key] = {
+                    "rate_pct": round(num / den, 2),
+                    "source": "CDC PLACES (TX, county API — pop-weighted)",
+                    "denominator": "adults 18+", "live": True}
+    return rates
+
+
+def county_cdc_demand(
+    county: Dict[str, Any],
+    rates: Dict[str, Dict[str, Any]],
+    places_row: "Dict[str, Any] | None" = None,
+    female_share: float = 0.497,
+) -> List[Dict[str, Any]]:
+    """Per-county infusion demand broken out by CDC-proxied therapy.
+
+    Estimated patients = REAL county adult population × the proxy
+    prevalence rate. The rate is the live county PLACES value when
+    present, else the TX state rate; the IV-iron pool is weighted by the
+    county female share (ACS). Every figure recomputes from real inputs."""
+    pop = float(county.get("population") or 0)
+    adults = pop * _ADULT_SHARE
+    seniors = float(county.get("seniors") or pop * 0.13)
+    out: List[Dict[str, Any]] = []
+    for spec in _THERAPY_PROXIES:
+        anchor = spec["anchor"]
+        live = False
+        if places_row and places_row.get(anchor) is not None:
+            # Live PLACES = full-population crude prevalence → adults.
+            rate = float(places_row[anchor])
+            live = True
+            denom_pop, denom_label = adults, "adults 18+"
+        else:
+            r = rates.get(anchor)
+            if not r:
+                continue
+            rate = float(r["rate_pct"])
+            # Apply each rate to its OWN denominator so the count is
+            # honest: Medicare-beneficiary rates → senior (65+) pool;
+            # full-population PLACES rates → all adults.
+            if "Medicare" in r.get("denominator", ""):
+                denom_pop, denom_label = seniors, "Medicare benes (65+)"
+            else:
+                denom_pop, denom_label = adults, "adults 18+"
+        base = denom_pop * rate / 100.0
+        if spec["key"] == "iron":
+            # Weight the anemia pool toward women (relative to 50%).
+            base *= female_share / 0.5
+        out.append({
+            "key": spec["key"], "therapy": spec["therapy"],
+            "channel": spec["channel"], "anchor_measure": anchor,
+            "measures": spec["measures"], "denominator": denom_label,
+            "rate_pct": round(rate, 2), "rate_is_county_live": live,
+            "estimated_patients": round(base), "note": spec["note"],
+        })
+    out.sort(key=lambda r: -r["estimated_patients"])
+    return out
+
+
+def county_payer_access(
+    county: Dict[str, Any],
+    rates: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    """A 0–100 commercial-payer-access index from real ACS uninsured +
+    poverty and the CDC PLACES routine-checkup rate. Higher = better
+    commercial access (the cash-flow underwriting for an AIC)."""
+    unins = float(county.get("uninsured_rate") or 0)          # 0–1
+    pov = float(county.get("child_poverty_rate") or 0)        # 0–1
+    checkup = float((rates.get("routine_checkup") or {})
+                    .get("rate_pct") or 0) / 100.0            # 0–1
+    unins_axis = 1.0 - min(unins, 0.30) / 0.30
+    pov_axis = 1.0 - min(pov, 0.40) / 0.40
+    score = 100.0 * (0.50 * unins_axis + 0.30 * pov_axis
+                     + 0.20 * checkup)
+    band = ("strong" if score >= 70 else
+            "moderate" if score >= 55 else "constrained")
+    return {
+        "score": round(score, 1), "band": band,
+        "uninsured_rate": round(unins, 4),
+        "child_poverty_rate": round(pov, 4),
+        "routine_checkup_pct": round(checkup * 100, 1),
+    }
+
+
+def texas_cdc_proxies(places_county: "Dict[str, Any] | None" = None
+                      ) -> Dict[str, Any]:
+    """State-level CDC/ACS proxy summary: one row per therapy family with
+    the proxy measure(s), the real TX rate, source, and denominator."""
+    rates = texas_cdc_state_rates(places_county)
+    rows = []
+    for spec in _THERAPY_PROXIES:
+        anchor = spec["anchor"]
+        r = rates.get(anchor)
+        if not r:
+            continue
+        rows.append({
+            "key": spec["key"], "therapy": spec["therapy"],
+            "channel": spec["channel"], "anchor_measure": anchor,
+            "measures": spec["measures"], "denominator": r["denominator"],
+            "rate_pct": r["rate_pct"], "source": r["source"],
+            "live": r.get("live", False), "note": spec["note"],
+        })
+    return {
+        "therapies": rows,
+        "rates": rates,
+        "live": bool(places_county),
+        "note": ("Each infusion therapy family proxied by a real CDC "
+                 "PLACES (full-population) or CMS Medicare prevalence "
+                 "measure. County-level rates pulled live from the CDC "
+                 "PLACES Socrata API when egress is available; otherwise "
+                 "the real TX state rate is used and per-county variation "
+                 "comes from real population / female share / poverty."),
+    }
 
 
 def infusion_drug_supply() -> Dict[str, Any]:
@@ -1474,10 +1737,21 @@ def build_texas_infusion_analysis(
     provider_landscape = texas_provider_landscape(tx_share)
     tx_patients = int(model.chain[0].value)
     metros = texas_metro_breakdown(tx_patients, tx_pop)
+    # CDC PLACES county rates + ACS female shares (live when egress is
+    # available, empty offline) + the TX state proxy-rate fallback —
+    # fetched once and threaded into every metro deep dive.
+    from ..data.cdc_places_api import places_counties_by_fips
+    from ..data.acs_sex import county_female_share
+    places_county = places_counties_by_fips("TX")
+    female_by_fips = county_female_share("TX", "48")
+    cdc_rates = texas_cdc_state_rates(places_county or None)
+    cdc_proxies = texas_cdc_proxies(places_county or None)
     # In-depth per-city deep dives — age-band ranking, suburb/county
     # breakdown with white-space, linked operators, specialty tilt.
     metro_deepdives = [
-        build_texas_metro_deepdive(m, tx_patients, tx_pop) for m in metros
+        build_texas_metro_deepdive(
+            m, tx_patients, tx_pop, places_county, female_by_fips, cdc_rates)
+        for m in metros
     ]
 
     # Health-system-owned (captive) capacity = the HOPD site share —
@@ -1545,6 +1819,7 @@ def build_texas_infusion_analysis(
         "aic_overrides_active": bool(aic_overrides),
         "drug_supply": infusion_drug_supply(),
         "provider_segments": _PROVIDER_SEGMENTS,
+        "cdc_proxies": cdc_proxies,
         "growth_scorecard": texas_growth_scorecard(metro_deepdives),
         "metros": metros,
         "metro_deepdives": metro_deepdives,
@@ -1603,6 +1878,13 @@ def build_texas_infusion_analysis(
             "Public operator disclosures (Option Care OPCH filings; CVS, "
             "UnitedHealth/Optum, Elevance segment commentary) — chain "
             "shares, illustrative",
+            "CDC PLACES (data.cdc.gov, dataset i46a-9kgh) — full-population "
+            "county prevalence for the therapy-demand proxies (live Socrata "
+            "API with vendored TX state fallback)",
+            "CMS Medicare Chronic Conditions — arthritis / cancer / CKD "
+            "prevalence (TX-adjusted) for the Medicare-denominator proxies",
+            "Census ACS 5-year table B01001 — county female share for the "
+            "IV-iron / anemia demand weighting",
         ],
         "basis_note": model.basis_note,
     }
