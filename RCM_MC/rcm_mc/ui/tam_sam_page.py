@@ -413,6 +413,55 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
     )
 
 
+def _industry_comparison_panel(active_key: str) -> str:
+    """Every sized vertical side by side — TAM × growth, sorted by size.
+    The cross-industry view: where the biggest pieces are, and where
+    they grow fastest. Each row links into its build."""
+    from ..diligence.tam_sam import TEMPLATES, compute as _compute
+    rows = []
+    for key, factory in TEMPLATES.items():
+        if key == "blank":
+            continue
+        try:
+            o = _compute(factory())
+        except Exception:  # noqa: BLE001
+            continue
+        rows.append((key, o["name"], o["tam"], o["composite_cagr_pct"]))
+    rows.sort(key=lambda r: -r[2])
+    max_tam = rows[0][2] if rows else 1
+    trs = ""
+    for key, name, tam, cagr in rows:
+        short = name.split("·")[0].strip()
+        on = ' style="background:var(--sc-bone,#ece5d6);"' if key == active_key else ""
+        bar_w = max(2, tam / max_tam * 160)
+        tone = "#0a8a5f" if cagr >= 4 else ("#b5321e" if cagr < 0 else "#1a2332")
+        trs += (
+            f'<tr{on}>'
+            f'<td><a href="/diligence/tam-sam?template={key}" '
+            f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+            f'text-decoration:none;">{html.escape(short)}</a></td>'
+            f'<td class="r">{_fmt_money(tam)}</td>'
+            f'<td><svg width="170" height="12">'
+            f'<rect x="0" y="1" width="{bar_w:.0f}" height="10" '
+            f'fill="#0b2341" opacity="0.8"/></svg></td>'
+            f'<td class="r" style="color:{tone};font-weight:600;">'
+            f'{cagr:+.1f}%/yr</td></tr>'
+        )
+    return ck_panel(
+        '<table class="ts2-chain"><thead><tr>'
+        '<th>Vertical</th><th style="text-align:right;">TAM</th>'
+        '<th>Relative size</th>'
+        '<th style="text-align:right;">Composite growth</th>'
+        f'</tr></thead><tbody>{trs}</tbody></table>'
+        '<p class="ts2-src" style="margin:8px 0 0;">Template defaults — '
+        'each row opens its full build (chain, segments, tornado, state '
+        'data where a CMS file is vendored). Green ≥4%/yr · red = '
+        'declining.</p>',
+        title="Cross-industry view · where the biggest pieces grow "
+              "fastest",
+    )
+
+
 def _dive_for_sources(tmpl_key: str) -> Optional[Dict[str, Any]]:
     from ..diligence.industry_deep_dive import deep_dive_for
     return deep_dive_for(tmpl_key)
@@ -461,6 +510,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
                            ("dental", "Dental · DSO"),
                            ("oncology", "Oncology"),
                            ("urgent_care", "Urgent care"),
+                           ("hospitals", "Hospitals"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )
@@ -630,6 +680,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
 
     body = (
         _CSS + title + src + tmpl_bar + basis + funnel
+        + _industry_comparison_panel(tmpl_key)
         + chain_panel + seg_panel + proj_panel
         + _tornado_panel(model, out["tam"])
         + _industry_panels(tmpl_key)

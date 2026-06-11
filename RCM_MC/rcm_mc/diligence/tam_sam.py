@@ -737,6 +737,59 @@ def urgent_care_template() -> TamSamModel:
     )
 
 
+
+def hospitals_template() -> TamSamModel:
+    """Hospital sector sizing — the flagship vertical, anchored to CMS
+    NHE ($1.4T hospital care). The deep dive underneath is computed from
+    the vendored HCRIS universe (6.1K filers, real NPR)."""
+    return TamSamModel(
+        name="Hospitals · acute-care market",
+        chain=[
+            DriverStep("US hospital care spend / yr",
+                       1_400_000_000_000, op="base", unit="$",
+                       source="CMS National Health Expenditure (hospital "
+                              "care line)"),
+            DriverStep("% community / investor-relevant",
+                       0.62, op="rate", unit="of spend",
+                       source="AHA Hospital Statistics (community "
+                              "hospital share excl. federal/psych/LTC)"),
+        ],
+        segments=[
+            Segment("Large systems (>$1B NPR)", 0.55, None,
+                    note="consolidation acquirers, not targets"),
+            Segment("Mid-size independents ($250M\u2013$1B)", 0.25, None,
+                    note="the PE/JV-able middle \u2014 the thesis segment"),
+            Segment("Small / rural / CAH", 0.20, None,
+                    note="distress-driven deal flow; regulatory "
+                         "protections complicate ownership"),
+        ],
+        growth_drivers=[
+            GrowthDriver("Price / rate growth", 4.0,
+                         "commercial rate escalators + Medicare updates"),
+            GrowthDriver("Utilization / demographics", 1.5,
+                         "inpatient flat; outpatient carries growth"),
+            GrowthDriver("Outpatient shift (within systems)", 1.0,
+                         "HOPD + ASC capture keeps revenue in-system"),
+            GrowthDriver("Site-neutral payment risk", -1.0,
+                         "HOPD rate parity proposals \u2014 the policy "
+                         "headwind"),
+            GrowthDriver("Labor cost normalization", -0.5,
+                         "contract-labor unwind helps margins, not "
+                         "revenue"),
+        ],
+        sam_share=0.25,
+        sam_note="The mid-size independent + distressed segments where "
+                 "outside capital can actually transact",
+        som_share=0.02,
+        som_note="Hospital deals are episodic; share builds slowly",
+        horizon_years=5,
+        basis_note="Template defaults from CMS NHE / AHA public data \u2014 "
+                   "replace with engagement data before IC use. The "
+                   "state footprint below is computed from the real "
+                   "HCRIS universe.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -775,6 +828,7 @@ TEMPLATES = {
     "dental": dental_template,
     "oncology": oncology_template,
     "urgent_care": urgent_care_template,
+    "hospitals": hospitals_template,
     "blank": blank_template,
 }
 

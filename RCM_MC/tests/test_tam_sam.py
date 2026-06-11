@@ -434,3 +434,39 @@ class SensitivityTornadoTests(unittest.TestCase):
         h = render_tam_sam_page({"template": ["snf"]})
         self.assertIn("Driver sensitivity", h)
         self.assertIn('aria-label="Driver sensitivity tornado"', h)
+
+
+class HospitalsFlagshipTests(unittest.TestCase):
+    """Industry #13 — hospitals, the flagship: the dive is computed from
+    the real HCRIS universe (state NPR in filed dollars, size-tier
+    structure, margin medians), and the cross-industry comparison panel
+    shows every vertical side by side."""
+
+    def test_hospitals_chain(self):
+        from rcm_mc.diligence.tam_sam import compute, hospitals_template
+        out = compute(hospitals_template())
+        self.assertAlmostEqual(out["tam"], 1.4e12 * 0.62, places=2)
+
+    def test_hcris_dive_real_dollars(self):
+        from rcm_mc.diligence.industry_deep_dive import hospitals_deep_dive
+        d = hospitals_deep_dive()
+        self.assertEqual(d["n_facilities"], 6123)     # the HCRIS universe
+        self.assertEqual(d["top_states"][0]["state"], "CA")
+        self.assertGreater(d["top_states"][0]["npr"], 1e11)  # $154B real
+        # Size tiers (HCRIS has no ownership field — size is the honest
+        # structure read); the mid-size pool is the PE-able middle.
+        tier_names = [c["org"] for c in d["chains"]]
+        self.assertIn("Mid-size ($250M–$1B)", tier_names)
+        self.assertGreater(d["n_independent"], 1000)
+        # Margin medians within the plausibility band, in percent points.
+        for st, q in d["quality_by_state"].items():
+            self.assertGreaterEqual(q["value"], -40.0, st)
+            self.assertLessEqual(q["value"], 30.0, st)
+
+    def test_cross_industry_comparison_panel(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["hospitals"]})
+        self.assertIn("Cross-industry view", h)
+        # Every sized template appears as a linked row.
+        self.assertGreaterEqual(
+            h.count("/diligence/tam-sam?template="), 14)
