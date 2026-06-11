@@ -2291,6 +2291,159 @@ def cardiology_template() -> TamSamModel:
     )
 
 
+
+def gastroenterology_template() -> TamSamModel:
+    """GI practice sizing — the screening-annuity specialty. ACG-anchored."""
+    return TamSamModel(
+        name="Gastroenterology · practice + ASC market",
+        chain=[
+            DriverStep("US gastroenterologists (practicing)", 16_000,
+                       op="base", unit="physicians",
+                       source="ACG / AGA workforce census"),
+            DriverStep("Avg revenue per gastroenterologist",
+                       1_350_000, op="price", unit="$/MD/yr",
+                       source="MGMA GI medians incl. ASC + anesthesia "
+                              "+ pathology ancillaries"),
+        ],
+        segments=[
+            Segment("Screening colonoscopy", 0.40, None,
+                    note="the annuity — USPSTF age-45 start widened "
+                         "the funnel by ~20M people", growth_pct=5.0),
+            Segment("Diagnostic / therapeutic endo", 0.25, None,
+                    growth_pct=4.0),
+            Segment("Clinical (IBD, hepatology)", 0.20, None,
+                    note="biologics-era complexity — infusion "
+                         "adjacency", growth_pct=6.0),
+            Segment("Ancillaries (path, anesthesia)", 0.15, None,
+                    note="payer scrutiny on company-model anesthesia",
+                    growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Age-45 screening expansion", 3.5,
+                         "the USPSTF change is a structural volume "
+                         "step-up still being absorbed"),
+            GrowthDriver("Demographics", 2.0,
+                         "polyp surveillance compounds"),
+            GrowthDriver("ASC migration", 1.5,
+                         "endo units shifting from HOPD"),
+            GrowthDriver("Non-invasive screening substitution", -2.0,
+                         "Cologuard/blood-based tests divert average-"
+                         "risk volume — THE bear case, shown as one"),
+            GrowthDriver("Anesthesia economics scrutiny", -1.0,
+                         "payers attacking the company model"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent GI groups + ASC co-ownership",
+        som_share=0.05,
+        som_note="GI Alliance class — mid-wave; the Cologuard question "
+                 "hangs over every IC",
+        horizon_years=5,
+        basis_note="Template defaults from ACG/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def orthopedics_template() -> TamSamModel:
+    """Ortho practice sizing — the MSK platform wave. AAOS-anchored."""
+    return TamSamModel(
+        name="Orthopedics · MSK platform market",
+        chain=[
+            DriverStep("US orthopedic surgeons (practicing)", 31_000,
+                       op="base", unit="physicians",
+                       source="AAOS census"),
+            DriverStep("Avg revenue per orthopedic surgeon",
+                       1_600_000, op="price", unit="$/MD/yr",
+                       source="MGMA ortho medians incl. ASC + imaging "
+                              "+ PT + bracing ancillaries"),
+        ],
+        segments=[
+            Segment("Total joints (hip/knee)", 0.30, None,
+                    note="the ASC-migration engine — CMS list "
+                         "additions made it investable",
+                    growth_pct=8.0),
+            Segment("Sports / arthroscopy", 0.25, None, growth_pct=5.0),
+            Segment("Spine", 0.20, None,
+                    note="highest revenue per case; UM-heavy",
+                    growth_pct=4.0),
+            Segment("Hand / foot / trauma", 0.15, None, growth_pct=3.0),
+            Segment("Ancillaries (PT, imaging, DME)", 0.10, None,
+                    note="the integration capture", growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Joint-replacement demographics", 4.0,
+                         "active boomers — TJA volume projections "
+                         "compound through 2035"),
+            GrowthDriver("ASC migration of TJA", 3.0,
+                         "site-shift economics: the wave's engine"),
+            GrowthDriver("Ancillary integration", 1.5,
+                         "PT/imaging/DME capture per episode"),
+            GrowthDriver("Bundled-payment risk", -1.5,
+                         "CMMI mandatory bundles squeeze episode "
+                         "economics"),
+            GrowthDriver("Implant cost inflation", -1.0,
+                         "device pricing against fixed bundles"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent ortho groups in ASC-favorable states",
+        som_share=0.04,
+        som_note="OrthoAlliance/US Orthopaedic Partners class — "
+                 "early-to-mid wave",
+        horizon_years=5,
+        basis_note="Template defaults from AAOS/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def womens_health_template() -> TamSamModel:
+    """OBGYN / women's health sizing — ACOG-anchored."""
+    return TamSamModel(
+        name="Women's health · OBGYN practice market",
+        chain=[
+            DriverStep("US OBGYNs (practicing)", 42_000, op="base",
+                       unit="physicians", source="ACOG workforce"),
+            DriverStep("Avg revenue per OBGYN", 850_000, op="price",
+                       unit="$/MD/yr",
+                       source="MGMA OBGYN medians incl. office "
+                              "procedures + ultrasound"),
+        ],
+        segments=[
+            Segment("Obstetrics", 0.40, None,
+                    note="volume anchor — but births declining; "
+                         "malpractice cost the structural drag",
+                    growth_pct=1.0),
+            Segment("Gynecology / office procedures", 0.30, None,
+                    growth_pct=4.0),
+            Segment("Fertility adjacency / REI referral", 0.15, None,
+                    note="the growth bridge to the IVF vertical",
+                    growth_pct=9.0),
+            Segment("Menopause / midlife (cash + Rx)", 0.15, None,
+                    note="the re-emerging category — HRT renaissance",
+                    growth_pct=8.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Gyn / midlife demand", 3.0,
+                         "menopause care renaissance + procedural gyn"),
+            GrowthDriver("Fertility referral economics", 1.5,
+                         "REI integration captures the IVF funnel"),
+            GrowthDriver("Birth-rate decline", -1.5,
+                         "OB volume shrinks slowly — the demographic "
+                         "headwind, shown as one"),
+            GrowthDriver("Malpractice premium inflation", -1.5,
+                         "OB coverage cost is the margin drag"),
+            GrowthDriver("Hospital employment gravity", -1.0,
+                         "OB call coverage pushes employment"),
+        ],
+        sam_share=0.40,
+        sam_note="Independent OBGYN groups + gyn-focused practices "
+                 "(hospital-employed OB excluded)",
+        som_share=0.04,
+        som_note="Unified/Together Women's Health class — early wave",
+        horizon_years=5,
+        basis_note="Template defaults from ACOG/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -2357,6 +2510,9 @@ TEMPLATES = {
     "ophthalmology": ophthalmology_template,
     "rcm_services": rcm_services_template,
     "cardiology": cardiology_template,
+    "gastroenterology": gastroenterology_template,
+    "orthopedics": orthopedics_template,
+    "womens_health": womens_health_template,
     "blank": blank_template,
 }
 

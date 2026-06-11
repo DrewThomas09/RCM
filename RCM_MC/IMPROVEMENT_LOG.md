@@ -1176,6 +1176,24 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-76 — niche verticals batch 10: GI, orthopedics, women's health (20:15Z)
+**Niche-vertical sprint** — industries #41–43, the remaining big PPM waves:
+  - gastroenterology ($21.6B, +4.0%): 16K GIs (ACG) × $1.35M; the
+    age-45 USPSTF step-up named as a structural tailwind; the COLOGUARD
+    bear case (non-invasive substitution) priced as a headwind — the
+    question that hangs over every GI IC; IBD/hepatology +6% ★.
+  - orthopedics ($49.6B, +6.0%): 31K surgeons (AAOS) × $1.6M; total
+    joints +8% ★ (the ASC-migration engine); CMMI bundled-payment risk
+    + implant inflation as headwinds.
+  - womens_health ($35.7B, +0.4%): 42K OBGYNs (ACOG) × $850K; NEAR-FLAT
+    composite told as-is — OB +1% with births declining + malpractice
+    drag, carried by fertility adjacency +9% ★ (the bridge to the IVF
+    vertical) and the menopause renaissance +8%.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; Cologuard bear case negative pinned; women's
+health <1.5% composite + fertility-fastest pinned; catalogue ≥44
+templates pinned; test_tam_sam 82 passed. 43 industries.
+
 ## W2-75 — niche verticals batch 9: ophthalmology, RCM services, cardiology (19:45Z)
 **Niche-vertical sprint** — industries #38–40:
   - ophthalmology ($34.2B, +3.9%): 19K ophthalmologists (AAO) × $1.8M
