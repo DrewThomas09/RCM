@@ -557,9 +557,32 @@ def render_deal_comps(store: Any, params: Optional[Dict[str, str]] = None) -> st
             f'style="color:{P["accent"]};text-decoration:none;font-size:12px">'
             f'← Deal Library</a></p>')
     if not total_companies:
+        # Dead-end fix: the licensed export is optional — the platform
+        # ships three comps surfaces that work out of the box. Point the
+        # partner at them instead of stranding them on "ingest first".
+        bundled = (
+            '<div style="margin-top:14px;font-size:13px;color:'
+            f'{P["text_dim"]};line-height:1.7;">'
+            'Meanwhile, the bundled comps surfaces work without any '
+            'export:<ul style="margin:6px 0 0 18px;padding:0;">'
+            f'<li><a href="/find-comps" style="color:{P["accent"]};">'
+            'Find Comps</a> — profile-distance similarity over the '
+            '733-deal corpus</li>'
+            '<li><a href="/diligence/comparable-outcomes" '
+            f'style="color:{P["accent"]};">Comparable Outcomes</a> — '
+            'realized MOIC / IRR / entry EV-EBITDA distributions</li>'
+            f'<li><a href="/verified-deals" style="color:{P["accent"]};">'
+            'Verified Deals</a> — the fully source-linked subset</li>'
+            '</ul></div>'
+        )
         return chartis_shell(
             back + title + ck_empty_state(
-                "No data yet", "Ingest a licensed export first (see /deal-library)."),
+                "No licensed export ingested",
+                "This view computes EV/Revenue and EV/EBITDA over a "
+                "licensed company export (see /deal-library).",
+                cta_label="Open Deal Library",
+                cta_href="/deal-library",
+            ) + bundled,
             title="Comparables", active_nav="/deal-library")
 
     summ = dl.multiples_summary(store)
