@@ -326,6 +326,104 @@ def _payer_section(a: Dict[str, Any]) -> str:
         f'</tr></thead><tbody>{rows}</tbody></table></div>')
 
 
+def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
+    """Medicare Advantage enrollment + the site-of-care-steerage read —
+    the key payer-mix force on infusion."""
+    ma = a.get("ma_enrollment") or {}
+    if not ma:
+        return ""
+    def _kpi(label: str, val: str) -> str:
+        return (
+            f'<div style="flex:1;min-width:120px;"><div style="font-size:9px;'
+            f'letter-spacing:0.06em;color:{_FAINT};font-weight:700;">{label}'
+            f'</div><div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+            f'{val}</div></div>')
+    return (
+        f'<div style="border:1px solid #d6cfc0;border-top:3px solid {_NAVY};'
+        f'border-radius:4px;padding:12px 14px;background:#fff;margin-top:14px;">'
+        f'<div style="font-size:13px;font-weight:700;color:{_NAVY};'
+        f'margin-bottom:8px;">Medicare Advantage — the site-of-care '
+        f'steerage engine</div>'
+        f'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
+        + _kpi("TX MA ENROLLEES", f'{ma["enrollment"]/1e6:.2f}M')
+        + _kpi("PENETRATION (vs 65+)", f'{ma["penetration_proxy"]*100:.0f}%')
+        + _kpi("DUAL-ELIGIBLE", f'{ma["dual_eligible_pct"]*100:.0f}%')
+        + _kpi("AVG AGE", f'{ma.get("avg_age","—")}')
+        + '</div>'
+        + f'<p style="font-size:11.5px;color:{_DIM};line-height:1.55;'
+        f'margin:8px 0 0;">{html.escape(ma["note"])}</p>'
+        + f'<p style="font-size:9px;color:{_FAINT};margin:6px 0 0;">'
+        f'CMS MA geographic-variation file (state, {ma.get("year","—")}); '
+        f'penetration vs 65+ population is a proxy (true denominator = '
+        f'total Medicare incl. &lt;65 disabled). County-level penetration '
+        f'available via the live CMS MA enrollment API.</p></div>')
+
+
+def _asp_pricing_section(a: Dict[str, Any]) -> str:
+    """Part B ASP buy-and-bill drug-pricing reference — the marquee
+    infusion J-codes, the ASP+6 / sequestered mechanics, and the live
+    per-unit payment limit where the CMS ASP file is reachable."""
+    asp = a.get("asp_pricing") or {}
+    ref = asp.get("reference", [])
+    if not ref:
+        return ""
+    live = asp.get("live")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">'
+        f'{"LIVE — CMS ASP file" if live else "OFFLINE — J-code reference + formula (live $/unit when egress available)"}'
+        f'</span>')
+    rows = ""
+    for r in ref:
+        pay = r.get("payment_limit_per_unit")
+        pay_s = (f'${pay:,.2f}' if pay is not None else
+                 f'<span style="color:{_FAINT};">ASP×{1+asp["addon_sequestered"]:.3f}</span>')
+        rows += (
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:5px 8px;font-family:monospace;'
+            f'font-weight:700;color:{_NAVY};">{html.escape(r["hcpcs"])}</td>'
+            f'<td style="padding:5px 8px;"><strong>{html.escape(r["drug"])}'
+            f'</strong> <span style="font-size:10px;color:{_FAINT};">'
+            f'{html.escape(r["unit"])}</span></td>'
+            f'<td style="padding:5px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(r["category"])}</td>'
+            f'<td style="padding:5px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(r["channel"])}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-weight:600;">{pay_s}</td>'
+            f'</tr>')
+    return (
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0;'
+        f'max-width:680px;">{html.escape(asp["note"])}</p>{badge}</div>'
+        f'<div style="display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;">'
+        f'<div style="padding:5px 10px;background:#eef2f7;border-radius:3px;'
+        f'font-size:11px;color:#1a2332;"><strong>Statutory:</strong> '
+        f'ASP + {asp["addon_statutory"]*100:.0f}%</div>'
+        f'<div style="padding:5px 10px;background:#fbf3ef;border-radius:3px;'
+        f'font-size:11px;color:#1a2332;"><strong>Post-sequester:</strong> '
+        f'≈ASP + {asp["addon_sequestered"]*100:.1f}%</div></div>'
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:5px 8px;">HCPCS</th>'
+        f'<th style="text-align:left;padding:5px 8px;">Drug</th>'
+        f'<th style="text-align:left;padding:5px 8px;">Category</th>'
+        f'<th style="text-align:left;padding:5px 8px;">Channel</th>'
+        f'<th style="text-align:right;padding:5px 8px;">ASP pay limit/unit</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'HCPCS J-codes + descriptors are public CMS facts; the per-unit '
+        f'ASP payment limit fills in live from the CMS ASP Pricing file '
+        f'(quarterly). The payment limit minus the operator\'s GPO / '
+        f'channel acquisition cost is the buy-and-bill drug spread — the '
+        f'engine of AIC + home economics.</p>')
+
+
 def _factors(a: Dict[str, Any]) -> str:
     out = ""
     for f in a["structural_factors"]:
@@ -1767,6 +1865,11 @@ def render_texas_infusion_page(
            f'assumptions above.</p></div>')
         + '</div>'
 
+        + ck_section_header("Part B drug pricing — ASP buy-and-bill",
+                            eyebrow="CMS ASP+6 (SEQ. +4.3%) · INFUSION J-CODES "
+                                    "· LIVE ASP FILE")
+        + _asp_pricing_section(a)
+
         + ck_section_header("Drug supply & inventory",
                             eyebrow="LIVE FDA SHORTAGE STATUS — NO SYNTHETIC "
                                     "DATA")
@@ -1803,8 +1906,10 @@ def render_texas_infusion_page(
         + _concentration(a)
 
         + ck_section_header("Payer mix",
-                            eyebrow="COMMERCIAL-HEAVY · TX NON-EXPANSION")
+                            eyebrow="COMMERCIAL-HEAVY · TX NON-EXPANSION · MA "
+                                    "STEERAGE")
         + _payer_section(a)
+        + _ma_enrollment_panel(a)
 
         + ck_section_header("Medicare population & demographics",
                             eyebrow="THE DEMAND TAILWIND")

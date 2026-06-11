@@ -214,3 +214,24 @@ NPPES/NPI registry (+ map), Census ACS, CDC PLACES. Build live API
 clients (egress-blocked in CI → real vendored/fallback) + wire into the
 Texas infusion page. NOTE: CDC PLACES county API + Census ACS sex client
 already exist (cdc_places_api.py, acs_sex.py from wave #53).
+
+---
+## Checkpoint — wave #56 (W2-154, 2026-06-11)
+Wired CMS ASP Part B drug pricing + MA enrollment into the Texas page.
+New `cms_asp_pricing.py` (live ASP client + verifiable infusion J-code
+reference + ASP+6/seq-4.3 formula; fails closed, no fabricated $).
+`texas_asp_pricing()` + `texas_ma_enrollment()` (real vendored CMS MA geo
+— 2.19M TX, 24% dual). Analysis gains asp_pricing + ma_enrollment. Page:
+"Part B drug pricing — ASP buy-and-bill" section + MA panel in payer mix.
+Tests: +3 integration + new test_cms_asp_pricing (5); full suite green.
+
+USER DATA REQUEST PROGRESS (multi-source integration):
+ DONE: CDC PLACES (wave #53, cdc_places_api), Census ACS sex (wave #53,
+   acs_sex), CMS ASP drug pricing (wave #56, NEW client), MA enrollment
+   (wave #56, wired real vendored ma_data).
+ REMAINING (existing live clients, not yet wired into Texas page):
+   - NPPES/NPI registry infusion-provider counts + MAP (nppes_api_client
+     exists; need infusion-taxonomy filter 261QI0500N/3336I0012X etc.)
+   - CMS Outpatient Hospitals by Provider & Service (cms_opps_outpatient
+     exists) — HOPD infusion volume by metro
+   - Medicare Monthly Enrollment total benes by county (no client yet)

@@ -3169,3 +3169,35 @@ chronic therapies, risk score recomputes from axes×weights + ranks
 descending, IG/biologic flag steerage=5 & OPAT referral-conc=5, referral
 shares sum to 1.0 + hospital-dominant, every metro carries flow; +6
 page-render needles. Full suite green.
+
+## W2-154 (2026-06-11) — Texas infusion: CMS ASP Part B drug pricing + Medicare Advantage enrollment (wave #56)
+Wired two more real CMS data sources into the Texas page — the buy-and-
+bill drug-pricing basis and the MA site-of-care-steerage force:
+- **CMS ASP Part B drug pricing** (`cms_asp_pricing.py`, new): the
+  marquee infusion-drug HCPCS J-code reference (infliximab J1745,
+  rituximab J9312, ocrelizumab J2350, IVIG J1569, vedolizumab, denosumab,
+  bevacizumab, …) — the codes/descriptors are public CMS facts — plus
+  the ASP+6 / sequestered-ASP+4.3 payment mechanics as pure functions,
+  and a best-effort LIVE client (resolves the current ASP dataset from
+  the CMS data.json catalog, fetches per-unit payment limits). Fails
+  closed offline: NO dollar value is fabricated — the J-code reference +
+  the formula show, and live $/unit fills in where egress permits. The
+  payment limit minus the operator's GPO acquisition cost is the
+  buy-and-bill spread.
+- **Medicare Advantage enrollment** (`texas_ma_enrollment`): real
+  vendored CMS MA geographic-variation data — 2.19M TX MA enrollees,
+  24% dual-eligible, avg age 72 — with a penetration proxy (vs 65+ pop,
+  labeled). MA is the key payer-mix force on infusion: plans steer site
+  of care to AIC/home over HOPD and gate biologics with prior-auth +
+  white-bagging (volume tailwind + drug-spread risk). County-level
+  penetration available via the existing live `cms_ma_enrollment` client.
+- **Page**: a "Part B drug pricing — ASP buy-and-bill" section (J-code
+  table + ASP+6/sequester mechanics + LIVE/OFFLINE badge) and a Medicare
+  Advantage panel in the payer-mix section (enrollment / penetration /
+  dual / avg-age KPIs + steerage read).
+**Verify**: +3 ASP/MA integration tests (test_texas_infusion) + new
+`test_cms_asp_pricing.py` (5) — ASP formula exact (×1.043 seq / ×1.06
+statutory), J-code reference is verifiable public codes, live fetch
+fails closed + parses mocked payload, offline shows no fabricated
+dollars, MA enrollment matches the real vendored file; +6 page-render
+needles. Full suite green.
