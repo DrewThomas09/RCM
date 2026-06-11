@@ -756,3 +756,35 @@ class NicheVerticalsBatch4Tests(unittest.TestCase):
         cr = compute(TEMPLATES["clinical_research"]())
         names = {g["name"]: g["annual_pct"] for g in cr["growth_drivers"]}
         self.assertLess(names["Biotech funding cyclicality"], 0)
+
+
+class NicheVerticalsBatch5Tests(unittest.TestCase):
+    """Industries #26–28 — wound care, sleep, occupational health."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "wound_care": 8_200_000 * 0.25 * 1.3 * 3_800,
+            "sleep": 30_000_000 * 0.20 * 900,
+            "occ_health": 135_000_000 * 190,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+
+    def test_sleep_disruption_told_honestly(self):
+        # In-lab PSG carries a NEGATIVE segment growth while HSAT grows
+        # +9% — a declining segment inside a growing market, and the
+        # GLP-1 OSA-indication bear case is named as a driver.
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        out = compute(TEMPLATES["sleep"]())
+        psg = next(s for s in out["segments"] if "PSG" in s["name"])
+        self.assertLess(psg["growth_pct"], 0)
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["GLP-1 OSA-indication effect"], 0)
+
+    def test_catalogue_at_29_templates(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 29)   # 28 industries + blank

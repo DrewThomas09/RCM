@@ -1175,6 +1175,35 @@ def clinical_research_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def wound_care_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="wound_care",
+        sector_tokens=("wound_care", "wound"),
+        note=("No public wound-center census — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def sleep_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="sleep",
+        sector_tokens=("sleep", "sleep_medicine"),
+        note=("No public sleep-lab census (AASM accreditation lists "
+              "aren't vendored) — geography omitted rather than "
+              "fabricated."),
+    )
+
+
+def occ_health_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="occ_health",
+        sector_tokens=("occ_health", "occupational_health"),
+        note=("No public occ-health clinic census — geography omitted "
+              "rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1204,6 +1233,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "aba": aba_deep_dive,
     "plasma": plasma_deep_dive,
     "clinical_research": clinical_research_deep_dive,
+    "wound_care": wound_care_deep_dive,
+    "sleep": sleep_deep_dive,
+    "occ_health": occ_health_deep_dive,
 }
 
 

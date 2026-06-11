@@ -1474,6 +1474,167 @@ def clinical_research_template() -> TamSamModel:
     )
 
 
+
+def wound_care_template() -> TamSamModel:
+    """Advanced wound care services sizing — AHRQ/Medicare-anchored."""
+    return TamSamModel(
+        name="Wound care · advanced wound services market",
+        chain=[
+            DriverStep("US patients with chronic wounds / yr",
+                       8_200_000, op="base", unit="patients",
+                       source="Medicare claims analyses (Nussbaum et "
+                              "al.) — chronic non-healing wounds"),
+            DriverStep("% receiving advanced wound care", 0.25,
+                       op="rate", unit="of patients",
+                       source="wound-registry penetration estimates"),
+            DriverStep("Avg episodes of care / yr", 1.3, op="mult",
+                       unit="episodes/yr", source="registry data"),
+            DriverStep("Avg revenue per episode", 3_800, op="price",
+                       unit="$/episode",
+                       source="HOPD wound-clinic + CTP/HBO blend "
+                              "(Medicare fee schedules)"),
+        ],
+        segments=[
+            Segment("Hospital-based wound centers (managed)", 0.50,
+                    None, note="the management-contract model — "
+                         "Healogics/RestorixHealth class",
+                    growth_pct=3.0),
+            Segment("Office / mobile wound practices", 0.30, None,
+                    note="the physician-services roll-up layer",
+                    growth_pct=8.0),
+            Segment("Post-acute / SNF wound rounds", 0.20, None,
+                    growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diabetes / vascular prevalence", 4.0,
+                         "diabetic foot ulcers compound with the "
+                         "diabetes curve"),
+            GrowthDriver("Site-shift to office/mobile", 2.5,
+                         "payers steering off HOPD wound-center "
+                         "rates"),
+            GrowthDriver("CTP (skin-substitute) scrutiny", -2.5,
+                         "CMS LCD crackdowns on skin-substitute "
+                         "spend — the compliance headwind"),
+            GrowthDriver("Documentation/audit burden", -1.0,
+                         "TPE audits on debridement frequency"),
+        ],
+        sam_share=0.45,
+        sam_note="Office/mobile + management contracts (hospital-"
+                 "employed programs excluded)",
+        som_share=0.05,
+        som_note="Healogics manages ~600 centers; the office/mobile "
+                 "layer is fragmented",
+        horizon_years=5,
+        basis_note="Template defaults from Medicare claims literature "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+def sleep_template() -> TamSamModel:
+    """Sleep medicine sizing — AASM-anchored. The HSAT disruption is
+    the structural story."""
+    return TamSamModel(
+        name="Sleep · diagnostics + therapy market",
+        chain=[
+            DriverStep("US adults with OSA (undiagnosed incl.)",
+                       30_000_000, op="base", unit="adults",
+                       source="AASM prevalence estimates"),
+            DriverStep("% diagnosed and in care / yr", 0.20, op="rate",
+                       unit="of prevalent",
+                       source="AASM — the diagnosis gap IS the "
+                              "whitespace"),
+            DriverStep("Avg annual revenue per managed patient", 900,
+                       op="price", unit="$/patient/yr",
+                       source="dx (PSG/HSAT amortized) + PAP resupply "
+                              "annuity blend"),
+        ],
+        segments=[
+            Segment("PAP therapy + resupply", 0.55, None,
+                    note="the annuity — resupply is the recurring "
+                         "engine", growth_pct=6.0),
+            Segment("Home sleep testing (HSAT)", 0.20, None,
+                    note="disrupting in-lab PSG at 1/4 the price",
+                    growth_pct=9.0),
+            Segment("In-lab PSG", 0.15, None,
+                    note="declining — complex cases only",
+                    growth_pct=-2.0),
+            Segment("Oral appliance / surgery / other", 0.10, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diagnosis-gap closure", 4.0,
+                         "80% undiagnosed — screening + awareness "
+                         "close it slowly"),
+            GrowthDriver("Resupply annuity compliance", 2.0,
+                         "adherence programs lift the recurring base"),
+            GrowthDriver("GLP-1 OSA-indication effect", -1.5,
+                         "tirzepatide's OSA label may shrink severe "
+                         "OSA over the hold — the new bear case"),
+            GrowthDriver("Competitive bidding / DME rates", -1.5,
+                         "CMS DMEPOS pricing pressure on PAP"),
+        ],
+        sam_share=0.55,
+        sam_note="Independent sleep practices + DME-integrated "
+                 "platforms",
+        som_share=0.04,
+        som_note="Fragmented behind the device manufacturers",
+        horizon_years=5,
+        basis_note="Template defaults from AASM/CMS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def occ_health_template() -> TamSamModel:
+    """Occupational health sizing — employer-paid, payer-free
+    economics. BLS-anchored."""
+    return TamSamModel(
+        name="Occupational health · employer services market",
+        chain=[
+            DriverStep("US private-sector workers", 135_000_000,
+                       op="base", unit="workers", source="BLS CES"),
+            DriverStep("Avg occ-health spend per worker / yr", 190,
+                       op="price", unit="$/worker/yr",
+                       source="employer benchmarks: injury care + "
+                              "exams + screens + surveillance blend"),
+        ],
+        segments=[
+            Segment("Work injury care (comp-funded)", 0.45, None,
+                    note="Concentra's franchise — fee-schedule "
+                         "protected", growth_pct=3.0),
+            Segment("Exams / compliance (DOT, pre-placement)", 0.30,
+                    None, note="volume annuity; regulation-driven",
+                    growth_pct=4.0),
+            Segment("Drug & alcohol screening", 0.15, None,
+                    growth_pct=2.0),
+            Segment("On-site / near-site clinics", 0.10, None,
+                    note="the employer-direct growth format",
+                    growth_pct=8.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Employment / wage base", 1.5,
+                         "volume tracks payrolls"),
+            GrowthDriver("Comp fee-schedule updates", 2.0,
+                         "state WC fee schedules grind upward"),
+            GrowthDriver("Employer direct-contracting", 2.0,
+                         "on-site/near-site expansion"),
+            GrowthDriver("Injury-rate secular decline", -1.5,
+                         "TRIR has fallen for decades — the volume "
+                         "headwind, shown as one"),
+            GrowthDriver("Telehealth triage substitution", -0.5,
+                         "tele-triage diverts low-acuity visits"),
+        ],
+        sam_share=0.50,
+        sam_note="Retail occ-health + employer-direct formats "
+                 "(carrier-owned networks excluded)",
+        som_share=0.05,
+        som_note="Concentra holds ~10% of the retail layer; the rest "
+                 "is fragmented",
+        horizon_years=5,
+        basis_note="Template defaults from BLS + employer benchmarks "
+                   "— replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -1525,6 +1686,9 @@ TEMPLATES = {
     "aba": aba_template,
     "plasma": plasma_template,
     "clinical_research": clinical_research_template,
+    "wound_care": wound_care_template,
+    "sleep": sleep_template,
+    "occ_health": occ_health_template,
     "blank": blank_template,
 }
 
