@@ -1348,6 +1348,36 @@ def womens_health_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def podiatry_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="podiatry",
+        sector_tokens=("podiatry", "foot_ankle"),
+        note=("APMA workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def ent_allergy_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="ent_allergy",
+        sector_tokens=("ent", "ent_allergy", "allergy"),
+        note=("AAO-HNS/AAAAI workforce data is aggregate-only — "
+              "geography omitted rather than fabricated."),
+    )
+
+
+def anesthesia_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="anesthesia",
+        sector_tokens=("anesthesia", "anesthesiology"),
+        note=("ASA workforce data is aggregate-only — geography "
+              "omitted rather than fabricated. The corpus carries "
+              "the pre-NSA-era anesthesia trade history — read it "
+              "knowing the OON playbook those deals priced is gone."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1395,6 +1425,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "gastroenterology": gastroenterology_deep_dive,
     "orthopedics": orthopedics_deep_dive,
     "womens_health": womens_health_deep_dive,
+    "podiatry": podiatry_deep_dive,
+    "ent_allergy": ent_allergy_deep_dive,
+    "anesthesia": anesthesia_deep_dive,
 }
 
 

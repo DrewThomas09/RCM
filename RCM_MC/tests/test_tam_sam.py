@@ -983,3 +983,37 @@ class NicheVerticalsBatch10Tests(unittest.TestCase):
     def test_catalogue_at_43_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 44)   # 43 + blank
+
+
+class NicheVerticalsBatch11Tests(unittest.TestCase):
+    """Industries #44–46 — podiatry, ENT/allergy, anesthesia."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "podiatry": 18_000 * 550_000,
+            "ent_allergy": 16_500 * 950_000,
+            "anesthesia": 60_000_000 * 420,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_anesthesia_nsa_playbook_honesty(self):
+        # The NSA rate reset killed the OON playbook — the template
+        # prices it as the defining headwind and the basis note says so.
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, anesthesia_template, compute,
+        )
+        out = compute(TEMPLATES["anesthesia"]())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLessEqual(names["No Surprises Act rate reset"], -2.0)
+        self.assertIn("playbook", anesthesia_template().basis_note)
+
+    def test_catalogue_at_46_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 47)   # 46 + blank
