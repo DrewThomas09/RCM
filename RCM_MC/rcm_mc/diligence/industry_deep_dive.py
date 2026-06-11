@@ -1084,6 +1084,35 @@ def physical_therapy_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def veterinary_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="veterinary",
+        sector_tokens=("veterinary", "vet", "animal_health"),
+        note=("No public veterinary facility census (AVMA data is "
+              "member-gated) — geography omitted rather than "
+              "fabricated."),
+    )
+
+
+def medspa_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="medspa",
+        sector_tokens=("medspa", "aesthetics", "medical_aesthetics"),
+        note=("AmSpa's location census is proprietary — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def ems_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="ems",
+        sector_tokens=("ems", "ambulance", "medical_transport"),
+        note=("NEMSIS agency-level data isn't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1104,6 +1133,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "infusion": infusion_deep_dive,
     "imaging": imaging_deep_dive,
     "physical_therapy": physical_therapy_deep_dive,
+    "veterinary": veterinary_deep_dive,
+    "medspa": medspa_deep_dive,
+    "ems": ems_deep_dive,
 }
 
 

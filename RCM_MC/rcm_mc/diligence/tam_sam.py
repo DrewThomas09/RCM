@@ -978,6 +978,173 @@ def physical_therapy_template() -> TamSamModel:
     )
 
 
+
+def veterinary_template() -> TamSamModel:
+    """Companion-animal veterinary sizing — AVMA/APPA-anchored. The
+    most consolidated 'non-healthcare healthcare' PE vertical."""
+    return TamSamModel(
+        name="Veterinary · companion-animal practice market",
+        chain=[
+            DriverStep("US pet-owning households", 87_000_000, op="base",
+                       unit="households",
+                       source="APPA National Pet Owners Survey"),
+            DriverStep("Avg vet visits per household / yr", 2.4,
+                       op="mult", unit="visits/yr",
+                       source="AVMA pet-owner survey (dog+cat blend)"),
+            DriverStep("Avg revenue per visit", 260, op="price",
+                       unit="$/visit",
+                       source="AVMA economic state of the profession "
+                              "(exam + dx + rx blend)"),
+        ],
+        segments=[
+            Segment("General practice", 0.62, None,
+                    note="the consolidation base — Mars/NVA/Thrive "
+                         "rolled the cities", growth_pct=4.0),
+            Segment("Specialty / referral (ER, onc, surgery)", 0.22,
+                    None, note="the margin + growth engine",
+                    growth_pct=8.0),
+            Segment("Urgent care / after-hours", 0.08, None,
+                    note="the newest format — de-novo economics",
+                    growth_pct=10.0),
+            Segment("Mobile / at-home", 0.08, None, growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Pet spending growth", 4.5,
+                         "humanization of pets — spend grows through "
+                         "recessions"),
+            GrowthDriver("Pricing power", 3.0,
+                         "cash-pay; no payer pushback; vet CPI has "
+                         "outrun core CPI for a decade"),
+            GrowthDriver("Insurance penetration", 1.5,
+                         "pet insurance ~4% of pets and climbing — "
+                         "loosens the wallet ceiling"),
+            GrowthDriver("Veterinarian shortage", -2.5,
+                         "DVM supply is the binding constraint — "
+                         "appointment caps, not demand"),
+            GrowthDriver("Visit-frequency normalization", -1.0,
+                         "post-2021 pet-boom cohort aging out"),
+        ],
+        sam_share=0.55,
+        sam_note="Metro + suburban practices a platform can staff "
+                 "(rural single-DVM excluded)",
+        som_share=0.04,
+        som_note="Mars holds ~7% of clinics; the long tail is still "
+                 "~75% independent",
+        horizon_years=5,
+        basis_note="Template defaults from AVMA/APPA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def medspa_template() -> TamSamModel:
+    """Medical aesthetics / medspa sizing — AmSpa-anchored. Cash-pay,
+    consumer-cyclical, and the fastest-fragmenting clinic format."""
+    return TamSamModel(
+        name="Medspa · medical aesthetics market",
+        chain=[
+            DriverStep("US medspa locations", 10_500, op="base",
+                       unit="locations", source="AmSpa state of the "
+                       "industry report"),
+            DriverStep("Avg revenue per location", 1_600_000, op="price",
+                       unit="$/location/yr",
+                       source="AmSpa benchmarking (median ~$1.2M, "
+                              "mean pulled up by multi-room urban)"),
+        ],
+        segments=[
+            Segment("Injectables (tox + filler)", 0.55, None,
+                    note="the volume + frequency engine — 3–4 visits/yr "
+                         "recurring", growth_pct=9.0),
+            Segment("Energy devices (laser, RF, body)", 0.20, None,
+                    growth_pct=6.0),
+            Segment("Skin / membership facials", 0.15, None,
+                    note="the retention layer — membership models",
+                    growth_pct=7.0),
+            Segment("Weight management (GLP-1 adjacency)", 0.10, None,
+                    note="the newest line — compounding-rule risk",
+                    growth_pct=15.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Consumer demand / destigmatization", 6.0,
+                         "male + under-35 adoption widening the funnel"),
+            GrowthDriver("Unit growth / de-novo", 4.0,
+                         "location count compounding ~10%/yr pre-"
+                         "saturation"),
+            GrowthDriver("GLP-1 halo", 2.0,
+                         "weight-loss patients convert to aesthetics"),
+            GrowthDriver("Consumer-cyclical exposure", -2.5,
+                         "discretionary cash-pay — recession beta is "
+                         "the bear case, shown as one"),
+            GrowthDriver("Injector supply / scope rules", -1.5,
+                         "NP/RN scope-of-practice + med-director rules "
+                         "cap throughput"),
+        ],
+        sam_share=0.50,
+        sam_note="Suburban + urban metros with density for multi-"
+                 "location brands",
+        som_share=0.03,
+        som_note="No platform holds >2% — the most fragmented "
+                 "consumer-health format",
+        horizon_years=5,
+        basis_note="Template defaults from AmSpa public reports — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def ems_template() -> TamSamModel:
+    """Ambulance / EMS sizing — NEMSIS/GAO-anchored. A regulated,
+    municipal-contract niche with structural payer drag."""
+    return TamSamModel(
+        name="EMS · ambulance transport market",
+        chain=[
+            DriverStep("US EMS transports / yr", 22_000_000, op="base",
+                       unit="transports",
+                       source="NEMSIS national EMS data"),
+            DriverStep("% by private operators", 0.40, op="rate",
+                       unit="of transports",
+                       source="GAO / AAA industry estimates (vs fire "
+                              "department + hospital-based)"),
+            DriverStep("Avg revenue per transport", 1_350, op="price",
+                       unit="$/transport",
+                       source="Medicare ambulance fee schedule × "
+                              "payer blend (GAO)"),
+        ],
+        segments=[
+            Segment("911 emergency (contracted)", 0.45, None,
+                    note="municipal contracts — sticky, low-margin",
+                    growth_pct=2.0),
+            Segment("Interfacility transfer (IFT)", 0.40, None,
+                    note="the margin segment — hospital-contracted",
+                    growth_pct=4.0),
+            Segment("Critical care / specialty (CCT, neo)", 0.10, None,
+                    note="highest rate per transport", growth_pct=6.0),
+            Segment("Event / standby", 0.05, None, growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Utilization / demographics", 2.5,
+                         "transport volume scales with 65+ + ED "
+                         "throughput"),
+            GrowthDriver("Rate relief (state add-ons)", 1.5,
+                         "GEMT/supplemental programs patch Medicaid "
+                         "underpayment"),
+            GrowthDriver("Balance-billing restrictions", -1.5,
+                         "No Surprises Act ground-ambulance extension "
+                         "risk — the policy headwind"),
+            GrowthDriver("EMT/paramedic shortage", -2.0,
+                         "crew supply is the binding constraint; "
+                         "wage inflation outruns rate updates"),
+        ],
+        sam_share=0.55,
+        sam_note="Private-operator markets ex the municipal-only "
+                 "jurisdictions",
+        som_share=0.06,
+        som_note="Top platforms (GMR class) hold meaningful share — "
+                 "less fragmented than other niches",
+        horizon_years=5,
+        basis_note="Template defaults from NEMSIS/GAO public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -1020,6 +1187,9 @@ TEMPLATES = {
     "infusion": infusion_template,
     "imaging": imaging_template,
     "physical_therapy": physical_therapy_template,
+    "veterinary": veterinary_template,
+    "medspa": medspa_template,
+    "ems": ems_template,
     "blank": blank_template,
 }
 

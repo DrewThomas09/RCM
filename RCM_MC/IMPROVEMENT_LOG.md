@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-68 — niche verticals batch 2: veterinary, medspa, EMS (16:10Z)
+**Niche-vertical sprint** — industries #17–19, the formats PE took
+mainstream that CDD tooling never covers:
+  - veterinary ($54.3B, +5.5%): 87M pet households (APPA) × 2.4 visits ×
+    $260 (AVMA); vet urgent care +10% ★ de-novo format vs GP +4%; the
+    DVM shortage carried as the binding constraint; Mars ~7% / ~75%
+    independent fragmentation in SOM.
+  - medspa ($16.8B, +8.0%): 10,500 locations (AmSpa) × $1.6M; GLP-1
+    weight-management adjacency +15% ★ (with the compounding-rule risk
+    note) vs devices +6%; consumer-cyclical exposure carried as the
+    bear case.
+  - ems ($11.9B, +0.4%): 22M transports (NEMSIS) × 40% private (GAO) ×
+    $1,350; CCT/specialty +6% ★ vs 911 +2%; crew shortage + No
+    Surprises ground-ambulance extension as headwinds — a near-flat
+    market the tool does NOT inflate.
+  All three: deals-only dives (no public facility census), geography
+  omitted never fabricated.
+**Verify**: three chains pinned; vertical-specific honesty pinned (DVM
+shortage negative, consumer-cyclical negative, EMS composite <1%); all
+20 templates render AND export valid xlsx; test_tam_sam 58 passed.
+
 ## W2-67 — niche verticals batch 1: infusion, imaging, physical therapy (15:40Z)
 **Niche-vertical sprint (user-directed)** — industries #14–16, the
 PE-active niches CDD shops actually field:

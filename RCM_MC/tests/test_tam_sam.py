@@ -646,3 +646,47 @@ class NicheVerticalsBatch1Tests(unittest.TestCase):
         self.assertGreaterEqual(imaging_deep_dive()["sector_deals"]["n"], 5)
         self.assertGreaterEqual(
             physical_therapy_deep_dive()["sector_deals"]["n"], 5)
+
+
+class NicheVerticalsBatch2Tests(unittest.TestCase):
+    """Industries #17–19 — veterinary, medspa, EMS: the niches PE took
+    mainstream that CDD tooling never covers."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "veterinary": 87_000_000 * 2.4 * 260,
+            "medspa": 10_500 * 1_600_000,
+            "ems": 22_000_000 * 0.40 * 1_350,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_vertical_specific_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Veterinary: the DVM shortage is the binding constraint.
+        vet = compute(TEMPLATES["veterinary"]())
+        names = {g["name"]: g["annual_pct"] for g in vet["growth_drivers"]}
+        self.assertLess(names["Veterinarian shortage"], 0)
+        # Medspa: consumer-cyclical exposure carried as the bear case.
+        spa = compute(TEMPLATES["medspa"]())
+        names = {g["name"]: g["annual_pct"] for g in spa["growth_drivers"]}
+        self.assertLess(names["Consumer-cyclical exposure"], 0)
+        # EMS: a near-flat market (+0.4%) — the tool doesn't inflate it.
+        ems = compute(TEMPLATES["ems"]())
+        self.assertLess(ems["composite_cagr_pct"], 1.0)
+
+    def test_every_template_still_renders_and_exports(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page, tam_sam_xlsx
+        for key in TEMPLATES:
+            self.assertIn("TAM / SAM Builder",
+                          render_tam_sam_page({"template": [key]}), key)
+            z = zipfile.ZipFile(io.BytesIO(
+                tam_sam_xlsx({"template": [key]})))
+            self.assertIsNone(z.testzip(), key)
