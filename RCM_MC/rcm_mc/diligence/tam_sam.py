@@ -49,11 +49,14 @@ class Segment:
     """A demand segment (e.g. maternal age band) with its own utilization
     economics. ``share_of_volume`` fractions should sum to ~1.0 across
     segments; ``success_rate`` is segment-specific (e.g. live-birth rate
-    per cycle by age band) and drives cycles-per-outcome differences."""
+    per cycle by age band); ``growth_pct`` is the segment's OWN annual
+    growth — the within-industry divergence map ("where it's growing
+    fastest"). None = grows with the composite."""
     name: str
     share_of_volume: float
     success_rate: Optional[float] = None
     note: str = ""
+    growth_pct: Optional[float] = None
 
 
 @dataclass
@@ -460,14 +463,19 @@ def behavioral_health_template() -> TamSamModel:
         ],
         segments=[
             Segment("Outpatient therapy / psychiatry", 0.40, None,
-                    note="the volume segment; telehealth-accelerated"),
+                    note="the volume segment; telehealth-accelerated",
+                    growth_pct=8.0),
             Segment("SUD treatment", 0.25, None,
-                    note="opioid-epidemic-driven; parity-funded"),
+                    note="opioid-epidemic-driven; parity-funded",
+                    growth_pct=6.0),
             Segment("Residential / PHP / IOP", 0.15, None,
-                    note="highest revenue per patient; payer scrutiny"),
+                    note="highest revenue per patient; payer scrutiny",
+                    growth_pct=4.0),
             Segment("Autism / IDD services", 0.12, None,
-                    note="the fastest-growing sub-vertical (ABA)"),
-            Segment("Psychiatric inpatient", 0.08, None),
+                    note="the fastest-growing sub-vertical (ABA)",
+                    growth_pct=10.0),
+            Segment("Psychiatric inpatient", 0.08, None,
+                    growth_pct=1.0),
         ],
         growth_drivers=[
             GrowthDriver("Demand / destigmatization", 2.5,
@@ -514,14 +522,17 @@ def asc_template() -> TamSamModel:
                               "blend (MedPAC)"),
         ],
         segments=[
-            Segment("GI / endoscopy", 0.25, None),
+            Segment("GI / endoscopy", 0.25, None, growth_pct=4.0),
             Segment("Ophthalmology", 0.20, None,
-                    note="cataract — the original ASC franchise"),
+                    note="cataract — the original ASC franchise",
+                    growth_pct=3.0),
             Segment("Ortho / MSK", 0.20, None,
                     note="the fastest-growing slice: total joints "
-                         "migrating off the HOPD list"),
-            Segment("Pain management", 0.15, None),
-            Segment("Other (ENT, uro, plastics)", 0.20, None),
+                         "migrating off the HOPD list",
+                    growth_pct=11.0),
+            Segment("Pain management", 0.15, None, growth_pct=5.0),
+            Segment("Other (ENT, uro, plastics)", 0.20, None,
+                    growth_pct=4.0),
         ],
         growth_drivers=[
             GrowthDriver("Site-of-care shift from HOPD", 4.0,
@@ -858,13 +869,24 @@ def compute(model: TamSamModel) -> Dict[str, Any]:
 
     seg_rows: List[Dict[str, Any]] = []
     for s in model.segments:
+        seg_tam = tam * s.share_of_volume
+        g = s.growth_pct
         seg_rows.append({
             "name": s.name,
             "share_of_volume": s.share_of_volume,
-            "tam_value": tam * s.share_of_volume,
+            "tam_value": seg_tam,
             "success_rate": s.success_rate,
             "note": s.note,
+            "growth_pct": g,
+            "tam_y_final": (seg_tam * (1 + g / 100.0)
+                            ** model.horizon_years
+                            if g is not None else None),
         })
+    if any(r["growth_pct"] is not None for r in seg_rows):
+        fastest = max((r for r in seg_rows
+                       if r["growth_pct"] is not None),
+                      key=lambda r: r["growth_pct"])
+        fastest["is_fastest"] = True
 
     # Composite growth: drivers multiply (1+g1)(1+g2)… per year — and the
     # decomposition is preserved so the IC sees which lever carries it.

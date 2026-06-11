@@ -470,3 +470,29 @@ class HospitalsFlagshipTests(unittest.TestCase):
         # Every sized template appears as a linked row.
         self.assertGreaterEqual(
             h.count("/diligence/tam-sam?template="), 14)
+
+
+class SegmentDivergenceTests(unittest.TestCase):
+    """Per-segment growth — the within-industry 'where it's growing
+    fastest' map (autism/IDD at +10% vs psych inpatient at +1%)."""
+
+    def test_segment_growth_math(self):
+        from rcm_mc.diligence.tam_sam import (
+            behavioral_health_template, compute,
+        )
+        out = compute(behavioral_health_template())
+        autism = next(s for s in out["segments"]
+                      if s["name"].startswith("Autism"))
+        self.assertTrue(autism.get("is_fastest"))
+        self.assertAlmostEqual(
+            autism["tam_y_final"],
+            autism["tam_value"] * 1.10 ** 5, places=2)
+
+    def test_columns_only_when_growth_set(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["behavioral_health"]})
+        self.assertIn("Growth %/yr", h)
+        self.assertIn("★", h)
+        # Templates without per-segment growth keep the lean table.
+        h2 = render_tam_sam_page({"template": ["snf"]})
+        self.assertNotIn("Growth %/yr", h2)

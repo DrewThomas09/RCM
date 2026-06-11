@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-61 — per-segment growth divergence (12:55Z)
+**Sprint depth**: the within-industry "where it's growing fastest" map.
+Segment gains growth_pct; compute() emits per-segment Y-final TAM slices
+and flags the fastest grower. BH (autism/IDD +10% ★ vs psych inpatient
++1%) and ASC (ortho/MSK +11% ★ — the total-joint migration) carry rates;
+the segments table gains Growth %/yr + Y5-slice columns with the ★ row
+highlighted; templates without rates keep the lean table.
+**Verify**: autism Y5 slice pinned to ×1.10^5; ★ flags the max; columns
+appear only when rates set; test_tam_sam 41 passed.
+
 ## W2-60 — industry #13: hospitals (HCRIS-grounded flagship) + cross-industry view (12:25Z)
 **Sprint flagship**:
   - hospitals_template(): $1.4T NHE hospital-care line × 62% community

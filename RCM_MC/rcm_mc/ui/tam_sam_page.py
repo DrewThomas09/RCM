@@ -611,16 +611,33 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         title="Driver chain · the methodology, shown",
     )
 
+    has_seg_growth = any(s.get("growth_pct") is not None
+                         for s in out["segments"])
     seg_rows = ""
     for s in out["segments"]:
         sr = (f"{s['success_rate']*100:,.0f}%"
               if s["success_rate"] is not None else "—")
+        fastest = s.get("is_fastest")
+        row_style = (' style="background:var(--sc-bone,#ece5d6);"'
+                     if fastest else "")
+        g = s.get("growth_pct")
+        g_s = (f'{g:+.0f}%' if g is not None else "—")
+        g_tone = ("#0a8a5f" if (g or 0) >= 5
+                  else "#b5321e" if (g or 0) < 0 else "#1a2332")
+        y5 = s.get("tam_y_final")
+        growth_tds = (
+            f'<td class="r" style="color:{g_tone};font-weight:600;">'
+            f'{g_s}{" ★" if fastest else ""}</td>'
+            f'<td class="r">{_fmt_money(y5) if y5 else "—"}</td>'
+            if has_seg_growth else ""
+        )
         seg_rows += (
-            '<tr>'
+            f'<tr{row_style}>'
             f'<td>{html.escape(s["name"])}'
             f'<div class="ts2-src">{html.escape(s["note"] or "")}</div></td>'
             f'<td class="r">{s["share_of_volume"]*100:,.0f}%</td>'
             f'<td class="r">{_fmt_money(s["tam_value"])}</td>'
+            f'{growth_tds}'
             f'<td class="r">{sr}</td>'
             '</tr>'
         )
@@ -628,8 +645,16 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         '<table class="ts2-chain"><thead><tr>'
         '<th>Segment</th><th style="text-align:right;">Volume share</th>'
         '<th style="text-align:right;">TAM slice</th>'
-        '<th style="text-align:right;">Success rate</th>'
-        f'</tr></thead><tbody>{seg_rows}</tbody></table>',
+        + ('<th style="text-align:right;">Growth %/yr</th>'
+           f'<th style="text-align:right;">Y{out["horizon_years"]} '
+           'slice</th>' if has_seg_growth else "")
+        + '<th style="text-align:right;">Success rate</th>'
+        f'</tr></thead><tbody>{seg_rows}</tbody></table>'
+        + ('<p class="ts2-src" style="margin:8px 0 0;">★ = the fastest-'
+           'growing segment — where the whitespace compounds. Segment '
+           'growth rates are template defaults; the composite drivers '
+           'above govern the funnel projection.</p>'
+           if has_seg_growth else ""),
         title="Segments · the whitespace map",
     ) if out["segments"] else ""
 
