@@ -578,3 +578,31 @@ class PayerDimensionTests(unittest.TestCase):
         from rcm_mc.diligence.industry_deep_dive import fertility_deep_dive
         f = fertility_deep_dive()
         self.assertGreaterEqual(f["sector_deals"]["n"], 2)
+
+
+class ChainHHITests(unittest.TestCase):
+    """Chain-concentration HHI (DOJ/FTC) — only over named operators."""
+
+    def test_dialysis_hhi_highly_concentrated(self):
+        from rcm_mc.diligence.industry_deep_dive import (
+            _chain_hhi, dialysis_deep_dive,
+        )
+        d = dialysis_deep_dive()
+        hhi = _chain_hhi(d["chains"], d["pool_label"])
+        # DaVita + Fresenius ~37% each → well over the 2,500 "highly
+        # concentrated" DOJ threshold.
+        self.assertGreater(hhi, 2500)
+
+    def test_hhi_none_for_ownership_buckets(self):
+        # SNF/HH/hospice chains are ownership/size buckets, not operators
+        # — HHI is meaningless there and must not render.
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        for key in ("home_health", "hospice", "snf", "hospitals"):
+            self.assertNotIn("Chain-concentration",
+                             render_tam_sam_page({"template": [key]}), key)
+
+    def test_dialysis_page_shows_hhi(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn("Chain-concentration", h)
+        self.assertIn("highly concentrated", h)
