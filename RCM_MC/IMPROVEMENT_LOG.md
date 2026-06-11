@@ -1176,6 +1176,15 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-103 — wave #5: thesis-pipeline compute chart (10:00Z)
+**Where the pipeline spends its time**: per-step horizontal bars
+(elapsed-ms proportional), OK steps teal, FAILED steps red with the ✗
+inline — the slow or broken step visible before reading the log. Sits
+between the step-log header and the detail rows; empty logs render
+nothing.
+**Verify**: ok/fail bars + red tone pinned; empty-log empty-string
+pinned; thesis-pipeline suites 19+2 passed.
+
 ## W2-102 — wave #4: cliff-calendar hold timeline (09:30Z)
 **The hold period as a picture**: one lollipop per cliff event on the
 hold-year axis — drop length ∝ the bps cut, color by payer (medicare

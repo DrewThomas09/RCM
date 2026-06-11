@@ -375,6 +375,40 @@ def _headline_grid(report: ThesisPipelineReport) -> str:
     )
 
 
+def _step_time_svg(report: ThesisPipelineReport,
+                   width: int = 640) -> str:
+    """Where the pipeline spends its compute: one bar per step,
+    elapsed-ms proportional, failed steps in red — the slow or broken
+    step is visible before reading the log."""
+    steps = report.step_log
+    if not steps:
+        return ""
+    mx = max((s.get("elapsed_ms", 0) or 0) for s in steps) or 1
+    row_h, pad_l, pad_r = 18, 190, 80
+    pw = width - pad_l - pad_r
+    h = len(steps) * row_h + 8
+    parts = [f'<svg width="{width}" height="{h}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Pipeline compute by step">']
+    for i, s in enumerate(steps):
+        y = i * row_h + 4
+        ms = s.get("elapsed_ms", 0) or 0
+        w = ms / mx * pw
+        ok = s.get("status", "ok") == "ok"
+        color = "#1F7A75" if ok else "#b5321e"
+        parts.append(
+            f'<text x="{pad_l-8}" y="{y+10}" text-anchor="end" '
+            'font-family="monospace" font-size="9.5" fill="#465366">'
+            f'{html.escape(str(s.get("step", "—"))[:26])}</text>'
+            f'<rect x="{pad_l}" y="{y}" width="{max(w,1.5):.1f}" '
+            f'height="11" fill="{color}" opacity="{1 if ok else .9}"/>'
+            f'<text x="{pad_l+w+6:.1f}" y="{y+10}" '
+            'font-family="monospace" font-size="9" fill="#7a8699">'
+            f'{ms:.0f}ms{"" if ok else " ✗"}</text>')
+    parts.append('</svg>')
+    return "".join(parts)
+
+
 def _step_log_block(report: ThesisPipelineReport) -> str:
     rows: List[str] = []
     for s in report.step_log:
@@ -396,7 +430,8 @@ def _step_log_block(report: ThesisPipelineReport) -> str:
     return (
         f'<div class="tp-section-label">Step log · '
         f'{len(report.step_log)} steps · {total:.0f}ms total compute</div>'
-        f'<div style="border:1px solid {P["border"]};border-radius:4px;'
+        + _step_time_svg(report)
+        + f'<div style="border:1px solid {P["border"]};border-radius:4px;'
         f'overflow:hidden;">{"".join(rows)}</div>'
     )
 

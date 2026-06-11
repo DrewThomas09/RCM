@@ -297,3 +297,30 @@ class HomeQuickstartTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StepTimeChartTests(unittest.TestCase):
+    """Wave #5 of the diligence upgrades: where the pipeline spends its
+    compute — per-step bars, failed steps in red."""
+
+    def test_chart_renders_ok_and_fail(self):
+        from rcm_mc.diligence.thesis_pipeline.orchestrator import (
+            ThesisPipelineReport,
+        )
+        from rcm_mc.ui.thesis_pipeline_page import _step_time_svg
+        r = ThesisPipelineReport(step_log=[
+            {"step": "ccd_load", "elapsed_ms": 120.0, "status": "ok"},
+            {"step": "cyber_score", "elapsed_ms": 2.0,
+             "status": "fail", "error": "X"},
+        ])
+        svg = _step_time_svg(r)
+        self.assertIn("Pipeline compute by step", svg)
+        self.assertIn("✗", svg)            # the failed step marked
+        self.assertIn("#b5321e", svg)      # in red
+
+    def test_empty_log_no_chart(self):
+        from rcm_mc.diligence.thesis_pipeline.orchestrator import (
+            ThesisPipelineReport,
+        )
+        from rcm_mc.ui.thesis_pipeline_page import _step_time_svg
+        self.assertEqual(_step_time_svg(ThesisPipelineReport()), "")
