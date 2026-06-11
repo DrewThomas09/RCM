@@ -1176,6 +1176,26 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-75 — niche verticals batch 9: ophthalmology, RCM services, cardiology (19:45Z)
+**Niche-vertical sprint** — industries #38–40:
+  - ophthalmology ($34.2B, +3.9%): 19K ophthalmologists (AAO) × $1.8M
+    (the highest revenue/MD specialty); retina +6% ★ buy-and-bill margin
+    engine WITH anti-VEGF biosimilar erosion priced on the other side;
+    premium-IOL cash-pay layer named.
+  - rcm_services ($31.2B, +5.5%): the META-VERTICAL — the platform sizes
+    its own industry. $2.6T provider NPR × 4% cost-to-collect (HFMA) ×
+    30% outsourced; tech-enabled/AI workflow +12% ★ (the rerating
+    layer); denial-complexity growth named as a vendor TAILWIND
+    (provider pain = vendor revenue); in-sourcing churn risk priced.
+  - cardiology ($46.2B, +5.0%): 33K cardiologists (ACC) × $1.4M; ASC/OBL
+    procedures +11% ★ (the wave's engine); the honest shrinking-pool
+    SAM at 0.20 — ~80% already hospital-employed, and employment
+    gravity is a named headwind.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; cardiology SAM ≤0.25 + employment-gravity
+negative pinned; in-sourcing churn negative pinned; catalogue ≥41
+templates pinned; test_tam_sam 78 passed. 40 industries.
+
 ## W2-74 — niche verticals batch 8: eating disorders, nephrology, O&P (19:15Z)
 **Niche-vertical sprint** — industries #35–37:
   - eating_disorders ($8.1B, +5.4%): 9M prevalent (NIMH/STRIPED) × 10%

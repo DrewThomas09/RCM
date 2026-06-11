@@ -902,3 +902,45 @@ class NicheVerticalsBatch8Tests(unittest.TestCase):
     def test_catalogue_at_37_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 38)   # 37 + blank
+
+
+class NicheVerticalsBatch9Tests(unittest.TestCase):
+    """Industries #38–40 — ophthalmology, RCM services (the
+    meta-vertical), cardiology standalone."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "ophthalmology": 19_000 * 1_800_000,
+            "rcm_services": 2.6e12 * 0.04 * 0.30,
+            "cardiology": 33_000 * 1_400_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_cardiology_shrinking_pool_honesty(self):
+        # ~80% hospital-employed: the SAM is honestly SMALL and the
+        # employment gravity is a named headwind.
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, cardiology_template, compute,
+        )
+        self.assertLessEqual(cardiology_template().sam_share, 0.25)
+        out = compute(TEMPLATES["cardiology"]())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["Hospital employment gravity"], 0)
+
+    def test_rcm_meta_vertical(self):
+        # The platform sizes its own industry — churn risk named.
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        out = compute(TEMPLATES["rcm_services"]())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["In-sourcing reversals"], 0)
+
+    def test_catalogue_at_40_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 41)   # 40 + blank

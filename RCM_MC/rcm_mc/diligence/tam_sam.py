@@ -2130,6 +2130,167 @@ def orthotics_prosthetics_template() -> TamSamModel:
     )
 
 
+
+def ophthalmology_template() -> TamSamModel:
+    """Ophthalmology / retina sizing — the highest-revenue-per-MD
+    specialty consolidation. AAO-anchored."""
+    return TamSamModel(
+        name="Ophthalmology · surgical eye care market",
+        chain=[
+            DriverStep("US ophthalmologists (practicing)", 19_000,
+                       op="base", unit="physicians",
+                       source="AAO workforce census"),
+            DriverStep("Avg revenue per ophthalmologist", 1_800_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA ophtho medians incl. ASC + optical "
+                              "+ retina drug margin"),
+        ],
+        segments=[
+            Segment("Cataract / anterior segment", 0.40, None,
+                    note="the volume franchise — premium-IOL upsell "
+                         "is the cash-pay layer", growth_pct=4.0),
+            Segment("Retina (medical + surgical)", 0.30, None,
+                    note="the margin engine — anti-VEGF buy-and-bill; "
+                         "biosimilar exposure", growth_pct=6.0),
+            Segment("Glaucoma / cornea / other", 0.20, None,
+                    growth_pct=4.0),
+            Segment("Refractive (LASIK/SMILE, cash)", 0.10, None,
+                    note="consumer-cyclical", growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Cataract demographics", 4.0,
+                         "4M+ cataract surgeries/yr compounding with "
+                         "the 65+ wave"),
+            GrowthDriver("Premium-IOL / cash-pay mix", 2.0,
+                         "presbyopia-correcting lens adoption"),
+            GrowthDriver("Retina therapeutics pipeline", 1.5,
+                         "geographic-atrophy agents expand treatable "
+                         "volume"),
+            GrowthDriver("Anti-VEGF biosimilar erosion", -2.0,
+                         "the retina buy-and-bill spread compresses — "
+                         "shown as one"),
+            GrowthDriver("Cataract fee compression", -1.5,
+                         "Medicare PFS facility+professional cuts"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent practices + ASC co-ownership in non-"
+                 "academic metros",
+        som_share=0.05,
+        som_note="EyeCare Partners / retina consolidators class — "
+                 "mid-wave consolidation",
+        horizon_years=5,
+        basis_note="Template defaults from AAO/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def rcm_services_template() -> TamSamModel:
+    """Revenue-cycle management services sizing — the meta-vertical:
+    THIS platform's own industry. HFMA/CAQH-anchored."""
+    return TamSamModel(
+        name="RCM services · revenue cycle outsourcing market",
+        chain=[
+            DriverStep("US provider net patient revenue",
+                       2_600_000_000_000, op="base", unit="$",
+                       source="CMS NHE provider lines (hospital + "
+                              "physician + post-acute)"),
+            DriverStep("% of NPR spent on revenue cycle", 0.04,
+                       op="rate", unit="of NPR",
+                       source="HFMA cost-to-collect benchmarks "
+                              "(3–5%)"),
+            DriverStep("% outsourced (vs in-house)", 0.30, op="rate",
+                       unit="of RC spend",
+                       source="industry surveys — outsourcing "
+                              "penetration still climbing"),
+        ],
+        segments=[
+            Segment("End-to-end RCM outsourcing", 0.40, None,
+                    note="the platform deals — R1/Ensemble class",
+                    growth_pct=8.0),
+            Segment("Point solutions (coding, denials, AR)", 0.35,
+                    None, note="the tuck-in layer", growth_pct=6.0),
+            Segment("Tech-enabled / AI workflow", 0.25, None,
+                    note="the rerating layer — automation captures "
+                         "the labor arbitrage", growth_pct=12.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Outsourcing penetration", 4.0,
+                         "labor scarcity pushes RC functions out"),
+            GrowthDriver("Denial complexity growth", 2.5,
+                         "payer friction RISES — bad for providers, "
+                         "good for RCM vendors"),
+            GrowthDriver("AI automation capture", 2.0,
+                         "automation margin accrues to vendors who "
+                         "own the workflow"),
+            GrowthDriver("Pricing pressure / rebids", -2.0,
+                         "contract rebids compress take rates"),
+            GrowthDriver("In-sourcing reversals", -1.0,
+                         "systems pulling RC back in-house after "
+                         "vendor failures — churn risk"),
+        ],
+        sam_share=0.55,
+        sam_note="Mid-market + regional provider segment (the mega-"
+                 "systems negotiate direct)",
+        som_share=0.04,
+        som_note="R1 + Ensemble + Optum hold the megadeals; the "
+                 "middle market is open",
+        horizon_years=5,
+        basis_note="Template defaults from HFMA/CAQH public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def cardiology_template() -> TamSamModel:
+    """Cardiology practice sizing — the current PPM wave, standalone
+    depth. ACC-anchored."""
+    return TamSamModel(
+        name="Cardiology · practice + ancillary market",
+        chain=[
+            DriverStep("US cardiologists (practicing)", 33_000,
+                       op="base", unit="physicians",
+                       source="ACC workforce census"),
+            DriverStep("Avg revenue per cardiologist", 1_400_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA cardiology medians incl. imaging "
+                              "+ ASC/OBL ancillaries"),
+        ],
+        segments=[
+            Segment("Clinical / E&M base", 0.40, None, growth_pct=3.0),
+            Segment("Imaging (echo, nuclear, CTA)", 0.25, None,
+                    note="the in-office ancillary engine",
+                    growth_pct=5.0),
+            Segment("ASC/OBL procedures (PCI, EP)", 0.20, None,
+                    note="the thesis layer — CMS added PCI to ASC "
+                         "list; OBL economics", growth_pct=11.0),
+            Segment("Device clinic / remote monitoring", 0.15, None,
+                    growth_pct=7.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("CV disease demographics", 3.0,
+                         "prevalence compounds with age + obesity"),
+            GrowthDriver("Site-of-care shift (ASC/OBL)", 3.5,
+                         "PCI/EP migrating out of HOPD — the wave's "
+                         "engine"),
+            GrowthDriver("Remote monitoring expansion", 1.5,
+                         "RPM/device-clinic recurring revenue"),
+            GrowthDriver("Hospital employment gravity", -2.0,
+                         "~80% of cardiologists already hospital-"
+                         "employed — the acquirable pool shrinks"),
+            GrowthDriver("Fee-schedule pressure", -1.0,
+                         "PFS conversion-factor cuts"),
+        ],
+        sam_share=0.20,
+        sam_note="The ~20% still-independent pool + employed groups "
+                 "that can be lifted out — honestly small",
+        som_share=0.06,
+        som_note="CVAUSA/Novocardia-class platforms in the land-grab "
+                 "phase of a SHRINKING independent pool",
+        horizon_years=5,
+        basis_note="Template defaults from ACC/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -2193,6 +2354,9 @@ TEMPLATES = {
     "eating_disorders": eating_disorders_template,
     "nephrology": nephrology_template,
     "orthotics_prosthetics": orthotics_prosthetics_template,
+    "ophthalmology": ophthalmology_template,
+    "rcm_services": rcm_services_template,
+    "cardiology": cardiology_template,
     "blank": blank_template,
 }
 
