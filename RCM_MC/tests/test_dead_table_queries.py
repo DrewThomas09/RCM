@@ -95,6 +95,49 @@ class DeadTableQueryTests(unittest.TestCase):
                     offenders.append((f, q[:80]))
         self.assertEqual(offenders, [])
 
+    def test_home_page_deadlines_query_runs(self):
+        """Wave-29: deal_deadlines has ``label``, not ``title`` — the
+        home page deadlines panel was always empty."""
+        from rcm_mc.deals.deal_deadlines import _ensure_table as ensure_dl
+        ensure_dl(self.store)
+        with self.store.connect() as con:
+            con.execute(
+                "INSERT INTO deal_deadlines "
+                "(deal_id, label, due_date, created_at) "
+                "VALUES ('d1','QoE call','2026-06-12','2026-06-01')")
+            con.commit()
+        queries = [q for q in _extract_queries(
+            "rcm_mc/ui/chartis/home_page.py") if "deal_deadlines" in q]
+        self.assertTrue(queries)
+        with self.store.connect() as con:
+            rows = con.execute(queries[0], ("2026-06-18",)).fetchall()
+        self.assertEqual(str(rows[0]["title"]), "QoE call")
+
+    def test_settings_ai_cost_queries_run(self):
+        """Wave-29: llm_calls has ``cost_usd``, not cost_usd_estimate."""
+        from rcm_mc.ai.llm_client import _ensure_tables as ensure_llm
+        ensure_llm(self.store)
+        queries = [q for q in _extract_queries(
+            "rcm_mc/ui/settings_ai_page.py") if "llm_calls" in q]
+        self.assertEqual(len(queries), 2)
+        with self.store.connect() as con:
+            for q in queries:
+                con.execute(q).fetchall()  # must not raise
+
+    def test_monitor_snapshot_query_runs(self):
+        """Wave-29: deal_snapshots has no ``snapshot_json`` column."""
+        from rcm_mc.portfolio.portfolio_snapshots import (
+            _ensure_snapshot_table as ensure_snap,
+        )
+        ensure_snap(self.store)
+        queries = [q for q in _extract_queries(
+            "rcm_mc/ui/portfolio_monitor_page.py")
+            if "deal_snapshots" in q]
+        self.assertTrue(queries)
+        with self.store.connect() as con:
+            for q in queries:
+                con.execute(q).fetchall()  # must not raise
+
     def test_unacked_join_excludes_acked_rows(self):
         q = [x for x in _extract_queries("rcm_mc/ui/command_center.py")
              if "alert_history" in x][0]

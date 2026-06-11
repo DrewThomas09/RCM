@@ -2434,3 +2434,25 @@ by the production _ensure_table functions; pins the unacked join
 (ack removes the row); and asserts no UI query references `FROM
 alerts` or deal_health_scores anywhere. 5 audit tests + 50 page
 tests passed.
+
+## W2-127 (2026-06-11) — Phantom-COLUMN audit: 3 more dead queries fixed (wave #29)
+**Found**: extended W2-126's audit from table existence to column-
+level validation (built an in-memory DB from every CREATE TABLE in
+the codebase, ran all 42 UI SELECTs). Three more silent failures:
+- chartis/home_page `_deadlines` selected a phantom `title` column
+  (real: `label`) — the "deadlines within 7 days" panel was ALWAYS
+  empty.
+- settings_ai_page summed phantom `cost_usd_estimate` (real:
+  `cost_usd`, confirmed against the INSERT) in both cost queries —
+  AI spend always showed $0 / no per-model rows.
+- portfolio_monitor selected phantom `snapshot_json` from
+  deal_snapshots (flat columns only) — stage was always blank.
+(`deals.archived_at` and deal_library_companies flagged too but are
+real — added by ALTER-TABLE migrations / dynamic DDL.)
+**Fixed**: `label AS title`; `SUM(cost_usd)`; snapshots select
+deal_id/stage/notes/created_at with the dead JSON-parse branch
+removed.
+**Verify**: 3 new cases in test_dead_table_queries.py — each builds
+the real schema via the production _ensure_table function, runs the
+exact query from the page source, and (for deadlines) asserts the
+aliased title round-trips. 8 audit tests + 24 page tests passed.
