@@ -286,6 +286,118 @@ def _claim_percentile(key: str, claim_val: float,
     return max(0, min(100, pct)), int(len(vals))
 
 
+@dataclass
+class CIMCredibility:
+    """Auditable trust read on a CIM, derived purely from the variance
+    rows — so it cannot drift from the table it summarizes.
+
+    ``score`` (0–100) starts at 100 and is docked per verifiable claim
+    by flag (red −28, yellow −10), with unverifiable claims docked a
+    smaller fixed amount each (−6) because "we cannot check this" is a
+    finding, not a pass. ``overstatement_bias`` is the mean signed
+    variance across verifiable claims: positive means management's
+    numbers run *above* the independent estimate (the inflation
+    pattern a CDD lead is hunting for).
+    """
+    score: int
+    band: str                    # Corroborated | Mixed | Overstated | Unsubstantiated
+    rationale: str
+    n_verifiable: int
+    n_red: int
+    n_yellow: int
+    n_green: int
+    n_unverifiable: int
+    verified_share: float        # green / total claims
+    overstatement_bias: Optional[float]   # mean signed variance, verifiable rows
+    bias_direction: str          # "overstates" | "understates" | "balanced" | "n/a"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+def compute_cim_credibility(result: "CrossCheckResult") -> CIMCredibility:
+    """Synthesize the variance rows into an auditable CIM-trust read.
+
+    Deterministic and reproducible: the same rows always yield the
+    same score, and every component (per-flag deductions, the
+    overstatement bias) is recoverable from the rows the table shows.
+    """
+    rows = result.rows
+    total = len(rows)
+    n_green = sum(1 for r in rows if r.flag == "green")
+    n_yellow = sum(1 for r in rows if r.flag == "yellow")
+    n_red = sum(1 for r in rows if r.flag == "red")
+    n_unver = sum(1 for r in rows if r.flag == "unverifiable")
+    n_verifiable = n_green + n_yellow + n_red
+
+    score = 100 - (28 * n_red) - (10 * n_yellow) - (6 * n_unver)
+    score = max(0, min(100, score))
+
+    verified_share = (n_green / total) if total else 0.0
+
+    # Signed-variance bias across verifiable rows: are claims
+    # systematically above (overstated) or below the public estimate?
+    signed = [r.variance for r in rows if r.variance is not None]
+    if signed:
+        bias = sum(signed) / len(signed)
+        if bias > 0.05:
+            bias_dir = "overstates"
+        elif bias < -0.05:
+            bias_dir = "understates"
+        else:
+            bias_dir = "balanced"
+    else:
+        bias = None
+        bias_dir = "n/a"
+
+    if total == 0:
+        band = "Unsubstantiated"
+        rationale = "No claims entered — nothing to corroborate."
+    elif n_verifiable == 0:
+        band = "Unsubstantiated"
+        rationale = (
+            f"None of the {total} claims could be checked against public "
+            f"data — the CIM rests entirely on figures we cannot "
+            f"independently verify. Treat as unsubstantiated until the "
+            f"data room closes the gap."
+        )
+    elif score >= 80 and n_red == 0:
+        band = "Corroborated"
+        rationale = (
+            f"{n_green}/{total} claims corroborate within 10% of the "
+            f"independent estimate, no red variances. "
+        )
+    elif n_red >= 2 or (n_red >= 1 and bias_dir == "overstates"):
+        band = "Overstated"
+        rationale = (
+            f"{n_red} claim{'s' if n_red != 1 else ''} diverge >25% from "
+            f"public data"
+            + (f", and verifiable claims run {bias*100:+.0f}% above the "
+               f"independent estimate on average — a systematic "
+               f"overstatement pattern. " if bias_dir == "overstates"
+               else ". ")
+        )
+    else:
+        band = "Mixed"
+        rationale = (
+            f"{n_green} corroborated, {n_yellow} soft ( ≤25% variance), "
+            f"{n_red} red, {n_unver} unverifiable. "
+        )
+    if n_unver and band not in ("Unsubstantiated",):
+        rationale += (
+            f"{n_unver} claim{'s' if n_unver != 1 else ''} cannot be "
+            f"verified from public data — press for source in the data room."
+        )
+
+    return CIMCredibility(
+        score=score, band=band, rationale=rationale.strip(),
+        n_verifiable=n_verifiable, n_red=n_red, n_yellow=n_yellow,
+        n_green=n_green, n_unverifiable=n_unver,
+        verified_share=verified_share,
+        overstatement_bias=bias, bias_direction=bias_dir,
+    )
+
+
 def run_crosscheck(
     hcris_df: pd.DataFrame,
     *,

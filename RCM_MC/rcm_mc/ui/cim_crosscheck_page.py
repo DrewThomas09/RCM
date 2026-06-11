@@ -14,7 +14,8 @@ from urllib.parse import urlencode
 
 from ..data.hcris import _get_latest_per_ccn
 from ..diligence.cim_crosscheck import (
-    CLAIM_TYPES, CrossCheckResult, run_crosscheck, variance_memo,
+    CLAIM_TYPES, CrossCheckResult, compute_cim_credibility, run_crosscheck,
+    variance_memo,
 )
 from ._chartis_kit import (
     ExhibitFactory, chartis_shell, ck_basis_badge, ck_kpi_block,
@@ -189,6 +190,77 @@ def _variance_chart_svg(result: "CrossCheckResult",
     return "".join(parts) + note
 
 
+_CRED_TONE = {
+    "Corroborated": "#0a8a5f",
+    "Mixed": "#b8732a",
+    "Overstated": "#b5321e",
+    "Unsubstantiated": "#7a8699",
+}
+
+
+def _credibility_section(cred) -> str:
+    """The auditable CIM-trust read: a banded score, the inflation-
+    direction signal, and a one-line rationale — every number
+    recoverable from the variance rows below it."""
+    tone = _CRED_TONE.get(cred.band, "#7a8699")
+    # Bias chip — the CDD-relevant direction signal.
+    if cred.bias_direction == "overstates":
+        bias_html = (
+            f'<span style="color:#b5321e;font-weight:600;">CLAIMS RUN '
+            f'{cred.overstatement_bias*100:+.0f}% vs PUBLIC (overstatement '
+            f'pattern)</span>')
+    elif cred.bias_direction == "understates":
+        bias_html = (
+            f'<span style="color:#0a8a5f;font-weight:600;">CLAIMS RUN '
+            f'{cred.overstatement_bias*100:+.0f}% vs PUBLIC (conservative)'
+            f'</span>')
+    elif cred.bias_direction == "balanced":
+        bias_html = (
+            '<span style="color:#7a8699;">verifiable claims balanced '
+            'around the public estimate</span>')
+    else:
+        bias_html = '<span style="color:#7a8699;">no verifiable claims to '\
+                    'measure bias</span>'
+    # Composition mini-bar of the four flag classes.
+    total = (cred.n_green + cred.n_yellow + cred.n_red + cred.n_unverifiable) or 1
+    seg = lambda n, col: (
+        f'<div style="width:{n/total*100:.0f}%;background:{col};"></div>'
+        if n else "")
+    bar = (
+        '<div style="display:flex;height:9px;border-radius:3px;'
+        'overflow:hidden;margin-top:10px;">'
+        + seg(cred.n_green, "#0a8a5f") + seg(cred.n_yellow, "#b8732a")
+        + seg(cred.n_red, "#b5321e") + seg(cred.n_unverifiable, "#cfc7b5")
+        + '</div>'
+        '<div style="display:flex;gap:14px;font-size:10px;'
+        'color:var(--sc-text-dim,#6a7480);margin-top:4px;flex-wrap:wrap;">'
+        f'<span><b style="color:#0a8a5f;">{cred.n_green}</b> corroborated</span>'
+        f'<span><b style="color:#b8732a;">{cred.n_yellow}</b> soft</span>'
+        f'<span><b style="color:#b5321e;">{cred.n_red}</b> red</span>'
+        f'<span><b style="color:#7a8699;">{cred.n_unverifiable}</b> '
+        f'unverifiable</span></div>'
+    )
+    return ck_panel(
+        '<div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;">'
+        f'<span style="font-family:var(--sc-mono);font-size:30px;'
+        f'font-weight:700;color:{tone};line-height:1;">{cred.score}'
+        f'<span style="font-size:13px;opacity:.6;">/100</span></span>'
+        f'<span style="font-family:var(--sc-mono);font-size:13px;'
+        f'font-weight:700;letter-spacing:0.06em;color:{tone};text-transform:'
+        f'uppercase;">{_html.escape(cred.band)}</span>'
+        f'<span style="margin-left:auto;font-size:10.5px;">{bias_html}</span>'
+        '</div>'
+        f'<p class="ck-section-body" style="font-size:12px;margin:8px 0 0;'
+        f'line-height:1.6;">{_html.escape(cred.rationale)}</p>'
+        + bar
+        + '<p class="ck-section-body" style="font-size:10px;margin:8px 0 0;'
+        'color:var(--sc-text-dim,#6a7480);">Score = 100 − 28·red − 10·yellow '
+        '− 6·unverifiable (floored at 0); bias = mean signed variance across '
+        'verifiable claims. Both recoverable from the rows below.</p>',
+        title="CIM credibility index",
+    )
+
+
 def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
     qs = qs or {}
     state = (qs.get("state") or [""])[0].strip().upper()[:2]
@@ -321,7 +393,8 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
         # print-to-PDF drops straight into the CDD readout deck.
         xf = ExhibitFactory(deal_label="CIM cross-check",
                             source_default=ck_source_link("CMS HCRIS"))
-        results_html = kpis + xf.wrap(
+        cred = compute_cim_credibility(result)
+        results_html = _credibility_section(cred) + kpis + xf.wrap(
             variance_chart
             + '<div style="overflow-x:auto;"><table class="ck-data-table" '
             'style="width:100%;border-collapse:collapse;">'
