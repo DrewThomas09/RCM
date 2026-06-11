@@ -4464,6 +4464,179 @@ def roi_services_template() -> TamSamModel:
     )
 
 
+
+def virtual_primary_care_template() -> TamSamModel:
+    """Virtual-first primary care sizing — the post-telehealth-boom
+    survivor model."""
+    return TamSamModel(
+        name="Virtual primary care · virtual-first market",
+        chain=[
+            DriverStep("US adults in employer/plan virtual-first "
+                       "offerings", 35_000_000, op="base",
+                       unit="eligible adults",
+                       source="employer-benefit survey penetration "
+                              "(virtual-first options offered)"),
+            DriverStep("% actively engaging / yr", 0.15, op="rate",
+                       unit="of eligible",
+                       source="engagement rates — the industry's "
+                              "defining problem: offered ≠ used"),
+            DriverStep("Avg revenue per engaged member / yr", 420,
+                       op="price", unit="$/member/yr",
+                       source="PMPM + visit-fee blends"),
+        ],
+        segments=[
+            Segment("Employer-sponsored virtual-first", 0.50, None,
+                    note="the buyer with the ROI math",
+                    growth_pct=7.0),
+            Segment("Payer-embedded (MA/commercial)", 0.30, None,
+                    growth_pct=8.0),
+            Segment("DTC subscription", 0.20, None,
+                    note="the churn-heavy layer — CAC economics "
+                         "rarely close", growth_pct=2.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("PCP shortage displacement", 4.0,
+                         "no in-person appointments available — "
+                         "virtual absorbs the overflow"),
+            GrowthDriver("Employer cost-containment", 2.5,
+                         "virtual-first plan designs steer"),
+            GrowthDriver("Engagement gap", -3.0,
+                         "15% engagement on bought eligibility — "
+                         "the post-boom reckoning; Teladoc's "
+                         "impairment is the case study, priced"),
+            GrowthDriver("Reimbursement parity sunset risk", -1.5,
+                         "telehealth payment flexibilities need "
+                         "renewal cycles"),
+        ],
+        sam_share=0.50,
+        sam_note="Employer + payer channels (DTC excluded — the "
+                 "economics don't close)",
+        som_share=0.04,
+        som_note="Post-boom consolidation: engagement, not "
+                 "eligibility, is the asset",
+        horizon_years=5,
+        basis_note="Template defaults from employer-survey public "
+                   "data — replace with engagement data before IC "
+                   "use. NOTE: the engagement-gap driver encodes the "
+                   "post-2021 telehealth reckoning.",
+    )
+
+
+def rpm_template() -> TamSamModel:
+    """Remote patient monitoring sizing — the CPT-code-created
+    niche."""
+    return TamSamModel(
+        name="RPM · remote patient monitoring market",
+        chain=[
+            DriverStep("US chronic-disease patients RPM-appropriate",
+                       60_000_000, op="base", unit="patients",
+                       source="HTN + CHF + diabetes prevalence "
+                              "(monitorable conditions)"),
+            DriverStep("% enrolled in billed RPM / yr", 0.03,
+                       op="rate", unit="of appropriate",
+                       source="CMS claims — penetration is TINY; "
+                              "the runway is the thesis"),
+            DriverStep("Avg billed revenue per enrolled / yr", 1_100,
+                       op="price", unit="$/patient/yr",
+                       source="CPT 99453/4/7/8 monthly cycles at "
+                              "Medicare rates"),
+        ],
+        segments=[
+            Segment("Cardiology (HTN/CHF)", 0.40, None,
+                    note="the anchor specialty", growth_pct=10.0),
+            Segment("Diabetes / CGM-linked", 0.30, None,
+                    note="cross-links the DME/CGM wave",
+                    growth_pct=12.0),
+            Segment("Post-acute / transitional", 0.20, None,
+                    growth_pct=8.0),
+            Segment("Behavioral / other", 0.10, None, growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Penetration runway", 6.0,
+                         "3% of the appropriate population — the "
+                         "early curve"),
+            GrowthDriver("VBC alignment", 2.5,
+                         "risk-bearing groups fund monitoring that "
+                         "avoids admissions"),
+            GrowthDriver("Device cost deflation", 1.5,
+                         "cellular-connected devices commoditize"),
+            GrowthDriver("OIG / billing-integrity scrutiny", -3.0,
+                         "RPM is on the OIG work plan — enrollment "
+                         "mills poisoned the well; compliance IS "
+                         "the moat, priced"),
+            GrowthDriver("Code-rate rebasing risk", -1.5,
+                         "CMS can reprice the CPT family any rule "
+                         "cycle — the code-created-market risk"),
+        ],
+        sam_share=0.55,
+        sam_note="Specialty + VBC-aligned programs (enrollment-mill "
+                 "models excluded by design)",
+        som_share=0.04,
+        som_note="A fragmented early market — no platform owns it",
+        horizon_years=5,
+        basis_note="Template defaults from CMS claims + prevalence "
+                   "public data — replace with engagement data before "
+                   "IC use. A CODE-CREATED market: the CPT family is "
+                   "both the TAM and the risk.",
+    )
+
+
+def care_navigation_template() -> TamSamModel:
+    """Care navigation / advocacy sizing — the employer-benefits
+    services niche."""
+    return TamSamModel(
+        name="Care navigation · advocacy services market",
+        chain=[
+            DriverStep("US covered lives in self-funded employer "
+                       "plans", 110_000_000, op="base", unit="lives",
+                       source="KFF employer-benefits survey"),
+            DriverStep("% with navigation/advocacy services", 0.25,
+                       op="rate", unit="of lives",
+                       source="benefit-consultant adoption surveys"),
+            DriverStep("Avg PEPM × 12 per covered life", 36,
+                       op="price", unit="$/life/yr",
+                       source="navigation PEPM benchmarks ($2-5 "
+                              "PEPM, engagement-tiered)"),
+        ],
+        segments=[
+            Segment("Full-replacement navigation (Quantum class)",
+                    0.45, None, note="the deep model — owns the "
+                         "member experience", growth_pct=8.0),
+            Segment("Point-solution navigation (MSK, cancer, "
+                    "fertility)", 0.35, None,
+                    note="the category-specific layer — vendor "
+                         "fatigue is the buyer pushback",
+                    growth_pct=6.0),
+            Segment("Expert-opinion / second-opinion", 0.20, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Employer cost desperation", 4.0,
+                         "trend above 7% makes navigation ROI "
+                         "stories sellable"),
+            GrowthDriver("Point-solution consolidation", 2.0,
+                         "buyers want fewer vendors — platforms "
+                         "absorb point solutions"),
+            GrowthDriver("ROI-proof pressure", -2.5,
+                         "navigation ROI claims are under actuarial "
+                         "audit — the category must prove savings "
+                         "or churn, shown as one"),
+            GrowthDriver("Carrier-embedded substitution", -1.5,
+                         "carriers bundle 'free' navigation to "
+                         "block independents"),
+        ],
+        sam_share=0.55,
+        sam_note="Self-funded mid-market + jumbo accounts",
+        som_share=0.05,
+        som_note="Quantum/Included/Transcarent class — the "
+                 "consolidation wave is underway",
+        horizon_years=5,
+        basis_note="Template defaults from KFF + benefits-survey "
+                   "public data — replace with engagement data before "
+                   "IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -4569,6 +4742,9 @@ TEMPLATES = {
     "air_medical": air_medical_template,
     "pediatric_home_health": pediatric_home_health_template,
     "roi_services": roi_services_template,
+    "virtual_primary_care": virtual_primary_care_template,
+    "rpm": rpm_template,
+    "care_navigation": care_navigation_template,
     "blank": blank_template,
 }
 
