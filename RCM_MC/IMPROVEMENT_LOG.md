@@ -1153,6 +1153,29 @@ Esc clears. Pure client-side, no new deps.
 + blobs present, v3/v5 stay delisted, no third-party branding); tools
 showcase suite 9 passed.
 
+## W2-48 — federated /search: the find-anything box (USER-REPORTED, 05:50Z)
+**Found by**: user — "the search bar still isn't even functional cause I
+look up hospital and it renders nothing… think about the search acting
+like a sharepoint for all the pages."
+**Root cause**: /search only scanned portfolio deals + notes — the 6,123-
+hospital HCRIS universe, the tools catalogue, and the public deals corpus
+were all unsearchable from the topbar box.
+**Fixed**: federated search across four universes, each hit linking to its
+full surface:
+  - HOSPITALS — HCRIS by name/CCN/city/state → the facility's full X-Ray
+    profile (top 12 + "all in Target Screener →" overflow);
+  - TOOLS & PAGES — the surface catalogue by label/route → the page;
+  - MARKET DEALS — public deals corpus by target/buyer → Deal Search
+    scoped to the query (top 8 + overflow link);
+  - PORTFOLIO — deal ids/names/stages + full-text notes (as before).
+  KPI strip shows per-universe counts; the empty state names what's
+  searchable; every universe is wrapped fail-safe (search never 500s).
+**Verify**: live server — "hospital"→12 hospital hits + tools + corpus;
+"stanford"→3 X-Ray links; "bridge"→Bridge Audit; "kkr"→market deals;
+~25ms warm. New test_federated_search (6: repro query, named hospital,
+tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
+pin; 4+6 passed, 198 passed across search-adjacent suites.
+
 ## W2-44 — Find Comps EV column rolls to $B (04:05Z)
 **Found by**: global render-audit for billion-scale "$X,XXXM" leftovers
 across the research surfaces (find-comps/verified-deals/deal-search/
