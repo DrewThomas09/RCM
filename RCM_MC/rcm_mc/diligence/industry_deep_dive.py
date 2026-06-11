@@ -1612,6 +1612,36 @@ def transplant_services_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def retail_clinics_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="retail_clinics",
+        sector_tokens=("retail_clinics", "retail_health",
+                       "convenience_care"),
+        note=("The estates are pharmacy-owned — geography omitted "
+              "rather than fabricated. The trade history here is a "
+              "failure autopsy: read it as one."),
+    )
+
+
+def surgical_assist_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="surgical_assist",
+        sector_tokens=("surgical_assist", "first_assist"),
+        note=("A micro-niche with no public roster — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def hit_consulting_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="hit_consulting",
+        sector_tokens=("hit_consulting", "health_it", "consulting"),
+        note=("Delivered nationally — the health-IT trade history "
+              "below is the structure read."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1686,6 +1716,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "endocrinology_obesity": endocrinology_obesity_deep_dive,
     "pulmonology": pulmonology_deep_dive,
     "transplant_services": transplant_services_deep_dive,
+    "retail_clinics": retail_clinics_deep_dive,
+    "surgical_assist": surgical_assist_deep_dive,
+    "hit_consulting": hit_consulting_deep_dive,
 }
 
 
