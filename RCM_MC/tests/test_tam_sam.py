@@ -398,3 +398,39 @@ class FourMoreVerticalsTests(unittest.TestCase):
             data = tam_sam_xlsx({"template": [key]})
             z = zipfile.ZipFile(io.BytesIO(data))
             self.assertIsNone(z.testzip(), key)
+
+
+class SensitivityTornadoTests(unittest.TestCase):
+    def test_sensitivity_math(self):
+        from rcm_mc.diligence.tam_sam import (
+            fertility_ivf_template, sensitivity,
+        )
+        rows = sensitivity(fertility_ivf_template())
+        self.assertEqual(len(rows), 4)            # one bar per driver
+        base = 3_660_000 * 0.023 * 2.5 * 20_000
+        for r in rows:
+            self.assertLess(r["tam_low"], base)
+            self.assertGreater(r["tam_high"], base)
+        # Sorted by impact descending.
+        self.assertGreaterEqual(rows[0]["impact"], rows[-1]["impact"])
+
+    def test_rate_clamps_at_100pct(self):
+        # A 95% rate swung +20% must clamp at 100%, not reach 114%.
+        from rcm_mc.diligence.tam_sam import (
+            DriverStep, TamSamModel, sensitivity,
+        )
+        m = TamSamModel(name="t", chain=[
+            DriverStep("base", 100.0, op="base"),
+            DriverStep("rate", 0.95, op="rate"),
+            DriverStep("price", 10.0, op="price"),
+        ])
+        rows = sensitivity(m)
+        rate_row = next(r for r in rows if r["name"] == "rate")
+        self.assertAlmostEqual(rate_row["tam_high"], 100 * 1.0 * 10,
+                               places=6)
+
+    def test_tornado_renders(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["snf"]})
+        self.assertIn("Driver sensitivity", h)
+        self.assertIn('aria-label="Driver sensitivity tornado"', h)

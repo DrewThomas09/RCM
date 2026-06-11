@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-59 — ±20% driver-sensitivity tornado on every build (11:55Z)
+**Professional-modeling layer**: sensitivity(model) swings each chain
+driver ±20% (rates clamped at 100%) holding the rest at base, sorted by
+TAM impact — the classic IC tornado answering "which assumption moves
+the answer". Rendered as an SVG low–high bar panel with the dashed
+base-TAM line and per-bar ranges, on all 13 industry templates.
+**Verify**: math pinned (one bar per driver, low<base<high, sorted by
+impact, 95%-rate +20% clamps at 100% not 114%); renders on every
+template; test_tam_sam 36 passed. Screenshot delivered.
+
 ## W2-58 — industries #9–12: physician groups, dental, oncology, urgent care (11:30Z)
 **Sprint continuation** — four more PE verticals, all chains anchored to
 named public sources, all with honest headwinds:

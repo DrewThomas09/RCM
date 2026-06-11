@@ -844,3 +844,39 @@ def compute(model: TamSamModel) -> Dict[str, Any]:
         "horizon_years": model.horizon_years,
         "basis_note": model.basis_note,
     }
+
+
+def sensitivity(model: TamSamModel, *, swing: float = 0.20) -> List[Dict[str, Any]]:
+    """Tornado data: TAM impact of swinging each chain driver ±swing
+    (rates clamped to [0,1]). Sorted by absolute impact — the classic
+    IC sensitivity read: which assumption moves the answer."""
+    base = compute(model)["tam"]
+    out: List[Dict[str, Any]] = []
+    for i, st in enumerate(model.chain):
+        lo_m = TamSamModel(name=model.name,
+                           chain=[DriverStep(s.name, s.value, op=s.op)
+                                  for s in model.chain],
+                           sam_share=model.sam_share,
+                           som_share=model.som_share)
+        hi_m = TamSamModel(name=model.name,
+                           chain=[DriverStep(s.name, s.value, op=s.op)
+                                  for s in model.chain],
+                           sam_share=model.sam_share,
+                           som_share=model.som_share)
+        lo_v = st.value * (1 - swing)
+        hi_v = st.value * (1 + swing)
+        if st.op == "rate":
+            lo_v = max(0.0, min(1.0, lo_v))
+            hi_v = max(0.0, min(1.0, hi_v))
+        lo_m.chain[i].value = lo_v
+        hi_m.chain[i].value = hi_v
+        tam_lo = compute(lo_m)["tam"]
+        tam_hi = compute(hi_m)["tam"]
+        out.append({
+            "name": st.name,
+            "tam_low": tam_lo,
+            "tam_high": tam_hi,
+            "impact": abs(tam_hi - tam_lo),
+        })
+    out.sort(key=lambda r: -r["impact"])
+    return out
