@@ -14,6 +14,92 @@ from ._chartis_kit import (
 from .models_page import _model_nav
 from .brand import PALETTE
 
+_SEV_TONES = {"high": "#b5321e", "medium": "#b8732a", "low": "#7a8699"}
+
+
+def _driver_pareto_svg(drivers: List[Dict[str, Any]]) -> str:
+    """Pareto chart of denial root causes by annual dollar impact.
+
+    Horizontal bars sorted largest-first, toned by severity, with a
+    running cumulative-share label per bar so the reader sees how
+    concentrated the recovery opportunity is (the classic 80/20 read).
+    Returns "" when there is nothing real to draw.
+    """
+    rows = []
+    for d in drivers:
+        impact = float(d.get("annual_impact", d.get("impact", 0)) or 0)
+        if impact <= 0:
+            continue
+        rows.append({
+            "name": str(d.get("driver", d.get("name", ""))),
+            "impact": impact,
+            "severity": str(d.get("severity", "medium")).lower(),
+        })
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: r["impact"], reverse=True)
+    total = sum(r["impact"] for r in rows)
+    max_impact = rows[0]["impact"]
+
+    label_w, bar_w_max, right_w = 190, 330, 170
+    row_h, gap, pad_top, pad_bot = 22, 8, 8, 8
+    width = label_w + bar_w_max + right_w + 20
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Denial root causes ranked by annual dollar impact">'
+    ]
+    cum = 0.0
+    for i, r in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        cum += r["impact"]
+        cum_pct = 100.0 * cum / total
+        w = max(2.0, bar_w_max * r["impact"] / max_impact)
+        tone = _SEV_TONES.get(r["severity"], "#7a8699")
+        name = r["name"]
+        if len(name) > 26:
+            name = name[:25] + "…"
+        ty = y + row_h / 2 + 4
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.0f}" text-anchor="end" '
+            f'font-size="11" fill="#3b4654">{html.escape(name)}</text>'
+        )
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{w:.1f}" height="{row_h}" '
+            f'rx="3" fill="{tone}" fill-opacity="0.85"/>'
+        )
+        impact_s = f"${r['impact'] / 1e6:.1f}M"
+        parts.append(
+            f'<text x="{label_w + w + 6:.1f}" y="{ty:.0f}" font-size="11" '
+            f'font-weight="600" fill="#0b2341">{impact_s}</text>'
+        )
+        parts.append(
+            f'<text x="{width - 10}" y="{ty:.0f}" text-anchor="end" '
+            f'font-size="10.5" fill="#7a8699">cum {cum_pct:.0f}%</text>'
+        )
+    parts.append("</svg>")
+    legend = (
+        '<div style="display:flex;gap:14px;font-size:10.5px;'
+        f'color:{PALETTE["text_secondary"]};margin-top:4px;">'
+        + "".join(
+            f'<span><span style="display:inline-block;width:9px;height:9px;'
+            f'border-radius:2px;background:{tone};margin-right:4px;"></span>'
+            f'{label}</span>'
+            for label, tone in (
+                ("High severity", _SEV_TONES["high"]),
+                ("Medium", _SEV_TONES["medium"]),
+                ("Low", _SEV_TONES["low"]),
+            )
+        )
+        + '<span style="margin-left:auto;">cum % = running share of total impact</span></div>'
+    )
+    return (
+        '<div class="ck-driver-pareto" style="margin:4px 0 14px;">'
+        + "".join(parts) + legend + "</div>"
+    )
+
 
 def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -> str:
     """Render denial driver analysis as a browser page."""
@@ -124,11 +210,13 @@ def render_denial_page(deal_id: str, deal_name: str, analysis: Dict[str, Any]) -
             f'</tr>'
         )
 
+    pareto = _driver_pareto_svg(drivers)
     drivers_section = (
         f'<div class="cad-card">'
         f'<h2>Denial Root Causes</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:10px;">'
         f'Decomposition of denial rate into root causes, sized by annual dollar impact.</p>'
+        f'{pareto}'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Driver</th><th>Contribution</th><th>Annual Impact</th>'
         f'<th>Severity</th><th>Magnitude</th>'
