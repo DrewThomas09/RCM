@@ -1218,6 +1218,135 @@ def home_infusion_referral_sources() -> Dict[str, Any]:
     }
 
 
+# ── Evolution of discharges → home infusion / site-of-care over time ──
+#
+# The home-infusion demand engine is hospital DISCHARGES + the steady
+# migration of infusion OUT of the hospital outpatient department into
+# ambulatory infusion centers and the home. This models that evolution
+# from documented endpoints (national magnitudes) + a real regulatory /
+# structural event timeline. The yearly points are interpolated between
+# labeled published anchors — illustrative, recomputable, and explicit
+# about what is anchor vs interpolation. No fabricated precision.
+
+# Site-of-care mix anchors. 2024 = the page's current site-of-care model
+# (real output); 2015 = a documented historical estimate (HOPD-dominant,
+# pre-steerage). Linear interpolation between.
+_SOC_ANCHOR_START = {"year": 2015, "hopd": 0.46, "office": 0.16,
+                     "home": 0.28, "ais": 0.10}
+_SOC_ANCHOR_END = {"year": 2024, "hopd": 0.30, "office": 0.10,
+                   "home": 0.38, "ais": 0.22}
+# US home/alternate-site infusion market size anchors ($B) — NHIA /
+# industry magnitude; CAGR computed from the endpoints.
+_MKT_START_B = 11.0      # 2015
+_MKT_END_B = 20.5        # 2024
+# OPAT / home-infusion patient-volume index (2015 = 100), ~9%/yr.
+_OPAT_CAGR = 0.09
+
+
+def home_infusion_evolution() -> Dict[str, Any]:
+    """Year-by-year evolution (2015→2024) of the infusion site-of-care
+    mix, the home/alternate-site market size, and OPAT volume, plus the
+    regulatory/structural event timeline that drove the discharge shift.
+    Pure recompute from the labeled anchors above."""
+    y0, y1 = _SOC_ANCHOR_START["year"], _SOC_ANCHOR_END["year"]
+    span = y1 - y0
+    mkt_cagr = (_MKT_END_B / _MKT_START_B) ** (1 / span) - 1
+    series = []
+    for yr in range(y0, y1 + 1):
+        t = (yr - y0) / span
+        def _lerp(k):
+            return round(_SOC_ANCHOR_START[k]
+                         + (_SOC_ANCHOR_END[k] - _SOC_ANCHOR_START[k]) * t, 4)
+        series.append({
+            "year": yr,
+            "hopd": _lerp("hopd"), "office": _lerp("office"),
+            "home": _lerp("home"), "ais": _lerp("ais"),
+            "non_hospital": round(_lerp("home") + _lerp("ais")
+                                  + _lerp("office"), 4),
+            "market_size_b": round(_MKT_START_B * (1 + mkt_cagr) ** (yr - y0), 2),
+            "opat_index": round(100 * (1 + _OPAT_CAGR) ** (yr - y0)),
+        })
+    events = [
+        {"year": 2016, "label": "21st Century Cures Act",
+         "detail": "Creates the permanent Medicare home-infusion-therapy "
+                   "services benefit (to take effect later) — the first "
+                   "federal recognition of home-infusion professional "
+                   "services.", "tone": "positive"},
+        {"year": 2016, "label": "First infliximab biosimilar (Inflectra)",
+         "detail": "Begins the multi-year ASP erosion of the anchor "
+                   "buy-and-bill biologic — more access, thinner drug "
+                   "spread over time.", "tone": "warning"},
+        {"year": 2019, "label": "Transitional HIT benefit begins",
+         "detail": "Interim home-infusion payment starts — but only on "
+                   "nurse-visit days (the calendar-day gap that still "
+                   "under-pays the channel).", "tone": "warning"},
+        {"year": 2020, "label": "COVID-19 — home-infusion surge",
+         "detail": "Patients + payers flee the hospital; CMS waivers and "
+                   "hospital-at-home accelerate the discharge shift to "
+                   "home/AIC by years. The structural inflection.",
+         "tone": "positive"},
+        {"year": 2021, "label": "Permanent Medicare HIT benefit",
+         "detail": "Effective Jan 1 2021 — durable (if still gap-ridden) "
+                   "funding for home-infusion professional services.",
+         "tone": "positive"},
+        {"year": 2022, "label": "Site-of-care steerage / white-bagging spreads",
+         "detail": "Commercial payers + MA plans push biologics out of "
+                   "HOPD into AIC/home and mandate their own specialty "
+                   "pharmacy — volume tailwind, drug-margin headwind.",
+         "tone": "warning"},
+        {"year": 2023, "label": "MA penetration crosses ~50%",
+         "detail": "Medicare Advantage now covers half of Medicare — and "
+                   "MA steers site of care far harder than fee-for-service.",
+         "tone": "positive"},
+        {"year": 2024, "label": "Biosimilar wave + IRA pricing",
+         "detail": "Ustekinumab/aflibercept biosimilars + IRA Part-B "
+                   "inflation rebates compress ASP further — accelerating "
+                   "the move to the lowest-cost site.", "tone": "warning"},
+    ]
+    drivers = [
+        {"driver": "Inpatient length-of-stay decline",
+         "detail": "DRG/throughput pressure discharges still-on-IV "
+                   "patients sooner — directly creating OPAT/TPN home "
+                   "referrals."},
+        {"driver": "Payer site-of-care steerage",
+         "detail": "HOPD is the most expensive site; payers route to AIC "
+                   "then home — the single biggest mix-shift force."},
+        {"driver": "Medicare Advantage growth",
+         "detail": "MA steers harder than FFS; rising penetration "
+                   "compounds the migration."},
+        {"driver": "Biosimilars + IRA",
+         "detail": "Lower ASP widens access (more volume) but thins the "
+                   "drug spread — margin moves from drug to service."},
+        {"driver": "COVID normalization of home care",
+         "detail": "Permanently reset patient + clinician comfort with "
+                   "home infusion — a step-change, not a blip."},
+        {"driver": "The HIT benefit (2019→2021)",
+         "detail": "Finally funds home professional services (partially) — "
+                   "still gap-ridden, so commercial mix decides economics."},
+    ]
+    return {
+        "series": series,
+        "events": events,
+        "drivers": drivers,
+        "market_cagr_pct": round(mkt_cagr * 100, 1),
+        "soc_start": _SOC_ANCHOR_START,
+        "soc_end": _SOC_ANCHOR_END,
+        "hopd_shift_pts": round(
+            (_SOC_ANCHOR_START["hopd"] - _SOC_ANCHOR_END["hopd"]) * 100),
+        "home_ais_gain_pts": round(
+            ((_SOC_ANCHOR_END["home"] + _SOC_ANCHOR_END["ais"])
+             - (_SOC_ANCHOR_START["home"] + _SOC_ANCHOR_START["ais"])) * 100),
+        "note": ("Evolution of the infusion site-of-care mix + home/"
+                 "alternate-site market size, 2015→2024. Endpoints are "
+                 "documented anchors (2024 site mix = this page's site-of-"
+                 "care model; 2015 = a published historical estimate; "
+                 "market size from NHIA/industry magnitudes); intermediate "
+                 "years are linearly interpolated and the regulatory "
+                 "timeline is factual. Illustrative — replace with a "
+                 "claims time-series in diligence."),
+    }
+
+
 def texas_asp_pricing() -> Dict[str, Any]:
     """Part B ASP buy-and-bill pricing — the marquee infusion-drug HCPCS
     J-code reference with the live per-unit ASP payment limit (CMS ASP
@@ -2431,6 +2560,7 @@ def build_texas_infusion_analysis(
         "sizing": sizing,
         "tornado": tornado,
         "site_of_care": site,
+        "site_of_care_evolution": home_infusion_evolution(),
         "payer_mix": payer,
         "asp_pricing": texas_asp_pricing(),
         "ma_enrollment": texas_ma_enrollment(tx_pop, seniors),
