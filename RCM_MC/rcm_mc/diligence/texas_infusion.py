@@ -460,20 +460,29 @@ def build_texas_metro_deepdive(
                 * (0.60 * senior_share + 0.40 * pop_share_in_metro))
             est_ais = max(0, round(
                 US_AIS_CENTERS * (pop / US_POPULATION_2024)))
+            north = _NORTH_SUBURBS.get(metro["cbsa_code"], {})
+            is_north = f in north.get("counties", {})
+            illness = county_illness_burden(pop)
             suburbs.append({
                 "county": (d.get("county_name") or "")
                           .replace(" County", ""),
+                "county_fips": f,
+                "region": "North suburb" if is_north else "",
+                "north_label": north.get("counties", {}).get(f, ""),
                 "population": round(pop),
                 "pct_age_65_plus": s65,
                 "seniors": round(seniors),
                 "pct_rural": float(d.get("pct_rural") or 0),
                 "uninsured_rate": float(d.get("uninsured_rate") or 0),
+                "median_household_income":
+                    float(d.get("median_household_income") or 0),
                 "infusion_patients": patients,
                 "est_ais_centers": est_ais,
                 # White-space: patients per AIS chair-cluster. High =
                 # underserved (demand with thin local capacity).
                 "patients_per_ais": (round(patients / est_ais)
                                      if est_ais else None),
+                "illness_burden": illness,
             })
     except Exception:  # noqa: BLE001 — crosswalk is best-effort
         suburbs = []
@@ -512,7 +521,25 @@ def build_texas_metro_deepdive(
         "whitespace_counties": whitespace,
         "operators": operators,
         "specialty": specialty,
+        "north_suburbs": _NORTH_SUBURBS.get(metro["cbsa_code"], {})
+                         .get("label", ""),
+        # Metro-level illness burden = sum of member-county estimates.
+        "illness_burden": _aggregate_illness(suburbs),
     }
+
+
+def _aggregate_illness(suburbs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Sum the per-county infusion-relevant illness estimates to the
+    metro level (real population-scaled), keyed by condition."""
+    agg: Dict[str, Dict[str, Any]] = {}
+    for s in suburbs:
+        for ib in s.get("illness_burden", []):
+            row = agg.setdefault(ib["condition"], {
+                "condition": ib["condition"], "therapy": ib["therapy"],
+                "channel": ib["channel"], "rate_pct": ib["rate_pct"],
+                "estimated_patients": 0, "source": ib["source"]})
+            row["estimated_patients"] += ib["estimated_patients"]
+    return sorted(agg.values(), key=lambda r: -r["estimated_patients"])
 
 
 def channel_economics() -> List[Dict[str, Any]]:
@@ -776,6 +803,253 @@ def rcm_playbook() -> Dict[str, Any]:
     }
 
 
+#: North-suburb counties + marquee cities per metro — the affluent,
+#: fast-growing, commercially-insured rings that are prime AIC ground.
+#: County FIPS from the CBSA crosswalk; cities are the population
+#: centers within each county.
+_NORTH_SUBURBS = {
+    "19100": {  # Dallas-Fort Worth-Arlington
+        "counties": {"48085": "Collin (Plano · Frisco · McKinney · Allen)",
+                     "48121": "Denton (Denton · Lewisville · Flower Mound)"},
+        "label": "North DFW — Collin & Denton (Plano/Frisco/McKinney/"
+                 "Denton): the affluent, fast-growing, commercially-"
+                 "insured corridor; the prime AIC ring."},
+    "26420": {  # Houston
+        "counties": {"48339": "Montgomery (The Woodlands · Conroe · "
+                              "Spring)"},
+        "label": "North Houston — Montgomery (The Woodlands/Conroe): "
+                 "high-income master-planned growth north of Harris; "
+                 "strong commercial mix."},
+    "12420": {  # Austin
+        "counties": {"48491": "Williamson (Round Rock · Cedar Park · "
+                              "Georgetown · Leander)"},
+        "label": "North Austin — Williamson (Round Rock/Cedar Park/"
+                 "Georgetown): the fastest-growing ring, tech-employer "
+                 "commercial insured."},
+    "41700": {  # San Antonio
+        "counties": {"48091": "Comal (New Braunfels) + north Bexar "
+                              "(Stone Oak)"},
+        "label": "North San Antonio — Comal/New Braunfels + north Bexar "
+                 "(Stone Oak): the affluent growth edge."},
+}
+
+
+#: Infusion-relevant chronic conditions → the therapies they drive and
+#: the channel that serves them. Prevalence rates come from CDC/CMS
+#: STATE-level public data (same across TX counties); the per-county
+#: BURDEN (estimated affected adults) scales by REAL county population.
+_CONDITION_THERAPY = [
+    {"condition": "Rheumatoid Arthritis", "rate_pct": 6.5,
+     "therapy": "Immunology biologics (infliximab, IVIG-adjacent)",
+     "channel": "AIC + home", "source": "CMS chronic-conditions (TX)"},
+    {"condition": "Cancer", "rate_pct": 9.1,
+     "therapy": "Oncology infusion + supportive (IV chemo, hydration)",
+     "channel": "AIC / HOPD", "source": "CMS chronic-conditions (TX)"},
+    {"condition": "Chronic Kidney Disease", "rate_pct": 26.7,
+     "therapy": "IV iron / anemia management",
+     "channel": "AIC + home", "source": "CMS chronic-conditions (TX)"},
+]
+
+
+def county_illness_burden(population: float) -> List[Dict[str, Any]]:
+    """Estimated infusion-relevant illness burden for a county =
+    REAL county adult population × the TX state prevalence rate (CDC/CMS
+    public data). The rate is state-level (does not vary by county), so
+    the variation across suburbs comes from real population — labeled as
+    a population-scaled estimate, not invented county differences.
+
+    Uses an adult-population proxy (~76% of total, Census age structure)
+    since the chronic-condition rates are adult/Medicare prevalences."""
+    adults = population * 0.76
+    out = []
+    for c in _CONDITION_THERAPY:
+        out.append({
+            "condition": c["condition"],
+            "therapy": c["therapy"],
+            "channel": c["channel"],
+            "rate_pct": c["rate_pct"],
+            "estimated_patients": round(adults * c["rate_pct"] / 100.0),
+            "source": c["source"],
+        })
+    return out
+
+
+def infusion_drug_supply() -> Dict[str, Any]:
+    """Real FDA drug-shortage status for the infusion-relevant drug
+    classes, from the vendored openFDA snapshot. The honest read: the
+    core specialty biologics are NOT FDA-shortage-listed (stable), while
+    OPAT anti-infectives, IV iron, and TPN/fluid components carry
+    FDA-tracked supply activity. No synthetic data."""
+    from ..data.drug_shortage_data import (
+        current_shortages, drug_shortage_summary, load_drug_shortages,
+    )
+    summary = drug_shortage_summary()
+    df = load_drug_shortages()
+    g = df["generic_name"].astype(str).str.lower()
+    classes = [
+        {"klass": "Specialty biologics (immunology / IVIG)",
+         "terms": ["immune globulin", "immunoglobulin", "infliximab",
+                   "rituximab", "vedolizumab", "ocrelizumab",
+                   "natalizumab"],
+         "channel": "AIC + home"},
+        {"klass": "OPAT anti-infectives",
+         "terms": ["vancomycin", "cefepime", "piperacillin", "daptomycin",
+                   "ertapenem", "meropenem", "ceftriaxone"],
+         "channel": "Home (OPAT)"},
+        {"klass": "IV iron / anemia",
+         "terms": ["iron sucrose", "ferric", "iron dextran"],
+         "channel": "AIC"},
+        {"klass": "TPN / nutrition + diluents",
+         "terms": ["amino acid", "dextrose", "sodium chloride",
+                   "lipid", "intralipid"],
+         "channel": "Home (TPN) + AIC"},
+    ]
+    rows = []
+    for c in classes:
+        mask = g.apply(lambda x: any(t in x for t in c["terms"]))
+        hits = df[mask]
+        current = hits[hits["status"].astype(str).str.lower()
+                       .str.contains("current", na=False)]
+        rows.append({
+            "klass": c["klass"], "channel": c["channel"],
+            "total_listed": int(len(hits)),
+            "current_shortages": int(len(current)),
+            "status": ("CURRENT SHORTAGE" if len(current) > 0
+                       else "WATCH (discontinuations listed)"
+                       if len(hits) > 0 else "STABLE — not FDA-listed"),
+            "examples": sorted(set(
+                hits["generic_name"].astype(str).head(3).tolist())),
+        })
+    return {
+        "snapshot_date": summary.get("snapshot_date"),
+        "total_current": summary.get("current"),
+        "classes": rows,
+        "headline": (
+            "Core specialty biologics (IVIG, infliximab, rituximab, "
+            "vedolizumab) are NOT on the FDA shortage list — the AIC "
+            "margin engine has stable supply. Supply risk concentrates "
+            "in OPAT anti-infectives, IV iron, and TPN/fluid components, "
+            "where the FDA tracks active shortages/discontinuations."),
+        "source": "openFDA drug-shortage snapshot (public, CC0)",
+    }
+
+
+def aic_chair_economics(
+    *, chairs: int = 10, util_pct: float = 0.78,
+    infusions_per_chair_day: float = 6.0, operating_days: int = 250,
+    revenue_per_infusion_drug: float = 650.0,
+    admin_fee_per_infusion: float = 220.0,
+    drug_margin_pct: float = 0.10, nurse_to_chair: float = 0.30,
+    nurse_fully_loaded: float = 130_000.0,
+    facility_overhead_per_chair: float = 28_000.0,
+    rcm_cost_pct: float = 0.05, commercial_mix_pct: float = 0.62,
+    recurring_patient_pct: float = 0.82,
+    prior_auth_approval_pct: float = 0.94,
+) -> Dict[str, Any]:
+    """The AIC unit-economics model — a per-chair P&L broken into the
+    sections a deal team underwrites, plus the operating KPIs the user
+    named (chair utilization, nurse productivity, recurring patients,
+    commercial mix, prior-auth discipline, drug margin/acquisition).
+
+    Documented defaults from NHIA / ambulatory-infusion benchmarks —
+    illustrative starting points, every input editable. The math is a
+    pure function of the assumptions so the breakdown audits."""
+    infusions_per_chair_yr = infusions_per_chair_day * operating_days * util_pct
+    total_infusions = infusions_per_chair_yr * chairs
+    nurses = chairs * nurse_to_chair
+
+    # Per-chair annual P&L sections (waterfall).
+    drug_rev = infusions_per_chair_yr * revenue_per_infusion_drug
+    admin_rev = infusions_per_chair_yr * admin_fee_per_infusion
+    gross_rev = drug_rev + admin_rev
+    drug_cogs = drug_rev * (1 - drug_margin_pct)
+    drug_spread = drug_rev * drug_margin_pct
+    nursing = (nurses * nurse_fully_loaded) / chairs if chairs else 0.0
+    overhead = facility_overhead_per_chair
+    rcm_cost = gross_rev * rcm_cost_pct
+    contribution = admin_rev + drug_spread - nursing - overhead - rcm_cost
+
+    sections = [
+        {"label": "Gross revenue / chair", "value": gross_rev,
+         "kind": "revenue",
+         "note": f"{infusions_per_chair_yr:,.0f} infusions × "
+                 f"(${revenue_per_infusion_drug:,.0f} drug + "
+                 f"${admin_fee_per_infusion:,.0f} admin)"},
+        {"label": "− Drug acquisition (COGS)", "value": -drug_cogs,
+         "kind": "cost",
+         "note": f"buy-and-bill at {drug_margin_pct*100:.0f}% spread — "
+                 "GPO / channel leverage is the lever"},
+        {"label": "− Nursing labor", "value": -nursing, "kind": "cost",
+         "note": f"{nurse_to_chair:.2f} nurse/chair × "
+                 f"${nurse_fully_loaded/1e3:,.0f}K fully loaded"},
+        {"label": "− Facility / overhead", "value": -overhead,
+         "kind": "cost", "note": "rent, pharmacy, scheduling, supplies"},
+        {"label": "− RCM / billing", "value": -rcm_cost, "kind": "cost",
+         "note": f"{rcm_cost_pct*100:.0f}% of revenue — benefit-"
+                 "investigation + prior-auth + claims labor"},
+        {"label": "= Chair contribution margin", "value": contribution,
+         "kind": "subtotal",
+         "note": f"{contribution/gross_rev*100:.1f}% of gross — the "
+                 "admin fee + drug spread net of variable cost"},
+    ]
+
+    kpis = [
+        {"kpi": "Chair utilization", "value": f"{util_pct*100:.0f}%",
+         "lever": "throughput — empty chairs are dead overhead",
+         "good": ">75%"},
+        {"kpi": "Nurse productivity",
+         "value": f"{total_infusions/nurses:,.0f} infusions/nurse/yr",
+         "lever": "the labor lever — chairs per nurse + visit pace",
+         "good": "1:3–4 nurse:chair"},
+        {"kpi": "Recurring patients",
+         "value": f"{recurring_patient_pct*100:.0f}%",
+         "lever": "chronic therapy = predictable, low-CAC revenue",
+         "good": ">80%"},
+        {"kpi": "Commercial payer mix",
+         "value": f"{commercial_mix_pct*100:.0f}%",
+         "lever": "commercial pays above Medicare ASP+ — the margin mix",
+         "good": ">60%"},
+        {"kpi": "Prior-auth approval rate",
+         "value": f"{prior_auth_approval_pct*100:.0f}%",
+         "lever": "clean PA process = fewer 5-figure denials, faster cash",
+         "good": ">92%"},
+        {"kpi": "Drug margin (buy-and-bill)",
+         "value": f"{drug_margin_pct*100:.0f}%",
+         "lever": "acquisition cost + payer rate; white-bagging kills it",
+         "good": "protect via contracts + GPO"},
+        {"kpi": "Revenue / chair / yr",
+         "value": f"${gross_rev/1e3:,.0f}K",
+         "lever": "the headline unit; drug-heavy, so watch contribution",
+         "good": "—"},
+        {"kpi": "Contribution / chair / yr",
+         "value": f"${contribution/1e3:,.0f}K",
+         "lever": "the real operating profit per chair",
+         "good": "—"},
+    ]
+    return {
+        "assumptions": {
+            "chairs": chairs, "util_pct": util_pct,
+            "infusions_per_chair_day": infusions_per_chair_day,
+            "operating_days": operating_days,
+            "commercial_mix_pct": commercial_mix_pct,
+            "recurring_patient_pct": recurring_patient_pct,
+            "prior_auth_approval_pct": prior_auth_approval_pct,
+            "drug_margin_pct": drug_margin_pct,
+            "nurse_to_chair": nurse_to_chair,
+        },
+        "infusions_per_chair_yr": round(infusions_per_chair_yr),
+        "total_infusions": round(total_infusions),
+        "nurses": round(nurses, 1),
+        "sections": sections,
+        "kpis": kpis,
+        "contribution_per_chair": contribution,
+        "contribution_margin_pct": contribution / gross_rev if gross_rev else 0,
+        "basis_note": "NHIA / ambulatory-infusion benchmark defaults — "
+                      "illustrative, every input editable; the math is a "
+                      "pure function of the assumptions.",
+    }
+
+
 def build_texas_infusion_analysis() -> Dict[str, Any]:
     """Assemble the full Texas infusion CDD analysis.
 
@@ -880,6 +1154,8 @@ def build_texas_infusion_analysis() -> Dict[str, Any]:
         "players": infusion_players(),
         "risk_register": infusion_risk_register(),
         "rcm_playbook": rcm_playbook(),
+        "aic_economics": aic_chair_economics(),
+        "drug_supply": infusion_drug_supply(),
         "metros": metros,
         "metro_deepdives": metro_deepdives,
         "health_system_capacity": health_system,

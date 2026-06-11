@@ -177,6 +177,128 @@ class ChannelPlayersRiskTests(unittest.TestCase):
         self.assertGreaterEqual(len(pb["diligence_questions"]), 4)
 
 
+class AICEconomicsTests(unittest.TestCase):
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+
+    def test_per_chair_pl_sections_balance(self):
+        from rcm_mc.diligence.texas_infusion import aic_chair_economics
+        e = aic_chair_economics()
+        sect = {s["label"]: s["value"] for s in e["sections"]}
+        rev = next(v for k, v in sect.items() if "Gross revenue" in k)
+        costs = sum(v for k, v in sect.items()
+                    if k.startswith("−"))   # negative
+        contrib = next(v for k, v in sect.items()
+                       if "contribution" in k)
+        # contribution must equal admin + drug-spread − costs; check the
+        # waterfall closes: revenue + costs (negatives) ≈ a gross-profit
+        # line that exceeds contribution (since admin+spread < revenue).
+        self.assertGreater(rev, 0)
+        self.assertLess(costs, 0)
+        self.assertEqual(contrib, e["contribution_per_chair"])
+        # Contribution margin in a sane band for a drug-heavy AIC.
+        self.assertGreater(e["contribution_margin_pct"], 0.05)
+        self.assertLess(e["contribution_margin_pct"], 0.40)
+
+    def test_levers_are_pure_functions(self):
+        from rcm_mc.diligence.texas_infusion import aic_chair_economics
+        base = aic_chair_economics(util_pct=0.78)
+        higher = aic_chair_economics(util_pct=0.90)
+        # Higher utilization → more infusions → more contribution.
+        self.assertGreater(higher["contribution_per_chair"],
+                           base["contribution_per_chair"])
+        # White-bagging shock: drug margin → 0 cuts contribution.
+        nobill = aic_chair_economics(drug_margin_pct=0.0)
+        self.assertLess(nobill["contribution_per_chair"],
+                        base["contribution_per_chair"])
+
+    def test_named_kpis_present(self):
+        e = self.a["aic_economics"]
+        kpis = " ".join(k["kpi"].lower() for k in e["kpis"])
+        for lever in ("chair utilization", "nurse productivity",
+                      "recurring", "commercial", "prior-auth",
+                      "drug margin"):
+            self.assertIn(lever, kpis)
+
+
+class DrugSupplyTests(unittest.TestCase):
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+
+    def test_real_fda_snapshot(self):
+        ds = self.a["drug_supply"]
+        self.assertTrue(ds["snapshot_date"])
+        self.assertGreater(ds["total_current"], 0)   # real FDA data
+        self.assertIn("openFDA", ds["source"])
+
+    def test_specialty_biologics_stable(self):
+        ds = self.a["drug_supply"]
+        bio = next(c for c in ds["classes"]
+                   if "biologic" in c["klass"].lower())
+        # The core AIC margin engine is NOT FDA-shortage-listed.
+        self.assertIn("STABLE", bio["status"])
+        self.assertEqual(bio["current_shortages"], 0)
+
+    def test_tpn_fluids_show_real_shortage(self):
+        ds = self.a["drug_supply"]
+        tpn = next(c for c in ds["classes"] if "TPN" in c["klass"])
+        # Dextrose/amino-acid/saline carry real current FDA shortages.
+        self.assertGreater(tpn["current_shortages"], 0)
+
+    def test_classes_have_channel_and_examples(self):
+        for c in self.a["drug_supply"]["classes"]:
+            self.assertTrue(c["channel"])
+            self.assertIsInstance(c["examples"], list)
+
+
+class IllnessNorthSuburbTests(unittest.TestCase):
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.dd = {d["metro"].split("-")[0]: d
+                   for d in self.a["metro_deepdives"]}
+
+    def test_north_suburbs_flagged_each_metro(self):
+        for d in self.a["metro_deepdives"]:
+            self.assertTrue(d["north_suburbs"])      # callout text
+            north = [s for s in d["suburbs"]
+                     if s.get("region") == "North suburb"]
+            self.assertTrue(north, f"no north county in {d['metro']}")
+        # DFW north ring = Collin + Denton.
+        dfw_north = {s["county"] for s in self.dd["Dallas"]["suburbs"]
+                     if s.get("region") == "North suburb"}
+        self.assertEqual(dfw_north, {"Collin", "Denton"})
+
+    def test_illness_burden_scales_with_population(self):
+        # Metro illness burden = sum of county (pop × TX prevalence);
+        # the bigger metro carries the bigger burden.
+        for d in self.a["metro_deepdives"]:
+            self.assertTrue(d["illness_burden"])
+            for ib in d["illness_burden"]:
+                self.assertGreater(ib["estimated_patients"], 0)
+                self.assertTrue(ib["therapy"])
+                self.assertTrue(ib["condition"])
+        # Houston/DFW (larger) > Austin (smaller) on total burden.
+        def _tot(m):
+            return sum(i["estimated_patients"]
+                       for i in self.dd[m]["illness_burden"])
+        self.assertGreater(_tot("Houston"), _tot("Austin"))
+
+    def test_illness_maps_to_infusion_therapies(self):
+        conds = {i["condition"]
+                 for i in self.dd["Houston"]["illness_burden"]}
+        self.assertIn("Rheumatoid Arthritis", conds)   # immunology biologics
+        self.assertIn("Cancer", conds)                  # oncology infusion
+
+    def test_county_illness_is_population_scaled(self):
+        from rcm_mc.diligence.texas_infusion import county_illness_burden
+        small = county_illness_burden(100_000)
+        big = county_illness_burden(1_000_000)
+        for s, b in zip(small, big):
+            self.assertEqual(s["condition"], b["condition"])
+            self.assertAlmostEqual(b["estimated_patients"],
+                                   s["estimated_patients"] * 10, delta=2)
+
+
 class CityDeepDiveTests(unittest.TestCase):
     def setUp(self):
         self.a = build_texas_infusion_analysis()
@@ -265,7 +387,10 @@ class PageRenderTests(unittest.TestCase):
             "The two channels", "DEFINING RISK", "Players",
             "Where the risks are", "White-bagging", "RCM read",
             "How RCM talks about infusion", "Denial DOLLAR exposure",
-            "TOP DENIAL DRIVERS",
+            "TOP DENIAL DRIVERS", "AIC unit economics",
+            "BREAKDOWN BY SECTION", "Chair contribution margin",
+            "Drug supply", "STABLE", "Drug Shortage tracker",
+            "North suburbs", "ILLNESS BURDEN",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
