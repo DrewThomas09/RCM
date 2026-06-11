@@ -7282,6 +7282,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "irr-disp",      "title": "IRR Dispersion",     "route": "/irr-dispersion"},
     {"id": "hold-analysis", "title": "Hold Analysis",      "route": "/hold-analysis"},
     {"id": "comp-outcomes", "title": "Comparable Outcomes","route": "/comparable-outcomes"},
+    {"id": "tam-sam", "title": "TAM / SAM Builder", "route": "/diligence/tam-sam"},
     {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
     {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
@@ -10890,6 +10891,7 @@ _SUB_SECTION_MAP = {
     # Some renderers still pass legacy /diligence/* active_nav values;
     # map them to the same editorial section the wired URL belongs to.
     "/diligence/comparable-outcomes": "research",
+    "/diligence/tam-sam": "diligence",
     "/diligence/regulatory-calendar": "research",
     "/diligence/bear-case": "research",
     "/diligence/bear-cases": "research",

@@ -3823,6 +3823,33 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/api/market-intel/live-sentiment":
             from .data_public.live_sentiment import live_sentiment_snapshot
             return self._send_json(live_sentiment_snapshot())
+        # TAM/SAM Builder — driver-tree market sizing with formatted
+        # exports (see diligence/tam_sam.py + ui/tam_sam_page.py).
+        if path == "/diligence/tam-sam":
+            from .ui.tam_sam_page import render_tam_sam_page
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_tam_sam_page(qs=_qs))
+        if path == "/api/diligence/tam-sam.csv":
+            from .ui.tam_sam_page import tam_sam_csv
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_text(
+                tam_sam_csv(_qs), content_type="text/csv; charset=utf-8")
+        if path == "/api/diligence/tam-sam.xlsx":
+            from .ui.tam_sam_page import tam_sam_xlsx
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _data = tam_sam_xlsx(_qs)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="tam_sam_build.xlsx"')
+            self.send_header("Content-Length", str(len(_data)))
+            self.end_headers()
+            self.wfile.write(_data)
+            return
         # Bear Case Auto-Generator — what could break this thesis.
         if path == "/diligence/bear-case":
             return self._route_bear_case_page()
