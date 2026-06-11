@@ -16,6 +16,7 @@ import html
 from typing import List
 
 from ..diligence.screening import (
+    analyze_distress_fingerprint,
     BankruptcySurvivorScan, BankruptcySurvivorVerdict, PatternCheck,
 )
 
@@ -276,6 +277,54 @@ def render_scan_landing() -> str:
     )
 
 
+def _replay_section(scan: BankruptcySurvivorScan) -> str:
+    """Named-case replay read: the distinct public-record bankruptcies
+    this deal's fingerprint matches, ranked by severity. Every line
+    recomputes from the fired checks — a replay, not a hunch."""
+    fp = analyze_distress_fingerprint(scan)
+    tone = {"CRITICAL": "#b5321e", "HIGH": "#b8732a",
+            "MEDIUM": "#a98545", "LOW": "#7a8699"}
+    if not fp.replays:
+        return (
+            '<div style="margin:0 0 14px;padding:10px 14px;'
+            'background:#eef3ee;border-left:3px solid #0a8a5f;'
+            'border-radius:0 3px 3px 0;font-size:12px;color:#2f5d3f;">'
+            f'{html.escape(fp.headline)}</div>')
+    rows = ""
+    for r in fp.replays:
+        col = tone.get(r.severity, "#7a8699")
+        case = (f'<div style="font-style:italic;font-size:11px;color:#465366;'
+                f'margin-top:2px;">{html.escape(r.case_study)}</div>'
+                if r.case_study else
+                '<div style="font-size:10.5px;color:#9aa3ad;margin-top:2px;">'
+                'fired without a named public-record precedent</div>')
+        rows += (
+            f'<div style="padding:8px 0;border-bottom:1px solid #e4ddca;">'
+            f'<div style="display:flex;gap:8px;align-items:baseline;">'
+            f'<span style="font-family:var(--sc-mono,monospace);font-size:9px;'
+            f'font-weight:700;letter-spacing:0.08em;color:{col};">'
+            f'{html.escape(r.severity)}</span>'
+            f'<span style="font-size:12px;font-weight:600;color:#1a2332;">'
+            f'{html.escape(r.pattern.replace("_", " ").title())}</span>'
+            f'<span style="margin-left:auto;font-size:9px;color:#9aa3ad;'
+            f'text-transform:uppercase;letter-spacing:0.06em;">'
+            f'{html.escape(r.category)}</span></div>'
+            f'{case}</div>')
+    return (
+        '<div style="margin:0 0 16px;padding:12px 16px;'
+        'border:1px solid #d6cfc0;border-radius:4px;background:#faf7f0;">'
+        '<div style="font-family:var(--sc-mono,monospace);font-size:10px;'
+        'letter-spacing:0.1em;color:#7a8699;font-weight:700;margin-bottom:4px;">'
+        f'NAMED-CASE REPLAY · {len(fp.distinct_cases)} DISTINCT CASES · '
+        f'SEVERITY {fp.weighted_severity}</div>'
+        f'<p style="font-size:12.5px;color:#1a2332;line-height:1.6;'
+        f'margin:0 0 8px;">{html.escape(fp.headline)}</p>'
+        f'{rows}'
+        '<p style="font-size:9.5px;color:#9aa3ad;margin:8px 0 0;">'
+        'Ranked by severity weight; de-duped by named case. Recomputes '
+        'from the fired pattern checks below.</p></div>')
+
+
 def _pattern_strip(scan: BankruptcySurvivorScan) -> str:
     """The scan at a glance before the table: one chip per pattern
     check — fired chips lit in their severity tone, passed chips muted.
@@ -365,6 +414,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         f"Patterns hit: {scan.patterns_hit} / 12  ·  "
         f"Critical matches: {scan.critical_hits}</div>"
         f"</div>"
+        f"{_replay_section(scan)}"
         "<h2>Pattern checks</h2>"
         f"{_pattern_strip(scan)}"
         "<table class='checks'>"

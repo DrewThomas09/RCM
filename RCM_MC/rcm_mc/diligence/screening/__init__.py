@@ -9,15 +9,21 @@ from __future__ import annotations
 from .bankruptcy_survivor import (
     BankruptcySurvivorScan,
     BankruptcySurvivorVerdict,
+    CaseReplay,
+    DistressFingerprint,
     PatternCheck,
     ScanInput,
+    analyze_distress_fingerprint,
     run_bankruptcy_survivor_scan,
 )
 
 __all__ = [
     "BankruptcySurvivorScan",
     "BankruptcySurvivorVerdict",
+    "CaseReplay",
+    "DistressFingerprint",
     "PatternCheck",
     "ScanInput",
+    "analyze_distress_fingerprint",
     "run_bankruptcy_survivor_scan",
 ]
