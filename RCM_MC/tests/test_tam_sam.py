@@ -163,8 +163,10 @@ class IndustryDeepDiveTests(unittest.TestCase):
 
     def test_unknown_industry_returns_none_not_500(self):
         from rcm_mc.diligence.industry_deep_dive import deep_dive_for
-        self.assertIsNone(deep_dive_for("fertility_ivf"))
+        # fertility gained a deals-only dive in W2-65 — only truly
+        # unregistered keys return None now.
         self.assertIsNone(deep_dive_for("nope"))
+        self.assertIsNone(deep_dive_for("blank"))
 
     def test_dialysis_page_renders_dive_panels(self):
         from rcm_mc.ui.tam_sam_page import render_tam_sam_page
@@ -549,3 +551,30 @@ class ExportParityTests(unittest.TestCase):
         self.assertIn(b"AGGRESSIVE scenario",
                       z.read("xl/worksheets/sheet1.xml"))
         self.assertIn(b"Growth %/yr", z.read("xl/worksheets/sheet2.xml"))
+
+
+class PayerDimensionTests(unittest.TestCase):
+    """State × payer — the hospitals dive carries filed Medicare day-share
+    state medians from HCRIS; fertility gains its real trade history."""
+
+    def test_hospitals_medicare_mix_medians(self):
+        from rcm_mc.diligence.industry_deep_dive import hospitals_deep_dive
+        d = hospitals_deep_dive()
+        with_mix = [s for s in d["top_states"]
+                    if s.get("medicare_mix_med") is not None]
+        self.assertGreater(len(with_mix), 5)
+        for s in with_mix:
+            self.assertGreaterEqual(s["medicare_mix_med"], 0.0)
+            self.assertLessEqual(s["medicare_mix_med"], 1.0)
+
+    def test_payer_column_only_where_computed(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        self.assertIn("Medicare mix (med)",
+                      render_tam_sam_page({"template": ["hospitals"]}))
+        self.assertNotIn("Medicare mix (med)",
+                         render_tam_sam_page({"template": ["dialysis"]}))
+
+    def test_fertility_trade_history(self):
+        from rcm_mc.diligence.industry_deep_dive import fertility_deep_dive
+        f = fertility_deep_dive()
+        self.assertGreaterEqual(f["sector_deals"]["n"], 2)

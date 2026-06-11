@@ -280,6 +280,10 @@ def _industry_panels(tmpl_key: str) -> str:
     pool_label = dive.get("pool_label", "Independent")
     cap_label = dive.get("capacity_label")
     q_label = dive.get("quality_label", "Quality (med)")
+    # The payer dimension — present when the dive computes it (hospitals:
+    # filed Medicare day share, state median from HCRIS).
+    has_payer = any(s.get("medicare_mix_med") is not None
+                    for s in dive["top_states"])
     # 1 · State footprint — top 10 states with the whitespace overlay.
     rows = ""
     for s in dive["top_states"]:
@@ -289,6 +293,12 @@ def _industry_panels(tmpl_key: str) -> str:
                 else f"{qv:,.0f}" if qv is not None else "—")
         cap_td = (f'<td class="r">{s["stations"]:,}</td>'
                   if cap_label else "")
+        mm = s.get("medicare_mix_med")
+        payer_td = (
+            f'<td class="r">{mm*100:,.0f}%</td>' if has_payer and
+            mm is not None else ('<td class="r">—</td>' if has_payer
+                                 else "")
+        )
         rows += (
             '<tr>'
             f'<td>{html.escape(s["state"])}</td>'
@@ -296,6 +306,7 @@ def _industry_panels(tmpl_key: str) -> str:
             f'{cap_td}'
             f'<td class="r">{s["independent"]:,}</td>'
             f'<td class="r">{s["independent_share"]*100:,.0f}%</td>'
+            f'{payer_td}'
             f'<td class="r">{qs_s}</td></tr>'
         )
     footprint = ck_panel(
@@ -311,7 +322,9 @@ def _industry_panels(tmpl_key: str) -> str:
            if cap_label else "")
         + f'<th style="text-align:right;">{html.escape(pool_label)}</th>'
         f'<th style="text-align:right;">{html.escape(pool_label)} share</th>'
-        f'<th style="text-align:right;">{html.escape(q_label)}</th>'
+        + ('<th style="text-align:right;">Medicare mix (med)</th>'
+           if has_payer else "")
+        + f'<th style="text-align:right;">{html.escape(q_label)}</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>'
         '</div>'
         f'<p class="ts2-src" style="margin:10px 0 0;">'
