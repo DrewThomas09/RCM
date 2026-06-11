@@ -2582,3 +2582,33 @@ years renders "". Placed after the outcome/sponsor analytics grid.
 2018×3 + 2021×1 → exactly 2 columns with 2019/2020 drought slots and
 the peak count label, single-year/empty → "", chart present in the
 full page render. 17 passed across verified-deals suites.
+
+## W2-136 (2026-06-11) — Diligence checklist: auditable IC-readiness gate (wave #38)
+**Found**: /diligence/checklist tracked item statuses and a P0-
+coverage KPI, but the actual CDD question — "can this deal go to
+IC, and if not, exactly what closes the gap?" — was left to the
+partner to infer from the coverage percentage. No single auditable
+go/no-go with a verification trail.
+**Added (analysis, not just a visual)**: `compute_ic_readiness(state)`
+in the checklist tracker → an `ICReadinessGate`:
+- verdict is a PURE function of item statuses (NOT_READY if any P0
+  open/blocked · CONDITIONAL if only P1s remain · READY if all P0+P1
+  closed) so it can never disagree with the checklist it sits above;
+- every blocker (`GateBlocker`) carries the *verification path*: its
+  completion_criteria ("closes when…"), the evidence_url that
+  produces that evidence, and `auto_verifiable` (closable from
+  DealObservations vs. needs a partner attestation);
+- the gate splits open work into auto-verifiable vs. manual-
+  attestation counts, so the partner sees how much the platform can
+  confirm itself.
+Surfaced on the page as a verdict band + verifiability mini-bar +
+evidence-linked punch-list (P0 hard-stops, then P1s), and folded into
+the page's JSON export under `ic_readiness_gate` so the gate is
+downloadable/auditable. Verdict order: blocked-before-open, then by
+phase.
+**Verify**: test_ic_readiness_gate.py (9) — empty deal NOT_READY,
+all-P0-done→CONDITIONAL, all-done→READY, p0_coverage matches the
+state, each blocker's auto_verifiable mirrors its auto_check_key,
+verifiability split sums to total blockers, to_dict round-trips the
+punch-list, gate renders in the page + JSON export. 116 passed
+across checklist/IC-packet suites.
