@@ -978,6 +978,61 @@ class SiteOfCareEvolutionTests(unittest.TestCase):
             self.assertIn(marker, text)
 
 
+class JcodePlaceOfServiceTests(unittest.TestCase):
+    """CMS Part B J-code place-of-service by state — modeled offline from
+    REAL state factors (never claims), live-overridable, with a US map
+    and percentage tables."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.jp = self.a["jcode_pos"]
+
+    def test_all_states_covered_and_ranked(self):
+        from rcm_mc.diligence.texas_infusion import _US_STATES
+        self.assertEqual(len(self.jp["states"]), len(_US_STATES))
+        pcts = [s["nonfac_pct"] for s in self.jp["states"]]
+        self.assertEqual(pcts, sorted(pcts, reverse=True))  # ranked desc
+        self.assertEqual([s["rank"] for s in self.jp["states"]],
+                         list(range(1, len(self.jp["states"]) + 1)))
+
+    def test_offline_is_modeled_not_claims(self):
+        # Airgapped: no live claims, every share is the modeled value.
+        self.assertFalse(self.jp["live"])
+        for s in self.jp["states"]:
+            self.assertFalse(s["is_live"])
+            self.assertEqual(s["nonfac_pct"], s["modeled_pct"])
+            self.assertTrue(0.35 <= s["nonfac_pct"] <= 0.82)
+
+    def test_modeled_share_responds_to_real_state_factors(self):
+        # Rurality drags the non-facility share down; MA penetration
+        # pushes it up — the model is a function of real state inputs.
+        from rcm_mc.diligence.texas_infusion import infusion_jcode_pos
+        jp = infusion_jcode_pos()
+        by = {s["code"]: s for s in jp["states"]}
+        # A high-rural state sits below a low-rural, high-MA state.
+        self.assertLess(by["VT"]["nonfac_pct"], by["FL"]["nonfac_pct"])
+
+    def test_texas_present_with_real_factors(self):
+        tx = self.jp["texas"]
+        self.assertEqual(tx["code"], "TX")
+        self.assertGreater(tx["ma_penetration"], 0)
+        self.assertGreater(tx["nonfac_pct"], 0)
+
+    def test_jcode_basket_and_trend(self):
+        codes = {c["hcpcs"] for c in self.jp["jcodes"]}
+        self.assertIn("J1745", codes)            # infliximab
+        tr = self.jp["national_trend"]
+        self.assertEqual(len(tr), 3)
+        # Non-facility share rises across the three years.
+        nf = [t["nonfacility_pct"] for t in tr]
+        self.assertEqual(nf, sorted(nf))
+
+    def test_live_flag_threads_through_fails_closed(self):
+        from rcm_mc.diligence.texas_infusion import infusion_jcode_pos
+        jp = infusion_jcode_pos(fetch_live=True)   # NPPES/CMS unreachable
+        self.assertFalse(jp["live"])               # no fabricated claims
+
+
 class SoWhatTakeawayTests(unittest.TestCase):
     """Every section carries a data-driven 'SO WHAT' takeaway that
     recomputes from the analysis it summarizes."""
@@ -1041,6 +1096,8 @@ class PageRenderTests(unittest.TestCase):
             "261QI0500N", "<polygon points=",
             "How discharges", "SITE-OF-CARE MIGRATION OVER TIME",
             "WHAT DROVE THE DISCHARGE SHIFT", "STRUCTURAL DRIVERS",
+            "J-code place of service by state", "NON-FACILITY SHARE",
+            "NATIONAL FACILITY", "PSPS Master File", "J-code basket",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
