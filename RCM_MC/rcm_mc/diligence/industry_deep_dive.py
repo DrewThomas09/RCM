@@ -1526,6 +1526,36 @@ def lop_medicine_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def dental_labs_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="dental_labs",
+        sector_tokens=("dental_labs", "dental_lab", "dental"),
+        note=("NADL membership rosters aren't public — geography "
+              "omitted rather than fabricated. The dental trade "
+              "history below is the adjacency read."),
+    )
+
+
+def htm_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="htm_clinical_engineering",
+        sector_tokens=("htm", "clinical_engineering",
+                       "medical_equipment"),
+        note=("Service contracts are private — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def interpretation_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="interpretation",
+        sector_tokens=("interpretation", "language_services"),
+        note=("Delivered remotely — geography is not the structure "
+              "read."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1591,6 +1621,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "nemt": nemt_deep_dive,
     "compounding_503b": compounding_503b_deep_dive,
     "lop_medicine": lop_medicine_deep_dive,
+    "dental_labs": dental_labs_deep_dive,
+    "htm_clinical_engineering": htm_deep_dive,
+    "interpretation": interpretation_deep_dive,
 }
 
 
