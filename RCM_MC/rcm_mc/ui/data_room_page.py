@@ -46,6 +46,107 @@ def _fmt_metric(val: float, metric_type: str) -> str:
     return f"{val:.3f}"
 
 
+def _calibration_delta_svg(calibrations: List[Any]) -> str:
+    """Signed surprise bars: seller data vs ML prediction per metric.
+
+    For every metric with both an ML prior and a seller delta, draw
+    the relative surprise (delta / |prediction|) from a center zero
+    line — green when the surprise is favorable for the metric's
+    direction ("lower is better" denial rate coming in lower), red
+    when unfavorable, sorted by magnitude so the thesis-changing
+    findings lead. Bars clamp at ±50% with a marker. ML-only metrics
+    contribute nothing; no deltas renders nothing.
+    """
+    rows = []
+    for cal in calibrations:
+        delta = getattr(cal, "delta_from_prediction", None)
+        pred = getattr(cal, "ml_predicted", None)
+        if delta is None or not pred:
+            continue
+        rel = float(delta) / abs(float(pred))
+        direction = str(getattr(cal, "direction", "") or "")
+        if direction == "lower":
+            better = delta < 0
+        elif direction == "higher":
+            better = delta > 0
+        else:
+            better = None
+        rows.append({
+            "label": str(getattr(cal, "label", "—")),
+            "rel": rel,
+            "better": better,
+        })
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: -abs(r["rel"]))
+
+    label_w, half_w, right_w = 200, 220, 70
+    row_h, gap, pad_top, pad_bot = 18, 7, 16, 10
+    cx0 = label_w + half_w
+    width = label_w + 2 * half_w + right_w
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+    clamp = 0.50
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Seller-data surprise vs ML prediction per metric">'
+        f'<line x1="{cx0}" y1="{pad_top - 8}" x2="{cx0}" '
+        f'y2="{height - pad_bot}" stroke="{PALETTE["border"]}" '
+        f'stroke-width="1"/>'
+        f'<text x="{cx0}" y="{pad_top - 10}" text-anchor="middle" '
+        f'font-size="8.5" fill="{PALETTE["text_muted"]}">ML PREDICTION</text>'
+    ]
+    for i, r in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        name = r["label"]
+        if len(name) > 28:
+            name = name[:27] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="{PALETTE["text_secondary"]}">'
+            f'{_html.escape(name)}</text>'
+        )
+        rel = r["rel"]
+        clamped = max(-clamp, min(clamp, rel))
+        w = abs(clamped) / clamp * half_w
+        tone = (
+            PALETTE["positive"] if r["better"] is True
+            else PALETTE["negative"] if r["better"] is False
+            else PALETTE["text_muted"]
+        )
+        x = cx0 if rel >= 0 else cx0 - w
+        parts.append(
+            f'<rect x="{x:.1f}" y="{y}" width="{max(w, 1.5):.1f}" '
+            f'height="{row_h}" rx="2" fill="{tone}" fill-opacity="0.8"/>'
+        )
+        val_s = f"{rel:+.1%}" + ("›" if abs(rel) > clamp else "")
+        vx = cx0 + w + 6 if rel >= 0 else cx0 - w - 6
+        anchor = "start" if rel >= 0 else "end"
+        parts.append(
+            f'<text x="{vx:.1f}" y="{ty:.1f}" text-anchor="{anchor}" '
+            f'font-size="10" font-weight="600" fill="{tone}">{val_s}</text>'
+        )
+    parts.append("</svg>")
+    note = (
+        f'<div style="font-size:9.5px;letter-spacing:0.08em;'
+        f'color:{PALETTE["text_muted"]};margin-top:4px;">'
+        'SIGNED SURPRISE = DELTA ÷ |ML PREDICTION| · GREEN = FAVORABLE '
+        'FOR THE METRIC\'S DIRECTION · AXIS CLAMPED AT ±50% (› = BEYOND)'
+        "</div>"
+    )
+    return ck_panel(
+        '<p class="ck-section-body">'
+        "Every seller-confirmed metric plotted against the model: bars "
+        "left/right of the center line show how far the seller's number "
+        "landed from our prediction, colored by whether that surprise "
+        "helps or hurts the thesis.</p>"
+        '<div class="dr-delta-chart">' + "".join(parts) + note + "</div>",
+        title="Seller Data vs Model — Signed Surprise",
+    )
+
+
 def render_data_room(
     ccn: str,
     hospital_name: str,
@@ -360,9 +461,10 @@ border-bottom:1px solid var(--cad-border);font-size:12.5px;}
         eyebrow="Up next",
         italic_word="checklist",
     )
+    delta_chart = _calibration_delta_svg(calibrations)
     body = (
         f'{deal_ribbon}{dr_styles}{intro}{kpis}{entry_form}{surprise_html}'
-        f'{bridge_impact}{cal_section}{history_section}{next_up}'
+        f'{delta_chart}{bridge_impact}{cal_section}{history_section}{next_up}'
     )
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

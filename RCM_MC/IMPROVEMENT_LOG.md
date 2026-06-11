@@ -2189,3 +2189,21 @@ Placed directly under the decision tiles.
 REJECT ≥75, all three decision tones, out-of-range guide omitted,
 unscored skipped (count drops), empty → "". 16 passed across the
 screening suites.
+
+## W2-113 (2026-06-11) — Data room page: signed surprise chart (wave #15)
+**Found**: the data room's stated purpose is showing "exactly where
+the seller data confirms or contradicts our models", but the
+contradiction lived only in a table delta column and a >15% text
+list — no visual put all the surprises on one axis.
+**Fixed**: `_calibration_delta_svg(calibrations)` — every metric with
+both an ML prior and a seller delta drawn as a signed bar from a
+center "ML PREDICTION" line: relative surprise = delta ÷ |prediction|,
+green when favorable for the metric's direction (a lower-is-better
+denial rate coming in lower), red when unfavorable, gray when
+direction is unknown; sorted by magnitude; axis clamped ±50% with a ›
+marker beyond. ML-only metrics contribute nothing; empty renders "".
+Placed between the surprises panel and the bridge impact.
+**Verify**: CalibrationDeltaChartTests — direction-aware tones
+(lower+lower → green, higher+lower → red), magnitude sort, +80.0%›
+clamp marker, ML-only → "", empty → "". 27 passed across data-room
+suites.
