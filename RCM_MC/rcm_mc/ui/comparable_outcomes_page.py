@@ -111,6 +111,19 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
     win = _fmt_pct(summary.get("win_rate_2_5x"))
     hold = summary.get("hold_years_median")
     hold_s = f"{hold:.1f}y" if hold else "—"
+    # Entry EV/EBITDA — the bid-pricing anchor. Multiples exist only on
+    # comps that disclose both EV and entry EBITDA; the sub names that n
+    # so a thin multiple sample reads as thin.
+    mult = summary.get("entry_multiple") or {}
+    mult_med = mult.get("median")
+    mult_med_s = f"{mult_med:.1f}x" if mult_med else "—"
+    mult_p25 = mult.get("p25")
+    mult_p75 = mult.get("p75")
+    mult_sub = (
+        f"p25 {mult_p25:.1f}x · p75 {mult_p75:.1f}x · {mult.get('n', 0)} disclosed"
+        if mult_med and mult_p25 is not None and mult_p75 is not None
+        else "EV + entry EBITDA disclosed on too few comps"
+    )
 
     def _stat(label: str, big: str, sub: str) -> str:
         # 2026-05-28 batch 43 · Tier-4 trope removal — cap radius at 2px.
@@ -131,6 +144,7 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
         '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:0 0 20px;">'
         + _stat("Median MOIC", moic_med, f"p25 {moic_p25} · p75 {moic_p75}")
         + _stat("Median IRR", irr_med, f"p25 {irr_p25} · p75 {irr_p75}")
+        + _stat("Entry EV/EBITDA", mult_med_s, mult_sub)
         + _stat("Median hold", hold_s,
                 f"{summary.get('n_comparables', 0)} comparables")
         + _stat("Win rate (≥2.5x)", win, "fraction of deals clearing the bar")

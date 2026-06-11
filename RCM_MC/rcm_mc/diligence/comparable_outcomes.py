@@ -281,6 +281,16 @@ def summarize_outcomes(
             for c in comparables]
     holds = [_safe_float(c.deal.get("hold_years"))
              for c in comparables]
+    # Entry EV/EBITDA — the "what would this trade for" anchor when
+    # sizing a bid. Computed only on comps that disclose BOTH ev_mm and
+    # ebitda_at_entry_mm (never imputed); n is reported alongside so the
+    # partner can judge how thin the multiple sample is vs the comp set.
+    multiples = []
+    for c in comparables:
+        ev = _safe_float(c.deal.get("ev_mm"))
+        eb = _safe_float(c.deal.get("ebitda_at_entry_mm"))
+        if ev is not None and eb is not None and eb > 0:
+            multiples.append(ev / eb)
 
     moics = [m for m in moics if m is not None]
     irrs = [i for i in irrs if i is not None]
@@ -304,6 +314,12 @@ def summarize_outcomes(
             "p75":    _percentile(irrs, 0.75),
         },
         "hold_years_median": _percentile(holds, 0.50),
+        "entry_multiple": {
+            "median": _percentile(multiples, 0.50),
+            "p25":    _percentile(multiples, 0.25),
+            "p75":    _percentile(multiples, 0.75),
+            "n":      len(multiples),
+        },
         "win_rate_2_5x":     win_rate,
         "min_score":         min((c.score for c in comparables), default=0),
         "max_score":         max((c.score for c in comparables), default=0),

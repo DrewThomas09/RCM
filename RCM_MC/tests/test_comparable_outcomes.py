@@ -201,6 +201,37 @@ class TestOutcomeSummary(unittest.TestCase):
         out = summarize_outcomes(comps)
         self.assertEqual(out["win_rate_2_5x"], 0.5)
 
+    def test_entry_multiple_distribution(self):
+        from rcm_mc.diligence.comparable_outcomes import (
+            summarize_outcomes, Comparable,
+        )
+        comps = [
+            # 500/50 = 10x · 900/100 = 9x · 660/60 = 11x
+            Comparable(deal={"realized_moic": 2.0, "ev_mm": 500,
+                             "ebitda_at_entry_mm": 50}, score=80),
+            Comparable(deal={"realized_moic": 2.5, "ev_mm": 900,
+                             "ebitda_at_entry_mm": 100}, score=80),
+            Comparable(deal={"realized_moic": 3.0, "ev_mm": 660,
+                             "ebitda_at_entry_mm": 60}, score=80),
+            # EBITDA undisclosed — excluded, never imputed.
+            Comparable(deal={"realized_moic": 1.8, "ev_mm": 400,
+                             "ebitda_at_entry_mm": None}, score=80),
+        ]
+        out = summarize_outcomes(comps)
+        self.assertEqual(out["entry_multiple"]["median"], 10.0)
+        self.assertEqual(out["entry_multiple"]["n"], 3)
+
+    def test_entry_multiple_none_when_undisclosed(self):
+        # No comp discloses both EV and entry EBITDA → honest None, not 0.
+        from rcm_mc.diligence.comparable_outcomes import (
+            summarize_outcomes, Comparable,
+        )
+        comps = [Comparable(deal={"realized_moic": 2.0, "ev_mm": 500},
+                            score=80)]
+        out = summarize_outcomes(comps)
+        self.assertIsNone(out["entry_multiple"]["median"])
+        self.assertEqual(out["entry_multiple"]["n"], 0)
+
 
 class TestBenchmarkDealShape(unittest.TestCase):
     def test_one_shot_dict_shape(self):
@@ -362,6 +393,22 @@ class TestComparableHttpRoutes(unittest.TestCase):
         # ck_page_explainer's restatement is gone; the serif lede stays.
         self.assertNotIn("Realized outcomes on comparable deals.", html)
         self.assertIn("What deals like this actually returned.", html)
+
+    def test_outcome_strip_shows_entry_multiple(self):
+        # The page's stated purpose includes "what would this trade for?"
+        # but no multiple ever rendered — the corpus carries ev_mm +
+        # ebitda_at_entry_mm, so the strip now aggregates entry EV/EBITDA
+        # across comps that disclose both (n stated; never imputed).
+        params = urllib.parse.urlencode({"sector": "hospital", "ev_mm": "500"})
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}"
+            f"/diligence/comparable-outcomes?{params}", timeout=10,
+        ) as resp:
+            html = resp.read().decode()
+        i = html.find("Entry EV/EBITDA")
+        self.assertGreater(i, 0)
+        self.assertRegex(html[i:i + 400], r"\d+\.\dx")
+        self.assertIn("disclosed", html[i:i + 500])
 
     def test_json_api(self):
         params = urllib.parse.urlencode({
