@@ -3293,6 +3293,174 @@ def genetic_testing_template() -> TamSamModel:
     )
 
 
+
+def nemt_template() -> TamSamModel:
+    """Non-emergency medical transportation sizing — the Medicaid
+    benefit-logistics niche. MTAC-anchored."""
+    return TamSamModel(
+        name="NEMT · non-emergency medical transport market",
+        chain=[
+            DriverStep("US NEMT trips / yr", 110_000_000, op="base",
+                       unit="trips",
+                       source="MTAC / MACPAC Medicaid NEMT volume"),
+            DriverStep("Avg revenue per trip", 38, op="price",
+                       unit="$/trip",
+                       source="broker per-trip blend (ambulatory $25 "
+                              "/ wheelchair $55 / stretcher $120)"),
+        ],
+        segments=[
+            Segment("Medicaid broker-managed", 0.65, None,
+                    note="the capitated-broker layer — Modivcare/MTM "
+                         "territory", growth_pct=4.0),
+            Segment("MA supplemental benefits", 0.20, None,
+                    note="the growth payer — plans add transport "
+                         "for quality scores", growth_pct=9.0),
+            Segment("Health-system / dialysis contracted", 0.15,
+                    None, note="missed-appointment economics fund it",
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("MA supplemental adoption", 4.0,
+                         "transport benefits proliferate in MA bids"),
+            GrowthDriver("Dialysis / treatment adherence demand", 2.0,
+                         "recurring-treatment populations grow"),
+            GrowthDriver("Rideshare-rail integration", 1.5,
+                         "Uber/Lyft Health lower unit costs and "
+                         "expand served trips"),
+            GrowthDriver("Medicaid redetermination churn", -2.0,
+                         "eligibility cycles shrink the covered "
+                         "base — shown as one"),
+            GrowthDriver("Broker rate compression", -1.5,
+                         "state rebids squeeze per-trip rates"),
+        ],
+        sam_share=0.45,
+        sam_note="Regional brokers + provider networks outside the "
+                 "two national brokers' lock",
+        som_share=0.06,
+        som_note="Modivcare ~40% of broker-managed — the regionals "
+                 "and provider layer are the targets",
+        horizon_years=5,
+        basis_note="Template defaults from MTAC/MACPAC public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def compounding_503b_template() -> TamSamModel:
+    """503B outsourcing-facility sizing — the hospital drug-shortage
+    backstop niche. FDA-anchored."""
+    return TamSamModel(
+        name="503B compounding · outsourcing facility market",
+        chain=[
+            DriverStep("FDA-registered 503B facilities", 80, op="base",
+                       unit="facilities", source="FDA 503B registry"),
+            DriverStep("Avg revenue per facility", 30_000_000,
+                       op="price", unit="$/facility/yr",
+                       source="industry estimates (~$2.4B market / "
+                              "registry count)"),
+        ],
+        segments=[
+            Segment("Sterile injectables (OR/ICU)", 0.50, None,
+                    note="the shortage backstop — anesthesia trays, "
+                         "pre-filled syringes", growth_pct=7.0),
+            Segment("Ophthalmic preparations", 0.20, None,
+                    note="repackaged anti-VEGF economics",
+                    growth_pct=5.0),
+            Segment("GLP-1 / semaglutide compounding", 0.15, None,
+                    note="the boom-bust line — shortage-list "
+                         "dependent; FDA enforcement risk",
+                    growth_pct=4.0),
+            Segment("Other (HRT, veterinary)", 0.15, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Drug-shortage persistence", 4.0,
+                         "generic-injectable shortages are "
+                         "structural — the demand floor"),
+            GrowthDriver("Hospital outsourcing of compounding", 3.0,
+                         "USP 797/800 compliance costs push "
+                         "in-house pharmacies out"),
+            GrowthDriver("FDA enforcement / 483 risk", -3.0,
+                         "a bad inspection closes a facility — "
+                         "quality IS the license, priced"),
+            GrowthDriver("Shortage-list dependence", -2.0,
+                         "GLP-1-class compounding evaporates when "
+                         "drugs come off the list — the boom-bust "
+                         "exposure, shown as one"),
+        ],
+        sam_share=0.60,
+        sam_note="Independent 503Bs (hospital-system-owned excluded)",
+        som_share=0.10,
+        som_note="A small-N market — single facilities move share",
+        horizon_years=5,
+        basis_note="Template defaults from FDA registry + industry "
+                   "public data — replace with engagement data before "
+                   "IC use.",
+    )
+
+
+def lop_medicine_template() -> TamSamModel:
+    """Personal-injury / letter-of-protection medicine sizing — the
+    litigation-funded care niche. The riskiest model in the catalogue,
+    and the build says so."""
+    return TamSamModel(
+        name="LOP medicine · personal-injury care market",
+        chain=[
+            DriverStep("US injury claims generating funded care / yr",
+                       2_500_000, op="base", unit="claims",
+                       source="NHTSA crash injuries × claim rates + "
+                              "premises/work injury litigation"),
+            DriverStep("% treated under LOP / lien arrangements",
+                       0.20, op="rate", unit="of claims",
+                       source="plaintiff-bar referral-channel "
+                              "estimates"),
+            DriverStep("Avg funded care per claim", 9_000, op="price",
+                       unit="$/claim",
+                       source="MRI + injections + chiro/PT + surgical "
+                              "episode blend at LOP rates"),
+        ],
+        segments=[
+            Segment("Imaging / diagnostics", 0.25, None,
+                    growth_pct=4.0),
+            Segment("Interventional pain / ortho", 0.40, None,
+                    note="the revenue core — surgical conversions",
+                    growth_pct=5.0),
+            Segment("Chiro / PT networks", 0.20, None, growth_pct=3.0),
+            Segment("Funding / factoring layer", 0.15, None,
+                    note="medical-lien factoring — the financial "
+                         "engine and the discount risk",
+                    growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Litigation funding growth", 4.0,
+                         "third-party capital expands the funded-"
+                         "care channel"),
+            GrowthDriver("Attorney-referral consolidation", 2.0,
+                         "marketing scale concentrates referral "
+                         "flow"),
+            GrowthDriver("Tort-reform risk", -3.0,
+                         "state caps / lien statutes can reprice the "
+                         "book overnight — the existential policy "
+                         "risk, priced"),
+            GrowthDriver("Collectability discounts", -2.5,
+                         "liens settle at deep discounts; revenue "
+                         "recognition IS the diligence issue — "
+                         "shown as one"),
+        ],
+        sam_share=0.40,
+        sam_note="Tort-friendly states (FL/TX/GA class) with "
+                 "established lien law",
+        som_share=0.05,
+        som_note="A channel-relationship business — referral "
+                 "concentration is the real asset and the real risk",
+        horizon_years=5,
+        basis_note="Template defaults from NHTSA + litigation-industry "
+                   "public data — replace with engagement data before "
+                   "IC use. NOTE: collectability accounting and "
+                   "tort-reform exposure make this the highest-"
+                   "diligence-burden vertical in the catalogue.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -3377,6 +3545,9 @@ TEMPLATES = {
     "senior_living": senior_living_template,
     "vascular_access": vascular_access_template,
     "genetic_testing": genetic_testing_template,
+    "nemt": nemt_template,
+    "compounding_503b": compounding_503b_template,
+    "lop_medicine": lop_medicine_template,
     "blank": blank_template,
 }
 
