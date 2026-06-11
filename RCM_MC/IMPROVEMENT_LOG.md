@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-101 — wave #3: bankruptcy-survivor pattern strip (09:00Z)
+**Diligence-page upgrade wave continues**: the bankruptcy-survivor scan
+at a glance — one chip per pattern check (the 12 historical failure
+fingerprints: Steward/Envision/Cano/Wellpath/APP class), FIRED chips lit
+in their severity tone (CRITICAL red → LOW gray), passed chips muted
+outline; a summary line ("3 of 12 patterns fired · 2 critical") above.
+The eye finds the lit CRITICALs before reading a row of the table.
+**Verify**: strip renders on a 3-fired/2-critical scan; empty-checks
+empty-string pinned; bankruptcy suites 21 passed.
+
 ## W2-100 — wave #2: CIM Cross-Check variance chart (08:30Z)
 **The 100th item of the window.** The cross-check at a glance: one
 signed bar per VERIFIABLE claim — right of the dashed line = management

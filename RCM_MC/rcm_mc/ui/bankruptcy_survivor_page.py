@@ -276,6 +276,41 @@ def render_scan_landing() -> str:
     )
 
 
+def _pattern_strip(scan: BankruptcySurvivorScan) -> str:
+    """The scan at a glance before the table: one chip per pattern
+    check — fired chips lit in their severity tone, passed chips muted.
+    The eye finds the lit CRITICALs instantly."""
+    if not scan.checks:
+        return ""
+    tone = {"CRITICAL": "#b5321e", "HIGH": "#b8732a",
+            "MEDIUM": "#a98545", "LOW": "#7a8699"}
+    chips = ""
+    for c in scan.checks:
+        color = tone.get(c.severity, "#7a8699")
+        if c.fired:
+            style = (f"background:{color};color:#fff;border:1px solid "
+                     f"{color};")
+        else:
+            style = ("background:transparent;color:#9aa3ad;"
+                     "border:1px solid #d6cfc0;")
+        label = c.name.replace("_", " ").title()
+        chips += (
+            f'<span title="{html.escape(c.severity)} · '
+            f'{"FIRED" if c.fired else "pass"}" '
+            f'style="display:inline-block;padding:4px 10px;margin:0 6px '
+            f'6px 0;border-radius:2px;font-size:10.5px;'
+            f'font-family:var(--sc-mono,monospace);{style}">'
+            f'{html.escape(label)}</span>'
+        )
+    summary = (
+        f'<p style="margin:0 0 6px;font-size:11px;color:#465366;">'
+        f'<strong>{scan.patterns_hit}</strong> of {len(scan.checks)} '
+        f'patterns fired · <strong>{scan.critical_hits}</strong> '
+        'critical — lit chips read in severity tone.</p>'
+    )
+    return f'<div style="margin:0 0 14px;">{summary}{chips}</div>'
+
+
 def render_scan_result(scan: BankruptcySurvivorScan) -> str:
     color = _VERDICT_COLOR[scan.verdict]
     copy = _VERDICT_COPY[scan.verdict]
@@ -331,6 +366,7 @@ def render_scan_result(scan: BankruptcySurvivorScan) -> str:
         f"Critical matches: {scan.critical_hits}</div>"
         f"</div>"
         "<h2>Pattern checks</h2>"
+        f"{_pattern_strip(scan)}"
         "<table class='checks'>"
         "<thead><tr><th>Category</th><th>Check</th><th>Status</th>"
         "<th>Narrative</th></tr></thead>"
