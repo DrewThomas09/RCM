@@ -522,6 +522,198 @@ def _provider_map_section(a: Dict[str, Any]) -> str:
         f'<ul style="margin:0;padding-left:16px;">{taxo}</ul></div></div>')
 
 
+# Schematic US tile-grid (row, col) — a labeled state grid, not a
+# geographic projection. Each tile carries its abbreviation so position
+# need not be exact to read.
+_STATE_TILE = {
+    "AK": (0, 0), "ME": (0, 10),
+    "VT": (1, 9), "NH": (1, 10),
+    "WA": (2, 0), "ID": (2, 1), "MT": (2, 2), "ND": (2, 3), "MN": (2, 4),
+    "IL": (2, 5), "WI": (2, 6), "MI": (2, 7), "NY": (2, 8), "MA": (2, 9),
+    "RI": (2, 10),
+    "OR": (3, 0), "NV": (3, 1), "WY": (3, 2), "SD": (3, 3), "IA": (3, 4),
+    "IN": (3, 5), "OH": (3, 6), "PA": (3, 7), "NJ": (3, 8), "CT": (3, 9),
+    "CA": (4, 0), "UT": (4, 1), "CO": (4, 2), "NE": (4, 3), "MO": (4, 4),
+    "KY": (4, 5), "WV": (4, 6), "VA": (4, 7), "MD": (4, 8), "DE": (4, 9),
+    "AZ": (5, 1), "NM": (5, 2), "KS": (5, 3), "AR": (5, 4), "TN": (5, 5),
+    "NC": (5, 6), "SC": (5, 7), "DC": (5, 8),
+    "OK": (6, 3), "LA": (6, 4), "MS": (6, 5), "AL": (6, 6), "GA": (6, 7),
+    "HI": (7, 0), "TX": (7, 3), "FL": (7, 8),
+}
+
+
+def _heat(frac: float) -> str:
+    """Light→teal sequential color for a 0–1 fraction."""
+    frac = max(0.0, min(1.0, frac))
+    c0 = (0xE4, 0xEC, 0xEA)
+    c1 = (0x12, 0x5E, 0x59)
+    rgb = tuple(round(c0[i] + (c1[i] - c0[i]) * frac) for i in range(3))
+    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+
+
+def _jcode_pos_section(a: Dict[str, Any]) -> str:
+    """Infusion J-code place-of-service by state — a tile-grid choropleth
+    of the non-facility (office/AIC) share, percentage tables, the
+    national facility→non-facility trend, and the Texas read."""
+    jp = a.get("jcode_pos") or {}
+    states = jp.get("states", [])
+    if not states:
+        return ""
+    by_code = {s["code"]: s for s in states}
+    vals = [s["nonfac_pct"] for s in states]
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1
+    live = jp.get("live")
+    cell, gap = 9.0, 0.7
+    ncol, nrow = 11, 8
+    tiles = ""
+    for code, (r, c) in _STATE_TILE.items():
+        s = by_code.get(code)
+        if not s:
+            continue
+        x, y = c * cell, r * cell
+        fill = _heat((s["nonfac_pct"] - lo) / rng)
+        is_tx = code == "TX"
+        stroke = _NEG if is_tx else "#fff"
+        sw = 0.9 if is_tx else 0.4
+        txt = "#fff" if (s["nonfac_pct"] - lo) / rng > 0.55 else "#1a2332"
+        tiles += (
+            f'<g><rect x="{x:.1f}" y="{y:.1f}" width="{cell-gap:.1f}" '
+            f'height="{cell-gap:.1f}" rx="1.2" fill="{fill}" '
+            f'stroke="{stroke}" stroke-width="{sw}">'
+            f'<title>{html.escape(s["name"])}: '
+            f'{s["nonfac_pct"]*100:.0f}% non-facility'
+            f'{" (live)" if s["is_live"] else " (modeled)"}</title></rect>'
+            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+3.4:.1f}" '
+            f'text-anchor="middle" font-size="2.7" font-weight="700" '
+            f'fill="{txt}">{code}</text>'
+            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+6.4:.1f}" '
+            f'text-anchor="middle" font-size="2.6" fill="{txt}">'
+            f'{s["nonfac_pct"]*100:.0f}</text></g>')
+    legend = (
+        f'<div style="display:flex;align-items:center;gap:6px;'
+        f'font-size:10px;color:{_FAINT};margin-top:4px;">'
+        f'<span>{lo*100:.0f}%</span>'
+        f'<span style="flex:0 0 120px;height:9px;border-radius:2px;'
+        f'background:linear-gradient(90deg,{_heat(0)},{_heat(1)});"></span>'
+        f'<span>{hi*100:.0f}% non-facility</span>'
+        f'<span style="margin-left:8px;color:{_NEG};font-weight:700;">'
+        f'▭ TX</span></div>')
+    svg = (
+        f'<svg viewBox="-1 -1 {ncol*cell+1:.0f} {nrow*cell+1:.0f}" '
+        f'width="100%" height="300" role="img" '
+        f'aria-label="J-code place-of-service by state" '
+        f'style="max-width:560px;">{tiles}</svg>')
+
+    def _row(s, hl=False):
+        bg = "background:#fbf3ef;" if hl else ""
+        tag = (' <span style="color:%s;font-weight:700;font-size:9px;">'
+               'TX</span>' % _NEG) if s["code"] == "TX" else ""
+        live_tag = ('<span style="color:%s;font-size:9px;">●live</span>' % _POS
+                    if s["is_live"] else
+                    '<span style="color:%s;font-size:9px;">modeled</span>'
+                    % _FAINT)
+        return (
+            f'<tr style="{bg}border-bottom:1px solid #e8e1d0;">'
+            f'<td class="num" style="padding:3px 8px;color:{_FAINT};">'
+            f'#{s["rank"]}</td>'
+            f'<td style="padding:3px 8px;font-weight:600;">'
+            f'{html.escape(s["name"])}{tag}</td>'
+            f'<td class="num" style="padding:3px 8px;text-align:right;'
+            f'font-weight:700;color:{_TEAL};">{s["nonfac_pct"]*100:.0f}%</td>'
+            f'<td class="num" style="padding:3px 8px;text-align:right;'
+            f'color:{_DIM};">{s["rural"]*100:.0f}%</td>'
+            f'<td class="num" style="padding:3px 8px;text-align:right;'
+            f'color:{_DIM};">{s["ma_penetration"]*100:.0f}%</td>'
+            f'<td style="padding:3px 8px;">{live_tag}</td></tr>')
+    tx = jp["texas"]
+    top = states[:6]
+    bottom = states[-6:]
+    body_rows = "".join(_row(s) for s in top)
+    if 6 < tx["rank"] <= len(states) - 6:
+        body_rows += ('<tr><td colspan="6" style="text-align:center;'
+                      f'color:{_FAINT};font-size:10px;padding:2px;">⋯</td></tr>')
+        body_rows += _row(tx, hl=True)
+    body_rows += ('<tr><td colspan="6" style="text-align:center;'
+                  f'color:{_FAINT};font-size:10px;padding:2px;">⋯</td></tr>')
+    body_rows += "".join(_row(s) for s in bottom)
+    state_table = (
+        f'<table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;color:{_FAINT};">'
+        f'<th style="text-align:left;padding:3px 8px;">#</th>'
+        f'<th style="text-align:left;padding:3px 8px;">State</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Non-facility</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Rural</th>'
+        f'<th style="text-align:right;padding:3px 8px;">MA pen</th>'
+        f'<th style="text-align:left;padding:3px 8px;">Src</th>'
+        f'</tr></thead><tbody>{body_rows}</tbody></table>')
+
+    tr_rows = ""
+    for t in jp["national_trend"]:
+        tr_rows += (
+            f'<tr style="border-bottom:1px solid #e8e1d0;">'
+            f'<td style="padding:3px 8px;font-weight:600;">{t["year"]}</td>'
+            f'<td class="num" style="padding:3px 8px;text-align:right;'
+            f'color:{_NAVY};">{t["facility_pct"]*100:.0f}%</td>'
+            f'<td style="padding:3px 8px;">'
+            f'{_bar(t["nonfacility_pct"]*100, _TEAL, 90)}</td>'
+            f'<td class="num" style="padding:3px 8px;text-align:right;'
+            f'font-weight:700;color:{_TEAL};">'
+            f'{t["nonfacility_pct"]*100:.0f}%</td></tr>')
+    trend_table = (
+        f'<table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;color:{_FAINT};">'
+        f'<th style="text-align:left;padding:3px 8px;">Year</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Facility (HOPD)</th>'
+        f'<th style="padding:3px 8px;"></th>'
+        f'<th style="text-align:right;padding:3px 8px;">Non-facility</th>'
+        f'</tr></thead><tbody>{tr_rows}</tbody></table>')
+
+    jcodes = ", ".join(c["hcpcs"] for c in jp.get("jcodes", []))
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">'
+        f'{"LIVE — CMS Part B by-Geography-and-Service" if live else "MODELED — real state factors (live CMS via ?nppes=live)"}'
+        f'</span>')
+    tx_read = (
+        f'<div style="margin-top:8px;padding:8px 11px;background:#fbf3ef;'
+        f'border-left:3px solid {_NEG};border-radius:0 3px 3px 0;'
+        f'font-size:11.5px;color:#1a2332;line-height:1.55;">'
+        f'<strong style="color:{_NEG};">Texas:</strong> '
+        f'~{tx["nonfac_pct"]*100:.0f}% of infusion J-code volume is '
+        f'non-facility (office/AIC), ranking #{tx["rank"]} of '
+        f'{len(states)} — pushed up by low rurality '
+        f'({tx["rural"]*100:.0f}%) and high MA penetration '
+        f'({tx["ma_penetration"]*100:.0f}%). That favorable site mix is '
+        f'why the AIC roll-up thesis works here.</div>')
+    return (
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0;'
+        f'max-width:620px;">{html.escape(jp.get("note", ""))}</p>{badge}</div>'
+        f'<div style="display:grid;grid-template-columns:1.05fr 1fr;gap:20px;'
+        f'align-items:start;"><div>{svg}{legend}</div>'
+        f'<div><div style="font-size:10px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:3px;">NON-FACILITY SHARE — '
+        f'TOP · TEXAS · BOTTOM</div>{state_table}</div></div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;'
+        f'margin-top:14px;align-items:start;">'
+        f'<div><div style="font-size:10px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:3px;">NATIONAL FACILITY → '
+        f'NON-FACILITY TREND</div>{trend_table}</div>'
+        f'<div>{tx_read}</div></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'J-code basket: {html.escape(jcodes)}. Facility = HOPD/inpatient; '
+        f'non-facility = office / freestanding AIC (the binary CMS POS). '
+        f'FFS only — excludes Medicare Advantage (~half of Medicare), so '
+        f'the non-facility shift is understated. Small cells (&lt;11) '
+        f'suppressed. Granular POS (home vs HOPD vs office) needs the paid '
+        f'PSPS Master File.</p>')
+
+
 def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
     """Medicare Advantage enrollment + the site-of-care-steerage read —
     the key payer-mix force on infusion."""
@@ -2070,6 +2262,14 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"Supply concentrates in DFW + Houston; relative to growth, "
             f"Austin and San Antonio are thinner — the white-space metros "
             f"for de-novo or tuck-in entry."),
+        "jcode_pos": (
+            f"Texas runs ~{a['jcode_pos']['texas']['nonfac_pct']*100:.0f}% "
+            f"of infusion J-code volume non-facility (office/AIC), #"
+            f"{a['jcode_pos']['texas']['rank']} of "
+            f"{len(a['jcode_pos']['states'])} — a structurally favorable "
+            f"site mix (low rural, high MA) that hands the AIC roll-up its "
+            f"runway. The national facility→non-facility drift keeps "
+            f"widening it."),
         "metro": (
             f"{top_metro['metro'].split('-')[0]} ranks #1 on attractiveness "
             f"({top_metro['attractiveness']:.0f}), but DFW carries the most "
@@ -2251,6 +2451,12 @@ def render_texas_infusion_page(
                             eyebrow="NPPES NPI REGISTRY · SUPPLY BY METRO")
         + _provider_map_section(a)
         + _so_what(sw["map"])
+
+        + ck_section_header("J-code place of service by state",
+                            eyebrow="CMS PART B · FACILITY vs NON-FACILITY · "
+                                    "MAP + 3-YR TREND")
+        + _jcode_pos_section(a)
+        + _so_what(sw["jcode_pos"])
 
         + ck_section_header("Metro attractiveness ranking",
                             eyebrow="HOUSTON · DFW · AUSTIN · SAN ANTONIO")

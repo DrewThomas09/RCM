@@ -274,3 +274,21 @@ model); factual event timeline (Cures Act/biosimilar/HIT 2019+2021/COVID/
 white-bagging/MA>50%/IRA) + structural drivers. Page: "How discharges →
 home infusion have evolved" stacked-area chart + timeline + drivers +
 SO WHAT. +5 tests; full suite green.
+
+---
+## Checkpoint — wave #60 (W2-158, 2026-06-11)
+Built J-code place-of-service by state (the PSPS/by-Geography question).
+New cms_geo_service.py (live CMS "by Geography and Service" client:
+J-code × state × POS(F/O) × year; resolves dataset per year; fails
+closed). infusion_jcode_pos(fetch_live,years): per-state non-facility %
+(live claims or MODELED from real rurality+MA, labeled), 51 states
+ranked, TX #12 ~61%, national 3-yr facility→non-fac trend. Page: "J-code
+place of service by state" — US tile-grid choropleth (TX outlined) +
+top/TX/bottom % table + trend table + TX read + LIVE/MODELED badge + SO
+WHAT. Caveats: FFS-only/excludes MA, <11 suppression, binary POS (PSPS
+Master File for granular). +6 engine + 4 client tests. Full suite green.
+
+USER DATA REQUEST: CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓ NPPES+map ✓ Part-B
+by-geo/POS J-codes+map ✓. Remaining named: Medicare Monthly Enrollment
+(total benes/county), CMS Outpatient Hospitals by provider/service
+(cms_opps_outpatient client exists, unwired).

@@ -3280,3 +3280,33 @@ non-hospital rises monotonically, market compounds at the computed CAGR,
 the 2024 endpoint equals the page's live site-of-care model, the event
 timeline is real & ordered (Cures Act/COVID/HIT/biosimilar); +4 render
 needles + 1 SO WHAT. Full suite green.
+
+## W2-158 (2026-06-11) — Texas infusion: J-code place-of-service by state (CMS by-Geography-and-Service) + map (wave #60)
+Answered the "aggregate POS for J-codes by state over 3 years" question
+by building it:
+- **`cms_geo_service.py`** (new live client): the CMS "Medicare Physician
+  & Other Practitioners — by Geography and Service" PUF — J-code × state
+  × place-of-service (facility/non-facility) × year. Resolves the per-
+  year dataset UUID from the CMS data.json catalog, pulls state rows for
+  the infusion J-code basket, aggregates facility vs non-facility
+  services + computes the non-facility %. Fails closed (no fabricated
+  claims) offline.
+- **`infusion_jcode_pos(fetch_live, years)`**: per-state non-facility
+  share for the infusion J-code basket. Live = real CMS Part B FFS
+  claims; offline = MODELED from a national anchor adjusted by REAL state
+  rurality (more rural → more facility) + MA penetration (more MA → more
+  non-facility steerage), clamped + labeled — never claims. All 51
+  states ranked; TX detail; national 3-yr facility→non-facility trend.
+- **Page**: a "J-code place of service by state" section — a schematic
+  US tile-grid choropleth (non-facility share, TX outlined, all 51 tiles
+  collision-checked), a top/Texas/bottom percentage table (non-facility %
+  / rural / MA-pen / live-vs-modeled), the national facility→non-facility
+  trend table, and the Texas read (~61% non-facility, #12 of 51), with a
+  LIVE/MODELED badge + SO WHAT. Honest caveats surfaced: FFS-only
+  (excludes MA), <11 suppression, binary POS (granular needs paid PSPS).
+**Verify**: +6 jcode-POS tests (test_texas_infusion) + new
+`test_cms_geo_service.py` (4) — all 51 states ranked, offline is modeled
+(not claims, 0.35–0.82), modeled share responds to real rurality/MA
+(VT<FL), TX present, J-code basket + 3-yr trend rises, live flag fails
+closed; client parses mocked Socrata payload + aggregates non-facility %
++ fails closed unresolved; +5 render needles + 1 SO WHAT. Full suite green.

@@ -1464,6 +1464,107 @@ def texas_infusion_provider_map(
     }
 
 
+_US_STATES = [
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA",
+    "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA",
+    "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY",
+    "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX",
+    "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+
+_STATE_NAME = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut",
+    "DE": "Delaware", "DC": "District of Columbia", "FL": "Florida",
+    "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois",
+    "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", "KY": "Kentucky",
+    "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota",
+    "MS": "Mississippi", "MO": "Missouri", "MT": "Montana",
+    "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire",
+    "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio",
+    "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania",
+    "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota",
+    "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont",
+    "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming"}
+
+
+def infusion_jcode_pos(
+    fetch_live: bool = False,
+    years: "tuple[int, ...]" = (2020, 2021, 2022),
+) -> Dict[str, Any]:
+    """Place-of-service split for the infusion J-code basket by state —
+    facility (HOPD) vs non-facility (office / freestanding AIC).
+
+    Live (``fetch_live``): real CMS Part B FFS claims from the
+    by-Geography-and-Service file, aggregated across the infusion J-codes
+    and years. Offline: a MODELED non-facility share per state driven by
+    REAL state factors — rurality (more rural → fewer freestanding AICs →
+    more facility) and MA penetration (more MA → more steerage to
+    non-facility) — anchored to a national base. Modeled values are
+    labeled, never claims; the live pull replaces them."""
+    from ..data.cms_asp_pricing import INFUSION_HCPCS
+    from ..data.county_demographics import demographics_state
+    from ..data.ma_data import ma_state
+
+    codes = [c["hcpcs"] for c in INFUSION_HCPCS]
+    live_by_name: Dict[str, Any] = {}
+    if fetch_live:
+        from ..data.cms_geo_service import jcode_pos_by_state
+        live_by_name = jcode_pos_by_state(codes, list(years))
+
+    base = 0.58           # national non-facility anchor (illustrative)
+    states = []
+    for code in _US_STATES:
+        d = demographics_state(code) or {}
+        pop = float(d.get("population") or 0)
+        pct65 = float(d.get("pct_age_65_plus") or 0.16)
+        rural = float(d.get("pct_rural") or 0.20)
+        m = ma_state(code) or {}
+        ma_enr = float(m.get("ma_enrollment") or 0)
+        ma_pen = min(0.95, ma_enr / (pop * pct65)) if pop and pct65 else 0.45
+        modeled = base - 0.30 * (rural - 0.20) + 0.18 * (ma_pen - 0.45)
+        modeled = round(max(0.35, min(0.82, modeled)), 4)
+        live = live_by_name.get(_STATE_NAME.get(code, ""))
+        live_pct = None
+        if live:
+            yr = max(live)
+            live_pct = live[yr].get("nonfac_pct")
+        states.append({
+            "code": code, "name": _STATE_NAME.get(code, code),
+            "nonfac_pct": live_pct if live_pct is not None else modeled,
+            "modeled_pct": modeled, "is_live": live_pct is not None,
+            "rural": round(rural, 4), "ma_penetration": round(ma_pen, 3),
+        })
+    states.sort(key=lambda s: -s["nonfac_pct"])
+    for i, s in enumerate(states, 1):
+        s["rank"] = i
+    tx = next((s for s in states if s["code"] == "TX"), None)
+    # National facility→non-facility trend from the site-of-care model
+    # (labeled national context; per-state 3-yr trend fills in live).
+    evo = home_infusion_evolution()["series"]
+    last3 = evo[-3:]
+    trend = [{"year": r["year"], "facility_pct": r["hopd"],
+              "nonfacility_pct": round(1 - r["hopd"], 4)} for r in last3]
+    return {
+        "states": states,
+        "texas": tx,
+        "national_trend": trend,
+        "jcodes": [{"hcpcs": c["hcpcs"], "drug": c["drug"]}
+                   for c in INFUSION_HCPCS],
+        "years": list(years),
+        "live": any(s["is_live"] for s in states),
+        "note": ("Place of service (facility = HOPD vs non-facility = "
+                 "office / freestanding AIC) for the infusion J-code "
+                 "basket, by state. Offline values are MODELED from a "
+                 "national anchor adjusted by real state rurality + MA "
+                 "penetration — NOT claims; the live CMS Part B "
+                 "by-Geography-and-Service pull (FFS only; excludes MA) "
+                 "replaces them per state × year."),
+    }
+
+
 def infusion_risk_register() -> List[Dict[str, Any]]:
     """Channel-specific risk register for AIC + home infusion, each
     risk tagged with severity, who it hits, and — critically — the RCM
@@ -2590,6 +2691,7 @@ def build_texas_infusion_analysis(
         "provider_segments": _PROVIDER_SEGMENTS,
         "provider_map": texas_infusion_provider_map(
             metro_deepdives, fetch_live=nppes_live),
+        "jcode_pos": infusion_jcode_pos(fetch_live=nppes_live),
         "cdc_proxies": cdc_proxies,
         "growth_scorecard": texas_growth_scorecard(metro_deepdives),
         "metros": metros,
