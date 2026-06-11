@@ -495,6 +495,172 @@ def _drug_supply_section(a: Dict[str, Any]) -> str:
         f'text-decoration:none;">Drug Shortage tracker →</a></p>')
 
 
+def _aic_assumptions_form(a: Dict[str, Any]) -> str:
+    """The change-your-assumptions form. GET → the same page; every
+    field range-clamped server-side; blank = model default."""
+    asm = a["aic_economics"]["assumptions"]
+    fields = [
+        ("aic_chairs", "Chairs", asm["chairs"], "1–60"),
+        ("aic_util", "Utilization %", round(asm["util_pct"] * 100),
+         "30–95"),
+        ("aic_per_day", "Infusions / chair / day",
+         asm["infusions_per_chair_day"], "2–12"),
+        ("aic_drug_rev", "Drug revenue / infusion $",
+         round(asm["revenue_per_infusion_drug"]), "100–5,000"),
+        ("aic_commercial", "Commercial mix %",
+         round(asm["commercial_mix_pct"] * 100), "0–100"),
+        ("aic_nurse_ratio", "Nurse : chair ratio",
+         asm["nurse_to_chair"], "0.10–1.0"),
+        ("aic_nurse_cost", "Nurse cost (loaded) $",
+         round(asm["nurse_fully_loaded"]), "60K–250K"),
+        ("aic_overhead", "Overhead / chair $",
+         round(asm["facility_overhead_per_chair"]), "5K–120K"),
+        ("aic_rcm", "RCM cost %", round(asm["rcm_cost_pct"] * 100),
+         "1–15"),
+    ]
+    inputs = "".join(
+        f'<label style="font-size:10px;color:{_FAINT};display:block;">'
+        f'{html.escape(label)} <span style="color:#c9c1ac;">({rng})</span>'
+        f'<input name="{key}" value="{val}" inputmode="decimal" '
+        f'style="width:100%;padding:4px 7px;border:1px solid #c9c1ac;'
+        f'border-radius:3px;font-variant-numeric:tabular-nums;'
+        f'font-size:12px;"></label>'
+        for key, label, val, rng in fields)
+    edited = (
+        f'<span style="font-size:9px;font-weight:700;color:{_WARN};'
+        f'border:1px solid {_WARN};border-radius:2px;padding:1px 6px;'
+        f'margin-left:8px;">EDITED — your assumptions</span>'
+        if a.get("aic_overrides_active") else
+        f'<span style="font-size:9px;color:{_FAINT};margin-left:8px;">'
+        f'benchmark defaults — edit and recompute</span>')
+    return (
+        f'<form method="get" action="/diligence/texas-infusion#aic" '
+        f'style="border:1px solid #d6cfc0;border-radius:4px;'
+        f'padding:10px 14px;background:#fff;margin-bottom:12px;">'
+        f'<div style="font-size:10px;font-weight:700;letter-spacing:'
+        f'0.06em;color:{_NAVY};margin-bottom:6px;">CHANGE THE '
+        f'ASSUMPTIONS{edited}</div>'
+        f'<div style="display:grid;grid-template-columns:repeat('
+        f'auto-fill,minmax(150px,1fr));gap:8px;align-items:end;">'
+        f'{inputs}'
+        f'<button type="submit" style="padding:6px 12px;cursor:pointer;'
+        f'background:{_NAVY};color:#fff;border:none;border-radius:3px;'
+        f'font-size:12px;font-weight:600;">Recompute ↻</button>'
+        f'<a href="/diligence/texas-infusion#aic" style="font-size:11px;'
+        f'color:{_FAINT};text-decoration:none;align-self:center;">reset</a>'
+        f'</div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:7px 0 0;">'
+        f'Inputs are range-clamped server-side; blank = benchmark '
+        f'default. With no explicit admin-fee/drug-margin override, both '
+        f'blend from the commercial mix (commercial '
+        f'${"%.0f" % 260}/{14:.0f}% vs Medicare ${"%.0f" % 155}/'
+        f'{4.3:.1f}% — MedPAC ASP+4.3 sequestered), so the mix slider '
+        f'moves the P&amp;L.</p>'
+        f'</form>')
+
+
+def _aic_tornado_svg(rows: List[Dict[str, Any]]) -> str:
+    """Contribution tornado — which lever moves the chair P&L."""
+    if not rows:
+        return ""
+    base = rows[0]["base"]
+    mx = max(max(abs(r["contribution_low"] - base),
+                 abs(r["contribution_high"] - base)) for r in rows) or 1.0
+    label_w, half_w = 190, 160
+    cx = label_w + half_w
+    row_h, gap, pad = 20, 7, 8
+    width = label_w + 2 * half_w + 80
+    height = pad * 2 + len(rows) * (row_h + gap) - gap + 16
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img">'
+        f'<line x1="{cx}" y1="{pad}" x2="{cx}" y2="{height-22}" '
+        f'stroke="#c9c1ac" stroke-width="1"/>'
+        f'<text x="{cx}" y="{height-8}" text-anchor="middle" '
+        f'font-size="9" fill="{_FAINT}">base ${base/1e3:,.0f}K</text>']
+    for i, r in enumerate(rows):
+        y = pad + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        lo_d = r["contribution_low"] - base
+        hi_d = r["contribution_high"] - base
+        for d, tone in ((lo_d, _NEG if lo_d < 0 else _POS),
+                        (hi_d, _POS if hi_d > 0 else _NEG)):
+            w = abs(d) / mx * half_w
+            x = cx - w if d < 0 else cx
+            parts.append(
+                f'<rect x="{x:.1f}" y="{y}" width="{max(w,1):.1f}" '
+                f'height="{row_h}" rx="2" fill="{tone}" '
+                f'fill-opacity="0.75"/>')
+        parts.append(
+            f'<text x="{label_w-6}" y="{ty:.0f}" text-anchor="end" '
+            f'font-size="10.5" fill="#1a2332">'
+            f'{html.escape(r["lever"])}</text>'
+            f'<text x="{cx+half_w+6}" y="{ty:.0f}" font-size="10" '
+            f'font-weight="600" fill="{_DIM}">±${r["impact"]/2e3:,.0f}K'
+            f'</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _util_curve_svg(curve: Dict[str, Any]) -> str:
+    """Contribution vs chair utilization with the break-even marker —
+    the de-novo ramp picture."""
+    pts = curve["points"]
+    if not pts:
+        return ""
+    width, h, pad_l, pad_b, pad_t = 560, 200, 64, 30, 14
+    plot_w, plot_h = width - pad_l - 16, h - pad_t - pad_b
+    us = [p["util_pct"] for p in pts]
+    cs = [p["contribution"] for p in pts]
+    lo_c, hi_c = min(min(cs), 0), max(cs)
+    span = (hi_c - lo_c) or 1.0
+    def _x(u): return pad_l + (u - us[0]) / (us[-1] - us[0]) * plot_w
+    def _y(c): return pad_t + (1 - (c - lo_c) / span) * plot_h
+    path = " ".join(
+        f'{"M" if i == 0 else "L"} {_x(p["util_pct"]):.1f} '
+        f'{_y(p["contribution"]):.1f}' for i, p in enumerate(pts))
+    zero_y = _y(0)
+    parts = [
+        f'<svg viewBox="0 0 {width} {h}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img">'
+        f'<line x1="{pad_l}" y1="{zero_y:.1f}" x2="{width-16}" '
+        f'y2="{zero_y:.1f}" stroke="#c9c1ac" stroke-width="1" '
+        f'stroke-dasharray="3,3"/>'
+        f'<text x="{pad_l-4}" y="{zero_y+3:.1f}" text-anchor="end" '
+        f'font-size="9" fill="{_FAINT}">$0</text>'
+        f'<path d="{path}" fill="none" stroke="{_NAVY}" '
+        f'stroke-width="2"/>']
+    be = curve.get("breakeven_util")
+    if be is not None and us[0] <= be <= us[-1]:
+        parts.append(
+            f'<line x1="{_x(be):.1f}" y1="{pad_t}" x2="{_x(be):.1f}" '
+            f'y2="{h-pad_b}" stroke="{_WARN}" stroke-width="1.5" '
+            f'stroke-dasharray="4,3"/>'
+            f'<text x="{_x(be):.1f}" y="{pad_t-3}" text-anchor="middle" '
+            f'font-size="9" font-weight="700" fill="{_WARN}">'
+            f'break-even {be*100:.0f}%</text>')
+    elif be is not None:
+        parts.append(
+            f'<text x="{pad_l}" y="{pad_t-3}" font-size="9" '
+            f'font-weight="700" fill="{_WARN}">break-even '
+            f'{be*100:.0f}% (left of chart)</text>')
+    cu = curve["current_util"]
+    parts.append(
+        f'<circle cx="{_x(cu):.1f}" '
+        f'cy="{_y(curve["current_contribution"]):.1f}" r="5" '
+        f'fill="{_POS}"/>'
+        f'<text x="{_x(cu)+8:.1f}" '
+        f'y="{_y(curve["current_contribution"])-6:.1f}" font-size="9.5" '
+        f'font-weight="700" fill="{_POS}">you: {cu*100:.0f}% · '
+        f'${curve["current_contribution"]/1e3:,.0f}K</text>')
+    for u in (0.40, 0.60, 0.80, 0.95):
+        parts.append(
+            f'<text x="{_x(u):.1f}" y="{h-10}" text-anchor="middle" '
+            f'font-size="9" fill="{_FAINT}">{u*100:.0f}%</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
 def _channel_cards(a: Dict[str, Any]) -> str:
     """Two side-by-side channel breakdowns — AIC vs home infusion."""
     cards = ""
@@ -817,10 +983,16 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'</div>')
 
 
-def render_texas_infusion_page() -> str:
-    """Render the full Texas infusion diligence page."""
-    from ..diligence.texas_infusion import build_texas_infusion_analysis
-    a = build_texas_infusion_analysis()
+def render_texas_infusion_page(
+    qs: "Dict[str, Any] | None" = None,
+) -> str:
+    """Render the full Texas infusion diligence page. ``qs`` carries
+    optional AIC assumption overrides (clamped server-side)."""
+    from ..diligence.texas_infusion import (
+        aic_assumptions_from_qs, build_texas_infusion_analysis,
+    )
+    overrides = aic_assumptions_from_qs(qs or {})
+    a = build_texas_infusion_analysis(aic_overrides=overrides)
     demo = a["demographics"]
 
     sources = "".join(
@@ -867,10 +1039,27 @@ def render_texas_infusion_page() -> str:
                             eyebrow="THE REVENUE-CYCLE PLAYBOOK")
         + _rcm_playbook(a)
 
+        + '<div id="aic"></div>'
         + ck_section_header("AIC unit economics",
                             eyebrow="PER-CHAIR P&L · THE LEVERS · BREAKDOWN "
-                                    "BY SECTION")
+                                    "BY SECTION · EDITABLE")
+        + _aic_assumptions_form(a)
         + _aic_economics_section(a)
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;'
+          'gap:18px;margin-top:14px;">'
+        + (f'<div><div style="font-size:10px;color:{_FAINT};'
+           f'letter-spacing:0.06em;font-weight:700;margin-bottom:4px;">'
+           f'SENSITIVITY — WHAT MOVES CONTRIBUTION / CHAIR (±20% swings)'
+           f'</div>{_aic_tornado_svg(a["aic_sensitivity"])}</div>')
+        + (f'<div><div style="font-size:10px;color:{_FAINT};'
+           f'letter-spacing:0.06em;font-weight:700;margin-bottom:4px;">'
+           f'UTILIZATION → CONTRIBUTION CURVE · BREAK-EVEN</div>'
+           f'{_util_curve_svg(a["aic_utilization_curve"])}'
+           f'<p style="font-size:9.5px;color:{_FAINT};margin:4px 0 0;">'
+           f'Fixed nursing + overhead don\'t scale with utilization — '
+           f'that gap creates the break-even. Recomputed from your '
+           f'assumptions above.</p></div>')
+        + '</div>'
 
         + ck_section_header("Drug supply & inventory",
                             eyebrow="LIVE FDA SHORTAGE STATUS — NO SYNTHETIC "

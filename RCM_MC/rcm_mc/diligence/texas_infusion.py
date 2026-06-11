@@ -934,12 +934,23 @@ def infusion_drug_supply() -> Dict[str, Any]:
     }
 
 
+#: Per-payer AIC rate anchors. Commercial pays an admin fee well above
+#: the Medicare PFS drug-administration codes (96413/96415 ≈ $145–160
+#: blended) and a wider buy-and-bill spread (% of AWP vs ASP+4.3
+#: sequestered). MedPAC Part B chapter + NHIA benchmarks; illustrative,
+#: editable.
+AIC_COMMERCIAL_ADMIN_FEE = 260.0
+AIC_MEDICARE_ADMIN_FEE = 155.0
+AIC_COMMERCIAL_DRUG_MARGIN = 0.14
+AIC_MEDICARE_DRUG_MARGIN = 0.043     # ASP+6 sequestered to ~ASP+4.3
+
+
 def aic_chair_economics(
     *, chairs: int = 10, util_pct: float = 0.78,
     infusions_per_chair_day: float = 6.0, operating_days: int = 250,
     revenue_per_infusion_drug: float = 650.0,
-    admin_fee_per_infusion: float = 220.0,
-    drug_margin_pct: float = 0.10, nurse_to_chair: float = 0.30,
+    admin_fee_per_infusion: Optional[float] = None,
+    drug_margin_pct: Optional[float] = None, nurse_to_chair: float = 0.30,
     nurse_fully_loaded: float = 130_000.0,
     facility_overhead_per_chair: float = 28_000.0,
     rcm_cost_pct: float = 0.05, commercial_mix_pct: float = 0.62,
@@ -951,9 +962,25 @@ def aic_chair_economics(
     named (chair utilization, nurse productivity, recurring patients,
     commercial mix, prior-auth discipline, drug margin/acquisition).
 
+    Payer mix is a REAL lever: when ``admin_fee_per_infusion`` /
+    ``drug_margin_pct`` are not explicitly overridden they are blended
+    from the per-payer anchors (commercial pays a higher admin fee and
+    a wider buy-and-bill spread than Medicare ASP+4.3) — so moving the
+    commercial-mix slider moves the P&L, not just a display chip.
+
     Documented defaults from NHIA / ambulatory-infusion benchmarks —
     illustrative starting points, every input editable. The math is a
     pure function of the assumptions so the breakdown audits."""
+    mix = max(0.0, min(1.0, commercial_mix_pct))
+    blended = False
+    if admin_fee_per_infusion is None:
+        admin_fee_per_infusion = (mix * AIC_COMMERCIAL_ADMIN_FEE
+                                  + (1 - mix) * AIC_MEDICARE_ADMIN_FEE)
+        blended = True
+    if drug_margin_pct is None:
+        drug_margin_pct = (mix * AIC_COMMERCIAL_DRUG_MARGIN
+                           + (1 - mix) * AIC_MEDICARE_DRUG_MARGIN)
+        blended = True
     infusions_per_chair_yr = infusions_per_chair_day * operating_days * util_pct
     total_infusions = infusions_per_chair_yr * chairs
     nurses = chairs * nurse_to_chair
@@ -1031,11 +1058,17 @@ def aic_chair_economics(
             "chairs": chairs, "util_pct": util_pct,
             "infusions_per_chair_day": infusions_per_chair_day,
             "operating_days": operating_days,
+            "revenue_per_infusion_drug": revenue_per_infusion_drug,
             "commercial_mix_pct": commercial_mix_pct,
             "recurring_patient_pct": recurring_patient_pct,
             "prior_auth_approval_pct": prior_auth_approval_pct,
+            "admin_fee_per_infusion": admin_fee_per_infusion,
             "drug_margin_pct": drug_margin_pct,
             "nurse_to_chair": nurse_to_chair,
+            "nurse_fully_loaded": nurse_fully_loaded,
+            "facility_overhead_per_chair": facility_overhead_per_chair,
+            "rcm_cost_pct": rcm_cost_pct,
+            "payer_blended": blended,
         },
         "infusions_per_chair_yr": round(infusions_per_chair_yr),
         "total_infusions": round(total_infusions),
@@ -1050,13 +1083,138 @@ def aic_chair_economics(
     }
 
 
-def build_texas_infusion_analysis() -> Dict[str, Any]:
+#: The qs-editable AIC assumptions: (param, qs key, lo, hi, kind).
+#: Percent-kind inputs arrive as 0–100 and convert to fractions.
+_AIC_QS_FIELDS = [
+    ("chairs", "aic_chairs", 1, 60, "int"),
+    ("util_pct", "aic_util", 30, 95, "pct"),
+    ("infusions_per_chair_day", "aic_per_day", 2.0, 12.0, "float"),
+    ("revenue_per_infusion_drug", "aic_drug_rev", 100.0, 5_000.0, "float"),
+    ("commercial_mix_pct", "aic_commercial", 0, 100, "pct"),
+    ("nurse_to_chair", "aic_nurse_ratio", 0.10, 1.0, "float"),
+    ("nurse_fully_loaded", "aic_nurse_cost", 60_000.0, 250_000.0, "float"),
+    ("facility_overhead_per_chair", "aic_overhead", 5_000.0, 120_000.0,
+     "float"),
+    ("rcm_cost_pct", "aic_rcm", 1, 15, "pct"),
+]
+
+
+def aic_assumptions_from_qs(qs: Dict[str, Any]) -> Dict[str, Any]:
+    """Parse + clamp AIC assumption overrides from the query string.
+
+    Every value is range-clamped (never trusted raw), percent inputs
+    arrive human-readable (78 → 0.78), and unknown/blank keys fall
+    through to the model defaults — so a hand-edited URL can never
+    poison the P&L."""
+    out: Dict[str, Any] = {}
+    for param, key, lo, hi, kind in _AIC_QS_FIELDS:
+        raw = qs.get(key)
+        if isinstance(raw, list):
+            raw = raw[0] if raw else None
+        if raw is None or str(raw).strip() == "":
+            continue
+        try:
+            v = float(str(raw).strip())
+        except (TypeError, ValueError):
+            continue
+        v = max(float(lo), min(float(hi), v))
+        if kind == "pct":
+            out[param] = v / 100.0
+        elif kind == "int":
+            out[param] = int(v)
+        else:
+            out[param] = v
+    return out
+
+
+def aic_sensitivity(*, swing: float = 0.20,
+                    **assumptions: Any) -> List[Dict[str, Any]]:
+    """Tornado on contribution-per-chair: swing each operating lever
+    ±``swing`` (utilization and mix clamped to their valid ranges) and
+    measure the contribution move. Sorted by impact — which assumption
+    actually moves the chair P&L. Pure recomputation through
+    ``aic_chair_economics``, so it can never disagree with the model."""
+    base = aic_chair_economics(**assumptions)
+    base_c = base["contribution_per_chair"]
+    levers = [
+        ("Chair utilization", "util_pct",
+         base["assumptions"]["util_pct"], 0.30, 0.95),
+        ("Infusions / chair / day", "infusions_per_chair_day",
+         base["assumptions"]["infusions_per_chair_day"], 1.0, 14.0),
+        ("Commercial payer mix", "commercial_mix_pct",
+         base["assumptions"]["commercial_mix_pct"], 0.0, 1.0),
+        ("Drug revenue / infusion", "revenue_per_infusion_drug",
+         base["assumptions"]["revenue_per_infusion_drug"], 50.0, 10_000.0),
+        ("Nurse cost (fully loaded)", "nurse_fully_loaded",
+         base["assumptions"]["nurse_fully_loaded"], 30_000.0, 400_000.0),
+        ("Facility overhead / chair", "facility_overhead_per_chair",
+         base["assumptions"]["facility_overhead_per_chair"],
+         1_000.0, 200_000.0),
+        ("RCM cost %", "rcm_cost_pct",
+         base["assumptions"]["rcm_cost_pct"], 0.0, 0.25),
+    ]
+    out: List[Dict[str, Any]] = []
+    for label, param, val, lo, hi in levers:
+        lo_v = max(lo, min(hi, val * (1 - swing)))
+        hi_v = max(lo, min(hi, val * (1 + swing)))
+        c_lo = aic_chair_economics(
+            **{**assumptions, param: lo_v})["contribution_per_chair"]
+        c_hi = aic_chair_economics(
+            **{**assumptions, param: hi_v})["contribution_per_chair"]
+        out.append({
+            "lever": label, "param": param,
+            "contribution_low": c_lo, "contribution_high": c_hi,
+            "impact": abs(c_hi - c_lo),
+            "base": base_c,
+        })
+    out.sort(key=lambda r: -r["impact"])
+    return out
+
+
+def aic_utilization_curve(**assumptions: Any) -> Dict[str, Any]:
+    """Contribution-per-chair across the utilization range (40–95%),
+    with the break-even utilization — the de-novo ramp question
+    ("how full do the chairs have to be before this site carries
+    itself?"). Fixed costs (nursing ratio + overhead) don't scale with
+    utilization, which is what creates the break-even. Pure
+    recomputation through ``aic_chair_economics``."""
+    pts: List[Dict[str, Any]] = []
+    breakeven: Optional[float] = None
+    overrides = {k: v for k, v in assumptions.items() if k != "util_pct"}
+    for u in [x / 100.0 for x in range(40, 96, 5)]:
+        c = aic_chair_economics(
+            **overrides, util_pct=u)["contribution_per_chair"]
+        pts.append({"util_pct": u, "contribution": c})
+    # Break-even by fine scan (1% steps) — fixed cost vs per-infusion
+    # gross profit crosses somewhere below the display range usually.
+    for u in [x / 100.0 for x in range(5, 96)]:
+        c = aic_chair_economics(
+            **overrides, util_pct=u)["contribution_per_chair"]
+        if c >= 0:
+            breakeven = u
+            break
+    current = assumptions.get("util_pct", 0.78)
+    return {
+        "points": pts,
+        "breakeven_util": breakeven,
+        "current_util": current,
+        "current_contribution": aic_chair_economics(
+            **overrides, util_pct=current)["contribution_per_chair"],
+    }
+
+
+def build_texas_infusion_analysis(
+    aic_overrides: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Assemble the full Texas infusion CDD analysis.
 
     Pulls real TX demographics, runs the verified sizing math, and
     layers the segmentation / concentration / payer / structural reads.
-    Returns one audit-friendly dict the page renders.
+    ``aic_overrides`` (already clamped via ``aic_assumptions_from_qs``)
+    re-run the AIC unit-economics, tornado, and utilization curve on
+    the partner's own assumptions. Returns one audit-friendly dict.
     """
+    aic_overrides = aic_overrides or {}
     from ..data.county_demographics import demographics_state
     demo = demographics_state("TX") or {}
     tx_pop = int(demo.get("population") or 30_029_572)
@@ -1154,7 +1312,10 @@ def build_texas_infusion_analysis() -> Dict[str, Any]:
         "players": infusion_players(),
         "risk_register": infusion_risk_register(),
         "rcm_playbook": rcm_playbook(),
-        "aic_economics": aic_chair_economics(),
+        "aic_economics": aic_chair_economics(**aic_overrides),
+        "aic_sensitivity": aic_sensitivity(**aic_overrides),
+        "aic_utilization_curve": aic_utilization_curve(**aic_overrides),
+        "aic_overrides_active": bool(aic_overrides),
         "drug_supply": infusion_drug_supply(),
         "metros": metros,
         "metro_deepdives": metro_deepdives,

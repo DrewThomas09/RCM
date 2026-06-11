@@ -221,6 +221,91 @@ class AICEconomicsTests(unittest.TestCase):
             self.assertIn(lever, kpis)
 
 
+class AICEditableAssumptionsTests(unittest.TestCase):
+    def test_payer_mix_is_a_real_lever(self):
+        from rcm_mc.diligence.texas_infusion import aic_chair_economics
+        lo = aic_chair_economics(commercial_mix_pct=0.40)
+        hi = aic_chair_economics(commercial_mix_pct=0.80)
+        # Blended admin fee + drug margin rise with commercial mix.
+        self.assertGreater(hi["contribution_per_chair"],
+                           lo["contribution_per_chair"])
+        self.assertTrue(hi["assumptions"]["payer_blended"])
+        # Explicit override still wins (white-bag shock path).
+        forced = aic_chair_economics(commercial_mix_pct=0.80,
+                                     drug_margin_pct=0.0)
+        self.assertEqual(forced["assumptions"]["drug_margin_pct"], 0.0)
+
+    def test_qs_parsing_clamps_and_drops_junk(self):
+        from rcm_mc.diligence.texas_infusion import aic_assumptions_from_qs
+        ov = aic_assumptions_from_qs({
+            "aic_util": ["88"], "aic_commercial": ["75"],
+            "aic_chairs": ["999"],          # clamps to 60
+            "aic_per_day": ["abc"],          # dropped
+            "aic_rcm": ["7"], "aic_nurse_ratio": ["0.5"],
+            "unrelated": ["x"]})
+        self.assertEqual(ov["util_pct"], 0.88)
+        self.assertEqual(ov["commercial_mix_pct"], 0.75)
+        self.assertEqual(ov["chairs"], 60)
+        self.assertNotIn("infusions_per_chair_day", ov)
+        self.assertEqual(ov["rcm_cost_pct"], 0.07)
+        self.assertNotIn("unrelated", ov)
+
+    def test_sensitivity_is_pure_recompute(self):
+        from rcm_mc.diligence.texas_infusion import (
+            aic_chair_economics, aic_sensitivity)
+        rows = aic_sensitivity()
+        base = aic_chair_economics()["contribution_per_chair"]
+        self.assertEqual(rows[0]["base"], base)
+        # Sorted by impact, throughput levers dominate.
+        impacts = [r["impact"] for r in rows]
+        self.assertEqual(impacts, sorted(impacts, reverse=True))
+        self.assertIn(rows[0]["lever"],
+                      ("Chair utilization", "Infusions / chair / day"))
+        # Every lever's low/high straddle reality: low ≤ high impact dirs
+        for r in rows:
+            self.assertGreaterEqual(r["impact"], 0)
+
+    def test_utilization_curve_and_breakeven(self):
+        from rcm_mc.diligence.texas_infusion import aic_utilization_curve
+        c = aic_utilization_curve()
+        # Monotonic increasing contribution with utilization.
+        vals = [p["contribution"] for p in c["points"]]
+        self.assertEqual(vals, sorted(vals))
+        # Break-even exists and sits below the default 78% utilization.
+        self.assertIsNotNone(c["breakeven_util"])
+        self.assertLess(c["breakeven_util"], 0.78)
+        # At break-even, contribution is ~first non-negative point.
+        self.assertGreaterEqual(c["current_contribution"], 0)
+
+    def test_overrides_flow_through_analysis_and_page(self):
+        from rcm_mc.diligence.texas_infusion import (
+            aic_assumptions_from_qs)
+        ov = aic_assumptions_from_qs({"aic_util": ["90"]})
+        a = build_texas_infusion_analysis(aic_overrides=ov)
+        self.assertTrue(a["aic_overrides_active"])
+        self.assertEqual(a["aic_economics"]["assumptions"]["util_pct"],
+                         0.90)
+        base = build_texas_infusion_analysis()
+        self.assertGreater(
+            a["aic_economics"]["contribution_per_chair"],
+            base["aic_economics"]["contribution_per_chair"])
+        from rcm_mc.ui.texas_infusion_page import (
+            render_texas_infusion_page)
+        h = render_texas_infusion_page({"aic_util": ["90"]})
+        self.assertIn("EDITED", h)
+        self.assertIn('value="90"', h)
+
+    def test_form_and_charts_render_by_default(self):
+        from rcm_mc.ui.texas_infusion_page import (
+            render_texas_infusion_page)
+        h = render_texas_infusion_page()
+        for needle in ("CHANGE THE ASSUMPTIONS", "Recompute",
+                       "SENSITIVITY", "break-even",
+                       "UTILIZATION → CONTRIBUTION"):
+            self.assertIn(needle, h)
+        self.assertNotIn("EDITED — your assumptions", h)
+
+
 class DrugSupplyTests(unittest.TestCase):
     def setUp(self):
         self.a = build_texas_infusion_analysis()
