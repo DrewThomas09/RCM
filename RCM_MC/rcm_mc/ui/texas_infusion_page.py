@@ -361,6 +361,140 @@ _SEV_TONE = {"HIGH": _NEG, "MEDIUM": _WARN, "LOW": _FAINT}
 _CHANNEL_TONE = {"AIC": _NAVY, "Home": _TEAL, "Both": "#6e5b9e"}
 
 
+def _aic_waterfall_svg(sections: List[Dict[str, Any]]) -> str:
+    """Per-chair P&L as a section waterfall — gross revenue drawn down
+    by each cost to the contribution margin. The 'breakdown by sections'
+    graphic."""
+    # Build running cumulative for the waterfall.
+    width, row_h, gap, pad_l, pad_top = 620, 26, 9, 220, 8
+    revenue = next((s["value"] for s in sections
+                    if s["kind"] == "revenue"), 1.0) or 1.0
+    height = pad_top * 2 + len(sections) * (row_h + gap)
+    scale = (width - pad_l - 90) / revenue
+    parts = [f'<svg viewBox="0 0 {width} {height}" width="100%" '
+             f'style="max-width:{width}px;display:block;" role="img">']
+    running = 0.0
+    for i, s in enumerate(sections):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 4
+        v = s["value"]
+        kind = s["kind"]
+        if kind == "revenue":
+            x0, w, tone, running = pad_l, v * scale, _POS, v
+        elif kind == "subtotal":
+            x0, w, tone, running = pad_l, v * scale, _NAVY, v
+        else:  # cost — draws from current running down by |v|
+            running_new = running + v       # v is negative
+            x0 = pad_l + running_new * scale
+            w = (-v) * scale
+            tone = _NEG
+            running = running_new
+        parts.append(
+            f'<text x="{pad_l-8}" y="{ty:.0f}" text-anchor="end" '
+            f'font-size="11" fill="#1a2332">{html.escape(s["label"])}</text>'
+            f'<rect x="{x0:.1f}" y="{y}" width="{max(w,2):.1f}" '
+            f'height="{row_h}" rx="2" fill="{tone}" fill-opacity="0.85"/>'
+            f'<text x="{pad_l + abs(revenue)*scale + 6:.0f}" y="{ty:.0f}" '
+            f'font-size="10.5" font-weight="600" fill="{tone}">'
+            f'${abs(v)/1e3:,.0f}K</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _aic_economics_section(a: Dict[str, Any]) -> str:
+    e = a["aic_economics"]
+    kpi_cards = "".join(
+        f'<div style="border:1px solid #d6cfc0;border-radius:4px;'
+        f'padding:8px 10px;background:#fff;">'
+        f'<div style="font-size:9px;letter-spacing:0.06em;color:{_FAINT};'
+        f'font-weight:700;">{html.escape(k["kpi"]).upper()}</div>'
+        f'<div style="font-size:16px;font-weight:700;color:{_NAVY};'
+        f'font-variant-numeric:tabular-nums;">{html.escape(k["value"])}</div>'
+        f'<div style="font-size:10px;color:{_DIM};line-height:1.4;">'
+        f'{html.escape(k["lever"])}</div>'
+        + (f'<div style="font-size:9px;color:{_POS};">good: '
+           f'{html.escape(k["good"])}</div>' if k.get("good") and
+           k["good"] != "—" else "")
+        + '</div>'
+        for k in e["kpis"])
+    sect_notes = "".join(
+        f'<li style="font-size:11px;color:{_DIM};margin:2px 0;">'
+        f'<strong>{html.escape(s["label"])}</strong> '
+        f'(${abs(s["value"])/1e3:,.0f}K) — {html.escape(s["note"])}</li>'
+        for s in e["sections"])
+    return (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
+        f'margin:0 0 10px;">A healthy AIC runs on <strong>high chair '
+        f'utilization, high nurse productivity, recurring (chronic) '
+        f'patients, a commercial-heavy payer mix, disciplined prior-auth, '
+        f'and tight drug acquisition</strong>. Per-chair P&amp;L at the '
+        f'benchmark assumptions — every input editable:</p>'
+        f'<div style="display:grid;grid-template-columns:1.1fr 1fr;'
+        f'gap:18px;align-items:start;">'
+        f'<div><div style="font-size:10px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:4px;">PER-CHAIR P&amp;L — '
+        f'BREAKDOWN BY SECTION (annual)</div>'
+        f'{_aic_waterfall_svg(e["sections"])}'
+        f'<ul style="margin:6px 0 0;padding-left:16px;">{sect_notes}</ul>'
+        f'</div>'
+        f'<div><div style="font-size:10px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:4px;">OPERATING KPIs — '
+        f'THE LEVERS</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+        f'{kpi_cards}</div></div></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:10px 0 0;">'
+        f'{html.escape(e["basis_note"])}</p>')
+
+
+def _drug_supply_section(a: Dict[str, Any]) -> str:
+    ds = a["drug_supply"]
+    def _tone(status: str) -> str:
+        if "CURRENT" in status:
+            return _NEG
+        if "WATCH" in status:
+            return _WARN
+        return _POS
+    rows = ""
+    for c in ds["classes"]:
+        t = _tone(c["status"])
+        ex = ", ".join(c["examples"][:3]) if c["examples"] else "—"
+        rows += (
+            f'<tr>'
+            f'<td style="padding:6px 8px;font-weight:600;">'
+            f'{html.escape(c["klass"])}'
+            f'<div style="font-size:10px;color:{_FAINT};">'
+            f'{html.escape(c["channel"])}</div></td>'
+            f'<td style="padding:6px 8px;"><span style="font-size:10px;'
+            f'font-weight:700;color:{t};border:1px solid {t};'
+            f'border-radius:2px;padding:1px 6px;">'
+            f'{html.escape(c["status"])}</span></td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'color:{_DIM};">{c["current_shortages"]} cur / '
+            f'{c["total_listed"]} listed</td>'
+            f'<td style="padding:6px 8px;font-size:10.5px;color:{_FAINT};">'
+            f'{html.escape(ex)}</td>'
+            f'</tr>')
+    return (
+        f'<div style="padding:10px 14px;background:#eef3ee;'
+        f'border-left:3px solid {_POS};border-radius:0 3px 3px 0;'
+        f'font-size:12.5px;color:#1a2332;line-height:1.6;margin-bottom:10px;">'
+        f'<strong>Supply read:</strong> {html.escape(ds["headline"])}</div>'
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:6px 8px;">Drug class</th>'
+        f'<th style="text-align:left;padding:6px 8px;">FDA status</th>'
+        f'<th style="text-align:right;padding:6px 8px;">Shortages</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Examples</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'Live from the {html.escape(str(ds["snapshot_date"]))} '
+        f'{html.escape(ds["source"])} ({ds["total_current"]:,} current US '
+        f'shortages). Full list: '
+        f'<a href="/drug-shortage" style="color:{_NAVY};font-weight:600;'
+        f'text-decoration:none;">Drug Shortage tracker →</a></p>')
+
+
 def _channel_cards(a: Dict[str, Any]) -> str:
     """Two side-by-side channel breakdowns — AIC vs home infusion."""
     cards = ""
@@ -576,12 +710,53 @@ def _city_section(dd: Dict[str, Any]) -> str:
         value_fmt=lambda v: f'{v*100:.0f}%', tone=_TEAL, sub_key="sub",
         rank_key="demand_rank")
 
-    # Top suburbs (member counties) by infusion patients.
-    sub_rows = dd["suburbs"][:8]
+    # Top suburbs (member counties) by infusion patients — north
+    # suburbs get a ▲N marker on the label.
+    sub_rows = []
+    for s in dd["suburbs"][:8]:
+        lab = s["county"] + (" ▲N" if s.get("region") == "North suburb"
+                             else "")
+        sub_rows.append({**s, "county_label": lab})
     sub_chart = _hbar_svg(
-        sub_rows, label_key="county", value_key="infusion_patients",
+        sub_rows, label_key="county_label", value_key="infusion_patients",
         value_fmt=lambda v: f'{v:,.0f} pts', tone=_NAVY, rank_key="demand_rank",
         sub_key="")
+
+    # North-suburb callout.
+    north = (
+        f'<div style="margin-top:10px;padding:7px 11px;background:#eef2f7;'
+        f'border-left:3px solid {_NAVY};border-radius:0 3px 3px 0;'
+        f'font-size:11.5px;color:#1a2332;line-height:1.5;">'
+        f'<strong>North suburbs:</strong> {html.escape(dd["north_suburbs"])}'
+        f'</div>' if dd.get("north_suburbs") else "")
+
+    # Illness burden → most-common therapies (metro-aggregated, real
+    # population × TX prevalence).
+    ib_rows = "".join(
+        f'<tr>'
+        f'<td style="padding:4px 8px;font-weight:500;">'
+        f'{html.escape(i["condition"])}</td>'
+        f'<td class="num" style="padding:4px 8px;text-align:right;'
+        f'font-variant-numeric:tabular-nums;">{i["estimated_patients"]:,}</td>'
+        f'<td style="padding:4px 8px;font-size:11px;color:{_DIM};">'
+        f'{html.escape(i["therapy"])}</td>'
+        f'<td style="padding:4px 8px;font-size:10px;color:{_FAINT};">'
+        f'{html.escape(i["channel"])}</td>'
+        f'</tr>'
+        for i in dd.get("illness_burden", []))
+    illness = (
+        f'<div style="margin-top:10px;">'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'margin-bottom:3px;">ILLNESS BURDEN → MOST-COMMON THERAPIES '
+        f'(est. adults = pop × TX prevalence)</div>'
+        f'<table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
+        f'<thead><tr style="border-bottom:1px solid #d6cfc0;color:{_FAINT};">'
+        f'<th style="text-align:left;padding:3px 8px;">Condition</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Est. patients</th>'
+        f'<th style="text-align:left;padding:3px 8px;">Therapy</th>'
+        f'<th style="text-align:left;padding:3px 8px;">Channel</th>'
+        f'</tr></thead><tbody>{ib_rows}</tbody></table></div>'
+        if ib_rows else "")
 
     # White-space callout. patients_per_ais is None when a county has no
     # estimated local AIS — that is MAXIMAL whitespace, labeled as such.
@@ -627,10 +802,13 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'INFUSION DEMAND BY AGE BAND (ranked)</div>{age_chart}</div>'
         f'<div><div style="font-size:10px;color:{_FAINT};'
         f'letter-spacing:0.06em;margin-bottom:4px;">'
-        f'SUBURBS / COUNTIES BY PATIENTS (ranked)</div>{sub_chart}</div>'
+        f'SUBURBS / COUNTIES BY PATIENTS (ranked · ▲N = north suburb)'
+        f'</div>{sub_chart}</div>'
         f'</div>'
+        + north
+        + illness
         # White-space
-        f'<div style="margin-top:10px;padding:8px 12px;background:#fff;'
+        + f'<div style="margin-top:10px;padding:8px 12px;background:#fff;'
         f'border-left:3px solid {_WARN};border-radius:0 3px 3px 0;">'
         f'<div style="font-size:10px;color:{_WARN};font-weight:700;'
         f'letter-spacing:0.06em;margin-bottom:3px;">EARLY / WHITESPACE '
@@ -688,6 +866,16 @@ def render_texas_infusion_page() -> str:
         + ck_section_header("How RCM talks about infusion",
                             eyebrow="THE REVENUE-CYCLE PLAYBOOK")
         + _rcm_playbook(a)
+
+        + ck_section_header("AIC unit economics",
+                            eyebrow="PER-CHAIR P&L · THE LEVERS · BREAKDOWN "
+                                    "BY SECTION")
+        + _aic_economics_section(a)
+
+        + ck_section_header("Drug supply & inventory",
+                            eyebrow="LIVE FDA SHORTAGE STATUS — NO SYNTHETIC "
+                                    "DATA")
+        + _drug_supply_section(a)
 
         + ck_section_header("Segmentation by therapy form",
                             eyebrow="WHERE THE DOLLARS — AND THE GROWTH — ARE")

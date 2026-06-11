@@ -2933,3 +2933,42 @@ severity/channel/RCM-angle with the two HIGH channel risks present,
 RCM playbook carries the denial-DOLLAR + AR KPIs and ≥4 denial drivers
 / questions, page renders all four sections. 31 passed; guide-context
 contract green.
+
+## W2-148 (2026-06-11) — Texas infusion: AIC unit economics, drug supply, illness-by-suburb, north suburbs (wave #50)
+Deep AIC build on the Texas infusion page — all REAL/sourced data, no
+synthetic:
+- **AIC unit economics** — `aic_chair_economics()`: per-chair P&L
+  waterfall (gross rev → drug COGS → nursing → overhead → RCM →
+  contribution; $1.02M rev → $216K/21% contribution at benchmark) with
+  a "breakdown by section" SVG, plus the operating-lever KPI cards the
+  user named (chair utilization, nurse productivity [infusions/nurse/
+  yr], recurring-patient %, commercial mix, prior-auth approval rate,
+  buy-and-bill drug margin, rev & contribution per chair). Pure
+  function of editable assumptions (NHIA/ambulatory benchmarks).
+- **Drug supply & inventory** — `infusion_drug_supply()` reads the
+  VENDORED openFDA shortage snapshot (1,156 current US shortages,
+  2026-05-25): specialty biologics (IVIG/infliximab/rituximab/
+  vedolizumab) = STABLE / not FDA-listed (the AIC margin engine has
+  clean supply); OPAT anti-infectives + IV iron = WATCH; TPN/fluids
+  (dextrose/amino-acid/saline) = CURRENT SHORTAGE (74). Status chips +
+  link to the existing /drug-shortage tracker. No synthetic data.
+- **Illness aggregation by suburb** — `county_illness_burden()`:
+  estimated infusion-relevant patients = REAL county population × the
+  TX state prevalence rate (CDC/CMS public data) for RA→immunology
+  biologics, Cancer→oncology infusion, CKD→IV iron. Variation across
+  suburbs comes from real population (labeled population-scaled, not
+  invented county rates). Aggregated to each metro + mapped to
+  most-common therapies + channel.
+- **North-suburb coverage** — `_NORTH_SUBURBS`: Collin/Denton (DFW),
+  Montgomery (Houston), Williamson (Austin), Comal/north Bexar (San
+  Antonio) flagged with marquee cities; north counties get a ▲N marker
+  in the per-city suburb chart + a callout. (Verified DFW north ring =
+  Collin + Denton.)
+14 SVG charts on the page; JSON API + guide contract green.
+**Verify**: +14 tests (42 total in test_texas_infusion.py) — P&L
+sections balance + sane contribution band, levers are pure functions
+(util↑→contribution↑, white-bag drug-margin→0 cuts it), named KPIs
+present, real FDA snapshot with biologics STABLE + TPN current
+shortage, north suburbs flagged per metro (DFW=Collin+Denton), illness
+burden scales with population + maps to therapies, county illness
+population-scaled (×10 pop → ×10 patients). 42 passed.
