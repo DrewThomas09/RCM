@@ -154,6 +154,152 @@ def _partner_thesis_hint(verdict: str, score: float, top_share: float) -> str:
     return "scale_or_capability"
 
 
+# DOJ/FTC 2023 Merger Guidelines: a merger that raises HHI by >200
+# into a market already above 2500 is presumed to enhance market power.
+HHI_DELTA_PRESUMPTION = 200
+
+
+@dataclass
+class RollupStep:
+    """One bolt-on in a buy-and-build sequence."""
+    n: int                      # acquisition number (1-based)
+    acquired: str
+    combined_share: float       # platform share AFTER this acquisition
+    hhi_after: float
+    delta_hhi: float            # HHI rise from this acquisition
+    crosses_presumption: bool   # HHI_after>2500 AND delta>200
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+@dataclass
+class RollupRunway:
+    """How far a buy-and-build can run before antitrust bites.
+
+    Models the platform (largest player, or a named one) acquiring the
+    next-largest independents one at a time. At each step the merged
+    entity's share is the sum of the two; everyone else is unchanged.
+    Pure arithmetic on the shares + published DOJ thresholds, so the
+    runway is auditable.
+    """
+    platform: str
+    platform_share_start: float
+    target_share: float
+    acquisitions_to_target: Optional[int]   # None if unreachable
+    presumption_step: Optional[int]         # acquisition n that crosses
+    runway_acquisitions: int                # bolt-ons before presumption
+    steps: List[RollupStep]
+    note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "platform": self.platform,
+            "platform_share_start": self.platform_share_start,
+            "target_share": self.target_share,
+            "acquisitions_to_target": self.acquisitions_to_target,
+            "presumption_step": self.presumption_step,
+            "runway_acquisitions": self.runway_acquisitions,
+            "steps": [s.to_dict() for s in self.steps],
+            "note": self.note,
+        }
+
+
+def rollup_runway(
+    shares: Dict[str, float],
+    *,
+    platform: Optional[str] = None,
+    target_share: float = 0.30,
+    max_steps: int = 12,
+) -> Optional[RollupRunway]:
+    """Simulate a buy-and-build: the platform absorbs the next-largest
+    independents until it hits ``target_share`` or the DOJ presumption.
+
+    Returns None when there is nothing to roll up (fewer than two
+    players). The presumption flag fires when a post-merger HHI sits
+    above 2500 AND that acquisition raised HHI by more than 200 — the
+    point where the next deal invites a Second Request.
+    """
+    norm = _normalize_shares(shares)
+    if len(norm) < 2:
+        return None
+    # Platform = explicit name (if present) else the largest player.
+    if platform and platform in norm:
+        plat = platform
+    else:
+        plat = max(norm, key=norm.get)
+    plat_start = norm[plat]
+
+    # Acquisition order: largest independents first.
+    others = sorted(
+        ((k, v) for k, v in norm.items() if k != plat),
+        key=lambda kv: -kv[1],
+    )
+    # Mutable working shares; merge acquired into the platform.
+    work = dict(norm)
+    prev_hhi = compute_hhi(work)   # 0..10000 scale
+    steps: List[RollupStep] = []
+    acq_to_target: Optional[int] = None
+    presumption_step: Optional[int] = None
+
+    for i, (name, sh) in enumerate(others[:max_steps], start=1):
+        work[plat] = work.get(plat, 0.0) + sh
+        work.pop(name, None)
+        new_hhi = compute_hhi(work)
+        delta = new_hhi - prev_hhi
+        combined = work[plat]
+        crosses = (new_hhi > HHI_HIGHLY_CONCENTRATED
+                   and delta > HHI_DELTA_PRESUMPTION)
+        steps.append(RollupStep(
+            n=i, acquired=name, combined_share=round(combined, 4),
+            hhi_after=round(new_hhi, 1), delta_hhi=round(delta, 1),
+            crosses_presumption=crosses,
+        ))
+        if acq_to_target is None and combined >= target_share:
+            acq_to_target = i
+        if presumption_step is None and crosses:
+            presumption_step = i
+        prev_hhi = new_hhi
+        # Stop once both milestones are known (keeps the table tight).
+        if acq_to_target is not None and presumption_step is not None:
+            break
+
+    runway = (presumption_step - 1) if presumption_step else len(steps)
+
+    if acq_to_target is not None and (
+            presumption_step is None or acq_to_target <= presumption_step):
+        note = (
+            f"{plat} ({plat_start*100:.0f}% today) reaches {target_share*100:.0f}% "
+            f"in {acq_to_target} bolt-on(s)"
+            + (f", and the DOJ presumption (HHI>2500, ΔHHI>200) bites at "
+               f"acquisition {presumption_step}." if presumption_step
+               else " without tripping the DOJ concentration presumption "
+                    "in this window.")
+        )
+    elif presumption_step is not None:
+        note = (
+            f"{plat} ({plat_start*100:.0f}% today) hits the DOJ concentration "
+            f"presumption at acquisition {presumption_step} — before reaching "
+            f"{target_share*100:.0f}%. Buy-and-build runway is "
+            f"~{runway} clean bolt-on(s); beyond that, expect a Second Request."
+        )
+    else:
+        reached = steps[-1].combined_share if steps else plat_start
+        note = (
+            f"{plat} ({plat_start*100:.0f}% today) can absorb all "
+            f"{len(steps)} sizeable independents and still only reach "
+            f"{reached*100:.0f}% — a long, antitrust-safe roll-up runway."
+        )
+
+    return RollupRunway(
+        platform=plat, platform_share_start=round(plat_start, 4),
+        target_share=target_share,
+        acquisitions_to_target=acq_to_target,
+        presumption_step=presumption_step,
+        runway_acquisitions=runway, steps=steps, note=note,
+    )
+
+
 def analyze_market_structure(
     shares: Dict[str, float],
 ) -> MarketStructureResult:

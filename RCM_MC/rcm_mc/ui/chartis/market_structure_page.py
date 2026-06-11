@@ -225,6 +225,57 @@ def _target_name_from_packet(packet: Any, profile: Dict[str, Any]) -> Optional[s
     return getattr(packet, "deal_name", None)
 
 
+def _rollup_runway_panel(
+    shares: Dict[str, float], *, target_name: Optional[str],
+) -> str:
+    """Buy-and-build runway: how many bolt-ons the platform can absorb
+    before the DOJ concentration presumption bites. Every figure is
+    arithmetic on the shares table above + published DOJ thresholds."""
+    from ...pe_intelligence.market_structure import rollup_runway
+    runway = rollup_runway(shares, platform=target_name, target_share=0.30)
+    if runway is None or not runway.steps:
+        return ""
+    rows = []
+    for s in runway.steps:
+        flag = (
+            f'<span style="color:{P["negative"]};font-weight:600;">'
+            f'DOJ presumption</span>' if s.crosses_presumption else "")
+        short = s.acquired if len(s.acquired) <= 22 else s.acquired[:21] + "…"
+        rows.append(
+            f'<tr>'
+            f'<td style="padding:5px 8px;font-family:var(--ck-mono);'
+            f'font-size:10px;color:{P["text_faint"]};">+{s.n}</td>'
+            f'<td style="padding:5px 8px;font-size:11px;color:{P["text"]};">'
+            f'{_html.escape(short)}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;color:{P["text"]};">'
+            f'{s.combined_share*100:.0f}%</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;color:{P["text_dim"]};">'
+            f'{s.hhi_after:,.0f}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;color:{P["text_faint"]};">'
+            f'+{s.delta_hhi:,.0f}</td>'
+            f'<td style="padding:5px 8px;font-size:10px;">{flag}</td>'
+            f'</tr>')
+    return small_panel(
+        f"Buy-and-build runway ({runway.platform})",
+        f'<p style="font-size:12px;color:{P["text_dim"]};line-height:1.6;'
+        f'margin:0 0 8px;">{_html.escape(runway.note)}</p>'
+        f'<div class="ck-table-wrap"><table class="ck-table">'
+        f'<thead><tr><th>Buy</th><th>Acquire</th>'
+        f'<th class="num">Combined</th><th class="num">HHI</th>'
+        f'<th class="num">ΔHHI</th><th></th></tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{P["text_faint"]};margin:8px 0 0;">'
+        f'Platform absorbs the next-largest independents in order; HHI + '
+        f'ΔHHI per step. DOJ presumption = post-merger HHI &gt; 2,500 AND '
+        f'ΔHHI &gt; 200 (2023 Merger Guidelines). Arithmetic on the shares '
+        f'above.</p>',
+        code="RUN",
+    )
+
+
 def render_market_structure(
     review: Any,
     deal_id: str,
@@ -388,6 +439,7 @@ def render_market_structure(
         )
         + small_panel("Verdict + thesis", verdict_panel, code="STR")
         + small_panel(f"Shares used ({n_players} players)", shares_panel, code="SHR")
+        + _rollup_runway_panel(shares, target_name=target_name)
     )
 
     return chartis_shell(
