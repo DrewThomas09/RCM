@@ -2665,3 +2665,30 @@ per-theme evidence cards, in both bear-case render paths.
 sources do, strongest theme leads + is corroborated, all-single-source
 verdict, empty report, to_dict round-trip, renders in page.
 84 passed across bear-case suites.
+
+## W2-139 (2026-06-11) — Cliff calendar: payer-channel exposure (wave #41)
+**Found**: /diligence/cliff-calendar plotted the cliff lollipops and a
+total in-hold bps, but the first CDD question on a reimbursement-
+exposed deal — "which payer channel is the headwind concentrated in,
+and how does it accumulate?" — was left unanswered.
+**Added (analysis, verifiable)**: `analyze_cliff_exposure(report)` in
+the cliff module → a `CliffExposure`:
+- groups the in-hold cuts by payer channel (medicare/medicaid/
+  commercial/340b), totaling bps + event count + worst single event
+  per payer, most-cut channel first;
+- builds the cumulative erosion curve (running bps by relative hold
+  year) — the final value equals the calendar's total_bps_in_hold, so
+  it's self-checking;
+- dominant_payer + dominant_share answer concentration: ≥70% in one
+  channel → "single-channel reimbursement story, underwrite it
+  specifically" vs. a diversified-headwind note;
+- stays in basis points — NO revenue base assumed, so nothing is
+  fabricated. Pure function of report.hits; every figure recomputes
+  from the timeline events above it.
+Surfaced as a payer-bar panel + cumulative-curve line + dominant-share
+chip between the lollipop timeline and the full calendar table.
+**Verify**: test_cliff_exposure.py (8) — payer totals sum to the
+calendar total, most-cut-first sort, cumulative curve's last value =
+total + monotonic years, single-channel concentration detected,
+worst-event = most-negative per payer, no-hits empty, to_dict
+round-trip, renders in page. 19 passed across cliff suites.
