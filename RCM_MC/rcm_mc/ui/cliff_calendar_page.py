@@ -22,6 +22,7 @@ from typing import List, Optional
 from ..pe_intelligence.reimbursement_cliff_calendar_2026_2029 import (
     CLIFF_CALENDAR,
     CliffEvent,
+    analyze_cliff_exposure,
     scan_cliff_calendar_for_deal,
 )
 from ._chartis_kit import (
@@ -194,6 +195,73 @@ def _cliff_timeline_svg(report, width: int = 680) -> str:
             '∝ bps cut · hover a dot for the event</span></div>')
 
 
+_PAYER_TONE = {"medicare": "#0b2341", "medicaid": "#1F7A75",
+               "commercial": "#b8732a", "340b": "#a98545"}
+
+
+def _exposure_section(report) -> str:
+    """Payer-channel decomposition of the in-hold rate cut + the
+    cumulative erosion curve. Both recompute from the timeline's
+    events, so the concentration read is auditable.
+
+    Stays in basis points (no revenue base assumed) so nothing is
+    fabricated — the partner reads which channel carries the cut and
+    how it accumulates across the hold."""
+    exp = analyze_cliff_exposure(report)
+    if not exp.by_payer:
+        return ""
+    # Payer bars — each channel's total in-hold bps, most-cut first.
+    max_bps = max((abs(p.total_bps) for p in exp.by_payer), default=1) or 1
+    bar_rows = []
+    for p in exp.by_payer:
+        tone = _PAYER_TONE.get(p.payer, "#7a8699")
+        w = abs(p.total_bps) / max_bps * 100.0
+        worst = (f' · worst: {_html.escape(p.worst_event)} '
+                 f'({p.worst_bps:+.0f})' if p.worst_event else "")
+        bar_rows.append(
+            f'<div style="display:grid;grid-template-columns:110px 1fr 92px;'
+            f'align-items:center;gap:9px;margin:4px 0;">'
+            f'<div style="font-size:11px;color:#1a2332;text-align:right;'
+            f'text-transform:capitalize;">{_html.escape(p.payer)}</div>'
+            f'<div style="height:13px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;"><div style="height:100%;width:{w:.0f}%;'
+            f'background:{tone};"></div></div>'
+            f'<div style="font-family:var(--sc-mono,monospace);font-size:11px;'
+            f'color:{tone};text-align:right;font-variant-numeric:tabular-nums;">'
+            f'{p.total_bps:+.0f} bps</div>'
+            f'<div style="grid-column:2/4;font-size:9.5px;color:#7a8699;'
+            f'margin:-2px 0 2px;">{p.event_count} event'
+            f'{"s" if p.event_count != 1 else ""}{worst}</div>'
+            f'</div>')
+    # Cumulative erosion curve — relative-year running total.
+    curve = ""
+    if exp.cumulative_by_relative_year:
+        pts = exp.cumulative_by_relative_year
+        chips = " → ".join(
+            f'<span style="font-family:var(--sc-mono,monospace);">Y{y}: '
+            f'{b:+.0f}</span>' for y, b in pts)
+        curve = (
+            f'<p style="font-size:11px;color:#465366;margin:8px 0 0;">'
+            f'<span style="color:#7a8699;">Cumulative erosion (bps, '
+            f'running): </span>{chips}</p>')
+    dom = ""
+    if exp.dominant_payer:
+        dom = (
+            f'<span style="font-family:var(--sc-mono,monospace);font-size:10px;'
+            f'letter-spacing:0.08em;color:{_PAYER_TONE.get(exp.dominant_payer, "#7a8699")};'
+            f'margin-left:8px;">{exp.dominant_payer.upper()} '
+            f'{exp.dominant_share*100:.0f}% OF CUT</span>')
+    return ck_panel(
+        f'<p class="ck-section-body" style="font-size:12px;margin:0 0 8px;'
+        f'line-height:1.6;">{_html.escape(exp.note)}</p>'
+        + "".join(bar_rows) + curve
+        + '<p style="font-size:9.5px;color:#7a8699;margin:8px 0 0;">'
+        'Per-payer totals and the cumulative curve sum the timeline events '
+        'above — basis points only, no revenue base assumed.</p>',
+        title=f'Payer-channel exposure{dom}',
+    )
+
+
 def render_cliff_calendar_page(
     subsector: str = "",
     hold_start: int = _MIN_YEAR,
@@ -308,6 +376,7 @@ def render_cliff_calendar_page(
         + _year_chips(subsector, hold_start, hold_years)
         + f'<div class="ck-kpi-grid">{kpis}</div>'
         + _cliff_timeline_svg(report)
+        + _exposure_section(report)
         + ck_section_header("CALENDAR", "every modeled event; hold-window hits "
                             "highlighted", count=len(CLIFF_CALENDAR))
         + table

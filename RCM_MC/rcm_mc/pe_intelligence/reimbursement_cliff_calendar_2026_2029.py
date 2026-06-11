@@ -268,6 +268,131 @@ class CalendarReport:
         }
 
 
+@dataclass
+class PayerExposure:
+    """Cumulative in-hold rate cut attributable to one payer channel."""
+    payer: str
+    total_bps: float
+    event_count: int
+    worst_event: str
+    worst_bps: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+@dataclass
+class CliffExposure:
+    """Decomposition of the in-hold cliff bps — by payer channel and
+    as a cumulative erosion curve over the hold.
+
+    Pure function of the report's hits: each payer total and each
+    year's cumulative figure recomputes from the cited events, so the
+    'is this a Medicare story or a commercial story?' read is
+    auditable. Stays in basis points — no revenue base is assumed, so
+    nothing is fabricated; the page translates to dollars only when
+    the partner supplies a base.
+    """
+    by_payer: List[PayerExposure]
+    cumulative_by_relative_year: List[tuple]   # (relative_year, cum_bps)
+    dominant_payer: Optional[str]
+    dominant_share: float                       # dominant payer bps / total
+    note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "by_payer": [p.to_dict() for p in self.by_payer],
+            "cumulative_by_relative_year": [
+                {"relative_year": y, "cumulative_bps": b}
+                for y, b in self.cumulative_by_relative_year
+            ],
+            "dominant_payer": self.dominant_payer,
+            "dominant_share": self.dominant_share,
+            "note": self.note,
+        }
+
+
+def analyze_cliff_exposure(report: CalendarReport) -> CliffExposure:
+    """Group the in-hold cliffs by payer and build the cumulative
+    erosion curve.
+
+    The dominant-payer share answers the first CDD question on a
+    reimbursement-exposed deal: which channel is the headwind
+    concentrated in? A deal taking −500 bps all from Medicare is a
+    different underwrite than one spread across four payers.
+    """
+    by_payer: Dict[str, Dict[str, Any]] = {}
+    for h in report.hits:
+        ev = h.event
+        bucket = by_payer.setdefault(
+            ev.affected_payer,
+            {"total": 0.0, "n": 0, "worst": 0.0, "worst_name": ""})
+        bucket["total"] += ev.rate_change_bps
+        bucket["n"] += 1
+        # "Worst" = most negative single event for that payer.
+        if ev.rate_change_bps < bucket["worst"]:
+            bucket["worst"] = ev.rate_change_bps
+            bucket["worst_name"] = ev.name
+
+    payers = [
+        PayerExposure(
+            payer=p, total_bps=round(b["total"], 1), event_count=b["n"],
+            worst_event=b["worst_name"], worst_bps=round(b["worst"], 1),
+        )
+        for p, b in by_payer.items()
+    ]
+    # Most-cut payer first (most negative total bps).
+    payers.sort(key=lambda p: p.total_bps)
+
+    # Cumulative erosion curve keyed by relative year.
+    cum_map: Dict[int, float] = {}
+    for h in report.hits:
+        cum_map[h.relative_year] = (
+            cum_map.get(h.relative_year, 0.0) + h.event.rate_change_bps)
+    cumulative: List[tuple] = []
+    run = 0.0
+    for ry in sorted(cum_map):
+        run += cum_map[ry]
+        cumulative.append((ry, round(run, 1)))
+
+    total_neg = sum(p.total_bps for p in payers if p.total_bps < 0)
+    dominant = None
+    dom_share = 0.0
+    if payers and payers[0].total_bps < 0 and total_neg < 0:
+        dominant = payers[0].payer
+        dom_share = payers[0].total_bps / total_neg
+
+    if not payers:
+        note = "No cliffs in the hold — no payer concentration to read."
+    elif dominant and dom_share >= 0.70:
+        note = (
+            f"{dom_share*100:.0f}% of the in-hold rate cut is concentrated "
+            f"in {dominant} ({payers[0].total_bps:+.0f} bps). This is a "
+            f"single-channel reimbursement story — underwrite the "
+            f"{dominant} exposure specifically."
+        )
+    elif dominant:
+        note = (
+            f"Rate cuts spread across {len(payers)} payer channels; "
+            f"{dominant} carries the most ({payers[0].total_bps:+.0f} bps, "
+            f"{dom_share*100:.0f}% of the total). Diversified headwind — "
+            f"model each channel."
+        )
+    else:
+        note = (
+            f"{len(payers)} payer channel(s) affected; net rate change "
+            f"is non-negative — no concentrated cut to underwrite."
+        )
+
+    return CliffExposure(
+        by_payer=payers,
+        cumulative_by_relative_year=cumulative,
+        dominant_payer=dominant,
+        dominant_share=dom_share,
+        note=note,
+    )
+
+
 def scan_cliff_calendar_for_deal(
     subsector: str,
     hold_start_year: int,
