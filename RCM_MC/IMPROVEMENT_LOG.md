@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-97 — growth-sort toggle on the cross-industry view (06:50Z)
+**Both of the user's questions, first-class**: the 82-row comparison
+panel now sorts by TAM ("where the biggest pieces are", default) or
+composite growth ("where it's growing fastest") via a one-click toggle —
+fertility (+12.5%/yr) leads the growth sort, hospitals ($868B) the TAM
+sort. The active sort renders bold; the toggle preserves the selected
+template.
+**Verify**: default order pinned (hospitals before fertility); growth
+order pinned (fertility before hospitals); test_tam_sam 137 passed.
+
 ## W2-96 — reciprocal linkage: Comparable Outcomes → "Size this market" (06:20Z)
 **The loop closes both ways**: the CO results view now offers "Size this
 market in the TAM/SAM Builder →" mapped via template_for_sector (all
