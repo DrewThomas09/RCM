@@ -138,6 +138,36 @@ class DeadTableQueryTests(unittest.TestCase):
             for q in queries:
                 con.execute(q).fetchall()  # must not raise
 
+    def test_server_quality_enrichment_query_runs(self):
+        """Wave-30: quality benchmarks live in hospital_benchmarks —
+        the server's hospital-profile enrichment queried a phantom
+        ``benchmark_values`` table and silently never ran."""
+        from rcm_mc.data.data_refresh import save_benchmarks
+        save_benchmarks(
+            self.store,
+            [{"provider_id": "450076", "metric_key": "star_rating",
+              "value": 4.0}],
+            source="CARE_COMPARE",
+        )
+        queries = [q for q in _extract_queries("rcm_mc/server.py")
+                   if "hospital_benchmarks" in q]
+        self.assertTrue(queries)
+        with self.store.connect() as con:
+            rows = con.execute(queries[0], ("450076",)).fetchall()
+        self.assertEqual(rows[0]["metric_key"], "star_rating")
+        self.assertEqual(rows[0]["value"], 4.0)
+
+    def test_no_query_references_benchmark_values(self):
+        import glob
+        offenders = []
+        for f in glob.glob("rcm_mc/**/*.py", recursive=True):
+            if "/test" in f:
+                continue
+            for q in _extract_queries(f):
+                if "benchmark_values" in q:
+                    offenders.append(f)
+        self.assertEqual(offenders, [])
+
     def test_unacked_join_excludes_acked_rows(self):
         q = [x for x in _extract_queries("rcm_mc/ui/command_center.py")
              if "alert_history" in x][0]

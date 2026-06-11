@@ -2456,3 +2456,22 @@ removed.
 the real schema via the production _ensure_table function, runs the
 exact query from the page source, and (for deadlines) asserts the
 aliased title round-trips. 8 audit tests + 24 page tests passed.
+
+## W2-128 (2026-06-11) — Server-side phantom query: quality enrichment never ran (wave #30)
+**Found**: extended the audit to all 1,309 non-UI files. After
+eliminating false positives (ALTER-TABLE migrations, dynamic DDL,
+module-constant schemas), one real phantom remained: the hospital-
+profile route in server.py enriched profiles from a
+`benchmark_values` table that no code anywhere creates — the CMS
+Care Compare quality data actually lands in `hospital_benchmarks`
+(written by data_refresh.save_benchmarks). The try/except meant the
+star-rating/quality enrichment on hospital profiles silently never
+ran since the feature shipped.
+**Fixed**: query reads `metric_key, value FROM hospital_benchmarks
+WHERE provider_id = ? AND value IS NOT NULL ORDER BY loaded_at DESC`
+— same downstream keys (q["metric_key"], q["value"]), so the
+enrichment loop is unchanged.
+**Verify**: new audit case seeds hospital_benchmarks via the real
+save_benchmarks(), extracts the exact query from server.py, asserts
+the round-trip (star_rating → 4.0); a guard test bans
+benchmark_values references codebase-wide. 10 audit tests passed.

@@ -7361,8 +7361,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             # Try to load quality data from store
             store = PortfolioStore(self.config.db_path)
             with store.connect() as con:
+                # The quality benchmarks live in hospital_benchmarks
+                # (written by data_refresh.save_benchmarks) — the old
+                # query hit a phantom ``benchmark_values`` table, so
+                # this enrichment silently never ran.
                 qrow = con.execute(
-                    "SELECT * FROM benchmark_values WHERE provider_id = ? LIMIT 10",
+                    "SELECT metric_key, value FROM hospital_benchmarks "
+                    "WHERE provider_id = ? AND value IS NOT NULL "
+                    "ORDER BY loaded_at DESC LIMIT 10",
                     (ccn,),
                 ).fetchall()
             for q in qrow:
