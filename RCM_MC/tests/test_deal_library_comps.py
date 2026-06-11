@@ -59,9 +59,16 @@ class TestMultiples(unittest.TestCase):
         self.assertIn("n=", html)                         # sample size shown
         self.assertIn("Beacon Dialysis", html)
 
-    def test_empty_state(self):
+    def test_empty_state_is_a_junction_not_a_dead_end(self):
+        # With no licensed export, the page used to say only "ingest
+        # first" — but the bundled comps surfaces work out of the box.
+        # The empty state must link the partner to them.
         empty = PortfolioStore(os.path.join(self.tmp.name, "e.db"))
-        self.assertIn("No data yet", render_deal_comps(empty, {}))
+        h = render_deal_comps(empty, {})
+        self.assertIn("No licensed export ingested", h)
+        self.assertIn("/find-comps", h)
+        self.assertIn("/diligence/comparable-outcomes", h)
+        self.assertIn("/verified-deals", h)
 
 
 if __name__ == "__main__":

@@ -1058,3 +1058,16 @@ JSON API inherits entry_multiple via outcome_distribution for free.
 when EBITDA undisclosed; honest None/0-n when nothing discloses); HTTP test
 pins the strip card; 50 passed across the 4 comparable suites. Screenshot
 delivered.
+
+## W2-40 — /deal-library/comps empty state: dead-end → junction (02:20Z)
+**Found by**: research-side comps sweep — with no licensed export ingested,
+the page rendered ONLY "No data yet — ingest a licensed export first",
+stranding the partner, while the platform ships three comps surfaces that
+work out of the box.
+**Fixed**: the empty state now carries a CTA to /deal-library plus links to
+the bundled surfaces — /find-comps (corpus profile-distance), /diligence/
+comparable-outcomes (realized MOIC/IRR + the new entry-multiple
+distribution), /verified-deals (source-linked subset).
+**Verify**: render asserts all three hrefs + CTA; updated
+test_empty_state_is_a_junction_not_a_dead_end; deal-library comps suite 4
+passed; all three routes confirmed in server.py.
