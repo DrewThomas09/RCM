@@ -1580,3 +1580,37 @@ class DiligenceAgendaTests(unittest.TestCase):
                                        "growth2": ["2.0"]})
         agenda = flipped.split("Diligence agenda")[1][:3000]
         self.assertNotIn("Home-modality shift", agenda)
+
+
+class AgendaExportParityTests(unittest.TestCase):
+    """The agenda travels into the exports — the workbook never carries
+    a thinner question list than the screen."""
+
+    def test_csv_carries_agenda(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv
+        out = tam_sam_csv({"template": ["rheumatology"]})
+        self.assertIn("Diligence agenda", out)
+        self.assertIn("Quantify the exposure", out)
+        self.assertIn("Biosimilar", out)
+
+    def test_xlsx_gains_agenda_sheet(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_xlsx
+        data = tam_sam_xlsx({"template": ["rheumatology"]})
+        z = zipfile.ZipFile(io.BytesIO(data))
+        self.assertIsNone(z.testzip())
+        self.assertIn("xl/worksheets/sheet5.xml", z.namelist())
+        self.assertIn(b"Biosimilar", z.read("xl/worksheets/sheet5.xml"))
+
+    def test_panel_and_export_derive_identically(self):
+        # Single source: the panel's Q-count equals the export's.
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        from rcm_mc.ui.tam_sam_page import (
+            _derive_agenda_items, render_tam_sam_page,
+        )
+        out = compute(TEMPLATES["dialysis"]())
+        items = _derive_agenda_items(out)
+        import re
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        agenda_html = h.split("Diligence agenda")[1]
+        q_markers = re.findall(r'margin-right:6px;">Q\d', agenda_html)
+        self.assertEqual(len(q_markers), len(items))
