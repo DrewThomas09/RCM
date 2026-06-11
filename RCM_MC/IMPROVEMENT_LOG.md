@@ -2124,3 +2124,17 @@ omitted; report None / no scored findings renders "".
 **Verify**: ReadinessProfileTests — weakest-first order, all status
 tones, composite guide + weight label pinned, unscored omitted,
 3 empty states render "". 21 passed across investability suites.
+
+## W2-109 (2026-06-11) — Management scorecard: team-at-a-glance heat matrix (wave #11)
+**Found**: /diligence/management rendered one tall card per executive
+— comparing the CFO's forecast reliability against the CEO's meant
+scrolling between cards; no single view put the roster side by side.
+**Fixed**: `_team_matrix_svg(scores)` — heat matrix of executives ×
+the four scoring dimensions + Overall, cells colored by the page's own
+_score_color bands with the score inside, rows in the same
+red-flags-first order as the cards, ✗ marking red-flagged execs,
+Overall column bold (it carries the red-flag cap). Placed between the
+section label and the cards. Empty roster renders "".
+**Verify**: TeamMatrixSvgTests — all execs + 5 column headers, ✗ only
+on the flagged exec, red-flags lead row order, empty → "", matrix
+present in full page render. 35 passed in scorecard suite.

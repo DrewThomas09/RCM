@@ -297,3 +297,45 @@ class ICPacketIntegrationTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TeamMatrixSvgTests(unittest.TestCase):
+    """Wave-11 visual: team-at-a-glance exec × dimension heat matrix."""
+
+    def _scores(self):
+        report = analyze_team([_good_ceo(), _bad_ceo()])
+        critical = [s for s in report.scores if s.is_red_flag]
+        other = [s for s in report.scores if not s.is_red_flag]
+        return critical + other
+
+    def test_matrix_renders_all_execs_and_dimensions(self):
+        from rcm_mc.ui.management_scorecard_page import _team_matrix_svg
+        svg = _team_matrix_svg(self._scores())
+        self.assertIn("<svg", svg)
+        self.assertIn("ms-team-matrix", svg)
+        self.assertIn("Good CEO", svg)
+        self.assertIn("Bad CEO", svg)
+        for col in ("FORECAST", "COMP", "TENURE", "PRIOR ROLE", "OVERALL"):
+            self.assertIn(col, svg)
+
+    def test_red_flagged_exec_marked(self):
+        from rcm_mc.ui.management_scorecard_page import _team_matrix_svg
+        svg = _team_matrix_svg(self._scores())
+        self.assertIn("Bad CEO ✗", svg)
+        self.assertNotIn("Good CEO ✗", svg)
+
+    def test_red_flags_lead_row_order(self):
+        from rcm_mc.ui.management_scorecard_page import _team_matrix_svg
+        svg = _team_matrix_svg(self._scores())
+        self.assertLess(svg.index("Bad CEO"), svg.index("Good CEO"))
+
+    def test_empty_roster_renders_nothing(self):
+        from rcm_mc.ui.management_scorecard_page import _team_matrix_svg
+        self.assertEqual(_team_matrix_svg([]), "")
+
+    def test_matrix_in_rendered_page(self):
+        from rcm_mc.ui.management_scorecard_page import (
+            render_management_scorecard_page,
+        )
+        html_out = render_management_scorecard_page({})
+        self.assertIn("ms-team-matrix", html_out)
