@@ -1176,6 +1176,26 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-88 — niche verticals batch 22: air medical, pediatric PDN, ROI services (02:15Z)
+**Niche-vertical sprint** — industries #77–79:
+  - air_medical ($6.0B, +0.4%): 550K transports (AAMS) × $11K POST-NSA
+    rates — the template prices a BROKEN PLAYBOOK: the NSA IDR reset
+    killed the $40K balance-billed engine (−3, with Air Methods'
+    bankruptcy named as the case study); rural closures as the access
+    tailwind; fixed-wing/organ +7% ★ cross-links transplant.
+  - pediatric_home_health ($15.1B, +4.4%): 400K medically-complex
+    children × 45% authorized × 40 hrs × 50 wks × $42; vent-dependent
+    +6% ★; the NURSE STAFFING GAP priced at −3.5 — "30-40% of
+    authorized hours go UNSTAFFED: the binding constraint IS the
+    business problem"; the $90K-vs-$500K institutional-diversion math.
+  - roi_services ($0.9B, +0.9%): 95M record requests × 55% outsourced ×
+    $18; payer/RADV retrieval +8% ★; NEAR-FLAT told honestly — info-
+    blocking fee caps + TEFCA/FHIR API disintermediation both priced;
+    Datavant dominance with the payer-retrieval challenger lane named.
+**Verify**: chains pinned; NSA ≤ −3 + "bankruptcy" in basis + staffing
+gap ≤ −3 + ROI <1.5% composite all pinned; catalogue ≥80 templates
+pinned; test_tam_sam 119 passed. 79 industries.
+
 ## W2-87 — niche verticals batch 21: hospitalist, perfusion, sterile processing (01:45Z)
 **Niche-vertical sprint** — industries #74–76, the micro-niche layer:
   - hospitalist ($5.9B, +2.4%): 44K hospitalists (SHM) × 35% contracted

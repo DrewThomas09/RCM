@@ -4292,6 +4292,178 @@ def sterile_processing_template() -> TamSamModel:
     )
 
 
+
+def air_medical_template() -> TamSamModel:
+    """Air medical transport sizing — the post-NSA rotor-wing niche.
+    AAMS-anchored."""
+    return TamSamModel(
+        name="Air medical · emergency air transport market",
+        chain=[
+            DriverStep("US air medical transports / yr", 550_000,
+                       op="base", unit="transports",
+                       source="AAMS / ADAMS database (rotor + fixed)"),
+            DriverStep("Avg revenue per transport (post-NSA)",
+                       11_000, op="price", unit="$/transport",
+                       source="IDR-settled + in-network blended rates "
+                              "— the NSA reset the old \$40K+ "
+                              "balance-billed charges"),
+        ],
+        segments=[
+            Segment("Rotor-wing 911 / scene", 0.55, None,
+                    note="the core mission — rural trauma coverage",
+                    growth_pct=2.0),
+            Segment("Interfacility (IFT) critical care", 0.30, None,
+                    note="hospital-contracted; steadier economics",
+                    growth_pct=5.0),
+            Segment("Fixed-wing / organ + specialty", 0.15, None,
+                    note="cross-links transplant logistics",
+                    growth_pct=7.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Rural hospital closures", 3.0,
+                         "every closure lengthens ground times — "
+                         "air becomes the access layer"),
+            GrowthDriver("Trauma/stroke regionalization", 2.0,
+                         "hub-and-spoke systems fly patients to "
+                         "centers"),
+            GrowthDriver("NSA IDR rate reset", -3.0,
+                         "the balance-billing engine is DEAD — "
+                         "arbitration resets revenue per transport; "
+                         "the old air-medical PE thesis broke, "
+                         "priced as such"),
+            GrowthDriver("Pilot/clinician scarcity + fuel", -1.5,
+                         "operating-cost inflation"),
+        ],
+        sam_share=0.50,
+        sam_note="Independent + hospital-JV programs (municipal "
+                 "excluded)",
+        som_share=0.10,
+        som_note="GMR/Air Methods (post-restructuring) concentrated — "
+                 "the question is the post-NSA unit economics",
+        horizon_years=5,
+        basis_note="Template defaults from AAMS/NSA-IDR public data — "
+                   "replace with engagement data before IC use. NOTE: "
+                   "this template prices a broken playbook — Air "
+                   "Methods' bankruptcy is the case study.",
+    )
+
+
+def pediatric_home_health_template() -> TamSamModel:
+    """Pediatric private-duty nursing sizing — the medically-complex-
+    children niche."""
+    return TamSamModel(
+        name="Pediatric home health · PDN market",
+        chain=[
+            DriverStep("US medically-complex children needing PDN",
+                       400_000, op="base", unit="children",
+                       source="CMC prevalence literature (tech-"
+                              "dependent: vents, trachs, G-tubes)"),
+            DriverStep("% with authorized PDN hours", 0.45, op="rate",
+                       unit="of those in need",
+                       source="Medicaid EPSDT authorization rates — "
+                              "the staffing gap leaves hours unfilled"),
+            DriverStep("Avg authorized hours / wk", 40, op="mult",
+                       unit="hrs/wk", source="PDN authorization norms"),
+            DriverStep("Weeks served / yr", 50, op="mult",
+                       unit="wks/yr", source="year-round care"),
+            DriverStep("Avg reimbursed rate / hr", 42, op="price",
+                       unit="$/hr",
+                       source="state Medicaid PDN fee schedules "
+                              "(LPN/RN blend)"),
+        ],
+        segments=[
+            Segment("Vent-dependent / high-acuity", 0.35, None,
+                    note="highest hours + rates; deepest staffing "
+                         "challenge", growth_pct=6.0),
+            Segment("Trach / G-tube moderate acuity", 0.40, None,
+                    growth_pct=5.0),
+            Segment("Behavioral-overlay / other CMC", 0.25, None,
+                    growth_pct=4.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("NICU-survivor growth", 3.5,
+                         "neonatal survival creates the population — "
+                         "the demand floor compounds"),
+            GrowthDriver("Institutional-diversion economics", 2.5,
+                         "PDN at \$90K/yr vs \$500K+ inpatient — "
+                         "states fund the cheaper setting"),
+            GrowthDriver("Rate-rebasing wave", 2.0,
+                         "post-2021 state PDN rate increases to fix "
+                         "the staffing gap"),
+            GrowthDriver("Nurse staffing gap", -3.5,
+                         "30-40% of authorized hours go UNSTAFFED — "
+                         "the binding constraint IS the business "
+                         "problem, priced as the largest headwind"),
+        ],
+        sam_share=0.55,
+        sam_note="States with rebased rates + managed-Medicaid "
+                 "carve-ins",
+        som_share=0.05,
+        som_note="Aveanna the scaled platform; regional density is "
+                 "the moat",
+        horizon_years=5,
+        basis_note="Template defaults from CMC literature + Medicaid "
+                   "public data — replace with engagement data before "
+                   "IC use.",
+    )
+
+
+def roi_services_template() -> TamSamModel:
+    """Release-of-information services sizing — the records-request
+    compliance niche. AHIMA-anchored."""
+    return TamSamModel(
+        name="ROI services · medical records release market",
+        chain=[
+            DriverStep("US medical-record requests processed / yr",
+                       95_000_000, op="base", unit="requests",
+                       source="AHIMA / industry volume estimates "
+                              "(legal, payer, patient, audit)"),
+            DriverStep("% via outsourced ROI vendors", 0.55,
+                       op="rate", unit="of requests",
+                       source="vs in-house HIM departments"),
+            DriverStep("Avg revenue per request", 18, op="price",
+                       unit="$/request",
+                       source="state per-page fee schedules + flat "
+                              "rates (patient requests fee-capped)"),
+        ],
+        segments=[
+            Segment("Legal / attorney requests", 0.35, None,
+                    note="the margin segment — per-page economics",
+                    growth_pct=3.0),
+            Segment("Payer / risk-adjustment retrieval", 0.35, None,
+                    note="the growth segment — MA RADV audits drive "
+                         "chart pulls", growth_pct=8.0),
+            Segment("Patient / continuity requests", 0.20, None,
+                    note="fee-capped by info-blocking rules — "
+                         "volume without margin", growth_pct=4.0),
+            Segment("Audit / compliance", 0.10, None, growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("RADV / payer-audit volume", 4.0,
+                         "MA risk-adjustment scrutiny multiplies "
+                         "chart retrieval"),
+            GrowthDriver("Litigation discovery growth", 1.5,
+                         "records-intensive litigation"),
+            GrowthDriver("Info-blocking fee caps", -2.5,
+                         "patient-access rules cap fees on a growing "
+                         "request class — margin mix erodes, shown "
+                         "as one"),
+            GrowthDriver("API-based exchange substitution", -2.0,
+                         "TEFCA/FHIR automated exchange bypasses "
+                         "manual ROI — the disintermediation curve"),
+        ],
+        sam_share=0.60,
+        sam_note="Hospital + large-clinic outsourced ROI",
+        som_share=0.08,
+        som_note="Datavant (Ciox) dominant post-merger — the "
+                 "challenger lane is payer-retrieval specialists",
+        horizon_years=5,
+        basis_note="Template defaults from AHIMA + regulatory public "
+                   "data — replace with engagement data before IC "
+                   "use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -4394,6 +4566,9 @@ TEMPLATES = {
     "hospitalist": hospitalist_template,
     "perfusion": perfusion_template,
     "sterile_processing": sterile_processing_template,
+    "air_medical": air_medical_template,
+    "pediatric_home_health": pediatric_home_health_template,
+    "roi_services": roi_services_template,
     "blank": blank_template,
 }
 

@@ -1431,3 +1431,45 @@ class NicheVerticalsBatch21Tests(unittest.TestCase):
     def test_catalogue_at_76_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 77)   # 76 + blank
+
+
+class NicheVerticalsBatch22Tests(unittest.TestCase):
+    """Industries #77–79 — air medical, pediatric PDN, ROI services."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "air_medical": 550_000 * 11_000,
+            "pediatric_home_health": 400_000 * 0.45 * 40 * 50 * 42,
+            "roi_services": 95_000_000 * 0.55 * 18,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_broken_playbook_and_constraint_pricing(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, air_medical_template, compute,
+        )
+        # Air medical: the NSA killed the balance-billing engine —
+        # priced ≤ −3, Air Methods bankruptcy named as the case study.
+        am = compute(TEMPLATES["air_medical"]())
+        names = {g["name"]: g["annual_pct"] for g in am["growth_drivers"]}
+        self.assertLessEqual(names["NSA IDR rate reset"], -3.0)
+        self.assertIn("bankruptcy", air_medical_template().basis_note)
+        # PDN: 30-40% of authorized hours go unstaffed — the largest
+        # headwind in its template.
+        pdn = compute(TEMPLATES["pediatric_home_health"]())
+        names = {g["name"]: g["annual_pct"] for g in pdn["growth_drivers"]}
+        self.assertLessEqual(names["Nurse staffing gap"], -3.0)
+        # ROI: near-flat — fee caps + API disintermediation both priced.
+        roi = compute(TEMPLATES["roi_services"]())
+        self.assertLess(roi["composite_cagr_pct"], 1.5)
+
+    def test_catalogue_at_79_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 80)   # 79 + blank

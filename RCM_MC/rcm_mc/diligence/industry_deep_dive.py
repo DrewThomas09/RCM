@@ -1671,6 +1671,38 @@ def sterile_processing_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def air_medical_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="air_medical",
+        sector_tokens=("air_medical", "air_ambulance"),
+        note=("ADAMS base data isn't vendored — geography omitted "
+              "rather than fabricated. The trade history priced the "
+              "pre-NSA balance-billing engine: read it as a broken "
+              "playbook."),
+    )
+
+
+def pediatric_home_health_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="pediatric_home_health",
+        sector_tokens=("pediatric_home_health", "pdn",
+                       "pediatric_nursing"),
+        note=("State PDN provider rosters aren't vendored — "
+              "geography omitted rather than fabricated."),
+    )
+
+
+def roi_services_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="roi_services",
+        sector_tokens=("roi_services", "release_of_information",
+                       "health_information"),
+        note=("Delivered nationally — geography is not the "
+              "structure read."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1751,6 +1783,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "hospitalist": hospitalist_deep_dive,
     "perfusion": perfusion_deep_dive,
     "sterile_processing": sterile_processing_deep_dive,
+    "air_medical": air_medical_deep_dive,
+    "pediatric_home_health": pediatric_home_health_deep_dive,
+    "roi_services": roi_services_deep_dive,
 }
 
 
