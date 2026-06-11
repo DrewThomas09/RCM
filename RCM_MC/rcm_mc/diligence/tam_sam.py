@@ -2444,6 +2444,160 @@ def womens_health_template() -> TamSamModel:
     )
 
 
+
+def podiatry_template() -> TamSamModel:
+    """Podiatry sizing — the diabetic-foot annuity niche. APMA-anchored."""
+    return TamSamModel(
+        name="Podiatry · foot & ankle practice market",
+        chain=[
+            DriverStep("US podiatrists (practicing)", 18_000, op="base",
+                       unit="DPMs", source="APMA workforce"),
+            DriverStep("Avg revenue per podiatrist", 550_000,
+                       op="price", unit="$/DPM/yr",
+                       source="MGMA/PMNews podiatry medians incl. "
+                              "in-office ancillaries"),
+        ],
+        segments=[
+            Segment("Diabetic foot / wound", 0.35, None,
+                    note="the recurring-care annuity — ties to the "
+                         "wound-care vertical", growth_pct=6.0),
+            Segment("Surgical (bunion, ankle)", 0.25, None,
+                    note="lapiplasty-era cash+ASC upside",
+                    growth_pct=5.0),
+            Segment("Routine / nail care", 0.20, None, growth_pct=2.0),
+            Segment("Orthotics / DME dispensing", 0.12, None,
+                    growth_pct=4.0),
+            Segment("Sports / pediatric", 0.08, None, growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diabetes prevalence", 4.0,
+                         "diabetic foot care compounds with the "
+                         "diabetes curve"),
+            GrowthDriver("Surgical innovation adoption", 1.5,
+                         "minimally-invasive bunion era lifts case "
+                         "values"),
+            GrowthDriver("Routine-care fee pressure", -1.5,
+                         "Medicare routine foot-care restrictions"),
+            GrowthDriver("DPM pipeline constraint", -1.0,
+                         "podiatry school enrollment flat"),
+        ],
+        sam_share=0.50,
+        sam_note="Independent DPM practices in diabetic-dense metros",
+        som_share=0.04,
+        som_note="Foot & Ankle Specialists class — early consolidation",
+        horizon_years=5,
+        basis_note="Template defaults from APMA/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def ent_allergy_template() -> TamSamModel:
+    """ENT + allergy sizing — the office-procedure migration niche."""
+    return TamSamModel(
+        name="ENT & allergy · practice market",
+        chain=[
+            DriverStep("US otolaryngologists + allergists", 16_500,
+                       op="base", unit="physicians",
+                       source="AAO-HNS + AAAAI workforce"),
+            DriverStep("Avg revenue per physician", 950_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA ENT/allergy medians incl. CT, "
+                              "audiology, allergy extracts"),
+        ],
+        segments=[
+            Segment("General ENT / sinus", 0.35, None,
+                    note="balloon sinuplasty moved to the office — "
+                         "the site-shift template", growth_pct=5.0),
+            Segment("Allergy / immunotherapy", 0.25, None,
+                    note="extract economics — the recurring annuity",
+                    growth_pct=6.0),
+            Segment("Audiology / hearing aids", 0.20, None,
+                    note="OTC hearing-aid disruption on the retail "
+                         "layer", growth_pct=2.0),
+            Segment("Head & neck / complex", 0.20, None,
+                    growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Office-procedure migration", 3.0,
+                         "sinuplasty/turbinate work at office rates"),
+            GrowthDriver("Allergy prevalence", 2.0,
+                         "environmental allergy burden rising"),
+            GrowthDriver("Biologics adjacency", 1.5,
+                         "asthma/CRSwNP biologics infusion capture"),
+            GrowthDriver("OTC hearing-aid substitution", -1.5,
+                         "the audiology retail layer erodes — shown "
+                         "as one"),
+            GrowthDriver("Prior-auth burden", -1.0,
+                         "imaging + biologics UM"),
+        ],
+        sam_share=0.50,
+        sam_note="Independent ENT/allergy groups (academic head & "
+                 "neck excluded)",
+        som_share=0.04,
+        som_note="ENT Partners-class platforms early; allergy roll-ups "
+                 "(AllerVie) mid-wave",
+        horizon_years=5,
+        basis_note="Template defaults from AAO-HNS/AAAAI/MGMA public "
+                   "data — replace with engagement data before IC use.",
+    )
+
+
+def anesthesia_template() -> TamSamModel:
+    """Anesthesia services sizing — the staffing-economics niche after
+    the NSA reset. ASA-anchored."""
+    return TamSamModel(
+        name="Anesthesia · physician services market",
+        chain=[
+            DriverStep("US anesthesia cases / yr", 60_000_000,
+                       op="base", unit="cases",
+                       source="ASA / claims-volume estimates "
+                              "(surgical + endo + OB)"),
+            DriverStep("Avg revenue per case", 420, op="price",
+                       unit="$/case",
+                       source="blended commercial + Medicare unit "
+                              "values (post-No Surprises reset)"),
+        ],
+        segments=[
+            Segment("Hospital contracts (subsidy-backed)", 0.50, None,
+                    note="stipends now fund most contracts — the "
+                         "subsidy negotiation IS the business",
+                    growth_pct=4.0),
+            Segment("ASC / office-based", 0.30, None,
+                    note="the growth setting — follows the surgical "
+                         "migration", growth_pct=7.0),
+            Segment("OB / trauma / call coverage", 0.20, None,
+                    growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Surgical volume growth", 2.5,
+                         "cases compound with demographics + ASC "
+                         "expansion"),
+            GrowthDriver("Subsidy repricing", 3.0,
+                         "hospital stipends re-rate upward on "
+                         "scarcity — the post-2021 structural shift"),
+            GrowthDriver("CRNA leverage models", 1.0,
+                         "care-team ratios expand capacity"),
+            GrowthDriver("No Surprises Act rate reset", -2.5,
+                         "out-of-network arbitrage is DEAD — the "
+                         "old PE playbook does not work; shown as "
+                         "the defining headwind"),
+            GrowthDriver("Clinician scarcity cost", -2.0,
+                         "anesthesiologist/CRNA wage inflation"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent groups + ASC-focused platforms "
+                 "(academic + employed excluded)",
+        som_share=0.05,
+        som_note="Post-Envision/USAP era: the playbook is subsidy "
+                 "economics, not OON billing",
+        horizon_years=5,
+        basis_note="Template defaults from ASA/CMS public data — "
+                   "replace with engagement data before IC use. NOTE: "
+                   "the NSA driver encodes why the 2010s anesthesia "
+                   "playbook failed.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -2513,6 +2667,9 @@ TEMPLATES = {
     "gastroenterology": gastroenterology_template,
     "orthopedics": orthopedics_template,
     "womens_health": womens_health_template,
+    "podiatry": podiatry_template,
+    "ent_allergy": ent_allergy_template,
+    "anesthesia": anesthesia_template,
     "blank": blank_template,
 }
 

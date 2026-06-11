@@ -1176,6 +1176,26 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-77 — niche verticals batch 11: podiatry, ENT/allergy, anesthesia (20:45Z)
+**Niche-vertical sprint** — industries #44–46:
+  - podiatry ($9.9B, +2.9%): 18K DPMs (APMA) × $550K; diabetic foot +6%
+    ★ (the annuity, cross-linked conceptually to the wound vertical);
+    Medicare routine-care restrictions as the fee headwind.
+  - ent_allergy ($15.7B, +4.0%): 16.5K MDs (AAO-HNS/AAAAI) × $950K;
+    allergy/immunotherapy +6% ★ extract annuity; balloon-sinuplasty
+    office migration as the site-shift template; OTC hearing-aid
+    substitution eroding the audiology retail layer — shown as one.
+  - anesthesia ($25.2B, +1.9%): 60M cases (ASA) × $420; THE PLAYBOOK
+    HONESTY — the No Surprises Act rate reset priced at −2.5 ("OON
+    arbitrage is DEAD; the old PE playbook does not work") and the
+    basis note says why the 2010s anesthesia thesis failed; subsidy
+    repricing named as the post-2021 structural shift; ASC/office +7% ★.
+  All three: deals-only dives; the anesthesia dive note warns the corpus
+  trade history priced a playbook that no longer exists.
+**Verify**: chains pinned; NSA reset ≤ −2 + "playbook" in basis note
+pinned; catalogue ≥47 templates pinned; test_tam_sam 85 passed.
+46 industries.
+
 ## W2-76 — niche verticals batch 10: GI, orthopedics, women's health (20:15Z)
 **Niche-vertical sprint** — industries #41–43, the remaining big PPM waves:
   - gastroenterology ($21.6B, +4.0%): 16K GIs (ACG) × $1.35M; the
