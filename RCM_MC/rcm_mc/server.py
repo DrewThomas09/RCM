@@ -891,6 +891,15 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         '<div class="ck-deal-action-row">'
         f'{owner_form}'
         f'{star_btn}'
+        # Once a deal has snapshots this page replaces the model-tile
+        # dashboard, which used to strand the partner with no path to the
+        # analysis surfaces at all — link the workbench + the model hub
+        # forward so the audit trail and the analytics stay one click apart.
+        f'<a href="/analysis/{qd}" class="ck-deal-action">'
+        'Open Workbench →</a>'
+        f'<a href="/models/dcf/{qd}" class="ck-deal-action" '
+        'title="DCF · LBO · bridge · the full model set runs off the same '
+        'deal profile.">Models</a>'
         f'<a href="/deal/{qd}?download=1" class="ck-deal-action">'
         '↓ Download HTML</a>'
         # P1 — carry this deal as ambient context; the active-deal bar then

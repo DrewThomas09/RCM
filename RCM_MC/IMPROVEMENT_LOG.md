@@ -996,3 +996,15 @@ recoverable; dashboard suite 5 passed; chartis-kit/deal sweep 656 passed.
 Also audited: deal quick-view headings (single h1, clean h2 ladder), all 16
 dashboard model-tile /models/<slug>/ routes resolve in server.py (no dead
 tiles), snapshot detail _fmt_kpi_val already rolls B/M/K.
+
+## W2-36 — snapshot deal page links forward to the analysis surfaces (00:25Z)
+**Found by**: deal-pages linkage audit — once a deal has snapshots,
+/deal/<id> renders the audit-trail detail page INSTEAD of the model-tile
+dashboard, and that page had ZERO links to the workbench or any of the 26
+models. The deeper a deal got into the pipeline, the harder its own
+analytics were to reach.
+**Fixed**: the action row now carries "Open Workbench →" (/analysis/<id>)
+and "Models" (/models/dcf/<id>) alongside Download/Set-Active — audit trail
+and analytics one click apart again.
+**Verify**: new test_snapshot_page_links_forward_to_analysis asserts both
+hrefs on a seeded snapshot deal; test_server suite 68 passed.
