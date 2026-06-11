@@ -2718,3 +2718,26 @@ nothing, replays only fired checks, severity-weight rank order,
 distinct-case dedupe + weighted-severity sum, to_dict round-trip,
 renders in page, clean page shows the no-replay note. 116 passed
 across screening suites.
+
+## W2-141 (2026-06-11) — Thesis pipeline: coverage / completeness read (wave #43)
+**Found**: /diligence/thesis-pipeline ran ~20 analytic modules and
+logged per-step timing, but never told the partner how COMPLETE the
+synthesized thesis is — a step that short-circuits (no data for the
+fixture, or an error) silently drops its risk, and an unassessed risk
+reads identically to a cleared one.
+**Added (analysis, verifiable)**: `analyze_pipeline_coverage(report)`
+in the orchestrator → a `PipelineCoverage`:
+- steps_ok / steps_failed / coverage_pct from the step_log;
+- headline_populated/total — how many derived numbers actually landed
+  (a step can succeed but yield a None headline on thin data);
+- confidence band FULL (≥90% ok, no failures) / PARTIAL / THIN (<60%);
+- failed_steps list with errors → surfaced as "DID NOT RUN (risks
+  unassessed)" so a short-circuited module isn't mistaken for a clean
+  result;
+- pure function of report.step_log + to_dict headline block.
+Surfaced as a confidence-banded coverage banner (progress bar +
+unassessed-step chips) at the top of the step-log block.
+**Verify**: test_pipeline_coverage.py (8) — empty→THIN, all-ok→FULL,
+partial lists failed steps as unassessed, <60%→THIN, coverage
+arithmetic (8/9), real pipeline run (ok+failed=total, headline bound),
+to_dict round-trip, renders in page. 28 passed across pipeline suites.

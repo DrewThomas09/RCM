@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from ..diligence.thesis_pipeline import (
     PipelineInput, ThesisPipelineReport,
-    pipeline_observations, run_thesis_pipeline,
+    analyze_pipeline_coverage, pipeline_observations, run_thesis_pipeline,
 )
 from ..diligence._pages import AVAILABLE_FIXTURES, _resolve_dataset
 from ..diligence.checklist import compute_status, DealObservations
@@ -409,6 +409,56 @@ def _step_time_svg(report: ThesisPipelineReport,
     return "".join(parts)
 
 
+_COVERAGE_TONE = {"FULL": "#0a8a5f", "PARTIAL": "#b8732a", "THIN": "#b5321e"}
+
+
+def _coverage_banner(report: ThesisPipelineReport) -> str:
+    """Auditable completeness read on the synthesis: how many modules
+    ran, how many headline numbers landed, and which steps did not run
+    (so unassessed risks aren't mistaken for cleared ones)."""
+    cov = analyze_pipeline_coverage(report)
+    if cov.steps_total == 0:
+        return ""
+    tone = _COVERAGE_TONE.get(cov.confidence, "#7a8699")
+    bar_w = cov.coverage_pct * 100.0
+    failed_html = ""
+    if cov.failed_steps:
+        chips = "".join(
+            f'<span style="display:inline-block;padding:2px 8px;margin:0 6px '
+            f'6px 0;border-radius:2px;font-size:10px;font-family:'
+            f'var(--ck-mono,monospace);background:transparent;'
+            f'border:1px solid {P["negative"]};color:{P["negative"]};" '
+            f'title="{html.escape(f["error"])}">{html.escape(f["step"])}</span>'
+            for f in cov.failed_steps)
+        failed_html = (
+            f'<div style="margin-top:8px;font-size:10px;color:{P["text_faint"]};'
+            f'letter-spacing:0.06em;">DID NOT RUN (risks unassessed):</div>'
+            f'<div style="margin-top:4px;">{chips}</div>')
+    return (
+        f'<div class="ck-panel" style="border-left:4px solid {tone};'
+        f'margin-bottom:14px;">'
+        f'<div style="display:flex;gap:12px;align-items:baseline;'
+        f'flex-wrap:wrap;">'
+        f'<span style="font-family:var(--ck-mono,monospace);font-size:16px;'
+        f'font-weight:700;color:{tone};letter-spacing:0.04em;">'
+        f'{cov.confidence} COVERAGE</span>'
+        f'<span style="font-family:var(--ck-mono,monospace);font-size:12px;'
+        f'color:{P["text_dim"]};">{cov.steps_ok}/{cov.steps_total} modules · '
+        f'{cov.headline_populated}/{cov.headline_total} headline numbers</span>'
+        f'</div>'
+        f'<div style="height:8px;border-radius:4px;overflow:hidden;'
+        f'background:{P["border_dim"]};margin-top:8px;">'
+        f'<div style="width:{bar_w:.0f}%;height:100%;background:{tone};"></div>'
+        f'</div>'
+        f'<p class="ck-section-body" style="font-size:12px;margin:8px 0 0;'
+        f'line-height:1.6;">{html.escape(cov.note)}</p>'
+        f'{failed_html}'
+        f'<p style="font-size:9.5px;color:{P["text_faint"]};margin:8px 0 0;">'
+        f'Derived from the step log below — coverage = ok-steps / steps run.'
+        f'</p></div>'
+    )
+
+
 def _step_log_block(report: ThesisPipelineReport) -> str:
     rows: List[str] = []
     for s in report.step_log:
@@ -428,7 +478,8 @@ def _step_log_block(report: ThesisPipelineReport) -> str:
         )
     total = report.total_compute_ms
     return (
-        f'<div class="tp-section-label">Step log · '
+        _coverage_banner(report)
+        + f'<div class="tp-section-label">Step log · '
         f'{len(report.step_log)} steps · {total:.0f}ms total compute</div>'
         + _step_time_svg(report)
         + f'<div style="border:1px solid {P["border"]};border-radius:4px;'

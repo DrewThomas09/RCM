@@ -27,13 +27,16 @@ Public API::
 from __future__ import annotations
 
 from .orchestrator import (
-    PipelineInput, ThesisPipelineReport, run_thesis_pipeline,
+    PipelineCoverage, PipelineInput, ThesisPipelineReport,
+    analyze_pipeline_coverage, run_thesis_pipeline,
     pipeline_observations,
 )
 
 __all__ = [
+    "PipelineCoverage",
     "PipelineInput",
     "ThesisPipelineReport",
+    "analyze_pipeline_coverage",
     "pipeline_observations",
     "run_thesis_pipeline",
 ]
