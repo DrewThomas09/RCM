@@ -20,7 +20,15 @@
   presets (Conservative/Base/Aggressive); per-segment divergence (8
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
-- current_step: looping the sprint; branch==main @ a0f9bea (checkpoint 69)
+- current_step: looping; branch==main @ a701ee0 (checkpoint 86)
+- DILIGENCE UPGRADE WAVE (checkpoints 79-86): at-a-glance visuals on 7
+  surfaces — bear-case severity matrix, CIM variance chart, bankruptcy
+  pattern strip, cliff hold timeline, pipeline compute bars, checklist
+  category progress, IC-packet glance strips. Plus: TAM/SAM jump nav,
+  growth-sort, deal-sector deep links (both directions), guide-registry
+  fix, full-platform sweep (15,280 passed, 1 found+fixed).
+  Wave discipline: visual derived from the page's own data model,
+  semantic tones, empty states render nothing.
 - MILESTONE 2: 82-industry catalogue (checkpoints 60-69, batches 14-23):
   + school services, mobile dx, palliative, senior living, vascular
   access, genetic testing, NEMT, 503B, LOP medicine, dental labs, HTM,
