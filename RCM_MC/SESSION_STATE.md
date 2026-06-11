@@ -112,3 +112,30 @@ exact source queries against production-created schemas and bans the
 phantom names platform-wide. Full sweep at checkpoint 115: 15,421
 passed / 0 failures across 1,015 files. All deploys to pedesk.app
 verified success.
+
+## Checkpoint 124 record (2026-06-11) — verifiable-CDD analysis arc (waves 38–45)
+Shifted from visualization to verifiable analytical computation per
+the directive "more analysis... make it verifiable." Eight diligence
+surfaces gained a synthesized, auditable read — each a PURE FUNCTION
+of the page's own data, footnoted, and unit-tested:
+- IC-readiness gate (#1779) — checklist → NOT_READY/CONDITIONAL/READY
+  with an evidence-linked, auto-verifiable-vs-manual punch-list.
+- CIM credibility index (#1780) — deterministic 0–100 score + band +
+  overstatement-bias (does management systematically inflate?).
+- Bear cross-source corroboration (#1781) — themes backed by ≥2
+  independent engines (memo-ready) vs single-source.
+- Cliff payer-channel exposure (#1782) — in-hold bps by payer +
+  cumulative erosion curve; dominant-channel concentration.
+- Bankruptcy named-case replay (#1783) — fired patterns reframed as
+  matches to real public-record failures, severity-ranked.
+- Thesis-pipeline coverage (#1784) — FULL/PARTIAL/THIN completeness;
+  short-circuited steps surfaced as unassessed (not cleared) risks.
+- Comp-set defensibility (#1785) — STRONG/MODERATE/WEAK/THIN by set
+  size × match closeness × MOIC dispersion (fixed a latent
+  _percentile fraction bug).
+- Buy-and-build roll-up runway (#1786) — bolt-ons to target share +
+  the DOJ HHI>2500/ΔHHI>200 presumption ceiling.
+Discipline: verdict can never drift from the table it summarizes;
+honest empty/thin states; nothing fabricated; every component
+recomputes from displayed data. All deploys verified on pedesk.app.
+Improvement log W2-136…W2-143.
