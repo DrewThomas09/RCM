@@ -2155,3 +2155,20 @@ Placed above the shares table in the SHR panel.
 fragmented 40%), no remainder at 100%, largest-first segment order,
 ghost/negative shares skipped, empty → "". 7 passed with the
 market-structure suite.
+
+## W2-111 (2026-06-11) — White space page: conviction spectrum (wave #13)
+**Found**: /deal/<id>/white-space rendered opportunity cards per
+dimension, but the 0–1 conviction distribution — where scores cluster
+against the 0.25/0.50/0.75 bands the page explainer documents — had
+no visual; you read "score 0.82" card by card.
+**Fixed**: `_score_spectrum_svg(by_dim)` — one row per dimension
+(geographic/segment/channel, in the page's own dimension colors),
+every opportunity a dot on a fixed 0–1 axis toned by the page's own
+_score_color bands, dashed guides at 0.25/0.50/0.75, best opportunity
+per row labeled with name + score. Dimensions with no opportunities
+omitted; scores clamped to the axis; nothing scored renders "".
+Placed above the dimension card sections.
+**Verify**: ScoreSpectrumTests — rows/guides/tones pinned, empty
+CHANNEL row omitted, best-per-row labeled while runner-up unlabeled,
+out-of-range score clamps to axis end (cx=650), empty → "".
+17 passed with the white-space suites.
