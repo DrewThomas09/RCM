@@ -2790,3 +2790,28 @@ monotonic combined share, presumption flag matches the DOJ rule
 exactly + first-crossing step, combined-share arithmetic (0.30+0.50=
 0.80), reaches-target, fragmented long runway, to_dict round-trip,
 renders in page. 17 passed across market-structure suites.
+
+## W2-144 (2026-06-11) — Investability: composite drag decomposition (wave #46)
+**Found**: /deal/<id>/investability showed the 0–100 composite, a
+grade, and three sub-score bars, but never decomposed WHICH axis
+drags the score — the partner saw "62/100, value 0.40" but had to do
+the weight math to know value was the binding constraint and what
+fixing it would buy.
+**Added (analysis, verifiable)**: `analyze_score_drivers(result)` in
+investability_scorer + an `AXIS_WEIGHTS` constant now used by BOTH the
+composite and its decomposition (so they can't disagree) → a
+`ScoreDrivers`:
+- per axis: weight, score, points_contributed (w·score·100),
+  points_lost (w·(1−score)·100);
+- binding_axis = the one losing the most points; total_points_lost;
+  uplift_if_binding_fixed = composite points gained if the binding
+  axis rose to the deal's strongest axis (a concrete lever);
+- honest "near-maxed, no material drag" path when total lost < 5;
+- pure function of the three sub-scores + published weights.
+Surfaced as a decomposition block (contributed/lost bars per axis +
+binding flag + lever note) under the sub-score bars.
+**Verify**: test_investability_drivers.py (8) — contributions sum to
+the composite, binding axis loses most + sorts first, points-lost/
+contributed formulas, uplift = weighted gap-to-best (20), near-max no
+drag, to_dict round-trip, weights sum to 1.0, renders in block.
+29 passed across investability suites.

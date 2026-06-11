@@ -246,6 +246,100 @@ def _partner_note(score: int, grade: str,
 
 # ── Orchestrator ────────────────────────────────────────────────────
 
+# Published composite weights — the single source of truth for both
+# the composite and its decomposition, so the two can never disagree.
+AXIS_WEIGHTS = {"opportunity": 0.30, "value": 0.40, "stability": 0.30}
+
+
+@dataclass
+class AxisDriver:
+    """One investability axis and its contribution to the composite."""
+    axis: str
+    weight: float
+    score: float                 # 0..1
+    points_contributed: float    # weight * score * 100
+    points_lost: float           # weight * (1 - score) * 100
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+@dataclass
+class ScoreDrivers:
+    """Decomposition of the investability composite into per-axis
+    points contributed vs. points lost.
+
+    The binding axis is the one losing the most points — the
+    highest-leverage place to improve the score. ``uplift_if_binding_fixed``
+    is the composite gain if that axis rose to the deal's best axis
+    score: a concrete "fix this to get here" lever. Pure function of
+    the three sub-scores + AXIS_WEIGHTS, so it can never disagree with
+    the composite it explains.
+    """
+    drivers: List[AxisDriver]
+    binding_axis: str
+    total_points_lost: float
+    uplift_if_binding_fixed: int     # composite points
+    note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "drivers": [d.to_dict() for d in self.drivers],
+            "binding_axis": self.binding_axis,
+            "total_points_lost": self.total_points_lost,
+            "uplift_if_binding_fixed": self.uplift_if_binding_fixed,
+            "note": self.note,
+        }
+
+
+def analyze_score_drivers(result: InvestabilityResult) -> ScoreDrivers:
+    """Decompose the composite into per-axis contribution vs. shortfall.
+
+    Answers "which axis is holding the score back, and what would
+    fixing it buy?" — the lever read a partner wants next to the grade.
+    """
+    axes = {
+        "opportunity": result.opportunity_score,
+        "value": result.value_score,
+        "stability": result.stability_score,
+    }
+    drivers = [
+        AxisDriver(
+            axis=name, weight=AXIS_WEIGHTS[name], score=round(sc, 4),
+            points_contributed=round(AXIS_WEIGHTS[name] * sc * 100, 1),
+            points_lost=round(AXIS_WEIGHTS[name] * (1 - sc) * 100, 1),
+        )
+        for name, sc in axes.items()
+    ]
+    drivers.sort(key=lambda d: -d.points_lost)
+    binding = drivers[0]
+    total_lost = round(sum(d.points_lost for d in drivers), 1)
+
+    # Lever: raise the binding axis to the deal's best axis score.
+    best_score = max(axes.values())
+    uplift = int(round(
+        binding.weight * (best_score - binding.score) * 100))
+    uplift = max(uplift, 0)
+
+    if total_lost < 5:
+        note = (
+            f"Score is near-maxed ({result.score}/100, grade "
+            f"{result.grade}) — no single axis is a material drag."
+        )
+    else:
+        note = (
+            f"{binding.axis.title()} is the binding constraint — it sheds "
+            f"{binding.points_lost:.0f} of the {result.score}/100 "
+            f"composite's lost points. Lifting {binding.axis} to the "
+            f"deal's strongest axis would add ~{uplift} composite points."
+        )
+    return ScoreDrivers(
+        drivers=drivers, binding_axis=binding.axis,
+        total_points_lost=total_lost,
+        uplift_if_binding_fixed=uplift, note=note,
+    )
+
+
 def score_investability(inputs: InvestabilityInputs) -> InvestabilityResult:
     """Compute the 0..100 composite + grade + strengths/weaknesses."""
     strengths: List[str] = []
@@ -253,7 +347,9 @@ def score_investability(inputs: InvestabilityInputs) -> InvestabilityResult:
     opportunity = _opportunity_score(inputs, strengths, weaknesses)
     value = _value_score(inputs, strengths, weaknesses)
     stability = _stability_score(inputs, strengths, weaknesses)
-    composite = 0.30 * opportunity + 0.40 * value + 0.30 * stability
+    composite = (AXIS_WEIGHTS["opportunity"] * opportunity
+                 + AXIS_WEIGHTS["value"] * value
+                 + AXIS_WEIGHTS["stability"] * stability)
     score = int(round(composite * 100))
     grade = _grade_from_score(score)
     note = _partner_note(score, grade, strengths, weaknesses)

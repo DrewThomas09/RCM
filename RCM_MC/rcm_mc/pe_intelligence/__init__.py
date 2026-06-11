@@ -121,6 +121,8 @@ from .white_space import (
 from .investability_scorer import (
     InvestabilityInputs,
     InvestabilityResult,
+    ScoreDrivers,
+    analyze_score_drivers,
     inputs_from_review as investability_inputs_from_review,
     score_investability,
 )
@@ -2290,6 +2292,8 @@ __all__ = [
     "top_opportunities",
     "InvestabilityInputs",
     "InvestabilityResult",
+    "ScoreDrivers",
+    "analyze_score_drivers",
     "investability_inputs_from_review",
     "score_investability",
     "run_all_plus_extras",
