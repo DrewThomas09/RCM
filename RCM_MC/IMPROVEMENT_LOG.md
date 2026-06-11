@@ -1176,6 +1176,43 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-54 — industry #3: hospice template + deep dive (09:15Z)
+**Sprint continuation**: hospice joins — the most PE-penetrated post-acute
+vertical.
+  - hospice_template(): 1.72M Medicare users × 80 covered days × $185/day
+    blended = $25.5B TAM (anchors to MedPAC ~$25B); level-of-care segments
+    (RHC 97% of days — "the economics ARE RHC", GIP/continuous/respite);
+    drivers incl. program-integrity scrutiny (OIG/CMS long-stay crackdown +
+    CA license glut) and labor as headwinds.
+  - hospice_deep_dive(): 6,852 CMS providers — CA 2,062 top (the license
+    glut, visible honestly at the saturated end of the density ranking);
+    4,744 for-profit pool (69%); care-index composite state medians (51
+    states); density whitespace lowest-first (NY 0.11 / FL 0.13 / MD 0.25
+    per 10K seniors); 4 corpus hospice deals.
+**Verify**: chain math pinned to MedPAC magnitude; dive aggregates pinned
+(CA top, >4K for-profit, no "-" buckets); page renders with Care-index
+label + drill links; test_tam_sam 21 passed.
+
+## W2-53 — industry #2: home health template + deep dive; dive schema generalized (08:45Z)
+**Sprint continuation**: home health joins the builder.
+  - home_health_template(): 67M Medicare beneficiaries → 5% HH users →
+    2.9 PDGM periods → $2,010/period = $19.5B TAM (anchors to MedPAC);
+    post-acute vs community segments; drivers incl. PDGM rate pressure,
+    labor constraint, MA penetration carried as headwinds.
+  - home_health_deep_dive(): 12,392 CMS agencies — state footprint
+    (CA/TX/FL top), ownership mix with the 9,037-agency for-profit pool,
+    state-median star ratings (52 states), and a DENSITY whitespace read:
+    agencies per 10K seniors (ACS population × pct_65+) — NJ 0.2 / NY 0.3 /
+    MD 0.5 surface as the structurally underserved CON states. "-"
+    ownership labeled "Not reported", never a bare dash.
+  - Dive schema generalized (capacity_label / pool_label+note /
+    chains_label / quality_label / whitespace_mode pool|density) so each
+    sprint industry plugs in; dialysis re-pinned on the new schema.
+**Verify**: HH chain math pinned to MedPAC magnitude; dive aggregates
+pinned (CA top, >8K for-profit, density ascending, no "-" buckets); both
+industries render with their own labels; test_tam_sam 18 passed.
+Screenshot delivered.
+
 ## W2-52 — industry deep-dive layer: dialysis grounded in live CMS data (USER-DIRECTED SPRINT, 08:00Z)
 **User directive**: the TAM/SAM page becomes a long sprint — per industry:
 state-by-state breakdown, payer, tailwind root causes + directionality,
