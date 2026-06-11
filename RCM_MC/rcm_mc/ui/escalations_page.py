@@ -24,6 +24,79 @@ from typing import Any, Dict, List
 _THRESHOLDS = (7, 14, 30, 60, 90)
 
 
+def _aging_svg(df: Any, min_days: int) -> str:
+    """How stale each escalation actually is.
+
+    The list says "47d open" per row; this draws every escalation's
+    age as a bar from the threshold line, brick for live alerts and
+    gray for acknowledged ones — so "three deals have been red for a
+    quarter and nobody silenced them" reads instantly. Capped at the
+    20 oldest. Empty frames render nothing.
+    """
+    if df is None or df.empty:
+        return ""
+    rows = []
+    for _, r in df.iterrows():
+        rows.append({
+            "deal": str(r.get("deal_id") or "—"),
+            "title": str(r.get("title") or ""),
+            "days": int(r.get("days_open") or 0),
+            "acked": bool(r.get("acked")),
+        })
+    rows.sort(key=lambda x: -x["days"])
+    rows = rows[:20]
+    max_days = max(r["days"] for r in rows) or 1
+
+    label_w, bar_w_max, right_w = 230, 360, 70
+    row_h, gap, pad_top, pad_bot = 16, 7, 20, 10
+    width = label_w + bar_w_max + right_w
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Days open per escalated alert">'
+        f'<text x="{label_w}" y="{pad_top - 7}" font-size="8.5" '
+        f'letter-spacing="1" fill="#7a8699">'
+        f'DAYS BEYOND THE {min_days}-DAY THRESHOLD &#8594;</text>'
+    ]
+    for i, r in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        label = f'{r["deal"]} · {r["title"]}'
+        if len(label) > 34:
+            label = label[:33] + "…"
+        tone = "#9b9382" if r["acked"] else "#b5321e"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="9.5" fill="#465366">{_html.escape(label)}</text>'
+        )
+        w = max(2.0, bar_w_max * r["days"] / max_days)
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{w:.1f}" height="{row_h}" '
+            f'rx="2" fill="{tone}" fill-opacity="0.85"/>'
+        )
+        suffix = " ACKED" if r["acked"] else ""
+        parts.append(
+            f'<text x="{label_w + w + 6:.1f}" y="{ty:.1f}" font-size="9.5" '
+            f'font-weight="600" fill="{tone}">{r["days"]}d{suffix}</text>'
+        )
+    parts.append("</svg>")
+    note = (
+        '<div style="font-size:9px;letter-spacing:0.08em;color:#7a8699;'
+        'margin:2px 0 12px;">'
+        '<span style="display:inline-block;width:9px;height:9px;'
+        'border-radius:2px;background:#b5321e;margin-right:4px;"></span>'
+        'LIVE · '
+        '<span style="display:inline-block;width:9px;height:9px;'
+        'border-radius:2px;background:#9b9382;margin-right:4px;"></span>'
+        'ACKNOWLEDGED (KNOWN BUT STILL OPEN) · 20 OLDEST SHOWN</div>'
+    )
+    return (
+        '<div class="ck-escalation-aging">' + "".join(parts) + note + "</div>"
+    )
+
+
 def render_escalations(
     *,
     store: Any,
@@ -152,7 +225,7 @@ def render_escalations(
                 f'<div class="ck-severity-detail">{detail}{ack_badge}</div>'
                 "</li>"
             )
-        results_body = ck_severity_panel(
+        results_body = _aging_svg(df, min_days) + ck_severity_panel(
             tone="red",
             label=f"Aged ≥ {min_days} days",
             count=count,
