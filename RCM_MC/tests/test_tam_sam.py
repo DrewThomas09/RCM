@@ -293,3 +293,46 @@ class SnfIndustryTests(unittest.TestCase):
         self.assertIn("Beds", h)
         self.assertIn("changed ownership", h)   # the CHOW signal
         self.assertIn("/target-screener?vertical=snf", h)
+
+
+class IrfLtchAndPolishTests(unittest.TestCase):
+    """Industries #5–6 (IRF, LTCH) + the professionalism layer: numbered
+    source footnotes, the TAM/SAM/SOM projection graph, and the Sources
+    sheet in the Excel export."""
+
+    def test_irf_and_ltch_templates(self):
+        from rcm_mc.diligence.tam_sam import compute, irf_template, ltch_template
+        irf = compute(irf_template())
+        self.assertAlmostEqual(irf["tam"], 370_000 * 22_000, places=2)
+        ltch = compute(ltch_template())
+        self.assertAlmostEqual(ltch["tam"], 78_000 * 45_000, places=2)
+        # LTCH is a structurally shrinking market — the tool sizes honest
+        # declines: composite growth is NEGATIVE.
+        self.assertLess(ltch["composite_cagr_pct"], 0)
+
+    def test_irf_ltch_dives_real_aggregates(self):
+        from rcm_mc.diligence.industry_deep_dive import (
+            irf_deep_dive, ltch_deep_dive,
+        )
+        irf = irf_deep_dive()
+        self.assertGreater(irf["n_facilities"], 1_200)
+        self.assertEqual(irf["top_states"][0]["state"], "TX")
+        ltch = ltch_deep_dive()
+        self.assertGreater(ltch["n_facilities"], 300)
+        self.assertGreater(ltch["n_independent"], 200)  # for-profit pool
+
+    def test_every_template_renders_chart_and_footnotes(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        for key in TEMPLATES:
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn('aria-label="TAM SAM SOM projection"', h, key)
+            self.assertIn("Sources", h, key)
+
+    def test_xlsx_gains_sources_sheet(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_xlsx
+        data = tam_sam_xlsx({"template": ["snf"]})
+        z = zipfile.ZipFile(io.BytesIO(data))
+        self.assertIn("xl/worksheets/sheet4.xml", z.namelist())
+        # The sheet carries the actual source strings.
+        self.assertIn(b"MedPAC", z.read("xl/worksheets/sheet4.xml"))
