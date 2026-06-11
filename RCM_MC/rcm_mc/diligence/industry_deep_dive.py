@@ -1703,6 +1703,36 @@ def roi_services_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def virtual_primary_care_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="virtual_primary_care",
+        sector_tokens=("virtual_primary_care", "telehealth",
+                       "virtual_care"),
+        note=("Delivered virtually — geography is not the structure "
+              "read. The telehealth trade history priced the boom; "
+              "read it against the engagement reckoning."),
+    )
+
+
+def rpm_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="rpm",
+        sector_tokens=("rpm", "remote_monitoring", "digital_health"),
+        note=("A code-created market with no facility footprint — "
+              "geography omitted rather than fabricated."),
+    )
+
+
+def care_navigation_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="care_navigation",
+        sector_tokens=("care_navigation", "navigation", "advocacy"),
+        note=("Delivered nationally to employer populations — "
+              "geography is not the structure read."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1786,6 +1816,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "air_medical": air_medical_deep_dive,
     "pediatric_home_health": pediatric_home_health_deep_dive,
     "roi_services": roi_services_deep_dive,
+    "virtual_primary_care": virtual_primary_care_deep_dive,
+    "rpm": rpm_deep_dive,
+    "care_navigation": care_navigation_deep_dive,
 }
 
 

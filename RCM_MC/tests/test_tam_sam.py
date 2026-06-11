@@ -1473,3 +1473,51 @@ class NicheVerticalsBatch22Tests(unittest.TestCase):
     def test_catalogue_at_79_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 80)   # 79 + blank
+
+
+class NicheVerticalsBatch23Tests(unittest.TestCase):
+    """Industries #80–82 — virtual primary care, RPM, care navigation:
+    crossing the 80-industry milestone."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "virtual_primary_care": 35_000_000 * 0.15 * 420,
+            "rpm": 60_000_000 * 0.03 * 1_100,
+            "care_navigation": 110_000_000 * 0.25 * 36,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_digital_era_honesty(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, rpm_template,
+            virtual_primary_care_template,
+        )
+        # Virtual primary: the engagement gap IS the reckoning (≤ −3,
+        # Teladoc impairment named).
+        vp = compute(TEMPLATES["virtual_primary_care"]())
+        names = {g["name"]: g["annual_pct"] for g in vp["growth_drivers"]}
+        self.assertLessEqual(names["Engagement gap"], -3.0)
+        self.assertIn("reckoning",
+                      virtual_primary_care_template().basis_note)
+        # RPM: a code-created market — OIG scrutiny ≤ −3 and the basis
+        # says the CPT family is both the TAM and the risk.
+        rpm = compute(TEMPLATES["rpm"]())
+        names = {g["name"]: g["annual_pct"] for g in rpm["growth_drivers"]}
+        self.assertLessEqual(names["OIG / billing-integrity scrutiny"],
+                             -3.0)
+        self.assertIn("CODE-CREATED", rpm_template().basis_note)
+        # Navigation: the ROI-proof pressure priced.
+        cn = compute(TEMPLATES["care_navigation"]())
+        names = {g["name"]: g["annual_pct"] for g in cn["growth_drivers"]}
+        self.assertLess(names["ROI-proof pressure"], 0)
+
+    def test_catalogue_crosses_80_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 83)   # 82 + blank

@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-89 — batch 23: virtual primary, RPM, care navigation — 80-INDUSTRY MILESTONE (02:45Z)
+**Niche-vertical sprint** — industries #80–82, crossing 80:
+  - virtual_primary_care ($2.2B, +1.9%): 35M eligible × 15% ENGAGED ×
+    $420 — "offered ≠ used" is the chain's honesty; the ENGAGEMENT GAP
+    priced at −3 with Teladoc's impairment named as the case study and
+    "the post-2021 telehealth reckoning" in the basis; DTC excluded
+    from SAM (the economics don't close).
+  - rpm ($2.0B, +5.4%): 60M appropriate × 3% enrolled × $1,100 CPT
+    cycles — A CODE-CREATED MARKET, and the basis says the CPT family
+    is both the TAM and the risk; OIG billing-integrity scrutiny ≤ −3
+    (enrollment mills poisoned the well — compliance IS the moat);
+    diabetes/CGM +12% ★ cross-links the DME wave.
+  - care_navigation ($1.0B, +1.9%): 110M self-funded lives × 25%
+    covered × $36 PEPM-year; full-replacement +8% ★ (Quantum class);
+    the ROI-PROOF PRESSURE priced — "the category must prove savings
+    or churn"; carrier-embedded substitution named.
+**Verify**: chains pinned; engagement ≤ −3 + "reckoning" in basis + OIG
+≤ −3 + "CODE-CREATED" in basis + ROI-pressure negative all pinned;
+catalogue ≥83 templates pinned — THE 80-INDUSTRY MILESTONE CROSSED at
+82; test_tam_sam 122 passed.
+
 ## W2-88 — niche verticals batch 22: air medical, pediatric PDN, ROI services (02:15Z)
 **Niche-vertical sprint** — industries #77–79:
   - air_medical ($6.0B, +0.4%): 550K transports (AAMS) × $11K POST-NSA
