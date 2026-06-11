@@ -1304,6 +1304,176 @@ def vision_template() -> TamSamModel:
     )
 
 
+
+def aba_template() -> TamSamModel:
+    """Autism services / ABA sizing — CDC-anchored. The fastest-grown
+    BH sub-vertical, sized standalone for the niche depth CDD needs."""
+    return TamSamModel(
+        name="ABA · autism therapy services market",
+        chain=[
+            DriverStep("US children with ASD (3–17)", 1_800_000,
+                       op="base", unit="children",
+                       source="CDC ADDM (1-in-36 prevalence × census)"),
+            DriverStep("% receiving ABA services", 0.30, op="rate",
+                       unit="of diagnosed",
+                       source="payer claims studies; access-"
+                              "constrained, not demand-constrained"),
+            DriverStep("Avg ABA hours / wk", 14, op="mult",
+                       unit="hrs/wk", source="CASP practice parameters "
+                       "(10–25h comprehensive blend)"),
+            DriverStep("Weeks in service / yr", 46, op="mult",
+                       unit="wks/yr", source="industry standard"),
+            DriverStep("Avg reimbursed rate / hr", 65, op="price",
+                       unit="$/hr",
+                       source="Medicaid + commercial blended BCBA/RBT "
+                              "billed rates"),
+        ],
+        segments=[
+            Segment("Center-based", 0.45, None,
+                    note="the platform model — utilization + clinical "
+                         "supervision economics", growth_pct=10.0),
+            Segment("Home-based", 0.40, None,
+                    note="labor-logistics heavy; lower margin",
+                    growth_pct=6.0),
+            Segment("School / community", 0.15, None, growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diagnosed prevalence", 5.0,
+                         "ADDM prevalence has compounded ~5%/yr for "
+                         "two decades"),
+            GrowthDriver("Coverage mandates", 2.0,
+                         "all 50 states mandate; Medicaid EPSDT "
+                         "enforcement still expanding access"),
+            GrowthDriver("Access build-out", 3.0,
+                         "waitlists everywhere — supply growth IS "
+                         "revenue growth"),
+            GrowthDriver("BCBA/RBT labor shortage", -3.0,
+                         "certified-staff supply is the binding "
+                         "constraint; turnover ~30%+"),
+            GrowthDriver("Payer rate scrutiny", -1.5,
+                         "Medicaid rate pressure + utilization "
+                         "management on comprehensive hours"),
+        ],
+        sam_share=0.55,
+        sam_note="Commercially-insured + managed-Medicaid metros a "
+                 "platform can staff",
+        som_share=0.03,
+        som_note="Largest platforms (CARD/Hopebridge class) hold ~2% "
+                 "— hyper-fragmented",
+        horizon_years=5,
+        basis_note="Template defaults from CDC/CASP public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def plasma_template() -> TamSamModel:
+    """Plasma collection sizing — PPTA-anchored. Fixed-cost center
+    economics feeding a fractionation oligopoly."""
+    return TamSamModel(
+        name="Plasma · source-plasma collection market",
+        chain=[
+            DriverStep("US collection centers", 1_100, op="base",
+                       unit="centers", source="PPTA / FDA registered "
+                       "source-plasma centers"),
+            DriverStep("Donations per center / yr", 28_000, op="mult",
+                       unit="donations/yr",
+                       source="PPTA throughput benchmarks (~550/wk)"),
+            DriverStep("Revenue per donation (liter-equivalent)", 150,
+                       op="price", unit="$/donation",
+                       source="fractionator transfer pricing "
+                              "(donor fee ~$50 + margin + processing)"),
+        ],
+        segments=[
+            Segment("Fractionator-owned (CSL/Grifols/Takeda)", 0.80,
+                    None, note="vertically integrated — NOT acquirable",
+                    growth_pct=5.0),
+            Segment("Independent collectors", 0.20, None,
+                    note="the investable layer — long-term supply "
+                         "agreements with fractionators",
+                    growth_pct=8.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Ig demand growth", 6.0,
+                         "immunoglobulin demand compounds 6–8%/yr — "
+                         "the pull-through driver"),
+            GrowthDriver("Center build-out", 3.0,
+                         "post-COVID collection recovery + de-novo "
+                         "expansion"),
+            GrowthDriver("Donor-pool economics", -1.5,
+                         "donor fees are the cost line; competition "
+                         "for donors raises them"),
+            GrowthDriver("Recombinant substitution", -1.0,
+                         "FcRn blockers / recombinant alternatives "
+                         "nibble at Ig indications — the tail risk"),
+        ],
+        sam_share=0.20,
+        sam_note="The independent-collector layer (fractionator-owned "
+                 "centers are not for sale)",
+        som_share=0.10,
+        som_note="A platform of 20–30 centers is a meaningful "
+                 "independent",
+        horizon_years=5,
+        basis_note="Template defaults from PPTA/FDA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def clinical_research_template() -> TamSamModel:
+    """Clinical research site / SMO sizing — the hottest post-2021
+    services niche. IQVIA/CenterWatch-anchored."""
+    return TamSamModel(
+        name="Clinical research · site network market",
+        chain=[
+            DriverStep("US industry-funded trials active / yr", 6_000,
+                       op="base", unit="trials",
+                       source="ClinicalTrials.gov industry-sponsored, "
+                              "US-sites active"),
+            DriverStep("Avg US sites per trial", 25, op="mult",
+                       unit="sites/trial",
+                       source="CenterWatch / IQVIA site-count norms"),
+            DriverStep("Avg site revenue per trial", 350_000,
+                       op="price", unit="$/site/trial",
+                       source="per-patient grants × enrollment + "
+                              "start-up fees (SCRS benchmarks)"),
+        ],
+        segments=[
+            Segment("Dedicated research sites / SMOs", 0.35, None,
+                    note="the platform model — multi-site, multi-"
+                         "therapeutic", growth_pct=9.0),
+            Segment("Physician-practice embedded", 0.40, None,
+                    note="the acquirable long tail", growth_pct=5.0),
+            Segment("Academic / health-system", 0.25, None,
+                    note="slowest start-up times — sponsors steering "
+                         "away", growth_pct=2.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Pipeline volume (obesity, CNS, onc)", 6.0,
+                         "GLP-1 + Alzheimer's + oncology trial waves "
+                         "demand site capacity"),
+            GrowthDriver("Decentralized / hybrid trial mix", 2.0,
+                         "DCT components ADD site coordination "
+                         "revenue, not replace it"),
+            GrowthDriver("Sponsor site-consolidation preference", 2.5,
+                         "sponsors pay for predictable enrollment — "
+                         "networks win allocation"),
+            GrowthDriver("Coordinator labor shortage", -2.0,
+                         "CRC turnover is the binding constraint"),
+            GrowthDriver("Biotech funding cyclicality", -1.5,
+                         "XBI-correlated trial starts — the cyclical "
+                         "bear case, shown as one"),
+        ],
+        sam_share=0.45,
+        sam_note="Dedicated + embedded sites consolidatable into "
+                 "networks (academic excluded)",
+        som_share=0.04,
+        som_note="No site network holds >3% of trial allocation",
+        horizon_years=5,
+        basis_note="Template defaults from ClinicalTrials.gov/SCRS "
+                   "public data — replace with engagement data before "
+                   "IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -1352,6 +1522,9 @@ TEMPLATES = {
     "clinical_labs": clinical_labs_template,
     "specialty_pharmacy": specialty_pharmacy_template,
     "vision": vision_template,
+    "aba": aba_template,
+    "plasma": plasma_template,
+    "clinical_research": clinical_research_template,
     "blank": blank_template,
 }
 

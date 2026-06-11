@@ -722,3 +722,37 @@ class NicheVerticalsBatch3Tests(unittest.TestCase):
         from rcm_mc.diligence.tam_sam import specialty_pharmacy_template
         self.assertLessEqual(specialty_pharmacy_template().sam_share,
                              0.25)
+
+
+class NicheVerticalsBatch4Tests(unittest.TestCase):
+    """Industries #23–25 — ABA/autism, plasma collection, clinical
+    research sites: the hyper-niche layer."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "aba": 1_800_000 * 0.30 * 14 * 46 * 65,
+            "plasma": 1_100 * 28_000 * 150,
+            "clinical_research": 6_000 * 25 * 350_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+
+    def test_structural_honesty(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, plasma_template,
+        )
+        # ABA: the labor shortage is the binding constraint.
+        aba = compute(TEMPLATES["aba"]())
+        names = {g["name"]: g["annual_pct"] for g in aba["growth_drivers"]}
+        self.assertLess(names["BCBA/RBT labor shortage"], 0)
+        # Plasma: 80% of the market is fractionator-owned and NOT
+        # acquirable — the SAM says so.
+        self.assertLessEqual(plasma_template().sam_share, 0.25)
+        # Clinical research: biotech-funding cyclicality is the bear case.
+        cr = compute(TEMPLATES["clinical_research"]())
+        names = {g["name"]: g["annual_pct"] for g in cr["growth_drivers"]}
+        self.assertLess(names["Biotech funding cyclicality"], 0)
