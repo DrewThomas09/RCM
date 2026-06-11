@@ -532,6 +532,55 @@ def render_comparable_outcomes_page(
             'These comparables are real deals from the corpus, with modeled '
             f'financials. For the fully source-linked subset, see {_vd_link}</p>'
         )
+        # Sponsor track record — when the partner names a buyer, answer
+        # "what does THIS house actually return" next to "what do deals
+        # like this return". Aggregated from the buyer's own corpus deals
+        # (realized only; unrealized counted, never imputed).
+        sponsor_band = ""
+        if _buyer:
+            try:
+                from ..diligence.comparable_outcomes import (
+                    sponsor_track_record,
+                )
+                rec = sponsor_track_record(corpus, _buyer)
+            except Exception:  # noqa: BLE001 — intel band must never 500
+                rec = None
+            if rec and rec["n_realized"]:
+                s_med = rec["moic"]["median"]
+                c_med = (summary.get("moic") or {}).get("median")
+                if s_med and c_med:
+                    delta = s_med - c_med
+                    tone = "#0a8a5f" if delta >= 0 else "#b8732a"
+                    vs = (
+                        f' · <span style="color:{tone};font-weight:600;">'
+                        f'{delta:+.2f}x vs this comp set</span>'
+                    )
+                else:
+                    vs = ""
+                yrs = (
+                    f' · active {rec["year_min"]}–{rec["year_max"]}'
+                    if rec.get("year_min") else ""
+                )
+                irr_bit = (
+                    f' · median IRR {rec["irr_median"]*100:.1f}%'
+                    if rec.get("irr_median") else ""
+                )
+                sponsor_band = (
+                    '<div style="margin:0 0 14px;padding:10px 14px;'
+                    'background:#f7f3ea;border:1px solid #d6cfc0;'
+                    'border-radius:2px;font-size:12.5px;color:#1a2332;">'
+                    '<span style="font-size:10px;color:#7a8699;font-weight:600;'
+                    'text-transform:uppercase;letter-spacing:0.05em;'
+                    f'margin-right:8px;">Sponsor record</span>'
+                    f'<strong>{_html.escape(rec["buyer"])}</strong>: '
+                    f'{rec["n_deals"]} corpus deal'
+                    f'{"s" if rec["n_deals"] != 1 else ""} '
+                    f'({rec["n_realized"]} realized) · '
+                    f'median {s_med:.2f}x{vs}{irr_bit}{yrs}'
+                    f' · <a href="/verified-deals?sponsor={_q(_buyer)}" '
+                    'style="color:var(--sc-navy);">sourced deals →</a>'
+                    '</div>'
+                )
         # Layout: identity → one lede → inputs → results together
         # (outcome strip directly above the table it summarizes) →
         # exports/print at the point of use → provenance footnote.
@@ -541,6 +590,7 @@ def render_comparable_outcomes_page(
             + explainer_html
             + form
             + _outcome_strip(summary)
+            + sponsor_band
             + export_bar
             + print_cta
             + _wc.section_card(

@@ -1071,3 +1071,19 @@ distribution), /verified-deals (source-linked subset).
 **Verify**: render asserts all three hrefs + CTA; updated
 test_empty_state_is_a_junction_not_a_dead_end; deal-library comps suite 4
 passed; all three routes confirmed in server.py.
+
+## W2-41 — sponsor track-record band on Comparable Outcomes (02:50Z)
+**Found by**: market-intel gap — naming a buyer boosted same-sponsor comps
+in the match score but never answered the partner's actual question: "what
+does THIS house return?"
+**Added**: sponsor_track_record(corpus, buyer) aggregates the named
+sponsor's own corpus record (n deals / n realized / MOIC median+p25+p75 /
+median IRR / active years — realized-only math, unrealized counted but
+never imputed; None for empty/unknown buyer). The page renders a "Sponsor
+record" band under the outcome strip with a tone-coded delta vs the comp
+set median and a link to /verified-deals?sponsor=.
+**Verify**: unit tests (realized-only aggregation incl. unrealized counted;
+None for empty/unknown); HTTP tests (band when buyer given — "KKR: 76
+corpus deals (61 realized) · median 3.00x · −0.25x vs comp set · IRR 21.8%
+· active 2006–2024"; absent without buyer); 39 passed across comparable
+suites. Screenshot delivered.

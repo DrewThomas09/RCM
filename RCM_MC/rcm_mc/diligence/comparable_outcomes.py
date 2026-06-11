@@ -326,6 +326,45 @@ def summarize_outcomes(
     }
 
 
+def sponsor_track_record(
+    corpus: Any,
+    buyer: str,
+) -> Optional[Dict[str, Any]]:
+    """A named sponsor's own realized record across the public corpus.
+
+    Market-intel companion to the comp-set distribution: when a partner is
+    tracking a specific buyer, "what does THIS house actually return" is a
+    different question from "what do deals like this return". Aggregates
+    only — median/p25/p75 over deals whose realized MOIC is disclosed;
+    unrealized/undisclosed deals are counted but never imputed. Returns
+    None when the buyer string is empty or matches nothing.
+    """
+    buyer = (buyer or "").strip()
+    if not buyer:
+        return None
+    deals = corpus.list(buyer_contains=buyer, limit=500)
+    if not deals:
+        return None
+    moics = [_safe_float(d.get("realized_moic")) for d in deals]
+    moics = [m for m in moics if m is not None]
+    irrs = [_safe_float(d.get("realized_irr")) for d in deals]
+    irrs = [i for i in irrs if i is not None]
+    years = [d.get("year") for d in deals if d.get("year")]
+    return {
+        "buyer": buyer,
+        "n_deals": len(deals),
+        "n_realized": len(moics),
+        "moic": {
+            "median": _percentile(moics, 0.50),
+            "p25":    _percentile(moics, 0.25),
+            "p75":    _percentile(moics, 0.75),
+        },
+        "irr_median": _percentile(irrs, 0.50),
+        "year_min": min(years) if years else None,
+        "year_max": max(years) if years else None,
+    }
+
+
 def benchmark_deal(
     corpus: Any,
     target: Dict[str, Any],

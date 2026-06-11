@@ -233,6 +233,40 @@ class TestOutcomeSummary(unittest.TestCase):
         self.assertEqual(out["entry_multiple"]["n"], 0)
 
 
+class TestSponsorTrackRecord(unittest.TestCase):
+    class _FakeCorpus:
+        def __init__(self, deals):
+            self._deals = deals
+
+        def list(self, *, buyer_contains=None, limit=500, **kw):
+            out = [d for d in self._deals
+                   if buyer_contains and buyer_contains in (d.get("buyer") or "")]
+            return out[:limit]
+
+    def test_aggregates_realized_only(self):
+        from rcm_mc.diligence.comparable_outcomes import sponsor_track_record
+        corpus = self._FakeCorpus([
+            {"buyer": "KKR", "realized_moic": 2.0, "realized_irr": 0.15,
+             "year": 2018},
+            {"buyer": "KKR", "realized_moic": 3.0, "realized_irr": 0.25,
+             "year": 2021},
+            # Unrealized — counted in n_deals, excluded from the math.
+            {"buyer": "KKR", "realized_moic": None, "year": 2024},
+        ])
+        rec = sponsor_track_record(corpus, "KKR")
+        self.assertEqual(rec["n_deals"], 3)
+        self.assertEqual(rec["n_realized"], 2)
+        self.assertEqual(rec["moic"]["median"], 2.5)
+        self.assertEqual(rec["year_min"], 2018)
+        self.assertEqual(rec["year_max"], 2024)
+
+    def test_none_for_empty_or_unknown_buyer(self):
+        from rcm_mc.diligence.comparable_outcomes import sponsor_track_record
+        corpus = self._FakeCorpus([])
+        self.assertIsNone(sponsor_track_record(corpus, ""))
+        self.assertIsNone(sponsor_track_record(corpus, "Nobody Capital"))
+
+
 class TestBenchmarkDealShape(unittest.TestCase):
     def test_one_shot_dict_shape(self):
         from rcm_mc.diligence.comparable_outcomes import benchmark_deal
@@ -409,6 +443,29 @@ class TestComparableHttpRoutes(unittest.TestCase):
         self.assertGreater(i, 0)
         self.assertRegex(html[i:i + 400], r"\d+\.\dx")
         self.assertIn("disclosed", html[i:i + 500])
+
+    def test_sponsor_record_band_when_buyer_given(self):
+        # Naming a buyer adds the sponsor's own realized record next to
+        # the comp-set distribution — "what does THIS house return".
+        params = urllib.parse.urlencode({
+            "sector": "hospital", "ev_mm": "500", "buyer": "KKR"})
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}"
+            f"/diligence/comparable-outcomes?{params}", timeout=10,
+        ) as resp:
+            html = resp.read().decode()
+        self.assertIn("Sponsor record", html)
+        self.assertIn("realized)", html)
+        self.assertIn("vs this comp set", html)
+
+    def test_no_sponsor_band_without_buyer(self):
+        params = urllib.parse.urlencode({"sector": "hospital", "ev_mm": "500"})
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}"
+            f"/diligence/comparable-outcomes?{params}", timeout=10,
+        ) as resp:
+            html = resp.read().decode()
+        self.assertNotIn("Sponsor record", html)
 
     def test_json_api(self):
         params = urllib.parse.urlencode({
