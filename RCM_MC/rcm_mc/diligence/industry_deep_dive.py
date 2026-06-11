@@ -776,6 +776,63 @@ def ltch_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def _deals_only_dive(*, industry: str, sector_tokens: tuple,
+                     note: str) -> Dict[str, Any]:
+    """For verticals WITHOUT a vendored CMS facility file: the honest
+    layer is the sector's own deal history — geography is omitted rather
+    than fabricated."""
+    sector_deals: Dict[str, Any] = {"n": 0}
+    try:
+        from ..ui.data_public.deal_search_page import _load_corpus
+        deals = [d for d in _load_corpus()
+                 if (d.get("sector") or "").lower().replace(" ", "_")
+                 in sector_tokens]
+        moics = [float(d["realized_moic"]) for d in deals
+                 if d.get("realized_moic") is not None]
+        mults = []
+        for d in deals:
+            ev, eb = d.get("ev_mm"), d.get("ebitda_at_entry_mm")
+            if ev and eb and float(eb) > 0:
+                mults.append(float(ev) / float(eb))
+        years = [int(d["year"]) for d in deals if d.get("year")]
+        sector_deals = {
+            "n": len(deals), "n_realized": len(moics),
+            "median_moic": _median(moics),
+            "median_entry_multiple": _median(mults),
+            "year_min": min(years) if years else None,
+            "year_max": max(years) if years else None,
+        }
+    except Exception:  # noqa: BLE001
+        pass
+    return {
+        "industry": industry,
+        "deals_only": True,
+        "geo_note": note,
+        "sector_deals": sector_deals,
+        "deals_href": f"/deal-search?sector={sector_tokens[0]}",
+    }
+
+
+def behavioral_health_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="behavioral_health",
+        sector_tokens=("behavioral_health",),
+        note=("CMS publishes no national behavioral-health facility "
+              "file — geography is omitted rather than fabricated. The "
+              "real layer here is the sector's own deal history."),
+    )
+
+
+def asc_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="asc",
+        sector_tokens=("asc", "ambulatory_surgery"),
+        note=("The CMS ASC file isn't vendored yet — geography omitted "
+              "rather than fabricated; the deal history below is real."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -785,6 +842,8 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "snf": snf_deep_dive,
     "irf": irf_deep_dive,
     "ltch": ltch_deep_dive,
+    "behavioral_health": behavioral_health_deep_dive,
+    "asc": asc_deep_dive,
 }
 
 

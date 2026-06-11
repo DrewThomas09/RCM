@@ -441,6 +441,111 @@ def ltch_template() -> TamSamModel:
     )
 
 
+
+def behavioral_health_template() -> TamSamModel:
+    """Behavioral health sizing — the largest PE services vertical not
+    tied to a CMS facility file. SAMHSA-anchored demand chain."""
+    return TamSamModel(
+        name="Behavioral health · treatment services market",
+        chain=[
+            DriverStep("US adults with any mental illness", 59_000_000,
+                       op="base", unit="adults",
+                       source="SAMHSA NSDUH annual report"),
+            DriverStep("% receiving treatment / yr", 0.50, op="rate",
+                       unit="of those with AMI", source="SAMHSA NSDUH"),
+            DriverStep("Avg annual spend per treated patient", 3_000,
+                       op="price", unit="$/patient/yr",
+                       source="blended OP therapy / SUD / residential "
+                              "(SAMHSA spending estimates)"),
+        ],
+        segments=[
+            Segment("Outpatient therapy / psychiatry", 0.40, None,
+                    note="the volume segment; telehealth-accelerated"),
+            Segment("SUD treatment", 0.25, None,
+                    note="opioid-epidemic-driven; parity-funded"),
+            Segment("Residential / PHP / IOP", 0.15, None,
+                    note="highest revenue per patient; payer scrutiny"),
+            Segment("Autism / IDD services", 0.12, None,
+                    note="the fastest-growing sub-vertical (ABA)"),
+            Segment("Psychiatric inpatient", 0.08, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("Demand / destigmatization", 2.5,
+                         "diagnosed prevalence + care-seeking still "
+                         "rising post-2020"),
+            GrowthDriver("Telehealth access expansion", 3.0,
+                         "virtual BH removed the geography constraint — "
+                         "the access-barrier mitigation lever"),
+            GrowthDriver("Parity enforcement", 2.0,
+                         "MHPAEA enforcement narrows the BH/medical "
+                         "reimbursement gap"),
+            GrowthDriver("Reimbursement gains", 2.0,
+                         "commercial + Medicaid BH rate catch-up"),
+            GrowthDriver("Clinician workforce shortage", -2.0,
+                         "therapist/psychiatrist supply caps realized "
+                         "volume — the binding constraint"),
+        ],
+        sam_share=0.55,
+        sam_note="Commercially-insured + Medicaid-managed segments a "
+                 "platform can credential into",
+        som_share=0.03,
+        som_note="Obtainable share — a fragmented market with no "
+                 "national leader above ~2%",
+        horizon_years=5,
+        basis_note="Template defaults from SAMHSA public data — replace "
+                   "with engagement data before IC use.",
+    )
+
+
+def asc_template() -> TamSamModel:
+    """Ambulatory surgery center sizing — the site-of-care shift
+    tailwind made into a chain. CMS/MedPAC + ASCA magnitudes."""
+    return TamSamModel(
+        name="ASC · ambulatory surgery center market",
+        chain=[
+            DriverStep("Medicare-certified ASCs", 6_300, op="base",
+                       unit="centers", source="CMS / ASCA"),
+            DriverStep("Cases per center / yr", 3_650, op="mult",
+                       unit="cases/yr",
+                       source="ASCA benchmarking (~14/working day)"),
+            DriverStep("Avg revenue per case", 2_000, op="price",
+                       unit="$/case",
+                       source="Medicare ASC fee schedule + commercial "
+                              "blend (MedPAC)"),
+        ],
+        segments=[
+            Segment("GI / endoscopy", 0.25, None),
+            Segment("Ophthalmology", 0.20, None,
+                    note="cataract — the original ASC franchise"),
+            Segment("Ortho / MSK", 0.20, None,
+                    note="the fastest-growing slice: total joints "
+                         "migrating off the HOPD list"),
+            Segment("Pain management", 0.15, None),
+            Segment("Other (ENT, uro, plastics)", 0.20, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("Site-of-care shift from HOPD", 4.0,
+                         "payers push procedures to the cheaper "
+                         "setting — the defining structural tailwind"),
+            GrowthDriver("CMS covered-procedures expansion", 2.0,
+                         "total joints, cardiac added to the ASC list"),
+            GrowthDriver("Physician alignment / recruitment", 1.5,
+                         "surgeon equity models pull volume"),
+            GrowthDriver("Anesthesia / staffing cost", -1.0,
+                         "anesthesia coverage inflation compresses "
+                         "case economics"),
+        ],
+        sam_share=0.65,
+        sam_note="Multi-specialty + single-specialty centers in CON-"
+                 "clear states a platform can partner into",
+        som_share=0.05,
+        som_note="Obtainable share at entry",
+        horizon_years=5,
+        basis_note="Template defaults from CMS/MedPAC/ASCA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -473,6 +578,8 @@ TEMPLATES = {
     "snf": snf_template,
     "irf": irf_template,
     "ltch": ltch_template,
+    "behavioral_health": behavioral_health_template,
+    "asc": asc_template,
     "blank": blank_template,
 }
 

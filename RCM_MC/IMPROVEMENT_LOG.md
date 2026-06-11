@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-57 — industries #7–8: behavioral health + ASC (11:00Z)
+**Sprint continuation** — the two biggest PE service verticals without
+CMS facility files.
+  - behavioral_health_template(): 59M adults with AMI (SAMHSA NSDUH) ×
+    50% treated × $3,000/yr blended = $88.5B; segments incl. autism/IDD
+    (the fastest-growing sub-vertical) and residential (payer-scrutiny
+    note); drivers incl. telehealth access (+3, the access-barrier
+    mitigation lever), parity enforcement, and the clinician workforce
+    shortage as the binding-constraint headwind. +7.6%/yr composite.
+  - asc_template(): 6,300 certified ASCs × 3,650 cases × $2,000 = $46.0B;
+    GI/ophtho/ortho-MSK/pain segments with the total-joint migration
+    note; the HOPD site-of-care shift (+4) as the defining structural
+    tailwind. +6.6%/yr composite.
+  - _deals_only_dive(): for verticals WITHOUT a vendored facility file
+    the honest layer is the sector's own corpus deal history — geography
+    is OMITTED rather than fabricated, and the page says so.
+**Verify**: both chains pinned to SAMHSA/CMS magnitudes; workforce
+headwind sign pinned; deals-only renders show the trade history with no
+State-footprint panel and the "rather than fabricated" disclosure;
+test_tam_sam 30 passed.
+
 ## W2-56 — industries #5–6 (IRF, LTCH) + professionalism layer (10:30Z)
 **Sprint continuation + the defensibility/training layer the user asked
 for**:

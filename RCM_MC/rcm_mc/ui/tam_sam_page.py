@@ -241,6 +241,30 @@ def _industry_panels(tmpl_key: str) -> str:
     dive = deep_dive_for(tmpl_key)
     if not dive:
         return ""
+    if dive.get("deals_only"):
+        # No vendored facility file for this vertical — geography is
+        # omitted rather than fabricated; the deal history is real.
+        sd = dive["sector_deals"]
+        if not sd.get("n"):
+            return ""
+        med = sd.get("median_moic")
+        mult = sd.get("median_entry_multiple")
+        yrs = (f", {sd['year_min']}–{sd['year_max']}"
+               if sd.get("year_min") else "")
+        med_s = f"{med:.2f}x" if med else "—"
+        mult_s = f"{mult:.1f}x" if mult else "—"
+        return ck_panel(
+            f'<p class="ck-section-body" style="margin:0 0 8px;">'
+            f'<strong>{sd["n"]} corpus deals</strong> '
+            f'({sd.get("n_realized", 0)} realized{yrs}) · '
+            f'median realized MOIC <strong>{med_s}</strong> · '
+            f'median entry EV/EBITDA <strong>{mult_s}</strong> · '
+            f'<a class="ck-link" href="{html.escape(dive["deals_href"])}">'
+            'open the deals →</a></p>'
+            f'<p class="ts2-src" style="margin:0;">'
+            f'{html.escape(dive.get("geo_note", ""))}</p>',
+            title="What this sector traded for",
+        )
     pool_label = dive.get("pool_label", "Independent")
     cap_label = dive.get("capacity_label")
     q_label = dive.get("quality_label", "Quality (med)")
@@ -385,6 +409,8 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
                            ("snf", "SNF · nursing"),
                            ("irf", "IRF · rehab"),
                            ("ltch", "LTCH"),
+                           ("behavioral_health", "Behavioral health"),
+                           ("asc", "ASC · surgery"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )
