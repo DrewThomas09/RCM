@@ -95,3 +95,20 @@ Discipline held throughout: visual derived from the page's own data
 model, semantic severity tones, suppressed/missing data omitted
 (never imputed), empty states render "", every chart pinned by tests
 (render + ordering + empty). Improvement log entries W2-106…W2-119.
+
+## Checkpoint 115 record (2026-06-11) — waves 22–36, audit arc, full sweep
+Visualization waves continued through #35 (compare advantage strip
+#1763, waterfall tier cascade #1764, Bayesian interval plot #1765,
+calibration payer landscape #1766, escalations aging #1767, fund
+learning planned-vs-realized #1772, physician EU contribution #1773,
+data-quality gap census #1774, covenant runway #1775, my-dashboard
+deadline timeline #1776). AUDIT ARC (#1768–#1771): found and fixed
+NINE silently-dead queries behind bare excepts — health history
+(at_date), phantom `alerts` table ×3 (now alert_history⋈alert_acks),
+phantom deal_health_scores, deadlines `title`→label, llm cost_usd,
+deal_snapshots snapshot_json, server benchmark_values→
+hospital_benchmarks. test_dead_table_queries.py (10 cases) runs the
+exact source queries against production-created schemas and bans the
+phantom names platform-wide. Full sweep at checkpoint 115: 15,421
+passed / 0 failures across 1,015 files. All deploys to pedesk.app
+verified success.
