@@ -185,6 +185,82 @@ def _result_row(r: Any) -> str:
     )
 
 
+def _risk_distribution_svg(
+    results: List[Any], watch_thr: float, max_thr: float,
+) -> str:
+    """Every screened deal on the 0–100 risk-composite axis.
+
+    Dots toned by their PASS/WATCH/FAIL decision with the active
+    watch and reject thresholds drawn as labeled guides — so when the
+    user moves a threshold in the form, this shows exactly which part
+    of the population shifts verdict. Deterministic row-jitter keeps
+    overlapping scores readable. No scored results renders nothing.
+    """
+    pts = [
+        (float(r.risk_composite), str(r.decision).upper())
+        for r in results
+        if r.risk_composite is not None
+    ]
+    if not pts:
+        return ""
+    label_pad, axis_w = 14, 690
+    lanes, lane_h, pad_top, pad_bot = 7, 11, 22, 18
+    width = label_pad + axis_w + 16
+    height = pad_top + lanes * lane_h + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Risk-composite distribution of screened deals">'
+    ]
+    base_y = pad_top + lanes * lane_h
+    parts.append(
+        f'<line x1="{label_pad}" y1="{base_y}" x2="{label_pad + axis_w}" '
+        f'y2="{base_y}" stroke="{P["border_dim"]}" stroke-width="1"/>'
+    )
+    for tick in (0, 25, 50, 75, 100):
+        tx = label_pad + axis_w * tick / 100.0
+        parts.append(
+            f'<text x="{tx:.0f}" y="{base_y + 13}" text-anchor="middle" '
+            f'font-size="8.5" font-family="var(--ck-mono)" '
+            f'fill="{P["text_faint"]}">{tick}</text>'
+        )
+    for thr, lbl, col in (
+        (watch_thr, "WATCH", _DECISION_COLORS["WATCH"]),
+        (max_thr, "REJECT", _DECISION_COLORS["FAIL"]),
+    ):
+        if thr is None or not 0 <= float(thr) <= 100:
+            continue
+        gx = label_pad + axis_w * float(thr) / 100.0
+        parts.append(
+            f'<line x1="{gx:.1f}" y1="{pad_top - 12}" x2="{gx:.1f}" '
+            f'y2="{base_y}" stroke="{col}" stroke-width="1" '
+            f'stroke-dasharray="3,3" opacity="0.8"/>'
+            f'<text x="{gx + 4:.1f}" y="{pad_top - 13}" font-size="8.5" '
+            f'letter-spacing="1" font-family="var(--ck-mono)" '
+            f'fill="{col}">{lbl} ≥{float(thr):.0f}</text>'
+        )
+    for i, (score, decision) in enumerate(pts):
+        x = label_pad + axis_w * max(0.0, min(100.0, score)) / 100.0
+        y = pad_top + (i % lanes) * lane_h + lane_h / 2
+        col = _DECISION_COLORS.get(decision, P["text_dim"])
+        parts.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="{col}" '
+            f'fill-opacity="0.7"/>'
+        )
+    parts.append("</svg>")
+    note = (
+        f'<div style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.08em;color:{P["text_faint"]};margin-top:2px;">'
+        f'{len(pts)} DEALS ON THE 0–100 RISK-COMPOSITE AXIS · DOT = DEAL, '
+        'TONE = VERDICT · DASHED GUIDES = YOUR ACTIVE THRESHOLDS</div>'
+    )
+    return (
+        '<div class="ds-risk-spectrum" style="margin:2px 0 14px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def _decision_strip(counts: Counter, total: int) -> str:
     tiles = []
     for key in ("PASS", "WATCH", "FAIL"):
@@ -346,7 +422,11 @@ def render_deal_screening(
         code="FIT",
     )
 
-    decision_strip = _decision_strip(counts, len(results))
+    decision_strip = _decision_strip(counts, len(results)) + _risk_distribution_svg(
+        results,
+        cfg.watch_composite_risk_score,
+        cfg.max_composite_risk_score,
+    )
 
     rows = "".join(_result_row(r) for r in display)
     results_table = (

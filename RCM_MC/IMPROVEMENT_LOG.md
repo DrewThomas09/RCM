@@ -2172,3 +2172,20 @@ Placed above the dimension card sections.
 CHANNEL row omitted, best-per-row labeled while runner-up unlabeled,
 out-of-range score clamps to axis end (cx=650), empty → "".
 17 passed with the white-space suites.
+
+## W2-112 (2026-06-11) — Deal screening page: risk distribution strip (wave #14)
+**Found**: /deal-screening showed PASS/WATCH/FAIL tile counts and a
+ranked table, but the screened population was never drawn on the
+risk-composite axis — moving the watch/reject thresholds in the form
+gave no picture of which deals would shift verdict.
+**Fixed**: `_risk_distribution_svg(results, watch_thr, max_thr)` —
+every screened deal as a dot on a fixed 0–100 axis with deterministic
+lane jitter, toned by the page's own _DECISION_COLORS, dashed labeled
+guides at the *active* thresholds from the parsed config (so the
+chart tracks the user's form inputs). Out-of-range thresholds omit
+their guide; unscored results skipped; nothing scored renders "".
+Placed directly under the decision tiles.
+**Verify**: RiskDistributionTests — guides labeled WATCH ≥50 /
+REJECT ≥75, all three decision tones, out-of-range guide omitted,
+unscored skipped (count drops), empty → "". 16 passed across the
+screening suites.
