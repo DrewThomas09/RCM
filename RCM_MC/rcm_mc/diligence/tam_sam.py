@@ -3461,6 +3461,174 @@ def lop_medicine_template() -> TamSamModel:
     )
 
 
+
+def dental_labs_template() -> TamSamModel:
+    """Dental laboratory sizing — the digital-dentistry manufacturing
+    niche. NADL-anchored."""
+    return TamSamModel(
+        name="Dental labs · prosthetics manufacturing market",
+        chain=[
+            DriverStep("US dental lab units produced / yr",
+                       38_000_000, op="base", unit="units",
+                       source="NADL industry estimates (crowns, "
+                              "bridges, dentures, aligners ex-DTC)"),
+            DriverStep("Avg revenue per unit", 210, op="price",
+                       unit="$/unit",
+                       source="NADL fee surveys (crown ~$180 / "
+                              "denture ~$350 / implant ~$450 blend)"),
+        ],
+        segments=[
+            Segment("Crown & bridge (fixed)", 0.45, None,
+                    note="the volume core — zirconia digital "
+                         "workflow", growth_pct=4.0),
+            Segment("Implant prosthetics", 0.25, None,
+                    note="the margin engine — follows the implant "
+                         "boom", growth_pct=8.0),
+            Segment("Removables (dentures)", 0.20, None,
+                    note="3D-printed dentures re-rating the "
+                         "category", growth_pct=3.0),
+            Segment("Ortho / aligner manufacturing", 0.10, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Implant volume growth", 3.5,
+                         "implant dentistry pulls high-value units"),
+            GrowthDriver("Digital workflow consolidation", 2.5,
+                         "scanner penetration favors scaled digital "
+                         "labs over benchtop shops"),
+            GrowthDriver("Offshore substitution", -2.5,
+                         "China/overseas labs at 50-60% price — the "
+                         "structural share leak, shown as one"),
+            GrowthDriver("Technician workforce decline", -1.5,
+                         "CDT pipeline shrinking — the craft-labor "
+                         "constraint"),
+        ],
+        sam_share=0.50,
+        sam_note="Domestic full-service + digital labs (DSO-captive "
+                 "excluded)",
+        som_share=0.05,
+        som_note="NDX (National Dentex) the scaled platform; "
+                 "thousands of small labs remain",
+        horizon_years=5,
+        basis_note="Template defaults from NADL public data — replace "
+                   "with engagement data before IC use.",
+    )
+
+
+def htm_clinical_engineering_template() -> TamSamModel:
+    """Healthcare technology management sizing — the med-device
+    service niche. AAMI-anchored."""
+    return TamSamModel(
+        name="HTM · clinical engineering services market",
+        chain=[
+            DriverStep("US hospital + ASC device fleet (serviceable)",
+                       25_000_000, op="base", unit="devices",
+                       source="AAMI / ECRI fleet estimates"),
+            DriverStep("Avg annual service spend per device", 280,
+                       op="price", unit="$/device/yr",
+                       source="ISO vs OEM contract benchmarks "
+                              "(PM + repair + parts blend)"),
+        ],
+        segments=[
+            Segment("OEM service contracts", 0.55, None,
+                    note="the incumbent layer — 30-50% premium to "
+                         "ISO", growth_pct=3.0),
+            Segment("ISO / third-party service", 0.25, None,
+                    note="the investable layer — Agiliti/Sodexo HTM "
+                         "class", growth_pct=7.0),
+            Segment("In-house programs (insourced)", 0.15, None,
+                    growth_pct=2.0),
+            Segment("Equipment rental / peak-need", 0.05, None,
+                    note="the utilization-arbitrage adjacency",
+                    growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Fleet growth / device intensity", 3.0,
+                         "devices per bed compounds"),
+            GrowthDriver("OEM→ISO cost-out switching", 2.5,
+                         "hospital margin pressure pushes service "
+                         "spend to third parties"),
+            GrowthDriver("Right-to-repair tailwind", 1.5,
+                         "FDA/FTC posture improving ISO parts access"),
+            GrowthDriver("OEM lockout tactics", -2.0,
+                         "software keys + proprietary parts block "
+                         "ISO service — the moat war, shown as one"),
+            GrowthDriver("BMET workforce shortage", -1.5,
+                         "biomed-tech pipeline thin"),
+        ],
+        sam_share=0.30,
+        sam_note="The ISO + rental layers (OEM contracts and "
+                 "insourced programs are not acquirable)",
+        som_share=0.08,
+        som_note="Agiliti the scaled platform; regional ISOs the "
+                 "tuck-ins",
+        horizon_years=5,
+        basis_note="Template defaults from AAMI/ECRI public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def interpretation_template() -> TamSamModel:
+    """Medical interpretation services sizing — the Section-1557
+    compliance niche. CSA-anchored."""
+    return TamSamModel(
+        name="Interpretation · medical language services market",
+        chain=[
+            DriverStep("US LEP patient encounters needing "
+                       "interpretation / yr", 380_000_000, op="base",
+                       unit="encounters",
+                       source="Census LEP population × utilization "
+                              "rates"),
+            DriverStep("% served by PAID interpretation", 0.30,
+                       op="rate", unit="of encounters",
+                       source="compliance-gap studies — family/ad-hoc "
+                              "interpretation fills the rest; Section "
+                              "1557 enforcement closes the gap"),
+            DriverStep("Avg revenue per served encounter", 28,
+                       op="price", unit="$/encounter",
+                       source="VRI per-minute + OPI + on-site blend"),
+        ],
+        segments=[
+            Segment("Video remote (VRI)", 0.40, None,
+                    note="the growth modality — margin leader",
+                    growth_pct=9.0),
+            Segment("Over-the-phone (OPI)", 0.35, None,
+                    note="the commoditizing base", growth_pct=3.0),
+            Segment("On-site / ASL", 0.20, None,
+                    note="legally-preferred for ASL; scheduling-"
+                         "intensive", growth_pct=4.0),
+            Segment("Document translation", 0.05, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Section 1557 enforcement", 3.0,
+                         "meaningful-access rules mandate qualified "
+                         "interpreters"),
+            GrowthDriver("LEP population growth", 2.0,
+                         "demographic floor"),
+            GrowthDriver("VRI substitution of on-site", 2.0,
+                         "video at 1/3 the on-site cost expands "
+                         "served encounters"),
+            GrowthDriver("AI interpretation displacement", -3.0,
+                         "speech-to-speech AI will commoditize OPI "
+                         "first — the existential tech risk, priced"),
+            GrowthDriver("Per-minute rate compression", -1.5,
+                         "procurement consolidation"),
+        ],
+        sam_share=0.55,
+        sam_note="Healthcare-vertical language services (general "
+                 "enterprise translation excluded)",
+        som_share=0.06,
+        som_note="LanguageLine/AMN/GLOBO concentrated top; the "
+                 "healthcare-specialist middle is the target layer",
+        horizon_years=5,
+        basis_note="Template defaults from Census/CSA public data — "
+                   "replace with engagement data before IC use. The AI "
+                   "driver is the diligence centerpiece: underwrite "
+                   "the displacement curve, not around it.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -3548,6 +3716,9 @@ TEMPLATES = {
     "nemt": nemt_template,
     "compounding_503b": compounding_503b_template,
     "lop_medicine": lop_medicine_template,
+    "dental_labs": dental_labs_template,
+    "htm_clinical_engineering": htm_clinical_engineering_template,
+    "interpretation": interpretation_template,
     "blank": blank_template,
 }
 

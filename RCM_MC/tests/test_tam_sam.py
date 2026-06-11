@@ -1212,3 +1212,48 @@ class NicheVerticalsBatch16Tests(unittest.TestCase):
     def test_catalogue_at_61_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 62)   # 61 + blank
+
+
+class NicheVerticalsBatch17Tests(unittest.TestCase):
+    """Industries #62–64 — dental labs, HTM/clinical engineering,
+    medical interpretation."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "dental_labs": 38_000_000 * 210,
+            "htm_clinical_engineering": 25_000_000 * 280,
+            "interpretation": 380_000_000 * 0.30 * 28,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_disruption_pricing(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, htm_clinical_engineering_template,
+            interpretation_template,
+        )
+        # Dental labs: offshore substitution is the structural leak.
+        dl = compute(TEMPLATES["dental_labs"]())
+        names = {g["name"]: g["annual_pct"] for g in dl["growth_drivers"]}
+        self.assertLess(names["Offshore substitution"], 0)
+        # HTM: only the ISO+rental layers are acquirable — SAM ≤ 0.35.
+        self.assertLessEqual(
+            htm_clinical_engineering_template().sam_share, 0.35)
+        # Interpretation: the AI displacement risk priced ≤ −3 and
+        # called the diligence centerpiece.
+        it = compute(TEMPLATES["interpretation"]())
+        names = {g["name"]: g["annual_pct"] for g in it["growth_drivers"]}
+        self.assertLessEqual(names["AI interpretation displacement"],
+                             -3.0)
+        self.assertIn("displacement curve",
+                      interpretation_template().basis_note)
+
+    def test_catalogue_at_64_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 65)   # 64 + blank

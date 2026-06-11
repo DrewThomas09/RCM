@@ -1176,6 +1176,25 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-83 — niche verticals batch 17: dental labs, HTM, interpretation (23:45Z)
+**Niche-vertical sprint** — industries #62–64:
+  - dental_labs ($8.0B, +1.9%): 38M units (NADL) × $210; implant
+    prosthetics +8% ★; the OFFSHORE SUBSTITUTION leak priced (China at
+    50-60% price); the CDT craft-labor decline named; NDX context.
+  - htm_clinical_engineering ($7.0B, +3.4%): 25M serviceable devices
+    (AAMI/ECRI) × $280; ISO third-party +7% ★ (the OEM→ISO cost-out
+    switch); the OEM LOCKOUT MOAT WAR priced (software keys block ISO
+    service); SAM honestly 0.30 — only the ISO+rental layers are
+    acquirable; Agiliti context.
+  - interpretation ($3.2B, +2.4%): 380M LEP encounters × 30% paid ×
+    $28; VRI +9% ★; Section 1557 enforcement as the compliance
+    tailwind; AI DISPLACEMENT PRICED AT −3 with the basis note saying
+    "underwrite the displacement curve, not around it" — the diligence
+    centerpiece named.
+**Verify**: chains pinned; offshore/lockout negatives + HTM SAM ≤0.35 +
+AI ≤ −3 + "displacement curve" in basis all pinned; catalogue ≥65
+templates pinned; test_tam_sam 103 passed. 64 industries.
+
 ## W2-82 — niche verticals batch 16: NEMT, 503B compounding, LOP medicine (23:15Z)
 **Niche-vertical sprint** — industries #59–61; the test suite crossed 100:
   - nemt ($4.2B, +3.9%): 110M trips (MTAC/MACPAC) × $38 modality blend;
