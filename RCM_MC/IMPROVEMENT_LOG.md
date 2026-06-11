@@ -3087,3 +3087,48 @@ denominator, IV-iron scales with female share, live rate overrides
 state, payer-access bounded 0–100, metro totals = sum of counties,
 analysis JSON-serializable; API parsing from mocked payloads. Full
 suite green.
+
+## W2-152 (2026-06-11) — Texas infusion: deep, authentic home-infusion analysis (wave #54)
+Made the home-infusion side of the Texas page far deeper and fully
+sourced — therapy/condition epidemiology, the network landscape, the
+Medicare HIT reimbursement gap, and episode economics:
+- **Therapy × condition reference** (`home_infusion_therapy_reference`):
+  six home-infusion families — anti-infectives/OPAT, immune globulin
+  (IVIG/SCIG), parenteral nutrition (HPN/TPN), inotropic therapy
+  (advanced HF), home biologics, and enzyme-replacement/factor/PAH —
+  each with the conditions served, regimen, reimbursement basis, the
+  home-vs-AIC rationale, and margin character.
+- **Real epidemiology, real population** (`home_infusion_conditions`):
+  per-therapy eligible-patient estimates = published treated-prevalence
+  / incidence anchor (per 100k — IDSA OPAT ≈0.9/1,000, IDF PI + CIDP for
+  IG, ASPEN ≈120/M for HPN, NHF/rare-disease registries) × real metro
+  population (inotropes denominated on the senior pool). ~27k OPAT, ~14k
+  IG, ~3.6k TPN eligible/yr statewide. Counts vary by real geography,
+  not invented rates.
+- **The networks** (`home_infusion_networks`): 11 operators across
+  tiers — national platforms (Option Care, CVS Coram, Amerita/
+  BrightSpring), payer-owned steerage threats (Optum, Paragon/Elevance —
+  TX-HQ'd Plano), IG/rare specialists (KabaFusion, NuFACTOR/FFF,
+  BioMatrix, Soleo, InfuCare Rx), and the franchise/independent roll-up
+  pool (Vital Care). Ownership, therapy focus, ACHC/URAC accreditation,
+  TX footprint.
+- **Reimbursement** (`home_infusion_reimbursement`): the 21st Century
+  Cures Act HIT services benefit (2021), the calendar-day gap (paid only
+  on nurse-visit days), the G0068–G0070 categories, the Part B DME drug/
+  pump split, the Part D black hole (no professional benefit), and why
+  commercial per-diem carries the channel — with the RCM read.
+- **Episode economics** (`home_infusion_episode_economics`): an
+  illustrative 4-week commercial OPAT P&L (~$4.7K revenue / ~$3.9K
+  contribution / ~41% margin) recomputed from labeled per-diem + drug-
+  spread + nurse-visit + compounding + delivery anchors; nurse route
+  density called out as the margin lever.
+- **Page**: a dedicated "Home infusion — therapies, networks &
+  reimbursement" section (therapy table + episode-P&L card, network
+  roster, HIT-gap explainer) and a per-metro home-infusion-eligible
+  demand bar block in each city deep-dive.
+**Verify**: +7 home-infusion tests (70 in test_texas_infusion) — counts
+scale linearly with population, inotropes use the senior denominator,
+networks cover all tiers + Paragon TX flag, reimbursement surfaces the
+calendar-day gap + Part D split, episode contribution recomputes
+(rev−cost, 0<margin<1), therapy reference complete (6 families), every
+metro carries home demand; +6 page-render needles. Full suite green.

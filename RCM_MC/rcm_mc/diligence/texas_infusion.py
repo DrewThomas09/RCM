@@ -560,6 +560,9 @@ def build_texas_metro_deepdive(
         # Metro-level CDC-proxy demand by therapy (sum of counties).
         "cdc_demand": _aggregate_cdc_demand(suburbs),
         "cdc_live": any(s.get("cdc_live") for s in suburbs),
+        # Home-infusion-eligible population by therapy (real pop × epi).
+        "home_infusion": home_infusion_conditions(
+            metro["population"], metro.get("seniors")),
     }
 
 
@@ -707,6 +710,313 @@ def infusion_players() -> List[Dict[str, Any]]:
                   "consolidation pool",
          "link": "https://www.vitalcare.com"},
     ]
+
+
+# ── Home infusion — deep clinical + network + reimbursement analysis ──
+#
+# Home infusion is a distinct business from the AIC: a logistics +
+# pharmacy-compounding operation delivering IV therapy in the patient's
+# home, reimbursed through a different (and notoriously awkward) channel.
+# The therapy mix, the eligible-population epidemiology, the operators,
+# and the Medicare Home Infusion Therapy (HIT) benefit all differ.
+
+#: Home-infusion therapy families with REAL published epidemiology
+#: anchors (annual treated prevalence / incidence per 100,000 population
+#: unless noted). Rates are applied to real metro population — the count
+#: varies by real geography, the rate is a labeled published anchor.
+_HOME_INFUSION_THERAPIES = [
+    {
+        "key": "opat", "therapy": "Anti-infectives (OPAT)",
+        "conditions": "Osteomyelitis, infective endocarditis, complicated "
+                      "cellulitis / SSTI, bacteremia, diabetic-foot & "
+                      "prosthetic-joint infection",
+        "epi_per_100k": 90.0,
+        "epi_basis": "≈0.9 OPAT courses per 1,000 population/yr (IDSA "
+                     "OPAT guidance; published program incidence)",
+        "regimen": "2–6 week IV antibiotic course after discharge",
+        "reimbursement": "Part B drug (DME infusion-pump LCD) + HIT visit "
+                         "payment; commercial per-diem + drug",
+        "why_home": "Frees an inpatient bed for an otherwise-stable "
+                    "patient — the original, highest-volume home-infusion "
+                    "use case and the hospital discharge-acceleration play.",
+        "margin": "Low drug cost, high volume; per-diem + nurse-visit "
+                  "driven — route density is the margin lever.",
+        "denominator": "population",
+    },
+    {
+        "key": "ig", "therapy": "Immune globulin (IVIG / SCIG)",
+        "conditions": "Primary immunodeficiency (PI), CIDP & autoimmune "
+                      "neuropathy, myasthenia gravis, ITP, secondary "
+                      "immunodeficiency",
+        "epi_per_100k": 45.0,
+        "epi_basis": "PI treated ≈25–40/100k + CIDP ≈8.9/100k (Immune "
+                     "Deficiency Foundation; GBS/CIDP Foundation)",
+        "regimen": "Chronic — IVIG q3–4 weeks or weekly SCIG, indefinitely",
+        "reimbursement": "High-value Part B drug + HIT/SCIG supply; the "
+                         "margin engine of the home channel",
+        "why_home": "Chronic, stable, self- or nurse-administered (SCIG "
+                    "especially) — ideal for the home; sticky recurring "
+                    "revenue.",
+        "margin": "The richest home-infusion category — $5K–$15K/dose "
+                  "drug spread + chronic recurring volume.",
+        "denominator": "population",
+    },
+    {
+        "key": "tpn", "therapy": "Parenteral nutrition (HPN / TPN)",
+        "conditions": "Short-bowel syndrome, chronic intestinal failure, "
+                      "GI obstruction, severe Crohn's, post-surgical gut "
+                      "failure",
+        "epi_per_100k": 12.0,
+        "epi_basis": "Home parenteral nutrition prevalence ≈120 per "
+                     "million (ASPEN / Sustain registry)",
+        "regimen": "Daily/overnight infusion, often long-term or lifelong",
+        "reimbursement": "Part B prosthetic-device benefit (nutrients + "
+                         "pump + supplies) — a stable, well-defined LCD",
+        "why_home": "Daily lifelong therapy that cannot occupy a chair; "
+                    "compounding + monitoring intensive — a pharmacy "
+                    "capability moat.",
+        "margin": "Compounding-labor heavy; steady, defensible, lower-"
+                  "competition (few operators have the sterile-compounding "
+                  "capability).",
+        "denominator": "population",
+    },
+    {
+        "key": "inotrope", "therapy": "Inotropic therapy (advanced HF)",
+        "conditions": "Stage-D heart failure — milrinone / dobutamine "
+                      "continuous infusion (bridge or palliative)",
+        "epi_per_100k": 3.0,
+        "epi_basis": "Stage-D HF on home inotropes — small subset of the "
+                     "CMS HF-prevalent population (HFSA/ACC)",
+        "regimen": "Continuous via ambulatory pump, weeks–months",
+        "reimbursement": "Part B drug + HIT; close cardiology coordination",
+        "why_home": "Avoids prolonged admission for end-stage HF; "
+                    "palliative or transplant/LVAD bridge.",
+        "margin": "Low volume, high acuity; clinical-coordination "
+                  "intensive — a referral-relationship business.",
+        "denominator": "seniors",
+    },
+    {
+        "key": "biologic", "therapy": "Home biologics / immunology",
+        "conditions": "Rheumatoid arthritis, IBD (Crohn's / UC), psoriatic "
+                      "disease — infliximab & select biologics shifted home",
+        "epi_per_100k": 60.0,
+        "epi_basis": "Subset of the autoimmune-biologic pool eligible for "
+                     "home administration (payer site-of-care steerage)",
+        "regimen": "q4–8 week maintenance infusions, chronic",
+        "reimbursement": "Part B / commercial medical; the white-bagging & "
+                         "site-of-care-steerage battleground",
+        "why_home": "Payers steer stable biologic patients out of HOPD/AIC "
+                    "to the lowest-cost site — home is the cheapest.",
+        "margin": "Drug-spread dependent; squeezed by white-bagging but "
+                  "high-volume and chronic.",
+        "denominator": "population",
+    },
+    {
+        "key": "rare", "therapy": "Enzyme replacement / factor / PAH",
+        "conditions": "Lysosomal storage disorders (Pompe, Fabry, "
+                      "Gaucher, MPS), hemophilia factor, pulmonary "
+                      "arterial hypertension (treprostinil)",
+        "epi_per_100k": 9.0,
+        "epi_basis": "Hemophilia ≈6/100k + LSDs ≈2/100k + PAH home-infused "
+                     "≈1/100k (NHF; rare-disease registries)",
+        "regimen": "Chronic / lifelong; ultra-high-cost agents",
+        "reimbursement": "Very-high-cost Part B / specialty; prior-auth "
+                         "and stop-loss intensive",
+        "why_home": "Lifelong rare-disease therapy; specialized handling — "
+                    "a high-touch, high-margin niche.",
+        "margin": "Ultra-high revenue per patient ($100K–$1M+/yr); tiny "
+                  "panels, enormous AR and stop-loss exposure.",
+        "denominator": "population",
+    },
+]
+
+
+def home_infusion_conditions(
+    population: float, seniors: "float | None" = None,
+) -> List[Dict[str, Any]]:
+    """Home-infusion-eligible patient estimates for a geography = real
+    population (or senior subpopulation) × the published treated-
+    prevalence rate per therapy. Rates are labeled epidemiology anchors;
+    the per-geography count varies by real population only."""
+    sen = seniors if seniors is not None else population * 0.13
+    out = []
+    for t in _HOME_INFUSION_THERAPIES:
+        base = sen if t["denominator"] == "seniors" else population
+        out.append({
+            "key": t["key"], "therapy": t["therapy"],
+            "conditions": t["conditions"],
+            "epi_per_100k": t["epi_per_100k"], "epi_basis": t["epi_basis"],
+            "denominator": t["denominator"],
+            "estimated_patients": round(base * t["epi_per_100k"] / 1e5),
+        })
+    out.sort(key=lambda r: -r["estimated_patients"])
+    return out
+
+
+def home_infusion_therapy_reference() -> List[Dict[str, Any]]:
+    """The full clinical reference: therapy, conditions, regimen,
+    reimbursement basis, the home-vs-AIC rationale, and margin character
+    — the depth a diligence team needs on the home channel."""
+    return [dict(t) for t in _HOME_INFUSION_THERAPIES]
+
+
+def home_infusion_networks() -> List[Dict[str, Any]]:
+    """The home-infusion operator landscape — national platforms,
+    payer-owned threats, IG/rare-disease specialists, the franchise /
+    independent roll-up pool, and Texas-relevant players. Ownership,
+    therapy focus, accreditation, and TX footprint from public
+    disclosures (directional)."""
+    return [
+        {"name": "Option Care Health", "tier": "National platform",
+         "ownership": "Public (NASDAQ: OPCH)", "tx": True,
+         "focus": "Full therapy breadth — the scale leader (~$4.3B rev, "
+                  "Naven Health nursing arm)", "accred": "ACHC / URAC",
+         "link": "https://www.optioncarehealth.com"},
+        {"name": "Optum Infusion Pharmacy", "tier": "Payer-owned",
+         "ownership": "UnitedHealth Group", "tx": True,
+         "focus": "Vertically integrated with the largest US payer — can "
+                  "steer its own members (legacy BriovaRx)",
+         "accred": "ACHC / URAC", "link": "https://www.optum.com"},
+        {"name": "CVS Health / Coram", "tier": "National platform",
+         "ownership": "Public (CVS Health)", "tx": True,
+         "focus": "Home infusion + specialty pharmacy at national scale",
+         "accred": "ACHC / URAC", "link": "https://www.coramhc.com"},
+        {"name": "Amerita", "tier": "National platform",
+         "ownership": "BrightSpring Health (NASDAQ: BTSG)", "tx": True,
+         "focus": "Adult + complex home infusion; rapid de-novo branch "
+                  "expansion", "accred": "ACHC",
+         "link": "https://www.ameritaiv.com"},
+        {"name": "Soleo Health", "tier": "Specialty / complex",
+         "ownership": "PE-backed", "tx": True,
+         "focus": "Rare-disease + complex specialty home infusion",
+         "accred": "ACHC / URAC", "link": "https://www.soleohealth.com"},
+        {"name": "KabaFusion", "tier": "IG specialist",
+         "ownership": "PE-backed", "tx": True,
+         "focus": "IVIG / SCIG and acute therapies — the IG margin engine",
+         "accred": "ACHC / URAC", "link": "https://www.kabafusion.com"},
+        {"name": "Paragon Healthcare", "tier": "Payer-owned",
+         "ownership": "Elevance Health", "tx": True,
+         "focus": "Texas-HQ'd (Plano) AIC + home; Elevance steers its own "
+                  "members", "accred": "ACHC",
+         "link": "https://www.paragonhealthcare.com"},
+        {"name": "InfuCare Rx", "tier": "Specialty / complex",
+         "ownership": "PE-backed", "tx": True,
+         "focus": "Home + ambulatory specialty infusion, expanding south",
+         "accred": "ACHC / URAC", "link": "https://www.infucarerx.com"},
+        {"name": "NuFACTOR / FFF Enterprises", "tier": "IG / factor",
+         "ownership": "Private", "tx": True,
+         "focus": "IG, hemophilia factor & specialty distribution",
+         "accred": "ACHC / URAC", "link": "https://www.nufactor.com"},
+        {"name": "BioMatrix Specialty Pharmacy", "tier": "Rare / factor",
+         "ownership": "Private", "tx": True,
+         "focus": "Bleeding disorders, IG, rare-disease home infusion",
+         "accred": "ACHC / URAC", "link": "https://www.biomatrixsprx.com"},
+        {"name": "Vital Care Infusion Services", "tier": "Franchise / roll-up pool",
+         "ownership": "Franchise network", "tx": True,
+         "focus": "Independent franchise locations across TX — the "
+                  "fragmented consolidation pool", "accred": "ACHC (varies)",
+         "link": "https://www.vitalcare.com"},
+    ]
+
+
+def home_infusion_reimbursement() -> Dict[str, Any]:
+    """The Medicare Home Infusion Therapy (HIT) benefit + the structural
+    reimbursement reality — the single biggest thing to underwrite on a
+    home-infusion deal. Sourced to the 21st Century Cures Act and CMS
+    HIT final rules."""
+    return {
+        "summary": (
+            "Home infusion reimbursement is split across three Medicare "
+            "buckets plus commercial per-diem — and the Medicare "
+            "professional-services benefit has a defining gap that "
+            "structurally under-pays the channel."),
+        "points": [
+            {"label": "The HIT services benefit (since 2021)",
+             "detail": "The 21st Century Cures Act created a permanent "
+                       "Medicare Home Infusion Therapy services benefit, "
+                       "effective Jan 1 2021 (after a 2019–20 transitional "
+                       "benefit). It pays a qualified HIT supplier a "
+                       "per-visit professional-services amount."},
+            {"label": "The calendar-day gap (the defining flaw)",
+             "detail": "The HIT payment is made ONLY for dates a skilled "
+                       "professional is physically in the home — the "
+                       "'infusion drug administration calendar day'. A "
+                       "multi-week course with one weekly nurse visit gets "
+                       "paid for ~4 of 28 days; the other days are unpaid "
+                       "professional time."},
+            {"label": "Three payment categories (G0068–G0070)",
+             "detail": "Payment is tiered by drug category (the J-code "
+                       "groups), with a higher first-visit amount reflecting "
+                       "a PFS E/M benchmark, geographically adjusted."},
+            {"label": "Drug + equipment paid separately",
+             "detail": "Part B home-infusion drugs + the external infusion "
+                       "pump and supplies are paid under the DME benefit "
+                       "(infusion-pump LCD); the nutrients/pump for TPN "
+                       "under the prosthetic-device benefit."},
+            {"label": "The Part D black hole",
+             "detail": "Many self-administered specialty drugs fall under "
+                       "Part D — where there is NO home-infusion "
+                       "professional-services benefit at all. The nursing "
+                       "and per-diem are effectively unfunded by Medicare."},
+            {"label": "Commercial carries the channel",
+             "detail": "Commercial payers reimburse a per-diem (nursing + "
+                       "supplies) plus the drug (AWP-based or contracted) — "
+                       "materially better than Medicare HIT, so payer mix "
+                       "is the single biggest driver of home-infusion "
+                       "economics."},
+        ],
+        "rcm_read": (
+            "Underwrite the home channel on its COMMERCIAL mix and its "
+            "Medicare HIT net collection rate per episode — not gross "
+            "charges. The calendar-day gap and the Part D split mean "
+            "headline revenue overstates collectible economics; measure "
+            "per-diem + drug realization across the 2–3 payers per "
+            "patient."),
+    }
+
+
+def home_infusion_episode_economics() -> Dict[str, Any]:
+    """An illustrative per-patient OPAT episode P&L for the home channel
+    — the volume driver — built from labeled NHIA/industry per-diem and
+    cost anchors so the contribution recomputes from the inputs."""
+    weeks = 4.0
+    per_diem = 165.0          # commercial nursing + supplies per diem
+    nurse_visits_per_wk = 2.0
+    nurse_cost_per_visit = 95.0
+    drug_rev_per_wk = 1_250.0
+    drug_cost_per_wk = 1_040.0   # ~16% spread
+    pharmacy_compound_per_wk = 140.0
+    delivery_per_wk = 55.0
+    rev = (per_diem * 7 + drug_rev_per_wk) * weeks
+    cost = ((nurse_visits_per_wk * nurse_cost_per_visit)
+            + drug_cost_per_wk + pharmacy_compound_per_wk
+            + delivery_per_wk) * weeks
+    contribution = rev - cost
+    return {
+        "therapy": "OPAT (4-week IV antibiotic course)",
+        "weeks": weeks,
+        "revenue": round(rev),
+        "cost": round(cost),
+        "contribution": round(contribution),
+        "contribution_margin": round(contribution / rev, 3) if rev else 0,
+        "drivers": [
+            ("Commercial per-diem (nursing + supplies)",
+             f"${per_diem:.0f}/day"),
+            ("Nurse visits", f"{nurse_visits_per_wk:.0f}/wk @ "
+                             f"${nurse_cost_per_visit:.0f}"),
+            ("Drug spread", f"~{(drug_rev_per_wk-drug_cost_per_wk)/drug_rev_per_wk*100:.0f}% "
+                            f"(${drug_rev_per_wk-drug_cost_per_wk:.0f}/wk)"),
+            ("Pharmacy compounding", f"${pharmacy_compound_per_wk:.0f}/wk"),
+            ("Delivery / logistics", f"${delivery_per_wk:.0f}/wk"),
+        ],
+        "lever": (
+            "Nurse route density (visits per nurse per day) is the margin "
+            "lever — the same logistics dynamic as any field-service "
+            "business. Rural TX dilutes density; metro clusters concentrate "
+            "it."),
+        "note": "Illustrative — commercial-payer OPAT; Medicare HIT pays "
+                "less (visit-day gap). NHIA / industry per-diem anchors.",
+    }
 
 
 def infusion_risk_register() -> List[Dict[str, Any]]:
@@ -1810,6 +2120,13 @@ def build_texas_infusion_analysis(
         "hhi_band": hhi_band,
         "provider_landscape": provider_landscape,
         "channel_economics": channel_economics(),
+        "home_infusion": {
+            "therapies": home_infusion_therapy_reference(),
+            "networks": home_infusion_networks(),
+            "reimbursement": home_infusion_reimbursement(),
+            "episode_economics": home_infusion_episode_economics(),
+            "tx_conditions": home_infusion_conditions(tx_pop, seniors),
+        },
         "players": infusion_players(),
         "risk_register": infusion_risk_register(),
         "rcm_playbook": rcm_playbook(),
