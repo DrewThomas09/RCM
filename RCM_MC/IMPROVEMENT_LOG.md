@@ -1110,3 +1110,12 @@ billion-scale dialysis platform deals; Avg-EV KPI had the same ceiling.
 **Verify**: dialysis sector renders $2.00B/$1.10B/$1.00B rows + $460M–$939M
 below; new DealSearchEvRollupTests; 3 passed in the drilldown file; 23
 passed across deal-search-touching suites.
+
+## W2-44 — Find Comps EV column rolls to $B (04:05Z)
+**Found by**: global render-audit for billion-scale "$X,XXXM" leftovers
+across the research surfaces (find-comps/verified-deals/deal-search/
+market-data/sector-momentum) — only Find Comps still showed "$2,000M" /
+"$4,350M" rows; everything else clean.
+**Fixed**: results-table EV rolls to "$X.XXB" at ev_mm ≥ 1000.
+**Verify**: render shows $1.00B–$4.35B, zero comma-M; new
+test_find_comps_ev_rolls_to_billions; 12 passed across the audit suites.
