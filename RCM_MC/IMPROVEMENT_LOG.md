@@ -2692,3 +2692,29 @@ calendar total, most-cut-first sort, cumulative curve's last value =
 total + monotonic years, single-channel concentration detected,
 worst-event = most-negative per payer, no-hits empty, to_dict
 round-trip, renders in page. 19 passed across cliff suites.
+
+## W2-140 (2026-06-11) — Bankruptcy survivor: named-case replay analysis (wave #42)
+**Found**: /screening/bankruptcy-survivor fired structural patterns and
+gave a verdict + chip strip, but never made the CDD-defining point —
+the fired patterns aren't abstract risk scores, they are matches to
+real public-record healthcare bankruptcies (Steward, Envision, Cano,
+Wellpath...).
+**Added (analysis, verifiable)**: `analyze_distress_fingerprint(scan)`
+in the screening module → a `DistressFingerprint`:
+- ranks the fired patterns by severity weight (CRITICAL 4 → LOW 1) so
+  the verdict's drivers order by how hard each precedent bit;
+- de-dupes by named case (a fingerprint matching Steward twice counts
+  Steward once) → distinct_cases;
+- headline reframes the verdict: "this deal's structure replays N
+  named bankruptcies (…) — falsifiable precedents, not a risk score",
+  with an honest "fired without a named precedent" path and a clean
+  "replays nothing" path;
+- pure function of scan.checks; every figure recomputes from the
+  fired pattern checks.
+Surfaced as a named-case replay panel (severity-ranked, case-cited)
+above the pattern-checks table.
+**Verify**: test_distress_fingerprint.py (7) — clean deal replays
+nothing, replays only fired checks, severity-weight rank order,
+distinct-case dedupe + weighted-severity sum, to_dict round-trip,
+renders in page, clean page shows the no-replay note. 116 passed
+across screening suites.

@@ -143,6 +143,110 @@ class BankruptcySurvivorScan:
         }
 
 
+# ── Named-case replay analysis ─────────────────────────────────────
+
+_SEVERITY_WEIGHT = {"CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1}
+
+
+@dataclass
+class CaseReplay:
+    """One fired pattern and the real bankruptcy it replays."""
+    pattern: str
+    category: str
+    severity: str
+    case_study: str
+    narrative: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+@dataclass
+class DistressFingerprint:
+    """How many real, named healthcare bankruptcies this deal's
+    structural fingerprint replays — ranked by severity.
+
+    The point a pre-screen makes to IC: the fired patterns are not
+    hypothetical risk scores, they are matches to public-record
+    failures (Steward, Envision, Cano, Wellpath...). ``replays`` lists
+    the distinct named cases; everything recomputes from the fired
+    checks, so the 'this is a replay, not a hunch' claim is auditable.
+    """
+    replays: List[CaseReplay]
+    distinct_cases: List[str]
+    weighted_severity: int
+    headline: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "replays": [r.to_dict() for r in self.replays],
+            "distinct_cases": list(self.distinct_cases),
+            "weighted_severity": self.weighted_severity,
+            "headline": self.headline,
+        }
+
+
+def analyze_distress_fingerprint(
+    scan: BankruptcySurvivorScan,
+) -> DistressFingerprint:
+    """Rank the fired patterns by severity and surface the distinct
+    named bankruptcies the deal's fingerprint replays.
+
+    Severity-weighted (CRITICAL 4 → LOW 1) so the verdict's drivers
+    are ordered by how hard each precedent bit, and de-duped by named
+    case so a fingerprint matching Steward twice counts Steward once.
+    """
+    fired = [c for c in scan.checks if c.fired]
+    fired.sort(
+        key=lambda c: -_SEVERITY_WEIGHT.get(c.severity, 0))
+    replays = [
+        CaseReplay(
+            pattern=c.name, category=c.category, severity=c.severity,
+            case_study=c.case_study or "", narrative=c.narrative,
+        )
+        for c in fired
+    ]
+    # Distinct named cases (order-preserving), ignoring patterns that
+    # fired without a named precedent.
+    seen: set = set()
+    distinct: List[str] = []
+    for c in fired:
+        cs = (c.case_study or "").strip()
+        if cs and cs not in seen:
+            seen.add(cs)
+            distinct.append(cs)
+    weighted = sum(_SEVERITY_WEIGHT.get(c.severity, 0) for c in fired)
+
+    n = len(distinct)
+    if not fired:
+        headline = (
+            "No named-case patterns fired — this fingerprint does not "
+            "replay any of the tracked healthcare bankruptcies."
+        )
+    elif n == 0:
+        headline = (
+            f"{len(fired)} pattern(s) fired but none map to a named "
+            f"public-record case — structural risk without a clean replay."
+        )
+    elif n == 1:
+        headline = (
+            f"This deal's structure replays 1 named bankruptcy "
+            f"({distinct[0]}) — a falsifiable precedent, not a risk score."
+        )
+    else:
+        lead = ", ".join(distinct[:3])
+        more = f" +{n - 3} more" if n > 3 else ""
+        headline = (
+            f"This deal's structure replays {n} named bankruptcies "
+            f"({lead}{more}). These are public-record failures with the "
+            f"same fingerprint — refute each before proceeding."
+        )
+    return DistressFingerprint(
+        replays=replays, distinct_cases=distinct,
+        weighted_severity=weighted, headline=headline,
+    )
+
+
 # ── Historical pattern checks ──────────────────────────────────────
 
 def _check_steward(inp: ScanInput) -> PatternCheck:
