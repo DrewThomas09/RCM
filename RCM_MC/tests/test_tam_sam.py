@@ -172,7 +172,7 @@ class IndustryDeepDiveTests(unittest.TestCase):
         self.assertIn("State footprint", h)
         self.assertIn("Consolidation map", h)
         self.assertIn("What this sector traded for", h)
-        self.assertIn("independents", h)
+        self.assertIn("independent facilities", h)
         # Drill links into the live surfaces.
         self.assertIn("/deal-search?sector=dialysis", h)
         self.assertIn("/target-screener?vertical=dialysis", h)
@@ -182,3 +182,46 @@ class IndustryDeepDiveTests(unittest.TestCase):
         h = render_tam_sam_page({"template": ["dialysis"]})
         self.assertIn("▲", h)   # tailwinds
         self.assertIn("▼", h)   # the home-shift headwind, shown as one
+
+
+class HomeHealthIndustryTests(unittest.TestCase):
+    """Industry #2 in the sprint — HH agencies + star ratings + the
+    density whitespace (agencies per 10K seniors from real ACS data)."""
+
+    def test_hh_template_math(self):
+        from rcm_mc.diligence.tam_sam import compute, home_health_template
+        out = compute(home_health_template())
+        # 67M × 5% × 2.9 × $2,010 ≈ $19.5B — anchors to MedPAC HH spend.
+        self.assertAlmostEqual(
+            out["tam"], 67_000_000 * 0.05 * 2.9 * 2_010, places=2)
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["PDGM / rate pressure"], 0)   # headwind shown
+
+    def test_hh_dive_real_aggregates(self):
+        from rcm_mc.diligence.industry_deep_dive import home_health_deep_dive
+        d = home_health_deep_dive()
+        self.assertGreater(d["n_facilities"], 12_000)
+        self.assertEqual(d["top_states"][0]["state"], "CA")
+        self.assertGreater(d["n_independent"], 8_000)   # for-profit pool
+        # Density whitespace: lowest agencies-per-10K-seniors first, all
+        # real ACS-derived values.
+        ws = d["whitespace_states"]
+        self.assertTrue(all(w["per_10k_seniors"] > 0 for w in ws))
+        self.assertLessEqual(ws[0]["per_10k_seniors"],
+                             ws[-1]["per_10k_seniors"])
+        self.assertNotIn("-", [c["org"] for c in d["chains"]])
+
+    def test_hh_page_renders_dive(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["home_health"]})
+        self.assertIn("State footprint", h)
+        self.assertIn("Star rating", h)
+        self.assertIn("per 10K seniors", h)
+        self.assertIn("/deal-search?sector=home_health", h)
+
+    def test_dialysis_panels_unaffected_by_generalization(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn("Stations", h)
+        self.assertIn("Hosp. rate", h)
+        self.assertIn("independent facilities", h)

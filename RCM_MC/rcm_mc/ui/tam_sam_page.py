@@ -163,34 +163,41 @@ def _industry_panels(tmpl_key: str) -> str:
     dive = deep_dive_for(tmpl_key)
     if not dive:
         return ""
+    pool_label = dive.get("pool_label", "Independent")
+    cap_label = dive.get("capacity_label")
+    q_label = dive.get("quality_label", "Quality (med)")
     # 1 · State footprint — top 10 states with the whitespace overlay.
     rows = ""
     for s in dive["top_states"]:
         q = dive["quality_by_state"].get(s["state"]) or {}
-        hosp = q.get("median_hospitalization_rate")
+        qv = q.get("value")
+        qs_s = (f"{qv:,.1f}" if qv is not None and qv < 100
+                else f"{qv:,.0f}" if qv is not None else "—")
+        cap_td = (f'<td class="r">{s["stations"]:,}</td>'
+                  if cap_label else "")
         rows += (
             '<tr>'
             f'<td>{html.escape(s["state"])}</td>'
             f'<td class="r">{s["facilities"]:,}</td>'
-            f'<td class="r">{s["stations"]:,}</td>'
+            f'{cap_td}'
             f'<td class="r">{s["independent"]:,}</td>'
             f'<td class="r">{s["independent_share"]*100:,.0f}%</td>'
-            f'<td class="r">{f"{hosp:,.0f}" if hosp is not None else "—"}'
-            '</td></tr>'
+            f'<td class="r">{qs_s}</td></tr>'
         )
     footprint = ck_panel(
         '<div style="display:grid;grid-template-columns:minmax(0,1fr) '
         'minmax(0,1fr);gap:24px;align-items:start;">'
         f'<div>{_state_bar_svg(dive["top_states"])}'
         '<p class="ts2-src" style="margin:8px 0 0;">Navy = all '
-        'facilities · teal = independents (the acquirable pool). '
+        f'facilities · teal = {html.escape(dive.get("pool_note", "the pool"))}. '
         f'{html.escape(dive["facility_source"])}.</p></div>'
         '<table class="ts2-chain"><thead><tr>'
         '<th>State</th><th style="text-align:right;">Facilities</th>'
-        '<th style="text-align:right;">Stations</th>'
-        '<th style="text-align:right;">Indep.</th>'
-        '<th style="text-align:right;">Indep. share</th>'
-        '<th style="text-align:right;">Hosp. rate (med)</th>'
+        + (f'<th style="text-align:right;">{html.escape(cap_label)}</th>'
+           if cap_label else "")
+        + f'<th style="text-align:right;">{html.escape(pool_label)}</th>'
+        f'<th style="text-align:right;">{html.escape(pool_label)} share</th>'
+        f'<th style="text-align:right;">{html.escape(q_label)}</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>'
         '</div>'
         f'<p class="ts2-src" style="margin:10px 0 0;">'
@@ -208,18 +215,30 @@ def _industry_panels(tmpl_key: str) -> str:
         f'<td class="r">{c["share"]*100:,.1f}%</td></tr>'
         for c in dive["chains"]
     )
-    ws = ", ".join(
-        f'{s["state"]} ({s["independent"]})'
-        for s in dive["whitespace_states"][:5])
+    if dive.get("whitespace_mode") == "density":
+        ws = ", ".join(
+            f'{s["state"]} ({s["per_10k_seniors"]:.1f}/10K)'
+            for s in dive["whitespace_states"][:5])
+    else:
+        ws = ", ".join(
+            f'{s["state"]} ({s["independent"]})'
+            for s in dive["whitespace_states"][:5])
+    duo = dive.get("duopoly_share")
+    duo_bit = (
+        f'Top-2 chains hold <strong>{duo*100:,.0f}%</strong> of '
+        'facilities; ' if duo else ""
+    )
     consolidation = ck_panel(
         '<table class="ts2-chain"><thead><tr>'
-        '<th>Chain</th><th style="text-align:right;">Facilities</th>'
+        f'<th>{html.escape(dive.get("chains_label", "Chain"))}</th>'
+        '<th style="text-align:right;">Facilities</th>'
         '<th style="text-align:right;">Share</th>'
         f'</tr></thead><tbody>{chain_rows}</tbody></table>'
         f'<p class="ck-section-body" style="margin:12px 0 0;">'
-        f'Top-2 chains hold <strong>{dive["duopoly_share"]*100:,.0f}%</strong> '
-        f'of facilities; <strong>{dive["n_independent"]:,} independents</strong> '
-        'are the acquirable pool. Deepest independent pools: '
+        f'{duo_bit}<strong>{dive["n_independent"]:,} '
+        f'{html.escape(pool_label.lower())}</strong> — '
+        f'{html.escape(dive.get("pool_note", ""))}. Whitespace '
+        f'({html.escape(dive.get("whitespace_note", ""))}): '
         f'<strong>{html.escape(ws)}</strong>.</p>',
         title="Consolidation map · who owns the market",
     )
@@ -278,6 +297,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'class="{"on" if k == tmpl_key else ""}">{html.escape(lbl)}</a>'
             for k, lbl in (("fertility_ivf", "Fertility · IVF"),
                            ("dialysis", "Dialysis · in-center"),
+                           ("home_health", "Home health"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )

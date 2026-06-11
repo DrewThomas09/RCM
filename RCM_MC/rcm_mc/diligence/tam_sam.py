@@ -185,6 +185,59 @@ def dialysis_template() -> TamSamModel:
     )
 
 
+def home_health_template() -> TamSamModel:
+    """Medicare-certified home health sizing. Magnitudes anchor to MedPAC
+    (~3.3M users, ~$16–18B Medicare HH spend) — illustrative defaults,
+    every value editable."""
+    return TamSamModel(
+        name="Home health · Medicare-certified agency market",
+        chain=[
+            DriverStep("Medicare beneficiaries", 67_000_000, op="base",
+                       unit="beneficiaries", source="CMS enrollment"),
+            DriverStep("% using home health / yr", 0.05, op="rate",
+                       unit="of beneficiaries",
+                       source="MedPAC (~3.3M annual HH users)"),
+            DriverStep("30-day periods per user / yr", 2.9, op="mult",
+                       unit="periods/user", source="MedPAC PDGM data"),
+            DriverStep("Avg revenue per 30-day period", 2_010, op="price",
+                       unit="$/period",
+                       source="CMS PDGM national standardized rate"),
+        ],
+        segments=[
+            Segment("Post-acute (hospital-discharge)", 0.62, None,
+                    note="referral-driven; hospital JV/alignment is the "
+                         "moat"),
+            Segment("Community-admitted", 0.38, None,
+                    note="physician/community referrals — slower growth, "
+                         "longer episodes"),
+        ],
+        growth_drivers=[
+            GrowthDriver("Aging population (65+ growth)", 3.0,
+                         "the demographic floor under demand"),
+            GrowthDriver("Site-of-care shift to home", 4.0,
+                         "payers + patients prefer home vs SNF; "
+                         "hospital-at-home momentum"),
+            GrowthDriver("PDGM / rate pressure", -1.5,
+                         "CMS behavioral-adjustment clawbacks compress "
+                         "rates — a headwind, shown as one"),
+            GrowthDriver("Labor supply constraint", -1.0,
+                         "nurse/aide wage inflation + capacity caps "
+                         "realized volume"),
+            GrowthDriver("MA penetration", -0.5,
+                         "MA pays below FFS for HH; mix shift drags "
+                         "blended rate"),
+        ],
+        sam_share=0.58,
+        sam_note="States/metros a platform can credibly serve with "
+                 "clinical staffing density",
+        som_share=0.04,
+        som_note="Obtainable share for a regional platform at entry",
+        horizon_years=5,
+        basis_note="Template defaults anchored to MedPAC/CMS public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -212,6 +265,7 @@ def blank_template() -> TamSamModel:
 TEMPLATES = {
     "fertility_ivf": fertility_ivf_template,
     "dialysis": dialysis_template,
+    "home_health": home_health_template,
     "blank": blank_template,
 }
 
