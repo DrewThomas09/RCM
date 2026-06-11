@@ -188,6 +188,97 @@ def _metric_row(
     )
 
 
+def _advantage_strip_svg(
+    pairs: List[tuple], left_name: str, right_name: str,
+) -> str:
+    """The bake-off verdict in one diverging chart.
+
+    For each compared metric, a bar extends toward whichever deal
+    wins the row (direction-aware: lower OON share wins leftward if
+    left is lower), sized by the relative gap and clamped at ±60%.
+    Built from the same (label, left, right, higher_is_better) tuples
+    the table rows use, so it can never disagree with the table. The
+    caption tallies rows won. Rows where both sides are zero are
+    skipped; nothing comparable renders nothing.
+    """
+    rows = []
+    for label, lv, rv, higher_better in pairs:
+        if lv == 0 and rv == 0:
+            continue
+        denom = max(abs(lv), abs(rv))
+        gap = (lv - rv) / denom  # >0 = left larger
+        left_wins = (gap > 0) == higher_better and gap != 0
+        rows.append((label, gap, left_wins))
+    if not rows:
+        return ""
+    clamp = 0.60
+    n_left = sum(1 for _, g, lw in rows if g != 0 and lw)
+    n_right = sum(1 for _, g, lw in rows if g != 0 and not lw)
+
+    label_w, half_w = 210, 200
+    cx0 = label_w + half_w
+    row_h, gap_px, pad_top, pad_bot = 16, 7, 26, 18
+    width = label_w + 2 * half_w + 20
+    height = pad_top + len(rows) * (row_h + gap_px) - gap_px + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Which deal wins each compared metric">'
+        f'<line x1="{cx0}" y1="{pad_top - 8}" x2="{cx0}" '
+        f'y2="{height - pad_bot}" stroke="{P["border"]}" stroke-width="1"/>'
+        f'<text x="{label_w}" y="{pad_top - 12}" font-size="9" '
+        f'letter-spacing="1" fill="{P["text_faint"]}">'
+        f'&#9664; {html.escape(left_name.upper())} WINS</text>'
+        f'<text x="{width - 10}" y="{pad_top - 12}" text-anchor="end" '
+        f'font-size="9" letter-spacing="1" fill="{P["text_faint"]}">'
+        f'{html.escape(right_name.upper())} WINS &#9654;</text>'
+    ]
+    for i, (label, gap, left_wins) in enumerate(rows):
+        y = pad_top + i * (row_h + gap_px)
+        ty = y + row_h / 2 + 3.5
+        short = label if len(label) <= 28 else label[:27] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10" fill="{P["text_dim"]}">'
+            f'{html.escape(short)}</text>'
+        )
+        if gap == 0:
+            parts.append(
+                f'<circle cx="{cx0}" cy="{ty - 3.5:.1f}" r="2.5" '
+                f'fill="{P["text_faint"]}"/>'
+            )
+            continue
+        mag = min(abs(gap), clamp) / clamp * half_w
+        # Bar points toward the WINNER of the row.
+        x = cx0 - mag if left_wins else cx0
+        tone = P["positive"]
+        parts.append(
+            f'<rect x="{x:.1f}" y="{y}" width="{max(mag, 2):.1f}" '
+            f'height="{row_h}" rx="2" fill="{tone}" fill-opacity="0.75"/>'
+        )
+        pct_s = f"{abs(gap) * 100:.0f}%" + ("›" if abs(gap) > clamp else "")
+        vx = cx0 - mag - 6 if left_wins else cx0 + mag + 6
+        anchor = "end" if left_wins else "start"
+        parts.append(
+            f'<text x="{vx:.1f}" y="{ty:.1f}" text-anchor="{anchor}" '
+            f'font-size="9.5" font-weight="600" fill="{tone}">{pct_s}</text>'
+        )
+    parts.append("</svg>")
+    note = (
+        f'<div style="font-family:var(--ck-mono,monospace);font-size:9px;'
+        f'letter-spacing:0.08em;color:{P["text_faint"]};margin-top:2px;">'
+        f'{html.escape(left_name.upper())} WINS {n_left} · '
+        f'{html.escape(right_name.upper())} WINS {n_right} · '
+        'BAR = RELATIVE GAP TOWARD THE WINNER, DIRECTION-AWARE '
+        '(LOWER-IS-BETTER ROWS INCLUDED) · CLAMPED ±60%</div>'
+    )
+    return (
+        '<div class="cp-advantage-strip" style="margin:12px 0 4px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def _render_comparison(
     left: Dict[str, Any], right: Dict[str, Any],
 ) -> str:
@@ -202,10 +293,14 @@ def _render_comparison(
 
     # Core metrics.
     rows: List[str] = []
+    # (label, left value, right value, higher_is_better) — feeds the
+    # advantage strip so it can never disagree with the table rows.
+    pairs: List[tuple] = []
 
     def claim_row(label: str, lv, rv, fmt="${:,.0f}", higher_better=True):
         lnum = float(lv) if lv is not None else 0.0
         rnum = float(rv) if rv is not None else 0.0
+        pairs.append((label, lnum, rnum, higher_better))
         return _metric_row(
             label,
             fmt.format(lnum), fmt.format(rnum),
@@ -216,6 +311,9 @@ def _render_comparison(
             ),
         )
 
+    pairs.append(("Claims in CCD",
+                  float(ls.get("claim_count", 0) or 0),
+                  float(rs.get("claim_count", 0) or 0), True))
     rows.append(_metric_row(
         "Claims in CCD",
         f"{ls.get('claim_count', 0):,}",
@@ -233,6 +331,7 @@ def _render_comparison(
     # Lower OON share is better (less NSA exposure).
     loons = float(ls.get("oon_share") or 0) * 100
     roons = float(rs.get("oon_share") or 0) * 100
+    pairs.append(("OON share", loons, roons, False))
     rows.append(_metric_row(
         "OON share",
         f"{loons:.1f}%", f"{roons:.1f}%",
@@ -259,6 +358,7 @@ def _render_comparison(
         ))
         lrr = (lw.total_realization_rate or 0) * 100
         rrr = (rw.total_realization_rate or 0) * 100
+        pairs.append(("Realization rate", lrr, rrr, True))
         rows.append(_metric_row(
             "Realization rate",
             f"{lrr:.1f}%", f"{rrr:.1f}%",
@@ -280,6 +380,8 @@ def _render_comparison(
             higher_better=True,
         ))
     if lcf and rcf:
+        pairs.append(("Counterfactuals identified",
+                      float(len(lcf.items)), float(len(rcf.items)), False))
         rows.append(_metric_row(
             "Counterfactuals identified",
             str(len(lcf.items)), str(len(rcf.items)),
@@ -289,7 +391,8 @@ def _render_comparison(
             ),
         ))
 
-    table_html = (
+    advantage = _advantage_strip_svg(pairs, left["name"], right["name"])
+    table_html = advantage + (
         f'<table style="width:100%;border-collapse:collapse;'
         f'font-size:12px;margin-top:12px;">'
         f'<thead><tr style="color:{P["text_faint"]};'
