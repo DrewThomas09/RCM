@@ -20,7 +20,18 @@
   presets (Conservative/Base/Aggressive); per-segment divergence (8
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
-- current_step: looping the sprint; branch==main @ 3c08c99 (checkpoint 49)
+- current_step: looping the sprint; branch==main @ ae8ada1 (checkpoint 59)
+- MILESTONE: 52-industry TAM/SAM catalogue (checkpoints 50-59): the
+  original 21 + niche batches 1-13 (infusion, imaging, PT, veterinary,
+  medspa, EMS, labs, specialty Rx, vision, ABA, plasma, research sites,
+  wound, sleep, occ health, derm, pain, hospital-at-home, LTC pharmacy,
+  DME, IDD, eating disorders, nephrology, O&P, ophthalmology, RCM
+  services, cardiology, GI, orthopedics, women's health, podiatry,
+  ENT/allergy, anesthesia, home care, PACE, teleradiology, correctional,
+  locum staffing, crisis services). Every chain footnoted to a named
+  public source; every bear case priced; chain HHI; state×payer where
+  vendored; scenarios; divergence ★; tornado; 4-sheet xlsx parity.
+  test_tam_sam: 91.
 - branch: claude/sharp-einstein-005lm == main (everything merged + deployed)
 - background: NO demo server (user: no demo runs — work everything to PE desk)
 
