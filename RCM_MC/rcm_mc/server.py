@@ -6705,6 +6705,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(
                 render_sponsor_detail_page(qp, db_path=self.config.db_path)
             )
+        if path == "/diligence/texas-infusion":
+            # Texas infusion market — full CDD sizing + segmentation +
+            # concentration + metro attractiveness, from public anchors.
+            from .ui.texas_infusion_page import render_texas_infusion_page
+            return self._send_html(render_texas_infusion_page())
+        if path == "/api/diligence/texas-infusion":
+            # JSON variant — the full analysis dict for programmatic use.
+            from .diligence.texas_infusion import (
+                build_texas_infusion_analysis,
+            )
+            return self._send_json(build_texas_infusion_analysis())
         if path == "/diligence/comparable-outcomes":
             # Comparable-deal benchmarking: target profile in,
             # corpus matches + outcome distribution out.
