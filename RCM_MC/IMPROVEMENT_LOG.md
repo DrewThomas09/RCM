@@ -2556,3 +2556,14 @@ due-in-14d. Unparseable dates skipped; no open deadlines renders
 counts, overdue marker geometrically left of the TODAY line and
 upcoming right (regex on cx coordinates), garbage dates skipped,
 empty/None → "". 19 passed across my-dashboard suites.
+
+## W2-134 (2026-06-11) — Full-platform regression sweep (wave #36)
+**Found**: nothing — and that's the record. After 28 consecutive
+shipped waves (14 diligence visualizations W2-106…W2-121,
+the phantom-table/column audit arc W2-125…W2-128, and 7 more
+visuals W2-129…W2-133), ran the complete suite in four quarters:
+Q1 3,005 · Q2 3,510 · Q3 5,713 · Q4 3,193 = **15,421 passed,
+72 skipped, 1 xfailed, 0 failures** across all 1,015 test files.
+**Verify**: every wave in the run is covered by its own pinned
+tests; the audit guards (test_dead_table_queries.py) now police the
+phantom-query class platform-wide on every CI run.
