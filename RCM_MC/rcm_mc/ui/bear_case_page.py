@@ -479,8 +479,79 @@ def _severity_matrix_svg(report: BearCaseReport,
             + f'<div style="margin:8px 0 14px;">{rows}</div>')
 
 
+_CORR_THEME_LABEL = {
+    "REGULATORY": "Regulatory", "CREDIT": "Credit",
+    "OPERATIONAL": "Operational", "MARKET": "Market",
+    "STRUCTURAL": "Structural", "PATTERN": "Pattern",
+}
+
+
+def _corroboration_section(report: BearCaseReport) -> str:
+    """The defensibility read: which themes are corroborated by ≥2
+    INDEPENDENT source engines (memo-ready) vs. resting on one (softer).
+
+    A pure function of the evidence — every count is recoverable from
+    the cards below, so this is an auditable summary, not a new claim.
+    """
+    from ..diligence.bear_case import analyze_corroboration
+    corr = analyze_corroboration(report)
+    if not corr.themes:
+        return ""
+    rows = []
+    for t in corr.themes:
+        label = _CORR_THEME_LABEL.get(t.theme, t.theme.title())
+        if t.corroborated:
+            badge = (
+                f'<span style="color:{P["negative"]};font-weight:600;'
+                f'font-size:10px;">CORROBORATED · {t.distinct_sources} '
+                f'INDEPENDENT SOURCES</span>')
+        else:
+            badge = (
+                f'<span style="color:{P["text_faint"]};font-size:10px;">'
+                f'SINGLE SOURCE — seek confirmation</span>')
+        srcs = ", ".join(
+            s.replace("_", " ").title() for s in t.source_names)
+        sev_col = {
+            "CRITICAL": P["critical"], "HIGH": P["negative"],
+            "MEDIUM": P["warning"], "LOW": P["text_faint"],
+        }.get(t.worst_severity, P["text_faint"])
+        rows.append(
+            f'<div style="padding:8px 0;border-bottom:1px solid '
+            f'{P["border_dim"]};">'
+            f'<div style="display:flex;gap:8px;align-items:baseline;'
+            f'flex-wrap:wrap;">'
+            f'<span style="font-weight:600;color:{P["text"]};font-size:12px;">'
+            f'{html.escape(label)}</span>'
+            f'<span style="font-family:var(--ck-mono);font-size:9px;'
+            f'color:{sev_col};letter-spacing:0.08em;">{t.worst_severity}</span>'
+            f'<span style="margin-left:auto;">{badge}</span></div>'
+            f'<div style="font-size:10.5px;color:{P["text_dim"]};'
+            f'margin-top:2px;">{t.evidence_count} item'
+            f'{"s" if t.evidence_count != 1 else ""} · {html.escape(srcs)}</div>'
+            f'</div>'
+        )
+    return (
+        f'<div class="ck-panel" style="margin-bottom:14px;">'
+        f'<div class="ck-panel-title">Cross-source corroboration '
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
+        f'{corr.corroborated_count} CORROBORATED · '
+        f'{corr.single_source_count} SINGLE-SOURCE</span></div>'
+        f'<p class="ck-section-body" style="font-size:12px;margin:0 0 8px;'
+        f'line-height:1.6;">{html.escape(corr.defensibility_note)}</p>'
+        + "".join(rows)
+        + '<p class="ck-section-body" style="font-size:10px;margin:8px 0 0;'
+        f'color:{P["text_faint"]};">A theme corroborated by ≥2 independent '
+        'analytic engines is memo-ready; single-source themes are flagged '
+        'for a second confirmation. Counts recompute from the evidence '
+        'cards below.</p>'
+        '</div>'
+    )
+
+
 def _evidence_by_theme(report: BearCaseReport) -> str:
     matrix = _severity_matrix_svg(report)
+    corroboration = _corroboration_section(report)
     by_theme: Dict[str, List[Evidence]] = {}
     for ev in report.evidence:
         by_theme.setdefault(ev.theme.value, []).append(ev)
@@ -505,7 +576,7 @@ def _evidence_by_theme(report: BearCaseReport) -> str:
                if narrative else "")
             + cards
         )
-    return matrix + "".join(blocks)
+    return matrix + corroboration + "".join(blocks)
 
 
 def _ic_memo_preview(report: BearCaseReport) -> str:
