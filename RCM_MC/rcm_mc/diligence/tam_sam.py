@@ -1966,6 +1966,170 @@ def idd_services_template() -> TamSamModel:
     )
 
 
+
+def eating_disorders_template() -> TamSamModel:
+    """Eating-disorder treatment sizing — the highest-acuity BH niche.
+    Prevalence-anchored with the access-gap thesis."""
+    return TamSamModel(
+        name="Eating disorders · treatment services market",
+        chain=[
+            DriverStep("US individuals with an active ED / yr",
+                       9_000_000, op="base", unit="individuals",
+                       source="NIMH/STRIPED prevalence (~2.7% of "
+                              "population in any year)"),
+            DriverStep("% receiving specialty treatment", 0.10,
+                       op="rate", unit="of prevalent",
+                       source="access studies — ~80–90% never receive "
+                              "ED-specific care; the gap IS the thesis"),
+            DriverStep("Avg treatment spend per patient / yr", 9_000,
+                       op="price", unit="$/patient/yr",
+                       source="level-of-care blend (OP $3–6K / IOP-PHP "
+                              "$20–40K / residential $80K+ episodes)"),
+        ],
+        segments=[
+            Segment("Outpatient / virtual", 0.40, None,
+                    note="the access-expansion layer — Equip-style "
+                         "virtual FBT", growth_pct=12.0),
+            Segment("IOP / PHP", 0.30, None,
+                    note="the step-down workhorse", growth_pct=7.0),
+            Segment("Residential", 0.25, None,
+                    note="highest revenue per stay; payer scrutiny on "
+                         "length-of-stay", growth_pct=3.0),
+            Segment("Inpatient (medical stabilization)", 0.05, None,
+                    growth_pct=1.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diagnosed prevalence / awareness", 4.0,
+                         "post-2020 adolescent ED incidence step-up"),
+            GrowthDriver("Parity enforcement", 2.5,
+                         "MHPAEA litigation forces ED coverage at "
+                         "parity"),
+            GrowthDriver("Virtual access expansion", 3.0,
+                         "telehealth FBT widens the treated funnel"),
+            GrowthDriver("Clinician scarcity", -2.5,
+                         "ED-specialized clinicians are the binding "
+                         "constraint"),
+            GrowthDriver("Payer LOS management", -1.5,
+                         "residential length-of-stay compression"),
+        ],
+        sam_share=0.55,
+        sam_note="Commercially-insured + parity-enforced markets",
+        som_share=0.05,
+        som_note="A few platforms (ERC/Monte Nido/Alsana class) — "
+                 "still fragmented below the top tier",
+        horizon_years=5,
+        basis_note="Template defaults from NIMH/STRIPED public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def nephrology_template() -> TamSamModel:
+    """Nephrology practice sizing — the value-based kidney-care niche
+    (CKCC/REACH made it investable)."""
+    return TamSamModel(
+        name="Nephrology · kidney care practice market",
+        chain=[
+            DriverStep("US nephrologists (practicing)", 11_000,
+                       op="base", unit="physicians",
+                       source="ASN workforce data"),
+            DriverStep("Avg practice revenue per nephrologist",
+                       900_000, op="price", unit="$/MD/yr",
+                       source="MGMA nephrology + dialysis medical-"
+                              "directorship + VBC shared savings "
+                              "blend"),
+        ],
+        segments=[
+            Segment("FFS practice (visits, rounding)", 0.55, None,
+                    note="the base — flat economics", growth_pct=2.0),
+            Segment("Dialysis directorships / JVs", 0.20, None,
+                    note="the annuity layer", growth_pct=3.0),
+            Segment("Value-based kidney contracts (CKCC/MA)", 0.15,
+                    None, note="the thesis layer — total-cost-of-care "
+                         "shared savings", growth_pct=15.0),
+            Segment("Access centers / ancillaries", 0.10, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("CKD prevalence", 2.5,
+                         "diabetes-driven CKD pipeline"),
+            GrowthDriver("VBC contract expansion", 4.0,
+                         "CKCC + MA delegation move dollars to "
+                         "nephrologists — the structural rerating"),
+            GrowthDriver("Home-dialysis economics", 1.0,
+                         "home modality favors practice-aligned care"),
+            GrowthDriver("Fee-schedule pressure", -1.5,
+                         "MCP/visit code compression"),
+            GrowthDriver("Model-rule uncertainty", -1.5,
+                         "CMMI model parameters reset every cycle — "
+                         "the VBC thesis depends on rulemaking"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent practices in VBC-viable markets "
+                 "(dialysis-chain-employed excluded)",
+        som_share=0.05,
+        som_note="Panoramic/Evergreen/IKC class platforms early — "
+                 "land-grab phase",
+        horizon_years=5,
+        basis_note="Template defaults from ASN/MGMA/CMMI public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+def orthotics_prosthetics_template() -> TamSamModel:
+    """O&P sizing — the craft-clinical niche. AOPA-anchored."""
+    return TamSamModel(
+        name="O&P · orthotics + prosthetics market",
+        chain=[
+            DriverStep("US O&P patients served / yr", 5_500_000,
+                       op="base", unit="patients",
+                       source="AOPA industry estimates (orthotic-"
+                              "dominant volume)"),
+            DriverStep("Avg revenue per patient / yr", 1_300,
+                       op="price", unit="$/patient/yr",
+                       source="Medicare DMEPOS L-codes × commercial "
+                              "blend (prosthetic episodes $15–60K "
+                              "amortized over the orthotic base)"),
+        ],
+        segments=[
+            Segment("Orthotics (bracing)", 0.55, None,
+                    note="the volume base — OTS-vs-custom payer "
+                         "pressure", growth_pct=3.0),
+            Segment("Lower-limb prosthetics", 0.30, None,
+                    note="the margin engine — diabetic amputation "
+                         "volume", growth_pct=5.0),
+            Segment("Upper-limb / advanced (MPK, myo)", 0.10, None,
+                    note="the technology premium layer",
+                    growth_pct=8.0),
+            Segment("Pediatric / cranial", 0.05, None, growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diabetes / vascular amputations", 3.0,
+                         "the grim demand floor — ~150K amputations/yr "
+                         "and rising"),
+            GrowthDriver("Technology mix shift (MPK)", 2.0,
+                         "microprocessor knees + myoelectric upgrades "
+                         "lift revenue per case"),
+            GrowthDriver("Coverage expansion advocacy", 1.0,
+                         "'insurance fairness' state laws for "
+                         "activity-specific prostheses"),
+            GrowthDriver("OTS substitution / competitive bid", -1.5,
+                         "payers push off-the-shelf bracing — the "
+                         "orthotic margin headwind"),
+            GrowthDriver("Certified-practitioner pipeline", -1.0,
+                         "CPO supply is craft-constrained"),
+        ],
+        sam_share=0.55,
+        sam_note="Independent O&P practices (Hanger holds ~25% — the "
+                 "rest is acquirable)",
+        som_share=0.05,
+        som_note="Hanger is the only scaled platform; regional "
+                 "consolidation is open",
+        horizon_years=5,
+        basis_note="Template defaults from AOPA/CMS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -2026,6 +2190,9 @@ TEMPLATES = {
     "ltc_pharmacy": ltc_pharmacy_template,
     "dme": dme_template,
     "idd_services": idd_services_template,
+    "eating_disorders": eating_disorders_template,
+    "nephrology": nephrology_template,
+    "orthotics_prosthetics": orthotics_prosthetics_template,
     "blank": blank_template,
 }
 

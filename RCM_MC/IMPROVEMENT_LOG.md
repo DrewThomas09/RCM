@@ -1176,6 +1176,25 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-74 — niche verticals batch 8: eating disorders, nephrology, O&P (19:15Z)
+**Niche-vertical sprint** — industries #35–37:
+  - eating_disorders ($8.1B, +5.4%): 9M prevalent (NIMH/STRIPED) × 10%
+    treated × $9K LOC blend — the 90% ACCESS GAP is in the chain and IS
+    the thesis; outpatient/virtual +12% ★ (Equip-style FBT); clinician
+    scarcity + payer LOS compression as headwinds.
+  - nephrology ($9.9B, +4.5%): 11K nephrologists (ASN) × $900K; BOTH
+    sides of the VBC thesis shown — value-based kidney contracts +15% ★
+    AND model-rule uncertainty (CMMI reset risk) priced as a headwind;
+    Panoramic/Evergreen land-grab context.
+  - orthotics_prosthetics ($7.2B, +3.5%): 5.5M patients (AOPA) × $1,300;
+    advanced upper-limb/MPK +8% ★ technology premium; the grim demand
+    floor (~150K amputations/yr) named honestly; Hanger ~25% with the
+    rest acquirable.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; VBC fastest + model-rule negative BOTH pinned;
+ED treated-rate ≤15% pinned (the access gap); catalogue ≥38 templates
+pinned; test_tam_sam 74 passed. 37 industries.
+
 ## W2-73 — niche verticals batch 7: LTC pharmacy, DME, IDD services (18:45Z)
 **Niche-vertical sprint** — industries #32–34:
   - ltc_pharmacy ($18.8B, +0.9%): 3.1M LTC residents (ASCP/NIC) × 110

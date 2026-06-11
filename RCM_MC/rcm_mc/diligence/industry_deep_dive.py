@@ -1262,6 +1262,34 @@ def idd_services_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def eating_disorders_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="eating_disorders",
+        sector_tokens=("eating_disorders", "eating_disorder"),
+        note=("No public ED-treatment census — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def nephrology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="nephrology",
+        sector_tokens=("nephrology", "kidney_care"),
+        note=("ASN workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def orthotics_prosthetics_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="orthotics_prosthetics",
+        sector_tokens=("orthotics_prosthetics", "o_and_p", "prosthetics"),
+        note=("ABC/BOC facility rosters aren't vendored — geography "
+              "omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1300,6 +1328,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "ltc_pharmacy": ltc_pharmacy_deep_dive,
     "dme": dme_deep_dive,
     "idd_services": idd_services_deep_dive,
+    "eating_disorders": eating_disorders_deep_dive,
+    "nephrology": nephrology_deep_dive,
+    "orthotics_prosthetics": orthotics_prosthetics_deep_dive,
 }
 
 

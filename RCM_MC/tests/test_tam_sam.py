@@ -865,3 +865,40 @@ class NicheVerticalsBatch7Tests(unittest.TestCase):
     def test_catalogue_at_34_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 35)   # 34 + blank
+
+
+class NicheVerticalsBatch8Tests(unittest.TestCase):
+    """Industries #35–37 — eating disorders, nephrology, O&P."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "eating_disorders": 9_000_000 * 0.10 * 9_000,
+            "nephrology": 11_000 * 900_000,
+            "orthotics_prosthetics": 5_500_000 * 1_300,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_thesis_layer_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Nephrology: the VBC thesis layer is the fastest (+15%) AND the
+        # model-rule uncertainty headwind is named — both sides shown.
+        neph = compute(TEMPLATES["nephrology"]())
+        vbc = next(s for s in neph["segments"] if "Value-based" in s["name"])
+        self.assertTrue(vbc.get("is_fastest"))
+        names = {g["name"]: g["annual_pct"] for g in neph["growth_drivers"]}
+        self.assertLess(names["Model-rule uncertainty"], 0)
+        # ED: the 90% access gap is in the chain (10% treated).
+        from rcm_mc.diligence.tam_sam import eating_disorders_template
+        rate_step = eating_disorders_template().chain[1]
+        self.assertLessEqual(rate_step.value, 0.15)
+
+    def test_catalogue_at_37_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 38)   # 37 + blank
