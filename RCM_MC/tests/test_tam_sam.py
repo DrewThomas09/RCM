@@ -1543,3 +1543,40 @@ class SegmentBarTests(unittest.TestCase):
         ])
         self.assertIn("★", svg)
         self.assertIn("70%", svg)
+
+
+class DiligenceAgendaTests(unittest.TestCase):
+    """The training layer — a working diligence agenda DERIVED from
+    each build's own drivers and notes; nothing hand-written."""
+
+    def test_every_template_renders_an_agenda(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        for key in TEMPLATES:
+            if key == "blank":
+                continue
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn("Diligence agenda", h, key)
+            # Every template carries ≥1 headwind → ≥1 Q.
+            self.assertIn("Quantify the exposure", h, key)
+
+    def test_agenda_reflects_the_build(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        # Rheumatology's biosimilar headwind becomes a question.
+        h = render_tam_sam_page({"template": ["rheumatology"]})
+        self.assertIn("Biosimilar margin erosion", h)
+        # Endo's declining bariatric segment becomes a sizing question.
+        h2 = render_tam_sam_page({"template": ["endocrinology_obesity"]})
+        self.assertIn("Size the decline", h2)
+
+    def test_agenda_follows_overrides(self):
+        # Edit a driver to positive → its question disappears: the
+        # agenda is LIVE, not static.
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        base = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn("Home-modality shift", base.split(
+            "Diligence agenda")[1][:3000])
+        flipped = render_tam_sam_page({"template": ["dialysis"],
+                                       "growth2": ["2.0"]})
+        agenda = flipped.split("Diligence agenda")[1][:3000]
+        self.assertNotIn("Home-modality shift", agenda)

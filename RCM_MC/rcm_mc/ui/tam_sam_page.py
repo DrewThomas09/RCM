@@ -291,6 +291,60 @@ def _segment_bar_svg(segments: List[Dict[str, Any]],
     return "".join(parts) + legend_html
 
 
+def _diligence_agenda_panel(out: Dict[str, Any]) -> str:
+    """The training layer: a working diligence agenda DERIVED from the
+    build itself — every priced headwind becomes a quantification
+    question, the fastest segment becomes a validation question, the
+    SAM/SOM notes become the addressability and share questions.
+    Nothing hand-written per industry; nothing the build doesn't
+    already assert."""
+    items: List[str] = []
+    for g in out["growth_drivers"]:
+        if g["annual_pct"] < 0:
+            note = f' — {g["note"]}' if g.get("note") else ""
+            items.append(
+                f'<strong>Quantify the exposure:</strong> '
+                f'{html.escape(g["name"])} (priced '
+                f'{g["annual_pct"]:+.1f}%/yr){html.escape(note)}')
+    fastest = next((s for s in out["segments"] if s.get("is_fastest")),
+                   None)
+    if fastest:
+        note = (f' — {fastest["note"]}' if fastest.get("note") else "")
+        items.append(
+            f'<strong>Validate the growth thesis:</strong> can the '
+            f'target capture {html.escape(fastest["name"])} '
+            f'({fastest["growth_pct"]:+.0f}%/yr)?{html.escape(note)}')
+    declining = [s for s in out["segments"]
+                 if (s.get("growth_pct") or 0) < 0]
+    for s in declining:
+        items.append(
+            f'<strong>Size the decline:</strong> what share of the '
+            f'target\u2019s revenue sits in '
+            f'{html.escape(s["name"])} ({s["growth_pct"]:+.0f}%/yr)?')
+    if out.get("sam_note"):
+        items.append(
+            f'<strong>Confirm addressability:</strong> '
+            f'{html.escape(out["sam_note"])}')
+    if out.get("som_note"):
+        items.append(
+            f'<strong>Pressure-test share:</strong> '
+            f'{html.escape(out["som_note"])}')
+    lis = "".join(
+        f'<li style="margin:0 0 8px;line-height:1.5;">'
+        f'<span style="font-family:var(--sc-mono);color:#7a8699;'
+        f'margin-right:6px;">Q{i+1}</span>{t}</li>'
+        for i, t in enumerate(items))
+    return ck_panel(
+        f'<ol style="list-style:none;margin:0;padding:0;font-size:12.5px;'
+        f'color:#1a2332;">{lis}</ol>'
+        '<p class="ts2-src" style="margin:8px 0 0;">Auto-derived from '
+        'this build\u2019s own drivers and notes \u2014 every priced '
+        'headwind becomes a quantification question. Edit the drivers '
+        'above and the agenda follows.</p>',
+        title="Diligence agenda \u00b7 the questions this build implies",
+    )
+
+
 def _industry_panels(tmpl_key: str) -> str:
     """Real-data deep-dive panels under the sizing build (additive — the
     registry decides which industries have a data layer yet)."""
@@ -886,6 +940,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + _industry_comparison_panel(tmpl_key)
         + chain_panel + seg_panel + proj_panel
         + _tornado_panel(model, out["tam"])
+        + _diligence_agenda_panel(out)
         + _industry_panels(tmpl_key)
         + _sources_panel(out, _dive_for_sources(tmpl_key))
         + export_panel

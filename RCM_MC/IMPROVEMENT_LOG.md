@@ -1176,6 +1176,20 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-91 — the diligence agenda: auto-derived questions on every build (03:45Z)
+**The training layer, catalogue-wide**: each build now renders a
+"Diligence agenda" panel DERIVED from its own content — every priced
+headwind becomes a "Quantify the exposure" question, the ★ fastest
+segment becomes "Validate the growth thesis", declining segments become
+"Size the decline", and the SAM/SOM notes become the addressability and
+share questions. Nothing hand-written per industry; nothing the build
+doesn't already assert. And it's LIVE: edit a driver above and the
+agenda follows (pinned — flipping dialysis's home-shift positive removes
+its question).
+**Verify**: all 82 templates render an agenda with ≥1 exposure question;
+rheumatology surfaces the biosimilar question; endo surfaces the
+bariatric sizing; override-follows pinned; test_tam_sam 127 passed.
+
 ## W2-90 — segment-composition bar on every build (03:15Z)
 **Catalogue-wide visual**: one stacked bar above each segments table —
 how the TAM splits, house categorical hues, ★ on the fastest grower,
