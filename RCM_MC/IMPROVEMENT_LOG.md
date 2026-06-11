@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-84 — niche verticals batch 18: urology, rheumatology, neurology (00:15Z)
+**Niche-vertical sprint** — industries #65–67, the infusion-ancillary
+specialty map completed:
+  - urology ($17.6B, +4.0%): 13.5K urologists (AUA) × $1.3M; advanced
+    prostate +7% ★ (with the UM scrutiny attached); the WORKFORCE CLIFF
+    named — the oldest surgical workforce, retirements outpacing
+    residency slots, "both the risk and the seller motivation".
+  - rheumatology ($6.6B, +1.3%): 6K rheumatologists (ACR) × $1.1M; "the
+    practice IS an infusion center with a clinic attached"; BIOSIMILAR
+    MARGIN EROSION priced at −3 with the basis naming it THE IC
+    question — the model's margin engine is repricing; trials
+    participation +8% ★ (the research-site adjacency).
+  - neurology ($12.6B, +1.9%): 14K neurologists (AAN) × $900K; the
+    ALZHEIMER'S-THERAPEUTICS ERA named — amyloid antibodies create an
+    infusion+PET+monitoring pathway from nothing, infusion +11% ★;
+    pre-wave whitespace (no scaled neuro platform exists);
+    coverage-with-evidence friction priced.
+**Verify**: chains pinned; biosimilar ≤ −3 + "margin engine" in basis +
+amyloid-infusion-fastest + workforce-cliff negative all pinned;
+catalogue ≥68 templates pinned; test_tam_sam 106 passed. 67 industries.
+
 ## W2-83 — niche verticals batch 17: dental labs, HTM, interpretation (23:45Z)
 **Niche-vertical sprint** — industries #62–64:
   - dental_labs ($8.0B, +1.9%): 38M units (NADL) × $210; implant

@@ -1556,6 +1556,34 @@ def interpretation_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def urology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="urology",
+        sector_tokens=("urology",),
+        note=("AUA census is aggregate-only — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def rheumatology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="rheumatology",
+        sector_tokens=("rheumatology",),
+        note=("ACR workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def neurology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="neurology",
+        sector_tokens=("neurology", "neuroscience"),
+        note=("AAN workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1624,6 +1652,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "dental_labs": dental_labs_deep_dive,
     "htm_clinical_engineering": htm_deep_dive,
     "interpretation": interpretation_deep_dive,
+    "urology": urology_deep_dive,
+    "rheumatology": rheumatology_deep_dive,
+    "neurology": neurology_deep_dive,
 }
 
 
