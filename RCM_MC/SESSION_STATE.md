@@ -139,3 +139,20 @@ Discipline: verdict can never drift from the table it summarizes;
 honest empty/thin states; nothing fabricated; every component
 recomputes from displayed data. All deploys verified on pedesk.app.
 Improvement log W2-136…W2-143.
+
+---
+## Checkpoint — wave #52 (W2-150, 2026-06-11)
+Texas infusion page gained AIC competitive dynamics + a TX growth
+scorecard. New backend: `_PROVIDER_SEGMENTS` (5 ownership segments,
+shares sum to 1.0), `county_capacity()` (per-county chairs / AIS-channel
+demand-vs-capacity ratio / saturation band / non-hospital penetration /
+chair apportionment by owner), `county_opportunity_score()` (0–100
+demand·under-saturation·payer·growth blend), `texas_growth_scorecard()`
+(ranks 34 counties, flags markets where demand likely exceeds AIS chair
+capacity — 6 undersupplied growth corridors: Williamson/Collin/Denton/
+Montgomery/Hays/Comal). New renderers wired into the page:
+`_provider_segments_section`, `_scorecard_section`, and a per-county
+`_county_capacity_table` inside each city deep-dive. Demand/capacity
+ratio scoped to the AIS channel (~22% site share) — the realistic fix
+for the earlier 4–5× total-demand bug. 54 tests pass; guide + JSON-API
+green. Ship through standard cadence.

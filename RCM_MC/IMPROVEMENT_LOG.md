@@ -3006,3 +3006,40 @@ throughput dominates, curve monotonic + break-even < default util,
 overrides flow analysis→page (EDITED, value=90, higher contribution),
 form + charts render by default with no EDITED badge. 48 passed;
 guide + API contracts green.
+
+## W2-150 (2026-06-11) — Texas infusion: competitive dynamics by owner, per-county capacity/saturation, growth scorecard (wave #52)
+AIC competitive landscape + a long-term-opportunity scorecard, all
+recomputed from real county population:
+- **Competitive dynamics by ownership** — `_PROVIDER_SEGMENTS` splits
+  the market into the five owner types the thesis competes with: national/
+  regional chains (28%), health-system-owned (33%, captive HOPD pool —
+  flagged non-hospital=False), physician-owned (15%), independent AIC
+  (14%), independent home (10%). Shares sum to 1.0; the ~39% independent +
+  physician pool is the fragmented roll-up target. Rendered as a 100%
+  ownership strip + examples/roll-up-read table.
+- **Per-county chair capacity & saturation** — `county_capacity()`
+  estimates chairs (est AIS × 7), AIS-channel demand (total infusion
+  visits × 22% site share), chair capacity (chairs × ~1,170 visits/yr),
+  and a demand/capacity ratio scoped to the AIS channel (not total
+  demand — that was a 4–5× bug). Bands: UNDERSUPPLIED / balanced /
+  saturated / no-local-capacity, plus non-hospital site penetration and
+  patients-per-chair. Apportions chairs across the ownership segments.
+  Surfaced as a per-county table inside each city deep-dive.
+- **Texas growth scorecard** — `county_opportunity_score()` blends
+  demand · under-saturation · payer quality · growth into a 0–100 score;
+  `texas_growth_scorecard()` ranks all 34 counties across the 4 metros,
+  flags markets where demand is likely to exceed AIS capacity (ratio
+  ≥1.10, or a balanced corridor where site-of-care migration 22%→30% +
+  population growth tip it over). 6 undersupplied growth markets surface
+  — Williamson, Collin, Denton, Montgomery, Hays, Comal (the north /
+  Austin corridors). Top-10 ranked bars + an undersupplied-markets table.
+All pure recomputation from real county population × labeled assumptions;
+ownership shares are national NHIA/industry estimates, flagged
+illustrative (replace with NPPES / state pharmacy-board pull in
+diligence).
+**Verify**: +6 tests (54 total) — segments cover the 5 owner types +
+sum to 1.0 + health-system captive; capacity ratio scoped to AIS
+channel (<3×, ais_demand < total); saturation bands mixed; scorecard
+ranks descending + undersupplied flagged; growth corridors surface;
+opportunity score bounded 0–100. Plus 6 new page-render needles. 54
+passed; guide + JSON-API contracts green.
