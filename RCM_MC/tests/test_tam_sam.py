@@ -1300,3 +1300,47 @@ class NicheVerticalsBatch18Tests(unittest.TestCase):
     def test_catalogue_at_67_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 68)   # 67 + blank
+
+
+class NicheVerticalsBatch19Tests(unittest.TestCase):
+    """Industries #68–70 — endocrinology/obesity (GLP-1 era),
+    pulmonology, transplant services."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "endocrinology_obesity": 16_000_000 * 0.40 * 650,
+            "pulmonology": 12_000 * 850_000,
+            "transplant_services": 48_000 * 1_100_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_glp1_era_honesty(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, endocrinology_obesity_template,
+            transplant_services_template,
+        )
+        # Endo: GLP-1s CANNIBALIZE bariatric — a negative segment
+        # inside the same vertical (intra-vertical disruption).
+        out = compute(TEMPLATES["endocrinology_obesity"]())
+        bari = next(s for s in out["segments"] if "bariatric" in s["name"])
+        self.assertLess(bari["growth_pct"], 0)
+        # The drug-dollars-to-pharmacy honesty is in the basis.
+        self.assertIn("pharmacy",
+                      endocrinology_obesity_template().basis_note)
+        # Transplant: SAM 0.15 — the centers are academic, only the
+        # services shell is investable, and the basis says so.
+        self.assertLessEqual(
+            transplant_services_template().sam_share, 0.20)
+        self.assertIn("academic",
+                      transplant_services_template().basis_note)
+
+    def test_catalogue_at_70_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 71)   # 70 + blank

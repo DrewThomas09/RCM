@@ -1584,6 +1584,34 @@ def neurology_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def endocrinology_obesity_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="endocrinology_obesity",
+        sector_tokens=("endocrinology", "obesity", "metabolic"),
+        note=("Workforce data is aggregate-only — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def pulmonology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="pulmonology",
+        sector_tokens=("pulmonology", "chest", "respiratory"),
+        note=("CHEST workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def transplant_services_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="transplant_services",
+        sector_tokens=("transplant", "transplant_services"),
+        note=("UNOS center lists are public but not vendored — "
+              "geography omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1655,6 +1683,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "urology": urology_deep_dive,
     "rheumatology": rheumatology_deep_dive,
     "neurology": neurology_deep_dive,
+    "endocrinology_obesity": endocrinology_obesity_deep_dive,
+    "pulmonology": pulmonology_deep_dive,
+    "transplant_services": transplant_services_deep_dive,
 }
 
 

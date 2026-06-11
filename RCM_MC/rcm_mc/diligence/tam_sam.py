@@ -3787,6 +3787,182 @@ def neurology_template() -> TamSamModel:
     )
 
 
+
+def endocrinology_obesity_template() -> TamSamModel:
+    """Endocrinology + obesity medicine sizing — the GLP-1-era
+    specialty. The demand shock is real; the capture model is the
+    question."""
+    return TamSamModel(
+        name="Endocrinology · obesity-era practice market",
+        chain=[
+            DriverStep("US adults seeking medical obesity care / yr",
+                       16_000_000, op="base", unit="patients",
+                       source="GLP-1-era care-seeking estimates (vs "
+                              "42% adult obesity prevalence — the "
+                              "funnel just opened)"),
+            DriverStep("% receiving physician-managed care", 0.40,
+                       op="rate", unit="of seekers",
+                       source="vs telehealth-only/compounding "
+                              "channels"),
+            DriverStep("Avg practice revenue per managed patient / yr",
+                       650, op="price", unit="$/patient/yr",
+                       source="E&M + monitoring + ancillary blend "
+                              "(drug spend flows to pharmacy, NOT "
+                              "the practice — sized honestly)"),
+        ],
+        segments=[
+            Segment("Obesity medicine programs", 0.40, None,
+                    note="the new franchise — ABOM-certified demand "
+                         "exploding", growth_pct=14.0),
+            Segment("Diabetes management", 0.35, None,
+                    note="the legacy core — CGM-era monitoring",
+                    growth_pct=5.0),
+            Segment("Thyroid / general endo", 0.15, None,
+                    growth_pct=3.0),
+            Segment("Metabolic / bariatric surgery referral", 0.10,
+                    None, note="GLP-1s CANNIBALIZE bariatric volume "
+                         "— the intra-vertical disruption",
+                    growth_pct=-2.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("GLP-1 demand shock", 8.0,
+                         "the largest care-seeking wave in chronic "
+                         "disease — visits, monitoring, titration"),
+            GrowthDriver("CGM / monitoring expansion", 2.0,
+                         "device-era diabetes management"),
+            GrowthDriver("Endocrinologist scarcity", -3.0,
+                         "~8K adult endos for 38M diabetics — the "
+                         "most supply-constrained specialty; NP-led "
+                         "models are the only scale path"),
+            GrowthDriver("Coverage volatility", -2.0,
+                         "employer/Medicare GLP-1 coverage reversals "
+                         "whipsaw the funnel — shown as one"),
+        ],
+        sam_share=0.45,
+        sam_note="Physician-led obesity/endo programs (telehealth-"
+                 "only channels excluded — different economics)",
+        som_share=0.04,
+        som_note="Pre-wave: no scaled endo platform exists; the "
+                 "GLP-1 era is the catalyst",
+        horizon_years=5,
+        basis_note="Template defaults from prevalence + GLP-1-era "
+                   "public data — replace with engagement data before "
+                   "IC use. NOTE the honest scoping: drug dollars flow "
+                   "to pharmacy, not the practice.",
+    )
+
+
+def pulmonology_template() -> TamSamModel:
+    """Pulmonology sizing — the post-COVID + ILD-era chest specialty.
+    CHEST-anchored."""
+    return TamSamModel(
+        name="Pulmonology · practice + diagnostics market",
+        chain=[
+            DriverStep("US pulmonologists (practicing)", 12_000,
+                       op="base", unit="physicians",
+                       source="CHEST/ATS workforce"),
+            DriverStep("Avg revenue per pulmonologist", 850_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA medians incl. PFT lab, bronch, "
+                              "sleep adjacency"),
+        ],
+        segments=[
+            Segment("Clinical (COPD, asthma, ILD)", 0.45, None,
+                    note="biologic-era severe asthma + new ILD "
+                         "therapies", growth_pct=4.0),
+            Segment("Interventional bronch / nodule programs",
+                    0.20, None,
+                    note="the growth engine — lung-cancer screening "
+                         "feeds robotic bronch", growth_pct=10.0),
+            Segment("PFT / diagnostics lab", 0.15, None,
+                    growth_pct=3.0),
+            Segment("Sleep adjacency", 0.20, None,
+                    note="cross-links to the sleep vertical",
+                    growth_pct=4.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Lung-cancer screening ramp", 4.0,
+                         "USPSTF LDCT uptake → nodule pipelines → "
+                         "interventional volume"),
+            GrowthDriver("Severe-asthma biologics", 2.0,
+                         "biologic management visits + infusion "
+                         "adjacency"),
+            GrowthDriver("Post-COVID ILD burden", 1.0,
+                         "fibrosis follow-up cohort"),
+            GrowthDriver("Critical-care pull", -2.5,
+                         "hospital ICU staffing drains the same "
+                         "workforce — outpatient capacity is the "
+                         "residual, shown as one"),
+            GrowthDriver("PFT fee pressure", -1.0,
+                         "diagnostic-code compression"),
+        ],
+        sam_share=0.40,
+        sam_note="Independent chest groups (most pulmonologists are "
+                 "hospital-employed via ICU contracts — honestly "
+                 "small)",
+        som_share=0.05,
+        som_note="Pre-wave; nodule-program economics are the entry "
+                 "thesis",
+        horizon_years=5,
+        basis_note="Template defaults from CHEST/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def transplant_services_template() -> TamSamModel:
+    """Transplant services sizing — the highest-acuity episode niche.
+    UNOS/SRTR-anchored."""
+    return TamSamModel(
+        name="Transplant services · solid-organ episode market",
+        chain=[
+            DriverStep("US solid-organ transplants / yr", 48_000,
+                       op="base", unit="transplants",
+                       source="UNOS/OPTN annual data"),
+            DriverStep("Avg billed episode (transplant year)",
+                       1_100_000, op="price", unit="$/episode",
+                       source="Milliman organ-transplant cost "
+                              "studies (kidney $440K → heart $1.7M, "
+                              "volume-weighted)"),
+        ],
+        segments=[
+            Segment("Kidney (the volume organ)", 0.55, None,
+                    note="ESRD adjacency; living-donor economics",
+                    growth_pct=5.0),
+            Segment("Liver", 0.20, None, growth_pct=4.0),
+            Segment("Heart / lung", 0.15, None,
+                    note="perfusion-tech era expands viable organs",
+                    growth_pct=7.0),
+            Segment("Pancreas / multi / other", 0.10, None,
+                    growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Organ-supply expansion", 4.0,
+                         "perfusion + DCD recovery + HCV-positive "
+                         "utilization grow the transplantable pool"),
+            GrowthDriver("Xeno/artificial horizon", 0.5,
+                         "early — not yet a volume driver, honestly "
+                         "small"),
+            GrowthDriver("IOTA / payment-model reform", -1.0,
+                         "CMS kidney-transplant model shifts "
+                         "economics"),
+            GrowthDriver("OPO consolidation turbulence", -0.5,
+                         "procurement-organization reform churn"),
+        ],
+        sam_share=0.15,
+        sam_note="The SERVICES layer only — pharmacy management, "
+                 "patient logistics, financial coordination, perfusion "
+                 "services (the transplant centers themselves are "
+                 "academic and NOT acquirable; sized honestly)",
+        som_share=0.06,
+        som_note="Vendors to the episode, not owners of it",
+        horizon_years=5,
+        basis_note="Template defaults from UNOS/Milliman public data — "
+                   "replace with engagement data before IC use. NOTE "
+                   "the SAM honesty: 0.15 because the centers are "
+                   "academic — only the services shell is investable.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -3880,6 +4056,9 @@ TEMPLATES = {
     "urology": urology_template,
     "rheumatology": rheumatology_template,
     "neurology": neurology_template,
+    "endocrinology_obesity": endocrinology_obesity_template,
+    "pulmonology": pulmonology_template,
+    "transplant_services": transplant_services_template,
     "blank": blank_template,
 }
 
