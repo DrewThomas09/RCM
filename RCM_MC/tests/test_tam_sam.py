@@ -1344,3 +1344,50 @@ class NicheVerticalsBatch19Tests(unittest.TestCase):
     def test_catalogue_at_70_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 71)   # 70 + blank
+
+
+class NicheVerticalsBatch20Tests(unittest.TestCase):
+    """Industries #71–73 — retail clinics (the failure autopsy),
+    surgical assist, HIT consulting."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "retail_clinics": 1_800 * 9_500 * 135,
+            "surgical_assist": 12_000_000 * 0.25 * 350,
+            "hit_consulting": 120e9 * 0.18,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_failure_autopsy_honesty(self):
+        # Retail clinics: the template documents a FAILED thesis — the
+        # big-box segment declines, the unit-economics lesson is priced
+        # ≤ −3, and the basis says the training value is the autopsy.
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, retail_clinics_template,
+        )
+        out = compute(TEMPLATES["retail_clinics"]())
+        bigbox = next(s for s in out["segments"] if "big-box" in s["name"])
+        self.assertLess(bigbox["growth_pct"], 0)
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLessEqual(names["The unit-economics problem"], -3.0)
+        self.assertIn("autopsy", retail_clinics_template().basis_note)
+
+    def test_hit_ai_wave_fastest(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        out = compute(TEMPLATES["hit_consulting"]())
+        ai = next(s for s in out["segments"] if "AI" in s["name"])
+        self.assertTrue(ai.get("is_fastest"))
+        # …and the shrunken original market is priced.
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["EHR-implementation maturity"], 0)
+
+    def test_catalogue_at_73_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 74)   # 73 + blank

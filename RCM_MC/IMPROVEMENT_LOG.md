@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-86 — niche verticals batch 20: retail clinics, surgical assist, HIT consulting (01:15Z)
+**Niche-vertical sprint** — industries #71–73:
+  - retail_clinics ($2.3B, +0.4%): THE FAILURE AUTOPSY TEMPLATE —
+    post-retrenchment 1,800 clinics × 9.5K visits × $135; the big-box
+    format −4% (Walmart exited, shown honestly); "the unit-economics
+    problem" priced at −3 (standalone visit economics NEVER worked —
+    Walmart/Walgreens proved it at scale); the basis says the training
+    value IS the autopsy; SOM note demands the thesis explain why THIS
+    time the economics close.
+  - surgical_assist ($1.1B, +1.9%): 12M assist-eligible cases × 25%
+    outsourced × $350; ortho/spine +6% ★ (ASCs don't have residents —
+    structural demand); AS-modifier payer scrutiny priced.
+  - hit_consulting ($21.6B, +3.9%): $120B provider IT spend × 18%
+    services; AI enablement +15% ★ (every system needs a defensible AI
+    roadmap); the EHR-IMPLEMENTATION MATURITY headwind priced — the
+    big-bang Epic installs are DONE, the original market shrank.
+**Verify**: chains pinned; big-box negative segment + unit-economics
+≤ −3 + "autopsy" in basis + AI-fastest + EHR-maturity negative all
+pinned; catalogue ≥74 templates pinned; test_tam_sam 113 passed.
+73 industries.
+
 ## W2-85 — niche verticals batch 19: endo/obesity, pulmonology, transplant services (00:45Z)
 **Niche-vertical sprint** — industries #68–70, hitting 70:
   - endocrinology_obesity ($4.2B, +4.7%): 16M GLP-1-era care seekers ×

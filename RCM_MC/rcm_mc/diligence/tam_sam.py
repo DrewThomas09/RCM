@@ -3963,6 +3963,169 @@ def transplant_services_template() -> TamSamModel:
     )
 
 
+
+def retail_clinics_template() -> TamSamModel:
+    """Retail health clinic sizing — the convenience-care format
+    AFTER the 2024 retrenchment. The build prices the failure."""
+    return TamSamModel(
+        name="Retail clinics · convenience care market",
+        chain=[
+            DriverStep("US retail clinic locations", 1_800, op="base",
+                       unit="clinics",
+                       source="post-retrenchment count (Walmart Health "
+                              "closure + Walgreens VillageMD pullback "
+                              "took ~600 out)"),
+            DriverStep("Visits per clinic / yr", 9_500, op="mult",
+                       unit="visits/yr",
+                       source="MinuteClinic-class throughput norms"),
+            DriverStep("Avg revenue per visit", 135, op="price",
+                       unit="$/visit",
+                       source="convenience-care fee schedules + "
+                              "vaccine/test mix"),
+        ],
+        segments=[
+            Segment("Pharmacy-attached (CVS class)", 0.60, None,
+                    note="the survivor format — pharmacy adjacency "
+                         "funds it", growth_pct=3.0),
+            Segment("Grocery / big-box attached", 0.15, None,
+                    note="the failed format — Walmart exited; "
+                         "shown honestly", growth_pct=-4.0),
+            Segment("Vaccine / test / occ-lite services", 0.25, None,
+                    note="the actual economics — services not "
+                         "visits", growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Convenience demand", 2.5,
+                         "same-day access preference persists"),
+            GrowthDriver("Pharmacy-services integration", 2.0,
+                         "vaccines + test-and-treat scope expansion"),
+            GrowthDriver("The unit-economics problem", -3.0,
+                         "standalone visit economics NEVER worked — "
+                         "Walmart/Walgreens proved it at scale; "
+                         "priced as the defining lesson"),
+            GrowthDriver("NP scope + staffing cost", -1.0,
+                         "provider cost vs \$135 visits"),
+        ],
+        sam_share=0.30,
+        sam_note="The services layer + operator contracts (the "
+                 "pharmacy-owned estates are not for sale)",
+        som_share=0.05,
+        som_note="A post-failure market: the thesis must explain why "
+                 "THIS time the unit economics close",
+        horizon_years=5,
+        basis_note="Template defaults from industry public data — "
+                   "replace with engagement data before IC use. NOTE: "
+                   "this template documents a FAILED thesis — the "
+                   "training value is the autopsy.",
+    )
+
+
+def surgical_assist_template() -> TamSamModel:
+    """Surgical first-assist services sizing — the OR-staffing
+    micro-niche."""
+    return TamSamModel(
+        name="Surgical assist · first-assist services market",
+        chain=[
+            DriverStep("US surgeries needing a first assist / yr",
+                       12_000_000, op="base", unit="cases",
+                       source="inpatient + ASC case volumes × assist-"
+                              "eligible rates"),
+            DriverStep("% via outsourced assist services", 0.25,
+                       op="rate", unit="of cases",
+                       source="vs hospital-employed / resident "
+                              "coverage"),
+            DriverStep("Avg revenue per case", 350, op="price",
+                       unit="$/case",
+                       source="first-assist billing (modifier AS / "
+                              "commercial assist fees)"),
+        ],
+        segments=[
+            Segment("Orthopedic / spine", 0.45, None,
+                    note="the volume base — follows the TJA wave",
+                    growth_pct=6.0),
+            Segment("General / robotic", 0.30, None, growth_pct=5.0),
+            Segment("CV / vascular", 0.15, None, growth_pct=4.0),
+            Segment("OB / C-section coverage", 0.10, None,
+                    growth_pct=2.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("ASC surgical migration", 3.5,
+                         "ASCs don't have residents — outsourced "
+                         "assists are structural there"),
+            GrowthDriver("Resident work-hour limits", 1.5,
+                         "academic assist gaps"),
+            GrowthDriver("Payer assist-fee scrutiny", -2.0,
+                         "commercial plans tightening AS-modifier "
+                         "payment — the reimbursement headwind"),
+            GrowthDriver("Surgeon-employment bundling", -1.0,
+                         "employed surgeons get system-provided "
+                         "assists"),
+        ],
+        sam_share=0.55,
+        sam_note="ASC + community-hospital outsourced demand",
+        som_share=0.08,
+        som_note="A micro-niche — national platforms are small; "
+                 "density economics decide",
+        horizon_years=5,
+        basis_note="Template defaults from case-volume public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def hit_consulting_template() -> TamSamModel:
+    """Healthcare IT consulting sizing — the EHR-era services layer.
+    KLAS-anchored."""
+    return TamSamModel(
+        name="HIT consulting · implementation & advisory market",
+        chain=[
+            DriverStep("US provider IT spend / yr", 120_000_000_000,
+                       op="base", unit="$",
+                       source="Gartner/HIMSS provider IT spend "
+                              "estimates"),
+            DriverStep("% on external services (consulting/impl)",
+                       0.18, op="rate", unit="of IT spend",
+                       source="services-attach benchmarks"),
+        ],
+        segments=[
+            Segment("EHR implementation / optimization", 0.40, None,
+                    note="the Epic-era core — post-go-live "
+                         "optimization is the annuity now",
+                    growth_pct=4.0),
+            Segment("Data / analytics / interop", 0.25, None,
+                    growth_pct=8.0),
+            Segment("AI enablement / governance", 0.15, None,
+                    note="the new wave — every system needs an AI "
+                         "roadmap it can defend", growth_pct=15.0),
+            Segment("Security / compliance", 0.20, None,
+                    note="breach-driven demand floor", growth_pct=7.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("AI adoption wave", 4.0,
+                         "ambient documentation + RCM automation "
+                         "programs need builders"),
+            GrowthDriver("Cybersecurity mandates", 2.5,
+                         "post-Change-Healthcare security spend is "
+                         "non-discretionary"),
+            GrowthDriver("Interoperability rules", 1.5,
+                         "TEFCA/FHIR compliance work"),
+            GrowthDriver("EHR-implementation maturity", -2.5,
+                         "the big-bang Epic installs are DONE — the "
+                         "original market shrank, shown as one"),
+            GrowthDriver("Rate pressure / offshore", -1.5,
+                         "blended-rate competition"),
+        ],
+        sam_share=0.50,
+        sam_note="Independent consultancies (Big-4 + Epic-direct "
+                 "excluded)",
+        som_share=0.04,
+        som_note="Nordic/Chartis/Impact class — the mid-tier "
+                 "consolidation continues",
+        horizon_years=5,
+        basis_note="Template defaults from Gartner/HIMSS/KLAS public "
+                   "data — replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -4059,6 +4222,9 @@ TEMPLATES = {
     "endocrinology_obesity": endocrinology_obesity_template,
     "pulmonology": pulmonology_template,
     "transplant_services": transplant_services_template,
+    "retail_clinics": retail_clinics_template,
+    "surgical_assist": surgical_assist_template,
+    "hit_consulting": hit_consulting_template,
     "blank": blank_template,
 }
 
