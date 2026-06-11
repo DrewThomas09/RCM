@@ -162,6 +162,91 @@ def _investability_panel(review: Any) -> str:
     )
 
 
+def _readiness_profile_svg(report: Any) -> str:
+    """Exit-readiness dimension profile on a fixed 0–100 axis.
+
+    One bar per scored finding, toned by its status color, sorted
+    weakest-first so the dimensions dragging the verdict lead. The
+    composite score is drawn as a vertical guide so each dimension
+    reads as above/below the roll-up. Findings without a numeric
+    score are omitted; nothing scored renders nothing.
+    """
+    if report is None:
+        return ""
+    rows = []
+    for f in getattr(report, "findings", None) or []:
+        sc = getattr(f, "score", None)
+        if not isinstance(sc, (int, float)):
+            continue
+        status = str(getattr(f, "status", "") or "")
+        rows.append({
+            "dim": str(getattr(f, "dimension", "—")),
+            "score": max(0.0, min(100.0, float(sc))),
+            "tone": _FINDING_STATUS_COLORS.get(status, P["text_faint"]),
+            "weight": getattr(f, "weight", None),
+        })
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: r["score"])
+    composite = getattr(report, "score", None)
+
+    label_w, axis_w, right_w = 190, 300, 56
+    row_h, gap, pad_top, pad_bot = 16, 7, 10, 10
+    width = label_w + axis_w + right_w + 14
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Exit readiness score by dimension, weakest first">'
+    ]
+    # Faint full-axis track per row, then the scored bar on top.
+    for i, r in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        dim = r["dim"] if len(r["dim"]) <= 26 else r["dim"][:25] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="{P["text_dim"]}">'
+            f'{_html.escape(dim)}</text>'
+        )
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{axis_w}" height="{row_h}" '
+            f'rx="2" fill="{P["text_faint"]}" fill-opacity="0.12"/>'
+        )
+        w = axis_w * r["score"] / 100.0
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{max(w, 2):.1f}" '
+            f'height="{row_h}" rx="2" fill="{r["tone"]}" '
+            f'fill-opacity="0.85"/>'
+        )
+        wt = r["weight"]
+        wt_s = f' · w {float(wt):.0%}' if wt is not None else ""
+        parts.append(
+            f'<text x="{label_w + axis_w + 8}" y="{ty:.1f}" '
+            f'font-size="10" font-family="var(--ck-mono)" '
+            f'fill="{P["text_faint"]}">{r["score"]:.0f}{wt_s}</text>'
+        )
+    if isinstance(composite, (int, float)) and 0 <= float(composite) <= 100:
+        gx = label_w + axis_w * float(composite) / 100.0
+        parts.append(
+            f'<line x1="{gx:.1f}" y1="{pad_top - 4}" x2="{gx:.1f}" '
+            f'y2="{height - pad_bot + 4}" stroke="{P["text"]}" '
+            f'stroke-width="1" stroke-dasharray="3,3" opacity="0.55"/>'
+        )
+    parts.append("</svg>")
+    note = (
+        f'<div style="font-family:var(--ck-mono);font-size:9.5px;'
+        f'letter-spacing:0.08em;color:{P["text_faint"]};margin-top:4px;">'
+        'WEAKEST FIRST · DASHED GUIDE = COMPOSITE SCORE · w = DIMENSION WEIGHT'
+        "</div>"
+    )
+    return (
+        '<div class="ck-exit-profile" style="margin:4px 0 14px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def _exit_readiness_panel(report: Any) -> str:
     if report is None:
         return empty_note("Exit readiness was not computed.")
@@ -219,6 +304,7 @@ def _exit_readiness_panel(report: Any) -> str:
             f'margin-bottom:10px;">{_html.escape(note)}</p>'
         )
     if finding_rows:
+        body += _readiness_profile_svg(report)
         body += (
             f'<div class="ck-table-wrap"><table class="ck-table">'
             f'<thead><tr>'

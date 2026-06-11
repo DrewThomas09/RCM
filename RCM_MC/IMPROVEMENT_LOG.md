@@ -2109,3 +2109,18 @@ review.heuristic_hits; no hits renders "".
 outranks three LOWs in row order, None category buckets as
 Uncategorized, unknown severity treated as LOW, empty renders
 nothing. 35 passed with the corpus red-flags suite.
+
+## W2-108 (2026-06-11) — Investability page: exit-readiness dimension profile (wave #10)
+**Found**: /deal/<id>/investability rendered the 12-dimension exit-
+readiness check as a table only — the dimensions dragging the verdict
+down had no visual ranking, and weights were a text column you had to
+mentally multiply.
+**Fixed**: `_readiness_profile_svg(report)` — one bar per scored
+finding on a fixed 0–100 axis, toned by the page's own
+_FINDING_STATUS_COLORS, sorted weakest-first so the drag leads, weight
+labels (· w 8%), and a dashed vertical guide at the composite score so
+each dimension reads above/below the roll-up. Unscored findings
+omitted; report None / no scored findings renders "".
+**Verify**: ReadinessProfileTests — weakest-first order, all status
+tones, composite guide + weight label pinned, unscored omitted,
+3 empty states render "". 21 passed across investability suites.
