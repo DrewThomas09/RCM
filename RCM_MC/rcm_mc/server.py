@@ -16560,18 +16560,133 @@ class RCMHandler(BaseHTTPRequestHandler):
         ))
 
     def _route_search(self, query: str) -> None:
-        """Cross-deal search: match against deal_id, stage, note body, author.
+        """Federated search — the find-anything box for the whole desk.
 
-        Editorial render: ck_page_title H1 + serif search hero +
-        section panels for deal and note matches. Replaces the bare
-        <form>+<div class="card"> chrome that read as legacy alongside
-        the rest of the v5 UI.
+        2026-06-11 (user-reported): typing "hospital" rendered nothing
+        because this only scanned portfolio deals + notes. It now spans
+        the four things a partner actually looks up, each hit linking
+        straight to its full surface:
+          · HOSPITALS — the 6,123-provider HCRIS universe by name / CCN /
+            city / state → the facility's full X-Ray profile;
+          · TOOLS — every catalogued surface by label / route → the page;
+          · MARKET DEALS — the public deals corpus by target / buyer →
+            Deal Search scoped to the query;
+          · PORTFOLIO — deal ids/names/stages + full-text notes (as before).
         """
         from .ui._chartis_kit import (
             ck_page_title, chartis_shell, ck_kpi_block,
         )
         q = (query or "").strip().lower()
         store = PortfolioStore(self.config.db_path)
+
+        # ── Hospitals (HCRIS universe) ─────────────────────────────────
+        hosp_hits: List[str] = []
+        n_hosp = 0
+        if q and len(q) >= 2:
+            try:
+                from .data.hcris import _get_latest_per_ccn
+                _df = _get_latest_per_ccn()
+                _hay = (
+                    _df["name"].fillna("").astype(str) + " " +
+                    _df["ccn"].fillna("").astype(str) + " " +
+                    _df.get("city", "").fillna("").astype(str) + " " +
+                    _df.get("state", "").fillna("").astype(str)
+                ).str.lower()
+                _m = _df[_hay.str.contains(q, regex=False)]
+                n_hosp = len(_m)
+                for _, h in _m.head(12).iterrows():
+                    _ccn = html.escape(str(h.get("ccn") or ""))
+                    _nm = html.escape(str(h.get("name") or _ccn))
+                    _loc = ", ".join(
+                        s for s in (str(h.get("city") or ""),
+                                    str(h.get("state") or "")) if s)
+                    _beds = h.get("beds")
+                    _npr = h.get("net_patient_revenue")
+                    _meta = " · ".join(filter(None, (
+                        html.escape(_loc),
+                        f"{int(_beds):,} beds" if _beds == _beds and _beds
+                        else "",
+                        (f"${_npr/1e9:,.2f}B NPR" if abs(_npr) >= 1e9
+                         else f"${_npr/1e6:,.1f}M NPR")
+                        if _npr == _npr and _npr else "",
+                    )))
+                    hosp_hits.append(
+                        '<li class="ck-search-hit">'
+                        '<div class="ck-search-hit-title">'
+                        f'<a href="/diligence/hcris-xray?ccn={_ccn}" '
+                        'style="color:var(--sc-navy,#0b2341);font-weight:600;'
+                        f'text-decoration:none;">{_nm}</a>'
+                        f'<span class="ck-search-hit-slug">CCN {_ccn}</span>'
+                        '</div>'
+                        f'<div class="ck-search-hit-meta">{_meta} · '
+                        f'<a href="/diligence/hcris-xray?ccn={_ccn}" '
+                        'class="ck-link">full X-Ray profile →</a></div>'
+                        '</li>'
+                    )
+            except Exception:  # noqa: BLE001 — search must never 500
+                pass
+
+        # ── Tools / pages (surface catalogue) ─────────────────────────
+        tool_hits: List[str] = []
+        if q:
+            try:
+                from .ui._surface_rankings import RANKINGS
+                seen = set()
+                for _sect, _rows in RANKINGS.items():
+                    for r in _rows:
+                        blob = f'{r.get("label", "")} {r["route"]}'.lower()
+                        if q in blob and r["route"] not in seen:
+                            seen.add(r["route"])
+                            tool_hits.append(
+                                '<li class="ck-search-hit">'
+                                '<div class="ck-search-hit-title">'
+                                f'<a href="{html.escape(r["route"])}" '
+                                'style="color:var(--sc-navy,#0b2341);'
+                                'font-weight:600;text-decoration:none;">'
+                                f'{html.escape(r.get("label", ""))}</a>'
+                                '<span class="ck-search-hit-slug">'
+                                f'{html.escape(_sect)}</span></div>'
+                                '<div class="ck-search-hit-meta">'
+                                f'{html.escape(r["route"])}</div></li>'
+                            )
+                tool_hits = tool_hits[:10]
+            except Exception:  # noqa: BLE001
+                pass
+
+        # ── Market deals (public corpus) ───────────────────────────────
+        corpus_hits: List[str] = []
+        n_corpus = 0
+        if q and len(q) >= 2:
+            try:
+                from .ui.data_public.deal_search_page import _load_corpus
+                for d in _load_corpus():
+                    blob = (f'{d.get("deal_name", "")} '
+                            f'{d.get("buyer", "")}').lower()
+                    if q in blob:
+                        n_corpus += 1
+                        if len(corpus_hits) < 8:
+                            _dn = html.escape(
+                                str(d.get("deal_name") or "")[:60])
+                            _by = html.escape(str(d.get("buyer") or "—")[:40])
+                            _yr = html.escape(str(d.get("year") or "—"))
+                            corpus_hits.append(
+                                '<li class="ck-search-hit">'
+                                '<div class="ck-search-hit-title">'
+                                f'<a href="/deal-search?q='
+                                f'{urllib.parse.quote(q)}" '
+                                'style="color:var(--sc-navy,#0b2341);'
+                                'font-weight:600;text-decoration:none;">'
+                                f'{_dn}</a>'
+                                f'<span class="ck-search-hit-slug">{_yr}'
+                                '</span></div>'
+                                '<div class="ck-search-hit-meta">'
+                                f'{_by} · <a class="ck-link" '
+                                f'href="/deal-search?q='
+                                f'{urllib.parse.quote(q)}">open in Deal '
+                                'Search →</a></div></li>'
+                            )
+            except Exception:  # noqa: BLE001
+                pass
 
         # Friendly deal-name lookup so result cards read
         # "Cypress Crossing Health" instead of slug "ccf".
@@ -16645,36 +16760,41 @@ class RCMHandler(BaseHTTPRequestHandler):
                         '</li>'
                     )
 
-        # KPI strip: total hits + deal hits + note hits + universe
+        # KPI strip: every universe the query touched.
+        _total = (n_hosp + len(tool_hits) + n_corpus
+                  + len(deal_hits) + len(note_hits))
         kpi_html = (
             '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
             + ck_kpi_block(
-                "Matches",
-                f"{len(deal_hits) + len(note_hits)}",
-                sub="across deals + notes",
+                "Matches", f"{_total}",
+                sub="hospitals + tools + deals + notes",
             )
             + ck_kpi_block(
-                "Deal Hits", f"{len(deal_hits)}",
-                sub="deal_id / stage / covenant",
+                "Hospitals", f"{n_hosp}",
+                sub="HCRIS universe (6,123)",
             )
             + ck_kpi_block(
-                "Note Hits", f"{len(note_hits)}",
-                sub="body + author full-text",
+                "Tools", f"{len(tool_hits)}",
+                sub="catalogued surfaces",
             )
             + ck_kpi_block(
-                "Query", f'"{html.escape(q)}"' if q else "—",
-                sub="case-insensitive substring",
+                "Market Deals", f"{n_corpus}",
+                sub="public deals corpus",
+            )
+            + ck_kpi_block(
+                "Portfolio", f"{len(deal_hits) + len(note_hits)}",
+                sub="deals + notes",
             )
             + '</div>'
         )
 
         title_html = ck_page_title(
             "Search",
-            eyebrow="PORTFOLIO-WIDE",
+            eyebrow="FIND ANYTHING",
             meta=(
-                f"Query: {q!r} · "
-                f"{len(deal_hits)} deal hits · {len(note_hits)} note hits"
-                if q else "Type a query to scan deals, stages, and notes"
+                f"Query: {q!r} · {_total} matches across hospitals, "
+                "tools, market deals, portfolio"
+                if q else "Hospitals · tools · market deals · portfolio"
             ),
         )
 
@@ -16688,6 +16808,35 @@ class RCMHandler(BaseHTTPRequestHandler):
             '</form>'
         )
 
+        def _hit_panel(label: str, hits: List[str], total: int,
+                       more_href: str = "", more_label: str = "") -> str:
+            if not hits:
+                return ""
+            more = (
+                f' · <a class="ck-link" href="{more_href}">{more_label}</a>'
+                if more_href and total > len(hits) else ""
+            )
+            return (
+                '<section class="cad-card ck-lp-section">'
+                '<header class="ck-lp-section-head">'
+                f'<h2>{label}</h2>'
+                f'<span class="ck-lp-section-count">'
+                f'{total} hit{"s" if total != 1 else ""}{more}</span>'
+                '</header>'
+                f'<ul class="ck-search-hits">{"".join(hits)}</ul>'
+                '</section>'
+            )
+
+        hosp_panel = _hit_panel(
+            "Hospitals", hosp_hits, n_hosp,
+            more_href=(f"/target-screener?vertical=hospitals"
+                       f"&q={urllib.parse.quote(q)}"),
+            more_label="all in Target Screener →")
+        tools_panel = _hit_panel("Tools & pages", tool_hits, len(tool_hits))
+        corpus_panel = _hit_panel(
+            "Market deals", corpus_hits, n_corpus,
+            more_href=f"/deal-search?q={urllib.parse.quote(q)}",
+            more_label="all in Deal Search →")
         deal_panel = (
             '<section class="cad-card ck-lp-section">'
             '<header class="ck-lp-section-head">'
@@ -16713,12 +16862,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             '<p class="ck-lp-empty">No matches. Try a shorter query — '
             'or open the <a href="/" style="color:var(--sc-teal-ink,#155752);">dashboard</a> '
             'to browse.</p></section>'
-        ) if q and not (deal_hits or note_hits) else ""
+        ) if q and not (deal_hits or note_hits or hosp_hits
+                        or tool_hits or corpus_hits) else ""
         hint_panel = (
             '<section class="cad-card ck-lp-section">'
-            '<p class="ck-lp-empty">Searches deal IDs, deal names, stages, '
-            'covenant status, and the full text of every note across the '
-            'portfolio. Press Cmd+K anywhere to jump to a tool by name.</p>'
+            '<p class="ck-lp-empty">Searches the 6,123-hospital HCRIS '
+            'universe (name / CCN / city / state — each hit opens the full '
+            'X-Ray profile), every catalogued tool, the public deals '
+            'corpus, and your portfolio (deal IDs, names, stages, covenant '
+            'status, full-text notes). Press Cmd+K anywhere to jump to a '
+            'tool by name.</p>'
             '</section>'
         ) if not q else ""
 
@@ -16759,8 +16912,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             f"{title_html}"
             f"{search_form}"
             f"{kpi_html}"
+            f"{hosp_panel}"
+            f"{tools_panel}"
             f"{deal_panel}"
             f"{note_panel}"
+            f"{corpus_panel}"
             f"{empty_panel}"
             f"{hint_panel}"
             f"{page_css}"

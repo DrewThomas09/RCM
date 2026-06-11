@@ -623,12 +623,11 @@ class TestPostForms(unittest.TestCase):
             try:
                 with urllib.request.urlopen(f"http://127.0.0.1:{port}/search") as r:
                     body = r.read().decode()
-                    # Editorial refactor: eyebrow "PORTFOLIO-WIDE" +
-                    # meta "Type a query to scan…"; the legacy
-                    # subtitle "Portfolio-wide search" lives in
-                    # chartis_shell metadata, not the visible body.
-                    self.assertIn("PORTFOLIO-WIDE", body)
-                    self.assertIn("Type a query", body)
+                    # 2026-06-11 federated search: the eyebrow is now
+                    # "FIND ANYTHING" (hospitals + tools + market deals +
+                    # portfolio) and the empty state names the universes.
+                    self.assertIn("FIND ANYTHING", body)
+                    self.assertIn("HCRIS", body)
             finally:
                 server.shutdown()
                 server.server_close()
