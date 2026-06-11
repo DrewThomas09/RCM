@@ -1436,6 +1436,37 @@ def crisis_services_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def school_services_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="school_services",
+        sector_tokens=("school_services", "school_based",
+                       "education_services"),
+        note=("District contract data is local — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def mobile_diagnostics_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="mobile_diagnostics",
+        sector_tokens=("mobile_diagnostics", "portable_xray",
+                       "mobile_imaging"),
+        note=("Mobile-provider rosters aren't public — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def palliative_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="palliative",
+        sector_tokens=("palliative", "palliative_care", "hospice"),
+        note=("CAPC program registry covers hospitals, not community "
+              "programs — geography omitted rather than fabricated. "
+              "The hospice trade history below is the adjacency read."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1492,6 +1523,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "correctional_health": correctional_health_deep_dive,
     "locum_staffing": locum_staffing_deep_dive,
     "crisis_services": crisis_services_deep_dive,
+    "school_services": school_services_deep_dive,
+    "mobile_diagnostics": mobile_diagnostics_deep_dive,
+    "palliative": palliative_deep_dive,
 }
 
 

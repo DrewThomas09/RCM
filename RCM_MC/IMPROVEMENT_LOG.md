@@ -1176,6 +1176,26 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-80 — niche verticals batch 14: school services, mobile diagnostics, palliative (22:15Z)
+**Niche-vertical sprint** — industries #53–55:
+  - school_services ($8.1B, +4.5%): 7.5M IEP students (NCES) × 45%
+    related services × $2,400; teletherapy +11% ★ (solved rural
+    coverage); the ESSER funding cliff priced as the district-budget
+    headwind; "districts can't hire — contracting IS the growth".
+  - mobile_diagnostics ($1.5B, +3.4%): 28M LTC/homebound encounters ×
+    55% mobile × $95; HaH/SNF-at-home adjacency +10% ★ (every care-at-
+    home episode needs mobile dx); the post-TridentUSA fragmentation
+    named as the rebuild opportunity; route-density economics as the
+    margin truth.
+  - palliative ($2.5B, +8.5%): 12M seriously ill (CAPC) × 5% community
+    penetration × $4,200 — the 95% GAP IS THE THESIS; MA/VBC PMPM +14%
+    ★ (payers fund avoided admissions); the FFS model's economic
+    failure priced as a negative driver ("visit billing alone doesn't
+    cover an IDT").
+**Verify**: chains pinned; palliative penetration ≤10% + FFS-weakness
+negative pinned; ESSER cliff negative pinned; catalogue ≥56 templates
+pinned; test_tam_sam 94 passed. 55 industries.
+
 ## W2-79 — niche verticals batch 13: correctional, locum staffing, crisis — 50-INDUSTRY MILESTONE (21:45Z)
 **Niche-vertical sprint** — industries #50–52, the milestone batch:
   - correctional_health ($7.8B, +4.5%): 1.9M incarcerated (BJS) × 55%
