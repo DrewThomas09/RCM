@@ -357,6 +357,159 @@ def _growth_drivers(a: Dict[str, Any]) -> str:
     return out
 
 
+_SEV_TONE = {"HIGH": _NEG, "MEDIUM": _WARN, "LOW": _FAINT}
+_CHANNEL_TONE = {"AIC": _NAVY, "Home": _TEAL, "Both": "#6e5b9e"}
+
+
+def _channel_cards(a: Dict[str, Any]) -> str:
+    """Two side-by-side channel breakdowns — AIC vs home infusion."""
+    cards = ""
+    for c in a["channel_economics"]:
+        is_aic = "AIC" in c["channel"]
+        tone = _NAVY if is_aic else _TEAL
+        def _row(label: str, val: str) -> str:
+            return (
+                f'<div style="margin-top:7px;"><div style="font-size:9px;'
+                f'letter-spacing:0.08em;color:{_FAINT};font-weight:700;">'
+                f'{label}</div><div style="font-size:11.5px;color:{_DIM};'
+                f'line-height:1.5;">{html.escape(val)}</div></div>')
+        cards += (
+            f'<div style="border:1px solid #d6cfc0;border-top:3px solid '
+            f'{tone};border-radius:4px;padding:12px 14px;background:#fff;">'
+            f'<div style="font-size:14px;font-weight:700;color:{tone};">'
+            f'{html.escape(c["channel"])}</div>'
+            f'<p style="font-size:11.5px;color:{_DIM};line-height:1.55;'
+            f'margin:4px 0 0;">{html.escape(c["what"])}</p>'
+            + _row("REIMBURSEMENT BASIS", c["reimbursement"])
+            + _row("MARGIN MODEL", c["margin_model"])
+            + _row("WORKING CAPITAL", c["working_capital"])
+            + f'<div style="margin-top:8px;padding:7px 10px;background:#fbf3ef;'
+            f'border-left:3px solid {_NEG};border-radius:0 3px 3px 0;">'
+            f'<div style="font-size:9px;letter-spacing:0.08em;color:{_NEG};'
+            f'font-weight:700;">DEFINING RISK</div>'
+            f'<div style="font-size:11.5px;color:#1a2332;line-height:1.5;">'
+            f'{html.escape(c["key_risk"])}</div></div>'
+            f'</div>')
+    return (
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">'
+        + cards + '</div>')
+
+
+def _players_table(a: Dict[str, Any]) -> str:
+    rows = ""
+    for p in a["players"]:
+        ct = _CHANNEL_TONE.get(p["channel"], _FAINT)
+        tx = ('<span style="color:%s;font-weight:700;">TX ✓</span>' % _POS
+              if p["tx"] else '<span style="color:%s;">—</span>' % _FAINT)
+        name = (f'<a href="{html.escape(p["link"], quote=True)}" '
+                f'target="_blank" rel="noopener" style="color:{_NAVY};'
+                f'font-weight:600;text-decoration:none;">'
+                f'{html.escape(p["name"])} ↗</a>'
+                if p.get("link") else
+                f'<span style="font-weight:600;">{html.escape(p["name"])}</span>')
+        rows += (
+            f'<tr>'
+            f'<td style="padding:6px 8px;">{name}</td>'
+            f'<td style="padding:6px 8px;"><span style="font-size:10px;'
+            f'font-weight:700;color:{ct};">{html.escape(p["channel"])}</span>'
+            f'</td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(p["ownership"])}</td>'
+            f'<td style="padding:6px 8px;text-align:center;">{tx}</td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(p["scale"])}</td>'
+            f'</tr>')
+    return (
+        '<div style="overflow-x:auto;"><table style="width:100%;'
+        'border-collapse:collapse;font-size:12px;">'
+        '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        '<th style="text-align:left;padding:6px 8px;">Operator</th>'
+        '<th style="text-align:left;padding:6px 8px;">Channel</th>'
+        '<th style="text-align:left;padding:6px 8px;">Ownership</th>'
+        '<th style="padding:6px 8px;">TX</th>'
+        '<th style="text-align:left;padding:6px 8px;">Scale / note</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        'Channel: AIC = ambulatory infusion center · Home = home '
+        'infusion · Both. Ownership and scale from public filings / '
+        'company disclosures (directional). Payer-owned operators '
+        '(Optum, Paragon) can steer their own members — a competitive '
+        'and white-bagging risk to independents.</p>')
+
+
+def _risk_register(a: Dict[str, Any]) -> str:
+    rows = ""
+    for r in a["risk_register"]:
+        st = _SEV_TONE.get(r["severity"], _FAINT)
+        ct = _CHANNEL_TONE.get(r["hits"], _FAINT)
+        rows += (
+            f'<div style="padding:10px 0;border-bottom:1px solid #e4ddca;">'
+            f'<div style="display:flex;gap:8px;align-items:baseline;'
+            f'flex-wrap:wrap;">'
+            f'<span style="font-family:monospace;font-size:9px;font-weight:'
+            f'700;color:{st};border:1px solid {st};border-radius:2px;'
+            f'padding:1px 5px;">{r["severity"]}</span>'
+            f'<span style="font-size:9px;color:{_FAINT};text-transform:'
+            f'uppercase;letter-spacing:0.06em;">{html.escape(r["category"])}'
+            f'</span>'
+            f'<span style="font-size:13px;font-weight:600;color:#1a2332;">'
+            f'{html.escape(r["risk"])}</span>'
+            f'<span style="margin-left:auto;font-size:9px;font-weight:700;'
+            f'color:{ct};">hits {html.escape(r["hits"])}</span></div>'
+            f'<div style="font-size:11.5px;color:{_DIM};margin-top:3px;'
+            f'line-height:1.5;">{html.escape(r["detail"])}</div>'
+            f'<div style="font-size:11.5px;color:#1a2332;margin-top:4px;'
+            f'line-height:1.5;padding-left:10px;border-left:2px solid '
+            f'{_TEAL};"><strong style="color:{_TEAL};">RCM read: </strong>'
+            f'{html.escape(r["rcm_angle"])}</div>'
+            f'</div>')
+    return rows
+
+
+def _rcm_playbook(a: Dict[str, Any]) -> str:
+    pb = a["rcm_playbook"]
+    kpi_rows = "".join(
+        f'<tr>'
+        f'<td style="padding:5px 8px;font-weight:600;">'
+        f'{html.escape(k["kpi"])}</td>'
+        f'<td style="padding:5px 8px;font-size:11px;color:{_DIM};">'
+        f'{html.escape(k["why"])}</td>'
+        f'<td style="padding:5px 8px;font-size:11px;color:{_FAINT};">'
+        f'{html.escape(k["benchmark"])}</td>'
+        f'</tr>' for k in pb["kpis"])
+    denials = "".join(
+        f'<li style="font-size:11.5px;color:{_DIM};margin:2px 0;">'
+        f'{html.escape(d)}</li>' for d in pb["denial_drivers"])
+    questions = "".join(
+        f'<li style="font-size:11.5px;color:#1a2332;margin:3px 0;">'
+        f'{html.escape(q)}</li>' for q in pb["diligence_questions"])
+    return (
+        f'<div style="padding:10px 14px;background:#eef3f2;'
+        f'border-left:3px solid {_TEAL};border-radius:0 3px 3px 0;'
+        f'font-size:12.5px;color:#1a2332;line-height:1.6;margin-bottom:12px;">'
+        f'<strong>Why infusion RCM is different:</strong> '
+        f'{html.escape(pb["why_different"])}</div>'
+        + '<div style="font-size:10px;color:%s;letter-spacing:0.06em;'
+        'font-weight:700;margin:4px 0;">THE INFUSION RCM KPI SET</div>'
+        % _FAINT
+        + '<div style="overflow-x:auto;"><table style="width:100%;'
+        'border-collapse:collapse;font-size:12px;">'
+        '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        '<th style="text-align:left;padding:5px 8px;">KPI</th>'
+        '<th style="text-align:left;padding:5px 8px;">Why it matters here</th>'
+        '<th style="text-align:left;padding:5px 8px;">Read</th>'
+        f'</tr></thead><tbody>{kpi_rows}</tbody></table></div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;'
+        'margin-top:12px;">'
+        f'<div><div style="font-size:10px;color:{_NEG};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:3px;">TOP DENIAL DRIVERS</div>'
+        f'<ul style="margin:0;padding-left:18px;">{denials}</ul></div>'
+        f'<div><div style="font-size:10px;color:{_TEAL};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:3px;">RCM DILIGENCE '
+        f'QUESTIONS</div><ol style="margin:0;padding-left:18px;">'
+        f'{questions}</ol></div></div>')
+
+
 def _hbar_svg(rows: List[Dict[str, Any]], *, label_key: str,
              value_key: str, value_fmt, tone: str, sub_key: str = "",
              width: int = 560, rank_key: str = "") -> str:
@@ -518,6 +671,23 @@ def render_texas_infusion_page() -> str:
         + ck_section_header("Market sizing — the driver chain",
                             eyebrow="TAM / SAM / SOM")
         + _sizing_chain(a)
+
+        + ck_section_header("The two channels — AIC vs home infusion",
+                            eyebrow="REIMBURSEMENT · MARGIN · WORKING CAPITAL")
+        + _channel_cards(a)
+
+        + ck_section_header("Players — the named operators",
+                            eyebrow="WHO COMPETES · OWNERSHIP · TX PRESENCE")
+        + _players_table(a)
+
+        + ck_section_header("Where the risks are",
+                            eyebrow="REIMBURSEMENT · RCM · MARKET — WITH THE "
+                                    "RCM READ")
+        + _risk_register(a)
+
+        + ck_section_header("How RCM talks about infusion",
+                            eyebrow="THE REVENUE-CYCLE PLAYBOOK")
+        + _rcm_playbook(a)
 
         + ck_section_header("Segmentation by therapy form",
                             eyebrow="WHERE THE DOLLARS — AND THE GROWTH — ARE")
