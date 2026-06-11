@@ -16,6 +16,103 @@ from .models_page import _model_nav
 from .brand import PALETTE
 
 
+def _tier_waterfall_svg(tiers: list) -> str:
+    """An actual waterfall for the waterfall page.
+
+    Cascading columns left-to-right, one per distribution tier: each
+    column rises from the running total and is split into its LP
+    (navy) and GP (green) dollars, so the carry mechanics — where in
+    the stack the GP starts taking — are visible instead of buried in
+    the tier table. Tiers with zero dollars are skipped; no funded
+    tiers renders nothing.
+    """
+    cols = []
+    for t in tiers:
+        name = str(t.get("tier_name", t.get("name", "")) or "—")
+        lp = float(t.get("lp_amount", t.get("lp", 0)) or 0)
+        gp = float(t.get("gp_amount", t.get("gp", 0)) or 0)
+        if lp + gp <= 0:
+            continue
+        cols.append((name, lp, gp))
+    if not cols:
+        return ""
+    total = sum(lp + gp for _, lp, gp in cols)
+
+    width, chart_h = 720, 200
+    pad_top, pad_bot, pad_l = 24, 34, 8
+    height = pad_top + chart_h + pad_bot
+    n = len(cols)
+    slot = (width - pad_l * 2) / n
+    bar_w = min(110.0, slot * 0.62)
+    scale = chart_h / total
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Distribution waterfall by tier, split LP and GP">'
+        f'<line x1="{pad_l}" y1="{pad_top + chart_h}" '
+        f'x2="{width - pad_l}" y2="{pad_top + chart_h}" '
+        f'stroke="{PALETTE["border"]}" stroke-width="1"/>'
+    ]
+    cum = 0.0
+    for i, (name, lp, gp) in enumerate(cols):
+        x = pad_l + i * slot + (slot - bar_w) / 2
+        tier_total = lp + gp
+        y_base = pad_top + chart_h - cum * scale
+        lp_h = lp * scale
+        gp_h = gp * scale
+        # LP block sits on the running total; GP block on top of it.
+        if lp > 0:
+            parts.append(
+                f'<rect x="{x:.1f}" y="{y_base - lp_h:.1f}" '
+                f'width="{bar_w:.1f}" height="{max(lp_h, 1):.1f}" '
+                f'fill="{PALETTE["brand_accent"]}" fill-opacity="0.9"/>'
+            )
+        if gp > 0:
+            parts.append(
+                f'<rect x="{x:.1f}" y="{y_base - lp_h - gp_h:.1f}" '
+                f'width="{bar_w:.1f}" height="{max(gp_h, 1):.1f}" '
+                f'fill="{PALETTE["positive"]}" fill-opacity="0.9"/>'
+            )
+        # Connector to the next column's starting level.
+        if i < n - 1:
+            yc = y_base - lp_h - gp_h
+            x_next = pad_l + (i + 1) * slot + (slot - bar_w) / 2
+            parts.append(
+                f'<line x1="{x + bar_w:.1f}" y1="{yc:.1f}" '
+                f'x2="{x_next:.1f}" y2="{yc:.1f}" '
+                f'stroke="{PALETTE["text_muted"]}" stroke-width="1" '
+                f'stroke-dasharray="3,3"/>'
+            )
+        parts.append(
+            f'<text x="{x + bar_w / 2:.1f}" '
+            f'y="{y_base - lp_h - gp_h - 5:.1f}" text-anchor="middle" '
+            f'font-size="10" font-weight="600" fill="#1a2332">'
+            f'${tier_total / 1e6:.1f}M</text>'
+        )
+        short = name if len(name) <= 18 else name[:17] + "…"
+        parts.append(
+            f'<text x="{x + bar_w / 2:.1f}" y="{pad_top + chart_h + 14}" '
+            f'text-anchor="middle" font-size="9.5" '
+            f'fill="{PALETTE["text_secondary"]}">{html.escape(short)}</text>'
+        )
+        cum += tier_total
+    parts.append(
+        f'<text x="{pad_l}" y="{height - 6}" font-size="9" '
+        f'letter-spacing="1" fill="{PALETTE["text_muted"]}">'
+        f'CASCADE OF ${total / 1e6:.1f}M TOTAL DISTRIBUTIONS · '
+        '<tspan fill="' + PALETTE["brand_accent"] + '">&#9632;</tspan> LP · '
+        '<tspan fill="' + PALETTE["positive"] + '">&#9632;</tspan> GP · '
+        'EACH TIER RISES FROM THE RUNNING TOTAL</text>'
+    )
+    parts.append("</svg>")
+    return (
+        '<div class="ck-tier-waterfall cad-card">'
+        "<h2>Distribution Waterfall</h2>"
+        + "".join(parts) + "</div>"
+    )
+
+
 def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) -> str:
     """Render a returns waterfall as a browser page."""
     lp_total = result.get("lp_total", 0)
@@ -125,7 +222,8 @@ def render_waterfall_page(deal_id: str, deal_name: str, result: Dict[str, Any]) 
         )
 
     tier_section = (
-        f'<div class="cad-card">'
+        _tier_waterfall_svg(tiers)
+        + f'<div class="cad-card">'
         f'<h2>Waterfall Tiers</h2>'
         f'<table class="cad-table"><thead><tr>'
         f'<th>Tier</th><th>Hurdle</th><th>Carry</th><th>LP</th><th>GP</th>'

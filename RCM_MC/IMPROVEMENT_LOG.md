@@ -2323,3 +2323,19 @@ Placed above the metric table.
 **Verify**: AdvantageStripTests — direction-aware tally (ALPHA 1 /
 BETA 1 with a lower-is-better row), 90%› clamp label, both-zero
 skipped + tie dot, empty → "". 107 passed across compare suites.
+
+## W2-121 (2026-06-11) — Waterfall page: tier cascade chart (wave #23)
+**Found**: /models/waterfall had, ironically, no waterfall — the
+tiers lived in a table and the LP/GP economics in one aggregate
+split bar; where in the stack the GP starts taking (the carry
+mechanics IC actually asks about) was invisible.
+**Fixed**: `_tier_waterfall_svg(tiers)` — cascading columns
+left-to-right, one per distribution tier, each rising from the
+running total and split into LP (navy) and GP (green) dollars, with
+dashed connectors between levels, per-tier $M totals, tier names,
+and a caption totaling the cascade. Zero-dollar (unreached) tiers
+skipped; no funded tiers renders "". Placed above the tier table.
+**Verify**: TierWaterfallTests — cascade renders with LP/GP split +
+$200.0M total caption, tier order preserved, unreached tier skipped,
+empty → "", chart precedes the tier table in the full page render.
+108 passed across waterfall suites.
