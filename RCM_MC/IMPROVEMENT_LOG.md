@@ -3252,3 +3252,31 @@ just the table:
 **Verify**: +2 takeaway tests — builder produces ≥15 non-empty takeaways
 carrying real values (HHI, OPAT flow), page renders ≥15 SO WHAT
 callouts. Full suite green.
+
+## W2-157 (2026-06-11) — Texas infusion: evolution of discharges → home infusion over time (wave #59)
+Added the TIME dimension the discharge analysis was missing — how the
+hospital-discharge → home-infusion / site-of-care shift has evolved:
+- **`home_infusion_evolution()`**: a 2015→2024 year-by-year series of
+  the infusion site-of-care mix (HOPD 46%→30%, home+AIS 38%→60%, a
+  16-pt shift out of the hospital), the home/alternate-site market size
+  ($11B→$20.5B, computed 7.2% CAGR), and an OPAT volume index (100→217).
+  Pure recompute from labeled endpoints — the 2024 site mix is THIS
+  page's live site-of-care model (so history connects to the present),
+  the 2015 mix a documented historical estimate, market size from NHIA/
+  industry magnitudes; intermediate years linearly interpolated, all
+  flagged illustrative.
+- **Event timeline** (factual): 21st Century Cures Act (2016), first
+  infliximab biosimilar (2016), transitional HIT benefit (2019), COVID
+  surge (2020), permanent HIT benefit (2021), white-bagging/steerage
+  spread (2022), MA >50% (2023), biosimilar wave + IRA (2024).
+- **Structural drivers**: LOS decline, payer steerage, MA growth,
+  biosimilars/IRA, COVID normalization, the HIT benefit.
+- **Page**: a "How discharges → home infusion have evolved" section — a
+  stacked-area site-of-care chart (HOPD shrinking, home/AIS growing), a
+  KPI strip (HOPD shift / home+AIS gain / market CAGR / OPAT index), the
+  event timeline, and the drivers, plus a data-driven SO WHAT.
+**Verify**: +5 evolution tests — shares sum to 1.0/yr, HOPD declines &
+non-hospital rises monotonically, market compounds at the computed CAGR,
+the 2024 endpoint equals the page's live site-of-care model, the event
+timeline is real & ordered (Cures Act/COVID/HIT/biosimilar); +4 render
+needles + 1 SO WHAT. Full suite green.

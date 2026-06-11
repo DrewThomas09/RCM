@@ -148,6 +148,118 @@ def _segment_table(a: Dict[str, Any]) -> str:
         f'</tr></thead><tbody>{rows}</tbody></table></div>')
 
 
+_EVO_BANDS = [("hopd", "Hospital outpatient (HOPD)", _NAVY),
+              ("office", "Physician office", "#b8a98c"),
+              ("ais", "Ambulatory infusion (AIS)", _TEAL),
+              ("home", "Home infusion", _POS)]
+
+
+def _evolution_section(a: Dict[str, Any]) -> str:
+    """How discharges → home infusion / site-of-care have evolved over
+    time: a stacked-area chart of the mix shift, the market-size + OPAT
+    growth, and the regulatory/structural event timeline."""
+    ev = a.get("site_of_care_evolution") or {}
+    series = ev.get("series", [])
+    if not series:
+        return ""
+    yrs = [s["year"] for s in series]
+    y0, y1 = yrs[0], yrs[-1]
+    W, H = 100.0, 56.0
+
+    def _x(yr):
+        return (yr - y0) / (y1 - y0) * W
+    # Stacked-area polygons (bottom→top: HOPD, office, AIS, home).
+    bands_svg = ""
+    cum = {s["year"]: 0.0 for s in series}
+    for key, _label, color in _EVO_BANDS:
+        top_pts, bot_pts = [], []
+        for s in series:
+            x = _x(s["year"])
+            bot = cum[s["year"]]
+            top = bot + s[key]
+            bot_pts.append((x, H - bot * H))
+            top_pts.append((x, H - top * H))
+            cum[s["year"]] = top
+        pts = top_pts + bot_pts[::-1]
+        path = " ".join(f"{x:.2f},{y:.2f}" for x, y in pts)
+        bands_svg += (f'<polygon points="{path}" fill="{color}" '
+                      f'fill-opacity="0.85"/>')
+    # Year gridlines + labels.
+    grid = ""
+    for s in series:
+        if s["year"] % 3 == 0 or s["year"] == y1:
+            x = _x(s["year"])
+            grid += (f'<line x1="{x:.1f}" y1="0" x2="{x:.1f}" y2="{H}" '
+                     f'stroke="#fff" stroke-opacity="0.25" stroke-width="0.3"/>'
+                     f'<text x="{x:.1f}" y="{H+4.5:.1f}" text-anchor="middle" '
+                     f'font-size="3" fill="{_FAINT}">{s["year"]}</text>')
+    chart = (
+        f'<svg viewBox="0 -2 100 64" width="100%" height="240" '
+        f'role="img" aria-label="Site-of-care evolution" '
+        f'style="max-width:620px;">{bands_svg}{grid}</svg>')
+    legend = " ".join(
+        f'<span style="font-size:10.5px;color:{_DIM};margin-right:12px;">'
+        f'<span style="display:inline-block;width:9px;height:9px;'
+        f'border-radius:2px;background:{c};margin-right:4px;"></span>'
+        f'{html.escape(lab)}</span>' for _k, lab, c in _EVO_BANDS)
+    # KPI strip.
+    def _kpi(label, val, sub=""):
+        return (
+            f'<div style="flex:1;min-width:110px;"><div style="font-size:9px;'
+            f'letter-spacing:0.06em;color:{_FAINT};font-weight:700;">{label}'
+            f'</div><div style="font-size:17px;font-weight:700;color:{_NAVY};">'
+            f'{val}</div><div style="font-size:9.5px;color:{_FAINT};">{sub}'
+            f'</div></div>')
+    s0, s1 = series[0], series[-1]
+    kpis = (
+        f'<div style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;">'
+        + _kpi("HOPD SHARE", f'{s0["hopd"]*100:.0f}% → {s1["hopd"]*100:.0f}%',
+               f'−{ev["hopd_shift_pts"]} pts to non-hospital')
+        + _kpi("HOME + AIS", f'{(s0["home"]+s0["ais"])*100:.0f}% → '
+               f'{(s1["home"]+s1["ais"])*100:.0f}%',
+               f'+{ev["home_ais_gain_pts"]} pts')
+        + _kpi("MARKET SIZE", f'${s0["market_size_b"]:.0f}B → '
+               f'${s1["market_size_b"]:.0f}B',
+               f'{ev["market_cagr_pct"]:.1f}% CAGR')
+        + _kpi("OPAT VOLUME", f'{s0["opat_index"]} → {s1["opat_index"]}',
+               f'index, {y0}=100')
+        + '</div>')
+    # Event timeline.
+    ev_rows = ""
+    for e in ev.get("events", []):
+        tone = (_POS if e["tone"] == "positive" else
+                _WARN if e["tone"] == "warning" else _DIM)
+        ev_rows += (
+            f'<div style="display:grid;grid-template-columns:46px 1fr;'
+            f'gap:10px;padding:7px 0;border-bottom:1px solid #e4ddca;">'
+            f'<div style="font-family:monospace;font-weight:700;font-size:13px;'
+            f'color:{tone};">{e["year"]}</div>'
+            f'<div><div style="font-size:12.5px;font-weight:600;color:#1a2332;">'
+            f'{html.escape(e["label"])}</div>'
+            f'<div style="font-size:11.5px;color:{_DIM};line-height:1.5;'
+            f'margin-top:1px;">{html.escape(e["detail"])}</div></div></div>')
+    drivers = "".join(
+        f'<li style="margin:3px 0;font-size:11.5px;color:{_DIM};">'
+        f'<strong style="color:#1a2332;">{html.escape(d["driver"])}:</strong> '
+        f'{html.escape(d["detail"])}</li>' for d in ev.get("drivers", []))
+    return (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
+        f'margin:0 0 8px;max-width:720px;">{html.escape(ev.get("note", ""))}'
+        f'</p>{kpis}'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin-bottom:3px;">INFUSION SITE-OF-CARE MIX, '
+        f'{y0}–{y1} (HOPD → AIS + HOME)</div>{chart}'
+        f'<div style="margin:6px 0 14px;">{legend}</div>'
+        f'<div style="display:grid;grid-template-columns:1.15fr 1fr;gap:22px;'
+        f'align-items:start;">'
+        f'<div><div style="font-size:10px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:3px;">WHAT DROVE THE '
+        f'DISCHARGE SHIFT — EVENT TIMELINE</div>{ev_rows}</div>'
+        f'<div><div style="font-size:10px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;margin-bottom:3px;">STRUCTURAL DRIVERS</div>'
+        f'<ul style="margin:0;padding-left:16px;">{drivers}</ul></div></div>')
+
+
 def _site_table(a: Dict[str, Any]) -> str:
     """Site-of-care segmentation — the HOPD → home/AIS migration in $."""
     rows = ""
@@ -1941,6 +2053,15 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"The {hopd*100:.0f}% HOPD pool migrating to AIS/home is the "
             f"growth engine — back operators positioned to RECEIVE the "
             f"steered volume, not defend a chair."),
+        "evolution": (
+            f"Infusion has moved {a['site_of_care_evolution']['hopd_shift_pts']} "
+            f"points out of the hospital since 2015 (HOPD "
+            f"{a['site_of_care_evolution']['soc_start']['hopd']*100:.0f}%→"
+            f"{a['site_of_care_evolution']['soc_end']['hopd']*100:.0f}%) while "
+            f"the market compounded "
+            f"{a['site_of_care_evolution']['market_cagr_pct']:.1f}%/yr — COVID "
+            f"+ the HIT benefit + payer steerage made the discharge shift "
+            f"structural, not cyclical. Underwrite it continuing."),
         "providers": (
             f"~{centers} estimated infusion centers across the four metros, "
             f"fragmented and un-consolidated — the supply side has not "
@@ -2114,6 +2235,12 @@ def render_texas_infusion_page(
                             eyebrow="THE SITE-OF-CARE SHIFT")
         + _site_table(a)
         + _so_what(sw["site"])
+
+        + ck_section_header("How discharges → home infusion have evolved",
+                            eyebrow="SITE-OF-CARE MIGRATION OVER TIME · "
+                                    "2015–2024 · EVENT TIMELINE")
+        + _evolution_section(a)
+        + _so_what(sw["evolution"])
 
         + ck_section_header("Provider landscape & competitiveness",
                             eyebrow="COUNTS · CAPACITY · FRAGMENTATION")

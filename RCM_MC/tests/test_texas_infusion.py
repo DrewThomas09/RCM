@@ -922,6 +922,62 @@ class ProviderMapTests(unittest.TestCase):
         self.assertTrue(all(p["nppes_count"] is None for p in pm["points"]))
 
 
+class SiteOfCareEvolutionTests(unittest.TestCase):
+    """How discharges → home infusion / site-of-care evolved over time —
+    a pure recompute from labeled endpoints + a factual event timeline."""
+
+    def setUp(self):
+        from rcm_mc.diligence.texas_infusion import home_infusion_evolution
+        self.ev = home_infusion_evolution()
+
+    def test_series_spans_years_and_shares_sum_to_one(self):
+        s = self.ev["series"]
+        self.assertEqual(s[0]["year"], 2015)
+        self.assertEqual(s[-1]["year"], 2024)
+        self.assertEqual(len(s), 10)
+        for row in s:
+            tot = row["hopd"] + row["office"] + row["ais"] + row["home"]
+            self.assertAlmostEqual(tot, 1.0, places=2)
+
+    def test_hopd_declines_and_home_ais_grow_monotonically(self):
+        s = self.ev["series"]
+        hopd = [r["hopd"] for r in s]
+        nonhosp = [r["home"] + r["ais"] for r in s]
+        self.assertEqual(hopd, sorted(hopd, reverse=True))   # HOPD falls
+        self.assertEqual(nonhosp, sorted(nonhosp))           # non-hosp rises
+        # Endpoints match the documented anchors.
+        self.assertEqual(self.ev["hopd_shift_pts"], 16)
+        self.assertEqual(self.ev["home_ais_gain_pts"], 22)
+
+    def test_market_size_compounds_at_computed_cagr(self):
+        s = self.ev["series"]
+        g = self.ev["market_cagr_pct"] / 100
+        # Each year ≈ prior × (1 + CAGR).
+        for a, b in zip(s, s[1:]):
+            self.assertAlmostEqual(
+                b["market_size_b"], a["market_size_b"] * (1 + g), delta=0.05)
+        self.assertGreater(s[-1]["market_size_b"], s[0]["market_size_b"])
+
+    def test_2024_endpoint_matches_current_site_of_care_model(self):
+        # The 2024 anchor must equal the page's live site-of-care mix so
+        # the history connects to the present, not a parallel estimate.
+        a = build_texas_infusion_analysis()
+        site = {x["site"]: x["share"] for x in a["site_of_care"]}
+        end = self.ev["series"][-1]
+        self.assertAlmostEqual(end["home"], site["Home infusion"], places=2)
+        self.assertAlmostEqual(
+            end["ais"], site["Ambulatory infusion suite (AIS)"], places=2)
+
+    def test_event_timeline_is_real_and_ordered(self):
+        events = self.ev["events"]
+        self.assertGreaterEqual(len(events), 6)
+        years = [e["year"] for e in events]
+        self.assertEqual(years, sorted(years))
+        text = " ".join(e["label"] for e in events).lower()
+        for marker in ("cures act", "covid", "hit benefit", "biosimilar"):
+            self.assertIn(marker, text)
+
+
 class SoWhatTakeawayTests(unittest.TestCase):
     """Every section carries a data-driven 'SO WHAT' takeaway that
     recomputes from the analysis it summarizes."""
@@ -983,6 +1039,8 @@ class PageRenderTests(unittest.TestCase):
             "Post-sequester", "Medicare Advantage", "TX MA ENROLLEES",
             "Infusion-provider map", "NPPES INFUSION TAXONOMIES",
             "261QI0500N", "<polygon points=",
+            "How discharges", "SITE-OF-CARE MIGRATION OVER TIME",
+            "WHAT DROVE THE DISCHARGE SHIFT", "STRUCTURAL DRIVERS",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 

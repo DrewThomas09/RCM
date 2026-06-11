@@ -263,3 +263,14 @@ home infusion, discharge, players, competitive dynamics, CDC, AIC econ,
 ASP, site-of-care, providers, map, metro, scorecard, concentration,
 payer, demographics, growth. Each recomputes from real analysis values.
 +2 tests; full suite green. Addresses user "so what of each thing" ask.
+
+---
+## Checkpoint — wave #59 (W2-157, 2026-06-11)
+Added evolution-over-time of discharges → home infusion (user asked how
+"dischanting"=discharging has evolved). home_infusion_evolution(): 2015→
+2024 site-of-care mix (HOPD 46→30%, home+AIS 38→60%), market $11B→$20.5B
+(7.2% CAGR), OPAT index 100→217, from labeled endpoints (2024=live site
+model); factual event timeline (Cures Act/biosimilar/HIT 2019+2021/COVID/
+white-bagging/MA>50%/IRA) + structural drivers. Page: "How discharges →
+home infusion have evolved" stacked-area chart + timeline + drivers +
+SO WHAT. +5 tests; full suite green.
