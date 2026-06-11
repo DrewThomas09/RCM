@@ -15,6 +15,91 @@ from .models_page import _model_nav
 from .brand import PALETTE
 
 
+def _covenant_runway_svg(
+    actual_lev: float, max_lev: float,
+    cov_ebitda: float, trips_at: float,
+) -> str:
+    """The leverage runway, drawn instead of described.
+
+    A fixed scale from 0 to past the covenant ceiling: the current
+    leverage as a bar toned by remaining headroom, the covenant max
+    as a hard red line, and the headroom gap shaded — plus a second
+    strip showing the same risk in EBITDA terms (current EBITDA vs
+    the level where the covenant trips). Missing covenant data
+    renders nothing.
+    """
+    if max_lev <= 0 or actual_lev < 0:
+        return ""
+    headroom = max_lev - actual_lev
+    scale_max = max(max_lev * 1.2, actual_lev * 1.1)
+    tone = ("#0a8a5f" if headroom > 1.5
+            else "#b8732a" if headroom > 0.5 else "#b5321e")
+
+    width, bar_h = 720, 26
+    pad_l, pad_top = 8, 22
+    strip2 = cov_ebitda > 0 and trips_at > 0
+    height = pad_top + bar_h + 28 + ((bar_h + 34) if strip2 else 0)
+
+    def _x(v: float) -> float:
+        return pad_l + (width - 2 * pad_l) * v / scale_max
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Leverage vs covenant ceiling">'
+        f'<text x="{pad_l}" y="{pad_top - 8}" font-size="9" '
+        f'letter-spacing="1" fill="#7a8699">LEVERAGE RUNWAY · TURNS OF '
+        f'EBITDA</text>'
+        # Track to the ceiling, then the headroom zone.
+        f'<rect x="{pad_l}" y="{pad_top}" '
+        f'width="{_x(max_lev) - pad_l:.1f}" height="{bar_h}" rx="3" '
+        f'fill="#7a8699" fill-opacity="0.12"/>'
+        f'<rect x="{pad_l}" y="{pad_top}" '
+        f'width="{max(_x(min(actual_lev, scale_max)) - pad_l, 2):.1f}" '
+        f'height="{bar_h}" rx="3" fill="{tone}" fill-opacity="0.85"/>'
+        f'<line x1="{_x(max_lev):.1f}" y1="{pad_top - 6}" '
+        f'x2="{_x(max_lev):.1f}" y2="{pad_top + bar_h + 6}" '
+        f'stroke="#b5321e" stroke-width="2"/>'
+        f'<text x="{_x(max_lev):.1f}" y="{pad_top + bar_h + 18}" '
+        f'text-anchor="middle" font-size="9.5" font-weight="700" '
+        f'fill="#b5321e">COVENANT {max_lev:.1f}x</text>'
+        f'<text x="{_x(actual_lev) - 6:.1f}" '
+        f'y="{pad_top + bar_h / 2 + 3.5:.1f}" text-anchor="end" '
+        f'font-size="11" font-weight="700" fill="#ffffff">'
+        f'{actual_lev:.1f}x</text>'
+        f'<text x="{_x(max_lev) + 6:.1f}" '
+        f'y="{pad_top + bar_h / 2 + 3.5:.1f}" font-size="10" '
+        f'fill="{tone}" font-weight="600">{headroom:.1f}x HEADROOM</text>'
+    ]
+    if strip2:
+        y2 = pad_top + bar_h + 34
+        e_max = max(cov_ebitda, trips_at) * 1.15
+
+        def _xe(v: float) -> float:
+            return pad_l + (width - 2 * pad_l) * v / e_max
+
+        parts.append(
+            f'<text x="{pad_l}" y="{y2 - 6}" font-size="9" '
+            f'letter-spacing="1" fill="#7a8699">SAME RISK IN EBITDA '
+            f'TERMS · COVENANT TRIPS AT ${trips_at / 1e6:.0f}M</text>'
+            f'<rect x="{pad_l}" y="{y2}" '
+            f'width="{_xe(cov_ebitda) - pad_l:.1f}" height="{bar_h}" '
+            f'rx="3" fill="{tone}" fill-opacity="0.25"/>'
+            f'<rect x="{pad_l}" y="{y2}" '
+            f'width="{max(_xe(trips_at) - pad_l, 2):.1f}" '
+            f'height="{bar_h}" rx="3" fill="#b5321e" fill-opacity="0.55"/>'
+            f'<text x="{_xe(trips_at) + 6:.1f}" '
+            f'y="{y2 + bar_h / 2 + 3.5:.1f}" font-size="10" '
+            f'fill="#1a2332">cushion ${max(cov_ebitda - trips_at, 0) / 1e6:.0f}M '
+            f'of ${cov_ebitda / 1e6:.0f}M EBITDA</text>'
+        )
+    parts.append("</svg>")
+    return (
+        '<div class="ck-covenant-runway" style="margin:4px 0 12px;">'
+        + "".join(parts) + "</div>"
+    )
+
+
 def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
                         covenant: Dict[str, Any]) -> str:
     """Render PE returns + covenant analysis."""
@@ -157,7 +242,8 @@ def render_returns_page(deal_id: str, deal_name: str, returns: Dict[str, Any],
         f'<h2>Covenant Headroom</h2>'
         f'<p style="font-size:12px;color:{PALETTE["text_secondary"]};margin-bottom:12px;">'
         f'How much EBITDA can compress before the leverage covenant trips?</p>'
-        f'<div class="cad-kpi-grid">'
+        + _covenant_runway_svg(actual_lev, max_lev, cov_ebitda, trips_at)
+        + f'<div class="cad-kpi-grid">'
         f'<div class="cad-kpi"><div class="cad-kpi-value">{actual_lev:.1f}x</div>'
         f'<div class="cad-kpi-label">Actual Leverage</div></div>'
         f'<div class="cad-kpi"><div class="cad-kpi-value">{max_lev:.1f}x</div>'
