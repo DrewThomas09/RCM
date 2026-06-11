@@ -515,6 +515,267 @@ def build_texas_metro_deepdive(
     }
 
 
+def channel_economics() -> List[Dict[str, Any]]:
+    """The two PE-relevant infusion channels — Ambulatory Infusion
+    Center (AIC) and home infusion — broken down on the dimensions a
+    deal team underwrites: reimbursement basis, margin model, working
+    capital, and the channel-defining risk. (HOPD and physician-office
+    are the *source* of steered volume, not the platform's channels.)
+    Sourced to NHIA / MedPAC / CMS rule structure."""
+    return [
+        {
+            "channel": "Ambulatory Infusion Center (AIC / AIS)",
+            "what": "Freestanding infusion suites — chairs staffed by "
+                    "infusion nurses; physician-, PE-, or payer-owned. "
+                    "The site-of-care destination for HOPD-steered "
+                    "biologics and oncology support.",
+            "reimbursement": "Medical benefit, buy-and-bill. Medicare "
+                    "Part B at ASP+6% (sequestered to ~ASP+4.3%) for "
+                    "the drug + a separate administration code; "
+                    "commercial at a % of AWP or a contracted rate, "
+                    "below the HOPD rate (the steerage incentive).",
+            "margin_model": "Drug is ~80–90% of gross revenue at a thin "
+                    "spread; the operating margin is the administration "
+                    "fee + drug-acquisition leverage (GPO / channel). "
+                    "Chair utilization is the throughput lever.",
+            "working_capital": "Buys the drug BEFORE it bills — specialty "
+                    "agents run $5K–$30K per infusion, so AR days and "
+                    "denials tie up real cash; a single denied claim is "
+                    "a five-figure hit.",
+            "key_risk": "White-bagging / brown-bagging mandates: a payer "
+                    "forces the drug through its OWN specialty pharmacy, "
+                    "stripping the buy-and-bill spread and leaving only "
+                    "the (smaller) admin fee.",
+        },
+        {
+            "channel": "Home Infusion",
+            "what": "Pharmacy compounding + skilled-nursing in the "
+                    "patient's home (NHIA-tracked). OPAT discharges, "
+                    "IVIG, TPN, and self-administered specialty therapy.",
+            "reimbursement": "Split and structurally awkward: Part B "
+                    "drugs at ASP+6% + the Medicare Home Infusion "
+                    "Therapy (HIT) professional-services payment that "
+                    "pays ONLY on days a nurse is physically present "
+                    "(the benefit's defining flaw); Part D for self-"
+                    "administered drugs; commercial as a per-diem + "
+                    "drug.",
+            "margin_model": "Per-diem nursing + drug spread; nurse "
+                    "utilization and route density (visits per nurse "
+                    "per day) drive the margin — a logistics business "
+                    "as much as a pharmacy.",
+            "working_capital": "Same buy-and-bill drug exposure as AIC, "
+                    "plus a nursing-labor float; cash conversion turns "
+                    "on clean per-diem + drug billing across two or "
+                    "three payers per patient.",
+            "key_risk": "The Medicare HIT benefit under-reimburses home "
+                    "infusion (no payment on non-visit days), so the "
+                    "channel leans on commercial + Part D; nurse "
+                    "capacity caps volume.",
+        },
+    ]
+
+
+#: The real named operators in AIC + home infusion, with channel,
+#: ownership, and scale. Public filings + company disclosures; scale is
+#: directional. ``tx`` flags a known Texas footprint.
+def infusion_players() -> List[Dict[str, Any]]:
+    return [
+        {"name": "Option Care Health", "channel": "Both",
+         "ownership": "Public (NASDAQ: OPCH)", "tx": True,
+         "scale": "Largest US infusion platform — ~$4.3B revenue, "
+                  "~700 sites + Naven Health nursing arm",
+         "link": "https://www.optioncarehealth.com"},
+        {"name": "IVX Health", "channel": "AIC", "ownership": "PE-backed",
+         "tx": True,
+         "scale": "Pure-play ambulatory infusion-center chain — 175+ "
+                  "centers, the fastest-scaling AIC roll-up; "
+                  "immunology/neurology focus",
+         "link": "https://www.ivxhealth.com"},
+        {"name": "CVS Health / Coram", "channel": "Home",
+         "ownership": "Public (CVS)", "tx": True,
+         "scale": "National home-infusion + specialty pharmacy",
+         "link": "https://www.coramhc.com"},
+        {"name": "Optum Infusion Pharmacy", "channel": "Both",
+         "ownership": "Payer-owned (UnitedHealth)", "tx": True,
+         "scale": "Vertically integrated with the largest US payer "
+                  "(incl. legacy BriovaRx) — a steerage threat to "
+                  "independents",
+         "link": "https://www.optum.com"},
+        {"name": "Paragon Healthcare", "channel": "AIC",
+         "ownership": "Payer-owned (Elevance/Anthem)", "tx": True,
+         "scale": "Payer-owned AIC + specialty — Elevance steers its "
+                  "own members into Paragon chairs",
+         "link": "https://www.paragonhealthcare.com"},
+        {"name": "Soleo Health", "channel": "Both", "ownership": "PE-backed",
+         "tx": True,
+         "scale": "Specialty + home infusion; rare-disease / complex "
+                  "therapy focus",
+         "link": "https://www.soleohealth.com"},
+        {"name": "KabaFusion", "channel": "Both", "ownership": "PE-backed",
+         "tx": True,
+         "scale": "IVIG / SCIG-focused; national footprint",
+         "link": "https://www.kabafusion.com"},
+        {"name": "Amber Specialty (Hy-Vee)", "channel": "Home",
+         "ownership": "Grocer-owned", "tx": False,
+         "scale": "Regional home-infusion + specialty pharmacy",
+         "link": "https://www.amberspecialtypharmacy.com"},
+        {"name": "InfuCare Rx", "channel": "Home", "ownership": "PE-backed",
+         "tx": False,
+         "scale": "Home + ambulatory specialty infusion",
+         "link": "https://www.infucarerx.com"},
+        {"name": "Vital Care Infusion Services", "channel": "Both",
+         "ownership": "Franchise", "tx": True,
+         "scale": "Franchise model — independent locations, a roll-up "
+                  "consolidation pool",
+         "link": "https://www.vitalcare.com"},
+    ]
+
+
+def infusion_risk_register() -> List[Dict[str, Any]]:
+    """Channel-specific risk register for AIC + home infusion, each
+    risk tagged with severity, who it hits, and — critically — the RCM
+    angle: how revenue-cycle diligence detects and measures it. This is
+    where an RCM platform earns its keep on an infusion deal."""
+    return [
+        {"risk": "White-bagging / brown-bagging mandates",
+         "category": "Reimbursement", "severity": "HIGH", "hits": "AIC",
+         "detail": "Payers increasingly require the drug be supplied by "
+                   "their own specialty pharmacy (white-bag) or the "
+                   "patient (brown-bag), removing the buy-and-bill "
+                   "spread that funds the AIC.",
+         "rcm_angle": "Track the % of infusions white-bagged by payer, "
+                      "the buy-and-bill margin-per-infusion trend, and "
+                      "contract language on drug sourcing. A rising "
+                      "white-bag share is a direct revenue-per-visit "
+                      "leak the RCM data shows before the P&L does."},
+        {"risk": "Medicare HIT benefit underpayment",
+         "category": "Reimbursement", "severity": "HIGH", "hits": "Home",
+         "detail": "The Home Infusion Therapy professional payment pays "
+                   "only on nurse-visit days — most home-infusion days "
+                   "(self-administered, between visits) carry no "
+                   "professional payment, so Medicare under-reimburses "
+                   "the channel.",
+         "rcm_angle": "Measure the Medicare home-infusion net collection "
+                      "rate and the share of therapy-days that are "
+                      "billable vs unbilled; quantify the Medicare drag "
+                      "on a deal that skews senior."},
+        {"risk": "Buy-and-bill margin compression",
+         "category": "Reimbursement", "severity": "MEDIUM", "hits": "Both",
+         "detail": "ASP+6% is sequestered to ~ASP+4.3%, and biosimilar "
+                   "adoption lowers the ASP base — both compress the "
+                   "drug spread per infusion.",
+         "rcm_angle": "Trend the drug-margin % and the biosimilar mix "
+                      "by J-code; model the spread at ASP+4.3 vs ASP+6 "
+                      "and under biosimilar substitution."},
+        {"risk": "Prior-auth / medical-necessity denials on high-dollar "
+                 "claims",
+         "category": "RCM", "severity": "HIGH", "hits": "Both",
+         "detail": "Every cycle needs benefit investigation + prior "
+                   "auth; a single denied specialty claim is a "
+                   "$5K–$30K write-off, so the denial RATE matters far "
+                   "less than the denial DOLLARS.",
+         "rcm_angle": "The core RCM read: initial denial rate, denial "
+                      "DOLLAR exposure (not just count), appeal-recovery "
+                      "rate, and days-in-AR. One avoidable auth denial "
+                      "dwarfs a hundred small ones — RCM sizes the "
+                      "recoverable revenue."},
+        {"risk": "Coding / units / wastage (JW) accuracy",
+         "category": "RCM", "severity": "MEDIUM", "hits": "Both",
+         "detail": "Specialty drugs bill by exact mg units against an "
+                   "NDC, with JW-modifier wastage billed separately — "
+                   "mis-units and missing JW are silent underpayments "
+                   "and audit exposure.",
+         "rcm_angle": "Audit units-billed vs units-administered, JW "
+                      "capture, and NDC-to-HCPCS crosswalk accuracy; "
+                      "underpayment recovery is real found money."},
+        {"risk": "Payer / contract concentration",
+         "category": "Market", "severity": "MEDIUM", "hits": "Both",
+         "detail": "Losing or repricing a single large commercial "
+                   "contract can swing the platform; payer-owned "
+                   "competitors (Optum, Paragon) can steer volume away.",
+         "rcm_angle": "Revenue by payer, top-payer concentration, and "
+                      "the contract-renewal calendar — the RCM data "
+                      "exposes the dependency a teaser won't."},
+        {"risk": "Working capital / specialty-drug inventory",
+         "category": "RCM / Ops", "severity": "MEDIUM", "hits": "Both",
+         "detail": "Buy-and-bill means cash is out the door on the drug "
+                   "before the claim is paid; high-cost inventory + slow "
+                   "AR is a cash-conversion drag that a growth roll-up "
+                   "feels acutely.",
+         "rcm_angle": "DSO/DAR, days-inventory-on-hand, and the cash "
+                      "conversion cycle; the bridge from net revenue to "
+                      "cash is the diligence number."},
+        {"risk": "Nurse labor & chair utilization",
+         "category": "Operational", "severity": "MEDIUM", "hits": "Both",
+         "detail": "Infusion-nurse supply caps both home-visit capacity "
+                   "and chair throughput; wage inflation pressures the "
+                   "admin-fee margin.",
+         "rcm_angle": "Less an RCM line than an ops one, but revenue per "
+                      "chair-hour / per nurse-visit is the productivity "
+                      "metric the RCM data underpins."},
+    ]
+
+
+def rcm_playbook() -> Dict[str, Any]:
+    """How RCM diligence talks about infusion specifically — the KPI
+    set, the denial drivers, and the cash dynamics that make infusion
+    RCM distinct from a generic provider. Aligns to the platform's own
+    RCM vocabulary (IDR, clean-claim, DAR, net collection)."""
+    return {
+        "why_different": (
+            "Infusion RCM is high-dollar-per-claim and buy-and-bill: the "
+            "provider purchases a $5K–$30K specialty drug, then bills "
+            "it — so a single avoidable denial is a five-figure cash "
+            "event, and the denial DOLLARS matter more than the denial "
+            "rate. Benefit investigation + prior auth gate every cycle, "
+            "and a home-infusion claim splits across Part B, Part D and "
+            "commercial. That makes the revenue cycle the dominant "
+            "value-creation lever on an infusion platform."),
+        "kpis": [
+            {"kpi": "Initial denial rate (IDR)",
+             "why": "Gates the recoverable-revenue opportunity",
+             "benchmark": "Infusion runs hot vs the ~8–12% provider "
+                          "norm — auth + medical-necessity heavy"},
+            {"kpi": "Denial DOLLAR exposure",
+             "why": "The number that matters here — high $/claim",
+             "benchmark": "One auth denial = $5K–$30K; size in $, not %"},
+            {"kpi": "Clean claim rate",
+             "why": "Units/JW/NDC accuracy on first pass",
+             "benchmark": "Coding-driven; specialty-drug units are the "
+                          "common defect"},
+            {"kpi": "Days in AR (DAR / DSO)",
+             "why": "Buy-and-bill cash is trapped until paid",
+             "benchmark": "Watch AR > 90 days — high-dollar tail"},
+            {"kpi": "Net collection rate",
+             "why": "Underpayment vs contracted ASP+/per-diem",
+             "benchmark": "Underpayment recovery is found money"},
+            {"kpi": "Cost to collect",
+             "why": "Benefit-investigation + auth labor is heavy",
+             "benchmark": "Higher than a low-acuity provider"},
+        ],
+        "denial_drivers": [
+            "Prior authorization not obtained / expired",
+            "Medical necessity / step-therapy not met",
+            "Site-of-care steerage (payer wants its own site/SP)",
+            "Units / dose / JW-wastage coding errors",
+            "Eligibility / benefit-coordination (Part B vs D vs "
+            "commercial)",
+        ],
+        "diligence_questions": [
+            "What share of infusions are white-bagged, and what is the "
+            "buy-and-bill margin-per-infusion trend by payer?",
+            "Initial denial rate AND denial dollars by payer and reason "
+            "— and the appeal-recovery rate?",
+            "Days in AR, AR > 90 days, and days of specialty-drug "
+            "inventory — the cash-conversion cycle?",
+            "Top-payer revenue concentration and the contract-renewal "
+            "calendar?",
+            "Medicare home-infusion net collection rate and the share "
+            "of unbillable (non-visit) therapy days?",
+        ],
+    }
+
+
 def build_texas_infusion_analysis() -> Dict[str, Any]:
     """Assemble the full Texas infusion CDD analysis.
 
@@ -615,6 +876,10 @@ def build_texas_infusion_analysis() -> Dict[str, Any]:
         "hhi": hhi,
         "hhi_band": hhi_band,
         "provider_landscape": provider_landscape,
+        "channel_economics": channel_economics(),
+        "players": infusion_players(),
+        "risk_register": infusion_risk_register(),
+        "rcm_playbook": rcm_playbook(),
         "metros": metros,
         "metro_deepdives": metro_deepdives,
         "health_system_capacity": health_system,

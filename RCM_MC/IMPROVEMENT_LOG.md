@@ -2897,3 +2897,39 @@ sum to 1, age bands ranked, suburbs are real member counties ranked
 operators present + http-linked, specialty tilt per city, white-space
 has real demand, page renders all city sections + ≥8 SVG charts +
 operator links. 27 passed.
+
+## W2-147 (2026-06-11) — Texas infusion: AIC + home-infusion channel focus, players, risks, RCM playbook (wave #49)
+**Refocused** the Texas infusion page on the two PE-relevant channels —
+Ambulatory Infusion Centers (AIC) and home infusion — and added the
+operator/risk/RCM depth the user asked for:
+- **Two-channel breakdown** — AIC vs home infusion side-by-side on
+  reimbursement basis (buy-and-bill ASP+6/sequestered ASP+4.3, the
+  Medicare HIT nurse-visit-only flaw, Part B/D/commercial split),
+  margin model, working capital, and the channel-defining risk
+  (white-bagging for AIC; HIT underpayment for home).
+- **Players table** — 10 named operators (Option Care, IVX Health
+  [pure-play AIC roll-up], CVS/Coram, Optum, Paragon, Soleo,
+  KabaFusion, Amber, InfuCare, Vital Care) with channel, ownership
+  (public / PE / payer-owned / franchise), TX presence, scale, and
+  external links; payer-owned steerage threats flagged.
+- **Risk register** — 8 channel-tagged risks across Reimbursement /
+  RCM / Market / Ops, each with severity, who it hits (AIC/Home/Both),
+  and — the differentiator — the **RCM read**: how revenue-cycle
+  diligence detects and measures it (white-bag % + margin/infusion;
+  Medicare home-infusion net collection + unbillable days; denial
+  DOLLARS not rate; units/JW capture; payer concentration; cash
+  conversion).
+- **RCM playbook** — why infusion RCM is different (high $/claim,
+  buy-and-bill working capital, auth-gated, multi-payer split), the
+  infusion KPI set (IDR, denial DOLLAR exposure, clean-claim, DAR/DSO,
+  net collection, cost-to-collect), top denial drivers, and the RCM
+  diligence question set — aligned to the platform's RCM vocabulary.
+Sections placed prominently after the sizing chain; provider scale +
+presence labeled directional (public-filing-based).
+**Verify**: +4 test classes (31 total) — both channels with all
+economics fields, players have channel/ownership/http-link with the
+marquee AIC+home names + payer-owned flags, risk register tags
+severity/channel/RCM-angle with the two HIGH channel risks present,
+RCM playbook carries the denial-DOLLAR + AR KPIs and ≥4 denial drivers
+/ questions, page renders all four sections. 31 passed; guide-context
+contract green.

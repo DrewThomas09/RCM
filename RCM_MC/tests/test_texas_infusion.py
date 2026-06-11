@@ -126,6 +126,57 @@ class ProviderAndMetroTests(unittest.TestCase):
         self.assertGreater(g["tx_senior_growth_pct"], g["tx_pop_growth_pct"])
 
 
+class ChannelPlayersRiskTests(unittest.TestCase):
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+
+    def test_two_channels_aic_and_home(self):
+        chans = [c["channel"] for c in self.a["channel_economics"]]
+        self.assertTrue(any("AIC" in c for c in chans))
+        self.assertTrue(any("Home" in c for c in chans))
+        for c in self.a["channel_economics"]:
+            for k in ("reimbursement", "margin_model", "working_capital",
+                      "key_risk"):
+                self.assertTrue(c[k])
+
+    def test_players_have_channel_ownership_link(self):
+        players = self.a["players"]
+        self.assertGreaterEqual(len(players), 8)
+        for p in players:
+            self.assertIn(p["channel"], ("AIC", "Home", "Both"))
+            self.assertTrue(p["ownership"])
+            self.assertTrue(p["link"].startswith("http"))
+        names = {p["name"] for p in players}
+        # The marquee AIC + home names must be present.
+        self.assertIn("Option Care Health", names)
+        self.assertIn("IVX Health", names)            # pure-play AIC
+        # Payer-owned steerage threats flagged.
+        payer = [p for p in players if "Payer-owned" in p["ownership"]]
+        self.assertTrue(payer)
+
+    def test_risk_register_tags_severity_channel_and_rcm(self):
+        risks = self.a["risk_register"]
+        self.assertGreaterEqual(len(risks), 6)
+        for r in risks:
+            self.assertIn(r["severity"], ("HIGH", "MEDIUM", "LOW"))
+            self.assertIn(r["hits"], ("AIC", "Home", "Both"))
+            self.assertTrue(r["rcm_angle"])      # every risk has the RCM read
+        # The two channel-defining HIGH risks must be present.
+        names = " ".join(r["risk"] for r in risks).lower()
+        self.assertIn("white-bag", names)
+        self.assertIn("hit benefit", names)
+
+    def test_rcm_playbook_has_infusion_kpis(self):
+        pb = self.a["rcm_playbook"]
+        self.assertTrue(pb["why_different"])
+        kpis = [k["kpi"] for k in pb["kpis"]]
+        self.assertTrue(any("denial" in k.lower() for k in kpis))
+        self.assertTrue(any("DOLLAR" in k for k in kpis))   # the $/claim read
+        self.assertTrue(any("AR" in k for k in kpis))
+        self.assertGreaterEqual(len(pb["denial_drivers"]), 4)
+        self.assertGreaterEqual(len(pb["diligence_questions"]), 4)
+
+
 class CityDeepDiveTests(unittest.TestCase):
     def setUp(self):
         self.a = build_texas_infusion_analysis()
@@ -211,6 +262,10 @@ class PageRenderTests(unittest.TestCase):
             "Home-infusion locations", "Competitive read",
             "City deep-dives", "INFUSION DEMAND BY AGE BAND",
             "SUBURBS / COUNTIES", "WHITESPACE SUBURBS", "Specialty tilt",
+            "The two channels", "DEFINING RISK", "Players",
+            "Where the risks are", "White-bagging", "RCM read",
+            "How RCM talks about infusion", "Denial DOLLAR exposure",
+            "TOP DENIAL DRIVERS",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
