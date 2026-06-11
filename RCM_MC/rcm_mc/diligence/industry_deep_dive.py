@@ -1467,6 +1467,36 @@ def palliative_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def senior_living_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="senior_living",
+        sector_tokens=("senior_living", "assisted_living",
+                       "senior_housing"),
+        note=("NIC MAP inventory is subscription data — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def vascular_access_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="vascular_access",
+        sector_tokens=("vascular_access", "vascular", "obl"),
+        note=("OBL rosters aren't public — geography omitted rather "
+              "than fabricated. The dialysis dive carries the "
+              "adjacent facility map."),
+    )
+
+
+def genetic_testing_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="genetic_testing",
+        sector_tokens=("genetic_testing", "genomics", "diagnostics"),
+        note=("CLIA genomic-lab registries aren't vendored — "
+              "geography omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1526,6 +1556,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "school_services": school_services_deep_dive,
     "mobile_diagnostics": mobile_diagnostics_deep_dive,
     "palliative": palliative_deep_dive,
+    "senior_living": senior_living_deep_dive,
+    "vascular_access": vascular_access_deep_dive,
+    "genetic_testing": genetic_testing_deep_dive,
 }
 
 
