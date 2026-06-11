@@ -1176,6 +1176,14 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-98 — jump nav on the build page (07:20Z)
+**Usability for the now-9-panel page**: a one-line jump nav (the X-Ray
+pattern) — Cross-industry · Chain · Segments · Projection · Sensitivity ·
+Agenda · Market data (when a dive exists) · Sources — with anchors on
+every panel.
+**Verify**: all chips + anchors pinned; the Market-data chip tracks dive
+availability; test_tam_sam 139 passed.
+
 ## W2-97 — growth-sort toggle on the cross-industry view (06:50Z)
 **Both of the user's questions, first-class**: the 82-row comparison
 panel now sorts by TAM ("where the biggest pieces are", default) or
