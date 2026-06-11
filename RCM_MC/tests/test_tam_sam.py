@@ -225,3 +225,34 @@ class HomeHealthIndustryTests(unittest.TestCase):
         self.assertIn("Stations", h)
         self.assertIn("Hosp. rate", h)
         self.assertIn("independent facilities", h)
+
+
+class HospiceIndustryTests(unittest.TestCase):
+    """Industry #3 — hospice: the most PE-penetrated post-acute vertical,
+    with the CA license glut visible in the density read."""
+
+    def test_hospice_template_math(self):
+        from rcm_mc.diligence.tam_sam import compute, hospice_template
+        out = compute(hospice_template())
+        # 1.72M users × 80 days × $185/day ≈ $25.5B (MedPAC magnitude).
+        self.assertAlmostEqual(
+            out["tam"], 1_720_000 * 80 * 185, places=2)
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["Program-integrity scrutiny"], 0)
+
+    def test_hospice_dive_real_aggregates(self):
+        from rcm_mc.diligence.industry_deep_dive import hospice_deep_dive
+        d = hospice_deep_dive()
+        self.assertGreater(d["n_facilities"], 6_500)
+        self.assertEqual(d["top_states"][0]["state"], "CA")  # the glut
+        self.assertGreater(d["n_independent"], 4_000)        # for-profit
+        ws = d["whitespace_states"]
+        self.assertTrue(all(w["per_10k_seniors"] > 0 for w in ws))
+        self.assertNotIn("-", [c["org"] for c in d["chains"]])
+
+    def test_hospice_page_renders_dive(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["hospice"]})
+        self.assertIn("State footprint", h)
+        self.assertIn("Care index", h)
+        self.assertIn("/deal-search?sector=hospice", h)

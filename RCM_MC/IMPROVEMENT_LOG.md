@@ -1176,6 +1176,23 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-54 — industry #3: hospice template + deep dive (09:15Z)
+**Sprint continuation**: hospice joins — the most PE-penetrated post-acute
+vertical.
+  - hospice_template(): 1.72M Medicare users × 80 covered days × $185/day
+    blended = $25.5B TAM (anchors to MedPAC ~$25B); level-of-care segments
+    (RHC 97% of days — "the economics ARE RHC", GIP/continuous/respite);
+    drivers incl. program-integrity scrutiny (OIG/CMS long-stay crackdown +
+    CA license glut) and labor as headwinds.
+  - hospice_deep_dive(): 6,852 CMS providers — CA 2,062 top (the license
+    glut, visible honestly at the saturated end of the density ranking);
+    4,744 for-profit pool (69%); care-index composite state medians (51
+    states); density whitespace lowest-first (NY 0.11 / FL 0.13 / MD 0.25
+    per 10K seniors); 4 corpus hospice deals.
+**Verify**: chain math pinned to MedPAC magnitude; dive aggregates pinned
+(CA top, >4K for-profit, no "-" buckets); page renders with Care-index
+label + drill links; test_tam_sam 21 passed.
+
 ## W2-53 — industry #2: home health template + deep dive; dive schema generalized (08:45Z)
 **Sprint continuation**: home health joins the builder.
   - home_health_template(): 67M Medicare beneficiaries → 5% HH users →

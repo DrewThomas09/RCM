@@ -238,6 +238,59 @@ def home_health_template() -> TamSamModel:
     )
 
 
+
+def hospice_template() -> TamSamModel:
+    """Medicare hospice sizing — anchors to MedPAC (~1.7M users, ~$25B
+    spend). Level-of-care segments; integrity scrutiny carried as a
+    headwind."""
+    return TamSamModel(
+        name="Hospice · Medicare benefit market",
+        chain=[
+            DriverStep("Medicare hospice users / yr", 1_720_000, op="base",
+                       unit="patients", source="MedPAC hospice chapter"),
+            DriverStep("Avg covered days per user", 80, op="mult",
+                       unit="days/user",
+                       source="MedPAC (median LOS ~18d, mean pulled up "
+                              "by long-stay tail)"),
+            DriverStep("Avg revenue per day (blended)", 185, op="price",
+                       unit="$/day",
+                       source="CMS RHC $218 d1-60 / $172 d61+ + GIP mix"),
+        ],
+        segments=[
+            Segment("Routine home care", 0.97, None,
+                    note="~97% of days — the economics ARE RHC"),
+            Segment("General inpatient (GIP)", 0.015, None,
+                    note="highest rate, heaviest scrutiny"),
+            Segment("Continuous home care", 0.010, None),
+            Segment("Respite", 0.005, None),
+        ],
+        growth_drivers=[
+            GrowthDriver("Deaths / demographic growth", 2.0,
+                         "boomer mortality curve — the demand floor"),
+            GrowthDriver("Penetration of decedents", 1.5,
+                         "hospice use still rising as share of Medicare "
+                         "decedents"),
+            GrowthDriver("Rate updates", 2.5,
+                         "CMS annual hospice payment update"),
+            GrowthDriver("Length-of-stay mix", 1.0,
+                         "dementia/non-cancer admissions extend stays"),
+            GrowthDriver("Program-integrity scrutiny", -1.5,
+                         "OIG/CMS crackdown on long-stay + the CA "
+                         "license glut — a headwind, shown as one"),
+            GrowthDriver("Labor supply", -0.5,
+                         "nurse/aide wage inflation caps census"),
+        ],
+        sam_share=0.60,
+        sam_note="Metros a platform can staff; excludes hospital-system-"
+                 "captive programs",
+        som_share=0.05,
+        som_note="Obtainable share for a regional platform at entry",
+        horizon_years=5,
+        basis_note="Template defaults anchored to MedPAC/CMS public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -266,6 +319,7 @@ TEMPLATES = {
     "fertility_ivf": fertility_ivf_template,
     "dialysis": dialysis_template,
     "home_health": home_health_template,
+    "hospice": hospice_template,
     "blank": blank_template,
 }
 

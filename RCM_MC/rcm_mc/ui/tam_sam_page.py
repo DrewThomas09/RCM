@@ -298,6 +298,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             for k, lbl in (("fertility_ivf", "Fertility · IVF"),
                            ("dialysis", "Dialysis · in-center"),
                            ("home_health", "Home health"),
+                           ("hospice", "Hospice"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )
