@@ -2224,3 +2224,18 @@ color key and the CSV link.
 alert/health/stale mixes; ranked order pinned; quiet deal absent;
 total 105 printed for TRIPPED+1 alert; all-quiet → "". 22 passed
 across risk-scan suites.
+
+## W2-115 (2026-06-11) — Archetype page: confidence ladder (wave #17)
+**Found**: /deal/<id>/archetype printed each match's confidence
+inside its own card — the separation between a dominant primary
+(0.78) and a marginal runner-up (0.31) read the same as a coin-flip
+0.52 vs 0.49; the band thresholds existed only in prose.
+**Fixed**: `_confidence_ladder_svg(hits)` — every matched archetype
+as a bar on a fixed 0–1 axis, toned by the page's own
+_confidence_band (HIGH/MEDIUM/LOW), dashed guides at the 0.25 match
+floor and the 0.50 / 0.75 band edges, value + band printed per bar,
+sorted highest-first. Confidence clamps to the axis; no hits renders
+"". Placed above the archetype cards.
+**Verify**: ConfidenceLadderTests — band tones + labels (0.78 HIGH /
+0.31 LOW), 0.25-floor guide, confidence sort, overshoot clamps to
+1.00, empty → "". 110 passed across archetype suites.

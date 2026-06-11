@@ -149,6 +149,82 @@ def _build_archetype_context(profile: Dict[str, Any], packet: Any) -> Any:
     )
 
 
+def _confidence_ladder_svg(hits: List[Any]) -> str:
+    """All matched archetypes on one fixed 0–1 confidence axis.
+
+    The cards print each confidence in isolation; this shows the
+    separation — a 0.78 primary towering over a 0.31 runner-up is a
+    different read than 0.52 vs 0.49. Bars use the page's own
+    confidence-band tones with dashed guides at the 0.25 entry
+    threshold and the 0.50 / 0.75 band edges. No hits renders
+    nothing.
+    """
+    rows = []
+    for h in hits:
+        conf = float(getattr(h, "confidence", 0.0) or 0.0)
+        rows.append((str(getattr(h, "archetype", "—")),
+                     max(0.0, min(1.0, conf))))
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: -r[1])
+
+    label_w, axis_w, right_w = 210, 380, 90
+    row_h, gap, pad_top, pad_bot = 18, 7, 20, 12
+    width = label_w + axis_w + right_w
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Archetype match confidence on a 0 to 1 axis">'
+    ]
+    for frac, tag in ((0.25, "0.25 floor"), (0.50, "0.50"), (0.75, "0.75")):
+        gx = label_w + axis_w * frac
+        parts.append(
+            f'<line x1="{gx:.0f}" y1="{pad_top - 6}" x2="{gx:.0f}" '
+            f'y2="{height - pad_bot + 2}" stroke="{P["border_dim"]}" '
+            f'stroke-width="1" stroke-dasharray="2,3"/>'
+            f'<text x="{gx:.0f}" y="{pad_top - 9}" text-anchor="middle" '
+            f'font-size="8.5" font-family="var(--ck-mono)" '
+            f'fill="{P["text_faint"]}">{tag}</text>'
+        )
+    for i, (name, conf) in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        col, band = _confidence_band(conf)
+        short = name if len(name) <= 30 else name[:29] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="{P["text_dim"]}">'
+            f'{_html.escape(short)}</text>'
+        )
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{axis_w}" height="{row_h}" '
+            f'rx="2" fill="{P["text_faint"]}" fill-opacity="0.10"/>'
+        )
+        w = axis_w * conf
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{max(w, 2):.1f}" '
+            f'height="{row_h}" rx="2" fill="{col}" fill-opacity="0.85"/>'
+        )
+        parts.append(
+            f'<text x="{label_w + axis_w + 8}" y="{ty:.1f}" font-size="10" '
+            f'font-family="var(--ck-mono)" fill="{col}">'
+            f'{conf:.2f} {band}</text>'
+        )
+    parts.append("</svg>")
+    note = (
+        f'<div style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.08em;color:{P["text_faint"]};margin-top:2px;">'
+        'CLASSIFIER CONFIDENCE 0–1 · ≥0.75 HIGH · 0.50–0.75 MEDIUM · '
+        '0.25 MATCH FLOOR</div>'
+    )
+    return (
+        '<div class="ck-arch-ladder" style="margin:2px 0 14px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def _archetype_card(hit: Any, *, primary: bool = False) -> str:
     title = _html.escape(str(getattr(hit, "archetype", "—")))
     confidence = float(getattr(hit, "confidence", 0.0) or 0.0)
@@ -330,7 +406,7 @@ def render_archetype(
         count=n_archetypes,
     )
     if hits:
-        archetype_cards = "".join(
+        archetype_cards = _confidence_ladder_svg(hits) + "".join(
             _archetype_card(h, primary=(i == 0)) for i, h in enumerate(hits)
         )
     else:
