@@ -34,5 +34,43 @@ class DealDashboardLeadAnchorTests(unittest.TestCase):
         )
 
 
+class DealDashboardOrganizationTests(unittest.TestCase):
+    """The dashboard used to stack the same financials three deep — title
+    meta, the DEAL SNAPSHOT anchor, AND the KPI strip all showed NPR/EV — and
+    the bottom "next step" self-linked to the page it was on. One home per
+    metric; the forward link goes somewhere new."""
+
+    def _html(self) -> str:
+        profile = {
+            "name": "Cypress Crossing Health", "state": "TX",
+            "net_revenue": 8.2e8, "ebitda_margin": 0.12,
+            "bed_count": 240, "denial_rate": 13.0,
+        }
+        return render_deal_dashboard("ccf", profile)
+
+    def test_title_meta_is_identity_not_financials(self):
+        html = self._html()
+        # The title/eyebrow identity line no longer repeats the valuation.
+        self.assertNotIn("M NPR", html)
+        self.assertNotIn("EV @ 11", html)
+
+    def test_kpi_strip_is_operating_profile_not_valuation_dup(self):
+        html = self._html()
+        # Operating facts the anchor can't carry …
+        self.assertIn("Denial Rate", html)
+        self.assertIn("EBITDA Margin", html)
+        self.assertIn("Bed Count", html)
+        # … and no second copy of the anchor's EV card.
+        self.assertNotIn("Rough EV", html)
+
+    def test_forward_link_is_not_self_referential(self):
+        html = self._html()
+        # "Up next" points at the workbench, not back at /deal/ccf.
+        self.assertIn('href="/analysis/ccf"', html)
+        self.assertIn("Open the analysis", html)
+        # The forward-link href is never the page's own /deal/<id> route.
+        self.assertNotIn('class="ck-next-link" href="/deal/ccf"', html)
+
+
 if __name__ == "__main__":
     unittest.main()

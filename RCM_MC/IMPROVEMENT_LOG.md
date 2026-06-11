@@ -952,3 +952,30 @@ scanner (HCRIS doesn't apply to them).
 **Verify**: render of AK hospitals → 24 hcris-xray row links, 0 generic;
 home_health/hospice/snf/dialysis → generic scanner retained; new
 XrayDrillRoutingTests (2) + screen-snapshot suite 20 passed.
+
+## W2-34 — Deal dashboard de-duplicated + reorganized (USER-REPORTED, 23:10Z)
+**Found by**: user — "deals have double titles and headers and bad
+organization; make sure data is linked correctly and well aggregated."
+**Root cause**: the /deal/<id> dashboard rendered the deal's financials
+THREE times near the top — the title meta (`$820M NPR · $98M EBITDA ·
+$1,082M EV`), the "DEAL SNAPSHOT" value-anchor (EV · NPR · recoverable ·
+IRR), AND the 4-card KPI strip (Net Revenue · Rough EV · Recoverable
+EBITDA) — so a partner saw the same numbers stacked three deep. Separately
+the bottom "Up next → Open the full deal profile" link pointed back at
+`/deal/<id>`, the very page being viewed (a dead self-link).
+**Fixed** — one home per metric:
+  - Title meta → identity only (`State · Deal id`); financials removed.
+  - "DEAL SNAPSHOT" anchor → kept as the canonical valuation readout
+    (EV · net revenue · recoverable EBITDA · IRR). Unchanged (test-pinned).
+  - KPI strip → repurposed from a 2nd copy of EV/recoverable into the
+    COMPLEMENTARY operating profile (Bed Count · Denial Rate · EBITDA
+    Margin), 3-card grid.
+  - "Up next" → now opens the analysis workbench (`/analysis/<id>`), a real
+    forward surface, instead of self-linking.
+  - Removed the now-dead ev_h / ebitda_h / ev_estimate_value / recoverable_value
+    locals.
+**Verify**: 5 dashboard tests pass — existing lead-anchor pins (DEAL SNAPSHOT
++ recoverable + anchor-before-explainer) still green; new
+DealDashboardOrganizationTests assert title carries no NPR/EV, the strip is
+operating-not-valuation (no "Rough EV"), and the forward link is
+/analysis/<id> not the self /deal/<id>. Screenshot delivered.

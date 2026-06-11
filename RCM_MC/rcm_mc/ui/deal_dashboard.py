@@ -166,22 +166,17 @@ def render_deal_dashboard(
     state = str(profile.get("state", ""))
 
     rev_h = float(profile.get("net_revenue", 0) or 0)
-    margin_h = float(profile.get("ebitda_margin", 0.10) or 0.10)
-    ebitda_h = rev_h * margin_h
-    ev_h = ebitda_h * 11.0
 
-    # Editorial-refresh: title block in Source Serif + meta line in
-    # mono, replacing the Bloomberg-uppercase H1 + horizontal pipe-
-    # delimited identity strip. The meta line carries the same
-    # numbers; the visual hierarchy now matches the rest of the
-    # editorial chartis surfaces.
+    # Title meta is the deal's IDENTITY line — state + id only. The
+    # financials (NPR / EBITDA / EV) used to live here too, but the
+    # "DEAL SNAPSHOT" value-anchor immediately below is the canonical
+    # valuation readout, so repeating them in the title stacked the
+    # same numbers three deep (title → anchor → KPI strip). Identity
+    # here, valuation in the anchor, operating profile in the KPI strip
+    # — each number has exactly one home now.
     meta_parts = []
     if state:
         meta_parts.append(f"State {state}")
-    if rev_h > 0:
-        meta_parts.append(f"${rev_h/1e6:,.0f}M NPR")
-        meta_parts.append(f"${ebitda_h/1e6:,.0f}M EBITDA")
-        meta_parts.append(f"${ev_h/1e6:,.0f}M EV @ 11.0x")
     meta_parts.append(f"Deal {deal_id}")
 
     title_block = ck_page_title(
@@ -227,31 +222,6 @@ def render_deal_dashboard(
         if equity_est > 0 else 0
     )
     recoverable = rev_val * max(0, dr_val - 8) / 100 * 0.3
-
-    # Cycle 51 — provenance on the rough EV estimate (used inside
-    # the model tiles below as inline previews).
-    ev_estimate_value = ck_provenance_tooltip(
-        "Rough enterprise-value estimate",
-        f"${ev_est/1e6:,.0f}M",
-        explainer=(
-            f"Quick estimate: net revenue x {margin_val:.0%} "
-            f"EBITDA margin x 11x EV/EBITDA. Indicative only; "
-            f"the DCF and LBO tiles below run a real model. Use "
-            f"this as a triage anchor before clicking through."
-        ),
-    )
-    recoverable_value = ck_provenance_tooltip(
-        "Recoverable EBITDA estimate",
-        f"${recoverable/1e6:,.1f}M",
-        explainer=(
-            f"Net revenue x (denial rate - 8% target) x 30% "
-            f"appeal-success rate. The 8% benchmark is the "
-            f"healthcare median; deals above it have addressable "
-            f"recovery. The Denial Drivers tile drills into the "
-            f"per-payer breakdown."
-        ),
-        inject_css=False,
-    )
 
     # Model grid — 26 tiles grouped into 4 semantic categories.
     # Per-tile color drops from "random palette pick" to a typed
@@ -446,38 +416,38 @@ def render_deal_dashboard(
         f'</div></div>'
     )
 
-    # Editorial-refresh: symmetric 4-card KPI strip merging the two
-    # awkward strips (the profile-metrics block + the 3-col estimate
-    # strip). One row, four cells, all the same shape — Bed Count /
-    # Net Revenue / Rough EV / Recoverable EBITDA. The total-models
-    # number moves into the panel section headers ("Valuation · 7
-    # models") so it stops competing with the KPIs.
+    # Operating-profile KPI strip — COMPLEMENTS the "DEAL SNAPSHOT"
+    # value-anchor above rather than repeating it. The anchor owns the
+    # valuation story (EV · net revenue · recoverable EBITDA · IRR); this
+    # strip owns the operating facts the anchor can't carry — bed count,
+    # initial-denial rate, EBITDA margin. Previously this was a second
+    # copy of EV + recoverable, stacking the identical numbers right
+    # under the anchor. One home per metric now.
     bed_count = profile.get("bed_count")
     bed_count_display = (
         f"{int(bed_count):,}" if bed_count not in (None, "") else "—"
     )
-    npr_display = (
-        f"${rev_h/1e6:,.0f}M" if rev_h > 0 else "—"
-    )
+    denial_display = f"{dr_val:.1f}%" if dr_val else "—"
+    margin_display = ck_fmt_pct(margin_val) if margin_val else "—"
     kpi_strip = (
         '<div class="ck-kpi-grid" '
-        'style="grid-template-columns:repeat(4,1fr);'
+        'style="grid-template-columns:repeat(3,1fr);'
         'gap:8px;margin:8px 0 16px;">'
-        + ck_kpi_block("Bed Count", bed_count_display)
-        + ck_kpi_block("Net Revenue", npr_display, "annual")
-        + ck_kpi_block("Rough EV", ev_estimate_value, "indicative")
-        + ck_kpi_block(
-            "Recoverable EBITDA", recoverable_value,
-            f"vs {ck_fmt_pct(0.08)} target",
-        )
+        + ck_kpi_block("Bed Count", bed_count_display, "HCRIS / entered")
+        + ck_kpi_block("Denial Rate", denial_display, "initial denials")
+        + ck_kpi_block("EBITDA Margin", margin_display, "of net revenue")
         + '</div>'
     )
 
+    # Forward action — the analysis workbench is the deeper surface
+    # (full packet, scenarios, provenance). This used to self-link back
+    # to /deal/{deal_id} — the very page being viewed — which read as a
+    # dead link. Point it where the partner actually goes next.
     next_up = ck_next_section(
-        "Open the full deal profile",
-        f"/deal/{deal_id}",
+        "Open the analysis workbench",
+        f"/analysis/{deal_id}",
         eyebrow="Up next",
-        italic_word="profile",
+        italic_word="workbench",
     )
 
     # Explainer in the partner-canonical position (right below the
@@ -489,9 +459,9 @@ def render_deal_dashboard(
             f"All {total_tiles} analytical models grouped into four "
             "categories — valuation, operations, risk, synthesis. "
             "Click any tile to drop into that model with the deal's "
-            "data pre-loaded. The KPI strip above shows the rough "
-            "EV + recoverable EBITDA estimates the deeper models "
-            "refine."
+            "data pre-loaded. The snapshot above carries the rough "
+            "EV + recoverable-EBITDA estimates the deeper models refine; "
+            "the strip beside it is the operating profile."
         ),
     )
 
