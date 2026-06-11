@@ -4126,6 +4126,172 @@ def hit_consulting_template() -> TamSamModel:
     )
 
 
+
+def hospitalist_template() -> TamSamModel:
+    """Hospitalist group sizing — the inpatient-coverage staffing
+    niche. SHM-anchored."""
+    return TamSamModel(
+        name="Hospitalist · inpatient coverage market",
+        chain=[
+            DriverStep("US hospitalists (practicing)", 44_000,
+                       op="base", unit="physicians",
+                       source="SHM workforce estimates"),
+            DriverStep("% in outsourced/contracted groups", 0.35,
+                       op="rate", unit="of hospitalists",
+                       source="vs hospital-employed — the contract "
+                              "layer"),
+            DriverStep("Avg contract revenue per hospitalist",
+                       380_000, op="price", unit="$/MD/yr",
+                       source="professional fees + hospital subsidy "
+                              "(subsidies fund ~50% of programs)"),
+        ],
+        segments=[
+            Segment("Community-hospital contracts", 0.55, None,
+                    note="the core — subsidy negotiation is the "
+                         "business", growth_pct=3.0),
+            Segment("Post-acute / SNF rounding (SNFists)", 0.25,
+                    None, note="the growth adjacency — value-based "
+                         "SNF coverage", growth_pct=8.0),
+            Segment("Telehospitalist / night coverage", 0.20, None,
+                    note="the rural-coverage product", growth_pct=9.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Inpatient coverage demand", 2.0,
+                         "every hospital needs 24/7 coverage; "
+                         "employment gaps persist"),
+            GrowthDriver("Subsidy repricing", 2.5,
+                         "scarcity re-rates stipends upward"),
+            GrowthDriver("Tele-coverage expansion", 1.5,
+                         "night/rural tele models scale"),
+            GrowthDriver("Post-Envision contract caution", -2.0,
+                         "hospitals burned by staffing-firm "
+                         "bankruptcies in-source — the trust "
+                         "deficit, shown as one"),
+            GrowthDriver("Wage inflation pass-through", -1.5,
+                         "hospitalist comp outruns fee growth"),
+        ],
+        sam_share=0.55,
+        sam_note="Community + rural contract demand (academic + "
+                 "employed excluded)",
+        som_share=0.05,
+        som_note="Post-Envision/TeamHealth-era: regional groups with "
+                 "clean balance sheets win RFPs",
+        horizon_years=5,
+        basis_note="Template defaults from SHM public data — replace "
+                   "with engagement data before IC use.",
+    )
+
+
+def perfusion_template() -> TamSamModel:
+    """Perfusion services sizing — the CV-OR micro-niche. AmSECT-anchored."""
+    return TamSamModel(
+        name="Perfusion · cardiovascular perfusion services market",
+        chain=[
+            DriverStep("US perfusion-supported procedures / yr",
+                       450_000, op="base", unit="procedures",
+                       source="STS adult-cardiac volumes + ECMO + "
+                              "transplant support"),
+            DriverStep("% via outsourced perfusion services", 0.45,
+                       op="rate", unit="of procedures",
+                       source="vs hospital-employed perfusionists"),
+            DriverStep("Avg revenue per procedure", 1_500, op="price",
+                       unit="$/procedure",
+                       source="per-case perfusion fees + equipment "
+                              "bundles"),
+        ],
+        segments=[
+            Segment("Cardiac surgery (CPB)", 0.60, None,
+                    note="the volume core", growth_pct=2.0),
+            Segment("ECMO services", 0.20, None,
+                    note="the acuity growth line — post-COVID "
+                         "capability expectations", growth_pct=9.0),
+            Segment("Organ-perfusion support", 0.10, None,
+                    note="cross-links to the transplant vertical",
+                    growth_pct=10.0),
+            Segment("Autotransfusion / cell saver", 0.10, None,
+                    growth_pct=3.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("ECMO capability expansion", 3.0,
+                         "community programs adding ECMO need "
+                         "coverage they can't staff"),
+            GrowthDriver("Organ-perfusion era", 2.0,
+                         "machine perfusion creates a new service "
+                         "line"),
+            GrowthDriver("Perfusionist scarcity", -2.5,
+                         "~4,500 CCPs nationally; schools produce "
+                         "~200/yr — the binding constraint AND the "
+                         "outsourcing driver"),
+            GrowthDriver("Cardiac-volume maturity", -1.0,
+                         "TAVR substitution caps open-heart growth"),
+        ],
+        sam_share=0.50,
+        sam_note="Community + mid-size programs (academic self-staff)",
+        som_share=0.12,
+        som_note="SpecialtyCare dominant; a concentrated micro-niche "
+                 "where one platform matters",
+        horizon_years=5,
+        basis_note="Template defaults from AmSECT/STS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def sterile_processing_template() -> TamSamModel:
+    """Sterile processing services sizing — the SPD outsourcing
+    micro-niche."""
+    return TamSamModel(
+        name="Sterile processing · SPD services market",
+        chain=[
+            DriverStep("US surgical instrument trays processed / yr",
+                       180_000_000, op="base", unit="trays",
+                       source="case volumes × trays-per-case norms"),
+            DriverStep("% via outsourced SPD services", 0.08,
+                       op="rate", unit="of trays",
+                       source="early-penetration estimate — most SPD "
+                              "is in-house; the outsourcing curve is "
+                              "the thesis"),
+            DriverStep("Avg revenue per tray", 28, op="price",
+                       unit="$/tray",
+                       source="offsite-reprocessing fee benchmarks"),
+        ],
+        segments=[
+            Segment("Offsite reprocessing centers", 0.45, None,
+                    note="the scalable model — hub serving multiple "
+                         "facilities", growth_pct=12.0),
+            Segment("Onsite managed services", 0.35, None,
+                    growth_pct=6.0),
+            Segment("ASC instrument services", 0.20, None,
+                    note="ASCs lack SPD scale — natural outsourcers",
+                    growth_pct=9.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Outsourcing-curve adoption", 5.0,
+                         "8% penetrated — the early-curve thesis"),
+            GrowthDriver("Quality/compliance pressure", 2.5,
+                         "immediate-use sterilization crackdowns + "
+                         "Joint Commission findings push to experts"),
+            GrowthDriver("SPD tech-staffing shortage", 1.5,
+                         "certified-tech scarcity favors scaled "
+                         "employers"),
+            GrowthDriver("Logistics cost / turnaround risk", -2.0,
+                         "offsite models live or die on courier "
+                         "loops — a missed tray cancels a case, "
+                         "shown as one"),
+            GrowthDriver("Capital intensity", -1.0,
+                         "reprocessing centers are \$10M+ builds"),
+        ],
+        sam_share=0.60,
+        sam_note="Metro hospital clusters + ASC density where hub "
+                 "logistics work",
+        som_share=0.10,
+        som_note="An early market — Steris IMS adjacent; no dominant "
+                 "pure-play yet",
+        horizon_years=5,
+        basis_note="Template defaults from industry public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -4225,6 +4391,9 @@ TEMPLATES = {
     "retail_clinics": retail_clinics_template,
     "surgical_assist": surgical_assist_template,
     "hit_consulting": hit_consulting_template,
+    "hospitalist": hospitalist_template,
+    "perfusion": perfusion_template,
+    "sterile_processing": sterile_processing_template,
     "blank": blank_template,
 }
 

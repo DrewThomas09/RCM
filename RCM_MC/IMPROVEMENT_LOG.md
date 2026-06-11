@@ -1176,6 +1176,24 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-87 — niche verticals batch 21: hospitalist, perfusion, sterile processing (01:45Z)
+**Niche-vertical sprint** — industries #74–76, the micro-niche layer:
+  - hospitalist ($5.9B, +2.4%): 44K hospitalists (SHM) × 35% contracted
+    × $380K (subsidies fund ~50% of programs); telehospitalist +9% ★;
+    the POST-ENVISION TRUST DEFICIT priced — hospitals burned by
+    staffing-firm bankruptcies in-source; clean balance sheets win RFPs.
+  - perfusion ($0.3B, +1.4%): 450K procedures × 45% outsourced ×
+    $1,500 — a SUB-$1B MICRO-NICHE SIZED HONESTLY; ~4,500 CCPs with
+    ~200/yr graduating: scarcity is BOTH the constraint and the
+    outsourcing driver; organ-perfusion +10% ★ cross-links transplant.
+  - sterile_processing ($0.4B at 8% penetration, +6.0%): the EARLY-
+    CURVE thesis — offsite reprocessing +12% ★; "a missed tray cancels
+    a case" — the courier-loop logistics risk priced; $10M+ builds
+    named as the capital gate.
+**Verify**: chains pinned; post-Envision negative + perfusion <$1B +
+logistics negative all pinned; catalogue ≥77 templates pinned;
+test_tam_sam 116 passed. 76 industries.
+
 ## W2-86 — niche verticals batch 20: retail clinics, surgical assist, HIT consulting (01:15Z)
 **Niche-vertical sprint** — industries #71–73:
   - retail_clinics ($2.3B, +0.4%): THE FAILURE AUTOPSY TEMPLATE —
