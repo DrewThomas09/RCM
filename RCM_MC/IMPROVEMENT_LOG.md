@@ -1141,6 +1141,18 @@ verified); tests updated + new PublicMarketRebrandTests /
 LiveSentimentModuleTests; 18 passed on the page suite, 304 passed across
 nav/landing/palette/v3/v5 suites. Screenshot delivered.
 
+## W2-47 — /tools instant filter (05:15Z)
+**Found by**: user — "we have a lot of good stuff in there but it is hard
+to get it out." The /tools catalogue lists ~100 ranked surfaces (174 links)
+with no way to narrow.
+**Added**: type-to-filter input above the catalogue — every row carries a
+data-tx-search blob (label + route, the screener's pattern); sections with
+zero matches collapse; a live "N tools match" count renders under the box;
+Esc clears. Pure client-side, no new deps.
+**Verify**: 98 rows carry search blobs; new ToolsFilterTests (filter input
++ blobs present, v3/v5 stay delisted, no third-party branding); tools
+showcase suite 9 passed.
+
 ## W2-44 — Find Comps EV column rolls to $B (04:05Z)
 **Found by**: global render-audit for billion-scale "$X,XXXM" leftovers
 across the research surfaces (find-comps/verified-deals/deal-search/

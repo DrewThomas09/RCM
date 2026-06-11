@@ -58,3 +58,27 @@ class ShowcaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ToolsFilterTests(unittest.TestCase):
+    """2026-06-11 — instant filter on /tools: 170+ tools is too many to
+    scan; type-to-narrow by name or route (the screener's data-*-search
+    pattern). The internal v3/v5 campaign dashboards must stay out of the
+    front-facing catalogue."""
+
+    def test_filter_input_and_search_blobs(self):
+        from rcm_mc.ui.tools_showcase_page import render_tools_showcase
+        h = render_tools_showcase(total_surfaces=200)
+        self.assertIn('id="tx-filter"', h)
+        self.assertIn("data-tx-search=", h)
+
+    def test_internal_campaign_dashboards_not_listed(self):
+        from rcm_mc.ui.tools_showcase_page import render_tools_showcase
+        h = render_tools_showcase(total_surfaces=200)
+        self.assertNotIn("/v3-status", h)
+        self.assertNotIn("/v5-status", h)
+
+    def test_no_third_party_branding(self):
+        from rcm_mc.ui.tools_showcase_page import render_tools_showcase
+        h = render_tools_showcase(total_surfaces=200)
+        self.assertNotIn("Seeking Alpha", h)
