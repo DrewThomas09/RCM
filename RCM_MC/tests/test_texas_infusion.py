@@ -664,6 +664,90 @@ class CDCProxyTests(unittest.TestCase):
         json.dumps(self.a)  # must not raise
 
 
+class HomeInfusionTests(unittest.TestCase):
+    """Deep home-infusion analysis — therapy/condition epidemiology,
+    the network roster, the Medicare HIT reimbursement gap, and episode
+    economics. Every count is a published rate × real population."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.hi = self.a["home_infusion"]
+
+    def test_conditions_scale_linearly_with_population(self):
+        from rcm_mc.diligence.texas_infusion import home_infusion_conditions
+        small = {c["key"]: c["estimated_patients"]
+                 for c in home_infusion_conditions(1_000_000, 130_000)}
+        big = {c["key"]: c["estimated_patients"]
+               for c in home_infusion_conditions(2_000_000, 260_000)}
+        # Double the population → double the eligible pool (real-pop scaled).
+        for k in small:
+            self.assertEqual(big[k], small[k] * 2, f"{k} not pop-scaled")
+        # OPAT is the volume driver among the families.
+        self.assertEqual(max(small, key=small.get), "opat")
+
+    def test_inotrope_uses_senior_denominator(self):
+        from rcm_mc.diligence.texas_infusion import home_infusion_conditions
+        # Holding population fixed, more seniors → more home inotrope
+        # patients (a senior-denominated therapy), but OPAT unchanged.
+        a = {c["key"]: c["estimated_patients"]
+             for c in home_infusion_conditions(1_000_000, 100_000)}
+        b = {c["key"]: c["estimated_patients"]
+             for c in home_infusion_conditions(1_000_000, 200_000)}
+        self.assertGreater(b["inotrope"], a["inotrope"])
+        self.assertEqual(b["opat"], a["opat"])
+
+    def test_networks_cover_tiers_and_texas(self):
+        nets = self.hi["networks"]
+        self.assertGreaterEqual(len(nets), 10)
+        tiers = {n["tier"] for n in nets}
+        # National, payer-owned, IG specialist, and the roll-up pool.
+        self.assertTrue(any("National" in t for t in tiers))
+        self.assertTrue(any("Payer-owned" in t for t in tiers))
+        self.assertTrue(any("roll-up" in t for t in tiers))
+        # Payer-owned steerage threats present; Paragon (TX-HQ'd) flagged.
+        names = {n["name"] for n in nets}
+        self.assertIn("Optum Infusion Pharmacy", names)
+        paragon = next(n for n in nets if n["name"] == "Paragon Healthcare")
+        self.assertTrue(paragon["tx"])
+        for n in nets:
+            for f in ("name", "tier", "ownership", "tx", "focus", "accred"):
+                self.assertIn(f, n)
+
+    def test_reimbursement_surfaces_the_hit_gap(self):
+        reim = self.hi["reimbursement"]
+        self.assertGreaterEqual(len(reim["points"]), 5)
+        text = " ".join(p["label"] + " " + p["detail"]
+                        for p in reim["points"]).lower()
+        # The defining calendar-day gap and the Part D black hole.
+        self.assertIn("calendar-day", text)
+        self.assertIn("part d", text)
+        self.assertTrue(reim["rcm_read"])
+
+    def test_episode_economics_recomputes(self):
+        ec = self.hi["episode_economics"]
+        self.assertEqual(ec["contribution"], ec["revenue"] - ec["cost"])
+        self.assertGreater(ec["contribution"], 0)
+        self.assertTrue(0 < ec["contribution_margin"] < 1)
+        self.assertTrue(ec["drivers"])
+
+    def test_therapy_reference_is_complete(self):
+        ths = self.hi["therapies"]
+        self.assertEqual(len(ths), 6)
+        keys = {t["key"] for t in ths}
+        self.assertEqual(keys, {"opat", "ig", "tpn", "inotrope",
+                                "biologic", "rare"})
+        for t in ths:
+            for f in ("conditions", "regimen", "reimbursement",
+                      "why_home", "margin", "epi_basis", "epi_per_100k"):
+                self.assertIn(f, t)
+
+    def test_each_metro_has_home_infusion_demand(self):
+        for dd in self.a["metro_deepdives"]:
+            self.assertTrue(dd["home_infusion"])
+            self.assertTrue(all(c["estimated_patients"] >= 0
+                                for c in dd["home_infusion"]))
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -688,6 +772,9 @@ class PageRenderTests(unittest.TestCase):
             "UNDERSUPPLIED GROWTH MARKETS", "CHAIR CAPACITY",
             "CDC public-health demand proxies", "CDC/ACS proxy",
             "CDC-PROXIED INFUSION DEMAND BY THERAPY", "Payer access",
+            "Home infusion — therapies, networks", "TX eligible/yr",
+            "THE NETWORKS", "calendar-day gap", "Amerita",
+            "HOME-INFUSION-ELIGIBLE PATIENTS",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 

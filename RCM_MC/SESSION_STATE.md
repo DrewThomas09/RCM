@@ -177,3 +177,19 @@ proxies" section + per-city CDC therapy-demand block. Egress blocked in
 CI/sandbox → real fallback ships; live rates light up automatically with
 network. Tests: +9 in test_texas_infusion + new test_cdc_places_api (7).
 Full suite green. Ship via standard cadence.
+
+---
+## Checkpoint — wave #54 (W2-152, 2026-06-11)
+Deepened the Texas home-infusion analysis. New engine fns:
+`home_infusion_therapy_reference` (6 families: OPAT, IG, TPN, inotrope,
+biologic, rare — conditions/regimen/reimbursement/why-home/margin),
+`home_infusion_conditions(pop,seniors)` (published epi rate/100k × real
+pop; inotrope on senior denom), `home_infusion_networks` (11 operators
+across tiers incl. payer-owned Optum/Paragon, IG specialists, franchise
+roll-up pool; ACHC/URAC, TX flags), `home_infusion_reimbursement` (HIT
+benefit + calendar-day gap + Part D black hole + RCM read),
+`home_infusion_episode_economics` (4-wk OPAT P&L, ~41% margin). Analysis
+`home_infusion` dict + per-metro `home_infusion` list. Page: "Home
+infusion — therapies, networks & reimbursement" section + per-city
+home-eligible bar block. 70 texas tests + 7 cdc client tests; full suite
+green. Shipped via standard cadence.

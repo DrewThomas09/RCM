@@ -979,6 +979,199 @@ def _county_capacity_table(dd: Dict[str, Any]) -> str:
         f'likely to exceed capacity.</p></div>')
 
 
+_HI_TONE = {"opat": _NAVY, "ig": _TEAL, "tpn": _WARN,
+            "inotrope": "#6e5b9e", "biologic": _NEG, "rare": "#0a8a5f"}
+_HI_TIER_TONE = {
+    "National platform": _NAVY, "Payer-owned": _NEG,
+    "IG specialist": _TEAL, "IG / factor": _TEAL,
+    "Specialty / complex": "#6e5b9e", "Rare / factor": "#6e5b9e",
+    "Franchise / roll-up pool": _WARN,
+}
+
+
+def _home_infusion_section(a: Dict[str, Any]) -> str:
+    """The deep home-infusion read: episode economics, therapy/condition
+    reference with TX eligible-population estimates, the network roster,
+    and the Medicare HIT reimbursement gap."""
+    hi = a.get("home_infusion") or {}
+    if not hi:
+        return ""
+    ec = hi.get("episode_economics", {})
+    conds = {c["key"]: c for c in hi.get("tx_conditions", [])}
+
+    # Episode-economics card (the concrete number).
+    drivers = "".join(
+        f'<div style="display:flex;justify-content:space-between;gap:10px;'
+        f'font-size:11px;padding:2px 0;border-bottom:1px dotted #e4ddca;">'
+        f'<span style="color:{_DIM};">{html.escape(d[0])}</span>'
+        f'<span style="color:#1a2332;font-weight:600;font-family:monospace;">'
+        f'{html.escape(d[1])}</span></div>'
+        for d in ec.get("drivers", []))
+    econ_card = (
+        f'<div style="border:1px solid #d6cfc0;border-top:3px solid {_TEAL};'
+        f'border-radius:4px;padding:12px 14px;background:#fff;">'
+        f'<div style="font-size:13px;font-weight:700;color:{_TEAL};">'
+        f'Home-infusion episode P&amp;L — {html.escape(ec.get("therapy",""))}'
+        f'</div>'
+        f'<div style="display:flex;gap:16px;margin:8px 0;flex-wrap:wrap;">'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;">REVENUE</div><div style="font-size:17px;'
+        f'font-weight:700;color:#1a2332;">{_money(ec.get("revenue",0))}</div>'
+        f'</div>'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;">CONTRIBUTION</div><div style="font-size:17px;'
+        f'font-weight:700;color:{_POS};">{_money(ec.get("contribution",0))}'
+        f' <span style="font-size:11px;color:{_DIM};">'
+        f'({ec.get("contribution_margin",0)*100:.0f}%)</span></div></div>'
+        f'</div>{drivers}'
+        f'<div style="margin-top:8px;padding:7px 10px;background:#eef5f4;'
+        f'border-left:3px solid {_TEAL};border-radius:0 3px 3px 0;'
+        f'font-size:11px;color:#1a2332;line-height:1.5;">'
+        f'<strong>Margin lever:</strong> {html.escape(ec.get("lever",""))}'
+        f'</div>'
+        f'<p style="font-size:9px;color:{_FAINT};margin:6px 0 0;">'
+        f'{html.escape(ec.get("note",""))}</p></div>')
+
+    # Therapy / condition reference table with TX eligible estimates.
+    trows = ""
+    for t in hi.get("therapies", []):
+        tone = _HI_TONE.get(t["key"], _FAINT)
+        est = conds.get(t["key"], {}).get("estimated_patients")
+        est_s = f'{est:,}' if est is not None else "—"
+        trows += (
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:6px 8px;vertical-align:top;">'
+            f'<span style="display:inline-block;width:9px;height:9px;'
+            f'border-radius:2px;background:{tone};margin-right:5px;"></span>'
+            f'<strong>{html.escape(t["therapy"])}</strong></td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};'
+            f'vertical-align:top;">{html.escape(t["conditions"])}</td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'vertical-align:top;font-weight:700;color:{tone};">{est_s}'
+            f'<div style="font-size:9px;color:{_FAINT};font-weight:400;">'
+            f'{t["epi_per_100k"]:.0f}/100k</div></td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};'
+            f'vertical-align:top;">{html.escape(t["regimen"])}</td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};'
+            f'vertical-align:top;">{html.escape(t["why_home"])}</td>'
+            f'</tr>')
+    therapy_table = (
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:6px 8px;">Therapy</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Conditions served</th>'
+        f'<th style="text-align:right;padding:6px 8px;">TX eligible/yr</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Regimen</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Why home</th>'
+        f'</tr></thead><tbody>{trows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'TX eligible/yr = published treated-prevalence / incidence rate '
+        f'(per 100k) × real TX population — labeled epidemiology anchors '
+        f'(IDSA OPAT; Immune Deficiency Foundation; ASPEN; NHF; rare-'
+        f'disease registries). Counts vary by real population, not '
+        f'invented rates.</p>')
+
+    # Network roster.
+    nrows = ""
+    for n in hi.get("networks", []):
+        tt = _HI_TIER_TONE.get(n["tier"], _FAINT)
+        tx = ('<span style="color:%s;font-weight:700;">TX ✓</span>' % _POS
+              if n["tx"] else '<span style="color:%s;">—</span>' % _FAINT)
+        name = (f'<a href="{html.escape(n["link"], quote=True)}" '
+                f'target="_blank" rel="noopener" style="color:{_NAVY};'
+                f'font-weight:600;text-decoration:none;">'
+                f'{html.escape(n["name"])} ↗</a>' if n.get("link") else
+                f'<strong>{html.escape(n["name"])}</strong>')
+        nrows += (
+            f'<tr>'
+            f'<td style="padding:6px 8px;">{name}</td>'
+            f'<td style="padding:6px 8px;"><span style="font-size:10px;'
+            f'font-weight:700;color:{tt};">{html.escape(n["tier"])}</span></td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(n["ownership"])}</td>'
+            f'<td style="padding:6px 8px;text-align:center;">{tx}</td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(n["focus"])}</td>'
+            f'<td style="padding:6px 8px;font-size:10px;color:{_FAINT};">'
+            f'{html.escape(n["accred"])}</td>'
+            f'</tr>')
+    network_table = (
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:6px 8px;">Network</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Tier</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Ownership</th>'
+        f'<th style="padding:6px 8px;">TX</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Focus</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Accreditation</th>'
+        f'</tr></thead><tbody>{nrows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'Payer-owned networks (Optum, Paragon/Elevance) can steer their '
+        f'own members — a competitive threat to independents. The '
+        f'franchise / independent pool is the fragmented roll-up target. '
+        f'Accreditation (ACHC / URAC) is table-stakes for payer contracts.'
+        f'</p>')
+
+    # Reimbursement HIT-gap explainer.
+    reim = hi.get("reimbursement", {})
+    rpts = "".join(
+        f'<div style="padding:7px 0;border-bottom:1px solid #e4ddca;">'
+        f'<div style="font-size:12px;font-weight:600;color:#1a2332;">'
+        f'{html.escape(p["label"])}</div>'
+        f'<div style="font-size:11.5px;color:{_DIM};line-height:1.5;'
+        f'margin-top:2px;">{html.escape(p["detail"])}</div></div>'
+        for p in reim.get("points", []))
+    reim_block = (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0 0 6px;">'
+        f'{html.escape(reim.get("summary",""))}</p>{rpts}'
+        f'<div style="margin-top:8px;padding:8px 11px;background:#eef5f4;'
+        f'border-left:3px solid {_TEAL};border-radius:0 3px 3px 0;'
+        f'font-size:11.5px;color:#1a2332;line-height:1.55;">'
+        f'<strong style="color:{_TEAL};">RCM read: </strong>'
+        f'{html.escape(reim.get("rcm_read",""))}</div>')
+
+    return (
+        f'<div style="display:grid;grid-template-columns:1.1fr 1fr;gap:18px;'
+        f'align-items:start;">'
+        f'<div>{therapy_table}</div><div>{econ_card}</div></div>'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin:16px 0 5px;">THE NETWORKS — NATIONAL, '
+        f'PAYER-OWNED, SPECIALIST &amp; THE TX ROLL-UP POOL</div>'
+        f'{network_table}'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin:16px 0 5px;">REIMBURSEMENT — THE MEDICARE '
+        f'HIT BENEFIT &amp; ITS GAP</div>{reim_block}')
+
+
+def _home_infusion_block(dd: Dict[str, Any]) -> str:
+    """Per-metro home-infusion-eligible demand by therapy (ranked bars)."""
+    rows = dd.get("home_infusion", [])
+    if not rows:
+        return ""
+    mx = max((r["estimated_patients"] for r in rows), default=1) or 1
+    bars = ""
+    for r in rows:
+        w = r["estimated_patients"] / mx * 100
+        tone = _HI_TONE.get(r["key"], _FAINT)
+        bars += (
+            f'<div style="display:grid;grid-template-columns:1fr 70px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div><div style="font-size:11px;color:#1a2332;">'
+            f'{html.escape(r["therapy"])}</div>'
+            f'<div style="height:10px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;margin-top:2px;"><div style="height:100%;'
+            f'width:{w:.0f}%;background:{tone};"></div></div></div>'
+            f'<div style="font-size:11px;font-weight:700;color:{tone};'
+            f'text-align:right;">{r["estimated_patients"]:,}</div></div>')
+    return (
+        f'<div style="margin-top:10px;"><div style="font-size:10px;'
+        f'color:{_FAINT};letter-spacing:0.06em;margin-bottom:3px;">'
+        f'HOME-INFUSION-ELIGIBLE PATIENTS/YR BY THERAPY (real pop × '
+        f'published epidemiology)</div>{bars}</div>')
+
+
 def _channel_cards(a: Dict[str, Any]) -> str:
     """Two side-by-side channel breakdowns — AIC vs home infusion."""
     cards = ""
@@ -1292,6 +1485,7 @@ def _city_section(dd: Dict[str, Any]) -> str:
         + north
         + illness
         + _cdc_demand_block(dd)
+        + _home_infusion_block(dd)
         + _county_capacity_table(dd)
         # White-space
         + f'<div style="margin-top:10px;padding:8px 12px;background:#fff;'
@@ -1345,6 +1539,12 @@ def render_texas_infusion_page(
         + ck_section_header("The two channels — AIC vs home infusion",
                             eyebrow="REIMBURSEMENT · MARGIN · WORKING CAPITAL")
         + _channel_cards(a)
+
+        + ck_section_header("Home infusion — therapies, networks & "
+                            "reimbursement",
+                            eyebrow="OPAT · IG · TPN · INOTROPES · RARE · "
+                                    "THE HIT BENEFIT GAP")
+        + _home_infusion_section(a)
 
         + ck_section_header("Players — the named operators",
                             eyebrow="WHO COMPETES · OWNERSHIP · TX PRESENCE")
