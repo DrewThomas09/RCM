@@ -1176,6 +1176,17 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-100 — wave #2: CIM Cross-Check variance chart (08:30Z)
+**The 100th item of the window.** The cross-check at a glance: one
+signed bar per VERIFIABLE claim — right of the dashed line = management
+claims HIGH vs the public data, left = LOW; bar tone = the variance flag
+(green/yellow/red); the % variance is the geometry so $B and % claims
+share one honest unit-free scale; unverifiable claims are counted in a
+note, NOT drawn ("no fabricated geometry"). Renders inside the numbered
+exhibit above the variance table.
+**Verify**: chart renders with real claims (TX market-size/margin/
+Medicare); empty-result empty-string pinned; CIM suites 29+65 passed.
+
 ## W2-99 — DILIGENCE-PAGE UPGRADE WAVE opens: bear-case severity matrix (07:55Z)
 **The wave the user directed** — functionality + visualization across
 every diligence surface, starting with the Bear Case:
