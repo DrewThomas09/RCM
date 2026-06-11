@@ -4861,3 +4861,93 @@ def sensitivity(model: TamSamModel, *, swing: float = 0.20) -> List[Dict[str, An
         })
     out.sort(key=lambda r: -r["impact"])
     return out
+
+
+# Deal/corpus sector tokens → the template that sizes that market.
+# Used to deep-link "size the opportunity" pre-selected to the deal's
+# own vertical. Unknown sectors fall back to the catalogue default.
+SECTOR_TO_TEMPLATE: Dict[str, str] = {
+    "hospital": "hospitals", "hospitals": "hospitals",
+    "behavioral_health": "behavioral_health",
+    "behavioral health": "behavioral_health",
+    "home_health": "home_health", "dme_home_health": "dme",
+    "hospice": "hospice", "dialysis": "dialysis",
+    "snf": "snf", "skilled_nursing": "snf", "post_acute": "snf",
+    "asc": "asc", "ambulatory_surgery": "asc",
+    "physician_group": "physician_group",
+    "physician_practice": "physician_group",
+    "dental": "dental", "oncology": "oncology",
+    "urgent_care": "urgent_care", "fertility": "fertility_ivf",
+    "women's health": "womens_health", "womens_health": "womens_health",
+    "radiology": "imaging", "radiology_imaging": "imaging",
+    "imaging": "imaging", "infusion": "infusion",
+    "home infusion": "infusion", "physical_therapy": "physical_therapy",
+    "physical therapy": "physical_therapy",
+    "veterinary": "veterinary", "medspa": "medspa", "ems": "ems",
+    "clinical_labs": "clinical_labs", "laboratory": "clinical_labs",
+    "diagnostics": "genetic_testing",
+    "specialty_pharmacy": "specialty_pharmacy",
+    "pharmacy": "specialty_pharmacy", "aba": "aba", "autism": "aba",
+    "plasma": "plasma", "clinical_research": "clinical_research",
+    "wound_care": "wound_care", "sleep": "sleep",
+    "occupational_health": "occ_health",
+    "dermatology": "dermatology", "pain_management": "pain_management",
+    "hospital_at_home": "hospital_at_home",
+    "ltc_pharmacy": "ltc_pharmacy", "dme": "dme",
+    "idd_services": "idd_services", "idd": "idd_services",
+    "eating_disorders": "eating_disorders",
+    "nephrology": "nephrology", "kidney_care": "nephrology",
+    "orthotics_prosthetics": "orthotics_prosthetics",
+    "ophthalmology": "ophthalmology", "eye_care": "ophthalmology",
+    "vision": "vision", "optometry": "vision",
+    "rcm": "rcm_services", "health_it": "hit_consulting",
+    "cardiology": "cardiology", "cardiovascular": "cardiology",
+    "gastroenterology": "gastroenterology", "gi": "gastroenterology",
+    "orthopedics": "orthopedics", "ortho": "orthopedics",
+    "msk": "orthopedics", "obgyn": "womens_health",
+    "podiatry": "podiatry", "ent": "ent_allergy",
+    "allergy": "ent_allergy", "anesthesia": "anesthesia",
+    "home_care": "home_care", "personal_care": "home_care",
+    "pace": "pace", "teleradiology": "teleradiology",
+    "correctional": "correctional_health",
+    "correctional_health": "correctional_health",
+    "staffing": "locum_staffing", "locum": "locum_staffing",
+    "crisis_services": "crisis_services",
+    "school_services": "school_services",
+    "mobile_diagnostics": "mobile_diagnostics",
+    "palliative": "palliative", "palliative_care": "palliative",
+    "senior_living": "senior_living",
+    "assisted_living": "senior_living",
+    "vascular_access": "vascular_access", "vascular": "vascular_access",
+    "genetic_testing": "genetic_testing", "genomics": "genetic_testing",
+    "nemt": "nemt", "medical_transport": "nemt",
+    "compounding": "compounding_503b",
+    "urology": "urology", "rheumatology": "rheumatology",
+    "neurology": "neurology", "endocrinology": "endocrinology_obesity",
+    "obesity": "endocrinology_obesity", "pulmonology": "pulmonology",
+    "transplant": "transplant_services",
+    "retail_clinics": "retail_clinics", "retail_health": "retail_clinics",
+    "surgical_assist": "surgical_assist",
+    "hospitalist": "hospitalist", "hospital_medicine": "hospitalist",
+    "perfusion": "perfusion",
+    "sterile_processing": "sterile_processing",
+    "air_medical": "air_medical", "air_ambulance": "air_medical",
+    "pediatric_home_health": "pediatric_home_health",
+    "pdn": "pediatric_home_health",
+    "telehealth": "virtual_primary_care",
+    "virtual_care": "virtual_primary_care",
+    "rpm": "rpm", "remote_monitoring": "rpm",
+    "care_navigation": "care_navigation", "navigation": "care_navigation",
+    "managed_care": "rcm_services",
+}
+
+
+def template_for_sector(sector: Optional[str]) -> Optional[str]:
+    """Map a deal/corpus sector token to its sizing template, or None
+    when no honest match exists (callers fall back to the default
+    catalogue view rather than guessing)."""
+    if not sector:
+        return None
+    key = str(sector).strip().lower().replace("-", "_")
+    return SECTOR_TO_TEMPLATE.get(key) or SECTOR_TO_TEMPLATE.get(
+        key.replace("_", " "))
