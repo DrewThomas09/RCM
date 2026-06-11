@@ -1257,3 +1257,46 @@ class NicheVerticalsBatch17Tests(unittest.TestCase):
     def test_catalogue_at_64_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 65)   # 64 + blank
+
+
+class NicheVerticalsBatch18Tests(unittest.TestCase):
+    """Industries #65–67 — urology, rheumatology, neurology: the
+    infusion-ancillary specialty map completed."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "urology": 13_500 * 1_300_000,
+            "rheumatology": 6_000 * 1_100_000,
+            "neurology": 14_000 * 900_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_specialty_honesty(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, rheumatology_template,
+        )
+        # Rheumatology: the biosimilar repricing of the margin engine
+        # is THE IC question — priced ≤ −3 and named in the basis.
+        rh = compute(TEMPLATES["rheumatology"]())
+        names = {g["name"]: g["annual_pct"] for g in rh["growth_drivers"]}
+        self.assertLessEqual(names["Biosimilar margin erosion"], -3.0)
+        self.assertIn("margin engine", rheumatology_template().basis_note)
+        # Neurology: the amyloid-era infusion line is the fastest (+11).
+        ne = compute(TEMPLATES["neurology"]())
+        inf = next(s for s in ne["segments"] if "Infusion" in s["name"])
+        self.assertTrue(inf.get("is_fastest"))
+        # Urology: the workforce cliff named (oldest surgical workforce).
+        ur = compute(TEMPLATES["urology"]())
+        names = {g["name"]: g["annual_pct"] for g in ur["growth_drivers"]}
+        self.assertLess(names["Workforce cliff"], 0)
+
+    def test_catalogue_at_67_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 68)   # 67 + blank

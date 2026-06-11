@@ -3629,6 +3629,164 @@ def interpretation_template() -> TamSamModel:
     )
 
 
+
+def urology_template() -> TamSamModel:
+    """Urology practice sizing — the ancillary-dense PPM wave. AUA-anchored."""
+    return TamSamModel(
+        name="Urology · practice + ancillary market",
+        chain=[
+            DriverStep("US urologists (practicing)", 13_500, op="base",
+                       unit="physicians", source="AUA census"),
+            DriverStep("Avg revenue per urologist", 1_300_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA urology medians incl. ASC, "
+                              "lithotripsy, pathology, radiation"),
+        ],
+        segments=[
+            Segment("Clinical / surgical core", 0.45, None,
+                    growth_pct=3.0),
+            Segment("Advanced prostate (radiation/focal)", 0.20, None,
+                    note="the in-practice radiation economics — UM "
+                         "scrutiny attached", growth_pct=7.0),
+            Segment("ASC / lithotripsy", 0.20, None, growth_pct=6.0),
+            Segment("Ancillaries (path, imaging, pharmacy)", 0.15,
+                    None, growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("PSA-era prostate volume", 3.0,
+                         "screening detection + active-surveillance "
+                         "conversions"),
+            GrowthDriver("BPH procedural innovation", 2.5,
+                         "UroLift/Rezum/Aquablation office+ASC "
+                         "migration"),
+            GrowthDriver("Ancillary integration", 1.5,
+                         "in-practice capture per episode"),
+            GrowthDriver("Workforce cliff", -2.0,
+                         "urology has the OLDEST surgical workforce — "
+                         "retirements outpace residency slots"),
+            GrowthDriver("Radiation UM scrutiny", -1.0,
+                         "payer attention on in-practice IMRT "
+                         "referral patterns"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent urology groups (US Urology Partners/"
+                 "Solaris class wave underway)",
+        som_share=0.05,
+        som_note="Mid-wave consolidation; the workforce cliff is both "
+                 "the risk and the seller motivation",
+        horizon_years=5,
+        basis_note="Template defaults from AUA/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def rheumatology_template() -> TamSamModel:
+    """Rheumatology sizing — the infusion-ancillary specialty. ACR-anchored."""
+    return TamSamModel(
+        name="Rheumatology · practice + infusion market",
+        chain=[
+            DriverStep("US rheumatologists (practicing)", 6_000,
+                       op="base", unit="physicians",
+                       source="ACR workforce study"),
+            DriverStep("Avg revenue per rheumatologist", 1_100_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA medians incl. in-office infusion "
+                              "buy-and-bill"),
+        ],
+        segments=[
+            Segment("In-office infusion (buy-and-bill)", 0.45, None,
+                    note="the economics — the practice IS an "
+                         "infusion center with a clinic attached",
+                    growth_pct=6.0),
+            Segment("Clinical E&M", 0.35, None,
+                    note="visit economics poor standalone; the "
+                         "infusion funnel", growth_pct=3.0),
+            Segment("Ancillaries (ultrasound, DXA, labs)", 0.12,
+                    None, growth_pct=4.0),
+            Segment("Clinical-trials participation", 0.08, None,
+                    note="the research-site adjacency",
+                    growth_pct=8.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Autoimmune prevalence + biologic era", 4.0,
+                         "diagnosed RA/PsA/SpA populations expand "
+                         "with therapy options"),
+            GrowthDriver("Infusion site-of-care capture", 2.5,
+                         "payers prefer office over HOPD rates"),
+            GrowthDriver("Biosimilar margin erosion", -3.0,
+                         "Humira-class LOEs compress the buy-and-bill "
+                         "spread the model depends on — THE "
+                         "structural question, priced"),
+            GrowthDriver("Workforce shortage", -2.0,
+                         "the smallest adult-specialty pipeline; "
+                         "demand outstrips supply"),
+        ],
+        sam_share=0.50,
+        sam_note="Independent rheumatology groups (the wave is early "
+                 "— American Arthritis/Articularis class)",
+        som_share=0.06,
+        som_note="A small-N specialty — platforms scale by infusion "
+                 "economics, not MD count",
+        horizon_years=5,
+        basis_note="Template defaults from ACR/MGMA public data — "
+                   "replace with engagement data before IC use. The "
+                   "biosimilar driver is the IC question: the model's "
+                   "margin engine is repricing.",
+    )
+
+
+def neurology_template() -> TamSamModel:
+    """Neurology sizing — the infusion + diagnostics specialty in the
+    Alzheimer's-therapeutics era. AAN-anchored."""
+    return TamSamModel(
+        name="Neurology · practice + infusion market",
+        chain=[
+            DriverStep("US neurologists (practicing)", 14_000,
+                       op="base", unit="physicians",
+                       source="AAN workforce"),
+            DriverStep("Avg revenue per neurologist", 900_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA medians incl. EEG/EMG, infusion, "
+                              "imaging referral economics"),
+        ],
+        segments=[
+            Segment("Clinical (epilepsy, movement, MS)", 0.45, None,
+                    growth_pct=3.0),
+            Segment("Infusion (MS, migraine, now amyloid)", 0.25,
+                    None, note="the Alzheimer's-antibody era makes "
+                         "neuro infusion the fastest new line",
+                    growth_pct=11.0),
+            Segment("Diagnostics (EEG/EMG/sleep)", 0.20, None,
+                    growth_pct=4.0),
+            Segment("Telestroke / teleneurology", 0.10, None,
+                    note="the coverage-gap service line",
+                    growth_pct=8.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Alzheimer's therapeutics era", 4.0,
+                         "amyloid antibodies create an infusion + "
+                         "PET + monitoring care pathway from nothing"),
+            GrowthDriver("Migraine/MS pipeline", 2.0,
+                         "CGRP + MS infusions compound"),
+            GrowthDriver("Neurologist scarcity", -2.5,
+                         "6-month waits standard — supply caps "
+                         "realized demand, shown as one"),
+            GrowthDriver("Coverage-with-evidence friction", -1.5,
+                         "amyloid-therapy coverage rules gate the "
+                         "new pathway's ramp"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent neuro groups + infusion-capable "
+                 "practices",
+        som_share=0.04,
+        som_note="Pre-wave: no scaled neuro platform exists yet — "
+                 "the whitespace thesis",
+        horizon_years=5,
+        basis_note="Template defaults from AAN/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -3719,6 +3877,9 @@ TEMPLATES = {
     "dental_labs": dental_labs_template,
     "htm_clinical_engineering": htm_clinical_engineering_template,
     "interpretation": interpretation_template,
+    "urology": urology_template,
+    "rheumatology": rheumatology_template,
+    "neurology": neurology_template,
     "blank": blank_template,
 }
 
