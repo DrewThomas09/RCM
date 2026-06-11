@@ -197,6 +197,92 @@ class ThesisPipelineReport:
         }
 
 
+@dataclass
+class PipelineCoverage:
+    """How complete the synthesized thesis actually is.
+
+    A partner reading the pipeline output needs to know how much of
+    it rests on modules that ran vs. modules that short-circuited (no
+    data for this fixture, or an error). Every field is derived from
+    the report's own ``step_log`` + populated headline numbers, so the
+    'how much can I trust this synthesis' read is auditable.
+    """
+    steps_total: int
+    steps_ok: int
+    steps_failed: int
+    coverage_pct: float
+    failed_steps: List[Dict[str, str]]      # [{step, error}]
+    headline_populated: int
+    headline_total: int
+    confidence: str                          # FULL | PARTIAL | THIN
+    note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.__dict__.copy()
+
+
+def analyze_pipeline_coverage(
+    report: "ThesisPipelineReport",
+) -> PipelineCoverage:
+    """Derive an auditable completeness read from the step log.
+
+    ``coverage_pct`` is ok-steps / total steps that ran; the headline
+    populated/total split shows how many derived numbers actually
+    landed (a step can succeed but produce a None headline when its
+    data was thin). Confidence bands: FULL ≥90% steps ok and no
+    failures, THIN <60%, else PARTIAL.
+    """
+    log = report.step_log or []
+    total = len(log)
+    failed = [
+        {"step": str(s.get("step", "?")),
+         "error": str(s.get("error", ""))[:160]}
+        for s in log if s.get("status") == "fail"
+    ]
+    ok = total - len(failed)
+    cov = (ok / total) if total else 0.0
+
+    headline = report.to_dict().get("headline_numbers", {})
+    h_total = len(headline)
+    h_pop = sum(1 for v in headline.values() if v is not None)
+
+    if total == 0:
+        confidence = "THIN"
+        note = "Pipeline did not run any steps — nothing to synthesize."
+    elif cov >= 0.90 and not failed:
+        confidence = "FULL"
+        note = (
+            f"All {ok}/{total} modules ran; {h_pop}/{h_total} headline "
+            f"numbers landed. The synthesized thesis rests on the full "
+            f"analytic stack."
+        )
+    elif cov < 0.60:
+        confidence = "THIN"
+        names = ", ".join(f["step"] for f in failed[:4])
+        note = (
+            f"Only {ok}/{total} modules ran ({cov*100:.0f}%). The thesis "
+            f"is built on a thin base — {len(failed)} step(s) short-"
+            f"circuited"
+            + (f" ({names})" if names else "")
+            + ". Supply a fuller dataset before relying on the synthesis."
+        )
+    else:
+        confidence = "PARTIAL"
+        names = ", ".join(f["step"] for f in failed[:4])
+        note = (
+            f"{ok}/{total} modules ran; {h_pop}/{h_total} headline numbers "
+            f"landed."
+            + (f" {len(failed)} step(s) did not run ({names}) — those "
+               f"risks are unassessed, not cleared." if failed else "")
+        )
+    return PipelineCoverage(
+        steps_total=total, steps_ok=ok, steps_failed=len(failed),
+        coverage_pct=round(cov, 4), failed_steps=failed,
+        headline_populated=h_pop, headline_total=h_total,
+        confidence=confidence, note=note,
+    )
+
+
 def _timed(step_name: str, fn, step_log: List[Dict[str, Any]]):
     """Run a step, log (name, elapsed, success/failure), return the
     step's output or None if it raised."""
