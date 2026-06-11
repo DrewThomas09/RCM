@@ -329,22 +329,39 @@ class TestComparableHttpRoutes(unittest.TestCase):
         self.assertIn("Median MOIC", html)
         self.assertIn("Win rate", html)
 
-    def test_comp_p50_moic_kpi_matches_median(self):
-        # The "Comp P50 MOIC" headline KPI read a non-existent flat
-        # summary["moic_p50"] key, so it silently showed "—" while the
-        # identical median rendered in the outcome strip below. P50 ==
-        # median; with a populated comp set the headline must carry a value.
-        import re
+    def test_median_moic_stat_carries_value(self):
+        # Originally pinned the "Comp P50 MOIC" headline KPI (which once
+        # silently showed "—" on a dead summary key). That KPI strip was
+        # removed in the 2026-06-11 de-clutter — it duplicated the outcome
+        # strip card-for-card — so the invariant moves to the single
+        # remaining readout: with a populated comp set, the Median MOIC
+        # stat must carry a real value, never "—".
         params = urllib.parse.urlencode({"sector": "hospital", "ev_mm": "500"})
         with urllib.request.urlopen(
             f"http://127.0.0.1:{self.port}"
             f"/diligence/comparable-outcomes?{params}", timeout=10,
         ) as resp:
             html = resp.read().decode()
-        i = html.find("Comp P50 MOIC")
+        i = html.find("Median MOIC")
         self.assertGreater(i, 0)
-        # ck_kpi_block renders the value AFTER the label.
+        # The stat card renders the value right after the label.
         self.assertRegex(html[i:i + 400], r"\d\.\d{2}x")
+
+    def test_results_view_has_single_results_strip(self):
+        # 2026-06-11 de-clutter regression: the page stacked a 3-card KPI
+        # strip (Comparables / Comp P50 MOIC / Win Rate) that repeated the
+        # outcome strip's numbers within one screen, plus three explainer
+        # blocks under the title. One results strip, one lede.
+        params = urllib.parse.urlencode({"sector": "hospital", "ev_mm": "500"})
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}"
+            f"/diligence/comparable-outcomes?{params}", timeout=10,
+        ) as resp:
+            html = resp.read().decode()
+        self.assertNotIn("Comp P50 MOIC", html)
+        # ck_page_explainer's restatement is gone; the serif lede stays.
+        self.assertNotIn("Realized outcomes on comparable deals.", html)
+        self.assertIn("What deals like this actually returned.", html)
 
     def test_json_api(self):
         params = urllib.parse.urlencode({

@@ -1021,3 +1021,26 @@ ck_fmt_currency for the same consistency.
 · $165.0M recoverable · $52.8M synergy · $660.0M cost base · $580.8M equity;
 new test_revenue_column_rolls_to_billions_not_2km; 73 passed across the 8
 portfolio-overview suites.
+
+## W2-38 — Comparable Outcomes de-cluttered (USER-REPORTED, 01:20Z)
+**Found by**: user — "Comparable outcome page has too much data under the
+title making it look awkward."
+**Root cause**: the results view stacked THREE near-identical explainers
+under the title (ck_source_purpose band + ck_page_explainer + a serif lede,
+each restating "realized MOIC/IRR from the corpus, sanity-check bid
+pricing"), PLUS a 3-card KPI strip (Comparables / Comp P50 MOIC / Win Rate)
+that duplicated the outcome strip card-for-card — six blocks of overlapping
+chrome before the table. The input form also sat between the KPI strip and
+the outcome strip, splitting the results in half.
+**Fixed**: one lede (the serif sentence) + the structured source_purpose
+band (guard-test-required); dropped the verbatim ck_page_explainer; dropped
+the duplicate KPI strip (matched count lives in the title meta + hold-card
+sub); reordered to title → lede → provenance → inputs → ONE results strip
+directly above the table → exports/print at point of use → verified-deals
+footnote.
+**Verify**: render shows single results strip ("Median MOIC"/"Win rate"
+present, "Comp P50 MOIC" gone, page_explainer restatement gone, lede kept);
+updated test_median_moic_stat_carries_value keeps the value-not-dash
+invariant; new test_results_view_has_single_results_strip pins the
+de-clutter; 34 passed across comparable suites + source-purpose guard.
+Screenshot delivered.
