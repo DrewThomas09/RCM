@@ -1176,6 +1176,15 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-92 — agenda export parity: the questions travel into the workbook (04:15Z)
+**Export parity for the training layer**: _derive_agenda_items() is the
+single plain-text source for the page panel AND the exports — the CSV
+gains an agenda block and the xlsx gains a 5th "Diligence agenda" sheet.
+The deal team's workbook never carries a thinner question list than the
+screen, and the panel/export derive identically (pinned: equal Q-counts).
+**Verify**: CSV carries the biosimilar question; xlsx sheet5 exists and
+carries it; panel-vs-export parity pinned; test_tam_sam 130 passed.
+
 ## W2-91 — the diligence agenda: auto-derived questions on every build (03:45Z)
 **The training layer, catalogue-wide**: each build now renders a
 "Diligence agenda" panel DERIVED from its own content — every priced

@@ -291,6 +291,37 @@ def _segment_bar_svg(segments: List[Dict[str, Any]],
     return "".join(parts) + legend_html
 
 
+def _derive_agenda_items(out: Dict[str, Any]) -> List[str]:
+    """Plain-text agenda items — single source for the page panel and
+    the exports, so the workbook never carries a thinner question list
+    than the screen."""
+    items: List[str] = []
+    for g in out["growth_drivers"]:
+        if g["annual_pct"] < 0:
+            note = f' — {g["note"]}' if g.get("note") else ""
+            items.append(
+                f'Quantify the exposure: {g["name"]} '
+                f'(priced {g["annual_pct"]:+.1f}%/yr){note}')
+    fastest = next((s for s in out["segments"] if s.get("is_fastest")),
+                   None)
+    if fastest:
+        note = f' — {fastest["note"]}' if fastest.get("note") else ""
+        items.append(
+            f'Validate the growth thesis: can the target capture '
+            f'{fastest["name"]} ({fastest["growth_pct"]:+.0f}%/yr)?'
+            f'{note}')
+    for s in out["segments"]:
+        if (s.get("growth_pct") or 0) < 0:
+            items.append(
+                f'Size the decline: what share of the target revenue '
+                f'sits in {s["name"]} ({s["growth_pct"]:+.0f}%/yr)?')
+    if out.get("sam_note"):
+        items.append(f'Confirm addressability: {out["sam_note"]}')
+    if out.get("som_note"):
+        items.append(f'Pressure-test share: {out["som_note"]}')
+    return items
+
+
 def _diligence_agenda_panel(out: Dict[str, Any]) -> str:
     """The training layer: a working diligence agenda DERIVED from the
     build itself — every priced headwind becomes a quantification
@@ -1001,6 +1032,10 @@ def tam_sam_csv(qs: Dict[str, List[str]]) -> str:
     for p in out["projection"]:
         w.writerow([p["year"], round(p["tam"], 2), round(p["sam"], 2),
                     round(p["som"], 2)])
+    w.writerow([])
+    w.writerow(["Diligence agenda"])
+    for i, q in enumerate(_derive_agenda_items(out), 1):
+        w.writerow([f"Q{i}", q])
     return buf.getvalue()
 
 
@@ -1086,6 +1121,12 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
     if out.get("basis_note"):
         n_src += 1
         src_rows.append([n_src, "Basis", out["basis_note"]])
+    agenda_rows: List[List[Any]] = [
+        [("#", H), ("Diligence question", H)],
+    ] + [
+        [f"Q{i}", q]
+        for i, q in enumerate(_derive_agenda_items(out), 1)
+    ]
     return write_xlsx([
         Sheet("Funnel & chain", funnel_rows,
               col_widths=[34, 8, 14, 16, 44, 16]),
@@ -1093,4 +1134,5 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
               col_widths=[26, 13, 15, 12, 15, 13, 40]),
         Sheet("Projection", proj_rows, col_widths=[34, 12, 40, 16]),
         Sheet("Sources", src_rows, col_widths=[5, 38, 70]),
+        Sheet("Diligence agenda", agenda_rows, col_widths=[6, 100]),
     ])
