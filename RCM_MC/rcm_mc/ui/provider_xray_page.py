@@ -260,6 +260,102 @@ def _bench_table(report: ProviderXrayReport) -> str:
     )
 
 
+_PCTL_TONES = (
+    (75, "#0a8a5f"),   # top quartile
+    (50, "#1F7A75"),   # above median
+    (25, "#b8732a"),   # below median
+    (0, "#b5321e"),    # bottom quartile
+)
+
+
+def _pctl_tone(p: int) -> str:
+    for floor, tone in _PCTL_TONES:
+        if p >= floor:
+            return tone
+    return "#7a8699"
+
+
+def _percentile_profile_svg(report: ProviderXrayReport) -> str:
+    """The benchmark table as one percentile picture.
+
+    One row per metric on a fixed 0–100 percentile axis: the state
+    percentile as the main dot (toned by quartile, higher = better),
+    the national percentile as a hollow reference ring, and a median
+    guide at 50. Suppressed percentiles are simply absent — the table
+    below keeps the n/a detail. Nothing plottable renders nothing.
+    """
+    rows = []
+    for b in report.benchmarks or []:
+        by_set = {p.peer_set: p for p in b.percentiles}
+        st = by_set.get("state")
+        nat = by_set.get("national")
+        st_p = None if (st is None or st.suppressed) else st.percentile
+        nat_p = None if (nat is None or nat.suppressed) else nat.percentile
+        if st_p is None and nat_p is None:
+            continue
+        rows.append((b.label, st_p, nat_p))
+    if not rows:
+        return ""
+
+    label_w, axis_w, right_w = 230, 380, 16
+    row_h, gap, pad_top, pad_bot = 20, 6, 20, 14
+    width = label_w + axis_w + right_w
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="State and national percentile per metric">'
+    ]
+    mid = label_w + axis_w * 0.5
+    parts.append(
+        f'<line x1="{mid:.0f}" y1="{pad_top - 6}" x2="{mid:.0f}" '
+        f'y2="{height - pad_bot + 2}" stroke="#d6cfc0" stroke-width="1" '
+        f'stroke-dasharray="2,3"/>'
+        f'<text x="{mid:.0f}" y="{pad_top - 9}" text-anchor="middle" '
+        f'font-size="8.5" fill="#7a8699">MEDIAN</text>'
+    )
+    for i, (label, st_p, nat_p) in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        cy = y + row_h / 2
+        short = label if len(label) <= 34 else label[:33] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{cy + 3.5:.1f}" text-anchor="end" '
+            f'font-size="10" fill="#465366">{_e(short)}</text>'
+        )
+        parts.append(
+            f'<line x1="{label_w}" y1="{cy:.1f}" x2="{label_w + axis_w}" '
+            f'y2="{cy:.1f}" stroke="#e7e0d1" stroke-width="1"/>'
+        )
+        if nat_p is not None:
+            nx = label_w + axis_w * nat_p / 100.0
+            parts.append(
+                f'<circle cx="{nx:.1f}" cy="{cy:.1f}" r="5" fill="none" '
+                f'stroke="#7a8699" stroke-width="1.5"/>'
+            )
+        if st_p is not None:
+            sx = label_w + axis_w * st_p / 100.0
+            tone = _pctl_tone(st_p)
+            parts.append(
+                f'<circle cx="{sx:.1f}" cy="{cy:.1f}" r="4.5" '
+                f'fill="{tone}"/>'
+            )
+    parts.append("</svg>")
+    legend = (
+        '<p class="ck-xr-prov" style="margin-top:2px;">'
+        '<span style="display:inline-block;width:9px;height:9px;'
+        'border-radius:50%;background:#1F7A75;margin-right:4px;"></span>'
+        'state percentile (color = quartile, higher = better) · '
+        '<span style="display:inline-block;width:9px;height:9px;'
+        'border-radius:50%;border:1.5px solid #7a8699;margin-right:4px;">'
+        '</span>national percentile · suppressed metrics (n&lt;5) omitted</p>'
+    )
+    return (
+        '<div class="ck-xr-pctl-profile" style="margin:0 0 10px;">'
+        + "".join(parts) + legend + "</div>"
+    )
+
+
 def _risk_section(report: ProviderXrayReport) -> str:
     """Transparent rule-based risk indicators — explicitly NOT forecasts."""
     if not report.risk_indicators:
@@ -445,7 +541,8 @@ def render_xray_report(report: ProviderXrayReport) -> str:
     )
     signals = f'<div class="ck-xr-signals">{sig_cards}</div>'
 
-    bench = _section("Peer benchmarks", _bench_table(report),
+    bench = _section("Peer benchmarks",
+                     _percentile_profile_svg(report) + _bench_table(report),
                      ribsub="NATIONAL · STATE · LOCALITY · OWNERSHIP")
 
     # Market context (when available)
