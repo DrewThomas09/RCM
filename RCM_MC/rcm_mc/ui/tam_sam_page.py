@@ -574,6 +574,12 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
                            ("oncology", "Oncology"),
                            ("urgent_care", "Urgent care"),
                            ("hospitals", "Hospitals"),
+                           ("infusion", "Infusion"),
+                           ("imaging", "Imaging"),
+                           ("physical_therapy", "Physical therapy"),
+                           ("veterinary", "Veterinary"),
+                           ("medspa", "Medspa"),
+                           ("ems", "EMS"),
                            ("blank", "Blank scaffold")))
         + '</div>'
     )

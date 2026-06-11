@@ -606,3 +606,87 @@ class ChainHHITests(unittest.TestCase):
         h = render_tam_sam_page({"template": ["dialysis"]})
         self.assertIn("Chain-concentration", h)
         self.assertIn("highly concentrated", h)
+
+
+class NicheVerticalsBatch1Tests(unittest.TestCase):
+    """Industries #14–16 — infusion, imaging, physical therapy: the
+    niche-vertical sprint. Public-source chains, divergence, real corpus
+    trade history (geography omitted, never fabricated)."""
+
+    def test_three_chains_pin_to_public_magnitudes(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "infusion": 3_200_000 * 18 * 650,
+            "imaging": 7_000 * 21_000 * 280,
+            "physical_therapy": 38_000 * 8_300 * 105,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            # Each carries a divergence map with a flagged fastest.
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_biosimilar_headwind_named(self):
+        # The infusion template must carry the biosimilar deflation
+        # headwind — the number-one diligence question in this vertical.
+        from rcm_mc.diligence.tam_sam import compute, infusion_template
+        out = compute(infusion_template())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["Biosimilar price deflation"], 0)
+
+    def test_dives_carry_real_trade_history(self):
+        from rcm_mc.diligence.industry_deep_dive import (
+            imaging_deep_dive, infusion_deep_dive,
+            physical_therapy_deep_dive,
+        )
+        self.assertGreaterEqual(infusion_deep_dive()["sector_deals"]["n"], 2)
+        self.assertGreaterEqual(imaging_deep_dive()["sector_deals"]["n"], 5)
+        self.assertGreaterEqual(
+            physical_therapy_deep_dive()["sector_deals"]["n"], 5)
+
+
+class NicheVerticalsBatch2Tests(unittest.TestCase):
+    """Industries #17–19 — veterinary, medspa, EMS: the niches PE took
+    mainstream that CDD tooling never covers."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "veterinary": 87_000_000 * 2.4 * 260,
+            "medspa": 10_500 * 1_600_000,
+            "ems": 22_000_000 * 0.40 * 1_350,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_vertical_specific_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Veterinary: the DVM shortage is the binding constraint.
+        vet = compute(TEMPLATES["veterinary"]())
+        names = {g["name"]: g["annual_pct"] for g in vet["growth_drivers"]}
+        self.assertLess(names["Veterinarian shortage"], 0)
+        # Medspa: consumer-cyclical exposure carried as the bear case.
+        spa = compute(TEMPLATES["medspa"]())
+        names = {g["name"]: g["annual_pct"] for g in spa["growth_drivers"]}
+        self.assertLess(names["Consumer-cyclical exposure"], 0)
+        # EMS: a near-flat market (+0.4%) — the tool doesn't inflate it.
+        ems = compute(TEMPLATES["ems"]())
+        self.assertLess(ems["composite_cagr_pct"], 1.0)
+
+    def test_every_template_still_renders_and_exports(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page, tam_sam_xlsx
+        for key in TEMPLATES:
+            self.assertIn("TAM / SAM Builder",
+                          render_tam_sam_page({"template": [key]}), key)
+            z = zipfile.ZipFile(io.BytesIO(
+                tam_sam_xlsx({"template": [key]})))
+            self.assertIsNone(z.testzip(), key)
