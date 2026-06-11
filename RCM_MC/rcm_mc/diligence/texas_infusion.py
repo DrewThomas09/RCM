@@ -1273,6 +1273,68 @@ def texas_ma_enrollment(tx_pop: float, seniors: float) -> Dict[str, Any]:
     }
 
 
+#: Approximate map coordinates (viewBox 0–100) for the four target
+#: metros on a stylized Texas outline — for the provider map.
+_METRO_MAP_XY = {
+    "Houston": (70.0, 57.0),
+    "Dallas": (56.0, 32.0),
+    "Austin": (52.0, 56.0),
+    "San Antonio": (45.0, 63.0),
+}
+
+
+def texas_infusion_provider_map(
+    metro_deepdives: List[Dict[str, Any]],
+    fetch_live: bool = False,
+) -> Dict[str, Any]:
+    """Provider map data for the four metros: estimated infusion-center
+    count (sum of member-county AIS estimates) + a live NPPES count of
+    infusion providers (taxonomy-filtered) when ``fetch_live`` is set and
+    egress permits. Each metro gets stylized map coordinates for the SVG
+    bubble map.
+
+    ``fetch_live`` is OFF by default: hitting NPPES (4 metros × 2
+    taxonomies) must never block a normal page render. It is enabled
+    deliberately (``?nppes=live``) as a refresh."""
+    from ..data.nppes_infusion import INFUSION_TAXONOMIES
+
+    points = []
+    for dd in metro_deepdives:
+        name = dd["metro"]
+        key = next((k for k in _METRO_MAP_XY if name.startswith(k)), None)
+        if not key:
+            continue
+        x, y = _METRO_MAP_XY[key]
+        est = sum(int(s.get("est_ais_centers") or 0)
+                  for s in dd.get("suburbs", []))
+        live = {"live": False}
+        if fetch_live:
+            from ..data.nppes_infusion import count_infusion_providers
+            live = count_infusion_providers("TX", city=key)
+        points.append({
+            "metro": name, "short": key, "x": x, "y": y,
+            "estimated_centers": est,
+            "nppes_count": live.get("count") if live.get("live") else None,
+            "nppes_live": bool(live.get("live")),
+            "population": dd.get("population", 0),
+        })
+    points.sort(key=lambda p: -p["estimated_centers"])
+    any_live = any(p["nppes_live"] for p in points)
+    return {
+        "points": points,
+        "taxonomies": INFUSION_TAXONOMIES,
+        "live": any_live,
+        "note": ("Infusion-provider supply by metro. Bubble size = "
+                 "estimated ambulatory-infusion centers (sum of member-"
+                 "county AIS estimates from real population); a live NPPES "
+                 "count (taxonomy-filtered — Clinic/Center Infusion "
+                 "Therapy, Infusion Pharmacy, Home Infusion) replaces the "
+                 "estimate wherever the NPI Registry is reachable. NPPES "
+                 "taxonomy codes are public facts; counts are never "
+                 "fabricated."),
+    }
+
+
 def infusion_risk_register() -> List[Dict[str, Any]]:
     """Channel-specific risk register for AIC + home infusion, each
     risk tagged with severity, who it hits, and — critically — the RCM
@@ -2259,6 +2321,7 @@ def texas_growth_scorecard(
 
 def build_texas_infusion_analysis(
     aic_overrides: Optional[Dict[str, Any]] = None,
+    nppes_live: bool = False,
 ) -> Dict[str, Any]:
     """Assemble the full Texas infusion CDD analysis.
 
@@ -2395,6 +2458,8 @@ def build_texas_infusion_analysis(
         "aic_overrides_active": bool(aic_overrides),
         "drug_supply": infusion_drug_supply(),
         "provider_segments": _PROVIDER_SEGMENTS,
+        "provider_map": texas_infusion_provider_map(
+            metro_deepdives, fetch_live=nppes_live),
         "cdc_proxies": cdc_proxies,
         "growth_scorecard": texas_growth_scorecard(metro_deepdives),
         "metros": metros,

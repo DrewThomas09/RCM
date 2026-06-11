@@ -235,3 +235,22 @@ USER DATA REQUEST PROGRESS (multi-source integration):
    - CMS Outpatient Hospitals by Provider & Service (cms_opps_outpatient
      exists) — HOPD infusion volume by metro
    - Medicare Monthly Enrollment total benes by county (no client yet)
+
+---
+## Checkpoint — wave #57 (W2-155, 2026-06-11)
+Added NPPES infusion-provider registry + Texas map. New nppes_infusion.py
+(real NUCC taxonomies + live count, fails closed/fast).
+texas_infusion_provider_map(deepdives, fetch_live=False) — OPT-IN live
+NPPES (?nppes=live) so renders never block. Page: "Infusion-provider map"
+SVG bubble map on stylized TX outline + est-vs-NPPES table + taxonomy ref.
+Tests: +4 map + new test_nppes_infusion (5). Full suite green.
+
+USER DATA REQUEST status: CDC PLACES ✓, ACS ✓, ASP ✓, MA ✓, NPPES+map ✓.
+Remaining named: CMS Outpatient Hospitals by provider/service (client
+exists cms_opps_outpatient — not wired), Medicare Monthly Enrollment
+(no client).
+
+NEXT USER REQUEST (wave #58): clarity pass — add a "SO WHAT" diligence
+implication callout to each section of the Texas infusion page and
+tighten/improve all the analysis. Page is large (~30 sections); add a
+reusable _so_what() helper + per-section takeaways.
