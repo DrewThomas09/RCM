@@ -2490,3 +2490,19 @@ Placed inside the Per-Lever Accuracy card above the table.
 **Verify**: LeverRealizationChartTests — dashed track + band tones +
 "38% of $4.0M"/"95% of $2.0M" labels, planned-size sort, zero-plan
 skipped, empty → "". 27 passed across fund-learning suites.
+
+## W2-130 (2026-06-11) — Physician EU page: signed contribution chart (wave #32)
+**Found**: /diligence/physician-eu ranked providers by contribution
+in a sortable table, but the practice's structure — "three providers
+fund it, two drain it" — lived in a color-coded dollars column you
+had to read row by row.
+**Fixed**: `_contribution_svg(report)` — each provider's annual
+contribution (after comp + allocated overhead) as a signed bar from
+a zero line, in the table's own tones: red when loss-making at FMV
+comp, amber when only at observed comp, green at ≥40% margin; rank
+order matches the roster; caption counts FMV vs observed-only
+loss-makers. Empty rosters render "". Placed inside the roster
+panel above the table.
+**Verify**: ContributionChartTests — all 8 demo providers render,
+rank order pinned, negative tone present with the FMV count in the
+caption, empty → "". 186 passed across physician suites.
