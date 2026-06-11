@@ -326,6 +326,90 @@ def _payer_section(a: Dict[str, Any]) -> str:
         f'</tr></thead><tbody>{rows}</tbody></table></div>')
 
 
+# Stylized Texas outline (viewBox 0 0 100 100) for the provider map.
+_TX_OUTLINE = ("29,8 43,8 43,24 50,24 60,22 63,17 69,26 72,38 78,50 "
+               "74,58 66,64 57,72 50,80 45,83 42,75 37,66 31,58 25,50 "
+               "18,40 10,35 17,30 24,25 29,20")
+
+
+def _provider_map_section(a: Dict[str, Any]) -> str:
+    """An SVG bubble map of the four metros on a stylized Texas outline,
+    sized by infusion-provider supply (estimated AIS centers, or the live
+    NPPES count where reachable), plus the NPPES taxonomy reference."""
+    pm = a.get("provider_map") or {}
+    pts = pm.get("points", [])
+    if not pts:
+        return ""
+    live = pm.get("live")
+
+    def _val(p):
+        return (p["nppes_count"] if p.get("nppes_count") is not None
+                else p["estimated_centers"])
+    mx = max((_val(p) for p in pts), default=1) or 1
+    bubbles = ""
+    for i, p in enumerate(pts):
+        v = _val(p)
+        r = 2.5 + 6.5 * (v / mx) ** 0.5
+        tone = _NAVY if i == 0 else _TEAL
+        bubbles += (
+            f'<circle cx="{p["x"]}" cy="{p["y"]}" r="{r:.1f}" '
+            f'fill="{tone}" fill-opacity="0.78" stroke="#fff" '
+            f'stroke-width="0.6"><title>{html.escape(p["short"])}: {v} '
+            f'infusion centers</title></circle>'
+            f'<text x="{p["x"]}" y="{p["y"]-r-1.2:.1f}" text-anchor="middle" '
+            f'font-size="3.4" font-weight="700" fill="#1a2332">'
+            f'{html.escape(p["short"])}</text>'
+            f'<text x="{p["x"]}" y="{p["y"]+1.1:.1f}" text-anchor="middle" '
+            f'font-size="3.2" font-weight="700" fill="#fff">{v}</text>')
+    svg = (
+        f'<svg viewBox="0 0 100 100" width="320" height="320" '
+        f'role="img" aria-label="Texas infusion-provider map" '
+        f'style="max-width:340px;">'
+        f'<polygon points="{_TX_OUTLINE}" fill="#efe9dc" '
+        f'stroke="#c9c1ac" stroke-width="0.8"/>{bubbles}</svg>')
+    taxo = "".join(
+        f'<li style="margin:2px 0;font-size:11px;color:{_DIM};">'
+        f'<code style="font-size:10px;color:{_NAVY};">{html.escape(t["code"])}'
+        f'</code> — {html.escape(t["label"])} '
+        f'<span style="color:{_FAINT};">({html.escape(t["kind"])})</span></li>'
+        for t in pm.get("taxonomies", []))
+    crows = "".join(
+        f'<tr><td style="padding:3px 8px;font-weight:600;">'
+        f'{html.escape(p["short"])}</td>'
+        f'<td class="num" style="padding:3px 8px;text-align:right;">'
+        f'{p["estimated_centers"]}</td>'
+        f'<td class="num" style="padding:3px 8px;text-align:right;'
+        f'color:{(_POS if p["nppes_count"] is not None else _FAINT)};">'
+        f'{p["nppes_count"] if p["nppes_count"] is not None else "—"}</td>'
+        f'</tr>' for p in pts)
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">'
+        f'{"LIVE — NPPES NPI Registry" if live else "MODELED — est. centers (live NPPES via ?nppes=live)"}'
+        f'</span>')
+    return (
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0;'
+        f'max-width:640px;">{html.escape(pm.get("note", ""))}</p>{badge}</div>'
+        f'<div style="display:grid;grid-template-columns:auto 1fr;gap:20px;'
+        f'align-items:start;">{svg}'
+        f'<div><table style="width:100%;border-collapse:collapse;'
+        f'font-size:12px;margin-bottom:8px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:3px 8px;">Metro</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Est. centers</th>'
+        f'<th style="text-align:right;padding:3px 8px;">NPPES</th>'
+        f'</tr></thead><tbody>{crows}</tbody></table>'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin:6px 0 3px;">NPPES INFUSION TAXONOMIES '
+        f'(PUBLIC NUCC CODES)</div>'
+        f'<ul style="margin:0;padding-left:16px;">{taxo}</ul></div></div>')
+
+
 def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
     """Medicare Advantage enrollment + the site-of-care-steerage read —
     the key payer-mix force on infusion."""
@@ -1774,7 +1858,13 @@ def render_texas_infusion_page(
         aic_assumptions_from_qs, build_texas_infusion_analysis,
     )
     overrides = aic_assumptions_from_qs(qs or {})
-    a = build_texas_infusion_analysis(aic_overrides=overrides)
+    # Live NPPES provider count is opt-in (?nppes=live) so a normal
+    # render never blocks on the NPI Registry.
+    _nppes = (qs or {}).get("nppes")
+    nppes_live = (_nppes == "live"
+                  or (isinstance(_nppes, list) and "live" in _nppes))
+    a = build_texas_infusion_analysis(
+        aic_overrides=overrides, nppes_live=nppes_live)
     demo = a["demographics"]
 
     sources = "".join(
@@ -1886,6 +1976,10 @@ def render_texas_infusion_page(
         + ck_section_header("Provider landscape & competitiveness",
                             eyebrow="COUNTS · CAPACITY · FRAGMENTATION")
         + _provider_panel(a)
+
+        + ck_section_header("Infusion-provider map",
+                            eyebrow="NPPES NPI REGISTRY · SUPPLY BY METRO")
+        + _provider_map_section(a)
 
         + ck_section_header("Metro attractiveness ranking",
                             eyebrow="HOUSTON · DFW · AUSTIN · SAN ANTONIO")

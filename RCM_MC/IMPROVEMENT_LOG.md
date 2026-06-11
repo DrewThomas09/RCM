@@ -3201,3 +3201,29 @@ statutory), J-code reference is verifiable public codes, live fetch
 fails closed + parses mocked payload, offline shows no fabricated
 dollars, MA enrollment matches the real vendored file; +6 page-render
 needles. Full suite green.
+
+## W2-155 (2026-06-11) — Texas infusion: NPPES infusion-provider registry + map (wave #57)
+Added the NPI-registry provider supply read + a Texas map:
+- **NPPES infusion taxonomy + count client** (`nppes_infusion.py`, new):
+  the real public NUCC taxonomy codes (261QI0500N Clinic/Center Infusion
+  Therapy, 3336I0012X Infusion Pharmacy, 251F00000X Home Infusion) and a
+  live count via the existing keyless NPPES API, taxonomy-filtered by
+  metro. Fails closed (no fabricated count) and fails FAST (no retries) —
+  it must never block a render.
+- **Provider map** (`texas_infusion_provider_map`): the four metros with
+  estimated infusion-center counts (sum of member-county AIS estimates
+  from real population) + map coordinates; a live NPPES count replaces
+  the estimate per metro when fetched. Live fetch is OPT-IN
+  (`?nppes=live`) so a normal page render makes zero network calls
+  (verified ~3.5s render).
+- **Page**: an "Infusion-provider map" section — an SVG bubble map on a
+  stylized Texas outline (bubbles sized by provider supply, all four
+  metros verified inside the outline via point-in-polygon), a per-metro
+  est-vs-NPPES count table, and the public taxonomy-code reference, with
+  a LIVE/MODELED badge.
+**Verify**: +4 provider-map tests (test_texas_infusion) + new
+`test_nppes_infusion.py` (5) — map has 4 metros with real estimates
+ranked, default build is offline (no network, counts None), taxonomies
+are the real NUCC codes, live flag threads through + fails closed, count
+client sums across taxonomies + flags capped + fails closed on empty
+state / network error; +4 page-render needles. Full suite green.

@@ -877,6 +877,51 @@ class ASPandMATests(unittest.TestCase):
         self.assertIn("Medicare Advantage", ma["note"])
 
 
+class ProviderMapTests(unittest.TestCase):
+    """NPPES infusion-provider map — real estimated counts, real public
+    taxonomy codes, and a live NPPES count that is OFF by default (never
+    blocks a render) and fails closed when enabled offline."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+
+    def test_map_has_four_metros_with_real_estimates(self):
+        pm = self.a["provider_map"]
+        self.assertEqual(len(pm["points"]), 4)
+        shorts = {p["short"] for p in pm["points"]}
+        self.assertEqual(shorts, {"Houston", "Dallas", "Austin",
+                                  "San Antonio"})
+        for p in pm["points"]:
+            self.assertGreater(p["estimated_centers"], 0)
+            self.assertTrue(0 <= p["x"] <= 100 and 0 <= p["y"] <= 100)
+        # Ranked by estimated centers (largest first).
+        ests = [p["estimated_centers"] for p in pm["points"]]
+        self.assertEqual(ests, sorted(ests, reverse=True))
+
+    def test_default_is_offline_no_network(self):
+        # Default build does NOT hit NPPES — live False, counts None.
+        pm = self.a["provider_map"]
+        self.assertFalse(pm["live"])
+        self.assertTrue(all(p["nppes_count"] is None for p in pm["points"]))
+
+    def test_taxonomies_are_real_nucc_codes(self):
+        codes = {t["code"] for t in self.a["provider_map"]["taxonomies"]}
+        self.assertIn("261QI0500N", codes)   # Clinic/Center Infusion
+        self.assertIn("3336I0012X", codes)   # Infusion Pharmacy
+        self.assertIn("251F00000X", codes)   # Home Infusion agency
+
+    def test_live_flag_threads_through(self):
+        # fetch_live still fails closed in the airgapped sandbox (NPPES
+        # unreachable) — the structure holds, counts stay None.
+        from rcm_mc.diligence.texas_infusion import (
+            texas_infusion_provider_map)
+        pm = texas_infusion_provider_map(
+            self.a["metro_deepdives"], fetch_live=True)
+        self.assertEqual(len(pm["points"]), 4)
+        # No fabrication: offline the live count is None.
+        self.assertTrue(all(p["nppes_count"] is None for p in pm["points"]))
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -909,6 +954,8 @@ class PageRenderTests(unittest.TestCase):
             "Concentration risk", "ANNUAL HOME-INFUSION REFERRALS/YR",
             "Part B drug pricing", "ASP pay limit/unit", "J1745",
             "Post-sequester", "Medicare Advantage", "TX MA ENROLLEES",
+            "Infusion-provider map", "NPPES INFUSION TAXONOMIES",
+            "261QI0500N", "<polygon points=",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
