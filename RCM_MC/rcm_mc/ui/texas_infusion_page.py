@@ -357,6 +357,135 @@ def _growth_drivers(a: Dict[str, Any]) -> str:
     return out
 
 
+def _hbar_svg(rows: List[Dict[str, Any]], *, label_key: str,
+             value_key: str, value_fmt, tone: str, sub_key: str = "",
+             width: int = 560, rank_key: str = "") -> str:
+    """Compact ranked horizontal-bar SVG — the 'easy to visualize'
+    aggregation. ``rows`` already ordered for display; bar length ∝
+    value / max."""
+    if not rows:
+        return ""
+    vals = [float(r.get(value_key) or 0) for r in rows]
+    mx = max(vals) or 1.0
+    label_w, bar_w, right_w = 168, 250, 130
+    row_h, gap, pad = 22, 6, 6
+    height = pad * 2 + len(rows) * (row_h + gap) - gap
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img">']
+    for i, r in enumerate(rows):
+        y = pad + i * (row_h + gap)
+        ty = y + row_h / 2 + 4
+        v = float(r.get(value_key) or 0)
+        w = max(2.0, bar_w * v / mx)
+        rk = (f'<tspan font-weight="700" fill="{tone}">#'
+              f'{r.get(rank_key)}</tspan> ' if rank_key else "")
+        lab = html.escape(str(r.get(label_key, "")))
+        parts.append(
+            f'<text x="{label_w-6}" y="{ty:.0f}" text-anchor="end" '
+            f'font-size="11" fill="#1a2332">{rk}{lab}</text>'
+            f'<rect x="{label_w}" y="{y}" width="{w:.1f}" height="{row_h}" '
+            f'rx="2" fill="{tone}" fill-opacity="0.85"/>'
+            f'<text x="{label_w+w+6:.1f}" y="{ty:.0f}" font-size="10.5" '
+            f'font-weight="600" fill="{_DIM}">{value_fmt(v)}'
+            + (f'<tspan fill="{_FAINT}" font-weight="400"> · '
+               f'{html.escape(str(r.get(sub_key,"")))}</tspan>'
+               if sub_key else "")
+            + '</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _city_section(dd: Dict[str, Any]) -> str:
+    att = dd["attractiveness"]
+    att_tone = _POS if att >= 90 else _TEAL if att >= 80 else _WARN
+    # Operators, linked.
+    ops = " ".join(
+        (f'<a href="{html.escape(o["link"], quote=True)}" target="_blank" '
+         f'rel="noopener" style="display:inline-block;padding:3px 9px;'
+         f'margin:0 5px 5px 0;border:1px solid #c9c1ac;border-radius:3px;'
+         f'font-size:11px;color:{_NAVY};text-decoration:none;'
+         f'background:#fff;">{html.escape(o["org"])} ↗</a>')
+        if o.get("link") else
+        (f'<span style="display:inline-block;padding:3px 9px;'
+         f'margin:0 5px 5px 0;border:1px solid #c9c1ac;border-radius:3px;'
+         f'font-size:11px;color:{_NAVY};">{html.escape(o["org"])}</span>')
+        for o in dd["operators"])
+
+    # Age bands in age order (rank badge inline) — demand share bars.
+    age_rows = [
+        {"band": b["band"], "demand_share": b["demand_share"],
+         "demand_rank": b["demand_rank"],
+         "sub": f'{b["population"]/1e3:,.0f}K · util {b["util_index"]:.1f}'}
+        for b in dd["age_bands"]]
+    age_chart = _hbar_svg(
+        age_rows, label_key="band", value_key="demand_share",
+        value_fmt=lambda v: f'{v*100:.0f}%', tone=_TEAL, sub_key="sub",
+        rank_key="demand_rank")
+
+    # Top suburbs (member counties) by infusion patients.
+    sub_rows = dd["suburbs"][:8]
+    sub_chart = _hbar_svg(
+        sub_rows, label_key="county", value_key="infusion_patients",
+        value_fmt=lambda v: f'{v:,.0f} pts', tone=_NAVY, rank_key="demand_rank",
+        sub_key="")
+
+    # White-space callout. patients_per_ais is None when a county has no
+    # estimated local AIS — that is MAXIMAL whitespace, labeled as such.
+    def _ws_cap(w: Dict[str, Any]) -> str:
+        ppa = w.get("patients_per_ais")
+        if ppa is None:
+            return "no local AIS — fully unserved"
+        return f'{w["est_ais_centers"]} AIS ({ppa:,}/center)'
+    ws = "".join(
+        f'<li style="margin:2px 0;font-size:11.5px;color:{_DIM};">'
+        f'<strong>{html.escape(w["county"])}</strong> — '
+        f'{w["infusion_patients"]:,} patients vs {_ws_cap(w)} · '
+        f'{w["pct_age_65_plus"]*100:.0f}% 65+</li>'
+        for w in dd["whitespace_counties"][:4])
+
+    return (
+        f'<div style="border:1px solid #d6cfc0;border-radius:5px;'
+        f'padding:14px 16px;margin:0 0 16px;background:#fbf9f4;">'
+        # Header
+        f'<div style="display:flex;gap:10px;align-items:baseline;'
+        f'flex-wrap:wrap;border-bottom:1px solid #e4ddca;padding-bottom:8px;">'
+        f'<span style="font-family:monospace;font-weight:700;font-size:15px;'
+        f'color:{att_tone};">#{dd["rank"]}</span>'
+        f'<span style="font-size:16px;font-weight:700;color:#1a2332;">'
+        f'{html.escape(dd["metro"])}</span>'
+        f'<span style="margin-left:auto;font-family:monospace;font-size:11px;'
+        f'color:{_DIM};">pop {dd["population"]/1e6:.2f}M · '
+        f'{dd["seniors"]/1e3:,.0f}K seniors · '
+        f'attractiveness <strong style="color:{att_tone};">{att:.0f}</strong></span>'
+        f'</div>'
+        # Specialty + operators
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.55;'
+        f'margin:8px 0 6px;"><strong style="color:#1a2332;">Specialty tilt:'
+        f'</strong> {html.escape(dd["specialty"])}</p>'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'margin:4px 0 2px;">BIG OPERATORS PRESENT (linked):</div>'
+        f'<div>{ops}</div>'
+        # Two-up charts
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;'
+        f'margin-top:12px;">'
+        f'<div><div style="font-size:10px;color:{_FAINT};'
+        f'letter-spacing:0.06em;margin-bottom:4px;">'
+        f'INFUSION DEMAND BY AGE BAND (ranked)</div>{age_chart}</div>'
+        f'<div><div style="font-size:10px;color:{_FAINT};'
+        f'letter-spacing:0.06em;margin-bottom:4px;">'
+        f'SUBURBS / COUNTIES BY PATIENTS (ranked)</div>{sub_chart}</div>'
+        f'</div>'
+        # White-space
+        f'<div style="margin-top:10px;padding:8px 12px;background:#fff;'
+        f'border-left:3px solid {_WARN};border-radius:0 3px 3px 0;">'
+        f'<div style="font-size:10px;color:{_WARN};font-weight:700;'
+        f'letter-spacing:0.06em;margin-bottom:3px;">EARLY / WHITESPACE '
+        f'SUBURBS — demand with thin local capacity</div>'
+        f'<ul style="margin:0;padding-left:18px;">{ws}</ul></div>'
+        f'</div>')
+
+
 def render_texas_infusion_page() -> str:
     """Render the full Texas infusion diligence page."""
     from ..diligence.texas_infusion import build_texas_infusion_analysis
@@ -405,6 +534,11 @@ def render_texas_infusion_page() -> str:
         + ck_section_header("Metro attractiveness ranking",
                             eyebrow="HOUSTON · DFW · AUSTIN · SAN ANTONIO")
         + _metro_table(a)
+
+        + ck_section_header("City deep-dives",
+                            eyebrow="AGE-BAND DEMAND · SUBURBS · OPERATORS · "
+                                    "WHITESPACE")
+        + "".join(_city_section(dd) for dd in a["metro_deepdives"])
 
         + ck_section_header("Concentration — operator landscape",
                             eyebrow="HHI · FRAGMENTATION → ROLL-UP")

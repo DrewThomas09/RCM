@@ -310,6 +310,211 @@ def texas_metro_breakdown(tx_patients: int, tx_pop: int) -> List[Dict[str, Any]]
     return rows
 
 
+#: Infusion-relevant age bands. ``us_share`` is the band's share of the
+#: US resident population (Census age structure, 2023 ACS S0101); the
+#: 65+ portion is REPLACED per-metro with the metro's real 65+ share so
+#: the bands re-base to local data. ``util_index`` is a relative
+#: infusion-utilization weight — prevalence of infused therapies rises
+#: steeply with age + chronic-disease burden (oncology support, OPAT,
+#: autoimmune biologics), anchored to NHIA / clinical patterns. The
+#: index is illustrative (no per-band claims census is vendored) but the
+#: population base is real.
+_AGE_BANDS = [
+    {"band": "0–17 (pediatric)", "us_share": 0.222, "util_index": 0.30,
+     "note": "low base — pediatric IVIG, enzyme-replacement, select "
+             "biologics only"},
+    {"band": "18–44", "us_share": 0.362, "util_index": 0.70,
+     "note": "autoimmune / IBD biologic onset peaks here"},
+    {"band": "45–64", "us_share": 0.246, "util_index": 1.30,
+     "note": "oncology + autoimmune ramp; commercially insured"},
+    {"band": "65–74", "us_share": 0.097, "util_index": 1.80,
+     "note": "oncology support + OPAT; Medicare onset"},
+    {"band": "75+", "us_share": 0.073, "util_index": 2.20,
+     "note": "highest per-capita — oncology, OPAT, frailty/TPN"},
+]
+_US_65_SHARE = 0.170   # the four-band 65+ total in the table above (0.097+0.073)
+
+
+def metro_age_breakdown(metro_pop: float, pct_65: float) -> List[Dict[str, Any]]:
+    """Split a metro's population into infusion-relevant age bands and
+    rank them by infusion-demand contribution.
+
+    The 65+ portion uses the metro's REAL 65+ share (re-based from the
+    national table); the under-65 bands keep their national relative
+    structure, rescaled to fill (1 − pct_65). Demand = band population ×
+    utilization index, normalized to a share and ranked."""
+    under_65_real = max(0.0, 1.0 - pct_65)
+    under_65_us = 1.0 - _US_65_SHARE
+    bands: List[Dict[str, Any]] = []
+    for b in _AGE_BANDS:
+        is_senior = b["band"] in ("65–74", "75+")
+        if is_senior:
+            # Re-base the two senior bands onto the metro's real 65+ share,
+            # preserving their national ratio to each other.
+            share = pct_65 * (b["us_share"] / _US_65_SHARE)
+        else:
+            share = under_65_real * (b["us_share"] / under_65_us)
+        pop = metro_pop * share
+        bands.append({
+            "band": b["band"], "pop_share": share,
+            "population": round(pop), "util_index": b["util_index"],
+            "note": b["note"], "demand_raw": pop * b["util_index"],
+        })
+    total_demand = sum(b["demand_raw"] for b in bands) or 1.0
+    for b in bands:
+        b["demand_share"] = b["demand_raw"] / total_demand
+    ranked = sorted(bands, key=lambda b: -b["demand_share"])
+    for i, b in enumerate(ranked, start=1):
+        b["demand_rank"] = i
+    # Return in age order for the pyramid, but each row carries its rank.
+    return bands
+
+
+#: Illustrative known operator presence by metro — public branch
+#: footprints (company locators / filings). NOT a TX provider census;
+#: used to show WHICH big chains compete in each metro and to link them.
+_METRO_OPERATORS = {
+    "Houston": ["Option Care Health", "CVS Health / Coram",
+                "Optum Infusion", "Soleo Health", "KabaFusion",
+                "Paragon Healthcare (Elevance)"],
+    "Dallas-Fort Worth-Arlington": [
+        "Option Care Health", "CVS Health / Coram", "Optum Infusion",
+        "Soleo Health", "Paragon Healthcare (Elevance)"],
+    "Austin-Round Rock-San Marcos": [
+        "Option Care Health", "CVS Health / Coram", "Soleo Health"],
+    "San Antonio-New Braunfels": [
+        "Option Care Health", "CVS Health / Coram", "Optum Infusion",
+        "Paragon Healthcare (Elevance)"],
+}
+
+#: Operator → external link (investor/company site) so each named chain
+#: in the per-city breakdown is clickable.
+_OPERATOR_LINKS = {
+    "Option Care Health": "https://www.optioncarehealth.com/locations",
+    "CVS Health / Coram": "https://www.coramhc.com",
+    "Optum Infusion": "https://www.optum.com/en/care/infusion-services.html",
+    "Soleo Health": "https://www.soleohealth.com/locations",
+    "KabaFusion": "https://www.kabafusion.com/locations",
+    "Paragon Healthcare (Elevance)": "https://www.paragonhealthcare.com/locations",
+}
+
+#: Per-metro infusion-specialty tilt — the therapy mix a platform would
+#: skew toward, read off the metro's demographic + provider ecosystem.
+#: Illustrative, anchored to the demographic profile.
+_METRO_SPECIALTY = {
+    "Houston": (
+        "Oncology-support heavy — the Texas Medical Center / MD Anderson "
+        "ecosystem anchors chemo + supportive infusion referral volume; "
+        "large OPAT discharge pipeline from the safety-net hospitals."),
+    "Dallas-Fort Worth-Arlington": (
+        "Balanced, commercial-heavy — the largest employer base in TX "
+        "drives commercial biologics (immunology/IBD) and site-of-care "
+        "steerage; broad oncology + OPAT."),
+    "Austin-Round Rock-San Marcos": (
+        "Youngest metro — autoimmune/IBD biologics and neurology (MS) "
+        "skew with a tech-employer commercial payer mix; lower senior "
+        "density but fast 65+ growth."),
+    "San Antonio-New Braunfels": (
+        "Older, military/VA-influenced and majority-Hispanic — oncology "
+        "support, diabetes-complication infusions, and OPAT; higher "
+        "Medicare + Medicaid mix than the other metros."),
+}
+
+
+def build_texas_metro_deepdive(
+    metro: Dict[str, Any], tx_patients: int, tx_pop: int) -> Dict[str, Any]:
+    """Assemble the in-depth per-city analysis: age-band demand ranking,
+    member-county ('suburb') breakdown with white-space, known operators
+    (linked), and the specialty tilt. Real ACS population per county +
+    the documented age/utilization model."""
+    import pandas as pd
+    from pathlib import Path
+    from ..data.county_demographics import demographics_county
+
+    age_bands = metro_age_breakdown(metro["population"],
+                                    metro["pct_age_65_plus"])
+
+    # Member counties (the suburbs) from the CBSA crosswalk — real.
+    cw_path = (Path(__file__).resolve().parent.parent / "data" / "vendor"
+               / "cbsa_crosswalk" / "cbsa_county_crosswalk.csv")
+    suburbs: List[Dict[str, Any]] = []
+    try:
+        cw = pd.read_csv(cw_path, dtype={"county_fips": str,
+                                         "cbsa_code": str})
+        fipses = cw[cw["cbsa_code"] == metro["cbsa_code"]]["county_fips"]
+        metro_seniors = sum(
+            (demographics_county(f).get("population") or 0)
+            * (demographics_county(f).get("pct_age_65_plus") or 0)
+            for f in fipses) or 1.0
+        for f in fipses:
+            d = demographics_county(f)
+            pop = float(d.get("population") or 0)
+            s65 = float(d.get("pct_age_65_plus") or 0)
+            seniors = pop * s65
+            # Apportion this metro's patient base by senior + total pop.
+            senior_share = seniors / metro_seniors
+            pop_share_in_metro = (pop / metro["population"]
+                                  if metro["population"] else 0)
+            patients = round(
+                (tx_patients * (metro["population"] / tx_pop))
+                * (0.60 * senior_share + 0.40 * pop_share_in_metro))
+            est_ais = max(0, round(
+                US_AIS_CENTERS * (pop / US_POPULATION_2024)))
+            suburbs.append({
+                "county": (d.get("county_name") or "")
+                          .replace(" County", ""),
+                "population": round(pop),
+                "pct_age_65_plus": s65,
+                "seniors": round(seniors),
+                "pct_rural": float(d.get("pct_rural") or 0),
+                "uninsured_rate": float(d.get("uninsured_rate") or 0),
+                "infusion_patients": patients,
+                "est_ais_centers": est_ais,
+                # White-space: patients per AIS chair-cluster. High =
+                # underserved (demand with thin local capacity).
+                "patients_per_ais": (round(patients / est_ais)
+                                     if est_ais else None),
+            })
+    except Exception:  # noqa: BLE001 — crosswalk is best-effort
+        suburbs = []
+
+    suburbs.sort(key=lambda s: -s["infusion_patients"])
+    for i, s in enumerate(suburbs, start=1):
+        s["demand_rank"] = i
+    # White-space ranking: counties with real demand but the thinnest
+    # estimated local capacity (highest patients-per-AIS, or zero AIS).
+    ws = [s for s in suburbs if s["infusion_patients"] > 0]
+    ws.sort(key=lambda s: -(s["patients_per_ais"] or 10 ** 9))
+    whitespace = ws[:5]
+
+    name = metro["metro"]
+    # Match operator/specialty keys (which use the long CBSA title).
+    long_key = next((k for k in _METRO_OPERATORS
+                     if k.startswith(name) or name.startswith(k.split("-")[0])),
+                    None)
+    operators = [
+        {"org": o, "link": _OPERATOR_LINKS.get(o, "")}
+        for o in _METRO_OPERATORS.get(long_key or name, [])
+    ]
+    specialty = _METRO_SPECIALTY.get(long_key or name, "")
+
+    return {
+        "metro": name,
+        "cbsa_code": metro["cbsa_code"],
+        "population": metro["population"],
+        "seniors": metro["seniors"],
+        "attractiveness": metro["attractiveness"],
+        "rank": metro.get("rank"),
+        "uninsured_rate": metro["uninsured_rate"],
+        "pct_rural": metro["pct_rural"],
+        "age_bands": age_bands,
+        "suburbs": suburbs,
+        "whitespace_counties": whitespace,
+        "operators": operators,
+        "specialty": specialty,
+    }
+
+
 def build_texas_infusion_analysis() -> Dict[str, Any]:
     """Assemble the full Texas infusion CDD analysis.
 
@@ -347,7 +552,13 @@ def build_texas_infusion_analysis() -> Dict[str, Any]:
 
     tx_share = tx_pop / US_POPULATION_2024
     provider_landscape = texas_provider_landscape(tx_share)
-    metros = texas_metro_breakdown(model.chain[0].value, tx_pop)
+    tx_patients = int(model.chain[0].value)
+    metros = texas_metro_breakdown(tx_patients, tx_pop)
+    # In-depth per-city deep dives — age-band ranking, suburb/county
+    # breakdown with white-space, linked operators, specialty tilt.
+    metro_deepdives = [
+        build_texas_metro_deepdive(m, tx_patients, tx_pop) for m in metros
+    ]
 
     # Health-system-owned (captive) capacity = the HOPD site share —
     # hospital outpatient infusion is owned by health systems and sits
@@ -405,6 +616,7 @@ def build_texas_infusion_analysis() -> Dict[str, Any]:
         "hhi_band": hhi_band,
         "provider_landscape": provider_landscape,
         "metros": metros,
+        "metro_deepdives": metro_deepdives,
         "health_system_capacity": health_system,
         "fragmentation": fragmentation,
         "population_growth": {
