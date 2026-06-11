@@ -2475,3 +2475,18 @@ enrichment loop is unchanged.
 save_benchmarks(), extracts the exact query from server.py, asserts
 the round-trip (star_rating → 4.0); a guard test bans
 benchmark_values references codebase-wide. 10 audit tests passed.
+
+## W2-129 (2026-06-11) — Fund learning page: planned-vs-realized chart (wave #31)
+**Found**: /fund-learning carried planned, actual, and realization %
+as table columns — the shortfall geometry ("we planned $4M from
+denial recovery and got $1.5M") required mental arithmetic per row,
+and the table's order didn't show where the dollars concentrate.
+**Fixed**: `_lever_realization_svg(lever_biases)` — per lever, the
+planned uplift as a dashed hollow track and the realized dollars as
+a filled bar on the same axis, toned by the page's own realization
+bands (≥85% green / ≥60% amber / below red), labeled "38% of $4.0M",
+sorted by planned size. Zero-plan levers skipped; empty renders "".
+Placed inside the Per-Lever Accuracy card above the table.
+**Verify**: LeverRealizationChartTests — dashed track + band tones +
+"38% of $4.0M"/"95% of $2.0M" labels, planned-size sort, zero-plan
+skipped, empty → "". 27 passed across fund-learning suites.

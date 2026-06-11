@@ -26,6 +26,77 @@ def _fm(val: float) -> str:
     return f"${val:,.0f}"
 
 
+def _lever_realization_svg(lever_biases: list) -> str:
+    """Planned vs realized per lever, as geometry not arithmetic.
+
+    For each lever: the planned uplift as a hollow track and the
+    realized dollars as a filled bar on the same axis, toned by the
+    page's realization bands (≥85% green / ≥60% amber / below red) —
+    so "we planned $4M from denial recovery and got $1.5M" reads as a
+    visible shortfall instead of two table columns. Sorted by planned
+    size. Levers with zero plan are skipped; nothing renders nothing.
+    """
+    rows = [
+        (str(b.lever), float(b.planned_total), float(b.actual_total),
+         float(b.realization_pct))
+        for b in lever_biases
+        if float(getattr(b, "planned_total", 0) or 0) > 0
+    ]
+    if not rows:
+        return ""
+    rows.sort(key=lambda r: -r[1])
+    max_v = max(max(p, a) for _, p, a, _ in rows)
+
+    label_w, bar_w_max, right_w = 190, 360, 110
+    row_h, gap, pad_top, pad_bot = 20, 8, 8, 8
+    width = label_w + bar_w_max + right_w
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Planned vs realized EBITDA uplift per lever">'
+    ]
+    for i, (lever, planned, actual, r_pct) in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 3.5
+        tone = ("#0a8a5f" if r_pct >= 0.85
+                else "#b8732a" if r_pct >= 0.60 else "#b5321e")
+        short = lever if len(lever) <= 25 else lever[:24] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.1f}" text-anchor="end" '
+            f'font-size="10.5" fill="#465366">{_html.escape(short)}</text>'
+        )
+        pw = max(2.0, bar_w_max * planned / max_v)
+        parts.append(
+            f'<rect x="{label_w}" y="{y}" width="{pw:.1f}" '
+            f'height="{row_h}" rx="2" fill="none" stroke="#9b9382" '
+            f'stroke-width="1" stroke-dasharray="3,2"/>'
+        )
+        aw = max(2.0, bar_w_max * max(actual, 0) / max_v)
+        parts.append(
+            f'<rect x="{label_w}" y="{y + 3}" width="{aw:.1f}" '
+            f'height="{row_h - 6}" rx="2" fill="{tone}" '
+            f'fill-opacity="0.85"/>'
+        )
+        parts.append(
+            f'<text x="{label_w + max(pw, aw) + 6:.1f}" y="{ty:.1f}" '
+            f'font-size="10" font-weight="600" fill="{tone}">'
+            f'{r_pct:.0%} of {_fm(planned)}</text>'
+        )
+    parts.append("</svg>")
+    note = (
+        '<p style="font-size:10px;color:var(--cad-text3);'
+        'letter-spacing:0.06em;margin:4px 0 0;">'
+        'DASHED OUTLINE = PLANNED UPLIFT · FILLED BAR = REALIZED · '
+        'TONE = REALIZATION BAND (≥85% / ≥60% / BELOW)</p>'
+    )
+    return (
+        '<div class="ck-lever-realization" style="margin:4px 0 12px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def render_fund_learning(db_path: str) -> str:
     """Render the fund learning dashboard."""
     from ..ml.fund_learning import compute_fund_accuracy
@@ -120,7 +191,8 @@ def render_fund_learning(db_path: str) -> str:
             f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
             f'Adjustment factors are applied to future bridge predictions automatically. '
             f'A factor of 0.82x means the model overestimates this lever by 18%.</p>'
-            f'<table class="cad-table"><thead><tr>'
+            + _lever_realization_svg(accuracy.lever_biases)
+            + f'<table class="cad-table"><thead><tr>'
             f'<th>Lever</th><th>Planned</th><th>Actual</th><th>Realization</th>'
             f'<th>Bias</th><th>Adj Factor</th><th>Deals</th>'
             f'</tr></thead><tbody>{lever_rows}</tbody></table></div>'
