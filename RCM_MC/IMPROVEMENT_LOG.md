@@ -1176,6 +1176,27 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-85 — niche verticals batch 19: endo/obesity, pulmonology, transplant services (00:45Z)
+**Niche-vertical sprint** — industries #68–70, hitting 70:
+  - endocrinology_obesity ($4.2B, +4.7%): 16M GLP-1-era care seekers ×
+    40% physician-managed × $650 — HONESTLY SCOPED: drug dollars flow
+    to pharmacy, not the practice, and the basis says so; obesity
+    programs +14% ★; GLP-1s CANNIBALIZE bariatric (−2% — intra-vertical
+    disruption inside one template); endo scarcity (8K endos / 38M
+    diabetics) priced at −3; coverage whipsaw priced.
+  - pulmonology ($10.2B, +3.4%): 12K pulmonologists (CHEST) × $850K;
+    interventional bronch/nodule programs +10% ★ (LDCT screening feeds
+    robotic bronch); the ICU-pull honesty — "outpatient capacity is the
+    residual"; SAM honestly 0.40 (most are hospital-employed).
+  - transplant_services ($52.8B, +3.0%): 48K transplants (UNOS) ×
+    $1.1M Milliman episodes; heart/lung +7% ★ (perfusion-tech era);
+    SAM 0.15 with the basis stating WHY — the centers are academic and
+    NOT acquirable; only the services shell (pharmacy mgmt, logistics,
+    perfusion) is investable.
+**Verify**: chains pinned; bariatric-negative-segment + pharmacy-in-basis
++ transplant SAM ≤0.20 + "academic" in basis all pinned; catalogue ≥71
+templates pinned; test_tam_sam 109 passed. 70 industries.
+
 ## W2-84 — niche verticals batch 18: urology, rheumatology, neurology (00:15Z)
 **Niche-vertical sprint** — industries #65–67, the infusion-ancillary
 specialty map completed:
