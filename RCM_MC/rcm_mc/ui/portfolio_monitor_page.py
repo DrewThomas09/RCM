@@ -268,12 +268,19 @@ def render_portfolio_monitor(store: Any) -> str:
     except Exception:
         health_rows = []
 
-    # Load alerts
+    # Load alerts — persisted sightings live in alert_history (acks in
+    # alert_acks); there is no ``alerts`` table, so the old query
+    # always fell into the except and this page never showed alerts.
     try:
         with store.connect() as con:
             alert_rows = con.execute(
-                "SELECT deal_id, severity, kind, message, fired_at "
-                "FROM alerts WHERE acked_at IS NULL ORDER BY fired_at DESC LIMIT 30"
+                "SELECT h.deal_id, h.severity, h.kind, "
+                "h.title AS message, h.last_seen_at AS fired_at "
+                "FROM alert_history h LEFT JOIN alert_acks a "
+                "ON a.kind = h.kind AND a.deal_id = h.deal_id "
+                "AND a.trigger_key = h.trigger_key "
+                "WHERE a.ack_id IS NULL "
+                "ORDER BY h.last_seen_at DESC LIMIT 30"
             ).fetchall()
     except Exception:
         alert_rows = []

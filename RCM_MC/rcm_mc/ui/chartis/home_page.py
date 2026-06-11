@@ -112,11 +112,20 @@ def _alerts(db_path: str) -> str:
         # Route through PortfolioStore (campaign target 4E) — provides
         # Row factory + busy_timeout + foreign_keys, so the manual
         # row_factory assignment is no longer needed.
+        # There is no persisted ``alerts`` table — evaluators fire live
+        # and sightings land in ``alert_history`` (acks in
+        # ``alert_acks``). The old query against the phantom table
+        # raised into the bare except, so this panel ALWAYS showed
+        # "No active alerts."
         with PortfolioStore(db_path).connect() as con:
             rows = con.execute(
-                "SELECT deal_id, severity, kind, message, fired_at "
-                "FROM alerts WHERE acked_at IS NULL "
-                "ORDER BY fired_at DESC LIMIT 6"
+                "SELECT h.deal_id, h.severity, h.kind, "
+                "h.title AS message, h.last_seen_at AS fired_at "
+                "FROM alert_history h LEFT JOIN alert_acks a "
+                "ON a.kind = h.kind AND a.deal_id = h.deal_id "
+                "AND a.trigger_key = h.trigger_key "
+                "WHERE a.ack_id IS NULL "
+                "ORDER BY h.last_seen_at DESC LIMIT 6"
             ).fetchall()
     except Exception:
         rows = []
@@ -159,9 +168,14 @@ def _alerts(db_path: str) -> str:
 def _health_distribution(db_path: str) -> str:
     try:
         with PortfolioStore(db_path).connect() as con:
+            # Latest score per deal from deal_health_history — the
+            # old query hit a phantom ``deal_health_scores`` table, so
+            # this panel ALWAYS showed the empty state.
             rows = con.execute(
-                "SELECT score FROM deal_health_scores "
-                "WHERE score IS NOT NULL"
+                "SELECT score FROM deal_health_history h "
+                "WHERE score IS NOT NULL AND at_date = ("
+                "SELECT MAX(at_date) FROM deal_health_history h2 "
+                "WHERE h2.deal_id = h.deal_id)"
             ).fetchall()
     except Exception:
         rows = []
@@ -478,7 +492,11 @@ def _kpi_strip(store: Any, db_path: str) -> str:
     try:
         with PortfolioStore(db_path).connect() as con:
             (n_alerts,) = con.execute(
-                "SELECT COUNT(*) FROM alerts WHERE acked_at IS NULL"
+                "SELECT COUNT(*) FROM alert_history h "
+                "LEFT JOIN alert_acks a ON a.kind = h.kind "
+                "AND a.deal_id = h.deal_id "
+                "AND a.trigger_key = h.trigger_key "
+                "WHERE a.ack_id IS NULL"
             ).fetchone()
     except Exception:
         n_alerts = 0

@@ -2410,3 +2410,27 @@ the source and runs it against the real DDL (would have caught the
 original bug); trend tests pin band guides, latest-score labels,
 single-score counted-not-drawn, empty → "". 61 passed across monitor
 suites.
+
+## W2-126 (2026-06-11) — Phantom-table query audit: 5 dead queries fixed (wave #28)
+**Found**: after W2-125's silent column bug, swept every raw SELECT
+in rcm_mc/ui (42 of them) against the real CREATE TABLE DDL. Four
+more queries hit tables that DON'T EXIST, each swallowed by a bare
+except so the page rendered a permanent empty state:
+- chartis/home_page `_health_distribution` → `deal_health_scores`
+  (real: deal_health_history) — home page health panel always empty.
+- chartis/home_page `_alerts` + `_kpi_strip` count → `alerts` —
+  home alert panel always "No active alerts", KPI always 0.
+- command_center alert list → `alerts` — always empty.
+- portfolio_monitor alert load → `alerts` — per-deal alerts and the
+  ≥3-alerts early-warning never fired.
+**Fixed**: health distribution reads the latest score per deal from
+deal_health_history; all three alert readers join alert_history
+(persisted sightings) LEFT JOIN alert_acks excluding acked rows,
+aliasing title→message and last_seen_at→fired_at so downstream
+rendering is unchanged.
+**Verify**: tests/test_dead_table_queries.py extracts the EXACT
+queries from each page source and runs them against schemas created
+by the production _ensure_table functions; pins the unacked join
+(ack removes the row); and asserts no UI query references `FROM
+alerts` or deal_health_scores anywhere. 5 audit tests + 50 page
+tests passed.

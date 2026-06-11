@@ -76,13 +76,20 @@ def render_command_center(
                 deals.append({"deal_id": r["deal_id"], "name": r["name"],
                                "created_at": r["created_at"]})
             try:
+                # Alerts persist in alert_history (sightings) +
+                # alert_acks — there is no ``alerts`` table, so the
+                # old query always fell into the except.
                 alert_rows = con.execute(
-                    "SELECT deal_id, severity, kind, message, fired_at "
-                    "FROM alerts WHERE acked_at IS NULL "
-                    "ORDER BY fired_at DESC LIMIT 5"
+                    "SELECT h.deal_id, h.severity, h.kind, "
+                    "h.title AS message, h.last_seen_at AS fired_at "
+                    "FROM alert_history h LEFT JOIN alert_acks a "
+                    "ON a.kind = h.kind AND a.deal_id = h.deal_id "
+                    "AND a.trigger_key = h.trigger_key "
+                    "WHERE a.ack_id IS NULL "
+                    "ORDER BY h.last_seen_at DESC LIMIT 5"
                 ).fetchall()
                 alerts = [dict(r) for r in alert_rows]
-            except Exception:  # noqa: BLE001 — alerts table is optional
+            except Exception:  # noqa: BLE001 — history table is optional
                 pass
     except Exception:  # noqa: BLE001 — empty/unbuilt DB falls through
         pass
