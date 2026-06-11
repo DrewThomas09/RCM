@@ -2567,3 +2567,18 @@ Q1 3,005 · Q2 3,510 · Q3 5,713 · Q4 3,193 = **15,421 passed,
 **Verify**: every wave in the run is covered by its own pinned
 tests; the audit guards (test_dead_table_queries.py) now police the
 phantom-query class platform-wide on every CI run.
+
+## W2-135 (2026-06-11) — Verified deals page: vintage timeline (wave #37)
+**Found**: the 445-deal verified catalogue (/verified-deals) had
+outcome-mix and sponsor bars but no time axis — when a sector's
+consolidation actually happened, and whether the deal flow dried up,
+was invisible in a table sorted by sector.
+**Fixed**: `_vintage_svg(deals)` — deal count per vintage year as
+columns over the filtered set (so sector/sponsor chips re-scope the
+chart), drought years keep their empty slot, peak-year counts
+labeled, span + deal count in the header. Fewer than two distinct
+years renders "". Placed after the outcome/sponsor analytics grid.
+**Verify**: VintageChartTests — renders the real 445-deal catalogue,
+2018×3 + 2021×1 → exactly 2 columns with 2019/2020 drought slots and
+the peak count label, single-year/empty → "", chart present in the
+full page render. 17 passed across verified-deals suites.
