@@ -2764,3 +2764,29 @@ strip, in both the normal and print-preview layouts.
 close+tight→STRONG, loose+scattered→WEAK, moderate middle, true-median
 match + close count, empty→THIN, missing-MOIC no-crash, real
 benchmark + page render. 183 passed across comparable suites.
+
+## W2-143 (2026-06-11) — Market structure: buy-and-build roll-up runway (wave #45)
+**Found**: /deal/<id>/market-structure computed HHI/CR3/CR5 + a
+fragmentation verdict and (wave #12) a composition strip, but never
+answered the buy-and-build question the verdict implies — how many
+bolt-ons can the platform actually do before the DOJ concentration
+presumption bites?
+**Added (analysis, verifiable)**: `rollup_runway(shares, platform,
+target_share)` in pe_intelligence/market_structure → a `RollupRunway`:
+- simulates the platform (largest player, or a named one) absorbing
+  the next-largest independents one at a time; at each step the merged
+  share = sum of the two, others unchanged;
+- per step: combined share, post-merger HHI, ΔHHI, and a DOJ-
+  presumption flag = HHI_after>2500 AND ΔHHI>200 (2023 Merger
+  Guidelines, published thresholds);
+- reports acquisitions-to-target (default 30%), the presumption step,
+  and the clean runway (bolt-ons before the presumption);
+- pure arithmetic on the share map; fewer than two players → None.
+Surfaced as a runway table panel (step · acquire · combined · HHI ·
+ΔHHI · presumption flag) + a one-line read, after the shares panel.
+**Verify**: test_rollup_runway.py (10) — single-player→None, platform
+defaults to largest / honors a named one, absorbs largest-first +
+monotonic combined share, presumption flag matches the DOJ rule
+exactly + first-crossing step, combined-share arithmetic (0.30+0.50=
+0.80), reaches-target, fragmented long runway, to_dict round-trip,
+renders in page. 17 passed across market-structure suites.
