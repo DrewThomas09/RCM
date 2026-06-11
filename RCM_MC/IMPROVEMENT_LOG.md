@@ -1176,6 +1176,17 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-93 — full-suite regression sweep + guide-blind fix (04:45Z)
+**Found by**: the quartered full-platform sweep (Q1 2,959 passed · Q2
+3,485 passed with ONE failure) — /diligence/tam-sam was GUIDE-BLIND:
+live in the nav but missing from the assistant's tool-route registry,
+so the PEdesk Guide couldn't answer questions about the sprint's
+flagship page.
+**Fixed**: ToolRouteDefinition for the TAM/SAM Builder (Diligence
+Workspace category, aliases: market sizing/tam/sam/som).
+**Verify**: test_guide_context_sufficiency 16 passed; Q3/Q4 of the sweep
+continuing.
+
 ## W2-92 — agenda export parity: the questions travel into the workbook (04:15Z)
 **Export parity for the training layer**: _derive_agenda_items() is the
 single plain-text source for the page panel AND the exports — the CSV

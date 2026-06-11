@@ -177,6 +177,15 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='TAM / SAM Builder',
+        route='/diligence/tam-sam',
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        source_group='Diligence Workspace',
+        is_auto_generated=False,
+        aliases=['market sizing', 'tam', 'sam', 'som'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Ingestion',
         route='/diligence/ingest',
         category=PageContextCategory.DILIGENCE_WORKSPACE,
