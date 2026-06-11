@@ -9,6 +9,7 @@ import html
 import importlib
 import math
 from collections import defaultdict
+from urllib.parse import quote as _url_quote
 from typing import Any, Dict, List, Optional
 
 
@@ -44,12 +45,24 @@ def _paired_sector_rows(items: list) -> tuple:
         "Sector", "Recent", "Prior", "Change",
         "MOIC P50 R", "MOIC P50 P",
     ]
+    from .._chartis_kit import SafeHtml
+    from urllib.parse import quote as _quote
     rows: list = []
     for d in items:
         chg = d.get("change_pct", 0.0)
         sign = "+" if chg >= 0 else ""
+        sec = d.get("sector") or ""
+        # Drill-down: each sector links into Deal Search pre-filtered to
+        # that taxonomy sector (exact match on the same corpus field), so
+        # the momentum read is one click from the underlying deals.
+        sec_cell = SafeHtml(
+            f'<a href="/deal-search?sector={_quote(sec)}" '
+            f'style="color:inherit;" title="Open the underlying '
+            f'corpus deals for {html.escape(sec, quote=True)}">'
+            f'{html.escape(sec[:30])}</a>'
+        )
         rows.append([
-            (d.get("sector") or "")[:30],
+            sec_cell,
             str(d.get("recent", 0)),
             str(d.get("prior", 0)),
             f"{sign}{chg:.0f}%",
@@ -174,7 +187,11 @@ def render_sector_momentum(recent_years: int = 5) -> str:
             moic_p = f"{d['moic_prior']:.2f}×"  if d.get("moic_prior")  else "—"
             rows += (
                 f'<tr>'
-                f'<td style="padding:4px 8px;font-size:11px">{html.escape(d["sector"][:30])}</td>'
+                # Same drill-down as the accelerating table — sector name
+                # opens Deal Search filtered to that taxonomy sector.
+                f'<td style="padding:4px 8px;font-size:11px">'
+                f'<a href="/deal-search?sector={_url_quote(d["sector"])}" '
+                f'style="color:inherit;">{html.escape(d["sector"][:30])}</a></td>'
                 f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;font-variant-numeric:tabular-nums">{d["recent"]}</td>'
                 f'<td style="padding:4px 8px;font-size:10px;font-family:{_MONO};text-align:right;color:{P["text_dim"]};font-variant-numeric:tabular-nums">{d["prior"]}</td>'
                 f'<td style="padding:4px 8px;font-size:11px;font-family:{_MONO};text-align:right;font-weight:700;color:{col};font-variant-numeric:tabular-nums">{sign}{d["change_pct"]:.0f}%</td>'
