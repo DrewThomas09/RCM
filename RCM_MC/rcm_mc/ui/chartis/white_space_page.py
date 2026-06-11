@@ -65,6 +65,90 @@ def _score_color(score: float) -> str:
     return P["text_faint"]
 
 
+def _score_spectrum_svg(by_dim: Dict[str, List[Dict[str, Any]]]) -> str:
+    """Every opportunity as a dot on one fixed 0–1 conviction axis.
+
+    One row per dimension; dashed guides at the 0.25 / 0.50 / 0.75
+    scoring bands the explainer describes; dots toned by the page's
+    own _score_color; the best opportunity per row gets its name
+    printed. Reads as "where does conviction cluster" — cards below
+    carry the rationale. No scored opportunities renders nothing.
+    """
+    dims = [d for d in ("geographic", "segment", "channel") if by_dim.get(d)]
+    if not dims:
+        return ""
+
+    label_w, axis_w = 110, 540
+    row_h, gap, pad_top, pad_bot = 30, 6, 18, 16
+    width = label_w + axis_w + 20
+    height = pad_top + len(dims) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="White-space opportunity scores by dimension">'
+    ]
+    for frac, tag in ((0.25, "0.25"), (0.50, "0.50"), (0.75, "0.75")):
+        gx = label_w + axis_w * frac
+        parts.append(
+            f'<line x1="{gx:.0f}" y1="{pad_top - 6}" x2="{gx:.0f}" '
+            f'y2="{height - pad_bot + 4}" stroke="{P["border_dim"]}" '
+            f'stroke-width="1" stroke-dasharray="2,3"/>'
+            f'<text x="{gx:.0f}" y="{pad_top - 9}" text-anchor="middle" '
+            f'font-size="8.5" font-family="var(--ck-mono)" '
+            f'fill="{P["text_faint"]}">{tag}</text>'
+        )
+    for i, dim in enumerate(dims):
+        y = pad_top + i * (row_h + gap)
+        cy = y + row_h / 2
+        dim_label, dim_col, _ = _DIM_LABELS.get(
+            dim, (dim.upper(), P["text_dim"], ""))
+        parts.append(
+            f'<text x="{label_w - 10}" y="{cy + 3:.1f}" text-anchor="end" '
+            f'font-size="9.5" letter-spacing="1" font-weight="700" '
+            f'fill="{dim_col}">{_html.escape(dim_label)}</text>'
+        )
+        parts.append(
+            f'<line x1="{label_w}" y1="{cy:.1f}" x2="{label_w + axis_w}" '
+            f'y2="{cy:.1f}" stroke="{P["border_dim"]}" stroke-width="1"/>'
+        )
+        opps = sorted(
+            by_dim[dim],
+            key=lambda o: float(o.get("score", 0.0) or 0.0),
+        )
+        for j, o in enumerate(opps):
+            score = max(0.0, min(1.0, float(o.get("score", 0.0) or 0.0)))
+            cx = label_w + axis_w * score
+            col = _score_color(score)
+            parts.append(
+                f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5.5" fill="{col}" '
+                f'fill-opacity="0.85" stroke="{P["panel"]}" stroke-width="1"/>'
+            )
+            if j == len(opps) - 1:  # best in row gets its name
+                name = str(o.get("name", "")) or "—"
+                if len(name) > 22:
+                    name = name[:21] + "…"
+                anchor = "end" if score > 0.82 else "start"
+                tx = cx - 9 if score > 0.82 else cx + 9
+                parts.append(
+                    f'<text x="{tx:.1f}" y="{cy - 9:.1f}" '
+                    f'text-anchor="{anchor}" font-size="9.5" '
+                    f'fill="{P["text_dim"]}">{_html.escape(name)} '
+                    f'{score:.2f}</text>'
+                )
+    parts.append("</svg>")
+    note = (
+        f'<div style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.08em;color:{P["text_faint"]};margin-top:2px;">'
+        '0–1 CONVICTION AXIS · ≥0.75 STRONG FIT · 0.50–0.75 FAIR · '
+        'BEST PER DIMENSION LABELED</div>'
+    )
+    return (
+        '<div class="ck-ws-spectrum" style="margin:2px 0 14px;">'
+        + "".join(parts) + note + "</div>"
+    )
+
+
 def _opportunity_card(opp: Dict[str, Any]) -> str:
     name = _html.escape(str(opp.get("name", "—")))
     score = float(opp.get("score", 0.0) or 0.0)
@@ -265,7 +349,8 @@ def render_white_space(
         )
 
     dim_sections = (
-        _dimension_section("geographic", by_dim.get("geographic", []))
+        _score_spectrum_svg(by_dim)
+        + _dimension_section("geographic", by_dim.get("geographic", []))
         + _dimension_section("segment", by_dim.get("segment", []))
         + _dimension_section("channel", by_dim.get("channel", []))
     )
