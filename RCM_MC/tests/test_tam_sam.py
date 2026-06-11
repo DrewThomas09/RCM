@@ -527,3 +527,25 @@ class ScenarioPresetTests(unittest.TestCase):
                                  "scenario": ["aggressive"]})
         self.assertIn("scenario=conservative", h)
         self.assertIn("scenario=base", h)
+
+
+class ExportParityTests(unittest.TestCase):
+    """The exports carry everything the page shows — segment divergence
+    columns and the scenario tag (a deal team must never get a thinner
+    file than the screen)."""
+
+    def test_csv_carries_divergence(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv
+        out = tam_sam_csv({"template": ["behavioral_health"]})
+        self.assertIn("Growth %/yr", out)
+        self.assertIn("Y5 slice", out)
+
+    def test_xlsx_carries_divergence_and_scenario(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_xlsx
+        data = tam_sam_xlsx({"template": ["behavioral_health"],
+                             "scenario": ["aggressive"]})
+        z = zipfile.ZipFile(io.BytesIO(data))
+        self.assertIsNone(z.testzip())
+        self.assertIn(b"AGGRESSIVE scenario",
+                      z.read("xl/worksheets/sheet1.xml"))
+        self.assertIn(b"Growth %/yr", z.read("xl/worksheets/sheet2.xml"))

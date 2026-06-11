@@ -776,11 +776,16 @@ def tam_sam_csv(qs: Dict[str, List[str]]) -> str:
                 "of SAM", out["som_note"], round(out["som"], 2)])
     w.writerow([])
     if out["segments"]:
-        w.writerow(["Segment", "Volume share", "TAM slice", "Success rate",
-                    "Note"])
+        w.writerow(["Segment", "Volume share", "TAM slice",
+                    "Growth %/yr", f"Y{out['horizon_years']} slice",
+                    "Success rate", "Note"])
         for s in out["segments"]:
             w.writerow([s["name"], s["share_of_volume"],
                         round(s["tam_value"], 2),
+                        s.get("growth_pct") if s.get("growth_pct")
+                        is not None else "",
+                        round(s["tam_y_final"], 2)
+                        if s.get("tam_y_final") else "",
                         s["success_rate"] if s["success_rate"] is not None
                         else "", s["note"]])
         w.writerow([])
@@ -800,9 +805,13 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
     from ..exports.xlsx_writer import Sheet, write_xlsx
     model = model_from_qs(qs)
     out = compute(model)
+    _scen = ((qs.get("scenario") or ["base"])[0] or "base").lower()
+    if _scen not in ("conservative", "base", "aggressive"):
+        _scen = "base"
     H = "header"
     funnel_rows: List[List[Any]] = [
-        [(f"TAM/SAM build · {out['name']}", H), ("", H), ("", H), ("", H),
+        [(f"TAM/SAM build · {out['name']} · "
+          f"{_scen.upper()} scenario", H), ("", H), ("", H), ("", H),
          ("", H), ("", H)],
         [out["basis_note"], "", "", "", "", ""],
         [],
@@ -829,10 +838,14 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
     ]
     seg_rows: List[List[Any]] = [
         [("Segment", H), ("Volume share", H), ("TAM slice", H),
+         ("Growth %/yr", H), (f"Y{out['horizon_years']} slice", H),
          ("Success rate", H), ("Note", H)],
     ] + [
         [s["name"], (s["share_of_volume"], "pct"),
          (s["tam_value"], "money"),
+         (s["growth_pct"] / 100.0, "pct")
+         if s.get("growth_pct") is not None else "",
+         (s["tam_y_final"], "money") if s.get("tam_y_final") else "",
          (s["success_rate"], "pct") if s["success_rate"] is not None else "",
          s["note"]]
         for s in out["segments"]
@@ -873,7 +886,8 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
     return write_xlsx([
         Sheet("Funnel & chain", funnel_rows,
               col_widths=[34, 8, 14, 16, 44, 16]),
-        Sheet("Segments", seg_rows, col_widths=[14, 14, 16, 14, 40]),
+        Sheet("Segments", seg_rows,
+              col_widths=[26, 13, 15, 12, 15, 13, 40]),
         Sheet("Projection", proj_rows, col_widths=[34, 12, 40, 16]),
         Sheet("Sources", src_rows, col_widths=[5, 38, 70]),
     ])

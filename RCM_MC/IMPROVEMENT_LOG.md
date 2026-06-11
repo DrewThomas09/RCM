@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-64 — export parity: divergence + scenario in CSV/XLSX (14:05Z)
+**Sprint polish**: a deal team must never get a thinner file than the
+screen. The CSV + the xlsx Segments sheet gain Growth %/yr + Y-final
+slice columns; the xlsx funnel header carries the SCENARIO tag
+("AGGRESSIVE scenario") so an exported model is never mistaken for base
+case. Scenario flows through both export endpoints automatically (they
+share model_from_qs).
+**Verify**: CSV carries the columns; xlsx sheet1 carries the scenario
+tag and sheet2 the divergence columns (pinned); test_tam_sam 46 passed.
+
 ## W2-63 — divergence map completed across the catalogue (13:40Z)
 **Sprint depth**: segment growth rates on 4 more templates —
   - oncology: med onc +7% ★ (drug spend) vs rad onc +1%
