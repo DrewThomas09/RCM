@@ -2372,3 +2372,19 @@ cards.
 ticks match slider ranges (0.500 / 0.800 / 120), out-of-range value
 clamps to the axis end, empty → "". 89 passed across calibration
 suites.
+
+## W2-124 (2026-06-11) — Escalations page: aging chart (wave #26)
+**Found**: /escalations printed "Nd open" per row; nothing drew the
+relative staleness of the queue or visually separated live alerts
+from acknowledged-but-still-open ones — "three deals have been red
+for a quarter and nobody silenced them" required reading every row.
+**Fixed**: `_aging_svg(df, min_days)` — one bar per escalated alert,
+sized by days open, oldest first, brick for live and gray for
+acknowledged (the ACKED suffix carries into the value label), header
+naming the threshold, capped at the 20 oldest with the cap declared
+in the legend. None/empty frames render "". Placed above the
+severity panel.
+**Verify**: EscalationsAgingChartTests — both tones + "45d ACKED"
+label + threshold header, oldest-first order, exactly 20 rects at
+the cap with "20 OLDEST SHOWN", None/empty → "". 37 passed across
+escalation suites.
