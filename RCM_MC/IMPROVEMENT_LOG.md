@@ -1176,6 +1176,18 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-99 — DILIGENCE-PAGE UPGRADE WAVE opens: bear-case severity matrix (07:55Z)
+**The wave the user directed** — functionality + visualization across
+every diligence surface, starting with the Bear Case:
+  - _severity_matrix_svg(): the bear case at a glance BEFORE the cards —
+    a severity-stacked bar (CRITICAL red → LOW gray, semantic tones,
+    counts inline) + a theme × severity dot matrix (REGULATORY/CREDIT/
+    OPERATIONAL/… rows, lit dots per severity present, per-theme counts).
+    Renders on both the full-pipeline and fast-path views; empty reports
+    render nothing.
+**Verify**: matrix renders on a fast-path bear case (regulatory evidence
+present); empty-report empty-string pinned; bear suites 21 passed.
+
 ## W2-98 — jump nav on the build page (07:20Z)
 **Usability for the now-9-panel page**: a one-line jump nav (the X-Ray
 pattern) — Cross-industry · Chain · Segments · Projection · Sensitivity ·

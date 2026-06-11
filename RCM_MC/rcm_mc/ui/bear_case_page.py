@@ -413,7 +413,74 @@ def _evidence_card(ev: Evidence) -> str:
     )
 
 
+def _severity_matrix_svg(report: BearCaseReport,
+                         width: int = 660) -> str:
+    """The bear case at a glance BEFORE the cards: a severity-stacked
+    bar (CRITICAL→LOW, semantic tones) plus a theme × severity dot
+    matrix. Empty report → empty string."""
+    if not report.evidence:
+        return ""
+    sev_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+    sev_tone = {"CRITICAL": "#b5321e", "HIGH": "#b8732a",
+                "MEDIUM": "#a98545", "LOW": "#7a8699"}
+    counts = {s: 0 for s in sev_order}
+    themes: Dict[str, Dict[str, int]] = {}
+    for ev in report.evidence:
+        counts[ev.severity.value] = counts.get(ev.severity.value, 0) + 1
+        themes.setdefault(ev.theme.value, {s: 0 for s in sev_order})
+        themes[ev.theme.value][ev.severity.value] += 1
+    total = sum(counts.values()) or 1
+
+    # 1 · stacked severity bar
+    bar_h = 22
+    parts = [f'<svg width="{width}" height="{bar_h + 18}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Evidence severity mix">']
+    x = 0.0
+    for s in sev_order:
+        n = counts[s]
+        if not n:
+            continue
+        w = n / total * width
+        parts.append(
+            f'<rect x="{x:.1f}" y="0" width="{max(w,1):.1f}" '
+            f'height="{bar_h}" fill="{sev_tone[s]}"/>')
+        if w >= 64:
+            parts.append(
+                f'<text x="{x + w/2:.1f}" y="{bar_h/2 + 4}" '
+                'text-anchor="middle" font-family="monospace" '
+                f'font-size="10.5" fill="#ffffff">{s} {n}</text>')
+        x += w
+    parts.append(
+        f'<text x="0" y="{bar_h + 14}" font-family="monospace" '
+        f'font-size="10" fill="#7a8699">{total} evidence items · '
+        'reads worst-first below</text></svg>')
+
+    # 2 · theme × severity dot rows
+    rows = ""
+    for theme, sv in themes.items():
+        dots = "".join(
+            f'<span title="{s}: {sv[s]}" style="display:inline-block;'
+            f'width:11px;height:11px;border-radius:2px;margin-right:3px;'
+            f'background:{sev_tone[s]};opacity:{1 if sv[s] else .12};">'
+            '</span>'
+            for s in sev_order)
+        n_t = sum(sv.values())
+        rows += (
+            '<div style="display:flex;align-items:center;gap:10px;'
+            'padding:3px 0;font-size:11.5px;color:#465366;">'
+            f'<span style="width:120px;font-family:var(--sc-mono);'
+            f'font-size:10px;text-transform:uppercase;">'
+            f'{html.escape(theme.title())}</span>{dots}'
+            f'<span style="font-family:var(--sc-mono);font-size:10px;">'
+            f'{n_t}</span></div>'
+        )
+    return ("".join(parts)
+            + f'<div style="margin:8px 0 14px;">{rows}</div>')
+
+
 def _evidence_by_theme(report: BearCaseReport) -> str:
+    matrix = _severity_matrix_svg(report)
     by_theme: Dict[str, List[Evidence]] = {}
     for ev in report.evidence:
         by_theme.setdefault(ev.theme.value, []).append(ev)
@@ -438,7 +505,7 @@ def _evidence_by_theme(report: BearCaseReport) -> str:
                if narrative else "")
             + cards
         )
-    return "".join(blocks)
+    return matrix + "".join(blocks)
 
 
 def _ic_memo_preview(report: BearCaseReport) -> str:
