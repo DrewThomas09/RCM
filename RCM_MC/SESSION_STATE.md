@@ -254,3 +254,12 @@ NEXT USER REQUEST (wave #58): clarity pass — add a "SO WHAT" diligence
 implication callout to each section of the Texas infusion page and
 tighten/improve all the analysis. Page is large (~30 sections); add a
 reusable _so_what() helper + per-section takeaways.
+
+---
+## Checkpoint — wave #58 (W2-156, 2026-06-11)
+Clarity pass: added `_so_what()` + `_so_whats(a)` (18 data-driven
+per-section takeaways) to the Texas infusion page — sizing, channels,
+home infusion, discharge, players, competitive dynamics, CDC, AIC econ,
+ASP, site-of-care, providers, map, metro, scorecard, concentration,
+payer, demographics, growth. Each recomputes from real analysis values.
++2 tests; full suite green. Addresses user "so what of each thing" ask.

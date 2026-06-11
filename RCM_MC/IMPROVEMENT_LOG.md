@@ -3227,3 +3227,28 @@ ranked, default build is offline (no network, counts None), taxonomies
 are the real NUCC codes, live flag threads through + fails closed, count
 client sums across taxonomies + flags capped + fails closed on empty
 state / network error; +4 page-render needles. Full suite green.
+
+## W2-156 (2026-06-11) — Texas infusion: per-section "SO WHAT" takeaways (wave #58)
+Clarity pass — made the page scannable by giving every major section a
+data-driven diligence takeaway, so a partner gets the implication, not
+just the table:
+- **`_so_what()` callout** + **`_so_whats(a)`** builder: 18 takeaways
+  computed from REAL analysis values (so each recomputes from the data
+  it summarizes) — e.g. sizing "$3.36B TAM growing 8.0%/yr, $1.95B
+  addressable — underwrite the demand chain, not the headline";
+  discharge "~27,027 OPAT referrals/yr but 58% through hospital
+  discharge desks — referral concentration is the #1 risk"; AIC
+  "~$218K contribution/chair, break-even near 19% utilization";
+  concentration "HHI 517, top operator 20%, 59% independent pool —
+  textbook roll-up runway"; payer "commercial 45% funds it, but 2.2M MA
+  lives (~55%) steer site-of-care"; scorecard "6 north/Austin-corridor
+  counties show demand outrunning AIS capacity".
+- Inserted after sizing, channels, home infusion, discharge pipeline,
+  players, competitive dynamics, CDC proxies, AIC economics, ASP
+  pricing, site of care, provider landscape, provider map, metro
+  ranking, growth scorecard, concentration, payer mix, demographics,
+  and growth drivers — colored by severity (risk takeaways in negative
+  tone).
+**Verify**: +2 takeaway tests — builder produces ≥15 non-empty takeaways
+carrying real values (HHI, OPAT flow), page renders ≥15 SO WHAT
+callouts. Full suite green.
