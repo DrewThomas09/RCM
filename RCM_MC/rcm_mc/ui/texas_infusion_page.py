@@ -1172,6 +1172,175 @@ def _home_infusion_block(dd: Dict[str, Any]) -> str:
         f'published epidemiology)</div>{bars}</div>')
 
 
+# Risk-heat scale 1 (low) → 5 (high).
+_RISK_SCALE = {1: "#0a8a5f", 2: "#5a9e6f", 3: "#b8732a",
+               4: "#cf5a2e", 5: "#b5321e"}
+_RISK_BAND_TONE = {"HIGH": _NEG, "ELEVATED": _WARN, "MODERATE": _TEAL}
+
+
+def _readmit_tone(pct: float) -> str:
+    return _NEG if pct >= 20 else _WARN if pct >= 12 else _POS
+
+
+def _home_discharge_section(a: Dict[str, Any]) -> str:
+    """The home-infusion discharge pipeline + therapy-volume risk: annual
+    referral flow by therapy, the five-axis risk heatmap (most-at-risk
+    ranked), and the referral-source concentration read."""
+    hi = a.get("home_infusion") or {}
+    disch = hi.get("tx_discharges", [])
+    risk = hi.get("therapy_risk", {})
+    refs = hi.get("referral_sources", {})
+    if not disch or not risk:
+        return ""
+
+    # Discharge / referral-flow table.
+    drows = ""
+    for d in disch:
+        tone = _HI_TONE.get(d["key"], _FAINT)
+        rt = _readmit_tone(d["readmission_pct"])
+        drows += (
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:6px 8px;"><span style="display:inline-block;'
+            f'width:9px;height:9px;border-radius:2px;background:{tone};'
+            f'margin-right:5px;"></span><strong>{html.escape(d["therapy"])}'
+            f'</strong></td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'font-weight:700;color:{tone};">{d["annual_referrals"]:,}'
+            f'<div style="font-size:9px;color:{_FAINT};font-weight:400;">'
+            f'{d["flow_per_100k"]:.0f}/100k</div></td>'
+            f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(d["source"])}</td>'
+            f'<td class="num" style="padding:6px 8px;text-align:right;'
+            f'font-weight:700;color:{rt};">{d["readmission_pct"]:.0f}%</td>'
+            f'</tr>')
+    flow_table = (
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:6px 8px;">Therapy</th>'
+        f'<th style="text-align:right;padding:6px 8px;">TX referrals/yr</th>'
+        f'<th style="text-align:left;padding:6px 8px;">Discharge / referral '
+        f'source</th>'
+        f'<th style="text-align:right;padding:6px 8px;">30-day readmit</th>'
+        f'</tr></thead><tbody>{drows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'Referrals/yr = published new-start / discharge incidence (per '
+        f'100k) × real TX population — the demand FLOW the channel '
+        f'captures, distinct from the standing eligible pool. Readmission '
+        f'anchors from OPAT / HPN / HF cohort studies (re-hospitalized '
+        f'patients stop billing — the leakage to underwrite).</p>')
+
+    # Risk heatmap, ranked most-at-risk first.
+    axes = ["reimbursement", "steerage", "referral_concentration",
+            "clinical", "supply"]
+    axhead = "".join(
+        f'<th style="padding:4px 5px;font-size:9px;font-weight:700;'
+        f'color:{_FAINT};writing-mode:horizontal-tb;text-align:center;">'
+        f'{html.escape(risk["axis_labels"][ax].split(" ")[0])}</th>'
+        for ax in axes)
+    rrows = ""
+    for r in risk["therapies"]:
+        bt = _RISK_BAND_TONE.get(r["band"], _FAINT)
+        cells = "".join(
+            f'<td style="padding:4px 5px;text-align:center;">'
+            f'<span style="display:inline-block;width:22px;height:18px;'
+            f'line-height:18px;border-radius:3px;background:{_RISK_SCALE[v]};'
+            f'color:#fff;font-size:10px;font-weight:700;">{v}</span></td>'
+            for v in (r["axes"][ax] for ax in axes))
+        rrows += (
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:5px 8px;"><strong style="color:{bt};">'
+            f'#{r["rank"]}</strong> {html.escape(r["therapy"])}'
+            f'<div style="font-size:9.5px;color:{_FAINT};">lead: '
+            f'{html.escape(r["lead_risk"])}</div></td>'
+            f'{cells}'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-weight:700;color:{bt};">{r["overall_pct"]}'
+            f'<div style="font-size:9px;font-weight:700;color:{bt};">'
+            f'{html.escape(r["band"])}</div></td>'
+            f'</tr>')
+    heatmap = (
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:4px 8px;">Therapy (most at '
+        f'risk first)</th>{axhead}'
+        f'<th style="padding:4px 8px;text-align:right;">At-risk</th>'
+        f'</tr></thead><tbody>{rrows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'Five-axis diligence framework (1 low → 5 high): Reimbursement · '
+        f'Steerage · Referral-concentration · Clinical · Supply. At-risk = '
+        f'weighted blend (×20). {html.escape(risk.get("note", ""))}</p>')
+
+    # Referral-source concentration.
+    src_bars = ""
+    for s in refs.get("sources", []):
+        w = s["share"] * 100
+        src_bars += (
+            f'<div style="display:grid;grid-template-columns:230px 1fr 44px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div style="font-size:11px;color:#1a2332;">'
+            f'{html.escape(s["source"])}</div>'
+            f'<div style="height:13px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;"><div style="height:100%;width:{w:.0f}%;'
+            f'background:{_NAVY};"></div></div>'
+            f'<div style="font-size:11px;font-weight:700;color:{_NAVY};'
+            f'text-align:right;">{w:.0f}%</div></div>')
+    ref_block = (
+        f'{src_bars}'
+        f'<div style="margin-top:8px;padding:8px 11px;background:#fbf3ef;'
+        f'border-left:3px solid {_NEG};border-radius:0 3px 3px 0;'
+        f'font-size:11.5px;color:#1a2332;line-height:1.55;">'
+        f'<strong style="color:{_NEG};">Concentration risk: </strong>'
+        f'{html.escape(refs.get("concentration_risk", ""))}</div>'
+        f'<div style="margin-top:6px;padding:8px 11px;background:#eef5f4;'
+        f'border-left:3px solid {_TEAL};border-radius:0 3px 3px 0;'
+        f'font-size:11.5px;color:#1a2332;line-height:1.55;">'
+        f'<strong style="color:{_TEAL};">RCM read: </strong>'
+        f'{html.escape(refs.get("rcm_read", ""))}</div>')
+
+    return (
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin:0 0 5px;">ANNUAL REFERRAL FLOW BY THERAPY '
+        f'+ READMISSION LEAKAGE</div>{flow_table}'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin:16px 0 5px;">WHAT&#39;S MOST AT RISK — '
+        f'THERAPY-VOLUME RISK HEATMAP</div>{heatmap}'
+        f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
+        f'font-weight:700;margin:16px 0 5px;">REFERRAL-SOURCE '
+        f'CONCENTRATION — THE COMMERCIAL FRAGILITY</div>{ref_block}')
+
+
+def _home_discharge_block(dd: Dict[str, Any]) -> str:
+    """Per-metro annual home-infusion referral flow by therapy."""
+    rows = dd.get("home_infusion_discharges", [])
+    if not rows:
+        return ""
+    mx = max((r["annual_referrals"] for r in rows), default=1) or 1
+    bars = ""
+    for r in rows:
+        w = r["annual_referrals"] / mx * 100
+        tone = _HI_TONE.get(r["key"], _FAINT)
+        rt = _readmit_tone(r["readmission_pct"])
+        bars += (
+            f'<div style="display:grid;grid-template-columns:1fr 100px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div><div style="font-size:11px;color:#1a2332;">'
+            f'{html.escape(r["therapy"])}</div>'
+            f'<div style="height:10px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;margin-top:2px;"><div style="height:100%;'
+            f'width:{w:.0f}%;background:{tone};"></div></div></div>'
+            f'<div style="text-align:right;"><span style="font-size:11px;'
+            f'font-weight:700;color:{tone};">{r["annual_referrals"]:,}</span>'
+            f'<span style="font-size:9px;color:{rt};"> · {r["readmission_pct"]:.0f}%↩</span>'
+            f'</div></div>')
+    return (
+        f'<div style="margin-top:10px;"><div style="font-size:10px;'
+        f'color:{_FAINT};letter-spacing:0.06em;margin-bottom:3px;">'
+        f'ANNUAL HOME-INFUSION REFERRALS/YR BY THERAPY (new starts · '
+        f'↩ 30-day readmit)</div>{bars}</div>')
+
+
 def _channel_cards(a: Dict[str, Any]) -> str:
     """Two side-by-side channel breakdowns — AIC vs home infusion."""
     cards = ""
@@ -1486,6 +1655,7 @@ def _city_section(dd: Dict[str, Any]) -> str:
         + illness
         + _cdc_demand_block(dd)
         + _home_infusion_block(dd)
+        + _home_discharge_block(dd)
         + _county_capacity_table(dd)
         # White-space
         + f'<div style="margin-top:10px;padding:8px 12px;background:#fff;'
@@ -1545,6 +1715,12 @@ def render_texas_infusion_page(
                             eyebrow="OPAT · IG · TPN · INOTROPES · RARE · "
                                     "THE HIT BENEFIT GAP")
         + _home_infusion_section(a)
+
+        + ck_section_header("Home-infusion discharge pipeline & therapy "
+                            "risk",
+                            eyebrow="REFERRAL FLOW · READMISSION LEAKAGE · "
+                                    "WHAT'S MOST AT RISK")
+        + _home_discharge_section(a)
 
         + ck_section_header("Players — the named operators",
                             eyebrow="WHO COMPETES · OWNERSHIP · TX PRESENCE")

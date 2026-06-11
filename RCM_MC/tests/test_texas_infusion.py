@@ -748,6 +748,87 @@ class HomeInfusionTests(unittest.TestCase):
                                 for c in dd["home_infusion"]))
 
 
+class HomeInfusionDischargeRiskTests(unittest.TestCase):
+    """Discharge pipeline + therapy-volume risk — the referral FLOW is a
+    real-rate × real-population estimate, the risk register recomputes
+    from documented axis scores, and referral concentration surfaces the
+    commercial fragility."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.hi = self.a["home_infusion"]
+
+    def test_discharge_flow_scales_with_population(self):
+        from rcm_mc.diligence.texas_infusion import (
+            home_infusion_discharge_volumes)
+        small = {d["key"]: d["annual_referrals"]
+                 for d in home_infusion_discharge_volumes(1_000_000, 130_000)}
+        big = {d["key"]: d["annual_referrals"]
+               for d in home_infusion_discharge_volumes(2_000_000, 260_000)}
+        for k in small:
+            self.assertEqual(big[k], small[k] * 2)
+        # OPAT is the dominant referral flow; every therapy has a source
+        # and a readmission anchor.
+        self.assertEqual(max(small, key=small.get), "opat")
+        for d in self.hi["tx_discharges"]:
+            self.assertTrue(d["source"])
+            self.assertGreater(d["readmission_pct"], 0)
+
+    def test_flow_is_smaller_than_prevalent_pool(self):
+        # Annual new-start FLOW must be ≤ the standing eligible pool for
+        # chronic therapies (IG/TPN/biologic) — flow is incidence, pool
+        # is prevalence.
+        pool = {c["key"]: c["estimated_patients"]
+                for c in self.hi["tx_conditions"]}
+        flow = {d["key"]: d["annual_referrals"]
+                for d in self.hi["tx_discharges"]}
+        for k in ("ig", "tpn", "biologic"):
+            self.assertLess(flow[k], pool[k], f"{k} flow ≥ pool")
+
+    def test_therapy_risk_recomputes_and_ranks(self):
+        from rcm_mc.diligence.texas_infusion import (
+            home_infusion_therapy_risk, _RISK_WEIGHTS)
+        tr = home_infusion_therapy_risk()
+        rows = tr["therapies"]
+        # Ranked descending by overall risk; ranks 1..n.
+        scores = [r["overall_score"] for r in rows]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertEqual([r["rank"] for r in rows],
+                         list(range(1, len(rows) + 1)))
+        # overall_score = weighted blend of the five axes (pure recompute).
+        for r in rows:
+            exp = sum(r["axes"][ax] * w for ax, w in _RISK_WEIGHTS.items())
+            self.assertAlmostEqual(r["overall_score"], round(exp, 2))
+            self.assertEqual(r["overall_pct"], round(exp * 20))
+            self.assertIn(r["band"], ("HIGH", "ELEVATED", "MODERATE"))
+        self.assertEqual(tr["most_at_risk"], rows[0]["therapy"])
+
+    def test_high_value_chronic_therapies_flag_steerage(self):
+        # IG and home biologics — the expensive, payer-steered therapies —
+        # must score steerage risk highest among their axes.
+        tr = {r["key"]: r for r in
+              self.hi["therapy_risk"]["therapies"]}
+        self.assertEqual(tr["ig"]["axes"]["steerage"], 5)
+        self.assertEqual(tr["biologic"]["axes"]["steerage"], 5)
+        # OPAT — the discharge-fed volume play — is referral-concentrated.
+        self.assertEqual(tr["opat"]["axes"]["referral_concentration"], 5)
+
+    def test_referral_sources_sum_and_concentration(self):
+        rs = self.hi["referral_sources"]
+        self.assertAlmostEqual(
+            sum(s["share"] for s in rs["sources"]), 1.0, places=3)
+        # Acute-hospital discharge is the dominant, concentrated source.
+        top = max(rs["sources"], key=lambda s: s["share"])
+        self.assertIn("hospital", top["source"].lower())
+        self.assertGreaterEqual(rs["hospital_dependence"], 0.5)
+        self.assertTrue(rs["concentration_risk"])
+        self.assertTrue(rs["rcm_read"])
+
+    def test_each_metro_has_discharge_flow(self):
+        for dd in self.a["metro_deepdives"]:
+            self.assertTrue(dd["home_infusion_discharges"])
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -775,6 +856,9 @@ class PageRenderTests(unittest.TestCase):
             "Home infusion — therapies, networks", "TX eligible/yr",
             "THE NETWORKS", "calendar-day gap", "Amerita",
             "HOME-INFUSION-ELIGIBLE PATIENTS",
+            "ANNUAL REFERRAL FLOW BY THERAPY", "TX referrals/yr",
+            "THERAPY-VOLUME RISK HEATMAP", "REFERRAL-SOURCE",
+            "Concentration risk", "ANNUAL HOME-INFUSION REFERRALS/YR",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
