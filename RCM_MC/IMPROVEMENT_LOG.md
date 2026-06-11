@@ -2256,3 +2256,21 @@ Placed above the benchmark table inside the Peer benchmarks ribbon.
 (80→green, 60→teal, 30→amber, 10→brick), suppressed-state metric
 still plots its national ring, fully-suppressed metric omitted,
 empty/None → "". 161 passed across X-ray suites.
+
+## W2-117 (2026-06-11) — Roll-up builder: platform composition strip (wave #19)
+**Found**: /pipeline/rollup's facility table listed absolute filed
+NPR per facility but never answered the structural question a deal
+team asks first — is this scenario an anchor + tuck-ins or a merger
+of equals?
+**Fixed**: `_platform_composition_svg(facilities)` — one 100% strip
+of combined filed NPR, segments per facility largest-first with
+share labels, plus a shape verdict from the top facility's share
+(≥50% ANCHOR + TUCK-INS · ≤35% BALANCED PLATFORM · else LEAD
+FACILITY + PEERS). Shares are of *reported* NPR only — facilities
+without filed NPR are excluded and counted in the caption, never
+imputed. Fewer than two reporting facilities renders "". Placed
+above the selected-facilities table.
+**Verify**: PlatformCompositionTests — 60% top share → ANCHOR +
+TUCK-INS, equal quarters → BALANCED PLATFORM, missing-NPR facility
+excluded + noted, <2 reporting → "". 132 passed across rollup
+suites.
