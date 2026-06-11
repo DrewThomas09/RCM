@@ -2239,3 +2239,20 @@ sorted highest-first. Confidence clamps to the axis; no hits renders
 **Verify**: ConfidenceLadderTests — band tones + labels (0.78 HIGH /
 0.31 LOW), 0.25-floor guide, confidence sort, overshoot clamps to
 1.00, empty → "". 110 passed across archetype suites.
+
+## W2-116 (2026-06-11) — Provider X-ray: percentile profile (wave #18)
+**Found**: the CMS X-Ray's peer-benchmark table printed four
+percentile columns per metric — the provider's overall shape
+(top-quartile on outcomes, bottom-quartile on cost) required reading
+every cell; nothing drew the profile.
+**Fixed**: `_percentile_profile_svg(report)` — one row per metric on
+a fixed 0–100 percentile axis: state percentile as a filled dot toned
+by quartile (≥75 green / ≥50 teal / ≥25 amber / <25 brick, higher =
+better), national percentile as a hollow reference ring, dashed
+MEDIAN guide at 50. Suppressed (n<5) percentiles are simply absent —
+the table below keeps the n/a detail; nothing plottable renders "".
+Placed above the benchmark table inside the Peer benchmarks ribbon.
+**Verify**: PercentileProfileTests — quartile tone bands pinned
+(80→green, 60→teal, 30→amber, 10→brick), suppressed-state metric
+still plots its national ring, fully-suppressed metric omitted,
+empty/None → "". 161 passed across X-ray suites.
