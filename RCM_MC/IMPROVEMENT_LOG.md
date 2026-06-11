@@ -2522,3 +2522,21 @@ the gap table.
 **Verify**: GapCensusChartTests — all three fill-kind tones +
 artifact legend, worst-first order, zero-gap skipped + exactly 15
 rects at the cap, empty → "". 22 passed across data-quality suites.
+
+## W2-132 (2026-06-11) — Returns page: covenant runway gauge (wave #34)
+**Found**: /models/returns described covenant headroom in KPI tiles
+and a prose line ("EBITDA can decline 30% before the 6.0x covenant
+trips") — the runway geometry, how close current leverage actually
+sits to the ceiling, was never drawn.
+**Fixed**: `_covenant_runway_svg(actual_lev, max_lev, cov_ebitda,
+trips_at)` — a leverage runway on a fixed scale: current leverage as
+a bar toned by remaining headroom (>1.5 turns green / >0.5 amber /
+else red), the covenant max as a hard red line with label, the
+headroom annotated in turns; plus a second strip translating the
+same risk into EBITDA terms (cushion $M of current EBITDA, trip
+level shaded red) only when the EBITDA data exists. Missing covenant
+data renders "". Placed at the top of the Covenant Headroom card.
+**Verify**: CovenantRunwayTests — green band + "1.8x HEADROOM" +
+"cushion $15M of $50M EBITDA", tight headroom goes red with no
+fabricated EBITDA strip, amber band pinned, missing data → "".
+904 passed across returns suites.
