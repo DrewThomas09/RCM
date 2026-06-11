@@ -1176,6 +1176,45 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-72 — niche verticals batch 6: dermatology, pain management, hospital-at-home (18:15Z)
+**Niche-vertical sprint** — industries #29–31:
+  - dermatology ($18.8B, +4.0%): 12,500 dermatologists (AAD) × $1.5M
+    (MGMA incl. ancillaries); Mohs/surgical +6% ★; CONSOLIDATION
+    MATURITY itself priced as a headwind — the first PPM wave already
+    rolled the best markets; SOM note says the question is exit path,
+    not entry runway.
+  - pain_management ($10.2B, +3.4%): 51M chronic-pain adults (CDC) ×
+    7% interventional × 2.6 procedures × $1,100; neuromodulation +8% ★;
+    utilization management carried as the defining payer headwind.
+  - hospital_at_home ($1.1B, +6.8%): 3M eligible admissions × 3%
+    penetration × $12K — penetration is TINY and that gap is the
+    thesis; enabler/vendor layer +20% ★ (the investable slice — system
+    programs aren't acquirable, SAM 0.20 says so); the AHCaH WAIVER
+    NON-RENEWAL RISK priced at −8%/yr: a market that can halve on one
+    appropriations cycle, and the build says so.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; maturity/UM/waiver negatives pinned (waiver
+≤ −5 specifically); catalogue ≥32 templates pinned; test_tam_sam 68
+passed. 31 industries.
+
+## W2-71 — niche verticals batch 5: wound care, sleep, occupational health (17:45Z)
+**Niche-vertical sprint** — industries #26–28:
+  - wound_care ($10.1B, +2.9%): 8.2M chronic-wound patients (Medicare
+    claims literature) × 25% advanced care × 1.3 episodes × $3,800;
+    office/mobile +8% ★ vs managed hospital centers +3%; the CMS
+    skin-substitute (CTP) LCD crackdown carried as the compliance
+    headwind; Healogics ~600-center context.
+  - sleep ($5.4B, +2.9%): 30M OSA adults (AASM) × 20% in care × $900;
+    the disruption told honestly — in-lab PSG −2% DECLINING inside a
+    growing market while HSAT +9% ★; PAP resupply named as the annuity;
+    the GLP-1 OSA-indication effect carried as the new bear case.
+  - occ_health ($25.6B, +3.5%): 135M workers (BLS) × $190; on-site/
+    near-site +8% ★; the secular injury-rate decline (TRIR) carried as
+    the volume headwind; Concentra ~10% context.
+  All three: deals-only dives; geography omitted never fabricated.
+**Verify**: chains pinned; PSG negative + GLP-1 effect negative pinned;
+catalogue ≥29 templates pinned; test_tam_sam 65 passed. 28 industries.
+
 ## W2-70 — niche verticals batch 4: ABA, plasma, clinical research sites (17:15Z)
 **Niche-vertical sprint** — industries #23–25, the hyper-niche layer:
   - aba ($22.6B, +5.4%): 1.8M ASD children (CDC ADDM 1-in-36) × 30%

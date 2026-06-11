@@ -1474,6 +1474,340 @@ def clinical_research_template() -> TamSamModel:
     )
 
 
+
+def wound_care_template() -> TamSamModel:
+    """Advanced wound care services sizing — AHRQ/Medicare-anchored."""
+    return TamSamModel(
+        name="Wound care · advanced wound services market",
+        chain=[
+            DriverStep("US patients with chronic wounds / yr",
+                       8_200_000, op="base", unit="patients",
+                       source="Medicare claims analyses (Nussbaum et "
+                              "al.) — chronic non-healing wounds"),
+            DriverStep("% receiving advanced wound care", 0.25,
+                       op="rate", unit="of patients",
+                       source="wound-registry penetration estimates"),
+            DriverStep("Avg episodes of care / yr", 1.3, op="mult",
+                       unit="episodes/yr", source="registry data"),
+            DriverStep("Avg revenue per episode", 3_800, op="price",
+                       unit="$/episode",
+                       source="HOPD wound-clinic + CTP/HBO blend "
+                              "(Medicare fee schedules)"),
+        ],
+        segments=[
+            Segment("Hospital-based wound centers (managed)", 0.50,
+                    None, note="the management-contract model — "
+                         "Healogics/RestorixHealth class",
+                    growth_pct=3.0),
+            Segment("Office / mobile wound practices", 0.30, None,
+                    note="the physician-services roll-up layer",
+                    growth_pct=8.0),
+            Segment("Post-acute / SNF wound rounds", 0.20, None,
+                    growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diabetes / vascular prevalence", 4.0,
+                         "diabetic foot ulcers compound with the "
+                         "diabetes curve"),
+            GrowthDriver("Site-shift to office/mobile", 2.5,
+                         "payers steering off HOPD wound-center "
+                         "rates"),
+            GrowthDriver("CTP (skin-substitute) scrutiny", -2.5,
+                         "CMS LCD crackdowns on skin-substitute "
+                         "spend — the compliance headwind"),
+            GrowthDriver("Documentation/audit burden", -1.0,
+                         "TPE audits on debridement frequency"),
+        ],
+        sam_share=0.45,
+        sam_note="Office/mobile + management contracts (hospital-"
+                 "employed programs excluded)",
+        som_share=0.05,
+        som_note="Healogics manages ~600 centers; the office/mobile "
+                 "layer is fragmented",
+        horizon_years=5,
+        basis_note="Template defaults from Medicare claims literature "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+def sleep_template() -> TamSamModel:
+    """Sleep medicine sizing — AASM-anchored. The HSAT disruption is
+    the structural story."""
+    return TamSamModel(
+        name="Sleep · diagnostics + therapy market",
+        chain=[
+            DriverStep("US adults with OSA (undiagnosed incl.)",
+                       30_000_000, op="base", unit="adults",
+                       source="AASM prevalence estimates"),
+            DriverStep("% diagnosed and in care / yr", 0.20, op="rate",
+                       unit="of prevalent",
+                       source="AASM — the diagnosis gap IS the "
+                              "whitespace"),
+            DriverStep("Avg annual revenue per managed patient", 900,
+                       op="price", unit="$/patient/yr",
+                       source="dx (PSG/HSAT amortized) + PAP resupply "
+                              "annuity blend"),
+        ],
+        segments=[
+            Segment("PAP therapy + resupply", 0.55, None,
+                    note="the annuity — resupply is the recurring "
+                         "engine", growth_pct=6.0),
+            Segment("Home sleep testing (HSAT)", 0.20, None,
+                    note="disrupting in-lab PSG at 1/4 the price",
+                    growth_pct=9.0),
+            Segment("In-lab PSG", 0.15, None,
+                    note="declining — complex cases only",
+                    growth_pct=-2.0),
+            Segment("Oral appliance / surgery / other", 0.10, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Diagnosis-gap closure", 4.0,
+                         "80% undiagnosed — screening + awareness "
+                         "close it slowly"),
+            GrowthDriver("Resupply annuity compliance", 2.0,
+                         "adherence programs lift the recurring base"),
+            GrowthDriver("GLP-1 OSA-indication effect", -1.5,
+                         "tirzepatide's OSA label may shrink severe "
+                         "OSA over the hold — the new bear case"),
+            GrowthDriver("Competitive bidding / DME rates", -1.5,
+                         "CMS DMEPOS pricing pressure on PAP"),
+        ],
+        sam_share=0.55,
+        sam_note="Independent sleep practices + DME-integrated "
+                 "platforms",
+        som_share=0.04,
+        som_note="Fragmented behind the device manufacturers",
+        horizon_years=5,
+        basis_note="Template defaults from AASM/CMS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def occ_health_template() -> TamSamModel:
+    """Occupational health sizing — employer-paid, payer-free
+    economics. BLS-anchored."""
+    return TamSamModel(
+        name="Occupational health · employer services market",
+        chain=[
+            DriverStep("US private-sector workers", 135_000_000,
+                       op="base", unit="workers", source="BLS CES"),
+            DriverStep("Avg occ-health spend per worker / yr", 190,
+                       op="price", unit="$/worker/yr",
+                       source="employer benchmarks: injury care + "
+                              "exams + screens + surveillance blend"),
+        ],
+        segments=[
+            Segment("Work injury care (comp-funded)", 0.45, None,
+                    note="Concentra's franchise — fee-schedule "
+                         "protected", growth_pct=3.0),
+            Segment("Exams / compliance (DOT, pre-placement)", 0.30,
+                    None, note="volume annuity; regulation-driven",
+                    growth_pct=4.0),
+            Segment("Drug & alcohol screening", 0.15, None,
+                    growth_pct=2.0),
+            Segment("On-site / near-site clinics", 0.10, None,
+                    note="the employer-direct growth format",
+                    growth_pct=8.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Employment / wage base", 1.5,
+                         "volume tracks payrolls"),
+            GrowthDriver("Comp fee-schedule updates", 2.0,
+                         "state WC fee schedules grind upward"),
+            GrowthDriver("Employer direct-contracting", 2.0,
+                         "on-site/near-site expansion"),
+            GrowthDriver("Injury-rate secular decline", -1.5,
+                         "TRIR has fallen for decades — the volume "
+                         "headwind, shown as one"),
+            GrowthDriver("Telehealth triage substitution", -0.5,
+                         "tele-triage diverts low-acuity visits"),
+        ],
+        sam_share=0.50,
+        sam_note="Retail occ-health + employer-direct formats "
+                 "(carrier-owned networks excluded)",
+        som_share=0.05,
+        som_note="Concentra holds ~10% of the retail layer; the rest "
+                 "is fragmented",
+        horizon_years=5,
+        basis_note="Template defaults from BLS + employer benchmarks "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+
+def dermatology_template() -> TamSamModel:
+    """Dermatology sizing — the FIRST PPM wave, now mature: a worked
+    example of underwriting a consolidated specialty."""
+    return TamSamModel(
+        name="Dermatology · practice + ancillary market",
+        chain=[
+            DriverStep("US dermatologists (practicing)", 12_500,
+                       op="base", unit="physicians",
+                       source="AAD workforce census"),
+            DriverStep("Avg revenue per dermatologist", 1_500_000,
+                       op="price", unit="$/MD/yr",
+                       source="MGMA derm medians incl. ancillaries "
+                              "(path lab + Mohs + cosmetic)"),
+        ],
+        segments=[
+            Segment("Medical dermatology", 0.50, None,
+                    note="the visit engine — biologics referrals the "
+                         "hidden value", growth_pct=4.0),
+            Segment("Mohs / surgical", 0.20, None,
+                    note="the margin engine — skin-cancer volume "
+                         "compounds with sun-exposed boomers",
+                    growth_pct=6.0),
+            Segment("Dermatopathology (in-house)", 0.12, None,
+                    note="ancillary capture; payer scrutiny",
+                    growth_pct=3.0),
+            Segment("Cosmetic (cash-pay)", 0.18, None,
+                    note="medspa-adjacent; consumer-cyclical",
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Skin-cancer incidence", 3.5,
+                         "melanoma + NMSC compound with demographics"),
+            GrowthDriver("Biologics-era visit demand", 2.0,
+                         "psoriasis/eczema biologics pull patients "
+                         "into care"),
+            GrowthDriver("Teledermatology triage", 1.0,
+                         "access expansion, mild ASP lift"),
+            GrowthDriver("Consolidation maturity", -1.5,
+                         "the first PPM wave already rolled the best "
+                         "markets — entry multiples vs exit paths "
+                         "compress, shown as a headwind"),
+            GrowthDriver("Derm workforce cap", -1.0,
+                         "residency slots flat; NP/PA leverage has "
+                         "limits"),
+        ],
+        sam_share=0.40,
+        sam_note="Remaining independent practices + secondary-market "
+                 "platforms (first-wave assets trade as re-trades)",
+        som_share=0.04,
+        som_note="A mature consolidation: the question is exit path, "
+                 "not entry runway",
+        horizon_years=5,
+        basis_note="Template defaults from AAD/MGMA public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def pain_management_template() -> TamSamModel:
+    """Interventional pain sizing — ASC-adjacent, UM-heavy."""
+    return TamSamModel(
+        name="Pain management · interventional practice market",
+        chain=[
+            DriverStep("US adults with chronic pain", 51_000_000,
+                       op="base", unit="adults",
+                       source="CDC chronic-pain prevalence (20.9%)"),
+            DriverStep("% receiving interventional care / yr", 0.07,
+                       op="rate", unit="of chronic-pain adults",
+                       source="claims-based interventional penetration"),
+            DriverStep("Avg procedures per treated patient / yr", 2.6,
+                       op="mult", unit="procedures/yr",
+                       source="ASIPP utilization norms"),
+            DriverStep("Avg revenue per procedure", 1_100, op="price",
+                       unit="$/procedure",
+                       source="Medicare PFS + facility blend (ESI/RFA/"
+                              "SCS-weighted)"),
+        ],
+        segments=[
+            Segment("Injections (ESI, facet, joint)", 0.55, None,
+                    note="the volume base — UM-target #1",
+                    growth_pct=3.0),
+            Segment("RF ablation", 0.20, None, growth_pct=6.0),
+            Segment("Neuromodulation (SCS/PNS)", 0.15, None,
+                    note="the margin engine — device-partnered",
+                    growth_pct=8.0),
+            Segment("Regenerative / cash (PRP)", 0.10, None,
+                    note="cash-pay; evidence-grade risk",
+                    growth_pct=7.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Opioid-alternative demand", 3.5,
+                         "payers + guidelines push interventional "
+                         "over opioids"),
+            GrowthDriver("ASC migration", 2.0,
+                         "pain cases shift to owned ASCs — facility-"
+                         "fee capture"),
+            GrowthDriver("Neuromodulation adoption", 1.5,
+                         "SCS/PNS indication expansion"),
+            GrowthDriver("Utilization management", -2.5,
+                         "prior-auth + frequency limits on injections "
+                         "— the defining payer headwind"),
+            GrowthDriver("PFS rate pressure", -1.0,
+                         "Medicare conversion-factor cuts"),
+        ],
+        sam_share=0.50,
+        sam_note="Independent interventional practices + pain-ASC "
+                 "co-ownership opportunities",
+        som_share=0.04,
+        som_note="Fragmented; no platform holds >3%",
+        horizon_years=5,
+        basis_note="Template defaults from CDC/ASIPP/CMS public data "
+                   "— replace with engagement data before IC use.",
+    )
+
+
+def hospital_at_home_template() -> TamSamModel:
+    """Hospital-at-home sizing — the emerging format. Small TAM today,
+    waiver-dependent: the build says BOTH honestly."""
+    return TamSamModel(
+        name="Hospital-at-home · acute care at home market",
+        chain=[
+            DriverStep("HaH-eligible inpatient admissions / yr",
+                       3_000_000, op="base", unit="admissions",
+                       source="literature: ~10% of medical admissions "
+                              "meet HaH clinical criteria"),
+            DriverStep("% actually treated at home", 0.03, op="rate",
+                       unit="of eligible",
+                       source="AHCaH waiver volumes — penetration is "
+                              "TINY today; that gap is the thesis"),
+            DriverStep("Avg revenue per episode", 12_000, op="price",
+                       unit="$/episode",
+                       source="DRG-equivalent payment under the CMS "
+                              "AHCaH waiver"),
+        ],
+        segments=[
+            Segment("Health-system programs (waiver)", 0.75, None,
+                    note="the current market — systems own the "
+                         "license; vendors enable", growth_pct=15.0),
+            Segment("Enabler / tech-services vendors", 0.20, None,
+                    note="where PE can actually invest — per-episode "
+                         "service fees", growth_pct=20.0),
+            Segment("Payer-direct (MA) programs", 0.05, None,
+                    growth_pct=18.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Penetration of eligible admissions", 15.0,
+                         "3% → 10%+ of eligible is the base-case "
+                         "build — capacity economics favor it"),
+            GrowthDriver("Capacity pressure tailwind", 3.0,
+                         "hospital bed scarcity makes HaH a relief "
+                         "valve"),
+            GrowthDriver("Waiver non-renewal risk", -8.0,
+                         "the AHCaH waiver needs Congressional "
+                         "renewal — THE existential risk, priced as "
+                         "a large negative driver"),
+            GrowthDriver("Staffing logistics", -2.0,
+                         "community-paramedic + nurse supply caps "
+                         "scale"),
+        ],
+        sam_share=0.20,
+        sam_note="The enabler/vendor layer + MA-direct (system-owned "
+                 "programs are not acquirable)",
+        som_share=0.08,
+        som_note="An early market — share is available but the "
+                 "denominator is small",
+        horizon_years=5,
+        basis_note="Template defaults from CMS AHCaH public data + "
+                   "literature — replace with engagement data before "
+                   "IC use. NOTE the waiver-risk driver: this market "
+                   "can halve on one appropriations cycle.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -1525,6 +1859,12 @@ TEMPLATES = {
     "aba": aba_template,
     "plasma": plasma_template,
     "clinical_research": clinical_research_template,
+    "wound_care": wound_care_template,
+    "sleep": sleep_template,
+    "occ_health": occ_health_template,
+    "dermatology": dermatology_template,
+    "pain_management": pain_management_template,
+    "hospital_at_home": hospital_at_home_template,
     "blank": blank_template,
 }
 
