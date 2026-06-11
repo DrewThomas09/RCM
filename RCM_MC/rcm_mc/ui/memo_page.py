@@ -15,6 +15,69 @@ from .models_page import _model_nav
 from .brand import PALETTE
 
 
+def _memo_integrity_svg(sections: List[Dict[str, Any]]) -> str:
+    """The memo's shape and trust state in one strip.
+
+    Each section is a block sized by its share of the memo's words
+    and toned by fact-check status (green verified / red check
+    required) — so "the two longest sections are the unverified ones"
+    is visible before reading. Caption totals sections, verified
+    count, and words. No sections renders nothing.
+    """
+    rows = []
+    for sec in sections:
+        title = str(sec.get("title", sec.get("heading", "")) or "—")
+        content = str(sec.get("content", sec.get("body", "")) or "")
+        words = max(1, len(content.split()))
+        rows.append((title, words, bool(sec.get("fact_checks_passed", True))))
+    if not rows:
+        return ""
+    total_words = sum(w for _, w, _ in rows)
+    n_verified = sum(1 for _, _, ok in rows if ok)
+
+    width, bar_h = 720, 34
+    height = bar_h + 22
+    min_w = 26.0
+    # Proportional widths with a readability floor, renormalized.
+    raw = [max(min_w, width * w / total_words) for _, w, _ in rows]
+    scale = width / sum(raw)
+    segs, x = [], 0.0
+    for (title, words, ok), rw in zip(rows, raw):
+        w = rw * scale
+        tone = "#0a8a5f" if ok else "#b5321e"
+        segs.append(
+            f'<rect x="{x:.1f}" y="0" width="{max(w - 2, 1):.1f}" '
+            f'height="{bar_h}" rx="2" fill="{tone}" '
+            f'fill-opacity="{0.85 if ok else 0.9}"/>'
+        )
+        if w >= 64:
+            short = title if len(title) <= int(w / 7) else title[: int(w / 7) - 1] + "…"
+            segs.append(
+                f'<text x="{x + w / 2:.1f}" y="{bar_h / 2 + 3.5}" '
+                f'text-anchor="middle" font-size="9.5" fill="#ffffff">'
+                f'{html.escape(short)}</text>'
+            )
+        x += w
+    caption = (
+        f"{len(rows)} SECTIONS · {n_verified} VERIFIED · "
+        f"{len(rows) - n_verified} CHECK REQUIRED · "
+        f"{total_words:,} WORDS · BLOCK WIDTH = SHARE OF MEMO"
+    )
+    svg = (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Memo sections by length and fact-check status">'
+        + "".join(segs)
+        + f'<text x="0" y="{height - 4}" font-size="9" letter-spacing="1" '
+        f'fill="{PALETTE["text_muted"]}">{caption}</text>'
+        "</svg>"
+    )
+    return (
+        '<div class="ck-memo-integrity" style="margin:0 0 14px;">'
+        + svg + "</div>"
+    )
+
+
 def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     """Render the IC memo as a browser page."""
     sections = memo.get("sections", [])
@@ -68,7 +131,7 @@ def render_memo_page(deal_id: str, deal_name: str, memo: Dict[str, Any]) -> str:
     )
 
     # Sections — each becomes a ck_panel
-    sections_html = ""
+    sections_html = _memo_integrity_svg(sections)
     for sec in sections:
         title = html.escape(str(sec.get("title", sec.get("heading", ""))))
         content = html.escape(str(sec.get("content", sec.get("body", ""))))

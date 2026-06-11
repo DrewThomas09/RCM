@@ -2274,3 +2274,20 @@ above the selected-facilities table.
 TUCK-INS, equal quarters → BALANCED PLATFORM, missing-NPR facility
 excluded + noted, <2 reporting → "". 132 passed across rollup
 suites.
+
+## W2-118 (2026-06-11) — IC memo page: integrity strip (wave #20)
+**Found**: /models/memo rendered sections as a vertical stack of
+panels with a per-section Verified/Check Required badge — seeing the
+memo's overall shape (which sections dominate, which are unverified)
+required scrolling the whole page; "the two longest sections are the
+unverified ones" was invisible.
+**Fixed**: `_memo_integrity_svg(sections)` — one strip where each
+section is a block sized by its share of the memo's words (with a
+readability floor, renormalized) and toned by fact-check status
+(green verified / red check required), section names printed in wide
+blocks, caption totaling sections · verified · check-required ·
+words. No sections renders "". Placed above the section panels.
+**Verify**: MemoIntegrityStripTests — both tones + caption counts
+(2 SECTIONS · 1 VERIFIED · 1 CHECK REQUIRED · 700 WORDS), document
+order preserved, empty → "", strip precedes section panels in the
+full page render. 184 passed across memo suites.
