@@ -2355,3 +2355,20 @@ empty renders "". Placed inside the estimates card above the table.
 **Verify**: PosteriorIntervalChartTests — quality tones, × only with
 data (prior_only row omits it), prior ring + posterior dot pinned,
 empty → "". 18 passed across bayesian suites.
+
+## W2-123 (2026-06-11) — Calibration page: payer landscape (wave #25)
+**Found**: /calibration rendered one slider card per payer —
+comparing payers (the actual calibration question: which payer is
+the outlier dragging the priors?) meant eyeballing slider positions
+across stacked cards.
+**Fixed**: `_payer_landscape_svg(aggs)` — every payer as a labeled
+dot on the same three fixed axes the sliders use (IDR 0–0.5, FWR
+0–0.8, DAR 0–120), tick labels at min/mid/max, alternating label
+rows to limit collisions, values clamped to the axis. Caption names
+the read ("the dot furthest from the pack is the payer dragging
+calibration"). Empty aggregates render "". Placed above the slider
+cards.
+**Verify**: PayerLandscapeTests — 3 payers × 3 axes = 9 dots, axis
+ticks match slider ranges (0.500 / 0.800 / 120), out-of-range value
+clamps to the axis end, empty → "". 89 passed across calibration
+suites.

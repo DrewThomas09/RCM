@@ -74,6 +74,84 @@ def _aggregate_payers(runs_df: pd.DataFrame) -> Dict[str, Dict[str, float]]:
     return out
 
 
+_LANDSCAPE_AXES = (
+    ("IDR mean", "idr_m", 0.0, 0.5, "{:.3f}"),
+    ("FWR mean", "fwr_m", 0.0, 0.8, "{:.3f}"),
+    ("DAR days", "dar_m", 0.0, 120.0, "{:.0f}"),
+)
+
+
+def _payer_landscape_svg(aggs: Dict[str, Dict[str, float]]) -> str:
+    """All payers on the three calibration axes at once.
+
+    The slider cards show one payer at a time; comparing payers means
+    eyeballing slider positions across cards. This puts every payer
+    on the same three fixed axes the sliders use (IDR 0–0.5, FWR
+    0–0.8, DAR 0–120) as labeled dots, so the outlier payer — the one
+    dragging the calibration — is visible immediately. Empty
+    aggregates render nothing.
+    """
+    payers = sorted(aggs.keys())
+    if not payers:
+        return ""
+
+    label_w, axis_w = 110, 560
+    row_h, gap, pad_top, pad_bot = 44, 10, 10, 14
+    width = label_w + axis_w + 30
+    height = pad_top + len(_LANDSCAPE_AXES) * (row_h + gap) - gap + pad_bot
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Every payer on the IDR, FWR, and DAR axes">'
+    ]
+    for i, (label, key, lo, hi, fmt) in enumerate(_LANDSCAPE_AXES):
+        y = pad_top + i * (row_h + gap)
+        cy = y + row_h * 0.62
+        parts.append(
+            f'<text x="{label_w - 10}" y="{cy + 3.5:.1f}" text-anchor="end" '
+            f'font-size="10.5" font-weight="600" fill="#465366">'
+            f'{label}</text>'
+        )
+        parts.append(
+            f'<line x1="{label_w}" y1="{cy:.1f}" x2="{label_w + axis_w}" '
+            f'y2="{cy:.1f}" stroke="#c9c1ac" stroke-width="1"/>'
+        )
+        for frac in (0.0, 0.5, 1.0):
+            tx = label_w + axis_w * frac
+            tick_v = lo + (hi - lo) * frac
+            parts.append(
+                f'<text x="{tx:.0f}" y="{cy + 16:.1f}" text-anchor="middle" '
+                f'font-size="8.5" fill="#9b9382">{fmt.format(tick_v)}</text>'
+            )
+        for j, payer in enumerate(payers):
+            v = float(aggs[payer].get(key, 0.0) or 0.0)
+            frac = max(0.0, min(1.0, (v - lo) / (hi - lo)))
+            cx = label_w + axis_w * frac
+            parts.append(
+                f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="5" '
+                f'fill="#0b2341" fill-opacity="0.75"/>'
+            )
+            # Alternate labels above the axis to limit collisions.
+            ly = cy - 9 - (j % 2) * 11
+            short = payer if len(payer) <= 14 else payer[:13] + "…"
+            parts.append(
+                f'<text x="{cx:.1f}" y="{ly:.1f}" text-anchor="middle" '
+                f'font-size="8.5" fill="#465366">'
+                f'{_html.escape(short)}</text>'
+            )
+    parts.append("</svg>")
+    note = (
+        '<p class="micro" style="margin:.25rem 0 1rem;font-weight:400;'
+        'letter-spacing:.04em;text-transform:none;color:var(--muted,#9b9382);">'
+        f'{len(payers)} payer(s) on the same fixed axes the sliders use — '
+        'the dot furthest from the pack is the payer dragging calibration.</p>'
+    )
+    return (
+        '<div class="ck-payer-landscape">' + "".join(parts) + note + "</div>"
+    )
+
+
 def _slider_card(payer: str, agg: Dict[str, float]) -> str:
     """One payer's IDR/FWR/DAR sliders + live readouts.
 
@@ -170,7 +248,8 @@ def render_calibration_page(store: Any) -> str:
     payers = _aggregate_payers(runs_df)
     n_runs = len(runs_df)
 
-    sliders = "".join(_slider_card(p, agg) for p, agg in sorted(payers.items()))
+    sliders = _payer_landscape_svg(payers) + "".join(
+        _slider_card(p, agg) for p, agg in sorted(payers.items()))
 
     # Cycle 46 — KPI strip with provenance to lift fidelity over 70.
     runs_value = ck_provenance_tooltip(
