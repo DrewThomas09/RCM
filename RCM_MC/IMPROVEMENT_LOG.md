@@ -1176,6 +1176,16 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-102 — wave #4: cliff-calendar hold timeline (09:30Z)
+**The hold period as a picture**: one lollipop per cliff event on the
+hold-year axis — drop length ∝ the bps cut, color by payer (medicare
+navy / medicaid teal / commercial amber / 340B ochre), same-year events
+jittered so nothing overprints, hover for the event detail, cumulative
+in-hold bps annotated at the axis end, payer legend beneath. Renders
+right under the KPI strip; empty holds render nothing.
+**Verify**: timeline renders for hospital_general (OBBBA phases visible);
+empty-report empty-string pinned; cliff suites 45+11 passed.
+
 ## W2-101 — wave #3: bankruptcy-survivor pattern strip (09:00Z)
 **Diligence-page upgrade wave continues**: the bankruptcy-survivor scan
 at a glance — one chip per pattern check (the 12 historical failure

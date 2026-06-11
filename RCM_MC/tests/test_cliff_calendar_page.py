@@ -83,3 +83,23 @@ class CliffCalendarPageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CliffTimelineTests(unittest.TestCase):
+    """Wave #4 of the diligence upgrades: the hold period as a picture
+    — one lollipop per cliff event, drop ∝ bps cut, color by payer."""
+
+    def test_timeline_renders_with_hits(self):
+        from rcm_mc.ui.cliff_calendar_page import render_cliff_calendar_page
+        h = render_cliff_calendar_page(subsector="hospital_general")
+        self.assertIn("Reimbursement cliffs across the hold", h)
+        self.assertIn("cumulative in hold", h)
+        self.assertIn("drop length", h)
+
+    def test_empty_hold_no_timeline(self):
+        from rcm_mc.pe_intelligence.\
+reimbursement_cliff_calendar_2026_2029 import CalendarReport
+        from rcm_mc.ui.cliff_calendar_page import _cliff_timeline_svg
+        empty = CalendarReport(subsector="x", hold_start_year=2026,
+                               hold_end_year=2031)
+        self.assertEqual(_cliff_timeline_svg(empty), "")

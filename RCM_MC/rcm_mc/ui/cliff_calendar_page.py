@@ -123,6 +123,77 @@ def _calendar_row(ev: CliffEvent, in_hold: bool) -> str:
     )
 
 
+def _cliff_timeline_svg(report, width: int = 680) -> str:
+    """The hold period as a picture: one lollipop per cliff event on
+    the hold-year axis — drop length ∝ the bps cut, color by payer,
+    cumulative bps annotated at the end. Empty hold → empty string."""
+    hits = report.hits
+    if not hits:
+        return ""
+    payer_tone = {"medicare": "#0b2341", "medicaid": "#1F7A75",
+                  "commercial": "#b8732a", "340b": "#a98545"}
+    years = list(range(report.hold_start_year, report.hold_end_year + 1))
+    n_years = max(len(years) - 1, 1)
+    pad_l, pad_r, base_y = 50, 120, 36
+    pw = width - pad_l - pad_r
+    max_bps = max(abs(h.event.rate_change_bps) for h in hits) or 1
+    drop_max = 86
+    h_total = base_y + drop_max + 44
+    parts = [f'<svg width="{width}" height="{h_total}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Reimbursement cliffs across the hold">']
+    # axis
+    parts.append(
+        f'<line x1="{pad_l}" y1="{base_y}" x2="{pad_l+pw}" '
+        f'y2="{base_y}" stroke="#7a8699" stroke-width="1"/>')
+    for i, yr in enumerate(years):
+        x = pad_l + (i / n_years) * pw
+        parts.append(
+            f'<line x1="{x:.1f}" y1="{base_y-3}" x2="{x:.1f}" '
+            f'y2="{base_y+3}" stroke="#7a8699"/>'
+            f'<text x="{x:.1f}" y="{base_y-8}" text-anchor="middle" '
+            'font-family="monospace" font-size="10" fill="#465366">'
+            f'{yr}</text>')
+    # lollipops — jitter same-year events horizontally so they don't
+    # overprint
+    seen_years: dict = {}
+    for hit in sorted(hits, key=lambda h: h.event.effective_year):
+        ev = hit.event
+        k = seen_years.get(ev.effective_year, 0)
+        seen_years[ev.effective_year] = k + 1
+        frac = (ev.effective_year - report.hold_start_year) / n_years
+        x = pad_l + frac * pw + k * 9
+        drop = abs(ev.rate_change_bps) / max_bps * drop_max
+        color = payer_tone.get(ev.affected_payer, "#7a8699")
+        parts.append(
+            f'<line x1="{x:.1f}" y1="{base_y}" x2="{x:.1f}" '
+            f'y2="{base_y+drop:.1f}" stroke="{color}" '
+            'stroke-width="2"/>'
+            f'<circle cx="{x:.1f}" cy="{base_y+drop:.1f}" r="4" '
+            f'fill="{color}"><title>'
+            f'{_html.escape(ev.name)} · {ev.effective_year} · '
+            f'{ev.rate_change_bps:+,.0f} bps ({ev.affected_payer})'
+            '</title></circle>')
+    parts.append(
+        f'<text x="{pad_l+pw+8}" y="{base_y+14}" '
+        'font-family="monospace" font-size="11" fill="#b5321e">'
+        f'{report.total_bps_in_hold:+,.0f} bps</text>'
+        f'<text x="{pad_l+pw+8}" y="{base_y+27}" '
+        'font-family="monospace" font-size="9" fill="#7a8699">'
+        'cumulative in hold</text>')
+    parts.append('</svg>')
+    legend = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:4px;'
+        f'margin-right:12px;font-size:10.5px;color:#465366;">'
+        f'<span style="width:9px;height:9px;background:{c};'
+        f'display:inline-block;"></span>{p_}</span>'
+        for p_, c in payer_tone.items())
+    return ("".join(parts)
+            + f'<div style="margin:2px 0 12px;">{legend}'
+            '<span style="font-size:10px;color:#7a8699;">drop length '
+            '∝ bps cut · hover a dot for the event</span></div>')
+
+
 def render_cliff_calendar_page(
     subsector: str = "",
     hold_start: int = _MIN_YEAR,
@@ -236,6 +307,7 @@ def render_cliff_calendar_page(
         + _subsector_chips(subsector, hold_start, hold_years)
         + _year_chips(subsector, hold_start, hold_years)
         + f'<div class="ck-kpi-grid">{kpis}</div>'
+        + _cliff_timeline_svg(report)
         + ck_section_header("CALENDAR", "every modeled event; hold-window hits "
                             "highlighted", count=len(CLIFF_CALENDAR))
         + table
