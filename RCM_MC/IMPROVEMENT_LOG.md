@@ -2540,3 +2540,19 @@ data renders "". Placed at the top of the Covenant Headroom card.
 "cushion $15M of $50M EBITDA", tight headroom goes red with no
 fabricated EBITDA strip, amber band pinned, missing data → "".
 904 passed across returns suites.
+
+## W2-133 (2026-06-11) — My dashboard: deadline timeline (wave #35)
+**Found**: /my/<owner> listed overdue and upcoming deadlines as two
+separate lists — how the analyst's fortnight actually clusters
+(three things due the same Thursday) was invisible.
+**Fixed**: `_deadline_timeline_svg(my_od, my_up)` — every open
+deadline as a lollipop on a calendar axis from the oldest overdue
+item to today+14: a dashed TODAY line, overdue markers red to its
+left, upcoming navy to its right, stems staggered to limit label
+collisions, each labeled deal · label, caption counting overdue vs
+due-in-14d. Unparseable dates skipped; no open deadlines renders
+"". Placed between the alerts panel and the deadline lists.
+**Verify**: DeadlineTimelineTests — both tones + TODAY + caption
+counts, overdue marker geometrically left of the TODAY line and
+upcoming right (regex on cx coordinates), garbage dates skipped,
+empty/None → "". 19 passed across my-dashboard suites.
