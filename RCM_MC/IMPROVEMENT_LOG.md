@@ -2093,3 +2093,19 @@ impacts render "" (never fabricated geometry).
 cum 100% close, sort order (Prior auth $2.0M before Eligibility
 $1.5M), chart placed before the table, empty/zero drivers render
 nothing, page survives empty analysis. 27 passed across denial suites.
+
+## W2-107 (2026-06-11) — Red flags page: category × severity cluster map (wave #9)
+**Found**: /deal/<id>/red-flags sorted hits by severity (banner, KPI
+strip, three severity sections) but never showed *where* the flags
+cluster — a deal with five flags all in one category reads identically
+to five scattered ones, and the category tag was buried per-row.
+**Fixed**: `_category_severity_svg(review)` — one stacked horizontal
+bar per category, segments toned by the page's own _SEV_COLORS,
+rows sorted by severity weight (CRITICAL 8 / HIGH 4 / MEDIUM 2 /
+LOW 1) so the most dangerous category leads; per-row total, legend.
+Placed between the KPI strip and ADDITIONAL SIGNALS. Derived from
+review.heuristic_hits; no hits renders "".
+**Verify**: CategorySeverityMapTests — tones pinned, one CRITICAL
+outranks three LOWs in row order, None category buckets as
+Uncategorized, unknown severity treated as LOW, empty renders
+nothing. 35 passed with the corpus red-flags suite.

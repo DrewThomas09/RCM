@@ -222,6 +222,95 @@ def _claude_status_card(review: Any) -> str:
     )
 
 
+def _category_severity_svg(review: Any) -> str:
+    """Stacked bar per flag category, segments toned by severity.
+
+    The severity banner answers "how bad"; this answers "where" —
+    which diligence categories the fired triggers cluster in. Rows
+    sort by severity weight so the most dangerous category leads.
+    Derived from review.heuristic_hits; no hits renders nothing.
+    """
+    hits = list(review.heuristic_hits or [])
+    if not hits:
+        return ""
+    sev_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+    weight = {"CRITICAL": 8, "HIGH": 4, "MEDIUM": 2, "LOW": 1}
+    by_cat: dict = {}
+    for h in hits:
+        cat = str(getattr(h, "category", "") or "Uncategorized")
+        sev = str(getattr(h, "severity", "LOW"))
+        if sev not in weight:
+            sev = "LOW"
+        by_cat.setdefault(cat, {s: 0 for s in sev_order})
+        by_cat[cat][sev] += 1
+    rows = sorted(
+        by_cat.items(),
+        key=lambda kv: (-sum(weight[s] * n for s, n in kv[1].items()),
+                        kv[0]),
+    )
+    max_n = max(sum(counts.values()) for _, counts in rows)
+
+    label_w, bar_w_max, right_w = 180, 320, 60
+    row_h, gap, pad_top, pad_bot = 20, 8, 8, 8
+    width = label_w + bar_w_max + right_w + 16
+    height = pad_top + len(rows) * (row_h + gap) - gap + pad_bot
+    unit = bar_w_max / max_n
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Red flags by category and severity">'
+    ]
+    for i, (cat, counts) in enumerate(rows):
+        y = pad_top + i * (row_h + gap)
+        ty = y + row_h / 2 + 4
+        name = cat if len(cat) <= 24 else cat[:23] + "…"
+        parts.append(
+            f'<text x="{label_w - 8}" y="{ty:.0f}" text-anchor="end" '
+            f'font-size="11" fill="{P["text_dim"]}">'
+            f'{_html.escape(name)}</text>'
+        )
+        x = float(label_w)
+        for sev in sev_order:
+            n = counts[sev]
+            if not n:
+                continue
+            w = n * unit
+            parts.append(
+                f'<rect x="{x:.1f}" y="{y}" width="{max(w - 1, 1):.1f}" '
+                f'height="{row_h}" rx="2" fill="{_SEV_COLORS[sev]}" '
+                f'fill-opacity="0.85"/>'
+            )
+            x += w
+        total = sum(counts.values())
+        parts.append(
+            f'<text x="{x + 6:.1f}" y="{ty:.0f}" font-size="11" '
+            f'font-weight="600" fill="{P["text"]}">{total}</text>'
+        )
+    parts.append("</svg>")
+    legend = (
+        '<div style="display:flex;gap:14px;font-size:10px;'
+        f'font-family:var(--ck-mono);letter-spacing:0.08em;'
+        f'color:{P["text_faint"]};margin-top:6px;">'
+        + "".join(
+            f'<span><span style="display:inline-block;width:9px;height:9px;'
+            f'border-radius:2px;background:{_SEV_COLORS[s]};'
+            f'margin-right:4px;"></span>{s}</span>'
+            for s in sev_order
+        )
+        + "</div>"
+    )
+    return (
+        '<div class="ck-panel ck-rf-category-map">'
+        '<div class="ck-panel-title">Where the Flags Cluster '
+        f'<span style="font-family:var(--ck-mono);font-size:9px;'
+        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
+        f'BY CATEGORY · {len(rows)}</span></div>'
+        f'<div style="padding:12px 14px;">{"".join(parts)}{legend}</div>'
+        "</div>"
+    )
+
+
 def _hit_row(hit: Any) -> str:
     sev = str(getattr(hit, "severity", "LOW"))
     col = _SEV_COLORS.get(sev, P["text_dim"])
@@ -489,6 +578,7 @@ def render_red_flags(
         + _header_links(deal_id)
         + _severity_banner(review)
         + _kpi_strip(review)
+        + _category_severity_svg(review)
         + ck_section_header(
             "ADDITIONAL SIGNALS",
             "supplemental healthcare checks and Claude confirmation",
