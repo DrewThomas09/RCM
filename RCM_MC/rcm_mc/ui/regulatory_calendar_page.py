@@ -882,7 +882,7 @@ def _market_context_block(
     return (
         f'<div class="rc-panel">'
         f'<div class="rc-section-label" style="margin-top:0;">'
-        f'Market Context · Seeking Alpha peer snapshot</div>'
+        f'Market Context · public-comp peer snapshot</div>'
         f'<div style="display:grid;grid-template-columns:'
         f'repeat(auto-fit,minmax(170px,1fr));gap:14px;">'
         f'  <div><div class="rc-kpi__label">Peer Category</div>'

@@ -1111,6 +1111,36 @@ billion-scale dialysis platform deals; Avg-EV KPI had the same ceiling.
 below; new DealSearchEvRollupTests; 3 passed in the drilldown file; 23
 passed across deal-search-touching suites.
 
+## W2-46 — Public Market Intel: rebrand + market-read layout + live sentiment (USER-DIRECTED, 04:50Z)
+**User asks**: (1) fix the cramped "Latest market read" panel spacing;
+(2) add a button that fetches live web info and reports current market
+sentiment; (3) remove the "Seeking Alpha" name ("that is not yours");
+(4) remove the v3/v5 pages from the front-facing tools.
+**Done**:
+  - REBRAND: every front-facing "Seeking Alpha" label → "Public Market
+    Intel" (page masthead/shell title, X-Ray cross-link + panel title,
+    market-intel copy + nav label, regulatory-calendar panel title, chartis
+    home tile, editorial/legacy kit navs, section landings, thesis-pipeline
+    link, surface rankings). Curated news items' fabricated
+    `source: Seeking Alpha` → "Industry wire". New canonical route
+    /market-intel/public-market; legacy /seeking-alpha path still routes.
+  - LAYOUT: market-read panel → two-column grid (read + callout left;
+    benchmark chip + live check right) with real margins — kills the
+    crammed-left/dead-right look.
+  - LIVE SENTIMENT: new data_public/live_sentiment.py — on-demand fetch of
+    public Google News RSS (fixed healthcare-PE queries, stdlib urllib, 6s
+    timeout), transparent keyword lexicon scoring (matched terms reported
+    back), GET /api/market-intel/live-sentiment endpoint, page button
+    renders label/score/headline-count inline. Honest fallback when the
+    install has no egress (ok=False + explanation; nothing fabricated).
+  - TOOLS HYGIENE: /v3-status + /v5-status removed from the front-facing
+    surface rankings (internal routes stay for maintainers).
+**Verify**: page renders with zero "Seeking Alpha", grid + button present;
+sentiment module scores transparently and never raises (sandbox fallback
+verified); tests updated + new PublicMarketRebrandTests /
+LiveSentimentModuleTests; 18 passed on the page suite, 304 passed across
+nav/landing/palette/v3/v5 suites. Screenshot delivered.
+
 ## W2-44 — Find Comps EV column rolls to $B (04:05Z)
 **Found by**: global render-audit for billion-scale "$X,XXXM" leftovers
 across the research surfaces (find-comps/verified-deals/deal-search/

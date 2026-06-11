@@ -741,7 +741,7 @@ def _earnings_calendar_section() -> str:
     return ck_panel(
         '<p class="ck-section-body">'
         "Derived from each ticker's most recent earnings report + "
-        'standard 90-day quarterly cadence. Real Seeking Alpha / '
+        'standard 90-day quarterly cadence. Real data-vendor / '
         'Yahoo Finance feed would replace the estimate with '
         'consensus-published dates.</p>'
         f'{imminent_html}{table}',
@@ -833,7 +833,7 @@ def render_market_intel_page(
 ) -> str:
     next_up = ck_next_section(
         "Dig into public-comp + PE deal flow",
-        "/market-intel/seeking-alpha",
+        "/market-intel/public-market",
         eyebrow="Up next",
         italic_word="deal",
     )

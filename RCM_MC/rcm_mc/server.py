@@ -3811,9 +3811,18 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Bridge Auto-Auditor — banker's bridge × realization priors.
         if path == "/diligence/bridge-audit":
             return self._route_bridge_audit_page()
-        # Seeking Alpha — public healthcare market intel + PE deal flow.
-        if path == "/market-intel/seeking-alpha":
+        # Public Market Intel — public healthcare market intel + PE deal
+        # flow. /public-market is the canonical (own-brand) path; the
+        # legacy /seeking-alpha path keeps old bookmarks working.
+        if path in ("/market-intel/public-market",
+                    "/market-intel/seeking-alpha"):
             return self._route_seeking_alpha_page()
+        # Live sentiment check — on-demand fetch of public news RSS +
+        # transparent keyword scoring (see data_public/live_sentiment.py).
+        # Read-only GET; returns ok=False JSON when egress is unavailable.
+        if path == "/api/market-intel/live-sentiment":
+            from .data_public.live_sentiment import live_sentiment_snapshot
+            return self._send_json(live_sentiment_snapshot())
         # Bear Case Auto-Generator — what could break this thesis.
         if path == "/diligence/bear-case":
             return self._route_bear_case_page()

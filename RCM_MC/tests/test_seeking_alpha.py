@@ -1,4 +1,4 @@
-"""Tests for the Seeking Alpha market-intel surface."""
+"""Tests for the Public Market Intel surface (formerly branded Seeking Alpha)."""
 from __future__ import annotations
 
 import json
@@ -74,7 +74,7 @@ class SeekingAlphaUIRenderTests(unittest.TestCase):
     def test_default_render(self):
         from rcm_mc.ui.seeking_alpha_page import render_seeking_alpha_page
         html = render_seeking_alpha_page({})
-        self.assertIn("Seeking Alpha", html)
+        self.assertIn("Public Market Intel", html)
         self.assertIn("HCA", html)
         self.assertIn("EV / EBITDA", html)
         self.assertIn("PE transactions", html)
@@ -84,7 +84,7 @@ class SeekingAlphaUIRenderTests(unittest.TestCase):
     def test_specialty_filter(self):
         from rcm_mc.ui.seeking_alpha_page import render_seeking_alpha_page
         html = render_seeking_alpha_page({"specialty": ["DIALYSIS"]})
-        self.assertIn("Seeking Alpha", html)
+        self.assertIn("Public Market Intel", html)
         # Dialysis filter limits tx list but page still renders comps
 
     def test_unknown_specialty_does_not_crash(self):
@@ -92,7 +92,7 @@ class SeekingAlphaUIRenderTests(unittest.TestCase):
         html = render_seeking_alpha_page(
             {"specialty": ["VETERINARY_MEDICINE"]},
         )
-        self.assertIn("Seeking Alpha", html)
+        self.assertIn("Public Market Intel", html)
         # Should still render the public comps + sector heatmap
 
     def test_sponsor_filter_partial_match(self):
@@ -133,7 +133,7 @@ class HTTPEndpointTests(unittest.TestCase):
         r = urlopen(url, timeout=15)
         self.assertEqual(r.status, 200)
         body = r.read().decode("utf-8")
-        self.assertIn("Seeking Alpha", body)
+        self.assertIn("Public Market Intel", body)
         self.assertIn("HCA", body)
 
     def test_seeking_alpha_with_filters(self):
@@ -150,3 +150,47 @@ class HTTPEndpointTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PublicMarketRebrandTests(unittest.TestCase):
+    """2026-06-11 user-directed rebrand: the page must carry the own-brand
+    'Public Market Intel' name — no third-party 'Seeking Alpha' branding
+    anywhere front-facing — and the canonical route is
+    /market-intel/public-market (legacy path still routes)."""
+
+    def test_no_third_party_brand_in_render(self):
+        from rcm_mc.ui.seeking_alpha_page import render_seeking_alpha_page
+        html = render_seeking_alpha_page({})
+        self.assertNotIn("Seeking Alpha", html)
+
+    def test_live_sentiment_block_present(self):
+        from rcm_mc.ui.seeking_alpha_page import render_seeking_alpha_page
+        html = render_seeking_alpha_page({})
+        self.assertIn("Check live sentiment now", html)
+        self.assertIn("/api/market-intel/live-sentiment", html)
+        # Two-column read layout (user-reported spacing fix)
+        self.assertIn("ck-sa-read-grid", html)
+
+
+class LiveSentimentModuleTests(unittest.TestCase):
+    def test_lexicon_scoring_transparent(self):
+        from rcm_mc.data_public.live_sentiment import score_sentiment
+        out = score_sentiment([
+            "Hospital chain posts record growth",
+            "Health system bankruptcy probe widens",
+            "PE firm to acquire dialysis platform",
+        ])
+        self.assertIn(out["label"], ("constructive", "risk-off",
+                                     "mixed / neutral"))
+        # The audit trail: matched terms are reported back.
+        self.assertIn("record", out["positive_terms"])
+        self.assertIn("probe", out["negative_terms"])
+
+    def test_snapshot_never_raises(self):
+        # Egress-blocked installs get ok=False + honest error, never an
+        # exception (the HTTP route is a thin pass-through).
+        from rcm_mc.data_public.live_sentiment import live_sentiment_snapshot
+        out = live_sentiment_snapshot()
+        self.assertIn("ok", out)
+        if not out["ok"]:
+            self.assertIn("error", out)

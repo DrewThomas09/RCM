@@ -84,7 +84,7 @@ _CORPUS_NAV = [
     {"label": "Counterfactual",  "href": "/diligence/counterfactual", "icon": "◉"},
     {"label": "Compare",         "href": "/diligence/compare",    "icon": "▤"},
     {"label": "Market Intel",    "href": "/market-intel",         "icon": "◈"},
-    {"label": "Seeking Alpha",   "href": "/market-intel/seeking-alpha", "icon": "◉"},
+    {"label": "Public Market Intel", "href": "/market-intel/public-market", "icon": "◉"},
     {"label": "Bankruptcy Scan", "href": "/screening/bankruptcy-survivor", "icon": "▥"},
     {"label": "QoE Memo",        "href": "/diligence/qoe-memo",   "icon": "▣"},
     {"label": "Denial Predict",  "href": "/diligence/denial-prediction", "icon": "◉"},

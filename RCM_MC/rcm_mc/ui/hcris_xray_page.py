@@ -1027,7 +1027,7 @@ def _local_market_context(target: HospitalMetrics) -> str:
 
 def _public_comp_context(target: HospitalMetrics) -> str:
     """Compare target's HCRIS operating margin against public
-    hospital-system comps from the Seeking Alpha library.  Answers
+    hospital-system comps from the public-comp library.  Answers
     the partner question: "how does this private target look
     vs the public tape?"
     """
@@ -1122,14 +1122,14 @@ def _public_comp_context(target: HospitalMetrics) -> str:
         '<p class="ck-section-body">'
         'Public-hospital comps are curated from 10-K / analyst '
         'consensus via '
-        '<a href="/market-intel/seeking-alpha" class="ck-link">'
-        '→ Seeking Alpha Market Intel</a>. '
+        '<a href="/market-intel/public-market" class="ck-link">'
+        '→ Public Market Intel</a>. '
         'Margin delta × $ of NPR ≈ the EBITDA gap between the '
         'target and the public bench.</p>'
     )
     return ck_panel(
         inner,
-        title="Public market context · Seeking Alpha hospital comps",
+        title="Public market context · hospital comps",
     )
 
 

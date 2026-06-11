@@ -712,7 +712,7 @@ _SIDEBAR_MODULES: List[Tuple[str, str, str]] = [
     ("IC Packet",         "/diligence/ic-packet",           "diligence"),
     # Market intel
     ("Market Intel",      "/market-intel",                  "market"),
-    ("Seeking Alpha",     "/market-intel/seeking-alpha",    "market"),
+    ("Public Market Intel", "/market-intel/public-market",  "market"),
     # Screening
     ("Bankruptcy Scan",   "/screening/bankruptcy-survivor", "screening"),
     # Operations
