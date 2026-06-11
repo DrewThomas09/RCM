@@ -3118,6 +3118,349 @@ def palliative_template() -> TamSamModel:
     )
 
 
+
+def senior_living_template() -> TamSamModel:
+    """Senior living (AL/IL/MC) sizing — private-pay congregate care.
+    NIC-anchored."""
+    return TamSamModel(
+        name="Senior living · AL/IL/memory care market",
+        chain=[
+            DriverStep("US senior living units (AL+IL+MC)",
+                       1_600_000, op="base", unit="units",
+                       source="NIC MAP inventory (primary + secondary "
+                              "markets)"),
+            DriverStep("Average occupancy", 0.86, op="rate",
+                       unit="of units", source="NIC MAP occupancy "
+                       "(recovered post-2020)"),
+            DriverStep("Avg monthly rate × 12", 63_000, op="price",
+                       unit="$/occupied unit/yr",
+                       source="NIC MAP blended AL ($5.9K/mo) / IL "
+                              "($4.1K) / MC ($7.3K) rates"),
+        ],
+        segments=[
+            Segment("Assisted living", 0.40, None,
+                    note="the core format", growth_pct=5.0),
+            Segment("Independent living", 0.35, None,
+                    note="the longest-stay, lowest-acuity layer",
+                    growth_pct=4.0),
+            Segment("Memory care", 0.20, None,
+                    note="the highest-rate, highest-need format — "
+                         "dementia demographics", growth_pct=7.0),
+            Segment("Active adult (55+)", 0.05, None,
+                    note="the emerging real-estate-light entry",
+                    growth_pct=9.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("The 80+ demographic wave", 4.5,
+                         "the cohort doubles by 2040 — supply has NOT "
+                         "kept pace: absorption outruns construction"),
+            GrowthDriver("Rate growth", 4.0,
+                         "private-pay pricing power; rate grew "
+                         "through the occupancy recovery"),
+            GrowthDriver("Construction-start drought", 1.5,
+                         "post-2022 financing froze starts — "
+                         "existing assets re-rate"),
+            GrowthDriver("Labor cost inflation", -3.0,
+                         "caregiver/CNA wages — the NOI compressor"),
+            GrowthDriver("Affordability ceiling", -1.5,
+                         "the middle market can't pay $6K/mo — the "
+                         "TAM is gated by wealth, shown as one"),
+        ],
+        sam_share=0.55,
+        sam_note="Investable operator/opco layer in primary+secondary "
+                 "markets (REIT-owned propco excluded from opco SAM)",
+        som_share=0.03,
+        som_note="Brookdale, the largest operator, holds ~4% of units "
+                 "— operations remain fragmented",
+        horizon_years=5,
+        basis_note="Template defaults from NIC MAP public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def vascular_access_template() -> TamSamModel:
+    """Vascular access center sizing — the dialysis-adjacent OBL
+    niche."""
+    return TamSamModel(
+        name="Vascular access · dialysis access center market",
+        chain=[
+            DriverStep("US dialysis patients needing access care",
+                       560_000, op="base", unit="patients",
+                       source="USRDS (in-center HD population)"),
+            DriverStep("Avg access procedures / patient / yr", 1.8,
+                       op="mult", unit="procedures/yr",
+                       source="fistula/graft maintenance literature "
+                              "(declot, angioplasty, revision)"),
+            DriverStep("Avg revenue per procedure", 3_200, op="price",
+                       unit="$/procedure",
+                       source="OBL/ASC vascular access codes "
+                              "(Medicare + commercial blend)"),
+        ],
+        segments=[
+            Segment("Access maintenance (angioplasty/declot)",
+                    0.55, None, note="the recurring base",
+                    growth_pct=4.0),
+            Segment("Access creation (fistula/graft)", 0.25, None,
+                    note="endovascular AVF (endoAVF) the technology "
+                         "shift", growth_pct=7.0),
+            Segment("Peritoneal / home-access support", 0.12, None,
+                    note="follows the home-dialysis push",
+                    growth_pct=8.0),
+            Segment("Non-dialysis vascular (PAD adjacency)", 0.08,
+                    None, note="the expansion lane — UM scrutiny on "
+                         "atherectomy", growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("ESRD population growth", 2.5,
+                         "the dialysis census compounds"),
+            GrowthDriver("Site-shift to OBL/ASC", 3.0,
+                         "access work migrating from hospital"),
+            GrowthDriver("Home-dialysis access needs", 1.5,
+                         "PD catheters + home-HD access support"),
+            GrowthDriver("Atherectomy/UM scrutiny", -2.0,
+                         "payer + OIG attention on overutilization — "
+                         "the compliance headwind in adjacent PAD "
+                         "work, shown as one"),
+            GrowthDriver("Fee-schedule rebasing", -1.5,
+                         "OBL access-code cuts"),
+        ],
+        sam_share=0.50,
+        sam_note="Independent access centers + nephrology-aligned "
+                 "OBLs (chain-owned excluded)",
+        som_share=0.06,
+        som_note="Azura (Fresenius) + Lifeline (DaVita) own the "
+                 "vertical layer; independents are the targets",
+        horizon_years=5,
+        basis_note="Template defaults from USRDS/CMS public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def genetic_testing_template() -> TamSamModel:
+    """Clinical genetic testing services sizing — the precision-
+    medicine lab niche."""
+    return TamSamModel(
+        name="Genetic testing · clinical genomics services market",
+        chain=[
+            DriverStep("US clinical genetic tests / yr", 8_000_000,
+                       op="base", unit="tests",
+                       source="Concert/industry volume estimates "
+                              "(germline + somatic + carrier + NIPT)"),
+            DriverStep("Avg revenue per test", 850, op="price",
+                       unit="$/test",
+                       source="CMS CLFS genomic codes × commercial "
+                              "blend (panel-weighted)"),
+        ],
+        segments=[
+            Segment("Oncology somatic / CGP", 0.35, None,
+                    note="the growth engine — therapy selection",
+                    growth_pct=11.0),
+            Segment("Reproductive (NIPT, carrier)", 0.30, None,
+                    note="volume-mature; price-deflating",
+                    growth_pct=3.0),
+            Segment("Hereditary / germline", 0.20, None,
+                    growth_pct=6.0),
+            Segment("Rare disease / exome-genome", 0.15, None,
+                    note="diagnostic-odyssey economics",
+                    growth_pct=9.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Precision-therapy linkage", 5.0,
+                         "every targeted-therapy approval mandates "
+                         "its companion test"),
+            GrowthDriver("Guideline expansion", 3.0,
+                         "NCCN/ACOG criteria widen eligible "
+                         "populations"),
+            GrowthDriver("MRD / liquid-biopsy adoption", 2.5,
+                         "longitudinal monitoring = recurring tests"),
+            GrowthDriver("Reimbursement friction", -3.0,
+                         "prior auth + coverage denials — genetic "
+                         "test denial rates are the industry's "
+                         "defining problem"),
+            GrowthDriver("Price deflation per test", -2.0,
+                         "sequencing cost curves pass through to "
+                         "price"),
+        ],
+        sam_share=0.45,
+        sam_note="Independent + specialty labs (Labcorp/Quest "
+                 "genomics + IDN-captive excluded)",
+        som_share=0.04,
+        som_note="Natera/Myriad/Guardant public comps anchor the "
+                 "valuation conversation",
+        horizon_years=5,
+        basis_note="Template defaults from CMS CLFS + industry public "
+                   "data — replace with engagement data before IC use.",
+    )
+
+
+
+def nemt_template() -> TamSamModel:
+    """Non-emergency medical transportation sizing — the Medicaid
+    benefit-logistics niche. MTAC-anchored."""
+    return TamSamModel(
+        name="NEMT · non-emergency medical transport market",
+        chain=[
+            DriverStep("US NEMT trips / yr", 110_000_000, op="base",
+                       unit="trips",
+                       source="MTAC / MACPAC Medicaid NEMT volume"),
+            DriverStep("Avg revenue per trip", 38, op="price",
+                       unit="$/trip",
+                       source="broker per-trip blend (ambulatory $25 "
+                              "/ wheelchair $55 / stretcher $120)"),
+        ],
+        segments=[
+            Segment("Medicaid broker-managed", 0.65, None,
+                    note="the capitated-broker layer — Modivcare/MTM "
+                         "territory", growth_pct=4.0),
+            Segment("MA supplemental benefits", 0.20, None,
+                    note="the growth payer — plans add transport "
+                         "for quality scores", growth_pct=9.0),
+            Segment("Health-system / dialysis contracted", 0.15,
+                    None, note="missed-appointment economics fund it",
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("MA supplemental adoption", 4.0,
+                         "transport benefits proliferate in MA bids"),
+            GrowthDriver("Dialysis / treatment adherence demand", 2.0,
+                         "recurring-treatment populations grow"),
+            GrowthDriver("Rideshare-rail integration", 1.5,
+                         "Uber/Lyft Health lower unit costs and "
+                         "expand served trips"),
+            GrowthDriver("Medicaid redetermination churn", -2.0,
+                         "eligibility cycles shrink the covered "
+                         "base — shown as one"),
+            GrowthDriver("Broker rate compression", -1.5,
+                         "state rebids squeeze per-trip rates"),
+        ],
+        sam_share=0.45,
+        sam_note="Regional brokers + provider networks outside the "
+                 "two national brokers' lock",
+        som_share=0.06,
+        som_note="Modivcare ~40% of broker-managed — the regionals "
+                 "and provider layer are the targets",
+        horizon_years=5,
+        basis_note="Template defaults from MTAC/MACPAC public data — "
+                   "replace with engagement data before IC use.",
+    )
+
+
+def compounding_503b_template() -> TamSamModel:
+    """503B outsourcing-facility sizing — the hospital drug-shortage
+    backstop niche. FDA-anchored."""
+    return TamSamModel(
+        name="503B compounding · outsourcing facility market",
+        chain=[
+            DriverStep("FDA-registered 503B facilities", 80, op="base",
+                       unit="facilities", source="FDA 503B registry"),
+            DriverStep("Avg revenue per facility", 30_000_000,
+                       op="price", unit="$/facility/yr",
+                       source="industry estimates (~$2.4B market / "
+                              "registry count)"),
+        ],
+        segments=[
+            Segment("Sterile injectables (OR/ICU)", 0.50, None,
+                    note="the shortage backstop — anesthesia trays, "
+                         "pre-filled syringes", growth_pct=7.0),
+            Segment("Ophthalmic preparations", 0.20, None,
+                    note="repackaged anti-VEGF economics",
+                    growth_pct=5.0),
+            Segment("GLP-1 / semaglutide compounding", 0.15, None,
+                    note="the boom-bust line — shortage-list "
+                         "dependent; FDA enforcement risk",
+                    growth_pct=4.0),
+            Segment("Other (HRT, veterinary)", 0.15, None,
+                    growth_pct=5.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Drug-shortage persistence", 4.0,
+                         "generic-injectable shortages are "
+                         "structural — the demand floor"),
+            GrowthDriver("Hospital outsourcing of compounding", 3.0,
+                         "USP 797/800 compliance costs push "
+                         "in-house pharmacies out"),
+            GrowthDriver("FDA enforcement / 483 risk", -3.0,
+                         "a bad inspection closes a facility — "
+                         "quality IS the license, priced"),
+            GrowthDriver("Shortage-list dependence", -2.0,
+                         "GLP-1-class compounding evaporates when "
+                         "drugs come off the list — the boom-bust "
+                         "exposure, shown as one"),
+        ],
+        sam_share=0.60,
+        sam_note="Independent 503Bs (hospital-system-owned excluded)",
+        som_share=0.10,
+        som_note="A small-N market — single facilities move share",
+        horizon_years=5,
+        basis_note="Template defaults from FDA registry + industry "
+                   "public data — replace with engagement data before "
+                   "IC use.",
+    )
+
+
+def lop_medicine_template() -> TamSamModel:
+    """Personal-injury / letter-of-protection medicine sizing — the
+    litigation-funded care niche. The riskiest model in the catalogue,
+    and the build says so."""
+    return TamSamModel(
+        name="LOP medicine · personal-injury care market",
+        chain=[
+            DriverStep("US injury claims generating funded care / yr",
+                       2_500_000, op="base", unit="claims",
+                       source="NHTSA crash injuries × claim rates + "
+                              "premises/work injury litigation"),
+            DriverStep("% treated under LOP / lien arrangements",
+                       0.20, op="rate", unit="of claims",
+                       source="plaintiff-bar referral-channel "
+                              "estimates"),
+            DriverStep("Avg funded care per claim", 9_000, op="price",
+                       unit="$/claim",
+                       source="MRI + injections + chiro/PT + surgical "
+                              "episode blend at LOP rates"),
+        ],
+        segments=[
+            Segment("Imaging / diagnostics", 0.25, None,
+                    growth_pct=4.0),
+            Segment("Interventional pain / ortho", 0.40, None,
+                    note="the revenue core — surgical conversions",
+                    growth_pct=5.0),
+            Segment("Chiro / PT networks", 0.20, None, growth_pct=3.0),
+            Segment("Funding / factoring layer", 0.15, None,
+                    note="medical-lien factoring — the financial "
+                         "engine and the discount risk",
+                    growth_pct=6.0),
+        ],
+        growth_drivers=[
+            GrowthDriver("Litigation funding growth", 4.0,
+                         "third-party capital expands the funded-"
+                         "care channel"),
+            GrowthDriver("Attorney-referral consolidation", 2.0,
+                         "marketing scale concentrates referral "
+                         "flow"),
+            GrowthDriver("Tort-reform risk", -3.0,
+                         "state caps / lien statutes can reprice the "
+                         "book overnight — the existential policy "
+                         "risk, priced"),
+            GrowthDriver("Collectability discounts", -2.5,
+                         "liens settle at deep discounts; revenue "
+                         "recognition IS the diligence issue — "
+                         "shown as one"),
+        ],
+        sam_share=0.40,
+        sam_note="Tort-friendly states (FL/TX/GA class) with "
+                 "established lien law",
+        som_share=0.05,
+        som_note="A channel-relationship business — referral "
+                 "concentration is the real asset and the real risk",
+        horizon_years=5,
+        basis_note="Template defaults from NHTSA + litigation-industry "
+                   "public data — replace with engagement data before "
+                   "IC use. NOTE: collectability accounting and "
+                   "tort-reform exposure make this the highest-"
+                   "diligence-burden vertical in the catalogue.",
+    )
+
+
 def blank_template() -> TamSamModel:
     """Empty scaffold with one of each block so the form renders."""
     return TamSamModel(
@@ -3199,6 +3542,12 @@ TEMPLATES = {
     "school_services": school_services_template,
     "mobile_diagnostics": mobile_diagnostics_template,
     "palliative": palliative_template,
+    "senior_living": senior_living_template,
+    "vascular_access": vascular_access_template,
+    "genetic_testing": genetic_testing_template,
+    "nemt": nemt_template,
+    "compounding_503b": compounding_503b_template,
+    "lop_medicine": lop_medicine_template,
     "blank": blank_template,
 }
 

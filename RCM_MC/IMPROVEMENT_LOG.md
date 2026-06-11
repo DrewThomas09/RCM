@@ -1176,6 +1176,47 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-82 — niche verticals batch 16: NEMT, 503B compounding, LOP medicine (23:15Z)
+**Niche-vertical sprint** — industries #59–61; the test suite crossed 100:
+  - nemt ($4.2B, +3.9%): 110M trips (MTAC/MACPAC) × $38 modality blend;
+    MA supplemental +9% ★ (plans add transport for quality scores);
+    Medicaid redetermination churn priced; Modivcare ~40% broker lock
+    with regionals named as the targets.
+  - compounding_503b ($2.4B, +1.8%): 80 FDA facilities × $30M; sterile
+    injectables +7% ★ (the shortage backstop); FDA 483 RISK PRICED AT
+    −3 — "a bad inspection closes a facility; quality IS the license";
+    the GLP-1 shortage-list boom-bust exposure shown as one.
+  - lop_medicine ($4.5B, +0.3%): 2.5M funded claims × 20% LOP × $9K;
+    NEAR-FLAT and flagged as THE HIGHEST-DILIGENCE-BURDEN vertical in
+    the catalogue — tort-reform risk −3 (state caps reprice the book
+    overnight) + collectability discounts −2.5 (revenue recognition IS
+    the diligence issue); referral concentration named as the real
+    asset and the real risk.
+**Verify**: chains pinned; 483 ≤ −3, tort ≤ −3, collectability ≤ −2,
+"highest-" in LOP basis all pinned; catalogue ≥62 templates pinned;
+test_tam_sam 100 passed. 61 industries.
+
+## W2-81 — niche verticals batch 15: senior living, vascular access, genetic testing (22:45Z)
+**Niche-vertical sprint** — industries #56–58:
+  - senior_living ($86.7B, +5.4%): 1.6M units (NIC MAP) × 86% occupancy
+    × $63K blended annual rate; active adult +9% ★ (the real-estate-
+    light entry) and memory care +7% (dementia demographics); the
+    construction-start drought named as a tailwind for existing assets;
+    the AFFORDABILITY CEILING priced — "the TAM is gated by wealth";
+    Brookdale ~4% operator fragmentation.
+  - vascular_access ($3.2B, +3.4%): 560K HD patients (USRDS) × 1.8
+    procedures × $3,200; home-access support +8% ★ (follows the home-
+    dialysis push); the Azura/Lifeline vertical lock named; the
+    atherectomy/OIG compliance headwind priced for the PAD adjacency.
+  - genetic_testing ($6.8B, +5.4%): 8M tests × $850 (CLFS blend);
+    oncology CGP +11% ★ (every targeted-therapy approval mandates its
+    companion test); REIMBURSEMENT FRICTION priced at −3 — denial rates
+    are the industry's defining problem; per-test price deflation as
+    the second headwind.
+**Verify**: chains pinned; affordability/atherectomy/reimbursement
+negatives pinned (friction ≤ −3); catalogue ≥59 templates pinned;
+test_tam_sam 97 passed. 58 industries.
+
 ## W2-80 — niche verticals batch 14: school services, mobile diagnostics, palliative (22:15Z)
 **Niche-vertical sprint** — industries #53–55:
   - school_services ($8.1B, +4.5%): 7.5M IEP students (NCES) × 45%

@@ -1132,3 +1132,83 @@ class NicheVerticalsBatch14Tests(unittest.TestCase):
     def test_catalogue_at_55_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 56)   # 55 + blank
+
+
+class NicheVerticalsBatch15Tests(unittest.TestCase):
+    """Industries #56–58 — senior living, vascular access, genetic
+    testing."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "senior_living": 1_600_000 * 0.86 * 63_000,
+            "vascular_access": 560_000 * 1.8 * 3_200,
+            "genetic_testing": 8_000_000 * 850,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_structural_honesty(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        # Senior living: the affordability ceiling gates the TAM.
+        sl = compute(TEMPLATES["senior_living"]())
+        names = {g["name"]: g["annual_pct"] for g in sl["growth_drivers"]}
+        self.assertLess(names["Affordability ceiling"], 0)
+        # Vascular access: the atherectomy/OIG compliance headwind named.
+        va = compute(TEMPLATES["vascular_access"]())
+        names = {g["name"]: g["annual_pct"] for g in va["growth_drivers"]}
+        self.assertLess(names["Atherectomy/UM scrutiny"], 0)
+        # Genetic testing: reimbursement friction is the industry's
+        # defining problem — priced largest among its headwinds.
+        gt = compute(TEMPLATES["genetic_testing"]())
+        names = {g["name"]: g["annual_pct"] for g in gt["growth_drivers"]}
+        self.assertLessEqual(names["Reimbursement friction"], -3.0)
+
+    def test_catalogue_at_58_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 59)   # 58 + blank
+
+
+class NicheVerticalsBatch16Tests(unittest.TestCase):
+    """Industries #59–61 — NEMT, 503B compounding, LOP medicine."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "nemt": 110_000_000 * 38,
+            "compounding_503b": 80 * 30_000_000,
+            "lop_medicine": 2_500_000 * 0.20 * 9_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_risk_pricing(self):
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, compute, lop_medicine_template,
+        )
+        # 503B: a bad FDA inspection closes a facility — quality IS the
+        # license, priced at -3.
+        cb = compute(TEMPLATES["compounding_503b"]())
+        names = {g["name"]: g["annual_pct"] for g in cb["growth_drivers"]}
+        self.assertLessEqual(names["FDA enforcement / 483 risk"], -3.0)
+        # LOP: tort-reform risk + collectability BOTH priced large; the
+        # basis names it the highest-diligence-burden vertical.
+        lop = compute(TEMPLATES["lop_medicine"]())
+        names = {g["name"]: g["annual_pct"] for g in lop["growth_drivers"]}
+        self.assertLessEqual(names["Tort-reform risk"], -3.0)
+        self.assertLessEqual(names["Collectability discounts"], -2.0)
+        self.assertIn("highest-", lop_medicine_template().basis_note)
+
+    def test_catalogue_at_61_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 62)   # 61 + blank
