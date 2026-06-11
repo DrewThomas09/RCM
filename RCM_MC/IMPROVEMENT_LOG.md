@@ -2612,3 +2612,31 @@ state, each blocker's auto_verifiable mirrors its auto_check_key,
 verifiability split sums to total blockers, to_dict round-trips the
 punch-list, gate renders in the page + JSON export. 116 passed
 across checklist/IC-packet suites.
+
+## W2-137 (2026-06-11) — CIM cross-check: auditable credibility index (wave #39)
+**Found**: /diligence/cim-crosscheck flagged each claim's variance
+against HCRIS and counted green/yellow/red/unverifiable, but never
+synthesized the CDD question a partner actually asks — "how much
+should we trust this CIM, and does management systematically inflate?"
+**Added (analysis, verifiable)**: `compute_cim_credibility(result)`
+→ a `CIMCredibility`:
+- score 0–100, a deterministic pure function of the rows
+  (100 − 28·red − 10·yellow − 6·unverifiable, floored), so it can
+  never drift from the variance table it summarizes;
+- band (Corroborated / Mixed / Overstated / Unsubstantiated) with an
+  honest override: zero verifiable claims → Unsubstantiated
+  regardless of score ("can't check it" is a finding, not a pass);
+- `overstatement_bias` = mean signed variance across verifiable rows
+  → bias_direction overstates/understates/balanced — the inflation
+  pattern a CDD lead hunts for, separating a management that inflates
+  from one that's merely imprecise;
+- every component recoverable from the displayed rows (footnoted on
+  the panel).
+Surfaced as a banded score panel + flag-composition mini-bar +
+direction chip above the KPI grid.
+**Verify**: test_cim_credibility.py (9) — all-green→100/Corroborated,
+deterministic deduction (red+yellow+unverifiable = 56), overstatement
+pattern detected with the bias sign, understatement banded
+conservative not Overstated, all-unverifiable→Unsubstantiated, empty
+result, score floored at 0, to_dict round-trip, renders in page.
+76 passed across CIM suites.
