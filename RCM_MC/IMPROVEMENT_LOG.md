@@ -1176,6 +1176,17 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-51 — dialysis template on the TAM/SAM Builder (07:20Z)
+**Found by**: one worked template reads as a demo; two read as a tool.
+**Added**: dialysis_template() — US ESRD patients (USRDS) → % on dialysis
+→ % in-center → treatments/yr → $/treatment (CMS PPS + commercial blend);
+payer-mix segments (commercial 10% as THE economics segment, labeled);
+growth drivers incl. the home-modality shift carried as a NEGATIVE driver,
+not netted away. Template bar on the page gains the third chip.
+**Verify**: chain math pinned (810K × 69% × 84% × 156 × $280 = $20.51B
+TAM — right magnitude vs the ~$25B in-center market); segments sum to 1.0;
+headwind sign pinned; page renders the template; test_tam_sam 10 passed.
+
 ## W2-49 — TAM/SAM Builder with formatted Excel export (USER-DIRECTED, 06:40Z)
 **User ask**: in-depth TAM/SAM builds like the healthcare-PE CDD shops do —
 the fertility example (total births → % IVF → IVF births → cycles per

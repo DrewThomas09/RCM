@@ -55,6 +55,29 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(out["segments"][0]["name"], "<35")
 
 
+class DialysisTemplateTests(unittest.TestCase):
+    def test_dialysis_chain_math(self):
+        from rcm_mc.diligence.tam_sam import compute, dialysis_template
+        out = compute(dialysis_template())
+        # 810K × 69% × 84% × 156 × $280
+        self.assertAlmostEqual(
+            out["tam"], 810_000 * 0.69 * 0.84 * 156 * 280, places=2)
+        # Payer-mix segments sum to 1.0.
+        self.assertAlmostEqual(
+            sum(s["share_of_volume"] for s in out["segments"]), 1.0,
+            places=6)
+        # The home-shift headwind is carried as a NEGATIVE driver, not
+        # netted away silently.
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["Home-modality shift"], 0)
+
+    def test_template_selectable_on_page(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn("US ESRD patients", h)
+        self.assertIn("$20.51B", h)
+
+
 class PageAndExportTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
