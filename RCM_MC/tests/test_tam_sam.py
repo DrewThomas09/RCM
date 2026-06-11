@@ -944,3 +944,42 @@ class NicheVerticalsBatch9Tests(unittest.TestCase):
     def test_catalogue_at_40_industries(self):
         from rcm_mc.diligence.tam_sam import TEMPLATES
         self.assertGreaterEqual(len(TEMPLATES), 41)   # 40 + blank
+
+
+class NicheVerticalsBatch10Tests(unittest.TestCase):
+    """Industries #41–43 — GI, orthopedics, women's health: the
+    remaining big PPM waves, standalone."""
+
+    def test_three_chains_pin(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "gastroenterology": 16_000 * 1_350_000,
+            "orthopedics": 31_000 * 1_600_000,
+            "womens_health": 42_000 * 850_000,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+            self.assertTrue(any(s.get("is_fastest")
+                                for s in out["segments"]), key)
+
+    def test_gi_cologuard_bear_case(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        out = compute(TEMPLATES["gastroenterology"]())
+        names = {g["name"]: g["annual_pct"] for g in out["growth_drivers"]}
+        self.assertLess(names["Non-invasive screening substitution"], 0)
+
+    def test_womens_health_ob_decline_honesty(self):
+        # OB the volume anchor grows only +1% while births decline —
+        # near-flat composite told as-is; fertility adjacency carries it.
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        out = compute(TEMPLATES["womens_health"]())
+        self.assertLess(out["composite_cagr_pct"], 1.5)
+        fert = next(s for s in out["segments"] if "Fertility" in s["name"])
+        self.assertTrue(fert.get("is_fastest"))
+
+    def test_catalogue_at_43_industries(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        self.assertGreaterEqual(len(TEMPLATES), 44)   # 43 + blank

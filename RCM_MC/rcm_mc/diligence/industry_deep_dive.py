@@ -1320,6 +1320,34 @@ def cardiology_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def gastroenterology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="gastroenterology",
+        sector_tokens=("gastroenterology", "gi"),
+        note=("ACG workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
+def orthopedics_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="orthopedics",
+        sector_tokens=("orthopedics", "ortho", "msk"),
+        note=("AAOS census is aggregate-only — geography omitted "
+              "rather than fabricated."),
+    )
+
+
+def womens_health_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="womens_health",
+        sector_tokens=("womens_health", "women's_health", "obgyn"),
+        note=("ACOG workforce data is aggregate-only — geography "
+              "omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -1364,6 +1392,9 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "ophthalmology": ophthalmology_deep_dive,
     "rcm_services": rcm_services_deep_dive,
     "cardiology": cardiology_deep_dive,
+    "gastroenterology": gastroenterology_deep_dive,
+    "orthopedics": orthopedics_deep_dive,
+    "womens_health": womens_health_deep_dive,
 }
 
 
