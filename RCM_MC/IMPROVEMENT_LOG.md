@@ -1176,6 +1176,19 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-65 — state × payer dimension + fertility trade history (14:35Z)
+**Sprint depth — "broken down by state, by payer"**:
+  - hospitals dive gains the PAYER dimension: filed Medicare day-share
+    state medians from HCRIS (CA 25.9%, real filings, ≥5 reporting) — a
+    "Medicare mix (med)" column in the state footprint, rendered only
+    where computed (dialysis et al. unchanged).
+  - fertility (industry #0) gains its deals-only dive — 5 real corpus
+    fertility/women's-health deals; geography stays omitted until CDC
+    ART clinic data is vendored.
+**Verify**: mix medians within [0,1], >5 states carry it; column absent on
+dialysis; fertility n≥2 pinned; stale fertility-has-no-dive pin updated;
+test_tam_sam 49 passed.
+
 ## W2-64 — export parity: divergence + scenario in CSV/XLSX (14:05Z)
 **Sprint polish**: a deal team must never get a thinner file than the
 screen. The CSV + the xlsx Segments sheet gain Growth %/yr + Y-final

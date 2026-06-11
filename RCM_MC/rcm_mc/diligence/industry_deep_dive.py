@@ -834,6 +834,16 @@ def asc_deep_dive() -> Dict[str, Any]:
 
 
 
+def fertility_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="fertility_ivf",
+        sector_tokens=("fertility", "women's_health"),
+        note=("CDC ART clinic-level data isn't vendored yet — geography "
+              "omitted rather than fabricated; the corpus fertility "
+              "deals below are real."),
+    )
+
+
 def physician_group_deep_dive() -> Dict[str, Any]:
     return _deals_only_dive(
         industry="physician_group",
@@ -888,6 +898,7 @@ def hospitals_deep_dive() -> Dict[str, Any]:
         lambda: {"facilities": 0, "chain": 0, "independent": 0,
                  "stations": 0, "npr": 0.0})
     margins: Dict[str, List[float]] = defaultdict(list)
+    medicare_mix: Dict[str, List[float]] = defaultdict(list)
     tiers: Dict[str, int] = defaultdict(int)
     for _, r in df.iterrows():
         st = str(r.get("state") or "").strip().upper()
@@ -929,6 +940,14 @@ def hospitals_deep_dive() -> Dict[str, Any]:
                     margins[st].append(m)
         except (TypeError, ValueError):
             pass
+        # The payer dimension — filed Medicare day share per hospital,
+        # state median below. Real HCRIS, never imputed.
+        try:
+            mp = float(r.get("medicare_day_pct"))
+            if mp == mp and 0.0 <= mp <= 1.0:
+                medicare_mix[st].append(mp)
+        except (TypeError, ValueError):
+            pass
 
     states = [
         {"state": st, **vals,
@@ -949,6 +968,14 @@ def hospitals_deep_dive() -> Dict[str, Any]:
         st: {"value": _median(vals) * 100, "n_reporting": len(vals)}
         for st, vals in margins.items() if len(vals) >= 5
     }
+    mcare_by_state = {
+        st: _median(vals) for st, vals in medicare_mix.items()
+        if len(vals) >= 5
+    }
+    for s in states:
+        mm = mcare_by_state.get(s["state"])
+        if mm is not None:
+            s["medicare_mix_med"] = mm
 
     sector_deals: Dict[str, Any] = {"n": 0}
     try:
@@ -1023,6 +1050,7 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "oncology": oncology_deep_dive,
     "urgent_care": urgent_care_deep_dive,
     "hospitals": hospitals_deep_dive,
+    "fertility_ivf": fertility_deep_dive,
 }
 
 
