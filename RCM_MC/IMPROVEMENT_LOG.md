@@ -2388,3 +2388,25 @@ severity panel.
 label + threshold header, oldest-first order, exactly 20 rects at
 the cap with "20 OLDEST SHOWN", None/empty → "". 37 passed across
 escalation suites.
+
+## W2-125 (2026-06-11) — Portfolio monitor: health-history BUG FIX + trend chart (wave #27)
+**Found**: a real silent bug — /portfolio/monitor queried
+`ORDER BY date` against deal_health_history whose column is
+`at_date`; sqlite raised "no such column: date" into the bare
+except, so health_rows was ALWAYS empty and health scores never
+rendered on the monitor (latest_health stayed None for every deal,
+the red-band early-warning never fired, the distribution bar counted
+everything as Unscored).
+**Fixed**: (1) query corrected to `SELECT deal_id, at_date, score,
+band … ORDER BY at_date DESC` with downstream indices updated;
+(2) the recovered history now also feeds `_health_trend_svg` — one
+line per deal with ≥2 recorded scores on a fixed 0–100 axis, band
+guides at 80 (GREEN) and 50 (AMBER), lines right-aligned to end at
+the latest snapshot with name+score labels, capped at the 8
+most-sampled deals; single-score deals counted in the caption, not
+drawn. Placed after the health distribution bar.
+**Verify**: HealthQueryRegressionTests extracts the exact query from
+the source and runs it against the real DDL (would have caught the
+original bug); trend tests pin band guides, latest-score labels,
+single-score counted-not-drawn, empty → "". 61 passed across monitor
+suites.

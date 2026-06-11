@@ -113,6 +113,101 @@ def _value_creation_panel(store: Any) -> str:
     )
 
 
+def _health_trend_svg(histories: Dict[str, list]) -> str:
+    """Health-score trajectories across the portfolio.
+
+    One line per deal with at least two recorded scores (rows are
+    (at_date, score), newest first), drawn on a fixed 0–100 axis with
+    the band edges at 50 and 80 as guides — direction is the early
+    warning the distribution bar can't show. Deals with a single
+    snapshot are counted in the caption, not drawn as fake lines.
+    Capped at the 8 most-sampled deals; nothing drawable renders "".
+    """
+    series = []
+    n_single = 0
+    for name, pts in histories.items():
+        if len(pts) < 2:
+            n_single += 1
+            continue
+        ordered = sorted(pts, key=lambda p: p[0])  # oldest → newest
+        series.append((name, ordered))
+    if not series:
+        return ""
+    series.sort(key=lambda s: -len(s[1]))
+    series = series[:8]
+
+    width, chart_h = 720, 170
+    pad_l, pad_r, pad_top, pad_bot = 36, 130, 10, 22
+    plot_w = width - pad_l - pad_r
+    height = pad_top + chart_h + pad_bot
+    tones = ("#0b2341", "#1F7A75", "#b8732a", "#7a8699",
+             "#46617e", "#a98545", "#6e8b8a", "#b5321e")
+
+    def _y(score: float) -> float:
+        return pad_top + chart_h * (1 - max(0.0, min(100.0, score)) / 100.0)
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Health score trend per deal, 0 to 100">'
+    ]
+    for band_v, band_lbl in ((80, "GREEN ≥80"), (50, "AMBER ≥50")):
+        gy = _y(band_v)
+        parts.append(
+            f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{pad_l + plot_w}" '
+            f'y2="{gy:.1f}" stroke="#d6cfc0" stroke-width="1" '
+            f'stroke-dasharray="3,3"/>'
+            f'<text x="{pad_l - 4}" y="{gy + 3:.1f}" text-anchor="end" '
+            f'font-size="8.5" fill="#9b9382">{band_v}</text>'
+            f'<text x="{pad_l + 4}" y="{gy - 3:.1f}" font-size="8" '
+            f'letter-spacing="1" fill="#9b9382">{band_lbl}</text>'
+        )
+    max_n = max(len(pts) for _, pts in series)
+    for si, (name, pts) in enumerate(series):
+        tone = tones[si % len(tones)]
+        # X positions: evenly spaced by observation index, right-aligned
+        # so every line ends at "now".
+        n = len(pts)
+        xs = [
+            pad_l + plot_w * (max_n - n + k) / max(max_n - 1, 1)
+            for k in range(n)
+        ]
+        path = " ".join(
+            f'{"M" if k == 0 else "L"} {xs[k]:.1f} {_y(pts[k][1]):.1f}'
+            for k in range(n)
+        )
+        parts.append(
+            f'<path d="{path}" fill="none" stroke="{tone}" '
+            f'stroke-width="1.8" stroke-opacity="0.85"/>'
+        )
+        lx, ly = xs[-1], _y(pts[-1][1])
+        parts.append(
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="3" fill="{tone}"/>'
+        )
+        short = name if len(name) <= 16 else name[:15] + "…"
+        parts.append(
+            f'<text x="{lx + 6:.1f}" y="{ly + 3:.1f}" font-size="9" '
+            f'fill="{tone}">{_html.escape(short)} {pts[-1][1]}</text>'
+        )
+    parts.append("</svg>")
+    caption_bits = [
+        f"{len(series)} DEALS WITH ≥2 SCORES · LINES END AT THE LATEST "
+        "SNAPSHOT",
+    ]
+    if n_single:
+        caption_bits.append(
+            f"{n_single} DEAL{'S' if n_single != 1 else ''} WITH A SINGLE "
+            "SCORE NOT DRAWN")
+    note = (
+        '<p class="ck-section-body" style="font-size:10px;color:#7a8699;'
+        f'letter-spacing:0.06em;">{" · ".join(caption_bits)}</p>'
+    )
+    return ck_panel(
+        "".join(parts) + note,
+        title="Health Score Trend",
+    )
+
+
 def render_portfolio_monitor(store: Any) -> str:
     """Render the portfolio monitoring dashboard."""
     import json as _json
@@ -161,12 +256,14 @@ def render_portfolio_monitor(store: Any) -> str:
     except Exception:
         snapshots = []
 
-    # Load health scores
+    # Load health scores. (The column is ``at_date`` — the old
+    # ``ORDER BY date`` raised "no such column" into the bare except,
+    # so health scores NEVER rendered on this page.)
     try:
         with store.connect() as con:
             health_rows = con.execute(
-                "SELECT deal_id, score, band FROM deal_health_history "
-                "ORDER BY date DESC"
+                "SELECT deal_id, at_date, score, band "
+                "FROM deal_health_history ORDER BY at_date DESC"
             ).fetchall()
     except Exception:
         health_rows = []
@@ -204,10 +301,15 @@ def render_portfolio_monitor(store: Any) -> str:
             deal_map[did]["actuals"].append({
                 "quarter": ar[1], "kpis": kpis, "plan": plan})
 
+    health_histories: Dict[str, list] = {}
     for hr in health_rows:
         did = hr[0]
-        if did in deal_map and deal_map[did]["latest_health"] is None:
-            deal_map[did]["latest_health"] = {"score": hr[1], "band": hr[2]}
+        if did not in deal_map:
+            continue
+        if deal_map[did]["latest_health"] is None:
+            deal_map[did]["latest_health"] = {"score": hr[2], "band": hr[3]}
+        health_histories.setdefault(
+            deal_map[did]["name"], []).append((str(hr[1]), int(hr[2])))
 
     for sr in snapshots:
         did = sr[0]
@@ -497,7 +599,7 @@ def render_portfolio_monitor(store: Any) -> str:
         f'<span>■ Unscored: {no_health}</span>'
         '</p>',
         title="Portfolio Health Distribution",
-    )
+    ) + _health_trend_svg(health_histories)
 
     # ── Early warning signals ──
     warnings = []
