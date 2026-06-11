@@ -124,6 +124,85 @@ def _shares_table(shares: Dict[str, float], *, target_name: Optional[str]) -> st
     )
 
 
+def _market_composition_svg(
+    shares: Dict[str, float], *, target_name: Optional[str],
+) -> str:
+    """The whole market in one 100% strip.
+
+    The ranked table shows each player against its own bar; this shows
+    the market — named players as proportional segments (target in the
+    accent tone) and, critically, the unallocated remainder as a gray
+    "fragmented" block. That remainder is the roll-up whitespace the
+    fragmentation verdict is talking about. Empty shares render
+    nothing; an over-allocated dict (sum > 100%) just omits the
+    remainder rather than inventing one.
+    """
+    items = [
+        (str(name), float(s)) for name, s in shares.items()
+        if s and float(s) > 0
+    ]
+    if not items:
+        return ""
+    items.sort(key=lambda kv: kv[1], reverse=True)
+    allocated = sum(s for _, s in items)
+    remainder = max(0.0, 1.0 - allocated)
+
+    width, bar_h, pad = 720, 34, 2
+    height = bar_h + 22
+    tones = [P["text_dim"], P["text_faint"]]
+    segs = []
+    x = 0.0
+    for i, (name, s) in enumerate(items):
+        is_target = bool(
+            target_name and name.lower() == str(target_name).lower()
+        )
+        w = width * min(s, 1.0)
+        tone = P["accent"] if is_target else tones[i % 2]
+        segs.append(
+            f'<rect x="{x:.1f}" y="0" width="{max(w - pad, 1):.1f}" '
+            f'height="{bar_h}" fill="{tone}" '
+            f'fill-opacity="{0.95 if is_target else 0.55}"/>'
+        )
+        if w >= 56:
+            short = name if len(name) <= int(w / 7) else name[: int(w / 7) - 1] + "…"
+            segs.append(
+                f'<text x="{x + w / 2:.1f}" y="{bar_h / 2 + 3.5}" '
+                f'text-anchor="middle" font-size="10" '
+                f'fill="#ffffff">{_html.escape(short)} {s * 100:.0f}%</text>'
+            )
+        x += w
+    if remainder > 0.005:
+        w = width * remainder
+        segs.append(
+            f'<rect x="{x:.1f}" y="0" width="{max(w - pad, 1):.1f}" '
+            f'height="{bar_h}" fill="{P["border_dim"]}"/>'
+        )
+        if w >= 90:
+            segs.append(
+                f'<text x="{x + w / 2:.1f}" y="{bar_h / 2 + 3.5}" '
+                f'text-anchor="middle" font-size="10" '
+                f'fill="{P["text_dim"]}">fragmented {remainder * 100:.0f}%</text>'
+            )
+    note_bits = [f"{len(items)} NAMED PLAYERS = {allocated * 100:.0f}%"]
+    if remainder > 0.005:
+        note_bits.append(
+            f"FRAGMENTED REMAINDER {remainder * 100:.0f}% = ROLL-UP WHITESPACE"
+        )
+    svg = (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;" role="img" '
+        f'aria-label="Market composition by player share">'
+        + "".join(segs)
+        + f'<text x="0" y="{height - 4}" font-size="9" letter-spacing="1" '
+        f'fill="{P["text_faint"]}">{" · ".join(note_bits)}</text>'
+        "</svg>"
+    )
+    return (
+        '<div class="ck-mkt-composition" style="margin:2px 0 12px;">'
+        + svg + "</div>"
+    )
+
+
 def _thesis_hint_badge(hint: str) -> str:
     labels = {
         "buy_and_build": ("BUY &amp; BUILD", P["positive"]),
@@ -254,7 +333,10 @@ def render_market_structure(
     )
 
     target_name = _target_name_from_packet(packet, profile or {})
-    shares_panel = _shares_table(shares, target_name=target_name)
+    shares_panel = (
+        _market_composition_svg(shares, target_name=target_name)
+        + _shares_table(shares, target_name=target_name)
+    )
 
     explainer = render_page_explainer(
         what=(

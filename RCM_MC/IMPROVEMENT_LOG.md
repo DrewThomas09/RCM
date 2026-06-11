@@ -2138,3 +2138,20 @@ section label and the cards. Empty roster renders "".
 **Verify**: TeamMatrixSvgTests — all execs + 5 column headers, ✗ only
 on the flagged exec, red-flags lead row order, empty → "", matrix
 present in full page render. 35 passed in scorecard suite.
+
+## W2-110 (2026-06-11) — Market structure page: 100% composition strip (wave #12)
+**Found**: /deal/<id>/market-structure ranked each player against its
+own per-row bar, but the unallocated remainder — the fragmented tail
+that IS the roll-up whitespace the fragmentation verdict describes —
+was invisible; you had to subtract CR5 from 100 in your head.
+**Fixed**: `_market_composition_svg(shares, target_name)` — one 100%
+strip: named players as proportional segments (target in the accent
+tone, label+share printed when the segment is wide enough), and the
+remainder as a gray "fragmented N%" block annotated ROLL-UP
+WHITESPACE. Fully-allocated markets omit the remainder rather than
+inventing one; zero/negative shares skipped; empty renders "".
+Placed above the shares table in the SHR panel.
+**Verify**: MarketCompositionStripTests — remainder math (30+20+10 →
+fragmented 40%), no remainder at 100%, largest-first segment order,
+ghost/negative shares skipped, empty → "". 7 passed with the
+market-structure suite.
