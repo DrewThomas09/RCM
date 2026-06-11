@@ -1176,6 +1176,14 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-90 — segment-composition bar on every build (03:15Z)
+**Catalogue-wide visual**: one stacked bar above each segments table —
+how the TAM splits, house categorical hues, ★ on the fastest grower,
+inline labels for wide slices + a legend for thin ones. One change, all
+82 industries gain the composition picture.
+**Verify**: every registered template renders the bar (pinned across the
+full registry); ★ + percentage labels pinned; test_tam_sam 124 passed.
+
 ## W2-89 — batch 23: virtual primary, RPM, care navigation — 80-INDUSTRY MILESTONE (02:45Z)
 **Niche-vertical sprint** — industries #80–82, crossing 80:
   - virtual_primary_care ($2.2B, +1.9%): 35M eligible × 15% ENGAGED ×

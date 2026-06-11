@@ -246,6 +246,51 @@ def _sources_panel(out: Dict[str, Any],
     )
 
 
+def _segment_bar_svg(segments: List[Dict[str, Any]],
+                     width: int = 640) -> str:
+    """One stacked bar: how the TAM splits across segments — the
+    composition picture above the segment table. House categorical
+    hues; ★ marker on the fastest grower; labels inline where the
+    slice is wide enough, legend beneath otherwise."""
+    if not segments:
+        return ""
+    palette = ["#0b2341", "#1F7A75", "#b8732a", "#a98545", "#5b6b85",
+               "#8a5a44", "#46604a"]
+    h, bar_h = 64, 26
+    parts = [f'<svg width="{width}" height="{h}" '
+             'xmlns="http://www.w3.org/2000/svg" role="img" '
+             'aria-label="Segment composition">']
+    x = 0.0
+    legend: List[str] = []
+    for i, s in enumerate(segments):
+        share = max(0.0, float(s.get("share_of_volume") or 0))
+        w = share * width
+        color = palette[i % len(palette)]
+        star = " \u2605" if s.get("is_fastest") else ""
+        parts.append(
+            f'<rect x="{x:.1f}" y="6" width="{max(w,1):.1f}" '
+            f'height="{bar_h}" fill="{color}"/>')
+        label = f'{s["name"][:22]}{star} {share*100:.0f}%'
+        if w >= 110:
+            parts.append(
+                f'<text x="{x + w/2:.1f}" y="{6 + bar_h/2 + 4}" '
+                'text-anchor="middle" font-family="sans-serif" '
+                f'font-size="10" fill="#ffffff">{html.escape(label)}'
+                '</text>')
+        else:
+            legend.append(
+                f'<span style="display:inline-flex;align-items:center;'
+                f'gap:4px;margin-right:12px;font-size:10.5px;'
+                f'color:#465366;"><span style="width:9px;height:9px;'
+                f'background:{color};display:inline-block;"></span>'
+                f'{html.escape(label)}</span>')
+        x += w
+    parts.append('</svg>')
+    legend_html = (f'<div style="margin:2px 0 6px;">{"".join(legend)}'
+                   '</div>' if legend else "")
+    return "".join(parts) + legend_html
+
+
 def _industry_panels(tmpl_key: str) -> str:
     """Real-data deep-dive panels under the sizing build (additive — the
     registry decides which industries have a data layer yet)."""
@@ -774,7 +819,8 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             '</tr>'
         )
     seg_panel = ck_panel(
-        '<table class="ts2-chain"><thead><tr>'
+        _segment_bar_svg(out["segments"])
+        + '<table class="ts2-chain"><thead><tr>'
         '<th>Segment</th><th style="text-align:right;">Volume share</th>'
         '<th style="text-align:right;">TAM slice</th>'
         + ('<th style="text-align:right;">Growth %/yr</th>'
