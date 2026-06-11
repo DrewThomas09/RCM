@@ -2741,3 +2741,26 @@ unassessed-step chips) at the top of the step-log block.
 partial lists failed steps as unassessed, <60%→THIN, coverage
 arithmetic (8/9), real pipeline run (ok+failed=total, headline bound),
 to_dict round-trip, renders in page. 28 passed across pipeline suites.
+
+## W2-142 (2026-06-11) — Comparable outcomes: comp-set defensibility (wave #44)
+**Found**: /diligence/comparable-outcomes showed the realized-MOIC
+distribution and a match-scored comp table, but never answered the
+question a partner must settle before citing "comps say 2.5x" to IC —
+HOW DEFENSIBLE is this comp set as an anchor? A tight set of close
+matches is quotable; a thin set of loose matches with scattered
+outcomes is indicative at best.
+**Added (analysis, verifiable)**: `assess_comp_set(result)` in the
+comparable_outcomes module → set size, median match score, close-match
+count (≥60), and MOIC dispersion ((p75−p25)/median); banded
+STRONG / MODERATE / WEAK / THIN by the conjunction of set size ×
+match closeness × outcome dispersion, with a one-line partner read.
+Pure function of benchmark_deal's output; every figure recomputes
+from the comparables + distribution the page already shows.
+(Caught a latent bug en route: _percentile takes a 0–1 fraction, not
+0–100 — fixed my call.)
+Surfaced as a banded defensibility strip directly under the outcome
+strip, in both the normal and print-preview layouts.
+**Verify**: test_comp_set_defensibility.py (8) — thin→THIN,
+close+tight→STRONG, loose+scattered→WEAK, moderate middle, true-median
+match + close count, empty→THIN, missing-MOIC no-crash, real
+benchmark + page render. 183 passed across comparable suites.

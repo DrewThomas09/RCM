@@ -152,6 +152,46 @@ def _outcome_strip(summary: Dict[str, Any]) -> str:
     )
 
 
+_DEFENSIBILITY_TONE = {
+    "STRONG": "#0a8a5f", "MODERATE": "#1F7A75",
+    "WEAK": "#b8732a", "THIN": "#b5321e",
+}
+
+
+def _defensibility_band(assessment: Dict[str, Any]) -> str:
+    """Comp-set defensibility read: how much the comp-implied median
+    can be trusted as an IC anchor. Every figure recomputes from the
+    comparables + distribution shown below it."""
+    if not assessment:
+        return ""
+    band = assessment.get("band", "THIN")
+    tone = _DEFENSIBILITY_TONE.get(band, "#7a8699")
+    disp = assessment.get("moic_dispersion")
+    disp_s = (f"±{disp*100:.0f}% MOIC IQR" if disp is not None
+              else "MOIC IQR n/a")
+    return (
+        '<div style="margin:0 0 14px;padding:10px 14px;'
+        f'border-left:3px solid {tone};background:#f7f3ea;'
+        'border-radius:0 2px 2px 0;">'
+        '<div style="display:flex;gap:10px;align-items:baseline;'
+        'flex-wrap:wrap;">'
+        f'<span style="font-family:var(--sc-mono,monospace);font-size:13px;'
+        f'font-weight:700;letter-spacing:0.04em;color:{tone};">'
+        f'{_html.escape(band)} COMP SET</span>'
+        f'<span style="font-size:10px;color:#7a8699;letter-spacing:0.06em;">'
+        f'n={assessment.get("n", 0)} · median match '
+        f'{assessment.get("median_match", 0):.0f} · '
+        f'{assessment.get("n_close", 0)} close (≥60) · {disp_s}</span>'
+        '</div>'
+        f'<p style="margin:6px 0 0;font-size:12px;color:#1a2332;'
+        f'line-height:1.6;">{_html.escape(assessment.get("note", ""))}</p>'
+        '<p style="margin:6px 0 0;font-size:9.5px;color:#9aa3ad;">'
+        'Defensibility = set size × match closeness × outcome dispersion; '
+        'recomputes from the comparables below.</p>'
+        '</div>'
+    )
+
+
 def _breakdown_bar(breakdown: Dict[str, float]) -> str:
     """Stacked horizontal mini-bar showing per-feature contribution
     to the composite match score. Hovering each segment shows the
@@ -276,7 +316,7 @@ def render_comparable_outcomes_page(
     from ._chartis_kit import (
         chartis_shell, ck_eyebrow, ck_next_section, ck_page_title,
         ck_source_purpose)
-    from ..diligence.comparable_outcomes import benchmark_deal
+    from ..diligence.comparable_outcomes import assess_comp_set, benchmark_deal
     from ..data_public.deals_corpus import DealsCorpus
 
     header = ck_page_title(
@@ -362,6 +402,7 @@ def render_comparable_outcomes_page(
                              active_nav="/diligence/comparable-outcomes")
 
     summary = result["outcome_distribution"]
+    comp_assessment = assess_comp_set(result)
     rows = [_comparable_row(c) for c in result["comparables"]]
     table = _wc.sortable_table(
         ["Match", "Deal", "Year", "Buyer", "EV", "MOIC", "IRR", "Hold"],
@@ -453,6 +494,7 @@ def render_comparable_outcomes_page(
             + ck_eyebrow("Comparable Outcomes")
             + header
             + _outcome_strip(summary)
+            + _defensibility_band(comp_assessment)
             + _wc.section_card(
                 f"Top {len(rows)} comparables — sorted by match score",
                 table + breakdown_legend, pad=False,
@@ -604,6 +646,7 @@ def render_comparable_outcomes_page(
             + explainer_html
             + form
             + _outcome_strip(summary)
+            + _defensibility_band(comp_assessment)
             + size_link
             + sponsor_band
             + export_bar

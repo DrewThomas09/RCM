@@ -365,6 +365,90 @@ def sponsor_track_record(
     }
 
 
+def assess_comp_set(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Score how DEFENSIBLE a comparable set is as an outcome anchor.
+
+    A comp-implied median is only as good as the set behind it: many
+    close matches with tightly-clustered outcomes make the median a
+    quotable anchor; a thin set of loose matches with scattered
+    outcomes makes it indicative at best. This is the read a partner
+    needs before citing "comps say 2.5x" to IC.
+
+    Pure function of ``benchmark_deal``'s output — every figure
+    (n, median match score, close-match count, MOIC dispersion)
+    recomputes from the comparables + distribution the page shows.
+
+    Returns a dict with:
+      * ``n`` — comparables in the set
+      * ``median_match`` / ``n_close`` (match ≥ 60) — closeness
+      * ``moic_dispersion`` — (p75−p25)/median, the outcome spread
+      * ``band`` — STRONG / MODERATE / WEAK / THIN
+      * ``note`` — the one-line partner read
+    """
+    comps = result.get("comparables", []) or []
+    dist = result.get("outcome_distribution", {}) or {}
+    n = len(comps)
+    scores = sorted(
+        float(c.get("match_score", 0) or 0) for c in comps)
+    median_match = _percentile(scores, 0.5) if scores else 0.0
+    n_close = sum(1 for s in scores if s >= 60.0)
+
+    moic = dist.get("moic") or {}
+    med = moic.get("median")
+    p25 = moic.get("p25")
+    p75 = moic.get("p75")
+    if med and med > 0 and p25 is not None and p75 is not None:
+        dispersion = (p75 - p25) / med
+    else:
+        dispersion = None
+
+    # Banding: a STRONG anchor needs a non-thin set, mostly close
+    # matches, AND tight outcome dispersion. Each missing leg steps
+    # the band down.
+    if n < 4:
+        band = "THIN"
+        note = (
+            f"Only {n} comparable(s) — too thin to anchor an outcome. "
+            f"Widen the sector/size/vintage net or treat the median as "
+            f"anecdotal."
+        )
+    elif (median_match or 0) >= 65 and dispersion is not None and dispersion <= 0.30:
+        band = "STRONG"
+        note = (
+            f"{n} comps, median match {median_match:.0f}, MOIC spread "
+            f"±{dispersion*100:.0f}% of median — a tight, close set. The "
+            f"comp-implied median is a defensible IC anchor."
+        )
+    elif (median_match or 0) >= 50 and (dispersion is None or dispersion <= 0.55):
+        band = "MODERATE"
+        disp_s = (f"MOIC spread ±{dispersion*100:.0f}%"
+                  if dispersion is not None else "MOIC spread n/a")
+        note = (
+            f"{n} comps, median match {median_match:.0f}, {disp_s}. Usable "
+            f"as a directional anchor; name the dispersion when you cite "
+            f"the median."
+        )
+    else:
+        band = "WEAK"
+        disp_s = (f"MOIC spread ±{dispersion*100:.0f}% of median"
+                  if dispersion is not None else "wide/unknown MOIC spread")
+        note = (
+            f"{n} comps but loose matches (median {median_match:.0f}) "
+            f"and {disp_s} — outcomes are scattered. Treat the median as "
+            f"indicative only, not a quotable anchor."
+        )
+
+    return {
+        "n": n,
+        "median_match": round(median_match or 0.0, 1),
+        "n_close": n_close,
+        "moic_dispersion": (round(dispersion, 4)
+                            if dispersion is not None else None),
+        "band": band,
+        "note": note,
+    }
+
+
 def benchmark_deal(
     corpus: Any,
     target: Dict[str, Any],
