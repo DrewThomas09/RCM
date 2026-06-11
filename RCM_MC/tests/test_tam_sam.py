@@ -362,3 +362,39 @@ class BehavioralAscIndustryTests(unittest.TestCase):
             self.assertIn("What this sector traded for", h, key)
             self.assertNotIn("State footprint", h, key)
             self.assertIn("rather than fabricated", h, key)
+
+
+class FourMoreVerticalsTests(unittest.TestCase):
+    """Industries #9–12 — physician groups, dental, oncology, urgent
+    care. All chains anchored to named public sources; deals-only dives."""
+
+    def test_all_four_chains_pin_to_public_magnitudes(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES, compute
+        expect = {
+            "physician_group": 580_000 * 0.42 * 750_000,
+            "dental": 165e9 * 0.95,
+            "oncology": 2_000_000 * 0.55 * 150_000,
+            "urgent_care": 14_000 * 14_600 * 165,
+        }
+        for key, tam in expect.items():
+            out = compute(TEMPLATES[key]())
+            self.assertAlmostEqual(out["tam"], tam, places=2, msg=key)
+            # Every template carries at least one honest headwind.
+            self.assertTrue(any(g["annual_pct"] < 0
+                                for g in out["growth_drivers"]), key)
+
+    def test_every_registered_template_renders(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        for key in TEMPLATES:
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn("TAM / SAM Builder", h, key)
+            self.assertIn("Sources", h, key)
+
+    def test_every_template_exports_valid_xlsx(self):
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        from rcm_mc.ui.tam_sam_page import tam_sam_xlsx
+        for key in TEMPLATES:
+            data = tam_sam_xlsx({"template": [key]})
+            z = zipfile.ZipFile(io.BytesIO(data))
+            self.assertIsNone(z.testzip(), key)

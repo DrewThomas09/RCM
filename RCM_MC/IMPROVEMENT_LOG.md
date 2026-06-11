@@ -1176,6 +1176,28 @@ full surface:
 tool, sponsor, honest empty, hostile-input no-500); updated the B77 hint
 pin; 4+6 passed, 198 passed across search-adjacent suites.
 
+## W2-58 — industries #9–12: physician groups, dental, oncology, urgent care (11:30Z)
+**Sprint continuation** — four more PE verticals, all chains anchored to
+named public sources, all with honest headwinds:
+  - physician_group: 580K office-based MDs (AMA) × 42% independent ×
+    $750K/MD (MGMA) = $182.7B; specialty segments (primary-care VBC,
+    ortho ancillaries, the cardiology wave, mature derm); the
+    independent-pool shrinkage carried as "the clock on the thesis".
+  - dental: $165B NHE dental spend × 95% practice-delivered = $156.8B;
+    DSO penetration (~13% of dentists) as the consolidation runway;
+    benefit-cap stagnation as the headwind.
+  - oncology: 2M new cases (ACS) × 55% community × $150K = $165B; buy-
+    and-bill flagged as the margin engine; IRA drug-price negotiation +
+    340B competition carried as structural headwinds.
+  - urgent_care: 14K centers (UCA) × 14.6K visits × $165 = $33.7B; the
+    $165-vs-$2,000-ED substitution as the tailwind; retail/telehealth
+    skim as the headwind.
+  All four use _deals_only_dive (geography omitted rather than
+  fabricated; corpus trade history real — physician_group has 17 deals).
+**Verify**: all four chains pinned; every template carries ≥1 negative
+driver (pinned); all 14 registered templates render AND export valid
+xlsx (pinned); test_tam_sam 33 passed.
+
 ## W2-57 — industries #7–8: behavioral health + ASC (11:00Z)
 **Sprint continuation** — the two biggest PE service verticals without
 CMS facility files.

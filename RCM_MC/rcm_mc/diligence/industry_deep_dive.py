@@ -833,6 +833,44 @@ def asc_deep_dive() -> Dict[str, Any]:
     )
 
 
+
+def physician_group_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="physician_group",
+        sector_tokens=("physician_group", "physician_practice"),
+        note=("No national physician-practice facility file exists — "
+              "geography omitted rather than fabricated. 17 corpus "
+              "deals carry the sector's trading history."),
+    )
+
+
+def dental_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="dental",
+        sector_tokens=("dental",),
+        note=("No CMS dental facility file — geography omitted rather "
+              "than fabricated; the DSO deal history below is real."),
+    )
+
+
+def oncology_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="oncology",
+        sector_tokens=("oncology",),
+        note=("No national community-oncology facility file — "
+              "geography omitted rather than fabricated."),
+    )
+
+
+def urgent_care_deep_dive() -> Dict[str, Any]:
+    return _deals_only_dive(
+        industry="urgent_care",
+        sector_tokens=("urgent_care",),
+        note=("No CMS urgent-care file (UCA census is proprietary) — "
+              "geography omitted rather than fabricated."),
+    )
+
+
 # Registry keyed by TAM/SAM template key. Industries are added one at a
 # time as their data layers land (the deep-dive sprint).
 DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
@@ -844,6 +882,10 @@ DEEP_DIVES: Dict[str, Callable[[], Dict[str, Any]]] = {
     "ltch": ltch_deep_dive,
     "behavioral_health": behavioral_health_deep_dive,
     "asc": asc_deep_dive,
+    "physician_group": physician_group_deep_dive,
+    "dental": dental_deep_dive,
+    "oncology": oncology_deep_dive,
+    "urgent_care": urgent_care_deep_dive,
 }
 
 
