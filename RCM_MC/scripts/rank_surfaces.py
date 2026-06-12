@@ -206,9 +206,20 @@ def build_rankings():
     return rows
 
 
+# Labels that must NOT be the slug-derived default. The b168 bug: the
+# section-landing entry for /library labeled "Library" renders a button
+# that reads as the section itself (recursive with the nav button).
+# These were hand-edited into the generated manifest once and lost on
+# the next regeneration — overrides belong in the generator.
+_LABEL_OVERRIDES = {
+    "/library": "Deal Corpus",
+    "/portfolio": "Overview",
+}
+
+
 def _label_map() -> Dict[str, str]:
     """route → human label, from the existing nav rails where available."""
-    out: Dict[str, str] = {}
+    out: Dict[str, str] = dict(_LABEL_OVERRIDES)
     try:
         from rcm_mc.ui._chartis_kit import _SUB_NAV
         for items in _SUB_NAV.values():

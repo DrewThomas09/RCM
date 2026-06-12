@@ -85,7 +85,7 @@ RANKINGS = {
         {'route': '/deal-library', 'label': 'Deal Library', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
         {'route': '/rcm-benchmarks', 'label': 'RCM Benchmarks', 'total': 7.0, 'tier': 'green', 'effort': 3.5, 'useful': 3.5},
         {'route': '/methodology', 'label': 'Methodology', 'total': 6.4, 'tier': 'green', 'effort': 3.5, 'useful': 3.0},
-        {'route': '/library', 'label': 'Library', 'total': 6.4, 'tier': 'green', 'effort': 3.5, 'useful': 3.0},
+        {'route': '/library', 'label': 'Deal Corpus', 'total': 6.4, 'tier': 'green', 'effort': 3.5, 'useful': 3.0},
         {'route': '/verified-deals', 'label': 'Verified Deals', 'total': 6.2, 'tier': 'green', 'effort': 2.5, 'useful': 3.5},
         {'route': '/data/catalog', 'label': 'Catalog', 'total': 6.2, 'tier': 'green', 'effort': 2.5, 'useful': 3.5},
         {'route': '/data/refresh', 'label': 'Refresh', 'total': 6.2, 'tier': 'green', 'effort': 2.5, 'useful': 3.5},
@@ -131,7 +131,7 @@ RANKINGS = {
     'portfolio': [
         {'route': '/portfolio/regression', 'label': 'Regression', 'total': 8.2, 'tier': 'navy', 'effort': 5.0, 'useful': 3.5},
         {'route': '/portfolio/risk-scan', 'label': 'Risk Scan', 'total': 8.2, 'tier': 'green', 'effort': 3.5, 'useful': 4.5},
-        {'route': '/portfolio', 'label': 'Portfolio', 'total': 8.2, 'tier': 'green', 'effort': 3.5, 'useful': 4.5},
+        {'route': '/portfolio', 'label': 'Overview', 'total': 8.2, 'tier': 'green', 'effort': 3.5, 'useful': 4.5},
         {'route': '/portfolio/monitor', 'label': 'Monitor', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
     ],
     'home': [
