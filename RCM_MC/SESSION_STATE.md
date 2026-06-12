@@ -337,6 +337,26 @@ nav + palette + guide context. +10 tests. Joins Excel Mapping (#62) +
 Chart Builder (#63) as the graphics-utility set.
 
 ---
+## Checkpoint — wave #66 (W2-164, 2026-06-12)
+Closed the LAST unbuilt item of the multi-source data request: CMS
+Medicare Monthly Enrollment. New cms_monthly_enrollment.py (live
+data.cms.gov client: catalog UUID resolve + state/county annual-average
+rows + year walk-back; suppressed cells → None; fails closed). Engine
+texas_medicare_base(): the TRUE Part B denominator — total/FFS/MA benes
+for TX + the 4 metros' member counties; offline MODELED from real pop ×
+documented enrollment rates (aged 0.95 × 65+, disabled 0.023 × pop;
+anchors in docstring) + real vendored TX MA enrollment for the split,
+LIVE rows replace every count via ?nppes=live. Page: "Medicare
+beneficiary base — the Part B denominator" section (KPI strip, FFS-vs-MA
+100% bar, top-12 county table, LIVE/MODELED badge, true-MA-penetration
+footnote) + SO WHAT + source line. +10 client tests + 6 integration.
+
+USER DATA REQUEST: CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓ NPPES+map ✓ J-code
+POS ✓ Medicare Monthly Enrollment ✓. Remaining named: CMS Outpatient
+Hospitals by provider/service (cms_opps_outpatient CSV loader exists —
+needs a live client or vendored extract to wire honestly).
+
+---
 ## Checkpoint — wave #65 (W2-163, 2026-06-12)
 Charts: +6 types (funnel/tornado/radar/matrix/bullet/dot → 19 total),
 export toolbar (Download SVG/PNG 2x/Copy, vanilla JS) on Chart Builder +

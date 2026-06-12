@@ -1402,6 +1402,127 @@ def texas_ma_enrollment(tx_pop: float, seniors: float) -> Dict[str, Any]:
     }
 
 
+#: MODELED-fallback anchors for the Medicare beneficiary base, from
+#: published national totals (CMS Medicare Monthly Enrollment, 2024
+#: annual average: ≈60M aged + ≈7.7M disabled beneficiaries on ≈335M
+#: residents). Aged enrollment at 65+ is near-universal (~95%); the
+#: disabled (<65) book scales with TOTAL population, not seniors.
+_AGED_ENROLLMENT_RATE = 0.95
+_DISABLED_BENE_RATE = 0.023
+
+
+def texas_medicare_base(
+    metro_deepdives: List[Dict[str, Any]],
+    tx_pop: float, seniors: float,
+    fetch_live: bool = False,
+) -> Dict[str, Any]:
+    """The Medicare beneficiary base — the TRUE Part B denominator —
+    for Texas and the four metros' member counties, split FFS
+    (Original Medicare, the ASP+6 buy-and-bill book) vs MA (the
+    steered, prior-auth'd book).
+
+    Offline the counts are MODELED from real inputs and labeled:
+    aged ≈ real 65+ population × near-universal enrollment, disabled
+    ≈ total population × the national disabled-bene rate, and the
+    FFS/MA split applies the real vendored TX MA enrollment
+    state-wide. With ``fetch_live`` (``?nppes=live``) the CMS Medicare
+    Monthly Enrollment API replaces every count with the published
+    state + county rows — nothing is fabricated either way."""
+    from ..data.ma_data import ma_state
+
+    def _modeled(pop: float, s65: float) -> Dict[str, int]:
+        aged = s65 * _AGED_ENROLLMENT_RATE
+        disabled = pop * _DISABLED_BENE_RATE
+        return {"total": round(aged + disabled),
+                "aged": round(aged), "disabled": round(disabled)}
+
+    st = _modeled(tx_pop, seniors)
+    ma_enr = int((ma_state("TX") or {}).get("ma_enrollment") or 0)
+    # State MA share from REAL vendored MA enrollment over the modeled
+    # total; clamped so a stale numerator can't imply >85% penetration.
+    ma_share = min(ma_enr / st["total"], 0.85) if st["total"] else 0.0
+    state_block = {
+        "total_benes": st["total"],
+        "ffs_benes": round(st["total"] * (1 - ma_share)),
+        "ma_benes": round(st["total"] * ma_share),
+        "ma_pct": round(ma_share, 3),
+        "aged_benes": st["aged"],
+        "disabled_benes": st["disabled"],
+    }
+
+    counties: List[Dict[str, Any]] = []
+    for dd in metro_deepdives:
+        for s in dd.get("suburbs", []):
+            m = _modeled(float(s.get("population") or 0),
+                         float(s.get("seniors") or 0))
+            counties.append({
+                "county": s.get("county", ""),
+                "county_fips": s.get("county_fips", ""),
+                "metro": dd["metro"].split("-")[0],
+                "total_benes": m["total"],
+                "ffs_benes": round(m["total"] * (1 - ma_share)),
+                "ma_benes": round(m["total"] * ma_share),
+                "ma_pct": round(ma_share, 3),
+                "live": False,
+            })
+
+    live = False
+    period = ""
+    if fetch_live:
+        from ..data.cms_monthly_enrollment import fetch_state_medicare_base
+        pub = fetch_state_medicare_base("TX")
+        if pub.get("state"):
+            srow = pub["state"]
+            tot = srow["total_benes"] or 0
+            ma = srow["ma_benes"] or 0
+            state_block = {
+                "total_benes": tot,
+                "ffs_benes": srow["ffs_benes"] or 0,
+                "ma_benes": ma,
+                "ma_pct": round(ma / tot, 3) if tot else 0.0,
+                "aged_benes": srow["aged_benes"],
+                "disabled_benes": srow["disabled_benes"],
+            }
+            by_fips = {r["fips"]: r for r in pub.get("counties", [])}
+            for c in counties:
+                r = by_fips.get(c["county_fips"])
+                if not r:
+                    continue
+                ctot = r["total_benes"] or 0
+                c.update({
+                    "total_benes": ctot,
+                    "ffs_benes": r["ffs_benes"] or 0,
+                    "ma_benes": r["ma_benes"] or 0,
+                    "ma_pct": round((r["ma_benes"] or 0) / ctot, 3)
+                              if ctot else 0.0,
+                    "live": True,
+                })
+            live = True
+            period = pub.get("period", "")
+
+    counties.sort(key=lambda c: -c["total_benes"])
+    return {
+        "live": live,
+        "period": period,
+        "state": state_block,
+        "counties": counties,
+        "note": (
+            "Total Medicare beneficiaries — not the 65+ population — are "
+            "the denominator for Part B infusion demand, and the FFS vs "
+            "MA split decides HOW that demand pays: the Original-Medicare "
+            "book reimburses buy-and-bill at ASP+6 (sequestered ~+4.3%) "
+            "with no prior-auth gate, while the MA book is steered to the "
+            "lowest-cost site and gated on biologics. "
+            + ("CMS Medicare Monthly Enrollment, " + period + "."
+               if live else
+               "Counts are MODELED from real county population × the "
+               "documented enrollment rates and the real vendored TX MA "
+               "enrollment; the live CMS Medicare Monthly Enrollment API "
+               "(?nppes=live) replaces them with published state + county "
+               "rows.")),
+    }
+
+
 #: Approximate map coordinates (viewBox 0–100) for the four target
 #: metros on a stylized Texas outline — for the provider map.
 _METRO_MAP_XY = {
@@ -2880,6 +3001,8 @@ def build_texas_infusion_analysis(
         "payer_mix": payer,
         "asp_pricing": texas_asp_pricing(),
         "ma_enrollment": texas_ma_enrollment(tx_pop, seniors),
+        "medicare_base": texas_medicare_base(
+            metro_deepdives, tx_pop, seniors, fetch_live=nppes_live),
         "chains": chains,
         "hhi": hhi,
         "hhi_band": hhi_band,
@@ -2974,6 +3097,10 @@ def build_texas_infusion_analysis(
             "prevalence (TX-adjusted) for the Medicare-denominator proxies",
             "Census ACS 5-year table B01001 — county female share for the "
             "IV-iron / anemia demand weighting",
+            "CMS Medicare Monthly Enrollment (data.cms.gov) — total / FFS "
+            "/ MA beneficiaries by state + county (live API; offline "
+            "fallback MODELED from real population × documented "
+            "enrollment rates, labeled)",
         ],
         "basis_note": model.basis_note,
     }

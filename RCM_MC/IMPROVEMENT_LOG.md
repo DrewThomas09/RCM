@@ -3439,3 +3439,36 @@ present (≥19 total) + render clean, width_px controls display size +
 height auto, export toolbar has SVG/PNG/Copy + ids, size presets S/M/L/XL,
 builder/pie pages show export buttons + size select + new-type chips.
 Full suite green.
+
+## W2-164 (2026-06-12) — Medicare Monthly Enrollment: the true Part B denominator (wave #66)
+Closed the last unbuilt item of the user's multi-source CMS data request.
+- **`cms_monthly_enrollment.py`** (new live client): resolves the CMS
+  "Medicare Monthly Enrollment" dataset UUID from the data.json catalog,
+  pulls state + county annual-average rows (TOT/ORGNL_MDCR/MA_AND_OTH/
+  AGED/DSBLD benes), walks the publication year back from today (CMS
+  lags), parses comma counts, and maps suppressed cells ('*') to None —
+  never 0. Fails closed when egress is blocked; nothing fabricates an
+  enrollment count.
+- **`texas_medicare_base()`** (engine): total / FFS / MA beneficiaries —
+  the TRUE Part B infusion denominator — for TX and the four metros'
+  member counties. Offline the counts are MODELED from real inputs and
+  labeled: aged ≈ real 65+ pop × near-universal enrollment (0.95),
+  disabled ≈ total pop × the national disabled-bene rate (0.023; both
+  anchors documented), FFS/MA split from the real vendored TX MA
+  enrollment. With ?nppes=live the published CMS rows replace every
+  count, county-by-county (per-county live dots).
+- **Page**: "Medicare beneficiary base — the Part B denominator" section
+  after Payer mix — KPI strip (total / FFS buy-and-bill book / MA
+  steered book / TRUE MA penetration / aged / disabled), an FFS-vs-MA
+  100% bar, a top-12 metro-county table, the LIVE/MODELED badge, and a
+  footnote that the 65+-proxy penetration in the MA panel above
+  overstates true penetration. + SO WHAT (size Part B on FFS benes) +
+  source line.
+**Verify**: new `test_cms_monthly_enrollment.py` (10) — suppression→None,
+alias parsing, fail-closed (no dataset / network error / nothing
+published), year walk-back to latest published, state+county composition.
++6 in test_texas_infusion — state math (FFS+MA=total, aged+disabled=
+total), modeled TX total inside the published 4.6–4.8M band, counties ⊂
+metro members sorted desc (Harris #1), live mock replaces state + matched
+counties and leaves the rest MODELED, page renders section + badge,
+source cited. Full suite green.

@@ -1114,6 +1114,100 @@ class SoWhatTakeawayTests(unittest.TestCase):
         self.assertGreaterEqual(h.count(">SO WHAT<"), 15)
 
 
+class MedicareBaseTests(unittest.TestCase):
+    """texas_medicare_base — the true Part B denominator (FFS vs MA),
+    MODELED offline from real population × documented rates, replaced
+    by published CMS Monthly Enrollment rows when live."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.a = build_texas_infusion_analysis()
+
+    def test_state_block_math_consistent(self):
+        st = self.a["medicare_base"]["state"]
+        # FFS + MA = total, aged + disabled = total (rounding ±1).
+        self.assertAlmostEqual(
+            st["ffs_benes"] + st["ma_benes"], st["total_benes"], delta=1)
+        self.assertAlmostEqual(
+            st["aged_benes"] + st["disabled_benes"], st["total_benes"],
+            delta=1)
+        self.assertGreater(st["ma_pct"], 0.0)
+        self.assertLessEqual(st["ma_pct"], 0.85)
+
+    def test_modeled_state_total_plausible(self):
+        # TX published total is ≈4.6–4.8M benes; the modeled fallback
+        # (real pop × documented rates) must land in a sane band.
+        st = self.a["medicare_base"]["state"]
+        self.assertGreater(st["total_benes"], 3_800_000)
+        self.assertLess(st["total_benes"], 5_500_000)
+
+    def test_counties_are_metro_members_sorted_desc(self):
+        mb = self.a["medicare_base"]
+        member_fips = {
+            s["county_fips"]
+            for dd in self.a["metro_deepdives"]
+            for s in dd["suburbs"]}
+        self.assertTrue(mb["counties"])
+        for c in mb["counties"]:
+            self.assertIn(c["county_fips"], member_fips)
+            self.assertAlmostEqual(
+                c["ffs_benes"] + c["ma_benes"], c["total_benes"], delta=1)
+            self.assertFalse(c["live"])     # offline → MODELED
+        totals = [c["total_benes"] for c in mb["counties"]]
+        self.assertEqual(totals, sorted(totals, reverse=True))
+        # Harris (Houston) is the largest TX county → the largest base.
+        self.assertEqual(mb["counties"][0]["county"], "Harris")
+        self.assertFalse(mb["live"])
+
+    def test_live_rows_replace_modeled_counts(self):
+        from unittest import mock
+        from rcm_mc.diligence.texas_infusion import texas_medicare_base
+        target = self.a["medicare_base"]["counties"][0]
+        published = {
+            "state": {"total_benes": 4_700_000, "ffs_benes": 2_300_000,
+                      "ma_benes": 2_400_000, "aged_benes": 4_000_000,
+                      "disabled_benes": 700_000},
+            "counties": [{"fips": target["county_fips"],
+                          "county": target["county"],
+                          "total_benes": 555_000, "ffs_benes": 250_000,
+                          "ma_benes": 305_000}],
+            "year": 2024, "period": "2024 annual average",
+        }
+        demo = self.a["demographics"]
+        with mock.patch(
+                "rcm_mc.data.cms_monthly_enrollment."
+                "fetch_state_medicare_base",
+                lambda state, **k: published):
+            mb = texas_medicare_base(
+                self.a["metro_deepdives"], demo["population"],
+                demo["seniors_65_plus"], fetch_live=True)
+        self.assertTrue(mb["live"])
+        self.assertEqual(mb["state"]["total_benes"], 4_700_000)
+        self.assertAlmostEqual(
+            mb["state"]["ma_pct"], 2_400_000 / 4_700_000, places=3)
+        top = next(c for c in mb["counties"]
+                   if c["county_fips"] == target["county_fips"])
+        self.assertTrue(top["live"])
+        self.assertEqual(top["total_benes"], 555_000)
+        # Counties without a published row keep the labeled model.
+        self.assertTrue(any(not c["live"] for c in mb["counties"]))
+        self.assertIn("2024", mb["period"])
+
+    def test_page_renders_medicare_base_section(self):
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        for needle in (
+            "Medicare beneficiary base", "TX TOTAL BENES",
+            "FFS — BUY-AND-BILL BOOK", "TRUE MA PENETRATION",
+            "MODELED — real population", "CMS MEDICARE MONTHLY ENROLLMENT",
+        ):
+            self.assertIn(needle, h, f"missing: {needle}")
+
+    def test_source_cited(self):
+        self.assertTrue(any(
+            "Medicare Monthly Enrollment" in s for s in self.a["sources"]))
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page

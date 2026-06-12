@@ -819,6 +819,107 @@ def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
         f'available via the live CMS MA enrollment API.</p></div>')
 
 
+def _medicare_base_section(a: Dict[str, Any]) -> str:
+    """The Medicare beneficiary base — total / FFS / MA by county. FFS
+    benes are the ASP+6 buy-and-bill denominator; MA benes are the
+    steered book. LIVE from CMS Medicare Monthly Enrollment when egress
+    allows, labeled MODELED otherwise."""
+    mb = a.get("medicare_base") or {}
+    st = mb.get("state") or {}
+    if not st:
+        return ""
+    live = mb.get("live")
+    badge_label = (
+        "LIVE — CMS Medicare Monthly Enrollment, " + mb.get("period", "")
+        if live else
+        "MODELED — real population × enrollment rates "
+        "(live CMS via ?nppes=live)")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">{badge_label}</span>')
+
+    def _kpi(label: str, val: str, color: str = _NAVY) -> str:
+        return (
+            f'<div style="flex:1;min-width:130px;"><div style="font-size:9px;'
+            f'letter-spacing:0.06em;color:{_FAINT};font-weight:700;">{label}'
+            f'</div><div class="num" style="font-size:18px;font-weight:700;'
+            f'color:{color};">{val}</div></div>')
+
+    ffs_pct = 1 - st["ma_pct"]
+    split_bar = (
+        f'<div style="display:flex;height:18px;border-radius:3px;'
+        f'overflow:hidden;margin:10px 0 4px;">'
+        f'<div style="width:{ffs_pct*100:.1f}%;background:{_TEAL};"></div>'
+        f'<div style="width:{st["ma_pct"]*100:.1f}%;background:{_NAVY};">'
+        f'</div></div>'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'font-size:10px;color:{_DIM};">'
+        f'<span><strong style="color:{_TEAL};">FFS (buy-and-bill, '
+        f'ASP+6)</strong> {ffs_pct*100:.1f}%</span>'
+        f'<span><strong style="color:{_NAVY};">MA (steered, '
+        f'prior-auth)</strong> {st["ma_pct"]*100:.1f}%</span></div>')
+
+    rows = ""
+    for c in mb.get("counties", [])[:12]:
+        dot = (f'<span style="color:{_POS};">●</span> '
+               if c.get("live") else "")
+        rows += (
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:5px 8px;font-weight:600;color:{_NAVY};">'
+            f'{dot}{html.escape(c["county"])}</td>'
+            f'<td style="padding:5px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(c["metro"])}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-weight:600;">{c["total_benes"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'color:{_TEAL};font-weight:600;">{c["ffs_benes"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'color:{_DIM};">{c["ma_benes"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;">'
+            f'{c["ma_pct"]*100:.1f}%</td></tr>')
+    aged = st.get("aged_benes")
+    disabled = st.get("disabled_benes")
+    return (
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0;'
+        f'max-width:680px;">{html.escape(mb.get("note", ""))}</p>{badge}</div>'
+        f'<div style="display:flex;gap:16px;flex-wrap:wrap;'
+        f'border:1px solid #d6cfc0;border-radius:4px;padding:12px 14px;'
+        f'background:#fff;">'
+        + _kpi("TX TOTAL BENES", f'{st["total_benes"]/1e6:.2f}M')
+        + _kpi("FFS — BUY-AND-BILL BOOK",
+               f'{st["ffs_benes"]/1e6:.2f}M', _TEAL)
+        + _kpi("MA — STEERED BOOK", f'{st["ma_benes"]/1e6:.2f}M')
+        + _kpi("TRUE MA PENETRATION", f'{st["ma_pct"]*100:.1f}%')
+        + (_kpi("AGED (65+)", f'{aged/1e6:.2f}M')
+           if aged is not None else "")
+        + (_kpi("DISABLED (<65)", f'{disabled/1e6:.2f}M')
+           if disabled is not None else "")
+        + f'</div>{split_bar}'
+        f'<div style="overflow-x:auto;margin-top:10px;"><table '
+        f'style="width:100%;border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:5px 8px;">County '
+        f'(top 12 of the metro set)</th>'
+        f'<th style="text-align:left;padding:5px 8px;">Metro</th>'
+        f'<th style="text-align:right;padding:5px 8px;">Total benes</th>'
+        f'<th style="text-align:right;padding:5px 8px;">FFS</th>'
+        f'<th style="text-align:right;padding:5px 8px;">MA</th>'
+        f'<th style="text-align:right;padding:5px 8px;">MA %</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'{"● = published county row (live)." if live else ""} '
+        f'True MA penetration uses TOTAL Medicare (incl. &lt;65 disabled) '
+        f'as the denominator — the 65+-population proxy in the MA panel '
+        f'above overstates it. The MODELED fallback applies the state MA '
+        f'share uniformly; real county penetration varies — the live rows '
+        f'replace it county-by-county.</p>')
+
+
 def _asp_pricing_section(a: Dict[str, Any]) -> str:
     """Part B ASP buy-and-bill drug-pricing reference — the marquee
     infusion J-codes, the ASP+6 / sequestered mechanics, and the live
@@ -2370,6 +2471,15 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"{ma['penetration_proxy']*100:.0f}%) are steering site-of-care "
             f"and gating biologics — payer mix is the swing factor on "
             f"margin."),
+        "medicare_base": (
+            f"~{a['medicare_base']['state']['ffs_benes']/1e6:.1f}M of "
+            f"TX's {a['medicare_base']['state']['total_benes']/1e6:.1f}M "
+            f"Medicare lives are still FFS — the ungated ASP+6 "
+            f"buy-and-bill book — while the "
+            f"{a['medicare_base']['state']['ma_pct']*100:.0f}% MA book is "
+            f"steered and prior-auth'd. Size the Part B opportunity on "
+            f"FFS benes by county, and underwrite the MA share "
+            f"converting only at managed-care economics."),
         "demographics": (
             "The 65+ tailwind is real, but TX's highest-in-US uninsured "
             "rate and rural spread complicate home economics outside the "
@@ -2571,6 +2681,13 @@ def render_texas_infusion_page(
         + _payer_section(a)
         + _ma_enrollment_panel(a)
         + _so_what(sw["payer"])
+
+        + ck_section_header("Medicare beneficiary base — the Part B "
+                            "denominator",
+                            eyebrow="CMS MEDICARE MONTHLY ENROLLMENT · "
+                                    "FFS vs MA · BY COUNTY")
+        + _medicare_base_section(a)
+        + _so_what(sw["medicare_base"])
 
         + ck_section_header("Medicare population & demographics",
                             eyebrow="THE DEMAND TAILWIND")
