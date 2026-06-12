@@ -4067,3 +4067,13 @@ Connected the new market scan to the graphics suite and the API surface:
   programmatic use, matching the platform's API-everywhere pattern.
 **Verify**: +1 test — the cross-link's data param round-trips to all 51
 states via the mapping parser. Full suite green.
+
+## W2-206 (2026-06-12) — P13 bullets on market-data state detail
+/market-data/state/<ST> gains two guarded insight bullets recomputed
+from the SAME HCRIS frame the hospital table renders: the credible-
+filing median operating margin + negative-margin count (the distress
+pool), and the PE size-band count (100–500 beds, ≥$50M NPR — the
+screenable universe). The credibility screen mirrors the row
+renderer's gate (revenue >$100K, positive opex, margin in [-100%,
++100%]); n<8 renders nothing. Test re-derives both figures from the
+frame and matches the rendered strings exactly. 14 passed.

@@ -682,6 +682,36 @@ def render_state_detail(
         + '</div>'
     )
 
+    # P13 insight bullets — recomputed from the SAME frame the table
+    # renders, with significance guards (margin screen mirrors the row
+    # renderer's >1e5-revenue + positive-opex credibility gate).
+    from ._chartis_kit import ck_insight_bullets
+    _cands = []
+    try:
+        _ok = sdf[(sdf[rev_col].fillna(0) > 1e5)
+                  & (sdf["operating_expenses"].fillna(0) > 0)].copy()
+        if len(_ok) >= 8:
+            _m = ((_ok[rev_col] - _ok["operating_expenses"]) / _ok[rev_col])
+            _m = _m[(_m >= -1.0) & (_m <= 1.0)]
+            _neg = int((_m < 0).sum())
+            _med = float(_m.median())
+            _cands.append((
+                f"Median operating margin across {len(_m)} credible "
+                f"{state_upper} filings is <strong>{_med:.1%}</strong>; "
+                f"<strong>{_neg}</strong> ({_neg/len(_m):.0%}) filed "
+                f"negative — the distress pool a buy-side screen starts "
+                f"from.", abs(_med) >= 0.005 or _neg > 0))
+            _big = _ok[_ok[rev_col] >= 5e7]
+            _pe = _big[(_big["beds"].fillna(0) >= 100)
+                       & (_big["beds"].fillna(0) <= 500)]
+            _cands.append((
+                f"<strong>{len(_pe)}</strong> of {len(_ok)} filings fit "
+                f"the PE size band (100–500 beds, ≥$50M NPR) — the "
+                f"screenable universe in {state_upper}.", len(_pe) > 0))
+    except Exception:  # noqa: BLE001 — bullets are additive context
+        _cands = []
+    kpis += ck_insight_bullets(_cands, title=f"{state_upper} — the read")
+
     # 2026-05-28 batch 24 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
     intro = ck_editorial_head(
