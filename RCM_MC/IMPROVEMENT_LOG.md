@@ -3786,3 +3786,31 @@ a long list. Detection is on the embedded /pipeline/rollup? reopen path
 the WRITER emits — a free-text note that merely says "roll-up" gets no
 chip (pinned both ways). New .ck-deal-note-chip style in the deal-page
 CSS. test_rollup_save_to_deal + test_server: 74 passed.
+
+## W2-184 (2026-06-12) — Route-walker cookie-context mode (backlog #27)
+Backlog #28 (screener state prefill) verified already shipped — marked
+done. #27 built: `route_walker.py --deal-cookie <id>` walks every page
+WITH the pedesk_active_deal_meta cookie set (TX / CCN 450358 sample
+meta via the new `deal_cookie()` helper), so the prefill code paths —
+CIM state/CCN, roll-up basket, screener state scoping — render under
+test instead of only on a partner's machine. `walk()` gained an
+optional `cookie=` arg (plain Request when unset). The weekly
+regression sweep now runs a SECOND walker pass with the cookie after
+the plain pass. +1 live-server test: cookie walk over the three
+prefill routes → 200 / no traceback / no nan-None leak.
+
+## W2-185 (2026-06-12) — Exhibit chrome on X-Ray peer roster + screener compare (backlog #26)
+P5 expansion: the two paste-ready comp tables now carry the house
+exhibit discipline (numbered figure + units stated + sourced,
+vintage-stamped footer + print-to-PDF page rules):
+- HCRIS X-Ray peer roster → "EXHIBIT 1 — Peer roster — matched
+  comparables", units state the roster basis (n peers · filed HCRIS
+  values, latest per CCN · — = not reported/implausible), footer
+  sourced CMS HCRIS + FY of the target filing, deal_label = target.
+- Target-screener compare basket → "EXHIBIT 1 — Compare basket —
+  side-by-side", cross-vertical baskets titled "(cross-vertical)" with
+  units noting Size/Quality are labeled per vertical (not comparable).
+**Verify**: +3 assertions in test_hcris_xray (exhibit number, title,
+source, FY-stamped footer regex) and +2 tests in test_target_screener
+(single-vertical exhibit without the cross caveat; cross-vertical title
++ units). 183 passed across both suites.

@@ -45,13 +45,30 @@ _MARKERS = [
 ]
 
 
-def walk(base: str, routes: list[str]) -> list[dict]:
+def deal_cookie(deal_id: str, *, name: str = "", state: str = "TX",
+                ccn: str = "450358") -> str:
+    """Build the pedesk_active_deal_meta cookie the server's
+    ``_active_deal_meta`` reader expects — the walker's cookie-context
+    mode walks every page AS IF a partner had set an active deal, so
+    prefill paths (CIM / roll-up / screener state scoping) render under
+    test instead of only on a partner's machine."""
+    import json
+    import urllib.parse as _up
+    payload = _up.quote(json.dumps(
+        {"id": deal_id, "name": name or deal_id,
+         "state": state, "ccn": ccn}))
+    return f"pedesk_active_deal_meta={payload}"
+
+
+def walk(base: str, routes: list[str], cookie: str = "") -> list[dict]:
     rows = []
     for r in routes:
         url = base + r + _SAMPLE_SUFFIX.get(r, "")
         row = {"route": r, "status": 0, "bytes": 0}
+        headers = {"Cookie": cookie} if cookie else {}
+        req = urllib.request.Request(url, headers=headers)
         try:
-            with urllib.request.urlopen(url, timeout=45) as resp:
+            with urllib.request.urlopen(req, timeout=45) as resp:
                 body = resp.read().decode("utf-8", "replace")
                 row["status"] = resp.status
                 row["bytes"] = len(body)
@@ -85,6 +102,11 @@ def main() -> int:
     ap.add_argument("--fail-on-leak", action="store_true",
                     help="also exit non-zero if any page leaks a literal "
                          "nan/None into rendered HTML")
+    ap.add_argument("--deal-cookie", default="", metavar="DEAL_ID",
+                    help="walk with the active-deal context cookie set to "
+                         "this deal id (state TX / CCN 450358 sample meta) — "
+                         "exercises the prefill paths (CIM, roll-up, "
+                         "screener scoping) that only run with a deal set")
     args = ap.parse_args()
 
     if args.discover:
@@ -104,7 +126,9 @@ def main() -> int:
             seen.add(k)
             ordered.append(k)
 
-    rows = walk(args.base, ordered)
+    rows = walk(args.base, ordered,
+                cookie=(deal_cookie(args.deal_cookie)
+                        if args.deal_cookie else ""))
     cols = ["route", "status", "bytes"] + [k for k, _ in _MARKERS] + ["error"]
     with open(args.out, "w") as f:
         f.write("\t".join(cols) + "\n")

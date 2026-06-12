@@ -2434,15 +2434,27 @@ def _screen_compare(qs, ck) -> str:
             f' <a class="ck-link" href="/pipeline/rollup?ccns='
             f'{",".join(_h.escape(c) for c in hosp_ccns)}">'
             f'Roll-up these {len(hosp_ccns)} → pro-forma platform</a> ·')
+    # P5 exhibit chrome: the compare basket is a paste-ready comp table —
+    # number it, state the units, stamp the source family.
+    from ._chartis_kit import ExhibitFactory
+    _xf = ExhibitFactory(source_default=(
+        "CMS public provider universes (per-row source links)"))
+    table = _xf.wrap(
+        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
+        'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'
+        f'<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">{"".join(ths)}</tr></thead>'
+        f'<tbody>{rows_html}</tbody></table></div>',
+        title=("Compare basket — side-by-side"
+               + (" (cross-vertical)" if cross else "")),
+        units="real CMS values; — = not reported"
+              + ("; Size/Quality labeled per vertical" if cross else ""),
+    )
     return (
         f'<p class="ck-section-body" style="margin:0 0 8px;">Comparing {len(cols)} '
         f'target(s){" across " + str(len(verticals)) + " verticals" if cross else ""}.'
         f'{rollup_link} '
         'Real CMS data; “—” = not reported.</p>'
-        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
-        'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'
-        f'<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">{"".join(ths)}</tr></thead>'
-        f'<tbody>{rows_html}</tbody></table></div>{note}{miss}'
+        f'{table}{note}{miss}'
     )
 
 

@@ -59,6 +59,23 @@ class WalkSmokeTests(unittest.TestCase):
             self.assertEqual(r.get("nan_leak", 0), 0, r["route"])
             self.assertEqual(r.get("none_leak", 0), 0, r["route"])
 
+    def test_cookie_context_walk_exercises_prefill_paths_clean(self):
+        # Backlog #27: the prefill code paths (CIM state/CCN, roll-up
+        # basket, screener state scoping) only run when an active deal is
+        # set — walk them WITH the cookie so a prefill 500 fails CI, not
+        # a partner's first click.
+        from scripts.route_walker import deal_cookie
+        ck = deal_cookie("walkdeal")
+        self.assertIn("pedesk_active_deal_meta=", ck)
+        base = f"http://127.0.0.1:{self.port}"
+        rows = walk(base, ["/pipeline/rollup", "/diligence/cim-crosscheck",
+                           "/target-screener"], cookie=ck)
+        for r in rows:
+            self.assertEqual(r["status"], 200, r["route"])
+            self.assertEqual(r.get("traceback", 0), 0, r["route"])
+            self.assertEqual(r.get("nan_leak", 0), 0, r["route"])
+            self.assertEqual(r.get("none_leak", 0), 0, r["route"])
+
 
 if __name__ == "__main__":
     unittest.main()

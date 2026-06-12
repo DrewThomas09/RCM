@@ -39,13 +39,13 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 21 | ✅ DONE — P12b palette name-search (shipped earlier; pinned by test_palette_entity_jump) | — | verified 2026-06-12 |
 | 22 | ✅ DONE — P9 slice-2 diff detail (?diff=<id> row-level view in target_screener_page) | — | verified 2026-06-12 |
 | 23 | ✅ DONE — P4b: CIM claim chip upgraded to ck_peer_percentile visual (track + scope label, engine rank) | — | W2-182 |
-| 26 | **P5 expansion** — exhibit wrapper on X-Ray peer table + screener compare view | 24 | exhibits numbered/sourced on both; print check; tests |
+| 26 | ✅ DONE — exhibit chrome on X-Ray peer roster + screener compare | — | W2-185 |
 | 24 | ✅ DONE — roll-up note: anchor (earlier) + ROLL-UP chip (W2-183) | — | W2-183 |
 | 30 | **A empty-state verification pass** — ?state=ZZ + empty-db walk, screenshot deck (carried #15) | 20 | walker empty-db variant + 4 screenshots |
 | 25 | ✅ DONE — DQ snapshot dates (all WIRED sources carry real vendored dates) | — | verified 2026-06-12 |
 | 29 | ✅ DONE — model-card link on screener footer (/methodology) | — | verified 2026-06-12 |
-| 27 | **walker cookie-context mode** — --deal-cookie flag walks with active-deal set (catches prefill 500s) | 18 | walk clean with cookie; CI-ready |
-| 28 | **Screener state prefill from active deal** — parity with CIM (cookie fills ?state= when absent) | 16 | cookie → state filter chip prefilled; params win; tests |
+| 27 | ✅ DONE — walker --deal-cookie + weekly-sweep second pass | — | W2-184 |
+| 28 | ✅ DONE — screener state prefill (shipped earlier; main-view only, params win) | — | verified 2026-06-12 |
 
 ## Groomed-out / blocked
 - Medicaid S-3 re-ingest + POS bed backfill: NETWORK-GATED (sources named in
