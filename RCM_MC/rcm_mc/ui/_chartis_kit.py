@@ -306,6 +306,21 @@ _NAV_NONNAVIGABLE = frozenset({
     "/new-deal/manual",   # manual-entry POST target → 303 on GET; use /new-deal
 })
 
+# Pinned dropdown slots — product decisions, not emergent ranking outcomes
+# (the same principle as the Target Screener tiebreak in
+# scripts/rank_surfaces.py). A pinned route always occupies one of its
+# section's six mega-menu slots even when the deterministic ranking would
+# bury it; the displaced rank-order leaf stays reachable via "More →" /
+# /best/<section>. Pins must be real-tier (green/navy/data_required) —
+# the front-facing gate test rejects weak-tier bars.
+_NAV_PINNED = {
+    # HCRIS X-Ray is the hospital cost-report workbench partners reach for
+    # by name; its renderer is thin (the engine lives in
+    # diligence/hcris_xray/) so the LOC-proxied effort score buries it
+    # at #18 — below the rank cut despite daily-driver traffic.
+    "diligence": ("/diligence/hcris-xray",),
+}
+
 
 def _ranked_subnav_items(sect: str):
     """The section's top-6 surfaces by the surface ranking, for the nav bar.
@@ -334,6 +349,8 @@ def _ranked_subnav_items(sect: str):
     # so a bar never shows the same destination twice. Skip "All X →" sentinel
     # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
+    pinned = [p for p in _NAV_PINNED.get(sect, ())
+              if p not in _NAV_NONNAVIGABLE]
 
     def _add(label: str, href: str) -> None:
         label = (label or "").strip()
@@ -344,11 +361,38 @@ def _ranked_subnav_items(sect: str):
         seen.add(key)
         top.append({"label": label, "href": href})
 
+    def _unplaced_pins() -> list:
+        placed = {t["href"] for t in top}
+        return [p for p in pinned if p not in placed]
+
     for r in pool:
-        c = cur.get(r["route"], {})
-        _add(c.get("label") or r.get("label") or r["route"], r["route"])
-        if len(top) >= 6:
+        route = r["route"]
+        # Reserve a slot per still-unplaced pin: a non-pinned leaf may not
+        # take the bar past 6-minus-those, so a low-ranked pin deeper in the
+        # pool still fits (bar order stays ranked-descending — the pin lands
+        # wherever its score puts it).
+        if route not in pinned and len(top) + len(_unplaced_pins()) >= 6:
+            continue
+        c = cur.get(route, {})
+        _add(c.get("label") or r.get("label") or route, route)
+        if len(top) >= 6 and not _unplaced_pins():
             break
+    # A pin absent from the ranked pool (e.g. the manifest was regenerated
+    # without its route) still gets its slot from the curated rail — gated
+    # to real tiers like the backfill below.
+    if _unplaced_pins():
+        try:
+            from rcm_mc.diligence.surface_status import classify_surface as _pcls
+        except Exception:  # noqa: BLE001
+            _pcls = None
+        for p in _unplaced_pins():
+            c = cur.get(p)
+            if c is None:
+                continue
+            if _pcls is not None and _pcls(p).get("tier") not in (
+                    "green", "navy", "data_required"):
+                continue
+            _add(c.get("label", ""), p)
     # Backfill to a fuller bar (target 4-6 destinations) from the curated rail
     # when the strong-ranked pool is short, so every section button opens a
     # populated mega-menu rather than 2-3 lonely links. GATED to real tiers
