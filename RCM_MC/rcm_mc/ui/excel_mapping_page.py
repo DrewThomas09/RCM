@@ -26,6 +26,7 @@ import html
 from typing import Any, Dict, List, Optional, Tuple
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
+from .cdd_chart_kit import chart_export_toolbar
 
 # ── Editable config (drive the map from Python here) ─────────────────
 
@@ -347,8 +348,10 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
         )
         + '<div class="ts-wrap" style="max-width:980px;">'
         + _form(cfg)
-        + f'<div style="font-family:{_SERIF};">{_map_svg(cfg)}</div>'
+        + f'<div id="mapOut" style="font-family:{_SERIF};">{_map_svg(cfg)}'
+        f'</div>'
         + _legend(cfg)
+        + chart_export_toolbar("mapOut", "state-map")
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;'
           'margin-top:18px;align-items:start;">'
         + '<div><div style="font-size:10px;letter-spacing:0.06em;'

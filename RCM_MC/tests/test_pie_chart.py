@@ -61,8 +61,13 @@ class PieChartPageTests(unittest.TestCase):
     def test_default_page_is_populated(self):
         h = render_pie_chart_page({})
         for needle in ("Pie Chart", "SLICES — LABEL", "Render chart",
-                       "Donut (ring)", 'type="color"', "<svg", "Segment A"):
+                       "Donut (ring)", 'type="color"', "<svg", "Segment A",
+                       'id="pieOut"', "⬇ SVG", "⬇ PNG", 'name="size"'):
             self.assertIn(needle, h, f"missing: {needle}")
+
+    def test_size_control_scales_pie(self):
+        h = render_pie_chart_page({"size": ["XL"]})
+        self.assertIn("max-width:1120px", h)
 
     def test_custom_slices_render(self):
         h = render_pie_chart_page({

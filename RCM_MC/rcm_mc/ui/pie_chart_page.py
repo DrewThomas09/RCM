@@ -12,7 +12,9 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
-from .cdd_chart_kit import presentable_pie, PALETTES
+from .cdd_chart_kit import (
+    presentable_pie, PALETTES, SIZE_PRESETS, chart_export_toolbar,
+)
 
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
           "'Times New Roman', serif")
@@ -80,12 +82,15 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
     label_mode = _qs1(qs, "mode", "percent")
     if label_mode not in ("percent", "value", "both", "none"):
         label_mode = "percent"
+    size = _qs1(qs, "size", "M")
+    width_px = dict(SIZE_PRESETS).get(size, 720)
 
     slices = [{"label": r["label"], "value": _to_float(r["value"]),
                "color": r["color"]} for r in rows]
     svg = presentable_pie(slices, {
         "title": title or "Pie Chart", "subtitle": subtitle,
         "donut": donut, "label_mode": label_mode, "value_suffix": suffix,
+        "width_px": width_px,
     })
 
     # Slice input rows.
@@ -154,7 +159,15 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'<input type="text" name="suffix" value="{html.escape(suffix)}" '
         f'placeholder="% or $" style="width:100%;height:32px;border:1px '
         f'solid #c9c1ac;border-radius:5px;padding:0 8px;"></label></div>'
+        f'<div style="display:flex;gap:14px;align-items:center;">'
         f'{_toggle("donut", "Donut (ring)", donut)}'
+        f'<label style="font-size:11px;color:#465366;display:flex;gap:5px;'
+        f'align-items:center;margin-left:auto;">Size'
+        f'<select name="size" style="height:30px;border:1px solid #c9c1ac;'
+        f'border-radius:5px;">' + "".join(
+            f'<option value="{k}"{" selected" if k == size else ""}>{k}'
+            f'</option>' for k, _w in SIZE_PRESETS)
+        + '</select></label></div>'
         f'<button type="submit" style="margin-top:4px;padding:10px 18px;'
         f'background:#0b2341;color:#fff;border:none;border-radius:5px;'
         f'font-weight:600;cursor:pointer;">Render chart</button>'
@@ -179,7 +192,9 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
         + form
         + '<div style="margin-top:18px;border:1px solid #d6cfc0;'
           'border-radius:8px;padding:18px;background:#fff;text-align:center;">'
-        + svg + '</div>'
+        + f'<div id="pieOut">{svg}</div>'
+        + chart_export_toolbar("pieOut", "pie-chart")
+        + '</div>'
         + '</div>')
     return chartis_shell(
         body, "Pie Chart", active_nav="/research",

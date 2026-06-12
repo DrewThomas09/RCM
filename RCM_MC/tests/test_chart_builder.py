@@ -10,7 +10,8 @@ from __future__ import annotations
 import unittest
 
 from rcm_mc.ui.cdd_chart_kit import (
-    CHART_TYPES, PALETTES, parse_table, render_cdd_chart, _series,
+    CHART_TYPES, PALETTES, SIZE_PRESETS, parse_table, render_cdd_chart,
+    _series, chart_export_toolbar,
 )
 from rcm_mc.ui.chart_builder_page import render_chart_builder_page
 
@@ -45,13 +46,18 @@ class ParseTableTests(unittest.TestCase):
 
 class RenderTests(unittest.TestCase):
     def _data(self, ctype):
-        if ctype in ("pie", "donut", "marimekko"):
+        if ctype in ("pie", "donut", "marimekko", "funnel", "tornado",
+                     "dot"):
             return parse_table("Seg\tA\tB\nX\t40\t10\nY\t30\t20\nZ\t30\t15")
         if ctype == "waterfall":
             return parse_table("Step\tV\nStart\t100\nUp\t20\nDown\t-8\n"
                                "Net\t=112")
-        if ctype in ("scatter", "bubble"):
+        if ctype in ("scatter", "bubble", "matrix"):
             return parse_table("Co\tX\tY\tS\nA\t12\t22\t40\nB\t8\t28\t60")
+        if ctype == "radar":
+            return parse_table("Ax\tA\tB\nP\t8\t6\nQ\t6\t9\nR\t9\t5\nS\t7\t8")
+        if ctype == "bullet":
+            return parse_table("KPI\tAct\tTgt\nA\t82\t90\nB\t45\t40")
         return parse_table("Year\tRev\tEBITDA\n2021\t100\t22\n2022\t130\t31\n"
                            "2023\t165\t43")
 
@@ -87,14 +93,45 @@ class RenderTests(unittest.TestCase):
             self.assertGreaterEqual(len(cols), 6, name)
             self.assertTrue(all(c.startswith("#") for c in cols), name)
 
+    def test_new_consultant_chart_types_present(self):
+        keys = {k for k, _ in CHART_TYPES}
+        for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot"):
+            self.assertIn(k, keys, k)
+        self.assertGreaterEqual(len(CHART_TYPES), 19)
+
+    def test_width_px_controls_display_size(self):
+        small = render_cdd_chart("column", self._data("column"),
+                                 {"width_px": 520})
+        big = render_cdd_chart("column", self._data("column"),
+                               {"width_px": 1120})
+        self.assertIn("max-width:520px", small)
+        self.assertIn("max-width:1120px", big)
+        # Proportional scaling (height auto from viewBox), not distortion.
+        self.assertIn("height:auto", small)
+
+    def test_export_toolbar_has_svg_png_copy(self):
+        tb = chart_export_toolbar("chartOut", "myfile")
+        for needle in ("⬇ SVG", "⬇ PNG", "Copy SVG", "ckDlSvg",
+                       "ckDlPng", "ckCopySvg", "myfile"):
+            self.assertIn(needle, tb, needle)
+
+    def test_size_presets_defined(self):
+        keys = [k for k, _ in SIZE_PRESETS]
+        self.assertEqual(keys, ["S", "M", "L", "XL"])
+
 
 class BuilderPageTests(unittest.TestCase):
     def test_page_renders_core_elements(self):
         h = render_chart_builder_page({})
         for needle in ("Chart Builder", "Render chart", "GALLERY",
                        "Waterfall (bridge)", "Marimekko", "<textarea",
-                       "<svg"):
+                       "<svg", "Funnel", "Tornado", "Radar",
+                       'id="chartOut"', "⬇ SVG", 'name="size"'):
             self.assertIn(needle, h, f"missing: {needle}")
+
+    def test_size_control_changes_render_width(self):
+        h = render_chart_builder_page({"size": ["L"]})
+        self.assertIn("max-width:920px", h)
 
     def test_type_selection_switches_chart(self):
         h = render_chart_builder_page({"type": ["pie"]})
