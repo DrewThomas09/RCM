@@ -50,5 +50,19 @@ class PredictiveScreenerLeadAnchorTests(unittest.TestCase):
         )
 
 
+
+class GlossaryHeaderLinkTests(unittest.TestCase):
+    """Refill #35: the metric column headers route to their canonical
+    glossary cards (no dead anchors — the helper falls back to text)."""
+
+    def test_metric_headers_link_glossary(self):
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        from rcm_mc.ui.predictive_screener import render_predictive_screener
+        h = render_predictive_screener(_get_latest_per_ccn(), "state=TX")
+        for key in ("net_patient_revenue", "operating_margin",
+                    "denial_rate", "days_in_ar"):
+            self.assertIn(f'/metric-glossary#{key}', h, key)
+
+
 if __name__ == "__main__":
     unittest.main()

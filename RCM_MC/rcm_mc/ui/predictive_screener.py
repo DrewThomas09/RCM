@@ -36,6 +36,7 @@ padding:2px 0 2px 14px;margin:var(--sc-s-3,10px) 0 var(--sc-s-5,18px);}
 .ck-ps-contrast a{color:var(--sc-teal,#155752);}
 .ps-dq{opacity:.5;cursor:help;}
 """
+from ._glossary_link import metric_label_link
 from .brand import PALETTE
 
 
@@ -485,9 +486,12 @@ def render_predictive_screener(
         # per-column, which numbers are real and which are modeled — the
         # "Est." prefix alone was too easy to miss.
         f'<th>Beds{ck_basis_badge("actual")}</th>'
-        f'<th>Revenue{ck_basis_badge("actual")}</th>'
-        f'<th>Margin{ck_basis_badge("actual")}</th>'
-        f'<th>Est. Denial{ck_basis_badge("predicted")}'
+        f'<th>{metric_label_link("Revenue", "net_patient_revenue")}'
+        f'{ck_basis_badge("actual")}</th>'
+        f'<th>{metric_label_link("Margin", "operating_margin")}'
+        f'{ck_basis_badge("actual")}</th>'
+        f'<th>{metric_label_link("Est. Denial", "denial_rate")}'
+        f'{ck_basis_badge("predicted")}'
         + ck_calc_help(
             "Est. Denial",
             ["Initial-denial rate modeled from payer mix, scale and pricing:",
@@ -497,7 +501,8 @@ def render_predictive_screener(
              "larger, cleaner-collecting hospitals → fewer.)"],
             benchmark="Clamped to the 2%–25% industry initial-denial range.")
         + '</th>'
-        f'<th>Est. AR Days{ck_basis_badge("predicted")}'
+        f'<th>{metric_label_link("Est. AR Days", "days_in_ar")}'
+        f'{ck_basis_badge("predicted")}'
         + ck_calc_help(
             "Est. AR Days",
             ["Days in accounts receivable modeled from payer mix, scale and pricing:",

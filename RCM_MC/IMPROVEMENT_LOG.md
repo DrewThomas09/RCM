@@ -4302,3 +4302,10 @@ restored from main; all 53 invariant tests green, 770-test broad
 sweep green, sweep #7's 2 fails re-verified as mid-merge artifacts.
 Backlog: #31 verified mostly-shipped (state pin map exists), #33/#36
 marked done.
+
+## W2-218 (2026-06-12) — Glossary long-tail: predictive-screener headers (refill #35, part 1)
+The predictive screener's metric column headers (Revenue, Margin, Est.
+Denial, Est. AR Days) now route to their canonical /metric-glossary
+cards via metric_label_link (no-dead-anchor fallback), alongside their
+existing basis badges. +1 test re-deriving all four anchors. 24 passed
+across the predictive suites.
