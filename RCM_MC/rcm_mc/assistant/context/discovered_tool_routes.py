@@ -196,6 +196,17 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Infusion Market Scan',
+        route='/diligence/infusion-markets',
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        source_group='Diligence Workspace',
+        is_auto_generated=False,
+        aliases=['infusion market scan', 'infusion by state', 'where else',
+                 'state attractiveness', 'infusion states', 'market scan',
+                 'best infusion state'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Visuals',
         route='/visuals',
         category=PageContextCategory.RESEARCH_BACKTESTING,
