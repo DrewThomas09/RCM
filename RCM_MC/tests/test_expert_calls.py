@@ -427,6 +427,58 @@ class CallNoteTests(unittest.TestCase):
                          ("SUPPORTS", "CONTRADICTS", "NEW QUESTION"))
 
 
+class SectorPackTests(unittest.TestCase):
+    def test_pack_integrity(self):
+        from rcm_mc.diligence.expert_calls import SECTOR_PACKS
+        for name, pack in SECTOR_PACKS.items():
+            self.assertTrue(pack, f"{name} pack empty")
+            for lens_key, qs in pack.items():
+                self.assertIsNotNone(stakeholder(lens_key),
+                                     f"{name}: unknown lens {lens_key}")
+                for q in qs:
+                    self.assertIn(q["topic"], CDD_TOPICS)
+                    self.assertTrue(q["question"].strip())
+                    self.assertTrue(q["listen_for"].strip())
+
+    def test_guide_layers_pack_only_when_asked(self):
+        base = build_call_guide("payer_exec")
+        packed = build_call_guide("payer_exec", sector="infusion")
+        self.assertGreater(packed["question_count"],
+                           base["question_count"])
+        self.assertEqual(packed["sector"], "infusion")
+        self.assertEqual(base["sector"], "")
+        pack_qs = [q for sec in packed["sections"]
+                   for q in sec["questions"] if q.get("pack")]
+        self.assertTrue(pack_qs)
+        self.assertTrue(all(q["pack"] == "infusion" for q in pack_qs))
+        # Pack questions join their topic's group, not a separate one.
+        self.assertEqual(len(packed["sections"]),
+                         len({s["topic"] for s in packed["sections"]}))
+
+    def test_unknown_sector_ignored_never_guessed(self):
+        g = build_call_guide("payer_exec", sector="crypto")
+        self.assertEqual(g["sector"], "")
+        self.assertEqual(g["question_count"],
+                         build_call_guide("payer_exec")["question_count"])
+
+    def test_page_renders_pack_tag_and_select(self):
+        page = render_expert_calls_page(
+            {"sector": ["infusion"], "lens": ["payer_exec"]})
+        self.assertIn("INFUSION PACK", page)
+        self.assertIn("white-bagging", page)
+        self.assertIn('name="sector"', page)
+        # Lens-chip links carry the sector through navigation.
+        self.assertIn("&sector=infusion", page)
+        # No sector → no pack tags anywhere.
+        plain = render_expert_calls_page({"lens": ["payer_exec"]})
+        self.assertNotIn("INFUSION PACK", plain)
+
+    def test_hostile_sector_falls_back(self):
+        page = render_expert_calls_page({"sector": ["<script>"]})
+        self.assertNotIn("<script>alert", page)
+        self.assertNotIn("PACK</span>", page)
+
+
 class FindingsLedgerTests(unittest.TestCase):
     def _note(self, lens="payer_exec", finding="Rates above market",
               tag="CONTRADICTS", vantage="ex-VP", as_of="2026-06"):

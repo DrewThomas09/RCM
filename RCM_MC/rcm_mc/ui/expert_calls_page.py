@@ -18,9 +18,10 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import quote_plus
 
 from ..diligence.expert_calls import (
-    BANK_VINTAGE, LEDGER_TAG_ORDER, STAKEHOLDER_TYPES, build_call_guide,
-    call_sheet_rows, coverage_read, findings_ledger, logged_call_counts,
-    program_plan, stakeholder, topic_coverage, weekly_cadence,
+    BANK_VINTAGE, LEDGER_TAG_ORDER, SECTOR_PACKS, STAKEHOLDER_TYPES,
+    build_call_guide, call_sheet_rows, coverage_read, findings_ledger,
+    logged_call_counts, program_plan, sector_pack, stakeholder,
+    topic_coverage, weekly_cadence,
     COVERED, THIN, UNCOVERED, TRIANGULATED, SINGLE_LENS, DARK,
 )
 from ._chartis_kit import (
@@ -129,12 +130,22 @@ def _guide_html(guide: Dict[str, Any]) -> str:
         qhtml = ""
         for q in sec["questions"]:
             qno += 1
+            pack_tag = ""
+            if q.get("pack"):
+                pack_tag = (
+                    f' <span style="font-family:\'JetBrains Mono\','
+                    f'monospace;font-size:9px;font-weight:700;'
+                    f'letter-spacing:0.05em;color:#7a4a1f;border:1px '
+                    f'solid #7a4a1f;border-radius:4px;padding:0 5px;'
+                    f'vertical-align:2px;">'
+                    f'{html.escape(q["pack"].upper())} PACK</span>')
             qhtml += (
                 f'<div style="margin:0 0 12px;">'
                 f'<div style="font-family:{_SERIF};font-size:14px;'
                 f'color:#1a2332;"><span style="font-family:\'JetBrains '
                 f'Mono\',monospace;font-size:11px;color:#7a8699;">Q{qno}'
-                f'</span> &nbsp;{html.escape(q["question"])}</div>'
+                f'</span> &nbsp;{html.escape(q["question"])}{pack_tag}'
+                f'</div>'
                 f'<div style="font-size:11.5px;color:#155752;'
                 f'margin:3px 0 0 26px;">Listen for: '
                 f'{html.escape(q["listen_for"])}</div></div>')
@@ -478,6 +489,9 @@ def render_expert_calls_page(
     lens_key = _qs1(qs, "lens", "referring_physician")
     if stakeholder(lens_key) is None:
         lens_key = "referring_physician"
+    sector = _qs1(qs, "sector", "").strip().lower()
+    if sector_pack(sector) is None:
+        sector = ""
 
     plan = program_plan(n)
     # The notes list (when the server passes it) is the single source:
@@ -500,7 +514,7 @@ def render_expert_calls_page(
         completed = {s["key"]: _qsint(qs, f"done_{s['key']}", 0, 0, 99)
                      for s in STAKEHOLDER_TYPES}
     read = coverage_read(completed, n)
-    guide = build_call_guide(lens_key, deal_name=deal)
+    guide = build_call_guide(lens_key, deal_name=deal, sector=sector)
 
     # Lens-chip links carry the tracker state — but when the counts
     # come from logged notes, baking them into done_* params would
@@ -510,6 +524,8 @@ def render_expert_calls_page(
         f"&done_{k}={v}" for k, v in completed.items() if v)) + f"&n={n}"
     if deal:
         base_qs += "&deal=" + quote_plus(deal)
+    if sector:
+        base_qs += "&sector=" + quote_plus(sector)
 
     cadence = weekly_cadence(n)
     topics = topic_coverage(completed)
@@ -655,6 +671,14 @@ def render_expert_calls_page(
         f'placeholder="optional — stamps the guide" style="width:200px;'
         f'height:30px;border:1px solid #c9c1ac;border-radius:5px;'
         f'padding:0 8px;margin-left:4px;font-family:{_SERIF};"></label>'
+        f'<label style="font-size:12px;color:#465366;">Sector pack '
+        f'<select name="sector" style="height:30px;border:1px solid '
+        f'#c9c1ac;border-radius:5px;margin-left:4px;">'
+        f'<option value="">None (generic bank)</option>'
+        + "".join(
+            f'<option value="{k}"{" selected" if k == sector else ""}>'
+            f'{k.title()}</option>' for k in sorted(SECTOR_PACKS))
+        + '</select></label>'
         f'<input type="hidden" name="lens" value="{html.escape(lens_key)}">'
         f'<button type="submit" style="padding:7px 14px;background:#0b2341;'
         f'color:#fff;border:none;border-radius:5px;font-weight:600;'

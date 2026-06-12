@@ -4265,3 +4265,27 @@ hostile <b> finding escaped; +1 CONTRADICTS → warning clears,
 green (cdd-scope/guide-invariants/catalog/exhibit/prefill). Branch
 re-synced with main twice (PRs #1816–#1829 merged in; second sync
 clean).
+
+## W2-169 (2026-06-12) — Expert-Call Program slice 5: sector question packs (infusion v1) (wave #71)
+The guides become engagement-specific: SECTOR_PACKS layers add-on
+questions onto the generic bank when the deal's sector is chosen.
+v1 ships the infusion pack (the platform's deepest vertical — the TX
+study + national scan): 9 questions across 6 lenses, every one
+carrying the sector's actual mechanics in its listen-for line —
+white-bagging vs site-of-care steerage (payer), buy-and-bill
+in-housing by referrers, chair math as the supply build (competitor),
+booked-vs-infusing utilization measurement (former employee — "an
+underwrite on booked utilization is 10–20 points rich"),
+discharge-pathway interception (site admin), ASP/MFP/biosimilar
+spread mechanics (expert). build_call_guide(sector=…) merges pack
+questions into their topic groups tagged pack=<name>; unknown sector
+ignored, never guessed. Page: a Sector-pack select (None default),
+INFUSION PACK mono tag on pack questions, sector carried through
+lens-chip navigation.
+**Verify**: test_expert_calls.py 51→56 — pack integrity (valid lens
+keys/topics, listen_for present), guide layering (count increases,
+pack tag on exactly the pack questions, topic groups not duplicated),
+unknown sector → identical to no sector, page renders tag + select +
+sector-carrying chips and plain page has no tags, hostile sector
+falls back clean. Neighbor suites 51 green. Live smoke 3 URLs
+(infusion / bogus sector / CSV with stray sector param) → 200s.
