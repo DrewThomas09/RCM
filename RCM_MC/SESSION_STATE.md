@@ -3,6 +3,16 @@
   8 hours, no questions, loop. Stream: claude/general-improvements-a78byd,
   PR #1811 accumulates; merge origin/main between items as the parallel
   chart stream advances; regression sweep every ~4 items.)
+- window3 progress (as of ~11:30Z): 16 items shipped to PR #1811 —
+  ready-queue CLEARED (#23 CIM pctile chip, #24 ROLL-UP chip, #26
+  exhibit chrome ×2, #27 walker --deal-cookie + weekly-sweep pass, #30
+  empty-state gate; #21/#22/#25/#28/#29 verified already shipped &
+  marked done). Plus: ranking-contract fix + manifest regen (B168
+  labels baked into generator), P13 bullets on /state-profile,
+  /pie-chart None-leak fix, quick-import server-side bounds + comma-
+  drop bugfix, P4 chips on /compare, command-center KPI drill-throughs,
+  screener per-row +Deal. Sweeps: 15,7xx green ×3 (one mid-edit
+  artifact re-verified). CI green on every push so far.
 - window2_start: 2026-06-10T12:40:00Z (directive: loop continuously, find bugs,
   small improvements/wins, UI+functionality polish, CDD features, data
   integration; no questions; merges → pedesk.app live + verify)
