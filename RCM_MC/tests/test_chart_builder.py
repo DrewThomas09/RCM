@@ -475,6 +475,15 @@ class BuilderPageTests(unittest.TestCase):
                                         "bins": ["nope"]})
         self.assertIn("Chart Builder", hb)
 
+    def test_copy_shaped_table_carries_transformed_tsv(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "group": ["sum"],
+            "data": ["Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7"]})
+        self.assertIn("Copy shaped table", h)
+        tsv = h.split('id="shapedTsv"')[1].split("</textarea>")[0]
+        self.assertIn("Aetna\t17", tsv)     # aggregated, not raw
+        self.assertNotIn("Aetna\t10", tsv)
+
     def test_bogus_shaping_params_ignored(self):
         h = render_chart_builder_page({
             "group": ["drop table"], "sort": ["weird"],

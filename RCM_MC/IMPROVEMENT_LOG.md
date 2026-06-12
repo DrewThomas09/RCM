@@ -4237,3 +4237,12 @@ Two small builder fixes post-deploy:
 **Verify**: +2 tests (toggle off persists on submit + links keep
 defaults + checked still works; 4 requested bins → exactly 4 bars,
 bogus value ignored). Chart sweep: 1484 passed.
+
+## W2-186 (2026-06-12) — Chart Builder: copy shaped table (wave #87)
+The shaping pipeline gets its Excel round-trip OUT: a "⧉ Copy shaped
+table" button next to the exhibit link copies the TRANSFORMED table
+(group/sort/top-N/calc applied) as paste-ready TSV — so the builder
+can be used purely as an aggregation tool (paste raw export → group +
+top-N → copy result), not only as a chart renderer.
+**Verify**: +1 test — the hidden TSV carries the aggregated values
+(Aetna 17, never the raw 10). Chart sweep green.
