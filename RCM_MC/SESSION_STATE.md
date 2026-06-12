@@ -21,6 +21,9 @@
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
 - current_step: looping; wave #70 on branch claude/pipeline-data-graphs-8ld7ng
+- WAVE 74 (W2-172): Saved Charts library (/charts + saved_charts
+  table + save strips on builder/exhibit, owner-scoped, e2e-tested);
+  found-fix: texas-infusion missing from /diligence catalog.
 - WAVE 73 (W2-171): builder↔exhibit round-trip (send-to-exhibit
   with shaped table, edit-in-builder back-links) + platform-data
   selects on exhibit panels (has_qs dataset fix).

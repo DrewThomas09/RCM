@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from ..data.chart_datasets import build_chart_dataset, list_chart_datasets
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
+from .saved_charts_page import save_chart_form as _save_chart_form
 from .cdd_chart_kit import (
     CHART_TYPES, PALETTES, parse_table, compose_exhibit,
     chart_export_toolbar,
@@ -177,6 +178,7 @@ def render_exhibit_page(qs: "Dict[str, Any] | None" = None) -> str:
           'border-radius:8px;padding:14px;background:#fff;text-align:center;">'
         + f'<div id="exhibitOut">{svg}</div>'
         + chart_export_toolbar("exhibitOut", "exhibit")
+        + _save_chart_form("/exhibit")
         + '</div></div>')
     return chartis_shell(
         body, "Exhibit Composer", active_nav="/research",

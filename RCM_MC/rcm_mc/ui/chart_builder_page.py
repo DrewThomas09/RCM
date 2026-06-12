@@ -16,6 +16,7 @@ import json
 from typing import Any, Dict, Optional
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
+from .saved_charts_page import save_chart_form as _save_chart_form
 from .cdd_chart_kit import (
     CHART_TYPES, PALETTES, SIZE_PRESETS, TRANSFORM_CALCS, TRANSFORM_GROUPS,
     parse_table, render_cdd_chart, table_to_tsv, transform_table,
@@ -417,6 +418,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
            + f'&d0={_urlq(table_to_tsv(table))}" '
            f'style="font-size:12px;color:#155752;font-weight:600;">'
            f'→ Send to Exhibit Composer (as panel 1)</a></div>')
+        + _save_chart_form("/chart-builder")
         + '</div>'
         + '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
           'font-weight:700;margin:18px 0 6px;">GALLERY — YOUR DATA IN EVERY '

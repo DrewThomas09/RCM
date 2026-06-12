@@ -220,6 +220,7 @@ _SUB_NAV = {
         {"label": "Chart Builder",       "href": "/chart-builder"},
         {"label": "Pie Chart",           "href": "/pie-chart"},
         {"label": "Exhibit Composer",    "href": "/exhibit"},
+        {"label": "Saved Charts",        "href": "/charts"},
         {"label": "All Research →",      "href": "/research"},
     ],
     # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
@@ -7293,6 +7294,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "chart-builder", "title": "Chart Builder · CDD chart kit (column, waterfall, marimekko, bubble)", "route": "/chart-builder"},
     {"id": "pie-chart", "title": "Pie Chart · client-ready pie/donut from per-slice values", "route": "/pie-chart"},
     {"id": "exhibit", "title": "Exhibit Composer · lay up to 4 charts on one deck slide", "route": "/exhibit"},
+    {"id": "saved-charts", "title": "Saved Charts · reopen named Chart Builder / Exhibit configs", "route": "/charts"},
     {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
     {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
@@ -10907,6 +10909,7 @@ _SUB_SECTION_MAP = {
     "/chart-builder": "research",
     "/pie-chart": "research",
     "/exhibit": "research",
+    "/charts": "research",
     "/diligence/regulatory-calendar": "research",
     "/diligence/bear-case": "research",
     "/diligence/bear-cases": "research",

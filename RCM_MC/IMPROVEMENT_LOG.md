@@ -3601,3 +3601,33 @@ table (scoped to the href — raw paste legitimately appears in gallery
 links); dataset-only exhibit loads real data and does NOT pre-fill the
 example defaults; pasted data wins over a selected dataset; edit-link;
 bogus ds key ignored. 75 pass across the three chart files; sweep 1426.
+
+## W2-172 (2026-06-12) — Saved Charts library (wave #74)
+Configurations become durable — the third hand-rebuild of the same
+denials Pareto is the builder failing its user:
+- **`portfolio/saved_charts.py`** (mirrors the saved_screens store
+  contract): `saved_charts` table (additive, IF NOT EXISTS), owner-
+  scoped save/list/delete, BEGIN IMMEDIATE, parameterised SQL. Route
+  allow-list — only /chart-builder and /exhibit are reopenable; a
+  forged route raises ValueError at the store AND is dropped silently
+  at the handler (never a 500, never an open-redirect-ish row). qs
+  capped at 8000 (a pasted table rides in it).
+- **★ Save to library** strip on Chart Builder + Exhibit Composer: a
+  name box + POST; the hidden query_params snapshots location.search
+  at submit so what's saved is exactly the URL being looked at. CSRF
+  via the shared form shim.
+- **/charts** library page: per-user table (name / kind chip / saved
+  date / open / delete), signed-out + empty states, titles escaped.
+  Server routes: GET /charts, POST /api/charts/save + /api/charts/
+  delete (owner from session — a spoofed owner field is impossible,
+  the form doesn't carry one). Registered: Research sub-nav, Cmd-K
+  palette, _SUB_SECTION_MAP, guide context (5 Qs + related_routes —
+  the invariant that bit the wave-67/68 pages).
+- **Found-bug fix (pre-existing on main)**: /diligence/texas-infusion
+  was served but absent from the /diligence catalog _PILLARS —
+  test_section_catalog failing on main. Added to Modeling pillar.
+**Verify**: test_saved_charts.py (16) — store CRUD owner-scoped,
+route allow-list, qs cap, page states, XSS escape, save strips on both
+pages, registration invariants, and a real-HTTP e2e (login → CSRF →
+save → list → delete; forged route dropped). Wide sweep
+(chart/exhibit/guide/palette/dataset/saved/catalog/screener): 1792.

@@ -12014,6 +12014,52 @@ _MANUAL.extend([
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
+    _ctx(
+        "/charts", "Saved Charts",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The chart library — named Chart Builder and "
+        "Exhibit Composer configurations saved per user, reopened "
+        "exactly as they were left (a chart is its URL query string).",
+        primary_purpose="Keep the charts a deal team reuses — weekly "
+        "exhibits, standard bridges — one click away instead of "
+        "re-pasting data and re-picking options.",
+        intended_users=["Deal team re-running the same exhibits across "
+                        "a workstream."],
+        common_questions=[
+            "How do I save a chart I just built?",
+            "Where do my saved charts live?",
+            "Can I reopen a saved exhibit and edit it?",
+            "Are saved charts shared with the whole team?",
+            "How do I delete a saved chart?",
+        ],
+        inputs=["A name typed on Chart Builder / Exhibit Composer (the "
+                "★ Save to library strip); the chart's current URL "
+                "query string is snapshotted automatically."],
+        outputs=["A per-user list of named charts — open / delete; "
+                 "opening re-renders the live page from the saved "
+                 "query string."],
+        key_metrics=["None — a workflow surface, not an analytic."],
+        data_sources=["The saved query strings only; chart data stays "
+                      "whatever was pasted or dataset-loaded when "
+                      "saved."],
+        model_logic_summary="A saved chart is a route + query string "
+        "persisted owner-scoped in SQLite; the library relinks, it "
+        "never re-renders or re-aggregates at save time.",
+        why_it_matters="The third time someone rebuilds the same "
+        "denials Pareto by hand, the builder has failed them — this "
+        "makes configurations durable.",
+        diligence_use_cases=["Weekly IC exhibit refresh: reopen the "
+                             "saved slide, paste the new month, export."],
+        interpretation_guidance=["Saved charts are per-user, not "
+                                 "shared; send the URL itself to share "
+                                 "a configuration."],
+        limitations=["Saves the configuration (URL), not a rendered "
+                     "image; very large pasted tables are capped at "
+                     "the qs limit."],
+        related_routes=["/chart-builder", "/exhibit", "/pie-chart"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
 ])
 
 
