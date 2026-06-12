@@ -3638,3 +3638,24 @@ Completed the deliverables set (alongside the IC memo):
   the one-page exhibit.
 **Verify**: +1 test — the shared helper returns the 5-svg composed slide
 (no None) and the page links to the SVG download route. Full suite green.
+
+## W2-176 (2026-06-12) — National infusion-market scan (wave #78)
+"Where else after Texas?" — a new diligence surface that ranks every
+state for an infusion roll-up from the SAME real per-state data the
+Texas page uses:
+- **`infusion_state_attractiveness()`** (new `infusion_market.py`): scores
+  all 51 states on a weighted blend (0–100) of senior base (28%), MA
+  penetration / site-of-care steerage (24%), no-CON de-novo runway (18%),
+  metro density (15%), and commercial payer mix (15%) — from ACS
+  demographics (vendored), CMS MA geographic variation, and the
+  documented 12-state no-CON list. CA #1, then CO/MN/UT/AZ/TX; ranked +
+  audited.
+- **Page** `/diligence/infusion-markets`: a US tile-grid choropleth
+  colored by score (TX outlined), a top-10 / Texas / bottom-5 ranked
+  table with the component axes + no-CON flag, the Texas read (#6) with a
+  link to the full deep-dive, and the methodology. Wired into Diligence
+  nav + Cmd-K palette + guide context.
+**Verify**: new `test_infusion_market.py` (6) — 51 states scored + ranked,
+score = the weighted-axes blend, no-CON flag matches the documented list,
+TX present + top-10; page renders the map/table/TX-read + palette/nav/
+guide registration. Full suite green.

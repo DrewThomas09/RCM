@@ -439,3 +439,13 @@ Extracted texas_exhibit_svg(a) (shared by page + route) + route
 /api/diligence/texas-infusion/exhibit.svg (server-rendered SVG download)
 + download link on the page. Deliverables set complete: IC memo (.md) +
 exhibit (.svg), both server-rendered from the live analysis. +1 test.
+
+---
+## Checkpoint — wave #78 (W2-176, 2026-06-12)
+NEW diligence surface: national infusion-market scan. infusion_market.py
+infusion_state_attractiveness() ranks 51 states (weighted: senior base 28
+/ MA 24 / no-CON 18 / density 15 / commercial 15) from real ACS + CMS MA
++ no-CON list (CA #1 … TX #6). Page /diligence/infusion-markets: tile-grid
+choropleth + ranked table + TX read + link to deep-dive. Diligence nav +
+palette + guide. +6 tests. Extends Texas to "where else?" without a
+per-state page refactor.
