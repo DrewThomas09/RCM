@@ -9,33 +9,7 @@ import urllib.parse
 from typing import Any, Dict
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
-
-# Schematic US tile grid (row, col) for the compact cartogram below.
-# Formerly shared with the Excel Mapping page, which now renders real
-# geography; this page keeps the tile layout for its compact map.
-_STATE_TILE = {
-    "AK": (0, 0), "ME": (0, 10),
-    "VT": (1, 9), "NH": (1, 10),
-    "WA": (2, 0), "ID": (2, 1), "MT": (2, 2), "ND": (2, 3), "MN": (2, 4),
-    "IL": (2, 5), "WI": (2, 6), "MI": (2, 7), "NY": (2, 8), "MA": (2, 9),
-    "RI": (2, 10),
-    "OR": (3, 0), "NV": (3, 1), "WY": (3, 2), "SD": (3, 3), "IA": (3, 4),
-    "IN": (3, 5), "OH": (3, 6), "PA": (3, 7), "NJ": (3, 8), "CT": (3, 9),
-    "CA": (4, 0), "UT": (4, 1), "CO": (4, 2), "NE": (4, 3), "MO": (4, 4),
-    "KY": (4, 5), "WV": (4, 6), "VA": (4, 7), "MD": (4, 8), "DE": (4, 9),
-    "AZ": (5, 1), "NM": (5, 2), "KS": (5, 3), "AR": (5, 4), "TN": (5, 5),
-    "NC": (5, 6), "SC": (5, 7), "DC": (5, 8),
-    "OK": (6, 3), "LA": (6, 4), "MS": (6, 5), "AL": (6, 6), "GA": (6, 7),
-    "HI": (7, 0), "TX": (7, 3), "FL": (7, 8),
-}
-
-
-def _heat(frac: float) -> str:
-    """Light → deep-teal sequential color for a 0–1 fraction."""
-    frac = max(0.0, min(1.0, frac))
-    c0, c1 = (0xE9, 0xF1, 0xF0), (0x12, 0x5E, 0x59)
-    rgb = tuple(round(c0[i] + (c1[i] - c0[i]) * frac) for i in range(3))
-    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+from .excel_mapping_page import _map_svg
 
 _NAVY = "#0b2341"
 _TEAL = "#1F7A75"
@@ -53,37 +27,21 @@ _AXIS_LABEL = {
 
 
 def _choropleth(states, lo, hi) -> str:
-    by_code = {s["code"]: s for s in states}
-    rng = (hi - lo) or 1
-    cell, gap, ncol, nrow = 9.0, 0.7, 11, 8
-    tiles = ""
-    for code, (r, c) in _STATE_TILE.items():
-        s = by_code.get(code)
-        if not s:
-            continue
-        x, y = c * cell, r * cell
-        fill = _heat((s["score"] - lo) / rng)
-        is_tx = code == "TX"
-        stroke = _NEG if is_tx else "#fff"
-        sw = 0.9 if is_tx else 0.4
-        txt = "#fff" if (s["score"] - lo) / rng > 0.55 else "#1a2332"
-        tiles += (
-            f'<g><rect x="{x:.1f}" y="{y:.1f}" width="{cell-gap:.1f}" '
-            f'height="{cell-gap:.1f}" rx="1.2" fill="{fill}" '
-            f'stroke="{stroke}" stroke-width="{sw}">'
-            f'<title>{html.escape(s["name"])}: {s["score"]:.0f} '
-            f'(#{s["rank"]})</title></rect>'
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+3.4:.1f}" '
-            f'text-anchor="middle" font-size="2.7" font-weight="700" '
-            f'fill="{txt}">{code}</text>'
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+6.4:.1f}" '
-            f'text-anchor="middle" font-size="2.7" fill="{txt}">'
-            f'{s["score"]:.0f}</text></g>')
-    return (
-        f'<svg viewBox="-1 -1 {ncol*cell+1:.0f} {nrow*cell+1:.0f}" '
-        f'width="100%" height="300" role="img" '
-        f'aria-label="State infusion attractiveness" '
-        f'style="max-width:560px;">{tiles}</svg>')
+    """Real-geography teal choropleth of attractiveness score; Texas
+    outlined red as the benchmark market. Shares the Excel Mapping
+    renderer so every state map in the product is the same geography."""
+    return _map_svg({
+        "values": {s["code"]: round(s["score"]) for s in states},
+        # Integer legend ticks to match the rounded on-state labels.
+        "lo": round(lo), "mid": round((lo + hi) / 2.0), "hi": round(hi),
+        "c_low": "#e9f1f0", "c_mid": "#7ea8a5", "c_high": "#125e59",
+        "accent": {"TX"}, "accent_color": _NEG,
+        "notes": {s["code"]: f'#{s["rank"]} of {len(states)}'
+                  for s in states},
+        "label_mode": "value", "label_scale": 1.35,
+        "max_width_px": 560,
+        "aria_label": "State infusion attractiveness (geographic map)",
+    })
 
 
 def render_infusion_market_page(qs: "Dict[str, Any] | None" = None) -> str:

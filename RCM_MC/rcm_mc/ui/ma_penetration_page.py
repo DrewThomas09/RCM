@@ -4,8 +4,8 @@ State choropleth + exposure-band table from the curated KFF/CMS cut,
 plus a footprint calculator: enter a target's states and get the
 average MA penetration of its geography vs the national norm. Renders
 from ``rcm_mc.market_intel.ma_penetration``; the map reuses the
-excel-mapping tile-grid renderer so the two state maps stay visually
-identical.
+excel-mapping real-geography renderer so the two state maps stay
+visually identical.
 """
 from __future__ import annotations
 

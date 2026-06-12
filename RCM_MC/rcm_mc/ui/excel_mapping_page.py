@@ -75,6 +75,9 @@ _CALLOUT_STATES: Tuple[str, ...] = (
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
           "'Times New Roman', serif")
 
+#: Monotonic counter for per-render SVG element ids (gradient defs).
+_uid = [0]
+
 
 # ── Gradient ─────────────────────────────────────────────────────────
 
@@ -259,23 +262,28 @@ def _ranks(values: Dict[str, float]) -> Dict[str, int]:
 
 
 def _label_text(x: float, y: float, code: str, label: str,
-                cls: str = "em-label") -> str:
+                cls: str = "em-label", scale: float = 1.0,
+                mode: str = "full") -> str:
     """Two-line black serif label (code over value) with a white halo so
     it stays legible on the dark end of the gradient. The halo is a
     separate underlying stroke-only copy (not paint-order) so exported
-    SVGs survive renderers that ignore paint-order (Office, cairosvg)."""
+    SVGs survive renderers that ignore paint-order (Office, cairosvg).
+    ``mode="value"`` drops the code line — compact embeds (infusion
+    pages) read the state from the geography and need the number big."""
     def _line(yy: float, size: float, weight: str, text: str) -> str:
         common = (f'class="{cls}" x="{x:.1f}" y="{yy:.1f}" '
                   f'text-anchor="middle" font-family="{_SERIF}" '
-                  f'font-size="{size:g}" font-weight="{weight}" '
+                  f'font-size="{size * scale:g}" font-weight="{weight}" '
                   f'pointer-events="none"')
         t = html.escape(text)
         return (f'<text {common} fill="none" stroke="#ffffff" '
-                f'stroke-width="1.7" stroke-linejoin="round">{t}</text>'
-                f'<text {common} fill="#000000">{t}</text>')
-    out = _line(y - 1.5, 9, "700", code)
+                f'stroke-width="{1.7 * scale:g}" stroke-linejoin="round">'
+                f'{t}</text><text {common} fill="#000000">{t}</text>')
+    if mode == "value":
+        return _line(y + 3.5 * scale, 9.5, "700", label) if label else ""
+    out = _line(y - 1.5 * scale, 9, "700", code)
     if label:
-        out += _line(y + 8.5, 9.5, "400", label)
+        out += _line(y + 8.5 * scale, 9.5, "400", label)
     return out
 
 
@@ -283,23 +291,28 @@ def _svg_legend(cfg: Dict[str, Any]) -> str:
     """Gradient legend drawn inside the SVG (bottom-right gutter) so
     SVG/PNG exports are self-contained."""
     x, y, w, h = 700.0, 508.0, 220.0, 12.0
+    sfx = cfg.get("legend_suffix", "")
     stops = (
         f'<stop offset="0%" stop-color="{html.escape(cfg["c_low"])}"/>'
         f'<stop offset="50%" stop-color="{html.escape(cfg["c_mid"])}"/>'
         f'<stop offset="100%" stop-color="{html.escape(cfg["c_high"])}"/>')
     tick = (f'font-family="{_SERIF}" font-size="11" fill="#1a2332" '
             f'pointer-events="none"')
+    # Per-render gradient id: two compact maps on one page (or a page
+    # plus the visuals-hub thumbnail) must not share a <defs> id.
+    _uid[0] += 1
+    gid = f"emGrad{_uid[0]}"
     return (
-        f'<defs><linearGradient id="emGrad" x1="0" y1="0" x2="1" y2="0">'
+        f'<defs><linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="0">'
         f'{stops}</linearGradient></defs>'
         f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" '
-        f'fill="url(#emGrad)" stroke="#c9c1ac" stroke-width="0.6"/>'
+        f'fill="url(#{gid})" stroke="#c9c1ac" stroke-width="0.6"/>'
         f'<text x="{x}" y="{y + h + 12}" text-anchor="start" {tick}>'
-        f'{_fmt(cfg["lo"])}</text>'
+        f'{_fmt(cfg["lo"])}{sfx}</text>'
         f'<text x="{x + w / 2}" y="{y + h + 12}" text-anchor="middle" {tick}>'
-        f'{_fmt(cfg["mid"])}</text>'
+        f'{_fmt(cfg["mid"])}{sfx}</text>'
         f'<text x="{x + w}" y="{y + h + 12}" text-anchor="end" {tick}>'
-        f'{_fmt(cfg["hi"])}</text>'
+        f'{_fmt(cfg["hi"])}{sfx}</text>'
         f'<rect x="{x}" y="{y - 22}" width="11" height="11" rx="2" '
         f'fill="#e6e3dc" stroke="#c9c1ac" stroke-width="0.6"/>'
         f'<text x="{x + 16}" y="{y - 13}" text-anchor="start" {tick}>'
@@ -307,12 +320,25 @@ def _svg_legend(cfg: Dict[str, Any]) -> str:
 
 
 def _map_svg(cfg: Dict[str, Any]) -> str:
+    """Geographic US choropleth from a cfg dict. Required keys:
+    ``values`` / ``lo`` / ``mid`` / ``hi`` / ``c_low`` / ``c_mid`` /
+    ``c_high``. Optional keys (read with .get so minimal callers like
+    ma_penetration_page keep working): ``title``, ``accent`` (codes
+    outlined in ``accent_color``), ``notes`` ({code: hover suffix}),
+    ``legend_suffix``, ``label_mode`` ("full" | "value" | "none"),
+    ``label_scale``, ``max_width_px``, ``aria_label``."""
     vals, lo, mid, hi = cfg["values"], cfg["lo"], cfg["mid"], cfg["hi"]
     anchors = _label_anchors()
     ranks = _ranks(vals)
     n_ranked = len(ranks)
+    accent = {str(c).upper() for c in (cfg.get("accent") or ())}
+    accent_color = cfg.get("accent_color", "#b5321e")
+    notes = cfg.get("notes") or {}
+    label_mode = cfg.get("label_mode", "full")
+    label_scale = float(cfg.get("label_scale", 1.0))
+    max_width = int(cfg.get("max_width_px", 980))
 
-    shapes, labels = "", ""
+    shapes, accents, labels = "", "", ""
     for code, rec in US_STATE_PATHS.items():
         v = vals.get(code)
         fill = gradient_color(v, lo, mid, hi, cfg["c_low"], cfg["c_mid"],
@@ -320,44 +346,58 @@ def _map_svg(cfg: Dict[str, Any]) -> str:
         label = _fmt(v) if v is not None else ""
         name = rec["name"]
         tip = f"{name} — {label or 'no data'}"
+        if code in notes:
+            tip += f" · {notes[code]}"
         rank_attr = (f' data-rank="{ranks[code]}" data-n="{n_ranked}"'
                      if code in ranks else "")
-        shapes += (
+        if code in accent:
+            stroke, sw = accent_color, "1.8"
+        else:
+            stroke, sw = "#ffffff", "0.7"
+        path = (
             f'<path class="em-state" data-state="{code}" '
             f'data-name="{html.escape(name)}" '
             f'data-value="{html.escape(label)}"{rank_attr} '
-            f'd="{rec["d"]}" fill="{fill}" stroke="#ffffff" '
-            f'stroke-width="0.7" tabindex="0" role="button" '
+            f'd="{rec["d"]}" fill="{fill}" stroke="{stroke}" '
+            f'stroke-width="{sw}" tabindex="0" role="button" '
             f'aria-label="{html.escape(tip)}">'
             f'<title>{html.escape(tip)}</title></path>')
-        if code not in _CALLOUT_STATES and code in anchors:
+        # Accent-outlined states paint after their neighbours so the
+        # coloured stroke isn't half-covered by adjacent white borders.
+        if code in accent:
+            accents += path
+        else:
+            shapes += path
+        if (label_mode != "none" and code not in _CALLOUT_STATES
+                and code in anchors):
             ax, ay = anchors[code]
-            labels += _label_text(ax, ay, code, label)
+            labels += _label_text(ax, ay, code, label,
+                                  scale=label_scale, mode=label_mode)
 
     # Small-Northeast swatch column in the Atlantic gutter.
     callouts = ""
-    cx, cy0, step = 812.0, 96.0, 26.0
-    for i, code in enumerate(_CALLOUT_STATES):
-        v = vals.get(code)
-        fill = gradient_color(v, lo, mid, hi, cfg["c_low"], cfg["c_mid"],
-                              cfg["c_high"])
-        label = _fmt(v) if v is not None else "—"
-        y = cy0 + i * step
-        callouts += (
-            f'<g class="em-callout" data-state="{code}">'
-            f'<rect x="{cx}" y="{y}" width="15" height="15" rx="2.5" '
-            f'fill="{fill}" stroke="#ffffff" stroke-width="0.7">'
-            f'<title>{html.escape(STATE_NAMES[code])}: '
-            f'{html.escape(label)}</title></rect>'
-            f'<text x="{cx + 22}" y="{y + 11.5}" text-anchor="start" '
-            f'font-family="{_SERIF}" font-size="11" font-weight="700" '
-            f'fill="#000000" pointer-events="none">{html.escape(code)}'
-            f'</text><text x="{cx + 52}" y="{y + 11.5}" text-anchor="start" '
-            f'font-family="{_SERIF}" font-size="11" fill="#000000" '
-            f'pointer-events="none">{html.escape(label)}</text></g>')
+    if label_mode != "none":
+        cx, cy0, step = 812.0, 96.0, 26.0
+        for i, code in enumerate(_CALLOUT_STATES):
+            v = vals.get(code)
+            fill = gradient_color(v, lo, mid, hi, cfg["c_low"], cfg["c_mid"],
+                                  cfg["c_high"])
+            label = _fmt(v) if v is not None else "—"
+            y = cy0 + i * step
+            callouts += (
+                f'<g class="em-callout" data-state="{code}">'
+                f'<rect x="{cx}" y="{y}" width="15" height="15" rx="2.5" '
+                f'fill="{fill}" stroke="#ffffff" stroke-width="0.7">'
+                f'<title>{html.escape(STATE_NAMES[code])}: '
+                f'{html.escape(label)}</title></rect>'
+                f'<text x="{cx + 22}" y="{y + 11.5}" text-anchor="start" '
+                f'font-family="{_SERIF}" font-size="11" font-weight="700" '
+                f'fill="#000000" pointer-events="none">{html.escape(code)}'
+                f'</text><text x="{cx + 52}" y="{y + 11.5}" '
+                f'text-anchor="start" '
+                f'font-family="{_SERIF}" font-size="11" fill="#000000" '
+                f'pointer-events="none">{html.escape(label)}</text></g>')
 
-    # .get(): callers like ma_penetration_page build a minimal cfg dict
-    # without the form-only "title" key.
     title_el = ""
     if cfg.get("title"):
         title_el = (
@@ -366,13 +406,14 @@ def _map_svg(cfg: Dict[str, Any]) -> str:
             f'fill="#0b2341" pointer-events="none">'
             f'{html.escape(cfg["title"])}</text>')
 
+    aria = cfg.get("aria_label", "US state choropleth (geographic)")
     return (
         f'<svg viewBox="0 0 960 553" width="100%" role="img" '
-        f'aria-label="US state choropleth (geographic)" '
+        f'aria-label="{html.escape(aria)}" '
         f'preserveAspectRatio="xMidYMid meet" '
-        f'style="max-width:980px;display:block;background:#fdfcf9;'
+        f'style="max-width:{max_width}px;display:block;background:#fdfcf9;'
         f'border:1px solid #d6cfc0;border-radius:6px;">'
-        f'{title_el}{shapes}'
+        f'{title_el}{shapes}{accents}'
         f'<g id="emLabels">{labels}{callouts}</g>'
         f'{_svg_legend(cfg)}</svg>')
 

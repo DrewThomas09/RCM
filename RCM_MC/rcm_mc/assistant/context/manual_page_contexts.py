@@ -3833,7 +3833,7 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/home-health", "Home Health Agencies",
         short_description="A screener of Medicare-certified home health "
-        "agencies with publicly reported quality, a state tile-grid map, and "
+        "agencies with publicly reported quality, a geographic state map, and "
         "per-state provider tables.",
         primary_purpose="Provide market and provider diligence context for "
         "home-health deals — agency density by state and public quality "
@@ -3855,7 +3855,7 @@ _MANUAL: List[PageContext] = [
                           "diligence separately?",
                           "Where does this data come from and how fresh is it?"],
         inputs=["Vendored CMS 'Home Health Care Agencies' snapshot (6jpm-sxkc)."],
-        outputs=["KPI cards, a state tile-grid map shaded by agency count, "
+        outputs=["KPI cards, a geographic state map shaded by agency count, "
                  "per-state summaries, and provider/quality tables.",
                  "Picking a state opens a market-intelligence view: a market "
                  "summary (agency count, cities represented, median star "
@@ -3901,7 +3901,7 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/hospice", "Hospice Providers",
         short_description="A screener of Medicare-certified hospices with "
-        "publicly reported HIS quality, a state tile-grid map, and per-state "
+        "publicly reported HIS quality, a geographic state map, and per-state "
         "provider tables.",
         primary_purpose="Provide market and provider diligence context for "
         "hospice deals — hospice density by state and public quality (Hospice "
@@ -3923,7 +3923,7 @@ _MANUAL: List[PageContext] = [
                           "Where does this data come from and how fresh is it?"],
         inputs=["Vendored CMS 'Hospice - General Information' (yc9t-dgbk) + "
                 "'Hospice - Provider Data' HIS measures (252m-zfp9)."],
-        outputs=["KPI cards, a state tile-grid map shaded by hospice count, "
+        outputs=["KPI cards, a geographic state map shaded by hospice count, "
                  "per-state summaries, and provider/quality tables.",
                  "Picking a state opens a market-intelligence view: a market "
                  "summary (hospice count, counties represented, median Care "
@@ -4362,7 +4362,7 @@ _MANUAL: List[PageContext] = [
         "homes with CMS five-star ratings (overall, health inspection, "
         "staffing, quality measures), staffing hours, certified beds, Special "
         "Focus status, ownership, and the enforcement-penalty summary — a "
-        "state tile-grid map, per-state market intelligence, and county "
+        "state geographic state map, per-state market intelligence, and county "
         "competition.",
         primary_purpose="Provide market + provider diligence context for SNF "
         "deals: facility density by state, the quality/staffing/survey-risk "
@@ -4381,7 +4381,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS Nursing Home Care Compare 'Provider Information' "
                 "snapshot (NH_ProviderInfo, Apr 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, rating "
                  "distribution, county competition), provider tables, and "
                  "per-facility profiles with state percentile + peers."],
@@ -4425,7 +4425,7 @@ _MANUAL: List[PageContext] = [
         "facilities with the CMS overall five-star rating, dialysis-station "
         "count, ownership/chain, modality offerings, and risk-adjusted "
         "outcome rates (mortality, hospitalization, readmission, transfusion) "
-        "— a state tile-grid map, per-state market intelligence, and county "
+        "— a geographic state map, per-state market intelligence, and county "
         "competition.",
         primary_purpose="Provide market + provider diligence context for "
         "dialysis deals: facility density by state, the five-star + "
@@ -4443,7 +4443,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS Dialysis Facility Compare 'Listing by Facility' "
                 "snapshot (DFC_FACILITY, Mar 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, five-star "
                  "distribution, county competition), provider tables, and "
                  "per-facility profiles with state percentile + peers."],
@@ -4484,7 +4484,7 @@ _MANUAL: List[PageContext] = [
         "rehabilitation facilities with publicly reported CMS measures — "
         "discharge to community (risk-standardized), potentially-preventable "
         "readmissions, and Medicare spending per beneficiary — plus a state "
-        "tile-grid map, per-state market intelligence, and county competition.",
+        "geographic state map, per-state market intelligence, and county competition.",
         primary_purpose="Provide market + provider diligence context for IRF "
         "deals: facility density by state, the discharge-to-community + "
         "readmission + spending profile, ownership mix, and county competition.",
@@ -4501,7 +4501,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS IRF Compare snapshot — General Information + "
                 "Provider Data (headline measures pivoted, Feb 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, county competition), "
                  "provider tables, and per-facility profiles with state "
                  "percentile + peers."],
@@ -4544,7 +4544,7 @@ _MANUAL: List[PageContext] = [
         "hospitals with publicly reported CMS measures — discharge to "
         "community (risk-standardized), potentially-preventable readmissions, "
         "Medicare spending per beneficiary, and bed counts — plus a state "
-        "tile-grid map, per-state market intelligence, and county competition.",
+        "geographic state map, per-state market intelligence, and county competition.",
         primary_purpose="Provide market + provider diligence context for LTCH "
         "deals: facility density and bed capacity by state, the discharge-to-"
         "community + readmission + spending profile, ownership mix, and county "
@@ -4562,7 +4562,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS LTCH Compare snapshot — General Information + "
                 "Provider Data (headline measures pivoted, Feb 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, county competition), "
                  "provider tables (with bed counts), and per-facility profiles "
                  "with state percentile + peers."],
@@ -11889,8 +11889,10 @@ _MANUAL.extend([
                              "metric for a market section."],
         interpretation_guidance=["Colour encodes the value via the gradient "
                                  "you set; the legend shows the domain."],
-        limitations=["Schematic tile grid (labelled, not a geographic "
-                     "projection); values are whatever you supply."],
+        limitations=["Approximate Albers-projected Census geography "
+                     "(AK/HI/PR insets; small NE states in a swatch "
+                     "column, not to scale); values are whatever you "
+                     "supply."],
         related_routes=["/chart-builder", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,

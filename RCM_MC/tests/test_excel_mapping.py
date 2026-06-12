@@ -134,8 +134,10 @@ class RenderAndRouteTests(unittest.TestCase):
         # NE small states render in the callout swatch column.
         for code in _CALLOUT_STATES:
             self.assertIn(f'class="em-callout" data-state="{code}"', h)
-        # Embedded gradient legend makes SVG/PNG exports self-contained.
-        self.assertIn('id="emGrad"', h)
+        # Embedded gradient legend makes SVG/PNG exports self-contained
+        # (id carries a per-render counter so two maps on a page can't
+        # collide).
+        self.assertIn('id="emGrad', h)
 
     def test_custom_title_is_drawn_on_the_svg(self):
         h = render_excel_mapping_page({"title": ["Q3 coverage"]})
