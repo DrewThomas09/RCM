@@ -551,3 +551,14 @@ Transaction-multiple depth: +13 bands / +10 verticals (infusion, ASC,
 cardiology, MSK, urgent care, imaging, fertility, oncology, PT,
 profitable HCIT) with policy notes; CDD hub module 4 → "Pricing,
 reimbursement & cost environment" + labor card. +2 tests.
+
+---
+## Checkpoint — wave #81 (W2-175, 2026-06-12)
+/market-intel multiples directory: full 29-band library rendered when
+no specialty selected, rows link focused views. +3 tests.
+
+---
+## Checkpoint — wave #82 (W2-176, 2026-06-12)
+/transaction-multiples.xlsx (29-band comps-ready workbook, linked from
+the /market-intel directory) + infusion-scan card in CDD hub module 1.
++2 tests, smoke green.
