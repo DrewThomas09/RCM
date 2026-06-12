@@ -3572,3 +3572,11 @@ fixed on its siblings: 2 common_questions (floor is 5) and no
 related_routes. Brought it to the floor + cross-linked /chart-builder
 and /pie-chart. Guide invariant suites + 1,254-test graphics/wiring
 sweep green on the merged tree.
+
+## W2-172 (2026-06-12) — /visuals guide-floor fix after the second main merge (wave #72c)
+The next main merge (waves #69–70 from the chart stream) brought the
+/visuals hub with the same gap again: 2 common_questions, no
+related_routes. Brought to the floor + cross-linked all four builder
+tools. NOTE for the chart stream: new pages keep landing below the
+Guide 5-Q floor — add the 5 questions + related_routes in the same PR
+that adds the page (test_pedesk_guide_5q_invariant is the gate).
