@@ -5077,3 +5077,26 @@ worktree), all fixed here so main goes back to green:
   engine now declares _FLAGSHIP and breaks total-ties explicitly.
 **Verify**: each fix's suite green (universe guard, 5-Q invariants,
 section catalog, surface rankings 9/9); full suite rerun → all green.
+
+## W2-219 (2026-06-12) — Tools tab: 72 surfaces curated, downloads de-carded
+The /tools card grid carried 77 auto-titled safety-net cards (slug
+names like "Cli Runs"/"Settings Ai", everything dumped in the
+Operations bucket) and 11 non-pages carded as tools (8 .csv exports,
+the 2 demo-corpus downloads, and the /market-data/ trailing-slash
+duplicate that rendered a second description-less Market Data card).
+- **72 surfaces curated into `_DEFAULT_PALETTE_MODULES`** (the CLAUDE.md
+  contract: every analytic surface in the palette) with honest,
+  collision-checked titles from each page's own registered context —
+  e.g. HFMA KPI Benchmarks vs RCM Benchmarks, Deal Comparison ·
+  packet side-by-side vs Compare Deals, Public Data Catalog vs Data
+  Catalog. They now sort as first-class (curated-first) cards in their
+  real workspace groups and are jumpable from Cmd+K. Auto cards: 77 → 5
+  (debug/status surfaces + two routes whose curated variant already
+  exists).
+- **Download endpoints hidden from the card grid** (same rationale as
+  the existing .xlsx hides: they serve a file; the owning page carries
+  the download button) + the /market-data/ duplicate de-carded.
+- discovered_tool_routes.py regenerated (183 routes).
+**Verify**: tools-index suites green incl. every-card-200s + global
+no-duplicate-labels (49 passed); discovered/context families (69);
+5-Q invariant + surface rankings + nav rail + route inventory (60).
