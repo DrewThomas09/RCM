@@ -141,6 +141,10 @@ _PILLARS: List[Mapping[str, object]] = [
              "label": "TAM / SAM Builder",
              "blurb": "Driver-tree market sizing with formatted "
                       "Excel export."},
+            {"href": "/diligence/texas-infusion",
+             "label": "Texas Infusion Market",
+             "blurb": "Full worked market study — sizing, metros, "
+                      "unit economics, live CMS/CDC data."},
             {"href": "/diligence/bear-case",
              "label": "Bear Case",
              "blurb": "The defensible bear case for this deal."},

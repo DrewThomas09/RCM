@@ -3472,3 +3472,24 @@ total), modeled TX total inside the published 4.6–4.8M band, counties ⊂
 metro members sorted desc (Harris #1), live mock replaces state + matched
 counties and leaves the rest MODELED, page renders section + badge,
 source cited. Full suite green.
+
+## W2-165 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65
+The full-suite sweep after wave #66 caught five pre-existing failures the
+graphics waves left on main (verified failing on a clean tree):
+- **`user-supplied` data-universe kind unregistered** — /chart-builder,
+  /excel-mapping and /pie-chart declared `universe="user-supplied"` but
+  the kind wasn't in `_DATA_UNIVERSE`, so the provenance chip rendered
+  EMPTY on all three pages (silent provenance loss). Registered with a
+  self-describing tooltip ("values you typed or pasted — not a data
+  claim") + docstring kind list updated.
+- **Guide 5-Q floor + empty related_routes ×3** — the three graphics
+  pages shipped with 3 common_questions (floor is 5) and no
+  related_routes, so the Guide couldn't recommend siblings. Each now
+  carries 5 questions (incl. the export/size features wave #65 added)
+  and cross-links the graphics-utility family.
+- **/diligence/texas-infusion orphaned from the catalog** — the served
+  route never appeared on the /diligence landing. Added to the Audit &
+  Stress pillar beside its sibling TAM/SAM Builder.
+**Verify**: the 5 failing tests (test_data_universe_kinds_registered,
+test_pedesk_guide_5q_invariant ×3, test_section_catalog) now pass;
+1,321-test wiring sweep (guide/palette/chartis/catalog/nav) green.

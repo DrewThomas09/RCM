@@ -11866,7 +11866,10 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
+            "Can I set my own low/mid/high value domain?",
+            "How do I export the map for a deck?",
         ],
+        related_routes=["/chart-builder", "/pie-chart"],
         inputs=["Three gradient colours; an optional low/mid/high value "
                 "domain (blank = auto from data); a value per state, set "
                 "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
@@ -11902,7 +11905,10 @@ _MANUAL.extend([
             "How do I make a waterfall / bridge chart?",
             "How do I build a marimekko or 100% stacked column?",
             "Can I paste my data from Excel and pick the colours?",
+            "How do I export a chart as SVG or PNG?",
+            "How do I change the chart size?",
         ],
+        related_routes=["/pie-chart", "/excel-mapping"],
         inputs=["A pasted table (headers row + category column + one column "
                 "per series); chart type; title/subtitle; a Chartis "
                 "palette; unit suffix; show-values / legend toggles."],
@@ -11939,7 +11945,10 @@ _MANUAL.extend([
             "How do I make a pie chart?",
             "Can I set the colour of each slice?",
             "How do I make it a donut?",
+            "Can I enter absolute values instead of percentages?",
+            "How do I export the pie as SVG or PNG?",
         ],
+        related_routes=["/chart-builder", "/excel-mapping"],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
                 "donut toggle."],
