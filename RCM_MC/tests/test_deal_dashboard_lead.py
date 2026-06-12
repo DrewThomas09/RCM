@@ -124,3 +124,43 @@ class ExportsRegistryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ExportsRegistryWriteSideTests(unittest.TestCase):
+    """P5 write-side: generating a memo records a registry row, so the
+    deal page's registry fills itself (best-effort, never blocks)."""
+
+    def test_memo_generation_records_export(self):
+        import json
+        import os
+        import socket
+        import tempfile
+        import threading
+        import time
+        import urllib.request
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.server import build_server
+        from rcm_mc.exports.export_store import list_exports
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "p.db")
+            store = PortfolioStore(db)
+            store.upsert_deal("d1", name="X",
+                              profile={"denial_rate": 12.0,
+                                       "net_revenue": 2e8})
+            s = socket.socket(); s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]; s.close()
+            srv, _ = build_server(port=port, host="127.0.0.1",
+                                  db_path=db, auth=None)
+            t = threading.Thread(target=srv.serve_forever, daemon=True)
+            t.start(); time.sleep(0.2)
+            try:
+                with urllib.request.urlopen(
+                        f"http://127.0.0.1:{port}/api/deals/d1/memo",
+                        timeout=120) as r:
+                    body = json.loads(r.read().decode())
+                self.assertEqual(body["deal_id"], "d1")
+                rows = list_exports(store, "d1")
+                self.assertTrue(rows, "no registry row recorded")
+                self.assertEqual(rows[0]["format"], "ic_memo_json")
+            finally:
+                srv.shutdown(); srv.server_close(); t.join(timeout=5)

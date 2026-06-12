@@ -11185,6 +11185,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                         {"error": str(exc)}, status=HTTPStatus.INTERNAL_SERVER_ERROR,
                     )
                 memo = _compose(pkt, use_llm=use_llm)
+                # P5 registry write-side (see package handler).
+                try:
+                    from .exports.export_store import record_export
+                    record_export(
+                        store, deal_id=deal_id, analysis_run_id=None,
+                        format="ic_memo_json", filepath=None,
+                        generated_by=self._current_username() or None)
+                except Exception:  # noqa: BLE001
+                    pass
                 return self._send_json({
                     "deal_id": deal_id,
                     "sections": {
@@ -11265,6 +11274,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                     with open(zip_path, "rb") as f:
                         body = f.read()
                 safe_name = (pkt.deal_name or deal_id).replace(" ", "_")[:40]
+                # P5 registry write-side: every generated package lands
+                # in the generated_exports audit table so the deal
+                # page's registry (W2-208) fills itself. Best-effort —
+                # a registry hiccup must never block the download.
+                try:
+                    from .exports.export_store import record_export
+                    record_export(
+                        store, deal_id=deal_id, analysis_run_id=None,
+                        format="package_zip", filepath=None,
+                        file_size_bytes=len(body),
+                        generated_by=self._current_username() or None)
+                except Exception:  # noqa: BLE001
+                    pass
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "application/zip")
                 self.send_header("Content-Length", str(len(body)))

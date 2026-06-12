@@ -4113,3 +4113,11 @@ tokens never stored, <2 rejected, owner scoping both ways, signed-out
 view has NO persistence affordance, owner sees form + sets + load
 links, HTTP save→store roundtrip on the real server. 166 passed with
 the full screener suite.
+
+## W2-210 (2026-06-12) — P5 registry write-side (refill #36)
+The W2-208 registry now fills itself: generating the IC memo
+(/api/deals/<id>/memo) and the diligence package ZIP both record a
+generated_exports row (format, size for the ZIP, generated_by) —
+best-effort, a registry hiccup can never block the download. E2E test:
+hitting the memo endpoint on a real server lands an ic_memo_json row
+readable by list_exports. 10 passed.
