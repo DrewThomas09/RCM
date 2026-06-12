@@ -3,6 +3,17 @@
   8 hours, no questions, loop. Stream: claude/general-improvements-a78byd,
   PR #1811 accumulates; merge origin/main between items as the parallel
   chart stream advances; regression sweep every ~4 items.)
+- window3 progress (as of ~13:45Z): ~37 items. Since the 13:00Z tally:
+  P4 saved peer-set objects (store + compare-view save/load/delete +
+  roll-up hand-off), P5 exhibit registry read+write sides, P14 timing
+  budgets (walker ms + --budget-ms in weekly sweep), refill #33/#35/#36
+  done + #34 part 1 (metro bullets) + #31 verified mostly-shipped,
+  glossary long-tail on predictive screener, demo-deal realism (real
+  CCN 450358), backlog refill 3 groomed. THREE parallel streams now
+  merging to main (sharp-einstein charts + pe-desk-improvements) —
+  two collision reconciliations absorbed (same ranking fix, same
+  guide-floor fixes; took main's equivalents, regenerated manifests,
+  329 surfaces). CI green on every push; babysit cadence active.
 - window3 progress (as of ~13:00Z): 28+ items shipped to PR #1811;
   full sweep 15,753 passed / 0 failed on the merged tree (sweep #6).
   ALL Tier-1 PAGE_INVENTORY top fixes closed (W2-191…200);
