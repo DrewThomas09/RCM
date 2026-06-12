@@ -3487,3 +3487,16 @@ The capstone of the chart suite — compose up to 4 charts onto one slide:
 chart svgs (parent + 4), layout drives panel count, empty→just the frame,
 page populated + custom slide + palette/nav/guide registration. Full
 suite green.
+
+## W2-167 (2026-06-12) — Charts: slope + gantt/timeline types (wave #69)
+Two more consultant staples (kit now 23 types):
+- **Slope chart** (`slope`): before→after — two periods per category with
+  a connecting line + end-point values (e.g. entry vs exit margins,
+  denial-rate change). Headers name the two periods.
+- **Gantt / timeline** (`gantt`): horizontal task bars on a time axis from
+  a task · start · end table — roadmaps, 100-day plans, workstream
+  sequencing. Time gridlines + task labels.
+Both surface automatically in the Chart Builder chips + gallery with
+example data (value-creation slope; 100-day workstream gantt).
+**Verify**: +1 test (≥23 types incl. slope/gantt) + both render clean
+(no None) with their labels. Full suite green.

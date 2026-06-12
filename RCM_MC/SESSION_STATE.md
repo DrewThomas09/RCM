@@ -366,3 +366,9 @@ count, exports one SVG/PNG. exhibit_page.py: 4 panel configs (type/palette/
 title/data) + slide meta; qs-driven; Research nav + palette + guide. +6
 tests. Graphics suite now: Excel Mapping, Chart Builder (21 types, per-
 series colours, footnote, export, size), Pie Chart, Exhibit Composer.
+
+---
+## Checkpoint — wave #69 (W2-167, 2026-06-12)
+Charts: +slope (before→after) + gantt/timeline (roadmap) → kit now 23
+types. Example data in Chart Builder. +1 test. Graphics suite: Excel
+Mapping, Chart Builder (23 types), Pie Chart, Exhibit Composer.

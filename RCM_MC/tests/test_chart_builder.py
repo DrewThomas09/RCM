@@ -96,9 +96,23 @@ class RenderTests(unittest.TestCase):
     def test_new_consultant_chart_types_present(self):
         keys = {k for k, _ in CHART_TYPES}
         for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot",
-                  "gauge", "heatmap"):
+                  "gauge", "heatmap", "slope", "gantt"):
             self.assertIn(k, keys, k)
-        self.assertGreaterEqual(len(CHART_TYPES), 21)
+        self.assertGreaterEqual(len(CHART_TYPES), 23)
+
+    def test_slope_and_gantt_render(self):
+        s = render_cdd_chart(
+            "slope", parse_table("M\tEntry\tExit\nMargin\t18\t26\n"
+                                 "Denials\t12\t6"), {"title": "Slope"})
+        self.assertTrue(s.startswith("<svg"))
+        self.assertIn("Margin", s)
+        self.assertNotIn("None", s)
+        g = render_cdd_chart(
+            "gantt", parse_table("Task\tStart\tEnd\nA\t0\t4\nB\t2\t9"),
+            {"title": "Plan"})
+        self.assertTrue(g.startswith("<svg"))
+        self.assertIn("A", g)
+        self.assertNotIn("None", g)
 
     def test_heatmap_renders_grid_with_headers(self):
         t = parse_table("Driver\tA\tB\nDemand\t9\t6\nSupply\t5\t8")

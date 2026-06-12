@@ -42,6 +42,11 @@ _EXAMPLE_RADAR = ("Attribute\tTarget\tBenchmark\nScale\t8\t6\n"
                   "Margin\t6\t9\nGrowth\t9\t5\nQuality\t7\t8\nRisk\t5\t7")
 _EXAMPLE_BULLET = ("KPI\tActual\tTarget\nClean-claim %\t96\t98\n"
                    "Denial %\t8\t6\nDAR (days)\t45\t40")
+_EXAMPLE_SLOPE = ("Metric\tEntry\tExit\nEBITDA margin\t18\t26\n"
+                  "Denial rate\t12\t6\nDAR days\t52\t41")
+_EXAMPLE_GANTT = ("Workstream\tStart\tEnd\nRCM diagnostic\t0\t4\n"
+                  "Denials program\t2\t9\nPayer renegotiation\t4\t12\n"
+                  "Systems migration\t6\t16")
 
 
 def _example_for(ctype: str) -> str:
@@ -59,6 +64,10 @@ def _example_for(ctype: str) -> str:
         return _EXAMPLE_RADAR
     if ctype == "bullet":
         return _EXAMPLE_BULLET
+    if ctype == "slope":
+        return _EXAMPLE_SLOPE
+    if ctype == "gantt":
+        return _EXAMPLE_GANTT
     return _EXAMPLE_TS
 
 

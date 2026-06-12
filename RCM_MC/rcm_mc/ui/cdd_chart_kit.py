@@ -60,6 +60,8 @@ CHART_TYPES = [
     ("dot", "Dot / lollipop"),
     ("gauge", "Gauge (KPI)"),
     ("heatmap", "Heatmap grid"),
+    ("slope", "Slope (before→after)"),
+    ("gantt", "Gantt / timeline"),
     ("marimekko", "Marimekko"),
     ("combo", "Combo (bars + line)"),
 ]
@@ -1076,6 +1078,98 @@ def _heatmap(table, opts):
     return body
 
 
+# ── Slope chart (before → after) ─────────────────────────────────────
+
+def _slope(table, opts):
+    cats = [r[0] for r in table["rows"]]
+    series = _series(table)
+    colors = opts["colors"]
+    headers = table.get("headers", [])
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    if len(series) < 2:
+        return _frame_open(opts) + "</svg>"
+    a, b = series[0]["values"], series[1]["values"]
+    allv = [v for v in (a + b) if v is not None]
+    vmax = _nice_max(max(allv) if allv else 1)
+    vmin = min(allv + [0]) if allv else 0
+    body = _frame_open(opts)
+    lx, rx = x0 + 40, x1 - 40
+    def yof(v):
+        return y1 - (v - vmin) / ((vmax - vmin) or 1) * (y1 - y0)
+    body += (f'<line x1="{lx:.1f}" y1="{y0:.1f}" x2="{lx:.1f}" '
+             f'y2="{y1:.1f}" stroke="{_GRID}" stroke-width="0.8"/>'
+             f'<line x1="{rx:.1f}" y1="{y0:.1f}" x2="{rx:.1f}" '
+             f'y2="{y1:.1f}" stroke="{_GRID}" stroke-width="0.8"/>')
+    pa = headers[1] if len(headers) > 1 else "Before"
+    pb = headers[2] if len(headers) > 2 else "After"
+    body += (f'<text x="{lx:.1f}" y="{y0-8:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="11" font-weight="600" '
+             f'fill="{_DIM}">{_esc(pa)}</text>'
+             f'<text x="{rx:.1f}" y="{y0-8:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="11" font-weight="600" '
+             f'fill="{_DIM}">{_esc(pb)}</text>')
+    suffix = opts.get("suffix", "")
+    for i, c in enumerate(cats):
+        va, vb = a[i], b[i]
+        if va is None or vb is None:
+            continue
+        col = colors[i % len(colors)]
+        ya, yb = yof(va), yof(vb)
+        body += (f'<line x1="{lx:.1f}" y1="{ya:.1f}" x2="{rx:.1f}" '
+                 f'y2="{yb:.1f}" stroke="{col}" stroke-width="2.2"/>'
+                 f'<circle cx="{lx:.1f}" cy="{ya:.1f}" r="4" fill="{col}"/>'
+                 f'<circle cx="{rx:.1f}" cy="{yb:.1f}" r="4" fill="{col}"/>'
+                 f'<text x="{lx-9:.1f}" y="{ya+3.5:.1f}" text-anchor="end" '
+                 f'font-family="{_SANS}" font-size="10.5" fill="{_INK}">'
+                 f'{_esc(c)} {_fmt(va, suffix)}</text>'
+                 f'<text x="{rx+9:.1f}" y="{yb+3.5:.1f}" '
+                 f'font-family="{_SANS}" font-size="10.5" fill="{_INK}">'
+                 f'{_fmt(vb, suffix)}</text>')
+    body += "</svg>"
+    return body
+
+
+# ── Gantt / timeline (roadmap, 100-day plan) ─────────────────────────
+
+def _gantt(table, opts):
+    rows = table["rows"]
+    colors = opts["colors"]
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    tasks = []
+    for lab, vals in rows:
+        if len(vals) >= 2 and vals[0] is not None and vals[1] is not None:
+            tasks.append((lab, vals[0], vals[1]))
+    if not tasks:
+        return _frame_open(opts) + "</svg>"
+    tmin = min(t[1] for t in tasks)
+    tmax = max(t[2] for t in tasks)
+    body = _frame_open(opts)
+    def xof(v):
+        return x0 + (v - tmin) / ((tmax - tmin) or 1) * (x1 - x0)
+    # Time gridlines.
+    for i in range(6):
+        v = tmin + (tmax - tmin) * i / 5
+        gx = xof(v)
+        body += (f'<line x1="{gx:.1f}" y1="{y0:.1f}" x2="{gx:.1f}" '
+                 f'y2="{y1:.1f}" stroke="{_GRID}" stroke-width="0.7"/>'
+                 f'<text x="{gx:.1f}" y="{y1+14:.1f}" text-anchor="middle" '
+                 f'font-family="{_SANS}" font-size="10" fill="{_FAINT}">'
+                 f'{_fmt(v, opts.get("suffix",""))}</text>')
+    n = len(tasks)
+    band = (y1 - y0) / max(n, 1)
+    for i, (lab, s, e) in enumerate(tasks):
+        yy = y0 + band * i + band * 0.22
+        bx, bw = xof(s), xof(e) - xof(s)
+        body += (f'<rect x="{bx:.1f}" y="{yy:.1f}" '
+                 f'width="{max(bw,2):.1f}" height="{band*0.56:.1f}" rx="3" '
+                 f'fill="{colors[i % len(colors)]}"/>'
+                 f'<text x="{x0-6:.1f}" y="{yy+band*0.42:.1f}" '
+                 f'text-anchor="end" font-family="{_SANS}" font-size="10.5" '
+                 f'fill="{_DIM}">{_esc(lab)}</text>')
+    body += "</svg>"
+    return body
+
+
 # ── Export toolbar (download SVG / PNG, copy) ────────────────────────
 
 def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
@@ -1154,6 +1248,8 @@ _DISPATCH = {
     "dot": (_dot, {}),
     "gauge": (_gauge, {}),
     "heatmap": (_heatmap, {}),
+    "slope": (_slope, {}),
+    "gantt": (_gantt, {}),
     "marimekko": (_marimekko, {}),
     "combo": (_combo, {}),
 }
