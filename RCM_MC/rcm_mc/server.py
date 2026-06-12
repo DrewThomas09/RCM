@@ -14044,13 +14044,48 @@ class RCMHandler(BaseHTTPRequestHandler):
         float_fields = ["denial_rate", "days_in_ar", "net_collection_rate",
                         "clean_claim_rate", "cost_to_collect", "net_revenue",
                         "bed_count", "claims_volume"]
+        # Entry-time range validation (PAGE_INVENTORY top fix: the
+        # plausibility bands existed only on DISPLAY — the form's HTML
+        # min/max never bound a curl/JS-off submit, so an impossible
+        # 140% denial rate landed silently as profile truth). Bounds are
+        # PHYSICAL limits, not judgment calls: percentages live in
+        # [0, 100], counts and dollars can't be negative. Implausible-
+        # but-possible values still import (they're ENTERED data and
+        # flagged downstream); impossible ones are rejected with the
+        # form re-rendered and every typed value preserved.
+        _hard_bounds = {
+            "denial_rate": (0.0, 100.0, "%"),
+            "net_collection_rate": (0.0, 100.0, "%"),
+            "clean_claim_rate": (0.0, 100.0, "%"),
+            "cost_to_collect": (0.0, 100.0, "%"),
+            "days_in_ar": (0.0, 500.0, " days"),
+            "net_revenue": (0.0, None, " $"),
+            "bed_count": (0.0, None, " beds"),
+            "claims_volume": (0.0, None, " claims"),
+        }
+        bad: list = []
         for f in float_fields:
-            val = form.get(f, "").strip()
-            if val:
-                try:
-                    profile[f] = float(val)
-                except ValueError:
-                    pass
+            val = form.get(f, "").strip().replace(",", "")
+            if not val:
+                continue
+            try:
+                fv = float(val)
+            except ValueError:
+                bad.append(f"{f} ('{form.get(f, '').strip()[:20]}' is not "
+                           f"a number)")
+                continue
+            lo, hi, unit = _hard_bounds.get(f, (None, None, ""))
+            if (lo is not None and fv < lo) or (hi is not None and fv > hi):
+                rng = (f"{lo:g}–{hi:g}{unit}" if hi is not None
+                       else f"≥ {lo:g}{unit}")
+                bad.append(f"{f} = {fv:g} (must be {rng})")
+                continue
+            profile[f] = fv
+        if bad:
+            return self._send_html(render_quick_import(
+                error_msg="Out-of-range value(s): " + "; ".join(bad),
+                prefill={k: form.get(k, "") for k in
+                         ["deal_id", "name", "state", *float_fields]}))
         state = form.get("state", "").strip().upper()
         if state:
             profile["state"] = state

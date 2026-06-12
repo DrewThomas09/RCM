@@ -3883,3 +3883,23 @@ sweep. Renamed the option to "No labels" (value unchanged; clearer to
 a partner anyway) + a regression test pinning >None< / >nan< out of
 the page HTML. The walk's only other non-200 is /analysis/<deal> 404
 on an empty db — the honest response, not a bug.
+
+## W2-191 (2026-06-12) — Quick-import entry-time range validation (+ comma-drop bug)
+PAGE_INVENTORY Tier-1 top fix for /import ("range validation exists
+only on display"). Server-side now:
+- **Hard physical bounds** in _route_quick_import_post — percentages in
+  [0,100], days-in-AR in [0,500], counts/dollars non-negative. Bounds
+  are physical limits only; implausible-but-possible values still
+  import (ENTERED data, flagged downstream). Violations re-render the
+  form with the offending field+bound named and EVERY typed value
+  preserved (metric/financial fields now accept prefill), and the deal
+  is NOT created.
+- **Found bug while wiring**: a comma-formatted entry ('180,000' —
+  exactly what the form hint promises works) hit ValueError inside the
+  float loop and was SILENTLY DROPPED from the profile. Commas now
+  strip server-side across numeric fields.
+**Verify**: new ungated test_quick_import_validation.py (2 e2e tests —
+140% denial rejected w/ prefill survival + deal not created;
+comma-formatted values land as numbers via the flattened deal store).
+The old import suite is env-gated (v2-shell markers) — verified green
+under CHARTIS_UI_V2=1 too.
