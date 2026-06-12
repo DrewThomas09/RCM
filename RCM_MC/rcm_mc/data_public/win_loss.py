@@ -133,6 +133,53 @@ _LOGS: Dict[str, Dict] = {
                      "GEOGRAPHY / COVERAGE": 15.0,
                      "TIMING / NO DECISION": 8.0},
     },
+    "ASC / Surgical": {
+        "competitors": [
+            ("Hospital outpatient department", 36, 22,
+             "RELATIONSHIP / INCUMBENCY", -8.0,
+             "Wins on price and turnover; loses where systems employ the surgeons"),
+            ("National ASC chain", 24, 12, "PRICE", 4.0,
+             "Chain trades rate for network breadth in payer deals"),
+            ("Physician-owned independents", 21, 14, "CAPABILITY", -2.0,
+             "Wins on anesthesia coverage and higher-acuity case mix"),
+        ],
+        "segments": [
+            ("Surgeon recruitment / syndication", 28, 18),
+            ("Payer network contracts", 23, 12),
+            ("Health-system JV opportunities", 14, 8),
+            ("Service-line expansions", 16, 10),
+        ],
+        "trend": [("2025Q2", 19, 51.5), ("2025Q3", 20, 53.0),
+                  ("2025Q4", 21, 56.5), ("2026Q1", 21, 59.3)],
+        "loss_mix": {"PRICE": 24.0, "CAPABILITY": 17.0,
+                     "RELATIONSHIP / INCUMBENCY": 38.0,
+                     "GEOGRAPHY / COVERAGE": 11.0,
+                     "TIMING / NO DECISION": 10.0},
+    },
+    "Behavioral Health": {
+        "competitors": [
+            ("Virtual-first BH platform", 31, 14, "PRICE", 6.0,
+             "Undercuts on session rate; loses on acuity and continuity"),
+            ("Health-system BH department", 26, 16,
+             "RELATIONSHIP / INCUMBENCY", -3.0,
+             "Wins on access speed; loses captive referral flow"),
+            ("Independent group practices", 23, 16,
+             "GEOGRAPHY / COVERAGE", 1.0,
+             "Wins on multi-site coverage and payer breadth"),
+        ],
+        "segments": [
+            ("EAP / employer contracts", 21, 11),
+            ("Payer network inclusion", 24, 13),
+            ("Referral relationships", 22, 15),
+            ("School / community programs", 13, 7),
+        ],
+        "trend": [("2025Q2", 18, 47.5), ("2025Q3", 20, 51.0),
+                  ("2025Q4", 21, 55.0), ("2026Q1", 21, 57.5)],
+        "loss_mix": {"PRICE": 33.0, "CAPABILITY": 16.0,
+                     "RELATIONSHIP / INCUMBENCY": 27.0,
+                     "GEOGRAPHY / COVERAGE": 13.0,
+                     "TIMING / NO DECISION": 11.0},
+    },
 }
 
 SECTORS = list(_LOGS)

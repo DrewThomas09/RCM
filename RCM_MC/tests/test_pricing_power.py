@@ -97,5 +97,33 @@ class PricingPowerPageTests(unittest.TestCase):
         self.assertEqual(_SUB_SECTION_MAP.get("/pricing-power"), "diligence")
 
 
+
+class CustomSegmentTests(unittest.TestCase):
+    def test_custom_segment_appends_to_book(self):
+        html = render_pricing_power({"custom_rev": "10",
+                                     "custom_margin": "65",
+                                     "custom_eps": "-0.6"})
+        self.assertIn("Custom segment (your inputs)", html)
+
+    def test_positive_elasticity_clamped_not_errored(self):
+        # ε > 0 is a data-entry error; clamp to 0 (no volume response)
+        # rather than modeling a Giffen good or 500ing.
+        html = render_pricing_power({"custom_rev": "10",
+                                     "custom_eps": "3"})
+        self.assertIn("elasticity 0.00", html)
+
+    def test_zero_revenue_means_no_custom_segment(self):
+        html = render_pricing_power({"custom_rev": "0"})
+        self.assertNotIn("Custom segment (your inputs)", html)
+
+    def test_compute_accepts_extra_segment(self):
+        from rcm_mc.data_public.pricing_power import SegmentPricing
+        base = compute_pricing_power(SECTORS[0])
+        extra = SegmentPricing("X", 5_000_000, 60.0, -0.5, "")
+        r = compute_pricing_power(SECTORS[0], extra_segment=extra)
+        self.assertEqual(len(r.segments), len(base.segments) + 1)
+        self.assertAlmostEqual(r.total_revenue_usd,
+                               base.total_revenue_usd + 5_000_000)
+
 if __name__ == "__main__":
     unittest.main()

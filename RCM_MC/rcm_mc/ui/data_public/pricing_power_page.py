@@ -128,7 +128,28 @@ def render_pricing_power(params: dict = None) -> str:
         SECTORS, compute_pricing_power,
     )
     sector = params.get("sector", SECTORS[0]) or SECTORS[0]
-    r = compute_pricing_power(sector=sector)
+
+    def _pf(name, default=0.0):
+        try:
+            return float(params.get(name, default))
+        except (TypeError, ValueError):
+            return default
+
+    # Analyst-supplied segment: revenue in $M, margin and elasticity as
+    # entered. Elasticity is clamped to [-5, 0] — positive demand
+    # response to price is a data-entry error, not a Giffen good.
+    custom_rev_m = max(_pf("custom_rev"), 0.0)
+    custom_margin = min(max(_pf("custom_margin", 55.0), 1.0), 100.0)
+    custom_eps = min(max(_pf("custom_eps", -0.8), -5.0), 0.0)
+    extra = None
+    if custom_rev_m > 0:
+        from rcm_mc.data_public.pricing_power import SegmentPricing
+        extra = SegmentPricing(
+            "Custom segment (your inputs)", custom_rev_m * 1_000_000,
+            custom_margin, custom_eps,
+            f"Analyst inputs: {custom_margin:.1f}% contribution margin, "
+            f"elasticity {custom_eps:.2f}")
+    r = compute_pricing_power(sector=sector, extra_segment=extra)
 
     panel = P["panel"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]
@@ -156,6 +177,21 @@ def render_pricing_power(params: dict = None) -> str:
   <label style="font-size:11px;color:{text_dim}">Revenue book
     <select name="sector" style="margin-left:6px;background:{panel};border:1px solid {border};color:{text};
       padding:4px 8px;font-size:11px;font-family:JetBrains Mono,monospace">{options}</select>
+  </label>
+  <label style="font-size:11px;color:{text_dim}">+ Custom segment — revenue ($M)
+    <input name="custom_rev" value="{custom_rev_m:g}" type="number" step="1" min="0"
+      style="margin-left:4px;background:{panel};border:1px solid {border};color:{text};
+      padding:4px 6px;font-size:11px;font-family:JetBrains Mono,monospace;width:64px"/>
+  </label>
+  <label style="font-size:11px;color:{text_dim}">margin %
+    <input name="custom_margin" value="{custom_margin:g}" type="number" step="5" min="1" max="100"
+      style="margin-left:4px;background:{panel};border:1px solid {border};color:{text};
+      padding:4px 6px;font-size:11px;font-family:JetBrains Mono,monospace;width:58px"/>
+  </label>
+  <label style="font-size:11px;color:{text_dim}">elasticity
+    <input name="custom_eps" value="{custom_eps:g}" type="number" step="0.1" max="0" min="-5"
+      style="margin-left:4px;background:{panel};border:1px solid {border};color:{text};
+      padding:4px 6px;font-size:11px;font-family:JetBrains Mono,monospace;width:58px"/>
   </label>
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};

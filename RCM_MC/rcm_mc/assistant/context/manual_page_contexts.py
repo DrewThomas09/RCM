@@ -12270,7 +12270,9 @@ _MANUAL.extend([
             "Why do some segments show LOCKED instead of a move?",
             "What does an optimum at the window edge mean?",
         ],
-        inputs=["Revenue-book selector (sector)."],
+        inputs=["Revenue-book selector (sector); optional custom "
+                "segment (revenue $M, contribution margin %, elasticity) "
+                "appended to the book."],
         outputs=["Price-response curves per segment, optima table with "
                  "volume response, portfolio EBITDA prize, pricing read."],
         key_metrics=["Segment elasticity", "Optimal price change %",

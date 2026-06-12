@@ -406,3 +406,10 @@ stress) + 2 CDD templates (win/loss COUNTIFS tracker, KPC survey scorer
 Roll-up/tuck-in arbitrage template (library: 10) + workbook cross-link
 buttons on /win-loss + /voc-survey + nav-integrity e2e guard (every
 _CORPUS_NAV/_SUB_NAV href must 200). +2 e2e tests; affected suites green.
+
+---
+## Checkpoint — wave #74 (W2-172, 2026-06-12)
+ASC + Behavioral Health panels on /voc-survey + /win-loss (5 sectors
+each); /pricing-power custom analyst segment (rev/margin/elasticity,
+clamped); Chart Builder + Exhibit Composer carded in CDD hub module 5.
++4 tests.

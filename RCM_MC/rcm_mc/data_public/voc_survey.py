@@ -148,6 +148,54 @@ _PANELS: Dict[str, Dict] = {
             ("Would demand concession", 11.0),
         ],
     },
+    "ASC / Surgical": {
+        "segments": [
+            ("Referring surgeons", 38, 46, 86.0, 6.0,
+             "Block-time availability and turnover speed drive loyalty"),
+            ("Patients", 81, 55, 88.0, 4.0,
+             "Out-of-pocket clarity beats the hospital alternative"),
+            ("Payer network managers", 17, 28, 76.0, 9.0,
+             "Site-of-care steering favors ASCs — rates still contested"),
+        ],
+        "kpc": [
+            ("Block time availability", 4.8, 8.5, 7.0),
+            ("OR turnover speed", 4.5, 8.2, 7.1),
+            ("Surgeon economics (ownership model)", 4.4, 7.9, 6.8),
+            ("Case-mix breadth (higher acuity)", 3.9, 6.4, 7.3),
+            ("Payer contracting strength", 3.8, 6.5, 7.2),
+            ("Scheduling / patient experience", 3.4, 7.6, 6.9),
+        ],
+        "wtp": [
+            ("Accept +5% case rate", 41.0),
+            ("Accept +3% only", 30.0),
+            ("Flat — no increase tolerated", 20.0),
+            ("Would demand concession", 9.0),
+        ],
+    },
+    "Behavioral Health": {
+        "segments": [
+            ("Referring clinicians / EAPs", 33, 36, 82.0, 8.0,
+             "Time-to-first-appointment is the deciding factor"),
+            ("Patients & families", 69, 41, 80.0, 10.0,
+             "Therapist continuity matters more than amenities"),
+            ("Payer network managers", 15, 18, 70.0, 12.0,
+             "Pushing measurement-based care evidence before rate talk"),
+        ],
+        "kpc": [
+            ("Time to first appointment", 4.9, 8.3, 6.6),
+            ("Clinician retention / continuity", 4.6, 7.2, 6.9),
+            ("Measurement-based outcomes data", 4.2, 6.2, 6.7),
+            ("In-network coverage breadth", 4.0, 7.0, 7.4),
+            ("Telehealth availability", 3.5, 8.0, 7.6),
+            ("Crisis / step-up pathway", 3.7, 6.8, 6.5),
+        ],
+        "wtp": [
+            ("Accept +6% session rate", 33.0),
+            ("Accept +3% only", 31.0),
+            ("Flat", 25.0),
+            ("Would demand concession", 11.0),
+        ],
+    },
 }
 
 SECTORS = list(_PANELS)

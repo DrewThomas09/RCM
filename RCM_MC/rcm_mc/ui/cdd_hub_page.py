@@ -92,6 +92,11 @@ _MODULES = [
           "Quality-of-earnings memo from the diligence packet"),
          ("Thesis Screening", "/deal-screening",
           "Screen the thesis against the deal corpus"),
+         ("Chart Builder", "/chart-builder",
+          "Deck-ready CDD charts (waterfall, marimekko, 23 types) from "
+          "a pasted table"),
+         ("Exhibit Composer", "/exhibit",
+          "Lay up to four charts on one 16:9 deck slide"),
      ]),
 ]
 

@@ -3607,3 +3607,18 @@ green (87 passed).
 **Verify**: all current tabs/links pass (2 e2e tests, 60+ URLs);
 template builds and formula cells verified (blended entry 8.11x on
 seed inputs, spread 2.89 turns); 39 affected tests green.
+
+## W2-172 (2026-06-12) — Wave 5: sector coverage + custom-segment calculator + hub chart cards
+- **VoC + Win/Loss sector coverage**: ASC / Surgical and Behavioral
+  Health panels added to both evidence modules (5 sectors each now) —
+  block-time/turnover KPCs and HOPD-incumbency loss patterns for ASC;
+  time-to-first-appointment and virtual-first competition for BH.
+- **Pricing Power custom segment**: form now appends an analyst-supplied
+  segment (revenue $M, contribution margin %, elasticity) to the loaded
+  book — elasticity clamped to [-5, 0] so a data-entry sign error can't
+  model a Giffen good. Turns the illustrative page into a calculator a
+  deal team can point at the target's actual book.
+- **CDD hub deliverables**: Chart Builder + Exhibit Composer carded in
+  module 5 (they are the CDD exhibit tools; they were only in Research).
+**Verify**: +4 custom-segment tests; all evidence/pricing/hub/invariant
+suites green (73 passed); guide context updated for the new inputs.

@@ -151,10 +151,20 @@ def _curve(seg: SegmentPricing) -> SegmentCurve:
     )
 
 
-def compute_pricing_power(sector: str = "Physician Services") -> PricingPowerResult:
+def compute_pricing_power(
+    sector: str = "Physician Services",
+    *,
+    extra_segment: "SegmentPricing | None" = None,
+) -> PricingPowerResult:
+    """``extra_segment`` lets the page append one analyst-supplied
+    segment (own revenue / margin / elasticity) to the curated book —
+    the difference between a demo and a calculator a deal team can
+    point at their target's actual book."""
     book = _BOOKS.get(sector) or _BOOKS[SECTORS[0]]
     if sector not in _BOOKS:
         sector = SECTORS[0]
+    if extra_segment is not None and extra_segment.revenue_usd > 0:
+        book = list(book) + [extra_segment]
 
     total_rev = sum(s.revenue_usd for s in book)
     blended = sum(s.elasticity * s.revenue_usd for s in book) / total_rev
