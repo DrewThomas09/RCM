@@ -35,6 +35,58 @@ def _money(v: float) -> str:
     return f"${v:,.0f}"
 
 
+def _thesis_section(a: Dict[str, Any]) -> str:
+    """The IC-ready investment-thesis synthesis — the top-line a partner
+    reads first, recomputed from the sections below."""
+    it = a.get("investment_thesis") or {}
+    if not it:
+        return ""
+    pillars = ""
+    for i, p in enumerate(it.get("pillars", []), 1):
+        pillars += (
+            f'<div style="border:1px solid #d6cfc0;border-radius:6px;'
+            f'padding:11px 13px;background:#fff;">'
+            f'<div style="font-size:9px;letter-spacing:0.06em;color:{_FAINT};'
+            f'font-weight:700;">PILLAR {i}</div>'
+            f'<div style="font-size:13px;font-weight:700;color:#1a2332;'
+            f'margin-top:2px;">{html.escape(p["title"])}</div>'
+            f'<div style="font-size:11.5px;font-weight:700;color:{_TEAL};'
+            f'font-family:monospace;margin:3px 0;">{html.escape(p["stat"])}'
+            f'</div>'
+            f'<div style="font-size:11px;color:{_DIM};line-height:1.5;">'
+            f'{html.escape(p["point"])}</div></div>')
+    risks = "".join(
+        f'<li style="margin:3px 0;font-size:11.5px;color:{_DIM};">'
+        f'<strong style="color:{_NEG};">{html.escape(r["risk"])}:</strong> '
+        f'{html.escape(r["detail"])}</li>' for r in it.get("risks", []))
+    ddn = "".join(
+        f'<li style="margin:3px 0;font-size:11.5px;color:{_DIM};">'
+        f'{html.escape(x)}</li>' for x in it.get("diligence_next", []))
+    return (
+        f'<div style="border:1px solid #c9c1ac;border-top:4px solid {_NAVY};'
+        f'border-radius:6px;padding:16px 18px;background:#fbf9f4;'
+        f'margin-bottom:18px;">'
+        f'<div style="font-size:10px;letter-spacing:0.08em;color:{_FAINT};'
+        f'font-weight:700;">INVESTMENT THESIS · IC SUMMARY</div>'
+        f'<p style="font-size:14px;color:#1a2332;line-height:1.6;'
+        f'font-family:\'Source Serif 4\',Georgia,serif;margin:6px 0 4px;">'
+        f'{html.escape(it["headline"])}</p>'
+        f'<div style="display:inline-block;font-size:11px;font-weight:700;'
+        f'color:{_POS};border:1px solid {_POS};border-radius:3px;'
+        f'padding:2px 8px;margin-bottom:12px;">'
+        f'{html.escape(it["verdict"].split(" — ")[0])}</div>'
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,'
+        f'minmax(230px,1fr));gap:12px;margin-bottom:14px;">{pillars}</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;">'
+        f'<div><div style="font-size:10px;letter-spacing:0.06em;'
+        f'color:{_NEG};font-weight:700;margin-bottom:3px;">KEY RISKS</div>'
+        f'<ul style="margin:0;padding-left:16px;">{risks}</ul></div>'
+        f'<div><div style="font-size:10px;letter-spacing:0.06em;'
+        f'color:{_TEAL};font-weight:700;margin-bottom:3px;">DILIGENCE NEXT'
+        f'</div><ul style="margin:0;padding-left:16px;">{ddn}</ul></div>'
+        f'</div></div>')
+
+
 def _bar(pct: float, tone: str, width: int = 100) -> str:
     w = max(1.0, min(100.0, pct))
     return (
@@ -2484,6 +2536,7 @@ def render_texas_infusion_page(
         )
         + '<div class="ts-wrap" style="max-width:980px;">'
         + _kpi_strip(a)
+        + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",
                             eyebrow="TAM / SAM / SOM")

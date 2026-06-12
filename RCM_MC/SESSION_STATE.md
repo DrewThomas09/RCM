@@ -400,3 +400,12 @@ patients × 30% HOPD share; live OPPS override). Page: "HOPD infusion —
 the steered-away pool" panel. +5 tests. ALL user-named data sources now
 integrated (CDC PLACES, ACS, ASP, MA, Monthly Enrollment, NPPES+map,
 Part-B POS, Outpatient Hospitals).
+
+---
+## Checkpoint — wave #73 (W2-171, 2026-06-12)
+Added texas_investment_thesis(a): IC-summary synthesis recomputed from the
+assembled analysis (5 pillars w/ supporting numbers, key risks, diligence-
+next, headline + CONSTRUCTIVE verdict). build_texas_infusion_analysis now
+assembles `out` then sets out["investment_thesis"]. Page: "Investment
+Thesis · IC Summary" block at the top (after KPI strip, before sizing).
++3 tests. The Texas page now opens with the partner-facing top-line.

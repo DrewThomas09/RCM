@@ -3555,3 +3555,27 @@ now Outpatient Hospitals).
 **Verify**: +3 HOPD tests — pool = real metro patients × HOPD share +
 ranked + summed, offline is modeled (OPPS fails closed), live flag
 threads through + fails closed; +2 render needles. Full suite green.
+
+## W2-171 (2026-06-12) — Texas infusion: IC-summary investment thesis (wave #73)
+Added the top-line synthesis a partner reads first — `texas_investment_
+thesis(a)` builds the IC summary PURELY from the assembled analysis so it
+can never drift from the sections below:
+- **5 thesis pillars**, each with its supporting number: large/growing/
+  fragmented market ($3.36B TAM · 8% CAGR · HHI 517); structural site-of-
+  care tailwind (HOPD 46%→30% · $684M HOPD pool); favorable Texas
+  structure (no CON · 48% MA · 70% non-hospital); AIC unit economics
+  work ($218K/chair · ~19% break-even); de-novo white-space (6
+  undersupplied growth corridors).
+- **Key risks** (drug-spread compression, home-infusion referral
+  concentration + the HIT gap, the most-at-risk therapy) and **diligence-
+  next** gaps (replace modeled counts/rates with the target's claims;
+  quantify referral concentration + white-bagged %; confirm TX statute).
+- A headline + a CONSTRUCTIVE verdict steering value creation to service
+  margin + RCM, not the drug spread.
+- **Page**: an "Investment Thesis · IC Summary" block at the very top
+  (after the KPI strip, before market sizing) — pillars as cards, risks,
+  and diligence-next.
+**Verify**: +3 thesis tests — 5 pillars / ≥3 risks / ≥3 diligence-next
+with complete fields, thesis numbers match the sections (real HHI,
+HOPD shift pts, undersupplied count), most-at-risk therapy surfaces in
+the risks; +3 render needles. Full suite green.
