@@ -101,6 +101,35 @@ def _metro_kpi_strip(rows, area_type: str) -> str:
     return strip + '</div>'
 
 
+def _metro_insights(rows, area_type: str) -> str:
+    """P13 takeaway bullets — recomputed from the SAME rows the table
+    renders, guarded (n≥8; only stated when the spread is material)."""
+    from rcm_mc.ui._chartis_kit import ck_insight_bullets
+    cands = []
+    aged = [(r["cbsa_title"], r["pct_age_65_plus"]) for r in rows
+            if r.get("pct_age_65_plus") is not None]
+    if len(aged) >= 8:
+        top = max(aged, key=lambda x: x[1])
+        med = sorted(x[1] for x in aged)[len(aged) // 2]
+        cands.append((
+            f"Oldest market: <strong>{top[0]}</strong> at "
+            f"{top[1]*100:.1f}% 65+ vs a {med*100:.1f}% median across "
+            f"{len(aged)} {area_type.lower()} areas — the senior-demand "
+            f"tail for Medicare-heavy theses.",
+            (top[1] - med) >= 0.03))
+    unins = [(r["cbsa_title"], r["uninsured_rate"]) for r in rows
+             if r.get("uninsured_rate") is not None]
+    if len(unins) >= 8:
+        hi = max(unins, key=lambda x: x[1])
+        med = sorted(x[1] for x in unins)[len(unins) // 2]
+        cands.append((
+            f"Highest uninsured: <strong>{hi[0]}</strong> at "
+            f"{hi[1]*100:.1f}% vs a {med*100:.1f}% median — the bad-debt "
+            f"screen for safety-net-exposed targets.",
+            (hi[1] - med) >= 0.05))
+    return ck_insight_bullets(cands, title=f"{area_type} areas — the read")
+
+
 def render_metro_markets(params: Dict = None) -> str:
     sort_key = _parse_sort(params)
     area_type = _parse_type(params)
@@ -162,6 +191,7 @@ def render_metro_markets(params: Dict = None) -> str:
 <div class="ck-page-wrap">
   {ck_page_title("Metro Markets", eyebrow="MARKET INTEL", meta=f"{len(rows)} U.S. {area_type.lower()} areas on real CBSA demographics — click a column to sort")}
   {_metro_kpi_strip(rows, area_type)}
+  {_metro_insights(rows, area_type)}
   <p style="font-size:13px;color:{td};max-width:74ch;margin:0 0 14px">
     The metro level of the Geographic Intelligence suite — U.S. Core-Based
     Statistical Areas ranked on real, derived demographics rolled up from county

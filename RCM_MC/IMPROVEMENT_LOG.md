@@ -4330,3 +4330,11 @@ verticals, rows link the focused view, focused view unaffected).
 **Verify**: +2 tests (workbook carries every band; directory links the
 download) + HTTP smoke 200/PK; hub link integrity + guide-coverage +
 tools-index families green (59 passed).
+
+## W2-221 (2026-06-12) — P13 bullets on /metro-markets (refill #34, part 1)
+Two guarded takeaways recomputed from the same CBSA rows the table
+renders: the oldest market (65+ share vs the median across all areas;
+stated only when ≥3pp above median — the senior-demand tail) and the
+highest-uninsured market (≥5pp above median — the bad-debt screen).
+n≥8 guard; ck_insight_bullets renders nothing otherwise. Test
+re-derives the top market + figure exactly. 7 passed.

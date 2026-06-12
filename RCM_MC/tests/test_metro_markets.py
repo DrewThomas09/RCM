@@ -55,5 +55,22 @@ class MetroMarketsTests(unittest.TestCase):
         self.assertEqual(classify_surface("/metro-markets")["tier"], "green")
 
 
+
+class MetroInsightTests(unittest.TestCase):
+    """P13 bullets recompute from the same rows the table renders."""
+
+    def test_oldest_market_bullet_rederives(self):
+        from rcm_mc.ui.data_public.metro_markets_page import (
+            metro_rows, render_metro_markets)
+        rows = metro_rows("Metropolitan", "population")
+        aged = [(r["cbsa_title"], r["pct_age_65_plus"]) for r in rows
+                if r.get("pct_age_65_plus") is not None]
+        top = max(aged, key=lambda x: x[1])
+        h = render_metro_markets({})
+        self.assertIn("Metropolitan areas — the read", h)
+        self.assertIn(top[0][:40], h)
+        self.assertIn(f"{top[1]*100:.1f}% 65+", h)
+
+
 if __name__ == "__main__":
     unittest.main()
