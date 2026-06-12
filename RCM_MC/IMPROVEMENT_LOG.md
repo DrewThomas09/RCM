@@ -3610,3 +3610,18 @@ move around it:
   the live section set — no hardcoded list to drift.
 **Verify**: +1 test — ≥20 unique section ids injected, the floating nav
 present, every nav link points at a real section id. Full suite green.
+
+## W2-174 (2026-06-12) — Texas infusion: downloadable Markdown IC memo (wave #76)
+A partner-shareable deliverable — the analysis as a clean Markdown IC
+memo a partner pastes into a writeup:
+- **`texas_infusion_memo_md(a)`**: renders the headline, verdict, the
+  5-pillar thesis, key risks, diligence-next, and a key-figures table
+  (TAM/SAM/CAGR/HHI/MA penetration/AIC contribution/undersupplied
+  counties/65+ base) — a pure function of the assembled analysis.
+- **Route** `/api/diligence/texas-infusion/memo`: serves the memo as a
+  `text/markdown` download (honoring the same AIC overrides as the page).
+- **Page**: a "⬇ IC memo (Markdown)" button in the Investment Thesis
+  block.
+**Verify**: +2 tests — memo has the section structure + real figures
+(HHI, verdict, one numbered item per thesis pillar); the page links to
+the memo download. Full suite green.
