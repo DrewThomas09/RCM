@@ -335,3 +335,12 @@ value·% legend, donut w/ TOTAL). New pie_chart_page.py (route /pie-chart):
 10 rows of Label·Value·Colour + title/mode/unit/donut; qs-driven; Research
 nav + palette + guide context. +10 tests. Joins Excel Mapping (#62) +
 Chart Builder (#63) as the graphics-utility set.
+
+---
+## Checkpoint — wave #65 (W2-163, 2026-06-12)
+Charts: +6 types (funnel/tornado/radar/matrix/bullet/dot → 19 total),
+export toolbar (Download SVG/PNG 2x/Copy, vanilla JS) on Chart Builder +
+Pie + Excel Mapping, and adjustable size (_svg_open width_px + SIZE_PRESETS
+S/M/L/XL, height auto from viewBox). Size selector on builder + pie. +9
+tests. Graphics-utility set now: Excel Mapping (#62), Chart Builder (#63,
+#65), Pie Chart (#64, #65).

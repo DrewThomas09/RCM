@@ -16,7 +16,8 @@ from typing import Any, Dict, Optional
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
 from .cdd_chart_kit import (
-    CHART_TYPES, PALETTES, parse_table, render_cdd_chart,
+    CHART_TYPES, PALETTES, SIZE_PRESETS, parse_table, render_cdd_chart,
+    chart_export_toolbar,
 )
 
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
@@ -31,6 +32,15 @@ _EXAMPLE_WF = ("Step\tValue\nEntry EBITDA\t100\nDenial recovery\t18\n"
 _EXAMPLE_SCATTER = ("Company\tGrowth\tMargin\tRevenue\nApex\t12\t22\t40\n"
                     "Meridian\t8\t28\t60\nVertex\t20\t15\t25\n"
                     "Keystone\t15\t30\t80")
+_EXAMPLE_FUNNEL = ("Stage\tValue\nTAM\t3360\nSAM\t1950\nSOM\t420\n"
+                   "Year-1 capture\t95")
+_EXAMPLE_TORNADO = ("Driver\tImpact\nChair utilization\t114\n"
+                    "Commercial mix\t47\nDrug spread\t31\n"
+                    "Nurse productivity\t-28\nDenials\t-19")
+_EXAMPLE_RADAR = ("Attribute\tTarget\tBenchmark\nScale\t8\t6\n"
+                  "Margin\t6\t9\nGrowth\t9\t5\nQuality\t7\t8\nRisk\t5\t7")
+_EXAMPLE_BULLET = ("KPI\tActual\tTarget\nClean-claim %\t96\t98\n"
+                   "Denial %\t8\t6\nDAR (days)\t45\t40")
 
 
 def _example_for(ctype: str) -> str:
@@ -38,8 +48,16 @@ def _example_for(ctype: str) -> str:
         return _EXAMPLE_PIE
     if ctype == "waterfall":
         return _EXAMPLE_WF
-    if ctype in ("scatter", "bubble"):
+    if ctype in ("scatter", "bubble", "matrix"):
         return _EXAMPLE_SCATTER
+    if ctype == "funnel":
+        return _EXAMPLE_FUNNEL
+    if ctype == "tornado":
+        return _EXAMPLE_TORNADO
+    if ctype == "radar":
+        return _EXAMPLE_RADAR
+    if ctype == "bullet":
+        return _EXAMPLE_BULLET
     return _EXAMPLE_TS
 
 
@@ -71,6 +89,8 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     suffix = _qs1(qs, "suffix", "")
     show_values = _qsbool(qs, "values", True)
     legend = _qsbool(qs, "legend", True)
+    size = _qs1(qs, "size", "M")
+    width_px = dict(SIZE_PRESETS).get(size, 720)
     data_text = _qs1(qs, "data", "")
     if not data_text.strip():
         data_text = _example_for(ctype)
@@ -78,7 +98,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     opts = {
         "title": title or dict(CHART_TYPES).get(ctype, ""),
         "subtitle": subtitle, "palette": palette, "suffix": suffix,
-        "show_values": show_values, "legend": legend,
+        "show_values": show_values, "legend": legend, "width_px": width_px,
     }
     chart_svg = render_cdd_chart(ctype, table, opts)
 
@@ -141,9 +161,16 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'placeholder="% or $" style="width:100%;height:30px;'
         f'border:1px solid #c9c1ac;border-radius:5px;padding:0 7px;"></label>'
         f'</div>'
-        f'<div style="display:flex;gap:14px;margin-top:2px;">'
+        f'<div style="display:flex;gap:14px;margin-top:2px;align-items:center;">'
         f'{_toggle("values", "Show values", show_values)}'
-        f'{_toggle("legend", "Legend", legend)}</div>'
+        f'{_toggle("legend", "Legend", legend)}'
+        f'<label style="font-size:11px;color:#465366;display:flex;gap:5px;'
+        f'align-items:center;margin-left:auto;">Size'
+        f'<select name="size" style="height:28px;border:1px solid #c9c1ac;'
+        f'border-radius:5px;">' + "".join(
+            f'<option value="{k}"{" selected" if k == size else ""}>{k}'
+            f'</option>' for k, _w in SIZE_PRESETS)
+        + '</select></label></div>'
         f'<button type="submit" style="margin-top:6px;padding:9px 18px;'
         f'background:#0b2341;color:#fff;border:none;border-radius:5px;'
         f'font-weight:600;cursor:pointer;">Render chart</button>'
@@ -187,7 +214,9 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         + form
         + '<div style="margin-top:18px;border:1px solid #d6cfc0;'
           'border-radius:8px;padding:16px;background:#fff;text-align:center;">'
-        + chart_svg + '</div>'
+        + f'<div id="chartOut">{chart_svg}</div>'
+        + chart_export_toolbar("chartOut", "chart-" + ctype)
+        + '</div>'
         + '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
           'font-weight:700;margin:18px 0 6px;">GALLERY — YOUR DATA IN EVERY '
           'CHART (click to switch)</div>'

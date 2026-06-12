@@ -3418,3 +3418,24 @@ clients":
 blank slices dropped, empty→prompt, donut hole + TOTAL; page populated by
 default + custom slices render (45/(45+35)=56%) + defaults-then-qs collect
 + palette/nav/guide registration. Full suite green.
+
+## W2-163 (2026-06-12) — Charts: 6 new types, easy export, adjustable size (wave #65)
+Per the request "more charts, super easy exports, adjustable by size":
+- **6 new chart types** (kit now 19): funnel (TAM/SAM/SOM with conversion
+  %), tornado (sensitivity, diverging sorted bars), radar/spider (multi-
+  attribute), 2×2 matrix (positioning with quadrant lines + axis titles),
+  bullet (actual vs target tick), dot/lollipop (ranking). All in
+  CHART_TYPES + dispatch, so they appear automatically in the Chart
+  Builder chips + gallery with example data.
+- **Easy export** (`chart_export_toolbar`): Download SVG, Download PNG
+  (2× canvas), and Copy SVG — pure vanilla JS, no deps. Added under the
+  chart on the Chart Builder, Pie Chart, AND Excel Mapping pages.
+- **Adjustable size** (`_svg_open` + `SIZE_PRESETS` S/M/L/XL → 520/720/
+  920/1120px): every chart's SVG now scales by `width_px` with height
+  auto from the viewBox (never distorts). A Size selector on the Chart
+  Builder + Pie Chart pages.
+**Verify**: +9 tests (test_chart_builder/test_pie_chart) — 6 new types
+present (≥19 total) + render clean, width_px controls display size +
+height auto, export toolbar has SVG/PNG/Copy + ids, size presets S/M/L/XL,
+builder/pie pages show export buttons + size select + new-type chips.
+Full suite green.

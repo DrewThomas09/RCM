@@ -50,8 +50,14 @@ CHART_TYPES = [
     ("waterfall", "Waterfall (bridge)"),
     ("pie", "Pie"),
     ("donut", "Donut"),
+    ("funnel", "Funnel"),
+    ("tornado", "Tornado (sensitivity)"),
     ("scatter", "Scatter"),
     ("bubble", "Bubble"),
+    ("matrix", "2×2 matrix"),
+    ("radar", "Radar (spider)"),
+    ("bullet", "Bullet (vs target)"),
+    ("dot", "Dot / lollipop"),
     ("marimekko", "Marimekko"),
     ("combo", "Combo (bars + line)"),
 ]
@@ -86,11 +92,8 @@ def presentable_pie(
     donut = opts.get("donut", False)
     mode = opts.get("label_mode", "percent")
     suffix = opts.get("value_suffix", "")
-    out = [f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
-           f'height="{opts.get("px_h", 470)}" '
-           f'preserveAspectRatio="xMidYMid meet" role="img" '
-           f'aria-label="{_esc(title or "pie chart")}" '
-           f'style="max-width:{W:.0f}px;background:#fff;font-family:{_SANS};">']
+    out = [_svg_open(W, H, opts, title or "pie chart",
+                     f"font-family:{_SANS};")]
     if title:
         out.append(f'<text x="{W/2:.0f}" y="34" text-anchor="middle" '
                    f'font-family="{_SERIF}" font-size="20" font-weight="700" '
@@ -235,6 +238,19 @@ def _esc(s: Any) -> str:
     return html.escape(str(s))
 
 
+def _svg_open(W: float, H: float, opts: Dict[str, Any], aria: str,
+              extra_style: str = "") -> str:
+    """Open an <svg> sized by ``width_px`` (default = the viewBox width),
+    scaling proportionally to the container — the size control. Height is
+    auto from the viewBox aspect so charts never distort."""
+    wpx = opts.get("width_px") or W
+    return (f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
+            f'preserveAspectRatio="xMidYMid meet" role="img" '
+            f'aria-label="{_esc(aria)}" '
+            f'style="max-width:{wpx:.0f}px;width:100%;height:auto;'
+            f'background:#fff;{extra_style}">')
+
+
 def _fmt(v: Optional[float], suffix: str = "") -> str:
     if v is None:
         return ""
@@ -261,11 +277,7 @@ def _frame_open(opts: Dict[str, Any]) -> str:
     W, H = opts.get("W", _W), opts.get("H", _H)
     title = opts.get("title", "")
     sub = opts.get("subtitle", "")
-    bits = [f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
-            f'height="{opts.get("px_h", 450)}" '
-            f'preserveAspectRatio="xMidYMid meet" role="img" '
-            f'aria-label="{_esc(title or "chart")}" '
-            f'style="max-width:{W:.0f}px;background:#fff;">']
+    bits = [_svg_open(W, H, opts, title or "chart")]
     if title:
         bits.append(
             f'<text x="{W/2:.0f}" y="26" text-anchor="middle" '
@@ -717,6 +729,304 @@ def _combo(table, opts):
     return body
 
 
+# ── Funnel (TAM/SAM/SOM, conversion) ─────────────────────────────────
+
+def _funnel(table, opts):
+    cats = [r[0] for r in table["rows"]]
+    vals = [(r[1][0] if r[1] else 0) or 0 for r in table["rows"]]
+    colors = opts["colors"]
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    body = _frame_open(opts)
+    n = len(cats)
+    if not n:
+        return body + "</svg>"
+    vmax = max(vals) or 1
+    cx = (x0 + x1) / 2
+    sh = (y1 - y0) / n
+    suffix = opts.get("suffix", "")
+    for i, (c, v) in enumerate(zip(cats, vals)):
+        w_top = (v / vmax) * (x1 - x0)
+        v_next = vals[i + 1] if i + 1 < n else v
+        w_bot = (v_next / vmax) * (x1 - x0)
+        yt, yb = y0 + sh * i + 3, y0 + sh * (i + 1) - 3
+        pts = (f"{cx-w_top/2:.1f},{yt:.1f} {cx+w_top/2:.1f},{yt:.1f} "
+               f"{cx+w_bot/2:.1f},{yb:.1f} {cx-w_bot/2:.1f},{yb:.1f}")
+        body += (f'<polygon points="{pts}" fill="{colors[i % len(colors)]}" '
+                 f'fill-opacity="0.92"/>')
+        conv = f" · {v/vals[0]*100:.0f}%" if vals[0] else ""
+        body += (f'<text x="{cx:.1f}" y="{(yt+yb)/2+4:.1f}" '
+                 f'text-anchor="middle" font-family="{_SANS}" '
+                 f'font-size="12" font-weight="700" fill="#fff">'
+                 f'{_esc(c)}: {_fmt(v, suffix)}{conv}</text>')
+    body += "</svg>"
+    return body
+
+
+# ── Tornado (sensitivity, diverging) ─────────────────────────────────
+
+def _tornado(table, opts):
+    rows = sorted(table["rows"],
+                  key=lambda r: -abs((r[1][0] if r[1] else 0) or 0))
+    colors = opts["colors"]
+    pos, neg = "#0a8a5f", "#b5321e"
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    body = _frame_open(opts)
+    vmax = max((abs((r[1][0] if r[1] else 0) or 0) for r in rows),
+               default=1) or 1
+    cxx = (x0 + x1) / 2
+    half = (x1 - x0) / 2
+    n = len(rows)
+    band = (y1 - y0) / max(n, 1)
+    suffix = opts.get("suffix", "")
+    body += (f'<line x1="{cxx:.1f}" y1="{y0:.1f}" x2="{cxx:.1f}" '
+             f'y2="{y1:.1f}" stroke="{_FAINT}" stroke-width="1"/>')
+    for i, (lab, v) in enumerate(rows):
+        val = (v[0] if v else 0) or 0
+        w = abs(val) / vmax * half
+        yy = y0 + band * i + band * 0.2
+        bx = cxx if val >= 0 else cxx - w
+        body += (f'<rect x="{bx:.1f}" y="{yy:.1f}" width="{w:.1f}" '
+                 f'height="{band*0.6:.1f}" fill="{pos if val>=0 else neg}" '
+                 f'rx="1"/>')
+        tx = cxx + w + 4 if val >= 0 else cxx - w - 4
+        anc = "start" if val >= 0 else "end"
+        body += (f'<text x="{tx:.1f}" y="{yy+band*0.42:.1f}" '
+                 f'text-anchor="{anc}" font-family="{_SANS}" '
+                 f'font-size="10" fill="{_DIM}">{_fmt(val, suffix)}</text>'
+                 f'<text x="{x0-4:.1f}" y="{yy+band*0.42:.1f}" '
+                 f'text-anchor="end" font-family="{_SANS}" font-size="10.5" '
+                 f'fill="{_DIM}">{_esc(lab)}</text>')
+    body += "</svg>"
+    return body
+
+
+# ── Radar (spider) ───────────────────────────────────────────────────
+
+def _radar(table, opts):
+    import math
+    cats = [r[0] for r in table["rows"]]
+    series = _series(table)
+    colors = opts["colors"]
+    W, H = opts.get("W", _W), opts.get("H", _H)
+    cx, cy, R = W / 2, H / 2 + 8, 150.0
+    n = len(cats)
+    if n < 3:
+        return _frame_open(opts) + '</svg>'
+    vmax = _nice_max(max((max((v or 0) for v in s["values"])
+                          for s in series), default=1))
+    body = _frame_open(opts)
+    def pt(i, frac):
+        a = -math.pi / 2 + 2 * math.pi * i / n
+        return (cx + R * frac * math.cos(a), cy + R * frac * math.sin(a))
+    for ring in (0.25, 0.5, 0.75, 1.0):
+        rp = " ".join(f"{x:.1f},{y:.1f}"
+                      for x, y in (pt(i, ring) for i in range(n)))
+        body += (f'<polygon points="{rp}" fill="none" stroke="{_GRID}" '
+                 f'stroke-width="0.8"/>')
+    for i, c in enumerate(cats):
+        ex, ey = pt(i, 1.0)
+        lx, ly = pt(i, 1.13)
+        body += (f'<line x1="{cx:.1f}" y1="{cy:.1f}" x2="{ex:.1f}" '
+                 f'y2="{ey:.1f}" stroke="{_GRID}" stroke-width="0.6"/>'
+                 f'<text x="{lx:.1f}" y="{ly+3:.1f}" text-anchor="middle" '
+                 f'font-family="{_SANS}" font-size="10" fill="{_DIM}">'
+                 f'{_esc(c)}</text>')
+    for si, s in enumerate(series):
+        poly = " ".join(
+            f"{x:.1f},{y:.1f}" for x, y in
+            (pt(i, (s["values"][i] or 0) / vmax) for i in range(n)))
+        col = colors[si % len(colors)]
+        body += (f'<polygon points="{poly}" fill="{col}" '
+                 f'fill-opacity="0.18" stroke="{col}" stroke-width="2"/>')
+    body += _legend(series, colors, opts) + "</svg>"
+    return body
+
+
+# ── Bullet (actual vs target) ────────────────────────────────────────
+
+def _bullet(table, opts):
+    cats = [r[0] for r in table["rows"]]
+    series = _series(table)
+    colors = opts["colors"]
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    body = _frame_open(opts)
+    actual = series[0]["values"] if series else []
+    target = series[1]["values"] if len(series) > 1 else [None] * len(cats)
+    allv = [v for v in (actual + [t for t in target if t is not None])
+            if v is not None]
+    vmax = _nice_max(max(allv) if allv else 1)
+    n = len(cats)
+    band = (y1 - y0) / max(n, 1)
+    suffix = opts.get("suffix", "")
+    for i, c in enumerate(cats):
+        yy = y0 + band * i + band * 0.25
+        bh = band * 0.5
+        body += (f'<rect x="{x0:.1f}" y="{yy:.1f}" width="{x1-x0:.1f}" '
+                 f'height="{bh:.1f}" fill="#ece5d6" rx="2"/>')
+        a = actual[i] or 0
+        body += (f'<rect x="{x0:.1f}" y="{yy+bh*0.2:.1f}" '
+                 f'width="{a/vmax*(x1-x0):.1f}" height="{bh*0.6:.1f}" '
+                 f'fill="{colors[0]}" rx="1"/>')
+        t = target[i]
+        if t is not None:
+            tx = x0 + t / vmax * (x1 - x0)
+            body += (f'<line x1="{tx:.1f}" y1="{yy-2:.1f}" x2="{tx:.1f}" '
+                     f'y2="{yy+bh+2:.1f}" stroke="#b5321e" '
+                     f'stroke-width="2.5"/>')
+        body += (f'<text x="{x0-4:.1f}" y="{yy+bh*0.7:.1f}" '
+                 f'text-anchor="end" font-family="{_SANS}" font-size="10.5" '
+                 f'fill="{_DIM}">{_esc(c)}</text>'
+                 f'<text x="{x1+2:.1f}" y="{yy+bh*0.7:.1f}" '
+                 f'font-family="{_SANS}" font-size="10" fill="{_DIM}">'
+                 f'{_fmt(a, suffix)}</text>')
+    body += "</svg>"
+    return body
+
+
+# ── Dot / lollipop (ranking) ─────────────────────────────────────────
+
+def _dot(table, opts):
+    rows = sorted(table["rows"],
+                  key=lambda r: (r[1][0] if r[1] else 0) or 0)
+    colors = opts["colors"]
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    body = _frame_open(opts)
+    vals = [(r[1][0] if r[1] else 0) or 0 for r in rows]
+    vmax = _nice_max(max(vals) if vals else 1)
+    n = len(rows)
+    band = (y1 - y0) / max(n, 1)
+    suffix = opts.get("suffix", "")
+    for i, (lab, v) in enumerate(rows):
+        val = (v[0] if v else 0) or 0
+        yy = y0 + band * (i + 0.5)
+        vx = x0 + val / vmax * (x1 - x0)
+        body += (f'<line x1="{x0:.1f}" y1="{yy:.1f}" x2="{vx:.1f}" '
+                 f'y2="{yy:.1f}" stroke="{_GRID}" stroke-width="2"/>'
+                 f'<circle cx="{vx:.1f}" cy="{yy:.1f}" r="5.5" '
+                 f'fill="{colors[0]}"/>'
+                 f'<text x="{x0-4:.1f}" y="{yy+3.5:.1f}" text-anchor="end" '
+                 f'font-family="{_SANS}" font-size="10.5" fill="{_DIM}">'
+                 f'{_esc(lab)}</text>'
+                 f'<text x="{vx+9:.1f}" y="{yy+3.5:.1f}" '
+                 f'font-family="{_SANS}" font-size="10" fill="{_DIM}">'
+                 f'{_fmt(val, suffix)}</text>')
+    body += "</svg>"
+    return body
+
+
+# ── 2×2 matrix (positioning) ─────────────────────────────────────────
+
+def _matrix(table, opts):
+    rows = table["rows"]
+    colors = opts["colors"]
+    pts = []
+    for lab, vals in rows:
+        if len(vals) >= 2 and vals[0] is not None and vals[1] is not None:
+            sz = vals[2] if len(vals) >= 3 and vals[2] is not None else None
+            pts.append((lab, vals[0], vals[1], sz))
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    body = _frame_open(opts)
+    xs = [p[1] for p in pts] or [0, 1]
+    ys = [p[2] for p in pts] or [0, 1]
+    xmin, xmax = min(xs), max(xs) or 1
+    ymin, ymax = min(ys), max(ys) or 1
+    xmin -= (xmax - xmin) * 0.12 or 1
+    xmax += (xmax - xmin) * 0.08 or 1
+    ymin -= (ymax - ymin) * 0.12 or 1
+    ymax += (ymax - ymin) * 0.08 or 1
+    def xof(v):
+        return x0 + (v - xmin) / ((xmax - xmin) or 1) * (x1 - x0)
+    def yof(v):
+        return y1 - (v - ymin) / ((ymax - ymin) or 1) * (y1 - y0)
+    mx, my = (x0 + x1) / 2, (y0 + y1) / 2
+    body += (f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{x1-x0:.1f}" '
+             f'height="{y1-y0:.1f}" fill="#fbf9f4" stroke="{_GRID}"/>'
+             f'<line x1="{mx:.1f}" y1="{y0:.1f}" x2="{mx:.1f}" y2="{y1:.1f}" '
+             f'stroke="{_FAINT}" stroke-dasharray="3 3" stroke-width="0.8"/>'
+             f'<line x1="{x0:.1f}" y1="{my:.1f}" x2="{x1:.1f}" y2="{my:.1f}" '
+             f'stroke="{_FAINT}" stroke-dasharray="3 3" stroke-width="0.8"/>')
+    sizes = [p[3] for p in pts if p[3]] or [1]
+    smax = max(sizes)
+    for i, (lab, xv, yv, sz) in enumerate(pts):
+        r = (7 + 20 * ((sz / smax) ** 0.5)) if sz else 7
+        body += (f'<circle cx="{xof(xv):.1f}" cy="{yof(yv):.1f}" r="{r:.1f}" '
+                 f'fill="{colors[i % len(colors)]}" fill-opacity="0.72" '
+                 f'stroke="#fff" stroke-width="1.2"/>'
+                 f'<text x="{xof(xv):.1f}" y="{yof(yv)-r-3:.1f}" '
+                 f'text-anchor="middle" font-family="{_SANS}" '
+                 f'font-size="10" font-weight="600" fill="{_INK}">'
+                 f'{_esc(lab)}</text>')
+    # Axis titles from headers.
+    h = table.get("headers", [])
+    xlab = h[1] if len(h) > 1 else "X"
+    ylab = h[2] if len(h) > 2 else "Y"
+    body += (f'<text x="{(x0+x1)/2:.1f}" y="{y1+18:.1f}" '
+             f'text-anchor="middle" font-family="{_SANS}" font-size="11" '
+             f'fill="{_FAINT}">{_esc(xlab)} →</text>'
+             f'<text x="{x0-14:.1f}" y="{(y0+y1)/2:.1f}" '
+             f'text-anchor="middle" font-family="{_SANS}" font-size="11" '
+             f'fill="{_FAINT}" transform="rotate(-90 {x0-14:.1f} '
+             f'{(y0+y1)/2:.1f})">{_esc(ylab)} →</text>')
+    body += "</svg>"
+    return body
+
+
+# ── Export toolbar (download SVG / PNG, copy) ────────────────────────
+
+def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
+    """Buttons to download the rendered SVG / a 2× PNG, or copy the SVG —
+    pure vanilla JS, no dependencies. ``target_id`` is the id of the
+    container holding the <svg>."""
+    fn = html.escape(filename, quote=True)
+    tid = html.escape(target_id, quote=True)
+    btn = ("padding:6px 13px;border:1px solid #c9c1ac;border-radius:5px;"
+           "background:#fff;color:#0b2341;font-size:12px;font-weight:600;"
+           "cursor:pointer;")
+    return (
+        f'<div style="display:flex;gap:8px;justify-content:center;'
+        f'margin-top:10px;flex-wrap:wrap;">'
+        f'<button type="button" style="{btn}" '
+        f'onclick="ckDlSvg(\'{tid}\',\'{fn}\')">⬇ SVG</button>'
+        f'<button type="button" style="{btn}" '
+        f'onclick="ckDlPng(\'{tid}\',\'{fn}\')">⬇ PNG (2×)</button>'
+        f'<button type="button" style="{btn}" '
+        f'onclick="ckCopySvg(\'{tid}\',this)">⧉ Copy SVG</button></div>'
+        '<script>'
+        'function ckSvgStr(id){var c=document.getElementById(id);'
+        'if(!c)return"";var s=c.querySelector("svg");if(!s)return"";'
+        'var n=s.cloneNode(true);n.setAttribute("xmlns",'
+        '"http://www.w3.org/2000/svg");'
+        'return "<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>\\n"'
+        '+new XMLSerializer().serializeToString(n);}'
+        'function ckDlSvg(id,fn){var str=ckSvgStr(id);if(!str)return;'
+        'var b=new Blob([str],{type:"image/svg+xml;charset=utf-8"});'
+        'var a=document.createElement("a");a.href=URL.createObjectURL(b);'
+        'a.download=fn+".svg";document.body.appendChild(a);a.click();'
+        'a.remove();}'
+        'function ckCopySvg(id,btn){var str=ckSvgStr(id);if(!str)return;'
+        'navigator.clipboard.writeText(str).then(function(){'
+        'var t=btn.textContent;btn.textContent="✓ Copied";'
+        'setTimeout(function(){btn.textContent=t;},1200);});}'
+        'function ckDlPng(id,fn){var c=document.getElementById(id);'
+        'if(!c)return;var s=c.querySelector("svg");if(!s)return;'
+        'var vb=s.viewBox.baseVal;var w=(vb&&vb.width)||720;'
+        'var h=(vb&&vb.height)||450;var sc=2;'
+        'var cv=document.createElement("canvas");cv.width=w*sc;cv.height=h*sc;'
+        'var ctx=cv.getContext("2d");ctx.fillStyle="#fff";'
+        'ctx.fillRect(0,0,cv.width,cv.height);ctx.scale(sc,sc);'
+        'var img=new Image();img.onload=function(){ctx.drawImage(img,0,0,w,h);'
+        'cv.toBlob(function(bl){var a=document.createElement("a");'
+        'a.href=URL.createObjectURL(bl);a.download=fn+".png";'
+        'document.body.appendChild(a);a.click();a.remove();});};'
+        'img.src="data:image/svg+xml;base64,"+btoa(unescape('
+        'encodeURIComponent(ckSvgStr(id))));}'
+        '</script>')
+
+
+# Size presets (display width in px).
+SIZE_PRESETS = [("S", 520), ("M", 720), ("L", 920), ("XL", 1120)]
+
+
 # ── Dispatch ─────────────────────────────────────────────────────────
 
 _DISPATCH = {
@@ -727,10 +1037,16 @@ _DISPATCH = {
     "line": (_lines, {}),
     "area": (_lines, {"area": True}),
     "waterfall": (_waterfall, {}),
+    "funnel": (_funnel, {}),
+    "tornado": (_tornado, {}),
     "pie": (_pie, {}),
     "donut": (_pie, {"donut": True}),
     "scatter": (_scatter, {}),
     "bubble": (_scatter, {"bubble": True}),
+    "matrix": (_matrix, {}),
+    "radar": (_radar, {}),
+    "bullet": (_bullet, {}),
+    "dot": (_dot, {}),
     "marimekko": (_marimekko, {}),
     "combo": (_combo, {}),
 }
@@ -753,9 +1069,8 @@ def render_cdd_chart(
                                                   PALETTES["Chartis"])
     if not table.get("rows"):
         W, H = o.get("W", _W), o.get("H", _H)
-        return (f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
-                f'height="200" style="background:#fff;"><text x="{W/2:.0f}" '
-                f'y="{H/2:.0f}" text-anchor="middle" font-family="{_SANS}" '
-                f'font-size="13" fill="{_FAINT}">Paste data to render a '
-                f'chart</text></svg>')
+        return (_svg_open(W, H, o, "empty chart")
+                + f'<text x="{W/2:.0f}" y="{H/2:.0f}" text-anchor="middle" '
+                f'font-family="{_SANS}" font-size="13" fill="{_FAINT}">'
+                f'Paste data to render a chart</text></svg>')
     return fn(table, o)
