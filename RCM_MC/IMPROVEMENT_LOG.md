@@ -3826,3 +3826,18 @@ results header counts "0 Hospitals" (the filter applied, not silently
 dropped) and the page says so in words; the cross-universe scale strip
 legitimately keeps the full universe sizes as context. 3 tests pass on
 the empty db.
+
+## W2-187 (2026-06-12) — Ranking-contract fix: flagship pin survives module growth
+The regression-sweep cadence caught test_surface_rankings failing on
+main: the Texas market study (now 3,092 lines after both streams' waves)
+overtook /target-screener as global rows[0] — both score a saturated
+10.0 and the sort tiebreak is raw module LOC, so sheer page size read
+as flagship displacement. The ranking only DRIVES per-section nav
+promotion, so the global pin was an artifact. Re-pinned the contract to
+intent: the screener holds the MAX total and leads its own (Source)
+section. Noted for a future considered item: the checked-in
+_surface_rankings.py manifest has drifted from live build_rankings()
+scores (e.g. screener 9.6 manifest vs 10.0 live) — regenerating it
+shifts nav rails and is pinned by other tests, so it needs its own
+wave, not a drive-by. test_surface_rankings: 9 passed. Sweep otherwise
+green: 15,722 passed / 1 failed (this one) / 72 skipped.
