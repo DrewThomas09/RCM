@@ -40,6 +40,10 @@ from .public_comps import (
     peer_physician_turnover_stats,
 )
 from .peer_snapshot import PeerSnapshot, compute_peer_snapshot
+from .rate_environment import (
+    BlendedImpact, RateUpdate, SettingRates, blended_rate_impact,
+    get_setting, list_settings,
+)
 from .pe_transactions import (
     PETransaction, list_transactions, multiple_band_by_specialty,
     sponsor_activity, transactions_for_specialty,
@@ -58,6 +62,12 @@ __all__ = [
     "PETransaction",
     "PeerSnapshot",
     "PublicComp",
+    "BlendedImpact",
+    "RateUpdate",
+    "SettingRates",
+    "blended_rate_impact",
+    "get_setting",
+    "list_settings",
     "compute_peer_snapshot",
     "list_transactions",
     "multiple_band_by_specialty",

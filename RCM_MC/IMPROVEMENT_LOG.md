@@ -3500,3 +3500,38 @@ Both surface automatically in the Chart Builder chips + gallery with
 example data (value-creation slope; 100-day workstream gantt).
 **Verify**: +1 test (≥23 types incl. slope/gantt) + both render clean
 (no None) with their labels. Full suite green.
+
+## W2-168 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
+Closes the three gaps flagged for the desk (not helping CDD enough, thin
+Excel resources, thin market-intel): four new surfaces + a hub + a
+formula-capable xlsx writer.
+- **Excel Model Templates** (`/excel-templates` + per-slug `.xlsx`
+  downloads): 7 live-formula workbooks — Quick LBO (sweep debt schedule,
+  MOIC/IRR), QoE adjusted-EBITDA databook (walk + TTM cadence), NWC peg
+  (12-mo build, DSO/DPO, peg candidates), 13-week cash (covenant headroom
+  row), CDD market model (TAM/SAM/SOM + competitor grid reconciling to
+  SAM), payer-mix × rate sensitivity, cohort/NRR triangle. Banker
+  convention: blue inputs / black formulas.
+- **xlsx_writer**: `F(expr)` live-formula cells (opt-in wrapper — strings
+  that look like formulas stay text, preserving the CSV-defang posture) +
+  6 new styles (mult, label, blue input/money/pct/num).
+- **CDD Hub** (`/cdd`): the five-module CDD workflow (market →
+  competition → customers → pricing → deliverables) laid over 20 existing
+  + new surfaces; link integrity pinned by test against server handlers.
+- **Voice of Customer** (`/voc-survey`): NPS by segment, KPC gap matrix
+  (importance × target-vs-best-competitor with DIFFERENTIATOR /
+  VULNERABILITY / TABLE_STAKES classification), willingness-to-pay bands.
+- **Win/Loss Analyzer** (`/win-loss`): head-to-head win rate by named
+  competitor, loss-reason mix (price- vs capability-led), price-gap read
+  on losses, quarterly trend.
+- **Medicare Rate Environment** (`/rate-environment`): new market_intel
+  dataset (`content/rate_updates.yaml`, 9 care settings × 3 rule cycles,
+  per-setting policy notes) + blended next-cycle dollar-impact calculator
+  on a target's Medicare revenue × setting mix.
+All five wired into Cmd-K palette, breadcrumb map, sub-nav (CDD Hub under
+Diligence; Excel Templates under Research) and the guide context registry.
+**Verify**: 5 new test files, 53 tests — workbook OOXML validity + formula
+cells + injection guard + LBO cell-ref pins, HTTP download e2e (MIME /
+Content-Disposition / 404), respondent-weighted NPS + classification
+thresholds, win-rate/loss-mix consistency, fixture integrity + blend
+normalization (pct vs fraction), hub link integrity. Full suite green.

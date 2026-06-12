@@ -372,3 +372,15 @@ series colours, footnote, export, size), Pie Chart, Exhibit Composer.
 Charts: +slope (before→after) + gantt/timeline (roadmap) → kit now 23
 types. Example data in Chart Builder. +1 test. Graphics suite: Excel
 Mapping, Chart Builder (23 types), Pie Chart, Exhibit Composer.
+
+---
+## Checkpoint — wave #70 (W2-168, 2026-06-12)
+PE-desk product wave (CDD + Excel + market intel): /excel-templates
+library — 7 live-formula workbooks (Quick LBO, QoE databook, NWC peg,
+13-week cash, CDD market model, payer sensitivity, cohort/NRR) via
+xlsx_writer F() formula cells + blue-input styles; /cdd hub (5-module
+CDD workflow over 20 surfaces); /voc-survey (NPS, KPC gap matrix, WTP);
+/win-loss (conversion record vs named competitors, loss-reason mix);
+/rate-environment (new market_intel rate_updates.yaml — 9 settings × 3
+rule cycles + blended $ impact calculator). Palette + breadcrumbs +
+sub-nav + guide contexts wired. +53 tests across 5 files.

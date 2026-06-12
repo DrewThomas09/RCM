@@ -11995,4 +11995,182 @@ _MANUAL.extend([
 ])
 
 
+# ── PE-desk wave: CDD hub + customer evidence + rate intel + templates ──
+_MANUAL.extend([
+    _ctx(
+        "/cdd", "CDD Hub",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The commercial-due-diligence workflow hub — "
+        "five modules (market, competition, customers, pricing, "
+        "deliverables) mapping the desk's CDD surfaces in running order.",
+        primary_purpose="Give an associate staffed on a commercial sprint "
+        "a table of contents instead of a nav trawl.",
+        intended_users=["Deal team running CDD on a live target."],
+        common_questions=[
+            "Where do I start a commercial diligence sprint?",
+            "Which pages cover market sizing / competitors / customers?",
+        ],
+        inputs=["None — pure navigation."],
+        outputs=["Five workstream modules of cards, each linking to a "
+                 "CDD surface."],
+        key_metrics=["None computed here."],
+        data_sources=["Links only."],
+        model_logic_summary="Static hub; the linked surfaces compute.",
+        why_it_matters="CDD ingredients existed but were scattered across "
+        "four nav sections; the hub makes the workflow legible.",
+        diligence_use_cases=["Kicking off and staffing a CDD sprint."],
+        interpretation_guidance=["Modules run in the order a CDD "
+                                 "engagement actually answers them."],
+        limitations=["Navigation only — no data of its own."],
+        related_routes=["/voc-survey", "/win-loss", "/rate-environment",
+                        "/excel-templates", "/diligence/tam-sam"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.UNKNOWN,
+    ),
+    _ctx(
+        "/voc-survey", "Voice of Customer / Survey Evidence",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Survey-evidence read: NPS by segment, a key-"
+        "purchase-criteria gap matrix vs the best competitor, and "
+        "willingness-to-pay bands.",
+        primary_purpose="Show the customer-evidence half of a CDD readout "
+        "— what buyers say, weighted by what they say matters.",
+        intended_users=["Deal team testing the demand side of a thesis."],
+        common_questions=[
+            "Where does the target beat its best competitor?",
+            "Will customers absorb a price increase?",
+        ],
+        inputs=["Survey panel selector (sector)."],
+        outputs=["KPC gap chart + matrix, segment NPS table, WTP bars, "
+                 "a one-line survey read."],
+        key_metrics=["Blended NPS", "KPC importance × performance gap",
+                     "Churn intent %", "WTP band shares"],
+        data_sources=["Curated illustrative survey panels (the page "
+                      "flags this); shaped to match a vendor panel file."],
+        model_logic_summary="Differentiator = gap ≥ +0.3 on a criterion "
+        "with importance ≥ 3.5/5; vulnerability is the mirror; NPS blends "
+        "respondent-weighted.",
+        why_it_matters="A share story without customer evidence is a "
+        "guess; this is the exhibit ICs ask for first.",
+        diligence_use_cases=["CDD customer-evidence section",
+                             "pricing-power read before a rate case"],
+        interpretation_guidance=["Low-importance gaps are noise — only "
+                                 "high-importance rows classify."],
+        limitations=["Illustrative panel until a real survey file is "
+                     "wired in."],
+        related_routes=["/win-loss", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/win-loss", "Win/Loss Analyzer",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Competitive-conversion record: win rate by "
+        "named competitor, loss-reason decomposition, price-gap read on "
+        "losses, and a quarterly trend.",
+        primary_purpose="Answer whether the target actually converts "
+        "against its named rivals — and whether losses are price-led or "
+        "capability-led.",
+        intended_users=["Deal team pressure-testing a share-gain thesis."],
+        common_questions=[
+            "Who does the target lose to, and why?",
+            "Are losses price-led or capability-led?",
+        ],
+        inputs=["Opportunity-log selector (sector)."],
+        outputs=["Win-rate bars by competitor, loss-reason mix, trend "
+                 "line, segment win-rate table."],
+        key_metrics=["Overall and per-competitor win rate",
+                     "Price-led loss share", "Median price gap on losses"],
+        data_sources=["Curated illustrative opportunity logs (flagged); "
+                      "schema matches a CRM export."],
+        model_logic_summary="Win rates from contested-opportunity counts; "
+        "loss reasons follow a five-bucket taxonomy where PRICE and "
+        "CAPABILITY drive the value-creation implication.",
+        why_it_matters="Price-led and capability-led losses imply "
+        "different value-creation plans; the mix is the strategic read.",
+        diligence_use_cases=["CDD competition section",
+                             "post-close commercial-excellence planning"],
+        interpretation_guidance=["A sub-50% rate against one rival with "
+                                 "incumbency-led losses is a relationship "
+                                 "problem, not a product problem."],
+        limitations=["Illustrative log until target CRM data is wired."],
+        related_routes=["/voc-survey", "/competitive-intel", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/rate-environment", "Medicare Rate Environment",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Setting-level CMS payment updates (IPPS, OPPS, "
+        "PFS, ASC, SNF, HH, Hospice, IRF, ESRD) across three rule cycles, "
+        "with a blended dollar-impact calculator.",
+        primary_purpose="Turn the Medicare rate environment into a number "
+        "in the model: blended next-cycle impact on a target's Medicare "
+        "revenue, by setting mix.",
+        intended_users=["Deal team underwriting Medicare-exposed revenue."],
+        common_questions=[
+            "What is Medicare paying this setting next year?",
+            "What does the rate environment do to this target's revenue?",
+        ],
+        inputs=["Medicare revenue ($M) and setting-mix shares."],
+        outputs=["Updates-by-setting table with 3-cycle compound and "
+                 "policy notes; per-setting and blended dollar impact."],
+        key_metrics=["Net payment update % by setting",
+                     "Mix-weighted blended update", "Revenue impact $"],
+        data_sources=["Curated YAML from CMS final rules "
+                      "(market_intel/content/rate_updates.yaml), "
+                      "refreshed each rule cycle."],
+        model_logic_summary="Blend = Σ(normalized mix share × latest net "
+        "update); dollars = revenue × blend.",
+        why_it_matters="Rate is the revenue line the operator doesn't "
+        "control; HH vs SNF exposure alone can swing a thesis.",
+        diligence_use_cases=["Revenue base-case for Medicare-heavy "
+                             "targets", "setting-mix sensitivity"],
+        interpretation_guidance=["Headline updates hide policy risk — "
+                                 "read the per-setting notes (site-"
+                                 "neutral, behavioral adjustment, PFS "
+                                 "conversion factor)."],
+        limitations=["Headline updates only; verify against the final "
+                     "rule before IC use."],
+        related_routes=["/market-intel", "/payer-intelligence", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/excel-templates", "Excel Model Templates",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Downloadable live-formula workbooks: quick "
+        "LBO, QoE databook, NWC peg, 13-week cash, CDD market model, "
+        "payer-mix sensitivity, cohort/NRR triangle.",
+        primary_purpose="Hand the deal team a working model — blue "
+        "inputs, black formulas — instead of a blank workbook at the "
+        "start of a sprint.",
+        intended_users=["Associates starting a CDD / QoE / screening "
+                        "sprint."],
+        common_questions=[
+            "Is there an LBO template I can download?",
+            "Do the workbooks have live formulas?",
+        ],
+        inputs=["None — pick a template and download."],
+        outputs=["One .xlsx per template with live formulas and the "
+                 "blue-input convention."],
+        key_metrics=["Whatever each model computes (MOIC/IRR, adjusted "
+                     "EBITDA, NWC peg, TAM/SAM/SOM, NRR…)."],
+        data_sources=["Seed assumptions only — every input is meant to "
+                      "be replaced with the target's numbers."],
+        model_logic_summary="Templates are built server-side by the "
+        "stdlib xlsx writer; formulas recompute in Excel on edit.",
+        why_it_matters="Closes the desk's Excel-resources gap — exports "
+        "existed, working models didn't.",
+        diligence_use_cases=["First-hour model setup in any sprint."],
+        interpretation_guidance=["Blue cells are assumptions to edit; "
+                                 "black cells recompute."],
+        limitations=["Seed numbers are illustrative placeholders."],
+        related_routes=["/cdd", "/excel-mapping", "/chart-builder"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+])
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
