@@ -41,7 +41,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 23 | ✅ DONE — P4b: CIM claim chip upgraded to ck_peer_percentile visual (track + scope label, engine rank) | — | W2-182 |
 | 26 | ✅ DONE — exhibit chrome on X-Ray peer roster + screener compare | — | W2-185 |
 | 24 | ✅ DONE — roll-up note: anchor (earlier) + ROLL-UP chip (W2-183) | — | W2-183 |
-| 30 | **A empty-state verification pass** — ?state=ZZ + empty-db walk, screenshot deck (carried #15) | 20 | walker empty-db variant + 4 screenshots |
+| 30 | ✅ DONE — empty-state sweep is a permanent test gate (ZZ + empty db, walker markers) | — | W2-186 |
 | 25 | ✅ DONE — DQ snapshot dates (all WIRED sources carry real vendored dates) | — | verified 2026-06-12 |
 | 29 | ✅ DONE — model-card link on screener footer (/methodology) | — | verified 2026-06-12 |
 | 27 | ✅ DONE — walker --deal-cookie + weekly-sweep second pass | — | W2-184 |

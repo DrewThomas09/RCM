@@ -3814,3 +3814,15 @@ vintage-stamped footer + print-to-PDF page rules):
 source, FY-stamped footer regex) and +2 tests in test_target_screener
 (single-vertical exhibit without the cross caveat; cross-vertical title
 + units). 183 passed across both suites.
+
+## W2-186 (2026-06-12) — Empty-state sweep test: ?state=ZZ + empty-db walk (backlog #30)
+The mechanical half of the carried "empty-state verification pass" is
+now a permanent gate: new test_empty_state_sweep.py boots an open
+server on an EMPTY db and walks (a) nine state-filterable analytics
+pages with ?state=ZZ and (b) eight core portfolio pages, asserting
+200/3xx + no traceback + no nan/None leak via the route-walker marker
+set. The screener ZZ case additionally pins the honest read: the
+results header counts "0 Hospitals" (the filter applied, not silently
+dropped) and the page says so in words; the cross-universe scale strip
+legitimately keeps the full universe sizes as context. 3 tests pass on
+the empty db.
