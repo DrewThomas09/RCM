@@ -79,6 +79,26 @@ class CompareViewFlowTests(unittest.TestCase):
         self.assertIn("My HH pair", h)
         self.assertIn(f'compare={",".join(ccns)}', h)
 
+    def test_all_hospital_set_gets_rollup_link_mixed_does_not(self):
+        # Refill #33: only an all-hospital basket links to the Roll-Up
+        # Builder (HCRIS math is hospitals-only); mixed sets get no
+        # link and no error.
+        from rcm_mc.ui.target_screener_page import (
+            _vertical_rows, render_target_screener)
+        hosp = [r["ccn"] for r in
+                _vertical_rows("hospitals", "TX", limit=3)[:2]]
+        hh = _vertical_rows("home_health", "", limit=1)[0]["ccn"]
+        sets = [
+            {"id": 1, "name": "TX hospital pair", "ccns": hosp,
+             "created_at": "2026-06-12T00:00:00+00:00"},
+            {"id": 2, "name": "mixed pair", "ccns": [hosp[0], hh],
+             "created_at": "2026-06-12T00:00:00+00:00"},
+        ]
+        h = render_target_screener({"view": ["compare"]},
+                                   owner="anna", peer_sets=sets)
+        self.assertIn(f'/pipeline/rollup?ccns={",".join(hosp)}', h)
+        self.assertNotIn(f'/pipeline/rollup?ccns={hosp[0]},{hh}', h)
+
     def test_http_save_then_load(self):
         from rcm_mc.server import build_server
         tmp = tempfile.TemporaryDirectory()

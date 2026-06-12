@@ -4121,3 +4121,10 @@ generated_exports row (format, size for the ZIP, generated_by) —
 best-effort, a registry hiccup can never block the download. E2E test:
 hitting the memo endpoint on a real server lands an ic_memo_json row
 readable by list_exports. 10 passed.
+
+## W2-211 (2026-06-12) — Saved peer sets hand off to the Roll-Up Builder (refill #33)
+A saved peer set whose CCNs ALL resolve to the hospitals universe gets
+a "→ roll-up" link straight into /pipeline/rollup?ccns= — the P4 →
+P7 hand-off. Mixed/other-vertical sets get no link and no error (the
+pro-forma combine only has HCRIS math behind hospitals). +1 test
+(hospital pair links, mixed pair doesn't). test_peer_sets: 8 passed.

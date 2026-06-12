@@ -2390,11 +2390,24 @@ def _peer_set_block(owner: str, cols,
     items = ""
     for s in (peer_sets or [])[:12]:
         ccns = ",".join(s["ccns"])
+        # Refill #33: an all-hospital set hands straight to the Roll-Up
+        # Builder (the pro-forma combine only has HCRIS math behind the
+        # hospitals vertical — mixed/other sets get no link, no error).
+        rollup = ""
+        if len(s["ccns"]) >= 2:
+            resolved = [_find_provider(c) for c in s["ccns"]]
+            if all(r and r.get("vertical") == "hospitals"
+                   for r in resolved):
+                rollup = (
+                    f' <a class="ck-link" style="font-size:10px;" '
+                    f'href="/pipeline/rollup?ccns={_h.escape(ccns)}">'
+                    f'→ roll-up</a>')
         items += (
             f'<li style="margin:0 0 6px;display:flex;gap:10px;'
             f'align-items:center;">'
             f'<a class="ck-link" href="/target-screener?view=compare'
             f'&compare={_h.escape(ccns)}">{_h.escape(s["name"])}</a>'
+            f'{rollup}'
             f'<span style="font-family:var(--sc-mono);font-size:9.5px;'
             f'color:var(--sc-text-dim,#6a7480);">{len(s["ccns"])} CCNs · '
             f'{_h.escape(str(s["created_at"])[:10])}</span>'
