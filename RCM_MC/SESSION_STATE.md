@@ -43,7 +43,23 @@
   presets (Conservative/Base/Aggressive); per-segment divergence (8
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
-- current_step: looping; branch==main @ a701ee0 (checkpoint 86)
+- current_step: looping; wave #70 on branch claude/pipeline-data-graphs-8ld7ng
+- PRE-MERGE SWEEP (W2-183): fixed 3 main-inherited reds (universe
+  kind, /visuals guide floor + catalog gaps, flagship rank tie).
+- WAVE 84 (W2-182): Saved Charts library (/charts + saved_charts
+  table + save strips on builder/exhibit, owner-scoped, e2e-tested);
+  found-fix: texas-infusion missing from /diligence catalog.
+- WAVE 83 (W2-181): builder↔exhibit round-trip (send-to-exhibit
+  with shaped table, edit-in-builder back-links) + platform-data
+  selects on exhibit panels (has_qs dataset fix).
+- WAVE 82 (W2-180): one-click platform datasets (10 real CMS
+  aggregates via new data/chart_datasets.py) on /chart-builder.
+- WAVE 81 (W2-179): annotations layer (ref/target line, avg line,
+  auto-CAGR tag) + bar_stacked/waffle/smallmult (kit 30 types).
+- WAVE 80 (W2-178): chart data-shaping pipeline (group/sort/top-N/calc
+  dropdowns), pareto/histogram/boxplot/dumbbell (kit 27 types),
+  trendline+R² on line/scatter; guide 5-Q invariant fixed for the 4
+  chart pages (was failing on main).
 - DILIGENCE UPGRADE WAVE (checkpoints 79-86): at-a-glance visuals on 7
   surfaces — bear-case severity matrix, CIM variance chart, bankruptcy
   pattern strip, cliff hold timeline, pipeline compute bars, checklist

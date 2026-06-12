@@ -6901,6 +6901,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.chart_builder_page import render_chart_builder_page
             _cb_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_chart_builder_page(_cb_qs))
+        if path == "/charts":
+            # Saved Charts library — the current user's named Chart
+            # Builder / Exhibit configurations (a chart IS its URL qs).
+            from .portfolio.saved_charts import list_charts
+            from .ui.saved_charts_page import render_saved_charts_page
+            _sc_owner = self._current_username() or ""
+            _sc_rows = list_charts(PortfolioStore(self.config.db_path),
+                                   _sc_owner) if _sc_owner else []
+            return self._send_html(
+                render_saved_charts_page(_sc_rows, owner=_sc_owner))
         if path == "/pie-chart":
             # Pie Chart — a client-ready pie/donut from per-slice label /
             # value / colour rows (no table paste); qs carries the slices
@@ -13489,6 +13499,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_save_post()
         if path == "/api/target-screener/delete":
             return self._route_target_screener_delete_post()
+        if path == "/api/charts/save":
+            return self._route_charts_save_post()
+        if path == "/api/charts/delete":
+            return self._route_charts_delete_post()
         if path == "/api/target-screener/snapshot":
             return self._route_target_screener_snapshot_post()
         if path == "/api/peer-sets/save":
@@ -14177,6 +14191,42 @@ class RCMHandler(BaseHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 pass
         return self._redirect("/target-screener?view=compare")
+
+    def _route_charts_save_post(self) -> None:
+        """POST /api/charts/save — persist a named chart for the current
+        user (Saved Charts library). The chart is its route + query
+        string; the form snapshots location.search at submit."""
+        from .portfolio.saved_charts import save_chart
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        title = (form.get("title", "") or "").strip()
+        route = (form.get("route", "") or "").strip()
+        params = (form.get("query_params", "") or "").strip()
+        if owner and title:
+            try:
+                save_chart(PortfolioStore(self.config.db_path), owner,
+                           title, route, params)
+            except ValueError:
+                pass    # forged/odd route — drop silently, never 500
+            except Exception:  # noqa: BLE001 — never 500 on a save hiccup
+                pass
+        return self._redirect("/charts")
+
+    def _route_charts_delete_post(self) -> None:
+        """POST /api/charts/delete — remove one of the current user's
+        saved charts by id (owner-scoped in the store's WHERE)."""
+        from .portfolio.saved_charts import delete_chart
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        cid = self._clamp_int(form.get("id", "0"), default=0, min_v=0,
+                              max_v=10**9)
+        if owner and cid:
+            try:
+                delete_chart(PortfolioStore(self.config.db_path), owner,
+                             cid)
+            except Exception:  # noqa: BLE001
+                pass
+        return self._redirect("/charts")
 
     def _route_target_screener_snapshot_post(self) -> None:
         """POST /api/target-screener/snapshot — P9 vintage-diff baseline.
