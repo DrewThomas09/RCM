@@ -145,6 +145,10 @@ _PILLARS: List[Mapping[str, object]] = [
              "label": "Texas Infusion Market",
              "blurb": "Worked CDD sizing: TAM/SAM, segmentation, "
                       "concentration, metro ranking."},
+            {"href": "/diligence/infusion-markets",
+             "label": "Infusion Market Scan",
+             "blurb": "Every state ranked for an infusion roll-up — "
+                      "demand, supply, fragmentation."},
             {"href": "/diligence/bear-case",
              "label": "Bear Case",
              "blurb": "The defensible bear case for this deal."},
