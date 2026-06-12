@@ -593,7 +593,9 @@ def _multiples_directory() -> str:
         f'<p class="ck-section-body">EV/EBITDA bands across {n_specs} '
         f'healthcare specialties ({len(rows_data)} specialty × size-band '
         f'combinations). Click a specialty to focus it against a target '
-        f'EV.</p>{table}',
+        f'EV. <a href="/transaction-multiples.xlsx" download '
+        f'style="color:#155752;font-weight:600">Download the library '
+        f'(.xlsx)</a>.</p>{table}',
         title="Private-market transaction multiples — full library",
     )
 
@@ -918,3 +920,36 @@ def render_market_intel_page(
         active_nav="/market-intel",
         subtitle="Public-market + PE transaction overlay",
     )
+
+
+def transaction_multiples_xlsx() -> bytes:
+    """The multiples library as a comps-tab-ready sheet — partners
+    paste these bands into deal models; shipping the directory as a
+    workbook saves the retyping (and the typos)."""
+    from rcm_mc.exports.xlsx_writer import Sheet, write_xlsx
+    from rcm_mc.market_intel.transaction_multiples import _load
+    data = _load()
+    rows: list = [
+        [("HEALTHCARE TRANSACTION MULTIPLES — EV/EBITDA", "header")]
+        + [("", "header")] * 5,
+        [f"Curated from public aggregates · last reviewed "
+         f"{data.get('last_reviewed', '')} · verify before IC use."],
+        [""],
+        [("Specialty", "header"), ("Size band", "header"),
+         ("P25", "header"), ("P50", "header"), ("P75", "header"),
+         ("n (TTM)", "header")],
+    ]
+    bands = sorted(data.get("bands") or (),
+                   key=lambda r: (str(r.get("specialty", "")),
+                                  str(r.get("deal_size_band", ""))))
+    for r in bands:
+        rows.append([
+            str(r.get("specialty", "")).replace("_", " ").title(),
+            str(r.get("deal_size_band", "")).replace("_", " "),
+            (float(r["p25_ev_ebitda"]), "mult"),
+            (float(r["p50_ev_ebitda"]), "mult"),
+            (float(r["p75_ev_ebitda"]), "mult"),
+            (int(r.get("sample_size_trailing_12_mo", 0) or 0), "num"),
+        ])
+    return write_xlsx([Sheet("Multiples", rows,
+                             col_widths=[30, 16, 9, 9, 9, 9])])

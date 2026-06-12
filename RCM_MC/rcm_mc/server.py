@@ -6802,6 +6802,21 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_rx)
             return
+        if path == "/transaction-multiples.xlsx":
+            from .ui.market_intel_page import transaction_multiples_xlsx
+            _tm = transaction_multiples_xlsx()
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="transaction_multiples.xlsx"')
+            self.send_header("Content-Length", str(len(_tm)))
+            self.end_headers()
+            self.wfile.write(_tm)
+            return
         if path == "/pricing-power.xlsx":
             from .ui.data_public.pricing_power_page import pricing_power_xlsx
             _pp_qs = urllib.parse.parse_qs(parsed.query)
@@ -20487,7 +20502,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # File-download endpoints (serve bytes, not a page; the owning
         # page carries the Guide context and the download button)
         "/rate-environment.xlsx", "/pricing-power.xlsx",
-        "/labor-market.xlsx",
+        "/labor-market.xlsx", "/transaction-multiples.xlsx",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
