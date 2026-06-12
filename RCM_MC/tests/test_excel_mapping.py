@@ -2,8 +2,9 @@
 
 Drive it from a {state: percentage} dict (or an Excel paste) + three
 gradient colours; it interpolates low→mid→high and labels each state in
-black serif text. Tests pin the gradient math, the Excel-paste parser,
-the form/qs overrides, and the route wiring.
+black serif text on real Census geography. Tests pin the gradient math,
+the Excel-paste parser, the form/qs overrides, the geographic SVG
+(label anchors, NE-callout column, embedded legend), and route wiring.
 """
 from __future__ import annotations
 
@@ -11,7 +12,8 @@ import unittest
 
 from rcm_mc.ui.excel_mapping_page import (
     gradient_color, parse_values_text, resolve_inputs,
-    render_excel_mapping_page, _STATE_TILE, DEFAULT_STATE_VALUES,
+    render_excel_mapping_page, STATE_NAMES, DEFAULT_STATE_VALUES,
+    _label_anchors, _CALLOUT_STATES,
 )
 
 
@@ -69,10 +71,24 @@ class ParseTests(unittest.TestCase):
         out = parse_values_text("garbage\nZZ 10\nTX 5\n\n  ")
         self.assertEqual(out, {"TX": 5.0})
 
-    def test_every_default_state_is_a_real_tile(self):
-        # The Python-editable default dict only references real states.
+    def test_every_default_state_is_real_geography(self):
+        # The Python-editable default dict only references states that
+        # exist in the vendored Census geometry.
         for code in DEFAULT_STATE_VALUES:
-            self.assertIn(code, _STATE_TILE)
+            self.assertIn(code, STATE_NAMES)
+
+
+class GeographyTests(unittest.TestCase):
+    def test_every_directly_labelled_state_has_an_anchor(self):
+        anchors = _label_anchors()
+        for code in STATE_NAMES:
+            if code not in _CALLOUT_STATES:
+                self.assertIn(code, anchors)
+
+    def test_anchors_fall_inside_the_viewbox(self):
+        for code, (x, y) in _label_anchors().items():
+            self.assertTrue(0 <= x <= 960, f"{code} x={x}")
+            self.assertTrue(0 <= y <= 553, f"{code} y={y}")
 
 
 class ResolveTests(unittest.TestCase):
@@ -107,6 +123,26 @@ class RenderAndRouteTests(unittest.TestCase):
         h = render_excel_mapping_page({"data": ["TX 77\nCA 12"]})
         self.assertIn(">77<", h)
         self.assertIn(">12<", h)
+
+    def test_renders_real_geography_not_tiles(self):
+        h = render_excel_mapping_page({})
+        # Real state outlines are <path> elements with vendored "d" data;
+        # the old tile cartogram drew one uniform <rect> per state.
+        self.assertIn('class="em-state"', h)
+        self.assertIn('data-state="TX"', h)
+        self.assertIn('data-name="Texas"', h)
+        # NE small states render in the callout swatch column.
+        for code in _CALLOUT_STATES:
+            self.assertIn(f'class="em-callout" data-state="{code}"', h)
+        # Embedded gradient legend makes SVG/PNG exports self-contained.
+        self.assertIn('id="emGrad"', h)
+
+    def test_custom_title_is_drawn_on_the_svg(self):
+        h = render_excel_mapping_page({"title": ["Q3 coverage"]})
+        self.assertIn("Q3 coverage", h)
+        # Title is escaped.
+        h2 = render_excel_mapping_page({"title": ["<b>x</b>"]})
+        self.assertNotIn("<b>x</b>", h2)
 
     def test_registered_in_palette_and_nav(self):
         from rcm_mc.ui._chartis_kit import (

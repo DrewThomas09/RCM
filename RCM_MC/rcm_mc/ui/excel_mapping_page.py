@@ -1,11 +1,19 @@
-"""Excel mapping — a configurable US-state choropleth you drive from
-Python (or paste from Excel).
+"""Excel mapping — a configurable real-geography US choropleth you
+drive from Python (or paste from Excel).
 
 The point of this page is to be a *generic* mapping utility, separate
 from any one analysis: set three gradient colors (low / mid / high),
 hand it a ``{state: percentage}`` dict, and it colours every state by
-interpolating the gradient across the values, printing each percentage
-in black serif text on the tile.
+interpolating the gradient across the values, printing each value in
+black serif text on the state.
+
+The map is the real United States — the same vendored Albers-projected
+US Census state boundaries that power /portfolio/map
+(``_us_geo_paths.py``; public domain, no runtime network) — not a
+square-tile cartogram. Alaska and Hawaii render as bottom-left insets;
+the nine small Northeast jurisdictions (VT NH MA RI CT NJ DE MD DC)
+are labelled in a swatch column beside the Atlantic seaboard because
+their shapes are too small to hold text.
 
 Two ways to drive it:
 
@@ -13,9 +21,10 @@ Two ways to drive it:
      ``DEFAULT_*_COLOR`` constants below. That dict is the source of
      truth when no form input is supplied.
   2. **In the page** — the form accepts three colour pickers, an
-     optional low/mid/high domain, and a textarea you can paste
-     Excel rows into (``TX  61`` / ``TX,61`` / ``Texas 61`` — tab,
-     comma, or whitespace separated).
+     optional low/mid/high domain, a map title, and a textarea you can
+     paste Excel rows into (``TX  61`` / ``TX,61`` / ``Texas 61`` —
+     tab, comma, or whitespace separated). The whole configuration
+     lives in the URL, so the rendered map is shareable as a link.
 
 Nothing here is a data claim: the default values are clearly-labelled
 example placeholders meant to be overwritten with your own numbers.
@@ -23,9 +32,11 @@ example placeholders meant to be overwritten with your own numbers.
 from __future__ import annotations
 
 import html
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
+from ._us_geo_paths import US_STATE_PATHS
 from .cdd_chart_kit import chart_export_toolbar
 
 # ── Editable config (drive the map from Python here) ─────────────────
@@ -49,41 +60,17 @@ DEFAULT_STATE_VALUES: Dict[str, float] = {
     "WV": 41, "WI": 52, "WY": 39,
 }
 
-# ── US tile grid (schematic; labelled, not a geographic projection) ──
-_STATE_TILE: Dict[str, Tuple[int, int]] = {
-    "AK": (0, 0), "ME": (0, 10),
-    "VT": (1, 9), "NH": (1, 10),
-    "WA": (2, 0), "ID": (2, 1), "MT": (2, 2), "ND": (2, 3), "MN": (2, 4),
-    "IL": (2, 5), "WI": (2, 6), "MI": (2, 7), "NY": (2, 8), "MA": (2, 9),
-    "RI": (2, 10),
-    "OR": (3, 0), "NV": (3, 1), "WY": (3, 2), "SD": (3, 3), "IA": (3, 4),
-    "IN": (3, 5), "OH": (3, 6), "PA": (3, 7), "NJ": (3, 8), "CT": (3, 9),
-    "CA": (4, 0), "UT": (4, 1), "CO": (4, 2), "NE": (4, 3), "MO": (4, 4),
-    "KY": (4, 5), "WV": (4, 6), "VA": (4, 7), "MD": (4, 8), "DE": (4, 9),
-    "AZ": (5, 1), "NM": (5, 2), "KS": (5, 3), "AR": (5, 4), "TN": (5, 5),
-    "NC": (5, 6), "SC": (5, 7), "DC": (5, 8),
-    "OK": (6, 3), "LA": (6, 4), "MS": (6, 5), "AL": (6, 6), "GA": (6, 7),
-    "HI": (7, 0), "TX": (7, 3), "FL": (7, 8),
-}
+#: code → full name, straight from the vendored Census geometry, so the
+#: set of valid codes and the drawn shapes can never disagree.
+STATE_NAMES: Dict[str, str] = {
+    code: rec["name"] for code, rec in US_STATE_PATHS.items()}
 
-_NAME_TO_CODE = {
-    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
-    "california": "CA", "colorado": "CO", "connecticut": "CT",
-    "delaware": "DE", "district of columbia": "DC", "florida": "FL",
-    "georgia": "GA", "hawaii": "HI", "idaho": "ID", "illinois": "IL",
-    "indiana": "IN", "iowa": "IA", "kansas": "KS", "kentucky": "KY",
-    "louisiana": "LA", "maine": "ME", "maryland": "MD",
-    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN",
-    "mississippi": "MS", "missouri": "MO", "montana": "MT",
-    "nebraska": "NE", "nevada": "NV", "new hampshire": "NH",
-    "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
-    "north carolina": "NC", "north dakota": "ND", "ohio": "OH",
-    "oklahoma": "OK", "oregon": "OR", "pennsylvania": "PA",
-    "rhode island": "RI", "south carolina": "SC", "south dakota": "SD",
-    "tennessee": "TN", "texas": "TX", "utah": "UT", "vermont": "VT",
-    "virginia": "VA", "washington": "WA", "west virginia": "WV",
-    "wisconsin": "WI", "wyoming": "WY",
-}
+_NAME_TO_CODE = {name.lower(): code for code, name in STATE_NAMES.items()}
+
+#: Northeast jurisdictions too small to hold an on-shape label — they
+#: get a swatch column in the Atlantic gutter instead (north → south).
+_CALLOUT_STATES: Tuple[str, ...] = (
+    "VT", "NH", "MA", "RI", "CT", "NJ", "DE", "MD", "DC")
 
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
           "'Times New Roman', serif")
@@ -153,7 +140,7 @@ def parse_values_text(text: str) -> Dict[str, float]:
             continue
         key, val = parts[0], parts[-1]
         code = key.strip().upper()
-        if code not in _STATE_TILE:
+        if code not in STATE_NAMES:
             code = _NAME_TO_CODE.get(key.strip().lower(), "")
         if not code:
             continue
@@ -182,17 +169,68 @@ def _qs1(qs: Optional[Dict[str, Any]], key: str, default: str = "") -> str:
     return str(v) if v not in (None, "") else default
 
 
+# ── Geometry: on-shape label anchors ─────────────────────────────────
+
+_PAIR_RE = re.compile(r"(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)")
+
+#: Hand nudges (dx, dy) where the polygon centroid sits awkwardly —
+#: Louisiana's delta pulls it east, Hawaii's label reads better beside
+#: the island chain than on top of it.
+_ANCHOR_NUDGE: Dict[str, Tuple[float, float]] = {
+    "LA": (-5.0, -5.0),
+    "HI": (14.0, -16.0),
+    "AK": (-14.0, -8.0),
+    # PR is a sliver inset at the very bottom-right corner; lift the
+    # label above it so the value line doesn't clip the viewBox edge.
+    "PR": (0.0, -12.0),
+}
+
+_anchor_cache: Dict[str, Tuple[float, float]] = {}
+
+
+def _label_anchors() -> Dict[str, Tuple[float, float]]:
+    """Shoelace centroid of each state's largest subpath (so Michigan
+    labels its lower peninsula, Hawaii its biggest island), cached."""
+    if _anchor_cache:
+        return _anchor_cache
+    for code, rec in US_STATE_PATHS.items():
+        best: Optional[Tuple[float, float, float]] = None  # area, cx, cy
+        for seg in rec["d"].split("M"):
+            pts = [(float(x), float(y)) for x, y in _PAIR_RE.findall(seg)]
+            if len(pts) < 3:
+                continue
+            a = cx = cy = 0.0
+            n = len(pts)
+            for i in range(n):
+                x0, y0 = pts[i]
+                x1, y1 = pts[(i + 1) % n]
+                cross = x0 * y1 - x1 * y0
+                a += cross
+                cx += (x0 + x1) * cross
+                cy += (y0 + y1) * cross
+            if abs(a) < 1e-9:
+                continue
+            if best is None or abs(a) / 2 > best[0]:
+                best = (abs(a) / 2, cx / (3 * a), cy / (3 * a))
+        if best is None:
+            continue
+        dx, dy = _ANCHOR_NUDGE.get(code, (0.0, 0.0))
+        _anchor_cache[code] = (best[1] + dx, best[2] + dy)
+    return _anchor_cache
+
+
 # ── Render ───────────────────────────────────────────────────────────
 
 def resolve_inputs(
     qs: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Resolve the effective colours / domain / values from the form
-    (qs) with the Python module defaults as the fallback."""
+    """Resolve the effective colours / domain / values / title from the
+    form (qs) with the Python module defaults as the fallback."""
     c_low = _qs1(qs, "low", DEFAULT_LOW_COLOR)
     c_mid = _qs1(qs, "mid", DEFAULT_MID_COLOR)
     c_high = _qs1(qs, "high", DEFAULT_HIGH_COLOR)
     data_text = _qs1(qs, "data", "")
+    title = _qs1(qs, "title", "").strip()
     values = parse_values_text(data_text) if data_text.strip() \
         else dict(DEFAULT_STATE_VALUES)
     nums = [v for v in values.values() if v is not None]
@@ -210,55 +248,162 @@ def resolve_inputs(
     mid = _num("midv", (lo + hi) / 2.0)
     return {
         "c_low": c_low, "c_mid": c_mid, "c_high": c_high,
-        "lo": lo, "mid": mid, "hi": hi,
+        "lo": lo, "mid": mid, "hi": hi, "title": title,
         "values": values, "data_text": data_text or _values_to_text(values),
     }
 
 
+def _ranks(values: Dict[str, float]) -> Dict[str, int]:
+    ordered = sorted(values.items(), key=lambda kv: -kv[1])
+    return {code: i + 1 for i, (code, _) in enumerate(ordered)}
+
+
+def _label_text(x: float, y: float, code: str, label: str,
+                cls: str = "em-label") -> str:
+    """Two-line black serif label (code over value) with a white halo so
+    it stays legible on the dark end of the gradient. The halo is a
+    separate underlying stroke-only copy (not paint-order) so exported
+    SVGs survive renderers that ignore paint-order (Office, cairosvg)."""
+    def _line(yy: float, size: float, weight: str, text: str) -> str:
+        common = (f'class="{cls}" x="{x:.1f}" y="{yy:.1f}" '
+                  f'text-anchor="middle" font-family="{_SERIF}" '
+                  f'font-size="{size:g}" font-weight="{weight}" '
+                  f'pointer-events="none"')
+        t = html.escape(text)
+        return (f'<text {common} fill="none" stroke="#ffffff" '
+                f'stroke-width="1.7" stroke-linejoin="round">{t}</text>'
+                f'<text {common} fill="#000000">{t}</text>')
+    out = _line(y - 1.5, 9, "700", code)
+    if label:
+        out += _line(y + 8.5, 9.5, "400", label)
+    return out
+
+
+def _svg_legend(cfg: Dict[str, Any]) -> str:
+    """Gradient legend drawn inside the SVG (bottom-right gutter) so
+    SVG/PNG exports are self-contained."""
+    x, y, w, h = 700.0, 508.0, 220.0, 12.0
+    stops = (
+        f'<stop offset="0%" stop-color="{html.escape(cfg["c_low"])}"/>'
+        f'<stop offset="50%" stop-color="{html.escape(cfg["c_mid"])}"/>'
+        f'<stop offset="100%" stop-color="{html.escape(cfg["c_high"])}"/>')
+    tick = (f'font-family="{_SERIF}" font-size="11" fill="#1a2332" '
+            f'pointer-events="none"')
+    return (
+        f'<defs><linearGradient id="emGrad" x1="0" y1="0" x2="1" y2="0">'
+        f'{stops}</linearGradient></defs>'
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" '
+        f'fill="url(#emGrad)" stroke="#c9c1ac" stroke-width="0.6"/>'
+        f'<text x="{x}" y="{y + h + 12}" text-anchor="start" {tick}>'
+        f'{_fmt(cfg["lo"])}</text>'
+        f'<text x="{x + w / 2}" y="{y + h + 12}" text-anchor="middle" {tick}>'
+        f'{_fmt(cfg["mid"])}</text>'
+        f'<text x="{x + w}" y="{y + h + 12}" text-anchor="end" {tick}>'
+        f'{_fmt(cfg["hi"])}</text>'
+        f'<rect x="{x}" y="{y - 22}" width="11" height="11" rx="2" '
+        f'fill="#e6e3dc" stroke="#c9c1ac" stroke-width="0.6"/>'
+        f'<text x="{x + 16}" y="{y - 13}" text-anchor="start" {tick}>'
+        f'no data</text>')
+
+
 def _map_svg(cfg: Dict[str, Any]) -> str:
-    cell, gap = 10.0, 0.8
-    ncol, nrow = 11, 8
-    vals, lo, mid, hi = (cfg["values"], cfg["lo"], cfg["mid"], cfg["hi"])
-    tiles = ""
-    for code, (r, c) in _STATE_TILE.items():
+    vals, lo, mid, hi = cfg["values"], cfg["lo"], cfg["mid"], cfg["hi"]
+    anchors = _label_anchors()
+    ranks = _ranks(vals)
+    n_ranked = len(ranks)
+
+    shapes, labels = "", ""
+    for code, rec in US_STATE_PATHS.items():
         v = vals.get(code)
-        x, y = c * cell, r * cell
         fill = gradient_color(v, lo, mid, hi, cfg["c_low"], cfg["c_mid"],
                               cfg["c_high"])
         label = _fmt(v) if v is not None else ""
-        tiles += (
-            f'<g><rect x="{x:.1f}" y="{y:.1f}" width="{cell-gap:.1f}" '
-            f'height="{cell-gap:.1f}" rx="1.3" fill="{fill}" '
-            f'stroke="#ffffff" stroke-width="0.5">'
-            f'<title>{html.escape(code)}: {html.escape(label or "—")}</title>'
-            f'</rect>'
-            # Black serif text "above" (on top of) the gradient.
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+3.7:.1f}" '
-            f'text-anchor="middle" font-family="{_SERIF}" font-size="2.9" '
-            f'font-weight="700" fill="#000000">{html.escape(code)}</text>'
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+6.9:.1f}" '
-            f'text-anchor="middle" font-family="{_SERIF}" font-size="3.0" '
-            f'fill="#000000" style="paint-order:stroke;stroke:#ffffff;'
-            f'stroke-width:0.5px;">{html.escape(label)}</text></g>')
+        name = rec["name"]
+        tip = f"{name} — {label or 'no data'}"
+        rank_attr = (f' data-rank="{ranks[code]}" data-n="{n_ranked}"'
+                     if code in ranks else "")
+        shapes += (
+            f'<path class="em-state" data-state="{code}" '
+            f'data-name="{html.escape(name)}" '
+            f'data-value="{html.escape(label)}"{rank_attr} '
+            f'd="{rec["d"]}" fill="{fill}" stroke="#ffffff" '
+            f'stroke-width="0.7" tabindex="0" role="button" '
+            f'aria-label="{html.escape(tip)}">'
+            f'<title>{html.escape(tip)}</title></path>')
+        if code not in _CALLOUT_STATES and code in anchors:
+            ax, ay = anchors[code]
+            labels += _label_text(ax, ay, code, label)
+
+    # Small-Northeast swatch column in the Atlantic gutter.
+    callouts = ""
+    cx, cy0, step = 812.0, 96.0, 26.0
+    for i, code in enumerate(_CALLOUT_STATES):
+        v = vals.get(code)
+        fill = gradient_color(v, lo, mid, hi, cfg["c_low"], cfg["c_mid"],
+                              cfg["c_high"])
+        label = _fmt(v) if v is not None else "—"
+        y = cy0 + i * step
+        callouts += (
+            f'<g class="em-callout" data-state="{code}">'
+            f'<rect x="{cx}" y="{y}" width="15" height="15" rx="2.5" '
+            f'fill="{fill}" stroke="#ffffff" stroke-width="0.7">'
+            f'<title>{html.escape(STATE_NAMES[code])}: '
+            f'{html.escape(label)}</title></rect>'
+            f'<text x="{cx + 22}" y="{y + 11.5}" text-anchor="start" '
+            f'font-family="{_SERIF}" font-size="11" font-weight="700" '
+            f'fill="#000000" pointer-events="none">{html.escape(code)}'
+            f'</text><text x="{cx + 52}" y="{y + 11.5}" text-anchor="start" '
+            f'font-family="{_SERIF}" font-size="11" fill="#000000" '
+            f'pointer-events="none">{html.escape(label)}</text></g>')
+
+    # .get(): callers like ma_penetration_page build a minimal cfg dict
+    # without the form-only "title" key.
+    title_el = ""
+    if cfg.get("title"):
+        title_el = (
+            f'<text x="952" y="22" text-anchor="end" '
+            f'font-family="{_SERIF}" font-size="18" font-weight="700" '
+            f'fill="#0b2341" pointer-events="none">'
+            f'{html.escape(cfg["title"])}</text>')
+
     return (
-        f'<svg viewBox="-1 -1 {ncol*cell+1:.0f} {nrow*cell+1:.0f}" '
-        f'width="100%" height="430" role="img" '
-        f'aria-label="US state choropleth" style="max-width:760px;">'
-        f'{tiles}</svg>')
+        f'<svg viewBox="0 0 960 553" width="100%" role="img" '
+        f'aria-label="US state choropleth (geographic)" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'style="max-width:980px;display:block;background:#fdfcf9;'
+        f'border:1px solid #d6cfc0;border-radius:6px;">'
+        f'{title_el}{shapes}'
+        f'<g id="emLabels">{labels}{callouts}</g>'
+        f'{_svg_legend(cfg)}</svg>')
 
 
-def _legend(cfg: Dict[str, Any]) -> str:
-    grad = (f'linear-gradient(90deg,{cfg["c_low"]},{cfg["c_mid"]} 50%,'
-            f'{cfg["c_high"]})')
+def _stats(cfg: Dict[str, Any]) -> str:
+    vals = {k: v for k, v in cfg["values"].items() if v is not None}
+    if not vals:
+        return ""
+    nums = sorted(vals.values())
+    n = len(nums)
+    mean = sum(nums) / n
+    median = (nums[n // 2] if n % 2 else (nums[n // 2 - 1] + nums[n // 2]) / 2)
+    hi_code = max(vals, key=lambda k: vals[k])
+    lo_code = min(vals, key=lambda k: vals[k])
+
+    def _cell(label: str, value: str) -> str:
+        return (
+            f'<div style="border:1px solid #d6cfc0;border-radius:6px;'
+            f'background:#fbf9f4;padding:8px 14px;min-width:108px;">'
+            f'<div style="font-size:10px;letter-spacing:0.06em;'
+            f'color:#7a8699;font-weight:700;">{label}</div>'
+            f'<div class="num" style="font-family:{_SERIF};font-size:17px;'
+            f'font-weight:700;color:#1a2332;">{value}</div></div>')
     return (
-        f'<div style="display:flex;align-items:center;gap:10px;'
-        f'font-family:{_SERIF};font-size:13px;color:#1a2332;margin-top:6px;">'
-        f'<span>{_fmt(cfg["lo"])}</span>'
-        f'<span style="flex:0 0 240px;height:14px;border-radius:3px;'
-        f'background:{grad};border:1px solid #c9c1ac;"></span>'
-        f'<span>{_fmt(cfg["mid"])}</span>'
-        f'<span style="flex:0 0 0;"></span>'
-        f'<span>{_fmt(cfg["hi"])}</span></div>')
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">'
+        + _cell("STATES", f"{n} / {len(STATE_NAMES)}")
+        + _cell("HIGHEST", f"{html.escape(hi_code)} · {_fmt(vals[hi_code])}")
+        + _cell("LOWEST", f"{html.escape(lo_code)} · {_fmt(vals[lo_code])}")
+        + _cell("MEAN", _fmt(round(mean, 1)))
+        + _cell("MEDIAN", _fmt(median))
+        + '</div>')
 
 
 def _form(cfg: Dict[str, Any]) -> str:
@@ -289,6 +434,13 @@ def _form(cfg: Dict[str, Any]) -> str:
         + _num("Low value", "lo", cfg["lo"])
         + _num("Mid value", "midv", cfg["mid"])
         + _num("High value", "hi", cfg["hi"])
+        + f'<label style="display:flex;flex-direction:column;gap:3px;'
+        f'font-size:11px;color:#465366;flex:1 1 180px;">Map title (optional, '
+        f'drawn on the export)'
+        f'<input type="text" name="title" value="{html.escape(cfg["title"])}" '
+        f'maxlength="80" placeholder="e.g. MA penetration by state, 2025" '
+        f'style="height:28px;border:1px solid #c9c1ac;border-radius:4px;'
+        f'padding:0 8px;font-family:{_SERIF};"></label>'
         + '</div>'
         + f'<div style="margin-top:12px;"><label style="font-size:11px;'
         f'color:#465366;">Percentages (paste from Excel — '
@@ -306,23 +458,78 @@ def _form(cfg: Dict[str, Any]) -> str:
         f'</form>')
 
 
+def _map_css_js() -> str:
+    css = (
+        '<style>'
+        '#mapOut{position:relative;}'
+        '#mapOut .em-state{transition:filter .12s,stroke .12s;cursor:pointer;}'
+        '#mapOut .em-state:hover{filter:brightness(.9);stroke:#0b2341;'
+        'stroke-width:1.4;}'
+        '#mapOut .em-state:focus-visible{outline:none;stroke:#1F7A75;'
+        'stroke-width:2;}'
+        '#mapOut .em-state.em-selected{stroke:#0b2341;stroke-width:2.4;}'
+        '#emTip{display:none;position:absolute;pointer-events:none;'
+        'background:#0b2341;color:#fff;font-size:12px;padding:5px 10px;'
+        'border-radius:4px;white-space:nowrap;z-index:5;'
+        'box-shadow:0 2px 8px rgba(11,35,65,.25);}'
+        '</style>')
+    js = (
+        "<script>(function(){"
+        "var root=document.getElementById('mapOut');if(!root)return;"
+        "var tip=document.getElementById('emTip');"
+        "var chip=document.getElementById('emSel');"
+        "function tipText(p){var v=p.dataset.value;"
+        "var t=p.dataset.name+' \\u2014 '+(v||'no data');"
+        "if(p.dataset.rank)t+='  (rank '+p.dataset.rank+' of '+p.dataset.n+')';"
+        "return t;}"
+        "root.querySelectorAll('.em-state').forEach(function(p){"
+        "p.addEventListener('mousemove',function(e){"
+        "tip.textContent=tipText(p);tip.style.display='block';"
+        "var r=root.getBoundingClientRect();"
+        "tip.style.left=(e.clientX-r.left+16)+'px';"
+        "tip.style.top=(e.clientY-r.top-8)+'px';});"
+        "p.addEventListener('mouseleave',function(){"
+        "tip.style.display='none';});"
+        "function pick(){var was=p.classList.contains('em-selected');"
+        "root.querySelectorAll('.em-selected').forEach(function(o){"
+        "o.classList.remove('em-selected');});"
+        "if(was){chip.style.display='none';return;}"
+        "p.classList.add('em-selected');"
+        "chip.textContent=tipText(p);chip.style.display='inline-block';}"
+        "p.addEventListener('click',pick);"
+        "p.addEventListener('keydown',function(e){"
+        "if(e.key==='Enter'||e.key===' '){e.preventDefault();pick();}});});"
+        "var cb=document.getElementById('emLabelsToggle');"
+        "if(cb)cb.addEventListener('change',function(){"
+        "var g=root.querySelector('#emLabels');"
+        "if(g)g.style.display=cb.checked?'':'none';});"
+        "})();</script>")
+    return css + js
+
+
 def _data_table(cfg: Dict[str, Any]) -> str:
     rows = ""
-    for code, v in sorted(cfg["values"].items(),
-                          key=lambda kv: -(kv[1] if kv[1] is not None else -1)):
+    ordered = sorted(cfg["values"].items(),
+                     key=lambda kv: -(kv[1] if kv[1] is not None else -1))
+    for rank, (code, v) in enumerate(ordered, start=1):
         sw = gradient_color(v, cfg["lo"], cfg["mid"], cfg["hi"],
                             cfg["c_low"], cfg["c_mid"], cfg["c_high"])
         rows += (
             f'<tr style="border-bottom:1px solid #e8e1d0;">'
+            f'<td class="num" style="padding:3px 8px;color:#7a8699;'
+            f'text-align:right;">{rank}</td>'
             f'<td style="padding:3px 8px;"><span style="display:inline-block;'
             f'width:11px;height:11px;border-radius:2px;background:{sw};'
             f'border:1px solid #c9c1ac;margin-right:6px;vertical-align:-1px;">'
-            f'</span>{html.escape(code)}</td>'
+            f'</span>{html.escape(code)} '
+            f'<span style="color:#7a8699;">'
+            f'{html.escape(STATE_NAMES.get(code, ""))}</span></td>'
             f'<td class="num" style="padding:3px 8px;text-align:right;'
             f'font-family:{_SERIF};font-weight:600;">{_fmt(v)}</td></tr>')
     return (
         f'<table style="border-collapse:collapse;font-size:12px;width:100%;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;color:#7a8699;">'
+        f'<th style="text-align:right;padding:3px 8px;">#</th>'
         f'<th style="text-align:left;padding:3px 8px;">State</th>'
         f'<th style="text-align:right;padding:3px 8px;">Value</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>')
@@ -336,21 +543,36 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
         ck_page_title(
             "Excel Mapping",
             eyebrow="UTILITY · STATE CHOROPLETH",
-            meta="Set low / mid / high colours + a value per state — "
-                 "gradient + black serif labels.",
+            meta="Real-geography US map — set low / mid / high colours + a "
+                 "value per state; gradient fills + black serif labels.",
         )
         + ck_source_purpose(
-            purpose="A generic US-state choropleth you drive from a "
+            purpose="A generic US-state choropleth (real Census geography, "
+                    "Albers projection) you drive from a "
                     "{state: percentage} dict or an Excel paste.",
             universe="user-supplied",
             source="Your inputs. Default values are example placeholders "
                    "— overwrite them with your own numbers.",
         )
-        + '<div class="ts-wrap" style="max-width:980px;">'
+        + '<div class="ts-wrap" style="max-width:1010px;">'
         + _form(cfg)
+        + '<div style="display:flex;gap:14px;align-items:center;'
+          'flex-wrap:wrap;margin-bottom:6px;">'
+          '<label style="font-size:12px;color:#465366;display:inline-flex;'
+          'align-items:center;gap:6px;cursor:pointer;">'
+          '<input type="checkbox" id="emLabelsToggle" checked>Show labels'
+          '</label>'
+          '<span id="emSel" style="display:none;font-size:12px;'
+          'font-weight:600;color:#0b2341;background:#fbf9f4;'
+          'border:1px solid #d6cfc0;border-radius:4px;padding:3px 10px;">'
+          '</span>'
+          '<span style="font-size:11px;color:#7a8699;">Hover a state for '
+          'detail · click to pin · the URL captures this exact map, so '
+          'copy it to share.</span></div>'
         + f'<div id="mapOut" style="font-family:{_SERIF};">{_map_svg(cfg)}'
-        f'</div>'
-        + _legend(cfg)
+        f'<div id="emTip"></div></div>'
+        + _map_css_js()
+        + _stats(cfg)
         + chart_export_toolbar("mapOut", "state-map")
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;'
           'margin-top:18px;align-items:start;">'
@@ -367,10 +589,20 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
           '<code>excel_mapping_page.py</code>.</p>'
           '<p style="margin-top:6px;"><strong>In the page:</strong> pick '
           'the three colours, optionally set the low/mid/high value '
-          'domain (blank = auto from your data), and paste '
-          '<code>STATE&nbsp;VALUE</code> rows from Excel. The gradient '
-          'interpolates low→mid→high; each state shows its value in black '
-          'serif text.</p></div>'
+          'domain (blank = auto from your data) and a map title, and '
+          'paste <code>STATE&nbsp;VALUE</code> rows from Excel. The '
+          'gradient interpolates low→mid→high; each state shows its '
+          'value in black serif text.</p>'
+          '<p style="margin-top:6px;"><strong>Geography:</strong> real US '
+          'Census state boundaries (Albers projection, public domain). '
+          'Alaska and Hawaii are bottom-left insets, Puerto Rico a '
+          'bottom-right inset; the nine small Northeast jurisdictions '
+          '(VT NH MA RI CT NJ DE MD DC) are labelled in the swatch '
+          'column beside the Atlantic coast because their shapes are '
+          'too small to hold text.</p>'
+          '<p style="margin-top:6px;"><strong>Export:</strong> the '
+          'SVG/PNG downloads include the legend and title, so the file '
+          'drops straight into a deck.</p></div>'
         + '</div></div>')
     return chartis_shell(
         body, "Excel Mapping", active_nav="/research",
