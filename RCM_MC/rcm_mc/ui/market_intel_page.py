@@ -543,12 +543,69 @@ def _public_comps_section(
     )
 
 
+def _multiples_directory() -> str:
+    """The full specialty × size-band library, rendered when no
+    specialty is selected. Before this, the 29-band library was
+    invisible unless the caller already knew a specialty code — the
+    directory makes the depth browsable and each row links the
+    focused view."""
+    from rcm_mc.market_intel.transaction_multiples import _load
+    from ._chartis_kit import ck_data_cell
+    rows_data = _load().get("bands") or []
+    by_spec: dict = {}
+    for r in rows_data:
+        by_spec.setdefault(str(r.get("specialty", "")), []).append(r)
+    trs = []
+    for spec in sorted(by_spec):
+        for r in sorted(by_spec[spec],
+                        key=lambda x: str(x.get("deal_size_band", ""))):
+            label = spec.replace("_", " ").title()
+            note = (r.get("note") or "").strip().replace("\n", " ")
+            trs.append("<tr>" + "".join([
+                ck_data_cell(
+                    f'<a href="/market-intel?specialty={html.escape(spec)}" '
+                    f'style="color:inherit">{html.escape(label)}</a>',
+                    mono=True, weight=600),
+                ck_data_cell(html.escape(
+                    str(r.get("deal_size_band", "")).replace("_", " ")),
+                    mono=True),
+                ck_data_cell(f'{float(r["p25_ev_ebitda"]):.2f}x',
+                             align="right", mono=True),
+                ck_data_cell(f'{float(r["p50_ev_ebitda"]):.2f}x',
+                             align="right", mono=True, weight=600),
+                ck_data_cell(f'{float(r["p75_ev_ebitda"]):.2f}x',
+                             align="right", mono=True),
+                ck_data_cell(str(r.get("sample_size_trailing_12_mo", "")),
+                             align="right", mono=True, tone="dim"),
+                f'<td class="ck-cell" style="max-width:300px;font-size:10px;'
+                f'color:#6b7280">{html.escape(note)}</td>',
+            ]) + "</tr>")
+    ths = "".join(
+        ck_data_cell(c, align=a, is_header=True)
+        for c, a in (("Specialty", "left"), ("Size band", "left"),
+                     ("P25", "right"), ("P50", "right"), ("P75", "right"),
+                     ("n (TTM)", "right"), ("Note", "left")))
+    table = (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             f'</table></div>')
+    n_specs = len(by_spec)
+    return ck_panel(
+        f'<p class="ck-section-body">EV/EBITDA bands across {n_specs} '
+        f'healthcare specialties ({len(rows_data)} specialty × size-band '
+        f'combinations). Click a specialty to focus it against a target '
+        f'EV. <a href="/transaction-multiples.xlsx" download '
+        f'style="color:#155752;font-weight:600">Download the library '
+        f'(.xlsx)</a>.</p>{table}',
+        title="Private-market transaction multiples — full library",
+    )
+
+
 def _transaction_multiples_section(
     specialty: Optional[str],
     ev_usd: Optional[float],
 ) -> str:
     if not specialty:
-        return ""
+        return _multiples_directory()
     band = transaction_multiple(specialty=specialty, ev_usd=ev_usd)
     if not band:
         return ck_panel(
@@ -863,3 +920,36 @@ def render_market_intel_page(
         active_nav="/market-intel",
         subtitle="Public-market + PE transaction overlay",
     )
+
+
+def transaction_multiples_xlsx() -> bytes:
+    """The multiples library as a comps-tab-ready sheet — partners
+    paste these bands into deal models; shipping the directory as a
+    workbook saves the retyping (and the typos)."""
+    from rcm_mc.exports.xlsx_writer import Sheet, write_xlsx
+    from rcm_mc.market_intel.transaction_multiples import _load
+    data = _load()
+    rows: list = [
+        [("HEALTHCARE TRANSACTION MULTIPLES — EV/EBITDA", "header")]
+        + [("", "header")] * 5,
+        [f"Curated from public aggregates · last reviewed "
+         f"{data.get('last_reviewed', '')} · verify before IC use."],
+        [""],
+        [("Specialty", "header"), ("Size band", "header"),
+         ("P25", "header"), ("P50", "header"), ("P75", "header"),
+         ("n (TTM)", "header")],
+    ]
+    bands = sorted(data.get("bands") or (),
+                   key=lambda r: (str(r.get("specialty", "")),
+                                  str(r.get("deal_size_band", ""))))
+    for r in bands:
+        rows.append([
+            str(r.get("specialty", "")).replace("_", " ").title(),
+            str(r.get("deal_size_band", "")).replace("_", " "),
+            (float(r["p25_ev_ebitda"]), "mult"),
+            (float(r["p50_ev_ebitda"]), "mult"),
+            (float(r["p75_ev_ebitda"]), "mult"),
+            (int(r.get("sample_size_trailing_12_mo", 0) or 0), "num"),
+        ])
+    return write_xlsx([Sheet("Multiples", rows,
+                             col_widths=[30, 16, 9, 9, 9, 9])])

@@ -11866,6 +11866,8 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
+            "Can I set the value domain manually?",
+            "Why is the map a tile grid instead of real geography?",
         ],
         inputs=["Three gradient colours; an optional low/mid/high value "
                 "domain (blank = auto from data); a value per state, set "
@@ -11885,6 +11887,7 @@ _MANUAL.extend([
                                  "you set; the legend shows the domain."],
         limitations=["Schematic tile grid (labelled, not a geographic "
                      "projection); values are whatever you supply."],
+        related_routes=["/chart-builder", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11902,6 +11905,8 @@ _MANUAL.extend([
             "How do I make a waterfall / bridge chart?",
             "How do I build a marimekko or 100% stacked column?",
             "Can I paste my data from Excel and pick the colours?",
+            "How do I export the chart as SVG or PNG?",
+            "Which chart types does the kit support?",
         ],
         inputs=["A pasted table (headers row + category column + one column "
                 "per series); chart type; title/subtitle; a Chartis "
@@ -11923,6 +11928,7 @@ _MANUAL.extend([
                                  "X, Y, [size]."],
         limitations=["Static SVG (no interactivity); charts render only "
                      "what you paste."],
+        related_routes=["/excel-mapping", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11939,6 +11945,8 @@ _MANUAL.extend([
             "How do I make a pie chart?",
             "Can I set the colour of each slice?",
             "How do I make it a donut?",
+            "Can the labels show values instead of percentages?",
+            "How many slices can I add?",
         ],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
@@ -11958,6 +11966,7 @@ _MANUAL.extend([
                                  "values you enter; colours are whatever you "
                                  "set."],
         limitations=["Static SVG; renders only the slices you enter."],
+        related_routes=["/chart-builder", "/excel-mapping", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11973,6 +11982,9 @@ _MANUAL.extend([
         common_questions=[
             "How do I put several charts on one slide?",
             "Can I export a whole exhibit at once?",
+            "How does the layout change with the panel count?",
+            "Can each panel use a different chart type?",
+            "Where do the slide title and source line come from?",
         ],
         inputs=["1–4 panels, each a chart type + pasted table + panel "
                 "title; a slide eyebrow / title / source."],
@@ -11989,6 +12001,7 @@ _MANUAL.extend([
         interpretation_guidance=["Each panel is independent; leave a panel "
                                  "blank to drop it."],
         limitations=["Static SVG; up to four panels."],
+        related_routes=["/chart-builder", "/pie-chart", "/excel-mapping"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -12002,7 +12015,10 @@ _MANUAL.extend([
         "place so a partner can see what each makes and jump in.",
         intended_users=["Anyone building visuals for a deck."],
         common_questions=["What chart tools are there?",
-                          "Where do I make a chart or map?"],
+                          "Where do I make a chart or map?",
+                          "How do I build a multi-chart deck slide?",
+                          "Which tool makes a US state heat map?",
+                          "Can I download a workbook model instead?"],
         inputs=["None — it links to the four builder tools."],
         outputs=["A card grid with a live thumbnail + link per tool."],
         key_metrics=["n/a — a navigation hub."],
@@ -12013,8 +12029,354 @@ _MANUAL.extend([
         diligence_use_cases=["Finding the right visual builder quickly."],
         interpretation_guidance=["Click a card to open that builder."],
         limitations=["A hub page; the builders hold the functionality."],
+        related_routes=["/chart-builder", "/pie-chart", "/excel-mapping",
+                        "/exhibit", "/excel-templates"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+])
+
+
+# ── PE-desk wave: CDD hub + customer evidence + rate intel + templates ──
+_MANUAL.extend([
+    _ctx(
+        "/cdd", "CDD Hub",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The commercial-due-diligence workflow hub — "
+        "five modules (market, competition, customers, pricing, "
+        "deliverables) mapping the desk's CDD surfaces in running order.",
+        primary_purpose="Give an associate staffed on a commercial sprint "
+        "a table of contents instead of a nav trawl.",
+        intended_users=["Deal team running CDD on a live target."],
+        common_questions=[
+            "Where do I start a commercial diligence sprint?",
+            "Which pages cover market sizing / competitors / customers?",
+            "What order should the CDD workstreams run in?",
+            "Where are the customer-evidence surfaces (VoC, win/loss)?",
+            "Where do I get the CDD deliverable templates?",
+        ],
+        inputs=["None — pure navigation."],
+        outputs=["Five workstream modules of cards, each linking to a "
+                 "CDD surface."],
+        key_metrics=["None computed here."],
+        data_sources=["Links only."],
+        model_logic_summary="Static hub; the linked surfaces compute.",
+        why_it_matters="CDD ingredients existed but were scattered across "
+        "four nav sections; the hub makes the workflow legible.",
+        diligence_use_cases=["Kicking off and staffing a CDD sprint."],
+        interpretation_guidance=["Modules run in the order a CDD "
+                                 "engagement actually answers them."],
+        limitations=["Navigation only — no data of its own."],
+        related_routes=["/voc-survey", "/win-loss", "/rate-environment",
+                        "/excel-templates"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.UNKNOWN,
+    ),
+    _ctx(
+        "/voc-survey", "Voice of Customer / Survey Evidence",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Survey-evidence read: NPS by segment, a key-"
+        "purchase-criteria gap matrix vs the best competitor, and "
+        "willingness-to-pay bands.",
+        primary_purpose="Show the customer-evidence half of a CDD readout "
+        "— what buyers say, weighted by what they say matters.",
+        intended_users=["Deal team testing the demand side of a thesis."],
+        common_questions=[
+            "Where does the target beat its best competitor?",
+            "Will customers absorb a price increase?",
+            "Which segment is the churn risk?",
+            "What counts as a differentiator vs table stakes here?",
+            "How is the blended NPS calculated?",
+        ],
+        inputs=["Survey panel selector (sector)."],
+        outputs=["KPC gap chart + matrix, segment NPS table, WTP bars, "
+                 "a one-line survey read."],
+        key_metrics=["Blended NPS", "KPC importance × performance gap",
+                     "Churn intent %", "WTP band shares"],
+        data_sources=["Curated illustrative survey panels (the page "
+                      "flags this); shaped to match a vendor panel file."],
+        model_logic_summary="Differentiator = gap ≥ +0.3 on a criterion "
+        "with importance ≥ 3.5/5; vulnerability is the mirror; NPS blends "
+        "respondent-weighted.",
+        why_it_matters="A share story without customer evidence is a "
+        "guess; this is the exhibit ICs ask for first.",
+        diligence_use_cases=["CDD customer-evidence section",
+                             "pricing-power read before a rate case"],
+        interpretation_guidance=["Low-importance gaps are noise — only "
+                                 "high-importance rows classify."],
+        limitations=["Illustrative panel until a real survey file is "
+                     "wired in."],
+        related_routes=["/win-loss", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/win-loss", "Win/Loss Analyzer",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Competitive-conversion record: win rate by "
+        "named competitor, loss-reason decomposition, price-gap read on "
+        "losses, and a quarterly trend.",
+        primary_purpose="Answer whether the target actually converts "
+        "against its named rivals — and whether losses are price-led or "
+        "capability-led.",
+        intended_users=["Deal team pressure-testing a share-gain thesis."],
+        common_questions=[
+            "Who does the target lose to, and why?",
+            "Are losses price-led or capability-led?",
+            "Is the win rate improving or softening?",
+            "In which segments does the target convert best?",
+            "How big is the price gap on lost deals?",
+        ],
+        inputs=["Opportunity-log selector (sector)."],
+        outputs=["Win-rate bars by competitor, loss-reason mix, trend "
+                 "line, segment win-rate table."],
+        key_metrics=["Overall and per-competitor win rate",
+                     "Price-led loss share", "Median price gap on losses"],
+        data_sources=["Curated illustrative opportunity logs (flagged); "
+                      "schema matches a CRM export."],
+        model_logic_summary="Win rates from contested-opportunity counts; "
+        "loss reasons follow a five-bucket taxonomy where PRICE and "
+        "CAPABILITY drive the value-creation implication.",
+        why_it_matters="Price-led and capability-led losses imply "
+        "different value-creation plans; the mix is the strategic read.",
+        diligence_use_cases=["CDD competition section",
+                             "post-close commercial-excellence planning"],
+        interpretation_guidance=["A sub-50% rate against one rival with "
+                                 "incumbency-led losses is a relationship "
+                                 "problem, not a product problem."],
+        limitations=["Illustrative log until target CRM data is wired."],
+        related_routes=["/voc-survey", "/competitive-intel", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/rate-environment", "Medicare Rate Environment",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Setting-level CMS payment updates (IPPS, OPPS, "
+        "PFS, ASC, SNF, HH, Hospice, IRF, ESRD) across three rule cycles, "
+        "with a blended dollar-impact calculator.",
+        primary_purpose="Turn the Medicare rate environment into a number "
+        "in the model: blended next-cycle impact on a target's Medicare "
+        "revenue, by setting mix.",
+        intended_users=["Deal team underwriting Medicare-exposed revenue."],
+        common_questions=[
+            "What is Medicare paying this setting next year?",
+            "What does the rate environment do to this target's revenue?",
+            "Which care setting has the best / worst rate outlook?",
+            "How do I model a multi-setting Medicare book?",
+            "Are these final-rule or proposed-rule numbers?",
+        ],
+        inputs=["Medicare revenue ($M) and setting-mix shares."],
+        outputs=["Updates-by-setting table with 3-cycle compound and "
+                 "policy notes; per-setting and blended dollar impact."],
+        key_metrics=["Net payment update % by setting",
+                     "Mix-weighted blended update", "Revenue impact $"],
+        data_sources=["Curated YAML from CMS final rules "
+                      "(market_intel/content/rate_updates.yaml), "
+                      "refreshed each rule cycle."],
+        model_logic_summary="Blend = Σ(normalized mix share × latest net "
+        "update); dollars = revenue × blend.",
+        why_it_matters="Rate is the revenue line the operator doesn't "
+        "control; HH vs SNF exposure alone can swing a thesis.",
+        diligence_use_cases=["Revenue base-case for Medicare-heavy "
+                             "targets", "setting-mix sensitivity"],
+        interpretation_guidance=["Headline updates hide policy risk — "
+                                 "read the per-setting notes (site-"
+                                 "neutral, behavioral adjustment, PFS "
+                                 "conversion factor)."],
+        limitations=["Headline updates only; verify against the final "
+                     "rule before IC use."],
+        related_routes=["/market-intel", "/payer-intelligence", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/excel-templates", "Excel Model Templates",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Downloadable live-formula workbooks: quick "
+        "LBO, QoE databook, NWC peg, 13-week cash, CDD market model, "
+        "payer-mix sensitivity, cohort/NRR triangle.",
+        primary_purpose="Hand the deal team a working model — blue "
+        "inputs, black formulas — instead of a blank workbook at the "
+        "start of a sprint.",
+        intended_users=["Associates starting a CDD / QoE / screening "
+                        "sprint."],
+        common_questions=[
+            "Is there an LBO template I can download?",
+            "Do the workbooks have live formulas?",
+            "Which cells am I supposed to edit?",
+            "Is there a QoE / working-capital-peg workbook?",
+            "Which templates cover CDD market work?",
+        ],
+        inputs=["None — pick a template and download."],
+        outputs=["One .xlsx per template with live formulas and the "
+                 "blue-input convention."],
+        key_metrics=["Whatever each model computes (MOIC/IRR, adjusted "
+                     "EBITDA, NWC peg, TAM/SAM/SOM, NRR…)."],
+        data_sources=["Seed assumptions only — every input is meant to "
+                      "be replaced with the target's numbers."],
+        model_logic_summary="Templates are built server-side by the "
+        "stdlib xlsx writer; formulas recompute in Excel on edit.",
+        why_it_matters="Closes the desk's Excel-resources gap — exports "
+        "existed, working models didn't.",
+        diligence_use_cases=["First-hour model setup in any sprint."],
+        interpretation_guidance=["Blue cells are assumptions to edit; "
+                                 "black cells recompute."],
+        limitations=["Seed numbers are illustrative placeholders."],
+        related_routes=["/cdd", "/excel-mapping", "/chart-builder"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+])
+
+_MANUAL.extend([
+    _ctx(
+        "/ma-penetration", "Medicare Advantage Penetration",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="MA penetration by state — choropleth, "
+        "exposure bands (saturated / high / moderate / low), and a "
+        "footprint scorer that averages a target's states vs the "
+        "national norm.",
+        primary_purpose="Score a target's geographic Medicare Advantage "
+        "exposure: where MA dominates, the Medicare book behaves like "
+        "managed care, not fee-for-service.",
+        intended_users=["Deal team underwriting Medicare-exposed revenue "
+                        "across a multi-state footprint."],
+        common_questions=[
+            "How MA-saturated is this target's footprint?",
+            "Which states have the highest / lowest MA penetration?",
+            "What does high MA penetration mean for the rate outlook?",
+            "How does the footprint compare to the national average?",
+            "Where does this data come from and how fresh is it?",
+        ],
+        inputs=["Optional footprint: the target's 2-letter state codes."],
+        outputs=["State choropleth, exposure-band table, footprint "
+                 "average with vs-national delta and band."],
+        key_metrics=["MA penetration % by state", "National penetration",
+                     "Footprint average ± national", "Exposure band"],
+        data_sources=["Curated KFF/CMS state cut "
+                      "(market_intel/content/ma_penetration.yaml), "
+                      "rounded to the point, refreshed annually."],
+        model_logic_summary="Footprint exposure = simple average of the "
+        "footprint states' penetration; bands cut at 55/45/30%, anchored "
+        "to the ~54% national norm.",
+        why_it_matters="MA penetration is the geography-level payer "
+        "variable: it decides rate pressure, prior-auth burden, and "
+        "network dynamics for any Medicare-heavy thesis.",
+        diligence_use_cases=["Payer-mix risk in CDD",
+                             "geographic expansion screening",
+                             "pairing with the rate-environment blend"],
+        interpretation_guidance=["A saturated-band footprint plus a "
+                                 "weak rate-environment setting (e.g. "
+                                 "home health) compounds: model MA "
+                                 "rates below the CMS fee schedule."],
+        limitations=["State-level only (county variation is large); "
+                     "approximate, verify against the current KFF "
+                     "release before IC use."],
+        related_routes=["/rate-environment", "/payer-intelligence",
+                        "/geo-market", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+])
+
+_MANUAL.extend([
+    _ctx(
+        "/pricing-power", "Pricing Power Analyzer",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Constant-elasticity price-response curves per "
+        "customer segment, the EBITDA-optimal price move within a ±15% "
+        "window, and the portfolio pricing prize — with rate-locked "
+        "segments (administered / capitated) excluded from the lever.",
+        primary_purpose="Model what a price move does to volume, revenue, "
+        "and EBITDA — the question a pricing thesis lives or dies on.",
+        intended_users=["Deal team testing a pricing-led value-creation "
+                        "plan in CDD."],
+        common_questions=[
+            "Which segments can absorb a price increase?",
+            "What is the EBITDA-optimal price move per segment?",
+            "How much EBITDA does optimal pricing add in total?",
+            "Why do some segments show LOCKED instead of a move?",
+            "What does an optimum at the window edge mean?",
+        ],
+        inputs=["Revenue-book selector (sector); optional custom "
+                "segment (revenue $M, contribution margin %, elasticity) "
+                "appended to the book."],
+        outputs=["Price-response curves per segment, optima table with "
+                 "volume response, portfolio EBITDA prize, pricing read."],
+        key_metrics=["Segment elasticity", "Optimal price change %",
+                     "EBITDA gain at optimum", "Blended elasticity"],
+        data_sources=["Curated illustrative segment books (flagged); the "
+                      "schema matches a pricing study's estimates."],
+        model_logic_summary="Volume response = (1+Δp)^ε per segment; "
+        "EBITDA = contribution scaling with volume plus the pure-margin "
+        "price component; optimum grid-searched over ±15% in 0.5% steps. "
+        "Administered/capitated segments are price_locked and contribute "
+        "no lever.",
+        why_it_matters="VoC gives stated willingness to pay; this turns "
+        "it into a modeled revenue/EBITDA consequence — the difference "
+        "between a pricing hope and a pricing plan.",
+        diligence_use_cases=["Pricing-led VCP sizing in CDD",
+                             "post-close pricing roadmap"],
+        interpretation_guidance=["An optimum at +15% or -15% means the "
+                                 "curve is monotone within the credible "
+                                 "window — treat the window as the bound, "
+                                 "not the true optimum."],
+        limitations=["Constant elasticity (no competitor response, no "
+                     "cross-segment substitution); illustrative books "
+                     "until a pricing study is wired."],
+        related_routes=["/voc-survey", "/win-loss", "/rate-environment",
+                        "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/labor-market", "Healthcare Labor Market",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Role-level wage / turnover / vacancy / "
+        "time-to-fill reads (10 healthcare roles, curated BLS + staffing-"
+        "survey cut) with a wage-inflation stress calculator on a "
+        "target's labor base and role mix.",
+        primary_purpose="Put a number on the cost side's biggest line: "
+        "next-year wage inflation in dollars, and in margin bps if rate "
+        "increases don't keep pace.",
+        intended_users=["Deal team underwriting a labor-heavy "
+                        "healthcare-services margin."],
+        common_questions=[
+            "How much does wage inflation cost this target next year?",
+            "Which roles are hardest to hold and replace?",
+            "What is the margin compression if rates stay flat?",
+            "What goes into the fragility score?",
+            "Where does the wage data come from?",
+        ],
+        inputs=["Labor cost ($M), revenue ($M), and role-mix shares."],
+        outputs=["Per-role stress table (cost increase, fragility), "
+                 "role-economics table, blended wage growth, margin "
+                 "compression in bps."],
+        key_metrics=["Median wage by role", "Wage YoY %", "Turnover %",
+                     "Fragility score /100", "Margin compression bps"],
+        data_sources=["Curated BLS OES + staffing-survey cut "
+                      "(market_intel/content/labor_market.yaml), national "
+                      "medians, refreshed annually."],
+        model_logic_summary="Blend = Σ(normalized mix share × role wage "
+        "YoY); fragility = equal-weight turnover/vacancy/wage-pressure "
+        "blend scaled to absolute worst-case bars.",
+        why_it_matters="Labor is 50-60% of opex for most healthcare "
+        "services targets — the wage environment decides whether the "
+        "margin holds through the hold period.",
+        diligence_use_cases=["Cost base-case in CDD", "margin-bridge "
+                             "stress", "staffing-risk read on de novo "
+                             "growth plans"],
+        interpretation_guidance=["Pair with the rate environment: wage "
+                                 "growth above the setting's payment "
+                                 "update is structural margin "
+                                 "compression."],
+        limitations=["National medians (local wage indices vary widely); "
+                     "verify against the current BLS release before IC "
+                     "use."],
+        related_routes=["/rate-environment", "/ma-penetration", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
 ])
 
