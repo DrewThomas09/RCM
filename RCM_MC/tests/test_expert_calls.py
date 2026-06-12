@@ -12,10 +12,13 @@ import unittest
 
 from rcm_mc.diligence.expert_calls import (
     CDD_TOPICS, QUESTION_BANK, STAKEHOLDER_TYPES,
-    COVERED, THIN, UNCOVERED,
-    build_call_guide, coverage_read, program_plan, stakeholder,
+    COVERED, THIN, UNCOVERED, TRIANGULATED, SINGLE_LENS, DARK,
+    build_call_guide, call_sheet_rows, coverage_read, program_plan,
+    stakeholder, topic_coverage, topic_lens_matrix, weekly_cadence,
 )
-from rcm_mc.ui.expert_calls_page import render_expert_calls_page
+from rcm_mc.ui.expert_calls_page import (
+    expert_calls_csv, render_expert_calls_page,
+)
 
 
 class QuestionBankIntegrityTests(unittest.TestCase):
@@ -177,6 +180,198 @@ class WiringTests(unittest.TestCase):
     def test_diligence_index_links_the_page(self):
         from rcm_mc.ui.diligence_index_page import render_diligence_index
         self.assertIn("/diligence/expert-calls", render_diligence_index())
+
+
+class WeeklyCadenceTests(unittest.TestCase):
+    def test_cadence_retimes_never_resizes(self):
+        # Per-lens week sums must equal the program plan exactly.
+        for total in (8, 20, 33):
+            cad = weekly_cadence(total)
+            plan = {p["stakeholder"]["key"]: p["calls"]
+                    for p in program_plan(total)}
+            for key, weeks in cad["by_lens_weeks"].items():
+                self.assertEqual(sum(weeks), plan[key],
+                                 f"{key} resized at total {total}")
+            self.assertEqual(cad["total"], total)
+            self.assertEqual(len(cad["weeks"]), 4)
+
+    def test_sequencing_logic_holds(self):
+        cad = weekly_cadence(20)["by_lens_weeks"]
+        # Former employees front-load (fastest to book, frame the
+        # hypotheses); payers wait for precise questions.
+        self.assertGreater(cad["former_employee"][0],
+                           cad["former_employee"][3])
+        self.assertEqual(cad["payer_exec"][0], 0)
+        self.assertGreater(sum(cad["payer_exec"][1:3]), 0)
+
+    def test_every_week_has_focus_and_rationale(self):
+        for w in weekly_cadence(20)["weeks"]:
+            self.assertTrue(w["focus"])
+            self.assertTrue(w["rationale"])
+
+
+class TopicCoverageTests(unittest.TestCase):
+    def test_matrix_derived_from_bank(self):
+        rows = topic_lens_matrix()
+        self.assertEqual([r["topic"] for r in rows], CDD_TOPICS)
+        for r in rows:
+            for key in r["lenses"]:
+                self.assertTrue(
+                    any(q["topic"] == r["topic"]
+                        for q in QUESTION_BANK[key]),
+                    f"{key} listed for {r['topic']} but never asks it")
+
+    def test_triangulation_needs_two_active_lenses(self):
+        # No calls → every topic DARK.
+        for r in topic_coverage({}):
+            self.assertEqual(r["status"], DARK)
+        # One active lens → its topics are SINGLE-LENS, never
+        # triangulated (two voices from one lens share its bias).
+        rows = topic_coverage({"referring_physician": 4})
+        by_topic = {r["topic"]: r for r in rows}
+        self.assertEqual(by_topic["demand"]["status"], SINGLE_LENS)
+        self.assertEqual(
+            by_topic["pricing_reimbursement"]["status"], DARK)
+        # A second lens that shares a topic triangulates it.
+        rows = topic_coverage({"referring_physician": 1,
+                               "payer_exec": 1})
+        by_topic = {r["topic"]: r for r in rows}
+        self.assertEqual(by_topic["demand"]["status"], TRIANGULATED)
+
+
+class CallSheetTests(unittest.TestCase):
+    def test_one_row_per_planned_call_weeks_ascending(self):
+        rows = call_sheet_rows(20)
+        self.assertEqual(len(rows), 20)
+        self.assertEqual([r["call_no"] for r in rows],
+                         list(range(1, 21)))
+        self.assertEqual([r["week"] for r in rows],
+                         sorted(r["week"] for r in rows))
+        self.assertTrue(all(r["sourcing"] for r in rows))
+
+    def test_csv_export_shape_and_defang(self):
+        out = expert_calls_csv({"n": ["12"], "deal": ["=cmd()|x"]})
+        lines = out.strip().splitlines()
+        # Header block + blank + column row + 12 call rows.
+        self.assertIn("Expert-call sheet", lines[0])
+        self.assertIn("'=cmd()", lines[0])     # formula defanged
+        self.assertIn("Question bank vintage", out)
+        self.assertIn("Thesis tag (SUPPORTS / CONTRADICTS", out)
+        data_rows = [l for l in lines
+                     if l and l.split(",")[0].isdigit()]
+        self.assertEqual(len(data_rows), 12)
+
+    def test_csv_no_deal_states_it(self):
+        self.assertIn("(no deal set)", expert_calls_csv({}))
+
+
+class SliceTwoPageTests(unittest.TestCase):
+    def test_cadence_matrix_and_csv_link_render(self):
+        page = render_expert_calls_page({})
+        for needle in ("CADENCE — THE STANDARD 4-WEEK SPRINT",
+                       "Week 4 — Close",
+                       "TOPIC × LENS — WHO CAN ANSWER WHAT",
+                       "/api/diligence/expert-calls.csv?n=20",
+                       "Download call sheet (CSV)"):
+            self.assertIn(needle, page, f"missing: {needle}")
+        # No coverage entered → matrix shows no triangulation chips.
+        self.assertNotIn(">TRIANGULATED<", page)
+
+    def test_topic_chips_follow_done_counts(self):
+        page = render_expert_calls_page(
+            {"done_referring_physician": ["1"], "done_payer_exec": ["1"]})
+        self.assertIn(">TRIANGULATED<", page)
+        self.assertIn(">DARK<", page)
+
+    def test_guide_renders_in_exhibit_chrome(self):
+        page = render_expert_calls_page({"deal": ["Project Falcon"]})
+        self.assertIn("EXHIBIT 1", page.upper())
+        self.assertIn("PEdesk curated question bank", page)
+        self.assertIn("bank 2026-06", page)
+
+    def test_csv_link_carries_deal_but_never_prefill_key(self):
+        page = render_expert_calls_page(
+            {"deal": ["Falcon"], "_prefill_deal": ["Falcon"]})
+        self.assertIn("/api/diligence/expert-calls.csv?n=20&deal=Falcon",
+                      page)
+        self.assertNotIn("_prefill_deal=", page.split("expert-calls.csv")[1]
+                         .split('"')[0])
+
+
+class ActiveDealPrefillHTTPTests(unittest.TestCase):
+    """The active-deal cookie pre-stamps the program (visible note;
+    explicit ?deal= wins) — exercised over real HTTP like the other
+    deal-context prefill suites."""
+
+    @classmethod
+    def setUpClass(cls):
+        import os
+        import socket
+        import tempfile
+        import threading
+        import time
+        from rcm_mc.server import build_server
+        cls.tmp = tempfile.TemporaryDirectory()
+        s = socket.socket(); s.bind(("127.0.0.1", 0))
+        cls.port = s.getsockname()[1]; s.close()
+        cls.server, _ = build_server(
+            port=cls.port, host="127.0.0.1",
+            db_path=os.path.join(cls.tmp.name, "p.db"), auth=None)
+        cls.t = threading.Thread(target=cls.server.serve_forever,
+                                 daemon=True)
+        cls.t.start(); time.sleep(0.2)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown(); cls.server.server_close()
+        cls.t.join(timeout=5); cls.tmp.cleanup()
+
+    def _get(self, path, cookie=None):
+        import urllib.request as _u
+        req = _u.Request(f"http://127.0.0.1:{self.port}{path}")
+        if cookie:
+            req.add_header("Cookie", cookie)
+        with _u.urlopen(req, timeout=20) as r:
+            return r.status, r.read().decode()
+
+    @staticmethod
+    def _cookie(name="Bigtown Health"):
+        import json
+        import urllib.parse
+        meta = {"id": "buh", "name": name, "state": "TX",
+                "ccn": "450076"}
+        return "pedesk_active_deal_meta=" + urllib.parse.quote(
+            json.dumps(meta, separators=(",", ":")))
+
+    def test_cookie_prefills_deal_with_visible_note(self):
+        status, body = self._get("/diligence/expert-calls",
+                                 cookie=self._cookie())
+        self.assertEqual(status, 200)
+        self.assertIn("Pre-scoped to your active deal", body)
+        self.assertIn("Bigtown Health", body)
+        self.assertIn("BIGTOWN HEALTH", body)   # guide stamp
+
+    def test_explicit_deal_param_wins(self):
+        status, body = self._get(
+            "/diligence/expert-calls?deal=Project+Orca",
+            cookie=self._cookie())
+        self.assertEqual(status, 200)
+        self.assertIn("Project Orca", body)
+        self.assertNotIn("Pre-scoped to your active deal", body)
+
+    def test_csv_endpoint_serves_sheet(self):
+        status, body = self._get(
+            "/api/diligence/expert-calls.csv?n=10&deal=Falcon")
+        self.assertEqual(status, 200)
+        self.assertIn("Expert-call sheet", body)
+        self.assertEqual(
+            sum(1 for l in body.splitlines()
+                if l and l.split(",")[0].isdigit()), 10)
+
+    def test_no_cookie_no_note(self):
+        status, body = self._get("/diligence/expert-calls")
+        self.assertEqual(status, 200)
+        self.assertNotIn("Pre-scoped to your active deal", body)
 
 
 if __name__ == "__main__":

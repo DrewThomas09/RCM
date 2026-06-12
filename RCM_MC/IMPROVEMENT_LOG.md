@@ -3510,3 +3510,49 @@ reproduce on a CLEAN tree (both pre-date this wave):
 (catalog/universe/surface-status/guide-invariant/chart suites); pie
 page renders the YOUR INPUTS chip; classify_surface returns the navy
 calculator label for expert-calls.
+
+## W2-165 (2026-06-12) — Expert-Call Program slice 2: cadence, triangulation matrix, call sheet, exhibit guides, deal prefill (wave #67)
+Deepened the wave-66 section into a complete workstream — five specific
+features, all on the same page:
+- **4-week cadence plan** (`weekly_cadence`): the program plan re-timed
+  across the standard CDD sprint via per-lens phase weights encoding
+  booking reality (former employees + referrers front-load and frame
+  hypotheses; payer/competitor calls wait for precise questions; week 4
+  chases contradictions). Largest-remainder per lens, so the cadence
+  NEVER resizes the program — per-lens week sums equal program_plan
+  exactly (tested at 8/20/33). Week × lens grid + per-week focus
+  rationale on the page.
+- **Topic × lens triangulation matrix** (`topic_lens_matrix` +
+  `topic_coverage`): derived from the question bank (can't drift), the
+  grid shows which lenses can answer each CDD topic; with completed
+  calls logged, each topic reads TRIANGULATED (≥2 ACTIVE lenses ask it)
+  / SINGLE-LENS / DARK — two voices from the same lens share its bias,
+  so they never triangulate a topic alone.
+- **Call-sheet CSV export** (`/api/diligence/expert-calls.csv`):
+  one row per planned call (call #, week, lens, sourcing channel
+  pre-filled) + empty date/interviewee/status/finding/thesis-tag
+  columns — the data-room tracker, generated from the same qs as the
+  page. House formula-injection defang on user text (deal "=cmd()|x" →
+  quoted), n clamped 1–200.
+- **Exhibit-chrome call guides**: the printable guide now renders via
+  ExhibitFactory (numbered EXHIBIT, deal label, question count, bank
+  vintage 2026-06 in the sourced footer) — Cmd+P → the PDF an associate
+  takes into the call.
+- **Active-deal prefill** (deal-context parity, Item-12 pattern): the
+  pedesk_active_deal_meta cookie pre-stamps the program/guides/call
+  sheet with the deal name, with the teal visible-note convention;
+  explicit ?deal= always wins; _prefill_deal never leaks into the CSV
+  export URL (tested).
+**Verify**: test_expert_calls.py 19→35 — cadence retime-not-resize at 3
+program sizes + sequencing pins (former-employee wk1>wk4, payer wk1=0)
++ focus lines; matrix derived-from-bank consistency; triangulation
+semantics (none→DARK, one lens→SINGLE-LENS never TRIANGULATED, two
+sharing lenses→TRIANGULATED); call-sheet row count/order/CSV shape/
+defang/no-deal honesty; page renders cadence+matrix+CSV link, chips
+follow done counts, EXHIBIT chrome + bank vintage, _prefill_deal kept
+out of export URL; real-HTTP class: cookie prefill with visible note,
+param override, CSV endpoint serves N rows, no-cookie no-note. Live
+smoke: 6 requests incl. hostile (n=-3 clamps to 1 row, encoded =2+2
+deal defanged) → all 200, no tracebacks. Neighbor suites green:
+exhibit-factory + deal-context-prefill + palette + catalog + guide
+invariants + tools-index (88).

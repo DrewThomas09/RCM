@@ -576,3 +576,142 @@ def coverage_read(completed: Dict[str, int],
         "findings": findings,
         "complete": (total_done > 0 and not uncovered and not thin),
     }
+
+
+# ── Slice 2: cadence, topic triangulation, call sheet ───────────────
+
+# Question-bank vintage, stamped on the exhibit footer so a printed
+# guide records which bank revision it came from.
+BANK_VINTAGE = "2026-06"
+
+# How each lens's calls distribute across the standard 4-week CDD
+# sprint. The shape encodes booking reality + sequencing logic, not
+# preference: former employees and referrers book fastest and frame
+# the hypotheses; payer/competitor calls need precise questions, so
+# they peak mid-program; week 4 is contradiction-chasing and the
+# closing expert read. Weights are relative within a lens's row.
+_PHASE_WEIGHTS: Dict[str, tuple] = {
+    "referring_physician": (3, 3, 2, 1),
+    "payer_exec":          (0, 3, 3, 1),
+    "competitor_exec":     (1, 3, 2, 1),
+    "former_employee":     (3, 2, 1, 0),
+    "site_administrator":  (0, 2, 2, 1),
+    "patient_advocate":    (0, 1, 2, 1),
+    "industry_expert":     (2, 0, 1, 2),
+}
+
+WEEK_FOCUS: List[Dict[str, str]] = [
+    {"week": 1, "focus": "Frame",
+     "rationale": "Book the fastest lenses (former employees, "
+                  "referrers, one calibrating expert) and use them to "
+                  "sharpen the hypotheses — week-1 calls write the "
+                  "week-2 questions."},
+    {"week": 2, "focus": "Breadth",
+     "rationale": "Open the payer and competitor lenses now that the "
+                  "questions are precise; keep referrer volume "
+                  "running."},
+    {"week": 3, "focus": "Depth",
+     "rationale": "Fill the channel (site administrators) and patient "
+                  "lenses; pressure-test the findings that are "
+                  "emerging from weeks 1–2."},
+    {"week": 4, "focus": "Close",
+     "rationale": "Chase contradictions between lenses, run "
+                  "callbacks, and take the closing expert read on "
+                  "what the program surfaced."},
+]
+
+
+def _apportion(total: int, weights: tuple) -> List[int]:
+    """Largest-remainder apportionment of ``total`` over ``weights``
+    (sums exactly; all-zero weights fall back to equal split)."""
+    if total <= 0:
+        return [0] * len(weights)
+    wsum = sum(weights)
+    if wsum <= 0:
+        weights = tuple(1 for _ in weights)
+        wsum = len(weights)
+    raw = [total * w / wsum for w in weights]
+    out = [int(math.floor(r)) for r in raw]
+    rem = total - sum(out)
+    order = sorted(range(len(raw)), key=lambda i: raw[i] - out[i],
+                   reverse=True)
+    for i in order[:rem]:
+        out[i] += 1
+    return out
+
+
+def weekly_cadence(total_calls: int = 20) -> Dict[str, Any]:
+    """Distribute the program plan across the standard 4-week sprint.
+
+    Per-lens totals always equal :func:`program_plan`'s — the cadence
+    re-times the same calls, it never re-sizes the program."""
+    plan = program_plan(total_calls)
+    by_lens_weeks: Dict[str, List[int]] = {}
+    for p in plan:
+        key = p["stakeholder"]["key"]
+        weights = _PHASE_WEIGHTS.get(key, (1, 1, 1, 1))
+        by_lens_weeks[key] = _apportion(p["calls"], weights)
+    weeks: List[Dict[str, Any]] = []
+    for i, wf in enumerate(WEEK_FOCUS):
+        by_lens = {k: v[i] for k, v in by_lens_weeks.items() if v[i]}
+        weeks.append({**wf, "by_lens": by_lens,
+                      "total": sum(by_lens.values())})
+    return {"weeks": weeks, "by_lens_weeks": by_lens_weeks,
+            "total": sum(w["total"] for w in weeks)}
+
+
+def topic_lens_matrix() -> List[Dict[str, Any]]:
+    """Which lenses ask each CDD topic — derived from the bank, so it
+    can never drift from the questions actually in the guides."""
+    rows: List[Dict[str, Any]] = []
+    for t in CDD_TOPICS:
+        lenses = [s["key"] for s in STAKEHOLDER_TYPES
+                  if any(q["topic"] == t
+                         for q in QUESTION_BANK.get(s["key"], []))]
+        rows.append({"topic": t, "label": topic_label(t),
+                     "lenses": lenses})
+    return rows
+
+
+# Topic-coverage statuses, in severity order.
+TRIANGULATED = "TRIANGULATED"
+SINGLE_LENS = "SINGLE-LENS"
+DARK = "DARK"
+
+
+def topic_coverage(completed: Dict[str, int]) -> List[Dict[str, Any]]:
+    """Topic-level triangulation: a CDD topic is only TRIANGULATED
+    when >=2 lenses that ask it have at least one completed call —
+    two voices from the SAME lens share the lens's bias, so they
+    don't triangulate a topic on their own."""
+    active = {k for k, v in completed.items()
+              if v is not None and int(v or 0) >= 1}
+    rows: List[Dict[str, Any]] = []
+    for m in topic_lens_matrix():
+        act = [k for k in m["lenses"] if k in active]
+        if len(act) >= 2:
+            status = TRIANGULATED
+        elif len(act) == 1:
+            status = SINGLE_LENS
+        else:
+            status = DARK
+        rows.append({**m, "active_lenses": act, "status": status})
+    return rows
+
+
+def call_sheet_rows(total_calls: int = 20) -> List[Dict[str, Any]]:
+    """The flat call sheet — one row per planned call, ordered week
+    then lens, with the sourcing channel pre-filled. This is the
+    tracker spreadsheet a deal team actually keeps; the CSV export
+    serves it with empty date/interviewee/finding columns to fill."""
+    cad = weekly_cadence(total_calls)
+    rows: List[Dict[str, Any]] = []
+    n = 0
+    for wk in cad["weeks"]:
+        for s in STAKEHOLDER_TYPES:
+            for _ in range(wk["by_lens"].get(s["key"], 0)):
+                n += 1
+                rows.append({"call_no": n, "week": wk["week"],
+                             "lens": s["label"],
+                             "sourcing": s["sourcing"]})
+    return rows

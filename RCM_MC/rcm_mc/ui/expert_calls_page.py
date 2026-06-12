@@ -18,18 +18,37 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import quote_plus
 
 from ..diligence.expert_calls import (
-    STAKEHOLDER_TYPES, build_call_guide, coverage_read, program_plan,
-    stakeholder, COVERED, THIN, UNCOVERED,
+    BANK_VINTAGE, STAKEHOLDER_TYPES, build_call_guide, call_sheet_rows,
+    coverage_read, program_plan, stakeholder, topic_coverage,
+    weekly_cadence, COVERED, THIN, UNCOVERED,
+    TRIANGULATED, SINGLE_LENS, DARK,
 )
-from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
+from ._chartis_kit import (
+    ExhibitFactory, chartis_shell, ck_page_title, ck_source_purpose,
+)
 
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
           "'Times New Roman', serif")
 
 _STATUS_STYLE = {
-    COVERED:   ("#0a8a5f", "rgba(10,138,95,0.10)"),
-    THIN:      ("#b8732a", "rgba(184,115,42,0.12)"),
-    UNCOVERED: ("#b5321e", "rgba(181,50,30,0.10)"),
+    COVERED:      ("#0a8a5f", "rgba(10,138,95,0.10)"),
+    THIN:         ("#b8732a", "rgba(184,115,42,0.12)"),
+    UNCOVERED:    ("#b5321e", "rgba(181,50,30,0.10)"),
+    TRIANGULATED: ("#0a8a5f", "rgba(10,138,95,0.10)"),
+    SINGLE_LENS:  ("#b8732a", "rgba(184,115,42,0.12)"),
+    DARK:         ("#b5321e", "rgba(181,50,30,0.10)"),
+}
+
+# Short lens labels for the topic-matrix column heads (full labels
+# live in the plan table above it).
+_SHORT_LENS = {
+    "referring_physician": "Referrer",
+    "payer_exec": "Payer",
+    "competitor_exec": "Compet.",
+    "former_employee": "Ex-emp",
+    "site_administrator": "Site adm",
+    "patient_advocate": "Patient",
+    "industry_expert": "Expert",
 }
 
 
@@ -126,9 +145,9 @@ def _guide_html(guide: Dict[str, Any]) -> str:
             f'border-bottom:1px solid #e4ddcd;padding-bottom:3px;'
             f'margin-bottom:8px;">{html.escape(sec["label"])}</div>'
             f'{qhtml}</div>')
+    # No own border — the ExhibitFactory figure provides the frame.
     return (
-        f'<div id="guide" style="border:1px solid #d6cfc0;border-radius:8px;'
-        f'background:#fff;padding:20px 22px;margin-top:18px;">'
+        f'<div id="guide" style="padding:6px 4px;">'
         f'<div style="font-size:10px;letter-spacing:0.07em;font-weight:700;'
         f'color:#7a8699;">CALL GUIDE'
         f'{" · " + html.escape(deal.upper()) if deal else ""}</div>'
@@ -216,6 +235,137 @@ def _coverage_block(read: Dict[str, Any], qs: Dict[str, Any],
         f'color:#1a2332;">{findings}</ul></div>')
 
 
+def _cadence_table(cad: Dict[str, Any]) -> str:
+    head = ('<tr style="font-size:10px;letter-spacing:0.06em;'
+            'color:#7a8699;text-transform:uppercase;text-align:left;">'
+            '<th style="padding:6px 10px;">Lens</th>'
+            + "".join(f'<th style="padding:6px 10px;text-align:right;">'
+                      f'Wk {w["week"]} · {html.escape(w["focus"])}</th>'
+                      for w in cad["weeks"])
+            + '<th style="padding:6px 10px;text-align:right;">Total</th>'
+            '</tr>')
+    rows = ""
+    for s in STAKEHOLDER_TYPES:
+        per_week = cad["by_lens_weeks"].get(s["key"], [0, 0, 0, 0])
+        cells = "".join(
+            f'<td class="num" style="padding:7px 10px;text-align:right;'
+            f'font-variant-numeric:tabular-nums;'
+            f'{"color:#c9c1ac;" if not c else "font-weight:700;"}">'
+            f'{c or "·"}</td>' for c in per_week)
+        rows += (f'<tr style="border-top:1px solid #e4ddcd;">'
+                 f'<td style="padding:7px 10px;font-weight:600;'
+                 f'color:#0b2341;">{html.escape(s["label"])}</td>{cells}'
+                 f'<td class="num" style="padding:7px 10px;'
+                 f'text-align:right;font-variant-numeric:tabular-nums;'
+                 f'color:#465366;">{sum(per_week)}</td></tr>')
+    totals = ("".join(
+        f'<td class="num" style="padding:7px 10px;text-align:right;'
+        f'font-variant-numeric:tabular-nums;font-weight:700;">'
+        f'{w["total"]}</td>' for w in cad["weeks"]))
+    rows += (f'<tr style="border-top:2px solid #c9c1ac;">'
+             f'<td style="padding:7px 10px;font-size:10px;'
+             f'letter-spacing:0.06em;color:#7a8699;">WEEK TOTAL</td>'
+             f'{totals}<td class="num" style="padding:7px 10px;'
+             f'text-align:right;font-weight:700;">{cad["total"]}</td>'
+             f'</tr>')
+    focus = "".join(
+        f'<li style="margin-bottom:5px;"><b>Week {w["week"]} — '
+        f'{html.escape(w["focus"])}.</b> {html.escape(w["rationale"])}'
+        f'</li>' for w in cad["weeks"])
+    return (
+        f'<div style="border:1px solid #d6cfc0;border-radius:8px;'
+        f'background:#fff;padding:18px 20px;margin-top:18px;">'
+        f'<div style="font-size:10px;letter-spacing:0.07em;'
+        f'font-weight:700;color:#7a8699;">CADENCE — THE STANDARD '
+        f'4-WEEK SPRINT</div>'
+        f'<div style="font-size:11.5px;color:#465366;margin:3px 0 10px;">'
+        f'Same calls as the plan above, re-timed: fast-booking lenses '
+        f'frame the hypotheses first; payer and competitor calls wait '
+        f'for precise questions; week 4 chases contradictions.</div>'
+        f'<table style="width:100%;border-collapse:collapse;'
+        f'font-size:12.5px;">{head}{rows}</table>'
+        f'<ul style="margin:12px 0 0;padding-left:20px;font-size:12px;'
+        f'color:#1a2332;">{focus}</ul></div>')
+
+
+def _topic_matrix(coverage: List[Dict[str, Any]],
+                  any_done: bool) -> str:
+    head = ('<tr style="font-size:10px;letter-spacing:0.06em;'
+            'color:#7a8699;text-transform:uppercase;text-align:left;">'
+            '<th style="padding:6px 10px;">CDD topic</th>'
+            + "".join(f'<th style="padding:6px 6px;text-align:center;">'
+                      f'{html.escape(_SHORT_LENS[s["key"]])}</th>'
+                      for s in STAKEHOLDER_TYPES)
+            + ('<th style="padding:6px 10px;">Triangulation</th>'
+               if any_done else "")
+            + '</tr>')
+    rows = ""
+    for row in coverage:
+        cells = ""
+        for s in STAKEHOLDER_TYPES:
+            asked = s["key"] in row["lenses"]
+            live = s["key"] in row["active_lenses"]
+            mark = "●" if asked else "·"
+            color = ("#0a8a5f" if live else
+                     "#0b2341" if asked else "#c9c1ac")
+            cells += (f'<td style="padding:7px 6px;text-align:center;'
+                      f'color:{color};">{mark}</td>')
+        chip = (f'<td style="padding:7px 10px;">'
+                f'{_status_chip(row["status"])}</td>' if any_done else "")
+        rows += (f'<tr style="border-top:1px solid #e4ddcd;">'
+                 f'<td style="padding:7px 10px;font-weight:600;'
+                 f'color:#0b2341;">{html.escape(row["label"])}</td>'
+                 f'{cells}{chip}</tr>')
+    legend = ('● asked by this lens'
+              + (' (green = lens has a completed call) · a topic is '
+                 'TRIANGULATED only when two ACTIVE lenses ask it — '
+                 'two voices from one lens share its bias'
+                 if any_done else
+                 ' · log completed calls above to see which topics '
+                 'are triangulated'))
+    return (
+        f'<div style="border:1px solid #d6cfc0;border-radius:8px;'
+        f'background:#fff;padding:18px 20px;margin-top:18px;">'
+        f'<div style="font-size:10px;letter-spacing:0.07em;'
+        f'font-weight:700;color:#7a8699;">TOPIC × LENS — WHO CAN '
+        f'ANSWER WHAT</div>'
+        f'<table style="width:100%;border-collapse:collapse;'
+        f'font-size:12.5px;margin-top:10px;">{head}{rows}</table>'
+        f'<div style="font-size:11px;color:#7a8699;margin-top:8px;">'
+        f'{legend}</div></div>')
+
+
+def _csv_defang(cell: str) -> str:
+    """Excel formula-injection guard (house CSV convention)."""
+    return "'" + cell if cell[:1] in ("=", "+", "-", "@") else cell
+
+
+def expert_calls_csv(qs: "Dict[str, Any] | None" = None) -> str:
+    """The call-sheet export: one row per planned call with the
+    sourcing channel pre-filled and empty tracking columns (date /
+    interviewee / status / finding / thesis tag) for the team to keep
+    in the data room. Same qs contract as the page."""
+    import csv
+    import io
+    n = _qsint(qs, "n", 20, 1, 200)
+    deal = _qs1(qs, "deal", "")[:80]
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["Expert-call sheet",
+                _csv_defang(deal) if deal else "(no deal set)"])
+    w.writerow(["Program size", n])
+    w.writerow(["Question bank vintage", BANK_VINTAGE])
+    w.writerow([])
+    w.writerow(["Call #", "Week", "Lens", "Sourcing channel",
+                "Scheduled date", "Interviewee (role, vantage)",
+                "Status", "Key finding",
+                "Thesis tag (SUPPORTS / CONTRADICTS / NEW QUESTION)"])
+    for r in call_sheet_rows(n):
+        w.writerow([r["call_no"], r["week"], _csv_defang(r["lens"]),
+                    _csv_defang(r["sourcing"]), "", "", "", "", ""])
+    return buf.getvalue()
+
+
 def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
     qs = qs or {}
     n = _qsint(qs, "n", 20, 1, 200)
@@ -234,6 +384,48 @@ def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
         f"&done_{k}={v}" for k, v in completed.items() if v) + f"&n={n}"
     if deal:
         base_qs += "&deal=" + quote_plus(deal)
+
+    cadence = weekly_cadence(n)
+    topics = topic_coverage(completed)
+    any_done = read["total_done"] > 0
+
+    # The call-sheet export carries the same program scope; the
+    # internal _prefill_deal key never leaks into the export URL.
+    csv_href = f"/api/diligence/expert-calls.csv?n={n}"
+    if deal:
+        csv_href += "&deal=" + quote_plus(deal)
+
+    # Active-deal prefill is visible, never silent (house pattern).
+    prefill_src = _qs1(qs, "_prefill_deal", "")
+    prefill_note = ""
+    if prefill_src and deal:
+        prefill_note = (
+            f'<div style="margin:12px 0 0;padding:8px 12px;border:1px '
+            f'solid #1F7A75;border-radius:6px;background:'
+            f'rgba(31,122,117,0.07);font-size:12px;color:#155752;">'
+            f'Pre-scoped to your active deal '
+            f'<b>{html.escape(deal)}</b> — the guide stamp and call '
+            f'sheet carry its name. Type a different deal to '
+            f'override.</div>')
+
+    # Exhibit chrome on the guide: a printed guide is the deliverable
+    # an associate takes into the call, so it gets the numbered,
+    # vintage-stamped treatment (Cmd+P → clean PDF).
+    guide_html = ""
+    if guide:
+        xf = ExhibitFactory(
+            deal_label=deal or "Expert-call program",
+            source_default="PEdesk curated question bank")
+        guide_html = (
+            '<div style="margin-top:18px;">'
+            + xf.wrap(
+                _guide_html(guide),
+                title=("Call guide — "
+                       + guide["stakeholder"]["label"]),
+                units=(f'{guide["question_count"]} questions · '
+                       f'topic-ordered · print for the call'),
+                vintage=f"bank {BANK_VINTAGE}")
+            + '</div>')
 
     size_form = (
         f'<form method="get" action="/diligence/expert-calls" '
@@ -284,6 +476,7 @@ def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
             next_href="/diligence/cim-crosscheck",
         )
         + '<div class="ts-wrap" style="max-width:1080px;">'
+        + prefill_note
         + size_form
         + f'<div style="border:1px solid #d6cfc0;border-radius:8px;'
           f'background:#fff;padding:18px 20px;">'
@@ -292,13 +485,22 @@ def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
           f'ACROSS THE SEVEN LENSES</div>'
           f'<div style="margin-top:10px;">'
         + _plan_table(plan, lens_key, base_qs)
-        + '</div></div>'
+        + '</div>'
+        + f'<div style="margin-top:10px;"><a href="{csv_href}" '
+          f'style="font-size:12px;color:#1F7A75;font-weight:600;">'
+          f'Download call sheet (CSV)</a>'
+          f'<span style="font-size:11px;color:#7a8699;"> — one row per '
+          f'planned call with the sourcing channel pre-filled and '
+          f'date / interviewee / finding columns to keep in the data '
+          f'room.</span></div></div>'
+        + _cadence_table(cadence)
         + _coverage_block(read, qs, n, lens_key, deal)
+        + _topic_matrix(topics, any_done)
         + f'<div style="margin-top:18px;">'
           f'<div style="font-size:10px;letter-spacing:0.07em;'
           f'font-weight:700;color:#7a8699;margin-bottom:8px;">'
           f'CALL GUIDE — PICK A LENS</div>{chips}</div>'
-        + (_guide_html(guide) if guide else "")
+        + guide_html
         + '</div>')
     return chartis_shell(
         body, "Expert-Call Program", active_nav="/diligence",

@@ -11996,9 +11996,13 @@ _MANUAL.extend([
         inputs=["Program size (calls); selected lens; completed-call "
                 "counts per lens; an optional deal name for the guide."],
         outputs=["A call-mix table with each lens's known bias; a "
-                 "structured call guide (compliance opening, questions "
-                 "grouped by CDD topic, closing asks); a coverage read "
-                 "(COVERED / THIN / UNCOVERED per lens)."],
+                 "4-week cadence plan (who to book each week, and why "
+                 "that order); a structured call guide in numbered "
+                 "exhibit chrome (compliance opening, questions grouped "
+                 "by CDD topic, closing asks — print-ready); a topic × "
+                 "lens triangulation matrix; a coverage read (COVERED / "
+                 "THIN / UNCOVERED per lens); a call-sheet CSV export "
+                 "(one row per planned call with sourcing pre-filled)."],
         key_metrics=["Calls per lens vs plan; coverage status — a lens "
                      "needs two voices to count as covered."],
         data_sources=["A curated question bank and program methodology — "

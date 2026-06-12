@@ -6714,12 +6714,28 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_html(render_texas_infusion_page(_ti_qs))
         if path == "/diligence/expert-calls":
             # Expert-Call Program — CDD voice-of-customer planner: call
-            # mix per stakeholder lens, per-lens call guide, coverage
+            # mix per stakeholder lens, 4-week cadence, per-lens call
+            # guide (exhibit chrome), topic triangulation, coverage
             # read. qs carries n / lens / done_<key> / deal (all GET —
             # the tracker state is the URL).
             from .ui.expert_calls_page import render_expert_calls_page
             _ec_qs = urllib.parse.parse_qs(parsed.query)
+            # Active-deal prefill (visible note on-page; an explicit
+            # ?deal= always wins; _prefill_deal never leaks to exports).
+            _ec_meta = self._active_deal_meta()
+            if _ec_meta and not (_ec_qs.get("deal") or [""])[0]:
+                if _ec_meta.get("name"):
+                    _ec_qs["deal"] = [_ec_meta["name"]]
+                    _ec_qs.setdefault("_prefill_deal", [_ec_meta["name"]])
             return self._send_html(render_expert_calls_page(_ec_qs))
+        if path == "/api/diligence/expert-calls.csv":
+            # Call-sheet export — one row per planned call (week, lens,
+            # sourcing) + empty tracking columns; same qs as the page.
+            from .ui.expert_calls_page import expert_calls_csv
+            _ec_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_text(
+                expert_calls_csv(_ec_qs),
+                content_type="text/csv; charset=utf-8")
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs
