@@ -11933,6 +11933,69 @@ _MANUAL.extend([
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
     _ctx(
+        "/further-analysis", "Further Analysis",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A Tableau-style data explorer over every vendored "
+        "public dataset (CMS Part D / Open Payments / HCRIS, CDC PLACES, "
+        "Census/county demographics, BLS-based labor economics, MA "
+        "penetration, PE transaction multiples, FDA drug shortages, derived "
+        "infusion-market scores). Pick a dataset, focus, measures and a chart "
+        "type; export a client-ready PNG/SVG.",
+        primary_purpose="Slice the platform's real public data thousands of "
+        "ways and turn any slice into a deck-ready chart without leaving the "
+        "app.",
+        intended_users=["Deal team building market exhibits from public data."],
+        common_questions=[
+            "Which states have the oldest populations / highest MA "
+            "penetration?",
+            "What are the top Part D drugs by spend, or EV/EBITDA comps by "
+            "specialty?",
+            "Can I chart county demographics for one state?",
+            "How do I export this as a PNG for the deck?",
+            "Where does each series come from?",
+        ],
+        inputs=["A dataset selection; an optional focus (e.g. a state for "
+                "county-grain sets); one or more measures; a chart type; "
+                "sort, top-N, palette, size and label toggles — all via the "
+                "query string, so a view is a shareable URL."],
+        outputs=["A centered, Chartis-styled SVG chart with PNG/SVG export, a "
+                 "gallery of the same query across chart types, and the data "
+                 "table behind the chart. JSON at /api/further-analysis."],
+        key_metrics=["Whatever measures the chosen dataset exposes "
+                     "(demographics, penetration %, spend, EV/EBITDA, wage / "
+                     "turnover, prevalence, shortage counts)."],
+        data_sources=["Real vendored public data only — CMS (Part D, Open "
+                      "Payments, HCRIS, MA enrollment), CDC PLACES, US Census "
+                      "/ County Health Rankings, BLS-based labor model, PE "
+                      "comps library, FDA drug shortages, plus the platform's "
+                      "derived infusion-market scan. No synthetic data."],
+        model_logic_summary="A declarative dataset registry wraps each loader; "
+        "a query layer filters, sorts, caps and scales the rows into the "
+        "chart kit's table shape; the CDD chart kit renders the SVG. See "
+        "diligence/further_analysis.py.",
+        why_it_matters="Gives a partner a single place to mine the public "
+        "datasets the platform already ingests and produce exhibits, instead "
+        "of hand-building tables per page.",
+        diligence_use_cases=["Market sizing and screening (senior base, MA "
+                             "steerage, CON status); reimbursement and drug "
+                             "spend context; labor-cost and comp benchmarks."],
+        interpretation_guidance=[
+            "Every series is real vendored public data; modeled/derived sets "
+            "(e.g. the infusion attractiveness score) are labeled as such.",
+            "Single-series charts (pie/donut/funnel/tornado/dot/gauge/"
+            "marimekko) use the first selected measure; multi-series charts "
+            "plot all selected measures.",
+            "Values are scaled to display units (%, $M/$B, x) per measure.",
+        ],
+        limitations=["Bounded by the vendored snapshots' coverage and "
+                     "vintage; loaders that would need the network are not "
+                     "offered here. Static SVG (no in-chart interactivity)."],
+        related_routes=["/chart-builder", "/visuals", "/excel-mapping",
+                        "/exhibit"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/pie-chart", "Pie Chart",
         category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="A client-ready pie/donut builder — type a "

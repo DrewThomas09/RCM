@@ -6898,6 +6898,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             # with a live thumbnail of each.
             from .ui.visuals_hub_page import render_visuals_hub_page
             return self._send_html(render_visuals_hub_page())
+        if path == "/further-analysis":
+            # Further Analysis — the Tableau-style data explorer over every
+            # vendored public dataset (CMS / CDC / Census / labor / market
+            # comps). qs carries dataset / focus / measures / type / sort /
+            # top / palette; renders an exportable chart from real data.
+            from .ui.further_analysis_page import render_further_analysis_page
+            _fa_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_further_analysis_page(_fa_qs))
+        if path == "/api/further-analysis":
+            # JSON variant — the resolved query + shaped table + the full
+            # dataset/measure catalog for programmatic discovery.
+            from .diligence.further_analysis import build_further_analysis
+            _fa_aqs = urllib.parse.parse_qs(parsed.query)
+            return self._send_json(build_further_analysis(_fa_aqs))
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.
