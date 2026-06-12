@@ -3841,3 +3841,20 @@ scores (e.g. screener 9.6 manifest vs 10.0 live) — regenerating it
 shifts nav rails and is pinned by other tests, so it needs its own
 wave, not a drive-by. test_surface_rankings: 9 passed. Sweep otherwise
 green: 15,722 passed / 1 failed (this one) / 72 skipped.
+
+## W2-188 (2026-06-12) — Surface-rankings manifest regenerated (drift closed)
+Follow-through on the W2-187 note: the checked-in _surface_rankings.py
+manifest had drifted well behind live build_rankings() (317 surfaces;
+scores moved as pages grew/got tests — e.g. screener 9.6→10.0, market
+map 5.2→7.6). Regenerated via scripts/rank_surfaces.py with one
+generator fix first: the B168 curated label overrides (/library →
+"Deal Corpus", /portfolio → "Overview") are now BAKED INTO the
+generator (_LABEL_OVERRIDES) — they had been hand-edited into the
+"do not edit" manifest and silently reverted on regen, reintroducing
+the recursive-dropdown bug the B168 tests guard. One B168 dropdown
+test was over-pinned (asserted /library VISIBLE in the dropdown; after
+regen it legitimately ranks below the top-N cut) — re-pinned to: no
+recursive item ever, and IF /library makes the cut it carries the
+non-recursive label, with the manifest-level label still pinned
+unconditionally. All 9 RANKINGS-pinned suites (93 tests) + 976-test
+nav/palette/best/landing sweep green.

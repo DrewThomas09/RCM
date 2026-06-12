@@ -124,8 +124,16 @@ class TestMegaMenuDropdownLabelsAreNonRecursive(unittest.TestCase):
         self.assertIsNone(
             m, "Library dropdown still contains a 'Library' item "
                f"(recursive). Section text: {section[:300]!r}")
-        # Sanity: the replacement label "Deal Corpus" is present.
-        self.assertIn("Deal Corpus", section)
+        # Sanity: IF the /library landing makes the dropdown's top-N cut,
+        # it must carry its non-recursive label. (2026-06-12 ranking
+        # regeneration: /library legitimately ranks below the cut now, so
+        # presence itself is no longer pinned — the manifest-level label
+        # is pinned by TestSurfaceRankingLabelsAreNonRecursive.)
+        if "Deal Corpus" not in section:
+            from rcm_mc.ui._surface_rankings import RANKINGS
+            lib = next(r for r in RANKINGS["library"]
+                       if r["route"] == "/library")
+            self.assertEqual(lib["label"], "Deal Corpus")
 
     def test_portfolio_dropdown_excludes_recursive_portfolio_label(self):
         text = self._nav_text()

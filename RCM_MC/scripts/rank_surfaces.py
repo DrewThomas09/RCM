@@ -199,9 +199,19 @@ def build_rankings():
     return rows
 
 
+#: Curated label overrides that must SURVIVE regeneration. B168: a section's
+#: own landing route must not repeat the section button's name (the dropdown
+#: read "Library ▾ … Library"), so these landings carry their page eyebrow
+#: instead. Regenerating without these silently reintroduced the recursion.
+_LABEL_OVERRIDES = {
+    "/library": "Deal Corpus",
+    "/portfolio": "Overview",
+}
+
+
 def _label_map() -> Dict[str, str]:
     """route → human label, from the existing nav rails where available."""
-    out: Dict[str, str] = {}
+    out: Dict[str, str] = dict(_LABEL_OVERRIDES)
     try:
         from rcm_mc.ui._chartis_kit import _SUB_NAV
         for items in _SUB_NAV.values():
