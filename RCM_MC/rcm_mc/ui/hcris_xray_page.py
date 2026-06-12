@@ -1626,9 +1626,18 @@ def render_hcris_xray_page(
         ),
     )
 
-    peers_panel = ck_panel(
+    # P5 exhibit chrome: the peer roster is the comp set a CDD readout
+    # actually pastes — number it, state the units, and stamp the source
+    # so print-to-PDF drops straight into the deck.
+    from ._chartis_kit import ExhibitFactory, ck_source_link
+    _xf = ExhibitFactory(deal_label=target.name[:40],
+                         source_default=ck_source_link("CMS HCRIS"))
+    peers_panel = _xf.wrap(
         _peer_table(report.peers),
-        title="Peer roster",
+        title="Peer roster — matched comparables",
+        units=(f"{len(report.peers)} peers · filed HCRIS values, latest "
+               "report per CCN · — = not reported / implausible filing"),
+        vintage=f"FY{target.fiscal_year}",
     )
 
     # EBITDA proxy = HCRIS-filed NPR x filed operating margin. Hospitals

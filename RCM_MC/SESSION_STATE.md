@@ -1,4 +1,27 @@
 # SESSION_STATE — autonomous 8h improvement session — WINDOW 2
+- window3_start: 2026-06-12T05:00:00Z (directive: continue improvements,
+  8 hours, no questions, loop. Stream: claude/general-improvements-a78byd,
+  PR #1811 accumulates; merge origin/main between items as the parallel
+  chart stream advances; regression sweep every ~4 items.)
+- window3 progress (as of ~13:00Z): 28+ items shipped to PR #1811;
+  full sweep 15,753 passed / 0 failed on the merged tree (sweep #6).
+  ALL Tier-1 PAGE_INVENTORY top fixes closed (W2-191…200);
+  FEATURE_MATRIX + PAGE_INVENTORY re-checked for doc honesty; demo deal
+  mvm_2026 rebuilt on real CCN 450358 (workstream H); P13 bullets on
+  /state-profile + market-data state detail; clean 170-route walks ×2.
+  Remaining groomed-open: P4 saved peer-set object, P5 per-deal exhibit
+  registry, P6 facility pins, P9 CHOW-diff alerts, P10 provenance
+  modal+coverage, P14 timing budgets.
+- window3 progress (as of ~11:30Z): 16 items shipped to PR #1811 —
+  ready-queue CLEARED (#23 CIM pctile chip, #24 ROLL-UP chip, #26
+  exhibit chrome ×2, #27 walker --deal-cookie + weekly-sweep pass, #30
+  empty-state gate; #21/#22/#25/#28/#29 verified already shipped &
+  marked done). Plus: ranking-contract fix + manifest regen (B168
+  labels baked into generator), P13 bullets on /state-profile,
+  /pie-chart None-leak fix, quick-import server-side bounds + comma-
+  drop bugfix, P4 chips on /compare, command-center KPI drill-throughs,
+  screener per-row +Deal. Sweeps: 15,7xx green ×3 (one mid-edit
+  artifact re-verified). CI green on every push so far.
 - window2_start: 2026-06-10T12:40:00Z (directive: loop continuously, find bugs,
   small improvements/wins, UI+functionality polish, CDD features, data
   integration; no questions; merges → pedesk.app live + verify)
@@ -20,7 +43,23 @@
   presets (Conservative/Base/Aggressive); per-segment divergence (8
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
-- current_step: looping; branch==main @ a701ee0 (checkpoint 86)
+- current_step: looping; wave #70 on branch claude/pipeline-data-graphs-8ld7ng
+- PRE-MERGE SWEEP (W2-183): fixed 3 main-inherited reds (universe
+  kind, /visuals guide floor + catalog gaps, flagship rank tie).
+- WAVE 84 (W2-182): Saved Charts library (/charts + saved_charts
+  table + save strips on builder/exhibit, owner-scoped, e2e-tested);
+  found-fix: texas-infusion missing from /diligence catalog.
+- WAVE 83 (W2-181): builder↔exhibit round-trip (send-to-exhibit
+  with shaped table, edit-in-builder back-links) + platform-data
+  selects on exhibit panels (has_qs dataset fix).
+- WAVE 82 (W2-180): one-click platform datasets (10 real CMS
+  aggregates via new data/chart_datasets.py) on /chart-builder.
+- WAVE 81 (W2-179): annotations layer (ref/target line, avg line,
+  auto-CAGR tag) + bar_stacked/waffle/smallmult (kit 30 types).
+- WAVE 80 (W2-178): chart data-shaping pipeline (group/sort/top-N/calc
+  dropdowns), pareto/histogram/boxplot/dumbbell (kit 27 types),
+  trendline+R² on line/scatter; guide 5-Q invariant fixed for the 4
+  chart pages (was failing on main).
 - DILIGENCE UPGRADE WAVE (checkpoints 79-86): at-a-glance visuals on 7
   surfaces — bear-case severity matrix, CIM variance chart, bankruptcy
   pattern strip, cliff hold timeline, pipeline compute bars, checklist
@@ -337,6 +376,26 @@ nav + palette + guide context. +10 tests. Joins Excel Mapping (#62) +
 Chart Builder (#63) as the graphics-utility set.
 
 ---
+## Checkpoint — wave #71 (W2-169, 2026-06-12)
+Closed the LAST unbuilt item of the multi-source data request: CMS
+Medicare Monthly Enrollment. New cms_monthly_enrollment.py (live
+data.cms.gov client: catalog UUID resolve + state/county annual-average
+rows + year walk-back; suppressed cells → None; fails closed). Engine
+texas_medicare_base(): the TRUE Part B denominator — total/FFS/MA benes
+for TX + the 4 metros' member counties; offline MODELED from real pop ×
+documented enrollment rates (aged 0.95 × 65+, disabled 0.023 × pop;
+anchors in docstring) + real vendored TX MA enrollment for the split,
+LIVE rows replace every count via ?nppes=live. Page: "Medicare
+beneficiary base — the Part B denominator" section (KPI strip, FFS-vs-MA
+100% bar, top-12 county table, LIVE/MODELED badge, true-MA-penetration
+footnote) + SO WHAT + source line. +10 client tests + 6 integration.
+
+USER DATA REQUEST — COMPLETE (wave #73): CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓
+NPPES+map ✓ J-code POS ✓ Medicare Monthly Enrollment ✓ Outpatient by
+Provider & Service ✓ (live client + APC-grain parser fix + HOPD
+steerable-pool section, W2-173). Nothing named remains unwired.
+
+---
 ## Checkpoint — wave #65 (W2-163, 2026-06-12)
 Charts: +6 types (funnel/tornado/radar/matrix/bullet/dot → 19 total),
 export toolbar (Download SVG/PNG 2x/Copy, vanilla JS) on Chart Builder +
@@ -519,3 +578,11 @@ no specialty selected, rows link focused views. +3 tests.
 /transaction-multiples.xlsx (29-band comps-ready workbook, linked from
 the /market-intel directory) + infusion-scan card in CDD hub module 1.
 +2 tests, smoke green.
+
+---
+## Checkpoint — wave #80 (W2-178, 2026-06-12)
+Deepened Texas (user steer): aic_denovo_ramp() de-novo build J-curve
+(capex ~$504K, break-even ~month 12, Y3 ~3.0x cash-on-cash; 36-mo cum-cash
+series; interpolates the chair util curve; editable). Page: "De-novo AIC
+build — the J-curve" section (KPIs + J-curve SVG + by-year + SO WHAT).
++4 tests. Builds on existing AIC economics.

@@ -147,6 +147,48 @@ def _profile_spotlight(key: str, state: str, ranked) -> str:
     )
 
 
+def _profile_insights(state: str, name: str, ranked) -> str:
+    """P13 takeaway bullets for the state dossier — built ONLY from the
+    same (value, rank, vs-median) tuples the table renders, with the
+    significance guard (top/bottom-quartile rank AND ≥10% off the
+    median; trivia suppressed). ck_insight_bullets renders nothing when
+    no candidate passes — silence over noise."""
+    from rcm_mc.ui._chartis_kit import ck_insight_bullets
+    strengths: List[Tuple[str, float, int, int, float]] = []
+    weaknesses: List[Tuple[str, float, int, int, float]] = []
+    for key, label, _src, _f, higher in _METRICS:
+        if higher is None:
+            continue                      # no good/bad direction → no claim
+        pairs = ranked.get(key, [])
+        n = len(pairs)
+        if n < 8:
+            continue
+        pos = next((i for i, (s, _) in enumerate(pairs, 1) if s == state), None)
+        val = next((v for s, v in pairs if s == state), None)
+        med = _us_median([v for _, v in pairs])
+        if pos is None or val is None or med in (None, 0):
+            continue
+        delta = (val - med) / abs(med) * 100.0
+        if pos / n <= 0.25 and abs(delta) >= 10.0:
+            strengths.append((label, delta, pos, n, abs(delta)))
+        elif pos / n >= 0.75 and abs(delta) >= 10.0:
+            weaknesses.append((label, delta, pos, n, abs(delta)))
+    strengths.sort(key=lambda t: -t[4])
+    weaknesses.sort(key=lambda t: -t[4])
+    cands = []
+    for label, delta, pos, n, _a in strengths[:2]:
+        cands.append((
+            f"{_html.escape(name)} ranks <strong>#{pos} of {n}</strong> on "
+            f"{_html.escape(label)} — {delta:+.0f}% vs the U.S. median; "
+            f"a top-quartile strength for market entry.", True))
+    for label, delta, pos, n, _a in weaknesses[:2]:
+        cands.append((
+            f"{_html.escape(name)} sits <strong>#{pos} of {n}</strong> on "
+            f"{_html.escape(label)} — {delta:+.0f}% vs the U.S. median; "
+            f"a bottom-quartile read to underwrite around.", True))
+    return ck_insight_bullets(cands, title=f"{name} — the read")
+
+
 def render_state_profile(params: Dict = None) -> str:
     state = _parse_state(params)
     name = _STATE_NAMES.get(state, state)
@@ -312,6 +354,7 @@ def render_state_profile(params: Dict = None) -> str:
 <div class="ck-page-wrap">
   {ck_page_title(f"State Profile — {name}", eyebrow="MARKET INTEL", meta=f"Every real public-data metric for {name} ({state}), with its national rank")}
   {kpi_strip}
+  {_profile_insights(state, name, ranked)}
   <p style="font-size:13px;color:{td};max-width:72ch;margin:0 0 14px">
     A single-state dossier across PEdesk's real public-data layers — each metric
     shown with {_html.escape(name)}'s gap to the U.S. median and its national rank

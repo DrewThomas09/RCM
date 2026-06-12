@@ -187,17 +187,38 @@ def render_command_center(
         ),
         inject_css=False,
     )
+    # PAGE_INVENTORY top fix — drill-through on every hero KPI: each
+    # figure links to the surface where a partner ACTS on it. Links live
+    # in the (trusted-markup) sub line so the value stays a clean number.
+    def _drill(href: str, label: str = "open →") -> str:
+        return (f' · <a class="ck-link" href="{href}" '
+                f'style="font-size:10px;">{label}</a>')
+
     hero_kpis = (
         ck_kpi_block(
             "Hospitals",
             f"{n_hospitals:,}",
-            f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}",
+            f"HCRIS FY2022 {source_tag(Source.HCRIS, 'FY2022')}"
+            + _drill("/target-screener?vertical=hospitals", "screen →"),
         )
-        + ck_kpi_block("PE-Sized Targets", pe_target_value, "100-500 beds, $50M+ NPSR")
-        + ck_kpi_block("Total NPSR", _fm(total_revenue), "all hospitals")
-        + ck_kpi_block("Median Margin", f"{median_margin:.1%}", "credible filings")
-        + ck_kpi_block("Distressed", distressed_value, "margin &lt; -5%")
-        + ck_kpi_block("Active Deals", f"{len(deals)}", "in portfolio")
+        + ck_kpi_block(
+            "PE-Sized Targets", pe_target_value,
+            "100-500 beds, $50M+ NPSR"
+            + _drill("/target-screener?vertical=hospitals&min_size=100",
+                     "screen →"))
+        + ck_kpi_block(
+            "Total NPSR", _fm(total_revenue),
+            "all hospitals" + _drill("/market-data", "market →"))
+        + ck_kpi_block(
+            "Median Margin", f"{median_margin:.1%}",
+            "credible filings" + _drill("/market-data", "market →"))
+        + ck_kpi_block(
+            "Distressed", distressed_value,
+            "margin &lt; -5%"
+            + _drill("/screening/bankruptcy-survivor", "scan →"))
+        + ck_kpi_block(
+            "Active Deals", f"{len(deals)}",
+            "in portfolio" + _drill("/portfolio", "book →"))
     )
     sections.append(
         f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(6,1fr);">'

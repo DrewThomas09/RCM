@@ -3639,7 +3639,343 @@ Completed the deliverables set (alongside the IC memo):
 **Verify**: +1 test — the shared helper returns the 5-svg composed slide
 (no None) and the page links to the SVG download route. Full suite green.
 
-## W2-176 (2026-06-12) — National infusion-market scan (wave #78)
+## W2-176 (2026-06-12) — Medicare Monthly Enrollment, county grain: the Part B denominator by county (wave #73a)
+Closed the last unbuilt item of the user's multi-source CMS data request.
+- **`cms_monthly_enrollment.py`** (new live client): resolves the CMS
+  "Medicare Monthly Enrollment" dataset UUID from the data.json catalog,
+  pulls state + county annual-average rows (TOT/ORGNL_MDCR/MA_AND_OTH/
+  AGED/DSBLD benes), walks the publication year back from today (CMS
+  lags), parses comma counts, and maps suppressed cells ('*') to None —
+  never 0. Fails closed when egress is blocked; nothing fabricates an
+  enrollment count.
+- **`texas_medicare_base()`** (engine): total / FFS / MA beneficiaries —
+  the TRUE Part B infusion denominator — for TX and the four metros'
+  member counties. Offline the counts are MODELED from real inputs and
+  labeled: aged ≈ real 65+ pop × near-universal enrollment (0.95),
+  disabled ≈ total pop × the national disabled-bene rate (0.023; both
+  anchors documented), FFS/MA split from the real vendored TX MA
+  enrollment. With ?nppes=live the published CMS rows replace every
+  count, county-by-county (per-county live dots).
+- **Page**: "Medicare beneficiary base — the Part B denominator" section
+  after Payer mix — KPI strip (total / FFS buy-and-bill book / MA
+  steered book / TRUE MA penetration / aged / disabled), an FFS-vs-MA
+  100% bar, a top-12 metro-county table, the LIVE/MODELED badge, and a
+  footnote that the 65+-proxy penetration in the MA panel above
+  overstates true penetration. + SO WHAT (size Part B on FFS benes) +
+  source line.
+**Verify**: new `test_cms_monthly_enrollment.py` (10) — suppression→None,
+alias parsing, fail-closed (no dataset / network error / nothing
+published), year walk-back to latest published, state+county composition.
++6 in test_texas_infusion — state math (FFS+MA=total, aged+disabled=
+total), modeled TX total inside the published 4.6–4.8M band, counties ⊂
+metro members sorted desc (Harris #1), live mock replaces state + matched
+counties and leaves the rest MODELED, page renders section + badge,
+source cited. Full suite green.
+
+## W2-177 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #73b)
+The full-suite sweep after the enrollment wave caught five pre-existing failures the
+graphics waves left on main (verified failing on a clean tree):
+- **`user-supplied` data-universe kind unregistered** — /chart-builder,
+  /excel-mapping and /pie-chart declared `universe="user-supplied"` but
+  the kind wasn't in `_DATA_UNIVERSE`, so the provenance chip rendered
+  EMPTY on all three pages (silent provenance loss). Registered with a
+  self-describing tooltip ("values you typed or pasted — not a data
+  claim") + docstring kind list updated.
+- **Guide 5-Q floor + empty related_routes ×3** — the three graphics
+  pages shipped with 3 common_questions (floor is 5) and no
+  related_routes, so the Guide couldn't recommend siblings. Each now
+  carries 5 questions (incl. the export/size features wave #65 added)
+  and cross-links the graphics-utility family.
+- **/diligence/texas-infusion orphaned from the catalog** — the served
+  route never appeared on the /diligence landing. Added to the Audit &
+  Stress pillar beside its sibling TAM/SAM Builder.
+**Verify**: the 5 failing tests (test_data_universe_kinds_registered,
+test_pedesk_guide_5q_invariant ×3, test_section_catalog) now pass;
+1,321-test wiring sweep (guide/palette/chartis/catalog/nav) green.
+
+## W2-178 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #73c)
+Merging main (waves #66–68 from the parallel chart stream) brought the
+new /exhibit Exhibit Composer with the SAME wiring gap the W2-177 sweep
+fixed on its siblings: 2 common_questions (floor is 5) and no
+related_routes. Brought it to the floor + cross-linked /chart-builder
+and /pie-chart. Guide invariant suites + 1,254-test graphics/wiring
+sweep green on the merged tree.
+
+## W2-179 (2026-06-12) — /visuals guide-floor fix after the second main merge (wave #73d)
+The next main merge (waves #69–70 from the chart stream) brought the
+/visuals hub with the same gap again: 2 common_questions, no
+related_routes. Brought to the floor + cross-linked all four builder
+tools. NOTE for the chart stream: new pages keep landing below the
+Guide 5-Q floor — add the 5 questions + related_routes in the same PR
+that adds the page (test_pedesk_guide_5q_invariant is the gate).
+
+## W2-180 (2026-06-12) — HOPD per-hospital volume via CMS OPPS by Provider & Service (wave #73e)
+Closed the FINAL remaining item of the multi-source CMS data request —
+and fixed a latent parser bug found while wiring it:
+- **Parser fix (found bug)**: the published "Outpatient Hospitals - by
+  Provider and Service" file is **APC-grain** (APC_Cd / CAPC_Srvcs /
+  Bene_Cnt — confirmed against the CMS data dictionary), but
+  `parse_opps_csv` only knew the speculative HCPCS aliases, so the real
+  download parsed to NOTHING. Added the APC aliases (HCPCS kept for old
+  extracts) + corrected the module docstring.
+- **Live client** (same module): `resolve_opps_provider_dataset`
+  (catalog UUID), `fetch_opps_apc_state` (per-hospital rows for one APC
+  × state), `fetch_state_drug_admin` (per-CCN aggregate over the four
+  OPPS drug-administration APCs 5691–5694; beneficiary counts are
+  max-per-APC, never summed across APCs). Fails closed.
+- **`texas_hopd_infusion()`** (engine): the steerable hospital pool by
+  metro. Offline = MODELED from the page's own factors (metro infusion
+  patients × HOPD site share × Medicare slice — all already on the
+  page); ?nppes=live = real per-CCN Medicare drug-admin services mapped
+  to metros via each hospital's HCRIS county + a top-10 TX hospitals
+  table naming where the steerable volume sits. FFS-only caveat stated
+  (live counts UNDERSTATE the pool).
+- **Page**: "HOPD infusion volume — the steerable pool" section after
+  site-of-care — APC reference chips, per-metro modeled/live table,
+  LIVE/MODELED badge, top-hospitals table (live), SO WHAT + source.
+
+USER DATA REQUEST — COMPLETE: CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓ NPPES+map ✓
+J-code POS ✓ Medicare Monthly Enrollment ✓ Outpatient by Provider &
+Service ✓. Every named source now has a live client wired into the
+Texas page with an honest labeled fallback.
+**Verify**: new test_cms_opps_live (6) — APC-grain CSV rows now parse
+(the pre-fix aliases dropped them), the four drug-admin APCs, fail-closed
+×3, mocked-payload parse, per-CCN aggregation (services sum, benes max,
+$ math). +5 in test_texas_infusion — modeled pool == page factors
+recomputed, APC set, live mock aggregates via the real HCRIS Harris-county
+join, page renders, source cited. Full suite green.
+
+## W2-181 (2026-06-12) — Reconcile the two parallel CMS wirings (wave #73f)
+The chart stream and this stream independently wired the SAME two CMS
+sources (their W2-169/170 vs this stream's W2-176/180). Reconciled at
+the merge instead of shipping duplicates:
+- **Both kept where complementary**: their state-level true-MA-
+  penetration upgrade to texas_ma_enrollment + their compact HOPD
+  "$-pool" panel inside site-of-care stay; this stream's county-grain
+  Medicare-base section and per-CCN HOPD drill-down (retitled "HOPD
+  volume by hospital — who holds the pool") stay. The modeled numbers
+  agree by construction (same patients × HOPD share).
+- **Found bug fixed at the merge**: their `fetch_opps_state_infusion`
+  filtered `HCPCS_Cd` (J-codes) against the APC-grain file — a filter
+  that matches nothing live. Rewired it as a thin bridge over the
+  APC-grain `fetch_state_drug_admin` (same name + return shape, their
+  tests untouched); `hcpcs_codes` accepted for back-compat and ignored,
+  documented in the docstring.
+**Verify**: merged-tree texas suite (both streams' test classes) +
+opps client suites green; page renders both blocks consistently.
+
+## W2-182 (2026-06-12) — CIM claim-percentile chip in ck_peer_percentile language (backlog #23)
+Backlog triage first: ready-queue items #21 (palette name-search), #22
+(P9 diff detail), #25 (DQ snapshot dates) and #29 (model-card link)
+were already shipped by earlier waves — marked done. The remaining
+delta on #23: the CIM cross-check claim-percentile chip was plain text
+("claim @ p97 of n=457") while the platform standard is the
+ck_peer_percentile visual (position track + peer label). Upgraded
+_pctile_chip to that language — mono chip + 60px track with the dot at
+the ENGINE's percentile (never recomputed in the UI) + the scope label
+("vs TX hospitals (n=457)") — tail amber + tooltip preserved, aggregate/
+small-n still render "". +2 chip assertions (track dot position derives
+from engine rank; mid-range neutral). test_cim_crosscheck: 30 passed.
+
+## W2-183 (2026-06-12) — ROLL-UP chip on saved scenario notes (backlog #24)
+The save-to-deal roll-up note's reopen path was already a real anchor
+(strict-charset linkify, pinned by NoteLinkifyTests); the missing half
+of backlog #24 was the type chip. Scenario notes on the deal page now
+carry a mono teal ROLL-UP chip in the note head so they're scannable in
+a long list. Detection is on the embedded /pipeline/rollup? reopen path
+the WRITER emits — a free-text note that merely says "roll-up" gets no
+chip (pinned both ways). New .ck-deal-note-chip style in the deal-page
+CSS. test_rollup_save_to_deal + test_server: 74 passed.
+
+## W2-184 (2026-06-12) — Route-walker cookie-context mode (backlog #27)
+Backlog #28 (screener state prefill) verified already shipped — marked
+done. #27 built: `route_walker.py --deal-cookie <id>` walks every page
+WITH the pedesk_active_deal_meta cookie set (TX / CCN 450358 sample
+meta via the new `deal_cookie()` helper), so the prefill code paths —
+CIM state/CCN, roll-up basket, screener state scoping — render under
+test instead of only on a partner's machine. `walk()` gained an
+optional `cookie=` arg (plain Request when unset). The weekly
+regression sweep now runs a SECOND walker pass with the cookie after
+the plain pass. +1 live-server test: cookie walk over the three
+prefill routes → 200 / no traceback / no nan-None leak.
+
+## W2-185 (2026-06-12) — Exhibit chrome on X-Ray peer roster + screener compare (backlog #26)
+P5 expansion: the two paste-ready comp tables now carry the house
+exhibit discipline (numbered figure + units stated + sourced,
+vintage-stamped footer + print-to-PDF page rules):
+- HCRIS X-Ray peer roster → "EXHIBIT 1 — Peer roster — matched
+  comparables", units state the roster basis (n peers · filed HCRIS
+  values, latest per CCN · — = not reported/implausible), footer
+  sourced CMS HCRIS + FY of the target filing, deal_label = target.
+- Target-screener compare basket → "EXHIBIT 1 — Compare basket —
+  side-by-side", cross-vertical baskets titled "(cross-vertical)" with
+  units noting Size/Quality are labeled per vertical (not comparable).
+**Verify**: +3 assertions in test_hcris_xray (exhibit number, title,
+source, FY-stamped footer regex) and +2 tests in test_target_screener
+(single-vertical exhibit without the cross caveat; cross-vertical title
++ units). 183 passed across both suites.
+
+## W2-186 (2026-06-12) — Empty-state sweep test: ?state=ZZ + empty-db walk (backlog #30)
+The mechanical half of the carried "empty-state verification pass" is
+now a permanent gate: new test_empty_state_sweep.py boots an open
+server on an EMPTY db and walks (a) nine state-filterable analytics
+pages with ?state=ZZ and (b) eight core portfolio pages, asserting
+200/3xx + no traceback + no nan/None leak via the route-walker marker
+set. The screener ZZ case additionally pins the honest read: the
+results header counts "0 Hospitals" (the filter applied, not silently
+dropped) and the page says so in words; the cross-universe scale strip
+legitimately keeps the full universe sizes as context. 3 tests pass on
+the empty db.
+
+## W2-187 (2026-06-12) — Ranking-contract fix: flagship pin survives module growth
+The regression-sweep cadence caught test_surface_rankings failing on
+main: the Texas market study (now 3,092 lines after both streams' waves)
+overtook /target-screener as global rows[0] — both score a saturated
+10.0 and the sort tiebreak is raw module LOC, so sheer page size read
+as flagship displacement. The ranking only DRIVES per-section nav
+promotion, so the global pin was an artifact. Re-pinned the contract to
+intent: the screener holds the MAX total and leads its own (Source)
+section. Noted for a future considered item: the checked-in
+_surface_rankings.py manifest has drifted from live build_rankings()
+scores (e.g. screener 9.6 manifest vs 10.0 live) — regenerating it
+shifts nav rails and is pinned by other tests, so it needs its own
+wave, not a drive-by. test_surface_rankings: 9 passed. Sweep otherwise
+green: 15,722 passed / 1 failed (this one) / 72 skipped.
+
+## W2-188 (2026-06-12) — Surface-rankings manifest regenerated (drift closed)
+Follow-through on the W2-187 note: the checked-in _surface_rankings.py
+manifest had drifted well behind live build_rankings() (317 surfaces;
+scores moved as pages grew/got tests — e.g. screener 9.6→10.0, market
+map 5.2→7.6). Regenerated via scripts/rank_surfaces.py with one
+generator fix first: the B168 curated label overrides (/library →
+"Deal Corpus", /portfolio → "Overview") are now BAKED INTO the
+generator (_LABEL_OVERRIDES) — they had been hand-edited into the
+"do not edit" manifest and silently reverted on regen, reintroducing
+the recursive-dropdown bug the B168 tests guard. One B168 dropdown
+test was over-pinned (asserted /library VISIBLE in the dropdown; after
+regen it legitimately ranks below the top-N cut) — re-pinned to: no
+recursive item ever, and IF /library makes the cut it carries the
+non-recursive label, with the manifest-level label still pinned
+unconditionally. All 9 RANKINGS-pinned suites (93 tests) + 976-test
+nav/palette/best/landing sweep green.
+
+## W2-189 (2026-06-12) — P13 insight bullets on the state-profile dossier
+Second half of the old P13 item (/portfolio adopted ck_insight_bullets
+earlier; the state market page never did). New _profile_insights(state,
+name, ranked): up to 2 top-quartile strengths + 2 bottom-quartile reads,
+built ONLY from the same (rank, n, vs-median) tuples the dossier table
+renders, with the significance guard (quartile rank AND ≥10% off the
+U.S. median; directional metrics only; n≥8). ck_insight_bullets keeps
+the copy-to-clipboard affordance and renders NOTHING when no candidate
+passes. Placed under the KPI strip on /state-profile.
+**Verify**: +2 tests — every claimed "#pos of n" in the rendered
+bullets is re-derived from _all_ranked() and must match exactly
+(regex over the bullet HTML); empty ranked structure renders "".
+21 passed across the geo/state suites.
+
+## W2-190 (2026-06-12) — Found bug: /pie-chart tripped the None-leak gate
+A live route-walk (the new --deal-cookie mode's first full run: 169
+routes plain + 169 with the active-deal cookie, 0 tracebacks) flagged
+exactly one leak: /pie-chart rendered a literal ">None<" — the label-
+mode select's "None" option, indistinguishable from a None-leak to the
+walker's marker and on course to FAIL the next weekly --fail-on-leak
+sweep. Renamed the option to "No labels" (value unchanged; clearer to
+a partner anyway) + a regression test pinning >None< / >nan< out of
+the page HTML. The walk's only other non-200 is /analysis/<deal> 404
+on an empty db — the honest response, not a bug.
+
+## W2-191 (2026-06-12) — Quick-import entry-time range validation (+ comma-drop bug)
+PAGE_INVENTORY Tier-1 top fix for /import ("range validation exists
+only on display"). Server-side now:
+- **Hard physical bounds** in _route_quick_import_post — percentages in
+  [0,100], days-in-AR in [0,500], counts/dollars non-negative. Bounds
+  are physical limits only; implausible-but-possible values still
+  import (ENTERED data, flagged downstream). Violations re-render the
+  form with the offending field+bound named and EVERY typed value
+  preserved (metric/financial fields now accept prefill), and the deal
+  is NOT created.
+- **Found bug while wiring**: a comma-formatted entry ('180,000' —
+  exactly what the form hint promises works) hit ValueError inside the
+  float loop and was SILENTLY DROPPED from the profile. Commas now
+  strip server-side across numeric fields.
+**Verify**: new ungated test_quick_import_validation.py (2 e2e tests —
+140% denial rejected w/ prefill survival + deal not created;
+comma-formatted values land as numbers via the flattened deal store).
+The old import suite is env-gated (v2-shell markers) — verified green
+under CHARTIS_UI_V2=1 too.
+
+## W2-192 (2026-06-12) — P4 percentile chips on /compare (PAGE_INVENTORY top fix)
+The deal-compare page's headline KPIs (Denial Rate, AR Days) now carry
+ck_peer_percentile chips ranking each compared deal against the WHOLE
+deal book — the inventory's "percentile context vs peers" fix. The
+/compare handler passes {metric: full-book values} from list_deals()
+(additive context; fails soft to no chips), the renderer takes an
+optional peer_dists arg, and ck_peer_percentile's own honesty guards
+hold: no distributions → no chip markup, a thin book (n<8) renders
+"peer set too small (n=K)", never a fabricated rank. Chips are toned
+lower-is-better for both metrics.
+**Verify**: +2 tests — p70 reproduced by hand for denial 12.0 against a
+10-value book ("vs portfolio deals (n=10)"); silent without dists +
+honesty note on n=3. 52 passed across the comparison suites.
+
+## W2-193 (2026-06-12) — Command-center hero-KPI drill-throughs (PAGE_INVENTORY top fix)
+Every hero figure on / (command center) now links to the surface where
+a partner ACTS on it: Hospitals → screener (hospitals universe);
+PE-Sized Targets → screener scoped min_size=100 (verified: hospital
+size == beds in the screener rows, so the deep link is semantically
+right); Total NPSR + Median Margin → /market-data; Distressed →
+/screening/bankruptcy-survivor (the distress scan); Active Deals →
+/portfolio. Links sit in the trusted sub line so values stay clean
+numbers. New test_command_center_drill.py: every link present on the
+rendered page + every drill target verified to be an exact-match
+served route in server.py (guards renames). 26 passed with the
+adjacent command-center suites.
+
+## W2-194 (2026-06-12) — Screener per-row deal-attach (+Deal) (PAGE_INVENTORY top fix)
+The main screener table's row actions (X-Ray · Inspect · CIM · +Cmp)
+gain +Deal: promote the provider straight to a prefilled /import (deal
+id slugged vertical_ccn, name, state) without the Inspector round-trip
+— closing the inventory's per-row deal-attach fix and completing the
+Source → Pipeline path from the row itself. Same prefill contract the
+Inspector's "Promote to Pipeline" link already used. +1 test (slug,
+title, action present); test_target_screener: 159 passed.
+
+## W2-195 (2026-06-12) — Market-data county drilldown links (PAGE_INVENTORY top fix)
+/market-data/state/<ST>'s Cross-links panel now drills into the SCOPED
+county explorer (/county-explorer?state=ST — the county layers existed,
+the state detail just never linked there) and the state dossier
+(/state-profile?state=ST). New ungated test_market_data_drilldown.py
+pins both links + the explorer's state scoping. 12 passed with the
+map suite.
+
+PAGE_INVENTORY status note: of the 17 Tier-1 "top fix" entries graded
+2026-06-10, TEN are now shipped (per-row deal-attach W2-194, drill-
+throughs W2-193, /compare percentiles W2-192, import validation W2-191,
+county drilldown W2-195, plus P5/P8/P9/P11/model-card from earlier
+waves). Still open: portfolio per-deal alert digest, deal-workbench
+ENTERED-basis pass, ebitda-bridge exhibit export, glossary links from
+every KPI label (partial).
+
+## W2-196 (2026-06-12) — EBITDA-bridge waterfall as a numbered exhibit (PAGE_INVENTORY top fix)
+The bridge waterfall — the slide an IC deck actually pastes — now
+carries the house exhibit chrome via ExhibitFactory: "EXHIBIT 1 —
+EBITDA Bridge · 7 RCM Levers", units stated (annual $ at full run-rate,
+filed HCRIS base × published research bands), footer sourced CMS HCRIS
++ FY-stamped, deal_label = the hospital, print-to-PDF page rules.
+Closes the inventory's "exhibit-style export" fix the same way as the
+peer roster + compare basket (W2-185). +1 test; 16 passed.
+
+## W2-197 (2026-06-12) — Portfolio per-deal alert digest (PAGE_INVENTORY top fix)
+The /portfolio deal table gains an Alerts column: one pass over the
+LIVE unacked alerts (evaluate_active — acked stay out of the partner's
+face, per the lifecycle) → worst-severity dot + count per deal, linked
+to /alerts, severity-toned (red/amber/info). Deals with no alerts show
+an em-dash, never a fabricated zero-chip; store=None or an evaluator
+failure renders dashes, never a 500. Test exercises the REAL path (an
+overdue deadline fires the alert; no synthetic Alert objects). 18
+passed across the portfolio suites.
+
+## W2-198 (2026-06-12) — National infusion-market scan (wave #78; chart stream)
 "Where else after Texas?" — a new diligence surface that ranks every
 state for an infusion roll-up from the SAME real per-state data the
 Texas page uses:
@@ -3660,7 +3996,67 @@ score = the weighted-axes blend, no-CON flag matches the documented list,
 TX present + top-10; page renders the map/table/TX-read + palette/nav/
 guide registration. Full suite green.
 
-## W2-177 (2026-06-12) — Infusion market scan: Excel-Mapping cross-link + JSON API (wave #79)
+## W2-199 (2026-06-12) — Deal-dashboard ENTERED-basis pass (PAGE_INVENTORY top fix)
+The deal dashboard's operating-profile strip rendered the MODEL'S
+fallback constants as if they were the deal's numbers: a profile with
+no denial rate showed "Denial Rate 12.0%" (the estimate default) and
+no margin showed 10% — fabricated-looking observed values. Now: entered
+values carry the ENTERED basis badge; missing metrics render an em-dash
+with an honest sub-line ("not entered — estimates use the 12% model
+default"); the Denial-Drivers tile only quotes a "14.2% → 8%"
+trajectory when the rate was actually entered. The derived ESTIMATES
+(EV/IRR/recoverable in the value anchor) legitimately keep their
+defaults — they're labeled indicative. +2 tests; 7 passed.
+
+## W2-200 (2026-06-12) — Glossary links: deal dashboard + market-data headers
+Extended the metric→glossary linking (PAGE_INVENTORY "partial" fix) to
+two more high-traffic surfaces: the deal dashboard's Denial Rate /
+EBITDA Margin KPI cards (link lives in the trusted sub line —
+ck_kpi_block ESCAPES labels by contract, which would have rendered a
+literal &lt;a&gt;; caught in verification) and the market-data state-
+detail hospital table's NPR / Margin headers. metric_label_link's
+no-dead-links fallback verified (bed_count has no card → plain text).
++1 test; 8+12 passed across both suites.
+
+## W2-201 (2026-06-12) — Found bug: /diligence/infusion-markets orphaned from catalog
+The cadence sweep caught the chart stream's new national infusion scan
+(wave #78) served but missing from the /diligence landing catalog —
+the same orphan class as texas-infusion before it (the catalog-coverage
+test is the gate that caught it). Added to the Audit & Stress pillar
+beside the Texas study. Invariant suites (39) green.
+
+## W2-202 (2026-06-12) — Doc fix: the live-mode session-TTL "limitation" was stale
+CLAUDE.md claimed "live mode meta-refresh doesn't extend session TTL" —
+misleading: verified functionally that every authenticated request
+(including the 60s meta-refresh GET) bumps last_seen_at and slides the
+IDLE window; only the 7-day ABSOLUTE TTL (set at login, by design as an
+activity cap) ends the session. Rewrote the known-limitation note to
+say precisely that. Also: clean full route-walk on the merged tree
+incl. the chart stream's new national-scan page (170 routes, 0
+tracebacks, 0 leaks, --deal-cookie mode).
+
+## W2-203 (2026-06-12) — FEATURE_MATRIX statuses re-checked (doc honesty)
+The matrix still listed P2 (CIM cross-check), P3 (driver trees), P7
+(roll-up builder), P8 (rule join), P11 (DQ dashboard) as MISSING/
+PARTIAL — all long shipped. Re-checked every row against the live
+code and updated statuses with their log references. Remaining
+genuinely-open sub-items now stated precisely: saved peer-set OBJECT
+(P4), per-deal exhibit REGISTRY (P5), facility pins/catchments (P6),
+ownership-CHOW diff alerts (P9), provenance modal + coverage metric
+(P10), long-tail bullet coverage (P13), timing budgets (P14).
+
+## W2-204 (2026-06-12) — Demo-deal realism: mvm_2026 rebuilt on real CCN 450358 (workstream H)
+One of the seeded fictional demo deals is now a REAL facility: mvm_2026
+becomes The Methodist Hospital (the platform's canonical sample TX CCN
+450358). Its profile loads from the live HCRIS frame AT SEED TIME —
+name, state, beds, NPR, filed margin, Medicare share — so the numbers
+can never drift from the filing (no hardcoded copies); falls back to
+the fictional seed when the frame is unavailable. metrics_basis records
+"ACTUAL — filed HCRIS values, CCN 450358 FY2022" and the deal dashboard
+identity line names the CCN + FY. +2 tests (profile == HCRIS row
+EXACTLY; page names the CCN). 18 + integration suites green.
+
+## W2-205 (2026-06-12) — Infusion market scan: Excel-Mapping cross-link + JSON API (wave #79)
 Connected the new market scan to the graphics suite and the API surface:
 - **"Open in Excel Mapping" cross-link**: pre-fills all 51 state
   attractiveness scores (+ a teal gradient and the score domain) into the
@@ -3671,7 +4067,69 @@ Connected the new market scan to the graphics suite and the API surface:
   programmatic use, matching the platform's API-everywhere pattern.
 **Verify**: +1 test — the cross-link's data param round-trips to all 51
 states via the mapping parser. Full suite green.
-## W2-168 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
+
+## W2-206 (2026-06-12) — P13 bullets on market-data state detail
+/market-data/state/<ST> gains two guarded insight bullets recomputed
+from the SAME HCRIS frame the hospital table renders: the credible-
+filing median operating margin + negative-margin count (the distress
+pool), and the PE size-band count (100–500 beds, ≥$50M NPR — the
+screenable universe). The credibility screen mirrors the row
+renderer's gate (revenue >$100K, positive opex, margin in [-100%,
++100%]); n<8 renders nothing. Test re-derives both figures from the
+frame and matches the rendered strings exactly. 14 passed.
+
+## W2-207 (2026-06-12) — P14 timing budgets in the route walker
+walk() now records per-route wall-clock ms (new `ms` TSV column); the
+summary prints the 5 slowest pages every run, and a `--budget-ms N`
+flag exits non-zero when any page exceeds the budget. Wired into the
+weekly sweep's SECOND (warm-server) pass at 15s — generous on purpose:
+the gate is for runaway regressions (an accidental O(n²) render), not
+micro-tuning; the first cold pass stays budget-free since it pays
+one-time imports. +1 walker test (ms recorded, sane bounds).
+
+## W2-208 (2026-06-12) — P5 exhibit registry on the deal page
+The deal dashboard's Export & Download card now lists the deal's
+PREVIOUSLY generated artifacts from the generated_exports audit table
+(format · timestamp · by · size, latest 10) — the per-deal exhibit
+registry the FEATURE_MATRIX named as P5's open half. Read-only,
+fails soft (registry errors → no panel), empty → nothing rendered.
++2 tests (real record_export row renders; empty deal shows no panel).
+
+## W2-209 (2026-06-12) — P4 saved peer-set object (the matrix's open half)
+New rcm_mc/portfolio/peer_sets.py — a named, owner-scoped CCN basket
+mirroring the saved_screens store discipline (CREATE IF NOT EXISTS,
+parameterised SQL, BEGIN IMMEDIATE, owner-scoped read AND delete).
+Honesty contracts: invalid CCN tokens are DROPPED at save (shape-
+validated, deduped order-preserving, capped 24), <2 valid CCNs
+rejected, and consumers re-resolve CCNs against their live universes
+so a stale CCN degrades to the module's own not-found handling.
+Compare view: "Save basket as peer set" form (owner only, basket ≥2)
++ SAVED PEER SETS load/delete list (renders on the empty basket too —
+loading is the natural first action). Server: POST /api/peer-sets/
+{save,delete} + sets queried server-side and threaded through
+render_target_screener (house pattern — page module stays store-free).
+**Verify**: new test_peer_sets.py (7) — roundtrip order/dedup, junk
+tokens never stored, <2 rejected, owner scoping both ways, signed-out
+view has NO persistence affordance, owner sees form + sets + load
+links, HTTP save→store roundtrip on the real server. 166 passed with
+the full screener suite.
+
+## W2-210 (2026-06-12) — P5 registry write-side (refill #36)
+The W2-208 registry now fills itself: generating the IC memo
+(/api/deals/<id>/memo) and the diligence package ZIP both record a
+generated_exports row (format, size for the ZIP, generated_by) —
+best-effort, a registry hiccup can never block the download. E2E test:
+hitting the memo endpoint on a real server lands an ic_memo_json row
+readable by list_exports. 10 passed.
+
+## W2-211 (2026-06-12) — Saved peer sets hand off to the Roll-Up Builder (refill #33)
+A saved peer set whose CCNs ALL resolve to the hospitals universe gets
+a "→ roll-up" link straight into /pipeline/rollup?ccns= — the P4 →
+P7 hand-off. Mixed/other-vertical sets get no link and no error (the
+pro-forma combine only has HCRIS math behind hospitals). +1 test
+(hospital pair links, mixed pair doesn't). test_peer_sets: 8 passed.
+
+## W2-212 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
 Closes the three gaps flagged for the desk (not helping CDD enough, thin
 Excel resources, thin market-intel): four new surfaces + a hub + a
 formula-capable xlsx writer.
@@ -3706,7 +4164,7 @@ Content-Disposition / 404), respondent-weighted NPS + classification
 thresholds, win-rate/loss-mix consistency, fixture integrity + blend
 normalization (pct vs fraction), hub link integrity. Full suite green.
 
-## W2-169 (2026-06-12) — Market-intel wave 2: MA penetration geography + rate-model xlsx
+## W2-213 (2026-06-12) — Market-intel wave 2: MA penetration geography + rate-model xlsx
 - **MA Penetration** (`/ma-penetration`): new market_intel dataset
   (`content/ma_penetration.yaml` — 50 states + DC, curated KFF/CMS cut,
   national 54%) with exposure bands (SATURATED ≥55 / HIGH ≥45 /
@@ -3730,7 +4188,7 @@ test_rate_environment.py (OOXML validity, SUMPRODUCT/compound formulas,
 param-carrying download link); HTTP smoke on both routes; invariant
 files (5-Q, slash-dual, catalog, data-universe, palette) green.
 
-## W2-170 (2026-06-12) — Wave 3: pricing power + labor intel + 2 CDD templates
+## W2-214 (2026-06-12) — Wave 3: pricing power + labor intel + 2 CDD templates
 Closes the last flagged CDD pricing gap and the labor-data market-intel gap:
 - **Pricing Power Analyzer** (`/pricing-power`): constant-elasticity
   price-response curves per customer segment (volume = (1+Δp)^ε),
@@ -3760,7 +4218,7 @@ stress math, fragility ordering CNA > specialist, normalization) + HTTP
 smoke on both pages and both template downloads; all invariant files
 green (87 passed).
 
-## W2-171 (2026-06-12) — Wave 4: roll-up template + workflow cross-links + nav integrity guard
+## W2-215 (2026-06-12) — Wave 4: roll-up template + workflow cross-links + nav integrity guard
 - **Roll-Up / Tuck-In Arbitrage Model** template (library now 10):
   3-year tuck-in cadence (count × avg EBITDA × entry multiple per
   year), synergies, platform organic growth, blended entry multiple vs
@@ -3778,7 +4236,7 @@ green (87 passed).
 template builds and formula cells verified (blended entry 8.11x on
 seed inputs, spread 2.89 turns); 39 affected tests green.
 
-## W2-172 (2026-06-12) — Wave 5: sector coverage + custom-segment calculator + hub chart cards
+## W2-216 (2026-06-12) — Wave 5: sector coverage + custom-segment calculator + hub chart cards
 - **VoC + Win/Loss sector coverage**: ASC / Surgical and Behavioral
   Health panels added to both evidence modules (5 sectors each now) —
   block-time/turnover KPCs and HOPD-incumbency loss patterns for ASC;
@@ -3793,7 +4251,7 @@ seed inputs, spread 2.89 turns); 39 affected tests green.
 **Verify**: +4 custom-segment tests; all evidence/pricing/hub/invariant
 suites green (73 passed); guide context updated for the new inputs.
 
-## W2-173 (2026-06-12) — Wave 6: workbook twins for the calculators + S&U / DRL templates
+## W2-217 (2026-06-12) — Wave 6: workbook twins for the calculators + S&U / DRL templates
 - **/pricing-power.xlsx**: per-segment price-move *inputs* (blue) with
   live elasticity math — volume = (1+move)^ε, EBITDA Δ = margin·volume
   effect + pure-margin price component — so the analyst argues with the
@@ -3813,7 +4271,7 @@ template suite green incl. the XML-escaped sheet-name fix
 ("Sources &amp; Uses" in workbook.xml is correct OOXML); HTTP smoke on
 all four new download paths; audit regen 187 pages / 0 flags.
 
-## W2-174 (2026-06-12) — Wave 7: transaction-multiple depth + hub cost module
+## W2-218 (2026-06-12) — Wave 7: transaction-multiple depth + hub cost module
 - **Transaction multiples 16 → 29 bands (13 → 23 specialties)**: added
   the active deal-flow verticals that had no band — INFUSION (platform
   scarcity note), ASC (site-of-care tailwind), CARDIOLOGY (hottest
@@ -3850,3 +4308,387 @@ verticals, rows link the focused view, focused view unaffected).
 **Verify**: +2 tests (workbook carries every band; directory links the
 download) + HTTP smoke 200/PK; hub link integrity + guide-coverage +
 tools-index families green (59 passed).
+## W2-217 (2026-06-12) — Third-stream merge reconciled (ranking fix collision)
+A third parallel stream (pe-desk-improvements) shipped its own version
+of the SAME ranking-generator durable-overrides fix + the b168
+invariant softening + the graphics-page guide-floor fixes. Reconciled
+by taking main's versions of the shared files wholesale (equivalent
+semantics, theirs already live), regenerating the rankings manifest
+(now 329 surfaces) with the merged generator, and keeping this
+stream's unique work intact. One self-inflicted hazard caught and
+fixed during resolution: a de-dup regex over _ctx blocks with a bad
+block boundary stripped related_routes from ~54 unrelated contexts —
+restored from main; all 53 invariant tests green, 770-test broad
+sweep green, sweep #7's 2 fails re-verified as mid-merge artifacts.
+Backlog: #31 verified mostly-shipped (state pin map exists), #33/#36
+marked done.
+
+## W2-178 (2026-06-12) — Charts: data-shaping pipeline + 4 types + trendline (wave #80)
+More data, more ways to work it (kit now 27 types):
+- **`transform_table(table, tf)`** — the Excel prep steps folded into the
+  builder so a raw export pastes as-is: aggregate duplicate labels
+  (sum/mean/max/min/count), sort by first series, top-N with the rest
+  lumped into "Other (k)", and per-series calcs (% of total, cumulative,
+  3-period moving average, growth % vs prior, index first=100). Ops
+  compose in that order; the input table is never mutated. A "DATA
+  SHAPING" control row (4 dropdowns + Top-N box) sits under the paste
+  box in the Chart Builder; bogus qs values are ignored.
+- **4 polished staples**: Pareto (sorted bars + cumulative-% line with an
+  80% reference marker), histogram (auto-binned √n distribution of the
+  first value column, n + mean annotation), box plot (five-number
+  summary per category — quartiles computed for you), dumbbell
+  (horizontal before→after pairs, period names from the headers).
+  All carry example data + chips + notes; Pareto joins the gallery.
+- **Trendline + R²** (`trendline` opt / checkbox): least-squares fit
+  overlaid dashed on line + scatter, clipped to the plot band, labelled
+  `Trend R²=…` — the quick "is this actually correlated" read.
+- **Found-bug fix (pre-existing on main)**: the four chart pages
+  (/chart-builder, /excel-mapping, /pie-chart, /exhibit) were below the
+  Guide's 5-question floor and had empty related_routes —
+  test_pedesk_guide_5q_invariant was failing 3 tests on main. Bumped
+  each to ≥5 common_questions + cross-linked the chart family; refreshed
+  the stale "13 chart types" model-logic line to the real 27 + shaping.
+**Verify**: +22 tests (11 transform incl. compose order + no-mutation;
+4 new types render clean with their markers; trendline on/off; shaping
+controls + group-sum/top-N/trendline reach the rendered SVG; bogus
+params ignored). Guide invariant suite back to green. Chart-adjacent
+sweep (-k chart/exhibit/excel_mapping/guide/palette): 1390 passed.
+
+## W2-179 (2026-06-12) — Charts: annotations + 3 types (wave #81)
+Kit now 30 types; the builder gets an exhibit-grade annotation layer:
+- **Annotations row** (column/bar/line/area/combo): a reference/target
+  line at any value with a custom label (y-scale stretches so the
+  target is never off-chart), a dotted average line (first series), and
+  an auto-CAGR tag — first→last non-None of the first series, labelled
+  with the period names (`CAGR 2021–2024: +28.1%`, signed, 1 dp per the
+  house format). Overlays stay quiet when inputs are missing; CAGR
+  refuses non-positive starts rather than printing nonsense.
+- **3 more staples**: stacked horizontal bar (`bar_stacked` — the
+  grouped-horizontal gap; in-bar white value labels), waffle (10×10
+  share grid, largest-remainder allocation so the cells always sum to
+  exactly 100, legend with 1-dp shares), small multiples (one mini line
+  panel per series, up to 8, SHARED y-scale — the honest way to compare
+  trajectories — with end-value labels and first/last period ticks).
+**Verify**: +8 tests (waffle cell-count exact at 100 incl. the 1/3-split
+rounding trap; one panel per series; stacked bar; ref-line label +
+scale stretch; CAGR math + non-positive guard; avg line; UI controls
+flow through; bogus refval ignored). 53 pass in the file; chart sweep
+1382 passed.
+
+## W2-180 (2026-06-12) — Chart Builder: one-click platform datasets (wave #82)
+The builder stops being paste-only — real CMS data, zero pasting:
+- **`rcm_mc/data/chart_datasets.py`** (data layer, per architecture):
+  10 chart-ready aggregates from the six vendored provider snapshots —
+  providers by sector (cross-sector Pareto), ownership mix by sector
+  (For-profit/Non-profit/Government/Other via a vocabulary-collapsing
+  bucketer — 'PROPRIETARY' and 'For profit - Corporation' land in the
+  same bucket), SNF beds + dialysis stations by state, and per-sector
+  providers-by-state (top-12 + 'Other (k)' so the universe always sums).
+  lru-cached (snapshots are immutable); no runtime network calls.
+- **PLATFORM DATA strip** on /chart-builder: one teal chip per dataset;
+  a click loads the finished table + suggested chart type + a
+  source/date footnote into the normal qs flow — so a partner can then
+  shape (top-N, % of total), restyle, and export like any pasted table.
+  Sector datasets cite the file's snapshot date; cross-sector ones span
+  six files so they stay date-less rather than implying one date.
+- Guide context: +1 common question, data_sources now names the
+  vendored CMS option.
+**Verify**: new test_chart_datasets.py (9) — stable registry keys (URL
+surface), every dataset parses all-numeric and renders its suggested
+chart clean, top-12+Other sums exactly to the sector total, ownership
+mix rows sum to each sector's provider count, bucket vocabulary cases,
+footnote date rules, strip renders with links, loaded dataset flows to
+the chart. Sweep: 1419 passed.
+
+## W2-181 (2026-06-12) — Builder ↔ Exhibit round-trip + datasets on slides (wave #83)
+The chart suite becomes one workflow instead of three pages:
+- **`table_to_tsv`** (kit): serialize a (possibly shaped) table back to
+  the paste format — None cells → empty, lossless through parse_table.
+  The bridge that lets a configured chart travel between pages as qs.
+- **"Send to Exhibit Composer"** link under the rendered builder chart:
+  carries type + title + palette + footnote(→slide source) + the
+  SHAPED table (what you see is what lands on the slide — group/top-N/
+  calc already applied), as panel 1 of a fresh exhibit.
+- **Platform data on slides**: each exhibit panel gets a teal
+  "Platform data…" select (the 10 CMS aggregates). A pick fills an
+  empty panel with the table + suggested type + label; pasted/edited
+  data always wins so a loaded table stays editable. Found+fixed in
+  the same change: `has_qs` only looked at d{i}, so a dataset-only
+  submit silently fell back to the four example defaults — ds{i} now
+  also leaves default mode.
+- **"✎ edit in Chart Builder"** link on every populated panel — the
+  reverse jump, carrying the panel's type/title/data.
+**Verify**: +7 tests — tsv round-trip; send link carries the shaped
+table (scoped to the href — raw paste legitimately appears in gallery
+links); dataset-only exhibit loads real data and does NOT pre-fill the
+example defaults; pasted data wins over a selected dataset; edit-link;
+bogus ds key ignored. 75 pass across the three chart files; sweep 1426.
+
+## W2-182 (2026-06-12) — Saved Charts library (wave #84)
+Configurations become durable — the third hand-rebuild of the same
+denials Pareto is the builder failing its user:
+- **`portfolio/saved_charts.py`** (mirrors the saved_screens store
+  contract): `saved_charts` table (additive, IF NOT EXISTS), owner-
+  scoped save/list/delete, BEGIN IMMEDIATE, parameterised SQL. Route
+  allow-list — only /chart-builder and /exhibit are reopenable; a
+  forged route raises ValueError at the store AND is dropped silently
+  at the handler (never a 500, never an open-redirect-ish row). qs
+  capped at 8000 (a pasted table rides in it).
+- **★ Save to library** strip on Chart Builder + Exhibit Composer: a
+  name box + POST; the hidden query_params snapshots location.search
+  at submit so what's saved is exactly the URL being looked at. CSRF
+  via the shared form shim.
+- **/charts** library page: per-user table (name / kind chip / saved
+  date / open / delete), signed-out + empty states, titles escaped.
+  Server routes: GET /charts, POST /api/charts/save + /api/charts/
+  delete (owner from session — a spoofed owner field is impossible,
+  the form doesn't carry one). Registered: Research sub-nav, Cmd-K
+  palette, _SUB_SECTION_MAP, guide context (5 Qs + related_routes —
+  the invariant that bit the wave-67/68 pages).
+- **Found-bug fix (pre-existing on main)**: /diligence/texas-infusion
+  was served but absent from the /diligence catalog _PILLARS —
+  test_section_catalog failing on main. Added to Modeling pillar.
+**Verify**: test_saved_charts.py (16) — store CRUD owner-scoped,
+route allow-list, qs cap, page states, XSS escape, save strips on both
+pages, registration invariants, and a real-HTTP e2e (login → CSRF →
+save → list → delete; forged route dropped). Wide sweep
+(chart/exhibit/guide/palette/dataset/saved/catalog/screener): 1792.
+
+## W2-183 (2026-06-12) — Pre-merge sweep: 3 main-inherited reds fixed
+Full local suite (15,763 tests) before merging the chart waves found
+three failures — ALL pre-existing on origin/main (verified in a clean
+worktree), all fixed here so main goes back to green:
+- **'user-supplied' data-universe kind unregistered**: five visuals
+  pages pass universe="user-supplied" but ck_data_universe knew no such
+  kind, so their provenance chip silently rendered empty — exactly the
+  honesty regression test_data_universe_kinds_registered guards.
+  Registered with USER-SUPPLIED DATA label + tooltip.
+- **/visuals below the Guide 5-Q floor** with no related_routes (3
+  invariant tests); /diligence/texas-infusion AND
+  /diligence/infusion-markets served but missing from the /diligence
+  catalog. Questions bumped, related routes cross-linked, both pages
+  added to the catalog's Modeling pillar.
+- **Surface-ranking flagship tie**: texas-infusion's growth reached a
+  perfect 10.0, tying /target-screener; the old tiebreak was raw LOC,
+  so the flagship lost the #1 slot test_surface_rankings pins. The
+  engine now declares _FLAGSHIP and breaks total-ties explicitly.
+**Verify**: each fix's suite green (universe guard, 5-Q invariants,
+section catalog, surface rankings 9/9); full suite rerun → all green.
+## W2-164 (2026-06-12) — Expert-Call Program: the CDD voice-of-customer workstream (wave #66)
+New CDD task covered — the primary-research call program every commercial
+due diligence runs and the platform had no surface for (the CIM
+Cross-Check generates suggested expert-call questions with nowhere to
+take them):
+- **`diligence/expert_calls.py`** (new, UI-free): 7 stakeholder lenses
+  (referring physician, payer/contracting exec, competitor exec, former
+  employee, site-of-care administrator, patient/caregiver voice,
+  industry/reimbursement expert), each with who/why/sourcing AND the
+  lens's known systematic bias stated (every source lies in a
+  predictable direction — the guide says which). Curated QUESTION_BANK
+  (38 questions) tagged to 7 CDD topics, each with a "listen for" line
+  (what a strong vs concerning answer sounds like). `build_call_guide`
+  (compliance-safe opening — no MNPI / NDA / current-employer rules
+  stated out loud — topic-ordered questions, closing asks incl. the
+  structured SUPPORTS/CONTRADICTS note); `program_plan` (largest-
+  remainder apportionment, sums exactly, no zero-call lens in a
+  full-size program); `coverage_read` (STRICT: ≥2 calls COVERED, 1
+  THIN single-source, 0 UNCOVERED blind spot — the read names the worst
+  lens, never a percent-done average).
+- **Page `/diligence/expert-calls`**: program-size + deal-stamp form,
+  call-mix table (lens / what only they can tell you / calls / mix /
+  known bias), coverage tracker (done-counts → status chips + honest
+  findings), lens chips → the full printable call guide; CIM
+  Cross-Check tie-in. All GET — tracker state is a shareable URL.
+  Wired: server route + Cmd-K palette + _SUB_SECTION_MAP + diligence
+  index card + Guide context (ToolRouteDefinition + full manual _ctx).
+- **Found + fixed (pre-existing, full-platform)**: the guide-invariant
+  suite was RED on main — /chart-builder, /pie-chart and /excel-mapping
+  (waves 62–65) shipped with 3 common_questions (below the 5-Q floor)
+  and empty related_routes. All three bumped to 5 questions + cross-
+  linked as a chart-tool family; expert-calls registered compliant from
+  birth (first related_routes draft pointed at an unresolvable route —
+  caught by the resolver invariant, fixed).
+**Verify**: new `test_expert_calls.py` (19) — bank integrity (7 lenses
+fully specified, every question topic-valid with listen_for, headline
+topics triangulated across ≥2 lenses), guide build (topic order, exact
+question counts, unknown lens → None never a generic guide), plan
+apportionment (20-call == recommended; 8/12/30/75 sum exactly, no
+zero-call lens; 0/3-call edge), coverage semantics (strict statuses,
+findings name gaps with NO percent headline, complete-read, empty
+state), page render (plan/guide/tracker needles, qs-driven lens/size/
+deal, status chips, hostile inputs escaped + fall back), wiring
+(palette, section map, guide contexts, diligence index). Live HTTP
+smoke on a real server: 4 URLs incl. hostile params → all 200, no
+tracebacks. Guide-invariant suite 31 green (was 3 RED on main);
+targeted sweep 1,372 passed; full suite at commit gate.
+
+## W2-164b (2026-06-12) — full-suite gate: two more pre-existing reds found + fixed
+The wave-66 full-suite gate (15,680 passed) surfaced two failures that
+reproduce on a CLEAN tree (both pre-date this wave):
+- **`/diligence/texas-infusion` orphaned from the diligence catalog**
+  (since wave #47): the section-catalog invariant scrapes every served
+  /diligence/* route from server.py and requires a diligence-index card;
+  the Texas infusion study never got one. Added the card (Audit &
+  Stress, beside TAM/SAM Builder).
+- **`user-supplied` data-universe kind never registered** (waves 62–64):
+  chart-builder / pie-chart / excel-mapping all pass
+  `universe="user-supplied"` to ck_source_purpose, but the kind wasn't
+  in _DATA_UNIVERSE — ck_data_universe fails safe to nothing, so all
+  three pages silently shipped WITHOUT their data-provenance chip.
+  Registered the kind ("YOUR INPUTS — renders only the values you
+  enter; no stored data, no data claim"); chip verified rendering.
+- Also classified `/diligence/expert-calls` in surface_status as NAVY
+  ("Diligence calculator (your inputs)") so the catalog honesty dot is
+  hand-set, not defaulted.
+**Verify**: both failing tests green; targeted sweeps 101 + 125 passed
+(catalog/universe/surface-status/guide-invariant/chart suites); pie
+page renders the YOUR INPUTS chip; classify_surface returns the navy
+calculator label for expert-calls.
+
+## W2-165 (2026-06-12) — Expert-Call Program slice 2: cadence, triangulation matrix, call sheet, exhibit guides, deal prefill (wave #67)
+Deepened the wave-66 section into a complete workstream — five specific
+features, all on the same page:
+- **4-week cadence plan** (`weekly_cadence`): the program plan re-timed
+  across the standard CDD sprint via per-lens phase weights encoding
+  booking reality (former employees + referrers front-load and frame
+  hypotheses; payer/competitor calls wait for precise questions; week 4
+  chases contradictions). Largest-remainder per lens, so the cadence
+  NEVER resizes the program — per-lens week sums equal program_plan
+  exactly (tested at 8/20/33). Week × lens grid + per-week focus
+  rationale on the page.
+- **Topic × lens triangulation matrix** (`topic_lens_matrix` +
+  `topic_coverage`): derived from the question bank (can't drift), the
+  grid shows which lenses can answer each CDD topic; with completed
+  calls logged, each topic reads TRIANGULATED (≥2 ACTIVE lenses ask it)
+  / SINGLE-LENS / DARK — two voices from the same lens share its bias,
+  so they never triangulate a topic alone.
+- **Call-sheet CSV export** (`/api/diligence/expert-calls.csv`):
+  one row per planned call (call #, week, lens, sourcing channel
+  pre-filled) + empty date/interviewee/status/finding/thesis-tag
+  columns — the data-room tracker, generated from the same qs as the
+  page. House formula-injection defang on user text (deal "=cmd()|x" →
+  quoted), n clamped 1–200.
+- **Exhibit-chrome call guides**: the printable guide now renders via
+  ExhibitFactory (numbered EXHIBIT, deal label, question count, bank
+  vintage 2026-06 in the sourced footer) — Cmd+P → the PDF an associate
+  takes into the call.
+- **Active-deal prefill** (deal-context parity, Item-12 pattern): the
+  pedesk_active_deal_meta cookie pre-stamps the program/guides/call
+  sheet with the deal name, with the teal visible-note convention;
+  explicit ?deal= always wins; _prefill_deal never leaks into the CSV
+  export URL (tested).
+**Verify**: test_expert_calls.py 19→35 — cadence retime-not-resize at 3
+program sizes + sequencing pins (former-employee wk1>wk4, payer wk1=0)
++ focus lines; matrix derived-from-bank consistency; triangulation
+semantics (none→DARK, one lens→SINGLE-LENS never TRIANGULATED, two
+sharing lenses→TRIANGULATED); call-sheet row count/order/CSV shape/
+defang/no-deal honesty; page renders cadence+matrix+CSV link, chips
+follow done counts, EXHIBIT chrome + bank vintage, _prefill_deal kept
+out of export URL; real-HTTP class: cookie prefill with visible note,
+param override, CSV endpoint serves N rows, no-cookie no-note. Live
+smoke: 6 requests incl. hostile (n=-3 clamps to 1 row, encoded =2+2
+deal defanged) → all 200, no tracebacks. Neighbor suites green:
+exhibit-factory + deal-context-prefill + palette + catalog + guide
+invariants + tools-index (88).
+
+## W2-166 (2026-06-12) — Expert-Call Program slice 3: calls logged as deal-note evidence, coverage derives from the record (wave #68)
+Closed the workstream loop — plan → call → EVIDENCE ON THE DEAL:
+- **`format_call_note` / `logged_call_counts`** (expert_calls.py):
+  structured note body "EXPERT CALL · <lens> — <vantage> (as of
+  <date>): <finding> [SUPPORTS|CONTRADICTS|NEW QUESTION]". STRICT
+  validation (unknown lens / invalid tag / empty finding raise — a
+  malformed note would silently fall out of the coverage count);
+  field caps (vantage 200 / finding 2000 / as-of 40); the counter
+  accepts only the exact prefix+label, so free-text notes that merely
+  mention a call never inflate coverage.
+- **POST `/api/expert-calls/log`**: records the note via deal_notes on
+  an EXISTING deal only (same junk-upsert guard as the roll-up save);
+  invalid fields redirect with NO note written; success → ?logged=1
+  confirmation. Author = session user.
+- **Page**: "Log a completed call — <deal>" form (lens select /
+  vantage / as-of / finding / thesis-tag) renders ONLY with an active
+  deal (nothing honest to attach to otherwise); the coverage tracker
+  now DERIVES its counts from the logged EXPERT CALL notes with a
+  visible source note ("Counts below come from N logged notes —
+  enter numbers to override"); explicit done_* params always win;
+  lens-chip links stop baking note-derived counts into params (a live
+  count must not freeze into an override). The closing-script
+  discipline ("an untagged call is color, not evidence") is now
+  enforced by the form's tag select.
+**Verify**: test_expert_calls.py 35→43 — note↔counter round-trip,
+field defaults ("vantage unstated"/"date unstated", tag normalized),
+strict raises, free-text/almost-prefix bodies count zero; real-HTTP
+class: form only with deal context, POST→303 logged=1 + note with the
+exact prefix + page shows confirmation + THIN chip from the derived
+count + explicit param override kills the derived note, unknown deal/
+bad lens/bad tag/blank finding → 303 without logged=1 and ZERO new
+notes. Live workflow smoke: 3 POSTs (incl. hostile <script> finding +
+5,000-char finding) → notes recorded capped, page derives COVERED,
+note searchable on /notes?q=EXPERT+CALL with hostile content escaped
+(escaping verified at the notes renderer). Neighbor suites green:
+expert-calls + rollup-save + deal-context-prefill + guide invariants
++ section catalog (95). /deal/<id> fallback dashboard for snapshot-less
+deals omits the notes section — pre-existing surface shape, noted.
+
+## W2-167 (2026-06-12) — CDD Scope: the four engagement depth levels (wave #69)
+New CDD dimension covered — not another workstream but the DEPTH axis:
+how deep the same nine workstreams run at each deal stage. New page
+/diligence/cdd-scope + rcm_mc/diligence/cdd_scope.py (UI-free):
+- **CDD_LEVELS**: L1 desktop screen (pre-IOI, days, go/no-go on
+  bidding) · L2 red-flag CDD (indicative bid, 1–2 wks, kill-risk
+  focus) · L3 full-scope CDD (exclusivity, 3–6 wks, the IC
+  underwrite) · L4 confirmatory/bring-down (post-IC, movement only).
+  Every duration explicitly labeled "market convention" (never a
+  quote, tested); NO cost figures by design; per-level call-program
+  size links straight into /diligence/expert-calls?n=….
+- **DEPTH_MATRIX**: 9 workstreams × 4 levels (NONE/DESKTOP/TARGETED/
+  FULL) with two tested contracts: monotone L1→L3 (a deeper
+  engagement never does LESS of a workstream; L3 = FULL everywhere)
+  and L4 never FULL (confirmation, not re-discovery). Each workstream
+  row links to the platform surface that EXECUTES it (tam-sam,
+  expert-calls, cim-crosscheck, market-rates, reg-calendar, …) — all
+  9 routes pinned against server.py so a dead link can't ship.
+- **recommend_level(stage, familiarity, deal_type)**: deterministic
+  scoping aid — stage anchors (screen→L1, bid→L2, exclusivity→L3,
+  preclose→L4), adjustments stated as reasons (known-market add-on at
+  exclusivity right-sizes to L2 because a full re-build duplicates
+  the platform CDD; new-market exclusivity flags call-booking lead
+  time as the critical path). Invalid/partial inputs → None and the
+  page says "never guesses" — no scope from a partial picture.
+- **level_task_list + /api/diligence/cdd-scope.csv**: the concrete
+  per-level engagement plan (workstream · depth · task · executing
+  surface · empty owner/status columns); unknown level falls back to
+  L3, never 500s.
+- Wired: route + palette + section map + diligence index card +
+  guide contexts (5-Q floor + resolvable related_routes from birth —
+  the wave-66 lesson) + surface-status NAVY.
+**Verify**: new test_cdd_scope.py (20) — registry completeness incl.
+the convention-label pin, matrix coverage/monotonicity/L4-narrowing,
+all 24 recommender combinations have reasons + invalid→None, task
+lists match the matrix with non-empty task text, CSV shape + bogus-
+level fallback, page render (cards/matrix/tasks/recommender reason/
+partial-input honesty/hostile level), wiring + guide-floor checks.
+Wiring sweep 140 passed (palette/catalog/guide-invariant/universe/
+expert-calls). Live smoke: 6 URLs incl. hostile stage + formula-
+injection level param → all 200, no tracebacks.
+## W2-178 (2026-06-12) — Texas infusion: de-novo AIC build J-curve (wave #80)
+Deepened the Texas page (per the "deepen Texas" steer) with the missing
+piece between the static per-chair economics and a returns view — the
+de-novo build P&L:
+- **`aic_denovo_ramp(**editable)`**: the de-novo AIC build J-curve.
+  Capex = chairs × per-chair fit-out + a fixed pre-open block goes out
+  day one; utilization ramps to mature over the ramp period; the monthly
+  contribution is the SAME chair model interpolated along its
+  utilization→contribution curve (negative below break-even during the
+  early ramp). Returns the 36-month cumulative-cash series + KPIs: build
+  capex (~$504K), cash break-even month (~12), mature annual contribution
+  (~$1.5M), and Year-3 cash-on-cash (~3.0x). Honors the page's editable
+  AIC assumptions.
+- **Page**: a "De-novo AIC build — the J-curve" section in the AIC block
+  — the KPI strip, the cumulative-cash J-curve SVG (capex trough → ramp
+  burn → break-even marker → recovery), contribution-by-year, and a
+  data-driven SO WHAT.
+**Verify**: +4 ramp tests — capex = chairs×fit-out+pre-open + J-curve
+shape (starts < −capex, ends positive), break-even sign change + mature ≈
+chairs×per-chair contribution, faster ramp breaks even sooner, analysis +
+page carry the ramp. Full suite green.

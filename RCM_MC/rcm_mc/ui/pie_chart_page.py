@@ -123,8 +123,11 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
     mode_opts = "".join(
         f'<option value="{m}"{" selected" if m == label_mode else ""}>'
         f'{lab}</option>' for m, lab in
+        # "No labels", not "None": a literal >None< in page HTML is
+        # indistinguishable from a None-leak to the route walker's leak
+        # gate (and reads ambiguous to a partner anyway).
         (("percent", "Percent"), ("value", "Value"),
-         ("both", "Value · %"), ("none", "None")))
+         ("both", "Value · %"), ("none", "No labels")))
 
     form = (
         f'<form method="get" action="/pie-chart">'

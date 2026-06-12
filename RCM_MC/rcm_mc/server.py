@@ -1220,10 +1220,18 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
             r'<a class="ck-link" href="\1">\1</a>',
             escaped)
         note_id = int(r.get("note_id") or 0)
+        # Roll-up scenario notes (the save-to-deal feature) get a typed
+        # chip so they're scannable in a long note list. Detection is on
+        # the reopen path the writer embeds — not on free text a partner
+        # might type.
+        rollup_chip = (
+            '<span class="ck-deal-note-chip">ROLL-UP</span>'
+            if "/pipeline/rollup?" in body_text else "")
         items_html.append(
             f'<li class="ck-deal-note">'
             f'<div class="ck-deal-note-head">'
             f'<span class="ck-deal-note-author">{html.escape(author)}</span>'
+            f'{rollup_chip}'
             f'<span class="ck-deal-note-ts">{html.escape(ts)}</span>'
             f'<form method="POST" action="/api/deals/{qd}/notes/{note_id}/delete" '
             f'style="display:inline;margin:0 0 0 auto;" '
@@ -1314,6 +1322,10 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-note-ts{{font-family:var(--sc-mono,monospace);
         font-size:10.5px;color:var(--sc-text-faint,#7a8699);
         letter-spacing:0.04em;}}
+      .ck-deal-note-chip{{font-family:var(--sc-mono,monospace);
+        font-size:9px;font-weight:700;letter-spacing:0.08em;
+        color:var(--sc-teal,#155752);border:1px solid var(--sc-teal,#155752);
+        border-radius:3px;padding:1px 6px;}}
       .ck-deal-note-delete{{background:none;border:0;
         color:var(--sc-negative,#b5321e);cursor:pointer;
         font-family:var(--sc-mono,monospace);font-size:10px;
@@ -5479,9 +5491,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                 except Exception:  # noqa: BLE001 — diff is best-effort chrome
                     _snap_info = {}
                     _diff_detail = None
+            # P4 — saved peer sets for the compare view (house pattern:
+            # the server queries, the page module stays store-free).
+            _ts_peer_sets = None
+            if (_tsq.get("view") or [""])[0] == "compare" and _ts_owner:
+                try:
+                    from .portfolio.peer_sets import list_peer_sets
+                    _ts_peer_sets = list_peer_sets(
+                        PortfolioStore(self.config.db_path), _ts_owner)
+                except Exception:  # noqa: BLE001 — additive panel
+                    _ts_peer_sets = None
             return self._send_html(render_target_screener(
                 _tsq, saved=_ts_saved, owner=_ts_owner,
-                snap_info=_snap_info, diff_detail=_diff_detail))
+                snap_info=_snap_info, diff_detail=_diff_detail,
+                peer_sets=_ts_peer_sets))
         if path == "/source":
             from .ui.source_page import render_source_page
             from .analysis.deal_sourcer import THESIS_LIBRARY, find_thesis_matches
@@ -6733,6 +6756,61 @@ class RCMHandler(BaseHTTPRequestHandler):
                 infusion_state_attractiveness,
             )
             return self._send_json(infusion_state_attractiveness())
+        if path == "/diligence/cdd-scope":
+            # CDD Scope — the four engagement depths (screen / red-flag
+            # / full-scope / bring-down): level cards, deterministic
+            # recommender (stage/familiarity/type), workstream × level
+            # matrix linking each workstream to its executing surface.
+            from .ui.cdd_scope_page import render_cdd_scope_page
+            _cs_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_cdd_scope_page(_cs_qs))
+        if path == "/api/diligence/cdd-scope.csv":
+            # Per-level task-list export (engagement-plan starter).
+            from .ui.cdd_scope_page import cdd_scope_csv
+            _cs_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_text(
+                cdd_scope_csv(_cs_qs),
+                content_type="text/csv; charset=utf-8")
+        if path == "/diligence/expert-calls":
+            # Expert-Call Program — CDD voice-of-customer planner: call
+            # mix per stakeholder lens, 4-week cadence, per-lens call
+            # guide (exhibit chrome), topic triangulation, coverage
+            # read. qs carries n / lens / done_<key> / deal (all GET —
+            # the tracker state is the URL).
+            from .ui.expert_calls_page import render_expert_calls_page
+            _ec_qs = urllib.parse.parse_qs(parsed.query)
+            # Active-deal prefill (visible note on-page; an explicit
+            # ?deal= always wins; _prefill_deal never leaks to exports).
+            _ec_meta = self._active_deal_meta()
+            if _ec_meta and not (_ec_qs.get("deal") or [""])[0]:
+                if _ec_meta.get("name"):
+                    _ec_qs["deal"] = [_ec_meta["name"]]
+                    _ec_qs.setdefault("_prefill_deal", [_ec_meta["name"]])
+            # Coverage from the evidence trail: count the structured
+            # EXPERT CALL notes already logged on the active deal so the
+            # tracker reflects what's recorded (explicit done_* params
+            # win on-page). Best-effort — notes trouble never 500s.
+            _ec_counts = None
+            if _ec_meta and _ec_meta.get("id"):
+                try:
+                    from .deals.deal_notes import list_notes
+                    from .diligence.expert_calls import logged_call_counts
+                    _df = list_notes(PortfolioStore(self.config.db_path),
+                                     _ec_meta["id"])
+                    _ec_counts = logged_call_counts(
+                        _df["body"].tolist() if len(_df) else [])
+                except Exception:  # noqa: BLE001
+                    _ec_counts = None
+            return self._send_html(render_expert_calls_page(
+                _ec_qs, active_deal=_ec_meta, logged_counts=_ec_counts))
+        if path == "/api/diligence/expert-calls.csv":
+            # Call-sheet export — one row per planned call (week, lens,
+            # sourcing) + empty tracking columns; same qs as the page.
+            from .ui.expert_calls_page import expert_calls_csv
+            _ec_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_text(
+                expert_calls_csv(_ec_qs),
+                content_type="text/csv; charset=utf-8")
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs
@@ -6878,6 +6956,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.chart_builder_page import render_chart_builder_page
             _cb_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_chart_builder_page(_cb_qs))
+        if path == "/charts":
+            # Saved Charts library — the current user's named Chart
+            # Builder / Exhibit configurations (a chart IS its URL qs).
+            from .portfolio.saved_charts import list_charts
+            from .ui.saved_charts_page import render_saved_charts_page
+            _sc_owner = self._current_username() or ""
+            _sc_rows = list_charts(PortfolioStore(self.config.db_path),
+                                   _sc_owner) if _sc_owner else []
+            return self._send_html(
+                render_saved_charts_page(_sc_rows, owner=_sc_owner))
         if path == "/pie-chart":
             # Pie Chart — a client-ready pie/donut from per-slice label /
             # value / colour rows (no table paste); qs carries the slices
@@ -7060,7 +7148,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                     packets.append(p)
                 except Exception:
                     pass
-            return self._send_html(_cmp_render(packets))
+            # P4 percentile context: each compared deal's headline KPIs
+            # rank against the WHOLE deal book, not just the selection.
+            peer_dists: Dict[str, list] = {}
+            try:
+                _book = store.list_deals()
+                for _m in ("denial_rate", "days_in_ar"):
+                    if _m in _book.columns:
+                        peer_dists[_m] = [
+                            float(x) for x in _book[_m].dropna().tolist()]
+            except Exception:  # noqa: BLE001 — chip is additive context
+                peer_dists = {}
+            return self._send_html(_cmp_render(packets,
+                                               peer_dists=peer_dists))
         if path == "/api/deals/compare":
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             raw = (qs.get("ids") or [""])[0]
@@ -10774,7 +10874,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             if profile:
                 from .ui.deal_dashboard import render_deal_dashboard
                 from .deals.deal import _now_utc as _deal_ts  # noqa: F401
-                return self._send_html(render_deal_dashboard(deal_id, profile))
+                # P5 exhibit registry — previously generated artifacts.
+                try:
+                    from .exports.export_store import list_exports
+                    _exports = list_exports(store, deal_id, limit=10)
+                except Exception:  # noqa: BLE001 — registry is additive
+                    _exports = None
+                return self._send_html(render_deal_dashboard(
+                    deal_id, profile, exports=_exports))
             self.send_error(HTTPStatus.NOT_FOUND, f"Deal {deal_id} not found")
             return
         try:
@@ -11284,6 +11391,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                         {"error": str(exc)}, status=HTTPStatus.INTERNAL_SERVER_ERROR,
                     )
                 memo = _compose(pkt, use_llm=use_llm)
+                # P5 registry write-side (see package handler).
+                try:
+                    from .exports.export_store import record_export
+                    record_export(
+                        store, deal_id=deal_id, analysis_run_id=None,
+                        format="ic_memo_json", filepath=None,
+                        generated_by=self._current_username() or None)
+                except Exception:  # noqa: BLE001
+                    pass
                 return self._send_json({
                     "deal_id": deal_id,
                     "sections": {
@@ -11364,6 +11480,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                     with open(zip_path, "rb") as f:
                         body = f.read()
                 safe_name = (pkt.deal_name or deal_id).replace(" ", "_")[:40]
+                # P5 registry write-side: every generated package lands
+                # in the generated_exports audit table so the deal
+                # page's registry (W2-208) fills itself. Best-effort —
+                # a registry hiccup must never block the download.
+                try:
+                    from .exports.export_store import record_export
+                    record_export(
+                        store, deal_id=deal_id, analysis_run_id=None,
+                        format="package_zip", filepath=None,
+                        file_size_bytes=len(body),
+                        generated_by=self._current_username() or None)
+                except Exception:  # noqa: BLE001
+                    pass
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "application/zip")
                 self.send_header("Content-Length", str(len(body)))
@@ -13425,10 +13554,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_save_post()
         if path == "/api/target-screener/delete":
             return self._route_target_screener_delete_post()
+        if path == "/api/charts/save":
+            return self._route_charts_save_post()
+        if path == "/api/charts/delete":
+            return self._route_charts_delete_post()
         if path == "/api/target-screener/snapshot":
             return self._route_target_screener_snapshot_post()
+        if path == "/api/peer-sets/save":
+            return self._route_peer_set_save_post()
+        if path == "/api/peer-sets/delete":
+            return self._route_peer_set_delete_post()
         if path == "/api/rollup/save-to-deal":
             return self._route_rollup_save_to_deal_post()
+        if path == "/api/expert-calls/log":
+            return self._route_expert_call_log_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -14076,6 +14215,76 @@ class RCMHandler(BaseHTTPRequestHandler):
                 pass
         return self._redirect("/target-screener?view=saved")
 
+    def _route_peer_set_save_post(self) -> None:
+        """POST /api/peer-sets/save — persist the compare basket as a
+        named, owner-scoped peer set (P4). Redirects back to the
+        compare view carrying the same basket."""
+        from .portfolio.peer_sets import save_peer_set
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        name = (form.get("name", "") or "").strip()
+        ccns = (form.get("ccns", "") or "").strip()
+        if owner and name and ccns:
+            try:
+                save_peer_set(PortfolioStore(self.config.db_path),
+                              owner, name, ccns)
+            except Exception:  # noqa: BLE001 — never 500 a save action
+                pass
+        back = urllib.parse.quote(ccns, safe=",")
+        return self._redirect(
+            f"/target-screener?view=compare&compare={back}")
+
+    def _route_peer_set_delete_post(self) -> None:
+        """POST /api/peer-sets/delete — owner-scoped delete by id."""
+        from .portfolio.peer_sets import delete_peer_set
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        sid = self._clamp_int(form.get("id", "0"), default=0,
+                              min_v=0, max_v=10**9)
+        if owner and sid:
+            try:
+                delete_peer_set(PortfolioStore(self.config.db_path),
+                                owner, sid)
+            except Exception:  # noqa: BLE001
+                pass
+        return self._redirect("/target-screener?view=compare")
+
+    def _route_charts_save_post(self) -> None:
+        """POST /api/charts/save — persist a named chart for the current
+        user (Saved Charts library). The chart is its route + query
+        string; the form snapshots location.search at submit."""
+        from .portfolio.saved_charts import save_chart
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        title = (form.get("title", "") or "").strip()
+        route = (form.get("route", "") or "").strip()
+        params = (form.get("query_params", "") or "").strip()
+        if owner and title:
+            try:
+                save_chart(PortfolioStore(self.config.db_path), owner,
+                           title, route, params)
+            except ValueError:
+                pass    # forged/odd route — drop silently, never 500
+            except Exception:  # noqa: BLE001 — never 500 on a save hiccup
+                pass
+        return self._redirect("/charts")
+
+    def _route_charts_delete_post(self) -> None:
+        """POST /api/charts/delete — remove one of the current user's
+        saved charts by id (owner-scoped in the store's WHERE)."""
+        from .portfolio.saved_charts import delete_chart
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        cid = self._clamp_int(form.get("id", "0"), default=0, min_v=0,
+                              max_v=10**9)
+        if owner and cid:
+            try:
+                delete_chart(PortfolioStore(self.config.db_path), owner,
+                             cid)
+            except Exception:  # noqa: BLE001
+                pass
+        return self._redirect("/charts")
+
     def _route_target_screener_snapshot_post(self) -> None:
         """POST /api/target-screener/snapshot — P9 vintage-diff baseline.
 
@@ -14168,6 +14377,42 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._redirect(f"/pipeline/rollup?{back_qs}")
         return self._redirect(f"/pipeline/rollup?{back_qs}&saved_note=1")
 
+    def _route_expert_call_log_post(self) -> None:
+        """POST /api/expert-calls/log — record one completed expert call
+        as a structured deal note (the program's evidence trail).
+
+        The note body is built by format_call_note (strict validation:
+        lens + thesis tag + non-empty finding) so logged_call_counts can
+        later derive coverage from it. The deal must already exist —
+        record_note would silently upsert a junk deal otherwise (same
+        guard as the roll-up save)."""
+        form = self._read_form_body()
+        deal_id = (form.get("deal_id", "") or "").strip()[:128]
+        back = "/diligence/expert-calls"
+        if not deal_id:
+            return self._redirect(back)
+        store = PortfolioStore(self.config.db_path)
+        try:
+            deals = store.list_deals(include_archived=True)
+            if deal_id not in set(deals.get("deal_id", [])):
+                return self._redirect(back)
+            from .diligence.expert_calls import format_call_note
+            body = format_call_note(
+                (form.get("lens", "") or "").strip(),
+                vantage=form.get("vantage", "") or "",
+                finding=form.get("finding", "") or "",
+                tag=form.get("tag", "") or "",
+                as_of=form.get("as_of", "") or "")
+            from .deals.deal_notes import record_note
+            record_note(store, deal_id=deal_id, body=body,
+                        author=self._current_username() or "api")
+        except ValueError:
+            # Invalid lens/tag/empty finding — never a junk note.
+            return self._redirect(back)
+        except Exception:  # noqa: BLE001 — never 500 a save action
+            return self._redirect(back)
+        return self._redirect(f"{back}?logged=1")
+
     def _route_quick_import_post(self) -> None:
         """POST /quick-import — create a deal from browser form."""
         from .ui.quick_import import render_quick_import
@@ -14184,13 +14429,48 @@ class RCMHandler(BaseHTTPRequestHandler):
         float_fields = ["denial_rate", "days_in_ar", "net_collection_rate",
                         "clean_claim_rate", "cost_to_collect", "net_revenue",
                         "bed_count", "claims_volume"]
+        # Entry-time range validation (PAGE_INVENTORY top fix: the
+        # plausibility bands existed only on DISPLAY — the form's HTML
+        # min/max never bound a curl/JS-off submit, so an impossible
+        # 140% denial rate landed silently as profile truth). Bounds are
+        # PHYSICAL limits, not judgment calls: percentages live in
+        # [0, 100], counts and dollars can't be negative. Implausible-
+        # but-possible values still import (they're ENTERED data and
+        # flagged downstream); impossible ones are rejected with the
+        # form re-rendered and every typed value preserved.
+        _hard_bounds = {
+            "denial_rate": (0.0, 100.0, "%"),
+            "net_collection_rate": (0.0, 100.0, "%"),
+            "clean_claim_rate": (0.0, 100.0, "%"),
+            "cost_to_collect": (0.0, 100.0, "%"),
+            "days_in_ar": (0.0, 500.0, " days"),
+            "net_revenue": (0.0, None, " $"),
+            "bed_count": (0.0, None, " beds"),
+            "claims_volume": (0.0, None, " claims"),
+        }
+        bad: list = []
         for f in float_fields:
-            val = form.get(f, "").strip()
-            if val:
-                try:
-                    profile[f] = float(val)
-                except ValueError:
-                    pass
+            val = form.get(f, "").strip().replace(",", "")
+            if not val:
+                continue
+            try:
+                fv = float(val)
+            except ValueError:
+                bad.append(f"{f} ('{form.get(f, '').strip()[:20]}' is not "
+                           f"a number)")
+                continue
+            lo, hi, unit = _hard_bounds.get(f, (None, None, ""))
+            if (lo is not None and fv < lo) or (hi is not None and fv > hi):
+                rng = (f"{lo:g}–{hi:g}{unit}" if hi is not None
+                       else f"≥ {lo:g}{unit}")
+                bad.append(f"{f} = {fv:g} (must be {rng})")
+                continue
+            profile[f] = fv
+        if bad:
+            return self._send_html(render_quick_import(
+                error_msg="Out-of-range value(s): " + "; ".join(bad),
+                prefill={k: form.get(k, "") for k in
+                         ["deal_id", "name", "state", *float_fields]}))
         state = form.get("state", "").strip().upper()
         if state:
             profile["state"] = state

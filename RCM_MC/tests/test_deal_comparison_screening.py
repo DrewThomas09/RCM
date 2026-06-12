@@ -109,6 +109,27 @@ class TestComparison(unittest.TestCase):
         self.assertIn("EBITDA impact", html)
         self.assertIn("denial_rate", html)
 
+    def test_peer_percentile_chips_rank_against_whole_book(self):
+        # P4: the compared deal's KPIs carry a percentile-vs-portfolio
+        # chip when the handler supplies the full-book distributions.
+        # denial 12.0 ranks 8th of 10 values below it → high percentile,
+        # toned by lower-is-better.
+        dists = {"denial_rate": [5, 6, 7, 8, 9, 10, 11, 12.5, 13, 20],
+                 "days_in_ar": [40, 42, 44, 46, 48, 52, 55, 60, 70, 90]}
+        html = render_comparison([_packet(denial=12.0)], peer_dists=dists)
+        self.assertIn("vs portfolio deals (n=10)", html)
+        self.assertIn("p70", html)        # 7 below / 10 → p70 for denial
+        self.assertIn("ck-pct-chip", html)
+
+    def test_peer_percentile_silent_without_dists_or_small_book(self):
+        # No distributions → no chip markup at all; a thin book (n<8)
+        # renders the honesty note instead of a fabricated rank.
+        html = render_comparison([_packet()])
+        self.assertNotIn("vs portfolio deals", html)
+        thin = {"denial_rate": [5, 6, 7]}
+        html2 = render_comparison([_packet()], peer_dists=thin)
+        self.assertIn("peer set too small (n=3)", html2)
+
 
 # ── Screening ─────────────────────────────────────────────────────
 

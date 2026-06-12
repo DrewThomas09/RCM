@@ -1005,6 +1005,207 @@ def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
         f'where egress permits.</p></div>')
 
 
+def _medicare_base_section(a: Dict[str, Any]) -> str:
+    """The Medicare beneficiary base — total / FFS / MA by county. FFS
+    benes are the ASP+6 buy-and-bill denominator; MA benes are the
+    steered book. LIVE from CMS Medicare Monthly Enrollment when egress
+    allows, labeled MODELED otherwise."""
+    mb = a.get("medicare_base") or {}
+    st = mb.get("state") or {}
+    if not st:
+        return ""
+    live = mb.get("live")
+    badge_label = (
+        "LIVE — CMS Medicare Monthly Enrollment, " + mb.get("period", "")
+        if live else
+        "MODELED — real population × enrollment rates "
+        "(live CMS via ?nppes=live)")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">{badge_label}</span>')
+
+    def _kpi(label: str, val: str, color: str = _NAVY) -> str:
+        return (
+            f'<div style="flex:1;min-width:130px;"><div style="font-size:9px;'
+            f'letter-spacing:0.06em;color:{_FAINT};font-weight:700;">{label}'
+            f'</div><div class="num" style="font-size:18px;font-weight:700;'
+            f'color:{color};">{val}</div></div>')
+
+    ffs_pct = 1 - st["ma_pct"]
+    split_bar = (
+        f'<div style="display:flex;height:18px;border-radius:3px;'
+        f'overflow:hidden;margin:10px 0 4px;">'
+        f'<div style="width:{ffs_pct*100:.1f}%;background:{_TEAL};"></div>'
+        f'<div style="width:{st["ma_pct"]*100:.1f}%;background:{_NAVY};">'
+        f'</div></div>'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'font-size:10px;color:{_DIM};">'
+        f'<span><strong style="color:{_TEAL};">FFS (buy-and-bill, '
+        f'ASP+6)</strong> {ffs_pct*100:.1f}%</span>'
+        f'<span><strong style="color:{_NAVY};">MA (steered, '
+        f'prior-auth)</strong> {st["ma_pct"]*100:.1f}%</span></div>')
+
+    rows = ""
+    for c in mb.get("counties", [])[:12]:
+        dot = (f'<span style="color:{_POS};">●</span> '
+               if c.get("live") else "")
+        rows += (
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:5px 8px;font-weight:600;color:{_NAVY};">'
+            f'{dot}{html.escape(c["county"])}</td>'
+            f'<td style="padding:5px 8px;font-size:11px;color:{_DIM};">'
+            f'{html.escape(c["metro"])}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-weight:600;">{c["total_benes"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'color:{_TEAL};font-weight:600;">{c["ffs_benes"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'color:{_DIM};">{c["ma_benes"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;">'
+            f'{c["ma_pct"]*100:.1f}%</td></tr>')
+    aged = st.get("aged_benes")
+    disabled = st.get("disabled_benes")
+    return (
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0;'
+        f'max-width:680px;">{html.escape(mb.get("note", ""))}</p>{badge}</div>'
+        f'<div style="display:flex;gap:16px;flex-wrap:wrap;'
+        f'border:1px solid #d6cfc0;border-radius:4px;padding:12px 14px;'
+        f'background:#fff;">'
+        + _kpi("TX TOTAL BENES", f'{st["total_benes"]/1e6:.2f}M')
+        + _kpi("FFS — BUY-AND-BILL BOOK",
+               f'{st["ffs_benes"]/1e6:.2f}M', _TEAL)
+        + _kpi("MA — STEERED BOOK", f'{st["ma_benes"]/1e6:.2f}M')
+        + _kpi("TRUE MA PENETRATION", f'{st["ma_pct"]*100:.1f}%')
+        + (_kpi("AGED (65+)", f'{aged/1e6:.2f}M')
+           if aged is not None else "")
+        + (_kpi("DISABLED (<65)", f'{disabled/1e6:.2f}M')
+           if disabled is not None else "")
+        + f'</div>{split_bar}'
+        f'<div style="overflow-x:auto;margin-top:10px;"><table '
+        f'style="width:100%;border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:5px 8px;">County '
+        f'(top 12 of the metro set)</th>'
+        f'<th style="text-align:left;padding:5px 8px;">Metro</th>'
+        f'<th style="text-align:right;padding:5px 8px;">Total benes</th>'
+        f'<th style="text-align:right;padding:5px 8px;">FFS</th>'
+        f'<th style="text-align:right;padding:5px 8px;">MA</th>'
+        f'<th style="text-align:right;padding:5px 8px;">MA %</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'{"● = published county row (live)." if live else ""} '
+        f'True MA penetration uses TOTAL Medicare (incl. &lt;65 disabled) '
+        f'as the denominator — the 65+-population proxy in the MA panel '
+        f'above overstates it. The MODELED fallback applies the state MA '
+        f'share uniformly; real county penetration varies — the live rows '
+        f'replace it county-by-county.</p>')
+
+
+def _hopd_infusion_section(a: Dict[str, Any]) -> str:
+    """HOPD drug-administration volume by metro — the steerable pool,
+    MODELED from the page's own factors offline, per-CCN CMS OPPS
+    counts when live."""
+    hi = a.get("hopd_infusion") or {}
+    if not hi.get("metros"):
+        return ""
+    live = hi.get("live")
+    badge_label = (
+        "LIVE — CMS Outpatient by Provider & Service" if live else
+        "MODELED — this page's own factors (live CMS via ?nppes=live)")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">{badge_label}</span>')
+    apcs = "".join(
+        f'<span style="display:inline-block;padding:3px 8px;margin:0 6px '
+        f'6px 0;background:#eef2f7;border-radius:3px;font-size:10.5px;">'
+        f'<span style="font-family:monospace;font-weight:700;'
+        f'color:{_NAVY};">{html.escape(r["apc"])}</span> '
+        f'{html.escape(r["label"])}</span>'
+        for r in hi.get("apc_reference", []))
+    rows = ""
+    for m in hi["metros"]:
+        live_cells = (
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'font-weight:600;color:{_POS};">{m["live_services"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;">'
+            f'{m["live_hospitals"]}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;">'
+            f'${m["live_payment_mm"]:,.1f}M</td>'
+            if live else
+            f'<td colspan="3" style="padding:5px 8px;text-align:right;'
+            f'font-size:10px;color:{_FAINT};">— live via ?nppes=live —</td>')
+        rows += (
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:5px 8px;font-weight:600;color:{_NAVY};">'
+            f'{html.escape(m["metro"])}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;">'
+            f'{m["hopd_patients_modeled"]:,}</td>'
+            f'<td class="num" style="padding:5px 8px;text-align:right;'
+            f'color:{_TEAL};font-weight:600;">'
+            f'{m["hopd_medicare_patients_modeled"]:,}</td>'
+            + live_cells + '</tr>')
+    tops = ""
+    if live and hi.get("top_hospitals"):
+        trs = "".join(
+            f'<tr style="border-bottom:1px solid #e4ddca;">'
+            f'<td style="padding:4px 8px;">{html.escape(h["name"])} '
+            f'<span style="font-size:10px;color:{_FAINT};">'
+            f'{html.escape(h["city"])}</span></td>'
+            f'<td style="padding:4px 8px;">{html.escape(h["metro"] or "—")}'
+            f'</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;'
+            f'font-weight:600;">{h["services"]:,}</td>'
+            f'<td class="num" style="padding:4px 8px;text-align:right;">'
+            f'${h["payment_mm"]:,.1f}M</td></tr>'
+            for h in hi["top_hospitals"])
+        tops = (
+            f'<div style="font-size:10px;letter-spacing:0.06em;'
+            f'color:{_FAINT};font-weight:700;margin:12px 0 4px;">'
+            f'TOP TX HOSPITALS BY DRUG-ADMIN SERVICES (LIVE)</div>'
+            f'<table style="width:100%;border-collapse:collapse;'
+            f'font-size:12px;"><thead>'
+            f'<tr style="border-bottom:2px solid #c9c1ac;">'
+            f'<th style="text-align:left;padding:4px 8px;">Hospital</th>'
+            f'<th style="text-align:left;padding:4px 8px;">Metro</th>'
+            f'<th style="text-align:right;padding:4px 8px;">Services</th>'
+            f'<th style="text-align:right;padding:4px 8px;">Medicare $</th>'
+            f'</tr></thead><tbody>{trs}</tbody></table>')
+    return (
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">'
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;margin:0;'
+        f'max-width:680px;">{html.escape(hi.get("note", ""))}</p>{badge}'
+        f'</div>'
+        f'<div style="margin-bottom:6px;">{apcs}</div>'
+        f'<div style="overflow-x:auto;"><table style="width:100%;'
+        f'border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+        f'<th style="text-align:left;padding:5px 8px;">Metro</th>'
+        f'<th style="text-align:right;padding:5px 8px;">HOPD pool '
+        f'(modeled patients)</th>'
+        f'<th style="text-align:right;padding:5px 8px;">…Medicare slice</th>'
+        f'<th style="text-align:right;padding:5px 8px;">Drug-admin '
+        f'services (live)</th>'
+        f'<th style="text-align:right;padding:5px 8px;">Hospitals</th>'
+        f'<th style="text-align:right;padding:5px 8px;">Medicare $</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        + tops +
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'Drug-administration APCs 5691–5694 are public OPPS facts. The '
+        f'live file is Medicare FFS only — MA (~half of Medicare) and all '
+        f'commercial volume are excluded, so published counts UNDERSTATE '
+        f'the steerable pool. Hospitals map to metros via their HCRIS '
+        f'county.</p>')
+
+
 def _asp_pricing_section(a: Dict[str, Any]) -> str:
     """Part B ASP buy-and-bill drug-pricing reference — the marquee
     infusion J-codes, the ASP+6 / sequestered mechanics, and the live
@@ -1403,6 +1604,107 @@ def _util_curve_svg(curve: Dict[str, Any]) -> str:
             f'font-size="9" fill="{_FAINT}">{u*100:.0f}%</text>')
     parts.append("</svg>")
     return "".join(parts)
+
+
+def _denovo_jcurve_svg(ramp: Dict[str, Any]) -> str:
+    """The de-novo build J-curve — cumulative cash over months, dipping
+    on capex + ramp burn then crossing zero at break-even."""
+    s = ramp.get("series", [])
+    if not s:
+        return ""
+    W, H, pl, pb, pt = 560, 210, 64, 26, 14
+    pw, ph = W - pl - 14, H - pt - pb
+    cums = [r["cumulative"] for r in s]
+    n = len(s)
+    lo, hi = min(cums + [0]), max(cums + [0])
+    span = (hi - lo) or 1.0
+
+    def _x(i):
+        return pl + pw * (i / max(n - 1, 1))
+
+    def _y(v):
+        return pt + ph * (1 - (v - lo) / span)
+    zero_y = _y(0)
+    parts = [f'<svg viewBox="0 0 {W} {H}" width="100%" height="210" '
+             f'role="img" aria-label="De-novo J-curve" '
+             f'style="max-width:{W}px;">']
+    # Zero line.
+    parts.append(f'<line x1="{pl}" y1="{zero_y:.1f}" x2="{pl+pw}" '
+                 f'y2="{zero_y:.1f}" stroke="{_FAINT}" stroke-width="1" '
+                 f'stroke-dasharray="3 3"/>')
+    # Area under/over the curve to the zero line.
+    top = " ".join(f"{_x(i):.1f},{_y(r['cumulative']):.1f}"
+                   for i, r in enumerate(s))
+    parts.append(f'<polyline points="{top}" fill="none" stroke="{_NAVY}" '
+                 f'stroke-width="2.4"/>')
+    # Break-even marker.
+    be = ramp.get("breakeven_month")
+    if be and be <= n:
+        bx = _x(be - 1)
+        parts.append(
+            f'<line x1="{bx:.1f}" y1="{pt}" x2="{bx:.1f}" y2="{pt+ph}" '
+            f'stroke="{_POS}" stroke-width="1" stroke-dasharray="2 2"/>'
+            f'<text x="{bx:.1f}" y="{pt+8}" text-anchor="middle" '
+            f'font-size="9" font-weight="700" fill="{_POS}">break-even '
+            f'm{be}</text>')
+    # Year x labels.
+    for yr in range(1, n // 12 + 1):
+        xi = _x(yr * 12 - 1)
+        parts.append(f'<text x="{xi:.1f}" y="{H-8}" text-anchor="middle" '
+                     f'font-size="9" fill="{_FAINT}">Y{yr}</text>')
+    # Y labels (cum at trough + end).
+    parts.append(f'<text x="{pl-6}" y="{_y(hi):.1f}" text-anchor="end" '
+                 f'font-size="9" fill="{_FAINT}">{_money(hi)}</text>'
+                 f'<text x="{pl-6}" y="{_y(lo)+3:.1f}" text-anchor="end" '
+                 f'font-size="9" fill="{_FAINT}">{_money(lo)}</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _denovo_section(a: Dict[str, Any]) -> str:
+    """De-novo AIC build economics — the J-curve + the KPIs a deal team
+    underwrites on a build-vs-buy decision."""
+    r = a.get("aic_denovo_ramp") or {}
+    if not r.get("series"):
+        return ""
+    yc = r.get("year_contribution", [])
+
+    def _kpi(label, val, sub=""):
+        return (
+            f'<div style="flex:1;min-width:120px;"><div style="font-size:9px;'
+            f'letter-spacing:0.06em;color:{_FAINT};font-weight:700;">{label}'
+            f'</div><div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+            f'{val}</div><div style="font-size:9.5px;color:{_FAINT};">{sub}'
+            f'</div></div>')
+    be = r.get("breakeven_month")
+    kpis = (
+        '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;">'
+        + _kpi("BUILD CAPEX", _money(r["capex_total"]),
+               f'{r["chairs"]:.0f} chairs × {_money(r["capex_per_chair"])} '
+               f'+ {_money(r["preopen"])} pre-open')
+        + _kpi("CASH BREAK-EVEN",
+               f'month {be}' if be else '>3 yrs',
+               f'{r["ramp_months"]}-mo ramp to {r["mature_util"]*100:.0f}% util')
+        + _kpi("MATURE CONTRIBUTION",
+               _money(r["mature_annual_contribution"]) + "/yr",
+               'at full utilization')
+        + _kpi("YEAR-3 CASH-ON-CASH", f'{r["y3_cash_on_cash"]:.1f}x',
+               'Y3 contribution ÷ build capex')
+        + '</div>')
+    yrs = "".join(
+        f'<span style="margin-right:14px;">Y{i+1}: '
+        f'<strong style="color:{_NAVY};">{_money(v)}</strong></span>'
+        for i, v in enumerate(yc))
+    return (
+        kpis
+        + '<div style="font-size:10px;color:%s;letter-spacing:0.06em;'
+          'font-weight:700;margin-bottom:4px;">CUMULATIVE CASH — THE BUILD '
+          'J-CURVE (capex out, ramp burn, then recovery)</div>' % _FAINT
+        + _denovo_jcurve_svg(r)
+        + f'<div style="font-size:11.5px;color:{_DIM};margin-top:6px;">'
+        f'Contribution by year: {yrs}</div>'
+        + f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'{html.escape(r["note"])}</p>')
 
 
 _SEG_TONE = ["#0b2341", "#b5321e", "#6e5b9e", "#1F7A75", "#b8732a"]
@@ -2494,6 +2796,13 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"chair and break-even near {curve['breakeven_util']*100:.0f}% "
             f"utilization, chair throughput + commercial mix make or break "
             f"the unit — de-novo ramps below break-even bleed cash."),
+        "denovo": (
+            f"A new center costs ~{_money(a['aic_denovo_ramp']['capex_total'])} "
+            f"to build and reaches cash break-even around month "
+            f"{a['aic_denovo_ramp']['breakeven_month']}, returning "
+            f"~{a['aic_denovo_ramp']['y3_cash_on_cash']:.1f}x cash-on-cash by "
+            f"year 3 — a fast-payback de-novo engine that, with the no-CON "
+            f"runway, can out-pace bolt-on multiples."),
         "asp": (
             f"The drug spread is thin and policy-set (ASP + "
             f"{a['asp_pricing']['addon_sequestered']*100:.1f}%); the real "
@@ -2556,7 +2865,22 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"({ma.get('penetration',0)*100:.0f}% of total Medicare) are "
             f"steering site-of-care and gating biologics — payer mix is "
             f"the swing factor on margin."),
-        "demographics": (
+        "hopd": (
+            f"~{sum(m['hopd_patients_modeled'] for m in a['hopd_infusion']['metros']):,} "
+            f"metro patients sit in the {a['hopd_infusion']['hopd_share']*100:.0f}% "
+            f"HOPD channel — the pool steerage converts. The CMS "
+            f"by-Provider-and-Service file names WHICH hospitals hold it, "
+            f"so the de-novo / referral strategy can target the discharge "
+            f"desks that matter rather than the metro average."),
+        "medicare_base": (
+            f"~{a['medicare_base']['state']['ffs_benes']/1e6:.1f}M of "
+            f"TX's {a['medicare_base']['state']['total_benes']/1e6:.1f}M "
+            f"Medicare lives are still FFS — the ungated ASP+6 "
+            f"buy-and-bill book — while the "
+            f"{a['medicare_base']['state']['ma_pct']*100:.0f}% MA book is "
+            f"steered and prior-auth'd. Size the Part B opportunity on "
+            f"FFS benes by county, and underwrite the MA share "
+            f"converting only at managed-care economics."),        "demographics": (
             "The 65+ tailwind is real, but TX's highest-in-US uninsured "
             "rate and rural spread complicate home economics outside the "
             "four metros — stay metro-clustered."),
@@ -2735,6 +3059,12 @@ def render_texas_infusion_page(
         + '</div>'
         + _so_what(sw["aic"])
 
+        + ck_section_header("De-novo AIC build — the J-curve",
+                            eyebrow="CAPEX · RAMP · CASH BREAK-EVEN · "
+                                    "YEAR-3 CASH-ON-CASH · EDITABLE")
+        + _denovo_section(a)
+        + _so_what(sw["denovo"])
+
         + ck_section_header("Part B drug pricing — ASP buy-and-bill",
                             eyebrow="CMS ASP+6 (SEQ. +4.3%) · INFUSION J-CODES "
                                     "· LIVE ASP FILE")
@@ -2755,6 +3085,12 @@ def render_texas_infusion_page(
         + _site_table(a)
         + _hopd_pool_section(a)
         + _so_what(sw["site"])
+
+        + ck_section_header("HOPD volume by hospital — who holds the pool",
+                            eyebrow="CMS OUTPATIENT BY PROVIDER & SERVICE · "
+                                    "DRUG-ADMIN APCs · PER-CCN DRILL-DOWN")
+        + _hopd_infusion_section(a)
+        + _so_what(sw["hopd"])
 
         + ck_section_header("How discharges → home infusion have evolved",
                             eyebrow="SITE-OF-CARE MIGRATION OVER TIME · "
@@ -2805,6 +3141,13 @@ def render_texas_infusion_page(
         + _payer_section(a)
         + _ma_enrollment_panel(a)
         + _so_what(sw["payer"])
+
+        + ck_section_header("Medicare beneficiary base — the Part B "
+                            "denominator",
+                            eyebrow="CMS MEDICARE MONTHLY ENROLLMENT · "
+                                    "FFS vs MA · BY COUNTY")
+        + _medicare_base_section(a)
+        + _so_what(sw["medicare_base"])
 
         + ck_section_header("Medicare population & demographics",
                             eyebrow="THE DEMAND TAILWIND")

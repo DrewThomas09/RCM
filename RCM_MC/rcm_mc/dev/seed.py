@@ -79,6 +79,13 @@ _CURATED_DEALS: List[Tuple[str, str, str, int]] = [
 # editorial covenant heatmap: ccf drifts safe→watch, arr trips,
 # pma deleverages cleanly, tlc held flat then exited.
 
+#: Workstream H — the one demo deal anchored to a REAL facility. CCN
+#: 450358 is the platform's canonical sample TX hospital (route walker,
+#: docs). The deal's profile is loaded from the live HCRIS frame at
+#: seed time so the numbers can never drift from the filing.
+_REAL_CCN_DEAL = "mvm_2026"
+_REAL_CCN = "450358"
+
 _COVENANT_TRAJECTORY: Dict[str, List[float]] = {
     # 8 quarters: drifts from safe (≤6.0) into watch (≤6.5) — common
     # demo line: "the thesis is intact but warrants attention"
@@ -248,8 +255,42 @@ def _seed_deals_and_snapshots(
             )
 
     for deal_id, name, terminal_stage, _vintage_year in deals_to_seed:
-        # 1. deals row (via store.upsert_deal)
-        store.upsert_deal(deal_id, name=name)
+        # 1. deals row (via store.upsert_deal). Workstream H (demo-deal
+        #    realism): mvm_2026 is rebuilt on a REAL named CCN — the deal
+        #    carries the hospital's actual filed HCRIS values (name,
+        #    state, beds, NPR, margin, Medicare share) as its profile,
+        #    with the CCN + FY recorded so every surface can trace the
+        #    numbers to the filing. Looked up at seed time from the
+        #    vendored frame (never hardcoded copies that drift); falls
+        #    back to the fictional seed if the frame is unavailable.
+        profile = None
+        if deal_id == _REAL_CCN_DEAL:
+            try:
+                from rcm_mc.data.hcris import _get_latest_per_ccn
+                _row = _get_latest_per_ccn()
+                _row = _row[_row["ccn"] == _REAL_CCN].iloc[0]
+                npr = float(_row["net_patient_revenue"])
+                opex = float(_row["operating_expenses"])
+                name = str(_row["name"]).title()
+                profile = {
+                    "state": str(_row["state"]),
+                    "bed_count": float(_row["beds"]),
+                    "net_revenue": npr,
+                    "ebitda_margin": round((npr - opex) / npr, 4),
+                    "medicare_day_pct": round(
+                        float(_row["medicare_day_pct"]), 4),
+                    "hcris_ccn": _REAL_CCN,
+                    "hcris_fy": int(_row["fiscal_year"]),
+                    "metrics_basis": (
+                        f"ACTUAL — filed HCRIS values, CCN {_REAL_CCN} "
+                        f"FY{int(_row['fiscal_year'])}"),
+                }
+            except Exception:  # noqa: BLE001 — frame optional in seeding
+                profile = None
+        if profile is not None:
+            store.upsert_deal(deal_id, name=name, profile=profile)
+        else:
+            store.upsert_deal(deal_id, name=name)
         result.deals_inserted += 1
 
         # 2. deal_stage_history rows — each transition that led to the
