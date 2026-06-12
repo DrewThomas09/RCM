@@ -449,19 +449,29 @@ def render_deal_dashboard(
         f"{ck_fmt_pct(float(margin_raw))}{ck_basis_badge('entered')}"
         if margin_raw not in (None, "") else "—"
     )
+    # Glossary links from the KPI cards (PAGE_INVENTORY "partial" fix):
+    # ck_kpi_block ESCAPES the label by contract, so the link lives in
+    # the trusted sub line — metric_label_link falls back to plain text
+    # for keys without a glossary card (no dead links).
+    from ._glossary_link import metric_label_link
+
+    def _gloss(key: str) -> str:
+        link = metric_label_link("glossary →", key)
+        return f" · {link}" if link.startswith("<a") else ""
+
     kpi_strip = (
         '<div class="ck-kpi-grid" '
         'style="grid-template-columns:repeat(3,1fr);'
         'gap:8px;margin:8px 0 16px;">'
         + ck_kpi_block("Bed Count", bed_count_display, "HCRIS / entered")
         + ck_kpi_block("Denial Rate", denial_display,
-                       "initial denials" if dr_raw not in (None, "")
-                       else "not entered — estimates use the 12% model "
-                            "default")
+                       ("initial denials" if dr_raw not in (None, "")
+                        else "not entered — estimates use the 12% model "
+                             "default") + _gloss("denial_rate"))
         + ck_kpi_block("EBITDA Margin", margin_display,
-                       "of net revenue" if margin_raw not in (None, "")
-                       else "not entered — estimates use the 10% model "
-                            "default")
+                       ("of net revenue" if margin_raw not in (None, "")
+                        else "not entered — estimates use the 10% model "
+                             "default") + _gloss("ebitda_margin"))
         + '</div>'
     )
 

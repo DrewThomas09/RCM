@@ -16,6 +16,7 @@ from ._chartis_kit import (
     ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
     ck_source_purpose, MARGIN_PLAUSIBLE_LO, MARGIN_PLAUSIBLE_HI,
 )
+from ._glossary_link import metric_label_link
 from .brand import PALETTE
 
 
@@ -725,7 +726,10 @@ def render_state_detail(
         )
     table_panel = ck_panel(
         '<table class="cad-table"><thead><tr>'
-        '<th>Hospital</th><th>Beds</th><th>NPR</th><th>Margin</th><th>Actions</th>'
+        '<th>Hospital</th><th>Beds</th>'
+        f'<th>{metric_label_link("NPR", "net_patient_revenue")}</th>'
+        f'<th>{metric_label_link("Margin", "operating_margin")}</th>'
+        '<th>Actions</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>',
         title=f"Hospitals in {html.escape(state_upper)} ({n})",
     )

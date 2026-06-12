@@ -4007,3 +4007,13 @@ default"); the Denial-Drivers tile only quotes a "14.2% → 8%"
 trajectory when the rate was actually entered. The derived ESTIMATES
 (EV/IRR/recoverable in the value anchor) legitimately keep their
 defaults — they're labeled indicative. +2 tests; 7 passed.
+
+## W2-200 (2026-06-12) — Glossary links: deal dashboard + market-data headers
+Extended the metric→glossary linking (PAGE_INVENTORY "partial" fix) to
+two more high-traffic surfaces: the deal dashboard's Denial Rate /
+EBITDA Margin KPI cards (link lives in the trusted sub line —
+ck_kpi_block ESCAPES labels by contract, which would have rendered a
+literal &lt;a&gt;; caught in verification) and the market-data state-
+detail hospital table's NPR / Margin headers. metric_label_link's
+no-dead-links fallback verified (bed_count has no card → plain text).
++1 test; 8+12 passed across both suites.
