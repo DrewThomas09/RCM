@@ -11,11 +11,15 @@ public data.
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Tuple
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_page_title, ck_section_header,
     ck_source_purpose,
+)
+from .cdd_chart_kit import (
+    compose_exhibit, parse_table, chart_export_toolbar,
 )
 
 _POS = "#0a8a5f"
@@ -33,6 +37,126 @@ def _money(v: float) -> str:
     if abs(v) >= 1e6:
         return f"${v/1e6:.1f}M"
     return f"${v:,.0f}"
+
+
+def texas_exhibit_svg(a: Dict[str, Any]) -> str:
+    """The auto-composed 'Investment Highlights' exhibit SVG — built from
+    the live analysis (funnel, site-of-care evolution, top de-novo
+    counties, current mix). Shared by the page section and the download
+    route so they can never disagree."""
+    s = a["sizing"]
+    funnel = parse_table(
+        f"Stage\tValue\nTAM\t{s['tam']/1e6:.0f}\nSAM\t{s['sam']/1e6:.0f}\n"
+        f"SOM\t{s['som']/1e6:.0f}")
+    evo = a["site_of_care_evolution"]["series"]
+    soc_rows = "\n".join(
+        f"{r['year']}\t{r['hopd']*100:.0f}\t{r['ais']*100:.0f}\t"
+        f"{r['home']*100:.0f}\t{r['office']*100:.0f}" for r in evo)
+    soc = parse_table("Year\tHOPD\tAIS\tHome\tOffice\n" + soc_rows)
+    top = a["growth_scorecard"]["top_opportunities"][:6]
+    score = parse_table(
+        "County\tScore\n" + "\n".join(
+            f"{t['county']}\t{t['score']:.0f}" for t in top))
+    site = {x["site"]: x["share"] for x in a["site_of_care"]}
+    mix = parse_table(
+        "Site\tShare\n" + "\n".join(
+            f"{k.split(' (')[0]}\t{v*100:.0f}" for k, v in site.items()))
+    panels = [
+        {"type": "funnel", "title": "Market sizing — TAM → SAM → SOM ($M)",
+         "table": funnel, "palette": "Navy–Teal"},
+        {"type": "column_100", "title": "Site-of-care mix, 2015–2024 (%)",
+         "table": soc, "palette": "Navy–Teal"},
+        {"type": "bar", "title": "Top de-novo county opportunities",
+         "table": score, "palette": "Chartis"},
+        {"type": "donut", "title": "Current site-of-care mix",
+         "table": mix, "palette": "Chartis"},
+    ]
+    return compose_exhibit(
+        panels, title="Texas Infusion — Investment Highlights",
+        eyebrow="Commercial Due Diligence",
+        source="Source: NHIA / MedPAC scaled to TX (Census/ACS) · CMS · "
+               "CDC PLACES — illustrative")
+
+
+def _exhibit_section(a: Dict[str, Any]) -> str:
+    """Auto-compose a one-page investment-highlights exhibit slide from
+    the LIVE analysis — the deliverable a partner drops into a deck.
+    Recomputes from the same numbers as the sections, so it can never
+    disagree with them."""
+    svg = texas_exhibit_svg(a)
+    return (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
+        f'margin:0 0 8px;">A one-page exhibit auto-composed from the live '
+        f'analysis on this page — download the SVG/PNG straight into a '
+        f'deck. It recomputes from the same figures, so it never disagrees '
+        f'with the sections below.</p>'
+        f'<div style="border:1px solid #d6cfc0;border-radius:8px;'
+        f'padding:12px;background:#fff;text-align:center;">'
+        f'<div id="txExhibit">{svg}</div>'
+        + chart_export_toolbar("txExhibit", "texas-infusion-exhibit")
+        + f'<div style="margin-top:6px;"><a href="/api/diligence/'
+        f'texas-infusion/exhibit.svg" style="font-size:11px;color:{_TEAL};'
+        f'font-weight:600;text-decoration:none;">⬇ download the exhibit '
+        f'SVG (server-rendered)</a></div>'
+        + '</div>')
+
+
+def _thesis_section(a: Dict[str, Any]) -> str:
+    """The IC-ready investment-thesis synthesis — the top-line a partner
+    reads first, recomputed from the sections below."""
+    it = a.get("investment_thesis") or {}
+    if not it:
+        return ""
+    pillars = ""
+    for i, p in enumerate(it.get("pillars", []), 1):
+        pillars += (
+            f'<div style="border:1px solid #d6cfc0;border-radius:6px;'
+            f'padding:11px 13px;background:#fff;">'
+            f'<div style="font-size:9px;letter-spacing:0.06em;color:{_FAINT};'
+            f'font-weight:700;">PILLAR {i}</div>'
+            f'<div style="font-size:13px;font-weight:700;color:#1a2332;'
+            f'margin-top:2px;">{html.escape(p["title"])}</div>'
+            f'<div style="font-size:11.5px;font-weight:700;color:{_TEAL};'
+            f'font-family:monospace;margin:3px 0;">{html.escape(p["stat"])}'
+            f'</div>'
+            f'<div style="font-size:11px;color:{_DIM};line-height:1.5;">'
+            f'{html.escape(p["point"])}</div></div>')
+    risks = "".join(
+        f'<li style="margin:3px 0;font-size:11.5px;color:{_DIM};">'
+        f'<strong style="color:{_NEG};">{html.escape(r["risk"])}:</strong> '
+        f'{html.escape(r["detail"])}</li>' for r in it.get("risks", []))
+    ddn = "".join(
+        f'<li style="margin:3px 0;font-size:11.5px;color:{_DIM};">'
+        f'{html.escape(x)}</li>' for x in it.get("diligence_next", []))
+    return (
+        f'<div style="border:1px solid #c9c1ac;border-top:4px solid {_NAVY};'
+        f'border-radius:6px;padding:16px 18px;background:#fbf9f4;'
+        f'margin-bottom:18px;">'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;">'
+        f'<div style="font-size:10px;letter-spacing:0.08em;color:{_FAINT};'
+        f'font-weight:700;">INVESTMENT THESIS · IC SUMMARY</div>'
+        f'<a href="/api/diligence/texas-infusion/memo" '
+        f'style="font-size:11px;font-weight:600;color:{_NAVY};'
+        f'border:1px solid {_NAVY};border-radius:4px;padding:4px 11px;'
+        f'text-decoration:none;">⬇ IC memo (Markdown)</a></div>'
+        f'<p style="font-size:14px;color:#1a2332;line-height:1.6;'
+        f'font-family:\'Source Serif 4\',Georgia,serif;margin:6px 0 4px;">'
+        f'{html.escape(it["headline"])}</p>'
+        f'<div style="display:inline-block;font-size:11px;font-weight:700;'
+        f'color:{_POS};border:1px solid {_POS};border-radius:3px;'
+        f'padding:2px 8px;margin-bottom:12px;">'
+        f'{html.escape(it["verdict"].split(" — ")[0])}</div>'
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,'
+        f'minmax(230px,1fr));gap:12px;margin-bottom:14px;">{pillars}</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;">'
+        f'<div><div style="font-size:10px;letter-spacing:0.06em;'
+        f'color:{_NEG};font-weight:700;margin-bottom:3px;">KEY RISKS</div>'
+        f'<ul style="margin:0;padding-left:16px;">{risks}</ul></div>'
+        f'<div><div style="font-size:10px;letter-spacing:0.06em;'
+        f'color:{_TEAL};font-weight:700;margin-bottom:3px;">DILIGENCE NEXT'
+        f'</div><ul style="margin:0;padding-left:16px;">{ddn}</ul></div>'
+        f'</div></div>')
 
 
 def _bar(pct: float, tone: str, width: int = 100) -> str:
@@ -152,6 +276,66 @@ _EVO_BANDS = [("hopd", "Hospital outpatient (HOPD)", _NAVY),
               ("office", "Physician office", "#b8a98c"),
               ("ais", "Ambulatory infusion (AIS)", _TEAL),
               ("home", "Home infusion", _POS)]
+
+
+def _hopd_pool_section(a: Dict[str, Any]) -> str:
+    """The HOPD 'steered-away' infusion pool by metro — the white-space an
+    AIC/home platform captures."""
+    hp = a.get("hopd_pool") or {}
+    metros = hp.get("metros", [])
+    if not metros:
+        return ""
+    live = hp.get("opps_live")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">'
+        f'{"LIVE — CMS OPPS file" if live else "MODELED — HOPD share × real metro patients (live CMS OPPS via ?nppes=live)"}'
+        f'</span>')
+    mx = max((m["hopd_patients"] for m in metros), default=1) or 1
+    bars = ""
+    for m in metros:
+        w = m["hopd_patients"] / mx * 100
+        short = m["metro"].split("-")[0]
+        bars += (
+            f'<div style="display:grid;grid-template-columns:130px 1fr 150px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div style="font-size:11.5px;color:#1a2332;">'
+            f'{html.escape(short)}</div>'
+            f'<div style="height:14px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;"><div style="height:100%;width:{w:.0f}%;'
+            f'background:{_NAVY};"></div></div>'
+            f'<div style="font-size:11px;color:{_DIM};text-align:right;">'
+            f'<strong style="color:{_NAVY};">{m["hopd_patients"]:,}</strong>'
+            f' pts · {_money(m["hopd_revenue"])}</div></div>')
+    opps = ""
+    if live and hp.get("opps_services"):
+        opps = (f'<div style="font-size:11px;color:{_POS};margin-top:6px;">'
+                f'Live CMS OPPS: {hp["opps_services"]:,} HOPD infusion '
+                f'services · {_money(hp.get("opps_payment",0))} Medicare '
+                f'payment (TX).</div>')
+    return (
+        f'<div style="border:1px solid #d6cfc0;border-top:3px solid {_NAVY};'
+        f'border-radius:4px;padding:12px 14px;background:#fff;margin-top:14px;">'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'
+        f'<div style="font-size:13px;font-weight:700;color:{_NAVY};">'
+        f'HOPD infusion — the steered-away pool '
+        f'({hp["hopd_share"]*100:.0f}% of volume)</div>{badge}</div>'
+        f'<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px;">'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;">CAPTURABLE HOPD PATIENTS (4 METROS)</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+        f'{hp["total_hopd_patients"]:,}</div></div>'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;">HOPD INFUSION REVENUE POOL</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+        f'{_money(hp["total_hopd_revenue"])}</div></div></div>'
+        f'{bars}{opps}'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'{html.escape(hp["note"])}</p></div>')
 
 
 def _evolution_section(a: Dict[str, Any]) -> str:
@@ -806,17 +990,19 @@ def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
         f'steerage engine</div>'
         f'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
         + _kpi("TX MA ENROLLEES", f'{ma["enrollment"]/1e6:.2f}M')
-        + _kpi("PENETRATION (vs 65+)", f'{ma["penetration_proxy"]*100:.0f}%')
+        + _kpi("TOTAL MEDICARE", f'{ma.get("total_medicare",0)/1e6:.2f}M')
+        + _kpi("MA PENETRATION", f'{ma.get("penetration",0)*100:.0f}%')
         + _kpi("DUAL-ELIGIBLE", f'{ma["dual_eligible_pct"]*100:.0f}%')
-        + _kpi("AVG AGE", f'{ma.get("avg_age","—")}')
         + '</div>'
         + f'<p style="font-size:11.5px;color:{_DIM};line-height:1.55;'
         f'margin:8px 0 0;">{html.escape(ma["note"])}</p>'
         + f'<p style="font-size:9px;color:{_FAINT};margin:6px 0 0;">'
-        f'CMS MA geographic-variation file (state, {ma.get("year","—")}); '
-        f'penetration vs 65+ population is a proxy (true denominator = '
-        f'total Medicare incl. &lt;65 disabled). County-level penetration '
-        f'available via the live CMS MA enrollment API.</p></div>')
+        f'MA enrollment: CMS MA geographic-variation file (state, '
+        f'{ma.get("year","—")}). Penetration denominator: '
+        f'{html.escape(ma.get("denominator_source","—"))} — the true total-'
+        f'Medicare base (not the 65+ proxy, which omits the &lt;65 '
+        f'disabled). Live county penetration via the CMS enrollment API '
+        f'where egress permits.</p></div>')
 
 
 def _asp_pricing_section(a: Dict[str, Any]) -> str:
@@ -2366,10 +2552,10 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"a textbook roll-up runway — no incumbent can block a build-up."),
         "payer": (
             f"Commercial-heavy ({commercial*100:.0f}%) funds the economics, "
-            f"but {ma['enrollment']/1e6:.1f}M MA lives (~"
-            f"{ma['penetration_proxy']*100:.0f}%) are steering site-of-care "
-            f"and gating biologics — payer mix is the swing factor on "
-            f"margin."),
+            f"but {ma['enrollment']/1e6:.1f}M MA lives "
+            f"({ma.get('penetration',0)*100:.0f}% of total Medicare) are "
+            f"steering site-of-care and gating biologics — payer mix is "
+            f"the swing factor on margin."),
         "demographics": (
             "The 65+ tailwind is real, but TX's highest-in-US uninsured "
             "rate and rural spread complicate home economics outside the "
@@ -2379,6 +2565,52 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             "the forecast; the thesis lives or dies on steerage to AIS/home "
             "continuing."),
     }
+
+
+_SEC_RE = re.compile(
+    r'(<header class="ck-section-header">)(.*?<h2 class="sc-h2">)([^<]+)',
+    re.S)
+
+
+def _inject_section_nav(body: str) -> Tuple[str, str]:
+    """Post-process the assembled body: give each section header an id
+    and build a floating 'jump to section' navigator. The page has ~25
+    sections — a partner needs to move around it."""
+    items: List[Tuple[str, str]] = []
+    seen: Dict[str, int] = {}
+
+    def _repl(m: "re.Match") -> str:
+        title = html.unescape(m.group(3)).strip()
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") or "sec"
+        if slug in seen:
+            seen[slug] += 1
+            slug = f"{slug}-{seen[slug]}"
+        else:
+            seen[slug] = 0
+        items.append((title, slug))
+        return (f'{m.group(1)[:-1]} id="{slug}" '
+                f'style="scroll-margin-top:70px;">{m.group(2)}{m.group(3)}')
+
+    body = _SEC_RE.sub(_repl, body)
+    if not items:
+        return body, ""
+    links = "".join(
+        f'<a href="#{s}" style="display:block;padding:4px 12px;'
+        f'font-size:12px;color:#1a2332;text-decoration:none;'
+        f'border-bottom:1px solid #efe9dc;">{html.escape(t)}</a>'
+        for t, s in items)
+    nav = (
+        '<details style="position:fixed;right:18px;bottom:18px;z-index:50;'
+        'font-family:\'Inter Tight\',system-ui,sans-serif;">'
+        '<summary style="list-style:none;cursor:pointer;background:#0b2341;'
+        'color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;'
+        'font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.18);">'
+        '☰ Sections</summary>'
+        '<div style="position:absolute;right:0;bottom:40px;width:248px;'
+        'max-height:60vh;overflow-y:auto;background:#fff;border:1px solid '
+        '#c9c1ac;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);'
+        f'">{links}</div></details>')
+    return body, nav
 
 
 def render_texas_infusion_page(
@@ -2422,6 +2654,7 @@ def render_texas_infusion_page(
         )
         + '<div class="ts-wrap" style="max-width:980px;">'
         + _kpi_strip(a)
+        + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",
                             eyebrow="TAM / SAM / SOM")
@@ -2520,6 +2753,7 @@ def render_texas_infusion_page(
         + ck_section_header("Segmentation by site of care",
                             eyebrow="THE SITE-OF-CARE SHIFT")
         + _site_table(a)
+        + _hopd_pool_section(a)
         + _so_what(sw["site"])
 
         + ck_section_header("How discharges → home infusion have evolved",
@@ -2603,6 +2837,11 @@ def render_texas_infusion_page(
                             eyebrow="WHAT'S DIFFERENT ABOUT TEXAS")
         + _factors(a)
 
+        + ck_section_header("One-page exhibit",
+                            eyebrow="AUTO-COMPOSED FROM THE LIVE ANALYSIS · "
+                                    "DECK-READY · SVG/PNG")
+        + _exhibit_section(a)
+
         + ck_section_header("Sources & basis", eyebrow="VERIFIABILITY")
         + f'<ul style="margin:0;padding-left:18px;">{sources}</ul>'
         + f'<p style="font-size:11px;color:{_FAINT};margin:10px 0 0;'
@@ -2615,7 +2854,8 @@ def render_texas_infusion_page(
     )
 
     from ._chartis_kit import ck_page_actions
-    body = body + ck_page_actions()
+    body, section_nav = _inject_section_nav(body)
+    body = body + section_nav + ck_page_actions()
     return chartis_shell(
         body, "Texas Infusion Market",
         active_nav="/diligence",

@@ -3501,6 +3501,176 @@ example data (value-creation slope; 100-day workstream gantt).
 **Verify**: +1 test (≥23 types incl. slope/gantt) + both render clean
 (no None) with their labels. Full suite green.
 
+## W2-168 (2026-06-12) — Visuals hub landing page (wave #70)
+A single landing page (`/visuals`) for the graphics toolkit — a card per
+tool (Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer) with a
+LIVE thumbnail rendered from the same kit the tools use (so the hub always
+reflects real output) + a one-line description and link. Wired into
+Research nav + Cmd-K palette + a documented guide context. Discoverability
+capstone for the suite.
+**Verify**: new `test_visuals_hub.py` (3) — a card + link per tool, ≥4
+thumbnail SVGs, palette/nav/guide registration. Full suite green.
+
+## W2-169 (2026-06-12) — Texas infusion: Medicare Monthly Enrollment → true MA penetration (wave #71)
+Pivoted back to diligence and wired a named source — CMS Medicare
+Monthly Enrollment — to fix the MA-penetration denominator:
+- **`cms_enrollment.py`** (new): a live client for the CMS Medicare
+  Monthly Enrollment file — total Medicare beneficiaries + the FFS vs
+  MA-and-other split by state (latest month). Resolves the dataset from
+  the CMS catalog, fails CLOSED, and falls back to a published TX total
+  (≈4.6M) — never fabricated.
+- **`texas_ma_enrollment`** now computes a TRUE MA-penetration rate =
+  MA enrollment ÷ total Medicare beneficiaries (≈48%: 2.19M / 4.6M),
+  replacing the 65+ proxy (which overstated at ~55% by omitting the
+  under-65 disabled). The proxy is kept for continuity; the panel now
+  shows TX MA enrollees / total Medicare / MA penetration / dual, with
+  the denominator source labeled (live vs published). Live county/total
+  penetration fills in via the enrollment API under `?nppes=live`.
+**Verify**: +1 integration test (penetration uses the total-Medicare
+denominator, < the proxy, offline = published fallback) + new
+`test_cms_enrollment.py` (4) — offline uses published total, unknown
+state → US fallback, fetch fails closed unresolved, parses latest-month
+total from a mocked payload. Full suite green.
+
+## W2-170 (2026-06-12) — Texas infusion: HOPD steered-away pool (CMS Outpatient Hospitals) (wave #72)
+Wired the last named data source — CMS Medicare Outpatient Hospitals (by
+provider & service) — and quantified the HOPD "steered-away" pool:
+- **`cms_opps_outpatient.fetch_opps_state_infusion`** (new): a best-effort
+  live aggregator over the OPPS by-provider-and-service file — total HOPD
+  outpatient services + Medicare payment for the infusion J-codes in a
+  state. Resolves the dataset from the CMS catalog, fails CLOSED.
+- **`texas_hopd_pool`**: per-metro HOPD infusion pool — HOPD patients =
+  real metro infusion patients × the HOPD site share (30%), HOPD revenue
+  at the sizing model's infusions/yr × revenue/infusion. ≈58k capturable
+  HOPD patients / ≈$0.7B across the four metros (DFW + Houston largest).
+  The live CMS OPPS pull overrides with real services + payment under
+  `?nppes=live`.
+- **Page**: a "HOPD infusion — the steered-away pool" panel in the
+  site-of-care section — capturable HOPD patients + revenue pool KPIs,
+  per-metro bars, and a LIVE/MODELED badge. Frames the 30% HOPD pool as
+  the white-space an AIC/home roll-up captures (not a competitor).
+This completes the user's named data-source list (CDC PLACES, ACS, ASP,
+MA enrollment, Medicare Monthly Enrollment, NPPES + map, Part-B POS, and
+now Outpatient Hospitals).
+**Verify**: +3 HOPD tests — pool = real metro patients × HOPD share +
+ranked + summed, offline is modeled (OPPS fails closed), live flag
+threads through + fails closed; +2 render needles. Full suite green.
+
+## W2-171 (2026-06-12) — Texas infusion: IC-summary investment thesis (wave #73)
+Added the top-line synthesis a partner reads first — `texas_investment_
+thesis(a)` builds the IC summary PURELY from the assembled analysis so it
+can never drift from the sections below:
+- **5 thesis pillars**, each with its supporting number: large/growing/
+  fragmented market ($3.36B TAM · 8% CAGR · HHI 517); structural site-of-
+  care tailwind (HOPD 46%→30% · $684M HOPD pool); favorable Texas
+  structure (no CON · 48% MA · 70% non-hospital); AIC unit economics
+  work ($218K/chair · ~19% break-even); de-novo white-space (6
+  undersupplied growth corridors).
+- **Key risks** (drug-spread compression, home-infusion referral
+  concentration + the HIT gap, the most-at-risk therapy) and **diligence-
+  next** gaps (replace modeled counts/rates with the target's claims;
+  quantify referral concentration + white-bagged %; confirm TX statute).
+- A headline + a CONSTRUCTIVE verdict steering value creation to service
+  margin + RCM, not the drug spread.
+- **Page**: an "Investment Thesis · IC Summary" block at the very top
+  (after the KPI strip, before market sizing) — pillars as cards, risks,
+  and diligence-next.
+**Verify**: +3 thesis tests — 5 pillars / ≥3 risks / ≥3 diligence-next
+with complete fields, thesis numbers match the sections (real HHI,
+HOPD shift pts, undersupplied count), most-at-risk therapy surfaces in
+the risks; +3 render needles. Full suite green.
+
+## W2-172 (2026-06-12) — Texas infusion: auto-composed investment-highlights exhibit (wave #74)
+Connected the graphics suite to the diligence data — the Texas page now
+AUTO-GENERATES a one-page exhibit slide from its own live analysis:
+- **`_exhibit_section(a)`**: builds four panels from the live analysis and
+  composes them (via the chart kit's `compose_exhibit`) into one 16:9
+  "Texas Infusion — Investment Highlights" slide:
+  1. Market-sizing funnel — TAM → SAM → SOM ($M)
+  2. Site-of-care mix 2015–2024 (100% stacked) — the HOPD→AIS/home shift
+  3. Top de-novo county opportunities (bar) — from the growth scorecard
+  4. Current site-of-care mix (donut)
+  Every panel recomputes from the same figures as the sections, so the
+  exhibit can never disagree with the page.
+- **Page**: a "One-page exhibit" section (deck-ready, SVG/PNG export
+  toolbar) before Sources — the deliverable a partner drops into a deck.
+This is the capstone tying the two arcs together (graphics kit + Texas
+diligence data).
+**Verify**: +1 exhibit test (four panels nested into one slide, export
+toolbar, no None) + 2 render needles. Full suite green.
+
+## W2-173 (2026-06-12) — Texas infusion: section navigator (wave #75)
+The page now runs ~29 sections; added a usability layer so a partner can
+move around it:
+- **`_inject_section_nav(body)`**: a post-process pass that gives every
+  `ck-section-header` a slugified, unique `id` (with `scroll-margin-top`
+  for a clean landing) and builds a floating "☰ Sections" navigator
+  (fixed bottom-right `<details>` dropdown) listing every section as an
+  anchor link. Recomputed from the rendered headers, so it always matches
+  the live section set — no hardcoded list to drift.
+**Verify**: +1 test — ≥20 unique section ids injected, the floating nav
+present, every nav link points at a real section id. Full suite green.
+
+## W2-174 (2026-06-12) — Texas infusion: downloadable Markdown IC memo (wave #76)
+A partner-shareable deliverable — the analysis as a clean Markdown IC
+memo a partner pastes into a writeup:
+- **`texas_infusion_memo_md(a)`**: renders the headline, verdict, the
+  5-pillar thesis, key risks, diligence-next, and a key-figures table
+  (TAM/SAM/CAGR/HHI/MA penetration/AIC contribution/undersupplied
+  counties/65+ base) — a pure function of the assembled analysis.
+- **Route** `/api/diligence/texas-infusion/memo`: serves the memo as a
+  `text/markdown` download (honoring the same AIC overrides as the page).
+- **Page**: a "⬇ IC memo (Markdown)" button in the Investment Thesis
+  block.
+**Verify**: +2 tests — memo has the section structure + real figures
+(HHI, verdict, one numbered item per thesis pillar); the page links to
+the memo download. Full suite green.
+
+## W2-175 (2026-06-12) — Texas infusion: server-rendered exhibit SVG download (wave #77)
+Completed the deliverables set (alongside the IC memo):
+- Refactored the auto-exhibit into a shared **`texas_exhibit_svg(a)`**
+  helper (used by the page section AND the download route, so they can
+  never disagree).
+- **Route** `/api/diligence/texas-infusion/exhibit.svg`: serves the
+  composed Investment-Highlights exhibit as a standalone, server-rendered
+  `image/svg+xml` download (honoring the AIC overrides).
+- **Page**: a "⬇ download the exhibit SVG (server-rendered)" link under
+  the one-page exhibit.
+**Verify**: +1 test — the shared helper returns the 5-svg composed slide
+(no None) and the page links to the SVG download route. Full suite green.
+
+## W2-176 (2026-06-12) — National infusion-market scan (wave #78)
+"Where else after Texas?" — a new diligence surface that ranks every
+state for an infusion roll-up from the SAME real per-state data the
+Texas page uses:
+- **`infusion_state_attractiveness()`** (new `infusion_market.py`): scores
+  all 51 states on a weighted blend (0–100) of senior base (28%), MA
+  penetration / site-of-care steerage (24%), no-CON de-novo runway (18%),
+  metro density (15%), and commercial payer mix (15%) — from ACS
+  demographics (vendored), CMS MA geographic variation, and the
+  documented 12-state no-CON list. CA #1, then CO/MN/UT/AZ/TX; ranked +
+  audited.
+- **Page** `/diligence/infusion-markets`: a US tile-grid choropleth
+  colored by score (TX outlined), a top-10 / Texas / bottom-5 ranked
+  table with the component axes + no-CON flag, the Texas read (#6) with a
+  link to the full deep-dive, and the methodology. Wired into Diligence
+  nav + Cmd-K palette + guide context.
+**Verify**: new `test_infusion_market.py` (6) — 51 states scored + ranked,
+score = the weighted-axes blend, no-CON flag matches the documented list,
+TX present + top-10; page renders the map/table/TX-read + palette/nav/
+guide registration. Full suite green.
+
+## W2-177 (2026-06-12) — Infusion market scan: Excel-Mapping cross-link + JSON API (wave #79)
+Connected the new market scan to the graphics suite and the API surface:
+- **"Open in Excel Mapping" cross-link**: pre-fills all 51 state
+  attractiveness scores (+ a teal gradient and the score domain) into the
+  Excel Mapping tool via the `?data=` param, so a partner can restyle and
+  export the scan as a branded state map. Round-trips through
+  `parse_values_text` (verified TX=85 of 51 states).
+- **JSON API** `/api/diligence/infusion-markets` — the ranked scan for
+  programmatic use, matching the platform's API-everywhere pattern.
+**Verify**: +1 test — the cross-link's data param round-trips to all 51
+states via the mapping parser. Full suite green.
 ## W2-168 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
 Closes the three gaps flagged for the desk (not helping CDD enough, thin
 Excel resources, thin market-intel): four new surfaces + a hub + a

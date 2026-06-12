@@ -375,6 +375,87 @@ Mapping, Chart Builder (23 types), Pie Chart, Exhibit Composer.
 
 ---
 ## Checkpoint — wave #70 (W2-168, 2026-06-12)
+Visuals hub (/visuals): card-per-tool landing page with live thumbnails
+(Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer); Research nav
++ palette + guide. +3 tests. Graphics suite complete: hub + 4 builders
+(Chart Builder 23 types, Pie, Excel Mapping, Exhibit Composer), all with
+SVG/PNG export + Chartis styling.
+
+---
+## Checkpoint — wave #71 (W2-169, 2026-06-12)
+Diligence pivot: wired CMS Medicare Monthly Enrollment (new cms_enrollment
+.py, live + published TX fallback) → texas_ma_enrollment now uses the TRUE
+total-Medicare denominator for MA penetration (~48% vs the old 65+ proxy
+~55%). MA panel shows enrollees/total/penetration/dual + denom source.
++5 tests. Remaining named source: CMS Outpatient Hospitals by provider/
+service (cms_opps_outpatient client exists, unwired — HOPD infusion volume).
+
+---
+## Checkpoint — wave #72 (W2-170, 2026-06-12)
+Wired the last named source: CMS Outpatient Hospitals (by provider &
+service). New cms_opps_outpatient.fetch_opps_state_infusion (live HOPD
+infusion services/payment by state, fails closed). texas_hopd_pool: HOPD
+steered-away pool per metro (≈58k pts / ~$0.7B, modeled from real metro
+patients × 30% HOPD share; live OPPS override). Page: "HOPD infusion —
+the steered-away pool" panel. +5 tests. ALL user-named data sources now
+integrated (CDC PLACES, ACS, ASP, MA, Monthly Enrollment, NPPES+map,
+Part-B POS, Outpatient Hospitals).
+
+---
+## Checkpoint — wave #73 (W2-171, 2026-06-12)
+Added texas_investment_thesis(a): IC-summary synthesis recomputed from the
+assembled analysis (5 pillars w/ supporting numbers, key risks, diligence-
+next, headline + CONSTRUCTIVE verdict). build_texas_infusion_analysis now
+assembles `out` then sets out["investment_thesis"]. Page: "Investment
+Thesis · IC Summary" block at the top (after KPI strip, before sizing).
++3 tests. The Texas page now opens with the partner-facing top-line.
+
+---
+## Checkpoint — wave #74 (W2-172, 2026-06-12)
+Connected graphics + diligence: _exhibit_section(a) auto-composes a 4-panel
+"Texas Infusion — Investment Highlights" slide (funnel TAM/SAM/SOM, site-
+of-care 100%-stacked evolution, top de-novo counties bar, current-mix
+donut) from the LIVE analysis via compose_exhibit; embedded on the page
+("One-page exhibit" section) with SVG/PNG export. +1 test. Capstone of
+both arcs.
+
+---
+## Checkpoint — wave #75 (W2-173, 2026-06-12)
+Added _inject_section_nav(body): post-process pass giving each Texas page
+section header a unique slug id (+scroll-margin) and a floating "☰
+Sections" navigator (29 sections). +1 test. Pure usability layer, derived
+from the rendered headers.
+
+---
+## Checkpoint — wave #76 (W2-174, 2026-06-12)
+Added texas_infusion_memo_md(a) (Markdown IC memo: headline/verdict/
+5-pillar thesis/risks/diligence-next/key-figures table) + route
+/api/diligence/texas-infusion/memo (text/markdown download) + "⬇ IC memo"
+button in the thesis block. +2 tests.
+
+---
+## Checkpoint — wave #77 (W2-175, 2026-06-12)
+Extracted texas_exhibit_svg(a) (shared by page + route) + route
+/api/diligence/texas-infusion/exhibit.svg (server-rendered SVG download)
++ download link on the page. Deliverables set complete: IC memo (.md) +
+exhibit (.svg), both server-rendered from the live analysis. +1 test.
+
+---
+## Checkpoint — wave #78 (W2-176, 2026-06-12)
+NEW diligence surface: national infusion-market scan. infusion_market.py
+infusion_state_attractiveness() ranks 51 states (weighted: senior base 28
+/ MA 24 / no-CON 18 / density 15 / commercial 15) from real ACS + CMS MA
++ no-CON list (CA #1 … TX #6). Page /diligence/infusion-markets: tile-grid
+choropleth + ranked table + TX read + link to deep-dive. Diligence nav +
+palette + guide. +6 tests. Extends Texas to "where else?" without a
+per-state page refactor.
+
+---
+## Checkpoint — wave #79 (W2-177, 2026-06-12)
+Market scan: added "Open in Excel Mapping" cross-link (pre-fills 51 state
+scores + gradient into /excel-mapping via ?data=) and JSON API
+/api/diligence/infusion-markets. +1 test. Connects diligence data ↔
+graphics tool + API surface.
 PE-desk product wave (CDD + Excel + market intel): /excel-templates
 library — 7 live-formula workbooks (Quick LBO, QoE databook, NWC peg,
 13-week cash, CDD market model, payer sensitivity, cohort/NRR) via

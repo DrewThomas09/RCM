@@ -1371,34 +1371,94 @@ def texas_asp_pricing() -> Dict[str, Any]:
     }
 
 
-def texas_ma_enrollment(tx_pop: float, seniors: float) -> Dict[str, Any]:
-    """Texas Medicare Advantage enrollment + a penetration proxy. MA
+def texas_ma_enrollment(tx_pop: float, seniors: float,
+                        fetch_live: bool = False) -> Dict[str, Any]:
+    """Texas Medicare Advantage enrollment + a TRUE penetration rate. MA
     growth is the single biggest payer-side force on infusion site of
     care — MA plans steer infusion out of HOPD into AIC / home and run
-    prior-auth + white-bagging. Real vendored CMS MA geographic-variation
-    data (state); live county penetration is available via
-    cms_ma_enrollment where egress permits."""
+    prior-auth + white-bagging. MA enrollment from the vendored CMS MA
+    geographic-variation file; the penetration DENOMINATOR is total
+    Medicare beneficiaries from the CMS Medicare Monthly Enrollment file
+    (live when egress permits, else a published TX total) — not the 65+
+    proxy, which omits the under-65 disabled."""
     from ..data.ma_data import ma_state
+    from ..data.cms_enrollment import total_medicare_for
     m = ma_state("TX") or {}
     enr = int(m.get("ma_enrollment") or 0)
-    pen = (enr / seniors) if seniors else 0.0
+    benes = total_medicare_for("TX", fetch_live=fetch_live)
+    total_medicare = int(benes.get("total") or 0)
+    penetration = (enr / total_medicare) if total_medicare else 0.0
+    proxy = (enr / seniors) if seniors else 0.0
+    denom_label = ("CMS Medicare Monthly Enrollment (live)"
+                   if benes.get("live") else
+                   "published CMS total Medicare (TX)")
     return {
         "enrollment": enr,
-        # Penetration vs the 65+ population — a labeled PROXY (the true
-        # denominator is total Medicare incl. <65 disabled).
-        "penetration_proxy": round(pen, 3),
+        "total_medicare": total_medicare,
+        "penetration": round(penetration, 3),
+        "penetration_live": bool(benes.get("live")),
+        # Kept for continuity: penetration vs the 65+ population.
+        "penetration_proxy": round(proxy, 3),
         "dual_eligible_pct": float(m.get("dual_eligible_pct") or 0),
         "female_pct": float(m.get("female_pct") or 0),
         "avg_age": m.get("avg_age"),
         "year": int(m.get("year") or 0),
-        "note": ("≈{:,} Texans are in Medicare Advantage (CMS geographic "
-                 "variation, {}). MA penetration (~{:.0f}% of the 65+ "
-                 "population as a proxy) is the key payer-mix force on "
-                 "infusion: MA plans steer site of care to the lowest-cost "
-                 "setting (AIC / home over HOPD) and gate biologics with "
-                 "prior-auth + white-bagging — a tailwind for independent "
-                 "AIC / home volume and a margin risk on the drug spread."
-                 ).format(enr, int(m.get("year") or 0), pen * 100),
+        "denominator_source": denom_label,
+        "note": ("≈{:,} Texans are in Medicare Advantage of ≈{:,} total "
+                 "Medicare beneficiaries — a {:.0f}% MA penetration rate "
+                 "({}). MA is the key payer-mix force on infusion: plans "
+                 "steer site of care to the lowest-cost setting (AIC / home "
+                 "over HOPD) and gate biologics with prior-auth + white-"
+                 "bagging — a tailwind for independent AIC / home volume "
+                 "and a margin risk on the drug spread."
+                 ).format(enr, total_medicare, penetration * 100,
+                          denom_label),
+    }
+
+
+def texas_hopd_pool(
+    metro_deepdives: List[Dict[str, Any]], hopd_share: float,
+    fetch_live: bool = False,
+) -> Dict[str, Any]:
+    """The hospital-outpatient (HOPD) infusion pool — the volume being
+    STEERED AWAY from the hospital that an AIC / home platform competes
+    to capture. Per metro: HOPD infusion patients = real metro infusion
+    patients × the HOPD site share, and HOPD revenue at the model's
+    infusions/yr × revenue/infusion. A live CMS OPPS by-provider-and-
+    service pull (TX, infusion J-codes) overrides with real HOPD services
+    + Medicare payment where egress permits."""
+    metros = []
+    for dd in metro_deepdives:
+        pts = sum(int(s.get("infusion_patients") or 0)
+                  for s in dd.get("suburbs", []))
+        hopd_pts = round(pts * hopd_share)
+        hopd_rev = round(hopd_pts * INFUSIONS_PER_PATIENT_YR
+                         * REVENUE_PER_INFUSION)
+        metros.append({"metro": dd["metro"], "infusion_patients": pts,
+                       "hopd_patients": hopd_pts, "hopd_revenue": hopd_rev})
+    metros.sort(key=lambda m: -m["hopd_patients"])
+    live = {"live": False}
+    if fetch_live:
+        from ..data.cms_asp_pricing import INFUSION_HCPCS
+        from ..data.cms_opps_outpatient import fetch_opps_state_infusion
+        live = fetch_opps_state_infusion(
+            "TX", [c["hcpcs"] for c in INFUSION_HCPCS])
+    return {
+        "metros": metros,
+        "hopd_share": round(hopd_share, 3),
+        "total_hopd_patients": sum(m["hopd_patients"] for m in metros),
+        "total_hopd_revenue": sum(m["hopd_revenue"] for m in metros),
+        "opps_live": bool(live.get("live")),
+        "opps_services": live.get("services"),
+        "opps_payment": live.get("medicare_payment"),
+        "note": ("The HOPD infusion pool is the volume payers are steering "
+                 "OUT of the hospital — the white-space an AIC / home "
+                 "platform captures, not a competitor to displace. Modeled "
+                 "from real metro infusion patients × the HOPD site share "
+                 "× the sizing model's infusions/yr × revenue/infusion; the "
+                 "live CMS Outpatient-Hospitals (by provider & service) "
+                 "file overrides with real HOPD services + Medicare payment "
+                 "where egress permits."),
     }
 
 
@@ -2764,6 +2824,183 @@ def texas_growth_scorecard(
     }
 
 
+def texas_infusion_memo_md(a: Dict[str, Any]) -> str:
+    """Render the analysis as a clean Markdown IC memo — the deliverable
+    a partner pastes into a writeup. Pure function of the assembled
+    analysis (incl. the investment thesis)."""
+    def _money(v: float) -> str:
+        v = float(v or 0)
+        if abs(v) >= 1e9:
+            return f"${v/1e9:.2f}B"
+        if abs(v) >= 1e6:
+            return f"${v/1e6:.1f}M"
+        return f"${v:,.0f}"
+    it = a.get("investment_thesis") or {}
+    s = a["sizing"]
+    frag = a["fragmentation"]
+    ma = a["ma_enrollment"]
+    sc = a["growth_scorecard"]
+    aic = a["aic_economics"]
+    demo = a["demographics"]
+    L: List[str] = []
+    L.append("# Texas Infusion Market — IC Summary\n")
+    if it.get("headline"):
+        L.append(f"> {it['headline']}\n")
+    if it.get("verdict"):
+        L.append(f"**Verdict:** {it['verdict']}\n")
+    L.append("## Investment thesis\n")
+    for i, p in enumerate(it.get("pillars", []), 1):
+        L.append(f"{i}. **{p['title']}** — *{p['stat']}*  \n   {p['point']}")
+    L.append("")
+    L.append("## Key risks\n")
+    for r in it.get("risks", []):
+        L.append(f"- **{r['risk']}:** {r['detail']}")
+    L.append("")
+    L.append("## Diligence next\n")
+    for x in it.get("diligence_next", []):
+        L.append(f"- {x}")
+    L.append("")
+    L.append("## Key figures\n")
+    L.append("| Metric | Value |")
+    L.append("| --- | --- |")
+    L.append(f"| TAM | {_money(s['tam'])} |")
+    L.append(f"| SAM (home + AIC) | {_money(s['sam'])} |")
+    L.append(f"| Composite CAGR | {s['composite_cagr_pct']:.1f}% |")
+    L.append(f"| HHI (concentration) | {frag['hhi']:,.0f} "
+             f"({frag['band']}) |")
+    L.append(f"| Top operator share | "
+             f"{frag['top_operator_share']*100:.0f}% |")
+    L.append(f"| MA penetration | {ma.get('penetration',0)*100:.0f}% "
+             f"({ma['enrollment']/1e6:.2f}M of "
+             f"{ma.get('total_medicare',0)/1e6:.2f}M) |")
+    L.append(f"| AIC contribution / chair | "
+             f"{_money(aic['contribution_per_chair'])} |")
+    L.append(f"| Undersupplied growth counties | "
+             f"{sc['n_undersupplied']} |")
+    L.append(f"| TX 65+ population | "
+             f"{demo['seniors_65_plus']/1e6:.2f}M |")
+    L.append("")
+    L.append(f"_Source: {a.get('basis_note','')}_")
+    L.append("")
+    L.append("_Generated by PEdesk · Texas Infusion diligence — "
+             "illustrative; replace modeled figures with engagement data "
+             "before IC._")
+    return "\n".join(L)
+
+
+def texas_investment_thesis(a: Dict[str, Any]) -> Dict[str, Any]:
+    """The IC-ready synthesis — the thesis a partner reads first, built
+    PURELY from the assembled analysis so it can never drift from the
+    sections below. Five pillars (each with its supporting number), the
+    top risks, and the honest 'diligence next' gaps."""
+    def _money(v: float) -> str:
+        v = float(v or 0)
+        if abs(v) >= 1e9:
+            return f"${v/1e9:.2f}B"
+        if abs(v) >= 1e6:
+            return f"${v/1e6:.1f}M"
+        return f"${v:,.0f}"
+    s = a["sizing"]
+    frag = a["fragmentation"]
+    site = {x["site"]: x["share"] for x in a["site_of_care"]}
+    hopd = next((v for k, v in site.items()
+                 if "HOPD" in k or "Hospital" in k), 0.30)
+    nonhosp = round(1 - hopd, 2)
+    ev = a["site_of_care_evolution"]
+    ma = a["ma_enrollment"]
+    sc = a["growth_scorecard"]
+    aic = a["aic_economics"]
+    curve = a["aic_utilization_curve"]
+    reg = a["regulatory_environment"]
+    hp = a["hopd_pool"]
+    risk = a["home_infusion"]["therapy_risk"]
+    refs = a["home_infusion"]["referral_sources"]
+    us = ", ".join(r["county"] for r in
+                   sc["undersupplied_growth_markets"][:3])
+
+    pillars = [
+        {"title": "Large, growing, fragmented market",
+         "stat": f"{_money(s['tam'])} TAM · {s['composite_cagr_pct']:.1f}% "
+                 f"CAGR · HHI {frag['hhi']:,.0f}",
+         "point": "A platform-scale, low-concentration market — the "
+                  f"largest operator holds only "
+                  f"{frag['top_operator_share']*100:.0f}% and the "
+                  f"independent pool is "
+                  f"{frag['independent_pool_share']*100:.0f}%: a textbook "
+                  "buy-and-build runway."},
+        {"title": "Structural site-of-care tailwind",
+         "stat": f"HOPD {ev['soc_start']['hopd']*100:.0f}%→"
+                 f"{ev['soc_end']['hopd']*100:.0f}% · "
+                 f"{_money(hp['total_hopd_revenue'])} HOPD pool",
+         "point": "Infusion has moved "
+                  f"{ev['hopd_shift_pts']} points out of the hospital "
+                  "since 2015 (COVID + the HIT benefit + payer steerage); "
+                  f"the {hopd*100:.0f}% HOPD pool is white-space to "
+                  "capture, not a competitor to displace."},
+        {"title": "Favorable Texas structure",
+         "stat": f"No CON · {ma['penetration']*100:.0f}% MA · "
+                 f"{nonhosp*100:.0f}% already non-hospital",
+         "point": "De-novo is unconstrained (no Certificate of Need), MA "
+                  "penetration drives site-of-care steerage, and most "
+                  "volume already sits outside the hospital — the entry "
+                  "conditions for a roll-up are unusually clean."},
+        {"title": "AIC unit economics work",
+         "stat": f"{_money(aic['contribution_per_chair'])}/chair · "
+                 f"break-even ≈{curve['breakeven_util']*100:.0f}% util",
+         "point": "Per-chair contribution is healthy at benchmark "
+                  "utilization with a low break-even; chair throughput + "
+                  "commercial payer mix are the levers to underwrite."},
+        {"title": "De-novo white-space identified",
+         "stat": f"{sc['n_undersupplied']} undersupplied growth corridors",
+         "point": f"{sc['n_undersupplied']} north / Austin-corridor "
+                  f"counties ({us}…) show demand outrunning AIS chair "
+                  "capacity — the priority de-novo and tuck-in targets."},
+    ]
+    risks = [
+        {"risk": "Drug-spread compression",
+         "detail": f"ASP+{a['asp_pricing']['addon_sequestered']*100:.1f}%, "
+                   "biosimilars, 340B, and white-bagging all squeeze the "
+                   f"buy-and-bill margin ({reg['headwinds']} regulatory "
+                   "headwinds) — underwrite on service margin, not the "
+                   "drug."},
+        {"risk": "Home-infusion referral concentration",
+         "detail": f"≈{refs['hospital_dependence']*100:.0f}% of home-"
+                   "infusion referrals come from hospital discharge desks, "
+                   "and the Medicare HIT benefit's calendar-day gap "
+                   "under-pays the channel — commercial mix decides the "
+                   "economics."},
+        {"risk": f"Most-at-risk therapy: {risk['most_at_risk']}",
+         "detail": "Rare-disease, IG, and home-biologic lines carry the "
+                   "highest reimbursement + payer-steerage risk — a "
+                   "concentration to size in the target's book."},
+    ]
+    diligence_next = [
+        "Replace modeled provider counts with a live NPPES / state "
+        "pharmacy-board pull, and the modeled prevalence rates with the "
+        "target's own claims.",
+        "Quantify the target's referral concentration (top-5 sources) and "
+        "white-bagged % by payer.",
+        "Confirm the current Texas white-bagging statute and the target's "
+        "accreditations / renewal calendar.",
+    ]
+    return {
+        "headline": (
+            f"A {_money(s['tam'])} fragmented Texas infusion market "
+            f"(HHI {frag['hhi']:,.0f}) with a structural site-of-care "
+            f"tailwind and no Certificate-of-Need barrier — a "
+            f"buy-and-build with de-novo white-space in "
+            f"{sc['n_undersupplied']} growth corridors. Underwrite on "
+            f"service margin + commercial mix, not the drug spread."),
+        "pillars": pillars,
+        "risks": risks,
+        "diligence_next": diligence_next,
+        "verdict": ("CONSTRUCTIVE — the market structure, Texas rules, and "
+                    "unit economics support a roll-up thesis; the central "
+                    "risk is drug-margin compression, which steers the "
+                    "value-creation plan toward service + RCM, not drug."),
+    }
+
+
 def build_texas_infusion_analysis(
     aic_overrides: Optional[Dict[str, Any]] = None,
     nppes_live: bool = False,
@@ -2860,7 +3097,7 @@ def build_texas_infusion_analysis(
             "roll-up."),
     }
 
-    return {
+    out = {
         "state": "TX",
         "demographics": {
             "population": tx_pop,
@@ -2877,9 +3114,15 @@ def build_texas_infusion_analysis(
         "tornado": tornado,
         "site_of_care": site,
         "site_of_care_evolution": home_infusion_evolution(),
+        "hopd_pool": texas_hopd_pool(
+            metro_deepdives,
+            next((s["share"] for s in site
+                  if "HOPD" in s["site"] or "Hospital" in s["site"]), 0.30),
+            fetch_live=nppes_live),
         "payer_mix": payer,
         "asp_pricing": texas_asp_pricing(),
-        "ma_enrollment": texas_ma_enrollment(tx_pop, seniors),
+        "ma_enrollment": texas_ma_enrollment(tx_pop, seniors,
+                                             fetch_live=nppes_live),
         "chains": chains,
         "hhi": hhi,
         "hhi_band": hhi_band,
@@ -2974,6 +3217,14 @@ def build_texas_infusion_analysis(
             "prevalence (TX-adjusted) for the Medicare-denominator proxies",
             "Census ACS 5-year table B01001 — county female share for the "
             "IV-iron / anemia demand weighting",
+            "CMS Medicare Monthly Enrollment — total Medicare beneficiaries "
+            "(the true MA-penetration denominator; live + published TX "
+            "fallback)",
+            "CMS Medicare Outpatient Hospitals (by provider & service) — "
+            "HOPD infusion services + payment for the steered-away pool "
+            "(live override; modeled from HOPD share offline)",
         ],
         "basis_note": model.basis_note,
     }
+    out["investment_thesis"] = texas_investment_thesis(out)
+    return out

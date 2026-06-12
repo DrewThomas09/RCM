@@ -6722,6 +6722,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/infusion-markets":
+            # National infusion-market scan — every state ranked for an
+            # infusion roll-up from real per-state ACS + CMS MA data.
+            from .ui.infusion_market_page import render_infusion_market_page
+            return self._send_html(render_infusion_market_page())
+        if path == "/api/diligence/infusion-markets":
+            # JSON variant — the ranked state attractiveness scan.
+            from .diligence.infusion_market import (
+                infusion_state_attractiveness,
+            )
+            return self._send_json(infusion_state_attractiveness())
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs
@@ -6866,6 +6877,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.exhibit_page import render_exhibit_page
             _ex_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_exhibit_page(_ex_qs))
+        if path == "/visuals":
+            # Visuals hub — the landing page for the graphics toolkit
+            # (Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer)
+            # with a live thumbnail of each.
+            from .ui.visuals_hub_page import render_visuals_hub_page
+            return self._send_html(render_visuals_hub_page())
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.
@@ -6875,6 +6892,47 @@ class RCMHandler(BaseHTTPRequestHandler):
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_json(build_texas_infusion_analysis(
                 aic_overrides=aic_assumptions_from_qs(_ti_qs)))
+        if path == "/api/diligence/texas-infusion/memo":
+            # Markdown IC memo — a partner-shareable writeup generated
+            # from the analysis; served as a download.
+            from .diligence.texas_infusion import (
+                aic_assumptions_from_qs, build_texas_infusion_analysis,
+                texas_infusion_memo_md,
+            )
+            _ti_qs = urllib.parse.parse_qs(parsed.query)
+            _md = texas_infusion_memo_md(build_texas_infusion_analysis(
+                aic_overrides=aic_assumptions_from_qs(_ti_qs)))
+            _enc = _md.encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/markdown; charset=utf-8")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="texas-infusion-ic-memo.md"')
+            self.send_header("Content-Length", str(len(_enc)))
+            self.end_headers()
+            self.wfile.write(_enc)
+            return None
+        if path == "/api/diligence/texas-infusion/exhibit.svg":
+            # The auto-composed Investment-Highlights exhibit, served as a
+            # standalone downloadable SVG.
+            from .diligence.texas_infusion import (
+                aic_assumptions_from_qs, build_texas_infusion_analysis,
+            )
+            from .ui.texas_infusion_page import texas_exhibit_svg
+            _ti_qs = urllib.parse.parse_qs(parsed.query)
+            _svg = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                    + texas_exhibit_svg(build_texas_infusion_analysis(
+                        aic_overrides=aic_assumptions_from_qs(_ti_qs))))
+            _enc = _svg.encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "image/svg+xml; charset=utf-8")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="texas-infusion-exhibit.svg"')
+            self.send_header("Content-Length", str(len(_enc)))
+            self.end_headers()
+            self.wfile.write(_enc)
+            return None
         if path == "/diligence/comparable-outcomes":
             # Comparable-deal benchmarking: target profile in,
             # corpus matches + outcome distribution out.
