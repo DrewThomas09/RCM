@@ -10657,7 +10657,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             if profile:
                 from .ui.deal_dashboard import render_deal_dashboard
                 from .deals.deal import _now_utc as _deal_ts  # noqa: F401
-                return self._send_html(render_deal_dashboard(deal_id, profile))
+                # P5 exhibit registry — previously generated artifacts.
+                try:
+                    from .exports.export_store import list_exports
+                    _exports = list_exports(store, deal_id, limit=10)
+                except Exception:  # noqa: BLE001 — registry is additive
+                    _exports = None
+                return self._send_html(render_deal_dashboard(
+                    deal_id, profile, exports=_exports))
             self.send_error(HTTPStatus.NOT_FOUND, f"Deal {deal_id} not found")
             return
         try:

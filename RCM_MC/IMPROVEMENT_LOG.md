@@ -4077,3 +4077,20 @@ screenable universe). The credibility screen mirrors the row
 renderer's gate (revenue >$100K, positive opex, margin in [-100%,
 +100%]); n<8 renders nothing. Test re-derives both figures from the
 frame and matches the rendered strings exactly. 14 passed.
+
+## W2-207 (2026-06-12) — P14 timing budgets in the route walker
+walk() now records per-route wall-clock ms (new `ms` TSV column); the
+summary prints the 5 slowest pages every run, and a `--budget-ms N`
+flag exits non-zero when any page exceeds the budget. Wired into the
+weekly sweep's SECOND (warm-server) pass at 15s — generous on purpose:
+the gate is for runaway regressions (an accidental O(n²) render), not
+micro-tuning; the first cold pass stays budget-free since it pays
+one-time imports. +1 walker test (ms recorded, sane bounds).
+
+## W2-208 (2026-06-12) — P5 exhibit registry on the deal page
+The deal dashboard's Export & Download card now lists the deal's
+PREVIOUSLY generated artifacts from the generated_exports audit table
+(format · timestamp · by · size, latest 10) — the per-deal exhibit
+registry the FEATURE_MATRIX named as P5's open half. Read-only,
+fails soft (registry errors → no panel), empty → nothing rendered.
++2 tests (real record_export row renders; empty deal shows no panel).

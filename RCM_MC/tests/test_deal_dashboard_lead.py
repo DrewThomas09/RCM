@@ -93,5 +93,34 @@ class EnteredBasisTests(unittest.TestCase):
         self.assertIn("not entered", h)     # honest sub-line
 
 
+
+class ExportsRegistryTests(unittest.TestCase):
+    """P5 exhibit registry: the deal page lists previously generated
+    artifacts from the generated_exports audit table; empty → no panel."""
+
+    def test_registry_panel_lists_real_export_rows(self):
+        import tempfile, os
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.exports.export_store import record_export, list_exports
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        with tempfile.TemporaryDirectory() as tmp:
+            s = PortfolioStore(os.path.join(tmp, "p.db"))
+            s.upsert_deal("d1", name="X")
+            record_export(s, deal_id="d1", analysis_run_id=None,
+                          format="pdf", filepath="/tmp/x.pdf",
+                          file_size_bytes=20480, generated_by="boss")
+            h = render_deal_dashboard(
+                "d1", {"name": "X"}, exports=list_exports(s, "d1"))
+            self.assertIn("Previously generated · registry (1)", h)
+            self.assertIn("pdf", h)
+            self.assertIn("boss", h)
+            self.assertIn("20 KB", h)
+
+    def test_no_exports_no_panel(self):
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        h = render_deal_dashboard("d1", {"name": "X"})
+        self.assertNotIn("Previously generated", h)
+
+
 if __name__ == "__main__":
     unittest.main()

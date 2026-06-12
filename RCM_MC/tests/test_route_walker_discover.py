@@ -59,6 +59,15 @@ class WalkSmokeTests(unittest.TestCase):
             self.assertEqual(r.get("nan_leak", 0), 0, r["route"])
             self.assertEqual(r.get("none_leak", 0), 0, r["route"])
 
+    def test_walk_records_per_route_latency(self):
+        # P14 timing budgets: every walked row carries its wall-clock ms
+        # so the weekly sweep can flag slow pages (--budget-ms gate).
+        base = f"http://127.0.0.1:{self.port}"
+        rows = walk(base, ["/data-quality"])
+        self.assertIn("ms", rows[0])
+        self.assertGreaterEqual(rows[0]["ms"], 0)
+        self.assertLess(rows[0]["ms"], 45_000)
+
     def test_cookie_context_walk_exercises_prefill_paths_clean(self):
         # Backlog #27: the prefill code paths (CIM state/CCN, roll-up
         # basket, screener state scoping) only run when an active deal is

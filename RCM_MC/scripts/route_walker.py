@@ -61,12 +61,14 @@ def deal_cookie(deal_id: str, *, name: str = "", state: str = "TX",
 
 
 def walk(base: str, routes: list[str], cookie: str = "") -> list[dict]:
+    import time as _time
     rows = []
     for r in routes:
         url = base + r + _SAMPLE_SUFFIX.get(r, "")
-        row = {"route": r, "status": 0, "bytes": 0}
+        row = {"route": r, "status": 0, "bytes": 0, "ms": 0}
         headers = {"Cookie": cookie} if cookie else {}
         req = urllib.request.Request(url, headers=headers)
+        t0 = _time.monotonic()
         try:
             with urllib.request.urlopen(req, timeout=45) as resp:
                 body = resp.read().decode("utf-8", "replace")
@@ -77,6 +79,7 @@ def walk(base: str, routes: list[str], cookie: str = "") -> list[dict]:
         except Exception as exc:  # noqa: BLE001 — record, keep walking
             row["status"] = getattr(exc, "code", -1)
             row["error"] = str(exc)[:60]
+        row["ms"] = int((_time.monotonic() - t0) * 1000)
         rows.append(row)
     return rows
 
@@ -102,6 +105,11 @@ def main() -> int:
     ap.add_argument("--fail-on-leak", action="store_true",
                     help="also exit non-zero if any page leaks a literal "
                          "nan/None into rendered HTML")
+    ap.add_argument("--budget-ms", type=int, default=0, metavar="MS",
+                    help="P14 timing budget: exit non-zero when any page "
+                         "renders slower than MS milliseconds (0 = report "
+                         "only). First load on a cold server includes "
+                         "one-time imports — budget accordingly.")
     ap.add_argument("--deal-cookie", default="", metavar="DEAL_ID",
                     help="walk with the active-deal context cookie set to "
                          "this deal id (state TX / CCN 450358 sample meta) — "
@@ -129,7 +137,8 @@ def main() -> int:
     rows = walk(args.base, ordered,
                 cookie=(deal_cookie(args.deal_cookie)
                         if args.deal_cookie else ""))
-    cols = ["route", "status", "bytes"] + [k for k, _ in _MARKERS] + ["error"]
+    cols = (["route", "status", "bytes", "ms"]
+            + [k for k, _ in _MARKERS] + ["error"])
     with open(args.out, "w") as f:
         f.write("\t".join(cols) + "\n")
         for row in rows:
@@ -139,8 +148,20 @@ def main() -> int:
     n_err = sum(1 for r in rows if r["status"] not in (200, 302, 303))
     n_tb = sum(1 for r in rows if r.get("traceback"))
     n_leak = sum(1 for r in rows if r.get("nan_leak") or r.get("none_leak"))
+    slow = sorted(rows, key=lambda r: -r.get("ms", 0))[:5]
+    slow_txt = ", ".join(f"{r['route']} {r['ms']}ms" for r in slow)
     print(f"walked {len(rows)} routes: {n_ok} ok, {n_err} non-2xx/3xx, "
           f"{n_tb} tracebacks, {n_leak} nan/None leaks -> {args.out}")
+    print(f"slowest: {slow_txt}")
+    n_over = 0
+    if args.budget_ms:
+        over = [r for r in rows if r.get("ms", 0) > args.budget_ms]
+        n_over = len(over)
+        if over:
+            print(f"FAIL: {n_over} route(s) over the {args.budget_ms}ms "
+                  "budget: " + ", ".join(
+                      f"{r['route']} {r['ms']}ms" for r in over),
+                  file=sys.stderr)
     if n_tb:
         print("FAIL: tracebacks on " + ", ".join(
             r["route"] for r in rows if r.get("traceback")), file=sys.stderr)
@@ -148,7 +169,7 @@ def main() -> int:
         print("FAIL: nan/None leaks on " + ", ".join(
             r["route"] for r in rows
             if r.get("nan_leak") or r.get("none_leak")), file=sys.stderr)
-    bad = n_tb or (args.fail_on_leak and n_leak)
+    bad = n_tb or (args.fail_on_leak and n_leak) or n_over
     return 1 if bad else 0
 
 
