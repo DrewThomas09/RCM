@@ -6791,6 +6791,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_rx)
             return
+        if path == "/pricing-power":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.pricing_power_page import render_pricing_power
+            return self._send_html(render_pricing_power(_qp))
+        if path == "/labor-market":
+            # Healthcare labor intelligence — role wage/turnover reads +
+            # wage-inflation EBITDA stress; qs carries labor base,
+            # revenue, and role-mix shares.
+            from .ui.labor_market_page import render_labor_market
+            _lm_qs = urllib.parse.parse_qs(parsed.query)
+            _lm_qp = {k: v[0] for k, v in _lm_qs.items() if v}
+            return self._send_html(render_labor_market(_lm_qp))
         if path == "/ma-penetration":
             # MA penetration by state — choropleth + exposure bands +
             # footprint scorer; qs carries the target's state codes.
@@ -20472,6 +20485,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/tax-structure", "/tax-structure-analyzer", "/tech-stack", "/telehealth-econ",
         "/tracker-340b", "/transition-services", "/treasury", "/trial-site-econ",
         "/underwriting", "/underwriting-model", "/unit-economics", "/value-creation",
+        "/pricing-power",
         "/value-creation-plan", "/vcp-tracker", "/vdr-tracker", "/vintage-cohorts",
         "/vintage-perf", "/voc-survey", "/win-loss",
         "/workforce-planning", "/workforce-retention", "/working-capital",

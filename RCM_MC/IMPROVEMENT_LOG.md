@@ -3559,3 +3559,33 @@ thresholds, footprint math, XSS, registration) + 3 xlsx tests in
 test_rate_environment.py (OOXML validity, SUMPRODUCT/compound formulas,
 param-carrying download link); HTTP smoke on both routes; invariant
 files (5-Q, slash-dual, catalog, data-universe, palette) green.
+
+## W2-170 (2026-06-12) — Wave 3: pricing power + labor intel + 2 CDD templates
+Closes the last flagged CDD pricing gap and the labor-data market-intel gap:
+- **Pricing Power Analyzer** (`/pricing-power`): constant-elasticity
+  price-response curves per customer segment (volume = (1+Δp)^ε),
+  EBITDA-optimal move grid-searched over a credible ±15% window,
+  portfolio pricing prize, and `price_locked` handling so administered /
+  capitated segments (CMS, in-term PMPM) never show a fictional lever.
+  Multi-curve SVG with per-segment optima dots. 3 sector books,
+  illustrative-flagged.
+- **Healthcare Labor Market** (`/labor-market`): new market_intel
+  dataset (`content/labor_market.yaml` — 10 roles, curated BLS OES +
+  staffing-survey cut: wage, YoY, turnover, vacancy, time-to-fill) with
+  a per-role fragility score and a wage-inflation stress calculator
+  (labor base × role mix → $ increase + uncompensated margin bps).
+- **Two new workbook templates** (library now 9): Win/Loss Opportunity
+  Tracker (editable log + COUNTIFS-live summary: win rate by competitor,
+  loss-reason mix, with spare pre-styled rows so adding deals needs no
+  formula edits) and KPC Survey Scorer (live gap, importance-weighted
+  position score via SUMPRODUCT, automatic DIFFERENTIATOR /
+  VULNERABILITY / TABLE STAKES classification).
+- Wiring: routes, palette, breadcrumbs (pricing-power→diligence,
+  labor-market→research), illustrative set, guide contexts (5-Q), CDD
+  hub card (Pricing Power in module 4), market_intel exports, audit
+  regen (187 pages, 0 flags).
+**Verify**: test_pricing_power.py (13 — incl. the ε* = -1/margin
+boundary flip and locked-segment guards) + test_labor_market.py (12 —
+stress math, fragility ordering CNA > specialist, normalization) + HTTP
+smoke on both pages and both template downloads; all invariant files
+green (87 passed).

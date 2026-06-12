@@ -1,0 +1,50 @@
+# Healthcare labor-market intelligence — wage and supply by role.
+#
+# Curated approximations of BLS OES healthcare wage data plus the
+# turnover/vacancy reads the staffing surveys (NSI, MGMA, HCAHPS-adjacent
+# vendor surveys) publish annually. Values are national medians rounded
+# for modeling; wage_yoy_pct is the trailing-year growth a base case
+# should carry. Verify against the current BLS OES release before IC
+# use — the analytical point (which roles are inflating and how hard
+# replacement is) survives rounding.
+
+last_reviewed: 2026-06-12
+source_urls:
+  - https://www.bls.gov/oes/current/oes_nat.htm
+  - https://www.nsinursingsolutions.com/library
+  - https://www.mgma.com/datadive
+
+# median_hourly_usd = national median wage; wage_yoy_pct = trailing-year
+# growth; turnover_pct = annual staff turnover; vacancy_pct = open-role
+# share; replacement_weeks = typical time-to-fill.
+roles:
+  - {role: RN, label: "Registered nurse", median_hourly_usd: 45.50,
+     wage_yoy_pct: 4.0, turnover_pct: 18.0, vacancy_pct: 10.0,
+     replacement_weeks: 12}
+  - {role: LPN, label: "Licensed practical nurse", median_hourly_usd: 28.50,
+     wage_yoy_pct: 4.5, turnover_pct: 25.0, vacancy_pct: 12.0,
+     replacement_weeks: 9}
+  - {role: CNA, label: "Nursing assistant / aide", median_hourly_usd: 19.50,
+     wage_yoy_pct: 5.0, turnover_pct: 35.0, vacancy_pct: 14.0,
+     replacement_weeks: 6}
+  - {role: MA, label: "Medical assistant", median_hourly_usd: 21.50,
+     wage_yoy_pct: 4.5, turnover_pct: 23.0, vacancy_pct: 9.0,
+     replacement_weeks: 7}
+  - {role: NP_PA, label: "NP / PA (advanced practice)", median_hourly_usd: 62.00,
+     wage_yoy_pct: 3.5, turnover_pct: 12.0, vacancy_pct: 8.0,
+     replacement_weeks: 16}
+  - {role: PHYS_PC, label: "Physician — primary care", median_hourly_usd: 130.00,
+     wage_yoy_pct: 3.0, turnover_pct: 7.0, vacancy_pct: 6.0,
+     replacement_weeks: 26}
+  - {role: PHYS_SPEC, label: "Physician — specialist", median_hourly_usd: 210.00,
+     wage_yoy_pct: 2.5, turnover_pct: 6.0, vacancy_pct: 5.0,
+     replacement_weeks: 30}
+  - {role: THERAPY, label: "Therapist (PT / OT / SLP)", median_hourly_usd: 48.00,
+     wage_yoy_pct: 3.5, turnover_pct: 14.0, vacancy_pct: 9.0,
+     replacement_weeks: 12}
+  - {role: PHARM, label: "Pharmacist", median_hourly_usd: 65.00,
+     wage_yoy_pct: 2.5, turnover_pct: 9.0, vacancy_pct: 5.0,
+     replacement_weeks: 14}
+  - {role: RCM_ADMIN, label: "RCM / billing & admin staff", median_hourly_usd: 23.50,
+     wage_yoy_pct: 3.5, turnover_pct: 20.0, vacancy_pct: 7.0,
+     replacement_weeks: 6}

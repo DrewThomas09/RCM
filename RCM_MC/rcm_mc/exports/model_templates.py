@@ -493,6 +493,134 @@ def _cohort_retention() -> List[Sheet]:
                   col_widths=[34, 15, 15, 15, 15, 15])]
 
 
+# ------------------------------------------- 8) Win/Loss tracker
+
+def _win_loss_log() -> List[Sheet]:
+    """Editable opportunity log + a summary tab that recomputes win
+    rates and loss-reason mix via COUNTIFS as rows are added — the
+    workbook version of /win-loss, pointed at the target's own CRM
+    export instead of the curated demo log."""
+    log: List[list] = []
+    log.append([("WIN/LOSS OPPORTUNITY LOG", "header")] + [("", "header")] * 5)
+    log.append([_CONVENTION + " Add rows; the Summary tab recomputes."])
+    log.append([""])
+    log.append([("Date", "header"), ("Segment", "header"),
+                ("Competitor", "header"), ("Outcome (WON/LOST)", "header"),
+                ("Deal value ($)", "header"), ("Loss reason", "header")])
+    seed = [
+        ("2026-01-12", "Payer contracts", "Competitor A", "WON", 420_000, ""),
+        ("2026-01-28", "Employer direct", "Competitor B", "LOST", 350_000,
+         "PRICE"),
+        ("2026-02-09", "Referral flow", "Competitor A", "WON", 180_000, ""),
+        ("2026-02-21", "Payer contracts", "Competitor C", "LOST", 510_000,
+         "RELATIONSHIP"),
+        ("2026-03-05", "Employer direct", "Competitor A", "LOST", 270_000,
+         "PRICE"),
+        ("2026-03-18", "Referral flow", "Competitor B", "WON", 220_000, ""),
+        ("2026-04-02", "Payer contracts", "Competitor A", "WON", 640_000, ""),
+        ("2026-04-19", "Employer direct", "Competitor C", "WON", 310_000, ""),
+        ("2026-05-06", "Referral flow", "Competitor B", "LOST", 150_000,
+         "CAPABILITY"),
+        ("2026-05-22", "Payer contracts", "Competitor B", "WON", 480_000, ""),
+    ]
+    for d, seg, comp, outcome, value, reason in seed:
+        log.append([(d, "input"), (seg, "input"), (comp, "input"),
+                    (outcome, "input"), (value, "input_money"),
+                    (reason, "input")])
+    # Spare blank input rows so adding opportunity #11 needs no
+    # formula edits — the summary ranges already cover to row 60.
+    for _ in range(10):
+        log.append([("", "input"), ("", "input"), ("", "input"),
+                    ("", "input"), ("", "input_money"), ("", "input")])
+
+    rng = "'Opportunity Log'!$C$5:$C$60"
+    out = "'Opportunity Log'!$D$5:$D$60"
+    why = "'Opportunity Log'!$F$5:$F$60"
+    summ: List[list] = []
+    summ.append([("WIN/LOSS SUMMARY (live — recomputes from the log)",
+                  "header")] + [("", "header")] * 3)
+    summ.append([""])
+    summ.append([("Competitor", "header"), ("Contested", "header"),
+                 ("Wins", "header"), ("Win rate", "header")])
+    for i, comp in enumerate(("Competitor A", "Competitor B",
+                              "Competitor C")):
+        n = 4 + i
+        summ.append([(comp, "input"),
+                     (F(f"COUNTIF({rng},A{n})"), "num"),
+                     (F(f'COUNTIFS({rng},A{n},{out},"WON")'), "num"),
+                     (F(f"IF(B{n}=0,0,C{n}/B{n})"), "pct")])
+    summ.append([("Overall", "label"),
+                 (F('COUNTIF(\'Opportunity Log\'!$D$5:$D$60,"WON")'
+                    '+COUNTIF(\'Opportunity Log\'!$D$5:$D$60,"LOST")'),
+                  "num"),
+                 (F('COUNTIF(\'Opportunity Log\'!$D$5:$D$60,"WON")'), "num"),
+                 (F("IF(B7=0,0,C7/B7)"), "pct")])
+    summ.append([""])
+    summ.append([("LOSS-REASON MIX", "label")])                       # row 9
+    summ.append([("Reason", "header"), ("Losses", "header"),
+                 ("Share of losses", "header")])                      # row 10
+    for i, reason in enumerate(("PRICE", "CAPABILITY", "RELATIONSHIP",
+                                "GEOGRAPHY", "TIMING")):
+        n = 11 + i
+        summ.append([reason,
+                     (F(f'COUNTIFS({why},A{n},{out},"LOST")'), "num"),
+                     (F(f"IF(SUM(B$11:B$15)=0,0,B{n}/SUM(B$11:B$15))"),
+                      "pct")])
+    return [
+        Sheet("Opportunity Log", log,
+              col_widths=[12, 20, 16, 18, 14, 16]),
+        Sheet("Summary", summ, col_widths=[24, 12, 10, 12]),
+    ]
+
+
+# ------------------------------------------- 9) KPC survey scorer
+
+def _kpc_survey() -> List[Sheet]:
+    """Key-purchase-criteria gap matrix with live classification and a
+    weighted competitive-position score — the workbook a VoC vendor
+    panel drops into (the /voc-survey math, editable)."""
+    r: List[list] = []
+    r.append([("KPC SURVEY SCORER", "header")] + [("", "header")] * 6)
+    r.append([_CONVENTION])
+    r.append(["Differentiator: importance ≥ 3.5 AND gap ≥ +0.3. "
+              "Vulnerability: importance ≥ 3.5 AND gap ≤ -0.3."])
+    r.append([""])
+    r.append([("Purchase criterion", "header"), ("Importance /5", "header"),
+              ("Target /10", "header"), ("Best comp /10", "header"),
+              ("Gap", "header"), ("Weighted gap", "header"),
+              ("Classification", "header")])                          # row 5
+    seed = [
+        ("Access / responsiveness", 4.6, 8.2, 7.0),
+        ("Clinical quality reputation", 4.8, 8.0, 8.1),
+        ("Price / rates", 3.9, 6.3, 7.2),
+        ("Coverage / footprint", 3.6, 7.1, 7.9),
+        ("Digital experience", 3.2, 6.9, 6.4),
+        ("Reporting & transparency", 4.0, 6.8, 6.2),
+    ]
+    first = 6
+    for i, (crit, imp, tgt, comp) in enumerate(seed):
+        n = first + i
+        r.append([(crit, "input"), (imp, "input_num"), (tgt, "input_num"),
+                  (comp, "input_num"),
+                  (F(f"C{n}-D{n}"), "num2"),
+                  (F(f"B{n}*E{n}"), "num2"),
+                  (F(f'IF(AND(B{n}>=3.5,E{n}>=0.3),"DIFFERENTIATOR",'
+                     f'IF(AND(B{n}>=3.5,E{n}<=-0.3),"VULNERABILITY",'
+                     f'"TABLE STAKES"))'), "text")])
+    last = first + len(seed) - 1
+    r.append([""])
+    r.append([("Weighted position score (gap pts, importance-weighted)",
+               "label"),
+              (F(f"SUMPRODUCT(B{first}:B{last},E{first}:E{last})"
+                 f"/SUM(B{first}:B{last})"), "num2")])
+    r.append([("Differentiators", "label"),
+              (F(f'COUNTIF(G{first}:G{last},"DIFFERENTIATOR")'), "num")])
+    r.append([("Vulnerabilities", "label"),
+              (F(f'COUNTIF(G{first}:G{last},"VULNERABILITY")'), "num")])
+    return [Sheet("KPC Matrix", r,
+                  col_widths=[34, 13, 11, 13, 9, 13, 17])]
+
+
 TEMPLATES: List[TemplateSpec] = [
     TemplateSpec(
         slug="quick-lbo",
@@ -563,6 +691,26 @@ TEMPLATES: List[TemplateSpec] = [
                      "exhibit for HCIT and services deals."),
         sheets=["Cohort Triangle"],
         builder=_cohort_retention,
+    ),
+    TemplateSpec(
+        slug="win-loss-log",
+        title="Win/Loss Opportunity Tracker",
+        category="CDD & Market",
+        description=("Editable opportunity log with a live summary tab — "
+                     "win rate by competitor and loss-reason mix recompute "
+                     "via COUNTIFS as rows are added."),
+        sheets=["Opportunity Log", "Summary"],
+        builder=_win_loss_log,
+    ),
+    TemplateSpec(
+        slug="kpc-survey",
+        title="KPC Survey Scorer",
+        category="CDD & Market",
+        description=("Key-purchase-criteria matrix with live gap, "
+                     "importance-weighted position score, and automatic "
+                     "differentiator / vulnerability classification."),
+        sheets=["KPC Matrix"],
+        builder=_kpc_survey,
     ),
 ]
 

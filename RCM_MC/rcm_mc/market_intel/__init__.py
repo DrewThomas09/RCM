@@ -40,6 +40,10 @@ from .public_comps import (
     peer_physician_turnover_stats,
 )
 from .peer_snapshot import PeerSnapshot, compute_peer_snapshot
+from .labor_market import (
+    LaborStress, RoleEconomics, get_role, labor_cost_stress,
+    list_roles,
+)
 from .ma_penetration import (
     StatePenetration, band_counts, footprint_exposure, get_state,
     list_state_penetration, national_penetration_pct,
@@ -67,6 +71,11 @@ __all__ = [
     "PeerSnapshot",
     "PublicComp",
     "BlendedImpact",
+    "LaborStress",
+    "RoleEconomics",
+    "get_role",
+    "labor_cost_stress",
+    "list_roles",
     "StatePenetration",
     "band_counts",
     "footprint_exposure",

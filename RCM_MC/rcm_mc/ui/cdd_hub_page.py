@@ -67,6 +67,8 @@ _MODULES = [
      "Who sets the price in this market — the target, the payer, or "
      "CMS?",
      [
+         ("Pricing Power Analyzer", "/pricing-power",
+          "Elasticity curves and segment-optimal price moves"),
          ("Medicare Rate Environment", "/rate-environment",
           "Setting-level CMS payment updates with blended dollar impact"),
          ("MA Penetration", "/ma-penetration",

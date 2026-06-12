@@ -392,3 +392,11 @@ choropleth via excel-mapping renderer, footprint scorer) + /rate-
 environment.xlsx (live-formula impact model: blue revenue/mix inputs,
 SUMPRODUCT blend, compound-update formulas). Palette + breadcrumbs +
 guide context + CDD-hub card + audit regen. +16 tests.
+
+---
+## Checkpoint — wave #72 (W2-170, 2026-06-12)
+Pricing Power (/pricing-power: elasticity curves, ±15% window optima,
+price_locked segments, portfolio prize) + Healthcare Labor Market
+(/labor-market: 10-role BLS cut, fragility score, wage-inflation EBITDA
+stress) + 2 CDD templates (win/loss COUNTIFS tracker, KPC survey scorer
+— library now 9). Full wiring + audit regen. +25 tests.

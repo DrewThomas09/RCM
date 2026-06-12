@@ -12251,5 +12251,103 @@ _MANUAL.extend([
     ),
 ])
 
+_MANUAL.extend([
+    _ctx(
+        "/pricing-power", "Pricing Power Analyzer",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Constant-elasticity price-response curves per "
+        "customer segment, the EBITDA-optimal price move within a ±15% "
+        "window, and the portfolio pricing prize — with rate-locked "
+        "segments (administered / capitated) excluded from the lever.",
+        primary_purpose="Model what a price move does to volume, revenue, "
+        "and EBITDA — the question a pricing thesis lives or dies on.",
+        intended_users=["Deal team testing a pricing-led value-creation "
+                        "plan in CDD."],
+        common_questions=[
+            "Which segments can absorb a price increase?",
+            "What is the EBITDA-optimal price move per segment?",
+            "How much EBITDA does optimal pricing add in total?",
+            "Why do some segments show LOCKED instead of a move?",
+            "What does an optimum at the window edge mean?",
+        ],
+        inputs=["Revenue-book selector (sector)."],
+        outputs=["Price-response curves per segment, optima table with "
+                 "volume response, portfolio EBITDA prize, pricing read."],
+        key_metrics=["Segment elasticity", "Optimal price change %",
+                     "EBITDA gain at optimum", "Blended elasticity"],
+        data_sources=["Curated illustrative segment books (flagged); the "
+                      "schema matches a pricing study's estimates."],
+        model_logic_summary="Volume response = (1+Δp)^ε per segment; "
+        "EBITDA = contribution scaling with volume plus the pure-margin "
+        "price component; optimum grid-searched over ±15% in 0.5% steps. "
+        "Administered/capitated segments are price_locked and contribute "
+        "no lever.",
+        why_it_matters="VoC gives stated willingness to pay; this turns "
+        "it into a modeled revenue/EBITDA consequence — the difference "
+        "between a pricing hope and a pricing plan.",
+        diligence_use_cases=["Pricing-led VCP sizing in CDD",
+                             "post-close pricing roadmap"],
+        interpretation_guidance=["An optimum at +15% or -15% means the "
+                                 "curve is monotone within the credible "
+                                 "window — treat the window as the bound, "
+                                 "not the true optimum."],
+        limitations=["Constant elasticity (no competitor response, no "
+                     "cross-segment substitution); illustrative books "
+                     "until a pricing study is wired."],
+        related_routes=["/voc-survey", "/win-loss", "/rate-environment",
+                        "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/labor-market", "Healthcare Labor Market",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Role-level wage / turnover / vacancy / "
+        "time-to-fill reads (10 healthcare roles, curated BLS + staffing-"
+        "survey cut) with a wage-inflation stress calculator on a "
+        "target's labor base and role mix.",
+        primary_purpose="Put a number on the cost side's biggest line: "
+        "next-year wage inflation in dollars, and in margin bps if rate "
+        "increases don't keep pace.",
+        intended_users=["Deal team underwriting a labor-heavy "
+                        "healthcare-services margin."],
+        common_questions=[
+            "How much does wage inflation cost this target next year?",
+            "Which roles are hardest to hold and replace?",
+            "What is the margin compression if rates stay flat?",
+            "What goes into the fragility score?",
+            "Where does the wage data come from?",
+        ],
+        inputs=["Labor cost ($M), revenue ($M), and role-mix shares."],
+        outputs=["Per-role stress table (cost increase, fragility), "
+                 "role-economics table, blended wage growth, margin "
+                 "compression in bps."],
+        key_metrics=["Median wage by role", "Wage YoY %", "Turnover %",
+                     "Fragility score /100", "Margin compression bps"],
+        data_sources=["Curated BLS OES + staffing-survey cut "
+                      "(market_intel/content/labor_market.yaml), national "
+                      "medians, refreshed annually."],
+        model_logic_summary="Blend = Σ(normalized mix share × role wage "
+        "YoY); fragility = equal-weight turnover/vacancy/wage-pressure "
+        "blend scaled to absolute worst-case bars.",
+        why_it_matters="Labor is 50-60% of opex for most healthcare "
+        "services targets — the wage environment decides whether the "
+        "margin holds through the hold period.",
+        diligence_use_cases=["Cost base-case in CDD", "margin-bridge "
+                             "stress", "staffing-risk read on de novo "
+                             "growth plans"],
+        interpretation_guidance=["Pair with the rate environment: wage "
+                                 "growth above the setting's payment "
+                                 "update is structural margin "
+                                 "compression."],
+        limitations=["National medians (local wage indices vary widely); "
+                     "verify against the current BLS release before IC "
+                     "use."],
+        related_routes=["/rate-environment", "/ma-penetration", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+])
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
