@@ -217,6 +217,16 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Pie Chart',
+        route='/pie-chart',
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        source_group='Research & Backtesting',
+        is_auto_generated=False,
+        aliases=['pie chart', 'donut chart', 'make a pie', 'pie',
+                 'share chart', 'mix chart', 'percentage chart'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Ingestion',
         route='/diligence/ingest',
         category=PageContextCategory.DILIGENCE_WORKSPACE,

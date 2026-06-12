@@ -60,6 +60,123 @@ _W, _H = 720.0, 450.0
 _M = {"top": 60.0, "right": 28.0, "bottom": 76.0, "left": 60.0}
 
 
+# ── Presentation-grade pie / donut (per-slice colours, no table) ─────
+
+def presentable_pie(
+    slices: List[Dict[str, Any]],
+    opts: "Dict[str, Any] | None" = None,
+) -> str:
+    """A polished, client-ready pie/donut from explicit slices.
+
+    ``slices`` is a list of ``{"label", "value", "color"}`` (colour
+    optional — falls back to the Chartis palette by index). ``opts``:
+    title, subtitle, donut (bool), label_mode ('percent'|'value'|'both'|
+    'none'), value_suffix, hole_total (donut centre text). Pie on the
+    left, a swatch/label/value/% legend on the right, both centred in a
+    760×470 frame — built for a slide, not a dashboard."""
+    import math
+    opts = dict(opts or {})
+    pal = PALETTES.get(opts.get("palette", "Chartis"), PALETTES["Chartis"])
+    clean = [s for s in slices
+             if s.get("value") not in (None, "")
+             and (s.get("value") or 0) > 0]
+    W, H = 760.0, 470.0
+    title = opts.get("title", "")
+    sub = opts.get("subtitle", "")
+    donut = opts.get("donut", False)
+    mode = opts.get("label_mode", "percent")
+    suffix = opts.get("value_suffix", "")
+    out = [f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
+           f'height="{opts.get("px_h", 470)}" '
+           f'preserveAspectRatio="xMidYMid meet" role="img" '
+           f'aria-label="{_esc(title or "pie chart")}" '
+           f'style="max-width:{W:.0f}px;background:#fff;font-family:{_SANS};">']
+    if title:
+        out.append(f'<text x="{W/2:.0f}" y="34" text-anchor="middle" '
+                   f'font-family="{_SERIF}" font-size="20" font-weight="700" '
+                   f'fill="{_NAVY}">{_esc(title)}</text>')
+    if sub:
+        out.append(f'<text x="{W/2:.0f}" y="54" text-anchor="middle" '
+                   f'font-size="12" fill="{_FAINT}">{_esc(sub)}</text>')
+    if not clean:
+        out.append(f'<text x="{W/2:.0f}" y="{H/2:.0f}" text-anchor="middle" '
+                   f'font-size="13" fill="{_FAINT}">Enter slice values to '
+                   f'render the pie</text></svg>')
+        return "".join(out)
+
+    total = sum(s["value"] for s in clean) or 1
+    cx, cy, R = 232.0, 268.0, 150.0
+    ang = -math.pi / 2
+    legend_y = max(96.0, cy - len(clean) * 13)
+    for i, s in enumerate(clean):
+        v = s["value"]
+        frac = v / total
+        color = s.get("color") or pal[i % len(pal)]
+        a2 = ang + frac * 2 * math.pi
+        large = 1 if frac > 0.5 else 0
+        x1p, y1p = cx + R * math.cos(ang), cy + R * math.sin(ang)
+        x2p, y2p = cx + R * math.cos(a2), cy + R * math.sin(a2)
+        if frac >= 0.9999:
+            out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R:.1f}" '
+                       f'fill="{color}" stroke="#fff" stroke-width="2"/>')
+        else:
+            out.append(
+                f'<path d="M {cx:.1f} {cy:.1f} L {x1p:.1f} {y1p:.1f} '
+                f'A {R:.1f} {R:.1f} 0 {large} 1 {x2p:.1f} {y2p:.1f} Z" '
+                f'fill="{color}" stroke="#fff" stroke-width="2"/>')
+        # On-slice label for big-enough slices.
+        if mode != "none" and frac >= 0.05:
+            mid = (ang + a2) / 2
+            lr = R * (0.62 if not donut else 0.78)
+            lx, ly = cx + lr * math.cos(mid), cy + lr * math.sin(mid)
+            txt = (f'{frac*100:.0f}%' if mode == "percent" else
+                   _fmt(v, suffix) if mode == "value" else
+                   f'{_fmt(v, suffix)} · {frac*100:.0f}%')
+            out.append(
+                f'<text x="{lx:.1f}" y="{ly+4:.1f}" text-anchor="middle" '
+                f'font-size="12.5" font-weight="700" fill="#fff" '
+                f'style="paint-order:stroke;stroke:rgba(0,0,0,0.18);'
+                f'stroke-width:2px;">{_esc(txt)}</text>')
+        ang = a2
+    if donut:
+        out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R*0.58:.1f}" '
+                   f'fill="#fff"/>')
+        ht = opts.get("hole_total")
+        if ht:
+            out.append(f'<text x="{cx:.1f}" y="{cy-2:.1f}" '
+                       f'text-anchor="middle" font-family="{_SERIF}" '
+                       f'font-size="22" font-weight="700" fill="{_NAVY}">'
+                       f'{_esc(ht)}</text>')
+        elif ht is None:
+            out.append(f'<text x="{cx:.1f}" y="{cy-4:.1f}" '
+                       f'text-anchor="middle" font-family="{_SERIF}" '
+                       f'font-size="20" font-weight="700" fill="{_NAVY}">'
+                       f'{_fmt(total, suffix)}</text>'
+                       f'<text x="{cx:.1f}" y="{cy+13:.1f}" '
+                       f'text-anchor="middle" font-size="10" '
+                       f'fill="{_FAINT}">TOTAL</text>')
+    # Legend — swatch · label · value · %.
+    lx0 = 452.0
+    ly = legend_y
+    for i, s in enumerate(clean):
+        v = s["value"]
+        frac = v / total
+        color = s.get("color") or pal[i % len(pal)]
+        out.append(
+            f'<rect x="{lx0:.0f}" y="{ly-9:.0f}" width="12" height="12" '
+            f'rx="2.5" fill="{color}"/>'
+            f'<text x="{lx0+19:.0f}" y="{ly:.0f}" font-size="12.5" '
+            f'fill="{_INK}">{_esc(s.get("label") or f"Slice {i+1}")}</text>'
+            f'<text x="{W-30:.0f}" y="{ly:.0f}" text-anchor="end" '
+            f'font-size="12.5" font-weight="700" fill="{_DIM}" '
+            f'font-family="{_SERIF}">{_fmt(v, suffix)} '
+            f'<tspan fill="{_FAINT}" font-weight="400">'
+            f'({frac*100:.0f}%)</tspan></text>')
+        ly += 26
+    out.append("</svg>")
+    return "".join(out)
+
+
 # ── Parsing ──────────────────────────────────────────────────────────
 
 def parse_table(text: str) -> Dict[str, Any]:

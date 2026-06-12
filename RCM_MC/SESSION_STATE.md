@@ -325,3 +325,13 @@ toggles + centered chart + gallery (your data in every type, click to
 switch); qs-driven, in Research nav + palette + guide context. +13 tests.
 Follows the Excel Mapping utility (wave #62). Both are generic graphics
 tools, not tied to one analysis.
+
+---
+## Checkpoint — wave #64 (W2-162, 2026-06-12)
+Added a client-ready Pie Chart page (user: "just type percent value +
+colour, easy pie, presentable static charts for clients"). New
+presentable_pie() in cdd_chart_kit (per-slice colours, on-slice %, label·
+value·% legend, donut w/ TOTAL). New pie_chart_page.py (route /pie-chart):
+10 rows of Label·Value·Colour + title/mode/unit/donut; qs-driven; Research
+nav + palette + guide context. +10 tests. Joins Excel Mapping (#62) +
+Chart Builder (#63) as the graphics-utility set.

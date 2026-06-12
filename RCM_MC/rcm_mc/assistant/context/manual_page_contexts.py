@@ -11926,6 +11926,41 @@ _MANUAL.extend([
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
+    _ctx(
+        "/pie-chart", "Pie Chart",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A client-ready pie/donut builder — type a "
+        "label, value, and colour per slice and render a presentable "
+        "static chart with on-slice percentages and a value/% legend.",
+        primary_purpose="Make a deck-ready pie or donut in seconds without "
+        "Excel — set each slice's value and colour directly.",
+        intended_users=["Deal team building exhibits for a client deck."],
+        common_questions=[
+            "How do I make a pie chart?",
+            "Can I set the colour of each slice?",
+            "How do I make it a donut?",
+        ],
+        inputs=["Up to ten slices, each a label + value + colour; a title; "
+                "label mode (percent / value / both / none); a unit; a "
+                "donut toggle."],
+        outputs=["A centered, Chartis-styled pie or donut SVG with "
+                 "on-slice labels and a label · value · % legend."],
+        key_metrics=["User-supplied slice values (shares computed)."],
+        data_sources=["Your slice inputs only — defaults are example "
+                      "placeholders."],
+        model_logic_summary="Each slice's share = value / total; arcs are "
+        "drawn proportionally with the colour you pick per slice.",
+        why_it_matters="A clean share/mix pie is a deck staple; this builds "
+        "one in the house style with no round-trip to Excel.",
+        diligence_use_cases=["Market share, segment mix, payer mix, any "
+                             "composition exhibit."],
+        interpretation_guidance=["Slice size = share of the total of the "
+                                 "values you enter; colours are whatever you "
+                                 "set."],
+        limitations=["Static SVG; renders only the slices you enter."],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
 ])
 
 
