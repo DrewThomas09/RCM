@@ -3440,7 +3440,6 @@ height auto, export toolbar has SVG/PNG/Copy + ids, size presets S/M/L/XL,
 builder/pie pages show export buttons + size select + new-type chips.
 Full suite green.
 
-<<<<<<< HEAD
 ## W2-164 (2026-06-12) — Expert-Call Program: the CDD voice-of-customer workstream (wave #66)
 New CDD task covered — the primary-research call program every commercial
 due diligence runs and the platform had no surface for (the CIM
@@ -3638,7 +3637,6 @@ partial-input honesty/hostile level), wiring + guide-floor checks.
 Wiring sweep 140 passed (palette/catalog/guide-invariant/universe/
 expert-calls). Live smoke: 6 URLs incl. hostile stage + formula-
 injection level param → all 200, no tracebacks.
-=======
 ## W2-164 (2026-06-12) — Charts: per-series colours + gauge KPI (wave #66)
 Continued the graphics-suite improvements:
 - **Per-series colour pickers in the Chart Builder** — every series (or
@@ -4072,4 +4070,155 @@ verticals, rows link the focused view, focused view unaffected).
 **Verify**: +2 tests (workbook carries every band; directory links the
 download) + HTTP smoke 200/PK; hub link integrity + guide-coverage +
 tools-index families green (59 passed).
->>>>>>> origin/main
+
+## W2-179 (2026-06-12) — Charts: data-shaping pipeline + 4 types + trendline (wave #80)
+More data, more ways to work it (kit now 27 types):
+- **`transform_table(table, tf)`** — the Excel prep steps folded into the
+  builder so a raw export pastes as-is: aggregate duplicate labels
+  (sum/mean/max/min/count), sort by first series, top-N with the rest
+  lumped into "Other (k)", and per-series calcs (% of total, cumulative,
+  3-period moving average, growth % vs prior, index first=100). Ops
+  compose in that order; the input table is never mutated. A "DATA
+  SHAPING" control row (4 dropdowns + Top-N box) sits under the paste
+  box in the Chart Builder; bogus qs values are ignored.
+- **4 polished staples**: Pareto (sorted bars + cumulative-% line with an
+  80% reference marker), histogram (auto-binned √n distribution of the
+  first value column, n + mean annotation), box plot (five-number
+  summary per category — quartiles computed for you), dumbbell
+  (horizontal before→after pairs, period names from the headers).
+  All carry example data + chips + notes; Pareto joins the gallery.
+- **Trendline + R²** (`trendline` opt / checkbox): least-squares fit
+  overlaid dashed on line + scatter, clipped to the plot band, labelled
+  `Trend R²=…` — the quick "is this actually correlated" read.
+- **Found-bug fix (pre-existing on main)**: the four chart pages
+  (/chart-builder, /excel-mapping, /pie-chart, /exhibit) were below the
+  Guide's 5-question floor and had empty related_routes —
+  test_pedesk_guide_5q_invariant was failing 3 tests on main. Bumped
+  each to ≥5 common_questions + cross-linked the chart family; refreshed
+  the stale "13 chart types" model-logic line to the real 27 + shaping.
+**Verify**: +22 tests (11 transform incl. compose order + no-mutation;
+4 new types render clean with their markers; trendline on/off; shaping
+controls + group-sum/top-N/trendline reach the rendered SVG; bogus
+params ignored). Guide invariant suite back to green. Chart-adjacent
+sweep (-k chart/exhibit/excel_mapping/guide/palette): 1390 passed.
+
+## W2-180 (2026-06-12) — Charts: annotations + 3 types (wave #81)
+Kit now 30 types; the builder gets an exhibit-grade annotation layer:
+- **Annotations row** (column/bar/line/area/combo): a reference/target
+  line at any value with a custom label (y-scale stretches so the
+  target is never off-chart), a dotted average line (first series), and
+  an auto-CAGR tag — first→last non-None of the first series, labelled
+  with the period names (`CAGR 2021–2024: +28.1%`, signed, 1 dp per the
+  house format). Overlays stay quiet when inputs are missing; CAGR
+  refuses non-positive starts rather than printing nonsense.
+- **3 more staples**: stacked horizontal bar (`bar_stacked` — the
+  grouped-horizontal gap; in-bar white value labels), waffle (10×10
+  share grid, largest-remainder allocation so the cells always sum to
+  exactly 100, legend with 1-dp shares), small multiples (one mini line
+  panel per series, up to 8, SHARED y-scale — the honest way to compare
+  trajectories — with end-value labels and first/last period ticks).
+**Verify**: +8 tests (waffle cell-count exact at 100 incl. the 1/3-split
+rounding trap; one panel per series; stacked bar; ref-line label +
+scale stretch; CAGR math + non-positive guard; avg line; UI controls
+flow through; bogus refval ignored). 53 pass in the file; chart sweep
+1382 passed.
+
+## W2-181 (2026-06-12) — Chart Builder: one-click platform datasets (wave #82)
+The builder stops being paste-only — real CMS data, zero pasting:
+- **`rcm_mc/data/chart_datasets.py`** (data layer, per architecture):
+  10 chart-ready aggregates from the six vendored provider snapshots —
+  providers by sector (cross-sector Pareto), ownership mix by sector
+  (For-profit/Non-profit/Government/Other via a vocabulary-collapsing
+  bucketer — 'PROPRIETARY' and 'For profit - Corporation' land in the
+  same bucket), SNF beds + dialysis stations by state, and per-sector
+  providers-by-state (top-12 + 'Other (k)' so the universe always sums).
+  lru-cached (snapshots are immutable); no runtime network calls.
+- **PLATFORM DATA strip** on /chart-builder: one teal chip per dataset;
+  a click loads the finished table + suggested chart type + a
+  source/date footnote into the normal qs flow — so a partner can then
+  shape (top-N, % of total), restyle, and export like any pasted table.
+  Sector datasets cite the file's snapshot date; cross-sector ones span
+  six files so they stay date-less rather than implying one date.
+- Guide context: +1 common question, data_sources now names the
+  vendored CMS option.
+**Verify**: new test_chart_datasets.py (9) — stable registry keys (URL
+surface), every dataset parses all-numeric and renders its suggested
+chart clean, top-12+Other sums exactly to the sector total, ownership
+mix rows sum to each sector's provider count, bucket vocabulary cases,
+footnote date rules, strip renders with links, loaded dataset flows to
+the chart. Sweep: 1419 passed.
+
+## W2-182 (2026-06-12) — Builder ↔ Exhibit round-trip + datasets on slides (wave #83)
+The chart suite becomes one workflow instead of three pages:
+- **`table_to_tsv`** (kit): serialize a (possibly shaped) table back to
+  the paste format — None cells → empty, lossless through parse_table.
+  The bridge that lets a configured chart travel between pages as qs.
+- **"Send to Exhibit Composer"** link under the rendered builder chart:
+  carries type + title + palette + footnote(→slide source) + the
+  SHAPED table (what you see is what lands on the slide — group/top-N/
+  calc already applied), as panel 1 of a fresh exhibit.
+- **Platform data on slides**: each exhibit panel gets a teal
+  "Platform data…" select (the 10 CMS aggregates). A pick fills an
+  empty panel with the table + suggested type + label; pasted/edited
+  data always wins so a loaded table stays editable. Found+fixed in
+  the same change: `has_qs` only looked at d{i}, so a dataset-only
+  submit silently fell back to the four example defaults — ds{i} now
+  also leaves default mode.
+- **"✎ edit in Chart Builder"** link on every populated panel — the
+  reverse jump, carrying the panel's type/title/data.
+**Verify**: +7 tests — tsv round-trip; send link carries the shaped
+table (scoped to the href — raw paste legitimately appears in gallery
+links); dataset-only exhibit loads real data and does NOT pre-fill the
+example defaults; pasted data wins over a selected dataset; edit-link;
+bogus ds key ignored. 75 pass across the three chart files; sweep 1426.
+
+## W2-183 (2026-06-12) — Saved Charts library (wave #84)
+Configurations become durable — the third hand-rebuild of the same
+denials Pareto is the builder failing its user:
+- **`portfolio/saved_charts.py`** (mirrors the saved_screens store
+  contract): `saved_charts` table (additive, IF NOT EXISTS), owner-
+  scoped save/list/delete, BEGIN IMMEDIATE, parameterised SQL. Route
+  allow-list — only /chart-builder and /exhibit are reopenable; a
+  forged route raises ValueError at the store AND is dropped silently
+  at the handler (never a 500, never an open-redirect-ish row). qs
+  capped at 8000 (a pasted table rides in it).
+- **★ Save to library** strip on Chart Builder + Exhibit Composer: a
+  name box + POST; the hidden query_params snapshots location.search
+  at submit so what's saved is exactly the URL being looked at. CSRF
+  via the shared form shim.
+- **/charts** library page: per-user table (name / kind chip / saved
+  date / open / delete), signed-out + empty states, titles escaped.
+  Server routes: GET /charts, POST /api/charts/save + /api/charts/
+  delete (owner from session — a spoofed owner field is impossible,
+  the form doesn't carry one). Registered: Research sub-nav, Cmd-K
+  palette, _SUB_SECTION_MAP, guide context (5 Qs + related_routes —
+  the invariant that bit the wave-67/68 pages).
+- **Found-bug fix (pre-existing on main)**: /diligence/texas-infusion
+  was served but absent from the /diligence catalog _PILLARS —
+  test_section_catalog failing on main. Added to Modeling pillar.
+**Verify**: test_saved_charts.py (16) — store CRUD owner-scoped,
+route allow-list, qs cap, page states, XSS escape, save strips on both
+pages, registration invariants, and a real-HTTP e2e (login → CSRF →
+save → list → delete; forged route dropped). Wide sweep
+(chart/exhibit/guide/palette/dataset/saved/catalog/screener): 1792.
+
+## W2-184 (2026-06-12) — Pre-merge sweep: 3 main-inherited reds fixed
+Full local suite (15,763 tests) before merging the chart waves found
+three failures — ALL pre-existing on origin/main (verified in a clean
+worktree), all fixed here so main goes back to green:
+- **'user-supplied' data-universe kind unregistered**: five visuals
+  pages pass universe="user-supplied" but ck_data_universe knew no such
+  kind, so their provenance chip silently rendered empty — exactly the
+  honesty regression test_data_universe_kinds_registered guards.
+  Registered with USER-SUPPLIED DATA label + tooltip.
+- **/visuals below the Guide 5-Q floor** with no related_routes (3
+  invariant tests); /diligence/texas-infusion AND
+  /diligence/infusion-markets served but missing from the /diligence
+  catalog. Questions bumped, related routes cross-linked, both pages
+  added to the catalog's Modeling pillar.
+- **Surface-ranking flagship tie**: texas-infusion's growth reached a
+  perfect 10.0, tying /target-screener; the old tiebreak was raw LOC,
+  so the flagship lost the #1 slot test_surface_rankings pins. The
+  engine now declares _FLAGSHIP and breaks total-ties explicitly.
+**Verify**: each fix's suite green (universe guard, 5-Q invariants,
+section catalog, surface rankings 9/9); full suite rerun → all green.
