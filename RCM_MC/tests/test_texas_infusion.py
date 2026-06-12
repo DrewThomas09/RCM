@@ -891,6 +891,42 @@ class ASPandMATests(unittest.TestCase):
         self.assertIn("published", ma["denominator_source"])
 
 
+class InvestmentThesisTests(unittest.TestCase):
+    """The IC-summary synthesis must recompute from the assembled
+    analysis — it can never drift from the sections it summarizes."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.it = self.a["investment_thesis"]
+
+    def test_thesis_has_pillars_risks_and_diligence(self):
+        self.assertEqual(len(self.it["pillars"]), 5)
+        self.assertGreaterEqual(len(self.it["risks"]), 3)
+        self.assertGreaterEqual(len(self.it["diligence_next"]), 3)
+        for p in self.it["pillars"]:
+            for f in ("title", "stat", "point"):
+                self.assertTrue(p[f], f)
+        self.assertTrue(self.it["headline"])
+        self.assertTrue(self.it["verdict"])
+
+    def test_thesis_numbers_match_the_sections(self):
+        # Headline carries the real HHI; the site-of-care pillar carries
+        # the real HOPD shift; the scorecard count matches.
+        self.assertIn(f"{self.a['fragmentation']['hhi']:,.0f}",
+                      self.it["headline"])
+        n_us = self.a["growth_scorecard"]["n_undersupplied"]
+        self.assertIn(str(n_us), self.it["headline"])
+        soc = next(p for p in self.it["pillars"]
+                   if "site-of-care" in p["title"])
+        ev = self.a["site_of_care_evolution"]
+        self.assertIn(f"{ev['hopd_shift_pts']} points", soc["point"])
+
+    def test_most_at_risk_therapy_surfaces_in_risks(self):
+        mar = self.a["home_infusion"]["therapy_risk"]["most_at_risk"]
+        risk_text = " ".join(r["risk"] for r in self.it["risks"])
+        self.assertIn(mar, risk_text)
+
+
 class HopdPoolTests(unittest.TestCase):
     """HOPD 'steered-away' infusion pool — modeled from real metro
     patients × the HOPD site share, live CMS OPPS overridable."""
@@ -1205,6 +1241,8 @@ class PageRenderTests(unittest.TestCase):
             "No Certificate of Need", "Implication:",
             "HOPD infusion — the steered-away pool",
             "CAPTURABLE HOPD PATIENTS",
+            "INVESTMENT THESIS · IC SUMMARY", "KEY RISKS",
+            "DILIGENCE NEXT",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 

@@ -2824,6 +2824,119 @@ def texas_growth_scorecard(
     }
 
 
+def texas_investment_thesis(a: Dict[str, Any]) -> Dict[str, Any]:
+    """The IC-ready synthesis — the thesis a partner reads first, built
+    PURELY from the assembled analysis so it can never drift from the
+    sections below. Five pillars (each with its supporting number), the
+    top risks, and the honest 'diligence next' gaps."""
+    def _money(v: float) -> str:
+        v = float(v or 0)
+        if abs(v) >= 1e9:
+            return f"${v/1e9:.2f}B"
+        if abs(v) >= 1e6:
+            return f"${v/1e6:.1f}M"
+        return f"${v:,.0f}"
+    s = a["sizing"]
+    frag = a["fragmentation"]
+    site = {x["site"]: x["share"] for x in a["site_of_care"]}
+    hopd = next((v for k, v in site.items()
+                 if "HOPD" in k or "Hospital" in k), 0.30)
+    nonhosp = round(1 - hopd, 2)
+    ev = a["site_of_care_evolution"]
+    ma = a["ma_enrollment"]
+    sc = a["growth_scorecard"]
+    aic = a["aic_economics"]
+    curve = a["aic_utilization_curve"]
+    reg = a["regulatory_environment"]
+    hp = a["hopd_pool"]
+    risk = a["home_infusion"]["therapy_risk"]
+    refs = a["home_infusion"]["referral_sources"]
+    us = ", ".join(r["county"] for r in
+                   sc["undersupplied_growth_markets"][:3])
+
+    pillars = [
+        {"title": "Large, growing, fragmented market",
+         "stat": f"{_money(s['tam'])} TAM · {s['composite_cagr_pct']:.1f}% "
+                 f"CAGR · HHI {frag['hhi']:,.0f}",
+         "point": "A platform-scale, low-concentration market — the "
+                  f"largest operator holds only "
+                  f"{frag['top_operator_share']*100:.0f}% and the "
+                  f"independent pool is "
+                  f"{frag['independent_pool_share']*100:.0f}%: a textbook "
+                  "buy-and-build runway."},
+        {"title": "Structural site-of-care tailwind",
+         "stat": f"HOPD {ev['soc_start']['hopd']*100:.0f}%→"
+                 f"{ev['soc_end']['hopd']*100:.0f}% · "
+                 f"{_money(hp['total_hopd_revenue'])} HOPD pool",
+         "point": "Infusion has moved "
+                  f"{ev['hopd_shift_pts']} points out of the hospital "
+                  "since 2015 (COVID + the HIT benefit + payer steerage); "
+                  f"the {hopd*100:.0f}% HOPD pool is white-space to "
+                  "capture, not a competitor to displace."},
+        {"title": "Favorable Texas structure",
+         "stat": f"No CON · {ma['penetration']*100:.0f}% MA · "
+                 f"{nonhosp*100:.0f}% already non-hospital",
+         "point": "De-novo is unconstrained (no Certificate of Need), MA "
+                  "penetration drives site-of-care steerage, and most "
+                  "volume already sits outside the hospital — the entry "
+                  "conditions for a roll-up are unusually clean."},
+        {"title": "AIC unit economics work",
+         "stat": f"{_money(aic['contribution_per_chair'])}/chair · "
+                 f"break-even ≈{curve['breakeven_util']*100:.0f}% util",
+         "point": "Per-chair contribution is healthy at benchmark "
+                  "utilization with a low break-even; chair throughput + "
+                  "commercial payer mix are the levers to underwrite."},
+        {"title": "De-novo white-space identified",
+         "stat": f"{sc['n_undersupplied']} undersupplied growth corridors",
+         "point": f"{sc['n_undersupplied']} north / Austin-corridor "
+                  f"counties ({us}…) show demand outrunning AIS chair "
+                  "capacity — the priority de-novo and tuck-in targets."},
+    ]
+    risks = [
+        {"risk": "Drug-spread compression",
+         "detail": f"ASP+{a['asp_pricing']['addon_sequestered']*100:.1f}%, "
+                   "biosimilars, 340B, and white-bagging all squeeze the "
+                   f"buy-and-bill margin ({reg['headwinds']} regulatory "
+                   "headwinds) — underwrite on service margin, not the "
+                   "drug."},
+        {"risk": "Home-infusion referral concentration",
+         "detail": f"≈{refs['hospital_dependence']*100:.0f}% of home-"
+                   "infusion referrals come from hospital discharge desks, "
+                   "and the Medicare HIT benefit's calendar-day gap "
+                   "under-pays the channel — commercial mix decides the "
+                   "economics."},
+        {"risk": f"Most-at-risk therapy: {risk['most_at_risk']}",
+         "detail": "Rare-disease, IG, and home-biologic lines carry the "
+                   "highest reimbursement + payer-steerage risk — a "
+                   "concentration to size in the target's book."},
+    ]
+    diligence_next = [
+        "Replace modeled provider counts with a live NPPES / state "
+        "pharmacy-board pull, and the modeled prevalence rates with the "
+        "target's own claims.",
+        "Quantify the target's referral concentration (top-5 sources) and "
+        "white-bagged % by payer.",
+        "Confirm the current Texas white-bagging statute and the target's "
+        "accreditations / renewal calendar.",
+    ]
+    return {
+        "headline": (
+            f"A {_money(s['tam'])} fragmented Texas infusion market "
+            f"(HHI {frag['hhi']:,.0f}) with a structural site-of-care "
+            f"tailwind and no Certificate-of-Need barrier — a "
+            f"buy-and-build with de-novo white-space in "
+            f"{sc['n_undersupplied']} growth corridors. Underwrite on "
+            f"service margin + commercial mix, not the drug spread."),
+        "pillars": pillars,
+        "risks": risks,
+        "diligence_next": diligence_next,
+        "verdict": ("CONSTRUCTIVE — the market structure, Texas rules, and "
+                    "unit economics support a roll-up thesis; the central "
+                    "risk is drug-margin compression, which steers the "
+                    "value-creation plan toward service + RCM, not drug."),
+    }
+
+
 def build_texas_infusion_analysis(
     aic_overrides: Optional[Dict[str, Any]] = None,
     nppes_live: bool = False,
@@ -2920,7 +3033,7 @@ def build_texas_infusion_analysis(
             "roll-up."),
     }
 
-    return {
+    out = {
         "state": "TX",
         "demographics": {
             "population": tx_pop,
@@ -3049,3 +3162,5 @@ def build_texas_infusion_analysis(
         ],
         "basis_note": model.basis_note,
     }
+    out["investment_thesis"] = texas_investment_thesis(out)
+    return out
