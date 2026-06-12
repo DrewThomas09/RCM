@@ -154,6 +154,66 @@ _EVO_BANDS = [("hopd", "Hospital outpatient (HOPD)", _NAVY),
               ("home", "Home infusion", _POS)]
 
 
+def _hopd_pool_section(a: Dict[str, Any]) -> str:
+    """The HOPD 'steered-away' infusion pool by metro — the white-space an
+    AIC/home platform captures."""
+    hp = a.get("hopd_pool") or {}
+    metros = hp.get("metros", [])
+    if not metros:
+        return ""
+    live = hp.get("opps_live")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">'
+        f'{"LIVE — CMS OPPS file" if live else "MODELED — HOPD share × real metro patients (live CMS OPPS via ?nppes=live)"}'
+        f'</span>')
+    mx = max((m["hopd_patients"] for m in metros), default=1) or 1
+    bars = ""
+    for m in metros:
+        w = m["hopd_patients"] / mx * 100
+        short = m["metro"].split("-")[0]
+        bars += (
+            f'<div style="display:grid;grid-template-columns:130px 1fr 150px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div style="font-size:11.5px;color:#1a2332;">'
+            f'{html.escape(short)}</div>'
+            f'<div style="height:14px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;"><div style="height:100%;width:{w:.0f}%;'
+            f'background:{_NAVY};"></div></div>'
+            f'<div style="font-size:11px;color:{_DIM};text-align:right;">'
+            f'<strong style="color:{_NAVY};">{m["hopd_patients"]:,}</strong>'
+            f' pts · {_money(m["hopd_revenue"])}</div></div>')
+    opps = ""
+    if live and hp.get("opps_services"):
+        opps = (f'<div style="font-size:11px;color:{_POS};margin-top:6px;">'
+                f'Live CMS OPPS: {hp["opps_services"]:,} HOPD infusion '
+                f'services · {_money(hp.get("opps_payment",0))} Medicare '
+                f'payment (TX).</div>')
+    return (
+        f'<div style="border:1px solid #d6cfc0;border-top:3px solid {_NAVY};'
+        f'border-radius:4px;padding:12px 14px;background:#fff;margin-top:14px;">'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'
+        f'<div style="font-size:13px;font-weight:700;color:{_NAVY};">'
+        f'HOPD infusion — the steered-away pool '
+        f'({hp["hopd_share"]*100:.0f}% of volume)</div>{badge}</div>'
+        f'<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px;">'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;">CAPTURABLE HOPD PATIENTS (4 METROS)</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+        f'{hp["total_hopd_patients"]:,}</div></div>'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;">HOPD INFUSION REVENUE POOL</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+        f'{_money(hp["total_hopd_revenue"])}</div></div></div>'
+        f'{bars}{opps}'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'{html.escape(hp["note"])}</p></div>')
+
+
 def _evolution_section(a: Dict[str, Any]) -> str:
     """How discharges → home infusion / site-of-care have evolved over
     time: a stacked-area chart of the mix shift, the market-size + OPAT
@@ -2522,6 +2582,7 @@ def render_texas_infusion_page(
         + ck_section_header("Segmentation by site of care",
                             eyebrow="THE SITE-OF-CARE SHIFT")
         + _site_table(a)
+        + _hopd_pool_section(a)
         + _so_what(sw["site"])
 
         + ck_section_header("How discharges → home infusion have evolved",
