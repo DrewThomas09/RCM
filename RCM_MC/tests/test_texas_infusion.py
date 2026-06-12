@@ -935,6 +935,17 @@ class AutoExhibitTests(unittest.TestCase):
         self.assertIn("⬇ PNG", sec)
         self.assertNotIn("None", sec[start:end])
 
+    def test_exhibit_svg_helper_and_download_link(self):
+        from rcm_mc.ui.texas_infusion_page import (
+            texas_exhibit_svg, render_texas_infusion_page)
+        a = build_texas_infusion_analysis()
+        svg = texas_exhibit_svg(a)
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertEqual(svg.count("<svg"), 5)   # parent + 4 panels
+        self.assertNotIn("None", svg)
+        h = render_texas_infusion_page()
+        self.assertIn("/api/diligence/texas-infusion/exhibit.svg", h)
+
 
 class InvestmentThesisTests(unittest.TestCase):
     """The IC-summary synthesis must recompute from the assembled
