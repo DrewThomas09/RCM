@@ -6745,17 +6745,6 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
-        if path == "/diligence/infusion-markets":
-            # National infusion-market scan — every state ranked for an
-            # infusion roll-up from real per-state ACS + CMS MA data.
-            from .ui.infusion_market_page import render_infusion_market_page
-            return self._send_html(render_infusion_market_page())
-        if path == "/api/diligence/infusion-markets":
-            # JSON variant — the ranked state attractiveness scan.
-            from .diligence.infusion_market import (
-                infusion_state_attractiveness,
-            )
-            return self._send_json(infusion_state_attractiveness())
         if path == "/diligence/cdd-scope":
             # CDD Scope — the four engagement depths (screen / red-flag
             # / full-scope / bring-down): level cards, deterministic
@@ -6811,6 +6800,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_text(
                 expert_calls_csv(_ec_qs),
                 content_type="text/csv; charset=utf-8")
+        if path == "/diligence/infusion-markets":
+            # National infusion-market scan — every state ranked for an
+            # infusion roll-up from real per-state ACS + CMS MA data.
+            from .ui.infusion_market_page import render_infusion_market_page
+            return self._send_html(render_infusion_market_page())
+        if path == "/api/diligence/infusion-markets":
+            # JSON variant — the ranked state attractiveness scan.
+            from .diligence.infusion_market import (
+                infusion_state_attractiveness,
+            )
+            return self._send_json(infusion_state_attractiveness())
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs

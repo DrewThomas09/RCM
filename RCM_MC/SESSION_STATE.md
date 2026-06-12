@@ -515,6 +515,17 @@ Market scan: added "Open in Excel Mapping" cross-link (pre-fills 51 state
 scores + gradient into /excel-mapping via ?data=) and JSON API
 /api/diligence/infusion-markets. +1 test. Connects diligence data ↔
 graphics tool + API surface.
+
+
+---
+## Checkpoint — wave #80 (W2-178, 2026-06-12)
+Deepened Texas (user steer): aic_denovo_ramp() de-novo build J-curve
+(capex ~$504K, break-even ~month 12, Y3 ~3.0x cash-on-cash; 36-mo cum-cash
+series; interpolates the chair util curve; editable). Page: "De-novo AIC
+build — the J-curve" section (KPIs + J-curve SVG + by-year + SO WHAT).
++4 tests. Builds on existing AIC economics.
+
+---
 PE-desk product wave (CDD + Excel + market intel): /excel-templates
 library — 7 live-formula workbooks (Quick LBO, QoE databook, NWC peg,
 13-week cash, CDD market model, payer sensitivity, cohort/NRR) via
