@@ -64,7 +64,7 @@ _EXAMPLE_DUMBBELL = ("Metric\tEntry\tExit\nEBITDA margin\t18\t26\n"
 
 
 def _example_for(ctype: str) -> str:
-    if ctype in ("pie", "donut"):
+    if ctype in ("pie", "donut", "waffle"):
         return _EXAMPLE_PIE
     if ctype == "waterfall":
         return _EXAMPLE_WF
@@ -144,6 +144,16 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     except ValueError:
         topn = 0
     trend = _qsbool(qs, "trend", False)
+    # Annotations — drawn on the chart over value axes.
+    refval_s = _qs1(qs, "refval", "")
+    try:
+        refval: "float | None" = float(refval_s) if refval_s.strip() \
+            else None
+    except ValueError:
+        refval = None
+    reflabel = _qs1(qs, "reflabel", "")
+    show_cagr = _qsbool(qs, "cagr", False)
+    show_avg = _qsbool(qs, "avg", False)
     if group or sort or calc or topn:
         table = transform_table(table, {
             "group": group or None, "sort": sort or None,
@@ -163,6 +173,8 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         "subtitle": subtitle, "palette": palette, "suffix": suffix,
         "show_values": show_values, "legend": legend, "width_px": width_px,
         "colors": series_colors, "footnote": footnote, "trendline": trend,
+        "ref_value": refval, "ref_label": reflabel,
+        "show_cagr": show_cagr, "show_avg": show_avg,
     }
     chart_svg = render_cdd_chart(ctype, table, opts)
 
@@ -240,6 +252,26 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         + _shaping_select("calc", "Calculation",
                           [("", "None")] + list(TRANSFORM_CALCS), calc)
         + _toggle("trend", "Trendline + R² (line/scatter)", trend)
+        + '</div></div>'
+        # Annotations — overlays on the value axis (column/line/combo).
+        + '<div style="margin-top:8px;border:1px solid #d6cfc0;'
+        'border-radius:6px;padding:8px 10px;background:#faf7f0;">'
+        '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
+        'font-weight:700;margin-bottom:5px;">ANNOTATIONS (column / bar / '
+        'line / area / combo)</div>'
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:'
+        'flex-end;">'
+        + (f'<label style="font-size:10.5px;color:#465366;width:110px;">'
+           f'Reference line at<input type="number" step="any" '
+           f'name="refval" value="{html.escape(refval_s)}" '
+           f'placeholder="e.g. 98" style="{_sel}padding:0 6px;"></label>')
+        + (f'<label style="font-size:10.5px;color:#465366;flex:1;'
+           f'min-width:120px;">Reference label'
+           f'<input type="text" name="reflabel" '
+           f'value="{html.escape(reflabel)}" placeholder="Target" '
+           f'style="{_sel}padding:0 6px;"></label>')
+        + _toggle("cagr", "CAGR tag (first→last)", show_cagr)
+        + _toggle("avg", "Average line", show_avg)
         + '</div></div>')
 
     form = (
@@ -371,11 +403,18 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
           'category, each column a sample — quartiles are computed for '
           'you. <strong>Dumbbell:</strong> two value columns = '
           'before/after per category. Everything else takes a category '
-          'column + one column per series. <strong>Data shaping</strong> '
+          'column + one column per series. <strong>Waffle:</strong> the '
+          'first value column as a 10×10 share grid (1 cell = 1%). '
+          '<strong>Small multiples:</strong> one mini line panel per '
+          'series on a shared y-scale. <strong>Data shaping</strong> '
           'runs before the chart: aggregate duplicate labels '
           '(sum/mean/max/min/count), sort, keep top-N and lump the rest '
           'into "Other", or switch the values to % of total / cumulative '
-          '/ moving average / growth-vs-prior / indexed-to-100.</p></div>'
+          '/ moving average / growth-vs-prior / indexed-to-100. '
+          '<strong>Annotations</strong> draw on value-axis charts: a '
+          'reference/target line with a label, a dotted average line, '
+          'and a CAGR tag computed first→last on the first series.'
+          '</p></div>'
         + '</div>')
     return chartis_shell(
         body, "Chart Builder", active_nav="/research",

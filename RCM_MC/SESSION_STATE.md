@@ -21,6 +21,8 @@
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
 - current_step: looping; wave #70 on branch claude/pipeline-data-graphs-8ld7ng
+- WAVE 71 (W2-169): annotations layer (ref/target line, avg line,
+  auto-CAGR tag) + bar_stacked/waffle/smallmult (kit 30 types).
 - WAVE 70 (W2-168): chart data-shaping pipeline (group/sort/top-N/calc
   dropdowns), pareto/histogram/boxplot/dumbbell (kit 27 types),
   trendline+R² on line/scatter; guide 5-Q invariant fixed for the 4

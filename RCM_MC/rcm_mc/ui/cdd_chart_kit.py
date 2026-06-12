@@ -45,6 +45,7 @@ CHART_TYPES = [
     ("column_stacked", "Stacked column"),
     ("column_100", "100% stacked column"),
     ("bar", "Horizontal bar"),
+    ("bar_stacked", "Stacked bar (horiz.)"),
     ("pareto", "Pareto (80/20)"),
     ("line", "Line"),
     ("area", "Stacked area"),
@@ -53,6 +54,7 @@ CHART_TYPES = [
     ("waterfall", "Waterfall (bridge)"),
     ("pie", "Pie"),
     ("donut", "Donut"),
+    ("waffle", "Waffle (share)"),
     ("funnel", "Funnel"),
     ("tornado", "Tornado (sensitivity)"),
     ("scatter", "Scatter"),
@@ -68,6 +70,7 @@ CHART_TYPES = [
     ("gantt", "Gantt / timeline"),
     ("marimekko", "Marimekko"),
     ("combo", "Combo (bars + line)"),
+    ("smallmult", "Small multiples"),
 ]
 
 _W, _H = 720.0, 450.0
@@ -482,6 +485,57 @@ def _x_labels(cats, x0, x1, y1, opts):
     return out
 
 
+# ── Annotation overlays (reference / average line, CAGR) ────────────
+
+def _ref_scaled_max(vmax: float, opts: Dict[str, Any]) -> float:
+    """Stretch the y-scale to include a user reference line so the
+    target is never drawn off-chart."""
+    rv = opts.get("ref_value")
+    return _nice_max(max(vmax, rv)) if rv is not None and rv > vmax \
+        else vmax
+
+
+def _overlay_svg(opts, yof, x0, x1, y0, cats, vals, suffix) -> str:
+    """Reference line + average line + CAGR tag over a value-axis chart.
+    ``vals`` is the first series (the one a partner means by 'the
+    number'); overlays stay quiet when their inputs are missing."""
+    out = ""
+    rv = opts.get("ref_value")
+    if rv is not None:
+        y = yof(rv)
+        label = opts.get("ref_label") or f"Target {_fmt(rv, suffix)}"
+        out += (f'<line x1="{x0:.1f}" y1="{y:.1f}" x2="{x1:.1f}" '
+                f'y2="{y:.1f}" stroke="{_NAVY}" stroke-width="1.4" '
+                f'stroke-dasharray="7 4"/>'
+                f'<text x="{x1-2:.1f}" y="{y-5:.1f}" text-anchor="end" '
+                f'font-family="{_SANS}" font-size="10" font-weight="700" '
+                f'fill="{_NAVY}">{_esc(label)}</text>')
+    nums = [v for v in vals if v is not None]
+    if opts.get("show_avg") and nums:
+        avg = sum(nums) / len(nums)
+        y = yof(avg)
+        out += (f'<line x1="{x0:.1f}" y1="{y:.1f}" x2="{x1:.1f}" '
+                f'y2="{y:.1f}" stroke="#b8732a" stroke-width="1.2" '
+                f'stroke-dasharray="2 3"/>'
+                f'<text x="{x0+4:.1f}" y="{y-4:.1f}" font-family="{_SANS}" '
+                f'font-size="9.5" font-weight="600" fill="#b8732a">'
+                f'Avg {_fmt(round(avg, 1), suffix)}</text>')
+    if opts.get("show_cagr"):
+        idx = [i for i, v in enumerate(vals) if v is not None]
+        if len(idx) >= 2:
+            i0, i1 = idx[0], idx[-1]
+            v0, v1 = vals[i0], vals[i1]
+            span = i1 - i0
+            if v0 > 0 and v1 > 0 and span >= 1:
+                cagr = (v1 / v0) ** (1.0 / span) - 1
+                out += (f'<text x="{x0+4:.1f}" y="{y0+12:.1f}" '
+                        f'font-family="{_SANS}" font-size="10.5" '
+                        f'font-weight="700" fill="{_DIM}">'
+                        f'CAGR {_esc(cats[i0])}–{_esc(cats[i1])}: '
+                        f'{cagr*100:+.1f}%</text>')
+    return out
+
+
 # ── Bars (column / stacked / 100% / horizontal) ──────────────────────
 
 def _bars(table, opts):
@@ -507,11 +561,12 @@ def _bars(table, opts):
     else:
         vmax = _nice_max(max((max((v or 0) for v in s["values"])
                               for s in series), default=1))
+    if not percent:
+        vmax = _ref_scaled_max(vmax, opts)
     vmin = 0.0
 
     body = _frame_open(opts)
     if horizontal:
-        # Horizontal single/grouped bars (no stacking variant here).
         n = len(cats)
         band = (y1 - y0) / max(n, 1)
         body += (f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x0:.1f}" '
@@ -520,18 +575,40 @@ def _bars(table, opts):
         for i, c in enumerate(cats):
             gy = y0 + band * i
             inner = band * 0.78
-            bh = inner / max(ns, 1)
-            for si, s in enumerate(series):
-                v = s["values"][i] or 0
-                w = (v / vmax) * (x1 - x0)
-                yy = gy + band * 0.11 + si * bh
-                body += (f'<rect x="{x0:.1f}" y="{yy:.1f}" '
-                         f'width="{max(0, w):.1f}" height="{bh*0.92:.1f}" '
-                         f'fill="{colors[si % len(colors)]}" rx="1"/>')
-                if show_vals and ns == 1:
-                    body += (f'<text x="{x0+w+4:.1f}" y="{yy+bh*0.7:.1f}" '
-                             f'font-family="{_SANS}" font-size="10" '
-                             f'fill="{_DIM}">{_fmt(v, suffix)}</text>')
+            if stacked or percent:
+                tot = totals[i] if percent else 1
+                yy = gy + band * 0.11
+                cumw = 0.0
+                for si, s in enumerate(series):
+                    raw = s["values"][i] or 0
+                    v = (raw / tot * 100) if percent and tot else raw
+                    w = (v / vmax) * (x1 - x0)
+                    body += (f'<rect x="{x0+cumw:.1f}" y="{yy:.1f}" '
+                             f'width="{max(0, w):.1f}" '
+                             f'height="{inner*0.92:.1f}" '
+                             f'fill="{colors[si % len(colors)]}"/>')
+                    if show_vals and v > vmax * 0.07:
+                        body += (f'<text x="{x0+cumw+w/2:.1f}" '
+                                 f'y="{yy+inner*0.55:.1f}" '
+                                 f'text-anchor="middle" '
+                                 f'font-family="{_SANS}" font-size="9.5" '
+                                 f'fill="#fff">{_fmt(v, suffix)}</text>')
+                    cumw += w
+            else:
+                bh = inner / max(ns, 1)
+                for si, s in enumerate(series):
+                    v = s["values"][i] or 0
+                    w = (v / vmax) * (x1 - x0)
+                    yy = gy + band * 0.11 + si * bh
+                    body += (f'<rect x="{x0:.1f}" y="{yy:.1f}" '
+                             f'width="{max(0, w):.1f}" '
+                             f'height="{bh*0.92:.1f}" '
+                             f'fill="{colors[si % len(colors)]}" rx="1"/>')
+                    if show_vals and ns == 1:
+                        body += (f'<text x="{x0+w+4:.1f}" '
+                                 f'y="{yy+bh*0.7:.1f}" '
+                                 f'font-family="{_SANS}" font-size="10" '
+                                 f'fill="{_DIM}">{_fmt(v, suffix)}</text>')
             body += (f'<text x="{x0-6:.1f}" y="{gy+band*0.55:.1f}" '
                      f'text-anchor="end" font-family="{_SANS}" '
                      f'font-size="10.5" fill="{_DIM}">{_esc(c)}</text>')
@@ -577,6 +654,9 @@ def _bars(table, opts):
                              f'text-anchor="middle" font-family="{_SANS}" '
                              f'font-size="9.5" fill="{_DIM}">'
                              f'{_fmt(v, suffix)}</text>')
+    if not percent and series:
+        body += _overlay_svg(opts, yof, x0, x1, y0, cats,
+                             series[0]["values"], suffix)
     body += _x_labels(cats, x0, x1, y1, opts)
     body += _legend(series, colors, opts) + "</svg>"
     return body
@@ -638,6 +718,7 @@ def _lines(table, opts):
     else:
         vmax = _nice_max(max((max((v or 0) for v in s["values"])
                               for s in series), default=1))
+    vmax = _ref_scaled_max(vmax, opts)
     body = _frame_open(opts)
     grid, yof = _y_axis(x0, y0, x1, y1, vmax, 0, opts, opts.get("suffix", ""))
     body += grid
@@ -674,6 +755,9 @@ def _lines(table, opts):
                 a, b, r2 = fit
                 body += _trend_svg(xof(0), yof(a), xof(n - 1),
                                    yof(a + b * (n - 1)), y0, y1, r2, x1 - 4)
+    if series:
+        body += _overlay_svg(opts, yof, x0, x1, y0, cats,
+                             series[0]["values"], opts.get("suffix", ""))
     body += _x_labels(cats, x0, x1, y1, opts)
     body += _legend(series, colors, opts) + "</svg>"
     return body
@@ -874,10 +958,13 @@ def _combo(table, opts):
         return _frame_open(opts) + "</svg>"
     bar_s = series[0]
     line_s = series[1] if len(series) > 1 else None
-    vmax = _nice_max(max((v or 0) for v in bar_s["values"]) or 1)
+    vmax = _ref_scaled_max(
+        _nice_max(max((v or 0) for v in bar_s["values"]) or 1), opts)
     body = _frame_open(opts)
     grid, yof = _y_axis(x0, y0, x1, y1, vmax, 0, opts, opts.get("suffix", ""))
     body += grid
+    body += _overlay_svg(opts, yof, x0, x1, y0, cats, bar_s["values"],
+                         opts.get("suffix", ""))
     band = (x1 - x0) / max(n, 1)
     for i in range(n):
         v = bar_s["values"][i] or 0
@@ -1548,6 +1635,118 @@ def _dumbbell(table, opts):
     return body
 
 
+# ── Waffle (10×10 share grid) ────────────────────────────────────────
+
+def _waffle(table, opts):
+    labels = [r[0] for r in table["rows"]]
+    vals = [(r[1][0] if r[1] else 0) or 0 for r in table["rows"]]
+    pairs = [(l, v) for l, v in zip(labels, vals) if v > 0]
+    colors = opts["colors"]
+    W, H = opts.get("W", _W), opts.get("H", _H)
+    body = _frame_open(opts)
+    if not pairs:
+        return body + "</svg>"
+    total = sum(v for _, v in pairs)
+    # Largest-remainder allocation so the 100 cells always sum exactly.
+    raw = [v / total * 100 for _, v in pairs]
+    cells = [int(r) for r in raw]
+    for i in sorted(range(len(raw)), key=lambda i: raw[i] - cells[i],
+                    reverse=True)[:100 - sum(cells)]:
+        cells[i] += 1
+    size, gap = 26.0, 4.0
+    gx0 = 64.0
+    gy0 = (H - (10 * size + 9 * gap)) / 2 + 14
+    idx = 0
+    for ci, n_cells in enumerate(cells):
+        col = colors[ci % len(colors)]
+        for _ in range(n_cells):
+            r, c = divmod(idx, 10)
+            body += (f'<rect x="{gx0 + c*(size+gap):.1f}" '
+                     f'y="{gy0 + r*(size+gap):.1f}" width="{size:.0f}" '
+                     f'height="{size:.0f}" rx="3" fill="{col}"/>')
+            idx += 1
+    # Legend — swatch · label · share (1 cell = 1%).
+    lx = gx0 + 10 * (size + gap) + 34
+    ly = gy0 + 8
+    for ci, ((lab, v), n_cells) in enumerate(zip(pairs, cells)):
+        col = colors[ci % len(colors)]
+        body += (f'<rect x="{lx:.0f}" y="{ly-9:.0f}" width="12" '
+                 f'height="12" rx="2.5" fill="{col}"/>'
+                 f'<text x="{lx+19:.0f}" y="{ly+1:.0f}" '
+                 f'font-family="{_SANS}" font-size="12" fill="{_INK}">'
+                 f'{_esc(lab)}</text>'
+                 f'<text x="{W-30:.0f}" y="{ly+1:.0f}" text-anchor="end" '
+                 f'font-family="{_SERIF}" font-size="12" font-weight="700" '
+                 f'fill="{_DIM}">{v/total*100:.1f}%</text>')
+        ly += 24
+    body += "</svg>"
+    return body
+
+
+# ── Small multiples (one mini line panel per series) ─────────────────
+
+def _smallmult(table, opts):
+    import math
+    cats = [r[0] for r in table["rows"]]
+    series = _series(table)[:8]
+    colors = opts["colors"]
+    W, H = opts.get("W", _W), opts.get("H", _H)
+    body = _frame_open(opts)
+    if not series or len(cats) < 2:
+        return body + "</svg>"
+    n = len(series)
+    cols = 1 if n == 1 else 2 if n <= 4 else 3 if n <= 6 else 4
+    rows_n = math.ceil(n / cols)
+    x0, y0, x1, y1 = 40.0, 58.0, W - 28.0, H - 26.0
+    gap = 18.0
+    pw = (x1 - x0 - gap * (cols - 1)) / cols
+    ph = (y1 - y0 - gap * (rows_n - 1)) / rows_n
+    # One shared y scale so the panels are comparable — the point of
+    # small multiples.
+    vmax = _nice_max(max((max((v or 0) for v in s["values"])
+                          for s in series), default=1))
+    suffix = opts.get("suffix", "")
+    nc = len(cats)
+    for si, s in enumerate(series):
+        px = x0 + (si % cols) * (pw + gap)
+        py = y0 + (si // cols) * (ph + gap)
+        col = colors[si % len(colors)]
+        ix0, iy0 = px + 6, py + 22
+        ix1, iy1 = px + pw - 40, py + ph - 16
+
+        def xof(i):
+            return ix0 + (ix1 - ix0) * (i / max(nc - 1, 1))
+
+        def yof(v):
+            return iy1 - (v / vmax) * (iy1 - iy0)
+        body += (f'<rect x="{px:.1f}" y="{py:.1f}" width="{pw:.1f}" '
+                 f'height="{ph:.1f}" fill="#fbf9f4" stroke="{_GRID}" '
+                 f'rx="4"/>'
+                 f'<text x="{px+8:.1f}" y="{py+14:.1f}" '
+                 f'font-family="{_SANS}" font-size="11" font-weight="700" '
+                 f'fill="{col}">{_esc(s["name"])}</text>'
+                 f'<line x1="{ix0:.1f}" y1="{iy1:.1f}" x2="{ix1:.1f}" '
+                 f'y2="{iy1:.1f}" stroke="{_GRID}" stroke-width="0.8"/>')
+        pts = " ".join(f"{xof(i):.1f},{yof(s['values'][i] or 0):.1f}"
+                       for i in range(nc))
+        last = s["values"][nc - 1] or 0
+        body += (f'<polyline points="{pts}" fill="none" stroke="{col}" '
+                 f'stroke-width="2" stroke-linejoin="round"/>'
+                 f'<circle cx="{xof(nc-1):.1f}" cy="{yof(last):.1f}" '
+                 f'r="3" fill="{col}"/>'
+                 f'<text x="{xof(nc-1)+6:.1f}" y="{yof(last)+3.5:.1f}" '
+                 f'font-family="{_SANS}" font-size="10" font-weight="700" '
+                 f'fill="{col}">{_fmt(last, suffix)}</text>'
+                 f'<text x="{ix0:.1f}" y="{iy1+11:.1f}" '
+                 f'font-family="{_SANS}" font-size="8.5" fill="{_FAINT}">'
+                 f'{_esc(cats[0])}</text>'
+                 f'<text x="{ix1:.1f}" y="{iy1+11:.1f}" text-anchor="end" '
+                 f'font-family="{_SANS}" font-size="8.5" fill="{_FAINT}">'
+                 f'{_esc(cats[-1])}</text>')
+    body += "</svg>"
+    return body
+
+
 # ── Export toolbar (download SVG / PNG, copy) ────────────────────────
 
 def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
@@ -1611,6 +1810,7 @@ _DISPATCH = {
     "column_stacked": (_bars, {"stacked": True}),
     "column_100": (_bars, {"stacked": True, "percent": True}),
     "bar": (_bars, {"horizontal": True}),
+    "bar_stacked": (_bars, {"horizontal": True, "stacked": True}),
     "pareto": (_pareto, {}),
     "line": (_lines, {}),
     "area": (_lines, {"area": True}),
@@ -1621,6 +1821,7 @@ _DISPATCH = {
     "tornado": (_tornado, {}),
     "pie": (_pie, {}),
     "donut": (_pie, {"donut": True}),
+    "waffle": (_waffle, {}),
     "scatter": (_scatter, {}),
     "bubble": (_scatter, {"bubble": True}),
     "matrix": (_matrix, {}),
@@ -1634,6 +1835,7 @@ _DISPATCH = {
     "gantt": (_gantt, {}),
     "marimekko": (_marimekko, {}),
     "combo": (_combo, {}),
+    "smallmult": (_smallmult, {}),
 }
 
 

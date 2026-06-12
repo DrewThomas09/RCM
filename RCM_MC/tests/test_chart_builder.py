@@ -97,9 +97,10 @@ class RenderTests(unittest.TestCase):
         keys = {k for k, _ in CHART_TYPES}
         for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot",
                   "gauge", "heatmap", "slope", "gantt", "pareto",
-                  "histogram", "boxplot", "dumbbell"):
+                  "histogram", "boxplot", "dumbbell", "bar_stacked",
+                  "waffle", "smallmult"):
             self.assertIn(k, keys, k)
-        self.assertGreaterEqual(len(CHART_TYPES), 27)
+        self.assertGreaterEqual(len(CHART_TYPES), 30)
 
     def test_pareto_has_cumulative_line_and_80_marker(self):
         t = parse_table("Reason\tCount\nAuth\t340\nElig\t210\nCoding\t160\n"
@@ -139,6 +140,62 @@ class RenderTests(unittest.TestCase):
         self.assertIn("Entry", svg)
         self.assertIn("Exit", svg)
         self.assertNotIn("None", svg)
+
+    def test_waffle_allocates_exactly_100_cells(self):
+        t = parse_table("Seg\tShare\nAIC\t38\nHome\t30\nHOPD\t22\nOffice\t10")
+        svg = render_cdd_chart("waffle", t, {"title": "Mix"})
+        self.assertTrue(svg.startswith("<svg"))
+        # 100 grid cells + 4 legend swatches.
+        self.assertEqual(svg.count("<rect"), 104)
+        self.assertIn("38.0%", svg)          # legend share, 1 decimal
+        self.assertNotIn("None", svg)
+
+    def test_waffle_rounding_uses_largest_remainder(self):
+        # 3 × 1/3 → 34+33+33, never 33+33+33 = 99 cells.
+        t = parse_table("S\tV\nA\t1\nB\t1\nC\t1")
+        svg = render_cdd_chart("waffle", t, {})
+        self.assertEqual(svg.count("<rect"), 103)
+
+    def test_small_multiples_one_panel_per_series(self):
+        t = parse_table("Year\tRev\tEBITDA\tCapex\n2021\t100\t22\t8\n"
+                        "2022\t130\t31\t9\n2023\t165\t43\t12")
+        svg = render_cdd_chart("smallmult", t, {"title": "KPIs"})
+        for name in ("Rev", "EBITDA", "Capex"):
+            self.assertIn(name, svg)
+        self.assertEqual(svg.count("<polyline"), 3)
+        self.assertNotIn("None", svg)
+
+    def test_stacked_horizontal_bar_renders(self):
+        t = parse_table("Payer\tIP\tOP\nMedicare\t40\t25\nCommercial\t30\t35")
+        svg = render_cdd_chart("bar_stacked", t, {"title": "Mix"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("Medicare", svg)
+        self.assertNotIn("None", svg)
+
+    def test_reference_line_with_label(self):
+        t = parse_table("Y\tR\n2021\t100\n2022\t130")
+        svg = render_cdd_chart("column", t, {"ref_value": 150.0,
+                                             "ref_label": "Plan target"})
+        self.assertIn("Plan target", svg)
+        self.assertIn("stroke-dasharray", svg)
+        # The scale stretches to include the reference value.
+        self.assertIn("150", svg)
+
+    def test_cagr_tag_first_to_last(self):
+        t = parse_table("Year\tRev\n2021\t100\n2022\t130\n2023\t165\n"
+                        "2024\t210")
+        svg = render_cdd_chart("line", t, {"show_cagr": True})
+        self.assertIn("CAGR 2021–2024: +28.1%", svg)
+        # No tag when the start value is non-positive.
+        neg = render_cdd_chart(
+            "line", parse_table("Y\tV\n2021\t0\n2022\t50"),
+            {"show_cagr": True})
+        self.assertNotIn("CAGR", neg)
+
+    def test_average_line(self):
+        t = parse_table("Q\tV\nQ1\t10\nQ2\t20\nQ3\t30")
+        svg = render_cdd_chart("column", t, {"show_avg": True})
+        self.assertIn("Avg 20", svg)
 
     def test_trendline_overlays_fit_with_r2(self):
         t = parse_table("Co\tX\tY\nA\t1\t2\nB\t2\t4.1\nC\t3\t5.9\nD\t4\t8")
@@ -351,10 +408,24 @@ class BuilderPageTests(unittest.TestCase):
             "data": ["Co\tX\tY\nA\t1\t2\nB\t2\t4\nC\t3\t6\nD\t4\t8"]})
         self.assertIn("Trend R²=", h)
 
+    def test_annotation_controls_present_and_flow_through(self):
+        h = render_chart_builder_page({})
+        for needle in ("ANNOTATIONS", 'name="refval"', 'name="reflabel"',
+                       'name="cagr"', 'name="avg"'):
+            self.assertIn(needle, h, f"missing: {needle}")
+        h2 = render_chart_builder_page({
+            "type": ["column"], "refval": ["150"], "reflabel": ["Target"],
+            "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertIn("Target", h2)
+        h3 = render_chart_builder_page({
+            "type": ["line"], "cagr": ["1"],
+            "data": ["Y\tR\n2021\t100\n2022\t130\n2023\t165"]})
+        self.assertIn("CAGR 2021–2023", h3)
+
     def test_bogus_shaping_params_ignored(self):
         h = render_chart_builder_page({
             "group": ["drop table"], "sort": ["weird"],
-            "topn": ["nope"], "calc": ["bad"]})
+            "topn": ["nope"], "calc": ["bad"], "refval": ["abc"]})
         self.assertIn("Chart Builder", h)
 
     def test_registered_in_palette_nav_and_guide(self):

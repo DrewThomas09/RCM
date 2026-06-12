@@ -3531,3 +3531,24 @@ More data, more ways to work it (kit now 27 types):
 controls + group-sum/top-N/trendline reach the rendered SVG; bogus
 params ignored). Guide invariant suite back to green. Chart-adjacent
 sweep (-k chart/exhibit/excel_mapping/guide/palette): 1390 passed.
+
+## W2-169 (2026-06-12) — Charts: annotations + 3 types (wave #71)
+Kit now 30 types; the builder gets an exhibit-grade annotation layer:
+- **Annotations row** (column/bar/line/area/combo): a reference/target
+  line at any value with a custom label (y-scale stretches so the
+  target is never off-chart), a dotted average line (first series), and
+  an auto-CAGR tag — first→last non-None of the first series, labelled
+  with the period names (`CAGR 2021–2024: +28.1%`, signed, 1 dp per the
+  house format). Overlays stay quiet when inputs are missing; CAGR
+  refuses non-positive starts rather than printing nonsense.
+- **3 more staples**: stacked horizontal bar (`bar_stacked` — the
+  grouped-horizontal gap; in-bar white value labels), waffle (10×10
+  share grid, largest-remainder allocation so the cells always sum to
+  exactly 100, legend with 1-dp shares), small multiples (one mini line
+  panel per series, up to 8, SHARED y-scale — the honest way to compare
+  trajectories — with end-value labels and first/last period ticks).
+**Verify**: +8 tests (waffle cell-count exact at 100 incl. the 1/3-split
+rounding trap; one panel per series; stacked bar; ref-line label +
+scale stretch; CAGR math + non-positive guard; avg line; UI controls
+flow through; bogus refval ignored). 53 pass in the file; chart sweep
+1382 passed.
