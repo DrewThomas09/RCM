@@ -196,6 +196,16 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Visuals',
+        route='/visuals',
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        source_group='Research & Backtesting',
+        is_auto_generated=False,
+        aliases=['visuals', 'graphics', 'charts hub', 'visuals hub',
+                 'make charts', 'graphics toolkit', 'chart tools'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Excel Mapping',
         route='/excel-mapping',
         category=PageContextCategory.RESEARCH_BACKTESTING,

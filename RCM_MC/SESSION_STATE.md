@@ -372,3 +372,11 @@ series colours, footnote, export, size), Pie Chart, Exhibit Composer.
 Charts: +slope (before→after) + gantt/timeline (roadmap) → kit now 23
 types. Example data in Chart Builder. +1 test. Graphics suite: Excel
 Mapping, Chart Builder (23 types), Pie Chart, Exhibit Composer.
+
+---
+## Checkpoint — wave #70 (W2-168, 2026-06-12)
+Visuals hub (/visuals): card-per-tool landing page with live thumbnails
+(Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer); Research nav
++ palette + guide. +3 tests. Graphics suite complete: hub + 4 builders
+(Chart Builder 23 types, Pie, Excel Mapping, Exhibit Composer), all with
+SVG/PNG export + Chartis styling.
