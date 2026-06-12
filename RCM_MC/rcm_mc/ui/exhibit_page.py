@@ -11,6 +11,7 @@ from __future__ import annotations
 import html
 from typing import Any, Dict, List, Optional
 
+from ..data.chart_datasets import build_chart_dataset, list_chart_datasets
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
 from .cdd_chart_kit import (
     CHART_TYPES, PALETTES, parse_table, compose_exhibit,
@@ -33,6 +34,11 @@ _DEFAULTS = [
 ]
 
 
+def _urlq(s: str) -> str:
+    import urllib.parse
+    return urllib.parse.quote(s)
+
+
 def _qs1(qs: Optional[Dict[str, Any]], key: str, default: str = "") -> str:
     if not qs:
         return default
@@ -43,8 +49,12 @@ def _qs1(qs: Optional[Dict[str, Any]], key: str, default: str = "") -> str:
 
 
 def render_exhibit_page(qs: "Dict[str, Any] | None" = None) -> str:
+    # A dataset pick alone (ds{i}, no pasted d{i}) must also leave
+    # example-default mode — otherwise the defaults pre-fill every
+    # panel and the dataset load is silently skipped.
     has_qs = bool(qs) and any(
-        _qs1(qs, f"d{i}") for i in range(_N_PANELS))
+        _qs1(qs, f"d{i}") or _qs1(qs, f"ds{i}") for i in range(_N_PANELS))
+    ds_keys = {m["key"] for m in list_chart_datasets()}
     slide_title = _qs1(qs, "title", "Investment Highlights")
     eyebrow = _qs1(qs, "eyebrow", "Commercial Due Diligence")
     source = _qs1(qs, "source", "Source: illustrative")
@@ -52,12 +62,23 @@ def render_exhibit_page(qs: "Dict[str, Any] | None" = None) -> str:
     panels = []
     forms = []
     for i in range(_N_PANELS):
+        ds = _qs1(qs, f"ds{i}", "")
+        if ds not in ds_keys:
+            ds = ""
         if not has_qs and i < len(_DEFAULTS):
             dt, ptitle, ddata = _DEFAULTS[i]
         else:
             dt = _qs1(qs, f"t{i}", "column")
             ptitle = _qs1(qs, f"pt{i}", "")
             ddata = _qs1(qs, f"d{i}", "")
+        if ds and not ddata.strip():
+            # Platform data fills an empty panel; pasted/edited data
+            # always wins so a loaded table stays editable afterwards.
+            d = build_chart_dataset(ds)
+            ddata = d["tsv"]
+            ptitle = ptitle or d["label"]
+            if not _qs1(qs, f"t{i}"):
+                dt = d["chart"]
         if dt not in dict(CHART_TYPES):
             dt = "column"
         pal = _qs1(qs, f"pal{i}", "Chartis")
@@ -73,12 +94,23 @@ def render_exhibit_page(qs: "Dict[str, Any] | None" = None) -> str:
         pal_opts = "".join(
             f'<option value="{p}"{" selected" if p == pal else ""}>{p}'
             f'</option>' for p in PALETTES)
+        ds_opts = '<option value="">Platform data…</option>' + "".join(
+            f'<option value="{m["key"]}"'
+            f'{" selected" if m["key"] == ds else ""}>{html.escape(m["label"])}'
+            f'</option>' for m in list_chart_datasets())
+        edit_link = ""
+        if ddata.strip():
+            edit_link = (
+                f'<a href="/chart-builder?type={dt}&title={_urlq(ptitle)}'
+                f'&data={_urlq(ddata)}" style="font-size:10.5px;'
+                f'color:#1F7A75;">✎ edit in Chart Builder</a>')
         forms.append(
             f'<div style="border:1px solid #d6cfc0;border-radius:6px;'
             f'padding:11px 13px;background:#fbf9f4;">'
             f'<div style="font-size:10px;letter-spacing:0.06em;'
-            f'color:#7a8699;font-weight:700;margin-bottom:5px;">PANEL '
-            f'{i+1}</div>'
+            f'color:#7a8699;font-weight:700;margin-bottom:5px;display:flex;'
+            f'justify-content:space-between;align-items:center;">'
+            f'<span>PANEL {i+1}</span>{edit_link}</div>'
             f'<div style="display:flex;gap:8px;margin-bottom:6px;">'
             f'<select name="t{i}" style="flex:1;height:28px;border:1px '
             f'solid #c9c1ac;border-radius:4px;">{type_opts}</select>'
@@ -93,7 +125,10 @@ def render_exhibit_page(qs: "Dict[str, Any] | None" = None) -> str:
             f'leave blank to drop this panel" style="width:100%;'
             f'font-family:ui-monospace,Menlo,monospace;font-size:11.5px;'
             f'border:1px solid #c9c1ac;border-radius:4px;padding:6px;">'
-            f'{html.escape(ddata)}</textarea></div>')
+            f'{html.escape(ddata)}</textarea>'
+            f'<select name="ds{i}" style="width:100%;height:26px;'
+            f'margin-top:5px;border:1px solid #9bc1bc;border-radius:4px;'
+            f'font-size:11px;color:#155752;">{ds_opts}</select></div>')
 
     svg = compose_exhibit(
         panels, title=slide_title, eyebrow=eyebrow, source=source)

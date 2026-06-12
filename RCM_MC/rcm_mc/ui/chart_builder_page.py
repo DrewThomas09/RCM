@@ -18,8 +18,8 @@ from typing import Any, Dict, Optional
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
 from .cdd_chart_kit import (
     CHART_TYPES, PALETTES, SIZE_PRESETS, TRANSFORM_CALCS, TRANSFORM_GROUPS,
-    parse_table, render_cdd_chart, transform_table, chart_export_toolbar,
-    _series,
+    parse_table, render_cdd_chart, table_to_tsv, transform_table,
+    chart_export_toolbar, _series,
 )
 
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
@@ -408,6 +408,15 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
           'border-radius:8px;padding:16px;background:#fff;text-align:center;">'
         + f'<div id="chartOut">{chart_svg}</div>'
         + chart_export_toolbar("chartOut", "chart-" + ctype)
+        # The shaped table travels, not the raw paste — what you see is
+        # what lands on the slide.
+        + (f'<div style="margin-top:8px;"><a href="/exhibit?t0={ctype}'
+           f'&pt0={_urlq(title or dict(CHART_TYPES).get(ctype, ""))}'
+           f'&pal0={_urlq(palette)}'
+           + (f'&source={_urlq(footnote)}' if footnote else "")
+           + f'&d0={_urlq(table_to_tsv(table))}" '
+           f'style="font-size:12px;color:#155752;font-weight:600;">'
+           f'→ Send to Exhibit Composer (as panel 1)</a></div>')
         + '</div>'
         + '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
           'font-weight:700;margin:18px 0 6px;">GALLERY — YOUR DATA IN EVERY '

@@ -3577,3 +3577,27 @@ chart clean, top-12+Other sums exactly to the sector total, ownership
 mix rows sum to each sector's provider count, bucket vocabulary cases,
 footnote date rules, strip renders with links, loaded dataset flows to
 the chart. Sweep: 1419 passed.
+
+## W2-171 (2026-06-12) — Builder ↔ Exhibit round-trip + datasets on slides (wave #73)
+The chart suite becomes one workflow instead of three pages:
+- **`table_to_tsv`** (kit): serialize a (possibly shaped) table back to
+  the paste format — None cells → empty, lossless through parse_table.
+  The bridge that lets a configured chart travel between pages as qs.
+- **"Send to Exhibit Composer"** link under the rendered builder chart:
+  carries type + title + palette + footnote(→slide source) + the
+  SHAPED table (what you see is what lands on the slide — group/top-N/
+  calc already applied), as panel 1 of a fresh exhibit.
+- **Platform data on slides**: each exhibit panel gets a teal
+  "Platform data…" select (the 10 CMS aggregates). A pick fills an
+  empty panel with the table + suggested type + label; pasted/edited
+  data always wins so a loaded table stays editable. Found+fixed in
+  the same change: `has_qs` only looked at d{i}, so a dataset-only
+  submit silently fell back to the four example defaults — ds{i} now
+  also leaves default mode.
+- **"✎ edit in Chart Builder"** link on every populated panel — the
+  reverse jump, carrying the panel's type/title/data.
+**Verify**: +7 tests — tsv round-trip; send link carries the shaped
+table (scoped to the href — raw paste legitimately appears in gallery
+links); dataset-only exhibit loads real data and does NOT pre-fill the
+example defaults; pasted data wins over a selected dataset; edit-link;
+bogus ds key ignored. 75 pass across the three chart files; sweep 1426.

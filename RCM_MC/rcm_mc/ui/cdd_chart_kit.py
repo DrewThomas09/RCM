@@ -247,6 +247,21 @@ def _series(table: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
+def table_to_tsv(table: Dict[str, Any]) -> str:
+    """Serialize a (possibly shaped) table back to the paste format —
+    the bridge that lets a configured chart travel between pages
+    (builder → exhibit) as a plain qs param. None cells become empty
+    strings so a round-trip through parse_table is lossless."""
+    lines = ["\t".join(str(h) for h in table.get("headers", []))]
+    for lab, vals in table.get("rows", []):
+        cells = [str(lab)]
+        for v in vals:
+            cells.append("" if v is None else
+                         (str(int(v)) if v == int(v) else f"{v:g}"))
+        lines.append("\t".join(cells))
+    return "\n".join(ln for ln in lines if ln)
+
+
 # ── Data shaping (aggregate → sort → top-N → calc) ───────────────────
 
 TRANSFORM_GROUPS = ["sum", "mean", "max", "min", "count"]

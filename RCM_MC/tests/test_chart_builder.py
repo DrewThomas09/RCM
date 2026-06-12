@@ -36,6 +36,11 @@ class ParseTableTests(unittest.TestCase):
         t = parse_table("A\tB\nx\tn/a")
         self.assertEqual(t["rows"][0], ("x", [None]))
 
+    def test_table_to_tsv_round_trip(self):
+        from rcm_mc.ui.cdd_chart_kit import table_to_tsv
+        t = parse_table("Y\tA\tB\n2021\t100\t\n2022\t1.5\t3")
+        self.assertEqual(parse_table(table_to_tsv(t)), t)
+
     def test_series_column_major(self):
         t = parse_table("Year\tRev\tEBITDA\n2021\t100\t22\n2022\t130\t31")
         s = _series(t)
@@ -421,6 +426,20 @@ class BuilderPageTests(unittest.TestCase):
             "type": ["line"], "cagr": ["1"],
             "data": ["Y\tR\n2021\t100\n2022\t130\n2023\t165"]})
         self.assertIn("CAGR 2021–2023", h3)
+
+    def test_send_to_exhibit_carries_shaped_table(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "group": ["sum"],
+            "data": ["Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7"]})
+        self.assertIn("Send to Exhibit Composer", h)
+        self.assertIn("/exhibit?t0=column", h)
+        # The link carries the SHAPED table (Aetna aggregated to 17),
+        # tab-encoded — what you see is what lands on the slide. The
+        # raw paste still appears elsewhere (textarea, gallery links),
+        # so scope the check to the exhibit href itself.
+        link = h.split("/exhibit?t0=")[1].split('"')[0]
+        self.assertIn("Aetna%0917", link)
+        self.assertNotIn("Aetna%0910", link)
 
     def test_bogus_shaping_params_ignored(self):
         h = render_chart_builder_page({
