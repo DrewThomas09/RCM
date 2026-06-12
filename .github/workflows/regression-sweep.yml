@@ -102,6 +102,7 @@ jobs:
           if [ "$rc" = "0" ]; then
             python scripts/route_walker.py --base http://127.0.0.1:8866 \
               --discover --fail-on-leak --deal-cookie sweepdeal \
+              --budget-ms 15000 \
               --out route_walk_cookie.tsv 2>&1 | tee -a route_walk.log
             rc=$?
           fi
