@@ -3589,3 +3589,21 @@ boundary flip and locked-segment guards) + test_labor_market.py (12 —
 stress math, fragility ordering CNA > specialist, normalization) + HTTP
 smoke on both pages and both template downloads; all invariant files
 green (87 passed).
+
+## W2-171 (2026-06-12) — Wave 4: roll-up template + workflow cross-links + nav integrity guard
+- **Roll-Up / Tuck-In Arbitrage Model** template (library now 10):
+  3-year tuck-in cadence (count × avg EBITDA × entry multiple per
+  year), synergies, platform organic growth, blended entry multiple vs
+  exit, multiple-arbitrage spread in turns, ungeared TEV MOIC — all
+  live formulas, blue-input convention.
+- **Workflow cross-links**: /win-loss and /voc-survey now carry a
+  "Workbook template (.xlsx)" button beside the form, linking the
+  matching library template (win-loss-log / kpc-survey) — analyze on
+  the page, take the editable model to the data room.
+- **Nav integrity guard** (test_subnav_integrity.py): every
+  _CORPUS_NAV tab and every _SUB_NAV link is walked against a real
+  server and must return 200 — a renamed route can no longer leave a
+  dead tab ("make sure all tabs are great", enforced).
+**Verify**: all current tabs/links pass (2 e2e tests, 60+ URLs);
+template builds and formula cells verified (blended entry 8.11x on
+seed inputs, spread 2.89 turns); 39 affected tests green.

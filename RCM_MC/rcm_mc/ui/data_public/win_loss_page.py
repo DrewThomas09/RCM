@@ -204,6 +204,10 @@ def render_win_loss(params: dict = None) -> str:
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
     padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Load log</button>
+  <a href="/excel-templates/win-loss-log.xlsx" download
+    style="background:#155752;color:#fffdf9;border:1px solid #155752;text-decoration:none;
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace"
+    title="Editable opportunity log whose summary recomputes via COUNTIFS">Workbook template (.xlsx)</a>
 </form>"""
 
     cell = (f"background:{panel};border:1px solid {border};padding:16px;"

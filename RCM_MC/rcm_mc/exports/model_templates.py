@@ -621,6 +621,66 @@ def _kpc_survey() -> List[Sheet]:
                   col_widths=[34, 13, 11, 13, 9, 13, 17])]
 
 
+# ------------------------------------------ 10) Roll-up / tuck-in
+
+def _rollup_model() -> List[Sheet]:
+    """Multiple-arbitrage math for a buy-and-build program: 3-year
+    tuck-in cadence, synergies, blended entry multiple vs exit multiple,
+    ungeared value creation. The screen-stage answer to "does the
+    roll-up math work?" before anyone builds the 14-tab version."""
+    r: List[list] = []
+    r.append([("ROLL-UP / TUCK-IN ARBITRAGE MODEL", "header"),
+              ("", "header"), ("", "header"), ("", "header")])
+    r.append([_CONVENTION])
+    r.append([""])
+    r.append([("PLATFORM", "label")])                                  # row 4
+    r.append(["Platform EBITDA ($M)", (25.00, "input_num")])           # B5
+    r.append(["Platform entry multiple", (10.00, "input_num")])        # B6
+    r.append(["Platform TEV ($M)", (F("B5*B6"), "num2")])              # B7
+    r.append([""])
+    r.append([("TUCK-IN PROGRAM", "header"), ("Yr 1", "header"),
+              ("Yr 2", "header"), ("Yr 3", "header")])                 # row 9
+    r.append(["Tuck-ins closed (count)",                               # row 10
+              (4, "input"), (5, "input"), (6, "input")])
+    r.append(["Avg tuck-in EBITDA ($M)",                               # row 11
+              (1.50, "input_num"), (1.50, "input_num"),
+              (1.50, "input_num")])
+    r.append(["Tuck-in entry multiple",                                # row 12
+              (6.00, "input_num"), (6.00, "input_num"),
+              (6.00, "input_num")])
+    r.append(["Acquired EBITDA ($M)",                                  # row 13
+              (F("B10*B11"), "num2"), (F("C10*C11"), "num2"),
+              (F("D10*D11"), "num2")])
+    r.append(["Capital deployed ($M)",                                 # row 14
+              (F("B13*B12"), "num2"), (F("C13*C12"), "num2"),
+              (F("D13*D12"), "num2")])
+    r.append(["Synergies (% of acquired EBITDA)",                      # row 15
+              (0.15, "input_pct"), (0.15, "input_pct"),
+              (0.15, "input_pct")])
+    r.append(["Synergized acquired EBITDA ($M)",                       # row 16
+              (F("B13*(1+B15)"), "num2"), (F("C13*(1+C15)"), "num2"),
+              (F("D13*(1+D15)"), "num2")])
+    r.append([""])
+    r.append([("PRO FORMA & VALUE CREATION (3-yr program)", "label")]) # row 18
+    r.append(["Cumulative synergized acquired EBITDA ($M)",
+              (F("SUM(B16:D16)"), "num2")])                            # B19
+    r.append(["Platform organic growth % / yr", (0.05, "input_pct")])  # B20
+    r.append(["Platform EBITDA at exit ($M)",
+              (F("B5*(1+B20)^3"), "num2")])                            # B21
+    r.append(["Pro forma exit EBITDA ($M)", (F("B19+B21"), "num2")])   # B22
+    r.append(["Exit multiple", (11.00, "input_num")])                  # B23
+    r.append(["Exit TEV ($M)", (F("B22*B23"), "num2")])                # B24
+    r.append(["Total capital deployed ($M)",
+              (F("B7+SUM(B14:D14)"), "num2")])                         # B25
+    r.append(["Blended entry multiple",
+              (F("B25/(B5+SUM(B13:D13))"), "mult")])                   # B26
+    r.append(["Multiple-arbitrage spread (turns)",
+              (F("B23-B26"), "mult")])                                 # B27
+    r.append(["Value created, TEV basis ($M)", (F("B24-B25"), "num2")])# B28
+    r.append(["TEV MOIC (ungeared)", (F("B24/B25"), "mult")])          # B29
+    return [Sheet("Roll-Up Model", r, col_widths=[42, 13, 13, 13])]
+
+
 TEMPLATES: List[TemplateSpec] = [
     TemplateSpec(
         slug="quick-lbo",
@@ -711,6 +771,16 @@ TEMPLATES: List[TemplateSpec] = [
                      "differentiator / vulnerability classification."),
         sheets=["KPC Matrix"],
         builder=_kpc_survey,
+    ),
+    TemplateSpec(
+        slug="rollup-model",
+        title="Roll-Up / Tuck-In Arbitrage Model",
+        category="Deal Math",
+        description=("3-year buy-and-build program: tuck-in cadence, "
+                     "synergies, blended entry multiple vs exit, and the "
+                     "multiple-arbitrage spread in turns."),
+        sheets=["Roll-Up Model"],
+        builder=_rollup_model,
     ),
 ]
 

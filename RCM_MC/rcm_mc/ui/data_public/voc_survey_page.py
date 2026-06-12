@@ -182,6 +182,10 @@ def render_voc_survey(params: dict = None) -> str:
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
     padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Load panel</button>
+  <a href="/excel-templates/kpc-survey.xlsx" download
+    style="background:#155752;color:#fffdf9;border:1px solid #155752;text-decoration:none;
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace"
+    title="KPC matrix with live gaps and automatic classification">Workbook template (.xlsx)</a>
 </form>"""
 
     cell = (f"background:{panel};border:1px solid {border};padding:16px;"

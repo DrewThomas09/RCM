@@ -400,3 +400,9 @@ price_locked segments, portfolio prize) + Healthcare Labor Market
 (/labor-market: 10-role BLS cut, fragility score, wage-inflation EBITDA
 stress) + 2 CDD templates (win/loss COUNTIFS tracker, KPC survey scorer
 — library now 9). Full wiring + audit regen. +25 tests.
+
+---
+## Checkpoint — wave #73 (W2-171, 2026-06-12)
+Roll-up/tuck-in arbitrage template (library: 10) + workbook cross-link
+buttons on /win-loss + /voc-survey + nav-integrity e2e guard (every
+_CORPUS_NAV/_SUB_NAV href must 200). +2 e2e tests; affected suites green.
