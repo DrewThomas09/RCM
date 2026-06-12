@@ -175,7 +175,7 @@ def render_texas_infusion_counties_page(
                  "nearest infusion access point — the convenience that "
                  "decides referrals, county by county, for AIC site "
                  "selection."),
-        universe="real", source=(
+        universe="cms", source=(
             "ACS county demographics (County Health Rankings vendored "
             "aggregate) · CMS Hospital General Information geocoded via "
             "US Census Geocoder · OMB CBSA crosswalk · NHIA demand "
