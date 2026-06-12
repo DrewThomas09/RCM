@@ -420,3 +420,42 @@ patients × 30% HOPD share; live OPPS override). Page: "HOPD infusion —
 the steered-away pool" panel. +5 tests. ALL user-named data sources now
 integrated (CDC PLACES, ACS, ASP, MA, Monthly Enrollment, NPPES+map,
 Part-B POS, Outpatient Hospitals).
+
+---
+## Checkpoint — wave #73 (W2-171, 2026-06-12)
+Added texas_investment_thesis(a): IC-summary synthesis recomputed from the
+assembled analysis (5 pillars w/ supporting numbers, key risks, diligence-
+next, headline + CONSTRUCTIVE verdict). build_texas_infusion_analysis now
+assembles `out` then sets out["investment_thesis"]. Page: "Investment
+Thesis · IC Summary" block at the top (after KPI strip, before sizing).
++3 tests. The Texas page now opens with the partner-facing top-line.
+
+---
+## Checkpoint — wave #74 (W2-172, 2026-06-12)
+Connected graphics + diligence: _exhibit_section(a) auto-composes a 4-panel
+"Texas Infusion — Investment Highlights" slide (funnel TAM/SAM/SOM, site-
+of-care 100%-stacked evolution, top de-novo counties bar, current-mix
+donut) from the LIVE analysis via compose_exhibit; embedded on the page
+("One-page exhibit" section) with SVG/PNG export. +1 test. Capstone of
+both arcs.
+
+---
+## Checkpoint — wave #75 (W2-173, 2026-06-12)
+Added _inject_section_nav(body): post-process pass giving each Texas page
+section header a unique slug id (+scroll-margin) and a floating "☰
+Sections" navigator (29 sections). +1 test. Pure usability layer, derived
+from the rendered headers.
+
+---
+## Checkpoint — wave #76 (W2-174, 2026-06-12)
+Added texas_infusion_memo_md(a) (Markdown IC memo: headline/verdict/
+5-pillar thesis/risks/diligence-next/key-figures table) + route
+/api/diligence/texas-infusion/memo (text/markdown download) + "⬇ IC memo"
+button in the thesis block. +2 tests.
+
+---
+## Checkpoint — wave #77 (W2-175, 2026-06-12)
+Extracted texas_exhibit_svg(a) (shared by page + route) + route
+/api/diligence/texas-infusion/exhibit.svg (server-rendered SVG download)
++ download link on the page. Deliverables set complete: IC memo (.md) +
+exhibit (.svg), both server-rendered from the live analysis. +1 test.

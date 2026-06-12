@@ -3556,7 +3556,90 @@ now Outpatient Hospitals).
 ranked + summed, offline is modeled (OPPS fails closed), live flag
 threads through + fails closed; +2 render needles. Full suite green.
 
-## W2-171 (2026-06-12) — Medicare Monthly Enrollment, county grain: the Part B denominator by county (wave #73a)
+## W2-171 (2026-06-12) — Texas infusion: IC-summary investment thesis (wave #73)
+Added the top-line synthesis a partner reads first — `texas_investment_
+thesis(a)` builds the IC summary PURELY from the assembled analysis so it
+can never drift from the sections below:
+- **5 thesis pillars**, each with its supporting number: large/growing/
+  fragmented market ($3.36B TAM · 8% CAGR · HHI 517); structural site-of-
+  care tailwind (HOPD 46%→30% · $684M HOPD pool); favorable Texas
+  structure (no CON · 48% MA · 70% non-hospital); AIC unit economics
+  work ($218K/chair · ~19% break-even); de-novo white-space (6
+  undersupplied growth corridors).
+- **Key risks** (drug-spread compression, home-infusion referral
+  concentration + the HIT gap, the most-at-risk therapy) and **diligence-
+  next** gaps (replace modeled counts/rates with the target's claims;
+  quantify referral concentration + white-bagged %; confirm TX statute).
+- A headline + a CONSTRUCTIVE verdict steering value creation to service
+  margin + RCM, not the drug spread.
+- **Page**: an "Investment Thesis · IC Summary" block at the very top
+  (after the KPI strip, before market sizing) — pillars as cards, risks,
+  and diligence-next.
+**Verify**: +3 thesis tests — 5 pillars / ≥3 risks / ≥3 diligence-next
+with complete fields, thesis numbers match the sections (real HHI,
+HOPD shift pts, undersupplied count), most-at-risk therapy surfaces in
+the risks; +3 render needles. Full suite green.
+
+## W2-172 (2026-06-12) — Texas infusion: auto-composed investment-highlights exhibit (wave #74)
+Connected the graphics suite to the diligence data — the Texas page now
+AUTO-GENERATES a one-page exhibit slide from its own live analysis:
+- **`_exhibit_section(a)`**: builds four panels from the live analysis and
+  composes them (via the chart kit's `compose_exhibit`) into one 16:9
+  "Texas Infusion — Investment Highlights" slide:
+  1. Market-sizing funnel — TAM → SAM → SOM ($M)
+  2. Site-of-care mix 2015–2024 (100% stacked) — the HOPD→AIS/home shift
+  3. Top de-novo county opportunities (bar) — from the growth scorecard
+  4. Current site-of-care mix (donut)
+  Every panel recomputes from the same figures as the sections, so the
+  exhibit can never disagree with the page.
+- **Page**: a "One-page exhibit" section (deck-ready, SVG/PNG export
+  toolbar) before Sources — the deliverable a partner drops into a deck.
+This is the capstone tying the two arcs together (graphics kit + Texas
+diligence data).
+**Verify**: +1 exhibit test (four panels nested into one slide, export
+toolbar, no None) + 2 render needles. Full suite green.
+
+## W2-173 (2026-06-12) — Texas infusion: section navigator (wave #75)
+The page now runs ~29 sections; added a usability layer so a partner can
+move around it:
+- **`_inject_section_nav(body)`**: a post-process pass that gives every
+  `ck-section-header` a slugified, unique `id` (with `scroll-margin-top`
+  for a clean landing) and builds a floating "☰ Sections" navigator
+  (fixed bottom-right `<details>` dropdown) listing every section as an
+  anchor link. Recomputed from the rendered headers, so it always matches
+  the live section set — no hardcoded list to drift.
+**Verify**: +1 test — ≥20 unique section ids injected, the floating nav
+present, every nav link points at a real section id. Full suite green.
+
+## W2-174 (2026-06-12) — Texas infusion: downloadable Markdown IC memo (wave #76)
+A partner-shareable deliverable — the analysis as a clean Markdown IC
+memo a partner pastes into a writeup:
+- **`texas_infusion_memo_md(a)`**: renders the headline, verdict, the
+  5-pillar thesis, key risks, diligence-next, and a key-figures table
+  (TAM/SAM/CAGR/HHI/MA penetration/AIC contribution/undersupplied
+  counties/65+ base) — a pure function of the assembled analysis.
+- **Route** `/api/diligence/texas-infusion/memo`: serves the memo as a
+  `text/markdown` download (honoring the same AIC overrides as the page).
+- **Page**: a "⬇ IC memo (Markdown)" button in the Investment Thesis
+  block.
+**Verify**: +2 tests — memo has the section structure + real figures
+(HHI, verdict, one numbered item per thesis pillar); the page links to
+the memo download. Full suite green.
+
+## W2-175 (2026-06-12) — Texas infusion: server-rendered exhibit SVG download (wave #77)
+Completed the deliverables set (alongside the IC memo):
+- Refactored the auto-exhibit into a shared **`texas_exhibit_svg(a)`**
+  helper (used by the page section AND the download route, so they can
+  never disagree).
+- **Route** `/api/diligence/texas-infusion/exhibit.svg`: serves the
+  composed Investment-Highlights exhibit as a standalone, server-rendered
+  `image/svg+xml` download (honoring the AIC overrides).
+- **Page**: a "⬇ download the exhibit SVG (server-rendered)" link under
+  the one-page exhibit.
+**Verify**: +1 test — the shared helper returns the 5-svg composed slide
+(no None) and the page links to the SVG download route. Full suite green.
+
+## W2-176 (2026-06-12) — Medicare Monthly Enrollment, county grain: the Part B denominator by county (wave #73a)
 Closed the last unbuilt item of the user's multi-source CMS data request.
 - **`cms_monthly_enrollment.py`** (new live client): resolves the CMS
   "Medicare Monthly Enrollment" dataset UUID from the data.json catalog,
@@ -3589,7 +3672,7 @@ metro members sorted desc (Harris #1), live mock replaces state + matched
 counties and leaves the rest MODELED, page renders section + badge,
 source cited. Full suite green.
 
-## W2-172 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #73b)
+## W2-177 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #73b)
 The full-suite sweep after the enrollment wave caught five pre-existing failures the
 graphics waves left on main (verified failing on a clean tree):
 - **`user-supplied` data-universe kind unregistered** — /chart-builder,
@@ -3610,15 +3693,15 @@ graphics waves left on main (verified failing on a clean tree):
 test_pedesk_guide_5q_invariant ×3, test_section_catalog) now pass;
 1,321-test wiring sweep (guide/palette/chartis/catalog/nav) green.
 
-## W2-173 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #73c)
+## W2-178 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #73c)
 Merging main (waves #66–68 from the parallel chart stream) brought the
-new /exhibit Exhibit Composer with the SAME wiring gap the W2-172 sweep
+new /exhibit Exhibit Composer with the SAME wiring gap the W2-177 sweep
 fixed on its siblings: 2 common_questions (floor is 5) and no
 related_routes. Brought it to the floor + cross-linked /chart-builder
 and /pie-chart. Guide invariant suites + 1,254-test graphics/wiring
 sweep green on the merged tree.
 
-## W2-174 (2026-06-12) — /visuals guide-floor fix after the second main merge (wave #73d)
+## W2-179 (2026-06-12) — /visuals guide-floor fix after the second main merge (wave #73d)
 The next main merge (waves #69–70 from the chart stream) brought the
 /visuals hub with the same gap again: 2 common_questions, no
 related_routes. Brought to the floor + cross-linked all four builder
@@ -3626,7 +3709,7 @@ tools. NOTE for the chart stream: new pages keep landing below the
 Guide 5-Q floor — add the 5 questions + related_routes in the same PR
 that adds the page (test_pedesk_guide_5q_invariant is the gate).
 
-## W2-175 (2026-06-12) — HOPD per-hospital volume via CMS OPPS by Provider & Service (wave #73e)
+## W2-180 (2026-06-12) — HOPD per-hospital volume via CMS OPPS by Provider & Service (wave #73e)
 Closed the FINAL remaining item of the multi-source CMS data request —
 and fixed a latent parser bug found while wiring it:
 - **Parser fix (found bug)**: the published "Outpatient Hospitals - by
@@ -3662,9 +3745,9 @@ $ math). +5 in test_texas_infusion — modeled pool == page factors
 recomputed, APC set, live mock aggregates via the real HCRIS Harris-county
 join, page renders, source cited. Full suite green.
 
-## W2-176 (2026-06-12) — Reconcile the two parallel CMS wirings (wave #73f)
+## W2-181 (2026-06-12) — Reconcile the two parallel CMS wirings (wave #73f)
 The chart stream and this stream independently wired the SAME two CMS
-sources (their W2-169/170 vs this stream's W2-171/175). Reconciled at
+sources (their W2-169/170 vs this stream's W2-176/180). Reconciled at
 the merge instead of shipping duplicates:
 - **Both kept where complementary**: their state-level true-MA-
   penetration upgrade to texas_ma_enrollment + their compact HOPD

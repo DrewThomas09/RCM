@@ -11,11 +11,15 @@ public data.
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Tuple
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_page_title, ck_section_header,
     ck_source_purpose,
+)
+from .cdd_chart_kit import (
+    compose_exhibit, parse_table, chart_export_toolbar,
 )
 
 _POS = "#0a8a5f"
@@ -33,6 +37,126 @@ def _money(v: float) -> str:
     if abs(v) >= 1e6:
         return f"${v/1e6:.1f}M"
     return f"${v:,.0f}"
+
+
+def texas_exhibit_svg(a: Dict[str, Any]) -> str:
+    """The auto-composed 'Investment Highlights' exhibit SVG — built from
+    the live analysis (funnel, site-of-care evolution, top de-novo
+    counties, current mix). Shared by the page section and the download
+    route so they can never disagree."""
+    s = a["sizing"]
+    funnel = parse_table(
+        f"Stage\tValue\nTAM\t{s['tam']/1e6:.0f}\nSAM\t{s['sam']/1e6:.0f}\n"
+        f"SOM\t{s['som']/1e6:.0f}")
+    evo = a["site_of_care_evolution"]["series"]
+    soc_rows = "\n".join(
+        f"{r['year']}\t{r['hopd']*100:.0f}\t{r['ais']*100:.0f}\t"
+        f"{r['home']*100:.0f}\t{r['office']*100:.0f}" for r in evo)
+    soc = parse_table("Year\tHOPD\tAIS\tHome\tOffice\n" + soc_rows)
+    top = a["growth_scorecard"]["top_opportunities"][:6]
+    score = parse_table(
+        "County\tScore\n" + "\n".join(
+            f"{t['county']}\t{t['score']:.0f}" for t in top))
+    site = {x["site"]: x["share"] for x in a["site_of_care"]}
+    mix = parse_table(
+        "Site\tShare\n" + "\n".join(
+            f"{k.split(' (')[0]}\t{v*100:.0f}" for k, v in site.items()))
+    panels = [
+        {"type": "funnel", "title": "Market sizing — TAM → SAM → SOM ($M)",
+         "table": funnel, "palette": "Navy–Teal"},
+        {"type": "column_100", "title": "Site-of-care mix, 2015–2024 (%)",
+         "table": soc, "palette": "Navy–Teal"},
+        {"type": "bar", "title": "Top de-novo county opportunities",
+         "table": score, "palette": "Chartis"},
+        {"type": "donut", "title": "Current site-of-care mix",
+         "table": mix, "palette": "Chartis"},
+    ]
+    return compose_exhibit(
+        panels, title="Texas Infusion — Investment Highlights",
+        eyebrow="Commercial Due Diligence",
+        source="Source: NHIA / MedPAC scaled to TX (Census/ACS) · CMS · "
+               "CDC PLACES — illustrative")
+
+
+def _exhibit_section(a: Dict[str, Any]) -> str:
+    """Auto-compose a one-page investment-highlights exhibit slide from
+    the LIVE analysis — the deliverable a partner drops into a deck.
+    Recomputes from the same numbers as the sections, so it can never
+    disagree with them."""
+    svg = texas_exhibit_svg(a)
+    return (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
+        f'margin:0 0 8px;">A one-page exhibit auto-composed from the live '
+        f'analysis on this page — download the SVG/PNG straight into a '
+        f'deck. It recomputes from the same figures, so it never disagrees '
+        f'with the sections below.</p>'
+        f'<div style="border:1px solid #d6cfc0;border-radius:8px;'
+        f'padding:12px;background:#fff;text-align:center;">'
+        f'<div id="txExhibit">{svg}</div>'
+        + chart_export_toolbar("txExhibit", "texas-infusion-exhibit")
+        + f'<div style="margin-top:6px;"><a href="/api/diligence/'
+        f'texas-infusion/exhibit.svg" style="font-size:11px;color:{_TEAL};'
+        f'font-weight:600;text-decoration:none;">⬇ download the exhibit '
+        f'SVG (server-rendered)</a></div>'
+        + '</div>')
+
+
+def _thesis_section(a: Dict[str, Any]) -> str:
+    """The IC-ready investment-thesis synthesis — the top-line a partner
+    reads first, recomputed from the sections below."""
+    it = a.get("investment_thesis") or {}
+    if not it:
+        return ""
+    pillars = ""
+    for i, p in enumerate(it.get("pillars", []), 1):
+        pillars += (
+            f'<div style="border:1px solid #d6cfc0;border-radius:6px;'
+            f'padding:11px 13px;background:#fff;">'
+            f'<div style="font-size:9px;letter-spacing:0.06em;color:{_FAINT};'
+            f'font-weight:700;">PILLAR {i}</div>'
+            f'<div style="font-size:13px;font-weight:700;color:#1a2332;'
+            f'margin-top:2px;">{html.escape(p["title"])}</div>'
+            f'<div style="font-size:11.5px;font-weight:700;color:{_TEAL};'
+            f'font-family:monospace;margin:3px 0;">{html.escape(p["stat"])}'
+            f'</div>'
+            f'<div style="font-size:11px;color:{_DIM};line-height:1.5;">'
+            f'{html.escape(p["point"])}</div></div>')
+    risks = "".join(
+        f'<li style="margin:3px 0;font-size:11.5px;color:{_DIM};">'
+        f'<strong style="color:{_NEG};">{html.escape(r["risk"])}:</strong> '
+        f'{html.escape(r["detail"])}</li>' for r in it.get("risks", []))
+    ddn = "".join(
+        f'<li style="margin:3px 0;font-size:11.5px;color:{_DIM};">'
+        f'{html.escape(x)}</li>' for x in it.get("diligence_next", []))
+    return (
+        f'<div style="border:1px solid #c9c1ac;border-top:4px solid {_NAVY};'
+        f'border-radius:6px;padding:16px 18px;background:#fbf9f4;'
+        f'margin-bottom:18px;">'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;">'
+        f'<div style="font-size:10px;letter-spacing:0.08em;color:{_FAINT};'
+        f'font-weight:700;">INVESTMENT THESIS · IC SUMMARY</div>'
+        f'<a href="/api/diligence/texas-infusion/memo" '
+        f'style="font-size:11px;font-weight:600;color:{_NAVY};'
+        f'border:1px solid {_NAVY};border-radius:4px;padding:4px 11px;'
+        f'text-decoration:none;">⬇ IC memo (Markdown)</a></div>'
+        f'<p style="font-size:14px;color:#1a2332;line-height:1.6;'
+        f'font-family:\'Source Serif 4\',Georgia,serif;margin:6px 0 4px;">'
+        f'{html.escape(it["headline"])}</p>'
+        f'<div style="display:inline-block;font-size:11px;font-weight:700;'
+        f'color:{_POS};border:1px solid {_POS};border-radius:3px;'
+        f'padding:2px 8px;margin-bottom:12px;">'
+        f'{html.escape(it["verdict"].split(" — ")[0])}</div>'
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fit,'
+        f'minmax(230px,1fr));gap:12px;margin-bottom:14px;">{pillars}</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;">'
+        f'<div><div style="font-size:10px;letter-spacing:0.06em;'
+        f'color:{_NEG};font-weight:700;margin-bottom:3px;">KEY RISKS</div>'
+        f'<ul style="margin:0;padding-left:16px;">{risks}</ul></div>'
+        f'<div><div style="font-size:10px;letter-spacing:0.06em;'
+        f'color:{_TEAL};font-weight:700;margin-bottom:3px;">DILIGENCE NEXT'
+        f'</div><ul style="margin:0;padding-left:16px;">{ddn}</ul></div>'
+        f'</div></div>')
 
 
 def _bar(pct: float, tone: str, width: int = 100) -> str:
@@ -2659,6 +2783,52 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
     }
 
 
+_SEC_RE = re.compile(
+    r'(<header class="ck-section-header">)(.*?<h2 class="sc-h2">)([^<]+)',
+    re.S)
+
+
+def _inject_section_nav(body: str) -> Tuple[str, str]:
+    """Post-process the assembled body: give each section header an id
+    and build a floating 'jump to section' navigator. The page has ~25
+    sections — a partner needs to move around it."""
+    items: List[Tuple[str, str]] = []
+    seen: Dict[str, int] = {}
+
+    def _repl(m: "re.Match") -> str:
+        title = html.unescape(m.group(3)).strip()
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") or "sec"
+        if slug in seen:
+            seen[slug] += 1
+            slug = f"{slug}-{seen[slug]}"
+        else:
+            seen[slug] = 0
+        items.append((title, slug))
+        return (f'{m.group(1)[:-1]} id="{slug}" '
+                f'style="scroll-margin-top:70px;">{m.group(2)}{m.group(3)}')
+
+    body = _SEC_RE.sub(_repl, body)
+    if not items:
+        return body, ""
+    links = "".join(
+        f'<a href="#{s}" style="display:block;padding:4px 12px;'
+        f'font-size:12px;color:#1a2332;text-decoration:none;'
+        f'border-bottom:1px solid #efe9dc;">{html.escape(t)}</a>'
+        for t, s in items)
+    nav = (
+        '<details style="position:fixed;right:18px;bottom:18px;z-index:50;'
+        'font-family:\'Inter Tight\',system-ui,sans-serif;">'
+        '<summary style="list-style:none;cursor:pointer;background:#0b2341;'
+        'color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;'
+        'font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.18);">'
+        '☰ Sections</summary>'
+        '<div style="position:absolute;right:0;bottom:40px;width:248px;'
+        'max-height:60vh;overflow-y:auto;background:#fff;border:1px solid '
+        '#c9c1ac;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);'
+        f'">{links}</div></details>')
+    return body, nav
+
+
 def render_texas_infusion_page(
     qs: "Dict[str, Any] | None" = None,
 ) -> str:
@@ -2700,6 +2870,7 @@ def render_texas_infusion_page(
         )
         + '<div class="ts-wrap" style="max-width:980px;">'
         + _kpi_strip(a)
+        + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",
                             eyebrow="TAM / SAM / SOM")
@@ -2895,6 +3066,11 @@ def render_texas_infusion_page(
                             eyebrow="WHAT'S DIFFERENT ABOUT TEXAS")
         + _factors(a)
 
+        + ck_section_header("One-page exhibit",
+                            eyebrow="AUTO-COMPOSED FROM THE LIVE ANALYSIS · "
+                                    "DECK-READY · SVG/PNG")
+        + _exhibit_section(a)
+
         + ck_section_header("Sources & basis", eyebrow="VERIFIABILITY")
         + f'<ul style="margin:0;padding-left:18px;">{sources}</ul>'
         + f'<p style="font-size:11px;color:{_FAINT};margin:10px 0 0;'
@@ -2907,7 +3083,8 @@ def render_texas_infusion_page(
     )
 
     from ._chartis_kit import ck_page_actions
-    body = body + ck_page_actions()
+    body, section_nav = _inject_section_nav(body)
+    body = body + section_nav + ck_page_actions()
     return chartis_shell(
         body, "Texas Infusion Market",
         active_nav="/diligence",
