@@ -3598,3 +3598,15 @@ This is the capstone tying the two arcs together (graphics kit + Texas
 diligence data).
 **Verify**: +1 exhibit test (four panels nested into one slide, export
 toolbar, no None) + 2 render needles. Full suite green.
+
+## W2-173 (2026-06-12) — Texas infusion: section navigator (wave #75)
+The page now runs ~29 sections; added a usability layer so a partner can
+move around it:
+- **`_inject_section_nav(body)`**: a post-process pass that gives every
+  `ck-section-header` a slugified, unique `id` (with `scroll-margin-top`
+  for a clean landing) and builds a floating "☰ Sections" navigator
+  (fixed bottom-right `<details>` dropdown) listing every section as an
+  anchor link. Recomputed from the rendered headers, so it always matches
+  the live section set — no hardcoded list to drift.
+**Verify**: +1 test — ≥20 unique section ids injected, the floating nav
+present, every nav link points at a real section id. Full suite green.

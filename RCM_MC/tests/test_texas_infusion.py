@@ -1217,6 +1217,23 @@ class SoWhatTakeawayTests(unittest.TestCase):
         self.assertGreaterEqual(h.count(">SO WHAT<"), 15)
 
 
+class SectionNavTests(unittest.TestCase):
+    """The long page gets per-section anchors + a floating navigator."""
+
+    def test_sections_anchored_and_nav_present(self):
+        import re
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        ids = re.findall(
+            r'<header class="ck-section-header" id="([^"]+)"', h)
+        self.assertGreaterEqual(len(ids), 20)
+        self.assertEqual(len(ids), len(set(ids)))   # unique
+        self.assertIn("☰ Sections", h)
+        # Every nav link points at a real section id.
+        for i in ids[:5]:
+            self.assertIn(f'href="#{i}"', h)
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
