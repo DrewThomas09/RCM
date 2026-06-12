@@ -1,4 +1,4 @@
-# PAGE_INVENTORY — graded 2026-06-10 (Phase 0)
+# PAGE_INVENTORY — graded 2026-06-10 (Phase 0) · Tier-1 fixes re-checked 2026-06-12 (W2-191…200)
 
 Evidence: scripts/route_walker.py walked 361 exact-match page routes on the
 seeded demo (5 deals, 6,123-hospital HCRIS universe): **349 render 200, 0
@@ -14,20 +14,20 @@ Users: 1 = Chartis consultant in live CDD · 2 = PE VP/principal · 3 = portfoli
 
 | Page/Route | User | Data | Functional | Depth | Grade | Top fix |
 |---|---|---|---|---|---|---|
-| /target-screener (9 universes) | 1,2 | real (CMS HCRIS + 6 vendored Compare files) | works | deep (map/table/compare/saved/basis filter) | A− | per-row deal-attach action |
-| /diligence/hcris-xray | 1,2 | real HCRIS | works | deep (peers, bands, gaps, flags) | A− | facility→rule exposure join (P8) |
-| /portfolio | 3 | real deal store (fixed today) | works | medium | B | per-deal alert digest |
-| /deal/<id> workbench | 1,2,3 | real packet + entered profile | works | deep | B+ | ENTERED-basis pass on observed-metric panels |
+| /target-screener (9 universes) | 1,2 | real (CMS HCRIS + 6 vendored Compare files) | works | deep (map/table/compare/saved/basis filter) | A | ✅ per-row +Deal (W2-194) |
+| /diligence/hcris-xray | 1,2 | real HCRIS | works | deep (peers, bands, gaps, flags) | A | ✅ P8 reg exposure + exhibit roster (W2-185) |
+| /portfolio | 3 | real deal store | works | medium | B+ | ✅ per-deal alert digest (W2-197) |
+| /deal/<id> workbench | 1,2,3 | real packet + entered profile | works | deep | A− | ✅ ENTERED-basis pass (W2-199) |
 | /predictive-screener | 2 | real HCRIS + labeled ridge estimates | works | deep ("?" explainers, bounds) | A− | est_ar_days column lacks "?" |
-| /command-center (/) | 2,3 | real HCRIS aggregates (band-fixed) | works | medium | B+ | drill-through links on KPIs |
-| /market-data (+/map) | 1,2 | real HCRIS state aggregates (band-fixed today) | works | medium | B | county-level drilldown |
-| /compare (deals) | 2,3 | real deal store | works | medium | B | percentile context vs peers (P4) |
+| /command-center (/) | 2,3 | real HCRIS aggregates (band-fixed) | works | medium | A− | ✅ KPI drill-throughs (W2-193) |
+| /market-data (+/map) | 1,2 | real HCRIS state aggregates | works | medium | B+ | ✅ county drilldown links (W2-195) |
+| /compare (deals) | 2,3 | real deal store | works | medium | B+ | ✅ P4 percentile-vs-book chips (W2-192) |
 | /regression (portfolio+HCRIS) | 1,2 | real | works | deep | B+ | overfit guard shipped today; surface holdout coverage in-UI |
-| /import (quick import) | 2,3 | n/a (entry) | works | medium | B | entry-time range validation (⚠ exists only on display) |
-| /ebitda-bridge/<ccn> | 1,2 | real HCRIS + labeled model | works | deep | B+ | exhibit-style export |
+| /import (quick import) | 2,3 | n/a (entry) | works | medium | B+ | ✅ server-side bounds + comma fix (W2-191) |
+| /ebitda-bridge/<ccn> | 1,2 | real HCRIS + labeled model | works | deep | A− | ✅ waterfall exhibit chrome (W2-196) |
 | /cms-sources, /data-catalog | 1 (internal) | real registry | works | medium | B | unify with gap registry → DQ dashboard (P11) |
 | /alerts, /watchlist | 3 | real store | works | medium | B+ | vintage-diff alerts (P9) |
-| /metric-glossary, /methodology | 1,2 | n/a docs | works | deep | A− | link from every KPI label (partial) |
+| /metric-glossary, /methodology | 1,2 | n/a docs | works | deep | A− | KPI-label links extended (W2-200); long-tail pages remain |
 | /regulatory-calendar | 1,2 | real curated YAML w/ source URLs | works | medium | B | facility-type → applicable-rule join (P8b) |
 
 ## Tier 2 — broad analytic catalog (~200 routes, walker-graded)
