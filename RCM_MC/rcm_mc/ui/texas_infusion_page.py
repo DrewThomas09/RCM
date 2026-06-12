@@ -1405,6 +1405,107 @@ def _util_curve_svg(curve: Dict[str, Any]) -> str:
     return "".join(parts)
 
 
+def _denovo_jcurve_svg(ramp: Dict[str, Any]) -> str:
+    """The de-novo build J-curve — cumulative cash over months, dipping
+    on capex + ramp burn then crossing zero at break-even."""
+    s = ramp.get("series", [])
+    if not s:
+        return ""
+    W, H, pl, pb, pt = 560, 210, 64, 26, 14
+    pw, ph = W - pl - 14, H - pt - pb
+    cums = [r["cumulative"] for r in s]
+    n = len(s)
+    lo, hi = min(cums + [0]), max(cums + [0])
+    span = (hi - lo) or 1.0
+
+    def _x(i):
+        return pl + pw * (i / max(n - 1, 1))
+
+    def _y(v):
+        return pt + ph * (1 - (v - lo) / span)
+    zero_y = _y(0)
+    parts = [f'<svg viewBox="0 0 {W} {H}" width="100%" height="210" '
+             f'role="img" aria-label="De-novo J-curve" '
+             f'style="max-width:{W}px;">']
+    # Zero line.
+    parts.append(f'<line x1="{pl}" y1="{zero_y:.1f}" x2="{pl+pw}" '
+                 f'y2="{zero_y:.1f}" stroke="{_FAINT}" stroke-width="1" '
+                 f'stroke-dasharray="3 3"/>')
+    # Area under/over the curve to the zero line.
+    top = " ".join(f"{_x(i):.1f},{_y(r['cumulative']):.1f}"
+                   for i, r in enumerate(s))
+    parts.append(f'<polyline points="{top}" fill="none" stroke="{_NAVY}" '
+                 f'stroke-width="2.4"/>')
+    # Break-even marker.
+    be = ramp.get("breakeven_month")
+    if be and be <= n:
+        bx = _x(be - 1)
+        parts.append(
+            f'<line x1="{bx:.1f}" y1="{pt}" x2="{bx:.1f}" y2="{pt+ph}" '
+            f'stroke="{_POS}" stroke-width="1" stroke-dasharray="2 2"/>'
+            f'<text x="{bx:.1f}" y="{pt+8}" text-anchor="middle" '
+            f'font-size="9" font-weight="700" fill="{_POS}">break-even '
+            f'm{be}</text>')
+    # Year x labels.
+    for yr in range(1, n // 12 + 1):
+        xi = _x(yr * 12 - 1)
+        parts.append(f'<text x="{xi:.1f}" y="{H-8}" text-anchor="middle" '
+                     f'font-size="9" fill="{_FAINT}">Y{yr}</text>')
+    # Y labels (cum at trough + end).
+    parts.append(f'<text x="{pl-6}" y="{_y(hi):.1f}" text-anchor="end" '
+                 f'font-size="9" fill="{_FAINT}">{_money(hi)}</text>'
+                 f'<text x="{pl-6}" y="{_y(lo)+3:.1f}" text-anchor="end" '
+                 f'font-size="9" fill="{_FAINT}">{_money(lo)}</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _denovo_section(a: Dict[str, Any]) -> str:
+    """De-novo AIC build economics — the J-curve + the KPIs a deal team
+    underwrites on a build-vs-buy decision."""
+    r = a.get("aic_denovo_ramp") or {}
+    if not r.get("series"):
+        return ""
+    yc = r.get("year_contribution", [])
+
+    def _kpi(label, val, sub=""):
+        return (
+            f'<div style="flex:1;min-width:120px;"><div style="font-size:9px;'
+            f'letter-spacing:0.06em;color:{_FAINT};font-weight:700;">{label}'
+            f'</div><div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+            f'{val}</div><div style="font-size:9.5px;color:{_FAINT};">{sub}'
+            f'</div></div>')
+    be = r.get("breakeven_month")
+    kpis = (
+        '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;">'
+        + _kpi("BUILD CAPEX", _money(r["capex_total"]),
+               f'{r["chairs"]:.0f} chairs × {_money(r["capex_per_chair"])} '
+               f'+ {_money(r["preopen"])} pre-open')
+        + _kpi("CASH BREAK-EVEN",
+               f'month {be}' if be else '>3 yrs',
+               f'{r["ramp_months"]}-mo ramp to {r["mature_util"]*100:.0f}% util')
+        + _kpi("MATURE CONTRIBUTION",
+               _money(r["mature_annual_contribution"]) + "/yr",
+               'at full utilization')
+        + _kpi("YEAR-3 CASH-ON-CASH", f'{r["y3_cash_on_cash"]:.1f}x',
+               'Y3 contribution ÷ build capex')
+        + '</div>')
+    yrs = "".join(
+        f'<span style="margin-right:14px;">Y{i+1}: '
+        f'<strong style="color:{_NAVY};">{_money(v)}</strong></span>'
+        for i, v in enumerate(yc))
+    return (
+        kpis
+        + '<div style="font-size:10px;color:%s;letter-spacing:0.06em;'
+          'font-weight:700;margin-bottom:4px;">CUMULATIVE CASH — THE BUILD '
+          'J-CURVE (capex out, ramp burn, then recovery)</div>' % _FAINT
+        + _denovo_jcurve_svg(r)
+        + f'<div style="font-size:11.5px;color:{_DIM};margin-top:6px;">'
+        f'Contribution by year: {yrs}</div>'
+        + f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'{html.escape(r["note"])}</p>')
+
+
 _SEG_TONE = ["#0b2341", "#b5321e", "#6e5b9e", "#1F7A75", "#b8732a"]
 
 
@@ -2494,6 +2595,13 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"chair and break-even near {curve['breakeven_util']*100:.0f}% "
             f"utilization, chair throughput + commercial mix make or break "
             f"the unit — de-novo ramps below break-even bleed cash."),
+        "denovo": (
+            f"A new center costs ~{_money(a['aic_denovo_ramp']['capex_total'])} "
+            f"to build and reaches cash break-even around month "
+            f"{a['aic_denovo_ramp']['breakeven_month']}, returning "
+            f"~{a['aic_denovo_ramp']['y3_cash_on_cash']:.1f}x cash-on-cash by "
+            f"year 3 — a fast-payback de-novo engine that, with the no-CON "
+            f"runway, can out-pace bolt-on multiples."),
         "asp": (
             f"The drug spread is thin and policy-set (ASP + "
             f"{a['asp_pricing']['addon_sequestered']*100:.1f}%); the real "
@@ -2734,6 +2842,12 @@ def render_texas_infusion_page(
            f'assumptions above.</p></div>')
         + '</div>'
         + _so_what(sw["aic"])
+
+        + ck_section_header("De-novo AIC build — the J-curve",
+                            eyebrow="CAPEX · RAMP · CASH BREAK-EVEN · "
+                                    "YEAR-3 CASH-ON-CASH · EDITABLE")
+        + _denovo_section(a)
+        + _so_what(sw["denovo"])
 
         + ck_section_header("Part B drug pricing — ASP buy-and-bill",
                             eyebrow="CMS ASP+6 (SEQ. +4.3%) · INFUSION J-CODES "

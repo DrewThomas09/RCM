@@ -3671,6 +3671,29 @@ Connected the new market scan to the graphics suite and the API surface:
   programmatic use, matching the platform's API-everywhere pattern.
 **Verify**: +1 test — the cross-link's data param round-trips to all 51
 states via the mapping parser. Full suite green.
+
+## W2-178 (2026-06-12) — Texas infusion: de-novo AIC build J-curve (wave #80)
+Deepened the Texas page (per the "deepen Texas" steer) with the missing
+piece between the static per-chair economics and a returns view — the
+de-novo build P&L:
+- **`aic_denovo_ramp(**editable)`**: the de-novo AIC build J-curve.
+  Capex = chairs × per-chair fit-out + a fixed pre-open block goes out
+  day one; utilization ramps to mature over the ramp period; the monthly
+  contribution is the SAME chair model interpolated along its
+  utilization→contribution curve (negative below break-even during the
+  early ramp). Returns the 36-month cumulative-cash series + KPIs: build
+  capex (~$504K), cash break-even month (~12), mature annual contribution
+  (~$1.5M), and Year-3 cash-on-cash (~3.0x). Honors the page's editable
+  AIC assumptions.
+- **Page**: a "De-novo AIC build — the J-curve" section in the AIC block
+  — the KPI strip, the cumulative-cash J-curve SVG (capex trough → ramp
+  burn → break-even marker → recovery), contribution-by-year, and a
+  data-driven SO WHAT.
+**Verify**: +4 ramp tests — capex = chairs×fit-out+pre-open + J-curve
+shape (starts < −capex, ends positive), break-even sign change + mature ≈
+chairs×per-chair contribution, faster ramp breaks even sooner, analysis +
+page carry the ramp. Full suite green.
+
 ## W2-168 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
 Closes the three gaps flagged for the desk (not helping CDD enough, thin
 Excel resources, thin market-intel): four new surfaces + a hub + a
