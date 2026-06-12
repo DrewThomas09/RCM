@@ -3903,3 +3903,17 @@ only on display"). Server-side now:
 comma-formatted values land as numbers via the flattened deal store).
 The old import suite is env-gated (v2-shell markers) — verified green
 under CHARTIS_UI_V2=1 too.
+
+## W2-192 (2026-06-12) — P4 percentile chips on /compare (PAGE_INVENTORY top fix)
+The deal-compare page's headline KPIs (Denial Rate, AR Days) now carry
+ck_peer_percentile chips ranking each compared deal against the WHOLE
+deal book — the inventory's "percentile context vs peers" fix. The
+/compare handler passes {metric: full-book values} from list_deals()
+(additive context; fails soft to no chips), the renderer takes an
+optional peer_dists arg, and ck_peer_percentile's own honesty guards
+hold: no distributions → no chip markup, a thin book (n<8) renders
+"peer set too small (n=K)", never a fabricated rank. Chips are toned
+lower-is-better for both metrics.
+**Verify**: +2 tests — p70 reproduced by hand for denial 12.0 against a
+10-value book ("vs portfolio deals (n=10)"); silent without dists +
+honesty note on n=3. 52 passed across the comparison suites.

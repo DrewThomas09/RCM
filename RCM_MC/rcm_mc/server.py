@@ -6920,7 +6920,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                     packets.append(p)
                 except Exception:
                     pass
-            return self._send_html(_cmp_render(packets))
+            # P4 percentile context: each compared deal's headline KPIs
+            # rank against the WHOLE deal book, not just the selection.
+            peer_dists: Dict[str, list] = {}
+            try:
+                _book = store.list_deals()
+                for _m in ("denial_rate", "days_in_ar"):
+                    if _m in _book.columns:
+                        peer_dists[_m] = [
+                            float(x) for x in _book[_m].dropna().tolist()]
+            except Exception:  # noqa: BLE001 — chip is additive context
+                peer_dists = {}
+            return self._send_html(_cmp_render(packets,
+                                               peer_dists=peer_dists))
         if path == "/api/deals/compare":
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             raw = (qs.get("ids") or [""])[0]
