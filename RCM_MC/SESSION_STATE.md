@@ -418,3 +418,10 @@ of-care 100%-stacked evolution, top de-novo counties bar, current-mix
 donut) from the LIVE analysis via compose_exhibit; embedded on the page
 ("One-page exhibit" section) with SVG/PNG export. +1 test. Capstone of
 both arcs.
+
+---
+## Checkpoint — wave #75 (W2-173, 2026-06-12)
+Added _inject_section_nav(body): post-process pass giving each Texas page
+section header a unique slug id (+scroll-margin) and a floating "☰
+Sections" navigator (29 sections). +1 test. Pure usability layer, derived
+from the rendered headers.

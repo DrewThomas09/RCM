@@ -11,7 +11,8 @@ public data.
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Tuple
 
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_page_title, ck_section_header,
@@ -2548,6 +2549,52 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
     }
 
 
+_SEC_RE = re.compile(
+    r'(<header class="ck-section-header">)(.*?<h2 class="sc-h2">)([^<]+)',
+    re.S)
+
+
+def _inject_section_nav(body: str) -> Tuple[str, str]:
+    """Post-process the assembled body: give each section header an id
+    and build a floating 'jump to section' navigator. The page has ~25
+    sections — a partner needs to move around it."""
+    items: List[Tuple[str, str]] = []
+    seen: Dict[str, int] = {}
+
+    def _repl(m: "re.Match") -> str:
+        title = html.unescape(m.group(3)).strip()
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") or "sec"
+        if slug in seen:
+            seen[slug] += 1
+            slug = f"{slug}-{seen[slug]}"
+        else:
+            seen[slug] = 0
+        items.append((title, slug))
+        return (f'{m.group(1)[:-1]} id="{slug}" '
+                f'style="scroll-margin-top:70px;">{m.group(2)}{m.group(3)}')
+
+    body = _SEC_RE.sub(_repl, body)
+    if not items:
+        return body, ""
+    links = "".join(
+        f'<a href="#{s}" style="display:block;padding:4px 12px;'
+        f'font-size:12px;color:#1a2332;text-decoration:none;'
+        f'border-bottom:1px solid #efe9dc;">{html.escape(t)}</a>'
+        for t, s in items)
+    nav = (
+        '<details style="position:fixed;right:18px;bottom:18px;z-index:50;'
+        'font-family:\'Inter Tight\',system-ui,sans-serif;">'
+        '<summary style="list-style:none;cursor:pointer;background:#0b2341;'
+        'color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;'
+        'font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.18);">'
+        '☰ Sections</summary>'
+        '<div style="position:absolute;right:0;bottom:40px;width:248px;'
+        'max-height:60vh;overflow-y:auto;background:#fff;border:1px solid '
+        '#c9c1ac;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);'
+        f'">{links}</div></details>')
+    return body, nav
+
+
 def render_texas_infusion_page(
     qs: "Dict[str, Any] | None" = None,
 ) -> str:
@@ -2789,7 +2836,8 @@ def render_texas_infusion_page(
     )
 
     from ._chartis_kit import ck_page_actions
-    body = body + ck_page_actions()
+    body, section_nav = _inject_section_nav(body)
+    body = body + section_nav + ck_page_actions()
     return chartis_shell(
         body, "Texas Infusion Market",
         active_nav="/diligence",
