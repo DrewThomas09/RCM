@@ -129,6 +129,127 @@ bands:
       Cano bankruptcy (Feb 2024) + V28 overhang compressed
       multiples ~40% vs. 2021 peak. Diligence intensity heightened.
 
+  # ── 2026-06-12 depth expansion: the active deal-flow verticals the
+  # desk diligences that had no band (infusion, ASC, cardiology, MSK,
+  # urgent care, imaging, fertility, oncology, PT, profitable HCIT).
+  # Same provenance + refresh cadence as the rest of the file.
+
+  - specialty: INFUSION
+    deal_size_band: SUB_100M
+    p25_ev_ebitda: 7.5
+    p50_ev_ebitda: 9.0
+    p75_ev_ebitda: 11.0
+    sample_size_trailing_12_mo: 14
+
+  - specialty: INFUSION
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 10.0
+    p50_ev_ebitda: 12.5
+    p75_ev_ebitda: 15.0
+    sample_size_trailing_12_mo: 7
+    note: |
+      Platform scarcity premium — few scaled assets; ambulatory
+      infusion benefits from site-neutral steering away from HOPDs.
+
+  - specialty: ASC
+    deal_size_band: SUB_100M
+    p25_ev_ebitda: 7.0
+    p50_ev_ebitda: 8.5
+    p75_ev_ebitda: 10.0
+    sample_size_trailing_12_mo: 31
+
+  - specialty: ASC
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 9.0
+    p50_ev_ebitda: 11.0
+    p75_ev_ebitda: 13.5
+    sample_size_trailing_12_mo: 12
+    note: |
+      Site-of-care tailwind (CMS CPL additions, payer steering);
+      surgeon-syndication depth drives the band spread.
+
+  - specialty: CARDIOLOGY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 10.0
+    p50_ev_ebitda: 12.0
+    p75_ev_ebitda: 14.5
+    sample_size_trailing_12_mo: 9
+    note: |
+      The hottest physician vertical since 2023 — OBL/ASC migration
+      thesis; early-platform premiums persist.
+
+  - specialty: ORTHO_MSK
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 9.5
+    p50_ev_ebitda: 11.5
+    p75_ev_ebitda: 14.0
+    sample_size_trailing_12_mo: 11
+
+  - specialty: URGENT_CARE
+    deal_size_band: SUB_100M
+    p25_ev_ebitda: 6.0
+    p50_ev_ebitda: 7.5
+    p75_ev_ebitda: 9.0
+    sample_size_trailing_12_mo: 16
+
+  - specialty: URGENT_CARE
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 8.5
+    p50_ev_ebitda: 10.0
+    p75_ev_ebitda: 12.0
+    sample_size_trailing_12_mo: 6
+
+  - specialty: IMAGING_RADIOLOGY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 9.0
+    p50_ev_ebitda: 10.5
+    p75_ev_ebitda: 12.5
+    sample_size_trailing_12_mo: 8
+
+  - specialty: FERTILITY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 11.0
+    p50_ev_ebitda: 13.5
+    p75_ev_ebitda: 16.0
+    sample_size_trailing_12_mo: 5
+    note: |
+      Cash-pay mix + secular demand keeps fertility the premium
+      physician-services vertical; scarce platforms trade rich.
+
+  - specialty: ONCOLOGY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 10.0
+    p50_ev_ebitda: 12.0
+    p75_ev_ebitda: 14.5
+    sample_size_trailing_12_mo: 6
+
+  - specialty: PHYSICAL_THERAPY
+    deal_size_band: SUB_100M
+    p25_ev_ebitda: 6.0
+    p50_ev_ebitda: 7.5
+    p75_ev_ebitda: 9.0
+    sample_size_trailing_12_mo: 19
+
+  - specialty: PHYSICAL_THERAPY
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 8.0
+    p50_ev_ebitda: 9.5
+    p75_ev_ebitda: 11.5
+    sample_size_trailing_12_mo: 7
+    note: |
+      Labor-sensitive margins cap the band; wage inflation is the
+      diligence question, not demand.
+
+  - specialty: HCIT_PROFITABLE
+    deal_size_band: 100M_TO_500M
+    p25_ev_ebitda: 12.0
+    p50_ev_ebitda: 15.0
+    p75_ev_ebitda: 18.5
+    sample_size_trailing_12_mo: 8
+    note: |
+      EBITDA-positive HCIT only — growth-stage HCIT trades on
+      revenue multiples and is out of scope for this table.
+
 # Deal-size band definitions.
 deal_size_bands:
   SUB_100M:      {min_ev_usd: 0, max_ev_usd: 100000000}

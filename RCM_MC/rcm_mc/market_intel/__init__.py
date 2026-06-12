@@ -40,6 +40,18 @@ from .public_comps import (
     peer_physician_turnover_stats,
 )
 from .peer_snapshot import PeerSnapshot, compute_peer_snapshot
+from .labor_market import (
+    LaborStress, RoleEconomics, get_role, labor_cost_stress,
+    list_roles,
+)
+from .ma_penetration import (
+    StatePenetration, band_counts, footprint_exposure, get_state,
+    list_state_penetration, national_penetration_pct,
+)
+from .rate_environment import (
+    BlendedImpact, RateUpdate, SettingRates, blended_rate_impact,
+    get_setting, list_settings,
+)
 from .pe_transactions import (
     PETransaction, list_transactions, multiple_band_by_specialty,
     sponsor_activity, transactions_for_specialty,
@@ -58,6 +70,23 @@ __all__ = [
     "PETransaction",
     "PeerSnapshot",
     "PublicComp",
+    "BlendedImpact",
+    "LaborStress",
+    "RoleEconomics",
+    "get_role",
+    "labor_cost_stress",
+    "list_roles",
+    "StatePenetration",
+    "band_counts",
+    "footprint_exposure",
+    "get_state",
+    "list_state_penetration",
+    "national_penetration_pct",
+    "RateUpdate",
+    "SettingRates",
+    "blended_rate_impact",
+    "get_setting",
+    "list_settings",
     "compute_peer_snapshot",
     "list_transactions",
     "multiple_band_by_specialty",

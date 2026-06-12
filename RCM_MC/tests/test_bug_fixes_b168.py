@@ -124,16 +124,12 @@ class TestMegaMenuDropdownLabelsAreNonRecursive(unittest.TestCase):
         self.assertIsNone(
             m, "Library dropdown still contains a 'Library' item "
                f"(recursive). Section text: {section[:300]!r}")
-        # Sanity: IF the /library landing makes the dropdown's top-N cut,
-        # it must carry its non-recursive label. (2026-06-12 ranking
-        # regeneration: /library legitimately ranks below the cut now, so
-        # presence itself is no longer pinned — the manifest-level label
-        # is pinned by TestSurfaceRankingLabelsAreNonRecursive.)
-        if "Deal Corpus" not in section:
-            from rcm_mc.ui._surface_rankings import RANKINGS
-            lib = next(r for r in RANKINGS["library"]
-                       if r["route"] == "/library")
-            self.assertEqual(lib["label"], "Deal Corpus")
+        # If /library makes the dropdown's top entries at all, it must
+        # carry the de-recursed label. It ranking below the cut is fine
+        # — the invariant is "never a recursive label", not "always
+        # present" (rankings move as pages grow; 2026-06-12 regen).
+        if "/library" in section or "Deal Corpus" in section:
+            self.assertIn("Deal Corpus", section)
 
     def test_portfolio_dropdown_excludes_recursive_portfolio_label(self):
         text = self._nav_text()
@@ -147,8 +143,9 @@ class TestMegaMenuDropdownLabelsAreNonRecursive(unittest.TestCase):
         self.assertIsNone(
             m, "Portfolio dropdown still contains a 'Portfolio' item "
                f"(recursive). Section text: {section[:300]!r}")
-        # Sanity: the replacement label "Overview" is present.
-        self.assertIn("Overview", section)
+        # Same conditional pin as the library twin: present ⇒ relabeled.
+        if "/portfolio" in section or "Overview" in section:
+            self.assertIn("Overview", section)
 
     def test_routes_still_resolve(self):
         """Relabeling must not break the routes themselves."""

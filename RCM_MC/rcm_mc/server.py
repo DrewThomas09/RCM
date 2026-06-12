@@ -4493,6 +4493,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.competitive_intel_page import render_competitive_intel
             return self._send_html(render_competitive_intel(_qp))
+        if path == "/voc-survey":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.voc_survey_page import render_voc_survey
+            return self._send_html(render_voc_survey(_qp))
+        if path == "/win-loss":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.win_loss_page import render_win_loss
+            return self._send_html(render_win_loss(_qp))
         if path == "/clinical-outcomes":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -6753,6 +6763,122 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.excel_mapping_page import render_excel_mapping_page
             _em_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_excel_mapping_page(_em_qs))
+        if path == "/excel-templates":
+            # Excel model template library — downloadable live-formula
+            # workbooks (quick LBO, QoE databook, NWC peg, 13-week cash,
+            # CDD market model, payer sensitivity, cohort/NRR).
+            from .ui.excel_templates_page import render_excel_templates
+            return self._send_html(render_excel_templates())
+        if path.startswith("/excel-templates/") and path.endswith(".xlsx"):
+            from .exports.model_templates import build_template_xlsx
+            _slug = path[len("/excel-templates/"):-len(".xlsx")]
+            _xlsx = build_template_xlsx(_slug)
+            if _xlsx is None:
+                return self._send_error(
+                    "Unknown template", status=HTTPStatus.NOT_FOUND,
+                    code="NOT_FOUND")
+            # Registry slugs are [a-z0-9-] so the filename needs no
+            # further sanitisation — unknown slugs already 404'd above.
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                f'attachment; filename="{_slug}.xlsx"')
+            self.send_header("Content-Length", str(len(_xlsx)))
+            self.end_headers()
+            self.wfile.write(_xlsx)
+            return
+        if path == "/cdd":
+            # Commercial Due Diligence hub — the five-module CDD workflow
+            # (market → competition → customers → pricing → deliverables)
+            # mapped onto the desk's surfaces.
+            from .ui.cdd_hub_page import render_cdd_hub
+            return self._send_html(render_cdd_hub())
+        if path == "/rate-environment":
+            # Medicare rate environment — setting-level CMS payment
+            # updates + blended dollar-impact calculator; qs carries the
+            # Medicare revenue base and setting-mix shares.
+            from .ui.rate_environment_page import render_rate_environment
+            _re_qs = urllib.parse.parse_qs(parsed.query)
+            _re_qp = {k: v[0] for k, v in _re_qs.items() if v}
+            return self._send_html(render_rate_environment(_re_qp))
+        if path == "/rate-environment.xlsx":
+            # Workbook twin of /rate-environment: blue revenue/mix inputs
+            # feeding a live SUMPRODUCT blend, so the model reruns in
+            # Excel without the page.
+            from .ui.rate_environment_page import rate_environment_xlsx
+            _rx_qs = urllib.parse.parse_qs(parsed.query)
+            _rx_qp = {k: v[0] for k, v in _rx_qs.items() if v}
+            _rx = rate_environment_xlsx(_rx_qp)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="rate_environment.xlsx"')
+            self.send_header("Content-Length", str(len(_rx)))
+            self.end_headers()
+            self.wfile.write(_rx)
+            return
+        if path == "/pricing-power.xlsx":
+            from .ui.data_public.pricing_power_page import pricing_power_xlsx
+            _pp_qs = urllib.parse.parse_qs(parsed.query)
+            _pp_qp = {k: v[0] for k, v in _pp_qs.items() if v}
+            _pp = pricing_power_xlsx(_pp_qp)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="pricing_power_model.xlsx"')
+            self.send_header("Content-Length", str(len(_pp)))
+            self.end_headers()
+            self.wfile.write(_pp)
+            return
+        if path == "/labor-market.xlsx":
+            from .ui.labor_market_page import labor_market_xlsx
+            _lm_qs = urllib.parse.parse_qs(parsed.query)
+            _lm_qp = {k: v[0] for k, v in _lm_qs.items() if v}
+            _lm = labor_market_xlsx(_lm_qp)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="labor_stress_model.xlsx"')
+            self.send_header("Content-Length", str(len(_lm)))
+            self.end_headers()
+            self.wfile.write(_lm)
+            return
+        if path == "/pricing-power":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.pricing_power_page import render_pricing_power
+            return self._send_html(render_pricing_power(_qp))
+        if path == "/labor-market":
+            # Healthcare labor intelligence — role wage/turnover reads +
+            # wage-inflation EBITDA stress; qs carries labor base,
+            # revenue, and role-mix shares.
+            from .ui.labor_market_page import render_labor_market
+            _lm_qs = urllib.parse.parse_qs(parsed.query)
+            _lm_qp = {k: v[0] for k, v in _lm_qs.items() if v}
+            return self._send_html(render_labor_market(_lm_qp))
+        if path == "/ma-penetration":
+            # MA penetration by state — choropleth + exposure bands +
+            # footprint scorer; qs carries the target's state codes.
+            from .ui.ma_penetration_page import render_ma_penetration
+            _ma_qs = urllib.parse.parse_qs(parsed.query)
+            _ma_qp = {k: v[0] for k, v in _ma_qs.items() if v}
+            return self._send_html(render_ma_penetration(_ma_qp))
         if path == "/chart-builder":
             # Chart Builder — the CDD/Excel chart family (column, stacked,
             # waterfall, marimekko, bubble, …) rendered Chartis-styled
@@ -20495,6 +20621,10 @@ class RCMHandler(BaseHTTPRequestHandler):
     _TOOLS_HIDDEN_ROUTES = frozenset({
         # Auth & session flows (not surfaces)
         "/login", "/logout", "/register", "/forgot", "/csrf-token",
+        # File-download endpoints (serve bytes, not a page; the owning
+        # page carries the Guide context and the download button)
+        "/rate-environment.xlsx", "/pricing-power.xlsx",
+        "/labor-market.xlsx",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
@@ -20585,8 +20715,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/tax-structure", "/tax-structure-analyzer", "/tech-stack", "/telehealth-econ",
         "/tracker-340b", "/transition-services", "/treasury", "/trial-site-econ",
         "/underwriting", "/underwriting-model", "/unit-economics", "/value-creation",
+        "/pricing-power",
         "/value-creation-plan", "/vcp-tracker", "/vdr-tracker", "/vintage-cohorts",
-        "/vintage-perf", "/workforce-planning", "/workforce-retention", "/working-capital",
+        "/vintage-perf", "/voc-survey", "/win-loss",
+        "/workforce-planning", "/workforce-retention", "/working-capital",
         "/zbb-tracker",
     })
 
