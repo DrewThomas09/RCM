@@ -4044,3 +4044,14 @@ genuinely-open sub-items now stated precisely: saved peer-set OBJECT
 (P4), per-deal exhibit REGISTRY (P5), facility pins/catchments (P6),
 ownership-CHOW diff alerts (P9), provenance modal + coverage metric
 (P10), long-tail bullet coverage (P13), timing budgets (P14).
+
+## W2-204 (2026-06-12) — Demo-deal realism: mvm_2026 rebuilt on real CCN 450358 (workstream H)
+One of the seeded fictional demo deals is now a REAL facility: mvm_2026
+becomes The Methodist Hospital (the platform's canonical sample TX CCN
+450358). Its profile loads from the live HCRIS frame AT SEED TIME —
+name, state, beds, NPR, filed margin, Medicare share — so the numbers
+can never drift from the filing (no hardcoded copies); falls back to
+the fictional seed when the frame is unavailable. metrics_basis records
+"ACTUAL — filed HCRIS values, CCN 450358 FY2022" and the deal dashboard
+identity line names the CCN + FY. +2 tests (profile == HCRIS row
+EXACTLY; page names the CCN). 18 + integration suites green.

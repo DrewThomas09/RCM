@@ -178,6 +178,13 @@ def render_deal_dashboard(
     if state:
         meta_parts.append(f"State {state}")
     meta_parts.append(f"Deal {deal_id}")
+    # Workstream H: a deal anchored to a real facility names its CCN in
+    # the identity line — the metrics trace to a filing, not a fiction.
+    if profile.get("hcris_ccn"):
+        fy = profile.get("hcris_fy")
+        meta_parts.append(
+            f"HCRIS CCN {profile['hcris_ccn']}"
+            + (f" · FY{int(fy)}" if fy else ""))
 
     title_block = ck_page_title(
         name,
