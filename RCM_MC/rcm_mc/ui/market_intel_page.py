@@ -543,12 +543,67 @@ def _public_comps_section(
     )
 
 
+def _multiples_directory() -> str:
+    """The full specialty × size-band library, rendered when no
+    specialty is selected. Before this, the 29-band library was
+    invisible unless the caller already knew a specialty code — the
+    directory makes the depth browsable and each row links the
+    focused view."""
+    from rcm_mc.market_intel.transaction_multiples import _load
+    from ._chartis_kit import ck_data_cell
+    rows_data = _load().get("bands") or []
+    by_spec: dict = {}
+    for r in rows_data:
+        by_spec.setdefault(str(r.get("specialty", "")), []).append(r)
+    trs = []
+    for spec in sorted(by_spec):
+        for r in sorted(by_spec[spec],
+                        key=lambda x: str(x.get("deal_size_band", ""))):
+            label = spec.replace("_", " ").title()
+            note = (r.get("note") or "").strip().replace("\n", " ")
+            trs.append("<tr>" + "".join([
+                ck_data_cell(
+                    f'<a href="/market-intel?specialty={html.escape(spec)}" '
+                    f'style="color:inherit">{html.escape(label)}</a>',
+                    mono=True, weight=600),
+                ck_data_cell(html.escape(
+                    str(r.get("deal_size_band", "")).replace("_", " ")),
+                    mono=True),
+                ck_data_cell(f'{float(r["p25_ev_ebitda"]):.2f}x',
+                             align="right", mono=True),
+                ck_data_cell(f'{float(r["p50_ev_ebitda"]):.2f}x',
+                             align="right", mono=True, weight=600),
+                ck_data_cell(f'{float(r["p75_ev_ebitda"]):.2f}x',
+                             align="right", mono=True),
+                ck_data_cell(str(r.get("sample_size_trailing_12_mo", "")),
+                             align="right", mono=True, tone="dim"),
+                f'<td class="ck-cell" style="max-width:300px;font-size:10px;'
+                f'color:#6b7280">{html.escape(note)}</td>',
+            ]) + "</tr>")
+    ths = "".join(
+        ck_data_cell(c, align=a, is_header=True)
+        for c, a in (("Specialty", "left"), ("Size band", "left"),
+                     ("P25", "right"), ("P50", "right"), ("P75", "right"),
+                     ("n (TTM)", "right"), ("Note", "left")))
+    table = (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             f'</table></div>')
+    n_specs = len(by_spec)
+    return ck_panel(
+        f'<p class="ck-section-body">EV/EBITDA bands across {n_specs} '
+        f'healthcare specialties ({len(rows_data)} specialty × size-band '
+        f'combinations). Click a specialty to focus it against a target '
+        f'EV.</p>{table}',
+        title="Private-market transaction multiples — full library",
+    )
+
+
 def _transaction_multiples_section(
     specialty: Optional[str],
     ev_usd: Optional[float],
 ) -> str:
     if not specialty:
-        return ""
+        return _multiples_directory()
     band = transaction_multiple(specialty=specialty, ev_usd=ev_usd)
     if not band:
         return ck_panel(

@@ -3829,3 +3829,12 @@ all four new download paths; audit regen 187 pages / 0 flags.
 **Verify**: +2 pin tests (every expansion vertical resolves at $200M
 EV; all 29 bands percentile-ordered with positive samples); 101
 market-intel tests + hub link integrity green.
+
+## W2-175 (2026-06-12) — Wave 8: transaction-multiples directory on /market-intel
+The 29-band library was invisible unless the caller already passed a
+specialty code — the no-specialty view silently omitted the section.
+/market-intel now renders the **full directory** (every specialty ×
+size-band combination: P25/P50/P75, TTM sample, policy note) with each
+row linking the focused `?specialty=CODE` view; the focused view is
+unchanged. +3 pin tests (directory renders with the expansion
+verticals, rows link the focused view, focused view unaffected).
