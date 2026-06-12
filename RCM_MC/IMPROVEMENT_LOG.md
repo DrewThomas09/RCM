@@ -3858,3 +3858,17 @@ recursive item ever, and IF /library makes the cut it carries the
 non-recursive label, with the manifest-level label still pinned
 unconditionally. All 9 RANKINGS-pinned suites (93 tests) + 976-test
 nav/palette/best/landing sweep green.
+
+## W2-189 (2026-06-12) — P13 insight bullets on the state-profile dossier
+Second half of the old P13 item (/portfolio adopted ck_insight_bullets
+earlier; the state market page never did). New _profile_insights(state,
+name, ranked): up to 2 top-quartile strengths + 2 bottom-quartile reads,
+built ONLY from the same (rank, n, vs-median) tuples the dossier table
+renders, with the significance guard (quartile rank AND ≥10% off the
+U.S. median; directional metrics only; n≥8). ck_insight_bullets keeps
+the copy-to-clipboard affordance and renders NOTHING when no candidate
+passes. Placed under the KPI strip on /state-profile.
+**Verify**: +2 tests — every claimed "#pos of n" in the rendered
+bullets is re-derived from _all_ranked() and must match exactly
+(regex over the bullet HTML); empty ranked structure renders "".
+21 passed across the geo/state suites.
