@@ -6712,6 +6712,21 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/cdd-scope":
+            # CDD Scope — the four engagement depths (screen / red-flag
+            # / full-scope / bring-down): level cards, deterministic
+            # recommender (stage/familiarity/type), workstream × level
+            # matrix linking each workstream to its executing surface.
+            from .ui.cdd_scope_page import render_cdd_scope_page
+            _cs_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_cdd_scope_page(_cs_qs))
+        if path == "/api/diligence/cdd-scope.csv":
+            # Per-level task-list export (engagement-plan starter).
+            from .ui.cdd_scope_page import cdd_scope_csv
+            _cs_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_text(
+                cdd_scope_csv(_cs_qs),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/expert-calls":
             # Expert-Call Program — CDD voice-of-customer planner: call
             # mix per stakeholder lens, 4-week cadence, per-lens call

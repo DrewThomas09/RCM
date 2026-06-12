@@ -3595,3 +3595,45 @@ note searchable on /notes?q=EXPERT+CALL with hostile content escaped
 expert-calls + rollup-save + deal-context-prefill + guide invariants
 + section catalog (95). /deal/<id> fallback dashboard for snapshot-less
 deals omits the notes section — pre-existing surface shape, noted.
+
+## W2-167 (2026-06-12) — CDD Scope: the four engagement depth levels (wave #69)
+New CDD dimension covered — not another workstream but the DEPTH axis:
+how deep the same nine workstreams run at each deal stage. New page
+/diligence/cdd-scope + rcm_mc/diligence/cdd_scope.py (UI-free):
+- **CDD_LEVELS**: L1 desktop screen (pre-IOI, days, go/no-go on
+  bidding) · L2 red-flag CDD (indicative bid, 1–2 wks, kill-risk
+  focus) · L3 full-scope CDD (exclusivity, 3–6 wks, the IC
+  underwrite) · L4 confirmatory/bring-down (post-IC, movement only).
+  Every duration explicitly labeled "market convention" (never a
+  quote, tested); NO cost figures by design; per-level call-program
+  size links straight into /diligence/expert-calls?n=….
+- **DEPTH_MATRIX**: 9 workstreams × 4 levels (NONE/DESKTOP/TARGETED/
+  FULL) with two tested contracts: monotone L1→L3 (a deeper
+  engagement never does LESS of a workstream; L3 = FULL everywhere)
+  and L4 never FULL (confirmation, not re-discovery). Each workstream
+  row links to the platform surface that EXECUTES it (tam-sam,
+  expert-calls, cim-crosscheck, market-rates, reg-calendar, …) — all
+  9 routes pinned against server.py so a dead link can't ship.
+- **recommend_level(stage, familiarity, deal_type)**: deterministic
+  scoping aid — stage anchors (screen→L1, bid→L2, exclusivity→L3,
+  preclose→L4), adjustments stated as reasons (known-market add-on at
+  exclusivity right-sizes to L2 because a full re-build duplicates
+  the platform CDD; new-market exclusivity flags call-booking lead
+  time as the critical path). Invalid/partial inputs → None and the
+  page says "never guesses" — no scope from a partial picture.
+- **level_task_list + /api/diligence/cdd-scope.csv**: the concrete
+  per-level engagement plan (workstream · depth · task · executing
+  surface · empty owner/status columns); unknown level falls back to
+  L3, never 500s.
+- Wired: route + palette + section map + diligence index card +
+  guide contexts (5-Q floor + resolvable related_routes from birth —
+  the wave-66 lesson) + surface-status NAVY.
+**Verify**: new test_cdd_scope.py (20) — registry completeness incl.
+the convention-label pin, matrix coverage/monotonicity/L4-narrowing,
+all 24 recommender combinations have reasons + invalid→None, task
+lists match the matrix with non-empty task text, CSV shape + bogus-
+level fallback, page render (cards/matrix/tasks/recommender reason/
+partial-input honesty/hostile level), wiring + guide-floor checks.
+Wiring sweep 140 passed (palette/catalog/guide-invariant/universe/
+expert-calls). Live smoke: 6 URLs incl. hostile stage + formula-
+injection level param → all 200, no tracebacks.

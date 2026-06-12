@@ -207,6 +207,17 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='CDD Scope',
+        route='/diligence/cdd-scope',
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        source_group='Diligence Workspace',
+        is_auto_generated=False,
+        aliases=['cdd scope', 'cdd levels', 'red-flag diligence',
+                 'full-scope cdd', 'desktop screen', 'bring-down',
+                 'engagement scoping', 'diligence depth'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Excel Mapping',
         route='/excel-mapping',
         category=PageContextCategory.RESEARCH_BACKTESTING,

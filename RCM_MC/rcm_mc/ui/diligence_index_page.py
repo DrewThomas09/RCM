@@ -132,6 +132,10 @@ _PILLARS: List[Mapping[str, object]] = [
              "label": "Expert Calls",
              "blurb": "CDD call program: mix plan, per-lens guides, "
                       "coverage read."},
+            {"href": "/diligence/cdd-scope",
+             "label": "CDD Scope",
+             "blurb": "Four engagement depths: screen, red-flag, "
+                      "full-scope, bring-down."},
             {"href": "/diligence/deal-mc",
              "label": "Deal MC",
              "blurb": "Per-deal Monte Carlo with overlay shocks."},

@@ -11972,6 +11972,68 @@ _MANUAL.extend([
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
     _ctx(
+        "/diligence/cdd-scope", "CDD Scope",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The four engagement depths of a commercial "
+        "due diligence — L1 desktop screen, L2 red-flag CDD, L3 "
+        "full-scope CDD, L4 confirmatory/bring-down — with a "
+        "deterministic scoping recommender, a workstream × level depth "
+        "matrix linking each workstream to the platform surface that "
+        "executes it, and a per-level task-list CSV.",
+        primary_purpose="Scope the CDD to the deal stage: decide how "
+        "deep each workstream runs before spending the fee budget, and "
+        "hand each workstream to its executing surface.",
+        intended_users=["Deal team scoping a CDD engagement; the "
+                        "partner deciding what a process stage "
+                        "justifies spending."],
+        common_questions=[
+            "How deep should our diligence go at this stage?",
+            "What's the difference between a red-flag and a full CDD?",
+            "What does a desktop screen actually cover?",
+            "What runs in a confirmatory bring-down?",
+            "Which platform page executes each workstream?",
+        ],
+        inputs=["Deal stage (pre-IOI / indicative bid / exclusivity / "
+                "pre-close), market familiarity, platform vs add-on; "
+                "a level selection for the task list."],
+        outputs=["A recommended level with the reasoning stated; four "
+                 "level cards (when / duration-as-convention / decision "
+                 "/ deliverable / call-program size); the workstream × "
+                 "level depth matrix (NONE / DESKTOP / TARGETED / "
+                 "FULL); a per-level task list with a CSV export."],
+        key_metrics=["Depth per workstream per level; recommended "
+                     "call-program size per level."],
+        data_sources=["Curated engagement methodology only — durations "
+                      "are market convention, not quotes; nothing on "
+                      "the page is market data."],
+        model_logic_summary="The recommender is deterministic: deal "
+        "stage anchors the level (screen→L1, bid→L2, exclusivity→L3, "
+        "pre-close→L4); familiarity and platform-vs-add-on adjust "
+        "within it (known-market add-on at exclusivity right-sizes to "
+        "L2). The depth matrix is monotone L1→L3 — a deeper level "
+        "never does less of a workstream; L4 narrows deliberately.",
+        why_it_matters="Mis-scoping burns the budget in one direction "
+        "and leaves the IC underwriting unverified claims in the "
+        "other; the level discipline is how CDD firms actually price "
+        "and staff.",
+        diligence_use_cases=["Scoping the engagement letter; deciding "
+                             "what an indicative-bid budget buys; "
+                             "handing a scoped task list to the team "
+                             "with each task's executing surface."],
+        interpretation_guidance=["The recommendation is a scoping aid, "
+                                 "not a rule — the reasoning is stated "
+                                 "so a partner can overrule it on "
+                                 "facts the form doesn't capture."],
+        limitations=["Healthcare-services CDD framing; durations are "
+                     "convention ranges, team shapes are qualitative — "
+                     "no cost figures, deliberately."],
+        related_routes=["/diligence/expert-calls",
+                        "/diligence/cim-crosscheck",
+                        "/diligence/checklist"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
         "/diligence/expert-calls", "Expert-Call Program",
         category=PageContextCategory.DILIGENCE_WORKSPACE,
         short_description="The CDD voice-of-customer planner — a call-mix "
