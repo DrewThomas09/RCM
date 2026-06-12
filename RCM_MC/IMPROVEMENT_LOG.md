@@ -3541,3 +3541,11 @@ graphics waves left on main (verified failing on a clean tree):
 **Verify**: the 5 failing tests (test_data_universe_kinds_registered,
 test_pedesk_guide_5q_invariant ×3, test_section_catalog) now pass;
 1,321-test wiring sweep (guide/palette/chartis/catalog/nav) green.
+
+## W2-169 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #70b)
+Merging main (waves #66–68 from the parallel chart stream) brought the
+new /exhibit Exhibit Composer with the SAME wiring gap the W2-168 sweep
+fixed on its siblings: 2 common_questions (floor is 5) and no
+related_routes. Brought it to the floor + cross-linked /chart-builder
+and /pie-chart. Guide invariant suites + 1,254-test graphics/wiring
+sweep green on the merged tree.

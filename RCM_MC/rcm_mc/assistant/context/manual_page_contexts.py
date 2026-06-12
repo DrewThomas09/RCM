@@ -11982,7 +11982,11 @@ _MANUAL.extend([
         common_questions=[
             "How do I put several charts on one slide?",
             "Can I export a whole exhibit at once?",
+            "How do I set the slide title, eyebrow and source line?",
+            "Can each panel use a different chart type?",
+            "How do I drop a panel from the layout?",
         ],
+        related_routes=["/chart-builder", "/pie-chart"],
         inputs=["1–4 panels, each a chart type + pasted table + panel "
                 "title; a slide eyebrow / title / source."],
         outputs=["A single 16:9 SVG slide with a title block, the charts "
