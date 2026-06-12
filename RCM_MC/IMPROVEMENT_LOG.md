@@ -4017,3 +4017,10 @@ literal &lt;a&gt;; caught in verification) and the market-data state-
 detail hospital table's NPR / Margin headers. metric_label_link's
 no-dead-links fallback verified (bed_count has no card → plain text).
 +1 test; 8+12 passed across both suites.
+
+## W2-201 (2026-06-12) — Found bug: /diligence/infusion-markets orphaned from catalog
+The cadence sweep caught the chart stream's new national infusion scan
+(wave #78) served but missing from the /diligence landing catalog —
+the same orphan class as texas-infusion before it (the catalog-coverage
+test is the gate that caught it). Added to the Audit & Stress pillar
+beside the Texas study. Invariant suites (39) green.
