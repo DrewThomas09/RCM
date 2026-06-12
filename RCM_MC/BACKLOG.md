@@ -36,18 +36,32 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 ## Refill 2 (scored 12:25Z) — ready queue
 | # | Item | Score | Verification plan |
 |---|---|---|---|
-| 21 | **P12b palette name-search** — non-CCN query ≥4 chars adds "Search providers for 'q'" row → /diligence/xray?q= (existing resolver; zero new backend) | 26 | type partial hospital name → row appears, Enter lands on X-Ray search results; tests |
-| 22 | **P9 slice-2: diff detail view** — click the diff line → table of entered/left/changed rows with old→new values | 25 | snapshot, mutate db copy, detail view lists exact rows; tests |
-| 23 | **P4b percentile chips on CIM estimates** — ck_peer_percentile beside each independent estimate (scope = the in-scope HCRIS rows) | 24 | chip matches hand-computed percentile for 2 claims; tests |
-| 26 | **P5 expansion** — exhibit wrapper on X-Ray peer table + screener compare view | 24 | exhibits numbered/sourced on both; print check; tests |
-| 24 | **Deal-page roll-up note affordance** — render the reopen link in rollup notes as a real anchor + ROLL-UP chip | 22 | note on deal page shows clickable reopen; tests |
-| 30 | **A empty-state verification pass** — ?state=ZZ + empty-db walk, screenshot deck (carried #15) | 20 | walker empty-db variant + 4 screenshots |
-| 25 | **DQ snapshot dates for home_health/hospice** — replace DATE UNSTATED with the vendored snapshot dates from loader docs | 20 | chips turn green/amber per real dates; tests updated |
-| 29 | **Model-card link on predictive screener footer** — "90% conformal band: 91.0% on holdout (model card)" → /methodology | 18 | footer states artifact numbers, never hand-typed; test |
-| 27 | **walker cookie-context mode** — --deal-cookie flag walks with active-deal set (catches prefill 500s) | 18 | walk clean with cookie; CI-ready |
-| 28 | **Screener state prefill from active deal** — parity with CIM (cookie fills ?state= when absent) | 16 | cookie → state filter chip prefilled; params win; tests |
+| 21 | ✅ DONE — P12b palette name-search (shipped earlier; pinned by test_palette_entity_jump) | — | verified 2026-06-12 |
+| 22 | ✅ DONE — P9 slice-2 diff detail (?diff=<id> row-level view in target_screener_page) | — | verified 2026-06-12 |
+| 23 | ✅ DONE — P4b: CIM claim chip upgraded to ck_peer_percentile visual (track + scope label, engine rank) | — | W2-182 |
+| 26 | ✅ DONE — exhibit chrome on X-Ray peer roster + screener compare | — | W2-185 |
+| 24 | ✅ DONE — roll-up note: anchor (earlier) + ROLL-UP chip (W2-183) | — | W2-183 |
+| 30 | ✅ DONE — empty-state sweep is a permanent test gate (ZZ + empty db, walker markers) | — | W2-186 |
+| 25 | ✅ DONE — DQ snapshot dates (all WIRED sources carry real vendored dates) | — | verified 2026-06-12 |
+| 29 | ✅ DONE — model-card link on screener footer (/methodology) | — | verified 2026-06-12 |
+| 27 | ✅ DONE — walker --deal-cookie + weekly-sweep second pass | — | W2-184 |
+| 28 | ✅ DONE — screener state prefill (shipped earlier; main-view only, params win) | — | verified 2026-06-12 |
 
 ## Groomed-out / blocked
 - Medicaid S-3 re-ingest + POS bed backfill: NETWORK-GATED (sources named in
   gap_fill_registry; loaders runnable when egress opens).
 - ONC CHPL HCIT wiring: NETWORK-GATED (api named in FEATURE_MATRIX E).
+
+## Refill 3 (groomed 2026-06-12, window 3) — ready queue
+| # | Item | Score | Verification plan |
+|---|---|---|---|
+| 31 | ◐ PARTIAL — state-detail pin map shipped (no-fake-points); remaining nub: catchment radius option | 12 | verified 2026-06-12 |
+| 32 | **P10 provenance-coverage metric** — static scan: % of ck_kpi_block call sites carrying provenance affordance (tooltip/source/basis) per page; publish on /methodology | 22 | scan reproducible by test; number matches hand-count on 2 pages |
+| 33 | ✅ DONE — all-hospital peer sets link → /pipeline/rollup?ccns= | — | W2-211 |
+| 34 | **P13 long-tail: bullets on /metro-markets + /county-explorer** — same guarded recompute pattern | 20 | figures re-derived in tests exactly |
+| 35 | **Glossary long-tail: predictive-screener + X-Ray metric headers** — metric_label_link adoption | 18 | links resolve; no dead anchors (helper guard); tests |
+| 36 | ✅ DONE — memo + package routes record registry rows | — | W2-210 |
+
+## Groomed-out / blocked (window 3 additions)
+- P9 per-CCN CHOW diff alerts: NETWORK-GATED (vendored snf_chow is
+  state×year aggregate; per-CCN CHOW feed named in gap registry).

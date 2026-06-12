@@ -30,6 +30,16 @@ class PresentablePieTests(unittest.TestCase):
             self.assertIn(f">{lab}<", svg)
         self.assertIn("(40%)", svg)   # 40/100
 
+    def test_page_html_never_carries_literal_none(self):
+        # The label-mode select used to say ">None<" — indistinguishable
+        # from a None-leak to the route walker's --fail-on-leak gate
+        # (would have failed the weekly sweep). The option is "No labels".
+        from rcm_mc.ui.pie_chart_page import render_pie_chart_page
+        h = render_pie_chart_page({})
+        self.assertNotIn(">None<", h)
+        self.assertNotIn(">nan<", h)
+        self.assertIn("No labels", h)
+
     def test_uses_per_slice_colors(self):
         svg = presentable_pie(self._slices(), {})
         self.assertIn("#0b2341", svg)

@@ -16,7 +16,8 @@ class VisualsHubTests(unittest.TestCase):
         for tool, href in (("Chart Builder", "/chart-builder"),
                            ("Pie Chart", "/pie-chart"),
                            ("Excel Mapping", "/excel-mapping"),
-                           ("Exhibit Composer", "/exhibit")):
+                           ("Exhibit Composer", "/exhibit"),
+                           ("Saved Charts", "/charts")):
             self.assertIn(tool, h, tool)
             self.assertIn(f'href="{href}"', h, href)
 

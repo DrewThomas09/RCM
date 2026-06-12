@@ -62,6 +62,42 @@ class ExhibitPageTests(unittest.TestCase):
         self.assertIn("My Slide", h)
         self.assertIn("Source: deal", h)
 
+    def test_panel_dataset_select_present(self):
+        h = render_exhibit_page({})
+        self.assertIn('name="ds0"', h)
+        self.assertIn('name="ds3"', h)
+        self.assertIn("Platform data…", h)
+        self.assertIn("Ownership mix by sector", h)
+
+    def test_dataset_pick_alone_loads_real_data_not_defaults(self):
+        # ds0 with no pasted data must leave example-default mode and
+        # fill panel 1 from the platform dataset.
+        h = render_exhibit_page({"ds0": ["snf_by_state"]})
+        self.assertIn("TX", h)
+        self.assertIn("SNF / nursing homes providers by state", h)
+        # The example defaults (donut mix, operator share) must NOT
+        # silently pre-fill the other panels.
+        self.assertNotIn("Option Care", h)
+
+    def test_pasted_data_wins_over_selected_dataset(self):
+        h = render_exhibit_page({
+            "ds0": ["snf_by_state"], "d0": ["Q\tV\nQ1\t10\nQ2\t20"],
+            "pt0": ["My panel"]})
+        self.assertIn("My panel", h)
+        # The dataset table did not overwrite the pasted one.
+        self.assertNotIn("SNF / nursing homes providers by state",
+                         h.split('name="pt0"')[1].split(">")[0])
+
+    def test_panel_edit_in_builder_link(self):
+        h = render_exhibit_page({
+            "t0": ["pie"], "pt0": ["Mix"], "d0": ["A\tV\nX\t60\nY\t40"]})
+        self.assertIn("edit in Chart Builder", h)
+        self.assertIn("/chart-builder?type=pie", h)
+
+    def test_bogus_dataset_key_ignored(self):
+        h = render_exhibit_page({"ds0": ["drop_table"]})
+        self.assertIn("Exhibit Composer", h)
+
     def test_registered_in_palette_nav_and_guide(self):
         from rcm_mc.ui._chartis_kit import (
             _DEFAULT_PALETTE_MODULES, _SUB_SECTION_MAP)

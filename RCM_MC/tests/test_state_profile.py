@@ -55,6 +55,35 @@ class StateProfileTests(unittest.TestCase):
         self.assertIn("Best national rank", h)
         self.assertIn("Above U.S. median", h)
 
+    def test_insight_bullets_recompute_from_ranked_data(self):
+        # P13: the takeaway bullets are built ONLY from the same
+        # (rank, n, vs-median) tuples the table renders, with the
+        # top/bottom-quartile + ≥10%-off-median significance guard.
+        from rcm_mc.ui.data_public.state_profile_page import (
+            _all_ranked, _profile_insights, _us_median, _METRICS)
+        ranked = _all_ranked()
+        h = _profile_insights("TX", "Texas", ranked)
+        self.assertIn("Texas — the read", h)
+        self.assertIn("of 51", h)              # rank phrasing from real n
+        self.assertIn("vs the U.S. median", h)
+        # Every claimed rank must reproduce from the ranked structure.
+        import re
+        for m in re.finditer(
+                r"#(\d+) of (\d+)</strong> on (.+?) — ", h):
+            pos, n, label = int(m.group(1)), int(m.group(2)), m.group(3).strip()
+            key = next(k for k, lbl, *_ in _METRICS if lbl == label)
+            pairs = ranked[key]
+            self.assertEqual(len(pairs), n)
+            self.assertEqual(
+                next(i for i, (s, _) in enumerate(pairs, 1) if s == "TX"),
+                pos, label)
+
+    def test_insight_bullets_silent_when_nothing_significant(self):
+        # An empty ranked structure → no candidates → ck_insight_bullets
+        # renders NOTHING (silence over noise), never a hollow header.
+        from rcm_mc.ui.data_public.state_profile_page import _profile_insights
+        self.assertEqual(_profile_insights("TX", "Texas", {}), "")
+
     def test_csv_has_vs_median_column(self):
         df = profile_dataframe("CA")
         self.assertIn("VsUSMedianPct", df.columns)

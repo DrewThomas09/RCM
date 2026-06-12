@@ -205,5 +205,40 @@ class TestVerify(unittest.TestCase):
             self.assertFalse(v.all_passed)
 
 
+
+class RealCcnAnchorTests(unittest.TestCase):
+    """Workstream H: mvm_2026 is rebuilt on the real CCN 450358 — its
+    profile must match the live HCRIS frame EXACTLY (loaded at seed
+    time, never hardcoded copies), and the deal page names the CCN."""
+
+    def test_seeded_profile_matches_hcris_filing(self):
+        import tempfile, os
+        from rcm_mc.dev.seed import seed_demo_db, _REAL_CCN
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "demo.db")
+            seed_demo_db(db, write_export_files=False)
+            deals = PortfolioStore(db).list_deals()
+            row = deals[deals["deal_id"] == "mvm_2026"].iloc[0]
+            ref = _get_latest_per_ccn()
+            ref = ref[ref["ccn"] == _REAL_CCN].iloc[0]
+            self.assertEqual(row["name"], str(ref["name"]).title())
+            self.assertEqual(float(row["net_revenue"]),
+                             float(ref["net_patient_revenue"]))
+            self.assertEqual(float(row["bed_count"]), float(ref["beds"]))
+            self.assertEqual(str(row["hcris_ccn"]), _REAL_CCN)
+            self.assertIn("ACTUAL", str(row["metrics_basis"]))
+
+    def test_deal_page_names_the_ccn(self):
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        h = render_deal_dashboard(
+            "mvm_2026", {"name": "The Methodist Hospital",
+                         "state": "TX", "hcris_ccn": "450358",
+                         "hcris_fy": 2022})
+        self.assertIn("HCRIS CCN 450358", h)
+        self.assertIn("FY2022", h)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,7 +11,7 @@ import unittest
 
 from rcm_mc.ui.cdd_chart_kit import (
     CHART_TYPES, PALETTES, SIZE_PRESETS, parse_table, render_cdd_chart,
-    _series, chart_export_toolbar,
+    transform_table, _series, chart_export_toolbar,
 )
 from rcm_mc.ui.chart_builder_page import render_chart_builder_page
 
@@ -35,6 +35,11 @@ class ParseTableTests(unittest.TestCase):
     def test_non_numeric_becomes_none(self):
         t = parse_table("A\tB\nx\tn/a")
         self.assertEqual(t["rows"][0], ("x", [None]))
+
+    def test_table_to_tsv_round_trip(self):
+        from rcm_mc.ui.cdd_chart_kit import table_to_tsv
+        t = parse_table("Y\tA\tB\n2021\t100\t\n2022\t1.5\t3")
+        self.assertEqual(parse_table(table_to_tsv(t)), t)
 
     def test_series_column_major(self):
         t = parse_table("Year\tRev\tEBITDA\n2021\t100\t22\n2022\t130\t31")
@@ -96,9 +101,119 @@ class RenderTests(unittest.TestCase):
     def test_new_consultant_chart_types_present(self):
         keys = {k for k, _ in CHART_TYPES}
         for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot",
-                  "gauge", "heatmap", "slope", "gantt"):
+                  "gauge", "heatmap", "slope", "gantt", "pareto",
+                  "histogram", "boxplot", "dumbbell", "bar_stacked",
+                  "waffle", "smallmult"):
             self.assertIn(k, keys, k)
-        self.assertGreaterEqual(len(CHART_TYPES), 23)
+        self.assertGreaterEqual(len(CHART_TYPES), 30)
+
+    def test_pareto_has_cumulative_line_and_80_marker(self):
+        t = parse_table("Reason\tCount\nAuth\t340\nElig\t210\nCoding\t160\n"
+                        "Filing\t90")
+        svg = render_cdd_chart("pareto", t, {"title": "Denials"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("80%", svg)
+        self.assertIn("<polyline", svg)       # cumulative-share line
+        self.assertIn("100%", svg)            # last cumulative point
+        self.assertNotIn("None", svg)
+
+    def test_histogram_bins_and_annotates(self):
+        rows = "\n".join(f"A{i}\t{v}" for i, v in enumerate(
+            (34, 41, 38, 52, 47, 44, 39, 61, 46, 43, 55, 37)))
+        svg = render_cdd_chart("histogram", parse_table("Acct\tDAR\n" + rows),
+                               {"title": "DAR distribution"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("n=12", svg)
+        self.assertIn("mean=", svg)
+        self.assertNotIn("None", svg)
+
+    def test_boxplot_renders_quartile_boxes(self):
+        t = parse_table("Site\tJ\tF\tM\tA\nNorth\t42\t45\t39\t48\n"
+                        "South\t38\t36\t41\t35")
+        svg = render_cdd_chart("boxplot", t, {"title": "DAR by site"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("North", svg)
+        self.assertIn("South", svg)
+        self.assertIn("fill-opacity", svg)    # the IQR box
+        self.assertNotIn("None", svg)
+
+    def test_dumbbell_renders_pairs_with_period_legend(self):
+        t = parse_table("Metric\tEntry\tExit\nMargin\t18\t26\nMix\t34\t41")
+        svg = render_cdd_chart("dumbbell", t, {"title": "Entry vs exit"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("Margin", svg)
+        self.assertIn("Entry", svg)
+        self.assertIn("Exit", svg)
+        self.assertNotIn("None", svg)
+
+    def test_waffle_allocates_exactly_100_cells(self):
+        t = parse_table("Seg\tShare\nAIC\t38\nHome\t30\nHOPD\t22\nOffice\t10")
+        svg = render_cdd_chart("waffle", t, {"title": "Mix"})
+        self.assertTrue(svg.startswith("<svg"))
+        # 100 grid cells + 4 legend swatches.
+        self.assertEqual(svg.count("<rect"), 104)
+        self.assertIn("38.0%", svg)          # legend share, 1 decimal
+        self.assertNotIn("None", svg)
+
+    def test_waffle_rounding_uses_largest_remainder(self):
+        # 3 × 1/3 → 34+33+33, never 33+33+33 = 99 cells.
+        t = parse_table("S\tV\nA\t1\nB\t1\nC\t1")
+        svg = render_cdd_chart("waffle", t, {})
+        self.assertEqual(svg.count("<rect"), 103)
+
+    def test_small_multiples_one_panel_per_series(self):
+        t = parse_table("Year\tRev\tEBITDA\tCapex\n2021\t100\t22\t8\n"
+                        "2022\t130\t31\t9\n2023\t165\t43\t12")
+        svg = render_cdd_chart("smallmult", t, {"title": "KPIs"})
+        for name in ("Rev", "EBITDA", "Capex"):
+            self.assertIn(name, svg)
+        self.assertEqual(svg.count("<polyline"), 3)
+        self.assertNotIn("None", svg)
+
+    def test_stacked_horizontal_bar_renders(self):
+        t = parse_table("Payer\tIP\tOP\nMedicare\t40\t25\nCommercial\t30\t35")
+        svg = render_cdd_chart("bar_stacked", t, {"title": "Mix"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("Medicare", svg)
+        self.assertNotIn("None", svg)
+
+    def test_reference_line_with_label(self):
+        t = parse_table("Y\tR\n2021\t100\n2022\t130")
+        svg = render_cdd_chart("column", t, {"ref_value": 150.0,
+                                             "ref_label": "Plan target"})
+        self.assertIn("Plan target", svg)
+        self.assertIn("stroke-dasharray", svg)
+        # The scale stretches to include the reference value.
+        self.assertIn("150", svg)
+
+    def test_cagr_tag_first_to_last(self):
+        t = parse_table("Year\tRev\n2021\t100\n2022\t130\n2023\t165\n"
+                        "2024\t210")
+        svg = render_cdd_chart("line", t, {"show_cagr": True})
+        self.assertIn("CAGR 2021–2024: +28.1%", svg)
+        # No tag when the start value is non-positive.
+        neg = render_cdd_chart(
+            "line", parse_table("Y\tV\n2021\t0\n2022\t50"),
+            {"show_cagr": True})
+        self.assertNotIn("CAGR", neg)
+
+    def test_average_line(self):
+        t = parse_table("Q\tV\nQ1\t10\nQ2\t20\nQ3\t30")
+        svg = render_cdd_chart("column", t, {"show_avg": True})
+        self.assertIn("Avg 20", svg)
+
+    def test_trendline_overlays_fit_with_r2(self):
+        t = parse_table("Co\tX\tY\nA\t1\t2\nB\t2\t4.1\nC\t3\t5.9\nD\t4\t8")
+        svg = render_cdd_chart("scatter", t, {"trendline": True})
+        self.assertIn("Trend R²=", svg)
+        self.assertIn("stroke-dasharray", svg)
+        line = render_cdd_chart(
+            "line", parse_table("Y\tR\n2021\t100\n2022\t130\n2023\t165"),
+            {"trendline": True})
+        self.assertIn("Trend R²=", line)
+        # Off by default.
+        off = render_cdd_chart("scatter", t, {})
+        self.assertNotIn("Trend R²=", off)
 
     def test_slope_and_gantt_render(self):
         s = render_cdd_chart(
@@ -174,6 +289,80 @@ class RenderTests(unittest.TestCase):
         self.assertEqual(keys, ["S", "M", "L", "XL"])
 
 
+class TransformTests(unittest.TestCase):
+    """transform_table — the Excel prep steps (SUMIF, sort, top-N,
+    running %) folded into the builder."""
+
+    def _t(self, text):
+        return parse_table(text)
+
+    def test_group_sum_aggregates_duplicate_labels(self):
+        t = self._t("Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7")
+        out = transform_table(t, {"group": "sum"})
+        self.assertEqual(out["rows"], [("Aetna", [17.0]), ("UHC", [5.0])])
+
+    def test_group_mean_and_count(self):
+        t = self._t("P\tV\nA\t10\nA\t20")
+        self.assertEqual(transform_table(t, {"group": "mean"})["rows"],
+                         [("A", [15.0])])
+        self.assertEqual(transform_table(t, {"group": "count"})["rows"],
+                         [("A", [2.0])])
+
+    def test_sort_desc_by_first_series(self):
+        t = self._t("P\tV\nA\t5\nB\t20\nC\t10")
+        out = transform_table(t, {"sort": "desc"})
+        self.assertEqual([r[0] for r in out["rows"]], ["B", "C", "A"])
+
+    def test_top_n_lumps_rest_into_other(self):
+        t = self._t("P\tV\nA\t50\nB\t30\nC\t10\nD\t6\nE\t4")
+        out = transform_table(t, {"sort": "desc", "top_n": 2})
+        self.assertEqual([r[0] for r in out["rows"]],
+                         ["A", "B", "Other (3)"])
+        self.assertEqual(out["rows"][-1][1], [20.0])
+
+    def test_pct_total_sums_to_100(self):
+        t = self._t("P\tV\nA\t50\nB\t30\nC\t20")
+        out = transform_table(t, {"calc": "pct_total"})
+        self.assertAlmostEqual(sum(r[1][0] for r in out["rows"]), 100.0)
+
+    def test_cumulative_running_total(self):
+        t = self._t("Q\tV\nQ1\t10\nQ2\t20\nQ3\t5")
+        out = transform_table(t, {"calc": "cumulative"})
+        self.assertEqual([r[1][0] for r in out["rows"]],
+                         [10.0, 30.0, 35.0])
+
+    def test_growth_vs_prior_first_row_blank(self):
+        t = self._t("Y\tR\n2021\t100\n2022\t130\n2023\t117")
+        out = transform_table(t, {"calc": "growth"})
+        vals = [r[1][0] for r in out["rows"]]
+        self.assertIsNone(vals[0])
+        self.assertAlmostEqual(vals[1], 30.0)
+        self.assertAlmostEqual(vals[2], -10.0)
+
+    def test_index_first_value_is_100(self):
+        t = self._t("Y\tR\n2021\t80\n2022\t120")
+        out = transform_table(t, {"calc": "index"})
+        self.assertEqual([r[1][0] for r in out["rows"]], [100.0, 150.0])
+
+    def test_moving_avg_window_3(self):
+        t = self._t("M\tV\nm1\t10\nm2\t20\nm3\t30\nm4\t40")
+        out = transform_table(t, {"calc": "moving_avg"})
+        self.assertEqual([r[1][0] for r in out["rows"]],
+                         [10.0, 15.0, 20.0, 30.0])
+
+    def test_ops_compose_group_then_sort_then_topn(self):
+        t = self._t("P\tV\nA\t5\nB\t20\nA\t10\nC\t8")
+        out = transform_table(
+            t, {"group": "sum", "sort": "desc", "top_n": 2})
+        self.assertEqual([r[0] for r in out["rows"]],
+                         ["B", "A", "Other (1)"])
+
+    def test_input_table_not_mutated(self):
+        t = self._t("P\tV\nA\t10\nA\t20")
+        transform_table(t, {"group": "sum", "calc": "pct_total"})
+        self.assertEqual(t["rows"], [("A", [10.0]), ("A", [20.0])])
+
+
 class BuilderPageTests(unittest.TestCase):
     def test_page_renders_core_elements(self):
         h = render_chart_builder_page({})
@@ -198,6 +387,108 @@ class BuilderPageTests(unittest.TestCase):
             "type": ["column"], "title": ["Q3 Revenue"],
             "data": ["Q\tR\nQ1\t10\nQ2\t20"]})
         self.assertIn("Q3 Revenue", h)
+
+    def test_shaping_controls_present(self):
+        h = render_chart_builder_page({})
+        for needle in ("DATA SHAPING", 'name="group"', 'name="sort"',
+                       'name="topn"', 'name="calc"', 'name="trend"',
+                       "% of total", "Largest first"):
+            self.assertIn(needle, h, f"missing: {needle}")
+
+    def test_group_sum_applied_to_rendered_chart(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "group": ["sum"],
+            "data": ["Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7"]})
+        self.assertIn(">17<", h)              # aggregated bar value label
+
+    def test_topn_lumps_other_in_chart(self):
+        h = render_chart_builder_page({
+            "type": ["bar"], "sort": ["desc"], "topn": ["2"],
+            "data": ["P\tV\nA\t50\nB\t30\nC\t10\nD\t6\nE\t4"]})
+        self.assertIn("Other (3)", h)
+
+    def test_trendline_checkbox_drives_overlay(self):
+        h = render_chart_builder_page({
+            "type": ["scatter"], "trend": ["1"],
+            "data": ["Co\tX\tY\nA\t1\t2\nB\t2\t4\nC\t3\t6\nD\t4\t8"]})
+        self.assertIn("Trend R²=", h)
+
+    def test_annotation_controls_present_and_flow_through(self):
+        h = render_chart_builder_page({})
+        for needle in ("ANNOTATIONS", 'name="refval"', 'name="reflabel"',
+                       'name="cagr"', 'name="avg"'):
+            self.assertIn(needle, h, f"missing: {needle}")
+        h2 = render_chart_builder_page({
+            "type": ["column"], "refval": ["150"], "reflabel": ["Target"],
+            "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertIn("Target", h2)
+        h3 = render_chart_builder_page({
+            "type": ["line"], "cagr": ["1"],
+            "data": ["Y\tR\n2021\t100\n2022\t130\n2023\t165"]})
+        self.assertIn("CAGR 2021–2023", h3)
+
+    def test_send_to_exhibit_carries_shaped_table(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "group": ["sum"],
+            "data": ["Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7"]})
+        self.assertIn("Send to Exhibit Composer", h)
+        self.assertIn("/exhibit?t0=column", h)
+        # The link carries the SHAPED table (Aetna aggregated to 17),
+        # tab-encoded — what you see is what lands on the slide. The
+        # raw paste still appears elsewhere (textarea, gallery links),
+        # so scope the check to the exhibit href itself.
+        link = h.split("/exhibit?t0=")[1].split('"')[0]
+        self.assertIn("Aetna%0917", link)
+        self.assertNotIn("Aetna%0910", link)
+
+    def test_unchecking_default_on_toggles_persists(self):
+        # GET forms drop unchecked boxes entirely, so default-True
+        # toggles could never be turned off. The hidden fs=1 marker
+        # makes absence mean unchecked on a real submit…
+        h = render_chart_builder_page({
+            "fs": ["1"], "type": ["column"],
+            "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertNotIn(">100<", h.split('id="chartOut"')[1]
+                         .split("GALLERY")[0])   # value labels off
+        # …while links without fs (gallery/dataset/shared) keep the
+        # friendly defaults.
+        h2 = render_chart_builder_page({
+            "type": ["column"], "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertIn(">100<", h2)
+        # And checked boxes still work on a submit.
+        h3 = render_chart_builder_page({
+            "fs": ["1"], "values": ["1"], "type": ["column"],
+            "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertIn(">100<", h3)
+
+    def test_histogram_bins_control(self):
+        rows = "\n".join(f"a{i}\t{30+i}" for i in range(20))
+        h = render_chart_builder_page({
+            "type": ["histogram"], "bins": ["4"],
+            "data": ["A\tV\n" + rows]})
+        self.assertIn('name="bins"', h)
+        chart = h.split('id="chartOut"')[1].split("GALLERY")[0]
+        # 4 requested bins → 4 histogram bars in the main chart.
+        self.assertEqual(chart.count("<rect"), 4)
+        # Bogus bins ignored.
+        hb = render_chart_builder_page({"type": ["histogram"],
+                                        "bins": ["nope"]})
+        self.assertIn("Chart Builder", hb)
+
+    def test_copy_shaped_table_carries_transformed_tsv(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "group": ["sum"],
+            "data": ["Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7"]})
+        self.assertIn("Copy shaped table", h)
+        tsv = h.split('id="shapedTsv"')[1].split("</textarea>")[0]
+        self.assertIn("Aetna\t17", tsv)     # aggregated, not raw
+        self.assertNotIn("Aetna\t10", tsv)
+
+    def test_bogus_shaping_params_ignored(self):
+        h = render_chart_builder_page({
+            "group": ["drop table"], "sort": ["weird"],
+            "topn": ["nope"], "calc": ["bad"], "refval": ["abc"]})
+        self.assertIn("Chart Builder", h)
 
     def test_registered_in_palette_nav_and_guide(self):
         from rcm_mc.ui._chartis_kit import (

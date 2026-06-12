@@ -988,6 +988,18 @@ class WorkbenchCompareTests(unittest.TestCase):
         self.assertIn("Comparing 3", h)
         self.assertIn("CMS X-Ray", h)
         self.assertNotIn("not directly comparable", h)  # single vertical
+        # P5: the comp table is exhibit-numbered + sourced (deck-ready);
+        # single-vertical baskets don't carry the cross-vertical caveat.
+        self.assertIn("EXHIBIT 1", h)
+        self.assertIn("Compare basket — side-by-side", h)
+        self.assertNotIn("(cross-vertical)", h)
+
+    def test_cross_vertical_compare_exhibit_labels_units(self):
+        hh = self._ccns("home_health", 1)[0]
+        dz = self._ccns("dialysis", 1)[0]
+        h = self._render(view="compare", compare=f"{hh},{dz}")
+        self.assertIn("Compare basket — side-by-side (cross-vertical)", h)
+        self.assertIn("Size/Quality labeled per vertical", h)
 
     def test_cross_vertical_shows_not_comparable(self):
         hh = self._ccns("home_health", 1)[0]
@@ -1004,6 +1016,15 @@ class WorkbenchCompareTests(unittest.TestCase):
         h = self._render(view="main", vertical="snf")
         self.assertIn("+Cmp", h)
         self.assertIn("view=compare&compare=", h)
+
+    def test_table_has_per_row_deal_attach(self):
+        # PAGE_INVENTORY top fix: every row can promote straight to a
+        # prefilled /import (deal id slugged from vertical+CCN, name,
+        # state) without the Inspector round-trip.
+        h = self._render(view="main", vertical="snf")
+        self.assertIn("+Deal", h)
+        self.assertIn("/import?deal_id=snf_", h)
+        self.assertIn("Promote to Pipeline (prefilled deal)", h)
 
 
 class WorkbenchJustMissedTests(unittest.TestCase):
