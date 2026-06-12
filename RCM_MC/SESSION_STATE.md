@@ -400,3 +400,23 @@ Visuals hub (/visuals): card-per-tool landing page with live thumbnails
 + palette + guide. +3 tests. Graphics suite complete: hub + 4 builders
 (Chart Builder 23 types, Pie, Excel Mapping, Exhibit Composer), all with
 SVG/PNG export + Chartis styling.
+
+---
+## Checkpoint — wave #71 (W2-169, 2026-06-12)
+Diligence pivot: wired CMS Medicare Monthly Enrollment (new cms_enrollment
+.py, live + published TX fallback) → texas_ma_enrollment now uses the TRUE
+total-Medicare denominator for MA penetration (~48% vs the old 65+ proxy
+~55%). MA panel shows enrollees/total/penetration/dual + denom source.
++5 tests. Remaining named source: CMS Outpatient Hospitals by provider/
+service (cms_opps_outpatient client exists, unwired — HOPD infusion volume).
+
+---
+## Checkpoint — wave #72 (W2-170, 2026-06-12)
+Wired the last named source: CMS Outpatient Hospitals (by provider &
+service). New cms_opps_outpatient.fetch_opps_state_infusion (live HOPD
+infusion services/payment by state, fails closed). texas_hopd_pool: HOPD
+steered-away pool per metro (≈58k pts / ~$0.7B, modeled from real metro
+patients × 30% HOPD share; live OPPS override). Page: "HOPD infusion —
+the steered-away pool" panel. +5 tests. ALL user-named data sources now
+integrated (CDC PLACES, ACS, ASP, MA, Monthly Enrollment, NPPES+map,
+Part-B POS, Outpatient Hospitals).

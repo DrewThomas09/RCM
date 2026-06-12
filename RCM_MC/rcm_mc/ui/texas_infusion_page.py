@@ -154,6 +154,66 @@ _EVO_BANDS = [("hopd", "Hospital outpatient (HOPD)", _NAVY),
               ("home", "Home infusion", _POS)]
 
 
+def _hopd_pool_section(a: Dict[str, Any]) -> str:
+    """The HOPD 'steered-away' infusion pool by metro — the white-space an
+    AIC/home platform captures."""
+    hp = a.get("hopd_pool") or {}
+    metros = hp.get("metros", [])
+    if not metros:
+        return ""
+    live = hp.get("opps_live")
+    badge = (
+        f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
+        f'padding:2px 7px;border-radius:3px;background:'
+        f'{("#e6f4ee" if live else "#f3efe4")};color:'
+        f'{(_POS if live else _WARN)};border:1px solid '
+        f'{(_POS if live else _WARN)};">'
+        f'{"LIVE — CMS OPPS file" if live else "MODELED — HOPD share × real metro patients (live CMS OPPS via ?nppes=live)"}'
+        f'</span>')
+    mx = max((m["hopd_patients"] for m in metros), default=1) or 1
+    bars = ""
+    for m in metros:
+        w = m["hopd_patients"] / mx * 100
+        short = m["metro"].split("-")[0]
+        bars += (
+            f'<div style="display:grid;grid-template-columns:130px 1fr 150px;'
+            f'align-items:center;gap:8px;margin:3px 0;">'
+            f'<div style="font-size:11.5px;color:#1a2332;">'
+            f'{html.escape(short)}</div>'
+            f'<div style="height:14px;background:#ece5d6;border-radius:2px;'
+            f'overflow:hidden;"><div style="height:100%;width:{w:.0f}%;'
+            f'background:{_NAVY};"></div></div>'
+            f'<div style="font-size:11px;color:{_DIM};text-align:right;">'
+            f'<strong style="color:{_NAVY};">{m["hopd_patients"]:,}</strong>'
+            f' pts · {_money(m["hopd_revenue"])}</div></div>')
+    opps = ""
+    if live and hp.get("opps_services"):
+        opps = (f'<div style="font-size:11px;color:{_POS};margin-top:6px;">'
+                f'Live CMS OPPS: {hp["opps_services"]:,} HOPD infusion '
+                f'services · {_money(hp.get("opps_payment",0))} Medicare '
+                f'payment (TX).</div>')
+    return (
+        f'<div style="border:1px solid #d6cfc0;border-top:3px solid {_NAVY};'
+        f'border-radius:4px;padding:12px 14px;background:#fff;margin-top:14px;">'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'
+        f'<div style="font-size:13px;font-weight:700;color:{_NAVY};">'
+        f'HOPD infusion — the steered-away pool '
+        f'({hp["hopd_share"]*100:.0f}% of volume)</div>{badge}</div>'
+        f'<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px;">'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;">CAPTURABLE HOPD PATIENTS (4 METROS)</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+        f'{hp["total_hopd_patients"]:,}</div></div>'
+        f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:'
+        f'0.06em;font-weight:700;">HOPD INFUSION REVENUE POOL</div>'
+        f'<div style="font-size:18px;font-weight:700;color:{_NAVY};">'
+        f'{_money(hp["total_hopd_revenue"])}</div></div></div>'
+        f'{bars}{opps}'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        f'{html.escape(hp["note"])}</p></div>')
+
+
 def _evolution_section(a: Dict[str, Any]) -> str:
     """How discharges → home infusion / site-of-care have evolved over
     time: a stacked-area chart of the mix shift, the market-size + OPAT
@@ -806,17 +866,19 @@ def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
         f'steerage engine</div>'
         f'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
         + _kpi("TX MA ENROLLEES", f'{ma["enrollment"]/1e6:.2f}M')
-        + _kpi("PENETRATION (vs 65+)", f'{ma["penetration_proxy"]*100:.0f}%')
+        + _kpi("TOTAL MEDICARE", f'{ma.get("total_medicare",0)/1e6:.2f}M')
+        + _kpi("MA PENETRATION", f'{ma.get("penetration",0)*100:.0f}%')
         + _kpi("DUAL-ELIGIBLE", f'{ma["dual_eligible_pct"]*100:.0f}%')
-        + _kpi("AVG AGE", f'{ma.get("avg_age","—")}')
         + '</div>'
         + f'<p style="font-size:11.5px;color:{_DIM};line-height:1.55;'
         f'margin:8px 0 0;">{html.escape(ma["note"])}</p>'
         + f'<p style="font-size:9px;color:{_FAINT};margin:6px 0 0;">'
-        f'CMS MA geographic-variation file (state, {ma.get("year","—")}); '
-        f'penetration vs 65+ population is a proxy (true denominator = '
-        f'total Medicare incl. &lt;65 disabled). County-level penetration '
-        f'available via the live CMS MA enrollment API.</p></div>')
+        f'MA enrollment: CMS MA geographic-variation file (state, '
+        f'{ma.get("year","—")}). Penetration denominator: '
+        f'{html.escape(ma.get("denominator_source","—"))} — the true total-'
+        f'Medicare base (not the 65+ proxy, which omits the &lt;65 '
+        f'disabled). Live county penetration via the CMS enrollment API '
+        f'where egress permits.</p></div>')
 
 
 def _medicare_base_section(a: Dict[str, Any]) -> str:
@@ -2567,10 +2629,10 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"a textbook roll-up runway — no incumbent can block a build-up."),
         "payer": (
             f"Commercial-heavy ({commercial*100:.0f}%) funds the economics, "
-            f"but {ma['enrollment']/1e6:.1f}M MA lives (~"
-            f"{ma['penetration_proxy']*100:.0f}%) are steering site-of-care "
-            f"and gating biologics — payer mix is the swing factor on "
-            f"margin."),
+            f"but {ma['enrollment']/1e6:.1f}M MA lives "
+            f"({ma.get('penetration',0)*100:.0f}% of total Medicare) are "
+            f"steering site-of-care and gating biologics — payer mix is "
+            f"the swing factor on margin."),
         "hopd": (
             f"~{sum(m['hopd_patients_modeled'] for m in a['hopd_infusion']['metros']):,} "
             f"metro patients sit in the {a['hopd_infusion']['hopd_share']*100:.0f}% "
@@ -2586,8 +2648,7 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"{a['medicare_base']['state']['ma_pct']*100:.0f}% MA book is "
             f"steered and prior-auth'd. Size the Part B opportunity on "
             f"FFS benes by county, and underwrite the MA share "
-            f"converting only at managed-care economics."),
-        "demographics": (
+            f"converting only at managed-care economics."),        "demographics": (
             "The 65+ tailwind is real, but TX's highest-in-US uninsured "
             "rate and rural spread complicate home economics outside the "
             "four metros — stay metro-clustered."),
@@ -2737,11 +2798,12 @@ def render_texas_infusion_page(
         + ck_section_header("Segmentation by site of care",
                             eyebrow="THE SITE-OF-CARE SHIFT")
         + _site_table(a)
+        + _hopd_pool_section(a)
         + _so_what(sw["site"])
 
-        + ck_section_header("HOPD infusion volume — the steerable pool",
+        + ck_section_header("HOPD volume by hospital — who holds the pool",
                             eyebrow="CMS OUTPATIENT BY PROVIDER & SERVICE · "
-                                    "DRUG-ADMIN APCs · BY METRO")
+                                    "DRUG-ADMIN APCs · PER-CCN DRILL-DOWN")
         + _hopd_infusion_section(a)
         + _so_what(sw["hopd"])
 

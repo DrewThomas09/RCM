@@ -386,3 +386,26 @@ def fetch_state_drug_admin(
     for slot in agg.values():
         slot["payment_mm"] = round(slot["payment_mm"], 3)
     return agg
+
+def fetch_opps_state_infusion(
+    state: str, hcpcs_codes: Optional[List[str]] = None, *,
+    timeout: float = 20.0,
+) -> Dict[str, Any]:
+    """State-level HOPD drug-administration totals — the steered-away
+    pool: ``{"live", "services", "medicare_payment"}``.
+
+    The published file is APC-grain, so the aggregation runs over the
+    four drug-administration APCs (5691-5694) via
+    ``fetch_state_drug_admin`` — a J-code filter against this dataset
+    matches nothing (the pre-fix behavior); ``hcpcs_codes`` is accepted
+    for back-compat and ignored. ``{"live": False}`` on any failure."""
+    del hcpcs_codes
+    if not str(state or "").strip():
+        return {"live": False}
+    by_ccn = fetch_state_drug_admin(state, timeout=timeout)
+    if not by_ccn:
+        return {"live": False}
+    services = sum(s["services"] for s in by_ccn.values())
+    payment = sum(s["payment_mm"] for s in by_ccn.values()) * 1_000_000
+    return {"live": True, "services": int(services),
+            "medicare_payment": round(payment)}

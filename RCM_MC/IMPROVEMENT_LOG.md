@@ -3511,7 +3511,52 @@ capstone for the suite.
 **Verify**: new `test_visuals_hub.py` (3) — a card + link per tool, ≥4
 thumbnail SVGs, palette/nav/guide registration. Full suite green.
 
-## W2-169 (2026-06-12) — Medicare Monthly Enrollment: the true Part B denominator (wave #71)
+## W2-169 (2026-06-12) — Texas infusion: Medicare Monthly Enrollment → true MA penetration (wave #71)
+Pivoted back to diligence and wired a named source — CMS Medicare
+Monthly Enrollment — to fix the MA-penetration denominator:
+- **`cms_enrollment.py`** (new): a live client for the CMS Medicare
+  Monthly Enrollment file — total Medicare beneficiaries + the FFS vs
+  MA-and-other split by state (latest month). Resolves the dataset from
+  the CMS catalog, fails CLOSED, and falls back to a published TX total
+  (≈4.6M) — never fabricated.
+- **`texas_ma_enrollment`** now computes a TRUE MA-penetration rate =
+  MA enrollment ÷ total Medicare beneficiaries (≈48%: 2.19M / 4.6M),
+  replacing the 65+ proxy (which overstated at ~55% by omitting the
+  under-65 disabled). The proxy is kept for continuity; the panel now
+  shows TX MA enrollees / total Medicare / MA penetration / dual, with
+  the denominator source labeled (live vs published). Live county/total
+  penetration fills in via the enrollment API under `?nppes=live`.
+**Verify**: +1 integration test (penetration uses the total-Medicare
+denominator, < the proxy, offline = published fallback) + new
+`test_cms_enrollment.py` (4) — offline uses published total, unknown
+state → US fallback, fetch fails closed unresolved, parses latest-month
+total from a mocked payload. Full suite green.
+
+## W2-170 (2026-06-12) — Texas infusion: HOPD steered-away pool (CMS Outpatient Hospitals) (wave #72)
+Wired the last named data source — CMS Medicare Outpatient Hospitals (by
+provider & service) — and quantified the HOPD "steered-away" pool:
+- **`cms_opps_outpatient.fetch_opps_state_infusion`** (new): a best-effort
+  live aggregator over the OPPS by-provider-and-service file — total HOPD
+  outpatient services + Medicare payment for the infusion J-codes in a
+  state. Resolves the dataset from the CMS catalog, fails CLOSED.
+- **`texas_hopd_pool`**: per-metro HOPD infusion pool — HOPD patients =
+  real metro infusion patients × the HOPD site share (30%), HOPD revenue
+  at the sizing model's infusions/yr × revenue/infusion. ≈58k capturable
+  HOPD patients / ≈$0.7B across the four metros (DFW + Houston largest).
+  The live CMS OPPS pull overrides with real services + payment under
+  `?nppes=live`.
+- **Page**: a "HOPD infusion — the steered-away pool" panel in the
+  site-of-care section — capturable HOPD patients + revenue pool KPIs,
+  per-metro bars, and a LIVE/MODELED badge. Frames the 30% HOPD pool as
+  the white-space an AIC/home roll-up captures (not a competitor).
+This completes the user's named data-source list (CDC PLACES, ACS, ASP,
+MA enrollment, Medicare Monthly Enrollment, NPPES + map, Part-B POS, and
+now Outpatient Hospitals).
+**Verify**: +3 HOPD tests — pool = real metro patients × HOPD share +
+ranked + summed, offline is modeled (OPPS fails closed), live flag
+threads through + fails closed; +2 render needles. Full suite green.
+
+## W2-171 (2026-06-12) — Medicare Monthly Enrollment, county grain: the Part B denominator by county (wave #73a)
 Closed the last unbuilt item of the user's multi-source CMS data request.
 - **`cms_monthly_enrollment.py`** (new live client): resolves the CMS
   "Medicare Monthly Enrollment" dataset UUID from the data.json catalog,
@@ -3544,8 +3589,8 @@ metro members sorted desc (Harris #1), live mock replaces state + matched
 counties and leaves the rest MODELED, page renders section + badge,
 source cited. Full suite green.
 
-## W2-170 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #72)
-The full-suite sweep after wave #71 caught five pre-existing failures the
+## W2-172 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #73b)
+The full-suite sweep after the enrollment wave caught five pre-existing failures the
 graphics waves left on main (verified failing on a clean tree):
 - **`user-supplied` data-universe kind unregistered** — /chart-builder,
   /excel-mapping and /pie-chart declared `universe="user-supplied"` but
@@ -3565,15 +3610,15 @@ graphics waves left on main (verified failing on a clean tree):
 test_pedesk_guide_5q_invariant ×3, test_section_catalog) now pass;
 1,321-test wiring sweep (guide/palette/chartis/catalog/nav) green.
 
-## W2-171 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #72b)
+## W2-173 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #73c)
 Merging main (waves #66–68 from the parallel chart stream) brought the
-new /exhibit Exhibit Composer with the SAME wiring gap the W2-170 sweep
+new /exhibit Exhibit Composer with the SAME wiring gap the W2-172 sweep
 fixed on its siblings: 2 common_questions (floor is 5) and no
 related_routes. Brought it to the floor + cross-linked /chart-builder
 and /pie-chart. Guide invariant suites + 1,254-test graphics/wiring
 sweep green on the merged tree.
 
-## W2-172 (2026-06-12) — /visuals guide-floor fix after the second main merge (wave #72c)
+## W2-174 (2026-06-12) — /visuals guide-floor fix after the second main merge (wave #73d)
 The next main merge (waves #69–70 from the chart stream) brought the
 /visuals hub with the same gap again: 2 common_questions, no
 related_routes. Brought to the floor + cross-linked all four builder
@@ -3581,7 +3626,7 @@ tools. NOTE for the chart stream: new pages keep landing below the
 Guide 5-Q floor — add the 5 questions + related_routes in the same PR
 that adds the page (test_pedesk_guide_5q_invariant is the gate).
 
-## W2-173 (2026-06-12) — HOPD infusion volume via CMS OPPS by Provider & Service (wave #73)
+## W2-175 (2026-06-12) — HOPD per-hospital volume via CMS OPPS by Provider & Service (wave #73e)
 Closed the FINAL remaining item of the multi-source CMS data request —
 and fixed a latent parser bug found while wiring it:
 - **Parser fix (found bug)**: the published "Outpatient Hospitals - by
@@ -3616,3 +3661,22 @@ Texas page with an honest labeled fallback.
 $ math). +5 in test_texas_infusion — modeled pool == page factors
 recomputed, APC set, live mock aggregates via the real HCRIS Harris-county
 join, page renders, source cited. Full suite green.
+
+## W2-176 (2026-06-12) — Reconcile the two parallel CMS wirings (wave #73f)
+The chart stream and this stream independently wired the SAME two CMS
+sources (their W2-169/170 vs this stream's W2-171/175). Reconciled at
+the merge instead of shipping duplicates:
+- **Both kept where complementary**: their state-level true-MA-
+  penetration upgrade to texas_ma_enrollment + their compact HOPD
+  "$-pool" panel inside site-of-care stay; this stream's county-grain
+  Medicare-base section and per-CCN HOPD drill-down (retitled "HOPD
+  volume by hospital — who holds the pool") stay. The modeled numbers
+  agree by construction (same patients × HOPD share).
+- **Found bug fixed at the merge**: their `fetch_opps_state_infusion`
+  filtered `HCPCS_Cd` (J-codes) against the APC-grain file — a filter
+  that matches nothing live. Rewired it as a thin bridge over the
+  APC-grain `fetch_state_drug_admin` (same name + return shape, their
+  tests untouched); `hcpcs_codes` accepted for back-compat and ignored,
+  documented in the docstring.
+**Verify**: merged-tree texas suite (both streams' test classes) +
+opps client suites green; page renders both blocks consistently.

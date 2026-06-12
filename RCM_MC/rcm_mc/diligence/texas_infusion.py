@@ -1371,34 +1371,94 @@ def texas_asp_pricing() -> Dict[str, Any]:
     }
 
 
-def texas_ma_enrollment(tx_pop: float, seniors: float) -> Dict[str, Any]:
-    """Texas Medicare Advantage enrollment + a penetration proxy. MA
+def texas_ma_enrollment(tx_pop: float, seniors: float,
+                        fetch_live: bool = False) -> Dict[str, Any]:
+    """Texas Medicare Advantage enrollment + a TRUE penetration rate. MA
     growth is the single biggest payer-side force on infusion site of
     care — MA plans steer infusion out of HOPD into AIC / home and run
-    prior-auth + white-bagging. Real vendored CMS MA geographic-variation
-    data (state); live county penetration is available via
-    cms_ma_enrollment where egress permits."""
+    prior-auth + white-bagging. MA enrollment from the vendored CMS MA
+    geographic-variation file; the penetration DENOMINATOR is total
+    Medicare beneficiaries from the CMS Medicare Monthly Enrollment file
+    (live when egress permits, else a published TX total) — not the 65+
+    proxy, which omits the under-65 disabled."""
     from ..data.ma_data import ma_state
+    from ..data.cms_enrollment import total_medicare_for
     m = ma_state("TX") or {}
     enr = int(m.get("ma_enrollment") or 0)
-    pen = (enr / seniors) if seniors else 0.0
+    benes = total_medicare_for("TX", fetch_live=fetch_live)
+    total_medicare = int(benes.get("total") or 0)
+    penetration = (enr / total_medicare) if total_medicare else 0.0
+    proxy = (enr / seniors) if seniors else 0.0
+    denom_label = ("CMS Medicare Monthly Enrollment (live)"
+                   if benes.get("live") else
+                   "published CMS total Medicare (TX)")
     return {
         "enrollment": enr,
-        # Penetration vs the 65+ population — a labeled PROXY (the true
-        # denominator is total Medicare incl. <65 disabled).
-        "penetration_proxy": round(pen, 3),
+        "total_medicare": total_medicare,
+        "penetration": round(penetration, 3),
+        "penetration_live": bool(benes.get("live")),
+        # Kept for continuity: penetration vs the 65+ population.
+        "penetration_proxy": round(proxy, 3),
         "dual_eligible_pct": float(m.get("dual_eligible_pct") or 0),
         "female_pct": float(m.get("female_pct") or 0),
         "avg_age": m.get("avg_age"),
         "year": int(m.get("year") or 0),
-        "note": ("≈{:,} Texans are in Medicare Advantage (CMS geographic "
-                 "variation, {}). MA penetration (~{:.0f}% of the 65+ "
-                 "population as a proxy) is the key payer-mix force on "
-                 "infusion: MA plans steer site of care to the lowest-cost "
-                 "setting (AIC / home over HOPD) and gate biologics with "
-                 "prior-auth + white-bagging — a tailwind for independent "
-                 "AIC / home volume and a margin risk on the drug spread."
-                 ).format(enr, int(m.get("year") or 0), pen * 100),
+        "denominator_source": denom_label,
+        "note": ("≈{:,} Texans are in Medicare Advantage of ≈{:,} total "
+                 "Medicare beneficiaries — a {:.0f}% MA penetration rate "
+                 "({}). MA is the key payer-mix force on infusion: plans "
+                 "steer site of care to the lowest-cost setting (AIC / home "
+                 "over HOPD) and gate biologics with prior-auth + white-"
+                 "bagging — a tailwind for independent AIC / home volume "
+                 "and a margin risk on the drug spread."
+                 ).format(enr, total_medicare, penetration * 100,
+                          denom_label),
+    }
+
+
+def texas_hopd_pool(
+    metro_deepdives: List[Dict[str, Any]], hopd_share: float,
+    fetch_live: bool = False,
+) -> Dict[str, Any]:
+    """The hospital-outpatient (HOPD) infusion pool — the volume being
+    STEERED AWAY from the hospital that an AIC / home platform competes
+    to capture. Per metro: HOPD infusion patients = real metro infusion
+    patients × the HOPD site share, and HOPD revenue at the model's
+    infusions/yr × revenue/infusion. A live CMS OPPS by-provider-and-
+    service pull (TX, infusion J-codes) overrides with real HOPD services
+    + Medicare payment where egress permits."""
+    metros = []
+    for dd in metro_deepdives:
+        pts = sum(int(s.get("infusion_patients") or 0)
+                  for s in dd.get("suburbs", []))
+        hopd_pts = round(pts * hopd_share)
+        hopd_rev = round(hopd_pts * INFUSIONS_PER_PATIENT_YR
+                         * REVENUE_PER_INFUSION)
+        metros.append({"metro": dd["metro"], "infusion_patients": pts,
+                       "hopd_patients": hopd_pts, "hopd_revenue": hopd_rev})
+    metros.sort(key=lambda m: -m["hopd_patients"])
+    live = {"live": False}
+    if fetch_live:
+        from ..data.cms_asp_pricing import INFUSION_HCPCS
+        from ..data.cms_opps_outpatient import fetch_opps_state_infusion
+        live = fetch_opps_state_infusion(
+            "TX", [c["hcpcs"] for c in INFUSION_HCPCS])
+    return {
+        "metros": metros,
+        "hopd_share": round(hopd_share, 3),
+        "total_hopd_patients": sum(m["hopd_patients"] for m in metros),
+        "total_hopd_revenue": sum(m["hopd_revenue"] for m in metros),
+        "opps_live": bool(live.get("live")),
+        "opps_services": live.get("services"),
+        "opps_payment": live.get("medicare_payment"),
+        "note": ("The HOPD infusion pool is the volume payers are steering "
+                 "OUT of the hospital — the white-space an AIC / home "
+                 "platform captures, not a competitor to displace. Modeled "
+                 "from real metro infusion patients × the HOPD site share "
+                 "× the sizing model's infusions/yr × revenue/infusion; the "
+                 "live CMS Outpatient-Hospitals (by provider & service) "
+                 "file overrides with real HOPD services + Medicare payment "
+                 "where egress permits."),
     }
 
 
@@ -3106,9 +3166,15 @@ def build_texas_infusion_analysis(
         "tornado": tornado,
         "site_of_care": site,
         "site_of_care_evolution": home_infusion_evolution(),
+        "hopd_pool": texas_hopd_pool(
+            metro_deepdives,
+            next((s["share"] for s in site
+                  if "HOPD" in s["site"] or "Hospital" in s["site"]), 0.30),
+            fetch_live=nppes_live),
         "payer_mix": payer,
         "asp_pricing": texas_asp_pricing(),
-        "ma_enrollment": texas_ma_enrollment(tx_pop, seniors),
+        "ma_enrollment": texas_ma_enrollment(tx_pop, seniors,
+                                             fetch_live=nppes_live),
         "medicare_base": texas_medicare_base(
             metro_deepdives, tx_pop, seniors, fetch_live=nppes_live),
         "hopd_infusion": texas_hopd_infusion(
