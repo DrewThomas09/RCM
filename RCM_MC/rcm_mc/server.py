@@ -6726,6 +6726,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.chart_builder_page import render_chart_builder_page
             _cb_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_chart_builder_page(_cb_qs))
+        if path == "/pie-chart":
+            # Pie Chart — a client-ready pie/donut from per-slice label /
+            # value / colour rows (no table paste); qs carries the slices
+            # (l{i}/v{i}/c{i}) + title / mode / donut.
+            from .ui.pie_chart_page import render_pie_chart_page
+            _pc_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_pie_chart_page(_pc_qs))
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.

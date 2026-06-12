@@ -3395,3 +3395,26 @@ units/None), column-major series, every chart type renders clean SVG
 (no None/NaN leak), centered title, empty→placeholder, waterfall total
 convention, palettes valid; builder page renders + type-switch + custom
 data + palette/nav/guide registration. Full suite green.
+
+## W2-162 (2026-06-12) — Pie Chart: client-ready pie/donut from per-slice input (wave #64)
+A simpler, more direct chart maker per the request "just type a percent
+value and colour and get an easy pie — good static charts ready for
+clients":
+- **`presentable_pie(slices, opts)`** (in cdd_chart_kit): a presentation-
+  grade pie/donut from explicit ``{label, value, color}`` slices — per-
+  slice colours, on-slice percentage labels (with a soft halo), and a
+  clean label · value · % legend; serif centered title, white slice
+  separators, optional donut with a TOTAL in the hole. Built for a slide,
+  not a dashboard.
+- **`pie_chart_page.py`** (route `/pie-chart`): the simple input the user
+  asked for — up to 10 slice rows, each just Label · Value · Colour
+  (HTML colour picker pre-set to the Chartis sequence), plus title /
+  subtitle / label-mode (percent / value / both / none) / unit / donut
+  toggle. Blank rows drop out; values can be percent or absolute (shares
+  computed). qs-driven (l{i}/v{i}/c{i}) so a chart is a shareable URL.
+  Wired into Research nav + Cmd-K palette + a documented guide context.
+**Verify**: new `test_pie_chart.py` (10) — renderer produces clean SVG
+(no None) with title + per-slice colours + computed-share legend, zero/
+blank slices dropped, empty→prompt, donut hole + TOTAL; page populated by
+default + custom slices render (45/(45+35)=56%) + defaults-then-qs collect
++ palette/nav/guide registration. Full suite green.
