@@ -4055,3 +4055,15 @@ the fictional seed when the frame is unavailable. metrics_basis records
 "ACTUAL — filed HCRIS values, CCN 450358 FY2022" and the deal dashboard
 identity line names the CCN + FY. +2 tests (profile == HCRIS row
 EXACTLY; page names the CCN). 18 + integration suites green.
+
+## W2-205 (2026-06-12) — Infusion market scan: Excel-Mapping cross-link + JSON API (wave #79)
+Connected the new market scan to the graphics suite and the API surface:
+- **"Open in Excel Mapping" cross-link**: pre-fills all 51 state
+  attractiveness scores (+ a teal gradient and the score domain) into the
+  Excel Mapping tool via the `?data=` param, so a partner can restyle and
+  export the scan as a branded state map. Round-trips through
+  `parse_values_text` (verified TX=85 of 51 states).
+- **JSON API** `/api/diligence/infusion-markets` — the ranked scan for
+  programmatic use, matching the platform's API-everywhere pattern.
+**Verify**: +1 test — the cross-link's data param round-trips to all 51
+states via the mapping parser. Full suite green.

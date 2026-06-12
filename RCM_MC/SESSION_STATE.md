@@ -483,3 +483,10 @@ infusion_state_attractiveness() ranks 51 states (weighted: senior base 28
 choropleth + ranked table + TX read + link to deep-dive. Diligence nav +
 palette + guide. +6 tests. Extends Texas to "where else?" without a
 per-state page refactor.
+
+---
+## Checkpoint — wave #79 (W2-177, 2026-06-12)
+Market scan: added "Open in Excel Mapping" cross-link (pre-fills 51 state
+scores + gradient into /excel-mapping via ?data=) and JSON API
+/api/diligence/infusion-markets. +1 test. Connects diligence data ↔
+graphics tool + API surface.

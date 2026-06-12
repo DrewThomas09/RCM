@@ -5,6 +5,7 @@ answers "where else after Texas?" from real per-state data.
 from __future__ import annotations
 
 import html
+import urllib.parse
 from typing import Any, Dict
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
@@ -135,6 +136,20 @@ def render_infusion_market_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'<a href="/diligence/texas-infusion" style="color:{_NAVY};'
         f'font-weight:600;">Open the full Texas deep-dive →</a></div>')
 
+    # Cross-link: open the scores in the Excel Mapping tool, pre-filled,
+    # so a partner can restyle / export the map.
+    _data = "\n".join(f"{s['code']},{s['score']:.0f}" for s in states)
+    _map_qs = urllib.parse.urlencode({
+        "data": _data, "low": "#e9f1f0", "mid": "#7bbcb5",
+        "high": "#125e59", "lo": f"{lo:.0f}", "hi": f"{hi:.0f}",
+        "midv": f"{(lo+hi)/2:.0f}"})
+    map_link = (
+        f'<p style="font-size:11.5px;margin-top:10px;">'
+        f'<a href="/excel-mapping?{html.escape(_map_qs, quote=True)}" '
+        f'style="color:{_TEAL};font-weight:600;text-decoration:none;">'
+        f'⬈ Open this scan in Excel Mapping (restyle &amp; export the map) '
+        f'→</a></p>')
+
     body = (
         ck_page_title(
             "Infusion Market Scan — by State",
@@ -158,6 +173,7 @@ def render_infusion_market_page(qs: "Dict[str, Any] | None" = None) -> str:
           f'Darker = more attractive · ▭ red = Texas</div></div>'
         + f'<div>{table}</div></div>'
         + tx_read
+        + map_link
         + f'<p style="font-size:10px;color:{_FAINT};margin-top:12px;'
           f'line-height:1.6;">{html.escape(a["note"])} Component columns '
           f'are each 0–100; Score is the weighted blend.</p>'
