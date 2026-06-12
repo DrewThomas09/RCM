@@ -3930,3 +3930,12 @@ numbers. New test_command_center_drill.py: every link present on the
 rendered page + every drill target verified to be an exact-match
 served route in server.py (guards renames). 26 passed with the
 adjacent command-center suites.
+
+## W2-194 (2026-06-12) — Screener per-row deal-attach (+Deal) (PAGE_INVENTORY top fix)
+The main screener table's row actions (X-Ray · Inspect · CIM · +Cmp)
+gain +Deal: promote the provider straight to a prefilled /import (deal
+id slugged vertical_ccn, name, state) without the Inspector round-trip
+— closing the inventory's per-row deal-attach fix and completing the
+Source → Pipeline path from the row itself. Same prefill contract the
+Inspector's "Promote to Pipeline" link already used. +1 test (slug,
+title, action present); test_target_screener: 159 passed.

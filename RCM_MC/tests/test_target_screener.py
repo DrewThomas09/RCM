@@ -1017,6 +1017,15 @@ class WorkbenchCompareTests(unittest.TestCase):
         self.assertIn("+Cmp", h)
         self.assertIn("view=compare&compare=", h)
 
+    def test_table_has_per_row_deal_attach(self):
+        # PAGE_INVENTORY top fix: every row can promote straight to a
+        # prefilled /import (deal id slugged from vertical+CCN, name,
+        # state) without the Inspector round-trip.
+        h = self._render(view="main", vertical="snf")
+        self.assertIn("+Deal", h)
+        self.assertIn("/import?deal_id=snf_", h)
+        self.assertIn("Promote to Pipeline (prefilled deal)", h)
+
 
 class WorkbenchJustMissedTests(unittest.TestCase):
     """PR 6 — just-missed scan: single-criterion near-misses + missing-data."""

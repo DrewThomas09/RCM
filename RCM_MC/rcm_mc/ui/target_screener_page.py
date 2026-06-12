@@ -1544,7 +1544,16 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             f'<a class="ts-act ts-act-primary" href="{xray}">X-Ray</a>'
             f'<a class="ts-act" href="{insp}">Inspect</a>'
             f'{cim_act}'
-            f'<a class="ts-act" href="{cmp_href}">+Cmp</a></span></td>'
+            f'<a class="ts-act" href="{cmp_href}">+Cmp</a>'
+            # PAGE_INVENTORY top fix — per-row deal-attach: promote this
+            # provider straight to a prefilled /import (deal id, name,
+            # state) without the Inspector round-trip.
+            f'<a class="ts-act" href="/import?deal_id='
+            f'{_uq(f"{vertical}_{ccn}".lower().replace(" ", "_"))}'
+            f'&name={_uq(r["name"])}'
+            f'{("&state=" + _uq(r.get("state") or "")) if r.get("state") else ""}" '
+            f'title="Promote to Pipeline (prefilled deal)">+Deal</a>'
+            f'</span></td>'
             '</tr>'
         )
     scope = f" · {state}" if state else ""
