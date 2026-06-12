@@ -414,11 +414,14 @@ def _ranked_subnav_items(sect: str):
     # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
 
+    from ._surface_visibility import is_internal
+
     def _add(label: str, href: str) -> None:
         label = (label or "").strip()
         key = label.lower()
         if (not label or not href or key in seen or "→" in label
-                or href in _NAV_NONNAVIGABLE or href in _NAV_DEMOTED):
+                or href in _NAV_NONNAVIGABLE or href in _NAV_DEMOTED
+                or is_internal(href)):
             return
         seen.add(key)
         top.append({"label": label, "href": href})

@@ -97,7 +97,11 @@ def _row(r: Dict) -> str:
 
 def _section(key: str, label: str, rows: List[Dict]) -> str:
     # Ranked order (best-first), but the score itself is never shown.
-    rows = sorted(rows, key=lambda r: -r.get("total", 0.0))
+    # curate_rows drops internal routes, sentinel "All X →" rows, and
+    # alias duplicates — a partner-facing catalog shows each real
+    # destination exactly once (see _surface_visibility).
+    from ._surface_visibility import curate_rows
+    rows = curate_rows(sorted(rows, key=lambda r: -r.get("total", 0.0)))
     body = "".join(_row(r) for r in rows)
     return (
         f'<section class="tx-sec"><div class="tx-sec-head">'
