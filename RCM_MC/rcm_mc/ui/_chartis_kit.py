@@ -7400,6 +7400,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "comp-outcomes", "title": "Comparable Outcomes","route": "/comparable-outcomes"},
     {"id": "tam-sam", "title": "TAM / SAM Builder", "route": "/diligence/tam-sam"},
     {"id": "tx-infusion", "title": "Texas Infusion Market · TAM/SAM + concentration + metro ranking", "route": "/diligence/texas-infusion"},
+    {"id": "tx-infusion-counties", "title": "Texas Infusion · county proximity + AIC whitespace", "route": "/diligence/texas-infusion/counties"},
     {"id": "infusion-markets", "title": "Infusion Market Scan · every state ranked for an infusion roll-up", "route": "/diligence/infusion-markets"},
     {"id": "visuals", "title": "Visuals · graphics toolkit hub (charts, maps, exhibits)", "route": "/visuals"},
     {"id": "excel-mapping", "title": "Excel Mapping · configurable US-state choropleth", "route": "/excel-mapping"},

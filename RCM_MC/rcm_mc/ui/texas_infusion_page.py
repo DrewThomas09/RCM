@@ -2762,6 +2762,14 @@ def render_texas_infusion_page(
         )
         + '<div class="ts-wrap" style="max-width:980px;">'
         + _kpi_strip(a)
+        # County & proximity workbench — the per-county referral-
+        # convenience drill-down lives on its own page (254 rows +
+        # the distance model would double this one).
+        + ('<p style="margin:4px 0 14px;font-size:13px;">'
+           '<a class="ck-link" '
+           'href="/diligence/texas-infusion/counties">County proximity '
+           'workbench → all 254 counties · patient-to-clinic distance '
+           '· AIC whitespace</a></p>')
         + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",

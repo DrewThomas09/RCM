@@ -6722,6 +6722,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/texas-infusion/counties":
+            # County & proximity workbench — all 254 TX counties with the
+            # patient → nearest-infusion-access distance model and the
+            # demand × distance AIC whitespace ranking.
+            from .ui.texas_infusion_counties_page import (
+                render_texas_infusion_counties_page,
+            )
+            return self._send_html(render_texas_infusion_counties_page())
+        if path == "/diligence/texas-infusion/counties.csv":
+            from .ui.texas_infusion_counties_page import texas_counties_csv
+            return self._send_text(
+                texas_counties_csv(),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/infusion-markets":
             # National infusion-market scan — every state ranked for an
             # infusion roll-up from real per-state ACS + CMS MA data.
