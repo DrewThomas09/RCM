@@ -15,7 +15,7 @@ from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_explainer,
     ck_page_title,
 )
-from rcm_mc.ui.excel_mapping_page import _legend, _map_svg
+from rcm_mc.ui.excel_mapping_page import _map_svg
 
 _BAND_TONE = {"SATURATED": "neg", "HIGH": "dim", "MODERATE": "dim",
               "LOW": "pos"}
@@ -163,7 +163,6 @@ def render_ma_penetration(params: dict = None) -> str:
   <div style="{cell}">
     <div style="{h3}">MA penetration by state (% of Medicare eligibles)</div>
     {_map_svg(cfg)}
-    {_legend(cfg)}
   </div>
   <div style="{cell}">
     <div style="{h3}">State exposure table (penetration-descending)</div>

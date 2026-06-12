@@ -11854,10 +11854,10 @@ _MANUAL.extend([
     _ctx(
         "/excel-mapping", "Excel Mapping",
         category=PageContextCategory.RESEARCH_BACKTESTING,
-        short_description="A configurable US-state choropleth utility — set "
-        "three gradient colours (low / mid / high) and a value per state, "
-        "and it colour-grades the map with each percentage in black serif "
-        "text.",
+        short_description="A configurable real-geography US choropleth "
+        "utility — set three gradient colours (low / mid / high) and a "
+        "value per state, and it colour-grades actual Census state "
+        "boundaries with each percentage in black serif text.",
         primary_purpose="Turn a {state: percentage} dict (or an Excel "
         "paste) into a clean, Chartis-styled US choropleth without a "
         "charting tool.",
@@ -11867,13 +11867,17 @@ _MANUAL.extend([
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
             "Can I set the value domain manually?",
-            "Why is the map a tile grid instead of real geography?",
+            "Where are the small Northeast states labelled?",
         ],
         inputs=["Three gradient colours; an optional low/mid/high value "
-                "domain (blank = auto from data); a value per state, set "
-                "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
-        outputs=["An SVG US tile-grid choropleth with a low→mid→high "
-                 "gradient legend and a sorted value table."],
+                "domain (blank = auto from data); an optional map title; "
+                "a value per state, set in Python (DEFAULT_STATE_VALUES) "
+                "or pasted in the form."],
+        outputs=["An SVG geographic US choropleth (Albers-projected "
+                 "Census boundaries; AK/HI insets; small NE states in a "
+                 "swatch column) with an embedded low→mid→high gradient "
+                 "legend, hover/click state detail, summary stats, and a "
+                 "ranked value table."],
         key_metrics=["User-supplied per-state values."],
         data_sources=["Your inputs only — default values are example "
                       "placeholders, not a data claim."],
