@@ -4034,3 +4034,13 @@ activity cap) ends the session. Rewrote the known-limitation note to
 say precisely that. Also: clean full route-walk on the merged tree
 incl. the chart stream's new national-scan page (170 routes, 0
 tracebacks, 0 leaks, --deal-cookie mode).
+
+## W2-203 (2026-06-12) — FEATURE_MATRIX statuses re-checked (doc honesty)
+The matrix still listed P2 (CIM cross-check), P3 (driver trees), P7
+(roll-up builder), P8 (rule join), P11 (DQ dashboard) as MISSING/
+PARTIAL — all long shipped. Re-checked every row against the live
+code and updated statuses with their log references. Remaining
+genuinely-open sub-items now stated precisely: saved peer-set OBJECT
+(P4), per-deal exhibit REGISTRY (P5), facility pins/catchments (P6),
+ownership-CHOW diff alerts (P9), provenance modal + coverage metric
+(P10), long-tail bullet coverage (P13), timing budgets (P14).
