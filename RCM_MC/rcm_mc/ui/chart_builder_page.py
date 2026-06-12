@@ -438,7 +438,20 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
            + (f'&source={_urlq(footnote)}' if footnote else "")
            + f'&d0={_urlq(table_to_tsv(table))}" '
            f'style="font-size:12px;color:#155752;font-weight:600;">'
-           f'→ Send to Exhibit Composer (as panel 1)</a></div>')
+           f'→ Send to Exhibit Composer (as panel 1)</a>'
+           # The shaped table (group/sort/top-N/calc applied) copies
+           # back out as a paste-ready TSV — the Excel round-trip OUT.
+           f'<textarea id="shapedTsv" style="display:none;">'
+           f'{html.escape(table_to_tsv(table))}</textarea>'
+           f'<button type="button" style="margin-left:14px;padding:5px '
+           f'11px;border:1px solid #c9c1ac;border-radius:5px;'
+           f'background:#fff;color:#0b2341;font-size:11.5px;'
+           f'font-weight:600;cursor:pointer;" onclick="var b=this;'
+           f'navigator.clipboard.writeText(document.getElementById('
+           f"'shapedTsv').value).then(function(){{var t=b.textContent;"
+           f'b.textContent=&quot;✓ Copied&quot;;setTimeout(function()'
+           f'{{b.textContent=t;}},1200);}});">⧉ Copy shaped table'
+           f'</button></div>')
         + _save_chart_form("/chart-builder")
         + '</div>'
         + '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
