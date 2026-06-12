@@ -4222,3 +4222,18 @@ worktree), all fixed here so main goes back to green:
   engine now declares _FLAGSHIP and breaks total-ties explicitly.
 **Verify**: each fix's suite green (universe guard, 5-Q invariants,
 section catalog, surface rankings 9/9); full suite rerun → all green.
+
+## W2-185 (2026-06-12) — Chart Builder polish: toggle persistence + bins (wave #85)
+Two small builder fixes post-deploy:
+- **Default-on toggles could never be turned OFF**: a GET form drops
+  unchecked checkboxes entirely, so "Show values" / "Legend" always
+  fell back to default-True on submit. The form now carries a hidden
+  fs=1 marker — on a real submit, absence means unchecked; gallery /
+  dataset / shared links don't carry fs so they keep the friendly
+  defaults.
+- **Histogram bin control**: the kit's `bins` opt existed but had no
+  input — added a "Bins (hist.)" number field (clamped 2–24, blank =
+  auto √n), wired through qs.
+**Verify**: +2 tests (toggle off persists on submit + links keep
+defaults + checked still works; 4 requested bins → exactly 4 bars,
+bogus value ignored). Chart sweep: 1484 passed.

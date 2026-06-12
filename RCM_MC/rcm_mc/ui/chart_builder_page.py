@@ -120,8 +120,14 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     title = _qs1(qs, "title", "")
     subtitle = _qs1(qs, "subtitle", "")
     suffix = _qs1(qs, "suffix", "")
-    show_values = _qsbool(qs, "values", True)
-    legend = _qsbool(qs, "legend", True)
+    # Unchecked checkboxes simply vanish from a GET submit, so default-
+    # True toggles could never be turned OFF (the absent param fell back
+    # to True). The form carries a hidden fs=1 marker; when present,
+    # absence means unchecked. Gallery / dataset / shared links don't
+    # carry fs, so they keep the friendly defaults.
+    submitted = _qs1(qs, "fs", "") == "1"
+    show_values = _qsbool(qs, "values", not submitted)
+    legend = _qsbool(qs, "legend", not submitted)
     footnote = _qs1(qs, "footnote", "")
     size = _qs1(qs, "size", "M")
     width_px = dict(SIZE_PRESETS).get(size, 720)
@@ -155,6 +161,11 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     reflabel = _qs1(qs, "reflabel", "")
     show_cagr = _qsbool(qs, "cagr", False)
     show_avg = _qsbool(qs, "avg", False)
+    bins_s = _qs1(qs, "bins", "")
+    try:
+        bins = max(2, min(24, int(bins_s))) if bins_s.strip() else 0
+    except ValueError:
+        bins = 0
     if group or sort or calc or topn:
         table = transform_table(table, {
             "group": group or None, "sort": sort or None,
@@ -176,6 +187,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         "colors": series_colors, "footnote": footnote, "trendline": trend,
         "ref_value": refval, "ref_label": reflabel,
         "show_cagr": show_cagr, "show_avg": show_avg,
+        "bins": bins or None,
     }
     chart_svg = render_cdd_chart(ctype, table, opts)
 
@@ -277,6 +289,9 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
 
     form = (
         f'<form method="get" action="/chart-builder">'
+        # Marks a real form submit so absent checkboxes read as
+        # unchecked (links without fs keep default-on toggles).
+        f'<input type="hidden" name="fs" value="1">'
         f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">'
         f'{chips}</div>'
         f'<input type="hidden" name="type" value="{ctype}">'
@@ -314,6 +329,12 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'<input type="text" name="suffix" value="{html.escape(suffix)}" '
         f'placeholder="% or $" style="width:100%;height:30px;'
         f'border:1px solid #c9c1ac;border-radius:5px;padding:0 7px;"></label>'
+        f'<label style="font-size:11px;color:#465366;width:88px;">'
+        f'Bins (hist.)'
+        f'<input type="number" name="bins" min="2" max="24" '
+        f'value="{bins if bins else ""}" placeholder="auto" '
+        f'style="width:100%;height:30px;border:1px solid #c9c1ac;'
+        f'border-radius:5px;padding:0 7px;"></label>'
         f'</div>'
         f'<div style="display:flex;gap:14px;margin-top:2px;align-items:center;">'
         f'{_toggle("values", "Show values", show_values)}'
