@@ -1,5 +1,7 @@
-"""Nav bars lead with their top-6 ranked surfaces + a 'More →' to the ranked
-/best/<section> index (Phase 2B of the front-facing revamp)."""
+"""Nav bars lead with the hand-curated flagship pins (_NAV_FLAGSHIPS), then
+ranked backfill, + a 'More →' to the ranked /best/<section> index. The front
+face is a product decision: the highest-functionality workbenches lead, and
+utility renderers (_NAV_DEMOTED) never front-face."""
 from __future__ import annotations
 
 import unittest
@@ -77,6 +79,43 @@ class RankedRailTests(unittest.TestCase):
         for sec in _SUB_NAV:
             top, _ = _ranked_subnav_items(sec)
             self.assertGreaterEqual(len(top), 1, sec)
+
+    def test_diligence_bar_leads_with_flagship_workbenches(self):
+        # The front face is the analyst playbook in workflow order — identity
+        # → ingest → baseline → X-Ray drill-downs → IC deliverable — not the
+        # LOC-score order (which front-faced the niche TX Infusion Market and
+        # buried HCRIS X-Ray at #19).
+        from rcm_mc.ui._chartis_kit import _ranked_subnav_items
+        top, _ = _ranked_subnav_items("diligence")
+        self.assertEqual([s["href"] for s in top], [
+            "/diligence/deal", "/diligence/ingest", "/diligence/benchmarks",
+            "/diligence/xray", "/diligence/hcris-xray", "/diligence/ic-packet",
+        ])
+
+    def test_flagship_pins_lead_every_pinned_section(self):
+        # Pins that pass the tier gate render first, in pinned order.
+        from rcm_mc.ui._chartis_kit import (
+            _NAV_FLAGSHIPS, _ranked_subnav_items,
+        )
+        from rcm_mc.diligence.surface_status import classify_surface
+        for sec, pins in _NAV_FLAGSHIPS.items():
+            real = [p for p in pins if classify_surface(p).get("tier")
+                    in ("green", "navy", "data_required")][:6]
+            top, _ = _ranked_subnav_items(sec)
+            self.assertEqual([s["href"] for s in top[:len(real)]], real, sec)
+
+    def test_utility_renderers_never_front_face(self):
+        # Chart/export utilities (Excel Mapping et al.) are real pages but
+        # tools, not analyses — they live in /best/<section>, never the bar.
+        from rcm_mc.ui._chartis_kit import (
+            _NAV_DEMOTED, _SUB_NAV, _ranked_subnav_items,
+        )
+        for sec in _SUB_NAV:
+            top, _ = _ranked_subnav_items(sec)
+            for s in top:
+                self.assertNotIn(s["href"], _NAV_DEMOTED, sec)
+        research = [s["href"] for s in _ranked_subnav_items("research")[0]]
+        self.assertNotIn("/excel-mapping", research)
 
 
 if __name__ == "__main__":

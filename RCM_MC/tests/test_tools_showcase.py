@@ -29,12 +29,15 @@ class ShowcaseTests(unittest.TestCase):
 
     def test_ranked_order_best_first(self):
         # Within diligence, rows appear in descending ranking order even though
-        # the score is hidden.
+        # the score is hidden. The page shows the CURATED ranked set (internal
+        # routes, sentinel "All X →" rows, and alias duplicates dropped — see
+        # _surface_visibility.curate_rows), still best-first.
+        from rcm_mc.ui._surface_visibility import curate_rows
         h = render_tools_showcase(355)
         routes = re.findall(r'tx-row" href="([^"]+)"', h)
         dil = [r["route"] for r in
-               sorted(RANKINGS.get("diligence", []),
-                      key=lambda r: -r.get("total", 0.0))]
+               curate_rows(sorted(RANKINGS.get("diligence", []),
+                                  key=lambda r: -r.get("total", 0.0)))]
         seen = [r for r in routes if r in set(dil)]
         self.assertEqual(seen[:len(dil)], dil)
 
