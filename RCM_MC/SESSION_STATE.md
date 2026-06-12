@@ -21,6 +21,8 @@
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
 - current_step: looping; wave #70 on branch claude/pipeline-data-graphs-8ld7ng
+- WAVE 72 (W2-170): one-click platform datasets (10 real CMS
+  aggregates via new data/chart_datasets.py) on /chart-builder.
 - WAVE 71 (W2-169): annotations layer (ref/target line, avg line,
   auto-CAGR tag) + bar_stacked/waffle/smallmult (kit 30 types).
 - WAVE 70 (W2-168): chart data-shaping pipeline (group/sort/top-N/calc

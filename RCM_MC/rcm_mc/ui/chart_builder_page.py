@@ -345,6 +345,30 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'function(inp,i){{if(c.length)inp.value=c[i%c.length];}});}}}});'
         f'</script>')
 
+    # Platform data — one-click real CMS aggregates (built in the data
+    # layer, cached per process; each link carries a finished table).
+    from ..data.chart_datasets import build_chart_dataset, list_chart_datasets
+    ds_chips = ""
+    for m in list_chart_datasets():
+        d = build_chart_dataset(m["key"])
+        href = (f'/chart-builder?type={d["chart"]}'
+                f'&title={_urlq(d["label"])}'
+                f'&footnote={_urlq(d["footnote"])}'
+                f'&data={_urlq(d["tsv"])}')
+        ds_chips += (
+            f'<a href="{html.escape(href, quote=True)}" '
+            f'style="padding:5px 11px;border-radius:14px;font-size:11.5px;'
+            f'border:1px solid #9bc1bc;background:#fff;color:#155752;'
+            f'text-decoration:none;">{html.escape(d["label"])}</a>')
+    datasets_strip = (
+        '<div style="margin-top:14px;">'
+        '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
+        'font-weight:700;margin-bottom:6px;">PLATFORM DATA — REAL CMS '
+        'AGGREGATES (one click to load, then shape and restyle freely)'
+        '</div>'
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;">'
+        + ds_chips + '</div></div>')
+
     # Gallery — the same data across a few chart types.
     gallery = ""
     gtypes = ["column", "column_stacked", "column_100", "bar", "pareto",
@@ -379,6 +403,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         )
         + '<div class="ts-wrap" style="max-width:1040px;">'
         + form
+        + datasets_strip
         + '<div style="margin-top:18px;border:1px solid #d6cfc0;'
           'border-radius:8px;padding:16px;background:#fff;text-align:center;">'
         + f'<div id="chartOut">{chart_svg}</div>'

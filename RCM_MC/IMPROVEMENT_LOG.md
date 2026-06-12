@@ -3552,3 +3552,28 @@ rounding trap; one panel per series; stacked bar; ref-line label +
 scale stretch; CAGR math + non-positive guard; avg line; UI controls
 flow through; bogus refval ignored). 53 pass in the file; chart sweep
 1382 passed.
+
+## W2-170 (2026-06-12) — Chart Builder: one-click platform datasets (wave #72)
+The builder stops being paste-only — real CMS data, zero pasting:
+- **`rcm_mc/data/chart_datasets.py`** (data layer, per architecture):
+  10 chart-ready aggregates from the six vendored provider snapshots —
+  providers by sector (cross-sector Pareto), ownership mix by sector
+  (For-profit/Non-profit/Government/Other via a vocabulary-collapsing
+  bucketer — 'PROPRIETARY' and 'For profit - Corporation' land in the
+  same bucket), SNF beds + dialysis stations by state, and per-sector
+  providers-by-state (top-12 + 'Other (k)' so the universe always sums).
+  lru-cached (snapshots are immutable); no runtime network calls.
+- **PLATFORM DATA strip** on /chart-builder: one teal chip per dataset;
+  a click loads the finished table + suggested chart type + a
+  source/date footnote into the normal qs flow — so a partner can then
+  shape (top-N, % of total), restyle, and export like any pasted table.
+  Sector datasets cite the file's snapshot date; cross-sector ones span
+  six files so they stay date-less rather than implying one date.
+- Guide context: +1 common question, data_sources now names the
+  vendored CMS option.
+**Verify**: new test_chart_datasets.py (9) — stable registry keys (URL
+surface), every dataset parses all-numeric and renders its suggested
+chart clean, top-12+Other sums exactly to the sector total, ownership
+mix rows sum to each sector's provider count, bucket vocabulary cases,
+footnote date rules, strip renders with links, loaded dataset flows to
+the chart. Sweep: 1419 passed.

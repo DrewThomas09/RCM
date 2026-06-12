@@ -11908,6 +11908,7 @@ _MANUAL.extend([
             "Can it aggregate / sort / top-N my data for me?",
             "How do I make a Pareto, histogram, or box plot?",
             "Can I add a trendline with R² to a scatter?",
+            "Can I chart real CMS data without pasting anything?",
         ],
         related_routes=["/exhibit", "/pie-chart", "/excel-mapping"],
         inputs=["A pasted table (headers row + category column + one column "
@@ -11916,8 +11917,12 @@ _MANUAL.extend([
         outputs=["A centered, Chartis-styled SVG chart, plus a gallery of "
                  "the same data across every chart type."],
         key_metrics=["User-supplied series values."],
-        data_sources=["Your pasted data only — example tables are "
-                      "placeholders."],
+        data_sources=["Your pasted data — example tables are "
+                      "placeholders.",
+                      "Optional one-click platform datasets aggregated "
+                      "from the vendored CMS provider snapshots (SNF, "
+                      "home health, hospice, dialysis, IRF, LTCH), each "
+                      "with a source/date footnote."],
         model_logic_summary="Pure SVG rendering over a shared frame "
         "(title, gridlines, value labels, legend); 27 chart types share "
         "one Chartis palette set. A pre-chart shaping pass can aggregate "
