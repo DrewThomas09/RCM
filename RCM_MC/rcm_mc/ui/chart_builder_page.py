@@ -12,12 +12,13 @@ shareable URL.
 from __future__ import annotations
 
 import html
+import json
 from typing import Any, Dict, Optional
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
 from .cdd_chart_kit import (
     CHART_TYPES, PALETTES, SIZE_PRESETS, parse_table, render_cdd_chart,
-    chart_export_toolbar,
+    chart_export_toolbar, _series,
 )
 
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
@@ -95,12 +96,39 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     if not data_text.strip():
         data_text = _example_for(ctype)
     table = parse_table(data_text)
+    # Per-series colour overrides (sc{i}); blanks fall back to the palette.
+    base_pal = PALETTES.get(palette, PALETTES["Chartis"])
+    series = _series(table)
+    n_series = max(len(series), len(table.get("rows", [])) if ctype in
+                   ("pie", "donut", "funnel", "tornado", "dot", "matrix",
+                    "marimekko") else 0)
+    series_colors = []
+    for i in range(max(n_series, 1)):
+        c = _qs1(qs, f"sc{i}", "")
+        series_colors.append(c or base_pal[i % len(base_pal)])
     opts = {
         "title": title or dict(CHART_TYPES).get(ctype, ""),
         "subtitle": subtitle, "palette": palette, "suffix": suffix,
         "show_values": show_values, "legend": legend, "width_px": width_px,
+        "colors": series_colors,
     }
     chart_svg = render_cdd_chart(ctype, table, opts)
+
+    # Per-series / per-category colour pickers.
+    color_labels = ([s["name"] for s in series]
+                    if ctype not in ("pie", "donut", "funnel", "tornado",
+                                     "dot", "matrix", "marimekko")
+                    else [r[0] for r in table.get("rows", [])])
+    color_pickers = ""
+    for i, lab in enumerate(color_labels[:10]):
+        color_pickers += (
+            f'<label style="display:flex;align-items:center;gap:5px;'
+            f'font-size:11px;color:#465366;">'
+            f'<input type="color" name="sc{i}" '
+            f'value="{html.escape(series_colors[i])}" style="width:34px;'
+            f'height:26px;border:1px solid #c9c1ac;border-radius:4px;'
+            f'padding:0;background:#fff;cursor:pointer;">'
+            f'{html.escape(str(lab))[:18]}</label>')
 
     # Chart-type selector (chips).
     chips = ""
@@ -171,12 +199,26 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
             f'<option value="{k}"{" selected" if k == size else ""}>{k}'
             f'</option>' for k, _w in SIZE_PRESETS)
         + '</select></label></div>'
-        f'<button type="submit" style="margin-top:6px;padding:9px 18px;'
+        + (f'<div style="margin-top:4px;"><div style="font-size:10px;'
+           f'letter-spacing:0.06em;color:#7a8699;font-weight:700;'
+           f'margin-bottom:4px;">SERIES COLOURS (override the palette)</div>'
+           f'<div style="display:flex;flex-wrap:wrap;gap:8px;">'
+           f'{color_pickers}</div></div>' if color_pickers else "")
+        + f'<button type="submit" style="margin-top:6px;padding:9px 18px;'
         f'background:#0b2341;color:#fff;border:none;border-radius:5px;'
         f'font-weight:600;cursor:pointer;">Render chart</button>'
         f'<a href="/chart-builder?type={ctype}" style="font-size:11.5px;'
         f'color:#1F7A75;">Reset to example data</a>'
-        f'</div></div></form>')
+        f'</div></div></form>'
+        # When the palette changes, re-seed the per-series colour pickers
+        # so the dropdown stays meaningful (pickers otherwise override it).
+        f'<script>var CKPAL={json.dumps(PALETTES)};'
+        f'document.addEventListener("change",function(e){{'
+        f'if(e.target&&e.target.name==="palette"){{'
+        f'var c=CKPAL[e.target.value]||[];'
+        f'document.querySelectorAll(\'input[name^="sc"]\').forEach('
+        f'function(inp,i){{if(c.length)inp.value=c[i%c.length];}});}}}});'
+        f'</script>')
 
     # Gallery — the same data across a few chart types.
     gallery = ""
