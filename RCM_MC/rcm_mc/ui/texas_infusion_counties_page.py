@@ -278,6 +278,7 @@ def render_texas_infusion_counties_page(
             + tier_panel + metro_panel + cbsa_panel
             + ck_section_header("The AIC referral-convenience read")
             + ws_panel
+            + render_metro_deepdive_sections()
             + ck_section_header("County detail")
             + table_panel)
     return chartis_shell(
@@ -305,4 +306,143 @@ def texas_counties_csv() -> str:
                 v = '"' + v.replace('"', '""') + '"'
             vals.append(v)
         out.append(",".join(vals))
+    return "\n".join(out) + "\n"
+
+
+# ── Four-metro member-county deep-dive section ──────────────────────
+
+def _roster_line(c: dict[str, Any]) -> str:
+    roster = c.get("facility_roster") or []
+    if not roster:
+        return ('<span style="color:var(--sc-text-faint,#8b94a0);">'
+                'no in-county facility — see verdict</span>')
+    shown = roster[:6]
+    extra = len(roster) - len(shown)
+    parts = ", ".join(
+        f'{html.escape(f["name"].title())}'
+        f'{" (CAH)" if f["kind"] == "CAH" else ""}'
+        for f in shown)
+    more = f' <span style="color:var(--sc-text-faint,#8b94a0);">+{extra} more</span>' if extra > 0 else ""
+    return parts + more
+
+
+def _metro_block(m: dict[str, Any]) -> str:
+    head = (
+        '<div style="display:flex;gap:18px;flex-wrap:wrap;margin:0 0 10px;'
+        'font-family:var(--sc-mono);font-size:11px;color:'
+        'var(--sc-text-dim,#465366);">'
+        f'<span>{m["member_counties"]} member counties</span>'
+        f'<span>{m["population"]:,} residents</span>'
+        f'<span>{m["infusion_patients"]:,} infusion patients</span>'
+        f'<span>{m["access_points"]} access points</span>'
+        f'<span>real facility spacing {m["facility_nn_mi"]} mi</span>'
+        f'<span>wtd distance {m["weighted_distance_mi"]:.1f} mi · '
+        f'{m["weighted_drive_minutes"]:.1f} min</span>'
+        '</div>')
+    rows = []
+    for c in m["counties"]:
+        rows.append(
+            f'<tr><td {_TD}><strong>{html.escape(c["county"])}</strong></td>'
+            f'<td {_TDN}>{c["population"]:,}</td>'
+            f'<td {_TDN}>{c["infusion_patients"]:,}</td>'
+            f'<td {_TDN}>{c["patients_65_plus"]:,} / '
+            f'{c["patients_under_65"]:,}</td>'
+            f'<td {_TDN}>{c["access_points"]}</td>'
+            f'<td {_TDN}>{c["expected_distance_mi"]:.1f}</td>'
+            f'<td {_TDN}>{c["drive_minutes"]:.1f}</td>'
+            f'<td {_TD} style="max-width:300px;">'
+            f'{html.escape(c["siting_verdict"])}</td></tr>'
+            f'<tr><td></td><td colspan="7" style="padding:0 10px 8px;'
+            f'font-size:11px;color:var(--sc-text-dim,#465366);'
+            f'border-bottom:1px solid var(--sc-rule,#e4ddcd);">'
+            f'{_roster_line(c)}</td></tr>')
+    table = (
+        '<table style="width:100%;border-collapse:collapse;">'
+        f'<thead><tr><th {_TH}>County</th><th {_THN}>Population</th>'
+        f'<th {_THN}>Patients</th><th {_THN}>65+ / under-65</th>'
+        f'<th {_THN}>Sites</th><th {_THN}>Distance (mi)</th>'
+        f'<th {_THN}>Drive (min)</th><th {_TH}>Siting verdict</th>'
+        '</tr></thead>'
+        f'<tbody>{"".join(rows)}</tbody></table>')
+    return ck_panel(head + table,
+                    title=f'{m["metro"]} — {m["cbsa_title"]}')
+
+
+def _state_context_panel(ctx: dict[str, Any]) -> str:
+    bits = []
+    ma = ctx.get("ma")
+    if ma:
+        bits.append(
+            f'<strong>Medicare Advantage steerage ({ma["year"]}, '
+            f'{html.escape(ma["source"])}):</strong> '
+            f'{ma["ma_enrollment"]:,} TX MA enrollees, avg age '
+            f'{ma["avg_age"]:.0f}, {ma["female_pct"]*100:.1f}% female, '
+            f'{ma["dual_eligible_pct"]*100:.1f}% dual-eligible. MA plans '
+            'steer infusion to the lowest-cost site of care — the AIC '
+            'tailwind.')
+    pl = ctx.get("places")
+    if pl:
+        bits.append(
+            f'<strong>Disease burden ({html.escape(pl["source"])}):</strong>'
+            f' diabetes {pl["diabetes_pct"]:.1f}%, obesity '
+            f'{pl["obesity_pct"]:.1f}%, fair/poor health '
+            f'{pl["fair_poor_health_pct"]:.1f}%, uninsured 18-64 '
+            f'{pl["uninsured_18_64_pct"]:.1f}% — state level; county/'
+            'tract rates need scripts/ingest_cdc_places.py (DATA '
+            'REQUIRED).')
+    hp = ctx.get("hpsa")
+    if hp:
+        bits.append(
+            f'<strong>Access shortage ({html.escape(hp["source"])}):'
+            f'</strong> {hp["designated_pc_hpsas"]} designated '
+            'primary-care HPSAs in Texas (median score '
+            f'{hp["median_hpsa_score"]:.0f}) — referral-network gaps an '
+            'AIC fills.')
+    body = "".join(f'<p style="margin:0 0 8px;font-size:13px;'
+                   f'line-height:1.5;">{b}</p>' for b in bits)
+    return ck_panel(body or "<p>No state context vendored.</p>",
+                    title="Texas payer & health context (state level, REAL)")
+
+
+def render_metro_deepdive_sections() -> str:
+    from ..diligence.texas_infusion_geo import (
+        metro_county_deepdive,
+        metro_state_context,
+    )
+    metros = metro_county_deepdive()
+    blocks = "".join(_metro_block(m) for m in metros)
+    return (
+        ck_section_header("Inside the four metros — county by county",
+                          eyebrow="DFW · HOUSTON · SAN ANTONIO · AUSTIN")
+        + ('<p style="margin:0 0 10px;font-size:12.5px;">'
+           '<a class="ck-link" '
+           'href="/diligence/texas-infusion/metros.csv">Download the '
+           'member-county deep-dive CSV (rosters included)</a></p>')
+        + _state_context_panel(metro_state_context())
+        + blocks)
+
+
+def texas_metros_csv() -> str:
+    """Member-county deep-dive as CSV (one row per metro county)."""
+    from ..diligence.texas_infusion_geo import metro_county_deepdive
+    cols = ["metro", "county_fips", "county", "population",
+            "seniors_65_plus", "pct_rural", "uninsured_rate",
+            "median_household_income", "infusion_patients",
+            "patients_65_plus", "patients_under_65", "access_points",
+            "access_tier", "metro_spillover", "facility_nn_mi",
+            "expected_distance_mi", "drive_minutes", "patient_miles",
+            "siting_verdict", "facility_names"]
+    out = [",".join(cols)]
+    for m in metro_county_deepdive():
+        for c in m["counties"]:
+            row = dict(c, metro=m["metro"], facility_names="; ".join(
+                f["name"] for f in c.get("facility_roster", [])))
+            vals = []
+            for col in cols:
+                v = row.get(col)
+                v = "" if v is None else str(v)
+                if "," in v or '"' in v:
+                    v = '"' + v.replace('"', '""') + '"'
+                vals.append(v)
+            out.append(",".join(vals))
     return "\n".join(out) + "\n"

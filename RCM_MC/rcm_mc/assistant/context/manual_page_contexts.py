@@ -12602,6 +12602,49 @@ _MANUAL.extend([
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/diligence/texas-infusion/metros.csv",
+        "Texas Infusion Metro Deep-Dive (CSV export)",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The four-metro (DFW, Houston, San Antonio, "
+        "Austin) member-county deep-dive as CSV — one row per metro "
+        "county with demand split, drive-time proxy, siting verdict, "
+        "and the named facility roster.",
+        primary_purpose="Take the metro member-county analysis into a "
+        "site-selection model: per-county demand (65+/under-65 split), "
+        "real facility names and spacing, modeled distance and drive "
+        "minutes, and the deterministic siting verdict.",
+        common_questions=[
+            "How do I export the four-metro county deep-dive?",
+            "Which hospitals are in each metro county?",
+            "What is the drive-time column based on?",
+            "What does the siting verdict mean?",
+            "Is this the same data as the counties page metro section?",
+        ],
+        inputs=["The same metro_county_deepdive() rows the page's "
+                "metro section renders."],
+        outputs=["CSV: metro, county, demographics, patients (65+/"
+                 "under-65), access points/tier, real facility spacing, "
+                 "expected distance, drive minutes, patient-miles, "
+                 "siting verdict, facility names."],
+        key_metrics=["Rows exported (metro member counties)"],
+        data_sources=["Identical to /diligence/texas-infusion/counties "
+                      "(metro deep-dive section)."],
+        model_logic_summary="Straight serialization of the deep-dive "
+        "rows; drive minutes = modeled miles at 25 mph urban / 45 mph "
+        "rural blended by the county's real urban share.",
+        why_it_matters="AIC site selection happens metro by metro — the "
+        "export keeps verdicts and rosters attached to every county.",
+        diligence_use_cases=["AIC site shortlisting inside a metro"],
+        interpretation_guidance=["Same caveats as the page: supply is "
+                                 "hospital access points; distances "
+                                 "conservative."],
+        limitations=["Reflects the vendored data at render time."],
+        related_routes=["/diligence/texas-infusion/counties",
+                        "/geo-intel"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ])
 
 

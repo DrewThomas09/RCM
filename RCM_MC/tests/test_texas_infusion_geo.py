@@ -147,3 +147,95 @@ class RouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MetroDeepdiveTests(unittest.TestCase):
+    def test_four_metros_with_member_counties(self):
+        from rcm_mc.diligence.texas_infusion_geo import (
+            metro_county_deepdive,
+        )
+        metros = metro_county_deepdive()
+        self.assertEqual(len(metros), 4)
+        names = {m["metro"] for m in metros}
+        self.assertEqual(names, {"Dallas-Fort Worth", "Houston",
+                                 "San Antonio", "Austin"})
+        for m in metros:
+            self.assertGreaterEqual(m["member_counties"], 5, m["metro"])
+            self.assertGreater(m["access_points"], 10, m["metro"])
+            self.assertIsNotNone(m["facility_nn_mi"], m["metro"])
+            # Member-county patients sum to the metro figure.
+            self.assertEqual(
+                sum(c["infusion_patients"] for c in m["counties"]),
+                m["infusion_patients"], m["metro"])
+
+    def test_rosters_carry_real_facility_names(self):
+        from rcm_mc.diligence.texas_infusion_geo import (
+            metro_county_deepdive,
+        )
+        dfw = next(m for m in metro_county_deepdive()
+                   if m["metro"] == "Dallas-Fort Worth")
+        dallas = next(c for c in dfw["counties"]
+                      if c["county"] == "Dallas")
+        self.assertGreaterEqual(len(dallas["facility_roster"]), 10)
+        for f in dallas["facility_roster"]:
+            self.assertTrue(f["name"])
+            self.assertIn(f["kind"], ("STAC", "CAH"))
+
+    def test_age_split_and_drive_time_consistent(self):
+        from rcm_mc.diligence.texas_infusion_geo import (
+            metro_county_deepdive,
+        )
+        for m in metro_county_deepdive():
+            for c in m["counties"]:
+                self.assertAlmostEqual(
+                    c["patients_65_plus"] + c["patients_under_65"],
+                    c["infusion_patients"], delta=1)
+                # Drive proxy: 25-45 mph band → minutes within
+                # [dist/45*60, dist/25*60].
+                lo = c["expected_distance_mi"] / 45.0 * 60.0
+                hi = c["expected_distance_mi"] / 25.0 * 60.0
+                self.assertTrue(
+                    lo - 0.11 <= c["drive_minutes"] <= hi + 0.11,
+                    f'{m["metro"]}/{c["county"]}: {c["drive_minutes"]}')
+                self.assertTrue(c["siting_verdict"])
+
+    def test_state_context_reads_vendored_files(self):
+        from rcm_mc.diligence.texas_infusion_geo import (
+            metro_state_context,
+        )
+        ctx = metro_state_context()
+        self.assertIn("ma", ctx)
+        self.assertGreater(ctx["ma"]["ma_enrollment"], 1_000_000)
+        self.assertIn("places", ctx)
+        self.assertIn("hpsa", ctx)
+
+    def test_metros_csv_route(self):
+        import os
+        import socket
+        import tempfile
+        import threading
+        import time
+        import urllib.request
+
+        from rcm_mc.server import build_server
+        sk = socket.socket()
+        sk.bind(("127.0.0.1", 0))
+        port = sk.getsockname()[1]
+        sk.close()
+        server, _ = build_server(
+            port=port, db_path=os.path.join(tempfile.mkdtemp(), "p.db"))
+        threading.Thread(target=server.serve_forever,
+                         daemon=True).start()
+        time.sleep(0.3)
+        try:
+            csv = urllib.request.urlopen(
+                f"http://127.0.0.1:{port}"
+                "/diligence/texas-infusion/metros.csv",
+                timeout=30).read().decode()
+            lines = csv.strip().splitlines()
+            self.assertGreater(len(lines), 30)
+            self.assertIn("siting_verdict", lines[0])
+            self.assertIn("facility_names", lines[0])
+        finally:
+            server.shutdown()
+            server.server_close()

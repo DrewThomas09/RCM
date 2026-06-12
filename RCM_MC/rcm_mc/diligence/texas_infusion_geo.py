@@ -437,3 +437,173 @@ def aic_whitespace(top: int = 25) -> list[dict[str, Any]]:
                 r["infusion_patients"] * r["expected_distance_mi"])))
     scored.sort(key=lambda x: -x["patient_miles"])
     return scored[:top]
+
+
+# ── Four-metro member-county deep-dive ──────────────────────────────
+
+#: The four target metros (CBSA-title prefixes). Together they hold
+#: ~65% of Texas infusion demand; the deep-dive goes county-by-county
+#: inside each.
+TX_TARGET_METRO_PREFIXES = (
+    "Dallas-Fort Worth", "Houston", "San Antonio", "Austin",
+)
+
+#: Effective door-to-door travel speeds for the drive-time proxy —
+#: MODELED constants (metro arterial vs rural highway averages). The
+#: convenience threshold AIC operators quote is ~20-30 minutes; the
+#: proxy turns modeled miles into that operational unit. Replace with
+#: a drive-time API in engagement.
+URBAN_MPH = 25.0
+RURAL_MPH = 45.0
+
+
+def _drive_minutes(dist_mi: float, urban_share: float) -> float:
+    mph = urban_share * URBAN_MPH + (1.0 - urban_share) * RURAL_MPH
+    return dist_mi / mph * 60.0 if mph else 0.0
+
+
+def _siting_verdict(r: dict[str, Any]) -> str:
+    """Deterministic per-county siting read from the computed fields —
+    a rule, not a judgment call, so it audits."""
+    pts, tier = r["infusion_patients"], r["access_tier"]
+    if tier == "NO_IN_COUNTY" and pts >= 500:
+        return ("Spillover catchment — first-mover AIC wedge: real "
+                "demand, zero in-county incumbents")
+    if tier == "MULTI_SITE" and pts >= 5_000:
+        return ("Core volume — convenience share-shift vs the HOPD "
+                "incumbents")
+    if tier == "SINGLE_SITE" and pts >= 1_000:
+        return ("Single incumbent — co-locate at the hospital's "
+                "referral edge")
+    if tier == "NO_IN_COUNTY":
+        return "Thin demand — serve from the adjacent-county site"
+    return "Hold — demand too thin for a dedicated site"
+
+
+def metro_state_context() -> dict[str, Any]:
+    """Texas state-level context for the metro deep-dives, read from
+    the vendored aggregates (all REAL; each names its source). State
+    granularity — county-level PLACES needs the ingest script."""
+    import csv as _csv
+    out: dict[str, Any] = {}
+    eq = _DATA / "vendor" / "cdc_places" / "places_equity_state.csv"
+    if eq.exists():
+        with eq.open() as fh:
+            for row in _csv.DictReader(fh):
+                if row.get("state") == "TX":
+                    out["places"] = {
+                        "uninsured_18_64_pct": float(
+                            row["uninsured_18_64"]),
+                        "fair_poor_health_pct": float(
+                            row["fair_poor_health"]),
+                        "diabetes_pct": float(row["diabetes"]),
+                        "obesity_pct": float(row["obesity"]),
+                        "depression_pct": float(row["depression"]),
+                        "source": "CDC PLACES state equity aggregate",
+                    }
+    ma = _DATA / "vendor" / "ma_geo" / "ma_geo_state.csv"
+    if ma.exists():
+        with ma.open() as fh:
+            rows = [r for r in _csv.DictReader(fh)
+                    if r.get("state") == "TX"]
+        if rows:
+            r = max(rows, key=lambda x: x.get("year") or "")
+            out["ma"] = {
+                "year": r["year"],
+                "ma_enrollment": int(float(r["ma_enrollment"])),
+                "avg_age": float(r["avg_age"]),
+                "female_pct": float(r["female_pct"]),
+                "dual_eligible_pct": float(r["dual_eligible_pct"]),
+                "source": "CMS MA geographic-variation state file",
+            }
+    hp = _DATA / "vendor" / "hrsa" / "hrsa_hpsa_pc_by_state.csv"
+    if hp.exists():
+        with hp.open() as fh:
+            for row in _csv.DictReader(fh):
+                if row.get("state") == "TX":
+                    out["hpsa"] = {
+                        "designated_pc_hpsas": int(
+                            float(row["designated_pc_hpsas"])),
+                        "median_hpsa_score": float(
+                            row["median_hpsa_score"]),
+                        "source": "HRSA primary-care HPSA file",
+                    }
+    return out
+
+
+@functools.lru_cache(maxsize=1)
+def metro_county_deepdive() -> list[dict[str, Any]]:
+    """The four target metros, county by county: every member county's
+    real demographics + demand, its REAL facility roster (names from
+    the geocoded CMS file), real intra-county facility spacing, the
+    distance + drive-time proxy, age-band demand split, and a
+    deterministic siting verdict. Ordered by metro demand."""
+    from .texas_infusion import metro_age_breakdown
+
+    universe = tx_county_universe()
+    pts_by_county: dict[str, list[dict[str, Any]]] = {}
+    for p in tx_access_points():
+        pts_by_county.setdefault(p["county"], []).append(p)
+
+    metros: list[dict[str, Any]] = []
+    for prefix in TX_TARGET_METRO_PREFIXES:
+        members = [r for r in universe
+                   if (r["cbsa_title"] or "").startswith(prefix)]
+        if not members:
+            continue
+        metro_pts: list[dict[str, Any]] = []
+        counties: list[dict[str, Any]] = []
+        for r in sorted(members, key=lambda x: -x["infusion_patients"]):
+            cname = _norm_county(r["county"])
+            roster = sorted(
+                pts_by_county.get(cname, []),
+                key=lambda p: (p["kind"] != "STAC", p["name"]))
+            metro_pts.extend(roster)
+            bands = metro_age_breakdown(
+                float(r["population"]), float(r["pct_age_65_plus"]))
+            # Senior bands match on prefix — the _AGE_BANDS labels
+            # use an en-dash ("65-74") that must not be retyped here.
+            senior_share = sum(
+                b["demand_share"] for b in bands
+                if b["band"].startswith(("65", "75")))
+            mins = _drive_minutes(
+                r["expected_distance_mi"], 1.0 - r["pct_rural"])
+            counties.append({
+                **r,
+                "facility_roster": [
+                    {"name": p["name"], "city": p["city"],
+                     "kind": p["kind"]} for p in roster],
+                "drive_minutes": round(mins, 1),
+                "senior_demand_share": round(senior_share, 3),
+                "patients_65_plus": round(
+                    r["infusion_patients"] * senior_share),
+                "patients_under_65": round(
+                    r["infusion_patients"] * (1.0 - senior_share)),
+                "patient_miles": round(r["infusion_patients"]
+                                       * r["expected_distance_mi"]),
+                "siting_verdict": _siting_verdict(r),
+            })
+        metro_nn = _nearest_nn_mi(metro_pts)
+        demand = sum(c["infusion_patients"] for c in counties)
+        metros.append({
+            "metro": prefix,
+            "cbsa_title": counties[0]["cbsa_title"],
+            "counties": counties,
+            "member_counties": len(counties),
+            "population": sum(c["population"] for c in counties),
+            "seniors_65_plus": sum(
+                c["seniors_65_plus"] for c in counties),
+            "infusion_patients": demand,
+            "access_points": sum(c["access_points"] for c in counties),
+            "facility_nn_mi": round(metro_nn, 1)
+            if metro_nn is not None else None,
+            "weighted_distance_mi": _weighted_distance(counties),
+            "weighted_drive_minutes": round(
+                sum(c["infusion_patients"] * c["drive_minutes"]
+                    for c in counties) / demand, 1) if demand else 0.0,
+            "no_access_counties": sum(
+                1 for c in counties
+                if c["access_tier"] == "NO_IN_COUNTY"),
+        })
+    metros.sort(key=lambda m: -m["infusion_patients"])
+    return metros

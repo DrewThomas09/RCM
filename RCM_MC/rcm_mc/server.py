@@ -6735,6 +6735,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_text(
                 texas_counties_csv(),
                 content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/metros.csv":
+            # Four-metro member-county deep-dive export (one row per
+            # metro county, facility roster names included).
+            from .ui.texas_infusion_counties_page import texas_metros_csv
+            return self._send_text(
+                texas_metros_csv(),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/cdd-scope":
             # CDD Scope — the four engagement depths (screen / red-flag
             # / full-scope / bring-down): level cards, deterministic
