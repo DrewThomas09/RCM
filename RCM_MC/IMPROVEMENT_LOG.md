@@ -3917,3 +3917,16 @@ lower-is-better for both metrics.
 **Verify**: +2 tests — p70 reproduced by hand for denial 12.0 against a
 10-value book ("vs portfolio deals (n=10)"); silent without dists +
 honesty note on n=3. 52 passed across the comparison suites.
+
+## W2-193 (2026-06-12) — Command-center hero-KPI drill-throughs (PAGE_INVENTORY top fix)
+Every hero figure on / (command center) now links to the surface where
+a partner ACTS on it: Hospitals → screener (hospitals universe);
+PE-Sized Targets → screener scoped min_size=100 (verified: hospital
+size == beds in the screener rows, so the deep link is semantically
+right); Total NPSR + Median Margin → /market-data; Distressed →
+/screening/bankruptcy-survivor (the distress scan); Active Deals →
+/portfolio. Links sit in the trusted sub line so values stay clean
+numbers. New test_command_center_drill.py: every link present on the
+rendered page + every drill target verified to be an exact-match
+served route in server.py (guards renames). 26 passed with the
+adjacent command-center suites.
