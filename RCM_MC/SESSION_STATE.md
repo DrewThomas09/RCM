@@ -357,3 +357,12 @@ series colours, export SVG/PNG, S/M/L/XL size), Pie Chart.
 Charts: +heatmap grid (scoring matrix; kit now 21 types) + source/footnote
 line on every chart (render_cdd_chart + presentable_pie inject it; field
 on Chart Builder + Pie pages; travels with SVG/PNG export). +4 tests.
+
+---
+## Checkpoint — wave #68 (W2-166, 2026-06-12)
+Exhibit Composer (route /exhibit): compose_exhibit() nests up to 4 charts
+into one 16:9 slide (eyebrow + title + source), layout adapts to panel
+count, exports one SVG/PNG. exhibit_page.py: 4 panel configs (type/palette/
+title/data) + slide meta; qs-driven; Research nav + palette + guide. +6
+tests. Graphics suite now: Excel Mapping, Chart Builder (21 types, per-
+series colours, footnote, export, size), Pie Chart, Exhibit Composer.

@@ -227,6 +227,16 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Exhibit Composer',
+        route='/exhibit',
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        source_group='Research & Backtesting',
+        is_auto_generated=False,
+        aliases=['exhibit', 'slide', 'deck slide', 'multi-chart',
+                 'compose charts', 'exhibit builder', 'slide builder'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Ingestion',
         route='/diligence/ingest',
         category=PageContextCategory.DILIGENCE_WORKSPACE,
