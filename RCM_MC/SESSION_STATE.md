@@ -432,3 +432,10 @@ Added texas_infusion_memo_md(a) (Markdown IC memo: headline/verdict/
 5-pillar thesis/risks/diligence-next/key-figures table) + route
 /api/diligence/texas-infusion/memo (text/markdown download) + "⬇ IC memo"
 button in the thesis block. +2 tests.
+
+---
+## Checkpoint — wave #77 (W2-175, 2026-06-12)
+Extracted texas_exhibit_svg(a) (shared by page + route) + route
+/api/diligence/texas-infusion/exhibit.svg (server-rendered SVG download)
++ download link on the page. Deliverables set complete: IC memo (.md) +
+exhibit (.svg), both server-rendered from the live analysis. +1 test.

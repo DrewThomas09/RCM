@@ -39,11 +39,11 @@ def _money(v: float) -> str:
     return f"${v:,.0f}"
 
 
-def _exhibit_section(a: Dict[str, Any]) -> str:
-    """Auto-compose a one-page investment-highlights exhibit slide from
-    the LIVE analysis — the deliverable a partner drops into a deck.
-    Recomputes from the same numbers as the sections, so it can never
-    disagree with them."""
+def texas_exhibit_svg(a: Dict[str, Any]) -> str:
+    """The auto-composed 'Investment Highlights' exhibit SVG — built from
+    the live analysis (funnel, site-of-care evolution, top de-novo
+    counties, current mix). Shared by the page section and the download
+    route so they can never disagree."""
     s = a["sizing"]
     funnel = parse_table(
         f"Stage\tValue\nTAM\t{s['tam']/1e6:.0f}\nSAM\t{s['sam']/1e6:.0f}\n"
@@ -71,11 +71,19 @@ def _exhibit_section(a: Dict[str, Any]) -> str:
         {"type": "donut", "title": "Current site-of-care mix",
          "table": mix, "palette": "Chartis"},
     ]
-    svg = compose_exhibit(
+    return compose_exhibit(
         panels, title="Texas Infusion — Investment Highlights",
         eyebrow="Commercial Due Diligence",
         source="Source: NHIA / MedPAC scaled to TX (Census/ACS) · CMS · "
                "CDC PLACES — illustrative")
+
+
+def _exhibit_section(a: Dict[str, Any]) -> str:
+    """Auto-compose a one-page investment-highlights exhibit slide from
+    the LIVE analysis — the deliverable a partner drops into a deck.
+    Recomputes from the same numbers as the sections, so it can never
+    disagree with them."""
+    svg = texas_exhibit_svg(a)
     return (
         f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
         f'margin:0 0 8px;">A one-page exhibit auto-composed from the live '
@@ -86,6 +94,10 @@ def _exhibit_section(a: Dict[str, Any]) -> str:
         f'padding:12px;background:#fff;text-align:center;">'
         f'<div id="txExhibit">{svg}</div>'
         + chart_export_toolbar("txExhibit", "texas-infusion-exhibit")
+        + f'<div style="margin-top:6px;"><a href="/api/diligence/'
+        f'texas-infusion/exhibit.svg" style="font-size:11px;color:{_TEAL};'
+        f'font-weight:600;text-decoration:none;">⬇ download the exhibit '
+        f'SVG (server-rendered)</a></div>'
         + '</div>')
 
 

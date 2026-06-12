@@ -3625,3 +3625,16 @@ memo a partner pastes into a writeup:
 **Verify**: +2 tests — memo has the section structure + real figures
 (HHI, verdict, one numbered item per thesis pillar); the page links to
 the memo download. Full suite green.
+
+## W2-175 (2026-06-12) — Texas infusion: server-rendered exhibit SVG download (wave #77)
+Completed the deliverables set (alongside the IC memo):
+- Refactored the auto-exhibit into a shared **`texas_exhibit_svg(a)`**
+  helper (used by the page section AND the download route, so they can
+  never disagree).
+- **Route** `/api/diligence/texas-infusion/exhibit.svg`: serves the
+  composed Investment-Highlights exhibit as a standalone, server-rendered
+  `image/svg+xml` download (honoring the AIC overrides).
+- **Page**: a "⬇ download the exhibit SVG (server-rendered)" link under
+  the one-page exhibit.
+**Verify**: +1 test — the shared helper returns the 5-svg composed slide
+(no None) and the page links to the SVG download route. Full suite green.

@@ -6775,6 +6775,27 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_enc)
             return None
+        if path == "/api/diligence/texas-infusion/exhibit.svg":
+            # The auto-composed Investment-Highlights exhibit, served as a
+            # standalone downloadable SVG.
+            from .diligence.texas_infusion import (
+                aic_assumptions_from_qs, build_texas_infusion_analysis,
+            )
+            from .ui.texas_infusion_page import texas_exhibit_svg
+            _ti_qs = urllib.parse.parse_qs(parsed.query)
+            _svg = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                    + texas_exhibit_svg(build_texas_infusion_analysis(
+                        aic_overrides=aic_assumptions_from_qs(_ti_qs))))
+            _enc = _svg.encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "image/svg+xml; charset=utf-8")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="texas-infusion-exhibit.svg"')
+            self.send_header("Content-Length", str(len(_enc)))
+            self.end_headers()
+            self.wfile.write(_enc)
+            return None
         if path == "/diligence/comparable-outcomes":
             # Comparable-deal benchmarking: target profile in,
             # corpus matches + outcome distribution out.
