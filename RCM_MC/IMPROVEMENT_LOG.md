@@ -4024,3 +4024,13 @@ The cadence sweep caught the chart stream's new national infusion scan
 the same orphan class as texas-infusion before it (the catalog-coverage
 test is the gate that caught it). Added to the Audit & Stress pillar
 beside the Texas study. Invariant suites (39) green.
+
+## W2-202 (2026-06-12) — Doc fix: the live-mode session-TTL "limitation" was stale
+CLAUDE.md claimed "live mode meta-refresh doesn't extend session TTL" —
+misleading: verified functionally that every authenticated request
+(including the 60s meta-refresh GET) bumps last_seen_at and slides the
+IDLE window; only the 7-day ABSOLUTE TTL (set at login, by design as an
+activity cap) ends the session. Rewrote the known-limitation note to
+say precisely that. Also: clean full route-walk on the merged tree
+incl. the chart stream's new national-scan page (170 routes, 0
+tracebacks, 0 leaks, --deal-cookie mode).
