@@ -237,3 +237,82 @@ def get_opps_metrics(store: Any, ccn: str,
             (str(ccn).strip(),),
         ).fetchone()
     return dict(row) if row else None
+
+
+# ── Live state aggregator — HOPD infusion volume by state ────────────
+#
+# The functions above are the CSV/CCN loader. For diligence we also want
+# a quick state-level read of hospital-outpatient (HOPD) infusion volume
+# for a set of J-codes, straight from the data.cms.gov data-api — the
+# "steered-away" pool an AIC/home platform competes to capture. Live and
+# best-effort; fails CLOSED (no fabricated totals) when egress is blocked.
+
+import json as _json
+import urllib.parse as _uparse
+import urllib.request as _urequest
+import functools as _functools
+
+_OPPS_DATA_API = "https://data.cms.gov/data-api/v1/dataset"
+_OPPS_CATALOG = "https://data.cms.gov/data.json"
+
+
+@_functools.lru_cache(maxsize=2)
+def _resolve_opps_dataset(timeout: float = 20.0) -> str:
+    from ._cms_download import ssl_context
+    try:
+        req = _urequest.Request(
+            _OPPS_CATALOG, headers={"Accept": "application/json",
+                                    "User-Agent": "rcm-mc/1.0"})
+        with _urequest.urlopen(req, timeout=timeout,
+                               context=ssl_context()) as r:
+            cat = _json.loads(r.read().decode())
+    except Exception:  # noqa: BLE001 — best-effort
+        return ""
+    for ds in cat.get("dataset", []):
+        t = str(ds.get("title", "")).lower()
+        if "outpatient hospitals" in t and "by provider and service" in t:
+            for dist in ds.get("distribution", []):
+                url = str(dist.get("accessURL", "")
+                          or dist.get("downloadURL", ""))
+                if "dataset/" in url:
+                    return url.split("dataset/")[1].split("/")[0]
+    return ""
+
+
+def fetch_opps_state_infusion(
+    state: str, hcpcs_codes: List[str], *, timeout: float = 20.0,
+) -> Dict[str, Any]:
+    """Aggregate HOPD outpatient services + Medicare payment for a set of
+    infusion HCPCS in a state, from the live OPPS by-provider-and-service
+    file. ``{"live": False}`` on any failure (caller falls back)."""
+    st = str(state or "").strip().upper()
+    if not st or not hcpcs_codes:
+        return {"live": False}
+    ds = _resolve_opps_dataset(timeout=timeout)
+    if not ds:
+        return {"live": False}
+    from ._cms_download import ssl_context
+    services = 0.0
+    payment = 0.0
+    try:
+        for code in hcpcs_codes:
+            params = {"filter[Rndrng_Prvdr_State_Abrvtn]": st,
+                      "filter[HCPCS_Cd]": code.upper(), "size": "500"}
+            url = (f"{_OPPS_DATA_API}/{ds}/data?"
+                   + _uparse.urlencode(params))
+            req = _urequest.Request(
+                url, headers={"Accept": "application/json",
+                              "User-Agent": "rcm-mc/1.0"})
+            with _urequest.urlopen(req, timeout=timeout,
+                                   context=ssl_context()) as r:
+                rows = _json.loads(r.read().decode())
+            for row in rows if isinstance(rows, list) else []:
+                srv = _pick(row, "CAPC_Srvcs", "Tot_Srvcs", "Cnt_Srvcs")
+                pay = _pick(row, "Avg_Mdcr_Pymt_Amt", "Avg_Mdcr_Alowd_Amt")
+                s = _safe_float(srv) or 0.0
+                services += s
+                payment += s * (_safe_float(pay) or 0.0)
+    except Exception:  # noqa: BLE001 — best-effort
+        return {"live": False}
+    return {"live": True, "services": round(services),
+            "medicare_payment": round(payment)}

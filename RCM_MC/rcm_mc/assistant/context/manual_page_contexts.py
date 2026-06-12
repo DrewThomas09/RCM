@@ -12060,6 +12060,30 @@ _MANUAL.extend([
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
+    _ctx(
+        "/visuals", "Visuals",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The landing hub for the graphics toolkit — "
+        "Chart Builder, Pie Chart, Excel Mapping, and Exhibit Composer — "
+        "each with a live thumbnail.",
+        primary_purpose="Surface the chart / map / exhibit builders in one "
+        "place so a partner can see what each makes and jump in.",
+        intended_users=["Anyone building visuals for a deck."],
+        common_questions=["What chart tools are there?",
+                          "Where do I make a chart or map?"],
+        inputs=["None — it links to the four builder tools."],
+        outputs=["A card grid with a live thumbnail + link per tool."],
+        key_metrics=["n/a — a navigation hub."],
+        data_sources=["Thumbnails render example placeholders."],
+        model_logic_summary="Thumbnails are rendered from the same chart "
+        "kit the tools use, so the hub reflects real output.",
+        why_it_matters="Discoverability for the graphics toolkit.",
+        diligence_use_cases=["Finding the right visual builder quickly."],
+        interpretation_guidance=["Click a card to open that builder."],
+        limitations=["A hub page; the builders hold the functionality."],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
 ])
 
 
