@@ -6740,6 +6740,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.exhibit_page import render_exhibit_page
             _ex_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_exhibit_page(_ex_qs))
+        if path == "/visuals":
+            # Visuals hub — the landing page for the graphics toolkit
+            # (Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer)
+            # with a live thumbnail of each.
+            from .ui.visuals_hub_page import render_visuals_hub_page
+            return self._send_html(render_visuals_hub_page())
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.

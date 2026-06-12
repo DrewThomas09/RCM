@@ -3500,3 +3500,13 @@ Both surface automatically in the Chart Builder chips + gallery with
 example data (value-creation slope; 100-day workstream gantt).
 **Verify**: +1 test (≥23 types incl. slope/gantt) + both render clean
 (no None) with their labels. Full suite green.
+
+## W2-168 (2026-06-12) — Visuals hub landing page (wave #70)
+A single landing page (`/visuals`) for the graphics toolkit — a card per
+tool (Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer) with a
+LIVE thumbnail rendered from the same kit the tools use (so the hub always
+reflects real output) + a one-line description and link. Wired into
+Research nav + Cmd-K palette + a documented guide context. Discoverability
+capstone for the suite.
+**Verify**: new `test_visuals_hub.py` (3) — a card + link per tool, ≥4
+thumbnail SVGs, palette/nav/guide registration. Full suite green.
