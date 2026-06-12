@@ -472,3 +472,48 @@ Market scan: added "Open in Excel Mapping" cross-link (pre-fills 51 state
 scores + gradient into /excel-mapping via ?data=) and JSON API
 /api/diligence/infusion-markets. +1 test. Connects diligence data ↔
 graphics tool + API surface.
+PE-desk product wave (CDD + Excel + market intel): /excel-templates
+library — 7 live-formula workbooks (Quick LBO, QoE databook, NWC peg,
+13-week cash, CDD market model, payer sensitivity, cohort/NRR) via
+xlsx_writer F() formula cells + blue-input styles; /cdd hub (5-module
+CDD workflow over 20 surfaces); /voc-survey (NPS, KPC gap matrix, WTP);
+/win-loss (conversion record vs named competitors, loss-reason mix);
+/rate-environment (new market_intel rate_updates.yaml — 9 settings × 3
+rule cycles + blended $ impact calculator). Palette + breadcrumbs +
+sub-nav + guide contexts wired. +53 tests across 5 files.
+
+---
+## Checkpoint — wave #71 (W2-169, 2026-06-12)
+Market-intel wave 2: /ma-penetration (KFF/CMS state cut, exposure bands,
+choropleth via excel-mapping renderer, footprint scorer) + /rate-
+environment.xlsx (live-formula impact model: blue revenue/mix inputs,
+SUMPRODUCT blend, compound-update formulas). Palette + breadcrumbs +
+guide context + CDD-hub card + audit regen. +16 tests.
+
+---
+## Checkpoint — wave #72 (W2-170, 2026-06-12)
+Pricing Power (/pricing-power: elasticity curves, ±15% window optima,
+price_locked segments, portfolio prize) + Healthcare Labor Market
+(/labor-market: 10-role BLS cut, fragility score, wage-inflation EBITDA
+stress) + 2 CDD templates (win/loss COUNTIFS tracker, KPC survey scorer
+— library now 9). Full wiring + audit regen. +25 tests.
+
+---
+## Checkpoint — wave #73 (W2-171, 2026-06-12)
+Roll-up/tuck-in arbitrage template (library: 10) + workbook cross-link
+buttons on /win-loss + /voc-survey + nav-integrity e2e guard (every
+_CORPUS_NAV/_SUB_NAV href must 200). +2 e2e tests; affected suites green.
+
+---
+## Checkpoint — wave #74 (W2-172, 2026-06-12)
+ASC + Behavioral Health panels on /voc-survey + /win-loss (5 sectors
+each); /pricing-power custom analyst segment (rev/margin/elasticity,
+clamped); Chart Builder + Exhibit Composer carded in CDD hub module 5.
++4 tests.
+
+---
+## Checkpoint — wave #75 (W2-173, 2026-06-12)
+Workbook twins for /pricing-power (live elasticity math, LOCKED rows)
+and /labor-market (SUMPRODUCT wage blend + margin bps) with download
+buttons; templates 10 → 12 (Sources & Uses with live equity plug +
+check row; DRL tracker with COUNTIF dashboard). +4 tests, smoke green.

@@ -46,11 +46,6 @@ _USEFUL_WEIGHT = 1.5
 _EFFORT_WEIGHT = 1.0
 _TOTAL_MAX = 5.0 * _USEFUL_WEIGHT + 5.0 * _EFFORT_WEIGHT  # 12.5
 
-# Scores move in 0.5 steps, so perfect-10 ties happen as big pages mature.
-# The flagship workbench is the deliberate front door of the product
-# (pinned by test_surface_rankings); it wins ties explicitly rather than
-# by whichever page happens to have more raw LOC that week.
-_FLAGSHIP = "/target-screener"
 
 
 def _handler_module_map(src: str) -> Dict[str, str]:
@@ -201,14 +196,31 @@ def build_rankings():
             "total": round(
                 (useful * _USEFUL_WEIGHT + effort * _EFFORT_WEIGHT) * 10.0 / _TOTAL_MAX, 1),
         })
-    rows.sort(key=lambda r: (-r["total"], r["route"] != _FLAGSHIP,
+    # Tiebreak: the Target Screener is the flagship workbench and leads
+    # among equal scores — a product decision (pinned by
+    # test_surface_rankings), not an emergent one. Without this, any
+    # page that grows to a perfect score (texas-infusion after waves
+    # #76-79) displaces it on the LOC tiebreak alone.
+    rows.sort(key=lambda r: (-r["total"],
+                             r["route"] != "/target-screener",
                              -r["loc"]))
     return rows
 
 
+# Labels that must NOT be the slug-derived default. The b168 bug: the
+# section-landing entry for /library labeled "Library" renders a button
+# that reads as the section itself (recursive with the nav button).
+# These were hand-edited into the generated manifest once and lost on
+# the next regeneration — overrides belong in the generator.
+_LABEL_OVERRIDES = {
+    "/library": "Deal Corpus",
+    "/portfolio": "Overview",
+}
+
+
 def _label_map() -> Dict[str, str]:
     """route → human label, from the existing nav rails where available."""
-    out: Dict[str, str] = {}
+    out: Dict[str, str] = dict(_LABEL_OVERRIDES)
     try:
         from rcm_mc.ui._chartis_kit import _SUB_NAV
         for items in _SUB_NAV.values():

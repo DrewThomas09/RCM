@@ -15,37 +15,62 @@ Public API:
     Sheet(name, rows, *, col_widths=None)
       rows: list of rows; each cell is either a plain value or a
       (value, style) tuple with style in
-      {"header","text","money","money2","pct","num","num2"}.
+      {"header","text","money","money2","pct","num","num2","mult",
+       "input","input_pct","label"}.
+    F(expr) — a live-formula cell value (expr WITHOUT the leading "=").
+      Formulas are opt-in via this wrapper, never inferred from a
+      leading "=" in a string: every CSV export in this codebase is
+      defanged against Excel formula injection, and silently turning
+      strings into formulas here would reopen that hole for any
+      template that interpolates partner-supplied text.
     write_xlsx(sheets) -> bytes
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, List, Optional, Sequence, Tuple
+from dataclasses import dataclass
+from typing import Any, List, Optional, Sequence
 from xml.sax.saxutils import escape
 import io
 import zipfile
 
+
+@dataclass(frozen=True)
+class F:
+    """Live Excel formula. ``F("SUM(B2:B5)")`` renders as ``=SUM(B2:B5)``."""
+    expr: str
+
 # Style ids map to cellXfs entries in _STYLES_XML below (order matters).
+# The "input*" styles render blue — the banker convention (blue =
+# hardcoded assumption you may edit, black = formula/derived) that deal
+# teams expect in any model template they download.
 _STYLE_IDS = {
     "text": 0,
     "header": 1,
-    "money": 2,    # $#,##0
-    "money2": 3,   # $#,##0.00
-    "pct": 4,      # 0.0%
-    "num": 5,      # #,##0
-    "num2": 6,     # #,##0.00
+    "money": 2,        # $#,##0
+    "money2": 3,       # $#,##0.00
+    "pct": 4,          # 0.0%
+    "num": 5,          # #,##0
+    "num2": 6,         # #,##0.00
+    "mult": 7,         # 0.00"x"
+    "label": 8,        # bold ink, no fill (section labels)
+    "input": 9,        # blue, general
+    "input_money": 10, # blue, $#,##0.00
+    "input_pct": 11,   # blue, 0.0%
+    "input_num": 12,   # blue, #,##0.00
 }
 
 _STYLES_XML = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="2">
+<numFmts count="3">
 <numFmt numFmtId="164" formatCode="$#,##0"/>
 <numFmt numFmtId="165" formatCode="$#,##0.00"/>
+<numFmt numFmtId="166" formatCode="0.00&quot;x&quot;"/>
 </numFmts>
-<fonts count="2">
+<fonts count="4">
 <font><sz val="11"/><name val="Calibri"/></font>
 <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
+<font><b/><sz val="11"/><color rgb="FF1A2332"/><name val="Calibri"/></font>
+<font><sz val="11"/><color rgb="FF1F4E9C"/><name val="Calibri"/></font>
 </fonts>
 <fills count="3">
 <fill><patternFill patternType="none"/></fill>
@@ -54,7 +79,7 @@ _STYLES_XML = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 </fills>
 <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="7">
+<cellXfs count="13">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
 <xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
@@ -62,6 +87,12 @@ _STYLES_XML = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
 <xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
 <xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="165" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+<xf numFmtId="10" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+<xf numFmtId="4" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
 </cellXfs>
 </styleSheet>"""
 
@@ -84,6 +115,8 @@ def _col_letter(i: int) -> str:
 
 def _cell_xml(ref: str, value: Any, style: str) -> str:
     sid = _STYLE_IDS.get(style, 0)
+    if isinstance(value, F):
+        return f'<c r="{ref}" s="{sid}"><f>{escape(value.expr)}</f></c>'
     if isinstance(value, (int, float)) and value is not True and value is not False:
         return f'<c r="{ref}" s="{sid}"><v>{value}</v></c>'
     if value is None or value == "":
