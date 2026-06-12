@@ -3470,3 +3470,20 @@ Two more client-readiness improvements:
 **Verify**: +4 tests — heatmap present (≥21 types) + renders grid with
 row/column headers clean, footnote appears in the chart SVG + on the
 page; pie footnote renders. Full suite green.
+
+## W2-166 (2026-06-12) — Exhibit Composer: multi-chart deck slide (wave #68)
+The capstone of the chart suite — compose up to 4 charts onto one slide:
+- **`compose_exhibit(panels, …)`** (in cdd_chart_kit): renders 1–4 charts
+  and nests each (via `_embed` rewriting the child <svg> opening tag) into
+  a single 16:9 (1280×720) slide with an eyebrow, serif title block, a
+  source line, and a Chartis·PEdesk mark. Layout adapts to panel count
+  (1 = full, 2 = side-by-side, 3–4 = 2×2). Exports as ONE SVG/PNG.
+- **`exhibit_page.py`** (route `/exhibit`): slide eyebrow / title / source
+  + 4 panel configs (chart type + palette + panel title + pasted data;
+  blank panels drop). qs-driven (t{i}/pt{i}/d{i}/pal{i}) so a whole slide
+  is a shareable URL; the composed slide gets the SVG/PNG export toolbar.
+  Wired into Research nav + Cmd-K palette + a documented guide context.
+**Verify**: new `test_exhibit.py` (6) — composes one SVG with the nested
+chart svgs (parent + 4), layout drives panel count, empty→just the frame,
+page populated + custom slide + palette/nav/guide registration. Full
+suite green.

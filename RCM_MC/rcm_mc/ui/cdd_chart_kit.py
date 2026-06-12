@@ -1194,3 +1194,80 @@ def _with_footnote(svg: str, opts: Dict[str, Any]) -> str:
           f'font-size="9.5" fill="{_FAINT}">{_esc(note)}</text>')
     idx = svg.rfind("</svg>")
     return svg[:idx] + el + svg[idx:]
+
+
+# ── Exhibit / slide composer ─────────────────────────────────────────
+
+def _embed(svg: str, x: float, y: float, w: float, h: float) -> str:
+    """Rewrite a chart's opening <svg> tag so it nests inside a parent
+    SVG at (x, y) with the given box — the viewBox scales the chart in."""
+    import re
+    m = re.search(r'viewBox="([^"]*)"', svg[:400])
+    vb = m.group(1) if m else "0 0 720 450"
+    body = svg[svg.find(">") + 1:]
+    return (f'<svg x="{x:.0f}" y="{y:.0f}" width="{w:.0f}" height="{h:.0f}" '
+            f'viewBox="{vb}" preserveAspectRatio="xMidYMid meet">{body}')
+
+
+def _exhibit_layout(n: int, x0, y0, x1, y1, gap=22.0):
+    """Panel boxes for n charts inside the content area."""
+    if n <= 1:
+        return [(x0, y0, x1 - x0, y1 - y0)]
+    if n == 2:
+        w = (x1 - x0 - gap) / 2
+        return [(x0, y0, w, y1 - y0), (x0 + w + gap, y0, w, y1 - y0)]
+    # 3–4 → 2×2 grid (3 leaves the last cell empty).
+    w = (x1 - x0 - gap) / 2
+    h = (y1 - y0 - gap) / 2
+    cells = [(x0, y0, w, h), (x0 + w + gap, y0, w, h),
+             (x0, y0 + h + gap, w, h), (x0 + w + gap, y0 + h + gap, w, h)]
+    return cells[:n]
+
+
+def compose_exhibit(
+    panels: List[Dict[str, Any]],
+    *, title: str = "", eyebrow: str = "", source: str = "",
+    width_px: float = 1120,
+) -> str:
+    """Compose up to 4 charts onto one deck slide (16:9) with a title
+    block + source line — exported as a single SVG. ``panels`` is a list
+    of ``{type, table, title, palette}``."""
+    W, H = 1280.0, 720.0
+    panels = [p for p in panels if p.get("table", {}).get("rows")][:4]
+    out = [f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
+           f'preserveAspectRatio="xMidYMid meet" role="img" '
+           f'aria-label="{_esc(title or "exhibit")}" '
+           f'style="max-width:{width_px:.0f}px;width:100%;height:auto;'
+           f'background:#fff;">'
+           f'<rect x="0" y="0" width="{W:.0f}" height="{H:.0f}" '
+           f'fill="#fff"/>']
+    if eyebrow:
+        out.append(f'<text x="40" y="40" font-family="{_SANS}" '
+                   f'font-size="13" font-weight="700" letter-spacing="1.5" '
+                   f'fill="{PALETTES["Chartis"][1]}">'
+                   f'{_esc(eyebrow.upper())}</text>')
+    if title:
+        out.append(f'<text x="40" y="70" font-family="{_SERIF}" '
+                   f'font-size="28" font-weight="700" fill="{_NAVY}">'
+                   f'{_esc(title)}</text>')
+    out.append(f'<line x1="40" y1="84" x2="{W-40:.0f}" y2="84" '
+               f'stroke="{_GRID}" stroke-width="1.2"/>')
+    boxes = _exhibit_layout(len(panels) or 1, 36, 96, W - 36, H - 44)
+    for p, (x, y, w, h) in zip(panels, boxes):
+        chart = render_cdd_chart(
+            p.get("type", "column"), p["table"],
+            {"title": p.get("title", ""), "palette": p.get("palette",
+                                                            "Chartis"),
+             "W": 720, "H": 460})
+        out.append(_embed(chart, x, y, w, h))
+    src = source or ""
+    out.append(f'<line x1="40" y1="{H-34:.0f}" x2="{W-40:.0f}" '
+               f'y2="{H-34:.0f}" stroke="{_GRID}" stroke-width="0.8"/>')
+    if src:
+        out.append(f'<text x="40" y="{H-16:.0f}" font-family="{_SANS}" '
+                   f'font-size="11" fill="{_FAINT}">{_esc(src)}</text>')
+    out.append(f'<text x="{W-40:.0f}" y="{H-16:.0f}" text-anchor="end" '
+               f'font-family="{_SERIF}" font-size="11" fill="{_FAINT}">'
+               f'Chartis · PEdesk</text>')
+    out.append("</svg>")
+    return "".join(out)

@@ -6733,6 +6733,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.pie_chart_page import render_pie_chart_page
             _pc_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_pie_chart_page(_pc_qs))
+        if path == "/exhibit":
+            # Exhibit Composer — lay up to 4 charts on one 16:9 deck slide
+            # with a title block + source; qs carries per-panel type/data/
+            # title (t{i}/d{i}/pt{i}) + slide title / eyebrow / source.
+            from .ui.exhibit_page import render_exhibit_page
+            _ex_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_exhibit_page(_ex_qs))
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.
