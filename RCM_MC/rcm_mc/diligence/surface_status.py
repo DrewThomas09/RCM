@@ -80,6 +80,12 @@ _GREEN = frozenset({
 
 # ── NAVY: diligence calculators (compute off your inputs) ───────────────────
 _NAVY = frozenset({
+    # CDD call-program planner: curated question bank + the user's own
+    # coverage counts — a calculator over your inputs, never market data.
+    "/diligence/expert-calls",
+    # CDD scoping aid: curated engagement methodology + the user's
+    # stage/familiarity inputs — same calculator class.
+    "/diligence/cdd-scope",
     "/physician-productivity", "/phys-comp-plan", "/physician-labor",
     "/provider-retention", "/quality-scorecard", "/clinical-outcomes",
     "/regulatory-risk", "/supply-chain", "/payer-shift", "/ma-contracts",

@@ -6745,6 +6745,61 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/cdd-scope":
+            # CDD Scope — the four engagement depths (screen / red-flag
+            # / full-scope / bring-down): level cards, deterministic
+            # recommender (stage/familiarity/type), workstream × level
+            # matrix linking each workstream to its executing surface.
+            from .ui.cdd_scope_page import render_cdd_scope_page
+            _cs_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_cdd_scope_page(_cs_qs))
+        if path == "/api/diligence/cdd-scope.csv":
+            # Per-level task-list export (engagement-plan starter).
+            from .ui.cdd_scope_page import cdd_scope_csv
+            _cs_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_text(
+                cdd_scope_csv(_cs_qs),
+                content_type="text/csv; charset=utf-8")
+        if path == "/diligence/expert-calls":
+            # Expert-Call Program — CDD voice-of-customer planner: call
+            # mix per stakeholder lens, 4-week cadence, per-lens call
+            # guide (exhibit chrome), topic triangulation, coverage
+            # read. qs carries n / lens / done_<key> / deal (all GET —
+            # the tracker state is the URL).
+            from .ui.expert_calls_page import render_expert_calls_page
+            _ec_qs = urllib.parse.parse_qs(parsed.query)
+            # Active-deal prefill (visible note on-page; an explicit
+            # ?deal= always wins; _prefill_deal never leaks to exports).
+            _ec_meta = self._active_deal_meta()
+            if _ec_meta and not (_ec_qs.get("deal") or [""])[0]:
+                if _ec_meta.get("name"):
+                    _ec_qs["deal"] = [_ec_meta["name"]]
+                    _ec_qs.setdefault("_prefill_deal", [_ec_meta["name"]])
+            # Coverage from the evidence trail: count the structured
+            # EXPERT CALL notes already logged on the active deal so the
+            # tracker reflects what's recorded (explicit done_* params
+            # win on-page). Best-effort — notes trouble never 500s.
+            _ec_counts = None
+            if _ec_meta and _ec_meta.get("id"):
+                try:
+                    from .deals.deal_notes import list_notes
+                    from .diligence.expert_calls import logged_call_counts
+                    _df = list_notes(PortfolioStore(self.config.db_path),
+                                     _ec_meta["id"])
+                    _ec_counts = logged_call_counts(
+                        _df["body"].tolist() if len(_df) else [])
+                except Exception:  # noqa: BLE001
+                    _ec_counts = None
+            return self._send_html(render_expert_calls_page(
+                _ec_qs, active_deal=_ec_meta, logged_counts=_ec_counts))
+        if path == "/api/diligence/expert-calls.csv":
+            # Call-sheet export — one row per planned call (week, lens,
+            # sourcing) + empty tracking columns; same qs as the page.
+            from .ui.expert_calls_page import expert_calls_csv
+            _ec_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_text(
+                expert_calls_csv(_ec_qs),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/infusion-markets":
             # National infusion-market scan — every state ranked for an
             # infusion roll-up from real per-state ACS + CMS MA data.
@@ -6901,6 +6956,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.chart_builder_page import render_chart_builder_page
             _cb_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_chart_builder_page(_cb_qs))
+        if path == "/charts":
+            # Saved Charts library — the current user's named Chart
+            # Builder / Exhibit configurations (a chart IS its URL qs).
+            from .portfolio.saved_charts import list_charts
+            from .ui.saved_charts_page import render_saved_charts_page
+            _sc_owner = self._current_username() or ""
+            _sc_rows = list_charts(PortfolioStore(self.config.db_path),
+                                   _sc_owner) if _sc_owner else []
+            return self._send_html(
+                render_saved_charts_page(_sc_rows, owner=_sc_owner))
         if path == "/pie-chart":
             # Pie Chart — a client-ready pie/donut from per-slice label /
             # value / colour rows (no table paste); qs carries the slices
@@ -13489,6 +13554,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_save_post()
         if path == "/api/target-screener/delete":
             return self._route_target_screener_delete_post()
+        if path == "/api/charts/save":
+            return self._route_charts_save_post()
+        if path == "/api/charts/delete":
+            return self._route_charts_delete_post()
         if path == "/api/target-screener/snapshot":
             return self._route_target_screener_snapshot_post()
         if path == "/api/peer-sets/save":
@@ -13497,6 +13566,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_peer_set_delete_post()
         if path == "/api/rollup/save-to-deal":
             return self._route_rollup_save_to_deal_post()
+        if path == "/api/expert-calls/log":
+            return self._route_expert_call_log_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -14178,6 +14249,42 @@ class RCMHandler(BaseHTTPRequestHandler):
                 pass
         return self._redirect("/target-screener?view=compare")
 
+    def _route_charts_save_post(self) -> None:
+        """POST /api/charts/save — persist a named chart for the current
+        user (Saved Charts library). The chart is its route + query
+        string; the form snapshots location.search at submit."""
+        from .portfolio.saved_charts import save_chart
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        title = (form.get("title", "") or "").strip()
+        route = (form.get("route", "") or "").strip()
+        params = (form.get("query_params", "") or "").strip()
+        if owner and title:
+            try:
+                save_chart(PortfolioStore(self.config.db_path), owner,
+                           title, route, params)
+            except ValueError:
+                pass    # forged/odd route — drop silently, never 500
+            except Exception:  # noqa: BLE001 — never 500 on a save hiccup
+                pass
+        return self._redirect("/charts")
+
+    def _route_charts_delete_post(self) -> None:
+        """POST /api/charts/delete — remove one of the current user's
+        saved charts by id (owner-scoped in the store's WHERE)."""
+        from .portfolio.saved_charts import delete_chart
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        cid = self._clamp_int(form.get("id", "0"), default=0, min_v=0,
+                              max_v=10**9)
+        if owner and cid:
+            try:
+                delete_chart(PortfolioStore(self.config.db_path), owner,
+                             cid)
+            except Exception:  # noqa: BLE001
+                pass
+        return self._redirect("/charts")
+
     def _route_target_screener_snapshot_post(self) -> None:
         """POST /api/target-screener/snapshot — P9 vintage-diff baseline.
 
@@ -14269,6 +14376,42 @@ class RCMHandler(BaseHTTPRequestHandler):
         except Exception:  # noqa: BLE001 — never 500 a save action
             return self._redirect(f"/pipeline/rollup?{back_qs}")
         return self._redirect(f"/pipeline/rollup?{back_qs}&saved_note=1")
+
+    def _route_expert_call_log_post(self) -> None:
+        """POST /api/expert-calls/log — record one completed expert call
+        as a structured deal note (the program's evidence trail).
+
+        The note body is built by format_call_note (strict validation:
+        lens + thesis tag + non-empty finding) so logged_call_counts can
+        later derive coverage from it. The deal must already exist —
+        record_note would silently upsert a junk deal otherwise (same
+        guard as the roll-up save)."""
+        form = self._read_form_body()
+        deal_id = (form.get("deal_id", "") or "").strip()[:128]
+        back = "/diligence/expert-calls"
+        if not deal_id:
+            return self._redirect(back)
+        store = PortfolioStore(self.config.db_path)
+        try:
+            deals = store.list_deals(include_archived=True)
+            if deal_id not in set(deals.get("deal_id", [])):
+                return self._redirect(back)
+            from .diligence.expert_calls import format_call_note
+            body = format_call_note(
+                (form.get("lens", "") or "").strip(),
+                vantage=form.get("vantage", "") or "",
+                finding=form.get("finding", "") or "",
+                tag=form.get("tag", "") or "",
+                as_of=form.get("as_of", "") or "")
+            from .deals.deal_notes import record_note
+            record_note(store, deal_id=deal_id, body=body,
+                        author=self._current_username() or "api")
+        except ValueError:
+            # Invalid lens/tag/empty finding — never a junk note.
+            return self._redirect(back)
+        except Exception:  # noqa: BLE001 — never 500 a save action
+            return self._redirect(back)
+        return self._redirect(f"{back}?logged=1")
 
     def _route_quick_import_post(self) -> None:
         """POST /quick-import — create a deal from browser form."""

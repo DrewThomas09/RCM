@@ -47,6 +47,7 @@ _EFFORT_WEIGHT = 1.0
 _TOTAL_MAX = 5.0 * _USEFUL_WEIGHT + 5.0 * _EFFORT_WEIGHT  # 12.5
 
 
+
 def _handler_module_map(src: str) -> Dict[str, str]:
     """``_route_<name>`` handler → ui module stem it renders. Most diligence
     (and many other) routes dispatch via ``return self._route_X()`` rather than

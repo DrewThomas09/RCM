@@ -11866,7 +11866,8 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
-            "Can I set the value domain manually?",
+            "Can I set the value domain instead of auto-scaling?",
+            "How do I export the map for a deck?",
             "Why is the map a tile grid instead of real geography?",
         ],
         inputs=["Three gradient colours; an optional low/mid/high value "
@@ -11905,20 +11906,33 @@ _MANUAL.extend([
             "How do I make a waterfall / bridge chart?",
             "How do I build a marimekko or 100% stacked column?",
             "Can I paste my data from Excel and pick the colours?",
+            "Can it aggregate / sort / top-N my data for me?",
+            "How do I make a Pareto, histogram, or box plot?",
+            "Can I add a trendline with R² to a scatter?",
+            "Can I chart real CMS data without pasting anything?",
             "How do I export the chart as SVG or PNG?",
             "Which chart types does the kit support?",
         ],
+        related_routes=["/exhibit", "/pie-chart", "/excel-mapping",
+                        "/charts"],
         inputs=["A pasted table (headers row + category column + one column "
                 "per series); chart type; title/subtitle; a Chartis "
                 "palette; unit suffix; show-values / legend toggles."],
         outputs=["A centered, Chartis-styled SVG chart, plus a gallery of "
                  "the same data across every chart type."],
         key_metrics=["User-supplied series values."],
-        data_sources=["Your pasted data only — example tables are "
-                      "placeholders."],
+        data_sources=["Your pasted data — example tables are "
+                      "placeholders.",
+                      "Optional one-click platform datasets aggregated "
+                      "from the vendored CMS provider snapshots (SNF, "
+                      "home health, hospice, dialysis, IRF, LTCH), each "
+                      "with a source/date footnote."],
         model_logic_summary="Pure SVG rendering over a shared frame "
-        "(title, gridlines, value labels, legend); 13 chart types share "
-        "one Chartis palette set.",
+        "(title, gridlines, value labels, legend); 27 chart types share "
+        "one Chartis palette set. A pre-chart shaping pass can aggregate "
+        "duplicate labels, sort, keep top-N (+ Other), and recompute "
+        "values (% of total / cumulative / moving avg / growth / index); "
+        "line + scatter take a least-squares trendline with R².",
         why_it_matters="Every CDD deck needs these charts; this builds them "
         "in the house style without Excel.",
         diligence_use_cases=["Market-sizing funnels, EBITDA bridges, "
@@ -11928,7 +11942,6 @@ _MANUAL.extend([
                                  "X, Y, [size]."],
         limitations=["Static SVG (no interactivity); charts render only "
                      "what you paste."],
-        related_routes=["/excel-mapping", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11945,7 +11958,8 @@ _MANUAL.extend([
             "How do I make a pie chart?",
             "Can I set the colour of each slice?",
             "How do I make it a donut?",
-            "Can the labels show values instead of percentages?",
+            "How do I show values instead of percentages?",
+            "How do I export the chart as SVG or PNG?",
             "How many slices can I add?",
         ],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
@@ -11983,8 +11997,8 @@ _MANUAL.extend([
             "How do I put several charts on one slide?",
             "Can I export a whole exhibit at once?",
             "How does the layout change with the panel count?",
-            "Can each panel use a different chart type?",
-            "Where do the slide title and source line come from?",
+            "Can I give the slide a title and source line?",
+            "Can each panel use a different chart type and palette?",
         ],
         inputs=["1–4 panels, each a chart type + pasted table + panel "
                 "title; a slide eyebrow / title / source."],
@@ -12006,6 +12020,52 @@ _MANUAL.extend([
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
     _ctx(
+        "/charts", "Saved Charts",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The chart library — named Chart Builder and "
+        "Exhibit Composer configurations saved per user, reopened "
+        "exactly as they were left (a chart is its URL query string).",
+        primary_purpose="Keep the charts a deal team reuses — weekly "
+        "exhibits, standard bridges — one click away instead of "
+        "re-pasting data and re-picking options.",
+        intended_users=["Deal team re-running the same exhibits across "
+                        "a workstream."],
+        common_questions=[
+            "How do I save a chart I just built?",
+            "Where do my saved charts live?",
+            "Can I reopen a saved exhibit and edit it?",
+            "Are saved charts shared with the whole team?",
+            "How do I delete a saved chart?",
+        ],
+        inputs=["A name typed on Chart Builder / Exhibit Composer (the "
+                "★ Save to library strip); the chart's current URL "
+                "query string is snapshotted automatically."],
+        outputs=["A per-user list of named charts — open / delete; "
+                 "opening re-renders the live page from the saved "
+                 "query string."],
+        key_metrics=["None — a workflow surface, not an analytic."],
+        data_sources=["The saved query strings only; chart data stays "
+                      "whatever was pasted or dataset-loaded when "
+                      "saved."],
+        model_logic_summary="A saved chart is a route + query string "
+        "persisted owner-scoped in SQLite; the library relinks, it "
+        "never re-renders or re-aggregates at save time.",
+        why_it_matters="The third time someone rebuilds the same "
+        "denials Pareto by hand, the builder has failed them — this "
+        "makes configurations durable.",
+        diligence_use_cases=["Weekly IC exhibit refresh: reopen the "
+                             "saved slide, paste the new month, export."],
+        interpretation_guidance=["Saved charts are per-user, not "
+                                 "shared; send the URL itself to share "
+                                 "a configuration."],
+        limitations=["Saves the configuration (URL), not a rendered "
+                     "image; very large pasted tables are capped at "
+                     "the qs limit."],
+        related_routes=["/chart-builder", "/exhibit", "/pie-chart"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
         "/visuals", "Visuals",
         category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="The landing hub for the graphics toolkit — "
@@ -12016,8 +12076,9 @@ _MANUAL.extend([
         intended_users=["Anyone building visuals for a deck."],
         common_questions=["What chart tools are there?",
                           "Where do I make a chart or map?",
-                          "How do I build a multi-chart deck slide?",
-                          "Which tool makes a US state heat map?",
+                          "Which tool makes a full deck slide?",
+                          "Can I build a US state choropleth?",
+                          "Where do my saved charts live?",
                           "Can I download a workbook model instead?"],
         inputs=["None — it links to the four builder tools."],
         outputs=["A card grid with a live thumbnail + link per tool."],
@@ -12030,7 +12091,134 @@ _MANUAL.extend([
         interpretation_guidance=["Click a card to open that builder."],
         limitations=["A hub page; the builders hold the functionality."],
         related_routes=["/chart-builder", "/pie-chart", "/excel-mapping",
-                        "/exhibit", "/excel-templates"],
+                        "/exhibit", "/excel-templates", "/charts"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/diligence/cdd-scope", "CDD Scope",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The four engagement depths of a commercial "
+        "due diligence — L1 desktop screen, L2 red-flag CDD, L3 "
+        "full-scope CDD, L4 confirmatory/bring-down — with a "
+        "deterministic scoping recommender, a workstream × level depth "
+        "matrix linking each workstream to the platform surface that "
+        "executes it, and a per-level task-list CSV.",
+        primary_purpose="Scope the CDD to the deal stage: decide how "
+        "deep each workstream runs before spending the fee budget, and "
+        "hand each workstream to its executing surface.",
+        intended_users=["Deal team scoping a CDD engagement; the "
+                        "partner deciding what a process stage "
+                        "justifies spending."],
+        common_questions=[
+            "How deep should our diligence go at this stage?",
+            "What's the difference between a red-flag and a full CDD?",
+            "What does a desktop screen actually cover?",
+            "What runs in a confirmatory bring-down?",
+            "Which platform page executes each workstream?",
+        ],
+        inputs=["Deal stage (pre-IOI / indicative bid / exclusivity / "
+                "pre-close), market familiarity, platform vs add-on; "
+                "a level selection for the task list."],
+        outputs=["A recommended level with the reasoning stated; four "
+                 "level cards (when / duration-as-convention / decision "
+                 "/ deliverable / call-program size); the workstream × "
+                 "level depth matrix (NONE / DESKTOP / TARGETED / "
+                 "FULL); a per-level task list with a CSV export."],
+        key_metrics=["Depth per workstream per level; recommended "
+                     "call-program size per level."],
+        data_sources=["Curated engagement methodology only — durations "
+                      "are market convention, not quotes; nothing on "
+                      "the page is market data."],
+        model_logic_summary="The recommender is deterministic: deal "
+        "stage anchors the level (screen→L1, bid→L2, exclusivity→L3, "
+        "pre-close→L4); familiarity and platform-vs-add-on adjust "
+        "within it (known-market add-on at exclusivity right-sizes to "
+        "L2). The depth matrix is monotone L1→L3 — a deeper level "
+        "never does less of a workstream; L4 narrows deliberately.",
+        why_it_matters="Mis-scoping burns the budget in one direction "
+        "and leaves the IC underwriting unverified claims in the "
+        "other; the level discipline is how CDD firms actually price "
+        "and staff.",
+        diligence_use_cases=["Scoping the engagement letter; deciding "
+                             "what an indicative-bid budget buys; "
+                             "handing a scoped task list to the team "
+                             "with each task's executing surface."],
+        interpretation_guidance=["The recommendation is a scoping aid, "
+                                 "not a rule — the reasoning is stated "
+                                 "so a partner can overrule it on "
+                                 "facts the form doesn't capture."],
+        limitations=["Healthcare-services CDD framing; durations are "
+                     "convention ranges, team shapes are qualitative — "
+                     "no cost figures, deliberately."],
+        related_routes=["/diligence/expert-calls",
+                        "/diligence/cim-crosscheck",
+                        "/diligence/checklist"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/diligence/expert-calls", "Expert-Call Program",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The CDD voice-of-customer planner — a call-mix "
+        "plan across seven stakeholder lenses (referrers, payers, "
+        "competitors, former employees, site administrators, patient "
+        "voice, industry experts), a printable per-lens call guide with "
+        "'listen for' scoring aids, and an honest coverage read.",
+        primary_purpose="Design and track the primary-research program of "
+        "a commercial due diligence: who to call, what to ask each lens, "
+        "and whether the evidence is triangulated or single-source.",
+        intended_users=["CDD deal team planning and running the "
+                        "expert-call sprint."],
+        common_questions=[
+            "Who should we be calling for this deal?",
+            "What do we ask a payer contracting exec?",
+            "Have we covered every stakeholder lens?",
+            "How many expert calls does a CDD need?",
+            "How do I keep expert calls compliant?",
+        ],
+        related_routes=["/diligence/cim-crosscheck",
+                        "/diligence/checklist", "/diligence/hcris-xray"],
+        inputs=["Program size (calls); selected lens; completed-call "
+                "counts per lens; an optional deal name for the guide."],
+        outputs=["A call-mix table with each lens's known bias; a "
+                 "4-week cadence plan (who to book each week, and why "
+                 "that order); a structured call guide in numbered "
+                 "exhibit chrome (compliance opening, questions grouped "
+                 "by CDD topic, closing asks — print-ready); a topic × "
+                 "lens triangulation matrix; a coverage read (COVERED / "
+                 "THIN / UNCOVERED per lens); a call-sheet CSV export "
+                 "(one row per planned call with sourcing pre-filled)."],
+        key_metrics=["Calls per lens vs plan; coverage status — a lens "
+                     "needs two voices to count as covered."],
+        data_sources=["A curated question bank and program methodology — "
+                      "a starting point, not engagement-specific design. "
+                      "Coverage counts are user-entered; nothing on the "
+                      "page is market data."],
+        model_logic_summary="The plan apportions the target call count "
+        "across the lenses' recommended weights (largest-remainder, no "
+        "zero-call lens in a full-size program). Coverage is strict: "
+        ">=2 calls COVERED, 1 THIN (single-source), 0 UNCOVERED (blind "
+        "spot); the read names the worst lens, never an average.",
+        why_it_matters="Public data answers what filings can answer; the "
+        "call program answers what only humans can — switching behavior, "
+        "contract intent, reputation. A CDD without structured primary "
+        "research is a desk study.",
+        diligence_use_cases=["Planning the week-one call sheet; briefing "
+                             "an associate before their first payer call; "
+                             "the 'are we triangulated?' check before "
+                             "drafting the memo."],
+        interpretation_guidance=["Each lens lies in a predictable "
+                                 "direction — the bias column says which "
+                                 "way; calibrate answers against the "
+                                 "platform's filed-data surfaces."],
+        limitations=["The bank is curated and generic to healthcare "
+                     "services — tailor questions to the engagement. "
+                     "Tracker state lives in the URL; the exception is "
+                     "the log-a-call form (shown with an active deal), "
+                     "which records each completed call as a structured "
+                     "EXPERT CALL deal note — coverage then derives "
+                     "from those notes (explicit counts still win)."],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),

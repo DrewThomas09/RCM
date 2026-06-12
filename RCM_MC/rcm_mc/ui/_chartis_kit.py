@@ -222,6 +222,7 @@ _SUB_NAV = {
         {"label": "Chart Builder",       "href": "/chart-builder"},
         {"label": "Pie Chart",           "href": "/pie-chart"},
         {"label": "Exhibit Composer",    "href": "/exhibit"},
+        {"label": "Saved Charts",        "href": "/charts"},
         {"label": "All Research →",      "href": "/research"},
     ],
     # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
@@ -940,6 +941,13 @@ _DATA_UNIVERSE = {
                        "Derived from a licensed market-data export (e.g. "
                        "SimplyAnalytics) — area-level, not your deals; unexported "
                        "variables show EXPORT REQUIRED, never fabricated."),
+    # The visuals toolkit (Chart Builder / Pie Chart / Excel Mapping /
+    # Exhibit Composer / Visuals hub): the chart plots whatever the user
+    # pasted or typed — no platform data claim unless a dataset chip was
+    # explicitly loaded (those carry their own source footnote).
+    "user-supplied": ("USER-SUPPLIED DATA", "deals",
+                       "Renders the data you paste/type — example values are "
+                       "placeholders, not a data claim."),
 }
 
 
@@ -948,8 +956,8 @@ def ck_data_universe(kind: str) -> str:
 
     ``kind`` ∈ user-deals · user-portfolio · cms · hcris · corpus · research ·
     mixed · derived · illustrative · data-required · experimental ·
-    user-supplied · licensed-report-derived · licensed-market-derived. Renders
-    nothing for an unknown kind (fail-safe). Style lives in the global shell
+    licensed-report-derived · licensed-market-derived · user-supplied.
+    Renders nothing for an unknown kind (fail-safe). Style lives in the global shell
     CSS (`.ck-universe`)."""
     rec = _DATA_UNIVERSE.get(kind)
     if rec is None:
@@ -7253,6 +7261,8 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
     {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
     {"id": "cim-crosscheck", "title": "CIM Cross-Check · Variance engine", "route": "/diligence/cim-crosscheck"},
+    {"id": "expert-calls", "title": "Expert-Call Program · CDD voice-of-customer planner", "route": "/diligence/expert-calls"},
+    {"id": "cdd-scope", "title": "CDD Scope · engagement depth levels", "route": "/diligence/cdd-scope"},
     {"id": "rollup-builder", "title": "Roll-Up Builder · Pro-forma platform", "route": "/pipeline/rollup"},
     {"id": "data-quality", "title": "Data Quality · Source certification", "route": "/data-quality"},
     {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
@@ -7318,6 +7328,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "chart-builder", "title": "Chart Builder · CDD chart kit (column, waterfall, marimekko, bubble)", "route": "/chart-builder"},
     {"id": "pie-chart", "title": "Pie Chart · client-ready pie/donut from per-slice values", "route": "/pie-chart"},
     {"id": "exhibit", "title": "Exhibit Composer · lay up to 4 charts on one deck slide", "route": "/exhibit"},
+    {"id": "saved-charts", "title": "Saved Charts · reopen named Chart Builder / Exhibit configs", "route": "/charts"},
     {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
     {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
@@ -10928,6 +10939,8 @@ _SUB_SECTION_MAP = {
     "/diligence/comparable-outcomes": "research",
     "/diligence/tam-sam": "diligence",
     "/diligence/texas-infusion": "diligence",
+    "/diligence/expert-calls": "diligence",
+    "/diligence/cdd-scope": "diligence",
     "/diligence/infusion-markets": "diligence",
     "/visuals": "research",
     "/excel-mapping": "research",
@@ -10935,6 +10948,7 @@ _SUB_SECTION_MAP = {
     "/chart-builder": "research",
     "/pie-chart": "research",
     "/exhibit": "research",
+    "/charts": "research",
     "/cdd": "diligence",
     "/voc-survey": "diligence",
     "/win-loss": "diligence",
