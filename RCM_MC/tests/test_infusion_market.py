@@ -53,6 +53,21 @@ class MarketPageTests(unittest.TestCase):
                        "<svg", "/diligence/texas-infusion"):
             self.assertIn(needle, h, needle)
 
+    def test_excel_mapping_crosslink_round_trips(self):
+        import re
+        import html as _html
+        import urllib.parse
+        from rcm_mc.ui.excel_mapping_page import parse_values_text
+        h = render_infusion_market_page()
+        self.assertIn("Open this scan in Excel Mapping", h)
+        m = re.search(r'/excel-mapping\?([^"]+)"', h)
+        self.assertIsNotNone(m)
+        qs = urllib.parse.parse_qs(_html.unescape(m.group(1)))
+        vals = parse_values_text(qs["data"][0])
+        # Every state's score flows into the mapping tool.
+        self.assertEqual(len(vals), 51)
+        self.assertIn("TX", vals)
+
     def test_registered_in_palette_nav_and_guide(self):
         from rcm_mc.ui._chartis_kit import (
             _DEFAULT_PALETTE_MODULES, _SUB_SECTION_MAP)
