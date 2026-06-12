@@ -3964,3 +3964,13 @@ filed HCRIS base × published research bands), footer sourced CMS HCRIS
 + FY-stamped, deal_label = the hospital, print-to-PDF page rules.
 Closes the inventory's "exhibit-style export" fix the same way as the
 peer roster + compare basket (W2-185). +1 test; 16 passed.
+
+## W2-197 (2026-06-12) — Portfolio per-deal alert digest (PAGE_INVENTORY top fix)
+The /portfolio deal table gains an Alerts column: one pass over the
+LIVE unacked alerts (evaluate_active — acked stay out of the partner's
+face, per the lifecycle) → worst-severity dot + count per deal, linked
+to /alerts, severity-toned (red/amber/info). Deals with no alerts show
+an em-dash, never a fabricated zero-chip; store=None or an evaluator
+failure renders dashes, never a 500. Test exercises the REAL path (an
+overdue deadline fires the alert; no synthetic Alert objects). 18
+passed across the portfolio suites.

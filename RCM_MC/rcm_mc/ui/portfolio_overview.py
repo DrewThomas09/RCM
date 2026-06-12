@@ -455,6 +455,38 @@ def render_portfolio_overview(
     # averages were missing. Each delta names its baseline on hover.
     avg_dr_val = avg_denial if avg_denial is not None else None
     avg_ar_val = avg_ar if avg_ar is not None else None
+
+    # PAGE_INVENTORY top fix — per-deal alert digest: one pass over the
+    # live UNACKED alerts → {deal_id: (worst_severity, count)} so each
+    # row carries its alert posture inline. Best-effort: an evaluator
+    # failure renders no chips, never a 500.
+    alert_digest: Dict[str, tuple] = {}
+    if store is not None:
+        try:
+            from ..alerts.alerts import evaluate_active
+            _rank = {"red": 2, "amber": 1, "info": 0}
+            for a in evaluate_active(store):
+                worst, cnt = alert_digest.get(a.deal_id, ("info", 0))
+                if _rank.get(a.severity, 0) >= _rank.get(worst, 0):
+                    worst = a.severity
+                alert_digest[a.deal_id] = (worst, cnt + 1)
+        except Exception:  # noqa: BLE001 — digest is additive context
+            alert_digest = {}
+
+    def _alert_chip(deal_id: str) -> str:
+        rec = alert_digest.get(deal_id)
+        if not rec:
+            return f'<span style="color:{PALETTE["text_muted"]};">—</span>'
+        worst, cnt = rec
+        color = (PALETTE["negative"] if worst == "red"
+                 else PALETTE["warning"] if worst == "amber"
+                 else PALETTE["text_muted"])
+        dot = "●" if worst != "info" else "○"
+        return (f'<a href="/alerts" style="text-decoration:none;'
+                f'font-family:var(--cad-mono);font-weight:700;'
+                f'color:{color};" title="{cnt} unacked alert(s), '
+                f'worst severity {worst}">{dot} {cnt}</a>')
+
     rows = ""
     for _, d in deals.head(30).iterrows():
         did = html.escape(str(d.get("deal_id", "")))
@@ -498,6 +530,7 @@ def render_portfolio_overview(
             # deal rendered "$2KM" (1500 → "$2K" → +"M") and a $500K deal
             # rendered "$0M".
             f'<td class="num">{ck_fmt_currency(rev) if rev is not None else _fmt_money(rev)}</td>'
+            f'<td class="num">{_alert_chip(str(d.get("deal_id", "")))}</td>'
             f'<td style="white-space:nowrap;">'
             f'<a href="/deal/{did}" class="cad-badge cad-badge-blue" '
             f'style="text-decoration:none;">DASH</a> '
@@ -523,6 +556,7 @@ def render_portfolio_overview(
         f'<th>{metric_label_link("Denial", _LABEL_TO_GLOSSARY_KEY["Denial"])}</th>'
         f'<th>{metric_label_link("AR", _LABEL_TO_GLOSSARY_KEY["AR"])}</th>'
         f'<th>{metric_label_link("NPR", _LABEL_TO_GLOSSARY_KEY["NPR"])}</th>'
+        f'<th>Alerts</th>'
         f'<th>Actions</th></tr></thead>'
         f'<tbody>{rows}</tbody></table></div>'
     )
