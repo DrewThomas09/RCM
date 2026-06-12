@@ -3776,3 +3776,13 @@ the ENGINE's percentile (never recomputed in the UI) + the scope label
 ("vs TX hospitals (n=457)") — tail amber + tooltip preserved, aggregate/
 small-n still render "". +2 chip assertions (track dot position derives
 from engine rank; mid-range neutral). test_cim_crosscheck: 30 passed.
+
+## W2-183 (2026-06-12) — ROLL-UP chip on saved scenario notes (backlog #24)
+The save-to-deal roll-up note's reopen path was already a real anchor
+(strict-charset linkify, pinned by NoteLinkifyTests); the missing half
+of backlog #24 was the type chip. Scenario notes on the deal page now
+carry a mono teal ROLL-UP chip in the note head so they're scannable in
+a long list. Detection is on the embedded /pipeline/rollup? reopen path
+the WRITER emits — a free-text note that merely says "roll-up" gets no
+chip (pinned both ways). New .ck-deal-note-chip style in the deal-page
+CSS. test_rollup_save_to_deal + test_server: 74 passed.

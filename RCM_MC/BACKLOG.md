@@ -40,7 +40,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 22 | ✅ DONE — P9 slice-2 diff detail (?diff=<id> row-level view in target_screener_page) | — | verified 2026-06-12 |
 | 23 | ✅ DONE — P4b: CIM claim chip upgraded to ck_peer_percentile visual (track + scope label, engine rank) | — | W2-182 |
 | 26 | **P5 expansion** — exhibit wrapper on X-Ray peer table + screener compare view | 24 | exhibits numbered/sourced on both; print check; tests |
-| 24 | **Deal-page roll-up note affordance** — render the reopen link in rollup notes as a real anchor + ROLL-UP chip | 22 | note on deal page shows clickable reopen; tests |
+| 24 | ✅ DONE — roll-up note: anchor (earlier) + ROLL-UP chip (W2-183) | — | W2-183 |
 | 30 | **A empty-state verification pass** — ?state=ZZ + empty-db walk, screenshot deck (carried #15) | 20 | walker empty-db variant + 4 screenshots |
 | 25 | ✅ DONE — DQ snapshot dates (all WIRED sources carry real vendored dates) | — | verified 2026-06-12 |
 | 29 | ✅ DONE — model-card link on screener footer (/methodology) | — | verified 2026-06-12 |

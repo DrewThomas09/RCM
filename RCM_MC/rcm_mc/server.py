@@ -1220,10 +1220,18 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
             r'<a class="ck-link" href="\1">\1</a>',
             escaped)
         note_id = int(r.get("note_id") or 0)
+        # Roll-up scenario notes (the save-to-deal feature) get a typed
+        # chip so they're scannable in a long note list. Detection is on
+        # the reopen path the writer embeds — not on free text a partner
+        # might type.
+        rollup_chip = (
+            '<span class="ck-deal-note-chip">ROLL-UP</span>'
+            if "/pipeline/rollup?" in body_text else "")
         items_html.append(
             f'<li class="ck-deal-note">'
             f'<div class="ck-deal-note-head">'
             f'<span class="ck-deal-note-author">{html.escape(author)}</span>'
+            f'{rollup_chip}'
             f'<span class="ck-deal-note-ts">{html.escape(ts)}</span>'
             f'<form method="POST" action="/api/deals/{qd}/notes/{note_id}/delete" '
             f'style="display:inline;margin:0 0 0 auto;" '
@@ -1314,6 +1322,10 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
       .ck-deal-note-ts{{font-family:var(--sc-mono,monospace);
         font-size:10.5px;color:var(--sc-text-faint,#7a8699);
         letter-spacing:0.04em;}}
+      .ck-deal-note-chip{{font-family:var(--sc-mono,monospace);
+        font-size:9px;font-weight:700;letter-spacing:0.08em;
+        color:var(--sc-teal,#155752);border:1px solid var(--sc-teal,#155752);
+        border-radius:3px;padding:1px 6px;}}
       .ck-deal-note-delete{{background:none;border:0;
         color:var(--sc-negative,#b5321e);cursor:pointer;
         font-family:var(--sc-mono,monospace);font-size:10px;

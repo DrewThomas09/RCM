@@ -133,3 +133,23 @@ class NoteLinkifyTests(unittest.TestCase):
                 'href="/pipeline/rollup?ccns=450076,450068&amp;ga_pct=0.05"', h)
             self.assertNotIn("<script>", h)          # escaped, inert
             self.assertNotIn('"><img>', h)           # strict charset stops it
+
+    def test_rollup_notes_carry_typed_chip_plain_notes_do_not(self):
+        import tempfile as _tf
+        from rcm_mc.deals.deal_notes import record_note
+        from rcm_mc.server import _render_deal_notes
+        with _tf.TemporaryDirectory() as tmp:
+            store = PortfolioStore(os.path.join(tmp, "n.db"))
+            store.upsert_deal("d1", name="D1")
+            record_note(store, deal_id="d1",
+                        body="Roll-up scenario … Reopen: "
+                             "/pipeline/rollup?ccns=450076,450068")
+            h = _render_deal_notes(store, "d1")
+            self.assertIn(">ROLL-UP</span>", h)
+            # A free-text note (even one that SAYS roll-up) gets no chip —
+            # detection is on the embedded reopen path only.
+            store.upsert_deal("d2", name="D2")
+            record_note(store, deal_id="d2",
+                        body="call notes: discussed the roll-up plan")
+            h2 = _render_deal_notes(store, "d2")
+            self.assertNotIn("ROLL-UP</span>", h2)
