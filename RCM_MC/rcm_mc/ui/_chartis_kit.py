@@ -919,19 +919,8 @@ _DATA_UNIVERSE = {
                        "framework until a live data source is connected."),
     "data-required":  ("DATA REQUIRED", "datareq",
                        "Needs a user upload / CCD / internal file to activate."),
-    # Pure-input utilities (chart kit, excel mapping, pie chart): the page
-    # renders only values the user typed or pasted — no data claim at all.
-    "user-supplied":  ("USER-SUPPLIED", "user",
-                       "Renders only the values you typed or pasted — "
-                       "not a data source."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
-    # Pure input utilities (chart builder / pie chart / excel mapping):
-    # the page renders only what the user typed or pasted — never a data
-    # claim from any vendored or live source.
-    "user-supplied": ("USER-SUPPLIED", "deals",
-                      "Values you typed or pasted into this form — rendered "
-                      "as-is; not a data claim from any source."),
     # Licensed third-party data, used only as derived/structured facts (raw
     # reports/exports never served). Distinct from public CMS/research.
     "licensed-report-derived": ("LICENSED REPORT", "ref",
@@ -7261,6 +7250,8 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
     {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
     {"id": "cim-crosscheck", "title": "CIM Cross-Check · Variance engine", "route": "/diligence/cim-crosscheck"},
+    {"id": "expert-calls", "title": "Expert-Call Program · CDD voice-of-customer planner", "route": "/diligence/expert-calls"},
+    {"id": "cdd-scope", "title": "CDD Scope · engagement depth levels", "route": "/diligence/cdd-scope"},
     {"id": "rollup-builder", "title": "Roll-Up Builder · Pro-forma platform", "route": "/pipeline/rollup"},
     {"id": "data-quality", "title": "Data Quality · Source certification", "route": "/data-quality"},
     {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
@@ -10939,6 +10930,8 @@ _SUB_SECTION_MAP = {
     "/diligence/texas-infusion": "diligence",
     "/diligence/infusion-markets": "diligence",
     "/visuals": "research",
+    "/diligence/expert-calls": "diligence",
+    "/diligence/cdd-scope": "diligence",
     "/excel-mapping": "research",
     "/excel-templates": "research",
     "/chart-builder": "research",
