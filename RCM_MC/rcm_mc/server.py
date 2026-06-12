@@ -20379,6 +20379,9 @@ class RCMHandler(BaseHTTPRequestHandler):
     _TOOLS_HIDDEN_ROUTES = frozenset({
         # Auth & session flows (not surfaces)
         "/login", "/logout", "/register", "/forgot", "/csrf-token",
+        # File-download endpoints (serve bytes, not a page; the owning
+        # page carries the Guide context and the download button)
+        "/rate-environment.xlsx",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
