@@ -313,3 +313,15 @@ parse_values_text (Excel paste), resolve_inputs (qs over Python
 defaults), render_excel_mapping_page. Wired: server route /excel-mapping
 (GET), Research sub-nav + palette + _SUB_SECTION_MAP + ToolRouteDefinition
 (guide context). 14 tests + 522-test wiring suite green; full suite green.
+
+---
+## Checkpoint — wave #63 (W2-161, 2026-06-12)
+Built the CDD Chart Builder. New cdd_chart_kit.py: render_cdd_chart over
+13 chart types (column/stacked/100%/bar/line/area/waterfall/pie/donut/
+scatter/bubble/marimekko/combo), shared centered-serif-title frame, 4
+Chartis palettes, parse_table (Excel paste). New chart_builder_page.py
+(route /chart-builder): type chips + data textarea + title/palette/unit/
+toggles + centered chart + gallery (your data in every type, click to
+switch); qs-driven, in Research nav + palette + guide context. +13 tests.
+Follows the Excel Mapping utility (wave #62). Both are generic graphics
+tools, not tied to one analysis.

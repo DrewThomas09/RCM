@@ -3369,3 +3369,29 @@ colours+domain+data, default dict references only real states, page
 renders core elements + custom values appear, registered in palette/nav,
 route has guide context. Wiring suite (guide-context/palette/tools-index/
 nav/us_map/routes) 522 passed. Full suite green.
+
+## W2-161 (2026-06-12) — Chart Builder: the CDD/Excel chart kit (wave #63)
+A standalone consultant-grade chart builder — the graphs a CDD deck
+needs, rendered Chartis-styled from a pasted table:
+- **`cdd_chart_kit.py`** (new): `render_cdd_chart(type, table, opts)` over
+  13 chart types — column (grouped), stacked column, 100% stacked column,
+  horizontal bar, line, stacked area, waterfall (bridge), pie, donut,
+  scatter, bubble, marimekko, combo (bars + line). One shared frame
+  (centered serif title, gridlines, value labels, centered legend) so
+  every chart matches the deck. 4 named Chartis palettes (Chartis,
+  Navy–Teal, Sequential teal, Diverging). `parse_table()` reads an Excel
+  paste (tab / comma / 2+-space; %/$ /thousands-commas stripped; headers
+  = category + series names). Waterfall reads a delta column with a
+  "total/net/=" row drawn as an absolute bar; scatter/bubble read X/Y/
+  [size]; pie/donut/marimekko read the first value column(s).
+- **`chart_builder_page.py`** (new, route `/chart-builder`): chart-type
+  chips, a data textarea (paste from Excel), title/subtitle/palette/unit
+  inputs + show-values/legend toggles, the rendered chart centered, and
+  a GALLERY strip rendering your data across every chart type (click a
+  thumbnail to switch). Fully qs-driven (a configured chart is a
+  shareable URL). Wired into Research nav + Cmd-K palette + guide context.
+**Verify**: new `test_chart_builder.py` (13) — table parser (tab/comma/
+units/None), column-major series, every chart type renders clean SVG
+(no None/NaN leak), centered title, empty→placeholder, waterfall total
+convention, palettes valid; builder page renders + type-switch + custom
+data + palette/nav/guide registration. Full suite green.

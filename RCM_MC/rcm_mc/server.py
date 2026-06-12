@@ -6719,6 +6719,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.excel_mapping_page import render_excel_mapping_page
             _em_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_excel_mapping_page(_em_qs))
+        if path == "/chart-builder":
+            # Chart Builder — the CDD/Excel chart family (column, stacked,
+            # waterfall, marimekko, bubble, …) rendered Chartis-styled
+            # from a pasted table; qs carries type / data / palette / opts.
+            from .ui.chart_builder_page import render_chart_builder_page
+            _cb_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_chart_builder_page(_cb_qs))
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.

@@ -11850,4 +11850,83 @@ for _sid, _routes in _src_to_pages.items():
     _src.related_routes = _new
 
 
+_MANUAL.extend([
+    _ctx(
+        "/excel-mapping", "Excel Mapping",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A configurable US-state choropleth utility — set "
+        "three gradient colours (low / mid / high) and a value per state, "
+        "and it colour-grades the map with each percentage in black serif "
+        "text.",
+        primary_purpose="Turn a {state: percentage} dict (or an Excel "
+        "paste) into a clean, Chartis-styled US choropleth without a "
+        "charting tool.",
+        intended_users=["Deal team building market maps for a CDD deck."],
+        common_questions=[
+            "How do I make a US state heat map?",
+            "How do I change the gradient colours?",
+            "Can I paste my percentages from Excel?",
+        ],
+        inputs=["Three gradient colours; an optional low/mid/high value "
+                "domain (blank = auto from data); a value per state, set "
+                "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
+        outputs=["An SVG US tile-grid choropleth with a low→mid→high "
+                 "gradient legend and a sorted value table."],
+        key_metrics=["User-supplied per-state values."],
+        data_sources=["Your inputs only — default values are example "
+                      "placeholders, not a data claim."],
+        model_logic_summary="Three-stop linear colour interpolation: "
+        "lo→c_low, mid→c_mid, hi→c_high, each side of the midpoint.",
+        why_it_matters="State maps are a staple CDD visual; this makes one "
+        "in seconds with the house palette.",
+        diligence_use_cases=["Mapping penetration / share / any per-state "
+                             "metric for a market section."],
+        interpretation_guidance=["Colour encodes the value via the gradient "
+                                 "you set; the legend shows the domain."],
+        limitations=["Schematic tile grid (labelled, not a geographic "
+                     "projection); values are whatever you supply."],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/chart-builder", "Chart Builder",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A CDD chart kit — build the Excel/consultant "
+        "chart family (column, stacked, 100% stacked, bar, line, area, "
+        "waterfall, pie, donut, scatter, bubble, marimekko, combo) from a "
+        "pasted table, Chartis-styled and centered.",
+        primary_purpose="Make deck-ready charts from a pasted table — pick "
+        "a type, set a title and palette, done.",
+        intended_users=["Deal team assembling exhibits for a CDD deck."],
+        common_questions=[
+            "How do I make a waterfall / bridge chart?",
+            "How do I build a marimekko or 100% stacked column?",
+            "Can I paste my data from Excel and pick the colours?",
+        ],
+        inputs=["A pasted table (headers row + category column + one column "
+                "per series); chart type; title/subtitle; a Chartis "
+                "palette; unit suffix; show-values / legend toggles."],
+        outputs=["A centered, Chartis-styled SVG chart, plus a gallery of "
+                 "the same data across every chart type."],
+        key_metrics=["User-supplied series values."],
+        data_sources=["Your pasted data only — example tables are "
+                      "placeholders."],
+        model_logic_summary="Pure SVG rendering over a shared frame "
+        "(title, gridlines, value labels, legend); 13 chart types share "
+        "one Chartis palette set.",
+        why_it_matters="Every CDD deck needs these charts; this builds them "
+        "in the house style without Excel.",
+        diligence_use_cases=["Market-sizing funnels, EBITDA bridges, "
+                             "site-of-care mix, competitor positioning."],
+        interpretation_guidance=["Waterfall: a 'total/net/=' row is an "
+                                 "absolute bar; scatter/bubble columns are "
+                                 "X, Y, [size]."],
+        limitations=["Static SVG (no interactivity); charts render only "
+                     "what you paste."],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+])
+
+
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}

@@ -206,6 +206,17 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Chart Builder',
+        route='/chart-builder',
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        source_group='Research & Backtesting',
+        is_auto_generated=False,
+        aliases=['chart builder', 'cdd charts', 'graphs', 'waterfall chart',
+                 'marimekko', 'bubble chart', 'stacked bar', 'make a chart',
+                 'excel charts', 'consultant charts'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Ingestion',
         route='/diligence/ingest',
         category=PageContextCategory.DILIGENCE_WORKSPACE,
