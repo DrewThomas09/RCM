@@ -425,3 +425,10 @@ Added _inject_section_nav(body): post-process pass giving each Texas page
 section header a unique slug id (+scroll-margin) and a floating "☰
 Sections" navigator (29 sections). +1 test. Pure usability layer, derived
 from the rendered headers.
+
+---
+## Checkpoint — wave #76 (W2-174, 2026-06-12)
+Added texas_infusion_memo_md(a) (Markdown IC memo: headline/verdict/
+5-pillar thesis/risks/diligence-next/key-figures table) + route
+/api/diligence/texas-infusion/memo (text/markdown download) + "⬇ IC memo"
+button in the thesis block. +2 tests.

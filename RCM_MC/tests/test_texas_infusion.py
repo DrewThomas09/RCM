@@ -891,6 +891,32 @@ class ASPandMATests(unittest.TestCase):
         self.assertIn("published", ma["denominator_source"])
 
 
+class ICMemoTests(unittest.TestCase):
+    """The Markdown IC memo — a partner-shareable writeup generated from
+    the analysis (incl. the thesis)."""
+
+    def test_memo_has_structure_and_real_figures(self):
+        from rcm_mc.diligence.texas_infusion import texas_infusion_memo_md
+        a = build_texas_infusion_analysis()
+        md = texas_infusion_memo_md(a)
+        for h in ("# Texas Infusion Market — IC Summary",
+                  "## Investment thesis", "## Key risks",
+                  "## Diligence next", "## Key figures"):
+            self.assertIn(h, md, h)
+        # Carries the real HHI + the thesis verdict.
+        self.assertIn(f"{a['fragmentation']['hhi']:,.0f}", md)
+        self.assertIn(a["investment_thesis"]["verdict"].split(" — ")[0], md)
+        # One pillar per thesis pillar (numbered list).
+        for i in range(1, len(a["investment_thesis"]["pillars"]) + 1):
+            self.assertIn(f"{i}. **", md)
+
+    def test_page_links_to_memo_download(self):
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        self.assertIn("/api/diligence/texas-infusion/memo", h)
+        self.assertIn("IC memo (Markdown)", h)
+
+
 class AutoExhibitTests(unittest.TestCase):
     """The one-page exhibit auto-composed from the live analysis — four
     panels nested into a single slide, recomputed from the analysis."""
