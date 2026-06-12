@@ -3838,3 +3838,15 @@ size-band combination: P25/P50/P75, TTM sample, policy note) with each
 row linking the focused `?specialty=CODE` view; the focused view is
 unchanged. +3 pin tests (directory renders with the expansion
 verticals, rows link the focused view, focused view unaffected).
+
+## W2-176 (2026-06-12) — Wave 9: multiples workbook download + infusion-scan hub card
+- **/transaction-multiples.xlsx**: the full 29-band library as a
+  comps-tab-ready workbook (specialty × size band × P25/P50/P75 × TTM
+  n, multiple-formatted cells), linked from the /market-intel
+  directory panel; endpoint hidden from /tools (download, not a page).
+- **CDD hub module 1** cards the national Infusion Market Scan
+  (/diligence/infusion-markets, waves #78-79) as the worked
+  market-sizing example.
+**Verify**: +2 tests (workbook carries every band; directory links the
+download) + HTTP smoke 200/PK; hub link integrity + guide-coverage +
+tools-index families green (59 passed).

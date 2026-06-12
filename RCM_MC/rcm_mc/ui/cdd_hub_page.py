@@ -36,6 +36,8 @@ _MODULES = [
           "Penetration S-curves and comparable expansion precedents"),
          ("Geographic Market Analyzer", "/geo-market",
           "CBSA-level attractiveness scoring and market-entry tiers"),
+         ("Infusion Market Scan", "/diligence/infusion-markets",
+          "Worked example: every state ranked for an infusion roll-up"),
      ]),
     ("2 · Competitive landscape",
      "Who else is in the market, how concentrated is it, and where does "

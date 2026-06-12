@@ -221,3 +221,24 @@ class MultiplesDirectoryTests(unittest.TestCase):
         html = render_market_intel_page(specialty="INFUSION",
                                         ev_usd=200_000_000)
         self.assertNotIn("full library", html)
+
+
+class MultiplesXlsxTests(unittest.TestCase):
+    def test_workbook_builds_with_all_bands(self):
+        import io
+        import zipfile
+        from rcm_mc.market_intel.transaction_multiples import _load
+        from rcm_mc.ui.market_intel_page import transaction_multiples_xlsx
+        data = transaction_multiples_xlsx()
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            self.assertIsNone(z.testzip())
+            xml = z.read("xl/worksheets/sheet1.xml").decode("utf-8")
+        # One row per band + 4 header/meta rows.
+        n_bands = len(_load()["bands"])
+        self.assertGreaterEqual(xml.count("<row "), n_bands + 4)
+        self.assertIn("Infusion", xml)
+
+    def test_directory_links_the_download(self):
+        from rcm_mc.ui.market_intel_page import render_market_intel_page
+        self.assertIn("/transaction-multiples.xlsx",
+                      render_market_intel_page())
