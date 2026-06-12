@@ -5481,9 +5481,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                 except Exception:  # noqa: BLE001 — diff is best-effort chrome
                     _snap_info = {}
                     _diff_detail = None
+            # P4 — saved peer sets for the compare view (house pattern:
+            # the server queries, the page module stays store-free).
+            _ts_peer_sets = None
+            if (_tsq.get("view") or [""])[0] == "compare" and _ts_owner:
+                try:
+                    from .portfolio.peer_sets import list_peer_sets
+                    _ts_peer_sets = list_peer_sets(
+                        PortfolioStore(self.config.db_path), _ts_owner)
+                except Exception:  # noqa: BLE001 — additive panel
+                    _ts_peer_sets = None
             return self._send_html(render_target_screener(
                 _tsq, saved=_ts_saved, owner=_ts_owner,
-                snap_info=_snap_info, diff_detail=_diff_detail))
+                snap_info=_snap_info, diff_detail=_diff_detail,
+                peer_sets=_ts_peer_sets))
         if path == "/source":
             from .ui.source_page import render_source_page
             from .analysis.deal_sourcer import THESIS_LIBRARY, find_thesis_matches
@@ -13317,6 +13328,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_delete_post()
         if path == "/api/target-screener/snapshot":
             return self._route_target_screener_snapshot_post()
+        if path == "/api/peer-sets/save":
+            return self._route_peer_set_save_post()
+        if path == "/api/peer-sets/delete":
+            return self._route_peer_set_delete_post()
         if path == "/api/rollup/save-to-deal":
             return self._route_rollup_save_to_deal_post()
         if path == "/api/login":
@@ -13965,6 +13980,40 @@ class RCMHandler(BaseHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 pass
         return self._redirect("/target-screener?view=saved")
+
+    def _route_peer_set_save_post(self) -> None:
+        """POST /api/peer-sets/save — persist the compare basket as a
+        named, owner-scoped peer set (P4). Redirects back to the
+        compare view carrying the same basket."""
+        from .portfolio.peer_sets import save_peer_set
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        name = (form.get("name", "") or "").strip()
+        ccns = (form.get("ccns", "") or "").strip()
+        if owner and name and ccns:
+            try:
+                save_peer_set(PortfolioStore(self.config.db_path),
+                              owner, name, ccns)
+            except Exception:  # noqa: BLE001 — never 500 a save action
+                pass
+        back = urllib.parse.quote(ccns, safe=",")
+        return self._redirect(
+            f"/target-screener?view=compare&compare={back}")
+
+    def _route_peer_set_delete_post(self) -> None:
+        """POST /api/peer-sets/delete — owner-scoped delete by id."""
+        from .portfolio.peer_sets import delete_peer_set
+        form = self._read_form_body()
+        owner = self._current_username() or ""
+        sid = self._clamp_int(form.get("id", "0"), default=0,
+                              min_v=0, max_v=10**9)
+        if owner and sid:
+            try:
+                delete_peer_set(PortfolioStore(self.config.db_path),
+                                owner, sid)
+            except Exception:  # noqa: BLE001
+                pass
+        return self._redirect("/target-screener?view=compare")
 
     def _route_target_screener_snapshot_post(self) -> None:
         """POST /api/target-screener/snapshot — P9 vintage-diff baseline.

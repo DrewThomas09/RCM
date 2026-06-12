@@ -4094,3 +4094,22 @@ PREVIOUSLY generated artifacts from the generated_exports audit table
 registry the FEATURE_MATRIX named as P5's open half. Read-only,
 fails soft (registry errors → no panel), empty → nothing rendered.
 +2 tests (real record_export row renders; empty deal shows no panel).
+
+## W2-209 (2026-06-12) — P4 saved peer-set object (the matrix's open half)
+New rcm_mc/portfolio/peer_sets.py — a named, owner-scoped CCN basket
+mirroring the saved_screens store discipline (CREATE IF NOT EXISTS,
+parameterised SQL, BEGIN IMMEDIATE, owner-scoped read AND delete).
+Honesty contracts: invalid CCN tokens are DROPPED at save (shape-
+validated, deduped order-preserving, capped 24), <2 valid CCNs
+rejected, and consumers re-resolve CCNs against their live universes
+so a stale CCN degrades to the module's own not-found handling.
+Compare view: "Save basket as peer set" form (owner only, basket ≥2)
++ SAVED PEER SETS load/delete list (renders on the empty basket too —
+loading is the natural first action). Server: POST /api/peer-sets/
+{save,delete} + sets queried server-side and threaded through
+render_target_screener (house pattern — page module stays store-free).
+**Verify**: new test_peer_sets.py (7) — roundtrip order/dedup, junk
+tokens never stored, <2 rejected, owner scoping both ways, signed-out
+view has NO persistence affordance, owner sees form + sets + load
+links, HTTP save→store roundtrip on the real server. 166 passed with
+the full screener suite.

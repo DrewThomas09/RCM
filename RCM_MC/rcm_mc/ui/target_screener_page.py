@@ -2360,19 +2360,77 @@ def _screen_columns(qs, ck) -> str:
     )
 
 
-def _screen_compare(qs, ck) -> str:
+def _peer_set_block(owner: str, cols,
+                    peer_sets: "Optional[List[Dict]]") -> str:
+    """P4 saved peer sets on the compare view: save the current basket
+    as a named set; load/delete existing ones. Owner-scoped; signed-out
+    renders nothing (no anonymous persistence implied). ``peer_sets``
+    is queried by the SERVER (house pattern, like saved screens) so
+    this module stays store-free."""
+    import html as _h
+    if not owner:
+        return ""
+    save_form = ""
+    if len(cols) >= 2:
+        basket = ",".join(_h.escape(c) for c, _ in cols)
+        save_form = (
+            '<form method="post" action="/api/peer-sets/save" '
+            'style="display:flex;gap:8px;align-items:center;'
+            'flex-wrap:wrap;margin:14px 0 0;">'
+            f'<input type="hidden" name="ccns" value="{basket}">'
+            '<input type="text" name="name" maxlength="120" required '
+            'placeholder="Name this peer set…" class="cad-input" '
+            'style="max-width:240px;">'
+            '<button type="submit" class="tsw-vert" '
+            'style="cursor:pointer;padding:6px 12px;">Save basket as '
+            'peer set</button>'
+            '<span style="font-family:var(--sc-mono);font-size:9.5px;'
+            'color:var(--sc-text-dim,#6a7480);">a reusable named CCN '
+            'basket — load it here any time</span></form>')
+    items = ""
+    for s in (peer_sets or [])[:12]:
+        ccns = ",".join(s["ccns"])
+        items += (
+            f'<li style="margin:0 0 6px;display:flex;gap:10px;'
+            f'align-items:center;">'
+            f'<a class="ck-link" href="/target-screener?view=compare'
+            f'&compare={_h.escape(ccns)}">{_h.escape(s["name"])}</a>'
+            f'<span style="font-family:var(--sc-mono);font-size:9.5px;'
+            f'color:var(--sc-text-dim,#6a7480);">{len(s["ccns"])} CCNs · '
+            f'{_h.escape(str(s["created_at"])[:10])}</span>'
+            f'<form method="post" action="/api/peer-sets/delete" '
+            f'style="display:inline;margin:0;">'
+            f'<input type="hidden" name="id" value="{s["id"]}">'
+            f'<button type="submit" class="ck-link" style="border:0;'
+            f'background:none;cursor:pointer;font-size:10px;'
+            f'color:var(--sc-negative,#b5321e);">delete</button>'
+            f'</form></li>')
+    sets_html = (
+        '<div style="margin-top:12px;">'
+        '<div style="font-family:var(--sc-mono);font-size:10px;'
+        'letter-spacing:0.06em;color:var(--sc-text-dim,#6a7480);'
+        'font-weight:700;margin-bottom:4px;">SAVED PEER SETS</div>'
+        f'<ul style="list-style:none;margin:0;padding:0;">{items}</ul>'
+        '</div>') if items else ""
+    return save_form + sets_html
+
+
+def _screen_compare(qs, ck, owner: str = "",
+                    peer_sets: "Optional[List[Dict]]" = None) -> str:
     import html as _h
     from ._chartis_kit import ck_source_link as _ck_source_link
     comp = _q1(qs, "compare")
     ccns = [c.strip() for c in comp.split(",") if c.strip()][:6]
     if not ccns:
+        # Saved peer sets still render on an empty basket — loading a
+        # set is the natural first action here.
         return _scaffold("Compare basket (empty)", "now", [
             "Add targets from Main with “+ Compare”, or pass "
             "?compare=ccn1,ccn2,… (CCNs from any vertical).",
             "Same-vertical targets compare on every metric; cross-vertical "
             "targets compare only on shared metrics: vertical-specific rows "
             "show “not comparable”, never fabricated values.",
-        ])
+        ]) + _peer_set_block(owner, [], peer_sets)
     found = [(c, _find_provider(c)) for c in ccns]
     cols = [(c, r) for c, r in found if r]
     missing = [c for c, r in found if not r]
@@ -2464,6 +2522,7 @@ def _screen_compare(qs, ck) -> str:
         f'{rollup_link} '
         'Real CMS data; “—” = not reported.</p>'
         f'{table}{note}{miss}'
+        f'{_peer_set_block(owner, cols, peer_sets)}'
     )
 
 
@@ -2818,7 +2877,8 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
                            *, saved: Optional[List[Dict]] = None,
                            owner: str = "",
                            snap_info: Optional[Dict[int, Dict]] = None,
-                           diff_detail: Optional[Dict] = None) -> str:
+                           diff_detail: Optional[Dict] = None,
+                           peer_sets: Optional[List[Dict]] = None) -> str:
     from ._chartis_kit import (chartis_shell, ck_page_title,
                                ck_panel, ck_source_purpose)
     qs = qs or {}
@@ -2853,7 +2913,13 @@ def render_target_screener(qs: Optional[Dict[str, List[str]]] = None,
         screen = _screen_saved(qs, ck, saved=saved or [], owner=owner,
                                snap_info=snap_info, diff_detail=diff_detail)
     else:
-        screen = _SCREENS[view](qs, ck)
+        if view == "compare":
+            # P4 saved peer sets are owner-scoped — only the compare
+            # view needs the identity + sets threaded through.
+            screen = _screen_compare(qs, ck, owner=owner,
+                                     peer_sets=peer_sets)
+        else:
+            screen = _SCREENS[view](qs, ck)
 
     # 2026-05-28 better-fitted redesign: drop the trailing
     # "One universe, one workbench" closer panel. Its content
