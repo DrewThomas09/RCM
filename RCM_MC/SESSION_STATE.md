@@ -1,4 +1,7 @@
 # SESSION_STATE — autonomous 8h improvement session — WINDOW 2
+- window3 CLOSED 2026-06-12T~14:00Z by user directive ("merge everything,
+  verify pedesk.app current, close the loop"). Final: ~37 items, closing
+  sweep 15,879 passed / 0 failed, PR #1811 merged to main → auto-deploy.
 - window3_start: 2026-06-12T05:00:00Z (directive: continue improvements,
   8 hours, no questions, loop. Stream: claude/general-improvements-a78byd,
   PR #1811 accumulates; merge origin/main between items as the parallel
