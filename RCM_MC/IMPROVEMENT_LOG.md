@@ -4287,3 +4287,18 @@ all four new download paths; audit regen 187 pages / 0 flags.
 **Verify**: +2 pin tests (every expansion vertical resolves at $200M
 EV; all 29 bands percentile-ordered with positive samples); 101
 market-intel tests + hub link integrity green.
+
+## W2-217 (2026-06-12) — Third-stream merge reconciled (ranking fix collision)
+A third parallel stream (pe-desk-improvements) shipped its own version
+of the SAME ranking-generator durable-overrides fix + the b168
+invariant softening + the graphics-page guide-floor fixes. Reconciled
+by taking main's versions of the shared files wholesale (equivalent
+semantics, theirs already live), regenerating the rankings manifest
+(now 329 surfaces) with the merged generator, and keeping this
+stream's unique work intact. One self-inflicted hazard caught and
+fixed during resolution: a de-dup regex over _ctx blocks with a bad
+block boundary stripped related_routes from ~54 unrelated contexts —
+restored from main; all 53 invariant tests green, 770-test broad
+sweep green, sweep #7's 2 fails re-verified as mid-merge artifacts.
+Backlog: #31 verified mostly-shipped (state pin map exists), #33/#36
+marked done.

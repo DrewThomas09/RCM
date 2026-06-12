@@ -55,12 +55,12 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 ## Refill 3 (groomed 2026-06-12, window 3) — ready queue
 | # | Item | Score | Verification plan |
 |---|---|---|---|
-| 31 | **P6 facility pins on state/market maps** — plot HCRIS facilities (hospital_coords.csv vendored) as pins on /market-data/map state drill + catchment radius option | 26 | pins match coords CSV for 3 CCNs; no pin for coordless filings (never guessed); tests |
+| 31 | ◐ PARTIAL — state-detail pin map shipped (no-fake-points); remaining nub: catchment radius option | 12 | verified 2026-06-12 |
 | 32 | **P10 provenance-coverage metric** — static scan: % of ck_kpi_block call sites carrying provenance affordance (tooltip/source/basis) per page; publish on /methodology | 22 | scan reproducible by test; number matches hand-count on 2 pages |
-| 33 | **Roll-Up Builder: load a saved peer set** — ?ccns= prefill from peer_sets (P4 follow-through; hospitals-only basket) | 22 | saved set with 2 hospital CCNs prefills builder; non-hospital CCNs excluded w/ note; tests |
+| 33 | ✅ DONE — all-hospital peer sets link → /pipeline/rollup?ccns= | — | W2-211 |
 | 34 | **P13 long-tail: bullets on /metro-markets + /county-explorer** — same guarded recompute pattern | 20 | figures re-derived in tests exactly |
 | 35 | **Glossary long-tail: predictive-screener + X-Ray metric headers** — metric_label_link adoption | 18 | links resolve; no dead anchors (helper guard); tests |
-| 36 | **Exhibit registry write-side** — record_export() calls on the deal ZIP/memo download routes so the W2-208 registry fills itself | 18 | downloading memo/ZIP adds a registry row; dedupe not required (audit log semantics) |
+| 36 | ✅ DONE — memo + package routes record registry rows | — | W2-210 |
 
 ## Groomed-out / blocked (window 3 additions)
 - P9 per-CCN CHOW diff alerts: NETWORK-GATED (vendored snf_chow is
