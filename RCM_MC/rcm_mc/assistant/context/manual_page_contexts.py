@@ -12200,5 +12200,56 @@ _MANUAL.extend([
     ),
 ])
 
+_MANUAL.extend([
+    _ctx(
+        "/ma-penetration", "Medicare Advantage Penetration",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="MA penetration by state — choropleth, "
+        "exposure bands (saturated / high / moderate / low), and a "
+        "footprint scorer that averages a target's states vs the "
+        "national norm.",
+        primary_purpose="Score a target's geographic Medicare Advantage "
+        "exposure: where MA dominates, the Medicare book behaves like "
+        "managed care, not fee-for-service.",
+        intended_users=["Deal team underwriting Medicare-exposed revenue "
+                        "across a multi-state footprint."],
+        common_questions=[
+            "How MA-saturated is this target's footprint?",
+            "Which states have the highest / lowest MA penetration?",
+            "What does high MA penetration mean for the rate outlook?",
+            "How does the footprint compare to the national average?",
+            "Where does this data come from and how fresh is it?",
+        ],
+        inputs=["Optional footprint: the target's 2-letter state codes."],
+        outputs=["State choropleth, exposure-band table, footprint "
+                 "average with vs-national delta and band."],
+        key_metrics=["MA penetration % by state", "National penetration",
+                     "Footprint average ± national", "Exposure band"],
+        data_sources=["Curated KFF/CMS state cut "
+                      "(market_intel/content/ma_penetration.yaml), "
+                      "rounded to the point, refreshed annually."],
+        model_logic_summary="Footprint exposure = simple average of the "
+        "footprint states' penetration; bands cut at 55/45/30%, anchored "
+        "to the ~54% national norm.",
+        why_it_matters="MA penetration is the geography-level payer "
+        "variable: it decides rate pressure, prior-auth burden, and "
+        "network dynamics for any Medicare-heavy thesis.",
+        diligence_use_cases=["Payer-mix risk in CDD",
+                             "geographic expansion screening",
+                             "pairing with the rate-environment blend"],
+        interpretation_guidance=["A saturated-band footprint plus a "
+                                 "weak rate-environment setting (e.g. "
+                                 "home health) compounds: model MA "
+                                 "rates below the CMS fee schedule."],
+        limitations=["State-level only (county variation is large); "
+                     "approximate, verify against the current KFF "
+                     "release before IC use."],
+        related_routes=["/rate-environment", "/payer-intelligence",
+                        "/geo-market", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+])
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}

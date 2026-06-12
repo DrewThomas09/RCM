@@ -3535,3 +3535,27 @@ cells + injection guard + LBO cell-ref pins, HTTP download e2e (MIME /
 Content-Disposition / 404), respondent-weighted NPS + classification
 thresholds, win-rate/loss-mix consistency, fixture integrity + blend
 normalization (pct vs fraction), hub link integrity. Full suite green.
+
+## W2-169 (2026-06-12) — Market-intel wave 2: MA penetration geography + rate-model xlsx
+- **MA Penetration** (`/ma-penetration`): new market_intel dataset
+  (`content/ma_penetration.yaml` — 50 states + DC, curated KFF/CMS cut,
+  national 54%) with exposure bands (SATURATED ≥55 / HIGH ≥45 /
+  MODERATE ≥30 / LOW), a state choropleth (reuses the excel-mapping
+  tile-grid renderer so the two maps stay identical), and a footprint
+  scorer: enter a target's state codes → average penetration,
+  vs-national delta, band. Closes the "MA penetration not ingested"
+  payer-intel gap.
+- **Rate-environment workbook** (`/rate-environment.xlsx?{qs}` +
+  download button carrying the current form params): two sheets — the
+  update calendar with the 3-cycle compound as a live formula, and an
+  Impact Model whose revenue/mix cells are blue inputs feeding
+  normalized-share + SUMPRODUCT blend formulas, so the model reruns in
+  Excel without the page.
+- /ma-penetration wired into palette, breadcrumbs, guide context (5-Q,
+  related routes) and carded in the CDD hub's pricing module; data-source
+  audit regenerated (186 pages, 0 no-disclosure flags).
+**Verify**: test_ma_penetration.py (13 — fixture integrity, band
+thresholds, footprint math, XSS, registration) + 3 xlsx tests in
+test_rate_environment.py (OOXML validity, SUMPRODUCT/compound formulas,
+param-carrying download link); HTTP smoke on both routes; invariant
+files (5-Q, slash-dual, catalog, data-universe, palette) green.

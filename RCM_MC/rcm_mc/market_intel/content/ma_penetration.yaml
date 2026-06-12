@@ -1,0 +1,71 @@
+# Medicare Advantage penetration by state — share of Medicare-eligible
+# beneficiaries enrolled in MA (including SNPs), 2025 plan year.
+#
+# Curated approximations of KFF's state MA penetration tracker (built
+# from CMS enrollment files). Values are rounded to the nearest point
+# and refreshed annually after KFF publishes the new plan-year cut;
+# verify against the current KFF/CMS release before quoting in an IC
+# document. The analytical point survives ±2pp noise: which states are
+# MA-saturated (rate pressure, utilization management, narrow networks)
+# vs traditional-Medicare strongholds.
+
+last_reviewed: 2026-06-12
+source_urls:
+  - https://www.kff.org/medicare/issue-brief/medicare-advantage-in-2025-enrollment-update-and-key-trends/
+  - https://www.cms.gov/data-research/statistics-trends-reports/medicare-advantagepart-d-contract-and-enrollment-data
+
+national_penetration_pct: 54
+
+# penetration_pct = % of Medicare-eligible beneficiaries in MA plans.
+states:
+  - {state: AL, penetration_pct: 62}
+  - {state: AK, penetration_pct: 2}
+  - {state: AZ, penetration_pct: 56}
+  - {state: AR, penetration_pct: 47}
+  - {state: CA, penetration_pct: 55}
+  - {state: CO, penetration_pct: 49}
+  - {state: CT, penetration_pct: 62}
+  - {state: DE, penetration_pct: 45}
+  - {state: DC, penetration_pct: 28}
+  - {state: FL, penetration_pct: 59}
+  - {state: GA, penetration_pct: 56}
+  - {state: HI, penetration_pct: 60}
+  - {state: ID, penetration_pct: 47}
+  - {state: IL, penetration_pct: 41}
+  - {state: IN, penetration_pct: 49}
+  - {state: IA, penetration_pct: 43}
+  - {state: KS, penetration_pct: 33}
+  - {state: KY, penetration_pct: 56}
+  - {state: LA, penetration_pct: 57}
+  - {state: ME, penetration_pct: 53}
+  - {state: MD, penetration_pct: 24}
+  - {state: MA, penetration_pct: 41}
+  - {state: MI, penetration_pct: 62}
+  - {state: MN, penetration_pct: 56}
+  - {state: MS, penetration_pct: 47}
+  - {state: MO, penetration_pct: 53}
+  - {state: MT, penetration_pct: 28}
+  - {state: NE, penetration_pct: 36}
+  - {state: NV, penetration_pct: 49}
+  - {state: NH, penetration_pct: 36}
+  - {state: NJ, penetration_pct: 45}
+  - {state: NM, penetration_pct: 45}
+  - {state: NY, penetration_pct: 53}
+  - {state: NC, penetration_pct: 53}
+  - {state: ND, penetration_pct: 30}
+  - {state: OH, penetration_pct: 57}
+  - {state: OK, penetration_pct: 45}
+  - {state: OR, penetration_pct: 53}
+  - {state: PA, penetration_pct: 56}
+  - {state: RI, penetration_pct: 56}
+  - {state: SC, penetration_pct: 51}
+  - {state: SD, penetration_pct: 30}
+  - {state: TN, penetration_pct: 56}
+  - {state: TX, penetration_pct: 53}
+  - {state: UT, penetration_pct: 53}
+  - {state: VT, penetration_pct: 33}
+  - {state: VA, penetration_pct: 48}
+  - {state: WA, penetration_pct: 47}
+  - {state: WV, penetration_pct: 51}
+  - {state: WI, penetration_pct: 53}
+  - {state: WY, penetration_pct: 16}

@@ -69,6 +69,8 @@ _MODULES = [
      [
          ("Medicare Rate Environment", "/rate-environment",
           "Setting-level CMS payment updates with blended dollar impact"),
+         ("MA Penetration", "/ma-penetration",
+          "State-level Medicare Advantage exposure with footprint scorer"),
          ("Market Rates", "/market-rates",
           "Negotiated-rate benchmarks"),
          ("Market Intel (Comps & News)", "/market-intel",

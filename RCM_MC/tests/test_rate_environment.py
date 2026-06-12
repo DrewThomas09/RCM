@@ -95,5 +95,41 @@ class RateEnvironmentPageTests(unittest.TestCase):
                          "research")
 
 
+
+class RateEnvironmentXlsxTests(unittest.TestCase):
+    """The workbook twin must be a live model: blue inputs feeding a
+    SUMPRODUCT blend, not a static dump of the page."""
+
+    def test_workbook_builds_with_both_sheets(self):
+        import io
+        import zipfile
+        from rcm_mc.ui.rate_environment_page import rate_environment_xlsx
+        data = rate_environment_xlsx({})
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            self.assertIsNone(z.testzip())
+            wb = z.read("xl/workbook.xml").decode("utf-8")
+        self.assertIn('name="Rate Updates"', wb)
+        self.assertIn('name="Impact Model"', wb)
+
+    def test_impact_model_has_live_blend_and_inputs(self):
+        import io
+        import zipfile
+        from rcm_mc.ui.rate_environment_page import rate_environment_xlsx
+        data = rate_environment_xlsx({"revenue": "120", "mix_pfs": "100",
+                                      "mix_opps": "0", "mix_asc": "0",
+                                      "mix_ipps": "0"})
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            xmls = "".join(
+                z.read(n).decode("utf-8") for n in z.namelist()
+                if n.startswith("xl/worksheets/"))
+        self.assertIn("SUMPRODUCT(C7:C15,D7:D15)", xmls)
+        self.assertIn("<v>120000000.0</v>", xmls)   # revenue input cell
+        # Compound formula on the updates sheet, not a precomputed value.
+        self.assertIn("(1+B5)*(1+C5)*(1+D5)-1", xmls)
+
+    def test_page_links_the_download_with_current_params(self):
+        html = render_rate_environment({"revenue": "120"})
+        self.assertIn("/rate-environment.xlsx?revenue=120", html)
+
 if __name__ == "__main__":
     unittest.main()

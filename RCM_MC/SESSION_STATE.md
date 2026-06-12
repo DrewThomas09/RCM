@@ -384,3 +384,11 @@ CDD workflow over 20 surfaces); /voc-survey (NPS, KPC gap matrix, WTP);
 /rate-environment (new market_intel rate_updates.yaml — 9 settings × 3
 rule cycles + blended $ impact calculator). Palette + breadcrumbs +
 sub-nav + guide contexts wired. +53 tests across 5 files.
+
+---
+## Checkpoint — wave #71 (W2-169, 2026-06-12)
+Market-intel wave 2: /ma-penetration (KFF/CMS state cut, exposure bands,
+choropleth via excel-mapping renderer, footprint scorer) + /rate-
+environment.xlsx (live-formula impact model: blue revenue/mix inputs,
+SUMPRODUCT blend, compound-update formulas). Palette + breadcrumbs +
+guide context + CDD-hub card + audit regen. +16 tests.

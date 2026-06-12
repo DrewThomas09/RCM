@@ -40,6 +40,10 @@ from .public_comps import (
     peer_physician_turnover_stats,
 )
 from .peer_snapshot import PeerSnapshot, compute_peer_snapshot
+from .ma_penetration import (
+    StatePenetration, band_counts, footprint_exposure, get_state,
+    list_state_penetration, national_penetration_pct,
+)
 from .rate_environment import (
     BlendedImpact, RateUpdate, SettingRates, blended_rate_impact,
     get_setting, list_settings,
@@ -63,6 +67,12 @@ __all__ = [
     "PeerSnapshot",
     "PublicComp",
     "BlendedImpact",
+    "StatePenetration",
+    "band_counts",
+    "footprint_exposure",
+    "get_state",
+    "list_state_penetration",
+    "national_penetration_pct",
     "RateUpdate",
     "SettingRates",
     "blended_rate_impact",

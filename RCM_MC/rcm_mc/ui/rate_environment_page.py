@@ -143,6 +143,9 @@ def render_rate_environment(params: dict = None) -> str:
         f'{border};color:{text};padding:4px 6px;font-size:11px;'
         f'font-family:JetBrains Mono,monospace;width:58px"/></label>'
         for s in settings)
+    from urllib.parse import urlencode
+    dl_qs = urlencode({"revenue": f"{revenue_m:g}", **{
+        f"mix_{k.lower()}": f"{v:g}" for k, v in mix.items()}})
     form = f"""
 <form method="GET" action="/rate-environment" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
   <label style="font-size:11px;color:{text_dim}">Medicare revenue ($M)
@@ -154,6 +157,9 @@ def render_rate_environment(params: dict = None) -> str:
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
     padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Compute impact</button>
+  <a href="/rate-environment.xlsx?{dl_qs}" download
+    style="background:#155752;color:#fffdf9;border:1px solid #155752;text-decoration:none;
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace">Download model (.xlsx)</a>
 </form>"""
 
     cell = (f"background:{panel};border:1px solid {border};padding:16px;"
@@ -196,3 +202,81 @@ def render_rate_environment(params: dict = None) -> str:
 </div>"""
     return chartis_shell(body, title="Medicare Rate Environment",
                          active_nav="/rate-environment")
+
+
+def rate_environment_xlsx(params: dict = None) -> bytes:
+    """Workbook version of this page — and unlike the HTML, a *model*:
+    the Impact sheet's revenue and mix cells are blue inputs feeding
+    live SUM/SUMPRODUCT formulas, so the partner can rerun the blend in
+    Excel without coming back to the page."""
+    from rcm_mc.exports.xlsx_writer import F, Sheet, write_xlsx
+    from rcm_mc.market_intel.rate_environment import list_settings
+
+    params = params or {}
+    settings = list_settings()
+    revenue_m = _f(params, "revenue", 60.0)
+    mix = {
+        s.setting: _f(params, f"mix_{s.setting.lower()}",
+                      _DEFAULT_MIX.get(s.setting, 0.0))
+        for s in settings
+    }
+
+    # -- Sheet 1: the curated update calendar, compound as a formula.
+    upd: list = []
+    upd.append([("MEDICARE NET PAYMENT UPDATES BY SETTING", "header")]
+               + [("", "header")] * 5)
+    upd.append(["Curated from CMS final rules — verify against the "
+                "final rule before IC use."])
+    upd.append([""])
+    periods = [u.period for u in settings[0].updates]
+    upd.append([("Setting", "header")]
+               + [(p, "header") for p in periods]
+               + [("3-cycle compound", "header"), ("Policy note", "header")])
+    for i, s in enumerate(settings):
+        n = 5 + i
+        row: list = [f"{s.label} [{s.cycle}]"]
+        for u in s.updates:
+            row.append((u.net_update_pct / 100.0, "pct"))
+        row.append((F(f"(1+B{n})*(1+C{n})*(1+D{n})-1"), "pct"))
+        row.append(s.note or "")
+        upd.append(row)
+
+    # -- Sheet 2: the blended-impact model (blue inputs, live blend).
+    imp: list = []
+    imp.append([("BLENDED RATE-IMPACT MODEL", "header")]
+               + [("", "header")] * 4)
+    imp.append(["Blue cells = inputs (edit these). "
+                "Black cells = live formulas."])
+    imp.append([""])
+    imp.append(["Medicare revenue ($)",
+                (revenue_m * 1_000_000, "input_money")])          # B4
+    imp.append([""])
+    imp.append([("Setting", "header"), ("Mix share", "header"),
+                ("Normalized share", "header"),
+                ("Latest update %", "header"),
+                ("Revenue impact ($)", "header")])                # row 6
+    first, last = 7, 6 + len(settings)
+    for i, s in enumerate(settings):
+        n = first + i
+        latest = s.latest()
+        imp.append([
+            s.label,
+            (mix[s.setting] / 100.0, "input_pct"),
+            (F(f"B{n}/SUM(B${first}:B${last})"), "pct"),
+            ((latest.net_update_pct / 100.0) if latest else 0.0, "pct"),
+            (F(f"$B$4*C{n}*D{n}"), "money2"),
+        ])
+    t = last + 1
+    imp.append([("Total / blended", "label"),
+                (F(f"SUM(B{first}:B{last})"), "pct"),
+                (F(f"SUM(C{first}:C{last})"), "pct"),
+                (F(f"SUMPRODUCT(C{first}:C{last},D{first}:D{last})"), "pct"),
+                (F(f"SUM(E{first}:E{last})"), "money2")])
+    imp.append([""])
+    imp.append(["Blended impact on revenue ($)",
+                (F(f"$B$4*D{t}"), "money2")])
+
+    return write_xlsx([
+        Sheet("Rate Updates", upd, col_widths=[34, 11, 11, 11, 16, 60]),
+        Sheet("Impact Model", imp, col_widths=[34, 13, 17, 15, 18]),
+    ])

@@ -267,6 +267,16 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='MA Penetration',
+        route='/ma-penetration',
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        source_group='Research & Backtesting',
+        is_auto_generated=False,
+        aliases=['ma penetration', 'medicare advantage', 'ma share',
+                 'ma by state', 'payer geography', 'ma exposure'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Medicare Rate Environment',
         route='/rate-environment',
         category=PageContextCategory.RESEARCH_BACKTESTING,

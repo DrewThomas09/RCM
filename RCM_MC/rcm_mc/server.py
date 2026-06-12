@@ -6771,6 +6771,33 @@ class RCMHandler(BaseHTTPRequestHandler):
             _re_qs = urllib.parse.parse_qs(parsed.query)
             _re_qp = {k: v[0] for k, v in _re_qs.items() if v}
             return self._send_html(render_rate_environment(_re_qp))
+        if path == "/rate-environment.xlsx":
+            # Workbook twin of /rate-environment: blue revenue/mix inputs
+            # feeding a live SUMPRODUCT blend, so the model reruns in
+            # Excel without the page.
+            from .ui.rate_environment_page import rate_environment_xlsx
+            _rx_qs = urllib.parse.parse_qs(parsed.query)
+            _rx_qp = {k: v[0] for k, v in _rx_qs.items() if v}
+            _rx = rate_environment_xlsx(_rx_qp)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="rate_environment.xlsx"')
+            self.send_header("Content-Length", str(len(_rx)))
+            self.end_headers()
+            self.wfile.write(_rx)
+            return
+        if path == "/ma-penetration":
+            # MA penetration by state — choropleth + exposure bands +
+            # footprint scorer; qs carries the target's state codes.
+            from .ui.ma_penetration_page import render_ma_penetration
+            _ma_qs = urllib.parse.parse_qs(parsed.query)
+            _ma_qp = {k: v[0] for k, v in _ma_qs.items() if v}
+            return self._send_html(render_ma_penetration(_ma_qp))
         if path == "/chart-builder":
             # Chart Builder — the CDD/Excel chart family (column, stacked,
             # waterfall, marimekko, bubble, …) rendered Chartis-styled
