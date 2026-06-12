@@ -876,6 +876,20 @@ class ASPandMATests(unittest.TestCase):
         self.assertGreater(ma["dual_eligible_pct"], 0)
         self.assertIn("Medicare Advantage", ma["note"])
 
+    def test_ma_penetration_uses_total_medicare_denominator(self):
+        from rcm_mc.data.cms_enrollment import total_medicare_for
+        ma = self.a["ma_enrollment"]
+        # True denominator = total Medicare (not the 65+ proxy), so the
+        # rate is lower and equals enrollment / total Medicare.
+        total = total_medicare_for("TX")["total"]
+        self.assertEqual(ma["total_medicare"], total)
+        self.assertAlmostEqual(ma["penetration"],
+                               round(ma["enrollment"] / total, 3))
+        self.assertLess(ma["penetration"], ma["penetration_proxy"])
+        # Offline: not live, uses the published fallback.
+        self.assertFalse(ma["penetration_live"])
+        self.assertIn("published", ma["denominator_source"])
+
 
 class ProviderMapTests(unittest.TestCase):
     """NPPES infusion-provider map — real estimated counts, real public

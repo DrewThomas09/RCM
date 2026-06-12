@@ -1371,34 +1371,48 @@ def texas_asp_pricing() -> Dict[str, Any]:
     }
 
 
-def texas_ma_enrollment(tx_pop: float, seniors: float) -> Dict[str, Any]:
-    """Texas Medicare Advantage enrollment + a penetration proxy. MA
+def texas_ma_enrollment(tx_pop: float, seniors: float,
+                        fetch_live: bool = False) -> Dict[str, Any]:
+    """Texas Medicare Advantage enrollment + a TRUE penetration rate. MA
     growth is the single biggest payer-side force on infusion site of
     care — MA plans steer infusion out of HOPD into AIC / home and run
-    prior-auth + white-bagging. Real vendored CMS MA geographic-variation
-    data (state); live county penetration is available via
-    cms_ma_enrollment where egress permits."""
+    prior-auth + white-bagging. MA enrollment from the vendored CMS MA
+    geographic-variation file; the penetration DENOMINATOR is total
+    Medicare beneficiaries from the CMS Medicare Monthly Enrollment file
+    (live when egress permits, else a published TX total) — not the 65+
+    proxy, which omits the under-65 disabled."""
     from ..data.ma_data import ma_state
+    from ..data.cms_enrollment import total_medicare_for
     m = ma_state("TX") or {}
     enr = int(m.get("ma_enrollment") or 0)
-    pen = (enr / seniors) if seniors else 0.0
+    benes = total_medicare_for("TX", fetch_live=fetch_live)
+    total_medicare = int(benes.get("total") or 0)
+    penetration = (enr / total_medicare) if total_medicare else 0.0
+    proxy = (enr / seniors) if seniors else 0.0
+    denom_label = ("CMS Medicare Monthly Enrollment (live)"
+                   if benes.get("live") else
+                   "published CMS total Medicare (TX)")
     return {
         "enrollment": enr,
-        # Penetration vs the 65+ population — a labeled PROXY (the true
-        # denominator is total Medicare incl. <65 disabled).
-        "penetration_proxy": round(pen, 3),
+        "total_medicare": total_medicare,
+        "penetration": round(penetration, 3),
+        "penetration_live": bool(benes.get("live")),
+        # Kept for continuity: penetration vs the 65+ population.
+        "penetration_proxy": round(proxy, 3),
         "dual_eligible_pct": float(m.get("dual_eligible_pct") or 0),
         "female_pct": float(m.get("female_pct") or 0),
         "avg_age": m.get("avg_age"),
         "year": int(m.get("year") or 0),
-        "note": ("≈{:,} Texans are in Medicare Advantage (CMS geographic "
-                 "variation, {}). MA penetration (~{:.0f}% of the 65+ "
-                 "population as a proxy) is the key payer-mix force on "
-                 "infusion: MA plans steer site of care to the lowest-cost "
-                 "setting (AIC / home over HOPD) and gate biologics with "
-                 "prior-auth + white-bagging — a tailwind for independent "
-                 "AIC / home volume and a margin risk on the drug spread."
-                 ).format(enr, int(m.get("year") or 0), pen * 100),
+        "denominator_source": denom_label,
+        "note": ("≈{:,} Texans are in Medicare Advantage of ≈{:,} total "
+                 "Medicare beneficiaries — a {:.0f}% MA penetration rate "
+                 "({}). MA is the key payer-mix force on infusion: plans "
+                 "steer site of care to the lowest-cost setting (AIC / home "
+                 "over HOPD) and gate biologics with prior-auth + white-"
+                 "bagging — a tailwind for independent AIC / home volume "
+                 "and a margin risk on the drug spread."
+                 ).format(enr, total_medicare, penetration * 100,
+                          denom_label),
     }
 
 
@@ -2879,7 +2893,8 @@ def build_texas_infusion_analysis(
         "site_of_care_evolution": home_infusion_evolution(),
         "payer_mix": payer,
         "asp_pricing": texas_asp_pricing(),
-        "ma_enrollment": texas_ma_enrollment(tx_pop, seniors),
+        "ma_enrollment": texas_ma_enrollment(tx_pop, seniors,
+                                             fetch_live=nppes_live),
         "chains": chains,
         "hhi": hhi,
         "hhi_band": hhi_band,
@@ -2974,6 +2989,9 @@ def build_texas_infusion_analysis(
             "prevalence (TX-adjusted) for the Medicare-denominator proxies",
             "Census ACS 5-year table B01001 — county female share for the "
             "IV-iron / anemia demand weighting",
+            "CMS Medicare Monthly Enrollment — total Medicare beneficiaries "
+            "(the true MA-penetration denominator; live + published TX "
+            "fallback)",
         ],
         "basis_note": model.basis_note,
     }

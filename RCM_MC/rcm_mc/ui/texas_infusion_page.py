@@ -806,17 +806,19 @@ def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
         f'steerage engine</div>'
         f'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
         + _kpi("TX MA ENROLLEES", f'{ma["enrollment"]/1e6:.2f}M')
-        + _kpi("PENETRATION (vs 65+)", f'{ma["penetration_proxy"]*100:.0f}%')
+        + _kpi("TOTAL MEDICARE", f'{ma.get("total_medicare",0)/1e6:.2f}M')
+        + _kpi("MA PENETRATION", f'{ma.get("penetration",0)*100:.0f}%')
         + _kpi("DUAL-ELIGIBLE", f'{ma["dual_eligible_pct"]*100:.0f}%')
-        + _kpi("AVG AGE", f'{ma.get("avg_age","—")}')
         + '</div>'
         + f'<p style="font-size:11.5px;color:{_DIM};line-height:1.55;'
         f'margin:8px 0 0;">{html.escape(ma["note"])}</p>'
         + f'<p style="font-size:9px;color:{_FAINT};margin:6px 0 0;">'
-        f'CMS MA geographic-variation file (state, {ma.get("year","—")}); '
-        f'penetration vs 65+ population is a proxy (true denominator = '
-        f'total Medicare incl. &lt;65 disabled). County-level penetration '
-        f'available via the live CMS MA enrollment API.</p></div>')
+        f'MA enrollment: CMS MA geographic-variation file (state, '
+        f'{ma.get("year","—")}). Penetration denominator: '
+        f'{html.escape(ma.get("denominator_source","—"))} — the true total-'
+        f'Medicare base (not the 65+ proxy, which omits the &lt;65 '
+        f'disabled). Live county penetration via the CMS enrollment API '
+        f'where egress permits.</p></div>')
 
 
 def _asp_pricing_section(a: Dict[str, Any]) -> str:
@@ -2366,10 +2368,10 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"a textbook roll-up runway — no incumbent can block a build-up."),
         "payer": (
             f"Commercial-heavy ({commercial*100:.0f}%) funds the economics, "
-            f"but {ma['enrollment']/1e6:.1f}M MA lives (~"
-            f"{ma['penetration_proxy']*100:.0f}%) are steering site-of-care "
-            f"and gating biologics — payer mix is the swing factor on "
-            f"margin."),
+            f"but {ma['enrollment']/1e6:.1f}M MA lives "
+            f"({ma.get('penetration',0)*100:.0f}% of total Medicare) are "
+            f"steering site-of-care and gating biologics — payer mix is "
+            f"the swing factor on margin."),
         "demographics": (
             "The 65+ tailwind is real, but TX's highest-in-US uninsured "
             "rate and rural spread complicate home economics outside the "
