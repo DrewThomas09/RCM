@@ -472,6 +472,16 @@ Market scan: added "Open in Excel Mapping" cross-link (pre-fills 51 state
 scores + gradient into /excel-mapping via ?data=) and JSON API
 /api/diligence/infusion-markets. +1 test. Connects diligence data ↔
 graphics tool + API surface.
+
+---
+## Checkpoint — wave #80 (W2-178, 2026-06-12)
+Deepened Texas (user steer): aic_denovo_ramp() de-novo build J-curve
+(capex ~$504K, break-even ~month 12, Y3 ~3.0x cash-on-cash; 36-mo cum-cash
+series; interpolates the chair util curve; editable). Page: "De-novo AIC
+build — the J-curve" section (KPIs + J-curve SVG + by-year + SO WHAT).
++4 tests. Builds on existing AIC economics.
+
+---
 PE-desk product wave (CDD + Excel + market intel): /excel-templates
 library — 7 live-formula workbooks (Quick LBO, QoE databook, NWC peg,
 13-week cash, CDD market model, payer sensitivity, cohort/NRR) via
@@ -517,3 +527,21 @@ Workbook twins for /pricing-power (live elasticity math, LOCKED rows)
 and /labor-market (SUMPRODUCT wage blend + margin bps) with download
 buttons; templates 10 → 12 (Sources & Uses with live equity plug +
 check row; DRL tracker with COUNTIF dashboard). +4 tests, smoke green.
+
+---
+## Checkpoint — wave #80 (W2-174, 2026-06-12)
+Transaction-multiple depth: +13 bands / +10 verticals (infusion, ASC,
+cardiology, MSK, urgent care, imaging, fertility, oncology, PT,
+profitable HCIT) with policy notes; CDD hub module 4 → "Pricing,
+reimbursement & cost environment" + labor card. +2 tests.
+
+---
+## Checkpoint — wave #81 (W2-175, 2026-06-12)
+/market-intel multiples directory: full 29-band library rendered when
+no specialty selected, rows link focused views. +3 tests.
+
+---
+## Checkpoint — wave #82 (W2-176, 2026-06-12)
+/transaction-multiples.xlsx (29-band comps-ready workbook, linked from
+the /market-intel directory) + infusion-scan card in CDD hub module 1.
++2 tests, smoke green.

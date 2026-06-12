@@ -177,6 +177,56 @@ class ChannelPlayersRiskTests(unittest.TestCase):
         self.assertGreaterEqual(len(pb["diligence_questions"]), 4)
 
 
+class DenovoRampTests(unittest.TestCase):
+    """The de-novo AIC build J-curve — capex out, ramp burn, then a cash
+    break-even, all recomputed from the chair model + inputs."""
+
+    def setUp(self):
+        from rcm_mc.diligence.texas_infusion import aic_denovo_ramp
+        self.r = aic_denovo_ramp()
+
+    def test_capex_and_jcurve_shape(self):
+        r = self.r
+        self.assertEqual(
+            r["capex_total"],
+            round(r["chairs"] * r["capex_per_chair"] + r["preopen"]))
+        # Month 1 cumulative starts roughly at -capex (capex out day one,
+        # minus early ramp burn).
+        self.assertLess(r["series"][0]["cumulative"], -r["capex_total"] * 0.9)
+        # The curve recovers above zero by the end (positive Y3).
+        self.assertGreater(r["series"][-1]["cumulative"], 0)
+        self.assertEqual(len(r["series"]), 36)
+
+    def test_breakeven_and_mature_contribution(self):
+        r = self.r
+        be = r["breakeven_month"]
+        self.assertIsNotNone(be)
+        # Cumulative is negative before break-even, non-negative at/after.
+        self.assertLess(r["series"][be - 2]["cumulative"], 0)
+        self.assertGreaterEqual(r["series"][be - 1]["cumulative"], 0)
+        # Mature annual ≈ chairs × per-chair contribution.
+        from rcm_mc.diligence.texas_infusion import aic_chair_economics
+        per = aic_chair_economics()["contribution_per_chair"]
+        self.assertAlmostEqual(
+            r["mature_annual_contribution"],
+            round(per * r["chairs"]), delta=per * 0.05)
+
+    def test_faster_ramp_breaks_even_sooner(self):
+        from rcm_mc.diligence.texas_infusion import aic_denovo_ramp
+        fast = aic_denovo_ramp(ramp_months=6)
+        slow = aic_denovo_ramp(ramp_months=18)
+        self.assertLess(fast["breakeven_month"], slow["breakeven_month"])
+
+    def test_analysis_and_page_carry_the_ramp(self):
+        a = build_texas_infusion_analysis()
+        self.assertIn("aic_denovo_ramp", a)
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        for needle in ("De-novo AIC build — the J-curve", "BUILD CAPEX",
+                       "YEAR-3 CASH-ON-CASH", "THE BUILD J-CURVE"):
+            self.assertIn(needle, h, needle)
+
+
 class AICEconomicsTests(unittest.TestCase):
     def setUp(self):
         self.a = build_texas_infusion_analysis()
