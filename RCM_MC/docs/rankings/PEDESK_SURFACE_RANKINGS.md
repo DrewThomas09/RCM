@@ -12,8 +12,8 @@ Ranked 329 route-backed page modules.
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/target-screener` | target_screener_page | green | 5.0 | 5.0 | **10.0** | 2,854 | ✓ |
-| `/diligence/texas-infusion` | texas_infusion_page | green | 5.0 | 5.0 | **10.0** | 2,863 | ✓ |
+| `/target-screener` | target_screener_page | green | 5.0 | 5.0 | **10.0** | 2,954 | ✓ |
+| `/diligence/texas-infusion` | texas_infusion_page | green | 5.0 | 5.0 | **10.0** | 3,092 | ✓ |
 | `/diligence/tam-sam` | tam_sam_page | green | 4.5 | 5.0 | **9.6** | 1,179 | ✓ |
 | `/diligence/ic-packet` | ic_packet_page | green | 4.5 | 5.0 | **9.6** | 927 | ✓ |
 | `/diligence/deal` | deal_profile_page | green | 5.0 | 4.5 | **9.4** | 2,700 | ✓ |
@@ -31,12 +31,12 @@ Ranked 329 route-backed page modules.
 | `/diligence/deal-autopsy` | deal_autopsy_page | navy | 4.5 | 4.0 | **8.4** | 897 | ✓ |
 | `/market-intel` | market_intel_page | green | 4.5 | 4.0 | **8.4** | 865 | ✓ |
 | `/diligence/checklist` | diligence_checklist_page | green | 4.5 | 4.0 | **8.4** | 850 | ✓ |
+| `/market-data/` | market_data_page | green | 4.5 | 4.0 | **8.4** | 807 | ✓ |
+| `/market-data/map` | market_data_page | green | 4.5 | 4.0 | **8.4** | 807 | ✓ |
 | `/portfolio/regression` | regression_page | navy | 5.0 | 3.5 | **8.2** | 4,551 | ✓ |
 | `/portfolio/risk-scan` | portfolio_risk_scan_page | green | 3.5 | 4.5 | **8.2** | 756 | ✓ |
 | `/new-deal/manual` | onboarding_wizard | green | 3.5 | 4.5 | **8.2** | 755 | ✓ |
 | `/pipeline/bridge` | day_one_page | green | 3.5 | 4.5 | **8.2** | 720 | ✓ |
-| `/portfolio` | day_one_page | green | 3.5 | 4.5 | **8.2** | 720 | ✓ |
-| `/pipeline` | pipeline_page | green | 3.5 | 4.5 | **8.2** | 685 | ✓ |
 
 ## Buried gems — strong but not in the nav (13)
 _High-scoring pages that aren't surfaced in a nav section — the prime candidates to migrate into the bars._
@@ -44,16 +44,16 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
 | `/payer-stress` | payer_stress_page | green | 4.5 | 4.0 | **8.4** | 1,263 | ✓ |
+| `/market-data/` | market_data_page | green | 4.5 | 4.0 | **8.4** | 807 | ✓ |
 | `/ml-insights` | ml_insights_page | green | 4.5 | 3.5 | **7.8** | 1,010 | ✓ |
-| `/market-data/` | market_data_page | green | 3.5 | 4.0 | **7.6** | 766 | ✓ |
 | `/debt-service` | debt_service_page | green | 3.5 | 4.0 | **7.6** | 494 | ✓ |
 | `/exit-timing` | exit_timing_page | navy | 4.5 | 3.0 | **7.2** | 906 | ✓ |
 | `/diligence-checklist` | diligence_checklist_page | green | 4.5 | 3.0 | **7.2** | 850 | ✓ |
 | `/benchmarks` | analytics_pages | green | 4.5 | 3.0 | **7.2** | 806 | ✓ |
 | `/day-one` | day_one_page | green | 3.5 | 3.5 | **7.0** | 720 | ✓ |
 | `/global-search` | global_search | green | 3.5 | 3.5 | **7.0** | 653 | ✓ |
-| `/users` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 570 | ✓ |
-| `/search` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 570 | ✓ |
+| `/users` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 594 | ✓ |
+| `/search` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 594 | ✓ |
 | `/deal-search` | deal_search_page | green | 3.5 | 3.5 | **7.0** | 481 | ✓ |
 | `/model-validation` | model_validation_page | green | 3.5 | 3.5 | **7.0** | 453 | ✓ |
 
@@ -61,11 +61,11 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/target-screener` | target_screener_page | green | 5.0 | 5.0 | **10.0** | 2,854 | ✓ |
-| `/screen` | deal_comparison | green | 3.5 | 4.5 | **8.2** | 570 | ✓ |
+| `/target-screener` | target_screener_page | green | 5.0 | 5.0 | **10.0** | 2,954 | ✓ |
+| `/screen` | deal_comparison | green | 3.5 | 4.5 | **8.2** | 594 | ✓ |
 | `/conferences` | conference_page | green | 3.5 | 4.0 | **7.6** | 691 | ✓ |
 | `/state-compare` | state_compare_page | green | 3.5 | 4.0 | **7.6** | 519 | ✓ |
-| `/state-profile` | state_profile_page | green | 2.5 | 4.0 | **6.8** | 404 | ✓ |
+| `/state-profile` | state_profile_page | green | 2.5 | 4.0 | **6.8** | 447 | ✓ |
 | `/county-explorer` | county_explorer_page | green | 2.5 | 4.0 | **6.8** | 305 | ✓ |
 | `/predictive-screener` | predictive_screener | yellow | 3.5 | 3.0 | **6.4** | 601 | ✓ |
 | `/metro-markets` | metro_markets_page | green | 1.5 | 4.0 | **6.0** | 190 | ✓ |
@@ -94,7 +94,7 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/diligence/texas-infusion` | texas_infusion_page | green | 5.0 | 5.0 | **10.0** | 2,863 | ✓ |
+| `/diligence/texas-infusion` | texas_infusion_page | green | 5.0 | 5.0 | **10.0** | 3,092 | ✓ |
 | `/diligence/tam-sam` | tam_sam_page | green | 4.5 | 5.0 | **9.6** | 1,179 | ✓ |
 | `/diligence/ic-packet` | ic_packet_page | green | 4.5 | 5.0 | **9.6** | 927 | ✓ |
 | `/diligence/deal` | deal_profile_page | green | 5.0 | 4.5 | **9.4** | 2,700 | ✓ |
@@ -111,9 +111,9 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 | `/diligence/value` | _pages | navy | 4.5 | 3.5 | **7.8** | 1,045 | ✓ |
 | `/diligence/qoe-memo` | _pages | navy | 4.5 | 3.5 | **7.8** | 1,045 | ✓ |
 | `/engagements` | engagement_pages | green | 3.5 | 4.0 | **7.6** | 463 | ✓ |
-| `/diligence/payer-stress` | cim_crosscheck_page | green | 2.5 | 4.5 | **7.4** | 427 | ✓ |
-| `/diligence/hcris-xray` | cim_crosscheck_page | green | 2.5 | 4.5 | **7.4** | 427 | ✓ |
-| `/diligence/cim-crosscheck` | cim_crosscheck_page | green | 2.5 | 4.5 | **7.4** | 427 | ✓ |
+| `/diligence/payer-stress` | cim_crosscheck_page | green | 2.5 | 4.5 | **7.4** | 438 | ✓ |
+| `/diligence/hcris-xray` | cim_crosscheck_page | green | 2.5 | 4.5 | **7.4** | 438 | ✓ |
+| `/diligence/cim-crosscheck` | cim_crosscheck_page | green | 2.5 | 4.5 | **7.4** | 438 | ✓ |
 | `/diligence` | diligence_index_page | green | 2.5 | 4.5 | **7.4** | 371 | ✓ |
 | `/diligence/` | diligence_index_page | green | 2.5 | 4.5 | **7.4** | 371 | ✓ |
 | `/diligence/risk-workbench` | risk_workbench_page | data_required | 4.5 | 3.0 | **7.2** | 1,376 | ✓ |
@@ -129,7 +129,7 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
-| `/market-data/map` | market_data_page | green | 3.5 | 4.0 | **7.6** | 766 | ✓ |
+| `/market-data/map` | market_data_page | green | 4.5 | 4.0 | **8.4** | 807 | ✓ |
 | `/deal-library/comps` | deal_library_page | green | 3.5 | 4.0 | **7.6** | 641 | ✓ |
 | `/deal-library/sponsors` | deal_library_page | green | 3.5 | 4.0 | **7.6** | 641 | ✓ |
 | `/deal-library` | deal_library_page | green | 3.5 | 4.0 | **7.6** | 641 | ✓ |
@@ -159,7 +159,7 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 | `/chart-builder` | chart_builder_page | green | 2.5 | 4.0 | **6.8** | 298 | ✓ |
 | `/diligence/bear-case` | bear_case_page | yellow | 4.5 | 2.0 | **6.0** | 1,080 | ✓ |
 | `/bear-cases` | bear_case_page | yellow | 4.5 | 2.0 | **6.0** | 1,080 | ✓ |
-| `/pie-chart` | pie_chart_page | green | 1.5 | 4.0 | **6.0** | 206 | ✓ |
+| `/pie-chart` | pie_chart_page | green | 1.5 | 4.0 | **6.0** | 209 | ✓ |
 | `/exhibit` | exhibit_page | green | 1.5 | 4.0 | **6.0** | 148 | ✓ |
 | `/visuals` | visuals_hub_page | green | 1.5 | 4.0 | **6.0** | 123 | ✓ |
 | `/research` | research_page | green | 2.5 | 3.0 | **5.6** | 317 | ✓ |
@@ -201,16 +201,16 @@ _High-scoring pages that aren't surfaced in a nav section — the prime candidat
 | Route | Page | Tier | Effort | PE-use | **Total** | LOC | Tests |
 |---|---|---|---:|---:|---:|---:|:--:|
 | `/payer-stress` | payer_stress_page | green | 4.5 | 4.0 | **8.4** | 1,263 | ✓ |
+| `/market-data/` | market_data_page | green | 4.5 | 4.0 | **8.4** | 807 | ✓ |
 | `/ml-insights` | ml_insights_page | green | 4.5 | 3.5 | **7.8** | 1,010 | ✓ |
-| `/market-data/` | market_data_page | green | 3.5 | 4.0 | **7.6** | 766 | ✓ |
 | `/debt-service` | debt_service_page | green | 3.5 | 4.0 | **7.6** | 494 | ✓ |
 | `/exit-timing` | exit_timing_page | navy | 4.5 | 3.0 | **7.2** | 906 | ✓ |
 | `/diligence-checklist` | diligence_checklist_page | green | 4.5 | 3.0 | **7.2** | 850 | ✓ |
 | `/benchmarks` | analytics_pages | green | 4.5 | 3.0 | **7.2** | 806 | ✓ |
 | `/day-one` | day_one_page | green | 3.5 | 3.5 | **7.0** | 720 | ✓ |
 | `/global-search` | global_search | green | 3.5 | 3.5 | **7.0** | 653 | ✓ |
-| `/users` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 570 | ✓ |
-| `/search` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 570 | ✓ |
+| `/users` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 594 | ✓ |
+| `/search` | deal_comparison | green | 3.5 | 3.5 | **7.0** | 594 | ✓ |
 | `/deal-search` | deal_search_page | green | 3.5 | 3.5 | **7.0** | 481 | ✓ |
 | `/model-validation` | model_validation_page | green | 3.5 | 3.5 | **7.0** | 453 | ✓ |
 | `/ref-pricing` | ref_pricing_page | green | 2.5 | 4.0 | **6.8** | 437 | ✓ |

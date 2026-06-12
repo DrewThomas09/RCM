@@ -236,15 +236,34 @@ class ClaimPercentileTests(unittest.TestCase):
         class _R:
             claim_percentile = 97
             percentile_n = 457
-        c = _pctile_chip(_R())
+        c = _pctile_chip(_R(), "TX hospitals")
         self.assertIn("p97", c)
         self.assertIn("tail claim", c)
         self.assertIn("b8732a", c)         # amber
+        # P4b: the chip carries the ck_peer_percentile visual language —
+        # a position track + the peer scope label, from the ENGINE's rank.
+        self.assertIn("<svg", c)
+        self.assertIn("vs TX hospitals (n=457)", c)
+        # Track dot position derives from the engine percentile (p97 → 58,
+        # clamped to the 60px track).
+        self.assertIn('cx="58"', c)
 
         class _Agg:
             claim_percentile = None
             percentile_n = 0
         self.assertEqual(_pctile_chip(_Agg()), "")
+
+    def test_chip_midrange_neutral_with_default_peers(self):
+        from rcm_mc.ui.cim_crosscheck_page import _pctile_chip
+
+        class _Mid:
+            claim_percentile = 50
+            percentile_n = 100
+        c = _pctile_chip(_Mid())
+        self.assertIn("p50", c)
+        self.assertIn("vs in-scope facilities (n=100)", c)
+        self.assertNotIn("tail claim", c)
+        self.assertIn('cx="30"', c)        # p50 → mid-track
 
 
 class MemoPercentileTests(unittest.TestCase):

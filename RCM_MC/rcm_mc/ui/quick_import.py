@@ -134,35 +134,41 @@ def render_quick_import(success_msg: str = "", error_msg: str = "",
             placeholder="14.2", type_="number", step="0.1",
             min_="0", max_="100",
             hint="As a percent (14.2 not 0.142). HFMA peer median ~10%.",
+            value=_pf("denial_rate"),
         )
         + _field(
             "days_in_ar", "Days in AR",
             placeholder="52", type_="number", step="1",
             min_="0", max_="500",
             hint="Integer days. PE healthcare median 45-55; >75 flags AR drag.",
+            value=_pf("days_in_ar"),
         )
         + _field(
             "net_collection_rate", "Net Collection (%)",
             placeholder="94.5", type_="number", step="0.1",
             min_="0", max_="100",
             hint="Realized cash ÷ allowable charges. PE target 92-95%.",
+            value=_pf("net_collection_rate"),
         )
         + _field(
             "clean_claim_rate", "Clean Claim (%)",
             placeholder="88", type_="number", step="0.1",
             min_="0", max_="100",
             hint="First-pass clean claims. PE target 85-92%.",
+            value=_pf("clean_claim_rate"),
         )
         + _field(
             "cost_to_collect", "Cost to Collect (%)",
             placeholder="5.1", type_="number", step="0.1",
             min_="0", max_="100",
             hint="RCM operating cost ÷ net collected. PE target 3-5%.",
+            value=_pf("cost_to_collect"),
         )
         + _field(
             "claims_volume", "Claims Volume",
             placeholder="180,000", type_="text",
             hint="Annual count. Commas are stripped on submit.",
+            value=_pf("claims_volume"),
         )
         + '</div>'
     )
@@ -176,8 +182,10 @@ def render_quick_import(success_msg: str = "", error_msg: str = "",
         f'letter-spacing:0.1em;color:{PALETTE["text_muted"]};text-transform:uppercase;">Optional</span>'
         f'</div>'
         f'<div class="cad-form-row" style="margin-bottom:18px;">'
-        + _field("net_revenue", "Net Revenue ($)", placeholder="386,000,000", type_="text")
-        + _field("bed_count", "Bed Count", placeholder="332", type_="number", step="1")
+        + _field("net_revenue", "Net Revenue ($)", placeholder="386,000,000",
+                 type_="text", value=_pf("net_revenue"))
+        + _field("bed_count", "Bed Count", placeholder="332", type_="number",
+                 step="1", value=_pf("bed_count"))
         + _field("state", "State", placeholder="AL", maxlength="2", value=_pf("state"))
         + '</div>'
     )

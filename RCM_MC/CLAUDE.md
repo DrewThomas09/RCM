@@ -267,7 +267,10 @@ All four original UI gaps have been closed:
 - Single-machine deployment. No clustering, no Postgres path.
 - Session tokens invalidate on server restart (per-process CSRF
   secret). Partners reopen login tab after a restart.
-- `live mode` meta-refresh doesn't extend session TTL.
+- Sessions carry a 7-day ABSOLUTE TTL set at login (by design — an
+  activity cap, not a bug); the idle window DOES slide on every
+  authenticated request, so a `live mode` tab stays signed in until
+  the absolute TTL, then reauthenticates.
 - In-memory job queue; jobs lost on restart. OK for partner-driven
   rerun (they'll just click rerun again) but not for critical cron
   runs — those should go via the CLI directly.

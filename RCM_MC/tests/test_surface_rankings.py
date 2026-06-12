@@ -70,8 +70,20 @@ class RankingEngineTests(unittest.TestCase):
         self.assertEqual(totals, sorted(totals, reverse=True))
 
     def test_target_screener_is_top_ranked(self):
-        # The flagship workbench should lead the ranking.
-        self.assertEqual(self.rows[0]["route"], "/target-screener")
+        # The flagship workbench should lead the ranking. What the ranking
+        # actually drives is PER-SECTION nav promotion, so the contract is:
+        # the screener tops its section (Source) at the maximum total. The
+        # previous global rows[0] pin was an artifact of the -loc tiebreak,
+        # which let any same-scored page win by sheer module size (the
+        # 3k-line Texas market study overtook it in 2026-06) — module
+        # bloat must never read as flagship displacement.
+        screener = next(r for r in self.rows
+                        if r["route"] == "/target-screener")
+        self.assertEqual(screener["total"],
+                         max(r["total"] for r in self.rows))
+        same_section = [r for r in self.rows
+                        if r["section"] == screener["section"]]
+        self.assertEqual(same_section[0]["route"], "/target-screener")
 
     def test_shared_kit_excluded(self):
         mods = {r["module"] for r in self.rows}

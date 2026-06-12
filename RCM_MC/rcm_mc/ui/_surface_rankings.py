@@ -79,7 +79,7 @@ RANKINGS = {
         {'route': '/diligence/compare', 'label': 'Compare', 'total': 4.2, 'tier': 'yellow', 'effort': 1.5, 'useful': 2.5},
     ],
     'library': [
-        {'route': '/market-data/map', 'label': 'Map', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
+        {'route': '/market-data/map', 'label': 'Map', 'total': 8.4, 'tier': 'green', 'effort': 4.5, 'useful': 4.0},
         {'route': '/deal-library/comps', 'label': 'Comps', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
         {'route': '/deal-library/sponsors', 'label': 'Sponsors', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
         {'route': '/deal-library', 'label': 'Deal Library', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
@@ -141,8 +141,8 @@ RANKINGS = {
     ],
     'uncategorized': [
         {'route': '/payer-stress', 'label': 'Payer Stress', 'total': 8.4, 'tier': 'green', 'effort': 4.5, 'useful': 4.0},
+        {'route': '/market-data/', 'label': 'Market Data', 'total': 8.4, 'tier': 'green', 'effort': 4.5, 'useful': 4.0},
         {'route': '/ml-insights', 'label': 'Ml Insights', 'total': 7.8, 'tier': 'green', 'effort': 4.5, 'useful': 3.5},
-        {'route': '/market-data/', 'label': 'Market Data', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
         {'route': '/debt-service', 'label': 'Debt Service', 'total': 7.6, 'tier': 'green', 'effort': 3.5, 'useful': 4.0},
         {'route': '/exit-timing', 'label': 'Exit Timing', 'total': 7.2, 'tier': 'navy', 'effort': 4.5, 'useful': 3.0},
         {'route': '/diligence-checklist', 'label': 'Diligence Checklist', 'total': 7.2, 'tier': 'green', 'effort': 4.5, 'useful': 3.0},

@@ -1124,8 +1124,18 @@ def render_ebitda_bridge(
         f'<strong>Total EBITDA Impact</strong> &nbsp; '
         f'<span class="cad-pos">{_fm(bridge["total_ebitda_impact"])}</span></p>'
     )
-    waterfall_section = ck_panel(
-        waterfall_inner, title="EBITDA Bridge · 7 RCM Levers",
+    # P5 exhibit chrome (PAGE_INVENTORY top fix "exhibit-style export"):
+    # the bridge waterfall IS the slide an IC deck pastes — numbered,
+    # units stated, sourced + vintage-stamped, print-to-PDF page rules.
+    from ._chartis_kit import ExhibitFactory, ck_source_link
+    _xf = ExhibitFactory(deal_label=name[:40],
+                         source_default=ck_source_link("CMS HCRIS"))
+    waterfall_section = _xf.wrap(
+        waterfall_inner,
+        title="EBITDA Bridge · 7 RCM Levers",
+        units="annual $ impact at full run-rate · filed HCRIS base × "
+              "published research bands",
+        vintage=f"FY{hospital.get('fiscal_year', '—')}",
     )
 
     # ── Lever detail table ──
