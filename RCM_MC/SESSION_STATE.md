@@ -605,3 +605,13 @@ no specialty selected, rows link focused views. +3 tests.
 /transaction-multiples.xlsx (29-band comps-ready workbook, linked from
 the /market-intel directory) + infusion-scan card in CDD hub module 1.
 +2 tests, smoke green.
+
+---
+## Checkpoint — wave #81 (W2-179, 2026-06-12)
+Further Analysis (`/further-analysis`): a Tableau-style explorer over 11
+offline vendored public datasets (CMS/CDC/Census/labor/market comps/derived).
+Declarative dataset registry + query layer (filter/sort/cap/scale) -> CDD
+chart kit; dataset/focus/measures/chart-type/sort/top-N controls, all 23 chart
+types, PNG/SVG export, chart gallery, data table, JSON API
+(/api/further-analysis). Wired into Research nav + palette + all-tools + guide
+context. +28 tests incl. live HTTP smoke. No synthetic data.

@@ -4552,6 +4552,50 @@ verticals, rows link the focused view, focused view unaffected).
 download) + HTTP smoke 200/PK; hub link integrity + guide-coverage +
 tools-index families green (59 passed).
 
+## W2-179 (2026-06-12) — Further Analysis: Tableau-style data explorer over all vendored public datasets
+User asked for a Tableau-like surface that builds charts from our ingested
+CMS/CDC/public data — selectable focus, selectable charts, thousands of ways
+to slice, easy PNG export — and to wire it into the all-tools tab and ship to
+pedesk.app.
+- **`diligence/further_analysis.py`** — a declarative dataset registry over 11
+  offline-verified vendored sources (CMS Part D / Open Payments / HCRIS / MA
+  penetration, CDC PLACES, Census + county demographics, BLS-based labor
+  economics, PE transaction-multiple comps, FDA drug shortages, derived
+  infusion-market attractiveness). Each dataset is metadata + an offline-safe
+  loader returning row dicts. A query layer (`shape_table` / `resolve_query`)
+  filters, sorts, caps and scales each measure into display units (
+## W2-179 (2026-06-12) — Further Analysis: Tableau-style data explorer over all vendored public datasets
+User asked for a Tableau-like surface that builds charts from our ingested
+CMS/CDC/public data — selectable focus, selectable charts, thousands of ways
+to slice, easy PNG export — wired into the all-tools tab and shipped to
+pedesk.app.
+- **`diligence/further_analysis.py`** — a declarative dataset registry over 11
+  offline-verified vendored sources (CMS Part D / Open Payments / HCRIS / MA
+  penetration, CDC PLACES, Census + county demographics, BLS-based labor
+  economics, PE transaction-multiple comps, FDA drug shortages, derived
+  infusion-market attractiveness). Each dataset is metadata + an offline-safe
+  loader returning row dicts. A query layer (`shape_table` / `resolve_query`)
+  filters, sorts, caps and scales each measure into display units (%, $M/$B, x)
+  and emits the `parse_table`-shaped table the CDD chart kit consumes.
+  `build_further_analysis()` returns the resolved query + shaped table + the
+  full dataset/measure catalog. NO synthetic data — every series is real
+  vendored public data; network-only loaders are not offered so the page
+  renders without egress.
+- **`ui/further_analysis_page.py`** (`/further-analysis`) — the explorer:
+  dataset dropdown (grouped by source), focus selector, measure chips
+  (multi-select), all 23 chart types, sort/order/top-N, palette/size/label
+  toggles, auto-filled editable title/subtitle/source, a live Chartis SVG
+  with one-click PNG/SVG export, a "same query, every chart" gallery, and the
+  data table behind the chart. Query-string driven, so every view is a URL.
+- **JSON API** `/api/further-analysis` — resolved query + table + catalog.
+- Wired into Research sub-nav, the Cmd-K palette + all-tools index, the
+  breadcrumb section map, and a documented guide PageContext; discovered
+  routes regenerated.
+**Verify**: +28 tests — every dataset loads offline & shapes, scaling/sort/
+clamp/focus correctness, query resolver clamping, JSON payload, page renders
+for all 23 chart types, + live HTTP smoke (page 200 + JSON 200). Nav/palette/
+guide/tools-index integrity suites green.
+
 ## W2-221 (2026-06-12) — P13 bullets on /metro-markets (refill #34, part 1)
 Two guarded takeaways recomputed from the same CBSA rows the table
 renders: the oldest market (65+ share vs the median across all areas;

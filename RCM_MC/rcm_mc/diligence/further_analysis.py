@@ -1,0 +1,669 @@
+"""Further Analysis — a Tableau-style query + chart engine over the
+platform's vendored public datasets.
+
+A partner picks a dataset (CMS / CDC / Census / Labor / Markets / derived),
+a focus (e.g. a state for a county-grain set), one or more measures, a
+dimension to plot against, a sort and a row cap — and gets a clean,
+client-ready chart in any of the CDD chart kit's chart types, exportable to
+PNG/SVG. Datasets × focuses × measures × dimensions × chart types × sorting
+yields thousands of distinct, real-data views.
+
+Hard rule (same as the rest of the platform): **no synthetic data**. Every
+series here is real vendored public data loaded offline — CMS Part D / Open
+Payments / ASP, CDC PLACES, Census/County demographics, BLS-based labor
+economics, MA penetration, PE transaction multiples, FDA drug shortages, and
+the platform's own derived infusion-market scores. Loaders that would need
+the network fail closed and are simply not offered here; what is offered
+renders without egress.
+
+The engine is intentionally declarative: a ``Dataset`` is metadata + a
+``loader`` returning a list of row dicts. ``shape_table`` turns a query into
+the ``parse_table``-shaped ``{"headers", "rows"}`` that ``render_cdd_chart``
+consumes, scaling each measure into display units and picking a unit suffix.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+# The 51 USPS codes the vendored state datasets cover (50 states + DC).
+_STATES: List[str] = [
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI",
+    "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+    "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
+    "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA",
+    "WV", "WI", "WY",
+]
+
+_STATE_NAMES: Dict[str, str] = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut",
+    "DE": "Delaware", "DC": "District of Columbia", "FL": "Florida",
+    "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois",
+    "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", "KY": "Kentucky",
+    "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota",
+    "MS": "Mississippi", "MO": "Missouri", "MT": "Montana",
+    "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire",
+    "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio",
+    "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania",
+    "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota",
+    "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont",
+    "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming",
+}
+
+
+# --------------------------------------------------------------------------
+# Measure formatting. ``fmt`` controls how a raw value is scaled into display
+# units and which unit suffix the chart shows. Keeping the scaling here (not
+# in each loader) means a loader can return values in their natural units.
+# --------------------------------------------------------------------------
+@dataclass(frozen=True)
+class Measure:
+    key: str
+    label: str
+    fmt: str = "num"   # num | usd | usd_m | usd_b | pct | pct100 | x | weeks
+
+
+_SUFFIX = {
+    "num": "", "usd": "", "usd_m": "M", "usd_b": "B",
+    "pct": "%", "pct100": "%", "x": "x", "weeks": "w",
+}
+
+
+def _scale(value: Any, fmt: str) -> Optional[float]:
+    """Scale a raw value into the display unit for ``fmt`` (None-safe)."""
+    if value is None:
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    if fmt == "usd_m":
+        return v / 1_000_000.0
+    if fmt == "usd_b":
+        return v / 1_000_000_000.0
+    if fmt == "pct":          # value is a 0-1 fraction → show as 0-100
+        return v * 100.0
+    return v                   # num / usd / pct100 / x / weeks pass through
+
+
+def measure_suffix(fmt: str) -> str:
+    return _SUFFIX.get(fmt, "")
+
+
+@dataclass
+class Dataset:
+    id: str
+    label: str
+    category: str             # CMS | CDC | Census | Labor | Markets | Derived
+    source: str               # citation shown on the page
+    grain: str                # state | county | category
+    dim_key: str              # row field used as the category/x label
+    dim_label: str
+    measures: List[Measure]
+    loader: Callable[[Optional[str]], List[Dict[str, Any]]]
+    focus_label: Optional[str] = None
+    focus_options: Optional[List[Tuple[str, str]]] = None
+    note: str = ""
+
+    def measure(self, key: str) -> Optional[Measure]:
+        for m in self.measures:
+            if m.key == key:
+                return m
+        return None
+
+
+# --------------------------------------------------------------------------
+# Loaders — each returns a list of row dicts with ``dim_key`` + measure keys.
+# Every loader is offline-safe; rows with missing values are tolerated and
+# filtered at shape time. Imports are local so importing this module is cheap
+# and a single broken loader never takes down the registry.
+# --------------------------------------------------------------------------
+def _safe(fn: Callable[[], List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    try:
+        return fn() or []
+    except Exception:
+        return []
+
+
+def _load_state_demographics(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..data import county_demographics as cd
+    rows: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            d = cd.demographics_state(st)
+        except Exception:
+            continue
+        if not d:
+            continue
+        d = dict(d)
+        d["state"] = _STATE_NAMES.get(st, st)
+        rows.append(d)
+    return rows
+
+
+def _load_county_demographics(focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..data import county_demographics as cd
+    st = (focus or "TX").upper()
+    try:
+        return cd.counties_for_state(st) or []
+    except Exception:
+        return []
+
+
+def _load_ma_penetration(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..market_intel import ma_penetration as mp
+    out: List[Dict[str, Any]] = []
+    for s in _safe(mp.list_state_penetration):
+        st = getattr(s, "state", None)
+        out.append({
+            "state": _STATE_NAMES.get(st, st),
+            "penetration_pct": getattr(s, "penetration_pct", None),
+            "band": getattr(s, "band", ""),
+        })
+    return out
+
+
+def _load_cdc_places(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..data import cdc_places_agg as ca
+    rows: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            d = ca.places_equity_state(st)
+        except Exception:
+            continue
+        if not d:
+            continue
+        d = dict(d)
+        d["state"] = _STATE_NAMES.get(st, st)
+        rows.append(d)
+    return rows
+
+
+def _load_infusion_attractiveness(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..diligence import infusion_market as im
+    try:
+        scan = im.infusion_state_attractiveness()
+    except Exception:
+        return []
+    out: List[Dict[str, Any]] = []
+    for s in scan.get("states", []):
+        axes = s.get("axes", {}) or {}
+        out.append({
+            "name": s.get("name") or s.get("code"),
+            "score": s.get("score"),
+            "senior_base": axes.get("senior_base"),
+            "ma_steerage": axes.get("ma_steerage"),
+            "no_con": axes.get("no_con"),
+            "density": axes.get("density"),
+            "commercial": axes.get("commercial"),
+            "seniors": s.get("seniors"),
+            "ma_penetration": s.get("ma_penetration"),
+            "median_income": s.get("median_income"),
+            "pct_rural": s.get("pct_rural"),
+        })
+    return out
+
+
+def _load_hcris_state(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..data import hcris
+    try:
+        df = hcris.load_hcris()
+    except Exception:
+        return []
+    try:
+        g = df.groupby("state").agg(
+            n_hospitals=("ccn", "count"),
+            total_beds=("beds", "sum"),
+            total_npsr=("net_patient_revenue", "sum"),
+            total_opex=("operating_expenses", "sum"),
+            total_net_income=("net_income", "sum"),
+        ).reset_index()
+    except Exception:
+        return []
+    rows: List[Dict[str, Any]] = []
+    for r in g.to_dict("records"):
+        st = r.get("state")
+        if not st or st not in _STATE_NAMES:
+            continue
+        npsr = r.get("total_npsr") or 0.0
+        ni = r.get("total_net_income") or 0.0
+        r["state"] = _STATE_NAMES.get(st, st)
+        r["operating_margin"] = (ni / npsr) if npsr else None
+        rows.append(r)
+    return rows
+
+
+def _load_partd(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..data import partd_drug as pdd
+    return _safe(lambda: pdd.top_drugs_by_spend(40))
+
+
+def _load_open_payments(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..data import open_payments as op
+    rows = _safe(lambda: op.top_reporting_entities(25))
+    out: List[Dict[str, Any]] = []
+    for r in rows:
+        out.append({
+            "entity": r.get("AMGPO_Name") or r.get("entity")
+            or r.get("name") or "—",
+            "total_amount": r.get("total_amount"),
+            "transactions": r.get("transactions"),
+        })
+    return out
+
+
+def _load_labor(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..market_intel import labor_market as lm
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lm.list_roles):
+        out.append({
+            "label": getattr(r, "label", ""),
+            "median_hourly_usd": getattr(r, "median_hourly_usd", None),
+            "wage_yoy_pct": getattr(r, "wage_yoy_pct", None),
+            "turnover_pct": getattr(r, "turnover_pct", None),
+            "vacancy_pct": getattr(r, "vacancy_pct", None),
+            "replacement_weeks": getattr(r, "replacement_weeks", None),
+            "fragility_score": (r.fragility_score()
+                                if hasattr(r, "fragility_score") else None),
+        })
+    return out
+
+
+def _load_multiples(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """All EV/EBITDA transaction-multiple bands, read straight from the
+    vendored YAML so every specialty × deal-size band is available."""
+    import pathlib
+    import yaml  # type: ignore
+    from ..market_intel import transaction_multiples as tm
+    try:
+        p = (pathlib.Path(tm.__file__).parent / "content"
+             / "transaction_multiples.yaml")
+        y = yaml.safe_load(p.read_text())
+    except Exception:
+        return []
+    out: List[Dict[str, Any]] = []
+    for b in (y.get("bands", []) if isinstance(y, dict) else []):
+        spec = str(b.get("specialty", "")).replace("_", " ").title()
+        band = str(b.get("deal_size_band", "")).replace("_", " ").title()
+        out.append({
+            "band": f"{spec} · {band}",
+            "p25_ev_ebitda": b.get("p25_ev_ebitda"),
+            "p50_ev_ebitda": b.get("p50_ev_ebitda"),
+            "p75_ev_ebitda": b.get("p75_ev_ebitda"),
+            "sample_size": b.get("sample_size"),
+        })
+    return out
+
+
+def _load_drug_shortages(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    from ..data import drug_shortage_data as ds
+    return _safe(ds.shortages_by_category)
+
+
+# --------------------------------------------------------------------------
+# The registry. Order here is the order shown in the dataset dropdown.
+# --------------------------------------------------------------------------
+_PCT = "pct"        # 0-1 fractions
+_P100 = "pct100"    # already 0-100
+
+_DATASETS_LIST: List[Dataset] = [
+    Dataset(
+        id="state_demographics", label="State demographics (Census/ACS)",
+        category="Census",
+        source="US Census ACS / County Health Rankings (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("population", "Population", "num"),
+            Measure("pct_age_65_plus", "Age 65+", _PCT),
+            Measure("median_household_income", "Median HH income", "usd"),
+            Measure("child_poverty_rate", "Child poverty", _PCT),
+            Measure("uninsured_rate", "Uninsured", _PCT),
+            Measure("pct_white_nh", "White (NH)", _PCT),
+            Measure("pct_black_nh", "Black (NH)", _PCT),
+            Measure("pct_hispanic", "Hispanic", _PCT),
+            Measure("pct_rural", "Rural", _PCT),
+        ],
+        loader=_load_state_demographics,
+        note="One row per state (50 + DC).",
+    ),
+    Dataset(
+        id="county_demographics", label="County demographics (by state)",
+        category="Census",
+        source="US Census ACS / County Health Rankings (vendored)",
+        grain="county", dim_key="county_name", dim_label="County",
+        measures=[
+            Measure("population", "Population", "num"),
+            Measure("pct_age_65_plus", "Age 65+", _PCT),
+            Measure("median_household_income", "Median HH income", "usd"),
+            Measure("child_poverty_rate", "Child poverty", _PCT),
+            Measure("uninsured_rate", "Uninsured", _PCT),
+            Measure("pct_white_nh", "White (NH)", _PCT),
+            Measure("pct_black_nh", "Black (NH)", _PCT),
+            Measure("pct_hispanic", "Hispanic", _PCT),
+            Measure("pct_rural", "Rural", _PCT),
+        ],
+        loader=_load_county_demographics,
+        focus_label="State",
+        focus_options=[(s, _STATE_NAMES[s]) for s in _STATES],
+        note="Every county in the chosen state.",
+    ),
+    Dataset(
+        id="ma_penetration", label="Medicare Advantage penetration (state)",
+        category="CMS",
+        source="KFF / CMS MA enrollment (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[Measure("penetration_pct", "MA penetration", _P100)],
+        loader=_load_ma_penetration,
+        note="Share of Medicare eligibles in MA, by state.",
+    ),
+    Dataset(
+        id="cdc_places", label="CDC PLACES health equity (state)",
+        category="CDC",
+        source="CDC PLACES county estimates, state-rolled (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("uninsured_18_64", "Uninsured 18-64", _P100),
+            Measure("fair_poor_health", "Fair/poor health", _P100),
+            Measure("poor_mental_health", "Poor mental-health days", _P100),
+            Measure("poor_physical_health", "Poor physical-health days",
+                    _P100),
+            Measure("routine_checkup", "Routine checkup", _P100),
+            Measure("food_insecurity", "Food insecurity", _P100),
+            Measure("snap_participation", "SNAP participation", _P100),
+            Measure("utility_shutoff_threat", "Utility-shutoff threat",
+                    _P100),
+        ],
+        loader=_load_cdc_places,
+        note="Social-determinant and health-status prevalence by state.",
+    ),
+    Dataset(
+        id="infusion_attractiveness",
+        label="Infusion market attractiveness (state)",
+        category="Derived",
+        source="Platform scan — demographics + MA + CON policy",
+        grain="state", dim_key="name", dim_label="State",
+        measures=[
+            Measure("score", "Attractiveness score", "num"),
+            Measure("senior_base", "Senior-base axis", _PCT),
+            Measure("ma_steerage", "MA-steerage axis", _PCT),
+            Measure("no_con", "No-CON axis", _PCT),
+            Measure("density", "Metro-density axis", _PCT),
+            Measure("commercial", "Commercial-payer axis", _PCT),
+            Measure("seniors", "Seniors (count)", "num"),
+            Measure("ma_penetration", "MA penetration", _PCT),
+            Measure("median_income", "Median income", "usd"),
+            Measure("pct_rural", "Rural", _PCT),
+        ],
+        loader=_load_infusion_attractiveness,
+        note="0-100 composite ranking 51 states for home/AIC infusion.",
+    ),
+    Dataset(
+        id="hcris_state", label="Hospital financials (HCRIS, state roll-up)",
+        category="CMS",
+        source="CMS HCRIS hospital cost reports (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("n_hospitals", "Hospitals", "num"),
+            Measure("total_beds", "Staffed beds", "num"),
+            Measure("total_npsr", "Net patient revenue", "usd_b"),
+            Measure("total_opex", "Operating expense", "usd_b"),
+            Measure("total_net_income", "Net income", "usd_b"),
+            Measure("operating_margin", "Operating margin", _PCT),
+        ],
+        loader=_load_hcris_state,
+        note="Cost-report financials aggregated to the state.",
+    ),
+    Dataset(
+        id="partd", label="Part D top drugs (spend & price)",
+        category="CMS",
+        source="CMS Medicare Part D drug spending (vendored)",
+        grain="category", dim_key="brand", dim_label="Drug",
+        measures=[
+            Measure("spend_2023", "2023 spend", "usd_b"),
+            Measure("claims_2023", "2023 claims", "num"),
+            Measure("price_per_unit_2023", "Price per unit", "usd"),
+            Measure("price_cagr_19_23", "Price CAGR '19-'23", _PCT),
+        ],
+        loader=_load_partd,
+        note="The 40 highest-spend Part D drugs.",
+    ),
+    Dataset(
+        id="open_payments", label="Open Payments top entities",
+        category="CMS",
+        source="CMS Open Payments (vendored)",
+        grain="category", dim_key="entity", dim_label="Manufacturer / GPO",
+        measures=[
+            Measure("total_amount", "Total payments", "usd_m"),
+            Measure("transactions", "Transactions", "num"),
+        ],
+        loader=_load_open_payments,
+        note="Largest industry payers to providers.",
+    ),
+    Dataset(
+        id="labor", label="Healthcare labor economics (roles)",
+        category="Labor",
+        source="BLS OES / JOLTS-based labor model (vendored)",
+        grain="category", dim_key="label", dim_label="Role",
+        measures=[
+            Measure("median_hourly_usd", "Median hourly", "usd"),
+            Measure("wage_yoy_pct", "Wage growth YoY", _P100),
+            Measure("turnover_pct", "Turnover", _P100),
+            Measure("vacancy_pct", "Vacancy", _P100),
+            Measure("replacement_weeks", "Replacement weeks", "weeks"),
+            Measure("fragility_score", "Fragility score", "num"),
+        ],
+        loader=_load_labor,
+        note="Wage, turnover and vacancy by clinical/admin role.",
+    ),
+    Dataset(
+        id="multiples", label="PE transaction multiples (EV/EBITDA)",
+        category="Markets",
+        source="Healthcare M&A comps library (vendored)",
+        grain="category", dim_key="band", dim_label="Specialty · size band",
+        measures=[
+            Measure("p25_ev_ebitda", "EV/EBITDA P25", "x"),
+            Measure("p50_ev_ebitda", "EV/EBITDA P50", "x"),
+            Measure("p75_ev_ebitda", "EV/EBITDA P75", "x"),
+            Measure("sample_size", "Sample size", "num"),
+        ],
+        loader=_load_multiples,
+        note="29 specialty × deal-size comp bands.",
+    ),
+    Dataset(
+        id="drug_shortages", label="FDA drug shortages (by category)",
+        category="CMS",
+        source="FDA drug shortage database (vendored)",
+        grain="category", dim_key="category", dim_label="Therapeutic area",
+        measures=[Measure("n", "Active shortages", "num")],
+        loader=_load_drug_shortages,
+        note="Count of active national shortages per therapeutic area.",
+    ),
+]
+
+DATASETS: Dict[str, Dataset] = {d.id: d for d in _DATASETS_LIST}
+
+# Chart types that take a single value column (the rest plot many series).
+_SINGLE_SERIES_TYPES = {
+    "pie", "donut", "funnel", "tornado", "dot", "gauge", "marimekko",
+}
+
+
+def list_datasets() -> List[Dataset]:
+    return list(_DATASETS_LIST)
+
+
+def categories() -> List[str]:
+    seen: List[str] = []
+    for d in _DATASETS_LIST:
+        if d.category not in seen:
+            seen.append(d.category)
+    return seen
+
+
+def _row_label(row: Dict[str, Any], dim_key: str) -> str:
+    val = row.get(dim_key)
+    return "—" if val is None else str(val)
+
+
+def shape_table(
+    dataset: Dataset,
+    measure_keys: List[str],
+    *,
+    focus: Optional[str] = None,
+    sort_key: Optional[str] = None,
+    ascending: bool = False,
+    top_n: int = 15,
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Run a query and return ``(table, meta)``.
+
+    ``table`` is ``{"headers", "rows"}`` shaped for ``render_cdd_chart``;
+    values are scaled into the display unit for each measure. ``meta`` carries
+    the suffix and the resolved measure list so the page can label things.
+    """
+    valid = [k for k in measure_keys if dataset.measure(k) is not None]
+    if not valid:
+        valid = [dataset.measures[0].key]
+    measures = [dataset.measure(k) for k in valid]
+
+    rows = dataset.loader(focus)
+    # Keep rows that have a label and at least one of the selected measures.
+    kept: List[Dict[str, Any]] = []
+    for r in rows:
+        if not any(r.get(k) is not None for k in valid):
+            continue
+        kept.append(r)
+
+    # Sort. Default: by the first selected measure, descending.
+    skey = sort_key if (sort_key in valid or sort_key == "_label") else valid[0]
+    if skey == "_label":
+        kept.sort(key=lambda r: _row_label(r, dataset.dim_key),
+                  reverse=ascending)
+    else:
+        def _k(r: Dict[str, Any]) -> float:
+            v = r.get(skey)
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return float("-inf") if not ascending else float("inf")
+        kept.sort(key=_k, reverse=not ascending)
+
+    top_n = max(1, min(int(top_n), 60))
+    kept = kept[:top_n]
+
+    headers = [dataset.dim_label] + [m.label for m in measures]
+    out_rows: List[Tuple[str, List[Optional[float]]]] = []
+    for r in kept:
+        vals = [_scale(r.get(m.key), m.fmt) for m in measures]
+        out_rows.append((_row_label(r, dataset.dim_key), vals))
+
+    # The chart shows one unit suffix; use the first measure's.
+    suffix = measure_suffix(measures[0].fmt)
+    meta = {
+        "suffix": suffix,
+        "measures": [{"key": m.key, "label": m.label, "fmt": m.fmt}
+                     for m in measures],
+        "n_rows": len(out_rows),
+        "dim_label": dataset.dim_label,
+    }
+    return {"headers": headers, "rows": out_rows}, meta
+
+
+def _qs1(qs: Optional[Dict[str, Any]], key: str, default: str = "") -> str:
+    if not qs:
+        return default
+    v = qs.get(key)
+    if isinstance(v, list):
+        v = v[0] if v else None
+    return str(v) if v not in (None, "") else default
+
+
+def _qsmany(qs: Optional[Dict[str, Any]], key: str) -> List[str]:
+    if not qs:
+        return []
+    v = qs.get(key)
+    if v is None:
+        return []
+    if isinstance(v, list):
+        out: List[str] = []
+        for item in v:
+            out.extend(str(item).split(","))
+        return [x for x in (s.strip() for s in out) if x]
+    return [x for x in (s.strip() for s in str(v).split(",")) if x]
+
+
+def resolve_query(qs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Resolve query-string params into a normalized analysis spec, clamped
+    to valid datasets/measures/focus. Shared by the page and the JSON API so
+    both stay perfectly in sync."""
+    ds_id = _qs1(qs, "dataset", _DATASETS_LIST[0].id)
+    dataset = DATASETS.get(ds_id) or _DATASETS_LIST[0]
+
+    focus = None
+    if dataset.focus_options:
+        valid_focus = {v for v, _ in dataset.focus_options}
+        focus = _qs1(qs, "focus", dataset.focus_options[0][0])
+        if focus not in valid_focus:
+            focus = dataset.focus_options[0][0]
+
+    chosen = [k for k in _qsmany(qs, "measures")
+              if dataset.measure(k) is not None]
+    if not chosen:
+        chosen = [dataset.measures[0].key]
+
+    chart_type = _qs1(qs, "type", "bar")
+    if chart_type in _SINGLE_SERIES_TYPES:
+        chosen = chosen[:1]
+
+    sort_key = _qs1(qs, "sort", chosen[0])
+    ascending = _qs1(qs, "asc", "0") in ("1", "true", "yes", "on")
+    try:
+        top_n = int(_qs1(qs, "top", "15"))
+    except ValueError:
+        top_n = 15
+
+    table, meta = shape_table(
+        dataset, chosen, focus=focus, sort_key=sort_key,
+        ascending=ascending, top_n=top_n)
+
+    return {
+        "dataset": dataset, "dataset_id": dataset.id, "focus": focus,
+        "measures": chosen, "chart_type": chart_type, "sort_key": sort_key,
+        "ascending": ascending, "top_n": max(1, min(top_n, 60)),
+        "table": table, "meta": meta,
+    }
+
+
+def build_further_analysis(qs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """JSON-API payload: the resolved query + shaped table + the catalog so a
+    programmatic caller can discover every dataset/measure available."""
+    spec = resolve_query(qs)
+    ds = spec["dataset"]
+    catalog = [{
+        "id": d.id, "label": d.label, "category": d.category,
+        "grain": d.grain, "source": d.source, "note": d.note,
+        "dimension": d.dim_label,
+        "focus_label": d.focus_label,
+        "focus_options": d.focus_options,
+        "measures": [{"key": m.key, "label": m.label, "fmt": m.fmt}
+                     for m in d.measures],
+    } for d in _DATASETS_LIST]
+    return {
+        "selected": {
+            "dataset": ds.id, "dataset_label": ds.label,
+            "category": ds.category, "source": ds.source,
+            "focus": spec["focus"], "measures": spec["measures"],
+            "chart_type": spec["chart_type"], "sort_key": spec["sort_key"],
+            "ascending": spec["ascending"], "top_n": spec["top_n"],
+        },
+        "table": {
+            "headers": spec["table"]["headers"],
+            "rows": [{"label": lbl, "values": vals}
+                     for lbl, vals in spec["table"]["rows"]],
+        },
+        "meta": spec["meta"],
+        "catalog": catalog,
+    }

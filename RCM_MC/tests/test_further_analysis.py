@@ -1,0 +1,254 @@
+"""Tests for Further Analysis — the Tableau-style data explorer.
+
+Exercises the data engine (every dataset loads offline and shapes cleanly),
+the query resolver (clamping + scaling), the JSON API payload, and the page
+renderer (real SVG, export toolbar, no crash across chart types).
+"""
+from __future__ import annotations
+
+import unittest
+
+from rcm_mc.diligence import further_analysis as fa
+from rcm_mc.ui.cdd_chart_kit import CHART_TYPES, render_cdd_chart
+from rcm_mc.ui.further_analysis_page import render_further_analysis_page
+
+
+class RegistryTests(unittest.TestCase):
+    def test_registry_has_many_datasets_across_sources(self):
+        ds = fa.list_datasets()
+        self.assertGreaterEqual(len(ds), 10)
+        cats = set(fa.categories())
+        # Real public-data sources are represented.
+        for c in ("CMS", "CDC", "Census", "Labor", "Markets"):
+            self.assertIn(c, cats)
+
+    def test_every_dataset_loads_offline_and_is_nonempty(self):
+        for d in fa.list_datasets():
+            focus = d.focus_options[0][0] if d.focus_options else None
+            rows = d.loader(focus)
+            self.assertTrue(rows, f"{d.id} returned no rows offline")
+            # Each row carries the dimension key.
+            self.assertIn(d.dim_key, rows[0], f"{d.id} missing dim_key")
+
+    def test_every_measure_is_present_in_rows(self):
+        for d in fa.list_datasets():
+            focus = d.focus_options[0][0] if d.focus_options else None
+            rows = d.loader(focus)
+            keys = set().union(*[set(r.keys()) for r in rows])
+            for m in d.measures:
+                self.assertIn(m.key, keys,
+                              f"{d.id}.{m.key} not in any row")
+
+
+class ShapeTests(unittest.TestCase):
+    def test_shape_returns_chart_kit_table(self):
+        d = fa.DATASETS["state_demographics"]
+        table, meta = fa.shape_table(d, ["population"], top_n=10)
+        self.assertEqual(table["headers"][0], "State")
+        self.assertEqual(len(table["rows"]), 10)
+        # Rows are (label, [values]) tuples consumable by render_cdd_chart.
+        label, vals = table["rows"][0]
+        self.assertIsInstance(label, str)
+        self.assertEqual(len(vals), 1)
+
+    def test_sort_descending_by_default(self):
+        d = fa.DATASETS["state_demographics"]
+        table, _ = fa.shape_table(d, ["population"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+
+    def test_ascending_flag_reverses(self):
+        d = fa.DATASETS["state_demographics"]
+        table, _ = fa.shape_table(d, ["population"], ascending=True, top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals))
+
+    def test_pct_fraction_scaled_to_0_100(self):
+        # demographics pct_age_65_plus is a 0-1 fraction → display 0-100.
+        d = fa.DATASETS["state_demographics"]
+        table, meta = fa.shape_table(d, ["pct_age_65_plus"], top_n=51)
+        self.assertEqual(meta["suffix"], "%")
+        for _, vals in table["rows"]:
+            if vals[0] is not None:
+                self.assertGreater(vals[0], 1.0)   # not still a fraction
+                self.assertLess(vals[0], 100.0)
+
+    def test_usd_billions_scaled(self):
+        d = fa.DATASETS["hcris_state"]
+        table, meta = fa.shape_table(d, ["total_npsr"], top_n=5)
+        self.assertEqual(meta["suffix"], "B")
+        # California NPSR in the hundreds of billions → scaled to ~hundreds.
+        top = table["rows"][0][1][0]
+        self.assertLess(top, 10000)
+
+    def test_top_n_is_clamped(self):
+        d = fa.DATASETS["state_demographics"]
+        table, _ = fa.shape_table(d, ["population"], top_n=999)
+        self.assertLessEqual(len(table["rows"]), 60)
+
+    def test_multi_measure_table_has_aligned_columns(self):
+        d = fa.DATASETS["hcris_state"]
+        table, _ = fa.shape_table(d, ["total_npsr", "total_opex"], top_n=6)
+        self.assertEqual(len(table["headers"]), 3)
+        for _, vals in table["rows"]:
+            self.assertEqual(len(vals), 2)
+
+    def test_county_focus_changes_rows(self):
+        d = fa.DATASETS["county_demographics"]
+        tx, _ = fa.shape_table(d, ["population"], focus="TX", top_n=5)
+        ca, _ = fa.shape_table(d, ["population"], focus="CA", top_n=5)
+        self.assertNotEqual([r[0] for r in tx["rows"]],
+                            [r[0] for r in ca["rows"]])
+
+
+class ResolveQueryTests(unittest.TestCase):
+    def test_defaults_resolve(self):
+        spec = fa.resolve_query({})
+        self.assertEqual(spec["dataset"].id, fa.list_datasets()[0].id)
+        self.assertTrue(spec["table"]["rows"])
+
+    def test_unknown_dataset_falls_back(self):
+        spec = fa.resolve_query({"dataset": ["nope"]})
+        self.assertEqual(spec["dataset"].id, fa.list_datasets()[0].id)
+
+    def test_invalid_measures_drop_to_default(self):
+        spec = fa.resolve_query({"dataset": ["labor"],
+                                 "measures": ["bogus"]})
+        self.assertEqual(spec["measures"],
+                         [fa.DATASETS["labor"].measures[0].key])
+
+    def test_single_series_chart_keeps_one_measure(self):
+        spec = fa.resolve_query({
+            "dataset": ["hcris_state"],
+            "measures": ["total_npsr", "total_opex"],
+            "type": ["pie"]})
+        self.assertEqual(len(spec["measures"]), 1)
+
+    def test_invalid_focus_clamps_to_first(self):
+        spec = fa.resolve_query({"dataset": ["county_demographics"],
+                                 "focus": ["ZZ"]})
+        self.assertEqual(spec["focus"],
+                         fa.DATASETS["county_demographics"].focus_options[0][0])
+
+    def test_measures_comma_or_repeat_param(self):
+        a = fa.resolve_query({"dataset": ["hcris_state"],
+                              "measures": ["total_npsr,total_opex"]})
+        b = fa.resolve_query({"dataset": ["hcris_state"],
+                              "measures": ["total_npsr", "total_opex"]})
+        self.assertEqual(a["measures"], b["measures"])
+
+
+class JsonApiTests(unittest.TestCase):
+    def test_payload_shape(self):
+        out = fa.build_further_analysis({})
+        self.assertIn("selected", out)
+        self.assertIn("table", out)
+        self.assertIn("catalog", out)
+        self.assertEqual(len(out["catalog"]), len(fa.list_datasets()))
+        # Catalog entries describe measures for programmatic discovery.
+        self.assertTrue(out["catalog"][0]["measures"])
+
+    def test_table_rows_are_labelled(self):
+        out = fa.build_further_analysis({"dataset": ["partd"]})
+        row = out["table"]["rows"][0]
+        self.assertIn("label", row)
+        self.assertIn("values", row)
+
+
+class PageRenderTests(unittest.TestCase):
+    def test_default_page_renders_with_chart_and_export(self):
+        h = render_further_analysis_page({})
+        self.assertIn("<svg", h)
+        self.assertIn("faOut", h)            # export toolbar target
+        self.assertIn("Further Analysis", h)
+
+    def test_renders_for_every_chart_type_without_error(self):
+        # Pick a multi-row dataset; render each chart type the page offers.
+        for key, _label in CHART_TYPES:
+            h = render_further_analysis_page({
+                "dataset": ["state_demographics"],
+                "measures": ["population"],
+                "type": [key]})
+            self.assertIn("<svg", h, f"chart type {key} produced no svg")
+
+    def test_dataset_dropdown_lists_all_datasets(self):
+        import html
+        h = render_further_analysis_page({})
+        for d in fa.list_datasets():
+            self.assertIn(html.escape(d.label), h)
+
+    def test_focus_selector_present_for_county_grain(self):
+        h = render_further_analysis_page({"dataset": ["county_demographics"]})
+        self.assertIn('name="focus"', h)
+
+    def test_no_focus_selector_for_state_grain(self):
+        h = render_further_analysis_page({"dataset": ["state_demographics"]})
+        self.assertNotIn('name="focus"', h)
+
+    def test_data_table_behind_chart_present(self):
+        h = render_further_analysis_page({"dataset": ["labor"]})
+        self.assertIn("DATA BEHIND THE CHART", h)
+
+    def test_no_synthetic_data_disclaimer(self):
+        h = render_further_analysis_page({})
+        self.assertIn("No synthetic data", h)
+
+
+class HttpSmokeTests(unittest.TestCase):
+    """The page + JSON routes serve 200 over a real HTTP server."""
+
+    @classmethod
+    def setUpClass(cls):
+        import os
+        import tempfile
+        import threading
+        import time
+        from rcm_mc.server import build_server
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        import socket
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        cls._port = s.getsockname()[1]
+        s.close()
+        srv, _ = build_server(
+            port=cls._port, db_path=os.path.join(cls._tmp.name, "p.db"),
+            host="127.0.0.1")
+        cls._srv = srv
+        cls._thread = threading.Thread(target=srv.serve_forever, daemon=True)
+        cls._thread.start()
+        time.sleep(0.2)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._srv.shutdown()
+        cls._srv.server_close()
+        cls._tmp.cleanup()
+
+    def _get(self, path):
+        import urllib.error
+        import urllib.request
+        try:
+            return urllib.request.urlopen(
+                f"http://127.0.0.1:{self._port}{path}", timeout=10)
+        except urllib.error.HTTPError as exc:
+            return exc
+
+    def test_page_route_serves_html(self):
+        resp = self._get("/further-analysis?dataset=hcris_state&type=column")
+        self.assertEqual(resp.status, 200)
+        body = resp.read().decode()
+        self.assertIn("Further Analysis", body)
+        self.assertIn("<svg", body)
+
+    def test_json_api_serves_catalog(self):
+        import json
+        resp = self._get("/api/further-analysis?dataset=partd")
+        self.assertEqual(resp.status, 200)
+        payload = json.loads(resp.read().decode())
+        self.assertEqual(payload["selected"]["dataset"], "partd")
+        self.assertTrue(payload["catalog"])
+
+
+if __name__ == "__main__":
+    unittest.main()
