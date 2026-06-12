@@ -3439,3 +3439,74 @@ present (≥19 total) + render clean, width_px controls display size +
 height auto, export toolbar has SVG/PNG/Copy + ids, size presets S/M/L/XL,
 builder/pie pages show export buttons + size select + new-type chips.
 Full suite green.
+
+## W2-164 (2026-06-12) — Expert-Call Program: the CDD voice-of-customer workstream (wave #66)
+New CDD task covered — the primary-research call program every commercial
+due diligence runs and the platform had no surface for (the CIM
+Cross-Check generates suggested expert-call questions with nowhere to
+take them):
+- **`diligence/expert_calls.py`** (new, UI-free): 7 stakeholder lenses
+  (referring physician, payer/contracting exec, competitor exec, former
+  employee, site-of-care administrator, patient/caregiver voice,
+  industry/reimbursement expert), each with who/why/sourcing AND the
+  lens's known systematic bias stated (every source lies in a
+  predictable direction — the guide says which). Curated QUESTION_BANK
+  (38 questions) tagged to 7 CDD topics, each with a "listen for" line
+  (what a strong vs concerning answer sounds like). `build_call_guide`
+  (compliance-safe opening — no MNPI / NDA / current-employer rules
+  stated out loud — topic-ordered questions, closing asks incl. the
+  structured SUPPORTS/CONTRADICTS note); `program_plan` (largest-
+  remainder apportionment, sums exactly, no zero-call lens in a
+  full-size program); `coverage_read` (STRICT: ≥2 calls COVERED, 1
+  THIN single-source, 0 UNCOVERED blind spot — the read names the worst
+  lens, never a percent-done average).
+- **Page `/diligence/expert-calls`**: program-size + deal-stamp form,
+  call-mix table (lens / what only they can tell you / calls / mix /
+  known bias), coverage tracker (done-counts → status chips + honest
+  findings), lens chips → the full printable call guide; CIM
+  Cross-Check tie-in. All GET — tracker state is a shareable URL.
+  Wired: server route + Cmd-K palette + _SUB_SECTION_MAP + diligence
+  index card + Guide context (ToolRouteDefinition + full manual _ctx).
+- **Found + fixed (pre-existing, full-platform)**: the guide-invariant
+  suite was RED on main — /chart-builder, /pie-chart and /excel-mapping
+  (waves 62–65) shipped with 3 common_questions (below the 5-Q floor)
+  and empty related_routes. All three bumped to 5 questions + cross-
+  linked as a chart-tool family; expert-calls registered compliant from
+  birth (first related_routes draft pointed at an unresolvable route —
+  caught by the resolver invariant, fixed).
+**Verify**: new `test_expert_calls.py` (19) — bank integrity (7 lenses
+fully specified, every question topic-valid with listen_for, headline
+topics triangulated across ≥2 lenses), guide build (topic order, exact
+question counts, unknown lens → None never a generic guide), plan
+apportionment (20-call == recommended; 8/12/30/75 sum exactly, no
+zero-call lens; 0/3-call edge), coverage semantics (strict statuses,
+findings name gaps with NO percent headline, complete-read, empty
+state), page render (plan/guide/tracker needles, qs-driven lens/size/
+deal, status chips, hostile inputs escaped + fall back), wiring
+(palette, section map, guide contexts, diligence index). Live HTTP
+smoke on a real server: 4 URLs incl. hostile params → all 200, no
+tracebacks. Guide-invariant suite 31 green (was 3 RED on main);
+targeted sweep 1,372 passed; full suite at commit gate.
+
+## W2-164b (2026-06-12) — full-suite gate: two more pre-existing reds found + fixed
+The wave-66 full-suite gate (15,680 passed) surfaced two failures that
+reproduce on a CLEAN tree (both pre-date this wave):
+- **`/diligence/texas-infusion` orphaned from the diligence catalog**
+  (since wave #47): the section-catalog invariant scrapes every served
+  /diligence/* route from server.py and requires a diligence-index card;
+  the Texas infusion study never got one. Added the card (Audit &
+  Stress, beside TAM/SAM Builder).
+- **`user-supplied` data-universe kind never registered** (waves 62–64):
+  chart-builder / pie-chart / excel-mapping all pass
+  `universe="user-supplied"` to ck_source_purpose, but the kind wasn't
+  in _DATA_UNIVERSE — ck_data_universe fails safe to nothing, so all
+  three pages silently shipped WITHOUT their data-provenance chip.
+  Registered the kind ("YOUR INPUTS — renders only the values you
+  enter; no stored data, no data claim"); chip verified rendering.
+- Also classified `/diligence/expert-calls` in surface_status as NAVY
+  ("Diligence calculator (your inputs)") so the catalog honesty dot is
+  hand-set, not defaulted.
+**Verify**: both failing tests green; targeted sweeps 101 + 125 passed
+(catalog/universe/surface-status/guide-invariant/chart suites); pie
+page renders the YOUR INPUTS chip; classify_surface returns the navy
+calculator label for expert-calls.

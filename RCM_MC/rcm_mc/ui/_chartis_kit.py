@@ -913,6 +913,12 @@ _DATA_UNIVERSE = {
                        "framework until a live data source is connected."),
     "data-required":  ("DATA REQUIRED", "datareq",
                        "Needs a user upload / CCD / internal file to activate."),
+    # Utility/builder pages that render only what the user types (chart
+    # makers, planners). Distinct from user-deals: nothing is read from
+    # the user's DB and nothing on the page is a data claim.
+    "user-supplied":  ("YOUR INPUTS", "deals",
+                       "Renders only the values you enter — no stored data, "
+                       "no data claim."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
     # Licensed third-party data, used only as derived/structured facts (raw
@@ -7237,6 +7243,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "cms-xray",      "title": "CMS X-Ray · Provider scanner", "route": "/diligence/xray"},
     {"id": "hcris-xray",    "title": "HCRIS X-Ray",        "route": "/diligence/hcris-xray"},
     {"id": "cim-crosscheck", "title": "CIM Cross-Check · Variance engine", "route": "/diligence/cim-crosscheck"},
+    {"id": "expert-calls", "title": "Expert-Call Program · CDD voice-of-customer planner", "route": "/diligence/expert-calls"},
     {"id": "rollup-builder", "title": "Roll-Up Builder · Pro-forma platform", "route": "/pipeline/rollup"},
     {"id": "data-quality", "title": "Data Quality · Source certification", "route": "/data-quality"},
     {"id": "root-cause",    "title": "Root Cause",         "route": "/diligence/root-cause"},
@@ -10901,6 +10908,7 @@ _SUB_SECTION_MAP = {
     "/diligence/comparable-outcomes": "research",
     "/diligence/tam-sam": "diligence",
     "/diligence/texas-infusion": "diligence",
+    "/diligence/expert-calls": "diligence",
     "/excel-mapping": "research",
     "/chart-builder": "research",
     "/pie-chart": "research",

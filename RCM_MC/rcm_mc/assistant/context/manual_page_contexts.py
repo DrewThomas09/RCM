@@ -11866,7 +11866,11 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
+            "Can I set the value range the colours map to?",
+            "How do I export the map for a deck?",
         ],
+        related_routes=["/chart-builder", "/pie-chart",
+                        "/market-data/map"],
         inputs=["Three gradient colours; an optional low/mid/high value "
                 "domain (blank = auto from data); a value per state, set "
                 "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
@@ -11902,7 +11906,10 @@ _MANUAL.extend([
             "How do I make a waterfall / bridge chart?",
             "How do I build a marimekko or 100% stacked column?",
             "Can I paste my data from Excel and pick the colours?",
+            "How do I download the chart as SVG or PNG?",
+            "How do I change the chart size?",
         ],
+        related_routes=["/pie-chart", "/excel-mapping"],
         inputs=["A pasted table (headers row + category column + one column "
                 "per series); chart type; title/subtitle; a Chartis "
                 "palette; unit suffix; show-values / legend toggles."],
@@ -11939,7 +11946,10 @@ _MANUAL.extend([
             "How do I make a pie chart?",
             "Can I set the colour of each slice?",
             "How do I make it a donut?",
+            "Can the labels show values instead of percentages?",
+            "How do I export the chart for a deck?",
         ],
+        related_routes=["/chart-builder", "/excel-mapping"],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
                 "donut toggle."],
@@ -11958,6 +11968,64 @@ _MANUAL.extend([
                                  "values you enter; colours are whatever you "
                                  "set."],
         limitations=["Static SVG; renders only the slices you enter."],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/diligence/expert-calls", "Expert-Call Program",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The CDD voice-of-customer planner — a call-mix "
+        "plan across seven stakeholder lenses (referrers, payers, "
+        "competitors, former employees, site administrators, patient "
+        "voice, industry experts), a printable per-lens call guide with "
+        "'listen for' scoring aids, and an honest coverage read.",
+        primary_purpose="Design and track the primary-research program of "
+        "a commercial due diligence: who to call, what to ask each lens, "
+        "and whether the evidence is triangulated or single-source.",
+        intended_users=["CDD deal team planning and running the "
+                        "expert-call sprint."],
+        common_questions=[
+            "Who should we be calling for this deal?",
+            "What do we ask a payer contracting exec?",
+            "Have we covered every stakeholder lens?",
+            "How many expert calls does a CDD need?",
+            "How do I keep expert calls compliant?",
+        ],
+        related_routes=["/diligence/cim-crosscheck",
+                        "/diligence/checklist", "/diligence/hcris-xray"],
+        inputs=["Program size (calls); selected lens; completed-call "
+                "counts per lens; an optional deal name for the guide."],
+        outputs=["A call-mix table with each lens's known bias; a "
+                 "structured call guide (compliance opening, questions "
+                 "grouped by CDD topic, closing asks); a coverage read "
+                 "(COVERED / THIN / UNCOVERED per lens)."],
+        key_metrics=["Calls per lens vs plan; coverage status — a lens "
+                     "needs two voices to count as covered."],
+        data_sources=["A curated question bank and program methodology — "
+                      "a starting point, not engagement-specific design. "
+                      "Coverage counts are user-entered; nothing on the "
+                      "page is market data."],
+        model_logic_summary="The plan apportions the target call count "
+        "across the lenses' recommended weights (largest-remainder, no "
+        "zero-call lens in a full-size program). Coverage is strict: "
+        ">=2 calls COVERED, 1 THIN (single-source), 0 UNCOVERED (blind "
+        "spot); the read names the worst lens, never an average.",
+        why_it_matters="Public data answers what filings can answer; the "
+        "call program answers what only humans can — switching behavior, "
+        "contract intent, reputation. A CDD without structured primary "
+        "research is a desk study.",
+        diligence_use_cases=["Planning the week-one call sheet; briefing "
+                             "an associate before their first payer call; "
+                             "the 'are we triangulated?' check before "
+                             "drafting the memo."],
+        interpretation_guidance=["Each lens lies in a predictable "
+                                 "direction — the bias column says which "
+                                 "way; calibrate answers against the "
+                                 "platform's filed-data surfaces."],
+        limitations=["The bank is curated and generic to healthcare "
+                     "services — tailor questions to the engagement; the "
+                     "page stores nothing server-side (state lives in "
+                     "the URL)."],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),

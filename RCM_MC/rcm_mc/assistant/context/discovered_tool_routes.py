@@ -196,6 +196,17 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Expert-Call Program',
+        route='/diligence/expert-calls',
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        source_group='Diligence Workspace',
+        is_auto_generated=False,
+        aliases=['expert calls', 'expert network', 'call guide',
+                 'interview guide', 'voice of customer', 'voc',
+                 'primary research', 'call program'],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Excel Mapping',
         route='/excel-mapping',
         category=PageContextCategory.RESEARCH_BACKTESTING,

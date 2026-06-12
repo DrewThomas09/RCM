@@ -128,6 +128,10 @@ _PILLARS: List[Mapping[str, object]] = [
             {"href": "/diligence/cim-crosscheck",
              "label": "CIM Cross-Check",
              "blurb": "Management's claims vs independent HCRIS estimates."},
+            {"href": "/diligence/expert-calls",
+             "label": "Expert Calls",
+             "blurb": "CDD call program: mix plan, per-lens guides, "
+                      "coverage read."},
             {"href": "/diligence/deal-mc",
              "label": "Deal MC",
              "blurb": "Per-deal Monte Carlo with overlay shocks."},
@@ -141,6 +145,10 @@ _PILLARS: List[Mapping[str, object]] = [
              "label": "TAM / SAM Builder",
              "blurb": "Driver-tree market sizing with formatted "
                       "Excel export."},
+            {"href": "/diligence/texas-infusion",
+             "label": "Texas Infusion Market",
+             "blurb": "Full CDD market study: TAM/SAM, metros, "
+                      "channels, regulation."},
             {"href": "/diligence/bear-case",
              "label": "Bear Case",
              "blurb": "The defensible bear case for this deal."},

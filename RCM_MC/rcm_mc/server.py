@@ -6712,6 +6712,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/expert-calls":
+            # Expert-Call Program — CDD voice-of-customer planner: call
+            # mix per stakeholder lens, per-lens call guide, coverage
+            # read. qs carries n / lens / done_<key> / deal (all GET —
+            # the tracker state is the URL).
+            from .ui.expert_calls_page import render_expert_calls_page
+            _ec_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_expert_calls_page(_ec_qs))
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs
