@@ -4552,7 +4552,6 @@ verticals, rows link the focused view, focused view unaffected).
 download) + HTTP smoke 200/PK; hub link integrity + guide-coverage +
 tools-index families green (59 passed).
 
-<<<<<<< HEAD
 ## W2-221 (2026-06-12) — P13 bullets on /metro-markets (refill #34, part 1)
 Two guarded takeaways recomputed from the same CBSA rows the table
 renders: the oldest market (65+ share vs the median across all areas;
@@ -4560,8 +4559,8 @@ stated only when ≥3pp above median — the senior-demand tail) and the
 highest-uninsured market (≥5pp above median — the bad-debt screen).
 n≥8 guard; ck_insight_bullets renders nothing otherwise. Test
 re-derives the top market + figure exactly. 7 passed.
-=======
-## W2-179 (2026-06-12) — Charts: data-shaping pipeline + 4 types + trendline (wave #80)
+
+## W2-230 (2026-06-12) — Charts: data-shaping pipeline + 4 types + trendline (wave #80)
 More data, more ways to work it (kit now 27 types):
 - **`transform_table(table, tf)`** — the Excel prep steps folded into the
   builder so a raw export pastes as-is: aggregate duplicate labels
@@ -4592,7 +4591,7 @@ controls + group-sum/top-N/trendline reach the rendered SVG; bogus
 params ignored). Guide invariant suite back to green. Chart-adjacent
 sweep (-k chart/exhibit/excel_mapping/guide/palette): 1390 passed.
 
-## W2-180 (2026-06-12) — Charts: annotations + 3 types (wave #81)
+## W2-231 (2026-06-12) — Charts: annotations + 3 types (wave #81)
 Kit now 30 types; the builder gets an exhibit-grade annotation layer:
 - **Annotations row** (column/bar/line/area/combo): a reference/target
   line at any value with a custom label (y-scale stretches so the
@@ -4613,7 +4612,7 @@ scale stretch; CAGR math + non-positive guard; avg line; UI controls
 flow through; bogus refval ignored). 53 pass in the file; chart sweep
 1382 passed.
 
-## W2-181 (2026-06-12) — Chart Builder: one-click platform datasets (wave #82)
+## W2-232 (2026-06-12) — Chart Builder: one-click platform datasets (wave #82)
 The builder stops being paste-only — real CMS data, zero pasting:
 - **`rcm_mc/data/chart_datasets.py`** (data layer, per architecture):
   10 chart-ready aggregates from the six vendored provider snapshots —
@@ -4638,7 +4637,7 @@ mix rows sum to each sector's provider count, bucket vocabulary cases,
 footnote date rules, strip renders with links, loaded dataset flows to
 the chart. Sweep: 1419 passed.
 
-## W2-182 (2026-06-12) — Builder ↔ Exhibit round-trip + datasets on slides (wave #83)
+## W2-233 (2026-06-12) — Builder ↔ Exhibit round-trip + datasets on slides (wave #83)
 The chart suite becomes one workflow instead of three pages:
 - **`table_to_tsv`** (kit): serialize a (possibly shaped) table back to
   the paste format — None cells → empty, lossless through parse_table.
@@ -4662,7 +4661,7 @@ links); dataset-only exhibit loads real data and does NOT pre-fill the
 example defaults; pasted data wins over a selected dataset; edit-link;
 bogus ds key ignored. 75 pass across the three chart files; sweep 1426.
 
-## W2-183 (2026-06-12) — Saved Charts library (wave #84)
+## W2-234 (2026-06-12) — Saved Charts library (wave #84)
 Configurations become durable — the third hand-rebuild of the same
 denials Pareto is the builder failing its user:
 - **`portfolio/saved_charts.py`** (mirrors the saved_screens store
@@ -4692,7 +4691,7 @@ pages, registration invariants, and a real-HTTP e2e (login → CSRF →
 save → list → delete; forged route dropped). Wide sweep
 (chart/exhibit/guide/palette/dataset/saved/catalog/screener): 1792.
 
-## W2-184 (2026-06-12) — Pre-merge sweep: 3 main-inherited reds fixed
+## W2-235 (2026-06-12) — Pre-merge sweep: 3 main-inherited reds fixed
 Full local suite (15,763 tests) before merging the chart waves found
 three failures — ALL pre-existing on origin/main (verified in a clean
 worktree), all fixed here so main goes back to green:
@@ -4712,4 +4711,3 @@ worktree), all fixed here so main goes back to green:
   engine now declares _FLAGSHIP and breaks total-ties explicitly.
 **Verify**: each fix's suite green (universe guard, 5-Q invariants,
 section catalog, surface rankings 9/9); full suite rerun → all green.
->>>>>>> origin/main
