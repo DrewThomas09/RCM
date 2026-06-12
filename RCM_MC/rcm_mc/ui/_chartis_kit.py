@@ -928,6 +928,13 @@ _DATA_UNIVERSE = {
                        "Derived from a licensed market-data export (e.g. "
                        "SimplyAnalytics) — area-level, not your deals; unexported "
                        "variables show EXPORT REQUIRED, never fabricated."),
+    # The visuals toolkit (Chart Builder / Pie Chart / Excel Mapping /
+    # Exhibit Composer / Visuals hub): the chart plots whatever the user
+    # pasted or typed — no platform data claim unless a dataset chip was
+    # explicitly loaded (those carry their own source footnote).
+    "user-supplied": ("USER-SUPPLIED DATA", "deals",
+                       "Renders the data you paste/type — example values are "
+                       "placeholders, not a data claim."),
 }
 
 
@@ -936,8 +943,8 @@ def ck_data_universe(kind: str) -> str:
 
     ``kind`` ∈ user-deals · user-portfolio · cms · hcris · corpus · research ·
     mixed · derived · illustrative · data-required · experimental ·
-    licensed-report-derived · licensed-market-derived. Renders
-    nothing for an unknown kind (fail-safe). Style lives in the global shell
+    licensed-report-derived · licensed-market-derived · user-supplied.
+    Renders nothing for an unknown kind (fail-safe). Style lives in the global shell
     CSS (`.ck-universe`)."""
     rec = _DATA_UNIVERSE.get(kind)
     if rec is None:
