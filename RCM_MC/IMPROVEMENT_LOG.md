@@ -4222,3 +4222,46 @@ worktree), all fixed here so main goes back to green:
   engine now declares _FLAGSHIP and breaks total-ties explicitly.
 **Verify**: each fix's suite green (universe guard, 5-Q invariants,
 section catalog, surface rankings 9/9); full suite rerun → all green.
+
+## W2-168 (2026-06-12) — Expert-Call Program slice 4: findings ledger — evidence by thesis tag (wave #70)
+The synthesis layer over the logged evidence — the page the memo
+section gets written FROM:
+- **`parse_call_note`** (strict inverse of format_call_note): regex
+  anchored to the exact note shape; unknown lens label or malformed
+  body → None, never a half-parsed finding (the ledger must never
+  attribute free text to a lens or tag it doesn't carry). Findings
+  containing literal [brackets] parse correctly (the FINAL [TAG] is
+  the tag — exactly where the formatter puts it; tested).
+- **`findings_ledger`**: groups parsed findings by thesis tag in memo
+  order — CONTRADICTS first, then NEW QUESTION, SUPPORTS last (the
+  reader needs the evidence against the thesis before the comfort) —
+  with per-tag counts and an honest skew read: ≥5 findings with ZERO
+  contradictions fires the confirmation-bias warning ("either this is
+  the easiest deal of the year or the program isn't listening");
+  4 findings is too small a base to call bias; one contradiction
+  clears it at any size (all three pinned).
+- **Page panel** (exhibit-wrapped, shares the page's exhibit
+  numbering with the call guide): tag-grouped findings with semantic
+  tone bars (CONTRADICTS negative / SUPPORTS positive / NEW QUESTION
+  navy), lens · vantage · as-of meta line per finding, count strip,
+  warning callout; honest empty state ("the ledger builds itself from
+  the Log-a-call form above"). Renders only with a deal context — the
+  ledger is the deal's evidence, not URL state. Server now passes the
+  raw note bodies once; coverage counts derive from the same list
+  (one source, no second query).
+- **`/api/expert-calls/findings.csv`**: the evidence appendix —
+  summary block (total + per-tag counts + any warning) then one row
+  per finding in ledger order; defanged; unknown deal → honest empty
+  ledger, never a fabricated finding, never a 500.
+**Verify**: test_expert_calls.py 43→51 — parser inverse round-trip
+incl. brackets-in-finding, free-text/fake-lens/bad-tag rejection,
+ledger grouping + memo order + counts, bias-warning fire/too-small/
+cleared, findings CSV shape + defang + contradictions-precede-
+supports + empty honesty; HTTP: logged finding renders grouped with
+vantage + CSV serves it + unknown-deal CSV honest + no-context page
+has no ledger. Live workflow smoke: 5 SUPPORTS → warning renders +
+hostile <b> finding escaped; +1 CONTRADICTS → warning clears,
+"CONTRADICTS (1)" header, CSV "Total findings,6". Neighbor sweep 127
+green (cdd-scope/guide-invariants/catalog/exhibit/prefill). Branch
+re-synced with main twice (PRs #1816–#1829 merged in; second sync
+clean).

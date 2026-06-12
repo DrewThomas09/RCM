@@ -29,6 +29,7 @@ This module is the UI-free core:
 from __future__ import annotations
 
 import math
+import re
 from typing import Any, Dict, List, Optional
 
 # CDD topics every program must triangulate. Order = guide order.
@@ -781,3 +782,69 @@ def logged_call_counts(note_bodies: Any) -> Dict[str, int]:
                 counts[key] = counts.get(key, 0) + 1
                 break
     return counts
+
+
+# Strict inverse of format_call_note. The finding is free text and may
+# itself contain brackets; the greedy group leaves the FINAL [TAG] as
+# the tag, which is exactly where the formatter puts it.
+_NOTE_RE = re.compile(
+    r"^EXPERT CALL · (?P<label>.+?) — (?P<vantage>.+?) "
+    r"\(as of (?P<as_of>.+?)\): (?P<finding>.+) "
+    r"\[(?P<tag>SUPPORTS|CONTRADICTS|NEW QUESTION)\]$",
+    re.S,
+)
+
+
+def parse_call_note(body: Any) -> Optional[Dict[str, str]]:
+    """Parse one structured EXPERT CALL note back into its fields.
+
+    Strict by design: anything that doesn't match the exact shape
+    (including an unknown lens label) returns None rather than a
+    half-parsed finding — the ledger must never attribute free text
+    to a lens or a thesis tag it doesn't carry."""
+    m = _NOTE_RE.match(str(body or "").strip())
+    if not m:
+        return None
+    label = m.group("label")
+    key = _LABEL_TO_KEY.get(label)
+    if key is None:
+        return None
+    return {"lens": key, "lens_label": label,
+            "vantage": m.group("vantage"), "as_of": m.group("as_of"),
+            "finding": m.group("finding"), "tag": m.group("tag")}
+
+
+# Ledger render order: what argues AGAINST the thesis leads — a memo
+# reader needs the contradictions first, the comfort last.
+LEDGER_TAG_ORDER = ("CONTRADICTS", "NEW QUESTION", "SUPPORTS")
+
+
+def findings_ledger(note_bodies: Any) -> Dict[str, Any]:
+    """Group the logged call findings by thesis tag, with an honest
+    skew read.
+
+    The confirmation-bias warning fires when a program of >=5 logged
+    calls has produced ZERO contradicting findings — a call program
+    that never hears anything against the thesis usually isn't
+    listening, and the memo should say so before an IC member does."""
+    findings = [f for f in (parse_call_note(b) for b in note_bodies or [])
+                if f is not None]
+    by_tag: Dict[str, List[Dict[str, str]]] = {
+        t: [] for t in LEDGER_TAG_ORDER}
+    for f in findings:
+        by_tag[f["tag"]].append(f)
+    total = len(findings)
+    warnings: List[str] = []
+    if total >= 5 and not by_tag["CONTRADICTS"]:
+        warnings.append(
+            f"{total} findings logged and not one contradicts the "
+            f"thesis — either this is the easiest deal of the year or "
+            f"the program isn't listening for disconfirming evidence. "
+            f"Re-read the 'listen for' lines before the next call.")
+    return {
+        "findings": findings,
+        "by_tag": by_tag,
+        "counts": {t: len(by_tag[t]) for t in LEDGER_TAG_ORDER},
+        "total": total,
+        "warnings": warnings,
+    }

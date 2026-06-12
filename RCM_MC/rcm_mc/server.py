@@ -6752,23 +6752,40 @@ class RCMHandler(BaseHTTPRequestHandler):
                 if _ec_meta.get("name"):
                     _ec_qs["deal"] = [_ec_meta["name"]]
                     _ec_qs.setdefault("_prefill_deal", [_ec_meta["name"]])
-            # Coverage from the evidence trail: count the structured
-            # EXPERT CALL notes already logged on the active deal so the
-            # tracker reflects what's recorded (explicit done_* params
-            # win on-page). Best-effort — notes trouble never 500s.
-            _ec_counts = None
+            # The evidence trail: the active deal's note bodies feed
+            # both the coverage tracker and the findings ledger
+            # (explicit done_* params win on-page). Best-effort —
+            # notes trouble never 500s the page.
+            _ec_notes = None
             if _ec_meta and _ec_meta.get("id"):
                 try:
                     from .deals.deal_notes import list_notes
-                    from .diligence.expert_calls import logged_call_counts
                     _df = list_notes(PortfolioStore(self.config.db_path),
                                      _ec_meta["id"])
-                    _ec_counts = logged_call_counts(
-                        _df["body"].tolist() if len(_df) else [])
+                    _ec_notes = _df["body"].tolist() if len(_df) else []
                 except Exception:  # noqa: BLE001
-                    _ec_counts = None
+                    _ec_notes = None
             return self._send_html(render_expert_calls_page(
-                _ec_qs, active_deal=_ec_meta, logged_counts=_ec_counts))
+                _ec_qs, active_deal=_ec_meta, logged_notes=_ec_notes))
+        if path == "/api/expert-calls/findings.csv":
+            # Findings-ledger export for one deal — the evidence
+            # appendix a memo drafter pastes from. Unknown deal → an
+            # empty ledger CSV (never a fabricated finding, never 500).
+            from .deals.deal_notes import list_notes
+            from .ui.expert_calls_page import findings_csv
+            _fc_qs = urllib.parse.parse_qs(parsed.query)
+            _fc_id = (_fc_qs.get("deal_id") or [""])[0].strip()[:128]
+            _fc_bodies: list = []
+            if _fc_id:
+                try:
+                    _df = list_notes(PortfolioStore(self.config.db_path),
+                                     _fc_id)
+                    _fc_bodies = _df["body"].tolist() if len(_df) else []
+                except Exception:  # noqa: BLE001
+                    _fc_bodies = []
+            return self._send_text(
+                findings_csv(_fc_id, _fc_bodies),
+                content_type="text/csv; charset=utf-8")
         if path == "/api/diligence/expert-calls.csv":
             # Call-sheet export — one row per planned call (week, lens,
             # sourcing) + empty tracking columns; same qs as the page.
