@@ -72,5 +72,95 @@ class DealDashboardOrganizationTests(unittest.TestCase):
         self.assertNotIn('class="ck-next-link" href="/deal/ccf"', html)
 
 
+
+class EnteredBasisTests(unittest.TestCase):
+    """PAGE_INVENTORY top fix: the operating-profile strip badges the
+    partner's ENTERED values and never renders the model's fallback
+    constants (12% denial / 10% margin) as if they were the deal's."""
+
+    def test_entered_values_badged(self):
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        h = render_deal_dashboard(
+            "d1", {"name": "X", "denial_rate": 14.2, "bed_count": 250,
+                   "ebitda_margin": 0.12})
+        self.assertIn(">ENTERED<", h)
+        self.assertIn("14.2%", h)
+
+    def test_missing_metrics_show_dash_not_model_default(self):
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        h = render_deal_dashboard("d2", {"name": "Y"})
+        self.assertNotIn("12.0%", h)        # the model default, anywhere
+        self.assertIn("not entered", h)     # honest sub-line
+
+
+
+class ExportsRegistryTests(unittest.TestCase):
+    """P5 exhibit registry: the deal page lists previously generated
+    artifacts from the generated_exports audit table; empty → no panel."""
+
+    def test_registry_panel_lists_real_export_rows(self):
+        import tempfile, os
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.exports.export_store import record_export, list_exports
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        with tempfile.TemporaryDirectory() as tmp:
+            s = PortfolioStore(os.path.join(tmp, "p.db"))
+            s.upsert_deal("d1", name="X")
+            record_export(s, deal_id="d1", analysis_run_id=None,
+                          format="pdf", filepath="/tmp/x.pdf",
+                          file_size_bytes=20480, generated_by="boss")
+            h = render_deal_dashboard(
+                "d1", {"name": "X"}, exports=list_exports(s, "d1"))
+            self.assertIn("Previously generated · registry (1)", h)
+            self.assertIn("pdf", h)
+            self.assertIn("boss", h)
+            self.assertIn("20 KB", h)
+
+    def test_no_exports_no_panel(self):
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        h = render_deal_dashboard("d1", {"name": "X"})
+        self.assertNotIn("Previously generated", h)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+class ExportsRegistryWriteSideTests(unittest.TestCase):
+    """P5 write-side: generating a memo records a registry row, so the
+    deal page's registry fills itself (best-effort, never blocks)."""
+
+    def test_memo_generation_records_export(self):
+        import json
+        import os
+        import socket
+        import tempfile
+        import threading
+        import time
+        import urllib.request
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.server import build_server
+        from rcm_mc.exports.export_store import list_exports
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "p.db")
+            store = PortfolioStore(db)
+            store.upsert_deal("d1", name="X",
+                              profile={"denial_rate": 12.0,
+                                       "net_revenue": 2e8})
+            s = socket.socket(); s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]; s.close()
+            srv, _ = build_server(port=port, host="127.0.0.1",
+                                  db_path=db, auth=None)
+            t = threading.Thread(target=srv.serve_forever, daemon=True)
+            t.start(); time.sleep(0.2)
+            try:
+                with urllib.request.urlopen(
+                        f"http://127.0.0.1:{port}/api/deals/d1/memo",
+                        timeout=120) as r:
+                    body = json.loads(r.read().decode())
+                self.assertEqual(body["deal_id"], "d1")
+                rows = list_exports(store, "d1")
+                self.assertTrue(rows, "no registry row recorded")
+                self.assertEqual(rows[0]["format"], "ic_memo_json")
+            finally:
+                srv.shutdown(); srv.server_close(); t.join(timeout=5)

@@ -155,12 +155,53 @@ _MODEL_TILE_CSS = f"""
 """.replace("{font_mono}", "'JetBrains Mono', 'SF Mono', monospace")
 
 
+def _exports_registry(exports: "list | None") -> str:
+    """P5 exhibit registry — the deal's previously generated artifacts
+    from the ``generated_exports`` audit table. Read-only; empty → ""."""
+    if not exports:
+        return ""
+    rows = ""
+    for e in exports[:10]:
+        size = e.get("file_size_bytes")
+        size_s = (f"{size/1024:.0f} KB" if size else "—")
+        rows += (
+            f'<tr><td style="padding:3px 8px;font-family:var(--cad-mono);'
+            f'font-weight:700;">{html.escape(str(e.get("format", "")))}</td>'
+            f'<td style="padding:3px 8px;font-family:var(--cad-mono);'
+            f'font-size:10.5px;">{html.escape(str(e.get("generated_at", ""))[:19])}</td>'
+            f'<td style="padding:3px 8px;font-size:11px;">'
+            f'{html.escape(str(e.get("generated_by") or "—"))}</td>'
+            f'<td class="num" style="padding:3px 8px;text-align:right;'
+            f'font-size:11px;">{size_s}</td></tr>')
+    return (
+        f'<div style="margin-top:12px;">'
+        f'<div style="font-family:var(--cad-mono);font-size:10px;'
+        f'letter-spacing:0.08em;color:{PALETTE["text_muted"]};'
+        f'text-transform:uppercase;margin-bottom:4px;">'
+        f'Previously generated · registry ({len(exports)})</div>'
+        f'<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+        f'<thead><tr style="border-bottom:1px solid {PALETTE["border"]};">'
+        f'<th style="text-align:left;padding:3px 8px;">Format</th>'
+        f'<th style="text-align:left;padding:3px 8px;">Generated</th>'
+        f'<th style="text-align:left;padding:3px 8px;">By</th>'
+        f'<th style="text-align:right;padding:3px 8px;">Size</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table></div>')
+
+
 def render_deal_dashboard(
     deal_id: str,
     profile: Dict[str, Any],
     has_packet: bool = False,
+    exports: "list | None" = None,
 ) -> str:
-    """Render a unified deal dashboard with all model links."""
+    """Render a unified deal dashboard with all model links.
+
+    ``exports`` — recent rows from the ``generated_exports`` registry
+    (P5): the deal's previously generated artifacts render as a
+    read-only audit list under the export buttons, so a partner can see
+    what's already been produced (and when, by whom) before
+    regenerating. None/empty → no panel, nothing fabricated.
+    """
     name = str(profile.get("name", deal_id))
     did = html.escape(deal_id)
     state = str(profile.get("state", ""))
@@ -178,6 +219,13 @@ def render_deal_dashboard(
     if state:
         meta_parts.append(f"State {state}")
     meta_parts.append(f"Deal {deal_id}")
+    # Workstream H: a deal anchored to a real facility names its CCN in
+    # the identity line — the metrics trace to a filing, not a fiction.
+    if profile.get("hcris_ccn"):
+        fy = profile.get("hcris_fy")
+        meta_parts.append(
+            f"HCRIS CCN {profile['hcris_ccn']}"
+            + (f" · FY{int(fy)}" if fy else ""))
 
     title_block = ck_page_title(
         name,
@@ -286,7 +334,12 @@ def render_deal_dashboard(
              f"{ck_fmt_currency(recoverable)} recoverable" if recoverable > 0
              else "Root-cause decomposition · AR bridge"),
             category="operations",
-            inline_value=(f"{dr_val:.1f}% → 8%" if dr_val > 8 else ""),
+            # Only quote a denial trajectory when the rate was ENTERED —
+            # the 12% model default must not read as the deal's number.
+            inline_value=(
+                f"{dr_val:.1f}% → 8%"
+                if profile.get("denial_rate") not in (None, "")
+                and dr_val > 8 else ""),
             inline_color=PALETTE["warning"],
         ),
         _model_tile(
@@ -413,7 +466,9 @@ def render_deal_dashboard(
         f'<a href="/api/deals/{did}/memo" class="cad-btn" style="text-decoration:none;">IC Memo</a>'
         f'<a href="/api/deals/{did}/package" class="cad-btn cad-btn-primary" style="text-decoration:none;">'
         f'Full Package (ZIP)</a>'
-        f'</div></div>'
+        f'</div>'
+        f'{_exports_registry(exports)}'
+        f'</div>'
     )
 
     # Operating-profile KPI strip — COMPLEMENTS the "DEAL SNAPSHOT"
@@ -423,19 +478,50 @@ def render_deal_dashboard(
     # initial-denial rate, EBITDA margin. Previously this was a second
     # copy of EV + recoverable, stacking the identical numbers right
     # under the anchor. One home per metric now.
+    # ENTERED-basis pass (PAGE_INVENTORY top fix): these are the
+    # partner's OWN entered numbers — badge them as such, and never
+    # render the model's fallback constants (12% denial / 10% margin,
+    # which the derived ESTIMATES above legitimately use) as if they
+    # were the deal's observed values. Missing → em-dash, no badge.
+    from ._chartis_kit import ck_basis_badge
     bed_count = profile.get("bed_count")
     bed_count_display = (
-        f"{int(bed_count):,}" if bed_count not in (None, "") else "—"
+        f"{int(bed_count):,}{ck_basis_badge('entered')}"
+        if bed_count not in (None, "") else "—"
     )
-    denial_display = f"{dr_val:.1f}%" if dr_val else "—"
-    margin_display = ck_fmt_pct(margin_val) if margin_val else "—"
+    dr_raw = profile.get("denial_rate")
+    denial_display = (
+        f"{float(dr_raw):.1f}%{ck_basis_badge('entered')}"
+        if dr_raw not in (None, "") else "—"
+    )
+    margin_raw = profile.get("ebitda_margin")
+    margin_display = (
+        f"{ck_fmt_pct(float(margin_raw))}{ck_basis_badge('entered')}"
+        if margin_raw not in (None, "") else "—"
+    )
+    # Glossary links from the KPI cards (PAGE_INVENTORY "partial" fix):
+    # ck_kpi_block ESCAPES the label by contract, so the link lives in
+    # the trusted sub line — metric_label_link falls back to plain text
+    # for keys without a glossary card (no dead links).
+    from ._glossary_link import metric_label_link
+
+    def _gloss(key: str) -> str:
+        link = metric_label_link("glossary →", key)
+        return f" · {link}" if link.startswith("<a") else ""
+
     kpi_strip = (
         '<div class="ck-kpi-grid" '
         'style="grid-template-columns:repeat(3,1fr);'
         'gap:8px;margin:8px 0 16px;">'
         + ck_kpi_block("Bed Count", bed_count_display, "HCRIS / entered")
-        + ck_kpi_block("Denial Rate", denial_display, "initial denials")
-        + ck_kpi_block("EBITDA Margin", margin_display, "of net revenue")
+        + ck_kpi_block("Denial Rate", denial_display,
+                       ("initial denials" if dr_raw not in (None, "")
+                        else "not entered — estimates use the 12% model "
+                             "default") + _gloss("denial_rate"))
+        + ck_kpi_block("EBITDA Margin", margin_display,
+                       ("of net revenue" if margin_raw not in (None, "")
+                        else "not entered — estimates use the 10% model "
+                             "default") + _gloss("ebitda_margin"))
         + '</div>'
     )
 

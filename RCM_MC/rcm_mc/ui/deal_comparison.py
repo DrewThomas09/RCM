@@ -139,11 +139,31 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
     )
 
 
-def render_comparison(packets: List[DealAnalysisPacket]) -> str:
-    """Column-per-deal table + radar chart. Used by ``GET /compare``."""
+def render_comparison(packets: List[DealAnalysisPacket],
+                      peer_dists: "Dict[str, List[float]] | None" = None,
+                      ) -> str:
+    """Column-per-deal table + radar chart. Used by ``GET /compare``.
+
+    ``peer_dists`` — {metric: [values across the WHOLE deal book]} — adds
+    the P4 percentile-vs-peers chip under each deal's headline KPIs, so a
+    side-by-side of two deals still says where each sits in the full
+    portfolio. ck_peer_percentile's own honesty guard handles small books
+    ("peer set too small (n=K)") — nothing is fabricated for thin data.
+    """
     from ._chartis_kit import (
         chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
+        ck_peer_percentile,
     )
+    peer_dists = peer_dists or {}
+
+    def _pct_chip(metric: str, v, higher_is_better: bool) -> str:
+        dist = peer_dists.get(metric)
+        if v is None or not dist:
+            return ""
+        chip = ck_peer_percentile(
+            v, dist, peer_label="portfolio deals",
+            higher_is_better=higher_is_better)
+        return f'<div style="margin-top:2px;">{chip}</div>' if chip else ""
 
     if not packets:
         body = (
@@ -203,7 +223,9 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
         metrics = (
             '<div class="ck-kpi-strip">'
             + ck_kpi_block(
-                "Denial Rate", _fmt(dr),
+                "Denial Rate",
+                _fmt(dr) + _pct_chip("denial_rate", dr,
+                                     higher_is_better=False),
                 help={
                     "definition": (
                         "Initial-denial rate as a share of total "
@@ -216,7 +238,9 @@ def render_comparison(packets: List[DealAnalysisPacket]) -> str:
                 },
             )
             + ck_kpi_block(
-                "AR Days", _fmt(ar),
+                "AR Days",
+                _fmt(ar) + _pct_chip("days_in_ar", ar,
+                                     higher_is_better=False),
                 help={
                     "definition": (
                         "Days in accounts receivable. PE healthcare "

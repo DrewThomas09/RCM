@@ -96,6 +96,16 @@ jobs:
           python scripts/route_walker.py --base http://127.0.0.1:8866 \
             --discover --fail-on-leak --out route_walk.tsv 2>&1 | tee route_walk.log
           rc=$?
+          # Second pass WITH the active-deal context cookie — the prefill
+          # paths (CIM / roll-up / screener scoping) only execute when a
+          # deal is set, so a plain walk never exercises them.
+          if [ "$rc" = "0" ]; then
+            python scripts/route_walker.py --base http://127.0.0.1:8866 \
+              --discover --fail-on-leak --deal-cookie sweepdeal \
+              --budget-ms 15000 \
+              --out route_walk_cookie.tsv 2>&1 | tee -a route_walk.log
+            rc=$?
+          fi
           kill "$SRV_PID" 2>/dev/null || true
           exit $rc
 

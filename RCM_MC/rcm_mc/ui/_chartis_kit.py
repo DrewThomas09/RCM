@@ -926,6 +926,12 @@ _DATA_UNIVERSE = {
                        "not a data source."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
+    # Pure input utilities (chart builder / pie chart / excel mapping):
+    # the page renders only what the user typed or pasted — never a data
+    # claim from any vendored or live source.
+    "user-supplied": ("USER-SUPPLIED", "deals",
+                      "Values you typed or pasted into this form — rendered "
+                      "as-is; not a data claim from any source."),
     # Licensed third-party data, used only as derived/structured facts (raw
     # reports/exports never served). Distinct from public CMS/research.
     "licensed-report-derived": ("LICENSED REPORT", "ref",

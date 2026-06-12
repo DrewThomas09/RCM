@@ -245,6 +245,12 @@ class UIRenderTests(unittest.TestCase):
         # Expect categorical headers
         self.assertIn("Payer Mix", html)
         self.assertIn("Margin", html)
+        # P5: the peer roster is exhibit-numbered + sourced + FY-stamped
+        # so print-to-PDF drops straight into a CDD deck.
+        self.assertIn("EXHIBIT 1", html)
+        self.assertIn("Peer roster — matched comparables", html)
+        self.assertIn("CMS HCRIS", html)
+        self.assertRegex(html, r"FY\d{4} · \n?\s*PEdesk")
 
 
 class HTTPEndpointTests(unittest.TestCase):
