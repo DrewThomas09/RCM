@@ -413,3 +413,10 @@ ASC + Behavioral Health panels on /voc-survey + /win-loss (5 sectors
 each); /pricing-power custom analyst segment (rev/margin/elasticity,
 clamped); Chart Builder + Exhibit Composer carded in CDD hub module 5.
 +4 tests.
+
+---
+## Checkpoint — wave #75 (W2-173, 2026-06-12)
+Workbook twins for /pricing-power (live elasticity math, LOCKED rows)
+and /labor-market (SUMPRODUCT wage blend + margin bps) with download
+buttons; templates 10 → 12 (Sources & Uses with live equity plug +
+check row; DRL tracker with COUNTIF dashboard). +4 tests, smoke green.

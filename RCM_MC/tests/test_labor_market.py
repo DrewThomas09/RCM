@@ -100,5 +100,21 @@ class LaborMarketPageTests(unittest.TestCase):
         self.assertEqual(_SUB_SECTION_MAP.get("/labor-market"), "research")
 
 
+
+class LaborMarketXlsxTests(unittest.TestCase):
+    def test_workbook_has_sumproduct_blend_and_inputs(self):
+        import io
+        import zipfile
+        from rcm_mc.ui.labor_market_page import labor_market_xlsx
+        data = labor_market_xlsx({"labor": "40", "revenue": "80"})
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            xml = z.read("xl/worksheets/sheet1.xml").decode("utf-8")
+        self.assertIn("SUMPRODUCT(C8:C17,D8:D17)", xml)
+        self.assertIn("<v>40000000.0</v>", xml)
+
+    def test_page_links_the_download_with_current_params(self):
+        html = render_labor_market({"labor": "40"})
+        self.assertIn("/labor-market.xlsx?labor=40", html)
+
 if __name__ == "__main__":
     unittest.main()

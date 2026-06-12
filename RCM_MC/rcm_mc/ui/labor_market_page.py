@@ -144,6 +144,10 @@ def render_labor_market(params: dict = None) -> str:
         f'{border};color:{text};padding:4px 6px;font-size:11px;'
         f'font-family:JetBrains Mono,monospace;width:58px"/></label>'
         for r in roles)
+    from urllib.parse import urlencode
+    dl_qs = urlencode({"labor": f"{labor_m:g}", "revenue": f"{revenue_m:g}",
+                       **{f"mix_{k.lower()}": f"{v:g}"
+                          for k, v in mix.items()}})
     form = f"""
 <form method="GET" action="/labor-market" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
   <label style="font-size:11px;color:{text_dim}">Labor cost ($M)
@@ -160,6 +164,10 @@ def render_labor_market(params: dict = None) -> str:
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
     padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Run stress</button>
+  <a href="/labor-market.xlsx?{dl_qs}" download
+    style="background:#155752;color:#fffdf9;border:1px solid #155752;text-decoration:none;
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace"
+    title="Blue labor/mix inputs feeding a live SUMPRODUCT blend">Download model (.xlsx)</a>
 </form>"""
 
     cell = (f"background:{panel};border:1px solid {border};padding:16px;"
@@ -205,3 +213,50 @@ def render_labor_market(params: dict = None) -> str:
 </div>"""
     return chartis_shell(body, title="Healthcare Labor Market",
                          active_nav="/labor-market")
+
+
+def labor_market_xlsx(params: dict = None) -> bytes:
+    """Workbook twin of the wage-inflation stress: blue labor-base /
+    revenue / mix inputs feeding normalized shares and a SUMPRODUCT
+    blend — same shape as the rate-environment model, pointed at cost."""
+    from rcm_mc.exports.xlsx_writer import F, Sheet, write_xlsx
+    from rcm_mc.market_intel.labor_market import list_roles
+
+    params = params or {}
+    roles = list_roles()
+    labor_m = _f(params, "labor", 32.0)
+    revenue_m = _f(params, "revenue", 60.0)
+    mix = {r.role: _f(params, f"mix_{r.role.lower()}",
+                      _DEFAULT_MIX.get(r.role, 0.0)) for r in roles}
+
+    r: list = []
+    r.append([("LABOR-COST STRESS MODEL", "header")] + [("", "header")] * 4)
+    r.append(["Blue cells = inputs (edit these). Black cells = live "
+              "formulas. National-median wage growth; verify vs local "
+              "indices."])
+    r.append([""])
+    r.append(["Labor cost ($)", (labor_m * 1_000_000, "input_money")])  # B4
+    r.append(["Revenue ($)", (revenue_m * 1_000_000, "input_money")])   # B5
+    r.append([""])
+    r.append([("Role", "header"), ("Mix share", "header"),
+              ("Normalized share", "header"), ("Wage YoY %", "header"),
+              ("Cost increase ($)", "header")])                          # row 7
+    first, last = 8, 7 + len(roles)
+    for i, role in enumerate(roles):
+        n = first + i
+        r.append([role.label,
+                  (mix[role.role] / 100.0, "input_pct"),
+                  (F(f"B{n}/SUM(B${first}:B${last})"), "pct"),
+                  (role.wage_yoy_pct / 100.0, "input_pct"),
+                  (F(f"$B$4*C{n}*D{n}"), "money2")])
+    t = last + 1
+    r.append([("Total / blended", "label"),
+              (F(f"SUM(B{first}:B{last})"), "pct"),
+              (F(f"SUM(C{first}:C{last})"), "pct"),
+              (F(f"SUMPRODUCT(C{first}:C{last},D{first}:D{last})"), "pct"),
+              (F(f"SUM(E{first}:E{last})"), "money2")])
+    r.append([""])
+    r.append(["Margin compression if uncompensated (bps)",
+              (F(f"E{t}/$B$5*10000"), "num2")])
+    return write_xlsx([Sheet("Labor Stress", r,
+                             col_widths=[34, 13, 17, 13, 17])])

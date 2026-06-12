@@ -7,6 +7,7 @@ Renders from rcm_mc.data_public.pricing_power.
 from __future__ import annotations
 
 import html as _html
+from urllib.parse import quote as _url_quote
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_data_cell, ck_illustrative_note, ck_kpi_block,
@@ -196,6 +197,10 @@ def render_pricing_power(params: dict = None) -> str:
   <button type="submit"
     style="background:{border};color:{text};border:1px solid {border};
     padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace;cursor:pointer">Load book</button>
+  <a href="/pricing-power.xlsx?sector={_html.escape(_url_quote(r.sector))}" download
+    style="background:#155752;color:#fffdf9;border:1px solid #155752;text-decoration:none;
+    padding:4px 12px;font-size:11px;font-family:JetBrains Mono,monospace"
+    title="Per-segment price-move inputs with live elasticity math">Download model (.xlsx)</a>
 </form>"""
 
     cell = (f"background:{panel};border:1px solid {border};padding:16px;"
@@ -237,3 +242,56 @@ def render_pricing_power(params: dict = None) -> str:
 </div>"""
     return chartis_shell(body, title="Pricing Power Analyzer",
                          active_nav="/pricing-power")
+
+
+def pricing_power_xlsx(params: dict = None) -> bytes:
+    """Workbook twin: per-segment price-move *inputs* (blue) with live
+    volume / revenue / EBITDA-delta formulas, so the analyst can test
+    moves in Excel instead of re-deriving the elasticity math. The page
+    shows the window-optimal answer; the workbook lets them argue with
+    it."""
+    from rcm_mc.exports.xlsx_writer import F, Sheet, write_xlsx
+    from rcm_mc.data_public.pricing_power import SECTORS, _BOOKS
+
+    params = params or {}
+    sector = params.get("sector", SECTORS[0]) or SECTORS[0]
+    book = _BOOKS.get(sector) or _BOOKS[SECTORS[0]]
+
+    r: list = []
+    r.append([("PRICING POWER MODEL", "header")] + [("", "header")] * 7)
+    r.append(["Blue cells = inputs (edit these). Black cells = live "
+              "formulas. Volume response = (1+move)^elasticity."])
+    r.append([f"Book: {sector}. Rate-locked segments carry no move "
+              "input — administered pricing has no lever."])
+    r.append([""])
+    r.append([("Segment", "header"), ("Revenue ($)", "header"),
+              ("Contribution margin", "header"), ("Elasticity", "header"),
+              ("Price move", "header"), ("Volume response", "header"),
+              ("Revenue Δ ($)", "header"), ("EBITDA Δ ($)", "header")])
+    first = 6
+    for i, seg in enumerate(book):
+        n = first + i
+        if seg.price_locked:
+            r.append([seg.segment, (seg.revenue_usd, "input_money"),
+                      (seg.contribution_margin_pct / 100.0, "input_pct"),
+                      "—", "LOCKED", "—", (0, "money2"), (0, "money2")])
+        else:
+            r.append([
+                seg.segment,
+                (seg.revenue_usd, "input_money"),
+                (seg.contribution_margin_pct / 100.0, "input_pct"),
+                (seg.elasticity, "input_num"),
+                (0.03, "input_pct"),
+                (F(f"(1+E{n})^D{n}-1"), "pct"),
+                (F(f"B{n}*(1+E{n})*(1+F{n})-B{n}"), "money2"),
+                # EBITDA Δ = margin·volume effect + pure-margin price
+                # component on the surviving volume.
+                (F(f"B{n}*C{n}*F{n}+B{n}*(1+F{n})*E{n}"), "money2"),
+            ])
+    last = first + len(book) - 1
+    r.append([("Total", "label"), (F(f"SUM(B{first}:B{last})"), "money2"),
+              "", "", "", "",
+              (F(f"SUM(G{first}:G{last})"), "money2"),
+              (F(f"SUM(H{first}:H{last})"), "money2")])
+    return write_xlsx([Sheet("Pricing Model", r,
+                             col_widths=[36, 15, 18, 11, 11, 15, 14, 14])])

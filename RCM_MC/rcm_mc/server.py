@@ -6791,6 +6791,40 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_rx)
             return
+        if path == "/pricing-power.xlsx":
+            from .ui.data_public.pricing_power_page import pricing_power_xlsx
+            _pp_qs = urllib.parse.parse_qs(parsed.query)
+            _pp_qp = {k: v[0] for k, v in _pp_qs.items() if v}
+            _pp = pricing_power_xlsx(_pp_qp)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="pricing_power_model.xlsx"')
+            self.send_header("Content-Length", str(len(_pp)))
+            self.end_headers()
+            self.wfile.write(_pp)
+            return
+        if path == "/labor-market.xlsx":
+            from .ui.labor_market_page import labor_market_xlsx
+            _lm_qs = urllib.parse.parse_qs(parsed.query)
+            _lm_qp = {k: v[0] for k, v in _lm_qs.items() if v}
+            _lm = labor_market_xlsx(_lm_qp)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="labor_stress_model.xlsx"')
+            self.send_header("Content-Length", str(len(_lm)))
+            self.end_headers()
+            self.wfile.write(_lm)
+            return
         if path == "/pricing-power":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -20394,7 +20428,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/login", "/logout", "/register", "/forgot", "/csrf-token",
         # File-download endpoints (serve bytes, not a page; the owning
         # page carries the Guide context and the download button)
-        "/rate-environment.xlsx",
+        "/rate-environment.xlsx", "/pricing-power.xlsx",
+        "/labor-market.xlsx",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",

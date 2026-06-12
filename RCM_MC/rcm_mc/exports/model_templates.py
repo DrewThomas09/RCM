@@ -681,6 +681,130 @@ def _rollup_model() -> List[Sheet]:
     return [Sheet("Roll-Up Model", r, col_widths=[42, 13, 13, 13])]
 
 
+# ------------------------------------------ 11) Sources & Uses
+
+def _sources_uses() -> List[Sheet]:
+    """Closing-table math with sponsor equity as the live plug — the
+    one structural formula every S&U needs and every hand-built one
+    eventually breaks: equity absorbs whatever the other sources
+    don't fund, and the check row proves the table ties."""
+    r: List[list] = []
+    r.append([("SOURCES & USES", "header"), ("", "header")])
+    r.append([_CONVENTION])
+    r.append([""])
+    r.append(["Entry EBITDA ($M)", (25.00, "input_num")])              # B4
+    r.append([""])
+    r.append([("USES", "label")])                                      # row 6
+    r.append(["Equity purchase price ($M)", (200.00, "input_num")])    # B7
+    r.append(["Refinance existing debt ($M)", (80.00, "input_num")])   # B8
+    r.append(["Transaction fees ($M)", (9.00, "input_num")])           # B9
+    r.append(["Financing fees / OID ($M)", (6.00, "input_num")])       # B10
+    r.append(["Cash to balance sheet ($M)", (5.00, "input_num")])      # B11
+    r.append([("Total uses ($M)", "label"),
+              (F("SUM(B7:B11)"), "num2")])                             # B12
+    r.append([""])
+    r.append([("SOURCES", "label")])                                   # row 14
+    r.append(["New term loan ($M)", (120.00, "input_num")])            # B15
+    r.append(["Revolver draw at close ($M)", (0.00, "input_num")])     # B16
+    r.append(["Seller rollover equity ($M)", (30.00, "input_num")])    # B17
+    r.append(["Seller note ($M)", (10.00, "input_num")])               # B18
+    r.append(["Sponsor equity ($M) — the plug",
+              (F("B12-SUM(B15:B18)"), "num2")])                        # B19
+    r.append([("Total sources ($M)", "label"),
+              (F("SUM(B15:B19)"), "num2")])                            # B20
+    r.append([("Check (sources − uses, must be 0)", "label"),
+              (F("B20-B12"), "num2")])                                 # B21
+    r.append([""])
+    r.append([("STRUCTURE READS", "label")])                           # row 23
+    r.append(["Sponsor equity % of sources", (F("B19/B20"), "pct")])
+    r.append(["Rollover % of sources", (F("B17/B20"), "pct")])
+    r.append(["Leverage (TL + revolver + note) / EBITDA",
+              (F("(B15+B16+B18)/B4"), "mult")])
+    r.append(["Fees % of purchase price", (F("(B9+B10)/B7"), "pct")])
+    return [Sheet("Sources & Uses", r, col_widths=[42, 14])]
+
+
+# ------------------------------------------ 12) DRL tracker
+
+def _drl_tracker() -> List[Sheet]:
+    """Diligence request list with a live status dashboard — COUNTIF
+    over the editable list, with spare pre-styled rows so adding item
+    #15 needs no formula edits (ranges already cover to row 60)."""
+    items: List[list] = []
+    items.append([("DILIGENCE REQUEST LIST", "header")]
+                 + [("", "header")] * 5)
+    items.append([_CONVENTION + " Status: OPEN / RECEIVED / REVIEWED / NA."])
+    items.append([""])
+    items.append([("Workstream", "header"), ("Request item", "header"),
+                  ("Owner", "header"), ("Status", "header"),
+                  ("Due", "header"), ("Notes", "header")])
+    seed = [
+        ("Financial", "Monthly P&L, 36 months", "QoE", "RECEIVED",
+         "2026-06-20"),
+        ("Financial", "Trial balance + mapping", "QoE", "OPEN",
+         "2026-06-20"),
+        ("Financial", "AR aging by payer, 24 months", "QoE", "REVIEWED",
+         "2026-06-18"),
+        ("Commercial", "Customer / payer revenue bridge", "CDD", "OPEN",
+         "2026-06-24"),
+        ("Commercial", "Top-20 referral sources by volume", "CDD",
+         "RECEIVED", "2026-06-24"),
+        ("Commercial", "Pricing / rate-card history", "CDD", "OPEN",
+         "2026-06-26"),
+        ("Legal", "Payer contracts (top 10)", "Counsel", "RECEIVED",
+         "2026-06-27"),
+        ("Legal", "Litigation & claims summary", "Counsel", "OPEN",
+         "2026-06-27"),
+        ("HR / Labor", "Census with comp by role", "Ops", "REVIEWED",
+         "2026-06-21"),
+        ("HR / Labor", "Turnover by role, 24 months", "Ops", "OPEN",
+         "2026-06-21"),
+        ("IT / Cyber", "Systems inventory + EHR version", "IT", "OPEN",
+         "2026-06-30"),
+        ("Compliance", "Coding-audit results, 24 months", "Compliance",
+         "RECEIVED", "2026-06-25"),
+    ]
+    for ws, item, owner, status, due in seed:
+        items.append([(ws, "input"), (item, "input"), (owner, "input"),
+                      (status, "input"), (due, "input"), ("", "input")])
+    for _ in range(10):
+        items.append([("", "input")] * 6)
+
+    a_rng = "'Request List'!$A$5:$A$60"
+    d_rng = "'Request List'!$D$5:$D$60"
+    dash: List[list] = []
+    dash.append([("DRL DASHBOARD (live — recomputes from the list)",
+                  "header"), ("", "header"), ("", "header")])
+    dash.append([""])
+    dash.append([("Status", "header"), ("Count", "header"),
+                 ("Share of tracked", "header")])                      # row 3
+    for i, status in enumerate(("OPEN", "RECEIVED", "REVIEWED", "NA")):
+        n = 4 + i
+        dash.append([status, (F(f'COUNTIF({d_rng},A{n})'), "num"),
+                     (F(f'IF(COUNTA({d_rng})=0,0,'
+                        f'B{n}/(COUNTIF({d_rng},"OPEN")'
+                        f'+COUNTIF({d_rng},"RECEIVED")'
+                        f'+COUNTIF({d_rng},"REVIEWED")'
+                        f'+COUNTIF({d_rng},"NA")))'), "pct")])
+    dash.append([("Complete (REVIEWED share)", "label"),
+                 "", (F("C6"), "pct")])                                # row 8
+    dash.append([""])
+    dash.append([("OPEN ITEMS BY WORKSTREAM", "label")])               # row 10
+    dash.append([("Workstream", "header"), ("Open", "header"),
+                 ("Total tracked", "header")])                         # row 11
+    for i, ws in enumerate(("Financial", "Commercial", "Legal",
+                            "HR / Labor", "IT / Cyber", "Compliance")):
+        n = 12 + i
+        dash.append([ws,
+                     (F(f'COUNTIFS({a_rng},A{n},{d_rng},"OPEN")'), "num"),
+                     (F(f'COUNTIF({a_rng},A{n})'), "num")])
+    return [
+        Sheet("Request List", items,
+              col_widths=[14, 38, 12, 12, 12, 28]),
+        Sheet("Dashboard", dash, col_widths=[28, 10, 16]),
+    ]
+
+
 TEMPLATES: List[TemplateSpec] = [
     TemplateSpec(
         slug="quick-lbo",
@@ -781,6 +905,26 @@ TEMPLATES: List[TemplateSpec] = [
                      "multiple-arbitrage spread in turns."),
         sheets=["Roll-Up Model"],
         builder=_rollup_model,
+    ),
+    TemplateSpec(
+        slug="sources-uses",
+        title="Sources & Uses",
+        category="Deal Math",
+        description=("Closing table with sponsor equity as the live plug, "
+                     "a sources-minus-uses check row, and structure reads "
+                     "(equity %, rollover %, leverage, fees %)."),
+        sheets=["Sources & Uses"],
+        builder=_sources_uses,
+    ),
+    TemplateSpec(
+        slug="drl-tracker",
+        title="Diligence Request List Tracker",
+        category="QoE & Accounting",
+        description=("Editable request list with a COUNTIF-live dashboard: "
+                     "status mix, completion share, and open items by "
+                     "workstream."),
+        sheets=["Request List", "Dashboard"],
+        builder=_drl_tracker,
     ),
 ]
 

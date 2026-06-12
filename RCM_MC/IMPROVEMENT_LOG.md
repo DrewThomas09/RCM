@@ -3622,3 +3622,23 @@ seed inputs, spread 2.89 turns); 39 affected tests green.
   module 5 (they are the CDD exhibit tools; they were only in Research).
 **Verify**: +4 custom-segment tests; all evidence/pricing/hub/invariant
 suites green (73 passed); guide context updated for the new inputs.
+
+## W2-173 (2026-06-12) — Wave 6: workbook twins for the calculators + S&U / DRL templates
+- **/pricing-power.xlsx**: per-segment price-move *inputs* (blue) with
+  live elasticity math — volume = (1+move)^ε, EBITDA Δ = margin·volume
+  effect + pure-margin price component — so the analyst argues with the
+  window-optimal answer in Excel. LOCKED rows carry no move input.
+- **/labor-market.xlsx**: blue labor-base / revenue / mix inputs feeding
+  normalized shares + SUMPRODUCT blended wage growth and the
+  uncompensated-margin-bps formula. Both pages link their model with a
+  param-carrying download button; both endpoints hidden from /tools
+  (downloads, not pages).
+- **Template library → 12**: Sources & Uses (sponsor equity as the live
+  plug, sources−uses check row, structure reads: equity %, rollover %,
+  leverage, fees %) + Diligence Request List Tracker (editable list +
+  COUNTIF-live dashboard: status mix, completion share, open items by
+  workstream; spare pre-styled rows to row 60).
+**Verify**: +4 xlsx tests (live formulas + param-carrying links);
+template suite green incl. the XML-escaped sheet-name fix
+("Sources &amp; Uses" in workbook.xml is correct OOXML); HTTP smoke on
+all four new download paths; audit regen 187 pages / 0 flags.

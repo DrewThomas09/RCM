@@ -125,5 +125,23 @@ class CustomSegmentTests(unittest.TestCase):
         self.assertAlmostEqual(r.total_revenue_usd,
                                base.total_revenue_usd + 5_000_000)
 
+
+class PricingPowerXlsxTests(unittest.TestCase):
+    def test_workbook_has_live_elasticity_math_and_locked_rows(self):
+        import io
+        import zipfile
+        from rcm_mc.ui.data_public.pricing_power_page import (
+            pricing_power_xlsx,
+        )
+        data = pricing_power_xlsx({"sector": "Home Health"})
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            xml = z.read("xl/worksheets/sheet1.xml").decode("utf-8")
+        self.assertIn(")^D", xml)            # (1+move)^elasticity
+        self.assertIn("LOCKED", xml)         # administered segment
+
+    def test_page_links_the_download(self):
+        html = render_pricing_power({})
+        self.assertIn("/pricing-power.xlsx?sector=", html)
+
 if __name__ == "__main__":
     unittest.main()

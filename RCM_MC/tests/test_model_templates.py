@@ -81,7 +81,8 @@ class TemplateRegistryTests(unittest.TestCase):
                 self.assertIsNone(z.testzip(), spec.slug)
                 wb = z.read("xl/workbook.xml").decode("utf-8")
             for sheet_name in spec.sheets:
-                self.assertIn(f'name="{sheet_name}"', wb, spec.slug)
+                from xml.sax.saxutils import escape
+                self.assertIn(f'name="{escape(sheet_name)}"', wb, spec.slug)
 
     def test_every_template_has_live_formulas_and_inputs(self):
         # A template without formulas is a data dump; one without
