@@ -2829,6 +2829,86 @@ def aic_utilization_curve(**assumptions: Any) -> Dict[str, Any]:
     }
 
 
+# De-novo AIC build economics (illustrative, editable). Fit-out + chair +
+# ambulatory pump + sterile-compounding build-out per chair, plus a fixed
+# pre-open block (licensing, USP <797> clean-room, pre-open staffing,
+# initial working capital).
+AIC_CAPEX_PER_CHAIR = 52_000.0
+AIC_PREOPEN_COST = 140_000.0
+AIC_RAMP_MONTHS = 12
+AIC_MATURE_UTIL = 0.78
+
+
+def aic_denovo_ramp(
+    *, chairs: float = 7.0, capex_per_chair: float = AIC_CAPEX_PER_CHAIR,
+    preopen: float = AIC_PREOPEN_COST, ramp_months: int = AIC_RAMP_MONTHS,
+    mature_util: float = AIC_MATURE_UTIL, months: int = 36,
+    **aic_overrides: Any,
+) -> Dict[str, Any]:
+    """The de-novo AIC build J-curve — what opening a new center costs and
+    returns over time. Capex (chairs × fit-out + pre-open) goes out day
+    one; utilization ramps to mature over ``ramp_months``; the monthly
+    contribution comes from the SAME chair model (interpolated along its
+    utilization→contribution curve, so it's negative below break-even
+    during the ramp). Returns the monthly cumulative-cash series + the
+    KPIs (months to cash break-even, Y1–Y3 contribution, Y3 cash-on-cash).
+    Every value recomputes from ``aic_chair_economics`` + the inputs."""
+    chairs = max(1.0, float(chairs))
+    ramp_months = max(1, int(ramp_months))
+    pts = aic_utilization_curve(**aic_overrides)["points"]
+
+    def _contrib_at(util: float) -> float:
+        """Annual contribution per chair at a utilization, linearly
+        inter/extrapolated along the curve (extrapolates negative below
+        the curve's low end — the ramp burn)."""
+        if util <= pts[0]["util_pct"]:
+            a, b = pts[0], pts[1]
+        elif util >= pts[-1]["util_pct"]:
+            a, b = pts[-2], pts[-1]
+        else:
+            a, b = pts[0], pts[1]
+            for i in range(len(pts) - 1):
+                if pts[i]["util_pct"] <= util <= pts[i + 1]["util_pct"]:
+                    a, b = pts[i], pts[i + 1]
+                    break
+        du = (b["util_pct"] - a["util_pct"]) or 1.0
+        t = (util - a["util_pct"]) / du
+        return a["contribution"] + (b["contribution"] - a["contribution"]) * t
+
+    capex_total = round(chairs * capex_per_chair + preopen)
+    series = []
+    cum = float(-capex_total)
+    be_month = None
+    for m in range(1, months + 1):
+        util = mature_util * min(1.0, m / ramp_months)
+        monthly = _contrib_at(util) * chairs / 12.0
+        cum += monthly
+        if be_month is None and cum >= 0:
+            be_month = m
+        series.append({"month": m, "util": round(util, 3),
+                       "monthly": round(monthly), "cumulative": round(cum)})
+    n_years = months // 12
+    year_contrib = [round(sum(s["monthly"] for s in series[y*12:(y+1)*12]))
+                    for y in range(n_years)]
+    mature_annual = round(_contrib_at(mature_util) * chairs)
+    y3 = year_contrib[2] if len(year_contrib) > 2 else 0
+    return {
+        "chairs": chairs, "capex_per_chair": round(capex_per_chair),
+        "preopen": round(preopen), "capex_total": capex_total,
+        "ramp_months": ramp_months, "mature_util": round(mature_util, 3),
+        "series": series, "breakeven_month": be_month,
+        "year_contribution": year_contrib,
+        "mature_annual_contribution": mature_annual,
+        "y3_cash_on_cash": round(y3 / capex_total, 3) if capex_total else 0.0,
+        "note": ("Illustrative de-novo build: capex = chairs × per-chair "
+                 "fit-out + a fixed pre-open block; utilization ramps to "
+                 "mature over the ramp period; the monthly contribution is "
+                 "the chair model interpolated along its utilization curve "
+                 "(negative below break-even during the early ramp). Edit "
+                 "the AIC assumptions above to re-run the J-curve."),
+    }
+
+
 #: Chairs per ambulatory infusion center (industry typical) and annual
 #: infusions one chair turns at benchmark utilization — the capacity
 #: denominators. Editable defaults; NHIA / ambulatory benchmarks.
@@ -3378,6 +3458,7 @@ def build_texas_infusion_analysis(
         "aic_economics": aic_chair_economics(**aic_overrides),
         "aic_sensitivity": aic_sensitivity(**aic_overrides),
         "aic_utilization_curve": aic_utilization_curve(**aic_overrides),
+        "aic_denovo_ramp": aic_denovo_ramp(**aic_overrides),
         "aic_overrides_active": bool(aic_overrides),
         "drug_supply": infusion_drug_supply(),
         "provider_segments": _PROVIDER_SEGMENTS,
