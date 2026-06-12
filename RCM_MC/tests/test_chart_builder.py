@@ -441,6 +441,40 @@ class BuilderPageTests(unittest.TestCase):
         self.assertIn("Aetna%0917", link)
         self.assertNotIn("Aetna%0910", link)
 
+    def test_unchecking_default_on_toggles_persists(self):
+        # GET forms drop unchecked boxes entirely, so default-True
+        # toggles could never be turned off. The hidden fs=1 marker
+        # makes absence mean unchecked on a real submit…
+        h = render_chart_builder_page({
+            "fs": ["1"], "type": ["column"],
+            "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertNotIn(">100<", h.split('id="chartOut"')[1]
+                         .split("GALLERY")[0])   # value labels off
+        # …while links without fs (gallery/dataset/shared) keep the
+        # friendly defaults.
+        h2 = render_chart_builder_page({
+            "type": ["column"], "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertIn(">100<", h2)
+        # And checked boxes still work on a submit.
+        h3 = render_chart_builder_page({
+            "fs": ["1"], "values": ["1"], "type": ["column"],
+            "data": ["Y\tR\n2021\t100\n2022\t130"]})
+        self.assertIn(">100<", h3)
+
+    def test_histogram_bins_control(self):
+        rows = "\n".join(f"a{i}\t{30+i}" for i in range(20))
+        h = render_chart_builder_page({
+            "type": ["histogram"], "bins": ["4"],
+            "data": ["A\tV\n" + rows]})
+        self.assertIn('name="bins"', h)
+        chart = h.split('id="chartOut"')[1].split("GALLERY")[0]
+        # 4 requested bins → 4 histogram bars in the main chart.
+        self.assertEqual(chart.count("<rect"), 4)
+        # Bogus bins ignored.
+        hb = render_chart_builder_page({"type": ["histogram"],
+                                        "bins": ["nope"]})
+        self.assertIn("Chart Builder", hb)
+
     def test_bogus_shaping_params_ignored(self):
         h = render_chart_builder_page({
             "group": ["drop table"], "sort": ["weird"],

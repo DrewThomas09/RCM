@@ -4,6 +4,9 @@
   integration; no questions; merges → pedesk.app live + verify)
 
 
+- WAVE 85 (W2-185): builder toggle-persistence fix (hidden fs
+  marker) + histogram bins input. PR #1816 MERGED @ 80cf97b;
+  Deploy PEdesk run success 16:42Z — chart waves LIVE on pedesk.app.
 - session_start: 2026-06-10T03:37:46Z
 - latest_timestamp: 2026-06-10T12:32:00Z
 - elapsed: window 2 begun
