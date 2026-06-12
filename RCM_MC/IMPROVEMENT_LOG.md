@@ -3671,7 +3671,148 @@ Connected the new market scan to the graphics suite and the API surface:
   programmatic use, matching the platform's API-everywhere pattern.
 **Verify**: +1 test — the cross-link's data param round-trips to all 51
 states via the mapping parser. Full suite green.
-<<<<<<< HEAD
+## W2-168 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
+Closes the three gaps flagged for the desk (not helping CDD enough, thin
+Excel resources, thin market-intel): four new surfaces + a hub + a
+formula-capable xlsx writer.
+- **Excel Model Templates** (`/excel-templates` + per-slug `.xlsx`
+  downloads): 7 live-formula workbooks — Quick LBO (sweep debt schedule,
+  MOIC/IRR), QoE adjusted-EBITDA databook (walk + TTM cadence), NWC peg
+  (12-mo build, DSO/DPO, peg candidates), 13-week cash (covenant headroom
+  row), CDD market model (TAM/SAM/SOM + competitor grid reconciling to
+  SAM), payer-mix × rate sensitivity, cohort/NRR triangle. Banker
+  convention: blue inputs / black formulas.
+- **xlsx_writer**: `F(expr)` live-formula cells (opt-in wrapper — strings
+  that look like formulas stay text, preserving the CSV-defang posture) +
+  6 new styles (mult, label, blue input/money/pct/num).
+- **CDD Hub** (`/cdd`): the five-module CDD workflow (market →
+  competition → customers → pricing → deliverables) laid over 20 existing
+  + new surfaces; link integrity pinned by test against server handlers.
+- **Voice of Customer** (`/voc-survey`): NPS by segment, KPC gap matrix
+  (importance × target-vs-best-competitor with DIFFERENTIATOR /
+  VULNERABILITY / TABLE_STAKES classification), willingness-to-pay bands.
+- **Win/Loss Analyzer** (`/win-loss`): head-to-head win rate by named
+  competitor, loss-reason mix (price- vs capability-led), price-gap read
+  on losses, quarterly trend.
+- **Medicare Rate Environment** (`/rate-environment`): new market_intel
+  dataset (`content/rate_updates.yaml`, 9 care settings × 3 rule cycles,
+  per-setting policy notes) + blended next-cycle dollar-impact calculator
+  on a target's Medicare revenue × setting mix.
+All five wired into Cmd-K palette, breadcrumb map, sub-nav (CDD Hub under
+Diligence; Excel Templates under Research) and the guide context registry.
+**Verify**: 5 new test files, 53 tests — workbook OOXML validity + formula
+cells + injection guard + LBO cell-ref pins, HTTP download e2e (MIME /
+Content-Disposition / 404), respondent-weighted NPS + classification
+thresholds, win-rate/loss-mix consistency, fixture integrity + blend
+normalization (pct vs fraction), hub link integrity. Full suite green.
+
+## W2-169 (2026-06-12) — Market-intel wave 2: MA penetration geography + rate-model xlsx
+- **MA Penetration** (`/ma-penetration`): new market_intel dataset
+  (`content/ma_penetration.yaml` — 50 states + DC, curated KFF/CMS cut,
+  national 54%) with exposure bands (SATURATED ≥55 / HIGH ≥45 /
+  MODERATE ≥30 / LOW), a state choropleth (reuses the excel-mapping
+  tile-grid renderer so the two maps stay identical), and a footprint
+  scorer: enter a target's state codes → average penetration,
+  vs-national delta, band. Closes the "MA penetration not ingested"
+  payer-intel gap.
+- **Rate-environment workbook** (`/rate-environment.xlsx?{qs}` +
+  download button carrying the current form params): two sheets — the
+  update calendar with the 3-cycle compound as a live formula, and an
+  Impact Model whose revenue/mix cells are blue inputs feeding
+  normalized-share + SUMPRODUCT blend formulas, so the model reruns in
+  Excel without the page.
+- /ma-penetration wired into palette, breadcrumbs, guide context (5-Q,
+  related routes) and carded in the CDD hub's pricing module; data-source
+  audit regenerated (186 pages, 0 no-disclosure flags).
+**Verify**: test_ma_penetration.py (13 — fixture integrity, band
+thresholds, footprint math, XSS, registration) + 3 xlsx tests in
+test_rate_environment.py (OOXML validity, SUMPRODUCT/compound formulas,
+param-carrying download link); HTTP smoke on both routes; invariant
+files (5-Q, slash-dual, catalog, data-universe, palette) green.
+
+## W2-170 (2026-06-12) — Wave 3: pricing power + labor intel + 2 CDD templates
+Closes the last flagged CDD pricing gap and the labor-data market-intel gap:
+- **Pricing Power Analyzer** (`/pricing-power`): constant-elasticity
+  price-response curves per customer segment (volume = (1+Δp)^ε),
+  EBITDA-optimal move grid-searched over a credible ±15% window,
+  portfolio pricing prize, and `price_locked` handling so administered /
+  capitated segments (CMS, in-term PMPM) never show a fictional lever.
+  Multi-curve SVG with per-segment optima dots. 3 sector books,
+  illustrative-flagged.
+- **Healthcare Labor Market** (`/labor-market`): new market_intel
+  dataset (`content/labor_market.yaml` — 10 roles, curated BLS OES +
+  staffing-survey cut: wage, YoY, turnover, vacancy, time-to-fill) with
+  a per-role fragility score and a wage-inflation stress calculator
+  (labor base × role mix → $ increase + uncompensated margin bps).
+- **Two new workbook templates** (library now 9): Win/Loss Opportunity
+  Tracker (editable log + COUNTIFS-live summary: win rate by competitor,
+  loss-reason mix, with spare pre-styled rows so adding deals needs no
+  formula edits) and KPC Survey Scorer (live gap, importance-weighted
+  position score via SUMPRODUCT, automatic DIFFERENTIATOR /
+  VULNERABILITY / TABLE STAKES classification).
+- Wiring: routes, palette, breadcrumbs (pricing-power→diligence,
+  labor-market→research), illustrative set, guide contexts (5-Q), CDD
+  hub card (Pricing Power in module 4), market_intel exports, audit
+  regen (187 pages, 0 flags).
+**Verify**: test_pricing_power.py (13 — incl. the ε* = -1/margin
+boundary flip and locked-segment guards) + test_labor_market.py (12 —
+stress math, fragility ordering CNA > specialist, normalization) + HTTP
+smoke on both pages and both template downloads; all invariant files
+green (87 passed).
+
+## W2-171 (2026-06-12) — Wave 4: roll-up template + workflow cross-links + nav integrity guard
+- **Roll-Up / Tuck-In Arbitrage Model** template (library now 10):
+  3-year tuck-in cadence (count × avg EBITDA × entry multiple per
+  year), synergies, platform organic growth, blended entry multiple vs
+  exit, multiple-arbitrage spread in turns, ungeared TEV MOIC — all
+  live formulas, blue-input convention.
+- **Workflow cross-links**: /win-loss and /voc-survey now carry a
+  "Workbook template (.xlsx)" button beside the form, linking the
+  matching library template (win-loss-log / kpc-survey) — analyze on
+  the page, take the editable model to the data room.
+- **Nav integrity guard** (test_subnav_integrity.py): every
+  _CORPUS_NAV tab and every _SUB_NAV link is walked against a real
+  server and must return 200 — a renamed route can no longer leave a
+  dead tab ("make sure all tabs are great", enforced).
+**Verify**: all current tabs/links pass (2 e2e tests, 60+ URLs);
+template builds and formula cells verified (blended entry 8.11x on
+seed inputs, spread 2.89 turns); 39 affected tests green.
+
+## W2-172 (2026-06-12) — Wave 5: sector coverage + custom-segment calculator + hub chart cards
+- **VoC + Win/Loss sector coverage**: ASC / Surgical and Behavioral
+  Health panels added to both evidence modules (5 sectors each now) —
+  block-time/turnover KPCs and HOPD-incumbency loss patterns for ASC;
+  time-to-first-appointment and virtual-first competition for BH.
+- **Pricing Power custom segment**: form now appends an analyst-supplied
+  segment (revenue $M, contribution margin %, elasticity) to the loaded
+  book — elasticity clamped to [-5, 0] so a data-entry sign error can't
+  model a Giffen good. Turns the illustrative page into a calculator a
+  deal team can point at the target's actual book.
+- **CDD hub deliverables**: Chart Builder + Exhibit Composer carded in
+  module 5 (they are the CDD exhibit tools; they were only in Research).
+**Verify**: +4 custom-segment tests; all evidence/pricing/hub/invariant
+suites green (73 passed); guide context updated for the new inputs.
+
+## W2-173 (2026-06-12) — Wave 6: workbook twins for the calculators + S&U / DRL templates
+- **/pricing-power.xlsx**: per-segment price-move *inputs* (blue) with
+  live elasticity math — volume = (1+move)^ε, EBITDA Δ = margin·volume
+  effect + pure-margin price component — so the analyst argues with the
+  window-optimal answer in Excel. LOCKED rows carry no move input.
+- **/labor-market.xlsx**: blue labor-base / revenue / mix inputs feeding
+  normalized shares + SUMPRODUCT blended wage growth and the
+  uncompensated-margin-bps formula. Both pages link their model with a
+  param-carrying download button; both endpoints hidden from /tools
+  (downloads, not pages).
+- **Template library → 12**: Sources & Uses (sponsor equity as the live
+  plug, sources−uses check row, structure reads: equity %, rollover %,
+  leverage, fees %) + Diligence Request List Tracker (editable list +
+  COUNTIF-live dashboard: status mix, completion share, open items by
+  workstream; spare pre-styled rows to row 60).
+**Verify**: +4 xlsx tests (live formulas + param-carrying links);
+template suite green incl. the XML-escaped sheet-name fix
+("Sources &amp; Uses" in workbook.xml is correct OOXML); HTTP smoke on
+all four new download paths; audit regen 187 pages / 0 flags.
+
 
 ## W2-178 (2026-06-12) — Charts: data-shaping pipeline + 4 types + trendline (wave #80)
 More data, more ways to work it (kit now 27 types):
@@ -3824,146 +3965,3 @@ worktree), all fixed here so main goes back to green:
   engine now declares _FLAGSHIP and breaks total-ties explicitly.
 **Verify**: each fix's suite green (universe guard, 5-Q invariants,
 section catalog, surface rankings 9/9); full suite rerun → all green.
-=======
-## W2-168 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
-Closes the three gaps flagged for the desk (not helping CDD enough, thin
-Excel resources, thin market-intel): four new surfaces + a hub + a
-formula-capable xlsx writer.
-- **Excel Model Templates** (`/excel-templates` + per-slug `.xlsx`
-  downloads): 7 live-formula workbooks — Quick LBO (sweep debt schedule,
-  MOIC/IRR), QoE adjusted-EBITDA databook (walk + TTM cadence), NWC peg
-  (12-mo build, DSO/DPO, peg candidates), 13-week cash (covenant headroom
-  row), CDD market model (TAM/SAM/SOM + competitor grid reconciling to
-  SAM), payer-mix × rate sensitivity, cohort/NRR triangle. Banker
-  convention: blue inputs / black formulas.
-- **xlsx_writer**: `F(expr)` live-formula cells (opt-in wrapper — strings
-  that look like formulas stay text, preserving the CSV-defang posture) +
-  6 new styles (mult, label, blue input/money/pct/num).
-- **CDD Hub** (`/cdd`): the five-module CDD workflow (market →
-  competition → customers → pricing → deliverables) laid over 20 existing
-  + new surfaces; link integrity pinned by test against server handlers.
-- **Voice of Customer** (`/voc-survey`): NPS by segment, KPC gap matrix
-  (importance × target-vs-best-competitor with DIFFERENTIATOR /
-  VULNERABILITY / TABLE_STAKES classification), willingness-to-pay bands.
-- **Win/Loss Analyzer** (`/win-loss`): head-to-head win rate by named
-  competitor, loss-reason mix (price- vs capability-led), price-gap read
-  on losses, quarterly trend.
-- **Medicare Rate Environment** (`/rate-environment`): new market_intel
-  dataset (`content/rate_updates.yaml`, 9 care settings × 3 rule cycles,
-  per-setting policy notes) + blended next-cycle dollar-impact calculator
-  on a target's Medicare revenue × setting mix.
-All five wired into Cmd-K palette, breadcrumb map, sub-nav (CDD Hub under
-Diligence; Excel Templates under Research) and the guide context registry.
-**Verify**: 5 new test files, 53 tests — workbook OOXML validity + formula
-cells + injection guard + LBO cell-ref pins, HTTP download e2e (MIME /
-Content-Disposition / 404), respondent-weighted NPS + classification
-thresholds, win-rate/loss-mix consistency, fixture integrity + blend
-normalization (pct vs fraction), hub link integrity. Full suite green.
-
-## W2-169 (2026-06-12) — Market-intel wave 2: MA penetration geography + rate-model xlsx
-- **MA Penetration** (`/ma-penetration`): new market_intel dataset
-  (`content/ma_penetration.yaml` — 50 states + DC, curated KFF/CMS cut,
-  national 54%) with exposure bands (SATURATED ≥55 / HIGH ≥45 /
-  MODERATE ≥30 / LOW), a state choropleth (reuses the excel-mapping
-  tile-grid renderer so the two maps stay identical), and a footprint
-  scorer: enter a target's state codes → average penetration,
-  vs-national delta, band. Closes the "MA penetration not ingested"
-  payer-intel gap.
-- **Rate-environment workbook** (`/rate-environment.xlsx?{qs}` +
-  download button carrying the current form params): two sheets — the
-  update calendar with the 3-cycle compound as a live formula, and an
-  Impact Model whose revenue/mix cells are blue inputs feeding
-  normalized-share + SUMPRODUCT blend formulas, so the model reruns in
-  Excel without the page.
-- /ma-penetration wired into palette, breadcrumbs, guide context (5-Q,
-  related routes) and carded in the CDD hub's pricing module; data-source
-  audit regenerated (186 pages, 0 no-disclosure flags).
-**Verify**: test_ma_penetration.py (13 — fixture integrity, band
-thresholds, footprint math, XSS, registration) + 3 xlsx tests in
-test_rate_environment.py (OOXML validity, SUMPRODUCT/compound formulas,
-param-carrying download link); HTTP smoke on both routes; invariant
-files (5-Q, slash-dual, catalog, data-universe, palette) green.
-
-## W2-170 (2026-06-12) — Wave 3: pricing power + labor intel + 2 CDD templates
-Closes the last flagged CDD pricing gap and the labor-data market-intel gap:
-- **Pricing Power Analyzer** (`/pricing-power`): constant-elasticity
-  price-response curves per customer segment (volume = (1+Δp)^ε),
-  EBITDA-optimal move grid-searched over a credible ±15% window,
-  portfolio pricing prize, and `price_locked` handling so administered /
-  capitated segments (CMS, in-term PMPM) never show a fictional lever.
-  Multi-curve SVG with per-segment optima dots. 3 sector books,
-  illustrative-flagged.
-- **Healthcare Labor Market** (`/labor-market`): new market_intel
-  dataset (`content/labor_market.yaml` — 10 roles, curated BLS OES +
-  staffing-survey cut: wage, YoY, turnover, vacancy, time-to-fill) with
-  a per-role fragility score and a wage-inflation stress calculator
-  (labor base × role mix → $ increase + uncompensated margin bps).
-- **Two new workbook templates** (library now 9): Win/Loss Opportunity
-  Tracker (editable log + COUNTIFS-live summary: win rate by competitor,
-  loss-reason mix, with spare pre-styled rows so adding deals needs no
-  formula edits) and KPC Survey Scorer (live gap, importance-weighted
-  position score via SUMPRODUCT, automatic DIFFERENTIATOR /
-  VULNERABILITY / TABLE STAKES classification).
-- Wiring: routes, palette, breadcrumbs (pricing-power→diligence,
-  labor-market→research), illustrative set, guide contexts (5-Q), CDD
-  hub card (Pricing Power in module 4), market_intel exports, audit
-  regen (187 pages, 0 flags).
-**Verify**: test_pricing_power.py (13 — incl. the ε* = -1/margin
-boundary flip and locked-segment guards) + test_labor_market.py (12 —
-stress math, fragility ordering CNA > specialist, normalization) + HTTP
-smoke on both pages and both template downloads; all invariant files
-green (87 passed).
-
-## W2-171 (2026-06-12) — Wave 4: roll-up template + workflow cross-links + nav integrity guard
-- **Roll-Up / Tuck-In Arbitrage Model** template (library now 10):
-  3-year tuck-in cadence (count × avg EBITDA × entry multiple per
-  year), synergies, platform organic growth, blended entry multiple vs
-  exit, multiple-arbitrage spread in turns, ungeared TEV MOIC — all
-  live formulas, blue-input convention.
-- **Workflow cross-links**: /win-loss and /voc-survey now carry a
-  "Workbook template (.xlsx)" button beside the form, linking the
-  matching library template (win-loss-log / kpc-survey) — analyze on
-  the page, take the editable model to the data room.
-- **Nav integrity guard** (test_subnav_integrity.py): every
-  _CORPUS_NAV tab and every _SUB_NAV link is walked against a real
-  server and must return 200 — a renamed route can no longer leave a
-  dead tab ("make sure all tabs are great", enforced).
-**Verify**: all current tabs/links pass (2 e2e tests, 60+ URLs);
-template builds and formula cells verified (blended entry 8.11x on
-seed inputs, spread 2.89 turns); 39 affected tests green.
-
-## W2-172 (2026-06-12) — Wave 5: sector coverage + custom-segment calculator + hub chart cards
-- **VoC + Win/Loss sector coverage**: ASC / Surgical and Behavioral
-  Health panels added to both evidence modules (5 sectors each now) —
-  block-time/turnover KPCs and HOPD-incumbency loss patterns for ASC;
-  time-to-first-appointment and virtual-first competition for BH.
-- **Pricing Power custom segment**: form now appends an analyst-supplied
-  segment (revenue $M, contribution margin %, elasticity) to the loaded
-  book — elasticity clamped to [-5, 0] so a data-entry sign error can't
-  model a Giffen good. Turns the illustrative page into a calculator a
-  deal team can point at the target's actual book.
-- **CDD hub deliverables**: Chart Builder + Exhibit Composer carded in
-  module 5 (they are the CDD exhibit tools; they were only in Research).
-**Verify**: +4 custom-segment tests; all evidence/pricing/hub/invariant
-suites green (73 passed); guide context updated for the new inputs.
-
-## W2-173 (2026-06-12) — Wave 6: workbook twins for the calculators + S&U / DRL templates
-- **/pricing-power.xlsx**: per-segment price-move *inputs* (blue) with
-  live elasticity math — volume = (1+move)^ε, EBITDA Δ = margin·volume
-  effect + pure-margin price component — so the analyst argues with the
-  window-optimal answer in Excel. LOCKED rows carry no move input.
-- **/labor-market.xlsx**: blue labor-base / revenue / mix inputs feeding
-  normalized shares + SUMPRODUCT blended wage growth and the
-  uncompensated-margin-bps formula. Both pages link their model with a
-  param-carrying download button; both endpoints hidden from /tools
-  (downloads, not pages).
-- **Template library → 12**: Sources & Uses (sponsor equity as the live
-  plug, sources−uses check row, structure reads: equity %, rollover %,
-  leverage, fees %) + Diligence Request List Tracker (editable list +
-  COUNTIF-live dashboard: status mix, completion share, open items by
-  workstream; spare pre-styled rows to row 60).
-**Verify**: +4 xlsx tests (live formulas + param-carrying links);
-template suite green incl. the XML-escaped sheet-name fix
-("Sources &amp; Uses" in workbook.xml is correct OOXML); HTTP smoke on
-all four new download paths; audit regen 187 pages / 0 flags.
->>>>>>> origin/main

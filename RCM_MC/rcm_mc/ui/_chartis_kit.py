@@ -10938,9 +10938,7 @@ _SUB_SECTION_MAP = {
     "/chart-builder": "research",
     "/pie-chart": "research",
     "/exhibit": "research",
-<<<<<<< HEAD
     "/charts": "research",
-=======
     "/cdd": "diligence",
     "/voc-survey": "diligence",
     "/win-loss": "diligence",
@@ -10948,7 +10946,6 @@ _SUB_SECTION_MAP = {
     "/ma-penetration": "research",
     "/pricing-power": "diligence",
     "/labor-market": "research",
->>>>>>> origin/main
     "/diligence/regulatory-calendar": "research",
     "/diligence/bear-case": "research",
     "/diligence/bear-cases": "research",

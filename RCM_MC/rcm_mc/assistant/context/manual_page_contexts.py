@@ -11866,15 +11866,10 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
-<<<<<<< HEAD
             "Can I set the value domain instead of auto-scaling?",
             "How do I export the map for a deck?",
-=======
-            "Can I set the value domain manually?",
             "Why is the map a tile grid instead of real geography?",
->>>>>>> origin/main
         ],
-        related_routes=["/chart-builder", "/exhibit"],
         inputs=["Three gradient colours; an optional low/mid/high value "
                 "domain (blank = auto from data); a value per state, set "
                 "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
@@ -11911,17 +11906,15 @@ _MANUAL.extend([
             "How do I make a waterfall / bridge chart?",
             "How do I build a marimekko or 100% stacked column?",
             "Can I paste my data from Excel and pick the colours?",
-<<<<<<< HEAD
             "Can it aggregate / sort / top-N my data for me?",
             "How do I make a Pareto, histogram, or box plot?",
             "Can I add a trendline with R² to a scatter?",
             "Can I chart real CMS data without pasting anything?",
-=======
             "How do I export the chart as SVG or PNG?",
             "Which chart types does the kit support?",
->>>>>>> origin/main
         ],
-        related_routes=["/exhibit", "/pie-chart", "/excel-mapping"],
+        related_routes=["/exhibit", "/pie-chart", "/excel-mapping",
+                        "/charts"],
         inputs=["A pasted table (headers row + category column + one column "
                 "per series); chart type; title/subtitle; a Chartis "
                 "palette; unit suffix; show-values / legend toggles."],
@@ -11949,7 +11942,6 @@ _MANUAL.extend([
                                  "X, Y, [size]."],
         limitations=["Static SVG (no interactivity); charts render only "
                      "what you paste."],
-        related_routes=["/excel-mapping", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11966,15 +11958,10 @@ _MANUAL.extend([
             "How do I make a pie chart?",
             "Can I set the colour of each slice?",
             "How do I make it a donut?",
-<<<<<<< HEAD
             "How do I show values instead of percentages?",
             "How do I export the chart as SVG or PNG?",
-=======
-            "Can the labels show values instead of percentages?",
             "How many slices can I add?",
->>>>>>> origin/main
         ],
-        related_routes=["/chart-builder", "/exhibit"],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
                 "donut toggle."],
@@ -12010,15 +11997,9 @@ _MANUAL.extend([
             "How do I put several charts on one slide?",
             "Can I export a whole exhibit at once?",
             "How does the layout change with the panel count?",
-<<<<<<< HEAD
             "Can I give the slide a title and source line?",
             "Can each panel use a different chart type and palette?",
-=======
-            "Can each panel use a different chart type?",
-            "Where do the slide title and source line come from?",
->>>>>>> origin/main
         ],
-        related_routes=["/chart-builder", "/pie-chart"],
         inputs=["1–4 panels, each a chart type + pasted table + panel "
                 "title; a slide eyebrow / title / source."],
         outputs=["A single 16:9 SVG slide with a title block, the charts "
@@ -12095,17 +12076,10 @@ _MANUAL.extend([
         intended_users=["Anyone building visuals for a deck."],
         common_questions=["What chart tools are there?",
                           "Where do I make a chart or map?",
-<<<<<<< HEAD
                           "Which tool makes a full deck slide?",
                           "Can I build a US state choropleth?",
-                          "Where do my saved charts live?"],
-        related_routes=["/chart-builder", "/pie-chart", "/excel-mapping",
-                        "/exhibit", "/charts"],
-=======
-                          "How do I build a multi-chart deck slide?",
-                          "Which tool makes a US state heat map?",
+                          "Where do my saved charts live?",
                           "Can I download a workbook model instead?"],
->>>>>>> origin/main
         inputs=["None — it links to the four builder tools."],
         outputs=["A card grid with a live thumbnail + link per tool."],
         key_metrics=["n/a — a navigation hub."],
@@ -12117,7 +12091,7 @@ _MANUAL.extend([
         interpretation_guidance=["Click a card to open that builder."],
         limitations=["A hub page; the builders hold the functionality."],
         related_routes=["/chart-builder", "/pie-chart", "/excel-mapping",
-                        "/exhibit", "/excel-templates"],
+                        "/exhibit", "/excel-templates", "/charts"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
