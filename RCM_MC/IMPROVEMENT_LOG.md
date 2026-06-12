@@ -3802,3 +3802,24 @@ route allow-list, qs cap, page states, XSS escape, save strips on both
 pages, registration invariants, and a real-HTTP e2e (login → CSRF →
 save → list → delete; forged route dropped). Wide sweep
 (chart/exhibit/guide/palette/dataset/saved/catalog/screener): 1792.
+
+## W2-183 (2026-06-12) — Pre-merge sweep: 3 main-inherited reds fixed
+Full local suite (15,763 tests) before merging the chart waves found
+three failures — ALL pre-existing on origin/main (verified in a clean
+worktree), all fixed here so main goes back to green:
+- **'user-supplied' data-universe kind unregistered**: five visuals
+  pages pass universe="user-supplied" but ck_data_universe knew no such
+  kind, so their provenance chip silently rendered empty — exactly the
+  honesty regression test_data_universe_kinds_registered guards.
+  Registered with USER-SUPPLIED DATA label + tooltip.
+- **/visuals below the Guide 5-Q floor** with no related_routes (3
+  invariant tests); /diligence/texas-infusion AND
+  /diligence/infusion-markets served but missing from the /diligence
+  catalog. Questions bumped, related routes cross-linked, both pages
+  added to the catalog's Modeling pillar.
+- **Surface-ranking flagship tie**: texas-infusion's growth reached a
+  perfect 10.0, tying /target-screener; the old tiebreak was raw LOC,
+  so the flagship lost the #1 slot test_surface_rankings pins. The
+  engine now declares _FLAGSHIP and breaks total-ties explicitly.
+**Verify**: each fix's suite green (universe guard, 5-Q invariants,
+section catalog, surface rankings 9/9); full suite rerun → all green.

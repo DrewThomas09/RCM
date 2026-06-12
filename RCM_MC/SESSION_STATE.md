@@ -21,6 +21,8 @@
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
 - current_step: looping; wave #70 on branch claude/pipeline-data-graphs-8ld7ng
+- PRE-MERGE SWEEP (W2-183): fixed 3 main-inherited reds (universe
+  kind, /visuals guide floor + catalog gaps, flagship rank tie).
 - WAVE 84 (W2-182): Saved Charts library (/charts + saved_charts
   table + save strips on builder/exhibit, owner-scoped, e2e-tested);
   found-fix: texas-infusion missing from /diligence catalog.

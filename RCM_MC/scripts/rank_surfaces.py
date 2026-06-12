@@ -46,6 +46,12 @@ _USEFUL_WEIGHT = 1.5
 _EFFORT_WEIGHT = 1.0
 _TOTAL_MAX = 5.0 * _USEFUL_WEIGHT + 5.0 * _EFFORT_WEIGHT  # 12.5
 
+# Scores move in 0.5 steps, so perfect-10 ties happen as big pages mature.
+# The flagship workbench is the deliberate front door of the product
+# (pinned by test_surface_rankings); it wins ties explicitly rather than
+# by whichever page happens to have more raw LOC that week.
+_FLAGSHIP = "/target-screener"
+
 
 def _handler_module_map(src: str) -> Dict[str, str]:
     """``_route_<name>`` handler → ui module stem it renders. Most diligence
@@ -195,7 +201,8 @@ def build_rankings():
             "total": round(
                 (useful * _USEFUL_WEIGHT + effort * _EFFORT_WEIGHT) * 10.0 / _TOTAL_MAX, 1),
         })
-    rows.sort(key=lambda r: (-r["total"], -r["loc"]))
+    rows.sort(key=lambda r: (-r["total"], r["route"] != _FLAGSHIP,
+                             -r["loc"]))
     return rows
 
 
