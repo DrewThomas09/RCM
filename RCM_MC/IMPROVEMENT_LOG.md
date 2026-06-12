@@ -3488,7 +3488,30 @@ chart svgs (parent + 4), layout drives panel count, empty→just the frame,
 page populated + custom slide + palette/nav/guide registration. Full
 suite green.
 
-## W2-167 (2026-06-12) — Medicare Monthly Enrollment: the true Part B denominator (wave #69)
+## W2-167 (2026-06-12) — Charts: slope + gantt/timeline types (wave #69)
+Two more consultant staples (kit now 23 types):
+- **Slope chart** (`slope`): before→after — two periods per category with
+  a connecting line + end-point values (e.g. entry vs exit margins,
+  denial-rate change). Headers name the two periods.
+- **Gantt / timeline** (`gantt`): horizontal task bars on a time axis from
+  a task · start · end table — roadmaps, 100-day plans, workstream
+  sequencing. Time gridlines + task labels.
+Both surface automatically in the Chart Builder chips + gallery with
+example data (value-creation slope; 100-day workstream gantt).
+**Verify**: +1 test (≥23 types incl. slope/gantt) + both render clean
+(no None) with their labels. Full suite green.
+
+## W2-168 (2026-06-12) — Visuals hub landing page (wave #70)
+A single landing page (`/visuals`) for the graphics toolkit — a card per
+tool (Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer) with a
+LIVE thumbnail rendered from the same kit the tools use (so the hub always
+reflects real output) + a one-line description and link. Wired into
+Research nav + Cmd-K palette + a documented guide context. Discoverability
+capstone for the suite.
+**Verify**: new `test_visuals_hub.py` (3) — a card + link per tool, ≥4
+thumbnail SVGs, palette/nav/guide registration. Full suite green.
+
+## W2-169 (2026-06-12) — Medicare Monthly Enrollment: the true Part B denominator (wave #71)
 Closed the last unbuilt item of the user's multi-source CMS data request.
 - **`cms_monthly_enrollment.py`** (new live client): resolves the CMS
   "Medicare Monthly Enrollment" dataset UUID from the data.json catalog,
@@ -3521,8 +3544,8 @@ metro members sorted desc (Harris #1), live mock replaces state + matched
 counties and leaves the rest MODELED, page renders section + badge,
 source cited. Full suite green.
 
-## W2-168 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #70)
-The full-suite sweep after wave #69 caught five pre-existing failures the
+## W2-170 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #72)
+The full-suite sweep after wave #71 caught five pre-existing failures the
 graphics waves left on main (verified failing on a clean tree):
 - **`user-supplied` data-universe kind unregistered** — /chart-builder,
   /excel-mapping and /pie-chart declared `universe="user-supplied"` but
@@ -3542,9 +3565,9 @@ graphics waves left on main (verified failing on a clean tree):
 test_pedesk_guide_5q_invariant ×3, test_section_catalog) now pass;
 1,321-test wiring sweep (guide/palette/chartis/catalog/nav) green.
 
-## W2-169 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #70b)
+## W2-171 (2026-06-12) — /exhibit guide-floor fix after the main merge (wave #72b)
 Merging main (waves #66–68 from the parallel chart stream) brought the
-new /exhibit Exhibit Composer with the SAME wiring gap the W2-168 sweep
+new /exhibit Exhibit Composer with the SAME wiring gap the W2-170 sweep
 fixed on its siblings: 2 common_questions (floor is 5) and no
 related_routes. Brought it to the floor + cross-linked /chart-builder
 and /pie-chart. Guide invariant suites + 1,254-test graphics/wiring

@@ -337,7 +337,7 @@ nav + palette + guide context. +10 tests. Joins Excel Mapping (#62) +
 Chart Builder (#63) as the graphics-utility set.
 
 ---
-## Checkpoint — wave #69 (W2-167, 2026-06-12)
+## Checkpoint — wave #71 (W2-169, 2026-06-12)
 Closed the LAST unbuilt item of the multi-source data request: CMS
 Medicare Monthly Enrollment. New cms_monthly_enrollment.py (live
 data.cms.gov client: catalog UUID resolve + state/county annual-average
@@ -386,3 +386,17 @@ count, exports one SVG/PNG. exhibit_page.py: 4 panel configs (type/palette/
 title/data) + slide meta; qs-driven; Research nav + palette + guide. +6
 tests. Graphics suite now: Excel Mapping, Chart Builder (21 types, per-
 series colours, footnote, export, size), Pie Chart, Exhibit Composer.
+
+---
+## Checkpoint — wave #69 (W2-167, 2026-06-12)
+Charts: +slope (before→after) + gantt/timeline (roadmap) → kit now 23
+types. Example data in Chart Builder. +1 test. Graphics suite: Excel
+Mapping, Chart Builder (23 types), Pie Chart, Exhibit Composer.
+
+---
+## Checkpoint — wave #70 (W2-168, 2026-06-12)
+Visuals hub (/visuals): card-per-tool landing page with live thumbnails
+(Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer); Research nav
++ palette + guide. +3 tests. Graphics suite complete: hub + 4 builders
+(Chart Builder 23 types, Pie, Excel Mapping, Exhibit Composer), all with
+SVG/PNG export + Chartis styling.
