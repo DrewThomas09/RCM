@@ -337,7 +337,7 @@ nav + palette + guide context. +10 tests. Joins Excel Mapping (#62) +
 Chart Builder (#63) as the graphics-utility set.
 
 ---
-## Checkpoint — wave #66 (W2-164, 2026-06-12)
+## Checkpoint — wave #69 (W2-167, 2026-06-12)
 Closed the LAST unbuilt item of the multi-source data request: CMS
 Medicare Monthly Enrollment. New cms_monthly_enrollment.py (live
 data.cms.gov client: catalog UUID resolve + state/county annual-average
@@ -364,3 +364,25 @@ Pie + Excel Mapping, and adjustable size (_svg_open width_px + SIZE_PRESETS
 S/M/L/XL, height auto from viewBox). Size selector on builder + pie. +9
 tests. Graphics-utility set now: Excel Mapping (#62), Chart Builder (#63,
 #65), Pie Chart (#64, #65).
+
+---
+## Checkpoint — wave #66 (W2-164, 2026-06-12)
+Chart Builder: per-series colour pickers (sc{i}, override palette, JS
+re-seeds on palette change) + new gauge/KPI chart type (kit now 20).
++5 tests. Graphics suite: Excel Mapping, Chart Builder (20 types, per-
+series colours, export SVG/PNG, S/M/L/XL size), Pie Chart.
+
+---
+## Checkpoint — wave #67 (W2-165, 2026-06-12)
+Charts: +heatmap grid (scoring matrix; kit now 21 types) + source/footnote
+line on every chart (render_cdd_chart + presentable_pie inject it; field
+on Chart Builder + Pie pages; travels with SVG/PNG export). +4 tests.
+
+---
+## Checkpoint — wave #68 (W2-166, 2026-06-12)
+Exhibit Composer (route /exhibit): compose_exhibit() nests up to 4 charts
+into one 16:9 slide (eyebrow + title + source), layout adapts to panel
+count, exports one SVG/PNG. exhibit_page.py: 4 panel configs (type/palette/
+title/data) + slide meta; qs-driven; Research nav + palette + guide. +6
+tests. Graphics suite now: Excel Mapping, Chart Builder (21 types, per-
+series colours, footnote, export, size), Pie Chart, Exhibit Composer.

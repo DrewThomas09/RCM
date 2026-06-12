@@ -11970,6 +11970,37 @@ _MANUAL.extend([
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
+    _ctx(
+        "/exhibit", "Exhibit Composer",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Lay up to four charts on a single 16:9 deck "
+        "slide with an eyebrow, title block, and source line, exported as "
+        "one SVG / PNG.",
+        primary_purpose="Compose a client-ready exhibit slide from "
+        "multiple charts without assembling it by hand in PowerPoint.",
+        intended_users=["Deal team building a CDD / IC deck."],
+        common_questions=[
+            "How do I put several charts on one slide?",
+            "Can I export a whole exhibit at once?",
+        ],
+        inputs=["1–4 panels, each a chart type + pasted table + panel "
+                "title; a slide eyebrow / title / source."],
+        outputs=["A single 16:9 SVG slide with a title block, the charts "
+                 "laid out in a grid, and a source line."],
+        key_metrics=["Whatever each panel's chart plots (user-supplied)."],
+        data_sources=["Your pasted panel data only."],
+        model_logic_summary="Each panel renders via the chart kit and is "
+        "nested into the slide SVG; the layout adapts to the panel count.",
+        why_it_matters="Turns the chart kit into a finished exhibit — the "
+        "deliverable a client actually sees.",
+        diligence_use_cases=["A one-slide 'investment highlights' / market "
+                             "overview exhibit."],
+        interpretation_guidance=["Each panel is independent; leave a panel "
+                                 "blank to drop it."],
+        limitations=["Static SVG; up to four panels."],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
 ])
 
 

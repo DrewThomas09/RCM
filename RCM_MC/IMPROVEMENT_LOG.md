@@ -3440,7 +3440,55 @@ height auto, export toolbar has SVG/PNG/Copy + ids, size presets S/M/L/XL,
 builder/pie pages show export buttons + size select + new-type chips.
 Full suite green.
 
-## W2-164 (2026-06-12) — Medicare Monthly Enrollment: the true Part B denominator (wave #66)
+## W2-164 (2026-06-12) — Charts: per-series colours + gauge KPI (wave #66)
+Continued the graphics-suite improvements:
+- **Per-series colour pickers in the Chart Builder** — every series (or
+  category, for pie/funnel/tornado/dot/matrix/marimekko) gets its own
+  colour picker (`sc{i}`), defaulting to the chosen palette but fully
+  overridable, so a chart can match any deck/brand exactly. A small JS
+  re-seeds the pickers when the palette dropdown changes so the palette
+  stays meaningful. Picked colours flow into the rendered SVG via
+  `opts["colors"]`.
+- **Gauge / KPI chart type** (kit now 20): a 180° semicircular gauge from
+  a single value (+ optional max) — big serif value, label, and 0→max
+  scale. Reads `Metric · Value · [Max]`; auto-scales the max when omitted.
+**Verify**: +5 tests — gauge present (≥20 types) + renders value/max
+clean, per-series colours override the palette and reach the SVG,
+palette-sync script present. Full suite green.
+
+## W2-165 (2026-06-12) — Charts: heatmap grid + source/footnote line (wave #67)
+Two more client-readiness improvements:
+- **Heatmap grid** chart type (kit now 21): a scoring matrix — rows ×
+  columns, each cell shaded on a sequential teal scale by value with the
+  value printed, row labels left + column headers top. The classic CDD
+  attractiveness/scoring matrix.
+- **Source / footnote line** on every chart: `render_cdd_chart` and
+  `presentable_pie` now inject a small bottom-left source/footnote line
+  (the way every client deck exhibit carries one). A "Source / footnote"
+  field added to the Chart Builder + Pie Chart pages; it's part of the
+  rendered SVG so it travels with the SVG/PNG export.
+**Verify**: +4 tests — heatmap present (≥21 types) + renders grid with
+row/column headers clean, footnote appears in the chart SVG + on the
+page; pie footnote renders. Full suite green.
+
+## W2-166 (2026-06-12) — Exhibit Composer: multi-chart deck slide (wave #68)
+The capstone of the chart suite — compose up to 4 charts onto one slide:
+- **`compose_exhibit(panels, …)`** (in cdd_chart_kit): renders 1–4 charts
+  and nests each (via `_embed` rewriting the child <svg> opening tag) into
+  a single 16:9 (1280×720) slide with an eyebrow, serif title block, a
+  source line, and a Chartis·PEdesk mark. Layout adapts to panel count
+  (1 = full, 2 = side-by-side, 3–4 = 2×2). Exports as ONE SVG/PNG.
+- **`exhibit_page.py`** (route `/exhibit`): slide eyebrow / title / source
+  + 4 panel configs (chart type + palette + panel title + pasted data;
+  blank panels drop). qs-driven (t{i}/pt{i}/d{i}/pal{i}) so a whole slide
+  is a shareable URL; the composed slide gets the SVG/PNG export toolbar.
+  Wired into Research nav + Cmd-K palette + a documented guide context.
+**Verify**: new `test_exhibit.py` (6) — composes one SVG with the nested
+chart svgs (parent + 4), layout drives panel count, empty→just the frame,
+page populated + custom slide + palette/nav/guide registration. Full
+suite green.
+
+## W2-167 (2026-06-12) — Medicare Monthly Enrollment: the true Part B denominator (wave #69)
 Closed the last unbuilt item of the user's multi-source CMS data request.
 - **`cms_monthly_enrollment.py`** (new live client): resolves the CMS
   "Medicare Monthly Enrollment" dataset UUID from the data.json catalog,
@@ -3473,8 +3521,8 @@ metro members sorted desc (Harris #1), live mock replaces state + matched
 counties and leaves the rest MODELED, page renders section + badge,
 source cited. Full suite green.
 
-## W2-165 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65
-The full-suite sweep after wave #66 caught five pre-existing failures the
+## W2-168 (2026-06-12) — Found-bug sweep: 5 wiring regressions from waves #62–65 (wave #70)
+The full-suite sweep after wave #69 caught five pre-existing failures the
 graphics waves left on main (verified failing on a clean tree):
 - **`user-supplied` data-universe kind unregistered** — /chart-builder,
   /excel-mapping and /pie-chart declared `universe="user-supplied"` but

@@ -58,6 +58,8 @@ CHART_TYPES = [
     ("radar", "Radar (spider)"),
     ("bullet", "Bullet (vs target)"),
     ("dot", "Dot / lollipop"),
+    ("gauge", "Gauge (KPI)"),
+    ("heatmap", "Heatmap grid"),
     ("marimekko", "Marimekko"),
     ("combo", "Combo (bars + line)"),
 ]
@@ -176,6 +178,10 @@ def presentable_pie(
             f'<tspan fill="{_FAINT}" font-weight="400">'
             f'({frac*100:.0f}%)</tspan></text>')
         ly += 26
+    note = opts.get("footnote") or opts.get("source")
+    if note:
+        out.append(f'<text x="16" y="{H-12:.1f}" font-family="{_SANS}" '
+                   f'font-size="10" fill="{_FAINT}">{_esc(note)}</text>')
     out.append("</svg>")
     return "".join(out)
 
@@ -914,6 +920,51 @@ def _dot(table, opts):
     return body
 
 
+# ── Gauge (single KPI) ───────────────────────────────────────────────
+
+def _gauge(table, opts):
+    import math
+    rows = table["rows"]
+    if not rows:
+        return _frame_open(opts) + "</svg>"
+    label = rows[0][0]
+    vals = rows[0][1] if rows[0][1] else [0]
+    value = vals[0] or 0
+    vmax = (vals[1] if len(vals) > 1 and vals[1] else None) or \
+        _nice_max(value * 1.25 if value else 100)
+    colors = opts["colors"]
+    suffix = opts.get("suffix", "")
+    W, H = opts.get("W", _W), opts.get("H", _H)
+    cx, cy, R = W / 2, H / 2 + 70, 165.0
+    body = _frame_open(opts)
+    frac = max(0.0, min(1.0, value / vmax if vmax else 0))
+
+    def arc(a0, a1, color, width):
+        x0a, y0a = cx + R * math.cos(a0), cy + R * math.sin(a0)
+        x1a, y1a = cx + R * math.cos(a1), cy + R * math.sin(a1)
+        large = 1 if (a1 - a0) > math.pi else 0
+        return (f'<path d="M {x0a:.1f} {y0a:.1f} A {R:.1f} {R:.1f} 0 '
+                f'{large} 1 {x1a:.1f} {y1a:.1f}" fill="none" '
+                f'stroke="{color}" stroke-width="{width}" '
+                f'stroke-linecap="round"/>')
+    # 180° gauge from left (π) to right (2π).
+    body += arc(math.pi, 2 * math.pi, "#ece5d6", 26)
+    body += arc(math.pi, math.pi + frac * math.pi, colors[0], 26)
+    body += (f'<text x="{cx:.1f}" y="{cy-8:.1f}" text-anchor="middle" '
+             f'font-family="{_SERIF}" font-size="46" font-weight="700" '
+             f'fill="{_NAVY}">{_fmt(value, suffix)}</text>'
+             f'<text x="{cx:.1f}" y="{cy+18:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="13" fill="{_FAINT}">'
+             f'{_esc(label)} · of {_fmt(vmax, suffix)}</text>'
+             f'<text x="{cx-R:.1f}" y="{cy+20:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="10" fill="{_FAINT}">0</text>'
+             f'<text x="{cx+R:.1f}" y="{cy+20:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="10" fill="{_FAINT}">'
+             f'{_fmt(vmax, suffix)}</text>')
+    body += "</svg>"
+    return body
+
+
 # ── 2×2 matrix (positioning) ─────────────────────────────────────────
 
 def _matrix(table, opts):
@@ -967,6 +1018,60 @@ def _matrix(table, opts):
              f'text-anchor="middle" font-family="{_SANS}" font-size="11" '
              f'fill="{_FAINT}" transform="rotate(-90 {x0-14:.1f} '
              f'{(y0+y1)/2:.1f})">{_esc(ylab)} →</text>')
+    body += "</svg>"
+    return body
+
+
+# ── Heatmap grid (scoring matrix) ────────────────────────────────────
+
+def _heat_color(frac: float) -> str:
+    frac = max(0.0, min(1.0, frac))
+    c0, c1 = (0xE9, 0xF1, 0xF0), (0x12, 0x5E, 0x59)
+    rgb = tuple(round(c0[i] + (c1[i] - c0[i]) * frac) for i in range(3))
+    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+
+
+def _heatmap(table, opts):
+    cats = [r[0] for r in table["rows"]]
+    series = _series(table)
+    headers = table.get("headers", [])
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    y0 += 14   # room for column headers
+    nrow, ncol = len(cats), len(series)
+    if not nrow or not ncol:
+        return _frame_open(opts) + "</svg>"
+    allv = [v for s in series for v in s["values"] if v is not None]
+    lo, hi = (min(allv), max(allv)) if allv else (0, 1)
+    rng = (hi - lo) or 1
+    body = _frame_open(opts)
+    cw = (x1 - x0) / ncol
+    ch = (y1 - y0) / nrow
+    suffix = opts.get("suffix", "")
+    for j, s in enumerate(series):
+        hx = x0 + cw * (j + 0.5)
+        name = headers[j + 1] if j + 1 < len(headers) else s["name"]
+        body += (f'<text x="{hx:.1f}" y="{y0-5:.1f}" text-anchor="middle" '
+                 f'font-family="{_SANS}" font-size="10" font-weight="600" '
+                 f'fill="{_DIM}">{_esc(name)}</text>')
+    for i, c in enumerate(cats):
+        ry = y0 + ch * i
+        body += (f'<text x="{x0-6:.1f}" y="{ry+ch/2+3:.1f}" '
+                 f'text-anchor="end" font-family="{_SANS}" font-size="10.5" '
+                 f'fill="{_DIM}">{_esc(c)}</text>')
+        for j, s in enumerate(series):
+            v = s["values"][i]
+            cx = x0 + cw * j
+            fill = _heat_color((v - lo) / rng) if v is not None else "#f3efe4"
+            tcol = "#fff" if (v is not None and (v - lo) / rng > 0.55) \
+                else _INK
+            body += (f'<rect x="{cx+1:.1f}" y="{ry+1:.1f}" '
+                     f'width="{cw-2:.1f}" height="{ch-2:.1f}" rx="2" '
+                     f'fill="{fill}"/>')
+            if v is not None:
+                body += (f'<text x="{cx+cw/2:.1f}" y="{ry+ch/2+3.5:.1f}" '
+                         f'text-anchor="middle" font-family="{_SANS}" '
+                         f'font-size="10.5" font-weight="600" fill="{tcol}">'
+                         f'{_fmt(v, suffix)}</text>')
     body += "</svg>"
     return body
 
@@ -1047,6 +1152,8 @@ _DISPATCH = {
     "radar": (_radar, {}),
     "bullet": (_bullet, {}),
     "dot": (_dot, {}),
+    "gauge": (_gauge, {}),
+    "heatmap": (_heatmap, {}),
     "marimekko": (_marimekko, {}),
     "combo": (_combo, {}),
 }
@@ -1073,4 +1180,94 @@ def render_cdd_chart(
                 + f'<text x="{W/2:.0f}" y="{H/2:.0f}" text-anchor="middle" '
                 f'font-family="{_SANS}" font-size="13" fill="{_FAINT}">'
                 f'Paste data to render a chart</text></svg>')
-    return fn(table, o)
+    return _with_footnote(fn(table, o), o)
+
+
+def _with_footnote(svg: str, opts: Dict[str, Any]) -> str:
+    """Inject a small bottom-left source/footnote line before </svg> —
+    every client chart wants one."""
+    note = opts.get("footnote") or opts.get("source")
+    if not note or "</svg>" not in svg:
+        return svg
+    H = opts.get("H", _H)
+    el = (f'<text x="14" y="{H-7:.1f}" font-family="{_SANS}" '
+          f'font-size="9.5" fill="{_FAINT}">{_esc(note)}</text>')
+    idx = svg.rfind("</svg>")
+    return svg[:idx] + el + svg[idx:]
+
+
+# ── Exhibit / slide composer ─────────────────────────────────────────
+
+def _embed(svg: str, x: float, y: float, w: float, h: float) -> str:
+    """Rewrite a chart's opening <svg> tag so it nests inside a parent
+    SVG at (x, y) with the given box — the viewBox scales the chart in."""
+    import re
+    m = re.search(r'viewBox="([^"]*)"', svg[:400])
+    vb = m.group(1) if m else "0 0 720 450"
+    body = svg[svg.find(">") + 1:]
+    return (f'<svg x="{x:.0f}" y="{y:.0f}" width="{w:.0f}" height="{h:.0f}" '
+            f'viewBox="{vb}" preserveAspectRatio="xMidYMid meet">{body}')
+
+
+def _exhibit_layout(n: int, x0, y0, x1, y1, gap=22.0):
+    """Panel boxes for n charts inside the content area."""
+    if n <= 1:
+        return [(x0, y0, x1 - x0, y1 - y0)]
+    if n == 2:
+        w = (x1 - x0 - gap) / 2
+        return [(x0, y0, w, y1 - y0), (x0 + w + gap, y0, w, y1 - y0)]
+    # 3–4 → 2×2 grid (3 leaves the last cell empty).
+    w = (x1 - x0 - gap) / 2
+    h = (y1 - y0 - gap) / 2
+    cells = [(x0, y0, w, h), (x0 + w + gap, y0, w, h),
+             (x0, y0 + h + gap, w, h), (x0 + w + gap, y0 + h + gap, w, h)]
+    return cells[:n]
+
+
+def compose_exhibit(
+    panels: List[Dict[str, Any]],
+    *, title: str = "", eyebrow: str = "", source: str = "",
+    width_px: float = 1120,
+) -> str:
+    """Compose up to 4 charts onto one deck slide (16:9) with a title
+    block + source line — exported as a single SVG. ``panels`` is a list
+    of ``{type, table, title, palette}``."""
+    W, H = 1280.0, 720.0
+    panels = [p for p in panels if p.get("table", {}).get("rows")][:4]
+    out = [f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
+           f'preserveAspectRatio="xMidYMid meet" role="img" '
+           f'aria-label="{_esc(title or "exhibit")}" '
+           f'style="max-width:{width_px:.0f}px;width:100%;height:auto;'
+           f'background:#fff;">'
+           f'<rect x="0" y="0" width="{W:.0f}" height="{H:.0f}" '
+           f'fill="#fff"/>']
+    if eyebrow:
+        out.append(f'<text x="40" y="40" font-family="{_SANS}" '
+                   f'font-size="13" font-weight="700" letter-spacing="1.5" '
+                   f'fill="{PALETTES["Chartis"][1]}">'
+                   f'{_esc(eyebrow.upper())}</text>')
+    if title:
+        out.append(f'<text x="40" y="70" font-family="{_SERIF}" '
+                   f'font-size="28" font-weight="700" fill="{_NAVY}">'
+                   f'{_esc(title)}</text>')
+    out.append(f'<line x1="40" y1="84" x2="{W-40:.0f}" y2="84" '
+               f'stroke="{_GRID}" stroke-width="1.2"/>')
+    boxes = _exhibit_layout(len(panels) or 1, 36, 96, W - 36, H - 44)
+    for p, (x, y, w, h) in zip(panels, boxes):
+        chart = render_cdd_chart(
+            p.get("type", "column"), p["table"],
+            {"title": p.get("title", ""), "palette": p.get("palette",
+                                                            "Chartis"),
+             "W": 720, "H": 460})
+        out.append(_embed(chart, x, y, w, h))
+    src = source or ""
+    out.append(f'<line x1="40" y1="{H-34:.0f}" x2="{W-40:.0f}" '
+               f'y2="{H-34:.0f}" stroke="{_GRID}" stroke-width="0.8"/>')
+    if src:
+        out.append(f'<text x="40" y="{H-16:.0f}" font-family="{_SANS}" '
+                   f'font-size="11" fill="{_FAINT}">{_esc(src)}</text>')
+    out.append(f'<text x="{W-40:.0f}" y="{H-16:.0f}" text-anchor="end" '
+               f'font-family="{_SERIF}" font-size="11" fill="{_FAINT}">'
+               f'Chartis · PEdesk</text>')
+    out.append("</svg>")
+    return "".join(out)

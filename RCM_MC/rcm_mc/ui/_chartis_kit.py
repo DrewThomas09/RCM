@@ -219,6 +219,7 @@ _SUB_NAV = {
         {"label": "Excel Mapping",       "href": "/excel-mapping"},
         {"label": "Chart Builder",       "href": "/chart-builder"},
         {"label": "Pie Chart",           "href": "/pie-chart"},
+        {"label": "Exhibit Composer",    "href": "/exhibit"},
         {"label": "All Research →",      "href": "/research"},
     ],
     # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
@@ -7297,6 +7298,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "excel-mapping", "title": "Excel Mapping · configurable US-state choropleth", "route": "/excel-mapping"},
     {"id": "chart-builder", "title": "Chart Builder · CDD chart kit (column, waterfall, marimekko, bubble)", "route": "/chart-builder"},
     {"id": "pie-chart", "title": "Pie Chart · client-ready pie/donut from per-slice values", "route": "/pie-chart"},
+    {"id": "exhibit", "title": "Exhibit Composer · lay up to 4 charts on one deck slide", "route": "/exhibit"},
     {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
     {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
@@ -10910,6 +10912,7 @@ _SUB_SECTION_MAP = {
     "/excel-mapping": "research",
     "/chart-builder": "research",
     "/pie-chart": "research",
+    "/exhibit": "research",
     "/diligence/regulatory-calendar": "research",
     "/diligence/bear-case": "research",
     "/diligence/bear-cases": "research",
