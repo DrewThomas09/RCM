@@ -196,3 +196,28 @@ class TransactionMultipleDepthTests(unittest.TestCase):
                                  r["specialty"])
             self.assertGreater(r["sample_size_trailing_12_mo"], 0,
                                r["specialty"])
+
+
+class MultiplesDirectoryTests(unittest.TestCase):
+    """No-specialty /market-intel renders the full band library instead
+    of silently omitting the section (2026-06-12 — the 29-band library
+    was invisible unless the caller already knew a code)."""
+
+    def test_directory_renders_without_specialty(self):
+        from rcm_mc.ui.market_intel_page import render_market_intel_page
+        html = render_market_intel_page()
+        self.assertIn("full library", html)
+        for label in ("Infusion", "Cardiology", "Fertility",
+                      "Physical Therapy"):
+            self.assertIn(label, html)
+
+    def test_directory_rows_link_the_focused_view(self):
+        from rcm_mc.ui.market_intel_page import render_market_intel_page
+        html = render_market_intel_page()
+        self.assertIn("/market-intel?specialty=INFUSION", html)
+
+    def test_focused_view_still_renders_with_specialty(self):
+        from rcm_mc.ui.market_intel_page import render_market_intel_page
+        html = render_market_intel_page(specialty="INFUSION",
+                                        ev_usd=200_000_000)
+        self.assertNotIn("full library", html)
