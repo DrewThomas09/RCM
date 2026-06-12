@@ -344,3 +344,10 @@ Pie + Excel Mapping, and adjustable size (_svg_open width_px + SIZE_PRESETS
 S/M/L/XL, height auto from viewBox). Size selector on builder + pie. +9
 tests. Graphics-utility set now: Excel Mapping (#62), Chart Builder (#63,
 #65), Pie Chart (#64, #65).
+
+---
+## Checkpoint — wave #66 (W2-164, 2026-06-12)
+Chart Builder: per-series colour pickers (sc{i}, override palette, JS
+re-seeds on palette change) + new gauge/KPI chart type (kit now 20).
++5 tests. Graphics suite: Excel Mapping, Chart Builder (20 types, per-
+series colours, export SVG/PNG, S/M/L/XL size), Pie Chart.

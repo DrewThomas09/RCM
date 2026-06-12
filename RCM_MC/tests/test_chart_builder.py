@@ -95,9 +95,31 @@ class RenderTests(unittest.TestCase):
 
     def test_new_consultant_chart_types_present(self):
         keys = {k for k, _ in CHART_TYPES}
-        for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot"):
+        for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot",
+                  "gauge"):
             self.assertIn(k, keys, k)
-        self.assertGreaterEqual(len(CHART_TYPES), 19)
+        self.assertGreaterEqual(len(CHART_TYPES), 20)
+
+    def test_gauge_renders_value_and_max(self):
+        svg = render_cdd_chart(
+            "gauge", parse_table("M\tVal\tMax\nUtilization\t78\t100"),
+            {"title": "Util", "suffix": "%"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("78", svg)
+        self.assertNotIn("None", svg)
+
+    def test_per_series_colors_override_palette(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "sc0": ["#ff0000"], "sc1": ["#00ff00"]})
+        self.assertIn("SERIES COLOURS", h)
+        self.assertIn("#ff0000", h)
+        self.assertIn("#00ff00", h)
+        # The picked colours reach the rendered SVG, not just the form.
+        self.assertEqual(h.count("#ff0000") >= 2, True)
+
+    def test_palette_sync_script_present(self):
+        h = render_chart_builder_page({})
+        self.assertIn("CKPAL", h)
 
     def test_width_px_controls_display_size(self):
         small = render_cdd_chart("column", self._data("column"),

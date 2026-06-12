@@ -58,6 +58,7 @@ CHART_TYPES = [
     ("radar", "Radar (spider)"),
     ("bullet", "Bullet (vs target)"),
     ("dot", "Dot / lollipop"),
+    ("gauge", "Gauge (KPI)"),
     ("marimekko", "Marimekko"),
     ("combo", "Combo (bars + line)"),
 ]
@@ -914,6 +915,51 @@ def _dot(table, opts):
     return body
 
 
+# ── Gauge (single KPI) ───────────────────────────────────────────────
+
+def _gauge(table, opts):
+    import math
+    rows = table["rows"]
+    if not rows:
+        return _frame_open(opts) + "</svg>"
+    label = rows[0][0]
+    vals = rows[0][1] if rows[0][1] else [0]
+    value = vals[0] or 0
+    vmax = (vals[1] if len(vals) > 1 and vals[1] else None) or \
+        _nice_max(value * 1.25 if value else 100)
+    colors = opts["colors"]
+    suffix = opts.get("suffix", "")
+    W, H = opts.get("W", _W), opts.get("H", _H)
+    cx, cy, R = W / 2, H / 2 + 70, 165.0
+    body = _frame_open(opts)
+    frac = max(0.0, min(1.0, value / vmax if vmax else 0))
+
+    def arc(a0, a1, color, width):
+        x0a, y0a = cx + R * math.cos(a0), cy + R * math.sin(a0)
+        x1a, y1a = cx + R * math.cos(a1), cy + R * math.sin(a1)
+        large = 1 if (a1 - a0) > math.pi else 0
+        return (f'<path d="M {x0a:.1f} {y0a:.1f} A {R:.1f} {R:.1f} 0 '
+                f'{large} 1 {x1a:.1f} {y1a:.1f}" fill="none" '
+                f'stroke="{color}" stroke-width="{width}" '
+                f'stroke-linecap="round"/>')
+    # 180° gauge from left (π) to right (2π).
+    body += arc(math.pi, 2 * math.pi, "#ece5d6", 26)
+    body += arc(math.pi, math.pi + frac * math.pi, colors[0], 26)
+    body += (f'<text x="{cx:.1f}" y="{cy-8:.1f}" text-anchor="middle" '
+             f'font-family="{_SERIF}" font-size="46" font-weight="700" '
+             f'fill="{_NAVY}">{_fmt(value, suffix)}</text>'
+             f'<text x="{cx:.1f}" y="{cy+18:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="13" fill="{_FAINT}">'
+             f'{_esc(label)} · of {_fmt(vmax, suffix)}</text>'
+             f'<text x="{cx-R:.1f}" y="{cy+20:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="10" fill="{_FAINT}">0</text>'
+             f'<text x="{cx+R:.1f}" y="{cy+20:.1f}" text-anchor="middle" '
+             f'font-family="{_SANS}" font-size="10" fill="{_FAINT}">'
+             f'{_fmt(vmax, suffix)}</text>')
+    body += "</svg>"
+    return body
+
+
 # ── 2×2 matrix (positioning) ─────────────────────────────────────────
 
 def _matrix(table, opts):
@@ -1047,6 +1093,7 @@ _DISPATCH = {
     "radar": (_radar, {}),
     "bullet": (_bullet, {}),
     "dot": (_dot, {}),
+    "gauge": (_gauge, {}),
     "marimekko": (_marimekko, {}),
     "combo": (_combo, {}),
 }

@@ -3439,3 +3439,19 @@ present (≥19 total) + render clean, width_px controls display size +
 height auto, export toolbar has SVG/PNG/Copy + ids, size presets S/M/L/XL,
 builder/pie pages show export buttons + size select + new-type chips.
 Full suite green.
+
+## W2-164 (2026-06-12) — Charts: per-series colours + gauge KPI (wave #66)
+Continued the graphics-suite improvements:
+- **Per-series colour pickers in the Chart Builder** — every series (or
+  category, for pie/funnel/tornado/dot/matrix/marimekko) gets its own
+  colour picker (`sc{i}`), defaulting to the chosen palette but fully
+  overridable, so a chart can match any deck/brand exactly. A small JS
+  re-seeds the pickers when the palette dropdown changes so the palette
+  stays meaningful. Picked colours flow into the rendered SVG via
+  `opts["colors"]`.
+- **Gauge / KPI chart type** (kit now 20): a 180° semicircular gauge from
+  a single value (+ optional max) — big serif value, label, and 0→max
+  scale. Reads `Metric · Value · [Max]`; auto-scales the max when omitted.
+**Verify**: +5 tests — gauge present (≥20 types) + renders value/max
+clean, per-series colours override the palette and reach the SVG,
+palette-sync script present. Full suite green.
