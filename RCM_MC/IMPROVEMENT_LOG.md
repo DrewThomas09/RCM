@@ -3955,3 +3955,12 @@ county drilldown W2-195, plus P5/P8/P9/P11/model-card from earlier
 waves). Still open: portfolio per-deal alert digest, deal-workbench
 ENTERED-basis pass, ebitda-bridge exhibit export, glossary links from
 every KPI label (partial).
+
+## W2-196 (2026-06-12) — EBITDA-bridge waterfall as a numbered exhibit (PAGE_INVENTORY top fix)
+The bridge waterfall — the slide an IC deck actually pastes — now
+carries the house exhibit chrome via ExhibitFactory: "EXHIBIT 1 —
+EBITDA Bridge · 7 RCM Levers", units stated (annual $ at full run-rate,
+filed HCRIS base × published research bands), footer sourced CMS HCRIS
++ FY-stamped, deal_label = the hospital, print-to-PDF page rules.
+Closes the inventory's "exhibit-style export" fix the same way as the
+peer roster + compare basket (W2-185). +1 test; 16 passed.

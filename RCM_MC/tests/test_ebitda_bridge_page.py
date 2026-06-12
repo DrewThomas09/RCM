@@ -120,6 +120,18 @@ class TestEBITDABridgePage(unittest.TestCase):
         self.assertIn("Denial Rate", html)
         self.assertIn("A/R Days", html)
 
+    def test_waterfall_is_numbered_sourced_exhibit(self):
+        # P5 (PAGE_INVENTORY "exhibit-style export"): the bridge
+        # waterfall carries the house exhibit chrome — numbered figure,
+        # units stated, sourced + FY-stamped footer, print page rules.
+        from rcm_mc.ui.ebitda_bridge_page import render_ebitda_bridge
+        df = _sample_hcris()
+        html = render_ebitda_bridge("000001", df)
+        self.assertIn("EXHIBIT 1", html)
+        self.assertIn("EBITDA Bridge · 7 RCM Levers", html)
+        self.assertIn("annual $ impact at full run-rate", html)
+        self.assertIn("CMS HCRIS", html)
+
     def test_has_irr_moic_values(self):
         from rcm_mc.ui.ebitda_bridge_page import render_ebitda_bridge
         df = _sample_hcris()
