@@ -11866,7 +11866,10 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
+            "Can I set the value domain instead of auto-scaling?",
+            "How do I export the map for a deck?",
         ],
+        related_routes=["/chart-builder", "/exhibit"],
         inputs=["Three gradient colours; an optional low/mid/high value "
                 "domain (blank = auto from data); a value per state, set "
                 "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
@@ -11902,7 +11905,11 @@ _MANUAL.extend([
             "How do I make a waterfall / bridge chart?",
             "How do I build a marimekko or 100% stacked column?",
             "Can I paste my data from Excel and pick the colours?",
+            "Can it aggregate / sort / top-N my data for me?",
+            "How do I make a Pareto, histogram, or box plot?",
+            "Can I add a trendline with R² to a scatter?",
         ],
+        related_routes=["/exhibit", "/pie-chart", "/excel-mapping"],
         inputs=["A pasted table (headers row + category column + one column "
                 "per series); chart type; title/subtitle; a Chartis "
                 "palette; unit suffix; show-values / legend toggles."],
@@ -11912,8 +11919,11 @@ _MANUAL.extend([
         data_sources=["Your pasted data only — example tables are "
                       "placeholders."],
         model_logic_summary="Pure SVG rendering over a shared frame "
-        "(title, gridlines, value labels, legend); 13 chart types share "
-        "one Chartis palette set.",
+        "(title, gridlines, value labels, legend); 27 chart types share "
+        "one Chartis palette set. A pre-chart shaping pass can aggregate "
+        "duplicate labels, sort, keep top-N (+ Other), and recompute "
+        "values (% of total / cumulative / moving avg / growth / index); "
+        "line + scatter take a least-squares trendline with R².",
         why_it_matters="Every CDD deck needs these charts; this builds them "
         "in the house style without Excel.",
         diligence_use_cases=["Market-sizing funnels, EBITDA bridges, "
@@ -11939,7 +11949,10 @@ _MANUAL.extend([
             "How do I make a pie chart?",
             "Can I set the colour of each slice?",
             "How do I make it a donut?",
+            "How do I show values instead of percentages?",
+            "How do I export the chart as SVG or PNG?",
         ],
+        related_routes=["/chart-builder", "/exhibit"],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
                 "donut toggle."],
@@ -11973,7 +11986,11 @@ _MANUAL.extend([
         common_questions=[
             "How do I put several charts on one slide?",
             "Can I export a whole exhibit at once?",
+            "How does the layout change with the panel count?",
+            "Can I give the slide a title and source line?",
+            "Can each panel use a different chart type and palette?",
         ],
+        related_routes=["/chart-builder", "/pie-chart"],
         inputs=["1–4 panels, each a chart type + pasted table + panel "
                 "title; a slide eyebrow / title / source."],
         outputs=["A single 16:9 SVG slide with a title block, the charts "

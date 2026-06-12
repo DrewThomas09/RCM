@@ -3500,3 +3500,34 @@ Both surface automatically in the Chart Builder chips + gallery with
 example data (value-creation slope; 100-day workstream gantt).
 **Verify**: +1 test (≥23 types incl. slope/gantt) + both render clean
 (no None) with their labels. Full suite green.
+
+## W2-168 (2026-06-12) — Charts: data-shaping pipeline + 4 types + trendline (wave #70)
+More data, more ways to work it (kit now 27 types):
+- **`transform_table(table, tf)`** — the Excel prep steps folded into the
+  builder so a raw export pastes as-is: aggregate duplicate labels
+  (sum/mean/max/min/count), sort by first series, top-N with the rest
+  lumped into "Other (k)", and per-series calcs (% of total, cumulative,
+  3-period moving average, growth % vs prior, index first=100). Ops
+  compose in that order; the input table is never mutated. A "DATA
+  SHAPING" control row (4 dropdowns + Top-N box) sits under the paste
+  box in the Chart Builder; bogus qs values are ignored.
+- **4 polished staples**: Pareto (sorted bars + cumulative-% line with an
+  80% reference marker), histogram (auto-binned √n distribution of the
+  first value column, n + mean annotation), box plot (five-number
+  summary per category — quartiles computed for you), dumbbell
+  (horizontal before→after pairs, period names from the headers).
+  All carry example data + chips + notes; Pareto joins the gallery.
+- **Trendline + R²** (`trendline` opt / checkbox): least-squares fit
+  overlaid dashed on line + scatter, clipped to the plot band, labelled
+  `Trend R²=…` — the quick "is this actually correlated" read.
+- **Found-bug fix (pre-existing on main)**: the four chart pages
+  (/chart-builder, /excel-mapping, /pie-chart, /exhibit) were below the
+  Guide's 5-question floor and had empty related_routes —
+  test_pedesk_guide_5q_invariant was failing 3 tests on main. Bumped
+  each to ≥5 common_questions + cross-linked the chart family; refreshed
+  the stale "13 chart types" model-logic line to the real 27 + shaping.
+**Verify**: +22 tests (11 transform incl. compose order + no-mutation;
+4 new types render clean with their markers; trendline on/off; shaping
+controls + group-sum/top-N/trendline reach the rendered SVG; bogus
+params ignored). Guide invariant suite back to green. Chart-adjacent
+sweep (-k chart/exhibit/excel_mapping/guide/palette): 1390 passed.

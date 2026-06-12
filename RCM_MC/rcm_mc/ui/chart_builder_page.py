@@ -17,8 +17,9 @@ from typing import Any, Dict, Optional
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
 from .cdd_chart_kit import (
-    CHART_TYPES, PALETTES, SIZE_PRESETS, parse_table, render_cdd_chart,
-    chart_export_toolbar, _series,
+    CHART_TYPES, PALETTES, SIZE_PRESETS, TRANSFORM_CALCS, TRANSFORM_GROUPS,
+    parse_table, render_cdd_chart, transform_table, chart_export_toolbar,
+    _series,
 )
 
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
@@ -47,6 +48,19 @@ _EXAMPLE_SLOPE = ("Metric\tEntry\tExit\nEBITDA margin\t18\t26\n"
 _EXAMPLE_GANTT = ("Workstream\tStart\tEnd\nRCM diagnostic\t0\t4\n"
                   "Denials program\t2\t9\nPayer renegotiation\t4\t12\n"
                   "Systems migration\t6\t16")
+_EXAMPLE_PARETO = ("Denial reason\tCount\nPrior auth\t340\nEligibility\t210\n"
+                   "Coding\t160\nTimely filing\t90\nMedical necessity\t60\n"
+                   "Other\t40")
+_EXAMPLE_HIST = ("Account\tDAR days\nA1\t34\nA2\t41\nA3\t38\nA4\t52\n"
+                 "A5\t47\nA6\t44\nA7\t39\nA8\t61\nA9\t46\nA10\t43\n"
+                 "A11\t55\nA12\t37\nA13\t49\nA14\t42")
+_EXAMPLE_BOX = ("Site\tJan\tFeb\tMar\tApr\tMay\tJun\n"
+                "North\t42\t45\t39\t48\t44\t41\n"
+                "Central\t55\t49\t61\t58\t52\t57\n"
+                "South\t38\t36\t41\t35\t39\t37")
+_EXAMPLE_DUMBBELL = ("Metric\tEntry\tExit\nEBITDA margin\t18\t26\n"
+                     "Clean-claim %\t88\t96\nCollections %\t91\t97\n"
+                     "Commercial mix\t34\t41")
 
 
 def _example_for(ctype: str) -> str:
@@ -68,6 +82,14 @@ def _example_for(ctype: str) -> str:
         return _EXAMPLE_SLOPE
     if ctype == "gantt":
         return _EXAMPLE_GANTT
+    if ctype == "pareto":
+        return _EXAMPLE_PARETO
+    if ctype == "histogram":
+        return _EXAMPLE_HIST
+    if ctype == "boxplot":
+        return _EXAMPLE_BOX
+    if ctype == "dumbbell":
+        return _EXAMPLE_DUMBBELL
     return _EXAMPLE_TS
 
 
@@ -106,6 +128,26 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     if not data_text.strip():
         data_text = _example_for(ctype)
     table = parse_table(data_text)
+    # Data shaping — the Excel prep steps as dropdowns.
+    group = _qs1(qs, "group", "")
+    if group not in TRANSFORM_GROUPS:
+        group = ""
+    sort = _qs1(qs, "sort", "")
+    if sort not in ("asc", "desc"):
+        sort = ""
+    calc = _qs1(qs, "calc", "")
+    if calc not in dict(TRANSFORM_CALCS):
+        calc = ""
+    topn_s = _qs1(qs, "topn", "")
+    try:
+        topn = max(1, min(50, int(topn_s))) if topn_s.strip() else 0
+    except ValueError:
+        topn = 0
+    trend = _qsbool(qs, "trend", False)
+    if group or sort or calc or topn:
+        table = transform_table(table, {
+            "group": group or None, "sort": sort or None,
+            "top_n": topn or None, "calc": calc or None})
     # Per-series colour overrides (sc{i}); blanks fall back to the palette.
     base_pal = PALETTES.get(palette, PALETTES["Chartis"])
     series = _series(table)
@@ -120,7 +162,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         "title": title or dict(CHART_TYPES).get(ctype, ""),
         "subtitle": subtitle, "palette": palette, "suffix": suffix,
         "show_values": show_values, "legend": legend, "width_px": width_px,
-        "colors": series_colors, "footnote": footnote,
+        "colors": series_colors, "footnote": footnote, "trendline": trend,
     }
     chart_svg = render_cdd_chart(ctype, table, opts)
 
@@ -164,6 +206,42 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
             f'name="{name}" value="1"{" checked" if on else ""}>{label}'
             f'</label>')
 
+    _sel = ('height:28px;border:1px solid #c9c1ac;border-radius:5px;'
+            'width:100%;font-size:11.5px;')
+
+    def _shaping_select(name, label, options, current):
+        opts_html = "".join(
+            f'<option value="{html.escape(v, quote=True)}"'
+            f'{" selected" if v == current else ""}>{html.escape(lab)}'
+            f'</option>' for v, lab in options)
+        return (f'<label style="font-size:10.5px;color:#465366;flex:1;'
+                f'min-width:108px;">{label}'
+                f'<select name="{name}" style="{_sel}">{opts_html}'
+                f'</select></label>')
+
+    shaping = (
+        '<div style="margin-top:8px;border:1px solid #d6cfc0;'
+        'border-radius:6px;padding:8px 10px;background:#faf7f0;">'
+        '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
+        'font-weight:700;margin-bottom:5px;">DATA SHAPING (applied before '
+        'the chart — no Excel prep needed)</div>'
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:'
+        'flex-end;">'
+        + _shaping_select("group", "Group duplicate labels",
+                          [("", "Off")] + [(g, f"Aggregate: {g}")
+                                           for g in TRANSFORM_GROUPS], group)
+        + _shaping_select("sort", "Sort by first series",
+                          [("", "Keep order"), ("desc", "Largest first"),
+                           ("asc", "Smallest first")], sort)
+        + (f'<label style="font-size:10.5px;color:#465366;width:96px;">'
+           f'Top N (+ Other)<input type="number" name="topn" min="1" '
+           f'max="50" value="{topn if topn else ""}" style="{_sel}'
+           f'padding:0 6px;"></label>')
+        + _shaping_select("calc", "Calculation",
+                          [("", "None")] + list(TRANSFORM_CALCS), calc)
+        + _toggle("trend", "Trendline + R² (line/scatter)", trend)
+        + '</div></div>')
+
     form = (
         f'<form method="get" action="/chart-builder">'
         f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">'
@@ -178,7 +256,8 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'<textarea name="data" rows="9" style="width:100%;margin-top:4px;'
         f'font-family:ui-monospace,Menlo,monospace;font-size:12px;'
         f'border:1px solid #c9c1ac;border-radius:5px;padding:8px;">'
-        f'{html.escape(data_text)}</textarea></label></div>'
+        f'{html.escape(data_text)}</textarea></label>'
+        f'{shaping}</div>'
         # Right: options
         f'<div style="display:flex;flex-direction:column;gap:9px;">'
         f'<label style="font-size:11px;color:#465366;">Title'
@@ -236,8 +315,8 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
 
     # Gallery — the same data across a few chart types.
     gallery = ""
-    gtypes = ["column", "column_stacked", "column_100", "bar", "line",
-              "area", "waterfall", "pie", "donut", "marimekko", "bubble",
+    gtypes = ["column", "column_stacked", "column_100", "bar", "pareto",
+              "line", "area", "waterfall", "pie", "donut", "marimekko",
               "combo"]
     for gt in gtypes:
         gdata = table
@@ -285,8 +364,18 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
           'label a row with "total"/"net"/"=" to draw an absolute total '
           'bar. <strong>Scatter/Bubble:</strong> columns are X, Y, [size]. '
           '<strong>Pie/Donut/Marimekko:</strong> use the first value '
-          'column(s). Everything else takes a category column + one column '
-          'per series.</p></div>'
+          'column(s). <strong>Pareto:</strong> one value column — sorted '
+          'bars + cumulative-% line with an 80% marker. '
+          '<strong>Histogram:</strong> bins the first value column (one '
+          'raw value per row). <strong>Box plot:</strong> each row is a '
+          'category, each column a sample — quartiles are computed for '
+          'you. <strong>Dumbbell:</strong> two value columns = '
+          'before/after per category. Everything else takes a category '
+          'column + one column per series. <strong>Data shaping</strong> '
+          'runs before the chart: aggregate duplicate labels '
+          '(sum/mean/max/min/count), sort, keep top-N and lump the rest '
+          'into "Other", or switch the values to % of total / cumulative '
+          '/ moving average / growth-vs-prior / indexed-to-100.</p></div>'
         + '</div>')
     return chartis_shell(
         body, "Chart Builder", active_nav="/research",

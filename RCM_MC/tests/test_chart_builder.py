@@ -11,7 +11,7 @@ import unittest
 
 from rcm_mc.ui.cdd_chart_kit import (
     CHART_TYPES, PALETTES, SIZE_PRESETS, parse_table, render_cdd_chart,
-    _series, chart_export_toolbar,
+    transform_table, _series, chart_export_toolbar,
 )
 from rcm_mc.ui.chart_builder_page import render_chart_builder_page
 
@@ -96,9 +96,62 @@ class RenderTests(unittest.TestCase):
     def test_new_consultant_chart_types_present(self):
         keys = {k for k, _ in CHART_TYPES}
         for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot",
-                  "gauge", "heatmap", "slope", "gantt"):
+                  "gauge", "heatmap", "slope", "gantt", "pareto",
+                  "histogram", "boxplot", "dumbbell"):
             self.assertIn(k, keys, k)
-        self.assertGreaterEqual(len(CHART_TYPES), 23)
+        self.assertGreaterEqual(len(CHART_TYPES), 27)
+
+    def test_pareto_has_cumulative_line_and_80_marker(self):
+        t = parse_table("Reason\tCount\nAuth\t340\nElig\t210\nCoding\t160\n"
+                        "Filing\t90")
+        svg = render_cdd_chart("pareto", t, {"title": "Denials"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("80%", svg)
+        self.assertIn("<polyline", svg)       # cumulative-share line
+        self.assertIn("100%", svg)            # last cumulative point
+        self.assertNotIn("None", svg)
+
+    def test_histogram_bins_and_annotates(self):
+        rows = "\n".join(f"A{i}\t{v}" for i, v in enumerate(
+            (34, 41, 38, 52, 47, 44, 39, 61, 46, 43, 55, 37)))
+        svg = render_cdd_chart("histogram", parse_table("Acct\tDAR\n" + rows),
+                               {"title": "DAR distribution"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("n=12", svg)
+        self.assertIn("mean=", svg)
+        self.assertNotIn("None", svg)
+
+    def test_boxplot_renders_quartile_boxes(self):
+        t = parse_table("Site\tJ\tF\tM\tA\nNorth\t42\t45\t39\t48\n"
+                        "South\t38\t36\t41\t35")
+        svg = render_cdd_chart("boxplot", t, {"title": "DAR by site"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("North", svg)
+        self.assertIn("South", svg)
+        self.assertIn("fill-opacity", svg)    # the IQR box
+        self.assertNotIn("None", svg)
+
+    def test_dumbbell_renders_pairs_with_period_legend(self):
+        t = parse_table("Metric\tEntry\tExit\nMargin\t18\t26\nMix\t34\t41")
+        svg = render_cdd_chart("dumbbell", t, {"title": "Entry vs exit"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("Margin", svg)
+        self.assertIn("Entry", svg)
+        self.assertIn("Exit", svg)
+        self.assertNotIn("None", svg)
+
+    def test_trendline_overlays_fit_with_r2(self):
+        t = parse_table("Co\tX\tY\nA\t1\t2\nB\t2\t4.1\nC\t3\t5.9\nD\t4\t8")
+        svg = render_cdd_chart("scatter", t, {"trendline": True})
+        self.assertIn("Trend R²=", svg)
+        self.assertIn("stroke-dasharray", svg)
+        line = render_cdd_chart(
+            "line", parse_table("Y\tR\n2021\t100\n2022\t130\n2023\t165"),
+            {"trendline": True})
+        self.assertIn("Trend R²=", line)
+        # Off by default.
+        off = render_cdd_chart("scatter", t, {})
+        self.assertNotIn("Trend R²=", off)
 
     def test_slope_and_gantt_render(self):
         s = render_cdd_chart(
@@ -174,6 +227,80 @@ class RenderTests(unittest.TestCase):
         self.assertEqual(keys, ["S", "M", "L", "XL"])
 
 
+class TransformTests(unittest.TestCase):
+    """transform_table — the Excel prep steps (SUMIF, sort, top-N,
+    running %) folded into the builder."""
+
+    def _t(self, text):
+        return parse_table(text)
+
+    def test_group_sum_aggregates_duplicate_labels(self):
+        t = self._t("Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7")
+        out = transform_table(t, {"group": "sum"})
+        self.assertEqual(out["rows"], [("Aetna", [17.0]), ("UHC", [5.0])])
+
+    def test_group_mean_and_count(self):
+        t = self._t("P\tV\nA\t10\nA\t20")
+        self.assertEqual(transform_table(t, {"group": "mean"})["rows"],
+                         [("A", [15.0])])
+        self.assertEqual(transform_table(t, {"group": "count"})["rows"],
+                         [("A", [2.0])])
+
+    def test_sort_desc_by_first_series(self):
+        t = self._t("P\tV\nA\t5\nB\t20\nC\t10")
+        out = transform_table(t, {"sort": "desc"})
+        self.assertEqual([r[0] for r in out["rows"]], ["B", "C", "A"])
+
+    def test_top_n_lumps_rest_into_other(self):
+        t = self._t("P\tV\nA\t50\nB\t30\nC\t10\nD\t6\nE\t4")
+        out = transform_table(t, {"sort": "desc", "top_n": 2})
+        self.assertEqual([r[0] for r in out["rows"]],
+                         ["A", "B", "Other (3)"])
+        self.assertEqual(out["rows"][-1][1], [20.0])
+
+    def test_pct_total_sums_to_100(self):
+        t = self._t("P\tV\nA\t50\nB\t30\nC\t20")
+        out = transform_table(t, {"calc": "pct_total"})
+        self.assertAlmostEqual(sum(r[1][0] for r in out["rows"]), 100.0)
+
+    def test_cumulative_running_total(self):
+        t = self._t("Q\tV\nQ1\t10\nQ2\t20\nQ3\t5")
+        out = transform_table(t, {"calc": "cumulative"})
+        self.assertEqual([r[1][0] for r in out["rows"]],
+                         [10.0, 30.0, 35.0])
+
+    def test_growth_vs_prior_first_row_blank(self):
+        t = self._t("Y\tR\n2021\t100\n2022\t130\n2023\t117")
+        out = transform_table(t, {"calc": "growth"})
+        vals = [r[1][0] for r in out["rows"]]
+        self.assertIsNone(vals[0])
+        self.assertAlmostEqual(vals[1], 30.0)
+        self.assertAlmostEqual(vals[2], -10.0)
+
+    def test_index_first_value_is_100(self):
+        t = self._t("Y\tR\n2021\t80\n2022\t120")
+        out = transform_table(t, {"calc": "index"})
+        self.assertEqual([r[1][0] for r in out["rows"]], [100.0, 150.0])
+
+    def test_moving_avg_window_3(self):
+        t = self._t("M\tV\nm1\t10\nm2\t20\nm3\t30\nm4\t40")
+        out = transform_table(t, {"calc": "moving_avg"})
+        self.assertEqual([r[1][0] for r in out["rows"]],
+                         [10.0, 15.0, 20.0, 30.0])
+
+    def test_ops_compose_group_then_sort_then_topn(self):
+        t = self._t("P\tV\nA\t5\nB\t20\nA\t10\nC\t8")
+        out = transform_table(
+            t, {"group": "sum", "sort": "desc", "top_n": 2})
+        self.assertEqual([r[0] for r in out["rows"]],
+                         ["B", "A", "Other (1)"])
+
+    def test_input_table_not_mutated(self):
+        t = self._t("P\tV\nA\t10\nA\t20")
+        transform_table(t, {"group": "sum", "calc": "pct_total"})
+        self.assertEqual(t["rows"], [("A", [10.0]), ("A", [20.0])])
+
+
 class BuilderPageTests(unittest.TestCase):
     def test_page_renders_core_elements(self):
         h = render_chart_builder_page({})
@@ -198,6 +325,37 @@ class BuilderPageTests(unittest.TestCase):
             "type": ["column"], "title": ["Q3 Revenue"],
             "data": ["Q\tR\nQ1\t10\nQ2\t20"]})
         self.assertIn("Q3 Revenue", h)
+
+    def test_shaping_controls_present(self):
+        h = render_chart_builder_page({})
+        for needle in ("DATA SHAPING", 'name="group"', 'name="sort"',
+                       'name="topn"', 'name="calc"', 'name="trend"',
+                       "% of total", "Largest first"):
+            self.assertIn(needle, h, f"missing: {needle}")
+
+    def test_group_sum_applied_to_rendered_chart(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "group": ["sum"],
+            "data": ["Payer\tDenials\nAetna\t10\nUHC\t5\nAetna\t7"]})
+        self.assertIn(">17<", h)              # aggregated bar value label
+
+    def test_topn_lumps_other_in_chart(self):
+        h = render_chart_builder_page({
+            "type": ["bar"], "sort": ["desc"], "topn": ["2"],
+            "data": ["P\tV\nA\t50\nB\t30\nC\t10\nD\t6\nE\t4"]})
+        self.assertIn("Other (3)", h)
+
+    def test_trendline_checkbox_drives_overlay(self):
+        h = render_chart_builder_page({
+            "type": ["scatter"], "trend": ["1"],
+            "data": ["Co\tX\tY\nA\t1\t2\nB\t2\t4\nC\t3\t6\nD\t4\t8"]})
+        self.assertIn("Trend R²=", h)
+
+    def test_bogus_shaping_params_ignored(self):
+        h = render_chart_builder_page({
+            "group": ["drop table"], "sort": ["weird"],
+            "topn": ["nope"], "calc": ["bad"]})
+        self.assertIn("Chart Builder", h)
 
     def test_registered_in_palette_nav_and_guide(self):
         from rcm_mc.ui._chartis_kit import (

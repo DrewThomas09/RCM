@@ -20,7 +20,11 @@
   presets (Conservative/Base/Aggressive); per-segment divergence (8
   verticals, ★ fastest); cross-industry comparison panel; 4-sheet
   formatted xlsx (stdlib writer) with export parity. test_tam_sam: 46.
-- current_step: looping; branch==main @ a701ee0 (checkpoint 86)
+- current_step: looping; wave #70 on branch claude/pipeline-data-graphs-8ld7ng
+- WAVE 70 (W2-168): chart data-shaping pipeline (group/sort/top-N/calc
+  dropdowns), pareto/histogram/boxplot/dumbbell (kit 27 types),
+  trendline+R² on line/scatter; guide 5-Q invariant fixed for the 4
+  chart pages (was failing on main).
 - DILIGENCE UPGRADE WAVE (checkpoints 79-86): at-a-glance visuals on 7
   surfaces — bear-case severity matrix, CIM variance chart, bankruptcy
   pattern strip, cliff hold timeline, pipeline compute bars, checklist

@@ -45,8 +45,11 @@ CHART_TYPES = [
     ("column_stacked", "Stacked column"),
     ("column_100", "100% stacked column"),
     ("bar", "Horizontal bar"),
+    ("pareto", "Pareto (80/20)"),
     ("line", "Line"),
     ("area", "Stacked area"),
+    ("histogram", "Histogram"),
+    ("boxplot", "Box plot"),
     ("waterfall", "Waterfall (bridge)"),
     ("pie", "Pie"),
     ("donut", "Donut"),
@@ -61,6 +64,7 @@ CHART_TYPES = [
     ("gauge", "Gauge (KPI)"),
     ("heatmap", "Heatmap grid"),
     ("slope", "Slope (before→after)"),
+    ("dumbbell", "Dumbbell (range)"),
     ("gantt", "Gantt / timeline"),
     ("marimekko", "Marimekko"),
     ("combo", "Combo (bars + line)"),
@@ -238,6 +242,116 @@ def _series(table: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "values": [(v[i] if i < len(v) else None)
                                for _, v in rows]})
     return out
+
+
+# ── Data shaping (aggregate → sort → top-N → calc) ───────────────────
+
+TRANSFORM_GROUPS = ["sum", "mean", "max", "min", "count"]
+TRANSFORM_CALCS = [
+    ("pct_total", "% of total"),
+    ("cumulative", "Cumulative"),
+    ("moving_avg", "Moving avg (3)"),
+    ("growth", "Growth % vs prior"),
+    ("index", "Index (first = 100)"),
+]
+
+
+def transform_table(table: Dict[str, Any],
+                    tf: Dict[str, Any]) -> Dict[str, Any]:
+    """Shape a parsed table before charting — the Excel prep steps
+    (SUMIF, sort, top-N + Other, running %, …) folded into the builder
+    so a raw export can be pasted as-is.
+
+    ``tf`` keys (all optional): ``group`` (sum|mean|max|min|count —
+    aggregate duplicate labels), ``sort`` (asc|desc by first series),
+    ``top_n`` (int — keep N rows, lump the rest into "Other"),
+    ``calc`` (pct_total|cumulative|moving_avg|growth|index — applied
+    per series). Returns a new table; the input is not mutated."""
+    headers = list(table.get("headers", []))
+    rows: List[Tuple[str, List[Optional[float]]]] = \
+        [(lab, list(vals)) for lab, vals in table.get("rows", [])]
+    ncol = max((len(v) for _, v in rows), default=0)
+
+    group = tf.get("group")
+    if group in TRANSFORM_GROUPS and rows:
+        order: List[str] = []
+        bucket: Dict[str, List[List[Optional[float]]]] = {}
+        for lab, vals in rows:
+            if lab not in bucket:
+                bucket[lab] = []
+                order.append(lab)
+            bucket[lab].append(vals)
+        rows = []
+        for lab in order:
+            cols: List[Optional[float]] = []
+            for i in range(ncol):
+                cell = [v[i] for v in bucket[lab]
+                        if i < len(v) and v[i] is not None]
+                if group == "count":
+                    cols.append(float(len(cell)))
+                elif not cell:
+                    cols.append(None)
+                elif group == "sum":
+                    cols.append(sum(cell))
+                elif group == "mean":
+                    cols.append(sum(cell) / len(cell))
+                elif group == "max":
+                    cols.append(max(cell))
+                else:
+                    cols.append(min(cell))
+            rows.append((lab, cols))
+
+    sort = tf.get("sort")
+    if sort in ("asc", "desc"):
+        rows.sort(key=lambda r: (r[1][0] if r[1] and r[1][0] is not None
+                                 else float("-inf")),
+                  reverse=(sort == "desc"))
+
+    top_n = tf.get("top_n")
+    if top_n and 0 < int(top_n) < len(rows):
+        keep, rest = rows[:int(top_n)], rows[int(top_n):]
+        other: List[Optional[float]] = []
+        for i in range(ncol):
+            cell = [v[i] for _, v in rest if i < len(v) and v[i] is not None]
+            other.append(sum(cell) if cell else None)
+        rows = keep + [(f"Other ({len(rest)})", other)]
+
+    calc = tf.get("calc")
+    if calc in dict(TRANSFORM_CALCS) and rows:
+        ncol = max((len(v) for _, v in rows), default=0)
+        for i in range(ncol):
+            col = [(v[i] if i < len(v) else None) for _, v in rows]
+            new: List[Optional[float]]
+            if calc == "pct_total":
+                tot = sum(abs(v) for v in col if v is not None) or 1
+                new = [None if v is None else v / tot * 100 for v in col]
+            elif calc == "cumulative":
+                run = 0.0
+                new = []
+                for v in col:
+                    run += v or 0
+                    new.append(None if v is None else run)
+            elif calc == "moving_avg":
+                new = []
+                for j, v in enumerate(col):
+                    win = [w for w in col[max(0, j - 2):j + 1]
+                           if w is not None]
+                    new.append(sum(win) / len(win) if win else None)
+            elif calc == "growth":
+                new = [None]
+                for j in range(1, len(col)):
+                    prev, cur = col[j - 1], col[j]
+                    new.append((cur - prev) / abs(prev) * 100
+                               if prev not in (None, 0) and cur is not None
+                               else None)
+            else:   # index — first non-None value = 100
+                base = next((v for v in col if v not in (None, 0)), None)
+                new = [None if (v is None or base is None)
+                       else v / base * 100 for v in col]
+            for r, v in zip(rows, new):
+                if i < len(r[1]):
+                    r[1][i] = v
+    return {"headers": headers, "rows": rows}
 
 
 # ── Shared frame ─────────────────────────────────────────────────────
@@ -468,6 +582,46 @@ def _bars(table, opts):
     return body
 
 
+# ── Trendline (least-squares fit, shared by line + scatter) ─────────
+
+def _linfit(xs: List[float], ys: List[float]):
+    """Least-squares (slope, intercept, R²) — or None when degenerate
+    (under 2 points / zero x-variance) so callers skip the overlay."""
+    n = len(xs)
+    if n < 2:
+        return None
+    mx, my = sum(xs) / n, sum(ys) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    if not sxx:
+        return None
+    b = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+    a = my - b * mx
+    ss_tot = sum((y - my) ** 2 for y in ys)
+    ss_res = sum((y - (a + b * x)) ** 2 for x, y in zip(xs, ys))
+    r2 = 1 - ss_res / ss_tot if ss_tot else 1.0
+    return a, b, r2
+
+
+def _trend_svg(xa, ya, xb, yb, y_top, y_bot, r2, label_x) -> str:
+    """Dashed fit line clipped to the plot band (in screen coords, so a
+    steep fit never draws over the title/labels) + an R² tag."""
+    dy = yb - ya
+    t0, t1 = 0.0, 1.0
+    if dy:
+        ta, tb = (y_top - ya) / dy, (y_bot - ya) / dy
+        t0, t1 = max(0.0, min(ta, tb)), min(1.0, max(ta, tb))
+    if t0 >= t1:
+        return ""
+    x1c, y1c = xa + (xb - xa) * t0, ya + dy * t0
+    x2c, y2c = xa + (xb - xa) * t1, ya + dy * t1
+    return (f'<line x1="{x1c:.1f}" y1="{y1c:.1f}" x2="{x2c:.1f}" '
+            f'y2="{y2c:.1f}" stroke="#b5321e" stroke-width="1.8" '
+            f'stroke-dasharray="6 4" opacity="0.85"/>'
+            f'<text x="{label_x:.1f}" y="{y_top+12:.1f}" text-anchor="end" '
+            f'font-family="{_SANS}" font-size="10.5" font-weight="600" '
+            f'fill="#b5321e">Trend R²={r2:.2f}</text>')
+
+
 # ── Lines / area ─────────────────────────────────────────────────────
 
 def _lines(table, opts):
@@ -512,6 +666,14 @@ def _lines(table, opts):
                 body += (f'<circle cx="{xof(i):.1f}" '
                          f'cy="{yof(s["values"][i] or 0):.1f}" r="2.6" '
                          f'fill="{colors[si % len(colors)]}"/>')
+        if opts.get("trendline") and series:
+            pts = [(float(i), v) for i, v in enumerate(series[0]["values"])
+                   if v is not None]
+            fit = _linfit([p[0] for p in pts], [p[1] for p in pts])
+            if fit:
+                a, b, r2 = fit
+                body += _trend_svg(xof(0), yof(a), xof(n - 1),
+                                   yof(a + b * (n - 1)), y0, y1, r2, x1 - 4)
     body += _x_labels(cats, x0, x1, y1, opts)
     body += _legend(series, colors, opts) + "</svg>"
     return body
@@ -653,6 +815,12 @@ def _scatter(table, opts):
                  f'text-anchor="middle" font-family="{_SANS}" '
                  f'font-size="10" fill="{_FAINT}">'
                  f'{_fmt(v, opts.get("xsuffix",""))}</text>')
+    if opts.get("trendline"):
+        fit = _linfit([p[1] for p in pts], [p[2] for p in pts])
+        if fit:
+            a, b, r2 = fit
+            body += _trend_svg(xof(xmin), yof(a + b * xmin), xof(xmax),
+                               yof(a + b * xmax), y0, y1, r2, x1 - 4)
     body += "</svg>"
     return body
 
@@ -1170,6 +1338,216 @@ def _gantt(table, opts):
     return body
 
 
+# ── Pareto (sorted bars + cumulative % line, 80% marker) ────────────
+
+def _pareto(table, opts):
+    rows = sorted(table["rows"],
+                  key=lambda r: -((r[1][0] if r[1] else 0) or 0))
+    cats = [r[0] for r in rows]
+    vals = [(r[1][0] if r[1] else 0) or 0 for r in rows]
+    colors = opts["colors"]
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    vmax = _nice_max(max(vals) if vals else 1)
+    body = _frame_open(opts)
+    grid, yof = _y_axis(x0, y0, x1, y1, vmax, 0, opts, opts.get("suffix", ""))
+    body += grid
+    n = len(cats)
+    band = (x1 - x0) / max(n, 1)
+    total = sum(vals) or 1
+    cum = 0.0
+    pts = []
+    for i, v in enumerate(vals):
+        h = (v / vmax) * (y1 - y0)
+        gx = x0 + band * i + band * 0.18
+        body += (f'<rect x="{gx:.1f}" y="{yof(v):.1f}" '
+                 f'width="{band*0.64:.1f}" height="{max(h,0):.1f}" '
+                 f'fill="{colors[0]}" rx="1"/>')
+        cum += v
+        pts.append((x0 + band * (i + 0.5),
+                    y1 - (cum / total) * (y1 - y0), cum / total))
+    # 80% reference + cumulative-share line on a 0–100% scale.
+    y80 = y1 - 0.8 * (y1 - y0)
+    body += (f'<line x1="{x0:.1f}" y1="{y80:.1f}" x2="{x1:.1f}" '
+             f'y2="{y80:.1f}" stroke="{_FAINT}" stroke-width="0.8" '
+             f'stroke-dasharray="4 3"/>'
+             f'<text x="{x1-2:.1f}" y="{y80-4:.1f}" text-anchor="end" '
+             f'font-family="{_SANS}" font-size="9.5" fill="{_FAINT}">80%'
+             f'</text>')
+    line = " ".join(f"{px:.1f},{py:.1f}" for px, py, _ in pts)
+    accent = colors[1 % len(colors)] if len(colors) > 1 else "#b8732a"
+    body += (f'<polyline points="{line}" fill="none" stroke="{accent}" '
+             f'stroke-width="2.2"/>')
+    for px, py, frac in pts:
+        body += (f'<circle cx="{px:.1f}" cy="{py:.1f}" r="3" '
+                 f'fill="{accent}"/>'
+                 f'<text x="{px:.1f}" y="{py-7:.1f}" text-anchor="middle" '
+                 f'font-family="{_SANS}" font-size="9" fill="{_DIM}">'
+                 f'{frac*100:.0f}%</text>')
+    body += _x_labels(cats, x0, x1, y1, opts) + "</svg>"
+    return body
+
+
+# ── Histogram (binned distribution of one value column) ─────────────
+
+def _histogram(table, opts):
+    vals = [r[1][0] for r in table["rows"] if r[1] and r[1][0] is not None]
+    colors = opts["colors"]
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    body = _frame_open(opts)
+    if not vals:
+        return body + "</svg>"
+    nb = int(opts.get("bins") or 0) or \
+        max(4, min(12, int(len(vals) ** 0.5) + 2))
+    lo, hi = min(vals), max(vals)
+    if hi == lo:
+        hi = lo + 1
+    w = (hi - lo) / nb
+    counts = [0] * nb
+    for v in vals:
+        counts[min(int((v - lo) / w), nb - 1)] += 1
+    vmax = _nice_max(max(counts))
+    grid, yof = _y_axis(x0, y0, x1, y1, vmax, 0, opts)
+    body += grid
+    band = (x1 - x0) / nb
+    labels = []
+    for i, c in enumerate(counts):
+        h = (c / vmax) * (y1 - y0)
+        gx = x0 + band * i + band * 0.06
+        body += (f'<rect x="{gx:.1f}" y="{yof(c):.1f}" '
+                 f'width="{band*0.88:.1f}" height="{max(h,0):.1f}" '
+                 f'fill="{colors[0]}"/>')
+        if c:
+            body += (f'<text x="{gx+band*0.44:.1f}" y="{yof(c)-3:.1f}" '
+                     f'text-anchor="middle" font-family="{_SANS}" '
+                     f'font-size="9.5" fill="{_DIM}">{c}</text>')
+        labels.append(f"{_fmt(lo + i * w)}–{_fmt(lo + (i + 1) * w)}")
+    mean = sum(vals) / len(vals)
+    body += (f'<text x="{x1:.1f}" y="{y0+12:.1f}" text-anchor="end" '
+             f'font-family="{_SANS}" font-size="10.5" fill="{_DIM}">'
+             f'n={len(vals)} · mean={_fmt(round(mean, 1), opts.get("suffix",""))}'
+             f'</text>')
+    body += _x_labels(labels, x0, x1, y1, opts) + "</svg>"
+    return body
+
+
+# ── Box plot (five-number summary per category) ──────────────────────
+
+def _quartiles(vs: List[float]) -> Tuple[float, float, float, float, float]:
+    s = sorted(vs)
+    n = len(s)
+
+    def q(p):
+        k = (n - 1) * p
+        f = int(k)
+        c = min(f + 1, n - 1)
+        return s[f] + (s[c] - s[f]) * (k - f)
+    return s[0], q(0.25), q(0.5), q(0.75), s[-1]
+
+
+def _box(table, opts):
+    groups = [(lab, [v for v in vals if v is not None])
+              for lab, vals in table["rows"]]
+    groups = [g for g in groups if g[1]]
+    colors = opts["colors"]
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    body = _frame_open(opts)
+    if not groups:
+        return body + "</svg>"
+    allv = [v for _, vs in groups for v in vs]
+    vmax = _nice_max(max(allv))
+    vmin = min(allv + [0])
+    grid, yof = _y_axis(x0, y0, x1, y1, vmax, vmin, opts,
+                        opts.get("suffix", ""))
+    body += grid
+    n = len(groups)
+    band = (x1 - x0) / max(n, 1)
+    for i, (lab, vs) in enumerate(groups):
+        mn, q1, med, q3, mx = _quartiles(vs)
+        cx = x0 + band * (i + 0.5)
+        bw = min(band * 0.5, 64.0)
+        col = colors[i % len(colors)]
+        body += (
+            # Whiskers + caps.
+            f'<line x1="{cx:.1f}" y1="{yof(mn):.1f}" x2="{cx:.1f}" '
+            f'y2="{yof(q1):.1f}" stroke="{_DIM}" stroke-width="1.2"/>'
+            f'<line x1="{cx:.1f}" y1="{yof(q3):.1f}" x2="{cx:.1f}" '
+            f'y2="{yof(mx):.1f}" stroke="{_DIM}" stroke-width="1.2"/>'
+            f'<line x1="{cx-bw*0.3:.1f}" y1="{yof(mn):.1f}" '
+            f'x2="{cx+bw*0.3:.1f}" y2="{yof(mn):.1f}" stroke="{_DIM}" '
+            f'stroke-width="1.2"/>'
+            f'<line x1="{cx-bw*0.3:.1f}" y1="{yof(mx):.1f}" '
+            f'x2="{cx+bw*0.3:.1f}" y2="{yof(mx):.1f}" stroke="{_DIM}" '
+            f'stroke-width="1.2"/>'
+            # IQR box + median.
+            f'<rect x="{cx-bw/2:.1f}" y="{yof(q3):.1f}" width="{bw:.1f}" '
+            f'height="{max(yof(q1)-yof(q3),1):.1f}" fill="{col}" '
+            f'fill-opacity="0.30" stroke="{col}" stroke-width="1.4" rx="2"/>'
+            f'<line x1="{cx-bw/2:.1f}" y1="{yof(med):.1f}" '
+            f'x2="{cx+bw/2:.1f}" y2="{yof(med):.1f}" stroke="{col}" '
+            f'stroke-width="2.4"/>'
+            f'<text x="{cx+bw/2+5:.1f}" y="{yof(med)+3.5:.1f}" '
+            f'font-family="{_SANS}" font-size="9.5" fill="{_DIM}">'
+            f'{_fmt(round(med, 1), opts.get("suffix",""))}</text>')
+    body += _x_labels([g[0] for g in groups], x0, x1, y1, opts) + "</svg>"
+    return body
+
+
+# ── Dumbbell (two points per category, horizontal) ───────────────────
+
+def _dumbbell(table, opts):
+    cats = [r[0] for r in table["rows"]]
+    series = _series(table)
+    colors = opts["colors"]
+    headers = table.get("headers", [])
+    x0, y0, x1, y1 = _plot(opts)
+    body = _frame_open(opts)
+    if len(series) < 2:
+        return body + "</svg>"
+    a, b = series[0]["values"], series[1]["values"]
+    allv = [v for v in (a + b) if v is not None]
+    vmax = _nice_max(max(allv) if allv else 1)
+    suffix = opts.get("suffix", "")
+
+    def xof(v):
+        return x0 + (v / vmax) * (x1 - x0)
+    for i in range(6):
+        v = vmax * i / 5
+        gx = xof(v)
+        body += (f'<line x1="{gx:.1f}" y1="{y0:.1f}" x2="{gx:.1f}" '
+                 f'y2="{y1:.1f}" stroke="{_GRID}" stroke-width="0.7"/>'
+                 f'<text x="{gx:.1f}" y="{y1+14:.1f}" text-anchor="middle" '
+                 f'font-family="{_SANS}" font-size="10" fill="{_FAINT}">'
+                 f'{_fmt(v, suffix)}</text>')
+    n = len(cats)
+    band = (y1 - y0) / max(n, 1)
+    ca, cb = colors[0], colors[1 % len(colors)]
+    for i, c in enumerate(cats):
+        va, vb = a[i] if i < len(a) else None, b[i] if i < len(b) else None
+        if va is None or vb is None:
+            continue
+        yy = y0 + band * (i + 0.5)
+        xa, xb = xof(va), xof(vb)
+        body += (f'<line x1="{xa:.1f}" y1="{yy:.1f}" x2="{xb:.1f}" '
+                 f'y2="{yy:.1f}" stroke="{_GRID}" stroke-width="3"/>'
+                 f'<circle cx="{xa:.1f}" cy="{yy:.1f}" r="5.5" '
+                 f'fill="{ca}"/>'
+                 f'<circle cx="{xb:.1f}" cy="{yy:.1f}" r="5.5" '
+                 f'fill="{cb}"/>'
+                 f'<text x="{x0-6:.1f}" y="{yy+3.5:.1f}" text-anchor="end" '
+                 f'font-family="{_SANS}" font-size="10.5" fill="{_DIM}">'
+                 f'{_esc(c)}</text>'
+                 f'<text x="{min(xa,xb)-9:.1f}" y="{yy+3.5:.1f}" '
+                 f'text-anchor="end" font-family="{_SANS}" font-size="9.5" '
+                 f'fill="{_DIM}">{_fmt(min(va,vb), suffix)}</text>'
+                 f'<text x="{max(xa,xb)+9:.1f}" y="{yy+3.5:.1f}" '
+                 f'font-family="{_SANS}" font-size="9.5" fill="{_DIM}">'
+                 f'{_fmt(max(va,vb), suffix)}</text>')
+    names = [{"name": headers[1] if len(headers) > 1 else "Before"},
+             {"name": headers[2] if len(headers) > 2 else "After"}]
+    body += _legend(names, [ca, cb], opts) + "</svg>"
+    return body
+
+
 # ── Export toolbar (download SVG / PNG, copy) ────────────────────────
 
 def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
@@ -1233,8 +1611,11 @@ _DISPATCH = {
     "column_stacked": (_bars, {"stacked": True}),
     "column_100": (_bars, {"stacked": True, "percent": True}),
     "bar": (_bars, {"horizontal": True}),
+    "pareto": (_pareto, {}),
     "line": (_lines, {}),
     "area": (_lines, {"area": True}),
+    "histogram": (_histogram, {}),
+    "boxplot": (_box, {}),
     "waterfall": (_waterfall, {}),
     "funnel": (_funnel, {}),
     "tornado": (_tornado, {}),
@@ -1249,6 +1630,7 @@ _DISPATCH = {
     "gauge": (_gauge, {}),
     "heatmap": (_heatmap, {}),
     "slope": (_slope, {}),
+    "dumbbell": (_dumbbell, {}),
     "gantt": (_gantt, {}),
     "marimekko": (_marimekko, {}),
     "combo": (_combo, {}),
