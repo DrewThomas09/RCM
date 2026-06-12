@@ -3556,3 +3556,42 @@ smoke: 6 requests incl. hostile (n=-3 clamps to 1 row, encoded =2+2
 deal defanged) → all 200, no tracebacks. Neighbor suites green:
 exhibit-factory + deal-context-prefill + palette + catalog + guide
 invariants + tools-index (88).
+
+## W2-166 (2026-06-12) — Expert-Call Program slice 3: calls logged as deal-note evidence, coverage derives from the record (wave #68)
+Closed the workstream loop — plan → call → EVIDENCE ON THE DEAL:
+- **`format_call_note` / `logged_call_counts`** (expert_calls.py):
+  structured note body "EXPERT CALL · <lens> — <vantage> (as of
+  <date>): <finding> [SUPPORTS|CONTRADICTS|NEW QUESTION]". STRICT
+  validation (unknown lens / invalid tag / empty finding raise — a
+  malformed note would silently fall out of the coverage count);
+  field caps (vantage 200 / finding 2000 / as-of 40); the counter
+  accepts only the exact prefix+label, so free-text notes that merely
+  mention a call never inflate coverage.
+- **POST `/api/expert-calls/log`**: records the note via deal_notes on
+  an EXISTING deal only (same junk-upsert guard as the roll-up save);
+  invalid fields redirect with NO note written; success → ?logged=1
+  confirmation. Author = session user.
+- **Page**: "Log a completed call — <deal>" form (lens select /
+  vantage / as-of / finding / thesis-tag) renders ONLY with an active
+  deal (nothing honest to attach to otherwise); the coverage tracker
+  now DERIVES its counts from the logged EXPERT CALL notes with a
+  visible source note ("Counts below come from N logged notes —
+  enter numbers to override"); explicit done_* params always win;
+  lens-chip links stop baking note-derived counts into params (a live
+  count must not freeze into an override). The closing-script
+  discipline ("an untagged call is color, not evidence") is now
+  enforced by the form's tag select.
+**Verify**: test_expert_calls.py 35→43 — note↔counter round-trip,
+field defaults ("vantage unstated"/"date unstated", tag normalized),
+strict raises, free-text/almost-prefix bodies count zero; real-HTTP
+class: form only with deal context, POST→303 logged=1 + note with the
+exact prefix + page shows confirmation + THIN chip from the derived
+count + explicit param override kills the derived note, unknown deal/
+bad lens/bad tag/blank finding → 303 without logged=1 and ZERO new
+notes. Live workflow smoke: 3 POSTs (incl. hostile <script> finding +
+5,000-char finding) → notes recorded capped, page derives COVERED,
+note searchable on /notes?q=EXPERT+CALL with hostile content escaped
+(escaping verified at the notes renderer). Neighbor suites green:
+expert-calls + rollup-save + deal-context-prefill + guide invariants
++ section catalog (95). /deal/<id> fallback dashboard for snapshot-less
+deals omits the notes section — pre-existing surface shape, noted.

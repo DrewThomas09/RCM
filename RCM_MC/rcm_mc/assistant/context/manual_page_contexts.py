@@ -12027,9 +12027,12 @@ _MANUAL.extend([
                                  "way; calibrate answers against the "
                                  "platform's filed-data surfaces."],
         limitations=["The bank is curated and generic to healthcare "
-                     "services — tailor questions to the engagement; the "
-                     "page stores nothing server-side (state lives in "
-                     "the URL)."],
+                     "services — tailor questions to the engagement. "
+                     "Tracker state lives in the URL; the exception is "
+                     "the log-a-call form (shown with an active deal), "
+                     "which records each completed call as a structured "
+                     "EXPERT CALL deal note — coverage then derives "
+                     "from those notes (explicit counts still win)."],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),

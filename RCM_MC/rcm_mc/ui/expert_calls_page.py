@@ -366,7 +366,10 @@ def expert_calls_csv(qs: "Dict[str, Any] | None" = None) -> str:
     return buf.getvalue()
 
 
-def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
+def render_expert_calls_page(
+        qs: "Dict[str, Any] | None" = None, *,
+        active_deal: "Dict[str, str] | None" = None,
+        logged_counts: "Dict[str, int] | None" = None) -> str:
     qs = qs or {}
     n = _qsint(qs, "n", 20, 1, 200)
     deal = _qs1(qs, "deal", "")[:80]
@@ -375,13 +378,30 @@ def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
         lens_key = "referring_physician"
 
     plan = program_plan(n)
-    completed = {s["key"]: _qsint(qs, f"done_{s['key']}", 0, 0, 99)
-                 for s in STAKEHOLDER_TYPES}
+    # Coverage source of truth: explicit done_* params win; with none
+    # entered, the counts come from the structured EXPERT CALL notes
+    # already logged on the active deal (the evidence trail), and the
+    # page says so — never a silent substitution.
+    any_done_params = any(_qs1(qs, f"done_{s['key']}")
+                          for s in STAKEHOLDER_TYPES)
+    counts_from_notes = (not any_done_params
+                         and bool(logged_counts))
+    if counts_from_notes:
+        completed = {s["key"]: min(99, max(0, int(
+            logged_counts.get(s["key"], 0))))
+            for s in STAKEHOLDER_TYPES}
+    else:
+        completed = {s["key"]: _qsint(qs, f"done_{s['key']}", 0, 0, 99)
+                     for s in STAKEHOLDER_TYPES}
     read = coverage_read(completed, n)
     guide = build_call_guide(lens_key, deal_name=deal)
 
-    base_qs = "".join(
-        f"&done_{k}={v}" for k, v in completed.items() if v) + f"&n={n}"
+    # Lens-chip links carry the tracker state — but when the counts
+    # come from logged notes, baking them into done_* params would
+    # freeze a live count into an explicit override. Leave them out so
+    # navigation keeps deriving from the notes.
+    base_qs = ("" if counts_from_notes else "".join(
+        f"&done_{k}={v}" for k, v in completed.items() if v)) + f"&n={n}"
     if deal:
         base_qs += "&deal=" + quote_plus(deal)
 
@@ -407,6 +427,84 @@ def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
             f'<b>{html.escape(deal)}</b> — the guide stamp and call '
             f'sheet carry its name. Type a different deal to '
             f'override.</div>')
+
+    # Log-a-call: only offered with a deal context — a call note has
+    # to live on a deal record, there is nothing honest to attach it
+    # to otherwise (same rule as the roll-up save).
+    log_block = ""
+    deal_id = (active_deal or {}).get("id", "")
+    if deal_id:
+        deal_label = (active_deal.get("name") or deal_id)
+        if _qs1(qs, "logged") == "1":
+            confirm = (
+                f'<p style="font-size:12px;color:#0a8a5f;margin:0 0 10px;">'
+                f'Call logged to <a href="/deal/{html.escape(deal_id)}" '
+                f'style="color:#0a8a5f;font-weight:700;">'
+                f'{html.escape(deal_label)}</a> as a structured note — '
+                f'the coverage tracker below counts it.</p>')
+        else:
+            confirm = ""
+        lens_opts = "".join(
+            f'<option value="{s["key"]}"'
+            f'{" selected" if s["key"] == lens_key else ""}>'
+            f'{html.escape(s["label"])}</option>'
+            for s in STAKEHOLDER_TYPES)
+        tag_opts = "".join(
+            f'<option value="{t}">{t}</option>'
+            for t in ("SUPPORTS", "CONTRADICTS", "NEW QUESTION"))
+        _in = (f'height:30px;border:1px solid #c9c1ac;border-radius:5px;'
+               f'padding:0 8px;font-family:{_SERIF};')
+        log_block = (
+            f'<div style="border:1px solid #d6cfc0;border-radius:8px;'
+            f'background:#fff;padding:18px 20px;margin-top:18px;">'
+            f'<div style="font-size:10px;letter-spacing:0.07em;'
+            f'font-weight:700;color:#7a8699;margin-bottom:8px;">'
+            f'LOG A COMPLETED CALL — {html.escape(deal_label.upper())}'
+            f'</div>{confirm}'
+            f'<form method="post" action="/api/expert-calls/log">'
+            f'<input type="hidden" name="deal_id" '
+            f'value="{html.escape(deal_id)}">'
+            f'<div style="display:grid;grid-template-columns:1.1fr 1.4fr '
+            f'0.7fr;gap:10px;">'
+            f'<label style="font-size:11px;color:#465366;">Lens'
+            f'<select name="lens" style="width:100%;{_in}">{lens_opts}'
+            f'</select></label>'
+            f'<label style="font-size:11px;color:#465366;">Interviewee '
+            f'vantage (role, geography)'
+            f'<input type="text" name="vantage" maxlength="200" '
+            f'placeholder="e.g. former contracting VP, TX Blues" '
+            f'style="width:100%;{_in}"></label>'
+            f'<label style="font-size:11px;color:#465366;">As of'
+            f'<input type="text" name="as_of" maxlength="40" '
+            f'placeholder="2026-06" style="width:100%;{_in}"></label>'
+            f'</div>'
+            f'<label style="font-size:11px;color:#465366;display:block;'
+            f'margin-top:10px;">Key finding (one finding per note)'
+            f'<textarea name="finding" required maxlength="2000" rows="2" '
+            f'style="width:100%;border:1px solid #c9c1ac;border-radius:5px;'
+            f'padding:6px 8px;font-family:{_SERIF};"></textarea></label>'
+            f'<div style="display:flex;gap:12px;align-items:center;'
+            f'margin-top:10px;">'
+            f'<label style="font-size:11px;color:#465366;">Thesis tag'
+            f'<select name="tag" style="{_in}margin-left:6px;">{tag_opts}'
+            f'</select></label>'
+            f'<button type="submit" style="padding:8px 16px;'
+            f'background:#0b2341;color:#fff;border:none;border-radius:5px;'
+            f'font-weight:600;cursor:pointer;">Log call</button>'
+            f'<span style="font-size:11px;color:#7a8699;">records a '
+            f'structured note on the deal — an untagged call is color, '
+            f'not evidence</span></div></form></div>')
+
+    # Visible-source note when the tracker is fed by logged notes.
+    counts_note = ""
+    if counts_from_notes:
+        counts_note = (
+            f'<div style="font-size:11.5px;color:#155752;'
+            f'margin:0 0 8px;">Counts below come from '
+            f'<b>{read["total_done"]}</b> logged EXPERT CALL note'
+            f'{"s" if read["total_done"] != 1 else ""} on '
+            f'<b>{html.escape((active_deal or {}).get("name") or deal_id)}'
+            f'</b> — enter numbers to override.</div>')
 
     # Exhibit chrome on the guide: a printed guide is the deliverable
     # an associate takes into the call, so it gets the numbered,
@@ -494,6 +592,9 @@ def render_expert_calls_page(qs: "Dict[str, Any] | None" = None) -> str:
           f'date / interviewee / finding columns to keep in the data '
           f'room.</span></div></div>'
         + _cadence_table(cadence)
+        + log_block
+        + (f'<div style="margin-top:18px;">{counts_note}</div>'
+           if counts_note else "")
         + _coverage_block(read, qs, n, lens_key, deal)
         + _topic_matrix(topics, any_done)
         + f'<div style="margin-top:18px;">'

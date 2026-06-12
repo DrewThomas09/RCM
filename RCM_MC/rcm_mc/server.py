@@ -6727,7 +6727,23 @@ class RCMHandler(BaseHTTPRequestHandler):
                 if _ec_meta.get("name"):
                     _ec_qs["deal"] = [_ec_meta["name"]]
                     _ec_qs.setdefault("_prefill_deal", [_ec_meta["name"]])
-            return self._send_html(render_expert_calls_page(_ec_qs))
+            # Coverage from the evidence trail: count the structured
+            # EXPERT CALL notes already logged on the active deal so the
+            # tracker reflects what's recorded (explicit done_* params
+            # win on-page). Best-effort — notes trouble never 500s.
+            _ec_counts = None
+            if _ec_meta and _ec_meta.get("id"):
+                try:
+                    from .deals.deal_notes import list_notes
+                    from .diligence.expert_calls import logged_call_counts
+                    _df = list_notes(PortfolioStore(self.config.db_path),
+                                     _ec_meta["id"])
+                    _ec_counts = logged_call_counts(
+                        _df["body"].tolist() if len(_df) else [])
+                except Exception:  # noqa: BLE001
+                    _ec_counts = None
+            return self._send_html(render_expert_calls_page(
+                _ec_qs, active_deal=_ec_meta, logged_counts=_ec_counts))
         if path == "/api/diligence/expert-calls.csv":
             # Call-sheet export — one row per planned call (week, lens,
             # sourcing) + empty tracking columns; same qs as the page.
@@ -13247,6 +13263,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_target_screener_snapshot_post()
         if path == "/api/rollup/save-to-deal":
             return self._route_rollup_save_to_deal_post()
+        if path == "/api/expert-calls/log":
+            return self._route_expert_call_log_post()
         if path == "/api/login":
             return self._route_login_post()
         if path == "/api/logout":
@@ -13985,6 +14003,42 @@ class RCMHandler(BaseHTTPRequestHandler):
         except Exception:  # noqa: BLE001 — never 500 a save action
             return self._redirect(f"/pipeline/rollup?{back_qs}")
         return self._redirect(f"/pipeline/rollup?{back_qs}&saved_note=1")
+
+    def _route_expert_call_log_post(self) -> None:
+        """POST /api/expert-calls/log — record one completed expert call
+        as a structured deal note (the program's evidence trail).
+
+        The note body is built by format_call_note (strict validation:
+        lens + thesis tag + non-empty finding) so logged_call_counts can
+        later derive coverage from it. The deal must already exist —
+        record_note would silently upsert a junk deal otherwise (same
+        guard as the roll-up save)."""
+        form = self._read_form_body()
+        deal_id = (form.get("deal_id", "") or "").strip()[:128]
+        back = "/diligence/expert-calls"
+        if not deal_id:
+            return self._redirect(back)
+        store = PortfolioStore(self.config.db_path)
+        try:
+            deals = store.list_deals(include_archived=True)
+            if deal_id not in set(deals.get("deal_id", [])):
+                return self._redirect(back)
+            from .diligence.expert_calls import format_call_note
+            body = format_call_note(
+                (form.get("lens", "") or "").strip(),
+                vantage=form.get("vantage", "") or "",
+                finding=form.get("finding", "") or "",
+                tag=form.get("tag", "") or "",
+                as_of=form.get("as_of", "") or "")
+            from .deals.deal_notes import record_note
+            record_note(store, deal_id=deal_id, body=body,
+                        author=self._current_username() or "api")
+        except ValueError:
+            # Invalid lens/tag/empty finding — never a junk note.
+            return self._redirect(back)
+        except Exception:  # noqa: BLE001 — never 500 a save action
+            return self._redirect(back)
+        return self._redirect(f"{back}?logged=1")
 
     def _route_quick_import_post(self) -> None:
         """POST /quick-import — create a deal from browser form."""

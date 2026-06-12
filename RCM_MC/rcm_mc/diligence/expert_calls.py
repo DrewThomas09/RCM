@@ -715,3 +715,69 @@ def call_sheet_rows(total_calls: int = 20) -> List[Dict[str, Any]]:
                              "lens": s["label"],
                              "sourcing": s["sourcing"]})
     return rows
+
+
+# ── Slice 3: call notes — the evidence trail on the deal ────────────
+
+# Every logged finding must take a position against the thesis; an
+# untagged call note is color, not evidence (the closing script says
+# the same thing to the caller).
+THESIS_TAGS = ("SUPPORTS", "CONTRADICTS", "NEW QUESTION")
+
+_NOTE_PREFIX = "EXPERT CALL"
+
+# Field caps: a call note is a finding, not a transcript.
+_MAX_VANTAGE = 200
+_MAX_FINDING = 2000
+_MAX_AS_OF = 40
+
+
+def format_call_note(lens_key: str, *, vantage: str, finding: str,
+                     tag: str, as_of: str = "") -> str:
+    """Build the structured deal-note body for one completed call.
+
+    Validates strictly — an invalid lens or tag raises rather than
+    producing an unparseable note, because :func:`logged_call_counts`
+    later derives coverage from these bodies and a malformed note
+    would silently fall out of the count."""
+    s = stakeholder(lens_key)
+    if s is None:
+        raise ValueError(f"unknown stakeholder lens: {lens_key!r}")
+    tag = (tag or "").strip().upper()
+    if tag not in THESIS_TAGS:
+        raise ValueError(
+            f"thesis tag must be one of {THESIS_TAGS}, got {tag!r}")
+    finding = (finding or "").strip()
+    if not finding:
+        raise ValueError("finding cannot be empty")
+    vantage = (vantage or "").strip()[:_MAX_VANTAGE]
+    finding = finding[:_MAX_FINDING]
+    as_of = (as_of or "").strip()[:_MAX_AS_OF]
+    vantage_bit = vantage or "vantage unstated"
+    as_of_bit = as_of or "date unstated"
+    return (f"{_NOTE_PREFIX} · {s['label']} — {vantage_bit} "
+            f"(as of {as_of_bit}): {finding} [{tag}]")
+
+
+_LABEL_TO_KEY: Dict[str, str] = {
+    s["label"]: s["key"] for s in STAKEHOLDER_TYPES
+}
+
+
+def logged_call_counts(note_bodies: Any) -> Dict[str, int]:
+    """Derive per-lens completed-call counts from deal-note bodies.
+
+    Only notes written by :func:`format_call_note` count (exact
+    ``EXPERT CALL · <lens label>`` prefix) — free-text notes that
+    merely mention a call never inflate coverage."""
+    counts: Dict[str, int] = {}
+    for body in note_bodies or []:
+        text = str(body or "")
+        if not text.startswith(_NOTE_PREFIX + " · "):
+            continue
+        rest = text[len(_NOTE_PREFIX) + 3:]
+        for label, key in _LABEL_TO_KEY.items():
+            if rest.startswith(label + " — "):
+                counts[key] = counts.get(key, 0) + 1
+                break
+    return counts

@@ -11,9 +11,10 @@ from __future__ import annotations
 import unittest
 
 from rcm_mc.diligence.expert_calls import (
-    CDD_TOPICS, QUESTION_BANK, STAKEHOLDER_TYPES,
+    CDD_TOPICS, QUESTION_BANK, STAKEHOLDER_TYPES, THESIS_TAGS,
     COVERED, THIN, UNCOVERED, TRIANGULATED, SINGLE_LENS, DARK,
-    build_call_guide, call_sheet_rows, coverage_read, program_plan,
+    build_call_guide, call_sheet_rows, coverage_read,
+    format_call_note, logged_call_counts, program_plan,
     stakeholder, topic_coverage, topic_lens_matrix, weekly_cadence,
 )
 from rcm_mc.ui.expert_calls_page import (
@@ -372,6 +373,182 @@ class ActiveDealPrefillHTTPTests(unittest.TestCase):
         status, body = self._get("/diligence/expert-calls")
         self.assertEqual(status, 200)
         self.assertNotIn("Pre-scoped to your active deal", body)
+
+
+class CallNoteTests(unittest.TestCase):
+    def test_note_round_trips_through_the_counter(self):
+        bodies = [
+            format_call_note("payer_exec", vantage="former VP, TX Blues",
+                             finding="Target is top-quartile on rates",
+                             tag="CONTRADICTS", as_of="2026-06"),
+            format_call_note("payer_exec", vantage="ex-network director",
+                             finding="Must-have in two metros",
+                             tag="SUPPORTS"),
+            format_call_note("referring_physician", vantage="TX PCP",
+                             finding="Refers on access alone",
+                             tag="NEW QUESTION"),
+        ]
+        self.assertEqual(logged_call_counts(bodies),
+                         {"payer_exec": 2, "referring_physician": 1})
+
+    def test_note_carries_all_fields_and_defaults(self):
+        note = format_call_note(
+            "industry_expert", vantage="", finding="MFP lands 2028",
+            tag="supports", as_of="")
+        self.assertIn("EXPERT CALL · Industry / reimbursement expert",
+                      note)
+        self.assertIn("vantage unstated", note)
+        self.assertIn("(as of date unstated)", note)
+        self.assertIn("[SUPPORTS]", note)   # tag normalized upper
+
+    def test_invalid_inputs_raise_never_malform(self):
+        with self.assertRaises(ValueError):
+            format_call_note("astrologer", vantage="x", finding="y",
+                             tag="SUPPORTS")
+        with self.assertRaises(ValueError):
+            format_call_note("payer_exec", vantage="x", finding="y",
+                             tag="MAYBE")
+        with self.assertRaises(ValueError):
+            format_call_note("payer_exec", vantage="x", finding="  ",
+                             tag="SUPPORTS")
+
+    def test_free_text_notes_never_inflate_coverage(self):
+        bodies = [
+            "Talked to a payer exec today — interesting call.",
+            "EXPERT CALLBACK · Payer / contracting executive — x: y [Z]",
+            "",
+            None,
+        ]
+        self.assertEqual(logged_call_counts(bodies), {})
+
+    def test_thesis_tags_constant(self):
+        self.assertEqual(THESIS_TAGS,
+                         ("SUPPORTS", "CONTRADICTS", "NEW QUESTION"))
+
+
+class LogCallHTTPTests(unittest.TestCase):
+    """POST /api/expert-calls/log records the structured note on an
+    EXISTING deal, and the page's coverage tracker derives from the
+    logged notes (explicit done_* params win) — over real HTTP."""
+
+    @classmethod
+    def setUpClass(cls):
+        import os
+        import socket
+        import tempfile
+        import threading
+        import time
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.server import build_server
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.db = os.path.join(cls.tmp.name, "p.db")
+        store = PortfolioStore(cls.db)
+        store.upsert_deal("buh", name="Bigtown Health",
+                          profile={"state": "TX"})
+        cls.store = store
+        s = socket.socket(); s.bind(("127.0.0.1", 0))
+        cls.port = s.getsockname()[1]; s.close()
+        cls.server, _ = build_server(
+            port=cls.port, host="127.0.0.1", db_path=cls.db, auth=None)
+        cls.t = threading.Thread(target=cls.server.serve_forever,
+                                 daemon=True)
+        cls.t.start(); time.sleep(0.2)
+        import urllib.request as _u
+
+        class _NoRedirect(_u.HTTPRedirectHandler):
+            def redirect_request(self, *a, **k):
+                return None
+        cls.opener = _u.build_opener(_NoRedirect)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown(); cls.server.server_close()
+        cls.t.join(timeout=5); cls.tmp.cleanup()
+
+    @staticmethod
+    def _cookie():
+        import json
+        import urllib.parse
+        return "pedesk_active_deal_meta=" + urllib.parse.quote(
+            json.dumps({"id": "buh", "name": "Bigtown Health",
+                        "state": "TX", "ccn": ""},
+                       separators=(",", ":")))
+
+    def _post(self, data):
+        import urllib.error
+        import urllib.parse
+        import urllib.request as _u
+        req = _u.Request(
+            f"http://127.0.0.1:{self.port}/api/expert-calls/log",
+            data=urllib.parse.urlencode(data).encode(), method="POST")
+        try:
+            resp = self.opener.open(req, timeout=30)
+            return resp.status, resp.headers.get("Location", "")
+        except urllib.error.HTTPError as e:
+            return e.code, e.headers.get("Location", "")
+
+    def _get(self, path, cookie=None):
+        import urllib.request as _u
+        req = _u.Request(f"http://127.0.0.1:{self.port}{path}")
+        if cookie:
+            req.add_header("Cookie", cookie)
+        with _u.urlopen(req, timeout=20) as r:
+            return r.status, r.read().decode()
+
+    def _notes(self):
+        from rcm_mc.deals.deal_notes import list_notes
+        df = list_notes(self.store, "buh")
+        return df["body"].tolist() if len(df) else []
+
+    def test_01_form_only_with_active_deal(self):
+        _, body = self._get("/diligence/expert-calls")
+        self.assertNotIn("LOG A COMPLETED CALL", body)
+        _, body = self._get("/diligence/expert-calls",
+                            cookie=self._cookie())
+        self.assertIn("LOG A COMPLETED CALL — BIGTOWN HEALTH", body)
+        self.assertIn("/api/expert-calls/log", body)
+
+    def test_02_log_then_coverage_reflects_it(self):
+        code, loc = self._post(
+            {"deal_id": "buh", "lens": "payer_exec",
+             "vantage": "former VP, TX Blues",
+             "finding": "Target is top-quartile on commercial rates",
+             "tag": "CONTRADICTS", "as_of": "2026-06"})
+        self.assertEqual(code, 303)
+        self.assertIn("logged=1", loc)
+        notes = self._notes()
+        self.assertTrue(any(
+            b.startswith("EXPERT CALL · Payer / contracting executive")
+            for b in notes))
+        # The page (with the deal context) derives the count.
+        _, body = self._get("/diligence/expert-calls?logged=1",
+                            cookie=self._cookie())
+        self.assertIn("Call logged to", body)
+        self.assertIn("logged EXPERT CALL note", body)
+        self.assertIn(">THIN<", body)   # payer lens now 1 call
+        # Explicit params still win over the notes-derived counts.
+        _, body = self._get(
+            "/diligence/expert-calls?done_payer_exec=2",
+            cookie=self._cookie())
+        self.assertNotIn("logged EXPERT CALL note", body)
+
+    def test_03_unknown_deal_or_bad_fields_record_nothing(self):
+        before = len(self._notes())
+        code, loc = self._post(
+            {"deal_id": "ghost", "lens": "payer_exec",
+             "finding": "x", "tag": "SUPPORTS"})
+        self.assertEqual(code, 303)
+        self.assertNotIn("logged=1", loc)
+        for bad in ({"deal_id": "buh", "lens": "astrologer",
+                     "finding": "x", "tag": "SUPPORTS"},
+                    {"deal_id": "buh", "lens": "payer_exec",
+                     "finding": "x", "tag": "MAYBE"},
+                    {"deal_id": "buh", "lens": "payer_exec",
+                     "finding": "  ", "tag": "SUPPORTS"}):
+            code, loc = self._post(bad)
+            self.assertEqual(code, 303)
+            self.assertNotIn("logged=1", loc)
+        self.assertEqual(len(self._notes()), before)
 
 
 if __name__ == "__main__":
