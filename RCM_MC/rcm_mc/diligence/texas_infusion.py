@@ -1416,6 +1416,52 @@ def texas_ma_enrollment(tx_pop: float, seniors: float,
     }
 
 
+def texas_hopd_pool(
+    metro_deepdives: List[Dict[str, Any]], hopd_share: float,
+    fetch_live: bool = False,
+) -> Dict[str, Any]:
+    """The hospital-outpatient (HOPD) infusion pool — the volume being
+    STEERED AWAY from the hospital that an AIC / home platform competes
+    to capture. Per metro: HOPD infusion patients = real metro infusion
+    patients × the HOPD site share, and HOPD revenue at the model's
+    infusions/yr × revenue/infusion. A live CMS OPPS by-provider-and-
+    service pull (TX, infusion J-codes) overrides with real HOPD services
+    + Medicare payment where egress permits."""
+    metros = []
+    for dd in metro_deepdives:
+        pts = sum(int(s.get("infusion_patients") or 0)
+                  for s in dd.get("suburbs", []))
+        hopd_pts = round(pts * hopd_share)
+        hopd_rev = round(hopd_pts * INFUSIONS_PER_PATIENT_YR
+                         * REVENUE_PER_INFUSION)
+        metros.append({"metro": dd["metro"], "infusion_patients": pts,
+                       "hopd_patients": hopd_pts, "hopd_revenue": hopd_rev})
+    metros.sort(key=lambda m: -m["hopd_patients"])
+    live = {"live": False}
+    if fetch_live:
+        from ..data.cms_asp_pricing import INFUSION_HCPCS
+        from ..data.cms_opps_outpatient import fetch_opps_state_infusion
+        live = fetch_opps_state_infusion(
+            "TX", [c["hcpcs"] for c in INFUSION_HCPCS])
+    return {
+        "metros": metros,
+        "hopd_share": round(hopd_share, 3),
+        "total_hopd_patients": sum(m["hopd_patients"] for m in metros),
+        "total_hopd_revenue": sum(m["hopd_revenue"] for m in metros),
+        "opps_live": bool(live.get("live")),
+        "opps_services": live.get("services"),
+        "opps_payment": live.get("medicare_payment"),
+        "note": ("The HOPD infusion pool is the volume payers are steering "
+                 "OUT of the hospital — the white-space an AIC / home "
+                 "platform captures, not a competitor to displace. Modeled "
+                 "from real metro infusion patients × the HOPD site share "
+                 "× the sizing model's infusions/yr × revenue/infusion; the "
+                 "live CMS Outpatient-Hospitals (by provider & service) "
+                 "file overrides with real HOPD services + Medicare payment "
+                 "where egress permits."),
+    }
+
+
 #: Approximate map coordinates (viewBox 0–100) for the four target
 #: metros on a stylized Texas outline — for the provider map.
 _METRO_MAP_XY = {
@@ -2891,6 +2937,11 @@ def build_texas_infusion_analysis(
         "tornado": tornado,
         "site_of_care": site,
         "site_of_care_evolution": home_infusion_evolution(),
+        "hopd_pool": texas_hopd_pool(
+            metro_deepdives,
+            next((s["share"] for s in site
+                  if "HOPD" in s["site"] or "Hospital" in s["site"]), 0.30),
+            fetch_live=nppes_live),
         "payer_mix": payer,
         "asp_pricing": texas_asp_pricing(),
         "ma_enrollment": texas_ma_enrollment(tx_pop, seniors,
@@ -2992,6 +3043,9 @@ def build_texas_infusion_analysis(
             "CMS Medicare Monthly Enrollment — total Medicare beneficiaries "
             "(the true MA-penetration denominator; live + published TX "
             "fallback)",
+            "CMS Medicare Outpatient Hospitals (by provider & service) — "
+            "HOPD infusion services + payment for the steered-away pool "
+            "(live override; modeled from HOPD share offline)",
         ],
         "basis_note": model.basis_note,
     }

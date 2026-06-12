@@ -3531,3 +3531,27 @@ denominator, < the proxy, offline = published fallback) + new
 `test_cms_enrollment.py` (4) — offline uses published total, unknown
 state → US fallback, fetch fails closed unresolved, parses latest-month
 total from a mocked payload. Full suite green.
+
+## W2-170 (2026-06-12) — Texas infusion: HOPD steered-away pool (CMS Outpatient Hospitals) (wave #72)
+Wired the last named data source — CMS Medicare Outpatient Hospitals (by
+provider & service) — and quantified the HOPD "steered-away" pool:
+- **`cms_opps_outpatient.fetch_opps_state_infusion`** (new): a best-effort
+  live aggregator over the OPPS by-provider-and-service file — total HOPD
+  outpatient services + Medicare payment for the infusion J-codes in a
+  state. Resolves the dataset from the CMS catalog, fails CLOSED.
+- **`texas_hopd_pool`**: per-metro HOPD infusion pool — HOPD patients =
+  real metro infusion patients × the HOPD site share (30%), HOPD revenue
+  at the sizing model's infusions/yr × revenue/infusion. ≈58k capturable
+  HOPD patients / ≈$0.7B across the four metros (DFW + Houston largest).
+  The live CMS OPPS pull overrides with real services + payment under
+  `?nppes=live`.
+- **Page**: a "HOPD infusion — the steered-away pool" panel in the
+  site-of-care section — capturable HOPD patients + revenue pool KPIs,
+  per-metro bars, and a LIVE/MODELED badge. Frames the 30% HOPD pool as
+  the white-space an AIC/home roll-up captures (not a competitor).
+This completes the user's named data-source list (CDC PLACES, ACS, ASP,
+MA enrollment, Medicare Monthly Enrollment, NPPES + map, Part-B POS, and
+now Outpatient Hospitals).
+**Verify**: +3 HOPD tests — pool = real metro patients × HOPD share +
+ranked + summed, offline is modeled (OPPS fails closed), live flag
+threads through + fails closed; +2 render needles. Full suite green.

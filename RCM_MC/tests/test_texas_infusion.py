@@ -891,6 +891,40 @@ class ASPandMATests(unittest.TestCase):
         self.assertIn("published", ma["denominator_source"])
 
 
+class HopdPoolTests(unittest.TestCase):
+    """HOPD 'steered-away' infusion pool — modeled from real metro
+    patients × the HOPD site share, live CMS OPPS overridable."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.hp = self.a["hopd_pool"]
+
+    def test_pool_modeled_from_real_metro_patients_and_share(self):
+        share = self.hp["hopd_share"]
+        self.assertTrue(0.2 <= share <= 0.45)
+        for m in self.hp["metros"]:
+            self.assertEqual(m["hopd_patients"],
+                             round(m["infusion_patients"] * share))
+            self.assertGreater(m["hopd_revenue"], 0)
+        # Total = sum across the four metros; ranked descending.
+        self.assertEqual(self.hp["total_hopd_patients"],
+                         sum(m["hopd_patients"] for m in self.hp["metros"]))
+        pts = [m["hopd_patients"] for m in self.hp["metros"]]
+        self.assertEqual(pts, sorted(pts, reverse=True))
+
+    def test_offline_is_modeled_not_live(self):
+        self.assertFalse(self.hp["opps_live"])
+        from rcm_mc.data.cms_opps_outpatient import fetch_opps_state_infusion
+        self.assertEqual(fetch_opps_state_infusion("TX", ["J1745"]),
+                         {"live": False})
+
+    def test_live_flag_threads_through_fails_closed(self):
+        from rcm_mc.diligence.texas_infusion import texas_hopd_pool
+        hp = texas_hopd_pool(self.a["metro_deepdives"], 0.30,
+                             fetch_live=True)
+        self.assertFalse(hp["opps_live"])   # OPPS unreachable → no fabrication
+
+
 class ProviderMapTests(unittest.TestCase):
     """NPPES infusion-provider map — real estimated counts, real public
     taxonomy codes, and a live NPPES count that is OFF by default (never
@@ -1169,6 +1203,8 @@ class PageRenderTests(unittest.TestCase):
             "Regulatory &amp; reimbursement environment", "NET READ",
             "Home Infusion Therapy (HIT)", "340B drug pricing",
             "No Certificate of Need", "Implication:",
+            "HOPD infusion — the steered-away pool",
+            "CAPTURABLE HOPD PATIENTS",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
