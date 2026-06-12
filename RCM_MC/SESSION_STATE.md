@@ -3,6 +3,15 @@
   8 hours, no questions, loop. Stream: claude/general-improvements-a78byd,
   PR #1811 accumulates; merge origin/main between items as the parallel
   chart stream advances; regression sweep every ~4 items.)
+- window3 progress (as of ~13:00Z): 28+ items shipped to PR #1811;
+  full sweep 15,753 passed / 0 failed on the merged tree (sweep #6).
+  ALL Tier-1 PAGE_INVENTORY top fixes closed (W2-191…200);
+  FEATURE_MATRIX + PAGE_INVENTORY re-checked for doc honesty; demo deal
+  mvm_2026 rebuilt on real CCN 450358 (workstream H); P13 bullets on
+  /state-profile + market-data state detail; clean 170-route walks ×2.
+  Remaining groomed-open: P4 saved peer-set object, P5 per-deal exhibit
+  registry, P6 facility pins, P9 CHOW-diff alerts, P10 provenance
+  modal+coverage, P14 timing budgets.
 - window3 progress (as of ~11:30Z): 16 items shipped to PR #1811 —
   ready-queue CLEARED (#23 CIM pctile chip, #24 ROLL-UP chip, #26
   exhibit chrome ×2, #27 walker --deal-cookie + weekly-sweep pass, #30
