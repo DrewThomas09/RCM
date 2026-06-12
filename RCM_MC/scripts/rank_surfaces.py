@@ -195,7 +195,14 @@ def build_rankings():
             "total": round(
                 (useful * _USEFUL_WEIGHT + effort * _EFFORT_WEIGHT) * 10.0 / _TOTAL_MAX, 1),
         })
-    rows.sort(key=lambda r: (-r["total"], -r["loc"]))
+    # Tiebreak: the Target Screener is the flagship workbench and leads
+    # among equal scores — a product decision (pinned by
+    # test_surface_rankings), not an emergent one. Without this, any
+    # page that grows to a perfect score (texas-infusion after waves
+    # #76-79) displaces it on the LOC tiebreak alone.
+    rows.sort(key=lambda r: (-r["total"],
+                             r["route"] != "/target-screener",
+                             -r["loc"]))
     return rows
 
 
