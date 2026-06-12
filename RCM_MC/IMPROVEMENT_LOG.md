@@ -3812,3 +3812,20 @@ suites green (73 passed); guide context updated for the new inputs.
 template suite green incl. the XML-escaped sheet-name fix
 ("Sources &amp; Uses" in workbook.xml is correct OOXML); HTTP smoke on
 all four new download paths; audit regen 187 pages / 0 flags.
+
+## W2-174 (2026-06-12) — Wave 7: transaction-multiple depth + hub cost module
+- **Transaction multiples 16 → 29 bands (13 → 23 specialties)**: added
+  the active deal-flow verticals that had no band — INFUSION (platform
+  scarcity note), ASC (site-of-care tailwind), CARDIOLOGY (hottest
+  physician vertical since 2023), ORTHO_MSK, URGENT_CARE,
+  IMAGING_RADIOLOGY, FERTILITY (premium cash-pay), ONCOLOGY,
+  PHYSICAL_THERAPY (labor-capped band), HCIT_PROFITABLE
+  (EBITDA-positive only; growth HCIT out of scope). Peer-snapshot
+  anchoring on these verticals stops falling back to the generic
+  physician-group band.
+- **CDD hub module 4** renamed to "Pricing, reimbursement & cost
+  environment" and cards the Healthcare Labor Market — the cost side
+  of the commercial read.
+**Verify**: +2 pin tests (every expansion vertical resolves at $200M
+EV; all 29 bands percentile-ordered with positive samples); 101
+market-intel tests + hub link integrity green.

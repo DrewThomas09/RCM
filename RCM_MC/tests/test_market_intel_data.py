@@ -169,3 +169,30 @@ class MarketContextPanelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TransactionMultipleDepthTests(unittest.TestCase):
+    """2026-06-12 depth expansion: the active deal-flow verticals must
+    carry bands so peer-snapshot anchoring stops falling back to the
+    generic physician-group band."""
+
+    def test_expansion_verticals_have_bands(self):
+        from rcm_mc.market_intel.transaction_multiples import (
+            transaction_multiple,
+        )
+        for spec in ("INFUSION", "ASC", "CARDIOLOGY", "ORTHO_MSK",
+                     "URGENT_CARE", "IMAGING_RADIOLOGY", "FERTILITY",
+                     "ONCOLOGY", "PHYSICAL_THERAPY", "HCIT_PROFITABLE"):
+            band = transaction_multiple(specialty=spec,
+                                        ev_usd=200_000_000)
+            self.assertIsNotNone(band, spec)
+
+    def test_all_bands_percentile_ordered_with_samples(self):
+        from rcm_mc.market_intel.transaction_multiples import _load
+        for r in _load()["bands"]:
+            self.assertLessEqual(r["p25_ev_ebitda"], r["p50_ev_ebitda"],
+                                 r["specialty"])
+            self.assertLessEqual(r["p50_ev_ebitda"], r["p75_ev_ebitda"],
+                                 r["specialty"])
+            self.assertGreater(r["sample_size_trailing_12_mo"], 0,
+                               r["specialty"])

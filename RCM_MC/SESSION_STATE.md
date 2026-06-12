@@ -501,3 +501,10 @@ Workbook twins for /pricing-power (live elasticity math, LOCKED rows)
 and /labor-market (SUMPRODUCT wage blend + margin bps) with download
 buttons; templates 10 → 12 (Sources & Uses with live equity plug +
 check row; DRL tracker with COUNTIF dashboard). +4 tests, smoke green.
+
+---
+## Checkpoint — wave #80 (W2-174, 2026-06-12)
+Transaction-multiple depth: +13 bands / +10 verticals (infusion, ASC,
+cardiology, MSK, urgent care, imaging, fertility, oncology, PT,
+profitable HCIT) with policy notes; CDD hub module 4 → "Pricing,
+reimbursement & cost environment" + labor card. +2 tests.
