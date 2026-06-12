@@ -1523,6 +1523,114 @@ def texas_medicare_base(
     }
 
 
+def texas_hopd_infusion(
+    metro_deepdives: List[Dict[str, Any]],
+    fetch_live: bool = False,
+) -> Dict[str, Any]:
+    """HOPD infusion volume — the steerable hospital pool — by metro,
+    from the CMS Outpatient Hospitals by-Provider-and-Service file
+    (drug-administration APCs 5691–5694).
+
+    Offline each metro shows the MODELED steerable pool (its real
+    model-derived infusion patients × the HOPD site share × the
+    Medicare payer share — every factor already on this page). With
+    ``fetch_live`` (``?nppes=live``) the published per-CCN Medicare
+    drug-admin service counts replace the picture: hospitals map to
+    metros by their HCRIS county, and a top-hospitals table names
+    exactly where the steerable volume sits. FFS only (excludes MA),
+    so the live counts UNDERSTATE the steerable pool — stated."""
+    from ..data.cms_opps_outpatient import DRUG_ADMIN_APCS
+
+    site = _site_of_care()
+    hopd_share = next((s["share"] for s in site if "HOPD" in s["site"]), 0.0)
+    medicare_share = next((p["share"] for p in _payer_mix()
+                           if p["payer"].startswith("Medicare")), 0.0)
+
+    metros: List[Dict[str, Any]] = []
+    county_to_metro: Dict[str, str] = {}
+    for dd in metro_deepdives:
+        short = dd["metro"].split("-")[0]
+        for s in dd.get("suburbs", []):
+            county_to_metro[s.get("county", "").strip().upper()] = short
+        patients = sum(int(s.get("infusion_patients") or 0)
+                       for s in dd.get("suburbs", []))
+        metros.append({
+            "metro": short,
+            # The steerable pool: this metro's model-derived infusion
+            # patients in the HOPD channel; the Medicare slice is the
+            # part the OPPS file can verify.
+            "hopd_patients_modeled": round(patients * hopd_share),
+            "hopd_medicare_patients_modeled": round(
+                patients * hopd_share * medicare_share),
+            "live_services": None,
+            "live_hospitals": None,
+            "live_payment_mm": None,
+        })
+
+    live = False
+    top_hospitals: List[Dict[str, Any]] = []
+    if fetch_live:
+        from ..data.cms_opps_outpatient import fetch_state_drug_admin
+        by_ccn = fetch_state_drug_admin("TX")
+        if by_ccn:
+            from ..data.hcris import _get_latest_per_ccn
+            frame = _get_latest_per_ccn()
+            tx = frame[frame["state"] == "TX"]
+            ccn_county = {
+                str(r["ccn"]): str(r["county"] or "").strip().upper()
+                for _, r in tx.iterrows()}
+            per_metro: Dict[str, Dict[str, Any]] = {
+                m["metro"]: {"services": 0, "hospitals": 0,
+                             "payment_mm": 0.0} for m in metros}
+            ranked = []
+            for ccn, slot in by_ccn.items():
+                metro = county_to_metro.get(ccn_county.get(ccn, ""))
+                if metro:
+                    pm = per_metro[metro]
+                    pm["services"] += slot["services"]
+                    pm["hospitals"] += 1
+                    pm["payment_mm"] += slot["payment_mm"]
+                ranked.append({
+                    "ccn": ccn, "name": slot["name"],
+                    "city": slot["city"], "metro": metro or "",
+                    "services": slot["services"],
+                    "payment_mm": slot["payment_mm"]})
+            for m in metros:
+                pm = per_metro[m["metro"]]
+                m["live_services"] = pm["services"]
+                m["live_hospitals"] = pm["hospitals"]
+                m["live_payment_mm"] = round(pm["payment_mm"], 1)
+            ranked.sort(key=lambda h: -h["services"])
+            top_hospitals = ranked[:10]
+            live = True
+
+    metros.sort(key=lambda m: -m["hopd_patients_modeled"])
+    return {
+        "live": live,
+        "hopd_share": hopd_share,
+        "medicare_share": medicare_share,
+        "apc_reference": [
+            {"apc": k, "label": v} for k, v in DRUG_ADMIN_APCS.items()],
+        "metros": metros,
+        "top_hospitals": top_hospitals,
+        "note": (
+            "HOPD infusion is the volume a steerage thesis CAPTURES — "
+            "the hospital-outpatient pool payers are actively moving to "
+            "AIC / home. The CMS Outpatient by-Provider-and-Service file "
+            "publishes it per hospital as drug-administration APC "
+            "services (5691–5694). "
+            + ("Live per-CCN Medicare FFS counts shown; FFS only — MA "
+               "(~half of Medicare) is excluded, so the steerable pool "
+               "is LARGER than these counts."
+               if live else
+               "Offline the table shows the MODELED steerable pool from "
+               "this page's own factors (metro infusion patients × "
+               f"{hopd_share*100:.0f}% HOPD site share"
+               " × the Medicare payer slice); the live CMS file "
+               "(?nppes=live) replaces it with per-hospital counts.")),
+    }
+
+
 #: Approximate map coordinates (viewBox 0–100) for the four target
 #: metros on a stylized Texas outline — for the provider map.
 _METRO_MAP_XY = {
@@ -3003,6 +3111,8 @@ def build_texas_infusion_analysis(
         "ma_enrollment": texas_ma_enrollment(tx_pop, seniors),
         "medicare_base": texas_medicare_base(
             metro_deepdives, tx_pop, seniors, fetch_live=nppes_live),
+        "hopd_infusion": texas_hopd_infusion(
+            metro_deepdives, fetch_live=nppes_live),
         "chains": chains,
         "hhi": hhi,
         "hhi_band": hhi_band,
@@ -3101,6 +3211,11 @@ def build_texas_infusion_analysis(
             "/ MA beneficiaries by state + county (live API; offline "
             "fallback MODELED from real population × documented "
             "enrollment rates, labeled)",
+            "CMS Medicare Outpatient Hospitals by Provider & Service "
+            "(data.cms.gov) — per-hospital drug-administration APC "
+            "(5691–5694) services for the HOPD steerable pool (live API; "
+            "offline fallback MODELED from the page's own site/payer "
+            "factors, labeled)",
         ],
         "basis_note": model.basis_note,
     }

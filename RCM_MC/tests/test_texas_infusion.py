@@ -1208,6 +1208,88 @@ class MedicareBaseTests(unittest.TestCase):
             "Medicare Monthly Enrollment" in s for s in self.a["sources"]))
 
 
+class HOPDInfusionTests(unittest.TestCase):
+    """texas_hopd_infusion — the steerable hospital pool by metro,
+    MODELED from the page's own factors offline, per-CCN CMS OPPS
+    drug-admin counts when live."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.a = build_texas_infusion_analysis()
+
+    def test_modeled_pool_consistent_with_page_factors(self):
+        hi = self.a["hopd_infusion"]
+        self.assertFalse(hi["live"])
+        self.assertEqual(len(hi["metros"]), 4)
+        site = {s["site"]: s["share"] for s in self.a["site_of_care"]}
+        hopd = next(v for k, v in site.items() if "HOPD" in k)
+        self.assertEqual(hi["hopd_share"], hopd)
+        dd_patients = {
+            dd["metro"].split("-")[0]: sum(
+                int(s.get("infusion_patients") or 0)
+                for s in dd["suburbs"])
+            for dd in self.a["metro_deepdives"]}
+        for m in hi["metros"]:
+            self.assertEqual(
+                m["hopd_patients_modeled"],
+                round(dd_patients[m["metro"]] * hopd))
+            # Medicare slice ⊂ pool; live columns empty offline.
+            self.assertLess(m["hopd_medicare_patients_modeled"],
+                            m["hopd_patients_modeled"])
+            self.assertIsNone(m["live_services"])
+        totals = [m["hopd_patients_modeled"] for m in hi["metros"]]
+        self.assertEqual(totals, sorted(totals, reverse=True))
+
+    def test_apc_reference_is_the_four_drug_admin_levels(self):
+        hi = self.a["hopd_infusion"]
+        self.assertEqual({r["apc"] for r in hi["apc_reference"]},
+                         {"5691", "5692", "5693", "5694"})
+
+    def test_live_rows_aggregate_by_hcris_county(self):
+        from unittest import mock
+        from rcm_mc.diligence.texas_infusion import texas_hopd_infusion
+        # A real Harris-county CCN from the HCRIS frame so the
+        # county→metro mapping exercises the real join.
+        from rcm_mc.data.hcris import _get_latest_per_ccn
+        frame = _get_latest_per_ccn()
+        harris = frame[(frame["state"] == "TX")
+                       & (frame["county"].str.upper() == "HARRIS")]
+        self.assertFalse(harris.empty)
+        ccn = str(harris.iloc[0]["ccn"])
+        published = {ccn: {"name": "Test Hospital", "city": "Houston",
+                           "services": 2000, "benes_max": 300,
+                           "payment_mm": 0.58,
+                           "by_apc": {"5694": 2000}}}
+        with mock.patch(
+                "rcm_mc.data.cms_opps_outpatient.fetch_state_drug_admin",
+                lambda state, **k: published):
+            hi = texas_hopd_infusion(
+                self.a["metro_deepdives"], fetch_live=True)
+        self.assertTrue(hi["live"])
+        houston = next(m for m in hi["metros"] if m["metro"] == "Houston")
+        self.assertEqual(houston["live_services"], 2000)
+        self.assertEqual(houston["live_hospitals"], 1)
+        self.assertEqual(hi["top_hospitals"][0]["metro"], "Houston")
+        # The modeled columns survive alongside the live ones.
+        self.assertGreater(houston["hopd_patients_modeled"], 0)
+
+    def test_page_renders_hopd_section(self):
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        for needle in (
+            "HOPD infusion volume — the steerable pool",
+            "CMS OUTPATIENT BY PROVIDER &amp; SERVICE",
+            "5694", "Level 4 Drug Administration",
+            "HOPD pool", "MODELED — this page",
+        ):
+            self.assertIn(needle, h, f"missing: {needle}")
+
+    def test_source_cited(self):
+        self.assertTrue(any(
+            "Outpatient Hospitals by Provider" in s
+            for s in self.a["sources"]))
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page

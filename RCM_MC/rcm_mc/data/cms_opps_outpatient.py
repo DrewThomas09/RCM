@@ -2,9 +2,12 @@
 
 Public source: ``data.cms.gov/provider-summary-by-type-of-service/
 medicare-outpatient-hospitals-by-provider-and-service``. One row
-per (CCN, HCPCS code) tuple. Columns include total services,
-outpatient services, average submitted charges, average Medicare
-payments, beneficiary counts.
+per (CCN, **comprehensive APC**) tuple — the published grain is the
+Ambulatory Payment Classification (``APC_Cd`` / ``APC_Desc``), NOT
+HCPCS (the data dictionary's service count is ``CAPC_Srvcs`` and the
+beneficiary count ``Bene_Cnt``). The parser accepts both spellings:
+the original HCPCS aliases are kept for older extracts, and the APC
+aliases make the CURRENT vintage parse instead of yielding nothing.
 
 Distinct from:
   • Inpatient (Part A) — DRG-level, in cms_utilization.py.
@@ -97,7 +100,8 @@ def parse_opps_csv(path: Any) -> Iterator[OPPSRecord]:
                 row, "Rndrng_Prvdr_CCN",
                 "Provider_CCN", "CCN") or "").strip()
             hcpcs = str(_pick(
-                row, "HCPCS_Cd", "HCPCS_Code") or "").strip()
+                row, "HCPCS_Cd", "HCPCS_Code",
+                "APC_Cd", "APC_CD") or "").strip()
             if not (ccn and hcpcs):
                 continue
             offcampus_str = str(_pick(
@@ -108,16 +112,16 @@ def parse_opps_csv(path: Any) -> Iterator[OPPSRecord]:
                 hcpcs_code=hcpcs,
                 hcpcs_description=str(_pick(
                     row, "HCPCS_Desc",
-                    "HCPCS_Description") or "").strip(),
+                    "HCPCS_Description", "APC_Desc") or "").strip(),
                 is_offcampus=(offcampus_str == "Y"
                               or offcampus_str == "TRUE"),
                 total_services=_safe_int(_pick(
                     row, "Tot_Srvcs",
                     "Total_Services",
-                    "Outpatient_Services")),
+                    "Outpatient_Services", "CAPC_Srvcs")),
                 n_unique_beneficiaries=_safe_int(_pick(
                     row, "Tot_Benes",
-                    "Total_Beneficiaries")),
+                    "Total_Beneficiaries", "Bene_Cnt")),
                 avg_submitted_charge=_safe_float(_pick(
                     row, "Avg_Tot_Sbmtd_Chrgs",
                     "Average_Submitted_Charges")),
@@ -237,3 +241,148 @@ def get_opps_metrics(store: Any, ccn: str,
             (str(ccn).strip(),),
         ).fetchone()
     return dict(row) if row else None
+
+
+# ---------------------------------------------------------------------------
+# Live client — data.cms.gov data-api, drug-administration APCs by state.
+#
+# The published grain is CCN × comprehensive APC. For infusion diligence
+# the relevant rows are the four OPPS drug-administration APCs (5691–5694
+# — level 1 simple injections up to level 4 chemo/complex infusions):
+# they are the hospital-outpatient (HOPD) infusion volume a steerage
+# thesis wants to see per market. Fails CLOSED (empty) when egress is
+# blocked; nothing fabricates a service count.
+
+import functools
+import json
+import logging
+import urllib.parse
+import urllib.request
+
+logger = logging.getLogger(__name__)
+
+_CMS_DATA_API = "https://data.cms.gov/data-api/v1/dataset"
+_CMS_CATALOG = "https://data.cms.gov/data.json"
+
+#: OPPS comprehensive drug-administration APCs (public OPPS facts).
+DRUG_ADMIN_APCS = {
+    "5691": "Level 1 Drug Administration (injections)",
+    "5692": "Level 2 Drug Administration (simple IV push/hydration)",
+    "5693": "Level 3 Drug Administration (therapeutic IV infusion)",
+    "5694": "Level 4 Drug Administration (chemo / complex infusion)",
+}
+
+
+@functools.lru_cache(maxsize=8)
+def resolve_opps_provider_dataset(year: int = 0,
+                                  timeout: float = 20.0) -> str:
+    """Find the 'Outpatient Hospitals - by Provider and Service' dataset
+    UUID from the CMS catalog — the entry titled for ``year`` when one
+    exists, else the bare-titled entry (which serves the latest vintage).
+    '' on failure (caller fails closed)."""
+    from ._cms_download import ssl_context
+    try:
+        req = urllib.request.Request(
+            _CMS_CATALOG, headers={"Accept": "application/json",
+                                   "User-Agent": "rcm-mc/1.0"})
+        with urllib.request.urlopen(
+                req, timeout=timeout, context=ssl_context()) as r:
+            cat = json.loads(r.read().decode())
+    except Exception as exc:
+        logger.warning("CMS catalog resolve failed: %s", exc)
+        return ""
+    fallback = ""
+    for ds in cat.get("dataset", []):
+        title = str(ds.get("title", ""))
+        if "outpatient hospitals - by provider and service" \
+                not in title.lower():
+            continue
+        for dist in ds.get("distribution", []):
+            url = str(dist.get("accessURL", "")
+                      or dist.get("downloadURL", ""))
+            if "dataset/" not in url:
+                continue
+            uuid = url.split("dataset/")[1].split("/")[0]
+            if year and str(year) in title:
+                return uuid
+            fallback = fallback or uuid
+    return fallback
+
+
+def fetch_opps_apc_state(
+    apc: str, state: str, *, dataset: str = "", timeout: float = 20.0,
+) -> List[Dict[str, Any]]:
+    """Per-hospital rows for one drug-admin APC in one state:
+    ``[{ccn, name, city, services, benes, avg_payment}]``. [] on
+    failure (fails closed)."""
+    ds = dataset or resolve_opps_provider_dataset()
+    if not ds:
+        return []
+    from ._cms_download import ssl_context
+    params = {
+        "filter[APC_Cd]": str(apc),
+        "filter[Rndrng_Prvdr_State_Abrvtn]": str(state).upper(),
+        "size": "2000",
+    }
+    url = (f"{_CMS_DATA_API}/{ds}/data?"
+           + urllib.parse.urlencode(params))
+    try:
+        req = urllib.request.Request(
+            url, headers={"Accept": "application/json",
+                          "User-Agent": "rcm-mc/1.0"})
+        with urllib.request.urlopen(
+                req, timeout=timeout, context=ssl_context()) as r:
+            rows = json.loads(r.read().decode())
+    except Exception as exc:
+        logger.warning("CMS OPPS provider API unavailable: %s", exc)
+        return []
+    out: List[Dict[str, Any]] = []
+    for row in rows if isinstance(rows, list) else []:
+        out.append({
+            "ccn": str(_pick(row, "Rndrng_Prvdr_CCN",
+                             "Provider_CCN", "CCN") or "").strip(),
+            "name": str(_pick(row, "Rndrng_Prvdr_Org_Name",
+                              "Provider_Name") or "").strip(),
+            "city": str(_pick(row, "Rndrng_Prvdr_City",
+                              "Provider_City") or "").strip(),
+            "apc": str(_pick(row, "APC_Cd", "APC_CD") or "").strip(),
+            "services": _safe_int(_pick(
+                row, "CAPC_Srvcs", "Tot_Srvcs")) or 0,
+            "benes": _safe_int(_pick(row, "Bene_Cnt", "Tot_Benes")),
+            "avg_payment": _safe_float(_pick(
+                row, "Avg_Mdcr_Pymt_Amt",
+                "Average_Medicare_Payment_Amount")),
+        })
+    return [r for r in out if r["ccn"]]
+
+
+def fetch_state_drug_admin(
+    state: str, *, apcs: Optional[List[str]] = None,
+    timeout: float = 20.0,
+) -> Dict[str, Dict[str, Any]]:
+    """Aggregate the drug-administration APC rows per CCN for a state:
+    ``{ccn: {name, city, services, benes_max, payment_mm, by_apc}}``.
+    ``benes_max`` is the LARGEST single-APC beneficiary count — bene
+    counts must not be summed across APCs (one patient can appear in
+    several). ``{}`` when the API is unreachable."""
+    ds = resolve_opps_provider_dataset(timeout=timeout)
+    if not ds:
+        return {}
+    agg: Dict[str, Dict[str, Any]] = {}
+    for apc in (apcs or list(DRUG_ADMIN_APCS)):
+        for r in fetch_opps_apc_state(
+                apc, state, dataset=ds, timeout=timeout):
+            slot = agg.setdefault(r["ccn"], {
+                "name": r["name"], "city": r["city"],
+                "services": 0, "benes_max": 0,
+                "payment_mm": 0.0, "by_apc": {}})
+            slot["services"] += r["services"]
+            slot["by_apc"][r["apc"]] = r["services"]
+            if r["benes"]:
+                slot["benes_max"] = max(slot["benes_max"], r["benes"])
+            if r["avg_payment"]:
+                slot["payment_mm"] += (
+                    r["avg_payment"] * r["services"] / 1_000_000)
+    for slot in agg.values():
+        slot["payment_mm"] = round(slot["payment_mm"], 3)
+    return agg

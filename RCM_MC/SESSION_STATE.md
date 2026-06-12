@@ -351,10 +351,10 @@ beneficiary base — the Part B denominator" section (KPI strip, FFS-vs-MA
 100% bar, top-12 county table, LIVE/MODELED badge, true-MA-penetration
 footnote) + SO WHAT + source line. +10 client tests + 6 integration.
 
-USER DATA REQUEST: CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓ NPPES+map ✓ J-code
-POS ✓ Medicare Monthly Enrollment ✓. Remaining named: CMS Outpatient
-Hospitals by provider/service (cms_opps_outpatient CSV loader exists —
-needs a live client or vendored extract to wire honestly).
+USER DATA REQUEST — COMPLETE (wave #73): CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓
+NPPES+map ✓ J-code POS ✓ Medicare Monthly Enrollment ✓ Outpatient by
+Provider & Service ✓ (live client + APC-grain parser fix + HOPD
+steerable-pool section, W2-173). Nothing named remains unwired.
 
 ---
 ## Checkpoint — wave #65 (W2-163, 2026-06-12)

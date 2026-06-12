@@ -3580,3 +3580,39 @@ related_routes. Brought to the floor + cross-linked all four builder
 tools. NOTE for the chart stream: new pages keep landing below the
 Guide 5-Q floor — add the 5 questions + related_routes in the same PR
 that adds the page (test_pedesk_guide_5q_invariant is the gate).
+
+## W2-173 (2026-06-12) — HOPD infusion volume via CMS OPPS by Provider & Service (wave #73)
+Closed the FINAL remaining item of the multi-source CMS data request —
+and fixed a latent parser bug found while wiring it:
+- **Parser fix (found bug)**: the published "Outpatient Hospitals - by
+  Provider and Service" file is **APC-grain** (APC_Cd / CAPC_Srvcs /
+  Bene_Cnt — confirmed against the CMS data dictionary), but
+  `parse_opps_csv` only knew the speculative HCPCS aliases, so the real
+  download parsed to NOTHING. Added the APC aliases (HCPCS kept for old
+  extracts) + corrected the module docstring.
+- **Live client** (same module): `resolve_opps_provider_dataset`
+  (catalog UUID), `fetch_opps_apc_state` (per-hospital rows for one APC
+  × state), `fetch_state_drug_admin` (per-CCN aggregate over the four
+  OPPS drug-administration APCs 5691–5694; beneficiary counts are
+  max-per-APC, never summed across APCs). Fails closed.
+- **`texas_hopd_infusion()`** (engine): the steerable hospital pool by
+  metro. Offline = MODELED from the page's own factors (metro infusion
+  patients × HOPD site share × Medicare slice — all already on the
+  page); ?nppes=live = real per-CCN Medicare drug-admin services mapped
+  to metros via each hospital's HCRIS county + a top-10 TX hospitals
+  table naming where the steerable volume sits. FFS-only caveat stated
+  (live counts UNDERSTATE the pool).
+- **Page**: "HOPD infusion volume — the steerable pool" section after
+  site-of-care — APC reference chips, per-metro modeled/live table,
+  LIVE/MODELED badge, top-hospitals table (live), SO WHAT + source.
+
+USER DATA REQUEST — COMPLETE: CDC PLACES ✓ ACS ✓ ASP ✓ MA ✓ NPPES+map ✓
+J-code POS ✓ Medicare Monthly Enrollment ✓ Outpatient by Provider &
+Service ✓. Every named source now has a live client wired into the
+Texas page with an honest labeled fallback.
+**Verify**: new test_cms_opps_live (6) — APC-grain CSV rows now parse
+(the pre-fix aliases dropped them), the four drug-admin APCs, fail-closed
+×3, mocked-payload parse, per-CCN aggregation (services sum, benes max,
+$ math). +5 in test_texas_infusion — modeled pool == page factors
+recomputed, APC set, live mock aggregates via the real HCRIS Harris-county
+join, page renders, source cited. Full suite green.
