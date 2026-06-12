@@ -3440,6 +3440,7 @@ height auto, export toolbar has SVG/PNG/Copy + ids, size presets S/M/L/XL,
 builder/pie pages show export buttons + size select + new-type chips.
 Full suite green.
 
+<<<<<<< HEAD
 ## W2-164 (2026-06-12) — Expert-Call Program: the CDD voice-of-customer workstream (wave #66)
 New CDD task covered — the primary-research call program every commercial
 due diligence runs and the platform had no surface for (the CIM
@@ -3637,3 +3638,415 @@ partial-input honesty/hostile level), wiring + guide-floor checks.
 Wiring sweep 140 passed (palette/catalog/guide-invariant/universe/
 expert-calls). Live smoke: 6 URLs incl. hostile stage + formula-
 injection level param → all 200, no tracebacks.
+=======
+## W2-164 (2026-06-12) — Charts: per-series colours + gauge KPI (wave #66)
+Continued the graphics-suite improvements:
+- **Per-series colour pickers in the Chart Builder** — every series (or
+  category, for pie/funnel/tornado/dot/matrix/marimekko) gets its own
+  colour picker (`sc{i}`), defaulting to the chosen palette but fully
+  overridable, so a chart can match any deck/brand exactly. A small JS
+  re-seeds the pickers when the palette dropdown changes so the palette
+  stays meaningful. Picked colours flow into the rendered SVG via
+  `opts["colors"]`.
+- **Gauge / KPI chart type** (kit now 20): a 180° semicircular gauge from
+  a single value (+ optional max) — big serif value, label, and 0→max
+  scale. Reads `Metric · Value · [Max]`; auto-scales the max when omitted.
+**Verify**: +5 tests — gauge present (≥20 types) + renders value/max
+clean, per-series colours override the palette and reach the SVG,
+palette-sync script present. Full suite green.
+
+## W2-165 (2026-06-12) — Charts: heatmap grid + source/footnote line (wave #67)
+Two more client-readiness improvements:
+- **Heatmap grid** chart type (kit now 21): a scoring matrix — rows ×
+  columns, each cell shaded on a sequential teal scale by value with the
+  value printed, row labels left + column headers top. The classic CDD
+  attractiveness/scoring matrix.
+- **Source / footnote line** on every chart: `render_cdd_chart` and
+  `presentable_pie` now inject a small bottom-left source/footnote line
+  (the way every client deck exhibit carries one). A "Source / footnote"
+  field added to the Chart Builder + Pie Chart pages; it's part of the
+  rendered SVG so it travels with the SVG/PNG export.
+**Verify**: +4 tests — heatmap present (≥21 types) + renders grid with
+row/column headers clean, footnote appears in the chart SVG + on the
+page; pie footnote renders. Full suite green.
+
+## W2-166 (2026-06-12) — Exhibit Composer: multi-chart deck slide (wave #68)
+The capstone of the chart suite — compose up to 4 charts onto one slide:
+- **`compose_exhibit(panels, …)`** (in cdd_chart_kit): renders 1–4 charts
+  and nests each (via `_embed` rewriting the child <svg> opening tag) into
+  a single 16:9 (1280×720) slide with an eyebrow, serif title block, a
+  source line, and a Chartis·PEdesk mark. Layout adapts to panel count
+  (1 = full, 2 = side-by-side, 3–4 = 2×2). Exports as ONE SVG/PNG.
+- **`exhibit_page.py`** (route `/exhibit`): slide eyebrow / title / source
+  + 4 panel configs (chart type + palette + panel title + pasted data;
+  blank panels drop). qs-driven (t{i}/pt{i}/d{i}/pal{i}) so a whole slide
+  is a shareable URL; the composed slide gets the SVG/PNG export toolbar.
+  Wired into Research nav + Cmd-K palette + a documented guide context.
+**Verify**: new `test_exhibit.py` (6) — composes one SVG with the nested
+chart svgs (parent + 4), layout drives panel count, empty→just the frame,
+page populated + custom slide + palette/nav/guide registration. Full
+suite green.
+
+## W2-167 (2026-06-12) — Charts: slope + gantt/timeline types (wave #69)
+Two more consultant staples (kit now 23 types):
+- **Slope chart** (`slope`): before→after — two periods per category with
+  a connecting line + end-point values (e.g. entry vs exit margins,
+  denial-rate change). Headers name the two periods.
+- **Gantt / timeline** (`gantt`): horizontal task bars on a time axis from
+  a task · start · end table — roadmaps, 100-day plans, workstream
+  sequencing. Time gridlines + task labels.
+Both surface automatically in the Chart Builder chips + gallery with
+example data (value-creation slope; 100-day workstream gantt).
+**Verify**: +1 test (≥23 types incl. slope/gantt) + both render clean
+(no None) with their labels. Full suite green.
+
+## W2-168 (2026-06-12) — Visuals hub landing page (wave #70)
+A single landing page (`/visuals`) for the graphics toolkit — a card per
+tool (Chart Builder, Pie Chart, Excel Mapping, Exhibit Composer) with a
+LIVE thumbnail rendered from the same kit the tools use (so the hub always
+reflects real output) + a one-line description and link. Wired into
+Research nav + Cmd-K palette + a documented guide context. Discoverability
+capstone for the suite.
+**Verify**: new `test_visuals_hub.py` (3) — a card + link per tool, ≥4
+thumbnail SVGs, palette/nav/guide registration. Full suite green.
+
+## W2-169 (2026-06-12) — Texas infusion: Medicare Monthly Enrollment → true MA penetration (wave #71)
+Pivoted back to diligence and wired a named source — CMS Medicare
+Monthly Enrollment — to fix the MA-penetration denominator:
+- **`cms_enrollment.py`** (new): a live client for the CMS Medicare
+  Monthly Enrollment file — total Medicare beneficiaries + the FFS vs
+  MA-and-other split by state (latest month). Resolves the dataset from
+  the CMS catalog, fails CLOSED, and falls back to a published TX total
+  (≈4.6M) — never fabricated.
+- **`texas_ma_enrollment`** now computes a TRUE MA-penetration rate =
+  MA enrollment ÷ total Medicare beneficiaries (≈48%: 2.19M / 4.6M),
+  replacing the 65+ proxy (which overstated at ~55% by omitting the
+  under-65 disabled). The proxy is kept for continuity; the panel now
+  shows TX MA enrollees / total Medicare / MA penetration / dual, with
+  the denominator source labeled (live vs published). Live county/total
+  penetration fills in via the enrollment API under `?nppes=live`.
+**Verify**: +1 integration test (penetration uses the total-Medicare
+denominator, < the proxy, offline = published fallback) + new
+`test_cms_enrollment.py` (4) — offline uses published total, unknown
+state → US fallback, fetch fails closed unresolved, parses latest-month
+total from a mocked payload. Full suite green.
+
+## W2-170 (2026-06-12) — Texas infusion: HOPD steered-away pool (CMS Outpatient Hospitals) (wave #72)
+Wired the last named data source — CMS Medicare Outpatient Hospitals (by
+provider & service) — and quantified the HOPD "steered-away" pool:
+- **`cms_opps_outpatient.fetch_opps_state_infusion`** (new): a best-effort
+  live aggregator over the OPPS by-provider-and-service file — total HOPD
+  outpatient services + Medicare payment for the infusion J-codes in a
+  state. Resolves the dataset from the CMS catalog, fails CLOSED.
+- **`texas_hopd_pool`**: per-metro HOPD infusion pool — HOPD patients =
+  real metro infusion patients × the HOPD site share (30%), HOPD revenue
+  at the sizing model's infusions/yr × revenue/infusion. ≈58k capturable
+  HOPD patients / ≈$0.7B across the four metros (DFW + Houston largest).
+  The live CMS OPPS pull overrides with real services + payment under
+  `?nppes=live`.
+- **Page**: a "HOPD infusion — the steered-away pool" panel in the
+  site-of-care section — capturable HOPD patients + revenue pool KPIs,
+  per-metro bars, and a LIVE/MODELED badge. Frames the 30% HOPD pool as
+  the white-space an AIC/home roll-up captures (not a competitor).
+This completes the user's named data-source list (CDC PLACES, ACS, ASP,
+MA enrollment, Medicare Monthly Enrollment, NPPES + map, Part-B POS, and
+now Outpatient Hospitals).
+**Verify**: +3 HOPD tests — pool = real metro patients × HOPD share +
+ranked + summed, offline is modeled (OPPS fails closed), live flag
+threads through + fails closed; +2 render needles. Full suite green.
+
+## W2-171 (2026-06-12) — Texas infusion: IC-summary investment thesis (wave #73)
+Added the top-line synthesis a partner reads first — `texas_investment_
+thesis(a)` builds the IC summary PURELY from the assembled analysis so it
+can never drift from the sections below:
+- **5 thesis pillars**, each with its supporting number: large/growing/
+  fragmented market ($3.36B TAM · 8% CAGR · HHI 517); structural site-of-
+  care tailwind (HOPD 46%→30% · $684M HOPD pool); favorable Texas
+  structure (no CON · 48% MA · 70% non-hospital); AIC unit economics
+  work ($218K/chair · ~19% break-even); de-novo white-space (6
+  undersupplied growth corridors).
+- **Key risks** (drug-spread compression, home-infusion referral
+  concentration + the HIT gap, the most-at-risk therapy) and **diligence-
+  next** gaps (replace modeled counts/rates with the target's claims;
+  quantify referral concentration + white-bagged %; confirm TX statute).
+- A headline + a CONSTRUCTIVE verdict steering value creation to service
+  margin + RCM, not the drug spread.
+- **Page**: an "Investment Thesis · IC Summary" block at the very top
+  (after the KPI strip, before market sizing) — pillars as cards, risks,
+  and diligence-next.
+**Verify**: +3 thesis tests — 5 pillars / ≥3 risks / ≥3 diligence-next
+with complete fields, thesis numbers match the sections (real HHI,
+HOPD shift pts, undersupplied count), most-at-risk therapy surfaces in
+the risks; +3 render needles. Full suite green.
+
+## W2-172 (2026-06-12) — Texas infusion: auto-composed investment-highlights exhibit (wave #74)
+Connected the graphics suite to the diligence data — the Texas page now
+AUTO-GENERATES a one-page exhibit slide from its own live analysis:
+- **`_exhibit_section(a)`**: builds four panels from the live analysis and
+  composes them (via the chart kit's `compose_exhibit`) into one 16:9
+  "Texas Infusion — Investment Highlights" slide:
+  1. Market-sizing funnel — TAM → SAM → SOM ($M)
+  2. Site-of-care mix 2015–2024 (100% stacked) — the HOPD→AIS/home shift
+  3. Top de-novo county opportunities (bar) — from the growth scorecard
+  4. Current site-of-care mix (donut)
+  Every panel recomputes from the same figures as the sections, so the
+  exhibit can never disagree with the page.
+- **Page**: a "One-page exhibit" section (deck-ready, SVG/PNG export
+  toolbar) before Sources — the deliverable a partner drops into a deck.
+This is the capstone tying the two arcs together (graphics kit + Texas
+diligence data).
+**Verify**: +1 exhibit test (four panels nested into one slide, export
+toolbar, no None) + 2 render needles. Full suite green.
+
+## W2-173 (2026-06-12) — Texas infusion: section navigator (wave #75)
+The page now runs ~29 sections; added a usability layer so a partner can
+move around it:
+- **`_inject_section_nav(body)`**: a post-process pass that gives every
+  `ck-section-header` a slugified, unique `id` (with `scroll-margin-top`
+  for a clean landing) and builds a floating "☰ Sections" navigator
+  (fixed bottom-right `<details>` dropdown) listing every section as an
+  anchor link. Recomputed from the rendered headers, so it always matches
+  the live section set — no hardcoded list to drift.
+**Verify**: +1 test — ≥20 unique section ids injected, the floating nav
+present, every nav link points at a real section id. Full suite green.
+
+## W2-174 (2026-06-12) — Texas infusion: downloadable Markdown IC memo (wave #76)
+A partner-shareable deliverable — the analysis as a clean Markdown IC
+memo a partner pastes into a writeup:
+- **`texas_infusion_memo_md(a)`**: renders the headline, verdict, the
+  5-pillar thesis, key risks, diligence-next, and a key-figures table
+  (TAM/SAM/CAGR/HHI/MA penetration/AIC contribution/undersupplied
+  counties/65+ base) — a pure function of the assembled analysis.
+- **Route** `/api/diligence/texas-infusion/memo`: serves the memo as a
+  `text/markdown` download (honoring the same AIC overrides as the page).
+- **Page**: a "⬇ IC memo (Markdown)" button in the Investment Thesis
+  block.
+**Verify**: +2 tests — memo has the section structure + real figures
+(HHI, verdict, one numbered item per thesis pillar); the page links to
+the memo download. Full suite green.
+
+## W2-175 (2026-06-12) — Texas infusion: server-rendered exhibit SVG download (wave #77)
+Completed the deliverables set (alongside the IC memo):
+- Refactored the auto-exhibit into a shared **`texas_exhibit_svg(a)`**
+  helper (used by the page section AND the download route, so they can
+  never disagree).
+- **Route** `/api/diligence/texas-infusion/exhibit.svg`: serves the
+  composed Investment-Highlights exhibit as a standalone, server-rendered
+  `image/svg+xml` download (honoring the AIC overrides).
+- **Page**: a "⬇ download the exhibit SVG (server-rendered)" link under
+  the one-page exhibit.
+**Verify**: +1 test — the shared helper returns the 5-svg composed slide
+(no None) and the page links to the SVG download route. Full suite green.
+
+## W2-176 (2026-06-12) — National infusion-market scan (wave #78)
+"Where else after Texas?" — a new diligence surface that ranks every
+state for an infusion roll-up from the SAME real per-state data the
+Texas page uses:
+- **`infusion_state_attractiveness()`** (new `infusion_market.py`): scores
+  all 51 states on a weighted blend (0–100) of senior base (28%), MA
+  penetration / site-of-care steerage (24%), no-CON de-novo runway (18%),
+  metro density (15%), and commercial payer mix (15%) — from ACS
+  demographics (vendored), CMS MA geographic variation, and the
+  documented 12-state no-CON list. CA #1, then CO/MN/UT/AZ/TX; ranked +
+  audited.
+- **Page** `/diligence/infusion-markets`: a US tile-grid choropleth
+  colored by score (TX outlined), a top-10 / Texas / bottom-5 ranked
+  table with the component axes + no-CON flag, the Texas read (#6) with a
+  link to the full deep-dive, and the methodology. Wired into Diligence
+  nav + Cmd-K palette + guide context.
+**Verify**: new `test_infusion_market.py` (6) — 51 states scored + ranked,
+score = the weighted-axes blend, no-CON flag matches the documented list,
+TX present + top-10; page renders the map/table/TX-read + palette/nav/
+guide registration. Full suite green.
+
+## W2-177 (2026-06-12) — Infusion market scan: Excel-Mapping cross-link + JSON API (wave #79)
+Connected the new market scan to the graphics suite and the API surface:
+- **"Open in Excel Mapping" cross-link**: pre-fills all 51 state
+  attractiveness scores (+ a teal gradient and the score domain) into the
+  Excel Mapping tool via the `?data=` param, so a partner can restyle and
+  export the scan as a branded state map. Round-trips through
+  `parse_values_text` (verified TX=85 of 51 states).
+- **JSON API** `/api/diligence/infusion-markets` — the ranked scan for
+  programmatic use, matching the platform's API-everywhere pattern.
+**Verify**: +1 test — the cross-link's data param round-trips to all 51
+states via the mapping parser. Full suite green.
+## W2-168 (2026-06-12) — PE-desk product wave: CDD Hub + customer evidence + rate intel + Excel template library
+Closes the three gaps flagged for the desk (not helping CDD enough, thin
+Excel resources, thin market-intel): four new surfaces + a hub + a
+formula-capable xlsx writer.
+- **Excel Model Templates** (`/excel-templates` + per-slug `.xlsx`
+  downloads): 7 live-formula workbooks — Quick LBO (sweep debt schedule,
+  MOIC/IRR), QoE adjusted-EBITDA databook (walk + TTM cadence), NWC peg
+  (12-mo build, DSO/DPO, peg candidates), 13-week cash (covenant headroom
+  row), CDD market model (TAM/SAM/SOM + competitor grid reconciling to
+  SAM), payer-mix × rate sensitivity, cohort/NRR triangle. Banker
+  convention: blue inputs / black formulas.
+- **xlsx_writer**: `F(expr)` live-formula cells (opt-in wrapper — strings
+  that look like formulas stay text, preserving the CSV-defang posture) +
+  6 new styles (mult, label, blue input/money/pct/num).
+- **CDD Hub** (`/cdd`): the five-module CDD workflow (market →
+  competition → customers → pricing → deliverables) laid over 20 existing
+  + new surfaces; link integrity pinned by test against server handlers.
+- **Voice of Customer** (`/voc-survey`): NPS by segment, KPC gap matrix
+  (importance × target-vs-best-competitor with DIFFERENTIATOR /
+  VULNERABILITY / TABLE_STAKES classification), willingness-to-pay bands.
+- **Win/Loss Analyzer** (`/win-loss`): head-to-head win rate by named
+  competitor, loss-reason mix (price- vs capability-led), price-gap read
+  on losses, quarterly trend.
+- **Medicare Rate Environment** (`/rate-environment`): new market_intel
+  dataset (`content/rate_updates.yaml`, 9 care settings × 3 rule cycles,
+  per-setting policy notes) + blended next-cycle dollar-impact calculator
+  on a target's Medicare revenue × setting mix.
+All five wired into Cmd-K palette, breadcrumb map, sub-nav (CDD Hub under
+Diligence; Excel Templates under Research) and the guide context registry.
+**Verify**: 5 new test files, 53 tests — workbook OOXML validity + formula
+cells + injection guard + LBO cell-ref pins, HTTP download e2e (MIME /
+Content-Disposition / 404), respondent-weighted NPS + classification
+thresholds, win-rate/loss-mix consistency, fixture integrity + blend
+normalization (pct vs fraction), hub link integrity. Full suite green.
+
+## W2-169 (2026-06-12) — Market-intel wave 2: MA penetration geography + rate-model xlsx
+- **MA Penetration** (`/ma-penetration`): new market_intel dataset
+  (`content/ma_penetration.yaml` — 50 states + DC, curated KFF/CMS cut,
+  national 54%) with exposure bands (SATURATED ≥55 / HIGH ≥45 /
+  MODERATE ≥30 / LOW), a state choropleth (reuses the excel-mapping
+  tile-grid renderer so the two maps stay identical), and a footprint
+  scorer: enter a target's state codes → average penetration,
+  vs-national delta, band. Closes the "MA penetration not ingested"
+  payer-intel gap.
+- **Rate-environment workbook** (`/rate-environment.xlsx?{qs}` +
+  download button carrying the current form params): two sheets — the
+  update calendar with the 3-cycle compound as a live formula, and an
+  Impact Model whose revenue/mix cells are blue inputs feeding
+  normalized-share + SUMPRODUCT blend formulas, so the model reruns in
+  Excel without the page.
+- /ma-penetration wired into palette, breadcrumbs, guide context (5-Q,
+  related routes) and carded in the CDD hub's pricing module; data-source
+  audit regenerated (186 pages, 0 no-disclosure flags).
+**Verify**: test_ma_penetration.py (13 — fixture integrity, band
+thresholds, footprint math, XSS, registration) + 3 xlsx tests in
+test_rate_environment.py (OOXML validity, SUMPRODUCT/compound formulas,
+param-carrying download link); HTTP smoke on both routes; invariant
+files (5-Q, slash-dual, catalog, data-universe, palette) green.
+
+## W2-170 (2026-06-12) — Wave 3: pricing power + labor intel + 2 CDD templates
+Closes the last flagged CDD pricing gap and the labor-data market-intel gap:
+- **Pricing Power Analyzer** (`/pricing-power`): constant-elasticity
+  price-response curves per customer segment (volume = (1+Δp)^ε),
+  EBITDA-optimal move grid-searched over a credible ±15% window,
+  portfolio pricing prize, and `price_locked` handling so administered /
+  capitated segments (CMS, in-term PMPM) never show a fictional lever.
+  Multi-curve SVG with per-segment optima dots. 3 sector books,
+  illustrative-flagged.
+- **Healthcare Labor Market** (`/labor-market`): new market_intel
+  dataset (`content/labor_market.yaml` — 10 roles, curated BLS OES +
+  staffing-survey cut: wage, YoY, turnover, vacancy, time-to-fill) with
+  a per-role fragility score and a wage-inflation stress calculator
+  (labor base × role mix → $ increase + uncompensated margin bps).
+- **Two new workbook templates** (library now 9): Win/Loss Opportunity
+  Tracker (editable log + COUNTIFS-live summary: win rate by competitor,
+  loss-reason mix, with spare pre-styled rows so adding deals needs no
+  formula edits) and KPC Survey Scorer (live gap, importance-weighted
+  position score via SUMPRODUCT, automatic DIFFERENTIATOR /
+  VULNERABILITY / TABLE STAKES classification).
+- Wiring: routes, palette, breadcrumbs (pricing-power→diligence,
+  labor-market→research), illustrative set, guide contexts (5-Q), CDD
+  hub card (Pricing Power in module 4), market_intel exports, audit
+  regen (187 pages, 0 flags).
+**Verify**: test_pricing_power.py (13 — incl. the ε* = -1/margin
+boundary flip and locked-segment guards) + test_labor_market.py (12 —
+stress math, fragility ordering CNA > specialist, normalization) + HTTP
+smoke on both pages and both template downloads; all invariant files
+green (87 passed).
+
+## W2-171 (2026-06-12) — Wave 4: roll-up template + workflow cross-links + nav integrity guard
+- **Roll-Up / Tuck-In Arbitrage Model** template (library now 10):
+  3-year tuck-in cadence (count × avg EBITDA × entry multiple per
+  year), synergies, platform organic growth, blended entry multiple vs
+  exit, multiple-arbitrage spread in turns, ungeared TEV MOIC — all
+  live formulas, blue-input convention.
+- **Workflow cross-links**: /win-loss and /voc-survey now carry a
+  "Workbook template (.xlsx)" button beside the form, linking the
+  matching library template (win-loss-log / kpc-survey) — analyze on
+  the page, take the editable model to the data room.
+- **Nav integrity guard** (test_subnav_integrity.py): every
+  _CORPUS_NAV tab and every _SUB_NAV link is walked against a real
+  server and must return 200 — a renamed route can no longer leave a
+  dead tab ("make sure all tabs are great", enforced).
+**Verify**: all current tabs/links pass (2 e2e tests, 60+ URLs);
+template builds and formula cells verified (blended entry 8.11x on
+seed inputs, spread 2.89 turns); 39 affected tests green.
+
+## W2-172 (2026-06-12) — Wave 5: sector coverage + custom-segment calculator + hub chart cards
+- **VoC + Win/Loss sector coverage**: ASC / Surgical and Behavioral
+  Health panels added to both evidence modules (5 sectors each now) —
+  block-time/turnover KPCs and HOPD-incumbency loss patterns for ASC;
+  time-to-first-appointment and virtual-first competition for BH.
+- **Pricing Power custom segment**: form now appends an analyst-supplied
+  segment (revenue $M, contribution margin %, elasticity) to the loaded
+  book — elasticity clamped to [-5, 0] so a data-entry sign error can't
+  model a Giffen good. Turns the illustrative page into a calculator a
+  deal team can point at the target's actual book.
+- **CDD hub deliverables**: Chart Builder + Exhibit Composer carded in
+  module 5 (they are the CDD exhibit tools; they were only in Research).
+**Verify**: +4 custom-segment tests; all evidence/pricing/hub/invariant
+suites green (73 passed); guide context updated for the new inputs.
+
+## W2-173 (2026-06-12) — Wave 6: workbook twins for the calculators + S&U / DRL templates
+- **/pricing-power.xlsx**: per-segment price-move *inputs* (blue) with
+  live elasticity math — volume = (1+move)^ε, EBITDA Δ = margin·volume
+  effect + pure-margin price component — so the analyst argues with the
+  window-optimal answer in Excel. LOCKED rows carry no move input.
+- **/labor-market.xlsx**: blue labor-base / revenue / mix inputs feeding
+  normalized shares + SUMPRODUCT blended wage growth and the
+  uncompensated-margin-bps formula. Both pages link their model with a
+  param-carrying download button; both endpoints hidden from /tools
+  (downloads, not pages).
+- **Template library → 12**: Sources & Uses (sponsor equity as the live
+  plug, sources−uses check row, structure reads: equity %, rollover %,
+  leverage, fees %) + Diligence Request List Tracker (editable list +
+  COUNTIF-live dashboard: status mix, completion share, open items by
+  workstream; spare pre-styled rows to row 60).
+**Verify**: +4 xlsx tests (live formulas + param-carrying links);
+template suite green incl. the XML-escaped sheet-name fix
+("Sources &amp; Uses" in workbook.xml is correct OOXML); HTTP smoke on
+all four new download paths; audit regen 187 pages / 0 flags.
+
+## W2-174 (2026-06-12) — Wave 7: transaction-multiple depth + hub cost module
+- **Transaction multiples 16 → 29 bands (13 → 23 specialties)**: added
+  the active deal-flow verticals that had no band — INFUSION (platform
+  scarcity note), ASC (site-of-care tailwind), CARDIOLOGY (hottest
+  physician vertical since 2023), ORTHO_MSK, URGENT_CARE,
+  IMAGING_RADIOLOGY, FERTILITY (premium cash-pay), ONCOLOGY,
+  PHYSICAL_THERAPY (labor-capped band), HCIT_PROFITABLE
+  (EBITDA-positive only; growth HCIT out of scope). Peer-snapshot
+  anchoring on these verticals stops falling back to the generic
+  physician-group band.
+- **CDD hub module 4** renamed to "Pricing, reimbursement & cost
+  environment" and cards the Healthcare Labor Market — the cost side
+  of the commercial read.
+**Verify**: +2 pin tests (every expansion vertical resolves at $200M
+EV; all 29 bands percentile-ordered with positive samples); 101
+market-intel tests + hub link integrity green.
+
+## W2-175 (2026-06-12) — Wave 8: transaction-multiples directory on /market-intel
+The 29-band library was invisible unless the caller already passed a
+specialty code — the no-specialty view silently omitted the section.
+/market-intel now renders the **full directory** (every specialty ×
+size-band combination: P25/P50/P75, TTM sample, policy note) with each
+row linking the focused `?specialty=CODE` view; the focused view is
+unchanged. +3 pin tests (directory renders with the expansion
+verticals, rows link the focused view, focused view unaffected).
+
+## W2-176 (2026-06-12) — Wave 9: multiples workbook download + infusion-scan hub card
+- **/transaction-multiples.xlsx**: the full 29-band library as a
+  comps-tab-ready workbook (specialty × size band × P25/P50/P75 × TTM
+  n, multiple-formatted cells), linked from the /market-intel
+  directory panel; endpoint hidden from /tools (download, not a page).
+- **CDD hub module 1** cards the national Infusion Market Scan
+  (/diligence/infusion-markets, waves #78-79) as the worked
+  market-sizing example.
+**Verify**: +2 tests (workbook carries every band; directory links the
+download) + HTTP smoke 200/PK; hub link integrity + guide-coverage +
+tools-index families green (59 passed).
+>>>>>>> origin/main

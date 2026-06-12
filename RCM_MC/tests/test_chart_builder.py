@@ -95,9 +95,63 @@ class RenderTests(unittest.TestCase):
 
     def test_new_consultant_chart_types_present(self):
         keys = {k for k, _ in CHART_TYPES}
-        for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot"):
+        for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot",
+                  "gauge", "heatmap", "slope", "gantt"):
             self.assertIn(k, keys, k)
-        self.assertGreaterEqual(len(CHART_TYPES), 19)
+        self.assertGreaterEqual(len(CHART_TYPES), 23)
+
+    def test_slope_and_gantt_render(self):
+        s = render_cdd_chart(
+            "slope", parse_table("M\tEntry\tExit\nMargin\t18\t26\n"
+                                 "Denials\t12\t6"), {"title": "Slope"})
+        self.assertTrue(s.startswith("<svg"))
+        self.assertIn("Margin", s)
+        self.assertNotIn("None", s)
+        g = render_cdd_chart(
+            "gantt", parse_table("Task\tStart\tEnd\nA\t0\t4\nB\t2\t9"),
+            {"title": "Plan"})
+        self.assertTrue(g.startswith("<svg"))
+        self.assertIn("A", g)
+        self.assertNotIn("None", g)
+
+    def test_heatmap_renders_grid_with_headers(self):
+        t = parse_table("Driver\tA\tB\nDemand\t9\t6\nSupply\t5\t8")
+        svg = render_cdd_chart("heatmap", t, {"title": "Score"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("Demand", svg)
+        self.assertIn("Supply", svg)
+        self.assertNotIn("None", svg)
+
+    def test_footnote_appears_on_chart(self):
+        svg = render_cdd_chart(
+            "column", parse_table("Y\tR\n2021\t100"),
+            {"footnote": "Source: company data"})
+        self.assertIn("Source: company data", svg)
+        # And on the page.
+        h = render_chart_builder_page({"footnote": ["Source: deal team"]})
+        self.assertIn("Source: deal team", h)
+        self.assertIn('name="footnote"', h)
+
+    def test_gauge_renders_value_and_max(self):
+        svg = render_cdd_chart(
+            "gauge", parse_table("M\tVal\tMax\nUtilization\t78\t100"),
+            {"title": "Util", "suffix": "%"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("78", svg)
+        self.assertNotIn("None", svg)
+
+    def test_per_series_colors_override_palette(self):
+        h = render_chart_builder_page({
+            "type": ["column"], "sc0": ["#ff0000"], "sc1": ["#00ff00"]})
+        self.assertIn("SERIES COLOURS", h)
+        self.assertIn("#ff0000", h)
+        self.assertIn("#00ff00", h)
+        # The picked colours reach the rendered SVG, not just the form.
+        self.assertEqual(h.count("#ff0000") >= 2, True)
+
+    def test_palette_sync_script_present(self):
+        h = render_chart_builder_page({})
+        self.assertIn("CKPAL", h)
 
     def test_width_px_controls_display_size(self):
         small = render_cdd_chart("column", self._data("column"),

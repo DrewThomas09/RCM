@@ -876,6 +876,146 @@ class ASPandMATests(unittest.TestCase):
         self.assertGreater(ma["dual_eligible_pct"], 0)
         self.assertIn("Medicare Advantage", ma["note"])
 
+    def test_ma_penetration_uses_total_medicare_denominator(self):
+        from rcm_mc.data.cms_enrollment import total_medicare_for
+        ma = self.a["ma_enrollment"]
+        # True denominator = total Medicare (not the 65+ proxy), so the
+        # rate is lower and equals enrollment / total Medicare.
+        total = total_medicare_for("TX")["total"]
+        self.assertEqual(ma["total_medicare"], total)
+        self.assertAlmostEqual(ma["penetration"],
+                               round(ma["enrollment"] / total, 3))
+        self.assertLess(ma["penetration"], ma["penetration_proxy"])
+        # Offline: not live, uses the published fallback.
+        self.assertFalse(ma["penetration_live"])
+        self.assertIn("published", ma["denominator_source"])
+
+
+class ICMemoTests(unittest.TestCase):
+    """The Markdown IC memo — a partner-shareable writeup generated from
+    the analysis (incl. the thesis)."""
+
+    def test_memo_has_structure_and_real_figures(self):
+        from rcm_mc.diligence.texas_infusion import texas_infusion_memo_md
+        a = build_texas_infusion_analysis()
+        md = texas_infusion_memo_md(a)
+        for h in ("# Texas Infusion Market — IC Summary",
+                  "## Investment thesis", "## Key risks",
+                  "## Diligence next", "## Key figures"):
+            self.assertIn(h, md, h)
+        # Carries the real HHI + the thesis verdict.
+        self.assertIn(f"{a['fragmentation']['hhi']:,.0f}", md)
+        self.assertIn(a["investment_thesis"]["verdict"].split(" — ")[0], md)
+        # One pillar per thesis pillar (numbered list).
+        for i in range(1, len(a["investment_thesis"]["pillars"]) + 1):
+            self.assertIn(f"{i}. **", md)
+
+    def test_page_links_to_memo_download(self):
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        self.assertIn("/api/diligence/texas-infusion/memo", h)
+        self.assertIn("IC memo (Markdown)", h)
+
+
+class AutoExhibitTests(unittest.TestCase):
+    """The one-page exhibit auto-composed from the live analysis — four
+    panels nested into a single slide, recomputed from the analysis."""
+
+    def test_exhibit_composes_four_panels_into_one_slide(self):
+        from rcm_mc.ui.texas_infusion_page import _exhibit_section
+        a = build_texas_infusion_analysis()
+        sec = _exhibit_section(a)
+        self.assertIn("Texas Infusion — Investment Highlights", sec)
+        self.assertIn('id="txExhibit"', sec)
+        # Parent slide + 4 nested chart svgs.
+        start = sec.index('<svg viewBox="0 0 1280')
+        end = sec.index("</div>", start)
+        self.assertEqual(sec[start:end].count("<svg"), 5)
+        # Export toolbar present.
+        self.assertIn("⬇ PNG", sec)
+        self.assertNotIn("None", sec[start:end])
+
+    def test_exhibit_svg_helper_and_download_link(self):
+        from rcm_mc.ui.texas_infusion_page import (
+            texas_exhibit_svg, render_texas_infusion_page)
+        a = build_texas_infusion_analysis()
+        svg = texas_exhibit_svg(a)
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertEqual(svg.count("<svg"), 5)   # parent + 4 panels
+        self.assertNotIn("None", svg)
+        h = render_texas_infusion_page()
+        self.assertIn("/api/diligence/texas-infusion/exhibit.svg", h)
+
+
+class InvestmentThesisTests(unittest.TestCase):
+    """The IC-summary synthesis must recompute from the assembled
+    analysis — it can never drift from the sections it summarizes."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.it = self.a["investment_thesis"]
+
+    def test_thesis_has_pillars_risks_and_diligence(self):
+        self.assertEqual(len(self.it["pillars"]), 5)
+        self.assertGreaterEqual(len(self.it["risks"]), 3)
+        self.assertGreaterEqual(len(self.it["diligence_next"]), 3)
+        for p in self.it["pillars"]:
+            for f in ("title", "stat", "point"):
+                self.assertTrue(p[f], f)
+        self.assertTrue(self.it["headline"])
+        self.assertTrue(self.it["verdict"])
+
+    def test_thesis_numbers_match_the_sections(self):
+        # Headline carries the real HHI; the site-of-care pillar carries
+        # the real HOPD shift; the scorecard count matches.
+        self.assertIn(f"{self.a['fragmentation']['hhi']:,.0f}",
+                      self.it["headline"])
+        n_us = self.a["growth_scorecard"]["n_undersupplied"]
+        self.assertIn(str(n_us), self.it["headline"])
+        soc = next(p for p in self.it["pillars"]
+                   if "site-of-care" in p["title"])
+        ev = self.a["site_of_care_evolution"]
+        self.assertIn(f"{ev['hopd_shift_pts']} points", soc["point"])
+
+    def test_most_at_risk_therapy_surfaces_in_risks(self):
+        mar = self.a["home_infusion"]["therapy_risk"]["most_at_risk"]
+        risk_text = " ".join(r["risk"] for r in self.it["risks"])
+        self.assertIn(mar, risk_text)
+
+
+class HopdPoolTests(unittest.TestCase):
+    """HOPD 'steered-away' infusion pool — modeled from real metro
+    patients × the HOPD site share, live CMS OPPS overridable."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        self.hp = self.a["hopd_pool"]
+
+    def test_pool_modeled_from_real_metro_patients_and_share(self):
+        share = self.hp["hopd_share"]
+        self.assertTrue(0.2 <= share <= 0.45)
+        for m in self.hp["metros"]:
+            self.assertEqual(m["hopd_patients"],
+                             round(m["infusion_patients"] * share))
+            self.assertGreater(m["hopd_revenue"], 0)
+        # Total = sum across the four metros; ranked descending.
+        self.assertEqual(self.hp["total_hopd_patients"],
+                         sum(m["hopd_patients"] for m in self.hp["metros"]))
+        pts = [m["hopd_patients"] for m in self.hp["metros"]]
+        self.assertEqual(pts, sorted(pts, reverse=True))
+
+    def test_offline_is_modeled_not_live(self):
+        self.assertFalse(self.hp["opps_live"])
+        from rcm_mc.data.cms_opps_outpatient import fetch_opps_state_infusion
+        self.assertEqual(fetch_opps_state_infusion("TX", ["J1745"]),
+                         {"live": False})
+
+    def test_live_flag_threads_through_fails_closed(self):
+        from rcm_mc.diligence.texas_infusion import texas_hopd_pool
+        hp = texas_hopd_pool(self.a["metro_deepdives"], 0.30,
+                             fetch_live=True)
+        self.assertFalse(hp["opps_live"])   # OPPS unreachable → no fabrication
+
 
 class ProviderMapTests(unittest.TestCase):
     """NPPES infusion-provider map — real estimated counts, real public
@@ -1114,6 +1254,23 @@ class SoWhatTakeawayTests(unittest.TestCase):
         self.assertGreaterEqual(h.count(">SO WHAT<"), 15)
 
 
+class SectionNavTests(unittest.TestCase):
+    """The long page gets per-section anchors + a floating navigator."""
+
+    def test_sections_anchored_and_nav_present(self):
+        import re
+        from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
+        h = render_texas_infusion_page()
+        ids = re.findall(
+            r'<header class="ck-section-header" id="([^"]+)"', h)
+        self.assertGreaterEqual(len(ids), 20)
+        self.assertEqual(len(ids), len(set(ids)))   # unique
+        self.assertIn("☰ Sections", h)
+        # Every nav link points at a real section id.
+        for i in ids[:5]:
+            self.assertIn(f'href="#{i}"', h)
+
+
 class PageRenderTests(unittest.TestCase):
     def test_page_renders_all_sections(self):
         from rcm_mc.ui.texas_infusion_page import render_texas_infusion_page
@@ -1155,6 +1312,10 @@ class PageRenderTests(unittest.TestCase):
             "Regulatory &amp; reimbursement environment", "NET READ",
             "Home Infusion Therapy (HIT)", "340B drug pricing",
             "No Certificate of Need", "Implication:",
+            "HOPD infusion — the steered-away pool",
+            "CAPTURABLE HOPD PATIENTS",
+            "INVESTMENT THESIS · IC SUMMARY", "KEY RISKS",
+            "DILIGENCE NEXT", "One-page exhibit", "txExhibit",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 

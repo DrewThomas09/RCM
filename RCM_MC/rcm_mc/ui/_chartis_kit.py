@@ -216,9 +216,12 @@ _SUB_NAV = {
         {"label": "Notes",               "href": "/notes"},
         {"label": "Sector Momentum",     "href": "/sector-momentum"},
         {"label": "Market Intel",        "href": "/market-intel"},
+        {"label": "Visuals (Charts)",    "href": "/visuals"},
         {"label": "Excel Mapping",       "href": "/excel-mapping"},
+        {"label": "Excel Templates",     "href": "/excel-templates"},
         {"label": "Chart Builder",       "href": "/chart-builder"},
         {"label": "Pie Chart",           "href": "/pie-chart"},
+        {"label": "Exhibit Composer",    "href": "/exhibit"},
         {"label": "All Research →",      "href": "/research"},
     ],
     # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
@@ -246,6 +249,7 @@ _SUB_NAV = {
     # cover the full surface; sub-nav is only the daily-driver shortcut.
     "diligence": [
         {"label": "Deal Profile",       "href": "/diligence/deal"},
+        {"label": "CDD Hub",            "href": "/cdd"},
         {"label": "Ingestion",          "href": "/diligence/ingest"},
         {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
         {"label": "CMS X-Ray",          "href": "/diligence/xray"},
@@ -254,6 +258,7 @@ _SUB_NAV = {
         {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
         {"label": "Cliff Calendar",     "href": "/diligence/cliff-calendar"},
         {"label": "TX Infusion Market", "href": "/diligence/texas-infusion"},
+        {"label": "Infusion Market Scan", "href": "/diligence/infusion-markets"},
         {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
@@ -913,12 +918,11 @@ _DATA_UNIVERSE = {
                        "framework until a live data source is connected."),
     "data-required":  ("DATA REQUIRED", "datareq",
                        "Needs a user upload / CCD / internal file to activate."),
-    # Utility/builder pages that render only what the user types (chart
-    # makers, planners). Distinct from user-deals: nothing is read from
-    # the user's DB and nothing on the page is a data claim.
-    "user-supplied":  ("YOUR INPUTS", "deals",
-                       "Renders only the values you enter — no stored data, "
-                       "no data claim."),
+    # Pure-input utilities (chart kit, excel mapping, pie chart): the page
+    # renders only values the user typed or pasted — no data claim at all.
+    "user-supplied":  ("USER-SUPPLIED", "user",
+                       "Renders only the values you typed or pasted — "
+                       "not a data source."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
     # Licensed third-party data, used only as derived/structured facts (raw
@@ -7296,9 +7300,20 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "comp-outcomes", "title": "Comparable Outcomes","route": "/comparable-outcomes"},
     {"id": "tam-sam", "title": "TAM / SAM Builder", "route": "/diligence/tam-sam"},
     {"id": "tx-infusion", "title": "Texas Infusion Market · TAM/SAM + concentration + metro ranking", "route": "/diligence/texas-infusion"},
+    {"id": "infusion-markets", "title": "Infusion Market Scan · every state ranked for an infusion roll-up", "route": "/diligence/infusion-markets"},
+    {"id": "visuals", "title": "Visuals · graphics toolkit hub (charts, maps, exhibits)", "route": "/visuals"},
     {"id": "excel-mapping", "title": "Excel Mapping · configurable US-state choropleth", "route": "/excel-mapping"},
+    {"id": "excel-templates", "title": "Excel Model Templates · live-formula workbooks (LBO, QoE, NWC peg, CDD market model)", "route": "/excel-templates"},
+    {"id": "cdd-hub", "title": "CDD Hub · the commercial-diligence workflow in running order", "route": "/cdd"},
+    {"id": "voc-survey", "title": "Voice of Customer · NPS, KPC gaps, willingness-to-pay", "route": "/voc-survey"},
+    {"id": "win-loss", "title": "Win/Loss Analyzer · conversion record vs named competitors", "route": "/win-loss"},
+    {"id": "rate-environment", "title": "Medicare Rate Environment · CMS payment updates + blended impact", "route": "/rate-environment"},
+    {"id": "ma-penetration", "title": "MA Penetration · state choropleth + footprint exposure scorer", "route": "/ma-penetration"},
+    {"id": "pricing-power", "title": "Pricing Power · elasticity curves + segment-optimal price moves", "route": "/pricing-power"},
+    {"id": "labor-market", "title": "Healthcare Labor Market · wage inflation + staffing fragility by role", "route": "/labor-market"},
     {"id": "chart-builder", "title": "Chart Builder · CDD chart kit (column, waterfall, marimekko, bubble)", "route": "/chart-builder"},
     {"id": "pie-chart", "title": "Pie Chart · client-ready pie/donut from per-slice values", "route": "/pie-chart"},
+    {"id": "exhibit", "title": "Exhibit Composer · lay up to 4 charts on one deck slide", "route": "/exhibit"},
     {"id": "bear-cases",    "title": "Bear Cases",         "route": "/bear-cases"},
     {"id": "reg-cal",       "title": "Regulatory Calendar","route": "/regulatory-calendar"},
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
@@ -10911,9 +10926,20 @@ _SUB_SECTION_MAP = {
     "/diligence/texas-infusion": "diligence",
     "/diligence/expert-calls": "diligence",
     "/diligence/cdd-scope": "diligence",
+    "/diligence/infusion-markets": "diligence",
+    "/visuals": "research",
     "/excel-mapping": "research",
+    "/excel-templates": "research",
     "/chart-builder": "research",
     "/pie-chart": "research",
+    "/exhibit": "research",
+    "/cdd": "diligence",
+    "/voc-survey": "diligence",
+    "/win-loss": "diligence",
+    "/rate-environment": "research",
+    "/ma-penetration": "research",
+    "/pricing-power": "diligence",
+    "/labor-market": "research",
     "/diligence/regulatory-calendar": "research",
     "/diligence/bear-case": "research",
     "/diligence/bear-cases": "research",

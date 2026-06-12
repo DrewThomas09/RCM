@@ -150,9 +150,13 @@ _PILLARS: List[Mapping[str, object]] = [
              "blurb": "Driver-tree market sizing with formatted "
                       "Excel export."},
             {"href": "/diligence/texas-infusion",
-             "label": "Texas Infusion Market",
-             "blurb": "Full CDD market study: TAM/SAM, metros, "
-                      "channels, regulation."},
+             "label": "TX Infusion Market",
+             "blurb": "Texas infusion-market CDD: sizing, segmentation, "
+                      "concentration, metro attractiveness."},
+            {"href": "/diligence/infusion-markets",
+             "label": "Infusion Market Scan",
+             "blurb": "National infusion-market scan — rank every state "
+                      "for a roll-up."},
             {"href": "/diligence/bear-case",
              "label": "Bear Case",
              "blurb": "The defensible bear case for this deal."},
