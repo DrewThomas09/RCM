@@ -5063,6 +5063,163 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
     ),
+    # ── Texas infusion CDD · part 1 (sizing tab) ─────────────────────
+    _ctx(
+        "/diligence/texas-infusion",
+        "Texas Infusion Market",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A worked Texas infusion-market CDD: TAM/SAM/"
+        "SOM sizing from NHIA/MedPAC anchors scaled by real Census "
+        "population, therapy + site-of-care segmentation, operator "
+        "concentration (HHI), payer mix, metro/county deep-dives, AIC "
+        "unit economics, and the regulatory environment.",
+        primary_purpose="Size and segment the Texas ambulatory + home "
+        "infusion market for a buy-and-build thesis — the 'how big, "
+        "how fragmented, where' tab of the two-part Texas infusion "
+        "diligence pair.",
+        common_questions=[
+            "How big is the Texas infusion market (TAM/SAM/SOM)?",
+            "How fragmented is the operator landscape (HHI)?",
+            "Which Texas metros and counties screen best?",
+            "What does an AIC chair earn (unit economics)?",
+            "What is the site-of-care shift doing to the mix?",
+        ],
+        inputs=["No user inputs for the sizing (NHIA/MedPAC anchors × "
+                "real ACS/Census population); the AIC unit-economics "
+                "assumptions are editable via query-string overrides "
+                "(clamped server-side); ?nppes=live pulls live NPPES / "
+                "CMS counts."],
+        outputs=["The TAM→SAM→SOM funnel + tornado, segmentation "
+                 "tables, HHI concentration read, metro/county "
+                 "deep-dives with white-space ranking, AIC per-chair "
+                 "P&L + de-novo J-curve, the regulatory register, an "
+                 "IC-ready thesis block, a Markdown IC memo and a "
+                 "deck-ready exhibit SVG."],
+        key_metrics=["TX infusion TAM / SAM / SOM", "Composite CAGR",
+                     "Chain HHI", "Site-of-care shares",
+                     "AIC contribution per chair",
+                     "County opportunity score"],
+        data_sources=["NHIA / MedPAC demand anchors (labeled); Census "
+                      "2024 + ACS demographics (vendored); CMS MA / "
+                      "enrollment / OPPS / ASP files (live where "
+                      "egress permits); CDC PLACES; DOJ/FTC HHI "
+                      "thresholds; operator public disclosures."],
+        model_logic_summary=(
+            "National demand magnitudes scaled to Texas by real "
+            "population share, run through the same verified TAM/SAM "
+            "compute() the builder uses; segmentation, HHI and county "
+            "scores are pure arithmetic on labeled constants + real "
+            "ACS data."),
+        why_it_matters="The sizing, fragmentation and geography tab "
+        "that anchors the infusion roll-up thesis before the per-"
+        "claim grain in part 2.",
+        diligence_use_cases=[
+            "First-pass market sizing for an infusion platform IC.",
+            "Metro/county targeting for de-novo and tuck-in pipelines.",
+            "AIC unit-economics sanity-check against a target's P&L.",
+        ],
+        interpretation_guidance=[
+            "Figures are labeled illustrative starting points (public "
+            "anchors scaled by real population), not engagement data.",
+            "Live pulls (?nppes=live) replace modeled counts where "
+            "reachable; offline the page says MODELED in place.",
+        ],
+        limitations=["No vendored TX infusion-provider census — "
+                     "provider counts are population-scaled estimates "
+                     "until replaced with an NPPES/state-board pull."],
+        related_routes=["/diligence/texas-infusion-continued", "/cdd",
+                        "/diligence/benchmarks"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    # ── Texas infusion CDD · part 2 (the granular tab) ──────────────
+    _ctx(
+        "/diligence/texas-infusion-continued",
+        "Texas Infusion Market · Continued",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Part 2 of the Texas infusion CDD — the "
+        "per-claim / per-payer / per-place grain: CPT-level rates by "
+        "site and Texas city, drug-dose economics, PPO/HMO structure, "
+        "the operator×plan network matrix, proximity analysis, and the "
+        "HealthQuest referral-convenience spotlight.",
+        primary_purpose="Take the part-1 market sizing down to the "
+        "grain a deal team underwrites on: what each CPT/HCPCS code "
+        "pays per office/AIC and per home visit, how the same visit "
+        "prices across HOPD/AIC/home, how reimbursement varies by "
+        "state (GAF) and by the eight Texas PFS localities, what the "
+        "drug mix earns per dose, and how payer structure, network "
+        "access, drive-time proximity and patient experience decide "
+        "where the volume lands.",
+        common_questions=[
+            "What does 96413 pay in an office/AIC vs the hospital?",
+            "How does Medicare pay home infusion (HIT G-codes) and "
+            "why does commercial per-diem matter more?",
+            "Which Texas city pays the highest Medicare rate?",
+            "What does an Ocrevus or Entyvio dose reimburse?",
+            "Which infusion operators are in network with BCBSTX?",
+            "How close is HealthQuest to the Houston population mass?",
+        ],
+        inputs=["No user inputs — published CMS rate tables (PFS, "
+                "OPPS, HIT, quarterly ASP, the vendored GPCI file), "
+                "payer data (AMA/KFF/CMS) and the part-1 demand model; "
+                "?asp=live refreshes drug pricing from the CMS ASP "
+                "API."],
+        outputs=["Channel sizing reconciled to the part-1 TAM, "
+                 "CPT/HCPCS rate tables with visit coding stacks, the "
+                 "cross-site arbitrage exhibit, state-GAF and TX-"
+                 "locality charts, drug-dose economics, payer-yield "
+                 "blend, PPO/HMO metro table, the in-network matrix, "
+                 "county proximity model, the HealthQuest spotlight "
+                 "and the patient-experience scorecard."],
+        key_metrics=["96413 non-facility rate (CY2025/26)",
+                     "HOPD premium (APC 5694 vs PFS)",
+                     "HIT G-code per-visit amounts",
+                     "Locality GAF by Texas city",
+                     "Blended revenue per infusion by payer",
+                     "MA penetration by core county",
+                     "Drive minutes to nearest infusion option"],
+        data_sources=["CMS PFS RVU files (CY2025/26), CY2025 GPCI "
+                      "file (vendored), OPPS pricer/IOCE, HIT rates "
+                      "files, quarterly ASP files; Montana Medicaid "
+                      "S-code fee schedule; AMA insurer-competition "
+                      "study via TMA; KFF EHBS + MA enrollment; "
+                      "Census V2024 + 2020 land areas; operator "
+                      "public disclosures (researched June 2026)."],
+        model_logic_summary=(
+            "Pure arithmetic on published rate tables + the part-1 "
+            "demand model: the channel build solves per-site prices "
+            "against the part-1 $650/infusion anchor so both tabs "
+            "reconcile exactly; locality rates apply the computed GAF "
+            "to national amounts; proximity uses a labeled nearest-"
+            "neighbor spatial model on real Census land areas."),
+        why_it_matters="Payer mix, code-level rates and site placement "
+        "— not headline TAM — decide an infusion platform's unit "
+        "economics; this page turns the part-1 sizing into the "
+        "underwriting grain.",
+        diligence_use_cases=[
+            "Pricing a target's book against published Medicare rates "
+            "by city and site of care.",
+            "Sizing the payer-mix lever (commercial vs MA vs Medicaid "
+            "yield) and the white-bagging exposure.",
+            "Screening de-novo sites on rate locality + drive-time "
+            "convenience + competitor proximity.",
+        ],
+        interpretation_guidance=[
+            "Verified published rates are labeled with their file and "
+            "year; directional items (network status, member-gated "
+            "AMA shares, county MA aggregators) are flagged in place.",
+            "The channel build and payer blend are anchored to the "
+            "part-1 $650/infusion — same model, finer grain, not an "
+            "independent estimate.",
+        ],
+        limitations=["Rate files refresh quarterly/annually; network "
+                     "status is contract-by-contract and must be "
+                     "re-verified per NPI before IC use."],
+        related_routes=["/diligence/texas-infusion", "/cdd",
+                        "/diligence/benchmarks"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
     # ── Diligence calculators converted with real CMS/FDA/CIVHC anchors ──
     _ctx(
         "/physician-productivity", "Physician Productivity",
