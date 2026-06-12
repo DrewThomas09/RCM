@@ -380,3 +380,12 @@ Visuals hub (/visuals): card-per-tool landing page with live thumbnails
 + palette + guide. +3 tests. Graphics suite complete: hub + 4 builders
 (Chart Builder 23 types, Pie, Excel Mapping, Exhibit Composer), all with
 SVG/PNG export + Chartis styling.
+
+---
+## Checkpoint — wave #71 (W2-169, 2026-06-12)
+Diligence pivot: wired CMS Medicare Monthly Enrollment (new cms_enrollment
+.py, live + published TX fallback) → texas_ma_enrollment now uses the TRUE
+total-Medicare denominator for MA penetration (~48% vs the old 65+ proxy
+~55%). MA panel shows enrollees/total/penetration/dual + denom source.
++5 tests. Remaining named source: CMS Outpatient Hospitals by provider/
+service (cms_opps_outpatient client exists, unwired — HOPD infusion volume).

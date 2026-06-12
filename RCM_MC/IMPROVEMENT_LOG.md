@@ -3510,3 +3510,24 @@ Research nav + Cmd-K palette + a documented guide context. Discoverability
 capstone for the suite.
 **Verify**: new `test_visuals_hub.py` (3) — a card + link per tool, ≥4
 thumbnail SVGs, palette/nav/guide registration. Full suite green.
+
+## W2-169 (2026-06-12) — Texas infusion: Medicare Monthly Enrollment → true MA penetration (wave #71)
+Pivoted back to diligence and wired a named source — CMS Medicare
+Monthly Enrollment — to fix the MA-penetration denominator:
+- **`cms_enrollment.py`** (new): a live client for the CMS Medicare
+  Monthly Enrollment file — total Medicare beneficiaries + the FFS vs
+  MA-and-other split by state (latest month). Resolves the dataset from
+  the CMS catalog, fails CLOSED, and falls back to a published TX total
+  (≈4.6M) — never fabricated.
+- **`texas_ma_enrollment`** now computes a TRUE MA-penetration rate =
+  MA enrollment ÷ total Medicare beneficiaries (≈48%: 2.19M / 4.6M),
+  replacing the 65+ proxy (which overstated at ~55% by omitting the
+  under-65 disabled). The proxy is kept for continuity; the panel now
+  shows TX MA enrollees / total Medicare / MA penetration / dual, with
+  the denominator source labeled (live vs published). Live county/total
+  penetration fills in via the enrollment API under `?nppes=live`.
+**Verify**: +1 integration test (penetration uses the total-Medicare
+denominator, < the proxy, offline = published fallback) + new
+`test_cms_enrollment.py` (4) — offline uses published total, unknown
+state → US fallback, fetch fails closed unresolved, parses latest-month
+total from a mocked payload. Full suite green.
