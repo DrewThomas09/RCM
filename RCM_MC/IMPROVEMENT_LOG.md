@@ -3455,3 +3455,18 @@ Continued the graphics-suite improvements:
 **Verify**: +5 tests — gauge present (≥20 types) + renders value/max
 clean, per-series colours override the palette and reach the SVG,
 palette-sync script present. Full suite green.
+
+## W2-165 (2026-06-12) — Charts: heatmap grid + source/footnote line (wave #67)
+Two more client-readiness improvements:
+- **Heatmap grid** chart type (kit now 21): a scoring matrix — rows ×
+  columns, each cell shaded on a sequential teal scale by value with the
+  value printed, row labels left + column headers top. The classic CDD
+  attractiveness/scoring matrix.
+- **Source / footnote line** on every chart: `render_cdd_chart` and
+  `presentable_pie` now inject a small bottom-left source/footnote line
+  (the way every client deck exhibit carries one). A "Source / footnote"
+  field added to the Chart Builder + Pie Chart pages; it's part of the
+  rendered SVG so it travels with the SVG/PNG export.
+**Verify**: +4 tests — heatmap present (≥21 types) + renders grid with
+row/column headers clean, footnote appears in the chart SVG + on the
+page; pie footnote renders. Full suite green.

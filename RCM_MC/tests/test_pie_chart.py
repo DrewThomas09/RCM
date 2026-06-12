@@ -56,6 +56,10 @@ class PresentablePieTests(unittest.TestCase):
         self.assertIn("TOTAL", svg)
         self.assertIn(">100<", svg)   # 40+25+35
 
+    def test_footnote_renders(self):
+        svg = presentable_pie(self._slices(), {"footnote": "Source: NHIA"})
+        self.assertIn("Source: NHIA", svg)
+
 
 class PieChartPageTests(unittest.TestCase):
     def test_default_page_is_populated(self):

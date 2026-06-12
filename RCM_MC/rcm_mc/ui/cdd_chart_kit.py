@@ -59,6 +59,7 @@ CHART_TYPES = [
     ("bullet", "Bullet (vs target)"),
     ("dot", "Dot / lollipop"),
     ("gauge", "Gauge (KPI)"),
+    ("heatmap", "Heatmap grid"),
     ("marimekko", "Marimekko"),
     ("combo", "Combo (bars + line)"),
 ]
@@ -177,6 +178,10 @@ def presentable_pie(
             f'<tspan fill="{_FAINT}" font-weight="400">'
             f'({frac*100:.0f}%)</tspan></text>')
         ly += 26
+    note = opts.get("footnote") or opts.get("source")
+    if note:
+        out.append(f'<text x="16" y="{H-12:.1f}" font-family="{_SANS}" '
+                   f'font-size="10" fill="{_FAINT}">{_esc(note)}</text>')
     out.append("</svg>")
     return "".join(out)
 
@@ -1017,6 +1022,60 @@ def _matrix(table, opts):
     return body
 
 
+# ── Heatmap grid (scoring matrix) ────────────────────────────────────
+
+def _heat_color(frac: float) -> str:
+    frac = max(0.0, min(1.0, frac))
+    c0, c1 = (0xE9, 0xF1, 0xF0), (0x12, 0x5E, 0x59)
+    rgb = tuple(round(c0[i] + (c1[i] - c0[i]) * frac) for i in range(3))
+    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+
+
+def _heatmap(table, opts):
+    cats = [r[0] for r in table["rows"]]
+    series = _series(table)
+    headers = table.get("headers", [])
+    x0, y0, x1, y1 = _plot(dict(opts, legend=False))
+    y0 += 14   # room for column headers
+    nrow, ncol = len(cats), len(series)
+    if not nrow or not ncol:
+        return _frame_open(opts) + "</svg>"
+    allv = [v for s in series for v in s["values"] if v is not None]
+    lo, hi = (min(allv), max(allv)) if allv else (0, 1)
+    rng = (hi - lo) or 1
+    body = _frame_open(opts)
+    cw = (x1 - x0) / ncol
+    ch = (y1 - y0) / nrow
+    suffix = opts.get("suffix", "")
+    for j, s in enumerate(series):
+        hx = x0 + cw * (j + 0.5)
+        name = headers[j + 1] if j + 1 < len(headers) else s["name"]
+        body += (f'<text x="{hx:.1f}" y="{y0-5:.1f}" text-anchor="middle" '
+                 f'font-family="{_SANS}" font-size="10" font-weight="600" '
+                 f'fill="{_DIM}">{_esc(name)}</text>')
+    for i, c in enumerate(cats):
+        ry = y0 + ch * i
+        body += (f'<text x="{x0-6:.1f}" y="{ry+ch/2+3:.1f}" '
+                 f'text-anchor="end" font-family="{_SANS}" font-size="10.5" '
+                 f'fill="{_DIM}">{_esc(c)}</text>')
+        for j, s in enumerate(series):
+            v = s["values"][i]
+            cx = x0 + cw * j
+            fill = _heat_color((v - lo) / rng) if v is not None else "#f3efe4"
+            tcol = "#fff" if (v is not None and (v - lo) / rng > 0.55) \
+                else _INK
+            body += (f'<rect x="{cx+1:.1f}" y="{ry+1:.1f}" '
+                     f'width="{cw-2:.1f}" height="{ch-2:.1f}" rx="2" '
+                     f'fill="{fill}"/>')
+            if v is not None:
+                body += (f'<text x="{cx+cw/2:.1f}" y="{ry+ch/2+3.5:.1f}" '
+                         f'text-anchor="middle" font-family="{_SANS}" '
+                         f'font-size="10.5" font-weight="600" fill="{tcol}">'
+                         f'{_fmt(v, suffix)}</text>')
+    body += "</svg>"
+    return body
+
+
 # ── Export toolbar (download SVG / PNG, copy) ────────────────────────
 
 def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
@@ -1094,6 +1153,7 @@ _DISPATCH = {
     "bullet": (_bullet, {}),
     "dot": (_dot, {}),
     "gauge": (_gauge, {}),
+    "heatmap": (_heatmap, {}),
     "marimekko": (_marimekko, {}),
     "combo": (_combo, {}),
 }
@@ -1120,4 +1180,17 @@ def render_cdd_chart(
                 + f'<text x="{W/2:.0f}" y="{H/2:.0f}" text-anchor="middle" '
                 f'font-family="{_SANS}" font-size="13" fill="{_FAINT}">'
                 f'Paste data to render a chart</text></svg>')
-    return fn(table, o)
+    return _with_footnote(fn(table, o), o)
+
+
+def _with_footnote(svg: str, opts: Dict[str, Any]) -> str:
+    """Inject a small bottom-left source/footnote line before </svg> —
+    every client chart wants one."""
+    note = opts.get("footnote") or opts.get("source")
+    if not note or "</svg>" not in svg:
+        return svg
+    H = opts.get("H", _H)
+    el = (f'<text x="14" y="{H-7:.1f}" font-family="{_SANS}" '
+          f'font-size="9.5" fill="{_FAINT}">{_esc(note)}</text>')
+    idx = svg.rfind("</svg>")
+    return svg[:idx] + el + svg[idx:]

@@ -87,10 +87,11 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
 
     slices = [{"label": r["label"], "value": _to_float(r["value"]),
                "color": r["color"]} for r in rows]
+    footnote = _qs1(qs, "footnote", "")
     svg = presentable_pie(slices, {
         "title": title or "Pie Chart", "subtitle": subtitle,
         "donut": donut, "label_mode": label_mode, "value_suffix": suffix,
-        "width_px": width_px,
+        "width_px": width_px, "footnote": footnote,
     })
 
     # Slice input rows.
@@ -151,6 +152,10 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'<input type="text" name="subtitle" value="{html.escape(subtitle)}" '
         f'style="width:100%;height:32px;border:1px solid #c9c1ac;'
         f'border-radius:5px;padding:0 8px;"></label>'
+        f'<label style="font-size:11px;color:#465366;">Source / footnote'
+        f'<input type="text" name="footnote" value="{html.escape(footnote)}" '
+        f'placeholder="Source: …" style="width:100%;height:32px;border:1px '
+        f'solid #c9c1ac;border-radius:5px;padding:0 8px;"></label>'
         f'<div style="display:flex;gap:10px;">'
         f'<label style="font-size:11px;color:#465366;flex:1;">Slice labels'
         f'<select name="mode" style="width:100%;height:32px;border:1px '

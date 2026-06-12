@@ -96,9 +96,27 @@ class RenderTests(unittest.TestCase):
     def test_new_consultant_chart_types_present(self):
         keys = {k for k, _ in CHART_TYPES}
         for k in ("funnel", "tornado", "radar", "matrix", "bullet", "dot",
-                  "gauge"):
+                  "gauge", "heatmap"):
             self.assertIn(k, keys, k)
-        self.assertGreaterEqual(len(CHART_TYPES), 20)
+        self.assertGreaterEqual(len(CHART_TYPES), 21)
+
+    def test_heatmap_renders_grid_with_headers(self):
+        t = parse_table("Driver\tA\tB\nDemand\t9\t6\nSupply\t5\t8")
+        svg = render_cdd_chart("heatmap", t, {"title": "Score"})
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertIn("Demand", svg)
+        self.assertIn("Supply", svg)
+        self.assertNotIn("None", svg)
+
+    def test_footnote_appears_on_chart(self):
+        svg = render_cdd_chart(
+            "column", parse_table("Y\tR\n2021\t100"),
+            {"footnote": "Source: company data"})
+        self.assertIn("Source: company data", svg)
+        # And on the page.
+        h = render_chart_builder_page({"footnote": ["Source: deal team"]})
+        self.assertIn("Source: deal team", h)
+        self.assertIn('name="footnote"', h)
 
     def test_gauge_renders_value_and_max(self):
         svg = render_cdd_chart(
