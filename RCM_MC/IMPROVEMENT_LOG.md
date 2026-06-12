@@ -3763,3 +3763,16 @@ the merge instead of shipping duplicates:
   documented in the docstring.
 **Verify**: merged-tree texas suite (both streams' test classes) +
 opps client suites green; page renders both blocks consistently.
+
+## W2-182 (2026-06-12) — CIM claim-percentile chip in ck_peer_percentile language (backlog #23)
+Backlog triage first: ready-queue items #21 (palette name-search), #22
+(P9 diff detail), #25 (DQ snapshot dates) and #29 (model-card link)
+were already shipped by earlier waves — marked done. The remaining
+delta on #23: the CIM cross-check claim-percentile chip was plain text
+("claim @ p97 of n=457") while the platform standard is the
+ck_peer_percentile visual (position track + peer label). Upgraded
+_pctile_chip to that language — mono chip + 60px track with the dot at
+the ENGINE's percentile (never recomputed in the UI) + the scope label
+("vs TX hospitals (n=457)") — tail amber + tooltip preserved, aggregate/
+small-n still render "". +2 chip assertions (track dot position derives
+from engine rank; mid-range neutral). test_cim_crosscheck: 30 passed.

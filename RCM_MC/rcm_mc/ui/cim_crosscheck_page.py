@@ -109,11 +109,13 @@ def _market_backdrop(state: str) -> str:
         'commercial mix. State-level ACS, not the target\'s patients.</p>')
 
 
-def _pctile_chip(row) -> str:
+def _pctile_chip(row, scope_label: str = "") -> str:
     """Where the CLAIM sits in the in-scope distribution — a tail claim
     (≤p10 / ≥p90) is a finding even when the variance flag is green, so the
     tails render amber. Engine returns None for aggregates and n<8 (no chip,
-    never a fabricated rank)."""
+    never a fabricated rank). Renders in the ck_peer_percentile visual
+    language (mono chip + position track + peer label) from the engine's
+    own percentile — the UI never recomputes the rank."""
     p = getattr(row, "claim_percentile", None)
     if p is None:
         return ""
@@ -122,10 +124,19 @@ def _pctile_chip(row) -> str:
     color = ("var(--sc-warning,#b8732a)" if tail
              else "var(--sc-text-dim,#6a7480)")
     note = " — tail claim, scrutinize" if tail else ""
-    return (f'<div style="font-family:var(--sc-mono);font-size:9.5px;'
-            f'color:{color};" title="The claimed value ranks at the '
+    peers = _html.escape(scope_label) if scope_label else "in-scope facilities"
+    dot_x = max(2, min(58, round(p * 0.60)))
+    track = (
+        '<svg width="60" height="8" style="vertical-align:middle;'
+        'margin:0 4px;" role="img" aria-label="claim percentile position">'
+        '<line x1="0" y1="4" x2="60" y2="4" '
+        'stroke="var(--sc-rule,#d6cfc0)" stroke-width="2"/>'
+        f'<circle cx="{dot_x}" cy="4" r="3" fill="{color}"/></svg>')
+    return (f'<div class="ck-pct-chip" style="font-family:var(--sc-mono);'
+            f'font-size:9.5px;color:{color};white-space:nowrap;" '
+            f'title="The claimed value ranks at the '
             f'p{p} of the {n} in-scope per-facility values{note}.">'
-            f'claim @ p{p} of n={n}</div>')
+            f'claim @ p{p}{track}vs {peers} (n={n})</div>')
 
 
 def _claims_from_qs(qs: Dict[str, List[str]]) -> Dict[str, float]:
@@ -378,7 +389,7 @@ def render_cim_crosscheck(qs: Optional[Dict[str, List[str]]] = None) -> str:
                 f'{_html.escape(est.method)}</div></td>'
                 f'<td class="num" style="padding:6px 8px;text-align:right;'
                 f'font-variant-numeric:tabular-nums;">{_fmt(r.claim_value, est.unit)}'
-                f'{ck_basis_badge("entered")}{_pctile_chip(r)}</td>'
+                f'{ck_basis_badge("entered")}{_pctile_chip(r, result.scope_label)}</td>'
                 f'<td class="num" style="padding:6px 8px;text-align:right;'
                 f'font-variant-numeric:tabular-nums;">{_fmt(est.value, est.unit)}'
                 f'{ck_basis_badge("actual") if est.value is not None else ""}'

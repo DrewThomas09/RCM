@@ -1,4 +1,8 @@
 # SESSION_STATE — autonomous 8h improvement session — WINDOW 2
+- window3_start: 2026-06-12T05:00:00Z (directive: continue improvements,
+  8 hours, no questions, loop. Stream: claude/general-improvements-a78byd,
+  PR #1811 accumulates; merge origin/main between items as the parallel
+  chart stream advances; regression sweep every ~4 items.)
 - window2_start: 2026-06-10T12:40:00Z (directive: loop continuously, find bugs,
   small improvements/wins, UI+functionality polish, CDD features, data
   integration; no questions; merges → pedesk.app live + verify)
