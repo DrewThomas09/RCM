@@ -3939,3 +3939,19 @@ id slugged vertical_ccn, name, state) without the Inspector round-trip
 Source → Pipeline path from the row itself. Same prefill contract the
 Inspector's "Promote to Pipeline" link already used. +1 test (slug,
 title, action present); test_target_screener: 159 passed.
+
+## W2-195 (2026-06-12) — Market-data county drilldown links (PAGE_INVENTORY top fix)
+/market-data/state/<ST>'s Cross-links panel now drills into the SCOPED
+county explorer (/county-explorer?state=ST — the county layers existed,
+the state detail just never linked there) and the state dossier
+(/state-profile?state=ST). New ungated test_market_data_drilldown.py
+pins both links + the explorer's state scoping. 12 passed with the
+map suite.
+
+PAGE_INVENTORY status note: of the 17 Tier-1 "top fix" entries graded
+2026-06-10, TEN are now shipped (per-row deal-attach W2-194, drill-
+throughs W2-193, /compare percentiles W2-192, import validation W2-191,
+county drilldown W2-195, plus P5/P8/P9/P11/model-card from earlier
+waves). Still open: portfolio per-deal alert digest, deal-workbench
+ENTERED-basis pass, ebitda-bridge exhibit export, glossary links from
+every KPI label (partial).

@@ -733,6 +733,13 @@ def render_state_detail(
         '<p class="ck-section-body">'
         f'<a href="/screen?state={html.escape(state_upper)}" class="cad-btn cad-btn-primary">'
         f'Screen {html.escape(state_upper)} Hospitals</a> '
+        # PAGE_INVENTORY top fix — county-level drilldown: the county
+        # explorer already serves real county layers; the state detail
+        # just never linked into it scoped.
+        f'<a href="/county-explorer?state={html.escape(state_upper)}" '
+        f'class="cad-btn">{html.escape(state_upper)} Counties &rarr;</a> '
+        f'<a href="/state-profile?state={html.escape(state_upper)}" '
+        f'class="cad-btn">{html.escape(state_upper)} Dossier &rarr;</a> '
         '<a href="/market-data/map" class="cad-btn">&larr; National View</a>'
         '</p>',
         title="Cross-links",
