@@ -57,6 +57,24 @@ def _thumb_exhibit() -> str:
                            width_px=360)
 
 
+def _thumb_saved() -> str:
+    # A mini "library" render — three named rows over a small chart, so
+    # the card previews the concept without needing a real store.
+    t = parse_table("Q\tV\nQ1\t10\nQ2\t16\nQ3\t13\nQ4\t21")
+    spark = render_cdd_chart("line", t, {
+        "title": "", "palette": "Chartis", "W": 340, "H": 150,
+        "legend": False, "show_values": False, "width_px": 340})
+    rows = "".join(
+        f'<div style="display:flex;justify-content:space-between;'
+        f'border-bottom:1px solid #ece5d6;padding:4px 6px;'
+        f'font-size:11px;color:#1a2332;"><span>★ {html.escape(n)}</span>'
+        f'<span style="color:#7a8699;">{k}</span></div>'
+        for n, k in (("Denials Pareto", "Chart"),
+                     ("IC highlights slide", "Exhibit"),
+                     ("Payer mix — monthly", "Chart")))
+    return f'<div>{rows}{spark}</div>'
+
+
 _TOOLS = [
     ("Chart Builder", "/chart-builder",
      f"{len(CHART_TYPES)} chart types from a pasted table — column, "
@@ -72,6 +90,10 @@ _TOOLS = [
     ("Exhibit Composer", "/exhibit",
      "Lay up to four charts on one 16:9 deck slide with a title block + "
      "source — export the whole exhibit as one SVG/PNG.", _thumb_exhibit),
+    ("Saved Charts", "/charts",
+     "Your chart library — name a configured chart or exhibit (★ Save "
+     "to library on either page) and reopen it from here exactly as "
+     "you left it.", _thumb_saved),
 ]
 
 
