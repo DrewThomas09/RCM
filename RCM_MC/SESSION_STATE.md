@@ -409,3 +409,12 @@ next, headline + CONSTRUCTIVE verdict). build_texas_infusion_analysis now
 assembles `out` then sets out["investment_thesis"]. Page: "Investment
 Thesis · IC Summary" block at the top (after KPI strip, before sizing).
 +3 tests. The Texas page now opens with the partner-facing top-line.
+
+---
+## Checkpoint — wave #74 (W2-172, 2026-06-12)
+Connected graphics + diligence: _exhibit_section(a) auto-composes a 4-panel
+"Texas Infusion — Investment Highlights" slide (funnel TAM/SAM/SOM, site-
+of-care 100%-stacked evolution, top de-novo counties bar, current-mix
+donut) from the LIVE analysis via compose_exhibit; embedded on the page
+("One-page exhibit" section) with SVG/PNG export. +1 test. Capstone of
+both arcs.

@@ -17,6 +17,9 @@ from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_page_title, ck_section_header,
     ck_source_purpose,
 )
+from .cdd_chart_kit import (
+    compose_exhibit, parse_table, chart_export_toolbar,
+)
 
 _POS = "#0a8a5f"
 _NEG = "#b5321e"
@@ -33,6 +36,56 @@ def _money(v: float) -> str:
     if abs(v) >= 1e6:
         return f"${v/1e6:.1f}M"
     return f"${v:,.0f}"
+
+
+def _exhibit_section(a: Dict[str, Any]) -> str:
+    """Auto-compose a one-page investment-highlights exhibit slide from
+    the LIVE analysis — the deliverable a partner drops into a deck.
+    Recomputes from the same numbers as the sections, so it can never
+    disagree with them."""
+    s = a["sizing"]
+    funnel = parse_table(
+        f"Stage\tValue\nTAM\t{s['tam']/1e6:.0f}\nSAM\t{s['sam']/1e6:.0f}\n"
+        f"SOM\t{s['som']/1e6:.0f}")
+    evo = a["site_of_care_evolution"]["series"]
+    soc_rows = "\n".join(
+        f"{r['year']}\t{r['hopd']*100:.0f}\t{r['ais']*100:.0f}\t"
+        f"{r['home']*100:.0f}\t{r['office']*100:.0f}" for r in evo)
+    soc = parse_table("Year\tHOPD\tAIS\tHome\tOffice\n" + soc_rows)
+    top = a["growth_scorecard"]["top_opportunities"][:6]
+    score = parse_table(
+        "County\tScore\n" + "\n".join(
+            f"{t['county']}\t{t['score']:.0f}" for t in top))
+    site = {x["site"]: x["share"] for x in a["site_of_care"]}
+    mix = parse_table(
+        "Site\tShare\n" + "\n".join(
+            f"{k.split(' (')[0]}\t{v*100:.0f}" for k, v in site.items()))
+    panels = [
+        {"type": "funnel", "title": "Market sizing — TAM → SAM → SOM ($M)",
+         "table": funnel, "palette": "Navy–Teal"},
+        {"type": "column_100", "title": "Site-of-care mix, 2015–2024 (%)",
+         "table": soc, "palette": "Navy–Teal"},
+        {"type": "bar", "title": "Top de-novo county opportunities",
+         "table": score, "palette": "Chartis"},
+        {"type": "donut", "title": "Current site-of-care mix",
+         "table": mix, "palette": "Chartis"},
+    ]
+    svg = compose_exhibit(
+        panels, title="Texas Infusion — Investment Highlights",
+        eyebrow="Commercial Due Diligence",
+        source="Source: NHIA / MedPAC scaled to TX (Census/ACS) · CMS · "
+               "CDC PLACES — illustrative")
+    return (
+        f'<p style="font-size:12px;color:{_DIM};line-height:1.6;'
+        f'margin:0 0 8px;">A one-page exhibit auto-composed from the live '
+        f'analysis on this page — download the SVG/PNG straight into a '
+        f'deck. It recomputes from the same figures, so it never disagrees '
+        f'with the sections below.</p>'
+        f'<div style="border:1px solid #d6cfc0;border-radius:8px;'
+        f'padding:12px;background:#fff;text-align:center;">'
+        f'<div id="txExhibit">{svg}</div>'
+        + chart_export_toolbar("txExhibit", "texas-infusion-exhibit")
+        + '</div>')
 
 
 def _thesis_section(a: Dict[str, Any]) -> str:
@@ -2718,6 +2771,11 @@ def render_texas_infusion_page(
         + ck_section_header("Texas structural factors",
                             eyebrow="WHAT'S DIFFERENT ABOUT TEXAS")
         + _factors(a)
+
+        + ck_section_header("One-page exhibit",
+                            eyebrow="AUTO-COMPOSED FROM THE LIVE ANALYSIS · "
+                                    "DECK-READY · SVG/PNG")
+        + _exhibit_section(a)
 
         + ck_section_header("Sources & basis", eyebrow="VERIFIABILITY")
         + f'<ul style="margin:0;padding-left:18px;">{sources}</ul>'

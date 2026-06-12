@@ -3579,3 +3579,22 @@ can never drift from the sections below:
 with complete fields, thesis numbers match the sections (real HHI,
 HOPD shift pts, undersupplied count), most-at-risk therapy surfaces in
 the risks; +3 render needles. Full suite green.
+
+## W2-172 (2026-06-12) — Texas infusion: auto-composed investment-highlights exhibit (wave #74)
+Connected the graphics suite to the diligence data — the Texas page now
+AUTO-GENERATES a one-page exhibit slide from its own live analysis:
+- **`_exhibit_section(a)`**: builds four panels from the live analysis and
+  composes them (via the chart kit's `compose_exhibit`) into one 16:9
+  "Texas Infusion — Investment Highlights" slide:
+  1. Market-sizing funnel — TAM → SAM → SOM ($M)
+  2. Site-of-care mix 2015–2024 (100% stacked) — the HOPD→AIS/home shift
+  3. Top de-novo county opportunities (bar) — from the growth scorecard
+  4. Current site-of-care mix (donut)
+  Every panel recomputes from the same figures as the sections, so the
+  exhibit can never disagree with the page.
+- **Page**: a "One-page exhibit" section (deck-ready, SVG/PNG export
+  toolbar) before Sources — the deliverable a partner drops into a deck.
+This is the capstone tying the two arcs together (graphics kit + Texas
+diligence data).
+**Verify**: +1 exhibit test (four panels nested into one slide, export
+toolbar, no None) + 2 render needles. Full suite green.

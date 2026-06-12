@@ -891,6 +891,25 @@ class ASPandMATests(unittest.TestCase):
         self.assertIn("published", ma["denominator_source"])
 
 
+class AutoExhibitTests(unittest.TestCase):
+    """The one-page exhibit auto-composed from the live analysis — four
+    panels nested into a single slide, recomputed from the analysis."""
+
+    def test_exhibit_composes_four_panels_into_one_slide(self):
+        from rcm_mc.ui.texas_infusion_page import _exhibit_section
+        a = build_texas_infusion_analysis()
+        sec = _exhibit_section(a)
+        self.assertIn("Texas Infusion — Investment Highlights", sec)
+        self.assertIn('id="txExhibit"', sec)
+        # Parent slide + 4 nested chart svgs.
+        start = sec.index('<svg viewBox="0 0 1280')
+        end = sec.index("</div>", start)
+        self.assertEqual(sec[start:end].count("<svg"), 5)
+        # Export toolbar present.
+        self.assertIn("⬇ PNG", sec)
+        self.assertNotIn("None", sec[start:end])
+
+
 class InvestmentThesisTests(unittest.TestCase):
     """The IC-summary synthesis must recompute from the assembled
     analysis — it can never drift from the sections it summarizes."""
@@ -1242,7 +1261,7 @@ class PageRenderTests(unittest.TestCase):
             "HOPD infusion — the steered-away pool",
             "CAPTURABLE HOPD PATIENTS",
             "INVESTMENT THESIS · IC SUMMARY", "KEY RISKS",
-            "DILIGENCE NEXT",
+            "DILIGENCE NEXT", "One-page exhibit", "txExhibit",
         ):
             self.assertIn(needle, h, f"missing section: {needle}")
 
