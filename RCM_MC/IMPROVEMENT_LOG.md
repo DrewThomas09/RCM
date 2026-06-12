@@ -3995,3 +3995,15 @@ Texas page uses:
 score = the weighted-axes blend, no-CON flag matches the documented list,
 TX present + top-10; page renders the map/table/TX-read + palette/nav/
 guide registration. Full suite green.
+
+## W2-199 (2026-06-12) — Deal-dashboard ENTERED-basis pass (PAGE_INVENTORY top fix)
+The deal dashboard's operating-profile strip rendered the MODEL'S
+fallback constants as if they were the deal's numbers: a profile with
+no denial rate showed "Denial Rate 12.0%" (the estimate default) and
+no margin showed 10% — fabricated-looking observed values. Now: entered
+values carry the ENTERED basis badge; missing metrics render an em-dash
+with an honest sub-line ("not entered — estimates use the 12% model
+default"); the Denial-Drivers tile only quotes a "14.2% → 8%"
+trajectory when the rate was actually entered. The derived ESTIMATES
+(EV/IRR/recoverable in the value anchor) legitimately keep their
+defaults — they're labeled indicative. +2 tests; 7 passed.

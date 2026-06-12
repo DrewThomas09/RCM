@@ -286,7 +286,12 @@ def render_deal_dashboard(
              f"{ck_fmt_currency(recoverable)} recoverable" if recoverable > 0
              else "Root-cause decomposition · AR bridge"),
             category="operations",
-            inline_value=(f"{dr_val:.1f}% → 8%" if dr_val > 8 else ""),
+            # Only quote a denial trajectory when the rate was ENTERED —
+            # the 12% model default must not read as the deal's number.
+            inline_value=(
+                f"{dr_val:.1f}% → 8%"
+                if profile.get("denial_rate") not in (None, "")
+                and dr_val > 8 else ""),
             inline_color=PALETTE["warning"],
         ),
         _model_tile(
@@ -423,19 +428,40 @@ def render_deal_dashboard(
     # initial-denial rate, EBITDA margin. Previously this was a second
     # copy of EV + recoverable, stacking the identical numbers right
     # under the anchor. One home per metric now.
+    # ENTERED-basis pass (PAGE_INVENTORY top fix): these are the
+    # partner's OWN entered numbers — badge them as such, and never
+    # render the model's fallback constants (12% denial / 10% margin,
+    # which the derived ESTIMATES above legitimately use) as if they
+    # were the deal's observed values. Missing → em-dash, no badge.
+    from ._chartis_kit import ck_basis_badge
     bed_count = profile.get("bed_count")
     bed_count_display = (
-        f"{int(bed_count):,}" if bed_count not in (None, "") else "—"
+        f"{int(bed_count):,}{ck_basis_badge('entered')}"
+        if bed_count not in (None, "") else "—"
     )
-    denial_display = f"{dr_val:.1f}%" if dr_val else "—"
-    margin_display = ck_fmt_pct(margin_val) if margin_val else "—"
+    dr_raw = profile.get("denial_rate")
+    denial_display = (
+        f"{float(dr_raw):.1f}%{ck_basis_badge('entered')}"
+        if dr_raw not in (None, "") else "—"
+    )
+    margin_raw = profile.get("ebitda_margin")
+    margin_display = (
+        f"{ck_fmt_pct(float(margin_raw))}{ck_basis_badge('entered')}"
+        if margin_raw not in (None, "") else "—"
+    )
     kpi_strip = (
         '<div class="ck-kpi-grid" '
         'style="grid-template-columns:repeat(3,1fr);'
         'gap:8px;margin:8px 0 16px;">'
         + ck_kpi_block("Bed Count", bed_count_display, "HCRIS / entered")
-        + ck_kpi_block("Denial Rate", denial_display, "initial denials")
-        + ck_kpi_block("EBITDA Margin", margin_display, "of net revenue")
+        + ck_kpi_block("Denial Rate", denial_display,
+                       "initial denials" if dr_raw not in (None, "")
+                       else "not entered — estimates use the 12% model "
+                            "default")
+        + ck_kpi_block("EBITDA Margin", margin_display,
+                       "of net revenue" if margin_raw not in (None, "")
+                       else "not entered — estimates use the 10% model "
+                            "default")
         + '</div>'
     )
 

@@ -72,5 +72,26 @@ class DealDashboardOrganizationTests(unittest.TestCase):
         self.assertNotIn('class="ck-next-link" href="/deal/ccf"', html)
 
 
+
+class EnteredBasisTests(unittest.TestCase):
+    """PAGE_INVENTORY top fix: the operating-profile strip badges the
+    partner's ENTERED values and never renders the model's fallback
+    constants (12% denial / 10% margin) as if they were the deal's."""
+
+    def test_entered_values_badged(self):
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        h = render_deal_dashboard(
+            "d1", {"name": "X", "denial_rate": 14.2, "bed_count": 250,
+                   "ebitda_margin": 0.12})
+        self.assertIn(">ENTERED<", h)
+        self.assertIn("14.2%", h)
+
+    def test_missing_metrics_show_dash_not_model_default(self):
+        from rcm_mc.ui.deal_dashboard import render_deal_dashboard
+        h = render_deal_dashboard("d2", {"name": "Y"})
+        self.assertNotIn("12.0%", h)        # the model default, anywhere
+        self.assertIn("not entered", h)     # honest sub-line
+
+
 if __name__ == "__main__":
     unittest.main()
