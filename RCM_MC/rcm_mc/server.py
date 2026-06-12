@@ -6745,6 +6745,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/texas-infusion-continued":
+            # Texas infusion market part 2 — the per-claim / per-payer /
+            # per-place grain: CPT rates by site + city, drug-dose
+            # economics, PPO/HMO structure, network matrix, proximity,
+            # HealthQuest spotlight, patient experience. ?asp=live
+            # refreshes drug pricing from the CMS ASP API.
+            from .ui.texas_infusion_continued_page import (
+                render_texas_infusion_continued_page,
+            )
+            _tc_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(
+                render_texas_infusion_continued_page(_tc_qs))
         if path == "/diligence/cdd-scope":
             # CDD Scope — the four engagement depths (screen / red-flag
             # / full-scope / bring-down): level cards, deterministic
@@ -7009,6 +7021,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_json(build_texas_infusion_analysis(
                 aic_overrides=aic_assumptions_from_qs(_ti_qs)))
+        if path == "/api/diligence/texas-infusion-continued":
+            # JSON variant of part 2 — the granular CPT/payer/proximity
+            # analysis dict; ?asp=live refreshes CMS ASP drug pricing.
+            from .diligence.texas_infusion_continued import (
+                build_texas_infusion_continued_analysis,
+            )
+            _tc_qs = urllib.parse.parse_qs(parsed.query)
+            _tc_live = "live" in _tc_qs.get("asp", [])
+            return self._send_json(
+                build_texas_infusion_continued_analysis(
+                    fetch_live=_tc_live))
         if path == "/api/diligence/texas-infusion/memo":
             # Markdown IC memo — a partner-shareable writeup generated
             # from the analysis; served as a download.
