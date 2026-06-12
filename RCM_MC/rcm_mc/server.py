@@ -6724,6 +6724,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/infusion-markets":
+            # National infusion-market scan — every state ranked for an
+            # infusion roll-up from real per-state ACS + CMS MA data.
+            from .ui.infusion_market_page import render_infusion_market_page
+            return self._send_html(render_infusion_market_page())
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs
