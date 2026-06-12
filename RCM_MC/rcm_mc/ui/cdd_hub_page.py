@@ -63,9 +63,9 @@ _MODULES = [
          ("HCIT / SaaS Analyzer", "/hcit-platform",
           "ARR quality: NRR, gross margin, Rule of 40"),
      ]),
-    ("4 · Pricing & reimbursement",
+    ("4 · Pricing, reimbursement & cost environment",
      "Who sets the price in this market — the target, the payer, or "
-     "CMS?",
+     "CMS — and does the cost side let the margin hold?",
      [
          ("Pricing Power Analyzer", "/pricing-power",
           "Elasticity curves and segment-optimal price moves"),
@@ -73,6 +73,9 @@ _MODULES = [
           "Setting-level CMS payment updates with blended dollar impact"),
          ("MA Penetration", "/ma-penetration",
           "State-level Medicare Advantage exposure with footprint scorer"),
+         ("Healthcare Labor Market", "/labor-market",
+          "Role-level wage inflation and staffing fragility with EBITDA "
+          "stress"),
          ("Market Rates", "/market-rates",
           "Negotiated-rate benchmarks"),
          ("Market Intel (Comps & News)", "/market-intel",
