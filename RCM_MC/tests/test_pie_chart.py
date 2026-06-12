@@ -24,6 +24,11 @@ class PresentablePieTests(unittest.TestCase):
         self.assertTrue(svg.startswith("<svg"))
         self.assertTrue(svg.rstrip().endswith("</svg>"))
         self.assertNotIn("None", svg)
+        self.assertIn("Segment Mix", svg)
+        # Legend carries each label + the computed share.
+        for lab in ("A", "B", "C"):
+            self.assertIn(f">{lab}<", svg)
+        self.assertIn("(40%)", svg)   # 40/100
 
     def test_page_html_never_carries_literal_none(self):
         # The label-mode select used to say ">None<" — indistinguishable
@@ -34,11 +39,6 @@ class PresentablePieTests(unittest.TestCase):
         self.assertNotIn(">None<", h)
         self.assertNotIn(">nan<", h)
         self.assertIn("No labels", h)
-        self.assertIn("Segment Mix", svg)
-        # Legend carries each label + the computed share.
-        for lab in ("A", "B", "C"):
-            self.assertIn(f">{lab}<", svg)
-        self.assertIn("(40%)", svg)   # 40/100
 
     def test_uses_per_slice_colors(self):
         svg = presentable_pie(self._slices(), {})
