@@ -916,6 +916,11 @@ _DATA_UNIVERSE = {
                        "framework until a live data source is connected."),
     "data-required":  ("DATA REQUIRED", "datareq",
                        "Needs a user upload / CCD / internal file to activate."),
+    # Pure-input utilities (chart kit, excel mapping, pie chart): the page
+    # renders only values the user typed or pasted — no data claim at all.
+    "user-supplied":  ("USER-SUPPLIED", "user",
+                       "Renders only the values you typed or pasted — "
+                       "not a data source."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
     # Licensed third-party data, used only as derived/structured facts (raw

@@ -11866,6 +11866,8 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
+            "Can I set the value domain manually?",
+            "Why is the map a tile grid instead of real geography?",
         ],
         inputs=["Three gradient colours; an optional low/mid/high value "
                 "domain (blank = auto from data); a value per state, set "
@@ -11885,6 +11887,7 @@ _MANUAL.extend([
                                  "you set; the legend shows the domain."],
         limitations=["Schematic tile grid (labelled, not a geographic "
                      "projection); values are whatever you supply."],
+        related_routes=["/chart-builder", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11902,6 +11905,8 @@ _MANUAL.extend([
             "How do I make a waterfall / bridge chart?",
             "How do I build a marimekko or 100% stacked column?",
             "Can I paste my data from Excel and pick the colours?",
+            "How do I export the chart as SVG or PNG?",
+            "Which chart types does the kit support?",
         ],
         inputs=["A pasted table (headers row + category column + one column "
                 "per series); chart type; title/subtitle; a Chartis "
@@ -11923,6 +11928,7 @@ _MANUAL.extend([
                                  "X, Y, [size]."],
         limitations=["Static SVG (no interactivity); charts render only "
                      "what you paste."],
+        related_routes=["/excel-mapping", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11939,6 +11945,8 @@ _MANUAL.extend([
             "How do I make a pie chart?",
             "Can I set the colour of each slice?",
             "How do I make it a donut?",
+            "Can the labels show values instead of percentages?",
+            "How many slices can I add?",
         ],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
@@ -11958,6 +11966,7 @@ _MANUAL.extend([
                                  "values you enter; colours are whatever you "
                                  "set."],
         limitations=["Static SVG; renders only the slices you enter."],
+        related_routes=["/chart-builder", "/excel-mapping", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -11973,6 +11982,9 @@ _MANUAL.extend([
         common_questions=[
             "How do I put several charts on one slide?",
             "Can I export a whole exhibit at once?",
+            "How does the layout change with the panel count?",
+            "Can each panel use a different chart type?",
+            "Where do the slide title and source line come from?",
         ],
         inputs=["1–4 panels, each a chart type + pasted table + panel "
                 "title; a slide eyebrow / title / source."],
@@ -11989,6 +12001,7 @@ _MANUAL.extend([
         interpretation_guidance=["Each panel is independent; leave a panel "
                                  "blank to drop it."],
         limitations=["Static SVG; up to four panels."],
+        related_routes=["/chart-builder", "/pie-chart", "/excel-mapping"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -12009,6 +12022,9 @@ _MANUAL.extend([
         common_questions=[
             "Where do I start a commercial diligence sprint?",
             "Which pages cover market sizing / competitors / customers?",
+            "What order should the CDD workstreams run in?",
+            "Where are the customer-evidence surfaces (VoC, win/loss)?",
+            "Where do I get the CDD deliverable templates?",
         ],
         inputs=["None — pure navigation."],
         outputs=["Five workstream modules of cards, each linking to a "
@@ -12023,7 +12039,7 @@ _MANUAL.extend([
                                  "engagement actually answers them."],
         limitations=["Navigation only — no data of its own."],
         related_routes=["/voc-survey", "/win-loss", "/rate-environment",
-                        "/excel-templates", "/diligence/tam-sam"],
+                        "/excel-templates"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.UNKNOWN,
     ),
@@ -12039,6 +12055,9 @@ _MANUAL.extend([
         common_questions=[
             "Where does the target beat its best competitor?",
             "Will customers absorb a price increase?",
+            "Which segment is the churn risk?",
+            "What counts as a differentiator vs table stakes here?",
+            "How is the blended NPS calculated?",
         ],
         inputs=["Survey panel selector (sector)."],
         outputs=["KPC gap chart + matrix, segment NPS table, WTP bars, "
@@ -12075,6 +12094,9 @@ _MANUAL.extend([
         common_questions=[
             "Who does the target lose to, and why?",
             "Are losses price-led or capability-led?",
+            "Is the win rate improving or softening?",
+            "In which segments does the target convert best?",
+            "How big is the price gap on lost deals?",
         ],
         inputs=["Opportunity-log selector (sector)."],
         outputs=["Win-rate bars by competitor, loss-reason mix, trend "
@@ -12111,6 +12133,9 @@ _MANUAL.extend([
         common_questions=[
             "What is Medicare paying this setting next year?",
             "What does the rate environment do to this target's revenue?",
+            "Which care setting has the best / worst rate outlook?",
+            "How do I model a multi-setting Medicare book?",
+            "Are these final-rule or proposed-rule numbers?",
         ],
         inputs=["Medicare revenue ($M) and setting-mix shares."],
         outputs=["Updates-by-setting table with 3-cycle compound and "
@@ -12150,6 +12175,9 @@ _MANUAL.extend([
         common_questions=[
             "Is there an LBO template I can download?",
             "Do the workbooks have live formulas?",
+            "Which cells am I supposed to edit?",
+            "Is there a QoE / working-capital-peg workbook?",
+            "Which templates cover CDD market work?",
         ],
         inputs=["None — pick a template and download."],
         outputs=["One .xlsx per template with live formulas and the "

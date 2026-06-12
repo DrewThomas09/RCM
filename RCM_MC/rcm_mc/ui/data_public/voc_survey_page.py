@@ -190,7 +190,7 @@ def render_voc_survey(params: dict = None) -> str:
           f"color:{text_dim};text-transform:uppercase;margin-bottom:10px")
 
     page_title = ck_page_title(
-        "Voice of Customer / Survey Evidence",
+        "Voice of Customer",
         eyebrow="CDD · CUSTOMER EVIDENCE",
         meta=(f"{r.sector} · N={r.n_total} across {len(r.segments)} segments "
               f"· NPS {r.blended_nps:+d} · {len(r.differentiators)} "
