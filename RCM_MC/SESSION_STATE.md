@@ -351,3 +351,9 @@ Chart Builder: per-series colour pickers (sc{i}, override palette, JS
 re-seeds on palette change) + new gauge/KPI chart type (kit now 20).
 +5 tests. Graphics suite: Excel Mapping, Chart Builder (20 types, per-
 series colours, export SVG/PNG, S/M/L/XL size), Pie Chart.
+
+---
+## Checkpoint — wave #67 (W2-165, 2026-06-12)
+Charts: +heatmap grid (scoring matrix; kit now 21 types) + source/footnote
+line on every chart (render_cdd_chart + presentable_pie inject it; field
+on Chart Builder + Pie pages; travels with SVG/PNG export). +4 tests.

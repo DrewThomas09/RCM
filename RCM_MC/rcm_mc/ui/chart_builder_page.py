@@ -90,6 +90,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     suffix = _qs1(qs, "suffix", "")
     show_values = _qsbool(qs, "values", True)
     legend = _qsbool(qs, "legend", True)
+    footnote = _qs1(qs, "footnote", "")
     size = _qs1(qs, "size", "M")
     width_px = dict(SIZE_PRESETS).get(size, 720)
     data_text = _qs1(qs, "data", "")
@@ -110,7 +111,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         "title": title or dict(CHART_TYPES).get(ctype, ""),
         "subtitle": subtitle, "palette": palette, "suffix": suffix,
         "show_values": show_values, "legend": legend, "width_px": width_px,
-        "colors": series_colors,
+        "colors": series_colors, "footnote": footnote,
     }
     chart_svg = render_cdd_chart(ctype, table, opts)
 
@@ -179,6 +180,10 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'<input type="text" name="subtitle" value="{html.escape(subtitle)}" '
         f'style="width:100%;height:30px;border:1px solid #c9c1ac;'
         f'border-radius:5px;padding:0 7px;"></label>'
+        f'<label style="font-size:11px;color:#465366;">Source / footnote'
+        f'<input type="text" name="footnote" value="{html.escape(footnote)}" '
+        f'placeholder="Source: …" style="width:100%;height:30px;border:1px '
+        f'solid #c9c1ac;border-radius:5px;padding:0 7px;"></label>'
         f'<div style="display:flex;gap:10px;">'
         f'<label style="font-size:11px;color:#465366;flex:1;">Palette'
         f'<select name="palette" style="width:100%;height:30px;'
