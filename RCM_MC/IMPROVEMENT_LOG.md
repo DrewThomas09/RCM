@@ -3872,3 +3872,14 @@ passes. Placed under the KPI strip on /state-profile.
 bullets is re-derived from _all_ranked() and must match exactly
 (regex over the bullet HTML); empty ranked structure renders "".
 21 passed across the geo/state suites.
+
+## W2-190 (2026-06-12) — Found bug: /pie-chart tripped the None-leak gate
+A live route-walk (the new --deal-cookie mode's first full run: 169
+routes plain + 169 with the active-deal cookie, 0 tracebacks) flagged
+exactly one leak: /pie-chart rendered a literal ">None<" — the label-
+mode select's "None" option, indistinguishable from a None-leak to the
+walker's marker and on course to FAIL the next weekly --fail-on-leak
+sweep. Renamed the option to "No labels" (value unchanged; clearer to
+a partner anyway) + a regression test pinning >None< / >nan< out of
+the page HTML. The walk's only other non-200 is /analysis/<deal> 404
+on an empty db — the honest response, not a bug.
