@@ -1,11 +1,11 @@
 {
   "summary": {
-    "pages": 184,
-    "with_disclosure": 170,
+    "pages": 187,
+    "with_disclosure": 173,
     "with_real_loader": 50,
     "flagged_no_disclosure": 0,
     "by_tier": {
-      "green": 38,
+      "green": 41,
       "navy": 73,
       "yellow": 37,
       "red": 0
@@ -1293,6 +1293,16 @@
       "flag": ""
     },
     {
+      "route": "/pricing-power",
+      "file": "pricing_power_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
       "route": "/provider-network",
       "file": "provider_network_page.py",
       "tier": "navy",
@@ -1809,6 +1819,26 @@
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/voc-survey",
+      "file": "voc_survey_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/win-loss",
+      "file": "win_loss_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
       "renders_data": true,
       "flag": ""
     },
