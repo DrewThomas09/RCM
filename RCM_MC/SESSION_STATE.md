@@ -723,3 +723,25 @@ public_api_clients: +NPPES and WHO GHO (OData) pure GET builders + typed
 who_gho_indicator fetcher; CLIENT_BUILDERS now covers nppes/openfda/
 clinicaltrials/rxnorm/census_acs/propublica_990/who_gho. +4 tests; client
 suite 21 passed.
+
+---
+## Checkpoint — wave #100 (2026-06-13)
+Further Analysis: +Part D drug price inflation dataset — drugs with the
+steepest 2019-2023 Part D price CAGR (IRA inflation-rebate exposure set,
+distinct from top-spend): price CAGR, price/unit, 2023 spend. Explorer now
+28 datasets. Generic suite covers it; 44 passed.
+
+---
+## Checkpoint — wave #101 (2026-06-13)
+Further Analysis: +Outpatient cost of care by service line (Colorado CIVHC,
+latest-year all-payer/all-region rollup): per-person-per-year + total spend
+across 13 outpatient service lines (Surgery leads PPPY ~$633). Clearly
+single-state. Explorer now 29 datasets. Suite 44 passed.
+
+---
+## Checkpoint — wave #102 (2026-06-13)
+Further Analysis: +Metro market demographics (CBSA) — 382 metropolitan
+statistical areas with population/age/income/uninsured/rural at the metro
+grain (the market-sizing unit, complements state+county demographics).
+Explorer now 30 datasets. +3 targeted tests (partd_inflation distinctness,
+cost_of_care dedup, metro grain); suite 47 passed.

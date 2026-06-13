@@ -242,6 +242,79 @@ def _load_partd(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(lambda: pdd.top_drugs_by_spend(40))
 
 
+def _load_metro_demographics(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Metropolitan statistical area (CBSA) demographics — population, age mix,
+    income and coverage at the metro grain, the right unit for hospital/MSO/ASC
+    market sizing. Fraction fields are 0-1 (scaled at shape time)."""
+    from ..data import cbsa_demographics as cb
+    rows = _safe(lambda: cb.cbsa_list(area_type="Metropolitan"))
+    out: List[Dict[str, Any]] = []
+    for r in rows:
+        title = r.get("cbsa_title")
+        if not title:
+            continue
+        out.append({
+            "cbsa_title": str(title),
+            "population": r.get("population"),
+            "county_count": r.get("county_count"),
+            "pct_age_65_plus": r.get("pct_age_65_plus"),
+            "median_household_income": r.get("median_household_income"),
+            "uninsured_rate": r.get("uninsured_rate"),
+            "child_poverty_rate": r.get("child_poverty_rate"),
+            "pct_rural": r.get("pct_rural"),
+        })
+    return out
+
+
+def _load_cost_of_care(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Outpatient cost of care by service line — per-person-per-year (PPPY) and
+    total spend, all-payer / all-region rollup for the latest year. Colorado
+    all-payer claims database (CIVHC); single-state, labeled as such."""
+    from ..data import payer_data as pdm
+    try:
+        df = pdm.load_cost_of_care("outpatient")
+    except Exception:
+        return []
+    if not hasattr(df, "columns") or not len(df):
+        return []
+    try:
+        years = [y for y in df["year"].unique() if str(y).isdigit()]
+        latest = max(years, key=lambda y: int(y))
+    except Exception:
+        return []
+    sub = df[(df["year"] == latest) & (df["payer_type"] == "All")
+             & (df["doi_region"] == "All")]
+    out: List[Dict[str, Any]] = []
+    for r in sub.to_dict("records"):
+        cat = r.get("outpatient_category")
+        if not cat:
+            continue
+        out.append({
+            "service_line": str(cat),
+            "pppy": r.get("pppy"),
+            "total_spend": r.get("total_spend"),
+        })
+    return out
+
+
+def _load_partd_inflation(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Part D drugs with the steepest 2019-2023 price growth — the IRA
+    inflation-rebate / drug-pricing exposure set (distinct from top-spend)."""
+    from ..data import partd_drug as pdd
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: pdd.top_drugs_by_price_inflation(25)):
+        brand = r.get("brand")
+        if not brand:
+            continue
+        out.append({
+            "brand": str(brand),
+            "price_cagr_19_23": r.get("price_cagr_19_23"),
+            "price_per_unit_2023": r.get("price_per_unit_2023"),
+            "spend_2023": r.get("spend_2023"),
+        })
+    return out
+
+
 def _load_open_payments(_focus: Optional[str]) -> List[Dict[str, Any]]:
     from ..data import open_payments as op
     rows = _safe(lambda: op.top_reporting_entities(25))
@@ -722,6 +795,48 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_partd,
         note="The 40 highest-spend Part D drugs.",
+    ),
+    Dataset(
+        id="metro_demographics", label="Metro market demographics (CBSA)",
+        category="Census",
+        source="US Census / OMB CBSA delineations 2023 (vendored)",
+        grain="category", dim_key="cbsa_title", dim_label="Metro area",
+        measures=[
+            Measure("population", "Population", "num"),
+            Measure("county_count", "Counties", "num"),
+            Measure("pct_age_65_plus", "Age 65+", _PCT),
+            Measure("median_household_income", "Median HH income", "usd"),
+            Measure("uninsured_rate", "Uninsured", _PCT),
+            Measure("child_poverty_rate", "Child poverty", _PCT),
+            Measure("pct_rural", "Rural", _PCT),
+        ],
+        loader=_load_metro_demographics,
+        note="382 metropolitan statistical areas — the market-sizing grain.",
+    ),
+    Dataset(
+        id="cost_of_care", label="Outpatient cost of care by service line (CO)",
+        category="Markets",
+        source="Colorado all-payer claims database (CIVHC cost of care, vendored)",
+        grain="category", dim_key="service_line", dim_label="Service line",
+        measures=[
+            Measure("pppy", "Per-person-per-year", "usd"),
+            Measure("total_spend", "Total spend", "usd_b"),
+        ],
+        loader=_load_cost_of_care,
+        note="Outpatient PPPY and spend by service line — Colorado, latest year.",
+    ),
+    Dataset(
+        id="partd_inflation", label="Part D drug price inflation",
+        category="CMS",
+        source="CMS Medicare Part D drug spending (vendored)",
+        grain="category", dim_key="brand", dim_label="Drug",
+        measures=[
+            Measure("price_cagr_19_23", "Price CAGR '19-'23", _PCT),
+            Measure("price_per_unit_2023", "Price per unit", "usd"),
+            Measure("spend_2023", "2023 spend", "usd_b"),
+        ],
+        loader=_load_partd_inflation,
+        note="Drugs with the steepest Part D price growth (IRA exposure set).",
     ),
     Dataset(
         id="open_payments", label="Open Payments top entities",
