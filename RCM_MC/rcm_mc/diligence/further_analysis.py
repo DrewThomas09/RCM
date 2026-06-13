@@ -702,6 +702,42 @@ def _load_clinical_trial_phase(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_snf_turnover(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS PBJ skilled-nursing total nurse-staff turnover, median by state — a
+    labor-pressure / staffing-stability signal for SNF diligence."""
+    from ..data import snf
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: snf.snf_turnover_by_state(60)):
+        st = r.get("state")
+        if st not in _STATE_NAMES:
+            continue
+        out.append({
+            "state": _STATE_NAMES.get(st, st),
+            "median_turnover": r.get("median_pct"),
+            "facilities_reporting": r.get("facilities_reporting"),
+        })
+    return out
+
+
+def _load_snf_rating_dist(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Care Compare SNF overall 5-star rating distribution — the quality
+    histogram across skilled-nursing facilities."""
+    from ..data import snf
+    try:
+        dist = (snf.snf_rating_distribution() or {}).get("dist", {})
+    except Exception:
+        return []
+    out: List[Dict[str, Any]] = []
+    for stars in ("1", "2", "3", "4", "5"):
+        cell = dist.get(stars) or {}
+        out.append({
+            "rating": f"{stars}-star",
+            "facilities": cell.get("count"),
+            "share": cell.get("pct"),
+        })
+    return out
+
+
 def _load_snf_owners(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS SNF ownership — the largest owner organizations by facility count,
     a direct read on chain consolidation in skilled nursing."""
@@ -1051,6 +1087,30 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("facilities_owned", "Facilities owned", "num")],
         loader=_load_snf_owners,
         note="Largest skilled-nursing chains by facility count.",
+    ),
+    Dataset(
+        id="snf_turnover", label="SNF nurse turnover by state",
+        category="CMS",
+        source="CMS Payroll-Based Journal nurse staffing turnover (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("median_turnover", "Median nurse turnover", _P100),
+            Measure("facilities_reporting", "Facilities reporting", "num"),
+        ],
+        loader=_load_snf_turnover,
+        note="Median total nurse-staff turnover by state — staffing pressure.",
+    ),
+    Dataset(
+        id="snf_rating_dist", label="SNF 5-star rating distribution",
+        category="CMS",
+        source="CMS Care Compare SNF overall star ratings (vendored)",
+        grain="category", dim_key="rating", dim_label="Overall rating",
+        measures=[
+            Measure("facilities", "Facilities", "num"),
+            Measure("share", "Share of facilities", _P100),
+        ],
+        loader=_load_snf_rating_dist,
+        note="Overall 5-star rating histogram across skilled-nursing facilities.",
     ),
     Dataset(
         id="mssp_aco_state", label="ACO footprint by state (MSSP)",

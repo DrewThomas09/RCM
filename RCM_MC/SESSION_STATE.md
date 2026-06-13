@@ -766,3 +766,10 @@ shows a "Ready in-repo" strip of chips linking to the Further Analysis charts
 that already answer that question (provider-universe→8 datasets, drugs/devices→5,
 financials→5, demographics/labor→7, volume/outcomes→4). Mapping validated
 against the live dataset registry at render + in tests. +1 test; sweep 59 passed.
+
+---
+## Checkpoint — wave #106 (2026-06-13)
+Further Analysis: +2 CMS SNF datasets — nurse turnover by state (PBJ median
+total nurse-staff turnover, 51 states; staffing-pressure signal) + SNF 5-star
+rating distribution (quality histogram across ~14.6K facilities). Explorer now
+34 datasets. Suite 47 passed.
