@@ -94,7 +94,7 @@ rcm-lookup = "rcm_mc.lookup:main"
 rcm-mc-diligence = "rcm_mc_diligence.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["rcm_mc*", "rcm_mc_diligence*"]
+include = ["rcm_mc*", "rcm_mc_diligence*", "connectors*"]
 
 [tool.setuptools.package-data]
 rcm_mc = ["data/*.csv.gz"]
@@ -105,6 +105,9 @@ rcm_mc_diligence = [
     "connectors/seekingchartis/models/**/*.sql",
     "connectors/seekingchartis/models/**/*.yml",
 ]
+# NPPES connector ships its reproducible verification fixtures + the
+# filesystem-as-memory journal (STATE/DECISIONS/progress) as package data.
+"connectors.nppes" = ["fixtures/*.csv", "*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
