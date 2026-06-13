@@ -131,11 +131,41 @@ class CmsDatasetTests(unittest.TestCase):
         # ENHANCED (full two-sided risk) is the largest track in the cut.
         self.assertEqual(table["rows"][0][0], "Enhanced")
 
+    def test_consolidation_state_sums_snf_and_hospital_chow(self):
+        d = fa.DATASETS["consolidation_state"]
+        self.assertEqual(d.grain, "state")
+        rows = {r["state"]: r for r in d.loader(None)}
+        # total_chows is the sum of the two settings, never silently dropped.
+        for r in rows.values():
+            self.assertEqual(
+                r["total_chows"],
+                (r["snf_chows"] or 0) + (r["hospital_chows"] or 0))
+        table, _ = fa.shape_table(d, ["total_chows"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+
+    def test_consolidation_trend_is_a_year_series(self):
+        d = fa.DATASETS["consolidation_trend"]
+        rows = d.loader(None)
+        years = [r["year"] for r in rows]
+        # One row per vintage year, labels are year strings.
+        self.assertEqual(years, sorted(years))
+        self.assertTrue(all(y.isdigit() for y in years))
+
+    def test_hrsa_shortage_is_its_own_source_category(self):
+        d = fa.DATASETS["hrsa_shortage"]
+        self.assertEqual(d.category, "HRSA")
+        self.assertIn("HRSA", fa.categories())
+        table, _ = fa.shape_table(d, ["population_in_shortage"], top_n=5)
+        self.assertTrue(table["rows"])
+
     def test_new_cms_datasets_appear_on_page(self):
         import html
         for did in ("hcahps", "ma_geo", "provider_supply", "mips",
                     "postacute_footprint", "snf_owners",
-                    "mssp_aco_state", "mssp_track"):
+                    "mssp_aco_state", "mssp_track",
+                    "consolidation_state", "consolidation_trend",
+                    "hrsa_shortage"):
             h = render_further_analysis_page({"dataset": [did]})
             self.assertIn("<svg", h, f"{did} produced no svg")
             self.assertIn(html.escape(fa.DATASETS[did].label), h)

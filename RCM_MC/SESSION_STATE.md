@@ -644,3 +644,14 @@ Program datasets — ACO footprint by state (Shared Savings ACOs operating in
 each state, VBC adoption read) and ACO risk-track mix (BASIC A-E / ENHANCED
 counts — downside-risk appetite). Explorer now 19 datasets, 13 CMS. +2 tests;
 suite 38 passed. CI: wave #88 (3180b67) green; #89/#90 queued.
+
+---
+## Checkpoint — wave #91 (2026-06-13)
+Further Analysis market-structure expansion: +3 datasets for market analysis —
+provider consolidation by state (CMS SNF + hospital change-of-ownership summed,
+transaction velocity), consolidation trend (national SNF vs hospital CHOW per
+year — the consolidation wave as a time series), and HRSA primary-care shortage
+by state (designated HPSAs, population in shortage, severity score — unmet-demand
+signal; new HRSA source category). Added public hospital_chow_by_year() to
+snf_chow loader. Explorer now 22 datasets (15 CMS, 1 HRSA). +3 tests; sweep
+78 passed (further + snf_chow + hrsa + nav + palette).

@@ -426,6 +426,68 @@ def _load_mssp_track(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_consolidation_state(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS change-of-ownership velocity by state — Medicare-enrolled SNF and
+    hospital ownership changes summed across all vintage years. A real
+    consolidation / transaction-velocity signal by market."""
+    from ..data import snf_chow as sc
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            snf_n = sc.total_chows_for_state(st)
+            hosp_n = sc.total_hospital_chows_for_state(st)
+        except Exception:
+            continue
+        out.append({
+            "state": _STATE_NAMES.get(st, st),
+            "snf_chows": snf_n,
+            "hospital_chows": hosp_n,
+            "total_chows": (snf_n or 0) + (hosp_n or 0),
+        })
+    return out
+
+
+def _load_consolidation_trend(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS change-of-ownership national time series — SNF vs hospital ownership
+    changes per year, the consolidation wave as a trend line."""
+    from ..data import snf_chow as sc
+    snf = {int(r["year"]): r.get("chow_count")
+           for r in _safe(sc.chow_by_year) if r.get("year") is not None}
+    hosp = {int(r["year"]): r.get("chow_count")
+            for r in _safe(sc.hospital_chow_by_year)
+            if r.get("year") is not None}
+    out: List[Dict[str, Any]] = []
+    for y in sorted(set(snf) | set(hosp)):
+        out.append({
+            "year": str(y),
+            "snf_chows": snf.get(y),
+            "hospital_chows": hosp.get(y),
+        })
+    return out
+
+
+def _load_hrsa_shortage(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """HRSA primary-care Health Professional Shortage Areas by state — designated
+    HPSA count, shortage severity score, and population in shortage. An unmet
+    primary-care-demand / market-opportunity signal."""
+    from ..data import hrsa_data as h
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            d = h.hpsa_state(st)
+        except Exception:
+            continue
+        if not d:
+            continue
+        out.append({
+            "state": _STATE_NAMES.get(st, st),
+            "designated_pc_hpsas": d.get("designated_pc_hpsas"),
+            "median_hpsa_score": d.get("median_hpsa_score"),
+            "population_in_shortage": d.get("population_in_shortage"),
+        })
+    return out
+
+
 def _load_snf_owners(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS SNF ownership — the largest owner organizations by facility count,
     a direct read on chain consolidation in skilled nursing."""
@@ -726,6 +788,47 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("acos", "ACOs in track", "num")],
         loader=_load_mssp_track,
         note="ACO counts by BASIC/ENHANCED risk track — downside-risk appetite.",
+    ),
+    Dataset(
+        id="consolidation_state",
+        label="Provider consolidation by state (CHOW)",
+        category="CMS",
+        source="CMS SNF + hospital change-of-ownership records (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("total_chows", "All ownership changes", "num"),
+            Measure("snf_chows", "SNF ownership changes", "num"),
+            Measure("hospital_chows", "Hospital ownership changes", "num"),
+        ],
+        loader=_load_consolidation_state,
+        note="Medicare-enrolled ownership changes by state (transaction velocity).",
+    ),
+    Dataset(
+        id="consolidation_trend",
+        label="Provider consolidation trend (national, by year)",
+        category="CMS",
+        source="CMS SNF + hospital change-of-ownership records (vendored)",
+        grain="category", dim_key="year", dim_label="Year",
+        measures=[
+            Measure("snf_chows", "SNF ownership changes", "num"),
+            Measure("hospital_chows", "Hospital ownership changes", "num"),
+        ],
+        loader=_load_consolidation_trend,
+        note="National ownership-change counts per year — the consolidation wave.",
+    ),
+    Dataset(
+        id="hrsa_shortage",
+        label="Primary-care shortage by state (HRSA HPSA)",
+        category="HRSA",
+        source="HRSA Health Professional Shortage Areas — primary care (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("designated_pc_hpsas", "Designated HPSAs", "num"),
+            Measure("population_in_shortage", "Population in shortage", "num"),
+            Measure("median_hpsa_score", "Median HPSA severity score", "num"),
+        ],
+        loader=_load_hrsa_shortage,
+        note="Primary-care shortage designations and underserved population.",
     ),
 ]
 
