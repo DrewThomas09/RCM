@@ -40,6 +40,66 @@ class RegistryTests(unittest.TestCase):
                               f"{d.id}.{m.key} not in any row")
 
 
+class CmsDatasetTests(unittest.TestCase):
+    """The expanded CMS dataset coverage (HCAHPS, MA geo, PECOS supply, MIPS)."""
+
+    def test_cms_is_the_largest_category(self):
+        cms = [d for d in fa.list_datasets() if d.category == "CMS"]
+        # The explorer is CMS-heavy by design — at least nine CMS sets.
+        self.assertGreaterEqual(len(cms), 9)
+        for needed in ("hcahps", "ma_geo", "provider_supply", "mips"):
+            self.assertIn(needed, fa.DATASETS)
+            self.assertEqual(fa.DATASETS[needed].category, "CMS")
+
+    def test_hcahps_is_state_grain_top_box_pct(self):
+        d = fa.DATASETS["hcahps"]
+        self.assertEqual(d.grain, "state")
+        table, meta = fa.shape_table(d, ["overall_rating_9_10"], top_n=51)
+        self.assertEqual(meta["suffix"], "%")
+        # Top-box shares are already 0-100 (pct100): not refractioned, plausible.
+        for _, vals in table["rows"]:
+            if vals[0] is not None:
+                self.assertGreater(vals[0], 40.0)
+                self.assertLessEqual(vals[0], 100.0)
+
+    def test_ma_geo_enrollment_sorts_and_fractions_scale(self):
+        d = fa.DATASETS["ma_geo"]
+        table, _ = fa.shape_table(d, ["ma_enrollment"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        # California carries the most MA enrollment in the 2022 cut.
+        self.assertEqual(table["rows"][0][0], "California")
+        # dual_eligible_pct is a 0-1 fraction → display 0-100.
+        dt, dmeta = fa.shape_table(d, ["dual_eligible_pct"], top_n=51)
+        self.assertEqual(dmeta["suffix"], "%")
+        for _, vals in dt["rows"]:
+            if vals[0] is not None:
+                self.assertGreater(vals[0], 1.0)
+                self.assertLess(vals[0], 100.0)
+
+    def test_provider_supply_category_grain(self):
+        d = fa.DATASETS["provider_supply"]
+        self.assertEqual(d.grain, "category")
+        table, _ = fa.shape_table(d, ["enrolled_count"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        # Labels are title-cased, not the raw all-caps source strings.
+        self.assertFalse(table["rows"][0][0].isupper())
+
+    def test_mips_distribution_renders(self):
+        d = fa.DATASETS["mips"]
+        table, _ = fa.shape_table(d, ["mean", "median"], top_n=10)
+        self.assertEqual(len(table["headers"]), 3)
+        self.assertTrue(table["rows"])
+
+    def test_new_cms_datasets_appear_on_page(self):
+        import html
+        for did in ("hcahps", "ma_geo", "provider_supply", "mips"):
+            h = render_further_analysis_page({"dataset": [did]})
+            self.assertIn("<svg", h, f"{did} produced no svg")
+            self.assertIn(html.escape(fa.DATASETS[did].label), h)
+
+
 class ShapeTests(unittest.TestCase):
     def test_shape_returns_chart_kit_table(self):
         d = fa.DATASETS["state_demographics"]

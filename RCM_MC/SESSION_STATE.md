@@ -615,3 +615,15 @@ chart kit; dataset/focus/measures/chart-type/sort/top-N controls, all 23 chart
 types, PNG/SVG export, chart gallery, data table, JSON API
 (/api/further-analysis). Wired into Research nav + palette + all-tools + guide
 context. +28 tests incl. live HTTP smoke. No synthetic data.
+
+---
+## Checkpoint — wave #88 (2026-06-13)
+Further Analysis CMS expansion: +4 real vendored CMS datasets wired into
+the Tableau-style explorer (`/further-analysis`) — HCAHPS patient experience
+(state, 8 top-box measures), Medicare Advantage geographic profile (state:
+enrollment + risk-adjustment population mix + utilization, 2022), PECOS
+provider supply by type (national), and MIPS score distribution (categories).
+CMS is now the explorer's largest category (9 sets). All render across the
+23 chart types via the CDD chart kit; no synthetic data. +6 tests
+(test_further_analysis CmsDatasetTests). Full further-analysis + cms +
+palette sweep: 174 passed.

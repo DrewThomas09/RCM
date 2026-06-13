@@ -304,6 +304,62 @@ def _load_drug_shortages(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(ds.shortages_by_category)
 
 
+def _load_hcahps(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS HCAHPS patient-experience top-box percentages, one row per state.
+    Values are already 0-100 top-box shares (pct100 — no rescale)."""
+    from ..data import hcahps_data as hc
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            d = hc.hcahps_state(st)
+        except Exception:
+            continue
+        if not d:
+            continue
+        d = dict(d)
+        d["state"] = _STATE_NAMES.get(st, st)
+        out.append(d)
+    return out
+
+
+def _load_ma_geo(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Medicare Advantage geographic variation, one row per state:
+    enrollment, the demographic drivers of risk adjustment, and headline
+    utilization. Percentage fields are 0-1 fractions (scaled at shape time)."""
+    from ..data import ma_data as md
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: md.top_ma_states(60)):
+        st = r.get("state")
+        if st not in _STATE_NAMES:
+            continue
+        r = dict(r)
+        r["state"] = _STATE_NAMES.get(st, st)
+        out.append(r)
+    return out
+
+
+def _load_provider_supply(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS PECOS enrolled-provider counts by provider/supplier type
+    (national). Title-cased so the all-caps source labels read cleanly."""
+    from ..data import provider_supply as ps
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: ps.supply_national_by_type(30)):
+        pt = r.get("provider_type")
+        if not pt:
+            continue
+        out.append({
+            "provider_type": str(pt).title(),
+            "enrolled_count": r.get("enrolled_count"),
+        })
+    return out
+
+
+def _load_mips(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS MIPS performance-category score distribution (0-100 points)."""
+    from ..data import mips_data as mp
+    return _safe(mp.mips_category_scores)
+
+
 # --------------------------------------------------------------------------
 # The registry. Order here is the order shown in the dataset dropdown.
 # --------------------------------------------------------------------------
@@ -481,6 +537,68 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("n", "Active shortages", "num")],
         loader=_load_drug_shortages,
         note="Count of active national shortages per therapeutic area.",
+    ),
+    Dataset(
+        id="hcahps", label="HCAHPS patient experience (state)",
+        category="CMS",
+        source="CMS Care Compare HCAHPS survey, state top-box (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("overall_rating_9_10", "Overall rating 9-10", _P100),
+            Measure("would_definitely_recommend", "Would recommend", _P100),
+            Measure("nurse_comm_always", "Nurse communication", _P100),
+            Measure("doctor_comm_always", "Doctor communication", _P100),
+            Measure("staff_explained_meds_always", "Meds explained", _P100),
+            Measure("given_discharge_info", "Discharge info", _P100),
+            Measure("room_always_clean", "Room always clean", _P100),
+            Measure("always_quiet_night", "Quiet at night", _P100),
+        ],
+        loader=_load_hcahps,
+        note="Official CMS patient-survey top-box shares by state.",
+    ),
+    Dataset(
+        id="ma_geo", label="Medicare Advantage profile (state)",
+        category="CMS",
+        source="CMS MA geographic variation, 2022 (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("ma_enrollment", "MA enrollment", "num"),
+            Measure("dual_eligible_pct", "Dual-eligible", _PCT),
+            Measure("avg_age", "Average age", "num"),
+            Measure("female_pct", "Female", _PCT),
+            Measure("race_white_pct", "White", _PCT),
+            Measure("race_black_pct", "Black", _PCT),
+            Measure("race_hispanic_pct", "Hispanic", _PCT),
+            Measure("ip_stays_per_1000", "Inpatient stays / 1,000", "num"),
+            Measure("snf_days_per_1000", "SNF days / 1,000", "num"),
+            Measure("er_visits_per_1000", "ER visits / 1,000", "num"),
+        ],
+        loader=_load_ma_geo,
+        note="MA enrollment, risk-adjustment population mix and utilization.",
+    ),
+    Dataset(
+        id="provider_supply", label="Provider supply by type (PECOS)",
+        category="CMS",
+        source="CMS PECOS enrolled providers, national (vendored)",
+        grain="category", dim_key="provider_type", dim_label="Provider type",
+        measures=[Measure("enrolled_count", "Enrolled providers", "num")],
+        loader=_load_provider_supply,
+        note="Medicare-enrolled provider/supplier counts by type.",
+    ),
+    Dataset(
+        id="mips", label="MIPS score distribution (categories)",
+        category="CMS",
+        source="CMS Quality Payment Program MIPS scores (vendored)",
+        grain="category", dim_key="category", dim_label="Performance category",
+        measures=[
+            Measure("mean", "Mean score", "num"),
+            Measure("median", "Median score", "num"),
+            Measure("p25", "25th percentile", "num"),
+            Measure("p75", "75th percentile", "num"),
+            Measure("n", "Clinicians scored", "num"),
+        ],
+        loader=_load_mips,
+        note="MIPS performance-category points (0-100) across clinicians.",
     ),
 ]
 
