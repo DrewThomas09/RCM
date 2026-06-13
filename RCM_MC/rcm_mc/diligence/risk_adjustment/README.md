@@ -108,7 +108,7 @@ risk_adjustment/
 
 The coefficients are **representative** of the **CMS-HCC V28 (PY2024+) community, non-dual, aged** segment — the most common payment segment, used as the diligence default. They are a **curated subset** (~24 of ~115 payment HCCs) covering the highest-prevalence / highest-weight conditions, **not** the full model. Magnitudes are in the published ballpark but are **not payment-grade**.
 
-For payment-grade precision (a target's actual claims extract in confirmatory diligence), swap `compute_raf` for the certified grouper or the **Tuva `cms_hcc` mart** behind the optional adapter — both return a `RiskScore`, so no caller changes. See [`docs/TUVA_MYELIN_INTEGRATION.md`](../../docs/TUVA_MYELIN_INTEGRATION.md).
+For payment-grade precision (a target's actual claims extract in confirmatory diligence), swap `compute_raf` for the certified grouper or the **Tuva `cms_hcc` mart** behind the optional adapter — both return a `RiskScore`, so no caller changes. See [`docs/TUVA_MYELIN_INTEGRATION.md`](../../../docs/TUVA_MYELIN_INTEGRATION.md).
 
 **Refresh annually** when CMS publishes the new factor table with each Rate Announcement.
 
