@@ -1,0 +1,16 @@
+NPI,Endpoint Type,Endpoint Type Description,Endpoint,Affiliation,Use Description,Content Type Description
+1000000079,FHIR,FHIR R4 API,https://fhir.example.org/1000000079/metadata,Y,Production,application/fhir+json
+1000000145,FHIR,FHIR R4 API,https://fhir.example.org/1000000145/metadata,Y,Production,application/fhir+json
+1000000210,FHIR,FHIR R4 API,https://fhir.example.org/1000000210/metadata,Y,Production,application/fhir+json
+1000000285,FHIR,FHIR R4 API,https://fhir.example.org/1000000285/metadata,Y,Production,application/fhir+json
+1000000350,FHIR,FHIR R4 API,https://fhir.example.org/1000000350/metadata,Y,Production,application/fhir+json
+1000000426,FHIR,FHIR R4 API,https://fhir.example.org/1000000426/metadata,Y,Production,application/fhir+json
+1000000491,FHIR,FHIR R4 API,https://fhir.example.org/1000000491/metadata,Y,Production,application/fhir+json
+1000000566,FHIR,FHIR R4 API,https://fhir.example.org/1000000566/metadata,Y,Production,application/fhir+json
+1000000632,FHIR,FHIR R4 API,https://fhir.example.org/1000000632/metadata,Y,Production,application/fhir+json
+1000000707,FHIR,FHIR R4 API,https://fhir.example.org/1000000707/metadata,Y,Production,application/fhir+json
+1000000772,FHIR,FHIR R4 API,https://fhir.example.org/1000000772/metadata,Y,Production,application/fhir+json
+1000000848,FHIR,FHIR R4 API,https://fhir.example.org/1000000848/metadata,Y,Production,application/fhir+json
+1000000913,FHIR,FHIR R4 API,https://fhir.example.org/1000000913/metadata,Y,Production,application/fhir+json
+1000000988,FHIR,FHIR R4 API,https://fhir.example.org/1000000988/metadata,Y,Production,application/fhir+json
+1000001051,FHIR,FHIR R4 API,https://fhir.example.org/1000001051/metadata,Y,Production,application/fhir+json
