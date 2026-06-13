@@ -200,6 +200,27 @@ class CmsDatasetTests(unittest.TestCase):
         table, _ = fa.shape_table(d, ["population"], top_n=3)
         self.assertIn("New York", table["rows"][0][0])
 
+    def test_snf_turnover_covers_states_as_pct(self):
+        d = fa.DATASETS["snf_turnover"]
+        self.assertEqual(d.grain, "state")
+        rows = d.loader(None)
+        self.assertGreaterEqual(len(rows), 40)
+        table, meta = fa.shape_table(d, ["median_turnover"], top_n=51)
+        self.assertEqual(meta["suffix"], "%")
+
+    def test_postacute_quality_multi_vertical_by_state(self):
+        d = fa.DATASETS["postacute_quality"]
+        self.assertEqual(d.grain, "state")
+        table, _ = fa.shape_table(
+            d, ["snf_overall", "hha_star", "dialysis_five_star"], top_n=10)
+        self.assertEqual(len(table["headers"]), 4)
+        # SNF/HHA/dialysis ratings sit on the 1-5 star scale.
+        for _, vals in table["rows"]:
+            for v in vals:
+                if v is not None:
+                    self.assertGreaterEqual(v, 1.0)
+                    self.assertLessEqual(v, 5.0)
+
     def test_api_catalog_coverage_charts_the_catalog(self):
         from rcm_mc.data_public import public_api_catalog as pac
         d = fa.DATASETS["api_catalog_coverage"]

@@ -482,6 +482,41 @@ def _load_mips_bands(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_postacute_quality(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Care Compare post-acute quality by state — the average rating in each
+    vertical (SNF/HHA/dialysis on a 1-5 star scale, hospice family-care index on
+    0-10, IRF discharge-to-community %). Complements the count footprint with a
+    cross-vertical quality read per state."""
+    from ..data import (snf, home_health as hh, hospice as ho,
+                         dialysis as di, irf)
+
+    def _by_state(fn: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
+        try:
+            return fn() or {}
+        except Exception:
+            return {}
+
+    snf_s = _by_state(snf.load_snf_summary_by_state)
+    hha_s = _by_state(hh.load_home_health_summary_by_state)
+    hos_s = _by_state(ho.load_hospice_summary_by_state)
+    dia_s = _by_state(di.load_dialysis_summary_by_state)
+    irf_s = _by_state(irf.load_irf_summary_by_state)
+
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        row = {
+            "state": _STATE_NAMES.get(st, st),
+            "snf_overall": (snf_s.get(st) or {}).get("avg_overall_rating"),
+            "hha_star": (hha_s.get(st) or {}).get("avg_star_rating"),
+            "hospice_care_index": (hos_s.get(st) or {}).get("avg_care_index"),
+            "dialysis_five_star": (dia_s.get(st) or {}).get("avg_five_star"),
+            "irf_dtc": (irf_s.get(st) or {}).get("avg_dtc"),
+        }
+        if any(v is not None for k, v in row.items() if k != "state"):
+            out.append(row)
+    return out
+
+
 def _load_postacute_footprint(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS Care Compare provider counts across the five post-acute verticals,
     aligned to one row per state so a partner can compare facility density of
@@ -1060,6 +1095,22 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_mips_bands,
         note="Final-score histogram across clinicians (most cluster 75-100).",
+    ),
+    Dataset(
+        id="postacute_quality",
+        label="Post-acute quality by state",
+        category="CMS",
+        source="CMS Care Compare — SNF/HHA/hospice/dialysis/IRF ratings (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("snf_overall", "SNF overall (1-5)", "num"),
+            Measure("hha_star", "Home health star (1-5)", "num"),
+            Measure("dialysis_five_star", "Dialysis 5-star (1-5)", "num"),
+            Measure("hospice_care_index", "Hospice care index (0-10)", "num"),
+            Measure("irf_dtc", "IRF discharge-to-community %", _P100),
+        ],
+        loader=_load_postacute_quality,
+        note="Average Care Compare rating per post-acute vertical, by state.",
     ),
     Dataset(
         id="postacute_footprint",

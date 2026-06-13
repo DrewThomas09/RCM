@@ -773,3 +773,11 @@ Further Analysis: +2 CMS SNF datasets — nurse turnover by state (PBJ median
 total nurse-staff turnover, 51 states; staffing-pressure signal) + SNF 5-star
 rating distribution (quality histogram across ~14.6K facilities). Explorer now
 34 datasets. Suite 47 passed.
+
+---
+## Checkpoint — wave #107 (2026-06-13)
+Further Analysis: +Post-acute quality by state — avg Care Compare rating per
+vertical (SNF/HHA/dialysis 1-5 star, hospice care index 0-10, IRF DTC %),
+cross-vertical quality complement to the count footprint. Explorer now 35
+datasets. +2 targeted tests (snf_turnover pct, postacute_quality scale);
+suite 49 passed.
