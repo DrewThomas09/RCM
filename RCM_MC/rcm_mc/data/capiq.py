@@ -349,6 +349,109 @@ def resolve_export_to_npi(records: List[CapIQRecord], **kw: Any) -> List[NpiReso
     return [resolve_record_to_npi(r, **kw) for r in records]
 
 
+# ── ProPublica EIN resolution (nonprofit targets) ─────────────────────────
+# irs990.fetch_990 needs an EIN, but notes the CCN↔EIN mapping is
+# "analyst-supplied — there's no canonical crosswalk"; the analyst looks the
+# EIN up by hand. This closes that gap for nonprofit targets: resolve a
+# company name to an IRS EIN via ProPublica's Nonprofit Explorer, with the
+# same surfaced-ambiguity discipline (a wrong EIN pulls the wrong 990).
+@dataclass
+class EinCandidate:
+    ein: str
+    name: str
+    state: Optional[str]
+    score: float            # 0..1 SequenceMatcher ratio vs the query name
+
+
+@dataclass
+class EinResolution:
+    capiq_id: str
+    company_name: str
+    status: ResolutionStatus
+    ein: Optional[str] = None
+    confidence: float = 0.0
+    candidates: List[EinCandidate] = field(default_factory=list)
+
+
+def _default_ein_fetch(name: str, state: Optional[str], limit: int) -> List[Any]:
+    """Live ProPublica Nonprofit Explorer search, behind the injectable seam.
+    Returns no candidates (→ UNMATCHED) on any error — never a fabricated EIN."""
+    try:
+        from ..data_public.public_api_clients import propublica_search
+    except Exception:
+        return []
+    try:
+        orgs = propublica_search(name, state=(state or ""))
+    except Exception:
+        return []
+    return list(orgs)[:limit]
+
+
+def resolve_record_to_ein(
+    rec: CapIQRecord,
+    *,
+    fetch: Optional[Any] = None,
+    accept_threshold: float = 0.90,
+    ambiguity_margin: float = 0.05,
+    limit: int = 10,
+) -> EinResolution:
+    """Resolve one CapIQ company to an IRS EIN (nonprofit targets only).
+
+    Same conservative rule as the CCN/NPI resolvers — 0 candidates → UNMATCHED;
+    a clean top match → RESOLVED; otherwise AMBIGUOUS (candidates surfaced, a
+    wrong EIN is never auto-selected). ``fetch(name, state, limit)`` returns
+    ProPublica org dicts (``ein``/``name``/``state``); injectable for offline
+    tests. Feed a RESOLVED EIN straight into :func:`irs990.fetch_990`.
+    """
+    fetch = fetch or _default_ein_fetch
+
+    orgs = list(fetch(rec.company_name, rec.state, limit) or [])
+    if not orgs and rec.state:
+        orgs = list(fetch(rec.company_name, None, limit) or [])
+    if not orgs:
+        return EinResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    cands = [
+        EinCandidate(
+            ein=str(o.get("ein") or "").strip(),
+            name=str(o.get("name") or "").strip(),
+            state=(str(o.get("state")) if o.get("state") else None),
+            score=_score(rec.company_name, o.get("name") or ""),
+        )
+        for o in orgs if str(o.get("ein") or "").strip()
+    ]
+    cands.sort(key=lambda c: c.score, reverse=True)
+    if not cands:
+        return EinResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    top = cands[0]
+    runner = cands[1].score if len(cands) > 1 else 0.0
+    clean = top.score >= accept_threshold and (top.score - runner) >= ambiguity_margin
+    if clean:
+        return EinResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.RESOLVED, ein=top.ein,
+            confidence=round(top.score, 4),
+        )
+    return EinResolution(
+        capiq_id=rec.capiq_id, company_name=rec.company_name,
+        status=ResolutionStatus.AMBIGUOUS, confidence=round(top.score, 4),
+        candidates=cands,
+    )
+
+
+def resolve_export_to_ein(records: List[CapIQRecord], **kw: Any) -> List[EinResolution]:
+    """Resolve every parsed record to an IRS EIN. ``**kw`` forwards thresholds
+    and the ``fetch`` seam to :func:`resolve_record_to_ein`."""
+    return [resolve_record_to_ein(r, **kw) for r in records]
+
+
 # Fields HCRIS (CMS public) contributes that a financial export typically
 # lacks — this is the "fill the gaps with CMS data" payload.
 _CMS_GAP_FIELDS = (
