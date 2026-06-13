@@ -7000,6 +7000,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .diligence.further_analysis import build_further_analysis
             _fa_aqs = urllib.parse.parse_qs(parsed.query)
             return self._send_json(build_further_analysis(_fa_aqs))
+        if path == "/cross-analysis":
+            # Cross-Dataset Analysis — correlate any two state-grain public
+            # datasets (Pearson r / R² + scatter with least-squares trendline).
+            from .ui.cross_analysis_page import render_cross_analysis_page
+            _ca_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_cross_analysis_page(_ca_qs))
+        if path == "/api/cross-analysis":
+            from .diligence.cross_analysis import build_cross_analysis
+            _ca_aqs = urllib.parse.parse_qs(parsed.query)
+            return self._send_json(build_cross_analysis(_ca_aqs))
         if path == "/data-apis":
             # Public Data APIs — the reference table of free, API-accessible
             # public healthcare data (non-CMS-claims), organized by the
