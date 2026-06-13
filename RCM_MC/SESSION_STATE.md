@@ -655,3 +655,19 @@ by state (designated HPSAs, population in shortage, severity score — unmet-dem
 signal; new HRSA source category). Added public hospital_chow_by_year() to
 snf_chow loader. Explorer now 22 datasets (15 CMS, 1 HRSA). +3 tests; sweep
 78 passed (further + snf_chow + hrsa + nav + palette).
+
+---
+## Checkpoint — wave #92 (2026-06-13) — Public Data APIs surface
+New non-CMS/CDC public-data API layer (field-guide build-out):
+- public_api_catalog.py — reference table of 18 free/key-optional public
+  healthcare APIs organized by diligence question (provider universe, volume/
+  outcomes, drugs/devices, financials, demographics/labor, behavioral/global).
+  Honest status taxonomy (live-client/vendored/registered). +12 tests.
+- public_api_clients.py — stdlib transport (retry, 5xx backoff, rate-limit
+  floor, optional free key) + pure URL builders + typed fetchers for the top
+  free APIs (openFDA, ClinicalTrials v2, RxNorm, Census, ProPublica 990);
+  injectable opener → fully offline-testable, fails closed. +18 tests.
+- /data-apis page + /api/data-apis JSON — KPI strip, CDD coverage-by-category
+  column chart, per-category source tables with auth/rate-limit/status badges
+  + docs links. Wired into Research nav + palette + breadcrumb. +8 tests.
+Sweep: page + nav + catalog + clients + palette = 79 passed.

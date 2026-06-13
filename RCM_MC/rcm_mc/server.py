@@ -7000,6 +7000,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .diligence.further_analysis import build_further_analysis
             _fa_aqs = urllib.parse.parse_qs(parsed.query)
             return self._send_json(build_further_analysis(_fa_aqs))
+        if path == "/data-apis":
+            # Public Data APIs — the reference table of free, API-accessible
+            # public healthcare data (non-CMS-claims), organized by the
+            # diligence question each source answers, with auth/rate-limit/
+            # status badges and a coverage chart.
+            from .ui.data_public.data_apis_page import render_data_apis_page
+            _da_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_data_apis_page(_da_qs))
+        if path == "/api/data-apis":
+            from .ui.data_public.data_apis_page import build_data_apis
+            _da_aqs = urllib.parse.parse_qs(parsed.query)
+            return self._send_json(build_data_apis(_da_aqs))
         if path == "/api/diligence/texas-infusion":
             # JSON variant — the full analysis dict for programmatic use,
             # honoring the same AIC assumption overrides as the page.
