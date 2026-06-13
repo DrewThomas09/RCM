@@ -44,6 +44,41 @@ def _measure_select(name: str, dataset_id: str, selected: str) -> str:
             f'border-radius:5px;">{opts}</select>')
 
 
+def _relationships_panel() -> str:
+    """A ranked, clickable list of the strongest substantive relationships
+    across the public-data universe — each row loads that pair into the view."""
+    try:
+        top = list(ca.scan_correlations(min_n=30, top=12, min_abs_r=0.3))
+    except Exception:
+        top = []
+    if not top:
+        return ""
+    rows = ""
+    for c in top:
+        tone = "#0a8a5f" if c["r"] >= 0 else "#b5321e"
+        href = (f'/cross-analysis?x={html.escape(c["x_id"])}'
+                f'&xm={html.escape(c["x_measure"])}'
+                f'&y={html.escape(c["y_id"])}&ym={html.escape(c["y_measure"])}')
+        rows += (
+            f'<a href="{href}" style="display:flex;justify-content:space-between;'
+            f'gap:10px;padding:5px 10px;border-top:1px solid #eee;'
+            f'text-decoration:none;color:#1a2332;font-size:11.5px;">'
+            f'<span>{html.escape(c["x_label"])} '
+            f'<span style="color:#7a8699;">×</span> '
+            f'{html.escape(c["y_label"])}</span>'
+            f'<span style="white-space:nowrap;font-variant-numeric:tabular-nums;'
+            f'font-weight:600;color:{tone};">r={c["r"]:+.2f} '
+            f'<span style="color:#9aa0ac;font-weight:400;">n={c["n"]}</span>'
+            f'</span></a>')
+    return (
+        '<details open style="margin:14px 0;background:#fff;border:1px solid '
+        '#e6e0d2;border-radius:8px;overflow:hidden;">'
+        '<summary style="cursor:pointer;padding:9px 10px;font-size:11px;'
+        'letter-spacing:.05em;text-transform:uppercase;color:#0b2341;'
+        'font-weight:600;">Strongest relationships (auto-scan · click to open)'
+        '</summary>' + rows + '</details>')
+
+
 def render_cross_analysis_page(qs: "Optional[Dict[str, Any]]" = None) -> str:
     from ._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title
 
@@ -154,6 +189,7 @@ def render_cross_analysis_page(qs: "Optional[Dict[str, Any]]" = None) -> str:
                       eyebrow="Correlation engine",
                       meta=f"{len(ca.state_grain_datasets())} joinable "
                            f"state-grain datasets")
-        + intro + controls + kpis + chart + table_html)
+        + intro + _relationships_panel() + controls + kpis + chart
+        + table_html)
     return chartis_shell(body, "Cross-Dataset Analysis", active_nav="/research",
                          subtitle="Correlate two public datasets")

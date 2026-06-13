@@ -807,3 +807,15 @@ joined table. None/NaN-safe join (drops unpaired states, never zero-fills);
 constant-series & n<3 guards. Default MA penetration × hospital margin (r~0.50).
 diligence/cross_analysis.py (pure) + ui/cross_analysis_page.py + nav/palette/
 breadcrumb wiring. +15 tests; nav-integrity green.
+
+---
+## Checkpoint — wave #111 (2026-06-13)
+Cross-Dataset Analysis upgraded with an auto correlation-scan discovery engine:
+scan_correlations() ranks the strongest SUBSTANTIVE relationships across all
+state-grain measure pairs, filtering out tautologies (derived composites, raw
+count/scale measures that track state size, same-metric-reused pairs, and
+near-perfect |r|>0.985 duplicates). Surfaces a clickable "Strongest
+relationships" panel on /cross-analysis (e.g. child poverty × food insecurity
+r=0.83; hospital scale × ACO footprint r=0.85; median income × poor health
+r=-0.74; rural × patient experience r=0.73) + top_relationships in the JSON.
+lru_cached. +4 tests; suite 19 passed.

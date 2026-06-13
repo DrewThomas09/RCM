@@ -61,6 +61,40 @@ class EngineTests(unittest.TestCase):
         self.assertFalse(r["ok"])
 
 
+class ScanTests(unittest.TestCase):
+    def test_scan_returns_substantive_filtered_results(self):
+        top = ca.scan_correlations(min_n=30, top=12, min_abs_r=0.3)
+        self.assertTrue(top)
+        for c in top:
+            self.assertGreaterEqual(c["n"], 30)
+            self.assertGreaterEqual(c["abs_r"], 0.3)
+            # Duplicate/tautological near-perfect pairs are filtered out.
+            self.assertLessEqual(c["abs_r"], 0.985)
+            # Cross-dataset only.
+            self.assertNotEqual(c["x_id"], c["y_id"])
+        # Sorted by strength, descending.
+        rs = [c["abs_r"] for c in top]
+        self.assertEqual(rs, sorted(rs, reverse=True))
+
+    def test_scan_excludes_derived_by_default(self):
+        top = ca.scan_correlations(min_n=30, top=50, min_abs_r=0.0)
+        derived = {d.id for d in ca.state_grain_datasets()
+                   if d.category == "Derived"}
+        for c in top:
+            self.assertNotIn(c["x_id"], derived)
+            self.assertNotIn(c["y_id"], derived)
+
+    def test_scale_filter_drops_raw_counts(self):
+        # Population is a raw scale measure; excluded unless include_scale.
+        d = ca.fa.DATASETS["state_demographics"]
+        pop = d.measure("population")
+        vm = ca._value_map(d, "population")
+        self.assertTrue(ca._is_scale_measure(pop, vm))
+        # A bounded rate (uninsured %) is not a scale measure.
+        un = d.measure("uninsured_rate")
+        self.assertFalse(ca._is_scale_measure(un, ca._value_map(d, "uninsured_rate")))
+
+
 class ResolveAndJsonTests(unittest.TestCase):
     def test_defaults_resolve_to_a_populated_pair(self):
         spec = ca.resolve_query({})
@@ -80,6 +114,8 @@ class ResolveAndJsonTests(unittest.TestCase):
             self.assertIn(k, p)
         self.assertEqual(len(p["catalog"]), len(ca.state_grain_datasets()))
         self.assertTrue(p["joined"])
+        self.assertIn("top_relationships", p)
+        self.assertTrue(p["top_relationships"])
 
 
 class PageTests(unittest.TestCase):
@@ -89,6 +125,12 @@ class PageTests(unittest.TestCase):
         self.assertIn("<svg", h)
         self.assertIn("Correlation (r)", h)
         self.assertIn("R²", h)
+
+    def test_page_shows_relationship_scan_with_links(self):
+        h = render_cross_analysis_page({})
+        self.assertIn("Strongest relationships", h)
+        # Clickable rows preset a pair into the view.
+        self.assertIn("/cross-analysis?x=", h)
 
     def test_page_handles_custom_pair(self):
         h = render_cross_analysis_page({

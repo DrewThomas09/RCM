@@ -15,6 +15,7 @@ value is dropped from the pair, never zero-filled.
 """
 from __future__ import annotations
 
+import functools
 import math
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -140,6 +141,92 @@ def correlate(
     }
 
 
+_NUMERIC_FMTS = {"num", "usd", "usd_m", "usd_b", "pct", "pct100", "x", "weeks"}
+# Range ratio above which a "num" measure is treated as a raw count/scale that
+# trivially tracks state size (population, bed/facility counts) rather than a
+# bounded rate or score — excluded from the scan so it surfaces real signal.
+_SCALE_RANGE_RATIO = 50.0
+
+
+def _is_scale_measure(measure: fa.Measure, values: Dict[str, float]) -> bool:
+    """True if a measure is a raw count/scale (vs a normalized rate/score)."""
+    if measure.fmt != "num":
+        return False
+    vs = [abs(v) for v in values.values() if v not in (None, 0)]
+    if len(vs) < 2:
+        return False
+    lo, hi = min(vs), max(vs)
+    return lo > 0 and (hi / lo) > _SCALE_RANGE_RATIO
+
+
+def _same_metric(a: fa.Measure, b: fa.Measure) -> bool:
+    """Heuristic: two measures are 'the same metric reused' when one label is a
+    substring of the other (e.g. 'SNF overall' vs 'SNF avg star rating')."""
+    la, lb = a.label.lower(), b.label.lower()
+    return la in lb or lb in la
+
+
+@functools.lru_cache(maxsize=16)
+def scan_correlations(
+    *, min_n: int = 30, top: int = 20, min_abs_r: float = 0.0,
+    max_abs_r: float = 0.985,
+    include_scale: bool = False, include_derived: bool = False,
+) -> List[Dict[str, Any]]:
+    """Scan every measure pair across *different* state-grain datasets and
+    return the strongest *substantive* correlations — a discovery engine for
+    "what moves with what" in the public-data universe.
+
+    Filtered for signal by default: derived composite indices are skipped
+    (they tautologically track their own inputs), raw count/scale measures are
+    skipped (they just track state size), and same-metric pairs (one label a
+    substring of the other) are dropped. Only pairs with at least ``min_n``
+    jointly-present states are scored. Returns up to ``top`` rows by ``|r|``.
+    """
+    sgs = [d for d in state_grain_datasets()
+           if include_derived or d.category != "Derived"]
+    maps: List[Tuple[fa.Dataset, fa.Measure, Dict[str, float]]] = []
+    for d in sgs:
+        for m in d.measures:
+            if m.fmt not in _NUMERIC_FMTS:
+                continue
+            vm = _value_map(d, m.key)
+            if len(vm) < min_n:
+                continue
+            if not include_scale and _is_scale_measure(m, vm):
+                continue
+            maps.append((d, m, vm))
+
+    out: List[Dict[str, Any]] = []
+    for i in range(len(maps)):
+        di, mi, vi = maps[i]
+        for j in range(i + 1, len(maps)):
+            dj, mj, vj = maps[j]
+            if di.id == dj.id:          # same dataset — not a cross relationship
+                continue
+            if _same_metric(mi, mj):    # same metric reused across datasets
+                continue
+            states = set(vi) & set(vj)
+            if len(states) < min_n:
+                continue
+            xs = [vi[s] for s in states]
+            ys = [vj[s] for s in states]
+            r = _pearson(xs, ys)
+            # A near-perfect r across many states almost always means the same
+            # underlying series loaded into two datasets — drop as a duplicate.
+            if r is None or abs(r) < min_abs_r or abs(r) > max_abs_r:
+                continue
+            out.append({
+                "x_id": di.id, "x_measure": mi.key,
+                "x_label": f"{di.label} · {mi.label}",
+                "y_id": dj.id, "y_measure": mj.key,
+                "y_label": f"{dj.label} · {mj.label}",
+                "r": r, "abs_r": abs(r), "n": len(states),
+                "strength": _strength(r),
+            })
+    out.sort(key=lambda d: d["abs_r"], reverse=True)
+    return out[:max(1, int(top))]
+
+
 def _qs1(qs: Optional[Dict[str, Any]], key: str, default: str = "") -> str:
     if not qs:
         return default
@@ -195,5 +282,7 @@ def build_cross_analysis(qs: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         "ok": res.get("ok", False),
         "joined": [{"state": lbl, "x": vals[0], "y": vals[1]}
                    for lbl, vals in table["rows"]],
+        "top_relationships": list(scan_correlations(min_n=30, top=15,
+                                                    min_abs_r=0.3)),
         "catalog": catalog,
     }
