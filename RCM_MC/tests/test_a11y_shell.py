@@ -53,6 +53,16 @@ class A11yShellTests(unittest.TestCase):
         html = chartis_shell("<p>x</p>", title="X")
         self.assertIn("prefers-reduced-motion: reduce", html)
 
+    def test_breadcrumb_nav_is_labelled(self):
+        # The primary nav is aria-label="Primary"; the breadcrumb trail
+        # must carry its own landmark label so screen readers don't
+        # announce two indistinct "navigation" regions.
+        html = chartis_shell(
+            "<p>x</p>", title="X",
+            breadcrumbs=[("Home", "/"), ("Deals", None)],
+        )
+        self.assertIn('<nav class="ck-breadcrumbs" aria-label="Breadcrumb">', html)
+
 
 if __name__ == "__main__":
     unittest.main()

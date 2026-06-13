@@ -2630,7 +2630,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                                 f'{_h.escape(_lbl)}</strong>'
                             )
                     crumbs_html = (
-                        '<nav class="ck-breadcrumbs">'
+                        '<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
                         + "".join(crumbs_parts)
                         + '</nav>'
                     )

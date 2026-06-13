@@ -11447,7 +11447,10 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
             parts.append(f'<a href="{_esc(href)}">{_esc(label)}</a>')
         else:
             parts.append(_esc(label))
-    return f'<nav class="ck-breadcrumbs">{"".join(parts)}</nav>'
+    return (
+        f'<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
+        f'{"".join(parts)}</nav>'
+    )
 
 
 # Global ~2% size trim ("everything a little too big"). A single root zoom
