@@ -716,3 +716,10 @@ explorer. Explorer now 27 datasets. +1 test; suite 44 passed.
 /data-apis: +2nd professional chart — "Data layer: wired in-repo vs still to
 build" grouped column by diligence question (live-client/vendored vs
 registered), a build-roadmap view alongside the coverage chart. +1 test.
+
+---
+## Checkpoint — wave #99 (2026-06-13)
+public_api_clients: +NPPES and WHO GHO (OData) pure GET builders + typed
+who_gho_indicator fetcher; CLIENT_BUILDERS now covers nppes/openfda/
+clinicaltrials/rxnorm/census_acs/propublica_990/who_gho. +4 tests; client
+suite 21 passed.

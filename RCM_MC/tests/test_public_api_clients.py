@@ -154,9 +154,29 @@ class FetcherTests(unittest.TestCase):
 
     def test_available_clients_lists_the_top_apis(self):
         avail = set(c.available_clients())
-        for k in ("openfda", "clinicaltrials", "rxnorm", "census_acs",
-                  "propublica_990"):
+        for k in ("nppes", "openfda", "clinicaltrials", "rxnorm", "census_acs",
+                  "propublica_990", "who_gho"):
             self.assertIn(k, avail)
+
+    def test_nppes_request_caps_limit_and_threads_filters(self):
+        r = c.nppes_request(organization_name="Acme Health", state="TX",
+                            enumeration_type="NPI-2", limit=9999)
+        self.assertTrue(r.url.startswith("https://npiregistry.cms.hhs.gov"))
+        self.assertEqual(r.params["limit"], "200")     # NPPES hard cap
+        self.assertEqual(r.params["state"], "TX")
+        self.assertEqual(r.params["enumeration_type"], "NPI-2")
+
+    def test_who_gho_builds_odata_filter(self):
+        r = c.who_gho_request("WHOSIS_000001", country="USA", year="2019")
+        self.assertTrue(r.url.endswith("/WHOSIS_000001"))
+        self.assertIn("SpatialDim eq 'USA'", r.params["$filter"])
+        self.assertIn("TimeDim eq 2019", r.params["$filter"])
+
+    def test_who_gho_indicator_unwraps_value(self):
+        out = c.who_gho_indicator(
+            "WHOSIS_000001",
+            opener=_json_opener({"value": [{"NumericValue": 78.5}]}))
+        self.assertEqual(out[0]["NumericValue"], 78.5)
 
 
 if __name__ == "__main__":

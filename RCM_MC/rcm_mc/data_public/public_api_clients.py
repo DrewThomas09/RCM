@@ -293,13 +293,70 @@ def propublica_organization(ein: str, *, opener: Optional[Opener] = None
     return payload if isinstance(payload, dict) else {}
 
 
+# NPPES NPI Registry — https://npiregistry.cms.hhs.gov/api/?version=2.1
+# (provider universe; the fuller client lives in nppes_api_client.py)
+_NPPES_BASE = "https://npiregistry.cms.hhs.gov/api/"
+
+
+def nppes_request(*, organization_name: str = "", npi: str = "",
+                  state: str = "", city: str = "",
+                  enumeration_type: str = "", taxonomy_description: str = "",
+                  limit: int = 200, version: str = "2.1") -> ApiRequest:
+    params: Dict[str, str] = {"version": version,
+                              "limit": str(max(1, min(int(limit), 200)))}
+    if organization_name:
+        params["organization_name"] = organization_name
+    if npi:
+        params["number"] = str(npi)
+    if state:
+        params["state"] = state
+    if city:
+        params["city"] = city
+    if enumeration_type:
+        params["enumeration_type"] = enumeration_type
+    if taxonomy_description:
+        params["taxonomy_description"] = taxonomy_description
+    return ApiRequest(url=_NPPES_BASE, params=params)
+
+
+# WHO Global Health Observatory — OData. https://ghoapi.azureedge.net/api/{IND}
+_WHO_GHO_BASE = "https://ghoapi.azureedge.net/api"
+
+
+def who_gho_request(indicator: str, *, country: str = "", year: str = "",
+                    sex: str = "") -> ApiRequest:
+    """Fetch a GHO indicator series, optionally filtered with an OData
+    ``$filter`` over country (SpatialDim), year (TimeDim), sex (Dim1)."""
+    clauses: List[str] = []
+    if country:
+        clauses.append(f"SpatialDim eq '{country}'")
+    if year:
+        clauses.append(f"TimeDim eq {int(year)}")
+    if sex:
+        clauses.append(f"Dim1 eq '{sex}'")
+    params: Dict[str, str] = {}
+    if clauses:
+        params["$filter"] = " and ".join(clauses)
+    return ApiRequest(url=f"{_WHO_GHO_BASE}/{indicator}", params=params)
+
+
+def who_gho_indicator(indicator: str, *, opener: Optional[Opener] = None,
+                      **kw: Any) -> List[Dict[str, Any]]:
+    req = who_gho_request(indicator, **kw)
+    client = HttpJsonClient(base_url=_WHO_GHO_BASE, min_interval_s=0.1)
+    payload = client.get_json(f"/{indicator}", req.params, opener=opener)
+    return payload.get("value", []) if isinstance(payload, dict) else []
+
+
 # Registry of the wired clients, for catalog-driven discovery/tests.
 CLIENT_BUILDERS: Dict[str, Callable[..., ApiRequest]] = {
+    "nppes": nppes_request,
     "openfda": openfda_request,
     "clinicaltrials": clinicaltrials_request,
     "rxnorm": rxnorm_rxcui_request,
     "census_acs": lambda **kw: census_request(**kw),
     "propublica_990": propublica_search_request,
+    "who_gho": who_gho_request,
 }
 
 
