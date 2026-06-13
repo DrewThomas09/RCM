@@ -636,3 +636,11 @@ counts aligned per state for cross-vertical density comparison + SNF avg
 star rating) and SNF ownership concentration (largest chains by facility
 count, roll-up read). Explorer now 17 datasets, 11 CMS. +4 tests; suite 36
 passed. All render incl. multi-series grouped bars.
+
+---
+## Checkpoint — wave #90 (2026-06-13)
+Further Analysis value-based-care expansion: +2 CMS Medicare Shared Savings
+Program datasets — ACO footprint by state (Shared Savings ACOs operating in
+each state, VBC adoption read) and ACO risk-track mix (BASIC A-E / ENHANCED
+counts — downside-risk appetite). Explorer now 19 datasets, 13 CMS. +2 tests;
+suite 38 passed. CI: wave #88 (3180b67) green; #89/#90 queued.

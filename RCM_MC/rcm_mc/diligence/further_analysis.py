@@ -397,6 +397,35 @@ def _load_postacute_footprint(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_mssp_aco_state(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Medicare Shared Savings Program ACOs operating in each state — a
+    read on value-based-care adoption (a multi-state ACO counts in every
+    state it serves)."""
+    from ..data import mssp_aco_data as m
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            n = m.acos_for_state(st)
+        except Exception:
+            continue
+        out.append({"state": _STATE_NAMES.get(st, st), "aco_count": n})
+    return out
+
+
+def _load_mssp_track(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS MSSP risk-track distribution — how many ACOs sit in each BASIC
+    (upside-only → two-sided) and ENHANCED (full two-sided) track. A direct
+    read on downside-risk appetite across the program."""
+    from ..data import mssp_aco_data as m
+    out: List[Dict[str, Any]] = []
+    for r in _safe(m.mssp_track_breakdown):
+        tr = r.get("track")
+        if not tr:
+            continue
+        out.append({"track": str(tr).title(), "acos": r.get("acos")})
+    return out
+
+
 def _load_snf_owners(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS SNF ownership — the largest owner organizations by facility count,
     a direct read on chain consolidation in skilled nursing."""
@@ -679,6 +708,24 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("facilities_owned", "Facilities owned", "num")],
         loader=_load_snf_owners,
         note="Largest skilled-nursing chains by facility count.",
+    ),
+    Dataset(
+        id="mssp_aco_state", label="ACO footprint by state (MSSP)",
+        category="CMS",
+        source="CMS Medicare Shared Savings Program ACO directory (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[Measure("aco_count", "ACOs serving state", "num")],
+        loader=_load_mssp_aco_state,
+        note="Shared Savings ACOs operating in each state (value-based care).",
+    ),
+    Dataset(
+        id="mssp_track", label="ACO risk-track mix (MSSP)",
+        category="CMS",
+        source="CMS Medicare Shared Savings Program ACO directory (vendored)",
+        grain="category", dim_key="track", dim_label="Risk track",
+        measures=[Measure("acos", "ACOs in track", "num")],
+        loader=_load_mssp_track,
+        note="ACO counts by BASIC/ENHANCED risk track — downside-risk appetite.",
     ),
 ]
 

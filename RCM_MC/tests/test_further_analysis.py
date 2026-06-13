@@ -113,10 +113,29 @@ class CmsDatasetTests(unittest.TestCase):
         vals = [v[0] for _, v in table["rows"]]
         self.assertEqual(vals, sorted(vals, reverse=True))
 
+    def test_mssp_aco_state_footprint_covers_all_states(self):
+        d = fa.DATASETS["mssp_aco_state"]
+        self.assertEqual(d.grain, "state")
+        rows = d.loader(None)
+        self.assertEqual(len(rows), 51)
+        table, _ = fa.shape_table(d, ["aco_count"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        self.assertTrue(all(v >= 0 for v in vals))
+
+    def test_mssp_track_mix_is_category_grain(self):
+        d = fa.DATASETS["mssp_track"]
+        self.assertEqual(d.grain, "category")
+        table, _ = fa.shape_table(d, ["acos"], top_n=10)
+        self.assertTrue(table["rows"])
+        # ENHANCED (full two-sided risk) is the largest track in the cut.
+        self.assertEqual(table["rows"][0][0], "Enhanced")
+
     def test_new_cms_datasets_appear_on_page(self):
         import html
         for did in ("hcahps", "ma_geo", "provider_supply", "mips",
-                    "postacute_footprint", "snf_owners"):
+                    "postacute_footprint", "snf_owners",
+                    "mssp_aco_state", "mssp_track"):
             h = render_further_analysis_page({"dataset": [did]})
             self.assertIn("<svg", h, f"{did} produced no svg")
             self.assertIn(html.escape(fa.DATASETS[did].label), h)
