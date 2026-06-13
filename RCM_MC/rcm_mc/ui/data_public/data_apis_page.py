@@ -114,8 +114,54 @@ def _source_row(s: cat.ApiSource) -> str:
         f'</td></tr>')
 
 
+# Diligence question -> the in-repo Further Analysis datasets that already
+# answer it, so the catalog is a two-sided launchpad (external APIs + ready
+# charts). Dataset ids are validated against the live registry at render time.
+_READY_BY_QUESTION: Dict[str, List[str]] = {
+    "provider_universe": ["provider_supply", "consolidation_state",
+                          "consolidation_trend", "snf_owners",
+                          "postacute_footprint", "oig_exclusions_state",
+                          "oig_exclusions_type", "hrsa_shortage"],
+    "volume_outcomes": ["hcahps", "mips", "mips_bands", "hcris_state"],
+    "drugs_devices": ["partd", "partd_inflation", "drug_shortages",
+                      "open_payments", "clinical_trial_phase"],
+    "financials": ["hcris_state", "hospital_pricing_power", "cost_of_care",
+                   "multiples", "apm_adoption"],
+    "demographics_labor": ["state_demographics", "county_demographics",
+                           "metro_demographics", "cdc_places", "labor",
+                           "ma_penetration", "ma_geo"],
+    "behavioral_global": [],
+}
+
+
+def _ready_strip(cid: str) -> str:
+    """Chips linking to the in-repo explorer charts that answer this question."""
+    from ...diligence import further_analysis as fa
+    ids = _READY_BY_QUESTION.get(cid, [])
+    chips = ""
+    for ds_id in ids:
+        d = fa.DATASETS.get(ds_id)
+        if d is None:
+            continue
+        chips += (
+            f'<a href="/further-analysis?dataset={_html.escape(ds_id)}" '
+            f'style="font-size:10.5px;color:#155752;background:#e6efed;'
+            f'border:1px solid #cfe0dc;border-radius:12px;padding:2px 9px;'
+            f'text-decoration:none;white-space:nowrap;">'
+            f'{_html.escape(d.label)} →</a>')
+    if not chips:
+        return ""
+    return (
+        '<div style="margin:6px 0 2px;display:flex;flex-wrap:wrap;gap:6px;'
+        'align-items:center;">'
+        '<span style="font-size:9.5px;font-weight:600;letter-spacing:.05em;'
+        'text-transform:uppercase;color:#7a8699;">Ready in-repo</span>'
+        + chips + '</div>')
+
+
 def _category_section(cid: str, label: str, members: List[cat.ApiSource]) -> str:
     rows = "".join(_source_row(s) for s in members)
+    ready = _ready_strip(cid)
     head = (
         '<thead><tr style="text-align:left;font-size:10px;'
         'letter-spacing:.06em;text-transform:uppercase;color:#7a8699;">'
@@ -130,6 +176,7 @@ def _category_section(cid: str, label: str, members: List[cat.ApiSource]) -> str
         f'color:#0b2341;margin:0 0 4px;">{_html.escape(label)} '
         f'<span style="font-size:11px;color:#7a8699;font-weight:400;">'
         f'({len(members)})</span></h2>'
+        f'{ready}'
         f'<table style="width:100%;border-collapse:collapse;'
         f'background:#fff;border:1px solid #e6e0d2;border-radius:8px;'
         f'overflow:hidden;">{head}<tbody>{rows}</tbody></table></section>')

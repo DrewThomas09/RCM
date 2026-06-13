@@ -53,6 +53,20 @@ class PageRenderTests(unittest.TestCase):
             # The route points at a real explorer dataset.
             self.assertIn("/further-analysis?dataset=", s.explore_route)
 
+    def test_ready_strip_maps_to_real_explorer_datasets(self):
+        from rcm_mc.diligence import further_analysis as fa
+        from rcm_mc.ui.data_public.data_apis_page import _READY_BY_QUESTION
+        ids = {d.id for d in fa.list_datasets()}
+        valid_cats = dict(cat.CATEGORIES)
+        for cid, ds_ids in _READY_BY_QUESTION.items():
+            self.assertIn(cid, valid_cats, f"{cid} not a diligence category")
+            for ds in ds_ids:
+                self.assertIn(ds, ids, f"ready strip -> unknown dataset {ds}")
+        # The page surfaces the launchpad strip with real explorer links.
+        h = render_data_apis_page({})
+        self.assertIn("Ready in-repo", h)
+        self.assertIn("/further-analysis?dataset=provider_supply", h)
+
     def test_explore_routes_resolve_to_real_datasets(self):
         from rcm_mc.diligence import further_analysis as fa
         ids = {d.id for d in fa.list_datasets()}

@@ -758,3 +758,11 @@ Explorer now 31 datasets. Suite 47 passed.
 Further Analysis: +MIPS final-score distribution (histogram of clinician
 final scores by band; ~86% in 75-100). Explorer now 32 datasets. Suite 47
 passed.
+
+---
+## Checkpoint — wave #105 (2026-06-13)
+/data-apis becomes a two-sided launchpad: each diligence-question section now
+shows a "Ready in-repo" strip of chips linking to the Further Analysis charts
+that already answer that question (provider-universe→8 datasets, drugs/devices→5,
+financials→5, demographics/labor→7, volume/outcomes→4). Mapping validated
+against the live dataset registry at render + in tests. +1 test; sweep 59 passed.
