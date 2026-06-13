@@ -242,6 +242,41 @@ def _load_partd(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(lambda: pdd.top_drugs_by_spend(40))
 
 
+def _load_hospital_pricing_power(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Hospital commercial pricing power — the commercial price as a multiple of
+    Medicare (blended inpatient+outpatient), latest year, one row per hospital.
+    Colorado all-payer claims (CIVHC reference-based pricing); single-state."""
+    from ..data import payer_data as pdm
+    try:
+        df = pdm.load_reference_based_pricing()
+    except Exception:
+        return []
+    if not hasattr(df, "columns") or not len(df):
+        return []
+    try:
+        latest = int(df["year"].max())
+    except Exception:
+        return []
+    sub = df[(df["year"] == latest)
+             & (df["claim_type"] == "Inpatient/Outpatient Combined")]
+    if not len(sub):
+        return []
+    # One row per hospital — keep the highest-volume filing.
+    sub = sub.sort_values("claims", ascending=False).drop_duplicates(
+        "organization_name")
+    out: List[Dict[str, Any]] = []
+    for r in sub.to_dict("records"):
+        org = r.get("organization_name")
+        if not org:
+            continue
+        out.append({
+            "organization_name": str(org),
+            "hospital_x_medicare": r.get("hospital_pct_medicare"),
+            "claims": r.get("claims"),
+        })
+    return out
+
+
 def _load_metro_demographics(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """Metropolitan statistical area (CBSA) demographics — population, age mix,
     income and coverage at the metro grain, the right unit for hospital/MSO/ASC
@@ -431,6 +466,20 @@ def _load_mips(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS MIPS performance-category score distribution (0-100 points)."""
     from ..data import mips_data as mp
     return _safe(mp.mips_category_scores)
+
+
+def _load_mips_bands(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS MIPS final-score distribution by score band — the performance
+    histogram across clinicians (most cluster in the top band)."""
+    from ..data import mips_data as mp
+    out: List[Dict[str, Any]] = []
+    for r in _safe(mp.mips_score_bands):
+        band = r.get("band")
+        if not band:
+            continue
+        out.append({"band": str(band), "clinicians": r.get("count"),
+                    "share": r.get("pct")})
+    return out
 
 
 def _load_postacute_footprint(_focus: Optional[str]) -> List[Dict[str, Any]]:
@@ -797,6 +846,19 @@ _DATASETS_LIST: List[Dataset] = [
         note="The 40 highest-spend Part D drugs.",
     ),
     Dataset(
+        id="hospital_pricing_power",
+        label="Hospital commercial pricing power (CO)",
+        category="Markets",
+        source="Colorado all-payer claims database (CIVHC reference pricing, vendored)",
+        grain="category", dim_key="organization_name", dim_label="Hospital",
+        measures=[
+            Measure("hospital_x_medicare", "Commercial price vs Medicare", "x"),
+            Measure("claims", "Claims", "num"),
+        ],
+        loader=_load_hospital_pricing_power,
+        note="Commercial price as a multiple of Medicare, by hospital — Colorado.",
+    ),
+    Dataset(
         id="metro_demographics", label="Metro market demographics (CBSA)",
         category="Census",
         source="US Census / OMB CBSA delineations 2023 (vendored)",
@@ -950,6 +1012,18 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_mips,
         note="MIPS performance-category points (0-100) across clinicians.",
+    ),
+    Dataset(
+        id="mips_bands", label="MIPS final-score distribution",
+        category="CMS",
+        source="CMS Quality Payment Program MIPS scores (vendored)",
+        grain="category", dim_key="band", dim_label="Score band",
+        measures=[
+            Measure("clinicians", "Clinicians", "num"),
+            Measure("share", "Share of clinicians", _P100),
+        ],
+        loader=_load_mips_bands,
+        note="Final-score histogram across clinicians (most cluster 75-100).",
     ),
     Dataset(
         id="postacute_footprint",
