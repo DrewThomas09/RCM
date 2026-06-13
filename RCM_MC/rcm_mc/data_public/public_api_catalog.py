@@ -194,10 +194,12 @@ _SOURCES: List[ApiSource] = [
         base_url="https://rxnav.nlm.nih.gov/REST",
         docs_url="https://lhncbc.nlm.nih.gov/RxNav/APIs/",
         access="none", rate_limit="20 requests/sec/IP",
-        formats="JSON/XML", cost="free", status="registered",
+        formats="JSON/XML", cost="free", status="live-client",
+        client_module="rcm_mc/data_public/public_api_clients.py",
         answers="How do I normalize drug names/NDCs to standard concepts?",
-        why="Normalizes drug names/NDCs to RxNorm concepts; pair with DailyMed "
-            "labeling for a full drug-reference layer.",
+        why="Normalizes drug names/NDCs to RxNorm concepts (name+NDC->RxCUI, "
+            "RxCUI->NDCs/properties); the NDC bridge resolves the vendored "
+            "openFDA drug layer. Pair with DailyMed for full drug reference.",
     ),
     ApiSource(
         id="dailymed", name="DailyMed", operator="NLM",

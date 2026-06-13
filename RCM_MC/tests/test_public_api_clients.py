@@ -179,5 +179,100 @@ class FetcherTests(unittest.TestCase):
         self.assertEqual(out[0]["NumericValue"], 78.5)
 
 
+def _route_opener(routes):
+    """Fake opener that returns a different JSON payload per URL substring,
+    so a multi-call path (normalize, join) can be exercised deterministically.
+    The first matching substring wins; an unmatched URL is an empty object."""
+    def _open(url, headers, timeout):
+        assert "User-Agent" in headers
+        for needle, payload in routes.items():
+            if needle in url:
+                return json.dumps(payload).encode()
+        return b"{}"
+    return _open
+
+
+class RxNormNdcBridgeTests(unittest.TestCase):
+    def test_ndc_request_uses_idtype_crosswalk(self):
+        r = c.rxnorm_ndc_request("0002-1433-80")
+        self.assertTrue(r.url.endswith("/rxcui.json"))
+        self.assertEqual(r.params["idtype"], "NDC")
+        self.assertEqual(r.params["id"], "0002-1433-80")
+
+    def test_ndc_request_strips_stray_chars(self):
+        r = c.rxnorm_ndc_request(" 0002-1433-80 ")
+        self.assertEqual(r.params["id"], "0002-1433-80")
+
+    def test_ndc_to_rxcui_unwraps_id_group(self):
+        out = c.rxnorm_ndc_to_rxcui(
+            "0002-1433-80",
+            opener=_json_opener({"idGroup": {"rxnormId": ["213269"]}}))
+        self.assertEqual(out, ["213269"])
+
+    def test_ndcs_request_uses_digit_only_rxcui(self):
+        r = c.rxnorm_ndcs_request("rxcui-213269")
+        self.assertTrue(r.url.endswith("/rxcui/213269/ndcs.json"))
+
+    def test_rxcui_ndcs_unwraps_ndc_group(self):
+        out = c.rxnorm_rxcui_ndcs(
+            "213269",
+            opener=_json_opener({"ndcGroup": {"ndcList": {"ndc": ["00021433"]}}}))
+        self.assertEqual(out, ["00021433"])
+
+    def test_properties_unwrap(self):
+        out = c.rxnorm_properties(
+            "83367",
+            opener=_json_opener({"properties": {"name": "atorvastatin",
+                                                "tty": "IN"}}))
+        self.assertEqual(out["name"], "atorvastatin")
+        self.assertEqual(out["tty"], "IN")
+
+    def test_normalize_by_name_composes_concept_record(self):
+        opener = _route_opener({
+            "/rxcui.json": {"idGroup": {"rxnormId": ["83367"]}},
+            "/properties.json": {"properties": {"name": "atorvastatin",
+                                                "tty": "IN"}},
+            "/ndcs.json": {"ndcGroup": {"ndcList": {"ndc": ["00071015523"]}}},
+        })
+        rec = c.rxnorm_normalize("atorvastatin", opener=opener)
+        self.assertEqual(rec["rxcui"], "83367")
+        self.assertEqual(rec["name"], "atorvastatin")
+        self.assertEqual(rec["tty"], "IN")
+        self.assertEqual(rec["ndcs"], ["00071015523"])
+
+    def test_normalize_unmatched_returns_empty_not_fabricated(self):
+        rec = c.rxnorm_normalize(
+            "not-a-real-drug",
+            opener=_json_opener({"idGroup": {}}))
+        self.assertEqual(rec, {})
+
+    def test_openfda_ndc_join_preserves_unmatched_as_empty(self):
+        out = c.openfda_ndc_to_rxcui(
+            ["0002-1433-80"],
+            opener=_json_opener({"idGroup": {"rxnormId": ["213269"]}}))
+        self.assertEqual(out, {"0002-1433-80": ["213269"]})
+
+        miss = c.openfda_ndc_to_rxcui(
+            ["9999-9999-99"], opener=_json_opener({"idGroup": {}}))
+        self.assertEqual(miss, {"9999-9999-99": []})
+
+    def test_openfda_ndc_join_dedupes_inputs(self):
+        calls = []
+
+        def opener(url, headers, timeout):
+            calls.append(url)
+            return json.dumps({"idGroup": {"rxnormId": ["1"]}}).encode()
+
+        out = c.openfda_ndc_to_rxcui(
+            ["0002-1433-80", "0002-1433-80", ""], opener=opener)
+        self.assertEqual(out, {"0002-1433-80": ["1"]})
+        self.assertEqual(len(calls), 1)  # dedupe + empty NDC skipped
+
+    def test_new_builders_registered_in_catalog(self):
+        avail = set(c.available_clients())
+        for k in ("rxnorm_ndc", "rxnorm_ndcs", "rxnorm_properties"):
+            self.assertIn(k, avail)
+
+
 if __name__ == "__main__":
     unittest.main()
