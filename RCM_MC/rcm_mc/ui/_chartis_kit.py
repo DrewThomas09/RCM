@@ -8872,6 +8872,38 @@ _CSS_INLINE_FALLBACK = """
     .ck-pair { grid-template-columns:1fr; }
     .ck-pair-viz { border-right:none; border-bottom:1px solid var(--sc-rule); }
   }
+
+  /* ── Accessibility: keyboard focus, skip-link, reduced motion ──────
+   * Mirror of the block in static/v3/chartis.css so a11y affordances
+   * survive even when static serving isn't wired up. Only .cta-btn
+   * carried a focus ring before; every other interactive element gave
+   * no visible focus indicator (WCAG 2.4.7 gap on every page). */
+  a:focus-visible, button:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--sc-teal, #155752);
+    outline-offset: 2px; border-radius: 1px;
+  }
+  .ck-skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 1000;
+    background: var(--sc-ink, #0F1C2E); color: var(--sc-paper, #FAF7F0);
+    padding: 9px 16px; font-family: var(--sc-sans, Inter), sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; text-decoration: none;
+  }
+  .ck-skip-link:focus { left: 8px; top: 8px; }
+  .ck-sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 </style>
 """
 
@@ -11765,6 +11797,13 @@ def chartis_shell(
     # forgot) must not even mention those selectors — test_deal_context
     # asserts bare pages carry no "ck-deal-bar" string at all.
     exhibit_print_css = _EXHIBIT_PRINT_CSS if show_chrome else ""
+    # Skip-to-content link — first focusable element so keyboard/screen-
+    # reader users can bypass the topbar + nav. Only meaningful when the
+    # chrome (and its nav) is present; bare auth pages have nothing to skip.
+    skip_link_html = (
+        '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
+        if show_chrome else ""
+    )
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -11779,8 +11818,9 @@ def chartis_shell(
         f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
+        f"{skip_link_html}"
         f"{chrome_html}"
-        f'<main class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
+        f'<main id="ck-main" class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
         f"{shortcuts_html}"
         f"{_TOAST_HTML}"
