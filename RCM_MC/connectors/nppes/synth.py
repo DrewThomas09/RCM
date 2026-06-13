@@ -213,6 +213,80 @@ def generate(out_dir: str, *, n_orgs: int = 80, n_individuals: int = 420,
             monthly_rows.append(orow)
         monthly_rows.append(r)
 
+    # Sub-scale independent practices: solo Type-2 orgs at UNIQUE addresses,
+    # each with 0–2 affiliated individuals, plus fully independent Type-1
+    # providers at unique addresses. This makes a market fragmented (low HHI,
+    # high independent share) so the roll-up / fragmentation CDD signals are
+    # meaningful — real provider markets always carry a long tail of solos.
+    n_solo = max(1, n_orgs // 2)
+    for i in range(n_solo):
+        city, st, zp = rng.choice(_CITIES)
+        uniq = f"{rng.randint(10000, 99999)} INDEP {rng.choice(['ELM','OAK','PINE','CEDAR'])} LN"
+        spec_taxo = rng.choice(["207Q00000X", "207R00000X", "261QP2300X", "207RG0100X"])
+        onpi = next_npi()
+        last = rng.choice(_LAST)
+        orow = _blank_row()
+        orow.update({
+            "NPI": onpi, "Entity Type Code": "2",
+            "Provider Organization Name (Legal Business Name)":
+                f"{last} SOLO PRACTICE PLLC",
+            "Provider First Line Business Practice Location Address": uniq,
+            "Provider Business Practice Location Address City Name": city,
+            "Provider Business Practice Location Address State Name": st,
+            "Provider Business Practice Location Address Postal Code": zp + "0000",
+            "Authorized Official Last Name": last,
+            "Authorized Official Title or Position": "OWNER",
+            "Provider Enumeration Date": "2015-06-01",
+            "Last Update Date": "2026-01-08",
+            "Healthcare Provider Taxonomy Code_1": spec_taxo,
+            "Healthcare Provider Primary Taxonomy Switch_1": "Y",
+        })
+        monthly_rows.append(orow)
+        for _ in range(rng.choice([0, 1, 1, 2])):
+            inpi = next_npi()
+            irow = _blank_row()
+            irow.update({
+                "NPI": inpi, "Entity Type Code": "1",
+                "Provider Last Name (Legal Name)": last,
+                "Provider First Name": rng.choice(_FIRST),
+                "Provider Credential Text": rng.choice(["MD", "DO", "NP"]),
+                "Provider First Line Business Practice Location Address": uniq,
+                "Provider Business Practice Location Address City Name": city,
+                "Provider Business Practice Location Address State Name": st,
+                "Provider Business Practice Location Address Postal Code": zp + "0000",
+                "Provider Enumeration Date": "2016-03-01",
+                "Last Update Date": "2026-01-08",
+                "Is Sole Proprietor": "Y",
+                "Healthcare Provider Taxonomy Code_1": spec_taxo,
+                "Provider License Number State Code_1": st,
+                "Healthcare Provider Primary Taxonomy Switch_1": "Y",
+            })
+            monthly_rows.append(irow)
+
+    # Fully independent individuals at unique addresses (no org co-location).
+    for i in range(max(1, n_individuals // 5)):
+        city, st, zp = rng.choice(_CITIES)
+        uniq = f"{rng.randint(10000, 99999)} {rng.choice(['SOLO','LONE','SINGLE'])} WAY"
+        inpi = next_npi()
+        irow = _blank_row()
+        irow.update({
+            "NPI": inpi, "Entity Type Code": "1",
+            "Provider Last Name (Legal Name)": rng.choice(_LAST),
+            "Provider First Name": rng.choice(_FIRST),
+            "Provider Credential Text": rng.choice(["MD", "DO", "NP", "PA"]),
+            "Provider First Line Business Practice Location Address": uniq,
+            "Provider Business Practice Location Address City Name": city,
+            "Provider Business Practice Location Address State Name": st,
+            "Provider Business Practice Location Address Postal Code": zp + "9999",
+            "Provider Enumeration Date": "2017-07-01",
+            "Last Update Date": "2026-01-07",
+            "Is Sole Proprietor": "Y",
+            "Healthcare Provider Taxonomy Code_1": rng.choice(
+                ["207Q00000X", "207R00000X", "363LF0000X"]),
+            "Healthcare Provider Primary Taxonomy Switch_1": "Y",
+        })
+        monthly_rows.append(irow)
+
     # Two intentionally invalid NPIs (bad check digit / wrong length).
     for bad in ("1234567890", "999"):
         r = _blank_row()
