@@ -797,3 +797,13 @@ same retry/rate-limit/fail-closed semantics) + builders for SEC EDGAR
 POST body) and BLS (timeseries, POST body). CLIENT_BUILDERS now 9. Catalog
 statuses unchanged (scaffolds, not end-to-end offline loaders). +8 tests;
 client suite 28 passed.
+
+---
+## Checkpoint — wave #110 (2026-06-13) — analytical layer
+NEW analysis capability: Cross-Dataset Analysis (/cross-analysis +
+/api/cross-analysis). Correlate any two of the 14 state-grain public datasets
+on shared state -> Pearson r, R², least-squares fit, scatter w/ trendline, and
+joined table. None/NaN-safe join (drops unpaired states, never zero-fills);
+constant-series & n<3 guards. Default MA penetration × hospital margin (r~0.50).
+diligence/cross_analysis.py (pure) + ui/cross_analysis_page.py + nav/palette/
+breadcrumb wiring. +15 tests; nav-integrity green.
