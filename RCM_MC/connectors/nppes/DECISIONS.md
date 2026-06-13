@@ -117,3 +117,20 @@ so the slice is reproducible and the tests run offline. This is clearly
 labeled verification data, not real provider data. `data/` (the built DB +
 landing zone) is git-ignored — it is a derived artifact, rebuildable with
 `python -m connectors.nppes.cli build`.
+
+## D12 — CDD analytics layer (cdd.py + report.py)
+The canonical dimensions answer "who/where" but not the diligence "so what".
+Added a read-only analytics layer turning them into commercial-diligence
+signal: TAM by taxonomy × geography, market concentration (HHI scored on the
+DOJ/FTC bands, using each org's captive-provider share as a revenue proxy
+since billed revenue is out of NPPES scope), fragmentation / roll-up scoring,
+incumbent-platform ranking, sub-scale roll-up targets, and roster integrity.
+`report.py` composes these into an IC-ready market-structure brief. All
+metrics are SQL-expressed (window-function firm assignment) so they stay
+bounded on the real 8M universe, and geography swaps from practice-state to
+the Census `fips_county` by changing one column once that dependency lands.
+Exposed via `cli.py cdd …` and mounted at `/v1/lookup/market/{metric}`.
+The synthetic universe was made more realistic (a long tail of solo
+practices + independent providers at unique addresses) so the fragmentation
+and roll-up signals are non-degenerate — real provider markets are never
+all-campus.

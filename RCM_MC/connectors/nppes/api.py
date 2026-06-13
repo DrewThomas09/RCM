@@ -296,9 +296,27 @@ def mount_router(router: Any, store: Any) -> bool:
     def _query_handler(dataset, **params):
         return query_dataset(store, dataset, **params)
 
+    def _market_handler(metric, **params):
+        # CDD market-structure analytics, exposed read-only.
+        from . import cdd, report
+        dispatch = {
+            "tam": cdd.tam_by_taxonomy_geography,
+            "concentration": cdd.market_concentration,
+            "fragmentation": cdd.fragmentation_scan,
+            "roster": cdd.roster_integrity,
+            "platforms": cdd.affiliation_footprint,
+            "rollup": cdd.rollup_targets,
+            "brief": report.market_brief_data,
+        }
+        fn = dispatch.get(metric)
+        if fn is None:
+            raise QueryError(f"unknown market metric {metric!r}")
+        return fn(store, **params)
+
     routes = [
         ("/v1/lookup/provider/{npi}", _provider_handler),
         ("/v1/lookup/provider/search", _search_handler),
+        ("/v1/lookup/market/{metric}", _market_handler),
         ("/v1/query/{dataset}", _query_handler),
     ]
     hook = None

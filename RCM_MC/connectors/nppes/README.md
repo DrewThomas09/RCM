@@ -92,13 +92,37 @@ api.search_providers(store, state="TX", taxonomy_code="207Q00000X")
 api.mount_router(host_router, store)              # plugin-mount /v1 routes (no core edits)
 ```
 
-## Diligence value
+## Diligence value — CDD analytics (`cdd.py` + `report.py`)
+
+The canonical tables are the raw material; `cdd.py` turns them into the
+signals a commercial-diligence analyst asks for, and `report.py` composes
+them into an IC-ready market-structure brief.
+
+| Function | CDD question it answers |
+|---|---|
+| `tam_by_taxonomy_geography` | How big is the market? (provider count by geo × specialty — the TAM spine) |
+| `market_concentration` | How consolidated is it? (HHI per geo × specialty, DOJ/FTC banded) |
+| `fragmentation_scan` | Is there roll-up runway? (independent share × low HHI × firm count) |
+| `affiliation_footprint` | Who are the platforms? (orgs ranked by captive-provider volume) |
+| `rollup_targets` | What are the add-on candidates? (sub-scale independent orgs) |
+| `roster_integrity` | What's the revenue-base risk? (deactivation/reactivation rates) |
+
+```bash
+# One-shot IC-ready brief for a thesis
+python -m connectors.nppes.cli cdd report --db nppes.db \
+    --geo TX --classification "Internal Medicine" --out brief.md
+
+# Individual metrics as JSON
+python -m connectors.nppes.cli cdd concentration --db nppes.db --geo-level state
+python -m connectors.nppes.cli cdd rollup --db nppes.db --geo TX
+```
 
 Provider count by taxonomy × geography is the spine of market-structure /
 TAM analysis (`bridge_provider_taxonomy` + `dim_provider_address`).
 Affiliation reconstructed from shared practice address + legal/other org
 name approximates referral and captive-volume relationships. Deactivation/
-reactivation flags drive roster-integrity checks.
+reactivation flags drive roster-integrity checks. All CDD metrics are also
+mounted under `/v1/lookup/market/{metric}` when a router hook is present.
 
 ## Tests
 

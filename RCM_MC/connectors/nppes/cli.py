@@ -22,7 +22,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import api, pipeline, synth
+from . import api, cdd, pipeline, report, synth
 from .connector import NppesConnector
 from .store import NppesStore
 
@@ -85,6 +85,39 @@ def _cmd_query(args) -> int:
     return 0
 
 
+def _cmd_cdd(args) -> int:
+    store = NppesStore(args.db)
+    if args.metric == "report":
+        md = report.market_brief_markdown(
+            store, geo_level=args.geo_level, geo=args.geo,
+            classification=args.classification)
+        if args.out:
+            with open(args.out, "w", encoding="utf-8") as fh:
+                fh.write(md)
+            print(f"wrote {args.out}")
+        else:
+            print(md)
+        return 0
+    fns = {
+        "tam": lambda: cdd.tam_by_taxonomy_geography(
+            store, geo_level=args.geo_level, classification=args.classification,
+            limit=args.limit),
+        "concentration": lambda: cdd.market_concentration(
+            store, geo_level=args.geo_level, classification=args.classification,
+            limit=args.limit),
+        "fragmentation": lambda: cdd.fragmentation_scan(
+            store, geo_level=args.geo_level, classification=args.classification,
+            limit=args.limit),
+        "roster": lambda: cdd.roster_integrity(store, geo_level=args.geo_level),
+        "platforms": lambda: cdd.affiliation_footprint(store, limit=args.limit),
+        "rollup": lambda: cdd.rollup_targets(
+            store, classification=args.classification, geo_level=args.geo_level,
+            geo=args.geo, limit=args.limit),
+    }
+    print(json.dumps(fns[args.metric](), indent=2, default=str))
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="connectors.nppes.cli")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -110,6 +143,18 @@ def main(argv=None) -> int:
     sp.add_argument("--filter", action="append")
     sp.add_argument("--limit", type=int, default=20)
     sp.set_defaults(fn=_cmd_query)
+
+    sp = sub.add_parser("cdd", help="commercial-diligence market analytics")
+    sp.add_argument("metric", choices=["tam", "concentration", "fragmentation",
+                                       "roster", "platforms", "rollup", "report"])
+    sp.add_argument("--db", default="nppes.db")
+    sp.add_argument("--geo-level", default="state",
+                    choices=["state", "city", "zip5", "county"])
+    sp.add_argument("--geo")
+    sp.add_argument("--classification")
+    sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--out", help="write report markdown to this path")
+    sp.set_defaults(fn=_cmd_cdd)
 
     args = p.parse_args(argv)
     return args.fn(args)
