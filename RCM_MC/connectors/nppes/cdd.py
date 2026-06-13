@@ -221,6 +221,78 @@ def fragmentation_scan(
     return out[:limit]
 
 
+# Year extracted from an NPPES date, tolerant of both the file's native
+# MM/DD/YYYY and the API's YYYY-MM-DD. Used for growth cohorts.
+_YEAR_EXPR = ("CASE WHEN instr({c},'/')>0 "
+              "THEN substr({c}, length({c})-3, 4) ELSE substr({c},1,4) END")
+
+
+def enumeration_trend(
+    store: Any, *, geo_level: str = "state", geo: Optional[str] = None,
+    classification: Optional[str] = None, since_year: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+    """Provider-growth cohort: new NPI enumerations vs. deactivations per
+    year for a market, with net growth — the "is this market growing?" CDD
+    signal. Returns one row per year, oldest-first."""
+    geo_c = _geo_col(geo_level)
+    enum_year = _YEAR_EXPR.format(c="p.enumeration_date")
+    deact_year = _YEAR_EXPR.format(c="p.deactivation_date")
+    where = [f"{geo_c} IS NOT NULL", f"{geo_c} <> ''"]
+    args: List[Any] = []
+    join_taxo = ""
+    if classification:
+        join_taxo = (" JOIN bridge_provider_taxonomy bt ON bt.npi=p.npi AND bt.primary_flag=1"
+                     " JOIN dim_taxonomy t ON t.taxonomy_code=bt.taxonomy_code")
+        where.append("t.classification = ?"); args.append(classification)
+    if geo:
+        where.append(f"{geo_c} = ?"); args.append(geo)
+    wsql = " AND ".join(where)
+    sql = f"""
+        WITH scoped AS (
+            SELECT p.npi,
+                   {enum_year} AS enum_year,
+                   CASE WHEN p.deactivation_date IS NOT NULL
+                             AND p.deactivation_date <> ''
+                        THEN {deact_year} ELSE NULL END AS deact_year
+            FROM dim_provider p
+            JOIN dim_provider_address a
+                 ON a.npi=p.npi AND a.address_purpose='practice'
+            {join_taxo}
+            WHERE {wsql}
+        ),
+        enrolled AS (
+            SELECT enum_year AS year, COUNT(*) AS new_providers
+            FROM scoped WHERE enum_year GLOB '[12][0-9][0-9][0-9]' GROUP BY enum_year
+        ),
+        retired AS (
+            SELECT deact_year AS year, COUNT(*) AS deactivated
+            FROM scoped WHERE deact_year GLOB '[12][0-9][0-9][0-9]' GROUP BY deact_year
+        )
+        SELECT COALESCE(e.year, r.year) AS year,
+               COALESCE(e.new_providers, 0) AS new_providers,
+               COALESCE(r.deactivated, 0) AS deactivated
+        FROM enrolled e
+        LEFT JOIN retired r ON r.year = e.year
+        UNION
+        SELECT r.year, 0, r.deactivated FROM retired r
+        WHERE r.year NOT IN (SELECT year FROM enrolled)
+        ORDER BY year
+    """
+    with store.connect() as con:
+        rows = con.execute(sql, args).fetchall()
+    out = []
+    cumulative = 0
+    for r in rows:
+        if since_year and int(r["year"]) < since_year:
+            continue
+        net = r["new_providers"] - r["deactivated"]
+        cumulative += net
+        out.append({"year": r["year"], "new_providers": r["new_providers"],
+                    "deactivated": r["deactivated"], "net_growth": net,
+                    "cumulative_net": cumulative})
+    return out
+
+
 def roster_integrity(
     store: Any, *, geo_level: Optional[str] = None,
 ) -> Dict[str, Any]:

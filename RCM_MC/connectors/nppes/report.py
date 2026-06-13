@@ -40,6 +40,9 @@ def market_brief_data(
     if geo:
         frag = [r for r in frag if r["geo"] == geo]
 
+    growth = cdd.enumeration_trend(
+        store, geo_level=geo_level, geo=geo, classification=classification)
+
     platforms = cdd.affiliation_footprint(store, min_confidence=0.5, limit=10)
     targets = cdd.rollup_targets(
         store, classification=classification, geo_level=geo_level, geo=geo,
@@ -54,6 +57,7 @@ def market_brief_data(
         "tam": {"total_providers": tam_total, "rows": tam[:25]},
         "concentration": {"avg_hhi": avg_hhi, "markets": conc[:15]},
         "fragmentation": frag[:15],
+        "growth": growth,
         "platforms": platforms,
         "rollup_targets": targets,
         "roster": {k: v for k, v in roster.items() if k != "by_geo"},
@@ -115,6 +119,20 @@ def market_brief_markdown(
         L.append(f"| {r['geo']} | {r['classification']} | {r['total_providers']:,} | "
                  f"{_fmt_pct(r['independent_share_pct'])} | {r['hhi']:.0f} | "
                  f"{r['rollup_score']:.1f} |")
+
+    if d["growth"]:
+        recent = d["growth"][-1]
+        L += ["", "## 3b. Provider growth (enumeration cohorts)",
+              f"- Latest cohort year **{recent['year']}**: "
+              f"+{recent['new_providers']:,} new / −{recent['deactivated']:,} "
+              f"deactivated (net {recent['net_growth']:+,})",
+              "",
+              "| Year | New | Deactivated | Net | Cumulative |",
+              "|---|---:|---:|---:|---:|"]
+        for r in d["growth"]:
+            L.append(f"| {r['year']} | {r['new_providers']:,} | "
+                     f"{r['deactivated']:,} | {r['net_growth']:+,} | "
+                     f"{r['cumulative_net']:,} |")
 
     L += ["", "## 4. Incumbent platforms (captive-volume proxy)",
           "| Organization | NPI | Captive providers | Avg confidence |",

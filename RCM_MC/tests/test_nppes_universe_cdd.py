@@ -84,6 +84,36 @@ def test_fragmentation_scan_produces_rollup_scores(store):
     assert scores == sorted(scores, reverse=True)
 
 
+def test_enumeration_trend(store):
+    rows = cdd.enumeration_trend(store, geo="TX")
+    assert rows
+    years = [r["year"] for r in rows]
+    assert years == sorted(years)  # oldest-first
+    cum = 0
+    for r in rows:
+        assert r["net_growth"] == r["new_providers"] - r["deactivated"]
+        cum += r["net_growth"]
+        assert r["cumulative_net"] == cum
+        assert r["year"].isdigit() and len(r["year"]) == 4
+
+
+def test_enumeration_trend_handles_slash_dates(store):
+    """Year extraction must tolerate the file's native MM/DD/YYYY too."""
+    # inject a provider with an NPPES-style slash date directly
+    with store.connect() as con:
+        con.execute(
+            "INSERT OR REPLACE INTO dim_provider "
+            "(npi, entity_type, enumeration_date, status, loaded_at) "
+            "VALUES ('1999999999', 1, '03/14/2009', 'active', '2026-01-01')")
+        con.execute(
+            "INSERT OR REPLACE INTO dim_provider_address "
+            "(npi, address_purpose, address_seq, state, geocode_status, loaded_at) "
+            "VALUES ('1999999999','practice',0,'ZZ','pending','2026-01-01')")
+        con.commit()
+    rows = cdd.enumeration_trend(store, geo="ZZ")
+    assert any(r["year"] == "2009" for r in rows)
+
+
 def test_roster_integrity(store):
     rep = cdd.roster_integrity(store, geo_level="state")
     assert rep["total_providers"] > 0

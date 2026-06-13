@@ -108,6 +108,9 @@ def _cmd_cdd(args) -> int:
         "fragmentation": lambda: cdd.fragmentation_scan(
             store, geo_level=args.geo_level, classification=args.classification,
             limit=args.limit),
+        "growth": lambda: cdd.enumeration_trend(
+            store, geo_level=args.geo_level, geo=args.geo,
+            classification=args.classification),
         "roster": lambda: cdd.roster_integrity(store, geo_level=args.geo_level),
         "platforms": lambda: cdd.affiliation_footprint(store, limit=args.limit),
         "rollup": lambda: cdd.rollup_targets(
@@ -146,7 +149,8 @@ def main(argv=None) -> int:
 
     sp = sub.add_parser("cdd", help="commercial-diligence market analytics")
     sp.add_argument("metric", choices=["tam", "concentration", "fragmentation",
-                                       "roster", "platforms", "rollup", "report"])
+                                       "growth", "roster", "platforms", "rollup",
+                                       "report"])
     sp.add_argument("--db", default="nppes.db")
     sp.add_argument("--geo-level", default="state",
                     choices=["state", "city", "zip5", "county"])

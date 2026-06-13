@@ -303,6 +303,7 @@ def mount_router(router: Any, store: Any) -> bool:
             "tam": cdd.tam_by_taxonomy_geography,
             "concentration": cdd.market_concentration,
             "fragmentation": cdd.fragmentation_scan,
+            "growth": cdd.enumeration_trend,
             "roster": cdd.roster_integrity,
             "platforms": cdd.affiliation_footprint,
             "rollup": cdd.rollup_targets,
