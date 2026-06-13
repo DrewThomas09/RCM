@@ -766,3 +766,25 @@ shows a "Ready in-repo" strip of chips linking to the Further Analysis charts
 that already answer that question (provider-universe→8 datasets, drugs/devices→5,
 financials→5, demographics/labor→7, volume/outcomes→4). Mapping validated
 against the live dataset registry at render + in tests. +1 test; sweep 59 passed.
+
+---
+## Checkpoint — wave #106 (2026-06-13)
+Further Analysis: +2 CMS SNF datasets — nurse turnover by state (PBJ median
+total nurse-staff turnover, 51 states; staffing-pressure signal) + SNF 5-star
+rating distribution (quality histogram across ~14.6K facilities). Explorer now
+34 datasets. Suite 47 passed.
+
+---
+## Checkpoint — wave #107 (2026-06-13)
+Further Analysis: +Post-acute quality by state — avg Care Compare rating per
+vertical (SNF/HHA/dialysis 1-5 star, hospice care index 0-10, IRF DTC %),
+cross-vertical quality complement to the count footprint. Explorer now 35
+datasets. +2 targeted tests (snf_turnover pct, postacute_quality scale);
+suite 49 passed.
+
+---
+## Checkpoint — wave #108 (2026-06-13)
+Further Analysis: +Public healthcare comparables — 14 listed companies with
+EV/EBITDA, EV/Revenue, market cap, EV, revenue/EBITDA (TTM), net-debt/EBITDA,
+operating margin ($bn fields re-expressed so usd_b renders 'B'). Added to the
+financials launchpad. Explorer now 36 datasets. +1 test; suite 50 passed.
