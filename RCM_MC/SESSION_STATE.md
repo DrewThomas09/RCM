@@ -655,3 +655,71 @@ by state (designated HPSAs, population in shortage, severity score — unmet-dem
 signal; new HRSA source category). Added public hospital_chow_by_year() to
 snf_chow loader. Explorer now 22 datasets (15 CMS, 1 HRSA). +3 tests; sweep
 78 passed (further + snf_chow + hrsa + nav + palette).
+
+---
+## Checkpoint — wave #92 (2026-06-13) — Public Data APIs surface
+New non-CMS/CDC public-data API layer (field-guide build-out):
+- public_api_catalog.py — reference table of 18 free/key-optional public
+  healthcare APIs organized by diligence question (provider universe, volume/
+  outcomes, drugs/devices, financials, demographics/labor, behavioral/global).
+  Honest status taxonomy (live-client/vendored/registered). +12 tests.
+- public_api_clients.py — stdlib transport (retry, 5xx backoff, rate-limit
+  floor, optional free key) + pure URL builders + typed fetchers for the top
+  free APIs (openFDA, ClinicalTrials v2, RxNorm, Census, ProPublica 990);
+  injectable opener → fully offline-testable, fails closed. +18 tests.
+- /data-apis page + /api/data-apis JSON — KPI strip, CDD coverage-by-category
+  column chart, per-category source tables with auth/rate-limit/status badges
+  + docs links. Wired into Research nav + palette + breadcrumb. +8 tests.
+Sweep: page + nav + catalog + clients + palette = 79 passed.
+
+---
+## Checkpoint — wave #93 (2026-06-13)
+Further Analysis non-CMS expansion (using the public-data catalog's vendored
+sources): +3 datasets — OIG exclusions by state (LEIE compliance-risk density)
++ OIG exclusions by reason (statutory debarment drivers) + ClinicalTrials.gov
+pipeline by phase (biotech/CRO landscape). Explorer now 25 datasets across 9
+source categories (CMS, CDC, Census, Labor, Markets, Derived, HRSA, OIG, NLM).
++1 test; suite 42 passed.
+
+---
+## Checkpoint — wave #94 (2026-06-13)
+/data-apis becomes a launchpad: added explore_route to catalog sources and an
+"Explore →" button on each that links straight to the in-repo chart already
+fed by that source (NPPES→PECOS supply, HRSA→shortage, openFDA→drug shortages,
+ClinicalTrials→trial phases, Census→state demographics, OIG→exclusions). Added
+OIG LEIE as a catalog source (now 19) to keep catalog↔explorer in sync.
+explore_route surfaced in /api/data-apis too. +3 tests; sweep 64 passed.
+
+---
+## Checkpoint — wave #95 (2026-06-13)
+Further Analysis: +1 dataset — value-based payment (APM) adoption by payer
+(Colorado all-payer claims / CIVHC, latest year): share of spend in alternative
+payment models by payer type (MA leads ~42%, then Medicaid, Commercial, CHP+),
+clearly labeled single-state. Excludes rolled-up Total + all-NaN Unknown.
+Explorer now 26 datasets. +1 test; suite 43 passed.
+
+---
+## Checkpoint — wave #96 (2026-06-13)
+CLI: `rcm-mc data apis` — store-free, network-free listing of the public-data
+API catalog (table + --json + --category + --wired-only), mirroring /data-apis
+so the reference table is scriptable. +4 tests.
+
+---
+## Checkpoint — wave #97 (2026-06-13)
+Further Analysis: +1 meta dataset — "Public-data API coverage (by diligence
+question)": charts the public-data API catalog itself (free sources / wired
+in-repo / key-optional per category), tying the /data-apis catalog to the
+explorer. Explorer now 27 datasets. +1 test; suite 44 passed.
+
+---
+## Checkpoint — wave #98 (2026-06-13)
+/data-apis: +2nd professional chart — "Data layer: wired in-repo vs still to
+build" grouped column by diligence question (live-client/vendored vs
+registered), a build-roadmap view alongside the coverage chart. +1 test.
+
+---
+## Checkpoint — wave #99 (2026-06-13)
+public_api_clients: +NPPES and WHO GHO (OData) pure GET builders + typed
+who_gho_indicator fetcher; CLIENT_BUILDERS now covers nppes/openfda/
+clinicaltrials/rxnorm/census_acs/propublica_990/who_gho. +4 tests; client
+suite 21 passed.

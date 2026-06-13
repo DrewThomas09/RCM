@@ -488,6 +488,98 @@ def _load_hrsa_shortage(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_oig_exclusions_state(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """HHS-OIG LEIE program exclusions by state — a compliance / integrity-risk
+    density signal (counts only; PII dropped at ingest)."""
+    from ..data import oig_leie as o
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            n = o.exclusions_for_state(st)
+        except Exception:
+            continue
+        out.append({"state": _STATE_NAMES.get(st, st), "exclusions": n})
+    return out
+
+
+def _load_oig_exclusions_type(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """HHS-OIG LEIE exclusions by statutory exclusion reason — what kind of
+    integrity failures drive provider exclusions."""
+    from ..data import oig_leie as o
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: o.by_exclusion_type(12)):
+        label = r.get("label") or r.get("code")
+        if not label:
+            continue
+        out.append({"reason": str(label), "exclusions": r.get("count")})
+    return out
+
+
+def _load_api_catalog_coverage(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """The public-data API catalog as a chartable view: how many free sources,
+    how many wired in-repo, and how many key-optional answer each diligence
+    question. Lets a partner see the data-source landscape itself."""
+    from ..data_public import public_api_catalog as pac
+    out: List[Dict[str, Any]] = []
+    for _cid, label, members in pac.by_category():
+        out.append({
+            "category": label,
+            "sources": len(members),
+            "wired": sum(1 for s in members if s.is_wired),
+            "no_key": sum(1 for s in members if s.access == "none"),
+        })
+    return out
+
+
+def _load_apm_adoption(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Alternative-payment-model (value-based) adoption by payer, latest year.
+    Colorado all-payer claims database (CIVHC) — a real read on how far each
+    payer type has shifted spend out of fee-for-service. Single-state; labeled
+    as such. Excludes the rolled-up Total and the all-NaN Unknown payer."""
+    from ..data import payer_data as pdm
+    try:
+        df = pdm.apm_adoption_by_payer("Total Medical Spending")
+    except Exception:
+        return []
+    if not hasattr(df, "to_dict") or not len(df):
+        return []
+    try:
+        latest = int(df["year"].max())
+    except Exception:
+        return []
+    out: List[Dict[str, Any]] = []
+    for r in df[df["year"] == latest].to_dict("records"):
+        payer = str(r.get("payer", "")).strip()
+        if payer in ("", "Total", "Unknown"):
+            continue
+        pct = r.get("pct_apm")
+        try:
+            if pct != pct:  # NaN
+                continue
+        except Exception:
+            pass
+        out.append({
+            "payer": payer,
+            "pct_apm": pct,
+            "apm_spend": r.get("apm_spend"),
+            "total_spend": r.get("total_spend"),
+        })
+    return out
+
+
+def _load_clinical_trial_phase(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """ClinicalTrials.gov registered studies by trial phase — the pipeline
+    shape for biotech / CRO / trial-site landscape work."""
+    from ..data import clinical_trials as ct
+    out: List[Dict[str, Any]] = []
+    for r in _safe(ct.phase_breakdown):
+        ph = r.get("phase")
+        if not ph:
+            continue
+        out.append({"phase": str(ph), "studies": r.get("count")})
+    return out
+
+
 def _load_snf_owners(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS SNF ownership — the largest owner organizations by facility count,
     a direct read on chain consolidation in skilled nursing."""
@@ -829,6 +921,64 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_hrsa_shortage,
         note="Primary-care shortage designations and underserved population.",
+    ),
+    Dataset(
+        id="oig_exclusions_state",
+        label="OIG exclusions by state (compliance risk)",
+        category="OIG",
+        source="HHS-OIG List of Excluded Individuals/Entities (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[Measure("exclusions", "Program exclusions", "num")],
+        loader=_load_oig_exclusions_state,
+        note="Federal health-program exclusions by state — integrity-risk density.",
+    ),
+    Dataset(
+        id="oig_exclusions_type",
+        label="OIG exclusions by reason",
+        category="OIG",
+        source="HHS-OIG List of Excluded Individuals/Entities (vendored)",
+        grain="category", dim_key="reason", dim_label="Exclusion reason",
+        measures=[Measure("exclusions", "Program exclusions", "num")],
+        loader=_load_oig_exclusions_type,
+        note="Exclusions by statutory reason — what drives provider debarment.",
+    ),
+    Dataset(
+        id="api_catalog_coverage",
+        label="Public-data API coverage (by diligence question)",
+        category="Derived",
+        source="PEdesk public-data API catalog",
+        grain="category", dim_key="category", dim_label="Diligence question",
+        measures=[
+            Measure("sources", "Free API sources", "num"),
+            Measure("wired", "Wired in-repo", "num"),
+            Measure("no_key", "Key-optional", "num"),
+        ],
+        loader=_load_api_catalog_coverage,
+        note="The free public-data API landscape, by the question each answers.",
+    ),
+    Dataset(
+        id="apm_adoption",
+        label="Value-based payment adoption by payer (CO)",
+        category="Markets",
+        source="Colorado all-payer claims database (CIVHC APM report, vendored)",
+        grain="category", dim_key="payer", dim_label="Payer type",
+        measures=[
+            Measure("pct_apm", "Spend in APMs", _PCT),
+            Measure("apm_spend", "APM spend", "usd_b"),
+            Measure("total_spend", "Total spend", "usd_b"),
+        ],
+        loader=_load_apm_adoption,
+        note="Share of spend in alternative payment models — Colorado, latest year.",
+    ),
+    Dataset(
+        id="clinical_trial_phase",
+        label="Clinical-trial pipeline by phase",
+        category="NLM",
+        source="ClinicalTrials.gov (US NLM) registered studies (vendored)",
+        grain="category", dim_key="phase", dim_label="Trial phase",
+        measures=[Measure("studies", "Registered studies", "num")],
+        loader=_load_clinical_trial_phase,
+        note="Registered study counts by phase — pipeline/competitive landscape.",
     ),
 ]
 

@@ -159,13 +159,52 @@ class CmsDatasetTests(unittest.TestCase):
         table, _ = fa.shape_table(d, ["population_in_shortage"], top_n=5)
         self.assertTrue(table["rows"])
 
+    def test_non_cms_public_sources_added(self):
+        # OIG exclusions + ClinicalTrials.gov extend coverage beyond CMS/HRSA.
+        cats = set(fa.categories())
+        self.assertIn("OIG", cats)
+        self.assertIn("NLM", cats)
+        oig = fa.DATASETS["oig_exclusions_state"]
+        self.assertEqual(oig.grain, "state")
+        table, _ = fa.shape_table(oig, ["exclusions"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        trials = fa.DATASETS["clinical_trial_phase"]
+        ttable, _ = fa.shape_table(trials, ["studies"], top_n=10)
+        self.assertTrue(ttable["rows"])
+
+    def test_api_catalog_coverage_charts_the_catalog(self):
+        from rcm_mc.data_public import public_api_catalog as pac
+        d = fa.DATASETS["api_catalog_coverage"]
+        rows = d.loader(None)
+        # One row per diligence category; counts match the catalog.
+        self.assertEqual(len(rows), len(pac.CATEGORIES))
+        total = sum(r["sources"] for r in rows)
+        self.assertEqual(total, len(pac.all_sources()))
+
+    def test_apm_adoption_is_pct_by_payer(self):
+        d = fa.DATASETS["apm_adoption"]
+        self.assertEqual(d.grain, "category")
+        table, meta = fa.shape_table(d, ["pct_apm"], top_n=10)
+        self.assertEqual(meta["suffix"], "%")
+        # Fractions scaled to 0-100; excludes the rolled-up Total/Unknown.
+        labels = [lbl for lbl, _ in table["rows"]]
+        self.assertNotIn("Total", labels)
+        self.assertNotIn("Unknown", labels)
+        for _, vals in table["rows"]:
+            if vals[0] is not None:
+                self.assertGreater(vals[0], 0.0)
+                self.assertLess(vals[0], 100.0)
+
     def test_new_cms_datasets_appear_on_page(self):
         import html
         for did in ("hcahps", "ma_geo", "provider_supply", "mips",
                     "postacute_footprint", "snf_owners",
                     "mssp_aco_state", "mssp_track",
                     "consolidation_state", "consolidation_trend",
-                    "hrsa_shortage"):
+                    "hrsa_shortage", "oig_exclusions_state",
+                    "oig_exclusions_type", "clinical_trial_phase",
+                    "apm_adoption"):
             h = render_further_analysis_page({"dataset": [did]})
             self.assertIn("<svg", h, f"{did} produced no svg")
             self.assertIn(html.escape(fa.DATASETS[did].label), h)
