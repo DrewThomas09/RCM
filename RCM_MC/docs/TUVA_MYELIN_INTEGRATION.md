@@ -138,8 +138,8 @@ All native, same pattern. ✅ = shipped in this work stream.
 | **Hierarchical/multilevel benchmarking** | small-n facility shrinkage | ✅ `diligence/hierarchical_bench/` — empirical-Bayes partial pooling; consumes `risk_adjustment` O/E |
 | **PMPM / financial** | per-member cost trend, normalized by RAF | ✅ `diligence/pmpm/` — reuses `risk_adjust_metric` for the peer O/E |
 | **Benford's-law screen** | fast billing-integrity check | ✅ `diligence/integrity/benford.py` — first-digit MAD + closed-form χ² |
-| **Episode grouping + service-line P&L** | cost-per-episode, line margin | the unit PE underwrites on |
-| **Quality measures (HEDIS/CQM)** | gap-closure, star drivers | benchmark via `risk_adjust_metric(lower_is_better=False)` |
+| **Episode grouping + service-line P&L** | cost-per-episode, line margin | ✅ `diligence/episodes/` — anchor-triggered, window-merged |
+| **Quality measures (HEDIS/CQM)** | gap-closure, star drivers | ✅ `diligence/quality_measures/` — gap-count + star composite |
 | **Spatial competition (Huff + isochrones)** | TAM / white-space beyond radius circles | optional geo extra |
 | **Referral-network analysis** | captive-volume moat | shared-patient graph centrality |
 

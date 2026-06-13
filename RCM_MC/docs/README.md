@@ -19,6 +19,8 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 - [Survival Analysis (Retention/Readmission)](../rcm_mc/diligence/survival/README.md)
 - [Hierarchical Benchmarking (Partial Pooling)](../rcm_mc/diligence/hierarchical_bench/README.md)
 - [Risk-Adjusted PMPM Trend](../rcm_mc/diligence/pmpm/README.md)
+- [Episode-of-Care Grouping](../rcm_mc/diligence/episodes/README.md)
+- [Quality Measures (HEDIS/CQM)](../rcm_mc/diligence/quality_measures/README.md)
 
 ---
 
