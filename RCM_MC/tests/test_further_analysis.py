@@ -92,9 +92,31 @@ class CmsDatasetTests(unittest.TestCase):
         self.assertEqual(len(table["headers"]), 3)
         self.assertTrue(table["rows"])
 
+    def test_postacute_footprint_aligns_five_verticals_by_state(self):
+        d = fa.DATASETS["postacute_footprint"]
+        self.assertEqual(d.grain, "state")
+        # Five comparable facility-count measures (+ a quality reference).
+        count_keys = ["snf_facilities", "hha_agencies", "hospice_count",
+                      "dialysis_facilities", "irf_facilities"]
+        for k in count_keys:
+            self.assertIsNotNone(d.measure(k), f"missing measure {k}")
+        table, _ = fa.shape_table(d, count_keys, top_n=10)
+        # One dimension column + five measure columns.
+        self.assertEqual(len(table["headers"]), 6)
+        for _, vals in table["rows"]:
+            self.assertEqual(len(vals), 5)
+
+    def test_snf_owners_category_grain_sorts_desc(self):
+        d = fa.DATASETS["snf_owners"]
+        self.assertEqual(d.grain, "category")
+        table, _ = fa.shape_table(d, ["facilities_owned"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+
     def test_new_cms_datasets_appear_on_page(self):
         import html
-        for did in ("hcahps", "ma_geo", "provider_supply", "mips"):
+        for did in ("hcahps", "ma_geo", "provider_supply", "mips",
+                    "postacute_footprint", "snf_owners"):
             h = render_further_analysis_page({"dataset": [did]})
             self.assertIn("<svg", h, f"{did} produced no svg")
             self.assertIn(html.escape(fa.DATASETS[did].label), h)

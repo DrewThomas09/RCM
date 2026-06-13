@@ -360,6 +360,59 @@ def _load_mips(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(mp.mips_category_scores)
 
 
+def _load_postacute_footprint(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Care Compare provider counts across the five post-acute verticals,
+    aligned to one row per state so a partner can compare facility density of
+    SNF / home health / hospice / dialysis / IRF side by side. Counts are
+    directly comparable (all integer facility counts); the SNF overall star
+    average rides along as a quality reference."""
+    from ..data import (snf, home_health as hh, hospice as ho,
+                         dialysis as di, irf)
+
+    def _by_state(fn: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
+        try:
+            return fn() or {}
+        except Exception:
+            return {}
+
+    snf_s = _by_state(snf.load_snf_summary_by_state)
+    hha_s = _by_state(hh.load_home_health_summary_by_state)
+    hos_s = _by_state(ho.load_hospice_summary_by_state)
+    dia_s = _by_state(di.load_dialysis_summary_by_state)
+    irf_s = _by_state(irf.load_irf_summary_by_state)
+
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        row = {
+            "state": _STATE_NAMES.get(st, st),
+            "snf_facilities": (snf_s.get(st) or {}).get("facilities"),
+            "hha_agencies": (hha_s.get(st) or {}).get("agencies"),
+            "hospice_count": (hos_s.get(st) or {}).get("hospices"),
+            "dialysis_facilities": (dia_s.get(st) or {}).get("facilities"),
+            "irf_facilities": (irf_s.get(st) or {}).get("facilities"),
+            "snf_avg_rating": (snf_s.get(st) or {}).get("avg_overall_rating"),
+        }
+        if any(v is not None for k, v in row.items() if k != "state"):
+            out.append(row)
+    return out
+
+
+def _load_snf_owners(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS SNF ownership — the largest owner organizations by facility count,
+    a direct read on chain consolidation in skilled nursing."""
+    from ..data import snf
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: snf.snf_top_owner_orgs(30)):
+        org = r.get("owner_organization")
+        if not org:
+            continue
+        out.append({
+            "owner_organization": str(org).title(),
+            "facilities_owned": r.get("facilities_owned"),
+        })
+    return out
+
+
 # --------------------------------------------------------------------------
 # The registry. Order here is the order shown in the dataset dropdown.
 # --------------------------------------------------------------------------
@@ -599,6 +652,33 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_mips,
         note="MIPS performance-category points (0-100) across clinicians.",
+    ),
+    Dataset(
+        id="postacute_footprint",
+        label="Post-acute provider footprint (state)",
+        category="CMS",
+        source="CMS Care Compare — SNF/HHA/hospice/dialysis/IRF (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("snf_facilities", "Skilled nursing", "num"),
+            Measure("hha_agencies", "Home health", "num"),
+            Measure("hospice_count", "Hospice", "num"),
+            Measure("dialysis_facilities", "Dialysis", "num"),
+            Measure("irf_facilities", "Inpatient rehab", "num"),
+            Measure("snf_avg_rating", "SNF avg star rating", "num"),
+        ],
+        loader=_load_postacute_footprint,
+        note="Facility counts across the five post-acute verticals, by state.",
+    ),
+    Dataset(
+        id="snf_owners", label="SNF ownership concentration (chains)",
+        category="CMS",
+        source="CMS SNF ownership data (vendored)",
+        grain="category", dim_key="owner_organization",
+        dim_label="Owner organization",
+        measures=[Measure("facilities_owned", "Facilities owned", "num")],
+        loader=_load_snf_owners,
+        note="Largest skilled-nursing chains by facility count.",
     ),
 ]
 

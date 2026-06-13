@@ -627,3 +627,12 @@ CMS is now the explorer's largest category (9 sets). All render across the
 23 chart types via the CDD chart kit; no synthetic data. +6 tests
 (test_further_analysis CmsDatasetTests). Full further-analysis + cms +
 palette sweep: 174 passed.
+
+---
+## Checkpoint — wave #89 (2026-06-13)
+Further Analysis post-acute expansion: +2 CMS Care Compare datasets —
+post-acute provider footprint (state: SNF/HHA/hospice/dialysis/IRF facility
+counts aligned per state for cross-vertical density comparison + SNF avg
+star rating) and SNF ownership concentration (largest chains by facility
+count, roll-up read). Explorer now 17 datasets, 11 CMS. +4 tests; suite 36
+passed. All render incl. multi-series grouped bars.
