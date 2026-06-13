@@ -242,6 +242,37 @@ def _load_partd(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(lambda: pdd.top_drugs_by_spend(40))
 
 
+def _load_cost_of_care(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Outpatient cost of care by service line — per-person-per-year (PPPY) and
+    total spend, all-payer / all-region rollup for the latest year. Colorado
+    all-payer claims database (CIVHC); single-state, labeled as such."""
+    from ..data import payer_data as pdm
+    try:
+        df = pdm.load_cost_of_care("outpatient")
+    except Exception:
+        return []
+    if not hasattr(df, "columns") or not len(df):
+        return []
+    try:
+        years = [y for y in df["year"].unique() if str(y).isdigit()]
+        latest = max(years, key=lambda y: int(y))
+    except Exception:
+        return []
+    sub = df[(df["year"] == latest) & (df["payer_type"] == "All")
+             & (df["doi_region"] == "All")]
+    out: List[Dict[str, Any]] = []
+    for r in sub.to_dict("records"):
+        cat = r.get("outpatient_category")
+        if not cat:
+            continue
+        out.append({
+            "service_line": str(cat),
+            "pppy": r.get("pppy"),
+            "total_spend": r.get("total_spend"),
+        })
+    return out
+
+
 def _load_partd_inflation(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS Part D drugs with the steepest 2019-2023 price growth — the IRA
     inflation-rebate / drug-pricing exposure set (distinct from top-spend)."""
@@ -740,6 +771,18 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_partd,
         note="The 40 highest-spend Part D drugs.",
+    ),
+    Dataset(
+        id="cost_of_care", label="Outpatient cost of care by service line (CO)",
+        category="Markets",
+        source="Colorado all-payer claims database (CIVHC cost of care, vendored)",
+        grain="category", dim_key="service_line", dim_label="Service line",
+        measures=[
+            Measure("pppy", "Per-person-per-year", "usd"),
+            Measure("total_spend", "Total spend", "usd_b"),
+        ],
+        loader=_load_cost_of_care,
+        note="Outpatient PPPY and spend by service line — Colorado, latest year.",
     ),
     Dataset(
         id="partd_inflation", label="Part D drug price inflation",

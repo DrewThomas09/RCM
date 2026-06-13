@@ -730,3 +730,10 @@ Further Analysis: +Part D drug price inflation dataset — drugs with the
 steepest 2019-2023 Part D price CAGR (IRA inflation-rebate exposure set,
 distinct from top-spend): price CAGR, price/unit, 2023 spend. Explorer now
 28 datasets. Generic suite covers it; 44 passed.
+
+---
+## Checkpoint — wave #101 (2026-06-13)
+Further Analysis: +Outpatient cost of care by service line (Colorado CIVHC,
+latest-year all-payer/all-region rollup): per-person-per-year + total spend
+across 13 outpatient service lines (Surgery leads PPPY ~$633). Clearly
+single-state. Explorer now 29 datasets. Suite 44 passed.
