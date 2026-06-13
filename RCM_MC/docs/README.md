@@ -14,6 +14,8 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 - [Bear Case Auto-Generator](../rcm_mc/diligence/bear_case/README.md)
 - [Payer Mix Stress](../rcm_mc/diligence/payer_stress/README.md)
 - [Thesis Pipeline](../rcm_mc/diligence/thesis_pipeline/README.md)
+- [Risk Adjustment (CMS-HCC)](../rcm_mc/diligence/risk_adjustment/README.md)
+- [Policy-Shock Evaluator (DiD)](../rcm_mc/diligence/policy_shock/README.md)
 
 ---
 
@@ -27,6 +29,7 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 | [METRIC_PROVENANCE.md](METRIC_PROVENANCE.md) | How each metric traces back to its source, with confidence tiers |
 | [MODEL_IMPROVEMENT.md](MODEL_IMPROVEMENT.md) | Known model limitations and the improvement roadmap (Tier 1–3) |
 | [PE_HEURISTICS.md](PE_HEURISTICS.md) | PE partner rule catalog: 275+ named heuristics, failure patterns, and thesis-trap detectors used by the `pe_intelligence/` brain |
+| [TUVA_MYELIN_INTEGRATION.md](TUVA_MYELIN_INTEGRATION.md) | How the Tuva (analytics core) and Myelin (CMS pricing) patterns are adopted natively — decision, adapter spec, and the risk-adjustment + DiD modules |
 | [UI_KIT.md](UI_KIT.md) | Reference for the canonical UI primitives (buttons / cards / inputs / KPIs) and the semantic color system |
 | [MISSION_ALIGNMENT.md](MISSION_ALIGNMENT.md) | What this product is for, who it serves, what we won't build |
 
