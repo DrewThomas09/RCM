@@ -242,6 +242,41 @@ def _load_partd(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(lambda: pdd.top_drugs_by_spend(40))
 
 
+def _load_hospital_pricing_power(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Hospital commercial pricing power — the commercial price as a multiple of
+    Medicare (blended inpatient+outpatient), latest year, one row per hospital.
+    Colorado all-payer claims (CIVHC reference-based pricing); single-state."""
+    from ..data import payer_data as pdm
+    try:
+        df = pdm.load_reference_based_pricing()
+    except Exception:
+        return []
+    if not hasattr(df, "columns") or not len(df):
+        return []
+    try:
+        latest = int(df["year"].max())
+    except Exception:
+        return []
+    sub = df[(df["year"] == latest)
+             & (df["claim_type"] == "Inpatient/Outpatient Combined")]
+    if not len(sub):
+        return []
+    # One row per hospital — keep the highest-volume filing.
+    sub = sub.sort_values("claims", ascending=False).drop_duplicates(
+        "organization_name")
+    out: List[Dict[str, Any]] = []
+    for r in sub.to_dict("records"):
+        org = r.get("organization_name")
+        if not org:
+            continue
+        out.append({
+            "organization_name": str(org),
+            "hospital_x_medicare": r.get("hospital_pct_medicare"),
+            "claims": r.get("claims"),
+        })
+    return out
+
+
 def _load_metro_demographics(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """Metropolitan statistical area (CBSA) demographics — population, age mix,
     income and coverage at the metro grain, the right unit for hospital/MSO/ASC
@@ -795,6 +830,19 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_partd,
         note="The 40 highest-spend Part D drugs.",
+    ),
+    Dataset(
+        id="hospital_pricing_power",
+        label="Hospital commercial pricing power (CO)",
+        category="Markets",
+        source="Colorado all-payer claims database (CIVHC reference pricing, vendored)",
+        grain="category", dim_key="organization_name", dim_label="Hospital",
+        measures=[
+            Measure("hospital_x_medicare", "Commercial price vs Medicare", "x"),
+            Measure("claims", "Claims", "num"),
+        ],
+        loader=_load_hospital_pricing_power,
+        note="Commercial price as a multiple of Medicare, by hospital — Colorado.",
     ),
     Dataset(
         id="metro_demographics", label="Metro market demographics (CBSA)",

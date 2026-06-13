@@ -745,3 +745,10 @@ statistical areas with population/age/income/uninsured/rural at the metro
 grain (the market-sizing unit, complements state+county demographics).
 Explorer now 30 datasets. +3 targeted tests (partd_inflation distinctness,
 cost_of_care dedup, metro grain); suite 47 passed.
+
+---
+## Checkpoint — wave #103 (2026-06-13)
+Further Analysis: +Hospital commercial pricing power (Colorado CIVHC reference
+pricing) — commercial price as a multiple of Medicare (blended IP+OP), latest
+year, one row per hospital (86 hospitals; top ~5.8x). Pricing-power signal.
+Explorer now 31 datasets. Suite 47 passed.
