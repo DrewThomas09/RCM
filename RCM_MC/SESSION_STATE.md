@@ -710,3 +710,9 @@ Further Analysis: +1 meta dataset — "Public-data API coverage (by diligence
 question)": charts the public-data API catalog itself (free sources / wired
 in-repo / key-optional per category), tying the /data-apis catalog to the
 explorer. Explorer now 27 datasets. +1 test; suite 44 passed.
+
+---
+## Checkpoint — wave #98 (2026-06-13)
+/data-apis: +2nd professional chart — "Data layer: wired in-repo vs still to
+build" grouped column by diligence question (live-client/vendored vs
+registered), a build-roadmap view alongside the coverage chart. +1 test.

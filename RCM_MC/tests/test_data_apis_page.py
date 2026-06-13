@@ -20,6 +20,12 @@ class PageRenderTests(unittest.TestCase):
         self.assertIn("Public APIs", h)       # KPI label
         self.assertIn("No key needed", h)
 
+    def test_has_two_professional_charts(self):
+        h = render_data_apis_page({})
+        # Coverage-by-question + wired-vs-registered roadmap.
+        self.assertGreaterEqual(h.count("<svg"), 2)
+        self.assertIn("wired in-repo vs", h.lower())
+
     def test_every_source_appears(self):
         import html
         h = render_data_apis_page({})

@@ -52,6 +52,28 @@ def _coverage_chart() -> str:
     return render_cdd_chart("column", table, opts)
 
 
+def _wiring_chart() -> str:
+    """Grouped view of what's wired in-repo vs still registered, by question —
+    the build roadmap for the data layer."""
+    from ..cdd_chart_kit import render_cdd_chart
+    rows = []
+    for _cid, label, members in cat.by_category():
+        short = label.split(" & ")[0].split(", ")[0]
+        wired = sum(1 for s in members if s.is_wired)
+        registered = sum(1 for s in members if not s.is_wired)
+        rows.append((short, [wired, registered]))
+    table = {"headers": ["Diligence question", "Wired in-repo", "Registered"],
+             "rows": rows}
+    opts = {
+        "title": "Data layer: wired in-repo vs. still to build",
+        "subtitle": "Live client or vendored snapshot vs. cataloged-only",
+        "palette": "Navy–Teal", "suffix": "", "show_values": True,
+        "legend": True, "width_px": 920,
+        "footnote": "Source: PEdesk public-data API catalog.",
+    }
+    return render_cdd_chart("column", table, opts)
+
+
 def _source_row(s: cat.ApiSource) -> str:
     access_label = cat.ACCESS_LABELS.get(s.access, s.access)
     status_label = cat.STATUS_LABELS.get(s.status, s.status)
@@ -143,7 +165,9 @@ def render_data_apis_page(qs: "Optional[Dict[str, Any]]" = None) -> str:
         'universe every build starts from.</p>')
 
     chart = (f'<div style="margin:16px 0;text-align:center;">'
-             f'{_coverage_chart()}</div>')
+             f'{_coverage_chart()}</div>'
+             f'<div style="margin:16px 0;text-align:center;">'
+             f'{_wiring_chart()}</div>')
 
     sections = "".join(
         _category_section(cid, label, members)
