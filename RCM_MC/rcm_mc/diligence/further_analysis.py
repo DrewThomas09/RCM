@@ -381,6 +381,32 @@ def _load_labor(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_public_comps(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Public healthcare-company comparables — market cap, EV, revenue, EBITDA,
+    trading multiples and margin. $bn fields are re-expressed in raw dollars so
+    the usd_b display scaling shows a 'B' suffix."""
+    from ..market_intel import public_comps as pc
+    out: List[Dict[str, Any]] = []
+    for c in _safe(pc.list_companies):
+        def _bn(v: Any) -> Optional[float]:
+            try:
+                return float(v) * 1_000_000_000.0
+            except (TypeError, ValueError):
+                return None
+        out.append({
+            "name": getattr(c, "name", "") or getattr(c, "ticker", "—"),
+            "ev_ebitda_multiple": getattr(c, "ev_ebitda_multiple", None),
+            "ev_revenue_multiple": getattr(c, "ev_revenue_multiple", None),
+            "market_cap": _bn(getattr(c, "market_cap_usd_bn", None)),
+            "enterprise_value": _bn(getattr(c, "enterprise_value_usd_bn", None)),
+            "revenue_ttm": _bn(getattr(c, "revenue_ttm_usd_bn", None)),
+            "ebitda_ttm": _bn(getattr(c, "ebitda_ttm_usd_bn", None)),
+            "debt_to_ebitda": getattr(c, "debt_to_ebitda", None),
+            "operating_margin": getattr(c, "operating_margin", None),
+        })
+    return out
+
+
 def _load_multiples(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """All EV/EBITDA transaction-multiple bands, read straight from the
     vendored YAML so every specialty × deal-size band is available."""
@@ -998,6 +1024,24 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_labor,
         note="Wage, turnover and vacancy by clinical/admin role.",
+    ),
+    Dataset(
+        id="public_comps", label="Public healthcare comparables",
+        category="Markets",
+        source="Public healthcare-company filings / market data (vendored)",
+        grain="category", dim_key="name", dim_label="Company",
+        measures=[
+            Measure("ev_ebitda_multiple", "EV/EBITDA", "x"),
+            Measure("ev_revenue_multiple", "EV/Revenue", "x"),
+            Measure("market_cap", "Market cap", "usd_b"),
+            Measure("enterprise_value", "Enterprise value", "usd_b"),
+            Measure("revenue_ttm", "Revenue (TTM)", "usd_b"),
+            Measure("ebitda_ttm", "EBITDA (TTM)", "usd_b"),
+            Measure("debt_to_ebitda", "Net debt / EBITDA", "x"),
+            Measure("operating_margin", "Operating margin", _PCT),
+        ],
+        loader=_load_public_comps,
+        note="Listed healthcare comps — multiples, scale and margin.",
     ),
     Dataset(
         id="multiples", label="PE transaction multiples (EV/EBITDA)",

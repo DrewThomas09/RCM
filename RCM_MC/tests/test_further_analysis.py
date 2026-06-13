@@ -200,6 +200,17 @@ class CmsDatasetTests(unittest.TestCase):
         table, _ = fa.shape_table(d, ["population"], top_n=3)
         self.assertIn("New York", table["rows"][0][0])
 
+    def test_public_comps_multiples_and_billions(self):
+        d = fa.DATASETS["public_comps"]
+        # EV/EBITDA renders as a multiple.
+        t_mult, m_mult = fa.shape_table(d, ["ev_ebitda_multiple"], top_n=14)
+        self.assertEqual(m_mult["suffix"], "x")
+        # Market cap renders in billions (UnitedHealth is the largest).
+        t_cap, m_cap = fa.shape_table(d, ["market_cap"], top_n=3)
+        self.assertEqual(m_cap["suffix"], "B")
+        self.assertLess(t_cap["rows"][0][1][0], 100000)   # scaled to ~hundreds
+        self.assertIn("UnitedHealth", t_cap["rows"][0][0])
+
     def test_snf_turnover_covers_states_as_pct(self):
         d = fa.DATASETS["snf_turnover"]
         self.assertEqual(d.grain, "state")

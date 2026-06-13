@@ -127,7 +127,7 @@ _READY_BY_QUESTION: Dict[str, List[str]] = {
     "drugs_devices": ["partd", "partd_inflation", "drug_shortages",
                       "open_payments", "clinical_trial_phase"],
     "financials": ["hcris_state", "hospital_pricing_power", "cost_of_care",
-                   "multiples", "apm_adoption"],
+                   "multiples", "public_comps", "apm_adoption"],
     "demographics_labor": ["state_demographics", "county_demographics",
                            "metro_demographics", "cdc_places", "labor",
                            "ma_penetration", "ma_geo", "snf_turnover"],
