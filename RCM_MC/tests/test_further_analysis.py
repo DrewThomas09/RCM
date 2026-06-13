@@ -40,6 +40,137 @@ class RegistryTests(unittest.TestCase):
                               f"{d.id}.{m.key} not in any row")
 
 
+class CmsDatasetTests(unittest.TestCase):
+    """The expanded CMS dataset coverage (HCAHPS, MA geo, PECOS supply, MIPS)."""
+
+    def test_cms_is_the_largest_category(self):
+        cms = [d for d in fa.list_datasets() if d.category == "CMS"]
+        # The explorer is CMS-heavy by design — at least nine CMS sets.
+        self.assertGreaterEqual(len(cms), 9)
+        for needed in ("hcahps", "ma_geo", "provider_supply", "mips"):
+            self.assertIn(needed, fa.DATASETS)
+            self.assertEqual(fa.DATASETS[needed].category, "CMS")
+
+    def test_hcahps_is_state_grain_top_box_pct(self):
+        d = fa.DATASETS["hcahps"]
+        self.assertEqual(d.grain, "state")
+        table, meta = fa.shape_table(d, ["overall_rating_9_10"], top_n=51)
+        self.assertEqual(meta["suffix"], "%")
+        # Top-box shares are already 0-100 (pct100): not refractioned, plausible.
+        for _, vals in table["rows"]:
+            if vals[0] is not None:
+                self.assertGreater(vals[0], 40.0)
+                self.assertLessEqual(vals[0], 100.0)
+
+    def test_ma_geo_enrollment_sorts_and_fractions_scale(self):
+        d = fa.DATASETS["ma_geo"]
+        table, _ = fa.shape_table(d, ["ma_enrollment"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        # California carries the most MA enrollment in the 2022 cut.
+        self.assertEqual(table["rows"][0][0], "California")
+        # dual_eligible_pct is a 0-1 fraction → display 0-100.
+        dt, dmeta = fa.shape_table(d, ["dual_eligible_pct"], top_n=51)
+        self.assertEqual(dmeta["suffix"], "%")
+        for _, vals in dt["rows"]:
+            if vals[0] is not None:
+                self.assertGreater(vals[0], 1.0)
+                self.assertLess(vals[0], 100.0)
+
+    def test_provider_supply_category_grain(self):
+        d = fa.DATASETS["provider_supply"]
+        self.assertEqual(d.grain, "category")
+        table, _ = fa.shape_table(d, ["enrolled_count"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        # Labels are title-cased, not the raw all-caps source strings.
+        self.assertFalse(table["rows"][0][0].isupper())
+
+    def test_mips_distribution_renders(self):
+        d = fa.DATASETS["mips"]
+        table, _ = fa.shape_table(d, ["mean", "median"], top_n=10)
+        self.assertEqual(len(table["headers"]), 3)
+        self.assertTrue(table["rows"])
+
+    def test_postacute_footprint_aligns_five_verticals_by_state(self):
+        d = fa.DATASETS["postacute_footprint"]
+        self.assertEqual(d.grain, "state")
+        # Five comparable facility-count measures (+ a quality reference).
+        count_keys = ["snf_facilities", "hha_agencies", "hospice_count",
+                      "dialysis_facilities", "irf_facilities"]
+        for k in count_keys:
+            self.assertIsNotNone(d.measure(k), f"missing measure {k}")
+        table, _ = fa.shape_table(d, count_keys, top_n=10)
+        # One dimension column + five measure columns.
+        self.assertEqual(len(table["headers"]), 6)
+        for _, vals in table["rows"]:
+            self.assertEqual(len(vals), 5)
+
+    def test_snf_owners_category_grain_sorts_desc(self):
+        d = fa.DATASETS["snf_owners"]
+        self.assertEqual(d.grain, "category")
+        table, _ = fa.shape_table(d, ["facilities_owned"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+
+    def test_mssp_aco_state_footprint_covers_all_states(self):
+        d = fa.DATASETS["mssp_aco_state"]
+        self.assertEqual(d.grain, "state")
+        rows = d.loader(None)
+        self.assertEqual(len(rows), 51)
+        table, _ = fa.shape_table(d, ["aco_count"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        self.assertTrue(all(v >= 0 for v in vals))
+
+    def test_mssp_track_mix_is_category_grain(self):
+        d = fa.DATASETS["mssp_track"]
+        self.assertEqual(d.grain, "category")
+        table, _ = fa.shape_table(d, ["acos"], top_n=10)
+        self.assertTrue(table["rows"])
+        # ENHANCED (full two-sided risk) is the largest track in the cut.
+        self.assertEqual(table["rows"][0][0], "Enhanced")
+
+    def test_consolidation_state_sums_snf_and_hospital_chow(self):
+        d = fa.DATASETS["consolidation_state"]
+        self.assertEqual(d.grain, "state")
+        rows = {r["state"]: r for r in d.loader(None)}
+        # total_chows is the sum of the two settings, never silently dropped.
+        for r in rows.values():
+            self.assertEqual(
+                r["total_chows"],
+                (r["snf_chows"] or 0) + (r["hospital_chows"] or 0))
+        table, _ = fa.shape_table(d, ["total_chows"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+
+    def test_consolidation_trend_is_a_year_series(self):
+        d = fa.DATASETS["consolidation_trend"]
+        rows = d.loader(None)
+        years = [r["year"] for r in rows]
+        # One row per vintage year, labels are year strings.
+        self.assertEqual(years, sorted(years))
+        self.assertTrue(all(y.isdigit() for y in years))
+
+    def test_hrsa_shortage_is_its_own_source_category(self):
+        d = fa.DATASETS["hrsa_shortage"]
+        self.assertEqual(d.category, "HRSA")
+        self.assertIn("HRSA", fa.categories())
+        table, _ = fa.shape_table(d, ["population_in_shortage"], top_n=5)
+        self.assertTrue(table["rows"])
+
+    def test_new_cms_datasets_appear_on_page(self):
+        import html
+        for did in ("hcahps", "ma_geo", "provider_supply", "mips",
+                    "postacute_footprint", "snf_owners",
+                    "mssp_aco_state", "mssp_track",
+                    "consolidation_state", "consolidation_trend",
+                    "hrsa_shortage"):
+            h = render_further_analysis_page({"dataset": [did]})
+            self.assertIn("<svg", h, f"{did} produced no svg")
+            self.assertIn(html.escape(fa.DATASETS[did].label), h)
+
+
 class ShapeTests(unittest.TestCase):
     def test_shape_returns_chart_kit_table(self):
         d = fa.DATASETS["state_demographics"]

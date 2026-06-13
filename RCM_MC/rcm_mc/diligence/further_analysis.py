@@ -304,6 +304,206 @@ def _load_drug_shortages(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(ds.shortages_by_category)
 
 
+def _load_hcahps(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS HCAHPS patient-experience top-box percentages, one row per state.
+    Values are already 0-100 top-box shares (pct100 — no rescale)."""
+    from ..data import hcahps_data as hc
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            d = hc.hcahps_state(st)
+        except Exception:
+            continue
+        if not d:
+            continue
+        d = dict(d)
+        d["state"] = _STATE_NAMES.get(st, st)
+        out.append(d)
+    return out
+
+
+def _load_ma_geo(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Medicare Advantage geographic variation, one row per state:
+    enrollment, the demographic drivers of risk adjustment, and headline
+    utilization. Percentage fields are 0-1 fractions (scaled at shape time)."""
+    from ..data import ma_data as md
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: md.top_ma_states(60)):
+        st = r.get("state")
+        if st not in _STATE_NAMES:
+            continue
+        r = dict(r)
+        r["state"] = _STATE_NAMES.get(st, st)
+        out.append(r)
+    return out
+
+
+def _load_provider_supply(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS PECOS enrolled-provider counts by provider/supplier type
+    (national). Title-cased so the all-caps source labels read cleanly."""
+    from ..data import provider_supply as ps
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: ps.supply_national_by_type(30)):
+        pt = r.get("provider_type")
+        if not pt:
+            continue
+        out.append({
+            "provider_type": str(pt).title(),
+            "enrolled_count": r.get("enrolled_count"),
+        })
+    return out
+
+
+def _load_mips(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS MIPS performance-category score distribution (0-100 points)."""
+    from ..data import mips_data as mp
+    return _safe(mp.mips_category_scores)
+
+
+def _load_postacute_footprint(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Care Compare provider counts across the five post-acute verticals,
+    aligned to one row per state so a partner can compare facility density of
+    SNF / home health / hospice / dialysis / IRF side by side. Counts are
+    directly comparable (all integer facility counts); the SNF overall star
+    average rides along as a quality reference."""
+    from ..data import (snf, home_health as hh, hospice as ho,
+                         dialysis as di, irf)
+
+    def _by_state(fn: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
+        try:
+            return fn() or {}
+        except Exception:
+            return {}
+
+    snf_s = _by_state(snf.load_snf_summary_by_state)
+    hha_s = _by_state(hh.load_home_health_summary_by_state)
+    hos_s = _by_state(ho.load_hospice_summary_by_state)
+    dia_s = _by_state(di.load_dialysis_summary_by_state)
+    irf_s = _by_state(irf.load_irf_summary_by_state)
+
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        row = {
+            "state": _STATE_NAMES.get(st, st),
+            "snf_facilities": (snf_s.get(st) or {}).get("facilities"),
+            "hha_agencies": (hha_s.get(st) or {}).get("agencies"),
+            "hospice_count": (hos_s.get(st) or {}).get("hospices"),
+            "dialysis_facilities": (dia_s.get(st) or {}).get("facilities"),
+            "irf_facilities": (irf_s.get(st) or {}).get("facilities"),
+            "snf_avg_rating": (snf_s.get(st) or {}).get("avg_overall_rating"),
+        }
+        if any(v is not None for k, v in row.items() if k != "state"):
+            out.append(row)
+    return out
+
+
+def _load_mssp_aco_state(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Medicare Shared Savings Program ACOs operating in each state — a
+    read on value-based-care adoption (a multi-state ACO counts in every
+    state it serves)."""
+    from ..data import mssp_aco_data as m
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            n = m.acos_for_state(st)
+        except Exception:
+            continue
+        out.append({"state": _STATE_NAMES.get(st, st), "aco_count": n})
+    return out
+
+
+def _load_mssp_track(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS MSSP risk-track distribution — how many ACOs sit in each BASIC
+    (upside-only → two-sided) and ENHANCED (full two-sided) track. A direct
+    read on downside-risk appetite across the program."""
+    from ..data import mssp_aco_data as m
+    out: List[Dict[str, Any]] = []
+    for r in _safe(m.mssp_track_breakdown):
+        tr = r.get("track")
+        if not tr:
+            continue
+        out.append({"track": str(tr).title(), "acos": r.get("acos")})
+    return out
+
+
+def _load_consolidation_state(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS change-of-ownership velocity by state — Medicare-enrolled SNF and
+    hospital ownership changes summed across all vintage years. A real
+    consolidation / transaction-velocity signal by market."""
+    from ..data import snf_chow as sc
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            snf_n = sc.total_chows_for_state(st)
+            hosp_n = sc.total_hospital_chows_for_state(st)
+        except Exception:
+            continue
+        out.append({
+            "state": _STATE_NAMES.get(st, st),
+            "snf_chows": snf_n,
+            "hospital_chows": hosp_n,
+            "total_chows": (snf_n or 0) + (hosp_n or 0),
+        })
+    return out
+
+
+def _load_consolidation_trend(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS change-of-ownership national time series — SNF vs hospital ownership
+    changes per year, the consolidation wave as a trend line."""
+    from ..data import snf_chow as sc
+    snf = {int(r["year"]): r.get("chow_count")
+           for r in _safe(sc.chow_by_year) if r.get("year") is not None}
+    hosp = {int(r["year"]): r.get("chow_count")
+            for r in _safe(sc.hospital_chow_by_year)
+            if r.get("year") is not None}
+    out: List[Dict[str, Any]] = []
+    for y in sorted(set(snf) | set(hosp)):
+        out.append({
+            "year": str(y),
+            "snf_chows": snf.get(y),
+            "hospital_chows": hosp.get(y),
+        })
+    return out
+
+
+def _load_hrsa_shortage(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """HRSA primary-care Health Professional Shortage Areas by state — designated
+    HPSA count, shortage severity score, and population in shortage. An unmet
+    primary-care-demand / market-opportunity signal."""
+    from ..data import hrsa_data as h
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            d = h.hpsa_state(st)
+        except Exception:
+            continue
+        if not d:
+            continue
+        out.append({
+            "state": _STATE_NAMES.get(st, st),
+            "designated_pc_hpsas": d.get("designated_pc_hpsas"),
+            "median_hpsa_score": d.get("median_hpsa_score"),
+            "population_in_shortage": d.get("population_in_shortage"),
+        })
+    return out
+
+
+def _load_snf_owners(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS SNF ownership — the largest owner organizations by facility count,
+    a direct read on chain consolidation in skilled nursing."""
+    from ..data import snf
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: snf.snf_top_owner_orgs(30)):
+        org = r.get("owner_organization")
+        if not org:
+            continue
+        out.append({
+            "owner_organization": str(org).title(),
+            "facilities_owned": r.get("facilities_owned"),
+        })
+    return out
+
+
 # --------------------------------------------------------------------------
 # The registry. Order here is the order shown in the dataset dropdown.
 # --------------------------------------------------------------------------
@@ -481,6 +681,154 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("n", "Active shortages", "num")],
         loader=_load_drug_shortages,
         note="Count of active national shortages per therapeutic area.",
+    ),
+    Dataset(
+        id="hcahps", label="HCAHPS patient experience (state)",
+        category="CMS",
+        source="CMS Care Compare HCAHPS survey, state top-box (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("overall_rating_9_10", "Overall rating 9-10", _P100),
+            Measure("would_definitely_recommend", "Would recommend", _P100),
+            Measure("nurse_comm_always", "Nurse communication", _P100),
+            Measure("doctor_comm_always", "Doctor communication", _P100),
+            Measure("staff_explained_meds_always", "Meds explained", _P100),
+            Measure("given_discharge_info", "Discharge info", _P100),
+            Measure("room_always_clean", "Room always clean", _P100),
+            Measure("always_quiet_night", "Quiet at night", _P100),
+        ],
+        loader=_load_hcahps,
+        note="Official CMS patient-survey top-box shares by state.",
+    ),
+    Dataset(
+        id="ma_geo", label="Medicare Advantage profile (state)",
+        category="CMS",
+        source="CMS MA geographic variation, 2022 (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("ma_enrollment", "MA enrollment", "num"),
+            Measure("dual_eligible_pct", "Dual-eligible", _PCT),
+            Measure("avg_age", "Average age", "num"),
+            Measure("female_pct", "Female", _PCT),
+            Measure("race_white_pct", "White", _PCT),
+            Measure("race_black_pct", "Black", _PCT),
+            Measure("race_hispanic_pct", "Hispanic", _PCT),
+            Measure("ip_stays_per_1000", "Inpatient stays / 1,000", "num"),
+            Measure("snf_days_per_1000", "SNF days / 1,000", "num"),
+            Measure("er_visits_per_1000", "ER visits / 1,000", "num"),
+        ],
+        loader=_load_ma_geo,
+        note="MA enrollment, risk-adjustment population mix and utilization.",
+    ),
+    Dataset(
+        id="provider_supply", label="Provider supply by type (PECOS)",
+        category="CMS",
+        source="CMS PECOS enrolled providers, national (vendored)",
+        grain="category", dim_key="provider_type", dim_label="Provider type",
+        measures=[Measure("enrolled_count", "Enrolled providers", "num")],
+        loader=_load_provider_supply,
+        note="Medicare-enrolled provider/supplier counts by type.",
+    ),
+    Dataset(
+        id="mips", label="MIPS score distribution (categories)",
+        category="CMS",
+        source="CMS Quality Payment Program MIPS scores (vendored)",
+        grain="category", dim_key="category", dim_label="Performance category",
+        measures=[
+            Measure("mean", "Mean score", "num"),
+            Measure("median", "Median score", "num"),
+            Measure("p25", "25th percentile", "num"),
+            Measure("p75", "75th percentile", "num"),
+            Measure("n", "Clinicians scored", "num"),
+        ],
+        loader=_load_mips,
+        note="MIPS performance-category points (0-100) across clinicians.",
+    ),
+    Dataset(
+        id="postacute_footprint",
+        label="Post-acute provider footprint (state)",
+        category="CMS",
+        source="CMS Care Compare — SNF/HHA/hospice/dialysis/IRF (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("snf_facilities", "Skilled nursing", "num"),
+            Measure("hha_agencies", "Home health", "num"),
+            Measure("hospice_count", "Hospice", "num"),
+            Measure("dialysis_facilities", "Dialysis", "num"),
+            Measure("irf_facilities", "Inpatient rehab", "num"),
+            Measure("snf_avg_rating", "SNF avg star rating", "num"),
+        ],
+        loader=_load_postacute_footprint,
+        note="Facility counts across the five post-acute verticals, by state.",
+    ),
+    Dataset(
+        id="snf_owners", label="SNF ownership concentration (chains)",
+        category="CMS",
+        source="CMS SNF ownership data (vendored)",
+        grain="category", dim_key="owner_organization",
+        dim_label="Owner organization",
+        measures=[Measure("facilities_owned", "Facilities owned", "num")],
+        loader=_load_snf_owners,
+        note="Largest skilled-nursing chains by facility count.",
+    ),
+    Dataset(
+        id="mssp_aco_state", label="ACO footprint by state (MSSP)",
+        category="CMS",
+        source="CMS Medicare Shared Savings Program ACO directory (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[Measure("aco_count", "ACOs serving state", "num")],
+        loader=_load_mssp_aco_state,
+        note="Shared Savings ACOs operating in each state (value-based care).",
+    ),
+    Dataset(
+        id="mssp_track", label="ACO risk-track mix (MSSP)",
+        category="CMS",
+        source="CMS Medicare Shared Savings Program ACO directory (vendored)",
+        grain="category", dim_key="track", dim_label="Risk track",
+        measures=[Measure("acos", "ACOs in track", "num")],
+        loader=_load_mssp_track,
+        note="ACO counts by BASIC/ENHANCED risk track — downside-risk appetite.",
+    ),
+    Dataset(
+        id="consolidation_state",
+        label="Provider consolidation by state (CHOW)",
+        category="CMS",
+        source="CMS SNF + hospital change-of-ownership records (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("total_chows", "All ownership changes", "num"),
+            Measure("snf_chows", "SNF ownership changes", "num"),
+            Measure("hospital_chows", "Hospital ownership changes", "num"),
+        ],
+        loader=_load_consolidation_state,
+        note="Medicare-enrolled ownership changes by state (transaction velocity).",
+    ),
+    Dataset(
+        id="consolidation_trend",
+        label="Provider consolidation trend (national, by year)",
+        category="CMS",
+        source="CMS SNF + hospital change-of-ownership records (vendored)",
+        grain="category", dim_key="year", dim_label="Year",
+        measures=[
+            Measure("snf_chows", "SNF ownership changes", "num"),
+            Measure("hospital_chows", "Hospital ownership changes", "num"),
+        ],
+        loader=_load_consolidation_trend,
+        note="National ownership-change counts per year — the consolidation wave.",
+    ),
+    Dataset(
+        id="hrsa_shortage",
+        label="Primary-care shortage by state (HRSA HPSA)",
+        category="HRSA",
+        source="HRSA Health Professional Shortage Areas — primary care (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("designated_pc_hpsas", "Designated HPSAs", "num"),
+            Measure("population_in_shortage", "Population in shortage", "num"),
+            Measure("median_hpsa_score", "Median HPSA severity score", "num"),
+        ],
+        loader=_load_hrsa_shortage,
+        note="Primary-care shortage designations and underserved population.",
     ),
 ]
 

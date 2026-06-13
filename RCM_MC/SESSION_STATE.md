@@ -615,3 +615,43 @@ chart kit; dataset/focus/measures/chart-type/sort/top-N controls, all 23 chart
 types, PNG/SVG export, chart gallery, data table, JSON API
 (/api/further-analysis). Wired into Research nav + palette + all-tools + guide
 context. +28 tests incl. live HTTP smoke. No synthetic data.
+
+---
+## Checkpoint — wave #88 (2026-06-13)
+Further Analysis CMS expansion: +4 real vendored CMS datasets wired into
+the Tableau-style explorer (`/further-analysis`) — HCAHPS patient experience
+(state, 8 top-box measures), Medicare Advantage geographic profile (state:
+enrollment + risk-adjustment population mix + utilization, 2022), PECOS
+provider supply by type (national), and MIPS score distribution (categories).
+CMS is now the explorer's largest category (9 sets). All render across the
+23 chart types via the CDD chart kit; no synthetic data. +6 tests
+(test_further_analysis CmsDatasetTests). Full further-analysis + cms +
+palette sweep: 174 passed.
+
+---
+## Checkpoint — wave #89 (2026-06-13)
+Further Analysis post-acute expansion: +2 CMS Care Compare datasets —
+post-acute provider footprint (state: SNF/HHA/hospice/dialysis/IRF facility
+counts aligned per state for cross-vertical density comparison + SNF avg
+star rating) and SNF ownership concentration (largest chains by facility
+count, roll-up read). Explorer now 17 datasets, 11 CMS. +4 tests; suite 36
+passed. All render incl. multi-series grouped bars.
+
+---
+## Checkpoint — wave #90 (2026-06-13)
+Further Analysis value-based-care expansion: +2 CMS Medicare Shared Savings
+Program datasets — ACO footprint by state (Shared Savings ACOs operating in
+each state, VBC adoption read) and ACO risk-track mix (BASIC A-E / ENHANCED
+counts — downside-risk appetite). Explorer now 19 datasets, 13 CMS. +2 tests;
+suite 38 passed. CI: wave #88 (3180b67) green; #89/#90 queued.
+
+---
+## Checkpoint — wave #91 (2026-06-13)
+Further Analysis market-structure expansion: +3 datasets for market analysis —
+provider consolidation by state (CMS SNF + hospital change-of-ownership summed,
+transaction velocity), consolidation trend (national SNF vs hospital CHOW per
+year — the consolidation wave as a time series), and HRSA primary-care shortage
+by state (designated HPSAs, population in shortage, severity score — unmet-demand
+signal; new HRSA source category). Added public hospital_chow_by_year() to
+snf_chow loader. Explorer now 22 datasets (15 CMS, 1 HRSA). +3 tests; sweep
+78 passed (further + snf_chow + hrsa + nav + palette).

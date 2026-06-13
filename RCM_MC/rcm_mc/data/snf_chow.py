@@ -101,3 +101,16 @@ def total_hospital_chows_for_state(state: str) -> int:
         return 0
     st = str(state).strip().upper()
     return int(df[df["state"] == st]["chow_count"].sum())
+
+
+@functools.lru_cache(maxsize=None)
+def _hospital_national_year() -> pd.DataFrame:
+    p = _HDIR / "hospital_chow_national_year.csv"
+    return pd.read_csv(p) if p.exists() else pd.DataFrame()
+
+
+def hospital_chow_by_year() -> List[Dict[str, Any]]:
+    """National hospital change-of-ownership counts per year — the parallel to
+    ``chow_by_year`` for the acute-care setting."""
+    df = _hospital_national_year()
+    return df.to_dict("records") if len(df) else []
