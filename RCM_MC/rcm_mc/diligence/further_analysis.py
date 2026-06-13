@@ -242,6 +242,30 @@ def _load_partd(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(lambda: pdd.top_drugs_by_spend(40))
 
 
+def _load_metro_demographics(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Metropolitan statistical area (CBSA) demographics — population, age mix,
+    income and coverage at the metro grain, the right unit for hospital/MSO/ASC
+    market sizing. Fraction fields are 0-1 (scaled at shape time)."""
+    from ..data import cbsa_demographics as cb
+    rows = _safe(lambda: cb.cbsa_list(area_type="Metropolitan"))
+    out: List[Dict[str, Any]] = []
+    for r in rows:
+        title = r.get("cbsa_title")
+        if not title:
+            continue
+        out.append({
+            "cbsa_title": str(title),
+            "population": r.get("population"),
+            "county_count": r.get("county_count"),
+            "pct_age_65_plus": r.get("pct_age_65_plus"),
+            "median_household_income": r.get("median_household_income"),
+            "uninsured_rate": r.get("uninsured_rate"),
+            "child_poverty_rate": r.get("child_poverty_rate"),
+            "pct_rural": r.get("pct_rural"),
+        })
+    return out
+
+
 def _load_cost_of_care(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """Outpatient cost of care by service line — per-person-per-year (PPPY) and
     total spend, all-payer / all-region rollup for the latest year. Colorado
@@ -771,6 +795,23 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_partd,
         note="The 40 highest-spend Part D drugs.",
+    ),
+    Dataset(
+        id="metro_demographics", label="Metro market demographics (CBSA)",
+        category="Census",
+        source="US Census / OMB CBSA delineations 2023 (vendored)",
+        grain="category", dim_key="cbsa_title", dim_label="Metro area",
+        measures=[
+            Measure("population", "Population", "num"),
+            Measure("county_count", "Counties", "num"),
+            Measure("pct_age_65_plus", "Age 65+", _PCT),
+            Measure("median_household_income", "Median HH income", "usd"),
+            Measure("uninsured_rate", "Uninsured", _PCT),
+            Measure("child_poverty_rate", "Child poverty", _PCT),
+            Measure("pct_rural", "Rural", _PCT),
+        ],
+        loader=_load_metro_demographics,
+        note="382 metropolitan statistical areas — the market-sizing grain.",
     ),
     Dataset(
         id="cost_of_care", label="Outpatient cost of care by service line (CO)",

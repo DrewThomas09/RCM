@@ -173,6 +173,33 @@ class CmsDatasetTests(unittest.TestCase):
         ttable, _ = fa.shape_table(trials, ["studies"], top_n=10)
         self.assertTrue(ttable["rows"])
 
+    def test_partd_inflation_is_distinct_pct_set(self):
+        d = fa.DATASETS["partd_inflation"]
+        table, meta = fa.shape_table(d, ["price_cagr_19_23"], top_n=10)
+        self.assertEqual(meta["suffix"], "%")
+        # Steepest-inflation drugs differ from the top-spend list.
+        spend_top = [lbl for lbl, _ in
+                     fa.shape_table(fa.DATASETS["partd"], ["spend_2023"],
+                                    top_n=10)[0]["rows"]]
+        infl_top = [lbl for lbl, _ in table["rows"]]
+        self.assertNotEqual(spend_top, infl_top)
+
+    def test_cost_of_care_one_row_per_service_line(self):
+        d = fa.DATASETS["cost_of_care"]
+        rows = d.loader(None)
+        lines = [r["service_line"] for r in rows]
+        self.assertEqual(len(lines), len(set(lines)))  # deduped rollup
+        table, _ = fa.shape_table(d, ["pppy"], top_n=20)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+
+    def test_metro_demographics_is_metro_grain(self):
+        d = fa.DATASETS["metro_demographics"]
+        rows = d.loader(None)
+        self.assertGreater(len(rows), 300)   # ~382 metros
+        table, _ = fa.shape_table(d, ["population"], top_n=3)
+        self.assertIn("New York", table["rows"][0][0])
+
     def test_api_catalog_coverage_charts_the_catalog(self):
         from rcm_mc.data_public import public_api_catalog as pac
         d = fa.DATASETS["api_catalog_coverage"]

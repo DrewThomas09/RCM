@@ -737,3 +737,11 @@ Further Analysis: +Outpatient cost of care by service line (Colorado CIVHC,
 latest-year all-payer/all-region rollup): per-person-per-year + total spend
 across 13 outpatient service lines (Surgery leads PPPY ~$633). Clearly
 single-state. Explorer now 29 datasets. Suite 44 passed.
+
+---
+## Checkpoint — wave #102 (2026-06-13)
+Further Analysis: +Metro market demographics (CBSA) — 382 metropolitan
+statistical areas with population/age/income/uninsured/rural at the metro
+grain (the market-sizing unit, complements state+county demographics).
+Explorer now 30 datasets. +3 targeted tests (partd_inflation distinctness,
+cost_of_care dedup, metro grain); suite 47 passed.
