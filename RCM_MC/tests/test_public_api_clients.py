@@ -128,6 +128,66 @@ class TransportTests(unittest.TestCase):
         self.assertAlmostEqual(slept["total"], 0.8, places=5)
 
 
+class PostTransportTests(unittest.TestCase):
+    def _post_opener(self, payload, calls=None):
+        def _open(url, headers, body, timeout):
+            assert headers.get("Content-Type") == "application/json"
+            assert isinstance(body, (bytes, bytearray))
+            if calls is not None:
+                calls.append(json.loads(body))
+            return json.dumps(payload).encode()
+        return _open
+
+    def test_post_json_sends_body_and_parses(self):
+        calls = []
+        client = c.HttpJsonClient(base_url="https://api.x")
+        out = client.post_json("/q", {"a": 1},
+                               opener=self._post_opener({"ok": 1}, calls))
+        self.assertEqual(out, {"ok": 1})
+        self.assertEqual(calls[0], {"a": 1})   # body round-tripped
+
+    def test_post_5xx_retries_then_fails_closed(self):
+        n = {"c": 0}
+
+        def opener(url, headers, body, timeout):
+            n["c"] += 1
+            raise HTTPError(url, 502, "Bad Gateway", {}, None)
+
+        client = c.HttpJsonClient(base_url="https://api.x", retry_count=2)
+        with self.assertRaises(c.PublicApiError):
+            client.post_json("/q", {}, opener=opener, sleep=lambda s: None)
+        self.assertEqual(n["c"], 3)
+
+    def test_sec_companyfacts_zero_pads_cik(self):
+        r = c.sec_companyfacts_request("320193")
+        self.assertTrue(r.url.endswith("/companyfacts/CIK0000320193.json"))
+
+    def test_hrsa_odata_params(self):
+        r = c.hrsa_request("HealthCenters", top=9999, odata_filter="State eq 'TX'")
+        self.assertIn("/api/HealthCenters", r.url)
+        self.assertEqual(r.params["$top"], "1000")     # capped
+        self.assertEqual(r.params["$filter"], "State eq 'TX'")
+
+    def test_usaspending_body_shape(self):
+        body = c.usaspending_recipient_body("HCA", limit=999)
+        self.assertEqual(body["filters"]["keywords"], ["HCA"])
+        self.assertEqual(body["limit"], 100)           # capped
+
+    def test_usaspending_search_unwraps_results(self):
+        out = c.usaspending_spending_by_award(
+            "HCA", opener=lambda u, h, b, t: json.dumps(
+                {"results": [{"x": 1}, {"x": 2}]}).encode())
+        self.assertEqual(len(out), 2)
+
+    def test_bls_body_and_unwrap(self):
+        body = c.bls_timeseries_body(["A", "B"], start_year="2022", api_key="K")
+        self.assertEqual(body["seriesid"], ["A", "B"])
+        self.assertEqual(body["registrationkey"], "K")
+        out = c.bls_timeseries(["A"], opener=lambda u, h, b, t: json.dumps(
+            {"Results": {"series": [{"seriesID": "A"}]}}).encode())
+        self.assertEqual(out[0]["seriesID"], "A")
+
+
 class FetcherTests(unittest.TestCase):
     def test_openfda_search_unwraps_results(self):
         out = c.openfda_search("drug", "event", search="x",
@@ -155,7 +215,7 @@ class FetcherTests(unittest.TestCase):
     def test_available_clients_lists_the_top_apis(self):
         avail = set(c.available_clients())
         for k in ("nppes", "openfda", "clinicaltrials", "rxnorm", "census_acs",
-                  "propublica_990", "who_gho"):
+                  "propublica_990", "who_gho", "sec_edgar", "hrsa"):
             self.assertIn(k, avail)
 
     def test_nppes_request_caps_limit_and_threads_filters(self):

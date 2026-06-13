@@ -788,3 +788,12 @@ Further Analysis: +Public healthcare comparables — 14 listed companies with
 EV/EBITDA, EV/Revenue, market cap, EV, revenue/EBITDA (TTM), net-debt/EBITDA,
 operating margin ($bn fields re-expressed so usd_b renders 'B'). Added to the
 financials launchpad. Explorer now 36 datasets. +1 test; suite 50 passed.
+
+---
+## Checkpoint — wave #109 (2026-06-13)
+public_api_clients: +POST transport (post_json with injectable post-opener,
+same retry/rate-limit/fail-closed semantics) + builders for SEC EDGAR
+(companyfacts/concept, GET), HRSA OData (GET), USAspending (spending_by_award,
+POST body) and BLS (timeseries, POST body). CLIENT_BUILDERS now 9. Catalog
+statuses unchanged (scaffolds, not end-to-end offline loaders). +8 tests;
+client suite 28 passed.

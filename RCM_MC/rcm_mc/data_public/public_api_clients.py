@@ -36,6 +36,8 @@ _DEFAULT_USER_AGENT = (
 
 # Opener signature: (url, headers, timeout_s) -> raw bytes.
 Opener = Callable[[str, Dict[str, str], int], bytes]
+# POST opener signature: (url, headers, body_bytes, timeout_s) -> raw bytes.
+PostOpener = Callable[[str, Dict[str, str], bytes, int], bytes]
 
 
 class PublicApiError(RuntimeError):
@@ -60,6 +62,13 @@ class ApiRequest:
 
 def _default_opener(url: str, headers: Dict[str, str], timeout_s: int) -> bytes:
     req = Request(url, headers=headers)
+    with urlopen(req, timeout=timeout_s) as resp:
+        return resp.read()
+
+
+def _default_post_opener(url: str, headers: Dict[str, str], body: bytes,
+                         timeout_s: int) -> bytes:
+    req = Request(url, data=body, headers=headers, method="POST")
     with urlopen(req, timeout=timeout_s) as resp:
         return resp.read()
 
@@ -142,6 +151,51 @@ class HttpJsonClient:
             f"{self.base_url}: failed after {self.retry_count + 1} attempts: "
             f"{last_exc}"
         ) from last_exc
+
+    def post_json(
+        self,
+        path: str,
+        body: Any,
+        *,
+        opener: Optional[PostOpener] = None,
+        sleep: Callable[[float], None] = time.sleep,
+        now: Callable[[], float] = time.monotonic,
+    ) -> Any:
+        """POST a JSON ``body`` and parse the JSON response — same retry,
+        rate-limit and fail-closed semantics as ``get_json``. Used by APIs that
+        take a query in the request body (USAspending, BLS)."""
+        opener = opener or _default_post_opener
+        url = self.base_url + path if path else self.base_url
+        payload = json.dumps(body).encode("utf-8")
+        headers = {"User-Agent": self.user_agent,
+                   "Accept": "application/json",
+                   "Content-Type": "application/json"}
+        last_exc: Optional[Exception] = None
+        for attempt in range(self.retry_count + 1):
+            self._throttle(sleep, now)
+            try:
+                raw = opener(url, headers, payload, self.timeout_s)
+                self._last_call_s = now()
+                try:
+                    return json.loads(raw)
+                except json.JSONDecodeError as exc:
+                    raise PublicApiError(
+                        f"{self.base_url}: non-JSON response ({len(raw)} bytes)"
+                    ) from exc
+            except HTTPError as exc:
+                last_exc = exc
+                self._last_call_s = now()
+                if exc.code < 500:
+                    raise PublicApiError(
+                        f"{url}: HTTP {exc.code} {exc.reason}") from exc
+                sleep(self.retry_backoff_s * (attempt + 1))
+            except (URLError, TimeoutError, OSError) as exc:
+                last_exc = exc
+                self._last_call_s = now()
+                sleep(self.retry_backoff_s * (attempt + 1))
+        raise PublicApiError(
+            f"{self.base_url}: POST failed after {self.retry_count + 1} "
+            f"attempts: {last_exc}") from last_exc
 
 
 # --------------------------------------------------------------------------
@@ -348,9 +402,99 @@ def who_gho_indicator(indicator: str, *, opener: Optional[Opener] = None,
     return payload.get("value", []) if isinstance(payload, dict) else []
 
 
+# SEC EDGAR — company facts/concepts. https://data.sec.gov/api/xbrl/...
+_SEC_BASE = "https://data.sec.gov"
+
+
+def sec_companyfacts_request(cik: str) -> ApiRequest:
+    """All XBRL facts for a company. CIK is zero-padded to 10 digits."""
+    digits = "".join(ch for ch in str(cik) if ch.isdigit())
+    cik10 = digits.zfill(10)
+    return ApiRequest(url=f"{_SEC_BASE}/api/xbrl/companyfacts/CIK{cik10}.json")
+
+
+def sec_concept_request(cik: str, taxonomy: str, tag: str) -> ApiRequest:
+    digits = "".join(ch for ch in str(cik) if ch.isdigit())
+    cik10 = digits.zfill(10)
+    return ApiRequest(
+        url=f"{_SEC_BASE}/api/xbrl/companyconcept/CIK{cik10}/{taxonomy}/{tag}.json")
+
+
+# HRSA data warehouse — OData. https://data.hrsa.gov/api/...
+_HRSA_BASE = "https://data.hrsa.gov/api"
+
+
+def hrsa_request(dataset: str, *, top: int = 100, skip: int = 0,
+                 odata_filter: str = "") -> ApiRequest:
+    params: Dict[str, str] = {"$format": "json",
+                              "$top": str(max(1, min(int(top), 1000)))}
+    if skip:
+        params["$skip"] = str(int(skip))
+    if odata_filter:
+        params["$filter"] = odata_filter
+    return ApiRequest(url=f"{_HRSA_BASE}/{dataset}", params=params)
+
+
+# USAspending — POST body. https://api.usaspending.gov/api/v2/...
+_USASPENDING_BASE = "https://api.usaspending.gov/api/v2"
+
+
+def usaspending_recipient_body(name: str, *, award_types: Optional[List[str]] = None,
+                               limit: int = 10) -> Dict[str, Any]:
+    """Body for spending_by_award keyword search on a recipient name."""
+    return {
+        "filters": {
+            "keywords": [name],
+            "award_type_codes": award_types or ["A", "B", "C", "D"],
+        },
+        "fields": ["Award ID", "Recipient Name", "Award Amount",
+                   "Awarding Agency"],
+        "limit": max(1, min(int(limit), 100)),
+        "page": 1,
+    }
+
+
+def usaspending_spending_by_award(name: str, *,
+                                  opener: Optional[PostOpener] = None,
+                                  **kw: Any) -> List[Dict[str, Any]]:
+    body = usaspending_recipient_body(name, **kw)
+    client = HttpJsonClient(base_url=_USASPENDING_BASE, min_interval_s=0.2)
+    payload = client.post_json("/search/spending_by_award/", body,
+                               opener=opener)
+    return payload.get("results", []) if isinstance(payload, dict) else []
+
+
+# BLS — POST body. https://api.bls.gov/publicAPI/v2/timeseries/data/
+_BLS_BASE = "https://api.bls.gov/publicAPI/v2"
+
+
+def bls_timeseries_body(series_ids: List[str], *, start_year: str = "",
+                        end_year: str = "", api_key: str = "") -> Dict[str, Any]:
+    body: Dict[str, Any] = {"seriesid": list(series_ids)}
+    if start_year:
+        body["startyear"] = str(start_year)
+    if end_year:
+        body["endyear"] = str(end_year)
+    if api_key:
+        body["registrationkey"] = api_key
+    return body
+
+
+def bls_timeseries(series_ids: List[str], *, opener: Optional[PostOpener] = None,
+                   **kw: Any) -> List[Dict[str, Any]]:
+    body = bls_timeseries_body(series_ids, **kw)
+    client = HttpJsonClient(base_url=_BLS_BASE, min_interval_s=0.2)
+    payload = client.post_json("/timeseries/data/", body, opener=opener)
+    if not isinstance(payload, dict):
+        return []
+    return (payload.get("Results", {}) or {}).get("series", []) or []
+
+
 # Registry of the wired clients, for catalog-driven discovery/tests.
 CLIENT_BUILDERS: Dict[str, Callable[..., ApiRequest]] = {
     "nppes": nppes_request,
+    "sec_edgar": sec_companyfacts_request,
+    "hrsa": hrsa_request,
     "openfda": openfda_request,
     "clinicaltrials": clinicaltrials_request,
     "rxnorm": rxnorm_rxcui_request,
