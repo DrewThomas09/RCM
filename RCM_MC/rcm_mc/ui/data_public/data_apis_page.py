@@ -122,14 +122,15 @@ _READY_BY_QUESTION: Dict[str, List[str]] = {
                           "consolidation_trend", "snf_owners",
                           "postacute_footprint", "oig_exclusions_state",
                           "oig_exclusions_type", "hrsa_shortage"],
-    "volume_outcomes": ["hcahps", "mips", "mips_bands", "hcris_state"],
+    "volume_outcomes": ["hcahps", "mips", "mips_bands", "hcris_state",
+                        "postacute_quality", "snf_rating_dist"],
     "drugs_devices": ["partd", "partd_inflation", "drug_shortages",
                       "open_payments", "clinical_trial_phase"],
     "financials": ["hcris_state", "hospital_pricing_power", "cost_of_care",
                    "multiples", "apm_adoption"],
     "demographics_labor": ["state_demographics", "county_demographics",
                            "metro_demographics", "cdc_places", "labor",
-                           "ma_penetration", "ma_geo"],
+                           "ma_penetration", "ma_geo", "snf_turnover"],
     "behavioral_global": [],
 }
 
