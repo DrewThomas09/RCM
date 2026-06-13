@@ -26,6 +26,11 @@ packet's audit trail.
 """
 from __future__ import annotations
 
+from .benford import (
+    BenfordResult,
+    BenfordVerdict,
+    benford_first_digit,
+)
 from .cohort_censoring import CensoringCheck, check_cohort_censoring
 from .distribution_shift import (
     DistributionScore,
@@ -64,6 +69,8 @@ from .temporal_validity import (
 )
 
 __all__ = [
+    "BenfordResult",
+    "BenfordVerdict",
     "CensoringCheck",
     "DistributionScore",
     "DistributionShiftReport",
@@ -79,6 +86,7 @@ __all__ = [
     "TemporalValidity",
     "assert_provider_disjoint",
     "audit_features",
+    "benford_first_digit",
     "build_split_manifest",
     "check_cohort_censoring",
     "check_distribution_shift",

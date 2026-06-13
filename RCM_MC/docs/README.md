@@ -18,6 +18,7 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 - [Policy-Shock Evaluator (DiD)](../rcm_mc/diligence/policy_shock/README.md)
 - [Survival Analysis (Retention/Readmission)](../rcm_mc/diligence/survival/README.md)
 - [Hierarchical Benchmarking (Partial Pooling)](../rcm_mc/diligence/hierarchical_bench/README.md)
+- [Risk-Adjusted PMPM Trend](../rcm_mc/diligence/pmpm/README.md)
 
 ---
 
