@@ -128,20 +128,24 @@ Default install pulls **none** of these. Every certified adapter does a guarded 
 
 ## 6. Roadmap — further native marts (each tied to a diligence question)
 
-Prioritized after the two shipped modules; all native, same pattern:
+All native, same pattern. ✅ = shipped in this work stream.
 
-| Mart (Tuva analog) | Diligence question | Notes |
+| Mart (Tuva analog) | Diligence question | Status / notes |
 |---|---|---|
+| **Risk adjustment (CMS-HCC)** | case-mix-normalized benchmarking | ✅ `diligence/risk_adjustment/` |
+| **Policy-shock evaluator (DiD)** | causal effect of OBBBA/MA/PFS | ✅ `diligence/policy_shock/` |
+| **Readmissions / retention (survival)** | time-to-readmission, churn/LTV | ✅ `diligence/survival/` — KM + log-rank + Cox |
+| **Hierarchical/multilevel benchmarking** | small-n facility shrinkage | ✅ `diligence/hierarchical_bench/` — empirical-Bayes partial pooling; consumes `risk_adjustment` O/E |
 | **PMPM / financial** | per-member cost trend, normalized by RAF | reuse `risk_adjustment` for the denominator |
-| **Readmissions** (survival) | time-to-readmission, churn/LTV | Kaplan-Meier + Cox; pairs with VBC theses |
 | **Episode grouping + service-line P&L** | cost-per-episode, line margin | the unit PE underwrites on |
 | **Quality measures (HEDIS/CQM)** | gap-closure, star drivers | benchmark via `risk_adjust_metric(lower_is_better=False)` |
-| **Hierarchical/multilevel benchmarking** | small-n facility shrinkage | partial pooling over the existing Ridge work |
 | **Spatial competition (Huff + isochrones)** | TAM / white-space beyond radius circles | optional geo extra |
 | **Referral-network analysis** | captive-volume moat | shared-patient graph centrality |
 | **Benford's-law screen** | fast billing-integrity check | cheap addition to `diligence/integrity/` |
 
 Anomaly detection is already covered by the existing isolation-forest work — ahead of the public fraud repos, which mostly use logistic regression / random forests.
+
+The four shipped marts compose: `risk_adjustment` produces per-unit O/E → `hierarchical_bench` shrinks them so small-n sites rank honestly → `policy_shock` sizes the regulatory headwind on the survivors → `survival` measures whether the retained volume actually sticks. That chain is the case-mix-aware, causally-grounded, small-area-correct benchmarking stack the brief asked for, built without leaving the numpy/pandas envelope.
 
 ---
 

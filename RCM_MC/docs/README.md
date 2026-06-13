@@ -16,6 +16,8 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 - [Thesis Pipeline](../rcm_mc/diligence/thesis_pipeline/README.md)
 - [Risk Adjustment (CMS-HCC)](../rcm_mc/diligence/risk_adjustment/README.md)
 - [Policy-Shock Evaluator (DiD)](../rcm_mc/diligence/policy_shock/README.md)
+- [Survival Analysis (Retention/Readmission)](../rcm_mc/diligence/survival/README.md)
+- [Hierarchical Benchmarking (Partial Pooling)](../rcm_mc/diligence/hierarchical_bench/README.md)
 
 ---
 
