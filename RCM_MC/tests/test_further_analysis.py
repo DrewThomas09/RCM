@@ -173,6 +173,20 @@ class CmsDatasetTests(unittest.TestCase):
         ttable, _ = fa.shape_table(trials, ["studies"], top_n=10)
         self.assertTrue(ttable["rows"])
 
+    def test_apm_adoption_is_pct_by_payer(self):
+        d = fa.DATASETS["apm_adoption"]
+        self.assertEqual(d.grain, "category")
+        table, meta = fa.shape_table(d, ["pct_apm"], top_n=10)
+        self.assertEqual(meta["suffix"], "%")
+        # Fractions scaled to 0-100; excludes the rolled-up Total/Unknown.
+        labels = [lbl for lbl, _ in table["rows"]]
+        self.assertNotIn("Total", labels)
+        self.assertNotIn("Unknown", labels)
+        for _, vals in table["rows"]:
+            if vals[0] is not None:
+                self.assertGreater(vals[0], 0.0)
+                self.assertLess(vals[0], 100.0)
+
     def test_new_cms_datasets_appear_on_page(self):
         import html
         for did in ("hcahps", "ma_geo", "provider_supply", "mips",
@@ -180,7 +194,8 @@ class CmsDatasetTests(unittest.TestCase):
                     "mssp_aco_state", "mssp_track",
                     "consolidation_state", "consolidation_trend",
                     "hrsa_shortage", "oig_exclusions_state",
-                    "oig_exclusions_type", "clinical_trial_phase"):
+                    "oig_exclusions_type", "clinical_trial_phase",
+                    "apm_adoption"):
             h = render_further_analysis_page({"dataset": [did]})
             self.assertIn("<svg", h, f"{did} produced no svg")
             self.assertIn(html.escape(fa.DATASETS[did].label), h)

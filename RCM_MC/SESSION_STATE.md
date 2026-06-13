@@ -689,3 +689,11 @@ fed by that source (NPPES→PECOS supply, HRSA→shortage, openFDA→drug shorta
 ClinicalTrials→trial phases, Census→state demographics, OIG→exclusions). Added
 OIG LEIE as a catalog source (now 19) to keep catalog↔explorer in sync.
 explore_route surfaced in /api/data-apis too. +3 tests; sweep 64 passed.
+
+---
+## Checkpoint — wave #95 (2026-06-13)
+Further Analysis: +1 dataset — value-based payment (APM) adoption by payer
+(Colorado all-payer claims / CIVHC, latest year): share of spend in alternative
+payment models by payer type (MA leads ~42%, then Medicaid, Commercial, CHP+),
+clearly labeled single-state. Excludes rolled-up Total + all-NaN Unknown.
+Explorer now 26 datasets. +1 test; suite 43 passed.

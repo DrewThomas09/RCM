@@ -515,6 +515,42 @@ def _load_oig_exclusions_type(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_apm_adoption(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Alternative-payment-model (value-based) adoption by payer, latest year.
+    Colorado all-payer claims database (CIVHC) — a real read on how far each
+    payer type has shifted spend out of fee-for-service. Single-state; labeled
+    as such. Excludes the rolled-up Total and the all-NaN Unknown payer."""
+    from ..data import payer_data as pdm
+    try:
+        df = pdm.apm_adoption_by_payer("Total Medical Spending")
+    except Exception:
+        return []
+    if not hasattr(df, "to_dict") or not len(df):
+        return []
+    try:
+        latest = int(df["year"].max())
+    except Exception:
+        return []
+    out: List[Dict[str, Any]] = []
+    for r in df[df["year"] == latest].to_dict("records"):
+        payer = str(r.get("payer", "")).strip()
+        if payer in ("", "Total", "Unknown"):
+            continue
+        pct = r.get("pct_apm")
+        try:
+            if pct != pct:  # NaN
+                continue
+        except Exception:
+            pass
+        out.append({
+            "payer": payer,
+            "pct_apm": pct,
+            "apm_spend": r.get("apm_spend"),
+            "total_spend": r.get("total_spend"),
+        })
+    return out
+
+
 def _load_clinical_trial_phase(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """ClinicalTrials.gov registered studies by trial phase — the pipeline
     shape for biotech / CRO / trial-site landscape work."""
@@ -889,6 +925,20 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("exclusions", "Program exclusions", "num")],
         loader=_load_oig_exclusions_type,
         note="Exclusions by statutory reason — what drives provider debarment.",
+    ),
+    Dataset(
+        id="apm_adoption",
+        label="Value-based payment adoption by payer (CO)",
+        category="Markets",
+        source="Colorado all-payer claims database (CIVHC APM report, vendored)",
+        grain="category", dim_key="payer", dim_label="Payer type",
+        measures=[
+            Measure("pct_apm", "Spend in APMs", _PCT),
+            Measure("apm_spend", "APM spend", "usd_b"),
+            Measure("total_spend", "Total spend", "usd_b"),
+        ],
+        loader=_load_apm_adoption,
+        note="Share of spend in alternative payment models — Colorado, latest year.",
     ),
     Dataset(
         id="clinical_trial_phase",
