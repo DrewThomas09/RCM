@@ -468,6 +468,20 @@ def _load_mips(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(mp.mips_category_scores)
 
 
+def _load_mips_bands(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS MIPS final-score distribution by score band — the performance
+    histogram across clinicians (most cluster in the top band)."""
+    from ..data import mips_data as mp
+    out: List[Dict[str, Any]] = []
+    for r in _safe(mp.mips_score_bands):
+        band = r.get("band")
+        if not band:
+            continue
+        out.append({"band": str(band), "clinicians": r.get("count"),
+                    "share": r.get("pct")})
+    return out
+
+
 def _load_postacute_footprint(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS Care Compare provider counts across the five post-acute verticals,
     aligned to one row per state so a partner can compare facility density of
@@ -998,6 +1012,18 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_mips,
         note="MIPS performance-category points (0-100) across clinicians.",
+    ),
+    Dataset(
+        id="mips_bands", label="MIPS final-score distribution",
+        category="CMS",
+        source="CMS Quality Payment Program MIPS scores (vendored)",
+        grain="category", dim_key="band", dim_label="Score band",
+        measures=[
+            Measure("clinicians", "Clinicians", "num"),
+            Measure("share", "Share of clinicians", _P100),
+        ],
+        loader=_load_mips_bands,
+        note="Final-score histogram across clinicians (most cluster 75-100).",
     ),
     Dataset(
         id="postacute_footprint",

@@ -752,3 +752,9 @@ Further Analysis: +Hospital commercial pricing power (Colorado CIVHC reference
 pricing) — commercial price as a multiple of Medicare (blended IP+OP), latest
 year, one row per hospital (86 hospitals; top ~5.8x). Pricing-power signal.
 Explorer now 31 datasets. Suite 47 passed.
+
+---
+## Checkpoint — wave #104 (2026-06-13)
+Further Analysis: +MIPS final-score distribution (histogram of clinician
+final scores by band; ~86% in 75-100). Explorer now 32 datasets. Suite 47
+passed.
