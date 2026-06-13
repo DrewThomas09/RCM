@@ -168,3 +168,60 @@ def _build_order(sort: Optional[List[str]], colset: set) -> str:
             raise QueryError(f"unknown sort field {field_name!r}")
         parts.append(f"{field_name} {'DESC' if desc else 'ASC'}")
     return "ORDER BY " + ", ".join(parts) if parts else ""
+
+
+@dataclass
+class AggregateResult:
+    dataset: str
+    group_by: List[str]
+    rows: List[Dict[str, Any]]      # each: {group cols..., "count": n}
+    limit: int
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "dataset": self.dataset,
+            "group_by": self.group_by,
+            "limit": self.limit,
+            "count": len(self.rows),
+            "rows": self.rows,
+        }
+
+
+def aggregate(
+    store: OpenFdaStore,
+    dataset_id: str,
+    *,
+    group_by: List[str],
+    filters: Optional[Dict[str, Any]] = None,
+    limit: Any = _DEFAULT_LIMIT,
+    descending: bool = True,
+    registry: Optional[Dict[str, RegistryRow]] = None,
+) -> AggregateResult:
+    """Uniform ``count=``-style aggregate over a registered dataset.
+
+    The cheap market-map path the brief calls for, but served from the
+    already-ingested canonical tables (no extra openFDA round-trips):
+    group by one or more whitelisted columns and count rows, ordered by
+    frequency. Same dataset slicing and identifier whitelisting as
+    :func:`query`.
+    """
+    registry = registry or by_dataset_id()
+    row = registry.get(dataset_id)
+    if row is None:
+        raise QueryError(f"unknown dataset {dataset_id!r}")
+    if not group_by:
+        raise QueryError("aggregate requires at least one group_by field")
+    table = row.target_table
+    colset = set(_columns(table))
+    for g in group_by:
+        if g not in colset:
+            raise QueryError(f"unknown group_by field {g!r}")
+    where_sql, args = _build_where(row, filters or {}, colset)
+    lim = _clamp_int(limit, _DEFAULT_LIMIT, 1, _MAX_LIMIT)
+    cols = ", ".join(group_by)
+    order = "DESC" if descending else "ASC"
+    sql = (f"SELECT {cols}, COUNT(*) AS count FROM {table} {where_sql} "
+           f"GROUP BY {cols} ORDER BY count {order} LIMIT ?")
+    rows = [dict(r) for r in store.fetchall(sql, (*args, lim))]
+    return AggregateResult(dataset=dataset_id, group_by=list(group_by),
+                           rows=rows, limit=lim)

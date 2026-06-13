@@ -29,8 +29,10 @@ discover() ─▶ fetch(endpoint, params, cursor) ─▶ raw lake (parquet|jsonl
 | `tables.py` | The 8 canonical tables + 3 crosswalk/rollup helpers; SQLite store with idempotent upsert. |
 | `crosswalk.py` | NDC→RxCUI (wireable, deferred when no RxNorm) + device `product_code` dimension + company persistence. |
 | `registry.py` | Declarative `source=openfda` registry rows (one per dataset). |
-| `query.py` | The `/v1/query` engine: uniform filter / select / sort / paginate. |
+| `query.py` | The `/v1/query` engine: uniform filter / select / sort / paginate **+ `aggregate()` group-by/count** (cheap market maps). |
 | `lookup.py` | `/v1/lookup/drug/{ndc}` + `/v1/lookup/device/{product_code}` enriched fan-out + router-agnostic handler map. |
+| `market_map.py` | Diligence aggregates: clearance timeline + competitive entry by `product_code`, MAUDE intensity (per-UDI-normalized), drug risk by NDC. |
+| `rxnorm_adapter.py` | Concrete NDC→RxCUI resolver backed by RxNav (injectable opener, cached, graceful) — plugs into the crosswalk seam. |
 | `dq.py` | DQ checks: count reconciliation, null-key, NDC→RxCUI coverage. |
 | `state.py` | `STATE.md` (resume), `PROGRESS.md` (append-only), `DECISIONS.md`. |
 | `raw_store.py` | Raw landing zone (parquet when `pyarrow` present, else JSONL). |
@@ -76,9 +78,22 @@ python -m connectors.openfda.cli --root ./data incremental --lookback-days 7
 python -m connectors.openfda.cli --root ./data query openfda_device_510k \
     --filter product_code=DXY --sort -decision_date --limit 20
 
+# Uniform aggregate (cheap market map over canonical tables)
+python -m connectors.openfda.cli --root ./data aggregate openfda_device_510k \
+    --group-by product_code --limit 20
+
+# Diligence market maps
+python -m connectors.openfda.cli --root ./data market-map clearance_timeline --product-code DXY
+python -m connectors.openfda.cli --root ./data market-map competitive_entry
+python -m connectors.openfda.cli --root ./data market-map maude_intensity
+python -m connectors.openfda.cli --root ./data market-map drug_risk
+
 # Enriched lookups
 python -m connectors.openfda.cli --root ./data lookup-drug 0002-1200
 python -m connectors.openfda.cli --root ./data lookup-device DXY
+
+# Resolve NDC->RxCUI live via RxNav during a backfill (needs egress)
+python -m connectors.openfda.cli --root ./data backfill --resolve-rxnorm
 
 # Data-quality suite (+ live count reconciliation)
 python -m connectors.openfda.cli --root ./data dq --reconcile
