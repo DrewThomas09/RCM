@@ -159,13 +159,28 @@ class CmsDatasetTests(unittest.TestCase):
         table, _ = fa.shape_table(d, ["population_in_shortage"], top_n=5)
         self.assertTrue(table["rows"])
 
+    def test_non_cms_public_sources_added(self):
+        # OIG exclusions + ClinicalTrials.gov extend coverage beyond CMS/HRSA.
+        cats = set(fa.categories())
+        self.assertIn("OIG", cats)
+        self.assertIn("NLM", cats)
+        oig = fa.DATASETS["oig_exclusions_state"]
+        self.assertEqual(oig.grain, "state")
+        table, _ = fa.shape_table(oig, ["exclusions"], top_n=5)
+        vals = [v[0] for _, v in table["rows"]]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+        trials = fa.DATASETS["clinical_trial_phase"]
+        ttable, _ = fa.shape_table(trials, ["studies"], top_n=10)
+        self.assertTrue(ttable["rows"])
+
     def test_new_cms_datasets_appear_on_page(self):
         import html
         for did in ("hcahps", "ma_geo", "provider_supply", "mips",
                     "postacute_footprint", "snf_owners",
                     "mssp_aco_state", "mssp_track",
                     "consolidation_state", "consolidation_trend",
-                    "hrsa_shortage"):
+                    "hrsa_shortage", "oig_exclusions_state",
+                    "oig_exclusions_type", "clinical_trial_phase"):
             h = render_further_analysis_page({"dataset": [did]})
             self.assertIn("<svg", h, f"{did} produced no svg")
             self.assertIn(html.escape(fa.DATASETS[did].label), h)

@@ -671,3 +671,12 @@ New non-CMS/CDC public-data API layer (field-guide build-out):
   column chart, per-category source tables with auth/rate-limit/status badges
   + docs links. Wired into Research nav + palette + breadcrumb. +8 tests.
 Sweep: page + nav + catalog + clients + palette = 79 passed.
+
+---
+## Checkpoint — wave #93 (2026-06-13)
+Further Analysis non-CMS expansion (using the public-data catalog's vendored
+sources): +3 datasets — OIG exclusions by state (LEIE compliance-risk density)
++ OIG exclusions by reason (statutory debarment drivers) + ClinicalTrials.gov
+pipeline by phase (biotech/CRO landscape). Explorer now 25 datasets across 9
+source categories (CMS, CDC, Census, Labor, Markets, Derived, HRSA, OIG, NLM).
++1 test; suite 42 passed.

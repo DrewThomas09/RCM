@@ -488,6 +488,46 @@ def _load_hrsa_shortage(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_oig_exclusions_state(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """HHS-OIG LEIE program exclusions by state — a compliance / integrity-risk
+    density signal (counts only; PII dropped at ingest)."""
+    from ..data import oig_leie as o
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        try:
+            n = o.exclusions_for_state(st)
+        except Exception:
+            continue
+        out.append({"state": _STATE_NAMES.get(st, st), "exclusions": n})
+    return out
+
+
+def _load_oig_exclusions_type(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """HHS-OIG LEIE exclusions by statutory exclusion reason — what kind of
+    integrity failures drive provider exclusions."""
+    from ..data import oig_leie as o
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: o.by_exclusion_type(12)):
+        label = r.get("label") or r.get("code")
+        if not label:
+            continue
+        out.append({"reason": str(label), "exclusions": r.get("count")})
+    return out
+
+
+def _load_clinical_trial_phase(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """ClinicalTrials.gov registered studies by trial phase — the pipeline
+    shape for biotech / CRO / trial-site landscape work."""
+    from ..data import clinical_trials as ct
+    out: List[Dict[str, Any]] = []
+    for r in _safe(ct.phase_breakdown):
+        ph = r.get("phase")
+        if not ph:
+            continue
+        out.append({"phase": str(ph), "studies": r.get("count")})
+    return out
+
+
 def _load_snf_owners(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """CMS SNF ownership — the largest owner organizations by facility count,
     a direct read on chain consolidation in skilled nursing."""
@@ -829,6 +869,36 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_hrsa_shortage,
         note="Primary-care shortage designations and underserved population.",
+    ),
+    Dataset(
+        id="oig_exclusions_state",
+        label="OIG exclusions by state (compliance risk)",
+        category="OIG",
+        source="HHS-OIG List of Excluded Individuals/Entities (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[Measure("exclusions", "Program exclusions", "num")],
+        loader=_load_oig_exclusions_state,
+        note="Federal health-program exclusions by state — integrity-risk density.",
+    ),
+    Dataset(
+        id="oig_exclusions_type",
+        label="OIG exclusions by reason",
+        category="OIG",
+        source="HHS-OIG List of Excluded Individuals/Entities (vendored)",
+        grain="category", dim_key="reason", dim_label="Exclusion reason",
+        measures=[Measure("exclusions", "Program exclusions", "num")],
+        loader=_load_oig_exclusions_type,
+        note="Exclusions by statutory reason — what drives provider debarment.",
+    ),
+    Dataset(
+        id="clinical_trial_phase",
+        label="Clinical-trial pipeline by phase",
+        category="NLM",
+        source="ClinicalTrials.gov (US NLM) registered studies (vendored)",
+        grain="category", dim_key="phase", dim_label="Trial phase",
+        measures=[Measure("studies", "Registered studies", "num")],
+        loader=_load_clinical_trial_phase,
+        note="Registered study counts by phase — pipeline/competitive landscape.",
     ),
 ]
 
