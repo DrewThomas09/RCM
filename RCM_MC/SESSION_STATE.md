@@ -703,3 +703,10 @@ Explorer now 26 datasets. +1 test; suite 43 passed.
 CLI: `rcm-mc data apis` — store-free, network-free listing of the public-data
 API catalog (table + --json + --category + --wired-only), mirroring /data-apis
 so the reference table is scriptable. +4 tests.
+
+---
+## Checkpoint — wave #97 (2026-06-13)
+Further Analysis: +1 meta dataset — "Public-data API coverage (by diligence
+question)": charts the public-data API catalog itself (free sources / wired
+in-repo / key-optional per category), tying the /data-apis catalog to the
+explorer. Explorer now 27 datasets. +1 test; suite 44 passed.

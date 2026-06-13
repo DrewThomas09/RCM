@@ -515,6 +515,22 @@ def _load_oig_exclusions_type(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_api_catalog_coverage(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """The public-data API catalog as a chartable view: how many free sources,
+    how many wired in-repo, and how many key-optional answer each diligence
+    question. Lets a partner see the data-source landscape itself."""
+    from ..data_public import public_api_catalog as pac
+    out: List[Dict[str, Any]] = []
+    for _cid, label, members in pac.by_category():
+        out.append({
+            "category": label,
+            "sources": len(members),
+            "wired": sum(1 for s in members if s.is_wired),
+            "no_key": sum(1 for s in members if s.access == "none"),
+        })
+    return out
+
+
 def _load_apm_adoption(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """Alternative-payment-model (value-based) adoption by payer, latest year.
     Colorado all-payer claims database (CIVHC) — a real read on how far each
@@ -925,6 +941,20 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("exclusions", "Program exclusions", "num")],
         loader=_load_oig_exclusions_type,
         note="Exclusions by statutory reason — what drives provider debarment.",
+    ),
+    Dataset(
+        id="api_catalog_coverage",
+        label="Public-data API coverage (by diligence question)",
+        category="Derived",
+        source="PEdesk public-data API catalog",
+        grain="category", dim_key="category", dim_label="Diligence question",
+        measures=[
+            Measure("sources", "Free API sources", "num"),
+            Measure("wired", "Wired in-repo", "num"),
+            Measure("no_key", "Key-optional", "num"),
+        ],
+        loader=_load_api_catalog_coverage,
+        note="The free public-data API landscape, by the question each answers.",
     ),
     Dataset(
         id="apm_adoption",

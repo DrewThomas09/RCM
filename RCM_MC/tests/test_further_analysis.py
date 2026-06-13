@@ -173,6 +173,15 @@ class CmsDatasetTests(unittest.TestCase):
         ttable, _ = fa.shape_table(trials, ["studies"], top_n=10)
         self.assertTrue(ttable["rows"])
 
+    def test_api_catalog_coverage_charts_the_catalog(self):
+        from rcm_mc.data_public import public_api_catalog as pac
+        d = fa.DATASETS["api_catalog_coverage"]
+        rows = d.loader(None)
+        # One row per diligence category; counts match the catalog.
+        self.assertEqual(len(rows), len(pac.CATEGORIES))
+        total = sum(r["sources"] for r in rows)
+        self.assertEqual(total, len(pac.all_sources()))
+
     def test_apm_adoption_is_pct_by_payer(self):
         d = fa.DATASETS["apm_adoption"]
         self.assertEqual(d.grain, "category")
