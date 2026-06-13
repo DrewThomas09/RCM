@@ -452,6 +452,73 @@ def resolve_export_to_ein(records: List[CapIQRecord], **kw: Any) -> List[EinReso
     return [resolve_record_to_ein(r, **kw) for r in records]
 
 
+# ── Unified identity (one call across all three universes) ─────────────────
+# A target rarely declares which universe it lives in. A hospital system has a
+# CCN; a physician/dental/home-health group has an NPI; a nonprofit has an EIN —
+# and a nonprofit hospital has all three. Running the resolvers separately
+# forces the caller to stitch the answer; this returns a single identity card.
+@dataclass
+class EntityIdentity:
+    capiq_id: str
+    company_name: str
+    ccn: Optional[str] = None
+    ccn_status: ResolutionStatus = ResolutionStatus.UNMATCHED
+    npi: Optional[str] = None
+    npi_status: ResolutionStatus = ResolutionStatus.UNMATCHED
+    ein: Optional[str] = None
+    ein_status: ResolutionStatus = ResolutionStatus.UNMATCHED
+
+    @property
+    def resolved_kinds(self) -> List[str]:
+        """The identifier kinds that resolved cleanly (CCN/NPI/EIN), in a
+        stable order. Empty means the target matched nothing — likely a
+        for-profit non-facility, or a name too generic to resolve."""
+        out: List[str] = []
+        if self.ccn_status is ResolutionStatus.RESOLVED:
+            out.append("ccn")
+        if self.npi_status is ResolutionStatus.RESOLVED:
+            out.append("npi")
+        if self.ein_status is ResolutionStatus.RESOLVED:
+            out.append("ein")
+        return out
+
+    @property
+    def any_ambiguous(self) -> bool:
+        """True if any universe found plausible-but-unconfirmed matches — a cue
+        to surface candidates for a human pick rather than trust the card."""
+        return ResolutionStatus.AMBIGUOUS in (
+            self.ccn_status, self.npi_status, self.ein_status)
+
+
+def resolve_identity(
+    rec: CapIQRecord,
+    *,
+    npi_fetch: Optional[Any] = None,
+    ein_fetch: Optional[Any] = None,
+    accept_threshold: float = 0.90,
+    ambiguity_margin: float = 0.05,
+    limit: int = 10,
+) -> EntityIdentity:
+    """Resolve one CapIQ company across all three universes in a single call.
+
+    Delegates to the three resolvers (each keeps its own surfaced-ambiguity
+    discipline) and folds the outcomes into one :class:`EntityIdentity`. The
+    NPPES/ProPublica fetches are injectable so this is offline-testable; the
+    CCN path reads the shipped HCRIS data (local, no network).
+    """
+    kw = dict(accept_threshold=accept_threshold,
+              ambiguity_margin=ambiguity_margin, limit=limit)
+    ccn = resolve_record(rec, **kw)
+    npi = resolve_record_to_npi(rec, fetch=npi_fetch, **kw)
+    ein = resolve_record_to_ein(rec, fetch=ein_fetch, **kw)
+    return EntityIdentity(
+        capiq_id=rec.capiq_id, company_name=rec.company_name,
+        ccn=ccn.ccn, ccn_status=ccn.status,
+        npi=npi.npi, npi_status=npi.status,
+        ein=ein.ein, ein_status=ein.status,
+    )
+
+
 # Fields HCRIS (CMS public) contributes that a financial export typically
 # lacks — this is the "fill the gaps with CMS data" payload.
 _CMS_GAP_FIELDS = (

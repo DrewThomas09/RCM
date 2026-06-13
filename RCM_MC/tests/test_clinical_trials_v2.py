@@ -91,5 +91,24 @@ class LandscapeTests(unittest.TestCase):
         self.assertEqual(ct.clinicaltrials_landscape([]), [])
 
 
+class FetchLandscapeTests(unittest.TestCase):
+    def test_fetch_then_rollup_via_injected_opener(self):
+        import json
+
+        payload = {"studies": [
+            _study("NCT01", "Acme Bio", ["PHASE2"], enrollment=100),
+            _study("NCT02", "Acme Bio", ["PHASE3"], enrollment=200),
+        ]}
+
+        def opener(url, headers, timeout):
+            assert "clinicaltrials.gov/api/v2/studies" in url
+            return json.dumps(payload).encode()
+
+        rows = ct.fetch_landscape(condition="psoriasis", opener=opener)
+        self.assertEqual(rows[0]["sponsor"], "Acme Bio")
+        self.assertEqual(rows[0]["trials"], 2)
+        self.assertEqual(rows[0]["total_enrollment"], 300)
+
+
 if __name__ == "__main__":
     unittest.main()

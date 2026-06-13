@@ -17,6 +17,8 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
+from .public_api_clients import Opener, clinicaltrials_search
+
 
 def _proto(study: Dict[str, Any]) -> Dict[str, Any]:
     p = study.get("protocolSection", study)
@@ -98,3 +100,17 @@ def clinicaltrials_landscape(studies: List[Dict[str, Any]]
         })
     rows.sort(key=lambda r: (-r["trials"], r["sponsor"]))
     return rows
+
+
+def fetch_landscape(*, condition: str = "", term: str = "", sponsor: str = "",
+                    phase: str = "", page_size: int = 100,
+                    opener: Optional[Opener] = None) -> List[Dict[str, Any]]:
+    """Live competitive landscape for a query: fetch matching v2 studies and
+    roll them up by lead sponsor in one call. The opener is injectable, so the
+    fetch→rollup path is offline-testable; with no opener it hits the live v2
+    API via ``clinicaltrials_search`` (which fails closed on transport error).
+    """
+    studies = clinicaltrials_search(
+        condition=condition, term=term, sponsor=sponsor, phase=phase,
+        page_size=page_size, opener=opener)
+    return clinicaltrials_landscape(studies)

@@ -102,6 +102,30 @@ class TestNpiResolution(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0].status, ResolutionStatus.RESOLVED)
 
+    def test_unified_identity_folds_provider_match(self):
+        # NPI resolves cleanly; CCN/EIN don't (generic non-hospital name) →
+        # one identity card listing only the provider universe.
+        npi_fetch = _fetch_returning([
+            _FakeProvider("1922011111", "Znx Specialty Provider Group LLC", "TX"),
+        ])
+        ident = capiq.resolve_identity(
+            _rec("Znx Specialty Provider Group LLC", "TX"),
+            npi_fetch=npi_fetch,
+            ein_fetch=lambda n, s, l: [])
+        self.assertEqual(ident.npi, "1922011111")
+        self.assertEqual(ident.npi_status, ResolutionStatus.RESOLVED)
+        self.assertIn("npi", ident.resolved_kinds)
+        self.assertNotIn("ein", ident.resolved_kinds)
+        self.assertIsNone(ident.ein)
+
+    def test_unified_identity_unmatched_everywhere(self):
+        ident = capiq.resolve_identity(
+            _rec("Zzqx For-Profit Software LLC", "TX"),
+            npi_fetch=lambda n, s, l: [],
+            ein_fetch=lambda n, s, l: [])
+        self.assertEqual(ident.resolved_kinds, [])
+        self.assertFalse(ident.any_ambiguous)
+
     def test_default_fetch_fails_closed_when_registry_raises(self):
         # An unreachable/erroring NPPES must yield no candidates (→ UNMATCHED
         # upstream), never raise — exercised without a socket by patching the
