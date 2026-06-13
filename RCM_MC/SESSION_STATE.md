@@ -697,3 +697,9 @@ Further Analysis: +1 dataset — value-based payment (APM) adoption by payer
 payment models by payer type (MA leads ~42%, then Medicaid, Commercial, CHP+),
 clearly labeled single-state. Excludes rolled-up Total + all-NaN Unknown.
 Explorer now 26 datasets. +1 test; suite 43 passed.
+
+---
+## Checkpoint — wave #96 (2026-06-13)
+CLI: `rcm-mc data apis` — store-free, network-free listing of the public-data
+API catalog (table + --json + --category + --wired-only), mirroring /data-apis
+so the reference table is scriptable. +4 tests.

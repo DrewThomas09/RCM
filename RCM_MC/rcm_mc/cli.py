@@ -1154,6 +1154,17 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         help="Census of HCRIS metric gaps + the researched fill source for each",
     )
 
+    a = sub.add_parser(
+        "apis",
+        help="List the free public-data API catalog (the /data-apis reference table)",
+    )
+    a.add_argument("--json", action="store_true",
+                   help="Emit the full catalog as JSON instead of a table")
+    a.add_argument("--category", default="",
+                   help="Filter to one diligence-question category id")
+    a.add_argument("--wired-only", action="store_true",
+                   help="Only sources with a live client or vendored loader")
+
     # NPPES has a different shape — per-CCN, not bulk — so it gets its
     # own subcommand rather than fitting awkwardly into --source.
     n = sub.add_parser(
@@ -1199,6 +1210,53 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
             "\nARTIFACT gaps are inconsistent filings (flag, don't fill); "
             "RE-INGEST/EXTERNAL gaps have a public fill source — see "
             "rcm_mc/data/gap_fill_registry.py.\n")
+        return 0
+
+    if args.action == "apis":
+        # Read-only catalog listing — no store, no network. Mirrors the
+        # /data-apis page so the reference table is scriptable too.
+        from .data_public import public_api_catalog as pac
+
+        sources = pac.all_sources()
+        if args.category:
+            sources = [s for s in sources if s.category == args.category]
+        if args.wired_only:
+            sources = [s for s in sources if s.is_wired]
+
+        if args.json:
+            import json as _json
+            payload = {
+                "summary": pac.summary(),
+                "sources": [{
+                    "id": s.id, "name": s.name, "operator": s.operator,
+                    "category": s.category, "base_url": s.base_url,
+                    "docs_url": s.docs_url, "access": s.access,
+                    "rate_limit": s.rate_limit, "formats": s.formats,
+                    "cost": s.cost, "status": s.status,
+                    "is_wired": s.is_wired, "answers": s.answers,
+                    "explore_route": s.explore_route or None,
+                } for s in sources],
+            }
+            sys.stdout.write(_json.dumps(payload, indent=2) + "\n")
+            return 0
+
+        summ = pac.summary()
+        sys.stdout.write(
+            f"Public-data API catalog — {summ['total']} sources, "
+            f"{summ['wired']} wired, {summ['no_key']} key-optional\n\n")
+        current = None
+        for s in sources:
+            if s.category != current:
+                current = s.category
+                sys.stdout.write(f"── {pac.category_label(current)} ──\n")
+            access = pac.ACCESS_LABELS.get(s.access, s.access)
+            status = pac.STATUS_LABELS.get(s.status, s.status)
+            sys.stdout.write(
+                f"  {s.name:<34} [{access:<12}] [{status:<16}]\n"
+                f"      {s.answers}\n"
+                f"      {s.base_url}\n")
+        if not sources:
+            sys.stdout.write("  (no sources match the filter)\n")
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.
