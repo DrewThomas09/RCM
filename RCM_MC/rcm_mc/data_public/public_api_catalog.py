@@ -128,7 +128,8 @@ _SOURCES: List[ApiSource] = [
         base_url="https://api.census.gov/data/{year}/cbp",
         docs_url="https://www.census.gov/data/developers/data-sets/cbp-nonemp.html",
         access="key-required", rate_limit="500/day without key; higher with key",
-        formats="JSON", cost="free-key", status="registered",
+        formats="JSON", cost="free-key", status="live-client",
+        client_module="rcm_mc/data_public/census_market.py",
         answers="How fragmented is this provider market, and is there roll-up runway?",
         why="Establishment + employment counts by NAICS (e.g. 621111 physician "
             "offices) — the cleanest free way to size a fragmented market.",
@@ -283,7 +284,8 @@ _SOURCES: List[ApiSource] = [
         base_url="https://api.census.gov/data/timeseries/healthins/sahie",
         docs_url="https://www.census.gov/data/developers/data-sets/Health-Insurance-SAHIE.html",
         access="key-required", rate_limit="500/day without key; higher with key",
-        formats="JSON", cost="free-key", status="registered",
+        formats="JSON", cost="free-key", status="live-client",
+        client_module="rcm_mc/data_public/census_market.py",
         answers="What is the payer mix / uninsured rate for a county?",
         why="Small-Area Health Insurance Estimates — uninsured rate and Medicaid "
             "eligibility proxy for payer-mix modeling.",
