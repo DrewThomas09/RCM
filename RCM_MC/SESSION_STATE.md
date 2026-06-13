@@ -723,3 +723,10 @@ public_api_clients: +NPPES and WHO GHO (OData) pure GET builders + typed
 who_gho_indicator fetcher; CLIENT_BUILDERS now covers nppes/openfda/
 clinicaltrials/rxnorm/census_acs/propublica_990/who_gho. +4 tests; client
 suite 21 passed.
+
+---
+## Checkpoint — wave #100 (2026-06-13)
+Further Analysis: +Part D drug price inflation dataset — drugs with the
+steepest 2019-2023 Part D price CAGR (IRA inflation-rebate exposure set,
+distinct from top-spend): price CAGR, price/unit, 2023 spend. Explorer now
+28 datasets. Generic suite covers it; 44 passed.

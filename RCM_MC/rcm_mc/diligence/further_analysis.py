@@ -242,6 +242,24 @@ def _load_partd(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return _safe(lambda: pdd.top_drugs_by_spend(40))
 
 
+def _load_partd_inflation(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Part D drugs with the steepest 2019-2023 price growth — the IRA
+    inflation-rebate / drug-pricing exposure set (distinct from top-spend)."""
+    from ..data import partd_drug as pdd
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: pdd.top_drugs_by_price_inflation(25)):
+        brand = r.get("brand")
+        if not brand:
+            continue
+        out.append({
+            "brand": str(brand),
+            "price_cagr_19_23": r.get("price_cagr_19_23"),
+            "price_per_unit_2023": r.get("price_per_unit_2023"),
+            "spend_2023": r.get("spend_2023"),
+        })
+    return out
+
+
 def _load_open_payments(_focus: Optional[str]) -> List[Dict[str, Any]]:
     from ..data import open_payments as op
     rows = _safe(lambda: op.top_reporting_entities(25))
@@ -722,6 +740,19 @@ _DATASETS_LIST: List[Dataset] = [
         ],
         loader=_load_partd,
         note="The 40 highest-spend Part D drugs.",
+    ),
+    Dataset(
+        id="partd_inflation", label="Part D drug price inflation",
+        category="CMS",
+        source="CMS Medicare Part D drug spending (vendored)",
+        grain="category", dim_key="brand", dim_label="Drug",
+        measures=[
+            Measure("price_cagr_19_23", "Price CAGR '19-'23", _PCT),
+            Measure("price_per_unit_2023", "Price per unit", "usd"),
+            Measure("spend_2023", "2023 spend", "usd_b"),
+        ],
+        loader=_load_partd_inflation,
+        note="Drugs with the steepest Part D price growth (IRA exposure set).",
     ),
     Dataset(
         id="open_payments", label="Open Payments top entities",
