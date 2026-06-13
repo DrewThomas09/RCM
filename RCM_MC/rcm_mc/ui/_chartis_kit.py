@@ -11812,6 +11812,12 @@ def chartis_shell(
         '<html lang="en"><head>'
         '<meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        # The product is a single light parchment theme. Declaring the
+        # scheme stops browsers in OS dark mode from auto-darkening form
+        # controls/scrollbars (which clashed with the parchment surfaces),
+        # and theme-color tints the mobile address bar to match the topbar.
+        '<meta name="color-scheme" content="light">'
+        '<meta name="theme-color" content="#faf6ec">'
         f"<title>{_esc(title)} · PE Desk</title>"
         '<link rel="icon" type="image/svg+xml" href="/favicon.svg">'
         f"{fonts}"
