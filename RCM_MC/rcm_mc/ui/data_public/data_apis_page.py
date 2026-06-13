@@ -62,6 +62,13 @@ def _source_row(s: cat.ApiSource) -> str:
         badges += " " + _badge("microdata $", ("#b5321e", "#f6e7e3"))
     docs = (f'<a href="{_html.escape(s.docs_url)}" target="_blank" '
             f'rel="noopener" style="color:#155752;">docs ↗</a>')
+    explore = ""
+    if s.explore_route:
+        explore = (f'<div style="margin-top:4px;"><a href="'
+                   f'{_html.escape(s.explore_route)}" style="font-size:10px;'
+                   f'font-weight:600;color:#fff;background:#0b2341;'
+                   f'border-radius:10px;padding:2px 9px;text-decoration:none;'
+                   f'white-space:nowrap;">Explore →</a></div>')
     records = (f'<div style="font-size:10px;color:#7a8699;">'
                f'{_html.escape(s.records)}</div>' if s.records else "")
     return (
@@ -74,7 +81,7 @@ def _source_row(s: cat.ApiSource) -> str:
         f'{_html.escape(s.answers)}'
         f'<div style="font-size:10.5px;color:#56606f;margin-top:3px;">'
         f'{_html.escape(s.why)}</div></td>'
-        f'<td style="padding:9px 10px;white-space:nowrap;">{badges}</td>'
+        f'<td style="padding:9px 10px;white-space:nowrap;">{badges}{explore}</td>'
         f'<td style="padding:9px 10px;font-size:10.5px;color:#56606f;">'
         f'{_html.escape(s.rate_limit)}'
         f'<div style="font-size:10px;color:#7a8699;margin-top:2px;">'
@@ -165,6 +172,7 @@ def build_data_apis(qs: "Optional[Dict[str, Any]]" = None) -> Dict[str, Any]:
             "status": s.status, "status_label": cat.STATUS_LABELS.get(s.status),
             "key_required": s.key_required, "is_wired": s.is_wired,
             "client_module": s.client_module or None,
+            "explore_route": s.explore_route or None,
             "answers": s.answers, "why": s.why, "records": s.records or None,
         }
     return {

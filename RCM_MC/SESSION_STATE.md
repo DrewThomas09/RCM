@@ -680,3 +680,12 @@ sources): +3 datasets — OIG exclusions by state (LEIE compliance-risk density)
 pipeline by phase (biotech/CRO landscape). Explorer now 25 datasets across 9
 source categories (CMS, CDC, Census, Labor, Markets, Derived, HRSA, OIG, NLM).
 +1 test; suite 42 passed.
+
+---
+## Checkpoint — wave #94 (2026-06-13)
+/data-apis becomes a launchpad: added explore_route to catalog sources and an
+"Explore →" button on each that links straight to the in-repo chart already
+fed by that source (NPPES→PECOS supply, HRSA→shortage, openFDA→drug shortages,
+ClinicalTrials→trial phases, Census→state demographics, OIG→exclusions). Added
+OIG LEIE as a catalog source (now 19) to keep catalog↔explorer in sync.
+explore_route surfaced in /api/data-apis too. +3 tests; sweep 64 passed.

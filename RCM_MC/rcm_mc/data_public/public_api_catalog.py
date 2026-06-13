@@ -75,6 +75,7 @@ class ApiSource:
     why: str                # why it matters for CDD (one line)
     records: str = ""       # scale, if notable
     client_module: str = "" # in-repo module path, if wired
+    explore_route: str = "" # in-repo page that already charts this source
 
     @property
     def key_required(self) -> bool:
@@ -104,6 +105,22 @@ _SOURCES: List[ApiSource] = [
         answers="Who are the providers/competitors in a target's geography?",
         why="Canonical list of every US provider and facility — the starting "
             "point for counting competitors and building a specialty TAM.",
+        explore_route="/further-analysis?dataset=provider_supply",
+    ),
+    ApiSource(
+        id="oig_leie", name="OIG LEIE (exclusions)",
+        operator="HHS Office of Inspector General",
+        category="provider_universe",
+        base_url="https://oig.hhs.gov/exclusions/exclusions_list.asp",
+        docs_url="https://oig.hhs.gov/exclusions/index.asp",
+        access="none", rate_limit="monthly CSV download",
+        formats="CSV", cost="free", status="vendored",
+        records="83K+ excluded parties",
+        client_module="rcm_mc/data/oig_leie.py",
+        answers="Is anyone tied to the target barred from federal health programs?",
+        why="The List of Excluded Individuals/Entities — a compliance / "
+            "integrity screen for acquisitions and credentialing.",
+        explore_route="/further-analysis?dataset=oig_exclusions_state",
     ),
     ApiSource(
         id="census_cbp", name="Census County Business Patterns",
@@ -127,6 +144,7 @@ _SOURCES: List[ApiSource] = [
         answers="Where are the underserved markets and reimbursement-uplift angles?",
         why="FQHCs/health centers, HPSA/MUA-MUP shortage designations, and the "
             "Area Health Resource Files — site-of-care expansion theses.",
+        explore_route="/further-analysis?dataset=hrsa_shortage",
     ),
 
     # ── Volume, utilization & outcomes ───────────────────────────────────
@@ -168,6 +186,7 @@ _SOURCES: List[ApiSource] = [
         answers="What is a device/drug target's regulatory moat and competitive set?",
         why="510(k)/PMA/UDI/recalls/MAUDE for devices; NDC/labeling/recalls/FAERS "
             "for drugs — map clearances and adverse-event exposure.",
+        explore_route="/further-analysis?dataset=drug_shortages",
     ),
     ApiSource(
         id="rxnorm", name="NLM RxNorm (RxNav)", operator="NLM",
@@ -202,6 +221,7 @@ _SOURCES: List[ApiSource] = [
         answers="What is the pipeline/competitive landscape for this asset or site?",
         why="Sponsor, phase, enrollment, sites and status — the core dataset for "
             "biotech, CRO and trial-site competitive work.",
+        explore_route="/further-analysis?dataset=clinical_trial_phase",
     ),
 
     # ── Financials ───────────────────────────────────────────────────────
@@ -253,6 +273,7 @@ _SOURCES: List[ApiSource] = [
         answers="What is the population, income and demand profile of a market?",
         why="County/ZIP population, age and income — drives demand and "
             "catchment modeling.",
+        explore_route="/further-analysis?dataset=state_demographics",
     ),
     ApiSource(
         id="census_sahie", name="Census SAHIE", operator="US Census Bureau",

@@ -38,6 +38,24 @@ class PageRenderTests(unittest.TestCase):
         for s in cat.all_sources():
             self.assertIn(s.docs_url, h)
 
+    def test_explore_launchpad_links_to_in_repo_charts(self):
+        h = render_data_apis_page({})
+        wired_with_route = [s for s in cat.all_sources() if s.explore_route]
+        self.assertTrue(wired_with_route)
+        for s in wired_with_route:
+            self.assertIn(s.explore_route, h)
+            # The route points at a real explorer dataset.
+            self.assertIn("/further-analysis?dataset=", s.explore_route)
+
+    def test_explore_routes_resolve_to_real_datasets(self):
+        from rcm_mc.diligence import further_analysis as fa
+        ids = {d.id for d in fa.list_datasets()}
+        for s in cat.all_sources():
+            if not s.explore_route:
+                continue
+            ds = s.explore_route.split("dataset=", 1)[1].split("&", 1)[0]
+            self.assertIn(ds, ids, f"{s.id} explore route -> unknown {ds}")
+
 
 class JsonApiTests(unittest.TestCase):
     def test_payload_mirrors_catalog(self):
