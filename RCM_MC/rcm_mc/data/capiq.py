@@ -230,6 +230,125 @@ def resolve_export(records: List[CapIQRecord], **kw: Any) -> List[EntityResoluti
     return [resolve_record(r, **kw) for r in records]
 
 
+# ── NPPES NPI resolution (the non-hospital counterpart) ───────────────────
+# ``resolve_record`` reaches CMS CCNs in HCRIS, which only covers Medicare
+# hospital cost-reporters. Most CapIQ/Deal-Library targets are NOT hospitals
+# (physician groups, dental/DSO, home health, infusion, behavioral), so they
+# land UNMATCHED there. NPPES is the provider *universe* — every enrolled
+# org has a Type-2 NPI — so it resolves the entities HCRIS structurally can't.
+@dataclass
+class NpiCandidate:
+    npi: str
+    name: str
+    state: Optional[str]
+    taxonomy: str
+    score: float            # 0..1 SequenceMatcher ratio vs the query name
+
+
+@dataclass
+class NpiResolution:
+    """A CapIQ company mapped (or not) to a NPPES Type-2 organization NPI.
+    Mirrors :class:`EntityResolution` but for the provider universe;
+    ``candidates`` is populated only when AMBIGUOUS so a reviewer can pick
+    without re-querying."""
+    capiq_id: str
+    company_name: str
+    status: ResolutionStatus
+    npi: Optional[str] = None
+    confidence: float = 0.0
+    candidates: List[NpiCandidate] = field(default_factory=list)
+
+
+def _default_npi_fetch(name: str, state: Optional[str], limit: int) -> List[Any]:
+    """Live NPPES org lookup. Imported lazily and behind the injectable
+    ``fetch`` seam so tests never touch the network and a missing/unreachable
+    registry simply yields no candidates (→ UNMATCHED, never a fabricated NPI)."""
+    try:
+        from ..data_public.nppes_api_client import search_by_organization
+    except Exception:
+        return []
+    try:
+        return search_by_organization(name, state or "", limit=limit)
+    except Exception:
+        return []
+
+
+def resolve_record_to_npi(
+    rec: CapIQRecord,
+    *,
+    fetch: Optional[Any] = None,
+    accept_threshold: float = 0.90,
+    ambiguity_margin: float = 0.05,
+    limit: int = 10,
+) -> NpiResolution:
+    """Resolve one CapIQ company to a NPPES Type-2 organization NPI.
+
+    Same conservative decision rule as :func:`resolve_record` — a wrong NPI
+    corrupts provider-supply counts, so an ambiguous match is *surfaced, never
+    auto-picked*:
+
+      * 0 candidates                       → UNMATCHED.
+      * top score ≥ ``accept_threshold`` AND it clears the runner-up by
+        ``ambiguity_margin`` (or is the only candidate) → RESOLVED.
+      * otherwise                          → AMBIGUOUS (candidates returned).
+
+    ``fetch(name, state, limit)`` returns objects exposing ``npi``,
+    ``organization_name``, ``state`` and ``taxonomy_label`` (e.g.
+    ``NppesProvider``); it is injectable so this is fully offline-testable.
+    ``rec.state`` scopes the search, then retries unscoped — a target's HQ
+    geography often differs from where its facilities enroll.
+    """
+    fetch = fetch or _default_npi_fetch
+
+    matches = list(fetch(rec.company_name, rec.state, limit) or [])
+    if not matches and rec.state:
+        matches = list(fetch(rec.company_name, None, limit) or [])
+    if not matches:
+        return NpiResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    cands = [
+        NpiCandidate(
+            npi=str(getattr(m, "npi", "") or ""),
+            name=str(getattr(m, "organization_name", "") or getattr(m, "name", "") or ""),
+            state=(str(getattr(m, "state", "")) or None),
+            taxonomy=str(getattr(m, "taxonomy_label", "") or ""),
+            score=_score(rec.company_name,
+                         getattr(m, "organization_name", "") or getattr(m, "name", "") or ""),
+        )
+        for m in matches if getattr(m, "npi", "")
+    ]
+    cands.sort(key=lambda c: c.score, reverse=True)
+    if not cands:
+        return NpiResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    top = cands[0]
+    runner = cands[1].score if len(cands) > 1 else 0.0
+    clean = top.score >= accept_threshold and (top.score - runner) >= ambiguity_margin
+    if clean:
+        return NpiResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.RESOLVED, npi=top.npi,
+            confidence=round(top.score, 4),
+        )
+    return NpiResolution(
+        capiq_id=rec.capiq_id, company_name=rec.company_name,
+        status=ResolutionStatus.AMBIGUOUS, confidence=round(top.score, 4),
+        candidates=cands,
+    )
+
+
+def resolve_export_to_npi(records: List[CapIQRecord], **kw: Any) -> List[NpiResolution]:
+    """Resolve every parsed record to a NPPES NPI. ``**kw`` forwards thresholds
+    and the ``fetch`` seam to :func:`resolve_record_to_npi`."""
+    return [resolve_record_to_npi(r, **kw) for r in records]
+
+
 # Fields HCRIS (CMS public) contributes that a financial export typically
 # lacks — this is the "fill the gaps with CMS data" payload.
 _CMS_GAP_FIELDS = (
