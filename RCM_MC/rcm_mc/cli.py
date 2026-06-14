@@ -1230,6 +1230,15 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                     help="PE vertical (omit to sweep all; see `data supply`)")
     mk.add_argument("--json", action="store_true", help="Emit JSON")
 
+    # RxNorm drug normalization — name or NDC -> normalized concept.
+    dg = sub.add_parser(
+        "drug",
+        help="Normalize a drug name or NDC to an RxNorm concept (RxNav)",
+    )
+    dg.add_argument("--name", default="", help="Drug name to normalize")
+    dg.add_argument("--ndc", default="", help="NDC to normalize")
+    dg.add_argument("--json", action="store_true", help="Emit JSON")
+
     args = ap.parse_args(argv)
 
     if args.action == "gaps":
@@ -1432,6 +1441,35 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                 f"{(prov if prov is not None else '—'):>9}  "
                 f"{(est if est is not None else '—'):>6}  "
                 f"{(f'{ratio:.2f}' if ratio is not None else '—'):>7}\n")
+        return 0
+
+    if args.action == "drug":
+        # RxNorm normalization. No store needed.
+        from .data_public.public_api_clients import (
+            rxnorm_normalize, PublicApiError)
+
+        if bool(args.name) == bool(args.ndc):
+            sys.stderr.write("provide exactly one of --name or --ndc\n")
+            return 2
+        value = args.name or args.ndc
+        by = "name" if args.name else "ndc"
+        try:
+            rec = rxnorm_normalize(value, by=by)
+        except PublicApiError as exc:
+            sys.stderr.write(f"[FAIL] RxNorm error: {exc}\n")
+            return 1
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rec, indent=2) + "\n")
+            return 0
+        if not rec:
+            sys.stdout.write(f"no RxNorm concept resolved for {value!r}\n")
+            return 0
+        sys.stdout.write(f"RxNorm concept for {value!r}:\n")
+        sys.stdout.write(f"  RxCUI  {rec.get('rxcui', '')}\n")
+        sys.stdout.write(f"  name   {rec.get('name', '')}\n")
+        sys.stdout.write(f"  tty    {rec.get('tty', '')}\n")
+        sys.stdout.write(f"  NDCs   {len(rec.get('ndcs', []))}\n")
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.
