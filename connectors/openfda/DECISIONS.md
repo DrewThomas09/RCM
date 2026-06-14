@@ -132,3 +132,17 @@ The normalizer records first-level fields present on raw records that it
 does not place, and the pipeline appends them here at runtime (with counts)
 so schema drift surfaces instead of silently dropping. Raw is retained in
 the lake, so any unmapped field can be mapped later without re-fetching.
+
+## Incremental watermark (operational)
+
+- **Nightly incrementals resume from a per-endpoint high-watermark**, not a
+  fixed lookback. After each run the pipeline records the max value of the
+  endpoint's `date_field` seen (`EndpointState.high_watermark`); the next
+  incremental seeds the connector start at `watermark - incremental_overlap_days`
+  (default 2). The overlap re-pulls a small tail to catch late-arriving
+  records; idempotent upsert absorbs the duplicates. A missed night
+  therefore self-heals — the window simply stretches back to the last
+  watermark. First incremental (no watermark yet) falls back to
+  `incremental_lookback_days`. Both openFDA date encodings (`YYYYMMDD` and
+  zero-padded `YYYY-MM-DD`) sort lexicographically and an endpoint uses
+  exactly one, so a string `max` is a correct watermark.
