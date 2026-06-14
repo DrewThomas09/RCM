@@ -156,3 +156,15 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   fires obbba_medicaid_exposure + state_pe_oversight only.
 - MILESTONE: NEW-01..NEW-17 all passes:true, wired to `python -m rcm_mc.cdd`.
 - Next: BOLSTER backlog, starting BOLSTER-01 ridge+conformal hardening.
+================================================================================
+[2026-06-14 04:55 UTC] BOLSTER-01 Ridge+conformal (hardened)
+- cdd/forecast.py: Pipeline(StandardScaler, Ridge), alpha via GridSearchCV over
+  logspace(-2,2) with TimeSeriesSplit; split-conformal at 80/95 calibrated on
+  last 20%; holdout coverage check >=nominal-1%; reproducible. Registered.
+- Verified existing rcm_mc/ml/ridge_predictor.py + conformal.py have no LLM on
+  the inference path (grep clean).
+- Also: pyproject [cdd] extra added (sklearn/scipy/lifelines/ruptures), folded
+  into [all]; [dev] left unchanged so CI 3.14 leg installs cleanly. PR #1859
+  opened (draft); CI runs a fixed subset that does not touch cdd/.
+- Evidence: pytest test_ridge_conformal_bolster.py => 8 passed. Coverage 82.5%/95%.
+- Next: BOLSTER-02 isolation-forest anomaly detection.

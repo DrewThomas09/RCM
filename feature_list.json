@@ -214,11 +214,11 @@
       "bucket": "bolster",
       "audience": "internal",
       "priority": 101,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_ridge_conformal_bolster.py",
-      "notes": ""
+      "notes": "sklearn Ridge+StandardScaler, alpha via GridSearchCV/TimeSeriesSplit over logspace(-2,2); split-conformal 80/95; holdout coverage>=nominal-1% (82.5%/95%); reproducible 1e-9; existing ridge_predictor/conformal confirmed LLM-free."
     },
     {
       "id": "BOLSTER-02",

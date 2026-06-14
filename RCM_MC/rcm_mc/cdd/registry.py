@@ -78,6 +78,9 @@ def _autoload() -> None:
         "positioning_map",
         "pricing_cm_bridge",
         "regulatory_flags",
+        "forecast",
+        "anomaly",
+        "changepoint",
     ]
     for name in modules:
         try:
