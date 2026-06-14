@@ -298,9 +298,10 @@ def mount_router(router: Any, store: Any) -> bool:
 
     def _market_handler(metric, **params):
         # CDD market-structure analytics, exposed read-only.
-        from . import cdd, report
+        from . import cdd, report, systems
         dispatch = {
             "tam": cdd.tam_by_taxonomy_geography,
+            "systems": systems.health_systems,
             "concentration": cdd.market_concentration,
             "fragmentation": cdd.fragmentation_scan,
             "growth": cdd.enumeration_trend,

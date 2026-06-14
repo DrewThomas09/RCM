@@ -134,3 +134,17 @@ The synthetic universe was made more realistic (a long tail of solo
 practices + independent providers at unique addresses) so the fragmentation
 and roll-up signals are non-degenerate — real provider markets are never
 all-campus.
+
+## D13 — Health-system (org→org) reconstruction
+`bridge_provider_affiliation` links individuals to organizations; CDD also
+needs the multi-site *health system* an org belongs to. `systems.py` clusters
+Type-2 orgs via union-find over edges where two orgs share a distinctive
+brand/surname name token (≥4 chars, excluding clinical/corporate stopwords —
+a dedicated `SYSTEM_STOPWORDS` set prevents "MEDICINE"/"CARDIOLOGY" from
+anchoring a mega-system) plus a corroborating signal (a second shared token
+or shared state). Connected components are systems, scored with a cohesion
+indicator. Documented limitation: common surnames can over-merge unrelated
+solo practices in one state; cohesion + member list surface that. Kept as a
+read-only analytics function (no materialized table, no pipeline/schema
+change). Exposed via `cdd systems`, `/v1/lookup/market/systems`, and the
+market brief (section 4b).

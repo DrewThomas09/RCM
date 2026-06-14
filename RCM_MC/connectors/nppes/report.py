@@ -14,7 +14,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from . import cdd
+from . import cdd, systems as _systems
 
 
 def market_brief_data(
@@ -44,6 +44,9 @@ def market_brief_data(
         store, geo_level=geo_level, geo=geo, classification=classification)
 
     platforms = cdd.affiliation_footprint(store, min_confidence=0.5, limit=10)
+    sys_all = _systems.health_systems(store, min_members=2, limit=100)
+    if geo:
+        sys_all = [s for s in sys_all if geo in s["states"]]
     targets = cdd.rollup_targets(
         store, classification=classification, geo_level=geo_level, geo=geo,
         max_captive=3, limit=25)
@@ -59,6 +62,7 @@ def market_brief_data(
         "fragmentation": frag[:15],
         "growth": growth,
         "platforms": platforms,
+        "health_systems": sys_all[:15],
         "rollup_targets": targets,
         "roster": {k: v for k, v in roster.items() if k != "by_geo"},
     }
@@ -140,6 +144,18 @@ def market_brief_markdown(
     for r in d["platforms"][:10]:
         L.append(f"| {r['organization_name'] or '(unnamed)'} | {r['npi']} | "
                  f"{r['captive_providers']:,} | {r['avg_confidence']} |")
+
+    if d.get("health_systems"):
+        L += ["", "## 4b. Multi-site health systems (org→org clustering)",
+              "_Heuristic: organizations clustered by shared brand/surname "
+              "name token + corroborating signal (see `systems.py`)._",
+              "",
+              "| System | Member orgs | States | Captive providers | Cohesion |",
+              "|---|---:|---|---:|---:|"]
+        for s in d["health_systems"][:10]:
+            L.append(f"| {s['system_name']} | {s['member_count']} | "
+                     f"{', '.join(s['states'][:6])} | {s['captive_providers']:,} | "
+                     f"{s['cohesion']} |")
 
     L += ["", "## 5. Roll-up candidates (sub-scale independents)",
           "| Organization | NPI | Geography | Captive providers |",
