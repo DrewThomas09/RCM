@@ -208,3 +208,32 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   Appended 8 per-feature decision entries to DECISIONS.md.
 - Evidence: pytest test_decisions_routing.py => 6 passed; missing_decisions == [].
 - Next: BOLSTER-07 data-ingestion reconciliation (last backlog item).
+================================================================================
+[2026-06-14 06:06 UTC] BOLSTER-07 Ingestion reconciliation -- BACKLOG COMPLETE
+- cdd/ingestion.py: reconcile_join (CCN/NPI/FIPS canonical keys), key-uniqueness,
+  join-integrity, <=11 cell suppression, vintage-stamp requirement. Registered.
+- Evidence: pytest test_ingestion_reconciliation.py => 7 passed. HCRIS->POS
+  integrity 1.0, HCRIS->CareCompare 2/3 (CCN3 orphan), 1 cell suppressed.
+
+================================================================================
+[2026-06-14 06:08 UTC] SESSION HANDOFF
+SHIPPED (all passes:true, golden-tested, wired to `python -m rcm_mc.cdd`, committed):
+  NEW-01..NEW-17 (17 new CDD analytics) + BOLSTER-01,02,03,04,05,06,07.
+  Foundation: rcm_mc/cdd/exhibit.py (audience separation + copy lint +
+  reconciliation), registry.py + cli.py surface, audience.py, chartpack.py.
+EVIDENCE: `cd RCM_MC && python -m pytest tests/golden/ -q` => 186 passed.
+  Existing CI subset (54-test local sample) green; full suite collects 16396, no
+  errors. pyproject [cdd] extra added; [dev] untouched so CI 3.14 leg installs.
+HARD CONSTRAINTS: no LLM on any prediction path (grep-verified + statistical
+  estimators only); seeds pinned (default_rng), reproducible to 1e-9; every
+  exhibit carries sourced footnote metadata; em-dash + AI-filler linted out;
+  audience separation enforced in render() and swept registry-wide.
+BLOCKED: none. State sources (APCD/HCUP/Texas THCIC) and commercial vendors
+  (Definitive/IQVIA) remain integration stubs per spec (no credentials); not in
+  this backlog.
+NOTE: NEW-12 ships a labeled CMS-HCC V28 REFERENCE SUBSET coefficient table;
+  drop full CMS tables into rcm_mc/cdd/v28_data.py to extend coverage.
+HIGHEST-VALUE NEXT: load the full CMS-HCC V28 crosswalk + coefficients into
+  v28_data.py (NEW-12) so RAF reproduces published values across all 115 HCCs;
+  then expand BOLSTER-07 with real CMS row-count fixtures per source.
+PR: #1859 (draft). Final commit hash recorded on push.

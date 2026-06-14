@@ -286,11 +286,11 @@
       "bucket": "bolster",
       "audience": "internal",
       "priority": 107,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_ingestion_reconciliation.py",
-      "notes": ""
+      "notes": "reconcile_join (CCN/NPI/FIPS), key uniqueness, join integrity, <=11 suppression, vintage-stamp requirement; HCRIS->CareCompare integrity 2/3 hand-verified."
     }
   ]
 }
