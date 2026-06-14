@@ -1892,6 +1892,7 @@ def ck_help_tooltip(
         '<span class="ck-help">'
         f'{_esc(term)}'
         '<button type="button" class="ck-help-trigger" '
+        f'aria-label="Definition of {_esc(term)}" '
         'aria-expanded="false" tabindex="0">?</button>'
         '<span class="ck-help-popover" role="tooltip">'
         f'<span class="ck-help-term">{_esc(term)}</span>'
