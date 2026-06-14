@@ -70,6 +70,7 @@ def _exit_memo_html(
 
     return (
         "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
         f"<title>{title}</title>"
         "<style>"
         "body{font-family:sans-serif;max-width:900px;margin:0 auto;padding:24px;}"

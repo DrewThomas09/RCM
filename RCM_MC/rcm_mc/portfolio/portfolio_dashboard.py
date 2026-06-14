@@ -1059,6 +1059,27 @@ h1 { margin: 0 0 0.25rem 0; color: var(--accent); }
 .at-risk-card ul { margin: 0.5rem 0 0 0; padding-left: 1.2rem; }
 .at-risk-card li { margin-bottom: 0.25rem; }
 footer { color: var(--muted); font-size: 0.8rem; margin-top: 2rem; text-align: center; }
+/* Onscreen adjustments — this legacy dashboard builds its own <html>
+   (it doesn't go through chartis_shell), so the shared ≤960px overflow
+   safety-net never reaches it. Without these rules a phone got a
+   zoomed-out desktop view (no viewport meta until 2026-06) plus three
+   page-widening culprits: the 4-up KPI grid never collapsed, the 2rem
+   body padding ate the narrow column, and the multi-column deal/
+   variance tables overflowed the page instead of scrolling in place.
+   Each rule only stacks / shrinks / scrolls — desktop (≥961px) is
+   byte-for-byte unchanged. */
+@media (max-width: 960px) {
+  /* Tablet: 4-up KPI grid → 2-up; wide tables scroll within the page. */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .deal-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@media (max-width: 640px) {
+  /* Phone: reclaim the gutters, single-column KPIs, tighter funnel labels. */
+  body { padding: 1rem; }
+  .card { padding: 1rem; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .funnel-row { grid-template-columns: 76px 1fr 32px; gap: 0.5rem; }
+}
 """
 
 
@@ -1180,6 +1201,7 @@ def build_portfolio_dashboard(
     html_doc = f"""<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title>
 <style>{_CSS}</style>
 </head><body>
