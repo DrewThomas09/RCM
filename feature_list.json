@@ -70,11 +70,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_ltv_cac.py",
-      "notes": ""
+      "notes": "Realized cumulative LTV/cust=90, payback m3, ratio 1.8 hand-verified; 3:1 ref; revenue reconciles within 2%."
     },
     {
       "id": "NEW-07",

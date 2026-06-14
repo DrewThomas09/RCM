@@ -67,3 +67,11 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest tests/golden/ => 51 passed. KM S(1)=.8/S(3)=.6/S(6)=.5;
   cliff steepest month=3 (0.25); vintage flag fires.
 - Next: NEW-06 cohort LTV/CAC (empirical cumulative LTV, payback, 3:1).
+================================================================================
+[2026-06-14 02:36 UTC] NEW-06 LTV/CAC
+- ltv_cac.py: empirically realized cumulative LTV per starting customer
+  (cum revenue*gross_margin/n); payback month; LTV:CAC vs 3:1 ref; below_3to1 +
+  never_pays_back flags; cohort revenue reconciles to total within 2%.
+- Evidence: pytest tests/golden/test_ltv_cac.py => 8 passed. LTV/cust=90,
+  payback m3, ratio 1.8 hand-verified.
+- Next: NEW-07 provider density / geographic heatmap (per-FIPS counts).
