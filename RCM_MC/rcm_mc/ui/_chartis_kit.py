@@ -922,19 +922,8 @@ _DATA_UNIVERSE = {
                        "framework until a live data source is connected."),
     "data-required":  ("DATA REQUIRED", "datareq",
                        "Needs a user upload / CCD / internal file to activate."),
-    # Pure-input utilities (chart kit, excel mapping, pie chart): the page
-    # renders only values the user typed or pasted — no data claim at all.
-    "user-supplied":  ("USER-SUPPLIED", "user",
-                       "Renders only the values you typed or pasted — "
-                       "not a data source."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
-    # Pure input utilities (chart builder / pie chart / excel mapping):
-    # the page renders only what the user typed or pasted — never a data
-    # claim from any vendored or live source.
-    "user-supplied": ("USER-SUPPLIED", "deals",
-                      "Values you typed or pasted into this form — rendered "
-                      "as-is; not a data claim from any source."),
     # Licensed third-party data, used only as derived/structured facts (raw
     # reports/exports never served). Distinct from public CMS/research.
     "licensed-report-derived": ("LICENSED REPORT", "ref",
@@ -947,7 +936,10 @@ _DATA_UNIVERSE = {
     # The visuals toolkit (Chart Builder / Pie Chart / Excel Mapping /
     # Exhibit Composer / Visuals hub): the chart plots whatever the user
     # pasted or typed — no platform data claim unless a dataset chip was
-    # explicitly loaded (those carry their own source footnote).
+    # explicitly loaded (those carry their own source footnote). This is the
+    # single canonical "user-supplied" entry — two earlier duplicate keys
+    # (label "USER-SUPPLIED", codes "user"/"deals") were dead: a dict literal
+    # keeps only the last value for a repeated key, so they never rendered.
     "user-supplied": ("USER-SUPPLIED DATA", "deals",
                        "Renders the data you paste/type — example values are "
                        "placeholders, not a data claim."),

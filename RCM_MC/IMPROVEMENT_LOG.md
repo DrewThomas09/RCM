@@ -4883,3 +4883,27 @@ been mapped.
 **Verify**: full guide-context suite 16/16 (was 15/16); broader
 guide/context/palette/tools-index sweep **425 passed / 1 skipped**; the
 blind-page list is now empty.
+
+## W4-005 (2026-06-14) — Error sweep: duplicate dict keys / set items (silently dropped values)
+Ran ruff `--select F601,F602,B033` (repeated dict-key literals + duplicate
+set items) over the whole tree. Three real "the value you wrote is silently
+discarded" defects:
+- **`_chartis_kit.py` `_DATA_UNIVERSE`** had `"user-supplied"` defined
+  **three times** (labels "USER-SUPPLIED" ×2 then "USER-SUPPLIED DATA"). A
+  dict literal keeps only the last, so the first two — accreted across three
+  edits — never rendered. Collapsed to the single canonical entry (behavior
+  identical: the last one already won) and documented why.
+- **`_ansi_codes.py` CARC map** mapped code `"18"` twice — `CODING` (dead)
+  then `PAYER_BEHAVIOR` (wins). The comments showed the author intended
+  payer-behaviour; removed the dead CODING line. `classify_carc("18")`
+  still returns `PAYER_BEHAVIOR` (unchanged).
+- **`server.py` title-case acronym set** contained a duplicate `"mc"` and a
+  dead `"mc-"` (can never match — the tokenizer splits on `-`, so no token
+  ever equals `"mc-"`). Removed both.
+Also reviewed the two non-duplicate hits and left them as correct-as-written:
+`v2_monte_carlo.py:358` (`lo, mode, hi = min(...), mode, max(...)` — a
+deliberate bracket-clamp that keeps `mode`) and two E714 `not (x is False)`
+three-valued-logic guards.
+**Verify**: F601/F602/B033 now clear across `rcm_mc`; `compileall` clean;
+`classify_carc("18")` → PAYER_BEHAVIOR; data-universe/chartis-kit/denial/
+benchmark/monte-carlo suites **1292 passed** (785 + 507) / 2 skipped.
