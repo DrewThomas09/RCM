@@ -102,7 +102,7 @@ def breadcrumb(
             parts.append(
                 f'<span class="bc-current">'
                 f'{_html.escape(label)}</span>')
-    return css + '<nav class="bc">' + "".join(parts) + '</nav>'
+    return css + '<nav class="bc" aria-label="Breadcrumb">' + "".join(parts) + '</nav>'
 
 
 # ── Keyboard shortcuts ───────────────────────────────────────

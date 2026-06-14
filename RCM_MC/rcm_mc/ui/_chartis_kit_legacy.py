@@ -1755,7 +1755,7 @@ def _nav_html(active_path: str = "") -> str:
                 f'{label}'
                 f'</a>'
             )
-    return f'<nav class="ck-nav">{"".join(parts)}</nav>'
+    return f'<nav class="ck-nav" aria-label="Primary">{"".join(parts)}</nav>'
 
 
 # ---------------------------------------------------------------------------

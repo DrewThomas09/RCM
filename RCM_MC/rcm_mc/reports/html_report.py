@@ -178,7 +178,7 @@ def generate_html_report(
 
     # Sticky navigation bar
     html_parts.append("""
-    <nav class="report-nav"><div class="report-nav-inner">
+    <nav class="report-nav" aria-label="Report sections"><div class="report-nav-inner">
       <span class="nav-brand">RCM Analysis</span>
       <a href="#exec-summary">Summary</a>
       <a href="#payer-dashboard">Payer Dashboard</a>
