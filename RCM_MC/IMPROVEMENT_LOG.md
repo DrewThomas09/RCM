@@ -4803,3 +4803,31 @@ block end-to-end; new `tests/test_diligence_dq_report_render.py` (2 tests)
 imports the module — so CI on 3.10/3.11 catches any future
 backslash-in-f-string regression — plus the message-block on/off assertions;
 diligence/dq/ingest suite 372 passed / 6 skipped.
+
+## W4-002 (2026-06-14) — Error sweep: route-walker found a None-leak + a standing false-positive 404
+Booted an open-auth server (CI's exact shape) and ran the route walker
+(`--discover --fail-on-leak`) over all 181 discovered routes — twice
+(plain + active-deal cookie). It surfaced two issues:
+- **`/chart-builder` leaked a literal `>None<`**: the "Calculation"
+  shaping dropdown's empty option was labelled `None`, which trips the
+  nan/None-leak gate (`>None<`) the weekly regression-sweep runs with
+  `--fail-on-leak` — i.e. this would turn the sweep red. The project
+  already documents this convention (`pie_chart_page.py:126` uses
+  "No labels", not "None"; the sibling "Group" dropdown uses "Off").
+  Relabelled the empty calc option `Off`. No test asserted the literal
+  "None" (tests only assert it must NOT appear). Added a unit guard
+  (`test_no_literal_none_in_page`) so it's caught on every PR, not just
+  the weekly sweep.
+- **`/analysis` reported a standing 404 in every sweep**: `/analysis`
+  is a *discovered* route with a real landing page (200 at `/analysis`),
+  but `_SAMPLE_SUFFIX` rewrote it to `/analysis/ccf` — a per-deal URL
+  for a demo deal that doesn't exist in the walker's fresh, *unseeded*
+  DB (CI boots `build_server` with an empty temp DB; zero deals). So a
+  healthy route was reported as a 404 on every run (non-fatal — the
+  walker only fails on tracebacks/leaks/budget — hence it sat unnoticed).
+  Removed the `/analysis` suffix entry so the landing route walks as
+  itself; the `/deal`-style entries stay for the manual `--routes` mode
+  (seeded DB).
+**Verify**: re-walk after fixes → **181 ok / 0 non-2xx / 0 tracebacks /
+0 nan/None leaks** on both the plain and cookie-context passes;
+`test_chart_builder.py` 59 passed; `test_route_walker_discover.py` 5 passed.

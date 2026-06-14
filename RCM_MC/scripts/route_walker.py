@@ -23,9 +23,16 @@ import sys
 import urllib.request
 
 # Exact-match page routes that need a sample entity to render meaningfully.
+# Per-deal suffixes for the manual ``--routes`` mode. NOTE: ``/analysis`` is
+# deliberately NOT here. In ``--discover`` mode (what CI runs) the server boots
+# on a fresh, *unseeded* DB with zero deals, and ``/analysis`` is itself a
+# discovered route that renders a real landing page at ``/analysis`` (200).
+# Appending ``/ccf`` rewrote it to ``/analysis/ccf`` — a deal that doesn't
+# exist in the empty DB — so every sweep reported a standing 404 on a route
+# that is actually healthy. Walk the landing instead. The ``/deal``-style
+# entries below stay for the manual route-list mode, which targets a seeded DB.
 _SAMPLE_SUFFIX = {
     "/deal": "/ccf",
-    "/analysis": "/ccf",
     "/hospital": "/450358",       # seeded HCRIS CCN (Texas)
     "/cohort": "/all",
     "/best": "/ccf",

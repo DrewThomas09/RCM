@@ -263,7 +263,10 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
            f'max="50" value="{topn if topn else ""}" style="{_sel}'
            f'padding:0 6px;"></label>')
         + _shaping_select("calc", "Calculation",
-                          [("", "None")] + list(TRANSFORM_CALCS), calc)
+                          # "Off", never "None": a literal >None< in page HTML
+                          # trips the route-walker nan/None-leak gate (same
+                          # convention as pie_chart_page / group dropdown above).
+                          [("", "Off")] + list(TRANSFORM_CALCS), calc)
         + _toggle("trend", "Trendline + R² (line/scatter)", trend)
         + '</div></div>'
         # Annotations — overlays on the value axis (column/line/combo).
