@@ -1926,3 +1926,23 @@ class MethodPanelPageTests(unittest.TestCase):
         from rcm_mc.ui.tam_sam_page import render_tam_sam_page
         h = render_tam_sam_page({"template": ["dialysis"]})
         self.assertIn('href="#ts-method"', h)
+
+
+class ArchetypeColumnTests(unittest.TestCase):
+    def test_every_archetype_has_a_chip(self):
+        from rcm_mc.ui.tam_sam_page import _ARCHETYPE_CHIP
+        from rcm_mc.diligence.tam_sam import ARCHETYPES
+        self.assertEqual(set(_ARCHETYPE_CHIP), set(ARCHETYPES))
+        for code, (color, label) in _ARCHETYPE_CHIP.items():
+            self.assertTrue(color.startswith("#") and len(color) == 7, code)
+            self.assertTrue(label)
+
+    def test_method_column_and_sort_render(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["snf"]})
+        self.assertIn("<th>Method</th>", h)
+        self.assertIn("by method", h)  # the sort link
+        # archetype sort orders without error
+        self.assertIn("<th>Method</th>",
+                      render_tam_sam_page({"template": ["snf"],
+                                           "sort": ["archetype"]}))

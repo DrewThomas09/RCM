@@ -4830,3 +4830,13 @@ unaffected.
 triangulation only-with-anchor; Bass only-for-adoption; nav chip). 162
 pass in test_tam_sam.py; texas_infusion (127) + comparable_outcomes +
 market_analysis_lead + section_catalog (44) green.
+
+## W3-003 (2026-06-14) — TAM cross-industry table: Method column + sort
+The cross-industry comparison (80+ verticals side by side) now carries a
+**Method** column — a compact color-coded archetype chip (Procedure /
+Epi / Lives / Facility / Install-base / Top-down) per vertical — plus a
+third sort, "by method", that groups the catalogue by sizing archetype
+(then TAM within method). `test_archetype_column` pins chip↔ARCHETYPES
+set-equality and valid 6-digit hex colors.
+**Verify**: +2 tests; 165 pass in test_tam_sam.py; market_analysis_lead +
+comparable_outcomes green (202 total in the run).

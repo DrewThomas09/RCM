@@ -592,6 +592,25 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
 _BAND_COLOR = {"green": "#0a8a5f", "amber": "#b8732a", "red": "#b5321e"}
 _COMPLEXITY_COLOR = {"MODERATE": "#155752", "HIGH": "#b8732a",
                      "VERY HIGH": "#b5321e"}
+# Compact archetype chips for the cross-industry table — one stable color
+# + short label per sizing method so the whole catalogue reads at a glance.
+_ARCHETYPE_CHIP = {
+    "procedure_claims": ("#0b2341", "Procedure"),
+    "epidemiology": ("#155752", "Epi"),
+    "capitation_lives": ("#6f4d8c", "Lives"),
+    "facility_capacity": ("#b8732a", "Facility"),
+    "installed_base": ("#1f6f8b", "Install-base"),
+    "top_down_nhe": ("#8b5e34", "Top-down"),
+}
+
+
+def _archetype_chip(code: str) -> str:
+    color, label = _ARCHETYPE_CHIP.get(code, ("#465366", code or "—"))
+    return (
+        f'<span style="font-family:var(--sc-mono);font-size:9px;'
+        f'letter-spacing:.06em;text-transform:uppercase;color:#fff;'
+        f'background:{color};padding:1px 6px;border-radius:2px;'
+        f'white-space:nowrap;">{html.escape(label)}</span>')
 
 
 def _method_panel(out: Dict[str, Any], model: TamSamModel) -> str:
@@ -727,7 +746,8 @@ def _industry_comparison_panel(active_key: str,
     """Every sized vertical side by side — sortable by TAM (where the
     biggest pieces are) or composite growth (where it grows fastest).
     Each row links into its build."""
-    from ..diligence.tam_sam import TEMPLATES, compute as _compute
+    from ..diligence.tam_sam import (
+        TEMPLATES, TEMPLATE_ARCHETYPE, compute as _compute)
     rows = []
     for key, factory in TEMPLATES.items():
         if key == "blank":
@@ -736,14 +756,17 @@ def _industry_comparison_panel(active_key: str,
             o = _compute(factory())
         except Exception:  # noqa: BLE001
             continue
-        rows.append((key, o["name"], o["tam"], o["composite_cagr_pct"]))
+        rows.append((key, o["name"], o["tam"], o["composite_cagr_pct"],
+                     TEMPLATE_ARCHETYPE.get(key, "")))
     if sort == "growth":
         rows.sort(key=lambda r: -r[3])
+    elif sort == "archetype":
+        rows.sort(key=lambda r: (r[4], -r[2]))
     else:
         rows.sort(key=lambda r: -r[2])
-    max_tam = rows[0][2] if rows else 1
+    max_tam = max((r[2] for r in rows), default=1)
     trs = ""
-    for key, name, tam, cagr in rows:
+    for key, name, tam, cagr, arch_code in rows:
         short = name.split("·")[0].strip()
         on = ' style="background:var(--sc-bone,#ece5d6);"' if key == active_key else ""
         bar_w = max(2, tam / max_tam * 160)
@@ -753,6 +776,7 @@ def _industry_comparison_panel(active_key: str,
             f'<td><a href="/diligence/tam-sam?template={key}" '
             f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
             f'text-decoration:none;">{html.escape(short)}</a></td>'
+            f'<td>{_archetype_chip(arch_code)}</td>'
             f'<td class="r">{_fmt_money(tam)}</td>'
             f'<td><svg width="170" height="12">'
             f'<rect x="0" y="1" width="{bar_w:.0f}" height="10" '
@@ -760,22 +784,25 @@ def _industry_comparison_panel(active_key: str,
             f'<td class="r" style="color:{tone};font-weight:600;">'
             f'{cagr:+.1f}%/yr</td></tr>'
         )
+    def _sort_link(token: str, label: str) -> str:
+        base = f'/diligence/tam-sam?template={html.escape(active_key)}'
+        href = base if token == "tam" else f'{base}&sort={token}'
+        weight = 700 if sort == token else 400
+        return (f'<a href="{href}" style="font-weight:{weight};'
+                f'color:var(--sc-navy);">{label}</a>')
     return ck_panel(
         '<table class="ts2-chain"><thead><tr>'
-        '<th>Vertical</th><th style="text-align:right;">TAM</th>'
+        '<th>Vertical</th><th>Method</th>'
+        '<th style="text-align:right;">TAM</th>'
         '<th>Relative size</th>'
         '<th style="text-align:right;">Composite growth</th>'
         f'</tr></thead><tbody>{trs}</tbody></table>'
         f'<p class="ts2-src" style="margin:8px 0 0;">Sort: '
-        f'<a href="/diligence/tam-sam?template={html.escape(active_key)}" '
-        f'style="font-weight:{700 if sort != "growth" else 400};'
-        'color:var(--sc-navy);">biggest pieces (TAM)</a> · '
-        f'<a href="/diligence/tam-sam?template={html.escape(active_key)}'
-        '&sort=growth" '
-        f'style="font-weight:{700 if sort == "growth" else 400};'
-        'color:var(--sc-navy);">growing fastest</a>. Template defaults — '
-        'each row opens its full build. Green ≥4%/yr · red = '
-        'declining.</p>',
+        + _sort_link("tam", "biggest pieces (TAM)") + ' · '
+        + _sort_link("growth", "growing fastest") + ' · '
+        + _sort_link("archetype", "by method")
+        + '. Template defaults — each row opens its full build. '
+        'Method = the sizing archetype. Green ≥4%/yr · red = declining.</p>',
         title="Cross-industry view · where the biggest pieces grow "
               "fastest",
     )
