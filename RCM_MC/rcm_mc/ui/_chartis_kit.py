@@ -5921,6 +5921,14 @@ _CK_BACK_TO_TOP_JS = """
     btn.addEventListener('click', function(ev){
       ev.preventDefault();
       window.scrollTo({top:0, behavior:'smooth'});
+      /* Also move keyboard focus to the top of content (the skip-link
+       * target), so a keyboard user's next Tab resumes from the top
+       * instead of staying parked on this bottom-right button.
+       * preventScroll keeps the smooth scroll above from being undone. */
+      var m = document.getElementById('ck-main');
+      if (m && typeof m.focus === 'function') {
+        try { m.focus({preventScroll:true}); } catch(e){ m.focus(); }
+      }
     });
     window.addEventListener('scroll', update, {passive:true});
     update();
