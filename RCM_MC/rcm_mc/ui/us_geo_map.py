@@ -46,7 +46,8 @@ def _shade(value: Optional[float], lo: float, hi: float) -> str:
 _CSS = """
 #{cid}{{font-family:var(--sc-mono,monospace);}}
 #{cid} .usgeo-svg{{width:100%;height:auto;display:block;background:var(--sc-bone,#f3eddb);
- border:1px solid var(--sc-rule,#c9c1ac);}}
+ border:1px solid var(--sc-rule,#c9c1ac);border-radius:4px;
+ filter:drop-shadow(0 2px 8px rgba(11,35,65,0.16));}}
 #{cid} .usgeo-state{{stroke:#fbf7ee;stroke-width:0.6;transition:filter .12s,stroke .12s;}}
 #{cid} .usgeo-state[data-clickable='1']{{cursor:pointer;}}
 #{cid} .usgeo-state[data-clickable='1']:hover{{filter:brightness(.92);stroke:var(--sc-navy,#0b2341);stroke-width:1.1;}}

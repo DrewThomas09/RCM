@@ -97,10 +97,12 @@ class RenderAndRouteTests(unittest.TestCase):
     def test_page_renders_core_elements(self):
         h = render_excel_mapping_page({})
         for needle in ("Excel Mapping", "Render map", "VALUES BY STATE",
-                       "HOW TO USE", "serif", "#000000",
-                       'type="color"', "<svg"):
+                       "HOW TO USE", "serif", 'type="color"', "<svg"):
             self.assertIn(needle, h, f"missing: {needle}")
-        # A state value renders on the map.
+        # The map draws the real geographic state boundaries, not tiles.
+        self.assertIn("<path d=\"M", h)
+        self.assertNotIn("viewBox=\"-1 -1", h)   # old tile-grid viewBox gone
+        # A state value renders on the page (centroid label + value table).
         self.assertIn(">TX<", h)
 
     def test_custom_values_appear(self):
