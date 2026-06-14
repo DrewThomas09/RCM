@@ -250,11 +250,11 @@
       "bucket": "bolster",
       "audience": "both",
       "priority": 104,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_two_audience.py",
-      "notes": ""
+      "notes": "audience.py brand envelope + find_leaks + audit_registry; sweep over all features asserts zero partner leakage, both views render core pack."
     },
     {
       "id": "BOLSTER-05",
