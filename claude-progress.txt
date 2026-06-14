@@ -90,3 +90,11 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   serve rule via provider_claims; FFS-only flag+footnote; rank-permutation recon.
 - Evidence: pytest => 5 passed. Saturation 0.5/0.1/2.0; ranking B,A,C.
 - Next: NEW-09 site-of-care shift analysis.
+================================================================================
+[2026-06-14 03:05 UTC] NEW-09 Site-of-care shift
+- site_of_care.py: use-per-1000 by setting (IP/HOPD/ASC/Office/Home) two-period;
+  migration metrics hopd_to_asc/ip_to_outpatient/facility_to_home + net;
+  migration flags; CY2026 OPPS/ASC note as internal-only series; optional ruptures
+  changepoint overlay (best-effort, wired to forthcoming BOLSTER-03).
+- Evidence: pytest => 7 passed. Migrations 30/10/10 hand-verified.
+- Next: NEW-10 customer concentration (top-N, >40% flag).

@@ -106,11 +106,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_site_of_care.py",
-      "notes": ""
+      "notes": "Migration hopd_to_asc=30/ip=10/home=10 hand-verified; CY2026 OPPS/ASC note internal-only; optional ruptures overlay."
     },
     {
       "id": "NEW-10",
