@@ -309,6 +309,24 @@ _NAV_NONNAVIGABLE = frozenset({
     "/new-deal/manual",   # manual-entry POST target → 303 on GET; use /new-deal
 })
 
+# Flagship "best content" surfaces guaranteed a slot at the FRONT of a
+# section's nav dropdown, ahead of the pure usefulness-rank fill. The raw
+# ranking weights build-effort alongside usefulness, which sinks a couple of
+# our marquee demo surfaces below the 6-leaf cut even though they are the
+# pages we most want a partner (or a prospect in a demo) to land on:
+#   • /diligence/hcris-xray — the HCRIS X-Ray. Type any hospital name or CCN,
+#     get an instant peer benchmark off filed Medicare cost reports — the
+#     surface that stands in for an $80K/yr CapIQ seat. Low build-effort
+#     drops it to ~#19 in the raw diligence ranking, so it never reached the
+#     bar despite being the diligence demo moment.
+#   • /diligence/xray — the CMS provider X-Ray, its sibling marquee surface.
+# Pins still pass the same front-facing tier gate as the rest of the bar
+# (green / navy / data_required only), so the honesty invariant the nav
+# tests enforce ("front facing shows real things") continues to hold.
+_NAV_PINNED = {
+    "diligence": ["/diligence/hcris-xray", "/diligence/xray"],
+}
+
 
 def _ranked_subnav_items(sect: str):
     """The section's top-6 surfaces by the surface ranking, for the nav bar.
@@ -346,6 +364,24 @@ def _ranked_subnav_items(sect: str):
             return
         seen.add(key)
         top.append({"label": label, "href": href})
+
+    # Seed the bar with the section's pinned flagship(s) so its best content
+    # leads regardless of the raw usefulness-rank. Resolve the label from the
+    # curated rail (vetted copy) or the ranking manifest, and gate by the same
+    # real-tier rule as the rest of the bar so a pin can never smuggle a weak
+    # surface past the front-facing honesty gate.
+    try:
+        from rcm_mc.diligence.surface_status import classify_surface as _cls_pin
+    except Exception:  # noqa: BLE001
+        _cls_pin = None
+    _rank_by_route = {r["route"]: r for r in ranked}
+    for href in _NAV_PINNED.get(sect, []):
+        if _cls_pin is not None and _cls_pin(href).get("tier") not in (
+                "green", "navy", "data_required"):
+            continue
+        c = cur.get(href, {})
+        rr = _rank_by_route.get(href, {})
+        _add(c.get("label") or rr.get("label") or href, href)
 
     for r in pool:
         c = cur.get(r["route"], {})
