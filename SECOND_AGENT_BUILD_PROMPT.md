@@ -56,7 +56,7 @@ CI/observability. The split is by directory, enforced by worktree.
 
 | Layer | Paths | Current state → next action (from `13_Build_Status.md`) |
 |---|---|---|
-| **1. Ingestion freshness** | `rcm_mc/data/` loaders (`cms_hcris.py`, `hcris_incremental.py`, `cms_pos.py`, `cms_ma_enrollment.py`, `cms_utilization.py`, `cms_care_compare.py`, `nppes_infusion.py`, …), `rcm_mc/data/data_refresh.py`, `pipeline.py` | Loaders **ship**. Gap: *automate HCRIS refresh end-to-end* — watermark-based idempotent incremental loads, MERGE on natural keys, suppression-aware validation. |
+| **1. Ingestion freshness** | `rcm_mc/data/` loaders (`cms_hcris.py`, `hcris_incremental.py`, `cms_pos.py`, `cms_ma_enrollment.py`, `cms_utilization.py`, `cms_care_compare.py`, `nppes_infusion.py`, …), `rcm_mc/data/data_refresh.py`, `pipeline.py` | Loaders **and the incremental layer ship** — `hcris_incremental.incremental_refresh` already does status-rank idempotency (`hcris_load_log` table, submitted→settled→audited, re-runs without side effects). Gap is the **front and back of the pipe**, not the middle (see Appendix A). |
 | **2. Deliverable production** | `rcm_mc/exports/` (`packet_renderer.py`, `ic_packet.py`, `qoe_memo.py`, `diligence_package.py`, `lp_quarterly_report.py`, `xlsx_*`), `rcm_mc/ic_memo/`, `rcm_mc/ic_binder/`, `rcm_mc/qoe/`, `rcm_mc/reports/` | Packet renderer **ships**. Gap: *real `python-docx`/`python-pptx`* behind a feature flag; provenance-by-construction (every exhibit carries a source line). |
 | **3. Monitoring & alerting** | `rcm_mc/portfolio_monitor/` (`dashboard.py`, `snapshot.py`, `variance.py`), `rcm_mc/alerts/`, `rcm_mc/portfolio/` | Ships. Gap: *exception-based alerting* fed by the primary agent's changepoint/anomaly outputs against variance-to-plan thresholds; RAG board-review surface. |
 | **4. App shell / roles** | `rcm_mc/server.py`, `rcm_mc/auth/`, route wiring (NOT page bodies) | Ships. Gap: *session persistence across restart*; role-based nav (Chartis EMs vs external PE partners). |
@@ -147,13 +147,10 @@ read `CLAUDE.md` + `13_Build_Status.md` + this doc. Verify no file
 overlap with the primary agent's active sweep (`B11_SWEEP_HANDOFF.md`
 lists its in-flight pages — all under `ui/data_public/`).
 
-**Stage 1 — Ingestion freshness (unblocks everything).** Automate the
-HCRIS refresh end-to-end in `rcm_mc/data/`: poll the CMS quarterly
-release, compare file hash/last-modified against a stored watermark,
-join NMRC/ALPHA → RPT on `RPT_REC_NUM`, MERGE on
-`(CCN, fiscal_year_end, report_status)` keeping the highest-status
-report, chunked reads + Parquet intermediates for the >2GB files,
-suppression-aware validation (cells ≤10/11). **Done = re-running a
+**Stage 1 — Ingestion freshness (unblocks everything).** The incremental
+*merge* logic already exists (`hcris_incremental.py` — status-rank
+idempotency, `hcris_load_log`). Do **not** rebuild it. Close the front and
+back of the pipe instead — see **Appendix A**. **Done = re-running a
 loader produces zero row changes and passes record-count
 reconciliation.** Golden-test each loader.
 
@@ -196,3 +193,52 @@ genuinely missing.
   in pptx; no native footnotes in docx) — design around them in helpers.
 - IC-memo format varies by firm (Word vs PPT vs hybrid; page counts) —
   keep the template configurable, not fixed.
+
+---
+
+## Appendix A — Stage 1 concrete spec (HCRIS, the worked example)
+
+What **already exists** (do not rebuild):
+
+- `data/hcris.py::refresh_hcris` — full parse + load.
+- `data/hcris_incremental.py::incremental_refresh` — status-rank
+  idempotent re-load (submitted → settled → audited; only overwrites a
+  stored `(CCN, fiscal_year, status_rank)` row when rank improves),
+  backed by the `hcris_load_log` table, plus `ingest_status` for a
+  partner-facing summary.
+
+What is **missing** — the front and back of the pipe:
+
+1. **Release detection (front).** A watermark on the *CMS publication*,
+   not just on rows already loaded: store the source file
+   hash/last-modified/ETag for each quarterly release; only kick a refresh
+   when it changes. This is what makes a cron run cheap — today
+   `incremental_refresh` still has to enumerate candidate years to decide
+   there's nothing to do. The watermark short-circuits that.
+2. **Memory discipline (front).** The `Hosp_Rpt_Nmrc` files exceed 2GB and
+   cannot be loaded whole. Chunked CSV reads + Parquet intermediates for
+   the long-skinny NMRC/ALPHA tables before the join to RPT on
+   `RPT_REC_NUM`.
+3. **Validation (back).** Suppression-aware checks (CMS suppresses cells
+   ≤10/11 — blank ≠ zero), sign-convention checks on negative amounts, and
+   **staging-to-target reconciliation** against the HCRIS record-count
+   file. A loader is not "done" until reconciliation passes.
+4. **Format-drift detection (back).** The 2552-96 → 2552-10 form change
+   moves worksheet/line/column codes; the loader must *detect* an
+   unrecognized `(WKSHT_CD, LINE_NUM, CLMN_NUM)` and fail loudly rather
+   than silently mapping to the wrong variable.
+
+**Generalize the pattern to the other loaders:**
+
+| Dataset | Natural key | Cadence | Drift trap to guard |
+|---|---|---|---|
+| HCRIS cost reports | `(CCN, fiscal_year, status_rank)` | Quarterly full overwrite | 2552-96 vs 2552-10 crosswalk |
+| NPPES (`nppes_infusion.py`) | `NPI` | Monthly full + weekly incremental | V.1 retired Mar 2026 → use V.2 field lengths |
+| POS (`cms_pos.py`) | `CCN` | Quarterly | Ownership/bed-size SCD over time |
+| MA enrollment (`cms_ma_enrollment.py`) | `(contract, county_FIPS)` | Monthly (~15th) | HIPAA suppression: blank = 1–10 |
+| Market Saturation (`cms_utilization.py`) | `(service, county_FIPS / CBSA)` | State/county quarterly, CBSA annual | cells ≤11 deleted |
+| Care Compare (`cms_care_compare.py`) | dataset-id + distribution | Quarterly (Jan/Apr/Jul/Oct) | distribution IDs change every refresh |
+
+Each loader's golden test: (a) run twice, assert zero row delta on the
+second run; (b) reconcile loaded row count against the source manifest;
+(c) feed a deliberately-drifted fixture and assert it fails loudly.
