@@ -74,6 +74,25 @@ class RankedRailTests(unittest.TestCase):
                 self.assertNotIn(tier, ("red", "yellow"),
                                  f"{sec}: weak surface {s['href']} ({tier}) in bar")
 
+    def test_pinned_hcris_xray_in_diligence_dropdown(self):
+        # /diligence/hcris-xray is a flagship product decision (_NAV_FLAGSHIPS):
+        # the renderer is thin (engine lives in diligence/hcris_xray/) so the
+        # LOC-proxied ranking buries it below the 6-leaf cut, but partners
+        # reach for it by name from the Diligence dropdown. Flagship pins lead
+        # the bar in workflow order (not score order); the bar stays capped at 6.
+        from rcm_mc.ui._chartis_kit import _ranked_subnav_items
+        top, _ = _ranked_subnav_items("diligence")
+        hrefs = [s["href"] for s in top]
+        self.assertIn("/diligence/hcris-xray", hrefs)
+        self.assertEqual(len(top), 6)
+
+    def test_pinned_hcris_xray_renders_in_shell_megamenu(self):
+        # The pin must survive all the way into the rendered topbar markup
+        # (the mega-menu leaf), not just the helper's return value.
+        from rcm_mc.ui._chartis_kit import chartis_shell
+        h = chartis_shell("<p>x</p>", "T", active_nav="/diligence")
+        self.assertIn('href="/diligence/hcris-xray" class="ck-mega-item"', h)
+
     def test_bars_never_empty(self):
         from rcm_mc.ui._chartis_kit import _ranked_subnav_items, _SUB_NAV
         for sec in _SUB_NAV:
