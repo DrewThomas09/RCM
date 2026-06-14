@@ -82,6 +82,16 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('href="/diligence" aria-expanded="false"', self.html)
         self.assertNotIn('href="/home" aria-expanded', self.html)
 
+    def test_section_triggers_control_their_panels(self):
+        # Each disclosure trigger must point at the panel it toggles, and that
+        # panel must carry the matching id (mirrors the user-chip wiring).
+        import re
+        controls = set(re.findall(r'aria-controls="(ck-mega-[a-z]+)"', self.html))
+        ids = re.findall(r'id="(ck-mega-[a-z]+)"', self.html)
+        self.assertGreaterEqual(len(controls), 6)
+        self.assertEqual(controls, set(ids))         # every control resolves
+        self.assertEqual(len(ids), len(set(ids)))    # ids are unique
+
     def test_my_dashboard_link_follows_chip_initials(self):
         # The "My Dashboard" link must target the same owner the avatar chip
         # shows — not a hardcoded "/my/AT". Pass real initials and assert both

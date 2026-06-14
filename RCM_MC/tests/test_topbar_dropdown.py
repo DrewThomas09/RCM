@@ -47,7 +47,7 @@ class TopbarDropdownTests(unittest.TestCase):
         self.assertIn('class="ck-mega-item"', self.html)
         self.assertNotIn('role="menuitem"', self.html)
         self.assertNotIn('role="menu"', self.html)
-        self.assertIn('ck-nav-mega" role="group"', self.html)
+        self.assertRegex(self.html, r'ck-nav-mega" id="ck-mega-[a-z]+" role="group"')
         # PR #1155 removed the "01. 02. …" mono-ordinal prefix; the items
         # are now plain links carrying the label + description.
         # The post-#1155 marker that survives is the per-item body span.

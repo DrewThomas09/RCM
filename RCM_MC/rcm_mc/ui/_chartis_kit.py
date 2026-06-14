@@ -11287,7 +11287,10 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # state instead of a bare link. No aria-haspopup — the panel is a group
         # of links (disclosure pattern), not a role="menu" widget. Bare items
         # (Home) carry neither.
-        pop_attr = ' aria-expanded="false"' if sect else ""
+        pop_attr = (
+            f' aria-expanded="false" aria-controls="ck-mega-{_esc(sect)}"'
+            if sect else ""
+        )
         anchor = (
             f'<a href="{_esc(item["href"])}"{pop_attr} '
             f'class="{"active" if item["key"] == active_nav else ""}">'
@@ -11359,7 +11362,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
             # named without the false affordance.
             '<div class="ck-nav-group">'
             f'{anchor}'
-            f'<div class="ck-nav-menu ck-nav-mega" role="group" '
+            f'<div class="ck-nav-menu ck-nav-mega" id="ck-mega-{_esc(sect)}" '
+            f'role="group" '
             f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
             '<div class="ck-mega-inner">'
             f'<div class="ck-mega-lede">{feature}</div>'
