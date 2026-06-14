@@ -283,6 +283,102 @@ def rxnorm_rxcui(name: str, *, opener: Optional[Opener] = None) -> List[str]:
     return list(grp.get("rxnormId", []) or [])
 
 
+def _clean_ndc(ndc: str) -> str:
+    """Strip spaces; keep digits and hyphens. RxNav accepts hyphenated 5-4-2
+    and 11-digit NDCs, and openFDA emits both ``product_ndc`` (no package
+    segment) and ``package_ndc`` (full) — pass either through unchanged so the
+    caller's missingness is preserved rather than guessing a reformat."""
+    return "".join(ch for ch in str(ndc).strip() if ch.isdigit() or ch == "-")
+
+
+def rxnorm_ndc_request(ndc: str) -> ApiRequest:
+    """NDC -> RxCUI via the RxNav id crosswalk (``idtype=NDC``). Same
+    ``rxcui.json`` endpoint as name lookup, different id type."""
+    return ApiRequest(url=f"{_RXNORM_BASE}/rxcui.json",
+                      params={"idtype": "NDC", "id": _clean_ndc(ndc)})
+
+
+def rxnorm_ndc_to_rxcui(ndc: str, *, opener: Optional[Opener] = None) -> List[str]:
+    req = rxnorm_ndc_request(ndc)
+    client = HttpJsonClient(base_url=_RXNORM_BASE, min_interval_s=0.05)
+    payload = client.get_json("/rxcui.json", req.params, opener=opener)
+    grp = (payload or {}).get("idGroup", {}) if isinstance(payload, dict) else {}
+    return list(grp.get("rxnormId", []) or [])
+
+
+def rxnorm_ndcs_request(rxcui: str) -> ApiRequest:
+    """RxCUI -> the NDCs that map to it (``/rxcui/{rxcui}/ndcs.json``)."""
+    digits = "".join(ch for ch in str(rxcui) if ch.isdigit())
+    return ApiRequest(url=f"{_RXNORM_BASE}/rxcui/{digits}/ndcs.json")
+
+
+def rxnorm_rxcui_ndcs(rxcui: str, *, opener: Optional[Opener] = None) -> List[str]:
+    digits = "".join(ch for ch in str(rxcui) if ch.isdigit())
+    client = HttpJsonClient(base_url=_RXNORM_BASE, min_interval_s=0.05)
+    payload = client.get_json(f"/rxcui/{digits}/ndcs.json", opener=opener)
+    grp = (payload or {}).get("ndcGroup", {}) if isinstance(payload, dict) else {}
+    lst = grp.get("ndcList", {}) or {}
+    return list(lst.get("ndc", []) or [])
+
+
+def rxnorm_properties_request(rxcui: str) -> ApiRequest:
+    """RxCUI -> concept properties (name, term type) for normalization."""
+    digits = "".join(ch for ch in str(rxcui) if ch.isdigit())
+    return ApiRequest(url=f"{_RXNORM_BASE}/rxcui/{digits}/properties.json")
+
+
+def rxnorm_properties(rxcui: str, *, opener: Optional[Opener] = None
+                      ) -> Dict[str, Any]:
+    digits = "".join(ch for ch in str(rxcui) if ch.isdigit())
+    client = HttpJsonClient(base_url=_RXNORM_BASE, min_interval_s=0.05)
+    payload = client.get_json(f"/rxcui/{digits}/properties.json", opener=opener)
+    props = (payload or {}).get("properties", {}) if isinstance(payload, dict) else {}
+    return props if isinstance(props, dict) else {}
+
+
+def rxnorm_normalize(value: str, *, by: str = "name",
+                     opener: Optional[Opener] = None) -> Dict[str, Any]:
+    """Resolve a drug name or NDC to a stable normalized concept record:
+    ``{rxcui, name, tty, ndcs}``. Returns ``{}`` (not a fabricated concept)
+    when nothing resolves — the caller must treat an empty dict as unmatched.
+
+    ``by`` is ``"name"`` or ``"ndc"``. One concept is returned (the first
+    RxCUI); ambiguity is the caller's to resolve from the raw id list if it
+    needs every candidate.
+    """
+    rxcuis = (rxnorm_ndc_to_rxcui(value, opener=opener) if by == "ndc"
+              else rxnorm_rxcui(value, opener=opener))
+    if not rxcuis:
+        return {}
+    rxcui = str(rxcuis[0])
+    props = rxnorm_properties(rxcui, opener=opener)
+    return {
+        "rxcui": rxcui,
+        "name": props.get("name", ""),
+        "tty": props.get("tty", ""),
+        "ndcs": rxnorm_rxcui_ndcs(rxcui, opener=opener),
+    }
+
+
+def openfda_ndc_to_rxcui(ndcs: List[str], *, opener: Optional[Opener] = None
+                         ) -> Dict[str, List[str]]:
+    """Bridge openFDA drug NDCs to RxNorm concepts — the join that lets the
+    vendored openFDA drug layer (``product_ndc`` / ``package_ndc``) resolve to
+    a normalized RxCUI.
+
+    Returns ``{ndc: [rxcui, ...]}`` for every input NDC; an unresolved NDC maps
+    to ``[]`` rather than being dropped, so downstream missingness is explicit
+    and never silently imputed. De-duplicates inputs while preserving order.
+    """
+    out: Dict[str, List[str]] = {}
+    for ndc in ndcs:
+        key = _clean_ndc(ndc)
+        if not key or key in out:
+            continue
+        out[key] = rxnorm_ndc_to_rxcui(key, opener=opener)
+    return out
+
+
 # Census APIs — https://api.census.gov/data/{year}/{dataset}?get=...&for=...&key=
 _CENSUS_BASE = "https://api.census.gov/data"
 
@@ -498,6 +594,9 @@ CLIENT_BUILDERS: Dict[str, Callable[..., ApiRequest]] = {
     "openfda": openfda_request,
     "clinicaltrials": clinicaltrials_request,
     "rxnorm": rxnorm_rxcui_request,
+    "rxnorm_ndc": rxnorm_ndc_request,
+    "rxnorm_ndcs": rxnorm_ndcs_request,
+    "rxnorm_properties": rxnorm_properties_request,
     "census_acs": lambda **kw: census_request(**kw),
     "propublica_990": propublica_search_request,
     "who_gho": who_gho_request,

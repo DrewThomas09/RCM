@@ -128,7 +128,8 @@ _SOURCES: List[ApiSource] = [
         base_url="https://api.census.gov/data/{year}/cbp",
         docs_url="https://www.census.gov/data/developers/data-sets/cbp-nonemp.html",
         access="key-required", rate_limit="500/day without key; higher with key",
-        formats="JSON", cost="free-key", status="registered",
+        formats="JSON", cost="free-key", status="live-client",
+        client_module="rcm_mc/data_public/census_market.py",
         answers="How fragmented is this provider market, and is there roll-up runway?",
         why="Establishment + employment counts by NAICS (e.g. 621111 physician "
             "offices) — the cleanest free way to size a fragmented market.",
@@ -194,10 +195,12 @@ _SOURCES: List[ApiSource] = [
         base_url="https://rxnav.nlm.nih.gov/REST",
         docs_url="https://lhncbc.nlm.nih.gov/RxNav/APIs/",
         access="none", rate_limit="20 requests/sec/IP",
-        formats="JSON/XML", cost="free", status="registered",
+        formats="JSON/XML", cost="free", status="live-client",
+        client_module="rcm_mc/data_public/public_api_clients.py",
         answers="How do I normalize drug names/NDCs to standard concepts?",
-        why="Normalizes drug names/NDCs to RxNorm concepts; pair with DailyMed "
-            "labeling for a full drug-reference layer.",
+        why="Normalizes drug names/NDCs to RxNorm concepts (name+NDC->RxCUI, "
+            "RxCUI->NDCs/properties); the NDC bridge resolves the vendored "
+            "openFDA drug layer. Pair with DailyMed for full drug reference.",
     ),
     ApiSource(
         id="dailymed", name="DailyMed", operator="NLM",
@@ -281,7 +284,8 @@ _SOURCES: List[ApiSource] = [
         base_url="https://api.census.gov/data/timeseries/healthins/sahie",
         docs_url="https://www.census.gov/data/developers/data-sets/Health-Insurance-SAHIE.html",
         access="key-required", rate_limit="500/day without key; higher with key",
-        formats="JSON", cost="free-key", status="registered",
+        formats="JSON", cost="free-key", status="live-client",
+        client_module="rcm_mc/data_public/census_market.py",
         answers="What is the payer mix / uninsured rate for a county?",
         why="Small-Area Health Insurance Estimates — uninsured rate and Medicaid "
             "eligibility proxy for payer-mix modeling.",
