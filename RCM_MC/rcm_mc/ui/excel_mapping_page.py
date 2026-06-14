@@ -33,10 +33,13 @@ from ._us_geo_paths import US_GEO_VIEWBOX, US_STATE_PATHS
 
 # ── Editable config (drive the map from Python here) ─────────────────
 
-#: Gradient stops — low value → mid value → high value.
-DEFAULT_LOW_COLOR = "#fde0dd"     # light
-DEFAULT_MID_COLOR = "#fa9fb5"     # midpoint
-DEFAULT_HIGH_COLOR = "#7a0177"    # high
+#: Gradient stops — low value → mid value → high value. Editorial teal→navy
+#: sequential by default (was a generic pink→magenta ramp); reads as a
+#: professional choropleth and matches the platform identity. Override per
+#: render with the colour pickers.
+DEFAULT_LOW_COLOR = "#dbe9e4"     # light teal
+DEFAULT_MID_COLOR = "#4e9a8f"     # mid teal
+DEFAULT_HIGH_COLOR = "#0b3b3a"    # deep teal / near-navy
 
 #: EXAMPLE values — edit this dict / paste your own per state (percent).
 #: Placeholders only; replace with your real numbers.
@@ -320,14 +323,19 @@ def _legend(cfg: Dict[str, Any]) -> str:
     grad = (f'linear-gradient(90deg,{cfg["c_low"]},{cfg["c_mid"]} 50%,'
             f'{cfg["c_high"]})')
     return (
-        f'<div style="display:flex;align-items:center;gap:10px;'
+        f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
         f'font-family:{_SERIF};font-size:13px;color:#1a2332;margin-top:6px;">'
         f'<span>{_fmt(cfg["lo"])}</span>'
         f'<span style="flex:0 0 240px;height:14px;border-radius:3px;'
         f'background:{grad};border:1px solid #c9c1ac;"></span>'
         f'<span>{_fmt(cfg["mid"])}</span>'
         f'<span style="flex:0 0 0;"></span>'
-        f'<span>{_fmt(cfg["hi"])}</span></div>')
+        f'<span>{_fmt(cfg["hi"])}</span>'
+        f'<span style="margin-left:14px;display:inline-flex;align-items:center;'
+        f'gap:5px;color:#7a8699;font-size:12px;">'
+        f'<span style="display:inline-block;width:13px;height:13px;'
+        f'border-radius:2px;background:#e6e3dc;border:1px solid #c9c1ac;"></span>'
+        f'no data</span></div>')
 
 
 def _form(cfg: Dict[str, Any]) -> str:

@@ -22,7 +22,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -30,11 +30,18 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 # ── Color palette ───────────────────────────────────────────────────────────
 
-# Dark blue from Chartis-ish palette; muted enough to print well in B&W.
-_HEADER_BG_HEX = "1F4E78"
+# Editorial Chartis identity (was a generic Office blue 1F4E78). Navy header
+# on white, a teal accent rule under the header, and a parchment zebra band —
+# so the workbook a partner opens looks like the rest of the PEdesk deck, not
+# a raw pandas dump. Navy prints cleanly in B&W.
+_HEADER_BG_HEX = "0B2341"   # editorial navy
 _HEADER_FG_HEX = "FFFFFF"
+_ACCENT_HEX = "155752"      # teal — header underline + cover rule
+_BAND_HEX = "F4F1EA"        # parchment zebra band for data rows
+_LABEL_HEX = "5B6B7A"       # editorial dim for cover labels
 
-# Semantic fills for source tags (Assumptions tab)
+# Semantic fills for source tags (Assumptions tab) — kept on Excel's
+# conventional Good/Neutral/Bad palette so partners read them instantly.
 _OBSERVED_HEX = "C6EFCE"   # pastel green
 _PRIOR_HEX = "FFEB9C"      # pastel amber
 _ASSUMED_HEX = "FFC7CE"    # pastel red
@@ -47,9 +54,13 @@ _PCT_LOW_HEX = "FFC7CE"    # ≤25th percentile: low
 HEADER_FONT = Font(color=_HEADER_FG_HEX, bold=True, size=11, name="Calibri")
 HEADER_FILL = PatternFill("solid", fgColor=_HEADER_BG_HEX)
 HEADER_ALIGN = Alignment(horizontal="center", vertical="center")
+# Thin teal rule under the header row — a quiet brand cue + reading guide.
+HEADER_BORDER = Border(bottom=Side(style="medium", color=_ACCENT_HEX))
+_BAND_FILL = PatternFill("solid", fgColor=_BAND_HEX)
 
-COVER_TITLE_FONT = Font(bold=True, size=20, color=_HEADER_BG_HEX, name="Calibri")
-COVER_LABEL_FONT = Font(bold=True, size=11, color="595959")
+COVER_TITLE_FONT = Font(bold=True, size=22, color=_HEADER_BG_HEX, name="Calibri")
+COVER_EYEBROW_FONT = Font(bold=True, size=10, color=_ACCENT_HEX, name="Calibri")
+COVER_LABEL_FONT = Font(bold=True, size=11, color=_LABEL_HEX)
 COVER_TOC_HEADER = Font(bold=True, size=13, color=_HEADER_BG_HEX)
 COVER_TOC_TAB = Font(bold=True, size=11)
 
@@ -136,6 +147,7 @@ def _style_header_row(ws: Worksheet) -> None:
         cell.font = HEADER_FONT
         cell.fill = HEADER_FILL
         cell.alignment = HEADER_ALIGN
+        cell.border = HEADER_BORDER
     # Header row a bit taller for visual weight
     ws.row_dimensions[1].height = 22
 
@@ -175,14 +187,34 @@ def _apply_number_formats(ws: Worksheet, headers: List[str]) -> None:
             ws[f"{col_letter}{row}"].number_format = fmt
 
 
+def apply_zebra_banding(ws: Worksheet, *, start_row: int = 2) -> int:
+    """Tint every other data row a faint parchment so wide tables stay
+    readable across the row — the single biggest legibility win on a dense
+    diligence sheet. Returns the number of rows banded (for tests).
+
+    Applied before any per-cell conditional fills (source tags, percentile
+    highlights) so those still override the band on the cells that matter."""
+    if ws.max_row < start_row or ws.max_column < 1:
+        return 0
+    banded = 0
+    for row in range(start_row, ws.max_row + 1):
+        if (row - start_row) % 2 == 1:   # every second data row
+            for col in range(1, ws.max_column + 1):
+                ws.cell(row=row, column=col).fill = _BAND_FILL
+            banded += 1
+    return banded
+
+
 def apply_sheet_polish(ws: Worksheet) -> None:
-    """One-shot: style header, freeze, apply number formats, size columns."""
+    """One-shot: style header, freeze, apply number formats, band rows,
+    size columns."""
     if ws.max_row < 1:
         return
     headers = [str(c.value) if c.value is not None else "" for c in ws[1]]
     _style_header_row(ws)
     _freeze_header(ws)
     _apply_number_formats(ws, headers)
+    apply_zebra_banding(ws)
     _auto_size_columns(ws)
 
 
@@ -468,11 +500,20 @@ def build_cover_sheet(
     ws.column_dimensions["A"].width = 28
     ws.column_dimensions["B"].width = 72
 
-    # Title row
-    ws["A1"] = "RCM Due Diligence Workbook"
-    ws["A1"].font = COVER_TITLE_FONT
+    # Brand eyebrow + title + teal rule (editorial cover masthead).
+    ws["A1"] = "PEDESK · CHARTIS — HEALTHCARE RCM DILIGENCE"
+    ws["A1"].font = COVER_EYEBROW_FONT
     ws.merge_cells("A1:B1")
-    ws.row_dimensions[1].height = 32
+    ws["A2"] = "RCM Due Diligence Workbook"
+    ws["A2"].font = COVER_TITLE_FONT
+    ws.merge_cells("A2:B2")
+    ws.row_dimensions[2].height = 34
+    # Thin teal rule under the title.
+    rule = PatternFill("solid", fgColor=_ACCENT_HEX)
+    for col in ("A", "B"):
+        ws[f"{col}3"].fill = rule
+    ws.merge_cells("A3:B3")
+    ws.row_dimensions[3].height = 5
 
     # Metadata
     gen_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -490,7 +531,7 @@ def build_cover_sheet(
             f"({grade['pct']:.0f}%)",
         ))
 
-    start = 3
+    start = 5
     for i, (label, value) in enumerate(rows):
         r = start + i
         ws[f"A{r}"] = label
