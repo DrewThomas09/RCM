@@ -182,8 +182,22 @@ def cmd_dq(args: argparse.Namespace) -> int:
     ctx = _open(args.root)
     conn = OpenFdaConnector() if args.reconcile else None
     report = dq_mod.run_all(ctx["store"], connector=conn, reconcile=args.reconcile)
+    if args.write:
+        out = Path(ctx["paths"]["state"]) / "DQ_REPORT.md"
+        out.write_text(report.to_markdown(), encoding="utf-8")
     _print(report.as_dict())
     return 0 if report.ok else 1
+
+
+def cmd_status(args: argparse.Namespace) -> int:
+    ctx = _open(args.root)
+    states = ctx["state"].load()
+    _print({k: {"status": s.status, "rows": s.rows_ingested,
+                "watermark": s.high_watermark, "last_window": s.last_window,
+                "last_run": s.last_run_at, "requests": s.requests_made,
+                "error": s.last_error or None}
+            for k, s in sorted(states.items())})
+    return 0
 
 
 def cmd_serve(args: argparse.Namespace) -> int:
@@ -259,7 +273,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     d = sub.add_parser("dq")
     d.add_argument("--reconcile", action="store_true")
+    d.add_argument("--write", action="store_true",
+                   help="also write DQ_REPORT.md under --root")
     d.set_defaults(func=cmd_dq)
+
+    sub.add_parser("status").set_defaults(func=cmd_status)
 
     srv = sub.add_parser("serve")
     srv.add_argument("--host", default="127.0.0.1")

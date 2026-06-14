@@ -59,6 +59,34 @@ class DqReport:
             },
         }
 
+    def to_markdown(self) -> str:
+        """Render the report as a DQ_REPORT.md artifact (filesystem-as-memory).
+
+        A human-readable companion to ``as_dict()`` so a partner can read
+        the last DQ outcome straight from the working dir without re-running.
+        """
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        s = self.as_dict()["summary"]
+        lines = [
+            "# openFDA connector — DQ report",
+            "",
+            f"_Generated {now} (UTC)._",
+            "",
+            f"**Overall: {'PASS' if self.ok else 'FAIL'}** "
+            f"({s['error_fails']} error-fails, {s['warn_fails']} warn-fails, "
+            f"{s['total']} checks)",
+            "",
+            "| Check | Severity | Result | Detail |",
+            "|---|---|---|---|",
+        ]
+        for r in self.results:
+            detail = r.detail.replace("|", "\\|")
+            lines.append(
+                f"| {r.name} | {r.severity} | {'pass' if r.passed else 'FAIL'} "
+                f"| {detail} |")
+        return "\n".join(lines) + "\n"
+
 
 # ── individual checks ──────────────────────────────────────────────────
 def null_key_check(store: OpenFdaStore) -> List[DqResult]:

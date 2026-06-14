@@ -100,8 +100,11 @@ python -m connectors.openfda.cli --root ./data search-company acme
 # Resolve NDC->RxCUI live via RxNav during a backfill (needs egress)
 python -m connectors.openfda.cli --root ./data backfill --resolve-rxnorm
 
-# Data-quality suite (+ live count reconciliation)
-python -m connectors.openfda.cli --root ./data dq --reconcile
+# Data-quality suite (+ live count reconciliation, + write DQ_REPORT.md)
+python -m connectors.openfda.cli --root ./data dq --reconcile --write
+
+# Per-endpoint status (rows, watermark, last run) straight from STATE.md
+python -m connectors.openfda.cli --root ./data status
 
 # Serve the /v1 surface (auto-exposes every registry dataset)
 python -m connectors.openfda.cli --root ./data serve --port 8099

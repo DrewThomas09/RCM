@@ -71,6 +71,16 @@ class DqTests(unittest.TestCase):
         r = dq_mod.reconcile_counts(conn, self.store, spec, opener=fake)
         self.assertTrue(r.passed)  # 1 ingested vs 1 live
 
+    def test_markdown_report_renders(self):
+        self.store.upsert("dim_drug_product", [
+            {"ndc": "b", "rxcui": "55", "source_endpoint": "drug_ndc"}])
+        report = dq_mod.run_all(self.store)
+        md = report.to_markdown()
+        self.assertIn("# openFDA connector — DQ report", md)
+        self.assertIn("Overall: PASS", md)
+        self.assertIn("null_key:dim_drug_product", md)
+        self.assertIn("ndc_rxcui_coverage", md)
+
     def test_deferred_rxcui_when_no_rxnorm(self):
         self.store.upsert("dim_drug_product", [
             {"ndc": "0002-1200", "source_endpoint": "drug_ndc"}])
@@ -139,6 +149,32 @@ class PipelineEndToEndTests(unittest.TestCase):
             self.assertEqual(states["drug_ndc"].status, "complete")
             self.assertEqual(states["device_event"].status, "failed")
             self.assertEqual(store.count("dim_drug_product"), 2)
+
+    def test_incremental_resumes_from_watermark(self):
+        with tempfile.TemporaryDirectory() as root:
+            # Backfill establishes a high-watermark from the FAERS dates.
+            fake = _fake_world()  # drug_event dates 20040101..20040105
+            pipe, store, state = self._pipe(root)
+            pipe.run(endpoints=["drug_event"], opener=fake)
+            wm = state.load()["drug_event"].high_watermark
+            self.assertEqual(wm, "20040105")
+
+            # Incremental seeds the connector start from watermark - overlap.
+            pipe2, _, state2 = self._pipe(root, mode="incremental")
+            pipe2.config.incremental_overlap_days = 2
+            seeded = {}
+            real = pipe2.connector.fetch
+
+            def spy(spec, params, cursor, *, opener=None):
+                # Capture the seeded start on the first (fresh-cursor) call.
+                if spec.key == "drug_event" and cursor is None:
+                    seeded["start"] = pipe2.connector.backfill_start
+                return real(spec, params, cursor, opener=opener)
+
+            pipe2.connector.fetch = spy
+            pipe2.run(endpoints=["drug_event"], opener=_fake_world())
+            # 20040105 - 2 days = 20040103, not a fixed today-lookback window.
+            self.assertEqual(seeded["start"], "20040103")
 
     def test_query_after_pipeline(self):
         with tempfile.TemporaryDirectory() as root:

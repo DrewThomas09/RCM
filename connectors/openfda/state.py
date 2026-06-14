@@ -35,6 +35,10 @@ class EndpointState:
     status: str = "pending"          # pending|in_progress|complete|failed
     last_error: str = ""
     last_run_at: str = ""
+    # Max value of the endpoint's date_field seen so far (in the endpoint's
+    # native date format). Nightly incrementals resume from here, not from a
+    # fixed lookback, so a missed night self-heals on the next run.
+    high_watermark: Optional[str] = None
 
     def touch(self) -> None:
         self.last_run_at = _utc_now()
