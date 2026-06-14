@@ -11281,12 +11281,13 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         sect = _section_of(item)
         caret = ('<span class="ck-nav-caret" aria-hidden="true">▾</span>'
                  if sect else "")
-        # Section triggers are disclosure buttons for their mega-menu: expose
-        # aria-haspopup + a starting aria-expanded="false" that _NAV_MENU_JS
-        # flips as the panel opens/closes, so a screen reader announces the
-        # collapsed/expanded state instead of a bare link. Bare items (Home)
-        # carry neither.
-        pop_attr = ' aria-haspopup="true" aria-expanded="false"' if sect else ""
+        # Section triggers are disclosure controls for their mega-menu: expose
+        # a starting aria-expanded="false" that _NAV_MENU_JS flips as the panel
+        # opens/closes, so a screen reader announces the collapsed/expanded
+        # state instead of a bare link. No aria-haspopup — the panel is a group
+        # of links (disclosure pattern), not a role="menu" widget. Bare items
+        # (Home) carry neither.
+        pop_attr = ' aria-expanded="false"' if sect else ""
         anchor = (
             f'<a href="{_esc(item["href"])}"{pop_attr} '
             f'class="{"active" if item["key"] == active_nav else ""}">'
@@ -11309,7 +11310,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # preserve render-order stability in case a future revision
         # re-introduces a meaningful per-item index.
         items = "".join(
-            f'<a href="{_esc(s["href"])}" class="ck-mega-item" role="menuitem">'
+            f'<a href="{_esc(s["href"])}" class="ck-mega-item">'
             f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
             f'{_esc(s["label"])}</span>'
             f'<span class="ck-mega-it-desc">{_esc(_NAV_DESC.get(s["href"], ""))}</span>'
@@ -11344,14 +11345,21 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # inside the links box (not a separate full-width footer chunk), in
         # green. Normal flow below the leaves → never overlaps anything.
         all_tools = (
-            f'<a href="/best/{_esc(sect)}" class="ck-mega-all" role="menuitem">'
+            f'<a href="/best/{_esc(sect)}" class="ck-mega-all">'
             f'All {_esc(_nav_label(item["label"]))} tools '
             '<span class="ck-mega-all-arr" aria-hidden="true">&rarr;</span></a>'
         )
         return (
-            '<div class="ck-nav-group" aria-haspopup="true">'
+            # Disclosure-navigation pattern (WAI-ARIA APG): the trigger is an
+            # <a> with aria-expanded; the disclosed panel is a labelled GROUP
+            # of links, not a role="menu" widget. The earlier menu/menuitem
+            # roles falsely promised arrow-key menu semantics this nav never
+            # implemented — screen readers announced "menu, N items" and
+            # trapped arrow keys. role="group" + aria-label keeps the cluster
+            # named without the false affordance.
+            '<div class="ck-nav-group">'
             f'{anchor}'
-            f'<div class="ck-nav-menu ck-nav-mega" role="menu" '
+            f'<div class="ck-nav-menu ck-nav-mega" role="group" '
             f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
             '<div class="ck-mega-inner">'
             f'<div class="ck-mega-lede">{feature}</div>'

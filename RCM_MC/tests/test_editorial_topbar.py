@@ -64,12 +64,14 @@ class EditorialTopbarTests(unittest.TestCase):
 
     def test_section_triggers_expose_aria_expanded(self):
         # Each mega-menu section trigger is a disclosure control: it must
-        # advertise aria-haspopup + a starting aria-expanded="false" (flipped
-        # by _NAV_MENU_JS on open) so screen readers announce open/collapsed
-        # state. Home (a bare link, no dropdown) must NOT carry it.
-        self.assertIn('href="/diligence" aria-haspopup="true" '
-                      'aria-expanded="false"', self.html)
-        self.assertNotIn('href="/home" aria-haspopup', self.html)
+        # advertise a starting aria-expanded="false" (flipped by _NAV_MENU_JS
+        # on open) so screen readers announce open/collapsed state. No
+        # aria-haspopup — the panel is a group of links, not a menu widget.
+        # Home (a bare link, no dropdown) carries no aria-expanded. The
+        # positive match also proves no aria-haspopup sits on the trigger
+        # (the user-chip dropdown keeps its own haspopup — out of scope here).
+        self.assertIn('href="/diligence" aria-expanded="false"', self.html)
+        self.assertNotIn('href="/home" aria-expanded', self.html)
 
     def test_avatar_chip_preserved(self):
         self.assertIn('class="ck-user-chip"', self.html)
