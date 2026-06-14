@@ -22,11 +22,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_pvm_bridge.py",
-      "notes": ""
+      "notes": "Bennet symmetric decomposition; price=220/vol=91.79/mix=228.21 hand-verified; additive+reversal to 1e-6; new/lost bucket."
     },
     {
       "id": "NEW-03",

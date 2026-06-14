@@ -31,3 +31,12 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   Hand fixture TAM 30000 / SAM 20000 / SOM 4000 verified; top_down 33000 no flag,
   50000 fires tam_divergence + reconciled False.
 - Next: NEW-02 PVM bridge (additive + reversal-consistent, tol 1e-6).
+================================================================================
+[2026-06-14 01:52 UTC] NEW-02 PVM bridge
+- pvm_bridge.py: symmetric Bennet decomposition. price=sum dp*qavg;
+  volume=dQ*sum(pa*s_avg); mix=Qavg*sum(pa*ds); new/lost bucket for lines in one
+  period only. Exactly additive + reversal-consistent. IBCS waterfall ordered by
+  magnitude, green/red/blue colors.
+- Evidence: pytest tests/golden/test_pvm_bridge.py => 8 passed. Hand fixture
+  price=220, volume=91.7857, mix=228.2143, total=540; reversal negates each.
+- Next: NEW-03 payer-mix analysis and waterfall (shares sum 100% to 1e-9).
