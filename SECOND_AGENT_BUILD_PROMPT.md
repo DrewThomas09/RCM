@@ -215,6 +215,12 @@ What is **missing** — the front and back of the pipe:
    when it changes. This is what makes a cron run cheap — today
    `incremental_refresh` still has to enumerate candidate years to decide
    there's nothing to do. The watermark short-circuits that.
+   **Reference implementation landed:** `data/release_watermark.py` +
+   the opt-in `fingerprints=` hook in `data_refresh.refresh_all_sources`
+   (skips a source whose fingerprint matches its stored watermark;
+   records on successful load; unknown/`None` always refreshes). Build on
+   it — wire per-source publication URLs and `http_head_fingerprint`
+   probes into the cron entry point.
 2. **Memory discipline (front).** The `Hosp_Rpt_Nmrc` files exceed 2GB and
    cannot be loaded whole. Chunked CSV reads + Parquet intermediates for
    the long-skinny NMRC/ALPHA tables before the join to RPT on
