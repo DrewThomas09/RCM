@@ -12257,7 +12257,10 @@ _MANUAL.extend([
                  "by CDD topic, closing asks — print-ready); a topic × "
                  "lens triangulation matrix; a coverage read (COVERED / "
                  "THIN / UNCOVERED per lens); a call-sheet CSV export "
-                 "(one row per planned call with sourcing pre-filled)."],
+                 "(one row per planned call with sourcing pre-filled); "
+                 "a findings ledger grouping the logged call evidence "
+                 "by thesis tag (contradictions first, with a "
+                 "confirmation-bias warning) plus its own CSV."],
         key_metrics=["Calls per lens vs plan; coverage status — a lens "
                      "needs two voices to count as covered."],
         data_sources=["A curated question bank and program methodology — "
