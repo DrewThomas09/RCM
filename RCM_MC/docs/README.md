@@ -38,6 +38,7 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 | [TUVA_MYELIN_INTEGRATION.md](TUVA_MYELIN_INTEGRATION.md) | How the Tuva (analytics core) and Myelin (CMS pricing) patterns are adopted natively — decision, adapter spec, and the risk-adjustment + DiD modules |
 | [UI_KIT.md](UI_KIT.md) | Reference for the canonical UI primitives (buttons / cards / inputs / KPIs) and the semantic color system |
 | [MISSION_ALIGNMENT.md](MISSION_ALIGNMENT.md) | What this product is for, who it serves, what we won't build |
+| [PEDESK_HEALTHCARE_VERTICALS_DEEP_DIVE.md](PEDESK_HEALTHCARE_VERTICALS_DEEP_DIVE.md) | **19-vertical reference deep-dive** — dental specialties, hospital sub-types, physician-org structures, diagnostics/biologics, and a veterinary cash-pay comparison. Codes, epidemiology, provider counts, benchmarks, reimbursement regimes, and chart-ready data sources per vertical, plus the 2025/2026 cross-cutting reimbursement updates |
 
 ---
 
