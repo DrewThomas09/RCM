@@ -6829,6 +6829,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             _live = (_jq.get("live") or [""])[0] in ("1", "true", "yes")
             return self._send_json(jcode_atlas(
                 population=_pop, fetch_live=_live))
+        if path == "/api/diligence/jcode-atlas/export.csv":
+            # Per-code site-of-care scan as a defanged CSV — one row per
+            # J-code (now-mix + change + pool + opportunity + live ASP).
+            from .diligence.jcode_atlas import jcode_scan_dataframe
+            _jq = urllib.parse.parse_qs(parsed.query)
+            _pop = self._clamp_int(
+                (_jq.get("pop") or ["0"])[0],
+                default=0, min_v=0, max_v=10 ** 10) or None
+            _live = (_jq.get("live") or [""])[0] in ("1", "true", "yes")
+            return self._send_csv_df(
+                jcode_scan_dataframe(population=_pop, fetch_live=_live),
+                "jcode-atlas-site-of-care.csv")
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs

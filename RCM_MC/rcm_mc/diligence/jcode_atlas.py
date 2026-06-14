@@ -27,6 +27,7 @@ REAL geography passed in.
 """
 from __future__ import annotations
 
+import math
 from typing import Any, Dict, List, Optional
 
 from ..data.infusion_jcodes import (
@@ -60,6 +61,41 @@ def _migration(then: Dict[str, float], now: Dict[str, float]
         "out_of_hospital_pts": round((non_hosp_now - non_hosp_then) * 100, 1),
         "non_hospital_share_now": round(non_hosp_now, 4),
         "non_hospital_share_then": round(non_hosp_then, 4),
+    }
+
+
+# Home-shift-opportunity weights — a documented analyst framework, not a
+# data feed. A code is an attractive home/AIC roll-up target when it has
+# a large patient pool (demand), is actively migrating out of the
+# hospital (momentum), AND still has hospital share left to capture
+# (runway). Biosimilar codes carry a drug-margin penalty.
+_OPP_WEIGHTS = {"demand": 0.45, "momentum": 0.35, "runway": 0.20}
+_OPP_POOL_CAP = 200_000      # pool that maps to a full demand score
+_OPP_MOMENTUM_CAP = 22.0     # out-of-hospital pts that maps to full momentum
+_OPP_BIOSIM_PENALTY = 0.85   # ASP-erosion haircut on biosimilar codes
+
+
+def _home_shift_opportunity(
+    pool: float, out_of_hospital_pts: float, hopd_share: float,
+    biosimilar: bool,
+) -> Dict[str, Any]:
+    """Score (0–100) how attractive a J-code is as a home/AIC roll-up
+    target. Pure arithmetic on the scan row so it recomputes + audits.
+
+    demand   = log-scaled patient pool (the addressable volume)
+    momentum = out-of-hospital migration already underway (the trend)
+    runway   = HOPD share still in the hospital (the capture headroom)
+    A biosimilar haircut reflects the thinner drug spread."""
+    demand = min(1.0, math.log10(max(pool, 1)) / math.log10(_OPP_POOL_CAP))
+    momentum = min(1.0, max(0.0, out_of_hospital_pts) / _OPP_MOMENTUM_CAP)
+    runway = max(0.0, min(1.0, hopd_share))
+    penalty = _OPP_BIOSIM_PENALTY if biosimilar else 1.0
+    axes = {"demand": demand, "momentum": momentum, "runway": runway}
+    score = 100.0 * penalty * sum(axes[k] * w for k, w in _OPP_WEIGHTS.items())
+    return {
+        "score": round(score, 1),
+        "axes": {k: round(v, 3) for k, v in axes.items()},
+        "biosimilar_penalty": biosimilar,
     }
 
 
@@ -101,6 +137,8 @@ def jcode_site_of_care_scan(
         base = sen if c.get("denominator") == "seniors" else pop
         patients = round(base * float(c["epi_per_100k"]) / 1e5)
         asp = live_asp.get(c["hcpcs"])
+        opp = _home_shift_opportunity(
+            patients, mig["out_of_hospital_pts"], now["hopd"], c["biosimilar"])
         rows.append({
             "hcpcs": c["hcpcs"], "drug": c["drug"], "unit": c["unit"],
             "drug_class": c["drug_class"], "diseases": c["diseases"],
@@ -117,6 +155,8 @@ def jcode_site_of_care_scan(
             "estimated_patients": patients,
             "asp_payment_limit_per_unit": asp,
             "asp_live": asp is not None,
+            "home_shift_opportunity": opp["score"],
+            "opportunity_axes": opp["axes"],
             "note": c.get("note", ""),
         })
     # Default sort: biggest home-migrators first (the thesis ranking).
@@ -203,6 +243,7 @@ def jcode_atlas(
     book_change = {s: round((book_mix_now[s] - book_mix_then[s]) * 100, 1)
                    for s in SITES}
     movers = sorted(scan, key=lambda r: -r["out_of_hospital_pts"])[:6]
+    opps = sorted(scan, key=lambda r: -r["home_shift_opportunity"])[:8]
 
     return {
         "scan": scan,
@@ -226,7 +267,17 @@ def jcode_atlas(
                             "out_of_hospital_pts": r["out_of_hospital_pts"],
                             "home_shift_pts": r["home_shift_pts"]}
                            for r in movers],
+            "top_opportunities": [
+                {"hcpcs": r["hcpcs"], "drug": r["drug"],
+                 "drug_class": r["drug_class"],
+                 "score": r["home_shift_opportunity"],
+                 "estimated_patients": r["estimated_patients"],
+                 "out_of_hospital_pts": r["out_of_hospital_pts"],
+                 "hopd_share_now": r["site_mix_now"]["hopd"],
+                 "biosimilar": r["biosimilar"]}
+                for r in opps],
         },
+        "opportunity_weights": _OPP_WEIGHTS,
         "then_year": SOC_THEN_YEAR,
         "now_year": SOC_NOW_YEAR,
         "asp_live": any(r["asp_live"] for r in scan),
@@ -250,3 +301,45 @@ def jcode_atlas(
             f"starting points — replace the site mix with a claims "
             f"place-of-service time-series in diligence."),
     }
+
+
+def jcode_scan_dataframe(
+    population: Optional[float] = None,
+    seniors: Optional[float] = None,
+    *,
+    fetch_live: bool = False,
+    scan: Optional[List[Dict[str, Any]]] = None,
+):
+    """Flatten the site-of-care scan into a pandas DataFrame for the CSV
+    export — one row per J-code, with the now-mix, the change, the pool,
+    the opportunity score, and (where reachable) the live ASP. Returns a
+    DataFrame so the server's shared defanged CSV sender can stream it."""
+    import pandas as pd
+    scan = scan or jcode_site_of_care_scan(
+        population, seniors, fetch_live=fetch_live)
+    out = []
+    for r in scan:
+        now = r["site_mix_now"]
+        d = r["change"]["delta_pts"]
+        asp = r["asp_payment_limit_per_unit"]
+        out.append({
+            "hcpcs": r["hcpcs"],
+            "drug": r["drug"],
+            "drug_class": r["drug_class"],
+            "primary_disease": r["diseases"][0] if r["diseases"] else "",
+            "n_diseases": len(r["diseases"]),
+            "icd10": r["icd10"][0] if r["icd10"] else "",
+            "biosimilar": "Y" if r["biosimilar"] else "",
+            "home_pct_now": round(now["home"] * 100, 1),
+            "office_pct_now": round(now["office"] * 100, 1),
+            "aic_pct_now": round(now["aic"] * 100, 1),
+            "hopd_pct_now": round(now["hopd"] * 100, 1),
+            "home_change_pts": d["home"],
+            "out_of_hospital_pts": r["out_of_hospital_pts"],
+            "estimated_patients": r["estimated_patients"],
+            "asp_payment_limit_per_unit": (round(asp, 4)
+                                           if asp is not None else ""),
+            "home_shift_opportunity": r["home_shift_opportunity"],
+            "migration_rank": r["migration_rank"],
+        })
+    return pd.DataFrame(out)
