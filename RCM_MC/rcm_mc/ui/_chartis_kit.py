@@ -11419,6 +11419,10 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search…" '
+        # autocomplete/spellcheck off so the browser doesn't squiggle CCNs
+        # and route slugs or pop an autofill dropdown over results;
+        # enterkeyhint surfaces a "search" key on mobile soft keyboards.
+        'autocomplete="off" spellcheck="false" enterkeyhint="search" '
         'aria-label="Search deals, hospitals, routes" />'
         '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
         '</form>'

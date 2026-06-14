@@ -50,6 +50,15 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('class="ck-search-kbd"', self.html)
         self.assertIn("⌘K", self.html)
 
+    def test_search_input_has_site_search_attributes(self):
+        # A site-search box should not autofill or spell-check the query
+        # (CCNs, route slugs), and should surface a "search" action key on
+        # mobile keyboards.
+        self.assertIn('type="search"', self.html)
+        self.assertIn('autocomplete="off"', self.html)
+        self.assertIn('spellcheck="false"', self.html)
+        self.assertIn('enterkeyhint="search"', self.html)
+
     def test_guide_button_preserved(self):
         # Guide button still opens the existing Guide sidebar.
         self.assertIn('class="ck-guide-trigger"', self.html)
