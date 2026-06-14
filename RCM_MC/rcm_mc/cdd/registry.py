@@ -84,6 +84,7 @@ def _autoload() -> None:
         "decisions",
         "ingestion",
         "diligence_pack",
+        "vertical_reference",
     ]
     for name in modules:
         try:
