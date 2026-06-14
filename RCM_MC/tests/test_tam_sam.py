@@ -1982,3 +1982,27 @@ class MethodExportTests(unittest.TestCase):
                           tam_sam_csv({"template": [key]}), key)
             self.assertTrue(tam_sam_xlsx({"template": [key]})[:2] == b"PK",
                             key)
+
+
+class TriangulationAgendaTests(unittest.TestCase):
+    """A diverging triangulation auto-generates a reconciliation question
+    — uncertainty drives the diligence agenda, in the panel and exports."""
+
+    def test_amber_template_gets_reconcile_item(self):
+        from rcm_mc.ui.tam_sam_page import _derive_agenda_items
+        from rcm_mc.diligence.tam_sam import compute, urgent_care_template
+        items = _derive_agenda_items(compute(urgent_care_template()))
+        self.assertTrue(any("Reconcile the sizing" in i for i in items))
+
+    def test_green_template_has_no_reconcile_item(self):
+        from rcm_mc.ui.tam_sam_page import _derive_agenda_items
+        from rcm_mc.diligence.tam_sam import compute, snf_template
+        items = _derive_agenda_items(compute(snf_template()))
+        self.assertFalse(any("Reconcile the sizing" in i for i in items))
+
+    def test_reconcile_item_in_panel_and_csv(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page, tam_sam_csv
+        self.assertIn("Reconcile the sizing",
+                      render_tam_sam_page({"template": ["urgent_care"]}))
+        self.assertIn("Reconcile the sizing",
+                      tam_sam_csv({"template": ["urgent_care"]}))

@@ -4865,3 +4865,12 @@ that manufactures a false red):
   (green). Anchors span facility/capacity, epidemiology archetypes.
 **Verify**: 168 pass in test_tam_sam.py; clean -W error import; gaps
 hand-checked against bottom-up builds (PT/UC/medspa/DME/vision).
+
+## W3-006 (2026-06-14) — Triangulation divergence → diligence agenda item
+A diverging triangulation (amber/red band) now auto-generates a
+"Reconcile the sizing" question at the top of the diligence agenda —
+naming the bottom-up vs top-down figures, the gap %, and the top-down
+basis to check. Wired into the single agenda source so it flows to the
+page panel, CSV, and XLSX alike; green models add nothing (no noise).
+**Verify**: +3 tests (amber template gets the item; green doesn't; item
+in panel + CSV). 171 pass in test_tam_sam.py.

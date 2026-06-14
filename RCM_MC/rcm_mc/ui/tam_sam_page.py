@@ -297,6 +297,15 @@ def _derive_agenda_items(out: Dict[str, Any]) -> List[str]:
     the exports, so the workbook never carries a thinner question list
     than the screen."""
     items: List[str] = []
+    tri = out.get("triangulation")
+    if tri and tri["band"] in ("amber", "red"):
+        items.append(
+            f'Reconcile the sizing: bottom-up '
+            f'({_fmt_money(tri["bottom_up_tam"])}) vs top-down '
+            f'({_fmt_money(tri["top_down_tam"])}) diverge '
+            f'{tri["gap_pct"]:.0f}% ({tri["band"].upper()}) — check '
+            f'segmentation, payer mix, and the top-down basis '
+            f'({tri.get("top_down_source", "")})')
     for g in out["growth_drivers"]:
         if g["annual_pct"] < 0:
             note = f' — {g["note"]}' if g.get("note") else ""
@@ -331,6 +340,15 @@ def _diligence_agenda_panel(out: Dict[str, Any]) -> str:
     Nothing hand-written per industry; nothing the build doesn't
     already assert."""
     items: List[str] = []
+    tri = out.get("triangulation")
+    if tri and tri["band"] in ("amber", "red"):
+        items.append(
+            f'<strong>Reconcile the sizing:</strong> bottom-up '
+            f'({_fmt_money(tri["bottom_up_tam"])}) vs top-down '
+            f'({_fmt_money(tri["top_down_tam"])}) diverge '
+            f'{tri["gap_pct"]:.0f}% ({tri["band"].upper()}) — check '
+            f'segmentation, payer mix, and the top-down basis '
+            f'({html.escape(tri.get("top_down_source", ""))})')
     for g in out["growth_drivers"]:
         if g["annual_pct"] < 0:
             note = f' — {g["note"]}' if g.get("note") else ""
