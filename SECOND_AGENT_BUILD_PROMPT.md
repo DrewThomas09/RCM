@@ -229,10 +229,16 @@ What is **missing** — the front and back of the pipe:
    ≤10/11 — blank ≠ zero), sign-convention checks on negative amounts, and
    **staging-to-target reconciliation** against the HCRIS record-count
    file. A loader is not "done" until reconciliation passes.
+   **Reference implementation landed:** `data/ingest_validation.py`
+   (`validate_suppression`, `reconcile_counts`, `check_non_negative`,
+   `ValidationReport.raise_for_issues`). Wire each loader to build a
+   report and `raise_for_issues()` before committing rows.
 4. **Format-drift detection (back).** The 2552-96 → 2552-10 form change
    moves worksheet/line/column codes; the loader must *detect* an
    unrecognized `(WKSHT_CD, LINE_NUM, CLMN_NUM)` and fail loudly rather
    than silently mapping to the wrong variable.
+   **Reference implementation landed:** `ingest_validation.detect_unknown_keys`
+   — pass the observed key tuples + the maintained crosswalk key set.
 
 **Generalize the pattern to the other loaders:**
 
