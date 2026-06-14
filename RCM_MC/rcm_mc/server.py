@@ -404,7 +404,7 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
         f'action="/api/deals/{qd}/deadlines">'
         f'<input type="text" name="label" placeholder="Task / deadline label" '
         f'required maxlength="120" class="ck-deal-deadline-label-input">'
-        f'<input type="date" name="due_date" required class="ck-deal-deadline-date">'
+        f'<input type="date" name="due_date" required aria-label="Due date" class="ck-deal-deadline-date">'
         f'<input type="text" name="owner" value="{html.escape(deal_owner)}" '
         f'placeholder="Owner" maxlength="40" class="ck-deal-deadline-owner-input">'
         f'<button type="submit" class="ck-deal-deadline-add">+ Add</button>'
@@ -1752,17 +1752,17 @@ def _deal_action_forms(deal_id: str) -> str:
         <label>Quarter (YYYYQn)</label>
         <input type="text" name="quarter" required placeholder="2026Q2">
         <label>EBITDA ($)</label>
-        <input type="number" step="any" name="ebitda">
+        <input type="number" step="any" name="ebitda" aria-label="EBITDA ($)">
         <label>Plan EBITDA ($)</label>
-        <input type="number" step="any" name="plan_ebitda">
+        <input type="number" step="any" name="plan_ebitda" aria-label="Plan EBITDA ($)">
         <label>NPSR ($)</label>
-        <input type="number" step="any" name="net_patient_revenue">
+        <input type="number" step="any" name="net_patient_revenue" aria-label="NPSR ($)">
         <label>IDR (decimal)</label>
-        <input type="number" step="0.001" name="idr_blended">
+        <input type="number" step="0.001" name="idr_blended" aria-label="IDR (decimal)">
         <label>DAR (days)</label>
-        <input type="number" step="0.1" name="dar_clean_days">
+        <input type="number" step="0.1" name="dar_clean_days" aria-label="DAR (days)">
         <label>Notes</label>
-        <input type="text" name="notes">
+        <input type="text" name="notes" aria-label="Quarter notes">
         <div></div>
         <button type="submit" class="ck-deal-action-submit">Record quarter</button>
       </form>
@@ -1801,7 +1801,7 @@ def _deal_action_forms(deal_id: str) -> str:
         <label>Run directory</label>
         <input type="text" name="run_dir" placeholder="/path/to/run (optional)">
         <label>Notes</label>
-        <input type="text" name="notes">
+        <input type="text" name="notes" aria-label="Stage notes">
         <div></div>
         <button type="submit" class="ck-deal-action-submit">Advance stage</button>
       </form>
