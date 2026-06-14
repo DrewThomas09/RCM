@@ -4,7 +4,66 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+# ── Editorial export palette (matches the on-screen Chartis tokens) ───
+# The PNG exports used to ship matplotlib defaults — generic cobalt/red on
+# a grey plate, DejaVu Sans, 150 dpi — which read as "Excel chart", not a
+# board exhibit. These tokens + the rcParams below give every exported
+# figure the same navy/teal editorial identity, a clean white plate, a
+# quiet y-grid, despined axes, and 200-dpi output for crisp slide paste.
+_PAPER = "#ffffff"
+_NAVY = "#0b2341"
+_INK = "#1a2332"
+_TEAL = "#155752"
+_POS = "#0a8a5f"
+_NEG = "#b5321e"
+_NEG_DK = "#8f2417"
+_WARN = "#b8732a"
+_DIM = "#5b6b7a"
+_FAINT = "#7a8699"
+_GRID = "#e4ddca"
+
+
+def _apply_pe_style() -> None:
+    """Apply the board-exhibit matplotlib theme once at import. Font names
+    that aren't installed fall back gracefully (matplotlib resolves the
+    first available in the list), so this adds no hard font dependency."""
+    mpl.rcParams.update({
+        "figure.facecolor": _PAPER,
+        "axes.facecolor": _PAPER,
+        "savefig.facecolor": _PAPER,
+        "savefig.dpi": 200,
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Inter Tight", "Helvetica Neue", "Helvetica",
+                            "Arial", "Liberation Sans", "DejaVu Sans"],
+        "font.size": 11,
+        "text.color": _INK,
+        "axes.edgecolor": _GRID,
+        "axes.linewidth": 0.9,
+        "axes.titlecolor": _NAVY,
+        "axes.titlesize": 14,
+        "axes.titleweight": "bold",
+        "axes.titlepad": 14,
+        "axes.labelcolor": _DIM,
+        "axes.labelsize": 11,
+        "axes.grid": True,
+        "axes.grid.axis": "y",
+        "axes.axisbelow": True,
+        "grid.color": _GRID,
+        "grid.linewidth": 0.8,
+        "grid.alpha": 0.85,
+        "xtick.color": _DIM,
+        "ytick.color": _DIM,
+        "xtick.labelsize": 9.5,
+        "ytick.labelsize": 9.5,
+        "legend.frameon": False,
+        "legend.fontsize": 10,
+    })
+
+
+_apply_pe_style()
 
 
 def summarize_distribution(df: pd.DataFrame, col: str) -> Dict[str, float]:
@@ -106,10 +165,10 @@ def waterfall_ebitda_drag(
         for v in values[:-1]:
             cum.append(cum[-1] + v)
         cum = cum[:-1]
-        bar_colors = ["#64748b"] + ["#059669"] * 4 + ["#0f172a"]  # Grey start, Green bridges, Dark end
+        bar_colors = [_DIM] + [_POS] * 4 + [_NAVY]  # Grey start, Green bridges, Dark end
         # Bridges go UP (recoverable add-backs)
-        fig, ax = plt.subplots(figsize=(12, 6), facecolor="#fafafa")
-        ax.set_facecolor("#fafafa")
+        fig, ax = plt.subplots(figsize=(12, 6), facecolor=_PAPER)
+        ax.set_facecolor(_PAPER)
         for i, (lab, v) in enumerate(zip(labels, values)):
             if i == 0:
                 ax.bar(i, v, bottom=0, color=bar_colors[i], edgecolor="white", linewidth=0.8)
@@ -122,7 +181,7 @@ def waterfall_ebitda_drag(
                 y_pos = cum[i] + v
             offset = max(total_drag * 0.02, 50000)
             ax.text(i, y_pos + offset, pretty_money(v), ha="center", va="bottom", fontsize=9, fontweight=600)
-        ax.axhline(0, color="#374151", linewidth=1, linestyle="-")
+        ax.axhline(0, color=_INK, linewidth=1, linestyle="-")
         ax.set_xticks(range(len(labels)))
         ax.set_xticklabels(labels, rotation=25, ha="right", fontsize=9)
         ax.set_ylabel("EBITDA ($)", fontsize=11, fontweight=500)
@@ -135,9 +194,9 @@ def waterfall_ebitda_drag(
         for v in values[:-1]:
             cum.append(cum[-1] + v)
         cum = cum[:-1]
-        bar_colors = ["#dc2626", "#dc2626", "#059669", "#059669", "#0f172a"]  # Red leakage, Green recoverable
-        fig, ax = plt.subplots(figsize=(11, 6), facecolor="#fafafa")
-        ax.set_facecolor("#fafafa")
+        bar_colors = [_NEG, _NEG, _POS, _POS, _NAVY]  # Red leakage, Green recoverable
+        fig, ax = plt.subplots(figsize=(11, 6), facecolor=_PAPER)
+        ax.set_facecolor(_PAPER)
         for i, (lab, v) in enumerate(comps):
             ax.bar(i, v, bottom=cum[i], color=bar_colors[i], edgecolor="white", linewidth=0.8)
             y_pos = cum[i] + v
@@ -146,7 +205,7 @@ def waterfall_ebitda_drag(
         ax.bar(len(comps), total_drag, color=bar_colors[-1], edgecolor="white", linewidth=0.8)
         ax.text(len(comps), total_drag + (total_drag * 0.02 if total_drag != 0 else 1000),
                 pretty_money(total_drag), ha="center", va="bottom", fontsize=11, fontweight=700)
-        ax.axhline(0, color="#374151", linewidth=1, linestyle="-")
+        ax.axhline(0, color=_INK, linewidth=1, linestyle="-")
         ax.set_xticks(range(len(labels)))
         ax.set_xticklabels(labels, rotation=20, ha="right", fontsize=10)
         ax.set_ylabel("Annual Addressable Opportunity (Actual vs Benchmark)", fontsize=11, fontweight=500)
@@ -155,7 +214,7 @@ def waterfall_ebitda_drag(
     ax.spines["right"].set_visible(False)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: pretty_money(x)))
     fig.tight_layout()
-    fig.savefig(outpath, dpi=150, bbox_inches="tight", facecolor="#fafafa")
+    fig.savefig(outpath, dpi=200, bbox_inches="tight", facecolor=_PAPER)
     plt.close(fig)
 
 
@@ -166,13 +225,17 @@ def plot_denial_drivers_chart(df_drag: pd.DataFrame, outpath: str, top_n: int = 
     top = df_drag.nlargest(top_n, "drag_mean_denial_writeoff")
     labels = [f"{r['payer']} · {r['root_cause']}" for _, r in top.iterrows()]
     vals = top["drag_mean_denial_writeoff"].values
-    fig, ax = plt.subplots(figsize=(10, max(5, len(labels) * 0.5)), facecolor="#fafafa")
-    ax.set_facecolor("#fafafa")
-    colors = ["#1e40af" if v > 0 else "#dc2626" for v in vals]
+    fig, ax = plt.subplots(figsize=(10, max(5, len(labels) * 0.5)), facecolor=_PAPER)
+    ax.set_facecolor(_PAPER)
+    colors = [_TEAL if v > 0 else _NEG for v in vals]
     bars = ax.barh(range(len(labels)), vals, color=colors, edgecolor="white", linewidth=0.8)
+    # Horizontal bars read against vertical gridlines, not horizontal ones.
+    ax.set_axisbelow(True)
+    ax.grid(axis="x", color=_GRID, linewidth=0.8, alpha=0.85)
+    ax.grid(axis="y", visible=False)
     ax.set_yticks(range(len(labels)))
     ax.set_yticklabels(labels, fontsize=10)
-    ax.axvline(0, color="#374151", linewidth=1)
+    ax.axvline(0, color=_INK, linewidth=1)
     ax.set_xlabel("Annual write-off drag ($)", fontsize=11)
     ax.set_title("Top Denial Drivers by Payer & Root Cause", fontsize=13, fontweight=600)
     ax.spines["top"].set_visible(False)
@@ -182,7 +245,7 @@ def plot_denial_drivers_chart(df_drag: pd.DataFrame, outpath: str, top_n: int = 
         ax.text(bar.get_width(), bar.get_y() + bar.get_height() / 2, pretty_money(v),
                 ha="left" if v >= 0 else "right", va="center", fontsize=9, fontweight=500)
     fig.tight_layout()
-    fig.savefig(outpath, dpi=150, bbox_inches="tight", facecolor="#fafafa")
+    fig.savefig(outpath, dpi=200, bbox_inches="tight", facecolor=_PAPER)
     plt.close(fig)
 
 
@@ -200,10 +263,10 @@ def plot_underpayments_chart(df_drag: pd.DataFrame, outpath: str) -> None:
     w = 0.35
     leak_vals = leak.set_index("payer").reindex(payers)["drag_mean_value"].fillna(0).values
     cost_vals = cost.set_index("payer").reindex(payers)["drag_mean_value"].fillna(0).values
-    fig, ax = plt.subplots(figsize=(9, 5), facecolor="#fafafa")
-    ax.set_facecolor("#fafafa")
-    ax.bar([i - w / 2 for i in x], leak_vals, w, label="Leakage", color="#1e40af", edgecolor="white")
-    ax.bar([i + w / 2 for i in x], cost_vals, w, label="Rework cost", color="#64748b", edgecolor="white")
+    fig, ax = plt.subplots(figsize=(9, 5), facecolor=_PAPER)
+    ax.set_facecolor(_PAPER)
+    ax.bar([i - w / 2 for i in x], leak_vals, w, label="Leakage", color=_TEAL, edgecolor="white")
+    ax.bar([i + w / 2 for i in x], cost_vals, w, label="Rework cost", color=_DIM, edgecolor="white")
     ax.set_xticks(x)
     ax.set_xticklabels(payers)
     ax.set_ylabel("Annual drag ($)", fontsize=11)
@@ -213,7 +276,7 @@ def plot_underpayments_chart(df_drag: pd.DataFrame, outpath: str) -> None:
     ax.spines["right"].set_visible(False)
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: pretty_money(x)))
     fig.tight_layout()
-    fig.savefig(outpath, dpi=150, bbox_inches="tight", facecolor="#fafafa")
+    fig.savefig(outpath, dpi=200, bbox_inches="tight", facecolor=_PAPER)
     plt.close(fig)
 
 
@@ -227,12 +290,15 @@ def plot_deal_summary(summary: pd.DataFrame, ev_multiple: float, outpath: str) -
     ev_p10 = ebitda_p10 * ev_multiple
     ev_mean = ebitda_mean * ev_multiple
     ev_p90 = ebitda_p90 * ev_multiple
-    fig, ax = plt.subplots(figsize=(10, 5), facecolor="#fafafa")
-    ax.set_facecolor("#fafafa")
+    fig, ax = plt.subplots(figsize=(10, 5), facecolor=_PAPER)
+    ax.set_facecolor(_PAPER)
     labels = ["P10 (conservative)", "Mean", "P90 (aggressive)"]
     vals = [ev_p10, ev_mean, ev_p90]
-    colors = ["#64748b", "#1e40af", "#0f172a"]
+    colors = [_DIM, _TEAL, _NAVY]
     bars = ax.barh(labels, vals, 0.5, color=colors, edgecolor="white", linewidth=1)
+    ax.set_axisbelow(True)
+    ax.grid(axis="x", color=_GRID, linewidth=0.8, alpha=0.85)
+    ax.grid(axis="y", visible=False)
     ax.set_xlabel("Enterprise value ($)", fontsize=11)
     ax.set_title(f"Deal Opportunity Range (at {ev_multiple}x EBITDA multiple)", fontsize=13, fontweight=600)
     ax.spines["top"].set_visible(False)
@@ -249,7 +315,7 @@ def plot_deal_summary(summary: pd.DataFrame, ev_multiple: float, outpath: str) -
     # Explicit margins keep the value labels inside the figure bounds
     # without relying on tight_layout to expand for text outside axes.
     fig.subplots_adjust(left=0.24, right=0.96, top=0.86, bottom=0.16)
-    fig.savefig(outpath, dpi=150, bbox_inches="tight", facecolor="#fafafa")
+    fig.savefig(outpath, dpi=200, bbox_inches="tight", facecolor=_PAPER)
     plt.close(fig)
 
 
@@ -275,8 +341,8 @@ def plot_ebitda_drag_distribution(
     p90 = float(np.quantile(x, 0.90))
     mean_val = float(np.mean(x))
 
-    fig, ax = plt.subplots(figsize=(11, 6), facecolor="#fafafa")
-    ax.set_facecolor("#fafafa")
+    fig, ax = plt.subplots(figsize=(11, 6), facecolor=_PAPER)
+    ax.set_facecolor(_PAPER)
     x_min, x_max = float(np.percentile(x, 0.5)), float(np.percentile(x, 99.5))
     x_range = np.linspace(max(0, x_min - (x_max - x_min) * 0.1), x_max * 1.15, 300)
 
@@ -287,14 +353,14 @@ def plot_ebitda_drag_distribution(
             y_kde = kde(x_range)
             y_kde = np.maximum(y_kde, 0)
             y_hi = float(np.max(y_kde))
-            ax.fill_between(x_range, 0, y_kde, alpha=0.5, color="#1e40af")
-            ax.plot(x_range, y_kde, color="#1e40af", linewidth=2.5)
+            ax.fill_between(x_range, 0, y_kde, alpha=0.5, color=_TEAL)
+            ax.plot(x_range, y_kde, color=_TEAL, linewidth=2.5)
         except Exception:
-            n, _, _ = ax.hist(x, bins=min(60, max(25, len(x) // 40)), color="#1e40af", alpha=0.6,
+            n, _, _ = ax.hist(x, bins=min(60, max(25, len(x) // 40)), color=_TEAL, alpha=0.6,
                               edgecolor="white", density=True)
             y_hi = float(np.max(n)) if len(n) > 0 else 1e-7
     else:
-        n, _, _ = ax.hist(x, bins=min(60, max(25, len(x) // 40)), color="#1e40af", alpha=0.6,
+        n, _, _ = ax.hist(x, bins=min(60, max(25, len(x) // 40)), color=_TEAL, alpha=0.6,
                           edgecolor="white", density=True)
         y_hi = float(np.max(n)) if len(n) > 0 else 1e-7
 
@@ -306,8 +372,8 @@ def plot_ebitda_drag_distribution(
         y_t = np.maximum(y_t, 0)
         if np.max(y_t) > 0 and y_hi > 0:
             scale = 0.35 * y_hi / np.max(y_t)
-            ax.fill_between(x_range, 0, y_t * scale, alpha=0.12, color="#64748b")
-            ax.plot(x_range, y_t * scale, color="#94a3b8", linestyle="--", linewidth=1.5, alpha=0.5)
+            ax.fill_between(x_range, 0, y_t * scale, alpha=0.12, color=_DIM)
+            ax.plot(x_range, y_t * scale, color=_FAINT, linestyle="--", linewidth=1.5, alpha=0.5)
     except Exception:
         pass
 
@@ -316,37 +382,37 @@ def plot_ebitda_drag_distribution(
         f"Model Mean: {pretty_money(mean_val)}",
         xy=(mean_val, y_hi * 0.5),
         xytext=(mean_val + (x_max - x_min) * 0.08, y_hi * 0.7),
-        fontsize=10, fontweight=600, color="#1e40af",
-        arrowprops=dict(arrowstyle="->", color="#1e40af", lw=1.5),
+        fontsize=10, fontweight=600, color=_TEAL,
+        arrowprops=dict(arrowstyle="->", color=_TEAL, lw=1.5),
     )
-    ax.axvline(mean_val, color="#1e40af", linestyle="--", linewidth=1.5, alpha=0.8)
+    ax.axvline(mean_val, color=_TEAL, linestyle="--", linewidth=1.5, alpha=0.8)
 
     ax.annotate(
         f"High-Stress Scenario: {pretty_money(p90)}",
         xy=(p90, 0),
         xytext=(p90 + (x_max - x_min) * 0.03, y_hi * 0.25),
-        fontsize=9, fontweight=600, color="#dc2626",
-        arrowprops=dict(arrowstyle="->", color="#dc2626", lw=1.2),
+        fontsize=9, fontweight=600, color=_NEG,
+        arrowprops=dict(arrowstyle="->", color=_NEG, lw=1.2),
     )
-    ax.axvline(p90, color="#dc2626", linestyle=":", linewidth=1.2, alpha=0.7)
+    ax.axvline(p90, color=_NEG, linestyle=":", linewidth=1.2, alpha=0.7)
 
     if covenant_trigger_drag is not None and covenant_trigger_drag > 0 and covenant_trigger_drag < x_max * 1.2:
-        ax.axvline(covenant_trigger_drag, color="#b91c1c", linestyle="-", linewidth=2, alpha=0.9)
+        ax.axvline(covenant_trigger_drag, color=_NEG_DK, linestyle="-", linewidth=2, alpha=0.9)
         ax.annotate(
             f"Covenant breach threshold",
             xy=(covenant_trigger_drag, y_hi * 0.35),
-            fontsize=8, color="#b91c1c", ha="center",
+            fontsize=8, color=_NEG_DK, ha="center",
         )
 
     if management_case_drag is not None:
-        ax.scatter([management_case_drag], [y_hi * 0.15], s=100, color="#059669", zorder=5,
-                   edgecolors="#0f172a", linewidths=2)
+        ax.scatter([management_case_drag], [y_hi * 0.15], s=100, color=_POS, zorder=5,
+                   edgecolors=_NAVY, linewidths=2)
         ax.annotate(
             f"Mgmt Case: {pretty_money(management_case_drag)}",
             xy=(management_case_drag, y_hi * 0.15),
             xytext=(management_case_drag - (x_max - x_min) * 0.15, y_hi * 0.4),
-            fontsize=9, fontweight=500, color="#059669",
-            arrowprops=dict(arrowstyle="->", color="#059669", lw=1),
+            fontsize=9, fontweight=500, color=_POS,
+            arrowprops=dict(arrowstyle="->", color=_POS, lw=1),
         )
 
     ax.set_xlabel("EBITDA Drag ($)", fontsize=11)
@@ -357,7 +423,7 @@ def plot_ebitda_drag_distribution(
     ax.set_ylim(bottom=0)
     ax.set_xlim(left=max(0, x_min - (x_max - x_min) * 0.05))
     fig.tight_layout()
-    fig.savefig(outpath, dpi=150, bbox_inches="tight", facecolor="#fafafa")
+    fig.savefig(outpath, dpi=200, bbox_inches="tight", facecolor=_PAPER)
     plt.close(fig)
 
 

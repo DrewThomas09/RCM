@@ -16,6 +16,7 @@ a header row (category-axis name + one name per series) and rows of
 from __future__ import annotations
 
 import html
+import itertools
 from typing import Any, Dict, List, Optional, Tuple
 
 # ── Chartis palettes ─────────────────────────────────────────────────
@@ -120,6 +121,10 @@ def presentable_pie(
 
     total = sum(s["value"] for s in clean) or 1
     cx, cy, R = 232.0, 268.0, 150.0
+    uid = _uid_of(opts)
+    # Shadow plate under the pie (hidden by the slices) for slide-ready depth.
+    out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R:.1f}" '
+               f'fill="#ffffff" filter="url(#cdsh{uid})"/>')
     ang = -math.pi / 2
     legend_y = max(96.0, cy - len(clean) * 13)
     for i, s in enumerate(clean):
@@ -152,6 +157,9 @@ def presentable_pie(
                 f'style="paint-order:stroke;stroke:rgba(0,0,0,0.18);'
                 f'stroke-width:2px;">{_esc(txt)}</text>')
         ang = a2
+    # Spherical sheen overlay for dimensional lift.
+    out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R:.1f}" '
+               f'fill="url(#cdrg{uid})" pointer-events="none"/>')
     if donut:
         out.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R*0.58:.1f}" '
                    f'fill="#fff"/>')
@@ -378,17 +386,83 @@ def _esc(s: Any) -> str:
     return html.escape(str(s))
 
 
+# ── Visual depth (gradients + soft shadow) ───────────────────────────
+#
+# Flat fills read as "beginner"; presentation-grade charts carry depth.
+# Every chart SVG ships a tiny <defs> block (unique id per render so two
+# charts on one page never collide): a soft navy drop-shadow that lifts
+# bars/marks off the plate, plus vertical/horizontal "sheen" gradients
+# (white at the lit edge → faint shade at the far edge) overlaid on each
+# bar so a solid hue reads as a rounded, dimensional surface. The base
+# colour is still a solid <rect> underneath, so palette assertions and
+# colour legibility are unchanged — the gradient is a translucent overlay.
+
+_UID = itertools.count(1)
+
+
+def _depth_defs(uid: int) -> str:
+    return (
+        f'<defs>'
+        f'<filter id="cdsh{uid}" x="-25%" y="-25%" width="150%" height="160%">'
+        f'<feDropShadow dx="0" dy="1.3" stdDeviation="1.7" '
+        f'flood-color="#0b2341" flood-opacity="0.22"/></filter>'
+        f'<linearGradient id="cdvg{uid}" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>'
+        f'<stop offset="0.5" stop-color="#ffffff" stop-opacity="0.06"/>'
+        f'<stop offset="1" stop-color="#000000" stop-opacity="0.10"/>'
+        f'</linearGradient>'
+        f'<linearGradient id="cdhg{uid}" x1="0" y1="0" x2="1" y2="0">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity="0.26"/>'
+        f'<stop offset="0.55" stop-color="#ffffff" stop-opacity="0.05"/>'
+        f'<stop offset="1" stop-color="#000000" stop-opacity="0.11"/>'
+        f'</linearGradient>'
+        f'<radialGradient id="cdrg{uid}" cx="0.38" cy="0.34" r="0.85">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity="0.26"/>'
+        f'<stop offset="0.55" stop-color="#ffffff" stop-opacity="0.03"/>'
+        f'<stop offset="1" stop-color="#000000" stop-opacity="0.12"/>'
+        f'</radialGradient>'
+        f'</defs>'
+    )
+
+
+def _uid_of(opts: Dict[str, Any]) -> int:
+    """The depth-defs id for this render (set by ``_svg_open``)."""
+    uid = opts.get("_uid")
+    if uid is None:
+        uid = next(_UID)
+        opts["_uid"] = uid
+    return uid
+
+
+def _depth_bar(opts: Dict[str, Any], x: float, y: float, w: float, h: float,
+               fill: str, *, rx: float = 1.5, vertical: bool = True,
+               shadow: bool = True) -> str:
+    """A bar with depth: solid colour + a sheen-gradient overlay (+ optional
+    soft drop-shadow). Width/height are clamped non-negative by the caller."""
+    uid = opts.get("_uid", 0)
+    flt = f' filter="url(#cdsh{uid})"' if shadow else ""
+    grad = f"cdvg{uid}" if vertical else f"cdhg{uid}"
+    return (
+        f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
+        f'rx="{rx:g}" fill="{fill}"{flt}/>'
+        f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
+        f'rx="{rx:g}" fill="url(#{grad})" pointer-events="none"/>')
+
+
 def _svg_open(W: float, H: float, opts: Dict[str, Any], aria: str,
               extra_style: str = "") -> str:
     """Open an <svg> sized by ``width_px`` (default = the viewBox width),
     scaling proportionally to the container — the size control. Height is
-    auto from the viewBox aspect so charts never distort."""
+    auto from the viewBox aspect so charts never distort. Emits a per-render
+    <defs> with the depth (shadow + sheen) primitives every chart shares."""
     wpx = opts.get("width_px") or W
+    uid = _uid_of(opts)
     return (f'<svg viewBox="0 0 {W:.0f} {H:.0f}" width="100%" '
             f'preserveAspectRatio="xMidYMid meet" role="img" '
             f'aria-label="{_esc(aria)}" '
             f'style="max-width:{wpx:.0f}px;width:100%;height:auto;'
-            f'background:#fff;{extra_style}">')
+            f'background:#fff;{extra_style}">'
+            + _depth_defs(uid))
 
 
 def _fmt(v: Optional[float], suffix: str = "") -> str:
@@ -598,10 +672,10 @@ def _bars(table, opts):
                     raw = s["values"][i] or 0
                     v = (raw / tot * 100) if percent and tot else raw
                     w = (v / vmax) * (x1 - x0)
-                    body += (f'<rect x="{x0+cumw:.1f}" y="{yy:.1f}" '
-                             f'width="{max(0, w):.1f}" '
-                             f'height="{inner*0.92:.1f}" '
-                             f'fill="{colors[si % len(colors)]}"/>')
+                    body += _depth_bar(
+                        opts, x0 + cumw, yy, max(0, w), inner * 0.92,
+                        colors[si % len(colors)], rx=0, vertical=False,
+                        shadow=False)
                     if show_vals and v > vmax * 0.07:
                         body += (f'<text x="{x0+cumw+w/2:.1f}" '
                                  f'y="{yy+inner*0.55:.1f}" '
@@ -615,10 +689,10 @@ def _bars(table, opts):
                     v = s["values"][i] or 0
                     w = (v / vmax) * (x1 - x0)
                     yy = gy + band * 0.11 + si * bh
-                    body += (f'<rect x="{x0:.1f}" y="{yy:.1f}" '
-                             f'width="{max(0, w):.1f}" '
-                             f'height="{bh*0.92:.1f}" '
-                             f'fill="{colors[si % len(colors)]}" rx="1"/>')
+                    body += _depth_bar(
+                        opts, x0, yy, max(0, w), bh * 0.92,
+                        colors[si % len(colors)], rx=1.5, vertical=False,
+                        shadow=(ns == 1))
                     if show_vals and ns == 1:
                         body += (f'<text x="{x0+w+4:.1f}" '
                                  f'y="{yy+bh*0.7:.1f}" '
@@ -645,9 +719,10 @@ def _bars(table, opts):
                 v = (raw / tot * 100) if percent and tot else raw
                 h = (v / vmax) * (y1 - y0)
                 yy = yof(cum + v)
-                body += (f'<rect x="{gx+band*0.18:.1f}" y="{yy:.1f}" '
-                         f'width="{band*0.64:.1f}" height="{max(0,h):.1f}" '
-                         f'fill="{colors[si % len(colors)]}"/>')
+                body += _depth_bar(
+                    opts, gx + band * 0.18, yy, band * 0.64, max(0, h),
+                    colors[si % len(colors)], rx=0, vertical=True,
+                    shadow=False)
                 if show_vals and v > vmax * 0.06:
                     body += (f'<text x="{gx+band*0.5:.1f}" '
                              f'y="{yy+h/2+3:.1f}" text-anchor="middle" '
@@ -661,9 +736,10 @@ def _bars(table, opts):
                 h = (v / vmax) * (y1 - y0)
                 xx = gx + band * 0.15 + si * bw
                 yy = yof(v)
-                body += (f'<rect x="{xx:.1f}" y="{yy:.1f}" '
-                         f'width="{bw*0.9:.1f}" height="{max(0,h):.1f}" '
-                         f'fill="{colors[si % len(colors)]}" rx="1"/>')
+                body += _depth_bar(
+                    opts, xx, yy, bw * 0.9, max(0, h),
+                    colors[si % len(colors)], rx=1.5, vertical=True,
+                    shadow=(ns <= 2))
                 if show_vals and ns <= 3:
                     body += (f'<text x="{xx+bw*0.45:.1f}" y="{yy-3:.1f}" '
                              f'text-anchor="middle" font-family="{_SANS}" '
@@ -815,8 +891,8 @@ def _waterfall(table, opts):
         top, bot = max(start, end), min(start, end)
         yy, h = yof(top), abs(yof(bot) - yof(top))
         col = tot if is_total else (pos if end >= start else neg)
-        body += (f'<rect x="{gx:.1f}" y="{yy:.1f}" width="{bw:.1f}" '
-                 f'height="{max(h,1):.1f}" fill="{col}" rx="1"/>')
+        body += _depth_bar(opts, gx, yy, bw, max(h, 1), col, rx=1.5,
+                           vertical=True, shadow=True)
         body += (f'<text x="{gx+bw/2:.1f}" y="{yy-3:.1f}" '
                  f'text-anchor="middle" font-family="{_SANS}" '
                  f'font-size="9.5" fill="{_DIM}">'
@@ -844,6 +920,10 @@ def _pie(table, opts):
     cx, cy, R = W / 2, H / 2 + 6, 130.0
     total = sum(vals) or 1
     body = _frame_open(opts)
+    uid = _uid_of(opts)
+    # Shadow plate under the pie for depth (covered by the slices on top).
+    body += (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R:.1f}" '
+             f'fill="#ffffff" filter="url(#cdsh{uid})"/>')
     ang = -math.pi / 2
     for i, (lab, v) in enumerate(zip(labels, vals)):
         frac = v / total
@@ -863,6 +943,9 @@ def _pie(table, opts):
                      f'font-size="11" font-weight="600" fill="#fff">'
                      f'{frac*100:.0f}%</text>')
         ang = a2
+    # Spherical sheen overlay — gives the disk dimensional lift.
+    body += (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R:.1f}" '
+             f'fill="url(#cdrg{uid})" pointer-events="none"/>')
     if donut:
         body += (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R*0.55:.1f}" '
                  f'fill="#fff"/>')
@@ -985,9 +1068,8 @@ def _combo(table, opts):
         v = bar_s["values"][i] or 0
         h = (v / vmax) * (y1 - y0)
         gx = x0 + band * i + band * 0.2
-        body += (f'<rect x="{gx:.1f}" y="{yof(v):.1f}" '
-                 f'width="{band*0.6:.1f}" height="{max(h,0):.1f}" '
-                 f'fill="{colors[0]}" rx="1"/>')
+        body += _depth_bar(opts, gx, yof(v), band * 0.6, max(h, 0),
+                           colors[0], rx=1.5, vertical=True, shadow=True)
     if line_s:
         lmax = _nice_max(max((v or 0) for v in line_s["values"]) or 1)
         def xof(i):
@@ -1030,7 +1112,7 @@ def _funnel(table, opts):
         pts = (f"{cx-w_top/2:.1f},{yt:.1f} {cx+w_top/2:.1f},{yt:.1f} "
                f"{cx+w_bot/2:.1f},{yb:.1f} {cx-w_bot/2:.1f},{yb:.1f}")
         body += (f'<polygon points="{pts}" fill="{colors[i % len(colors)]}" '
-                 f'fill-opacity="0.92"/>')
+                 f'fill-opacity="0.95" filter="url(#cdsh{_uid_of(opts)})"/>')
         conv = f" · {v/vals[0]*100:.0f}%" if vals[0] else ""
         body += (f'<text x="{cx:.1f}" y="{(yt+yb)/2+4:.1f}" '
                  f'text-anchor="middle" font-family="{_SANS}" '
@@ -1461,9 +1543,8 @@ def _pareto(table, opts):
     for i, v in enumerate(vals):
         h = (v / vmax) * (y1 - y0)
         gx = x0 + band * i + band * 0.18
-        body += (f'<rect x="{gx:.1f}" y="{yof(v):.1f}" '
-                 f'width="{band*0.64:.1f}" height="{max(h,0):.1f}" '
-                 f'fill="{colors[0]}" rx="1"/>')
+        body += _depth_bar(opts, gx, yof(v), band * 0.64, max(h, 0),
+                           colors[0], rx=1.5, vertical=True, shadow=True)
         cum += v
         pts.append((x0 + band * (i + 0.5),
                     y1 - (cum / total) * (y1 - y0), cum / total))
@@ -1515,9 +1596,8 @@ def _histogram(table, opts):
     for i, c in enumerate(counts):
         h = (c / vmax) * (y1 - y0)
         gx = x0 + band * i + band * 0.06
-        body += (f'<rect x="{gx:.1f}" y="{yof(c):.1f}" '
-                 f'width="{band*0.88:.1f}" height="{max(h,0):.1f}" '
-                 f'fill="{colors[0]}"/>')
+        body += _depth_bar(opts, gx, yof(c), band * 0.88, max(h, 0),
+                           colors[0], rx=1.5, vertical=True, shadow=True)
         if c:
             body += (f'<text x="{gx+band*0.44:.1f}" y="{yof(c)-3:.1f}" '
                      f'text-anchor="middle" font-family="{_SANS}" '
@@ -1765,9 +1845,9 @@ def _smallmult(table, opts):
 # ── Export toolbar (download SVG / PNG, copy) ────────────────────────
 
 def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
-    """Buttons to download the rendered SVG / a 2× PNG, or copy the SVG —
+    """Buttons to download the rendered SVG / a 3× PNG, or copy the SVG —
     pure vanilla JS, no dependencies. ``target_id`` is the id of the
-    container holding the <svg>."""
+    container holding the <svg>. PNG renders at 3× for crisp slide paste."""
     fn = html.escape(filename, quote=True)
     tid = html.escape(target_id, quote=True)
     btn = ("padding:6px 13px;border:1px solid #c9c1ac;border-radius:5px;"
@@ -1779,7 +1859,7 @@ def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
         f'<button type="button" style="{btn}" '
         f'onclick="ckDlSvg(\'{tid}\',\'{fn}\')">⬇ SVG</button>'
         f'<button type="button" style="{btn}" '
-        f'onclick="ckDlPng(\'{tid}\',\'{fn}\')">⬇ PNG (2×)</button>'
+        f'onclick="ckDlPng(\'{tid}\',\'{fn}\')">⬇ PNG (3×)</button>'
         f'<button type="button" style="{btn}" '
         f'onclick="ckCopySvg(\'{tid}\',this)">⧉ Copy SVG</button></div>'
         '<script>'
@@ -1801,7 +1881,7 @@ def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
         'function ckDlPng(id,fn){var c=document.getElementById(id);'
         'if(!c)return;var s=c.querySelector("svg");if(!s)return;'
         'var vb=s.viewBox.baseVal;var w=(vb&&vb.width)||720;'
-        'var h=(vb&&vb.height)||450;var sc=2;'
+        'var h=(vb&&vb.height)||450;var sc=3;'
         'var cv=document.createElement("canvas");cv.width=w*sc;cv.height=h*sc;'
         'var ctx=cv.getContext("2d");ctx.fillStyle="#fff";'
         'ctx.fillRect(0,0,cv.width,cv.height);ctx.scale(sc,sc);'

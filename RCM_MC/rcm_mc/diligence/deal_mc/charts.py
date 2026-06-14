@@ -11,9 +11,43 @@ fan + histogram + tornado read at typical viewing distance.
 """
 from __future__ import annotations
 
+import itertools
 from typing import Any, List, Optional, Sequence, Tuple
 
 from .engine import DealMCResult, StressResult, YearBand
+
+# Editorial type stack — the inline charts used to label everything in
+# "Helvetica Neue, Arial" (a browser default that reads as an unstyled
+# Excel export). These match the platform's on-screen identity: Source
+# Serif for the display kicker, Inter Tight for axis/labels, JetBrains
+# Mono for numerics, so the SVG charts look like the rest of the deck.
+_SERIF = "Source Serif 4, Georgia, 'Times New Roman', serif"
+_SANS = "Inter Tight, system-ui, -apple-system, 'Segoe UI', sans-serif"
+_MONO = "JetBrains Mono, ui-monospace, 'SF Mono', monospace"
+
+_DM_UID = itertools.count(1)
+
+
+def _depth_defs(uid: int) -> str:
+    """Per-SVG shadow + sheen primitives so bars/areas read dimensional
+    (unique id per render — several of these charts share one deal page)."""
+    return (
+        f'<defs>'
+        f'<filter id="dmsh{uid}" x="-25%" y="-25%" width="150%" height="160%">'
+        f'<feDropShadow dx="0" dy="1.2" stdDeviation="1.6" '
+        f'flood-color="#0b2341" flood-opacity="0.22"/></filter>'
+        f'<linearGradient id="dmv{uid}" x1="0" y1="0" x2="0" y2="1">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>'
+        f'<stop offset="0.5" stop-color="#ffffff" stop-opacity="0.06"/>'
+        f'<stop offset="1" stop-color="#000000" stop-opacity="0.10"/>'
+        f'</linearGradient>'
+        f'<linearGradient id="dmh{uid}" x1="0" y1="0" x2="1" y2="0">'
+        f'<stop offset="0" stop-color="#ffffff" stop-opacity="0.26"/>'
+        f'<stop offset="0.55" stop-color="#ffffff" stop-opacity="0.05"/>'
+        f'<stop offset="1" stop-color="#000000" stop-opacity="0.11"/>'
+        f'</linearGradient>'
+        f'</defs>'
+    )
 
 
 # Palette tuned for the Chartis dark shell.
@@ -142,7 +176,7 @@ def fan_chart(
             f'stroke="{_PAL["grid"]}" stroke-dasharray="2,4" />'
             f'<text x="{padding_left - 8}" y="{y_pos + 3:.1f}" '
             f'fill="{_PAL["text_faint"]}" text-anchor="end" '
-            f'font-size="12" font-family="JetBrains Mono, monospace">'
+            f'font-size="12" font-family="{_MONO}">'
             f'{_svg_escape(fmt_y(val))}</text>'
         )
 
@@ -153,13 +187,13 @@ def fan_chart(
         x_ticks.append(
             f'<text x="{x:.1f}" y="{padding_top + inner_h + 16}" '
             f'fill="{_PAL["text_faint"]}" text-anchor="middle" '
-            f'font-size="12" font-family="JetBrains Mono, monospace">'
+            f'font-size="12" font-family="{_MONO}">'
             f'Y{b.year}</text>'
         )
 
     title_html = (
         f'<text x="{padding_left}" y="20" fill="{_PAL["text_dim"]}" '
-        f'font-size="10" font-family="Helvetica Neue, Arial, sans-serif" '
+        f'font-size="10" font-family="{_SANS}" '
         f'letter-spacing="1.5" text-transform="uppercase" '
         f'font-weight="700">{_svg_escape(title)}</text>'
         if title else ""
@@ -174,7 +208,7 @@ def fan_chart(
     # Legend
     legend = (
         f'<g transform="translate({padding_left + inner_w - 200}, {padding_top - 4})" '
-        f'font-size="9" font-family="Helvetica Neue, Arial, sans-serif" '
+        f'font-size="9" font-family="{_SANS}" '
         f'fill="{_PAL["text_faint"]}" letter-spacing="1">'
         f'<rect x="0" y="0" width="12" height="8" '
         f'fill="{_PAL["p10_90_fill"]}" />'
@@ -216,6 +250,7 @@ def moic_histogram_chart(
     buckets = result.moic_histogram
     if not buckets:
         return '<svg width="0" height="0"></svg>'
+    uid = next(_DM_UID)
     inner_w = width - padding_left - padding_right
     inner_h = height - padding_top - padding_bottom
     max_prob = max(b.probability for b in buckets) or 1.0
@@ -240,21 +275,24 @@ def moic_histogram_chart(
         bar_height = max(1, padding_top + inner_h - y(b.probability))
         bars.append(
             f'<rect x="{x(i):.1f}" y="{y(b.probability):.1f}" '
-            f'width="{bar_w:.1f}" height="{bar_height:.1f}" '
-            f'fill="{color}" opacity="0.85" />'
+            f'width="{bar_w:.1f}" height="{bar_height:.1f}" rx="2" '
+            f'fill="{color}" filter="url(#dmsh{uid})" />'
+            f'<rect x="{x(i):.1f}" y="{y(b.probability):.1f}" '
+            f'width="{bar_w:.1f}" height="{bar_height:.1f}" rx="2" '
+            f'fill="url(#dmv{uid})" pointer-events="none" />'
         )
         # Probability label above bar.
         if b.probability > 0.01:
             bars.append(
                 f'<text x="{x(i) + bar_w/2:.1f}" y="{y(b.probability) - 4:.1f}" '
                 f'fill="{_PAL["text_dim"]}" text-anchor="middle" '
-                f'font-size="9" font-family="JetBrains Mono, monospace">'
+                f'font-size="9" font-family="{_MONO}">'
                 f'{b.probability*100:.1f}%</text>'
             )
         labels.append(
             f'<text x="{x(i) + bar_w/2:.1f}" y="{padding_top + inner_h + 14:.1f}" '
             f'fill="{_PAL["text_faint"]}" text-anchor="middle" '
-            f'font-size="9" font-family="JetBrains Mono, monospace">'
+            f'font-size="9" font-family="{_MONO}">'
             f'{b.lower:.1f}–{b.upper:.1f}x</text>'
         )
 
@@ -275,7 +313,7 @@ def moic_histogram_chart(
             f'stroke="{_PAL["text"]}" stroke-width="1.5" stroke-dasharray="4,3" />'
             f'<text x="{p50_x:.1f}" y="{padding_top - 6}" '
             f'fill="{_PAL["text"]}" text-anchor="middle" '
-            f'font-size="12" font-family="JetBrains Mono, monospace" '
+            f'font-size="12" font-family="{_MONO}" '
             f'font-weight="700">'
             f'P50 {p50:.2f}x</text>'
         )
@@ -283,15 +321,16 @@ def moic_histogram_chart(
     return (
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
         f'style="max-width:{width}px;">'
+        f'{_depth_defs(uid)}'
         f'<text x="{padding_left}" y="20" fill="{_PAL["text_dim"]}" '
-        f'font-size="10" font-family="Helvetica Neue, Arial, sans-serif" '
+        f'font-size="10" font-family="{_SANS}" '
         f'letter-spacing="1.5" font-weight="700">MOIC DISTRIBUTION</text>'
         f'{"".join(bars)}'
         f'{p50_line}'
         f'{"".join(labels)}'
         f'<text x="{padding_left + inner_w}" y="{padding_top + inner_h + 14:.1f}" '
         f'fill="{_PAL["text_faint"]}" text-anchor="end" '
-        f'font-size="9" font-family="Helvetica Neue, Arial, sans-serif">'
+        f'font-size="9" font-family="{_SANS}">'
         f'MOIC (equity exit / equity check)</text>'
         f'</svg>'
     )
@@ -308,6 +347,7 @@ def attribution_chart(
 ) -> str:
     if not result.attribution or not result.attribution.contributions:
         return ""
+    uid = next(_DM_UID)
     contribs = list(result.attribution.contributions)
     contribs.sort(key=lambda c: -c.share_of_variance)
     unexpl = result.attribution.unexplained_share
@@ -329,14 +369,17 @@ def attribution_chart(
         bars.append(
             f'<text x="{padding_left - 8}" y="{y(i) + bar_h/2 + 4:.1f}" '
             f'fill="{_PAL["text"]}" text-anchor="end" font-size="11" '
-            f'font-family="Helvetica Neue, Arial, sans-serif">'
+            f'font-family="{_SANS}">'
             f'{_svg_escape(c.driver)}</text>'
-            f'<rect x="{padding_left}" y="{y(i):.1f}" '
+            f'<rect x="{padding_left}" y="{y(i):.1f}" rx="2" '
             f'width="{w:.1f}" height="{bar_h:.1f}" '
-            f'fill="{_PAL["accent"]}" opacity="0.85" />'
+            f'fill="{_PAL["accent"]}" filter="url(#dmsh{uid})" />'
+            f'<rect x="{padding_left}" y="{y(i):.1f}" rx="2" '
+            f'width="{w:.1f}" height="{bar_h:.1f}" '
+            f'fill="url(#dmh{uid})" pointer-events="none" />'
             f'<text x="{padding_left + w + 6:.1f}" y="{y(i) + bar_h/2 + 4:.1f}" '
             f'fill="{_PAL["text_dim"]}" font-size="10" '
-            f'font-family="JetBrains Mono, monospace">'
+            f'font-family="{_MONO}">'
             f'{c.share_of_variance*100:.1f}%</text>'
         )
     if unexpl > 0:
@@ -345,22 +388,23 @@ def attribution_chart(
         bars.append(
             f'<text x="{padding_left - 8}" y="{y(idx) + bar_h/2 + 4:.1f}" '
             f'fill="{_PAL["text_faint"]}" text-anchor="end" font-size="11" '
-            f'font-family="Helvetica Neue, Arial, sans-serif" '
+            f'font-family="{_SANS}" '
             f'font-style="italic">Unexplained / correlated</text>'
             f'<rect x="{padding_left}" y="{y(idx):.1f}" '
             f'width="{w:.1f}" height="{bar_h:.1f}" '
             f'fill="{_PAL["text_faint"]}" opacity="0.5" />'
             f'<text x="{padding_left + w + 6:.1f}" y="{y(idx) + bar_h/2 + 4:.1f}" '
             f'fill="{_PAL["text_faint"]}" font-size="10" '
-            f'font-family="JetBrains Mono, monospace">'
+            f'font-family="{_MONO}">'
             f'{unexpl*100:.1f}%</text>'
         )
 
     return (
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
         f'style="max-width:{width}px;">'
+        f'{_depth_defs(uid)}'
         f'<text x="16" y="18" fill="{_PAL["text_dim"]}" '
-        f'font-size="10" font-family="Helvetica Neue, Arial, sans-serif" '
+        f'font-size="10" font-family="{_SANS}" '
         f'letter-spacing="1.5" font-weight="700">'
         f'VARIANCE ATTRIBUTION · MOIC</text>'
         f'{"".join(bars)}'
@@ -380,6 +424,7 @@ def sensitivity_tornado(
     stress = list(result.stress_results)
     if not stress:
         return ""
+    uid = next(_DM_UID)
     # Sort by absolute magnitude, largest first.
     stress.sort(key=lambda s: -abs(s.moic_impact))
     n = len(stress)
@@ -405,15 +450,18 @@ def sensitivity_tornado(
         bars.append(
             f'<text x="{padding_left - 8}" y="{y(i) + bar_h/2 + 4:.1f}" '
             f'fill="{_PAL["text"]}" text-anchor="end" font-size="11" '
-            f'font-family="Helvetica Neue, Arial, sans-serif">'
+            f'font-family="{_SANS}">'
             f'{_svg_escape(s.shock_label)}</text>'
-            f'<rect x="{x:.1f}" y="{y(i):.1f}" '
+            f'<rect x="{x:.1f}" y="{y(i):.1f}" rx="2" '
             f'width="{w:.1f}" height="{bar_h:.1f}" '
-            f'fill="{color}" opacity="0.85" />'
+            f'fill="{color}" filter="url(#dmsh{uid})" />'
+            f'<rect x="{x:.1f}" y="{y(i):.1f}" rx="2" '
+            f'width="{w:.1f}" height="{bar_h:.1f}" '
+            f'fill="url(#dmh{uid})" pointer-events="none" />'
             f'<text x="{(padding_left + inner_w + 6):.1f}" '
             f'y="{y(i) + bar_h/2 + 4:.1f}" '
             f'fill="{_PAL["text_dim"]}" font-size="10" '
-            f'font-family="JetBrains Mono, monospace">'
+            f'font-family="{_MONO}">'
             f'{s.moic_impact:+.2f}x</text>'
         )
     # Center axis
@@ -427,15 +475,16 @@ def sensitivity_tornado(
     return (
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
         f'style="max-width:{width}px;">'
+        f'{_depth_defs(uid)}'
         f'<text x="16" y="18" fill="{_PAL["text_dim"]}" '
-        f'font-size="10" font-family="Helvetica Neue, Arial, sans-serif" '
+        f'font-size="10" font-family="{_SANS}" '
         f'letter-spacing="1.5" font-weight="700">'
         f'SENSITIVITY · ONE-AT-A-TIME SHOCK</text>'
         f'{center_line}'
         f'{"".join(bars)}'
         f'<text x="{center_x}" y="{padding_top + n * (bar_h + gap_h) + 18:.1f}" '
         f'fill="{_PAL["text_faint"]}" text-anchor="middle" '
-        f'font-size="10" font-family="Helvetica Neue, Arial, sans-serif">'
+        f'font-size="10" font-family="{_SANS}">'
         f'Base MOIC {base_moic:.2f}x</text>'
         f'</svg>'
     )
