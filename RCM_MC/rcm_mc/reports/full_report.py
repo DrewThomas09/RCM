@@ -199,6 +199,7 @@ def generate_full_html_report(
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RCM Monte Carlo — Full Report</title>
   <style>
     {all_styles}

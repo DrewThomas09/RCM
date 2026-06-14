@@ -170,6 +170,7 @@ def generate_html_report(
     _theme_vars = get_theme_css(theme)
     _escaped_title = html_escape(title)
     html_parts.append("<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n"
+                       + "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
                        + f"  <title>{_escaped_title}</title>\n"
                        + f"  <style>\n    {_theme_vars}\n  </style>\n"
                        + "  <style>")
