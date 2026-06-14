@@ -286,7 +286,8 @@ _SECTION_FEATURE = {
                  "href": "/pipeline"},
     "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
                   "blurb": "Run a live deal end to end: identity, ingestion, "
-                           "benchmarks, the CMS / HCRIS X-Ray, and the QoE memo.",
+                           "benchmarks, the CMS / HCRIS X-Ray, and the IC "
+                           "packet.",
                   "href": "/diligence"},
     "library": {"eyebrow": "SECTION · LIBRARY", "title": "Reference desk",
                 "blurb": "Methodology, the metric glossary, RCM benchmarks, the "
@@ -309,19 +310,85 @@ _NAV_NONNAVIGABLE = frozenset({
     "/new-deal/manual",   # manual-entry POST target → 303 on GET; use /new-deal
 })
 
+# Data-honesty tiers allowed to front-face in a nav bar. Illustrative
+# (yellow) and placeholder (red) surfaces are demoted to the ranked
+# /best/<section> index, where they render with an honest tier dot.
+_REAL_TIERS = ("green", "navy", "data_required")
+
+# Hand-curated flagship pins — the "best of the best" front face, per section.
+#
+# The ranked manifest scores effort by renderer LOC, which front-faced niche
+# one-market scans (TX Infusion Market led the Diligence bar) and utility
+# renderers (Excel Mapping made the Research bar) ahead of the flagship
+# analyst workbenches — HCRIS X-Ray ranked #19 in diligence and never
+# surfaced. The topbar is the product's front face: it leads with the
+# highest-functionality destination pages, in workflow order, as a product
+# decision (same rationale as the /target-screener tiebreak pin in
+# scripts/rank_surfaces.py) — not as an emergent LOC artifact. Pins render
+# first but stay tier-gated: a pin that regresses to an illustrative tier
+# drops out rather than punching through the honesty gate. Ranked backfill
+# fills the remaining slots, so a bar never goes sparse.
+_NAV_FLAGSHIPS = {
+    "home": ["/app", "/alerts"],
+    # Target Screener is the flagship workbench and must lead Source (pinned
+    # product decision); the rest of the bar stays score-ordered.
+    "source": ["/target-screener"],
+    "pipeline": ["/pipeline", "/pipeline/bridge", "/pipeline/rollup"],
+    # The analyst playbook in workflow order: identity → ingest → baseline →
+    # the CMS / HCRIS X-Ray drill-downs → the IC deliverable.
+    "diligence": [
+        "/diligence/deal",
+        "/diligence/ingest",
+        "/diligence/benchmarks",
+        "/diligence/xray",
+        "/diligence/hcris-xray",
+        "/diligence/ic-packet",
+    ],
+    "library": ["/deal-library", "/rcm-benchmarks", "/methodology"],
+    # House views lead with the analytical reads; the chart/export utilities
+    # (Excel Mapping, Pie Chart, Chart Builder, …) live in /best/research.
+    "research": [
+        "/market-intel",
+        "/industry",
+        "/regulatory-calendar",
+        "/comparable-outcomes",
+        "/market-intel/geo",
+        "/notes",
+    ],
+    "portfolio": ["/portfolio", "/portfolio/monitor", "/portfolio/risk-scan"],
+}
+
+# Utility/visual helper renderers — real pages, but tools rather than
+# analyses. They never front-face in a nav bar (any source: pin, ranked,
+# or curated backfill); they stay reachable from /best/<section>, the
+# section catalogs, and the Cmd-K palette.
+_NAV_DEMOTED = frozenset({
+    "/excel-mapping",
+    "/excel-templates",
+    "/chart-builder",
+    "/pie-chart",
+    "/visuals",
+    "/exhibit",
+})
+
 
 def _ranked_subnav_items(sect: str):
-    """The section's top-6 surfaces by the surface ranking, for the nav bar.
-    Returns (items, has_more) where each item is {label, href}.
+    """The section's top-6 surfaces for the nav bar: flagship pins first,
+    then ranked backfill. Returns (items, has_more) where each item is
+    {label, href}.
 
-    Drawn from the FULL ranked manifest (not just the hand-curated _SUB_NAV) so
-    a bar genuinely leads with its best pages — including strong pages that were
-    never wired into the curated rail (the diligence crossover gap). Front-
-    facing gate: only green/navy/data-required tiers (illustrative/placeholder
-    demoted to the ranked /best/<section> index, reachable via "More →").
-    Curated labels/descriptions win where available (vetted copy); otherwise the
-    manifest's derived label is used. Falls back to the curated rail if the
-    manifest has no entry, so a bar is never empty.
+    The hand-curated _NAV_FLAGSHIPS pins lead the bar (the front face is a
+    product decision — the highest-functionality workbenches in workflow
+    order, not an emergent LOC-score artifact). Remaining slots backfill from
+    the FULL ranked manifest (not just the hand-curated _SUB_NAV) so strong
+    pages that were never wired into the curated rail still surface (the
+    diligence crossover gap). Front-facing gate applies to every source —
+    pins included: only green/navy/data-required tiers (illustrative/
+    placeholder demoted to the ranked /best/<section> index, reachable via
+    "More →"), and utility renderers in _NAV_DEMOTED never front-face.
+    Curated labels/descriptions win where available (vetted copy); otherwise
+    the manifest's derived label is used. Falls back to the curated rail if
+    the manifest has no entry, so a bar is never empty.
     """
     cur = {s["href"]: s for s in _SUB_NAV.get(sect, []) if isinstance(s, dict)}
     try:
@@ -329,8 +396,21 @@ def _ranked_subnav_items(sect: str):
         ranked = list(RANKINGS.get(sect, []))
     except Exception:  # noqa: BLE001
         ranked = []
-    strong = [r for r in ranked
-              if r.get("tier") in ("green", "navy", "data_required")]
+    by_route = {r["route"]: r for r in ranked}
+    try:
+        from rcm_mc.diligence.surface_status import classify_surface as _cls
+    except Exception:  # noqa: BLE001
+        _cls = None
+
+    def _is_real(href: str) -> bool:
+        # Live classifier wins (the manifest's tier can drift between
+        # regenerations); manifest tier is the fallback when the classifier
+        # isn't importable.
+        if _cls is not None:
+            return _cls(href).get("tier") in _REAL_TIERS
+        return by_route.get(href, {}).get("tier") in _REAL_TIERS
+
+    strong = [r for r in ranked if r.get("tier") in _REAL_TIERS]
     pool = strong or ranked
     # Dedupe alias routes for the same page (e.g. /regulatory-calendar and
     # /diligence/regulatory-calendar) by label, keeping the highest-ranked —
@@ -338,38 +418,47 @@ def _ranked_subnav_items(sect: str):
     # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
 
+    from ._surface_visibility import is_internal
+
     def _add(label: str, href: str) -> None:
         label = (label or "").strip()
         key = label.lower()
         if (not label or not href or key in seen or "→" in label
-                or href in _NAV_NONNAVIGABLE):
+                or href in _NAV_NONNAVIGABLE or href in _NAV_DEMOTED
+                or is_internal(href)):
             return
         seen.add(key)
         top.append({"label": label, "href": href})
 
-    for r in pool:
-        c = cur.get(r["route"], {})
-        _add(c.get("label") or r.get("label") or r["route"], r["route"])
+    # 1) Flagship pins — the hand-curated best-of-the-best lead the bar.
+    for href in _NAV_FLAGSHIPS.get(sect, ()):
         if len(top) >= 6:
             break
-    # Backfill to a fuller bar (target 4-6 destinations) from the curated rail
-    # when the strong-ranked pool is short, so every section button opens a
-    # populated mega-menu rather than 2-3 lonely links. GATED to real tiers
+        if not _is_real(href):
+            continue
+        c = cur.get(href) or {}
+        r = by_route.get(href) or {}
+        _add(c.get("label") or r.get("label") or href, href)
+
+    # 2) Ranked backfill — strongest remaining pages by score.
+    for r in pool:
+        if len(top) >= 6:
+            break
+        c = cur.get(r["route"], {})
+        _add(c.get("label") or r.get("label") or r["route"], r["route"])
+    # 3) Backfill to a fuller bar (target 4-6 destinations) from the curated
+    # rail when the strong-ranked pool is short, so every section button opens
+    # a populated mega-menu rather than 2-3 lonely links. GATED to real tiers
     # (green / navy / data_required): never pad the prime nav with yellow
     # (illustrative seed-corpus) or red (synthetic) pages — that honesty gate is
     # foundational ("front facing shows real things"); illustrative surfaces
     # stay demoted to the ranked /best/<section> index with their tier dot.
     if len(top) < 6:
-        try:
-            from rcm_mc.diligence.surface_status import classify_surface as _cls
-        except Exception:  # noqa: BLE001
-            _cls = None
         for s in _SUB_NAV.get(sect, []):
             if not isinstance(s, dict):
                 continue
             href = s.get("href", "")
-            if _cls is not None and _cls(href).get("tier") not in (
-                    "green", "navy", "data_required"):
+            if not _is_real(href):
                 continue
             _add(s.get("label", ""), href)
             if len(top) >= 6:
@@ -412,7 +501,20 @@ _NAV_DESC = {
     "/diligence/benchmarks": "Peer benchmark grid", "/diligence/xray": "CMS provider X-Ray",
     "/diligence/hcris-xray": "HCRIS hospital X-Ray", "/diligence/qoe-memo": "Quality-of-earnings memo",
     "/diligence/cim-crosscheck": "CIM claims vs public data",
+    "/diligence/ic-packet": "Full-pipeline IC packet",
     "/diligence": "Every diligence surface →",
+    "/industry": "Industry dossiers & links",
+    "/regulatory-calendar": "Thesis kill-switch timeline",
+    "/comparable-outcomes": "Similar realized-deal returns",
+    "/market-intel/geo": "Geographic market intel",
+    "/pipeline/rollup": "Pro-forma roll-up scenarios",
+    "/portfolio": "The active book overview",
+    "/portfolio/monitor": "Actual vs predicted warnings",
+    "/portfolio/regression": "Portfolio regression analytics",
+    "/market-data/map": "Market data on the map",
+    "/deal-library/comps": "Library comp sets",
+    "/deal-library/sponsors": "Sponsors in the library",
+    "/app/cards": "Card-view morning brief",
 }
 
 # Legacy navigation kept for callers that haven't migrated.
@@ -7337,6 +7439,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "comp-outcomes", "title": "Comparable Outcomes","route": "/comparable-outcomes"},
     {"id": "tam-sam", "title": "TAM / SAM Builder", "route": "/diligence/tam-sam"},
     {"id": "tx-infusion", "title": "Texas Infusion Market · TAM/SAM + concentration + metro ranking", "route": "/diligence/texas-infusion"},
+    {"id": "tx-infusion-counties", "title": "Texas Infusion · county proximity + AIC whitespace", "route": "/diligence/texas-infusion/counties"},
     {"id": "infusion-markets", "title": "Infusion Market Scan · every state ranked for an infusion roll-up", "route": "/diligence/infusion-markets"},
     {"id": "visuals", "title": "Visuals · graphics toolkit hub (charts, maps, exhibits)", "route": "/visuals"},
     {"id": "further-analysis", "title": "Further Analysis · Tableau-style data explorer over CMS/CDC/Census/labor/market datasets", "route": "/further-analysis"},

@@ -12630,6 +12630,146 @@ _MANUAL.extend([
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/diligence/texas-infusion/counties",
+        "Texas Infusion · County Proximity",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="All 254 Texas counties with modeled patient → "
+        "nearest-infusion-access distance, access tiers, and the demand x "
+        "distance AIC whitespace ranking.",
+        primary_purpose="Read referral convenience county by county — how "
+        "far the average infusion patient sits from the nearest access "
+        "point — to rank AIC (ambulatory infusion center) site whitespace.",
+        common_questions=[
+            "How far is the average Texas infusion patient from a clinic?",
+            "Which counties have no in-county infusion access?",
+            "Where is the AIC whitespace (demand far from supply)?",
+            "How are the distances computed without an AIC census?",
+            "What does metro spillover mean on a county row?",
+        ],
+        inputs=["Vendored ACS county demographics (population, 65+, "
+                "rural share), geocoded CMS general-acute hospitals "
+                "(STAC + CAH by CCN convention), OMB CBSA crosswalk, "
+                "NHIA state demand anchors."],
+        outputs=["Per-county demand + expected distance + access tier, "
+                 "tier/metro/CBSA rollups, demand-weighted statewide "
+                 "distance, top-20 whitespace ranking, CSV export."],
+        key_metrics=["Demand-weighted distance (mi)",
+                     "% patients within 10 miles",
+                     "No-in-county-site counties", "Patient-miles"],
+        data_sources=["county_demographics vendored aggregate (ACS via "
+                      "County Health Rankings); hospital_coords.csv (CMS "
+                      "Hospital General Information, Census-geocoded); "
+                      "cbsa_county_crosswalk."],
+        model_logic_summary="In-county: urban share gets half the REAL "
+        "nearest-neighbor facility spacing, rural share gets "
+        "0.5*sqrt(area/sites) (random-placement nearest-facility "
+        "result). No-in-county: 0.5*sqrt(own area) + a same-CBSA "
+        "spillover hop or a median-county hop. Demand apportions the "
+        "NHIA state pool 60/40 by senior/population share.",
+        why_it_matters="Infusion referrals convert on convenience — the "
+        "distance read is the site-selection wedge for an AIC platform "
+        "against HOPD incumbents.",
+        diligence_use_cases=["AIC de-novo site screening",
+                             "referral-catchment sizing",
+                             "rural access-gap framing in the CDD"],
+        interpretation_guidance=[
+            "Distances are conservative (long): the geocode file covers "
+            "376 of ~640 TX hospitals and freestanding AICs are "
+            "invisible to public files.",
+            "MODELED rows use the stated formula; running "
+            "scripts/ingest_county_gazetteer.py upgrades cross-county "
+            "legs to exact Census-point geometry."],
+        limitations=["No public AIC census (POS-11 billing); supply = "
+                     "hospital access points only.",
+                     "Land areas default to the 909 sq mi Texas median "
+                     "where not explicitly vendored (marked DEFAULT)."],
+        related_routes=["/diligence/texas-infusion/counties.csv",
+                        "/geo-intel", "/county-explorer"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/counties.csv",
+        "Texas Infusion County Proximity (CSV export)",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The full 254-county proximity table as a "
+        "downloadable CSV — one row per county with demand, access tier, "
+        "and the modeled distance plus its evidence class.",
+        primary_purpose="Take the county proximity universe into Excel / "
+        "a model: demographics, infusion demand, access points, expected "
+        "distance, and the REAL/MODELED/DEFAULT evidence flags per row.",
+        common_questions=[
+            "How do I export the Texas county proximity table?",
+            "What columns are in the counties CSV?",
+            "Is the CSV the same data as the counties page?",
+            "What do the REAL / MODELED / DEFAULT evidence flags mean?",
+            "Does the export include the access-tier classification?",
+        ],
+        inputs=["The same tx_county_universe() rows the page renders."],
+        outputs=["CSV: FIPS, county, metro class, CBSA, demographics, "
+                 "infusion patients, access points/tier, land area, "
+                 "expected distance, and evidence classes."],
+        key_metrics=["Rows exported (254 counties)"],
+        data_sources=["Identical to /diligence/texas-infusion/counties."],
+        model_logic_summary="Straight serialization of the county "
+        "universe; no extra modeling in the export.",
+        why_it_matters="The whitespace screen usually continues in the "
+        "deal team's own model — the export keeps the evidence flags "
+        "attached to every number.",
+        diligence_use_cases=["AIC site-screen modeling offline"],
+        interpretation_guidance=["Same caveats as the page: distances "
+                                 "are conservative, supply is hospital "
+                                 "access points only."],
+        limitations=["Reflects the vendored data at render time."],
+        related_routes=["/diligence/texas-infusion/counties",
+                        "/geo-intel"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/metros.csv",
+        "Texas Infusion Metro Deep-Dive (CSV export)",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The four-metro (DFW, Houston, San Antonio, "
+        "Austin) member-county deep-dive as CSV — one row per metro "
+        "county with demand split, drive-time proxy, siting verdict, "
+        "and the named facility roster.",
+        primary_purpose="Take the metro member-county analysis into a "
+        "site-selection model: per-county demand (65+/under-65 split), "
+        "real facility names and spacing, modeled distance and drive "
+        "minutes, and the deterministic siting verdict.",
+        common_questions=[
+            "How do I export the four-metro county deep-dive?",
+            "Which hospitals are in each metro county?",
+            "What is the drive-time column based on?",
+            "What does the siting verdict mean?",
+            "Is this the same data as the counties page metro section?",
+        ],
+        inputs=["The same metro_county_deepdive() rows the page's "
+                "metro section renders."],
+        outputs=["CSV: metro, county, demographics, patients (65+/"
+                 "under-65), access points/tier, real facility spacing, "
+                 "expected distance, drive minutes, patient-miles, "
+                 "siting verdict, facility names."],
+        key_metrics=["Rows exported (metro member counties)"],
+        data_sources=["Identical to /diligence/texas-infusion/counties "
+                      "(metro deep-dive section)."],
+        model_logic_summary="Straight serialization of the deep-dive "
+        "rows; drive minutes = modeled miles at 25 mph urban / 45 mph "
+        "rural blended by the county's real urban share.",
+        why_it_matters="AIC site selection happens metro by metro — the "
+        "export keeps verdicts and rosters attached to every county.",
+        diligence_use_cases=["AIC site shortlisting inside a metro"],
+        interpretation_guidance=["Same caveats as the page: supply is "
+                                 "hospital access points; distances "
+                                 "conservative."],
+        limitations=["Reflects the vendored data at render time."],
+        related_routes=["/diligence/texas-infusion/counties",
+                        "/geo-intel"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ])
 
 
