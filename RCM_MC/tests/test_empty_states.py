@@ -178,5 +178,22 @@ class TestPreBuiltVariants(unittest.TestCase):
         self.assertIn("RCM_MC_LIVE", html)
 
 
+class TestCkEmptyState(unittest.TestCase):
+    """The chartis-kit ck_empty_state primitive (distinct from the
+    empty_states.empty_state wrapper)."""
+
+    def test_decorative_icon_is_aria_hidden(self):
+        from rcm_mc.ui._chartis_kit import ck_empty_state
+        html = ck_empty_state("No starred deals yet.", icon="★")
+        # The glyph is decorative — hidden from AT so it doesn't announce
+        # "star" before the title (matches the empty_states wrapper).
+        self.assertIn('class="ck-empty-state-icon" aria-hidden="true"', html)
+        self.assertIn("★", html)
+
+    def test_no_icon_slot_when_absent(self):
+        from rcm_mc.ui._chartis_kit import ck_empty_state
+        self.assertNotIn("ck-empty-state-icon", ck_empty_state("Nothing here"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -78,6 +78,50 @@ class RankedRailTests(unittest.TestCase):
             top, _ = _ranked_subnav_items(sec)
             self.assertGreaterEqual(len(top), 1, sec)
 
+    def test_diligence_leads_with_pinned_hcris_xray(self):
+        # The HCRIS X-Ray is the marquee diligence demo surface but its low
+        # build-effort score sinks it below the 6-leaf cut in the raw ranking.
+        # _NAV_PINNED guarantees it (and its CMS X-Ray sibling) lead the bar so
+        # the dropdown always surfaces the best content we have. Regression for
+        # the "make sure diligence has HCRIS X-Ray" handoff.
+        from rcm_mc.ui._chartis_kit import _ranked_subnav_items, _NAV_PINNED
+        top, _ = _ranked_subnav_items("diligence")
+        hrefs = [s["href"] for s in top]
+        for pinned in _NAV_PINNED["diligence"]:
+            self.assertIn(pinned, hrefs, f"{pinned} missing from diligence bar")
+        # Pins lead: HCRIS X-Ray is the very first leaf.
+        self.assertEqual(top[0]["href"], "/diligence/hcris-xray")
+        self.assertEqual(top[0]["label"], "HCRIS X-Ray")
+
+    def test_no_cross_section_namespace_leak_in_bars(self):
+        # A section's nav menu must stay inside its own namespace: no leaf may
+        # borrow another section's /<key>/… prefix when a native-namespace
+        # alias of the same page exists (Research used to lead with
+        # /diligence/regulatory-calendar instead of /regulatory-calendar,
+        # which resolved the active-nav/breadcrumb to the wrong section).
+        from rcm_mc.ui._chartis_kit import (
+            _ranked_subnav_items, _route_section_prefix, _SUB_NAV,
+        )
+        for sec in _SUB_NAV:
+            top, _ = _ranked_subnav_items(sec)
+            for s in top:
+                pref = _route_section_prefix(s["href"])
+                self.assertIn(pref, ("", sec),
+                              f"{sec} bar leaks into /{pref}/: {s['href']}")
+
+    def test_pins_pass_front_facing_tier_gate(self):
+        # A pin can never smuggle a weak (yellow/red) surface past the honesty
+        # gate — every pinned route that lands in a bar is a real tier.
+        from rcm_mc.ui._chartis_kit import _ranked_subnav_items, _NAV_PINNED
+        from rcm_mc.diligence.surface_status import classify_surface
+        for sec, pins in _NAV_PINNED.items():
+            hrefs = {s["href"] for s in _ranked_subnav_items(sec)[0]}
+            for href in pins:
+                if href in hrefs:
+                    tier = classify_surface(href).get("tier")
+                    self.assertIn(tier, ("green", "navy", "data_required"),
+                                  f"{sec}: pinned weak surface {href} ({tier})")
+
 
 if __name__ == "__main__":
     unittest.main()
