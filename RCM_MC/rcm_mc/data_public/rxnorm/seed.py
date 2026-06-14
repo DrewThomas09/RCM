@@ -180,6 +180,27 @@ def _rxclass_payload(rxcui: str) -> Dict[str, Any]:
     return {"rxclassDrugInfoList": {"rxclassDrugInfo": infos}}
 
 
+def _approximate_payload(term: str) -> Dict[str, Any]:
+    t = (term or "").strip().lower()
+    cands = []
+    for rank, (rx, c) in enumerate(SEED_CONCEPTS.items(), start=1):
+        if t and t in c["name"].lower():
+            cands.append({"rxcui": rx, "score": "100", "rank": str(rank)})
+    return {"approximateGroup": {"candidate": cands}}
+
+
+def _drugs_payload(name: str) -> Dict[str, Any]:
+    t = (name or "").strip().lower()
+    groups: Dict[str, List[Dict[str, str]]] = {}
+    for rx, c in SEED_CONCEPTS.items():
+        if t and t in c["name"].lower():
+            groups.setdefault(c["tty"], []).append(
+                {"rxcui": rx, "name": c["name"], "tty": c["tty"]})
+    cg = [{"tty": tty, "conceptProperties": props}
+          for tty, props in groups.items()]
+    return {"drugGroup": {"conceptGroup": cg}}
+
+
 def seed_opener(url: str, headers: Dict[str, str], timeout_s: int) -> bytes:
     """An :data:`connector.Opener` that serves RxNav-native JSON from the seed.
 
@@ -209,6 +230,10 @@ def seed_opener(url: str, headers: Dict[str, str], timeout_s: int) -> bytes:
         payload = _rxcui_by_ndc_payload(_one("id"))
     elif path.endswith("/ndcproperties.json"):
         payload = _ndcproperties_payload(_one("id"))
+    elif path.endswith("/approximateTerm.json"):
+        payload = _approximate_payload(_one("term"))
+    elif path.endswith("/drugs.json"):
+        payload = _drugs_payload(_one("name"))
     elif path.endswith("/byRxcui.json"):
         payload = _rxclass_payload(_one("rxcui"))
     else:

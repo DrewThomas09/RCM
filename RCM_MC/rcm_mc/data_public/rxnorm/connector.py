@@ -209,6 +209,16 @@ class RxNormConnector:
             ndc = params["id"]
             payload = self._get_json("/ndcproperties.json", {"id": ndc}, **kw)
             return (_parse_ndcproperties(payload), "")
+        if endpoint == "approximateterm":
+            term = params["term"]
+            payload = self._get_json(
+                "/approximateTerm.json",
+                {"term": term, "maxEntries": params.get("maxEntries", "20")}, **kw)
+            return (nz.parse_approximate(payload), "")
+        if endpoint == "drugs":
+            name = params["name"]
+            payload = self._get_json("/drugs.json", {"name": name}, **kw)
+            return (nz.parse_drugs(payload), "")
         if endpoint == "rxclass":
             rxcui = params["rxcui"]
             qp = {"rxcui": rxcui}

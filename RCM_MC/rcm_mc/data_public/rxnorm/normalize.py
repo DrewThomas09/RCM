@@ -261,6 +261,45 @@ def parse_rxcui_by_ndc(payload: Dict) -> List[str]:
     return [str(x).strip() for x in (grp.get("rxnormId", []) or []) if str(x).strip()]
 
 
+def parse_approximate(payload: Dict) -> List[Dict[str, str]]:
+    """Parse /approximateTerm.json → ranked candidate rxcui matches.
+
+    Supports manufacturer / product-name normalization other sources rely on:
+    a fuzzy string resolves to candidate concepts with a score + rank.
+    """
+    if not isinstance(payload, dict):
+        return []
+    grp = payload.get("approximateGroup", {}) or {}
+    out: List[Dict[str, str]] = []
+    for c in grp.get("candidate", []) or []:
+        rxcui = str(c.get("rxcui", "")).strip()
+        if not rxcui:
+            continue
+        out.append({
+            "rxcui": rxcui,
+            "score": str(c.get("score", "")).strip(),
+            "rank": str(c.get("rank", "")).strip(),
+        })
+    return out
+
+
+def parse_drugs(payload: Dict) -> List[Dict[str, str]]:
+    """Parse /drugs.json → concept rows grouped by term type (name search)."""
+    if not isinstance(payload, dict):
+        return []
+    grp = payload.get("drugGroup", {}) or {}
+    out: List[Dict[str, str]] = []
+    for cg in grp.get("conceptGroup", []) or []:
+        tty = str(cg.get("tty", "")).strip().upper()
+        for cp in cg.get("conceptProperties", []) or []:
+            rxcui = str(cp.get("rxcui", "")).strip()
+            if rxcui:
+                out.append({"rxcui": rxcui,
+                            "name": str(cp.get("name", "")).strip(),
+                            "tty": tty})
+    return out
+
+
 @dataclass(frozen=True)
 class DrugClassRow:
     rxcui: str

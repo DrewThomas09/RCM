@@ -286,6 +286,15 @@ def _concept_status(store: Any, rxcui: str) -> str:
     return row["status"] if row else "active"
 
 
+def seed_into(store: Any) -> Dict[str, Any]:
+    """Populate the given store from the offline seed without touching the
+    committed package STATE.md/PROGRESS.log — used by the UI 'populate' action,
+    which writes its checkpoint to a throwaway temp dir.
+    """
+    import tempfile
+    return RxnormPipeline(store, state_dir=Path(tempfile.mkdtemp())).run()
+
+
 def run(store: Any, **kwargs: Any) -> Dict[str, Any]:
     """Module-level convenience: ``RxnormPipeline(store, **kw).run()``."""
     pipe_kwargs = {k: kwargs.pop(k) for k in

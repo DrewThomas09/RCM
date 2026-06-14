@@ -14,10 +14,10 @@ Public surface:
 """
 from __future__ import annotations
 
-from . import query, registry, store, validation
+from . import analytics, query, registry, store, validation
 from .connector import RxNormApiError, RxNormConnector
 from .normalize import NdcNormalizationError, format_ndc_11, normalize_ndc
-from .pipeline import RxnormPipeline, run
+from .pipeline import RxnormPipeline, run, seed_into
 from .query import lookup_ndc, lookup_rxcui, query_dataset
 
 __all__ = [
@@ -25,6 +25,8 @@ __all__ = [
     "RxNormApiError",
     "RxnormPipeline",
     "run",
+    "seed_into",
+    "analytics",
     "normalize_ndc",
     "format_ndc_11",
     "NdcNormalizationError",

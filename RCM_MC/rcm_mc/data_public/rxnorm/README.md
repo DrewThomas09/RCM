@@ -24,9 +24,23 @@ codes from silently corrupting joins.
 | `registry.py` | Declarative dataset rows tagged `source=rxnorm` (one row per dataset). |
 | `query.py` | Uniform filter/select/sort/paginate (`query_dataset`) + `lookup_rxcui` / `lookup_ndc` (rxnorm namespace). |
 | `pipeline.py` | Resumable, idempotent orchestrator; STATE.md / PROGRESS.log; failure queue. |
+| `analytics.py` | Diligence reads: competitive-set sizing by class/mechanism, molecule competitive set, name search, retired/remapped audit, coverage summary. |
 | `validation.py` | Read-only openFDA NDC join → match-rate report. |
 | `seed.py` | Offline representative seed (renders RxNav-native JSON). |
 | `STATE.md` / `DECISIONS.md` / `PROGRESS.log` | Filesystem-as-memory. |
+
+## UI page — `/rxnorm`
+
+`rcm_mc/ui/data_public/rxnorm_page.py` renders the **Drug Reference & NDC→RxCUI
+crosswalk** surface (Research nav + Cmd-K palette), with:
+
+- KPI strip: concepts, NDC crosswalk size, class-coverage %, retired/remapped, openFDA join rate.
+- **NDC resolver** — paste any NDC format → canonical 11-digit + current RxCUI + concept.
+- **Concept search** + **RxCUI deep-dive** — drug classes, relations, NDCs, the molecule's competitive set.
+- **Drug-class explorer** — rank classes by competitive-set size, filter by ATC / therapeutic / mechanism.
+- **Retired/remapped audit** — each stale code and the active concept it resolves to.
+- A one-click **"populate from offline seed"** action (`POST /rxnorm/seed`) so the page is useful on an empty DB.
+- JSON twin at `GET /api/rxnorm` (`?ndc=`, `?rxcui=`, `?q=`, `?class_type=`).
 
 ## Canonical tables
 
