@@ -26,6 +26,12 @@ exposed to the internet**.
 PEdesk runs only on the Droplet. Ollama runs only on the Mac. The Droplet
 calls Ollama at the Mac's **Tailscale IP** — never a public address.
 
+> For the forward-looking infrastructure/operations re-scope — what's
+> already live vs. the right-sized next steps (offsite Spaces backups,
+> hardening, `do-agent` monitoring, Terraform capture) vs. the deferred
+> growth path (Managed Postgres/HA) — see
+> [DIGITALOCEAN_AGENT4_RESCOPE.md](DIGITALOCEAN_AGENT4_RESCOPE.md).
+
 ## Migration context
 
 Moving off Azure-for-Students (credit exhausted, subscription disabled) to a
