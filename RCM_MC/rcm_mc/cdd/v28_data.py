@@ -11,10 +11,18 @@ Vintage: CMS-HCC V28, payment year 2024 community model (reference subset).
 """
 from __future__ import annotations
 
-from typing import Dict, List
+import csv
+from typing import Dict, List, Mapping, Tuple
 
 VINTAGE = "CMS-HCC V28, PY2024 community model (reference subset)"
-SEGMENT = "CNA"  # community non-dual aged
+SEGMENT = "CNA"  # community non-dual aged (default)
+
+# Community model segments. Each has its own demographic factor table.
+SEGMENTS = {
+    "CNA": "Community non-dual aged",
+    "CND": "Community non-dual disabled",
+    "CFA": "Community full-benefit dual aged",
+}
 
 # ICD-10 (no dot) to HCC id.
 ICD_TO_HCC: Dict[str, str] = {
@@ -45,6 +53,16 @@ HCC_HIERARCHY: Dict[str, List[str]] = {
     "HCC37": ["HCC38"],
 }
 
+# Disease-interaction terms. Each fires only when every HCC in ``requires``
+# survives the hierarchy, adding its coefficient on top of the additive sum.
+# Reference subset values; drop the published interaction table in to extend.
+INTERACTIONS: List[Dict[str, object]] = [
+    {"name": "HF_KIDNEY", "label": "Heart failure with kidney disease",
+     "requires": ["HCC226", "HCC329"], "coef": 0.100},
+    {"name": "HF_COPD", "label": "Heart failure with COPD",
+     "requires": ["HCC226", "HCC280"], "coef": 0.080},
+]
+
 # Demographic factors keyed by (sex, age_band) for the CNA segment.
 AGE_BANDS = [
     (0, 64, "0-64"),
@@ -56,11 +74,28 @@ AGE_BANDS = [
     (90, 200, "90+"),
 ]
 
+# CNA demographic factors (default segment, kept stable for the golden fixture).
 DEMOGRAPHIC_FACTORS: Dict[str, float] = {
     "M:65-69": 0.330, "M:70-74": 0.395, "M:75-79": 0.485, "M:80-84": 0.600,
     "M:85-89": 0.730, "M:90+": 0.880,
     "F:65-69": 0.300, "F:70-74": 0.360, "F:75-79": 0.440, "F:80-84": 0.540,
     "F:85-89": 0.650, "F:90+": 0.770,
+}
+
+# Demographic factors per community segment. CND (disabled) and CFA (full dual)
+# carry their own age curves; values are a labeled reference subset.
+DEMOGRAPHIC_FACTORS_BY_SEGMENT: Dict[str, Dict[str, float]] = {
+    "CNA": DEMOGRAPHIC_FACTORS,
+    "CND": {
+        "M:0-64": 0.330, "M:65-69": 0.360, "M:70-74": 0.420, "M:75-79": 0.500,
+        "F:0-64": 0.320, "F:65-69": 0.340, "F:70-74": 0.380, "F:75-79": 0.460,
+    },
+    "CFA": {
+        "M:65-69": 0.430, "M:70-74": 0.495, "M:75-79": 0.585, "M:80-84": 0.700,
+        "M:85-89": 0.830, "M:90+": 0.980,
+        "F:65-69": 0.400, "F:70-74": 0.460, "F:75-79": 0.540, "F:80-84": 0.640,
+        "F:85-89": 0.750, "F:90+": 0.870,
+    },
 }
 
 
@@ -71,6 +106,33 @@ def age_band(age: int) -> str:
     return "90+"
 
 
-def demographic_factor(sex: str, age: int) -> float:
+def demographic_factor(sex: str, age: int, segment: str = "CNA") -> float:
+    table = DEMOGRAPHIC_FACTORS_BY_SEGMENT.get(segment, DEMOGRAPHIC_FACTORS)
     key = f"{sex.upper()}:{age_band(age)}"
-    return float(DEMOGRAPHIC_FACTORS.get(key, 0.0))
+    return float(table.get(key, 0.0))
+
+
+def load_crosswalk_csv(path: str) -> Dict[str, str]:
+    """Load an ICD-10 to HCC crosswalk from a CSV with columns icd10,hcc.
+
+    Codes are normalized (uppercased, dots stripped) so a real CMS crosswalk
+    drops in directly. The mapping stays a pure lookup table. No LLM.
+    """
+    out: Dict[str, str] = {}
+    with open(path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            code = str(row["icd10"]).replace(".", "").upper().strip()
+            out[code] = str(row["hcc"]).strip()
+    return out
+
+
+def load_coefficients_csv(path: str) -> Dict[str, Dict[str, object]]:
+    """Load HCC coefficients from a CSV with columns hcc,label,coef."""
+    out: Dict[str, Dict[str, object]] = {}
+    with open(path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            out[str(row["hcc"]).strip()] = {
+                "label": str(row.get("label", "")).strip(),
+                "coef": float(row["coef"]),
+            }
+    return out

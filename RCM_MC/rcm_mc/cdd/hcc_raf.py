@@ -35,6 +35,8 @@ def compute_raf(
     icd_to_hcc: Optional[Mapping[str, str]] = None,
     hcc_coefficients: Optional[Mapping[str, Mapping[str, Any]]] = None,
     hierarchy: Optional[Mapping[str, List[str]]] = None,
+    interactions: Optional[List[Mapping[str, object]]] = None,
+    segment: str = "CNA",
     trajectory_years: int = 3,
     coding_intensity: float = 0.02,
     compression_rate: float = 0.059,
@@ -45,10 +47,12 @@ def compute_raf(
     """Compute a member's RAF and a compression trajectory under CMS-HCC V28.
 
     ``member``: {age, sex, eligibility (optional), icd10: [codes]}.
+    ``segment``: community segment (CNA, CND, CFA) selecting the demographic table.
     """
     icd_map = dict(icd_to_hcc) if icd_to_hcc is not None else dict(v28_data.ICD_TO_HCC)
     coefs = dict(hcc_coefficients) if hcc_coefficients is not None else dict(v28_data.HCC_COEFFICIENTS)
     hier = dict(hierarchy) if hierarchy is not None else dict(v28_data.HCC_HIERARCHY)
+    inter = list(interactions) if interactions is not None else list(v28_data.INTERACTIONS)
 
     age = int(member["age"])
     sex = str(member["sex"]).upper()
@@ -73,7 +77,7 @@ def compute_raf(
     survivors = _apply_hierarchy(raw_hccs, hier)
     dropped = raw_hccs - survivors
 
-    demo = v28_data.demographic_factor(sex, age)
+    demo = v28_data.demographic_factor(sex, age, segment)
     hcc_contrib = {h: float(coefs[h]["coef"]) for h in sorted(survivors) if h in coefs}
     missing_coef = [h for h in survivors if h not in coefs]
     if missing_coef:
@@ -83,8 +87,16 @@ def compute_raf(
             message=f"{len(missing_coef)} HCC(s) had no coefficient in the loaded table.",
         ))
 
+    # Disease interactions fire only when every required HCC survives.
+    interaction_contrib: Dict[str, float] = {}
+    for spec in inter:
+        required = set(str(h) for h in spec["requires"])  # type: ignore[arg-type]
+        if required <= survivors:
+            interaction_contrib[str(spec["name"])] = float(spec["coef"])  # type: ignore[arg-type]
+
     hcc_sum = sum(hcc_contrib.values())
-    raf = demo + hcc_sum
+    interaction_sum = sum(interaction_contrib.values())
+    raf = demo + hcc_sum + interaction_sum
 
     # RAF trajectory and compression scenario.
     trajectory: List[Dict[str, float]] = []
@@ -95,12 +107,12 @@ def compute_raf(
         trajectory.append({"year": y, "raf": base_y})
         compressed.append({"year": y, "raf": comp_y})
 
-    # Reconciliation: RAF equals demographic factor plus surviving HCC coefficients.
+    # Reconciliation: RAF equals demographic + surviving HCCs + fired interactions.
     reconciliations = [
         Reconciliation(
-            identity="RAF == demographic factor + sum(surviving HCC coefficients)",
+            identity="RAF == demographic + sum(surviving HCC coefficients) + interactions",
             lhs=raf,
-            rhs=demo + hcc_sum,
+            rhs=demo + hcc_sum + interaction_sum,
             tolerance=1e-12,
         )
     ]
@@ -109,6 +121,7 @@ def compute_raf(
         Series(name="RAF components", kind="bar", points=(
             [{"label": "Demographic", "value": demo}]
             + [{"label": h, "value": v} for h, v in hcc_contrib.items()]
+            + [{"label": k, "value": v} for k, v in interaction_contrib.items()]
         )),
         Series(name="RAF trajectory", kind="line",
                points=[{"label": f"Y{p['year']}", "value": p["raf"]} for p in trajectory]),
@@ -144,8 +157,11 @@ def compute_raf(
         meta={
             "raf": raf,
             "demographic_factor": demo,
+            "segment": segment,
             "hcc_sum": hcc_sum,
             "hcc_contributions": hcc_contrib,
+            "interaction_sum": interaction_sum,
+            "interaction_contributions": interaction_contrib,
             "surviving_hccs": sorted(survivors),
             "dropped_by_hierarchy": sorted(dropped),
             "unmapped_codes": unmapped,

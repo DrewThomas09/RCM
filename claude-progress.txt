@@ -237,3 +237,13 @@ HIGHEST-VALUE NEXT: load the full CMS-HCC V28 crosswalk + coefficients into
   v28_data.py (NEW-12) so RAF reproduces published values across all 115 HCCs;
   then expand BOLSTER-07 with real CMS row-count fixtures per source.
 PR: #1859 (draft). Final commit hash recorded on push.
+================================================================================
+[2026-06-14 05:20 UTC] IMPROVE NEW-12 V28 extension (post-backlog)
+- v28_data.py: added community segments (CNA/CND/CFA) with per-segment
+  demographic tables; disease INTERACTIONS (HF_KIDNEY, HF_COPD) firing only when
+  all required HCCs survive; load_crosswalk_csv + load_coefficients_csv so real
+  CMS tables drop in (codes normalized). hcc_raf.py: segment + interactions
+  params; RAF = demo + HCC sum + interaction sum; meta exposes both.
+- Existing golden RAF 1.025 unchanged (demo member triggers no interaction).
+- Evidence: pytest tests/golden/ => 192 passed. Interaction member RAF 1.630
+  hand-verified; CFA segment demo 0.495; CSV loaders roundtrip.
