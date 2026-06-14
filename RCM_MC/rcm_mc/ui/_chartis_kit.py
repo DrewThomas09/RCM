@@ -11447,7 +11447,11 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<div class="ck-user-recent-head">Recent deals</div>'
         '<div class="ck-user-recent-list" data-ck-recent-list></div>'
         '</div>'
-        '<a href="/my/AT" class="ck-user-dropdown-item">My Dashboard</a>'
+        # Follow the chip's initials, not a hardcoded "/my/AT" — so when a
+        # caller passes real user_initials the dashboard link and the avatar
+        # point at the same owner instead of silently diverging.
+        f'<a href="/my/{_esc(user_initials)}" class="ck-user-dropdown-item">'
+        f'My Dashboard</a>'
         '<a href="/tools" class="ck-user-dropdown-item">All Tools &middot; ⌘K</a>'
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
         f'<a href="/settings/workspace" class="ck-user-dropdown-item">'

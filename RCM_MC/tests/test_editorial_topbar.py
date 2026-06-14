@@ -73,6 +73,16 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('href="/diligence" aria-expanded="false"', self.html)
         self.assertNotIn('href="/home" aria-expanded', self.html)
 
+    def test_my_dashboard_link_follows_chip_initials(self):
+        # The "My Dashboard" link must target the same owner the avatar chip
+        # shows — not a hardcoded "/my/AT". Pass real initials and assert both
+        # the chip and the dashboard link move together.
+        html = chartis_shell("<p>b</p>", title="X", active_nav="portfolio",
+                             show_chrome=True, user_initials="JD")
+        self.assertIn(">JD</button>", html)            # chip
+        self.assertIn('href="/my/JD"', html)           # dashboard link
+        self.assertNotIn('href="/my/AT"', html)
+
     def test_avatar_chip_preserved(self):
         self.assertIn('class="ck-user-chip"', self.html)
         self.assertIn("data-ck-user-toggle", self.html)
