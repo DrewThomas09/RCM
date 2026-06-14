@@ -10258,6 +10258,9 @@ _TABLE_FILTER_JS = """
     input.type='search'; input.placeholder='Filter rows\\u2026';
     input.setAttribute('aria-label','Filter table rows');
     var count=document.createElement('span'); count.className='ck-tfilter-count';
+    /* Announce the match count as the partner types, so a screen-reader
+     * user hears "5 of 20" instead of filtering blind. */
+    count.setAttribute('aria-live','polite');
     var total=tbody.rows.length;
     function upd(){
       var q=input.value.trim().toLowerCase(); var shown=0;
