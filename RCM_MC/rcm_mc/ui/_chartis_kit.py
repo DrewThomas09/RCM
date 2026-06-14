@@ -5677,8 +5677,11 @@ def ck_empty_state(
         f'<div class="ck-eyebrow">{_esc(eyebrow)}</div>' if eyebrow else ""
     )
     icon_html = (
-        f'<div class="ck-empty-state-icon">{icon}</div>'  # pre-escaped/glyph
-        if icon else ""
+        # aria-hidden: the glyph is decorative (the title carries the
+        # meaning), so AT shouldn't announce "star"/"check" before it —
+        # matches every other decorative glyph in this kit.
+        f'<div class="ck-empty-state-icon" aria-hidden="true">{icon}</div>'
+        if icon else ""  # icon is a pre-escaped glyph / HTML snippet
     )
     body_html = (
         f'<p class="ck-empty-state-body">{_esc(body)}</p>' if body else ""
