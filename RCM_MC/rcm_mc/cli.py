@@ -1208,6 +1208,17 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                     help="Max studies to pull (v2 caps at 1000)")
     tr.add_argument("--json", action="store_true", help="Emit JSON")
 
+    # Provider supply by PE vertical for a state (live NPPES, NUCC crosswalk).
+    sp = sub.add_parser(
+        "supply",
+        help="Live provider-supply counts by PE vertical for a state (NPPES)",
+    )
+    sp.add_argument("--state", required=True, help="Two-letter state code")
+    sp.add_argument("--vertical", default="",
+                    help="One vertical (default: all crosswalk verticals)")
+    sp.add_argument("--city", default="", help="Narrow to one city")
+    sp.add_argument("--json", action="store_true", help="Emit JSON")
+
     args = ap.parse_args(argv)
 
     if args.action == "gaps":
@@ -1336,6 +1347,33 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
             sys.stdout.write(
                 f"{r['sponsor'][:40]:<40}  {r['trials']:>6}  "
                 f"{(f'{enr:,}' if enr is not None else '—'):>10}\n")
+        return 0
+
+    if args.action == "supply":
+        # Live provider-supply sweep by vertical. No store needed.
+        from .data.nppes_infusion import supply_by_vertical
+        from .data_public.nucc_taxonomy import VERTICALS
+
+        verts = [args.vertical] if args.vertical else None
+        if args.vertical and args.vertical not in VERTICALS:
+            sys.stderr.write(f"unknown vertical {args.vertical!r}; "
+                             f"known: {', '.join(VERTICALS)}\n")
+            return 2
+        rows = supply_by_vertical(args.state, verts, city=args.city)
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rows, indent=2) + "\n")
+            return 0
+        sys.stdout.write(f"Provider supply for {args.state.upper()}"
+                         + (f" / {args.city}" if args.city else "") + ":\n")
+        sys.stdout.write(f"  {'VERTICAL':<22}  {'COUNT':>7}\n")
+        for r in rows:
+            if r["live"]:
+                cap = "+" if r.get("capped") else ""
+                sys.stdout.write(f"  {r['vertical']:<22}  {r['count']:>6}{cap or ' '}\n")
+            else:
+                sys.stdout.write(f"  {r['vertical']:<22}  {'—':>7}  (unavailable)\n")
+        sys.stdout.write("  ('+' = hit 200/desc page cap; true count is higher)\n")
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.

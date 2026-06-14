@@ -86,3 +86,32 @@ def count_infusion_providers(
     by-taxonomy counter for backward compatibility."""
     return count_providers_by_taxonomy(
         state, _TAXO_DESCRIPTIONS, city=city, timeout_s=timeout_s)
+
+
+def supply_by_vertical(
+    state: str, verticals: List[str] = None, city: str = "", *,
+    timeout_s: int = 20,
+) -> List[Dict[str, Any]]:
+    """Live provider-supply counts across PE verticals for a state — one row
+    per vertical: ``{vertical, live, count?, capped?}``. Uses the NUCC crosswalk
+    to map each vertical to its NPPES descriptions.
+
+    A vertical whose NPPES call fails is returned with ``live=False`` and no
+    count (the market is unknown, not empty) so a partial-egress run degrades
+    per-vertical instead of failing the whole sweep. ``verticals`` defaults to
+    the full crosswalk coverage."""
+    verts = verticals if verticals is not None else _nucc.VERTICALS
+    rows: List[Dict[str, Any]] = []
+    for v in verts:
+        descs = _nucc.descriptions_for(v)
+        if not descs:
+            rows.append({"vertical": v, "live": False})
+            continue
+        res = count_providers_by_taxonomy(
+            state, descs, city=city, timeout_s=timeout_s)
+        row: Dict[str, Any] = {"vertical": v, "live": bool(res.get("live"))}
+        if res.get("live"):
+            row["count"] = res["count"]
+            row["capped"] = res["capped"]
+        rows.append(row)
+    return rows
