@@ -2905,6 +2905,9 @@ def render_texas_infusion_page(
         aic_overrides=overrides, nppes_live=nppes_live)
     demo = a["demographics"]
     sw = _so_whats(a)
+    # Tab strip shared with part 2 (lazy import — part 2 imports this
+    # module's section-nav helper, so a top-level import would cycle).
+    from .texas_infusion_continued_page import part_tabs
 
     sources = "".join(
         f'<li style="margin:3px 0;font-size:11px;color:{_DIM};">'
@@ -2927,6 +2930,7 @@ def render_texas_infusion_page(
                    "DOJ/FTC HHI. Replace with engagement data before IC.",
         )
         + '<div class="ts-wrap" style="max-width:980px;">'
+        + part_tabs("part1")
         + _kpi_strip(a)
         # County & proximity workbench — the per-county referral-
         # convenience drill-down lives on its own page (254 rows +
