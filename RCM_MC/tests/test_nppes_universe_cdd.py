@@ -114,6 +114,18 @@ def test_enumeration_trend_handles_slash_dates(store):
     assert any(r["year"] == "2009" for r in rows)
 
 
+def test_referral_hubs(store):
+    rows = cdd.referral_hubs(store, min_providers=3, limit=20)
+    assert rows
+    counts = [r["providers"] for r in rows]
+    assert counts == sorted(counts, reverse=True)
+    for r in rows:
+        assert r["providers"] >= 3
+        # individuals + organizations should account for the provider total
+        assert r["individuals"] + r["organizations"] == r["providers"]
+        assert r["address"]
+
+
 def test_roster_integrity(store):
     rep = cdd.roster_integrity(store, geo_level="state")
     assert rep["total_providers"] > 0

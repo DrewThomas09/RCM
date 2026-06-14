@@ -42,6 +42,8 @@ def market_brief_data(
 
     growth = cdd.enumeration_trend(
         store, geo_level=geo_level, geo=geo, classification=classification)
+    hubs = cdd.referral_hubs(store, geo_level=geo_level, geo=geo,
+                             min_providers=3, limit=10)
 
     platforms = cdd.affiliation_footprint(store, min_confidence=0.5, limit=10)
     sys_all = _systems.health_systems(store, min_members=2, limit=100)
@@ -63,6 +65,7 @@ def market_brief_data(
         "tam": {"total_providers": tam_total, "rows": tam[:25]},
         "concentration": {"avg_hhi": avg_hhi, "markets": conc[:15]},
         "fragmentation": frag[:15],
+        "referral_hubs": hubs,
         "growth": growth,
         "platforms": platforms,
         "health_systems": sys_all[:15],
@@ -141,6 +144,17 @@ def market_brief_markdown(
             L.append(f"| {r['year']} | {r['new_providers']:,} | "
                      f"{r['deactivated']:,} | {r['net_growth']:+,} | "
                      f"{r['cumulative_net']:,} |")
+
+    if d.get("referral_hubs"):
+        L += ["", "## 3c. Referral hubs (co-location density)",
+              "_Practice sites where many distinct providers operate — "
+              "concentrated referral / captive-volume anchors._",
+              "",
+              "| Address | ZIP | Providers | Individuals | Orgs |",
+              "|---|---|---:|---:|---:|"]
+        for r in d["referral_hubs"][:8]:
+            L.append(f"| {r['address']} | {r['zip5']} | {r['providers']} | "
+                     f"{r['individuals']} | {r['organizations']} |")
 
     L += ["", "## 4. Incumbent platforms (captive-volume proxy)",
           "| Organization | NPI | Captive providers | Avg confidence |",

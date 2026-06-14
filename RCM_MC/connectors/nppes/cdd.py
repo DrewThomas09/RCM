@@ -332,6 +332,43 @@ def roster_integrity(
     }
 
 
+def referral_hubs(
+    store: Any, *, geo_level: str = "state", geo: Optional[str] = None,
+    min_providers: int = 3, limit: int = 50,
+) -> List[Dict[str, Any]]:
+    """Co-location referral hubs: practice addresses where many distinct
+    providers operate. A dense shared facility concentrates referral and
+    captive volume — the higher the provider count at one address, the more
+    a single site anchors the local network. Returns hubs ranked by provider
+    count, with the individual/org split."""
+    geo_c = _geo_col(geo_level)
+    args: List[Any] = [int(min_providers)]
+    where = ["a.address_purpose IN ('practice','secondary_practice')",
+             "a.address_line_1 IS NOT NULL", "a.address_line_1 <> ''"]
+    if geo:
+        where.insert(0, f"{geo_c} = ?")
+        args.insert(0, geo)
+    wsql = " AND ".join(where)
+    sql = f"""
+        SELECT
+            UPPER(a.address_line_1) AS address, a.zip5 AS zip5,
+            MAX(a.city) AS city, MAX(a.state) AS state,
+            COUNT(DISTINCT a.npi) AS providers,
+            COUNT(DISTINCT CASE WHEN p.entity_type=1 THEN a.npi END) AS individuals,
+            COUNT(DISTINCT CASE WHEN p.entity_type=2 THEN a.npi END) AS organizations
+        FROM dim_provider_address a
+        JOIN dim_provider p ON p.npi=a.npi
+        WHERE {wsql}
+        GROUP BY UPPER(a.address_line_1), a.zip5
+        HAVING providers >= ?
+        ORDER BY providers DESC LIMIT ?
+    """
+    args.append(int(limit))
+    with store.connect() as con:
+        rows = con.execute(sql, args).fetchall()
+    return [dict(r) for r in rows]
+
+
 def affiliation_footprint(
     store: Any, *, min_confidence: float = 0.5, limit: int = 50,
 ) -> List[Dict[str, Any]]:

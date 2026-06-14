@@ -306,6 +306,7 @@ def mount_router(router: Any, store: Any) -> bool:
             "concentration": cdd.market_concentration,
             "fragmentation": cdd.fragmentation_scan,
             "growth": cdd.enumeration_trend,
+            "referral_hubs": cdd.referral_hubs,
             "roster": cdd.roster_integrity,
             "platforms": cdd.affiliation_footprint,
             "rollup": cdd.rollup_targets,

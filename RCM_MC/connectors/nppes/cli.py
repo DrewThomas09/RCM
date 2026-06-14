@@ -113,6 +113,8 @@ def _cmd_cdd(args) -> int:
             classification=args.classification),
         "roster": lambda: cdd.roster_integrity(store, geo_level=args.geo_level),
         "platforms": lambda: cdd.affiliation_footprint(store, limit=args.limit),
+        "referral_hubs": lambda: cdd.referral_hubs(
+            store, geo_level=args.geo_level, geo=args.geo, limit=args.limit),
         "systems": lambda: systems.health_systems(store, limit=args.limit),
         "screen": lambda: screen.screen_targets(
             store, thesis=args.thesis, geo_level=args.geo_level, geo=args.geo,
@@ -163,7 +165,8 @@ def main(argv=None) -> int:
     sp = sub.add_parser("cdd", help="commercial-diligence market analytics")
     sp.add_argument("metric", choices=["tam", "concentration", "fragmentation",
                                        "growth", "roster", "platforms", "rollup",
-                                       "systems", "screen", "report"])
+                                       "systems", "screen", "referral_hubs",
+                                       "report"])
     sp.add_argument("--db", default="nppes.db")
     sp.add_argument("--geo-level", default="state",
                     choices=["state", "city", "zip5", "county"])
