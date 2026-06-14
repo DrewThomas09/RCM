@@ -10715,15 +10715,20 @@ _NAV_MENU_JS = """
 
   function cancelOpen(){ if (openTimer){ clearTimeout(openTimer); openTimer = null; } }
   function cancelClose(){ if (closeTimer){ clearTimeout(closeTimer); closeTimer = null; } }
+  function setExpanded(g, on){     // keep the trigger's aria-expanded in sync
+    var trigger = g.querySelector('a');
+    if (trigger) trigger.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
   function closeAll(){
     cancelOpen(); cancelClose();
-    groups.forEach(function(g){ g.classList.remove('is-open'); });
+    groups.forEach(function(g){ g.classList.remove('is-open'); setExpanded(g, false); });
     current = null;
   }
   function openOnly(g){            // one panel open at a time
     if (current === g) return;
-    groups.forEach(function(x){ if (x !== g) x.classList.remove('is-open'); });
+    groups.forEach(function(x){ if (x !== g){ x.classList.remove('is-open'); setExpanded(x, false); } });
     g.classList.add('is-open');
+    setExpanded(g, true);
     current = g;
   }
 
@@ -11276,8 +11281,14 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         sect = _section_of(item)
         caret = ('<span class="ck-nav-caret" aria-hidden="true">▾</span>'
                  if sect else "")
+        # Section triggers are disclosure buttons for their mega-menu: expose
+        # aria-haspopup + a starting aria-expanded="false" that _NAV_MENU_JS
+        # flips as the panel opens/closes, so a screen reader announces the
+        # collapsed/expanded state instead of a bare link. Bare items (Home)
+        # carry neither.
+        pop_attr = ' aria-haspopup="true" aria-expanded="false"' if sect else ""
         anchor = (
-            f'<a href="{_esc(item["href"])}" '
+            f'<a href="{_esc(item["href"])}"{pop_attr} '
             f'class="{"active" if item["key"] == active_nav else ""}">'
             f'{_esc(_nav_label(item["label"]))}{caret}</a>'
         )

@@ -62,6 +62,15 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('class="ck-newdeal-cta" href="/new-deal"', self.html)
         self.assertIn("+ New deal", self.html)
 
+    def test_section_triggers_expose_aria_expanded(self):
+        # Each mega-menu section trigger is a disclosure control: it must
+        # advertise aria-haspopup + a starting aria-expanded="false" (flipped
+        # by _NAV_MENU_JS on open) so screen readers announce open/collapsed
+        # state. Home (a bare link, no dropdown) must NOT carry it.
+        self.assertIn('href="/diligence" aria-haspopup="true" '
+                      'aria-expanded="false"', self.html)
+        self.assertNotIn('href="/home" aria-haspopup', self.html)
+
     def test_avatar_chip_preserved(self):
         self.assertIn('class="ck-user-chip"', self.html)
         self.assertIn("data-ck-user-toggle", self.html)
