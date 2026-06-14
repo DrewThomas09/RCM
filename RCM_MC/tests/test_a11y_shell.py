@@ -33,8 +33,14 @@ class A11yShellTests(unittest.TestCase):
     def test_skip_link_present_with_chrome(self):
         html = chartis_shell("<p>x</p>", title="X")
         self.assertIn(_SKIP_ANCHOR, html)
-        # Skip link must precede the topbar so it is the first tab stop.
-        self.assertLess(html.index(_SKIP_ANCHOR), html.index("<main"))
+        # Skip link must precede the main element so it is the first tab stop.
+        self.assertLess(html.index(_SKIP_ANCHOR), html.index('<main id="ck-main"'))
+
+    def test_skip_target_is_focusable(self):
+        # For the skip link to move keyboard focus (not just scroll), the
+        # target must be programmatically focusable.
+        html = chartis_shell("<p>x</p>", title="X")
+        self.assertIn('<main id="ck-main" tabindex="-1"', html)
 
     def test_skip_link_absent_on_bare_pages(self):
         # Auth pages (login/forgot) render show_chrome=False — there's no

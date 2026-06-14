@@ -144,6 +144,9 @@ summary:focus-visible,
   text-decoration: none;
 }
 .ck-skip-link:focus { left: .5rem; top: .5rem; }
+/* The skip target receives programmatic focus; don't ring the whole
+ * main region (tabindex=-1 makes it focusable so the skip link lands). */
+#ck-main:focus { outline: none; }
 
 /* Screen-reader-only utility — present for assistive tech, hidden
  * visually (e.g. labels for icon-only controls). */

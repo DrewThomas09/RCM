@@ -8892,6 +8892,9 @@ _CSS_INLINE_FALLBACK = """
     text-transform: uppercase; text-decoration: none;
   }
   .ck-skip-link:focus { left: 8px; top: 8px; }
+  /* The skip target receives programmatic focus; don't ring the whole
+   * main region (tabindex=-1 makes it focusable so the skip link lands). */
+  #ck-main:focus { outline: none; }
   .ck-sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
@@ -11829,7 +11832,7 @@ def chartis_shell(
         "</head><body>"
         f"{skip_link_html}"
         f"{chrome_html}"
-        f'<main id="ck-main" class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
+        f'<main id="ck-main" tabindex="-1" class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
         f"{shortcuts_html}"
         f"{_TOAST_HTML}"
