@@ -1,0 +1,33 @@
+PEDESK / RCM-MC — CDD Analytics Expansion — Progress Log
+Branch: claude/pedesk-cdd-analytics-cvzvgf
+Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
+
+================================================================================
+[2026-06-14 01:24 UTC] ORIENT / BOOTSTRAP
+- Fresh branch off main (HEAD 00c5a3b). No prior state files; created them.
+- App: RCM_MC (pkg rcm_mc), Python 3.11. Baseline existing tests green
+  (ran tests/test_simulator.py + tests/test_ridge_predictor.py = 40 passed).
+- Dependency env: numpy 2.4.6, scipy 1.17.1, scikit-learn 1.9.0 present.
+  Installed pandas, matplotlib, pytest, ruptures, plotly, lifelines 0.30.3.
+- Confirmed existing assets to bolster: rcm_mc/ml/ridge_predictor.py +
+  conformal.py (BOLSTER-01), rcm_mc/ml/anomaly_detector.py +
+  qoe/isolation_forest.py (BOLSTER-02), rcm_mc/ml/regime_detection.py
+  (BOLSTER-03), rcm_mc/ml/payer_mix_cascade.py, mc/ + montecarlo_v3/.
+- Created feature_list.json (17 NEW + 7 BOLSTER), DECISIONS.md, this log.
+- Plan: build cohesive rcm_mc/cdd/ subpackage with shared Exhibit contract +
+  registry (wired to CLI + server), golden tests in tests/golden/.
+- Next: foundation (exhibit + registry + copy linter) then NEW-01.
+
+================================================================================
+[2026-06-14 01:40 UTC] FOUNDATION + NEW-01
+- Built rcm_mc/cdd/ subpackage: exhibit.py (Exhibit/Footnote/AssumptionNode/
+  Flag/Reconciliation/Series + lint_copy em-dash & AI-filler guard + audience
+  separation in render()), registry.py (autoloads feature modules, CLI+server
+  surface), cli.py + __main__.py (python -m rcm_mc.cdd list|run).
+- NEW-01 tam_sam_som.py: TAM=all units*price, SAM=reachable, SOM=capacity*win_rate
+  priced at blended reachable price, capped at demand ceiling. Divergence flag
+  vs top-down >20%. Assumption nodes editable+sourced; partner render strips them.
+- Evidence: python -m pytest tests/golden/ -q => 21 passed.
+  Hand fixture TAM 30000 / SAM 20000 / SOM 4000 verified; top_down 33000 no flag,
+  50000 fires tam_divergence + reconciled False.
+- Next: NEW-02 PVM bridge (additive + reversal-consistent, tol 1e-6).
