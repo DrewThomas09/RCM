@@ -94,11 +94,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_market_saturation.py",
-      "notes": ""
+      "notes": "Saturation 0.5/0.1/2.0 per 1000; white-space ranking B,A,C; >10 serve rule; FFS-only noted."
     },
     {
       "id": "NEW-09",

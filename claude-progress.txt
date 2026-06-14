@@ -83,3 +83,10 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest tests/golden/test_provider_density.py => 7 passed. Counts
   5/3/2 hand-counted; density per 100k verified.
 - Next: NEW-08 market saturation / white-space mapping.
+================================================================================
+[2026-06-14 02:55 UTC] NEW-08 Market saturation
+- market_saturation.py: saturation = serving providers per N beneficiaries;
+  white-space ranking ascending (lowest=most open); >10 located-beneficiary
+  serve rule via provider_claims; FFS-only flag+footnote; rank-permutation recon.
+- Evidence: pytest => 5 passed. Saturation 0.5/0.1/2.0; ranking B,A,C.
+- Next: NEW-09 site-of-care shift analysis.
