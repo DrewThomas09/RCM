@@ -226,11 +226,11 @@
       "bucket": "bolster",
       "audience": "internal",
       "priority": 102,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_isoforest_anomaly.py",
-      "notes": ""
+      "notes": "IsolationForest explicit contamination, n_estimators>=100, pinned random_state; planted 3 anomalies caught, FP 1/30; z-score reasons; reproducible."
     },
     {
       "id": "BOLSTER-03",

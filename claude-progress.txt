@@ -168,3 +168,11 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   opened (draft); CI runs a fixed subset that does not touch cdd/.
 - Evidence: pytest test_ridge_conformal_bolster.py => 8 passed. Coverage 82.5%/95%.
 - Next: BOLSTER-02 isolation-forest anomaly detection.
+================================================================================
+[2026-06-14 05:08 UTC] BOLSTER-02 Isolation-forest anomaly
+- cdd/anomaly.py: IsolationForest (explicit contamination, n_estimators>=100,
+  pinned random_state) for billing/claims/provider outliers; human-readable
+  reasons via top z-score feature (statistical, not LLM). Registered.
+- Evidence: pytest test_isoforest_anomaly.py => 7 passed. 3 planted anomalies
+  caught, FP 1/30, reasons attached, reproducible.
+- Next: BOLSTER-03 changepoint detection (ruptures).
