@@ -20958,6 +20958,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
+        "/rxnorm/seed",  # POST-only "populate from offline seed" action
         "/data/refresh", "/quick-import", "/quick-import-json",
         "/export/bridge", "/exports/lp-update", "/calibrate", "/upload",
         "/digest/morning",

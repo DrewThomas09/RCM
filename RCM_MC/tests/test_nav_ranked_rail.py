@@ -136,6 +136,22 @@ class RankedRailTests(unittest.TestCase):
         research = [s["href"] for s in _ranked_subnav_items("research")[0]]
         self.assertNotIn("/excel-mapping", research)
 
+    def test_no_cross_section_namespace_leak_in_bars(self):
+        # A section's nav menu must stay inside its own namespace: no leaf may
+        # borrow another section's /<key>/… prefix when a native-namespace
+        # alias of the same page exists (Research used to lead with
+        # /diligence/regulatory-calendar instead of /regulatory-calendar,
+        # which resolved the active-nav/breadcrumb to the wrong section).
+        from rcm_mc.ui._chartis_kit import (
+            _ranked_subnav_items, _route_section_prefix, _SUB_NAV,
+        )
+        for sec in _SUB_NAV:
+            top, _ = _ranked_subnav_items(sec)
+            for s in top:
+                pref = _route_section_prefix(s["href"])
+                self.assertIn(pref, ("", sec),
+                              f"{sec} bar leaks into /{pref}/: {s['href']}")
+
 
 if __name__ == "__main__":
     unittest.main()

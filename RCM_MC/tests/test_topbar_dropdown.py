@@ -41,7 +41,13 @@ class TopbarDropdownTests(unittest.TestCase):
         self.assertTrue(top, "research mega-menu surfaced no ranked items")
         for item in top:
             self.assertIn(item["label"], self.html)
-        self.assertIn('class="ck-mega-item" role="menuitem"', self.html)
+        # Disclosure-nav pattern: items are plain links inside a labelled
+        # group, NOT role="menuitem" (which would promise arrow-key menu
+        # semantics this nav never implemented).
+        self.assertIn('class="ck-mega-item"', self.html)
+        self.assertNotIn('role="menuitem"', self.html)
+        self.assertNotIn('role="menu"', self.html)
+        self.assertRegex(self.html, r'ck-nav-mega" id="ck-mega-[a-z]+" role="group"')
         # PR #1155 removed the "01. 02. …" mono-ordinal prefix; the items
         # are now plain links carrying the label + description.
         # The post-#1155 marker that survives is the per-item body span.

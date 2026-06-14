@@ -374,6 +374,23 @@ _NAV_DEMOTED = frozenset({
     "/exhibit",
 })
 
+# Section keys that own a URL namespace (``/diligence/…``, ``/portfolio/…``).
+# Used to keep a section's nav menu inside its own namespace: a Research leaf
+# that points at ``/diligence/regulatory-calendar`` reads wrong and resolves
+# the active-nav/breadcrumb to Diligence, not Research. Derived from the
+# primary nav so it tracks _CORPUS_NAV automatically.
+_NAV_SECTION_KEYS = frozenset(d["key"] for d in _CORPUS_NAV)
+
+
+def _route_section_prefix(route: str) -> str:
+    """First path segment of ``route`` if it names a nav section, else ``""``.
+
+    ``/diligence/hcris-xray`` → ``diligence``; ``/market-intel`` → ``""``
+    (no section prefix — a bare top-level surface).
+    """
+    head = route.strip("/").split("/", 1)[0]
+    return head if head in _NAV_SECTION_KEYS else ""
+
 
 def _ranked_subnav_items(sect: str):
     """The section's top-6 surfaces for the nav bar: flagship pins first,
@@ -423,6 +440,30 @@ def _ranked_subnav_items(sect: str):
 
     from ._surface_visibility import is_internal
 
+    def _resolved_label(r: dict) -> str:
+        c = cur.get(r.get("route", ""), {})
+        return (c.get("label") or r.get("label") or r.get("route") or "").strip()
+
+    # Keep the bar inside its own namespace. Many surfaces are reachable at
+    # both a bare route and a section-prefixed alias (``/regulatory-calendar``
+    # and ``/diligence/regulatory-calendar`` are the same page). When the pool
+    # carries both, prefer the alias that does NOT borrow another section's
+    # ``/<key>/…`` namespace — otherwise the Research menu links into Diligence
+    # and the destination resolves its active-nav/breadcrumb to the wrong
+    # section. Only drop a foreign-prefixed route when a same-label native
+    # alias is actually present, so a surface that lives ONLY under a foreign
+    # prefix still shows rather than vanishing.
+    _native_labels = {
+        _resolved_label(r).lower()
+        for r in pool
+        if _route_section_prefix(r.get("route", "")) in ("", sect)
+    }
+
+    def _is_displaceable_foreign(r: dict) -> bool:
+        pref = _route_section_prefix(r.get("route", ""))
+        return (pref not in ("", sect)
+                and _resolved_label(r).lower() in _native_labels)
+
     def _add(label: str, href: str) -> None:
         label = (label or "").strip()
         key = label.lower()
@@ -443,10 +484,14 @@ def _ranked_subnav_items(sect: str):
         r = by_route.get(href) or {}
         _add(c.get("label") or r.get("label") or href, href)
 
-    # 2) Ranked backfill — strongest remaining pages by score.
+    # 2) Ranked backfill — strongest remaining pages by score. Skip a
+    # foreign-namespace alias when a same-label native route is in the pool,
+    # so a section's bar never links into another section's /<key>/… space.
     for r in pool:
         if len(top) >= 6:
             break
+        if _is_displaceable_foreign(r):
+            continue
         c = cur.get(r["route"], {})
         _add(c.get("label") or r.get("label") or r["route"], r["route"])
     # 3) Backfill to a fuller bar (target 4-6 destinations) from the curated
@@ -5697,8 +5742,11 @@ def ck_empty_state(
         f'<div class="ck-eyebrow">{_esc(eyebrow)}</div>' if eyebrow else ""
     )
     icon_html = (
-        f'<div class="ck-empty-state-icon">{icon}</div>'  # pre-escaped/glyph
-        if icon else ""
+        # aria-hidden: the glyph is decorative (the title carries the
+        # meaning), so AT shouldn't announce "star"/"check" before it —
+        # matches every other decorative glyph in this kit.
+        f'<div class="ck-empty-state-icon" aria-hidden="true">{icon}</div>'
+        if icon else ""  # icon is a pre-escaped glyph / HTML snippet
     )
     body_html = (
         f'<p class="ck-empty-state-body">{_esc(body)}</p>' if body else ""
@@ -5938,6 +5986,14 @@ _CK_BACK_TO_TOP_JS = """
     btn.addEventListener('click', function(ev){
       ev.preventDefault();
       window.scrollTo({top:0, behavior:'smooth'});
+      /* Also move keyboard focus to the top of content (the skip-link
+       * target), so a keyboard user's next Tab resumes from the top
+       * instead of staying parked on this bottom-right button.
+       * preventScroll keeps the smooth scroll above from being undone. */
+      var m = document.getElementById('ck-main');
+      if (m && typeof m.focus === 'function') {
+        try { m.focus({preventScroll:true}); } catch(e){ m.focus(); }
+      }
     });
     window.addEventListener('scroll', update, {passive:true});
     update();
@@ -8392,6 +8448,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-chip:hover { transform:scale(1.04); box-shadow:0 0 0 3px var(--tb-green-soft); }
   .ck-user-chip:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce){ .ck-user-chip:hover { transform:none; } }
+  /* Keyboard focus rings for the remaining focusable topbar links (WCAG
+   * 2.4.7). The nav links, Guide, +New, and the chip already had rings;
+   * the wordmark, mode chip, Q-pill, and — most importantly — the account
+   * dropdown items did not, so keyboard users navigating the open menu saw
+   * no focus indicator at all. Inset offset on dropdown items so the ring
+   * stays inside the menu's edge. */
+  .ck-wordmark:focus-visible,
+  .ck-mode-chip:focus-visible,
+  .ck-topbar-qpill:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  .ck-user-dropdown-item:focus-visible { outline:2px solid var(--tb-green); outline-offset:-2px; }
   /* Portfolio-wide diligence-questions pill in the topbar. JS
    * hydrates from rcm_deal_*_questions on DOMContentLoaded; hidden
    * when zero open across the portfolio. Warning-tone numeric +
@@ -10052,10 +10118,12 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
         if(th.getAttribute('data-sortable')!=null) return;
         th.setAttribute('data-sortable','');
         th.style.cursor='pointer';
-        // Keep the native columnheader role so aria-sort is honoured;
-        // tabindex + the keydown handler below still make it operable.
-        th.setAttribute('aria-sort','none');
+        /* Keep the native columnheader role: aria-sort is only honored on a
+         * columnheader, so overriding to role=button (the prior behavior)
+         * silently discarded the sort-state announcement. tabindex + the
+         * keydown handler below keep it operable for keyboard users. */
         th.setAttribute('tabindex','0');
+        if(th.getAttribute('aria-sort')==null) th.setAttribute('aria-sort','none');
         if(!th.title) th.title='Sort';
         var ind=document.createElement('span');
         ind.className='ck-sort-ind';
@@ -10092,8 +10160,12 @@ _TABLE_TOTALS_JS = """
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
-.ck-data-table-scroll:hover .ck-ttotals{opacity:0.9;}
+.ck-data-table-scroll:hover .ck-ttotals,
+.ck-data-table-scroll:focus-within .ck-ttotals{opacity:0.9;}
 .ck-ttotals:hover,.ck-ttotals[aria-pressed="true"]{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+/* Same as the copy button: reveal + ring on keyboard focus so a Tab user
+ * doesn't land on an invisible toggle. */
+.ck-ttotals:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:700;
   background:var(--sc-bone,#ece5d6);font-family:var(--sc-mono,'JetBrains Mono',monospace);
   font-variant-numeric:tabular-nums;padding:6px 10px;font-size:11px;}
@@ -10279,8 +10351,12 @@ _TABLE_COPY_JS = """
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
-.ck-data-table-scroll:hover .ck-tcopy{opacity:0.9;}
+.ck-data-table-scroll:hover .ck-tcopy,
+.ck-data-table-scroll:focus-within .ck-tcopy{opacity:0.9;}
 .ck-tcopy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+/* Reveal + ring the copy button on keyboard focus — without this a Tab
+ * user lands on an invisible (opacity:0) control with no focus cue. */
+.ck-tcopy:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 </style>
 <script>
 /* Hover copy-to-clipboard for editorial tables. A small Copy button
@@ -10363,6 +10439,9 @@ _TABLE_FILTER_JS = """
     input.type='search'; input.placeholder='Filter rows\\u2026';
     input.setAttribute('aria-label','Filter table rows');
     var count=document.createElement('span'); count.className='ck-tfilter-count';
+    /* Announce the match count as the partner types, so a screen-reader
+     * user hears "5 of 20" instead of filtering blind. */
+    count.setAttribute('aria-live','polite');
     var total=tbody.rows.length;
     function upd(){
       var q=input.value.trim().toLowerCase(); var shown=0;
@@ -10750,7 +10829,12 @@ _USER_MENU_JS = """
     if (!menu.contains(e.target) && e.target !== btn) close();
   });
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && !menu.hidden) close();
+    if (e.key === 'Escape' && !menu.hidden) {
+      close();
+      /* Return focus to the chip so a keyboard user who tabbed into the
+       * menu isn't stranded on the now-hidden element (WCAG 2.4.3). */
+      btn.focus();
+    }
   });
 
   /* Hydrate recent-deals group */
@@ -10788,6 +10872,27 @@ _USER_MENU_JS = """
       }
     }
   } catch (e) { /* storage unavailable — skip */ }
+})();
+</script>
+"""
+
+
+_MODKEY_JS = """
+<script>
+/* Platform-correct the ⌘ shortcut hints. The keyboard handlers already
+ * accept metaKey || ctrlKey, but the *displayed* glyph was hardcoded to
+ * ⌘ — meaningless to Windows/Linux users, who press Ctrl. On non-Mac
+ * platforms rewrite any [data-modkey] element's ⌘ to "Ctrl". Idempotent
+ * and guarded; a Mac (or a failure) leaves the markup untouched. */
+(function() {
+  try {
+    var ua = (navigator.platform || "") + " " + (navigator.userAgent || "");
+    if (/Mac|iPhone|iPad|iPod/i.test(ua)) return;
+    document.querySelectorAll("[data-modkey]").forEach(function(el) {
+      el.textContent = el.textContent.replace(/⌘/g, "Ctrl ")
+                                     .replace(/\\s+/g, " ").trim();
+    });
+  } catch (e) { /* leave the Mac glyph rather than risk a broken label */ }
 })();
 </script>
 """
@@ -10839,15 +10944,20 @@ _NAV_MENU_JS = """
 
   function cancelOpen(){ if (openTimer){ clearTimeout(openTimer); openTimer = null; } }
   function cancelClose(){ if (closeTimer){ clearTimeout(closeTimer); closeTimer = null; } }
+  function setExpanded(g, on){     // keep the trigger's aria-expanded in sync
+    var trigger = g.querySelector('a');
+    if (trigger) trigger.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
   function closeAll(){
     cancelOpen(); cancelClose();
-    groups.forEach(function(g){ g.classList.remove('is-open'); });
+    groups.forEach(function(g){ g.classList.remove('is-open'); setExpanded(g, false); });
     current = null;
   }
   function openOnly(g){            // one panel open at a time
     if (current === g) return;
-    groups.forEach(function(x){ if (x !== g) x.classList.remove('is-open'); });
+    groups.forEach(function(x){ if (x !== g){ x.classList.remove('is-open'); setExpanded(x, false); } });
     g.classList.add('is-open');
+    setExpanded(g, true);
     current = g;
   }
 
@@ -11403,8 +11513,18 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         sect = _section_of(item)
         caret = ('<span class="ck-nav-caret" aria-hidden="true">▾</span>'
                  if sect else "")
+        # Section triggers are disclosure controls for their mega-menu: expose
+        # a starting aria-expanded="false" that _NAV_MENU_JS flips as the panel
+        # opens/closes, so a screen reader announces the collapsed/expanded
+        # state instead of a bare link. No aria-haspopup — the panel is a group
+        # of links (disclosure pattern), not a role="menu" widget. Bare items
+        # (Home) carry neither.
+        pop_attr = (
+            f' aria-expanded="false" aria-controls="ck-mega-{_esc(sect)}"'
+            if sect else ""
+        )
         anchor = (
-            f'<a href="{_esc(item["href"])}" '
+            f'<a href="{_esc(item["href"])}"{pop_attr} '
             f'class="{"active" if item["key"] == active_nav else ""}">'
             f'{_esc(_nav_label(item["label"]))}{caret}</a>'
         )
@@ -11425,7 +11545,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # preserve render-order stability in case a future revision
         # re-introduces a meaningful per-item index.
         items = "".join(
-            f'<a href="{_esc(s["href"])}" class="ck-mega-item" role="menuitem">'
+            f'<a href="{_esc(s["href"])}" class="ck-mega-item">'
             f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
             f'{_esc(s["label"])}</span>'
             f'<span class="ck-mega-it-desc">{_esc(_NAV_DESC.get(s["href"], ""))}</span>'
@@ -11460,14 +11580,22 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # inside the links box (not a separate full-width footer chunk), in
         # green. Normal flow below the leaves → never overlaps anything.
         all_tools = (
-            f'<a href="/best/{_esc(sect)}" class="ck-mega-all" role="menuitem">'
+            f'<a href="/best/{_esc(sect)}" class="ck-mega-all">'
             f'All {_esc(_nav_label(item["label"]))} tools '
             '<span class="ck-mega-all-arr" aria-hidden="true">&rarr;</span></a>'
         )
         return (
-            '<div class="ck-nav-group" aria-haspopup="true">'
+            # Disclosure-navigation pattern (WAI-ARIA APG): the trigger is an
+            # <a> with aria-expanded; the disclosed panel is a labelled GROUP
+            # of links, not a role="menu" widget. The earlier menu/menuitem
+            # roles falsely promised arrow-key menu semantics this nav never
+            # implemented — screen readers announced "menu, N items" and
+            # trapped arrow keys. role="group" + aria-label keeps the cluster
+            # named without the false affordance.
+            '<div class="ck-nav-group">'
             f'{anchor}'
-            f'<div class="ck-nav-menu ck-nav-mega" role="menu" '
+            f'<div class="ck-nav-menu ck-nav-mega" id="ck-mega-{_esc(sect)}" '
+            f'role="group" '
             f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
             '<div class="ck-mega-inner">'
             f'<div class="ck-mega-lede">{feature}</div>'
@@ -11528,11 +11656,12 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search…" '
         # Search terms are tickers/metrics ("EBITDA", "CCN 050441") — stop
-        # mobile keyboards auto-capitalising / auto-correcting / red-squiggling.
+        # mobile keyboards auto-capitalising / auto-correcting / red-squiggling;
+        # enterkeyhint surfaces a "search" key on mobile soft keyboards.
         'autocomplete="off" autocapitalize="none" '
-        'autocorrect="off" spellcheck="false" '
+        'autocorrect="off" spellcheck="false" enterkeyhint="search" '
         'aria-label="Search deals, hospitals, routes" />'
-        '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
+        '<kbd class="ck-search-kbd" aria-hidden="true" data-modkey>⌘K</kbd>'
         '</form>'
         # PEdesk Guide trigger — opens the read-only context sidebar. The
         # green italic-serif "?" glyph is the handoff accent that makes the
@@ -11542,24 +11671,34 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
         'title="PEdesk Guide · explain this page">'
         '<span class="ck-guide-glyph" aria-hidden="true">?</span>Guide</button>'
-        # + New deal — primary CTA. No dedicated /deals/new route exists yet,
-        # so it routes to the Pipeline section (deal sourcing/origination)
-        # rather than inventing a flow or shipping a broken link.
-        '<a class="ck-newdeal-cta" href="/pipeline" '
-        'title="Start a new deal in the pipeline">+ New deal</a>'
+        # + New deal — primary CTA. Routes to /new-deal, the guided create
+        # wizard (step 1 of the intake flow), so the partner lands on the
+        # action the button promises rather than the Pipeline list one click
+        # short of it.
+        '<a class="ck-newdeal-cta" href="/new-deal" '
+        'title="Start a new deal">+ New deal</a>'
         '<div class="ck-user-menu">'
+        # aria-controls ties the chip to the menu it toggles (mirrors the
+        # Guide button → #ck-guide-panel wiring), so AT exposes the
+        # collapsed/expanded relationship instead of an orphan button.
         f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
-        f'aria-expanded="false" aria-label="Account menu" title="Signed in" '
+        f'aria-expanded="false" aria-label="Account menu" '
+        f'aria-controls="ck-user-dropdown" title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
-        '<div class="ck-user-dropdown" hidden>'
+        '<div class="ck-user-dropdown" id="ck-user-dropdown" hidden>'
         # Recently-viewed deals — populated client-side from
         # localStorage by _USER_MENU_JS. Hidden when empty.
         '<div class="ck-user-recent" data-ck-recent-deals hidden>'
         '<div class="ck-user-recent-head">Recent deals</div>'
         '<div class="ck-user-recent-list" data-ck-recent-list></div>'
         '</div>'
-        '<a href="/my/AT" class="ck-user-dropdown-item">My Dashboard</a>'
-        '<a href="/tools" class="ck-user-dropdown-item">All Tools &middot; ⌘K</a>'
+        # Follow the chip's initials, not a hardcoded "/my/AT" — so when a
+        # caller passes real user_initials the dashboard link and the avatar
+        # point at the same owner instead of silently diverging.
+        f'<a href="/my/{_esc(user_initials)}" class="ck-user-dropdown-item">'
+        f'My Dashboard</a>'
+        '<a href="/tools" class="ck-user-dropdown-item" data-modkey>'
+        'All Tools &middot; ⌘K</a>'
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
         f'<a href="/settings/workspace" class="ck-user-dropdown-item">'
         f'Workspace: {_esc(_ws_mode_label)}</a>'
@@ -11618,13 +11757,21 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
             continue
         norm.append((label, href))
     parts = []
+    last = len(norm) - 1
     for i, (label, href) in enumerate(norm):
         if i:
-            parts.append('<span class="sep">/</span>')
+            # aria-hidden so AT doesn't read "slash" between every crumb.
+            parts.append('<span class="sep" aria-hidden="true">/</span>')
         if href:
             parts.append(f'<a href="{_esc(href)}">{_esc(label)}</a>')
+        elif i == last:
+            # Final href-less crumb is the page you're on — mark it so a
+            # screen reader announces "current page".
+            parts.append(f'<span aria-current="page">{_esc(label)}</span>')
         else:
             parts.append(_esc(label))
+    # aria-label distinguishes this from the Primary nav landmark — without
+    # it AT announces two unnamed "navigation" regions on every page.
     return (
         f'<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
         f'{"".join(parts)}</nav>'
@@ -11638,6 +11785,22 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
 # if it ever needs to. Modern browsers (Chrome/Edge/Safari/Firefox 126+)
 # support `zoom`; older engines simply render at 100% (graceful).
 _GLOBAL_SCALE_CSS = "<style>@media screen{html{zoom:0.98;}}</style>"
+
+# Skip-to-content link (WCAG 2.4.1 Bypass Blocks). The first focusable
+# element on every chromed page lets a keyboard / screen-reader user jump
+# past the topbar nav straight to <main>. Off-screen until focused, then it
+# slides into the top-left corner. Kept inline (not in the static stylesheet)
+# so it works even when /static fails to serve.
+_SKIP_LINK_CSS = (
+    "<style>"
+    ".ck-skip-link{position:absolute;left:8px;top:-48px;z-index:1000;"
+    "background:#0b2341;color:#fff;padding:8px 14px;border-radius:0 0 3px 3px;"
+    "font-family:var(--sc-sans,system-ui);font-size:13px;font-weight:600;"
+    "text-decoration:none;transition:top .15s ease;}"
+    ".ck-skip-link:focus{top:0;outline:2px solid #155752;outline-offset:2px;}"
+    "</style>"
+)
+_SKIP_LINK_HTML = '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
 
 
 # ── Title-first contract (2026-06 clutter audit) ──────────────────────
@@ -11969,6 +12132,7 @@ def chartis_shell(
     user_menu_js = _USER_MENU_JS if show_chrome else ""
     nav_menu_js = _NAV_MENU_JS if show_chrome else ""
     qpill_js = _QPILL_JS if show_chrome else ""
+    modkey_js = _MODKEY_JS if show_chrome else ""
     palette_js = _PALETTE_JS if (include_palette and show_chrome) else ""
     shortcuts_js = _SHORTCUTS_JS if show_chrome else ""
     tour_html = ck_default_tour() if show_chrome else ""
@@ -11978,13 +12142,11 @@ def chartis_shell(
     # forgot) must not even mention those selectors — test_deal_context
     # asserts bare pages carry no "ck-deal-bar" string at all.
     exhibit_print_css = _EXHIBIT_PRINT_CSS if show_chrome else ""
-    # Skip-to-content link — first focusable element so keyboard/screen-
-    # reader users can bypass the topbar + nav. Only meaningful when the
-    # chrome (and its nav) is present; bare auth pages have nothing to skip.
-    skip_link_html = (
-        '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
-        if show_chrome else ""
-    )
+    # Skip-to-content link only earns its place when there's chrome (a
+    # topbar nav) to skip past. Bare pages (login/forgot) have nothing to
+    # bypass, so they stay link-free — keeping their DOM minimal.
+    skip_link_css = _SKIP_LINK_CSS if show_chrome else ""
+    skip_link_html = _SKIP_LINK_HTML if show_chrome else ""
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -12002,6 +12164,7 @@ def chartis_shell(
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"
         f"{_GLOBAL_SCALE_CSS}"
+        f"{skip_link_css}"
         f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
@@ -12017,6 +12180,7 @@ def chartis_shell(
         f"{user_menu_js}"
         f"{nav_menu_js}"
         f"{qpill_js}"
+        f"{modkey_js}"
         f"{_INTRO_DISMISS_JS}"
         f"{palette_js}"
         f"{shortcuts_js}"
