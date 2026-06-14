@@ -145,7 +145,9 @@ All native, same pattern. ✅ = shipped in this work stream.
 
 Anomaly detection is already covered by the existing isolation-forest work — ahead of the public fraud repos, which mostly use logistic regression / random forests.
 
-The shipped marts compose: `risk_adjustment` produces per-unit O/E → `hierarchical_bench` shrinks them so small-n sites rank honestly → `pmpm` trends the risk-adjusted cost level over time → `policy_shock` sizes the regulatory headwind on the survivors → `survival` measures whether the retained volume actually sticks, while `integrity.benford` screens the underlying billed amounts for fabrication/thresholding before any of it is trusted. That chain is the case-mix-aware, causally-grounded, small-area-correct benchmarking stack the brief asked for, built without leaving the numpy/pandas envelope.
+The shipped marts compose: `risk_adjustment` produces per-unit O/E → `hierarchical_bench` shrinks them so small-n sites rank honestly → `pmpm` trends the risk-adjusted cost level over time → `policy_shock` sizes the regulatory headwind on the survivors → `survival` measures whether the retained volume actually sticks → `episodes` and `quality_measures` give the per-episode and per-measure cuts → `spatial` and the extended `referral` graph metrics map the competitive and referral geography, while `integrity.benford` screens the underlying billed amounts for fabrication/thresholding before any of it is trusted. That chain is the case-mix-aware, causally-grounded, small-area-correct benchmarking stack the brief asked for, built without leaving the numpy/pandas envelope.
+
+`diligence/advanced_analytics.py` is the **composition facade**: one `run_advanced_analytics(inputs)` call runs every mart for which inputs were supplied, collects the headlines into a citation-keyed findings list, and rolls the EBITDA-at-risk items (PMPM projection + adverse policy overlay) into one number — a pure, side-effect-free object ready for an eventual `DealAnalysisPacket` section or UI surface (the wiring of which is the next deliberate pass, with its own packet/nav/palette invariants).
 
 ---
 
