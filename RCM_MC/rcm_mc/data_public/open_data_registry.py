@@ -162,8 +162,9 @@ SOURCES: List[Dict[str, str]] = [
         "url": "https://lhncbc.nlm.nih.gov/RxNav/APIs/",
         "blurb": "NLM normalized drug nomenclature + crosswalks via the public "
                  "RxNav REST API.",
-        "relevance": "Resolve/standardize drug names in diligence drug-spend data.",
-        "status": "registered", "integration": "api-client",
+        "relevance": "Resolve/standardize drug names in diligence drug-spend data; "
+                     "owns the NDC→RxCUI crosswalk other drug sources join to.",
+        "status": "wired", "integration": "api-client",
     },
     {
         "id": "fda_ndc", "name": "FDA NDC Directory", "category": "infra",

@@ -66,3 +66,22 @@ def reconcile_vertical(
         "establishments": establishments,
         "providers_per_estab": ratio,
     }
+
+
+def reconcile_state(
+    supply_rows: List[Dict[str, Any]],
+    cbp_by_vertical: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+) -> List[Dict[str, Any]]:
+    """Reconcile a whole state's supply sweep against per-vertical CBP rows.
+
+    ``supply_rows`` is the output of ``nppes_infusion.supply_by_vertical``;
+    ``cbp_by_vertical`` maps a vertical to its CBP rows (omit a vertical to
+    leave its establishment side unknown). Returns one reconciled record per
+    supply row, preserving input order — a single pure call for the
+    all-verticals market view."""
+    cbp_by_vertical = cbp_by_vertical or {}
+    return [
+        reconcile_vertical(row.get("vertical", ""), row,
+                           cbp_by_vertical.get(row.get("vertical", "")))
+        for row in supply_rows
+    ]

@@ -1,0 +1,11 @@
+Code,Grouping,Classification,Specialization,Definition,Notes,Display Name,Section
+207Q00000X,Allopathic & Osteopathic Physicians,Family Medicine,,,,Family Medicine,Individual
+207R00000X,Allopathic & Osteopathic Physicians,Internal Medicine,,,,Internal Medicine,Individual
+207RC0000X,Allopathic & Osteopathic Physicians,Internal Medicine,Cardiovascular Disease,,,Internal Medicine - Cardiovascular Disease,Individual
+208D00000X,Allopathic & Osteopathic Physicians,General Practice,,,,General Practice,Individual
+207RG0100X,Allopathic & Osteopathic Physicians,Internal Medicine,Gastroenterology,,,Internal Medicine - Gastroenterology,Individual
+363LF0000X,Physician Assistants & Advanced Practice Nursing Providers,Nurse Practitioner,Family,,,Nurse Practitioner - Family,Individual
+282N00000X,Hospitals,General Acute Care Hospital,,,,General Acute Care Hospital,Non-Individual
+282NC0060X,Hospitals,General Acute Care Hospital,Critical Access,,,General Acute Care Hospital - Critical Access,Non-Individual
+261QP2300X,Ambulatory Health Care Facilities,Clinic/Center,Primary Care,,,Clinic/Center - Primary Care,Non-Individual
+314000000X,Nursing & Custodial Care Facilities,Skilled Nursing Facility,,,,Skilled Nursing Facility,Non-Individual

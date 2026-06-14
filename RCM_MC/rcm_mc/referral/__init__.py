@@ -32,31 +32,39 @@ The graph implementation is pure stdlib — no networkx dependency.
 For the panel sizes typical in PE diligence (a few thousand NPIs),
 power-iteration on a sparse adjacency dict converges in <100ms.
 """
-from .graph import ReferralGraph, ReferralEdge
 from .centrality import (
     eigenvector_centrality,
     in_degree_centrality,
     out_degree_centrality,
 )
-from .leakage import compute_leakage, compute_key_person_risk
-from .simulate import simulate_departure, payer_leverage_score
-from .loader import (
-    parse_cms_referrals_csv,
-    build_graph_from_cms,
-    CmsReferralRow,
+from .graph import ReferralEdge, ReferralGraph
+from .graph_metrics import (
+    betweenness_centrality,
+    detect_communities,
+    pagerank,
 )
+from .leakage import compute_key_person_risk, compute_leakage
+from .loader import (
+    CmsReferralRow,
+    build_graph_from_cms,
+    parse_cms_referrals_csv,
+)
+from .simulate import payer_leverage_score, simulate_departure
 
 __all__ = [
-    "ReferralGraph",
+    "CmsReferralRow",
     "ReferralEdge",
+    "ReferralGraph",
+    "betweenness_centrality",
+    "build_graph_from_cms",
+    "compute_key_person_risk",
+    "compute_leakage",
+    "detect_communities",
     "eigenvector_centrality",
     "in_degree_centrality",
     "out_degree_centrality",
-    "compute_leakage",
-    "compute_key_person_risk",
-    "simulate_departure",
-    "payer_leverage_score",
+    "pagerank",
     "parse_cms_referrals_csv",
-    "build_graph_from_cms",
-    "CmsReferralRow",
+    "payer_leverage_score",
+    "simulate_departure",
 ]

@@ -706,88 +706,38 @@ def _provider_map_section(a: Dict[str, Any]) -> str:
         f'<ul style="margin:0;padding-left:16px;">{taxo}</ul></div></div>')
 
 
-# Schematic US tile-grid (row, col) — a labeled state grid, not a
-# geographic projection. Each tile carries its abbreviation so position
-# need not be exact to read.
-_STATE_TILE = {
-    "AK": (0, 0), "ME": (0, 10),
-    "VT": (1, 9), "NH": (1, 10),
-    "WA": (2, 0), "ID": (2, 1), "MT": (2, 2), "ND": (2, 3), "MN": (2, 4),
-    "IL": (2, 5), "WI": (2, 6), "MI": (2, 7), "NY": (2, 8), "MA": (2, 9),
-    "RI": (2, 10),
-    "OR": (3, 0), "NV": (3, 1), "WY": (3, 2), "SD": (3, 3), "IA": (3, 4),
-    "IN": (3, 5), "OH": (3, 6), "PA": (3, 7), "NJ": (3, 8), "CT": (3, 9),
-    "CA": (4, 0), "UT": (4, 1), "CO": (4, 2), "NE": (4, 3), "MO": (4, 4),
-    "KY": (4, 5), "WV": (4, 6), "VA": (4, 7), "MD": (4, 8), "DE": (4, 9),
-    "AZ": (5, 1), "NM": (5, 2), "KS": (5, 3), "AR": (5, 4), "TN": (5, 5),
-    "NC": (5, 6), "SC": (5, 7), "DC": (5, 8),
-    "OK": (6, 3), "LA": (6, 4), "MS": (6, 5), "AL": (6, 6), "GA": (6, 7),
-    "HI": (7, 0), "TX": (7, 3), "FL": (7, 8),
-}
-
-
-def _heat(frac: float) -> str:
-    """Light→teal sequential color for a 0–1 fraction."""
-    frac = max(0.0, min(1.0, frac))
-    c0 = (0xE4, 0xEC, 0xEA)
-    c1 = (0x12, 0x5E, 0x59)
-    rgb = tuple(round(c0[i] + (c1[i] - c0[i]) * frac) for i in range(3))
-    return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-
-
 def _jcode_pos_section(a: Dict[str, Any]) -> str:
-    """Infusion J-code place-of-service by state — a tile-grid choropleth
-    of the non-facility (office/AIC) share, percentage tables, the
-    national facility→non-facility trend, and the Texas read."""
+    """Infusion J-code place-of-service by state — a real-geography
+    choropleth of the non-facility (office/AIC) share, percentage
+    tables, the national facility→non-facility trend, and the Texas
+    read. Shares the Excel Mapping renderer so every state map in the
+    product is the same Census geography."""
+    from .excel_mapping_page import _map_svg
     jp = a.get("jcode_pos") or {}
     states = jp.get("states", [])
     if not states:
         return ""
-    by_code = {s["code"]: s for s in states}
     vals = [s["nonfac_pct"] for s in states]
     lo, hi = min(vals), max(vals)
-    rng = (hi - lo) or 1
     live = jp.get("live")
-    cell, gap = 9.0, 0.7
-    ncol, nrow = 11, 8
-    tiles = ""
-    for code, (r, c) in _STATE_TILE.items():
-        s = by_code.get(code)
-        if not s:
-            continue
-        x, y = c * cell, r * cell
-        fill = _heat((s["nonfac_pct"] - lo) / rng)
-        is_tx = code == "TX"
-        stroke = _NEG if is_tx else "#fff"
-        sw = 0.9 if is_tx else 0.4
-        txt = "#fff" if (s["nonfac_pct"] - lo) / rng > 0.55 else "#1a2332"
-        tiles += (
-            f'<g><rect x="{x:.1f}" y="{y:.1f}" width="{cell-gap:.1f}" '
-            f'height="{cell-gap:.1f}" rx="1.2" fill="{fill}" '
-            f'stroke="{stroke}" stroke-width="{sw}">'
-            f'<title>{html.escape(s["name"])}: '
-            f'{s["nonfac_pct"]*100:.0f}% non-facility'
-            f'{" (live)" if s["is_live"] else " (modeled)"}</title></rect>'
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+3.4:.1f}" '
-            f'text-anchor="middle" font-size="2.7" font-weight="700" '
-            f'fill="{txt}">{code}</text>'
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+6.4:.1f}" '
-            f'text-anchor="middle" font-size="2.6" fill="{txt}">'
-            f'{s["nonfac_pct"]*100:.0f}</text></g>')
+    svg = _map_svg({
+        "values": {s["code"]: round(s["nonfac_pct"] * 100) for s in states},
+        # Integer legend ticks to match the rounded on-state labels.
+        "lo": round(lo * 100), "mid": round((lo + hi) * 50),
+        "hi": round(hi * 100),
+        "c_low": "#e4ecea", "c_mid": "#7ba5a2", "c_high": "#125e59",
+        "accent": {"TX"}, "accent_color": _NEG,
+        "notes": {s["code"]: ("live CMS" if s["is_live"] else "modeled")
+                  for s in states},
+        "legend_suffix": "%",
+        "label_mode": "value", "label_scale": 1.35,
+        "max_width_px": 560,
+        "aria_label": "J-code place-of-service by state (geographic map)",
+    })
     legend = (
-        f'<div style="display:flex;align-items:center;gap:6px;'
-        f'font-size:10px;color:{_FAINT};margin-top:4px;">'
-        f'<span>{lo*100:.0f}%</span>'
-        f'<span style="flex:0 0 120px;height:9px;border-radius:2px;'
-        f'background:linear-gradient(90deg,{_heat(0)},{_heat(1)});"></span>'
-        f'<span>{hi*100:.0f}% non-facility</span>'
-        f'<span style="margin-left:8px;color:{_NEG};font-weight:700;">'
-        f'▭ TX</span></div>')
-    svg = (
-        f'<svg viewBox="-1 -1 {ncol*cell+1:.0f} {nrow*cell+1:.0f}" '
-        f'width="100%" height="300" role="img" '
-        f'aria-label="J-code place-of-service by state" '
-        f'style="max-width:560px;">{tiles}</svg>')
+        f'<div style="font-size:10px;color:{_FAINT};margin-top:4px;">'
+        f'% of J-code volume billed non-facility (office/AIC) · '
+        f'<span style="color:{_NEG};font-weight:700;">▭ Texas</span></div>')
 
     def _row(s, hl=False):
         bg = "background:#fbf3ef;" if hl else ""
@@ -2955,6 +2905,9 @@ def render_texas_infusion_page(
         aic_overrides=overrides, nppes_live=nppes_live)
     demo = a["demographics"]
     sw = _so_whats(a)
+    # Tab strip shared with part 2 (lazy import — part 2 imports this
+    # module's section-nav helper, so a top-level import would cycle).
+    from .texas_infusion_continued_page import part_tabs
 
     sources = "".join(
         f'<li style="margin:3px 0;font-size:11px;color:{_DIM};">'
@@ -2977,7 +2930,16 @@ def render_texas_infusion_page(
                    "DOJ/FTC HHI. Replace with engagement data before IC.",
         )
         + '<div class="ts-wrap" style="max-width:980px;">'
+        + part_tabs("part1")
         + _kpi_strip(a)
+        # County & proximity workbench — the per-county referral-
+        # convenience drill-down lives on its own page (254 rows +
+        # the distance model would double this one).
+        + ('<p style="margin:4px 0 14px;font-size:13px;">'
+           '<a class="ck-link" '
+           'href="/diligence/texas-infusion/counties">County proximity '
+           'workbench → all 254 counties · patient-to-clinic distance '
+           '· AIC whitespace</a></p>')
         + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",

@@ -249,6 +249,18 @@ class ICPacketPageRouteTests(unittest.TestCase):
         h = render_ic_packet_page(qs={"dataset": ["not_a_fixture"]})
         self.assertIn("pick a CCD fixture", h)
 
+    def test_diligence_coverage_section_renders(self):
+        # Regression: the checklist-coverage block read ``bear_block_html``
+        # before it was assigned (the bear-case block lived *below* it), so
+        # every run hit a NameError that the surrounding bare ``except``
+        # swallowed — ``checklist_state`` was silently None and the whole
+        # "Diligence Coverage" section never rendered. The bear-case block
+        # now runs first; this asserts the section is present on a live
+        # packet (it carries ``ic_packet_assembled=True`` so total > 0).
+        from rcm_mc.ui.ic_packet_page import render_ic_packet_page
+        h = render_ic_packet_page(qs={"dataset": ["hospital_01_clean_acute"]})
+        self.assertIn("Diligence Coverage", h)
+
 
 class NavLinkTest(unittest.TestCase):
 

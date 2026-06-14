@@ -13,8 +13,10 @@ Operating rules from the brief, all enforced here:
   * **Idempotent + resumable.** Every step persists the cursor; a hard
     kill resumes from STATE.md. Upserts make replays safe.
   * **Backfill vs incremental.** Backfill walks history from
-    ``backfill_start``; incremental only re-pulls a recent date window
-    for nightly-cadence endpoints (dimensions refresh on their cadence).
+    ``backfill_start``; incremental resumes each nightly-cadence endpoint
+    from its own high-watermark (max date ingested) minus a small overlap,
+    so a skipped night self-heals on the next run. First incremental (no
+    watermark yet) falls back to a fixed lookback.
 """
 from __future__ import annotations
 
@@ -26,6 +28,7 @@ from .connector import OpenFdaConnector, FetchResult
 from .crosswalk import (RxcuiResolver, persist_companies,
                         rebuild_device_product_code, resolve_ndc_rxcui)
 from .endpoints import ENDPOINTS, EndpointSpec
+from .flatten import dig
 from .normalize import normalize
 from .raw_store import RawStore
 from .state import EndpointState, StateStore
@@ -41,6 +44,7 @@ _MAX_STEPS_PER_ENDPOINT = 100_000
 class PipelineConfig:
     mode: str = "backfill"          # "backfill" | "incremental"
     incremental_lookback_days: int = 7
+    incremental_overlap_days: int = 2   # re-pull a small overlap past the watermark
     backfill_start: str = "20040101"
     max_steps_per_endpoint: int = _MAX_STEPS_PER_ENDPOINT
 
@@ -75,11 +79,6 @@ class OpenFdaPipeline:
     ) -> Dict[str, EndpointState]:
         """Run the selected endpoints, then finalize the crosswalk."""
         states = self.state_store.load()
-        # Incremental runs only re-pull a recent date window.
-        if self.config.mode == "incremental":
-            start = (datetime.now(timezone.utc).date()
-                     - timedelta(days=self.config.incremental_lookback_days))
-            self.connector.backfill_start = start.strftime("%Y%m%d")
         selected = self._select_endpoints(endpoints)
         failed: List[str] = []
 
@@ -120,6 +119,10 @@ class OpenFdaPipeline:
         cursor = st.cursor if st.status != "complete" else None
         if st.status == "complete" and self.config.mode == "incremental":
             cursor = None  # re-seed a fresh incremental window
+        # Per-endpoint incremental start: resume from this endpoint's
+        # watermark (minus a small overlap) rather than a global lookback.
+        if self.config.mode == "incremental" and cursor is None:
+            self.connector.backfill_start = self._incremental_start(spec, st)
         st.status = "in_progress"
         steps = 0
         prev_cursor_repr = object()
@@ -167,6 +170,7 @@ class OpenFdaPipeline:
         st.requests_made = self.connector.transport.requests_made
         st.last_window = (f"{result.window[0]}..{result.window[1]}"
                           if result.window else tag)
+        self._advance_watermark(spec, result.rows, st)
 
         norm = normalize(spec, result.rows)
         written = 0
@@ -226,6 +230,38 @@ class OpenFdaPipeline:
         params = dict(spec.default_params)
         return params
 
+    def _advance_watermark(self, spec: EndpointSpec,
+                           rows: List[Dict[str, Any]], st: EndpointState) -> None:
+        """Track the max ``date_field`` value seen for an endpoint.
+
+        Both openFDA date encodings (``YYYYMMDD`` and zero-padded
+        ``YYYY-MM-DD``) sort lexicographically, and a given endpoint uses
+        exactly one, so a string ``max`` is a correct watermark.
+        """
+        if not spec.date_field or not rows:
+            return
+        batch_max = max(
+            (str(dig(r, spec.date_field)) for r in rows
+             if dig(r, spec.date_field)), default=None)
+        if batch_max:
+            st.high_watermark = (batch_max if not st.high_watermark
+                                 else max(st.high_watermark, batch_max))
+
+    def _incremental_start(self, spec: EndpointSpec, st: EndpointState) -> str:
+        """YYYYMMDD start for an incremental run of one endpoint.
+
+        Resume from the endpoint's watermark minus an overlap (idempotent
+        upsert absorbs the re-pulled overlap); fall back to a fixed
+        lookback when there's no watermark yet (first incremental).
+        """
+        overlap = timedelta(days=self.config.incremental_overlap_days)
+        if spec.date_field and st.high_watermark:
+            base = _parse_any(st.high_watermark) - overlap
+        else:
+            base = (datetime.now(timezone.utc).date()
+                    - timedelta(days=self.config.incremental_lookback_days))
+        return base.strftime("%Y%m%d")
+
     def _window_tag(self, result: FetchResult) -> str:
         if result.window:
             return f"{result.window[0]}_{result.window[1]}"
@@ -235,3 +271,10 @@ class OpenFdaPipeline:
         states = self.state_store.load()
         states[st.endpoint] = st
         self.state_store.save(states)
+
+
+def _parse_any(s: str):
+    """Parse a date string in either ``YYYYMMDD`` or ``YYYY-MM-DD`` form."""
+    from datetime import date
+    raw = str(s).replace("-", "")
+    return date(int(raw[0:4]), int(raw[4:6]), int(raw[6:8]))

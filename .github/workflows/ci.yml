@@ -37,9 +37,11 @@ jobs:
 
       - name: Run go-live test subset
         # Targeted subset (~175 tests, ~20s) covering smoke, auth, exports,
-        # resilience, full pipeline, the README link checker, and the
-        # NPPES provider directory (14 tests; HTTP mocked). Full suite
-        # is large; run via `pytest tests/` locally before tagging a release.
+        # resilience, full pipeline, the README link checker, the NPPES
+        # provider directory (14 tests; HTTP mocked), and the NPPES
+        # provider-universe slice (connector + pipeline + CDD analytics;
+        # all offline/mocked). Full suite is large; run via `pytest tests/`
+        # locally before tagging a release.
         run: |
           pytest \
             tests/test_healthz.py \
@@ -55,7 +57,10 @@ jobs:
             tests/test_portfolio.py \
             tests/test_alerts.py \
             tests/test_health_score.py \
-            tests/test_nppes_api_client.py
+            tests/test_nppes_api_client.py \
+            tests/test_nppes_universe_connector.py \
+            tests/test_nppes_universe_pipeline.py \
+            tests/test_nppes_universe_cdd.py
 
       - name: Smoke-test server boot + /health
         run: |

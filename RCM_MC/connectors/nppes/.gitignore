@@ -1,0 +1,7 @@
+# Derived build artifacts — rebuildable with `python -m connectors.nppes.cli build`.
+# The canonical SQLite store and the raw landing zone (parquet/NDJSON) are
+# outputs, never sources. Fixtures (committed) are the reproducible inputs.
+data/
+*.db
+*.db-wal
+*.db-shm

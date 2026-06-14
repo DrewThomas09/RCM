@@ -29,6 +29,7 @@ This module is the UI-free core:
 from __future__ import annotations
 
 import math
+import re
 from typing import Any, Dict, List, Optional
 
 # CDD topics every program must triangulate. Order = guide order.
@@ -456,15 +457,113 @@ _CLOSING: List[str] = [
 ]
 
 
-def build_call_guide(stakeholder_key: str,
-                     deal_name: str = "") -> Optional[Dict[str, Any]]:
+# Sector packs: engagement-specific add-on questions layered onto the
+# generic bank when the deal's sector is known. Same shape as the
+# bank, plus they render with a pack tag so the caller knows which
+# questions are sector-specific. v1 ships the infusion pack (the
+# platform's deepest vertical — TX infusion study + national scan).
+SECTOR_PACKS: Dict[str, Dict[str, List[Dict[str, str]]]] = {
+    "infusion": {
+        "referring_physician": [
+            {"topic": "stickiness",
+             "question": "When you start a patient on an infused "
+                         "therapy, who actually picks the site of "
+                         "care — you, your staff, the payer, or the "
+                         "patient?",
+             "listen_for": "If the answer is 'the payer's white-"
+                           "bagging policy', the referrer relationship "
+                           "the CIM sells isn't the demand driver."},
+            {"topic": "demand",
+             "question": "Are you keeping more infusions in-office "
+                         "yourself than two years ago?",
+             "listen_for": "Practice in-housing (buy-and-bill) is the "
+                           "quiet share-taker the site-of-care "
+                           "tailwind hides."},
+        ],
+        "payer_exec": [
+            {"topic": "pricing_reimbursement",
+             "question": "Where is your plan on white-bagging and "
+                         "site-of-care steerage for infused drugs — "
+                         "policy today, and 24 months out?",
+             "listen_for": "Steerage TO the target's setting is the "
+                           "thesis; a white-bagging mandate guts the "
+                           "drug margin even when volume grows."},
+            {"topic": "pricing_reimbursement",
+             "question": "How do you reimburse the drug versus the "
+                         "administration — and which one are you "
+                         "squeezing first?",
+             "listen_for": "ASP-minus drug economics with protected "
+                           "admin fees supports the service-margin "
+                           "underwrite; squeezing admin does not."},
+        ],
+        "competitor_exec": [
+            {"topic": "growth",
+             "question": "How many chairs are you running today, at "
+                         "what utilization, and how many are you "
+                         "adding?",
+             "listen_for": "Chair math is the supply build: chairs × "
+                           "hours × fill rate against the metro's "
+                           "patient pool."},
+        ],
+        "former_employee": [
+            {"topic": "demand",
+             "question": "How was chair utilization actually measured "
+                         "— booked hours, seated hours, or infusing "
+                         "hours?",
+             "listen_for": "'Booked' overstates by no-shows and "
+                           "ramp-down time; an underwrite on booked "
+                           "utilization is 10–20 points rich."},
+            {"topic": "risks",
+             "question": "Which therapies carried the margin, and "
+                         "what happens to them on biosimilar entry?",
+             "listen_for": "A margin concentrated in 2–3 reference "
+                           "drugs facing biosimilars is a melting "
+                           "asset the topline hides."},
+        ],
+        "site_administrator": [
+            {"topic": "demand",
+             "question": "When your discharge planners place a "
+                         "patient needing ongoing infusion, what's "
+                         "the default pathway?",
+             "listen_for": "Hospital-at-home and HOPD retention "
+                           "programs intercept exactly the discharge "
+                           "flow a home/AIC platform underwrites."},
+        ],
+        "industry_expert": [
+            {"topic": "pricing_reimbursement",
+             "question": "How do IRA negotiation (MFP) and biosimilar "
+                         "entry actually flow through to an infusion "
+                         "provider's buy-and-bill spread?",
+             "listen_for": "An expert who can walk ASP mechanics "
+                           "date-by-date; 'margins will compress' "
+                           "without the mechanism is a lens failure."},
+        ],
+    },
+}
+
+
+def sector_pack(sector: str) -> Optional[Dict[str, List[Dict[str, str]]]]:
+    return SECTOR_PACKS.get((sector or "").strip().lower())
+
+
+def build_call_guide(stakeholder_key: str, deal_name: str = "",
+                     sector: str = "") -> Optional[Dict[str, Any]]:
     """Assemble the printable guide for one lens: opening script,
-    questions grouped in CDD-topic order, closing asks. Returns None
-    for an unknown lens — never a fabricated generic guide."""
+    questions grouped in CDD-topic order, closing asks. A known
+    ``sector`` layers its pack questions into the same topic groups,
+    each tagged with the pack name (so the guide shows which
+    questions are engagement-specific). Returns None for an unknown
+    lens — never a fabricated generic guide; an unknown sector is
+    ignored, never guessed."""
     s = stakeholder(stakeholder_key)
     if s is None:
         return None
-    bank = QUESTION_BANK.get(stakeholder_key, [])
+    bank = list(QUESTION_BANK.get(stakeholder_key, []))
+    pack = sector_pack(sector)
+    pack_name = (sector or "").strip().lower() if pack else ""
+    if pack:
+        for q in pack.get(stakeholder_key, []):
+            bank.append({**q, "pack": pack_name})
     grouped: List[Dict[str, Any]] = []
     for topic in CDD_TOPICS:
         qs = [q for q in bank if q["topic"] == topic]
@@ -474,6 +573,7 @@ def build_call_guide(stakeholder_key: str,
     return {
         "stakeholder": s,
         "deal_name": deal_name,
+        "sector": pack_name,
         "opening": list(_OPENING),
         "sections": grouped,
         "question_count": len(bank),
@@ -781,3 +881,69 @@ def logged_call_counts(note_bodies: Any) -> Dict[str, int]:
                 counts[key] = counts.get(key, 0) + 1
                 break
     return counts
+
+
+# Strict inverse of format_call_note. The finding is free text and may
+# itself contain brackets; the greedy group leaves the FINAL [TAG] as
+# the tag, which is exactly where the formatter puts it.
+_NOTE_RE = re.compile(
+    r"^EXPERT CALL · (?P<label>.+?) — (?P<vantage>.+?) "
+    r"\(as of (?P<as_of>.+?)\): (?P<finding>.+) "
+    r"\[(?P<tag>SUPPORTS|CONTRADICTS|NEW QUESTION)\]$",
+    re.S,
+)
+
+
+def parse_call_note(body: Any) -> Optional[Dict[str, str]]:
+    """Parse one structured EXPERT CALL note back into its fields.
+
+    Strict by design: anything that doesn't match the exact shape
+    (including an unknown lens label) returns None rather than a
+    half-parsed finding — the ledger must never attribute free text
+    to a lens or a thesis tag it doesn't carry."""
+    m = _NOTE_RE.match(str(body or "").strip())
+    if not m:
+        return None
+    label = m.group("label")
+    key = _LABEL_TO_KEY.get(label)
+    if key is None:
+        return None
+    return {"lens": key, "lens_label": label,
+            "vantage": m.group("vantage"), "as_of": m.group("as_of"),
+            "finding": m.group("finding"), "tag": m.group("tag")}
+
+
+# Ledger render order: what argues AGAINST the thesis leads — a memo
+# reader needs the contradictions first, the comfort last.
+LEDGER_TAG_ORDER = ("CONTRADICTS", "NEW QUESTION", "SUPPORTS")
+
+
+def findings_ledger(note_bodies: Any) -> Dict[str, Any]:
+    """Group the logged call findings by thesis tag, with an honest
+    skew read.
+
+    The confirmation-bias warning fires when a program of >=5 logged
+    calls has produced ZERO contradicting findings — a call program
+    that never hears anything against the thesis usually isn't
+    listening, and the memo should say so before an IC member does."""
+    findings = [f for f in (parse_call_note(b) for b in note_bodies or [])
+                if f is not None]
+    by_tag: Dict[str, List[Dict[str, str]]] = {
+        t: [] for t in LEDGER_TAG_ORDER}
+    for f in findings:
+        by_tag[f["tag"]].append(f)
+    total = len(findings)
+    warnings: List[str] = []
+    if total >= 5 and not by_tag["CONTRADICTS"]:
+        warnings.append(
+            f"{total} findings logged and not one contradicts the "
+            f"thesis — either this is the easiest deal of the year or "
+            f"the program isn't listening for disconfirming evidence. "
+            f"Re-read the 'listen for' lines before the next call.")
+    return {
+        "findings": findings,
+        "by_tag": by_tag,
+        "counts": {t: len(by_tag[t]) for t in LEDGER_TAG_ORDER},
+        "total": total,
+        "warnings": warnings,
+    }

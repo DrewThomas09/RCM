@@ -220,6 +220,7 @@ _SUB_NAV = {
         {"label": "Further Analysis",    "href": "/further-analysis"},
         {"label": "Cross-Dataset Analysis", "href": "/cross-analysis"},
         {"label": "Public Data APIs",    "href": "/data-apis"},
+        {"label": "Drug Reference (RxNorm)", "href": "/rxnorm"},
         {"label": "Excel Mapping",       "href": "/excel-mapping"},
         {"label": "Excel Templates",     "href": "/excel-templates"},
         {"label": "Chart Builder",       "href": "/chart-builder"},
@@ -262,7 +263,9 @@ _SUB_NAV = {
         {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
         {"label": "Cliff Calendar",     "href": "/diligence/cliff-calendar"},
         {"label": "TX Infusion Market", "href": "/diligence/texas-infusion"},
+        {"label": "TX Infusion · Cont.", "href": "/diligence/texas-infusion-continued"},
         {"label": "Infusion Market Scan", "href": "/diligence/infusion-markets"},
+        {"label": "J-Code Atlas",       "href": "/diligence/jcode-atlas"},
         {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
@@ -286,7 +289,8 @@ _SECTION_FEATURE = {
                  "href": "/pipeline"},
     "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
                   "blurb": "Run a live deal end to end: identity, ingestion, "
-                           "benchmarks, the CMS / HCRIS X-Ray, and the QoE memo.",
+                           "benchmarks, the CMS / HCRIS X-Ray, and the IC "
+                           "packet.",
                   "href": "/diligence"},
     "library": {"eyebrow": "SECTION · LIBRARY", "title": "Reference desk",
                 "blurb": "Methodology, the metric glossary, RCM benchmarks, the "
@@ -309,19 +313,102 @@ _NAV_NONNAVIGABLE = frozenset({
     "/new-deal/manual",   # manual-entry POST target → 303 on GET; use /new-deal
 })
 
+# Data-honesty tiers allowed to front-face in a nav bar. Illustrative
+# (yellow) and placeholder (red) surfaces are demoted to the ranked
+# /best/<section> index, where they render with an honest tier dot.
+_REAL_TIERS = ("green", "navy", "data_required")
+
+# Hand-curated flagship pins — the "best of the best" front face, per section.
+#
+# The ranked manifest scores effort by renderer LOC, which front-faced niche
+# one-market scans (TX Infusion Market led the Diligence bar) and utility
+# renderers (Excel Mapping made the Research bar) ahead of the flagship
+# analyst workbenches — HCRIS X-Ray ranked #19 in diligence and never
+# surfaced. The topbar is the product's front face: it leads with the
+# highest-functionality destination pages, in workflow order, as a product
+# decision (same rationale as the /target-screener tiebreak pin in
+# scripts/rank_surfaces.py) — not as an emergent LOC artifact. Pins render
+# first but stay tier-gated: a pin that regresses to an illustrative tier
+# drops out rather than punching through the honesty gate. Ranked backfill
+# fills the remaining slots, so a bar never goes sparse.
+_NAV_FLAGSHIPS = {
+    "home": ["/app", "/alerts"],
+    # Target Screener is the flagship workbench and must lead Source (pinned
+    # product decision); the rest of the bar stays score-ordered.
+    "source": ["/target-screener"],
+    "pipeline": ["/pipeline", "/pipeline/bridge", "/pipeline/rollup"],
+    # The analyst playbook in workflow order: identity → ingest → baseline →
+    # the CMS / HCRIS X-Ray drill-downs → the IC deliverable.
+    "diligence": [
+        "/diligence/deal",
+        "/diligence/ingest",
+        "/diligence/benchmarks",
+        "/diligence/xray",
+        "/diligence/hcris-xray",
+        "/diligence/ic-packet",
+    ],
+    "library": ["/deal-library", "/rcm-benchmarks", "/methodology"],
+    # House views lead with the analytical reads; the chart/export utilities
+    # (Excel Mapping, Pie Chart, Chart Builder, …) live in /best/research.
+    "research": [
+        "/market-intel",
+        "/industry",
+        "/regulatory-calendar",
+        "/comparable-outcomes",
+        "/market-intel/geo",
+        "/notes",
+    ],
+    "portfolio": ["/portfolio", "/portfolio/monitor", "/portfolio/risk-scan"],
+}
+
+# Utility/visual helper renderers — real pages, but tools rather than
+# analyses. They never front-face in a nav bar (any source: pin, ranked,
+# or curated backfill); they stay reachable from /best/<section>, the
+# section catalogs, and the Cmd-K palette.
+_NAV_DEMOTED = frozenset({
+    "/excel-mapping",
+    "/excel-templates",
+    "/chart-builder",
+    "/pie-chart",
+    "/visuals",
+    "/exhibit",
+})
+
+# Section keys that own a URL namespace (``/diligence/…``, ``/portfolio/…``).
+# Used to keep a section's nav menu inside its own namespace: a Research leaf
+# that points at ``/diligence/regulatory-calendar`` reads wrong and resolves
+# the active-nav/breadcrumb to Diligence, not Research. Derived from the
+# primary nav so it tracks _CORPUS_NAV automatically.
+_NAV_SECTION_KEYS = frozenset(d["key"] for d in _CORPUS_NAV)
+
+
+def _route_section_prefix(route: str) -> str:
+    """First path segment of ``route`` if it names a nav section, else ``""``.
+
+    ``/diligence/hcris-xray`` → ``diligence``; ``/market-intel`` → ``""``
+    (no section prefix — a bare top-level surface).
+    """
+    head = route.strip("/").split("/", 1)[0]
+    return head if head in _NAV_SECTION_KEYS else ""
+
 
 def _ranked_subnav_items(sect: str):
-    """The section's top-6 surfaces by the surface ranking, for the nav bar.
-    Returns (items, has_more) where each item is {label, href}.
+    """The section's top-6 surfaces for the nav bar: flagship pins first,
+    then ranked backfill. Returns (items, has_more) where each item is
+    {label, href}.
 
-    Drawn from the FULL ranked manifest (not just the hand-curated _SUB_NAV) so
-    a bar genuinely leads with its best pages — including strong pages that were
-    never wired into the curated rail (the diligence crossover gap). Front-
-    facing gate: only green/navy/data-required tiers (illustrative/placeholder
-    demoted to the ranked /best/<section> index, reachable via "More →").
-    Curated labels/descriptions win where available (vetted copy); otherwise the
-    manifest's derived label is used. Falls back to the curated rail if the
-    manifest has no entry, so a bar is never empty.
+    The hand-curated _NAV_FLAGSHIPS pins lead the bar (the front face is a
+    product decision — the highest-functionality workbenches in workflow
+    order, not an emergent LOC-score artifact). Remaining slots backfill from
+    the FULL ranked manifest (not just the hand-curated _SUB_NAV) so strong
+    pages that were never wired into the curated rail still surface (the
+    diligence crossover gap). Front-facing gate applies to every source —
+    pins included: only green/navy/data-required tiers (illustrative/
+    placeholder demoted to the ranked /best/<section> index, reachable via
+    "More →"), and utility renderers in _NAV_DEMOTED never front-face.
+    Curated labels/descriptions win where available (vetted copy); otherwise
+    the manifest's derived label is used. Falls back to the curated rail if
+    the manifest has no entry, so a bar is never empty.
     """
     cur = {s["href"]: s for s in _SUB_NAV.get(sect, []) if isinstance(s, dict)}
     try:
@@ -329,8 +416,21 @@ def _ranked_subnav_items(sect: str):
         ranked = list(RANKINGS.get(sect, []))
     except Exception:  # noqa: BLE001
         ranked = []
-    strong = [r for r in ranked
-              if r.get("tier") in ("green", "navy", "data_required")]
+    by_route = {r["route"]: r for r in ranked}
+    try:
+        from rcm_mc.diligence.surface_status import classify_surface as _cls
+    except Exception:  # noqa: BLE001
+        _cls = None
+
+    def _is_real(href: str) -> bool:
+        # Live classifier wins (the manifest's tier can drift between
+        # regenerations); manifest tier is the fallback when the classifier
+        # isn't importable.
+        if _cls is not None:
+            return _cls(href).get("tier") in _REAL_TIERS
+        return by_route.get(href, {}).get("tier") in _REAL_TIERS
+
+    strong = [r for r in ranked if r.get("tier") in _REAL_TIERS]
     pool = strong or ranked
     # Dedupe alias routes for the same page (e.g. /regulatory-calendar and
     # /diligence/regulatory-calendar) by label, keeping the highest-ranked —
@@ -338,38 +438,75 @@ def _ranked_subnav_items(sect: str):
     # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
 
+    from ._surface_visibility import is_internal
+
+    def _resolved_label(r: dict) -> str:
+        c = cur.get(r.get("route", ""), {})
+        return (c.get("label") or r.get("label") or r.get("route") or "").strip()
+
+    # Keep the bar inside its own namespace. Many surfaces are reachable at
+    # both a bare route and a section-prefixed alias (``/regulatory-calendar``
+    # and ``/diligence/regulatory-calendar`` are the same page). When the pool
+    # carries both, prefer the alias that does NOT borrow another section's
+    # ``/<key>/…`` namespace — otherwise the Research menu links into Diligence
+    # and the destination resolves its active-nav/breadcrumb to the wrong
+    # section. Only drop a foreign-prefixed route when a same-label native
+    # alias is actually present, so a surface that lives ONLY under a foreign
+    # prefix still shows rather than vanishing.
+    _native_labels = {
+        _resolved_label(r).lower()
+        for r in pool
+        if _route_section_prefix(r.get("route", "")) in ("", sect)
+    }
+
+    def _is_displaceable_foreign(r: dict) -> bool:
+        pref = _route_section_prefix(r.get("route", ""))
+        return (pref not in ("", sect)
+                and _resolved_label(r).lower() in _native_labels)
+
     def _add(label: str, href: str) -> None:
         label = (label or "").strip()
         key = label.lower()
         if (not label or not href or key in seen or "→" in label
-                or href in _NAV_NONNAVIGABLE):
+                or href in _NAV_NONNAVIGABLE or href in _NAV_DEMOTED
+                or is_internal(href)):
             return
         seen.add(key)
         top.append({"label": label, "href": href})
 
-    for r in pool:
-        c = cur.get(r["route"], {})
-        _add(c.get("label") or r.get("label") or r["route"], r["route"])
+    # 1) Flagship pins — the hand-curated best-of-the-best lead the bar.
+    for href in _NAV_FLAGSHIPS.get(sect, ()):
         if len(top) >= 6:
             break
-    # Backfill to a fuller bar (target 4-6 destinations) from the curated rail
-    # when the strong-ranked pool is short, so every section button opens a
-    # populated mega-menu rather than 2-3 lonely links. GATED to real tiers
+        if not _is_real(href):
+            continue
+        c = cur.get(href) or {}
+        r = by_route.get(href) or {}
+        _add(c.get("label") or r.get("label") or href, href)
+
+    # 2) Ranked backfill — strongest remaining pages by score. Skip a
+    # foreign-namespace alias when a same-label native route is in the pool,
+    # so a section's bar never links into another section's /<key>/… space.
+    for r in pool:
+        if len(top) >= 6:
+            break
+        if _is_displaceable_foreign(r):
+            continue
+        c = cur.get(r["route"], {})
+        _add(c.get("label") or r.get("label") or r["route"], r["route"])
+    # 3) Backfill to a fuller bar (target 4-6 destinations) from the curated
+    # rail when the strong-ranked pool is short, so every section button opens
+    # a populated mega-menu rather than 2-3 lonely links. GATED to real tiers
     # (green / navy / data_required): never pad the prime nav with yellow
     # (illustrative seed-corpus) or red (synthetic) pages — that honesty gate is
     # foundational ("front facing shows real things"); illustrative surfaces
     # stay demoted to the ranked /best/<section> index with their tier dot.
     if len(top) < 6:
-        try:
-            from rcm_mc.diligence.surface_status import classify_surface as _cls
-        except Exception:  # noqa: BLE001
-            _cls = None
         for s in _SUB_NAV.get(sect, []):
             if not isinstance(s, dict):
                 continue
             href = s.get("href", "")
-            if _cls is not None and _cls(href).get("tier") not in (
-                    "green", "navy", "data_required"):
+            if not _is_real(href):
                 continue
             _add(s.get("label", ""), href)
             if len(top) >= 6:
@@ -403,6 +540,7 @@ _NAV_DESC = {
     "/notes": "The analyst notebook", "/sector-momentum": "Where sectors are moving",
     "/irr-dispersion": "Return dispersion reads", "/hold-analysis": "Hold-period analytics",
     "/market-intel": "Market structure & HHI", "/research": "Every research surface →",
+    "/rxnorm": "Drug names, NDC crosswalk & classes",
     "/portfolio/map": "Exposure by geography", "/portfolio/heatmap": "Risk × dimension grid",
     "/portfolio/risk-scan": "Portfolio-wide risk flags",
     "/deal-corpus-analytics": "Benchmark corpus scorecard",
@@ -412,7 +550,20 @@ _NAV_DESC = {
     "/diligence/benchmarks": "Peer benchmark grid", "/diligence/xray": "CMS provider X-Ray",
     "/diligence/hcris-xray": "HCRIS hospital X-Ray", "/diligence/qoe-memo": "Quality-of-earnings memo",
     "/diligence/cim-crosscheck": "CIM claims vs public data",
+    "/diligence/ic-packet": "Full-pipeline IC packet",
     "/diligence": "Every diligence surface →",
+    "/industry": "Industry dossiers & links",
+    "/regulatory-calendar": "Thesis kill-switch timeline",
+    "/comparable-outcomes": "Similar realized-deal returns",
+    "/market-intel/geo": "Geographic market intel",
+    "/pipeline/rollup": "Pro-forma roll-up scenarios",
+    "/portfolio": "The active book overview",
+    "/portfolio/monitor": "Actual vs predicted warnings",
+    "/portfolio/regression": "Portfolio regression analytics",
+    "/market-data/map": "Market data on the map",
+    "/deal-library/comps": "Library comp sets",
+    "/deal-library/sponsors": "Sponsors in the library",
+    "/app/cards": "Card-view morning brief",
 }
 
 # Legacy navigation kept for callers that haven't migrated.
@@ -922,19 +1073,8 @@ _DATA_UNIVERSE = {
                        "framework until a live data source is connected."),
     "data-required":  ("DATA REQUIRED", "datareq",
                        "Needs a user upload / CCD / internal file to activate."),
-    # Pure-input utilities (chart kit, excel mapping, pie chart): the page
-    # renders only values the user typed or pasted — no data claim at all.
-    "user-supplied":  ("USER-SUPPLIED", "user",
-                       "Renders only the values you typed or pasted — "
-                       "not a data source."),
     "experimental":   ("EXPERIMENTAL", "exp",
                        "Real source exists but coverage/method is partial — caveated."),
-    # Pure input utilities (chart builder / pie chart / excel mapping):
-    # the page renders only what the user typed or pasted — never a data
-    # claim from any vendored or live source.
-    "user-supplied": ("USER-SUPPLIED", "deals",
-                      "Values you typed or pasted into this form — rendered "
-                      "as-is; not a data claim from any source."),
     # Licensed third-party data, used only as derived/structured facts (raw
     # reports/exports never served). Distinct from public CMS/research.
     "licensed-report-derived": ("LICENSED REPORT", "ref",
@@ -947,7 +1087,10 @@ _DATA_UNIVERSE = {
     # The visuals toolkit (Chart Builder / Pie Chart / Excel Mapping /
     # Exhibit Composer / Visuals hub): the chart plots whatever the user
     # pasted or typed — no platform data claim unless a dataset chip was
-    # explicitly loaded (those carry their own source footnote).
+    # explicitly loaded (those carry their own source footnote). This is the
+    # single canonical "user-supplied" entry — two earlier duplicate keys
+    # (label "USER-SUPPLIED", codes "user"/"deals") were dead: a dict literal
+    # keeps only the last value for a repeated key, so they never rendered.
     "user-supplied": ("USER-SUPPLIED DATA", "deals",
                        "Renders the data you paste/type — example values are "
                        "placeholders, not a data claim."),
@@ -5599,8 +5742,11 @@ def ck_empty_state(
         f'<div class="ck-eyebrow">{_esc(eyebrow)}</div>' if eyebrow else ""
     )
     icon_html = (
-        f'<div class="ck-empty-state-icon">{icon}</div>'  # pre-escaped/glyph
-        if icon else ""
+        # aria-hidden: the glyph is decorative (the title carries the
+        # meaning), so AT shouldn't announce "star"/"check" before it —
+        # matches every other decorative glyph in this kit.
+        f'<div class="ck-empty-state-icon" aria-hidden="true">{icon}</div>'
+        if icon else ""  # icon is a pre-escaped glyph / HTML snippet
     )
     body_html = (
         f'<p class="ck-empty-state-body">{_esc(body)}</p>' if body else ""
@@ -5840,6 +5986,14 @@ _CK_BACK_TO_TOP_JS = """
     btn.addEventListener('click', function(ev){
       ev.preventDefault();
       window.scrollTo({top:0, behavior:'smooth'});
+      /* Also move keyboard focus to the top of content (the skip-link
+       * target), so a keyboard user's next Tab resumes from the top
+       * instead of staying parked on this bottom-right button.
+       * preventScroll keeps the smooth scroll above from being undone. */
+      var m = document.getElementById('ck-main');
+      if (m && typeof m.focus === 'function') {
+        try { m.focus({preventScroll:true}); } catch(e){ m.focus(); }
+      }
     });
     window.addEventListener('scroll', update, {passive:true});
     update();
@@ -7228,6 +7382,12 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "watchlist",   "title": "Watchlist",            "route": "/watchlist"},
     {"id": "questions-ledger", "title": "Diligence Questions · ledger",
         "route": "/diligence/questions"},
+    {"id": "activity",    "title": "Activity Feed",        "route": "/activity"},
+    {"id": "deadlines",   "title": "Deadlines",            "route": "/deadlines"},
+    {"id": "global-search", "title": "Global Search",      "route": "/global-search"},
+    {"id": "search",      "title": "Search",               "route": "/search"},
+    {"id": "pressure",    "title": "Pressure Test",        "route": "/pressure"},
+    {"id": "query",       "title": "Deal Query",           "route": "/query"},
     # International
     {"id": "global-markets", "title": "Global Healthcare Markets",
         "route": "/markets/global"},
@@ -7242,6 +7402,9 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "find-comps",  "title": "Find Comps",           "route": "/find-comps"},
     {"id": "verified-deals", "title": "Verified Deals · real, sourced healthcare PE deals", "route": "/verified-deals"},
     {"id": "conferences", "title": "Conferences",          "route": "/conferences"},
+    {"id": "new-deal",    "title": "New Deal",             "route": "/new-deal"},
+    {"id": "pipeline-bridge", "title": "Pipeline Bridge · deal → EBITDA bridge", "route": "/pipeline/bridge"},
+    {"id": "screening-dash", "title": "Screening Dashboard", "route": "/screening/dashboard"},
     # Diligence playbook
     {"id": "deal-profile",  "title": "Deal Profile",       "route": "/diligence/deal"},
     {"id": "cliff-calendar","title": "Reimbursement Cliff Calendar · 2026-2029 Medicare/340B rate events by subsector", "route": "/diligence/cliff-calendar"},
@@ -7274,6 +7437,16 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "risk-bench",    "title": "Risk Workbench",     "route": "/diligence/risk-workbench?demo=steward"},
     {"id": "counterfact",   "title": "Counterfactual",     "route": "/diligence/counterfactual"},
     {"id": "compare",       "title": "Compare Deals",      "route": "/diligence/compare"},
+    {"id": "deal-comparison", "title": "Deal Comparison · packet side-by-side", "route": "/compare"},
+    {"id": "diligence-hub", "title": "Diligence Workspace", "route": "/diligence"},
+    {"id": "checklist-dash", "title": "Checklist Dashboard", "route": "/diligence-checklist"},
+    {"id": "cost-structure", "title": "Cost Structure",    "route": "/cost-structure"},
+    {"id": "verticals",     "title": "Healthcare Verticals", "route": "/verticals"},
+    {"id": "snapshot-ingest", "title": "Snapshot Ingestion", "route": "/diligence/snapshot"},
+    {"id": "sponsor-detail", "title": "Sponsor Detail",    "route": "/diligence/sponsor-detail"},
+    {"id": "bear-case",     "title": "Bear Case · downside thesis builder", "route": "/diligence/bear-case"},
+    {"id": "comp-outcomes-deal", "title": "Comparable Outcomes · per-deal benchmark", "route": "/diligence/comparable-outcomes"},
+    {"id": "reg-cal-deal",  "title": "Regulatory Calendar · thesis kill-switches", "route": "/diligence/regulatory-calendar"},
     {"id": "bankruptcy",    "title": "Bankruptcy Scan",    "route": "/screening/bankruptcy-survivor"},
     {"id": "qoe-memo",      "title": "QoE Memo",           "route": "/diligence/qoe-memo"},
     {"id": "denial-pred",   "title": "Denial Prediction",  "route": "/diligence/denial-prediction"},
@@ -7307,6 +7480,17 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "market-rates",  "title": "Market Rates",       "route": "/market-rates"},
     {"id": "market-state",  "title": "Market Data · State (CA)",
         "route": "/market-data/state/CA"},
+    {"id": "hfma-benchmarks", "title": "HFMA KPI Benchmarks", "route": "/benchmarks"},
+    {"id": "cms-sources",   "title": "CMS Data Sources",   "route": "/cms-sources"},
+    {"id": "cms-browser",   "title": "CMS Public Data Browser", "route": "/cms-data-browser"},
+    {"id": "public-data-catalog", "title": "Public Data Catalog", "route": "/data/catalog"},
+    {"id": "dl-comps",      "title": "Deal Library — Multiples", "route": "/deal-library/comps"},
+    {"id": "dl-sponsors",   "title": "Deal Library — Sponsors", "route": "/deal-library/sponsors"},
+    {"id": "market-data",   "title": "Market Data",        "route": "/market-data"},
+    {"id": "market-map",    "title": "Market Data Map",    "route": "/market-data/map"},
+    {"id": "methodology-calc", "title": "Methodology — Calculations", "route": "/methodology/calculations"},
+    {"id": "module-index",  "title": "Module Index",       "route": "/module-index"},
+    {"id": "news",          "title": "News",               "route": "/news"},
     # Research
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
@@ -7318,11 +7502,15 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "comp-outcomes", "title": "Comparable Outcomes","route": "/comparable-outcomes"},
     {"id": "tam-sam", "title": "TAM / SAM Builder", "route": "/diligence/tam-sam"},
     {"id": "tx-infusion", "title": "Texas Infusion Market · TAM/SAM + concentration + metro ranking", "route": "/diligence/texas-infusion"},
+    {"id": "tx-infusion-counties", "title": "Texas Infusion · county proximity + AIC whitespace", "route": "/diligence/texas-infusion/counties"},
+    {"id": "tx-infusion-continued", "title": "Texas Infusion Market · Continued — CPT-level rates by site + city, drug mix, PPO/HMO, network access, proximity", "route": "/diligence/texas-infusion-continued"},
     {"id": "infusion-markets", "title": "Infusion Market Scan · every state ranked for an infusion roll-up", "route": "/diligence/infusion-markets"},
+    {"id": "jcode-atlas", "title": "J-Code Atlas · every infusion J-code by site of care (home vs office) + the change, tied to disease", "route": "/diligence/jcode-atlas"},
     {"id": "visuals", "title": "Visuals · graphics toolkit hub (charts, maps, exhibits)", "route": "/visuals"},
     {"id": "further-analysis", "title": "Further Analysis · Tableau-style data explorer over CMS/CDC/Census/labor/market datasets", "route": "/further-analysis"},
     {"id": "cross-analysis", "title": "Cross-Dataset Analysis · correlate any two state-grain public datasets (Pearson r, R², scatter + trendline)", "route": "/cross-analysis"},
     {"id": "data-apis", "title": "Public Data APIs · catalog of free non-CMS healthcare data sources (NPPES, openFDA, ClinicalTrials, Census, ProPublica 990) by diligence question", "route": "/data-apis"},
+    {"id": "rxnorm", "title": "Drug Reference (RxNorm) · NDC→RxCUI crosswalk, concepts, drug classes & competitive-set sizing", "route": "/rxnorm"},
     {"id": "excel-mapping", "title": "Excel Mapping · configurable US-state choropleth", "route": "/excel-mapping"},
     {"id": "excel-templates", "title": "Excel Model Templates · live-formula workbooks (LBO, QoE, NWC peg, CDD market model)", "route": "/excel-templates"},
     {"id": "cdd-hub", "title": "CDD Hub · the commercial-diligence workflow in running order", "route": "/cdd"},
@@ -7341,6 +7529,17 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "market-intel",  "title": "Market Intelligence","route": "/market-intel"},
     {"id": "corpus-back",   "title": "Dataset Backtest",    "route": "/corpus-backtest"},
     {"id": "backtest",      "title": "Backtest",           "route": "/backtest"},
+    {"id": "analysis-hub",  "title": "Analysis Landing",   "route": "/analysis"},
+    {"id": "data-intel",    "title": "Data Intelligence",  "route": "/data-intelligence"},
+    {"id": "feat-importance", "title": "Feature Importance", "route": "/models/importance"},
+    {"id": "insights",      "title": "Insights",           "route": "/insights"},
+    {"id": "ml-insights",   "title": "ML Insights",        "route": "/ml-insights"},
+    {"id": "model-quality", "title": "Model Quality",      "route": "/models/quality"},
+    {"id": "model-validation", "title": "Model Validation", "route": "/model-validation"},
+    {"id": "calibration",   "title": "Prior Calibration",  "route": "/calibration"},
+    {"id": "quant-lab",     "title": "Quant Lab",          "route": "/quant-lab"},
+    {"id": "scenarios",     "title": "Scenario Explorer",  "route": "/scenarios"},
+    {"id": "surrogate",     "title": "Surrogate Model",    "route": "/surrogate"},
     # Portfolio
     {"id": "portfolio",     "title": "Portfolio",          "route": "/portfolio"},
     {"id": "port-map",      "title": "Portfolio Map",      "route": "/portfolio/map"},
@@ -7351,10 +7550,30 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "sponsor-tr",    "title": "Sponsor Track Record","route": "/sponsor-track-record"},
     {"id": "payer-intel",   "title": "Payer Intelligence", "route": "/payer-intelligence"},
     {"id": "lp-update",     "title": "LP Update",          "route": "/lp-update"},
+    {"id": "cohorts",       "title": "Cohorts",            "route": "/cohorts"},
+    {"id": "fund-learning", "title": "Fund Learning",      "route": "/fund-learning"},
+    {"id": "initiatives",   "title": "Initiatives",        "route": "/initiatives"},
+    {"id": "owners",        "title": "Owners",             "route": "/owners"},
+    {"id": "port-mc",       "title": "Portfolio Monte Carlo", "route": "/portfolio/monte-carlo"},
+    {"id": "port-regression", "title": "Regression Analysis", "route": "/portfolio/regression"},
+    {"id": "variance",      "title": "Variance Drill-Down", "route": "/variance"},
     # Admin / system
     {"id": "audit",         "title": "Audit Log",          "route": "/audit"},
     {"id": "users",         "title": "Users",              "route": "/users"},
     {"id": "import",        "title": "Import Deal",        "route": "/import"},
+    {"id": "exports",       "title": "Exports",            "route": "/exports"},
+    {"id": "jobs",          "title": "Jobs",               "route": "/jobs"},
+    {"id": "runs",          "title": "Run History",        "route": "/runs"},
+    {"id": "settings",      "title": "Settings",           "route": "/settings"},
+    {"id": "settings-ai",   "title": "AI Settings",        "route": "/settings/ai"},
+    {"id": "settings-ws",   "title": "Workspace Settings", "route": "/settings/workspace"},
+    {"id": "team",          "title": "Team",               "route": "/team"},
+    {"id": "cli-runs",      "title": "CLI Runs",           "route": "/cli-runs"},
+    {"id": "audit-chain",   "title": "Audit Chain",        "route": "/admin/audit-chain"},
+    {"id": "data-source-admin", "title": "Data Source Admin", "route": "/admin/data-sources"},
+    {"id": "open-data-lab", "title": "Open Data Lab",      "route": "/tools/open-data"},
+    {"id": "demo-mode",     "title": "Demo Mode",          "route": "/demo"},
+    {"id": "ops-status",    "title": "Ops Status",         "route": "/ops"},
 ]
 
 
@@ -8229,6 +8448,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-chip:hover { transform:scale(1.04); box-shadow:0 0 0 3px var(--tb-green-soft); }
   .ck-user-chip:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce){ .ck-user-chip:hover { transform:none; } }
+  /* Keyboard focus rings for the remaining focusable topbar links (WCAG
+   * 2.4.7). The nav links, Guide, +New, and the chip already had rings;
+   * the wordmark, mode chip, Q-pill, and — most importantly — the account
+   * dropdown items did not, so keyboard users navigating the open menu saw
+   * no focus indicator at all. Inset offset on dropdown items so the ring
+   * stays inside the menu's edge. */
+  .ck-wordmark:focus-visible,
+  .ck-mode-chip:focus-visible,
+  .ck-topbar-qpill:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  .ck-user-dropdown-item:focus-visible { outline:2px solid var(--tb-green); outline-offset:-2px; }
   /* Portfolio-wide diligence-questions pill in the topbar. JS
    * hydrates from rcm_deal_*_questions on DOMContentLoaded; hidden
    * when zero open across the portfolio. Warning-tone numeric +
@@ -9889,10 +10118,12 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
         if(th.getAttribute('data-sortable')!=null) return;
         th.setAttribute('data-sortable','');
         th.style.cursor='pointer';
-        // Keep the native columnheader role so aria-sort is honoured;
-        // tabindex + the keydown handler below still make it operable.
-        th.setAttribute('aria-sort','none');
+        /* Keep the native columnheader role: aria-sort is only honored on a
+         * columnheader, so overriding to role=button (the prior behavior)
+         * silently discarded the sort-state announcement. tabindex + the
+         * keydown handler below keep it operable for keyboard users. */
         th.setAttribute('tabindex','0');
+        if(th.getAttribute('aria-sort')==null) th.setAttribute('aria-sort','none');
         if(!th.title) th.title='Sort';
         var ind=document.createElement('span');
         ind.className='ck-sort-ind';
@@ -9929,8 +10160,12 @@ _TABLE_TOTALS_JS = """
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
-.ck-data-table-scroll:hover .ck-ttotals{opacity:0.9;}
+.ck-data-table-scroll:hover .ck-ttotals,
+.ck-data-table-scroll:focus-within .ck-ttotals{opacity:0.9;}
 .ck-ttotals:hover,.ck-ttotals[aria-pressed="true"]{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+/* Same as the copy button: reveal + ring on keyboard focus so a Tab user
+ * doesn't land on an invisible toggle. */
+.ck-ttotals:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:700;
   background:var(--sc-bone,#ece5d6);font-family:var(--sc-mono,'JetBrains Mono',monospace);
   font-variant-numeric:tabular-nums;padding:6px 10px;font-size:11px;}
@@ -10116,8 +10351,12 @@ _TABLE_COPY_JS = """
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
-.ck-data-table-scroll:hover .ck-tcopy{opacity:0.9;}
+.ck-data-table-scroll:hover .ck-tcopy,
+.ck-data-table-scroll:focus-within .ck-tcopy{opacity:0.9;}
 .ck-tcopy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+/* Reveal + ring the copy button on keyboard focus — without this a Tab
+ * user lands on an invisible (opacity:0) control with no focus cue. */
+.ck-tcopy:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 </style>
 <script>
 /* Hover copy-to-clipboard for editorial tables. A small Copy button
@@ -10200,6 +10439,9 @@ _TABLE_FILTER_JS = """
     input.type='search'; input.placeholder='Filter rows\\u2026';
     input.setAttribute('aria-label','Filter table rows');
     var count=document.createElement('span'); count.className='ck-tfilter-count';
+    /* Announce the match count as the partner types, so a screen-reader
+     * user hears "5 of 20" instead of filtering blind. */
+    count.setAttribute('aria-live','polite');
     var total=tbody.rows.length;
     function upd(){
       var q=input.value.trim().toLowerCase(); var shown=0;
@@ -10587,7 +10829,12 @@ _USER_MENU_JS = """
     if (!menu.contains(e.target) && e.target !== btn) close();
   });
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && !menu.hidden) close();
+    if (e.key === 'Escape' && !menu.hidden) {
+      close();
+      /* Return focus to the chip so a keyboard user who tabbed into the
+       * menu isn't stranded on the now-hidden element (WCAG 2.4.3). */
+      btn.focus();
+    }
   });
 
   /* Hydrate recent-deals group */
@@ -10625,6 +10872,27 @@ _USER_MENU_JS = """
       }
     }
   } catch (e) { /* storage unavailable — skip */ }
+})();
+</script>
+"""
+
+
+_MODKEY_JS = """
+<script>
+/* Platform-correct the ⌘ shortcut hints. The keyboard handlers already
+ * accept metaKey || ctrlKey, but the *displayed* glyph was hardcoded to
+ * ⌘ — meaningless to Windows/Linux users, who press Ctrl. On non-Mac
+ * platforms rewrite any [data-modkey] element's ⌘ to "Ctrl". Idempotent
+ * and guarded; a Mac (or a failure) leaves the markup untouched. */
+(function() {
+  try {
+    var ua = (navigator.platform || "") + " " + (navigator.userAgent || "");
+    if (/Mac|iPhone|iPad|iPod/i.test(ua)) return;
+    document.querySelectorAll("[data-modkey]").forEach(function(el) {
+      el.textContent = el.textContent.replace(/⌘/g, "Ctrl ")
+                                     .replace(/\\s+/g, " ").trim();
+    });
+  } catch (e) { /* leave the Mac glyph rather than risk a broken label */ }
 })();
 </script>
 """
@@ -10676,15 +10944,20 @@ _NAV_MENU_JS = """
 
   function cancelOpen(){ if (openTimer){ clearTimeout(openTimer); openTimer = null; } }
   function cancelClose(){ if (closeTimer){ clearTimeout(closeTimer); closeTimer = null; } }
+  function setExpanded(g, on){     // keep the trigger's aria-expanded in sync
+    var trigger = g.querySelector('a');
+    if (trigger) trigger.setAttribute('aria-expanded', on ? 'true' : 'false');
+  }
   function closeAll(){
     cancelOpen(); cancelClose();
-    groups.forEach(function(g){ g.classList.remove('is-open'); });
+    groups.forEach(function(g){ g.classList.remove('is-open'); setExpanded(g, false); });
     current = null;
   }
   function openOnly(g){            // one panel open at a time
     if (current === g) return;
-    groups.forEach(function(x){ if (x !== g) x.classList.remove('is-open'); });
+    groups.forEach(function(x){ if (x !== g){ x.classList.remove('is-open'); setExpanded(x, false); } });
     g.classList.add('is-open');
+    setExpanded(g, true);
     current = g;
   }
 
@@ -10985,6 +11258,8 @@ _SUB_SECTION_MAP = {
     "/diligence/comparable-outcomes": "research",
     "/diligence/tam-sam": "diligence",
     "/diligence/texas-infusion": "diligence",
+    "/diligence/texas-infusion-continued": "diligence",
+    "/diligence/jcode-atlas": "diligence",
     "/diligence/expert-calls": "diligence",
     "/diligence/cdd-scope": "diligence",
     "/diligence/infusion-markets": "diligence",
@@ -10992,6 +11267,7 @@ _SUB_SECTION_MAP = {
     "/further-analysis": "research",
     "/cross-analysis": "research",
     "/data-apis": "research",
+    "/rxnorm": "research",
     "/excel-mapping": "research",
     "/excel-templates": "research",
     "/chart-builder": "research",
@@ -11237,8 +11513,18 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         sect = _section_of(item)
         caret = ('<span class="ck-nav-caret" aria-hidden="true">▾</span>'
                  if sect else "")
+        # Section triggers are disclosure controls for their mega-menu: expose
+        # a starting aria-expanded="false" that _NAV_MENU_JS flips as the panel
+        # opens/closes, so a screen reader announces the collapsed/expanded
+        # state instead of a bare link. No aria-haspopup — the panel is a group
+        # of links (disclosure pattern), not a role="menu" widget. Bare items
+        # (Home) carry neither.
+        pop_attr = (
+            f' aria-expanded="false" aria-controls="ck-mega-{_esc(sect)}"'
+            if sect else ""
+        )
         anchor = (
-            f'<a href="{_esc(item["href"])}" '
+            f'<a href="{_esc(item["href"])}"{pop_attr} '
             f'class="{"active" if item["key"] == active_nav else ""}">'
             f'{_esc(_nav_label(item["label"]))}{caret}</a>'
         )
@@ -11259,7 +11545,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # preserve render-order stability in case a future revision
         # re-introduces a meaningful per-item index.
         items = "".join(
-            f'<a href="{_esc(s["href"])}" class="ck-mega-item" role="menuitem">'
+            f'<a href="{_esc(s["href"])}" class="ck-mega-item">'
             f'<span class="ck-mega-it-body"><span class="ck-mega-it-label">'
             f'{_esc(s["label"])}</span>'
             f'<span class="ck-mega-it-desc">{_esc(_NAV_DESC.get(s["href"], ""))}</span>'
@@ -11294,14 +11580,22 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # inside the links box (not a separate full-width footer chunk), in
         # green. Normal flow below the leaves → never overlaps anything.
         all_tools = (
-            f'<a href="/best/{_esc(sect)}" class="ck-mega-all" role="menuitem">'
+            f'<a href="/best/{_esc(sect)}" class="ck-mega-all">'
             f'All {_esc(_nav_label(item["label"]))} tools '
             '<span class="ck-mega-all-arr" aria-hidden="true">&rarr;</span></a>'
         )
         return (
-            '<div class="ck-nav-group" aria-haspopup="true">'
+            # Disclosure-navigation pattern (WAI-ARIA APG): the trigger is an
+            # <a> with aria-expanded; the disclosed panel is a labelled GROUP
+            # of links, not a role="menu" widget. The earlier menu/menuitem
+            # roles falsely promised arrow-key menu semantics this nav never
+            # implemented — screen readers announced "menu, N items" and
+            # trapped arrow keys. role="group" + aria-label keeps the cluster
+            # named without the false affordance.
+            '<div class="ck-nav-group">'
             f'{anchor}'
-            f'<div class="ck-nav-menu ck-nav-mega" role="menu" '
+            f'<div class="ck-nav-menu ck-nav-mega" id="ck-mega-{_esc(sect)}" '
+            f'role="group" '
             f'aria-label="{_esc(_nav_label(item["label"]))} menu">'
             '<div class="ck-mega-inner">'
             f'<div class="ck-mega-lede">{feature}</div>'
@@ -11362,11 +11656,12 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search…" '
         # Search terms are tickers/metrics ("EBITDA", "CCN 050441") — stop
-        # mobile keyboards auto-capitalising / auto-correcting / red-squiggling.
+        # mobile keyboards auto-capitalising / auto-correcting / red-squiggling;
+        # enterkeyhint surfaces a "search" key on mobile soft keyboards.
         'autocomplete="off" autocapitalize="none" '
-        'autocorrect="off" spellcheck="false" '
+        'autocorrect="off" spellcheck="false" enterkeyhint="search" '
         'aria-label="Search deals, hospitals, routes" />'
-        '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
+        '<kbd class="ck-search-kbd" aria-hidden="true" data-modkey>⌘K</kbd>'
         '</form>'
         # PEdesk Guide trigger — opens the read-only context sidebar. The
         # green italic-serif "?" glyph is the handoff accent that makes the
@@ -11376,24 +11671,34 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
         'title="PEdesk Guide · explain this page">'
         '<span class="ck-guide-glyph" aria-hidden="true">?</span>Guide</button>'
-        # + New deal — primary CTA. No dedicated /deals/new route exists yet,
-        # so it routes to the Pipeline section (deal sourcing/origination)
-        # rather than inventing a flow or shipping a broken link.
-        '<a class="ck-newdeal-cta" href="/pipeline" '
-        'title="Start a new deal in the pipeline">+ New deal</a>'
+        # + New deal — primary CTA. Routes to /new-deal, the guided create
+        # wizard (step 1 of the intake flow), so the partner lands on the
+        # action the button promises rather than the Pipeline list one click
+        # short of it.
+        '<a class="ck-newdeal-cta" href="/new-deal" '
+        'title="Start a new deal">+ New deal</a>'
         '<div class="ck-user-menu">'
+        # aria-controls ties the chip to the menu it toggles (mirrors the
+        # Guide button → #ck-guide-panel wiring), so AT exposes the
+        # collapsed/expanded relationship instead of an orphan button.
         f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
-        f'aria-expanded="false" aria-label="Account menu" title="Signed in" '
+        f'aria-expanded="false" aria-label="Account menu" '
+        f'aria-controls="ck-user-dropdown" title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
-        '<div class="ck-user-dropdown" hidden>'
+        '<div class="ck-user-dropdown" id="ck-user-dropdown" hidden>'
         # Recently-viewed deals — populated client-side from
         # localStorage by _USER_MENU_JS. Hidden when empty.
         '<div class="ck-user-recent" data-ck-recent-deals hidden>'
         '<div class="ck-user-recent-head">Recent deals</div>'
         '<div class="ck-user-recent-list" data-ck-recent-list></div>'
         '</div>'
-        '<a href="/my/AT" class="ck-user-dropdown-item">My Dashboard</a>'
-        '<a href="/tools" class="ck-user-dropdown-item">All Tools &middot; ⌘K</a>'
+        # Follow the chip's initials, not a hardcoded "/my/AT" — so when a
+        # caller passes real user_initials the dashboard link and the avatar
+        # point at the same owner instead of silently diverging.
+        f'<a href="/my/{_esc(user_initials)}" class="ck-user-dropdown-item">'
+        f'My Dashboard</a>'
+        '<a href="/tools" class="ck-user-dropdown-item" data-modkey>'
+        'All Tools &middot; ⌘K</a>'
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
         f'<a href="/settings/workspace" class="ck-user-dropdown-item">'
         f'Workspace: {_esc(_ws_mode_label)}</a>'
@@ -11452,13 +11757,21 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
             continue
         norm.append((label, href))
     parts = []
+    last = len(norm) - 1
     for i, (label, href) in enumerate(norm):
         if i:
-            parts.append('<span class="sep">/</span>')
+            # aria-hidden so AT doesn't read "slash" between every crumb.
+            parts.append('<span class="sep" aria-hidden="true">/</span>')
         if href:
             parts.append(f'<a href="{_esc(href)}">{_esc(label)}</a>')
+        elif i == last:
+            # Final href-less crumb is the page you're on — mark it so a
+            # screen reader announces "current page".
+            parts.append(f'<span aria-current="page">{_esc(label)}</span>')
         else:
             parts.append(_esc(label))
+    # aria-label distinguishes this from the Primary nav landmark — without
+    # it AT announces two unnamed "navigation" regions on every page.
     return (
         f'<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
         f'{"".join(parts)}</nav>'
@@ -11472,6 +11785,22 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
 # if it ever needs to. Modern browsers (Chrome/Edge/Safari/Firefox 126+)
 # support `zoom`; older engines simply render at 100% (graceful).
 _GLOBAL_SCALE_CSS = "<style>@media screen{html{zoom:0.98;}}</style>"
+
+# Skip-to-content link (WCAG 2.4.1 Bypass Blocks). The first focusable
+# element on every chromed page lets a keyboard / screen-reader user jump
+# past the topbar nav straight to <main>. Off-screen until focused, then it
+# slides into the top-left corner. Kept inline (not in the static stylesheet)
+# so it works even when /static fails to serve.
+_SKIP_LINK_CSS = (
+    "<style>"
+    ".ck-skip-link{position:absolute;left:8px;top:-48px;z-index:1000;"
+    "background:#0b2341;color:#fff;padding:8px 14px;border-radius:0 0 3px 3px;"
+    "font-family:var(--sc-sans,system-ui);font-size:13px;font-weight:600;"
+    "text-decoration:none;transition:top .15s ease;}"
+    ".ck-skip-link:focus{top:0;outline:2px solid #155752;outline-offset:2px;}"
+    "</style>"
+)
+_SKIP_LINK_HTML = '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
 
 
 # ── Title-first contract (2026-06 clutter audit) ──────────────────────
@@ -11803,6 +12132,7 @@ def chartis_shell(
     user_menu_js = _USER_MENU_JS if show_chrome else ""
     nav_menu_js = _NAV_MENU_JS if show_chrome else ""
     qpill_js = _QPILL_JS if show_chrome else ""
+    modkey_js = _MODKEY_JS if show_chrome else ""
     palette_js = _PALETTE_JS if (include_palette and show_chrome) else ""
     shortcuts_js = _SHORTCUTS_JS if show_chrome else ""
     tour_html = ck_default_tour() if show_chrome else ""
@@ -11812,13 +12142,11 @@ def chartis_shell(
     # forgot) must not even mention those selectors — test_deal_context
     # asserts bare pages carry no "ck-deal-bar" string at all.
     exhibit_print_css = _EXHIBIT_PRINT_CSS if show_chrome else ""
-    # Skip-to-content link — first focusable element so keyboard/screen-
-    # reader users can bypass the topbar + nav. Only meaningful when the
-    # chrome (and its nav) is present; bare auth pages have nothing to skip.
-    skip_link_html = (
-        '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
-        if show_chrome else ""
-    )
+    # Skip-to-content link only earns its place when there's chrome (a
+    # topbar nav) to skip past. Bare pages (login/forgot) have nothing to
+    # bypass, so they stay link-free — keeping their DOM minimal.
+    skip_link_css = _SKIP_LINK_CSS if show_chrome else ""
+    skip_link_html = _SKIP_LINK_HTML if show_chrome else ""
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -11836,6 +12164,7 @@ def chartis_shell(
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"
         f"{_GLOBAL_SCALE_CSS}"
+        f"{skip_link_css}"
         f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
@@ -11851,6 +12180,7 @@ def chartis_shell(
         f"{user_menu_js}"
         f"{nav_menu_js}"
         f"{qpill_js}"
+        f"{modkey_js}"
         f"{_INTRO_DISMISS_JS}"
         f"{palette_js}"
         f"{shortcuts_js}"

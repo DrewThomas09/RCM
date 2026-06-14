@@ -4,8 +4,8 @@ State choropleth + exposure-band table from the curated KFF/CMS cut,
 plus a footprint calculator: enter a target's states and get the
 average MA penetration of its geography vs the national norm. Renders
 from ``rcm_mc.market_intel.ma_penetration``; the map reuses the
-excel-mapping tile-grid renderer so the two state maps stay visually
-identical.
+excel-mapping real-geography renderer so the two state maps stay
+visually identical.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_data_cell, ck_kpi_block, ck_page_explainer,
     ck_page_title,
 )
-from rcm_mc.ui.excel_mapping_page import _legend, _map_svg
+from rcm_mc.ui.excel_mapping_page import _map_svg
 
 _BAND_TONE = {"SATURATED": "neg", "HIGH": "dim", "MODERATE": "dim",
               "LOW": "pos"}
@@ -163,7 +163,6 @@ def render_ma_penetration(params: dict = None) -> str:
   <div style="{cell}">
     <div style="{h3}">MA penetration by state (% of Medicare eligibles)</div>
     {_map_svg(cfg)}
-    {_legend(cfg)}
   </div>
   <div style="{cell}">
     <div style="{h3}">State exposure table (penetration-descending)</div>

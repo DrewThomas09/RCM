@@ -411,6 +411,54 @@ class TestFilterBar(unittest.TestCase):
             self.assertIn("applyFilter", text)
 
 
+class TestPortfolioDashboardOnscreen(unittest.TestCase):
+    """Onscreen / mobile guards for the legacy portfolio dashboard.
+
+    This dashboard builds its own ``<html>`` document and does NOT go
+    through ``chartis_shell``, so the shared ≤960px overflow safety-net
+    never reaches it. Before 2026-06 a phone got a zoomed-out desktop
+    view (no viewport meta) with a 4-up KPI grid that never collapsed
+    and wide tables that widened the page. Lock the fixes in so they
+    can't be silently dropped.
+    """
+
+    def _render(self) -> str:
+        with tempfile.TemporaryDirectory() as tmp:
+            store = PortfolioStore(os.path.join(tmp, "p.db"))
+            out = os.path.join(tmp, "dash.html")
+            build_portfolio_dashboard(store, out)
+            return _read_text(out)
+
+    def test_has_viewport_meta(self):
+        html = self._render()
+        self.assertIn(
+            '<meta name="viewport" content="width=device-width, '
+            'initial-scale=1">',
+            html,
+        )
+
+    def test_has_responsive_breakpoints(self):
+        html = self._render()
+        # Tablet net (KPI grid → 2-up, tables scroll) and phone net
+        # (single-column KPIs, reclaimed gutters) must both be present.
+        self.assertIn("@media (max-width: 960px)", html)
+        self.assertIn("@media (max-width: 640px)", html)
+
+    def test_kpi_grid_collapses_on_mobile(self):
+        html = self._render()
+        # Desktop default is the 4-up grid; the mobile overrides drop it
+        # to two then one column so KPI cards never force horizontal scroll.
+        self.assertIn("grid-template-columns: repeat(4, 1fr)", html)
+        self.assertIn("grid-template-columns: repeat(2, 1fr)", html)
+        self.assertIn("grid-template-columns: 1fr", html)
+
+    def test_deal_table_scrolls_in_place(self):
+        html = self._render()
+        # The wide deal table becomes its own scroll container on narrow
+        # viewports rather than widening the whole page.
+        self.assertIn("overflow-x: auto", html)
+
+
 class TestPortfolioDashboardCLI(unittest.TestCase):
     def test_dashboard_subcommand_writes_file(self):
         import io
