@@ -75,3 +75,11 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest tests/golden/test_ltv_cac.py => 8 passed. LTV/cust=90,
   payback m3, ratio 1.8 hand-verified.
 - Next: NEW-07 provider density / geographic heatmap (per-FIPS counts).
+================================================================================
+[2026-06-14 02:46 UTC] NEW-07 Provider density
+- provider_density.py: count unique NPI per FIPS or CBSA; optional per-100k
+  density; CMS-style cell suppression (<=11) with flag; choropleth geo layer;
+  reconciliation on raw counts. Renders on two geographies.
+- Evidence: pytest tests/golden/test_provider_density.py => 7 passed. Counts
+  5/3/2 hand-counted; density per 100k verified.
+- Next: NEW-08 market saturation / white-space mapping.

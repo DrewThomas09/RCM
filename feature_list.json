@@ -82,11 +82,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_provider_density.py",
-      "notes": ""
+      "notes": "Per-FIPS counts 5/3/2 hand-counted; density per 100k; renders FIPS+CBSA; suppression <=11 hides small cells."
     },
     {
       "id": "NEW-08",
