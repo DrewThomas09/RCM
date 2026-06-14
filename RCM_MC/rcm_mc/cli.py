@@ -1252,6 +1252,24 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                     help="Top-N counties by uninsured rate (table view)")
     pm.add_argument("--json", action="store_true", help="Emit JSON (all counties)")
 
+    # CY2026 fee-schedule backbone + site-of-service arbitrage. Read-only
+    # reference (hard-coded finalized constants) — no store, no network.
+    fs = sub.add_parser(
+        "fee-schedule",
+        help="CY2026 fee-schedule constants + site-of-service arbitrage sizing",
+    )
+    fs.add_argument("--code", default="",
+                    help="Size a migration for one HCPCS (e.g. 45378)")
+    fs.add_argument("--volume", type=int, default=0,
+                    help="Annual procedure volume (with --code)")
+    fs.add_argument("--from", dest="from_setting", default="hopd",
+                    help="Origin setting: physician | asc | hopd | office")
+    fs.add_argument("--to", dest="to_setting", default="asc",
+                    help="Destination setting: physician | asc | hopd | office")
+    fs.add_argument("--payer", default="medicare",
+                    help="medicare | commercial")
+    fs.add_argument("--json", action="store_true", help="Emit JSON")
+
     args = ap.parse_args(argv)
 
     if args.action == "gaps":
@@ -1519,6 +1537,59 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                 f"  {str(r['county'])[:32]:<32}  "
                 f"{(f'{nui:,}' if nui is not None else '—'):>9}  "
                 f"{(f'{pct:.1f}%' if pct is not None else '—'):>6}\n")
+        return 0
+
+    if args.action == "fee-schedule":
+        # Read-only reference — no store, no network. Hard-coded finalized
+        # CY2026 constants; the site-of-service gap is the value driver.
+        from .data_public import fee_schedule_2026 as fsmod
+
+        if args.code:
+            try:
+                arb = fsmod.site_of_service_arbitrage(
+                    args.code, args.volume, args.from_setting,
+                    args.to_setting, payer=args.payer,
+                )
+            except ValueError as exc:
+                sys.stderr.write(f"{exc}\n")
+                return 2
+            if args.json:
+                import json as _json
+                from dataclasses import asdict
+                sys.stdout.write(_json.dumps(asdict(arb), indent=2) + "\n")
+                return 0
+            sys.stdout.write(
+                f"{arb.code} {arb.descr} ({arb.subsector}) — {arb.payer}\n"
+                f"  {arb.from_setting:>9} fee   ${arb.from_rate:>10,.2f}\n"
+                f"  {arb.to_setting:>9} fee   ${arb.to_rate:>10,.2f}\n"
+                f"  per-case delta   ${arb.per_case_delta:>+10,.2f}\n"
+                f"  @ {arb.annual_volume:,}/yr      ${arb.annual_delta:>+10,.2f}\n"
+            )
+            if arb.note:
+                sys.stdout.write(f"  note: {arb.note}\n")
+            return 0
+
+        if args.json:
+            import json as _json
+            from dataclasses import asdict
+            payload = {
+                k: asdict(v) for k, v in fsmod.FEE_SCHEDULE_BACKBONE_2026.items()
+            }
+            sys.stdout.write(_json.dumps(payload, indent=2) + "\n")
+            return 0
+
+        sys.stdout.write("CY2026 Medicare fee-schedule backbone (finalized):\n\n")
+        for c in fsmod.FEE_SCHEDULE_BACKBONE_2026.values():
+            val = f"${c.value:,.4f}" if c.value is not None else "—"
+            prior = f"${c.prior_value:,.4f}" if c.prior_value is not None else "—"
+            sys.stdout.write(
+                f"  {c.label:<46} {val:>14}  ({c.update_pct:+.2f}% vs {prior})\n"
+                f"        {c.unit} · {c.rule}\n"
+            )
+        sys.stdout.write(
+            "\nSize a migration: "
+            "rcm-mc data fee-schedule --code 45378 --volume 1000 --from hopd --to asc\n"
+        )
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.
