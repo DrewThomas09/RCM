@@ -1,0 +1,266 @@
+PEDESK / RCM-MC — CDD Analytics Expansion — Progress Log
+Branch: claude/pedesk-cdd-analytics-cvzvgf
+Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
+
+================================================================================
+[2026-06-14 01:24 UTC] ORIENT / BOOTSTRAP
+- Fresh branch off main (HEAD 00c5a3b). No prior state files; created them.
+- App: RCM_MC (pkg rcm_mc), Python 3.11. Baseline existing tests green
+  (ran tests/test_simulator.py + tests/test_ridge_predictor.py = 40 passed).
+- Dependency env: numpy 2.4.6, scipy 1.17.1, scikit-learn 1.9.0 present.
+  Installed pandas, matplotlib, pytest, ruptures, plotly, lifelines 0.30.3.
+- Confirmed existing assets to bolster: rcm_mc/ml/ridge_predictor.py +
+  conformal.py (BOLSTER-01), rcm_mc/ml/anomaly_detector.py +
+  qoe/isolation_forest.py (BOLSTER-02), rcm_mc/ml/regime_detection.py
+  (BOLSTER-03), rcm_mc/ml/payer_mix_cascade.py, mc/ + montecarlo_v3/.
+- Created feature_list.json (17 NEW + 7 BOLSTER), DECISIONS.md, this log.
+- Plan: build cohesive rcm_mc/cdd/ subpackage with shared Exhibit contract +
+  registry (wired to CLI + server), golden tests in tests/golden/.
+- Next: foundation (exhibit + registry + copy linter) then NEW-01.
+
+================================================================================
+[2026-06-14 01:40 UTC] FOUNDATION + NEW-01
+- Built rcm_mc/cdd/ subpackage: exhibit.py (Exhibit/Footnote/AssumptionNode/
+  Flag/Reconciliation/Series + lint_copy em-dash & AI-filler guard + audience
+  separation in render()), registry.py (autoloads feature modules, CLI+server
+  surface), cli.py + __main__.py (python -m rcm_mc.cdd list|run).
+- NEW-01 tam_sam_som.py: TAM=all units*price, SAM=reachable, SOM=capacity*win_rate
+  priced at blended reachable price, capped at demand ceiling. Divergence flag
+  vs top-down >20%. Assumption nodes editable+sourced; partner render strips them.
+- Evidence: python -m pytest tests/golden/ -q => 21 passed.
+  Hand fixture TAM 30000 / SAM 20000 / SOM 4000 verified; top_down 33000 no flag,
+  50000 fires tam_divergence + reconciled False.
+- Next: NEW-02 PVM bridge (additive + reversal-consistent, tol 1e-6).
+================================================================================
+[2026-06-14 01:52 UTC] NEW-02 PVM bridge
+- pvm_bridge.py: symmetric Bennet decomposition. price=sum dp*qavg;
+  volume=dQ*sum(pa*s_avg); mix=Qavg*sum(pa*ds); new/lost bucket for lines in one
+  period only. Exactly additive + reversal-consistent. IBCS waterfall ordered by
+  magnitude, green/red/blue colors.
+- Evidence: pytest tests/golden/test_pvm_bridge.py => 8 passed. Hand fixture
+  price=220, volume=91.7857, mix=228.2143, total=540; reversal negates each.
+- Next: NEW-03 payer-mix analysis and waterfall (shares sum 100% to 1e-9).
+================================================================================
+[2026-06-14 02:02 UTC] NEW-03 Payer mix
+- payer_mix.py: shares = payer/total*100 (sum 100% to 1e-9); two-period shift
+  waterfall (deltas sum 0); margin-weight overlay (commercial>medicare/medicaid)
+  as internal-only series; margin_dilutive_shift flag when weighted score falls.
+- Evidence: pytest tests/golden/test_payer_mix.py => 7 passed. Shares 40/20/30/5/5
+  -> 45/25/25/3/2; deltas +5/+5/-5/-2/-3=0; scores 0.655->0.636.
+- Next: NEW-04 percentage-of-Medicare reimbursement benchmarking (label basis).
+================================================================================
+[2026-06-14 02:12 UTC] NEW-04 Percent-of-Medicare
+- pct_medicare.py: reprice commercial allowed to Medicare schedule; blended and
+  per-code pct; basis (medical-services-repriced | facility-inclusive) labeled on
+  title+footnote+meta; basis_mismatch flag never blends; external anchors
+  196/254/171 kept with their own basis label; missing-code exclusion flag.
+- Evidence: pytest tests/golden/test_pct_medicare.py => 7 passed. Blended 194.29%,
+  per-code 200/250/150 hand-verified.
+- Next: NEW-05 cohort retention/churn (KM survival, lifelines).
+================================================================================
+[2026-06-14 02:25 UTC] NEW-05 Cohort retention (KM)
+- retention_survival.py: lifelines KaplanMeierFitter per cohort; survival at
+  configurable ages; cohort-by-age triangle; small_cohort<30 reliability flag;
+  cliff detection via conditional hazard d/n; vintage overlay flag when newer
+  cohort retains worse; aggregate monotone reconciliation. Dates contract via
+  YYYY-MM month diff supported.
+- Evidence: pytest tests/golden/ => 51 passed. KM S(1)=.8/S(3)=.6/S(6)=.5;
+  cliff steepest month=3 (0.25); vintage flag fires.
+- Next: NEW-06 cohort LTV/CAC (empirical cumulative LTV, payback, 3:1).
+================================================================================
+[2026-06-14 02:36 UTC] NEW-06 LTV/CAC
+- ltv_cac.py: empirically realized cumulative LTV per starting customer
+  (cum revenue*gross_margin/n); payback month; LTV:CAC vs 3:1 ref; below_3to1 +
+  never_pays_back flags; cohort revenue reconciles to total within 2%.
+- Evidence: pytest tests/golden/test_ltv_cac.py => 8 passed. LTV/cust=90,
+  payback m3, ratio 1.8 hand-verified.
+- Next: NEW-07 provider density / geographic heatmap (per-FIPS counts).
+================================================================================
+[2026-06-14 02:46 UTC] NEW-07 Provider density
+- provider_density.py: count unique NPI per FIPS or CBSA; optional per-100k
+  density; CMS-style cell suppression (<=11) with flag; choropleth geo layer;
+  reconciliation on raw counts. Renders on two geographies.
+- Evidence: pytest tests/golden/test_provider_density.py => 7 passed. Counts
+  5/3/2 hand-counted; density per 100k verified.
+- Next: NEW-08 market saturation / white-space mapping.
+================================================================================
+[2026-06-14 02:55 UTC] NEW-08 Market saturation
+- market_saturation.py: saturation = serving providers per N beneficiaries;
+  white-space ranking ascending (lowest=most open); >10 located-beneficiary
+  serve rule via provider_claims; FFS-only flag+footnote; rank-permutation recon.
+- Evidence: pytest => 5 passed. Saturation 0.5/0.1/2.0; ranking B,A,C.
+- Next: NEW-09 site-of-care shift analysis.
+================================================================================
+[2026-06-14 03:05 UTC] NEW-09 Site-of-care shift
+- site_of_care.py: use-per-1000 by setting (IP/HOPD/ASC/Office/Home) two-period;
+  migration metrics hopd_to_asc/ip_to_outpatient/facility_to_home + net;
+  migration flags; CY2026 OPPS/ASC note as internal-only series; optional ruptures
+  changepoint overlay (best-effort, wired to forthcoming BOLSTER-03).
+- Evidence: pytest => 7 passed. Migrations 30/10/10 hand-verified.
+- Next: NEW-10 customer concentration (top-N, >40% flag).
+================================================================================
+[2026-06-14 03:14 UTC] NEW-10 Customer concentration
+- concentration.py: top-N shares, Pareto cumulative, Herfindahl; >40% single-
+  account red flag; partner view shows ranks (#1..), names internal-only.
+- Evidence: pytest => 7 passed. max 45% flags, 30% does not; HHI 0.325.
+- Next: NEW-11 Monte Carlo / scenario simulation overlay (rng seed, P5/P50/P95).
+================================================================================
+[2026-06-14 03:26 UTC] NEW-11 Monte Carlo overlay
+- monte_carlo_overlay.py: numpy default_rng(seed), n_sims>=10000; normal/
+  triangular/beta/lognormal drivers as fractional shocks; P5/P50/P95; tornado
+  by sensitivity; deterministic stress scenarios (CMS rate cut). No LLM.
+- Evidence: pytest => 8 passed. P50~950 (theory 950), reproducible to 1e-9,
+  tornado ranks cms first, CMS-cut stress drops median 100.
+- Next: NEW-12 HCC/RAF risk-adjustment (CMS-HCC V28).
+================================================================================
+[2026-06-14 03:40 UTC] NEW-12 HCC/RAF (V28)
+- v28_data.py: deterministic ICD->HCC crosswalk, HCC coefficients, hierarchy,
+  demographic factors (CNA segment), vintage label. Labeled REFERENCE SUBSET of
+  V28; full CMS tables can be dropped in. hcc_raf.py: map->hierarchy->demo+sum;
+  RAF trajectory + compression scenario. Pure lookup, no LLM.
+- Evidence: pytest => 9 passed. RAF=1.025 (demo 0.395 + HCC37 0.300 + HCC226
+  0.330); HCC38 trumped; reconciles exactly.
+- Next: NEW-13 FFS-to-all-population correction.
+================================================================================
+[2026-06-14 03:50 UTC] NEW-13 FFS-to-all-population
+- ffs_correction.py: corrected = ffs/(1-MA); explicit per-county weight; high-MA
+  (>=40%) understatement flag; 55% national anchor; 100% MA uncomputable guard.
+- Evidence: pytest => 8 passed. X MA0.5->2000, Y MA0.2->1250 hand-verified.
+- Next: NEW-14 quality/outcomes benchmarking.
+================================================================================
+[2026-06-14 04:00 UTC] NEW-14 Quality benchmarking
+- quality_benchmark.py: directional percentile rank (100=best) vs peers; vs
+  national; bottom-quartile (<25) operational-risk flag; small-hospital
+  suppression excluded+flagged.
+- Evidence: pytest => 7 passed. readmit 40 / mortality 0 (bottom-q) / hcahps 100.
+- Next: NEW-15 competitive positioning map.
+================================================================================
+[2026-06-14 04:09 UTC] NEW-15 Positioning map
+- positioning_map.py: 2x2 bubble map (x=share, y=attractiveness, bubble=revenue
+  normalized); quadrant classification; median default thresholds.
+- Evidence: pytest => 6 passed. Alpha Leaders/1.0, Beta Niche/0.3, Gamma
+  Challengers/0.6 hand-verified.
+- Next: NEW-16 pricing waterfall + contribution-margin bridge.
+================================================================================
+[2026-06-14 04:18 UTC] NEW-16 Pricing + CM bridge
+- pricing_cm_bridge.py: price waterfall gross->net; revenue->CM bridge; EBITDA
+  proxy + documented QoE handoff (internal-only). Both reconcile to 1e-6.
+- Evidence: pytest => 7 passed. net 80, rev 80000, CM 35000 (43.75%), EBITDA 20000.
+- Next: NEW-17 regulatory-flag module (last NEW feature).
+================================================================================
+[2026-06-14 04:28 UTC] NEW-17 Regulatory flags -- ALL 17 NEW FEATURES DONE
+- regulatory_flags.py: deterministic 5-rule engine (OBBBA Medicaid, MA RAF
+  compression, site-of-care, 340B, state PE oversight); each flag has rationale
+  + source/vintage; flags surface in both audiences, rule trace internal-only.
+- Evidence: pytest tests/golden/ => 137 passed. Heavy-Medicaid home-health CA
+  fires obbba_medicaid_exposure + state_pe_oversight only.
+- MILESTONE: NEW-01..NEW-17 all passes:true, wired to `python -m rcm_mc.cdd`.
+- Next: BOLSTER backlog, starting BOLSTER-01 ridge+conformal hardening.
+================================================================================
+[2026-06-14 04:55 UTC] BOLSTER-01 Ridge+conformal (hardened)
+- cdd/forecast.py: Pipeline(StandardScaler, Ridge), alpha via GridSearchCV over
+  logspace(-2,2) with TimeSeriesSplit; split-conformal at 80/95 calibrated on
+  last 20%; holdout coverage check >=nominal-1%; reproducible. Registered.
+- Verified existing rcm_mc/ml/ridge_predictor.py + conformal.py have no LLM on
+  the inference path (grep clean).
+- Also: pyproject [cdd] extra added (sklearn/scipy/lifelines/ruptures), folded
+  into [all]; [dev] left unchanged so CI 3.14 leg installs cleanly. PR #1859
+  opened (draft); CI runs a fixed subset that does not touch cdd/.
+- Evidence: pytest test_ridge_conformal_bolster.py => 8 passed. Coverage 82.5%/95%.
+- Next: BOLSTER-02 isolation-forest anomaly detection.
+================================================================================
+[2026-06-14 05:08 UTC] BOLSTER-02 Isolation-forest anomaly
+- cdd/anomaly.py: IsolationForest (explicit contamination, n_estimators>=100,
+  pinned random_state) for billing/claims/provider outliers; human-readable
+  reasons via top z-score feature (statistical, not LLM). Registered.
+- Evidence: pytest test_isoforest_anomaly.py => 7 passed. 3 planted anomalies
+  caught, FP 1/30, reasons attached, reproducible.
+- Next: BOLSTER-03 changepoint detection (ruptures).
+================================================================================
+[2026-06-14 05:20 UTC] BOLSTER-03 Changepoint (ruptures)
+- cdd/changepoint.py: ruptures PELT (l2/rbf), BIC-style default penalty
+  (sigma^2 log n, robust sigma); emits index/date/magnitude/direction. Feeds the
+  NEW-09 site-of-care overlay and the monitoring layer. Registered.
+- Evidence: pytest changepoint + site_of_care => 16 passed. Break idx10 mag+40,
+  flat=0, noisy break detected, date mapping works.
+- Next: BOLSTER-04 two-audience UI layer leakage test.
+================================================================================
+[2026-06-14 05:30 UTC] BOLSTER-04 Two-audience layer
+- cdd/audience.py: render_for_audience (partner brand envelope / internal label),
+  find_leaks, core_pack_present, audit_registry. Leakage enforced in code.
+- Evidence: pytest test_two_audience.py => 6 passed. Registry-wide sweep: zero
+  partner leakage; both views render core pack; injected-leak detector works.
+- Next: BOLSTER-05 chart-pack rendering standards.
+================================================================================
+[2026-06-14 05:42 UTC] BOLSTER-05 Chart-pack standards
+- cdd/chartpack.py: validate_standards (mandatory footnote source/vintage/
+  assumptions, IBCS green/red/blue waterfall convention, no em-dash in labels),
+  snapshot_exhibit (stable fingerprint), audit_standards (registry sweep).
+- Caught + fixed a real violation: NEW-16 CM end point was green; totals must be
+  blue. Fixed pricing_cm_bridge.py.
+- Evidence: pytest test_chartpack_standards.py => 6 passed; registry sweep 0
+  violations across 20 features; snapshots stable.
+- Next: BOLSTER-06 DECISIONS.md routing pattern.
+================================================================================
+[2026-06-14 05:54 UTC] BOLSTER-06 DECISIONS routing
+- cdd/decisions.py: parse DECISIONS.md headers, covered_features, append_decision
+  (canonical format), missing_decisions check over NON_DEFAULT_CHOICES (8 items).
+  Appended 8 per-feature decision entries to DECISIONS.md.
+- Evidence: pytest test_decisions_routing.py => 6 passed; missing_decisions == [].
+- Next: BOLSTER-07 data-ingestion reconciliation (last backlog item).
+================================================================================
+[2026-06-14 06:06 UTC] BOLSTER-07 Ingestion reconciliation -- BACKLOG COMPLETE
+- cdd/ingestion.py: reconcile_join (CCN/NPI/FIPS canonical keys), key-uniqueness,
+  join-integrity, <=11 cell suppression, vintage-stamp requirement. Registered.
+- Evidence: pytest test_ingestion_reconciliation.py => 7 passed. HCRIS->POS
+  integrity 1.0, HCRIS->CareCompare 2/3 (CCN3 orphan), 1 cell suppressed.
+
+================================================================================
+[2026-06-14 06:08 UTC] SESSION HANDOFF
+SHIPPED (all passes:true, golden-tested, wired to `python -m rcm_mc.cdd`, committed):
+  NEW-01..NEW-17 (17 new CDD analytics) + BOLSTER-01,02,03,04,05,06,07.
+  Foundation: rcm_mc/cdd/exhibit.py (audience separation + copy lint +
+  reconciliation), registry.py + cli.py surface, audience.py, chartpack.py.
+EVIDENCE: `cd RCM_MC && python -m pytest tests/golden/ -q` => 186 passed.
+  Existing CI subset (54-test local sample) green; full suite collects 16396, no
+  errors. pyproject [cdd] extra added; [dev] untouched so CI 3.14 leg installs.
+HARD CONSTRAINTS: no LLM on any prediction path (grep-verified + statistical
+  estimators only); seeds pinned (default_rng), reproducible to 1e-9; every
+  exhibit carries sourced footnote metadata; em-dash + AI-filler linted out;
+  audience separation enforced in render() and swept registry-wide.
+BLOCKED: none. State sources (APCD/HCUP/Texas THCIC) and commercial vendors
+  (Definitive/IQVIA) remain integration stubs per spec (no credentials); not in
+  this backlog.
+NOTE: NEW-12 ships a labeled CMS-HCC V28 REFERENCE SUBSET coefficient table;
+  drop full CMS tables into rcm_mc/cdd/v28_data.py to extend coverage.
+HIGHEST-VALUE NEXT: load the full CMS-HCC V28 crosswalk + coefficients into
+  v28_data.py (NEW-12) so RAF reproduces published values across all 115 HCCs;
+  then expand BOLSTER-07 with real CMS row-count fixtures per source.
+PR: #1859 (draft). Final commit hash recorded on push.
+================================================================================
+[2026-06-14 05:20 UTC] IMPROVE NEW-12 V28 extension (post-backlog)
+- v28_data.py: added community segments (CNA/CND/CFA) with per-segment
+  demographic tables; disease INTERACTIONS (HF_KIDNEY, HF_COPD) firing only when
+  all required HCCs survive; load_crosswalk_csv + load_coefficients_csv so real
+  CMS tables drop in (codes normalized). hcc_raf.py: segment + interactions
+  params; RAF = demo + HCC sum + interaction sum; meta exposes both.
+- Existing golden RAF 1.025 unchanged (demo member triggers no interaction).
+- Evidence: pytest tests/golden/ => 192 passed. Interaction member RAF 1.630
+  hand-verified; CFA segment demo 0.495; CSV loaders roundtrip.
+================================================================================
+[2026-06-14 05:32 UTC] IMPROVE adversarial robustness sweep (Part 6 refute)
+- tests/golden/test_adversarial_robustness.py: 24 degenerate/adversarial inputs
+  across all 20 features (empty, single-point, all-Medicaid, all-codes-missing,
+  cohort<30, zero revenue, zero beneficiaries, zero-variance MC driver, 100% MA,
+  all-suppressed, zero volume, constant series, identical records, 2-point).
+  Each degrades with a clear flag, a defensible value, or a clean ValueError.
+- Evidence: pytest test_adversarial_robustness.py => 24 passed.
+================================================================================
+[2026-06-14 05:45 UTC] IMPROVE PACK-01 composite diligence pack (post-backlog)
+- cdd/diligence_pack.py: DiligencePack chains TAM/SAM + PVM + payer mix +
+  concentration + regulatory exhibits for one deal; severity-ranked flag roll-up
+  (risk first); pack reconciliation = all sections reconcile; audience-aware
+  render; summary_exhibit registered as PACK-01. Integration layer, no new
+  estimator, no LLM.
+- Evidence: pytest tests/golden/ => 223 passed. Pack surfaces concentration +
+  OBBBA + state-oversight red flags; partner render leaks no assumptions.
