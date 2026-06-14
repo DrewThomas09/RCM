@@ -178,11 +178,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_positioning_map.py",
-      "notes": ""
+      "notes": "2x2 bubble map; coords+bubble sizes hand-verified; quadrant classification Leaders/Challengers/Niche; median default thresholds."
     },
     {
       "id": "NEW-16",
