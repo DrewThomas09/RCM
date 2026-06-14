@@ -8307,6 +8307,16 @@ _CSS_INLINE_FALLBACK = """
   .ck-user-chip:hover { transform:scale(1.04); box-shadow:0 0 0 3px var(--tb-green-soft); }
   .ck-user-chip:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce){ .ck-user-chip:hover { transform:none; } }
+  /* Keyboard focus rings for the remaining focusable topbar links (WCAG
+   * 2.4.7). The nav links, Guide, +New, and the chip already had rings;
+   * the wordmark, mode chip, Q-pill, and — most importantly — the account
+   * dropdown items did not, so keyboard users navigating the open menu saw
+   * no focus indicator at all. Inset offset on dropdown items so the ring
+   * stays inside the menu's edge. */
+  .ck-wordmark:focus-visible,
+  .ck-mode-chip:focus-visible,
+  .ck-topbar-qpill:focus-visible { outline:2px solid var(--tb-green); outline-offset:2px; }
+  .ck-user-dropdown-item:focus-visible { outline:2px solid var(--tb-green); outline-offset:-2px; }
   /* Portfolio-wide diligence-questions pill in the topbar. JS
    * hydrates from rcm_deal_*_questions on DOMContentLoaded; hidden
    * when zero open across the portfolio. Warning-tone numeric +

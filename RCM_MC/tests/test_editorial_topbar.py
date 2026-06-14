@@ -102,6 +102,15 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('href="/my/JD"', html)           # dashboard link
         self.assertNotIn('href="/my/AT"', html)
 
+    def test_focusable_topbar_elements_have_focus_rings(self):
+        # WCAG 2.4.7: every focusable topbar control needs a visible focus
+        # indicator. The account dropdown items in particular were rendering
+        # no ring for keyboard users navigating the open menu.
+        for sel in (".ck-wordmark:focus-visible", ".ck-mode-chip:focus-visible",
+                    ".ck-topbar-qpill:focus-visible",
+                    ".ck-user-dropdown-item:focus-visible"):
+            self.assertIn(sel, self.html, f"missing focus ring: {sel}")
+
     def test_user_chip_controls_its_dropdown(self):
         # The chip is a disclosure trigger; it must point at the menu it
         # toggles (mirrors the Guide button → #ck-guide-panel wiring) and the
