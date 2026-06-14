@@ -163,7 +163,7 @@ def _histogram_svg(
     bins: int = 24,
     width: int = 340,
     height: int = 140,
-    bar_color: str = "#1d4ed8",
+    bar_color: str = "#155752",
     ref_line: Optional[float] = 2.5,
 ) -> str:
     """Histogram of MOIC distribution, inline SVG."""
@@ -645,7 +645,7 @@ def _moic_histogram_viz(moics: List[float]) -> str:
     ``_moic_histogram_panel`` when /backtest adopted ck_paired_block.)
     """
     svg = _histogram_svg(moics, x_lo=0.0, x_hi=6.0, bins=30, width=680, height=160,
-                         bar_color="#1d4ed8", ref_line=2.5)
+                         bar_color="#155752", ref_line=2.5)
     return (
         '<div style="font-family:var(--sc-mono);font-size:9px;'
         'letter-spacing:0.1em;text-transform:uppercase;'

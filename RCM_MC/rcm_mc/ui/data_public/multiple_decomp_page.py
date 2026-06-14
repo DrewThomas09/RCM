@@ -30,7 +30,7 @@ def _waterfall_svg(components: List[Any], total: float, width: int = 640, height
 
     COLORS = {
         "Sector Baseline":     P["accent"],
-        "Size Adjustment":     "#0ea5e9",
+        "Size Adjustment":     "#3d6e8f",
         "Payer Mix Adjustment": "#a98545",
         "Unexplained Premium": "#b8732a" if total > 0 else P["negative"],
     }
