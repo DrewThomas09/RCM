@@ -104,3 +104,11 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   account red flag; partner view shows ranks (#1..), names internal-only.
 - Evidence: pytest => 7 passed. max 45% flags, 30% does not; HHI 0.325.
 - Next: NEW-11 Monte Carlo / scenario simulation overlay (rng seed, P5/P50/P95).
+================================================================================
+[2026-06-14 03:26 UTC] NEW-11 Monte Carlo overlay
+- monte_carlo_overlay.py: numpy default_rng(seed), n_sims>=10000; normal/
+  triangular/beta/lognormal drivers as fractional shocks; P5/P50/P95; tornado
+  by sensitivity; deterministic stress scenarios (CMS rate cut). No LLM.
+- Evidence: pytest => 8 passed. P50~950 (theory 950), reproducible to 1e-9,
+  tornado ranks cms first, CMS-cut stress drops median 100.
+- Next: NEW-12 HCC/RAF risk-adjustment (CMS-HCC V28).

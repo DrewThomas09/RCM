@@ -130,11 +130,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_monte_carlo_overlay.py",
-      "notes": ""
+      "notes": "default_rng(seed); P50~950 theory; reproducible 1e-9; tornado ranks cms first; CMS-cut stress -100; normal/tri/beta/lognormal."
     },
     {
       "id": "NEW-12",
