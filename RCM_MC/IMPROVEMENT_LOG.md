@@ -4779,3 +4779,37 @@ can be used purely as an aggregation tool (paste raw export → group +
 top-N → copy result), not only as a chart renderer.
 **Verify**: +1 test — the hidden TSV carries the aggregated values
 (Aetna 17, never the raw 10). Chart sweep green.
+
+## CY2026 fee-schedule backbone + site-of-service arbitrage (2026-06-14)
+The reimbursement brief's Section 1.0 says "hard-code these constants" —
+until now `rate_updates.yaml` carried only the headline net update
+*percentages*, never the finalized CY2026 *dollar* values, and nothing
+sized the site-of-service facility-fee gap the brief calls the core
+value driver (ASC-migration theses live or die on it).
+- **`rcm_mc/data_public/fee_schedule_2026.py`** — single source of truth:
+  - `FEE_SCHEDULE_BACKBONE_2026` — 8 finalized constants with prior-year
+    + net update + finalizing rule id: PFS CFs $33.4009 non-QP / $33.5675
+    QP (off the 2025 $32.3465), OPPS CF $91.415, ASC CF $56.322 (~62% of
+    OPPS — the structural gap), ESRD $281.71, HH 30-day $2,038.22 (a net
+    *cut*), hospice cap $35,361.44, SNF +3.2%.
+  - `PROCEDURE_RATES_2026` — 12 PE-flagship HCPCS (45378/45380/45385 GI,
+    66984/66982 cataract, 27447/27130 joints, 93458/92928/93306 cardiology,
+    52000/52441 urology) with physician / ASC / HOPD / office allowed
+    amounts where the brief publishes them.
+  - `site_of_service_arbitrage(code, volume, from, to, payer=)` — sizes
+    the per-case + annual facility-fee swing of a setting migration;
+    refuses to size off a missing rate (raises, never silently zero).
+    `pfs_payment` (RVU triplet → $), `gross_up_all_payer` (FFS → all-payer
+    via MA penetration + commercial multiple), `COMMERCIAL_TO_MEDICARE`
+    (Milliman 2025 / RAND 5.1 ratios).
+- **`rcm-mc data fee-schedule`** — read-only CLI (no store, no network):
+  bare = backbone table; `--code/--volume/--from/--to/--payer` = migration
+  sizing; `--json` on both. E.g. 1,000 colonoscopies HOPD→ASC = −$335,000
+  Medicare facility-fee saving.
+**Verify**: +30 tests across test_fee_schedule_2026.py (constants exact,
+QP>non-QP, ASC≈62% of OPPS, HH is a net cut, arbitrage delta + annualize
+exact, commercial gross-up wider than Medicare, missing-rate raises) and
+test_data_fee_schedule_cli.py (table/JSON/migration/clean-error). Targeted
+sweep (-k cli/fee_schedule/site_neutral/reimbursement/data_*): 578 passed.
+All figures are diligence-grade reference dollars — verify against the
+MPFS Look-Up Tool / OPPS-ASC Addendum B before any IC use.
