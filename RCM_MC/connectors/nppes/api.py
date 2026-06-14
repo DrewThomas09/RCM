@@ -316,10 +316,15 @@ def mount_router(router: Any, store: Any) -> bool:
             raise QueryError(f"unknown market metric {metric!r}")
         return fn(store, **params)
 
+    def _profile_handler(**params):
+        from . import profile
+        return profile.profile_universe(store)
+
     routes = [
         ("/v1/lookup/provider/{npi}", _provider_handler),
         ("/v1/lookup/provider/search", _search_handler),
         ("/v1/lookup/market/{metric}", _market_handler),
+        ("/v1/lookup/universe/profile", _profile_handler),
         ("/v1/query/{dataset}", _query_handler),
     ]
     hook = None

@@ -22,7 +22,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import api, cdd, pipeline, report, screen, synth, systems
+from . import api, cdd, pipeline, profile, report, screen, synth, systems
 from .connector import NppesConnector
 from .store import NppesStore
 
@@ -125,6 +125,15 @@ def _cmd_cdd(args) -> int:
     return 0
 
 
+def _cmd_profile(args) -> int:
+    store = NppesStore(args.db)
+    if args.json:
+        print(json.dumps(profile.profile_universe(store), indent=2, default=str))
+    else:
+        print(profile.profile_markdown(store))
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="connectors.nppes.cli")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -165,6 +174,11 @@ def main(argv=None) -> int:
                     help="target-screen thesis (for the 'screen' metric)")
     sp.add_argument("--out", help="write report markdown to this path")
     sp.set_defaults(fn=_cmd_cdd)
+
+    sp = sub.add_parser("profile", help="data-room universe profile")
+    sp.add_argument("--db", default="nppes.db")
+    sp.add_argument("--json", action="store_true")
+    sp.set_defaults(fn=_cmd_profile)
 
     args = p.parse_args(argv)
     return args.fn(args)

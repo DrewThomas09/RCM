@@ -160,3 +160,12 @@ rewards sub-scale independents (scale-fit inverts). Every candidate carries a
 transparent component breakdown + rationale so the ranking is defensible.
 Exposed via `cdd screen --thesis …`, `/v1/lookup/market/screen`, and the
 market brief (section 5b).
+
+## D15 — Data-room universe profile (profile.py)
+DQ proves correctness; a diligence team also needs the coverage picture
+before relying on the universe. `profile.py` reports entity-type mix,
+taxonomy/address/affiliation/endpoint completeness, key-field null rates, and
+the specialty/geography distributions, as a structured dict + markdown.
+`addresses_geocoded` is surfaced explicitly (expected 0% until the Census
+geocoder lands) so the FIPS/lat-long stub is visible, not hidden. Exposed via
+`profile` CLI and `/v1/lookup/universe/profile`.
