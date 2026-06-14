@@ -4779,3 +4779,34 @@ can be used purely as an aggregation tool (paste raw export → group +
 top-N → copy result), not only as a chart renderer.
 **Verify**: +1 test — the hidden TSV carries the aggregated values
 (Aetna 17, never the raw 10). Chart sweep green.
+
+## W3-001 (2026-06-14) — TAM engine: six-archetype taxonomy + triangulation + Bass + Monte Carlo
+The market-sizing engine (`diligence/tam_sam.py`, ~90 vertical templates)
+had the deterministic driver-chain skeleton but none of the Part-A
+discipline that separates elite CDD from "1% fallacy" decks. Added the
+methodology layer, additively (every existing `compute()` key preserved;
+the page reads new keys via `.get()`):
+- **Six canonical archetypes** (`ARCHETYPES`): procedure/claims,
+  epidemiology, capitation/lives, facility/capacity, installed-base
+  (Bass), top-down NHE — each with formula skeleton, complexity ceiling,
+  when-to-use, primary public-data sources.
+- **Every template classified** (`TEMPLATE_ARCHETYPE`, 84/84) — match the
+  METHOD to the vertical, deliberately. `test_tam_sam_archetypes` pins
+  set-equality with `TEMPLATES` so a new template can never ship
+  un-classified, and asserts the structural fallback `infer_archetype()`
+  reproduces every curated tag (two sources of truth that agree).
+- **Triangulation** (`triangulate`): symmetric gap bottom-up vs
+  independent top-down, quality-gate band (green ≤15% / amber ≤20% /
+  red >20% per practitioner consensus) — "the gap is the finding."
+  Top-down NHE anchors wired into 6 flagships (snf/dialysis/home_health/
+  hospice/asc/infusion) with sources; surfaced in `compute()`.
+- **Bass diffusion** (`bass_trajectory`): installed-base S-curve for
+  SOM(t)=SAM×F(t); coefficients on rpm + virtual_primary_care.
+- **Monte Carlo** (`monte_carlo`): lognormal driver-uncertainty
+  propagation → P10/P50/P90 + CV, seeded/reproducible, rate-clamped,
+  median reproduces the point estimate. Statistical, LLM-free.
+- Cleanup: fixed 7 pre-existing invalid `\$` escape-sequence
+  DeprecationWarnings in the same file.
+**Verify**: +19 tests in test_tam_sam.py (158 pass total; 285 with the
+texas_infusion consumer suite). `python -W error::DeprecationWarning`
+imports the module clean.

@@ -20,6 +20,16 @@ Public API:
     fertility_ivf_template() -> TamSamModel
     blank_template() -> TamSamModel
     compute(model) -> dict   (funnel, segments, projection, audit trail)
+    sensitivity(model) -> list  (tornado: which driver moves the answer)
+    monte_carlo(model) -> dict  (P10/P50/P90 bands over driver uncertainty)
+
+Modeling-archetype layer (Part A discipline — match the METHOD to the
+vertical, then triangulate bottom-up against top-down):
+    ARCHETYPES                       — the six canonical sizing methods
+    infer_archetype(model) -> str    — classify a model from its chain
+    archetype_for(template_key) -> str
+    triangulate(bottom_up, top_down) -> dict   (gap %, quality-gate band)
+    bass_trajectory(ceiling, p, q, periods) -> list  (adoption S-curve)
 """
 from __future__ import annotations
 
@@ -81,6 +91,398 @@ class TamSamModel:
     som_note: str = ""
     horizon_years: int = 5
     basis_note: str = ""
+    # --- Modeling-archetype tag (see ARCHETYPES). Empty = let the
+    # engine infer it from the chain structure via infer_archetype().
+    # Elite CDD practice MATCHES the method to the vertical; carrying the
+    # archetype on the model makes that choice explicit and auditable. ---
+    archetype: str = ""
+    # --- Triangulation: an INDEPENDENT top-down cross-check of the
+    # bottom-up chain TAM (almost always an NHE / published-spend
+    # decomposition). The discipline that separates elite work from
+    # "1% fallacy" decks is building bottom-up for credibility and
+    # reconciling against top-down for scope — convergence within
+    # ~15-20% is the quality gate. None = no cross-check carried. ---
+    top_down_tam: Optional[float] = None
+    top_down_source: str = ""
+    # --- Bass diffusion (installed-base / adoption archetype). When a
+    # template models an S-curve rollout rather than a steady share,
+    # p (innovation) and q (imitation) coefficients drive SOM(t). None =
+    # the linear composite-growth projection is used instead. ---
+    bass_p: Optional[float] = None
+    bass_q: Optional[float] = None
+
+
+# ---------------------------------------------------------------------------
+# Modeling-archetype layer
+#
+# Elite TAM/SAM/SOM work is not one method but six archetypes, and the
+# discipline is MATCHING the archetype to the vertical, then triangulating
+# a bottom-up build against a top-down check. This block encodes the six
+# archetypes, classifies every bundled template, and provides the
+# triangulation / Bass / Monte-Carlo machinery the deterministic chain
+# skeleton wraps. The forecasting math here is statistical (Bass diffusion,
+# Monte-Carlo sampling) — never LLM-driven.
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Archetype:
+    """One of the six canonical market-sizing methods. ``complexity`` is
+    the build's characteristic ceiling (the doc's MODERATE/HIGH/VERY HIGH
+    read) — it tells a partner how much engagement data the model needs
+    before it is IC-defensible."""
+    code: str
+    label: str
+    formula: str
+    complexity: str            # MODERATE | HIGH | VERY HIGH
+    when_to_use: str
+    primary_sources: str
+
+
+# Order is the doc's order; keys are the stable archetype codes used
+# everywhere else (model.archetype, TEMPLATE_ARCHETYPE, compute output).
+ARCHETYPES: Dict[str, Archetype] = {
+    "procedure_claims": Archetype(
+        code="procedure_claims",
+        label="Procedure / claims bottom-up",
+        formula="Σ procedures [ eligible_pop × utilization_rate × "
+                "all-payer price × site-of-care mix ]",
+        complexity="HIGH",
+        when_to_use="Provider/surgical/ASC verticals where reimbursement "
+                    "is procedure-coded and site-of-care shift is a value "
+                    "driver — grossed from Medicare FFS to all-payer.",
+        primary_sources="Medicare Physician & Other Practitioners, "
+                        "Physician Fee Schedule, OPPS/ASC fee schedules, "
+                        "price-transparency multipliers",
+    ),
+    "epidemiology": Archetype(
+        code="epidemiology",
+        label="Epidemiology / prevalence funnel",
+        formula="Population × prevalence(or incidence) × dx_rate × "
+                "tx_rate × eligible × adherence × LOT × price_per_course",
+        complexity="HIGH",
+        when_to_use="Therapeutics, diagnostics, and disease-specific "
+                    "services — prevalence-based for chronic/daily "
+                    "therapy, incidence-based patient-flow for "
+                    "oncology/rare-disease (monthly cohorts, LOT).",
+        primary_sources="CDC PLACES/BRFSS/NHANES, SEER, US Cancer "
+                        "Statistics, CDC WONDER, Census denominators",
+    ),
+    "capitation_lives": Archetype(
+        code="capitation_lives",
+        label="Capitation / lives-based",
+        formula="Attributed_lives × PMPM × 12 × RAF_adjustment",
+        complexity="HIGH",
+        when_to_use="Value-based care, Medicare Advantage, risk-bearing "
+                    "primary care, ACOs, MSOs, and per-capita contracted "
+                    "populations (correctional, PACE).",
+        primary_sources="Medicare Monthly Enrollment, MA CPSC, Geographic "
+                        "Variation PUF, CMS-HCC V28, BCDA (ACO)",
+    ),
+    "facility_capacity": Archetype(
+        code="facility_capacity",
+        label="Facility / capacity-utilization",
+        formula="Σ facilities [ capacity_units × utilization_rate × "
+                "payment_per_unit × days/year ]",
+        complexity="MODERATE",
+        when_to_use="SNF, dialysis, hospitals, infusion suites, imaging, "
+                    "ASC, urgent care — anywhere a physical capacity unit "
+                    "(bed/chair/station/room) × utilization × payment is "
+                    "the natural build.",
+        primary_sources="POS / Provider of Services file, HCRIS cost "
+                        "reports, Market Saturation & Utilization, "
+                        "Care Compare",
+    ),
+    "installed_base": Archetype(
+        code="installed_base",
+        label="Installed-base / penetration / adoption",
+        formula="Addressable sites(or seats/providers/devices) × ACV; "
+                "SOM(t) = SAM × Bass adoption curve f(t)=(p+q·F)(1−F)",
+        complexity="MODERATE",
+        when_to_use="HCIT/SaaS, devices, and provider-universe roll-ups "
+                    "(PPM specialty groups) sized as unit-universe × "
+                    "revenue-per-unit × penetration / S-curve adoption.",
+        primary_sources="NPPES, POS file, Care Compare, HCRIS facility "
+                        "counts, comparable-contract ACV",
+    ),
+    "top_down_nhe": Archetype(
+        code="top_down_nhe",
+        label="Top-down NHE / payer-flow decomposition",
+        formula="National_Health_Expenditure × segment_share × "
+                "addressable_fraction",
+        complexity="MODERATE",
+        when_to_use="The SCOPE CHECK, never the primary build — decompose "
+                    "CMS NHE by category and payer and reconcile against "
+                    "the bottom-up build.",
+        primary_sources="CMS National Health Expenditure Accounts, "
+                        "category/payer decomposition",
+    ),
+}
+
+
+# Curated archetype for every bundled template (Part A's discipline:
+# the method is matched to the vertical DELIBERATELY, not inferred by
+# accident). The tag reflects the BUILD ACTUALLY USED in that template's
+# chain — what the math is — so the page can show "this is how this model
+# is built." test_tam_sam_archetypes pins set-equality with TEMPLATES so a
+# new template can never ship un-classified.
+TEMPLATE_ARCHETYPE: Dict[str, str] = {
+    # Epidemiology / prevalence funnels (population × prevalence × tx × price)
+    "fertility_ivf": "epidemiology",
+    "dialysis": "epidemiology",
+    "home_health": "epidemiology",
+    "hospice": "epidemiology",
+    "behavioral_health": "epidemiology",
+    "oncology": "epidemiology",
+    "infusion": "epidemiology",
+    "veterinary": "epidemiology",
+    "vision": "epidemiology",
+    "aba": "epidemiology",
+    "wound_care": "epidemiology",
+    "sleep": "epidemiology",
+    "occ_health": "epidemiology",
+    "pain_management": "epidemiology",
+    "hospital_at_home": "epidemiology",
+    "ltc_pharmacy": "epidemiology",
+    "dme": "epidemiology",
+    "idd_services": "epidemiology",
+    "eating_disorders": "epidemiology",
+    "orthotics_prosthetics": "epidemiology",
+    "home_care": "epidemiology",
+    "crisis_services": "epidemiology",
+    "school_services": "epidemiology",
+    "palliative": "epidemiology",
+    "endocrinology_obesity": "epidemiology",
+    "pediatric_home_health": "epidemiology",
+    "rpm": "epidemiology",
+    "vascular_access": "epidemiology",
+    "blank": "epidemiology",
+    # Procedure / claims (event-flow volume × reimbursement)
+    "irf": "procedure_claims",
+    "ltch": "procedure_claims",
+    "ems": "procedure_claims",
+    "clinical_labs": "procedure_claims",
+    "anesthesia": "procedure_claims",
+    "teleradiology": "procedure_claims",
+    "genetic_testing": "procedure_claims",
+    "nemt": "procedure_claims",
+    "dental_labs": "procedure_claims",
+    "interpretation": "procedure_claims",
+    "transplant_services": "procedure_claims",
+    "surgical_assist": "procedure_claims",
+    "perfusion": "procedure_claims",
+    "sterile_processing": "procedure_claims",
+    "air_medical": "procedure_claims",
+    "roi_services": "procedure_claims",
+    "mobile_diagnostics": "procedure_claims",
+    "lop_medicine": "procedure_claims",
+    # Facility / capacity (facility count × utilization × payment)
+    "snf": "facility_capacity",
+    "asc": "facility_capacity",
+    "urgent_care": "facility_capacity",
+    "imaging": "facility_capacity",
+    "physical_therapy": "facility_capacity",
+    "medspa": "facility_capacity",
+    "plasma": "facility_capacity",
+    "senior_living": "facility_capacity",
+    "compounding_503b": "facility_capacity",
+    "retail_clinics": "facility_capacity",
+    # Installed-base / penetration (provider/site/device universe × per-unit)
+    "physician_group": "installed_base",
+    "dermatology": "installed_base",
+    "nephrology": "installed_base",
+    "ophthalmology": "installed_base",
+    "cardiology": "installed_base",
+    "gastroenterology": "installed_base",
+    "orthopedics": "installed_base",
+    "womens_health": "installed_base",
+    "podiatry": "installed_base",
+    "ent_allergy": "installed_base",
+    "urology": "installed_base",
+    "rheumatology": "installed_base",
+    "neurology": "installed_base",
+    "pulmonology": "installed_base",
+    "hospitalist": "installed_base",
+    "clinical_research": "installed_base",
+    "htm_clinical_engineering": "installed_base",
+    "locum_staffing": "installed_base",
+    # Capitation / lives (covered lives × PMPM/PEPM/per-capita)
+    "pace": "capitation_lives",
+    "correctional_health": "capitation_lives",
+    "virtual_primary_care": "capitation_lives",
+    "care_navigation": "capitation_lives",
+    # Top-down NHE (dollar-pool decomposition)
+    "dental": "top_down_nhe",
+    "hospitals": "top_down_nhe",
+    "specialty_pharmacy": "top_down_nhe",
+    "rcm_services": "top_down_nhe",
+    "hit_consulting": "top_down_nhe",
+}
+
+
+def archetype_for(template_key: Optional[str]) -> Optional[str]:
+    """Curated archetype code for a bundled template key, or None."""
+    if not template_key:
+        return None
+    return TEMPLATE_ARCHETYPE.get(str(template_key).strip().lower())
+
+
+_FACILITY_TOKENS = (
+    "center", "centre", "bed", "clinic", "location", "facilit",
+    "station", "site", "chair", "agency", "agencies", "suite", "room",
+)
+_PROVIDER_TOKENS = (
+    "device", "seat", "provider", "physician", "trial", "fte",
+    "podiatrist", "dpm", "optometrist", "dentist", "audiologist",
+    "obgyn", "surgeon", "nurse practitioner",
+)
+_PROCEDURE_TOKENS = (
+    "procedure", "case", "discharge", "transport", "scan", "test",
+    "trip", "visit", "encounter", "admission", "claim", "study",
+    "interpretation", "session", "tray", "request", "restoration",
+    "transplant", "produced",
+)
+_LIVES_TOKENS = (
+    "/life", "/member", "/participant", "/person", "pmpm", "pepm",
+    "capitation", "per member", "per life", "per participant", "per capita",
+)
+_EPI_TOKENS = (
+    "population", "patient", "people", "adult", "household", "child",
+    "decedent", "death", "birth", "resident", "beneficiar", "individual",
+    "worker", "student", "user", "enrollee",
+)
+
+
+def infer_archetype(model: TamSamModel) -> str:
+    """Classify a model into one of the six archetypes from its chain
+    structure. ``model.archetype`` wins when set; otherwise the heuristic
+    reads the base step + the chain's ops/units. This is the fallback for
+    user-built / custom models so they are never left un-classified — the
+    bundled templates carry curated tags via TEMPLATE_ARCHETYPE.
+
+    Rules (in order):
+      1. explicit override on the model
+      2. per-member/per-life revenue unit            → capitation_lives
+      3. $ spend base with NO price step             → top_down_nhe
+      4. device/seat/provider universe × per-unit $  → installed_base
+      5. facility-count base                         → facility_capacity
+      6. event-flow volume base × price              → procedure_claims
+      7. population/patient base (default)           → epidemiology
+    """
+    if model.archetype:
+        return model.archetype
+    chain = model.chain
+    if not chain:
+        return "top_down_nhe"
+    base = chain[0]
+    # "clinical" must not trip the "clinic" facility token — strip it
+    # before the facility scan (a lab/test base is procedure, not a site).
+    base_text = (base.name + " " + base.unit).lower()
+    fac_text = base_text.replace("clinical", "")
+    base_unit = (base.unit or "").lower()
+    all_units = " ".join((s.unit or "").lower() for s in chain)
+    has_price = any(s.op == "price" for s in chain)
+    has_mult = any(s.op == "mult" for s in chain)
+
+    if any(t in all_units for t in _LIVES_TOKENS):
+        return "capitation_lives"
+    if base.op == "base" and ("$" in (base.unit or "")
+                              or "spend" in base.name.lower()
+                              or "revenue" in base.name.lower()) \
+            and not has_price:
+        return "top_down_nhe"
+    if any(t in base_text for t in _PROVIDER_TOKENS):
+        return "installed_base"
+    if any(t in fac_text for t in _FACILITY_TOKENS):
+        return "facility_capacity"
+    # The base UNIT is the cleanest method signal: an event-flow unit
+    # (tests/encounters/claims/transplants) is a procedure/claims build
+    # even when the name mentions patients; a population/patient unit is
+    # an epidemiology funnel.
+    if base_unit in _PROCEDURE_TOKENS:
+        return "procedure_claims"
+    if any(t in base_unit for t in _EPI_TOKENS):
+        return "epidemiology"
+    if any(t in base_text for t in _PROCEDURE_TOKENS) \
+            and not any(t in base_text for t in _EPI_TOKENS):
+        return "procedure_claims"
+    return "epidemiology"
+
+
+def triangulate(bottom_up_tam: float,
+                top_down_tam: float) -> Dict[str, Any]:
+    """Reconcile a bottom-up build against an independent top-down check.
+
+    The quality gate every elite shop applies: bottom-up gives
+    credibility, top-down gives scope, and convergence within ~15-20% is
+    the bar before a model is defensible. Where they diverge, the GAP
+    ITSELF is the finding (a data-source, segmentation, or
+    willingness-to-pay error), so we surface it rather than hide it.
+
+    Gap is symmetric — |bu − td| / mean(bu, td) — so neither estimate is
+    privileged as "truth". Band thresholds follow the practitioner
+    consensus the doc cites: green ≤15% (Data-Mania), amber ≤20%
+    (spectup), red beyond.
+    """
+    bu = float(bottom_up_tam)
+    td = float(top_down_tam)
+    mean = (bu + td) / 2.0
+    gap_pct = abs(bu - td) / mean * 100.0 if mean else 0.0
+    if gap_pct <= 15.0:
+        band, verdict = "green", (
+            "Converged — bottom-up and top-down agree within the 15% "
+            "elite-practice tolerance; the build is defensible.")
+    elif gap_pct <= 20.0:
+        band, verdict = "amber", (
+            "Marginal — divergence is in the 15-20% watch band; reconcile "
+            "segmentation and payer mix before IC.")
+    else:
+        band, verdict = "red", (
+            "Diverged >20% — the gap is the finding: re-examine the "
+            "data source, MECE segmentation, or willingness-to-pay before "
+            "relying on either number.")
+    return {
+        "bottom_up_tam": bu,
+        "top_down_tam": td,
+        "gap_pct": gap_pct,
+        "band": band,
+        "verdict": verdict,
+        "higher": "bottom_up" if bu >= td else "top_down",
+    }
+
+
+def bass_trajectory(ceiling: float, p: float, q: float,
+                    periods: int) -> List[Dict[str, Any]]:
+    """Bass-diffusion adoption S-curve for the installed-base archetype.
+
+    f(t) = (p + q·F(t−1)) · (1 − F(t−1)) is the fraction of the remaining
+    ceiling that adopts each period; F is the cumulative adopted fraction.
+    ``p`` is the coefficient of innovation (external/marketing-driven),
+    ``q`` the coefficient of imitation (word-of-mouth). Returns the
+    per-period new and cumulative adopted VALUE scaled to ``ceiling`` —
+    so SOM(t) = SAM × F(t) when ceiling is SAM.
+
+    Discrete recurrence (not the closed form) so it composes with the
+    year-by-year projection the page already renders.
+    """
+    out: List[Dict[str, Any]] = []
+    f_prev = 0.0
+    for t in range(periods + 1):
+        if t == 0:
+            new_frac = 0.0
+        else:
+            new_frac = (p + q * f_prev) * (1.0 - f_prev)
+            new_frac = max(0.0, min(new_frac, 1.0 - f_prev))
+        f_cum = f_prev + new_frac
+        out.append({
+            "period": t,
+            "new_frac": new_frac,
+            "cum_frac": f_cum,
+            "new_value": new_frac * ceiling,
+            "cum_value": f_cum * ceiling,
+        })
+        f_prev = f_cum
+    return out
 
 
 def fertility_ivf_template() -> TamSamModel:
@@ -183,6 +585,9 @@ def dialysis_template() -> TamSamModel:
         som_share=0.05,
         som_note="Obtainable share for a regional platform at entry",
         horizon_years=5,
+        top_down_tam=24_000_000_000,
+        top_down_source="In-center dialysis-services revenue ~$24B "
+                        "(USRDS/industry) — scope check vs the patient build",
         basis_note="Template defaults from public USRDS/CMS data — "
                    "replace with engagement data before IC use.",
     )
@@ -236,6 +641,9 @@ def home_health_template() -> TamSamModel:
         som_share=0.04,
         som_note="Obtainable share for a regional platform at entry",
         horizon_years=5,
+        top_down_tam=17_500_000_000,
+        top_down_source="Medicare home health spend ~$16-18B (MedPAC) — "
+                        "scope check vs the beneficiary-utilization build",
         basis_note="Template defaults anchored to MedPAC/CMS public data "
                    "— replace with engagement data before IC use.",
     )
@@ -289,6 +697,9 @@ def hospice_template() -> TamSamModel:
         som_share=0.05,
         som_note="Obtainable share for a regional platform at entry",
         horizon_years=5,
+        top_down_tam=25_000_000_000,
+        top_down_source="Medicare hospice spend ~$25B (MedPAC) — scope "
+                        "check vs the users×days×rate build",
         basis_note="Template defaults anchored to MedPAC/CMS public data "
                    "— replace with engagement data before IC use.",
     )
@@ -348,6 +759,9 @@ def snf_template() -> TamSamModel:
         som_share=0.03,
         som_note="Obtainable share for a regional platform at entry",
         horizon_years=5,
+        top_down_tam=137_000_000_000,
+        top_down_source="SNF industry revenue ~$130-140B (MedPAC/AHCA) — "
+                        "top-down scope check vs the bed×occupancy build",
         basis_note="Template defaults from CMS/NIC/MedPAC public data — "
                    "replace with engagement data before IC use.",
     )
@@ -552,6 +966,9 @@ def asc_template() -> TamSamModel:
         som_share=0.05,
         som_note="Obtainable share at entry",
         horizon_years=5,
+        top_down_tam=43_000_000_000,
+        top_down_source="US ASC market ~$40-45B (industry) — scope check "
+                        "vs the centers×cases×rate build",
         basis_note="Template defaults from CMS/MedPAC/ASCA public data — "
                    "replace with engagement data before IC use.",
     )
@@ -666,6 +1083,7 @@ def oncology_template() -> TamSamModel:
     """Community oncology sizing — ASCO/MedPAC-anchored."""
     return TamSamModel(
         name="Oncology · community practice market",
+        archetype="epidemiology",  # base "cases" = cancer INCIDENCE
         chain=[
             DriverStep("New US cancer cases / yr", 2_000_000, op="base",
                        unit="cases", source="ACS Cancer Facts & Figures"),
@@ -865,6 +1283,9 @@ def infusion_template() -> TamSamModel:
         som_note="Obtainable share at entry — Option Care holds ~20% of "
                  "home infusion; the suite market is fragmented",
         horizon_years=5,
+        top_down_tam=38_000_000_000,
+        top_down_source="US home + suite infusion market ~$35-40B (NHIA) — "
+                        "scope check vs the patients×infusions×rate build",
         basis_note="Template defaults from NHIA/MedPAC public data — "
                    "replace with engagement data before IC use.",
     )
@@ -955,8 +1376,8 @@ def physical_therapy_template() -> TamSamModel:
             GrowthDriver("Surgical volume growth", 3.0,
                          "total joints + ASC migration feed referrals"),
             GrowthDriver("Direct access / conservative care", 2.0,
-                         "payers prefer \$1,200 PT episodes over "
-                         "\$30K surgeries"),
+                         "payers prefer $1,200 PT episodes over "
+                         "$30K surgeries"),
             GrowthDriver("Demographics", 1.5,
                          "active-aging demand floor"),
             GrowthDriver("Medicare fee cuts", -2.0,
@@ -3124,6 +3545,7 @@ def senior_living_template() -> TamSamModel:
     NIC-anchored."""
     return TamSamModel(
         name="Senior living · AL/IL/memory care market",
+        archetype="facility_capacity",  # "units" = housing capacity
         chain=[
             DriverStep("US senior living units (AL+IL+MC)",
                        1_600_000, op="base", unit="units",
@@ -3573,6 +3995,7 @@ def interpretation_template() -> TamSamModel:
     compliance niche. CSA-anchored."""
     return TamSamModel(
         name="Interpretation · medical language services market",
+        archetype="procedure_claims",  # encounter-volume × price build
         chain=[
             DriverStep("US LEP patient encounters needing "
                        "interpretation / yr", 380_000_000, op="base",
@@ -4004,7 +4427,7 @@ def retail_clinics_template() -> TamSamModel:
                          "Walmart/Walgreens proved it at scale; "
                          "priced as the defining lesson"),
             GrowthDriver("NP scope + staffing cost", -1.0,
-                         "provider cost vs \$135 visits"),
+                         "provider cost vs $135 visits"),
         ],
         sam_share=0.30,
         sam_note="The services layer + operator contracts (the "
@@ -4278,7 +4701,7 @@ def sterile_processing_template() -> TamSamModel:
                          "loops — a missed tray cancels a case, "
                          "shown as one"),
             GrowthDriver("Capital intensity", -1.0,
-                         "reprocessing centers are \$10M+ builds"),
+                         "reprocessing centers are $10M+ builds"),
         ],
         sam_share=0.60,
         sam_note="Metro hospital clusters + ASC density where hub "
@@ -4305,7 +4728,7 @@ def air_medical_template() -> TamSamModel:
             DriverStep("Avg revenue per transport (post-NSA)",
                        11_000, op="price", unit="$/transport",
                        source="IDR-settled + in-network blended rates "
-                              "— the NSA reset the old \$40K+ "
+                              "— the NSA reset the old $40K+ "
                               "balance-billed charges"),
         ],
         segments=[
@@ -4385,7 +4808,7 @@ def pediatric_home_health_template() -> TamSamModel:
                          "neonatal survival creates the population — "
                          "the demand floor compounds"),
             GrowthDriver("Institutional-diversion economics", 2.5,
-                         "PDN at \$90K/yr vs \$500K+ inpatient — "
+                         "PDN at $90K/yr vs $500K+ inpatient — "
                          "states fund the cheaper setting"),
             GrowthDriver("Rate-rebasing wave", 2.0,
                          "post-2021 state PDN rate increases to fix "
@@ -4515,6 +4938,8 @@ def virtual_primary_care_template() -> TamSamModel:
         som_note="Post-boom consolidation: engagement, not "
                  "eligibility, is the asset",
         horizon_years=5,
+        bass_p=0.02,
+        bass_q=0.45,
         basis_note="Template defaults from employer-survey public "
                    "data — replace with engagement data before IC "
                    "use. NOTE: the engagement-gap driver encodes the "
@@ -4574,6 +4999,8 @@ def rpm_template() -> TamSamModel:
         som_share=0.04,
         som_note="A fragmented early market — no platform owns it",
         horizon_years=5,
+        bass_p=0.03,
+        bass_q=0.40,
         basis_note="Template defaults from CMS claims + prevalence "
                    "public data — replace with engagement data before "
                    "IC use. A CODE-CREATED market: the CPT family is "
@@ -4809,6 +5236,34 @@ def compute(model: TamSamModel) -> Dict[str, Any]:
             "som": som * factor,
         })
 
+    # --- Archetype: the build method, surfaced so the page can show
+    # "this is how this model is sized" alongside the chain. ---
+    arch_code = infer_archetype(model)
+    arch = ARCHETYPES.get(arch_code)
+    archetype_block = {
+        "code": arch_code,
+        "label": arch.label if arch else arch_code,
+        "formula": arch.formula if arch else "",
+        "complexity": arch.complexity if arch else "",
+        "when_to_use": arch.when_to_use if arch else "",
+        "primary_sources": arch.primary_sources if arch else "",
+    }
+
+    # --- Triangulation: reconcile the bottom-up chain TAM against the
+    # independent top-down check when the model carries one. The gap is
+    # the finding — surfaced, never hidden. ---
+    triangulation = None
+    if model.top_down_tam is not None and model.top_down_tam > 0:
+        triangulation = triangulate(tam, model.top_down_tam)
+        triangulation["top_down_source"] = model.top_down_source
+
+    # --- Bass adoption: the installed-base S-curve for SOM(t), scaled to
+    # SAM, when the model carries innovation/imitation coefficients. ---
+    bass = None
+    if model.bass_p is not None and model.bass_q is not None:
+        bass = bass_trajectory(sam, model.bass_p, model.bass_q,
+                               model.horizon_years)
+
     return {
         "name": model.name,
         "steps": steps,
@@ -4824,6 +5279,9 @@ def compute(model: TamSamModel) -> Dict[str, Any]:
         "projection": projection,
         "horizon_years": model.horizon_years,
         "basis_note": model.basis_note,
+        "archetype": archetype_block,
+        "triangulation": triangulation,
+        "bass": bass,
     }
 
 
@@ -4861,6 +5319,75 @@ def sensitivity(model: TamSamModel, *, swing: float = 0.20) -> List[Dict[str, An
         })
     out.sort(key=lambda r: -r["impact"])
     return out
+
+
+def monte_carlo(model: TamSamModel, *, n: int = 10_000,
+                rel_sigma: float = 0.15,
+                seed: int = 1_729) -> Dict[str, Any]:
+    """Propagate driver-assumption uncertainty into a TAM distribution.
+
+    Each chain driver is treated as lognormally uncertain (multiplicative
+    noise — a driver is never negative, and a ±15% read is symmetric in
+    log-space), then N draws are run through the same chain. Returns the
+    P10/P50/P90 band plus the mean and the coefficient of variation — the
+    interval the deterministic point estimate sits inside.
+
+    Statistical, reproducible (stdlib ``random`` seeded), and LLM-free —
+    this is the uncertainty layer the doc prescribes (Monte-Carlo over
+    assumption distributions), wrapping the deterministic skeleton. Rates
+    are clamped to [0, 1] on every draw so a sampled penetration can't
+    exceed 100%.
+
+    ``rel_sigma`` is the relative standard deviation applied to every
+    driver; callers wanting per-driver sigmas can pre-split the chain.
+    """
+    import math
+    import random as _random
+
+    if n <= 0:
+        raise ValueError("n must be positive")
+    base = compute(model)
+    base_tam = base["tam"]
+    rng = _random.Random(seed)
+    # Lognormal with median = value: multiply by exp(sigma·Z) where the
+    # underlying normal has mean 0, so the MEDIAN draw reproduces the
+    # point estimate (mean is pulled slightly high by lognormal skew).
+    sigma = max(0.0, float(rel_sigma))
+    draws: List[float] = []
+    for _ in range(n):
+        running = 0.0
+        for i, st in enumerate(model.chain):
+            shock = math.exp(rng.gauss(0.0, sigma)) if sigma else 1.0
+            v = st.value * shock
+            if st.op == "rate":
+                v = max(0.0, min(1.0, v))
+            if i == 0 or st.op == "base":
+                running = v
+            else:
+                running = running * v
+        draws.append(running)
+    draws.sort()
+
+    def _pct(p: float) -> float:
+        if not draws:
+            return 0.0
+        idx = min(len(draws) - 1, max(0, int(round(p * (len(draws) - 1)))))
+        return draws[idx]
+
+    mean = sum(draws) / len(draws) if draws else 0.0
+    var = (sum((d - mean) ** 2 for d in draws) / len(draws)
+           if draws else 0.0)
+    std = var ** 0.5
+    return {
+        "n": n,
+        "rel_sigma": sigma,
+        "point_tam": base_tam,
+        "p10": _pct(0.10),
+        "p50": _pct(0.50),
+        "p90": _pct(0.90),
+        "mean": mean,
+        "cv": (std / mean) if mean else 0.0,
+    }
 
 
 # Deal/corpus sector tokens → the template that sizes that market.
