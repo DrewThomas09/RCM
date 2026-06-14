@@ -4810,3 +4810,23 @@ the page reads new keys via `.get()`):
 **Verify**: +19 tests in test_tam_sam.py (158 pass total; 285 with the
 texas_infusion consumer suite). `python -W error::DeprecationWarning`
 imports the module clean.
+
+## W3-002 (2026-06-14) — TAM page: Method & uncertainty panel
+Surfaced the W3-001 engine layer on `/diligence/tam-sam` with a new
+"Method & uncertainty" panel (anchor `#ts-method`, jump-nav chip) placed
+between the cross-industry compare and the driver chain:
+- **Archetype** header — label + color-coded complexity chip + formula
+  skeleton + when-to-use + primary public-data sources.
+- **Triangulation** quality gate — bottom-up vs top-down, gap %, and a
+  band-colored verdict (green/amber/red), rendered only when the template
+  carries a top-down anchor.
+- **Monte-Carlo band** — P10/P50/P90 + CV (n=4,000, ±15%/driver, seeded).
+- **Bass adoption** table — cumulative SOM(t) share of SAM, rendered only
+  when the model carries p/q coefficients.
+All strings are server-generated from the registry (html.escape applied
+defensively); reads new compute() keys via .get() so older callers are
+unaffected.
+**Verify**: +4 page tests (archetype+MC render for ALL 84 templates;
+triangulation only-with-anchor; Bass only-for-adoption; nav chip). 162
+pass in test_tam_sam.py; texas_infusion (127) + comparable_outcomes +
+market_analysis_lead + section_catalog (44) green.

@@ -17,7 +17,8 @@ import urllib.parse
 from typing import Any, Dict, List, Optional
 
 from ..diligence.tam_sam import (
-    TEMPLATES, TamSamModel, compute, fertility_ivf_template,
+    ARCHETYPES, TEMPLATES, TamSamModel, compute, fertility_ivf_template,
+    monte_carlo,
 )
 from ._chartis_kit import (
     chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
@@ -588,10 +589,121 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
     )
 
 
+_BAND_COLOR = {"green": "#0a8a5f", "amber": "#b8732a", "red": "#b5321e"}
+_COMPLEXITY_COLOR = {"MODERATE": "#155752", "HIGH": "#b8732a",
+                     "VERY HIGH": "#b5321e"}
+
+
+def _method_panel(out: Dict[str, Any], model: TamSamModel) -> str:
+    """Method-&-uncertainty panel: the sizing ARCHETYPE (the discipline of
+    matching the method to the vertical), the bottom-up vs top-down
+    TRIANGULATION quality gate, the Monte-Carlo uncertainty band, and the
+    Bass adoption curve when the model carries one. This is the analytic
+    altitude the doc demands — the chain shows the build, this panel shows
+    whether to trust it."""
+    arch = out.get("archetype") or {}
+    code = arch.get("code", "")
+    comp = arch.get("complexity", "")
+    comp_c = _COMPLEXITY_COLOR.get(comp, "#465366")
+    # Archetype header — label + complexity chip + formula + sources.
+    arch_html = (
+        '<div style="margin:0 0 10px;">'
+        f'<span style="font-weight:600;color:var(--sc-navy,#0b2341);">'
+        f'{html.escape(arch.get("label", code))}</span> '
+        f'<span style="font-family:var(--sc-mono);font-size:9.5px;'
+        f'letter-spacing:.1em;text-transform:uppercase;color:#fff;'
+        f'background:{comp_c};padding:2px 7px;border-radius:2px;'
+        f'margin-left:6px;">{html.escape(comp)} complexity</span>'
+        f'<div class="ts2-src" style="margin-top:6px;">'
+        f'<b>Formula</b> · {html.escape(arch.get("formula", ""))}</div>'
+        f'<div class="ts2-src" style="margin-top:3px;">'
+        f'<b>When to use</b> · {html.escape(arch.get("when_to_use", ""))}'
+        f'</div>'
+        f'<div class="ts2-src" style="margin-top:3px;">'
+        f'<b>Primary sources</b> · '
+        f'{html.escape(arch.get("primary_sources", ""))}</div>'
+        '</div>'
+    )
+
+    # Triangulation — the quality gate. Only when the model carries an
+    # independent top-down check.
+    tri = out.get("triangulation")
+    tri_html = ""
+    if tri:
+        bc = _BAND_COLOR.get(tri["band"], "#465366")
+        tri_html = (
+            '<div style="margin:14px 0 0;padding:11px 13px;border-left:'
+            f'4px solid {bc};background:var(--sc-bone,#ece5d6);">'
+            '<div style="font-family:var(--sc-mono);font-size:9.5px;'
+            'letter-spacing:.12em;text-transform:uppercase;color:#465366;'
+            'margin-bottom:5px;">Triangulation · bottom-up vs top-down</div>'
+            '<div style="display:flex;gap:18px;flex-wrap:wrap;'
+            'align-items:baseline;">'
+            f'<span>Bottom-up <b>{_fmt_money(tri["bottom_up_tam"])}</b></span>'
+            f'<span>Top-down <b>{_fmt_money(tri["top_down_tam"])}</b></span>'
+            f'<span style="color:{bc};font-weight:600;">Gap '
+            f'{tri["gap_pct"]:.1f}% · {tri["band"].upper()}</span>'
+            '</div>'
+            f'<div class="ts2-src" style="margin-top:6px;">'
+            f'{html.escape(tri["verdict"])}</div>'
+            f'<div class="ts2-src" style="margin-top:3px;">Top-down basis · '
+            f'{html.escape(tri.get("top_down_source", ""))}</div>'
+            '</div>'
+        )
+
+    # Monte-Carlo uncertainty band — P10/P50/P90 around the point estimate.
+    mc = monte_carlo(model, n=4000, rel_sigma=0.15, seed=1729)
+    mc_html = (
+        '<div style="margin:14px 0 0;">'
+        '<div style="font-family:var(--sc-mono);font-size:9.5px;'
+        'letter-spacing:.12em;text-transform:uppercase;color:#465366;'
+        'margin-bottom:5px;">Monte-Carlo TAM band · ±15% per-driver, '
+        'n=4,000</div>'
+        '<div style="display:flex;gap:18px;flex-wrap:wrap;">'
+        f'<span>P10 <b>{_fmt_money(mc["p10"])}</b></span>'
+        f'<span>P50 <b>{_fmt_money(mc["p50"])}</b></span>'
+        f'<span>P90 <b>{_fmt_money(mc["p90"])}</b></span>'
+        f'<span class="ts2-src">CV {mc["cv"]*100:.0f}%</span>'
+        '</div>'
+        '<p class="ts2-src" style="margin:5px 0 0;">Lognormal driver '
+        'uncertainty propagated through the chain (seeded, reproducible, '
+        'no LLM). The P50 reproduces the deterministic point estimate.</p>'
+        '</div>'
+    )
+
+    # Bass adoption S-curve (installed-base archetype) when present.
+    bass = out.get("bass")
+    bass_html = ""
+    if bass:
+        cells = "".join(
+            f'<td class="r">{b["cum_frac"]*100:.0f}%</td>' for b in bass)
+        hdr = "".join(f'<th class="r">Y{b["period"]}</th>' for b in bass)
+        bass_html = (
+            '<div style="margin:14px 0 0;">'
+            '<div style="font-family:var(--sc-mono);font-size:9.5px;'
+            'letter-spacing:.12em;text-transform:uppercase;color:#465366;'
+            'margin-bottom:5px;">Bass adoption · SOM(t) = SAM × F(t)</div>'
+            '<table class="ts2-chain"><thead><tr><th>Cumulative adopted</th>'
+            f'{hdr}</tr></thead><tbody><tr><td class="ts2-src">share of '
+            f'SAM</td>{cells}</tr></tbody></table>'
+            '<p class="ts2-src" style="margin:5px 0 0;">Innovation p='
+            f'{model.bass_p:g}, imitation q={model.bass_q:g} — the S-curve '
+            'that governs realistic near-term capture for an adoption play.'
+            '</p></div>'
+        )
+
+    return ck_panel(
+        arch_html + tri_html + mc_html + bass_html,
+        title="Method &amp; uncertainty · how it's built, whether to "
+              "trust it",
+    )
+
+
 def _jump_nav(has_dive: bool) -> str:
     """One-line jump nav for the long build page — same pattern as the
     X-Ray's section nav. Anchors are attached to the panels below."""
     chips = [("#ts-compare", "Cross-industry"),
+             ("#ts-method", "Method"),
              ("#ts-chain", "Chain"),
              ("#ts-segments", "Segments"),
              ("#ts-projection", "Projection"),
@@ -1004,6 +1116,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + '<div id="ts-compare"></div>'
         + _industry_comparison_panel(
             tmpl_key, sort=(qs.get("sort") or ["tam"])[0])
+        + '<div id="ts-method"></div>' + _method_panel(out, model)
         + '<div id="ts-chain"></div>' + chain_panel
         + '<div id="ts-segments"></div>' + seg_panel
         + '<div id="ts-projection"></div>' + proj_panel

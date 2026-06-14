@@ -1891,3 +1891,38 @@ class MonteCarloTests(unittest.TestCase):
         from rcm_mc.diligence.tam_sam import monte_carlo, snf_template
         with self.assertRaises(ValueError):
             monte_carlo(snf_template(), n=0)
+
+
+class MethodPanelPageTests(unittest.TestCase):
+    """The /diligence/tam-sam page surfaces the archetype, triangulation
+    quality gate, Monte-Carlo band, and Bass curve — the analytic altitude
+    that says whether to trust the chain, not just how it was built."""
+
+    def test_archetype_and_mc_render_for_every_template(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        for key in TEMPLATES:
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn('id="ts-method"', h, key)
+            self.assertIn("Monte-Carlo TAM band", h, key)
+            self.assertIn("complexity", h.lower(), key)
+
+    def test_triangulation_renders_only_with_anchor(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        # snf carries a top-down NHE anchor; dermatology does not.
+        self.assertIn("Triangulation · bottom-up",
+                      render_tam_sam_page({"template": ["snf"]}))
+        self.assertNotIn("Triangulation · bottom-up",
+                         render_tam_sam_page({"template": ["dermatology"]}))
+
+    def test_bass_curve_renders_for_adoption_template(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        self.assertIn("Bass adoption",
+                      render_tam_sam_page({"template": ["rpm"]}))
+        self.assertNotIn("Bass adoption",
+                         render_tam_sam_page({"template": ["snf"]}))
+
+    def test_method_chip_in_jump_nav(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn('href="#ts-method"', h)
