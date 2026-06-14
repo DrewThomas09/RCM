@@ -126,6 +126,9 @@ def _ndc_tool(store: Any, ndc: str) -> str:
             f'row. (Resolve live or populate the seed to extend coverage.)',
             tone="muted")
     rxcui = match.get("current_rxcui", match.get("rxcui", ""))
+    seg = (f'<span style="color:#155752;">{_html.escape(ndc_11[:5])}</span>-'
+           f'<span style="color:#b8732a;">{_html.escape(ndc_11[5:9])}</span>-'
+           f'<span style="color:#0b2341;">{_html.escape(ndc_11[9:])}</span>')
     return box + (
         '<div style="border:1px solid #b9cde6;background:#eef4fb;border-radius:4px;'
         'padding:12px 16px;max-width:560px;">'
@@ -134,6 +137,11 @@ def _ndc_tool(store: Any, ndc: str) -> str:
         f'<div style="font-size:13px;">Canonical NDC-11: '
         f'<code style="{_MONO}">{_html.escape(ndc_11)}</code> '
         f'(raw <code style="{_MONO}">{_html.escape(match.get("ndc_raw",""))}</code>)</div>'
+        f'<div style="{_MONO}font-size:11px;color:#6a7480;margin-top:3px;">'
+        f'5-4-2 segments: {seg} '
+        f'<span style="color:#155752;">labeler</span>·'
+        f'<span style="color:#b8732a;">product</span>·'
+        f'<span style="color:#0b2341;">package</span></div>'
         f'<div style="font-size:13px;margin-top:4px;">RxCUI '
         f'<a href="/rxnorm?rxcui={_html.escape(rxcui)}" style="color:#155752;">'
         f'{_html.escape(rxcui)}</a> &middot; '
@@ -298,6 +306,84 @@ def _audit_table(store: Any) -> str:
          ("Resolves to (active)",)], rows, max_width=820)
 
 
+def _dataset_browser(store: Any, dataset: str, sort: str, desc: bool,
+                     page: int) -> str:
+    """Paginated, sortable browser over any registered dataset.
+
+    Exercises the uniform query contract (filter/select/sort/paginate) directly:
+    the caller never sees RxNav's native shape, only the flat envelope.
+    """
+    ids = registry.dataset_ids()
+    if dataset not in ids:
+        dataset = ids[0]
+    per_page = 15
+    offset = max(0, page) * per_page
+    try:
+        res = rxquery.query_dataset(store, dataset, sort=sort or None,
+                                    descending=desc, limit=per_page, offset=offset)
+    except (ValueError, KeyError):
+        res = rxquery.query_dataset(store, dataset, limit=per_page, offset=offset)
+        sort = ""
+    cols = list(res["rows"][0].keys()) if res["rows"] else []
+
+    # dataset selector
+    sel = ('<form method="get" action="/rxnorm" style="display:inline;">'
+           '<input type="hidden" name="ds_page" value="0"/>'
+           '<select name="dataset" onchange="this.form.submit()" '
+           'style="padding:5px 8px;border:1px solid #c9c1ac;border-radius:3px;'
+           'font-size:12px;">'
+           + "".join(
+               f'<option value="{d}"{" selected" if d == dataset else ""}>{d}</option>'
+               for d in ids)
+           + '</select></form>')
+
+    def _sort_link(col: str) -> str:
+        nd = not desc if (sort == col) else False
+        arrow = (" ▲" if (sort == col and not desc) else
+                 " ▼" if (sort == col and desc) else "")
+        return (f'<a href="/rxnorm?dataset={dataset}&sort={col}&'
+                f'desc={"1" if nd else "0"}&ds_page=0" '
+                f'style="color:#fff;text-decoration:none;">{_html.escape(col)}{arrow}</a>')
+
+    head = "".join(
+        f'<th style="padding:6px 10px;text-align:left;font-size:10px;'
+        f'text-transform:uppercase;">{_sort_link(c)}</th>' for c in cols)
+    body_rows = "".join(
+        '<tr>' + "".join(
+            _td(_html.escape(str(r.get(c, ""))), mono=(c in (
+                "rxcui", "ndc_11", "class_id", "related_rxcui")))
+            for c in cols) + '</tr>'
+        for r in res["rows"])
+    table = (
+        f'<div style="border:1px solid var(--sc-rule,#c9c1ac);border-radius:3px;'
+        f'overflow:hidden;margin:6px 0 8px;max-width:880px;">'
+        '<table style="width:100%;border-collapse:collapse;">'
+        '<thead><tr style="background:var(--sc-navy,#0b2341);color:#fff;">'
+        f'{head}</tr></thead><tbody>{body_rows}</tbody></table></div>'
+    ) if cols else _callout("No rows for that dataset.")
+
+    total = res["total"]
+    shown_lo = offset + 1 if res["count"] else 0
+    shown_hi = offset + res["count"]
+    nav = []
+    if page > 0:
+        nav.append(f'<a href="/rxnorm?dataset={dataset}&sort={sort}&'
+                   f'desc={"1" if desc else "0"}&ds_page={page-1}" '
+                   f'style="color:#155752;">← prev</a>')
+    if shown_hi < total:
+        nav.append(f'<a href="/rxnorm?dataset={dataset}&sort={sort}&'
+                   f'desc={"1" if desc else "0"}&ds_page={page+1}" '
+                   f'style="color:#155752;">next →</a>')
+    pager = (f'<div style="font-size:11px;color:#6a7480;margin:2px 0 18px;">'
+             f'{shown_lo}–{shown_hi} of {total} &nbsp; '
+             + " &nbsp;·&nbsp; ".join(nav) + '</div>')
+    return (f'<div style="margin:4px 0 8px;">Dataset: {sel} '
+            f'<span style="font-size:11px;color:#8b94a0;">'
+            f'→ <code style="{_MONO}">{_html.escape(res["target_table"])}</code> '
+            f'(GET /api/rxnorm · /v1/query/{_html.escape(dataset)})</span></div>'
+            + table + pager)
+
+
 def _registry_table() -> str:
     rows = "".join(
         '<tr>' + _td(_html.escape(r["dataset_id"]), mono=True)
@@ -444,6 +530,10 @@ def render_rxnorm_page(store: Any, params: Optional[Dict[str, str]] = None) -> s
     q = (params.get("q") or "").strip()
     class_type = (params.get("class_type") or "").strip()
     class_id = (params.get("class_id") or "").strip()
+    dataset = (params.get("dataset") or "").strip()
+    ds_sort = (params.get("sort") or "").strip()
+    ds_desc = params.get("desc") == "1"
+    ds_page = _clamp_int(params.get("ds_page"), 0, 100000, 0)
 
     summary = analytics.coverage_summary(store)
     counts = summary["counts"]
@@ -507,6 +597,10 @@ def render_rxnorm_page(store: Any, params: Optional[Dict[str, str]] = None) -> s
         + _section("Retired / remapped audit",
                    "stale codes and the active concept they resolve to")
         + _audit_table(store)
+        + _section("Dataset browser",
+                   "uniform filter / sort / paginate over any registered dataset")
+        + _dataset_browser(store, dataset or "rxnorm_concepts", ds_sort,
+                           ds_desc, ds_page)
         + _section("Datasets (registry)",
                    "declarative rows — adding a dataset is a row, not code")
         + _registry_table()

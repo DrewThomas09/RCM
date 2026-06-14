@@ -79,6 +79,24 @@ class RenderTests(unittest.TestCase):
         html = render_rxnorm_page(store, {"q": "<script>x</script>"})
         self.assertNotIn("<script>x</script>", html)
 
+    def test_ndc_decomposition_shown(self):
+        store = _seed_store(self.db)
+        html = render_rxnorm_page(store, {"ndc": "0409-1896-20"})
+        self.assertIn("5-4-2 segments", html)
+        self.assertIn("labeler", html)
+
+    def test_dataset_browser_sort_and_paginate(self):
+        store = _seed_store(self.db)
+        html = render_rxnorm_page(store, {
+            "dataset": "rxnorm_ndc_crosswalk", "sort": "ndc_11",
+            "desc": "1", "ds_page": "0"})
+        self.assertIn("Dataset browser", html)
+        self.assertIn("/v1/query/rxnorm_ndc_crosswalk", html)
+        # second page renders without error even if beyond range
+        html2 = render_rxnorm_page(store, {"dataset": "rxnorm_concepts",
+                                           "ds_page": "1"})
+        self.assertIn("<html", html2.lower())
+
     def test_build_json_shape(self):
         store = _seed_store(self.db)
         out = build_rxnorm(store, {"ndc": "0409-1896-20", "rxcui": "83367"})
