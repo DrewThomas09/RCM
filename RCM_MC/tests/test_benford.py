@@ -9,6 +9,7 @@ import numpy as np
 from rcm_mc.diligence.integrity import (
     BenfordVerdict,
     benford_first_digit,
+    benford_first_two_digits,
 )
 
 
@@ -90,6 +91,37 @@ class ChiSquareClosedFormTests(unittest.TestCase):
         # sf(0) = 1, decreasing in x.
         self.assertEqual(_chi2_sf_even_df(0.0, 8), 1.0)
         self.assertGreater(_chi2_sf_even_df(5, 8), _chi2_sf_even_df(20, 8))
+
+
+class FirstTwoDigitsTests(unittest.TestCase):
+
+    def test_benford_data_conforms(self):
+        res = benford_first_two_digits(_benford_sample(8000, seed=11))
+        self.assertIn(res.verdict,
+                      (BenfordVerdict.CONFORMING, BenfordVerdict.MARGINAL))
+        self.assertEqual(len(res.observed_proportions), 90)
+
+    def test_threshold_hugging_flagged(self):
+        # Pile values just under a 50k review threshold (first two digits
+        # 49) on top of an otherwise-Benford book → nonconforming.
+        base = _benford_sample(4000, seed=12)
+        spike = (49000 + np.random.default_rng(0).uniform(0, 999, 4000)).tolist()
+        res = benford_first_two_digits(base + spike)
+        self.assertEqual(res.verdict, BenfordVerdict.NONCONFORMING)
+
+    def test_small_sample_insufficient(self):
+        res = benford_first_two_digits(_benford_sample(100, seed=13), min_n=300)
+        self.assertEqual(res.verdict, BenfordVerdict.INSUFFICIENT)
+
+    def test_chi_square_88_df_closed_form(self):
+        from rcm_mc.diligence.integrity.benford import _chi2_sf_even_df
+        # df=88 critical value at 0.05 ≈ 110.9 → sf ≈ 0.05.
+        self.assertAlmostEqual(_chi2_sf_even_df(110.9, 88), 0.05, delta=0.01)
+
+    def test_dict_and_headline(self):
+        res = benford_first_two_digits(_benford_sample(1000, seed=14))
+        self.assertTrue(res.headline)
+        self.assertEqual(res.to_dict()["citation_key"], "IN-BEN")
 
 
 if __name__ == "__main__":

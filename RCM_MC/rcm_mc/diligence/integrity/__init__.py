@@ -30,6 +30,7 @@ from .benford import (
     BenfordResult,
     BenfordVerdict,
     benford_first_digit,
+    benford_first_two_digits,
 )
 from .cohort_censoring import CensoringCheck, check_cohort_censoring
 from .distribution_shift import (
@@ -87,6 +88,7 @@ __all__ = [
     "assert_provider_disjoint",
     "audit_features",
     "benford_first_digit",
+    "benford_first_two_digits",
     "build_split_manifest",
     "check_cohort_censoring",
     "check_distribution_shift",
