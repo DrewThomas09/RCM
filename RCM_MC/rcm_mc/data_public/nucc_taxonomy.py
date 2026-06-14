@@ -83,6 +83,30 @@ _BY_CODE: Dict[str, Taxonomy] = {t.code: t for t in _TAXONOMIES}
 # PE verticals the crosswalk covers, in first-seen order.
 VERTICALS: List[str] = list(dict.fromkeys(t.vertical for t in _TAXONOMIES))
 
+# PE vertical -> the closest Census NAICS (2017) industry code, so NPPES
+# provider supply can be reconciled against CBP establishment counts. These
+# are deliberately conservative: where no NAICS cleanly maps to the vertical
+# (e.g. hospice has no dedicated NAICS) it is omitted rather than forced into
+# an approximate bucket — an honest gap beats a misleading join.
+VERTICAL_NAICS: Dict[str, str] = {
+    "infusion": "621498",            # All other outpatient care centers
+    "home_health": "621610",         # Home health care services
+    "snf": "623110",                 # Nursing care facilities (skilled)
+    "dialysis": "621492",            # Kidney dialysis centers
+    "asc": "621493",                 # Freestanding ambulatory surgical centers
+    "urgent_care": "621493",         # …and emergency centers
+    "dental": "621210",              # Offices of dentists
+    "behavioral": "621420",          # Outpatient mental-health/substance-abuse
+    "physician_primary_care": "621111",  # Offices of physicians
+    # hospice: intentionally unmapped — no dedicated NAICS code.
+}
+
+
+def naics_for(vertical: str) -> str:
+    """The Census NAICS code that best matches a PE vertical, or ``""`` when
+    no clean mapping exists (the caller treats empty as "no CBP join")."""
+    return VERTICAL_NAICS.get(str(vertical).strip().lower(), "")
+
 
 def all_taxonomies() -> List[Taxonomy]:
     return list(_TAXONOMIES)
