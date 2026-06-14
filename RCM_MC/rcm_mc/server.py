@@ -5034,6 +5034,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .verticals.behavioral_health.bridge import compute_bh_bridge  # noqa: F401
             from .verticals.mso.bridge import compute_mso_bridge  # noqa: F401
             return self._send_html(render_verticals())
+        if path == "/clinical-verticals":
+            from .ui.clinical_verticals_page import render_clinical_verticals
+            return self._send_html(render_clinical_verticals())
         if path.startswith("/models/questions/"):
             did = urllib.parse.unquote(path[len("/models/questions/"):]).strip("/")
             return self._route_model_questions(did)
