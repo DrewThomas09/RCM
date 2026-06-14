@@ -11870,6 +11870,8 @@ _MANUAL.extend([
             "How do I export the map for a deck?",
             "Why is the map a tile grid instead of real geography?",
         ],
+        related_routes=["/chart-builder", "/pie-chart",
+                        "/market-data/map", "/exhibit"],
         inputs=["Three gradient colours; an optional low/mid/high value "
                 "domain (blank = auto from data); a value per state, set "
                 "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
@@ -11888,7 +11890,6 @@ _MANUAL.extend([
                                  "you set; the legend shows the domain."],
         limitations=["Schematic tile grid (labelled, not a geographic "
                      "projection); values are whatever you supply."],
-        related_routes=["/chart-builder", "/pie-chart", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -12025,6 +12026,7 @@ _MANUAL.extend([
             "How do I export the chart as SVG or PNG?",
             "How many slices can I add?",
         ],
+        related_routes=["/chart-builder", "/excel-mapping", "/exhibit"],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
                 "donut toggle."],
@@ -12043,7 +12045,6 @@ _MANUAL.extend([
                                  "values you enter; colours are whatever you "
                                  "set."],
         limitations=["Static SVG; renders only the slices you enter."],
-        related_routes=["/chart-builder", "/excel-mapping", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),

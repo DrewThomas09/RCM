@@ -20821,6 +20821,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         # page carries the Guide context and the download button)
         "/rate-environment.xlsx", "/pricing-power.xlsx",
         "/labor-market.xlsx", "/transaction-multiples.xlsx",
+        "/target-screener.csv", "/state-compare.csv", "/state-rankings.csv",
+        "/state-profile.csv", "/state-peers.csv", "/county-explorer.csv",
+        "/metro-markets.csv", "/verified-deals.csv",
+        "/demo/download/kkr-deals.csv", "/demo/download/kkr-deals.json",
+        # Trailing-slash duplicate of /market-data — same renderer; the
+        # slashless route is the canonical card.
+        "/market-data/",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
