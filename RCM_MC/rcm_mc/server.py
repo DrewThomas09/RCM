@@ -17567,6 +17567,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f"<input type='hidden' name='username' value='{qu}'>"
                 f"<input type='password' name='new_password' "
                 f"placeholder='new password' minlength='8' required "
+                f"autocomplete='new-password' "
                 f"style='font-size: 0.8rem; padding: 0.15rem; "
                 f"width: 10rem;'>"
                 f"<button type='submit' class='btn' "
@@ -17590,12 +17591,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             'style="display: grid; gap: 0.5rem; max-width: 26rem;">'
             '<input type="text" name="username" placeholder="username" '
             'required maxlength="40" pattern="[A-Za-z0-9][A-Za-z0-9_.@-]{0,39}" '
-            'style="padding: 0.4rem;">'
+            'autocomplete="off" style="padding: 0.4rem;">'
             '<input type="text" name="display_name" '
             'placeholder="display name (optional)" '
-            'style="padding: 0.4rem;">'
+            'autocomplete="off" style="padding: 0.4rem;">'
             '<input type="password" name="password" placeholder="password" '
-            'required minlength="8" style="padding: 0.4rem;">'
+            'required minlength="8" autocomplete="new-password" '
+            'style="padding: 0.4rem;">'
             '<select name="role" style="padding: 0.4rem;">'
             '<option value="analyst" selected>analyst</option>'
             '<option value="admin">admin</option></select>'
