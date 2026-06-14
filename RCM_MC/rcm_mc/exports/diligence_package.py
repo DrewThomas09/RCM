@@ -45,7 +45,8 @@ def _exec_summary_html(packet: DealAnalysisPacket) -> str:
     ) or "<li>No critical risks flagged.</li>"
     grade = getattr(packet.completeness, "grade", "?") or "?"
     return (
-        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        "<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
         f"<title>{packet.deal_name or packet.deal_id} — Executive Summary</title>"
         "<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:24px;}"
         "h1{color:#1f4e78;} .num{font-family:monospace;} .risk{color:#ef4444;}</style></head>"

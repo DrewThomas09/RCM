@@ -175,6 +175,7 @@ class PacketRenderer:
         return (
             '<!DOCTYPE html>'
             '<html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
             f'<title>{_esc(packet.deal_name or packet.deal_id)} · Diligence Memo</title>'
             f'<style>{_MEMO_CSS}</style>'
             '</head>'
@@ -489,6 +490,7 @@ class PacketRenderer:
         return (
             '<!DOCTYPE html>'
             '<html lang="en"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
             '<title>Portfolio LP Update</title>'
             f'<style>{_LP_CSS}</style>'
             '</head><body>'

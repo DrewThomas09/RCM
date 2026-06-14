@@ -271,6 +271,7 @@ def render_memo_html(memo: ICMemo) -> str:
         "<!DOCTYPE html>\n"
         "<html lang=\"en\">\n<head>\n"
         "<meta charset=\"utf-8\">\n"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
         f"<title>{_html.escape(title)}</title>\n"
         f"<style>{_HTML_CSS}</style>\n"
         "</head>\n<body>\n"

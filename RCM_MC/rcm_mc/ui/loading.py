@@ -49,13 +49,11 @@ from typing import Any, Optional
 # Single shimmer animation reused by every skeleton component.
 _SKELETON_CSS = """
 <style>
-@keyframes skeleton-pulse {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.5; }
-  100% { opacity: 1; }
-}
+/* Parchment-theme skeletons/loaders. Colors track the editorial tokens
+   (bone/parchment shimmer, teal accent) so placeholders read as light
+   content-shaped boxes on the parchment surfaces — not dark-theme blocks. */
 .sk{background:linear-gradient(
-  90deg,#374151 0%,#4b5563 50%,#374151 100%);
+  90deg,#e3ddce 0%,#efe9dc 50%,#e3ddce 100%);
   background-size:200% 100%;
   animation:skeleton-shimmer 1.4s linear infinite;
   border-radius:4px;display:inline-block;}
@@ -64,30 +62,30 @@ _SKELETON_CSS = """
   100% { background-position: -200% 0; }
 }
 .spinner{display:inline-block;width:18px;height:18px;
-  border:2px solid #374151;border-top-color:#60a5fa;
+  border:2px solid #d6cfc0;border-top-color:#1f7a75;
   border-radius:50%;animation:spin 0.7s linear infinite;
   vertical-align:middle;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.progress-bar{height:6px;background:#1f2937;
+.progress-bar{height:6px;background:#e8e0d0;
   border-radius:3px;overflow:hidden;position:relative;}
-.progress-bar-fill{height:100%;background:#60a5fa;
+.progress-bar-fill{height:100%;background:#1f7a75;
   transition:width 0.3s ease-out;}
 .progress-bar-indet{height:100%;width:30%;
   background:linear-gradient(90deg,
-    transparent 0%,#60a5fa 50%,transparent 100%);
+    transparent 0%,#1f7a75 50%,transparent 100%);
   animation:progress-indet 1.5s ease-in-out infinite;}
 @keyframes progress-indet {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(400%); }
 }
 .loading-overlay{position:fixed;top:0;left:0;right:0;
-  bottom:0;background:rgba(15,23,42,0.85);
+  bottom:0;background:rgba(15,28,46,0.60);
   display:flex;align-items:center;justify-content:center;
   flex-direction:column;gap:14px;z-index:5000;}
-.loading-overlay-label{color:#f3f4f6;font-size:13px;
+.loading-overlay-label{color:#faf7f0;font-size:13px;
   font-family:system-ui;}
 #page-progress{position:fixed;top:0;left:0;right:0;
-  height:2px;background:#60a5fa;width:0;
+  height:2px;background:#1f7a75;width:0;
   transition:width 0.2s ease-out;z-index:9999;}
 #page-progress.active{width:80%;}
 #page-progress.done{width:100%;opacity:0;
@@ -214,13 +212,13 @@ def loading_spinner(
 ) -> str:
     """CSS-only spinning ring. Optional label aligned right."""
     safe_label = (
-        f'<span style="margin-left:10px;color:#9ca3af;'
+        f'<span style="margin-left:10px;color:#5C6878;'
         f'font-size:13px;vertical-align:middle;">'
         f'{_html.escape(label)}</span>' if label else "")
     return (
         _maybe_css(inject_css)
         + f'<div style="display:inline-flex;'
-        f'align-items:center;">'
+        f'align-items:center;" role="status" aria-live="polite">'
         f'<span class="spinner" '
         f'style="width:{size};height:{size};"></span>'
         f'{safe_label}</div>')
@@ -239,19 +237,23 @@ def progress_bar(
       label: optional caption above the bar.
     """
     label_html = (
-        f'<div style="color:#9ca3af;font-size:11px;'
+        f'<div style="color:#5C6878;font-size:11px;'
         f'margin-bottom:6px;">{_html.escape(label)}'
         f'</div>' if label else "")
     if percent is None:
         fill = '<div class="progress-bar-indet"></div>'
+        # Indeterminate: omit aria-valuenow so AT announces "busy".
+        aria = 'role="progressbar" aria-valuemin="0" aria-valuemax="100"'
     else:
         pct = max(0, min(100, float(percent)))
         fill = (f'<div class="progress-bar-fill" '
                 f'style="width:{pct:.1f}%;"></div>')
+        aria = (f'role="progressbar" aria-valuemin="0" aria-valuemax="100" '
+                f'aria-valuenow="{pct:.0f}"')
     return (
         _maybe_css(inject_css)
         + label_html
-        + f'<div class="progress-bar">{fill}</div>')
+        + f'<div class="progress-bar" {aria}>{fill}</div>')
 
 
 def loading_overlay(

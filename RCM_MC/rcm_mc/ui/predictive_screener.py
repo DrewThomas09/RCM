@@ -276,7 +276,7 @@ def render_predictive_screener(
         f'<select name="region" class="cad-select ps-select-md">{region_opts}</select>'
         '</div>'
         '<div class="cad-field"><label>Min Beds</label>'
-        f'<input class="cad-input ps-input-sm" type="number" name="min_beds" value="{min_beds}" min="0"></div>'
+        f'<input class="cad-input ps-input-sm" type="number" name="min_beds" value="{min_beds}" min="0" aria-label="Min Beds"></div>'
         '<div class="cad-field"><label>Max Beds</label>'
         f'<input class="cad-input ps-input-sm" type="number" name="max_beds" value="{max_beds if max_beds < 9999 else ""}" placeholder="9999"></div>'
         '<div class="cad-field"><label>Min Margin</label>'

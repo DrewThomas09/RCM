@@ -190,6 +190,7 @@ def render_html_binder(synthesis_result: Any,
         "<!DOCTYPE html>\n"
         "<html lang=\"en\">\n<head>\n"
         "<meta charset=\"utf-8\">\n"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
         f"<title>{_html.escape(page_title)}</title>\n"
         f"<style>{_CSS}</style>\n"
         "</head>\n<body>\n"

@@ -615,7 +615,7 @@ def _render_hero(
         f'      <div class="cf-title">{html.escape(dataset)}</div>'
         f'    </div>'
         f'    <a href="{html.escape(download_url)}" target="_blank" '
-        f'class="cf-download">Download JSON</a>'
+        f'rel="noopener" class="cf-download">Download JSON</a>'
         f'  </div>'
         f'  <div style="background:{P["panel_alt"]};'
         f'border-left:3px solid {primary_color};padding:10px 14px;'

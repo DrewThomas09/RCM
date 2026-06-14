@@ -115,9 +115,9 @@ def _xray_workstation(q: str, state_filter: str, summary: dict) -> str:
         + k.xr_eyebrow("② Peer engine")
         + '<div class="xr-ws-grid">'
         '<div class="xr-ws-field"><label>Peer pool size</label>'
-        '<input name="peer_k" value="25"></div>'
+        '<input name="peer_k" value="25" aria-label="Peer pool size"></div>'
         '<div class="xr-ws-field"><label>Bed band ±</label>'
-        '<input name="bed_band_pct" value="0.30"></div>'
+        '<input name="bed_band_pct" value="0.30" aria-label="Bed band percent"></div>'
         '</div>'
         '<div class="xr-ws-actions">'
         '<button class="xr-btn" type="submit">▸ Run X-Ray</button>'
@@ -1292,11 +1292,11 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
       </div>
       <div class="hx-form-field">
         <label>Peer pool size (default 25)</label>
-        <input name="peer_k" value="25"/>
+        <input name="peer_k" value="25" aria-label="Peer pool size"/>
       </div>
       <div class="hx-form-field">
         <label>Bed band ± (default 30%)</label>
-        <input name="bed_band_pct" value="0.30"/>
+        <input name="bed_band_pct" value="0.30" aria-label="Bed band percent"/>
       </div>
     </div>
     <button class="hx-form-submit" type="submit">Run X-Ray</button>
