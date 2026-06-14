@@ -1184,6 +1184,52 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
     n.add_argument("--limit", type=int, default=200,
                    help="Max individuals to fetch per address (NPPES caps at 200)")
 
+    # Entity resolution — resolve a company name across all three universes
+    # (CCN / NPI / EIN) in one call. Live: hits NPPES + ProPublica, reads
+    # local HCRIS. Scriptable counterpart to the in-app resolvers.
+    rv = sub.add_parser(
+        "resolve",
+        help="Resolve a company name to CCN / NPI / EIN (entity identity card)",
+    )
+    rv.add_argument("--name", required=True, help="Company / target name")
+    rv.add_argument("--state", default="", help="Two-letter state (narrows match)")
+    rv.add_argument("--json", action="store_true", help="Emit JSON")
+
+    # ClinicalTrials.gov v2 competitive landscape for a query.
+    tr = sub.add_parser(
+        "trials",
+        help="ClinicalTrials.gov v2 competitive landscape by lead sponsor",
+    )
+    tr.add_argument("--condition", default="", help="Condition / indication")
+    tr.add_argument("--term", default="", help="Free-text query term")
+    tr.add_argument("--sponsor", default="", help="Lead-sponsor filter")
+    tr.add_argument("--phase", default="", help="Phase filter (e.g. 'Phase 3')")
+    tr.add_argument("--page-size", type=int, default=100,
+                    help="Max studies to pull (v2 caps at 1000)")
+    tr.add_argument("--json", action="store_true", help="Emit JSON")
+
+    # Provider supply by PE vertical for a state (live NPPES, NUCC crosswalk).
+    sp = sub.add_parser(
+        "supply",
+        help="Live provider-supply counts by PE vertical for a state (NPPES)",
+    )
+    sp.add_argument("--state", required=True, help="Two-letter state code")
+    sp.add_argument("--vertical", default="",
+                    help="One vertical (default: all crosswalk verticals)")
+    sp.add_argument("--city", default="", help="Narrow to one city")
+    sp.add_argument("--json", action="store_true", help="Emit JSON")
+
+    # Two-source market structure: NPPES provider supply x Census CBP
+    # establishments for one vertical in a state.
+    mk = sub.add_parser(
+        "market",
+        help="Two-source market structure (NPPES supply x Census CBP) by vertical",
+    )
+    mk.add_argument("--state", required=True, help="Two-letter state code")
+    mk.add_argument("--vertical", required=True,
+                    help="PE vertical (see `data supply` for the list)")
+    mk.add_argument("--json", action="store_true", help="Emit JSON")
+
     args = ap.parse_args(argv)
 
     if args.action == "gaps":
@@ -1257,6 +1303,129 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                 f"      {s.base_url}\n")
         if not sources:
             sys.stdout.write("  (no sources match the filter)\n")
+        return 0
+
+    if args.action == "resolve":
+        # Live entity resolution across all three universes. No store needed.
+        from .data.capiq import CapIQRecord, resolve_identity
+
+        rec = CapIQRecord(capiq_id=args.name, company_name=args.name,
+                          state=(args.state or None))
+        ident = resolve_identity(rec)
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps({
+                "name": ident.company_name,
+                "ccn": ident.ccn, "ccn_status": ident.ccn_status.value,
+                "npi": ident.npi, "npi_status": ident.npi_status.value,
+                "ein": ident.ein, "ein_status": ident.ein_status.value,
+                "resolved_kinds": ident.resolved_kinds,
+                "any_ambiguous": ident.any_ambiguous,
+            }, indent=2) + "\n")
+            return 0
+        sys.stdout.write(f"Entity identity for {ident.company_name!r}:\n")
+        sys.stdout.write(f"  CCN  {ident.ccn or '—':<12} [{ident.ccn_status.value}]\n")
+        sys.stdout.write(f"  NPI  {ident.npi or '—':<12} [{ident.npi_status.value}]\n")
+        sys.stdout.write(f"  EIN  {ident.ein or '—':<12} [{ident.ein_status.value}]\n")
+        kinds = ", ".join(ident.resolved_kinds) or "none"
+        sys.stdout.write(f"  resolved: {kinds}"
+                         + ("  (ambiguous matches present — review)\n"
+                            if ident.any_ambiguous else "\n"))
+        return 0
+
+    if args.action == "trials":
+        # Live ClinicalTrials.gov v2 landscape. No store needed.
+        from .data_public.clinical_trials_v2 import fetch_landscape
+        from .data_public.public_api_clients import PublicApiError
+
+        try:
+            rows = fetch_landscape(
+                condition=args.condition, term=args.term, sponsor=args.sponsor,
+                phase=args.phase, page_size=int(args.page_size))
+        except PublicApiError as exc:
+            sys.stderr.write(f"[FAIL] ClinicalTrials.gov v2 error: {exc}\n")
+            return 1
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rows, indent=2) + "\n")
+            return 0
+        if not rows:
+            sys.stdout.write("no studies match the query\n")
+            return 0
+        sys.stdout.write(f"{'SPONSOR':<40}  {'TRIALS':>6}  {'ENROLLMENT':>10}\n")
+        for r in rows:
+            enr = r["total_enrollment"]
+            sys.stdout.write(
+                f"{r['sponsor'][:40]:<40}  {r['trials']:>6}  "
+                f"{(f'{enr:,}' if enr is not None else '—'):>10}\n")
+        return 0
+
+    if args.action == "supply":
+        # Live provider-supply sweep by vertical. No store needed.
+        from .data.nppes_infusion import supply_by_vertical
+        from .data_public.nucc_taxonomy import VERTICALS
+
+        verts = [args.vertical] if args.vertical else None
+        if args.vertical and args.vertical not in VERTICALS:
+            sys.stderr.write(f"unknown vertical {args.vertical!r}; "
+                             f"known: {', '.join(VERTICALS)}\n")
+            return 2
+        rows = supply_by_vertical(args.state, verts, city=args.city)
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rows, indent=2) + "\n")
+            return 0
+        sys.stdout.write(f"Provider supply for {args.state.upper()}"
+                         + (f" / {args.city}" if args.city else "") + ":\n")
+        sys.stdout.write(f"  {'VERTICAL':<22}  {'COUNT':>7}\n")
+        for r in rows:
+            if r["live"]:
+                cap = "+" if r.get("capped") else ""
+                sys.stdout.write(f"  {r['vertical']:<22}  {r['count']:>6}{cap or ' '}\n")
+            else:
+                sys.stdout.write(f"  {r['vertical']:<22}  {'—':>7}  (unavailable)\n")
+        sys.stdout.write("  ('+' = hit 200/desc page cap; true count is higher)\n")
+        return 0
+
+    if args.action == "market":
+        # Two-source market structure for one vertical. No store needed.
+        from .data.nppes_infusion import supply_by_vertical
+        from .data_public.nucc_taxonomy import VERTICALS, naics_for
+        from .data_public import census_market as cm
+        from .data_public.market_structure import reconcile_vertical
+        from .data_public.public_api_clients import PublicApiError
+
+        if args.vertical not in VERTICALS:
+            sys.stderr.write(f"unknown vertical {args.vertical!r}; "
+                             f"known: {', '.join(VERTICALS)}\n")
+            return 2
+        fips = cm.state_fips(args.state)
+        if not fips:
+            sys.stderr.write(f"unrecognized state {args.state!r}\n")
+            return 2
+
+        supply = supply_by_vertical(args.state, [args.vertical])[0]
+        naics = naics_for(args.vertical)
+        cbp_rows = []
+        if naics:
+            try:
+                cbp_rows = cm.fetch_cbp(naics, state_fips=fips)
+            except PublicApiError as exc:
+                sys.stderr.write(f"[warn] CBP unavailable: {exc}\n")
+        rec = reconcile_vertical(args.vertical, supply, cbp_rows)
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rec, indent=2) + "\n")
+            return 0
+        prov = rec["providers"]
+        est = rec["establishments"]
+        ratio = rec["providers_per_estab"]
+        sys.stdout.write(
+            f"Market structure — {args.vertical} in {args.state.upper()} "
+            f"(NAICS {rec['naics'] or '—'}):\n")
+        sys.stdout.write(f"  NPPES providers     {prov if prov is not None else '— (unavailable)'}\n")
+        sys.stdout.write(f"  CBP establishments  {est if est is not None else '— (unavailable)'}\n")
+        sys.stdout.write(f"  providers/estab     {f'{ratio:.2f}' if ratio is not None else '—'}\n")
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.

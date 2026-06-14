@@ -344,7 +344,7 @@ def render_sector_provider_profile(
         verdict_html = f"<em>{verdict_text}</em>"
 
     crumb_html = (
-        '<nav class="crumb">'
+        '<nav class="crumb" aria-label="Breadcrumb">'
         f'<a href="{route}">All {_esc(kind_singular)}s</a>'
         + (
             f'<span class="sep">/</span>'

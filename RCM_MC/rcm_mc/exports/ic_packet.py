@@ -1371,6 +1371,7 @@ def render_ic_packet_html(
         '<html lang="en">\n'
         "<head>\n"
         '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         f'<title>IC Packet — {html.escape(metadata.deal_name)}</title>\n'
         "</head>\n"
         f'<body>\n{body}\n</body>\n</html>\n'

@@ -673,31 +673,31 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     </div>
     <div class="ba-form-grid">
       <div class="ba-form-field"><label>Target name</label>
-        <input name="target_name" value="Meadowbrook Regional"/></div>
+        <input name="target_name" aria-label="Target name" value="Meadowbrook Regional"/></div>
       <div class="ba-form-field"><label>Asking price (USD)</label>
-        <input name="asking_price_usd" value="710000000"/></div>
+        <input name="asking_price_usd" aria-label="Asking price (USD)" value="710000000"/></div>
       <div class="ba-form-field"><label>Entry multiple (x)</label>
-        <input name="entry_multiple" value="10.5"/></div>
+        <input name="entry_multiple" aria-label="Entry multiple (x)" value="10.5"/></div>
       <div class="ba-form-field"><label>Denial rate % (0-1)</label>
-        <input name="denial_rate_pct" value="0.095"/></div>
+        <input name="denial_rate_pct" aria-label="Denial rate fraction (0-1)" value="0.095"/></div>
       <div class="ba-form-field"><label>Days in AR</label>
-        <input name="days_in_ar" value="52"/></div>
+        <input name="days_in_ar" aria-label="Days in AR" value="52"/></div>
       <div class="ba-form-field"><label>MA mix % (0-1)</label>
-        <input name="ma_mix_pct" value="0.45"/></div>
+        <input name="ma_mix_pct" aria-label="MA mix fraction (0-1)" value="0.45"/></div>
       <div class="ba-form-field"><label>Commercial share (0-1)</label>
-        <input name="commercial_payer_share" value="0.32"/></div>
+        <input name="commercial_payer_share" aria-label="Commercial payer share (0-1)" value="0.32"/></div>
       <div class="ba-form-field"><label>Top-1 payer share (0-1)</label>
-        <input name="top_1_payer_share" value="0.34"/></div>
+        <input name="top_1_payer_share" aria-label="Top-1 payer share (0-1)" value="0.34"/></div>
       <div class="ba-form-field"><label>Beds</label>
-        <input name="beds" value="300"/></div>
+        <input name="beds" aria-label="Beds" value="300"/></div>
       <div class="ba-form-field"><label>EHR vendor</label>
-        <input name="ehr_vendor" value="EPIC"/></div>
+        <input name="ehr_vendor" aria-label="EHR vendor" value="EPIC"/></div>
       <div class="ba-form-field"><label>Unionized workforce</label>
-        <select name="unionized_workforce">
+        <select name="unionized_workforce" aria-label="Unionized workforce">
           <option value="">No</option><option value="1">Yes</option>
         </select></div>
       <div class="ba-form-field"><label>Prior denial initiative failed</label>
-        <select name="prior_denial_initiative_failed">
+        <select name="prior_denial_initiative_failed" aria-label="Prior denial initiative failed">
           <option value="">No</option><option value="1">Yes</option>
         </select></div>
     </div>

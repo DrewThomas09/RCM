@@ -3,9 +3,11 @@ Python (or paste from Excel).
 
 The point of this page is to be a *generic* mapping utility, separate
 from any one analysis: set three gradient colors (low / mid / high),
-hand it a ``{state: percentage}`` dict, and it colours every state by
-interpolating the gradient across the values, printing each percentage
-in black serif text on the tile.
+hand it a ``{state: percentage}`` dict, and it colours every state on the
+real US map (vendored Albers geography) by interpolating the gradient
+across the values, printing each value at the state centroid in
+contrast-aware text. The map deliberately omits the 2-letter state code —
+the number is the story, not a redundant label.
 
 Two ways to drive it:
 
@@ -27,13 +29,17 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
 from .cdd_chart_kit import chart_export_toolbar
+from ._us_geo_paths import US_GEO_VIEWBOX, US_STATE_PATHS
 
 # ── Editable config (drive the map from Python here) ─────────────────
 
-#: Gradient stops — low value → mid value → high value.
-DEFAULT_LOW_COLOR = "#fde0dd"     # light
-DEFAULT_MID_COLOR = "#fa9fb5"     # midpoint
-DEFAULT_HIGH_COLOR = "#7a0177"    # high
+#: Gradient stops — low value → mid value → high value. Editorial teal→navy
+#: sequential by default (was a generic pink→magenta ramp); reads as a
+#: professional choropleth and matches the platform identity. Override per
+#: render with the colour pickers.
+DEFAULT_LOW_COLOR = "#dbe9e4"     # light teal
+DEFAULT_MID_COLOR = "#4e9a8f"     # mid teal
+DEFAULT_HIGH_COLOR = "#0b3b3a"    # deep teal / near-navy
 
 #: EXAMPLE values — edit this dict / paste your own per state (percent).
 #: Placeholders only; replace with your real numbers.
@@ -49,7 +55,10 @@ DEFAULT_STATE_VALUES: Dict[str, float] = {
     "WV": 41, "WI": 52, "WY": 39,
 }
 
-# ── US tile grid (schematic; labelled, not a geographic projection) ──
+# ── Supported state set (input validation + value-table ordering) ────
+# Drawing now uses the real ``US_STATE_PATHS`` geometry; this table is the
+# canonical 50-states-plus-DC set the utility accepts (its (row, col) values
+# are retained only as a stable, documented key list).
 _STATE_TILE: Dict[str, Tuple[int, int]] = {
     "AK": (0, 0), "ME": (0, 10),
     "VT": (1, 9), "NH": (1, 10),
@@ -130,6 +139,44 @@ def gradient_color(
         return _lerp(rl, rm, (value - lo) / denom)
     denom = (hi - mid) or 1.0
     return _lerp(rm, rh, (value - mid) / denom)
+
+
+# ── Geographic label anchors (real Albers state geometry) ────────────
+#
+# The map draws the vendored US Census state boundaries (``US_STATE_PATHS``)
+# rather than a square tile grid, so it reads as the actual country. Each
+# state's value is printed at the bounding-box centroid of its path; the
+# 2-letter state CODE is deliberately NOT drawn on the map (it added clutter
+# and competed with the number — the value is the story). Tiny states whose
+# body cannot hold a legible number are left to the data table.
+
+def _state_anchors() -> Dict[str, Tuple[float, float, float]]:
+    """Per-state ``(cx, cy, bbox_area)`` from the vendored path geometry.
+    Computed once at import — the paths are static."""
+    import re
+    out: Dict[str, Tuple[float, float, float]] = {}
+    for code, rec in US_STATE_PATHS.items():
+        nums = [float(n) for n in re.findall(r"-?\d+\.?\d*", rec.get("d", ""))]
+        xs, ys = nums[0::2], nums[1::2]
+        if not xs or not ys:
+            continue
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        out[code] = ((x0 + x1) / 2.0, (y0 + y1) / 2.0,
+                     (x1 - x0) * (y1 - y0))
+    return out
+
+
+_STATE_ANCHOR = _state_anchors()
+#: bbox area below which an on-map value label would collide with neighbours
+#: (DC / RI / DE / CT / NJ in the Northeast) — those read from the table.
+_LABEL_MIN_AREA = 1000.0
+
+
+def _is_dark(hex_color: str) -> bool:
+    """Perceived-luminance test so the value label flips to white on a dark
+    fill and to navy on a light fill (always legible on the choropleth)."""
+    r, g, b = _hex_to_rgb(hex_color)
+    return (0.299 * r + 0.587 * g + 0.114 * b) < 140.0
 
 
 # ── Input parsing ────────────────────────────────────────────────────
@@ -216,49 +263,79 @@ def resolve_inputs(
 
 
 def _map_svg(cfg: Dict[str, Any]) -> str:
-    cell, gap = 10.0, 0.8
-    ncol, nrow = 11, 8
+    """Choropleth over the real US state geometry (Albers projection).
+
+    Each state is filled by interpolating the low→mid→high gradient across
+    its value; the value is printed at the state centroid in contrast-aware
+    text (white on dark fills, navy on light). State CODES are not drawn —
+    the map carries the number, not a label. A soft drop-shadow + crisp
+    white state borders give the map slide-ready depth."""
     vals, lo, mid, hi = (cfg["values"], cfg["lo"], cfg["mid"], cfg["hi"])
-    tiles = ""
-    for code, (r, c) in _STATE_TILE.items():
+    vx0, vy0, vw, vh = US_GEO_VIEWBOX
+    paths: List[str] = []
+    labels: List[str] = []
+    for code in _STATE_TILE:
+        rec = US_STATE_PATHS.get(code)
+        if not rec:
+            continue
         v = vals.get(code)
-        x, y = c * cell, r * cell
         fill = gradient_color(v, lo, mid, hi, cfg["c_low"], cfg["c_mid"],
                               cfg["c_high"])
-        label = _fmt(v) if v is not None else ""
-        tiles += (
-            f'<g><rect x="{x:.1f}" y="{y:.1f}" width="{cell-gap:.1f}" '
-            f'height="{cell-gap:.1f}" rx="1.3" fill="{fill}" '
-            f'stroke="#ffffff" stroke-width="0.5">'
-            f'<title>{html.escape(code)}: {html.escape(label or "—")}</title>'
-            f'</rect>'
-            # Black serif text "above" (on top of) the gradient.
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+3.7:.1f}" '
-            f'text-anchor="middle" font-family="{_SERIF}" font-size="2.9" '
-            f'font-weight="700" fill="#000000">{html.escape(code)}</text>'
-            f'<text x="{x+(cell-gap)/2:.1f}" y="{y+6.9:.1f}" '
-            f'text-anchor="middle" font-family="{_SERIF}" font-size="3.0" '
-            f'fill="#000000" style="paint-order:stroke;stroke:#ffffff;'
-            f'stroke-width:0.5px;">{html.escape(label)}</text></g>')
+        name = rec.get("name", code)
+        label = _fmt(v) if v is not None else "—"
+        paths.append(
+            f'<path d="{rec["d"]}" fill="{fill}" stroke="#ffffff" '
+            f'stroke-width="0.9" stroke-linejoin="round" vector-effect='
+            f'"non-scaling-stroke">'
+            f'<title>{html.escape(name)}: {html.escape(label)}</title></path>')
+        if v is None:
+            continue
+        anc = _STATE_ANCHOR.get(code)
+        if not anc:
+            continue
+        cx, cy, area = anc
+        if area < _LABEL_MIN_AREA:
+            continue   # too cramped to label legibly — see the data table
+        white = _is_dark(fill)
+        tcol = "#ffffff" if white else "#0b2341"
+        halo = ("rgba(11,35,65,0.32)" if white else "rgba(255,255,255,0.62)")
+        fs = 12.0 if area >= 5000 else 10.5 if area >= 2200 else 9.0
+        labels.append(
+            f'<text x="{cx:.1f}" y="{cy + fs * 0.34:.1f}" text-anchor="middle" '
+            f'font-family="{_SERIF}" font-size="{fs:g}" font-weight="600" '
+            f'fill="{tcol}" style="paint-order:stroke;stroke:{halo};'
+            f'stroke-width:2.2px;stroke-linejoin:round;">'
+            f'{html.escape(_fmt(v))}</text>')
+    inset = (
+        f'<text x="14" y="{vh - 96:.0f}" font-family="{_SERIF}" '
+        f'font-size="13" font-style="italic" fill="#7a8699">Alaska</text>'
+        f'<text x="210" y="{vh - 96:.0f}" font-family="{_SERIF}" '
+        f'font-size="13" font-style="italic" fill="#7a8699">Hawaii</text>')
     return (
-        f'<svg viewBox="-1 -1 {ncol*cell+1:.0f} {nrow*cell+1:.0f}" '
-        f'width="100%" height="430" role="img" '
-        f'aria-label="US state choropleth" style="max-width:760px;">'
-        f'{tiles}</svg>')
+        f'<svg viewBox="{vx0} {vy0} {vw} {vh}" width="100%" '
+        f'role="img" aria-label="US state choropleth (geographic)" '
+        f'style="max-width:880px;height:auto;display:block;'
+        f'filter:drop-shadow(0 2px 7px rgba(11,35,65,0.16));">'
+        f'<g>{"".join(paths)}</g>{inset}<g>{"".join(labels)}</g></svg>')
 
 
 def _legend(cfg: Dict[str, Any]) -> str:
     grad = (f'linear-gradient(90deg,{cfg["c_low"]},{cfg["c_mid"]} 50%,'
             f'{cfg["c_high"]})')
     return (
-        f'<div style="display:flex;align-items:center;gap:10px;'
+        f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
         f'font-family:{_SERIF};font-size:13px;color:#1a2332;margin-top:6px;">'
         f'<span>{_fmt(cfg["lo"])}</span>'
         f'<span style="flex:0 0 240px;height:14px;border-radius:3px;'
         f'background:{grad};border:1px solid #c9c1ac;"></span>'
         f'<span>{_fmt(cfg["mid"])}</span>'
         f'<span style="flex:0 0 0;"></span>'
-        f'<span>{_fmt(cfg["hi"])}</span></div>')
+        f'<span>{_fmt(cfg["hi"])}</span>'
+        f'<span style="margin-left:14px;display:inline-flex;align-items:center;'
+        f'gap:5px;color:#7a8699;font-size:12px;">'
+        f'<span style="display:inline-block;width:13px;height:13px;'
+        f'border-radius:2px;background:#e6e3dc;border:1px solid #c9c1ac;"></span>'
+        f'no data</span></div>')
 
 
 def _form(cfg: Dict[str, Any]) -> str:
@@ -335,9 +412,9 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
     body = (
         ck_page_title(
             "Excel Mapping",
-            eyebrow="UTILITY · STATE CHOROPLETH",
+            eyebrow="UTILITY · GEOGRAPHIC CHOROPLETH",
             meta="Set low / mid / high colours + a value per state — "
-                 "gradient + black serif labels.",
+                 "shaded on the real US map, value labelled on each state.",
         )
         + ck_source_purpose(
             purpose="A generic US-state choropleth you drive from a "
@@ -369,8 +446,9 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
           'the three colours, optionally set the low/mid/high value '
           'domain (blank = auto from your data), and paste '
           '<code>STATE&nbsp;VALUE</code> rows from Excel. The gradient '
-          'interpolates low→mid→high; each state shows its value in black '
-          'serif text.</p></div>'
+          'interpolates low→mid→high across the real US geography; each '
+          'state shows its value in contrast-aware text (small Northeast '
+          'states read from the table).</p></div>'
         + '</div></div>')
     return chartis_shell(
         body, "Excel Mapping", active_nav="/research",

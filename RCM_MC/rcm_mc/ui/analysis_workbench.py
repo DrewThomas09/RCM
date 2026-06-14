@@ -2690,12 +2690,12 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
     )
     mt_add = (
         '<div class="ov-add-form" id="ov-mt-add-form">'
-        '<div><label>Metric key</label>'
+        '<div><label for="ov-mt-key">Metric key</label>'
         '<input class="ov-add-input" id="ov-mt-key" type="text" '
         'placeholder="e.g. denial_rate"></div>'
-        '<div><label>Target value</label>'
+        '<div><label for="ov-mt-val">Target value</label>'
         '<input class="ov-add-input" id="ov-mt-val" type="number" step="any"></div>'
-        '<div><label>Reason (optional)</label>'
+        '<div><label for="ov-mt-reason">Reason (optional)</label>'
         '<input class="ov-add-input" id="ov-mt-reason" type="text"></div>'
         '<div><label>&nbsp;</label>'
         '<button class="wb-btn wb-btn-primary" id="ov-mt-add-btn">Add target</button></div>'
@@ -2706,12 +2706,12 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
     # ── Custom / raw add ──────────────────────────────────────────
     raw_add = (
         '<div class="ov-add-form" id="ov-raw-add-form">'
-        '<div><label>Override key</label>'
+        '<div><label for="ov-raw-key">Override key</label>'
         '<input class="ov-add-input" id="ov-raw-key" type="text" '
         'placeholder="e.g. payer_mix.commercial_share"></div>'
-        '<div><label>Value</label>'
+        '<div><label for="ov-raw-val">Value</label>'
         '<input class="ov-add-input" id="ov-raw-val" type="text"></div>'
-        '<div><label>Reason (optional)</label>'
+        '<div><label for="ov-raw-reason">Reason (optional)</label>'
         '<input class="ov-add-input" id="ov-raw-reason" type="text"></div>'
         '<div><label>&nbsp;</label>'
         '<button class="wb-btn wb-btn-primary" id="ov-raw-add-btn">Set</button></div>'

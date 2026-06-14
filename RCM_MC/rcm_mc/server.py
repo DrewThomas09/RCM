@@ -404,7 +404,7 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
         f'action="/api/deals/{qd}/deadlines">'
         f'<input type="text" name="label" placeholder="Task / deadline label" '
         f'required maxlength="120" class="ck-deal-deadline-label-input">'
-        f'<input type="date" name="due_date" required class="ck-deal-deadline-date">'
+        f'<input type="date" name="due_date" required aria-label="Due date" class="ck-deal-deadline-date">'
         f'<input type="text" name="owner" value="{html.escape(deal_owner)}" '
         f'placeholder="Owner" maxlength="40" class="ck-deal-deadline-owner-input">'
         f'<button type="submit" class="ck-deal-deadline-add">+ Add</button>'
@@ -1752,17 +1752,17 @@ def _deal_action_forms(deal_id: str) -> str:
         <label>Quarter (YYYYQn)</label>
         <input type="text" name="quarter" required placeholder="2026Q2">
         <label>EBITDA ($)</label>
-        <input type="number" step="any" name="ebitda">
+        <input type="number" step="any" name="ebitda" aria-label="EBITDA ($)">
         <label>Plan EBITDA ($)</label>
-        <input type="number" step="any" name="plan_ebitda">
+        <input type="number" step="any" name="plan_ebitda" aria-label="Plan EBITDA ($)">
         <label>NPSR ($)</label>
-        <input type="number" step="any" name="net_patient_revenue">
+        <input type="number" step="any" name="net_patient_revenue" aria-label="NPSR ($)">
         <label>IDR (decimal)</label>
-        <input type="number" step="0.001" name="idr_blended">
+        <input type="number" step="0.001" name="idr_blended" aria-label="IDR (decimal)">
         <label>DAR (days)</label>
-        <input type="number" step="0.1" name="dar_clean_days">
+        <input type="number" step="0.1" name="dar_clean_days" aria-label="DAR (days)">
         <label>Notes</label>
-        <input type="text" name="notes">
+        <input type="text" name="notes" aria-label="Quarter notes">
         <div></div>
         <button type="submit" class="ck-deal-action-submit">Record quarter</button>
       </form>
@@ -1801,7 +1801,7 @@ def _deal_action_forms(deal_id: str) -> str:
         <label>Run directory</label>
         <input type="text" name="run_dir" placeholder="/path/to/run (optional)">
         <label>Notes</label>
-        <input type="text" name="notes">
+        <input type="text" name="notes" aria-label="Stage notes">
         <div></div>
         <button type="submit" class="ck-deal-action-submit">Advance stage</button>
       </form>
@@ -2630,7 +2630,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                                 f'{_h.escape(_lbl)}</strong>'
                             )
                     crumbs_html = (
-                        '<nav class="ck-breadcrumbs">'
+                        '<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
                         + "".join(crumbs_parts)
                         + '</nav>'
                     )
@@ -7000,6 +7000,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .diligence.further_analysis import build_further_analysis
             _fa_aqs = urllib.parse.parse_qs(parsed.query)
             return self._send_json(build_further_analysis(_fa_aqs))
+        if path == "/cross-analysis":
+            # Cross-Dataset Analysis — correlate any two state-grain public
+            # datasets (Pearson r / R² + scatter with least-squares trendline).
+            from .ui.cross_analysis_page import render_cross_analysis_page
+            _ca_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_cross_analysis_page(_ca_qs))
+        if path == "/api/cross-analysis":
+            from .diligence.cross_analysis import build_cross_analysis
+            _ca_aqs = urllib.parse.parse_qs(parsed.query)
+            return self._send_json(build_cross_analysis(_ca_aqs))
         if path == "/data-apis":
             # Public Data APIs — the reference table of free, API-accessible
             # public healthcare data (non-CMS-claims), organized by the
@@ -17557,6 +17567,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f"<input type='hidden' name='username' value='{qu}'>"
                 f"<input type='password' name='new_password' "
                 f"placeholder='new password' minlength='8' required "
+                f"autocomplete='new-password' "
                 f"style='font-size: 0.8rem; padding: 0.15rem; "
                 f"width: 10rem;'>"
                 f"<button type='submit' class='btn' "
@@ -17580,12 +17591,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             'style="display: grid; gap: 0.5rem; max-width: 26rem;">'
             '<input type="text" name="username" placeholder="username" '
             'required maxlength="40" pattern="[A-Za-z0-9][A-Za-z0-9_.@-]{0,39}" '
-            'style="padding: 0.4rem;">'
+            'autocomplete="off" style="padding: 0.4rem;">'
             '<input type="text" name="display_name" '
             'placeholder="display name (optional)" '
-            'style="padding: 0.4rem;">'
+            'autocomplete="off" style="padding: 0.4rem;">'
             '<input type="password" name="password" placeholder="password" '
-            'required minlength="8" style="padding: 0.4rem;">'
+            'required minlength="8" autocomplete="new-password" '
+            'style="padding: 0.4rem;">'
             '<select name="role" style="padding: 0.4rem;">'
             '<option value="analyst" selected>analyst</option>'
             '<option value="admin">admin</option></select>'

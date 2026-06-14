@@ -1458,6 +1458,7 @@ def _render_diligence_questions(slug: str) -> str:
         '<form class="ck-dp-qs-form" data-rcm-qs-form>'
         '<input class="ck-dp-qs-input" data-rcm-qs-input '
         'placeholder="e.g. What share of NPR comes from out-of-network rates?" '
+        'aria-label="New diligence question" '
         'maxlength="280" autocomplete="off"/>'
         '<select class="ck-dp-qs-cat" data-rcm-qs-cat '
         'aria-label="Question category">'

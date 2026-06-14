@@ -198,7 +198,7 @@ def _setup_instructions() -> str:
         f'padding-left:18px;margin:0 0 8px;">'
         f'<li>Get an API key from '
         f'<a href="https://console.anthropic.com/" target="_blank" '
-        f'style="color:{P["accent"]};">console.anthropic.com</a>.</li>'
+        f'rel="noopener" style="color:{P["accent"]};">console.anthropic.com</a>.</li>'
         f'<li>Export it in the shell before launching the server:'
         f'<pre style="background:{P["panel_alt"]};border:1px solid {P["border"]};'
         f'border-radius:2px;padding:8px 10px;margin:6px 0;'

@@ -46,10 +46,14 @@ def _field(
         f'margin-top:3px;">{html.escape(hint)}</div>'
         if hint else ""
     )
+    # Associate label↔input so clicking the label focuses the field and
+    # screen readers announce the field's name (field names are simple
+    # identifiers — deal_id, name, state — safe as an id stem).
+    fid = f"qi-{html.escape(name, quote=True)}"
     return (
         f'<div class="cad-field">'
-        f'<label>{html.escape(label)}{req_mark}</label>'
-        f'<input class="cad-input" type="{type_}" name="{name}" '
+        f'<label for="{fid}">{html.escape(label)}{req_mark}</label>'
+        f'<input class="cad-input" id="{fid}" type="{type_}" name="{name}" '
         f'placeholder="{html.escape(placeholder)}"{val}{req}{st}{ml}{pat}{mn}{mx}>'
         f'{hint_html}'
         f'</div>'
@@ -244,6 +248,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "",
         f'Paste a JSON array of deals to import multiple at once</p>'
         f'<form method="POST" action="/quick-import-json">'
         f'<textarea name="json_data" rows="8" class="cad-input" '
+        f'aria-label="JSON array of deals to import" '
         f'placeholder=\'[{{"deal_id": "southeast", "name": "Southeast Health", '
         f'"profile": {{"denial_rate": 14.2, "days_in_ar": 52, "net_revenue": 386000000}}}}]\' '
         f'style="width:100%;resize:vertical;line-height:1.5;"></textarea>'

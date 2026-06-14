@@ -197,7 +197,7 @@ def breadcrumbs(items: Iterable[Tuple[str, Optional[str]]]) -> str:
         else:
             parts.append(f'<span>{label_esc}</span>')
     sep = '<span class="sep">/</span>'
-    return f'<nav class="wc-breadcrumbs">{sep.join(parts)}</nav>'
+    return f'<nav class="wc-breadcrumbs" aria-label="Breadcrumb">{sep.join(parts)}</nav>'
 
 
 def page_header(title: str, *, subtitle: Optional[str] = None,

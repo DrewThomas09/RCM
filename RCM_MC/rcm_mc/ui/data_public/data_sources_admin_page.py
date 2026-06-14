@@ -63,7 +63,7 @@ def _sources_table(sources) -> str:
         type_color = type_colors.get(s.source_type, text_dim)
         rec_str = f"{s.record_count:,}" if s.record_count > 0 else "—"
         name_cell = (
-            f'<a href="{_html.escape(s.url)}" target="_blank" style="color:{acc};text-decoration:none">'
+            f'<a href="{_html.escape(s.url)}" target="_blank" rel="noopener" style="color:{acc};text-decoration:none">'
             f'{_html.escape(s.name)}</a>'
             if s.url else _html.escape(s.name)
         )

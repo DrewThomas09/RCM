@@ -218,6 +218,7 @@ _SUB_NAV = {
         {"label": "Market Intel",        "href": "/market-intel"},
         {"label": "Visuals (Charts)",    "href": "/visuals"},
         {"label": "Further Analysis",    "href": "/further-analysis"},
+        {"label": "Cross-Dataset Analysis", "href": "/cross-analysis"},
         {"label": "Public Data APIs",    "href": "/data-apis"},
         {"label": "Excel Mapping",       "href": "/excel-mapping"},
         {"label": "Excel Templates",     "href": "/excel-templates"},
@@ -617,7 +618,7 @@ def ck_table(
     # (<a href=…>Company ▲</a>). Render those raw instead of escaping the tag
     # into literal "<A HREF=…>" text in the header.
     header_cells = "".join(
-        f'<th class="align-{_esc(c.get("align", "left"))}">'
+        f'<th scope="col" class="align-{_esc(c.get("align", "left"))}">'
         f'{c.get("label", "") if "<" in str(c.get("label", "")) else _esc(c.get("label", ""))}'
         f'</th>'
         for c in columns
@@ -1719,8 +1720,8 @@ def ck_paired_block(
     """
     hot = set(hot_rows)
     head_cells = "".join(
-        f'<th>{_esc(h)}</th>' if i == 0
-        else f'<th class="ck-pair-r">{_esc(h)}</th>'
+        f'<th scope="col">{_esc(h)}</th>' if i == 0
+        else f'<th scope="col" class="ck-pair-r">{_esc(h)}</th>'
         for i, h in enumerate(headers)
     )
     body_rows = ""
@@ -1891,6 +1892,7 @@ def ck_help_tooltip(
         '<span class="ck-help">'
         f'{_esc(term)}'
         '<button type="button" class="ck-help-trigger" '
+        f'aria-label="Definition of {_esc(term)}" '
         'aria-expanded="false" tabindex="0">?</button>'
         '<span class="ck-help-popover" role="tooltip">'
         f'<span class="ck-help-term">{_esc(term)}</span>'
@@ -7062,7 +7064,7 @@ def ck_data_table(
             else ""
         )
         head_cells.append(
-            f'<th class="ck-cell ck-data-table-head{align_cls}">'
+            f'<th scope="col" class="ck-cell ck-data-table-head{align_cls}">'
             f'{_esc(h.get("label", ""))}</th>'
         )
     head_html = "<thead><tr>" + "".join(head_cells) + "</tr></thead>"
@@ -7319,6 +7321,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "infusion-markets", "title": "Infusion Market Scan · every state ranked for an infusion roll-up", "route": "/diligence/infusion-markets"},
     {"id": "visuals", "title": "Visuals · graphics toolkit hub (charts, maps, exhibits)", "route": "/visuals"},
     {"id": "further-analysis", "title": "Further Analysis · Tableau-style data explorer over CMS/CDC/Census/labor/market datasets", "route": "/further-analysis"},
+    {"id": "cross-analysis", "title": "Cross-Dataset Analysis · correlate any two state-grain public datasets (Pearson r, R², scatter + trendline)", "route": "/cross-analysis"},
     {"id": "data-apis", "title": "Public Data APIs · catalog of free non-CMS healthcare data sources (NPPES, openFDA, ClinicalTrials, Census, ProPublica 990) by diligence question", "route": "/data-apis"},
     {"id": "excel-mapping", "title": "Excel Mapping · configurable US-state choropleth", "route": "/excel-mapping"},
     {"id": "excel-templates", "title": "Excel Model Templates · live-formula workbooks (LBO, QoE, NWC peg, CDD market model)", "route": "/excel-templates"},
@@ -8870,6 +8873,41 @@ _CSS_INLINE_FALLBACK = """
     .ck-pair { grid-template-columns:1fr; }
     .ck-pair-viz { border-right:none; border-bottom:1px solid var(--sc-rule); }
   }
+
+  /* ── Accessibility: keyboard focus, skip-link, reduced motion ──────
+   * Mirror of the block in static/v3/chartis.css so a11y affordances
+   * survive even when static serving isn't wired up. Only .cta-btn
+   * carried a focus ring before; every other interactive element gave
+   * no visible focus indicator (WCAG 2.4.7 gap on every page). */
+  a:focus-visible, button:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, summary:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--sc-teal, #155752);
+    outline-offset: 2px; border-radius: 1px;
+  }
+  .ck-skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 1000;
+    background: var(--sc-ink, #0F1C2E); color: var(--sc-paper, #FAF7F0);
+    padding: 9px 16px; font-family: var(--sc-sans, Inter), sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; text-decoration: none;
+  }
+  .ck-skip-link:focus { left: 8px; top: 8px; }
+  /* The skip target receives programmatic focus; don't ring the whole
+   * main region (tabindex=-1 makes it focusable so the skip link lands). */
+  #ck-main:focus { outline: none; }
+  .ck-sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 </style>
 """
 
@@ -9818,10 +9856,12 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
     var heads=th.parentNode.children;
     for(var i=0;i<heads.length;i++){
       heads[i].removeAttribute('data-sort-dir');
+      if(heads[i].getAttribute('data-sortable')!=null) heads[i].setAttribute('aria-sort','none');
       var pi=heads[i].querySelector('.ck-sort-ind');
       if(pi) pi.textContent='';
     }
     th.setAttribute('data-sort-dir',dir);
+    th.setAttribute('aria-sort',dir==='asc'?'ascending':'descending');
     var mul=dir==='asc'?1:-1;
     var dec=rows.map(function(r,i){var t=cellText(r,idx);return {r:r,i:i,t:t,n:parseNum(t)};});
     dec.sort(function(a,b){
@@ -9849,7 +9889,9 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
         if(th.getAttribute('data-sortable')!=null) return;
         th.setAttribute('data-sortable','');
         th.style.cursor='pointer';
-        th.setAttribute('role','button');
+        // Keep the native columnheader role so aria-sort is honoured;
+        // tabindex + the keydown handler below still make it operable.
+        th.setAttribute('aria-sort','none');
         th.setAttribute('tabindex','0');
         if(!th.title) th.title='Sort';
         var ind=document.createElement('span');
@@ -10948,6 +10990,7 @@ _SUB_SECTION_MAP = {
     "/diligence/infusion-markets": "diligence",
     "/visuals": "research",
     "/further-analysis": "research",
+    "/cross-analysis": "research",
     "/data-apis": "research",
     "/excel-mapping": "research",
     "/excel-templates": "research",
@@ -11318,6 +11361,10 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search…" '
+        # Search terms are tickers/metrics ("EBITDA", "CCN 050441") — stop
+        # mobile keyboards auto-capitalising / auto-correcting / red-squiggling.
+        'autocomplete="off" autocapitalize="none" '
+        'autocorrect="off" spellcheck="false" '
         'aria-label="Search deals, hospitals, routes" />'
         '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
         '</form>'
@@ -11336,7 +11383,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         'title="Start a new deal in the pipeline">+ New deal</a>'
         '<div class="ck-user-menu">'
         f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
-        f'aria-expanded="false" title="Signed in" '
+        f'aria-expanded="false" aria-label="Account menu" title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
         '<div class="ck-user-dropdown" hidden>'
         # Recently-viewed deals — populated client-side from
@@ -11412,7 +11459,10 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
             parts.append(f'<a href="{_esc(href)}">{_esc(label)}</a>')
         else:
             parts.append(_esc(label))
-    return f'<nav class="ck-breadcrumbs">{"".join(parts)}</nav>'
+    return (
+        f'<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
+        f'{"".join(parts)}</nav>'
+    )
 
 
 # Global ~2% size trim ("everything a little too big"). A single root zoom
@@ -11762,11 +11812,24 @@ def chartis_shell(
     # forgot) must not even mention those selectors — test_deal_context
     # asserts bare pages carry no "ck-deal-bar" string at all.
     exhibit_print_css = _EXHIBIT_PRINT_CSS if show_chrome else ""
+    # Skip-to-content link — first focusable element so keyboard/screen-
+    # reader users can bypass the topbar + nav. Only meaningful when the
+    # chrome (and its nav) is present; bare auth pages have nothing to skip.
+    skip_link_html = (
+        '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
+        if show_chrome else ""
+    )
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
         '<meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        # The product is a single light parchment theme. Declaring the
+        # scheme stops browsers in OS dark mode from auto-darkening form
+        # controls/scrollbars (which clashed with the parchment surfaces),
+        # and theme-color tints the mobile address bar to match the topbar.
+        '<meta name="color-scheme" content="light">'
+        '<meta name="theme-color" content="#faf6ec">'
         f"<title>{_esc(title)} · PE Desk</title>"
         '<link rel="icon" type="image/svg+xml" href="/favicon.svg">'
         f"{fonts}"
@@ -11776,8 +11839,9 @@ def chartis_shell(
         f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
+        f"{skip_link_html}"
         f"{chrome_html}"
-        f'<main class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
+        f'<main id="ck-main" tabindex="-1" class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
         f"{shortcuts_html}"
         f"{_TOAST_HTML}"

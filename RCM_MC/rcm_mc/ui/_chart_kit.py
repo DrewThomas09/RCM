@@ -556,7 +556,7 @@ margin-top:7px;}
     var url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
     var img = new Image();
     img.onload = function(){
-      var s = 2, c = document.createElement('canvas');
+      var s = 3, c = document.createElement('canvas');
       c.width = w*s; c.height = h*s;
       var ctx = c.getContext('2d');
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,c.width,c.height);

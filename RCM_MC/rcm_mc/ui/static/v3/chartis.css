@@ -111,6 +111,66 @@ img, svg { display: block; max-width: 100%; }
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* ── Accessibility: keyboard focus, skip-link, reduced motion ───────
+ * Before this block only .cta-btn carried a :focus-visible ring, so
+ * tabbing through links, nav items, generic buttons and form fields
+ * left no visible focus indicator — a WCAG 2.4.7 gap on every page.
+ * Scoped to :focus-visible so mouse clicks don't draw the ring;
+ * component-level focus rules still win on specificity. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--teal, #1F7A75);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+/* Skip-to-content link — off-screen until focused, then pinned
+ * top-left so keyboard users can jump past the topbar/nav. */
+.ck-skip-link {
+  position: absolute;
+  left: -9999px; top: 0;
+  z-index: 1000;
+  background: var(--ink, #0F1C2E);
+  color: var(--paper, #FAF7F0);
+  padding: .6rem 1rem;
+  font-family: "Inter", sans-serif;
+  font-size: .8rem; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  text-decoration: none;
+}
+.ck-skip-link:focus { left: .5rem; top: .5rem; }
+/* The skip target receives programmatic focus; don't ring the whole
+ * main region (tabindex=-1 makes it focusable so the skip link lands). */
+#ck-main:focus { outline: none; }
+
+/* Screen-reader-only utility — present for assistive tech, hidden
+ * visually (e.g. labels for icon-only controls). */
+.ck-sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+
+/* Honour the OS "reduce motion" preference platform-wide. The
+ * editorial chrome uses transitions + translateY hover lifts in
+ * dozens of places; users with vestibular sensitivity want them off. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* code/pre/kbd default to the browser monospace (Courier-ish); pin them to
    the design mono so inline code + module paths match JetBrains Mono. */
 code, pre, kbd, samp { font-family: var(--sc-mono, "JetBrains Mono", monospace); }

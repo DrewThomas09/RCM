@@ -699,17 +699,17 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     </div>
     <div class="ps-form-grid">
       <div class="ps-form-field"><label>Target name</label>
-        <input name="target_name" value="Meadowbrook Regional"/></div>
+        <input name="target_name" aria-label="Target name" value="Meadowbrook Regional"/></div>
       <div class="ps-form-field"><label>Total NPR (USD)</label>
-        <input name="total_npr_usd" value="450000000"/></div>
+        <input name="total_npr_usd" aria-label="Total NPR (USD)" value="450000000"/></div>
       <div class="ps-form-field"><label>Total EBITDA (USD)</label>
-        <input name="total_ebitda_usd" value="67500000"/></div>
+        <input name="total_ebitda_usd" aria-label="Total EBITDA (USD)" value="67500000"/></div>
       <div class="ps-form-field"><label>Horizon (years)</label>
-        <input name="horizon_years" value="5"/></div>
+        <input name="horizon_years" aria-label="Horizon (years)" value="5"/></div>
       <div class="ps-form-field"><label>Simulation paths</label>
-        <input name="n_paths" value="500"/></div>
+        <input name="n_paths" aria-label="Simulation paths" value="500"/></div>
       <div class="ps-form-field"><label>EBITDA pass-through (0-1)</label>
-        <input name="ebitda_pass_through" value="0.70"/></div>
+        <input name="ebitda_pass_through" aria-label="EBITDA pass-through (0-1)" value="0.70"/></div>
     </div>
     <button class="ps-form-submit" type="submit">
       Run payer stress</button>

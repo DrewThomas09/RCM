@@ -286,7 +286,7 @@ def _signature_chart(
         labels.append(
             f'<text x="{pad_l - 8:.0f}" y="{y + row_h/2 + 1:.0f}" '
             f'fill="{P["text_dim"]}" font-size="9" text-anchor="end" '
-            f'font-family="Helvetica Neue, Arial, sans-serif">'
+            f'font-family="Inter Tight, system-ui, sans-serif">'
             f'{html.escape(lbl)}</text>'
         )
         # Background track.
@@ -312,11 +312,11 @@ def _signature_chart(
         f'<g transform="translate({pad_l},{height - 10:.0f})">'
         f'<rect width="10" height="6" fill="{P["accent"]}" />'
         f'<text x="16" y="6" fill="{P["text_dim"]}" font-size="9" '
-        f'font-family="Helvetica Neue, Arial, sans-serif">target</text>'
+        f'font-family="Inter Tight, system-ui, sans-serif">target</text>'
         f'<rect x="72" width="10" height="6" '
         f'fill="{P["text_faint"]}" opacity="0.6" />'
         f'<text x="88" y="6" fill="{P["text_dim"]}" font-size="9" '
-        f'font-family="Helvetica Neue, Arial, sans-serif">historical</text>'
+        f'font-family="Inter Tight, system-ui, sans-serif">historical</text>'
         f'</g>'
     )
     return (

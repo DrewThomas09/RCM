@@ -468,8 +468,10 @@ class BuilderPageTests(unittest.TestCase):
             "data": ["A\tV\n" + rows]})
         self.assertIn('name="bins"', h)
         chart = h.split('id="chartOut"')[1].split("GALLERY")[0]
-        # 4 requested bins → 4 histogram bars in the main chart.
-        self.assertEqual(chart.count("<rect"), 4)
+        # 4 requested bins → 4 histogram bars in the main chart. Each bar
+        # carries a depth sheen overlay (one url(#cdvg…) per bar), so the
+        # bar count is the number of vertical-sheen overlays.
+        self.assertEqual(chart.count("url(#cdvg"), 4)
         # Bogus bins ignored.
         hb = render_chart_builder_page({"type": ["histogram"],
                                         "bins": ["nope"]})

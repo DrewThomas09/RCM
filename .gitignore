@@ -2,6 +2,10 @@
 .DS_Store
 Thumbs.db
 
+# Parallel-agent worktrees (see AGENTS.md) — never committed
+.claude/worktrees/
+.worktreeinclude
+
 # Python
 __pycache__/
 *.py[cod]

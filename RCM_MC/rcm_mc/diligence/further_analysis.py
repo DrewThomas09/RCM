@@ -381,6 +381,32 @@ def _load_labor(_focus: Optional[str]) -> List[Dict[str, Any]]:
     return out
 
 
+def _load_public_comps(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """Public healthcare-company comparables — market cap, EV, revenue, EBITDA,
+    trading multiples and margin. $bn fields are re-expressed in raw dollars so
+    the usd_b display scaling shows a 'B' suffix."""
+    from ..market_intel import public_comps as pc
+    out: List[Dict[str, Any]] = []
+    for c in _safe(pc.list_companies):
+        def _bn(v: Any) -> Optional[float]:
+            try:
+                return float(v) * 1_000_000_000.0
+            except (TypeError, ValueError):
+                return None
+        out.append({
+            "name": getattr(c, "name", "") or getattr(c, "ticker", "—"),
+            "ev_ebitda_multiple": getattr(c, "ev_ebitda_multiple", None),
+            "ev_revenue_multiple": getattr(c, "ev_revenue_multiple", None),
+            "market_cap": _bn(getattr(c, "market_cap_usd_bn", None)),
+            "enterprise_value": _bn(getattr(c, "enterprise_value_usd_bn", None)),
+            "revenue_ttm": _bn(getattr(c, "revenue_ttm_usd_bn", None)),
+            "ebitda_ttm": _bn(getattr(c, "ebitda_ttm_usd_bn", None)),
+            "debt_to_ebitda": getattr(c, "debt_to_ebitda", None),
+            "operating_margin": getattr(c, "operating_margin", None),
+        })
+    return out
+
+
 def _load_multiples(_focus: Optional[str]) -> List[Dict[str, Any]]:
     """All EV/EBITDA transaction-multiple bands, read straight from the
     vendored YAML so every specialty × deal-size band is available."""
@@ -479,6 +505,41 @@ def _load_mips_bands(_focus: Optional[str]) -> List[Dict[str, Any]]:
             continue
         out.append({"band": str(band), "clinicians": r.get("count"),
                     "share": r.get("pct")})
+    return out
+
+
+def _load_postacute_quality(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Care Compare post-acute quality by state — the average rating in each
+    vertical (SNF/HHA/dialysis on a 1-5 star scale, hospice family-care index on
+    0-10, IRF discharge-to-community %). Complements the count footprint with a
+    cross-vertical quality read per state."""
+    from ..data import (snf, home_health as hh, hospice as ho,
+                         dialysis as di, irf)
+
+    def _by_state(fn: Callable[[], Dict[str, Any]]) -> Dict[str, Any]:
+        try:
+            return fn() or {}
+        except Exception:
+            return {}
+
+    snf_s = _by_state(snf.load_snf_summary_by_state)
+    hha_s = _by_state(hh.load_home_health_summary_by_state)
+    hos_s = _by_state(ho.load_hospice_summary_by_state)
+    dia_s = _by_state(di.load_dialysis_summary_by_state)
+    irf_s = _by_state(irf.load_irf_summary_by_state)
+
+    out: List[Dict[str, Any]] = []
+    for st in _STATES:
+        row = {
+            "state": _STATE_NAMES.get(st, st),
+            "snf_overall": (snf_s.get(st) or {}).get("avg_overall_rating"),
+            "hha_star": (hha_s.get(st) or {}).get("avg_star_rating"),
+            "hospice_care_index": (hos_s.get(st) or {}).get("avg_care_index"),
+            "dialysis_five_star": (dia_s.get(st) or {}).get("avg_five_star"),
+            "irf_dtc": (irf_s.get(st) or {}).get("avg_dtc"),
+        }
+        if any(v is not None for k, v in row.items() if k != "state"):
+            out.append(row)
     return out
 
 
@@ -699,6 +760,42 @@ def _load_clinical_trial_phase(_focus: Optional[str]) -> List[Dict[str, Any]]:
         if not ph:
             continue
         out.append({"phase": str(ph), "studies": r.get("count")})
+    return out
+
+
+def _load_snf_turnover(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS PBJ skilled-nursing total nurse-staff turnover, median by state — a
+    labor-pressure / staffing-stability signal for SNF diligence."""
+    from ..data import snf
+    out: List[Dict[str, Any]] = []
+    for r in _safe(lambda: snf.snf_turnover_by_state(60)):
+        st = r.get("state")
+        if st not in _STATE_NAMES:
+            continue
+        out.append({
+            "state": _STATE_NAMES.get(st, st),
+            "median_turnover": r.get("median_pct"),
+            "facilities_reporting": r.get("facilities_reporting"),
+        })
+    return out
+
+
+def _load_snf_rating_dist(_focus: Optional[str]) -> List[Dict[str, Any]]:
+    """CMS Care Compare SNF overall 5-star rating distribution — the quality
+    histogram across skilled-nursing facilities."""
+    from ..data import snf
+    try:
+        dist = (snf.snf_rating_distribution() or {}).get("dist", {})
+    except Exception:
+        return []
+    out: List[Dict[str, Any]] = []
+    for stars in ("1", "2", "3", "4", "5"):
+        cell = dist.get(stars) or {}
+        out.append({
+            "rating": f"{stars}-star",
+            "facilities": cell.get("count"),
+            "share": cell.get("pct"),
+        })
     return out
 
 
@@ -929,6 +1026,24 @@ _DATASETS_LIST: List[Dataset] = [
         note="Wage, turnover and vacancy by clinical/admin role.",
     ),
     Dataset(
+        id="public_comps", label="Public healthcare comparables",
+        category="Markets",
+        source="Public healthcare-company filings / market data (vendored)",
+        grain="category", dim_key="name", dim_label="Company",
+        measures=[
+            Measure("ev_ebitda_multiple", "EV/EBITDA", "x"),
+            Measure("ev_revenue_multiple", "EV/Revenue", "x"),
+            Measure("market_cap", "Market cap", "usd_b"),
+            Measure("enterprise_value", "Enterprise value", "usd_b"),
+            Measure("revenue_ttm", "Revenue (TTM)", "usd_b"),
+            Measure("ebitda_ttm", "EBITDA (TTM)", "usd_b"),
+            Measure("debt_to_ebitda", "Net debt / EBITDA", "x"),
+            Measure("operating_margin", "Operating margin", _PCT),
+        ],
+        loader=_load_public_comps,
+        note="Listed healthcare comps — multiples, scale and margin.",
+    ),
+    Dataset(
         id="multiples", label="PE transaction multiples (EV/EBITDA)",
         category="Markets",
         source="Healthcare M&A comps library (vendored)",
@@ -1026,6 +1141,22 @@ _DATASETS_LIST: List[Dataset] = [
         note="Final-score histogram across clinicians (most cluster 75-100).",
     ),
     Dataset(
+        id="postacute_quality",
+        label="Post-acute quality by state",
+        category="CMS",
+        source="CMS Care Compare — SNF/HHA/hospice/dialysis/IRF ratings (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("snf_overall", "SNF overall (1-5)", "num"),
+            Measure("hha_star", "Home health star (1-5)", "num"),
+            Measure("dialysis_five_star", "Dialysis 5-star (1-5)", "num"),
+            Measure("hospice_care_index", "Hospice care index (0-10)", "num"),
+            Measure("irf_dtc", "IRF discharge-to-community %", _P100),
+        ],
+        loader=_load_postacute_quality,
+        note="Average Care Compare rating per post-acute vertical, by state.",
+    ),
+    Dataset(
         id="postacute_footprint",
         label="Post-acute provider footprint (state)",
         category="CMS",
@@ -1051,6 +1182,30 @@ _DATASETS_LIST: List[Dataset] = [
         measures=[Measure("facilities_owned", "Facilities owned", "num")],
         loader=_load_snf_owners,
         note="Largest skilled-nursing chains by facility count.",
+    ),
+    Dataset(
+        id="snf_turnover", label="SNF nurse turnover by state",
+        category="CMS",
+        source="CMS Payroll-Based Journal nurse staffing turnover (vendored)",
+        grain="state", dim_key="state", dim_label="State",
+        measures=[
+            Measure("median_turnover", "Median nurse turnover", _P100),
+            Measure("facilities_reporting", "Facilities reporting", "num"),
+        ],
+        loader=_load_snf_turnover,
+        note="Median total nurse-staff turnover by state — staffing pressure.",
+    ),
+    Dataset(
+        id="snf_rating_dist", label="SNF 5-star rating distribution",
+        category="CMS",
+        source="CMS Care Compare SNF overall star ratings (vendored)",
+        grain="category", dim_key="rating", dim_label="Overall rating",
+        measures=[
+            Measure("facilities", "Facilities", "num"),
+            Measure("share", "Share of facilities", _P100),
+        ],
+        loader=_load_snf_rating_dist,
+        note="Overall 5-star rating histogram across skilled-nursing facilities.",
     ),
     Dataset(
         id="mssp_aco_state", label="ACO footprint by state (MSSP)",

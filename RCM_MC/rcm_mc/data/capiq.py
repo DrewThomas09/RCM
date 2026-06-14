@@ -230,6 +230,295 @@ def resolve_export(records: List[CapIQRecord], **kw: Any) -> List[EntityResoluti
     return [resolve_record(r, **kw) for r in records]
 
 
+# ── NPPES NPI resolution (the non-hospital counterpart) ───────────────────
+# ``resolve_record`` reaches CMS CCNs in HCRIS, which only covers Medicare
+# hospital cost-reporters. Most CapIQ/Deal-Library targets are NOT hospitals
+# (physician groups, dental/DSO, home health, infusion, behavioral), so they
+# land UNMATCHED there. NPPES is the provider *universe* — every enrolled
+# org has a Type-2 NPI — so it resolves the entities HCRIS structurally can't.
+@dataclass
+class NpiCandidate:
+    npi: str
+    name: str
+    state: Optional[str]
+    taxonomy: str
+    score: float            # 0..1 SequenceMatcher ratio vs the query name
+
+
+@dataclass
+class NpiResolution:
+    """A CapIQ company mapped (or not) to a NPPES Type-2 organization NPI.
+    Mirrors :class:`EntityResolution` but for the provider universe;
+    ``candidates`` is populated only when AMBIGUOUS so a reviewer can pick
+    without re-querying."""
+    capiq_id: str
+    company_name: str
+    status: ResolutionStatus
+    npi: Optional[str] = None
+    confidence: float = 0.0
+    candidates: List[NpiCandidate] = field(default_factory=list)
+
+
+def _default_npi_fetch(name: str, state: Optional[str], limit: int) -> List[Any]:
+    """Live NPPES org lookup. Imported lazily and behind the injectable
+    ``fetch`` seam so tests never touch the network and a missing/unreachable
+    registry simply yields no candidates (→ UNMATCHED, never a fabricated NPI)."""
+    try:
+        from ..data_public.nppes_api_client import search_by_organization
+    except Exception:
+        return []
+    try:
+        return search_by_organization(name, state or "", limit=limit)
+    except Exception:
+        return []
+
+
+def resolve_record_to_npi(
+    rec: CapIQRecord,
+    *,
+    fetch: Optional[Any] = None,
+    accept_threshold: float = 0.90,
+    ambiguity_margin: float = 0.05,
+    limit: int = 10,
+) -> NpiResolution:
+    """Resolve one CapIQ company to a NPPES Type-2 organization NPI.
+
+    Same conservative decision rule as :func:`resolve_record` — a wrong NPI
+    corrupts provider-supply counts, so an ambiguous match is *surfaced, never
+    auto-picked*:
+
+      * 0 candidates                       → UNMATCHED.
+      * top score ≥ ``accept_threshold`` AND it clears the runner-up by
+        ``ambiguity_margin`` (or is the only candidate) → RESOLVED.
+      * otherwise                          → AMBIGUOUS (candidates returned).
+
+    ``fetch(name, state, limit)`` returns objects exposing ``npi``,
+    ``organization_name``, ``state`` and ``taxonomy_label`` (e.g.
+    ``NppesProvider``); it is injectable so this is fully offline-testable.
+    ``rec.state`` scopes the search, then retries unscoped — a target's HQ
+    geography often differs from where its facilities enroll.
+    """
+    fetch = fetch or _default_npi_fetch
+
+    matches = list(fetch(rec.company_name, rec.state, limit) or [])
+    if not matches and rec.state:
+        matches = list(fetch(rec.company_name, None, limit) or [])
+    if not matches:
+        return NpiResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    cands = [
+        NpiCandidate(
+            npi=str(getattr(m, "npi", "") or ""),
+            name=str(getattr(m, "organization_name", "") or getattr(m, "name", "") or ""),
+            state=(str(getattr(m, "state", "")) or None),
+            taxonomy=str(getattr(m, "taxonomy_label", "") or ""),
+            score=_score(rec.company_name,
+                         getattr(m, "organization_name", "") or getattr(m, "name", "") or ""),
+        )
+        for m in matches if getattr(m, "npi", "")
+    ]
+    cands.sort(key=lambda c: c.score, reverse=True)
+    if not cands:
+        return NpiResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    top = cands[0]
+    runner = cands[1].score if len(cands) > 1 else 0.0
+    clean = top.score >= accept_threshold and (top.score - runner) >= ambiguity_margin
+    if clean:
+        return NpiResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.RESOLVED, npi=top.npi,
+            confidence=round(top.score, 4),
+        )
+    return NpiResolution(
+        capiq_id=rec.capiq_id, company_name=rec.company_name,
+        status=ResolutionStatus.AMBIGUOUS, confidence=round(top.score, 4),
+        candidates=cands,
+    )
+
+
+def resolve_export_to_npi(records: List[CapIQRecord], **kw: Any) -> List[NpiResolution]:
+    """Resolve every parsed record to a NPPES NPI. ``**kw`` forwards thresholds
+    and the ``fetch`` seam to :func:`resolve_record_to_npi`."""
+    return [resolve_record_to_npi(r, **kw) for r in records]
+
+
+# ── ProPublica EIN resolution (nonprofit targets) ─────────────────────────
+# irs990.fetch_990 needs an EIN, but notes the CCN↔EIN mapping is
+# "analyst-supplied — there's no canonical crosswalk"; the analyst looks the
+# EIN up by hand. This closes that gap for nonprofit targets: resolve a
+# company name to an IRS EIN via ProPublica's Nonprofit Explorer, with the
+# same surfaced-ambiguity discipline (a wrong EIN pulls the wrong 990).
+@dataclass
+class EinCandidate:
+    ein: str
+    name: str
+    state: Optional[str]
+    score: float            # 0..1 SequenceMatcher ratio vs the query name
+
+
+@dataclass
+class EinResolution:
+    capiq_id: str
+    company_name: str
+    status: ResolutionStatus
+    ein: Optional[str] = None
+    confidence: float = 0.0
+    candidates: List[EinCandidate] = field(default_factory=list)
+
+
+def _default_ein_fetch(name: str, state: Optional[str], limit: int) -> List[Any]:
+    """Live ProPublica Nonprofit Explorer search, behind the injectable seam.
+    Returns no candidates (→ UNMATCHED) on any error — never a fabricated EIN."""
+    try:
+        from ..data_public.public_api_clients import propublica_search
+    except Exception:
+        return []
+    try:
+        orgs = propublica_search(name, state=(state or ""))
+    except Exception:
+        return []
+    return list(orgs)[:limit]
+
+
+def resolve_record_to_ein(
+    rec: CapIQRecord,
+    *,
+    fetch: Optional[Any] = None,
+    accept_threshold: float = 0.90,
+    ambiguity_margin: float = 0.05,
+    limit: int = 10,
+) -> EinResolution:
+    """Resolve one CapIQ company to an IRS EIN (nonprofit targets only).
+
+    Same conservative rule as the CCN/NPI resolvers — 0 candidates → UNMATCHED;
+    a clean top match → RESOLVED; otherwise AMBIGUOUS (candidates surfaced, a
+    wrong EIN is never auto-selected). ``fetch(name, state, limit)`` returns
+    ProPublica org dicts (``ein``/``name``/``state``); injectable for offline
+    tests. Feed a RESOLVED EIN straight into :func:`irs990.fetch_990`.
+    """
+    fetch = fetch or _default_ein_fetch
+
+    orgs = list(fetch(rec.company_name, rec.state, limit) or [])
+    if not orgs and rec.state:
+        orgs = list(fetch(rec.company_name, None, limit) or [])
+    if not orgs:
+        return EinResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    cands = [
+        EinCandidate(
+            ein=str(o.get("ein") or "").strip(),
+            name=str(o.get("name") or "").strip(),
+            state=(str(o.get("state")) if o.get("state") else None),
+            score=_score(rec.company_name, o.get("name") or ""),
+        )
+        for o in orgs if str(o.get("ein") or "").strip()
+    ]
+    cands.sort(key=lambda c: c.score, reverse=True)
+    if not cands:
+        return EinResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.UNMATCHED,
+        )
+
+    top = cands[0]
+    runner = cands[1].score if len(cands) > 1 else 0.0
+    clean = top.score >= accept_threshold and (top.score - runner) >= ambiguity_margin
+    if clean:
+        return EinResolution(
+            capiq_id=rec.capiq_id, company_name=rec.company_name,
+            status=ResolutionStatus.RESOLVED, ein=top.ein,
+            confidence=round(top.score, 4),
+        )
+    return EinResolution(
+        capiq_id=rec.capiq_id, company_name=rec.company_name,
+        status=ResolutionStatus.AMBIGUOUS, confidence=round(top.score, 4),
+        candidates=cands,
+    )
+
+
+def resolve_export_to_ein(records: List[CapIQRecord], **kw: Any) -> List[EinResolution]:
+    """Resolve every parsed record to an IRS EIN. ``**kw`` forwards thresholds
+    and the ``fetch`` seam to :func:`resolve_record_to_ein`."""
+    return [resolve_record_to_ein(r, **kw) for r in records]
+
+
+# ── Unified identity (one call across all three universes) ─────────────────
+# A target rarely declares which universe it lives in. A hospital system has a
+# CCN; a physician/dental/home-health group has an NPI; a nonprofit has an EIN —
+# and a nonprofit hospital has all three. Running the resolvers separately
+# forces the caller to stitch the answer; this returns a single identity card.
+@dataclass
+class EntityIdentity:
+    capiq_id: str
+    company_name: str
+    ccn: Optional[str] = None
+    ccn_status: ResolutionStatus = ResolutionStatus.UNMATCHED
+    npi: Optional[str] = None
+    npi_status: ResolutionStatus = ResolutionStatus.UNMATCHED
+    ein: Optional[str] = None
+    ein_status: ResolutionStatus = ResolutionStatus.UNMATCHED
+
+    @property
+    def resolved_kinds(self) -> List[str]:
+        """The identifier kinds that resolved cleanly (CCN/NPI/EIN), in a
+        stable order. Empty means the target matched nothing — likely a
+        for-profit non-facility, or a name too generic to resolve."""
+        out: List[str] = []
+        if self.ccn_status is ResolutionStatus.RESOLVED:
+            out.append("ccn")
+        if self.npi_status is ResolutionStatus.RESOLVED:
+            out.append("npi")
+        if self.ein_status is ResolutionStatus.RESOLVED:
+            out.append("ein")
+        return out
+
+    @property
+    def any_ambiguous(self) -> bool:
+        """True if any universe found plausible-but-unconfirmed matches — a cue
+        to surface candidates for a human pick rather than trust the card."""
+        return ResolutionStatus.AMBIGUOUS in (
+            self.ccn_status, self.npi_status, self.ein_status)
+
+
+def resolve_identity(
+    rec: CapIQRecord,
+    *,
+    npi_fetch: Optional[Any] = None,
+    ein_fetch: Optional[Any] = None,
+    accept_threshold: float = 0.90,
+    ambiguity_margin: float = 0.05,
+    limit: int = 10,
+) -> EntityIdentity:
+    """Resolve one CapIQ company across all three universes in a single call.
+
+    Delegates to the three resolvers (each keeps its own surfaced-ambiguity
+    discipline) and folds the outcomes into one :class:`EntityIdentity`. The
+    NPPES/ProPublica fetches are injectable so this is offline-testable; the
+    CCN path reads the shipped HCRIS data (local, no network).
+    """
+    kw = dict(accept_threshold=accept_threshold,
+              ambiguity_margin=ambiguity_margin, limit=limit)
+    ccn = resolve_record(rec, **kw)
+    npi = resolve_record_to_npi(rec, fetch=npi_fetch, **kw)
+    ein = resolve_record_to_ein(rec, fetch=ein_fetch, **kw)
+    return EntityIdentity(
+        capiq_id=rec.capiq_id, company_name=rec.company_name,
+        ccn=ccn.ccn, ccn_status=ccn.status,
+        npi=npi.npi, npi_status=npi.status,
+        ein=ein.ein, ein_status=ein.status,
+    )
+
+
 # Fields HCRIS (CMS public) contributes that a financial export typically
 # lacks — this is the "fill the gaps with CMS data" payload.
 _CMS_GAP_FIELDS = (

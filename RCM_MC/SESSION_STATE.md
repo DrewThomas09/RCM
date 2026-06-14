@@ -766,3 +766,56 @@ shows a "Ready in-repo" strip of chips linking to the Further Analysis charts
 that already answer that question (provider-universe→8 datasets, drugs/devices→5,
 financials→5, demographics/labor→7, volume/outcomes→4). Mapping validated
 against the live dataset registry at render + in tests. +1 test; sweep 59 passed.
+
+---
+## Checkpoint — wave #106 (2026-06-13)
+Further Analysis: +2 CMS SNF datasets — nurse turnover by state (PBJ median
+total nurse-staff turnover, 51 states; staffing-pressure signal) + SNF 5-star
+rating distribution (quality histogram across ~14.6K facilities). Explorer now
+34 datasets. Suite 47 passed.
+
+---
+## Checkpoint — wave #107 (2026-06-13)
+Further Analysis: +Post-acute quality by state — avg Care Compare rating per
+vertical (SNF/HHA/dialysis 1-5 star, hospice care index 0-10, IRF DTC %),
+cross-vertical quality complement to the count footprint. Explorer now 35
+datasets. +2 targeted tests (snf_turnover pct, postacute_quality scale);
+suite 49 passed.
+
+---
+## Checkpoint — wave #108 (2026-06-13)
+Further Analysis: +Public healthcare comparables — 14 listed companies with
+EV/EBITDA, EV/Revenue, market cap, EV, revenue/EBITDA (TTM), net-debt/EBITDA,
+operating margin ($bn fields re-expressed so usd_b renders 'B'). Added to the
+financials launchpad. Explorer now 36 datasets. +1 test; suite 50 passed.
+
+---
+## Checkpoint — wave #109 (2026-06-13)
+public_api_clients: +POST transport (post_json with injectable post-opener,
+same retry/rate-limit/fail-closed semantics) + builders for SEC EDGAR
+(companyfacts/concept, GET), HRSA OData (GET), USAspending (spending_by_award,
+POST body) and BLS (timeseries, POST body). CLIENT_BUILDERS now 9. Catalog
+statuses unchanged (scaffolds, not end-to-end offline loaders). +8 tests;
+client suite 28 passed.
+
+---
+## Checkpoint — wave #110 (2026-06-13) — analytical layer
+NEW analysis capability: Cross-Dataset Analysis (/cross-analysis +
+/api/cross-analysis). Correlate any two of the 14 state-grain public datasets
+on shared state -> Pearson r, R², least-squares fit, scatter w/ trendline, and
+joined table. None/NaN-safe join (drops unpaired states, never zero-fills);
+constant-series & n<3 guards. Default MA penetration × hospital margin (r~0.50).
+diligence/cross_analysis.py (pure) + ui/cross_analysis_page.py + nav/palette/
+breadcrumb wiring. +15 tests; nav-integrity green.
+
+---
+## Checkpoint — wave #111 (2026-06-13)
+Cross-Dataset Analysis upgraded with an auto correlation-scan discovery engine:
+scan_correlations() ranks the strongest SUBSTANTIVE relationships across all
+state-grain measure pairs, filtering out tautologies (derived composites, raw
+count/scale measures that track state size, same-metric-reused pairs, and
+near-perfect |r|>0.985 duplicates). Surfaces a clickable "Strongest
+relationships" panel on /cross-analysis (e.g. child poverty × food insecurity
+r=0.83; hospital scale × ACO footprint r=0.85; median income × poor health
+r=-0.74; rural × patient experience r=0.73) + top_relationships in the JSON.
+lru_cached. +4 tests; suite 19 passed.

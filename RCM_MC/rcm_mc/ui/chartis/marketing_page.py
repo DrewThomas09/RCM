@@ -458,7 +458,7 @@ def _topbar() -> str:
         '<div class="brand-mark">PD</div>'
         '<div class="brand-name">PE <em>Desk</em></div>'
         '</a>'
-        '<nav class="topnav">'
+        '<nav class="topnav" aria-label="Primary">'
         '<a href="#workspace">Workspace</a>'
         '<a href="#modules">What it computes</a>'
         '<a href="#proof">Sample profile</a>'

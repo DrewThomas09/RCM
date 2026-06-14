@@ -231,7 +231,7 @@ def _target_scatter_chart(
             f'fill="{P["warning"]}"><title>Target</title></circle>'
             f'<text x="{tx + 12:.1f}" y="{ty + 4:.1f}" '
             f'fill="{P["warning"]}" font-size="10" '
-            f'font-family="Helvetica Neue, Arial, sans-serif" '
+            f'font-family="Inter Tight, system-ui, sans-serif" '
             f'font-weight="700">TARGET</text>'
         )
 
@@ -263,7 +263,7 @@ def _target_scatter_chart(
     x_axis.append(
         f'<text x="{pad_l + inner_w / 2:.0f}" y="{pad_t + inner_h + 34:.0f}" '
         f'fill="{P["text_faint"]}" text-anchor="middle" font-size="9" '
-        f'font-family="Helvetica Neue, Arial, sans-serif" '
+        f'font-family="Inter Tight, system-ui, sans-serif" '
         f'letter-spacing="1" font-style="italic">'
         f'TTM REVENUE — LOG SCALE ($B)</text>'
     )
@@ -273,7 +273,7 @@ def _target_scatter_chart(
         note = (
             f'<text x="{pad_l}" y="{height - 6:.0f}" '
             f'fill="{P["text_faint"]}" font-size="9.5" '
-            f'font-family="Helvetica Neue, Arial, sans-serif" '
+            f'font-family="Inter Tight, system-ui, sans-serif" '
             f'font-style="italic">'
             f'Target position uses a 12% EBITDA margin assumption '
             f'(acute hospital median).</text>'
@@ -284,7 +284,7 @@ def _target_scatter_chart(
         f'preserveAspectRatio="xMidYMid meet" '
         f'style="max-width:{width}px;height:auto;display:block;margin-top:8px;">'
         f'<text x="{pad_l}" y="14" fill="{P["text_dim"]}" '
-        f'font-size="10" font-family="Helvetica Neue, Arial, sans-serif" '
+        f'font-size="10" font-family="Inter Tight, system-ui, sans-serif" '
         f'font-weight="700" letter-spacing="1.5">'
         f'EV/EBITDA vs REVENUE · PEER SCATTER</text>'
         f'{"".join(grid)}'

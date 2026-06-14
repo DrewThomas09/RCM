@@ -170,6 +170,7 @@ def generate_html_report(
     _theme_vars = get_theme_css(theme)
     _escaped_title = html_escape(title)
     html_parts.append("<!doctype html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n"
+                       + "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
                        + f"  <title>{_escaped_title}</title>\n"
                        + f"  <style>\n    {_theme_vars}\n  </style>\n"
                        + "  <style>")
@@ -177,7 +178,7 @@ def generate_html_report(
 
     # Sticky navigation bar
     html_parts.append("""
-    <nav class="report-nav"><div class="report-nav-inner">
+    <nav class="report-nav" aria-label="Report sections"><div class="report-nav-inner">
       <span class="nav-brand">RCM Analysis</span>
       <a href="#exec-summary">Summary</a>
       <a href="#payer-dashboard">Payer Dashboard</a>
