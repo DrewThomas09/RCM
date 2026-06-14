@@ -11507,14 +11507,25 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
             continue
         norm.append((label, href))
     parts = []
+    last = len(norm) - 1
     for i, (label, href) in enumerate(norm):
         if i:
-            parts.append('<span class="sep">/</span>')
+            # aria-hidden so AT doesn't read "slash" between every crumb.
+            parts.append('<span class="sep" aria-hidden="true">/</span>')
         if href:
             parts.append(f'<a href="{_esc(href)}">{_esc(label)}</a>')
+        elif i == last:
+            # Final href-less crumb is the page you're on — mark it so a
+            # screen reader announces "current page".
+            parts.append(f'<span aria-current="page">{_esc(label)}</span>')
         else:
             parts.append(_esc(label))
-    return f'<nav class="ck-breadcrumbs">{"".join(parts)}</nav>'
+    # aria-label distinguishes this from the Primary nav landmark — without
+    # it AT announces two unnamed "navigation" regions on every page.
+    return (
+        f'<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
+        f'{"".join(parts)}</nav>'
+    )
 
 
 # Global ~2% size trim ("everything a little too big"). A single root zoom
