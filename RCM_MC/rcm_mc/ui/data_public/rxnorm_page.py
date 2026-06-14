@@ -22,7 +22,9 @@ import html as _html
 from typing import Any, Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
-from rcm_mc.data_public.rxnorm import analytics, query as rxquery, registry
+from rcm_mc.ui._chart_kit import ck_hbar_chart
+from rcm_mc.data_public.rxnorm import (analytics, query as rxquery, registry,
+                                       store as rxstore, validation)
 
 
 def _clamp_int(v: Any, lo: int, hi: int, default: int) -> int:
@@ -326,6 +328,91 @@ def _seed_prompt(csrf_hint: bool = True) -> str:
     )
 
 
+def _top_class_chart(store: Any, class_type: str) -> str:
+    """Ranked bar chart of drug classes by competitive-set size."""
+    rows = analytics.competitive_set_by_class(store, class_type=class_type,
+                                              limit=12)
+    if not rows:
+        return ""
+    tone_by_type = {"ATC": "teal", "therapeutic": "navy",
+                    "mechanism_of_action": "amber"}
+    items = [(f'{r["class_name"] or r["class_id"]}', r["n_rxcui"],
+              tone_by_type.get(r["class_type"], "muted")) for r in rows]
+    return ck_hbar_chart(
+        "Largest competitive sets by drug class",
+        items,
+        value_fmt=lambda v: f"{int(v)}",
+        subtitle="Distinct molecules grouped under each class — bigger bar = "
+                 "more crowded competitive set",
+        source="RxClass (ATC / therapeutic / mechanism of action) via RxNav.",
+        label_w=180.0,
+    )
+
+
+def _openfda_coverage_panel(store: Any) -> str:
+    """Crosswalk-quality panel: how well the crosswalk joins to openFDA NDCs."""
+    rep = validation.openfda_ndc_match_rate(store)
+    pct = rep.get("match_rate", 0) * 100
+    sample = ", ".join(_html.escape(s) for s in rep.get("unmatched_sample", [])[:6])
+    return (
+        '<div style="border:1px solid #b9cde6;background:#eef4fb;border-radius:4px;'
+        'padding:12px 16px;max-width:760px;margin:6px 0 18px;">'
+        f'<div style="{_MONO}font-size:10px;letter-spacing:.08em;text-transform:'
+        f'uppercase;color:#0b2341;margin-bottom:6px;">Crosswalk coverage vs openFDA</div>'
+        f'<div style="font-size:13px;">Of <strong>{rep.get("normalizable",0)}</strong> '
+        f'openFDA drug-shortage NDCs, <strong>{rep.get("matched",0)}</strong> '
+        f'resolve through the crosswalk '
+        f'(<strong>{pct:.1f}%</strong> match rate). '
+        f'{rep.get("unnormalizable",0)} were unnormalizable.</div>'
+        + (f'<div style="font-size:11px;color:#6a7480;margin-top:4px;">'
+           f'Unmatched sample (extend coverage via a live pull): '
+           f'<code style="{_MONO}">{sample}</code></div>' if sample else "")
+        + '<div style="font-size:10.5px;color:#8b94a0;margin-top:6px;">'
+        'Read-only join against openFDA’s vendored drug-shortage snapshot '
+        '(package_ndc). Match rate scales with crosswalk breadth.</div></div>'
+    )
+
+
+# ── CSV export ──────────────────────────────────────────────────────────────
+
+_EXPORT_TABLES = {
+    "crosswalk": ("xwalk_ndc_rxcui",
+                  ["ndc_11", "ndc_raw", "rxcui", "status"]),
+    "concepts": ("dim_rxnorm_concept",
+                 ["rxcui", "name", "tty", "status", "remapped_to_rxcui"]),
+    "classes": ("dim_drug_class",
+                ["rxcui", "class_id", "class_name", "class_type"]),
+}
+
+
+def build_export_df(store: Any, table: str):
+    """Build a pandas DataFrame for a named export table (CSV download).
+
+    ``table`` is one of crosswalk|concepts|classes|audit. Unknown names raise
+    KeyError so the route returns a clean 404 rather than guessing.
+    """
+    import pandas as pd
+    if table == "audit":
+        rows = analytics.retired_remapped_audit(store, limit=1000)
+        return pd.DataFrame(rows, columns=[
+            "rxcui", "name", "status", "remapped_to_rxcui",
+            "resolves_to_rxcui", "resolves_to_name", "resolves_to_status"])
+    tbl, cols = _EXPORT_TABLES[table]
+    with store.connect() as con:
+        rxstore.ensure_tables(con)
+        rows = con.execute(
+            f"SELECT {', '.join(cols)} FROM {tbl} ORDER BY 1").fetchall()
+    return pd.DataFrame([dict(r) for r in rows], columns=cols)
+
+
+def _export_links() -> str:
+    links = " &middot; ".join(
+        f'<a href="/rxnorm/export.csv?table={t}" style="color:#155752;">{t}.csv</a>'
+        for t in ("crosswalk", "concepts", "classes", "audit"))
+    return (f'<div style="font-size:11px;color:#6a7480;margin:0 0 10px;">'
+            f'Export: {links}</div>')
+
+
 # ── JSON API ────────────────────────────────────────────────────────────────
 
 def build_rxnorm(store: Any, params: Optional[Dict[str, str]] = None
@@ -406,7 +493,8 @@ def render_rxnorm_page(store: Any, params: Optional[Dict[str, str]] = None) -> s
 
     body = (
         '<div class="ck-page-wrap" style="max-width:1040px;margin:0 auto;">'
-        + title + kpis
+        + title + kpis + _export_links()
+        + _openfda_coverage_panel(store)
         + _section("NDC resolver", "paste any NDC format → canonical 11-digit + RxCUI")
         + _ndc_tool(store, ndc)
         + _section("Concept search", "find a molecule, then drill into its RxCUI")
@@ -414,6 +502,7 @@ def render_rxnorm_page(store: Any, params: Optional[Dict[str, str]] = None) -> s
         + (_rxcui_detail(store, rxcui) if rxcui else "")
         + _section("Drug-class explorer",
                    "size the competitive set by therapeutic class or mechanism")
+        + _top_class_chart(store, class_type)
         + _class_explorer(store, class_type, class_id)
         + _section("Retired / remapped audit",
                    "stale codes and the active concept they resolve to")

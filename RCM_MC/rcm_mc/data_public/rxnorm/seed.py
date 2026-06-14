@@ -42,6 +42,17 @@ SEED_CONCEPTS: Dict[str, Dict[str, str]] = {
     "7052":   {"name": "morphine", "tty": "IN", "status": "active", "remap": ""},
     "6902":   {"name": "methylprednisolone", "tty": "IN", "status": "active",
                "remap": ""},
+    # Broader universe (common chronic-care + shortage-list molecules) so the
+    # surface and the openFDA join are substantive.
+    "48937":  {"name": "dexmedetomidine", "tty": "IN", "status": "active", "remap": ""},
+    "40048":  {"name": "carboplatin", "tty": "IN", "status": "active", "remap": ""},
+    "2598":   {"name": "clonazepam", "tty": "IN", "status": "active", "remap": ""},
+    "6470":   {"name": "lorazepam", "tty": "IN", "status": "active", "remap": ""},
+    "6901":   {"name": "methylphenidate", "tty": "IN", "status": "active", "remap": ""},
+    "6809":   {"name": "metformin", "tty": "IN", "status": "active", "remap": ""},
+    "29046":  {"name": "lisinopril", "tty": "IN", "status": "active", "remap": ""},
+    "7646":   {"name": "omeprazole", "tty": "IN", "status": "active", "remap": ""},
+    "17767":  {"name": "amlodipine", "tty": "IN", "status": "active", "remap": ""},
     # Retired + remapped → resolves to active atorvastatin (83367).
     "9999999": {"name": "atorvastatin (obsolete concept)", "tty": "IN",
                 "status": "remapped", "remap": "83367"},
@@ -53,6 +64,11 @@ SEED_NDCS: Dict[str, List[str]] = {
     "617312": ["0071-0155-23"],                          # 4-4-2
     "7052":   ["0409-1896-20"],                          # openFDA shortage NDC
     "6902":   ["55150-313-01"],                          # openFDA shortage NDC
+    "48937":  ["71225-126-05"],                          # dexmedetomidine
+    "40048":  ["61703-339-56"],                          # carboplatin
+    "2598":   ["43547-406-10"],                          # clonazepam
+    "6470":   ["65219-368-02"],                          # lorazepam
+    "6901":   ["62037-727-01"],                          # methylphenidate
 }
 
 # rxcui -> [(related_rxcui, tty)]
@@ -81,6 +97,47 @@ SEED_CLASSES: Dict[str, List[List[str]]] = {
     "6902": [
         ["H02AB", "Glucocorticoids", "ATC1-4"],
         ["GLUCOCORTICOIDS", "GLUCOCORTICOIDS", "VA"],
+    ],
+    "48937": [
+        ["N05CM18", "Dexmedetomidine", "ATC1-4"],
+        ["N0000175726", "Adrenergic alpha2-Agonists", "MOA"],
+    ],
+    "40048": [
+        ["L01XA02", "Carboplatin", "ATC1-4"],
+        ["N0000175566", "Alkylating Activity", "MOA"],
+        ["ANTINEOPLASTICS", "ANTINEOPLASTICS", "VA"],
+    ],
+    "2598": [
+        ["N03AE01", "Clonazepam", "ATC1-4"],
+        ["N0000175722", "Benzodiazepines", "MOA"],
+        ["ANTICONVULSANTS", "ANTICONVULSANTS", "VA"],
+    ],
+    "6470": [
+        ["N05BA06", "Lorazepam", "ATC1-4"],
+        ["N0000175722", "Benzodiazepines", "MOA"],
+    ],
+    "6901": [
+        ["N06BA04", "Methylphenidate", "ATC1-4"],
+        ["N0000175754", "Central Nervous System Stimulants", "MOA"],
+    ],
+    "6809": [
+        ["A10BA02", "Metformin", "ATC1-4"],
+        ["N0000182137", "Biguanides", "MOA"],
+        ["HYPOGLYCEMICS,ORAL", "HYPOGLYCEMICS, ORAL", "VA"],
+    ],
+    "29046": [
+        ["C09AA03", "Lisinopril", "ATC1-4"],
+        ["N0000175562", "Angiotensin-converting Enzyme Inhibitors", "MOA"],
+        ["ACE INHIBITORS", "ACE INHIBITORS", "VA"],
+    ],
+    "7646": [
+        ["A02BC01", "Omeprazole", "ATC1-4"],
+        ["N0000175526", "Proton Pump Inhibitors", "MOA"],
+    ],
+    "17767": [
+        ["C08CA01", "Amlodipine", "ATC1-4"],
+        ["N0000175565", "Calcium Channel Blockers", "MOA"],
+        ["CALCIUM CHANNEL BLOCKERS", "CALCIUM CHANNEL BLOCKERS", "VA"],
     ],
 }
 

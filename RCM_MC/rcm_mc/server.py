@@ -4079,6 +4079,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.rxnorm_page import build_rxnorm
             return self._send_json(build_rxnorm(
                 PortfolioStore(self.config.db_path), _qp))
+        if path == "/rxnorm/export.csv":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _table = (_qs.get("table") or ["crosswalk"])[0]
+            from .ui.data_public.rxnorm_page import build_export_df
+            try:
+                _df = build_export_df(
+                    PortfolioStore(self.config.db_path), _table)
+            except KeyError:
+                return self._send_json(
+                    {"error": f"unknown table: {_table}"},
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_csv_df(_df, f"rxnorm-{_table}.csv")
         if path == "/payer-concentration":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

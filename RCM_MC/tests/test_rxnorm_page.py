@@ -13,6 +13,7 @@ import socket
 import tempfile
 import threading
 import unittest
+import urllib.error
 import urllib.request
 
 from rcm_mc.portfolio.store import PortfolioStore
@@ -123,6 +124,24 @@ class RouteTests(unittest.TestCase):
         data = json.loads(body)
         self.assertIn("summary", data)
         self.assertIn("datasets", data)
+
+    def _post_seed(self):
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/rxnorm/seed", data=b"", method="POST")
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            self.assertEqual(resp.status, 200)
+
+    def test_csv_export_after_seed(self):
+        self._post_seed()
+        status, body = self._get("/rxnorm/export.csv?table=crosswalk")
+        self.assertEqual(status, 200)
+        self.assertIn("ndc_11", body.splitlines()[0])
+        # unknown table → 404
+        try:
+            self._get("/rxnorm/export.csv?table=bogus")
+            self.fail("expected HTTP 404")
+        except urllib.error.HTTPError as exc:
+            self.assertEqual(exc.code, 404)
 
     def test_seed_post_populates_then_resolves(self):
         # POST the seed action (urllib follows the 303 to /rxnorm).
