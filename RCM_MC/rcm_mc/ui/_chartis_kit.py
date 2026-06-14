@@ -9855,10 +9855,12 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
     var heads=th.parentNode.children;
     for(var i=0;i<heads.length;i++){
       heads[i].removeAttribute('data-sort-dir');
+      if(heads[i].getAttribute('data-sortable')!=null) heads[i].setAttribute('aria-sort','none');
       var pi=heads[i].querySelector('.ck-sort-ind');
       if(pi) pi.textContent='';
     }
     th.setAttribute('data-sort-dir',dir);
+    th.setAttribute('aria-sort',dir==='asc'?'ascending':'descending');
     var mul=dir==='asc'?1:-1;
     var dec=rows.map(function(r,i){var t=cellText(r,idx);return {r:r,i:i,t:t,n:parseNum(t)};});
     dec.sort(function(a,b){
@@ -9886,7 +9888,9 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
         if(th.getAttribute('data-sortable')!=null) return;
         th.setAttribute('data-sortable','');
         th.style.cursor='pointer';
-        th.setAttribute('role','button');
+        // Keep the native columnheader role so aria-sort is honoured;
+        // tabindex + the keydown handler below still make it operable.
+        th.setAttribute('aria-sort','none');
         th.setAttribute('tabindex','0');
         if(!th.title) th.title='Sort';
         var ind=document.createElement('span');
