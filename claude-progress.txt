@@ -255,3 +255,12 @@ PR: #1859 (draft). Final commit hash recorded on push.
   all-suppressed, zero volume, constant series, identical records, 2-point).
   Each degrades with a clear flag, a defensible value, or a clean ValueError.
 - Evidence: pytest test_adversarial_robustness.py => 24 passed.
+================================================================================
+[2026-06-14 05:45 UTC] IMPROVE PACK-01 composite diligence pack (post-backlog)
+- cdd/diligence_pack.py: DiligencePack chains TAM/SAM + PVM + payer mix +
+  concentration + regulatory exhibits for one deal; severity-ranked flag roll-up
+  (risk first); pack reconciliation = all sections reconcile; audience-aware
+  render; summary_exhibit registered as PACK-01. Integration layer, no new
+  estimator, no LLM.
+- Evidence: pytest tests/golden/ => 223 passed. Pack surfaces concentration +
+  OBBBA + state-oversight red flags; partner render leaks no assumptions.

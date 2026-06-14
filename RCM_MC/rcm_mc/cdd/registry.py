@@ -83,6 +83,7 @@ def _autoload() -> None:
         "changepoint",
         "decisions",
         "ingestion",
+        "diligence_pack",
     ]
     for name in modules:
         try:
