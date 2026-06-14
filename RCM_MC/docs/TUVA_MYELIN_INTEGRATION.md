@@ -140,8 +140,8 @@ All native, same pattern. ✅ = shipped in this work stream.
 | **Benford's-law screen** | fast billing-integrity check | ✅ `diligence/integrity/benford.py` — first-digit MAD + closed-form χ² |
 | **Episode grouping + service-line P&L** | cost-per-episode, line margin | ✅ `diligence/episodes/` — anchor-triggered, window-merged |
 | **Quality measures (HEDIS/CQM)** | gap-closure, star drivers | ✅ `diligence/quality_measures/` — gap-count + star composite |
-| **Spatial competition (Huff + isochrones)** | TAM / white-space beyond radius circles | optional geo extra |
-| **Referral-network analysis** | captive-volume moat | shared-patient graph centrality |
+| **Spatial competition (Huff + isochrones)** | TAM / white-space beyond radius circles | ✅ `diligence/spatial/` — Huff gravity + Moran's I (haversine; drive-time is the optional geo extra) |
+| **Referral-network analysis** | captive-volume moat | ✅ existing `rcm_mc/referral` package (graph + leakage + key-person + departure sim) **extended** here with PageRank, Brandes betweenness, and label-propagation communities (`referral/graph_metrics.py`) |
 
 Anomaly detection is already covered by the existing isolation-forest work — ahead of the public fraud repos, which mostly use logistic regression / random forests.
 

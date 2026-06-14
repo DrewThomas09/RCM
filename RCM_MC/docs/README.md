@@ -21,6 +21,7 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 - [Risk-Adjusted PMPM Trend](../rcm_mc/diligence/pmpm/README.md)
 - [Episode-of-Care Grouping](../rcm_mc/diligence/episodes/README.md)
 - [Quality Measures (HEDIS/CQM)](../rcm_mc/diligence/quality_measures/README.md)
+- [Spatial Competition (Huff + Moran's I)](../rcm_mc/diligence/spatial/README.md)
 
 ---
 
