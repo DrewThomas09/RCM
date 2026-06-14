@@ -247,3 +247,11 @@ PR: #1859 (draft). Final commit hash recorded on push.
 - Existing golden RAF 1.025 unchanged (demo member triggers no interaction).
 - Evidence: pytest tests/golden/ => 192 passed. Interaction member RAF 1.630
   hand-verified; CFA segment demo 0.495; CSV loaders roundtrip.
+================================================================================
+[2026-06-14 05:32 UTC] IMPROVE adversarial robustness sweep (Part 6 refute)
+- tests/golden/test_adversarial_robustness.py: 24 degenerate/adversarial inputs
+  across all 20 features (empty, single-point, all-Medicaid, all-codes-missing,
+  cohort<30, zero revenue, zero beneficiaries, zero-variance MC driver, 100% MA,
+  all-suppressed, zero volume, constant series, identical records, 2-point).
+  Each degrades with a clear flag, a defensible value, or a clean ValueError.
+- Evidence: pytest test_adversarial_robustness.py => 24 passed.
