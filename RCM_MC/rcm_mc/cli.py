@@ -1118,6 +1118,8 @@ Commands:
             `rcm-mc analysis <deal_id> [--scenario X] [--as-of DATE] [--out PATH]`
   data      Refresh or inspect CMS public-data sources (HCRIS, Care Compare,
             Medicare Utilization, IRS 990). `rcm-mc data {refresh|status} --help`
+  taxonomy  Browse the ~55-subsector healthcare taxonomy (KPI packs, codes,
+            data sources, exhibits). `rcm-mc taxonomy {groupings|list|show|search|central}`
 
 Run `rcm-mc <command> --help` for command-specific options.
 
@@ -1619,6 +1621,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         return analysis_main(argv[1:], prog="rcm-mc analysis")
     if first == "data":
         return data_main(argv[1:], prog="rcm-mc data")
+    if first == "taxonomy":
+        from .taxonomy.cli import main as taxonomy_main
+        return taxonomy_main(argv[1:], prog="rcm-mc taxonomy")
 
     # Back-compat: flat-form flag at position 1 → treat as `run`.
     # (Nearly every existing script uses this form.)
