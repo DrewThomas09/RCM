@@ -99,7 +99,7 @@ def _deal_count_histogram(stats: List[Any], width: int = 600, height: int = 80) 
         bh = max(2, int(s.n_deals / max_n * (height - 20)))
         bx = 10 + i * bar_w
         by = height - 12 - bh
-        color = "#1d4ed8"
+        color = "#155752"
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-2)}" height="{bh}" fill="{color}" opacity="0.8"/>')
         if bar_w >= 16:
             elements.append(

@@ -88,7 +88,7 @@ def _heatmap_svg(
                 stroke = P["border"]
             else:
                 fill = P["accent"]
-                stroke = "#1d4ed8"
+                stroke = "#155752"
 
             parts.append(
                 f'<rect x="{x_left+1}" y="{y_top+1}" width="{cell_w-2}" height="{cell_h-2}" '
