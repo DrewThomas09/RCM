@@ -4779,3 +4779,131 @@ can be used purely as an aggregation tool (paste raw export → group +
 top-N → copy result), not only as a chart renderer.
 **Verify**: +1 test — the hidden TSV carries the aggregated values
 (Aetna 17, never the raw 10). Chart sweep green.
+
+## W4-001 (2026-06-14) — Error sweep: diligence DQ renderer SyntaxError on Py<3.12
+`compileall` across the live packages surfaced a hard `SyntaxError` that
+shipped because no test exercised the module:
+- **`rcm_mc_diligence/dq/report.py::_section_html`** built the optional
+  message block with an f-string whose *expression part* contained
+  backslash escapes — `f"{('<div class=\"sub\" …'+msg+'…') if msg else ''}"`.
+  PEP 701 only lifts the "no backslash in an f-string expression" rule in
+  Python 3.12, so on every supported interpreter below 3.12 (the project
+  declares `requires-python = ">=3.10"` and classifies 3.10–3.14) the
+  **entire `rcm_mc_diligence` diligence layer failed to import** — the
+  `dq.report` import chain raised at parse time. The local env (3.11)
+  reproduced it.
+- **Fix**: precompute `msg_html` outside the f-string (legal escaped
+  quotes on every target version); behavior byte-identical on 3.12+.
+  No other live module had the pattern — AST-parsed all tracked `.py`
+  files; the only other hits were `legacy/` and `design_reference/`
+  handoff snapshots (not imported, left as-is).
+**Verify**: `compileall rcm_mc rcm_mc_diligence` clean; `render_html()`
+on a report whose section carries a message emits the previously-broken
+block end-to-end; new `tests/test_diligence_dq_report_render.py` (2 tests)
+imports the module — so CI on 3.10/3.11 catches any future
+backslash-in-f-string regression — plus the message-block on/off assertions;
+diligence/dq/ingest suite 372 passed / 6 skipped.
+
+## W4-002 (2026-06-14) — Error sweep: route-walker found a None-leak + a standing false-positive 404
+Booted an open-auth server (CI's exact shape) and ran the route walker
+(`--discover --fail-on-leak`) over all 181 discovered routes — twice
+(plain + active-deal cookie). It surfaced two issues:
+- **`/chart-builder` leaked a literal `>None<`**: the "Calculation"
+  shaping dropdown's empty option was labelled `None`, which trips the
+  nan/None-leak gate (`>None<`) the weekly regression-sweep runs with
+  `--fail-on-leak` — i.e. this would turn the sweep red. The project
+  already documents this convention (`pie_chart_page.py:126` uses
+  "No labels", not "None"; the sibling "Group" dropdown uses "Off").
+  Relabelled the empty calc option `Off`. No test asserted the literal
+  "None" (tests only assert it must NOT appear). Added a unit guard
+  (`test_no_literal_none_in_page`) so it's caught on every PR, not just
+  the weekly sweep.
+- **`/analysis` reported a standing 404 in every sweep**: `/analysis`
+  is a *discovered* route with a real landing page (200 at `/analysis`),
+  but `_SAMPLE_SUFFIX` rewrote it to `/analysis/ccf` — a per-deal URL
+  for a demo deal that doesn't exist in the walker's fresh, *unseeded*
+  DB (CI boots `build_server` with an empty temp DB; zero deals). So a
+  healthy route was reported as a 404 on every run (non-fatal — the
+  walker only fails on tracebacks/leaks/budget — hence it sat unnoticed).
+  Removed the `/analysis` suffix entry so the landing route walks as
+  itself; the `/deal`-style entries stay for the manual `--routes` mode
+  (seeded DB).
+**Verify**: re-walk after fixes → **181 ok / 0 non-2xx / 0 tracebacks /
+0 nan/None leaks** on both the plain and cookie-context passes;
+`test_chart_builder.py` 59 passed; `test_route_walker_discover.py` 5 passed.
+
+## W4-003 (2026-06-14) — Error sweep: ruff F821 found a swallowed NameError that dropped an IC-packet section
+Ran `ruff --select F821` (undefined names) over `rcm_mc`/`rcm_mc_diligence`/
+`scripts`. Most hits were annotation-only false-positives (lazy `Dict`/
+`Any`/`pd.DataFrame` etc. under `from __future__ import annotations`, plus
+a deliberately aliased+deleted `_np_for_grid` forward-ref in
+`ridge_predictor.py`). Three were in *executable* code:
+- **`ic_packet_page.py` — REAL bug, confirmed live.** The "7b checklist
+  coverage" block read `bear_block_html` to mark hcris_xray/covenant/payer
+  coverage — but `bear_block_html` was only assigned *below* it in the "7e
+  bear-case" block. Every IC-packet build therefore hit a `NameError` that
+  the surrounding bare `except Exception` swallowed, leaving
+  `checklist_state = None` so the **entire "Diligence Coverage" section
+  silently never rendered**. Hoisted the bear-case block above the
+  checklist block (it only depends on values computed earlier:
+  `meta`/`reg_exposure`/`autopsy_matches`/`first()`). Confirmed by
+  rendering `hospital_01_clean_acute`: section ABSENT before, PRESENT after
+  (git-stash A/B). New regression test
+  `test_diligence_coverage_section_renders`.
+- **`physician_productivity.py:262`** — dead `target_wrvu` line, a
+  debugging leftover (`… if False else 0` ⇒ always `range(0)`, so the
+  undefined `i` never actually evaluated and the result was always 0) that
+  was never read; the real value is `new_wrvu` computed just below. Removed.
+- **`escalations_page.py:268`** — dead `n_esc = len(escalated) if
+  'escalated' in dir() else 0`: `escalated` was never defined so the guard
+  was always False (→ 0), and `n_esc` was never read. Removed; the real
+  count already lives in `count`.
+**Verify**: F821 clears on all three; `compileall` clean; escalations page
+renders (274 KB); ic_packet/physician/escalation suites 87 passed / 2
+skipped; the new IC-packet regression test goes red on the pre-fix tree.
+
+## W4-004 (2026-06-14) — Error sweep: full-suite red on main — two Guide-blind live pages
+Ran the **full** local suite (16,259 tests) — which PR CI does NOT run (CI is
+a ~175-test go-live subset) — and caught a failure that is **pre-existing on
+origin/main** (confirmed by re-running the test on a clean `origin/main`
+checkout): `test_guide_context_sufficiency::test_no_live_tools_page_is_guide_blind`
+listed `['/cross-analysis', '/data-apis']` as live `/tools` pages with **no
+Guide page-context** — i.e. a partner asking the Guide about either page got
+nothing. `/data-apis` is a newly-added page; `/cross-analysis` had also never
+been mapped.
+- Added two full `_ctx(...)` entries to `manual_page_contexts.py`:
+  - **`/data-apis`** (LIBRARY_REFERENCE) — the public-data API catalog:
+    purpose, access/rate-limit/status semantics, coverage-by-question,
+    metadata-only/no-fetch caveat.
+  - **`/cross-analysis`** (RESEARCH_BACKTESTING) — two-dataset state-grain
+    correlation: Pearson r / R² / OLS trendline, inner-join-on-state logic,
+    n-sample caveat, correlation≠causation + linear-only limits.
+- Both carry only related_routes that resolve (the dead-cross-link guard
+  `test_related_routes_have_no_dead_cross_links` passes).
+**Verify**: full guide-context suite 16/16 (was 15/16); broader
+guide/context/palette/tools-index sweep **425 passed / 1 skipped**; the
+blind-page list is now empty.
+
+## W4-005 (2026-06-14) — Error sweep: duplicate dict keys / set items (silently dropped values)
+Ran ruff `--select F601,F602,B033` (repeated dict-key literals + duplicate
+set items) over the whole tree. Three real "the value you wrote is silently
+discarded" defects:
+- **`_chartis_kit.py` `_DATA_UNIVERSE`** had `"user-supplied"` defined
+  **three times** (labels "USER-SUPPLIED" ×2 then "USER-SUPPLIED DATA"). A
+  dict literal keeps only the last, so the first two — accreted across three
+  edits — never rendered. Collapsed to the single canonical entry (behavior
+  identical: the last one already won) and documented why.
+- **`_ansi_codes.py` CARC map** mapped code `"18"` twice — `CODING` (dead)
+  then `PAYER_BEHAVIOR` (wins). The comments showed the author intended
+  payer-behaviour; removed the dead CODING line. `classify_carc("18")`
+  still returns `PAYER_BEHAVIOR` (unchanged).
+- **`server.py` title-case acronym set** contained a duplicate `"mc"` and a
+  dead `"mc-"` (can never match — the tokenizer splits on `-`, so no token
+  ever equals `"mc-"`). Removed both.
+Also reviewed the two non-duplicate hits and left them as correct-as-written:
+`v2_monte_carlo.py:358` (`lo, mode, hi = min(...), mode, max(...)` — a
+deliberate bracket-clamp that keeps `mode`) and two E714 `not (x is False)`
+three-valued-logic guards.
+**Verify**: F601/F602/B033 now clear across `rcm_mc`; `compileall` clean;
+`classify_carc("18")` → PAYER_BEHAVIOR; data-universe/chartis-kit/denial/
+benchmark/monte-carlo suites **1292 passed** (785 + 507) / 2 skipped.

@@ -258,9 +258,7 @@ def _build_capacity(
     total_current_wrvu = sum(p.total_annual_wrvu for p in providers)
 
     for label, pct_of_p75 in [("Reach P50", 0.8), ("Reach P75", 1.0), ("P75 + Hire", 1.1)]:
-        # Implied wRVU at target
-        target_wrvu = sum(b.p75_wrvu * pct_of_p75 for b in benchmarks for _ in range(int(providers[i].fte_count if i < len(providers) else 1) if False else 0))
-        # Simpler: scale each provider by pct_of_p75 relative to their benchmark p75
+        # Scale each provider by pct_of_p75 relative to their benchmark p75.
         new_wrvu = 0.0
         for p, b in zip(providers, benchmarks):
             target = b.p75_wrvu * pct_of_p75

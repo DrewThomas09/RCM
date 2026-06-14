@@ -1041,7 +1041,10 @@ _DATA_UNIVERSE = {
     # The visuals toolkit (Chart Builder / Pie Chart / Excel Mapping /
     # Exhibit Composer / Visuals hub): the chart plots whatever the user
     # pasted or typed — no platform data claim unless a dataset chip was
-    # explicitly loaded (those carry their own source footnote).
+    # explicitly loaded (those carry their own source footnote). This is the
+    # single canonical "user-supplied" entry — two earlier duplicate keys
+    # (label "USER-SUPPLIED", codes "user"/"deals") were dead: a dict literal
+    # keeps only the last value for a repeated key, so they never rendered.
     "user-supplied": ("USER-SUPPLIED DATA", "deals",
                        "Renders the data you paste/type — example values are "
                        "placeholders, not a data claim."),

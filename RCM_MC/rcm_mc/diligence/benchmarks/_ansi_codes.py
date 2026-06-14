@@ -57,7 +57,6 @@ _CARC_MAP: Dict[str, DenialCategory] = {
     "7":   DenialCategory.CODING,          # Procedure code inconsistent with patient gender
     "11":  DenialCategory.CODING,          # Diagnosis inconsistent with procedure
     "16":  DenialCategory.CODING,          # Claim/service lacks information or has submission errors
-    "18":  DenialCategory.CODING,          # Exact duplicate claim/service (handled here — payer perspective)
     "125": DenialCategory.CODING,          # Submission/billing error
     "181": DenialCategory.CODING,          # Procedure code invalid on date of service
 
@@ -70,7 +69,7 @@ _CARC_MAP: Dict[str, DenialCategory] = {
     "198": DenialCategory.CLINICAL,        # Precertification/authorization exceeded
 
     # Payer behaviour: timing, duplicates, coordination, policy
-    "18":  DenialCategory.PAYER_BEHAVIOR,  # Duplicate (overrides CODING when seen in volume)
+    "18":  DenialCategory.PAYER_BEHAVIOR,  # Exact duplicate claim/service — classified as payer behaviour
     "22":  DenialCategory.PAYER_BEHAVIOR,  # Care may be covered by another payer (COB)
     "23":  DenialCategory.PAYER_BEHAVIOR,  # Impact of prior-payer adjudication (OA-23 on ZBA)
     "29":  DenialCategory.PAYER_BEHAVIOR,  # Time limit for filing expired

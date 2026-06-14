@@ -21087,7 +21087,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             "fwa", "gp", "gpo", "hcit", "ic", "irr", "irs", "lbo",
             "lp", "ma", "mc", "ml", "moic", "msa", "nsa", "pe",
             "pmi", "qoe", "rcm", "reit", "rfp", "roi", "rw", "tam",
-            "vdr", "zbb", "340b", "mc", "mc-", "ehr", "ev",
+            "vdr", "zbb", "340b", "ehr", "ev",
         }
 
         def _title_chunk(chunk: str) -> str:
