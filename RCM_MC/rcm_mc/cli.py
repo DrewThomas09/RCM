@@ -1226,8 +1226,8 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         help="Two-source market structure (NPPES supply x Census CBP) by vertical",
     )
     mk.add_argument("--state", required=True, help="Two-letter state code")
-    mk.add_argument("--vertical", required=True,
-                    help="PE vertical (see `data supply` for the list)")
+    mk.add_argument("--vertical", default="",
+                    help="PE vertical (omit to sweep all; see `data supply`)")
     mk.add_argument("--json", action="store_true", help="Emit JSON")
 
     args = ap.parse_args(argv)
@@ -1392,10 +1392,10 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         from .data.nppes_infusion import supply_by_vertical
         from .data_public.nucc_taxonomy import VERTICALS, naics_for
         from .data_public import census_market as cm
-        from .data_public.market_structure import reconcile_vertical
+        from .data_public.market_structure import reconcile_state
         from .data_public.public_api_clients import PublicApiError
 
-        if args.vertical not in VERTICALS:
+        if args.vertical and args.vertical not in VERTICALS:
             sys.stderr.write(f"unknown vertical {args.vertical!r}; "
                              f"known: {', '.join(VERTICALS)}\n")
             return 2
@@ -1404,28 +1404,34 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
             sys.stderr.write(f"unrecognized state {args.state!r}\n")
             return 2
 
-        supply = supply_by_vertical(args.state, [args.vertical])[0]
-        naics = naics_for(args.vertical)
-        cbp_rows = []
-        if naics:
+        verts = [args.vertical] if args.vertical else VERTICALS
+        supply_rows = supply_by_vertical(args.state, verts)
+        cbp_by_vertical = {}
+        for v in verts:
+            naics = naics_for(v)
+            if not naics:
+                continue
             try:
-                cbp_rows = cm.fetch_cbp(naics, state_fips=fips)
+                cbp_by_vertical[v] = cm.fetch_cbp(naics, state_fips=fips)
             except PublicApiError as exc:
-                sys.stderr.write(f"[warn] CBP unavailable: {exc}\n")
-        rec = reconcile_vertical(args.vertical, supply, cbp_rows)
+                sys.stderr.write(f"[warn] CBP unavailable for {v}: {exc}\n")
+        rows = reconcile_state(supply_rows, cbp_by_vertical)
         if args.json:
             import json as _json
-            sys.stdout.write(_json.dumps(rec, indent=2) + "\n")
+            sys.stdout.write(_json.dumps(rows, indent=2) + "\n")
             return 0
-        prov = rec["providers"]
-        est = rec["establishments"]
-        ratio = rec["providers_per_estab"]
-        sys.stdout.write(
-            f"Market structure — {args.vertical} in {args.state.upper()} "
-            f"(NAICS {rec['naics'] or '—'}):\n")
-        sys.stdout.write(f"  NPPES providers     {prov if prov is not None else '— (unavailable)'}\n")
-        sys.stdout.write(f"  CBP establishments  {est if est is not None else '— (unavailable)'}\n")
-        sys.stdout.write(f"  providers/estab     {f'{ratio:.2f}' if ratio is not None else '—'}\n")
+        sys.stdout.write(f"Market structure — {args.state.upper()}:\n")
+        sys.stdout.write(f"  {'VERTICAL':<22}  {'NAICS':>6}  {'PROVIDERS':>9}  "
+                         f"{'ESTAB':>6}  {'P/ESTAB':>7}\n")
+        for r in rows:
+            prov = r["providers"]
+            est = r["establishments"]
+            ratio = r["providers_per_estab"]
+            sys.stdout.write(
+                f"  {r['vertical']:<22}  {r['naics'] or '—':>6}  "
+                f"{(prov if prov is not None else '—'):>9}  "
+                f"{(est if est is not None else '—'):>6}  "
+                f"{(f'{ratio:.2f}' if ratio is not None else '—'):>7}\n")
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.
