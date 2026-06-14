@@ -11382,7 +11382,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         'title="Start a new deal in the pipeline">+ New deal</a>'
         '<div class="ck-user-menu">'
         f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
-        f'aria-expanded="false" title="Signed in" '
+        f'aria-expanded="false" aria-label="Account menu" title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
         '<div class="ck-user-dropdown" hidden>'
         # Recently-viewed deals — populated client-side from
