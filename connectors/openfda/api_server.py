@@ -28,7 +28,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlparse
 
-from .lookup import v1_handlers
+from .lookup import search_companies, v1_handlers
 from .query import AggregateResult, QueryError, QueryResult, aggregate, query
 from .registry import by_dataset_id, registry_as_dicts
 from .tables import OpenFdaStore
@@ -89,6 +89,12 @@ def build_handler(store: OpenFdaStore):
                 return self._send(200, {"status": "ok"})
             if parts == ["v1", "datasets"]:
                 return self._send(200, {"datasets": registry_as_dicts()})
+            # /v1/companies?q=acme — fuzzy company search
+            if parts == ["v1", "companies"]:
+                q = qs.get("q", [""])[0]
+                limit = int(qs.get("limit", ["25"])[0])
+                return self._send(200, {"companies": search_companies(
+                    store, q, limit=limit)})
             # /v1/query/{dataset}[/aggregate]
             if len(parts) >= 3 and parts[0] == "v1" and parts[1] == "query":
                 dataset = parts[2]
@@ -114,6 +120,9 @@ def build_handler(store: OpenFdaStore):
                 if parts[2] == "device":
                     return self._send(
                         200, lookups["/v1/lookup/device/{product_code}"](key))
+                if parts[2] == "company":
+                    return self._send(
+                        200, lookups["/v1/lookup/company/{company_key}"](key))
             self._send(404, {"error": f"no route for /{'/'.join(parts)}"})
 
     return OpenFdaHandler

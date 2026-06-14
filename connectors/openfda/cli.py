@@ -27,7 +27,7 @@ from . import dq as dq_mod
 from . import market_map as mm
 from .connector import OpenFdaConnector
 from .endpoints import ENDPOINTS
-from .lookup import lookup_device, lookup_drug
+from .lookup import lookup_company, lookup_device, lookup_drug, search_companies
 from .pipeline import OpenFdaPipeline, PipelineConfig
 from .query import AggregateResult, QueryError, aggregate, query
 from .raw_store import RawStore, parquet_available
@@ -166,6 +166,18 @@ def cmd_lookup_device(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_lookup_company(args: argparse.Namespace) -> int:
+    ctx = _open(args.root)
+    _print(lookup_company(ctx["store"], args.company))
+    return 0
+
+
+def cmd_search_company(args: argparse.Namespace) -> int:
+    ctx = _open(args.root)
+    _print(search_companies(ctx["store"], args.query, limit=args.limit))
+    return 0
+
+
 def cmd_dq(args: argparse.Namespace) -> int:
     ctx = _open(args.root)
     conn = OpenFdaConnector() if args.reconcile else None
@@ -235,6 +247,15 @@ def build_parser() -> argparse.ArgumentParser:
     lv = sub.add_parser("lookup-device")
     lv.add_argument("product_code")
     lv.set_defaults(func=cmd_lookup_device)
+
+    lc = sub.add_parser("lookup-company")
+    lc.add_argument("company", help="co_* key or a raw company name")
+    lc.set_defaults(func=cmd_lookup_company)
+
+    sc = sub.add_parser("search-company")
+    sc.add_argument("query")
+    sc.add_argument("--limit", type=int, default=25)
+    sc.set_defaults(func=cmd_search_company)
 
     d = sub.add_parser("dq")
     d.add_argument("--reconcile", action="store_true")

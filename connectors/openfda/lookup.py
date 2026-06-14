@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List
 
+from .normalize import company_key as _company_key
 from .tables import OpenFdaStore
 
 
@@ -99,6 +100,61 @@ def lookup_device(store: OpenFdaStore, product_code: str) -> Dict[str, Any]:
     }
 
 
+# ── company rollup ────────────────────────────────────────────────────
+def lookup_company(store: OpenFdaStore, company: str) -> Dict[str, Any]:
+    """Roll up every drug + device record for one normalized company.
+
+    The payoff of the manufacturer/sponsor name normalization: given a
+    target company (a ``co_*`` key or a raw name we normalize on the
+    way in), fan out across drug products, approvals, devices, UDI,
+    recalls, and adverse events so a diligence view of "everything this
+    company makes and every safety signal against it" is one call.
+    """
+    key = company if str(company).startswith("co_") else _company_key(company)
+    if not key:
+        return {"company_key": None, "error": "unresolvable company"}
+    company_row = _rows(store, "SELECT * FROM dim_company WHERE company_key = ?",
+                        (key,))
+    drugs = _rows(store, "SELECT ndc, proprietary_name, generic_name, "
+                  "dosage_form, rxcui FROM dim_drug_product WHERE company_key = ? "
+                  "LIMIT 200", (key,))
+    approvals = _rows(store, "SELECT application_number, brand_name, "
+                      "application_type, marketing_status FROM dim_drug_approval "
+                      "WHERE company_key = ? LIMIT 200", (key,))
+    devices = _rows(store, "SELECT device_key, product_code, device_name, "
+                    "decision_date, decision_type FROM dim_device "
+                    "WHERE company_key = ? ORDER BY decision_date DESC LIMIT 200",
+                    (key,))
+    product_codes = sorted({d["product_code"] for d in devices if d["product_code"]})
+    ndcs = sorted({d["ndc"] for d in drugs if d["ndc"]})
+    return {
+        "company_key": key,
+        "company": company_row[0] if company_row else None,
+        "drug_products": {"count": _count(store, "dim_drug_product",
+                          "company_key", key), "sample": drugs},
+        "drug_approvals": {"count": _count(store, "dim_drug_approval",
+                           "company_key", key), "sample": approvals},
+        "devices": {"count": _count(store, "dim_device", "company_key", key),
+                    "product_codes": product_codes, "sample": devices},
+        "device_udi": _count(store, "dim_device_udi", "company_key", key),
+        "drug_recalls": _count(store, "fact_drug_recall", "company_key", key),
+        "device_recalls": _count(store, "fact_device_recall", "company_key", key),
+        "drug_adverse_events": _count(store, "fact_drug_adverse_event",
+                                      "company_key", key),
+        "device_adverse_events": _count(store, "fact_device_adverse_event",
+                                        "company_key", key),
+        "ndcs": ndcs,
+    }
+
+
+def search_companies(store: OpenFdaStore, q: str, *, limit: int = 25
+                     ) -> List[Dict[str, Any]]:
+    """Fuzzy-find companies by normalized name (case-insensitive LIKE)."""
+    return _rows(store, "SELECT company_key, normalized_name, kind FROM dim_company "
+                 "WHERE normalized_name LIKE ? ORDER BY normalized_name LIMIT ?",
+                 (f"%{q}%", int(limit)))
+
+
 # ── router-agnostic plugin surface ────────────────────────────────────
 def v1_handlers(store: OpenFdaStore) -> Dict[str, Callable[[str], Dict[str, Any]]]:
     """Return ``{route_template: handler}`` for plugin registration.
@@ -115,6 +171,7 @@ def v1_handlers(store: OpenFdaStore) -> Dict[str, Callable[[str], Dict[str, Any]
     return {
         "/v1/lookup/drug/{ndc}": lambda ndc: lookup_drug(store, ndc),
         "/v1/lookup/device/{product_code}": lambda pc: lookup_device(store, pc),
+        "/v1/lookup/company/{company_key}": lambda ck: lookup_company(store, ck),
     }
 
 

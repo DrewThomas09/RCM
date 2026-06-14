@@ -93,6 +93,10 @@ python -m connectors.openfda.cli --root ./data market-map drug_risk
 python -m connectors.openfda.cli --root ./data lookup-drug 0002-1200
 python -m connectors.openfda.cli --root ./data lookup-device DXY
 
+# Company rollup — every drug + device record + safety signal for one company
+python -m connectors.openfda.cli --root ./data lookup-company "Acme Pharmaceuticals, Inc."
+python -m connectors.openfda.cli --root ./data search-company acme
+
 # Resolve NDC->RxCUI live via RxNav during a backfill (needs egress)
 python -m connectors.openfda.cli --root ./data backfill --resolve-rxnorm
 
