@@ -816,6 +816,21 @@ def _lines(table, opts):
     def xof(i):
         return x0 + (x1 - x0) * (i / max(n - 1, 1))
     if area:
+        # Per-series vertical gradient fade (colour at the top edge → faint
+        # at the baseline) — the classic presentation-grade area fill, far
+        # richer than a flat translucent block. A crisp top-edge stroke
+        # defines each band.
+        uid = _uid_of(opts)
+        gdefs = ["<defs>"]
+        for si in range(len(series)):
+            col = colors[si % len(colors)]
+            gdefs.append(
+                f'<linearGradient id="cdar{uid}-{si}" x1="0" y1="0" x2="0" y2="1">'
+                f'<stop offset="0" stop-color="{col}" stop-opacity="0.90"/>'
+                f'<stop offset="1" stop-color="{col}" stop-opacity="0.18"/>'
+                f'</linearGradient>')
+        gdefs.append("</defs>")
+        body += "".join(gdefs)
         cum = [0.0] * n
         for si, s in enumerate(series):
             top = [cum[i] + (s["values"][i] or 0) for i in range(n)]
@@ -823,9 +838,12 @@ def _lines(table, opts):
                                for i in range(n))
             pts_bot = " ".join(f"{xof(i):.1f},{yof(cum[i]):.1f}"
                                for i in range(n - 1, -1, -1))
+            col = colors[si % len(colors)]
             body += (f'<polygon points="{pts_top} {pts_bot}" '
-                     f'fill="{colors[si % len(colors)]}" '
-                     f'fill-opacity="0.85"/>')
+                     f'fill="url(#cdar{uid}-{si})"/>'
+                     f'<polyline points="{pts_top}" fill="none" '
+                     f'stroke="{col}" stroke-width="2" '
+                     f'stroke-linejoin="round"/>')
             cum = top
     else:
         for si, s in enumerate(series):
