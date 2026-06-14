@@ -147,3 +147,12 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   proxy + documented QoE handoff (internal-only). Both reconcile to 1e-6.
 - Evidence: pytest => 7 passed. net 80, rev 80000, CM 35000 (43.75%), EBITDA 20000.
 - Next: NEW-17 regulatory-flag module (last NEW feature).
+================================================================================
+[2026-06-14 04:28 UTC] NEW-17 Regulatory flags -- ALL 17 NEW FEATURES DONE
+- regulatory_flags.py: deterministic 5-rule engine (OBBBA Medicaid, MA RAF
+  compression, site-of-care, 340B, state PE oversight); each flag has rationale
+  + source/vintage; flags surface in both audiences, rule trace internal-only.
+- Evidence: pytest tests/golden/ => 137 passed. Heavy-Medicaid home-health CA
+  fires obbba_medicaid_exposure + state_pe_oversight only.
+- MILESTONE: NEW-01..NEW-17 all passes:true, wired to `python -m rcm_mc.cdd`.
+- Next: BOLSTER backlog, starting BOLSTER-01 ridge+conformal hardening.

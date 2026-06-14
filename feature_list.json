@@ -202,11 +202,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_regulatory_flags.py",
-      "notes": ""
+      "notes": "Deterministic 5-rule engine; heavy-Medicaid home-health CA fires OBBBA+state-oversight; each flag has rationale+source; flags in both audiences."
     },
     {
       "id": "BOLSTER-01",
