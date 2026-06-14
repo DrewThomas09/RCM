@@ -174,6 +174,13 @@ def cmd_dq(args: argparse.Namespace) -> int:
     return 0 if report.ok else 1
 
 
+def cmd_serve(args: argparse.Namespace) -> int:
+    from .api_server import serve
+    p = _paths(args.root)
+    serve(p["db"], host=args.host, port=args.port)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="connectors.openfda.cli",
@@ -232,6 +239,11 @@ def build_parser() -> argparse.ArgumentParser:
     d = sub.add_parser("dq")
     d.add_argument("--reconcile", action="store_true")
     d.set_defaults(func=cmd_dq)
+
+    srv = sub.add_parser("serve")
+    srv.add_argument("--host", default="127.0.0.1")
+    srv.add_argument("--port", type=int, default=8099)
+    srv.set_defaults(func=cmd_serve)
     return p
 
 

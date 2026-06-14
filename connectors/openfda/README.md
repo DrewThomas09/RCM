@@ -37,6 +37,7 @@ discover() ─▶ fetch(endpoint, params, cursor) ─▶ raw lake (parquet|jsonl
 | `state.py` | `STATE.md` (resume), `PROGRESS.md` (append-only), `DECISIONS.md`. |
 | `raw_store.py` | Raw landing zone (parquet when `pyarrow` present, else JSONL). |
 | `pipeline.py` | Orchestrator: backfill + nightly incremental, never-block-on-one-endpoint, end-of-run retry. |
+| `api_server.py` | Standalone stdlib `http.server` `/v1` surface (auto-exposes every registry dataset + the lookup handlers) — no router core touched. |
 | `cli.py` | `python -m connectors.openfda.cli …` |
 
 ## Endpoints ingested
@@ -97,6 +98,14 @@ python -m connectors.openfda.cli --root ./data backfill --resolve-rxnorm
 
 # Data-quality suite (+ live count reconciliation)
 python -m connectors.openfda.cli --root ./data dq --reconcile
+
+# Serve the /v1 surface (auto-exposes every registry dataset)
+python -m connectors.openfda.cli --root ./data serve --port 8099
+#   GET /v1/datasets
+#   GET /v1/query/openfda_device_510k?product_code=DXY&sort=-decision_date&limit=20
+#   GET /v1/query/openfda_device_510k/aggregate?group_by=product_code
+#   GET /v1/lookup/drug/0002-1200
+#   GET /v1/lookup/device/DXY
 ```
 
 Set `OPENFDA_API_KEY` to raise the daily cap (optional — the connector
