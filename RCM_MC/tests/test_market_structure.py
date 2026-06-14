@@ -63,6 +63,24 @@ class ReconcileTests(unittest.TestCase):
         self.assertEqual(out["providers"], 3)
 
 
+class ReconcileStateTests(unittest.TestCase):
+    def test_maps_supply_rows_with_optional_cbp(self):
+        supply = [
+            {"vertical": "home_health", "live": True, "count": 120},
+            {"vertical": "snf", "live": False},
+        ]
+        cbp = {"home_health": _cbp(40, 20)}  # snf intentionally omitted
+        rows = ms.reconcile_state(supply, cbp)
+        self.assertEqual([r["vertical"] for r in rows],
+                         ["home_health", "snf"])      # order preserved
+        self.assertEqual(rows[0]["providers_per_estab"], 2.0)
+        self.assertIsNone(rows[1]["providers"])        # not live
+        self.assertIsNone(rows[1]["establishments"])   # no cbp supplied
+
+    def test_empty_supply_is_empty(self):
+        self.assertEqual(ms.reconcile_state([]), [])
+
+
 class NaicsMapTests(unittest.TestCase):
     def test_naics_for_known_and_unknown(self):
         self.assertEqual(nt.naics_for("dental"), "621210")

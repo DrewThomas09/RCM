@@ -1226,9 +1226,29 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         help="Two-source market structure (NPPES supply x Census CBP) by vertical",
     )
     mk.add_argument("--state", required=True, help="Two-letter state code")
-    mk.add_argument("--vertical", required=True,
-                    help="PE vertical (see `data supply` for the list)")
+    mk.add_argument("--vertical", default="",
+                    help="PE vertical (omit to sweep all; see `data supply`)")
     mk.add_argument("--json", action="store_true", help="Emit JSON")
+
+    # RxNorm drug normalization — name or NDC -> normalized concept.
+    dg = sub.add_parser(
+        "drug",
+        help="Normalize a drug name or NDC to an RxNorm concept (RxNav)",
+    )
+    dg.add_argument("--name", default="", help="Drug name to normalize")
+    dg.add_argument("--ndc", default="", help="NDC to normalize")
+    dg.add_argument("--json", action="store_true", help="Emit JSON")
+
+    # Census SAHIE payer-mix proxy — county uninsured rates for a state.
+    pm = sub.add_parser(
+        "payer-mix",
+        help="County uninsured rates for a state (Census SAHIE payer-mix proxy)",
+    )
+    pm.add_argument("--state", required=True, help="Two-letter state code")
+    pm.add_argument("--year", type=int, default=2021, help="SAHIE year")
+    pm.add_argument("--limit", type=int, default=20,
+                    help="Top-N counties by uninsured rate (table view)")
+    pm.add_argument("--json", action="store_true", help="Emit JSON (all counties)")
 
     args = ap.parse_args(argv)
 
@@ -1392,10 +1412,10 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         from .data.nppes_infusion import supply_by_vertical
         from .data_public.nucc_taxonomy import VERTICALS, naics_for
         from .data_public import census_market as cm
-        from .data_public.market_structure import reconcile_vertical
+        from .data_public.market_structure import reconcile_state
         from .data_public.public_api_clients import PublicApiError
 
-        if args.vertical not in VERTICALS:
+        if args.vertical and args.vertical not in VERTICALS:
             sys.stderr.write(f"unknown vertical {args.vertical!r}; "
                              f"known: {', '.join(VERTICALS)}\n")
             return 2
@@ -1404,28 +1424,99 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
             sys.stderr.write(f"unrecognized state {args.state!r}\n")
             return 2
 
-        supply = supply_by_vertical(args.state, [args.vertical])[0]
-        naics = naics_for(args.vertical)
-        cbp_rows = []
-        if naics:
+        verts = [args.vertical] if args.vertical else VERTICALS
+        supply_rows = supply_by_vertical(args.state, verts)
+        cbp_by_vertical = {}
+        for v in verts:
+            naics = naics_for(v)
+            if not naics:
+                continue
             try:
-                cbp_rows = cm.fetch_cbp(naics, state_fips=fips)
+                cbp_by_vertical[v] = cm.fetch_cbp(naics, state_fips=fips)
             except PublicApiError as exc:
-                sys.stderr.write(f"[warn] CBP unavailable: {exc}\n")
-        rec = reconcile_vertical(args.vertical, supply, cbp_rows)
+                sys.stderr.write(f"[warn] CBP unavailable for {v}: {exc}\n")
+        rows = reconcile_state(supply_rows, cbp_by_vertical)
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rows, indent=2) + "\n")
+            return 0
+        sys.stdout.write(f"Market structure — {args.state.upper()}:\n")
+        sys.stdout.write(f"  {'VERTICAL':<22}  {'NAICS':>6}  {'PROVIDERS':>9}  "
+                         f"{'ESTAB':>6}  {'P/ESTAB':>7}\n")
+        for r in rows:
+            prov = r["providers"]
+            est = r["establishments"]
+            ratio = r["providers_per_estab"]
+            sys.stdout.write(
+                f"  {r['vertical']:<22}  {r['naics'] or '—':>6}  "
+                f"{(prov if prov is not None else '—'):>9}  "
+                f"{(est if est is not None else '—'):>6}  "
+                f"{(f'{ratio:.2f}' if ratio is not None else '—'):>7}\n")
+        return 0
+
+    if args.action == "drug":
+        # RxNorm normalization. No store needed.
+        from .data_public.public_api_clients import (
+            rxnorm_normalize, PublicApiError)
+
+        if bool(args.name) == bool(args.ndc):
+            sys.stderr.write("provide exactly one of --name or --ndc\n")
+            return 2
+        value = args.name or args.ndc
+        by = "name" if args.name else "ndc"
+        try:
+            rec = rxnorm_normalize(value, by=by)
+        except PublicApiError as exc:
+            sys.stderr.write(f"[FAIL] RxNorm error: {exc}\n")
+            return 1
         if args.json:
             import json as _json
             sys.stdout.write(_json.dumps(rec, indent=2) + "\n")
             return 0
-        prov = rec["providers"]
-        est = rec["establishments"]
-        ratio = rec["providers_per_estab"]
-        sys.stdout.write(
-            f"Market structure — {args.vertical} in {args.state.upper()} "
-            f"(NAICS {rec['naics'] or '—'}):\n")
-        sys.stdout.write(f"  NPPES providers     {prov if prov is not None else '— (unavailable)'}\n")
-        sys.stdout.write(f"  CBP establishments  {est if est is not None else '— (unavailable)'}\n")
-        sys.stdout.write(f"  providers/estab     {f'{ratio:.2f}' if ratio is not None else '—'}\n")
+        if not rec:
+            sys.stdout.write(f"no RxNorm concept resolved for {value!r}\n")
+            return 0
+        sys.stdout.write(f"RxNorm concept for {value!r}:\n")
+        sys.stdout.write(f"  RxCUI  {rec.get('rxcui', '')}\n")
+        sys.stdout.write(f"  name   {rec.get('name', '')}\n")
+        sys.stdout.write(f"  tty    {rec.get('tty', '')}\n")
+        sys.stdout.write(f"  NDCs   {len(rec.get('ndcs', []))}\n")
+        return 0
+
+    if args.action == "payer-mix":
+        # Census SAHIE county uninsured rates. No store needed.
+        from .data_public import census_market as cm
+        from .data_public.public_api_clients import PublicApiError
+
+        fips = cm.state_fips(args.state)
+        if not fips:
+            sys.stderr.write(f"unrecognized state {args.state!r}\n")
+            return 2
+        try:
+            rows = cm.fetch_sahie(state_fips=fips, year=int(args.year))
+        except PublicApiError as exc:
+            sys.stderr.write(f"[FAIL] SAHIE error: {exc}\n")
+            return 1
+        # Sort by uninsured rate desc; suppressed (None) pct sinks to the end.
+        rows.sort(key=lambda r: (r["uninsured_pct"] is None,
+                                 -(r["uninsured_pct"] or 0.0)))
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rows, indent=2) + "\n")
+            return 0
+        if not rows:
+            sys.stdout.write("no SAHIE rows returned\n")
+            return 0
+        sys.stdout.write(f"Uninsured rate by county — {args.state.upper()} "
+                         f"({args.year}), top {args.limit}:\n")
+        sys.stdout.write(f"  {'COUNTY':<32}  {'UNINSURED':>9}  {'RATE':>6}\n")
+        for r in rows[:max(1, int(args.limit))]:
+            pct = r["uninsured_pct"]
+            nui = r["uninsured"]
+            sys.stdout.write(
+                f"  {str(r['county'])[:32]:<32}  "
+                f"{(f'{nui:,}' if nui is not None else '—'):>9}  "
+                f"{(f'{pct:.1f}%' if pct is not None else '—'):>6}\n")
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.

@@ -64,10 +64,18 @@ class MarketCliTests(unittest.TestCase):
         rc, out = self._patched(["market", "--state", "CO",
                                  "--vertical", "home_health", "--json"])
         self.assertEqual(rc, 0)
-        rec = json.loads(out)
-        self.assertEqual(rec["providers"], 100)
-        self.assertEqual(rec["establishments"], 50)
-        self.assertEqual(rec["providers_per_estab"], 2.0)
+        rows = json.loads(out)            # list, even for a single vertical
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["providers"], 100)
+        self.assertEqual(rows[0]["establishments"], 50)
+        self.assertEqual(rows[0]["providers_per_estab"], 2.0)
+
+    def test_sweep_all_verticals_when_omitted(self):
+        from rcm_mc.data_public.nucc_taxonomy import VERTICALS
+        rc, out = self._patched(["market", "--state", "CO", "--json"])
+        self.assertEqual(rc, 0)
+        rows = json.loads(out)
+        self.assertEqual({r["vertical"] for r in rows}, set(VERTICALS))
 
     def test_unknown_state_rejected(self):
         rc, _ = _run(["market", "--state", "ZZ", "--vertical", "home_health"])
