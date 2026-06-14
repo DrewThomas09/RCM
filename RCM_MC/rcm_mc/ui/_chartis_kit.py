@@ -11441,10 +11441,14 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<a class="ck-newdeal-cta" href="/new-deal" '
         'title="Start a new deal">+ New deal</a>'
         '<div class="ck-user-menu">'
+        # aria-controls ties the chip to the menu it toggles (mirrors the
+        # Guide button → #ck-guide-panel wiring), so AT exposes the
+        # collapsed/expanded relationship instead of an orphan button.
         f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
-        f'aria-expanded="false" title="Signed in" '
+        f'aria-expanded="false" aria-controls="ck-user-dropdown" '
+        f'title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
-        '<div class="ck-user-dropdown" hidden>'
+        '<div class="ck-user-dropdown" id="ck-user-dropdown" hidden>'
         # Recently-viewed deals — populated client-side from
         # localStorage by _USER_MENU_JS. Hidden when empty.
         '<div class="ck-user-recent" data-ck-recent-deals hidden>'

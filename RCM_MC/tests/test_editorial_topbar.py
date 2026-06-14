@@ -92,6 +92,14 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('href="/my/JD"', html)           # dashboard link
         self.assertNotIn('href="/my/AT"', html)
 
+    def test_user_chip_controls_its_dropdown(self):
+        # The chip is a disclosure trigger; it must point at the menu it
+        # toggles (mirrors the Guide button → #ck-guide-panel wiring) and the
+        # menu must carry that id exactly once.
+        self.assertIn('aria-controls="ck-user-dropdown"', self.html)
+        self.assertIn('id="ck-user-dropdown"', self.html)
+        self.assertEqual(self.html.count('id="ck-user-dropdown"'), 1)
+
     def test_avatar_chip_preserved(self):
         self.assertIn('class="ck-user-chip"', self.html)
         self.assertIn("data-ck-user-toggle", self.html)
