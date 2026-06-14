@@ -49,6 +49,29 @@ PROVIDER_NAICS: Dict[str, str] = {
 }
 
 
+# Postal code -> 2-digit state FIPS (public constant). Census endpoints key on
+# FIPS, not the USPS code; this is the one place that mapping lives so callers
+# can pass the familiar "CO" and get "08".
+STATE_FIPS: Dict[str, str] = {
+    "AL": "01", "AK": "02", "AZ": "04", "AR": "05", "CA": "06", "CO": "08",
+    "CT": "09", "DE": "10", "DC": "11", "FL": "12", "GA": "13", "HI": "15",
+    "ID": "16", "IL": "17", "IN": "18", "IA": "19", "KS": "20", "KY": "21",
+    "LA": "22", "ME": "23", "MD": "24", "MA": "25", "MI": "26", "MN": "27",
+    "MS": "28", "MO": "29", "MT": "30", "NE": "31", "NV": "32", "NH": "33",
+    "NJ": "34", "NM": "35", "NY": "36", "NC": "37", "ND": "38", "OH": "39",
+    "OK": "40", "OR": "41", "PA": "42", "RI": "44", "SC": "45", "SD": "46",
+    "TN": "47", "TX": "48", "UT": "49", "VT": "50", "VA": "51", "WA": "53",
+    "WV": "54", "WI": "55", "WY": "56",
+}
+
+
+def state_fips(postal: str) -> str:
+    """2-digit state FIPS for a USPS code (case-insensitive), or ``""`` if it
+    isn't a recognised state/DC — the caller treats empty as "can't scope to a
+    state" rather than guessing."""
+    return STATE_FIPS.get(str(postal).strip().upper(), "")
+
+
 def census_api_key() -> str:
     """The optional Census API key from the environment. Empty string means
     "no key" — a supported path (subject to the 500/day cap). Never embed a
