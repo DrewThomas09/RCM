@@ -291,6 +291,54 @@
       "blocked_reason": "",
       "golden_test": "tests/golden/test_ingestion_reconciliation.py",
       "notes": "reconcile_join (CCN/NPI/FIPS), key uniqueness, join integrity, <=11 suppression, vintage-stamp requirement; HCRIS->CareCompare integrity 2/3 hand-verified."
+    },
+    {
+      "id": "REF-01",
+      "title": "Commercial-to-Medicare site-of-care price ladder",
+      "bucket": "reference",
+      "audience": "both",
+      "priority": 201,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_vertical_reference.py",
+      "notes": "RAND PT5.1 (2022 data) HOPD 279/IP 254/professional 184/ASC 170 percent of Medicare; blended==inpatient reconciliation; drug ASP basis kept internal-only and never blended; state range 162 to 346."
+    },
+    {
+      "id": "REF-02",
+      "title": "Physician productivity wRVU percentiles by specialty",
+      "bucket": "reference",
+      "audience": "both",
+      "priority": 202,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_vertical_reference.py",
+      "notes": "MGMA medians; radiology ~11,950 leads, primary care 5,000 to 6,000, proceduralists 9,000 to 12,000; GI comp-per-wRVU cross-check 512500/8700 ties to reported band within 5."
+    },
+    {
+      "id": "REF-03",
+      "title": "Revenue cycle KPI benchmarks",
+      "bucket": "reference",
+      "audience": "both",
+      "priority": 203,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_vertical_reference.py",
+      "notes": "HFMA MAP Keys targets (A/R days 30 to 40, clean claim 95 percent, initial denial under 5 percent); optimal clean-claim 95 + optimal denial 5 == 100 reconciliation."
+    },
+    {
+      "id": "REF-04",
+      "title": "Healthcare vertical unit-economics reference catalog",
+      "bucket": "reference",
+      "audience": "both",
+      "priority": 204,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_vertical_reference.py",
+      "notes": "14 deep-dive verticals, each headline metric tagged source/vintage/confidence-tier; tier-3 headlines (derm, urgent care, imaging) flagged; full detail internal-only; Fresenius implied margin (353-282)/353=20.1 ties to reported 19 within 1.5."
     }
   ]
 }
