@@ -327,6 +327,23 @@ _NAV_PINNED = {
     "diligence": ["/diligence/hcris-xray", "/diligence/xray"],
 }
 
+# Section keys that own a URL namespace (``/diligence/…``, ``/portfolio/…``).
+# Used to keep a section's nav menu inside its own namespace: a Research leaf
+# that points at ``/diligence/regulatory-calendar`` reads wrong and resolves
+# the active-nav/breadcrumb to Diligence, not Research. Derived from the
+# primary nav so it tracks _CORPUS_NAV automatically.
+_NAV_SECTION_KEYS = frozenset(d["key"] for d in _CORPUS_NAV)
+
+
+def _route_section_prefix(route: str) -> str:
+    """First path segment of ``route`` if it names a nav section, else ``""``.
+
+    ``/diligence/hcris-xray`` → ``diligence``; ``/market-intel`` → ``""``
+    (no section prefix — a bare top-level surface).
+    """
+    head = route.strip("/").split("/", 1)[0]
+    return head if head in _NAV_SECTION_KEYS else ""
+
 
 def _ranked_subnav_items(sect: str):
     """The section's top-6 surfaces by the surface ranking, for the nav bar.
@@ -356,6 +373,30 @@ def _ranked_subnav_items(sect: str):
     # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
 
+    def _resolved_label(r: dict) -> str:
+        c = cur.get(r.get("route", ""), {})
+        return (c.get("label") or r.get("label") or r.get("route") or "").strip()
+
+    # Keep the bar inside its own namespace. Many surfaces are reachable at
+    # both a bare route and a section-prefixed alias (``/regulatory-calendar``
+    # and ``/diligence/regulatory-calendar`` are the same page). When the pool
+    # carries both, prefer the alias that does NOT borrow another section's
+    # ``/<key>/…`` namespace — otherwise the Research menu links into Diligence
+    # and the destination resolves its active-nav/breadcrumb to the wrong
+    # section. Only drop a foreign-prefixed route when a same-label native
+    # alias is actually present, so a surface that lives ONLY under a foreign
+    # prefix still shows rather than vanishing.
+    _native_labels = {
+        _resolved_label(r).lower()
+        for r in pool
+        if _route_section_prefix(r.get("route", "")) in ("", sect)
+    }
+
+    def _is_displaceable_foreign(r: dict) -> bool:
+        pref = _route_section_prefix(r.get("route", ""))
+        return (pref not in ("", sect)
+                and _resolved_label(r).lower() in _native_labels)
+
     def _add(label: str, href: str) -> None:
         label = (label or "").strip()
         key = label.lower()
@@ -384,6 +425,8 @@ def _ranked_subnav_items(sect: str):
         _add(c.get("label") or rr.get("label") or href, href)
 
     for r in pool:
+        if _is_displaceable_foreign(r):
+            continue  # a native-namespace alias of this page is in the pool
         c = cur.get(r["route"], {})
         _add(c.get("label") or r.get("label") or r["route"], r["route"])
         if len(top) >= 6:
@@ -11368,11 +11411,12 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         'aria-haspopup="dialog" aria-controls="ck-guide-panel" '
         'title="PEdesk Guide · explain this page">'
         '<span class="ck-guide-glyph" aria-hidden="true">?</span>Guide</button>'
-        # + New deal — primary CTA. No dedicated /deals/new route exists yet,
-        # so it routes to the Pipeline section (deal sourcing/origination)
-        # rather than inventing a flow or shipping a broken link.
-        '<a class="ck-newdeal-cta" href="/pipeline" '
-        'title="Start a new deal in the pipeline">+ New deal</a>'
+        # + New deal — primary CTA. Routes to /new-deal, the guided create
+        # wizard (step 1 of the intake flow), so the partner lands on the
+        # action the button promises rather than the Pipeline list one click
+        # short of it.
+        '<a class="ck-newdeal-cta" href="/new-deal" '
+        'title="Start a new deal">+ New deal</a>'
         '<div class="ck-user-menu">'
         f'<button class="ck-user-chip" type="button" aria-haspopup="true" '
         f'aria-expanded="false" title="Signed in" '

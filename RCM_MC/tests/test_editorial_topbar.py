@@ -57,8 +57,9 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('aria-controls="ck-guide-panel"', self.html)
 
     def test_new_deal_cta_routes_to_real_route(self):
-        # CTA exists and points at an existing route (no invented flow).
-        self.assertIn('class="ck-newdeal-cta" href="/pipeline"', self.html)
+        # CTA exists and points at the real create wizard (/new-deal step 1),
+        # not the Pipeline list it used to dead-end on one click short.
+        self.assertIn('class="ck-newdeal-cta" href="/new-deal"', self.html)
         self.assertIn("+ New deal", self.html)
 
     def test_avatar_chip_preserved(self):
