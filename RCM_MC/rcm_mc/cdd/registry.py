@@ -61,6 +61,9 @@ def _autoload() -> None:
     from importlib import import_module
 
     modules = [
+        "parameters",
+        "epidemiology",
+        "capitation",
         "tam_sam_som",
         "pvm_bridge",
         "payer_mix",
