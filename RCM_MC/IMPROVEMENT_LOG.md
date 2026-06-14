@@ -4840,3 +4840,18 @@ third sort, "by method", that groups the catalogue by sizing archetype
 set-equality and valid 6-digit hex colors.
 **Verify**: +2 tests; 165 pass in test_tam_sam.py; market_analysis_lead +
 comparable_outcomes green (202 total in the run).
+
+## W3-004 (2026-06-14) — TAM exports carry method/triangulation/MC/Bass
+The CSV and XLSX exports now ship the W3-001/002 methodology layer into
+the deal team's model:
+- **CSV**: a Method block (archetype label/complexity/formula/sources),
+  the triangulation line (bottom-up vs top-down + gap% + band) when an
+  anchor exists, the Monte-Carlo P10/P50/P90 + CV, and the Bass
+  cumulative-adoption row for adoption templates.
+- **XLSX**: a new "Method & uncertainty" sheet (archetype block,
+  triangulation gate with verdict, MC band, Bass curve). Appended LAST so
+  the established sheet ordering (Funnel=1 … Agenda=5) that downstream
+  tests/code index by position is preserved (Sources stays sheet4).
+**Verify**: +4 tests (CSV method/triangulation/MC; CSV Bass; XLSX method
+sheet at sheet6 with Sources still at sheet4; ALL 84 templates export
+both formats clean). 168 pass in test_tam_sam.py.

@@ -1946,3 +1946,39 @@ class ArchetypeColumnTests(unittest.TestCase):
         self.assertIn("<th>Method</th>",
                       render_tam_sam_page({"template": ["snf"],
                                            "sort": ["archetype"]}))
+
+
+class MethodExportTests(unittest.TestCase):
+    """The archetype, triangulation gate, MC band, and Bass curve export
+    into the deal model alongside the point build."""
+
+    def test_csv_carries_method_triangulation_and_mc(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv
+        out = tam_sam_csv({"template": ["snf"]})
+        self.assertIn("Method (archetype)", out)
+        self.assertIn("Triangulation bottom-up", out)
+        self.assertIn("Monte-Carlo TAM (P10/P50/P90)", out)
+
+    def test_csv_carries_bass_for_adoption_template(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv
+        self.assertIn("Bass cum. adoption",
+                      tam_sam_csv({"template": ["rpm"]}))
+
+    def test_xlsx_gains_method_sheet_last_preserving_order(self):
+        import io
+        import zipfile
+        from rcm_mc.ui.tam_sam_page import tam_sam_xlsx
+        z = zipfile.ZipFile(io.BytesIO(tam_sam_xlsx({"template": ["snf"]})))
+        # 6 sheets now; Method is sheet6, Sources still sheet4 (MedPAC).
+        self.assertIn("xl/worksheets/sheet6.xml", z.namelist())
+        self.assertIn(b"MedPAC", z.read("xl/worksheets/sheet4.xml"))
+        self.assertIn(b"Monte-Carlo", z.read("xl/worksheets/sheet6.xml"))
+
+    def test_every_template_exports_method_without_error(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv, tam_sam_xlsx
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        for key in TEMPLATES:
+            self.assertIn("Method (archetype)",
+                          tam_sam_csv({"template": [key]}), key)
+            self.assertTrue(tam_sam_xlsx({"template": [key]})[:2] == b"PK",
+                            key)

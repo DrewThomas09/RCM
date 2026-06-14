@@ -1214,6 +1214,28 @@ def tam_sam_csv(qs: Dict[str, List[str]]) -> str:
         w.writerow([p["year"], round(p["tam"], 2), round(p["sam"], 2),
                     round(p["som"], 2)])
     w.writerow([])
+    # Method & uncertainty — the archetype, triangulation gate, and the
+    # Monte-Carlo band travel into the deal model alongside the point build.
+    arch = out.get("archetype") or {}
+    w.writerow(["Method (archetype)", arch.get("label", ""),
+                f"{arch.get('complexity', '')} complexity"])
+    w.writerow(["Formula", arch.get("formula", "")])
+    w.writerow(["Primary sources", arch.get("primary_sources", "")])
+    tri = out.get("triangulation")
+    if tri:
+        w.writerow(["Triangulation bottom-up", round(tri["bottom_up_tam"], 2),
+                    "Triangulation top-down", round(tri["top_down_tam"], 2),
+                    f"gap {tri['gap_pct']:.1f}% ({tri['band'].upper()})"])
+        w.writerow(["Top-down basis", tri.get("top_down_source", "")])
+    mc = monte_carlo(model, n=4000, rel_sigma=0.15, seed=1729)
+    w.writerow(["Monte-Carlo TAM (P10/P50/P90)", round(mc["p10"], 2),
+                round(mc["p50"], 2), round(mc["p90"], 2),
+                f"CV {mc['cv']*100:.0f}%"])
+    if out.get("bass"):
+        w.writerow(["Bass cum. adoption (share of SAM)"]
+                   + [f"Y{b['period']}={b['cum_frac']*100:.0f}%"
+                      for b in out["bass"]])
+    w.writerow([])
     w.writerow(["Diligence agenda"])
     for i, q in enumerate(_derive_agenda_items(out), 1):
         w.writerow([f"Q{i}", q])
@@ -1308,6 +1330,46 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
         [f"Q{i}", q]
         for i, q in enumerate(_derive_agenda_items(out), 1)
     ]
+    # Method & uncertainty sheet — archetype, triangulation gate, MC band.
+    arch = out.get("archetype") or {}
+    method_rows: List[List[Any]] = [
+        [("Method & uncertainty", H), ("", H)],
+        ["Archetype", arch.get("label", "")],
+        ["Complexity", arch.get("complexity", "")],
+        ["Formula", arch.get("formula", "")],
+        ["When to use", arch.get("when_to_use", "")],
+        ["Primary sources", arch.get("primary_sources", "")],
+        [],
+    ]
+    tri = out.get("triangulation")
+    if tri:
+        method_rows += [
+            [("Triangulation (bottom-up vs top-down)", H), ("", H)],
+            ["Bottom-up TAM", (tri["bottom_up_tam"], "money")],
+            ["Top-down TAM", (tri["top_down_tam"], "money")],
+            ["Gap", (tri["gap_pct"] / 100.0, "pct")],
+            ["Band", tri["band"].upper()],
+            ["Verdict", tri["verdict"]],
+            ["Top-down basis", tri.get("top_down_source", "")],
+            [],
+        ]
+    mc = monte_carlo(model, n=4000, rel_sigma=0.15, seed=1729)
+    method_rows += [
+        [("Monte-Carlo TAM band (±15%/driver, n=4,000)", H), ("", H)],
+        ["P10", (mc["p10"], "money")],
+        ["P50 (≈ point estimate)", (mc["p50"], "money")],
+        ["P90", (mc["p90"], "money")],
+        ["Coefficient of variation", (mc["cv"], "pct")],
+    ]
+    if out.get("bass"):
+        method_rows += [[], [("Bass adoption · cumulative share of SAM",
+                              H), ("", H)]]
+        for b in out["bass"]:
+            method_rows.append([f"Year {b['period']}",
+                                (b["cum_frac"], "pct")])
+    # Method sheet is appended LAST so the established sheet ordering
+    # (Funnel=1, Segments=2, Projection=3, Sources=4, Agenda=5) — which
+    # downstream code and tests index by position — is preserved.
     return write_xlsx([
         Sheet("Funnel & chain", funnel_rows,
               col_widths=[34, 8, 14, 16, 44, 16]),
@@ -1316,4 +1378,5 @@ def tam_sam_xlsx(qs: Dict[str, List[str]]) -> bytes:
         Sheet("Projection", proj_rows, col_widths=[34, 12, 40, 16]),
         Sheet("Sources", src_rows, col_widths=[5, 38, 70]),
         Sheet("Diligence agenda", agenda_rows, col_widths=[6, 100]),
+        Sheet("Method & uncertainty", method_rows, col_widths=[34, 52]),
     ])
