@@ -504,6 +504,36 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     except Exception:  # noqa: BLE001
         reg_exposure = None
 
+    # 7e. Auto-generate a Bear Case block from available sources.
+    # Runs extractors standalone — uses the same library as
+    # /diligence/bear-case but produces print-ready HTML inline.
+    # MUST run before the 7b checklist block below: that block reads
+    # bear_block_html to mark hcris_xray/covenant/payer coverage. When this
+    # lived *after* 7b, every checklist run hit a NameError on
+    # bear_block_html that the bare `except` swallowed — so checklist_state
+    # was silently None and the IC packet's coverage section never rendered.
+    bear_block_html = ""
+    try:
+        from ..diligence.bear_case import generate_bear_case
+        from ..diligence.hcris_xray import xray as _hcris_xray
+        hcris_report = None
+        ccn = first("hcris_ccn")
+        if ccn:
+            try:
+                hcris_report = _hcris_xray(ccn=ccn)
+            except Exception:  # noqa: BLE001
+                hcris_report = None
+        br = generate_bear_case(
+            target_name=meta.deal_name,
+            regulatory_exposure=reg_exposure,
+            autopsy_matches=autopsy_matches,
+            hcris_xray=hcris_report,
+        )
+        if br.evidence:
+            bear_block_html = br.ic_memo_html
+    except Exception:  # noqa: BLE001
+        bear_block_html = ""
+
     # 7b. Checklist coverage — derive observations from what the
     # pipeline has actually produced and run the tracker.
     checklist_state = None
@@ -556,32 +586,7 @@ def render_ic_packet_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     if reg_exposure is not None:
         reg_block_html = _render_regulatory_block(reg_exposure)
 
-    # 7e. Auto-generate a Bear Case block from available sources.
-    # Runs extractors standalone — uses the same library as
-    # /diligence/bear-case but produces print-ready HTML inline.
-    bear_block_html = ""
-    try:
-        from ..diligence.bear_case import generate_bear_case
-        from ..diligence.hcris_xray import xray as _hcris_xray
-        hcris_report = None
-        ccn = first("hcris_ccn")
-        if ccn:
-            try:
-                hcris_report = _hcris_xray(ccn=ccn)
-            except Exception:  # noqa: BLE001
-                hcris_report = None
-        br = generate_bear_case(
-            target_name=meta.deal_name,
-            regulatory_exposure=reg_exposure,
-            autopsy_matches=autopsy_matches,
-            hcris_xray=hcris_report,
-        )
-        if br.evidence:
-            bear_block_html = br.ic_memo_html
-    except Exception:  # noqa: BLE001
-        bear_block_html = ""
-
-    # 8. Assemble.
+    # 8. Assemble. (Bear Case block computed above, before 7b checklist.)
     html_str = render_ic_packet_html(
         metadata=meta,
         bankruptcy_scan=scan,

@@ -4094,6 +4094,105 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/data-apis", "Public Data APIs",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="Reference catalog of the free, API-accessible public "
+        "healthcare data sources (non-CMS-claims) PEdesk can draw on, organized "
+        "by the diligence question each one answers.",
+        primary_purpose="Make the public-data API landscape explainable: which "
+        "free sources exist, what each answers, how to access it (auth / rate "
+        "limits), and its integration status in the product.",
+        common_questions=[
+            "What free public-data APIs can PEdesk pull from?",
+            "Which source answers a given diligence question?",
+            "Does a source need an API key or registration?",
+            "What are the rate limits on each API?",
+            "Which sources are live clients vs vendored vs only registered?",
+            "Where are each source's official docs?",
+            "Is any of this commercial-payer or claims data?",
+            "How is API coverage distributed across diligence questions?",
+        ],
+        inputs=["Static public_api_catalog registry of source descriptors "
+                "(metadata only — nothing fetches at render time)."],
+        outputs=["KPI strip, a coverage-by-diligence-question chart, and "
+                 "per-category source tables with auth / rate-limit / status "
+                 "badges and doc links."],
+        key_metrics=["Source count", "Access level (none / key / registration)",
+                     "Integration status", "Coverage by diligence question"],
+        data_sources=["public_api_catalog (curated registry of public "
+                      "healthcare-data APIs)."],
+        model_logic_summary="Display-only catalog; no computation and no "
+        "render-time fetches. Coverage chart counts catalog rows per category.",
+        why_it_matters="Shows the breadth of free public data the platform can "
+        "stand on, and exactly how to access each source — the provenance map "
+        "for non-CMS-claims data.",
+        diligence_use_cases=["Finding the right free source to answer a "
+                             "diligence question; judging access cost and "
+                             "integration maturity before relying on a source."],
+        interpretation_guidance=[
+            "Metadata only — a 'registered' status means catalogued, not yet "
+            "wired to a live loader.",
+            "Public, non-claims sources — not commercial payer or private-pay "
+            "data.",
+        ],
+        limitations=["Reference catalog, not a live feed; no runtime API calls "
+                     "from this page."],
+        related_routes=["/data/catalog", "/cms-sources", "/cms-data-browser"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/cross-analysis", "Cross-Dataset Analysis",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Correlate any two of the platform's state-grain "
+        "public datasets — pick an X and Y measure and get the Pearson r / R² "
+        "stat block, a scatter with a least-squares trendline, and the joined "
+        "state table.",
+        primary_purpose="Let a partner test whether two public-data measures "
+        "move together across states — the multi-dataset companion to the "
+        "single-dataset Further Analysis explorer.",
+        common_questions=[
+            "Do these two state-level measures correlate?",
+            "What's the Pearson r / R² between dataset X and dataset Y?",
+            "Which states drive the relationship (or are outliers)?",
+            "Is the trend positive or negative, and how strong?",
+            "Which two datasets can I cross here?",
+            "Does correlation here imply causation? (no)",
+            "How many states are in the joined sample?",
+        ],
+        inputs=["Two chosen state-grain public datasets + the X/Y measures "
+                "(query params); joined on state."],
+        outputs=["Pearson r / R² stat block, scatter chart with least-squares "
+                 "trendline, and the joined per-state table."],
+        key_metrics=["Pearson r", "R²", "Sample size (n states)", "Slope"],
+        data_sources=["State-grain public datasets registered in "
+                      "diligence.cross_analysis (CHR/Census, CDC PLACES, CMS, "
+                      "HRSA, etc.)."],
+        model_logic_summary="Inner-joins the two datasets on state, computes "
+        "Pearson r and R² over the overlapping states, and fits a "
+        "least-squares line for the scatter. No imputation — non-overlapping "
+        "states drop out of the sample.",
+        why_it_matters="Quick hypothesis check across public datasets without "
+        "exporting to a spreadsheet — surfaces relationships worth a deeper "
+        "look in diligence.",
+        diligence_use_cases=["Sanity-checking a market thesis (e.g. does "
+                             "provider supply track disease burden across "
+                             "states) before committing analyst time."],
+        interpretation_guidance=[
+            "Correlation is not causation — both measures may track a third "
+            "factor (population, age mix).",
+            "State-grain only; an n of ~50 states means a few outliers can "
+            "swing r.",
+            "Read the sample size — non-overlapping states are dropped, not "
+            "zero-filled.",
+        ],
+        limitations=["State granularity only; no facility-level cross-analysis. "
+                     "Linear (Pearson/OLS) only — no non-linear fits."],
+        related_routes=["/further-analysis", "/state-compare", "/quant-lab"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/data/catalog", "Data Catalog",
         short_description="Every public-data source PEdesk has ingested — a "
         "KPI strip (sources / records / freshness) and a category-grouped "
