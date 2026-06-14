@@ -121,3 +121,9 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest => 9 passed. RAF=1.025 (demo 0.395 + HCC37 0.300 + HCC226
   0.330); HCC38 trumped; reconciles exactly.
 - Next: NEW-13 FFS-to-all-population correction.
+================================================================================
+[2026-06-14 03:50 UTC] NEW-13 FFS-to-all-population
+- ffs_correction.py: corrected = ffs/(1-MA); explicit per-county weight; high-MA
+  (>=40%) understatement flag; 55% national anchor; 100% MA uncomputable guard.
+- Evidence: pytest => 8 passed. X MA0.5->2000, Y MA0.2->1250 hand-verified.
+- Next: NEW-14 quality/outcomes benchmarking.

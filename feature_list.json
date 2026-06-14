@@ -154,11 +154,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_ffs_correction.py",
-      "notes": ""
+      "notes": "weight=1/(1-MA); X 0.50->2000, Y 0.20->1250 hand-verified; high-MA>=40% flag; 55% national anchor; 100% MA uncomputable."
     },
     {
       "id": "NEW-14",
