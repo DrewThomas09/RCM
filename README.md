@@ -11,7 +11,7 @@ This replaces the slice of healthcare diligence that firms typically outsource t
 | Goal | Go to |
 |------|-------|
 | **Install + run locally** | [§4 — Install](#4-install) |
-| **Deploy to production (DigitalOcean)** | [RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md) — droplet guide · [RCM_MC/docs/AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md) for the push-to-main pipeline |
+| **Deploy to production (DigitalOcean)** | [RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md](RCM_MC/docs/DIGITALOCEAN_DEPLOYMENT.md) — droplet guide · [RCM_MC/docs/AUTODEPLOY.md](RCM_MC/docs/AUTODEPLOY.md) for the push-to-main pipeline · [RCM_MC/docs/DIGITALOCEAN_AGENT4_RESCOPE.md](RCM_MC/docs/DIGITALOCEAN_AGENT4_RESCOPE.md) for the infra/ops re-scope & growth path |
 | **See a full Monday-AM → IC-ready walkthrough** | [§5 — Deal walkthrough](#5-deal-walkthrough-mondayam--ic-ready-by-1030am) or the longer [WALKTHROUGH.md](WALKTHROUGH.md) |
 | **Find a file or module** | [FILE_INDEX.md](FILE_INDEX.md) (navigation map) · [FILE_MAP.md](FILE_MAP.md) (1,659-file catalogue) |
 | **See the architecture visually** | [ARCHITECTURE_MAP.md](ARCHITECTURE_MAP.md) — 8 Mermaid diagrams (GitHub-rendered) |
