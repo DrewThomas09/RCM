@@ -4779,3 +4779,27 @@ can be used purely as an aggregation tool (paste raw export → group +
 top-N → copy result), not only as a chart renderer.
 **Verify**: +1 test — the hidden TSV carries the aggregated values
 (Aetna 17, never the raw 10). Chart sweep green.
+
+## W4-001 (2026-06-14) — Error sweep: diligence DQ renderer SyntaxError on Py<3.12
+`compileall` across the live packages surfaced a hard `SyntaxError` that
+shipped because no test exercised the module:
+- **`rcm_mc_diligence/dq/report.py::_section_html`** built the optional
+  message block with an f-string whose *expression part* contained
+  backslash escapes — `f"{('<div class=\"sub\" …'+msg+'…') if msg else ''}"`.
+  PEP 701 only lifts the "no backslash in an f-string expression" rule in
+  Python 3.12, so on every supported interpreter below 3.12 (the project
+  declares `requires-python = ">=3.10"` and classifies 3.10–3.14) the
+  **entire `rcm_mc_diligence` diligence layer failed to import** — the
+  `dq.report` import chain raised at parse time. The local env (3.11)
+  reproduced it.
+- **Fix**: precompute `msg_html` outside the f-string (legal escaped
+  quotes on every target version); behavior byte-identical on 3.12+.
+  No other live module had the pattern — AST-parsed all tracked `.py`
+  files; the only other hits were `legacy/` and `design_reference/`
+  handoff snapshots (not imported, left as-is).
+**Verify**: `compileall rcm_mc rcm_mc_diligence` clean; `render_html()`
+on a report whose section carries a message emits the previously-broken
+block end-to-end; new `tests/test_diligence_dq_report_render.py` (2 tests)
+imports the module — so CI on 3.10/3.11 catches any future
+backslash-in-f-string regression — plus the message-block on/off assertions;
+diligence/dq/ingest suite 372 passed / 6 skipped.
