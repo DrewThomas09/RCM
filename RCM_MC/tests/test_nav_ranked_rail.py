@@ -1,5 +1,7 @@
-"""Nav bars lead with their top-6 ranked surfaces + a 'More →' to the ranked
-/best/<section> index (Phase 2B of the front-facing revamp)."""
+"""Nav bars lead with the hand-curated flagship pins (_NAV_FLAGSHIPS), then
+ranked backfill, + a 'More →' to the ranked /best/<section> index. The front
+face is a product decision: the highest-functionality workbenches lead, and
+utility renderers (_NAV_DEMOTED) never front-face."""
 from __future__ import annotations
 
 import unittest
@@ -72,11 +74,83 @@ class RankedRailTests(unittest.TestCase):
                 self.assertNotIn(tier, ("red", "yellow"),
                                  f"{sec}: weak surface {s['href']} ({tier}) in bar")
 
+    def test_pinned_hcris_xray_in_diligence_dropdown(self):
+        # /diligence/hcris-xray is a flagship product decision (_NAV_FLAGSHIPS):
+        # the renderer is thin (engine lives in diligence/hcris_xray/) so the
+        # LOC-proxied ranking buries it below the 6-leaf cut, but partners
+        # reach for it by name from the Diligence dropdown. Flagship pins lead
+        # the bar in workflow order (not score order); the bar stays capped at 6.
+        from rcm_mc.ui._chartis_kit import _ranked_subnav_items
+        top, _ = _ranked_subnav_items("diligence")
+        hrefs = [s["href"] for s in top]
+        self.assertIn("/diligence/hcris-xray", hrefs)
+        self.assertEqual(len(top), 6)
+
+    def test_pinned_hcris_xray_renders_in_shell_megamenu(self):
+        # The pin must survive all the way into the rendered topbar markup
+        # (the mega-menu leaf), not just the helper's return value.
+        from rcm_mc.ui._chartis_kit import chartis_shell
+        h = chartis_shell("<p>x</p>", "T", active_nav="/diligence")
+        self.assertIn('href="/diligence/hcris-xray" class="ck-mega-item"', h)
+
     def test_bars_never_empty(self):
         from rcm_mc.ui._chartis_kit import _ranked_subnav_items, _SUB_NAV
         for sec in _SUB_NAV:
             top, _ = _ranked_subnav_items(sec)
             self.assertGreaterEqual(len(top), 1, sec)
+
+    def test_diligence_bar_leads_with_flagship_workbenches(self):
+        # The front face is the analyst playbook in workflow order — identity
+        # → ingest → baseline → X-Ray drill-downs → IC deliverable — not the
+        # LOC-score order (which front-faced the niche TX Infusion Market and
+        # buried HCRIS X-Ray at #19).
+        from rcm_mc.ui._chartis_kit import _ranked_subnav_items
+        top, _ = _ranked_subnav_items("diligence")
+        self.assertEqual([s["href"] for s in top], [
+            "/diligence/deal", "/diligence/ingest", "/diligence/benchmarks",
+            "/diligence/xray", "/diligence/hcris-xray", "/diligence/ic-packet",
+        ])
+
+    def test_flagship_pins_lead_every_pinned_section(self):
+        # Pins that pass the tier gate render first, in pinned order.
+        from rcm_mc.ui._chartis_kit import (
+            _NAV_FLAGSHIPS, _ranked_subnav_items,
+        )
+        from rcm_mc.diligence.surface_status import classify_surface
+        for sec, pins in _NAV_FLAGSHIPS.items():
+            real = [p for p in pins if classify_surface(p).get("tier")
+                    in ("green", "navy", "data_required")][:6]
+            top, _ = _ranked_subnav_items(sec)
+            self.assertEqual([s["href"] for s in top[:len(real)]], real, sec)
+
+    def test_utility_renderers_never_front_face(self):
+        # Chart/export utilities (Excel Mapping et al.) are real pages but
+        # tools, not analyses — they live in /best/<section>, never the bar.
+        from rcm_mc.ui._chartis_kit import (
+            _NAV_DEMOTED, _SUB_NAV, _ranked_subnav_items,
+        )
+        for sec in _SUB_NAV:
+            top, _ = _ranked_subnav_items(sec)
+            for s in top:
+                self.assertNotIn(s["href"], _NAV_DEMOTED, sec)
+        research = [s["href"] for s in _ranked_subnav_items("research")[0]]
+        self.assertNotIn("/excel-mapping", research)
+
+    def test_no_cross_section_namespace_leak_in_bars(self):
+        # A section's nav menu must stay inside its own namespace: no leaf may
+        # borrow another section's /<key>/… prefix when a native-namespace
+        # alias of the same page exists (Research used to lead with
+        # /diligence/regulatory-calendar instead of /regulatory-calendar,
+        # which resolved the active-nav/breadcrumb to the wrong section).
+        from rcm_mc.ui._chartis_kit import (
+            _ranked_subnav_items, _route_section_prefix, _SUB_NAV,
+        )
+        for sec in _SUB_NAV:
+            top, _ = _ranked_subnav_items(sec)
+            for s in top:
+                pref = _route_section_prefix(s["href"])
+                self.assertIn(pref, ("", sec),
+                              f"{sec} bar leaks into /{pref}/: {s['href']}")
 
 
 if __name__ == "__main__":

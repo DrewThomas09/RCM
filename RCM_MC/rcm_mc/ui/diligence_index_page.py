@@ -153,10 +153,19 @@ _PILLARS: List[Mapping[str, object]] = [
              "label": "TX Infusion Market",
              "blurb": "Texas infusion-market CDD: sizing, segmentation, "
                       "concentration, metro attractiveness."},
+            {"href": "/diligence/texas-infusion-continued",
+             "label": "TX Infusion · Continued",
+             "blurb": "Part 2 — CPT-level rates by site and city, drug "
+                      "mix, PPO/HMO concentration, network access, "
+                      "proximity, HealthQuest spotlight."},
             {"href": "/diligence/infusion-markets",
              "label": "Infusion Market Scan",
              "blurb": "National infusion-market scan — rank every state "
                       "for a roll-up."},
+            {"href": "/diligence/jcode-atlas",
+             "label": "J-Code Atlas",
+             "blurb": "Every infusion J-code by site of care (home vs "
+                      "office) + the change, tied to disease + demand."},
             {"href": "/diligence/bear-case",
              "label": "Bear Case",
              "blurb": "The defensible bear case for this deal."},

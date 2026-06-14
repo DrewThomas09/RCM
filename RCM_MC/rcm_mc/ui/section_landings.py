@@ -267,11 +267,17 @@ def has_landing(section: str) -> bool:
 
 
 def _auto_pillars(section: str) -> List[Mapping[str, object]]:
-    """Fallback: one 'All tools' pillar built from the ranking manifest."""
+    """Fallback: one 'All tools' pillar built from the ranking manifest.
+
+    curate_rows gates the manifest — without it this fallback leaked
+    internal routes (login/forgot/demo/.xlsx artifacts in the
+    'uncategorized' pool) as partner-facing tool cards.
+    """
+    from ._surface_visibility import curate_rows
     try:
         from ._surface_rankings import RANKINGS
-        rows = sorted(RANKINGS.get(section, []),
-                      key=lambda r: -r.get("total", 0.0))
+        rows = curate_rows(sorted(RANKINGS.get(section, []),
+                                  key=lambda r: -r.get("total", 0.0)))
     except Exception:  # noqa: BLE001
         rows = []
     links = [{"href": r["route"], "label": r.get("label", r["route"]),

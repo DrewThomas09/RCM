@@ -50,6 +50,26 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('class="ck-search-kbd"', self.html)
         self.assertIn("⌘K", self.html)
 
+    def test_modkey_hint_is_platform_aware(self):
+        # The ⌘ glyph is hardcoded in markup but a guarded script rewrites it
+        # to Ctrl on non-Mac platforms. Both display spots (search kbd + the
+        # "All Tools" menu item) are tagged for the rewrite.
+        self.assertEqual(self.html.count("data-modkey>"), 2)
+        self.assertIn('querySelectorAll("[data-modkey]")', self.html)
+        # Bare (chrome-less) pages ship neither the markup nor the script.
+        from rcm_mc.ui._chartis_kit import chartis_shell
+        bare = chartis_shell("<p>x</p>", "Login", show_chrome=False)
+        self.assertNotIn("data-modkey", bare)
+
+    def test_search_input_has_site_search_attributes(self):
+        # A site-search box should not autofill or spell-check the query
+        # (CCNs, route slugs), and should surface a "search" action key on
+        # mobile keyboards.
+        self.assertIn('type="search"', self.html)
+        self.assertIn('autocomplete="off"', self.html)
+        self.assertIn('spellcheck="false"', self.html)
+        self.assertIn('enterkeyhint="search"', self.html)
+
     def test_guide_button_preserved(self):
         # Guide button still opens the existing Guide sidebar.
         self.assertIn('class="ck-guide-trigger"', self.html)
@@ -57,9 +77,65 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('aria-controls="ck-guide-panel"', self.html)
 
     def test_new_deal_cta_routes_to_real_route(self):
-        # CTA exists and points at an existing route (no invented flow).
-        self.assertIn('class="ck-newdeal-cta" href="/pipeline"', self.html)
+        # CTA exists and points at the real create wizard (/new-deal step 1),
+        # not the Pipeline list it used to dead-end on one click short.
+        self.assertIn('class="ck-newdeal-cta" href="/new-deal"', self.html)
         self.assertIn("+ New deal", self.html)
+
+    def test_section_triggers_expose_aria_expanded(self):
+        # Each mega-menu section trigger is a disclosure control: it must
+        # advertise a starting aria-expanded="false" (flipped by _NAV_MENU_JS
+        # on open) so screen readers announce open/collapsed state. No
+        # aria-haspopup — the panel is a group of links, not a menu widget.
+        # Home (a bare link, no dropdown) carries no aria-expanded. The
+        # positive match also proves no aria-haspopup sits on the trigger
+        # (the user-chip dropdown keeps its own haspopup — out of scope here).
+        self.assertIn('href="/diligence" aria-expanded="false"', self.html)
+        self.assertNotIn('href="/home" aria-expanded', self.html)
+
+    def test_section_triggers_control_their_panels(self):
+        # Each disclosure trigger must point at the panel it toggles, and that
+        # panel must carry the matching id (mirrors the user-chip wiring).
+        import re
+        controls = set(re.findall(r'aria-controls="(ck-mega-[a-z]+)"', self.html))
+        ids = re.findall(r'id="(ck-mega-[a-z]+)"', self.html)
+        self.assertGreaterEqual(len(controls), 6)
+        self.assertEqual(controls, set(ids))         # every control resolves
+        self.assertEqual(len(ids), len(set(ids)))    # ids are unique
+
+    def test_my_dashboard_link_follows_chip_initials(self):
+        # The "My Dashboard" link must target the same owner the avatar chip
+        # shows — not a hardcoded "/my/AT". Pass real initials and assert both
+        # the chip and the dashboard link move together.
+        html = chartis_shell("<p>b</p>", title="X", active_nav="portfolio",
+                             show_chrome=True, user_initials="JD")
+        self.assertIn(">JD</button>", html)            # chip
+        self.assertIn('href="/my/JD"', html)           # dashboard link
+        self.assertNotIn('href="/my/AT"', html)
+
+    def test_focusable_topbar_elements_have_focus_rings(self):
+        # WCAG 2.4.7: every focusable topbar control needs a visible focus
+        # indicator. The account dropdown items in particular were rendering
+        # no ring for keyboard users navigating the open menu.
+        for sel in (".ck-wordmark:focus-visible", ".ck-mode-chip:focus-visible",
+                    ".ck-topbar-qpill:focus-visible",
+                    ".ck-user-dropdown-item:focus-visible"):
+            self.assertIn(sel, self.html, f"missing focus ring: {sel}")
+
+    def test_user_menu_escape_returns_focus_to_chip(self):
+        # Closing the account menu with Escape must move focus back to the
+        # chip so a keyboard user isn't stranded on the hidden menu (2.4.3).
+        idx = self.html.find("e.key === 'Escape' && !menu.hidden")
+        self.assertNotEqual(idx, -1)
+        self.assertIn("btn.focus()", self.html[idx:idx + 360])
+
+    def test_user_chip_controls_its_dropdown(self):
+        # The chip is a disclosure trigger; it must point at the menu it
+        # toggles (mirrors the Guide button → #ck-guide-panel wiring) and the
+        # menu must carry that id exactly once.
+        self.assertIn('aria-controls="ck-user-dropdown"', self.html)
+        self.assertIn('id="ck-user-dropdown"', self.html)
+        self.assertEqual(self.html.count('id="ck-user-dropdown"'), 1)
 
     def test_avatar_chip_preserved(self):
         self.assertIn('class="ck-user-chip"', self.html)

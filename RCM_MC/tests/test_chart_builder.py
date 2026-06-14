@@ -372,6 +372,16 @@ class BuilderPageTests(unittest.TestCase):
                        'id="chartOut"', "⬇ SVG", 'name="size"'):
             self.assertIn(needle, h, f"missing: {needle}")
 
+    def test_no_literal_none_in_page(self):
+        # A bare >None< (e.g. the calc dropdown's empty option labelled
+        # "None") trips the route-walker nan/None-leak gate that the weekly
+        # regression-sweep runs with --fail-on-leak. The empty calc option
+        # must read "Off", never "None". Guarded here so it's caught on every
+        # PR, not only in the weekly sweep.
+        for params in ({}, {"calc": [""]}, {"type": ["pie"]}):
+            h = render_chart_builder_page(params)
+            self.assertNotIn(">None<", h, f"literal >None< leaked with {params}")
+
     def test_size_control_changes_render_width(self):
         h = render_chart_builder_page({"size": ["L"]})
         self.assertIn("max-width:920px", h)

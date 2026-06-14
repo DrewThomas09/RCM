@@ -11,14 +11,15 @@ from __future__ import annotations
 import unittest
 
 from rcm_mc.diligence.expert_calls import (
-    CDD_TOPICS, QUESTION_BANK, STAKEHOLDER_TYPES, THESIS_TAGS,
-    COVERED, THIN, UNCOVERED, TRIANGULATED, SINGLE_LENS, DARK,
-    build_call_guide, call_sheet_rows, coverage_read,
-    format_call_note, logged_call_counts, program_plan,
-    stakeholder, topic_coverage, topic_lens_matrix, weekly_cadence,
+    CDD_TOPICS, LEDGER_TAG_ORDER, QUESTION_BANK, STAKEHOLDER_TYPES,
+    THESIS_TAGS, COVERED, THIN, UNCOVERED, TRIANGULATED, SINGLE_LENS,
+    DARK, build_call_guide, call_sheet_rows, coverage_read,
+    findings_ledger, format_call_note, logged_call_counts,
+    parse_call_note, program_plan, stakeholder, topic_coverage,
+    topic_lens_matrix, weekly_cadence,
 )
 from rcm_mc.ui.expert_calls_page import (
-    expert_calls_csv, render_expert_calls_page,
+    expert_calls_csv, findings_csv, render_expert_calls_page,
 )
 
 
@@ -426,6 +427,134 @@ class CallNoteTests(unittest.TestCase):
                          ("SUPPORTS", "CONTRADICTS", "NEW QUESTION"))
 
 
+class SectorPackTests(unittest.TestCase):
+    def test_pack_integrity(self):
+        from rcm_mc.diligence.expert_calls import SECTOR_PACKS
+        for name, pack in SECTOR_PACKS.items():
+            self.assertTrue(pack, f"{name} pack empty")
+            for lens_key, qs in pack.items():
+                self.assertIsNotNone(stakeholder(lens_key),
+                                     f"{name}: unknown lens {lens_key}")
+                for q in qs:
+                    self.assertIn(q["topic"], CDD_TOPICS)
+                    self.assertTrue(q["question"].strip())
+                    self.assertTrue(q["listen_for"].strip())
+
+    def test_guide_layers_pack_only_when_asked(self):
+        base = build_call_guide("payer_exec")
+        packed = build_call_guide("payer_exec", sector="infusion")
+        self.assertGreater(packed["question_count"],
+                           base["question_count"])
+        self.assertEqual(packed["sector"], "infusion")
+        self.assertEqual(base["sector"], "")
+        pack_qs = [q for sec in packed["sections"]
+                   for q in sec["questions"] if q.get("pack")]
+        self.assertTrue(pack_qs)
+        self.assertTrue(all(q["pack"] == "infusion" for q in pack_qs))
+        # Pack questions join their topic's group, not a separate one.
+        self.assertEqual(len(packed["sections"]),
+                         len({s["topic"] for s in packed["sections"]}))
+
+    def test_unknown_sector_ignored_never_guessed(self):
+        g = build_call_guide("payer_exec", sector="crypto")
+        self.assertEqual(g["sector"], "")
+        self.assertEqual(g["question_count"],
+                         build_call_guide("payer_exec")["question_count"])
+
+    def test_page_renders_pack_tag_and_select(self):
+        page = render_expert_calls_page(
+            {"sector": ["infusion"], "lens": ["payer_exec"]})
+        self.assertIn("INFUSION PACK", page)
+        self.assertIn("white-bagging", page)
+        self.assertIn('name="sector"', page)
+        # Lens-chip links carry the sector through navigation.
+        self.assertIn("&sector=infusion", page)
+        # No sector → no pack tags anywhere.
+        plain = render_expert_calls_page({"lens": ["payer_exec"]})
+        self.assertNotIn("INFUSION PACK", plain)
+
+    def test_hostile_sector_falls_back(self):
+        page = render_expert_calls_page({"sector": ["<script>"]})
+        self.assertNotIn("<script>alert", page)
+        self.assertNotIn("PACK</span>", page)
+
+
+class FindingsLedgerTests(unittest.TestCase):
+    def _note(self, lens="payer_exec", finding="Rates above market",
+              tag="CONTRADICTS", vantage="ex-VP", as_of="2026-06"):
+        return format_call_note(lens, vantage=vantage, finding=finding,
+                                tag=tag, as_of=as_of)
+
+    def test_parser_is_the_exact_inverse(self):
+        body = self._note(finding="Finding with [brackets] inside")
+        f = parse_call_note(body)
+        self.assertEqual(f["lens"], "payer_exec")
+        self.assertEqual(f["finding"], "Finding with [brackets] inside")
+        self.assertEqual(f["tag"], "CONTRADICTS")
+        self.assertEqual(f["vantage"], "ex-VP")
+        self.assertEqual(f["as_of"], "2026-06")
+
+    def test_parser_rejects_free_text_and_fake_lenses(self):
+        self.assertIsNone(parse_call_note("Talked to a payer today"))
+        self.assertIsNone(parse_call_note(
+            "EXPERT CALL · Astrologer — x (as of y): z [SUPPORTS]"))
+        self.assertIsNone(parse_call_note(None))
+        self.assertIsNone(parse_call_note(
+            "EXPERT CALL · Payer / contracting executive — x "
+            "(as of y): z [MAYBE]"))
+
+    def test_ledger_groups_contradictions_first(self):
+        ledger = findings_ledger([
+            self._note(tag="SUPPORTS", finding="s1"),
+            self._note(tag="CONTRADICTS", finding="c1"),
+            self._note(tag="NEW QUESTION", finding="q1",
+                       lens="referring_physician"),
+            "free text never counted",
+        ])
+        self.assertEqual(ledger["total"], 3)
+        self.assertEqual(LEDGER_TAG_ORDER[0], "CONTRADICTS")
+        self.assertEqual(ledger["counts"],
+                         {"CONTRADICTS": 1, "NEW QUESTION": 1,
+                          "SUPPORTS": 1})
+        self.assertEqual(ledger["warnings"], [])
+
+    def test_confirmation_bias_warning_fires_only_at_scale(self):
+        all_supports = [self._note(tag="SUPPORTS", finding=f"s{i}")
+                        for i in range(5)]
+        ledger = findings_ledger(all_supports)
+        self.assertEqual(len(ledger["warnings"]), 1)
+        self.assertIn("isn't listening", ledger["warnings"][0])
+        # Four findings is too small a base to call bias.
+        self.assertEqual(findings_ledger(all_supports[:4])["warnings"],
+                         [])
+        # One contradiction clears it at any size.
+        self.assertEqual(findings_ledger(
+            all_supports + [self._note(tag="CONTRADICTS")])["warnings"],
+            [])
+
+    def test_findings_csv_shape_and_defang(self):
+        out = findings_csv("=evil()", [
+            self._note(finding="=cmd()|x", tag="CONTRADICTS"),
+            self._note(tag="SUPPORTS", finding="fine"),
+        ])
+        self.assertIn("'=evil()", out)
+        self.assertIn("'=cmd()", out)
+        self.assertIn("CONTRADICTS,1", out.replace('"', ""))
+        lines = out.strip().splitlines()
+        self.assertIn("Thesis tag,Finding,Lens", out)
+        # Contradiction row precedes the supports row.
+        self.assertLess(
+            next(i for i, l in enumerate(lines)
+                 if l.startswith("CONTRADICTS,")),
+            next(i for i, l in enumerate(lines)
+                 if l.startswith("SUPPORTS,")))
+
+    def test_empty_ledger_csv_is_honest(self):
+        out = findings_csv("", [])
+        self.assertIn("(no deal set)", out)
+        self.assertIn("Total findings,0", out)
+
+
 class LogCallHTTPTests(unittest.TestCase):
     """POST /api/expert-calls/log records the structured note on an
     EXISTING deal, and the page's coverage tracker derives from the
@@ -531,6 +660,34 @@ class LogCallHTTPTests(unittest.TestCase):
             "/diligence/expert-calls?done_payer_exec=2",
             cookie=self._cookie())
         self.assertNotIn("logged EXPERT CALL note", body)
+
+    def test_04_ledger_renders_logged_findings_grouped(self):
+        # Log a contradiction; the on-page ledger groups it under
+        # CONTRADICTS with its vantage, and the CSV serves it.
+        code, _ = self._post(
+            {"deal_id": "buh", "lens": "competitor_exec",
+             "vantage": "rival COO, DFW",
+             "finding": "They are adding 3 sites in the same metro",
+             "tag": "CONTRADICTS", "as_of": "2026-05"})
+        self.assertEqual(code, 303)
+        _, body = self._get("/diligence/expert-calls",
+                            cookie=self._cookie())
+        self.assertIn("Findings ledger — Bigtown Health", body)
+        self.assertIn("CONTRADICTS (", body)   # grouped section header
+        self.assertIn("rival COO, DFW", body)
+        self.assertIn("/api/expert-calls/findings.csv?deal_id=buh",
+                      body)
+        _, csv_out = self._get(
+            "/api/expert-calls/findings.csv?deal_id=buh")
+        self.assertIn("adding 3 sites", csv_out)
+        # Unknown deal → honest empty ledger, never an error.
+        _, csv_empty = self._get(
+            "/api/expert-calls/findings.csv?deal_id=ghost")
+        self.assertIn("Total findings,0", csv_empty)
+
+    def test_05_no_deal_context_no_ledger(self):
+        _, body = self._get("/diligence/expert-calls")
+        self.assertNotIn("Findings ledger", body)
 
     def test_03_unknown_deal_or_bad_fields_record_nothing(self):
         before = len(self._notes())

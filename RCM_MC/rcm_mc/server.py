@@ -4067,6 +4067,30 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.global_markets_page import render_country_profile
             return self._send_html(render_country_profile(
                 iso2, PortfolioStore(self.config.db_path)))
+        if path == "/rxnorm":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rxnorm_page import render_rxnorm_page
+            return self._send_html(render_rxnorm_page(
+                PortfolioStore(self.config.db_path), _qp))
+        if path == "/api/rxnorm":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rxnorm_page import build_rxnorm
+            return self._send_json(build_rxnorm(
+                PortfolioStore(self.config.db_path), _qp))
+        if path == "/rxnorm/export.csv":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _table = (_qs.get("table") or ["crosswalk"])[0]
+            from .ui.data_public.rxnorm_page import build_export_df
+            try:
+                _df = build_export_df(
+                    PortfolioStore(self.config.db_path), _table)
+            except KeyError:
+                return self._send_json(
+                    {"error": f"unknown table: {_table}"},
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_csv_df(_df, f"rxnorm-{_table}.csv")
         if path == "/payer-concentration":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -6745,6 +6769,38 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.texas_infusion_page import render_texas_infusion_page
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_texas_infusion_page(_ti_qs))
+        if path == "/diligence/texas-infusion/counties":
+            # County & proximity workbench — all 254 TX counties with the
+            # patient → nearest-infusion-access distance model and the
+            # demand × distance AIC whitespace ranking.
+            from .ui.texas_infusion_counties_page import (
+                render_texas_infusion_counties_page,
+            )
+            return self._send_html(render_texas_infusion_counties_page())
+        if path == "/diligence/texas-infusion/counties.csv":
+            from .ui.texas_infusion_counties_page import texas_counties_csv
+            return self._send_text(
+                texas_counties_csv(),
+                content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/metros.csv":
+            # Four-metro member-county deep-dive export (one row per
+            # metro county, facility roster names included).
+            from .ui.texas_infusion_counties_page import texas_metros_csv
+            return self._send_text(
+                texas_metros_csv(),
+                content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion-continued":
+            # Texas infusion market part 2 — the per-claim / per-payer /
+            # per-place grain: CPT rates by site + city, drug-dose
+            # economics, PPO/HMO structure, network matrix, proximity,
+            # HealthQuest spotlight, patient experience. ?asp=live
+            # refreshes drug pricing from the CMS ASP API.
+            from .ui.texas_infusion_continued_page import (
+                render_texas_infusion_continued_page,
+            )
+            _tc_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(
+                render_texas_infusion_continued_page(_tc_qs))
         if path == "/diligence/cdd-scope":
             # CDD Scope — the four engagement depths (screen / red-flag
             # / full-scope / bring-down): level cards, deterministic
@@ -6775,23 +6831,40 @@ class RCMHandler(BaseHTTPRequestHandler):
                 if _ec_meta.get("name"):
                     _ec_qs["deal"] = [_ec_meta["name"]]
                     _ec_qs.setdefault("_prefill_deal", [_ec_meta["name"]])
-            # Coverage from the evidence trail: count the structured
-            # EXPERT CALL notes already logged on the active deal so the
-            # tracker reflects what's recorded (explicit done_* params
-            # win on-page). Best-effort — notes trouble never 500s.
-            _ec_counts = None
+            # The evidence trail: the active deal's note bodies feed
+            # both the coverage tracker and the findings ledger
+            # (explicit done_* params win on-page). Best-effort —
+            # notes trouble never 500s the page.
+            _ec_notes = None
             if _ec_meta and _ec_meta.get("id"):
                 try:
                     from .deals.deal_notes import list_notes
-                    from .diligence.expert_calls import logged_call_counts
                     _df = list_notes(PortfolioStore(self.config.db_path),
                                      _ec_meta["id"])
-                    _ec_counts = logged_call_counts(
-                        _df["body"].tolist() if len(_df) else [])
+                    _ec_notes = _df["body"].tolist() if len(_df) else []
                 except Exception:  # noqa: BLE001
-                    _ec_counts = None
+                    _ec_notes = None
             return self._send_html(render_expert_calls_page(
-                _ec_qs, active_deal=_ec_meta, logged_counts=_ec_counts))
+                _ec_qs, active_deal=_ec_meta, logged_notes=_ec_notes))
+        if path == "/api/expert-calls/findings.csv":
+            # Findings-ledger export for one deal — the evidence
+            # appendix a memo drafter pastes from. Unknown deal → an
+            # empty ledger CSV (never a fabricated finding, never 500).
+            from .deals.deal_notes import list_notes
+            from .ui.expert_calls_page import findings_csv
+            _fc_qs = urllib.parse.parse_qs(parsed.query)
+            _fc_id = (_fc_qs.get("deal_id") or [""])[0].strip()[:128]
+            _fc_bodies: list = []
+            if _fc_id:
+                try:
+                    _df = list_notes(PortfolioStore(self.config.db_path),
+                                     _fc_id)
+                    _fc_bodies = _df["body"].tolist() if len(_df) else []
+                except Exception:  # noqa: BLE001
+                    _fc_bodies = []
+            return self._send_text(
+                findings_csv(_fc_id, _fc_bodies),
+                content_type="text/csv; charset=utf-8")
         if path == "/api/diligence/expert-calls.csv":
             # Call-sheet export — one row per planned call (week, lens,
             # sourcing) + empty tracking columns; same qs as the page.
@@ -6811,6 +6884,36 @@ class RCMHandler(BaseHTTPRequestHandler):
                 infusion_state_attractiveness,
             )
             return self._send_json(infusion_state_attractiveness())
+        if path == "/diligence/jcode-atlas":
+            # J-Code Atlas — every infusion J-code scanned by site of care
+            # (home vs office vs AIC vs HOPD) + the change, tied to disease.
+            # qs: ?pop=<int> scales pools; ?live=1 overlays live ASP price.
+            from .ui.jcode_atlas_page import render_jcode_atlas_page
+            _jc_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_jcode_atlas_page(_jc_qs))
+        if path == "/api/diligence/jcode-atlas":
+            # JSON variant — the full J-code atlas (scan + disease tie +
+            # summary). ?pop=<int> scales pools; ?live=1 overlays ASP.
+            from .diligence.jcode_atlas import jcode_atlas
+            _jq = urllib.parse.parse_qs(parsed.query)
+            _pop = self._clamp_int(
+                (_jq.get("pop") or ["0"])[0],
+                default=0, min_v=0, max_v=10 ** 10) or None
+            _live = (_jq.get("live") or [""])[0] in ("1", "true", "yes")
+            return self._send_json(jcode_atlas(
+                population=_pop, fetch_live=_live))
+        if path == "/api/diligence/jcode-atlas/export.csv":
+            # Per-code site-of-care scan as a defanged CSV — one row per
+            # J-code (now-mix + change + pool + opportunity + live ASP).
+            from .diligence.jcode_atlas import jcode_scan_dataframe
+            _jq = urllib.parse.parse_qs(parsed.query)
+            _pop = self._clamp_int(
+                (_jq.get("pop") or ["0"])[0],
+                default=0, min_v=0, max_v=10 ** 10) or None
+            _live = (_jq.get("live") or [""])[0] in ("1", "true", "yes")
+            return self._send_csv_df(
+                jcode_scan_dataframe(population=_pop, fetch_live=_live),
+                "jcode-atlas-site-of-care.csv")
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs
@@ -7031,6 +7134,17 @@ class RCMHandler(BaseHTTPRequestHandler):
             _ti_qs = urllib.parse.parse_qs(parsed.query)
             return self._send_json(build_texas_infusion_analysis(
                 aic_overrides=aic_assumptions_from_qs(_ti_qs)))
+        if path == "/api/diligence/texas-infusion-continued":
+            # JSON variant of part 2 — the granular CPT/payer/proximity
+            # analysis dict; ?asp=live refreshes CMS ASP drug pricing.
+            from .diligence.texas_infusion_continued import (
+                build_texas_infusion_continued_analysis,
+            )
+            _tc_qs = urllib.parse.parse_qs(parsed.query)
+            _tc_live = "live" in _tc_qs.get("asp", [])
+            return self._send_json(
+                build_texas_infusion_continued_analysis(
+                    fetch_live=_tc_live))
         if path == "/api/diligence/texas-infusion/memo":
             # Markdown IC memo — a partner-shareable writeup generated
             # from the analysis; served as a download.
@@ -13586,6 +13700,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_guide_ask()
         if path == "/diligence/snapshot":
             return self._route_diligence_snapshot_post()
+        if path == "/rxnorm/seed":
+            # Populate the RxNorm tables from the committed offline seed so the
+            # /rxnorm surface is useful without network access. Idempotent.
+            from .data_public.rxnorm import seed_into
+            try:
+                rep = seed_into(PortfolioStore(self.config.db_path))
+                n = rep["counts"].get("dim_rxnorm_concept", 0)
+                dest = self._with_flash(
+                    "/rxnorm", f"Loaded {n} RxNorm concepts from seed", "success")
+            except Exception as exc:  # noqa: BLE001
+                dest = self._with_flash(
+                    "/rxnorm", f"Seed load failed: {exc}", "error")
+            return self._redirect(dest)
         if path == "/api/target-screener/save":
             return self._route_target_screener_save_post()
         if path == "/api/target-screener/delete":
@@ -20821,9 +20948,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         # page carries the Guide context and the download button)
         "/rate-environment.xlsx", "/pricing-power.xlsx",
         "/labor-market.xlsx", "/transaction-multiples.xlsx",
+        "/target-screener.csv", "/state-compare.csv", "/state-rankings.csv",
+        "/state-profile.csv", "/state-peers.csv", "/county-explorer.csv",
+        "/metro-markets.csv", "/verified-deals.csv",
+        "/demo/download/kkr-deals.csv", "/demo/download/kkr-deals.json",
+        # Trailing-slash duplicate of /market-data — same renderer; the
+        # slashless route is the canonical card.
+        "/market-data/",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
+        "/rxnorm/seed",  # POST-only "populate from offline seed" action
         "/data/refresh", "/quick-import", "/quick-import-json",
         "/export/bridge", "/exports/lp-update", "/calibrate", "/upload",
         "/digest/morning",
@@ -20983,7 +21118,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             "fwa", "gp", "gpo", "hcit", "ic", "irr", "irs", "lbo",
             "lp", "ma", "mc", "ml", "moic", "msa", "nsa", "pe",
             "pmi", "qoe", "rcm", "reit", "rfp", "roi", "rw", "tam",
-            "vdr", "zbb", "340b", "mc", "mc-", "ehr", "ev",
+            "vdr", "zbb", "340b", "ehr", "ev",
         }
 
         def _title_chunk(chunk: str) -> str:

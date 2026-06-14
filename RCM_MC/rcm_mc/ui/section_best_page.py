@@ -101,7 +101,10 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
 
     section = (section or "").strip().lower()
     title = _SECTION_TITLE.get(section, section.title() or "Section")
-    rows: List[Dict] = list(RANKINGS.get(section, []))
+    # curate_rows drops internal routes, sentinel rows, and alias dupes —
+    # the tier counts below then describe exactly what's on the page.
+    from ._surface_visibility import curate_rows
+    rows: List[Dict] = curate_rows(RANKINGS.get(section, []))
 
     # Per-tier coverage — quoted in the meta-line. Same source of
     # truth as the section_catalog cascade (#1060).

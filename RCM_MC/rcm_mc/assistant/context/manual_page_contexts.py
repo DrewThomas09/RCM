@@ -420,6 +420,68 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
     _ctx(
+        "/diligence/jcode-atlas", "J-Code Atlas",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Scans every infusion HCPCS J-code by site of care "
+        "(home vs office vs ambulatory suite vs HOPD), shows the 2018→now "
+        "home-migration change code by code, and ties each code to its "
+        "disease and the size of the patient pool it serves.",
+        primary_purpose="Answer two infusion-diligence questions at the "
+        "J-code grain: where is each drug administered and which way is the "
+        "mix moving (home vs office and the change), and which disease — and "
+        "how big a patient pool — does the code represent.",
+        intended_users=["PE deal team underwriting an infusion / specialty-"
+                        "pharmacy / home-infusion platform."],
+        common_questions=[
+            "Which infusion J-codes are migrating from the hospital to home?",
+            "What is the home-vs-office site-of-care split for this drug?",
+            "How much has the site-of-care mix changed since 2018?",
+            "Which diseases drive the biggest infusion patient pool?",
+            "Which J-codes have biosimilar / ASP-erosion exposure?",
+        ],
+        inputs=["?pop=<int> scales the disease patient pools to a real "
+                "market (defaults to US). ?live=1 overlays the live CMS "
+                "ASP per-unit payment limit."],
+        outputs=["A per-code site-of-care scan (home/office/AIC/HOPD mix + "
+                 "the 2018→now per-site delta + out-of-hospital migration "
+                 "index + estimated patient pool + ASP), a disease tie "
+                 "(disease → treating codes → pool → dominant site), and a "
+                 "whole-book site-of-care mix + change."],
+        key_metrics=["Out-of-hospital migration (pts)", "Home / office share",
+                     "Estimated patient pool", "ASP payment limit/unit",
+                     "Biosimilar exposure"],
+        data_sources=["HCPCS codes + descriptors (CMS public facts); "
+                      "FDA-labeled indications; published treated-prevalence "
+                      "anchors; site-of-care mix from labeled NHIA/MedPAC "
+                      "archetype anchors; live CMS ASP Pricing file overlay."],
+        model_logic_summary="Site mix + its change come from labeled "
+        "drug-class archetype anchors (2018 + current); patient pools = real "
+        "population (or senior base) × the published epi rate; per-disease "
+        "pool is the max across overlapping brand codes (not summed). ASP is "
+        "live where egress permits, else shown as the ASP+6% formula.",
+        why_it_matters="The migration of infusion out of the hospital into "
+        "the home/office is the entire ambulatory- and home-infusion thesis; "
+        "this makes it concrete per drug and ties it to real disease demand.",
+        diligence_use_cases=["Sizing an infusion platform's addressable "
+                             "drug + disease book; spotting which therapies "
+                             "are home-shiftable; flagging biosimilar / ASP "
+                             "drug-margin risk by code."],
+        interpretation_guidance=[
+            "Site-of-care mix + the change are labeled illustrative anchors, "
+            "not a claims place-of-service feed — replace in diligence.",
+            "Patient pools scale with the real geography you pass in; the "
+            "epi rates are published anchors.",
+            "Dollar ASP is None (shown as the formula) when offline — no "
+            "dollar value is fabricated."],
+        limitations=["The site-of-care time-series is a two-anchor model, "
+                     "not a real claims trend; pools are prevalence "
+                     "estimates, not a provider census."],
+        related_routes=["/diligence/texas-infusion",
+                        "/diligence/infusion-markets"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MODEL_ESTIMATE,
+    ),
+    _ctx(
         "/users", "Users",
         short_description="Admin-only user management — accounts, roles, "
         "password rotation, and deletion.",
@@ -3833,7 +3895,7 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/home-health", "Home Health Agencies",
         short_description="A screener of Medicare-certified home health "
-        "agencies with publicly reported quality, a state tile-grid map, and "
+        "agencies with publicly reported quality, a geographic state map, and "
         "per-state provider tables.",
         primary_purpose="Provide market and provider diligence context for "
         "home-health deals — agency density by state and public quality "
@@ -3855,7 +3917,7 @@ _MANUAL: List[PageContext] = [
                           "diligence separately?",
                           "Where does this data come from and how fresh is it?"],
         inputs=["Vendored CMS 'Home Health Care Agencies' snapshot (6jpm-sxkc)."],
-        outputs=["KPI cards, a state tile-grid map shaded by agency count, "
+        outputs=["KPI cards, a geographic state map shaded by agency count, "
                  "per-state summaries, and provider/quality tables.",
                  "Picking a state opens a market-intelligence view: a market "
                  "summary (agency count, cities represented, median star "
@@ -3901,7 +3963,7 @@ _MANUAL: List[PageContext] = [
     _ctx(
         "/hospice", "Hospice Providers",
         short_description="A screener of Medicare-certified hospices with "
-        "publicly reported HIS quality, a state tile-grid map, and per-state "
+        "publicly reported HIS quality, a geographic state map, and per-state "
         "provider tables.",
         primary_purpose="Provide market and provider diligence context for "
         "hospice deals — hospice density by state and public quality (Hospice "
@@ -3923,7 +3985,7 @@ _MANUAL: List[PageContext] = [
                           "Where does this data come from and how fresh is it?"],
         inputs=["Vendored CMS 'Hospice - General Information' (yc9t-dgbk) + "
                 "'Hospice - Provider Data' HIS measures (252m-zfp9)."],
-        outputs=["KPI cards, a state tile-grid map shaded by hospice count, "
+        outputs=["KPI cards, a geographic state map shaded by hospice count, "
                  "per-state summaries, and provider/quality tables.",
                  "Picking a state opens a market-intelligence view: a market "
                  "summary (hospice count, counties represented, median Care "
@@ -4090,6 +4152,105 @@ _MANUAL: List[PageContext] = [
         limitations=["Snapshot-based; no runtime CMS API calls. Medicare/"
                      "public scope only."],
         related_routes=["/cms-sources", "/data/catalog", "/market-data"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/data-apis", "Public Data APIs",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="Reference catalog of the free, API-accessible public "
+        "healthcare data sources (non-CMS-claims) PEdesk can draw on, organized "
+        "by the diligence question each one answers.",
+        primary_purpose="Make the public-data API landscape explainable: which "
+        "free sources exist, what each answers, how to access it (auth / rate "
+        "limits), and its integration status in the product.",
+        common_questions=[
+            "What free public-data APIs can PEdesk pull from?",
+            "Which source answers a given diligence question?",
+            "Does a source need an API key or registration?",
+            "What are the rate limits on each API?",
+            "Which sources are live clients vs vendored vs only registered?",
+            "Where are each source's official docs?",
+            "Is any of this commercial-payer or claims data?",
+            "How is API coverage distributed across diligence questions?",
+        ],
+        inputs=["Static public_api_catalog registry of source descriptors "
+                "(metadata only — nothing fetches at render time)."],
+        outputs=["KPI strip, a coverage-by-diligence-question chart, and "
+                 "per-category source tables with auth / rate-limit / status "
+                 "badges and doc links."],
+        key_metrics=["Source count", "Access level (none / key / registration)",
+                     "Integration status", "Coverage by diligence question"],
+        data_sources=["public_api_catalog (curated registry of public "
+                      "healthcare-data APIs)."],
+        model_logic_summary="Display-only catalog; no computation and no "
+        "render-time fetches. Coverage chart counts catalog rows per category.",
+        why_it_matters="Shows the breadth of free public data the platform can "
+        "stand on, and exactly how to access each source — the provenance map "
+        "for non-CMS-claims data.",
+        diligence_use_cases=["Finding the right free source to answer a "
+                             "diligence question; judging access cost and "
+                             "integration maturity before relying on a source."],
+        interpretation_guidance=[
+            "Metadata only — a 'registered' status means catalogued, not yet "
+            "wired to a live loader.",
+            "Public, non-claims sources — not commercial payer or private-pay "
+            "data.",
+        ],
+        limitations=["Reference catalog, not a live feed; no runtime API calls "
+                     "from this page."],
+        related_routes=["/data/catalog", "/cms-sources", "/cms-data-browser"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/cross-analysis", "Cross-Dataset Analysis",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Correlate any two of the platform's state-grain "
+        "public datasets — pick an X and Y measure and get the Pearson r / R² "
+        "stat block, a scatter with a least-squares trendline, and the joined "
+        "state table.",
+        primary_purpose="Let a partner test whether two public-data measures "
+        "move together across states — the multi-dataset companion to the "
+        "single-dataset Further Analysis explorer.",
+        common_questions=[
+            "Do these two state-level measures correlate?",
+            "What's the Pearson r / R² between dataset X and dataset Y?",
+            "Which states drive the relationship (or are outliers)?",
+            "Is the trend positive or negative, and how strong?",
+            "Which two datasets can I cross here?",
+            "Does correlation here imply causation? (no)",
+            "How many states are in the joined sample?",
+        ],
+        inputs=["Two chosen state-grain public datasets + the X/Y measures "
+                "(query params); joined on state."],
+        outputs=["Pearson r / R² stat block, scatter chart with least-squares "
+                 "trendline, and the joined per-state table."],
+        key_metrics=["Pearson r", "R²", "Sample size (n states)", "Slope"],
+        data_sources=["State-grain public datasets registered in "
+                      "diligence.cross_analysis (CHR/Census, CDC PLACES, CMS, "
+                      "HRSA, etc.)."],
+        model_logic_summary="Inner-joins the two datasets on state, computes "
+        "Pearson r and R² over the overlapping states, and fits a "
+        "least-squares line for the scatter. No imputation — non-overlapping "
+        "states drop out of the sample.",
+        why_it_matters="Quick hypothesis check across public datasets without "
+        "exporting to a spreadsheet — surfaces relationships worth a deeper "
+        "look in diligence.",
+        diligence_use_cases=["Sanity-checking a market thesis (e.g. does "
+                             "provider supply track disease burden across "
+                             "states) before committing analyst time."],
+        interpretation_guidance=[
+            "Correlation is not causation — both measures may track a third "
+            "factor (population, age mix).",
+            "State-grain only; an n of ~50 states means a few outliers can "
+            "swing r.",
+            "Read the sample size — non-overlapping states are dropped, not "
+            "zero-filled.",
+        ],
+        limitations=["State granularity only; no facility-level cross-analysis. "
+                     "Linear (Pearson/OLS) only — no non-linear fits."],
+        related_routes=["/further-analysis", "/state-compare", "/quant-lab"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
@@ -4362,7 +4523,7 @@ _MANUAL: List[PageContext] = [
         "homes with CMS five-star ratings (overall, health inspection, "
         "staffing, quality measures), staffing hours, certified beds, Special "
         "Focus status, ownership, and the enforcement-penalty summary — a "
-        "state tile-grid map, per-state market intelligence, and county "
+        "state geographic state map, per-state market intelligence, and county "
         "competition.",
         primary_purpose="Provide market + provider diligence context for SNF "
         "deals: facility density by state, the quality/staffing/survey-risk "
@@ -4381,7 +4542,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS Nursing Home Care Compare 'Provider Information' "
                 "snapshot (NH_ProviderInfo, Apr 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, rating "
                  "distribution, county competition), provider tables, and "
                  "per-facility profiles with state percentile + peers."],
@@ -4425,7 +4586,7 @@ _MANUAL: List[PageContext] = [
         "facilities with the CMS overall five-star rating, dialysis-station "
         "count, ownership/chain, modality offerings, and risk-adjusted "
         "outcome rates (mortality, hospitalization, readmission, transfusion) "
-        "— a state tile-grid map, per-state market intelligence, and county "
+        "— a geographic state map, per-state market intelligence, and county "
         "competition.",
         primary_purpose="Provide market + provider diligence context for "
         "dialysis deals: facility density by state, the five-star + "
@@ -4443,7 +4604,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS Dialysis Facility Compare 'Listing by Facility' "
                 "snapshot (DFC_FACILITY, Mar 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, five-star "
                  "distribution, county competition), provider tables, and "
                  "per-facility profiles with state percentile + peers."],
@@ -4484,7 +4645,7 @@ _MANUAL: List[PageContext] = [
         "rehabilitation facilities with publicly reported CMS measures — "
         "discharge to community (risk-standardized), potentially-preventable "
         "readmissions, and Medicare spending per beneficiary — plus a state "
-        "tile-grid map, per-state market intelligence, and county competition.",
+        "geographic state map, per-state market intelligence, and county competition.",
         primary_purpose="Provide market + provider diligence context for IRF "
         "deals: facility density by state, the discharge-to-community + "
         "readmission + spending profile, ownership mix, and county competition.",
@@ -4501,7 +4662,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS IRF Compare snapshot — General Information + "
                 "Provider Data (headline measures pivoted, Feb 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, county competition), "
                  "provider tables, and per-facility profiles with state "
                  "percentile + peers."],
@@ -4544,7 +4705,7 @@ _MANUAL: List[PageContext] = [
         "hospitals with publicly reported CMS measures — discharge to "
         "community (risk-standardized), potentially-preventable readmissions, "
         "Medicare spending per beneficiary, and bed counts — plus a state "
-        "tile-grid map, per-state market intelligence, and county competition.",
+        "geographic state map, per-state market intelligence, and county competition.",
         primary_purpose="Provide market + provider diligence context for LTCH "
         "deals: facility density and bed capacity by state, the discharge-to-"
         "community + readmission + spending profile, ownership mix, and county "
@@ -4562,7 +4723,7 @@ _MANUAL: List[PageContext] = [
         ],
         inputs=["Vendored CMS LTCH Compare snapshot — General Information + "
                 "Provider Data (headline measures pivoted, Feb 2026)."],
-        outputs=["KPI cards, a state tile-grid map shaded by facility count, "
+        outputs=["KPI cards, a geographic state map shaded by facility count, "
                  "per-state market summary (ownership mix, county competition), "
                  "provider tables (with bed counts), and per-facility profiles "
                  "with state percentile + peers."],
@@ -5062,6 +5223,163 @@ _MANUAL: List[PageContext] = [
         related_routes=["/market-intel/geo", "/diligence/hcris-xray", "/research"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.MIXED,
+    ),
+    # ── Texas infusion CDD · part 1 (sizing tab) ─────────────────────
+    _ctx(
+        "/diligence/texas-infusion",
+        "Texas Infusion Market",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A worked Texas infusion-market CDD: TAM/SAM/"
+        "SOM sizing from NHIA/MedPAC anchors scaled by real Census "
+        "population, therapy + site-of-care segmentation, operator "
+        "concentration (HHI), payer mix, metro/county deep-dives, AIC "
+        "unit economics, and the regulatory environment.",
+        primary_purpose="Size and segment the Texas ambulatory + home "
+        "infusion market for a buy-and-build thesis — the 'how big, "
+        "how fragmented, where' tab of the two-part Texas infusion "
+        "diligence pair.",
+        common_questions=[
+            "How big is the Texas infusion market (TAM/SAM/SOM)?",
+            "How fragmented is the operator landscape (HHI)?",
+            "Which Texas metros and counties screen best?",
+            "What does an AIC chair earn (unit economics)?",
+            "What is the site-of-care shift doing to the mix?",
+        ],
+        inputs=["No user inputs for the sizing (NHIA/MedPAC anchors × "
+                "real ACS/Census population); the AIC unit-economics "
+                "assumptions are editable via query-string overrides "
+                "(clamped server-side); ?nppes=live pulls live NPPES / "
+                "CMS counts."],
+        outputs=["The TAM→SAM→SOM funnel + tornado, segmentation "
+                 "tables, HHI concentration read, metro/county "
+                 "deep-dives with white-space ranking, AIC per-chair "
+                 "P&L + de-novo J-curve, the regulatory register, an "
+                 "IC-ready thesis block, a Markdown IC memo and a "
+                 "deck-ready exhibit SVG."],
+        key_metrics=["TX infusion TAM / SAM / SOM", "Composite CAGR",
+                     "Chain HHI", "Site-of-care shares",
+                     "AIC contribution per chair",
+                     "County opportunity score"],
+        data_sources=["NHIA / MedPAC demand anchors (labeled); Census "
+                      "2024 + ACS demographics (vendored); CMS MA / "
+                      "enrollment / OPPS / ASP files (live where "
+                      "egress permits); CDC PLACES; DOJ/FTC HHI "
+                      "thresholds; operator public disclosures."],
+        model_logic_summary=(
+            "National demand magnitudes scaled to Texas by real "
+            "population share, run through the same verified TAM/SAM "
+            "compute() the builder uses; segmentation, HHI and county "
+            "scores are pure arithmetic on labeled constants + real "
+            "ACS data."),
+        why_it_matters="The sizing, fragmentation and geography tab "
+        "that anchors the infusion roll-up thesis before the per-"
+        "claim grain in part 2.",
+        diligence_use_cases=[
+            "First-pass market sizing for an infusion platform IC.",
+            "Metro/county targeting for de-novo and tuck-in pipelines.",
+            "AIC unit-economics sanity-check against a target's P&L.",
+        ],
+        interpretation_guidance=[
+            "Figures are labeled illustrative starting points (public "
+            "anchors scaled by real population), not engagement data.",
+            "Live pulls (?nppes=live) replace modeled counts where "
+            "reachable; offline the page says MODELED in place.",
+        ],
+        limitations=["No vendored TX infusion-provider census — "
+                     "provider counts are population-scaled estimates "
+                     "until replaced with an NPPES/state-board pull."],
+        related_routes=["/diligence/texas-infusion-continued", "/cdd",
+                        "/diligence/benchmarks"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    # ── Texas infusion CDD · part 2 (the granular tab) ──────────────
+    _ctx(
+        "/diligence/texas-infusion-continued",
+        "Texas Infusion Market · Continued",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Part 2 of the Texas infusion CDD — the "
+        "per-claim / per-payer / per-place grain: CPT-level rates by "
+        "site and Texas city, drug-dose economics, PPO/HMO structure, "
+        "the operator×plan network matrix, proximity analysis, and the "
+        "HealthQuest referral-convenience spotlight.",
+        primary_purpose="Take the part-1 market sizing down to the "
+        "grain a deal team underwrites on: what each CPT/HCPCS code "
+        "pays per office/AIC and per home visit, how the same visit "
+        "prices across HOPD/AIC/home, how reimbursement varies by "
+        "state (GAF) and by the eight Texas PFS localities, what the "
+        "drug mix earns per dose, and how payer structure, network "
+        "access, drive-time proximity and patient experience decide "
+        "where the volume lands.",
+        common_questions=[
+            "What does 96413 pay in an office/AIC vs the hospital?",
+            "How does Medicare pay home infusion (HIT G-codes) and "
+            "why does commercial per-diem matter more?",
+            "Which Texas city pays the highest Medicare rate?",
+            "What does an Ocrevus or Entyvio dose reimburse?",
+            "Which infusion operators are in network with BCBSTX?",
+            "How close is HealthQuest to the Houston population mass?",
+        ],
+        inputs=["No user inputs — published CMS rate tables (PFS, "
+                "OPPS, HIT, quarterly ASP, the vendored GPCI file), "
+                "payer data (AMA/KFF/CMS) and the part-1 demand model; "
+                "?asp=live refreshes drug pricing from the CMS ASP "
+                "API."],
+        outputs=["Channel sizing reconciled to the part-1 TAM, "
+                 "CPT/HCPCS rate tables with visit coding stacks, the "
+                 "cross-site arbitrage exhibit, state-GAF and TX-"
+                 "locality charts, drug-dose economics, payer-yield "
+                 "blend, PPO/HMO metro table, the in-network matrix, "
+                 "county proximity model, the HealthQuest spotlight "
+                 "and the patient-experience scorecard."],
+        key_metrics=["96413 non-facility rate (CY2025/26)",
+                     "HOPD premium (APC 5694 vs PFS)",
+                     "HIT G-code per-visit amounts",
+                     "Locality GAF by Texas city",
+                     "Blended revenue per infusion by payer",
+                     "MA penetration by core county",
+                     "Drive minutes to nearest infusion option"],
+        data_sources=["CMS PFS RVU files (CY2025/26), CY2025 GPCI "
+                      "file (vendored), OPPS pricer/IOCE, HIT rates "
+                      "files, quarterly ASP files; Montana Medicaid "
+                      "S-code fee schedule; AMA insurer-competition "
+                      "study via TMA; KFF EHBS + MA enrollment; "
+                      "Census V2024 + 2020 land areas; operator "
+                      "public disclosures (researched June 2026)."],
+        model_logic_summary=(
+            "Pure arithmetic on published rate tables + the part-1 "
+            "demand model: the channel build solves per-site prices "
+            "against the part-1 $650/infusion anchor so both tabs "
+            "reconcile exactly; locality rates apply the computed GAF "
+            "to national amounts; proximity uses a labeled nearest-"
+            "neighbor spatial model on real Census land areas."),
+        why_it_matters="Payer mix, code-level rates and site placement "
+        "— not headline TAM — decide an infusion platform's unit "
+        "economics; this page turns the part-1 sizing into the "
+        "underwriting grain.",
+        diligence_use_cases=[
+            "Pricing a target's book against published Medicare rates "
+            "by city and site of care.",
+            "Sizing the payer-mix lever (commercial vs MA vs Medicaid "
+            "yield) and the white-bagging exposure.",
+            "Screening de-novo sites on rate locality + drive-time "
+            "convenience + competitor proximity.",
+        ],
+        interpretation_guidance=[
+            "Verified published rates are labeled with their file and "
+            "year; directional items (network status, member-gated "
+            "AMA shares, county MA aggregators) are flagged in place.",
+            "The channel build and payer blend are anchored to the "
+            "part-1 $650/infusion — same model, finer grain, not an "
+            "independent estimate.",
+        ],
+        limitations=["Rate files refresh quarterly/annually; network "
+                     "status is contract-by-contract and must be "
+                     "re-verified per NPI before IC use."],
+        related_routes=["/diligence/texas-infusion", "/cdd",
+                        "/diligence/benchmarks"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     # ── Diligence calculators converted with real CMS/FDA/CIVHC anchors ──
     _ctx(
@@ -11854,10 +12172,10 @@ _MANUAL.extend([
     _ctx(
         "/excel-mapping", "Excel Mapping",
         category=PageContextCategory.RESEARCH_BACKTESTING,
-        short_description="A configurable US-state choropleth utility — set "
-        "three gradient colours (low / mid / high) and a value per state, "
-        "and it colour-grades the map with each percentage in black serif "
-        "text.",
+        short_description="A configurable real-geography US choropleth "
+        "utility — set three gradient colours (low / mid / high) and a "
+        "value per state, and it colour-grades actual Census state "
+        "boundaries with each percentage in black serif text.",
         primary_purpose="Turn a {state: percentage} dict (or an Excel "
         "paste) into a clean, Chartis-styled US choropleth without a "
         "charting tool.",
@@ -11866,15 +12184,20 @@ _MANUAL.extend([
             "How do I make a US state heat map?",
             "How do I change the gradient colours?",
             "Can I paste my percentages from Excel?",
-            "Can I set the value domain instead of auto-scaling?",
-            "How do I export the map for a deck?",
-            "Why is the map a tile grid instead of real geography?",
+            "Can I set the value domain manually?",
+            "Where are the small Northeast states labelled?",
         ],
+        related_routes=["/chart-builder", "/pie-chart",
+                        "/market-data/map", "/exhibit"],
         inputs=["Three gradient colours; an optional low/mid/high value "
-                "domain (blank = auto from data); a value per state, set "
-                "in Python (DEFAULT_STATE_VALUES) or pasted in the form."],
-        outputs=["An SVG US tile-grid choropleth with a low→mid→high "
-                 "gradient legend and a sorted value table."],
+                "domain (blank = auto from data); an optional map title; "
+                "a value per state, set in Python (DEFAULT_STATE_VALUES) "
+                "or pasted in the form."],
+        outputs=["An SVG geographic US choropleth (Albers-projected "
+                 "Census boundaries; AK/HI insets; small NE states in a "
+                 "swatch column) with an embedded low→mid→high gradient "
+                 "legend, hover/click state detail, summary stats, and a "
+                 "ranked value table."],
         key_metrics=["User-supplied per-state values."],
         data_sources=["Your inputs only — default values are example "
                       "placeholders, not a data claim."],
@@ -11886,9 +12209,10 @@ _MANUAL.extend([
                              "metric for a market section."],
         interpretation_guidance=["Colour encodes the value via the gradient "
                                  "you set; the legend shows the domain."],
-        limitations=["Schematic tile grid (labelled, not a geographic "
-                     "projection); values are whatever you supply."],
-        related_routes=["/chart-builder", "/pie-chart", "/exhibit"],
+        limitations=["Approximate Albers-projected Census geography "
+                     "(AK/HI/PR insets; small NE states in a swatch "
+                     "column, not to scale); values are whatever you "
+                     "supply."],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -12025,6 +12349,7 @@ _MANUAL.extend([
             "How do I export the chart as SVG or PNG?",
             "How many slices can I add?",
         ],
+        related_routes=["/chart-builder", "/excel-mapping", "/exhibit"],
         inputs=["Up to ten slices, each a label + value + colour; a title; "
                 "label mode (percent / value / both / none); a unit; a "
                 "donut toggle."],
@@ -12043,7 +12368,6 @@ _MANUAL.extend([
                                  "values you enter; colours are whatever you "
                                  "set."],
         limitations=["Static SVG; renders only the slices you enter."],
-        related_routes=["/chart-builder", "/excel-mapping", "/exhibit"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),
@@ -12251,7 +12575,10 @@ _MANUAL.extend([
                  "by CDD topic, closing asks — print-ready); a topic × "
                  "lens triangulation matrix; a coverage read (COVERED / "
                  "THIN / UNCOVERED per lens); a call-sheet CSV export "
-                 "(one row per planned call with sourcing pre-filled)."],
+                 "(one row per planned call with sourcing pre-filled); "
+                 "a findings ledger grouping the logged call evidence "
+                 "by thesis tag (contradictions first, with a "
+                 "confirmation-bias warning) plus its own CSV."],
         key_metrics=["Calls per lens vs plan; coverage status — a lens "
                      "needs two voices to count as covered."],
         data_sources=["A curated question bank and program methodology — "
@@ -12626,6 +12953,146 @@ _MANUAL.extend([
                      "verify against the current BLS release before IC "
                      "use."],
         related_routes=["/rate-environment", "/ma-penetration", "/cdd"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/counties",
+        "Texas Infusion · County Proximity",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="All 254 Texas counties with modeled patient → "
+        "nearest-infusion-access distance, access tiers, and the demand x "
+        "distance AIC whitespace ranking.",
+        primary_purpose="Read referral convenience county by county — how "
+        "far the average infusion patient sits from the nearest access "
+        "point — to rank AIC (ambulatory infusion center) site whitespace.",
+        common_questions=[
+            "How far is the average Texas infusion patient from a clinic?",
+            "Which counties have no in-county infusion access?",
+            "Where is the AIC whitespace (demand far from supply)?",
+            "How are the distances computed without an AIC census?",
+            "What does metro spillover mean on a county row?",
+        ],
+        inputs=["Vendored ACS county demographics (population, 65+, "
+                "rural share), geocoded CMS general-acute hospitals "
+                "(STAC + CAH by CCN convention), OMB CBSA crosswalk, "
+                "NHIA state demand anchors."],
+        outputs=["Per-county demand + expected distance + access tier, "
+                 "tier/metro/CBSA rollups, demand-weighted statewide "
+                 "distance, top-20 whitespace ranking, CSV export."],
+        key_metrics=["Demand-weighted distance (mi)",
+                     "% patients within 10 miles",
+                     "No-in-county-site counties", "Patient-miles"],
+        data_sources=["county_demographics vendored aggregate (ACS via "
+                      "County Health Rankings); hospital_coords.csv (CMS "
+                      "Hospital General Information, Census-geocoded); "
+                      "cbsa_county_crosswalk."],
+        model_logic_summary="In-county: urban share gets half the REAL "
+        "nearest-neighbor facility spacing, rural share gets "
+        "0.5*sqrt(area/sites) (random-placement nearest-facility "
+        "result). No-in-county: 0.5*sqrt(own area) + a same-CBSA "
+        "spillover hop or a median-county hop. Demand apportions the "
+        "NHIA state pool 60/40 by senior/population share.",
+        why_it_matters="Infusion referrals convert on convenience — the "
+        "distance read is the site-selection wedge for an AIC platform "
+        "against HOPD incumbents.",
+        diligence_use_cases=["AIC de-novo site screening",
+                             "referral-catchment sizing",
+                             "rural access-gap framing in the CDD"],
+        interpretation_guidance=[
+            "Distances are conservative (long): the geocode file covers "
+            "376 of ~640 TX hospitals and freestanding AICs are "
+            "invisible to public files.",
+            "MODELED rows use the stated formula; running "
+            "scripts/ingest_county_gazetteer.py upgrades cross-county "
+            "legs to exact Census-point geometry."],
+        limitations=["No public AIC census (POS-11 billing); supply = "
+                     "hospital access points only.",
+                     "Land areas default to the 909 sq mi Texas median "
+                     "where not explicitly vendored (marked DEFAULT)."],
+        related_routes=["/diligence/texas-infusion/counties.csv",
+                        "/geo-intel", "/county-explorer"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/counties.csv",
+        "Texas Infusion County Proximity (CSV export)",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The full 254-county proximity table as a "
+        "downloadable CSV — one row per county with demand, access tier, "
+        "and the modeled distance plus its evidence class.",
+        primary_purpose="Take the county proximity universe into Excel / "
+        "a model: demographics, infusion demand, access points, expected "
+        "distance, and the REAL/MODELED/DEFAULT evidence flags per row.",
+        common_questions=[
+            "How do I export the Texas county proximity table?",
+            "What columns are in the counties CSV?",
+            "Is the CSV the same data as the counties page?",
+            "What do the REAL / MODELED / DEFAULT evidence flags mean?",
+            "Does the export include the access-tier classification?",
+        ],
+        inputs=["The same tx_county_universe() rows the page renders."],
+        outputs=["CSV: FIPS, county, metro class, CBSA, demographics, "
+                 "infusion patients, access points/tier, land area, "
+                 "expected distance, and evidence classes."],
+        key_metrics=["Rows exported (254 counties)"],
+        data_sources=["Identical to /diligence/texas-infusion/counties."],
+        model_logic_summary="Straight serialization of the county "
+        "universe; no extra modeling in the export.",
+        why_it_matters="The whitespace screen usually continues in the "
+        "deal team's own model — the export keeps the evidence flags "
+        "attached to every number.",
+        diligence_use_cases=["AIC site-screen modeling offline"],
+        interpretation_guidance=["Same caveats as the page: distances "
+                                 "are conservative, supply is hospital "
+                                 "access points only."],
+        limitations=["Reflects the vendored data at render time."],
+        related_routes=["/diligence/texas-infusion/counties",
+                        "/geo-intel"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/metros.csv",
+        "Texas Infusion Metro Deep-Dive (CSV export)",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The four-metro (DFW, Houston, San Antonio, "
+        "Austin) member-county deep-dive as CSV — one row per metro "
+        "county with demand split, drive-time proxy, siting verdict, "
+        "and the named facility roster.",
+        primary_purpose="Take the metro member-county analysis into a "
+        "site-selection model: per-county demand (65+/under-65 split), "
+        "real facility names and spacing, modeled distance and drive "
+        "minutes, and the deterministic siting verdict.",
+        common_questions=[
+            "How do I export the four-metro county deep-dive?",
+            "Which hospitals are in each metro county?",
+            "What is the drive-time column based on?",
+            "What does the siting verdict mean?",
+            "Is this the same data as the counties page metro section?",
+        ],
+        inputs=["The same metro_county_deepdive() rows the page's "
+                "metro section renders."],
+        outputs=["CSV: metro, county, demographics, patients (65+/"
+                 "under-65), access points/tier, real facility spacing, "
+                 "expected distance, drive minutes, patient-miles, "
+                 "siting verdict, facility names."],
+        key_metrics=["Rows exported (metro member counties)"],
+        data_sources=["Identical to /diligence/texas-infusion/counties "
+                      "(metro deep-dive section)."],
+        model_logic_summary="Straight serialization of the deep-dive "
+        "rows; drive minutes = modeled miles at 25 mph urban / 45 mph "
+        "rural blended by the county's real urban share.",
+        why_it_matters="AIC site selection happens metro by metro — the "
+        "export keeps verdicts and rosters attached to every county.",
+        diligence_use_cases=["AIC site shortlisting inside a metro"],
+        interpretation_guidance=["Same caveats as the page: supply is "
+                                 "hospital access points; distances "
+                                 "conservative."],
+        limitations=["Reflects the vendored data at render time."],
+        related_routes=["/diligence/texas-infusion/counties",
+                        "/geo-intel"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),

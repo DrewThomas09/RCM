@@ -84,7 +84,7 @@ def _hold_histogram(
         by = pad_t + ph - bh
         bars.append(
             f'<rect x="{bx:.1f}" y="{by:.1f}" width="{pw/bins - 1:.1f}" height="{bh:.1f}" '
-            f'fill="#1d4ed8" opacity="0.8"/>'
+            f'fill="#155752" opacity="0.8"/>'
         )
 
     def tx(xv: float) -> float:

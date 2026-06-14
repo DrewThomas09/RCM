@@ -436,11 +436,18 @@ def _section_html(
     body = render_rows(section.rows) if section.rows else (
         "<div class=\"sub\" style=\"padding:8px 0;\">no rows</div>"
     )
+    # Precompute the optional message block: an f-string expression part
+    # cannot contain a backslash on Python < 3.12 (PEP 701 lifts this in
+    # 3.12), and this project supports 3.10+. Building the string outside
+    # the f-string keeps the escaped quotes legal on every target version.
+    msg_html = (
+        f"<div class=\"sub\" style=\"margin-bottom:8px;\">{msg}</div>" if msg else ""
+    )
     return (
         f"<h2>{html.escape(title)} {badge} {sev}</h2>"
         f"<div class=\"sub\">{html.escape(subtitle)}</div>"
         f"<div class=\"panel\">"
-        f"{('<div class=\"sub\" style=\"margin-bottom:8px;\">'+msg+'</div>') if msg else ''}"
+        f"{msg_html}"
         f"{body}"
         f"</div>"
     )

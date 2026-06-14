@@ -18,10 +18,11 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import quote_plus
 
 from ..diligence.expert_calls import (
-    BANK_VINTAGE, STAKEHOLDER_TYPES, build_call_guide, call_sheet_rows,
-    coverage_read, program_plan, stakeholder, topic_coverage,
-    weekly_cadence, COVERED, THIN, UNCOVERED,
-    TRIANGULATED, SINGLE_LENS, DARK,
+    BANK_VINTAGE, LEDGER_TAG_ORDER, SECTOR_PACKS, STAKEHOLDER_TYPES,
+    build_call_guide, call_sheet_rows, coverage_read, findings_ledger,
+    logged_call_counts, program_plan, sector_pack, stakeholder,
+    topic_coverage, weekly_cadence,
+    COVERED, THIN, UNCOVERED, TRIANGULATED, SINGLE_LENS, DARK,
 )
 from ._chartis_kit import (
     ExhibitFactory, chartis_shell, ck_page_title, ck_source_purpose,
@@ -129,12 +130,22 @@ def _guide_html(guide: Dict[str, Any]) -> str:
         qhtml = ""
         for q in sec["questions"]:
             qno += 1
+            pack_tag = ""
+            if q.get("pack"):
+                pack_tag = (
+                    f' <span style="font-family:\'JetBrains Mono\','
+                    f'monospace;font-size:9px;font-weight:700;'
+                    f'letter-spacing:0.05em;color:#7a4a1f;border:1px '
+                    f'solid #7a4a1f;border-radius:4px;padding:0 5px;'
+                    f'vertical-align:2px;">'
+                    f'{html.escape(q["pack"].upper())} PACK</span>')
             qhtml += (
                 f'<div style="margin:0 0 12px;">'
                 f'<div style="font-family:{_SERIF};font-size:14px;'
                 f'color:#1a2332;"><span style="font-family:\'JetBrains '
                 f'Mono\',monospace;font-size:11px;color:#7a8699;">Q{qno}'
-                f'</span> &nbsp;{html.escape(q["question"])}</div>'
+                f'</span> &nbsp;{html.escape(q["question"])}{pack_tag}'
+                f'</div>'
                 f'<div style="font-size:11.5px;color:#155752;'
                 f'margin:3px 0 0 26px;">Listen for: '
                 f'{html.escape(q["listen_for"])}</div></div>')
@@ -367,18 +378,127 @@ def expert_calls_csv(qs: "Dict[str, Any] | None" = None) -> str:
     return buf.getvalue()
 
 
+# Thesis-tag tones for the ledger: CONTRADICTS is the finding a memo
+# reader needs first (negative), SUPPORTS is comfort (positive),
+# NEW QUESTION is open work (navy).
+_TAG_TONE = {
+    "CONTRADICTS": "#b5321e",
+    "NEW QUESTION": "#0b2341",
+    "SUPPORTS": "#0a8a5f",
+}
+
+
+def _ledger_panel(ledger: Dict[str, Any], deal_label: str,
+                  deal_id: str, xf) -> str:
+    if not ledger["total"]:
+        inner = (
+            f'<div style="font-size:12.5px;color:#7a8699;'
+            f'padding:8px 4px;">No findings logged yet — the ledger '
+            f'builds itself from the "Log a completed call" form '
+            f'above. Every logged call lands here under its thesis '
+            f'tag.</div>')
+    else:
+        sections = ""
+        for tag in LEDGER_TAG_ORDER:
+            rows = ledger["by_tag"][tag]
+            if not rows:
+                continue
+            tone = _TAG_TONE[tag]
+            items = ""
+            for f in rows:
+                items += (
+                    f'<div style="margin:0 0 10px;padding-left:10px;'
+                    f'border-left:3px solid {tone};">'
+                    f'<div style="font-size:13px;color:#1a2332;">'
+                    f'{html.escape(f["finding"])}</div>'
+                    f'<div style="font-size:11px;color:#7a8699;'
+                    f'margin-top:2px;">'
+                    f'{html.escape(f["lens_label"])} · '
+                    f'{html.escape(f["vantage"])} · as of '
+                    f'{html.escape(f["as_of"])}</div></div>')
+            sections += (
+                f'<div style="margin-top:12px;">'
+                f'<div style="font-family:\'JetBrains Mono\',monospace;'
+                f'font-size:10.5px;font-weight:700;letter-spacing:'
+                f'0.06em;color:{tone};margin-bottom:8px;">{tag} '
+                f'({len(rows)})</div>{items}</div>')
+        warn = "".join(
+            f'<div style="margin-top:10px;padding:8px 12px;border:1px '
+            f'solid #b8732a;border-radius:6px;background:'
+            f'rgba(184,115,42,0.08);font-size:12px;color:#7a4a1f;">'
+            f'{html.escape(w)}</div>' for w in ledger["warnings"])
+        counts = " · ".join(
+            f'{t} {ledger["counts"][t]}' for t in LEDGER_TAG_ORDER)
+        inner = (
+            f'<div style="font-family:\'JetBrains Mono\',monospace;'
+            f'font-size:10px;color:#7a8699;">{counts} · '
+            f'{ledger["total"]} TOTAL</div>'
+            + sections + warn
+            + f'<div style="margin-top:12px;">'
+              f'<a href="/api/expert-calls/findings.csv?deal_id='
+              f'{html.escape(deal_id)}" style="font-size:12px;'
+              f'color:#1F7A75;font-weight:600;">Download findings '
+              f'(CSV)</a></div>')
+    return (
+        '<div style="margin-top:18px;">'
+        + xf.wrap(
+            f'<div style="padding:4px 2px;">{inner}</div>',
+            title=f"Findings ledger — {deal_label}",
+            units="logged call evidence, grouped by thesis tag — "
+                  "contradictions first",
+            vintage=f"bank {BANK_VINTAGE}")
+        + '</div>')
+
+
+def findings_csv(deal_label: str, note_bodies) -> str:
+    """The findings ledger as CSV — the evidence appendix a memo
+    drafter pastes from. Same strict parser as the page; free-text
+    notes never appear."""
+    import csv
+    import io
+    ledger = findings_ledger(note_bodies)
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["Expert-call findings ledger",
+                _csv_defang(deal_label) if deal_label else
+                "(no deal set)"])
+    w.writerow(["Total findings", ledger["total"]])
+    for t in LEDGER_TAG_ORDER:
+        w.writerow([t, ledger["counts"][t]])
+    for warn in ledger["warnings"]:
+        w.writerow(["WARNING", _csv_defang(warn)])
+    w.writerow([])
+    w.writerow(["Thesis tag", "Finding", "Lens",
+                "Interviewee vantage", "As of"])
+    for tag in LEDGER_TAG_ORDER:
+        for f in ledger["by_tag"][tag]:
+            w.writerow([tag, _csv_defang(f["finding"]),
+                        _csv_defang(f["lens_label"]),
+                        _csv_defang(f["vantage"]),
+                        _csv_defang(f["as_of"])])
+    return buf.getvalue()
+
+
 def render_expert_calls_page(
         qs: "Dict[str, Any] | None" = None, *,
         active_deal: "Dict[str, str] | None" = None,
-        logged_counts: "Dict[str, int] | None" = None) -> str:
+        logged_counts: "Dict[str, int] | None" = None,
+        logged_notes: "list | None" = None) -> str:
     qs = qs or {}
     n = _qsint(qs, "n", 20, 1, 200)
     deal = _qs1(qs, "deal", "")[:80]
     lens_key = _qs1(qs, "lens", "referring_physician")
     if stakeholder(lens_key) is None:
         lens_key = "referring_physician"
+    sector = _qs1(qs, "sector", "").strip().lower()
+    if sector_pack(sector) is None:
+        sector = ""
 
     plan = program_plan(n)
+    # The notes list (when the server passes it) is the single source:
+    # counts derive from it unless explicitly provided.
+    if logged_notes is not None and logged_counts is None:
+        logged_counts = logged_call_counts(logged_notes)
     # Coverage source of truth: explicit done_* params win; with none
     # entered, the counts come from the structured EXPERT CALL notes
     # already logged on the active deal (the evidence trail), and the
@@ -395,7 +515,7 @@ def render_expert_calls_page(
         completed = {s["key"]: _qsint(qs, f"done_{s['key']}", 0, 0, 99)
                      for s in STAKEHOLDER_TYPES}
     read = coverage_read(completed, n)
-    guide = build_call_guide(lens_key, deal_name=deal)
+    guide = build_call_guide(lens_key, deal_name=deal, sector=sector)
 
     # Lens-chip links carry the tracker state — but when the counts
     # come from logged notes, baking them into done_* params would
@@ -405,6 +525,8 @@ def render_expert_calls_page(
         f"&done_{k}={v}" for k, v in completed.items() if v)) + f"&n={n}"
     if deal:
         base_qs += "&deal=" + quote_plus(deal)
+    if sector:
+        base_qs += "&sector=" + quote_plus(sector)
 
     cadence = weekly_cadence(n)
     topics = topic_coverage(completed)
@@ -507,14 +629,25 @@ def render_expert_calls_page(
             f'<b>{html.escape((active_deal or {}).get("name") or deal_id)}'
             f'</b> — enter numbers to override.</div>')
 
+    # One exhibit factory per render pass so the ledger + guide share
+    # the page's numbering (house P5 discipline).
+    xf = ExhibitFactory(
+        deal_label=deal or "Expert-call program",
+        source_default="PEdesk curated question bank")
+
+    # Findings ledger — only with a deal context AND the server-passed
+    # notes (the ledger is the deal's evidence, not URL state).
+    ledger_html = ""
+    if deal_id and logged_notes is not None:
+        ledger_html = _ledger_panel(
+            findings_ledger(logged_notes),
+            (active_deal or {}).get("name") or deal_id, deal_id, xf)
+
     # Exhibit chrome on the guide: a printed guide is the deliverable
     # an associate takes into the call, so it gets the numbered,
     # vintage-stamped treatment (Cmd+P → clean PDF).
     guide_html = ""
     if guide:
-        xf = ExhibitFactory(
-            deal_label=deal or "Expert-call program",
-            source_default="PEdesk curated question bank")
         guide_html = (
             '<div style="margin-top:18px;">'
             + xf.wrap(
@@ -539,6 +672,14 @@ def render_expert_calls_page(
         f'placeholder="optional — stamps the guide" style="width:200px;'
         f'height:30px;border:1px solid #c9c1ac;border-radius:5px;'
         f'padding:0 8px;margin-left:4px;font-family:{_SERIF};"></label>'
+        f'<label style="font-size:12px;color:#465366;">Sector pack '
+        f'<select name="sector" style="height:30px;border:1px solid '
+        f'#c9c1ac;border-radius:5px;margin-left:4px;">'
+        f'<option value="">None (generic bank)</option>'
+        + "".join(
+            f'<option value="{k}"{" selected" if k == sector else ""}>'
+            f'{k.title()}</option>' for k in sorted(SECTOR_PACKS))
+        + '</select></label>'
         f'<input type="hidden" name="lens" value="{html.escape(lens_key)}">'
         f'<button type="submit" style="padding:7px 14px;background:#0b2341;'
         f'color:#fff;border:none;border-radius:5px;font-weight:600;'
@@ -598,6 +739,7 @@ def render_expert_calls_page(
            if counts_note else "")
         + _coverage_block(read, qs, n, lens_key, deal)
         + _topic_matrix(topics, any_done)
+        + ledger_html
         + f'<div style="margin-top:18px;">'
           f'<div style="font-size:10px;letter-spacing:0.07em;'
           f'font-weight:700;color:#7a8699;margin-bottom:8px;">'

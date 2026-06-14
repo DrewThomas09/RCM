@@ -265,7 +265,6 @@ def render_escalations(
 
     # 2026-05-28 batch 20 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
-    n_esc = len(escalated) if 'escalated' in dir() else 0
     intro = ck_editorial_head(
         eyebrow="ESCALATIONS",
         title="Escalations",

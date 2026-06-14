@@ -64,6 +64,17 @@ edi = ["x12-python>=0.1,<1.0"]
 # so the package runs on default install. Listed here to make
 # ``pip install seekingchartis[stats]`` opt-in for nicer charts.
 stats = ["scipy>=1.11"]
+# CDD analytics expansion (rcm_mc/cdd/). Statistical estimators only:
+# scikit-learn (Ridge, IsolationForest), lifelines (Kaplan-Meier survival),
+# ruptures (changepoint), scipy. Opt-in so the base install and the light
+# ``[dev]`` CI matrix stay unaffected; the golden suite under
+# ``tests/golden/`` needs this extra: ``pip install -e ".[cdd]"``.
+cdd = [
+    "scikit-learn>=1.3",
+    "scipy>=1.11",
+    "lifelines>=0.27",
+    "ruptures>=1.1",
+]
 # ``[all]`` should mean genuinely everything — including
 # ``[diligence]`` and ``[stats]`` — so a single ``pip install -e ".[all]"``
 # yields a fully-featured dev environment. (Report 0001 MR18.)
@@ -79,6 +90,9 @@ all = [
     "dbt-duckdb>=1.10,<2.0",
     "pyarrow>=18.1,<19.0",
     "x12-python>=0.1,<1.0",
+    "scikit-learn>=1.3",
+    "lifelines>=0.27",
+    "ruptures>=1.1",
 ]
 dev = [
     "pytest>=7.0",
@@ -94,7 +108,7 @@ rcm-lookup = "rcm_mc.lookup:main"
 rcm-mc-diligence = "rcm_mc_diligence.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["rcm_mc*", "rcm_mc_diligence*"]
+include = ["rcm_mc*", "rcm_mc_diligence*", "connectors*"]
 
 [tool.setuptools.package-data]
 rcm_mc = ["data/*.csv.gz"]
@@ -105,6 +119,9 @@ rcm_mc_diligence = [
     "connectors/seekingchartis/models/**/*.sql",
     "connectors/seekingchartis/models/**/*.yml",
 ]
+# NPPES connector ships its reproducible verification fixtures + the
+# filesystem-as-memory journal (STATE/DECISIONS/progress) as package data.
+"connectors.nppes" = ["fixtures/*.csv", "*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

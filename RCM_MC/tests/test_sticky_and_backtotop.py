@@ -62,6 +62,15 @@ class BackToTopHelperTests(unittest.TestCase):
         html = ck_back_to_top_button()
         self.assertIn("behavior:'smooth'", html)
 
+    def test_helper_moves_focus_to_main(self) -> None:
+        # Back-to-top must also move keyboard focus to the top of content
+        # (the #ck-main skip target), not just scroll, so a keyboard user's
+        # next Tab resumes from the top instead of the bottom button.
+        from rcm_mc.ui._chartis_kit import ck_back_to_top_button
+        html = ck_back_to_top_button()
+        self.assertIn("getElementById('ck-main')", html)
+        self.assertIn("focus({preventScroll:true})", html)
+
     def test_helper_accepts_custom_label(self) -> None:
         from rcm_mc.ui._chartis_kit import ck_back_to_top_button
         html = ck_back_to_top_button(label="Top ↑")
