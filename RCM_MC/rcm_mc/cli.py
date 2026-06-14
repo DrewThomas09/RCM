@@ -1239,6 +1239,17 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
     dg.add_argument("--ndc", default="", help="NDC to normalize")
     dg.add_argument("--json", action="store_true", help="Emit JSON")
 
+    # Census SAHIE payer-mix proxy — county uninsured rates for a state.
+    pm = sub.add_parser(
+        "payer-mix",
+        help="County uninsured rates for a state (Census SAHIE payer-mix proxy)",
+    )
+    pm.add_argument("--state", required=True, help="Two-letter state code")
+    pm.add_argument("--year", type=int, default=2021, help="SAHIE year")
+    pm.add_argument("--limit", type=int, default=20,
+                    help="Top-N counties by uninsured rate (table view)")
+    pm.add_argument("--json", action="store_true", help="Emit JSON (all counties)")
+
     args = ap.parse_args(argv)
 
     if args.action == "gaps":
@@ -1470,6 +1481,42 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         sys.stdout.write(f"  name   {rec.get('name', '')}\n")
         sys.stdout.write(f"  tty    {rec.get('tty', '')}\n")
         sys.stdout.write(f"  NDCs   {len(rec.get('ndcs', []))}\n")
+        return 0
+
+    if args.action == "payer-mix":
+        # Census SAHIE county uninsured rates. No store needed.
+        from .data_public import census_market as cm
+        from .data_public.public_api_clients import PublicApiError
+
+        fips = cm.state_fips(args.state)
+        if not fips:
+            sys.stderr.write(f"unrecognized state {args.state!r}\n")
+            return 2
+        try:
+            rows = cm.fetch_sahie(state_fips=fips, year=int(args.year))
+        except PublicApiError as exc:
+            sys.stderr.write(f"[FAIL] SAHIE error: {exc}\n")
+            return 1
+        # Sort by uninsured rate desc; suppressed (None) pct sinks to the end.
+        rows.sort(key=lambda r: (r["uninsured_pct"] is None,
+                                 -(r["uninsured_pct"] or 0.0)))
+        if args.json:
+            import json as _json
+            sys.stdout.write(_json.dumps(rows, indent=2) + "\n")
+            return 0
+        if not rows:
+            sys.stdout.write("no SAHIE rows returned\n")
+            return 0
+        sys.stdout.write(f"Uninsured rate by county — {args.state.upper()} "
+                         f"({args.year}), top {args.limit}:\n")
+        sys.stdout.write(f"  {'COUNTY':<32}  {'UNINSURED':>9}  {'RATE':>6}\n")
+        for r in rows[:max(1, int(args.limit))]:
+            pct = r["uninsured_pct"]
+            nui = r["uninsured"]
+            sys.stdout.write(
+                f"  {str(r['county'])[:32]:<32}  "
+                f"{(f'{nui:,}' if nui is not None else '—'):>9}  "
+                f"{(f'{pct:.1f}%' if pct is not None else '—'):>6}\n")
         return 0
 
     # refresh / status / refresh-nppes all need the store + refresh helpers.
