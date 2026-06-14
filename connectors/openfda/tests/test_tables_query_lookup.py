@@ -63,6 +63,31 @@ class QueryEngineTests(unittest.TestCase):
         with self.assertRaises(QueryError):
             query(self.store, "openfda_not_a_dataset")
 
+    def test_notnull_and_isnull_operators(self):
+        # One 510k row has a decision_date, the classification slice has none;
+        # within the 510k slice all three rows have decision_date... add a null.
+        self.store.upsert("dim_device", [
+            {"device_key": "K:3", "product_code": "ABC", "device_class": "2",
+             "source_endpoint": "device_510k"}])  # no decision_date
+        has = query(self.store, "openfda_device_510k",
+                    filters={"decision_date__notnull": "1"})
+        self.assertEqual(has.total, 2)
+        missing = query(self.store, "openfda_device_510k",
+                        filters={"decision_date__isnull": "1"})
+        self.assertEqual(missing.total, 1)
+        self.assertEqual(missing.rows[0]["device_key"], "K:3")
+
+    def test_between_operator(self):
+        res = query(self.store, "openfda_device_510k",
+                    filters={"decision_date__between": "2018-06-01,2019-12-31"})
+        self.assertEqual(res.total, 1)
+        self.assertEqual(res.rows[0]["decision_date"], "2019-01-01")
+
+    def test_between_rejects_bad_arity(self):
+        with self.assertRaises(QueryError):
+            query(self.store, "openfda_device_510k",
+                  filters={"decision_date__between": "2019-01-01"})
+
 
 class LookupTests(unittest.TestCase):
     def setUp(self):

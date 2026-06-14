@@ -17,8 +17,10 @@ Filter grammar (uniform across every dataset)::
     {"field": value}                      # equality
     {"field__gte": value, "field__like": "%x%", "field__in": [a, b]}
 
-Supported ops: eq, ne, gt, gte, lt, lte, like, in.
-Sort: ``"field"`` ascending or ``"-field"`` descending.
+Supported ops: eq, ne, gt, gte, lt, lte, like, in, between, isnull, notnull.
+``between`` takes ``"lo,hi"`` (or a 2-tuple); ``isnull``/``notnull`` ignore
+the value (``rxcui__isnull=1`` ⇒ unresolved NDCs; ``decision_date__notnull=1``
+⇒ rows with a real decision). Sort: ``"field"`` asc or ``"-field"`` desc.
 """
 from __future__ import annotations
 
@@ -31,6 +33,8 @@ from .tables import TABLES, OpenFdaStore
 _OPS = {
     "eq": "=", "ne": "!=", "gt": ">", "gte": ">=", "lt": "<", "lte": "<=",
     "like": "LIKE", "in": "IN",
+    # Null/range operators (handled specially in _build_where).
+    "isnull": "", "notnull": "", "between": "",
 }
 _DEFAULT_LIMIT = 50
 _MAX_LIMIT = 1000
@@ -129,7 +133,18 @@ def _build_where(row: RegistryRow, filters: Dict[str, Any], colset: set
         if field_name not in colset:
             raise QueryError(f"unknown filter field {field_name!r}")
         sql_op = _OPS[op]
-        if op == "in":
+        if op == "isnull":
+            # Null OR empty-string — TEXT columns store "" for absent values.
+            clauses.append(f"({field_name} IS NULL OR {field_name} = '')")
+        elif op == "notnull":
+            clauses.append(f"({field_name} IS NOT NULL AND {field_name} <> '')")
+        elif op == "between":
+            parts = value if isinstance(value, (list, tuple)) else str(value).split(",")
+            if len(parts) != 2:
+                raise QueryError(f"between expects two values, got {value!r}")
+            clauses.append(f"{field_name} BETWEEN ? AND ?")
+            args.extend(str(p) for p in parts)
+        elif op == "in":
             vals = value if isinstance(value, (list, tuple)) else [value]
             if not vals:
                 clauses.append("0 = 1")  # empty IN matches nothing
