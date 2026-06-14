@@ -58,11 +58,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_retention_survival.py",
-      "notes": ""
+      "notes": "lifelines KM S(1)=.8/S(3)=.6/S(6)=.5 hand-verified; small_cohort<30 flag; cliff month=3; vintage overlay flag."
     },
     {
       "id": "NEW-06",

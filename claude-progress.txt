@@ -57,3 +57,13 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest tests/golden/test_pct_medicare.py => 7 passed. Blended 194.29%,
   per-code 200/250/150 hand-verified.
 - Next: NEW-05 cohort retention/churn (KM survival, lifelines).
+================================================================================
+[2026-06-14 02:25 UTC] NEW-05 Cohort retention (KM)
+- retention_survival.py: lifelines KaplanMeierFitter per cohort; survival at
+  configurable ages; cohort-by-age triangle; small_cohort<30 reliability flag;
+  cliff detection via conditional hazard d/n; vintage overlay flag when newer
+  cohort retains worse; aggregate monotone reconciliation. Dates contract via
+  YYYY-MM month diff supported.
+- Evidence: pytest tests/golden/ => 51 passed. KM S(1)=.8/S(3)=.6/S(6)=.5;
+  cliff steepest month=3 (0.25); vintage flag fires.
+- Next: NEW-06 cohort LTV/CAC (empirical cumulative LTV, payback, 3:1).
