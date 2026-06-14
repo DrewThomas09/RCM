@@ -291,6 +291,90 @@
       "blocked_reason": "",
       "golden_test": "tests/golden/test_ingestion_reconciliation.py",
       "notes": "reconcile_join (CCN/NPI/FIPS), key uniqueness, join integrity, <=11 suppression, vintage-stamp requirement; HCRIS->CareCompare integrity 2/3 hand-verified."
+    },
+    {
+      "id": "NEW-18",
+      "title": "Defensible parameter library",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 99,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_parameters.py",
+      "notes": "Central registry; source/vintage/defensibility flag per leaf; CF and commercial multipliers import from fee_schedule_2026; PERT/triangular/beta sampling."
+    },
+    {
+      "id": "NEW-19",
+      "title": "Epidemiology patient-flow funnel",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 99,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_epidemiology.py",
+      "notes": "Monthly cohort N(t)=sum Init(c)S(t-c); exponential/Weibull persistence; incidence-prevalence duration link; Markov line-of-therapy. Funnel 100k->80k->40k hand-verified."
+    },
+    {
+      "id": "NEW-20",
+      "title": "Capitation / lives and shared-savings model",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 99,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_capitation.py",
+      "notes": "Lives x member-months x PMPM x RAF; 85% MLR floor with remittance; MSSP MSR/MLR waterfall. Revenue 12M, settlement 1M hand-verified."
+    },
+    {
+      "id": "NEW-21",
+      "title": "Facility / capacity model",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 99,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_facility_capacity.py",
+      "notes": "Units x periods x turns x utilization with binding-constraint detection; Erlang-C M/M/c wait probability. 37,440 cap / 4/9 P(wait) hand-verified."
+    },
+    {
+      "id": "NEW-22",
+      "title": "Installed-base / adoption model (Bass diffusion)",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 99,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_adoption_bass.py",
+      "notes": "Discrete Bass p/q, ACV build, NRR-compounded ARR path. n(1)=30, n(2)=40.158, ARR path hand-verified."
+    },
+    {
+      "id": "NEW-23",
+      "title": "Procedure / claims bottom-up TAM",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 99,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_procedure_buildup.py",
+      "notes": "Population x util/1000 x proc/patient x site mix x payer mix x allowed; mix-normalization reconciliation. TAM 1,516,704 hand-verified."
+    },
+    {
+      "id": "NEW-24",
+      "title": "Forward-projection engines (cohort-component, Fisher-Pry)",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 99,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_projection.py",
+      "notes": "Leslie cohort-component step; Fisher-Pry logistic fit on log-odds and projection. [40,90,94] and a/b recovery hand-verified."
     }
   ]
 }

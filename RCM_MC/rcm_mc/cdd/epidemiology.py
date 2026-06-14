@@ -30,7 +30,7 @@ Statistical and deterministic. No LLM on any path.
 from __future__ import annotations
 
 import math
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence
 
 from .exhibit import Exhibit, Flag, Footnote, Reconciliation, Series, safe_div
 from .registry import CddFeature, register
