@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import unittest
 
-from rcm_mc.ui._chartis_kit import chartis_shell
+from rcm_mc.ui._chartis_kit import chartis_shell, ck_table
 
 _SKIP_ANCHOR = '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
 
@@ -68,6 +68,24 @@ class A11yShellTests(unittest.TestCase):
             breadcrumbs=[("Home", "/"), ("Deals", None)],
         )
         self.assertIn('<nav class="ck-breadcrumbs" aria-label="Breadcrumb">', html)
+
+
+class TableHeaderScopeTests(unittest.TestCase):
+    def test_ck_table_headers_carry_col_scope(self):
+        # scope="col" lets screen readers associate each data cell with
+        # its column header — without it a wide table is just a grid of
+        # numbers with no context.
+        html = ck_table(
+            rows=[{"name": "Acme", "ebitda": 12.5}],
+            columns=[
+                {"key": "name", "label": "Company"},
+                {"key": "ebitda", "label": "EBITDA", "align": "right",
+                 "kind": "currency"},
+            ],
+        )
+        self.assertEqual(html.count('<th scope="col"'), 2)
+        # Every <th> in the header must carry the scope.
+        self.assertNotIn("<th class=", html)
 
 
 if __name__ == "__main__":

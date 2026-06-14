@@ -618,7 +618,7 @@ def ck_table(
     # (<a href=…>Company ▲</a>). Render those raw instead of escaping the tag
     # into literal "<A HREF=…>" text in the header.
     header_cells = "".join(
-        f'<th class="align-{_esc(c.get("align", "left"))}">'
+        f'<th scope="col" class="align-{_esc(c.get("align", "left"))}">'
         f'{c.get("label", "") if "<" in str(c.get("label", "")) else _esc(c.get("label", ""))}'
         f'</th>'
         for c in columns
@@ -1720,8 +1720,8 @@ def ck_paired_block(
     """
     hot = set(hot_rows)
     head_cells = "".join(
-        f'<th>{_esc(h)}</th>' if i == 0
-        else f'<th class="ck-pair-r">{_esc(h)}</th>'
+        f'<th scope="col">{_esc(h)}</th>' if i == 0
+        else f'<th scope="col" class="ck-pair-r">{_esc(h)}</th>'
         for i, h in enumerate(headers)
     )
     body_rows = ""
@@ -7063,7 +7063,7 @@ def ck_data_table(
             else ""
         )
         head_cells.append(
-            f'<th class="ck-cell ck-data-table-head{align_cls}">'
+            f'<th scope="col" class="ck-cell ck-data-table-head{align_cls}">'
             f'{_esc(h.get("label", ""))}</th>'
         )
     head_html = "<thead><tr>" + "".join(head_cells) + "</tr></thead>"
