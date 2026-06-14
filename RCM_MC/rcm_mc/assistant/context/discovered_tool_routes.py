@@ -1158,6 +1158,15 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='Drug Reference (RxNorm) · NDC→RxCUI crosswalk, concepts, drug classes & competitive-set sizing',
+        route='/rxnorm',
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        source_group='Research & Backtesting',
+        is_auto_generated=True,
+        aliases=[],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Excel Mapping · configurable US-state choropleth',
         route='/excel-mapping',
         category=PageContextCategory.RESEARCH_BACKTESTING,

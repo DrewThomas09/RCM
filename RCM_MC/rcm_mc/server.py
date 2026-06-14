@@ -4067,6 +4067,30 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.global_markets_page import render_country_profile
             return self._send_html(render_country_profile(
                 iso2, PortfolioStore(self.config.db_path)))
+        if path == "/rxnorm":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rxnorm_page import render_rxnorm_page
+            return self._send_html(render_rxnorm_page(
+                PortfolioStore(self.config.db_path), _qp))
+        if path == "/api/rxnorm":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rxnorm_page import build_rxnorm
+            return self._send_json(build_rxnorm(
+                PortfolioStore(self.config.db_path), _qp))
+        if path == "/rxnorm/export.csv":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _table = (_qs.get("table") or ["crosswalk"])[0]
+            from .ui.data_public.rxnorm_page import build_export_df
+            try:
+                _df = build_export_df(
+                    PortfolioStore(self.config.db_path), _table)
+            except KeyError:
+                return self._send_json(
+                    {"error": f"unknown table: {_table}"},
+                    status=HTTPStatus.NOT_FOUND)
+            return self._send_csv_df(_df, f"rxnorm-{_table}.csv")
         if path == "/payer-concentration":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -13646,6 +13670,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_guide_ask()
         if path == "/diligence/snapshot":
             return self._route_diligence_snapshot_post()
+        if path == "/rxnorm/seed":
+            # Populate the RxNorm tables from the committed offline seed so the
+            # /rxnorm surface is useful without network access. Idempotent.
+            from .data_public.rxnorm import seed_into
+            try:
+                rep = seed_into(PortfolioStore(self.config.db_path))
+                n = rep["counts"].get("dim_rxnorm_concept", 0)
+                dest = self._with_flash(
+                    "/rxnorm", f"Loaded {n} RxNorm concepts from seed", "success")
+            except Exception as exc:  # noqa: BLE001
+                dest = self._with_flash(
+                    "/rxnorm", f"Seed load failed: {exc}", "error")
+            return self._redirect(dest)
         if path == "/api/target-screener/save":
             return self._route_target_screener_save_post()
         if path == "/api/target-screener/delete":
