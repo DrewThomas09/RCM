@@ -4779,3 +4779,98 @@ can be used purely as an aggregation tool (paste raw export → group +
 top-N → copy result), not only as a chart renderer.
 **Verify**: +1 test — the hidden TSV carries the aggregated values
 (Aetna 17, never the raw 10). Chart sweep green.
+
+## W3-001 (2026-06-14) — TAM engine: six-archetype taxonomy + triangulation + Bass + Monte Carlo
+The market-sizing engine (`diligence/tam_sam.py`, ~90 vertical templates)
+had the deterministic driver-chain skeleton but none of the Part-A
+discipline that separates elite CDD from "1% fallacy" decks. Added the
+methodology layer, additively (every existing `compute()` key preserved;
+the page reads new keys via `.get()`):
+- **Six canonical archetypes** (`ARCHETYPES`): procedure/claims,
+  epidemiology, capitation/lives, facility/capacity, installed-base
+  (Bass), top-down NHE — each with formula skeleton, complexity ceiling,
+  when-to-use, primary public-data sources.
+- **Every template classified** (`TEMPLATE_ARCHETYPE`, 84/84) — match the
+  METHOD to the vertical, deliberately. `test_tam_sam_archetypes` pins
+  set-equality with `TEMPLATES` so a new template can never ship
+  un-classified, and asserts the structural fallback `infer_archetype()`
+  reproduces every curated tag (two sources of truth that agree).
+- **Triangulation** (`triangulate`): symmetric gap bottom-up vs
+  independent top-down, quality-gate band (green ≤15% / amber ≤20% /
+  red >20% per practitioner consensus) — "the gap is the finding."
+  Top-down NHE anchors wired into 6 flagships (snf/dialysis/home_health/
+  hospice/asc/infusion) with sources; surfaced in `compute()`.
+- **Bass diffusion** (`bass_trajectory`): installed-base S-curve for
+  SOM(t)=SAM×F(t); coefficients on rpm + virtual_primary_care.
+- **Monte Carlo** (`monte_carlo`): lognormal driver-uncertainty
+  propagation → P10/P50/P90 + CV, seeded/reproducible, rate-clamped,
+  median reproduces the point estimate. Statistical, LLM-free.
+- Cleanup: fixed 7 pre-existing invalid `\$` escape-sequence
+  DeprecationWarnings in the same file.
+**Verify**: +19 tests in test_tam_sam.py (158 pass total; 285 with the
+texas_infusion consumer suite). `python -W error::DeprecationWarning`
+imports the module clean.
+
+## W3-002 (2026-06-14) — TAM page: Method & uncertainty panel
+Surfaced the W3-001 engine layer on `/diligence/tam-sam` with a new
+"Method & uncertainty" panel (anchor `#ts-method`, jump-nav chip) placed
+between the cross-industry compare and the driver chain:
+- **Archetype** header — label + color-coded complexity chip + formula
+  skeleton + when-to-use + primary public-data sources.
+- **Triangulation** quality gate — bottom-up vs top-down, gap %, and a
+  band-colored verdict (green/amber/red), rendered only when the template
+  carries a top-down anchor.
+- **Monte-Carlo band** — P10/P50/P90 + CV (n=4,000, ±15%/driver, seeded).
+- **Bass adoption** table — cumulative SOM(t) share of SAM, rendered only
+  when the model carries p/q coefficients.
+All strings are server-generated from the registry (html.escape applied
+defensively); reads new compute() keys via .get() so older callers are
+unaffected.
+**Verify**: +4 page tests (archetype+MC render for ALL 84 templates;
+triangulation only-with-anchor; Bass only-for-adoption; nav chip). 162
+pass in test_tam_sam.py; texas_infusion (127) + comparable_outcomes +
+market_analysis_lead + section_catalog (44) green.
+
+## W3-003 (2026-06-14) — TAM cross-industry table: Method column + sort
+The cross-industry comparison (80+ verticals side by side) now carries a
+**Method** column — a compact color-coded archetype chip (Procedure /
+Epi / Lives / Facility / Install-base / Top-down) per vertical — plus a
+third sort, "by method", that groups the catalogue by sizing archetype
+(then TAM within method). `test_archetype_column` pins chip↔ARCHETYPES
+set-equality and valid 6-digit hex colors.
+**Verify**: +2 tests; 165 pass in test_tam_sam.py; market_analysis_lead +
+comparable_outcomes green (202 total in the run).
+
+## W3-004 (2026-06-14) — TAM exports carry method/triangulation/MC/Bass
+The CSV and XLSX exports now ship the W3-001/002 methodology layer into
+the deal team's model:
+- **CSV**: a Method block (archetype label/complexity/formula/sources),
+  the triangulation line (bottom-up vs top-down + gap% + band) when an
+  anchor exists, the Monte-Carlo P10/P50/P90 + CV, and the Bass
+  cumulative-adoption row for adoption templates.
+- **XLSX**: a new "Method & uncertainty" sheet (archetype block,
+  triangulation gate with verdict, MC band, Bass curve). Appended LAST so
+  the established sheet ordering (Funnel=1 … Agenda=5) that downstream
+  tests/code index by position is preserved (Sources stays sheet4).
+**Verify**: +4 tests (CSV method/triangulation/MC; CSV Bass; XLSX method
+sheet at sheet6 with Sources still at sheet4; ALL 84 templates export
+both formats clean). 168 pass in test_tam_sam.py.
+
+## W3-005 (2026-06-14) — TAM triangulation: 5 more top-down anchors
+Extended the triangulation quality gate from 6 to 11 verticals with
+published top-down anchors, each verified to land honestly (not a number
+that manufactures a false red):
+- physical_therapy $34B (green, 2.6%), urgent_care $40B (amber, 17.0% —
+  the gate working), medspa $16B (green), dme $63B (green), vision $64B
+  (green). Anchors span facility/capacity, epidemiology archetypes.
+**Verify**: 168 pass in test_tam_sam.py; clean -W error import; gaps
+hand-checked against bottom-up builds (PT/UC/medspa/DME/vision).
+
+## W3-006 (2026-06-14) — Triangulation divergence → diligence agenda item
+A diverging triangulation (amber/red band) now auto-generates a
+"Reconcile the sizing" question at the top of the diligence agenda —
+naming the bottom-up vs top-down figures, the gap %, and the top-down
+basis to check. Wired into the single agenda source so it flows to the
+page panel, CSV, and XLSX alike; green models add nothing (no noise).
+**Verify**: +3 tests (amber template gets the item; green doesn't; item
+in panel + CSV). 171 pass in test_tam_sam.py.

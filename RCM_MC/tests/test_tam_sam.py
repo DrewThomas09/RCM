@@ -1712,3 +1712,297 @@ class JumpNavTests(unittest.TestCase):
         # Dialysis has a dive → the chip renders.
         self.assertIn('href="#ts-dive"',
                       render_tam_sam_page({"template": ["dialysis"]}))
+
+
+class ArchetypeTaxonomyTests(unittest.TestCase):
+    """Part A discipline: every model carries its sizing METHOD, and the
+    six archetypes are the canonical set. These tests pin the registry so
+    a new template can never ship un-classified."""
+
+    def test_six_canonical_archetypes(self):
+        from rcm_mc.diligence.tam_sam import ARCHETYPES
+        self.assertEqual(
+            set(ARCHETYPES),
+            {"procedure_claims", "epidemiology", "capitation_lives",
+             "facility_capacity", "installed_base", "top_down_nhe"})
+        for code, a in ARCHETYPES.items():
+            self.assertEqual(a.code, code)
+            self.assertIn(a.complexity, ("MODERATE", "HIGH", "VERY HIGH"))
+            self.assertTrue(a.formula and a.when_to_use)
+
+    def test_every_template_is_classified(self):
+        # Set-equality is the guard: a new template added to TEMPLATES
+        # without an archetype entry (or vice-versa) fails here.
+        from rcm_mc.diligence.tam_sam import TEMPLATES, TEMPLATE_ARCHETYPE
+        self.assertEqual(set(TEMPLATES), set(TEMPLATE_ARCHETYPE))
+
+    def test_curated_tags_are_valid_codes(self):
+        from rcm_mc.diligence.tam_sam import ARCHETYPES, TEMPLATE_ARCHETYPE
+        for key, code in TEMPLATE_ARCHETYPE.items():
+            self.assertIn(code, ARCHETYPES, key)
+
+    def test_inference_matches_curation_for_all_templates(self):
+        # The structural heuristic (the fallback for custom models) must
+        # reproduce the curated tag for every bundled template — proof the
+        # two sources of truth agree.
+        from rcm_mc.diligence.tam_sam import (
+            TEMPLATES, TEMPLATE_ARCHETYPE, infer_archetype)
+        for key, factory in TEMPLATES.items():
+            self.assertEqual(infer_archetype(factory()),
+                             TEMPLATE_ARCHETYPE[key], key)
+
+    def test_compute_surfaces_archetype_block(self):
+        from rcm_mc.diligence.tam_sam import compute, asc_template
+        block = compute(asc_template())["archetype"]
+        self.assertEqual(block["code"], "facility_capacity")
+        self.assertTrue(block["label"] and block["formula"])
+        self.assertIn(block["complexity"], ("MODERATE", "HIGH", "VERY HIGH"))
+
+    def test_explicit_archetype_overrides_heuristic(self):
+        from rcm_mc.diligence.tam_sam import (
+            TamSamModel, DriverStep, infer_archetype)
+        m = TamSamModel(name="x", archetype="capitation_lives",
+                        chain=[DriverStep("centers", 10, op="base",
+                                          unit="centers")])
+        self.assertEqual(infer_archetype(m), "capitation_lives")
+
+    def test_inference_fallback_on_custom_models(self):
+        from rcm_mc.diligence.tam_sam import (
+            TamSamModel, DriverStep, infer_archetype)
+
+        def mk(name, unit, op="base"):
+            return TamSamModel(name="t", chain=[
+                DriverStep(name, 100, op=op, unit=unit),
+                DriverStep("price", 10, op="price", unit="$")])
+        # lives × per-member → capitation
+        self.assertEqual(infer_archetype(TamSamModel(name="t", chain=[
+            DriverStep("covered lives", 1e6, op="base", unit="lives"),
+            DriverStep("PMPM×12", 100, op="price", unit="$/life/yr")])),
+            "capitation_lives")
+        # $-spend base, no price step → top-down NHE
+        self.assertEqual(infer_archetype(TamSamModel(name="t", chain=[
+            DriverStep("US spend", 1e11, op="base", unit="$"),
+            DriverStep("share", 0.1, op="rate")])), "top_down_nhe")
+        # device universe → installed base
+        self.assertEqual(infer_archetype(mk("serviceable devices",
+                         "devices")), "installed_base")
+        # facility base → facility/capacity
+        self.assertEqual(infer_archetype(mk("imaging centers", "centers")),
+                         "facility_capacity")
+        # "clinical tests" must NOT trip the clinic facility token
+        self.assertEqual(infer_archetype(TamSamModel(name="t", chain=[
+            DriverStep("US clinical tests / yr", 1e9, op="base",
+                       unit="tests"),
+            DriverStep("price", 14, op="price", unit="$")])),
+            "procedure_claims")
+        # patient population → epidemiology
+        self.assertEqual(infer_archetype(mk("patients with disease",
+                         "patients")), "epidemiology")
+
+
+class TriangulationTests(unittest.TestCase):
+    """The discipline that separates elite work: reconcile bottom-up vs
+    top-down, and the gap IS the finding."""
+
+    def test_band_thresholds(self):
+        from rcm_mc.diligence.tam_sam import triangulate
+        self.assertEqual(triangulate(100, 100)["band"], "green")
+        # 14% gap (symmetric) → green; 18% → amber; 30% → red
+        self.assertEqual(triangulate(100, 115)["band"], "green")
+        self.assertEqual(triangulate(100, 119)["band"], "amber")
+        self.assertEqual(triangulate(100, 130)["band"], "red")
+
+    def test_symmetric_gap(self):
+        from rcm_mc.diligence.tam_sam import triangulate
+        a = triangulate(80, 120)["gap_pct"]
+        b = triangulate(120, 80)["gap_pct"]
+        self.assertAlmostEqual(a, b, places=9)
+        # |80-120|/100 = 40%
+        self.assertAlmostEqual(a, 40.0, places=6)
+
+    def test_higher_side_reported(self):
+        from rcm_mc.diligence.tam_sam import triangulate
+        self.assertEqual(triangulate(120, 80)["higher"], "bottom_up")
+        self.assertEqual(triangulate(80, 120)["higher"], "top_down")
+
+    def test_compute_includes_triangulation_when_model_carries_it(self):
+        from rcm_mc.diligence.tam_sam import compute, snf_template
+        tri = compute(snf_template())["triangulation"]
+        self.assertIsNotNone(tri)
+        self.assertIn(tri["band"], ("green", "amber", "red"))
+        self.assertTrue(tri["top_down_source"])
+
+    def test_compute_triangulation_none_without_anchor(self):
+        from rcm_mc.diligence.tam_sam import compute, dermatology_template
+        # dermatology carries no top_down_tam → no triangulation block.
+        self.assertIsNone(compute(dermatology_template())["triangulation"])
+
+
+class BassDiffusionTests(unittest.TestCase):
+    def test_cumulative_monotonic_and_bounded(self):
+        from rcm_mc.diligence.tam_sam import bass_trajectory
+        traj = bass_trajectory(1000.0, p=0.03, q=0.40, periods=20)
+        cum = [r["cum_frac"] for r in traj]
+        self.assertEqual(cum[0], 0.0)
+        for a, b in zip(cum, cum[1:]):
+            self.assertLessEqual(a, b + 1e-12)      # non-decreasing
+        self.assertLessEqual(cum[-1], 1.0 + 1e-9)   # never exceeds 100%
+        # value scaling: cum_value == cum_frac × ceiling
+        self.assertAlmostEqual(traj[-1]["cum_value"],
+                               traj[-1]["cum_frac"] * 1000.0, places=6)
+
+    def test_compute_surfaces_bass_for_adoption_templates(self):
+        from rcm_mc.diligence.tam_sam import compute, rpm_template
+        out = compute(rpm_template())
+        self.assertIsNotNone(out["bass"])
+        self.assertEqual(len(out["bass"]), out["horizon_years"] + 1)
+        # SOM(t) ceiling is SAM.
+        self.assertLessEqual(out["bass"][-1]["cum_value"], out["sam"] + 1e-6)
+
+    def test_no_bass_without_coefficients(self):
+        from rcm_mc.diligence.tam_sam import compute, snf_template
+        self.assertIsNone(compute(snf_template())["bass"])
+
+
+class MonteCarloTests(unittest.TestCase):
+    def test_band_ordering_and_median_near_point(self):
+        from rcm_mc.diligence.tam_sam import monte_carlo, dialysis_template
+        mc = monte_carlo(dialysis_template(), n=5000, rel_sigma=0.15,
+                         seed=42)
+        self.assertLess(mc["p10"], mc["p50"])
+        self.assertLess(mc["p50"], mc["p90"])
+        # Lognormal median draw reproduces the deterministic point.
+        self.assertAlmostEqual(mc["p50"] / mc["point_tam"], 1.0, delta=0.06)
+        self.assertGreater(mc["cv"], 0.0)
+
+    def test_reproducible_with_seed(self):
+        from rcm_mc.diligence.tam_sam import monte_carlo, asc_template
+        a = monte_carlo(asc_template(), n=3000, seed=11)
+        b = monte_carlo(asc_template(), n=3000, seed=11)
+        self.assertEqual(a, b)
+
+    def test_zero_sigma_collapses_to_point(self):
+        from rcm_mc.diligence.tam_sam import monte_carlo, hospice_template
+        mc = monte_carlo(hospice_template(), n=500, rel_sigma=0.0)
+        self.assertAlmostEqual(mc["p10"], mc["p90"], places=2)
+        self.assertAlmostEqual(mc["p50"], mc["point_tam"], places=2)
+
+    def test_invalid_n_raises(self):
+        from rcm_mc.diligence.tam_sam import monte_carlo, snf_template
+        with self.assertRaises(ValueError):
+            monte_carlo(snf_template(), n=0)
+
+
+class MethodPanelPageTests(unittest.TestCase):
+    """The /diligence/tam-sam page surfaces the archetype, triangulation
+    quality gate, Monte-Carlo band, and Bass curve — the analytic altitude
+    that says whether to trust the chain, not just how it was built."""
+
+    def test_archetype_and_mc_render_for_every_template(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        for key in TEMPLATES:
+            h = render_tam_sam_page({"template": [key]})
+            self.assertIn('id="ts-method"', h, key)
+            self.assertIn("Monte-Carlo TAM band", h, key)
+            self.assertIn("complexity", h.lower(), key)
+
+    def test_triangulation_renders_only_with_anchor(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        # snf carries a top-down NHE anchor; dermatology does not.
+        self.assertIn("Triangulation · bottom-up",
+                      render_tam_sam_page({"template": ["snf"]}))
+        self.assertNotIn("Triangulation · bottom-up",
+                         render_tam_sam_page({"template": ["dermatology"]}))
+
+    def test_bass_curve_renders_for_adoption_template(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        self.assertIn("Bass adoption",
+                      render_tam_sam_page({"template": ["rpm"]}))
+        self.assertNotIn("Bass adoption",
+                         render_tam_sam_page({"template": ["snf"]}))
+
+    def test_method_chip_in_jump_nav(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["dialysis"]})
+        self.assertIn('href="#ts-method"', h)
+
+
+class ArchetypeColumnTests(unittest.TestCase):
+    def test_every_archetype_has_a_chip(self):
+        from rcm_mc.ui.tam_sam_page import _ARCHETYPE_CHIP
+        from rcm_mc.diligence.tam_sam import ARCHETYPES
+        self.assertEqual(set(_ARCHETYPE_CHIP), set(ARCHETYPES))
+        for code, (color, label) in _ARCHETYPE_CHIP.items():
+            self.assertTrue(color.startswith("#") and len(color) == 7, code)
+            self.assertTrue(label)
+
+    def test_method_column_and_sort_render(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page
+        h = render_tam_sam_page({"template": ["snf"]})
+        self.assertIn("<th>Method</th>", h)
+        self.assertIn("by method", h)  # the sort link
+        # archetype sort orders without error
+        self.assertIn("<th>Method</th>",
+                      render_tam_sam_page({"template": ["snf"],
+                                           "sort": ["archetype"]}))
+
+
+class MethodExportTests(unittest.TestCase):
+    """The archetype, triangulation gate, MC band, and Bass curve export
+    into the deal model alongside the point build."""
+
+    def test_csv_carries_method_triangulation_and_mc(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv
+        out = tam_sam_csv({"template": ["snf"]})
+        self.assertIn("Method (archetype)", out)
+        self.assertIn("Triangulation bottom-up", out)
+        self.assertIn("Monte-Carlo TAM (P10/P50/P90)", out)
+
+    def test_csv_carries_bass_for_adoption_template(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv
+        self.assertIn("Bass cum. adoption",
+                      tam_sam_csv({"template": ["rpm"]}))
+
+    def test_xlsx_gains_method_sheet_last_preserving_order(self):
+        import io
+        import zipfile
+        from rcm_mc.ui.tam_sam_page import tam_sam_xlsx
+        z = zipfile.ZipFile(io.BytesIO(tam_sam_xlsx({"template": ["snf"]})))
+        # 6 sheets now; Method is sheet6, Sources still sheet4 (MedPAC).
+        self.assertIn("xl/worksheets/sheet6.xml", z.namelist())
+        self.assertIn(b"MedPAC", z.read("xl/worksheets/sheet4.xml"))
+        self.assertIn(b"Monte-Carlo", z.read("xl/worksheets/sheet6.xml"))
+
+    def test_every_template_exports_method_without_error(self):
+        from rcm_mc.ui.tam_sam_page import tam_sam_csv, tam_sam_xlsx
+        from rcm_mc.diligence.tam_sam import TEMPLATES
+        for key in TEMPLATES:
+            self.assertIn("Method (archetype)",
+                          tam_sam_csv({"template": [key]}), key)
+            self.assertTrue(tam_sam_xlsx({"template": [key]})[:2] == b"PK",
+                            key)
+
+
+class TriangulationAgendaTests(unittest.TestCase):
+    """A diverging triangulation auto-generates a reconciliation question
+    — uncertainty drives the diligence agenda, in the panel and exports."""
+
+    def test_amber_template_gets_reconcile_item(self):
+        from rcm_mc.ui.tam_sam_page import _derive_agenda_items
+        from rcm_mc.diligence.tam_sam import compute, urgent_care_template
+        items = _derive_agenda_items(compute(urgent_care_template()))
+        self.assertTrue(any("Reconcile the sizing" in i for i in items))
+
+    def test_green_template_has_no_reconcile_item(self):
+        from rcm_mc.ui.tam_sam_page import _derive_agenda_items
+        from rcm_mc.diligence.tam_sam import compute, snf_template
+        items = _derive_agenda_items(compute(snf_template()))
+        self.assertFalse(any("Reconcile the sizing" in i for i in items))
+
+    def test_reconcile_item_in_panel_and_csv(self):
+        from rcm_mc.ui.tam_sam_page import render_tam_sam_page, tam_sam_csv
+        self.assertIn("Reconcile the sizing",
+                      render_tam_sam_page({"template": ["urgent_care"]}))
+        self.assertIn("Reconcile the sizing",
+                      tam_sam_csv({"template": ["urgent_care"]}))
