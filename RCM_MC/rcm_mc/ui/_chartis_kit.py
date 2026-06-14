@@ -9987,8 +9987,12 @@ _TABLE_TOTALS_JS = """
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
-.ck-data-table-scroll:hover .ck-ttotals{opacity:0.9;}
+.ck-data-table-scroll:hover .ck-ttotals,
+.ck-data-table-scroll:focus-within .ck-ttotals{opacity:0.9;}
 .ck-ttotals:hover,.ck-ttotals[aria-pressed="true"]{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+/* Same as the copy button: reveal + ring on keyboard focus so a Tab user
+ * doesn't land on an invisible toggle. */
+.ck-ttotals:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:700;
   background:var(--sc-bone,#ece5d6);font-family:var(--sc-mono,'JetBrains Mono',monospace);
   font-variant-numeric:tabular-nums;padding:6px 10px;font-size:11px;}
@@ -10174,8 +10178,12 @@ _TABLE_COPY_JS = """
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
-.ck-data-table-scroll:hover .ck-tcopy{opacity:0.9;}
+.ck-data-table-scroll:hover .ck-tcopy,
+.ck-data-table-scroll:focus-within .ck-tcopy{opacity:0.9;}
 .ck-tcopy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+/* Reveal + ring the copy button on keyboard focus — without this a Tab
+ * user lands on an invisible (opacity:0) control with no focus cue. */
+.ck-tcopy:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 </style>
 <script>
 /* Hover copy-to-clipboard for editorial tables. A small Copy button
