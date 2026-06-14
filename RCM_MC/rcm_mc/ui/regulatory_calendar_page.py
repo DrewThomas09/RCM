@@ -930,28 +930,28 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
       Target profile</div>
     <div class="rc-form-grid">
       <div class="rc-form-field"><label>Target name</label>
-        <input name="target_name" value="Meadowbrook Health System"/></div>
+        <input name="target_name" aria-label="Target name" value="Meadowbrook Health System"/></div>
       <div class="rc-form-field"><label>Specialties (comma)</label>
-        <input name="specialties"
+        <input name="specialties" aria-label="Specialties (comma-separated)"
                value="HOSPITAL,ACUTE_HOSPITAL,MA_RISK_PRIMARY_CARE"/></div>
       <div class="rc-form-field"><label>MA mix % (0-1)</label>
-        <input name="ma_mix_pct" value="0.55"/></div>
+        <input name="ma_mix_pct" aria-label="MA mix fraction (0-1)" value="0.55"/></div>
       <div class="rc-form-field"><label>Commercial payer share (0-1)</label>
-        <input name="commercial_payer_share" value="0.35"/></div>
+        <input name="commercial_payer_share" aria-label="Commercial payer share (0-1)" value="0.35"/></div>
       <div class="rc-form-field"><label>Has HOPD revenue</label>
-        <select name="has_hopd_revenue">
+        <select name="has_hopd_revenue" aria-label="Has HOPD revenue">
           <option value="1">Yes</option><option value="">No</option>
         </select></div>
       <div class="rc-form-field"><label>REIT landlord</label>
-        <select name="has_reit_landlord">
+        <select name="has_reit_landlord" aria-label="REIT landlord">
           <option value="1">Yes</option><option value="">No</option>
         </select></div>
       <div class="rc-form-field"><label>Revenue (USD)</label>
-        <input name="revenue_usd" value="450000000"/></div>
+        <input name="revenue_usd" aria-label="Revenue (USD)" value="450000000"/></div>
       <div class="rc-form-field"><label>EBITDA (USD)</label>
-        <input name="ebitda_usd" value="67500000"/></div>
+        <input name="ebitda_usd" aria-label="EBITDA (USD)" value="67500000"/></div>
       <div class="rc-form-field"><label>Horizon months</label>
-        <input name="horizon_months" value="24"/></div>
+        <input name="horizon_months" aria-label="Horizon months" value="24"/></div>
     </div>
     <button class="rc-form-submit" type="submit">
       Run kill-switch analysis</button>
