@@ -50,6 +50,17 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn('class="ck-search-kbd"', self.html)
         self.assertIn("⌘K", self.html)
 
+    def test_modkey_hint_is_platform_aware(self):
+        # The ⌘ glyph is hardcoded in markup but a guarded script rewrites it
+        # to Ctrl on non-Mac platforms. Both display spots (search kbd + the
+        # "All Tools" menu item) are tagged for the rewrite.
+        self.assertEqual(self.html.count("data-modkey>"), 2)
+        self.assertIn('querySelectorAll("[data-modkey]")', self.html)
+        # Bare (chrome-less) pages ship neither the markup nor the script.
+        from rcm_mc.ui._chartis_kit import chartis_shell
+        bare = chartis_shell("<p>x</p>", "Login", show_chrome=False)
+        self.assertNotIn("data-modkey", bare)
+
     def test_search_input_has_site_search_attributes(self):
         # A site-search box should not autofill or spell-check the query
         # (CCNs, route slugs), and should surface a "search" action key on

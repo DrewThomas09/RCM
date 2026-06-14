@@ -10679,6 +10679,27 @@ _USER_MENU_JS = """
 """
 
 
+_MODKEY_JS = """
+<script>
+/* Platform-correct the ⌘ shortcut hints. The keyboard handlers already
+ * accept metaKey || ctrlKey, but the *displayed* glyph was hardcoded to
+ * ⌘ — meaningless to Windows/Linux users, who press Ctrl. On non-Mac
+ * platforms rewrite any [data-modkey] element's ⌘ to "Ctrl". Idempotent
+ * and guarded; a Mac (or a failure) leaves the markup untouched. */
+(function() {
+  try {
+    var ua = (navigator.platform || "") + " " + (navigator.userAgent || "");
+    if (/Mac|iPhone|iPad|iPod/i.test(ua)) return;
+    document.querySelectorAll("[data-modkey]").forEach(function(el) {
+      el.textContent = el.textContent.replace(/⌘/g, "Ctrl ")
+                                     .replace(/\\s+/g, " ").trim();
+    });
+  } catch (e) { /* leave the Mac glyph rather than risk a broken label */ }
+})();
+</script>
+"""
+
+
 # Topbar mega-menu controller. Enforces ONE open menu at a time and reliable
 # dismissal (the CSS :focus-within fallback could leave a focused panel stuck
 # open alongside a hovered one). Marks the topbar [data-menu-js] so CSS hands
@@ -11438,7 +11459,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # enterkeyhint surfaces a "search" key on mobile soft keyboards.
         'autocomplete="off" spellcheck="false" enterkeyhint="search" '
         'aria-label="Search deals, hospitals, routes" />'
-        '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
+        '<kbd class="ck-search-kbd" aria-hidden="true" data-modkey>⌘K</kbd>'
         '</form>'
         # PEdesk Guide trigger — opens the read-only context sidebar. The
         # green italic-serif "?" glyph is the handoff accent that makes the
@@ -11474,7 +11495,8 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         # point at the same owner instead of silently diverging.
         f'<a href="/my/{_esc(user_initials)}" class="ck-user-dropdown-item">'
         f'My Dashboard</a>'
-        '<a href="/tools" class="ck-user-dropdown-item">All Tools &middot; ⌘K</a>'
+        '<a href="/tools" class="ck-user-dropdown-item" data-modkey>'
+        'All Tools &middot; ⌘K</a>'
         '<a href="/methodology" class="ck-user-dropdown-item">Methodology</a>'
         f'<a href="/settings/workspace" class="ck-user-dropdown-item">'
         f'Workspace: {_esc(_ws_mode_label)}</a>'
@@ -11908,6 +11930,7 @@ def chartis_shell(
     user_menu_js = _USER_MENU_JS if show_chrome else ""
     nav_menu_js = _NAV_MENU_JS if show_chrome else ""
     qpill_js = _QPILL_JS if show_chrome else ""
+    modkey_js = _MODKEY_JS if show_chrome else ""
     palette_js = _PALETTE_JS if (include_palette and show_chrome) else ""
     shortcuts_js = _SHORTCUTS_JS if show_chrome else ""
     tour_html = ck_default_tour() if show_chrome else ""
@@ -11949,6 +11972,7 @@ def chartis_shell(
         f"{user_menu_js}"
         f"{nav_menu_js}"
         f"{qpill_js}"
+        f"{modkey_js}"
         f"{_INTRO_DISMISS_JS}"
         f"{palette_js}"
         f"{shortcuts_js}"
