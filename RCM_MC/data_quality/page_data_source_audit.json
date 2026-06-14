@@ -1,11 +1,11 @@
 {
   "summary": {
-    "pages": 187,
+    "pages": 188,
     "with_disclosure": 173,
-    "with_real_loader": 50,
+    "with_real_loader": 51,
     "flagged_no_disclosure": 0,
     "by_tier": {
-      "green": 41,
+      "green": 42,
       "navy": 73,
       "yellow": 37,
       "red": 0
@@ -358,6 +358,16 @@
       "tier": "green",
       "has_disclosure": true,
       "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/data-apis",
+      "file": "data_apis_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
       "uses_seed_corpus": false,
       "renders_data": true,
       "flag": ""

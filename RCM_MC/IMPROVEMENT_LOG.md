@@ -4831,3 +4831,33 @@ Booted an open-auth server (CI's exact shape) and ran the route walker
 **Verify**: re-walk after fixes → **181 ok / 0 non-2xx / 0 tracebacks /
 0 nan/None leaks** on both the plain and cookie-context passes;
 `test_chart_builder.py` 59 passed; `test_route_walker_discover.py` 5 passed.
+
+## W4-003 (2026-06-14) — Error sweep: ruff F821 found a swallowed NameError that dropped an IC-packet section
+Ran `ruff --select F821` (undefined names) over `rcm_mc`/`rcm_mc_diligence`/
+`scripts`. Most hits were annotation-only false-positives (lazy `Dict`/
+`Any`/`pd.DataFrame` etc. under `from __future__ import annotations`, plus
+a deliberately aliased+deleted `_np_for_grid` forward-ref in
+`ridge_predictor.py`). Three were in *executable* code:
+- **`ic_packet_page.py` — REAL bug, confirmed live.** The "7b checklist
+  coverage" block read `bear_block_html` to mark hcris_xray/covenant/payer
+  coverage — but `bear_block_html` was only assigned *below* it in the "7e
+  bear-case" block. Every IC-packet build therefore hit a `NameError` that
+  the surrounding bare `except Exception` swallowed, leaving
+  `checklist_state = None` so the **entire "Diligence Coverage" section
+  silently never rendered**. Hoisted the bear-case block above the
+  checklist block (it only depends on values computed earlier:
+  `meta`/`reg_exposure`/`autopsy_matches`/`first()`). Confirmed by
+  rendering `hospital_01_clean_acute`: section ABSENT before, PRESENT after
+  (git-stash A/B). New regression test
+  `test_diligence_coverage_section_renders`.
+- **`physician_productivity.py:262`** — dead `target_wrvu` line, a
+  debugging leftover (`… if False else 0` ⇒ always `range(0)`, so the
+  undefined `i` never actually evaluated and the result was always 0) that
+  was never read; the real value is `new_wrvu` computed just below. Removed.
+- **`escalations_page.py:268`** — dead `n_esc = len(escalated) if
+  'escalated' in dir() else 0`: `escalated` was never defined so the guard
+  was always False (→ 0), and `n_esc` was never read. Removed; the real
+  count already lives in `count`.
+**Verify**: F821 clears on all three; `compileall` clean; escalations page
+renders (274 KB); ic_packet/physician/escalation suites 87 passed / 2
+skipped; the new IC-packet regression test goes red on the pre-fix tree.
