@@ -108,6 +108,7 @@ def render_qoe_memo_html(
         '<html lang="en">\n'
         "<head>\n"
         '  <meta charset="utf-8">\n'
+        '  <meta name="viewport" content="width=device-width, initial-scale=1">\n'
         f'  <title>QoE Memo — {html.escape(title)}</title>\n'
         "</head>\n"
         f'<body>\n{body}\n</body>\n</html>\n'

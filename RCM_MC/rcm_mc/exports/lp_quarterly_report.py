@@ -91,7 +91,8 @@ def generate_lp_quarterly_html(store: Any, *, quarter: str = "") -> str:
         )
 
     return (
-        '<!DOCTYPE html><html><head><meta charset="utf-8">'
+        '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
         f'<title>LP Quarterly Report — {_esc(quarter)}</title>'
         '<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:24px;'
         'color:#111;line-height:1.6;} h1{color:#1f4e78;} .summary{display:flex;gap:20px;'

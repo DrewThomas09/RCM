@@ -350,6 +350,7 @@ def build_exit_memo(
     html_doc = f"""<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title or f'Exit Memo — {deal_id}')}</title>
 <style>{_CSS}</style>
 </head><body>

@@ -544,7 +544,8 @@ def build_partner_brief(
 
     parts: List[str] = [
         "<!doctype html>",
-        '<html lang="en"><head><meta charset="utf-8">',
+        '<html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
         f"<title>RCM Partner Brief — {_escape(hosp_display)}</title>",
         f"<style>{_BRIEF_CSS}</style></head><body>",
         '<div class="brief">',
