@@ -22,7 +22,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import api, cdd, pipeline, profile, report, screen, synth, systems
+from . import api, cdd, export, pipeline, profile, report, screen, synth, systems
 from .connector import NppesConnector
 from .store import NppesStore
 
@@ -123,7 +123,17 @@ def _cmd_cdd(args) -> int:
             store, classification=args.classification, geo_level=args.geo_level,
             geo=args.geo, limit=args.limit),
     }
-    print(json.dumps(fns[args.metric](), indent=2, default=str))
+    result = fns[args.metric]()
+    if args.csv and isinstance(result, list):
+        text = export.rows_to_csv(result)
+        if args.out:
+            with open(args.out, "w", encoding="utf-8", newline="") as fh:
+                fh.write(text)
+            print(f"wrote {args.out} ({len(result)} rows)")
+        else:
+            print(text, end="")
+        return 0
+    print(json.dumps(result, indent=2, default=str))
     return 0
 
 
@@ -175,7 +185,9 @@ def main(argv=None) -> int:
     sp.add_argument("--limit", type=int, default=25)
     sp.add_argument("--thesis", default="platform", choices=["platform", "addon"],
                     help="target-screen thesis (for the 'screen' metric)")
-    sp.add_argument("--out", help="write report markdown to this path")
+    sp.add_argument("--out", help="write report/csv output to this path")
+    sp.add_argument("--csv", action="store_true",
+                    help="emit tabular metrics as CSV (data-room export)")
     sp.set_defaults(fn=_cmd_cdd)
 
     sp = sub.add_parser("profile", help="data-room universe profile")
