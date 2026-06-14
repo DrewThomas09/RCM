@@ -132,7 +132,7 @@ def _controls_form(
         inputs.append(
             f'<div class="ds-field">'
             f'<span class="ds-field-label">{_html.escape(label)}{unit_html}{gloss_html}</span>'
-            f'<input class="ds-input" name="{key}" value="{val}" type="number" step="any">'
+            f'<input class="ds-input" name="{key}" value="{val}" type="number" step="any" aria-label="{_html.escape(label)}">'
             f'</div>'
         )
     decision_options = "".join(
@@ -143,7 +143,7 @@ def _controls_form(
         f'<div class="ds-field">'
         f'<span class="ds-field-label">Show decision<br>'
         f'<span class="ds-unit">filter results</span></span>'
-        f'<select class="ds-select" name="decision">{decision_options}</select>'
+        f'<select class="ds-select" name="decision" aria-label="Show decision">{decision_options}</select>'
         f'</div>'
     )
     inputs.append(

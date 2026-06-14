@@ -695,7 +695,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     </div>
     <div class="ps-form-field" style="margin-bottom:16px;">
       <label>Payer mix</label>
-      <textarea name="mix">{html.escape(default)}</textarea>
+      <textarea name="mix" aria-label="Payer mix">{html.escape(default)}</textarea>
     </div>
     <div class="ps-form-grid">
       <div class="ps-form-field"><label>Target name</label>

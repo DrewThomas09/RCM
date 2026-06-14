@@ -718,7 +718,7 @@ def _landing() -> str:
         '<div class="da-form-eyebrow">'
         'Fixture mode · auto-build from CCD</div>'
         '<label class="da-form-label">CCD fixture</label>'
-        '<select name="dataset" class="da-form-select">'
+        '<select name="dataset" class="da-form-select" aria-label="CCD fixture">'
         '<option value="">(pick a fixture, optional)</option>'
         f'{options}</select>'
         f'<div class="da-form-grid">{form_fields}</div>'

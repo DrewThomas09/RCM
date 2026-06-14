@@ -463,9 +463,9 @@ def _landing_page() -> str:
         + title_block
         + '<form method="GET" action="/diligence/counterfactual" class="cf-form">'
         + '<label class="cf-form-label">Dataset</label>'
-        + f'<select name="dataset" required><option value="">(pick a CCD fixture)</option>{options}</select>'
+        + f'<select name="dataset" required aria-label="Dataset"><option value="">(pick a CCD fixture)</option>{options}</select>'
         + '<label class="cf-form-label">Structure (optional)</label>'
-        + '<select name="legal_structure">'
+        + '<select name="legal_structure" aria-label="Structure (optional)">'
         + '<option value="">(none)</option>'
         + '<option>FRIENDLY_PC_PASS_THROUGH</option>'
         + '<option>MSO_PC_MANAGEMENT_FEE</option>'

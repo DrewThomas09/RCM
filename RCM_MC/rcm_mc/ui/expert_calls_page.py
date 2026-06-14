@@ -190,6 +190,7 @@ def _coverage_block(read: Dict[str, Any], qs: Dict[str, Any],
             f'{html.escape(s["label"])}</td>'
             f'<td style="padding:7px 10px;text-align:right;">'
             f'<input type="number" name="done_{s["key"]}" min="0" max="99" '
+            f'aria-label="{html.escape(s["label"], quote=True)} calls done" '
             f'value="{r["done"]}" style="width:58px;height:28px;'
             f'border:1px solid #c9c1ac;border-radius:5px;text-align:right;'
             f'padding:0 6px;"></td>'

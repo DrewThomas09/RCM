@@ -2938,7 +2938,7 @@ def render_regression_page(
         '<input type="hidden" name="submitted" value="1">'
         '<div>'
         '<label class="rg-selector-label">Data Source</label>'
-        '<select name="source" class="rg-selector-input">'
+        '<select name="source" class="rg-selector-input" aria-label="Data Source">'
         f'<option value="hcris" {"selected" if data_source == "hcris" else ""}>'
         f'HCRIS National ({len(hcris_df) if hcris_df is not None else "~6000"} hospitals)</option>'
         f'<option value="portfolio" {"selected" if data_source == "portfolio" else ""}>'
@@ -2946,7 +2946,7 @@ def render_regression_page(
         '</select></div>'
         '<div>'
         '<label class="rg-selector-label">Target Variable</label>'
-        '<select name="target" class="rg-selector-input">'
+        '<select name="target" class="rg-selector-input" aria-label="Target Variable">'
     )
 
     metrics = (_HCRIS_METRICS + _COMPUTED_HCRIS) if data_source == "hcris" else _AVAILABLE_METRICS

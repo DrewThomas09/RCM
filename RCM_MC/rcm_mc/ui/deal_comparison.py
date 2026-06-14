@@ -446,7 +446,7 @@ def render_screen_page(
     sort_select = (
         f'<div><label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
         f'Sort by</label>'
-        f'<select name="sort" style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
+        f'<select name="sort" aria-label="Sort by" style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
         f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;">'
         + "".join(
             f'<option value="{v}"{" selected" if v == sort_val else ""}>{_esc(lbl)}</option>'

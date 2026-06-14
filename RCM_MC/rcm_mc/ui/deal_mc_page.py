@@ -92,6 +92,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             f'font-weight:600;display:block;margin-bottom:4px;">'
             f'{html.escape(label)}</label>'
             f'<input name="{name}" value="{html.escape(value)}" '
+            f'aria-label="{html.escape(label)}" '
             f'style="width:100%;padding:6px 8px;background:{P["panel_alt"]};'
             f'color:{P["text"]};border:1px solid {P["border"]};'
             f'font-family:inherit;"></div>'

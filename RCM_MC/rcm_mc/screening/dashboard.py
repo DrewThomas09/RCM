@@ -206,7 +206,7 @@ def render_screening_dashboard(
         '<form class="scr-filters" method="GET" '
         'action="/screening/dashboard">')
     parts.append('<label>Sector</label>')
-    parts.append('<select name="sector">')
+    parts.append('<select name="sector" aria-label="Sector">')
     parts.append('<option value="">All</option>')
     cur_sector = (flt.sectors[0] if flt.sectors else "")
     for s in sector_options:
@@ -219,17 +219,20 @@ def render_screening_dashboard(
     parts.append(
         f'<input name="size_min" type="number" step="1" '
         f'value="{flt.size_min_mm or ""}" '
+        f'aria-label="EBITDA $M minimum" '
         f'style="width:80px;">')
     parts.append('<label>EBITDA $M ≤</label>')
     parts.append(
         f'<input name="size_max" type="number" step="1" '
         f'value="{flt.size_max_mm or ""}" '
+        f'aria-label="EBITDA $M maximum" '
         f'style="width:80px;">')
     parts.append('<label>Conf ≥</label>')
     parts.append(
         f'<input name="confidence_floor" type="number" '
         f'step="0.05" min="0" max="1" '
         f'value="{flt.confidence_floor}" '
+        f'aria-label="Confidence floor" '
         f'style="width:80px;">')
     parts.append('<label>Exclude</label>')
     parts.append(
