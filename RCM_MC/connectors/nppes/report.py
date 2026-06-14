@@ -14,7 +14,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from . import cdd, systems as _systems
+from . import cdd, screen as _screen, systems as _systems
 
 
 def market_brief_data(
@@ -51,6 +51,9 @@ def market_brief_data(
         store, classification=classification, geo_level=geo_level, geo=geo,
         max_captive=3, limit=25)
     roster = cdd.roster_integrity(store, geo_level=geo_level)
+    long_list = _screen.screen_targets(
+        store, thesis="platform", geo_level=geo_level, geo=geo,
+        classification=classification, limit=15)
 
     avg_hhi = round(sum(r["hhi"] for r in conc) / len(conc), 1) if conc else None
     return {
@@ -64,6 +67,7 @@ def market_brief_data(
         "platforms": platforms,
         "health_systems": sys_all[:15],
         "rollup_targets": targets,
+        "target_screen": long_list,
         "roster": {k: v for k, v in roster.items() if k != "by_geo"},
     }
 
@@ -163,6 +167,17 @@ def market_brief_markdown(
     for r in d["rollup_targets"][:15]:
         L.append(f"| {r['organization_name'] or '(unnamed)'} | {r['npi']} | "
                  f"{r['geo']} | {r['captive_providers']} |")
+
+    if d.get("target_screen"):
+        L += ["", "## 5b. Acquisition long-list (platform target screen)",
+              "_Score = 0.35·market-growth + 0.35·fragmentation + "
+              "0.30·scale-fit (see `screen.py`)._",
+              "",
+              "| Organization | NPI | Geography | Captive | Score |",
+              "|---|---|---|---:|---:|"]
+        for r in d["target_screen"][:10]:
+            L.append(f"| {r['organization_name'] or '(unnamed)'} | {r['npi']} | "
+                     f"{r['geo']} | {r['captive_providers']} | {r['score']} |")
 
     ro = d["roster"]
     L += ["", "## 6. Roster integrity (revenue-base risk)",

@@ -105,7 +105,10 @@ them into an IC-ready market-structure brief.
 | `fragmentation_scan` | Is there roll-up runway? (independent share × low HHI × firm count) |
 | `affiliation_footprint` | Who are the platforms? (orgs ranked by captive-provider volume) |
 | `rollup_targets` | What are the add-on candidates? (sub-scale independent orgs) |
+| `enumeration_trend` | Is the market growing? (new-vs-deactivated cohorts by year) |
 | `roster_integrity` | What's the revenue-base risk? (deactivation/reactivation rates) |
+| `systems.health_systems` | Who are the multi-site systems? (org→org clustering) |
+| `screen.screen_targets` | Ranked acquisition long-list (platform/add-on thesis scoring) |
 
 ```bash
 # One-shot IC-ready brief for a thesis

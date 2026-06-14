@@ -22,7 +22,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from . import api, cdd, pipeline, report, synth, systems
+from . import api, cdd, pipeline, report, screen, synth, systems
 from .connector import NppesConnector
 from .store import NppesStore
 
@@ -114,6 +114,9 @@ def _cmd_cdd(args) -> int:
         "roster": lambda: cdd.roster_integrity(store, geo_level=args.geo_level),
         "platforms": lambda: cdd.affiliation_footprint(store, limit=args.limit),
         "systems": lambda: systems.health_systems(store, limit=args.limit),
+        "screen": lambda: screen.screen_targets(
+            store, thesis=args.thesis, geo_level=args.geo_level, geo=args.geo,
+            classification=args.classification, limit=args.limit),
         "rollup": lambda: cdd.rollup_targets(
             store, classification=args.classification, geo_level=args.geo_level,
             geo=args.geo, limit=args.limit),
@@ -151,13 +154,15 @@ def main(argv=None) -> int:
     sp = sub.add_parser("cdd", help="commercial-diligence market analytics")
     sp.add_argument("metric", choices=["tam", "concentration", "fragmentation",
                                        "growth", "roster", "platforms", "rollup",
-                                       "systems", "report"])
+                                       "systems", "screen", "report"])
     sp.add_argument("--db", default="nppes.db")
     sp.add_argument("--geo-level", default="state",
                     choices=["state", "city", "zip5", "county"])
     sp.add_argument("--geo")
     sp.add_argument("--classification")
     sp.add_argument("--limit", type=int, default=25)
+    sp.add_argument("--thesis", default="platform", choices=["platform", "addon"],
+                    help="target-screen thesis (for the 'screen' metric)")
     sp.add_argument("--out", help="write report markdown to this path")
     sp.set_defaults(fn=_cmd_cdd)
 

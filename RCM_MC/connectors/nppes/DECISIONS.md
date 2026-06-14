@@ -148,3 +148,15 @@ solo practices in one state; cohesion + member list surface that. Kept as a
 read-only analytics function (no materialized table, no pipeline/schema
 change). Exposed via `cdd systems`, `/v1/lookup/market/systems`, and the
 market brief (section 4b).
+
+## D14 — Target screen (acquisition long-list synthesizer)
+The six metric surfaces answer individual questions; a deal team wants one
+ranked list. `screen.py` scores every in-scope Type-2 org on three
+normalized axes — market growth (recent net provider growth of its geo ×
+specialty market), fragmentation (its market's roll-up score), and scale-fit
+(captive footprint vs. the thesis) — weighted (0.35/0.35/0.30, overridable)
+into a 0–100 score. `thesis='platform'` rewards captive scale; `'addon'`
+rewards sub-scale independents (scale-fit inverts). Every candidate carries a
+transparent component breakdown + rationale so the ranking is defensible.
+Exposed via `cdd screen --thesis …`, `/v1/lookup/market/screen`, and the
+market brief (section 5b).
