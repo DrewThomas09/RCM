@@ -184,7 +184,7 @@ def render_dashboard_v2(store: Any) -> str:
     <div class="dash-actions">
       <a href="/new-deal">+ New Deal</a>
       <a href="/portfolio/heatmap">Heatmap</a>
-      <a href="/portfolio/monte-carlo">Portfolio MC</a>
+      <a href="/scenarios">Portfolio MC</a>
       <a href="/screen">Screen Deals</a>
     </div>
     """

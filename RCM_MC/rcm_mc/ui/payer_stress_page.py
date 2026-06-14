@@ -837,8 +837,8 @@ def _verdict_card(report: PayerStressReport) -> str:
     # path + Copy-share-link + IC/denial drilldown cross-links.
     intro_actions = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/ic-memo">Open IC memo →</a>'
-        '<a href="/denial-drilldown">Open denial drilldown →</a>'
+        '<a href="/ic-memo-gen">Open IC memo →</a>'
+        '<a href="/diligence/denial-prediction">Open denial drilldown →</a>'
     )
     intro = _ps_head(
         eyebrow=f"Payer Stress · {verdict}",
@@ -1106,8 +1106,8 @@ def render_payer_stress_page(
     # 2026-05-28 sweep · strict 5-block head for the main intro path.
     main_intro_actions = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/ic-memo">Open IC memo →</a>'
-        '<a href="/denial-drilldown">Open denial drilldown →</a>'
+        '<a href="/ic-memo-gen">Open IC memo →</a>'
+        '<a href="/diligence/denial-prediction">Open denial drilldown →</a>'
     )
     main_intro = _ps_head(
         eyebrow="Payer Mix Stress Lab",
