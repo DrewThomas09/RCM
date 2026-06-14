@@ -19,6 +19,8 @@ Partners ask:
 
 1. **Huff gravity model** (`huff_capture`) — for each demand point (population centroid), P(choose facility j) ∝ `attractiveness_j / distance_ij^β`, normalized across all competitors. Expected capture for j is the demand-weighted sum. `β` tunes distance decay (higher = patients stick closer). Distances via **haversine** — no geo dependency.
 2. **Moran's I** (`morans_i`) — global spatial autocorrelation of a variable (utilization, cost) over locations, with inverse-distance row-standardized weights, a normal-approximation z/p, and a **CLUSTERED / DISPERSED / RANDOM** verdict.
+3. **Local Moran's I / LISA** (`local_morans_i`) — *where* the clustering is: classifies each location as a hot spot (High-High), cold spot (Low-Low), or spatial outlier (High-Low / Low-High) with a conditional-permutation pseudo p-value. Global Moran's I says whether utilization clusters; LISA says which facilities sit in a real catchment vs are isolated.
+4. **New-entrant impact** (`competitor_impact`) — runs the Huff model with and without a hypothetical new competitor and returns the target's volume-at-risk: the rigorous answer to "how much does the clinic opening down the road actually take from us?"
 
 ## The demo moment
 

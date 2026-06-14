@@ -31,7 +31,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 
@@ -281,5 +281,198 @@ def morans_i(
     res.headline = (
         f"Moran's I = {i_stat:.3f} (E[I]={E_I:.3f}, z={z_score:.2f}, p={p:.3f}): "
         f"utilization is spatially {verdict.value.lower()}."
+    )
+    return res
+
+
+# ────────────────────────────────────────────────────────────────────
+# Local Moran's I (LISA) — where the hot/cold spots are
+# ────────────────────────────────────────────────────────────────────
+
+@dataclass
+class LisaPoint:
+    """Local indicator of spatial association for one location."""
+    index: int
+    local_i: float
+    spatial_lag: float
+    quadrant: str                    # HH / LL / HL / LH
+    p_value: float
+    significant: bool
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "index": self.index,
+            "local_i": round(self.local_i, 6),
+            "spatial_lag": round(self.spatial_lag, 6),
+            "quadrant": self.quadrant,
+            "p_value": round(self.p_value, 4),
+            "significant": self.significant,
+        }
+
+
+@dataclass
+class LisaResult:
+    points: List[LisaPoint]
+    n: int
+    n_hot: int                       # significant High-High
+    n_cold: int                      # significant Low-Low
+    headline: str = ""
+    source_module: str = SOURCE_MODULE
+    citation_key: str = CITATION_KEY
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "points": [p.to_dict() for p in self.points],
+            "n": self.n, "n_hot": self.n_hot, "n_cold": self.n_cold,
+            "headline": self.headline,
+            "source_module": self.source_module,
+            "citation_key": self.citation_key,
+        }
+
+
+def local_morans_i(
+    lats: Sequence[float],
+    lons: Sequence[float],
+    values: Sequence[float],
+    min_distance_km: float = 0.5,
+    permutations: int = 199,
+    seed: int = 0,
+) -> LisaResult:
+    """Local Moran's I (LISA) — classifies each location as a hot spot
+    (High-High), cold spot (Low-Low), or spatial outlier (High-Low /
+    Low-High), with a conditional-permutation pseudo p-value.
+
+    Global Moran's I says *whether* utilization clusters; LISA says
+    *where* — which facilities sit in a high-utilization neighborhood
+    (a real catchment) vs which are isolated outliers. The permutation
+    test (hold location i fixed, shuffle the rest) is dependency-free
+    and the standard LISA inference."""
+    lat = np.asarray(lats, dtype=float)
+    lon = np.asarray(lons, dtype=float)
+    x = np.asarray(values, dtype=float)
+    n = len(x)
+    if n < 3:
+        return LisaResult([], n, 0, 0, "Too few locations for LISA (need ≥3).")
+
+    W = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
+            d = max(haversine_km(lat[i], lon[i], lat[j], lon[j]), min_distance_km)
+            W[i, j] = 1.0 / d
+    row_sums = W.sum(axis=1, keepdims=True)
+    row_sums[row_sums == 0] = 1.0
+    W = W / row_sums
+
+    z = x - x.mean()
+    m2 = float((z ** 2).sum()) / n
+    if m2 == 0:
+        return LisaResult([], n, 0, 0, "Zero variance — LISA undefined.")
+
+    rng = np.random.default_rng(seed)
+    points: List[LisaPoint] = []
+    n_hot = n_cold = 0
+    for i in range(n):
+        lag = float(W[i] @ z)
+        ii = (z[i] / m2) * lag
+        # Conditional permutation: shuffle the other n-1 z's into j≠i.
+        others = np.delete(z, i)
+        w_i = np.delete(W[i], i)
+        perm_i = np.empty(permutations)
+        for p in range(permutations):
+            shuffled = rng.permutation(others)
+            perm_i[p] = (z[i] / m2) * float(w_i @ shuffled)
+        ge = int(np.sum(np.abs(perm_i) >= abs(ii)))
+        pval = (ge + 1) / (permutations + 1)
+        if z[i] > 0 and lag > 0:
+            quad = "HH"
+        elif z[i] < 0 and lag < 0:
+            quad = "LL"
+        elif z[i] > 0 and lag < 0:
+            quad = "HL"
+        else:
+            quad = "LH"
+        sig = pval < 0.05
+        if sig and quad == "HH":
+            n_hot += 1
+        elif sig and quad == "LL":
+            n_cold += 1
+        points.append(LisaPoint(i, ii, lag, quad, pval, sig))
+
+    res = LisaResult(points=points, n=n, n_hot=n_hot, n_cold=n_cold)
+    res.headline = (
+        f"LISA over {n} locations: {n_hot} hot spot(s) (High-High), "
+        f"{n_cold} cold spot(s) (Low-Low) at p<0.05."
+    )
+    return res
+
+
+# ────────────────────────────────────────────────────────────────────
+# New-entrant competitive impact
+# ────────────────────────────────────────────────────────────────────
+
+@dataclass
+class EntrantImpactResult:
+    target_facility_id: str
+    capture_before: float
+    capture_after: float
+    volume_at_risk: float            # before − after (≥0 when entrant hurts)
+    pct_volume_lost: float
+    new_entrant_capture: float
+    headline: str = ""
+    source_module: str = SOURCE_MODULE
+    citation_key: str = CITATION_KEY
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "target_facility_id": self.target_facility_id,
+            "capture_before": round(self.capture_before, 2),
+            "capture_after": round(self.capture_after, 2),
+            "volume_at_risk": round(self.volume_at_risk, 2),
+            "pct_volume_lost": round(self.pct_volume_lost, 6),
+            "new_entrant_capture": round(self.new_entrant_capture, 2),
+            "headline": self.headline,
+            "source_module": self.source_module,
+            "citation_key": self.citation_key,
+        }
+
+
+def competitor_impact(
+    demand_points: Sequence[DemandPoint],
+    existing_facilities: Sequence[Facility],
+    new_entrant: Facility,
+    target_facility_id: str,
+    beta: float = 2.0,
+    min_distance_km: float = 0.5,
+) -> EntrantImpactResult:
+    """Volume-at-risk to a target facility from a new competitor opening.
+
+    Runs the Huff model with and without ``new_entrant`` and returns the
+    target's capture before/after, the absolute volume at risk, and the
+    new entrant's own capture — the rigorous answer to "how much does
+    the clinic opening down the road actually take from us?\""""
+    before = huff_capture(
+        demand_points, existing_facilities, beta=beta,
+        min_distance_km=min_distance_km, target_facility_id=target_facility_id,
+    )
+    after = huff_capture(
+        demand_points, list(existing_facilities) + [new_entrant], beta=beta,
+        min_distance_km=min_distance_km, target_facility_id=target_facility_id,
+    )
+    cap_before = before.target_capture or 0.0
+    cap_after = after.target_capture or 0.0
+    var = cap_before - cap_after
+    pct = (var / cap_before) if cap_before > 0 else 0.0
+    res = EntrantImpactResult(
+        target_facility_id=target_facility_id,
+        capture_before=cap_before, capture_after=cap_after,
+        volume_at_risk=var, pct_volume_lost=pct,
+        new_entrant_capture=after.facility_capture.get(new_entrant.facility_id, 0.0),
+    )
+    res.headline = (
+        f"New entrant {new_entrant.facility_id} puts {var:,.0f} units "
+        f"({pct * 100:.1f}% of capture) at risk for {target_facility_id} "
+        f"(capture {cap_before:,.0f} → {cap_after:,.0f})."
     )
     return res

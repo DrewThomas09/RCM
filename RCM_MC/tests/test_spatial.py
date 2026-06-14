@@ -9,8 +9,10 @@ from rcm_mc.diligence.spatial import (
     DemandPoint,
     Facility,
     SpatialVerdict,
+    competitor_impact,
     haversine_km,
     huff_capture,
+    local_morans_i,
     morans_i,
 )
 
@@ -117,6 +119,67 @@ class MoransITests(unittest.TestCase):
     def test_dict(self):
         res = morans_i([40, 41, 42, 43], [-75, -75, -75, -75],
                        [1.0, 2.0, 3.0, 4.0])
+        self.assertEqual(res.to_dict()["citation_key"], "SP1")
+
+
+class LisaTests(unittest.TestCase):
+
+    def test_hot_spot_detected(self):
+        # North cluster high, south cluster low → north points are HH.
+        lats = [41.0, 41.01, 41.02, 40.0, 40.01, 40.02]
+        lons = [-75.0] * 6
+        vals = [100.0, 102.0, 98.0, 10.0, 9.0, 11.0]
+        res = local_morans_i(lats, lons, vals, permutations=199, seed=0)
+        self.assertEqual(res.n, 6)
+        quads = {p.index: p.quadrant for p in res.points}
+        # The high northern points sit in a high neighborhood → HH.
+        self.assertEqual(quads[0], "HH")
+        self.assertEqual(quads[3], "LL")
+
+    def test_zero_variance(self):
+        res = local_morans_i([40, 41, 42], [-75, -75, -75], [5.0, 5.0, 5.0])
+        self.assertEqual(res.points, [])
+
+    def test_too_few(self):
+        res = local_morans_i([40, 41], [-75, -75], [1.0, 2.0])
+        self.assertEqual(res.n, 2)
+        self.assertEqual(res.points, [])
+
+    def test_pvalues_valid_and_dict(self):
+        res = local_morans_i([40, 41, 42, 43], [-75, -75, -75, -75],
+                             [1.0, 2.0, 3.0, 4.0], permutations=99)
+        for p in res.points:
+            self.assertGreater(p.p_value, 0.0)
+            self.assertLessEqual(p.p_value, 1.0)
+        self.assertEqual(res.to_dict()["citation_key"], "SP1")
+
+
+class EntrantImpactTests(unittest.TestCase):
+
+    def test_new_entrant_takes_volume(self):
+        demand = [DemandPoint("d1", 40.0, -75.0, 1000.0)]
+        existing = [Facility("target", 40.02, -75.0, 100.0),
+                    Facility("incumbent", 40.5, -75.0, 100.0)]
+        entrant = Facility("newco", 40.03, -75.0, 150.0)  # right next to target
+        res = competitor_impact(demand, existing, entrant, "target")
+        self.assertGreater(res.volume_at_risk, 0)
+        self.assertLess(res.capture_after, res.capture_before)
+        self.assertGreater(res.new_entrant_capture, 0)
+        self.assertGreater(res.pct_volume_lost, 0)
+
+    def test_distant_entrant_minimal_impact(self):
+        demand = [DemandPoint("d1", 40.0, -75.0, 1000.0)]
+        existing = [Facility("target", 40.01, -75.0, 100.0)]
+        far = Facility("newco", 48.0, -110.0, 100.0)   # far away
+        res = competitor_impact(demand, existing, far, "target")
+        self.assertLess(res.pct_volume_lost, 0.05)
+
+    def test_dict_and_headline(self):
+        demand = [DemandPoint("d1", 40.0, -75.0, 100.0)]
+        existing = [Facility("target", 40.0, -75.0, 100.0)]
+        entrant = Facility("newco", 40.0, -75.0, 100.0)
+        res = competitor_impact(demand, existing, entrant, "target")
+        self.assertTrue(res.headline)
         self.assertEqual(res.to_dict()["citation_key"], "SP1")
 
 

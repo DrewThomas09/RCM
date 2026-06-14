@@ -10,22 +10,32 @@ from __future__ import annotations
 
 from .competition import (
     DemandPoint,
+    EntrantImpactResult,
     Facility,
     HuffResult,
+    LisaPoint,
+    LisaResult,
     MoranResult,
     SpatialVerdict,
+    competitor_impact,
     haversine_km,
     huff_capture,
+    local_morans_i,
     morans_i,
 )
 
 __all__ = [
     "DemandPoint",
+    "EntrantImpactResult",
     "Facility",
     "HuffResult",
+    "LisaPoint",
+    "LisaResult",
     "MoranResult",
     "SpatialVerdict",
+    "competitor_impact",
     "haversine_km",
     "huff_capture",
+    "local_morans_i",
     "morans_i",
 ]
