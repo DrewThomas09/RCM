@@ -191,3 +191,13 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest test_two_audience.py => 6 passed. Registry-wide sweep: zero
   partner leakage; both views render core pack; injected-leak detector works.
 - Next: BOLSTER-05 chart-pack rendering standards.
+================================================================================
+[2026-06-14 05:42 UTC] BOLSTER-05 Chart-pack standards
+- cdd/chartpack.py: validate_standards (mandatory footnote source/vintage/
+  assumptions, IBCS green/red/blue waterfall convention, no em-dash in labels),
+  snapshot_exhibit (stable fingerprint), audit_standards (registry sweep).
+- Caught + fixed a real violation: NEW-16 CM end point was green; totals must be
+  blue. Fixed pricing_cm_bridge.py.
+- Evidence: pytest test_chartpack_standards.py => 6 passed; registry sweep 0
+  violations across 20 features; snapshots stable.
+- Next: BOLSTER-06 DECISIONS.md routing pattern.

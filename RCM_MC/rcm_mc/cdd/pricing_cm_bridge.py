@@ -78,7 +78,7 @@ def pricing_cm_bridge(
         cm_points.append({"label": str(v.get("name", "Variable cost")),
                           "value": -_line_amount(v, volume), "kind": "delta", "color": "red"})
     cm_points.append({"label": "Contribution margin", "value": contribution_margin,
-                      "kind": "end", "color": "green" if contribution_margin >= 0 else "red"})
+                      "kind": "end", "color": "blue"})
 
     reconciliations = [
         Reconciliation(identity="gross - discounts - rebates == net price",

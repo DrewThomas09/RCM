@@ -262,11 +262,11 @@
       "bucket": "bolster",
       "audience": "both",
       "priority": 105,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_chartpack_standards.py",
-      "notes": ""
+      "notes": "chartpack.py validate_standards (footnote/IBCS color/em-dash) + snapshot; registry sweep 0 violations; caught+fixed NEW-16 CM end-point color."
     },
     {
       "id": "BOLSTER-06",
