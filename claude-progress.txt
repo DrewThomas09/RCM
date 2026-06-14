@@ -127,3 +127,10 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   (>=40%) understatement flag; 55% national anchor; 100% MA uncomputable guard.
 - Evidence: pytest => 8 passed. X MA0.5->2000, Y MA0.2->1250 hand-verified.
 - Next: NEW-14 quality/outcomes benchmarking.
+================================================================================
+[2026-06-14 04:00 UTC] NEW-14 Quality benchmarking
+- quality_benchmark.py: directional percentile rank (100=best) vs peers; vs
+  national; bottom-quartile (<25) operational-risk flag; small-hospital
+  suppression excluded+flagged.
+- Evidence: pytest => 7 passed. readmit 40 / mortality 0 (bottom-q) / hcahps 100.
+- Next: NEW-15 competitive positioning map.

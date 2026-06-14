@@ -166,11 +166,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_quality_benchmark.py",
-      "notes": ""
+      "notes": "Directional percentile (100=best): readmit 40/mortality 0/hcahps 100 hand-verified; bottom-quartile flag; suppression handled."
     },
     {
       "id": "NEW-15",
