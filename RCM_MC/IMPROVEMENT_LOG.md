@@ -4861,3 +4861,25 @@ a deliberately aliased+deleted `_np_for_grid` forward-ref in
 **Verify**: F821 clears on all three; `compileall` clean; escalations page
 renders (274 KB); ic_packet/physician/escalation suites 87 passed / 2
 skipped; the new IC-packet regression test goes red on the pre-fix tree.
+
+## W4-004 (2026-06-14) — Error sweep: full-suite red on main — two Guide-blind live pages
+Ran the **full** local suite (16,259 tests) — which PR CI does NOT run (CI is
+a ~175-test go-live subset) — and caught a failure that is **pre-existing on
+origin/main** (confirmed by re-running the test on a clean `origin/main`
+checkout): `test_guide_context_sufficiency::test_no_live_tools_page_is_guide_blind`
+listed `['/cross-analysis', '/data-apis']` as live `/tools` pages with **no
+Guide page-context** — i.e. a partner asking the Guide about either page got
+nothing. `/data-apis` is a newly-added page; `/cross-analysis` had also never
+been mapped.
+- Added two full `_ctx(...)` entries to `manual_page_contexts.py`:
+  - **`/data-apis`** (LIBRARY_REFERENCE) — the public-data API catalog:
+    purpose, access/rate-limit/status semantics, coverage-by-question,
+    metadata-only/no-fetch caveat.
+  - **`/cross-analysis`** (RESEARCH_BACKTESTING) — two-dataset state-grain
+    correlation: Pearson r / R² / OLS trendline, inner-join-on-state logic,
+    n-sample caveat, correlation≠causation + linear-only limits.
+- Both carry only related_routes that resolve (the dead-cross-link guard
+  `test_related_routes_have_no_dead_cross_links` passes).
+**Verify**: full guide-context suite 16/16 (was 15/16); broader
+guide/context/palette/tools-index sweep **425 passed / 1 skipped**; the
+blind-page list is now empty.
