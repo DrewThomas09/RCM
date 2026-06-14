@@ -160,5 +160,35 @@ class CoxTests(unittest.TestCase):
         self.assertEqual(res.to_dict()["citation_key"], "SV1")
 
 
+class CoxTiesTests(unittest.TestCase):
+
+    def test_efron_equals_breslow_without_ties(self):
+        # Distinct event times → the two corrections must agree.
+        t = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+        e = [1, 1, 1, 1, 1, 1, 1, 1]
+        x = [[v] for v in (0.5, -0.3, 1.2, -1.0, 0.1, 0.8, -0.6, 0.2)]
+        b = cox_ph(t, e, x, ties="breslow")
+        ef = cox_ph(t, e, x, ties="efron")
+        self.assertAlmostEqual(b.covariates[0].coef, ef.covariates[0].coef,
+                               places=6)
+
+    def test_efron_runs_with_heavy_ties_and_recovers_sign(self):
+        rng = np.random.default_rng(9)
+        n = 400
+        x = rng.normal(0, 1, n)
+        scale = 1.0 / (0.1 * np.exp(1.0 * x))
+        t_event = rng.exponential(scale)
+        # Coarsen to integer times → many ties.
+        t = np.ceil(np.minimum(t_event, rng.uniform(0, 30, n)))
+        e = (t_event <= rng.uniform(0, 30, n)).astype(int)
+        res = cox_ph(t, e, x.reshape(-1, 1), ties="efron")
+        self.assertGreater(res.tie_fraction, 0.3)   # genuinely tied
+        self.assertGreater(res.covariates[0].hazard_ratio, 1.0)
+
+    def test_invalid_ties_raises(self):
+        with self.assertRaises(ValueError):
+            cox_ph([1, 2], [1, 1], [[0.0], [1.0]], ties="nope")
+
+
 if __name__ == "__main__":
     unittest.main()

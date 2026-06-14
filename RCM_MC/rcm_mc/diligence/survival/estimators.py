@@ -17,16 +17,17 @@ What's here (all numpy + stdlib — numpy is already a repo runtime dep):
 * :func:`logrank_test` — compares two survival curves (e.g. treated vs
   control cohort, or high- vs low-acuity). Chi-square with 1 df; the
   p-value uses ``math.erfc`` (no scipy).
-* :func:`cox_ph` — Cox proportional-hazards regression by Breslow
-  partial likelihood, fit with Newton-Raphson. Returns hazard ratios,
-  cluster-free SEs from the observed information, z/p, and a
-  concordance (Harrell's C) goodness-of-fit. This is the "which
-  factors raise readmission/churn risk, holding the others fixed"
-  workhorse.
+* :func:`cox_ph` — Cox proportional-hazards regression by partial
+  likelihood, fit with Newton-Raphson, with Breslow (default) or Efron
+  tie handling. Returns hazard ratios, cluster-free SEs from the
+  observed information, z/p, and a concordance (Harrell's C)
+  goodness-of-fit. This is the "which factors raise readmission/churn
+  risk, holding the others fixed" workhorse.
 
 Honesty about the method, surfaced not buried:
-    * Breslow tie handling (simplest; fine when ties are not dominant —
-      ``tie_fraction`` is reported so you can see if Efron would matter).
+    * Tie handling defaults to Breslow (fast, slightly biased when ties
+      are heavy); pass ``ties="efron"`` for the more accurate correction.
+      ``tie_fraction`` is reported so you can see whether it matters.
     * SEs are model-based (observed information), not robust to
       mis-specified proportional hazards. ``cox_ph`` returns the
       Schoenfeld-style ``ph_test_pvalue`` so a violated PH assumption
@@ -341,14 +342,23 @@ def cox_ph(
     confidence: float = 0.95,
     max_iter: int = 50,
     tol: float = 1e-7,
+    ties: str = "breslow",
 ) -> CoxResult:
-    """Cox proportional-hazards regression (Breslow ties, Newton-Raphson).
+    """Cox proportional-hazards regression (Newton-Raphson).
 
     ``covariates`` is row-per-subject (n × p). Covariates are mean-
     centered internally for numerical stability (coefficients are
     unaffected). Returns hazard ratios with model-based SEs from the
     observed information matrix, plus Harrell's concordance and a
-    proportional-hazards diagnostic."""
+    proportional-hazards diagnostic.
+
+    ``ties`` selects the tie-handling correction: ``"breslow"`` (the
+    default, fast, slightly biased toward 0 when ties are heavy) or
+    ``"efron"`` (more accurate with tied event times — the modern
+    default elsewhere; reduces the tied-event risk set by the standard
+    averaged fractions). They agree exactly when no event times tie."""
+    if ties not in ("breslow", "efron"):
+        raise ValueError("ties must be 'breslow' or 'efron'")
     t = np.asarray(durations, dtype=float)
     e = np.asarray(events, dtype=int)
     X = np.asarray(covariates, dtype=float)
@@ -385,9 +395,11 @@ def cox_ph(
                 continue
             S1 = (th[:, None] * Xr).sum(axis=0)        # (p,)
             S2 = (th[:, None, None] * (Xr[:, :, None] * Xr[:, None, :])).sum(axis=0)
-            mean_r = S1 / S0
-            grad += Xc[d_mask].sum(axis=0) - d * mean_r
-            info += d * (S2 / S0 - np.outer(mean_r, mean_r))
+            sum_means, info_contrib, _ = _tie_terms(
+                S0, S1, S2, theta, Xc, d_mask, d, ties,
+            )
+            grad += Xc[d_mask].sum(axis=0) - sum_means
+            info += info_contrib
         try:
             step = np.linalg.solve(info, grad)
         except np.linalg.LinAlgError:
@@ -415,7 +427,7 @@ def cox_ph(
             ci_high_hr=math.exp(coef + z_crit * se_j),
         ))
 
-    ll = _cox_loglik(Xc, t, e, beta, event_times)
+    ll = _cox_loglik(Xc, t, e, beta, event_times, ties)
     c_index = _concordance(t, e, Xc @ beta)
     ph_p = _ph_test(Xc, t, e, beta, event_times)
     res = CoxResult(
@@ -439,7 +451,44 @@ def _tie_fraction(t, e, event_times) -> float:
     return tied / n_ev
 
 
-def _cox_loglik(Xc, t, e, beta, event_times) -> float:
+def _tie_terms(S0, S1, S2, theta, Xc, d_mask, d, ties):
+    """Per-event-time contribution to the score (Σ means), information,
+    and the log-denominator, for Breslow or Efron tie handling.
+
+    Breslow uses the full risk-set sums d times. Efron, for the l-th of
+    d tied events, removes the average fraction l/d of the tied events'
+    own mass (D0/D1/D2) from the risk set — the standard correction that
+    avoids over-counting the tied subjects' contribution to their own
+    risk sets."""
+    p = S1.shape[0]
+    if ties == "breslow" or d == 1:
+        mean_r = S1 / S0
+        sum_means = d * mean_r
+        info_contrib = d * (S2 / S0 - np.outer(mean_r, mean_r))
+        logdenom = d * math.log(S0)
+        return sum_means, info_contrib, logdenom
+    # Efron
+    th_d = theta[d_mask]
+    Xd = Xc[d_mask]
+    D0 = float(th_d.sum())
+    D1 = (th_d[:, None] * Xd).sum(axis=0)
+    D2 = (th_d[:, None, None] * (Xd[:, :, None] * Xd[:, None, :])).sum(axis=0)
+    sum_means = np.zeros(p)
+    info_contrib = np.zeros((p, p))
+    logdenom = 0.0
+    for k in range(d):
+        phi = k / d
+        s0 = S0 - phi * D0
+        s1 = S1 - phi * D1
+        s2 = S2 - phi * D2
+        m = s1 / s0
+        sum_means += m
+        info_contrib += s2 / s0 - np.outer(m, m)
+        logdenom += math.log(s0)
+    return sum_means, info_contrib, logdenom
+
+
+def _cox_loglik(Xc, t, e, beta, event_times, ties="breslow") -> float:
     eta = Xc @ beta
     theta = np.exp(eta)
     ll = 0.0
@@ -449,8 +498,13 @@ def _cox_loglik(Xc, t, e, beta, event_times) -> float:
         d = int(np.sum(d_mask))
         if d == 0:
             continue
-        S0 = theta[risk].sum()
-        ll += float(eta[d_mask].sum() - d * math.log(S0))
+        S0 = float(theta[risk].sum())
+        if ties == "breslow" or d == 1:
+            ll += float(eta[d_mask].sum()) - d * math.log(S0)
+        else:
+            D0 = float(theta[d_mask].sum())
+            logdenom = sum(math.log(S0 - (k / d) * D0) for k in range(d))
+            ll += float(eta[d_mask].sum()) - logdenom
     return ll
 
 
