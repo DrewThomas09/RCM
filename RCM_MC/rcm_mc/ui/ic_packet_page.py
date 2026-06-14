@@ -133,7 +133,7 @@ def _landing() -> str:
         '<form method="GET" action="/diligence/ic-packet" class="ic-form">'
         '<div class="ic-form-full">'
         '<label>Dataset</label>'
-        '<select name="dataset" required>'
+        '<select name="dataset" required aria-label="Dataset">'
         f'<option value="">(pick a CCD fixture)</option>{options}'
         '</select></div>'
     )

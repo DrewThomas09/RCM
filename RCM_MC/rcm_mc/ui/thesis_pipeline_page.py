@@ -105,7 +105,7 @@ def _landing() -> str:
     form = (
         '<form method="GET" action="/diligence/thesis-pipeline" class="tp-form">'
         '<label class="tp-form-label">CCD fixture</label>'
-        '<select name="dataset" required class="tp-form-select">'
+        '<select name="dataset" required class="tp-form-select" aria-label="CCD fixture">'
         '<option value="">(pick a fixture)</option>'
         f'{options}</select>'
         '<div class="tp-form-grid">'

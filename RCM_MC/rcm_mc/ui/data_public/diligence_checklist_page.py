@@ -151,13 +151,13 @@ def _input_form(params: dict) -> str:
     padding:14px 16px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;
     gap:12px;align-items:end">
   <div><label style="{lbl}">Sector</label>
-    <select name="sector" style="{inp}">{options}</select></div>
+    <select name="sector" style="{inp}" aria-label="Sector">{options}</select></div>
   <div><label style="{lbl}">EV ($M)</label>
-    <input name="ev" type="number" step="10" value="{ev}" style="{inp}"></div>
+    <input name="ev" type="number" step="10" value="{ev}" style="{inp}" aria-label="EV ($M)"></div>
   <div><label style="{lbl}">Commercial %</label>
-    <input name="comm" type="number" step="0.01" value="{comm}" style="{inp}"></div>
+    <input name="comm" type="number" step="0.01" value="{comm}" style="{inp}" aria-label="Commercial %"></div>
   <div><label style="{lbl}">AR Days (DSO)</label>
-    <input name="ar" type="number" step="1" value="{ar}" style="{inp}"></div>
+    <input name="ar" type="number" step="1" value="{ar}" style="{inp}" aria-label="AR Days (DSO)"></div>
   <div><button type="submit" style="{btn}">Generate</button></div>
 </form>'''
 

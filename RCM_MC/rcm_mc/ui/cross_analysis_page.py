@@ -20,18 +20,20 @@ def _fmt_num(v: Optional[float], nd: int = 2) -> str:
     return f"{v:.{nd}f}"
 
 
-def _ds_select(name: str, selected: str) -> str:
+def _ds_select(name: str, selected: str, aria_label: str = "") -> str:
     opts = ""
     for d in ca.state_grain_datasets():
         sel = " selected" if d.id == selected else ""
         opts += (f'<option value="{d.id}"{sel}>'
                  f'{html.escape(d.label)}</option>')
-    return (f'<select name="{name}" onchange="this.form.submit()" '
+    aria = f' aria-label="{html.escape(aria_label, quote=True)}"' if aria_label else ""
+    return (f'<select name="{name}"{aria} onchange="this.form.submit()" '
             f'style="width:100%;height:30px;border:1px solid #c9c1ac;'
             f'border-radius:5px;">{opts}</select>')
 
 
-def _measure_select(name: str, dataset_id: str, selected: str) -> str:
+def _measure_select(name: str, dataset_id: str, selected: str,
+                    aria_label: str = "") -> str:
     d = ca.fa.DATASETS.get(dataset_id)
     opts = ""
     if d is not None:
@@ -39,7 +41,8 @@ def _measure_select(name: str, dataset_id: str, selected: str) -> str:
             sel = " selected" if m.key == selected else ""
             opts += (f'<option value="{m.key}"{sel}>'
                      f'{html.escape(m.label)}</option>')
-    return (f'<select name="{name}" onchange="this.form.submit()" '
+    aria = f' aria-label="{html.escape(aria_label, quote=True)}"' if aria_label else ""
+    return (f'<select name="{name}"{aria} onchange="this.form.submit()" '
             f'style="width:100%;height:30px;border:1px solid #c9c1ac;'
             f'border-radius:5px;">{opts}</select>')
 
@@ -136,18 +139,18 @@ def render_cross_analysis_page(qs: "Optional[Dict[str, Any]]" = None) -> str:
         'padding:14px;">'
         '<div><div style="font-size:10px;letter-spacing:.06em;'
         'text-transform:uppercase;color:#7a8699;margin-bottom:3px;">'
-        'X dataset</div>' + _ds_select("x", spec["x_id"]) + '</div>'
+        'X dataset</div>' + _ds_select("x", spec["x_id"], "X dataset") + '</div>'
         '<div><div style="font-size:10px;letter-spacing:.06em;'
         'text-transform:uppercase;color:#7a8699;margin-bottom:3px;">'
-        'Y dataset</div>' + _ds_select("y", spec["y_id"]) + '</div>'
+        'Y dataset</div>' + _ds_select("y", spec["y_id"], "Y dataset") + '</div>'
         '<div><div style="font-size:10px;letter-spacing:.06em;'
         'text-transform:uppercase;color:#7a8699;margin-bottom:3px;">'
         'X measure</div>'
-        + _measure_select("xm", spec["x_id"], spec["x_measure"]) + '</div>'
+        + _measure_select("xm", spec["x_id"], spec["x_measure"], "X measure") + '</div>'
         '<div><div style="font-size:10px;letter-spacing:.06em;'
         'text-transform:uppercase;color:#7a8699;margin-bottom:3px;">'
         'Y measure</div>'
-        + _measure_select("ym", spec["y_id"], spec["y_measure"]) + '</div>'
+        + _measure_select("ym", spec["y_id"], spec["y_measure"], "Y measure") + '</div>'
         '<noscript><button type="submit" style="grid-column:1/3;">'
         'Update</button></noscript>'
         '</form>')

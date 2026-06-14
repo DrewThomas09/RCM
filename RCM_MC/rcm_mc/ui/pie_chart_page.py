@@ -110,6 +110,7 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
             f'border:1px solid #c9c1ac;border-radius:5px;padding:0 8px;'
             f'text-align:right;font-family:{_SERIF};">'
             f'<input type="color" name="c{i}" '
+            f'aria-label="Color for slice {i+1}" '
             f'value="{html.escape(r["color"])}" style="width:52px;height:30px;'
             f'border:1px solid #c9c1ac;border-radius:5px;padding:0;'
             f'background:#fff;cursor:pointer;">'

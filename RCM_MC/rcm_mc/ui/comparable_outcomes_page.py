@@ -44,7 +44,7 @@ def _input_form(qs: Dict[str, Any]) -> str:
         '<div><label style="display:block;font-size:11px;color:#7a8699;'
         'text-transform:uppercase;letter-spacing:0.05em;'
         'margin-bottom:4px;">Sector</label>'
-        '<select name="sector" style="padding:6px 8px;border:1px solid '
+        '<select name="sector" aria-label="Sector" style="padding:6px 8px;border:1px solid '
         '#d6cfc0;border-radius:4px;font-size:13px;">'
         + "".join(sector_options) +
         '</select></div>'

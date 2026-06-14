@@ -69,6 +69,7 @@ def render_snapshot_upload(*, notice: str = "", error: str = "") -> str:
         'margin-bottom:4px;">VDR files</label>'
         '<input type="file" name="files" multiple '
         'accept=".edi,.txt,.835,.837,.csv,.tsv,.xlsx,.xlsm,.parquet,.zip" '
+        'aria-label="VDR files" '
         'style="margin-bottom:6px;">'
         f'<div style="font-size:11px;color:var(--sc-text-faint);margin-bottom:16px;">'
         f'Supported: {_SUPPORTED}</div>'

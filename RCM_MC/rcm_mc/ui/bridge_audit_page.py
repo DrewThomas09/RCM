@@ -669,7 +669,7 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
     </div>
     <div class="ba-form-field" style="margin-bottom:16px;">
       <label>Bridge line items</label>
-      <textarea name="bridge">{html.escape(_DEFAULT_BRIDGE)}</textarea>
+      <textarea name="bridge" aria-label="Bridge line items">{html.escape(_DEFAULT_BRIDGE)}</textarea>
     </div>
     <div class="ba-form-grid">
       <div class="ba-form-field"><label>Target name</label>

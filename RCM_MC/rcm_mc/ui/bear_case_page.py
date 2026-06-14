@@ -603,31 +603,31 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
       Auto-generate bear case from pipeline</div>
     <div class="bc-form-grid">
       <div class="bc-form-field"><label>Dataset fixture</label>
-        <input name="dataset" value="hospital_04_mixed_payer"/></div>
+        <input name="dataset" value="hospital_04_mixed_payer" aria-label="Dataset fixture"/></div>
       <div class="bc-form-field"><label>Deal name</label>
-        <input name="deal_name" value="Meadowbrook Regional"/></div>
+        <input name="deal_name" value="Meadowbrook Regional" aria-label="Deal name"/></div>
       <div class="bc-form-field"><label>Specialty</label>
-        <input name="specialty" value="HOSPITAL"/></div>
+        <input name="specialty" value="HOSPITAL" aria-label="Specialty"/></div>
       <div class="bc-form-field"><label>Revenue Y0 (USD)</label>
-        <input name="revenue_year0_usd" value="450000000"/></div>
+        <input name="revenue_year0_usd" value="450000000" aria-label="Revenue Y0 (USD)"/></div>
       <div class="bc-form-field"><label>EBITDA Y0 (USD)</label>
-        <input name="ebitda_year0_usd" value="67500000"/></div>
+        <input name="ebitda_year0_usd" value="67500000" aria-label="EBITDA Y0 (USD)"/></div>
       <div class="bc-form-field"><label>Enterprise value (USD)</label>
-        <input name="enterprise_value_usd" value="600000000"/></div>
+        <input name="enterprise_value_usd" value="600000000" aria-label="Enterprise value (USD)"/></div>
       <div class="bc-form-field"><label>Equity check (USD)</label>
-        <input name="equity_check_usd" value="250000000"/></div>
+        <input name="equity_check_usd" value="250000000" aria-label="Equity check (USD)"/></div>
       <div class="bc-form-field"><label>Debt (USD)</label>
-        <input name="debt_usd" value="350000000"/></div>
+        <input name="debt_usd" value="350000000" aria-label="Debt (USD)"/></div>
       <div class="bc-form-field"><label>Medicare share (0-1)</label>
-        <input name="medicare_share" value="0.45"/></div>
+        <input name="medicare_share" value="0.45" aria-label="Medicare share (0-1)"/></div>
       <div class="bc-form-field"><label>Landlord (opt)</label>
-        <input name="landlord" value="MPT"/></div>
+        <input name="landlord" value="MPT" aria-label="Landlord (opt)"/></div>
       <div class="bc-form-field"><label>HOPD rev (USD)</label>
-        <input name="hopd_revenue_annual_usd" value="45000000"/></div>
+        <input name="hopd_revenue_annual_usd" value="45000000" aria-label="HOPD rev (USD)"/></div>
       <div class="bc-form-field"><label>HCRIS CCN (opt)</label>
         <input name="hcris_ccn" placeholder="e.g. 010001"/></div>
       <div class="bc-form-field"><label>N simulation paths</label>
-        <input name="n_runs" value="250"/></div>
+        <input name="n_runs" value="250" aria-label="N simulation paths"/></div>
     </div>
     <button class="bc-form-submit" type="submit">
       Generate bear case</button>

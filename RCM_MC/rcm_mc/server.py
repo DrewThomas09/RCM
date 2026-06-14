@@ -15769,7 +15769,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '<form method="GET" action="/lp-update" class="ck-lp-window">'
             '<label class="ck-lp-window-label">Window</label>'
             '<select name="days" onchange="this.form.submit()" '
-            'class="ck-lp-window-select">'
+            'class="ck-lp-window-select" aria-label="Window">'
             f'{picker_options}'
             '</select>'
             '</form>'
@@ -16310,10 +16310,10 @@ class RCMHandler(BaseHTTPRequestHandler):
 
             <label>Simulations</label>
             <input type="number" name="n_sims" value="5000" min="100"
-                   max="200000" {input_css}>
+                   max="200000" aria-label="Simulations" {input_css}>
 
             <label>Seed</label>
-            <input type="number" name="seed" value="42" {input_css}>
+            <input type="number" name="seed" value="42" aria-label="Seed" {input_css}>
 
             <label>Partner brief</label>
             <label style="font-size: 0.88rem; color: var(--muted);">
@@ -17598,7 +17598,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             '<input type="password" name="password" placeholder="password" '
             'required minlength="8" autocomplete="new-password" '
             'style="padding: 0.4rem;">'
-            '<select name="role" style="padding: 0.4rem;">'
+            '<select name="role" aria-label="Role" style="padding: 0.4rem;">'
             '<option value="analyst" selected>analyst</option>'
             '<option value="admin">admin</option></select>'
             '<button type="submit" class="btn" '

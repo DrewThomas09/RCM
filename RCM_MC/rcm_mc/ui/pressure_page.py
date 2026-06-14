@@ -31,7 +31,7 @@ def render_pressure_page(
         f'<p style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:12px;">'
         f'Select a deal to view risk flags and EBITDA pressure analysis.</p>'
         f'<form method="GET" action="/pressure" style="display:flex;gap:8px;align-items:center;">'
-        f'<select name="deal_id" style="padding:7px 12px;border:1px solid var(--cad-border);'
+        f'<select name="deal_id" aria-label="Select deal" style="padding:7px 12px;border:1px solid var(--cad-border);'
         f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;'
         f'min-width:250px;">'
         f'<option value="">— select deal —</option>'

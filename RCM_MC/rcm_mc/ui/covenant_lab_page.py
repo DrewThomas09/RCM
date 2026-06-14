@@ -829,35 +829,35 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
       Deal structure · covenant package</div>
     <div class="cl-form-grid">
       <div class="cl-form-field"><label>Deal name</label>
-        <input name="deal_name" value="Meadowbrook Health System"/></div>
+        <input name="deal_name" value="Meadowbrook Health System" aria-label="Deal name"/></div>
       <div class="cl-form-field"><label>Entry EBITDA (Y0 USD)</label>
-        <input name="ebitda_y0" value="67500000"/></div>
+        <input name="ebitda_y0" value="67500000" aria-label="Entry EBITDA (Y0 USD)"/></div>
       <div class="cl-form-field"><label>EBITDA growth (CAGR)</label>
-        <input name="ebitda_growth" value="0.06"/></div>
+        <input name="ebitda_growth" value="0.06" aria-label="EBITDA growth (CAGR)"/></div>
       <div class="cl-form-field"><label>EBITDA vol (σ)</label>
-        <input name="ebitda_sigma" value="0.15"/></div>
+        <input name="ebitda_sigma" value="0.15" aria-label="EBITDA vol (sigma)"/></div>
       <div class="cl-form-field"><label>Total debt (USD)</label>
-        <input name="total_debt_usd" value="300000000"/></div>
+        <input name="total_debt_usd" value="300000000" aria-label="Total debt (USD)"/></div>
       <div class="cl-form-field"><label>Revolver capacity (USD)</label>
-        <input name="revolver_usd" value="40000000"/></div>
+        <input name="revolver_usd" value="40000000" aria-label="Revolver capacity (USD)"/></div>
       <div class="cl-form-field"><label>Revolver initial draw %</label>
-        <input name="revolver_draw_pct" value="0.30"/></div>
+        <input name="revolver_draw_pct" value="0.30" aria-label="Revolver initial draw %"/></div>
       <div class="cl-form-field"><label>Term (years)</label>
-        <input name="term_years" value="6"/></div>
+        <input name="term_years" value="6" aria-label="Term (years)"/></div>
       <div class="cl-form-field"><label>Base rate (annual)</label>
-        <input name="base_rate" value="0.055"/></div>
+        <input name="base_rate" value="0.055" aria-label="Base rate (annual)"/></div>
       <div class="cl-form-field"><label>Leverage covenant opening (×)</label>
-        <input name="leverage_ceiling" value="7.5"/></div>
+        <input name="leverage_ceiling" value="7.5" aria-label="Leverage covenant opening (x)"/></div>
       <div class="cl-form-field"><label>Leverage covenant step (×/yr)</label>
-        <input name="leverage_step" value="0.5"/></div>
+        <input name="leverage_step" value="0.5" aria-label="Leverage covenant step (x/yr)"/></div>
       <div class="cl-form-field"><label>DSCR covenant floor (×)</label>
-        <input name="dscr_floor" value="1.25"/></div>
+        <input name="dscr_floor" value="1.25" aria-label="DSCR covenant floor (x)"/></div>
       <div class="cl-form-field"><label>Interest coverage floor (×)</label>
-        <input name="icr_floor" value="1.75"/></div>
+        <input name="icr_floor" value="1.75" aria-label="Interest coverage floor (x)"/></div>
       <div class="cl-form-field"><label>Quarters to simulate</label>
-        <input name="quarters" value="20"/></div>
+        <input name="quarters" value="20" aria-label="Quarters to simulate"/></div>
       <div class="cl-form-field"><label>Regulatory overlay (Y-by-Y, $M)</label>
-        <input name="reg_overlay" value="0,0,-9.9,-9.95,0,0"/></div>
+        <input name="reg_overlay" value="0,0,-9.9,-9.95,0,0" aria-label="Regulatory overlay (Y-by-Y, $M)"/></div>
     </div>
     <button class="cl-form-submit" type="submit">
       Run covenant stress</button>
