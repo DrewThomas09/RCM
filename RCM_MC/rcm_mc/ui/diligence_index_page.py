@@ -162,6 +162,10 @@ _PILLARS: List[Mapping[str, object]] = [
              "label": "Infusion Market Scan",
              "blurb": "National infusion-market scan — rank every state "
                       "for a roll-up."},
+            {"href": "/diligence/jcode-atlas",
+             "label": "J-Code Atlas",
+             "blurb": "Every infusion J-code by site of care (home vs "
+                      "office) + the change, tied to disease + demand."},
             {"href": "/diligence/bear-case",
              "label": "Bear Case",
              "blurb": "The defensible bear case for this deal."},

@@ -1122,6 +1122,15 @@ DISCOVERED_TOOL_ROUTES: List[ToolRouteDefinition] = [
         source_file=_SOURCE_FILE,
     ),
     ToolRouteDefinition(
+        title='J-Code Atlas · every infusion J-code by site of care (home vs office) + the change, tied to disease',
+        route='/diligence/jcode-atlas',
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        source_group='Research & Backtesting',
+        is_auto_generated=True,
+        aliases=[],
+        source_file=_SOURCE_FILE,
+    ),
+    ToolRouteDefinition(
         title='Visuals · graphics toolkit hub (charts, maps, exhibits)',
         route='/visuals',
         category=PageContextCategory.RESEARCH_BACKTESTING,

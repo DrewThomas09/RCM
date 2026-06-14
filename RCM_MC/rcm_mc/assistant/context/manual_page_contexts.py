@@ -420,6 +420,68 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.OBSERVED_TARGET_DATA,
     ),
     _ctx(
+        "/diligence/jcode-atlas", "J-Code Atlas",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="Scans every infusion HCPCS J-code by site of care "
+        "(home vs office vs ambulatory suite vs HOPD), shows the 2018→now "
+        "home-migration change code by code, and ties each code to its "
+        "disease and the size of the patient pool it serves.",
+        primary_purpose="Answer two infusion-diligence questions at the "
+        "J-code grain: where is each drug administered and which way is the "
+        "mix moving (home vs office and the change), and which disease — and "
+        "how big a patient pool — does the code represent.",
+        intended_users=["PE deal team underwriting an infusion / specialty-"
+                        "pharmacy / home-infusion platform."],
+        common_questions=[
+            "Which infusion J-codes are migrating from the hospital to home?",
+            "What is the home-vs-office site-of-care split for this drug?",
+            "How much has the site-of-care mix changed since 2018?",
+            "Which diseases drive the biggest infusion patient pool?",
+            "Which J-codes have biosimilar / ASP-erosion exposure?",
+        ],
+        inputs=["?pop=<int> scales the disease patient pools to a real "
+                "market (defaults to US). ?live=1 overlays the live CMS "
+                "ASP per-unit payment limit."],
+        outputs=["A per-code site-of-care scan (home/office/AIC/HOPD mix + "
+                 "the 2018→now per-site delta + out-of-hospital migration "
+                 "index + estimated patient pool + ASP), a disease tie "
+                 "(disease → treating codes → pool → dominant site), and a "
+                 "whole-book site-of-care mix + change."],
+        key_metrics=["Out-of-hospital migration (pts)", "Home / office share",
+                     "Estimated patient pool", "ASP payment limit/unit",
+                     "Biosimilar exposure"],
+        data_sources=["HCPCS codes + descriptors (CMS public facts); "
+                      "FDA-labeled indications; published treated-prevalence "
+                      "anchors; site-of-care mix from labeled NHIA/MedPAC "
+                      "archetype anchors; live CMS ASP Pricing file overlay."],
+        model_logic_summary="Site mix + its change come from labeled "
+        "drug-class archetype anchors (2018 + current); patient pools = real "
+        "population (or senior base) × the published epi rate; per-disease "
+        "pool is the max across overlapping brand codes (not summed). ASP is "
+        "live where egress permits, else shown as the ASP+6% formula.",
+        why_it_matters="The migration of infusion out of the hospital into "
+        "the home/office is the entire ambulatory- and home-infusion thesis; "
+        "this makes it concrete per drug and ties it to real disease demand.",
+        diligence_use_cases=["Sizing an infusion platform's addressable "
+                             "drug + disease book; spotting which therapies "
+                             "are home-shiftable; flagging biosimilar / ASP "
+                             "drug-margin risk by code."],
+        interpretation_guidance=[
+            "Site-of-care mix + the change are labeled illustrative anchors, "
+            "not a claims place-of-service feed — replace in diligence.",
+            "Patient pools scale with the real geography you pass in; the "
+            "epi rates are published anchors.",
+            "Dollar ASP is None (shown as the formula) when offline — no "
+            "dollar value is fabricated."],
+        limitations=["The site-of-care time-series is a two-anchor model, "
+                     "not a real claims trend; pools are prevalence "
+                     "estimates, not a provider census."],
+        related_routes=["/diligence/texas-infusion",
+                        "/diligence/infusion-markets"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MODEL_ESTIMATE,
+    ),
+    _ctx(
         "/users", "Users",
         short_description="Admin-only user management — accounts, roles, "
         "password rotation, and deletion.",
