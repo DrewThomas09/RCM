@@ -48,3 +48,12 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest tests/golden/test_payer_mix.py => 7 passed. Shares 40/20/30/5/5
   -> 45/25/25/3/2; deltas +5/+5/-5/-2/-3=0; scores 0.655->0.636.
 - Next: NEW-04 percentage-of-Medicare reimbursement benchmarking (label basis).
+================================================================================
+[2026-06-14 02:12 UTC] NEW-04 Percent-of-Medicare
+- pct_medicare.py: reprice commercial allowed to Medicare schedule; blended and
+  per-code pct; basis (medical-services-repriced | facility-inclusive) labeled on
+  title+footnote+meta; basis_mismatch flag never blends; external anchors
+  196/254/171 kept with their own basis label; missing-code exclusion flag.
+- Evidence: pytest tests/golden/test_pct_medicare.py => 7 passed. Blended 194.29%,
+  per-code 200/250/150 hand-verified.
+- Next: NEW-05 cohort retention/churn (KM survival, lifelines).

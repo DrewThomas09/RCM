@@ -46,11 +46,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_pct_medicare.py",
-      "notes": ""
+      "notes": "Blended 194.29% hand-verified; basis labeled on every output; basis_mismatch flag; external anchors 196/254/171 kept with own basis."
     },
     {
       "id": "NEW-05",
