@@ -6811,6 +6811,36 @@ class RCMHandler(BaseHTTPRequestHandler):
                 infusion_state_attractiveness,
             )
             return self._send_json(infusion_state_attractiveness())
+        if path == "/diligence/jcode-atlas":
+            # J-Code Atlas — every infusion J-code scanned by site of care
+            # (home vs office vs AIC vs HOPD) + the change, tied to disease.
+            # qs: ?pop=<int> scales pools; ?live=1 overlays live ASP price.
+            from .ui.jcode_atlas_page import render_jcode_atlas_page
+            _jc_qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_jcode_atlas_page(_jc_qs))
+        if path == "/api/diligence/jcode-atlas":
+            # JSON variant — the full J-code atlas (scan + disease tie +
+            # summary). ?pop=<int> scales pools; ?live=1 overlays ASP.
+            from .diligence.jcode_atlas import jcode_atlas
+            _jq = urllib.parse.parse_qs(parsed.query)
+            _pop = self._clamp_int(
+                (_jq.get("pop") or ["0"])[0],
+                default=0, min_v=0, max_v=10 ** 10) or None
+            _live = (_jq.get("live") or [""])[0] in ("1", "true", "yes")
+            return self._send_json(jcode_atlas(
+                population=_pop, fetch_live=_live))
+        if path == "/api/diligence/jcode-atlas/export.csv":
+            # Per-code site-of-care scan as a defanged CSV — one row per
+            # J-code (now-mix + change + pool + opportunity + live ASP).
+            from .diligence.jcode_atlas import jcode_scan_dataframe
+            _jq = urllib.parse.parse_qs(parsed.query)
+            _pop = self._clamp_int(
+                (_jq.get("pop") or ["0"])[0],
+                default=0, min_v=0, max_v=10 ** 10) or None
+            _live = (_jq.get("live") or [""])[0] in ("1", "true", "yes")
+            return self._send_csv_df(
+                jcode_scan_dataframe(population=_pop, fetch_live=_live),
+                "jcode-atlas-site-of-care.csv")
         if path == "/excel-mapping":
             # Excel mapping — a configurable US-state choropleth driven
             # from a {state: percentage} dict or an Excel paste; qs
