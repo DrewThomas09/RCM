@@ -98,3 +98,37 @@ Options: A) fixed constant; B) BIC-style sigma^2 log(n) with a robust sigma from
 Decision: B.
 Rationale: scales with noise so a noisy series does not over-segment and a flat series yields none.
 Reconciliation/Validation: test_changepoint asserts one break on a clear shift and zero on a flat series.
+
+## [2026-06-14 19:30] NEW-19 marimekko width/height encoding
+Context: a healthcare profit-pool marimekko can use the textbook revenue-width by
+margin-height encoding or McKinsey's EBITDA-share by EBITDA-share variant.
+Options: A) revenue width and margin height; B) width is sector share of total
+industry EBITDA and height is sub-segment share of its sector's EBITDA.
+Decision: B as the primary, with A offered as an alternate when revenue and
+margin are supplied.
+Rationale: faithful recreation of the McKinsey healthcare profit-pool map, where
+rectangle area reads as a sub-segment's share of total industry EBITDA; the
+classic encoding stays available for margin-pressure diligence.
+Reconciliation/Validation: test_marimekko asserts widths sum to 1.0, areas sum
+to 1.0, and the 10/50/5/35 sector widths of the published 2017/18 map.
+
+## [2026-06-14 19:30] NEW-18 CAGR bracket coverage and undefined handling
+Context: a profit-pool exhibit needs CAGR brackets, and CAGR is undefined when a
+base or endpoint is non-positive or the span is zero.
+Options: A) emit a single full-span CAGR; B) emit consecutive-pair brackets plus
+the full span, and return None for an undefined CAGR rather than a number.
+Decision: B.
+Rationale: multi-column decks want both adjacent and end-to-end growth; a None
+keeps a meaningless ratio out of a bracket instead of printing a misleading one.
+Reconciliation/Validation: test_profit_pool asserts total CAGR 7.0% and HST 12%
+hand-verified, plus a reconciliation that the full-span CAGR rebuilds the final
+total from the first.
+
+## [2026-06-14 19:30] NEW-20 growth quadrant threshold
+Context: the historic-vs-projected growth map needs a quadrant line.
+Options: A) median of each axis; B) a fixed 5 percent growth line on both axes.
+Decision: B, default 5 percent (overridable).
+Rationale: the McKinsey archetype map uses an absolute 5 percent growth line, not
+a relative median, so high-growth pools are defined consistently across vintages.
+Reconciliation/Validation: test_growth_archetype asserts the four quadrant
+assignments and the high-growth EBITDA share 299/389 hand-verified.

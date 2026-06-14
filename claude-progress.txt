@@ -264,3 +264,27 @@ PR: #1859 (draft). Final commit hash recorded on push.
   estimator, no LLM.
 - Evidence: pytest tests/golden/ => 223 passed. Pack surfaces concentration +
   OBBBA + state-oversight red flags; partner render leaks no assumptions.
+
+================================================================================
+[2026-06-14 19:30 UTC] NEW-18/19/20 McKinsey signature exhibits
+Branch: claude/mckinsey-healthcare-exhibits-qix9ec
+- Built the three profit-pool archetypes the McKinsey recreation catalog flags
+  as highest leverage (Stage 1 plus archetype H), as cdd/ Exhibit engines.
+- NEW-18 profit_pool.py: stacked EBITDA by segment over years, CAGR auto-
+  brackets (consecutive pairs plus full span), ghosted projection columns,
+  percent-of-NHE framing toggle, declining-pool + contains-projection flags.
+  Column totals tie to segment sum; full-span CAGR rebuilds endpoint.
+- NEW-19 marimekko.py: EBITDA-share by EBITDA-share map (width=sector share of
+  industry EBITDA, height=sub-segment share of sector, area=share of total),
+  cumulative-width x boundaries, classic revenue-width by margin-height
+  alternate, >7-column clutter flag. Widths sum 1.0; areas sum 1.0.
+- NEW-20 growth_archetype.py: historic vs projected growth bubble scatter, 5%
+  quadrant lines (sustained/accelerator/decelerator/laggard), high-growth
+  EBITDA share, Pearson correlation, high-growth-pools-small flag.
+- All three registered in cdd/registry.py autoload; CLI list/run verified;
+  partner render strips assumptions (audience separation).
+- Evidence: pytest tests/golden/ => 246 passed (3 new files, 23 new tests).
+  Hand-verified: 583->819 7.0% CAGR + HST 12% (NEW-18); widths 10/50/5/35 and
+  areas->1.0 (NEW-19); high-growth share 299/389 (NEW-20).
+- Next: optional Stage 2 (sites-of-care cost delta, admin-cost waterfall, VBC
+  curves) if requested; UI deck panels already speak marimekko/waterfall.
