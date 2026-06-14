@@ -199,16 +199,19 @@ def _payer_slider_form(params: Dict[str, str]) -> str:
     <div class="ck-form-group">
       <label class="ck-label">Commercial % (0–1)</label>
       <input type="number" name="comm_pct" class="ck-input w130"
+        aria-label="Commercial payer share (0-1)"
         value="{_html.escape(comm)}" step="0.05" min="0" max="1">
     </div>
     <div class="ck-form-group">
       <label class="ck-label">Medicare % (0–1)</label>
       <input type="number" name="mcare_pct" class="ck-input w130"
+        aria-label="Medicare share (0-1)"
         value="{_html.escape(mcare)}" step="0.05" min="0" max="1">
     </div>
     <div class="ck-form-group">
       <label class="ck-label">Medicaid % (0–1)</label>
       <input type="number" name="mcaid_pct" class="ck-input w130"
+        aria-label="Medicaid share (0-1)"
         value="{_html.escape(mcaid)}" step="0.05" min="0" max="1">
     </div>
     <div class="ck-form-group" style="align-self:flex-end">
