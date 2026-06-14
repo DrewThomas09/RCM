@@ -28,6 +28,18 @@ def _free_port() -> int:
 
 
 class TestPaletteHelpers(unittest.TestCase):
+    def test_ck_command_palette_has_dialog_semantics(self):
+        # The chartis-kit palette (id=ck-palette) must match the
+        # _web_components palette: a labelled modal dialog with a labelled
+        # input (a placeholder is not a reliable accessible name).
+        from rcm_mc.ui._chartis_kit import (
+            ck_command_palette, _DEFAULT_PALETTE_MODULES)
+        html = ck_command_palette(_DEFAULT_PALETTE_MODULES)
+        self.assertIn('role="dialog"', html)
+        self.assertIn('aria-modal="true"', html)
+        self.assertIn('aria-label="Command palette"', html)
+        self.assertIn('aria-label="Jump to a page, or type a 6-digit CCN"', html)
+
     def test_modal_markup_well_formed(self):
         from rcm_mc.ui._web_components import command_palette
         html = command_palette()

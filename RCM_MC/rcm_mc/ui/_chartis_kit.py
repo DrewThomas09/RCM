@@ -7457,8 +7457,14 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
     )
     return (
         '<div class="ck-palette" id="ck-palette" hidden>'
-        '<div class="ck-palette-box">'
+        # role=dialog + aria-modal so AT treats the overlay as a modal and a
+        # screen reader announces it; aria-label names it (there's no visible
+        # heading). The input gets an explicit aria-label — a placeholder is
+        # not a reliable accessible name.
+        '<div class="ck-palette-box" role="dialog" aria-modal="true" '
+        'aria-label="Command palette">'
         '<input class="ck-palette-input" type="text" '
+        'aria-label="Jump to a page, or type a 6-digit CCN" '
         'placeholder="Jump to a page, or type a 6-digit CCN… (⌘K)" />'
         '<ul class="ck-palette-list">'
         # P12 entity jump — a synthetic result the JS reveals when the query
