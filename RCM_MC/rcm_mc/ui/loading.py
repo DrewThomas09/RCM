@@ -212,13 +212,13 @@ def loading_spinner(
 ) -> str:
     """CSS-only spinning ring. Optional label aligned right."""
     safe_label = (
-        f'<span style="margin-left:10px;color:#9ca3af;'
+        f'<span style="margin-left:10px;color:#5C6878;'
         f'font-size:13px;vertical-align:middle;">'
         f'{_html.escape(label)}</span>' if label else "")
     return (
         _maybe_css(inject_css)
         + f'<div style="display:inline-flex;'
-        f'align-items:center;">'
+        f'align-items:center;" role="status" aria-live="polite">'
         f'<span class="spinner" '
         f'style="width:{size};height:{size};"></span>'
         f'{safe_label}</div>')
@@ -237,19 +237,23 @@ def progress_bar(
       label: optional caption above the bar.
     """
     label_html = (
-        f'<div style="color:#9ca3af;font-size:11px;'
+        f'<div style="color:#5C6878;font-size:11px;'
         f'margin-bottom:6px;">{_html.escape(label)}'
         f'</div>' if label else "")
     if percent is None:
         fill = '<div class="progress-bar-indet"></div>'
+        # Indeterminate: omit aria-valuenow so AT announces "busy".
+        aria = 'role="progressbar" aria-valuemin="0" aria-valuemax="100"'
     else:
         pct = max(0, min(100, float(percent)))
         fill = (f'<div class="progress-bar-fill" '
                 f'style="width:{pct:.1f}%;"></div>')
+        aria = (f'role="progressbar" aria-valuemin="0" aria-valuemax="100" '
+                f'aria-valuenow="{pct:.0f}"')
     return (
         _maybe_css(inject_css)
         + label_html
-        + f'<div class="progress-bar">{fill}</div>')
+        + f'<div class="progress-bar" {aria}>{fill}</div>')
 
 
 def loading_overlay(
