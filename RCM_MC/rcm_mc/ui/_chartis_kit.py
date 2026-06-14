@@ -11360,6 +11360,10 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         '<form class="ck-search-form" action="/search" method="get" role="search">'
         '<input class="ck-search" type="search" name="q" '
         'placeholder="Search…" '
+        # Search terms are tickers/metrics ("EBITDA", "CCN 050441") — stop
+        # mobile keyboards auto-capitalising / auto-correcting / red-squiggling.
+        'autocomplete="off" autocapitalize="none" '
+        'autocorrect="off" spellcheck="false" '
         'aria-label="Search deals, hospitals, routes" />'
         '<kbd class="ck-search-kbd" aria-hidden="true">⌘K</kbd>'
         '</form>'
