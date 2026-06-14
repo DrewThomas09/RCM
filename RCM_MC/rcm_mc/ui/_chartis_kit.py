@@ -11525,6 +11525,22 @@ def _breadcrumbs(crumbs: Optional[Sequence[Any]]) -> str:
 # support `zoom`; older engines simply render at 100% (graceful).
 _GLOBAL_SCALE_CSS = "<style>@media screen{html{zoom:0.98;}}</style>"
 
+# Skip-to-content link (WCAG 2.4.1 Bypass Blocks). The first focusable
+# element on every chromed page lets a keyboard / screen-reader user jump
+# past the topbar nav straight to <main>. Off-screen until focused, then it
+# slides into the top-left corner. Kept inline (not in the static stylesheet)
+# so it works even when /static fails to serve.
+_SKIP_LINK_CSS = (
+    "<style>"
+    ".ck-skip-link{position:absolute;left:8px;top:-48px;z-index:1000;"
+    "background:#0b2341;color:#fff;padding:8px 14px;border-radius:0 0 3px 3px;"
+    "font-family:var(--sc-sans,system-ui);font-size:13px;font-weight:600;"
+    "text-decoration:none;transition:top .15s ease;}"
+    ".ck-skip-link:focus{top:0;outline:2px solid #155752;outline-offset:2px;}"
+    "</style>"
+)
+_SKIP_LINK_HTML = '<a class="ck-skip-link" href="#ck-main">Skip to main content</a>'
+
 
 # ── Title-first contract (2026-06 clutter audit) ──────────────────────
 #
@@ -11864,6 +11880,11 @@ def chartis_shell(
     # forgot) must not even mention those selectors — test_deal_context
     # asserts bare pages carry no "ck-deal-bar" string at all.
     exhibit_print_css = _EXHIBIT_PRINT_CSS if show_chrome else ""
+    # Skip-to-content link only earns its place when there's chrome (a
+    # topbar nav) to skip past. Bare pages (login/forgot) have nothing to
+    # bypass, so they stay link-free — keeping their DOM minimal.
+    skip_link_css = _SKIP_LINK_CSS if show_chrome else ""
+    skip_link_html = _SKIP_LINK_HTML if show_chrome else ""
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -11875,11 +11896,13 @@ def chartis_shell(
         f"{_CSS_LINK}"
         f"{_CSS_INLINE_FALLBACK}"
         f"{_GLOBAL_SCALE_CSS}"
+        f"{skip_link_css}"
         f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
+        f"{skip_link_html}"
         f"{chrome_html}"
-        f'<main class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
+        f'<main id="ck-main" tabindex="-1" class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
         f"{palette_html}"
         f"{shortcuts_html}"
         f"{_TOAST_HTML}"
