@@ -190,11 +190,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_pricing_cm_bridge.py",
-      "notes": ""
+      "notes": "net 80, revenue 80000, CM 35000 (43.75%), EBITDA proxy 20000 hand-verified; both waterfalls reconcile 1e-6; QoE handoff documented."
     },
     {
       "id": "NEW-17",

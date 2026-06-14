@@ -141,3 +141,9 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest => 6 passed. Alpha Leaders/1.0, Beta Niche/0.3, Gamma
   Challengers/0.6 hand-verified.
 - Next: NEW-16 pricing waterfall + contribution-margin bridge.
+================================================================================
+[2026-06-14 04:18 UTC] NEW-16 Pricing + CM bridge
+- pricing_cm_bridge.py: price waterfall gross->net; revenue->CM bridge; EBITDA
+  proxy + documented QoE handoff (internal-only). Both reconcile to 1e-6.
+- Evidence: pytest => 7 passed. net 80, rev 80000, CM 35000 (43.75%), EBITDA 20000.
+- Next: NEW-17 regulatory-flag module (last NEW feature).
