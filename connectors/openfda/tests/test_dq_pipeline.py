@@ -71,6 +71,16 @@ class DqTests(unittest.TestCase):
         r = dq_mod.reconcile_counts(conn, self.store, spec, opener=fake)
         self.assertTrue(r.passed)  # 1 ingested vs 1 live
 
+    def test_markdown_report_renders(self):
+        self.store.upsert("dim_drug_product", [
+            {"ndc": "b", "rxcui": "55", "source_endpoint": "drug_ndc"}])
+        report = dq_mod.run_all(self.store)
+        md = report.to_markdown()
+        self.assertIn("# openFDA connector — DQ report", md)
+        self.assertIn("Overall: PASS", md)
+        self.assertIn("null_key:dim_drug_product", md)
+        self.assertIn("ndc_rxcui_coverage", md)
+
     def test_deferred_rxcui_when_no_rxnorm(self):
         self.store.upsert("dim_drug_product", [
             {"ndc": "0002-1200", "source_endpoint": "drug_ndc"}])
