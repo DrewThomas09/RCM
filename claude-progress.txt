@@ -98,3 +98,9 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
   changepoint overlay (best-effort, wired to forthcoming BOLSTER-03).
 - Evidence: pytest => 7 passed. Migrations 30/10/10 hand-verified.
 - Next: NEW-10 customer concentration (top-N, >40% flag).
+================================================================================
+[2026-06-14 03:14 UTC] NEW-10 Customer concentration
+- concentration.py: top-N shares, Pareto cumulative, Herfindahl; >40% single-
+  account red flag; partner view shows ranks (#1..), names internal-only.
+- Evidence: pytest => 7 passed. max 45% flags, 30% does not; HHI 0.325.
+- Next: NEW-11 Monte Carlo / scenario simulation overlay (rng seed, P5/P50/P95).

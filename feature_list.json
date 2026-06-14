@@ -118,11 +118,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_concentration.py",
-      "notes": ""
+      "notes": "Top-N shares + Pareto + HHI 0.325; >40% flag at 45% not at 30%; partner ranks, internal names."
     },
     {
       "id": "NEW-11",
