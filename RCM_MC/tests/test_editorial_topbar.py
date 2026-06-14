@@ -122,6 +122,13 @@ class EditorialTopbarTests(unittest.TestCase):
                     ".ck-user-dropdown-item:focus-visible"):
             self.assertIn(sel, self.html, f"missing focus ring: {sel}")
 
+    def test_user_menu_escape_returns_focus_to_chip(self):
+        # Closing the account menu with Escape must move focus back to the
+        # chip so a keyboard user isn't stranded on the hidden menu (2.4.3).
+        idx = self.html.find("e.key === 'Escape' && !menu.hidden")
+        self.assertNotEqual(idx, -1)
+        self.assertIn("btn.focus()", self.html[idx:idx + 360])
+
     def test_user_chip_controls_its_dropdown(self):
         # The chip is a disclosure trigger; it must point at the menu it
         # toggles (mirrors the Guide button → #ck-guide-panel wiring) and the

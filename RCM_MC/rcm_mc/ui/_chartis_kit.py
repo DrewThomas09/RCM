@@ -10636,7 +10636,12 @@ _USER_MENU_JS = """
     if (!menu.contains(e.target) && e.target !== btn) close();
   });
   document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && !menu.hidden) close();
+    if (e.key === 'Escape' && !menu.hidden) {
+      close();
+      /* Return focus to the chip so a keyboard user who tabbed into the
+       * menu isn't stranded on the now-hidden element (WCAG 2.4.3). */
+      btn.focus();
+    }
   });
 
   /* Hydrate recent-deals group */
