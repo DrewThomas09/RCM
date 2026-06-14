@@ -40,3 +40,11 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest tests/golden/test_pvm_bridge.py => 8 passed. Hand fixture
   price=220, volume=91.7857, mix=228.2143, total=540; reversal negates each.
 - Next: NEW-03 payer-mix analysis and waterfall (shares sum 100% to 1e-9).
+================================================================================
+[2026-06-14 02:02 UTC] NEW-03 Payer mix
+- payer_mix.py: shares = payer/total*100 (sum 100% to 1e-9); two-period shift
+  waterfall (deltas sum 0); margin-weight overlay (commercial>medicare/medicaid)
+  as internal-only series; margin_dilutive_shift flag when weighted score falls.
+- Evidence: pytest tests/golden/test_payer_mix.py => 7 passed. Shares 40/20/30/5/5
+  -> 45/25/25/3/2; deltas +5/+5/-5/-2/-3=0; scores 0.655->0.636.
+- Next: NEW-04 percentage-of-Medicare reimbursement benchmarking (label basis).

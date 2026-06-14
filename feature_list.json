@@ -34,11 +34,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_payer_mix.py",
-      "notes": ""
+      "notes": "Shares sum 100% to 1e-9; deltas sum 0; margin-weight overlay internal-only; dilution flag; scores 0.655->0.636 hand-verified."
     },
     {
       "id": "NEW-04",
