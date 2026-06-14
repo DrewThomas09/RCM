@@ -142,11 +142,11 @@
       "bucket": "new",
       "audience": "both",
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_hcc_raf.py",
-      "notes": ""
+      "notes": "RAF=1.025 hand-verified; deterministic ICD->HCC lookup; hierarchy drops HCC38; trajectory+compression; V28 vintage labeled. Coefficient table is a labeled reference subset (drop full CMS tables to extend)."
     },
     {
       "id": "NEW-13",

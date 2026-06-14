@@ -112,3 +112,12 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest => 8 passed. P50~950 (theory 950), reproducible to 1e-9,
   tornado ranks cms first, CMS-cut stress drops median 100.
 - Next: NEW-12 HCC/RAF risk-adjustment (CMS-HCC V28).
+================================================================================
+[2026-06-14 03:40 UTC] NEW-12 HCC/RAF (V28)
+- v28_data.py: deterministic ICD->HCC crosswalk, HCC coefficients, hierarchy,
+  demographic factors (CNA segment), vintage label. Labeled REFERENCE SUBSET of
+  V28; full CMS tables can be dropped in. hcc_raf.py: map->hierarchy->demo+sum;
+  RAF trajectory + compression scenario. Pure lookup, no LLM.
+- Evidence: pytest => 9 passed. RAF=1.025 (demo 0.395 + HCC37 0.300 + HCC226
+  0.330); HCC38 trumped; reconciles exactly.
+- Next: NEW-13 FFS-to-all-population correction.
