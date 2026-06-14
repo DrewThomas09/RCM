@@ -238,11 +238,11 @@
       "bucket": "bolster",
       "audience": "internal",
       "priority": 103,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_changepoint.py",
-      "notes": ""
+      "notes": "ruptures PELT l2/rbf, BIC-style default penalty; break at idx 10 mag+40, flat=0 cps; date mapping; feeds NEW-09 site-of-care overlay."
     },
     {
       "id": "BOLSTER-04",

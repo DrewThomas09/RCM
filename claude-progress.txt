@@ -176,3 +176,11 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest test_isoforest_anomaly.py => 7 passed. 3 planted anomalies
   caught, FP 1/30, reasons attached, reproducible.
 - Next: BOLSTER-03 changepoint detection (ruptures).
+================================================================================
+[2026-06-14 05:20 UTC] BOLSTER-03 Changepoint (ruptures)
+- cdd/changepoint.py: ruptures PELT (l2/rbf), BIC-style default penalty
+  (sigma^2 log n, robust sigma); emits index/date/magnitude/direction. Feeds the
+  NEW-09 site-of-care overlay and the monitoring layer. Registered.
+- Evidence: pytest changepoint + site_of_care => 16 passed. Break idx10 mag+40,
+  flat=0, noisy break detected, date mapping works.
+- Next: BOLSTER-04 two-audience UI layer leakage test.
