@@ -47,6 +47,9 @@ KNOWN_SOURCES: Tuple[str, ...] = (
 _STATUS_OK = "OK"
 _STATUS_STALE = "STALE"
 _STATUS_ERROR = "ERROR"
+# A source whose published release matched its stored watermark — no
+# parse was run. Reported but does not overwrite the prior OK/last_refresh.
+_STATUS_SKIPPED = "SKIPPED"
 
 
 def _utcnow_iso() -> str:
@@ -400,19 +403,42 @@ def refresh_all_sources(
     sources: Optional[Iterable[str]] = None,
     interval_days: int = 30,
     refreshers: Optional[Dict[str, Callable[[Any], int]]] = None,
+    fingerprints: Optional[Dict[str, Optional[str]]] = None,
 ) -> RefreshReport:
     """Refresh one or more CMS data sources.
 
     ``sources`` — subset of ``KNOWN_SOURCES`` or ``None`` for all.
     ``refreshers`` — override dict of ``name → callable(store) -> int``
     so tests can swap in deterministic stubs without actual downloads.
+    ``fingerprints`` — optional ``name → release fingerprint`` map (see
+    :mod:`rcm_mc.data.release_watermark`). When a source's fingerprint
+    matches its stored watermark the parse is skipped (result status
+    ``SKIPPED``); on a successful refresh the new fingerprint is
+    recorded. Sources absent from the map always refresh. Omitting the
+    arg entirely preserves the prior always-refresh behavior.
     """
     _ensure_tables(store)
     refreshers = refreshers if refreshers is not None else _default_refreshers()
     selected = list(sources) if sources else list(KNOWN_SOURCES)
+    fingerprints = fingerprints or {}
+    if fingerprints:
+        from . import release_watermark
+    else:
+        release_watermark = None  # type: ignore[assignment]
 
     report = RefreshReport(started_at=_utcnow_iso())
     for name in selected:
+        if (
+            release_watermark is not None
+            and name in fingerprints
+            and not release_watermark.is_release_changed(
+                store, name, fingerprints[name]
+            )
+        ):
+            report.per_source.append(RefreshSourceResult(
+                source=name, status=_STATUS_SKIPPED,
+            ))
+            continue
         fn = refreshers.get(name)
         if fn is None:
             report.per_source.append(RefreshSourceResult(
@@ -433,6 +459,10 @@ def refresh_all_sources(
             ))
             set_status(store, name, status=_STATUS_OK,
                        record_count=count, interval_days=interval_days)
+            if release_watermark is not None and name in fingerprints:
+                release_watermark.record_release(
+                    store, name, fingerprints[name], kind="refresh",
+                )
         except Exception as exc:  # noqa: BLE001 — partial failures are tolerated
             elapsed = (datetime.now(timezone.utc) - t0).total_seconds()
             detail = f"{type(exc).__name__}: {exc}"
