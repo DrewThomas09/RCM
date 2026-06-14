@@ -4855,3 +4855,13 @@ the deal team's model:
 **Verify**: +4 tests (CSV method/triangulation/MC; CSV Bass; XLSX method
 sheet at sheet6 with Sources still at sheet4; ALL 84 templates export
 both formats clean). 168 pass in test_tam_sam.py.
+
+## W3-005 (2026-06-14) — TAM triangulation: 5 more top-down anchors
+Extended the triangulation quality gate from 6 to 11 verticals with
+published top-down anchors, each verified to land honestly (not a number
+that manufactures a false red):
+- physical_therapy $34B (green, 2.6%), urgent_care $40B (amber, 17.0% —
+  the gate working), medspa $16B (green), dme $63B (green), vision $64B
+  (green). Anchors span facility/capacity, epidemiology archetypes.
+**Verify**: 168 pass in test_tam_sam.py; clean -W error import; gaps
+hand-checked against bottom-up builds (PT/UC/medspa/DME/vision).

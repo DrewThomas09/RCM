@@ -1169,6 +1169,9 @@ def urgent_care_template() -> TamSamModel:
         som_share=0.05,
         som_note="Obtainable share at entry",
         horizon_years=5,
+        top_down_tam=40_000_000_000,
+        top_down_source="US urgent care market ~$40B (industry) — scope "
+                        "check vs the centers×visits×rate build",
         basis_note="Template defaults from UCA public census data — "
                    "replace with engagement data before IC use.",
     )
@@ -1394,6 +1397,9 @@ def physical_therapy_template() -> TamSamModel:
         som_note="Largest platform (Upstream/USPh/ATI class) holds <3% "
                  "— deeply fragmented",
         horizon_years=5,
+        top_down_tam=34_000_000_000,
+        top_down_source="US outpatient PT market ~$30-35B (APTA/"
+                        "IBISWorld) — scope check vs the clinics build",
         basis_note="Template defaults from APTA/CMS public data — "
                    "replace with engagement data before IC use.",
     )
@@ -1506,6 +1512,9 @@ def medspa_template() -> TamSamModel:
         som_note="No platform holds >2% — the most fragmented "
                  "consumer-health format",
         horizon_years=5,
+        top_down_tam=16_000_000_000,
+        top_down_source="US medical spa market ~$15-17B (AmSpa/industry) "
+                        "— scope check vs the locations×revenue build",
         basis_note="Template defaults from AmSpa public reports — "
                    "replace with engagement data before IC use.",
     )
@@ -1720,6 +1729,9 @@ def vision_template() -> TamSamModel:
         som_note="Largest PE platforms hold ~2% of practices — "
                  "deeply fragmented",
         horizon_years=5,
+        top_down_tam=64_000_000_000,
+        top_down_source="US vision care + optical market ~$60-68B "
+                        "(Vision Council) — scope check vs the build",
         basis_note="Template defaults from Vision Council public data "
                    "— replace with engagement data before IC use.",
     )
@@ -2326,6 +2338,9 @@ def dme_template() -> TamSamModel:
         som_note="AdaptHealth/Lincare/Rotech rolled respiratory; "
                  "diabetes + complex rehab are the open lanes",
         horizon_years=5,
+        top_down_tam=63_000_000_000,
+        top_down_source="US DME market ~$60-65B (industry/CMS DMEPOS) — "
+                        "scope check vs the patients×utilization build",
         basis_note="Template defaults from CMS DMEPOS/AAHomecare "
                    "public data — replace with engagement data before "
                    "IC use.",
