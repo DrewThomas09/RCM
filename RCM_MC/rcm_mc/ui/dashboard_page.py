@@ -1530,7 +1530,7 @@ def _render_saved_templates_section(db_path: str) -> str:
         f'{"".join(rows)}</ul>'
         f'<p style="margin:10px 0 0;font-size:11px;color:#5C6878;">'
         f'Click any template to launch. Run count updates automatically. '
-        f'<a href="/api/saved-analyses" style="color:#155752;">API</a>'
+        f'<a href="/api/docs" style="color:#155752;">API</a>'
         f'</p>'
     )
     return _wc.section_card(
