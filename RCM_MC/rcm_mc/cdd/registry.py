@@ -81,6 +81,7 @@ def _autoload() -> None:
         "forecast",
         "anomaly",
         "changepoint",
+        "decisions",
     ]
     for name in modules:
         try:

@@ -274,11 +274,11 @@
       "bucket": "bolster",
       "audience": "internal",
       "priority": 106,
-      "passes": false,
+      "passes": true,
       "blocked": false,
       "blocked_reason": "",
       "golden_test": "tests/golden/test_decisions_routing.py",
-      "notes": ""
+      "notes": "decisions.py parses DECISIONS.md, append_decision helper, missing_decisions check; 8 non-default choices all logged; demo reconciles."
     },
     {
       "id": "BOLSTER-07",

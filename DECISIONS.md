@@ -42,3 +42,59 @@ ruptures only. Every stochastic path takes `seed` and uses
 Rationale: reproducibility to 1e-9 and auditability.
 Reconciliation/Validation: reproducibility assertions in Monte Carlo and
 conformal golden tests.
+
+## [2026-06-14 04:30] NEW-01 SOM definition
+Context: SOM can be a flat percentage of TAM or capacity-constrained.
+Options: A) flat % of TAM; B) sales capacity times realistic win rate, capped at demand ceiling.
+Decision: B.
+Rationale: a flat TAM cut is not defensible in diligence; capacity times win rate ties SOM to the sales plan.
+Reconciliation/Validation: test_tam_sam_som asserts SOM 4000 from 300 winnable units at the blended reachable price.
+
+## [2026-06-14 04:30] NEW-02 PVM decomposition method
+Context: many price-volume-mix decompositions exist; most are not exactly additive or reversal consistent.
+Options: A) sequential first-difference; B) symmetric Bennet indicator.
+Decision: B.
+Rationale: Bennet is exactly additive and reversal consistent to machine precision.
+Reconciliation/Validation: test_pvm_bridge asserts additivity 1e-6 and reversal negation.
+
+## [2026-06-14 04:30] NEW-04 reimbursement basis handling
+Context: percent-of-Medicare can be medical-services-repriced or facility-inclusive.
+Options: A) blend to one number; B) label each basis and never blend.
+Decision: B.
+Rationale: blending bases produces a meaningless ratio; RAND and Milliman anchors sit on different bases.
+Reconciliation/Validation: test_pct_medicare asserts basis label on every output and a basis_mismatch flag.
+
+## [2026-06-14 04:30] NEW-05 small-cohort threshold
+Context: small cohorts give unreliable Kaplan-Meier estimates.
+Options: A) no flag; B) flag cohorts below 30 members.
+Decision: B, threshold 30.
+Rationale: 30 is the conventional small-sample boundary; below it KM curves are too noisy to defend.
+Reconciliation/Validation: test_retention_survival asserts the small_cohort flag for a 10-member cohort.
+
+## [2026-06-14 04:30] NEW-11 Monte Carlo default model
+Context: drivers must combine into an outcome.
+Options: A) additive on revenue; B) base times one plus the sum of fractional shocks.
+Decision: B.
+Rationale: fractional shocks compose naturally for rate cuts and attrition and keep the model unit-free.
+Reconciliation/Validation: test_monte_carlo_overlay asserts P50 near theory and 1e-9 reproducibility.
+
+## [2026-06-14 04:30] NEW-13 FFS correction weight
+Context: grossing FFS-only activity to all-population needs a weight.
+Options: A) add MA penetration; B) divide by FFS share, weight 1/(1-MA).
+Decision: B.
+Rationale: FFS counts cover only the FFS share of the population; dividing by that share recovers the whole.
+Reconciliation/Validation: test_ffs_correction asserts MA 0.50 grosses 1000 to 2000.
+
+## [2026-06-14 05:00] BOLSTER-01 conformal coverage design
+Context: a pure time trend with Ridge shrinkage on an unscaled feature breaks conformal exchangeability on the holdout.
+Options: A) raw feature + Ridge; B) StandardScaler pipeline + exchangeable design for the coverage test.
+Decision: B.
+Rationale: scaling removes shrinkage bias; exchangeable calibration and holdout are required for the split-conformal guarantee.
+Reconciliation/Validation: test_ridge_conformal_bolster asserts empirical coverage >= nominal - 1% at 80 and 95.
+
+## [2026-06-14 05:20] BOLSTER-03 changepoint default penalty
+Context: PELT needs a penalty; too low over-segments, too high misses breaks.
+Options: A) fixed constant; B) BIC-style sigma^2 log(n) with a robust sigma from the median absolute first difference.
+Decision: B.
+Rationale: scales with noise so a noisy series does not over-segment and a flat series yields none.
+Reconciliation/Validation: test_changepoint asserts one break on a clear shift and zero on a flat series.

@@ -201,3 +201,10 @@ Append-only. Each entry: timestamp, feature id, what, evidence, commit, next.
 - Evidence: pytest test_chartpack_standards.py => 6 passed; registry sweep 0
   violations across 20 features; snapshots stable.
 - Next: BOLSTER-06 DECISIONS.md routing pattern.
+================================================================================
+[2026-06-14 05:54 UTC] BOLSTER-06 DECISIONS routing
+- cdd/decisions.py: parse DECISIONS.md headers, covered_features, append_decision
+  (canonical format), missing_decisions check over NON_DEFAULT_CHOICES (8 items).
+  Appended 8 per-feature decision entries to DECISIONS.md.
+- Evidence: pytest test_decisions_routing.py => 6 passed; missing_decisions == [].
+- Next: BOLSTER-07 data-ingestion reconciliation (last backlog item).
