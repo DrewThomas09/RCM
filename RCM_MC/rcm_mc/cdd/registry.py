@@ -79,6 +79,12 @@ def _autoload() -> None:
         "profit_pool",
         "marimekko",
         "growth_archetype",
+        "unit_economics_spine",
+        "rate_update_scorecard",
+        "payer_economics",
+        "commercial_multiplier",
+        "market_concentration",
+        "market_size_estimates",
         "pricing_cm_bridge",
         "regulatory_flags",
         "forecast",
@@ -87,6 +93,7 @@ def _autoload() -> None:
         "decisions",
         "ingestion",
         "diligence_pack",
+        "benchmark_reference",
     ]
     for name in modules:
         try:

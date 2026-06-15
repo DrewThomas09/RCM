@@ -1,0 +1,73 @@
+vertical_id,source,source_type
+snf,CMS SNF PPS final rules,federal
+snf,CMS Care Compare / Nursing Home Compare,federal
+snf,CASPER,federal
+snf,Medicare cost reports,federal
+snf,MedPAC March reports,quasi-federal
+snf,KFF,research
+snf,CLA SNF Cost Comparison report,industry
+snf,NIC MAP,industry
+senior_living,NIC MAP / NIC MAP Vision,industry
+senior_living,McKnight's Senior Living,trade
+senior_living,Company filings (Brookdale; Welltower; Ventas),company
+hospice,CMS hospice final rules,federal
+hospice,NHPCO Facts & Figures,industry
+hospice,MedPAC March reports (Ch. 9),quasi-federal
+hospice,CMS hospice claims,federal
+hospice,Hospice Care Index (Care Compare),federal
+home_health,CMS HH PPS final rules,federal
+home_health,Home Health Compare,federal
+home_health,MedPAC,quasi-federal
+home_health,CMS home health claims,federal
+home_health,PDGM grouper files,federal
+behavioral_health,SAMHSA NSDUH,federal
+behavioral_health,HRSA Bureau of Health Workforce / NCHWA,federal
+behavioral_health,KFF,research
+behavioral_health,HRSA HPSA data,federal
+sud,SAMHSA N-SSATS/NSDUH,federal
+sud,AATOD,industry
+sud,CMS OTP payment data,federal
+sud,ASAM criteria,industry
+aba,ABA Coding Coalition (abacodes.org),industry
+aba,CASP Guidelines,industry
+aba,AMA CPT,industry
+aba,State Medicaid manuals,state
+aba,Behavior Analyst Certification Board (BACB),industry
+hospital_at_home,CMS AHCAH approved-facility list,federal
+hospital_at_home,AHA fact sheets,industry
+hospital_at_home,Bipartisan Policy Center,research
+hospital_at_home,CMS 2024 study,federal
+hospital_at_home,42 U.S.C. 1395cc-7,statute
+post_acute,MedPAC March reports (PAC chapters),quasi-federal
+post_acute,CMS MedPAR,federal
+post_acute,Cost reports,federal
+personal_care,PHI Direct Care Workers Key Facts,research
+personal_care,BLS OEWS,federal
+personal_care,CMS HCBS data,federal
+cell_gene_therapy,FDA Approved Cellular and Gene Therapy Products list,federal
+cell_gene_therapy,ICER reports,research
+cell_gene_therapy,Manufacturer filings,company
+cell_gene_therapy,Micromedex Red Book,commercial
+cro,ICH E6(R3),regulatory
+cro,IQVIA / Tufts CSDD,industry
+cro,Company filings (IQVIA; ICON; Medpace; Charles River; Fortrea),company
+cdmo,FDA Emerging Technology Program,federal
+cdmo,Company annual reports,company
+cdmo,Grand View Research,commercial
+cdmo,Bourne Partners,commercial
+cdmo,Lonza annual report,company
+nemt,CMS Medicaid NEMT data,federal
+nemt,Mordor / Insight Partners market reports,commercial
+nemt,ModivCare / MTM filings,company
+dme,CMS DMEPOS fee schedule and competitive bidding files,federal
+dme,HCPCS code set,federal
+dme,CMS supplier data,federal
+dialysis_esrd,USRDS Annual Data Report,federal
+dialysis_esrd,CMS ESRD PPS final rules,federal
+dialysis_esrd,CMS dialysis facility cost reports,federal
+dialysis_esrd,Dialysis Facility Compare,federal
+dialysis_esrd,NIDDK,federal
+fertility_art,CDC ART / NASS,federal
+fertility_art,SART Clinic Summary Report,industry
+fertility_art,ASRM,industry
+fertility_art,Employer-benefit surveys (IFEBP),industry

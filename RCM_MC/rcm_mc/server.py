@@ -4336,6 +4336,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ma_star_tracker_page import render_ma_star_tracker
             return self._send_html(render_ma_star_tracker(_qp))
+        if path == "/benchmark-reference":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.benchmark_reference_page import render_benchmark_reference
+            return self._send_html(render_benchmark_reference(_qp))
         if path == "/gpo-supply":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -4507,6 +4512,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             _slug = path[len("/industry/"):].strip("/").split("/", 1)[0]
             from .ui.data_public.industry_page import render_industry
             return self._send_html(render_industry(_slug))
+        if path == "/healthcare-verticals":
+            from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
+            return self._send_html(render_verticals_intel_index())
+        if path.startswith("/healthcare-verticals/"):
+            _vid = path[len("/healthcare-verticals/"):].strip("/").split("/", 1)[0]
+            from .ui.data_public.healthcare_verticals_page import render_vertical_intel
+            return self._send_html(render_vertical_intel(_vid))
         if path == "/patient-experience":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -6949,6 +6961,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_xlsx)
             return
+        if path == "/cdd/tools":
+            # CDD analytics engines catalog — renders every registered
+            # rcm_mc.cdd exhibit (partner view) so the whole registry is
+            # browsable in the app, not just from the CLI.
+            from .ui.cdd_tools_page import render_cdd_tools
+            return self._send_html(render_cdd_tools())
         if path == "/cdd":
             # Commercial Due Diligence hub — the five-module CDD workflow
             # (market → competition → customers → pricing → deliverables)
