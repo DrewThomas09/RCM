@@ -2979,7 +2979,11 @@ def render_texas_infusion_page(
            '<span style="color:var(--sc-text-faint,#8b94a0);"> &nbsp;·&nbsp; '
            '</span><a class="ck-link" '
            'href="/diligence/texas-infusion/revenue">Revenue build → CPT '
-           'units by code · competitor benchmark</a></p>')
+           'units by code · competitor benchmark</a>'
+           '<span style="color:var(--sc-text-faint,#8b94a0);"> &nbsp;·&nbsp; '
+           '</span><a class="ck-link" '
+           'href="/diligence/texas-infusion/jcode-benchmark">J-code '
+           'commercial benchmark → 2022–2026 by code</a></p>')
         + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",

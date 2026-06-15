@@ -6848,6 +6848,22 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_text(
                 texas_revenue_csv(),
                 content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/jcode-benchmark":
+            # J-code commercial benchmark 2022-2026 — published
+            # commercial-as-%-of-Medicare multiples + the biosimilar-
+            # driven blended-ASP trajectory by HCPCS J-code.
+            from .ui.texas_infusion_jcode_benchmark_page import (
+                render_texas_infusion_jcode_benchmark_page,
+            )
+            return self._send_html(
+                render_texas_infusion_jcode_benchmark_page())
+        if path == "/diligence/texas-infusion/jcode-benchmark.csv":
+            from .ui.texas_infusion_jcode_benchmark_page import (
+                texas_jcode_benchmark_csv,
+            )
+            return self._send_text(
+                texas_jcode_benchmark_csv(),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/texas-infusion-continued":
             # Texas infusion market part 2 — the per-claim / per-payer /
             # per-place grain: CPT rates by site + city, drug-dose
