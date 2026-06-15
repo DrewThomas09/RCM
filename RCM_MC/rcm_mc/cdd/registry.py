@@ -79,6 +79,7 @@ def _autoload() -> None:
         "profit_pool",
         "marimekko",
         "growth_archetype",
+        "market_size_estimates",
         "pricing_cm_bridge",
         "regulatory_flags",
         "forecast",
