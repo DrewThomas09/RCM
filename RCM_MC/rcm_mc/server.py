@@ -3407,14 +3407,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             # DealAnalysisPacket exemption as /v3-status.
             from .ui.v5_status_page import render_v5_status
             return self._send_html(render_v5_status())
-        if path == "/healthcare-verticals":
+        if path == "/healthcare-verticals-reference":
             # Library domain-reference page. Renders the vendored
             # docs/HEALTHCARE_VERTICALS_REFERENCE.md via chartis_shell.
-            # Static reference content — documented exemption from the
-            # DealAnalysisPacket invariant, same as /methodology and
-            # /v3-status (no deal, no analytics, no DB).
-            from .ui.healthcare_verticals_page import render_healthcare_verticals
-            return self._send_html(render_healthcare_verticals())
+            # Distinct from the data-driven /healthcare-verticals intel
+            # surface (rcm_mc/ui/data_public) — this is the narrative
+            # markdown reference. Static content — documented exemption
+            # from the DealAnalysisPacket invariant, same as /methodology
+            # and /v3-status (no deal, no analytics, no DB).
+            from .ui.healthcare_verticals_reference_page import (
+                render_healthcare_verticals_reference,
+            )
+            return self._send_html(render_healthcare_verticals_reference())
         if path == "/cli-runs":
             # CLI run-history browser (campaign target 3C). Reads
             # <outdir>/runs.sqlite via infra.run_history.list_runs.
@@ -3876,6 +3880,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Payer Mix Stress Lab — rate-shock Monte Carlo on payer mix.
         if path == "/diligence/payer-stress":
             return self._route_payer_stress_page()
+        # Advanced Analytics — composed native analytics stack (demo).
+        if path == "/diligence/advanced-analytics":
+            return self._route_advanced_analytics_page()
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
@@ -4344,6 +4351,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ma_star_tracker_page import render_ma_star_tracker
             return self._send_html(render_ma_star_tracker(_qp))
+        if path == "/benchmark-reference":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.benchmark_reference_page import render_benchmark_reference
+            return self._send_html(render_benchmark_reference(_qp))
         if path == "/gpo-supply":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -4515,6 +4527,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             _slug = path[len("/industry/"):].strip("/").split("/", 1)[0]
             from .ui.data_public.industry_page import render_industry
             return self._send_html(render_industry(_slug))
+        if path == "/healthcare-verticals":
+            from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
+            return self._send_html(render_verticals_intel_index())
+        if path.startswith("/healthcare-verticals/"):
+            _vid = path[len("/healthcare-verticals/"):].strip("/").split("/", 1)[0]
+            from .ui.data_public.healthcare_verticals_page import render_vertical_intel
+            return self._send_html(render_vertical_intel(_vid))
         if path == "/patient-experience":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -6957,12 +6976,24 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_xlsx)
             return
+        if path == "/cdd/tools":
+            # CDD analytics engines catalog — renders every registered
+            # rcm_mc.cdd exhibit (partner view) so the whole registry is
+            # browsable in the app, not just from the CLI.
+            from .ui.cdd_tools_page import render_cdd_tools
+            return self._send_html(render_cdd_tools())
         if path == "/cdd":
             # Commercial Due Diligence hub — the five-module CDD workflow
             # (market → competition → customers → pricing → deliverables)
             # mapped onto the desk's surfaces.
             from .ui.cdd_hub_page import render_cdd_hub
             return self._send_html(render_cdd_hub())
+        if path == "/payer-system":
+            # US payer-system exhibits deck — MA bid/benchmark/rebate, star
+            # QBP sensitivity, Part D IRA redesign, and the ACA APTC cliff
+            # (the four payer-economics CDD exhibits, 2025-2026 rules).
+            from .ui.payer_system_page import render_payer_system_page
+            return self._send_html(render_payer_system_page())
         if path == "/rate-environment":
             # Medicare rate environment — setting-level CMS payment
             # updates + blended dollar-impact calculator; qs carries the
@@ -10554,6 +10585,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             urllib.parse.urlparse(self.path).query,
         )
         self._send_html(render_payer_stress_page(qs=qs))
+
+    def _route_advanced_analytics_page(self) -> None:
+        from .ui.advanced_analytics_page import render_advanced_analytics_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_advanced_analytics_page(qs=qs))
 
     # ── HCRIS Peer X-Ray ─────────────────────────────────────────────
 

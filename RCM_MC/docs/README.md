@@ -39,6 +39,7 @@ Reference documents that don't belong in the numbered user guide (`readME/`) —
 | [TUVA_MYELIN_INTEGRATION.md](TUVA_MYELIN_INTEGRATION.md) | How the Tuva (analytics core) and Myelin (CMS pricing) patterns are adopted natively — decision, adapter spec, and the risk-adjustment + DiD modules |
 | [UI_KIT.md](UI_KIT.md) | Reference for the canonical UI primitives (buttons / cards / inputs / KPIs) and the semantic color system |
 | [MISSION_ALIGNMENT.md](MISSION_ALIGNMENT.md) | What this product is for, who it serves, what we won't build |
+| [PEDESK_HEALTHCARE_VERTICALS_DEEP_DIVE.md](PEDESK_HEALTHCARE_VERTICALS_DEEP_DIVE.md) | **19-vertical reference deep-dive** — dental specialties, hospital sub-types, physician-org structures, diagnostics/biologics, and a veterinary cash-pay comparison. Codes, epidemiology, provider counts, benchmarks, reimbursement regimes, and chart-ready data sources per vertical, plus the 2025/2026 cross-cutting reimbursement updates |
 
 ---
 
@@ -54,6 +55,7 @@ Fifteen strategy documents written during the most recent autonomous-loop cycle.
 | [PARTNERSHIPS_PLAN.md](PARTNERSHIPS_PLAN.md) | **Partnerships strategy** — Tier 1-4 partners with prioritization, outreach copy, integration scope per tier |
 | [COMPETITIVE_LANDSCAPE.md](COMPETITIVE_LANDSCAPE.md) | **Competitive map** — Trilliant / Definitive / PitchBook / consultant overlap; positioning + how we win |
 | [MULTI_ASSET_EXPANSION.md](MULTI_ASSET_EXPANSION.md) | **Beyond hospitals** — physician groups, ASCs, behavioral, post-acute. Sequencing + data-source map |
+| [PEDESK_HEALTHCARE_VERTICALS_LIFE_SCIENCES.md](PEDESK_HEALTHCARE_VERTICALS_LIFE_SCIENCES.md) | **15 candidate verticals deep-dive** — ten provider/therapy/ancillary segments (rehab, chiro, podiatry, aesthetics, sleep, wound care, allergy, labs, ambulance, IRF/LTACH/PACE) + the five-segment life-sciences drug-dollar layer (specialty pharmacy, PBMs, CROs/CDMOs, GPOs/340B, home infusion). Chart-ready codes, epidemiology, workforce, and 2025/2026 reimbursement anchors with named primary datasets |
 | [MULTI_USER_ARCHITECTURE.md](MULTI_USER_ARCHITECTURE.md) | **Deal teams** — auth, organizations, comments, presence, shared annotations. Phase 1 (auth + isolation) vs Phase 2 (collaboration) |
 | [PHI_SECURITY_ARCHITECTURE.md](PHI_SECURITY_ARCHITECTURE.md) | **PHI handling** — BAA template, SOC 2 Type II plan, tenant isolation tiers (T1 → T3), customer-managed keys |
 | [PEDESK_AGENT3_ARCHITECTURE.md](PEDESK_AGENT3_ARCHITECTURE.md) | **Cross-cutting platform layers** — the third PEDesk agent's scope: security/RBAC+ABAC/multi-tenancy, compliance/audit governance, commercial data-vendor connectors (ACL), expert-network + qualitative-synthesis workflow, data-room/deal-pipeline/engagement. Includes the three-agent coordination model (ownership map, frozen contracts, config owner) and a stdlib-grounded translation of the cloud-native research |

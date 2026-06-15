@@ -83,6 +83,15 @@ def _build_modules() -> List[Module]:
                "20 curated CMS datasets (PFS, OPPS, MS-DRG, HCRIS, MA), API status", False),
         Module("CMS Sources", "/cms-sources", "Data", "diligence", "analyst",
                "High-level CMS data source catalog (companion to CMS Data Browser)", False),
+        Module("Benchmark Reference", "/benchmark-reference", "Data", "diligence", "analyst",
+               "Granular sourced benchmark layer: quality-measure weights, CPT/DRG/Part-B "
+               "frequency, physician comp, hospital cost structure, disease prevalence & NHE "
+               "spending (CMS/MGMA/AAMC/SEER/CDC, named sources)", False),
+        Module("CDD Analytics Engines", "/cdd/tools", "Data", "diligence", "associate",
+               "Every registered CDD exhibit rendered in one catalog: McKinsey profit-pool "
+               "stacked column, marimekko profit-pool map, growth archetype map, TAM/SAM, "
+               "PVM bridge, HCC/RAF and the benchmarking layer, each with its reconciliation "
+               "and sourced footnote", False),
         # Diligence & Screening
         Module("Red-Flag Scanner", "/redflag-scanner", "Diligence", "diligence", "associate",
                "Rule-based red-flag screening against corpus benchmarks", True),

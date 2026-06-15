@@ -1,0 +1,10 @@
+vertical_id,unit_label,value_low,value_high,unit,as_of,confidence,source,notes
+snf,per patient-day,700,800,USD,2025,medium,SNF cost reports (flagged in research),Approximate; not pinned to single authoritative figure by payer
+hospice,routine home care per day,224,224,USD,2025,medium,CMS hospice final rules,RHC per-diem approximate anchor value
+dialysis_esrd,per treatment,281.71,281.71,USD,2026,high,CMS ESRD PPS final rule CY2026,CY2026 base rate
+fertility_art,per IVF cycle,15000,20000,USD,2025,high,ASRM; clinic data,Can exceed $30000; ~2.5 cycles to pregnancy
+nemt,per trip,18,65,USD,2024,medium,Medicaid broker averages 2023-24,Ambulatory $18-35 base; wheelchair van $35-65 base; stretcher $75-150
+cell_gene_therapy,per dose,373000,4250000,USD,2025,high,FDA list; manufacturer WAC,WAC list; net/paid prices materially lower
+sud,MAT Suboxone per month,200,600,USD,2025,medium,Drug pricing,Generic $200-350; branded $400-600
+sud,MAT Vivitrol per month,1000,1000,USD,2025,medium,Drug pricing,Naltrexone monthly dose $1000+
+cro,Phase 3 trial cost,20000000,20000000,USD,2024,medium,Industry estimates,Phase 1 ~$4M; Phase 2 ~$13M; Phase 3 ~$20M

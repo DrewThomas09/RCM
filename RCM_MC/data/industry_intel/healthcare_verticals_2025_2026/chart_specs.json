@@ -1,0 +1,19 @@
+{
+  "bundle": "healthcare_verticals_2025_2026",
+  "description": "Machine-readable chart suggestions mapping report visuals to the structured datasets in this bundle.",
+  "charts": [
+    {"id": "cross_vertical_unit_economics", "title": "Cross-vertical unit economics (normalized per-unit)", "type": "bar", "dataset": "unit_economics.csv", "x": "vertical_id", "y": ["value_low", "value_high"], "note": "The single most useful synthesis visual; values are in different denominators (per day/treatment/cycle/trip/dose) so label units explicitly."},
+    {"id": "fy2026_payment_updates", "title": "FY/CY2026 payment updates by setting", "type": "bar", "dataset": "payment_updates_2026.csv", "x": "setting", "y": "net_update_pct"},
+    {"id": "snf_rate_buildup", "title": "SNF FY2026 rate build-up", "type": "waterfall", "dataset": "payment_buildup_2026.csv", "filter": {"vertical_id": "snf"}, "x": "component", "y": "value_pct"},
+    {"id": "hh_rate_buildup", "title": "Home Health CY2026 rate build-up", "type": "waterfall", "dataset": "payment_buildup_2026.csv", "filter": {"vertical_id": "home_health"}, "x": "component", "y": "value_pct"},
+    {"id": "gene_therapy_prices", "title": "Cell & gene therapy WAC list prices", "type": "bar", "dataset": "gene_therapy_prices.csv", "x": "therapy", "y": "list_price_usd", "sort": "desc"},
+    {"id": "gene_therapy_platform_split", "title": "Gene therapy approvals by platform", "type": "pie", "dataset": "gene_therapy_prices.csv", "group_by": "platform"},
+    {"id": "market_concentration", "title": "Market concentration by vertical", "type": "bar", "dataset": "market_structure.csv", "x": "vertical_id", "y": "combined_share_pct"},
+    {"id": "direct_care_workforce", "title": "Behavioral & direct care workforce shortages", "type": "bar", "dataset": "workforce.csv", "x": "metric", "y": "value"},
+    {"id": "snf_payer_mix", "title": "SNF payer mix", "type": "stacked_bar", "dataset": "inline", "series": [{"label": "Medicaid", "value": 63}, {"label": "Medicare", "value": 14}, {"label": "Other", "value": 23}], "note": "Per residents; from report section 1(d)."},
+    {"id": "senior_living_supply_gap", "title": "Senior living supply gap projection", "type": "bar", "dataset": "inline", "series": [{"label": "2024", "value": 156000}, {"label": "by 2028", "value": 549000}, {"label": "by 2030", "value": 806000}], "note": "Additional units needed per NIC MAP."},
+    {"id": "dialysis_concentration_trend", "title": "DaVita+Fresenius facility share over time", "type": "line", "dataset": "inline", "series": [{"label": "2005", "value": 59.1}, {"label": "2019", "value": 77.1}], "note": "Koukounas et al. (JAMA)."},
+    {"id": "hospice_for_profit_trend", "title": "Hospice for-profit share over time", "type": "line", "dataset": "inline", "series": [{"label": "1992", "value": 5}, {"label": "2024", "value": 73}]},
+    {"id": "employer_ivf_coverage", "title": "Employer IVF coverage trend", "type": "line", "dataset": "inline", "series": [{"label": "2016", "value": 13}, {"label": "2020", "value": 30}, {"label": "2024", "value": 32}]}
+  ]
+}

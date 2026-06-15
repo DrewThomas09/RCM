@@ -1,10 +1,16 @@
-"""Library reference page: US Healthcare Verticals.
+"""Library reference page: US Healthcare Verticals (narrative reference).
 
-GET /healthcare-verticals renders ``RCM_MC/docs/HEALTHCARE_VERTICALS_REFERENCE.md``
-— the granular per-vertical operational/clinical/epidemiological reference
-(code fingerprints, payment systems, facility/workforce counts, access,
-benchmarks, data sources) — inside ``chartis_shell`` so partners can read it
-in-app instead of opening the markdown file.
+GET /healthcare-verticals-reference renders
+``RCM_MC/docs/HEALTHCARE_VERTICALS_REFERENCE.md`` — the granular per-vertical
+operational/clinical/epidemiological reference (code fingerprints, payment
+systems, facility/workforce counts, access, benchmarks, data sources) —
+inside ``chartis_shell`` so partners can read it in-app instead of opening
+the markdown file.
+
+Distinct from the data-driven ``/healthcare-verticals`` intel surface
+(``rcm_mc/ui/data_public/healthcare_verticals_page.py``), which renders the
+structured 17-vertical CSV bundle with 2026 rates. This page is the prose
+reference; that one is the chart-ready dataset.
 
 Exempt from the DealAnalysisPacket invariant for the same reason as
 ``/v3-status`` and ``/methodology``: this is static domain-reference content,
@@ -122,8 +128,8 @@ _JUMP_SECTIONS = (
 )
 
 
-def render_healthcare_verticals() -> str:
-    """GET /healthcare-verticals — full HTML via chartis_shell."""
+def render_healthcare_verticals_reference() -> str:
+    """GET /healthcare-verticals-reference — full HTML via chartis_shell."""
     if not DOC_PATH.is_file():
         body = (
             '<section style="max-width:62rem;">'
@@ -154,7 +160,7 @@ def render_healthcare_verticals() -> str:
 
     head = ck_editorial_head(
         eyebrow="LIBRARY · DOMAIN REFERENCE",
-        title="US Healthcare Verticals",
+        title="US Healthcare Verticals Reference",
         meta=(
             f"{vertical_count} VERTICALS · "
             "CPT/HCPCS · ICD-10 · DRG · CDT · NUCC TAXONOMY · "
@@ -208,7 +214,7 @@ def render_healthcare_verticals() -> str:
 
     return chartis_shell(
         body,
-        "US Healthcare Verticals",
+        "US Healthcare Verticals Reference",
         active_nav="library",
         subtitle="library · domain reference",
     )

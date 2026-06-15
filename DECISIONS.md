@@ -98,3 +98,75 @@ Options: A) fixed constant; B) BIC-style sigma^2 log(n) with a robust sigma from
 Decision: B.
 Rationale: scales with noise so a noisy series does not over-segment and a flat series yields none.
 Reconciliation/Validation: test_changepoint asserts one break on a clear shift and zero on a flat series.
+
+## [2026-06-14 19:30] NEW-19 marimekko width/height encoding
+Context: a healthcare profit-pool marimekko can use the textbook revenue-width by
+margin-height encoding or McKinsey's EBITDA-share by EBITDA-share variant.
+Options: A) revenue width and margin height; B) width is sector share of total
+industry EBITDA and height is sub-segment share of its sector's EBITDA.
+Decision: B as the primary, with A offered as an alternate when revenue and
+margin are supplied.
+Rationale: faithful recreation of the McKinsey healthcare profit-pool map, where
+rectangle area reads as a sub-segment's share of total industry EBITDA; the
+classic encoding stays available for margin-pressure diligence.
+Reconciliation/Validation: test_marimekko asserts widths sum to 1.0, areas sum
+to 1.0, and the 10/50/5/35 sector widths of the published 2017/18 map.
+
+## [2026-06-14 19:30] NEW-18 CAGR bracket coverage and undefined handling
+Context: a profit-pool exhibit needs CAGR brackets, and CAGR is undefined when a
+base or endpoint is non-positive or the span is zero.
+Options: A) emit a single full-span CAGR; B) emit consecutive-pair brackets plus
+the full span, and return None for an undefined CAGR rather than a number.
+Decision: B.
+Rationale: multi-column decks want both adjacent and end-to-end growth; a None
+keeps a meaningless ratio out of a bracket instead of printing a misleading one.
+Reconciliation/Validation: test_profit_pool asserts total CAGR 7.0% and HST 12%
+hand-verified, plus a reconciliation that the full-span CAGR rebuilds the final
+total from the first.
+
+## [2026-06-14 19:30] NEW-20 growth quadrant threshold
+Context: the historic-vs-projected growth map needs a quadrant line.
+Options: A) median of each axis; B) a fixed 5 percent growth line on both axes.
+Decision: B, default 5 percent (overridable).
+Rationale: the McKinsey archetype map uses an absolute 5 percent growth line, not
+a relative median, so high-growth pools are defined consistently across vintages.
+Reconciliation/Validation: test_growth_archetype asserts the four quadrant
+assignments and the high-growth EBITDA share 299/389 hand-verified.
+
+## [2026-06-15 12:20] REF-01..REF-06 — Granular benchmarking reference as registered Exhibits
+Context: The granular benchmark-data layer (quality-measure weights, code/procedure
+frequency, physician comp/productivity, hospital cost structure, disease-prevalence
+denominators, utilization/spending rates) needed a home that is chart-ready and
+testable, not a static markdown table that can drift from its stated totals.
+Options: A) a markdown/CSV reference doc under docs/; B) a benchmark_reference.py
+module that encodes each domain as a typed Exhibit with sourced footnotes,
+provenance flags, and a numeric reconciliation, registered like every other CDD
+feature.
+Decision: B. One cohesive rcm_mc/cdd/benchmark_reference.py registers REF-01..REF-06.
+Each carries source + vintage + key assumptions, flags every estimate, projection,
+proprietary cell, and litigated item, and emits a reconciliation that ties cells to
+their stated total. NHE-by-payer and NHE-by-category use a computed residual bucket
+so each stacked bar ties exactly to the 4.9T total; this is the one non-default
+modeling choice (a residual is shown rather than dropping unlisted spend).
+Rationale: reuses the audience-separation, copy-lint, and chartpack-standards
+machinery the registry already enforces, so the reference passes the same
+registry-wide sweeps as the analytics exhibits and cannot silently lose provenance.
+Reconciliation/Validation: tests/golden/test_benchmark_reference.py hand-verifies
+each identity (Star weight 4-2==2; Part B top-10 18.4 vs 18.5; 218400/5200==42;
+42*0.68==28.56; (680909+613352)/3090964==41.9%; payer named+residual==4900) and
+asserts the chartpack and two-audience registry sweeps stay green with REF added.
+## 2026-06-15 session (healthcare unit-economics spine)
+
+## [2026-06-15 11:55] NEW-22 Unit-economics spine representative value
+Context: the spine charts verticals whose natural unit is sometimes a point value (a final-rule rate) and sometimes a range (a secondary-source estimate or a list-price band), all on one log axis spanning about five orders of magnitude.
+Options: chart the arithmetic midpoint of a range, the low bound, the high bound, or the geometric mean.
+Decision: the representative value on the log axis is the geometric mean of the low and high bounds; a point value charts at its own value because its bounds are equal.
+Rationale: the geometric mean is the natural center on a log scale (it sits halfway between the bounds in log space), so a range plots symmetrically about its charted point; the arithmetic midpoint would bias every range upward on a log axis.
+Reconciliation/Validation: the representative-within-bounds identity holds for every row, and the order-of-magnitude span equals log of max over min; both reconcile in tests/golden/test_unit_economics_spine.py.
+
+## [2026-06-15 11:55] NEW-26 Market concentration threshold
+Context: the concentration overlay flags verticals that are highly concentrated so a vertical chart can carry a "who controls this market" badge.
+Options: flag on a fixed top-firm share threshold, on an HHI cutoff, or leave it unflagged and purely descriptive.
+Decision: flag a vertical as highly concentrated when its named top-firm share is at or above 70 percent.
+Rationale: the share is the figure the source data reports directly and the one a partner reads on the chart; an HHI cutoff would require firm-level shares the headline rows do not carry, and 70 percent cleanly separates the consolidated verticals (distribution 95, PBM 80, dialysis 77.1, GPO 75) from the open ones (hospital systems about 5 percent).
+Reconciliation/Validation: every share validates to the 0 to 100 percent range and the top charted share equals the table maximum; tests/golden/test_market_concentration.py confirms four rows clear the bar.

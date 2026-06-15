@@ -1,0 +1,10 @@
+vertical_id,setting,fiscal_period,component,component_order,value_pct,is_total,confidence,source,notes
+snf,Skilled Nursing Facilities,FY2026,Market basket,1,3.3,0,high,CMS SNF PPS final rule FY2026,
+snf,Skilled Nursing Facilities,FY2026,Forecast error,2,0.6,0,high,CMS SNF PPS final rule FY2026,
+snf,Skilled Nursing Facilities,FY2026,Productivity adjustment,3,-0.7,0,high,CMS SNF PPS final rule FY2026,
+snf,Skilled Nursing Facilities,FY2026,Net update,4,3.2,1,high,CMS SNF PPS final rule FY2026,
+home_health,Home Health,CY2026,Market basket,1,2.4,0,high,CMS HH PPS final rule CY2026,
+home_health,Home Health,CY2026,Permanent PDGM adjustment,2,-1.023,0,high,CMS HH PPS final rule CY2026,Recalculated on CY2020-2022 data only
+home_health,Home Health,CY2026,Temporary adjustment,3,-3.0,0,high,CMS HH PPS final rule CY2026,
+home_health,Home Health,CY2026,Fixed-dollar-loss (FDL),4,-0.1,0,high,CMS HH PPS final rule CY2026,
+home_health,Home Health,CY2026,Net update,5,-1.3,1,high,CMS HH PPS final rule CY2026,
