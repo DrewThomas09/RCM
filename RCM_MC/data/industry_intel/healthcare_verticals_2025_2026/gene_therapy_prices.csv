@@ -1,0 +1,17 @@
+therapy,generic_name,indication,list_price_usd,platform,confidence,source,notes
+Lenmeldy,atidarsagene autotemcel,MLD,4250000,lentiviral gene therapy,high,Manufacturer WAC; FDA list,ICER valued up to ~$3.94M
+Hemgenix,etranacogene dezaparvovec,Hemophilia B,3500000,AAV in vivo,high,Manufacturer WAC; FDA list,
+Elevidys,delandistrogene moxeparvovec,DMD,3200000,AAV in vivo,high,Manufacturer WAC; FDA list,Label narrowed to ambulatory DMD; Boxed Warning
+Lyfgenia,lovo-cel,Sickle cell,3100000,lentiviral gene therapy,high,Manufacturer WAC; FDA list,
+Skysona,elivaldogene autotemcel,CALD,3000000,lentiviral gene therapy,high,Manufacturer WAC; FDA list,
+Roctavian,valoctocogene roxaparvovec,Hemophilia A,2900000,AAV in vivo,high,Manufacturer WAC; FDA list,Withdrawing from US by end-May 2026
+Zynteglo,beti-cel,Beta-thalassemia,2800000,lentiviral gene therapy,high,Manufacturer WAC; FDA list,
+Casgevy,exa-cel,Sickle cell,2200000,CRISPR gene editing,high,Manufacturer WAC; FDA list,Vertex identified ~35000 potential patients
+Zolgensma,onasemnogene abeparvovec,SMA,2100000,AAV in vivo,high,Manufacturer WAC; FDA list,Net ~$1.36M per caveat
+Carvykti,cilta-cel,Multiple myeloma,465000,CAR-T,high,Manufacturer WAC; FDA list,
+Abecma,ide-cel,Multiple myeloma,419500,CAR-T,high,Manufacturer WAC; FDA list,
+Breyanzi,liso-cel,Lymphoma,410300,CAR-T,high,Manufacturer WAC; FDA list,
+Kymriah,tisagenlecleucel,B-ALL,475000,CAR-T,high,Manufacturer WAC; FDA list,B-ALL indication
+Kymriah,tisagenlecleucel,DLBCL,373000,CAR-T,high,Manufacturer WAC; FDA list,DLBCL indication
+Yescarta,axi-cel,Lymphoma,373000,CAR-T,high,Manufacturer WAC; FDA list,Some formulary sheets show $399K-$424K
+Tecartus,brexu-cel,MCL,373000,CAR-T,high,Manufacturer WAC; FDA list,Median vein-to-vein ~15 days; 96% manufacturing success

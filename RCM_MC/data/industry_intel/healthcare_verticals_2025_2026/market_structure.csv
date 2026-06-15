@@ -1,0 +1,10 @@
+vertical_id,leaders,combined_share_pct,share_basis,confidence,source,notes
+dialysis_esrd,DaVita + Fresenius,77.1,facilities,high,Koukounas et al. (JAMA; PMC12177639),Rose from 59.1% (2005) to 77.1% (2019); DaVita ~37% / Fresenius ~38%
+nemt,ModivCare + MTM,,broker market,medium,ModivCare/MTM filings,ModivCare ~25-35%; MTM ~15-25%
+snf,25 largest chains,19,facilities,low,IQVIA (dated),Single operators ~40%; highly fragmented
+hospice,10 largest chains,33,patients treated,medium,NHPCO; industry,Treat roughly a third of patients
+cro,Top 10 CROs,69.5,contract clinical-services revenue,medium,Company filings,~69-70%; top 10 ~$34B (2022)
+cdmo,Lonza / Catalent / Samsung Biologics / WuXi,,commercialized approvals,low,Company reports,Demand outpacing capacity; no single dominant share figure
+fertility_art,US Fertility / Inception / Pinnacle / Kindbody / CCRM,,clinics,low,Industry,~450+ clinics; consolidating networks
+home_health,Optum (LHC+Amedisys) / Enhabit / Aveanna / BAYADA,,agencies,low,Company filings,Fragmented with active consolidation
+senior_living,Brookdale / Atria / Sunrise / Holiday / LCS / Five Star,,properties,low,Company filings,Brookdale largest; fragmented below top operators
