@@ -387,6 +387,78 @@
       "blocked_reason": "",
       "golden_test": "tests/golden/test_market_concentration.py",
       "notes": "Top-firm share by vertical: distribution 95 / PBM 80 / dialysis 77.1 (2019 JAMA) / GPO 75 clear the 70% bar (4 highly-concentrated); hospital systems ~5%. GPO and EHR flagged as industry estimates; shares validated 0-100; highly-concentrated and estimates flags."
+    },
+    {
+      "id": "REF-01",
+      "title": "Quality measure weights reference (Star Ratings 2025 vs 2026)",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 31,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_benchmark_reference.py",
+      "notes": "Granular benchmark-data layer. CMS MA-PD Star weights by category; patient-experience weight drop 4->2 reconciled (4-2==2); 2027 proposed measure removals flagged forward-looking. Stdlib only, no optional deps."
+    },
+    {
+      "id": "REF-02",
+      "title": "Procedure and code frequency reference (CPT, DRG, Part B drugs)",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 32,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_benchmark_reference.py",
+      "notes": "Top CPT (99214 4.50% / 99213 3.88%), top inpatient MS-DRG (871 sepsis 7.44%), top Part B drugs (Keytruda 4.9B). Top-10 Part B sum 18.4B vs reported 18.5B reconciled (tol 0.15); Definitive-shares-not-counts, DRG470 site-of-care, FFS-only flags."
+    },
+    {
+      "id": "REF-03",
+      "title": "Physician compensation, productivity, and supply reference",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 33,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_benchmark_reference.py",
+      "notes": "MGMA family-medicine comp 218400 / 5200 wRVU = 42 $/wRVU reconciled; AAMC shortage range 13500-86000 by 2036; MGMA-proprietary, aggregator-approximate, AAMC-projection, 2026 PFS efficiency-adjustment flags."
+    },
+    {
+      "id": "REF-04",
+      "title": "Hospital and provider cost structure reference",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 34,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_benchmark_reference.py",
+      "notes": "Kaufman Hall median operating margin 1.3% YTD Dec-2025 (w/ alloc); labor 84.4% of practice expense; 340B uncompensated 42B*0.68==28.56B reconciled; allocation-basis, hospitals-in-red, 340B-rebate-vacated flags."
+    },
+    {
+      "id": "REF-05",
+      "title": "Disease prevalence denominators reference",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 35,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_benchmark_reference.py",
+      "notes": "Diabetes 40.1M / prediabetes 115.2M; SEER 2026 cancer incidence; leading causes 2023. (680909+613352)/3090964==41.9% reconciled (tol 0.1); diabetes-methodology-conflict, cancer-projection, CCW-vintage flags."
+    },
+    {
+      "id": "REF-06",
+      "title": "National health expenditure and utilization reference",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 36,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_benchmark_reference.py",
+      "notes": "NHE 4.9T 2023 by category and payer with computed residual buckets tying each bar to the 4900B total (reconciled 1e-6); Medicaid per-enrollee by group; NHE-projection and MedPAC-all-payer-basis flags."
     }
   ]
 }

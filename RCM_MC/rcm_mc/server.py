@@ -6961,6 +6961,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_xlsx)
             return
+        if path == "/cdd/tools":
+            # CDD analytics engines catalog — renders every registered
+            # rcm_mc.cdd exhibit (partner view) so the whole registry is
+            # browsable in the app, not just from the CLI.
+            from .ui.cdd_tools_page import render_cdd_tools
+            return self._send_html(render_cdd_tools())
         if path == "/cdd":
             # Commercial Due Diligence hub — the five-module CDD workflow
             # (market → competition → customers → pricing → deliverables)

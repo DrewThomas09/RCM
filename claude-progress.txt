@@ -288,6 +288,31 @@ Branch: claude/mckinsey-healthcare-exhibits-qix9ec
   areas->1.0 (NEW-19); high-growth share 299/389 (NEW-20).
 - Next: optional Stage 2 (sites-of-care cost delta, admin-cost waterfall, VBC
   curves) if requested; UI deck panels already speak marimekko/waterfall.
+================================================================================
+[2026-06-15 12:20 UTC] REF-01..REF-06 Granular benchmarking reference
+Branch: claude/healthcare-benchmarking-reference-f96a6q
+- Built the granular benchmark-data layer as one cohesive cdd Exhibit module:
+  rcm_mc/cdd/benchmark_reference.py registers REF-01..REF-06 (quality-measure
+  weights, code/procedure frequency, physician comp/supply, hospital cost
+  structure, disease-prevalence denominators, NHE/utilization). Stdlib only,
+  no new runtime deps, no optional [cdd] deps, no LLM on any path.
+- Each domain carries source+vintage+key-assumption footnotes, provenance flags
+  (estimate / projection / proprietary / litigated), and a numeric reconciliation
+  that ties cells to a stated total. NHE-by-payer/category use a computed residual
+  bucket so each stacked bar ties exactly to the 4.9T total.
+- Hand-verified reconciliations: Star weight 4-2==2 (REF-01); Part B top-10
+  18.4 vs reported 18.5 within 0.15 (REF-02); 218400/5200==42 $/wRVU (REF-03);
+  340B uncompensated 42*0.68==28.56B (REF-04); (680909+613352)/3090964==41.9%
+  within 0.1 (REF-05); payer named 3907.2 + residual 992.8 ==4900 (REF-06).
+- Wired into registry autoload + CLI (python -m rcm_mc.cdd list/run REF-0x).
+  Added to feature_list.json (priority 21-26) and DECISIONS.md.
+- Evidence: pytest tests/golden/test_benchmark_reference.py => 10 passed;
+  test_chartpack_standards.py + test_two_audience.py sweeps green with REF added
+  (REF exhibits pass footnote/IBCS/no-em-dash and zero partner leakage). Full
+  golden sample 198 passed; only pre-existing NEW-05/BOLSTER dep-skips (lifelines/
+  sklearn/ruptures not installed in this container) remain, unrelated to REF.
+- Next: optional UI panel surfacing REF exhibits on the benchmarks page; license
+  the proprietary layer (MGMA DataDive, CMS MEDPAR) to fill percentile/count cells.
 
 ================================================================================
 [2026-06-15 00:40 UTC] NEW-21 Contested market-size triangulation

@@ -133,6 +133,28 @@ a relative median, so high-growth pools are defined consistently across vintages
 Reconciliation/Validation: test_growth_archetype asserts the four quadrant
 assignments and the high-growth EBITDA share 299/389 hand-verified.
 
+## [2026-06-15 12:20] REF-01..REF-06 — Granular benchmarking reference as registered Exhibits
+Context: The granular benchmark-data layer (quality-measure weights, code/procedure
+frequency, physician comp/productivity, hospital cost structure, disease-prevalence
+denominators, utilization/spending rates) needed a home that is chart-ready and
+testable, not a static markdown table that can drift from its stated totals.
+Options: A) a markdown/CSV reference doc under docs/; B) a benchmark_reference.py
+module that encodes each domain as a typed Exhibit with sourced footnotes,
+provenance flags, and a numeric reconciliation, registered like every other CDD
+feature.
+Decision: B. One cohesive rcm_mc/cdd/benchmark_reference.py registers REF-01..REF-06.
+Each carries source + vintage + key assumptions, flags every estimate, projection,
+proprietary cell, and litigated item, and emits a reconciliation that ties cells to
+their stated total. NHE-by-payer and NHE-by-category use a computed residual bucket
+so each stacked bar ties exactly to the 4.9T total; this is the one non-default
+modeling choice (a residual is shown rather than dropping unlisted spend).
+Rationale: reuses the audience-separation, copy-lint, and chartpack-standards
+machinery the registry already enforces, so the reference passes the same
+registry-wide sweeps as the analytics exhibits and cannot silently lose provenance.
+Reconciliation/Validation: tests/golden/test_benchmark_reference.py hand-verifies
+each identity (Star weight 4-2==2; Part B top-10 18.4 vs 18.5; 218400/5200==42;
+42*0.68==28.56; (680909+613352)/3090964==41.9%; payer named+residual==4900) and
+asserts the chartpack and two-audience registry sweeps stay green with REF added.
 ## 2026-06-15 session (healthcare unit-economics spine)
 
 ## [2026-06-15 11:55] NEW-22 Unit-economics spine representative value
