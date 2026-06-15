@@ -4507,6 +4507,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             _slug = path[len("/industry/"):].strip("/").split("/", 1)[0]
             from .ui.data_public.industry_page import render_industry
             return self._send_html(render_industry(_slug))
+        if path == "/healthcare-verticals":
+            from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
+            return self._send_html(render_verticals_intel_index())
+        if path.startswith("/healthcare-verticals/"):
+            _vid = path[len("/healthcare-verticals/"):].strip("/").split("/", 1)[0]
+            from .ui.data_public.healthcare_verticals_page import render_vertical_intel
+            return self._send_html(render_vertical_intel(_vid))
         if path == "/patient-experience":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
