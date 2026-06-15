@@ -459,6 +459,54 @@
       "blocked_reason": "",
       "golden_test": "tests/golden/test_benchmark_reference.py",
       "notes": "NHE 4.9T 2023 by category and payer with computed residual buckets tying each bar to the 4900B total (reconciled 1e-6); Medicaid per-enrollee by group; NHE-projection and MedPAC-all-payer-basis flags."
+    },
+    {
+      "id": "NEW-27",
+      "title": "MA bid / benchmark / rebate waterfall",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 27,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_ma_bid_rebate.py",
+      "notes": "US payer system. County benchmark by FFS quartile (115/107.5/100/95%) plus 5/10% quality bonus; star-tier rebate retention (50/65/70%) of benchmark minus bid; CMS-retained savings; enrollee premium when bid exceeds benchmark; RAF-scaled final payment. KFF worked example reproduced exactly: 1150 benchmark, 830 bid, 224 rebate, 1054 payment."
+    },
+    {
+      "id": "NEW-28",
+      "title": "Star-rating QBP payment sensitivity",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 28,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_star_qbp.py",
+      "notes": "US payer system. Prices plan payment across star scenarios (reuses NEW-27 engine), surfaces the 4-star quality-bonus cliff and the downgrade payment loss. Held FFS 1000 / quartile 1 / bid 830: payments 1089/1089/1070.5/1038/990 across 5.0..3.0 stars, 99 swing, 4.5->4.0 loss 18.5."
+    },
+    {
+      "id": "NEW-29",
+      "title": "Part D IRA redesign payer shares",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 29,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_part_d_redesign.py",
+      "notes": "US payer system. Three-phase brand allocation across enrollee/plan/manufacturer/Medicare with the 2000 (2025) / 2100 (2026) OOP cap and the 80->20% catastrophic reinsurance shift. 10000 gross in 2025 hand-verified: enrollee 2000 (at cap), plan 5928, manufacturer 1318, Medicare 754."
+    },
+    {
+      "id": "NEW-30",
+      "title": "ACA enhanced-APTC subsidy cliff",
+      "bucket": "new",
+      "audience": "both",
+      "priority": 30,
+      "passes": true,
+      "blocked": false,
+      "blocked_reason": "",
+      "golden_test": "tests/golden/test_aca_aptc_cliff.py",
+      "notes": "US payer system. Net benchmark premium under enhanced vs sunset applicable-percentage schedules; restores the 400% eligibility cliff and the premium shock. FPL base 15060, benchmark 7000: 400% FPL net 5120.40 (enhanced) -> 5921.592 (sunset); 450% FPL 5760.45 -> 7000 (cliff)."
     }
   ]
 }

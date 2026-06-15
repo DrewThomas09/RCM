@@ -69,6 +69,8 @@ _MODULES = [
      "Who sets the price in this market — the target, the payer, or "
      "CMS — and does the cost side let the margin hold?",
      [
+         ("US Payer System", "/payer-system",
+          "MA bid/benchmark/rebate, star QBP cliff, Part D IRA redesign, ACA APTC cliff"),
          ("Pricing Power Analyzer", "/pricing-power",
           "Elasticity curves and segment-optimal price moves"),
          ("Medicare Rate Environment", "/rate-environment",

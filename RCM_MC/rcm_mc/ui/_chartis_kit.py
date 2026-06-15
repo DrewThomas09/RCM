@@ -7522,6 +7522,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "excel-templates", "title": "Excel Model Templates · live-formula workbooks (LBO, QoE, NWC peg, CDD market model)", "route": "/excel-templates"},
     {"id": "cdd-hub", "title": "CDD Hub · the commercial-diligence workflow in running order", "route": "/cdd"},
     {"id": "cdd-tools", "title": "CDD Analytics Engines · every registered exhibit rendered with its reconciliation and sources", "route": "/cdd/tools"},
+    {"id": "payer-system", "title": "US Payer System · MA rebate, star QBP, Part D, ACA cliff", "route": "/payer-system"},
     {"id": "voc-survey", "title": "Voice of Customer · NPS, KPC gaps, willingness-to-pay", "route": "/voc-survey"},
     {"id": "win-loss", "title": "Win/Loss Analyzer · conversion record vs named competitors", "route": "/win-loss"},
     {"id": "rate-environment", "title": "Medicare Rate Environment · CMS payment updates + blended impact", "route": "/rate-environment"},

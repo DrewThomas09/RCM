@@ -364,3 +364,23 @@ Branch: claude/healthcare-unit-economics-spine-311f1w
   already taken NEW-21 for market_size_estimates.
 - Next: optional UI deck panels for the spine and scorecard, and primary-source
   verification of the est_verify rows.
+
+================================================================================
+[2026-06-15 13:55 UTC] NEW-27..30 US payer-system exhibits (rebased onto main)
+Branch: claude/us-payer-system-2025-2026-vmdjts
+- Rebased onto main after #1884/#1886 claimed NEW-21..26; renumbered this
+  workstream's four exhibits to NEW-27..30 to avoid feature-id collision.
+- NEW-27 ma_bid_rebate.py: MA bid/benchmark/rebate waterfall. County benchmark
+  by FFS quartile plus 5/10% quality bonus, star-tier rebate retention, CMS-
+  retained savings, enrollee premium when bid exceeds benchmark, RAF-scaled
+  payment. KFF worked example reproduced exactly (1150/830/224/1054).
+- NEW-28 star_qbp.py: star-rating QBP payment sensitivity, reuses the NEW-27
+  engine; flags the 4-star quality-bonus cliff and the downgrade loss.
+- NEW-29 part_d_redesign.py: three-phase IRA brand allocation across enrollee/
+  plan/manufacturer/Medicare with the 2000/2100 OOP cap and the 80->20%
+  catastrophic reinsurance shift.
+- NEW-30 aca_aptc_cliff.py: net benchmark premium under enhanced vs sunset
+  applicable-percentage schedules; restores the 400% cliff and premium shock.
+- All four registered in cdd/registry.py autoload; golden-tested; audience-
+  separated. New deck page surfaces them (ui/payer_system_page.py at /payer-system).
+- No new runtime deps; statistical only, no LLM on any path.
