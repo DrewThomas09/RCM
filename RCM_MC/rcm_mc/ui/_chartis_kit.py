@@ -269,6 +269,7 @@ _SUB_NAV = {
         {"label": "Infusion Market Scan", "href": "/diligence/infusion-markets"},
         {"label": "J-Code Atlas",       "href": "/diligence/jcode-atlas"},
         {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
+        {"label": "Advanced Analytics", "href": "/diligence/advanced-analytics"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
 }
@@ -7464,6 +7465,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "covenant-stress","title":"Covenant Stress",    "route": "/diligence/covenant-stress"},
     {"id": "bridge-audit",  "title": "Bridge Audit",       "route": "/diligence/bridge-audit"},
     {"id": "payer-stress",  "title": "Payer Stress",       "route": "/diligence/payer-stress"},
+    {"id": "advanced-analytics", "title": "Advanced Analytics", "route": "/diligence/advanced-analytics"},
     {"id": "ic-packet",     "title": "IC Packet",          "route": "/diligence/ic-packet"},
     {"id": "engagements",   "title": "Engagements",        "route": "/engagements"},
     {"id": "sector-intel",  "title": "Sector Intelligence","route": "/sector-intelligence"},

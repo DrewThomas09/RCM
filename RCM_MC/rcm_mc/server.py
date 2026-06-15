@@ -3868,6 +3868,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Payer Mix Stress Lab — rate-shock Monte Carlo on payer mix.
         if path == "/diligence/payer-stress":
             return self._route_payer_stress_page()
+        # Advanced Analytics — composed native analytics stack (demo).
+        if path == "/diligence/advanced-analytics":
+            return self._route_advanced_analytics_page()
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
@@ -10570,6 +10573,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             urllib.parse.urlparse(self.path).query,
         )
         self._send_html(render_payer_stress_page(qs=qs))
+
+    def _route_advanced_analytics_page(self) -> None:
+        from .ui.advanced_analytics_page import render_advanced_analytics_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_advanced_analytics_page(qs=qs))
 
     # ── HCRIS Peer X-Ray ─────────────────────────────────────────────
 
