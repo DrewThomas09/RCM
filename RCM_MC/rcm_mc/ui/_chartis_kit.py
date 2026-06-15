@@ -209,6 +209,7 @@ _SUB_NAV = {
     "research": [
         {"label": "Industry Intelligence", "href": "/industry"},
         {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
+        {"label": "Vertical Unit Economics", "href": "/healthcare-verticals/unit-economics"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
         {"label": "Deal Dataset Analytics", "href": "/deal-corpus-analytics"},
         {"label": "Find Comps",          "href": "/find-comps"},
@@ -7504,6 +7505,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
     {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
+    {"id": "hc-unit-econ",  "title": "Cross-Vertical Unit Economics", "route": "/healthcare-verticals/unit-economics"},
     {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},
     {"id": "notes",         "title": "Notes",              "route": "/notes"},
     {"id": "sector-mom",    "title": "Sector Momentum",    "route": "/sector-momentum"},
