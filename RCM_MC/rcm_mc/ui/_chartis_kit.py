@@ -208,6 +208,7 @@ _SUB_NAV = {
     "research": [
         {"label": "Industry Intelligence", "href": "/industry"},
         {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
+        {"label": "Life-Sciences & Specialty Pharmacy", "href": "/healthcare-verticals/life-sciences"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
         {"label": "Deal Dataset Analytics", "href": "/deal-corpus-analytics"},
         {"label": "Find Comps",          "href": "/find-comps"},
@@ -7502,6 +7503,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
     {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
+    {"id": "hc-life-sci",   "title": "Life-Sciences & Specialty Pharmacy · 15-vertical deep dive", "route": "/healthcare-verticals/life-sciences"},
     {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},
     {"id": "notes",         "title": "Notes",              "route": "/notes"},
     {"id": "sector-mom",    "title": "Sector Momentum",    "route": "/sector-momentum"},
@@ -11259,6 +11261,7 @@ _SUB_SECTION_MAP = {
     "/rcm-benchmarks": "library",
     "/research": "research", "/notes": "research", "/industry": "research",
     "/healthcare-verticals": "research",
+    "/healthcare-verticals/life-sciences": "research",
     "/market-intel/geo": "research",
     "/sector-momentum": "research", "/irr-dispersion": "research",
     "/hold-analysis": "research", "/backtest": "research",
