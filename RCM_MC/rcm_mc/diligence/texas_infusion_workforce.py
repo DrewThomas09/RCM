@@ -233,6 +233,60 @@ def _metro_population_shares() -> list[dict[str, Any]]:
     return out
 
 
+@functools.lru_cache(maxsize=1)
+def texas_therapy_mix() -> dict[str, Any]:
+    """The therapy layer that connects the prescriber funnel to demand
+    and diligence risk: each home/AIC infusion therapy class with its
+    estimated Texas patient count (real population × published treated-
+    prevalence) and its five-axis risk profile. Merges the demand,
+    clinical-reference and risk views from
+    :mod:`rcm_mc.diligence.texas_infusion` so this page never re-derives
+    a number the main CDD already owns."""
+    from .texas_infusion import (
+        home_infusion_conditions,
+        home_infusion_therapy_reference,
+        home_infusion_therapy_risk,
+    )
+
+    rows = tx_county_universe()
+    pop = sum(r["population"] for r in rows)
+    seniors = sum(r["seniors_65_plus"] for r in rows)
+
+    demand = {t["key"]: t for t in home_infusion_conditions(pop, seniors)}
+    ref = {t["key"]: t for t in home_infusion_therapy_reference()}
+    risk = home_infusion_therapy_risk()
+
+    therapies = []
+    for t in risk["therapies"]:
+        k = t["key"]
+        d = demand.get(k, {})
+        r = ref.get(k, {})
+        therapies.append({
+            "key": k,
+            "therapy": t["therapy"],
+            "rank": t["rank"],
+            "conditions": r.get("conditions", ""),
+            "regimen": r.get("regimen", ""),
+            "margin": r.get("margin", ""),
+            "epi_per_100k": d.get("epi_per_100k"),
+            "estimated_patients": d.get("estimated_patients"),
+            "axes": t["axes"],
+            "overall_pct": t["overall_pct"],
+            "band": t["band"],
+            "lead_risk": t["lead_risk"],
+            "readmission_pct": t.get("readmission_pct"),
+        })
+    therapies.sort(key=lambda x: x["rank"])
+    return {
+        "therapies": therapies,
+        "axis_labels": risk["axis_labels"],
+        "weights": risk["weights"],
+        "most_at_risk": risk["most_at_risk"],
+        "note": risk["note"],
+        "tx_population": pop,
+    }
+
+
 def specialty_employment_by_metro() -> list[dict[str, Any]]:
     """Clinical infusion-relevant headcount apportioned across the metros
     by population share — the sub-state employment view. Honest about

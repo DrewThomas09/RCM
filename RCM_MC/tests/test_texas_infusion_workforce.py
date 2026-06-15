@@ -11,6 +11,7 @@ from rcm_mc.diligence.texas_infusion_workforce import (
     county_demand_centroids,
     specialty_employment_by_metro,
     texas_specialty_employment,
+    texas_therapy_mix,
     tx_boundary_lonlat,
 )
 
@@ -101,6 +102,35 @@ class CountyDemandGeoTests(unittest.TestCase):
         self.assertLessEqual(d["mid"], d["hi"])
 
 
+class TherapyMixTests(unittest.TestCase):
+    def setUp(self):
+        self.mix = texas_therapy_mix()
+
+    def test_therapy_axes_in_range_and_ranked(self):
+        ts = self.mix["therapies"]
+        self.assertGreaterEqual(len(ts), 5)
+        ranks = [t["rank"] for t in ts]
+        self.assertEqual(ranks, sorted(ranks))
+        for t in ts:
+            for k in self.mix["axis_labels"]:
+                self.assertTrue(1 <= t["axes"][k] <= 5, (t["key"], k))
+            self.assertTrue(0 <= t["overall_pct"] <= 100)
+
+    def test_patient_estimates_scale_with_population(self):
+        # estimated_patients = population × epi_per_100k / 1e5 (or the
+        # senior denominator) — strictly positive for a real therapy.
+        for t in self.mix["therapies"]:
+            if t["estimated_patients"] is not None:
+                self.assertGreaterEqual(t["estimated_patients"], 0)
+        # IVIG carries a meaningful Texas pool.
+        ig = next(t for t in self.mix["therapies"] if t["key"] == "ig")
+        self.assertGreater(ig["estimated_patients"], 1000)
+
+    def test_most_at_risk_matches_top_ranked(self):
+        top = self.mix["therapies"][0]
+        self.assertEqual(self.mix["most_at_risk"], top["therapy"])
+
+
 class WorkforcePageTests(unittest.TestCase):
     def test_page_renders_both_heatmaps_and_key_sections(self):
         from rcm_mc.ui.texas_infusion_workforce_page import (
@@ -110,11 +140,13 @@ class WorkforcePageTests(unittest.TestCase):
                 "Employment by specialty", "channel-fit heatmap",
                 "County infusion-demand heatmap", "Registered nurses",
                 "Gastroenterology", "TX headcount", "Rest of Texas",
+                "diligence-risk heatmap", "What they infuse",
+                "Immune globulin",
                 "Methodology &amp; evidence classes",
                 "workforce.csv"):
             self.assertIn(needle, h, needle)
-        # Two charts (matrix + geographic) at minimum.
-        self.assertGreaterEqual(h.count("<svg"), 2)
+        # Three charts (specialty matrix + therapy risk + geographic).
+        self.assertGreaterEqual(h.count("<svg"), 3)
 
     def test_geographic_heatmap_projects_inside_the_frame(self):
         # The projected boundary path must exist and dots must render.
@@ -135,6 +167,7 @@ class WorkforcePageTests(unittest.TestCase):
             texas_workforce_csv)
         csv = texas_workforce_csv()
         self.assertIn("specialty_columns", csv)
+        self.assertIn("therapy_columns", csv)
         self.assertIn("county_columns", csv)
 
 

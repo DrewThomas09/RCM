@@ -158,6 +158,145 @@ def _fit_legend() -> str:
             f'&nbsp;high fit · bar = Texas infusion-relevant headcount</div>')
 
 
+# ── Therapy demand + risk heatmap ───────────────────────────────────
+
+# Risk ramp: low risk (1) pale green → amber → red (5). Risk is "warm
+# = bad", the inverse of the channel-fit ramp.
+_RISK_LO, _RISK_MID, _RISK_HI = "#e7f0e6", "#e2b15f", "#b5321e"
+
+
+def _therapy_risk_heatmap_svg(mix: dict) -> str:
+    """Therapy × five-axis diligence-risk heatmap. Cells are the 1–5 axis
+    scores on the risk ramp; a trailing column carries the weighted
+    overall percentile and risk band. Demand (estimated TX patients)
+    rides as a magnitude bar on the left so the biggest pools and the
+    riskiest therapies read together."""
+    therapies = mix.get("therapies") or []
+    axes = list(mix.get("axis_labels", {}).items())
+    if not therapies or not axes:
+        return ""
+    label_w, bar_w, cell_w, overall_w = 196, 104, 104, 92
+    row_h, head_h, pad = 32, 58, 8
+    n = len(axes)
+    width = label_w + bar_w + n * cell_w + overall_w + 12
+    height = head_h + pad * 2 + len(therapies) * row_h
+    pmax = max((t["estimated_patients"] or 0) for t in therapies) or 1
+
+    def _trunc(s: str, m: int = 22) -> str:
+        return s if len(s) <= m else s[:m - 1] + "…"
+
+    parts = [
+        f'<svg viewBox="0 0 {width} {height}" width="100%" '
+        f'style="max-width:{width}px;display:block;font-family:'
+        f'var(--sc-mono,monospace);" role="img" '
+        f'aria-label="Therapy diligence-risk heatmap">']
+
+    # Column headers (wrapped to two lines on the long axis labels).
+    parts.append(
+        f'<text x="{label_w+bar_w/2:.0f}" y="{head_h-20}" '
+        f'text-anchor="middle" font-size="10" font-weight="700" '
+        f'fill="{_NAVY}">Est. TX patients</text>')
+    for j, (_key, lab) in enumerate(axes):
+        cx = label_w + bar_w + j * cell_w + cell_w / 2
+        short = lab.split(" (")[0].split(" / ")[0]
+        words = short.split()
+        mid = (len(words) + 1) // 2
+        l1, l2 = " ".join(words[:mid]), " ".join(words[mid:])
+        parts.append(
+            f'<text x="{cx:.0f}" y="{head_h-26}" text-anchor="middle" '
+            f'font-size="9.5" font-weight="700" fill="{_NAVY}">'
+            f'{html.escape(l1)}</text>'
+            f'<text x="{cx:.0f}" y="{head_h-15}" text-anchor="middle" '
+            f'font-size="9.5" font-weight="700" fill="{_NAVY}">'
+            f'{html.escape(l2)}</text>')
+    parts.append(
+        f'<text x="{label_w+bar_w+n*cell_w+overall_w/2:.0f}" '
+        f'y="{head_h-20}" text-anchor="middle" font-size="10" '
+        f'font-weight="700" fill="{_NAVY}">Overall</text>')
+
+    y = head_h
+    for t in therapies:
+        # Rank badge + therapy label, left-aligned in a fixed zone that
+        # never reaches the demand-bar column.
+        lab = _trunc(t["therapy"].split(" (")[0], 20)
+        parts.append(
+            f'<text x="4" y="{y+row_h/2+4:.0f}" font-size="11" '
+            f'font-weight="700" fill="{_TEAL}">#{t["rank"]}</text>'
+            f'<text x="22" y="{y+row_h/2+4:.0f}" font-size="11" '
+            f'fill="#1a2332">{html.escape(lab)}</text>')
+        # Demand bar + count, in its own column.
+        pts = t["estimated_patients"] or 0
+        bw = max(2.0, (bar_w - 8) * pts / pmax)
+        parts.append(
+            f'<rect x="{label_w+4}" y="{y+row_h/2-3:.0f}" width="{bw:.1f}" '
+            f'height="9" rx="2" fill="{_TEAL}" fill-opacity="0.55">'
+            f'<title>{pts:,} est. TX patients</title></rect>'
+            f'<text x="{label_w+4:.0f}" y="{y+row_h/2-6:.0f}" '
+            f'font-size="8.5" fill="{_DIM}">{pts:,}</text>')
+        # Risk cells.
+        for j, (key, lab2) in enumerate(axes):
+            v = float(t["axes"][key])
+            fill = gradient_color(v, 1, 3, 5, _RISK_LO, _RISK_MID, _RISK_HI)
+            tx_fill = "#ffffff" if v >= 4 else "#1a2332"
+            cx = label_w + bar_w + j * cell_w
+            parts.append(
+                f'<rect x="{cx+2}" y="{y+2}" width="{cell_w-4}" '
+                f'height="{row_h-4}" rx="2" fill="{fill}">'
+                f'<title>{html.escape(lab)} · {html.escape(lab2)}: '
+                f'{v:.0f}/5</title></rect>'
+                f'<text x="{cx+cell_w/2:.0f}" y="{y+row_h/2+4:.0f}" '
+                f'text-anchor="middle" font-size="11" font-weight="700" '
+                f'fill="{tx_fill}">{v:.0f}</text>')
+        # Overall band.
+        band_color = {"HIGH": _RISK_HI, "ELEVATED": "#b8732a"}.get(
+            t["band"], _TEAL)
+        ox = label_w + bar_w + n * cell_w
+        parts.append(
+            f'<text x="{ox+overall_w/2:.0f}" y="{y+row_h/2:.0f}" '
+            f'text-anchor="middle" font-size="13" font-weight="700" '
+            f'fill="{band_color}">{t["overall_pct"]}%</text>'
+            f'<text x="{ox+overall_w/2:.0f}" y="{y+row_h/2+11:.0f}" '
+            f'text-anchor="middle" font-size="8" letter-spacing="0.05em" '
+            f'fill="{_DIM}">{html.escape(t["band"])}</text>')
+        y += row_h
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def _risk_legend() -> str:
+    stops = ((1, _RISK_LO, "low"), (3, _RISK_MID, "med"),
+             (5, _RISK_HI, "high"))
+    sw = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:5px;'
+        f'margin-right:14px;"><span style="width:14px;height:14px;'
+        f'border-radius:3px;background:{c};display:inline-block;'
+        f'border:1px solid #d6cfc0;"></span>'
+        f'<span style="font-size:11px;color:{_DIM};">{v} {t}</span></span>'
+        for v, c, t in stops)
+    return (f'<div style="margin:8px 0 2px;font-size:11px;color:{_FAINT};">'
+            f'Axis score (1–5, higher = more risk): {sw}'
+            f'· bar = estimated Texas patients · overall = weighted '
+            f'percentile</div>')
+
+
+def _therapy_table(mix: dict) -> str:
+    rows = "".join(
+        f'<tr><td {_TD}><strong>{html.escape(t["therapy"])}</strong>'
+        f'<div style="font-size:11px;color:{_DIM};">'
+        f'{html.escape(t["conditions"])}</div></td>'
+        f'<td {_TDN}>{t["epi_per_100k"]:.0f}</td>'
+        f'<td {_TDN}>{(t["estimated_patients"] or 0):,}</td>'
+        f'<td {_TD} style="font-size:11.5px;">{html.escape(t["regimen"])}</td>'
+        f'<td {_TD} style="font-size:11px;">{html.escape(t["lead_risk"])}</td>'
+        f'</tr>' for t in mix["therapies"])
+    return (
+        '<table style="width:100%;border-collapse:collapse;">'
+        f'<thead><tr><th {_TH}>Infusion therapy</th>'
+        f'<th {_THN}>Per 100k</th><th {_THN}>Est. TX patients</th>'
+        f'<th {_TH}>Regimen</th><th {_TH}>Lead risk</th></tr></thead>'
+        f'<tbody>{rows}</tbody></table>')
+
+
 # ── Geographic county-demand heatmap ────────────────────────────────
 
 def _projector(boundary: List[Tuple[float, float]], width: float,
@@ -332,9 +471,11 @@ def _whitespace_table(geo: dict) -> str:
 def render_texas_infusion_workforce_page(
         qs: dict[str, Any] | None = None) -> str:
     from ..diligence.texas_infusion_workforce import (
-        county_demand_centroids, texas_specialty_employment)
+        county_demand_centroids, texas_specialty_employment,
+        texas_therapy_mix)
     emp = texas_specialty_employment()
     geo = county_demand_centroids()
+    mix = texas_therapy_mix()
     t = emp["totals"]
     cov = geo["coverage"]
 
@@ -408,6 +549,19 @@ def render_texas_infusion_workforce_page(
         'workforce).</p>' + _metro_employment_table(),
         title="Workforce by metro (population apportionment)")
 
+    therapy_panel = ck_panel(
+        '<p class="ck-section-body" style="font-size:13px;line-height:1.5;">'
+        'What the prescriber funnel actually infuses, and how risky each '
+        'therapy class is to underwrite. Estimated Texas patients = real '
+        'population × published treated-prevalence; the five-axis risk '
+        f'score (1–5) is the documented diligence framework. Most at risk: '
+        f'<strong>{html.escape(mix["most_at_risk"])}</strong>.</p>'
+        + _therapy_risk_heatmap_svg(mix) + _risk_legend(),
+        title="Therapy demand & diligence-risk heatmap")
+    therapy_table_panel = ck_panel(
+        _therapy_table(mix),
+        title="Therapy reference — demand, regimen & lead risk")
+
     geo_panel = ck_panel(
         '<p class="ck-section-body" style="font-size:13px;line-height:1.5;">'
         'Every Texas county with a geocoded CMS facility is plotted at '
@@ -457,6 +611,9 @@ def render_texas_infusion_workforce_page(
             + ck_section_header("Employment by specialty",
                                 eyebrow="WHO STAFFS · WHO FEEDS THE PLATFORM")
             + matrix_panel + clinical_panel + prescriber_panel + metro_panel
+            + ck_section_header("What they infuse — therapy mix & risk",
+                                eyebrow="DEMAND × DILIGENCE RISK")
+            + therapy_panel + therapy_table_panel
             + ck_section_header("Where the demand sits",
                                 eyebrow="COUNTY HEATMAP · TRUE GEOGRAPHY")
             + geo_panel + whitespace_panel
@@ -470,9 +627,11 @@ def render_texas_infusion_workforce_page(
 def texas_workforce_csv() -> str:
     """CSV of the specialty matrix + the placed county centroids."""
     from ..diligence.texas_infusion_workforce import (
-        county_demand_centroids, texas_specialty_employment)
+        county_demand_centroids, texas_specialty_employment,
+        texas_therapy_mix)
     emp = texas_specialty_employment()
     geo = county_demand_centroids()
+    mix = texas_therapy_mix()
     out = ["section,label,a,b,c,d,e"]
     out.append("specialty_columns,label,aic_fit,home_fit,demand_pull,"
                "scarcity,headcount")
@@ -480,6 +639,15 @@ def texas_workforce_csv() -> str:
         out.append(",".join(str(x) for x in [
             "specialty", _csv(r["label"]), r["aic_fit"], r["home_fit"],
             r["demand_pull"], r["scarcity"], r["headcount"]]))
+    out.append("therapy_columns,therapy,reimbursement,steerage,"
+               "referral_concentration,clinical,supply,overall_pct,"
+               "est_tx_patients")
+    for r in mix["therapies"]:
+        ax = r["axes"]
+        out.append(",".join(str(x) for x in [
+            "therapy", _csv(r["therapy"]), ax["reimbursement"],
+            ax["steerage"], ax["referral_concentration"], ax["clinical"],
+            ax["supply"], r["overall_pct"], r["estimated_patients"]]))
     out.append("county_columns,county,lat,lon,infusion_patients,"
                "patients_per_100k,population")
     for r in geo["placed"]:
