@@ -118,8 +118,21 @@ fake. Removed all 131 from `_TOOLS_ILLUSTRATIVE_ROUTES`; **front-facing pages
   green); for navy calculators the strip honestly flags the illustrative
   *defaults*. Follow-up polish: reword the strip on navy pages to "Illustrative
   defaults — edit inputs to compute on your deal."
-- **Follow-up:** add the highest-value un-gated calculators to
-  `_DEFAULT_PALETTE_MODULES` (today only 4 of the 120 were in the palette).
+
+### Wave 2.5 — Universal Cmd+K palette ✅ (this PR)
+Only 4 of the 120 un-gated calculators were in `_DEFAULT_PALETTE_MODULES`.
+Rather than hand-add 120 entries (and risk the same staleness), the palette is
+now **augmented from the ranking manifest** at render time
+(`_augmented_palette_modules()`): every route in a named nav section that isn't
+already curated, internal, or a redirect/parametric slug. Curated titles win.
+Result: palette **191 → 348** entries; all 157 additions verified to render 200
+(booted server). Self-maintaining — a new ranked page is Cmd+K-reachable the
+moment it ships.
+
+### Guardrail ✅ (this PR) — `tests/test_surface_manifest_fresh.py`
+Fails CI if `_surface_rankings.py` differs from what `rank_surfaces.py` would
+generate, so the manifest can never silently go stale again (the root cause of
+the original ghosts). Fix on failure: `python scripts/rank_surfaces.py`.
 
 ### Wave 3 — Seed-corpus pages (42 YELLOW) — data decision
 Each presents realistic figures on the bundled illustrative seed corpus.
@@ -158,8 +171,7 @@ Honesty-preserving: every surfaced page carries its real tier dot.
   (`/sponsor-league`, `/specialty-benchmarks`, `/vintage-perf`,
   `/irr-dispersion`, `/market-rates`).
 - **Wave 4** — `/ma-star` staged CMS ingest.
-- Palette: add the top un-gated calculators to `_DEFAULT_PALETTE_MODULES`.
 - Taxonomy polish: `_heuristic_section` folds sourcing into `pipeline` and
   sends many PE-math pages to `diligence` (now 163 rows) — refine the
   section split so `/best/diligence` isn't overloaded.
-- Guardrail: manifest-freshness check in CI (see above).
+- Remove the redundant curated `/deals-library` palette entry (301 → /library).

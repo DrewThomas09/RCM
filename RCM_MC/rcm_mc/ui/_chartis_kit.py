@@ -7579,6 +7579,62 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "ops-status",    "title": "Ops Status",         "route": "/ops"},
 ]
 
+# Curated entries above are the vetted, well-titled jump targets. But CLAUDE.md
+# asks that *every* analytic surface be Cmd+K-reachable, and the hand-curated
+# list lagged the ~120 honest calculators surfaced in the ghost-page migration
+# (Wave 2) — only 4 of them were here. Rather than hand-maintain 120+ more
+# entries (and re-create the staleness that buried them), fold in the ranking
+# manifest at render time: every route in a NAMED nav section that isn't
+# already curated, isn't internal, and isn't a redirect/parametric/POST-only
+# slug. The curated entry wins when both exist (its title is vetted copy). The
+# `uncategorized` manifest bucket is auth/admin/download routes — skipped.
+# Self-maintaining: a new ranked page is in the palette the moment it ships.
+_AUGMENTED_PALETTE_CACHE: "list | None" = None
+
+
+def _augmented_palette_modules() -> list:
+    global _AUGMENTED_PALETTE_CACHE
+    if _AUGMENTED_PALETTE_CACHE is not None:
+        return _AUGMENTED_PALETTE_CACHE
+    out = list(_DEFAULT_PALETTE_MODULES)
+    try:
+        from ._surface_rankings import RANKINGS
+        from ._surface_visibility import is_internal
+    except Exception:  # noqa: BLE001
+        _AUGMENTED_PALETTE_CACHE = out
+        return out
+    # Redirect/parametric/POST-only slugs that 404 or 303 on a bare GET — never
+    # a valid jump target. Pulled lazily (server imports this module, so the
+    # import is only safe once, at render time, when server is fully loaded).
+    try:
+        from rcm_mc.server import RCMHandler
+        hidden = set(RCMHandler._TOOLS_HIDDEN_ROUTES)
+    except Exception:  # noqa: BLE001
+        hidden = set()
+
+    def _norm(r: str) -> str:
+        return (r or "").split("?", 1)[0].rstrip("/") or "/"
+
+    seen = {_norm(m.get("route", "")) for m in out if isinstance(m, dict)}
+    named = ("source", "pipeline", "diligence", "library",
+             "research", "portfolio", "home")  # skip 'uncategorized'
+    for sect in named:
+        for row in RANKINGS.get(sect, []):
+            route = str(row.get("route", ""))
+            n = _norm(route)
+            label = str(row.get("label", "")).strip()
+            if (not n or n in seen or "→" in label
+                    or route.endswith((".csv", ".xlsx"))
+                    or route in _NAV_NONNAVIGABLE or n in _NAV_NONNAVIGABLE
+                    or route in hidden or n in hidden
+                    or is_internal(route) or is_internal(n)):
+                continue
+            seen.add(n)
+            out.append({"id": "rk" + n.replace("/", "-"),
+                        "title": label or n, "route": route})
+    _AUGMENTED_PALETTE_CACHE = out
+    return out
+
 
 def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
     items = "".join(
@@ -11957,7 +12013,7 @@ def chartis_shell(
         # didn't pass a curated list. Lets every editorial page jump
         # to any tool via Cmd+K without each renderer having to
         # re-enumerate the palette.
-        modules_to_use = palette_modules or _DEFAULT_PALETTE_MODULES
+        modules_to_use = palette_modules or _augmented_palette_modules()
         palette_html = ck_command_palette(modules_to_use)
     debug_tag = f'<div class="ck-debug-code">[{_esc(code)}]</div>' if code else ""
     # show_chrome=False: bare pages (login / forgot) without topnav
