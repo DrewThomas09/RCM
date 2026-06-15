@@ -1,40 +1,265 @@
-"""CDD analytics tools catalog — /cdd/tools.
+"""CDD Analytics Engines catalog — /cdd/tools.
 
-The ``rcm_mc.cdd`` registry holds the desk's audience-aware analytic
-exhibits (TAM/SAM, PVM bridge, payer mix, retention, LTV/CAC, profit
-pools, marimekko, contested market-size triangulation, and the rest).
-Every one was wired into the registry so the CLI (``python -m
-rcm_mc.cdd``) and server could run it, but until now the only browser
-surface was the static CDD workflow hub. An associate could not see the
-full tool set, run one, and read its exhibit without dropping to the
-shell.
+The /cdd hub is a navigation map over the desk's existing surfaces, but the
+rcm_mc.cdd registry (TAM/SAM, PVM bridge, payer mix, HCC/RAF, the McKinsey
+profit-pool exhibits, the granular benchmarking reference layer, and the
+platform bolsters) had no single surface that renders the engines themselves.
+An associate could run them only from the CLI (python -m rcm_mc.cdd). This page
+enumerates every registered feature and renders its partner-safe exhibit so the
+whole analytics catalog is browsable in the app.
 
-This page reads the live registry and renders two surfaces:
-
-- ``/cdd/tools`` lists every registered tool grouped by family, with its
-  audience and a one-line identity.
-- ``/cdd/tools/<feature_id>`` runs that tool's demo exhibit and renders
-  it the way a partner sees it: summary, flags, reconciliation status, a
-  chart of the leading series, the underlying data, and the sourced
-  footnote. ``?internal=1`` switches to the internal render so an analyst
-  can see the assumption nodes the partner view strips.
-
-The page computes nothing itself: it is a faithful window onto whatever
-the registry exposes, so a new ``register(...)`` call shows up here with
-no edit to this file.
+The render uses the audience-aware Exhibit contract: every card shows the
+partner view (internal_mode=False), so assumption nodes and internal-only series
+never reach this surface. Each feature is rendered defensively so one broken
+engine cannot blank the catalog.
 """
 from __future__ import annotations
 
 import html as _html
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from rcm_mc.cdd import registry
 from rcm_mc.ui._chartis_kit import (
-    chartis_shell, ck_page_explainer, ck_page_title, ck_signal_badge,
-    ck_empty_state,
+    chartis_shell, ck_empty_state, ck_page_explainer, ck_page_title,
+    ck_signal_badge,
 )
-from rcm_mc.ui.cdd_chart_kit import render_cdd_chart, chart_export_toolbar
+from rcm_mc.ui.cdd_chart_kit import chart_export_toolbar, render_cdd_chart
 
+# Feature-id prefix to the human group it belongs to, in display order.
+_GROUPS: List[Tuple[str, str, str]] = [
+    ("REF-", "Benchmarking reference layer",
+     "Chart-ready, sourced benchmark data: quality-measure weights, code and "
+     "procedure frequency, compensation, cost structure, prevalence, spending."),
+    ("NEW-", "Analytics exhibits",
+     "The commercial-diligence analytic engines, from market sizing through "
+     "the McKinsey profit-pool exhibits."),
+    ("PACK-", "Composite packs",
+     "Multi-exhibit diligence packs that chain the engines for one deal."),
+    ("BOLSTER-", "Platform engines",
+     "Forecasting, anomaly, changepoint, and reconciliation engines that "
+     "bolster the analytics core."),
+]
+
+_FLAG_TONE = {"risk": "negative", "warn": "warning", "info": "neutral"}
+_MAX_POINTS = 6  # cap rows per series so a card stays scannable
+
+
+def _group_for(feature_id: str) -> int:
+    for idx, (prefix, _, _) in enumerate(_GROUPS):
+        if feature_id.startswith(prefix):
+            return idx
+    return len(_GROUPS)  # anything unprefixed falls into a trailing bucket
+
+
+def _fmt_value(v: Any) -> str:
+    """Format a numeric payload value for display, escaped.
+
+    Counts render without decimals, fractional values to at most two places, so
+    a percentage, a dollar figure, and a discharge count each read cleanly in
+    the same column.
+    """
+    if isinstance(v, bool):
+        return "yes" if v else "no"
+    if isinstance(v, (int,)) or (isinstance(v, float) and float(v).is_integer()):
+        return _html.escape(f"{int(v):,}")
+    if isinstance(v, float):
+        return _html.escape(f"{v:,.2f}")
+    return _html.escape(str(v))
+
+
+def _render_series(series: List[Dict[str, Any]]) -> str:
+    blocks = []
+    for s in series:
+        name = _html.escape(str(s.get("name", "")))
+        points = s.get("points", []) or []
+        rows = []
+        for pt in points[:_MAX_POINTS]:
+            label = _html.escape(str(pt.get("label", "")))
+            # A point may carry value, or low/high for a range bar.
+            if "value" in pt:
+                val = _fmt_value(pt.get("value"))
+            elif "low" in pt and "high" in pt:
+                val = f"{_fmt_value(pt.get('low'))} to {_fmt_value(pt.get('high'))}"
+            else:
+                val = ""
+            rows.append(
+                f'<tr><td class="cdt-lbl">{label}</td>'
+                f'<td class="cdt-val num">{val}</td></tr>')
+        extra = len(points) - _MAX_POINTS
+        more = (f'<tr><td class="cdt-more" colspan="2">'
+                f'{extra} more not shown</td></tr>') if extra > 0 else ""
+        kind = _html.escape(str(s.get("kind", "bar")))
+        blocks.append(
+            f'<div class="cdt-series">'
+            f'<div class="cdt-series-h">{name} '
+            f'<span class="cdt-kind">{kind}</span></div>'
+            f'<table class="cdt-table">{"".join(rows)}{more}</table>'
+            f'</div>')
+    return "".join(blocks)
+
+
+def _render_flags(flags: List[Dict[str, Any]]) -> str:
+    if not flags:
+        return ""
+    badges = []
+    for f in flags:
+        tone = _FLAG_TONE.get(str(f.get("severity", "info")), "neutral")
+        badges.append(ck_signal_badge(str(f.get("code", "")), tone=tone))
+    lines = "".join(
+        f'<li>{_html.escape(str(f.get("message", "")))}</li>' for f in flags)
+    return (f'<div class="cdt-flags">{" ".join(badges)}'
+            f'<ul class="cdt-flag-list">{lines}</ul></div>')
+
+
+def _render_footnote(fn: Dict[str, Any]) -> str:
+    if not fn:
+        return ""
+    source = _html.escape(str(fn.get("source", "")))
+    vintage = _html.escape(str(fn.get("vintage", "")))
+    assumptions = fn.get("assumptions", []) or []
+    items = "".join(f'<li>{_html.escape(str(a))}</li>' for a in assumptions)
+    return (f'<div class="cdt-foot">'
+            f'<div class="cdt-foot-src">Source: {source} · {vintage}</div>'
+            f'<ul class="cdt-foot-asm">{items}</ul></div>')
+
+
+def _render_card(rendered: Dict[str, Any]) -> str:
+    fid = _html.escape(str(rendered.get("feature_id", "")))
+    title = _html.escape(str(rendered.get("title", "")))
+    audience = _html.escape(str(rendered.get("audience", "both")))
+    summary = _html.escape(str(rendered.get("summary", "")))
+    series = rendered.get("series", []) or []
+    flags = rendered.get("flags", []) or []
+    recs = rendered.get("reconciliations", []) or []
+
+    if rendered.get("reconciled", True) and recs:
+        rec_badge = ck_signal_badge("reconciled", tone="positive")
+    elif recs:
+        rec_badge = ck_signal_badge("check reconciliation", tone="warning")
+    else:
+        rec_badge = ""
+    rec_ids = "".join(
+        f'<li>{_html.escape(str(r.get("identity", "")))}</li>' for r in recs)
+    rec_html = (f'<div class="cdt-rec">{rec_badge}'
+                f'<ul class="cdt-rec-list">{rec_ids}</ul></div>') if recs else ""
+
+    return (
+        f'<section class="cdt-card" id="{fid}">'
+        f'<div class="cdt-card-top">'
+        f'<a class="cdt-fid" href="/cdd/tools/{fid}">{fid}</a>'
+        f'<span class="cdt-aud">{audience}</span></div>'
+        f'<h3 class="cdt-title">'
+        f'<a class="cdt-title-link" href="/cdd/tools/{fid}">{title}</a></h3>'
+        f'<p class="cdt-sum">{summary}</p>'
+        f'{_render_series(series)}'
+        f'{rec_html}'
+        f'{_render_flags(flags)}'
+        f'{_render_footnote(rendered.get("footnote"))}'
+        f'</section>')
+
+
+def _catalog() -> Tuple[List[Tuple[str, str, str, List[Dict[str, Any]]]], int]:
+    """Render every registered feature into grouped, partner-safe payloads.
+
+    Returns (groups, n_features) where each group is
+    (prefix, title, blurb, [rendered_exhibit, ...]). Import is local so a
+    missing optional dependency in the registry never breaks page import.
+    """
+    from rcm_mc.cdd import registry
+
+    buckets: Dict[int, List[Dict[str, Any]]] = {}
+    n = 0
+    for feat in registry.all_features():
+        try:
+            rendered = feat.demo().render(internal_mode=False)
+        except Exception:  # noqa: BLE001 - one broken engine must not blank the catalog
+            continue
+        buckets.setdefault(_group_for(feat.feature_id), []).append(rendered)
+        n += 1
+
+    groups: List[Tuple[str, str, str, List[Dict[str, Any]]]] = []
+    for idx, (prefix, title, blurb) in enumerate(_GROUPS):
+        items = sorted(buckets.get(idx, []), key=lambda r: r.get("feature_id", ""))
+        if items:
+            groups.append((prefix, title, blurb, items))
+    return groups, n
+
+
+def render_cdd_tools(params: dict = None) -> str:
+    groups, n_features = _catalog()
+
+    sections = []
+    for _, title, blurb, items in groups:
+        cards = "".join(_render_card(r) for r in items)
+        sections.append(
+            f'<section class="cdt-group">'
+            f'<h2 class="cdt-group-h">{_html.escape(title)} '
+            f'<span class="cdt-group-n">{len(items)}</span></h2>'
+            f'<p class="cdt-group-blurb">{_html.escape(blurb)}</p>'
+            f'<div class="cdt-grid">{cards}</div>'
+            f'</section>')
+
+    page_title = ck_page_title(
+        "CDD Analytics Engines",
+        eyebrow="DILIGENCE · CDD CATALOG",
+        meta=(f"{n_features} registered engines · partner view · "
+              "every exhibit carries a sourced footnote and reconciliation"),
+    )
+    explainer = ck_page_explainer(
+        "Every CDD engine, rendered, in one place.",
+        "This catalog enumerates the analytics registry and renders each "
+        "engine's partner-facing exhibit: the chart-ready series, the "
+        "reconciliation that ties the numbers to their source, the diligence "
+        "flags, and the sourced footnote. It is the same surface the CLI and "
+        "server run, so what you see here is exactly what an exhibit emits.",
+    )
+    css = """
+<style>
+.cdt-group { margin: 26px 0; }
+.cdt-group-h { font-size: 20px; margin: 0 0 4px; color: #0b2341; }
+.cdt-group-n { font-size: 13px; color: #155752; font-weight: 600; }
+.cdt-group-blurb { margin: 0 0 12px; color: #4a5568; font-style: italic; max-width: 74ch; }
+.cdt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.cdt-card { background: #fffdf9; border: 1px solid #d8d2c4; border-radius: 6px; padding: 14px 16px; }
+.cdt-card-top { display: flex; justify-content: space-between; align-items: center; }
+.cdt-fid { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #155752; letter-spacing: 0.04em; text-decoration: none; }
+.cdt-fid:hover { text-decoration: underline; }
+.cdt-aud { font-size: 10.5px; text-transform: uppercase; color: #8a8170; letter-spacing: 0.06em; }
+.cdt-title { font-size: 15px; color: #0b2341; margin: 4px 0 4px; }
+.cdt-title-link { color: #0b2341; text-decoration: none; }
+.cdt-title-link:hover { color: #155752; text-decoration: underline; }
+.cdt-sum { font-size: 12.5px; line-height: 1.45; color: #1a2332; margin: 0 0 10px; }
+.cdt-series { margin: 8px 0; }
+.cdt-series-h { font-size: 11.5px; font-weight: 600; color: #155752; margin-bottom: 3px; }
+.cdt-kind { font-size: 10px; color: #8a8170; font-weight: 400; }
+.cdt-table { width: 100%; border-collapse: collapse; }
+.cdt-table td { font-size: 11.5px; padding: 2px 0; border-bottom: 1px solid #efe9dc; }
+.cdt-lbl { color: #1a2332; padding-right: 8px; }
+.cdt-val { text-align: right; color: #0b2341; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cdt-more { font-size: 10.5px; color: #8a8170; font-style: italic; }
+.cdt-rec, .cdt-flags, .cdt-foot { margin-top: 10px; }
+.cdt-rec-list, .cdt-flag-list, .cdt-foot-asm { margin: 5px 0 0; padding-left: 16px; }
+.cdt-rec-list li, .cdt-foot-asm li { font-size: 11px; color: #4a5568; line-height: 1.4; }
+.cdt-flag-list li { font-size: 11px; color: #1a2332; line-height: 1.4; }
+.cdt-foot { border-top: 1px solid #efe9dc; padding-top: 8px; }
+.cdt-foot-src { font-size: 10.5px; color: #8a8170; font-family: 'JetBrains Mono', monospace; }
+</style>"""
+    body = f"""
+<div class="ck-page-wrap">
+  {page_title}
+  {explainer}
+  {''.join(sections)}
+</div>"""
+    return chartis_shell(body, title="CDD Analytics Engines",
+                         active_nav="/cdd/tools", extra_css=css)
+
+
+# ── Per-engine drill-down (/cdd/tools/<feature_id>) ──────────────────
+#
+# The catalog above renders every engine inline. From a card a partner can
+# open one engine on its own page to see a chart of the leading series, the
+# full data tables, the reconciliation math, and (with ?internal=1) the
+# assumption nodes the partner view strips. This is the drill-down the
+# single-page catalog cannot show without becoming unscannable.
 
 # Exhibit series kind -> CDD chart-kit chart type. Kinds without a faithful
 # 2D chart (a choropleth needs a map) fall back to a column so the numbers
@@ -48,97 +273,21 @@ _KIND_TO_CHART = {
     "choropleth": "column",
 }
 
-# Flag severity -> badge tone. "risk" is the desk's red diligence flag.
-_SEVERITY_TONE = {"risk": "negative", "warn": "warning", "info": "neutral"}
-
 
 def _family(feature_id: str) -> str:
-    """Group key: the prefix before the first hyphen (NEW, BOLSTER, PACK)."""
+    """Group key: the prefix before the first hyphen (NEW, BOLSTER, PACK, REF)."""
     return feature_id.split("-", 1)[0] if "-" in feature_id else feature_id
 
 
-_FAMILY_LABEL = {
-    "NEW": "Core analytics",
-    "BOLSTER": "Hardened estimators",
-    "PACK": "Composite packs",
-}
+def _num(value: Any) -> str:
+    """Detail-page number formatting. Keeps four decimals for fractional
+    values so a reconciliation gap of 1e-9 does not display as 0.00."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return _html.escape(str(value))
+    if float(value).is_integer() and abs(value) < 1e15:
+        return f"{value:,.0f}"
+    return f"{value:,.4f}"
 
-
-def _audience_badge(audience: str) -> str:
-    tone = "neutral" if audience == "both" else "warning"
-    return ck_signal_badge(audience.upper(), tone=tone)
-
-
-# ── Index ────────────────────────────────────────────────────────────
-
-def render_cdd_tools_index(params: Optional[Dict[str, Any]] = None) -> str:
-    features = registry.all_features()
-
-    groups: Dict[str, List[Any]] = {}
-    for feat in features:
-        groups.setdefault(_family(feat.feature_id), []).append(feat)
-
-    sections = []
-    for fam in sorted(groups, key=lambda k: (k != "NEW", k != "PACK", k)):
-        label = _FAMILY_LABEL.get(fam, fam)
-        cards = []
-        for feat in groups[fam]:
-            fid = _html.escape(feat.feature_id)
-            cards.append(
-                f'<a class="cdt-card" href="/cdd/tools/{fid}">'
-                f'<div class="cdt-card-top">'
-                f'<span class="cdt-id">{fid}</span>'
-                f'{_audience_badge(feat.audience)}</div>'
-                f'<div class="cdt-card-title">{_html.escape(feat.title)}</div>'
-                f'</a>')
-        sections.append(
-            f'<section class="cdt-fam">'
-            f'<h2 class="cdt-fam-h">{_html.escape(label)} '
-            f'<span class="cdt-fam-n">{len(groups[fam])}</span></h2>'
-            f'<div class="cdt-grid">{"".join(cards)}</div>'
-            f'</section>')
-
-    page_title = ck_page_title(
-        "CDD Analytics Tools",
-        eyebrow="DILIGENCE · CDD ANALYTICS",
-        meta=(f"{len(features)} registered tools · live registry · "
-              "each renders an audience-aware, reconciled exhibit"),
-    )
-    explainer = ck_page_explainer(
-        "Every analytic the desk can run, in one catalog.",
-        "These are the registered CDD analytics: each one takes sourced "
-        "inputs and returns a single exhibit that carries its own flags, a "
-        "reconciliation that proves the numbers tie out, and a footnote with "
-        "source and vintage. Open a tool to run its demo and read the exhibit "
-        "the way a partner sees it. The list is read live from the registry, "
-        "so a newly registered tool appears here on its own.",
-    )
-    css = """
-<style>
-.cdt-fam { margin: 24px 0; }
-.cdt-fam-h { font-size: 18px; margin: 0 0 12px; color: #0b2341; }
-.cdt-fam-n { font-family: 'JetBrains Mono', monospace; font-size: 12px;
-             color: #155752; background: #e7efe9; border-radius: 10px;
-             padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
-.cdt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.cdt-card { display: block; background: #fffdf9; border: 1px solid #d8d2c4;
-            border-radius: 6px; padding: 13px 15px; text-decoration: none; }
-.cdt-card:hover { border-color: #155752; }
-.cdt-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.cdt-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #155752; font-weight: 600; }
-.cdt-card-title { font-size: 14.5px; line-height: 1.35; color: #1a2332; }
-</style>"""
-    body = f"""
-<div class="ck-page-wrap">
-  {page_title}
-  {explainer}
-  {"".join(sections)}
-</div>"""
-    return chartis_shell(body, title="CDD Analytics Tools",
-                         active_nav="/cdd/tools", extra_css=css)
-
-
-# ── Detail ───────────────────────────────────────────────────────────
 
 def _chart_for_series(series: Dict[str, Any], title: str,
                       source: str) -> Optional[str]:
@@ -164,19 +313,10 @@ def _chart_for_series(series: Dict[str, Any], title: str,
                             {"title": title, "source": source})
 
 
-def _num(value: Any) -> str:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return _html.escape(str(value))
-    if float(value).is_integer() and abs(value) < 1e15:
-        return f"{value:,.0f}"
-    return f"{value:,.4f}"
-
-
 def _series_table(series: Dict[str, Any]) -> str:
     points = series.get("points") or []
     if not points:
         return '<p class="cdt-muted">No rows.</p>'
-    # Union of keys across points, label first, in first-seen order.
     keys: List[str] = []
     for p in points:
         if isinstance(p, dict):
@@ -194,12 +334,17 @@ def _series_table(series: Dict[str, Any]) -> str:
         body_rows.append(f"<tr>{cells}</tr>")
     more = ("" if len(points) <= 60
             else f'<p class="cdt-muted">{len(points) - 60} more rows not shown.</p>')
-    return (f'<table class="cdt-table"><thead><tr>{head}</tr></thead>'
+    return (f'<table class="cdt-dtable"><thead><tr>{head}</tr></thead>'
             f'<tbody>{"".join(body_rows)}</tbody></table>{more}')
 
 
 def render_cdd_tool_detail(feature_id: str,
                           params: Optional[Dict[str, Any]] = None) -> str:
+    """One engine's demo exhibit on its own page, partner (default) or
+    internal (?internal=1) render. Import of the registry is local so a
+    missing optional dependency never breaks page import."""
+    from rcm_mc.cdd import registry
+
     params = params or {}
     internal = str(params.get("internal", "")).strip() in ("1", "true", "yes")
 
@@ -208,8 +353,8 @@ def render_cdd_tool_detail(feature_id: str,
     except KeyError:
         body = (f'<div class="ck-page-wrap">'
                 f'{ck_page_title("Tool not found", eyebrow="DILIGENCE · CDD ANALYTICS")}'
-                f'{ck_empty_state("No registered tool with id " + _html.escape(feature_id) + ".", icon="search")}'
-                f'<p><a href="/cdd/tools">Back to the tools catalog</a></p></div>')
+                f'{ck_empty_state("No registered engine with id " + _html.escape(feature_id) + ".", icon="search")}'
+                f'<p><a href="/cdd/tools">Back to the engines catalog</a></p></div>')
         return chartis_shell(body, title="CDD tool not found",
                              active_nav="/cdd/tools")
 
@@ -219,8 +364,8 @@ def render_cdd_tool_detail(feature_id: str,
     except Exception as exc:  # noqa: BLE001 - surface the reason, never 500
         body = (f'<div class="ck-page-wrap">'
                 f'{ck_page_title(feat.title, eyebrow="DILIGENCE · CDD ANALYTICS · " + _html.escape(feature_id))}'
-                f'{ck_empty_state("This tool could not run its demo in this environment: " + _html.escape(str(exc)), icon="alert")}'
-                f'<p><a href="/cdd/tools">Back to the tools catalog</a></p></div>')
+                f'{ck_empty_state("This engine could not run its demo in this environment: " + _html.escape(str(exc)), icon="alert")}'
+                f'<p><a href="/cdd/tools">Back to the engines catalog</a></p></div>')
         return chartis_shell(body, title=feat.title, active_nav="/cdd/tools")
 
     fn = rendered.get("footnote") or {}
@@ -229,7 +374,6 @@ def render_cdd_tool_detail(feature_id: str,
     series = rendered.get("series") or []
     reconciled = bool(rendered.get("reconciled"))
 
-    # Header KPI strip.
     kpis = [
         ("Audience", _html.escape(str(rendered.get("audience", "both")))),
         ("Series", str(len(series))),
@@ -241,18 +385,16 @@ def render_cdd_tool_detail(feature_id: str,
         f'<div class="cdt-kpi-v">{v}</div></div>'
         for l, v in kpis)
 
-    # Flags.
     if flags:
         items = "".join(
-            f'<li>{ck_signal_badge(f.get("severity", "info").upper(), tone=_SEVERITY_TONE.get(f.get("severity"), "neutral"))} '
+            f'<li>{ck_signal_badge(f.get("severity", "info").upper(), tone=_FLAG_TONE.get(f.get("severity"), "neutral"))} '
             f'<span class="cdt-flag-code">{_html.escape(str(f.get("code", "")))}</span> '
             f'{_html.escape(str(f.get("message", "")))}</li>'
             for f in flags)
-        flags_html = f'<ul class="cdt-flags">{items}</ul>'
+        flags_html = f'<ul class="cdt-dflags">{items}</ul>'
     else:
         flags_html = '<p class="cdt-muted">No flags raised.</p>'
 
-    # Reconciliations.
     if recons:
         rrows = "".join(
             f'<tr><td>{_html.escape(str(r.get("identity", "")))}</td>'
@@ -262,13 +404,12 @@ def render_cdd_tool_detail(feature_id: str,
             f'<td>{ck_signal_badge("OK" if r.get("ok") else "OFF", tone="positive" if r.get("ok") else "negative")}</td></tr>'
             for r in recons)
         recon_html = (
-            '<table class="cdt-table"><thead><tr><th>identity</th>'
+            '<table class="cdt-dtable"><thead><tr><th>identity</th>'
             '<th>lhs</th><th>rhs</th><th>gap</th><th>ties</th></tr></thead>'
             f'<tbody>{rrows}</tbody></table>')
     else:
         recon_html = '<p class="cdt-muted">No reconciliation emitted.</p>'
 
-    # Chart of the first chartable series.
     src = " · ".join(x for x in (fn.get("source", ""), fn.get("vintage", "")) if x)
     chart_html = ""
     for s in series:
@@ -279,18 +420,16 @@ def render_cdd_tool_detail(feature_id: str,
                 f'{chart_export_toolbar("cdt-chart", feature_id)}{svg}</div>')
             break
 
-    # Series tables.
     series_html = "".join(
-        f'<h3 class="cdt-sub">{_html.escape(s.get("name", "series"))} '
+        f'<h3 class="cdt-dsub">{_html.escape(s.get("name", "series"))} '
         f'<span class="cdt-muted">({_html.escape(s.get("kind", "bar"))})</span></h3>'
         f'{_series_table(s)}'
         for s in series)
 
-    # Footnote + assumptions (assumptions only present in internal render).
     fn_assumptions = fn.get("assumptions") or []
     assum_html = ""
     if fn_assumptions:
-        assum_html = ('<ul class="cdt-assum">'
+        assum_html = ('<ul class="cdt-dassum">'
                       + "".join(f"<li>{_html.escape(str(a))}</li>" for a in fn_assumptions)
                       + "</ul>")
     nodes = rendered.get("assumptions") or []  # internal-only assumption nodes
@@ -303,9 +442,9 @@ def render_cdd_tool_detail(feature_id: str,
             f'<td>{_html.escape(str(n.get("source", "")))}</td></tr>'
             for n in nodes)
         nodes_html = (
-            '<h3 class="cdt-sub">Assumption nodes '
+            '<h3 class="cdt-dsub">Assumption nodes '
             '<span class="cdt-muted">(internal)</span></h3>'
-            '<table class="cdt-table"><thead><tr><th>label</th><th>value</th>'
+            '<table class="cdt-dtable"><thead><tr><th>label</th><th>value</th>'
             '<th>unit</th><th>source</th></tr></thead>'
             f'<tbody>{nrows}</tbody></table>')
 
@@ -325,44 +464,44 @@ def render_cdd_tool_detail(feature_id: str,
              f"{len(flags)} flags · reconciled: {'yes' if reconciled else 'no'}",
     )
     summary = rendered.get("summary") or ""
-    summary_html = (f'<p class="cdt-summary">{_html.escape(summary)}</p>'
+    summary_html = (f'<p class="cdt-dsummary">{_html.escape(summary)}</p>'
                     if summary else "")
 
     css = """
 <style>
-.cdt-nav { margin: 0 0 14px; font-size: 13px; }
-.cdt-nav a { color: #155752; text-decoration: none; }
-.cdt-summary { font-size: 15px; color: #1a2332; max-width: 78ch; margin: 6px 0 18px; }
+.cdt-dnav { margin: 0 0 14px; font-size: 13px; }
+.cdt-dnav a { color: #155752; text-decoration: none; }
+.cdt-dsummary { font-size: 15px; color: #1a2332; max-width: 78ch; margin: 6px 0 18px; }
 .cdt-kpis { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 20px; }
 .cdt-kpi { background: #fffdf9; border: 1px solid #d8d2c4; border-radius: 6px; padding: 9px 16px; min-width: 96px; }
 .cdt-kpi-l { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
 .cdt-kpi-v { font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #0b2341; }
-.cdt-block { margin: 22px 0; }
-.cdt-block h2 { font-size: 16px; color: #0b2341; margin: 0 0 10px; border-bottom: 1px solid #e2ddd0; padding-bottom: 5px; }
-.cdt-sub { font-size: 14px; color: #155752; margin: 16px 0 6px; }
-.cdt-flags { list-style: none; padding: 0; margin: 0; }
-.cdt-flags li { margin: 7px 0; font-size: 13.5px; line-height: 1.45; }
+.cdt-dblock { margin: 22px 0; }
+.cdt-dblock h2 { font-size: 16px; color: #0b2341; margin: 0 0 10px; border-bottom: 1px solid #e2ddd0; padding-bottom: 5px; }
+.cdt-dsub { font-size: 14px; color: #155752; margin: 16px 0 6px; }
+.cdt-dflags { list-style: none; padding: 0; margin: 0; }
+.cdt-dflags li { margin: 7px 0; font-size: 13.5px; line-height: 1.45; }
 .cdt-flag-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #b8732a; }
-.cdt-table { border-collapse: collapse; width: 100%; font-size: 12.5px; margin: 6px 0; }
-.cdt-table th { text-align: left; background: #f0ece1; color: #0b2341; padding: 5px 8px; border: 1px solid #ddd6c8; font-weight: 600; }
-.cdt-table td { padding: 4px 8px; border: 1px solid #e6e0d3; }
-.cdt-table td.num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; text-align: right; }
+.cdt-dtable { border-collapse: collapse; width: 100%; font-size: 12.5px; margin: 6px 0; }
+.cdt-dtable th { text-align: left; background: #f0ece1; color: #0b2341; padding: 5px 8px; border: 1px solid #ddd6c8; font-weight: 600; }
+.cdt-dtable td { padding: 4px 8px; border: 1px solid #e6e0d3; }
+.cdt-dtable td.num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; text-align: right; }
 .cdt-muted { color: #6b7280; font-size: 12.5px; }
 .cdt-chart { background: #fffdf9; border: 1px solid #d8d2c4; border-radius: 6px; padding: 10px; margin: 6px 0; }
-.cdt-assum { font-size: 12.5px; color: #4a5568; }
+.cdt-dassum { font-size: 12.5px; color: #4a5568; }
 </style>"""
     body = f"""
 <div class="ck-page-wrap">
-  <div class="cdt-nav"><a href="/cdd/tools">CDD Analytics Tools</a> / {_html.escape(feature_id)}
+  <div class="cdt-dnav"><a href="/cdd/tools">CDD Analytics Engines</a> / {_html.escape(feature_id)}
     &nbsp;·&nbsp; <a href="{toggle_href}">{toggle_label}</a></div>
   {page_title}
   {summary_html}
   <div class="cdt-kpis">{kpi_html}</div>
-  {('<div class="cdt-block"><h2>Exhibit</h2>' + chart_html + '</div>') if chart_html else ''}
-  <div class="cdt-block"><h2>Flags</h2>{flags_html}</div>
-  <div class="cdt-block"><h2>Reconciliation</h2>{recon_html}</div>
-  <div class="cdt-block"><h2>Data</h2>{series_html}{nodes_html}</div>
-  <div class="cdt-block"><h2>Source</h2>
+  {('<div class="cdt-dblock"><h2>Exhibit</h2>' + chart_html + '</div>') if chart_html else ''}
+  <div class="cdt-dblock"><h2>Flags</h2>{flags_html}</div>
+  <div class="cdt-dblock"><h2>Reconciliation</h2>{recon_html}</div>
+  <div class="cdt-dblock"><h2>Data</h2>{series_html}{nodes_html}</div>
+  <div class="cdt-dblock"><h2>Source</h2>
     <p class="cdt-muted">{fn_line}</p>{assum_html}</div>
 </div>"""
     return chartis_shell(body, title=feat.title, active_nav="/cdd/tools",
@@ -372,7 +511,9 @@ def render_cdd_tool_detail(feature_id: str,
 # ── JSON / CSV twins ─────────────────────────────────────────────────
 
 def cdd_tools_catalog() -> List[Dict[str, Any]]:
-    """Machine-readable catalog of every registered tool."""
+    """Machine-readable catalog of every registered engine."""
+    from rcm_mc.cdd import registry
+
     out = []
     for feat in registry.all_features():
         out.append({

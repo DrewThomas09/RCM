@@ -207,6 +207,7 @@ _SUB_NAV = {
     # Backtest, Backtest) alongside the original catalog.
     "research": [
         {"label": "Industry Intelligence", "href": "/industry"},
+        {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
         {"label": "Deal Dataset Analytics", "href": "/deal-corpus-analytics"},
         {"label": "Find Comps",          "href": "/find-comps"},
@@ -269,6 +270,7 @@ _SUB_NAV = {
         {"label": "Infusion Market Scan", "href": "/diligence/infusion-markets"},
         {"label": "J-Code Atlas",       "href": "/diligence/jcode-atlas"},
         {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
+        {"label": "Advanced Analytics", "href": "/diligence/advanced-analytics"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
 }
@@ -355,6 +357,7 @@ _NAV_FLAGSHIPS = {
     "research": [
         "/market-intel",
         "/industry",
+        "/healthcare-verticals",
         "/regulatory-calendar",
         "/comparable-outcomes",
         "/market-intel/geo",
@@ -556,6 +559,7 @@ _NAV_DESC = {
     "/diligence/ic-packet": "Full-pipeline IC packet",
     "/diligence": "Every diligence surface →",
     "/industry": "Industry dossiers & links",
+    "/healthcare-verticals": "17-vertical reference & 2026 rates",
     "/regulatory-calendar": "Thesis kill-switch timeline",
     "/comparable-outcomes": "Similar realized-deal returns",
     "/market-intel/geo": "Geographic market intel",
@@ -7462,6 +7466,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "covenant-stress","title":"Covenant Stress",    "route": "/diligence/covenant-stress"},
     {"id": "bridge-audit",  "title": "Bridge Audit",       "route": "/diligence/bridge-audit"},
     {"id": "payer-stress",  "title": "Payer Stress",       "route": "/diligence/payer-stress"},
+    {"id": "advanced-analytics", "title": "Advanced Analytics", "route": "/diligence/advanced-analytics"},
     {"id": "ic-packet",     "title": "IC Packet",          "route": "/diligence/ic-packet"},
     {"id": "engagements",   "title": "Engagements",        "route": "/engagements"},
     {"id": "sector-intel",  "title": "Sector Intelligence","route": "/sector-intelligence"},
@@ -7497,6 +7502,7 @@ _DEFAULT_PALETTE_MODULES = [
     # Research
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
+    {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
     {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},
     {"id": "notes",         "title": "Notes",              "route": "/notes"},
     {"id": "sector-mom",    "title": "Sector Momentum",    "route": "/sector-momentum"},
@@ -7518,7 +7524,8 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "excel-mapping", "title": "Excel Mapping · configurable US-state choropleth", "route": "/excel-mapping"},
     {"id": "excel-templates", "title": "Excel Model Templates · live-formula workbooks (LBO, QoE, NWC peg, CDD market model)", "route": "/excel-templates"},
     {"id": "cdd-hub", "title": "CDD Hub · the commercial-diligence workflow in running order", "route": "/cdd"},
-    {"id": "cdd-tools", "title": "CDD Analytics Tools · the live registry of audience-aware reconciled exhibits", "route": "/cdd/tools"},
+    {"id": "cdd-tools", "title": "CDD Analytics Engines · every registered exhibit rendered with its reconciliation and sources", "route": "/cdd/tools"},
+    {"id": "payer-system", "title": "US Payer System · MA rebate, star QBP, Part D, ACA cliff", "route": "/payer-system"},
     {"id": "voc-survey", "title": "Voice of Customer · NPS, KPC gaps, willingness-to-pay", "route": "/voc-survey"},
     {"id": "win-loss", "title": "Win/Loss Analyzer · conversion record vs named competitors", "route": "/win-loss"},
     {"id": "rate-environment", "title": "Medicare Rate Environment · CMS payment updates + blended impact", "route": "/rate-environment"},
@@ -11252,6 +11259,7 @@ _SUB_SECTION_MAP = {
     "/market-rates": "library", "/data-catalog": "library",
     "/rcm-benchmarks": "library",
     "/research": "research", "/notes": "research", "/industry": "research",
+    "/healthcare-verticals": "research",
     "/market-intel/geo": "research",
     "/sector-momentum": "research", "/irr-dispersion": "research",
     "/hold-analysis": "research", "/backtest": "research",

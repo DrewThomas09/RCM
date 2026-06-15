@@ -3868,6 +3868,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Payer Mix Stress Lab — rate-shock Monte Carlo on payer mix.
         if path == "/diligence/payer-stress":
             return self._route_payer_stress_page()
+        # Advanced Analytics — composed native analytics stack (demo).
+        if path == "/diligence/advanced-analytics":
+            return self._route_advanced_analytics_page()
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
@@ -4512,6 +4515,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             _slug = path[len("/industry/"):].strip("/").split("/", 1)[0]
             from .ui.data_public.industry_page import render_industry
             return self._send_html(render_industry(_slug))
+        if path == "/healthcare-verticals":
+            from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
+            return self._send_html(render_verticals_intel_index())
+        if path.startswith("/healthcare-verticals/"):
+            _vid = path[len("/healthcare-verticals/"):].strip("/").split("/", 1)[0]
+            from .ui.data_public.healthcare_verticals_page import render_vertical_intel
+            return self._send_html(render_vertical_intel(_vid))
         if path == "/patient-experience":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -6954,17 +6964,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_xlsx)
             return
+        if path == "/cdd/tools":
+            # CDD analytics engines catalog — renders every registered
+            # rcm_mc.cdd exhibit (partner view) so the whole registry is
+            # browsable in the app, not just from the CLI.
+            from .ui.cdd_tools_page import render_cdd_tools
+            return self._send_html(render_cdd_tools())
         if path == "/cdd":
             # Commercial Due Diligence hub — the five-module CDD workflow
             # (market → competition → customers → pricing → deliverables)
             # mapped onto the desk's surfaces.
             from .ui.cdd_hub_page import render_cdd_hub
             return self._send_html(render_cdd_hub())
-        if path == "/cdd/tools":
-            # CDD analytics tools catalog — the live rcm_mc.cdd registry of
-            # audience-aware, reconciled exhibits surfaced for the browser.
-            from .ui.cdd_tools_page import render_cdd_tools_index
-            return self._send_html(render_cdd_tools_index())
         if path == "/cdd/tools.csv":
             from .ui.cdd_tools_page import cdd_tools_index_csv
             return self._send_text(
@@ -6975,15 +6986,21 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.cdd_tools_page import cdd_tools_catalog
             return self._send_json({"tools": cdd_tools_catalog()})
         if path.startswith("/cdd/tools/"):
-            # One tool's demo exhibit, rendered for the partner (default) or
-            # internal (?internal=1) audience.
+            # One tool's demo exhibit drilled down: rendered for the partner
+            # (default) or internal (?internal=1) audience. The exact
+            # /cdd/tools index (render_cdd_tools) is handled above.
             from .ui.cdd_tools_page import render_cdd_tool_detail
             _ct_fid = urllib.parse.unquote(path[len("/cdd/tools/"):]).strip("/")
             _ct_qs = urllib.parse.parse_qs(parsed.query)
             _ct_qp = {k: v[0] for k, v in _ct_qs.items() if v}
             return self._send_html(
                 render_cdd_tool_detail(_ct_fid, _ct_qp))
-
+        if path == "/payer-system":
+            # US payer-system exhibits deck — MA bid/benchmark/rebate, star
+            # QBP sensitivity, Part D IRA redesign, and the ACA APTC cliff
+            # (the four payer-economics CDD exhibits, 2025-2026 rules).
+            from .ui.payer_system_page import render_payer_system_page
+            return self._send_html(render_payer_system_page())
         if path == "/rate-environment":
             # Medicare rate environment — setting-level CMS payment
             # updates + blended dollar-impact calculator; qs carries the
@@ -10575,6 +10592,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             urllib.parse.urlparse(self.path).query,
         )
         self._send_html(render_payer_stress_page(qs=qs))
+
+    def _route_advanced_analytics_page(self) -> None:
+        from .ui.advanced_analytics_page import render_advanced_analytics_page
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_advanced_analytics_page(qs=qs))
 
     # ── HCRIS Peer X-Ray ─────────────────────────────────────────────
 

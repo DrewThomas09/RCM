@@ -1,0 +1,14 @@
+vertical_id,metric,value,unit,as_of,confidence,source,notes
+personal_care,Direct care workforce total,5400000,workers,2024,high,PHI Key Facts 2025,
+personal_care,Home care workers,3200000,workers,2024,high,PHI Key Facts 2025,Doubled from ~1.4M in 2014
+personal_care,Residential care aides,656000,workers,2024,high,PHI Key Facts 2025,
+personal_care,Nursing assistants in nursing homes,459000,workers,2024,high,PHI Key Facts 2025,
+personal_care,Median hourly wage (all direct care),17.36,USD/hour,2024,high,PHI Key Facts 2025,Home care $16.77/hour
+personal_care,Median annual earnings (home care),22429,USD/year,2024,high,PHI Key Facts 2025,
+personal_care,Projected job openings 2024-2034,9700000,openings,2024,high,PHI Key Facts 2025,
+personal_care,Home care turnover,75,percent,2024,medium,PHI Key Facts 2025,
+behavioral_health,Adult psychiatrist shortage by 2038,43660,FTE,2038,high,HRSA NCHWA (Jan 2026 update),
+behavioral_health,Additional psychologists needed by 2038,136350,FTE,2038,high,HRSA State of the Behavioral Health Workforce 2025,To meet all unmet need
+behavioral_health,Child/adolescent psychiatrist shortage,19770,FTE,2038,medium,HRSA NCHWA,Elevated-need scenario; 36% adequacy
+behavioral_health,Marriage & family therapist deficit,63540,FTE,2038,medium,HRSA NCHWA,Elevated-need scenario; 45% adequacy
+behavioral_health,Population in mental health HPSAs,40,percent,2025,high,HRSA HPSA data,As of December 2025

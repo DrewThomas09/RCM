@@ -69,6 +69,8 @@ _MODULES = [
      "Who sets the price in this market — the target, the payer, or "
      "CMS — and does the cost side let the margin hold?",
      [
+         ("US Payer System", "/payer-system",
+          "MA bid/benchmark/rebate, star QBP cliff, Part D IRA redesign, ACA APTC cliff"),
          ("Pricing Power Analyzer", "/pricing-power",
           "Elasticity curves and segment-optimal price moves"),
          ("Medicare Rate Environment", "/rate-environment",
@@ -103,6 +105,14 @@ _MODULES = [
          ("Exhibit Composer", "/exhibit",
           "Lay up to four charts on one 16:9 deck slide"),
      ]),
+    ("6 · Analytics engines",
+     "The registered CDD exhibit engines themselves, rendered with their "
+     "reconciliations, diligence flags, and sourced footnotes.",
+     [
+         ("CDD Analytics Engines", "/cdd/tools",
+          "Every registered exhibit (TAM/SAM, profit pools, benchmarking "
+          "reference layer, bolsters) rendered in the partner view"),
+     ]),
 ]
 
 
@@ -126,8 +136,8 @@ def render_cdd_hub(params: dict = None) -> str:
     page_title = ck_page_title(
         "Commercial Due Diligence Hub",
         eyebrow="DILIGENCE · CDD WORKFLOW",
-        meta=(f"5 workstream modules · {n_surfaces} surfaces · market → "
-              "competition → customers → pricing → deliverables"),
+        meta=(f"6 workstream modules · {n_surfaces} surfaces · market → "
+              "competition → customers → pricing → deliverables → engines"),
     )
     explainer = ck_page_explainer(
         "The commercial sprint, in running order.",

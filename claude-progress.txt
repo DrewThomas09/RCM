@@ -288,6 +288,33 @@ Branch: claude/mckinsey-healthcare-exhibits-qix9ec
   areas->1.0 (NEW-19); high-growth share 299/389 (NEW-20).
 - Next: optional Stage 2 (sites-of-care cost delta, admin-cost waterfall, VBC
   curves) if requested; UI deck panels already speak marimekko/waterfall.
+
+================================================================================
+[2026-06-15 12:20 UTC] REF-01..REF-06 Granular benchmarking reference
+Branch: claude/healthcare-benchmarking-reference-f96a6q
+- Built the granular benchmark-data layer as one cohesive cdd Exhibit module:
+  rcm_mc/cdd/benchmark_reference.py registers REF-01..REF-06 (quality-measure
+  weights, code/procedure frequency, physician comp/supply, hospital cost
+  structure, disease-prevalence denominators, NHE/utilization). Stdlib only,
+  no new runtime deps, no optional [cdd] deps, no LLM on any path.
+- Each domain carries source+vintage+key-assumption footnotes, provenance flags
+  (estimate / projection / proprietary / litigated), and a numeric reconciliation
+  that ties cells to a stated total. NHE-by-payer/category use a computed residual
+  bucket so each stacked bar ties exactly to the 4.9T total.
+- Hand-verified reconciliations: Star weight 4-2==2 (REF-01); Part B top-10
+  18.4 vs reported 18.5 within 0.15 (REF-02); 218400/5200==42 $/wRVU (REF-03);
+  340B uncompensated 42*0.68==28.56B (REF-04); (680909+613352)/3090964==41.9%
+  within 0.1 (REF-05); payer named 3907.2 + residual 992.8 ==4900 (REF-06).
+- Wired into registry autoload + CLI (python -m rcm_mc.cdd list/run REF-0x).
+  Added to feature_list.json (priority 21-26) and DECISIONS.md.
+- Evidence: pytest tests/golden/test_benchmark_reference.py => 10 passed;
+  test_chartpack_standards.py + test_two_audience.py sweeps green with REF added
+  (REF exhibits pass footnote/IBCS/no-em-dash and zero partner leakage). Full
+  golden sample 198 passed; only pre-existing NEW-05/BOLSTER dep-skips (lifelines/
+  sklearn/ruptures not installed in this container) remain, unrelated to REF.
+- Next: optional UI panel surfacing REF exhibits on the benchmarks page; license
+  the proprietary layer (MGMA DataDive, CMS MEDPAR) to fill percentile/count cells.
+
 ================================================================================
 [2026-06-15 00:40 UTC] NEW-21 Contested market-size triangulation
 Branch: claude/healthcare-supply-infrastructure-4faheu
@@ -302,11 +329,59 @@ Branch: claude/healthcare-supply-infrastructure-4faheu
   outside the source span. House-in-range is the load-bearing reconciliation
   (clamped house == house iff in range). Registered in cdd/registry autoload.
 - Evidence: pytest tests/golden/test_market_size_estimates.py => 13 passed.
-  RCM fixture hand-verified: low 56.8 / high 172.2 / median 100.05 / mean
-  107.275 / spread 2.03169 (203%); both divergence + basis flags fire; partner
-  render strips assumptions, keeps flags + sourced footnote.
-- Full golden sweep (chartpack standards + two-audience leak test) clean for the
-  new feature; only pre-existing NEW-05 lifelines-import failures remain in this
-  sandbox (lifelines wheel will not build here; unrelated to this change).
-- Next: encode the rest of the report's contested ranges (IVD, global medtech)
-  as house estimates and wire a deck panel for the range chart.
+- Next: encode the rest of the report's contested ranges as house estimates.
+
+================================================================================
+[2026-06-15 11:58 UTC] NEW-22..26 Healthcare unit-economics and data spine
+Branch: claude/healthcare-unit-economics-spine-311f1w
+- Built the unit-economics master spine and its four headline visualizations as
+  cdd/ Exhibit engines, wiring the 2025/26 master reference onto one comparable
+  spine (Stages 1 to 4 of the reference recommendations).
+- NEW-21 unit_economics_spine.py: 26 verticals (14 verified 2026 final-rule
+  anchors, 2 sourced list-price ranges, 10 secondary-source estimates) on one
+  log axis. Representative = geometric mean of bounds; spans about 5 orders of
+  magnitude (hospice 181.94/day to gene therapy 4.25M). est_verify rows flagged
+  and charted as ranges; rep-within-bounds and span identities reconcile.
+- NEW-22 rate_update_scorecard.py: diverging bar of 12 net 2026 updates; home
+  health -1.3% only negative; PFS dual QP +3.77/non-QP +3.26. Stated market
+  basket/productivity components reconcile to the net (SNF 3.3+0.6-0.7=3.2,
+  IPF 3.2-0.7=2.5); negative-update and pfs-dual flags.
+- NEW-23 payer_economics.py: gross margin per enrollee + MLR by segment; MA
+  leads 1655 (yoy -331), Medicaid MC 608. Highest-margin flag computed from
+  data; yoy ties to 2024 minus 2023; rebate/Part B/Part D context in meta.
+- NEW-24 commercial_multiplier.py: RAND Round 5.1 ratios (254/279/184/171%)
+  applied to 2026 Medicare anchors (IPPS 6752.61*2.54=17151.63 hand-verified);
+  product reconciles; unknown-service-type flag; AR 162 to FL 346 spread.
+- NEW-25 market_concentration.py: top-firm share by vertical, distribution 95 /
+  PBM 80 / dialysis 77.1 (2019 JAMA) / GPO 75 clear the 70% bar; GPO and EHR
+  flagged industry estimates; shares validated 0-100.
+- All five registered in cdd/registry.py autoload; CLI list/run verified in both
+  audience modes; partner render strips assumptions (audience separation).
+  Non-default choices logged in DECISIONS.md (NEW-21 geomean, NEW-25 threshold).
+- Evidence: cd RCM_MC && python -m pytest tests/golden/ -q => 281 passed
+  (35 new tests across 5 files); registry-wide two-audience and chartpack
+  sweeps green over all features. No new runtime deps; no LLM on any path.
+- Renumbered from NEW-21..25 to NEW-22..26 on merge with main, which had
+  already taken NEW-21 for market_size_estimates.
+- Next: optional UI deck panels for the spine and scorecard, and primary-source
+  verification of the est_verify rows.
+
+================================================================================
+[2026-06-15 13:55 UTC] NEW-27..30 US payer-system exhibits (rebased onto main)
+Branch: claude/us-payer-system-2025-2026-vmdjts
+- Rebased onto main after #1884/#1886 claimed NEW-21..26; renumbered this
+  workstream's four exhibits to NEW-27..30 to avoid feature-id collision.
+- NEW-27 ma_bid_rebate.py: MA bid/benchmark/rebate waterfall. County benchmark
+  by FFS quartile plus 5/10% quality bonus, star-tier rebate retention, CMS-
+  retained savings, enrollee premium when bid exceeds benchmark, RAF-scaled
+  payment. KFF worked example reproduced exactly (1150/830/224/1054).
+- NEW-28 star_qbp.py: star-rating QBP payment sensitivity, reuses the NEW-27
+  engine; flags the 4-star quality-bonus cliff and the downgrade loss.
+- NEW-29 part_d_redesign.py: three-phase IRA brand allocation across enrollee/
+  plan/manufacturer/Medicare with the 2000/2100 OOP cap and the 80->20%
+  catastrophic reinsurance shift.
+- NEW-30 aca_aptc_cliff.py: net benchmark premium under enhanced vs sunset
+  applicable-percentage schedules; restores the 400% cliff and premium shock.
+- All four registered in cdd/registry.py autoload; golden-tested; audience-
+  separated. New deck page surfaces them (ui/payer_system_page.py at /payer-system).
+- No new runtime deps; statistical only, no LLM on any path.

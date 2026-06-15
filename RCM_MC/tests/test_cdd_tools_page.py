@@ -15,14 +15,14 @@ import unittest
 from rcm_mc.cdd import registry
 from rcm_mc.ui.cdd_tools_page import (
     cdd_tools_catalog, cdd_tools_index_csv, render_cdd_tool_detail,
-    render_cdd_tools_index,
+    render_cdd_tools,
 )
 
 
 class CddToolsIndexTests(unittest.TestCase):
     def test_index_lists_every_registered_tool(self):
-        html = render_cdd_tools_index()
-        self.assertIn("CDD Analytics Tools", html)
+        html = render_cdd_tools()
+        self.assertIn("CDD Analytics Engines", html)
         for feat in registry.all_features():
             self.assertIn(_html.escape(feat.feature_id), html)
             self.assertIn(f"/cdd/tools/{feat.feature_id}", html)
