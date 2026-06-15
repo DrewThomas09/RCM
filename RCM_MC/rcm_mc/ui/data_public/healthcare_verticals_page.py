@@ -13,6 +13,7 @@ provider-specific. Every row carries source + confidence; ranges stay ranges.
 from __future__ import annotations
 
 import html as _html
+import math
 from typing import Dict, List, Optional
 
 from rcm_mc.ui._chartis_kit import (
@@ -153,7 +154,10 @@ def render_verticals_intel_index(params: dict = None) -> str:
             source=_hv.ATTRIBUTION + ". Industry-level, not provider-specific; "
                    "ranges kept as ranges; figures flagged unverifiable marked low-confidence.",
             next_action="Open a vertical for its payment economics, unit economics, and sources")
-        + f'<p style="margin:6px 0 16px">{_SYNTH_CHIP}</p>'
+        + f'<p style="margin:6px 0 16px">{_SYNTH_CHIP} '
+        + f'<a href="/healthcare-verticals/unit-economics" style="margin-left:10px;'
+        + f'color:{P["accent"]};font-size:12px;font-weight:600;text-decoration:none">'
+        + f'Cross-vertical unit economics &rarr;</a></p>'
         + kpi_block + upd_panel + sections)
     return chartis_shell(body, "Healthcare Verticals", active_nav="/healthcare-verticals",
                          editorial_intro={
@@ -306,6 +310,126 @@ def render_vertical_intel(vertical_id: str, params: dict = None) -> str:
         + f'{_conf_chip(_overall_conf(vid))}</p>'
         + kpi_block + panels)
     return chartis_shell(body, v.get("vertical_name",""), active_nav="/healthcare-verticals")
+
+
+def _fmt_usd(n: float) -> str:
+    """Editorial currency, 2dp per house style. Collapses to M/bn for the
+    large end (gene therapy, trial costs) so the cross-vertical table stays
+    readable across five orders of magnitude."""
+    if n >= 1e9:
+        return f"${n/1e9:,.2f}bn"
+    if n >= 1e6:
+        return f"${n/1e6:,.2f}M"
+    if n >= 1e4:
+        return f"${n/1e3:,.1f}K"
+    return f"${n:,.2f}"
+
+
+# ── Cross-vertical unit economics — /healthcare-verticals/unit-economics ────
+# The report's flagged "single most useful synthesis visual": every vertical's
+# per-unit price on one axis. Denominators differ (per day / treatment / cycle /
+# trip / dose / month), so a linear axis is meaningless — values span ~$42/trip
+# to ~$20M/trial, five orders of magnitude. We render a LOG-scaled bar of the
+# midpoint with the denominator labelled on every row, never implying the units
+# are interchangeable.
+def render_unit_economics(params: dict = None) -> str:
+    rows = _hv.load_unit_economics()
+    names = {v["vertical_id"]: v.get("vertical_name", v["vertical_id"])
+             for v in _hv.load_verticals()}
+
+    # Parse to (row, low, high, mid); drop rows without a numeric low.
+    parsed = []
+    for r in rows:
+        try:
+            lo = float(r["value_low"])
+            hi = float(r["value_high"]) if r.get("value_high") not in ("", None) else lo
+        except (TypeError, ValueError, KeyError):
+            continue
+        parsed.append((r, lo, hi, (lo + hi) / 2.0))
+    parsed.sort(key=lambda t: t[3], reverse=True)
+
+    mids = [t[3] for t in parsed] or [1.0]
+    lmin, lmax = math.log10(min(mids)), math.log10(max(mids))
+    span = (lmax - lmin) or 1.0
+
+    bars = ""
+    for r, lo, hi, mid in parsed:
+        # Floor the width at 4% so the smallest bar (NEMT) is still visible.
+        pct = 4 + (math.log10(mid) - lmin) / span * 96
+        rng = _fmt_usd(lo) if lo == hi else f"{_fmt_usd(lo)} – {_fmt_usd(hi)}"
+        vname = _html.escape(names.get(r["vertical_id"], r["vertical_id"]))
+        unit_label = _html.escape(r.get("unit_label", ""))
+        bars += (
+            f'<div style="display:flex;align-items:center;gap:10px;margin:4px 0">'
+            f'<div style="flex:0 0 250px"><a href="/healthcare-verticals/{_html.escape(r["vertical_id"])}" '
+            f'style="color:{P["accent"]};text-decoration:none;font-size:12px;font-weight:600">{vname}</a>'
+            f'<div style="font-size:10px;color:{P["text_dim"]}">{unit_label}</div></div>'
+            f'<div style="flex:1;background:{P["panel_alt"]};border-radius:3px;height:18px;min-width:60px">'
+            f'<div style="width:{pct:.1f}%;background:{P["accent"]};height:18px;border-radius:3px"></div></div>'
+            f'<div style="flex:0 0 170px;text-align:right;font-variant-numeric:tabular-nums;'
+            f'font-size:12px;color:{P["text"]}">{rng}</div>'
+            f'<div style="flex:0 0 60px;text-align:right">{_conf_chip(r.get("confidence",""))}</div>'
+            f'</div>')
+
+    chart_panel = _panel(
+        "Per-unit price by vertical — log scale, midpoint bar",
+        f'<p style="font-size:11px;color:{P["text_dim"]};margin:0 0 10px">'
+        f'Denominators differ per row (per day / treatment / cycle / trip / dose / month). '
+        f'The axis is <b>log-scaled</b> across ~5 orders of magnitude — bar length compares '
+        f'order of magnitude, not interchangeable dollars.</p>' + bars)
+
+    # Full detail table with source + notes.
+    trows = ""
+    for r, lo, hi, mid in parsed:
+        rng = _fmt_usd(lo) if lo == hi else f"{_fmt_usd(lo)} – {_fmt_usd(hi)}"
+        trows += (
+            f'<tr style="border-bottom:1px solid {P["border"]}">'
+            f'<td style="padding:6px 10px;font-size:12px">{_html.escape(names.get(r["vertical_id"], r["vertical_id"]))}</td>'
+            f'<td style="padding:6px 10px;font-size:12px;color:{P["text_dim"]}">{_html.escape(r.get("unit_label",""))}</td>'
+            f'<td style="padding:6px 10px;text-align:right;font-variant-numeric:tabular-nums;font-size:12px">{rng}</td>'
+            f'<td style="padding:6px 10px;text-align:center">{_conf_chip(r.get("confidence",""))}</td>'
+            f'<td style="padding:6px 10px;font-size:11px;color:{P["text_dim"]}">{_html.escape(r.get("source",""))}</td>'
+            f'</tr>')
+    table_panel = _panel(
+        "Unit economics — sourced detail",
+        f'<table style="width:100%;border-collapse:collapse"><thead>'
+        f'<tr style="text-align:left;color:{P["text_dim"]};font-size:10px;text-transform:uppercase;border-bottom:2px solid {P["border"]}">'
+        f'<th style="padding:6px 10px">Vertical</th><th style="padding:6px 10px">Unit</th>'
+        f'<th style="padding:6px 10px;text-align:right">Per-unit price</th>'
+        f'<th style="padding:6px 10px;text-align:center">Conf.</th><th style="padding:6px 10px">Source</th>'
+        f'</tr></thead><tbody>{trows}</tbody></table>')
+
+    # KPI anchors: the extremes.
+    hi_row = parsed[0] if parsed else None
+    lo_row = parsed[-1] if parsed else None
+    kpis = ck_kpi_block("Comparable units", str(len(parsed)), "across verticals", "")
+    if hi_row:
+        kpis += ck_kpi_block("Highest", _fmt_usd(hi_row[3]),
+                             _html.escape(f'{names.get(hi_row[0]["vertical_id"],"")} · {hi_row[0].get("unit_label","")}'), "")
+    if lo_row:
+        kpis += ck_kpi_block("Lowest", _fmt_usd(lo_row[3]),
+                             _html.escape(f'{names.get(lo_row[0]["vertical_id"],"")} · {lo_row[0].get("unit_label","")}'), "")
+    if hi_row and lo_row and lo_row[3]:
+        kpis += ck_kpi_block("Spread", f"{hi_row[3]/lo_row[3]:,.0f}x", "high ÷ low", "")
+    kpi_block = f'<div class="ck-kpi-grid" style="margin-bottom:16px">{kpis}</div>'
+
+    body = (
+        ck_page_title("Cross-Vertical Unit Economics", eyebrow="RESEARCH · VERTICALS",
+                      meta=f"{len(parsed)} verticals · per-unit price on one log axis · "
+                           f'<a href="/healthcare-verticals" style="color:inherit">all verticals</a>')
+        + ck_source_purpose(
+            purpose="Put every vertical's per-unit price on one axis — the "
+                    "report's flagged single most useful synthesis visual — to "
+                    "frame relative scale across the specialized verticals.",
+            universe="public-source-synthesis", confidence="mixed",
+            source=_hv.ATTRIBUTION + ". Units are NOT interchangeable (per day / "
+                   "treatment / cycle / trip / dose / month); log axis compares "
+                   "magnitude only. Ranges kept as ranges.",
+            next_action="Open a vertical for its full payment economics and sources")
+        + f'<p style="margin:6px 0 16px">{_SYNTH_CHIP}</p>'
+        + kpi_block + chart_panel + table_panel)
+    return chartis_shell(body, "Cross-Vertical Unit Economics",
+                         active_nav="/healthcare-verticals")
 
 
 def _is_num(x) -> bool:

@@ -91,6 +91,17 @@ class RenderTests(unittest.TestCase):
             render_vertical_intel)
         self.assertIn("not found", render_vertical_intel("nope").lower())
 
+    def test_unit_economics_page(self):
+        from rcm_mc.ui.data_public.healthcare_verticals_page import (
+            render_unit_economics)
+        html = render_unit_economics()
+        self.assertIn("Cross-Vertical Unit Economics", html)
+        # Spans the extremes and labels the denominators (not interchangeable).
+        self.assertIn("per dose", html)
+        self.assertIn("per trip", html)
+        self.assertIn("log-scaled", html)
+        self.assertIn("Public-source synthesis", html)
+
 
 class RouteTests(unittest.TestCase):
     @classmethod
@@ -126,6 +137,14 @@ class RouteTests(unittest.TestCase):
         s, b = self._get("/healthcare-verticals/dialysis_esrd")
         self.assertEqual(s, 200)
         self.assertIn("281.71", b)
+
+    def test_unit_economics_route_not_shadowed(self):
+        # The explicit /unit-economics route must win over the /<id> catch —
+        # i.e. it must NOT render the "vertical not found" page.
+        s, b = self._get("/healthcare-verticals/unit-economics")
+        self.assertEqual(s, 200)
+        self.assertIn("Cross-Vertical Unit Economics", b)
+        self.assertNotIn("not found", b.lower())
 
 
 if __name__ == "__main__":

@@ -4530,6 +4530,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
+        if path == "/healthcare-verticals/unit-economics":
+            from .ui.data_public.healthcare_verticals_page import render_unit_economics
+            return self._send_html(render_unit_economics())
         if path.startswith("/healthcare-verticals/"):
             _vid = path[len("/healthcare-verticals/"):].strip("/").split("/", 1)[0]
             from .ui.data_public.healthcare_verticals_page import render_vertical_intel
