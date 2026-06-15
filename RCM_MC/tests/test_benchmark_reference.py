@@ -101,6 +101,17 @@ class RenderTests(unittest.TestCase):
         self.assertIn("<html", render_benchmark_reference(None).lower())
 
 
+class CatalogTests(unittest.TestCase):
+    def test_listed_in_all_tools_module_index(self):
+        # The page must surface in the platform's "all tools" directory
+        # (/module-index) with a public-data source badge.
+        from rcm_mc.data_public.module_index import compute_module_index
+        from rcm_mc.ui.data_public.module_index_page import _source_badge
+        routes = {m.route for m in compute_module_index().modules}
+        self.assertIn("/benchmark-reference", routes)
+        self.assertIn("CMS", _source_badge("/benchmark-reference"))
+
+
 class RouteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
