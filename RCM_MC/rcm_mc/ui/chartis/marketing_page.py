@@ -59,15 +59,33 @@ _STYLE = """
     --green: #3F7D4D;
     --amber: #B7791F;
     --red: #A53A2D;
+
+    /* Type — one stack per role, declared once so every surface stays
+       consistent. (Mirrors the platform's --sc-serif/sans/mono tokens;
+       this page is standalone so it carries its own copy.) */
+    --serif: "Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, serif;
+    --sans: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+    /* Uppercase-label scale — three steps so eyebrows/tags don't drift
+       to a dozen near-identical sizes across sections.
+         --label    primary: nav, buttons, hero eyebrow
+         --label-sm secondary: section micro, table + panel headers
+         --label-xs tiny tags: hero-card eyebrow, "sample" markers */
+    --label: .72rem;
+    --label-sm: .68rem;
+    --label-xs: .58rem;
+    --track: .14em;
   }
   * { box-sizing: border-box; }
   html, body {
     margin: 0; padding: 0; background: var(--bg); color: var(--ink);
-    font-family: "Source Serif 4", "Source Serif Pro", "Iowan Old Style", Georgia, serif; font-size: 16px; line-height: 1.55;
+    font-family: var(--serif); font-size: 16px; line-height: 1.6;
     -webkit-font-smoothing: antialiased; scroll-behavior: smooth;
+    text-rendering: optimizeLegibility; text-wrap: pretty;
   }
-  .sans { font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; }
-  .mono { font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum" on; }
+  .sans { font-family: var(--sans); }
+  .mono { font-family: var(--mono); font-feature-settings: "tnum" on; }
 
   /* TOP BAR */
   .topbar {
@@ -78,29 +96,29 @@ _STYLE = """
   .brand-mark {
     width: 38px; height: 38px; border: 1.5px solid var(--ink); border-radius: 999px;
     display: flex; align-items: center; justify-content: center;
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1rem; font-weight: 600;
+    font-family: var(--serif); font-size: 1rem; font-weight: 600;
     color: var(--ink);
   }
-  .brand-name { font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.4rem; font-weight: 600; color: var(--ink); }
+  .brand-name { font-family: var(--serif); font-size: 1.4rem; font-weight: 600; color: var(--ink); }
   .brand-name em { font-style: italic; font-weight: 500; }
   .topnav {
     display: flex; gap: 0; margin-left: 2rem;
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .76rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
+    font-family: var(--sans); font-size: var(--label); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase;
   }
-  .topnav a { padding: 0 1.1rem; color: var(--ink); text-decoration: none; }
+  .topnav a { padding: 0 1.1rem; color: var(--ink); text-decoration: none; transition: color .18s ease; }
   .topnav a:hover { color: var(--teal-deep); }
   .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
   .signin {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+    font-family: var(--sans); font-size: var(--label); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase; color: var(--muted);
     text-decoration: none; padding: 0 .75rem;
   }
   .signin:hover { color: var(--ink); }
   .cta-btn {
     background: var(--ink); color: var(--paper);
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
+    font-family: var(--sans); font-size: var(--label); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase;
     padding: .8rem 1.4rem; border: none; cursor: pointer; text-decoration: none;
     display: inline-block; transition: background .18s ease;
   }
@@ -109,7 +127,7 @@ _STYLE = """
   /* CRUMBS */
   .crumbs {
     background: var(--bg); padding: .9rem 2rem; border-bottom: 1px solid var(--border);
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; letter-spacing: .1em;
+    font-family: var(--sans); font-size: var(--label); letter-spacing: var(--track);
     text-transform: uppercase; color: var(--muted);
   }
   .crumbs .sep { margin: 0 .55rem; color: var(--faint); }
@@ -123,31 +141,31 @@ _STYLE = """
     gap: 4rem; align-items: center;
   }
   .eyebrow {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; letter-spacing: .14em;
+    font-family: var(--sans); font-size: var(--label); letter-spacing: var(--track);
     text-transform: uppercase; color: var(--muted); font-weight: 600;
     display: flex; align-items: center; gap: .6rem; margin-bottom: 1.5rem;
   }
   .eyebrow .dot { color: var(--faint); }
-  .eyebrow .slug { font-family: "JetBrains Mono", monospace; color: var(--teal-deep); letter-spacing: .04em; }
+  .eyebrow .slug { font-family: var(--mono); color: var(--teal-deep); letter-spacing: .04em; }
   .eyebrow::before {
     content: ""; width: 7px; height: 7px; border-radius: 50%;
     background: var(--teal); display: inline-block;
   }
   h1.title {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400;
+    font-family: var(--serif); font-weight: 400;
     font-size: clamp(3rem, 5.2vw, 4.7rem); line-height: 1.02; letter-spacing: -0.022em;
     color: var(--ink); margin: 0 0 1.5rem;
   }
   h1.title em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
   .lede {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.28rem; line-height: 1.5;
-    color: var(--ink-2); max-width: 640px; margin: 0 0 2rem;
+    font-family: var(--serif); font-size: 1.28rem; line-height: 1.58;
+    color: var(--ink-2); max-width: 33rem; margin: 0 0 2.25rem;
   }
   .lede b { font-weight: 600; color: var(--ink); }
   .hero-actions { display: flex; gap: 1.5rem; align-items: center; }
   .ghost-btn {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--ink);
+    font-family: var(--sans); font-size: var(--label); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase; color: var(--ink);
     padding: .8rem 0; border-bottom: 1px solid var(--ink); text-decoration: none;
   }
   .ghost-btn:hover { color: var(--teal-deep); border-bottom-color: var(--teal-deep); }
@@ -168,8 +186,8 @@ _STYLE = """
     margin-bottom: 1.05rem;
   }
   .ha-eyebrow {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
-    font-size: .6rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    font-family: var(--sans);
+    font-size: var(--label-xs); font-weight: 700; letter-spacing: var(--track); text-transform: uppercase;
     color: var(--muted); display: flex; align-items: center; gap: .45rem;
   }
   .ha-dot {
@@ -177,22 +195,22 @@ _STYLE = """
     background: var(--teal); display: inline-block;
   }
   .ha-chip {
-    font-family: "JetBrains Mono", monospace; font-size: .56rem; letter-spacing: .06em;
+    font-family: var(--mono); font-size: .56rem; letter-spacing: .06em;
     color: var(--teal-deep); background: var(--teal-soft);
     padding: .2rem .45rem; border-radius: 2px; white-space: nowrap;
   }
   .ha-ctitle {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    font-family: var(--serif);
     font-size: 1.05rem; line-height: 1.2; color: var(--ink); margin: 0;
   }
   .ha-ctitle span { font-style: italic; color: var(--faint); }
   .ha-csub {
-    font-family: "JetBrains Mono", monospace; font-size: .58rem; letter-spacing: .04em;
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .04em;
     color: var(--faint); margin: .15rem 0 .55rem;
   }
   .ha-chart { display: block; width: 100%; height: auto; }
   .ha-chart .ha-tick {
-    font-family: "JetBrains Mono", monospace; font-size: 8px;
+    font-family: var(--mono); font-size: 8px;
     fill: var(--faint); letter-spacing: .02em;
   }
   .ha-kpis { border-top: 1px solid var(--border); margin-top: .85rem; padding-top: .75rem; }
@@ -200,24 +218,24 @@ _STYLE = """
     display: flex; align-items: baseline; justify-content: space-between; padding: .28rem 0;
   }
   .ha-row .k {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--sans);
     font-size: .78rem; color: var(--muted);
   }
   .ha-row .v {
-    font-family: "JetBrains Mono", monospace; font-feature-settings: "tnum" on;
+    font-family: var(--mono); font-feature-settings: "tnum" on;
     font-size: .92rem; font-weight: 600; color: var(--ink);
   }
   .ha-foot {
     margin-top: .85rem; padding-top: .75rem; border-top: 1px solid var(--border);
-    font-family: "JetBrains Mono", monospace; font-size: .62rem; letter-spacing: .02em;
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .02em;
     color: var(--faint); display: flex; align-items: center; gap: .4rem;
   }
   .ha-foot .arr { color: var(--teal); font-size: .85rem; line-height: 1; }
 
   /* sample tag — honest "this is a worked example" marker */
   .sample-tag {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .58rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--amber);
+    font-family: var(--sans); font-size: var(--label-xs); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase; color: var(--amber);
     border: 1px solid var(--amber); border-radius: 2px; padding: .12rem .4rem;
     white-space: nowrap;
   }
@@ -230,12 +248,13 @@ _STYLE = """
   .trip-cell { padding: 2rem 1.75rem; border-right: 1px solid var(--border); }
   .trip-cell:last-child { border-right: none; }
   .trip-num {
-    font-family: "JetBrains Mono", monospace; font-size: .72rem;
+    font-family: var(--mono); font-size: .72rem;
     color: var(--teal-deep); letter-spacing: .04em; margin-bottom: .8rem;
   }
   .trip-h {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400; font-size: 1.35rem;
+    font-family: var(--serif); font-weight: 400; font-size: 1.35rem;
     line-height: 1.2; color: var(--ink); margin: 0 0 .75rem;
+    text-wrap: balance;
   }
   .trip-h em { font-style: italic; color: var(--teal-deep); }
   .trip-p { font-size: .94rem; color: var(--muted); line-height: 1.6; margin: 0; }
@@ -251,17 +270,17 @@ _STYLE = """
     background: var(--teal);
   }
   .sect h2 {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400;
+    font-family: var(--serif); font-weight: 400;
     font-size: clamp(2.1rem, 3.4vw, 3.1rem); line-height: 1.08;
     letter-spacing: -0.016em; color: var(--ink); margin: .35rem 0 0;
   }
   .sect h2 em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
   .micro {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
+    font-family: var(--sans); font-size: var(--label-sm); font-weight: 700;
     letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
   }
   .desc {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.05rem; line-height: 1.6;
+    font-family: var(--serif); font-size: 1.05rem; line-height: 1.6;
     color: var(--muted); margin: 0; max-width: 640px;
   }
 
@@ -274,21 +293,21 @@ _STYLE = """
   .pair .data { background: var(--bg); }
   .data-h {
     padding: .9rem 1.25rem; border-bottom: 1px solid var(--border);
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+    font-family: var(--sans); font-size: var(--label-sm); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase; color: var(--muted);
     display: flex; justify-content: space-between; align-items: center; gap: .5rem;
   }
   .data-h .src {
-    font-family: "JetBrains Mono", monospace; text-transform: none;
+    font-family: var(--mono); text-transform: none;
     letter-spacing: 0; color: var(--teal-deep); font-size: .72rem;
   }
   .pair table { width: 100%; border-collapse: collapse;
-    font-family: "JetBrains Mono", monospace; font-size: .82rem; }
+    font-family: var(--mono); font-size: .82rem; }
   .pair th {
     text-align: left; padding: .55rem 1.25rem; color: var(--faint);
     font-weight: 600; font-size: .62rem; letter-spacing: .12em;
     text-transform: uppercase; border-bottom: 1px solid var(--border);
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--sans);
   }
   .pair td {
     padding: .55rem 1.25rem; border-bottom: 1px solid var(--border);
@@ -296,7 +315,7 @@ _STYLE = """
   }
   .pair tr:last-child td { border-bottom: none; }
   .pair td.r { text-align: right; }
-  .pair td.lbl { color: var(--muted); font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .9rem; }
+  .pair td.lbl { color: var(--muted); font-family: var(--sans); font-size: .9rem; }
   .pair tr.hot td { background: var(--bg-tint); }
   .pair tr.hot td:first-child { border-left: 2px solid var(--amber); }
 
@@ -304,16 +323,16 @@ _STYLE = """
   .funnel { display: grid; grid-template-columns: repeat(7, 1fr); gap: .15rem; }
   .funnel .stage { background: var(--bg); padding: 1rem .85rem; border-top: 2px solid var(--teal); }
   .funnel .nm {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+    font-family: var(--sans); font-size: var(--label-sm); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase; color: var(--muted);
     margin-bottom: .5rem;
   }
   .funnel .ct {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.7rem; color: var(--ink);
+    font-family: var(--serif); font-size: 1.7rem; color: var(--ink);
     line-height: 1; margin-bottom: .25rem;
   }
   .funnel .ev {
-    font-family: "JetBrains Mono", monospace; font-size: .72rem;
+    font-family: var(--mono); font-size: .72rem;
     color: var(--teal-deep); margin-bottom: .5rem;
   }
   .funnel .bar { height: 3px; background: var(--border); }
@@ -331,15 +350,15 @@ _STYLE = """
   .cap:nth-child(4n) { border-right: none; }
   .cap:nth-last-child(-n+4) { border-bottom: none; }
   .cap-tag {
-    font-family: "JetBrains Mono", monospace; font-size: .64rem;
+    font-family: var(--mono); font-size: .64rem;
     letter-spacing: .04em; color: var(--teal-deep); margin-bottom: .6rem;
   }
   .cap-name {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: 1.22rem; line-height: 1.2;
-    color: var(--ink); margin: 0 0 .5rem;
+    font-family: var(--serif); font-size: 1.22rem; line-height: 1.2;
+    color: var(--ink); margin: 0 0 .5rem; text-wrap: balance;
   }
   .cap-d {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-size: .9rem; color: var(--muted);
+    font-family: var(--serif); font-size: .9rem; color: var(--muted);
     line-height: 1.5; margin: 0;
   }
 
@@ -355,11 +374,11 @@ _STYLE = """
     display: flex; justify-content: space-between; align-items: center;
   }
   .cat-h .ttl {
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .68rem; font-weight: 700;
-    letter-spacing: .14em; color: var(--ink);
+    font-family: var(--sans); font-size: var(--label-sm); font-weight: 700;
+    letter-spacing: var(--track); color: var(--ink);
   }
   .cat-h .lvl {
-    font-family: "JetBrains Mono", monospace; font-size: .6rem;
+    font-family: var(--mono); font-size: .6rem;
     padding: .15rem .45rem; border: 1px solid var(--border); color: var(--muted);
   }
   .cat-h .lvl.fund { background: var(--teal-soft); color: var(--teal-deep); border-color: var(--teal); }
@@ -369,8 +388,8 @@ _STYLE = """
     border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
   }
   .cat-col tr:last-child td { border-bottom: none; }
-  .cat-col td.lbl { color: var(--muted); font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; }
-  .cat-col td.r { text-align: right; font-family: "JetBrains Mono", monospace; color: var(--ink); font-weight: 600; }
+  .cat-col td.lbl { color: var(--muted); font-family: var(--sans); }
+  .cat-col td.r { text-align: right; font-family: var(--mono); color: var(--ink); font-weight: 600; }
 
   /* CTA STRIP — flat dark, no glow */
   .cta-strip {
@@ -379,7 +398,7 @@ _STYLE = """
     display: grid; grid-template-columns: 1.4fr 1fr; gap: 3rem; align-items: center;
   }
   .cta-strip h3 {
-    font-family: "Source Serif 4", "Iowan Old Style", Georgia, serif; font-weight: 400;
+    font-family: var(--serif); font-weight: 400;
     font-size: 2.4rem; line-height: 1.08; letter-spacing: -0.015em;
     color: var(--paper); margin: 0;
   }
@@ -392,16 +411,16 @@ _STYLE = """
   .cta-strip-actions { display: flex; flex-direction: column; gap: .75rem; }
   .cta-light {
     background: var(--paper); color: var(--ink);
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
+    font-family: var(--sans); font-size: var(--label); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
     transition: background .18s ease, color .18s ease;
   }
   .cta-light:hover { background: var(--teal); color: var(--paper); }
   .cta-outline {
     background: transparent; border: 1px solid rgba(245,240,225,.4); color: var(--paper);
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .72rem; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
+    font-family: var(--sans); font-size: var(--label); font-weight: 700;
+    letter-spacing: var(--track); text-transform: uppercase;
     padding: 1rem 1.5rem; text-decoration: none; text-align: center;
     transition: background .18s ease, color .18s ease, border-color .18s ease;
   }
@@ -412,7 +431,7 @@ _STYLE = """
     margin-top: 3rem; padding: 2rem; border-top: 1px solid var(--rule);
     display: flex; justify-content: space-between; align-items: center; gap: 1rem;
     flex-wrap: wrap;
-    font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif; font-size: .82rem; color: var(--muted);
+    font-family: var(--sans); font-size: .82rem; color: var(--muted);
   }
   footer em { font-style: italic; color: var(--teal-deep); }
 
@@ -496,12 +515,11 @@ def _hero() -> str:
         '<h1 class="title">The deal file that <br/>'
         '<em>shows its work.</em></h1>'
         '<p class="lede">'
-        'PE Desk gives a healthcare deal team one workspace per target: '
-        'market structure, peer benchmarks, comparable transactions, '
-        'customer and competitor signals, interviews, and notes. '
+        'One workspace per target: market structure, peer benchmarks, '
+        'comparable transactions, and the signals around them. '
         '<b>Every figure links back to the filing, cost report, or call '
-        'it came from.</b> It runs on your own infrastructure, off public '
-        'CMS data, and nothing leaves the box.'
+        'it came from</b> &mdash; and nothing ever leaves your '
+        'infrastructure.'
         '</p>'
         '<div class="hero-actions">'
         f'<a href="{_LOGIN}" class="cta-btn">Open a workspace &rarr;</a>'
@@ -572,16 +590,16 @@ def _triplet() -> str:
     cells = [
         ("/01", "Enter the deal <em>once</em>",
          "Name the target, set the thesis, drop in the financials. Every "
-         "analytic downstream opens already filled in. Nobody re-keys the "
-         "same revenue number into five different tools."),
-        ("/02", "Read the market and the target <em>together</em>",
-         "The target sits inside its market: structure, growth, payer mix, "
-         "named competitors, and the comparable transactions that set the "
-         "multiple. Read across the page, not just down it."),
+         "analytic downstream opens already filled in &mdash; no re-keying "
+         "the same number into five tools."),
+        ("/02", "Market and target <em>together</em>",
+         "The target sits inside its market: growth, payer mix, named "
+         "competitors, and the comparables that set the multiple. Read "
+         "across the page, not just down it."),
         ("/03", "Every figure <em>shows its source</em>",
-         "Filings, CMS cost reports, interviews, benchmarks, prior-engagement "
-         "notes. Click any number to land on the document behind it, and "
-         "hand the file to the next analyst without losing the trail."),
+         "Click any number to land on the filing, cost report, or call "
+         "behind it &mdash; then hand the file to the next analyst without "
+         "losing the trail."),
     ]
     inner = "".join(
         f'<div class="trip-cell">'
@@ -670,11 +688,10 @@ def _workspace_section() -> str:
         + _sect(
             "THE WORKSPACE",
             "From scattered files <br/>to <em>one deal view.</em>",
-            "Open a workspace per opportunity. The target profile, the "
-            "market map, the comparable set, the interview log, and the "
-            "diligence questions all live in one place and stay tied to the "
-            "deal, so the whole team is reading the same file as it moves "
-            "from sourced to close.",
+            "The target profile, market map, comparable set, interview log, "
+            "and diligence questions live in one place and stay tied to the "
+            "deal &mdash; so the whole team reads the same file, from "
+            "sourced to close.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
@@ -733,9 +750,8 @@ def _capability_section() -> str:
             "WHAT IT COMPUTES",
             "Analysis that <br/>ships <em>in the box.</em>",
             "Every workspace carries the same analytic surfaces, run on "
-            "public data and your own inputs. No add-on modules, no "
-            "per-seat math, no waiting on a data vendor; the deal "
-            "team opens the file and the analysis is already there.",
+            "public data and your own inputs &mdash; no add-on modules, no "
+            "per-seat math, no waiting on a vendor.",
         )
         + f'<div class="caps">{inner}</div>'
         + '</section>'
@@ -792,10 +808,9 @@ def _profile_section() -> str:
         + _sect(
             "A SAMPLE PROFILE",
             "One target, <br/>four <em>angles.</em>",
-            "A profile pulls the company, its market, its competitors, and "
-            "its customers onto one screen so a reviewer can read the whole "
-            "commercial picture in a sitting. Figures below are an "
-            "illustrative example; in the app every row links to its source.",
+            "Company, market, competitors, and customers on one screen "
+            "&mdash; the whole commercial picture in a sitting. Figures below "
+            "are illustrative; in the app every row links to its source.",
         )
         + '<div class="data-h" style="border:1px solid var(--rule);'
           'border-bottom:none;background:var(--paper-pure)">'
@@ -833,10 +848,9 @@ def _sources_section() -> str:
         + _sect(
             "THE DATA",
             "Public where it can be, <br/><em>yours</em> where it counts.",
-            "The workspace ships loaded with CMS public data and reads SEC "
-            "filings out of the box. Add your own research, interviews, and "
-            "engagement notes alongside them. Nothing you add is sent "
-            "anywhere; the file stays on your infrastructure.",
+            "It ships loaded with CMS public data and reads SEC filings out "
+            "of the box. Add your own research, interviews, and notes "
+            "alongside them &mdash; nothing you add is sent anywhere.",
         )
         + '<div class="pair">'
         f'<div class="viz">{funnel}</div>'
@@ -857,10 +871,10 @@ def _cta_strip() -> str:
         '<div class="micro">GET ACCESS</div>'
         '<h3>Bring your own <em>model</em>. <br/>'
         'Keep your own <em>data</em>.</h3>'
-        '<p>PE Desk runs on your infrastructure with the model you choose '
-        'in local or hosted form. Public sources come preloaded; connect '
-        'your research and CRM when you are ready. No data leaves the box, '
-        'and there is no SaaS lock-in.</p>'
+        '<p>PE Desk runs on your infrastructure with the model you choose, '
+        'local or hosted. Public sources come preloaded; connect your '
+        'research and CRM when you&rsquo;re ready. No data leaves the box, '
+        'no SaaS lock-in.</p>'
         '</div>'
         '<div class="cta-strip-actions">'
         f'<a href="{_LOGIN}" class="cta-light">Open a workspace &rarr;</a>'
