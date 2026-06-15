@@ -207,6 +207,7 @@ _SUB_NAV = {
     # Backtest, Backtest) alongside the original catalog.
     "research": [
         {"label": "Industry Intelligence", "href": "/industry"},
+        {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
         {"label": "Deal Dataset Analytics", "href": "/deal-corpus-analytics"},
         {"label": "Find Comps",          "href": "/find-comps"},
@@ -354,6 +355,7 @@ _NAV_FLAGSHIPS = {
     "research": [
         "/market-intel",
         "/industry",
+        "/healthcare-verticals",
         "/regulatory-calendar",
         "/comparable-outcomes",
         "/market-intel/geo",
@@ -555,6 +557,7 @@ _NAV_DESC = {
     "/diligence/ic-packet": "Full-pipeline IC packet",
     "/diligence": "Every diligence surface →",
     "/industry": "Industry dossiers & links",
+    "/healthcare-verticals": "17-vertical reference & 2026 rates",
     "/regulatory-calendar": "Thesis kill-switch timeline",
     "/comparable-outcomes": "Similar realized-deal returns",
     "/market-intel/geo": "Geographic market intel",
@@ -7496,6 +7499,7 @@ _DEFAULT_PALETTE_MODULES = [
     # Research
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
+    {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
     {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},
     {"id": "notes",         "title": "Notes",              "route": "/notes"},
     {"id": "sector-mom",    "title": "Sector Momentum",    "route": "/sector-momentum"},
@@ -11250,6 +11254,7 @@ _SUB_SECTION_MAP = {
     "/market-rates": "library", "/data-catalog": "library",
     "/rcm-benchmarks": "library",
     "/research": "research", "/notes": "research", "/industry": "research",
+    "/healthcare-verticals": "research",
     "/market-intel/geo": "research",
     "/sector-momentum": "research", "/irr-dispersion": "research",
     "/hold-analysis": "research", "/backtest": "research",
