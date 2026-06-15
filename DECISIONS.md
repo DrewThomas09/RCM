@@ -132,3 +132,19 @@ Rationale: the McKinsey archetype map uses an absolute 5 percent growth line, no
 a relative median, so high-growth pools are defined consistently across vintages.
 Reconciliation/Validation: test_growth_archetype asserts the four quadrant
 assignments and the high-growth EBITDA share 299/389 hand-verified.
+
+## 2026-06-15 session (healthcare unit-economics spine)
+
+## [2026-06-15 11:55] NEW-22 Unit-economics spine representative value
+Context: the spine charts verticals whose natural unit is sometimes a point value (a final-rule rate) and sometimes a range (a secondary-source estimate or a list-price band), all on one log axis spanning about five orders of magnitude.
+Options: chart the arithmetic midpoint of a range, the low bound, the high bound, or the geometric mean.
+Decision: the representative value on the log axis is the geometric mean of the low and high bounds; a point value charts at its own value because its bounds are equal.
+Rationale: the geometric mean is the natural center on a log scale (it sits halfway between the bounds in log space), so a range plots symmetrically about its charted point; the arithmetic midpoint would bias every range upward on a log axis.
+Reconciliation/Validation: the representative-within-bounds identity holds for every row, and the order-of-magnitude span equals log of max over min; both reconcile in tests/golden/test_unit_economics_spine.py.
+
+## [2026-06-15 11:55] NEW-26 Market concentration threshold
+Context: the concentration overlay flags verticals that are highly concentrated so a vertical chart can carry a "who controls this market" badge.
+Options: flag on a fixed top-firm share threshold, on an HHI cutoff, or leave it unflagged and purely descriptive.
+Decision: flag a vertical as highly concentrated when its named top-firm share is at or above 70 percent.
+Rationale: the share is the figure the source data reports directly and the one a partner reads on the chart; an HHI cutoff would require firm-level shares the headline rows do not carry, and 70 percent cleanly separates the consolidated verticals (distribution 95, PBM 80, dialysis 77.1, GPO 75) from the open ones (hospital systems about 5 percent).
+Reconciliation/Validation: every share validates to the 0 to 100 percent range and the top charted share equals the table maximum; tests/golden/test_market_concentration.py confirms four rows clear the bar.

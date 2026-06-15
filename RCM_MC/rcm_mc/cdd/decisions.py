@@ -33,6 +33,8 @@ NON_DEFAULT_CHOICES: Dict[str, str] = {
     "NEW-13": "FFS correction weight is one over one minus MA penetration",
     "BOLSTER-01": "StandardScaler pipeline and exchangeable design for conformal coverage",
     "BOLSTER-03": "BIC-style default changepoint penalty with robust sigma",
+    "NEW-22": "spine log-axis representative is the geometric mean of the bounds",
+    "NEW-26": "highly-concentrated threshold set at a 70 percent top-firm share",
 }
 
 
