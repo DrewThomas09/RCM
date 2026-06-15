@@ -6973,6 +6973,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             # mapped onto the desk's surfaces.
             from .ui.cdd_hub_page import render_cdd_hub
             return self._send_html(render_cdd_hub())
+        if path == "/payer-system":
+            # US payer-system exhibits deck — MA bid/benchmark/rebate, star
+            # QBP sensitivity, Part D IRA redesign, and the ACA APTC cliff
+            # (the four payer-economics CDD exhibits, 2025-2026 rules).
+            from .ui.payer_system_page import render_payer_system_page
+            return self._send_html(render_payer_system_page())
         if path == "/rate-environment":
             # Medicare rate environment — setting-level CMS payment
             # updates + blended dollar-impact calculator; qs carries the
