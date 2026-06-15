@@ -4496,6 +4496,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.supply_chain_page import render_supply_chain
             return self._send_html(render_supply_chain(_qp))
+        if path == "/pharma-supply":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.pharma_supply_page import render_pharma_supply
+            return self._send_html(render_pharma_supply(_qp))
+        if path == "/medtech-landscape":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.medtech_landscape_page import render_medtech_landscape
+            return self._send_html(render_medtech_landscape(_qp))
+        if path == "/health-it-landscape":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.health_it_landscape_page import render_health_it_landscape
+            return self._send_html(render_health_it_landscape(_qp))
+        if path == "/rcm-infrastructure":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.rcm_infrastructure_page import render_rcm_infrastructure
+            return self._send_html(render_rcm_infrastructure(_qp))
         if path == "/industry":
             from .ui.data_public.industry_page import render_industry_index
             return self._send_html(render_industry_index())

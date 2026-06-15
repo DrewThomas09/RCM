@@ -1,11 +1,11 @@
 {
   "summary": {
-    "pages": 188,
-    "with_disclosure": 173,
+    "pages": 193,
+    "with_disclosure": 178,
     "with_real_loader": 51,
     "flagged_no_disclosure": 0,
     "by_tier": {
-      "green": 42,
+      "green": 47,
       "navy": 73,
       "yellow": 37,
       "red": 0
@@ -823,6 +823,16 @@
       "flag": ""
     },
     {
+      "route": "/health-it-landscape",
+      "file": "health_it_landscape_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
       "route": "/hold-analysis",
       "file": "hold_analysis_page.py",
       "tier": "yellow",
@@ -1033,6 +1043,16 @@
       "flag": ""
     },
     {
+      "route": "/medtech-landscape",
+      "file": "medtech_landscape_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
       "route": "/metro-markets",
       "file": "metro_markets_page.py",
       "tier": "green",
@@ -1223,6 +1243,16 @@
       "flag": ""
     },
     {
+      "route": "/pharma-supply",
+      "file": "pharma_supply_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
       "route": "/phys-comp-plan",
       "file": "phys_comp_plan_page.py",
       "tier": "navy",
@@ -1349,6 +1379,16 @@
       "has_disclosure": true,
       "imports_real_loader": true,
       "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/rcm-infrastructure",
+      "file": "rcm_infrastructure_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
       "renders_data": true,
       "flag": ""
     },
@@ -1489,6 +1529,16 @@
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/rxnorm",
+      "file": "rxnorm_page.py",
+      "tier": "green",
+      "has_disclosure": true,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
       "renders_data": true,
       "flag": ""
     },
