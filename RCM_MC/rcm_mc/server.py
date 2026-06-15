@@ -6835,6 +6835,19 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_text(
                 texas_workforce_csv(),
                 content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/revenue":
+            # Code-level revenue build — CPT administration units ×
+            # Medicare rate, the therapy→CPT unit derivation, the
+            # buy-and-bill bridge, and the Texas competitor benchmark.
+            from .ui.texas_infusion_revenue_page import (
+                render_texas_infusion_revenue_page,
+            )
+            return self._send_html(render_texas_infusion_revenue_page())
+        if path == "/diligence/texas-infusion/revenue.csv":
+            from .ui.texas_infusion_revenue_page import texas_revenue_csv
+            return self._send_text(
+                texas_revenue_csv(),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/texas-infusion-continued":
             # Texas infusion market part 2 — the per-claim / per-payer /
             # per-place grain: CPT rates by site + city, drug-dose
