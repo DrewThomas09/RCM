@@ -6960,6 +6960,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             # mapped onto the desk's surfaces.
             from .ui.cdd_hub_page import render_cdd_hub
             return self._send_html(render_cdd_hub())
+        if path == "/cdd/unit-economics":
+            # Healthcare unit-economics spine — the cdd registry's NEW-22..26
+            # exhibits (normalized log-scale comparison, 2026 rate-update
+            # scorecard, payer economics, commercial multiplier, concentration)
+            # rendered on one reference page straight from the registry.
+            from .ui.cdd_unit_economics_page import render_cdd_unit_economics
+            return self._send_html(render_cdd_unit_economics())
         if path == "/rate-environment":
             # Medicare rate environment — setting-level CMS payment
             # updates + blended dollar-impact calculator; qs carries the

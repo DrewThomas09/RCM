@@ -73,6 +73,9 @@ _MODULES = [
           "Elasticity curves and segment-optimal price moves"),
          ("Medicare Rate Environment", "/rate-environment",
           "Setting-level CMS payment updates with blended dollar impact"),
+         ("Healthcare Unit Economics", "/cdd/unit-economics",
+          "Normalized spine: 2026 anchors, rate scorecard, payer margins, "
+          "commercial multiplier, concentration"),
          ("MA Penetration", "/ma-penetration",
           "State-level Medicare Advantage exposure with footprint scorer"),
          ("Healthcare Labor Market", "/labor-market",
