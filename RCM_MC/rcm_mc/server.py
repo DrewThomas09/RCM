@@ -3949,6 +3949,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/methodology/calculations":
             from .ui.methodology_page import render_methodology
             return self._send_html(render_methodology())
+        if path == "/healthcare-verticals":
+            # Healthcare Verticals deep-dive — static Library reference
+            # report profiling 19 US healthcare verticals (codes,
+            # epidemiology, benchmarks, reimbursement, sources).
+            from .ui.healthcare_verticals_page import render_healthcare_verticals
+            return self._send_html(render_healthcare_verticals())
         # Corpus Intelligence pages
         if path == "/deals-library":
             # Renamed → /library. 301 redirect preserves query string so
