@@ -21,7 +21,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .exhibit import Exhibit, Flag, Footnote, Reconciliation, Series
 from .registry import CddFeature, register
 
-FEATURE_ID = "NEW-25"
+FEATURE_ID = "NEW-26"
 
 # A top-firm share at or above this earns the highly-concentrated flag.
 HIGH_CONCENTRATION_PCT = 70.0

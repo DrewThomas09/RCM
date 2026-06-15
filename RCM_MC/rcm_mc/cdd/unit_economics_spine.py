@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .exhibit import Exhibit, Flag, Footnote, Reconciliation, Series
 from .registry import CddFeature, register
 
-FEATURE_ID = "NEW-21"
+FEATURE_ID = "NEW-22"
 
 # A figure that spans this many orders of magnitude or more earns the headline
 # log-scale flag; the published spine spans about five.

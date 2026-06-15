@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .exhibit import Exhibit, Flag, Footnote, Reconciliation, Series
 from .registry import CddFeature, register
 
-FEATURE_ID = "NEW-22"
+FEATURE_ID = "NEW-23"
 
 # Components must sum to the net within this tolerance (CMS rounds to one tenth).
 COMPONENT_TOL = 0.05

@@ -290,7 +290,23 @@ Branch: claude/mckinsey-healthcare-exhibits-qix9ec
   curves) if requested; UI deck panels already speak marimekko/waterfall.
 
 ================================================================================
-[2026-06-15 11:58 UTC] NEW-21..25 Healthcare unit-economics and data spine
+[2026-06-15 00:40 UTC] NEW-21 Contested market-size triangulation
+Branch: claude/healthcare-supply-infrastructure-4faheu
+- Operationalizes the healthcare supply-side reference report's Stage 2 rule:
+  contested market sizes (medtech 586-695, IVD 82-101, RCM 57-172) must be shown
+  as named-source ranges, not single bars, with one documented house estimate.
+- cdd/market_size_estimates.py: takes named source estimates for one market,
+  computes low/median/mean/high + spread (high over low); house defaults to the
+  median or an explicit analyst value; wide_estimate_divergence flag fires above
+  a 25% spread, basis_mismatch when sources use different scope definitions
+  (software-led vs services-inclusive), house_outside_range when the house sits
+  outside the source span. House-in-range is the load-bearing reconciliation
+  (clamped house == house iff in range). Registered in cdd/registry autoload.
+- Evidence: pytest tests/golden/test_market_size_estimates.py => 13 passed.
+- Next: encode the rest of the report's contested ranges as house estimates.
+
+================================================================================
+[2026-06-15 11:58 UTC] NEW-22..26 Healthcare unit-economics and data spine
 Branch: claude/healthcare-unit-economics-spine-311f1w
 - Built the unit-economics master spine and its four headline visualizations as
   cdd/ Exhibit engines, wiring the 2025/26 master reference onto one comparable
@@ -319,5 +335,7 @@ Branch: claude/healthcare-unit-economics-spine-311f1w
 - Evidence: cd RCM_MC && python -m pytest tests/golden/ -q => 281 passed
   (35 new tests across 5 files); registry-wide two-audience and chartpack
   sweeps green over all features. No new runtime deps; no LLM on any path.
-- Next: optional UI deck panels for the spine and scorecard (owned by the
-  analytics/UI agent), and primary-source verification of the est_verify rows.
+- Renumbered from NEW-21..25 to NEW-22..26 on merge with main, which had
+  already taken NEW-21 for market_size_estimates.
+- Next: optional UI deck panels for the spine and scorecard, and primary-source
+  verification of the est_verify rows.

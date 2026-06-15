@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 from .exhibit import Exhibit, Flag, Footnote, Reconciliation, Series, safe_div
 from .registry import CddFeature, register
 
-FEATURE_ID = "NEW-24"
+FEATURE_ID = "NEW-25"
 
 # RAND Round 5.1 commercial price as a percent of Medicare, by service type.
 RAND_RATIOS: Dict[str, float] = {

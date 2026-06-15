@@ -84,6 +84,7 @@ def _autoload() -> None:
         "payer_economics",
         "commercial_multiplier",
         "market_concentration",
+        "market_size_estimates",
         "pricing_cm_bridge",
         "regulatory_flags",
         "forecast",

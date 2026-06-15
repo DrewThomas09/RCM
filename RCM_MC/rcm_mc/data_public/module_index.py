@@ -83,6 +83,10 @@ def _build_modules() -> List[Module]:
                "20 curated CMS datasets (PFS, OPPS, MS-DRG, HCRIS, MA), API status", False),
         Module("CMS Sources", "/cms-sources", "Data", "diligence", "analyst",
                "High-level CMS data source catalog (companion to CMS Data Browser)", False),
+        Module("Benchmark Reference", "/benchmark-reference", "Data", "diligence", "analyst",
+               "Granular sourced benchmark layer: quality-measure weights, CPT/DRG/Part-B "
+               "frequency, physician comp, hospital cost structure, disease prevalence & NHE "
+               "spending (CMS/MGMA/AAMC/SEER/CDC, named sources)", False),
         # Diligence & Screening
         Module("Red-Flag Scanner", "/redflag-scanner", "Diligence", "diligence", "associate",
                "Rule-based red-flag screening against corpus benchmarks", True),

@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional, Sequence
 from .exhibit import Exhibit, Flag, Footnote, Reconciliation, Series
 from .registry import CddFeature, register
 
-FEATURE_ID = "NEW-23"
+FEATURE_ID = "NEW-24"
 
 
 @dataclass(frozen=True)

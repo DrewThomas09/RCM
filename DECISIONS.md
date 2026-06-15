@@ -135,14 +135,14 @@ assignments and the high-growth EBITDA share 299/389 hand-verified.
 
 ## 2026-06-15 session (healthcare unit-economics spine)
 
-## [2026-06-15 11:55] NEW-21 Unit-economics spine representative value
+## [2026-06-15 11:55] NEW-22 Unit-economics spine representative value
 Context: the spine charts verticals whose natural unit is sometimes a point value (a final-rule rate) and sometimes a range (a secondary-source estimate or a list-price band), all on one log axis spanning about five orders of magnitude.
 Options: chart the arithmetic midpoint of a range, the low bound, the high bound, or the geometric mean.
 Decision: the representative value on the log axis is the geometric mean of the low and high bounds; a point value charts at its own value because its bounds are equal.
 Rationale: the geometric mean is the natural center on a log scale (it sits halfway between the bounds in log space), so a range plots symmetrically about its charted point; the arithmetic midpoint would bias every range upward on a log axis.
 Reconciliation/Validation: the representative-within-bounds identity holds for every row, and the order-of-magnitude span equals log of max over min; both reconcile in tests/golden/test_unit_economics_spine.py.
 
-## [2026-06-15 11:55] NEW-25 Market concentration threshold
+## [2026-06-15 11:55] NEW-26 Market concentration threshold
 Context: the concentration overlay flags verticals that are highly concentrated so a vertical chart can carry a "who controls this market" badge.
 Options: flag on a fixed top-firm share threshold, on an HHI cutoff, or leave it unflagged and purely descriptive.
 Decision: flag a vertical as highly concentrated when its named top-firm share is at or above 70 percent.
