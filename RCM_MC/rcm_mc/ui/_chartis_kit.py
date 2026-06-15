@@ -11249,6 +11249,12 @@ _SUB_SECTION_MAP = {
     "/data": "library", "/comparables": "library",
     "/market-rates": "library", "/data-catalog": "library",
     "/rcm-benchmarks": "library",
+    # CMS public-data vertical pages — reference desk. Wave 1: these resolved
+    # to "more" via _heuristic_section and never reached a /best/<section>.
+    "/nursing-homes": "library", "/dialysis": "library",
+    "/home-health": "library", "/hospice": "library",
+    "/long-term-care-hospital": "library", "/inpatient-rehab": "library",
+    "/data-activation": "library",
     "/research": "research", "/notes": "research", "/industry": "research",
     "/market-intel/geo": "research",
     "/sector-momentum": "research", "/irr-dispersion": "research",

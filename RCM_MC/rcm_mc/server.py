@@ -21000,62 +21000,35 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/tools",
     })
 
-    # Pages whose figures come from hardcoded illustrative dataclass lists
-    # (they render the ck_illustrative_note "Illustrative template — not
-    # this portfolio's live, sourced data" strip). Per product decision
-    # these are kept OUT of the /tools front view so the index surfaces
-    # only real-data + functional tools — but the routes still resolve, so
-    # they remain reachable by direct URL, in-page links, and the Cmd-K
-    # palette. Derived by scanning rendered output for `class="ck-illus-
-    # note"`; regenerate the same way if the live-data wiring lands and a
-    # page graduates off illustrative figures (drop it from this set then).
+    # Seed-corpus (yellow) + synthetic (red) pages only: their figures come
+    # from the bundled ILLUSTRATIVE deal corpus or hardcoded values, so they
+    # render the ck_illustrative_note "Illustrative template — not this
+    # portfolio's live, sourced data" strip and are kept OUT of the /tools
+    # front index. They stay reachable by direct URL, in-page links, the
+    # Cmd-K palette, and the tier-dotted /best/<section> catalogs, and they
+    # graduate off this set when real-data wiring lands (see
+    # docs/GHOST_PAGE_MIGRATION_PLAN.md, Wave 3).
+    #
+    # WAVE 2 (2026-06-15): this set was ~174 routes and also gated the
+    # *honest* navy calculators ("computes off your inputs"), the
+    # data-required pages, and a handful of real-data GREEN pages mislabeled
+    # illustrative. Those 131 graduated to the front index — they carry an
+    # honest navy/purple/green tier dot via surface_status.classify_surface
+    # (test_tools_index_cards.test_status_reflects_real_surface_tier pins the
+    # dot to the tier). Only the seed-corpus (yellow) + synthetic (red) tiers
+    # remain gated here.
     _TOOLS_ILLUSTRATIVE_ROUTES = frozenset({
-        "/aco-economics", "/acq-timing", "/ai-operating-model", "/antitrust-screener",
-        "/backtest", "/backtester", "/base-rates", "/biosimilars",
-        "/board-governance", "/bolton-analyzer", "/cap-structure", "/capex-budget",
-        "/capital-call", "/capital-efficiency", "/capital-pacing", "/capital-schedule",
-        "/cin-analyzer", "/clinical-ai", "/clinical-outcomes", "/cms-apm",
-        "/coinvest-pipeline", "/comparables", "/competitive-intel", "/compliance-attestation",
-        "/concentration-risk", "/continuation-vehicle", "/corpus-coverage", "/corpus-dashboard",
-        "/corpus-ic-memo", "/covenant-headroom", "/covenant-monitor", "/cyber-risk",
-        "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
-        "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-search",
-        "/deal-sourcing", "/deals-library", "/debt-financing", "/debt-service",
-        "/demand-forecast", "/denovo-expansion", "/digital-front-door", "/diligence-vendors",
-        "/diligence/cliff-calendar", "/diligence/pe-library", "/diligence/pe-reference", "/diligence/physician-attrition",
-        "/direct-employer", "/direct-lending", "/dividend-recap", "/dpi-tracker",
-        "/drug-pricing-340b", "/drug-shortage", "/earnout", "/entry-multiple",
-        "/escrow-earnout", "/esg-dashboard", "/esg-impact", "/exit-multiple",
-        "/exit-readiness", "/exit-timing", "/find-comps", "/fraud-detection",
-        "/fund-attribution", "/fundraising", "/geo-market", "/gp-benchmarking",
-        "/gpo-supply", "/growth-runway", "/hcit-platform", "/health-equity",
-        "/hold-analysis", "/hold-optimizer", "/hospital-anchor", "/ic-memo-gen",
-        "/insurance-tracker", "/irr-dispersion", "/key-person", "/lbo-stress",
-        "/leverage-intel", "/litigation", "/locum-tracker",
-        "/lp-dashboard", "/lp-reporting", "/ma-contracts", "/ma-star",
-        "/market-rates", "/medicaid-unwinding", "/medical-realestate", "/mgmt-comp",
-        "/mgmt-fee-tracker", "/msa-concentration", "/multiple-decomp", "/nav-loan-tracker",
-        "/nsa-tracker", "/operating-partners", "/partner-economics", "/patient-experience",
-        "/payer-concentration", "/payer-contracts", "/payer-intel", "/payer-intelligence",
-        "/payer-rate-trends", "/payer-shift", "/peer-transactions", "/peer-valuation",
-        "/phys-comp-plan", "/physician-labor", "/physician-productivity", "/platform-maturity",
-        "/pmi-integration", "/pmi-playbook", "/portfolio-analytics", "/portfolio-optimizer",
-        "/portfolio-sim", "/provider-network", "/provider-retention", "/qoe-analyzer",
-        "/quality-scorecard", "/rcm-red-flags", "/real-estate", "/redflag-scanner",
-        "/ref-pricing", "/refi-optimizer", "/regulatory-risk", "/reinvestment",
-        "/reit-analyzer", "/return-attribution", "/revenue-leakage", "/risk-adjustment",
-        "/risk-matrix", "/rollup-economics", "/rw-insurance", "/scenario-mc",
-        "/secondaries-tracker", "/sector-correlation", "/sector-intel", "/sector-momentum",
-        "/sellside-process", "/size-intel", "/specialty-benchmarks", "/sponsor-heatmap",
-        "/sponsor-league", "/sponsor-track-record", "/supply-chain", "/tax-credits",
-        "/tax-structure", "/tax-structure-analyzer", "/tech-stack", "/telehealth-econ",
-        "/tracker-340b", "/transition-services", "/treasury", "/trial-site-econ",
-        "/underwriting", "/underwriting-model", "/unit-economics", "/value-creation",
-        "/pricing-power",
-        "/value-creation-plan", "/vcp-tracker", "/vdr-tracker", "/vintage-cohorts",
-        "/vintage-perf", "/voc-survey", "/win-loss",
-        "/workforce-planning", "/workforce-retention", "/working-capital",
-        "/zbb-tracker",
+        '/backtest', '/backtester', '/base-rates', '/comparables',
+        '/corpus-coverage', '/corpus-dashboard', '/corpus-ic-memo', '/deal-flow-heatmap',
+        '/deal-origination', '/deal-postmortem', '/deal-quality', '/deal-risk-scores',
+        '/deal-sourcing', '/deals-library', '/dpi-tracker', '/find-comps',
+        '/fund-attribution', '/geo-market', '/gp-benchmarking', '/hold-analysis',
+        '/ic-memo-gen', '/irr-dispersion', '/leverage-intel', '/lp-dashboard',
+        '/lp-reporting', '/ma-star', '/market-rates', '/payer-intel',
+        '/payer-intelligence', '/peer-transactions', '/portfolio-analytics', '/reit-analyzer',
+        '/return-attribution', '/sector-correlation', '/sector-intel', '/sector-momentum',
+        '/size-intel', '/specialty-benchmarks', '/sponsor-heatmap', '/sponsor-league',
+        '/sponsor-track-record', '/vintage-cohorts', '/vintage-perf',
     })
 
     @classmethod
