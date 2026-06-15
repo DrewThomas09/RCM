@@ -4336,6 +4336,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.ma_star_tracker_page import render_ma_star_tracker
             return self._send_html(render_ma_star_tracker(_qp))
+        if path == "/benchmark-reference":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.benchmark_reference_page import render_benchmark_reference
+            return self._send_html(render_benchmark_reference(_qp))
         if path == "/gpo-supply":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
