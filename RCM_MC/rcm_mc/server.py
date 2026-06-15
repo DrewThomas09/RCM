@@ -3407,6 +3407,18 @@ class RCMHandler(BaseHTTPRequestHandler):
             # DealAnalysisPacket exemption as /v3-status.
             from .ui.v5_status_page import render_v5_status
             return self._send_html(render_v5_status())
+        if path == "/healthcare-verticals-reference":
+            # Library domain-reference page. Renders the vendored
+            # docs/HEALTHCARE_VERTICALS_REFERENCE.md via chartis_shell.
+            # Distinct from the data-driven /healthcare-verticals intel
+            # surface (rcm_mc/ui/data_public) — this is the narrative
+            # markdown reference. Static content — documented exemption
+            # from the DealAnalysisPacket invariant, same as /methodology
+            # and /v3-status (no deal, no analytics, no DB).
+            from .ui.healthcare_verticals_reference_page import (
+                render_healthcare_verticals_reference,
+            )
+            return self._send_html(render_healthcare_verticals_reference())
         if path == "/cli-runs":
             # CLI run-history browser (campaign target 3C). Reads
             # <outdir>/runs.sqlite via infra.run_history.list_runs.
