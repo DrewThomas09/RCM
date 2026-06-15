@@ -6819,6 +6819,22 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_text(
                 texas_metros_csv(),
                 content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/workforce":
+            # Workforce & demand heatmaps — employment-by-specialty
+            # (clinical roster + prescriber funnel) matrix heatmap and a
+            # true-geography county infusion-demand heatmap on the real
+            # Census Texas boundary.
+            from .ui.texas_infusion_workforce_page import (
+                render_texas_infusion_workforce_page,
+            )
+            return self._send_html(render_texas_infusion_workforce_page())
+        if path == "/diligence/texas-infusion/workforce.csv":
+            from .ui.texas_infusion_workforce_page import (
+                texas_workforce_csv,
+            )
+            return self._send_text(
+                texas_workforce_csv(),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/texas-infusion-continued":
             # Texas infusion market part 2 — the per-claim / per-payer /
             # per-place grain: CPT rates by site + city, drug-dose

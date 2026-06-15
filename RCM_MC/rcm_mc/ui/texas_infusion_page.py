@@ -2970,7 +2970,12 @@ def render_texas_infusion_page(
            '<a class="ck-link" '
            'href="/diligence/texas-infusion/counties">County proximity '
            'workbench → all 254 counties · patient-to-clinic distance '
-           '· AIC whitespace</a></p>')
+           '· AIC whitespace</a>'
+           '<span style="color:var(--sc-text-faint,#8b94a0);"> &nbsp;·&nbsp; '
+           '</span><a class="ck-link" '
+           'href="/diligence/texas-infusion/workforce">Workforce &amp; '
+           'demand heatmaps → employment by specialty · county demand '
+           'heatmap</a></p>')
         + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",
