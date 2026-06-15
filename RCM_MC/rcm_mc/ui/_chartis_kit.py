@@ -256,6 +256,7 @@ _SUB_NAV = {
     "diligence": [
         {"label": "Deal Profile",       "href": "/diligence/deal"},
         {"label": "CDD Hub",            "href": "/cdd"},
+        {"label": "CDD Tools",          "href": "/cdd/tools"},
         {"label": "Ingestion",          "href": "/diligence/ingest"},
         {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
         {"label": "CMS X-Ray",          "href": "/diligence/xray"},
@@ -7517,6 +7518,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "excel-mapping", "title": "Excel Mapping · configurable US-state choropleth", "route": "/excel-mapping"},
     {"id": "excel-templates", "title": "Excel Model Templates · live-formula workbooks (LBO, QoE, NWC peg, CDD market model)", "route": "/excel-templates"},
     {"id": "cdd-hub", "title": "CDD Hub · the commercial-diligence workflow in running order", "route": "/cdd"},
+    {"id": "cdd-tools", "title": "CDD Analytics Tools · the live registry of audience-aware reconciled exhibits", "route": "/cdd/tools"},
     {"id": "voc-survey", "title": "Voice of Customer · NPS, KPC gaps, willingness-to-pay", "route": "/voc-survey"},
     {"id": "win-loss", "title": "Win/Loss Analyzer · conversion record vs named competitors", "route": "/win-loss"},
     {"id": "rate-environment", "title": "Medicare Rate Environment · CMS payment updates + blended impact", "route": "/rate-environment"},
@@ -11279,6 +11281,7 @@ _SUB_SECTION_MAP = {
     "/exhibit": "research",
     "/charts": "research",
     "/cdd": "diligence",
+    "/cdd/tools": "diligence",
     "/voc-survey": "diligence",
     "/win-loss": "diligence",
     "/rate-environment": "research",
