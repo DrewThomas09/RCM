@@ -343,6 +343,163 @@ def _payer_share_chart(items) -> str:
             'commercial is the rate driver; Medicare FFS rate is PFS-cut-exposed; MA is the fastest-growing mix</div></div>')
 
 
+# ── Modality sub-segments ────────────────────────────────────────────────────
+def _modality_segment_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("Modality", "left"), ("US Mkt $B", "right"), ("Vol / yr (M)", "right"),
+            ("Growth", "right"), ("Avg Medicare $", "right"), ("Capex / unit $k", "right"),
+            ("Gross Margin", "right"), ("Room min", "right"), ("Supply Dependency", "left"), ("Dynamics", "left")]
+    trs = []
+    for m in items:
+        vol = f"{m.annual_volume_mm:,.0f}" if m.annual_volume_mm else "—"
+        avg = f"${m.avg_medicare_global:,.0f}" if m.avg_medicare_global else "—"
+        room = f"{m.room_time_min}" if m.room_time_min else "—"
+        cells = [
+            ck_data_cell(_html.escape(m.modality), mono=True, weight=700),
+            ck_data_cell(f"${m.us_market_bn:,.1f}", align="right", mono=True, tone="pos", weight=600),
+            ck_data_cell(vol, align="right", mono=True),
+            ck_data_cell(f"{m.growth_pct:.0f}%", align="right", mono=True, tone="acc"),
+            ck_data_cell(avg, align="right", mono=True),
+            ck_data_cell(f"{m.equipment_capex_k:,.0f}", align="right", mono=True, tone="dim"),
+            ck_data_cell(f"{m.gross_margin_pct:.0f}%", align="right", mono=True, weight=600),
+            ck_data_cell(room, align="right", mono=True, tone="dim"),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.supply_exposure)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.dynamics)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _modality_segment_chart(items) -> str:
+    ranked = sorted(items, key=lambda m: m.us_market_bn, reverse=True)
+    total = sum(m.us_market_bn for m in items) or 1.0
+    tone = {"CT (computed tomography)": "navy", "MRI (magnetic resonance)": "positive",
+            "Mammography / breast": "teal", "PET/CT & nuclear medicine": "negative"}
+    rows = [ck_bar_row(f"{m.modality}  (+{m.growth_pct:.0f}%/yr)", f"${m.us_market_bn:,.1f}B",
+                       m.us_market_bn / total * 100.0, tone=tone.get(m.modality, "warning")) for m in ranked]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = approx US services-revenue share by modality · '
+            'value = $B · label shows volume CAGR (illustrative)</div></div>')
+
+
+# ── Supply shocks ────────────────────────────────────────────────────────────
+def _supply_shock_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    sev_color = {"high": P["negative"], "medium": P["warning"], "low": P["positive"]}
+    cols = [("Supply Shock", "left"), ("Cat.", "center"), ("Mechanism", "left"),
+            ("Peak Impact", "left"), ("Window", "center"), ("Exposure", "left"),
+            ("Mitigation", "left"), ("Severity", "center")]
+    trs = []
+    for s in items:
+        sc = sev_color.get(s.severity, text_dim)
+        cells = [
+            ck_data_cell(_html.escape(s.shock), mono=True, weight=700),
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;'
+            f'font-size:9px;color:{text_dim}">{_html.escape(s.category.upper())}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.mechanism)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(s.peak_impact)}</td>',
+            ck_data_cell(_html.escape(s.window), align="center", mono=True, tone="dim"),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.exposure)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.mitigation)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;'
+            f'font-size:9px;color:{sc};font-weight:700">{_html.escape(s.severity.upper())}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+# ── Unit economics (center P&L waterfall) ────────────────────────────────────
+def _unit_econ_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]; pos = P["positive"]; neg = P["negative"]; panel_alt = P["panel_alt"]
+    cols = [("Line Item", "left"), ("% of Net Revenue", "right"), ("Per Blended Study", "right"), ("Note", "left")]
+    trs = []
+    for u in items:
+        pct_color = pos if u.pct_of_revenue > 0 else neg
+        row_bg = f"background:{panel_alt}" if u.is_total else ""
+        weight = 700 if u.is_total else 400
+        cells = [
+            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;'
+            f'font-size:11px;font-weight:{weight};color:{text};{row_bg}">{_html.escape(u.line_item)}</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;'
+            f'font-family:JetBrains Mono,monospace;font-size:11px;font-weight:{weight};color:{pct_color};{row_bg}">{u.pct_of_revenue:+.0f}%</td>',
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;'
+            f'font-family:JetBrains Mono,monospace;font-size:11px;font-weight:{weight};color:{pct_color};{row_bg}">${u.per_scan:,.2f}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim};{row_bg}">{_html.escape(u.note)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _econ_driver_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("Driver", "left"), ("Definition", "left"), ("Typical", "left"), ("Why it moves the P&L", "left")]
+    trs = []
+    for d in items:
+        cells = [
+            ck_data_cell(_html.escape(d.driver), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.definition)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{P["accent"]}">{_html.escape(d.typical_value)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.lever)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+# ── Radiology Partners diligence ─────────────────────────────────────────────
+def _rp_diligence_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    flag_color = {"positive": P["positive"], "watch": P["warning"], "risk": P["negative"]}
+    flag_label = {"positive": "✓ STRENGTH", "watch": "◆ WATCH", "risk": "▼ RISK"}
+    cols = [("Area", "center"), ("Metric", "left"), ("Value", "left"), ("Diligence Read", "left"), ("Flag", "center")]
+    trs = []
+    for d in items:
+        fc = flag_color.get(d.flag, text_dim)
+        cells = [
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;'
+            f'font-size:9px;color:{text_dim}">{_html.escape(d.category.upper())}</td>',
+            ck_data_cell(_html.escape(d.metric), mono=True, weight=600),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{text}">{_html.escape(d.value)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.assessment)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;'
+            f'font-size:9px;color:{fc};font-weight:700">{_html.escape(flag_label.get(d.flag, d.flag.upper()))}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+# ── AI model build ───────────────────────────────────────────────────────────
+def _ai_build_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Stage", "left"), ("What it takes", "left"), ("Cost", "center"), ("Time", "center"), ("Key Risk", "left")]
+    trs = []
+    for s in items:
+        cells = [
+            ck_data_cell(_html.escape(s.stage), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.description)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{text}">{_html.escape(s.typical_cost)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{P["accent"]}">{_html.escape(s.typical_time)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{P["negative"]}">{_html.escape(s.key_risk)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _ai_build_vs_buy_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Dimension", "left"), ("Build", "left"), ("Buy / License", "left"), ("Verdict", "center")]
+    trs = []
+    for b in items:
+        cells = [
+            ck_data_cell(_html.escape(b.dimension), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.build)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(b.buy)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{P["accent"]};font-weight:700">{_html.escape(b.verdict)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Render
 # ─────────────────────────────────────────────────────────────────────────────
@@ -356,6 +513,9 @@ def render_radiology_imaging(params: dict = None) -> str:
     kpi_strip = (
         ck_kpi_block("Imaging Market", f"${r.market_size_bn:,.1f}B", "freestanding centers (IBISWorld)", "") +
         ck_kpi_block("Imaging Centers", f"{r.freestanding_centers:,}", "freestanding / IDTF", "") +
+        ck_kpi_block("Modalities", f"{len(r.modality_segments)}", "sub-segments broken out", "") +
+        ck_kpi_block("Center EBITDA", f"~{r.center_ebitda_margin_pct:.0f}%", f"on ~${r.center_revenue_mm:,.1f}M revenue", "") +
+        ck_kpi_block("Supply Shocks", f"{len(r.supply_shocks)}", "tracked disruptions", "") +
         ck_kpi_block("MQSA Facilities", f"{r.mqsa_facilities:,}", "FDA-certified mammography", "") +
         ck_kpi_block("Mammograms / yr", f"{r.annual_mammograms_mm:,.0f}M", f"DBT (3D) at {r.dbt_adoption_pct:.0f}% of facilities", "") +
         ck_kpi_block("CPT/HCPCS Codes", f"{r.cpt_codes_tracked}", "claims atlas", "") +
@@ -387,6 +547,42 @@ def render_radiology_imaging(params: dict = None) -> str:
         f'This is why the same scan can be covered differently county-to-county.</div>'
     )
 
+    def _note(lead: str, rest: str) -> str:
+        return (
+            f'<div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};'
+            f'padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:14px">'
+            f'<strong style="color:{text}">{lead}</strong> {rest}</div>'
+        )
+
+    _unit_econ_note = _note(
+        "Reading the P&L:",
+        "a representative scaled freestanding multi-modality center nets ~$190 per blended study at "
+        f"~{r.center_revenue_mm:,.1f}M revenue and ~{r.center_ebitda_margin_pct:.0f}% EBITDA. Equipment + occupancy "
+        "are mostly fixed, so utilization is the dominant lever — each incremental scan drops ~70-80% to "
+        "contribution. A technical-only (TC) center sends reads out and forgoes the -26 professional line. "
+        "Illustrative, not a specific company's actuals.",
+    )
+    _shock_note = _note(
+        "Why supply shocks matter here:",
+        "imaging is a capital- and consumable-intensive business sitting on concentrated supply chains — a "
+        "single contrast plant, a handful of helium sources, a few isotope reactors, two-country scanner "
+        "manufacturing. Each shock maps to a specific modality's P&L; severity is recurrence-weighted.",
+    )
+    _rp_note = _note(
+        "Radiology Partners (RP):",
+        "the largest US radiology practice and the reference LBO in the sector — a scale-and-leverage case "
+        "study. The thesis is national density + data + AI (Aidoc) + teleradiology (vRad); the central risk "
+        "is the balance sheet (the 2025 restructuring S&P treated as distressed). Figures are sourced "
+        "estimates from public reporting; verify against primary filings before relying on them.",
+    )
+    _ai_build_note = _note(
+        "How to build an imaging AI model:",
+        "the realistic pipeline from a labeled study corpus through FDA clearance to deployment. The hard "
+        "part is not the model — it is data rights, multi-site validation against distribution shift, and "
+        "the reimbursement gap (most cleared imaging AI has no dedicated payment, so ROI is throughput and "
+        "quality, not a billable code). See Build-vs-Buy below for the platform decision.",
+    )
+
     footer = (
         f'<div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};'
         f'padding:12px 16px;font-size:11px;color:{text_dim};margin-bottom:16px">'
@@ -406,13 +602,20 @@ def render_radiology_imaging(params: dict = None) -> str:
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   {_section("CMS Claims Atlas — Radiology CPT/HCPCS (approx CY2025 PFS · global = prof + tech)", _modality_chart(r.cpt_codes) + _cpt_table(r.cpt_codes))}
+  {_section("Radiology Broken Into Sub-Segments — the modality economics", _modality_segment_chart(r.modality_segments) + _modality_segment_table(r.modality_segments))}
   {_section("Mammography & Breast Imaging — 2D, 3D/DBT, MQSA & density rule", _mammography_table(r.mammography_stats))}
   {_section("CMS Coverage Connections — live NCDs & LCDs (the loop)", loop_note + _coverage_table(r.coverage_connections))}
   {_section("MAC Payer Jurisdictions — who prices Part-B imaging, by state", _mac_table(r.mac_jurisdictions))}
   {_section("State-Level Data — imaging centers, MQSA facilities, Medicare spend, DBT penetration", _state_chart(r.state_profiles) + _state_table(r.state_profiles))}
   {_section("County-Level Payer Mix — the biggest imaging counties in the main states", _county_table(r.county_payer_mix))}
+  {_section("Imaging-Center Unit Economics — a representative multi-modality P&L", _unit_econ_note + _unit_econ_table(r.unit_economics))}
+  {_section("Economic Drivers — the levers that move an imaging P&L", _econ_driver_table(r.economic_drivers))}
+  {_section("Supply Shocks — the disruptions that hit imaging economics", _shock_note + _supply_shock_table(r.supply_shocks))}
   {_section("Big Players — the large freestanding operators (+ Radiology Partners reads)", _players_chart(r.big_players) + _players_table(r.big_players))}
+  {_section("Radiology Partners — Diligence Deep-Dive (largest US practice)", _rp_note + _rp_diligence_table(r.rp_diligence))}
   {_section("AI Implementation — FDA-cleared algorithms, vendors & reimbursement", _ai_table(r.ai_implementations))}
+  {_section("AI Imaging — How To Build a Model (the pipeline)", _ai_build_note + _ai_build_table(r.ai_build_stages))}
+  {_section("AI Imaging — Build vs Buy", _ai_build_vs_buy_table(r.ai_build_vs_buy))}
   {_section("Imaging Payer-Type Revenue Share", _payer_share_chart(r.payer_shares))}
   {_section("Recent Important Factors (2024-2026)", _factors_table(r.recent_factors))}
   {footer}
@@ -420,10 +623,11 @@ def render_radiology_imaging(params: dict = None) -> str:
 
     body = body + ck_page_actions()
     meta_line = (
-        f"{r.cpt_codes_tracked} CPT/HCPCS codes · {r.cms_connections} CMS connections "
-        f"({r.ncd_count} NCD · {r.lcd_count} LCD) · {r.mac_payers} MAC payers · "
-        f"{len(r.state_profiles)} states · {len(r.county_payer_mix)} counties · "
-        f"{len(r.big_players)} operators · {len(r.ai_implementations)} AI vendors"
+        f"{r.cpt_codes_tracked} CPT/HCPCS codes · {len(r.modality_segments)} modality segments · "
+        f"{r.cms_connections} CMS connections ({r.ncd_count} NCD · {r.lcd_count} LCD) · "
+        f"{r.mac_payers} MAC payers · {len(r.state_profiles)} states · {len(r.county_payer_mix)} counties · "
+        f"{len(r.supply_shocks)} supply shocks · {len(r.economic_drivers)} economic drivers · "
+        f"{len(r.big_players)} operators · RP diligence · {len(r.ai_build_stages)}-stage AI build"
     )
     return chartis_shell(
         body, "Referring Radiology & Diagnostic Imaging",

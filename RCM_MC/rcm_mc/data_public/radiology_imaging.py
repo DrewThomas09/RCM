@@ -182,6 +182,78 @@ class PayerTypeShare:
 
 
 @dataclass
+class ModalitySegment:
+    """One imaging modality as its own economic unit."""
+    modality: str
+    us_market_bn: float           # approx US services market for the modality
+    annual_volume_mm: float       # approx US studies/yr (millions)
+    growth_pct: float             # approx volume CAGR
+    avg_medicare_global: float    # representative global allowable per study
+    equipment_capex_k: float      # approx capex per unit/room ($ thousands)
+    gross_margin_pct: float       # representative center-level gross margin
+    room_time_min: int            # typical scan room time (throughput driver)
+    supply_exposure: str          # the key supply-chain dependency
+    dynamics: str
+
+
+@dataclass
+class SupplyShock:
+    """A supply disruption that hits imaging economics."""
+    shock: str
+    category: str                 # contrast / cryogen / isotope / equipment / labor
+    mechanism: str
+    peak_impact: str
+    window: str
+    exposure: str                 # which modality bears it
+    mitigation: str
+    severity: str                 # high / medium / low (recurrence-weighted)
+
+
+@dataclass
+class UnitEconomicLine:
+    """One line of a representative freestanding multi-modality imaging-center P&L."""
+    line_item: str
+    pct_of_revenue: float         # share of net revenue (cost lines negative)
+    per_scan: float               # approx $ per blended study
+    note: str
+    is_total: bool = False
+
+
+@dataclass
+class EconomicDriver:
+    driver: str
+    definition: str
+    typical_value: str
+    lever: str                    # why it moves the P&L
+
+
+@dataclass
+class RPDiligenceItem:
+    category: str                 # scale / financials / capital / ownership / tele / ai / nsa
+    metric: str
+    value: str
+    assessment: str               # the diligence read
+    flag: str                     # positive / watch / risk
+
+
+@dataclass
+class AIBuildStage:
+    stage: str
+    description: str
+    typical_cost: str
+    typical_time: str
+    key_risk: str
+
+
+@dataclass
+class AIBuildVsBuy:
+    dimension: str
+    build: str
+    buy: str
+    verdict: str
+
+
+@dataclass
 class RadiologyImagingResult:
     # headline KPIs
     market_size_bn: float
@@ -208,6 +280,15 @@ class RadiologyImagingResult:
     ai_implementations: List[AIImplementation]
     recent_factors: List[RecentFactor]
     payer_shares: List[PayerTypeShare]
+    modality_segments: List[ModalitySegment]
+    supply_shocks: List[SupplyShock]
+    unit_economics: List[UnitEconomicLine]
+    economic_drivers: List[EconomicDriver]
+    rp_diligence: List[RPDiligenceItem]
+    ai_build_stages: List[AIBuildStage]
+    ai_build_vs_buy: List[AIBuildVsBuy]
+    center_revenue_mm: float
+    center_ebitda_margin_pct: float
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -583,17 +664,18 @@ def _build_big_players() -> List[BigPlayer]:
 # 7) AI IMPLEMENTATION — FDA-cleared algorithms, vendors, reimbursement
 # ─────────────────────────────────────────────────────────────────────────────
 def _build_ai_implementations() -> List[AIImplementation]:
-    # FDA has authorized 1,000+ AI/ML-enabled radiology devices (crossed in
-    # Sep 2025; ~1,039 total, ~75% of ALL FDA AI authorizations). Clearance
-    # leaders: GE HealthCare 120, Siemens 89, Philips 50, Canon 45, United
-    # Imaging 38, Aidoc 31, DeepHealth 28. The radiology-AI software market is
-    # ~$0.76B (2025) → $2.27B by 2030 (24.5% CAGR) — but reimbursement lags
-    # clearance badly: most cleared tools have NO dedicated payment code.
+    # FDA has authorized 1,451 AI/ML-enabled devices cumulatively through
+    # end-2025; radiology = 1,104 (76% of all FDA AI), with a record 331 new
+    # devices in 2025. Clearance leaders: GE HealthCare 120, Siemens 89,
+    # Philips 50, Canon 45, United Imaging 38, Aidoc 31, DeepHealth 28. The
+    # radiology-AI software market is ~$0.76B (2025) → $2.27B by 2030 (24.5%
+    # CAGR) — but reimbursement lags clearance badly: most cleared tools have
+    # NO dedicated payment code (only 2 paid Cat-I AI codes, both cardiac).
     return [
         AIImplementation("Viz.ai", "Viz ContaCT / Viz LVO", "FDA cleared (De Novo)",
                          "CT angiography", "Large-vessel-occlusion stroke triage",
-                         "NTAP (New Technology Add-on Payment)", "NTAP — up to ~$1,040/case",
-                         "First AI to win a CMS NTAP; widely deployed in stroke networks."),
+                         "NTAP (New Technology Add-on Payment)", "NTAP $1,040 cap (~$30-80 realized)",
+                         "First AI to win a CMS NTAP (2020). The cap pays only on loss-making cases — amortized value is far below the headline; subscription ~$25K/yr."),
         AIImplementation("iCAD", "ProFound AI / ProFound Detection", "FDA cleared",
                          "Mammography (DBT)", "Breast-cancer detection & density on tomosynthesis",
                          "Bundled into mammography global", "77063 / 77067 (no separate AI pay)",
@@ -604,12 +686,12 @@ def _build_ai_implementations() -> List[AIImplementation]:
                          "Used by Solis and several screening networks."),
         AIImplementation("RadNet / DeepHealth", "Saige-Dx", "FDA cleared (28 RadNet/DeepHealth clearances)",
                          "Mammography (2D/DBT)", "Breast-cancer detection; enhanced-screening upsell",
-                         "Patient-pay enhanced screening + bundled", "Self-pay add-on",
-                         "RadNet monetizes via an out-of-pocket enhanced-breast-cancer-detection (EBCD) cash program — the clearest AI revenue model in imaging."),
-        AIImplementation("HeartFlow", "FFRct Analysis", "FDA cleared",
-                         "Coronary CT (CCTA)", "Non-invasive fractional flow reserve from CCTA",
-                         "Category I CPT + APC", "CPT 75580 (from 0503T)",
-                         "Pairs with the CCTA LCD family; established outpatient (APC) payment — a rare AI tool with a permanent code."),
+                         "Cash-pay (EBCD program)", "~$40 self-pay add-on",
+                         "RadNet's out-of-pocket enhanced-breast-cancer-detection program (~$40); ~36% opt-in, +21% detection — the clearest AI revenue model in imaging. SimonMed ($50/$90) & RAYUS ($40) copied it."),
+        AIImplementation("HeartFlow / Cleerly / Elucid", "FFR-CT & AI coronary plaque", "FDA cleared",
+                         "Coronary CT (CCTA)", "FFR-CT + AI plaque quantification",
+                         "Category I CPT (the rare paid AI)", "75580 (~$1,017) · NEW 75577 (~$1,000, Jan 2026)",
+                         "The exception that proves the rule: cardiac CT AI now has 2 paid Cat-I codes (4/7 MACs cover via LCDs). Pairs with the CCTA LCD family."),
         AIImplementation("Aidoc", "BriefCase (PE, ICH, C-spine, …) — 31 FDA clearances", "FDA cleared (multiple)",
                          "CT / CTA", "Acute-finding triage & notification across modalities",
                          "No direct fee — throughput/quality ROI", "—",
@@ -618,10 +700,10 @@ def _build_ai_implementations() -> List[AIImplementation]:
                          "CT / MRI / X-ray", "Image reconstruction, dose reduction, auto-measure",
                          "Bundled into equipment", "—",
                          "The device OEMs hold the most clearances; AI sold as a scanner feature, not a billable service."),
-        AIImplementation("Quantitative CT (Cleerly, Coreline, HeartLung)", "Coronary-plaque / lung quantification", "FDA cleared",
-                         "CT", "Coronary-plaque & lung-nodule quantification",
-                         "CPT Category III (tracking) codes", "0623T-0626T, 0721T-0722T",
-                         "Cat-III codes let payers track AI utilization before a permanent value is set — the typical 'reimbursement-lag' purgatory."),
+        AIImplementation("Quantitative CT / chest AI (Coreline, Riverain)", "Lung-nodule / chest quantification", "FDA cleared",
+                         "CT / chest X-ray", "Lung-nodule & chest quantification",
+                         "CPT Category III (tracking) codes", "0721T-0722T (coronary 0623T→75577 in 2026)",
+                         "Cat-III codes let payers track AI before a permanent value is set — the 'reimbursement-lag' purgatory most imaging AI still sits in (the coronary set graduated to Cat-I 75577 in 2026)."),
     ]
 
 
@@ -666,6 +748,9 @@ def _build_recent_factors() -> List[RecentFactor]:
         RecentFactor("Breast-density notification rule", "policy",
                      "Nationwide FDA dense-breast reporting (Sep 9, 2024) plus the 2024 USPSTF age-40 start drive supplemental screening volume (breast US/MRI) and AI-enhanced-screening upsell.",
                      "tailwind", "2024-2026"),
+        RecentFactor("First paid AI imaging codes", "reimbursement",
+                     "Jan 2026 added Category I CPT 75577 (AI coronary-plaque, ~$1,000) alongside 75580 (FFR-CT) — the only 2 paid AI imaging codes, both cardiac, covered by 4/7 MACs. Validates the AI thesis but underscores that 1,000+ cleared algorithms still have no payment.",
+                     "mixed", "2026"),
         RecentFactor("PE consolidation continues", "structure",
                      "A dozen-plus diagnostic-imaging deals in 2025 (Envision/Rezolut, etc.) against a still-fragmented ~6,900-center market; multiple-arbitrage + AI-productivity remains the core imaging thesis. FTC scrutiny of roll-ups (WCAS) is the watch-item.",
                      "tailwind", "2024-2026"),
@@ -691,6 +776,260 @@ def _build_payer_shares() -> List[PayerTypeShare]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 10) MODALITY SUB-SEGMENTS — radiology broken into its economic units
+# ─────────────────────────────────────────────────────────────────────────────
+# us_market_bn = approx US imaging-services revenue for the modality (all
+# settings, illustrative slice of the ~$140B services market); volume, growth,
+# capex and margin are sourced estimates. The point is the *relative* economics:
+# which modality is high-capex/high-margin, which is commodity, what each one's
+# binding supply constraint is.
+def _build_modality_segments() -> List[ModalitySegment]:
+    return [
+        ModalitySegment("CT (computed tomography)", 7.0, 85.0, 5.0, 210.0, 1100.0, 52.0, 12,
+                        "Iodinated contrast (single-plant concentration)",
+                        "Highest-volume advanced modality; contrast-shock exposed; site-of-service tailwind."),
+        ModalitySegment("MRI (magnetic resonance)", 8.0, 40.0, 5.0, 280.0, 1700.0, 55.0, 35,
+                        "Liquid helium cryogen for superconducting magnets",
+                        "Highest capex + highest fixed cost → utilization is the whole game. Sealed magnets cut helium risk."),
+        ModalitySegment("Mammography / breast", 3.5, 40.0, 4.0, 130.0, 400.0, 48.0, 17,
+                        "None major (MQSA-regulated units)",
+                        "2D→3D/DBT upgrade economics + density-rule supplemental volume. AI-enhanced cash upsell."),
+        ModalitySegment("Ultrasound", 4.0, 90.0, 4.0, 130.0, 150.0, 50.0, 25,
+                        "None (sonographer labor is the constraint)",
+                        "Low capex, labor-intensive; no contrast/cryogen exposure; point-of-care growth."),
+        ModalitySegment("PET/CT & nuclear medicine", 3.0, 3.0, 11.0, 1450.0, 2200.0, 40.0, 45,
+                        "Mo-99/Tc-99m + F-18 radiopharmaceuticals (short half-life)",
+                        "Highest per-study price; +12% PET volume in 2024 straining capacity; isotope-supply fragile."),
+        ModalitySegment("X-ray / radiography", 2.5, 200.0, 2.0, 40.0, 360.0, 42.0, 8,
+                        "None (commodity)",
+                        "Highest raw volume, lowest unit price; throughput/commodity economics; AI triage upside."),
+        ModalitySegment("Interventional radiology", 3.0, 6.0, 6.0, 520.0, 1500.0, 45.0, 60,
+                        "Contrast + devices/consumables",
+                        "Procedure-based, higher acuity; the one segment with a CY2026 PFS uplift (+2%)."),
+        ModalitySegment("Teleradiology (read capacity)", 1.0, 0.0, 12.0, 0.0, 50.0, 35.0, 0,
+                        "Radiologist labor supply (the binding constraint)",
+                        "The capacity/arbitrage layer over every modality; ~12% CAGR; vRad/RP dominant. Capex-light."),
+        ModalitySegment("DXA / bone densitometry", 0.5, 12.0, 3.0, 45.0, 80.0, 45.0, 20,
+                        "Low (no cryogen/contrast/isotope)",
+                        "Osteoporosis screening; low price, frequency-limited; aging-demographics tailwind."),
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11) SUPPLY SHOCKS — the disruptions that hit imaging economics
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_supply_shocks() -> List[SupplyShock]:
+    return [
+        SupplyShock(
+            "Iodinated contrast media shortage", "contrast",
+            "GE Healthcare's Shanghai plant (Omnipaque/iohexol) — a large share of global iodinated contrast — was shut by a COVID lockdown.",
+            "Up to ~80% of GE contrast capacity offline at peak; hospitals rationed CT, deferred non-urgent scans, switched to MRI / non-contrast protocols.",
+            "Apr–Aug 2022", "CT, CT angiography, interventional",
+            "Dual-source contrast contracting, contrast-stewardship protocols, weight-based dosing, MRI substitution.",
+            "high"),
+        SupplyShock(
+            "Liquid-helium cryogen squeeze", "cryogen",
+            "Superconducting MRI magnets need ~2,000L liquid helium at install plus top-offs; the Helium Shortage 3.0/4.0 and the wind-down/privatization of the US Federal Helium Reserve tightened supply.",
+            "Helium roughly doubled — ~$7.57/m³ (2020) → ~$14/m³ (2023, USGS); refills delayed; ~50,000 installed MRI base can't refresh overnight.",
+            "2019, 2022–2025", "MRI",
+            "Sealed 'helium-free'/low-helium magnets (GE Freelium, Philips BlueSeal ~7L, Siemens DryCool ~0.7L) deployed on refresh — the structural fix.",
+            "medium"),
+        SupplyShock(
+            "Mo-99 / Tc-99m radioisotope fragility", "isotope",
+            "Technetium-99m (used in ~80% of nuclear-medicine procedures) decays from Molybdenum-99 made in a handful of aging reactors with no historical US production; 66h/6h half-lives prevent stockpiling.",
+            "2009–10 global shortage cancelled/deferred scans nationwide; recurring single-reactor outages still ripple.",
+            "2009–10; recurring", "Nuclear medicine, SPECT",
+            "Domestic Mo-99 (NorthStar, SHINE, Niowave) + CMS CY2026 OPPS $10/dose domestic-Mo-99 add-on (HCPCS C9176) to onshore supply.",
+            "medium"),
+        SupplyShock(
+            "PET radiopharmaceutical / cyclotron capacity", "isotope",
+            "F-18 FDG (~110-min half-life) must be made at regional cyclotrons/PET pharmacies and used within hours — supply is local and fragile; new PSMA tracers add demand.",
+            "PET volume +12.2% in 2024 strained tracer capacity; ~40% of PET sites report ≥8-day waits.",
+            "2024–2026", "PET/CT",
+            "Regional cyclotron network expansion, tracer-supply contracts, scheduling optimization.",
+            "medium"),
+        SupplyShock(
+            "Equipment / semiconductor & tariffs", "equipment",
+            "2021–23 chip shortage (~52-week lead times) extended scanner delivery; 2025 US–China tariffs (145% Apr → 30% May truce) + China rare-earth/gadolinium export controls raise scanner capex.",
+            "Scanner prices nearly doubled in ~6 months (2021–22); GE HealthCare guided a ~$500M 2025 tariff hit (~$375M China); ~$100–200K added per $1–2M CT/MRI.",
+            "2021–2023; 2025 tariffs", "All (capex cycle); MRI/X-ray most REE-exposed",
+            "OEM onshoring (United Imaging Pearland TX, Siemens $150M US expansion), multi-OEM sourcing, refurbished market, lengthened refresh.",
+            "medium"),
+        SupplyShock(
+            "Radiologist labor supply gap", "labor",
+            "~38,000 practicing radiologists against ~4.6%/yr volume growth vs ~3.6%/yr workforce growth, a retirement wave, capped residency slots, and burnout — the binding constraint on reads.",
+            "Read backlogs, locum/teleradiology rate inflation, comp escalation; ~40% of PET sites report long waits.",
+            "Structural, 2024–2026", "Reads across every modality",
+            "Teleradiology (vRad/RP), AI triage/productivity tools, subspecialty read-routing, offshore prelim reads.",
+            "high"),
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12) UNIT ECONOMICS — representative freestanding multi-modality center P&L
+# ─────────────────────────────────────────────────────────────────────────────
+# Illustrative per-blended-study economics on ~$190 net revenue/study. A
+# technical-only (TC) center sends reads to a radiology group/teleradiology and
+# drops the radiologist-read line (and ~18% of revenue with it). Numbers are
+# sourced estimates, not a specific company's actuals.
+def _build_unit_economics() -> List[UnitEconomicLine]:
+    rev = 190.0
+    return [
+        UnitEconomicLine("Net revenue / blended study", 100.0, rev,
+                         "Blended across modalities + payer mix; commercial pays ~2-3× Medicare.", True),
+        UnitEconomicLine("Clinical / technologist labor", -22.0, -0.22 * rev,
+                         "Techs & sonographers; the largest variable cost; tight labor market."),
+        UnitEconomicLine("Radiologist reads (employed or tele)", -16.0, -0.16 * rev,
+                         "Professional read; a TC-only center sends this out and forgoes the -26 revenue."),
+        UnitEconomicLine("Equipment depreciation / lease", -15.0, -0.15 * rev,
+                         "High fixed cost → utilization is the dominant margin lever; 7-10yr refresh."),
+        UnitEconomicLine("Occupancy / real estate", -7.0, -0.07 * rev,
+                         "MRI suites need shielding/siting; MOB lease or REIT/SLB structure."),
+        UnitEconomicLine("Billing / RCM / prior-auth", -5.0, -0.05 * rev,
+                         "Denials, prior-auth (RBM), No Surprises Act IDR add cost & DSO."),
+        UnitEconomicLine("Contrast & consumables", -4.0, -0.04 * rev,
+                         "Iodinated/gadolinium contrast, film, supplies; supply-shock exposed."),
+        UnitEconomicLine("G&A / marketing / overhead", -11.0, -0.11 * rev,
+                         "Scheduling, referral marketing, corporate overhead; scale leverage here."),
+        UnitEconomicLine("Center EBITDA", 20.0, 0.20 * rev,
+                         "~20% at a scaled multi-modality center; utilization + payer mix + read-sourcing drive it.", True),
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13) ECONOMIC DRIVERS — the levers that move an imaging P&L
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_economic_drivers() -> List[EconomicDriver]:
+    return [
+        EconomicDriver("Equipment utilization rate",
+                       "Scans performed ÷ scanner-hours available.",
+                       "MRI/CT 60-85% of capacity",
+                       "#1 lever: equipment is mostly fixed cost, so each incremental scan is ~70-80% contribution margin."),
+        EconomicDriver("Scan throughput / room time",
+                       "Minutes of room time per study by modality.",
+                       "X-ray ~8m · CT ~12m · US ~25m · MRI ~35m · PET ~45m",
+                       "Faster protocols (and AI reconstruction) add slots/day without new capex."),
+        EconomicDriver("Payer mix",
+                       "Commercial vs Medicare vs Medicaid revenue split.",
+                       "Commercial ~46% of revenue",
+                       "Commercial pays ~2-3× Medicare for the same code — mix shift swings margin more than volume."),
+        EconomicDriver("Same-store volume growth",
+                       "YoY scan growth at existing centers.",
+                       "~4-5%/yr",
+                       "Organic engine; referral relationships + screening expansion (lung, breast) drive it."),
+        EconomicDriver("No-show / cancellation rate",
+                       "Booked studies that don't arrive.",
+                       "~10-20%",
+                       "Direct revenue leakage on a fixed-cost slot; reminders + waitlists recover it."),
+        EconomicDriver("Radiologist read productivity",
+                       "RVUs (or studies) read per radiologist-day.",
+                       "subspecialty premium for neuro/MSK/breast",
+                       "AI triage + worklist optimization lift reads/day; the labor gap makes this the scaling constraint."),
+        EconomicDriver("Site of service",
+                       "Freestanding/IDTF vs hospital outpatient (HOPD).",
+                       "HOPD costs payers 2-4× freestanding",
+                       "Payer steering to freestanding is a structural volume tailwind for independents."),
+        EconomicDriver("DSO / denial / prior-auth",
+                       "Days sales outstanding, denial rate, RBM prior-auth burden.",
+                       "denials ~12-18% (estimate)",
+                       "AUC rescinded, but commercial prior-auth + NSA IDR still drag cash conversion."),
+        EconomicDriver("Capex cycle / equipment age",
+                       "Refresh cadence and depreciation load.",
+                       "7-10yr refresh",
+                       "Aging fleet = higher maintenance + downtime; refresh timing drives depreciation and tariff exposure."),
+        EconomicDriver("Read sourcing (build vs tele)",
+                       "In-house reads vs teleradiology / subspecialty routing.",
+                       "tele ~12% CAGR",
+                       "Labor arbitrage + 24/7 coverage; the global-vs-TC billing split decides who captures the -26 read."),
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 14) RADIOLOGY PARTNERS — diligence deep-dive (the largest US practice)
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_rp_diligence() -> List[RPDiligenceItem]:
+    return [
+        RPDiligenceItem("scale", "Physicians", "~3,600–4,000",
+                        "Largest US radiology practice by physician count; national density.", "positive"),
+        RPDiligenceItem("scale", "Sites / imaging centers", "3,400+ sites · ~131 owned centers",
+                        "Hospital-contract + owned-center hybrid across all 50 states.", "positive"),
+        RPDiligenceItem("scale", "Annual case volume", "~56M cases/yr",
+                        "Massive read volume = data + AI-training + payer-negotiation leverage.", "positive"),
+        RPDiligenceItem("financials", "Revenue", "~$2.6B",
+                        "Scale leader; revenue concentrated in hospital professional-services contracts.", "positive"),
+        RPDiligenceItem("capital", "Total first-lien debt", "~$2.3B+",
+                        "Heavily levered; the central diligence risk.", "risk"),
+        RPDiligenceItem("capital", "2025 debt restructuring", "S&P: 'tantamount to default'",
+                        "Refinancing/maturity-extension that S&P treated as distressed; Moody's pegged the cut at ~20% / ~$600M debt reduction.", "risk"),
+        RPDiligenceItem("ownership", "Cap table", "Whistler ~32% · NEA ~20% · Future Fund ~10% · physicians ~33%",
+                        "PE-controlled but with meaningful physician ownership; $720M growth raise (target was $300M).", "watch"),
+        RPDiligenceItem("tele", "vRad (Virtual Radiologic)", "~688 rads · ~8.9M studies/yr",
+                        "Largest US teleradiology, acquired via the $885M Mednax radiology deal (2020); Nov 2025 spun a tech division to license the AI platform externally.", "positive"),
+        RPDiligenceItem("ai", "Aidoc enterprise partnership", "across ~3,400 sites",
+                        "Enterprise AI triage deployment; Aidoc raised $150M (Sept 2025). Productivity lever against the labor gap.", "positive"),
+        RPDiligenceItem("nsa", "No Surprises Act IDR", "~600–631% of QPA (H1 2024)",
+                        "Winning arbitration well above payer QPAs — but invites payer network/rate pushback.", "watch"),
+        RPDiligenceItem("risk", "PE roll-up scrutiny", "FTC focus on physician-services roll-ups",
+                        "Regulatory/antitrust overhang on further consolidation (cf. WCAS/anesthesia case).", "risk"),
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 15) AI IMAGING — how to build a model (pipeline + build-vs-buy)
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_ai_build_stages() -> List[AIBuildStage]:
+    return [
+        AIBuildStage("1 · Data acquisition",
+                     "Assemble a labeled corpus (from scratch: ~25k–130k studies like CheXNet/Gulshan; foundation models cut it to ~1k–5k, even ~45–2,200). De-identify (HIPAA Safe Harbor; burned-in pixel PHI needs OCR redaction), IRB, data rights. Public sets: ChestX-ray14, CheXpert, MIMIC-CXR, EMBED, CBIS-DDSM.",
+                     "$$ (data rights + infra)", "3–9 months (DUA alone ~6-12mo)",
+                     "Most public sets are research-ONLY (can't ground a commercial product); positives-per-class & site bias are the binding constraints."),
+        AIBuildStage("2 · Annotation / ground truth",
+                     "Expert-radiologist labels (~$255/hr); pixel segmentation runs 2–15 min/image; ground truth via biopsy/follow-up; multi-reader consensus to manage variability.",
+                     "~$8.50–$70 per segmented image", "3–12 months",
+                     "Label noise; 'exorbitant' expert time; ground-truth definition."),
+        AIBuildStage("3 · Model development",
+                     "U-Net/nnU-Net (segmentation), ResNet/DenseNet/EfficientNet (classification), ViT/Swin, OR fine-tune an imaging foundation model. Compute is NOT the gate.",
+                     "~$1–25/run (fine-tune) · ~$10–80K (FM pretrain)", "3–6 months",
+                     "Shortcut learning (model keys on scanner/site, not pathology)."),
+        AIBuildStage("4 · Validation",
+                     "FDA-preferred MRMC reader study (AUC primary): ~12–20 readers × ~100–300 enriched cases, unaided-vs-AI; plus standalone accuracy. Test across scanners/sites/demographics.",
+                     "~$0.5–3M single-indication ($5–20M+ multicenter)", "9–18 months",
+                     "Distribution shift — 81% of radiology DL models LOSE AUC at a new site (24% drop ≥0.10)."),
+        AIBuildStage("5 · FDA clearance",
+                     "~97% of imaging AI clears via 510(k) (CADt=triage QAS/QFM · CADe=detect MYN · CADx=diagnose POK); novel → De Novo; autonomous Class-III → PMA. A Predetermined Change Control Plan (PCCP, final guidance Dec 2024) lets you update the model without re-filing.",
+                     "~$0.5–2.5M (510k) · ~$17.8M avg (De Novo)", "~5–6.5mo FDA clock (1–7yr end-to-end)",
+                     "Predicate/clinical-evidence bar; only 5.4% of devices use a PCCP (rest are 'locked')."),
+        AIBuildStage("6 · Deployment",
+                     "Integrate into PACS/RIS/worklist (orchestrators: Aidoc aiOS, Nuance/Microsoft, Blackford 140+ apps); on-prem/cloud/hybrid GPU inference; monitor for drift in production.",
+                     "$$ (integration + MLOps)", "ongoing",
+                     "Silent data drift — only ~9% of FDA AI tools ship a post-market surveillance plan."),
+        AIBuildStage("7 · Reimbursement / ROI",
+                     "Most imaging AI has NO dedicated payment. The exceptions are cardiac: CPT 75580 (FFR-CT, ~$1,017) and the NEW Jan-2026 CPT 75577 (AI coronary plaque, ~$1,000). Others: NTAP (Viz.ai, $1,040 cap but ~$30-80 realized), bundled-into-code (mammo AI in 77067), or cash-pay (RadNet EBCD ~$40). ROI is usually throughput/quality, not a billable code.",
+                     "monetization is the hard part", "12+ months to a code",
+                     "Reimbursement lag far behind FDA clearance — the #1 commercial risk."),
+    ]
+
+
+def _build_ai_build_vs_buy() -> List[AIBuildVsBuy]:
+    return [
+        AIBuildVsBuy("Time to value", "1–7 years (data → FDA → deploy)",
+                     "Weeks to integrate a cleared vendor", "Buy for speed"),
+        AIBuildVsBuy("Upfront cost", "~$1.65M (510k) / $2.5M (De Novo) / $5M (PMA) regulatory + data/annotation; ~$30M to stand up a Class-II device co.",
+                     "Aidoc ~$500–5,000/mo by volume; Viz.ai ~$25K/yr; iCAD/Lunit per-exam", "Buy is far lower upfront"),
+        AIBuildVsBuy("FDA / regulatory risk", "You own clearance + post-market PCCP + drift monitoring",
+                     "Vendor owns the clearance", "Buy de-risks"),
+        AIBuildVsBuy("Differentiation", "Proprietary, if AI is the thesis",
+                     "Commodity capability everyone can license", "Build if it's core"),
+        AIBuildVsBuy("Data moat", "Leverages your 10M+ study archive (foundation models need tens of millions of images)",
+                     "No proprietary-data advantage", "Build if data-rich"),
+        AIBuildVsBuy("Reimbursement", "Same gap either way — most cleared AI has no code",
+                     "Same gap; vendor may carry the cardiac codes (75577/75580)", "Neutral — ROI is operational"),
+        AIBuildVsBuy("Who actually does it", "RadNet/DeepHealth (data-advantaged, AI is the thesis)",
+                     "Most platforms license Aidoc/iCAD/Lunit or partner (RP–Aidoc)", "Buy is the default"),
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Compute — assemble the result
 # ─────────────────────────────────────────────────────────────────────────────
 def compute_radiology_imaging() -> RadiologyImagingResult:
@@ -704,10 +1043,18 @@ def compute_radiology_imaging() -> RadiologyImagingResult:
     ai = _build_ai_implementations()
     factors = _build_recent_factors()
     payer_shares = _build_payer_shares()
+    modality_segments = _build_modality_segments()
+    supply_shocks = _build_supply_shocks()
+    unit_economics = _build_unit_economics()
+    economic_drivers = _build_economic_drivers()
+    rp_diligence = _build_rp_diligence()
+    ai_build_stages = _build_ai_build_stages()
+    ai_build_vs_buy = _build_ai_build_vs_buy()
 
     ncd_count = sum(1 for c in coverage if c.doc_type == "NCD")
     lcd_count = sum(1 for c in coverage if c.doc_type == "LCD")
-    dbt_code = next((c for c in cpt_codes if c.code == "77063"), None)
+    ebitda_line = next((u for u in unit_economics if u.line_item == "Center EBITDA"), None)
+    center_ebitda_margin_pct = ebitda_line.pct_of_revenue if ebitda_line else 0.0
 
     return RadiologyImagingResult(
         market_size_bn=26.3,                 # US diagnostic-imaging-centers industry (IBISWorld 2026)
@@ -720,7 +1067,7 @@ def compute_radiology_imaging() -> RadiologyImagingResult:
         ncd_count=ncd_count,
         lcd_count=lcd_count,
         mac_payers=len(macs),
-        fda_ai_radiology_devices=1039,       # FDA AI/ML radiology clearances (crossed 1,000 in Sep 2025; ~75% of all FDA AI)
+        fda_ai_radiology_devices=1104,       # FDA AI/ML radiology clearances through end-2025 (76% of 1,451 total)
         radiologist_shortage=38000,          # practicing radiologists (supply baseline)
         pfs_conversion_factor_2025=32.2465,  # FINAL CY2025 PFS conversion factor
         cpt_codes=cpt_codes,
@@ -733,4 +1080,13 @@ def compute_radiology_imaging() -> RadiologyImagingResult:
         ai_implementations=ai,
         recent_factors=factors,
         payer_shares=payer_shares,
+        modality_segments=modality_segments,
+        supply_shocks=supply_shocks,
+        unit_economics=unit_economics,
+        economic_drivers=economic_drivers,
+        rp_diligence=rp_diligence,
+        ai_build_stages=ai_build_stages,
+        ai_build_vs_buy=ai_build_vs_buy,
+        center_revenue_mm=4.5,               # approx net revenue of a scaled multi-modality center
+        center_ebitda_margin_pct=center_ebitda_margin_pct,
     )

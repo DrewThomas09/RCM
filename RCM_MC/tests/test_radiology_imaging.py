@@ -167,5 +167,84 @@ class RadiologyImagingWiringTests(unittest.TestCase):
         self.assertEqual(_SUB_SECTION_MAP.get("/radiology-imaging"), "research")
 
 
+class RadiologyImagingExpansionTests(unittest.TestCase):
+    """Sub-segments, supply shocks, unit economics, RP diligence, AI build."""
+
+    def setUp(self):
+        self.r = compute_radiology_imaging()
+
+    def test_modality_segments(self):
+        mods = {m.modality for m in self.r.modality_segments}
+        self.assertGreaterEqual(len(self.r.modality_segments), 8)
+        # The radiology breakdown must include the core modalities.
+        self.assertTrue(any("MRI" in m for m in mods))
+        self.assertTrue(any("CT" in m for m in mods))
+        self.assertTrue(any("PET" in m for m in mods))
+        self.assertTrue(any("Teleradiology" in m for m in mods))
+
+    def test_supply_shocks_have_severity(self):
+        self.assertGreaterEqual(len(self.r.supply_shocks), 6)
+        cats = {s.category for s in self.r.supply_shocks}
+        # The big shocks: contrast, cryogen (helium), isotope, equipment, labor.
+        for cat in ("contrast", "cryogen", "isotope", "equipment", "labor"):
+            self.assertIn(cat, cats)
+        for s in self.r.supply_shocks:
+            self.assertIn(s.severity, ("high", "medium", "low"))
+
+    def test_unit_economics_nets_to_ebitda(self):
+        lines = self.r.unit_economics
+        cost_and_rev = sum(u.pct_of_revenue for u in lines if not u.is_total)
+        # Net revenue (+100 total) + cost lines should reconcile to the EBITDA total.
+        ebitda = next(u for u in lines if u.line_item == "Center EBITDA")
+        # cost lines (the non-total entries) sum to -(100 - EBITDA)
+        self.assertAlmostEqual(cost_and_rev, -(100.0 - ebitda.pct_of_revenue), delta=0.5)
+        # per-scan EBITDA is positive and consistent with the margin.
+        self.assertGreater(ebitda.per_scan, 0)
+
+    def test_economic_drivers(self):
+        self.assertGreaterEqual(len(self.r.economic_drivers), 8)
+        drivers = " ".join(d.driver.lower() for d in self.r.economic_drivers)
+        self.assertIn("utilization", drivers)
+        self.assertIn("payer mix", drivers)
+
+    def test_rp_diligence(self):
+        self.assertGreaterEqual(len(self.r.rp_diligence), 8)
+        flags = {d.flag for d in self.r.rp_diligence}
+        # A real diligence read carries both strengths and risks.
+        self.assertIn("positive", flags)
+        self.assertIn("risk", flags)
+        text = " ".join(d.metric + " " + d.value + " " + d.assessment for d in self.r.rp_diligence)
+        self.assertIn("vRad", text)
+        self.assertIn("Whistler", text)
+
+    def test_ai_build_pipeline(self):
+        self.assertGreaterEqual(len(self.r.ai_build_stages), 7)
+        joined = " ".join(s.stage + s.description for s in self.r.ai_build_stages).lower()
+        self.assertIn("fda", joined)
+        self.assertIn("validation", joined)
+        self.assertIn("reimbursement", joined)
+
+    def test_ai_build_vs_buy(self):
+        self.assertGreaterEqual(len(self.r.ai_build_vs_buy), 5)
+        verdicts = " ".join(b.verdict.lower() for b in self.r.ai_build_vs_buy)
+        self.assertIn("buy", verdicts)
+
+    def test_expansion_renders(self):
+        html = render_radiology_imaging({})
+        for marker in (
+            "Radiology Broken Into Sub-Segments",
+            "Imaging-Center Unit Economics",
+            "Economic Drivers",
+            "Supply Shocks",
+            "Radiology Partners",
+            "How To Build a Model",
+            "Build vs Buy",
+        ):
+            self.assertIn(marker, html, msg=f"missing expansion section: {marker}")
+        # No render regressions.
+        self.assertNotIn("&amp;amp;", html)
+        self.assertNotIn(">None<", html)
+
+
 if __name__ == "__main__":
     unittest.main()
