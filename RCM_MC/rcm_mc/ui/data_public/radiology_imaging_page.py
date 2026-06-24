@@ -655,11 +655,11 @@ def _tx_banner(r) -> str:
         f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:0.14em;'
         f'text-transform:uppercase;color:{on_dim};margin-bottom:4px">Geographic Deep-Dive</div>'
         f'<div style="font-family:Source Serif 4,Georgia,serif;font-size:19px;font-weight:600">'
-        f'Texas — the outsourced on-site + tele market</div>'
+        f'Texas + the {r.operating_state_count}-state operating footprint</div>'
         f'<div style="font-size:11px;color:{on_dim};margin-top:5px">'
-        f'{r.counties_modeled} counties · {r.tx_population:,} people · '
-        f'{r.tx_senior_population:,} aged 65+ · {r.tx_rural_population:,} rural · '
-        f'{r.tx_uninsured_rate*100:.0f}% uninsured · MAC: Novitas (JH) · '
+        f'TX home market: {r.counties_modeled} counties · {r.tx_population:,} people · '
+        f'{r.tx_uninsured_rate*100:.0f}% uninsured · MAC Novitas (JH) — '
+        f'footprint spans {r.operating_state_count} states / all {r.mac_count} MACs · '
         f'<span style="font-family:JetBrains Mono,monospace">data: {_html.escape(r.data_mode)}</span></div>'
         f'</div>'
     )
@@ -775,6 +775,96 @@ def _tx_payer_chart(items) -> str:
             'TX non-expansion + ~20% uninsured makes the rural-read payer drag real</div></div>')
 
 
+# ── Operating footprint (the public coverage map) ────────────────────────────
+def _tx_operating_table(items) -> str:
+    text_dim = P["text_dim"]
+    region_color = {"Texas": P["accent"], "Southern Plains": P["warning"],
+                    "Upper Midwest": P["positive"], "Southeast": P["negative"], "Florida": P["navy"]}
+    cols = [("State", "left"), ("Region", "center"), ("MAC", "left"),
+            ("Medicaid", "center"), ("Payer Skew", "left"), ("Competitive / Tele Dynamic", "left")]
+    trs = []
+    for s in items:
+        rc = region_color.get(s.region, text_dim)
+        exp = s.medicaid_expansion
+        e_color = P["positive"] if "expanded" in exp else P["warning"]
+        trs.append('<tr>' + "".join([
+            ck_data_cell(f"{_html.escape(s.state)} ({_html.escape(s.postal)})", mono=True, weight=700),
+            f'<td style="text-align:center;padding:5px 8px;font-family:JetBrains Mono,monospace;font-size:9px;color:{rc};font-weight:700">{_html.escape(s.region.upper())}</td>',
+            ck_data_cell(_html.escape(s.mac), mono=True, tone="acc"),
+            f'<td style="text-align:center;padding:5px 8px;font-family:JetBrains Mono,monospace;font-size:9px;color:{e_color};font-weight:700">{_html.escape(exp.split(" ")[0].upper())}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.payer_skew)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.competitive_note)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_region_payer_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("Operating Region", "left"), ("States", "left"), ("Mix (Comm·MCR·MCD·Unins)", "left"),
+            ("Comm", "right"), ("MCR", "right"), ("MCD", "right"), ("Unins", "right"), ("Dynamics", "left")]
+    trs = []
+    for m in items:
+        stack = _payer_stack(m.medicare_pct, m.medicaid_pct, m.commercial_pct, m.uninsured_pct)
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(m.region), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:9px;font-family:JetBrains Mono,monospace;color:{text_dim}">{_html.escape(m.states)}</td>',
+            f'<td style="padding:5px 10px">{stack}</td>',
+            ck_data_cell(f"{m.commercial_pct:.0f}%", align="right", mono=True, tone="pos", weight=600),
+            ck_data_cell(f"{m.medicare_pct:.0f}%", align="right", mono=True),
+            ck_data_cell(f"{m.medicaid_pct:.0f}%", align="right", mono=True, tone="dim"),
+            ck_data_cell(f"{m.uninsured_pct:.0f}%", align="right", mono=True, tone="neg"),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.dynamics)}</td>',
+        ]) + '</tr>')
+    legend = ('<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+              'font-family:JetBrains Mono,monospace">Upper-Midwest is the richest payer mix (low uninsured, '
+              'commercial-strong); the Southeast + Texas carry the Medicaid-gap + uninsured drag (mostly non-expansion).</div>')
+    return _table(cols, "".join(trs)) + legend
+
+
+def _tx_service_lines_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Service Line", "left"), ("What it is", "left"), ("Competitive Edge", "left")]
+    trs = []
+    for s in items:
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(s.line), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.description)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(s.competitive_edge)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_tele_trends_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Teleradiology Trend", "left"), ("Detail", "left"), ("Hybrid Implication", "left")]
+    trs = []
+    for t in items:
+        gap = "nighthawk" in t.trend.lower() or "priors" in t.trend.lower()
+        name_cell = ck_data_cell(_html.escape(t.trend), mono=True, weight=700)
+        if gap:  # spotlight the structural weakness the hybrid beats
+            name_cell = (f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;'
+                         f'font-size:11px;font-weight:700;color:{P["negative"]}">★ {_html.escape(t.trend)}</td>')
+        trs.append('<tr>' + "".join([
+            name_cell,
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(t.detail)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(t.hybrid_implication)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_ai_workflow_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Theme", "left"), ("The reality", "left"), ("Evidence / read", "left")]
+    trs = []
+    for a in items:
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(a.theme), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(a.reality)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.evidence)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Render
 # ─────────────────────────────────────────────────────────────────────────────
@@ -883,6 +973,21 @@ def render_radiology_imaging(params: dict = None) -> str:
         "company facts (coaxionradiology.com / ZoomInfo), framed as Texas market intelligence — the Lubbock hub maps "
         "onto the West-Texas rural coverage gap, and the on-site+tele+IR scope is the single-vendor hybrid archetype.",
     )
+    _footprint_note = _note(
+        "Where they operate (the public coverage map):",
+        f"{tx.operating_state_count} states across five regions — Texas, the Southern Plains (OK·KS·NE·NM), the "
+        f"Upper Midwest / Dakotas (MN·SD·ND·WI), the Southeast (AL·GA·TN·NC·KY·MS) and north Florida. That footprint "
+        f"spans all {tx.mac_count} Medicare MACs at once, so the platform credentials and complies across seven "
+        f"different local-coverage (LCD) regimes — a real operating-complexity and a barrier-to-entry for sub-scale rivals.",
+    )
+    _ai_workflow_note = _note(
+        "Where AI actually helps the read:",
+        "market-intelligence read (public industry knowledge — Viz/Aidoc/Rad AI/Harrison.ai/PowerScribe) on the "
+        "detection-vs-reporting split. The proven ROI is on the reporting side (auto-impression saves time on every "
+        "patient and eases the shortage); detection/triage time-savings have underwhelmed. The binding barrier is "
+        "infrastructure — archaic on-prem systems, no cloud platform at scale, no common patient ID to tie priors "
+        "together — not model capability. Radiologists stay human-in-the-loop; the role evolves.",
+    )
 
     footer = (
         f'<div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};'
@@ -919,6 +1024,11 @@ def render_radiology_imaging(params: dict = None) -> str:
   {_section("Texas — Imaging Demand by County (top metros)", _tx_note + _tx_metro_county_table(tx.metro_counties))}
   {_section("Texas — Rural Coverage Gap (the on-site + tele opportunity)", _tx_rural_gap_table(tx.rural_gap_counties))}
   {_section("Texas — Outsourced Platform Profile + Payer Mix", _tx_profile_note + _tx_profile_table(tx.outsourced_profile) + _tx_payer_chart(tx.payer_shares))}
+  {_section("Operating Footprint — states served, by MAC region", _footprint_note + _tx_operating_table(tx.operating_states))}
+  {_section("Payer Mix by Operating Region", _tx_region_payer_table(tx.region_payer_mix))}
+  {_section("Service Lines — on-site · tele · diagnostic · interventional", _tx_service_lines_table(tx.service_lines))}
+  {_section("Teleradiology Trends — incl. the nighthawk priors / context gap", _tx_tele_trends_table(tx.teleradiology_trends))}
+  {_section("AI Workflow Reality — where AI actually helps the read", _ai_workflow_note + _tx_ai_workflow_table(tx.ai_workflow))}
   {_section("Outsourced Service Model — Competing Delivery Models", _d3_note + _service_model_table(r.service_models))}
   {_section("Turnaround SLA Tiers — priced on turnaround, not volume", _sla_table(r.sla_tiers))}
   {_section("Reading-Labor Economics — on-site fixed vs Day/Night-Hawk per-read", _staffing_table(r.staffing_models))}

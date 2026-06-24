@@ -96,6 +96,56 @@ class TXPayerShare:
 
 
 @dataclass
+class OperatingState:
+    """A state in the platform's operating footprint (from the public coverage
+    map): which MAC prices it, Medicaid-expansion status, payer skew, and the
+    competitive/teleradiology dynamic there."""
+    state: str
+    postal: str
+    region: str
+    mac: str
+    medicaid_expansion: str       # "expanded (year)" / "non-expansion"
+    payer_skew: str
+    competitive_note: str
+
+
+@dataclass
+class RegionPayerMix:
+    """Payer mix for an operating region — the 'payer mix by these groups' cut."""
+    region: str
+    states: str
+    commercial_pct: float
+    medicare_pct: float
+    medicaid_pct: float
+    uninsured_pct: float
+    dynamics: str
+
+
+@dataclass
+class TeleradiologyTrend:
+    trend: str
+    detail: str
+    hybrid_implication: str       # what it means for an on-site+tele hybrid
+
+
+@dataclass
+class AIWorkflowReality:
+    """Market-intelligence read on where AI actually helps the radiology
+    workflow — public industry knowledge (Viz/Aidoc/Rad AI/Harrison.ai/
+    PowerScribe), not any confidential source."""
+    theme: str
+    reality: str
+    evidence: str
+
+
+@dataclass
+class ServiceLine:
+    line: str
+    description: str
+    competitive_edge: str
+
+
+@dataclass
 class TexasRadiologyResult:
     counties_modeled: int
     tx_population: int
@@ -111,6 +161,13 @@ class TexasRadiologyResult:
     gpci_localities: List[TXGPCILocality]
     outsourced_profile: List[TXOutsourcedProfile]
     payer_shares: List[TXPayerShare]
+    operating_states: List[OperatingState]
+    region_payer_mix: List[RegionPayerMix]
+    teleradiology_trends: List[TeleradiologyTrend]
+    ai_workflow: List[AIWorkflowReality]
+    service_lines: List[ServiceLine]
+    operating_state_count: int
+    mac_count: int
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -231,6 +288,13 @@ def compute_texas_radiology() -> TexasRadiologyResult:
         gpci_localities=_build_gpci(),
         outsourced_profile=_build_outsourced_profile(),
         payer_shares=_build_payer_shares(),
+        operating_states=(op_states := _build_operating_states()),
+        region_payer_mix=_build_region_payer_mix(),
+        teleradiology_trends=_build_teleradiology_trends(),
+        ai_workflow=_build_ai_workflow(),
+        service_lines=_build_service_lines(),
+        operating_state_count=len(op_states),
+        mac_count=len({s.mac.split(" (")[0] for s in op_states}),
     )
 
 
@@ -328,3 +392,173 @@ def _build_payer_shares() -> List[TXPayerShare]:
         TXPayerShare("Medicaid (TX)", 13.0, "Non-expansion state — thin Medicaid; rural safety-net load."),
         TXPayerShare("Self-pay / uninsured", 9.0, "TX has ~the highest uninsured rate in the US (~18-20%) — a real rural-read payer drag."),
     ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Operating footprint — the states the public coverage map shows, by region.
+# A 15+ state on-site+tele platform spans all 7 Medicare MACs, so it credentials
+# and complies across seven different local-coverage (LCD) regimes at once.
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_operating_states() -> List[OperatingState]:
+    return [
+        OperatingState("Texas", "TX", "Texas", "Novitas (JH)", "non-expansion",
+                       "Commercial-metro / high-uninsured",
+                       "Home market; metros have local groups, rural West/South TX is tele-served."),
+        OperatingState("Oklahoma", "OK", "Southern Plains", "Novitas (JH)", "expanded (2021)",
+                       "Rural / Medicare-aging",
+                       "Heavy map cluster; rural CAHs that can't staff on-site — core tele demand."),
+        OperatingState("Kansas", "KS", "Southern Plains", "WPS (J5)", "non-expansion",
+                       "Rural / Medicare-aging / high-uninsured",
+                       "Heavy cluster; frontier counties, no local radiologist depth."),
+        OperatingState("Nebraska", "NE", "Southern Plains", "WPS (J5)", "expanded (2020)",
+                       "Rural / commercial-ag",
+                       "Sparse rural hospitals; tele-dependent."),
+        OperatingState("New Mexico", "NM", "Southern Plains", "Novitas (JH)", "expanded (2014)",
+                       "Rural / Medicaid-heavy / high-uninsured",
+                       "Frontier; severe radiologist scarcity."),
+        OperatingState("Minnesota", "MN", "Upper Midwest", "NGS (J6)", "expanded (2014)",
+                       "Commercial-strong / low-uninsured",
+                       "Heavy cluster (Sioux Falls catchment); strong commercial, dense CAH network."),
+        OperatingState("South Dakota", "SD", "Upper Midwest", "Noridian (JF)", "expanded (2023)",
+                       "Rural / commercial / low-uninsured",
+                       "Heavy cluster; large rural geography, regional-hub reading."),
+        OperatingState("North Dakota", "ND", "Upper Midwest", "Noridian (JF)", "expanded (2014)",
+                       "Rural / commercial / low-uninsured",
+                       "Frontier; tele backbone over sparse population."),
+        OperatingState("Wisconsin", "WI", "Upper Midwest", "NGS (J6)", "non-expansion (≤100% FPL)",
+                       "Commercial / low-uninsured",
+                       "Edge of the Upper-Midwest cluster."),
+        OperatingState("Alabama", "AL", "Southeast", "Palmetto (JJ)", "non-expansion",
+                       "Rural / high-uninsured / Medicaid-gap",
+                       "Heavy cluster; most rural-hospital distress — strong tele demand."),
+        OperatingState("Georgia", "GA", "Southeast", "Palmetto (JJ)", "non-expansion",
+                       "Mixed metro/rural / high-uninsured",
+                       "Heavy cluster; Atlanta metro + a deep rural tail."),
+        OperatingState("Tennessee", "TN", "Southeast", "Palmetto (JJ)", "non-expansion",
+                       "Rural / high-uninsured",
+                       "Rural-hospital closures elevate tele reliance."),
+        OperatingState("North Carolina", "NC", "Southeast", "Palmetto (JM)", "expanded (2023)",
+                       "Mixed / improving coverage",
+                       "Cluster; recent Medicaid expansion lifts the payer floor."),
+        OperatingState("Kentucky", "KY", "Southeast", "CGS (J15)", "expanded (2014)",
+                       "Rural / Medicaid-heavy",
+                       "Appalachian rural reads; CGS issues the breast/cardiac-CT LCDs."),
+        OperatingState("Mississippi", "MS", "Southeast", "Novitas (JH)", "non-expansion",
+                       "Rural / highest-uninsured / Medicaid-gap",
+                       "Poorest payer mix; deepest rural-coverage need."),
+        OperatingState("Florida", "FL", "Florida", "First Coast (JN)", "non-expansion",
+                       "Senior-heavy / high-uninsured",
+                       "North-FL edge of the map; oldest-skew = high imaging demand."),
+    ]
+
+
+# Payer mix by operating region (illustrative, ACS-anchored shares that sum to
+# 100). The regional spread is the point: Upper-Midwest is commercial-rich and
+# low-uninsured; the Southeast and Texas carry the Medicaid-gap + uninsured drag.
+def _build_region_payer_mix() -> List[RegionPayerMix]:
+    return [
+        RegionPayerMix("Texas", "TX", 45.0, 33.0, 13.0, 9.0,
+                       "Commercial-strong metros vs a high-uninsured (~18-20%) non-expansion rural tail."),
+        RegionPayerMix("Southern Plains", "OK · KS · NE · NM", 42.0, 36.0, 13.0, 9.0,
+                       "Aging, rural, Medicare-heavy; mixed expansion (NE/NM/OK yes, KS no)."),
+        RegionPayerMix("Upper Midwest / Dakotas", "MN · SD · ND · WI", 50.0, 33.0, 11.0, 6.0,
+                       "Best payer mix in the footprint — commercial-rich, low-uninsured, dense CAH network; all expanded."),
+        RegionPayerMix("Southeast", "AL · GA · TN · NC · KY · MS", 43.0, 33.0, 14.0, 10.0,
+                       "Highest uninsured + Medicaid-gap (most non-expansion); the deepest rural-hospital distress."),
+        RegionPayerMix("Florida", "FL (north)", 40.0, 38.0, 13.0, 9.0,
+                       "Senior-heavy (highest Medicare share) non-expansion; oldest-skew lifts imaging demand."),
+    ]
+
+
+# Teleradiology trends — general market + the structural nighthawk weakness that
+# an integrated on-site+tele hybrid (with the hospital's systems & priors) beats.
+def _build_teleradiology_trends() -> List[TeleradiologyTrend]:
+    return [
+        TeleradiologyTrend(
+            "Shortage-driven demand",
+            "Hospitals lack the bandwidth to staff their own radiology groups, so they reach out to tele providers — the radiologist shortage IS the demand engine.",
+            "Tailwind for any outsourced platform; the bigger the shortage, the more reads route out."),
+        TeleradiologyTrend(
+            "The nighthawk priors / context gap",
+            "An off-hours nighthawk reader often lacks access to the patient's prior exams & context. The classic case: a 12-hour follow-up head CT comes back as just 'head bleed' — no quantification, no better/worse-than-before — so the day team must RE-READ it.",
+            "The structural weakness of pure-tele — and exactly where an on-site+tele hybrid WIRED INTO the hospital's systems & priors wins on quality and avoids the reread."),
+        TeleradiologyTrend(
+            "Prelim → final shift",
+            "Nighthawk reads are moving from preliminary to final reads as tele matures and SLAs tighten.",
+            "Raises the bar on reader quality + system integration; favors integrated platforms."),
+        TeleradiologyTrend(
+            "Subspecialty routing",
+            "Tele lets a rural hospital reach neuro/MSK/breast/peds subspecialists it could never staff locally.",
+            "A core hybrid value prop — subspecialty depth the local group can't match."),
+        TeleradiologyTrend(
+            "AI on the reporting side",
+            "Auto-impression / report-drafting AI (Rad AI, Nuance PowerScribe) is cutting read time per patient — the real, proven AI ROI, easing the shortage.",
+            "Lifts reads/radiologist for the platform; a productivity lever, not a substitute."),
+        TeleradiologyTrend(
+            "PACS / cloud fragmentation",
+            "Radiology runs on archaic, on-prem, non-connected systems — there is no cloud radiology platform at scale, and no common US patient identifier to string priors together.",
+            "The binding workflow barrier; whoever solves cross-site priors & cloud reads captures durable advantage."),
+        TeleradiologyTrend(
+            "Consolidation",
+            "A dominant national consolidator (owns the largest teleradiology arm) anchors the market; the US teleradiology market is ~$0.85B (2022) → ~$2.1B (2030), ~12% CAGR.",
+            "Scale compresses per-read cost; the local-group share-donor keeps shrinking."),
+    ]
+
+
+# AI workflow reality — public industry knowledge on where AI actually helps the
+# radiology workflow (the detection-vs-reporting split, the widget/noise problem,
+# the cloud/priors barrier, the enterprise pivot, foundation-model FDA gaps).
+def _build_ai_workflow() -> List[AIWorkflowReality]:
+    return [
+        AIWorkflowReality(
+            "Two AI worlds: the image vs the report",
+            "AI splits into (1) detection/triage on the image and (2) automating everything that wraps the read — patient context + the report. The value is migrating to (2).",
+            "Detection started the market (Viz stroke, Aidoc ICH); reporting (Rad AI, PowerScribe) is where time is actually saved."),
+        AIWorkflowReality(
+            "Detection ROI has underwhelmed",
+            "A suspected-stroke patient is already labeled 'stroke?' — so a triage flag doesn't make the radiologist read faster. Disease-detection/triage time-savings have been hard to prove.",
+            "Why pure-detection algorithm shops struggled to justify their value to the radiologist."),
+        AIWorkflowReality(
+            "Reporting ROI is real",
+            "Auto-impression / report drafting saves significant time on EVERY patient — the radiologist's mind is doing 'summarize this' on every read, and AI does part of it.",
+            "The proven productivity win; directly eases the radiologist shortage & volume load."),
+        AIWorkflowReality(
+            "The widget / noise problem",
+            "Because radiology systems are archaic & non-connected, AI bolts on as a desktop widget. Stacking algorithms (one vendor reached ~17 clearances) adds irrelevant findings — an old vertebral fracture on a stroke case — i.e. noise, not value.",
+            "More algorithms ≠ more value without workflow integration; alert fatigue is real."),
+        AIWorkflowReality(
+            "The priors / cloud barrier",
+            "No cloud radiology platform at scale and no common US patient identifier means you can't string a patient's imaging history together — radiology still hands out CDs ('the blockbuster era'). Tying priors together is what the radiologist actually needs.",
+            "The real blocker is infrastructure (cloud migration), not model capability."),
+        AIWorkflowReality(
+            "The enterprise pivot",
+            "AI vendors moved from selling the radiologist ('save time/quality' — unproven) to the C-suite (CIO/CDO): 'help you treat & capture more patients = more revenue'. The radiology-only TAM didn't support venture valuations.",
+            "Enterprise buyers see less of the radiology-workflow barriers; deals get bigger but ROI gets fuzzier."),
+        AIWorkflowReality(
+            "Foundation models — promise vs productization",
+            "Excitement around every-disease foundation models, but the FDA pathway for approving hundreds of algorithms at once is unclear (a notable 2024-25 setback), and the models sit on top of the same un-integrated systems.",
+            "Capability isn't the gate — regulatory clarity + cloud/workflow integration is."),
+        AIWorkflowReality(
+            "Radiologists are not replaced — the role evolves",
+            "AI will 100% remain human-in-the-loop for nearly everything; 'not reading every case' begins narrowly (e.g., chest X-ray). The radiologist stays central for context and what-happens-next.",
+            "The scarcity thesis holds; AI re-prices the bottleneck (productivity) rather than removing it."),
+    ]
+
+
+# The four service lines (from the public site), mapped to competitive edge.
+def _build_service_lines() -> List[ServiceLine]:
+    return [
+        ServiceLine("On-site services",
+                    "Contracted radiologists read on premise — faster results, procedure coverage, supervision.",
+                    "The part pure-tele can't do; satisfies on-premise-required reads + IR + fluoro supervision."),
+        ServiceLine("Teleradiology",
+                    "Contracted radiologists deliver expert reads & consults remotely, 24/7/365.",
+                    "Scales reading capacity nationally; the labor-arbitrage + after-hours layer."),
+        ServiceLine("Diagnostic radiology",
+                    "Advanced imaging across all subspecialties for precise diagnosis & treatment planning.",
+                    "Subspecialty depth a rural local group can't staff — the switching trigger answered."),
+        ServiceLine("Interventional radiology",
+                    "Minimally invasive, image-guided procedures — precise treatment, faster recovery.",
+                    "Requires on-site presence; the highest-acuity line tele-only competitors structurally can't serve."),
+    ]
+

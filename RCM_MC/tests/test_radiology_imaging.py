@@ -376,5 +376,68 @@ class TexasRadiologyTests(unittest.TestCase):
         self.assertNotIn(">None<", html)
 
 
+class CoaxionFootprintTests(unittest.TestCase):
+    """The multi-state operating footprint, payer-by-region, teleradiology &
+    AI-workflow intelligence (from the public map + expert-call industry facts)."""
+
+    def setUp(self):
+        from rcm_mc.data_public.texas_radiology import compute_texas_radiology
+        self.tx = compute_texas_radiology()
+
+    def test_operating_footprint_spans_macs(self):
+        self.assertGreaterEqual(self.tx.operating_state_count, 15)
+        # The whole policy point: a 15+ state platform spans every MAC.
+        self.assertEqual(self.tx.mac_count, 7)
+        postals = {s.postal for s in self.tx.operating_states}
+        # The map's heavy clusters.
+        for p in ("TX", "OK", "KS", "MN", "SD", "AL", "GA", "NC"):
+            self.assertIn(p, postals)
+
+    def test_region_payer_mix_sums_and_spread(self):
+        regions = {m.region for m in self.tx.region_payer_mix}
+        self.assertIn("Upper Midwest / Dakotas", regions)
+        self.assertIn("Southeast", regions)
+        for m in self.tx.region_payer_mix:
+            total = m.commercial_pct + m.medicare_pct + m.medicaid_pct + m.uninsured_pct
+            self.assertAlmostEqual(total, 100.0, delta=0.5, msg=f"{m.region} sums to {total}")
+        # Upper Midwest is the richest mix (lowest uninsured) vs the Southeast.
+        um = next(m for m in self.tx.region_payer_mix if "Upper Midwest" in m.region)
+        se = next(m for m in self.tx.region_payer_mix if m.region == "Southeast")
+        self.assertLess(um.uninsured_pct, se.uninsured_pct)
+        self.assertGreater(um.commercial_pct, se.commercial_pct)
+
+    def test_teleradiology_nighthawk_gap(self):
+        self.assertGreaterEqual(len(self.tx.teleradiology_trends), 6)
+        joined = " ".join(t.trend.lower() + " " + t.detail.lower() for t in self.tx.teleradiology_trends)
+        # The structural nighthawk priors/context gap must be captured.
+        self.assertIn("nighthawk", joined)
+        self.assertIn("prior", joined)
+        self.assertIn("re-read", joined.replace("reread", "re-read"))
+
+    def test_ai_workflow_detection_vs_reporting(self):
+        self.assertGreaterEqual(len(self.tx.ai_workflow), 6)
+        joined = " ".join(a.theme.lower() + " " + a.reality.lower() + " " + a.evidence.lower()
+                          for a in self.tx.ai_workflow)
+        # The core expert insight: reporting ROI real, detection underwhelming.
+        self.assertIn("reporting", joined)
+        self.assertIn("detection", joined)
+        # The infrastructure barrier (priors / cloud / patient id).
+        self.assertIn("prior", joined)
+        # Human-in-the-loop conclusion.
+        self.assertIn("human-in-the-loop", joined.replace("human in the loop", "human-in-the-loop"))
+
+    def test_service_lines(self):
+        lines = " ".join(s.line.lower() for s in self.tx.service_lines)
+        for needed in ("on-site", "teleradiology", "diagnostic", "interventional"):
+            self.assertIn(needed, lines)
+
+    def test_footprint_renders(self):
+        html = render_radiology_imaging({})
+        for marker in ("Operating Footprint", "Payer Mix by Operating Region",
+                       "Teleradiology Trends", "AI Workflow Reality", "Southern Plains"):
+            self.assertIn(marker, html, msg=f"missing footprint section: {marker}")
+        self.assertNotIn(">None<", html)
+
+
 if __name__ == "__main__":
     unittest.main()
