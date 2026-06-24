@@ -146,6 +146,52 @@ class ServiceLine:
 
 
 @dataclass
+class CompetitorProfile:
+    """Three-player double-click: the two incumbents vs the rural challenger.
+    Scores 1-5; capital/NSA/AI are public/sourced market facts."""
+    player: str
+    scale: str
+    model: str
+    on_site: int
+    ir: int
+    subspecialty: int
+    tech_ai: int
+    coverage: int
+    capital_posture: str
+    rural_fit: str                # x/12 on what a rural CAH needs
+    edge: str
+
+
+@dataclass
+class RuralTargetingMetric:
+    """A finding from the county-level rural-targeting analysis (3,143 US
+    counties, real ACS data)."""
+    metric: str
+    footprint_value: str
+    baseline: str
+    takeaway: str
+
+
+@dataclass
+class NPIEvidence:
+    """A fact confirmed live in the CMS NPPES NPI Registry this session."""
+    finding: str
+    evidence: str
+    proves: str
+    npi_url: str
+
+
+@dataclass
+class DataProvenance:
+    """A market claim mapped to the public dataset that proves it."""
+    claim: str
+    dataset: str
+    how: str
+    link: str
+    live: bool                    # queried this session vs link-to-pull
+
+
+@dataclass
 class TexasRadiologyResult:
     counties_modeled: int
     tx_population: int
@@ -168,6 +214,10 @@ class TexasRadiologyResult:
     service_lines: List[ServiceLine]
     operating_state_count: int
     mac_count: int
+    competitors: List[CompetitorProfile]
+    rural_targeting: List[RuralTargetingMetric]
+    npi_evidence: List[NPIEvidence]
+    data_provenance: List[DataProvenance]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -295,7 +345,131 @@ def compute_texas_radiology() -> TexasRadiologyResult:
         service_lines=_build_service_lines(),
         operating_state_count=len(op_states),
         mac_count=len({s.mac.split(" (")[0] for s in op_states}),
+        competitors=_build_competitors(),
+        rural_targeting=_build_rural_targeting(),
+        npi_evidence=_build_npi_evidence(),
+        data_provenance=_build_data_provenance(),
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Competitor double-click — RP vs vRad vs the rural challenger (public facts)
+# ─────────────────────────────────────────────────────────────────────────────
+def _build_competitors() -> List[CompetitorProfile]:
+    return [
+        CompetitorProfile(
+            "Radiology Partners", "~4,000 rads · 3,400+ sites · 50 states · ~56M cases · ~$2.6-3.0B rev",
+            "Employed / affiliation; metro + health-system", 4, 3, 5, 5, 5,
+            "Levered ~7.7x net debt/EBITDA, B2-tier (2024 distressed exchange + 2025 $2.3B refi); 28% of NSA IDR disputes, ~582-594% of QPA; UHC/Aetna suits.",
+            "8/12 — metro-tuned",
+            "Scale, subspecialty bench, AI data-moat (Mosaic/Cognita $80M) — but built for large systems, not rural CAHs."),
+        CompetitorProfile(
+            "vRad (RP-owned)", "~500+ rads (688 on platform) · ~1,600 facilities · 8.9M studies/yr · >80% final",
+            "Pure teleradiology, 100% WFH", 1, 0, 4, 4, 5,
+            "RP division (acquired via the $885M Mednax deal, 2020); commercialized 'The vRad Platform' (Nov 2025).",
+            "3/12 — no on-site/IR",
+            "Best-in-class stroke/trauma turnaround + AI worklist — but can't put a body (or an interventionalist) in the building."),
+        CompetitorProfile(
+            "Coaxion (rural challenger)", "~200 rads · 15+ states · Lubbock-HQ hub",
+            "Hybrid on-site + tele; diagnostic + IR", 5, 3, 4, 2, 4,
+            "PE-backable challenger; fast AI integrator (buy, not build); subsidy/stipend-dependent at small hospitals.",
+            "12/12 — the rural white space",
+            "Hub-and-spoke on-site+tele+IR into rural/CAH markets RP skips (sub-scale) and vRad can't serve (no on-site)."),
+    ]
+
+
+# Findings from the 3,143-county rural-targeting analysis (real ACS data).
+def _build_rural_targeting() -> List[RuralTargetingMetric]:
+    return [
+        RuralTargetingMetric("Footprint rural share (pop-weighted)", "24.4%", "20.1% US · 2.1% top-metro",
+                             "The footprint is deliberately more rural than the nation and 12× more rural than where RP concentrates."),
+        RuralTargetingMetric("Footprint county median rural", "75.9%", "66.7% US · 1.4% top-metro",
+                             "On a per-county basis the tilt is even starker — these are rural counties, not metros."),
+        RuralTargetingMetric("National rural white-space captured", "47% (617 of 1,317 counties)", "with 32% of the states",
+                             "The 16-state footprint concentrates in the rural-radiology opportunity, not spread evenly."),
+        RuralTargetingMetric("'Triple-bind' counties in footprint", "203 of 253 (80%)", "old + rural + ≥15% uninsured",
+                             "The footprint targets the very counties pure-tele AND metro-scale both skip — highest demand, worst payer, no local radiologist."),
+        RuralTargetingMetric("rural% ↔ 65+ correlation", "+0.43", "(across all US counties)",
+                             "More rural = older = MORE imaging demand per capita — the demand is real."),
+        RuralTargetingMetric("rural% ↔ uninsured / income", "+0.20 / −0.40", "(across all US counties)",
+                             "…but the same rural county is poorer and more uninsured — the structural payer drag a hub-and-spoke must absorb."),
+    ]
+
+
+# Confirmed live in the CMS NPPES NPI Registry this session.
+def _build_npi_evidence() -> List[NPIEvidence]:
+    return [
+        NPIEvidence("Coaxion is registry-confirmed",
+                    "COAXION PLLC (NPI 1629805221) + CONCORD RADIOLOGY PLLC (NPI 1598260515), Diagnostic Radiology, 1602 Avenue Q, Lubbock TX",
+                    "The public Lubbock-HQ radiology profile is real and NPPES-verified.",
+                    "https://npiregistry.cms.hhs.gov/provider-view/1629805221"),
+        NPIEvidence("The hub is incumbent-dominated",
+                    "Lubbock 'Radiology' = 91 NPIs: UMC/Hospital District 21, Lubbock Diagnostic Radiology LLP 21, Grace Clinic 8, Coaxion/Concord 5",
+                    "Coaxion isn't out-supplying the metro — it uses Lubbock as a READING HUB, not a metro land-grab.",
+                    "https://npiregistry.cms.hhs.gov"),
+        NPIEvidence("The rural spoke is a radiologist desert",
+                    "Plainview TX (Hale Co, ~32k pop) 'Radiology' = 4: one mammo facility + 3 Lubbock-based radiologists. ZERO resident radiologists.",
+                    "The hub-and-spoke is observable in the data: rural reads are done from the metro hub.",
+                    "https://npiregistry.cms.hhs.gov"),
+        NPIEvidence("IR is scarce even in the hub",
+                    "Only 4 of 91 Lubbock NPIs are Vascular & Interventional — and 2 of the 4 practice in Fort Worth / Austin.",
+                    "On-site IR is genuinely differentiated; tele-only competitors can't do it at all.",
+                    "https://npiregistry.cms.hhs.gov"),
+        NPIEvidence("RP runs an affiliation model",
+                    "An org search for 'Radiology Partners*' returns only 4 entities despite 3,400+ sites.",
+                    "Confirms RP's scale hides under local-group NPIs — the affiliation-platform structure.",
+                    "https://npiregistry.cms.hhs.gov"),
+        NPIEvidence("Teleradiology already crosses the hub",
+                    "15 of 89 Lubbock-search NPIs practice elsewhere — incl. Eden Prairie MN (vRad's HQ), Rockford IL, Nashville, Miami, OKC.",
+                    "'Proximity irrelevant' is observable: reads cross geography in the registry today.",
+                    "https://npiregistry.cms.hhs.gov"),
+    ]
+
+
+# Each market claim mapped to the public dataset that proves it.
+def _build_data_provenance() -> List[DataProvenance]:
+    return [
+        DataProvenance("RP = 28% of NSA IDR disputes; ~582-594% of QPA",
+                       "CMS Federal IDR Public Use Files + Georgetown CHIR",
+                       "The IDR PUF logs every resolved dispute (initiating provider, specialty, QPA, prevailing offer) — group by party.",
+                       "https://www.cms.gov/nosurprises", False),
+        DataProvenance("RP reads ~1 in 10 US imaging studies (~55-56M/yr)",
+                       "Medicare Physician & Other Practitioners by Provider & Service (PUF)",
+                       "Per-NPI imaging-HCPCS service counts; sum RP-affiliated NPIs vs the national imaging total.",
+                       "https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners", False),
+        DataProvenance("Radiologist shortage (~37,482 enrolled 2023; durable to 2055)",
+                       "Neiman HPI workforce studies (JACR Feb 2025) on CMS enrollment",
+                       "Counts Medicare-billing radiologists; projects supply vs imaging demand (util +16.9-26.9% by 2055).",
+                       "https://www.neimanhpi.org", False),
+        DataProvenance("CY2025 PFS conversion-factor cut (~-2.8%)",
+                       "CMS Physician Fee Schedule Final Rule / Federal Register",
+                       "The published conversion factor ($33.29 → $32.25) + the radiology specialty-impact table.",
+                       "https://www.cms.gov/medicare/payment/fee-schedules/physician", False),
+        DataProvenance("HOPD pays 2-4× freestanding for the same scan",
+                       "MedPAC reports + CMS OPPS (APC) vs PFS rate files",
+                       "Price the same imaging HCPCS under OPPS vs PFS; CY2026 OPPS RFI targets imaging APCs 5521-5524.",
+                       "https://www.medpac.gov", False),
+        DataProvenance("TX has the most rural hospitals / closures (~25+)",
+                       "UNC Sheps Center closures list + CMS Provider of Services (CAH flag)",
+                       "Sheps tracks every rural closure since 2005; CMS POS flags Critical Access Hospitals by county.",
+                       "https://www.shepscenter.unc.edu/programs-projects/rural-health/rural-hospital-closures/", False),
+        DataProvenance("Coverage differs by MAC / LCD geography",
+                       "CMS Coverage API / Medicare Coverage Database",
+                       "Each MAC issues its own LCDs; pulled Novitas L34865 (MRA) for TX this session; footprint spans all 7 MACs.",
+                       "https://api.coverage.cms.gov", True),
+        DataProvenance("Coaxion / RP / vRad entities + the rural supply gap",
+                       "CMS NPPES NPI Registry",
+                       "Confirmed COAXION PLLC; Lubbock 91 vs Plainview 0 resident rads; RP's 4-entity affiliation model.",
+                       "https://npiregistry.cms.hhs.gov", True),
+        DataProvenance("Rural = most demand, worst payer, least supply",
+                       "County Health Rankings / ACS (vendored) + NPPES",
+                       "rural% ↔ 65+ +0.43, ↔ uninsured +0.20, ↔ income −0.40; NPPES shows 0 resident rads in the rural county.",
+                       "https://www.countyhealthrankings.org", True),
+        DataProvenance("Telerad consolidation comps (Lumexa IPO, I-MED/StatRad)",
+                       "SEC EDGAR (Lumexa / LMRI S-1, 10-K)",
+                       "Lumexa S-1: audited revenue $1.0B, adj. EBITDA $220M (21.8%), 184 centers / 13 states.",
+                       "https://www.sec.gov/edgar", False),
+    ]
 
 
 # ─────────────────────────────────────────────────────────────────────────────

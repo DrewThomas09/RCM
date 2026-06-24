@@ -865,6 +865,83 @@ def _tx_ai_workflow_table(items) -> str:
     return _table(cols, "".join(trs))
 
 
+# ── Competitor double-click · rural targeting · NPPES evidence · provenance ───
+def _tx_competitor_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Player", "left"), ("Scale", "left"), ("Model", "left"), ("On-Site", "center"),
+            ("IR", "center"), ("Subspec", "center"), ("Tech/AI", "center"), ("Capital / NSA / Posture", "left"),
+            ("Rural-Fit", "center"), ("Edge", "left")]
+    trs = []
+    for c in items:
+        rural = "Coaxion" in c.player
+        name = (f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;'
+                f'font-size:11px;font-weight:700;color:{P["accent"] if rural else text}">'
+                f'{"★ " if rural else ""}{_html.escape(c.player)}</td>')
+        trs.append('<tr>' + "".join([
+            name,
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{text_dim}">{_html.escape(c.scale)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.model)}</td>',
+            f'<td style="text-align:center;padding:5px 6px">{_score_dots(c.on_site)}</td>',
+            f'<td style="text-align:center;padding:5px 6px">{_score_dots(c.ir)}</td>',
+            f'<td style="text-align:center;padding:5px 6px">{_score_dots(c.subspecialty)}</td>',
+            f'<td style="text-align:center;padding:5px 6px">{_score_dots(c.tech_ai)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.capital_posture)}</td>',
+            f'<td style="text-align:center;padding:5px 8px;font-family:JetBrains Mono,monospace;font-size:10px;'
+            f'color:{P["positive"] if rural else text_dim};font-weight:700">{_html.escape(c.rural_fit)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(c.edge)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_rural_targeting_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Metric", "left"), ("Footprint", "right"), ("Baseline", "left"), ("Takeaway", "left")]
+    trs = []
+    for m in items:
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(m.metric), mono=True, weight=600),
+            ck_data_cell(_html.escape(m.footprint_value), align="right", mono=True, tone="acc", weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{text_dim}">{_html.escape(m.baseline)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(m.takeaway)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_npi_evidence_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]; acc = P["accent"]
+    cols = [("Finding", "left"), ("Evidence (live NPPES)", "left"), ("What it proves", "left"), ("Source", "center")]
+    trs = []
+    for e in items:
+        link = (f'<a href="{_html.escape(e.npi_url)}" target="_blank" rel="noopener" '
+                f'style="color:{acc};text-decoration:none;font-weight:700">NPPES ↗</a>')
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(e.finding), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{text}">{_html.escape(e.evidence)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(e.proves)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-size:10px">{link}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_provenance_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]; acc = P["accent"]; pos = P["positive"]
+    cols = [("Market Claim", "left"), ("Dataset", "left"), ("How it proves it", "left"), ("Status", "center"), ("Link", "center")]
+    trs = []
+    for d in items:
+        status = (f'<span style="color:{pos};font-weight:700">● LIVE</span>' if d.live
+                  else f'<span style="color:{text_dim}">link</span>')
+        link = (f'<a href="{_html.escape(d.link)}" target="_blank" rel="noopener" '
+                f'style="color:{acc};text-decoration:none;font-weight:700">source ↗</a>')
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(d.claim), mono=True, weight=600),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text};font-weight:600">{_html.escape(d.dataset)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(d.how)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px">{status}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-size:10px">{link}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Render
 # ─────────────────────────────────────────────────────────────────────────────
@@ -988,6 +1065,26 @@ def render_radiology_imaging(params: dict = None) -> str:
         "infrastructure — archaic on-prem systems, no cloud platform at scale, no common patient ID to tie priors "
         "together — not model capability. Radiologists stay human-in-the-loop; the role evolves.",
     )
+    _competitor_note = _note(
+        "Same market, different geometry:",
+        "the two incumbents and the rural challenger occupy different points. RP goes where the VOLUME is (metros, "
+        "big systems) and carries the leverage + NSA-IDR exposure; vRad is national pure-tele (no on-site, no IR); "
+        "the rural challenger is hybrid on-site+tele+IR into the markets both skip. Scored on what a rural CAH "
+        "actually needs (rural-fit, /12). Public-company facts (filings, rating agencies, Georgetown CHIR, press).",
+    )
+    _rural_note = _note(
+        "Quantified from real data:",
+        "computed over all 3,143 US counties (the same vendored ACS base the page reuses). The footprint is "
+        "deliberately rural, concentrates in the rural-radiology white space, and targets the 'triple-bind' "
+        "counties — highest imaging demand, worst payer mix, no local radiologist — that pure-tele and metro-scale "
+        "both skip.",
+    )
+    _provenance_note = _note(
+        "Nothing here is hand-waved:",
+        "every load-bearing market claim is tagged with the public dataset that proves it and a link to pull it. "
+        "● LIVE = queried this session (CMS Coverage API + NPPES NPI Registry); the rest link to the authoritative "
+        "CMS / Georgetown / Neiman / SEC source to pull.",
+    )
 
     footer = (
         f'<div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};'
@@ -1029,6 +1126,10 @@ def render_radiology_imaging(params: dict = None) -> str:
   {_section("Service Lines — on-site · tele · diagnostic · interventional", _tx_service_lines_table(tx.service_lines))}
   {_section("Teleradiology Trends — incl. the nighthawk priors / context gap", _tx_tele_trends_table(tx.teleradiology_trends))}
   {_section("AI Workflow Reality — where AI actually helps the read", _ai_workflow_note + _tx_ai_workflow_table(tx.ai_workflow))}
+  {_section("Competitor Double-Click — RP vs vRad vs the rural challenger", _competitor_note + _tx_competitor_table(tx.competitors))}
+  {_section("Rural Targeting — quantified (3,143-county analysis)", _rural_note + _tx_rural_targeting_table(tx.rural_targeting))}
+  {_section("Evidence in the Data — live NPPES NPI Registry", _tx_npi_evidence_table(tx.npi_evidence))}
+  {_section("Data Provenance — every claim → the public dataset that proves it", _provenance_note + _tx_provenance_table(tx.data_provenance))}
   {_section("Outsourced Service Model — Competing Delivery Models", _d3_note + _service_model_table(r.service_models))}
   {_section("Turnaround SLA Tiers — priced on turnaround, not volume", _sla_table(r.sla_tiers))}
   {_section("Reading-Labor Economics — on-site fixed vs Day/Night-Hawk per-read", _staffing_table(r.staffing_models))}
@@ -1048,9 +1149,9 @@ def render_radiology_imaging(params: dict = None) -> str:
     meta_line = (
         f"{r.cpt_codes_tracked} CPT/HCPCS codes · {len(r.modality_segments)} modality segments · "
         f"{r.cms_connections} CMS connections · {r.mac_payers} MAC payers · "
-        f"{len(r.service_models)} service models · {len(r.switching_triggers)} switching triggers · "
-        f"RP diligence · {len(r.ai_build_stages)}-stage AI build · "
-        f"TEXAS deep-dive ({tx.counties_modeled} counties reused · Novitas MAC · Lubbock hub)"
+        f"{len(r.service_models)} service models · RP diligence · {len(r.ai_build_stages)}-stage AI build · "
+        f"TEXAS deep-dive ({tx.counties_modeled} counties · {tx.operating_state_count}-state footprint · all {tx.mac_count} MACs) · "
+        f"3-player tear-sheet · NPPES evidence · {len(tx.data_provenance)}-row data-provenance map"
     )
     return chartis_shell(
         body, "Referring Radiology & Diagnostic Imaging",

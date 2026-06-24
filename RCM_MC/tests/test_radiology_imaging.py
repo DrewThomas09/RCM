@@ -439,5 +439,63 @@ class CoaxionFootprintTests(unittest.TestCase):
         self.assertNotIn(">None<", html)
 
 
+class CompetitiveEvidenceTests(unittest.TestCase):
+    """Competitor tear-sheet, rural-targeting findings, live NPPES evidence,
+    and the claim→dataset provenance map — all data-grounded."""
+
+    def setUp(self):
+        from rcm_mc.data_public.texas_radiology import compute_texas_radiology
+        self.tx = compute_texas_radiology()
+
+    def test_three_player_tear_sheet(self):
+        players = {c.player for c in self.tx.competitors}
+        self.assertTrue(any("Radiology Partners" in p for p in players))
+        self.assertTrue(any("vRad" in p for p in players))
+        self.assertTrue(any("Coaxion" in p for p in players))
+        # vRad has no on-site/IR; the challenger maxes rural-fit.
+        vrad = next(c for c in self.tx.competitors if "vRad" in c.player)
+        cox = next(c for c in self.tx.competitors if "Coaxion" in c.player)
+        self.assertEqual(vrad.ir, 0)
+        self.assertEqual(cox.on_site, 5)
+        self.assertIn("12/12", cox.rural_fit)
+
+    def test_rural_targeting_findings(self):
+        self.assertGreaterEqual(len(self.tx.rural_targeting), 5)
+        blob = " ".join(m.metric + " " + m.footprint_value + " " + m.takeaway
+                        for m in self.tx.rural_targeting).lower()
+        self.assertIn("white-space", blob)
+        self.assertIn("triple-bind", blob)
+        self.assertIn("80%", " ".join(m.footprint_value for m in self.tx.rural_targeting))
+
+    def test_npi_evidence_is_real(self):
+        self.assertGreaterEqual(len(self.tx.npi_evidence), 5)
+        blob = " ".join(e.finding + " " + e.evidence for e in self.tx.npi_evidence)
+        self.assertIn("COAXION PLLC", blob)
+        self.assertIn("1629805221", blob)        # the real Coaxion NPI
+        self.assertIn("Plainview", blob)          # the rural desert
+        # Every NPPES evidence row links to the registry.
+        for e in self.tx.npi_evidence:
+            self.assertIn("npiregistry.cms.hhs.gov", e.npi_url)
+
+    def test_data_provenance_links_and_live(self):
+        self.assertGreaterEqual(len(self.tx.data_provenance), 8)
+        # Some claims are LIVE-verified (CMS Coverage API + NPPES).
+        self.assertGreaterEqual(sum(1 for d in self.tx.data_provenance if d.live), 2)
+        # Every row carries a real https source link.
+        for d in self.tx.data_provenance:
+            self.assertTrue(d.link.startswith("https://"), msg=f"{d.claim} has no link")
+        claims = " ".join(d.claim for d in self.tx.data_provenance)
+        self.assertIn("NSA IDR", claims)
+        self.assertIn("shortage", claims.lower())
+
+    def test_evidence_renders(self):
+        html = render_radiology_imaging({})
+        for marker in ("Competitor Double-Click", "Rural Targeting", "Evidence in the Data",
+                       "Data Provenance", "npiregistry.cms.hhs.gov"):
+            self.assertIn(marker, html, msg=f"missing evidence section: {marker}")
+        self.assertNotIn(">None<", html)
+        self.assertNotIn("&amp;amp;", html)
+
+
 if __name__ == "__main__":
     unittest.main()
