@@ -81,6 +81,11 @@ def _build_modules() -> List[Module]:
                "HHI / CR3 / CR5 concentration analysis; whitespace scoring by MSA", True),
         Module("CMS Data Browser", "/cms-data-browser", "Data", "diligence", "analyst",
                "20 curated CMS datasets (PFS, OPPS, MS-DRG, HCRIS, MA), API status", False),
+        Module("Referring Radiology & Imaging", "/radiology-imaging", "Data", "diligence", "analyst",
+               "Diagnostic-imaging atlas: radiology CPT/HCPCS claims (2D & 3D mammography), "
+               "live CMS coverage loop (7 NCDs + 7 LCDs), 7 MAC payers by state, state + county "
+               "payer mix, big freestanding operators (RadNet, RAYUS, SimonMed, US Radiology, "
+               "Radiology Partners), and the FDA-cleared AI / reimbursement landscape", False),
         Module("CMS Sources", "/cms-sources", "Data", "diligence", "analyst",
                "High-level CMS data source catalog (companion to CMS Data Browser)", False),
         Module("Benchmark Reference", "/benchmark-reference", "Data", "diligence", "analyst",

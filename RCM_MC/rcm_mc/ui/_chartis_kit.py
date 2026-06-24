@@ -208,6 +208,7 @@ _SUB_NAV = {
     # Backtest, Backtest) alongside the original catalog.
     "research": [
         {"label": "Industry Intelligence", "href": "/industry"},
+        {"label": "Radiology & Imaging", "href": "/radiology-imaging"},
         {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
         {"label": "Vertical Unit Economics", "href": "/healthcare-verticals/unit-economics"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
@@ -7493,6 +7494,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "hfma-benchmarks", "title": "HFMA KPI Benchmarks", "route": "/benchmarks"},
     {"id": "cms-sources",   "title": "CMS Data Sources",   "route": "/cms-sources"},
     {"id": "cms-browser",   "title": "CMS Public Data Browser", "route": "/cms-data-browser"},
+    {"id": "radiology-imaging", "title": "Referring Radiology & Diagnostic Imaging · CMS claims, mammography/2D/3D, NCD+LCD coverage loop, MAC payers, state+county payer mix, big players & AI", "route": "/radiology-imaging"},
     {"id": "public-data-catalog", "title": "Public Data Catalog", "route": "/data/catalog"},
     {"id": "dl-comps",      "title": "Deal Library — Multiples", "route": "/deal-library/comps"},
     {"id": "dl-sponsors",   "title": "Deal Library — Sponsors", "route": "/deal-library/sponsors"},
@@ -11263,7 +11265,7 @@ _SUB_SECTION_MAP = {
     "/market-rates": "library", "/data-catalog": "library",
     "/rcm-benchmarks": "library",
     "/research": "research", "/notes": "research", "/industry": "research",
-    "/healthcare-verticals": "research",
+    "/healthcare-verticals": "research", "/radiology-imaging": "research",
     "/market-intel/geo": "research",
     "/sector-momentum": "research", "/irr-dispersion": "research",
     "/hold-analysis": "research", "/backtest": "research",

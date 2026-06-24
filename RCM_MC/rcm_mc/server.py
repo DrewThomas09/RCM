@@ -4246,6 +4246,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.cms_data_browser_page import render_cms_data_browser
             return self._send_html(render_cms_data_browser(_qp))
+        if path == "/radiology-imaging":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.radiology_imaging_page import render_radiology_imaging
+            return self._send_html(render_radiology_imaging(_qp))
         if path == "/msa-concentration":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -21232,7 +21237,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             "/backtester", "/quant-lab", "/surrogate",
             "/model-validation", "/data-intelligence",
             "/ml-insights", "/insights", "/bear-cases",
-            "/comparable-outcomes",
+            "/comparable-outcomes", "/radiology-imaging",
         ):
             return "research"
         if r.startswith("/library") or r in (

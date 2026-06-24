@@ -367,7 +367,7 @@ _MODULE_SOURCE = {
     "/sponsor-heatmap": "live",
     # CMS public data
     "/cms-data-browser": "cms", "/cms-sources": "cms", "/msa-concentration": "cms",
-    "/benchmark-reference": "cms",
+    "/benchmark-reference": "cms", "/radiology-imaging": "cms",
     # Illustrative templates — hardcoded representative data
     "/deal-origination": "illus", "/payer-concentration": "illus",
     "/fraud-detection": "illus", "/drug-shortage": "illus", "/cyber-risk": "illus",
