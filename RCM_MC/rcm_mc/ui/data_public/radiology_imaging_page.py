@@ -646,12 +646,143 @@ def _ai_vendor_role_table(items) -> str:
     return _table(cols, "".join(trs))
 
 
+# ── Texas deep-dive (reuses the infusion county base) ────────────────────────
+def _tx_banner(r) -> str:
+    navy = P["navy"]; on = P["on_navy"]; on_dim = P["on_navy_dim"]
+    return (
+        f'<div style="background:{navy};color:{on};border:1px solid {navy};'
+        f'padding:14px 18px;margin:22px 0 14px;border-left:4px solid var(--sc-teal,#155752)">'
+        f'<div style="font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:0.14em;'
+        f'text-transform:uppercase;color:{on_dim};margin-bottom:4px">Geographic Deep-Dive</div>'
+        f'<div style="font-family:Source Serif 4,Georgia,serif;font-size:19px;font-weight:600">'
+        f'Texas — the outsourced on-site + tele market</div>'
+        f'<div style="font-size:11px;color:{on_dim};margin-top:5px">'
+        f'{r.counties_modeled} counties · {r.tx_population:,} people · '
+        f'{r.tx_senior_population:,} aged 65+ · {r.tx_rural_population:,} rural · '
+        f'{r.tx_uninsured_rate*100:.0f}% uninsured · MAC: Novitas (JH) · '
+        f'<span style="font-family:JetBrains Mono,monospace">data: {_html.escape(r.data_mode)}</span></div>'
+        f'</div>'
+    )
+
+
+def _tx_market_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("Metric", "left"), ("Value", "right"), ("Detail", "left"), ("Source", "left")]
+    trs = []
+    for m in items:
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(m.metric), mono=True, weight=600),
+            ck_data_cell(_html.escape(m.value), align="right", mono=True, tone="acc", weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.detail)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:9px;font-family:JetBrains Mono,monospace;color:{P["text_faint"]}">{_html.escape(m.source)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_cms_table(items) -> str:
+    text_dim = P["text_dim"]; acc = P["accent"]
+    cols = [("Connection", "left"), ("Kind", "center"), ("Identifier", "left"), ("Detail", "left")]
+    trs = []
+    for c in items:
+        ident = (f'<a href="{_html.escape(c.url)}" target="_blank" rel="noopener" '
+                 f'style="color:{acc};text-decoration:none;font-weight:700">{_html.escape(c.identifier)}</a>')
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(c.label), mono=True, weight=600),
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px;color:{text_dim};font-weight:700">{_html.escape(c.kind)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:11px">{ident}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(c.detail)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_gpci_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("PFS Locality", "left"), ("Work GPCI", "right"), ("PE GPCI", "right"),
+            ("MP GPCI", "right"), ("Read Economics", "left")]
+    trs = []
+    for g in items:
+        rural = "Rest of Texas" in g.locality
+        pe_color = P["negative"] if rural else (P["positive"] if g.pe_gpci >= 0.99 else P["text"])
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(g.locality), mono=True, weight=700 if rural else 600),
+            ck_data_cell(f"{g.work_gpci:.3f}", align="right", mono=True, tone="dim"),
+            f'<td style="text-align:right;padding:5px 10px;font-variant-numeric:tabular-nums;font-family:JetBrains Mono,monospace;font-size:11px;color:{pe_color};font-weight:700">{g.pe_gpci:.3f}</td>',
+            ck_data_cell(f"{g.mp_gpci:.3f}", align="right", mono=True, tone="dim"),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(g.read_economics)}</td>',
+        ]) + '</tr>')
+    legend = ('<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+              'font-family:JetBrains Mono,monospace">PE GPCI is the swing — metros price above 1.0, '
+              '\'Rest of Texas\' below, so the identical read pays less in the rural counties (approx CY2025).</div>')
+    return _tx_market_wrap(_table(cols, "".join(trs)) + legend)
+
+
+def _tx_market_wrap(inner: str) -> str:
+    return inner
+
+
+def _tx_metro_county_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("County", "left"), ("Population", "right"), ("65+", "right"),
+            ("Imaging Demand Share", "right"), ("Tier", "center")]
+    trs = []
+    for c in items:
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(c.county), mono=True, weight=700),
+            ck_data_cell(f"{c.population:,}", align="right", mono=True),
+            ck_data_cell(f"{c.pct_65_plus*100:.0f}%", align="right", mono=True, tone="dim"),
+            ck_data_cell(f"{c.imaging_demand_share:.2f}%", align="right", mono=True, tone="acc", weight=700, bar=c.imaging_demand_share / max(d.imaging_demand_share for d in items) * 100.0),
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px;color:{text_dim}">{_html.escape(c.tier.upper())}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_rural_gap_table(items) -> str:
+    cols = [("County", "left"), ("Population", "right"), ("Rural", "right"), ("65+", "right"),
+            ("Uninsured", "right"), ("Coverage-Gap Score", "right")]
+    trs = []
+    for c in items:
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(c.county), mono=True, weight=700),
+            ck_data_cell(f"{c.population:,}", align="right", mono=True),
+            ck_data_cell(f"{c.pct_rural*100:.0f}%", align="right", mono=True, tone="dim"),
+            ck_data_cell(f"{c.pct_65_plus*100:.0f}%", align="right", mono=True, tone="dim"),
+            ck_data_cell(f"{c.uninsured_rate*100:.0f}%", align="right", mono=True, tone="neg"),
+            ck_data_cell(f"{c.coverage_gap_score:.0f}", align="right", mono=True, tone="warning", weight=700, bar=c.coverage_gap_score),
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_profile_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Attribute", "left"), ("Profile (public)", "left"), ("Dimension-3 read", "left")]
+    trs = []
+    for p in items:
+        trs.append('<tr>' + "".join([
+            ck_data_cell(_html.escape(p.attribute), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(p.value)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(p.dimension3_read)}</td>',
+        ]) + '</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _tx_payer_chart(items) -> str:
+    tone = {"Commercial / employer": "positive", "Medicare (FFS + MA)": "navy",
+            "Medicaid (TX)": "warning", "Self-pay / uninsured": "negative"}
+    rows = [ck_bar_row(p.payer, f"{p.share_pct:.0f}%", p.share_pct, tone=tone.get(p.payer, "teal")) for p in items]
+    return ('<div style="margin-bottom:14px">' + "".join(rows) +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Texas payer mix (reused from the infusion model) · '
+            'TX non-expansion + ~20% uninsured makes the rural-read payer drag real</div></div>')
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Render
 # ─────────────────────────────────────────────────────────────────────────────
 def render_radiology_imaging(params: dict = None) -> str:
     from rcm_mc.data_public.radiology_imaging import compute_radiology_imaging
     r = compute_radiology_imaging()
+    from rcm_mc.data_public.texas_radiology import compute_texas_radiology
+    tx = compute_texas_radiology()
 
     panel_alt = P["panel_alt"]; border = P["border"]; text = P["text"]
     text_dim = P["text_dim"]; acc = P["accent"]
@@ -737,6 +868,21 @@ def render_radiology_imaging(params: dict = None) -> str:
         "irrelevant), and where AI vendors land. Generic industry mechanics — archetype-level, not any one "
         "operator.",
     )
+    _tx_note = _note(
+        "Texas demand model — reused, not re-derived:",
+        f"imaging demand and the rural coverage gap below are computed from the committed {tx.counties_modeled}-county "
+        "Texas ACS aggregate already vendored for the infusion geography model, on the SAME senior/population "
+        "apportionment (0.60·senior-share + 0.40·population-share) — radiology demand, like infusion, skews to an "
+        "aging, dispersed population. The coverage-gap score (rural × aging, discounted in the metros) flags the "
+        "sparse counties a sparse-market on-site+tele hybrid actually serves.",
+    )
+    _tx_profile_note = _note(
+        "Texas-HQ outsourced platform (public profile):",
+        "a Lubbock, TX-headquartered hybrid 24/7 on-site + teleradiology platform serving hospitals, imaging "
+        "centers and clinics across 15+ states with AI-supported diagnostic and interventional reads. Public-source "
+        "company facts (coaxionradiology.com / ZoomInfo), framed as Texas market intelligence — the Lubbock hub maps "
+        "onto the West-Texas rural coverage gap, and the on-site+tele+IR scope is the single-vendor hybrid archetype.",
+    )
 
     footer = (
         f'<div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};'
@@ -768,6 +914,11 @@ def render_radiology_imaging(params: dict = None) -> str:
   {_section("Supply Shocks — the disruptions that hit imaging economics", _shock_note + _supply_shock_table(r.supply_shocks))}
   {_section("Big Players — the large freestanding operators (+ Radiology Partners reads)", _players_chart(r.big_players) + _players_table(r.big_players))}
   {_section("Radiology Partners — Diligence Deep-Dive (largest US practice)", _rp_note + _rp_diligence_table(r.rp_diligence))}
+  {_tx_banner(tx)}
+  {_section("Texas — Market & CMS (Novitas MAC · GPCI localities)", _tx_market_table(tx.market_stats) + _tx_cms_table(tx.cms_connections) + _tx_gpci_table(tx.gpci_localities))}
+  {_section("Texas — Imaging Demand by County (top metros)", _tx_note + _tx_metro_county_table(tx.metro_counties))}
+  {_section("Texas — Rural Coverage Gap (the on-site + tele opportunity)", _tx_rural_gap_table(tx.rural_gap_counties))}
+  {_section("Texas — Outsourced Platform Profile + Payer Mix", _tx_profile_note + _tx_profile_table(tx.outsourced_profile) + _tx_payer_chart(tx.payer_shares))}
   {_section("Outsourced Service Model — Competing Delivery Models", _d3_note + _service_model_table(r.service_models))}
   {_section("Turnaround SLA Tiers — priced on turnaround, not volume", _sla_table(r.sla_tiers))}
   {_section("Reading-Labor Economics — on-site fixed vs Day/Night-Hawk per-read", _staffing_table(r.staffing_models))}
@@ -786,11 +937,10 @@ def render_radiology_imaging(params: dict = None) -> str:
     body = body + ck_page_actions()
     meta_line = (
         f"{r.cpt_codes_tracked} CPT/HCPCS codes · {len(r.modality_segments)} modality segments · "
-        f"{r.cms_connections} CMS connections ({r.ncd_count} NCD · {r.lcd_count} LCD) · "
-        f"{r.mac_payers} MAC payers · {len(r.state_profiles)} states · {len(r.county_payer_mix)} counties · "
-        f"{len(r.supply_shocks)} supply shocks · {len(r.service_models)} service models · "
-        f"{len(r.switching_triggers)} switching triggers · {len(r.big_players)} operators · "
-        f"RP diligence · {len(r.ai_build_stages)}-stage AI build"
+        f"{r.cms_connections} CMS connections · {r.mac_payers} MAC payers · "
+        f"{len(r.service_models)} service models · {len(r.switching_triggers)} switching triggers · "
+        f"RP diligence · {len(r.ai_build_stages)}-stage AI build · "
+        f"TEXAS deep-dive ({tx.counties_modeled} counties reused · Novitas MAC · Lubbock hub)"
     )
     return chartis_shell(
         body, "Referring Radiology & Diagnostic Imaging",

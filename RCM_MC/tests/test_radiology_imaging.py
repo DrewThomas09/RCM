@@ -315,5 +315,66 @@ class RadiologyImagingServiceModelTests(unittest.TestCase):
         self.assertNotIn(">None<", html)
 
 
+class TexasRadiologyTests(unittest.TestCase):
+    """Texas deep-dive that REUSES the infusion county base."""
+
+    def setUp(self):
+        from rcm_mc.data_public.texas_radiology import compute_texas_radiology
+        self.tx = compute_texas_radiology()
+
+    def test_reuses_infusion_county_data(self):
+        # The whole point: cross-use the committed 254-county ACS aggregate.
+        self.assertGreaterEqual(self.tx.counties_modeled, 50)
+        # When the vendored data is present it should be the 254-county set.
+        if "reused" in self.tx.data_mode:
+            self.assertEqual(self.tx.counties_modeled, 254)
+            self.assertGreater(self.tx.tx_population, 25_000_000)  # ~30M Texans
+
+    def test_demand_and_gap_consistency(self):
+        # Metro demand shares are the biggest; rural-gap counties are rural+aging.
+        self.assertTrue(self.tx.metro_counties)
+        top = self.tx.metro_counties[0]
+        self.assertGreaterEqual(top.imaging_demand_share, self.tx.metro_counties[-1].imaging_demand_share)
+        for c in self.tx.rural_gap_counties:
+            self.assertEqual(c.tier, "rural-gap")
+            self.assertGreaterEqual(c.coverage_gap_score, 0.0)
+            self.assertLessEqual(c.coverage_gap_score, 100.0)
+
+    def test_lubbock_is_the_hub(self):
+        # Lubbock should resolve (the West-Texas hub) when real data is present.
+        if "reused" in self.tx.data_mode:
+            self.assertIsNotNone(self.tx.lubbock)
+            self.assertEqual(self.tx.lubbock.fips, "48303")
+
+    def test_texas_cms_layer_tight(self):
+        # Texas-binding CMS: Novitas MAC + the real Novitas MRA LCD. Kept tight.
+        ids = " ".join(c.identifier for c in self.tx.cms_connections)
+        self.assertIn("Novitas", ids)
+        self.assertIn("L34865", ids)
+        self.assertLessEqual(len(self.tx.cms_connections), 5)  # not overdone
+        # GPCI shows the metro-vs-rural PE swing.
+        localities = {g.locality for g in self.tx.gpci_localities}
+        self.assertIn("Houston", localities)
+        self.assertIn("Rest of Texas", localities)
+
+    def test_texas_payer_mix_sums(self):
+        self.assertAlmostEqual(sum(p.share_pct for p in self.tx.payer_shares), 100.0, delta=0.5)
+
+    def test_outsourced_profile_public_only(self):
+        # Public profile attributes present; nothing deal/transaction-specific.
+        attrs = " ".join(p.attribute + " " + p.value for p in self.tx.outsourced_profile).lower()
+        self.assertIn("lubbock", attrs)
+        self.assertIn("on-site", attrs)
+        blob = " ".join(p.value + " " + p.dimension3_read for p in self.tx.outsourced_profile).lower()
+        for forbidden in ("westview", "chartis", "acquisition", "diligence engagement", "letter of engagement"):
+            self.assertNotIn(forbidden, blob)
+
+    def test_texas_renders_in_page(self):
+        html = render_radiology_imaging({})
+        for marker in ("Texas — Market", "Rural Coverage Gap", "Novitas", "L34865", "Lubbock"):
+            self.assertIn(marker, html, msg=f"missing Texas content: {marker}")
+        self.assertNotIn(">None<", html)
+
+
 if __name__ == "__main__":
     unittest.main()
