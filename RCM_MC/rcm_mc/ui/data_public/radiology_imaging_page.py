@@ -500,6 +500,152 @@ def _ai_build_vs_buy_table(items) -> str:
     return _table(cols, "".join(trs))
 
 
+# ── Outsourced service model — competitive landscape (Dimension 3) ────────────
+def _score_dots(n: int) -> str:
+    """Render a 1-5 score as filled/empty dots for fast visual scanning."""
+    n = max(0, min(5, int(n)))
+    acc = P["accent"]; faint = P["text_faint"]
+    filled = "".join(f'<span style="color:{acc}">●</span>' for _ in range(n))
+    empty = "".join(f'<span style="color:{faint}">○</span>' for _ in range(5 - n))
+    return (f'<span style="font-family:JetBrains Mono,monospace;font-size:11px;letter-spacing:1px" '
+            f'title="{n}/5">{filled}{empty}</span>')
+
+
+def _service_model_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("Delivery Model", "left"), ("On-Site", "center"), ("Scale", "center"),
+            ("Subspec.", "center"), ("Tech/AI", "center"), ("Reliability", "center"),
+            ("MD Align.", "center"), ("Cost", "center"), ("Pricing Basis", "left")]
+    trs = []
+    for m in items:
+        cells = [
+            ck_data_cell(_html.escape(m.model), mono=True, weight=700),
+            f'<td style="text-align:center;padding:5px 8px">{_score_dots(m.on_site_presence)}</td>',
+            f'<td style="text-align:center;padding:5px 8px">{_score_dots(m.scale)}</td>',
+            f'<td style="text-align:center;padding:5px 8px">{_score_dots(m.subspecialty_depth)}</td>',
+            f'<td style="text-align:center;padding:5px 8px">{_score_dots(m.tech_ai)}</td>',
+            f'<td style="text-align:center;padding:5px 8px">{_score_dots(m.coverage_reliability)}</td>',
+            f'<td style="text-align:center;padding:5px 8px">{_score_dots(m.physician_alignment)}</td>',
+            f'<td style="text-align:center;padding:5px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:{P["positive"]};font-weight:700">{_html.escape(m.cost_position)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(m.pricing_basis)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    body = _table(cols, "".join(trs))
+    # Strength/weakness read below the score matrix.
+    sw = []
+    for m in items:
+        sw.append(
+            f'<div style="margin-bottom:8px;font-size:10px;color:{text_dim}">'
+            f'<strong style="color:{P["text"]}">{_html.escape(m.model)}</strong> — '
+            f'<span style="color:{P["positive"]}">+ {_html.escape(m.strengths)}</span> '
+            f'<span style="color:{P["negative"]}">− {_html.escape(m.weaknesses)}</span></div>'
+        )
+    legend = ('<div style="font-size:10px;color:var(--sc-text-faint);margin:6px 0 10px;'
+              'font-family:JetBrains Mono,monospace">● = strength on axis (1-5) · '
+              '$ = cheapest per-read · the local group is the share-donor; platforms take share on cost</div>')
+    return body + legend + "".join(sw)
+
+
+def _sla_table(items) -> str:
+    text_dim = P["text_dim"]
+    cols = [("SLA Tier", "left"), ("Turnaround Target", "center"), ("Scope", "left"), ("Pricing Note", "left")]
+    trs = []
+    for s in items:
+        cells = [
+            ck_data_cell(_html.escape(s.tier), mono=True, weight=700),
+            ck_data_cell(_html.escape(s.turnaround_target), align="center", mono=True, tone="acc", weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.scope)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.pricing_note)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _staffing_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    cols = [("Reading-Labor Model", "left"), ("Cost Structure", "left"), ("When Used", "left"), ("Economics", "left")]
+    trs = []
+    for s in items:
+        fixed = "fixed" in s.cost_structure.lower()
+        c_color = P["negative"] if fixed else P["positive"]
+        cells = [
+            ck_data_cell(_html.escape(s.model), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;font-family:JetBrains Mono,monospace;color:{c_color};font-weight:700">{_html.escape(s.cost_structure)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.when_used)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(s.economics)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _switching_table(items) -> str:
+    text_dim = P["text_dim"]
+    u_color = {"high": P["negative"], "medium": P["warning"], "low": P["positive"]}
+    cols = [("Switching Trigger", "left"), ("Mechanism", "left"), ("Early Signal", "left"), ("Urgency", "center")]
+    trs = []
+    for s in items:
+        uc = u_color.get(s.urgency, text_dim)
+        cells = [
+            ck_data_cell(_html.escape(s.trigger), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.mechanism)}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(s.early_signal)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px;color:{uc};font-weight:700">{_html.escape(s.urgency.upper())}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _decision_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    w_color = {"primary": P["negative"], "secondary": P["warning"], "tertiary": P["accent"], "minimal": P["text_faint"]}
+    cols = [("#", "center"), ("Purchasing Criterion", "left"), ("Weight", "center"), ("Rationale", "left")]
+    trs = []
+    for d in sorted(items, key=lambda x: x.rank):
+        wc = w_color.get(d.weight, text_dim)
+        cells = [
+            ck_data_cell(str(d.rank), align="center", mono=True, weight=700, tone="acc"),
+            ck_data_cell(_html.escape(d.criterion), mono=True, weight=600),
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px;color:{wc};font-weight:700">{_html.escape(d.weight.upper())}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(d.rationale)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _outsourced_econ_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    d_color = {"revenue": P["positive"], "cost": P["negative"], "margin": P["accent"]}
+    cols = [("Line Item", "left"), ("Type", "center"), ("Note", "left")]
+    trs = []
+    for e in items:
+        dc = d_color.get(e.direction, text_dim)
+        weight = 700 if e.direction == "margin" else 600
+        cells = [
+            ck_data_cell(_html.escape(e.line_item), mono=True, weight=weight),
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px;color:{dc};font-weight:700">{_html.escape(e.direction.upper())}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(e.note)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
+def _ai_vendor_role_table(items) -> str:
+    text_dim = P["text_dim"]; text = P["text"]
+    l_color = {"high": P["positive"], "medium": P["warning"], "low": P["text_faint"]}
+    cols = [("AI Vendor Role", "left"), ("Scenario", "left"), ("Likelihood", "center"), ("Implication", "left")]
+    trs = []
+    for a in items:
+        lc = l_color.get(a.likelihood, text_dim)
+        cells = [
+            ck_data_cell(_html.escape(a.role), mono=True, weight=700),
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text_dim}">{_html.escape(a.scenario)}</td>',
+            f'<td style="text-align:center;padding:5px 10px;font-family:JetBrains Mono,monospace;font-size:9px;color:{lc};font-weight:700">{_html.escape(a.likelihood.upper())}</td>',
+            f'<td style="text-align:left;padding:5px 10px;font-size:10px;color:{text}">{_html.escape(a.implication)}</td>',
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return _table(cols, "".join(trs))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Render
 # ─────────────────────────────────────────────────────────────────────────────
@@ -582,6 +728,15 @@ def render_radiology_imaging(params: dict = None) -> str:
         "the reimbursement gap (most cleared imaging AI has no dedicated payment, so ROI is throughput and "
         "quality, not a billable code). See Build-vs-Buy below for the platform decision.",
     )
+    _d3_note = _note(
+        "Outsourced radiology service model:",
+        "the structural shift underneath the reads — hospitals moving interpretation off local groups onto "
+        "outsourced platforms. This layer frames the competing delivery models, the turnaround-SLA pricing "
+        "(reads are priced on turnaround, not volume), the on-site-fixed vs hawk-per-read labor economics, "
+        "the triggers that push a hospital to switch, the purchasing hierarchy (cost first, proximity "
+        "irrelevant), and where AI vendors land. Generic industry mechanics — archetype-level, not any one "
+        "operator.",
+    )
 
     footer = (
         f'<div style="background:{panel_alt};border:1px solid {border};border-left:3px solid {acc};'
@@ -613,6 +768,13 @@ def render_radiology_imaging(params: dict = None) -> str:
   {_section("Supply Shocks — the disruptions that hit imaging economics", _shock_note + _supply_shock_table(r.supply_shocks))}
   {_section("Big Players — the large freestanding operators (+ Radiology Partners reads)", _players_chart(r.big_players) + _players_table(r.big_players))}
   {_section("Radiology Partners — Diligence Deep-Dive (largest US practice)", _rp_note + _rp_diligence_table(r.rp_diligence))}
+  {_section("Outsourced Service Model — Competing Delivery Models", _d3_note + _service_model_table(r.service_models))}
+  {_section("Turnaround SLA Tiers — priced on turnaround, not volume", _sla_table(r.sla_tiers))}
+  {_section("Reading-Labor Economics — on-site fixed vs Day/Night-Hawk per-read", _staffing_table(r.staffing_models))}
+  {_section("Outsourced-Platform Economics — collections, subsidy, per-read", _outsourced_econ_table(r.outsourced_economics))}
+  {_section("Switching Triggers — what moves a hospital off its local group", _switching_table(r.switching_triggers))}
+  {_section("Hospital Purchasing Hierarchy — cost first, proximity irrelevant", _decision_table(r.decision_criteria))}
+  {_section("AI Vendor Role — competitor, enabler, embedded, or target?", _ai_vendor_role_table(r.ai_vendor_roles))}
   {_section("AI Implementation — FDA-cleared algorithms, vendors & reimbursement", _ai_table(r.ai_implementations))}
   {_section("AI Imaging — How To Build a Model (the pipeline)", _ai_build_note + _ai_build_table(r.ai_build_stages))}
   {_section("AI Imaging — Build vs Buy", _ai_build_vs_buy_table(r.ai_build_vs_buy))}
@@ -626,8 +788,9 @@ def render_radiology_imaging(params: dict = None) -> str:
         f"{r.cpt_codes_tracked} CPT/HCPCS codes · {len(r.modality_segments)} modality segments · "
         f"{r.cms_connections} CMS connections ({r.ncd_count} NCD · {r.lcd_count} LCD) · "
         f"{r.mac_payers} MAC payers · {len(r.state_profiles)} states · {len(r.county_payer_mix)} counties · "
-        f"{len(r.supply_shocks)} supply shocks · {len(r.economic_drivers)} economic drivers · "
-        f"{len(r.big_players)} operators · RP diligence · {len(r.ai_build_stages)}-stage AI build"
+        f"{len(r.supply_shocks)} supply shocks · {len(r.service_models)} service models · "
+        f"{len(r.switching_triggers)} switching triggers · {len(r.big_players)} operators · "
+        f"RP diligence · {len(r.ai_build_stages)}-stage AI build"
     )
     return chartis_shell(
         body, "Referring Radiology & Diagnostic Imaging",

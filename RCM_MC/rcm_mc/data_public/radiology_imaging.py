@@ -253,6 +253,86 @@ class AIBuildVsBuy:
     verdict: str
 
 
+# ── Outsourced radiology service model — competitive landscape (generic) ──────
+@dataclass
+class ServiceModelArchetype:
+    """One delivery-model archetype for outsourced/affiliated radiology.
+
+    Scored 1-5 (low→high) on the axes a hospital weighs when choosing a
+    coverage model. Generic industry archetypes — not any one company.
+    """
+    model: str
+    on_site_presence: int       # 1-5
+    scale: int                  # 1-5
+    subspecialty_depth: int     # 1-5
+    tech_ai: int                # 1-5
+    coverage_reliability: int   # 1-5
+    physician_alignment: int    # 1-5
+    cost_position: str          # qualitative ($ = cheapest)
+    pricing_basis: str
+    strengths: str
+    weaknesses: str
+
+
+@dataclass
+class SLATier:
+    """Turnaround SLA tier — outsourced radiology is priced on turnaround,
+    not volume. Targets reflect common ACR-aligned industry practice."""
+    tier: str
+    turnaround_target: str
+    scope: str
+    pricing_note: str
+
+
+@dataclass
+class StaffingModel:
+    """A reading-labor model. On-site is fixed cost; hawk models are
+    pay-per-read variable cost."""
+    model: str
+    cost_structure: str
+    when_used: str
+    economics: str
+
+
+@dataclass
+class SwitchingTrigger:
+    """A circumstance that pushes a hospital off its incumbent radiology
+    group toward an outsourced platform — the demand engine."""
+    trigger: str
+    mechanism: str
+    early_signal: str
+    urgency: str                # high / medium / low
+
+
+@dataclass
+class DecisionCriterion:
+    """A hospital purchasing criterion, ranked. Proximity is deliberately
+    last — the ordering physician never sees where the read happens."""
+    criterion: str
+    rank: int
+    weight: str                 # primary / secondary / tertiary / minimal
+    rationale: str
+
+
+@dataclass
+class OutsourcedEconomicLine:
+    """A line in the per-read economics of an outsourced reading platform
+    (distinct from the imaging-center P&L). Illustrative, generic."""
+    line_item: str
+    direction: str              # revenue / cost / margin
+    note: str
+
+
+@dataclass
+class AIVendorRole:
+    """How AI vendors resolve against the outsourced service model — the
+    Dimension-1↔3 hinge."""
+    role: str
+    scenario: str
+    likelihood: str             # high / medium / low
+    implication: str
+
+
 @dataclass
 class RadiologyImagingResult:
     # headline KPIs
@@ -289,6 +369,13 @@ class RadiologyImagingResult:
     ai_build_vs_buy: List[AIBuildVsBuy]
     center_revenue_mm: float
     center_ebitda_margin_pct: float
+    service_models: List[ServiceModelArchetype]
+    sla_tiers: List[SLATier]
+    staffing_models: List[StaffingModel]
+    switching_triggers: List[SwitchingTrigger]
+    decision_criteria: List[DecisionCriterion]
+    outsourced_economics: List[OutsourcedEconomicLine]
+    ai_vendor_roles: List[AIVendorRole]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1030,6 +1117,158 @@ def _build_ai_build_vs_buy() -> List[AIBuildVsBuy]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 16) OUTSOURCED RADIOLOGY SERVICE MODEL — competitive landscape (generic)
+# ─────────────────────────────────────────────────────────────────────────────
+# The structural question: hospitals are shifting reads off local groups onto
+# outsourced platforms. This layer frames the competing delivery models, the
+# turnaround-SLA pricing, the reading-labor economics, the switching triggers,
+# the purchasing hierarchy, and where AI vendors land. Archetype-level —
+# generic industry mechanics, no company-specific or deal-specific content.
+def _build_service_models() -> List[ServiceModelArchetype]:
+    return [
+        ServiceModelArchetype(
+            "National full-service platform (hybrid)", 4, 5, 5, 5, 5, 2,
+            "$ (lowest per-read at scale)",
+            "Turnaround-SLA + subsidy; per-read or per-wRVU",
+            "Scale → low per-read cost, deep subspecialty bench, 24/7 prioritized worklist, national credentialing/licensing, redundancy, heavy tech/AI.",
+            "Employed-radiologist culture/engagement can lag; commoditized relationship; thinner local presence."),
+        ServiceModelArchetype(
+            "Teleradiology-only (remote reads)", 1, 4, 4, 4, 4, 3,
+            "$ (low; variable per-read)",
+            "Pay-per-read; after-hours/overflow tiers",
+            "Fast turnaround, elastic capacity, strong after-hours (night-hawk) coverage, low fixed cost.",
+            "No on-site presence → can't do procedures/fluoro supervision or on-premise-required reads; prelim-vs-final friction; less integrated."),
+        ServiceModelArchetype(
+            "Traditional local radiology group", 5, 2, 3, 2, 3, 5,
+            "$$$ (highest per-read)",
+            "Professional-fee collections + hospital subsidy/stipend",
+            "On-site presence, local relationships & reputation, procedure coverage, strong physician alignment.",
+            "Recruiting/scale limits, subspecialty gaps, slower turnaround, succession risk, higher cost — the share-donor."),
+        ServiceModelArchetype(
+            "Single-vendor hybrid (on-site + tele)", 4, 4, 4, 4, 5, 3,
+            "$$ (mid; bundled)",
+            "Bundled coverage contract + subsidy",
+            "One vendor for on-site procedures AND 24/7 tele backbone — 'one throat to choke', integrated, full coverage.",
+            "Must match incumbent price+quality to displace; hospitals still keep a 2nd vendor for redundancy."),
+    ]
+
+
+def _build_sla_tiers() -> List[SLATier]:
+    return [
+        SLATier("Stroke / acute neuro", "~20 min radiology window",
+                "Non-contrast head CT (± CTA/perfusion); part of a ~45-min full acute cycle",
+                "Top SLA tier; priced highest on turnaround."),
+        SLATier("Trauma / STAT", "~30 min",
+                "Acute inpatient/ED stat reads",
+                "Premium tier."),
+        SLATier("Urgent / ED", "~45 min",
+                "Emergency-department routine urgent reads",
+                "Standard urgent tier."),
+        SLATier("Critical / actionable findings", "~20 min + mandatory call",
+                "ACR actionable-findings list — read PLUS documented radiologist-to-provider communication",
+                "Communication SLA, not just read time; compliance-driven."),
+        SLATier("Routine inpatient", "hours (same-day)",
+                "Non-urgent inpatient",
+                "Lower tier."),
+        SLATier("Outpatient / scheduled", "~24–48 h",
+                "Scheduled outpatient exams",
+                "Lowest turnaround tier; volume base."),
+    ]
+
+
+def _build_staffing_models() -> List[StaffingModel]:
+    return [
+        StaffingModel("On-site radiologist", "Large FIXED cost",
+                      "IR/procedures, fluoroscopy supervision, on-premise-required reads, resident cosign at teaching sites",
+                      "The expensive line; justified by procedures + supervision, not routine read volume."),
+        StaffingModel("Day-Hawk (daytime tele)", "Variable — pay-per-read",
+                      "Daytime routine/overflow final reads",
+                      "Converts fixed reading cost to per-read; flexes with volume."),
+        StaffingModel("Night-Hawk (overnight tele)", "Variable — pay-per-read",
+                      "Overnight/after-hours coverage",
+                      "Historically preliminary reads; increasingly final. Time-zone arbitrage."),
+        StaffingModel("Subspecialty routing", "Per-read premium",
+                      "Neuro / MSK / breast / peds / cardiac routed to subspecialists",
+                      "Premium per read; what local groups struggle to staff."),
+        StaffingModel("Offshore preliminary reads", "Low variable",
+                      "Overnight prelims via time-zone coverage",
+                      "Cost arbitrage; prelim only, final cosigned domestically."),
+    ]
+
+
+def _build_switching_triggers() -> List[SwitchingTrigger]:
+    return [
+        SwitchingTrigger("Group failure / can't staff", "Local group dissolves or can't fill the schedule",
+                         "Open shifts, locum dependence, coverage gaps", "high"),
+        SwitchingTrigger("Recruiting struggles", "Group can't recruit/retain to meet demand",
+                         "Persistent vacancies, comp escalation", "high"),
+        SwitchingTrigger("Turnaround-time pressure", "SLA misses on stroke/ED degrade throughput & satisfaction",
+                         "Rising report turnaround, ED/clinician complaints", "high"),
+        SwitchingTrigger("Subspecialty coverage gap", "No neuro/MSK/breast/peds depth locally",
+                         "Outbound referrals, delayed subspecialty reads", "medium"),
+        SwitchingTrigger("Subsidy dispute", "Stipend negotiation breaks down on price",
+                         "Contentious renewals, subsidy step-ups", "medium"),
+        SwitchingTrigger("Quality / discordance issues", "Discordance or misses raise risk",
+                         "Peer-review flags, malpractice exposure", "medium"),
+        SwitchingTrigger("System M&A / standardization", "IDN consolidates and standardizes a vendor",
+                         "Post-merger vendor rationalization", "medium"),
+        SwitchingTrigger("Succession / aging-out", "Senior partners retire with no bench",
+                         "Aging group roster, no successors", "low"),
+    ]
+
+
+def _build_decision_criteria() -> List[DecisionCriterion]:
+    return [
+        DecisionCriterion("Cost (per-read / subsidy)", 1, "primary",
+                          "The first cut; scale platforms win the cost axis — illustratively reads can compress to a fraction of legacy per-read cost."),
+        DecisionCriterion("Reputation / clinical quality", 2, "secondary",
+                          "Brand + low discordance; the trust gate after cost."),
+        DecisionCriterion("Turnaround / efficiency", 3, "tertiary",
+                          "SLA attainment + discordance rate; tie-breaker once cost & reputation clear."),
+        DecisionCriterion("Subspecialty coverage breadth", 4, "tertiary",
+                          "Can they read everything, 24/7, without outbound referral?"),
+        DecisionCriterion("Physician culture / alignment", 5, "secondary",
+                          "Engagement & on-site collegiality — where local groups defend share."),
+        DecisionCriterion("Technology / AI / portal", 6, "tertiary",
+                          "Worklist, prior-retrieval, AI triage, results delivery, EHR/PACS integration."),
+        DecisionCriterion("Geographic proximity", 7, "minimal",
+                          "Effectively irrelevant — the ordering physician never sees where the read happens."),
+    ]
+
+
+def _build_outsourced_economics() -> List[OutsourcedEconomicLine]:
+    return [
+        OutsourcedEconomicLine("Professional-fee collections", "revenue",
+                               "Payer-mix-dependent (PFS-priced; commercial ~2-3× Medicare). The base revenue line."),
+        OutsourcedEconomicLine("Hospital subsidy / stipend", "revenue",
+                               "Top-up the hospital pays to guarantee coverage where collections don't cover cost. The durability question."),
+        OutsourcedEconomicLine("Price per read / per wRVU", "revenue",
+                               "The unit the contract is priced on; scale compresses it, which is how platforms win on cost."),
+        OutsourcedEconomicLine("Radiologist comp (read COGS)", "cost",
+                               "Per-read or salaried; the dominant cost line, inflating high-single-digits on the labor gap."),
+        OutsourcedEconomicLine("On-site fixed coverage", "cost",
+                               "Large fixed expense for procedures/supervision; the line tele-only models avoid."),
+        OutsourcedEconomicLine("Tech / PACS / credentialing / billing", "cost",
+                               "Worklist + AI + multi-state licensing/credentialing + RCM; scale-leveraged overhead."),
+        OutsourcedEconomicLine("Platform contribution margin", "margin",
+                               "What's left; rests on per-read pricing vs comp COGS, and on subsidy durability."),
+    ]
+
+
+def _build_ai_vendor_roles() -> List[AIVendorRole]:
+    return [
+        AIVendorRole("Enabler (productivity)", "AI does triage/worklist/prior-retrieval and lifts reads/radiologist",
+                     "high", "Near-term reality; eases the labor gap, supports turnaround SLAs — accretive to the platform."),
+        AIVendorRole("Embedded software partner", "AI sold as a PACS/worklist feature the platform licenses",
+                     "high", "The dominant 'buy' path; commoditizes capability, no proprietary moat."),
+        AIVendorRole("Competitor (narrow autonomy)", "Autonomous reads for narrow exams (non-contrast, MSK) erode volume at the margin",
+                     "medium", "The bear case for Dimension 2 — productivity gains could ease the shortage and pressure pricing/subsidies."),
+        AIVendorRole("Acquisition target", "Outsourcer buys an AI vendor to own the productivity layer",
+                     "medium", "Consolidators internalize AI (cf. data-advantaged platforms) to defend the cost axis."),
+    ]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Compute — assemble the result
 # ─────────────────────────────────────────────────────────────────────────────
 def compute_radiology_imaging() -> RadiologyImagingResult:
@@ -1050,6 +1289,13 @@ def compute_radiology_imaging() -> RadiologyImagingResult:
     rp_diligence = _build_rp_diligence()
     ai_build_stages = _build_ai_build_stages()
     ai_build_vs_buy = _build_ai_build_vs_buy()
+    service_models = _build_service_models()
+    sla_tiers = _build_sla_tiers()
+    staffing_models = _build_staffing_models()
+    switching_triggers = _build_switching_triggers()
+    decision_criteria = _build_decision_criteria()
+    outsourced_economics = _build_outsourced_economics()
+    ai_vendor_roles = _build_ai_vendor_roles()
 
     ncd_count = sum(1 for c in coverage if c.doc_type == "NCD")
     lcd_count = sum(1 for c in coverage if c.doc_type == "LCD")
@@ -1089,4 +1335,11 @@ def compute_radiology_imaging() -> RadiologyImagingResult:
         ai_build_vs_buy=ai_build_vs_buy,
         center_revenue_mm=4.5,               # approx net revenue of a scaled multi-modality center
         center_ebitda_margin_pct=center_ebitda_margin_pct,
+        service_models=service_models,
+        sla_tiers=sla_tiers,
+        staffing_models=staffing_models,
+        switching_triggers=switching_triggers,
+        decision_criteria=decision_criteria,
+        outsourced_economics=outsourced_economics,
+        ai_vendor_roles=ai_vendor_roles,
     )

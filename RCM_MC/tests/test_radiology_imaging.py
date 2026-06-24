@@ -246,5 +246,74 @@ class RadiologyImagingExpansionTests(unittest.TestCase):
         self.assertNotIn(">None<", html)
 
 
+class RadiologyImagingServiceModelTests(unittest.TestCase):
+    """Outsourced radiology service-model competitive landscape (generic)."""
+
+    def setUp(self):
+        self.r = compute_radiology_imaging()
+
+    def test_three_plus_models(self):
+        models = " ".join(m.model.lower() for m in self.r.service_models)
+        self.assertGreaterEqual(len(self.r.service_models), 3)
+        # The three core archetypes + the emerging hybrid.
+        self.assertIn("national", models)
+        self.assertIn("teleradiology", models)
+        self.assertIn("local", models)
+        # Scores are bounded 1-5 on every axis.
+        for m in self.r.service_models:
+            for v in (m.on_site_presence, m.scale, m.subspecialty_depth, m.tech_ai,
+                      m.coverage_reliability, m.physician_alignment):
+                self.assertGreaterEqual(v, 1)
+                self.assertLessEqual(v, 5)
+
+    def test_sla_tiers_turnaround_priced(self):
+        self.assertGreaterEqual(len(self.r.sla_tiers), 4)
+        tiers = " ".join(s.tier.lower() for s in self.r.sla_tiers)
+        self.assertIn("stroke", tiers)
+        self.assertIn("critical", tiers)  # critical/actionable findings tier
+
+    def test_staffing_models_fixed_and_variable(self):
+        structures = " ".join(s.cost_structure.lower() for s in self.r.staffing_models)
+        self.assertIn("fixed", structures)        # on-site
+        self.assertIn("pay-per-read", structures)  # hawk models
+
+    def test_switching_triggers(self):
+        self.assertGreaterEqual(len(self.r.switching_triggers), 6)
+        for s in self.r.switching_triggers:
+            self.assertIn(s.urgency, ("high", "medium", "low"))
+
+    def test_decision_hierarchy_proximity_last(self):
+        ranked = sorted(self.r.decision_criteria, key=lambda d: d.rank)
+        self.assertEqual(ranked[0].weight, "primary")   # cost is #1
+        self.assertIn("cost", ranked[0].criterion.lower())
+        self.assertIn("proximity", ranked[-1].criterion.lower())  # proximity is last
+        self.assertEqual(ranked[-1].weight, "minimal")
+
+    def test_outsourced_economics_has_subsidy(self):
+        items = " ".join(e.line_item.lower() for e in self.r.outsourced_economics)
+        self.assertIn("subsidy", items)
+        self.assertIn("per read", items.replace("/", " "))
+        dirs = {e.direction for e in self.r.outsourced_economics}
+        self.assertEqual(dirs, {"revenue", "cost", "margin"})
+
+    def test_ai_vendor_roles(self):
+        roles = " ".join(a.role.lower() for a in self.r.ai_vendor_roles)
+        for needed in ("enabler", "embedded", "competitor", "target"):
+            self.assertIn(needed, roles)
+
+    def test_service_model_renders(self):
+        html = render_radiology_imaging({})
+        for marker in (
+            "Outsourced Service Model",
+            "Turnaround SLA Tiers",
+            "Reading-Labor Economics",
+            "Switching Triggers",
+            "Hospital Purchasing Hierarchy",
+            "AI Vendor Role",
+        ):
+            self.assertIn(marker, html, msg=f"missing D3 section: {marker}")
+        self.assertNotIn(">None<", html)
+
+
 if __name__ == "__main__":
     unittest.main()
