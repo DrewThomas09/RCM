@@ -16,6 +16,7 @@
 | **Exit / hold family** | 5 | `exit_modeling` (4 routes), `exit_multiple`, `exit_readiness`, `hold_optimizer`, `hold_period_optimizer` (near-duplicate of hold_optimizer) |
 | **Sector / sponsor analytics** | 6 | `sector_correlation`, `sector_intelligence`, `sponsor_analytics`, `sponsor_heatmap`, `sponsor_track_record`, `size_analytics` |
 | **Regulatory / reimbursement** | 5 | `regulatory_risk`, `reimbursement_risk_model`, `risk_adjustment`, `ma_contracts`, `ma_star_tracker`, `medicaid_unwinding`, `nsa_tracker`, `tracker_340b`, `drug_pricing_340b` |
+| **CY2026 reference** | 2 | `fee_schedule_2026` (conversion factors + site-of-service arbitrage — the dollar backbone) and `clinical_verticals_2026` (13 clinical-specialty verticals: codes, epidemiology, workforce, access, sources, chart specs — surfaced at `/clinical-verticals`). The verticals module imports its CFs from `fee_schedule_2026` so the dollar constants live in exactly one place. |
 | **Physician / workforce** | 6 | `phys_comp_plan`, `physician_labor`, `physician_productivity`, `workforce_planning`, `workforce_retention`, `working_capital` |
 | **Value creation family** | 4 | `value_creation`, `value_creation_plan`, `vcp_tracker` (dup of VCP), `value_backtester` |
 | **Vintage analytics** | 3 | `vintage_analysis`, `vintage_analytics`, `vintage_cohorts`. **Three near-duplicates — consolidation candidate.** |
