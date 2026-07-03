@@ -70,9 +70,12 @@ res = run_pipeline("claims.xlsx", progress=print)   # minutes; constructs live c
 write_report(res, "recovered.xlsx")
 ```
 
-It is **not** invoked from the web request: it constructs live CMS/NPPES
-clients and can run for minutes. The interactive page uses the deterministic
-engine above plus the bounded live NPPES cross-check in `../nppes_bridge.py`
-(which reuses PE Desk's own cached `data_public.nppes_api_client`). To run the
-full pipeline as a scheduled/CLI job against the same shared connection, point
-its `clients` at `data_public.nppes_api_client` / `cms_api_client`.
+On the page it is exposed as the opt-in **"Deep recovery"** checkbox, run by
+`../deep_pipeline.py` in the background job thread under a wall-clock timeout:
+`candidates.build_candidate_pools` warms the CMS data catalog over HTTP no
+matter which sub-steps are enabled, so without outbound access the run would
+otherwise hang on urllib3 retry-backoff — the watchdog fails the job with a
+clear message instead, leaving the fast deterministic results untouched. On
+success it offers the multi-tab `write_report` workbook as a download. To run
+the same pipeline as a scheduled/CLI job against the app's shared connection,
+point its `clients` at `data_public.nppes_api_client` / `cms_api_client`.

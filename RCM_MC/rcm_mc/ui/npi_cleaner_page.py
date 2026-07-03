@@ -210,6 +210,13 @@ def _body() -> str:
 connectors. NPIs are verified against NPPES (active vs deactivated) and missing
 NPIs recovered from provider names; NDC and drug-name columns are resolved to
 RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></label>
+      <label><input type="checkbox" id="npi-deep">
+        Deep recovery — full v49 pipeline (networked, slower)
+        <span class="npi-hint" title="Runs the complete Steps 0-8 recovery
+pipeline: live NPPES enrichment, CMS billers, Open Payments, 340B, entity
+resolution and statistical fill, then a multi-tab Excel report. Needs outbound
+network access and can take minutes; runs in the background with a timeout and
+never blocks the fast results.">ⓘ</span></label>
     </div>
   </div>
 
@@ -267,6 +274,7 @@ RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></label>
     </div>
 
     <div class="npi-panel" data-panel="connectors">
+      <div id="npi-deep"></div>
       <div id="npi-nppes"></div>
       <div id="npi-connectors"></div>
       <div id="npi-catalog"></div>
@@ -404,6 +412,7 @@ _EXTRA_JS = r"""
 
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
+    renderDeep(s.deep, s.download, s.deep_workbook_name);
     renderNppes(s.nppes);
     renderConnectors(s.connectors);
     renderCatalog(s.catalog);
@@ -600,6 +609,27 @@ _EXTRA_JS = r"""
     box.innerHTML=html;
   }
 
+  function renderDeep(deep, dl, wbName){
+    var box=$("npi-deep");
+    if(!deep){ box.innerHTML=""; return; }
+    var html='<div class="npi-conn"><div class="top">'+
+      '<span class="nm">Deep recovery — full v49 pipeline</span></div>';
+    if(deep.ok){
+      html+='<div class="nt" style="color:var(--green-deep,#0c7c66)">✓ '+
+        'Completed. '+(deep.stats&&Object.keys(deep.stats).length?
+        Object.keys(deep.stats).length+' pipeline stats produced.':'')+'</div>';
+      if(wbName){
+        html+='<div style="margin-top:8px"><a class="npi-dl" href="'+dl+
+          '?fmt=deep" download="'+esc(wbName)+'">⤓ Download recovered workbook (.xlsx)</a></div>';
+      }
+    } else {
+      html+='<div class="npi-warn" style="margin-top:6px">'+esc(deep.error||
+        "Deep recovery did not complete.")+'</div>';
+    }
+    html+='</div>';
+    box.innerHTML=html;
+  }
+
   function renderConnectors(conns){
     var box=$("npi-connectors");
     if(!conns || !conns.length){ box.innerHTML=""; return; }
@@ -754,6 +784,7 @@ _EXTRA_JS = r"""
     var params=[];
     if(!$("npi-dedupe").checked) params.push("dedupe=0");
     if($("npi-enrich").checked) params.push("enrich=1");
+    if($("npi-deep").checked) params.push("deep=1");
     var qs = params.length ? "?"+params.join("&") : "";
     var headers={"X-Filename":encodeURIComponent(file.name)};
     if(overrides && Object.keys(overrides).length){

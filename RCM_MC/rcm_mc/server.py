@@ -2747,6 +2747,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(parsed.query)
         dedupe = (qs.get("dedupe") or ["1"])[0] != "0"
         enrich = (qs.get("enrich") or ["0"])[0] == "1"
+        deep = (qs.get("deep") or ["0"])[0] == "1"
         # Column-mapping overrides arrive as a URL-encoded JSON object in the
         # X-Overrides header (role -> header). Bad JSON is ignored → auto-detect.
         overrides = None
@@ -2761,7 +2762,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             except Exception:  # noqa: BLE001
                 overrides = None
         job_id = engine.manager().submit(
-            raw, name, drop_duplicates=dedupe, enrich=enrich,
+            raw, name, drop_duplicates=dedupe, enrich=enrich, deep=deep,
             overrides=overrides)
         return self._send_json({"job_id": job_id})
 
@@ -2810,6 +2811,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             src_path = job.result.companion_path
             fname = job.result.companion_name
             ctype = "text/csv; charset=utf-8"
+        elif fmt == "deep":
+            src_path = job.result.deep_workbook_path
+            fname = job.result.deep_workbook_name
+            ctype = ("application/vnd.openxmlformats-officedocument."
+                     "spreadsheetml.sheet")
         else:
             src_path = job.result.out_path
             fname = job.result.out_name

@@ -145,6 +145,10 @@ class CleanResult:
     # catalog. None unless online mode ran. See connectors.py.
     connectors: Optional[List[Dict[str, object]]] = None
     catalog: Optional[List[Dict[str, object]]] = None
+    # Deep recovery (full v49 run_pipeline) result. None unless deep mode ran.
+    deep: Optional[Dict[str, object]] = None
+    deep_workbook_path: Optional[str] = None
+    deep_workbook_name: str = "recovered.xlsx"
 
     @property
     def total_npi_cells(self) -> int:
@@ -197,6 +201,9 @@ class CleanResult:
             "nppes": self.nppes,
             "connectors": self.connectors,
             "catalog": self.catalog,
+            "deep": self.deep,
+            "deep_workbook_name": (self.deep_workbook_name
+                                   if self.deep_workbook_path else None),
         }
 
 
@@ -325,6 +332,7 @@ def clean_bytes(
     *,
     drop_duplicates: bool = True,
     enrich: bool = False,
+    deep: bool = False,
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
 ) -> CleanResult:
@@ -503,6 +511,22 @@ def clean_bytes(
     cb("Writing cleaned file", 0.90)
     res.out_name = _out_name(src_name)
     _write_output(res, headers, cleaned)
+
+    # Deep recovery — the full networked v49 pipeline, opt-in, guarded, with
+    # its own timeout. Runs last so the fast deterministic results are already
+    # complete; failure/timeout leaves them untouched.
+    if deep:
+        cb("Deep recovery — starting", 0.5)
+        try:
+            from . import deep_pipeline
+            res.deep = deep_pipeline.run(data, src_name, progress=cb)
+            if res.deep.get("workbook_path"):
+                res.deep_workbook_path = res.deep["workbook_path"]
+                res.deep_workbook_name = res.deep.get(
+                    "workbook_name", "recovered.xlsx")
+        except Exception as exc:  # noqa: BLE001
+            res.deep = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
     cb("Done", 1.0)
     return res
 
@@ -685,6 +709,7 @@ class JobManager:
 
     def submit(self, data: bytes, name: str, *,
                drop_duplicates: bool = True, enrich: bool = False,
+               deep: bool = False,
                overrides: Optional[Dict[str, str]] = None) -> str:
         job_id = uuid.uuid4().hex
         job = Job(job_id=job_id, name=name, created=time.time())
@@ -698,7 +723,7 @@ class JobManager:
             try:
                 job.result = clean_bytes(
                     data, name, drop_duplicates=drop_duplicates,
-                    enrich=enrich, overrides=overrides, progress=cb)
+                    enrich=enrich, deep=deep, overrides=overrides, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
             except Exception as exc:  # noqa: BLE001
                 traceback.print_exc()

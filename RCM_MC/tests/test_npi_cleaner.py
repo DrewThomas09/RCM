@@ -249,6 +249,52 @@ class TestConnectors(unittest.TestCase):
         self.assertGreaterEqual(len(sc["catalog"]), 15)
 
 
+class TestDeepPipeline(unittest.TestCase):
+    """Deep recovery (full v49 run_pipeline) wiring — timeout + graceful fail."""
+
+    def test_available(self):
+        from rcm_mc.npi_cleaner import deep_pipeline as D
+        # Boolean either way; just exercise the guard.
+        self.assertIn(D.available(), (True, False))
+
+    def test_timeout_is_graceful_not_a_hang(self):
+        from rcm_mc.npi_cleaner import deep_pipeline as D
+        if not D.available():
+            self.skipTest("deep pipeline unavailable")
+        from rcm_mc.npi_cleaner.vendor_v49.npi_recovery import pipeline as P
+
+        def _hang(*a, **k):
+            time.sleep(10)
+
+        with patch.object(P, "run_pipeline", _hang):
+            out = D.run(b"BillingNPI\n" + GOOD_A.encode(),
+                        "x.csv", timeout_s=1)
+        self.assertFalse(out["ok"])
+        self.assertIn("timed out", out["error"])
+
+    def test_engine_attaches_deep_result(self):
+        from rcm_mc.npi_cleaner import deep_pipeline, engine as eng
+        import tempfile
+        import os
+
+        wb = os.path.join(tempfile.mkdtemp(), "x_recovered.xlsx")
+        with open(wb, "wb") as fh:
+            fh.write(b"PK\x03\x04stub")
+
+        def fake_run(data, name, **kw):
+            return {"ok": True, "error": None, "stats": {"npis_recovered": 5},
+                    "workbook_path": wb, "workbook_name": "x_recovered.xlsx"}
+
+        data = ("BillingNPI\n" + GOOD_A + "\n").encode()
+        with patch.object(deep_pipeline, "run", fake_run):
+            res = eng.clean_bytes(data, "x.csv", deep=True)
+        self.assertIsNotNone(res.deep)
+        self.assertTrue(res.deep["ok"])
+        self.assertEqual(res.deep_workbook_path, wb)
+        self.assertEqual(res.as_scorecard()["deep_workbook_name"],
+                         "x_recovered.xlsx")
+
+
 class TestNppesBridge(unittest.TestCase):
     """Live NPPES verify/recover, cross-using the shared CMS client (mocked)."""
 
