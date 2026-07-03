@@ -217,6 +217,13 @@ pipeline: live NPPES enrichment, CMS billers, Open Payments, 340B, entity
 resolution and statistical fill, then a multi-tab Excel report. Needs outbound
 network access and can take minutes; runs in the background with a timeout and
 never blocks the fast results.">ⓘ</span></label>
+      <label><input type="checkbox" id="npi-deid">
+        De-identify patient PHI in the export
+        <span class="npi-hint" title="Masks patient-scoped identifiers only —
+patient name/address/phone/email and SSN are redacted, DOB is reduced to year,
+ZIP to its first three digits, and MRN/account numbers are replaced with a
+stable per-run token (same value → same token, so rows still link). Provider
+NPI and provider name are always kept intact — NPI recovery depends on them.">ⓘ</span></label>
     </div>
   </div>
 
@@ -285,6 +292,7 @@ never blocks the fast results.">ⓘ</span></label>
 
     <div class="npi-panel" data-panel="downloads">
       <div id="npi-recovered-note"></div>
+      <div id="npi-deid-note"></div>
       <div style="margin-top:4px;margin-bottom:14px">
         <a class="npi-dl" id="npi-analyze" href="#"
            style="background:var(--ink,#11201c)">📊 Open pivot analysis →</a>
@@ -466,6 +474,22 @@ _EXTRA_JS = r"""
         'from NPPES — written to a new <code>recovered_billing_npi</code> '+
         'column in the download (originals preserved).</div>';
     } else { rn.innerHTML=""; }
+
+    var dn=$("npi-deid-note");
+    if(dn){
+      if(s.deid && s.deid.cells>0){
+        dn.innerHTML='<div class="npi-recovered">🛡 PHI de-identified — '+
+          fmt(s.deid.cells)+' patient cell'+(s.deid.cells===1?'':'s')+
+          ' masked across '+(s.deid.columns?s.deid.columns.length:0)+
+          ' column'+((s.deid.columns&&s.deid.columns.length===1)?'':'s')+' ('+
+          (s.deid.columns?s.deid.columns.map(esc).join(', '):'')+
+          '). Provider NPI &amp; name left intact for recovery.</div>';
+      } else if(s.deid){
+        dn.innerHTML='<div class="npi-muted" style="margin-top:6px">'+
+          'De-identify was on, but no patient-scoped PHI columns were detected '+
+          'in this file — nothing to mask.</div>';
+      } else { dn.innerHTML=""; }
+    }
 
     // Always land on the Overview tab for a fresh result.
     document.querySelectorAll(".npi-tab").forEach(function(b){
@@ -909,6 +933,7 @@ _EXTRA_JS = r"""
     if(!$("npi-dedupe").checked) params.push("dedupe=0");
     if($("npi-enrich").checked) params.push("enrich=1");
     if($("npi-deep").checked) params.push("deep=1");
+    if($("npi-deid").checked) params.push("deid=1");
     var qs = params.length ? "?"+params.join("&") : "";
     var headers={"X-Filename":encodeURIComponent(file.name)};
     if(overrides && Object.keys(overrides).length){

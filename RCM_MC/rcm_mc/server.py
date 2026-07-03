@@ -2748,6 +2748,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         dedupe = (qs.get("dedupe") or ["1"])[0] != "0"
         enrich = (qs.get("enrich") or ["0"])[0] == "1"
         deep = (qs.get("deep") or ["0"])[0] == "1"
+        deid = (qs.get("deid") or ["0"])[0] == "1"
         # Column-mapping overrides arrive as a URL-encoded JSON object in the
         # X-Overrides header (role -> header). Bad JSON is ignored → auto-detect.
         overrides = None
@@ -2763,7 +2764,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 overrides = None
         job_id = engine.manager().submit(
             raw, name, drop_duplicates=dedupe, enrich=enrich, deep=deep,
-            overrides=overrides)
+            overrides=overrides, deid=deid)
         return self._send_json({"job_id": job_id})
 
     def _route_npi_cleaner_detect(self) -> None:

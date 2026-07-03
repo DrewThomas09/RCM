@@ -358,6 +358,68 @@ def _clean_ndc_cell(v: str) -> Tuple[str, List[str]]:
     return v, []
 
 
+import hashlib
+
+
+def _phi_kind(hn: str) -> Optional[str]:
+    """Classify a header (folded key) as a patient-PHI field, or None.
+
+    Deliberately conservative: provider name / NPI / practice phone are NOT
+    PHI (a provider is a public entity, and NPI recovery relies on them), so
+    generic phone/zip/address only count when the header is patient-scoped.
+    SSN / DOB / MRN / email are treated as PHI regardless of scope.
+    """
+    if "ssn" in hn or "socialsecurity" in hn:
+        return "redact"
+    if "dateofbirth" in hn or hn == "dob" or "birthdate" in hn or "birthdt" in hn \
+            or "dateofbirth" in hn:
+        return "dob"
+    if "mrn" in hn or "medicalrecord" in hn:
+        return "hashid"
+    if "email" in hn:
+        return "redact"
+    patient = any(p in hn for p in (
+        "patient", "member", "subscriber", "beneficiary", "insured",
+        "guarantor", "enrollee", "bene"))
+    if patient:
+        if "name" in hn:
+            return "redact"
+        if "dob" in hn or "birth" in hn:
+            return "dob"
+        if "zip" in hn or "postal" in hn:
+            return "zip3"
+        if "phone" in hn or "fax" in hn:
+            return "redact"
+        if "addr" in hn or "street" in hn:
+            return "redact"
+        if "id" in hn or "acct" in hn or "account" in hn or "number" in hn:
+            return "hashid"
+    return None
+
+
+def _deid_value(v: str, kind: str, salt: str) -> str:
+    """Apply a de-identification transform, preserving referential integrity
+    for ids (same value → same token within a run) via a per-run salt."""
+    if v == "":
+        return v
+    if kind == "hashid":
+        h = hashlib.sha256((salt + v).encode("utf-8")).hexdigest()[:10].upper()
+        return "PT-" + h
+    if kind == "dob":
+        m = _DATE_ISO_RE.match(v.strip())
+        if m:
+            return m.group(1)  # keep year only
+        digs = "".join(c for c in v if c.isdigit())
+        if len(digs) >= 4:
+            for token in re.findall(r"(19|20)\d{2}", v):
+                return token  # first plausible 4-digit year
+        return "REDACTED"
+    if kind == "zip3":
+        digs = "".join(c for c in v if c.isdigit())
+        return (digs[:3] + "XX") if len(digs) >= 3 else "REDACTED"
+    return "REDACTED"
+
+
 def _to_number(s: str) -> Optional[float]:
     """Parse a possibly-formatted numeric cell, or None."""
     if s is None or s == "":
@@ -454,6 +516,10 @@ class CleanResult:
     repairs: Dict[str, int] = field(default_factory=dict)
     # Cross-field data-sanity flags (not auto-fixed), rule → count of rows.
     sanity: Dict[str, int] = field(default_factory=dict)
+    # PHI de-identification (opt-in): whether it ran, cells masked, columns hit.
+    deid_applied: bool = False
+    deid_cells: int = 0
+    deid_columns: List[str] = field(default_factory=list)
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -522,6 +588,8 @@ class CleanResult:
             "repairs": dict(self.repairs),
             "repairs_total": sum(self.repairs.values()),
             "sanity": dict(self.sanity),
+            "deid": ({"cells": self.deid_cells,
+                      "columns": self.deid_columns} if self.deid_applied else None),
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
             "npi_cells": cells,
@@ -686,6 +754,7 @@ def clean_bytes(
     drop_duplicates: bool = True,
     enrich: bool = False,
     deep: bool = False,
+    deid: bool = False,
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
 ) -> CleanResult:
@@ -767,6 +836,16 @@ def clean_bytes(
     ndc_norm_set = {i for i, h in enumerate(headers)
                     if any(x in _norm_key(h) for x in _NDC_HINTS)}
     state_set = {i for i in ([state_idx] if state_idx is not None else [])}
+    # PHI columns for opt-in de-identification (patient direct identifiers).
+    phi_cols: Dict[int, str] = {}
+    if deid:
+        for i, h in enumerate(headers):
+            k = _phi_kind(_norm_key(h))
+            if k:
+                phi_cols[i] = k
+        res.deid_applied = True
+        res.deid_columns = [headers[i] for i in sorted(phi_cols)]
+    _deid_salt = uuid.uuid4().hex
     # Specific columns for cross-field sanity flags.
     allowed_i = _detect_one(headers, ("allowedamt", "allowed"))
     billed_i = _detect_one(headers, ("billedamt", "billed", "chargeamt",
@@ -861,6 +940,14 @@ def clean_bytes(
                 val, r = _clean_ndc_cell(val); hits += r
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
+            # PHI de-identification (opt-in) — applied last so the value that
+            # lands in the output (and the pivot) is masked. Stable id hashing
+            # keeps within-file referential integrity for counts/joins.
+            if phi_cols and ci in phi_cols and val != "":
+                masked = _deid_value(val, phi_cols[ci], _deid_salt)
+                if masked != val:
+                    res.deid_cells += 1
+                val = masked
             new_row.append(val)
         # Cross-field sanity flags (report-only) on the cleaned row.
         for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i, units_i):
@@ -1175,7 +1262,7 @@ class JobManager:
 
     def submit(self, data: bytes, name: str, *,
                drop_duplicates: bool = True, enrich: bool = False,
-               deep: bool = False,
+               deep: bool = False, deid: bool = False,
                overrides: Optional[Dict[str, str]] = None) -> str:
         job_id = uuid.uuid4().hex
         job = Job(job_id=job_id, name=name, created=time.time())
@@ -1189,7 +1276,8 @@ class JobManager:
             try:
                 job.result = clean_bytes(
                     data, name, drop_duplicates=drop_duplicates,
-                    enrich=enrich, deep=deep, overrides=overrides, progress=cb)
+                    enrich=enrich, deep=deep, deid=deid,
+                    overrides=overrides, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
             except Exception as exc:  # noqa: BLE001
                 traceback.print_exc()

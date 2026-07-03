@@ -207,6 +207,53 @@ class TestEngine(unittest.TestCase):
             out = fh.read()
         self.assertIn("'=SUM(A1:A9)", out)
 
+    def test_phi_deid_masks_patient_keeps_provider(self):
+        # De-id must mask ONLY patient identifiers — provider NPI/name stay
+        # intact (NPPES recovery relies on them). Off by default.
+        data = (
+            "BillingNPI,ProviderName,PatientName,PatientDOB,PatientZip,"
+            "MRN,SSN,PatientAcct\n"
+            f"{GOOD_B},Dr Jane Smith,John Q Public,1980-05-14,90210,"
+            "MR12345,123-45-6789,ACCT-778\n"
+            f"{GOOD_B},Dr Jane Smith,Mary Roe,1975-11-02,90210,"
+            "MR99999,987-65-4321,ACCT-778\n"
+        ).encode()
+        res = engine.clean_bytes(data, "phi.csv", deid=True)
+        sc = res.as_scorecard()
+        self.assertIsNotNone(sc.get("deid"))
+        self.assertGreater(sc["deid"]["cells"], 0)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        # Provider identifiers preserved.
+        self.assertIn(GOOD_B, out)
+        self.assertIn("Dr Jane Smith", out)
+        # Patient identifiers masked.
+        self.assertNotIn("John Q Public", out)
+        self.assertNotIn("Mary Roe", out)
+        self.assertNotIn("123-45-6789", out)
+        self.assertNotIn("1980-05-14", out)   # DOB reduced to year
+        self.assertIn("1980", out)
+        self.assertIn("902XX", out)            # ZIP truncated to 3 digits
+        # MRN/account tokenized, and the SAME source value → SAME token so
+        # rows still link (both rows share PatientAcct ACCT-778).
+        self.assertNotIn("MR12345", out)
+        self.assertNotIn("ACCT-778", out)
+        lines = [ln for ln in out.splitlines() if ln.strip()][1:]
+        acct_tokens = [ln.split(",")[-1] for ln in lines]
+        self.assertEqual(acct_tokens[0], acct_tokens[1])   # stable token
+        self.assertTrue(acct_tokens[0].startswith("PT-"))
+
+    def test_phi_deid_off_by_default(self):
+        # Without the flag, patient data passes through untouched.
+        data = ("BillingNPI,PatientName,SSN\n"
+                f"{GOOD_B},John Q Public,123-45-6789\n").encode()
+        res = engine.clean_bytes(data, "phi.csv")
+        self.assertIsNone(res.as_scorecard().get("deid"))
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("John Q Public", out)
+        self.assertIn("123-45-6789", out)
+
     def test_xlsx_upload_roundtrip(self):
         openpyxl = __import__("openpyxl")
         from io import BytesIO
