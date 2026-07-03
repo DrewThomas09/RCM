@@ -275,6 +275,7 @@ never blocks the fast results.">ⓘ</span></label>
 
     <div class="npi-panel" data-panel="connectors">
       <div id="npi-deep"></div>
+      <div id="npi-compliance"></div>
       <div id="npi-nppes"></div>
       <div id="npi-connectors"></div>
       <div id="npi-catalog"></div>
@@ -413,6 +414,7 @@ _EXTRA_JS = r"""
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
     renderDeep(s.deep, s.download, s.deep_workbook_name);
+    renderCompliance(s.compliance);
     renderNppes(s.nppes);
     renderConnectors(s.connectors);
     renderCatalog(s.catalog);
@@ -606,6 +608,34 @@ _EXTRA_JS = r"""
       html+='</tr>';
     });
     html+='</tbody></table></div>';
+    box.innerHTML=html;
+  }
+
+  function renderCompliance(comp){
+    var box=$("npi-compliance");
+    if(!comp || !comp.length){ box.innerHTML=""; return; }
+    var html='<div class="ck-section-header" style="margin-top:6px">'+
+      '<h3 style="margin:0">Compliance screening</h3></div>';
+    comp.forEach(function(c){
+      if(!c.label){ return; }
+      var flag=(c.excluded>0)||(c.opted_out>0);
+      html+='<div class="npi-conn"><div class="top">'+
+        '<span class="nm">'+esc(c.label)+'</span>';
+      if(c.id==="oig_leie"){
+        html+='<span class="cnt '+(c.excluded>0?"":"")+'" style="'+
+          (c.excluded>0?"color:#a8331f":"")+'">'+
+          (c.available?(fmt(c.excluded)+' excluded'):'not loaded')+'</span>';
+      } else {
+        html+='<span class="cnt" style="'+(flag?"color:#a8331f":"")+'">'+
+          (c.available?(fmt(c.checked)+' screened'):'offline')+'</span>';
+      }
+      html+='</div><div class="src">'+esc(c.source||"")+'</div>';
+      if(c.matches && c.matches.length){
+        html+='<div class="nt" style="color:#a8331f">Excluded NPIs: '+
+          c.matches.slice(0,8).map(function(m){return esc(m.npi);}).join(", ")+'</div>';
+      }
+      html+='<div class="nt">'+esc(c.note||"")+'</div></div>';
+    });
     box.innerHTML=html;
   }
 

@@ -145,6 +145,9 @@ class CleanResult:
     # catalog. None unless online mode ran. See connectors.py.
     connectors: Optional[List[Dict[str, object]]] = None
     catalog: Optional[List[Dict[str, object]]] = None
+    # Compliance screens (OIG LEIE + Medicare PECOS). None unless online. See
+    # compliance.py.
+    compliance: Optional[List[Dict[str, object]]] = None
     # Deep recovery (full v49 run_pipeline) result. None unless deep mode ran.
     deep: Optional[Dict[str, object]] = None
     deep_workbook_path: Optional[str] = None
@@ -201,6 +204,7 @@ class CleanResult:
             "nppes": self.nppes,
             "connectors": self.connectors,
             "catalog": self.catalog,
+            "compliance": self.compliance,
             "deep": self.deep,
             "deep_workbook_name": (self.deep_workbook_name
                                    if self.deep_workbook_path else None),
@@ -488,6 +492,20 @@ def clean_bytes(
                 res.connectors = []
         except Exception as exc:  # noqa: BLE001
             res.connectors = [{"id": "error",
+                               "note": f"{type(exc).__name__}: {exc}"}]
+        # Compliance — OIG LEIE (offline) + Medicare PECOS (networked, bounded).
+        cb("Screening billing NPIs (OIG LEIE · PECOS)", 0.74)
+        try:
+            from . import compliance
+            billing = ([row[billing_idx] for row in cleaned
+                        if billing_idx is not None and billing_idx < len(row)]
+                       if billing_idx is not None else [])
+            # LEIE is offline (always in online mode); the networked PECOS
+            # screen rides the deep flag so a plain online run stays fast.
+            res.compliance = (compliance.screen(billing, run_cms=deep)
+                              if billing else [])
+        except Exception as exc:  # noqa: BLE001
+            res.compliance = [{"id": "error",
                                "note": f"{type(exc).__name__}: {exc}"}]
 
     # Real vendored-engine pass: run the actual v48 field_validators +

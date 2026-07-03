@@ -249,6 +249,63 @@ class TestConnectors(unittest.TestCase):
         self.assertGreaterEqual(len(sc["catalog"]), 15)
 
 
+class TestCompliance(unittest.TestCase):
+    """OIG LEIE (offline) + Medicare PECOS (mocked client) screening."""
+
+    def test_leie_offline_flags_excluded(self):
+        from rcm_mc.npi_cleaner import compliance as C
+        p = os.path.join(tempfile.mkdtemp(), "leie.csv")
+        with open(p, "w", encoding="utf-8") as fh:
+            fh.write("LASTNAME,NPI,EXCLTYPE\n"
+                     f"BADDOC,{GOOD_B},1128a1\n")
+        r = C.screen_leie([GOOD_B, GOOD_A, "99999"], leie_path=p)
+        self.assertTrue(r["available"])
+        self.assertEqual(r["excluded"], 1)
+        self.assertEqual(r["matches"][0]["npi"], GOOD_B)
+
+    def test_leie_no_dataset_note(self):
+        from rcm_mc.npi_cleaner import compliance as C
+        r = C.screen_leie([GOOD_A], leie_path="/nonexistent/leie.csv")
+        self.assertFalse(r["available"])
+        self.assertIn("LEIE", r["note"])
+
+    def test_pecos_with_mock_client(self):
+        from rcm_mc.npi_cleaner import compliance as C
+
+        class FakeCMS:
+            def enrollment_lookup(self, npi):
+                return {"enrolled": npi != GOOD_A}
+
+            def opt_out_lookup(self, npi):
+                return {"opted_out": npi == GOOD_B}
+
+        r = C.screen_cms([GOOD_A, GOOD_B], cms_client=FakeCMS())
+        self.assertTrue(r["available"])
+        self.assertEqual(r["checked"], 2)
+        self.assertEqual(r["not_enrolled"], 1)   # GOOD_A
+        self.assertEqual(r["opted_out"], 1)      # GOOD_B
+
+    def test_engine_online_attaches_compliance(self):
+        from rcm_mc.npi_cleaner import compliance as C, connectors as CN
+
+        def fake_screen(npis, **kw):
+            return [{"id": "oig_leie", "label": "OIG LEIE (excluded providers)",
+                     "available": True, "checked": len(npis), "excluded": 0,
+                     "matches": [], "note": "clean"}]
+
+        def fake_fetch(npi, **kw):
+            return None
+
+        data = (f"BillingNPI\n{GOOD_A}\n99999\n").encode()
+        with patch.object(C, "screen", fake_screen), \
+             patch.object(CN, "resolve_drugs", lambda *a, **k: []), \
+             patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi", fake_fetch):
+            res = engine.clean_bytes(data, "c.csv", enrich=True)
+        sc = res.as_scorecard()
+        self.assertTrue(sc["compliance"])
+        self.assertEqual(sc["compliance"][0]["id"], "oig_leie")
+
+
 class TestDeepPipeline(unittest.TestCase):
     """Deep recovery (full v49 run_pipeline) wiring — timeout + graceful fail."""
 
