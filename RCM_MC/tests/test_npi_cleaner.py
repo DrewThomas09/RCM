@@ -12,6 +12,7 @@ import tempfile
 import time
 import unittest
 import urllib.request as _u
+from unittest.mock import patch
 
 from rcm_mc.npi_cleaner import engine
 
@@ -137,6 +138,81 @@ class TestVendorAdapter(unittest.TestCase):
         res = engine.clean_bytes(data, "c.csv")
         self.assertIsNotNone(res.advanced)
         self.assertIn("field_validators", res.advanced["engine"])
+
+
+class TestNppesBridge(unittest.TestCase):
+    """Live NPPES verify/recover, cross-using the shared CMS client (mocked)."""
+
+    def _providers(self):
+        from rcm_mc.data_public.nppes_api_client import NppesProvider
+        return NppesProvider
+
+    def test_verify_active_and_not_found(self):
+        from rcm_mc.npi_cleaner import nppes_bridge
+        NppesProvider = self._providers()
+
+        def fake_fetch(npi, **kw):
+            if npi == GOOD_B:
+                return NppesProvider(npi=npi, entity_type=2,
+                                     name="MERCY HOSPITAL", state="OH")
+            return None
+
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi", fake_fetch):
+            out = nppes_bridge.verify_npis([GOOD_B, GOOD_A, GOOD_B, "123"])
+        self.assertEqual(out["checked"], 2)     # GOOD_B + GOOD_A (distinct, 10-digit)
+        self.assertEqual(out["active"], 1)      # GOOD_B resolves
+        self.assertEqual(out["not_found"], 1)   # GOOD_A returns None
+        self.assertEqual(out["records"][GOOD_B]["status"], "active")
+
+    def test_recover_candidates(self):
+        from rcm_mc.npi_cleaner import nppes_bridge
+        NppesProvider = self._providers()
+
+        def fake_search(name, state="", **kw):
+            return [NppesProvider(npi=GOOD_A, entity_type=2,
+                                  name="ACME CLINIC LLC", state=state or "TX")]
+
+        with patch("rcm_mc.data_public.nppes_api_client.search_by_organization",
+                   fake_search):
+            out = nppes_bridge.recover_candidates([
+                {"row": "2", "name": "Acme Clinic", "state": "TX"},
+                {"row": "3", "name": "Acme Clinic", "state": "TX"},  # deduped
+            ])
+        self.assertEqual(out["searched"], 1)
+        self.assertEqual(out["resolved"], 1)
+        self.assertEqual(out["matches"][0]["candidates"][0]["npi"], GOOD_A)
+
+    def test_engine_enrich_end_to_end(self):
+        NppesProvider = self._providers()
+
+        def fake_fetch(npi, **kw):
+            if npi == GOOD_B:
+                return NppesProvider(npi=npi, entity_type=2,
+                                     name="MERCY HOSPITAL", state="OH")
+            return None
+
+        def fake_search(name, state="", **kw):
+            return [NppesProvider(npi=GOOD_A, entity_type=2,
+                                  name="ACME CLINIC LLC", state=state or "TX")]
+
+        data = (
+            "ClaimID,BillingProviderNPI,OrganizationName,ProviderState\n"
+            f"1,{GOOD_B},Mercy Hospital,OH\n"
+            "2,,Acme Clinic,TX\n"
+        ).encode()
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi", fake_fetch), \
+             patch("rcm_mc.data_public.nppes_api_client.search_by_organization",
+                   fake_search):
+            res = engine.clean_bytes(data, "c.csv", enrich=True)
+        self.assertIsNotNone(res.nppes)
+        self.assertEqual(res.nppes["verify"]["active"], 1)
+        matches = res.nppes["recover"]["matches"]
+        self.assertTrue(any(m["candidates"] for m in matches))
+
+    def test_enrich_off_by_default(self):
+        data = f"NPI\n{GOOD_A}\n".encode()
+        res = engine.clean_bytes(data, "c.csv")
+        self.assertIsNone(res.nppes)
 
 
 class TestNpiCleanerHttp(unittest.TestCase):

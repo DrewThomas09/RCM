@@ -51,6 +51,14 @@ _NPI_HINTS = (
 # missing values here are the headline recovery target.
 _BILLING_HINTS = ("billing", "billingprovider", "pay")
 
+# Columns that carry a provider / organization name, used to recover a missing
+# NPI by searching NPPES. Order = priority.
+_NAME_HINTS = (
+    "organizationname", "orgname", "providername", "billingprovidername",
+    "facilityname", "practicename", "provider", "name",
+)
+_STATE_HINTS = ("providerstate", "billingstate", "state", "provstate", "st")
+
 ProgressCb = Callable[[str, float], None]
 
 
@@ -116,6 +124,9 @@ class CleanResult:
     # screens (via vendor_adapter). None when pandas / the modules are
     # unavailable and we ran the stdlib path only.
     advanced: Optional[Dict[str, object]] = None
+    # Live NPPES verify/recover results (via nppes_bridge). None unless the
+    # user opted into the CMS cross-check. See nppes_bridge.py.
+    nppes: Optional[Dict[str, object]] = None
 
     @property
     def total_npi_cells(self) -> int:
@@ -160,6 +171,7 @@ class CleanResult:
             "out_name": self.out_name,
             "warnings": self.warnings,
             "advanced": self.advanced,
+            "nppes": self.nppes,
         }
 
 
@@ -207,15 +219,32 @@ def _detect_npi_columns(headers: List[str]) -> Tuple[List[int], Optional[int]]:
     return npi_idx, billing_idx
 
 
+def _detect_one(headers: List[str], hints: tuple) -> Optional[int]:
+    """First header whose folded key contains any hint (hint order = priority)."""
+    keys = [_norm_key(h) for h in headers]
+    for hint in hints:
+        for i, k in enumerate(keys):
+            if hint in k:
+                return i
+    return None
+
+
 # -------------------------------------------------------------------- cleaner --
 def clean_bytes(
     data: bytes,
     src_name: str,
     *,
     drop_duplicates: bool = True,
+    enrich: bool = False,
     progress: Optional[ProgressCb] = None,
 ) -> CleanResult:
-    """Clean a delimited claims file given as raw bytes. Pure, no network."""
+    """Clean a delimited claims file given as raw bytes.
+
+    Offline by default. When ``enrich`` is set, the distinct NPIs are verified
+    against the live NPPES registry and rows with a missing/bad billing NPI but
+    a provider name are run through NPPES recovery — both via the app's shared
+    CMS connection (``nppes_bridge``), fully guarded.
+    """
     def cb(msg: str, frac: float) -> None:
         if progress:
             progress(msg, frac)
@@ -239,6 +268,9 @@ def clean_bytes(
         res.warnings.append(
             "No NPI column detected (looked for headers containing 'NPI'). "
             "Rows were still trimmed and de-duplicated.")
+
+    name_idx = _detect_one(headers, _NAME_HINTS)
+    state_idx = _detect_one(headers, _STATE_HINTS)
 
     ncols = len(headers)
     for i in npi_idx:
@@ -279,6 +311,17 @@ def clean_bytes(
 
     res.n_rows_out = len(cleaned)
 
+    # Optional live NPPES cross-check via the app's shared CMS connection.
+    # Guarded end-to-end: any failure leaves res.nppes with a note and the
+    # offline results stand.
+    if enrich:
+        cb("Verifying NPIs against the live NPPES registry", 0.60)
+        try:
+            res.nppes = _enrich_via_nppes(
+                cleaned, npi_idx, billing_idx, name_idx, state_idx)
+        except Exception as exc:  # noqa: BLE001
+            res.nppes = {"error": f"{type(exc).__name__}: {exc}"}
+
     # Real vendored-engine pass: run the actual v48 field_validators +
     # consistency + dedup screens when pandas and the modules are available.
     # Guarded end-to-end — any failure just leaves res.advanced None and the
@@ -295,6 +338,49 @@ def clean_bytes(
     _write_output(res, headers, cleaned)
     cb("Done", 1.0)
     return res
+
+
+def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
+    """Run NPPES verify + recover over the cleaned rows via nppes_bridge.
+
+    Returns the combined ``{"verify": ..., "recover": ...}`` payload, or a
+    ``{"note": ...}`` when the bridge is unavailable.
+    """
+    from . import nppes_bridge
+    if not nppes_bridge.available():
+        return {"note": "NPPES connection unavailable in this deployment."}
+
+    # Distinct NPIs across every detected NPI column, for verification.
+    all_npis: List[str] = []
+    for row in cleaned:
+        for i in npi_idx:
+            if i < len(row):
+                all_npis.append(row[i])
+    verify = nppes_bridge.verify_npis(all_npis)
+
+    # Recovery queries: rows whose billing NPI is not valid but which carry a
+    # provider name (+ state) we can search on.
+    recover: Dict[str, object] = {"note": "No provider-name column to recover from."}
+    if billing_idx is not None and name_idx is not None:
+        queries: List[Dict[str, str]] = []
+        for ridx, row in enumerate(cleaned):
+            if billing_idx >= len(row):
+                continue
+            if classify_npi(row[billing_idx]) == "valid":
+                continue
+            name = row[name_idx] if name_idx < len(row) else ""
+            if not name.strip():
+                continue
+            state = row[state_idx] if (state_idx is not None
+                                       and state_idx < len(row)) else ""
+            queries.append({"row": str(ridx + 1), "name": name, "state": state})
+        if queries:
+            recover = nppes_bridge.recover_candidates(queries)
+        else:
+            recover = {"note": "No rows needed NPI recovery."}
+
+    return {"verify": verify, "recover": recover,
+            "source": "NPPES via rcm_mc.data_public.nppes_api_client"}
 
 
 def _out_name(src_name: str) -> str:
@@ -355,7 +441,7 @@ class JobManager:
             self._jobs.pop(j.job_id, None)
 
     def submit(self, data: bytes, name: str, *,
-               drop_duplicates: bool = True) -> str:
+               drop_duplicates: bool = True, enrich: bool = False) -> str:
         job_id = uuid.uuid4().hex
         job = Job(job_id=job_id, name=name, created=time.time())
         with self._lock:
@@ -367,7 +453,8 @@ class JobManager:
                 job.msg, job.frac = msg, float(frac)
             try:
                 job.result = clean_bytes(
-                    data, name, drop_duplicates=drop_duplicates, progress=cb)
+                    data, name, drop_duplicates=drop_duplicates,
+                    enrich=enrich, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
             except Exception as exc:  # noqa: BLE001
                 traceback.print_exc()

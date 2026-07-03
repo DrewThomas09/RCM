@@ -98,6 +98,17 @@ _EXTRA_CSS = r"""
 .npi-pill{display:inline-block;font-size:10.5px;font-family:ui-monospace,Menlo,monospace;
   padding:1px 6px;border-radius:5px;background:var(--line-soft,#e7eeea);
   color:var(--ink-2,#4a5d57);margin-right:6px}
+.npi-hint{cursor:help;color:var(--green-deep,#0c7c66);font-size:12px;margin-left:2px}
+.npi-nppes-note{font-size:12px;color:var(--ink-2,#4a5d57);margin:2px 0 10px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.npi-cand{border:1px solid var(--line-soft,#e7eeea);border-radius:9px;
+  padding:9px 12px;margin-bottom:7px;background:var(--panel,#fbfdfc);font-size:13px}
+.npi-cand .q{font-weight:640}
+.npi-cand .arrow{color:var(--ink-2,#4a5d57);margin:0 6px}
+.npi-cand code{font-family:ui-monospace,Menlo,monospace;
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--green-deep,#0c7c66);font-weight:640}
+.npi-cand .rowref{font-size:11px;color:var(--ink-2,#4a5d57)}
 """
 
 
@@ -111,7 +122,8 @@ def _body() -> str:
             " and get it back cleaned: every NPI checked against the official "
             "Luhn checksum, exact-duplicate rows removed, whitespace trimmed, "
             "and every missing or malformed billing-provider NPI flagged. "
-            "The file is processed in memory and never leaves this server."),
+            "Processed in memory — nothing is stored, and nothing leaves the "
+            "server unless you opt into the live NPPES cross-check."),
         source_note=(
             "Engine: rcm_mc/npi_cleaner/engine.py · verdicts mirror the "
             "NPI_Recovery_and_Cleaner v48 field validators."),
@@ -135,6 +147,12 @@ def _body() -> str:
     <div class="npi-opts">
       <label><input type="checkbox" id="npi-dedupe" checked>
         Remove exact-duplicate rows</label>
+      <label><input type="checkbox" id="npi-enrich">
+        Verify &amp; recover NPIs against the live NPPES registry
+        <span class="npi-hint" title="Uses PE Desk's own cached CMS/NPPES
+connection. Distinct NPIs are looked up (active vs deactivated/unassigned) and
+rows with a missing NPI but a provider name are matched to a candidate NPI.
+Bounded and cached; opt-in.">ⓘ</span></label>
     </div>
   </div>
 
@@ -167,6 +185,8 @@ def _body() -> str:
 
     <div id="npi-advanced"></div>
 
+    <div id="npi-nppes"></div>
+
     <div style="margin-top:22px">
       <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned file</a>
       <button class="npi-again" id="npi-again">Clean another file</button>
@@ -181,7 +201,8 @@ def _body() -> str:
     10 digits but the check digit is wrong; <em>blank</em> = missing. Rows and
     columns are preserved exactly; only surrounding whitespace is trimmed and
     byte-identical duplicate rows are dropped. Nothing is written to a
-    database and no NPIs are sent to any external service.
+    database, and no data leaves this server unless you explicitly enable the
+    live NPPES cross-check below.
     <br><br>
     <strong>Two engines.</strong> The scorecard and cleaned file above always
     run on a dependency-free stdlib pass. When the server has pandas available,
@@ -195,6 +216,16 @@ def _body() -> str:
     pipeline, imputation, entity crosswalk, the Excel report writer and the CMS
     reference tables), so those advanced steps stay dark until those files are
     supplied; see <code>rcm_mc/npi_cleaner/vendor_v48/README.md</code>.
+    <br><br>
+    <strong>Live NPPES cross-check (opt-in).</strong> Tick the second box and
+    the cleaner uses PE&nbsp;Desk's own cached CMS/NPPES connection
+    (<code>rcm_mc.data_public.nppes_api_client</code>) to <em>verify</em> each
+    distinct NPI against the live registry — active vs. unassigned/deactivated
+    — and to <em>recover</em> a candidate NPI for rows that have a provider or
+    organization name but a missing/malformed billing NPI. Lookups are
+    de-duplicated, capped per run and cached, so it stays fast and polite; if
+    the network is unavailable the box simply no-ops and the offline results
+    stand.
   </div>
 </div>
 """
@@ -268,6 +299,7 @@ _EXTRA_JS = r"""
     $("npi-col-rows").innerHTML=rows;
 
     renderAdvanced(s.advanced);
+    renderNppes(s.nppes);
 
     $("npi-dl").setAttribute("href", s.download);
     $("npi-dl").setAttribute("download", s.out_name||"cleaned.csv");
@@ -317,6 +349,52 @@ _EXTRA_JS = r"""
     box.innerHTML=html;
   }
 
+  function renderNppes(n){
+    var box=$("npi-nppes");
+    if(!n){ box.innerHTML=""; return; }
+    var html='<div class="npi-adv"><div class="ck-section-header">'+
+      '<h3 style="margin:0">Live NPPES verification &amp; recovery</h3></div>';
+    if(n.error){
+      html+='<div class="npi-warn">NPPES cross-check error: '+n.error+'</div></div>';
+      box.innerHTML=html; return;
+    }
+    if(n.note && !n.verify){
+      html+='<div class="npi-nppes-note">'+n.note+'</div></div>';
+      box.innerHTML=html; return;
+    }
+    html+='<div class="eng">real connection · '+(n.source||'NPPES')+'</div>';
+
+    var v=n.verify||{};
+    html+='<div class="npi-cards" style="margin:10px 0 4px">'+
+      '<div class="npi-card"><div class="k">NPIs verified</div>'+
+        '<div class="v">'+fmt(v.checked)+'</div></div>'+
+      '<div class="npi-card"><div class="k">Active in NPPES</div>'+
+        '<div class="v good">'+fmt(v.active)+'</div></div>'+
+      '<div class="npi-card"><div class="k">Not found / deactivated</div>'+
+        '<div class="v '+((v.not_found||0)>0?'bad':'good')+'">'+
+        fmt(v.not_found)+'</div></div></div>';
+    if(v.note){ html+='<div class="npi-nppes-note">'+v.note+'</div>'; }
+
+    var r=n.recover||{};
+    var matches=(r.matches||[]).filter(function(m){
+      return m.candidates && m.candidates.length; });
+    if(matches.length){
+      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
+        'Recovered NPI candidates ('+matches.length+')</div>';
+      matches.forEach(function(m){
+        var c=m.candidates[0];
+        html+='<div class="npi-cand"><span class="q">'+m.query+
+          (m.state?' · '+m.state:'')+'</span><span class="arrow">→</span>'+
+          '<code>'+c.npi+'</code> '+c.name+
+          ' <span class="rowref">(row '+m.row+')</span></div>';
+      });
+    } else if(r.note){
+      html+='<div class="npi-nppes-note">'+r.note+'</div>';
+    }
+    html+='</div>';
+    box.innerHTML=html;
+  }
+
   function watch(jobId){
     poll=setInterval(function(){
       fetch("/npi-cleaner/status/"+jobId, {headers:{"Accept":"application/json"}})
@@ -342,7 +420,10 @@ _EXTRA_JS = r"""
     hide(stUp); hide(stErr); hide(stRes); show(stPr);
     $("npi-bar-fill").style.width="4%";
     $("npi-bar-msg").textContent="Uploading "+file.name+"…";
-    var qs = $("npi-dedupe").checked ? "" : "?dedupe=0";
+    var params=[];
+    if(!$("npi-dedupe").checked) params.push("dedupe=0");
+    if($("npi-enrich").checked) params.push("enrich=1");
+    var qs = params.length ? "?"+params.join("&") : "";
     fetch("/npi-cleaner/upload"+qs, {
       method:"POST",
       headers:{"X-Filename":encodeURIComponent(file.name)},

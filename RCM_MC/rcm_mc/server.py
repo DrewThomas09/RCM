@@ -2746,7 +2746,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             name = "claims.csv"
         qs = urllib.parse.parse_qs(parsed.query)
         dedupe = (qs.get("dedupe") or ["1"])[0] != "0"
-        job_id = engine.manager().submit(raw, name, drop_duplicates=dedupe)
+        enrich = (qs.get("enrich") or ["0"])[0] == "1"
+        job_id = engine.manager().submit(
+            raw, name, drop_duplicates=dedupe, enrich=enrich)
         return self._send_json({"job_id": job_id})
 
     def _route_npi_cleaner_status(self, job_id: str) -> None:

@@ -56,9 +56,29 @@ and 20 more). The remaining 11 are blocked by the missing modules listed above.
 `coding_edits` imports fine but its screens return "reference file not found"
 until the CMS seed CSVs are supplied.
 
+## Live NPPES cross-check (already wired)
+
+The zip carried its own raw `requests`-based NPPES/CMS clients (`clients.py`),
+but the orchestrator that drove them was among the missing modules. Rather than
+resurrect a raw client, `../nppes_bridge.py` wires the cleaner's live features
+to the connection the rest of PE Desk already uses —
+`rcm_mc.data_public.nppes_api_client` (shared disk cache + record parsing):
+
+- **Verify** — each distinct NPI is looked up in NPPES: present → active;
+  absent → unassigned/deactivated. A live signal that supersedes the missing
+  deactivation seed file.
+- **Recover** — rows with a missing/malformed billing NPI but a provider or
+  organization name are searched in NPPES to propose a candidate NPI.
+
+Both are opt-in (the page's second checkbox), bounded/capped, cached, and fully
+guarded — the offline cleaner never depends on them.
+
 ## To light up the rest
 
 Drop the 14 missing modules and the CMS reference CSVs into
 `npi_recovery/`, install pandas/numpy (already base deps), and extend
 `vendor_adapter.py` to call `clean_orchestrator.clean_all(...)` and, for the
-network recovery path, `run_pipeline(...)`.
+full network recovery path, `run_pipeline(...)`. The NPPES/CMS lookups those
+modules need can point at `rcm_mc.data_public.nppes_api_client` /
+`cms_api_client` via the same bridge, so the recovery path reuses the app's
+cached CMS connection instead of the vendored raw client.
