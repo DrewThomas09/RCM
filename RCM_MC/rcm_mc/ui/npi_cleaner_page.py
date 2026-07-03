@@ -518,7 +518,10 @@ _EXTRA_JS = r"""
     "zip-pad":"Restored dropped leading zeros in ZIPs",
     "zip5+4":"Formatted ZIP+4",
     "zip-clean":"Cleaned ZIP formatting",
-    "hcpcs-upper":"Upper-cased HCPCS/CPT codes"};
+    "hcpcs-upper":"Upper-cased HCPCS/CPT codes",
+    "sex-normalize":"Normalized sex/gender to M / F / U",
+    "dx-upper":"Upper-cased ICD-10 diagnosis codes",
+    "dx-decimal":"Inserted the ICD-10 decimal point (E1165 → E11.65)"};
 
   function renderRepairs(repairs, total){
     var box=$("npi-repairs");

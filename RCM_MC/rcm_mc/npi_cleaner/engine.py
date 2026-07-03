@@ -68,6 +68,8 @@ _DATE_HINTS = ("dateofservice", "servicedate", "dos", "paiddate", "date",
                "dob", "birthdate", "fromdate", "thrudate")
 _ZIP_HINTS = ("zip", "postalcode", "postal")
 _HCPCS_HINTS = ("hcpcs", "cpt", "proccode", "procedurecode")
+_SEX_HINTS = ("patientsex", "sex", "gender", "patientgender")
+_DX_HINTS = ("diagnosis", "diagnosiscode", "icd", "icd10", "dx", "dxcode")
 
 # Tokens that mean "missing" and are normalized to a blank cell.
 _NULL_TOKENS = {"na", "n/a", "null", "none", "nan", "nil", "-", "--", "#n/a",
@@ -253,6 +255,34 @@ def _clean_hcpcs_cell(v: str) -> Tuple[str, List[str]]:
         return v, []
     up = v.strip().upper()
     return up, ([] if up == v else ["hcpcs-upper"])
+
+
+def _clean_sex_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    key = v.strip().lower()
+    if key in _SEX_MAP:
+        out = _SEX_MAP[key]
+        return out, ([] if out == v else ["sex-normalize"])
+    return v, []
+
+
+_ICD_SHAPE_RE = re.compile(r"^[A-Z][0-9][0-9A-Z]{1,5}$")
+
+
+def _clean_dx_cell(v: str) -> Tuple[str, List[str]]:
+    """Uppercase an ICD-10-CM code and insert the decimal after the 3rd
+    character (E1165 → E11.65). Codes of length ≤ 3 (e.g. I10) stay as-is."""
+    if v == "":
+        return v, []
+    up = v.strip().upper().replace(" ", "")
+    rules: List[str] = []
+    if up != v.strip():
+        rules.append("dx-upper")
+    if "." not in up and _ICD_SHAPE_RE.match(up) and len(up) > 3:
+        up = up[:3] + "." + up[3:]
+        rules.append("dx-decimal")
+    return up, (rules if up != v else ([] if not rules else rules))
 
 ProgressCb = Callable[[str, float], None]
 
@@ -611,6 +641,10 @@ def clean_bytes(
                if any(x in _norm_key(h) for x in _ZIP_HINTS)}
     hcpcs_set = {i for i, h in enumerate(headers)
                  if any(x in _norm_key(h) for x in _HCPCS_HINTS)}
+    sex_set = {i for i, h in enumerate(headers)
+               if any(x in _norm_key(h) for x in _SEX_HINTS)}
+    dx_set = {i for i, h in enumerate(headers)
+              if any(x in _norm_key(h) for x in _DX_HINTS)}
     state_set = {i for i in ([state_idx] if state_idx is not None else [])}
 
     # User column-mapping overrides (canonical role → header) win over
@@ -679,6 +713,10 @@ def clean_bytes(
                 val, r = _clean_zip_cell(val); hits += r
             elif ci in hcpcs_set:
                 val, r = _clean_hcpcs_cell(val); hits += r
+            elif ci in sex_set:
+                val, r = _clean_sex_cell(val); hits += r
+            elif ci in dx_set:
+                val, r = _clean_dx_cell(val); hits += r
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
             new_row.append(val)

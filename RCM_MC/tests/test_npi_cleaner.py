@@ -110,6 +110,18 @@ class TestEngine(unittest.TestCase):
         self.assertIn("-50.00", out)
         self.assertNotIn("'-50.00", out)
 
+    def test_sex_and_icd_normalization(self):
+        data = ("ClaimID,PatientSex,Diagnosis\n"
+                "1,Male,E1165\n2,F,I10\n3,2,e119\n").encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertIn("sex-normalize", res.repairs)
+        self.assertIn("dx-decimal", res.repairs)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("E11.65", out)   # E1165 → decimal inserted
+        self.assertIn("I10", out)      # 3-char code unchanged
+        self.assertIn("1,M,", out)     # Male → M
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
