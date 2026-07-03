@@ -895,6 +895,8 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 self.assertIn('value="correlation"', page)
                 self.assertIn("renderCorrelation", page)
                 self.assertIn("Pearson correlation", page)
+                self.assertIn('value="box"', page)
+                self.assertIn("renderBoxplot", page)
                 self.assertIn("% of total", page)
                 # unknown job → graceful "expired" page (still 200)
                 with _u.urlopen(

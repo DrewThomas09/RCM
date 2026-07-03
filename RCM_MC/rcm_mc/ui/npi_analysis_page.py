@@ -167,6 +167,7 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
             <option value="line">Line</option>
             <option value="heatmap">Heatmap</option>
             <option value="scatter">Scatter</option>
+            <option value="box">Box plot</option>
             <option value="correlation">Correlation matrix</option>
           </select></label>
         <label class="an-ctl">Top
@@ -656,6 +657,78 @@ _EXTRA_JS = r"""
     box.innerHTML=h; bindTips(box);
   }
 
+  // Linear-interpolation quantile (type-7, matches numpy's default) on a
+  // pre-sorted ascending array.
+  function quantile(s, q){
+    var n=s.length; if(!n) return null; if(n===1) return s[0];
+    var pos=(n-1)*q, base=Math.floor(pos), rest=pos-base;
+    var lo=s[base], hi=(base+1<n)?s[base+1]:s[base];
+    return lo+rest*(hi-lo);
+  }
+
+  function renderBoxplot(){
+    var box=$("an-chart-box");
+    var cat=state.rows[0];
+    if(!cat){ box.innerHTML='<div class="an-empty">Add a category field to Rows '+
+      'to group the box plot.</div>'; return; }
+    // Measure = the Values field when numeric, else the first numeric column.
+    var measure=(state.val&&NUM[state.val])?state.val:
+      DATA.columns.filter(function(c){return NUM[c];})[0];
+    if(!measure){ box.innerHTML='<div class="an-empty">No numeric measure '+
+      'available for a box plot.</div>'; return; }
+    var ci=DATA.columns.indexOf(cat), mi=DATA.columns.indexOf(measure);
+    var groups={}, order=[];
+    for(var i=0;i<DATA.rows.length;i++){ var row=DATA.rows[i]; if(!passesFilters(row))continue;
+      var mv=row[mi]; if(mv===""||mv==null||!isNum(mv))continue;
+      var k=String(row[ci]===undefined||row[ci]===""?"(blank)":row[ci]);
+      if(!(k in groups)){ groups[k]=[]; order.push(k); }
+      groups[k].push(num(mv)); }
+    if(!order.length){ box.innerHTML='<div class="an-empty">No numeric values to plot.</div>'; return; }
+    order.sort(function(a,b){return groups[b].length-groups[a].length;});
+    var capped=order.length>12; if(capped) order=order.slice(0,12);
+    // Five-number summary + Tukey (1.5·IQR) fences per group.
+    var stats=order.map(function(k){ var v=groups[k].slice().sort(function(a,b){return a-b;});
+      var q1=quantile(v,0.25), med=quantile(v,0.5), q3=quantile(v,0.75), iqr=q3-q1;
+      var loF=q1-1.5*iqr, hiF=q3+1.5*iqr;
+      var inF=v.filter(function(x){return x>=loF&&x<=hiF;});
+      return {k:k, n:v.length, min:v[0], max:v[v.length-1], q1:q1, med:med, q3:q3,
+        wlo:inF.length?inF[0]:v[0], whi:inF.length?inF[inF.length-1]:v[v.length-1],
+        out:v.filter(function(x){return x<loF||x>hiF;})}; });
+    var ymin=Infinity, ymax=-Infinity;
+    stats.forEach(function(s){ ymin=Math.min(ymin, s.wlo); ymax=Math.max(ymax, s.whi);
+      s.out.forEach(function(o){ ymin=Math.min(ymin,o); ymax=Math.max(ymax,o); }); });
+    if(ymin===ymax){ ymax=ymin+1; }
+    var pal=palette();
+    var W=Math.max(560, box.clientWidth-4), H=360, L=56, R=16, T=16, B=84, iw=W-L-R, ih=H-T-B;
+    function sy(v){ return T+ih-(v-ymin)/(ymax-ymin)*ih; }
+    var bw=iw/stats.length;
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet" font-family="Inter,system-ui,sans-serif">';
+    for(var t=0;t<=4;t++){ var gv=ymin+(ymax-ymin)*t/4, gy=sy(gv);
+      svg+='<line x1="'+L+'" y1="'+gy+'" x2="'+(W-R)+'" y2="'+gy+'" stroke="rgba(120,130,125,.18)"/>';
+      svg+='<text x="'+(L-6)+'" y="'+(gy+3)+'" text-anchor="end" font-size="10" fill="rgba(120,130,125,.9)">'+fmtNum(gv)+'</text>'; }
+    stats.forEach(function(s,gi){ var cx=L+(gi+0.5)*bw, half=Math.min(24, bw*0.28), c=pal[gi%pal.length];
+      var tip=s.k+" · n="+s.n.toLocaleString()+" · min "+fmtNum(s.min)+" · Q1 "+fmtNum(s.q1)+
+        " · med "+fmtNum(s.med)+" · Q3 "+fmtNum(s.q3)+" · max "+fmtNum(s.max);
+      svg+='<line x1="'+cx+'" y1="'+sy(s.whi)+'" x2="'+cx+'" y2="'+sy(s.wlo)+'" stroke="'+c+'" stroke-width="1.5"/>';
+      svg+='<line x1="'+(cx-half*0.6)+'" y1="'+sy(s.whi)+'" x2="'+(cx+half*0.6)+'" y2="'+sy(s.whi)+'" stroke="'+c+'" stroke-width="1.5"/>';
+      svg+='<line x1="'+(cx-half*0.6)+'" y1="'+sy(s.wlo)+'" x2="'+(cx+half*0.6)+'" y2="'+sy(s.wlo)+'" stroke="'+c+'" stroke-width="1.5"/>';
+      var yb=sy(s.q3), hh=Math.max(1, sy(s.q1)-sy(s.q3));
+      svg+='<rect x="'+(cx-half)+'" y="'+yb+'" width="'+(2*half)+'" height="'+hh+'" fill="'+c+
+        '" fill-opacity="0.28" stroke="'+c+'" stroke-width="1.5" data-tip="'+esc(tip)+'"/>';
+      svg+='<line x1="'+(cx-half)+'" y1="'+sy(s.med)+'" x2="'+(cx+half)+'" y2="'+sy(s.med)+'" stroke="'+c+'" stroke-width="2.5"/>';
+      s.out.slice(0,60).forEach(function(o){ svg+='<circle cx="'+cx+'" cy="'+sy(o).toFixed(1)+
+        '" r="2.6" fill="none" stroke="'+c+'" stroke-width="1.2" data-tip="'+esc(s.k+" outlier: "+fmtNum(o))+'"/>'; });
+      var lab=s.k.length>14?s.k.slice(0,13)+"…":s.k;
+      svg+='<text x="'+cx+'" y="'+(T+ih+14)+'" text-anchor="end" font-size="10" fill="var(--ink-2,#4a5d57)" '+
+        'transform="rotate(-35 '+cx+' '+(T+ih+14)+')">'+esc(lab)+'</text>';
+    });
+    svg+='<line x1="'+L+'" y1="'+(T+ih)+'" x2="'+(W-R)+'" y2="'+(T+ih)+'" stroke="rgba(120,130,125,.5)"/>';
+    svg+='</svg>';
+    box.innerHTML='<div style="font-size:13px;font-weight:640;margin-bottom:6px">'+esc(measure)+
+      ' distribution by '+esc(cat)+(capped?' (top 12 groups by count)':'')+'</div>'+svg;
+    bindTips(box);
+  }
+
   function renderHeatmap(){
     var box=$("an-chart-box"), p=PIVOT;
     var rKeys=p.rKeys.slice(0, state.topn>0?state.topn:p.rKeys.length);
@@ -688,6 +761,7 @@ _EXTRA_JS = r"""
     $("an-scatter-ctl").classList.toggle("on", state.chart==="scatter");
     if(state.chart==="scatter"){ return renderScatter(); }
     if(state.chart==="correlation"){ return renderCorrelation(); }
+    if(state.chart==="box"){ return renderBoxplot(); }
     if(!PIVOT||!PIVOT.rKeys.length){ box.innerHTML='<div class="an-empty">No chart.</div>'; return; }
     if(state.chart==="heatmap"){ return renderHeatmap(); }
     var p=PIVOT, topn=state.topn>0?state.topn:p.rKeys.length;
