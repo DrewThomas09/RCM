@@ -521,7 +521,10 @@ _EXTRA_JS = r"""
     "hcpcs-upper":"Upper-cased HCPCS/CPT codes",
     "sex-normalize":"Normalized sex/gender to M / F / U",
     "dx-upper":"Upper-cased ICD-10 diagnosis codes",
-    "dx-decimal":"Inserted the ICD-10 decimal point (E1165 → E11.65)"};
+    "dx-decimal":"Inserted the ICD-10 decimal point (E1165 → E11.65)",
+    "modifier-normalize":"Normalized claim-line modifiers (split · upper · dedup)",
+    "phone-format":"Formatted phone/fax numbers",
+    "taxonomy-upper":"Upper-cased provider taxonomy codes"};
 
   function renderRepairs(repairs, total){
     var box=$("npi-repairs");

@@ -122,6 +122,22 @@ class TestEngine(unittest.TestCase):
         self.assertIn("I10", out)      # 3-char code unchanged
         self.assertIn("1,M,", out)     # Male → M
 
+    def test_modifier_phone_taxonomy_normalization(self):
+        data = ("ClaimID,Modifiers,ProviderPhone,ProviderTaxonomy\n"
+                "1,\"26|tc, 59\",5551234567,207q00000x\n"
+                "2,25;25,1-555-987-6543,208d00000x\n").encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertIn("modifier-normalize", res.repairs)
+        self.assertIn("phone-format", res.repairs)
+        self.assertIn("taxonomy-upper", res.repairs)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("26,TC,59", out)          # split/upper/order
+        self.assertIn("(555) 123-4567", out)     # 10-digit format
+        self.assertIn("(555) 987-6543", out)     # 11-digit w/ leading 1
+        self.assertIn("207Q00000X", out)         # taxonomy upper
+        self.assertIn("2,25,", out)              # dedup 25;25 → 25
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()

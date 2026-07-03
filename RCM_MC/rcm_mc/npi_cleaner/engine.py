@@ -70,6 +70,9 @@ _ZIP_HINTS = ("zip", "postalcode", "postal")
 _HCPCS_HINTS = ("hcpcs", "cpt", "proccode", "procedurecode")
 _SEX_HINTS = ("patientsex", "sex", "gender", "patientgender")
 _DX_HINTS = ("diagnosis", "diagnosiscode", "icd", "icd10", "dx", "dxcode")
+_MOD_HINTS = ("modifier", "modifiers", "mod1", "mod2", "hcpcsmodifier")
+_PHONE_HINTS = ("phone", "fax", "telephone", "phonenumber")
+_TAXO_HINTS = ("taxonomy", "taxonomycode", "providertaxonomy", "nucc")
 
 # Tokens that mean "missing" and are normalized to a blank cell.
 _NULL_TOKENS = {"na", "n/a", "null", "none", "nan", "nil", "-", "--", "#n/a",
@@ -283,6 +286,41 @@ def _clean_dx_cell(v: str) -> Tuple[str, List[str]]:
         up = up[:3] + "." + up[3:]
         rules.append("dx-decimal")
     return up, (rules if up != v else ([] if not rules else rules))
+
+
+def _clean_modifier_cell(v: str) -> Tuple[str, List[str]]:
+    """Normalize a claim-line modifier field: split on common delimiters,
+    upper-case, keep 2-char alphanumerics, de-dup, and re-join with commas."""
+    if v == "":
+        return v, []
+    parts = re.split(r"[,;|/\s]+", v.strip().upper())
+    mods, seen = [], set()
+    for p in parts:
+        p = p.strip()
+        if len(p) == 2 and p.isalnum() and p not in seen:
+            seen.add(p)
+            mods.append(p)
+    out = ",".join(mods)
+    return out, ([] if out == v else ["modifier-normalize"])
+
+
+def _clean_phone_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    digits = "".join(ch for ch in v if ch.isdigit())
+    if len(digits) == 11 and digits[0] == "1":
+        digits = digits[1:]
+    if len(digits) == 10:
+        out = f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+        return out, ([] if out == v else ["phone-format"])
+    return v, []
+
+
+def _clean_taxonomy_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    up = v.strip().upper()
+    return up, ([] if up == v else ["taxonomy-upper"])
 
 ProgressCb = Callable[[str, float], None]
 
@@ -645,6 +683,12 @@ def clean_bytes(
                if any(x in _norm_key(h) for x in _SEX_HINTS)}
     dx_set = {i for i, h in enumerate(headers)
               if any(x in _norm_key(h) for x in _DX_HINTS)}
+    mod_set = {i for i, h in enumerate(headers)
+               if any(x in _norm_key(h) for x in _MOD_HINTS)}
+    phone_set = {i for i, h in enumerate(headers)
+                 if any(x in _norm_key(h) for x in _PHONE_HINTS)}
+    taxo_set = {i for i, h in enumerate(headers)
+                if any(x in _norm_key(h) for x in _TAXO_HINTS)}
     state_set = {i for i in ([state_idx] if state_idx is not None else [])}
 
     # User column-mapping overrides (canonical role → header) win over
@@ -717,6 +761,12 @@ def clean_bytes(
                 val, r = _clean_sex_cell(val); hits += r
             elif ci in dx_set:
                 val, r = _clean_dx_cell(val); hits += r
+            elif ci in mod_set:
+                val, r = _clean_modifier_cell(val); hits += r
+            elif ci in phone_set:
+                val, r = _clean_phone_cell(val); hits += r
+            elif ci in taxo_set:
+                val, r = _clean_taxonomy_cell(val); hits += r
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
             new_row.append(val)
