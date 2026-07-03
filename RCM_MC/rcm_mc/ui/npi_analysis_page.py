@@ -86,6 +86,13 @@ table.an-ptbl{border-collapse:collapse;font-size:12.5px;width:100%}
 .an-ptbl th .arr{font-size:9px;margin-left:2px}
 .an-scatter-ctl{display:none;gap:10px;align-items:center}
 .an-scatter-ctl.on{display:flex}
+.an-prof{border:1px solid var(--line,#d2ddd7);border-radius:12px;margin:6px 0 14px;
+  overflow:auto;max-height:320px}
+.an-prof table{border-collapse:collapse;width:100%;font-size:12px}
+.an-prof th,.an-prof td{padding:5px 9px;border-bottom:1px solid var(--line-soft,#e7eeea);text-align:left;white-space:nowrap}
+.an-prof th{background:var(--panel,#fbfdfc);position:sticky;top:0;font-weight:640;color:var(--ink-2,#4a5d57)}
+.an-prof .bar{height:6px;border-radius:3px;background:var(--green-deep,#0c7c66);display:inline-block;vertical-align:middle}
+.an-cf-badge{color:var(--green-deep,#0c7c66);font-size:10px;margin-left:3px}
 .an-tip{position:fixed;pointer-events:none;background:#11201c;color:#fff;
   font-size:11.5px;padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .1s;
   z-index:50;white-space:nowrap;font-family:ui-monospace,Menlo,monospace}
@@ -176,9 +183,29 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
         </span>
         <div class="an-actions" style="margin:0">
           <button class="an-btn" id="an-reset">Reset</button>
+          <button class="an-btn" id="an-png">Export chart PNG</button>
           <button class="an-btn prim" id="an-dl">Download pivot CSV</button>
         </div>
       </div>
+
+      <div class="an-ctls" style="margin-top:-4px">
+        <label class="an-ctl">Saved views
+          <select id="an-views-sel"><option value="">—</option></select></label>
+        <button class="an-btn" id="an-save-view">Save current view</button>
+        <button class="an-btn" id="an-del-view">Delete</button>
+        <span style="width:1px;height:20px;background:var(--line,#d2ddd7)"></span>
+        <label class="an-ctl">New field
+          <select id="an-cf-a"></select></label>
+        <select id="an-cf-op" class="an-ctl">
+          <option value="div">÷</option><option value="sub">−</option>
+          <option value="mul">×</option><option value="add">+</option></select>
+        <select id="an-cf-b"></select>
+        <input id="an-cf-name" placeholder="name (optional)"
+          style="padding:5px 7px;border:1px solid var(--line,#d2ddd7);border-radius:6px;font-size:12px;width:130px">
+        <button class="an-btn" id="an-cf-add">Add field</button>
+        <button class="an-btn" id="an-profile-toggle">Profile columns</button>
+      </div>
+      <div id="an-profile"></div>
 
       <div class="an-chart" id="an-chart-box"></div>
 
@@ -198,7 +225,7 @@ _EXTRA_JS = r"""
   var wrap=document.querySelector(".an-wrap"); if(!wrap) return;
   var job=wrap.getAttribute("data-job"); if(!job) return;
 
-  var DATA={columns:[],rows:[]}, NUM={}, state={rows:[],cols:[],val:null,filters:{},
+  var DATA={columns:[],rows:[]}, NUM={}, COMPUTED={}, state={rows:[],cols:[],val:null,filters:{},
     agg:"count",chart:"bar",topn:12,pct:false,sortCol:null,sortDir:-1,
     sx:null,sy:null,scolor:null};
 
@@ -262,14 +289,95 @@ _EXTRA_JS = r"""
     $("an-pct").checked=false; renderZones(); recompute();
   }
 
+  function optList(list){ return list.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join(""); }
   function populateScatterSelects(){
     var nums=DATA.columns.filter(function(c){return NUM[c];});
     var cats=DATA.columns.filter(function(c){return !NUM[c];});
-    function opts(list){ return list.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join(""); }
-    $("an-sx").innerHTML=opts(nums); $("an-sy").innerHTML=opts(nums);
-    $("an-scolor").innerHTML='<option value="">(none)</option>'+opts(cats);
+    $("an-sx").innerHTML=optList(nums); $("an-sy").innerHTML=optList(nums);
+    $("an-scolor").innerHTML='<option value="">(none)</option>'+optList(cats);
     if(nums.length){ state.sx=nums[0]; state.sy=nums[Math.min(1,nums.length-1)];
       $("an-sx").value=state.sx; $("an-sy").value=state.sy; }
+    $("an-cf-a").innerHTML=optList(nums); $("an-cf-b").innerHTML=optList(nums);
+    loadViewsList();
+  }
+
+  // ---- Computed fields ----
+  function addComputedField(){
+    var a=$("an-cf-a").value, b=$("an-cf-b").value, op=$("an-cf-op").value;
+    if(!a||!b) return;
+    var sym={div:"÷",sub:"−",mul:"×",add:"+"}[op];
+    var name=($("an-cf-name").value||"").trim()||((a+" "+sym+" "+b).slice(0,40));
+    if(DATA.columns.indexOf(name)>=0) name=name+"_"+Date.now().toString().slice(-4);
+    var ai=DATA.columns.indexOf(a), bi=DATA.columns.indexOf(b);
+    DATA.columns.push(name);
+    for(var i=0;i<DATA.rows.length;i++){ var x=num(DATA.rows[i][ai]), y=num(DATA.rows[i][bi]), v=0;
+      if(op==="div")v=y?x/y:""; else if(op==="sub")v=x-y; else if(op==="mul")v=x*y; else v=x+y;
+      DATA.rows[i].push(v===""?"":Math.round(v*10000)/10000); }
+    NUM[name]=true; COMPUTED[name]=true;
+    populateScatterSelects(); renderFields(); recompute();
+    $("an-cf-name").value="";
+  }
+
+  // ---- Saved views (localStorage) ----
+  var VKEY="npiPivotViews";
+  function loadViews(){ try{ return JSON.parse(localStorage.getItem(VKEY)||"{}"); }catch(e){ return {}; } }
+  function saveViews(v){ try{ localStorage.setItem(VKEY, JSON.stringify(v)); }catch(e){} }
+  function loadViewsList(){ var v=loadViews();
+    $("an-views-sel").innerHTML='<option value="">—</option>'+
+      Object.keys(v).sort().map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join(""); }
+  function snapshotState(){ return {rows:state.rows,cols:state.cols,val:state.val,
+    agg:state.agg,chart:state.chart,pct:state.pct,filters:state.filters,
+    sx:state.sx,sy:state.sy,scolor:state.scolor}; }
+  function restoreState(s){
+    // Only restore fields that still exist in this dataset.
+    function keep(arr){ return (arr||[]).filter(function(c){return DATA.columns.indexOf(c)>=0;}); }
+    state.rows=keep(s.rows); state.cols=keep(s.cols);
+    state.val=(s.val&&DATA.columns.indexOf(s.val)>=0)?s.val:null;
+    state.agg=s.agg||"count"; state.chart=s.chart||"bar"; state.pct=!!s.pct;
+    state.filters={}; Object.keys(s.filters||{}).forEach(function(f){ if(DATA.columns.indexOf(f)>=0)state.filters[f]=s.filters[f]; });
+    state.sx=s.sx; state.sy=s.sy; state.scolor=s.scolor;
+    $("an-agg").value=state.agg; $("an-charttype").value=state.chart; $("an-pct").checked=state.pct;
+    renderZones(); recompute();
+  }
+
+  // ---- Column profiling ----
+  function toggleProfile(){
+    var box=$("an-profile");
+    if(box.innerHTML){ box.innerHTML=""; return; }
+    var h='<div class="an-prof"><table><thead><tr><th>Column</th><th>Type</th>'+
+      '<th>Distinct</th><th>% filled</th><th>Min / Max / Mean · Top values</th></tr></thead><tbody>';
+    DATA.columns.forEach(function(c,ci){
+      var filled=0,distinct={},nums=[],counts={};
+      for(var i=0;i<DATA.rows.length;i++){ var v=DATA.rows[i][ci];
+        if(v!==""&&v!=null){ filled++; distinct[v]=1; counts[v]=(counts[v]||0)+1; if(NUM[c])nums.push(num(v)); } }
+      var pct=DATA.rows.length?Math.round(filled/DATA.rows.length*100):0;
+      var detail="";
+      if(NUM[c]&&nums.length){ var mn=Math.min.apply(null,nums),mx=Math.max.apply(null,nums),
+        mean=nums.reduce(function(a,b){return a+b;},0)/nums.length;
+        detail=fmtNum(mn)+" / "+fmtNum(mx)+" / "+fmtNum(mean); }
+      else { detail=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];}).slice(0,3)
+        .map(function(k){return esc(k||"(blank)")+" ("+counts[k]+")";}).join(", "); }
+      h+='<tr><td><b>'+esc(c)+'</b>'+(COMPUTED[c]?'<span class="an-cf-badge">ƒ</span>':'')+'</td>'+
+        '<td>'+(NUM[c]?"numeric":"text")+'</td><td>'+Object.keys(distinct).length.toLocaleString()+'</td>'+
+        '<td><span class="bar" style="width:'+Math.max(2,pct*0.5)+'px"></span> '+pct+'%</td>'+
+        '<td>'+detail+'</td></tr>';
+    });
+    h+='</tbody></table></div>'; box.innerHTML=h;
+  }
+
+  // ---- PNG export ----
+  function exportPNG(){
+    var svg=$("an-chart-box").querySelector("svg");
+    if(!svg){ alert("PNG export works for bar/line/scatter charts (the heatmap is a table)."); return; }
+    var xml=new XMLSerializer().serializeToString(svg);
+    var vb=svg.getAttribute("viewBox").split(" "), W=parseFloat(vb[2]), H=parseFloat(vb[3]);
+    var scale=2, canvas=document.createElement("canvas"); canvas.width=W*scale; canvas.height=H*scale;
+    var img=new Image();
+    img.onload=function(){ var ctx=canvas.getContext("2d");
+      ctx.fillStyle=getComputedStyle(document.body).backgroundColor||"#fff";
+      ctx.fillRect(0,0,canvas.width,canvas.height); ctx.scale(scale,scale); ctx.drawImage(img,0,0);
+      var a=document.createElement("a"); a.href=canvas.toDataURL("image/png"); a.download="chart.png"; a.click(); };
+    img.src="data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent(xml)));
   }
 
   function detectNumeric(){
@@ -618,6 +726,18 @@ _EXTRA_JS = r"""
     state.sx=$("an-sx").value; state.sy=$("an-sy").value; state.scolor=$("an-scolor").value; renderChart(); }); });
   document.querySelectorAll(".an-btn.vw").forEach(function(b){
     b.addEventListener("click",function(){ applyView(b.getAttribute("data-view")); }); });
+  $("an-cf-add").addEventListener("click", addComputedField);
+  $("an-profile-toggle").addEventListener("click", toggleProfile);
+  $("an-png").addEventListener("click", exportPNG);
+  $("an-save-view").addEventListener("click", function(){
+    var name=prompt("Save this view as:"); if(!name)return;
+    var v=loadViews(); v[name]=snapshotState(); saveViews(v); loadViewsList();
+    $("an-views-sel").value=name; });
+  $("an-views-sel").addEventListener("change", function(){
+    var v=loadViews(), n=$("an-views-sel").value; if(n&&v[n])restoreState(v[n]); });
+  $("an-del-view").addEventListener("click", function(){
+    var n=$("an-views-sel").value; if(!n)return; var v=loadViews(); delete v[n];
+    saveViews(v); loadViewsList(); });
   $("an-reset").addEventListener("click",function(){ state.rows=[];state.cols=[];state.val=null;
     state.filters={};state.agg="count"; renderZones(); recompute(); });
   $("an-dl").addEventListener("click",function(){ var csv=pivotCSV();
