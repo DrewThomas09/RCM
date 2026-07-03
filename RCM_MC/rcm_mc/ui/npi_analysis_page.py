@@ -167,6 +167,7 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
             <option value="line">Line</option>
             <option value="heatmap">Heatmap</option>
             <option value="scatter">Scatter</option>
+            <option value="correlation">Correlation matrix</option>
           </select></label>
         <label class="an-ctl">Top
           <select id="an-topn">
@@ -598,6 +599,63 @@ _EXTRA_JS = r"""
     bindTips(box);
   }
 
+  // Pearson r over complete observations (both values present & numeric).
+  function pearson(xs, ys){
+    var n=xs.length; if(n<3) return null;
+    var sx=0, sy=0, i;
+    for(i=0;i<n;i++){ sx+=xs[i]; sy+=ys[i]; }
+    var mx=sx/n, my=sy/n, cov=0, dx=0, dy=0;
+    for(i=0;i<n;i++){ var a=xs[i]-mx, b=ys[i]-my; cov+=a*b; dx+=a*a; dy+=b*b; }
+    if(dx<=0||dy<=0) return null;   // a constant column has no correlation
+    return cov/Math.sqrt(dx*dy);
+  }
+
+  function renderCorrelation(){
+    var box=$("an-chart-box");
+    var cols=DATA.columns.filter(function(c){return NUM[c];});
+    var capped=cols.length>12; if(capped) cols=cols.slice(0,12);
+    if(cols.length<2){ box.innerHTML='<div class="an-empty">Need at least two '+
+      'numeric fields for a correlation matrix (add measures or a computed field).</div>'; return; }
+    var idx=cols.map(function(c){return DATA.columns.indexOf(c);});
+    var rows=[];
+    for(var i=0;i<DATA.rows.length;i++){ if(passesFilters(DATA.rows[i])) rows.push(DATA.rows[i]); }
+    // Pairwise, using only rows where BOTH fields are present & numeric, so a
+    // blank in one column never silently biases the coefficient toward zero.
+    var R=[], N=[];
+    for(var a=0;a<cols.length;a++){ R.push([]); N.push([]);
+      for(var b=0;b<cols.length;b++){
+        if(b<a){ R[a].push(R[b][a]); N[a].push(N[b][a]); continue; }  // symmetric
+        var xs=[], ys=[];
+        for(var r=0;r<rows.length;r++){ var va=rows[r][idx[a]], vb=rows[r][idx[b]];
+          if(va===""||va==null||vb===""||vb==null||!isNum(va)||!isNum(vb)) continue;
+          xs.push(num(va)); ys.push(num(vb)); }
+        R[a].push(a===b?1:pearson(xs,ys)); N[a].push(xs.length);
+      }
+    }
+    // Diverging ramp (ColorBrewer RdBu): blue = negative, red = positive.
+    var ramp=["#2166ac","#67a9cf","#d1e5f0","#f7f7f7","#fddbc7","#ef8a62","#b2182b"];
+    function color(r){ if(r==null) return "transparent";
+      var t=(r+1)/2, k=Math.max(0,Math.min(ramp.length-1, Math.round(t*(ramp.length-1)))); return ramp[k]; }
+    var h='<div style="font-size:13px;font-weight:640;margin-bottom:6px">Pearson correlation'+
+      (capped?' (first 12 numeric fields)':'')+'</div>';
+    h+='<div style="overflow:auto"><table class="an-ptbl" style="border:0"><thead><tr><th class="k"></th>';
+    cols.forEach(function(c){ h+='<th style="white-space:nowrap;font-weight:600;font-size:11px">'+esc(c)+'</th>'; });
+    h+='</tr></thead><tbody>';
+    cols.forEach(function(c,a){ h+='<tr><td class="k">'+esc(c)+'</td>';
+      cols.forEach(function(_,b){ var rr=R[a][b], nn=N[a][b];
+        var strong=rr!=null&&Math.abs(rr)>0.55;
+        h+='<td style="background:'+color(rr)+';color:'+(strong?"#fff":"var(--ink,#1a2332)")+
+          ';text-align:center;min-width:52px" data-tip="'+
+          esc(c+" × "+cols[b]+": r="+(rr==null?"n/a":rr.toFixed(2))+" (n="+nn.toLocaleString()+")")+'">'+
+          (rr==null?"·":rr.toFixed(2))+'</td>'; });
+      h+='</tr>'; });
+    h+='</tbody></table></div>';
+    h+='<div class="an-legend" style="margin-top:8px;align-items:center">−1'+
+      ramp.map(function(cl){return '<span class="sw" style="background:'+cl+';width:22px"></span>';}).join("")+
+      '+1 &nbsp;<span style="color:var(--ink-2,#4a5d57)">blue negative · red positive</span></div>';
+    box.innerHTML=h; bindTips(box);
+  }
+
   function renderHeatmap(){
     var box=$("an-chart-box"), p=PIVOT;
     var rKeys=p.rKeys.slice(0, state.topn>0?state.topn:p.rKeys.length);
@@ -629,6 +687,7 @@ _EXTRA_JS = r"""
     var box=$("an-chart-box");
     $("an-scatter-ctl").classList.toggle("on", state.chart==="scatter");
     if(state.chart==="scatter"){ return renderScatter(); }
+    if(state.chart==="correlation"){ return renderCorrelation(); }
     if(!PIVOT||!PIVOT.rKeys.length){ box.innerHTML='<div class="an-empty">No chart.</div>'; return; }
     if(state.chart==="heatmap"){ return renderHeatmap(); }
     var p=PIVOT, topn=state.topn>0?state.topn:p.rKeys.length;
