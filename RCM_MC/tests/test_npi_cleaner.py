@@ -621,6 +621,49 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
+    def test_pivot_analysis_page_and_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                csv = (
+                    "ClaimID,ProviderState,AllowedAmt\n"
+                    f"1,OH,100\n2,TX,200\n3,OH,50\n"
+                ).encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv, method="POST", headers={"X-Filename": "c.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        if json.loads(r.read().decode()).get("done"):
+                            break
+                    time.sleep(0.05)
+                # data endpoint returns the cleaned rows as JSON
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/data/{job_id}"
+                ) as r:
+                    data = json.loads(r.read().decode())
+                self.assertIn("ProviderState", data["columns"])
+                self.assertEqual(len(data["rows"]), 3)
+                # analysis page renders with the pivot builder
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/analyze/{job_id}"
+                ) as r:
+                    page = r.read().decode()
+                self.assertIn("an-fieldlist", page)
+                self.assertIn(f"/npi-cleaner/data/", page)
+                # unknown job → graceful "expired" page (still 200)
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/analyze/deadbeef"
+                ) as r:
+                    self.assertIn("expired", r.read().decode())
+            finally:
+                server.shutdown()
+                server.server_close()
+
     def test_empty_upload_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)

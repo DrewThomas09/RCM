@@ -283,6 +283,12 @@ never blocks the fast results.">ⓘ</span></label>
 
     <div class="npi-panel" data-panel="downloads">
       <div id="npi-recovered-note"></div>
+      <div style="margin-top:4px;margin-bottom:14px">
+        <a class="npi-dl" id="npi-analyze" href="#"
+           style="background:var(--ink,#11201c)">📊 Open pivot analysis →</a>
+        <span class="npi-muted" style="margin-left:10px">Build pivot tables and
+          charts from the cleaned data — like a mini Tableau.</span>
+      </div>
       <div style="margin-top:8px">
         <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
         <a class="npi-dl npi-dl-alt" id="npi-dl-xlsx" href="#" download
@@ -350,7 +356,7 @@ _EXTRA_JS = r"""
   var stUp=$("npi-stage-upload"), stMap=$("npi-stage-mapping"),
       stPr=$("npi-stage-progress"),
       stErr=$("npi-stage-error"), stRes=$("npi-stage-result");
-  var poll=null, currentFile=null, detectRoles=[];
+  var poll=null, currentFile=null, detectRoles=[], currentJobId=null;
 
   function show(el){ el.classList.remove("npi-hidden"); }
   function hide(el){ el.classList.add("npi-hidden"); }
@@ -442,6 +448,9 @@ _EXTRA_JS = r"""
       cbtn.setAttribute("download", s.companion_name);
       cbtn.style.display="";
     } else { cbtn.style.display="none"; }
+
+    if(currentJobId){ $("npi-analyze").setAttribute("href",
+      "/npi-cleaner/analyze/"+currentJobId); }
 
     var rn=$("npi-recovered-note");
     if(s.recovered_written>0){
@@ -731,6 +740,7 @@ _EXTRA_JS = r"""
   }
 
   function watch(jobId){
+    currentJobId=jobId;
     poll=setInterval(function(){
       fetch("/npi-cleaner/status/"+jobId, {headers:{"Accept":"application/json"}})
         .then(function(r){ return r.json(); })

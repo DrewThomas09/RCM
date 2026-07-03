@@ -2838,6 +2838,45 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _route_npi_cleaner_analyze(self, job_id: str) -> None:
+        """Render the pivot/analysis page for a finished cleaning job."""
+        from .npi_cleaner import engine
+        from .ui.npi_analysis_page import render_npi_analysis
+
+        job = engine.manager().get(job_id)
+        ok = bool(job and job.result and job.result.out_path)
+        return self._send_html(render_npi_analysis(
+            job_id, available=ok,
+            src_name=(job.result.out_name if ok else "")))
+
+    def _route_npi_cleaner_data(self, job_id: str) -> None:
+        """Return the cleaned rows as JSON for the client-side pivot (capped)."""
+        import csv as _csv
+        from .npi_cleaner import engine
+
+        job = engine.manager().get(job_id)
+        if job is None or job.result is None or not job.result.out_path:
+            return self._send_json(
+                {"error": "Job not found (server may have restarted)."},
+                status=HTTPStatus.NOT_FOUND)
+        cap = 20000
+        try:
+            with open(job.result.out_path, newline="", encoding="utf-8") as fh:
+                reader = _csv.reader(fh)
+                rows = list(reader)
+        except OSError:
+            return self._send_json({"error": "cleaned data unavailable"},
+                                   status=HTTPStatus.NOT_FOUND)
+        if not rows:
+            return self._send_json({"columns": [], "rows": [], "truncated": False})
+        columns = rows[0]
+        body = rows[1:cap + 1]
+        return self._send_json({
+            "columns": columns, "rows": body,
+            "truncated": len(rows) - 1 > cap,
+            "total_rows": len(rows) - 1,
+        })
+
     def _route_npi_cleaner_sample(self) -> None:
         """Serve a small illustrative claims CSV so a partner can try the tool
         in one click without hunting for a file."""
@@ -3682,6 +3721,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 urllib.parse.parse_qs(parsed.query))
         if path == "/npi-cleaner/sample":
             return self._route_npi_cleaner_sample()
+        if path.startswith("/npi-cleaner/analyze/"):
+            return self._route_npi_cleaner_analyze(
+                path[len("/npi-cleaner/analyze/"):].strip("/"))
+        if path.startswith("/npi-cleaner/data/"):
+            return self._route_npi_cleaner_data(
+                path[len("/npi-cleaner/data/"):].strip("/"))
         if path == "/import":
             from .ui.quick_import import render_quick_import
             _imp_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
