@@ -577,7 +577,8 @@ _EXTRA_JS = r"""
     "nonpositive-units":"Units ≤ 0",
     "fractional-units":"Fractional (non-integer) units",
     "suspected-duplicate-claim":"Suspected duplicate claim (same provider · patient · date · code · amount)",
-    "ndc-ambiguous-10digit":"Ambiguous 10-digit NDC (segmentation unknown — verify at source)"};
+    "ndc-ambiguous-10digit":"Ambiguous 10-digit NDC (segmentation unknown — verify at source)",
+    "date-in-future":"Impossible future date (service · birth · paid date after today)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];

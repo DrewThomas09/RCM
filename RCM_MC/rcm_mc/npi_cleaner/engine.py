@@ -66,6 +66,15 @@ _MONEY_HINTS = ("allowedamt", "allowed", "paidamt", "paid", "billedamt",
                 "billed", "chargeamt", "charge", "amount", "cost", "fee")
 _DATE_HINTS = ("dateofservice", "servicedate", "dos", "paiddate", "date",
                "dob", "birthdate", "fromdate", "thrudate")
+# Date roles that can NEVER legitimately be in the future — a service was
+# rendered, a patient was born, a claim was adjudicated. Used to flag
+# future-dated rows. Deliberately excludes generic "date"/coverage-end/
+# authorization-expiry columns, which CAN be future.
+_SERVICE_DATE_HINTS = ("dateofservice", "servicedate", "svcdate", "dos",
+                       "fromdate", "thrudate", "servicefromdate",
+                       "servicetodate", "admitdate", "admissiondate",
+                       "dischargedate", "paiddate", "adjudicationdate")
+_DOB_HINTS = ("dateofbirth", "dob", "birthdate", "birthdt", "patientdob")
 _ZIP_HINTS = ("zip", "postalcode", "postal")
 _HCPCS_HINTS = ("hcpcs", "cpt", "proccode", "procedurecode")
 _SEX_HINTS = ("patientsex", "sex", "gender", "patientgender")
@@ -223,6 +232,22 @@ def _clean_date_cell(v: str) -> Tuple[str, List[str]]:
         except ValueError:
             return v, []
     return v, []
+
+
+def _date_after(iso: str, today) -> bool:
+    """True when a cleaned cell is a valid ISO date strictly after ``today``.
+
+    Only recognizes the normalized ``YYYY-MM-DD`` form the date normalizer
+    emits — anything unparseable is treated as not-future (report-only flag,
+    so we never guess)."""
+    m = _DATE_ISO_RE.match(iso.strip()) if iso else None
+    if not m:
+        return False
+    try:
+        from datetime import date as _d
+        return _d(int(m.group(1)), int(m.group(2)), int(m.group(3))) > today
+    except ValueError:
+        return False
 
 
 def _clean_state_cell(v: str) -> Tuple[str, List[str]]:
@@ -836,6 +861,12 @@ def clean_bytes(
     ndc_norm_set = {i for i, h in enumerate(headers)
                     if any(x in _norm_key(h) for x in _NDC_HINTS)}
     state_set = {i for i in ([state_idx] if state_idx is not None else [])}
+    # Date columns that must never be in the future (service / birth / paid).
+    past_date_cols = {i for i, h in enumerate(headers)
+                      if any(x in _norm_key(h)
+                             for x in (_SERVICE_DATE_HINTS + _DOB_HINTS))}
+    from datetime import datetime as _dt, timezone as _tz
+    _today = _dt.now(_tz.utc).date()
     # PHI columns for opt-in de-identification (patient direct identifiers).
     phi_cols: Dict[int, str] = {}
     if deid:
@@ -952,6 +983,11 @@ def clean_bytes(
         # Cross-field sanity flags (report-only) on the cleaned row.
         for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i, units_i):
             res.sanity[f] = res.sanity.get(f, 0) + 1
+        # Impossible future date on a service/birth/paid column (counted once
+        # per row, like the other row-level sanity flags).
+        if any(ci < len(new_row) and _date_after(new_row[ci], _today)
+               for ci in past_date_cols):
+            res.sanity["date-in-future"] = res.sanity.get("date-in-future", 0) + 1
         # NDC that couldn't be safely normalized (unhyphenated 10-digit).
         for ci in ndc_norm_set:
             if ci < len(new_row):

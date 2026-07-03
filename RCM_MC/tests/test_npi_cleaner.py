@@ -199,6 +199,30 @@ class TestEngine(unittest.TestCase):
         res = engine.clean_bytes(data, "y.csv")
         self.assertNotIn("suspected-duplicate-claim", res.sanity)
 
+    def test_future_date_flagged(self):
+        # A service date or DOB after today is impossible → flagged. Uses a
+        # far-future year so the assertion is stable regardless of run date.
+        # A US-format future date must flag too (normalized to ISO first), and
+        # a legitimately-future column (coverage end) must NOT flag.
+        data = (
+            "ClaimID,DateOfService,PatientDOB,CoverageEndDate\n"
+            "1,2999-01-01,1980-05-14,2999-12-31\n"   # future DOS → flag
+            "2,03/04/2999,1975-02-02,2999-12-31\n"   # future DOS (US fmt) → flag
+            "3,2020-06-15,2999-05-05,2999-12-31\n"   # future DOB → flag
+            "4,2021-01-01,1990-01-01,2999-12-31\n"   # all past svc/dob → clear
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        # Three rows have a future service/birth date; the coverage-end column
+        # is in the future on every row but must never trigger the flag.
+        self.assertEqual(res.sanity.get("date-in-future"), 3)
+
+    def test_future_date_needs_service_or_dob_column(self):
+        # Without a service/birth date column the check must not run even if a
+        # generic future date is present.
+        data = ("ClaimID,CoverageEndDate\n1,2999-01-01\n").encode()
+        res = engine.clean_bytes(data, "y.csv")
+        self.assertNotIn("date-in-future", res.sanity)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
