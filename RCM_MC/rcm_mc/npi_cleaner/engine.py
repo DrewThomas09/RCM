@@ -736,6 +736,13 @@ def clean_bytes(
                                      "charge", "submittedamt"))
     paid_i = _detect_one(headers, ("paidamt", "paymentamt", "planpaid", "paid"))
     units_i = _detect_one(headers, ("units", "unit", "quantity", "qty", "srvccnt"))
+    # Composite-key columns for suspected duplicate-claim detection.
+    patient_i = _detect_one(headers, ("patientid", "memberid", "subscriberid",
+                                      "patientaccount", "patientacct",
+                                      "patient", "memberidnumber", "beneid"))
+    dos_i = _detect_one(headers, ("dateofservice", "servicedate", "svcdate",
+                                  "dos", "fromdate", "servicefromdate"))
+    hcpcs_i = _detect_one(headers, _HCPCS_HINTS)
 
     # User column-mapping overrides (canonical role → header) win over
     # auto-detection. Only roles the stdlib path acts on are honored here; the
@@ -835,6 +842,30 @@ def clean_bytes(
             cb("Cleaning rows", 0.30 + 0.55 * (ri / total))
 
     res.n_rows_out = len(cleaned)
+
+    # Suspected duplicate CLAIMS — distinct rows (already past exact-row dedup)
+    # that share the same billing provider · patient · date-of-service ·
+    # procedure · amount. This is the double-billing signal exact dedup misses;
+    # reported, never auto-removed (a repeat key can be legitimate).
+    _dup_key_idx = [i for i in (billing_idx, patient_i, dos_i, hcpcs_i,
+                                units_i, allowed_i) if i is not None]
+    _has_when = dos_i is not None
+    _has_who = billing_idx is not None or patient_i is not None
+    _has_what = hcpcs_i is not None
+    if _has_when and _has_who and _has_what and len(_dup_key_idx) >= 3:
+        _seen_keys: set = set()
+        _dup = 0
+        for r in cleaned:
+            parts = [r[i] for i in _dup_key_idx if i < len(r)]
+            if all(p == "" for p in parts):
+                continue
+            k = "||".join(parts)
+            if k in _seen_keys:
+                _dup += 1
+            else:
+                _seen_keys.add(k)
+        if _dup:
+            res.sanity["suspected-duplicate-claim"] = _dup
 
     # Optional live NPPES cross-check via the app's shared CMS connection.
     # Guarded end-to-end: any failure leaves res.nppes with a note and the

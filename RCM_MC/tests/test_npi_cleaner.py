@@ -152,6 +152,27 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(sf.get("nonpositive-units"), 1)
         self.assertEqual(sf.get("fractional-units"), 1)
 
+    def test_suspected_duplicate_claims(self):
+        # Rows 1&2 share provider/patient/DOS/HCPCS/amount (diff ClaimID) → dup.
+        # A 3rd row is an exact dup of row 1 (removed by exact dedup, not
+        # double-counted). A 4th row differs only by patient → not a dup.
+        data = (
+            "ClaimID,BillingNPI,PatientID,DateOfService,HCPCS,AllowedAmt\n"
+            f"1,{GOOD_B},P100,2024-03-01,99213,80\n"
+            f"2,{GOOD_B},P100,2024-03-01,99213,80\n"
+            f"1,{GOOD_B},P100,2024-03-01,99213,80\n"
+            f"9,{GOOD_B},P200,2024-03-01,99213,80\n"
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.n_dupes_removed, 1)                    # exact dup
+        self.assertEqual(res.sanity.get("suspected-duplicate-claim"), 1)
+
+    def test_duplicate_claims_needs_key_columns(self):
+        # Without provider/date/code columns the check must not run.
+        data = ("ClaimID,Note\n1,a\n2,a\n").encode()
+        res = engine.clean_bytes(data, "y.csv")
+        self.assertNotIn("suspected-duplicate-claim", res.sanity)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()

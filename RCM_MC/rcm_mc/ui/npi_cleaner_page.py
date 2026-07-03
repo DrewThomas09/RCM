@@ -549,7 +549,8 @@ _EXTRA_JS = r"""
     "negative-allowed":"Negative allowed amount",
     "negative-paid":"Negative paid amount",
     "nonpositive-units":"Units ≤ 0",
-    "fractional-units":"Fractional (non-integer) units"};
+    "fractional-units":"Fractional (non-integer) units",
+    "suspected-duplicate-claim":"Suspected duplicate claim (same provider · patient · date · code · amount)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
