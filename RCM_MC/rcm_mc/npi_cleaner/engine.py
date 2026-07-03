@@ -119,6 +119,12 @@ class CleanResult:
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
     out_name: str = "cleaned.csv"
+    workbook_path: Optional[str] = None
+    workbook_name: str = "report.xlsx"
+    # NPPES-recovered NPIs written into the cleaned output, keyed by the
+    # 1-based row index → recovered NPI. Populated only when enrich resolves
+    # a single confident candidate for a row's provider name+state.
+    recovered_rows: Dict[int, str] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
     # Real-engine findings from the vendored v48 field/consistency/dedup
     # screens (via vendor_adapter). None when pandas / the modules are
@@ -167,8 +173,11 @@ class CleanResult:
             "health_pct": health,
             "column_stats": self.column_stats,
             "delimiter": {",": "comma", "\t": "tab", ";": "semicolon",
-                          "|": "pipe"}.get(self.delimiter, self.delimiter),
+                          "|": "pipe", "xlsx": "xlsx (Excel)"}.get(
+                              self.delimiter, self.delimiter),
             "out_name": self.out_name,
+            "workbook_name": self.workbook_name if self.workbook_path else None,
+            "recovered_written": len(self.recovered_rows),
             "warnings": self.warnings,
             "advanced": self.advanced,
             "nppes": self.nppes,
@@ -186,8 +195,58 @@ def _sniff_delimiter(sample: str) -> str:
         return max(",\t;|", key=first.count) if first else ","
 
 
+# Leading characters Excel/Sheets treat as a formula — a CSV export of
+# untrusted claims data must neutralize these to avoid CSV-injection.
+_FORMULA_LEAD = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _defang_cell(value: str) -> str:
+    """Prefix a lone quote when a CSV cell would otherwise start a formula."""
+    if value and value[0] in _FORMULA_LEAD:
+        return "'" + value
+    return value
+
+
+def _looks_like_xlsx(data: bytes) -> bool:
+    # .xlsx is a zip; the local-file-header magic is "PK\x03\x04". A CSV that
+    # happens to start with "PK" is vanishingly unlikely to also be valid zip.
+    return data[:4] == b"PK\x03\x04"
+
+
+def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]]]:
+    """Read the first worksheet of an .xlsx via openpyxl (read-only mode).
+
+    Raises if openpyxl is unavailable or the workbook is unreadable — the
+    caller turns that into a friendly warning telling the user to export CSV.
+    """
+    from openpyxl import load_workbook  # base dependency
+
+    wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+    try:
+        ws = wb[wb.sheetnames[0]]
+        rows: List[List[str]] = []
+        for r in ws.iter_rows(values_only=True):
+            if r is None:
+                continue
+            cells = ["" if c is None else str(c) for c in r]
+            if any(c.strip() for c in cells):
+                rows.append(cells)
+    finally:
+        wb.close()
+    if not rows:
+        return [], []
+    headers = [h.strip() for h in rows[0]]
+    return headers, rows[1:]
+
+
 def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str]:
-    """Decode bytes → (headers, rows, delimiter). Tolerant of BOM / latin-1."""
+    """Decode bytes → (headers, rows, format). Handles CSV/TSV and .xlsx.
+
+    ``format`` is the delimiter for text files, or ``"xlsx"`` for spreadsheets.
+    """
+    if _looks_like_xlsx(data):
+        headers, body = _read_xlsx(data)
+        return headers, body, "xlsx"
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -250,7 +309,27 @@ def clean_bytes(
             progress(msg, frac)
 
     cb("Reading file", 0.05)
-    headers, rows, delim = _read_table(data)
+    try:
+        headers, rows, delim = _read_table(data)
+    except ImportError:
+        headers, rows, delim = [], [], "xlsx"
+        _res = CleanResult(delimiter="xlsx", headers=[])
+        _res.warnings.append(
+            "This looks like an .xlsx file but the Excel reader isn't "
+            "available on the server. Please export the sheet as CSV and "
+            "re-upload.")
+        _res.out_name = _out_name(src_name)
+        _write_output(_res, [], [])
+        cb("Done", 1.0)
+        return _res
+    except Exception as exc:  # noqa: BLE001 — malformed spreadsheet
+        _res = CleanResult(delimiter="xlsx", headers=[])
+        _res.warnings.append(f"Could not read the file: {exc}. If this is an "
+                             "Excel file, try exporting it as CSV.")
+        _res.out_name = _out_name(src_name)
+        _write_output(_res, [], [])
+        cb("Done", 1.0)
+        return _res
     res = CleanResult(delimiter=delim, headers=headers)
     res.n_rows_in = len(rows)
     if not headers:
@@ -317,7 +396,7 @@ def clean_bytes(
     if enrich:
         cb("Verifying NPIs against the live NPPES registry", 0.60)
         try:
-            res.nppes = _enrich_via_nppes(
+            res.nppes, res.recovered_rows = _enrich_via_nppes(
                 cleaned, npi_idx, billing_idx, name_idx, state_idx)
         except Exception as exc:  # noqa: BLE001
             res.nppes = {"error": f"{type(exc).__name__}: {exc}"}
@@ -348,7 +427,7 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
     """
     from . import nppes_bridge
     if not nppes_bridge.available():
-        return {"note": "NPPES connection unavailable in this deployment."}
+        return ({"note": "NPPES connection unavailable in this deployment."}, {})
 
     # Distinct NPIs across every detected NPI column, for verification.
     all_npis: List[str] = []
@@ -359,10 +438,13 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
     verify = nppes_bridge.verify_npis(all_npis)
 
     # Recovery queries: rows whose billing NPI is not valid but which carry a
-    # provider name (+ state) we can search on.
+    # provider name (+ state) we can search on. Track which rows each query
+    # covers so a resolved candidate can be written back to every matching row.
     recover: Dict[str, object] = {"note": "No provider-name column to recover from."}
+    recovered_rows: Dict[int, str] = {}
     if billing_idx is not None and name_idx is not None:
         queries: List[Dict[str, str]] = []
+        key_to_rows: Dict[tuple, List[int]] = {}
         for ridx, row in enumerate(cleaned):
             if billing_idx >= len(row):
                 continue
@@ -374,13 +456,45 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
             state = row[state_idx] if (state_idx is not None
                                        and state_idx < len(row)) else ""
             queries.append({"row": str(ridx + 1), "name": name, "state": state})
+            key = (name.strip().lower(), (state or "").strip().upper()[:2])
+            key_to_rows.setdefault(key, []).append(ridx + 1)
         if queries:
             recover = nppes_bridge.recover_candidates(queries)
+            # A match with exactly one candidate is confident enough to write
+            # back to every row that shared that provider name + state.
+            for m in recover.get("matches", []):
+                cands = m.get("candidates") or []
+                if len(cands) != 1:
+                    continue
+                key = ((m.get("query") or "").strip().lower(),
+                       (m.get("state") or "").strip().upper()[:2])
+                for rownum in key_to_rows.get(key, []):
+                    recovered_rows[rownum] = cands[0]["npi"]
         else:
             recover = {"note": "No rows needed NPI recovery."}
 
-    return {"verify": verify, "recover": recover,
-            "source": "NPPES via rcm_mc.data_public.nppes_api_client"}
+    payload = {"verify": verify, "recover": recover,
+               "recovered_written": len(recovered_rows),
+               "source": "NPPES via rcm_mc.data_public.nppes_api_client"}
+    return payload, recovered_rows
+
+
+def sample_csv() -> str:
+    """A small illustrative claims file exercising every check: a clean row, a
+    duplicate, a blank billing NPI, a malformed NPI, a checksum failure, a
+    whitespace case, a future service date and a money-ordering violation.
+    NPIs here are Luhn-valid synthetic examples — not real providers.
+    """
+    return (
+        "ClaimID,BillingProviderNPI,RenderingNPI,OrganizationName,"
+        "ProviderState,ChargeAmt,AllowedAmt,PaidAmt,DateOfService,HCPCS\n"
+        "1001,1679576722,1234567893,Mercy General Hospital,OH,420,300,240,2024-02-11,99213\n"
+        "1001, 1679576722 ,1234567893,Mercy General Hospital,OH,420,300,240,2024-02-11,99213\n"
+        "1003,,1245319599,Riverbend Clinic,TX,180,140,110,2024-03-02,99214\n"
+        "1004,99999,1245319599,Riverbend Clinic,TX,180,140,110,2024-03-02,99214\n"
+        "1005,1234567890,1679576722,Summit Surgical Center,CA,900,700,760,2024-04-19,ABCDE\n"
+        "1006,1699999984,1234567893,Lakeside Imaging,FL,250,200,150,2099-01-01,70450\n"
+    )
 
 
 def _out_name(src_name: str) -> str:
@@ -390,13 +504,40 @@ def _out_name(src_name: str) -> str:
 
 def _write_output(res: CleanResult, headers: List[str],
                   rows: List[List[str]]) -> None:
-    out_path = WORKDIR / f"{uuid.uuid4().hex}_{res.out_name}"
+    # When NPPES recovery filled in NPIs, append a non-destructive column so
+    # the original billing-NPI column is preserved and the recovery is visible.
+    out_headers = list(headers)
+    out_rows = [list(r) for r in rows]
+    if res.recovered_rows and headers:
+        out_headers = out_headers + ["recovered_billing_npi"]
+        for i, r in enumerate(out_rows):
+            r.append(res.recovered_rows.get(i + 1, ""))
+
+    token = uuid.uuid4().hex
+    out_path = WORKDIR / f"{token}_{res.out_name}"
     with open(out_path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.writer(fh)
-        if headers:
-            writer.writerow(headers)
-        writer.writerows(rows)
+        if out_headers:
+            writer.writerow([_defang_cell(h) for h in out_headers])
+        for r in out_rows:
+            writer.writerow([_defang_cell(c) for c in r])
     res.out_path = str(out_path)
+
+    # A styled multi-tab .xlsx workbook (Cleaned · issues · scorecard) via the
+    # app's stdlib xlsx writer — no new dependency. Guarded: a workbook build
+    # failure never blocks the CSV download.
+    try:
+        from . import report
+        stem = res.out_name[:-len("_cleaned.csv")] if res.out_name.endswith(
+            "_cleaned.csv") else res.out_name.rsplit(".", 1)[0]
+        res.workbook_name = f"{stem or 'claims'}_report.xlsx"
+        wb_bytes = report.build_workbook(res, out_headers, out_rows)
+        wb_path = WORKDIR / f"{token}_{res.workbook_name}"
+        with open(wb_path, "wb") as fh:
+            fh.write(wb_bytes)
+        res.workbook_path = str(wb_path)
+    except Exception:  # noqa: BLE001
+        res.workbook_path = None
 
 
 # ------------------------------------------------------------- job management --

@@ -2762,26 +2762,53 @@ class RCMHandler(BaseHTTPRequestHandler):
                 status=HTTPStatus.NOT_FOUND)
         return self._send_json(job.status_dict())
 
-    def _route_npi_cleaner_download(self, job_id: str) -> None:
-        """Stream the cleaned CSV for a finished job."""
+    def _route_npi_cleaner_download(self, job_id: str, qs: dict) -> None:
+        """Stream the cleaned CSV, or the .xlsx workbook when ?fmt=xlsx."""
         from .npi_cleaner import engine
 
         job = engine.manager().get(job_id)
-        if job is None or job.result is None or not job.result.out_path:
+        if job is None or job.result is None:
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        want_xlsx = (qs.get("fmt") or [""])[0] == "xlsx"
+        if want_xlsx:
+            src_path = job.result.workbook_path
+            fname = job.result.workbook_name
+            ctype = ("application/vnd.openxmlformats-officedocument."
+                     "spreadsheetml.sheet")
+        else:
+            src_path = job.result.out_path
+            fname = job.result.out_name
+            ctype = "text/csv; charset=utf-8"
+        if not src_path:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         try:
-            with open(job.result.out_path, "rb") as fh:
+            with open(src_path, "rb") as fh:
                 data = fh.read()
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
-        safe_name = job.result.out_name.replace('"', "")
+        safe_name = fname.replace('"', "")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header(
+            "Content-Disposition", f'attachment; filename="{safe_name}"')
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _route_npi_cleaner_sample(self) -> None:
+        """Serve a small illustrative claims CSV so a partner can try the tool
+        in one click without hunting for a file."""
+        from .npi_cleaner import engine
+
+        data = engine.sample_csv().encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/csv; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self.send_header(
-            "Content-Disposition", f'attachment; filename="{safe_name}"')
+            "Content-Disposition", 'attachment; filename="sample_claims.csv"')
         self.end_headers()
         self.wfile.write(data)
 
@@ -3611,7 +3638,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 path[len("/npi-cleaner/status/"):].strip("/"))
         if path.startswith("/npi-cleaner/download/"):
             return self._route_npi_cleaner_download(
-                path[len("/npi-cleaner/download/"):].strip("/"))
+                path[len("/npi-cleaner/download/"):].strip("/"),
+                urllib.parse.parse_qs(parsed.query))
+        if path == "/npi-cleaner/sample":
+            return self._route_npi_cleaner_sample()
         if path == "/import":
             from .ui.quick_import import render_quick_import
             _imp_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)

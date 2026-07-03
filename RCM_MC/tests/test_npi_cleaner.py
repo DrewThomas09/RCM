@@ -83,6 +83,45 @@ class TestEngine(unittest.TestCase):
         res = engine.clean_bytes(data, "t.tsv")
         self.assertEqual(res.as_scorecard()["delimiter"], "tab")
 
+    def test_formula_injection_defanged(self):
+        # A cell that would start an Excel formula must be neutralized in CSV.
+        data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
+        res = engine.clean_bytes(data, "x.csv")
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("'=SUM(A1:A9)", out)
+
+    def test_xlsx_upload_roundtrip(self):
+        openpyxl = __import__("openpyxl")
+        from io import BytesIO
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(["ClaimID", "BillingNPI"])
+        ws.append([1, GOOD_A])
+        ws.append([2, "99999"])
+        buf = BytesIO()
+        wb.save(buf)
+        res = engine.clean_bytes(buf.getvalue(), "claims.xlsx")
+        sc = res.as_scorecard()
+        self.assertEqual(sc["delimiter"], "xlsx (Excel)")
+        self.assertEqual(sc["rows_in"], 2)
+        self.assertEqual(sc["billing_column"], "BillingNPI")
+
+    def test_workbook_generated(self):
+        data = (f"BillingNPI,AllowedAmt\n{GOOD_A},80\n").encode()
+        res = engine.clean_bytes(data, "c.csv")
+        self.assertTrue(res.workbook_path)
+        openpyxl = __import__("openpyxl")
+        wb = openpyxl.load_workbook(res.workbook_path)
+        self.assertIn("Scorecard", wb.sheetnames)
+        self.assertIn("Cleaned data", wb.sheetnames)
+
+    def test_sample_csv_cleans(self):
+        res = engine.clean_bytes(engine.sample_csv().encode(), "sample.csv")
+        sc = res.as_scorecard()
+        self.assertEqual(sc["duplicates_removed"], 1)   # rows 1001/1002
+        self.assertGreater(sc["billing_issues"], 0)
+
 
 class TestVendorAdapter(unittest.TestCase):
     """The real vendored v48 screens, driven through vendor_adapter."""
@@ -214,6 +253,32 @@ class TestNppesBridge(unittest.TestCase):
         res = engine.clean_bytes(data, "c.csv")
         self.assertIsNone(res.nppes)
 
+    def test_recovery_written_to_cleaned_file(self):
+        NppesProvider = self._providers()
+
+        def fake_fetch(npi, **kw):
+            return None  # nothing verifies; forces recovery path
+
+        def fake_search(name, state="", **kw):
+            return [NppesProvider(npi=GOOD_A, entity_type=2,
+                                  name="ACME CLINIC LLC", state=state or "TX")]
+
+        data = (
+            "BillingNPI,OrganizationName,ProviderState\n"
+            ",Acme Clinic,TX\n"
+            "99999,Acme Clinic,TX\n"
+        ).encode()
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi", fake_fetch), \
+             patch("rcm_mc.data_public.nppes_api_client.search_by_organization",
+                   fake_search):
+            res = engine.clean_bytes(data, "c.csv", enrich=True)
+        # Both Acme rows get the recovered NPI written to a new column.
+        self.assertEqual(len(res.recovered_rows), 2)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("recovered_billing_npi", out)
+        self.assertEqual(out.count(GOOD_A), 2)
+
 
 class TestNpiCleanerHttp(unittest.TestCase):
     def _start(self, tmp):
@@ -287,6 +352,45 @@ class TestNpiCleanerHttp(unittest.TestCase):
                     self.assertIn("attachment", r.headers.get("Content-Disposition", ""))
                     out = r.read().decode()
                 self.assertIn("ClaimID,BillingNPI", out)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_sample_and_xlsx_download(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                # The sample endpoint returns a usable CSV.
+                with _u.urlopen(f"http://127.0.0.1:{port}/npi-cleaner/sample") as r:
+                    sample = r.read()
+                self.assertIn(b"BillingProviderNPI", sample)
+
+                # Upload it and pull the .xlsx workbook back.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=sample, method="POST",
+                    headers={"X-Filename": "sample_claims.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                sc = None
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        st = json.loads(r.read().decode())
+                    if st.get("done"):
+                        sc = st["scorecard"]
+                        break
+                    time.sleep(0.05)
+                self.assertIsNotNone(sc)
+                self.assertTrue(sc["workbook_name"].endswith(".xlsx"))
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}?fmt=xlsx"
+                ) as r:
+                    body = r.read()
+                    self.assertEqual(body[:4], b"PK\x03\x04")  # a real zip/xlsx
+                    self.assertIn("spreadsheetml",
+                                  r.headers.get("Content-Type", ""))
             finally:
                 server.shutdown()
                 server.server_close()

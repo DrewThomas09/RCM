@@ -73,6 +73,11 @@ _EXTRA_CSS = r"""
   background:var(--green-deep,#0c7c66);color:#fff;text-decoration:none;
   padding:11px 20px;border-radius:10px;font-weight:640;font-size:14px}
 .npi-dl:hover{background:var(--green,#075a4a)}
+.npi-dl-alt{background:transparent;color:var(--green-deep,#0c7c66);
+  border:1px solid var(--green-deep,#0c7c66)}
+.npi-dl-alt:hover{background:color-mix(in srgb,var(--green-deep,#0c7c66) 8%,transparent);color:var(--green-deep,#0c7c66)}
+.npi-recovered{border:1px solid #b7d9c9;background:#eef7f2;color:#0c5a45;
+  border-radius:10px;padding:10px 14px;font-size:13px;margin-top:16px}
 .npi-again{margin-left:14px;font-size:13px;color:var(--green-deep,#0c7c66);
   cursor:pointer;text-decoration:underline;background:none;border:0;padding:0}
 .npi-err{border:1px solid #e2b8ae;background:#fbf1ee;color:#8a2a17;
@@ -140,10 +145,11 @@ def _body() -> str:
       <div class="cloud">⤒</div>
       <div class="big">Drag a claims file here</div>
       <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, or any delimited text export · up to 10&nbsp;MB</div>
+        CSV, TSV, or Excel (.xlsx) · up to 10&nbsp;MB ·
+        <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
     </div>
     <input type="file" id="npi-file" class="npi-hidden"
-           accept=".csv,.tsv,.txt,text/csv,text/plain">
+           accept=".csv,.tsv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <div class="npi-opts">
       <label><input type="checkbox" id="npi-dedupe" checked>
         Remove exact-duplicate rows</label>
@@ -187,8 +193,11 @@ Bounded and cached; opt-in.">ⓘ</span></label>
 
     <div id="npi-nppes"></div>
 
+    <div id="npi-recovered-note"></div>
     <div style="margin-top:22px">
-      <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned file</a>
+      <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
+      <a class="npi-dl npi-dl-alt" id="npi-dl-xlsx" href="#" download
+         style="margin-left:10px">⤓ Download report (.xlsx)</a>
       <button class="npi-again" id="npi-again">Clean another file</button>
     </div>
   </div>
@@ -303,6 +312,21 @@ _EXTRA_JS = r"""
 
     $("npi-dl").setAttribute("href", s.download);
     $("npi-dl").setAttribute("download", s.out_name||"cleaned.csv");
+    var xbtn=$("npi-dl-xlsx");
+    if(s.workbook_name){
+      xbtn.setAttribute("href", s.download+"?fmt=xlsx");
+      xbtn.setAttribute("download", s.workbook_name);
+      xbtn.style.display="";
+    } else { xbtn.style.display="none"; }
+
+    var rn=$("npi-recovered-note");
+    if(s.recovered_written>0){
+      rn.innerHTML='<div class="npi-recovered">✓ '+fmt(s.recovered_written)+
+        ' row'+(s.recovered_written===1?'':'s')+' had a billing NPI recovered '+
+        'from NPPES — written to a new <code>recovered_billing_npi</code> '+
+        'column in the download (originals preserved).</div>';
+    } else { rn.innerHTML=""; }
+
     hide(stUp); hide(stPr); hide(stErr); show(stRes);
   }
 
