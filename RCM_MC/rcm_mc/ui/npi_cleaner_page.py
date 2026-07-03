@@ -1,0 +1,390 @@
+"""NPI Claims Cleaner — the ``/npi-cleaner`` tool page.
+
+A drag-and-drop utility that runs a claims file through the offline NPI
+cleaner (``rcm_mc.npi_cleaner.engine``): validate every NPI against the Luhn
+check, de-duplicate exact rows, trim whitespace, flag missing / malformed /
+checksum-failing billing NPIs, and hand back a cleaned CSV plus a scorecard.
+
+Rendered inside ``chartis_shell`` (TOOLS nav) so it lives natively in the PE
+Desk app. The upload → live-progress → download loop is pure client-side JS
+talking to three sibling endpoints wired in ``server.py``:
+
+    POST /npi-cleaner/upload            (raw body, X-Filename header)
+    GET  /npi-cleaner/status/<job_id>   (JSON progress + scorecard)
+    GET  /npi-cleaner/download/<job_id> (the cleaned CSV)
+
+Exempt from the DealAnalysisPacket invariant for the same reason as
+``/import`` and ``/methodology``: this is a stateless data-hygiene utility, not
+analytical output about a specific deal. No DB, no network — the engine is
+stdlib-only.
+"""
+from __future__ import annotations
+
+from ._chartis_kit import chartis_shell, ck_editorial_head, ck_page_actions
+
+
+_EXTRA_CSS = r"""
+.npi-wrap{max-width:920px;margin:0 auto}
+.npi-drop{
+  border:2px dashed var(--line,#c9d6d0); border-radius:16px;
+  background:var(--panel,#fbfdfc); padding:44px 28px; text-align:center;
+  cursor:pointer; transition:border-color .15s ease, background .15s ease;
+}
+.npi-drop:hover,.npi-drop.drag{
+  border-color:var(--green-deep,#0c7c66);
+  background:color-mix(in srgb, var(--green-deep,#0c7c66) 5%, transparent);
+}
+.npi-drop .cloud{font-size:34px;line-height:1;margin-bottom:10px}
+.npi-drop .big{font-size:17px;font-weight:640;letter-spacing:-.01em}
+.npi-drop .small{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:6px}
+.npi-drop .pick{color:var(--green-deep,#0c7c66);text-decoration:underline;font-weight:600}
+.npi-opts{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;
+  margin:16px 0 4px;font-size:13px;color:var(--ink-2,#4a5d57)}
+.npi-opts label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.npi-hidden{display:none !important}
+.npi-prog{margin-top:22px}
+.npi-bar{height:10px;border-radius:6px;background:var(--line-soft,#e7eeea);overflow:hidden}
+.npi-bar > i{display:block;height:100%;width:0;border-radius:6px;
+  background:linear-gradient(90deg,var(--green,#0c7c66),var(--green-deep,#075a4a));
+  transition:width .25s ease}
+.npi-msg{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:8px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.npi-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;margin:22px 0}
+.npi-card{border:1px solid var(--line,#d2ddd7);border-radius:12px;
+  background:var(--panel,#fbfdfc);padding:14px 16px}
+.npi-card .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-2,#4a5d57)}
+.npi-card .v{font-size:26px;font-weight:680;letter-spacing:-.02em;margin-top:4px;
+  font-variant-numeric:tabular-nums}
+.npi-card .v.good{color:var(--green-deep,#0c7c66)}
+.npi-card .v.warn{color:#b06a00}
+.npi-card .v.bad{color:#a8331f}
+.npi-tbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+.npi-tbl th,.npi-tbl td{padding:8px 10px;border-bottom:1px solid var(--line-soft,#e7eeea);text-align:left}
+.npi-tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-2,#4a5d57);font-weight:640}
+.npi-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.npi-tbl tr td.billing{font-weight:640}
+.npi-badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 12%,transparent);
+  color:var(--green-deep,#0c7c66);margin-left:6px;vertical-align:middle}
+.npi-dl{display:inline-flex;align-items:center;gap:8px;margin-top:6px;
+  background:var(--green-deep,#0c7c66);color:#fff;text-decoration:none;
+  padding:11px 20px;border-radius:10px;font-weight:640;font-size:14px}
+.npi-dl:hover{background:var(--green,#075a4a)}
+.npi-again{margin-left:14px;font-size:13px;color:var(--green-deep,#0c7c66);
+  cursor:pointer;text-decoration:underline;background:none;border:0;padding:0}
+.npi-err{border:1px solid #e2b8ae;background:#fbf1ee;color:#8a2a17;
+  border-radius:10px;padding:12px 14px;font-size:13px;margin-top:16px}
+.npi-warn{border:1px solid #e8d8ac;background:#fbf7ea;color:#7a5a12;
+  border-radius:10px;padding:10px 14px;font-size:12.5px;margin-top:12px}
+.npi-note{font-size:12px;color:var(--ink-2,#4a5d57);margin-top:26px;
+  border-top:1px solid var(--line-soft,#e7eeea);padding-top:14px;line-height:1.6}
+.npi-adv{margin-top:26px}
+.npi-adv h3{margin:0 0 3px}
+.npi-adv .eng{font-size:11.5px;color:var(--ink-2,#4a5d57);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;margin-bottom:8px}
+.npi-flag{display:flex;justify-content:space-between;gap:12px;align-items:baseline;
+  padding:9px 12px;border:1px solid var(--line-soft,#e7eeea);border-radius:9px;
+  margin-bottom:7px;background:var(--panel,#fbfdfc)}
+.npi-flag .lab{font-weight:600;font-size:13px}
+.npi-flag .lab small{display:block;font-weight:400;color:var(--ink-2,#4a5d57);
+  font-size:11.5px;margin-top:2px}
+.npi-flag .cnt{font-variant-numeric:tabular-nums;font-weight:680;font-size:15px;
+  white-space:nowrap}
+.npi-flag .cnt.hit{color:#a8331f}
+.npi-flag .cnt.clear{color:var(--green-deep,#0c7c66)}
+.npi-pill{display:inline-block;font-size:10.5px;font-family:ui-monospace,Menlo,monospace;
+  padding:1px 6px;border-radius:5px;background:var(--line-soft,#e7eeea);
+  color:var(--ink-2,#4a5d57);margin-right:6px}
+"""
+
+
+def _body() -> str:
+    head = ck_editorial_head(
+        eyebrow="TOOLS · DATA HYGIENE",
+        title="NPI Claims Cleaner",
+        meta="OFFLINE · STDLIB ENGINE · NO PHI STORED",
+        lede_italic_phrase="Drop a claims file",
+        lede_body=(
+            " and get it back cleaned: every NPI checked against the official "
+            "Luhn checksum, exact-duplicate rows removed, whitespace trimmed, "
+            "and every missing or malformed billing-provider NPI flagged. "
+            "The file is processed in memory and never leaves this server."),
+        source_note=(
+            "Engine: rcm_mc/npi_cleaner/engine.py · verdicts mirror the "
+            "NPI_Recovery_and_Cleaner v48 field validators."),
+        actions_html=ck_page_actions(glossary=False, methodology=False),
+        show_legend=False,
+    )
+    return f"""
+{head}
+<div class="npi-wrap">
+
+  <div id="npi-stage-upload">
+    <div class="npi-drop" id="npi-drop" tabindex="0" role="button"
+         aria-label="Upload a claims file">
+      <div class="cloud">⤒</div>
+      <div class="big">Drag a claims file here</div>
+      <div class="small">or <span class="pick">choose a file</span> —
+        CSV, TSV, or any delimited text export · up to 10&nbsp;MB</div>
+    </div>
+    <input type="file" id="npi-file" class="npi-hidden"
+           accept=".csv,.tsv,.txt,text/csv,text/plain">
+    <div class="npi-opts">
+      <label><input type="checkbox" id="npi-dedupe" checked>
+        Remove exact-duplicate rows</label>
+    </div>
+  </div>
+
+  <div id="npi-stage-progress" class="npi-hidden">
+    <div class="npi-prog">
+      <div class="npi-bar"><i id="npi-bar-fill"></i></div>
+      <div class="npi-msg" id="npi-bar-msg">Uploading…</div>
+    </div>
+  </div>
+
+  <div id="npi-stage-error" class="npi-hidden">
+    <div class="npi-err" id="npi-err-text"></div>
+    <button class="npi-again" id="npi-err-again">Try another file</button>
+  </div>
+
+  <div id="npi-stage-result" class="npi-hidden">
+    <div class="npi-cards" id="npi-cards"></div>
+    <div id="npi-warnings"></div>
+    <div class="ck-section-header" style="margin-top:8px">
+      <h3 style="margin:0">Per-column NPI health</h3>
+    </div>
+    <table class="npi-tbl">
+      <thead><tr>
+        <th>Column</th><th class="num">Cells</th><th class="num">Valid</th>
+        <th class="num">Blank</th><th class="num">Malformed</th>
+        <th class="num">Checksum&nbsp;fail</th><th class="num">Health</th>
+      </tr></thead>
+      <tbody id="npi-col-rows"></tbody>
+    </table>
+
+    <div id="npi-advanced"></div>
+
+    <div style="margin-top:22px">
+      <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned file</a>
+      <button class="npi-again" id="npi-again">Clean another file</button>
+    </div>
+  </div>
+
+  <div class="npi-note">
+    <strong>What "cleaned" means.</strong> An NPI is <em>valid</em> when it is
+    exactly 10 digits and passes the Luhn check over the constant prefix
+    <code>80840</code> plus its first nine digits — the same rule CMS/NPPES
+    uses. <em>Malformed</em> = present but not 10 digits; <em>checksum</em> =
+    10 digits but the check digit is wrong; <em>blank</em> = missing. Rows and
+    columns are preserved exactly; only surrounding whitespace is trimmed and
+    byte-identical duplicate rows are dropped. Nothing is written to a
+    database and no NPIs are sent to any external service.
+    <br><br>
+    <strong>Two engines.</strong> The scorecard and cleaned file above always
+    run on a dependency-free stdlib pass. When the server has pandas available,
+    the file is <em>also</em> run through the genuine <code>NPI&nbsp;Recovery
+    &amp; Cleaner v48</code> screens — <code>field_validators</code> (NPI / NDC
+    / date / money / state / HCPCS rules), <code>consistency</code> (paid ≤
+    allowed ≤ billed, date ordering, provider-role coherence, quantity vs
+    days-supply) and the <code>dedup</code> netting audit — and their real
+    findings appear under "Coding &amp; consistency screens." The uploaded v48
+    archive was missing 14 of its own internal modules (the full NPPES recovery
+    pipeline, imputation, entity crosswalk, the Excel report writer and the CMS
+    reference tables), so those advanced steps stay dark until those files are
+    supplied; see <code>rcm_mc/npi_cleaner/vendor_v48/README.md</code>.
+  </div>
+</div>
+"""
+
+
+_EXTRA_JS = r"""
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var drop=$("npi-drop"), fileIn=$("npi-file");
+  var stUp=$("npi-stage-upload"), stPr=$("npi-stage-progress"),
+      stErr=$("npi-stage-error"), stRes=$("npi-stage-result");
+  var poll=null;
+
+  function show(el){ el.classList.remove("npi-hidden"); }
+  function hide(el){ el.classList.add("npi-hidden"); }
+  function reset(){
+    if(poll){ clearInterval(poll); poll=null; }
+    hide(stPr); hide(stErr); hide(stRes); show(stUp);
+    fileIn.value="";
+  }
+  function fail(msg){
+    if(poll){ clearInterval(poll); poll=null; }
+    hide(stUp); hide(stPr); hide(stRes);
+    $("npi-err-text").textContent = msg || "Something went wrong.";
+    show(stErr);
+  }
+  function fmt(n){ return (n==null?0:n).toLocaleString(); }
+
+  function healthClass(pct){ return pct>=99?"good":(pct>=90?"warn":"bad"); }
+
+  function render(s){
+    var cards=[
+      ["Rows in", fmt(s.rows_in), ""],
+      ["Rows out", fmt(s.rows_out), ""],
+      ["Duplicates removed", fmt(s.duplicates_removed),
+        s.duplicates_removed>0?"warn":"good"],
+      ["NPI health", (s.health_pct!=null?s.health_pct:0)+"%",
+        healthClass(s.health_pct)],
+      ["Billing-NPI issues", fmt(s.billing_issues),
+        s.billing_issues>0?"bad":"good"],
+      ["Cells trimmed", fmt(s.cells_trimmed), ""]
+    ];
+    $("npi-cards").innerHTML = cards.map(function(c){
+      return '<div class="npi-card"><div class="k">'+c[0]+
+        '</div><div class="v '+c[2]+'">'+c[1]+'</div></div>';
+    }).join("");
+
+    var w=$("npi-warnings"); w.innerHTML="";
+    (s.warnings||[]).forEach(function(msg){
+      var d=document.createElement("div"); d.className="npi-warn";
+      d.textContent=msg; w.appendChild(d);
+    });
+
+    var rows="";
+    var cs=s.column_stats||{};
+    Object.keys(cs).forEach(function(col){
+      var c=cs[col]; var cells=c.cells||0;
+      var pct=cells?Math.round(1000*c.valid/cells)/10:0;
+      var isBilling=(col===s.billing_column);
+      rows+='<tr><td class="'+(isBilling?'billing':'')+'">'+col+
+        (isBilling?'<span class="npi-badge">billing</span>':'')+'</td>'+
+        '<td class="num">'+fmt(cells)+'</td>'+
+        '<td class="num">'+fmt(c.valid)+'</td>'+
+        '<td class="num">'+fmt(c.blank)+'</td>'+
+        '<td class="num">'+fmt(c.malformed)+'</td>'+
+        '<td class="num">'+fmt(c.checksum)+'</td>'+
+        '<td class="num">'+pct+'%</td></tr>';
+    });
+    if(!rows){ rows='<tr><td colspan="7" style="color:var(--ink-2)">'+
+      'No NPI column detected in this file.</td></tr>'; }
+    $("npi-col-rows").innerHTML=rows;
+
+    renderAdvanced(s.advanced);
+
+    $("npi-dl").setAttribute("href", s.download);
+    $("npi-dl").setAttribute("download", s.out_name||"cleaned.csv");
+    hide(stUp); hide(stPr); hide(stErr); show(stRes);
+  }
+
+  function flagRow(label, sub, count){
+    var hit = count>0;
+    return '<div class="npi-flag"><div class="lab">'+label+
+      (sub?'<small>'+sub+'</small>':'')+'</div>'+
+      '<div class="cnt '+(hit?'hit':'clear')+'">'+
+      (hit?fmt(count)+' flagged':'clear')+'</div></div>';
+  }
+
+  function renderAdvanced(adv){
+    var box=$("npi-advanced");
+    if(!adv){ box.innerHTML=""; return; }
+    var html='<div class="npi-adv">';
+    html+='<div class="ck-section-header"><h3 style="margin:0">'+
+      'Coding &amp; consistency screens</h3></div>';
+    html+='<div class="eng">real engine · '+(adv.engine||'')+'</div>';
+
+    var fr=adv.field_rules||[];
+    if(fr.length){
+      html+='<div style="margin:6px 0 4px;font-weight:640;font-size:13px">'+
+        'Field-level rules</div>';
+      fr.forEach(function(r){
+        html+=flagRow('<span class="npi-pill">'+r.rule_id+'</span>'+r.field,
+          r.repair, r.rows);
+      });
+    }
+    var con=(adv.consistency||[]).filter(function(c){
+      return c.flagged>0 || (c.note && c.note.indexOf('needs')===-1); });
+    if(con.length){
+      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
+        'Cross-field consistency</div>';
+      con.forEach(function(c){
+        html+=flagRow(c.screen.replace(/_/g,' '), c.note, c.flagged);
+      });
+    }
+    if(adv.netting){
+      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
+        'Reversal / netting audit</div>';
+      html+=flagRow('netting_audit', adv.netting.note, adv.netting.pairs);
+    }
+    html+='</div>';
+    box.innerHTML=html;
+  }
+
+  function watch(jobId){
+    poll=setInterval(function(){
+      fetch("/npi-cleaner/status/"+jobId, {headers:{"Accept":"application/json"}})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          if(j.error){ fail(j.error); return; }
+          $("npi-bar-fill").style.width=Math.round((j.frac||0)*100)+"%";
+          $("npi-bar-msg").textContent=(j.msg||"Working")+" — "+
+            Math.round((j.frac||0)*100)+"%";
+          if(j.done){
+            clearInterval(poll); poll=null;
+            if(j.scorecard){ render(Object.assign(j.scorecard,{download:j.download})); }
+            else { fail("Cleaning finished without a result."); }
+          }
+        })
+        .catch(function(e){ fail("Lost connection to the server."); });
+    }, 400);
+  }
+
+  function upload(file){
+    if(!file) return;
+    if(file.size > 10*1024*1024){ fail("File is larger than 10 MB."); return; }
+    hide(stUp); hide(stErr); hide(stRes); show(stPr);
+    $("npi-bar-fill").style.width="4%";
+    $("npi-bar-msg").textContent="Uploading "+file.name+"…";
+    var qs = $("npi-dedupe").checked ? "" : "?dedupe=0";
+    fetch("/npi-cleaner/upload"+qs, {
+      method:"POST",
+      headers:{"X-Filename":encodeURIComponent(file.name)},
+      body:file
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j.error){ fail(j.error); return; }
+      if(!j.job_id){ fail("Upload did not return a job id."); return; }
+      watch(j.job_id);
+    })
+    .catch(function(e){ fail("Upload failed. Is the file under 10 MB?"); });
+  }
+
+  drop.addEventListener("click", function(){ fileIn.click(); });
+  drop.addEventListener("keydown", function(e){
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileIn.click(); } });
+  fileIn.addEventListener("change", function(){ upload(fileIn.files[0]); });
+  ["dragenter","dragover"].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault();
+      drop.classList.add("drag"); }); });
+  ["dragleave","drop"].forEach(function(ev){
+    drop.addEventListener(ev, function(e){ e.preventDefault();
+      drop.classList.remove("drag"); }); });
+  drop.addEventListener("drop", function(e){
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    upload(f);
+  });
+  $("npi-again").addEventListener("click", reset);
+  $("npi-err-again").addEventListener("click", reset);
+})();
+"""
+
+
+def render_npi_cleaner() -> str:
+    """Full HTML for GET /npi-cleaner."""
+    return chartis_shell(
+        _body(),
+        title="NPI Claims Cleaner",
+        active_nav="TOOLS",
+        breadcrumbs=[("Tools", None), ("NPI Cleaner", None)],
+        extra_css=_EXTRA_CSS,
+        extra_js=_EXTRA_JS,
+        code="rcm_mc/ui/npi_cleaner_page.py",
+    )
