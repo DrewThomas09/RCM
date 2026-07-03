@@ -223,6 +223,37 @@ class TestEngine(unittest.TestCase):
         res = engine.clean_bytes(data, "y.csv")
         self.assertNotIn("date-in-future", res.sanity)
 
+    def test_zip_state_mismatch_flagged(self):
+        # A ZIP whose 3-digit prefix resolves to a different state than the
+        # state cell is flagged. 902xx→CA, 331xx→FL, 100xx→NY.
+        data = (
+            "ClaimID,ProviderState,ProviderZip\n"
+            "1,CA,90210\n"        # 902→CA, matches → clear
+            "2,NY,90210\n"        # 902→CA but state says NY → mismatch
+            "3,FL,33101\n"        # 331→FL, matches → clear
+            "4,TX,10001\n"        # 100→NY but state says TX → mismatch
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("zip-state-mismatch"), 2)
+
+    def test_zip_state_pairs_same_entity_only(self):
+        # PatientState must not be compared against ProviderZip (different
+        # entities) — that pairing would false-positive. Only same-entity
+        # provider columns are compared, and here they agree → no flag.
+        data = (
+            "ClaimID,PatientState,ProviderState,ProviderZip\n"
+            "1,NY,CA,90210\n"     # provider CA↔902 agree; patient NY ignored
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertNotIn("zip-state-mismatch", res.sanity)
+
+    def test_zip_state_skips_territories(self):
+        # Territory/military prefixes are approximate in the crosswalk, so a
+        # PR/VI mismatch is never flagged.
+        data = ("ClaimID,ProviderState,ProviderZip\n1,VI,00801\n").encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertNotIn("zip-state-mismatch", res.sanity)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()

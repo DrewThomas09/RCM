@@ -578,7 +578,8 @@ _EXTRA_JS = r"""
     "fractional-units":"Fractional (non-integer) units",
     "suspected-duplicate-claim":"Suspected duplicate claim (same provider · patient · date · code · amount)",
     "ndc-ambiguous-10digit":"Ambiguous 10-digit NDC (segmentation unknown — verify at source)",
-    "date-in-future":"Impossible future date (service · birth · paid date after today)"};
+    "date-in-future":"Impossible future date (service · birth · paid date after today)",
+    "zip-state-mismatch":"ZIP prefix disagrees with the state code (verify address at source)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];

@@ -234,6 +234,62 @@ def _clean_date_cell(v: str) -> Tuple[str, List[str]]:
     return v, []
 
 
+# ZIP3-prefix ranges are approximate for a few split prefixes and for the
+# territory/military pseudo-states, so we never flag a mismatch involving one
+# of these — the reliable signal is the 50 states + DC.
+_ZIP_STATE_SKIP = {"AA", "AE", "AP", "PR", "VI", "GU", "MP", "AS"}
+_ZIP3_STATE_CACHE: Optional[Dict[str, str]] = None
+
+
+def _zip3_state_map() -> Dict[str, str]:
+    """The vendored USPS ZIP3→state crosswalk (pure-Python, no pandas), cached.
+
+    Reused rather than duplicated so the offline engine and the full v49
+    pipeline agree on the same prefix table."""
+    global _ZIP3_STATE_CACHE
+    if _ZIP3_STATE_CACHE is None:
+        try:
+            from .vendor_v49.npi_recovery.geo import ZIP3_TO_STATE
+            _ZIP3_STATE_CACHE = dict(ZIP3_TO_STATE)
+        except Exception:  # noqa: BLE001 — vendor tree missing → feature off
+            _ZIP3_STATE_CACHE = {}
+    return _ZIP3_STATE_CACHE
+
+
+def _zip_state_pairs(headers: List[str]) -> List[Tuple[int, int]]:
+    """Pair a state column with a ZIP column that refers to the SAME entity.
+
+    Cross-entity pairs (PatientState vs ProviderZip) would false-positive, so
+    columns are matched by the header text left after removing the
+    state/zip role tokens (ProviderState↔ProviderZip → both "provider"). When
+    nothing matches by entity but there is exactly one of each, they are
+    paired as a fallback."""
+    def _entity(folded: str, drop: tuple) -> str:
+        for d in drop:
+            folded = folded.replace(d, "")
+        return folded
+
+    states, zips = [], []
+    for i, h in enumerate(headers):
+        k = _norm_key(h)
+        if "state" in k or "province" in k:
+            states.append((i, _entity(k, ("state", "province"))))
+        if any(x in k for x in ("zipcode", "zip", "postalcode", "postal")):
+            zips.append((i, _entity(k, ("zipcode", "zip", "postalcode",
+                                        "postal", "code"))))
+    pairs: List[Tuple[int, int]] = []
+    used = set()
+    for si, se in states:
+        for zi, ze in zips:
+            if zi not in used and se and ze and se == ze:
+                pairs.append((si, zi))
+                used.add(zi)
+                break
+    if not pairs and len(states) == 1 and len(zips) == 1:
+        pairs.append((states[0][0], zips[0][0]))
+    return pairs
+
+
 def _date_after(iso: str, today) -> bool:
     """True when a cleaned cell is a valid ISO date strictly after ``today``.
 
@@ -867,6 +923,10 @@ def clean_bytes(
                              for x in (_SERVICE_DATE_HINTS + _DOB_HINTS))}
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).date()
+    # ZIP↔state consistency: pair same-entity state/zip columns and flag rows
+    # whose ZIP3 prefix resolves to a different state than the state cell.
+    zs_pairs = _zip_state_pairs(headers)
+    zs_map = _zip3_state_map() if zs_pairs else {}
     # PHI columns for opt-in de-identification (patient direct identifiers).
     phi_cols: Dict[int, str] = {}
     if deid:
@@ -988,6 +1048,20 @@ def clean_bytes(
         if any(ci < len(new_row) and _date_after(new_row[ci], _today)
                for ci in past_date_cols):
             res.sanity["date-in-future"] = res.sanity.get("date-in-future", 0) + 1
+        # ZIP prefix disagrees with the same-entity state cell (counted once).
+        for si, zi in zs_pairs:
+            if si >= len(new_row) or zi >= len(new_row):
+                continue
+            sv = new_row[si].strip().upper()
+            zdig = "".join(c for c in new_row[zi] if c.isdigit())
+            if len(sv) == 2 and sv in _STATE_CODES and len(zdig) >= 3:
+                exp = zs_map.get(zdig[:3])
+                if (exp and exp != sv
+                        and exp not in _ZIP_STATE_SKIP
+                        and sv not in _ZIP_STATE_SKIP):
+                    res.sanity["zip-state-mismatch"] = \
+                        res.sanity.get("zip-state-mismatch", 0) + 1
+                    break
         # NDC that couldn't be safely normalized (unhyphenated 10-digit).
         for ci in ndc_norm_set:
             if ci < len(new_row):
