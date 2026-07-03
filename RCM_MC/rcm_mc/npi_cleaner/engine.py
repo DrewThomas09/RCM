@@ -121,6 +121,11 @@ class CleanResult:
     out_name: str = "cleaned.csv"
     workbook_path: Optional[str] = None
     workbook_name: str = "report.xlsx"
+    # Corrections companion (v49 suggested_fixes): row-level current→suggested
+    # fixes with provenance. Written to its own CSV for download.
+    companion_path: Optional[str] = None
+    companion_name: str = "corrections.csv"
+    suggestions_records: List[Dict[str, str]] = field(default_factory=list)
     # NPPES-recovered NPIs written into the cleaned output, keyed by the
     # 1-based row index → recovered NPI. Populated only when enrich resolves
     # a single confident candidate for a row's provider name+state.
@@ -177,6 +182,8 @@ class CleanResult:
                               self.delimiter, self.delimiter),
             "out_name": self.out_name,
             "workbook_name": self.workbook_name if self.workbook_path else None,
+            "companion_name": self.companion_name if self.companion_path else None,
+            "companion_n": len(self.suggestions_records),
             "recovered_written": len(self.recovered_rows),
             "warnings": self.warnings,
             "advanced": self.advanced,
@@ -405,10 +412,17 @@ def clean_bytes(
     # consistency + dedup screens when pandas and the modules are available.
     # Guarded end-to-end — any failure just leaves res.advanced None and the
     # stdlib results stand on their own.
-    cb("Running coding & consistency screens", 0.82)
+    cb("Running the v49 deterministic engine (repairs · screens · issues)", 0.82)
     try:
         from . import vendor_adapter
-        res.advanced = vendor_adapter.run(data)
+        adv = vendor_adapter.run(data)
+        if adv:
+            # The full companion can be large — keep it out of the JSON the
+            # browser polls; retain it for the CSV/workbook downloads and
+            # expose only a small preview inline.
+            res.suggestions_records = adv.pop("suggestions_records", []) or []
+            adv["suggestions_sample"] = res.suggestions_records[:25]
+        res.advanced = adv
     except Exception:  # noqa: BLE001
         res.advanced = None
 
@@ -522,6 +536,20 @@ def _write_output(res: CleanResult, headers: List[str],
         for r in out_rows:
             writer.writerow([_defang_cell(c) for c in r])
     res.out_path = str(out_path)
+
+    # Corrections companion (v49 suggested_fixes) as its own CSV download.
+    if res.suggestions_records:
+        cols = list(res.suggestions_records[0].keys())
+        stem = res.out_name[:-len("_cleaned.csv")] if res.out_name.endswith(
+            "_cleaned.csv") else res.out_name.rsplit(".", 1)[0]
+        res.companion_name = f"{stem or 'claims'}_corrections.csv"
+        comp_path = WORKDIR / f"{token}_{res.companion_name}"
+        with open(comp_path, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            writer.writerow([_defang_cell(c) for c in cols])
+            for rec in res.suggestions_records:
+                writer.writerow([_defang_cell(str(rec.get(c, ""))) for c in cols])
+        res.companion_path = str(comp_path)
 
     # A styled multi-tab .xlsx workbook (Cleaned · issues · scorecard) via the
     # app's stdlib xlsx writer — no new dependency. Guarded: a workbook build

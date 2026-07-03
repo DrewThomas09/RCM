@@ -1,0 +1,14 @@
+contractor_id,contractor_name,sad_article_id,jurisdiction,part_ab,jurisdiction_states,notes
+NGS,National Government Services Inc.,A53021,JK,A/B,"CT,NY,ME,NH,VT,MA,RI",Jurisdiction K Part A/B
+NGS,National Government Services Inc.,A53021,J6,A/B,"IL,MN,WI",Jurisdiction 6 Part A/B; shares SAD article A53021 with JK
+WPS,WPS Insurance Corporation,A52800,J5,A/B,"IA,KS,MO,NE",Jurisdiction 5 Part A/B
+WPS,WPS Insurance Corporation,A52800,J8,A/B,"IN,MI",Jurisdiction 8 Part A/B; shares SAD article A52800 with J5
+CGS,CGS Administrators LLC,A52527,J15,A/B,"KY,OH",Jurisdiction 15 Part A/B
+CGS,CGS Administrators LLC,A52527,HHH,HHH,"HHH",Home Health and Hospice MAC (national); billed by home-infusion providers
+NORIDIAN_JE,Noridian Healthcare Solutions LLC,A53032,JE,A/B,"CA,HI,NV,AS,GU,MP",Jurisdiction E Part A/B; distinct SAD article A53032
+NORIDIAN_JF,Noridian Healthcare Solutions LLC,A53033,JF,A/B,"AK,AZ,ID,MT,ND,OR,SD,UT,WA,WY",Jurisdiction F Part A/B; distinct SAD article A53033
+NOVITAS,Novitas Solutions Inc.,A53127,JH,A/B,"AR,CO,LA,MS,NM,OK,TX",Jurisdiction H Part A/B
+NOVITAS,Novitas Solutions Inc.,A53127,JL,A/B,"DE,DC,MD,NJ,PA",Jurisdiction L Part A/B; shares SAD article A53127 with JH
+FCSO,First Coast Service Options Inc.,A52571,JN,A/B,"FL,PR,VI",Jurisdiction N Part A/B
+PALMETTO,Palmetto GBA,A53066,JM,A/B,"NC,SC,VA,WV",Jurisdiction M Part A/B
+PALMETTO,Palmetto GBA,A53066,JJ,A/B,"AL,GA,TN",Jurisdiction J Part A/B; shares SAD article A53066 with JM

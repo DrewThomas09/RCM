@@ -1,0 +1,16 @@
+ndc,hcpcs,drug_name,labeler,billable_units
+57894-0060-03,J3357,Stelara 90 MG/ML SC,Janssen,1
+57894-0061-01,J3357,Stelara 45 MG SC,Janssen,1
+57894-0054-01,J3358,Stelara 130 MG/26ML IV,Janssen,26
+72606-0130-01,J3358,ustekinumab-auub IV (Wezlana),Amgen,26
+00944-2800-01,J1569,Gammagard Liquid 10%,Takeda,500
+00944-2700-01,J1569,Gammagard Liquid 10%,Takeda,500
+13533-0800-71,J1561,Gamunex-C 10%,Grifols,500
+13533-0800-20,J1561,Gamunex-C 10%,Grifols,500
+44206-0451-05,J1459,Privigen 10%,CSL Behring,500
+00069-0809-01,J1745,Remicade 100 MG,Janssen,10
+59676-0310-01,Q5103,Inflectra 100 MG (infliximab-dyyb),Pfizer,10
+59676-0310-20,Q5103,Inflectra 100 MG (infliximab-dyyb),Pfizer,10
+59676-0310-40,Q5103,Inflectra 100 MG (infliximab-dyyb),Pfizer,10
+61010-3720-01,Q5104,Renflexis 100 MG (infliximab-abda),Organon,10
+72057-0088-01,Q5121,Avsola 100 MG (infliximab-axxq),Amgen,10

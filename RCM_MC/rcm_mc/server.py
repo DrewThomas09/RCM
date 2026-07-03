@@ -2770,12 +2770,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         if job is None or job.result is None:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
-        want_xlsx = (qs.get("fmt") or [""])[0] == "xlsx"
-        if want_xlsx:
+        fmt = (qs.get("fmt") or [""])[0]
+        if fmt == "xlsx":
             src_path = job.result.workbook_path
             fname = job.result.workbook_name
             ctype = ("application/vnd.openxmlformats-officedocument."
                      "spreadsheetml.sheet")
+        elif fmt == "companion":
+            src_path = job.result.companion_path
+            fname = job.result.companion_name
+            ctype = "text/csv; charset=utf-8"
         else:
             src_path = job.result.out_path
             fname = job.result.out_name

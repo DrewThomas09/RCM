@@ -12,4 +12,4 @@ from .entity import make_crosswalk, hhi_entity_vs_raw
 
 __all__ = ["run_pipeline", "write_report", "Result",
            "make_crosswalk", "hhi_entity_vs_raw"]
-__version__ = "48.0.0"
+__version__ = "49.0.0"

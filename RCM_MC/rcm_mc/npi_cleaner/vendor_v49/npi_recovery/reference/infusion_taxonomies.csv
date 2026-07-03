@@ -1,0 +1,26 @@
+taxonomy_code,site_class,label,note,source
+261QI0500X,AIC,Clinic/Center - Infusion Therapy,Standalone ambulatory infusion center,NUCC taxonomy
+261Q00000X,AIC,Clinic/Center - general,Multispecialty clinic; AIC when paired with in-clinic admin codes,NUCC taxonomy
+261QM0801X,AIC,Clinic/Center - Mental health,Clinic setting,NUCC taxonomy
+261QA1903X,AIC,Clinic/Center - Ambulatory surgical,Ambulatory facility,NUCC taxonomy
+3336I0012X,AIS,Pharmacy - Infusion,Infusion pharmacy (pharmacy-model; bills as supplier),NUCC taxonomy
+3336H0001X,AIS,Pharmacy - Home infusion,Home-infusion pharmacy supplier,NUCC taxonomy
+3336C0002X,AIS,Pharmacy - Clinic,Clinic pharmacy supplier,NUCC taxonomy
+3336C0003X,AIS,Pharmacy - Community/retail,Retail/specialty pharmacy supplier,NUCC taxonomy
+3336S0011X,AIS,Pharmacy - Specialty,Specialty pharmacy supplier,NUCC taxonomy
+333600000X,AIS,Pharmacy,Generic pharmacy supplier,NUCC taxonomy
+332B00000X,AIS,Durable Medical Equipment & Medical Supplies,DMEPOS supplier (home pump/SCIG channel),NUCC taxonomy
+332BX2000X,AIS,DME - external infusion pump,External infusion pump supplier,NUCC taxonomy
+251E00000X,Home,Home Health,Home health agency,NUCC taxonomy
+251G00000X,Home,Hospice Care Community Based,Community/home hospice,NUCC taxonomy
+253Z00000X,Home,In Home Supportive Care,In-home support,NUCC taxonomy
+174200000X,AIS,Meals/home delivery,Home delivery support,NUCC taxonomy
+207RH0003X,Office,Internal Medicine - Hematology & Oncology,Physician office,NUCC taxonomy
+2080P0201X,Office,Pediatrics - Hematology/Oncology,Physician office,NUCC taxonomy
+207RI0011X,Office,Internal Medicine - Immunology,Physician office,NUCC taxonomy
+2084N0400X,Office,Neurology,Physician office,NUCC taxonomy
+207RG0100X,Office,Internal Medicine - Gastroenterology,Physician office,NUCC taxonomy
+207RR0500X,Office,Internal Medicine - Rheumatology,Physician office,NUCC taxonomy
+207R00000X,Office,Internal Medicine,Physician office,NUCC taxonomy
+208D00000X,Office,General Practice,Physician office,NUCC taxonomy
+207Q00000X,Office,Family Medicine,Physician office,NUCC taxonomy

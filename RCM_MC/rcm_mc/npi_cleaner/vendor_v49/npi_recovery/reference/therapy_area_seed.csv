@@ -1,0 +1,19 @@
+molecule_token,therapy_code,acute_chronic,chronic_subclass,straddle_note,source
+immune globulin,IMM,chronic,IVIG,,Client TA seed
+ustekinumab,GAS,chronic,other_chronic,,Client TA seed
+vedolizumab,GAS,chronic,other_chronic,,Client TA seed
+infliximab,GAS,chronic,other_chronic,"STRADDLE: rheum vs GI dominant-indication split",Client TA seed
+ocrelizumab,NEU,chronic,other_chronic,,Client TA seed
+efgartigimod,NEU,chronic,rare_orphan,,Client TA seed
+rozanolixizumab,NEU,chronic,rare_orphan,,Client TA seed
+ravulizumab,NEU,chronic,rare_orphan,,Client TA seed
+eculizumab,NEU,chronic,rare_orphan,,Client TA seed
+vutrisiran,CAR,chronic,rare_orphan,,Client TA seed
+teprotumumab,END,chronic,rare_orphan,,Client TA seed
+daptomycin,AIN,acute,,,Client TA seed
+cefepime,AIN,acute,,,Client TA seed
+ceftriaxone,AIN,acute,,,Client TA seed
+ertapenem,AIN,acute,,,Client TA seed
+vancomycin,AIN,acute,,,Client TA seed
+rituximab,ONC,chronic,other_chronic,"STRADDLE: oncology vs rheum/heme; dominant-code decision flips a nine-figure molecule in/out of scope",Client TA seed
+pembrolizumab,ONC,chronic,other_chronic,"STRADDLE: oncology exclusion line (market-excluded upstream)",Client TA seed

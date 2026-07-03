@@ -136,6 +136,15 @@ def _v43_sheets(result):
                        "each drug, used to score whether a recovered NPI's specialty is "
                        "a plausible biller. Refit from real Medicare utilization or RIF "
                        "carrier data for measured frequencies."))
+    rar = getattr(result, "reassignment_recovery", None)
+    if isinstance(rar, pd.DataFrame) and not rar.empty:
+        sheets.append(("Reassignment_Recovery", rar,
+                       "v49 - Structural billing-NPI recovery from PECOS reassignment",
+                       rar.attrs.get("note", "") + " Blank billing NPIs recovered by "
+                       "looking up the organization the rendering physician reassigns to "
+                       "in the Medicare enrollment data, the actual billing structure "
+                       "rather than a statistical guess. Refit from the CMS reassignment "
+                       "sub-file in production."))
     return sheets
 
 

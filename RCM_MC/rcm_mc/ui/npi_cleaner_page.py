@@ -78,6 +78,9 @@ _EXTRA_CSS = r"""
 .npi-dl-alt:hover{background:color-mix(in srgb,var(--green-deep,#0c7c66) 8%,transparent);color:var(--green-deep,#0c7c66)}
 .npi-recovered{border:1px solid #b7d9c9;background:#eef7f2;color:#0c5a45;
   border-radius:10px;padding:10px 14px;font-size:13px;margin-top:16px}
+.npi-sig{font-size:11.5px}
+.npi-sig.bad{color:#a8331f;font-weight:600}
+.npi-sig.warn{color:#b06a00}
 .npi-again{margin-left:14px;font-size:13px;color:var(--green-deep,#0c7c66);
   cursor:pointer;text-decoration:underline;background:none;border:0;padding:0}
 .npi-err{border:1px solid #e2b8ae;background:#fbf1ee;color:#8a2a17;
@@ -130,8 +133,9 @@ def _body() -> str:
             "Processed in memory — nothing is stored, and nothing leaves the "
             "server unless you opt into the live NPPES cross-check."),
         source_note=(
-            "Engine: rcm_mc/npi_cleaner/engine.py · verdicts mirror the "
-            "NPI_Recovery_and_Cleaner v48 field validators."),
+            "Engine: rcm_mc/npi_cleaner/engine.py (stdlib) + the complete "
+            "NPI_Recovery_and_Cleaner v49 deterministic engine "
+            "(clean_orchestrator.clean_all) on CMS reference tables."),
         actions_html=ck_page_actions(glossary=False, methodology=False),
         show_legend=False,
     )
@@ -198,6 +202,8 @@ Bounded and cached; opt-in.">ⓘ</span></label>
       <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
       <a class="npi-dl npi-dl-alt" id="npi-dl-xlsx" href="#" download
          style="margin-left:10px">⤓ Download report (.xlsx)</a>
+      <a class="npi-dl npi-dl-alt" id="npi-dl-companion" href="#" download
+         style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
       <button class="npi-again" id="npi-again">Clean another file</button>
     </div>
   </div>
@@ -215,16 +221,20 @@ Bounded and cached; opt-in.">ⓘ</span></label>
     <br><br>
     <strong>Two engines.</strong> The scorecard and cleaned file above always
     run on a dependency-free stdlib pass. When the server has pandas available,
-    the file is <em>also</em> run through the genuine <code>NPI&nbsp;Recovery
-    &amp; Cleaner v48</code> screens — <code>field_validators</code> (NPI / NDC
-    / date / money / state / HCPCS rules), <code>consistency</code> (paid ≤
-    allowed ≤ billed, date ordering, provider-role coherence, quantity vs
-    days-supply) and the <code>dedup</code> netting audit — and their real
-    findings appear under "Coding &amp; consistency screens." The uploaded v48
-    archive was missing 14 of its own internal modules (the full NPPES recovery
-    pipeline, imputation, entity crosswalk, the Excel report writer and the CMS
-    reference tables), so those advanced steps stay dark until those files are
-    supplied; see <code>rcm_mc/npi_cleaner/vendor_v48/README.md</code>.
+    the file is <em>also</em> run through the genuine, complete
+    <code>NPI&nbsp;Recovery&nbsp;&amp;&nbsp;Cleaner v49</code> deterministic
+    engine — <code>schema.standardize_any</code> +
+    <code>clean_orchestrator.clean_all</code>. That applies safe deterministic
+    repairs and runs every coding-edit and consistency screen (NCCI MUE, PTP
+    pairs, ICD-10/DOS validity, age–sex, JW/JZ single-dose wastage,
+    deactivated-NPI, and the money/date/role/units cross-field checks) against
+    the CMS reference tables vendored with the package. Each issue is sized —
+    rows, % of rows, dollar exposure, and a systematic-vs-random verdict — and
+    every fixable row gets a suggested correction you can download as the
+    corrections companion. The full networked recovery pipeline
+    (<code>run_pipeline</code>, live NPPES/CMS Steps&nbsp;0–8) ships in the
+    vendored package for batch/CLI use; see
+    <code>rcm_mc/npi_cleaner/vendor_v49/README.md</code>.
     <br><br>
     <strong>Live NPPES cross-check (opt-in).</strong> Tick the second box and
     the cleaner uses PE&nbsp;Desk's own cached CMS/NPPES connection
@@ -318,6 +328,12 @@ _EXTRA_JS = r"""
       xbtn.setAttribute("download", s.workbook_name);
       xbtn.style.display="";
     } else { xbtn.style.display="none"; }
+    var cbtn=$("npi-dl-companion");
+    if(s.companion_name){
+      cbtn.setAttribute("href", s.download+"?fmt=companion");
+      cbtn.setAttribute("download", s.companion_name);
+      cbtn.style.display="";
+    } else { cbtn.style.display="none"; }
 
     var rn=$("npi-recovered-note");
     if(s.recovered_written>0){
@@ -338,36 +354,56 @@ _EXTRA_JS = r"""
       (hit?fmt(count)+' flagged':'clear')+'</div></div>';
   }
 
+  function dollars(v){
+    if(v==null) return "";
+    if(v>=1e6) return "$"+(v/1e6).toFixed(2)+"M";
+    if(v>=1e3) return "$"+(v/1e3).toFixed(1)+"K";
+    return "$"+Math.round(v);
+  }
+
   function renderAdvanced(adv){
     var box=$("npi-advanced");
     if(!adv){ box.innerHTML=""; return; }
     var html='<div class="npi-adv">';
     html+='<div class="ck-section-header"><h3 style="margin:0">'+
-      'Coding &amp; consistency screens</h3></div>';
-    html+='<div class="eng">real engine · '+(adv.engine||'')+'</div>';
+      'Coding, consistency &amp; issue analysis</h3></div>';
+    html+='<div class="eng">real engine · '+(adv.engine||'')+
+      (adv.repairs?(' · '+fmt(adv.repairs)+' deterministic repairs applied'):'')+
+      '</div>';
 
-    var fr=adv.field_rules||[];
-    if(fr.length){
-      html+='<div style="margin:6px 0 4px;font-weight:640;font-size:13px">'+
-        'Field-level rules</div>';
-      fr.forEach(function(r){
-        html+=flagRow('<span class="npi-pill">'+r.rule_id+'</span>'+r.field,
-          r.repair, r.rows);
+    var issues=adv.issues||[];
+    if(issues.length){
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Issue</th><th class="num">Rows</th><th class="num">% rows</th>'+
+        '<th class="num">$ exposure</th><th>Signal</th></tr></thead><tbody>';
+      issues.forEach(function(it){
+        var sig=it.systematic||"";
+        var tone=sig.indexOf("systematic")===0?"bad":
+                 (sig.indexOf("random")===0?"":"warn");
+        html+='<tr><td>'+it.issue.replace(/_/g,' ')+'</td>'+
+          '<td class="num">'+fmt(it.rows)+'</td>'+
+          '<td class="num">'+(it.pct_rows!=null?it.pct_rows.toFixed(1)+'%':'')+'</td>'+
+          '<td class="num">'+dollars(it.dollars)+'</td>'+
+          '<td><span class="npi-sig '+tone+'">'+sig+'</span></td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+
+    var scr=adv.screens||{};
+    var keys=Object.keys(scr);
+    if(keys.length){
+      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
+        'Screens run</div>';
+      keys.forEach(function(k){
+        html+=flagRow(k.replace(/_/g,' '), "", scr[k]);
       });
     }
-    var con=(adv.consistency||[]).filter(function(c){
-      return c.flagged>0 || (c.note && c.note.indexOf('needs')===-1); });
-    if(con.length){
-      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
-        'Cross-field consistency</div>';
-      con.forEach(function(c){
-        html+=flagRow(c.screen.replace(/_/g,' '), c.note, c.flagged);
-      });
-    }
-    if(adv.netting){
-      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
-        'Reversal / netting audit</div>';
-      html+=flagRow('netting_audit', adv.netting.note, adv.netting.pairs);
+
+    if(adv.suggestions_n>0){
+      html+='<div class="npi-nppes-note" style="margin-top:12px">'+
+        fmt(adv.suggestions_n)+' row-level suggested corrections available '+
+        '(current → suggested, with provenance) — download the corrections '+
+        'companion below.</div>';
     }
     html+='</div>';
     box.innerHTML=html;

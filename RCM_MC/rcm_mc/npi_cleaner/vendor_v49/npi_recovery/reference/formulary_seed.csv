@@ -1,0 +1,51 @@
+key,kind,disposition,note
+immune globulin,ingredient,in_formulary,IVIG/SCIG core
+ustekinumab,ingredient,in_formulary,Stelara
+vedolizumab,ingredient,in_formulary,Entyvio
+ocrelizumab,ingredient,in_formulary,Ocrevus
+efgartigimod,ingredient,in_formulary,Vyvgart (FcRn)
+rozanolixizumab,ingredient,in_formulary,Rystiggo (FcRn)
+ravulizumab,ingredient,in_formulary,Ultomiris
+eculizumab,ingredient,in_formulary,Soliris
+vutrisiran,ingredient,in_formulary,Amvuttra
+patisiran,ingredient,in_formulary,Onpattro
+teprotumumab,ingredient,in_formulary,Tepezza
+infliximab,ingredient,in_formulary,Remicade/biosimilars
+pegloticase,ingredient,in_formulary,Krystexxa (340B-sensitive)
+mepolizumab,ingredient,in_formulary,Nucala
+benralizumab,ingredient,in_formulary,Fasenra
+reslizumab,ingredient,in_formulary,Cinqair
+omalizumab,ingredient,in_formulary,Xolair
+dupilumab,ingredient,in_formulary,Dupixent
+natalizumab,ingredient,in_formulary,Tysabri
+ublituximab,ingredient,in_formulary,Briumvi
+golimumab,ingredient,in_formulary,Simponi Aria
+tocilizumab,ingredient,in_formulary,Actemra
+belimumab,ingredient,in_formulary,Benlysta
+anifrolumab,ingredient,in_formulary,Saphnelo
+inebilizumab,ingredient,in_formulary,Uplizna
+satralizumab,ingredient,in_formulary,Enspryng
+edaravone,ingredient,in_formulary,Radicava
+daptomycin,ingredient,keep_off_formulary,OPAT antibiotic — off core formulary but tracked
+cefepime,ingredient,keep_off_formulary,OPAT antibiotic — tracked
+ceftriaxone,ingredient,keep_off_formulary,OPAT antibiotic — tracked
+ertapenem,ingredient,keep_off_formulary,OPAT antibiotic — tracked
+vancomycin,ingredient,keep_off_formulary,OPAT antibiotic — tracked
+pembrolizumab,token,exclude,Keytruda — oncology; out of infusion-pharmacy scope
+keytruda,token,exclude,Keytruda — oncology; out of scope
+nivolumab,token,exclude,Opdivo — oncology; out of scope
+opdivo,token,exclude,Opdivo — oncology; out of scope
+atezolizumab,token,exclude,Tecentriq — oncology; out of scope
+tecentriq,token,exclude,oncology; out of scope
+durvalumab,token,exclude,Imfinzi — oncology; out of scope
+bevacizumab,token,exclude,Avastin — oncology; out of scope
+avastin,token,exclude,oncology; out of scope
+trastuzumab,token,exclude,Herceptin — oncology; out of scope
+pertuzumab,token,exclude,Perjeta — oncology; out of scope
+carboplatin,token,exclude,cytotoxic chemo; out of scope
+cisplatin,token,exclude,cytotoxic chemo; out of scope
+oxaliplatin,token,exclude,cytotoxic chemo; out of scope
+paclitaxel,token,exclude,cytotoxic chemo; out of scope
+docetaxel,token,exclude,cytotoxic chemo; out of scope
+pemetrexed,token,exclude,cytotoxic chemo; out of scope
+fluorouracil,token,exclude,cytotoxic chemo; out of scope

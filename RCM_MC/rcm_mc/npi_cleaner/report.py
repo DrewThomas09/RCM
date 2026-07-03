@@ -70,19 +70,31 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
         health.append(["No NPI column detected", "", "", "", "", ""])
     sheets.append(Sheet("NPI health", health, col_widths=[28, 10, 10, 10, 12, 14]))
 
-    # ---- Issues (real vendored screens) ----
-    issues = [_header(["Type", "Screen / rule", "Flagged rows", "Detail"])]
+    # ---- Issues (real v49 engine: sized with $ exposure + verdict) ----
     adv = res.advanced or {}
-    for r in adv.get("field_rules", []):
-        issues.append(["field rule", f"{r['rule_id']} · {r['field']}",
-                       r["rows"], r["repair"]])
-    for c in adv.get("consistency", []):
-        if c.get("flagged"):
-            issues.append(["consistency", c["screen"], c["flagged"], c.get("note", "")])
+    issues = [_header(["Issue", "Rows flagged", "% rows", "$ exposure",
+                       "% $", "Signal"])]
+    for it in adv.get("issues", []):
+        issues.append([it.get("issue", ""), it.get("rows", 0),
+                       it.get("pct_rows"), it.get("dollars"),
+                       it.get("pct_dollars"), it.get("systematic", "")])
+    if adv.get("repairs"):
+        issues.append(["deterministic repairs applied",
+                       adv["repairs"], "", "", "", "safe formatting fixes"])
     if len(issues) == 1:
-        issues.append(["—", "No coding/consistency findings "
-                       "(or pandas engine unavailable)", "", ""])
-    sheets.append(Sheet("Issues", issues, col_widths=[14, 26, 12, 60]))
+        issues.append(["No coding/consistency findings "
+                       "(or pandas engine unavailable)", "", "", "", "", ""])
+    sheets.append(Sheet("Issues", issues, col_widths=[26, 13, 9, 14, 8, 52]))
+
+    # ---- Suggested fixes companion (v49 suggested_fixes) ----
+    recs = res.suggestions_records
+    if recs:
+        cols = list(recs[0].keys())
+        fix_rows = [_header(cols)]
+        for rec in recs[:_MAX_DATA_ROWS]:
+            fix_rows.append([rec.get(c, "") for c in cols])
+        sheets.append(Sheet("Suggested fixes", fix_rows,
+                            col_widths=[12] * min(len(cols), 12)))
 
     # ---- NPPES verify + recover (only when it ran) ----
     nppes = res.nppes or {}

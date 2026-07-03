@@ -1,188 +1,149 @@
-"""Adapter that drives the *real* vendored NPI_Recovery_and_Cleaner v48 modules.
+"""Drive the *real* v49 deterministic engine from the NPI cleaner.
 
-The uploaded zip is incomplete — 14 internal modules its code imports were not
-in the archive (``pipeline``/``run_pipeline``, ``entity``, ``clean_pipeline``,
-``issue_analysis``, ``impute``, ``fill``, ``rx_bridge``, ``specialty_drug``,
-``common_name``, ``npi_channel``, ``deficit_diagnostics``, ``row_consistency``,
-``run_manifest``, ``bulk``, ``prettyxl``), plus the CMS reference-data CSVs the
-coding-edit screens read. So the full Steps 0–8 recovery pipeline and the
-Excel report cannot run from what was delivered.
+v49 is the complete package (unlike the v48 upload, which was missing its
+core). Its offline orchestrator — ``schema.standardize_any`` +
+``clean_orchestrator.clean_all`` — runs with no third-party deps beyond
+pandas/numpy and no network, and now finds the vendored CMS reference tables
+(NCCI MUE, ICD-10-CM validity, PTP pairs, deactivated-NPI, JW/JZ single-dose),
+so every coding-edit + consistency screen lights up for real.
 
-What *did* ship and runs offline with no missing deps are the field- and
-cross-field validation screens. This adapter wires the genuine package code for
-those — nothing here reimplements their logic:
+``clean_all`` returns the genuine v49 outputs:
+  * ``repair_ledger`` — safe deterministic repairs applied to a cleaned copy
+  * ``screens``       — MUE / PTP / ICD-DOS / age-sex / JW-JZ wastage /
+                        deactivated-NPI / cross-field consistency
+  * ``suggestions``   — a corrections companion (row, current→suggested, rule,
+                        confidence, safe-to-auto-apply, provenance, $)
+  * ``issue_summary`` — each issue sized: rows, % rows, $ exposure, % $,
+                        drug/provider HHI, and a systematic-vs-random verdict
 
-  * ``field_validators.run_field_validation`` — NPI (length + Luhn), NDC,
-    date, money, state, HCPCS field rules with a repairability verdict.
-  * ``consistency.run_all`` — money ordering (paid ≤ allowed ≤ billed), date
-    ordering, provider-role coherence, quantity vs days-supply.
-  * ``dedup.netting_audit`` — reversal / netting audit when allowed + units
-    are present.
+Everything is guarded: if pandas or the vendored modules are unavailable,
+``run(...)`` returns ``None`` and the caller falls back to the stdlib cleaner.
 
-Those functions expect a *standardized* frame with canonical column names, so
-the adapter maps the uploaded headers onto the canonical fields (the same
-fallbacks the screens themselves use) before calling them. Everything is
-guarded: if pandas or any module is unavailable, ``run(...)`` returns ``None``
-and the caller falls back to the stdlib engine.
+The full networked ``run_pipeline`` (live NPPES/CMS recovery, Steps 0–8) is a
+batch/CLI job — it constructs live clients and can run for minutes — so it is
+deliberately not invoked from the web request. The interactive page uses this
+deterministic path plus the bounded live NPPES cross-check in ``nppes_bridge``.
 """
 from __future__ import annotations
 
 import io
-import re
+import math
 from typing import Dict, List, Optional
 
-
-# Canonical field -> the header spellings we accept for it. Keys mirror the
-# canonical names the vendored screens resolve (field_validators uses the
-# canonical name directly; consistency/coding_edits use these + fallbacks).
-_CANON_ALIASES: Dict[str, tuple] = {
-    "billing_npi": ("billingnpi", "billingprovidernpi", "billnpi", "npi",
-                    "providernpi", "payto_npi", "paytonpi"),
-    "referring_npi": ("referringnpi", "refernpi", "referringprovidernpi"),
-    "rendering_npi": ("renderingnpi", "rendnpi", "renderingprovidernpi",
-                      "servicingnpi", "attendingnpi"),
-    "allowed_amt": ("allowedamt", "allowed", "allowedamount", "alloweddollars"),
-    "billed_amt": ("billedamt", "billed", "chargeamt", "charges", "charge",
-                   "submittedamt", "billedamount"),
-    "paid_amt": ("paidamt", "paid", "paymentamt", "planpaid", "paidamount"),
-    "date": ("date", "dateofservice", "servicedate", "dos", "svcdate",
-             "fromdate", "servicefromdate"),
-    "paid_date": ("paiddate", "paymentdate", "adjudicationdate", "processeddate"),
-    "state": ("state", "provstate", "providerstate", "patientstate", "st"),
-    "hcpcs": ("hcpcs", "hcpcscpt", "cpt", "code", "procedurecode", "proccode"),
-    "units": ("units", "unit", "quantity", "qty", "srvccnt", "servicecount"),
-    "days_supply": ("dayssupply", "days", "dayssup", "supplydays"),
-    "ndc": ("ndc", "ndc11", "ndccode", "drugndc"),
-    "age": ("age", "patientage", "ageyears"),
-    "sex": ("sex", "gender", "patientsex"),
-}
-
-
-def _norm(h: str) -> str:
-    return re.sub(r"[^a-z0-9]", "", (h or "").lower())
-
-
-def build_mapping(headers: List[str]) -> Dict[str, str]:
-    """Map canonical field -> the actual header in this file (best effort).
-
-    First-match-wins per canonical field, in the alias order above. A header is
-    only claimed by one canonical field so we don't map two NPIs to the same
-    column.
-    """
-    norm_to_header = {}
-    for h in headers:
-        norm_to_header.setdefault(_norm(h), h)
-    claimed = set()
-    mapping: Dict[str, str] = {}
-    for canon, aliases in _CANON_ALIASES.items():
-        for alias in aliases:
-            hdr = norm_to_header.get(alias)
-            if hdr is not None and hdr not in claimed:
-                mapping[canon] = hdr
-                claimed.add(hdr)
-                break
-    return mapping
+# Cap the corrections companion so a pathological file can't produce a
+# multi-hundred-MB export; the count is always reported in full.
+_MAX_SUGGESTIONS = 5000
 
 
 def available() -> bool:
-    """True when pandas and the runnable vendored modules import cleanly."""
+    """True when pandas and the vendored v49 offline engine import."""
     try:
         import pandas  # noqa: F401
-        from .vendor_v48.npi_recovery import (  # noqa: F401
-            field_validators, consistency, dedup,
-        )
+        from .vendor_v49.npi_recovery import schema, clean_orchestrator  # noqa: F401
         return True
     except Exception:  # noqa: BLE001
         return False
 
 
-def run(data: bytes, mapping: Optional[Dict[str, str]] = None) -> Optional[dict]:
-    """Run the real field + consistency + netting screens on the upload.
-
-    Returns a dict of real findings, or ``None`` if the engine is unavailable
-    or the file cannot be framed. Never raises — a screen that lacks its inputs
-    returns a note, which we surface rather than treat as an error.
-    """
-    try:
-        import pandas as pd
-        from .vendor_v48.npi_recovery import (
-            field_validators as FV,
-            consistency as CON,
-            dedup as DD,
-        )
-    except Exception:  # noqa: BLE001
-        return None
-
+def _read_df(data: bytes):
+    import pandas as pd
+    if data[:4] == b"PK\x03\x04":  # xlsx
+        return pd.read_excel(io.BytesIO(data), dtype=str)
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
         text = data.decode("latin-1", errors="replace")
+    return pd.read_csv(io.StringIO(text), sep=None, engine="python",
+                       dtype=str, keep_default_na=False)
 
+
+def _num(v) -> Optional[float]:
     try:
-        df = pd.read_csv(io.StringIO(text), sep=None, engine="python",
-                         dtype=str, keep_default_na=False)
+        f = float(v)
+        return None if math.isnan(f) else f
+    except (TypeError, ValueError):
+        return None
+
+
+def run(data: bytes) -> Optional[dict]:
+    """Run the real v49 deterministic engine. Returns a display payload plus a
+    capped ``suggestions_records`` companion, or ``None`` when unavailable."""
+    try:
+        import pandas as pd
+        from .vendor_v49.npi_recovery import schema, clean_orchestrator as CO
     except Exception:  # noqa: BLE001
         return None
-    if df.empty or df.shape[1] == 0:
+
+    try:
+        raw = _read_df(data)
+    except Exception:  # noqa: BLE001
+        return None
+    if raw is None or raw.shape[1] == 0 or len(raw) == 0:
         return None
 
-    headers = list(df.columns)
-    mapping = mapping or build_mapping(headers)
-
-    # field_validators.run_field_validation reads canonical column NAMES
-    # directly (not via mapping), so present a renamed copy to it.
-    std = df.copy()
-    rename = {src: canon for canon, src in mapping.items() if src in std.columns}
-    std_fv = std.rename(columns=rename)
-
-    findings: dict = {"mapping": mapping, "field_rules": [],
-                      "consistency": [], "netting": None}
-
-    # ---- field-level rules (real) ----
     try:
-        fr = FV.run_field_validation(std_fv)
-        if "rule_id" in getattr(fr, "columns", []):
-            for _, r in fr.iterrows():
-                findings["field_rules"].append({
-                    "field": str(r["field"]), "rule_id": str(r["rule_id"]),
-                    "rows": int(r["rows"]), "repair": str(r["repair"]),
-                })
+        out = schema.standardize_any(raw)
+        std = out[0] if isinstance(out, tuple) else out
+        mapping = out[1] if isinstance(out, tuple) and len(out) > 1 else {}
     except Exception:  # noqa: BLE001
-        pass
+        return None
 
-    # ---- cross-field consistency screens (real) ----
     try:
-        screens = CON.run_all(std, mapping)
-        for name, frame in screens.items():
-            cols = getattr(frame, "columns", [])
-            if "row" in cols:
-                findings["consistency"].append({
-                    "screen": name, "flagged": int(len(frame)),
-                    "note": str(frame.attrs.get("note", "")),
-                })
-            else:
-                note = ""
-                if "note" in cols and len(frame):
-                    note = str(frame.iloc[0]["note"])
-                findings["consistency"].append({
-                    "screen": name, "flagged": 0, "note": note,
-                })
+        res = CO.clean_all(std, mapping=mapping)
     except Exception:  # noqa: BLE001
-        pass
+        return None
 
-    # ---- reversal / netting audit (real) ----
-    try:
-        allowed_c = mapping.get("allowed_amt")
-        units_c = mapping.get("units")
-        if allowed_c and units_c:
-            audit = DD.netting_audit(std, allowed=allowed_c, units=units_c)
-            if hasattr(audit, "__len__"):
-                findings["netting"] = {
-                    "pairs": int(len(audit)),
-                    "note": str(getattr(audit, "attrs", {}).get("note", "")),
-                }
-    except Exception:  # noqa: BLE001
-        pass
+    payload: Dict[str, object] = {
+        "engine": "npi_recovery v49 · schema.standardize_any + clean_all",
+        "mapping": {k: str(v) for k, v in (mapping or {}).items()},
+    }
 
-    findings["engine"] = "npi_recovery v48 (field_validators + consistency + dedup)"
-    return findings
+    ledger = res.get("repair_ledger")
+    payload["repairs"] = int(len(ledger)) if ledger is not None and hasattr(
+        ledger, "__len__") else 0
+
+    # Screen flag counts (frames that carry a per-row "row" column).
+    screens = res.get("screens", {}) or {}
+    payload["screens"] = {
+        name: int(len(frame))
+        for name, frame in screens.items()
+        if hasattr(frame, "columns") and "row" in getattr(frame, "columns", [])
+    }
+
+    # Sized issues (the headline: rows, $ exposure, systematic verdict).
+    issues: List[dict] = []
+    isum = res.get("issue_summary")
+    if isum is not None and hasattr(isum, "iterrows"):
+        for _, r in isum.iterrows():
+            issues.append({
+                "issue": str(r.get("issue", "")),
+                "rows": int(r.get("rows_flagged", 0) or 0),
+                "pct_rows": _num(r.get("pct_rows")),
+                "dollars": _num(r.get("dollar_exposure")),
+                "pct_dollars": _num(r.get("pct_dollars")),
+                "systematic": str(r.get("systematic_signal", "")),
+            })
+        issues.sort(key=lambda d: (d["dollars"] or 0), reverse=True)
+    payload["issues"] = issues
+
+    # Corrections companion.
+    sug = res.get("suggestions")
+    records: List[dict] = []
+    if sug is not None and hasattr(sug, "iterrows") and len(sug):
+        cols = [c for c in ("row", "field", "current_value", "suggested_value",
+                            "fix_rule", "confidence", "safe_to_auto_apply",
+                            "provenance", "issue", "dollars")
+                if c in sug.columns]
+        for _, r in sug.head(_MAX_SUGGESTIONS).iterrows():
+            records.append({c: ("" if pd.isna(r[c]) else str(r[c])) for c in cols})
+    payload["suggestions_n"] = int(len(sug)) if sug is not None else 0
+    payload["suggestions_records"] = records
+    payload["suggestions_cols"] = (
+        list(records[0].keys()) if records else [])
+
+    cleaned = res.get("cleaned")
+    if cleaned is not None and hasattr(cleaned, "shape"):
+        payload["cleaned_rows"] = int(cleaned.shape[0])
+        payload["cleaned_cols"] = int(cleaned.shape[1])
+
+    return payload

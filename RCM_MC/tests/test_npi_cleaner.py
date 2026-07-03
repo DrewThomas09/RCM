@@ -124,59 +124,64 @@ class TestEngine(unittest.TestCase):
 
 
 class TestVendorAdapter(unittest.TestCase):
-    """The real vendored v48 screens, driven through vendor_adapter."""
+    """The real, complete v49 deterministic engine (schema.standardize_any +
+    clean_orchestrator.clean_all), driven through vendor_adapter."""
 
     def setUp(self):
         from rcm_mc.npi_cleaner import vendor_adapter as va
         if not va.available():
-            self.skipTest("pandas / vendored modules unavailable")
+            self.skipTest("pandas / vendored v49 engine unavailable")
         self.va = va
 
-    def test_header_mapping(self):
-        m = self.va.build_mapping(
-            ["ClaimID", "BillingProviderNPI", "ReferringNPI", "ChargeAmt",
-             "AllowedAmt", "PaidAmt", "DateOfService", "PaidDate", "HCPCS"])
-        self.assertEqual(m["billing_npi"], "BillingProviderNPI")
-        self.assertEqual(m["referring_npi"], "ReferringNPI")
-        self.assertEqual(m["billed_amt"], "ChargeAmt")
-        self.assertEqual(m["allowed_amt"], "AllowedAmt")
-        self.assertEqual(m["date"], "DateOfService")
-        self.assertEqual(m["hcpcs"], "HCPCS")
-
-    def test_real_screens_catch_violations(self):
+    def test_v49_engine_runs_and_sizes_issues(self):
         data = (
             "ClaimID,BillingProviderNPI,ReferringNPI,ChargeAmt,AllowedAmt,"
             "PaidAmt,DateOfService,PaidDate,HCPCS\n"
             f"1,{GOOD_A},{GOOD_B},100,80,60,2024-01-15,2024-02-01,99213\n"
-            # paid>allowed (money), referring==billing (role), future date
-            f"2,{GOOD_A},{GOOD_A},50,90,40,2099-03-10,2024-03-01,ABCDE\n"
-            f"3,99999,{GOOD_B},200,150,120,2024-05-01,2024-06-01,99214\n"
+            # allowed>billed + paid>allowed (money), referring==billing (role)
+            f"2,{GOOD_A},{GOOD_A},50,90,40,2024-03-10,2024-03-01,99214\n"
+            f"3,99999,{GOOD_B},200,150,120,2024-05-01,2024-06-01,99215\n"
         ).encode()
         res = self.va.run(data)
         self.assertIsNotNone(res)
-        self.assertIn("field_validators", res["engine"])
+        self.assertIn("clean_all", res["engine"])
+        # Real screens fire; issues are sized with a systematic verdict.
+        self.assertIn("money_ordering", res["screens"])
+        self.assertGreaterEqual(res["screens"]["money_ordering"], 1)
+        self.assertGreaterEqual(res["screens"].get("npi_role_coherence", 0), 1)
+        issues = {i["issue"] for i in res["issues"]}
+        self.assertIn("money_ordering", issues)
+        # A corrections companion is produced for the consistency violations.
+        self.assertGreater(res["suggestions_n"], 0)
+        self.assertTrue(res["suggestions_records"])
+        self.assertIn("suggested_value", res["suggestions_records"][0])
 
-        # money ordering flags row 2 (paid 40 > allowed 90? no; allowed 90 >
-        # billed 50 yes) and row-2 paid>allowed etc. — at least one violation.
-        money = [c for c in res["consistency"] if c["screen"] == "money_ordering"][0]
-        self.assertGreaterEqual(money["flagged"], 1)
-        role = [c for c in res["consistency"]
-                if c["screen"] == "npi_role_coherence"][0]
-        self.assertEqual(role["flagged"], 1)  # row 2 referring == billing
-
-        rule_ids = {r["rule_id"] for r in res["field_rules"]}
-        self.assertIn("NPI-LEN", rule_ids)       # 99999 billing NPI
-        self.assertIn("DATE-FUTURE", rule_ids)   # 2099 service date
-        self.assertIn("HCPCS-FMT", rule_ids)     # ABCDE
-
-    def test_engine_attaches_advanced(self):
+    def test_engine_attaches_v49_advanced_and_companion(self):
         data = (
-            "BillingNPI,AllowedAmt,PaidAmt\n"
-            f"{GOOD_A},80,200\n"   # paid > allowed
+            "BillingNPI,ChargeAmt,AllowedAmt,PaidAmt\n"
+            f"{GOOD_A},50,90,40\n"   # allowed>billed + paid>allowed
         ).encode()
         res = engine.clean_bytes(data, "c.csv")
         self.assertIsNotNone(res.advanced)
-        self.assertIn("field_validators", res.advanced["engine"])
+        self.assertIn("clean_all", res.advanced["engine"])
+        # Suggestions companion is written to its own CSV.
+        self.assertTrue(res.companion_path)
+        with open(res.companion_path, encoding="utf-8") as fh:
+            head = fh.readline()
+        self.assertIn("suggested_value", head)
+
+    def test_bundled_v49_sample_runs(self):
+        from pathlib import Path
+        sample = (Path(__import__("rcm_mc").__file__).parent / "npi_cleaner"
+                  / "vendor_v49" / "examples" / "sample_claims.xlsx")
+        if not sample.exists():
+            self.skipTest("bundled sample missing")
+        res = engine.clean_bytes(sample.read_bytes(), "sample_claims.xlsx")
+        self.assertEqual(res.as_scorecard()["delimiter"], "xlsx (Excel)")
+        self.assertIsNotNone(res.advanced)
+        # 20 deterministic repairs + the JW/JZ wastage issue on the sample.
+        self.assertGreater(res.advanced["repairs"], 0)
+        self.assertTrue(res.advanced["issues"])
 
 
 class TestNppesBridge(unittest.TestCase):
