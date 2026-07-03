@@ -88,8 +88,38 @@ Reimbursement and revenue-realization modeling. Encodes the economic structure o
 
 ---
 
+## `life_sciences.py` — Life-Sciences Valuation Engine (rNPV)
+
+**What it does:** Prices life-sciences assets (therapeutics, devices, diagnostics) the way the sector actually values them — with a **risk-adjusted NPV (rNPV)** driven by clinical trial success probabilities, not an EBITDA multiple. The rest of `finance/` prices recurring-cash-flow services businesses; a pre-revenue drug asset has negative near-term cash flow, a binary clinical outcome, and a finite patent-protected life, so it needs a fundamentally different model. Pure-Python (`math` + `numpy` for the Monte Carlo), zero new dependencies.
+
+**Core rNPV.** `AssetRNPVConfig` → `value_asset_rnpv()` schedules the remaining development phases from the asset's `current_phase`, risks each future cash flow by the cumulative probability of reaching it, and discounts to today. Development spend is weighted by the probability of *reaching* that phase; commercial cash flow by the full cumulative **Likelihood of Approval (LoA)**. Returns `rnpv_musd` (the headline), `npv_success_musd` (the approval-case upside), the LoA, a year-by-year projection, and a `provenance` dict tagging every benchmark default vs. analyst input.
+
+**Clinical framework.** `PHASE_SUCCESS_TABLE` encodes phase-transition probabilities by `TherapeuticArea`, calibrated so the cumulative Phase-1 LoA reproduces the published BIO 2011–2020 range (ALL ≈ 7.9%; hematology highest ~24%; oncology/CNS lowest ~5–6%; vaccines high). Sourced from Wong/Siah/Lo (2019), BIO/Informa (2021), and DiMasi (2016) — all analyst-overridable.
+
+**Peak-sales, endogenously.** `EpidemiologyFunnel` builds peak sales bottom-up (population → diagnosed → treated → eligible → captured × net price × adherence) instead of pulling a number from the air. `competition_adjusted_peak_sales()` splits a class-level TAM among expected entrants by **order of entry** (first movers anchor share; late entrants split the residual) and differentiation.
+
+**Deal economics.** `LicensingDeal` (upfront + risked milestones + tiered royalties) overlays a licensing structure and splits the asset's rNPV between **licensor and licensee** — the number both sides argue over.
+
+**Dynamic / stochastic layers.**
+- `monte_carlo_rnpv()` — full binary-outcome simulation: each clinical gate is a Bernoulli trial; failures are worth the *negative* sunk development cost; successes draw a stochastic peak. The **mean reconciles to the analytic rNPV** — the point estimate is just the expected value of a violently skewed, bimodal distribution. Returns P10/P50/P90, P(positive), P(reaches market), and conditional expectations.
+- `sensitivity_tornado()` / `sensitivity_grid()` — one- and two-way sensitivity (the diligence tornado + heatmap).
+- `breakeven_peak_sales()` / `breakeven_loa()` — solve for the peak sales, or the *implied probability of success*, at which rNPV hits zero — i.e., what the price makes you believe.
+- `real_options_value()` — a staged-abandonment decision tree: rNPV assumes you always continue; reality lets you kill a program after a weak readout. Quantifies that walk-away option's premium.
+- `expected_value_blend()` — probability-weighted expected rNPV across a bear/base/bull scenario set.
+
+**Company / portfolio.** `value_pipeline()` (sum-of-the-parts across assets net of platform G&A and cash), `runway_analysis()` (cash runway + next-raise sizing — the first question in any pre-profit biotech deal).
+
+**Adjacent subsectors.** `cdmo_capacity_model()` (CDMO/CRO capacity, utilization, operating leverage, book-to-bill) and `diagnostics_unit_economics()` (razor/razor-blade instrument + consumable annuity).
+
+**Side-by-side (`compare_*`).** `compare_assets()`, `compare_scenarios()`, and `compare_assets_deep()` (adds the Monte-Carlo distribution rows) align any number of assets or scenarios on the same metric rows with deltas vs. a base, and render to `to_dict()` or a markdown table.
+
+**Data in:** analyst inputs (phase, therapeutic area, peak sales, deal terms) with benchmark defaults filling every gap. **Data out:** `RNPVResult` / `MonteCarloResult` / `Comparison` dataclasses, each with a `to_dict()` for UI/API/export.
+
+---
+
 ## Key Concepts
 
+- **rNPV over multiples**: Life sciences values a binary, finite-life asset by probability-weighting each future cash flow — not by applying a multiple to today's (often negative) EBITDA. The point rNPV is the *expected value* of a bimodal distribution; `monte_carlo_rnpv` shows the whole shape.
 - **Method-sensitive economics**: A 1% denial rate reduction is worth more on a DRG-prospective hospital than a capitated one — the reimbursement engine makes this structure explicit and auditable.
 - **Mechanism tables over opaque functions**: Every reimbursement method has a `MethodSensitivity` entry encoding its sensitivity to each RCM lever on a 0–1 scale. Analysts can read and defend every cell.
 - **Transparent inference**: Whenever a gap is filled (method distribution, discount, timing), the field is tagged in the profile's `provenance` dict so renderers show `inferred_from_profile` vs. `observed`.
