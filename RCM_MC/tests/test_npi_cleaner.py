@@ -184,6 +184,70 @@ class TestVendorAdapter(unittest.TestCase):
         self.assertTrue(res.advanced["issues"])
 
 
+class TestConnectors(unittest.TestCase):
+    """Live drug connectors (RxNorm / openFDA) with an injected opener."""
+
+    def setUp(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        if not C.available():
+            self.skipTest("public_api_clients unavailable")
+        self.C = C
+
+    def _opener(self, url, headers, timeout_s):
+        if "rxcui.json" in url and "idtype=NDC" in url:
+            return json.dumps({"idGroup": {"rxnormId": ["1049502"]}}).encode()
+        if "rxcui.json" in url:
+            return json.dumps({"idGroup": {"rxnormId": ["860975"]}}).encode()
+        if "/properties.json" in url:
+            return json.dumps({"properties": {"name": "metformin", "tty": "IN"}}).encode()
+        if "/ndcs.json" in url:
+            return json.dumps({"ndcGroup": {"ndcList": {"ndc": ["00093-1049"]}}}).encode()
+        if "api.fda.gov" in url:
+            return json.dumps({"results": [{"brand_name": "GLUCOPHAGE",
+                                            "generic_name": "METFORMIN",
+                                            "labeler_name": "BMS"}]}).encode()
+        return b"{}"
+
+    def test_catalog_lists_sources(self):
+        cat = self.C.catalog()
+        self.assertGreaterEqual(len(cat), 15)
+        ids = {c["id"] for c in cat}
+        self.assertIn("rxnorm", ids)
+        self.assertIn("nppes", ids)
+        self.assertIn("openfda", ids)
+
+    def test_resolve_drugs_rxnorm_and_openfda(self):
+        res = self.C.resolve_drugs(
+            ["0093-1049-01"], ["metformin"], opener=self._opener)
+        by_id = {r["id"]: r for r in res}
+        self.assertIn("rxnorm", by_id)
+        self.assertEqual(by_id["rxnorm"]["resolved"], 2)  # 1 NDC + 1 name
+        self.assertTrue(by_id["rxnorm"]["sample"][0]["rxcui"])
+        self.assertIn("openfda", by_id)
+        self.assertEqual(by_id["openfda"]["resolved"], 1)
+        self.assertEqual(by_id["openfda"]["sample"][0]["brand"], "GLUCOPHAGE")
+
+    def test_engine_online_wires_connectors_and_catalog(self):
+        from rcm_mc.npi_cleaner import connectors as C
+
+        def fake_resolve(ndcs, drugs, **kw):
+            return [{"id": "rxnorm", "label": "RxNorm / RxNav", "queried": 1,
+                     "resolved": 1, "unresolved": 0, "sample": [], "note": "ok"}]
+
+        def fake_fetch(npi, **kw):
+            return None
+
+        data = ("BillingNPI,NDC,DrugName\n"
+                f"{GOOD_A},0093-1049-01,Metformin\n").encode()
+        with patch.object(C, "resolve_drugs", fake_resolve), \
+             patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi", fake_fetch):
+            res = engine.clean_bytes(data, "c.csv", enrich=True)
+        sc = res.as_scorecard()
+        self.assertTrue(sc["connectors"])
+        self.assertEqual(sc["connectors"][0]["id"], "rxnorm")
+        self.assertGreaterEqual(len(sc["catalog"]), 15)
+
+
 class TestNppesBridge(unittest.TestCase):
     """Live NPPES verify/recover, cross-using the shared CMS client (mocked)."""
 
@@ -309,6 +373,11 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 self.assertIn("NPI Claims Cleaner", body)
                 self.assertIn("/npi-cleaner/upload", body)
                 self.assertIn("npi-drop", body)
+                # Tabbed results + live-connector affordances present.
+                self.assertIn("npi-tabs", body)
+                self.assertIn('data-panel="connectors"', body)
+                self.assertIn("Connections available", body)
+                self.assertIn("Go online", body)
             finally:
                 server.shutdown()
                 server.server_close()

@@ -58,6 +58,9 @@ _NAME_HINTS = (
     "facilityname", "practicename", "provider", "name",
 )
 _STATE_HINTS = ("providerstate", "billingstate", "state", "provstate", "st")
+# Columns carrying a drug identifier, for the RxNorm / openFDA connectors.
+_NDC_HINTS = ("ndc11", "ndc", "drugndc", "ndccode")
+_DRUG_HINTS = ("drugname", "drug", "productname", "medication", "labelname")
 
 ProgressCb = Callable[[str, float], None]
 
@@ -138,6 +141,10 @@ class CleanResult:
     # Live NPPES verify/recover results (via nppes_bridge). None unless the
     # user opted into the CMS cross-check. See nppes_bridge.py.
     nppes: Optional[Dict[str, object]] = None
+    # Live drug connectors (RxNorm / openFDA) results, and the available-source
+    # catalog. None unless online mode ran. See connectors.py.
+    connectors: Optional[List[Dict[str, object]]] = None
+    catalog: Optional[List[Dict[str, object]]] = None
 
     @property
     def total_npi_cells(self) -> int:
@@ -188,6 +195,8 @@ class CleanResult:
             "warnings": self.warnings,
             "advanced": self.advanced,
             "nppes": self.nppes,
+            "connectors": self.connectors,
+            "catalog": self.catalog,
         }
 
 
@@ -357,6 +366,8 @@ def clean_bytes(
 
     name_idx = _detect_one(headers, _NAME_HINTS)
     state_idx = _detect_one(headers, _STATE_HINTS)
+    ndc_idx = _detect_one(headers, _NDC_HINTS)
+    drug_idx = _detect_one(headers, _DRUG_HINTS)
 
     ncols = len(headers)
     for i in npi_idx:
@@ -401,12 +412,30 @@ def clean_bytes(
     # Guarded end-to-end: any failure leaves res.nppes with a note and the
     # offline results stand.
     if enrich:
-        cb("Verifying NPIs against the live NPPES registry", 0.60)
+        cb("Verifying NPIs against the live NPPES registry", 0.58)
         try:
             res.nppes, res.recovered_rows = _enrich_via_nppes(
                 cleaned, npi_idx, billing_idx, name_idx, state_idx)
         except Exception as exc:  # noqa: BLE001
             res.nppes = {"error": f"{type(exc).__name__}: {exc}"}
+        # Drug connectors (RxNorm / openFDA) + the available-source catalog.
+        cb("Resolving drugs via RxNorm / openFDA", 0.68)
+        try:
+            from . import connectors
+            res.catalog = connectors.catalog()
+            ndcs = ([row[ndc_idx] for row in cleaned
+                     if ndc_idx is not None and ndc_idx < len(row)]
+                    if ndc_idx is not None else [])
+            drugs = ([row[drug_idx] for row in cleaned
+                      if drug_idx is not None and drug_idx < len(row)]
+                     if drug_idx is not None else [])
+            if ndcs or drugs:
+                res.connectors = connectors.resolve_drugs(ndcs, drugs)
+            else:
+                res.connectors = []
+        except Exception as exc:  # noqa: BLE001
+            res.connectors = [{"id": "error",
+                               "note": f"{type(exc).__name__}: {exc}"}]
 
     # Real vendored-engine pass: run the actual v48 field_validators +
     # consistency + dedup screens when pandas and the modules are available.

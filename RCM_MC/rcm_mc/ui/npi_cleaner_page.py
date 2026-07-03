@@ -117,6 +117,37 @@ _EXTRA_CSS = r"""
   background:color-mix(in srgb,var(--green-deep,#0c7c66) 10%,transparent);
   padding:1px 6px;border-radius:5px;color:var(--green-deep,#0c7c66);font-weight:640}
 .npi-cand .rowref{font-size:11px;color:var(--ink-2,#4a5d57)}
+.npi-tabs{display:flex;gap:2px;border-bottom:1px solid var(--line,#d2ddd7);
+  margin-bottom:18px;flex-wrap:wrap}
+.npi-tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;
+  padding:9px 14px;font-size:14px;font-weight:600;color:var(--ink-2,#4a5d57);
+  cursor:pointer;margin-bottom:-1px}
+.npi-tab:hover{color:var(--ink,#11201c)}
+.npi-tab.is-active{color:var(--green-deep,#0c7c66);
+  border-bottom-color:var(--green-deep,#0c7c66)}
+.npi-tab-badge{display:inline-block;min-width:18px;font-size:11px;text-align:center;
+  font-variant-numeric:tabular-nums;padding:0 5px;border-radius:9px;
+  background:var(--line-soft,#e7eeea);color:var(--ink-2,#4a5d57);margin-left:4px}
+.npi-tab-badge:empty{display:none}
+.npi-panel{display:none}
+.npi-panel.is-active{display:block}
+.npi-conn{border:1px solid var(--line,#d2ddd7);border-radius:12px;
+  padding:14px 16px;margin-bottom:12px;background:var(--panel,#fbfdfc)}
+.npi-conn .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.npi-conn .nm{font-weight:660;font-size:14px}
+.npi-conn .src{font-size:11px;color:var(--ink-2,#4a5d57);
+  font-family:ui-monospace,Menlo,monospace}
+.npi-conn .cnt{font-variant-numeric:tabular-nums;font-weight:680;font-size:15px;
+  color:var(--green-deep,#0c7c66);white-space:nowrap}
+.npi-conn .nt{font-size:12px;color:var(--ink-2,#4a5d57);margin-top:6px}
+.npi-cat{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+  gap:8px;margin-top:10px}
+.npi-cat .c{border:1px solid var(--line-soft,#e7eeea);border-radius:9px;
+  padding:8px 11px;background:var(--panel,#fbfdfc)}
+.npi-cat .c .n{font-size:12.5px;font-weight:600}
+.npi-cat .c .o{font-size:11px;color:var(--ink-2,#4a5d57)}
+.npi-cat .c .free{color:var(--green-deep,#0c7c66)}
+.npi-muted{font-size:12.5px;color:var(--ink-2,#4a5d57);margin:14px 0}
 """
 
 
@@ -158,11 +189,11 @@ def _body() -> str:
       <label><input type="checkbox" id="npi-dedupe" checked>
         Remove exact-duplicate rows</label>
       <label><input type="checkbox" id="npi-enrich">
-        Verify &amp; recover NPIs against the live NPPES registry
-        <span class="npi-hint" title="Uses PE Desk's own cached CMS/NPPES
-connection. Distinct NPIs are looked up (active vs deactivated/unassigned) and
-rows with a missing NPI but a provider name are matched to a candidate NPI.
-Bounded and cached; opt-in.">ⓘ</span></label>
+        Go online — verify &amp; recover NPIs, resolve drugs (NPPES · RxNorm · openFDA)
+        <span class="npi-hint" title="Uses PE Desk's own live public-data
+connectors. NPIs are verified against NPPES (active vs deactivated) and missing
+NPIs recovered from provider names; NDC and drug-name columns are resolved to
+RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></label>
     </div>
   </div>
 
@@ -179,32 +210,54 @@ Bounded and cached; opt-in.">ⓘ</span></label>
   </div>
 
   <div id="npi-stage-result" class="npi-hidden">
-    <div class="npi-cards" id="npi-cards"></div>
-    <div id="npi-warnings"></div>
-    <div class="ck-section-header" style="margin-top:8px">
-      <h3 style="margin:0">Per-column NPI health</h3>
+    <div class="npi-tabs" role="tablist">
+      <button class="npi-tab is-active" data-tab="overview">Overview</button>
+      <button class="npi-tab" data-tab="issues">Issues &amp; fixes
+        <span class="npi-tab-badge" id="tabbadge-issues"></span></button>
+      <button class="npi-tab" data-tab="connectors">Live connectors
+        <span class="npi-tab-badge" id="tabbadge-conn"></span></button>
+      <button class="npi-tab" data-tab="downloads">Downloads</button>
     </div>
-    <table class="npi-tbl">
-      <thead><tr>
-        <th>Column</th><th class="num">Cells</th><th class="num">Valid</th>
-        <th class="num">Blank</th><th class="num">Malformed</th>
-        <th class="num">Checksum&nbsp;fail</th><th class="num">Health</th>
-      </tr></thead>
-      <tbody id="npi-col-rows"></tbody>
-    </table>
 
-    <div id="npi-advanced"></div>
+    <div class="npi-panel is-active" data-panel="overview">
+      <div class="npi-cards" id="npi-cards"></div>
+      <div id="npi-warnings"></div>
+      <div class="ck-section-header" style="margin-top:8px">
+        <h3 style="margin:0">Per-column NPI health</h3>
+      </div>
+      <table class="npi-tbl">
+        <thead><tr>
+          <th>Column</th><th class="num">Cells</th><th class="num">Valid</th>
+          <th class="num">Blank</th><th class="num">Malformed</th>
+          <th class="num">Checksum&nbsp;fail</th><th class="num">Health</th>
+        </tr></thead>
+        <tbody id="npi-col-rows"></tbody>
+      </table>
+    </div>
 
-    <div id="npi-nppes"></div>
+    <div class="npi-panel" data-panel="issues">
+      <div id="npi-advanced"></div>
+      <div id="npi-suggestions"></div>
+    </div>
 
-    <div id="npi-recovered-note"></div>
-    <div style="margin-top:22px">
-      <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
-      <a class="npi-dl npi-dl-alt" id="npi-dl-xlsx" href="#" download
-         style="margin-left:10px">⤓ Download report (.xlsx)</a>
-      <a class="npi-dl npi-dl-alt" id="npi-dl-companion" href="#" download
-         style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
-      <button class="npi-again" id="npi-again">Clean another file</button>
+    <div class="npi-panel" data-panel="connectors">
+      <div id="npi-nppes"></div>
+      <div id="npi-connectors"></div>
+      <div id="npi-catalog"></div>
+    </div>
+
+    <div class="npi-panel" data-panel="downloads">
+      <div id="npi-recovered-note"></div>
+      <div style="margin-top:8px">
+        <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-xlsx" href="#" download
+           style="margin-left:10px">⤓ Download report (.xlsx)</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-companion" href="#" download
+           style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
+      </div>
+      <div style="margin-top:16px">
+        <button class="npi-again" id="npi-again">Clean another file</button>
+      </div>
     </div>
   </div>
 
@@ -236,15 +289,20 @@ Bounded and cached; opt-in.">ⓘ</span></label>
     vendored package for batch/CLI use; see
     <code>rcm_mc/npi_cleaner/vendor_v49/README.md</code>.
     <br><br>
-    <strong>Live NPPES cross-check (opt-in).</strong> Tick the second box and
-    the cleaner uses PE&nbsp;Desk's own cached CMS/NPPES connection
-    (<code>rcm_mc.data_public.nppes_api_client</code>) to <em>verify</em> each
-    distinct NPI against the live registry — active vs. unassigned/deactivated
-    — and to <em>recover</em> a candidate NPI for rows that have a provider or
-    organization name but a missing/malformed billing NPI. Lookups are
-    de-duplicated, capped per run and cached, so it stays fast and polite; if
-    the network is unavailable the box simply no-ops and the offline results
-    stand.
+    <strong>Online mode (opt-in).</strong> Tick "Go online" and the cleaner
+    lights up PE&nbsp;Desk's own live public-data connectors under the
+    <em>Live connectors</em> tab:
+    <strong>NPPES</strong> (<code>data_public.nppes_api_client</code>) verifies
+    each distinct NPI (active vs. deactivated) and recovers a candidate NPI for
+    rows with a provider/organization name but a missing billing NPI;
+    <strong>RxNorm / RxNav</strong> and <strong>openFDA</strong>
+    (<code>data_public.public_api_clients</code>) resolve NDC and drug-name
+    columns to normalized RxCUI concepts and drug labels. The tab also lists
+    every public-data source wired into the platform (NPPES, OIG LEIE, RxNav,
+    openFDA, DailyMed, HRSA, Census, ClinicalTrials, and more) that can be
+    enabled for enrichment. All lookups are de-duplicated, capped per run and
+    cached; if the network is unavailable the connectors simply no-op and the
+    offline results stand. No data leaves the server unless online mode is on.
   </div>
 </div>
 """
@@ -318,7 +376,19 @@ _EXTRA_JS = r"""
     $("npi-col-rows").innerHTML=rows;
 
     renderAdvanced(s.advanced);
+    renderSuggestions(s.advanced);
     renderNppes(s.nppes);
+    renderConnectors(s.connectors);
+    renderCatalog(s.catalog);
+
+    // Tab badges: issue count + live-connector count.
+    var nIssues=(s.advanced&&s.advanced.issues?s.advanced.issues.length:0)+
+      (s.advanced&&s.advanced.suggestions_n?1:0);
+    $("tabbadge-issues").textContent = nIssues? String(
+      (s.advanced&&s.advanced.issues?s.advanced.issues.length:0)) : "";
+    var nConn=(s.connectors?s.connectors.filter(function(c){return c.resolved>0}).length:0)+
+      (s.nppes&&s.nppes.verify?1:0);
+    $("tabbadge-conn").textContent = nConn? String(nConn) : "";
 
     $("npi-dl").setAttribute("href", s.download);
     $("npi-dl").setAttribute("download", s.out_name||"cleaned.csv");
@@ -343,6 +413,11 @@ _EXTRA_JS = r"""
         'column in the download (originals preserved).</div>';
     } else { rn.innerHTML=""; }
 
+    // Always land on the Overview tab for a fresh result.
+    document.querySelectorAll(".npi-tab").forEach(function(b){
+      b.classList.toggle("is-active", b.getAttribute("data-tab")==="overview"); });
+    document.querySelectorAll(".npi-panel").forEach(function(p){
+      p.classList.toggle("is-active", p.getAttribute("data-panel")==="overview"); });
     hide(stUp); hide(stPr); hide(stErr); show(stRes);
   }
 
@@ -455,6 +530,88 @@ _EXTRA_JS = r"""
     box.innerHTML=html;
   }
 
+  function esc(s){ var d=document.createElement("div"); d.textContent=(s==null?"":s); return d.innerHTML; }
+
+  function renderSuggestions(adv){
+    var box=$("npi-suggestions");
+    if(!adv || !adv.suggestions_sample || !adv.suggestions_sample.length){
+      box.innerHTML=""; return; }
+    var recs=adv.suggestions_sample, cols=Object.keys(recs[0]);
+    var html='<div class="ck-section-header" style="margin-top:20px">'+
+      '<h3 style="margin:0">Suggested corrections</h3></div>'+
+      '<div class="npi-muted">Showing '+recs.length+' of '+fmt(adv.suggestions_n)+
+      ' — full list in the corrections companion (Downloads tab).</div>'+
+      '<div style="overflow-x:auto"><table class="npi-tbl"><thead><tr>';
+    cols.forEach(function(c){ html+='<th>'+esc(c.replace(/_/g," "))+'</th>'; });
+    html+='</tr></thead><tbody>';
+    recs.forEach(function(r){
+      html+='<tr>';
+      cols.forEach(function(c){ html+='<td>'+esc(r[c])+'</td>'; });
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+    box.innerHTML=html;
+  }
+
+  function renderConnectors(conns){
+    var box=$("npi-connectors");
+    if(!conns || !conns.length){ box.innerHTML=""; return; }
+    var html='<div class="ck-section-header" style="margin-top:20px">'+
+      '<h3 style="margin:0">Drug connectors (RxNorm · openFDA)</h3></div>';
+    conns.forEach(function(c){
+      if(!c.label){ return; }
+      html+='<div class="npi-conn"><div class="top">'+
+        '<span class="nm">'+esc(c.label)+'</span>'+
+        '<span class="cnt">'+fmt(c.resolved||0)+' / '+fmt(c.queried||0)+' resolved</span>'+
+        '</div><div class="src">'+esc(c.source||"")+'</div>';
+      if(c.sample && c.sample.length){
+        html+='<div class="nt">';
+        c.sample.slice(0,6).forEach(function(s){
+          if(s.rxcui!=null){
+            html+='• '+esc(s.input)+' <span class="arrow">→</span> RxCUI '+
+              '<code>'+esc(s.rxcui)+'</code> '+esc(s.name)+'<br>';
+          } else {
+            html+='• '+esc(s.ndc)+' <span class="arrow">→</span> '+
+              esc(s.brand||s.generic)+' <span class="rowref">('+esc(s.labeler)+')</span><br>';
+          }
+        });
+        html+='</div>';
+      }
+      html+='<div class="nt">'+esc(c.note||"")+'</div></div>';
+    });
+    box.innerHTML=html;
+  }
+
+  function renderCatalog(cat){
+    var box=$("npi-catalog");
+    if(!cat || !cat.length){ box.innerHTML=""; return; }
+    var html='<div class="ck-section-header" style="margin-top:22px">'+
+      '<h3 style="margin:0">Connections available</h3></div>'+
+      '<div class="npi-muted">'+cat.length+' public-data sources are wired into '+
+      'PE&nbsp;Desk and can be enabled for enrichment.</div><div class="npi-cat">';
+    cat.forEach(function(s){
+      var free=(s.cost||"").indexOf("free")===0;
+      html+='<div class="c"><div class="n">'+esc(s.name)+'</div>'+
+        '<div class="o">'+esc(s.operator||"")+
+        ' · <span class="'+(free?"free":"")+'">'+esc(s.cost||"")+'</span></div></div>';
+    });
+    html+='</div>';
+    box.innerHTML=html;
+  }
+
+  function initTabs(){
+    if(window.__npiTabsInit) return; window.__npiTabsInit=true;
+    document.addEventListener("click", function(e){
+      var t=e.target.closest ? e.target.closest(".npi-tab") : null;
+      if(!t) return;
+      var name=t.getAttribute("data-tab");
+      document.querySelectorAll(".npi-tab").forEach(function(b){
+        b.classList.toggle("is-active", b===t); });
+      document.querySelectorAll(".npi-panel").forEach(function(p){
+        p.classList.toggle("is-active", p.getAttribute("data-panel")===name); });
+    });
+  }
+
   function watch(jobId){
     poll=setInterval(function(){
       fetch("/npi-cleaner/status/"+jobId, {headers:{"Accept":"application/json"}})
@@ -498,6 +655,7 @@ _EXTRA_JS = r"""
     .catch(function(e){ fail("Upload failed. Is the file under 10 MB?"); });
   }
 
+  initTabs();
   drop.addEventListener("click", function(){ fileIn.click(); });
   drop.addEventListener("keydown", function(e){
     if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileIn.click(); } });
