@@ -84,6 +84,32 @@ class TestEngine(unittest.TestCase):
         res = engine.clean_bytes(data, "t.tsv")
         self.assertEqual(res.as_scorecard()["delimiter"], "tab")
 
+    def test_normalization_fixes(self):
+        # A deliberately messy file exercising each normalizer.
+        data = (
+            "ClaimID,BillingNPI,ProviderState,AllowedAmt,DateOfService,PatientZip,HCPCS\n"
+            "1,'1234567893,Ohio,\"$1,234.50\",2024-01-15,1234,99213\n"
+            "2,1234567893.0,TX,\"(50.00)\",45300,08540,g0008\n"
+            "3,N/A,texas,\"1,000\",01/15/2024,00501,99214\n"
+        ).encode()
+        res = engine.clean_bytes(data, "messy.csv")
+        rp = res.repairs
+        self.assertGreater(res.as_scorecard()["repairs_total"], 5)
+        self.assertIn("state-name-to-code", rp)        # Ohio→OH, texas→TX
+        self.assertIn("npi-excel-float", rp)           # 1234567893.0
+        self.assertIn("leading-apostrophe", rp)        # '1234567893
+        self.assertIn("null-token", rp)                # N/A → blank
+        self.assertIn("date-excel-serial", rp)         # 45300
+        self.assertIn("date-us-to-iso", rp)            # 01/15/2024
+        self.assertIn("hcpcs-upper", rp)               # g0008 → G0008
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("OH", out)
+        self.assertIn("2024-01-15", out)
+        # Negative money is NOT apostrophe-defanged (it is a plain number).
+        self.assertIn("-50.00", out)
+        self.assertNotIn("'-50.00", out)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()

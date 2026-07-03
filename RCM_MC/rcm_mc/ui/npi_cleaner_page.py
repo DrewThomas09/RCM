@@ -266,6 +266,7 @@ never blocks the fast results.">ⓘ</span></label>
         </tr></thead>
         <tbody id="npi-col-rows"></tbody>
       </table>
+      <div id="npi-repairs"></div>
     </div>
 
     <div class="npi-panel" data-panel="issues">
@@ -419,6 +420,7 @@ _EXTRA_JS = r"""
     if(!rows){ rows='<tr><td colspan="7" style="color:var(--ink-2)">'+
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
+    renderRepairs(s.repairs, s.repairs_total);
 
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
@@ -497,6 +499,40 @@ _EXTRA_JS = r"""
     h+='</tbody></table><div class="npi-muted" style="margin:2px 0">Showing up '+
       'to 15 offending rows.</div>';
     return h;
+  }
+
+  var REPAIR_LABELS={
+    "whitespace-chars":"Non-breaking / zero-width spaces normalized",
+    "collapse-space":"Collapsed internal whitespace",
+    "mojibake":"Repaired mojibake (mis-encoded characters)",
+    "leading-apostrophe":"Stripped Excel text-marker apostrophe",
+    "null-token":"Unified null tokens (NA / N/A / NULL …) to blank",
+    "npi-excel-float":"Fixed NPIs mangled to floats by Excel (…​.0)",
+    "npi-strip-nondigits":"Stripped non-digits from NPIs",
+    "money-normalize":"Normalized money ($ / commas / accounting negatives)",
+    "date-excel-serial":"Converted Excel serial dates to ISO",
+    "date-us-to-iso":"Converted US-format dates to ISO",
+    "date-iso-trim":"Trimmed date-times to ISO date",
+    "state-name-to-code":"Mapped state names to 2-letter codes",
+    "state-upper":"Upper-cased state codes",
+    "zip-pad":"Restored dropped leading zeros in ZIPs",
+    "zip5+4":"Formatted ZIP+4",
+    "zip-clean":"Cleaned ZIP formatting",
+    "hcpcs-upper":"Upper-cased HCPCS/CPT codes"};
+
+  function renderRepairs(repairs, total){
+    var box=$("npi-repairs");
+    var keys=repairs?Object.keys(repairs):[];
+    if(!keys.length){ box.innerHTML=""; return; }
+    keys.sort(function(a,b){return repairs[b]-repairs[a];});
+    var html='<div class="ck-section-header" style="margin-top:20px">'+
+      '<h3 style="margin:0">Cleaning fixes applied</h3></div>'+
+      '<div class="npi-muted">'+fmt(total)+' deterministic normalizations written '+
+      'to the cleaned file (originals were replaced in place).</div>';
+    keys.forEach(function(k){
+      html+=flagRow(REPAIR_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', repairs[k]);
+    });
+    box.innerHTML=html;
   }
 
   function renderAdvanced(adv){

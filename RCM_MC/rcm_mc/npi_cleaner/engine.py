@@ -61,6 +61,198 @@ _STATE_HINTS = ("providerstate", "billingstate", "state", "provstate", "st")
 # Columns carrying a drug identifier, for the RxNorm / openFDA connectors.
 _NDC_HINTS = ("ndc11", "ndc", "drugndc", "ndccode")
 _DRUG_HINTS = ("drugname", "drug", "productname", "medication", "labelname")
+# Roles for the deterministic normalization pass.
+_MONEY_HINTS = ("allowedamt", "allowed", "paidamt", "paid", "billedamt",
+                "billed", "chargeamt", "charge", "amount", "cost", "fee")
+_DATE_HINTS = ("dateofservice", "servicedate", "dos", "paiddate", "date",
+               "dob", "birthdate", "fromdate", "thrudate")
+_ZIP_HINTS = ("zip", "postalcode", "postal")
+_HCPCS_HINTS = ("hcpcs", "cpt", "proccode", "procedurecode")
+
+# Tokens that mean "missing" and are normalized to a blank cell.
+_NULL_TOKENS = {"na", "n/a", "null", "none", "nan", "nil", "-", "--", "#n/a",
+                "unknown", "unk", ".", "?"}
+
+# Common mojibake fixups from UTF-8 mis-decoded as latin-1/cp1252.
+_MOJIBAKE = {
+    "â": "'", "â": "'",
+    "â": '"', "â": '"',
+    "â": "-", "â": "-",
+    "Â ": " ",
+}
+
+# Full state / territory names → USPS 2-letter code.
+_STATE_NAMES = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "district of columbia": "DC", "florida": "FL", "georgia": "GA",
+    "hawaii": "HI", "idaho": "ID", "illinois": "IL", "indiana": "IN",
+    "iowa": "IA", "kansas": "KS", "kentucky": "KY", "louisiana": "LA",
+    "maine": "ME", "maryland": "MD", "massachusetts": "MA", "michigan": "MI",
+    "minnesota": "MN", "mississippi": "MS", "missouri": "MO", "montana": "MT",
+    "nebraska": "NE", "nevada": "NV", "new hampshire": "NH", "new jersey": "NJ",
+    "new mexico": "NM", "new york": "NY", "north carolina": "NC",
+    "north dakota": "ND", "ohio": "OH", "oklahoma": "OK", "oregon": "OR",
+    "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+    "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+    "vermont": "VT", "virginia": "VA", "washington": "WA",
+    "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY",
+    "puerto rico": "PR", "guam": "GU", "virgin islands": "VI",
+}
+_STATE_CODES = set(_STATE_NAMES.values()) | {
+    "AS", "MP", "FM", "MH", "PW", "AA", "AE", "AP"}
+_SEX_MAP = {"m": "M", "male": "M", "1": "M", "f": "F", "female": "F",
+            "2": "F", "u": "U", "unknown": "U", "0": "U"}
+_EXCEL_FLOAT_RE = re.compile(r"^(\d+)\.0+$")
+_MONEY_PARENS_RE = re.compile(r"^\((.*)\)$")
+
+
+def _clean_generic(cell: str) -> Tuple[str, List[str]]:
+    """Generic cell cleanups applied to every column. Returns (value, rules)."""
+    rules: List[str] = []
+    v = cell
+    # Zero-width + non-breaking spaces → normal space.
+    v2 = (v.replace("​", "").replace("﻿", "")
+          .replace(" ", " ").replace("\t", " "))
+    if v2 != v:
+        rules.append("whitespace-chars")
+        v = v2
+    # Mojibake repair.
+    for bad, good in _MOJIBAKE.items():
+        if bad in v:
+            v = v.replace(bad, good)
+            rules.append("mojibake")
+    # Collapse runs of internal whitespace.
+    v2 = re.sub(r"  +", " ", v).strip()
+    if v2 != v:
+        if "whitespace-chars" not in rules:
+            rules.append("collapse-space")
+        v = v2
+    # Excel leading text-marker apostrophe: '01234 → 01234.
+    if v.startswith("'") and len(v) > 1:
+        v = v[1:]
+        rules.append("leading-apostrophe")
+    # Null tokens → blank.
+    if v.lower() in _NULL_TOKENS:
+        if v != "":
+            rules.append("null-token")
+        v = ""
+    return v, rules
+
+
+def _clean_npi_cell(v: str) -> Tuple[str, List[str]]:
+    rules: List[str] = []
+    m = _EXCEL_FLOAT_RE.match(v)
+    if m:  # 1234567890.0 (Excel float coercion)
+        v = m.group(1)
+        rules.append("npi-excel-float")
+    digits = "".join(ch for ch in v if ch.isdigit())
+    if digits != v and v != "":
+        rules.append("npi-strip-nondigits")
+    return (digits if v != "" else ""), rules
+
+
+def _clean_money_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    rules: List[str] = []
+    raw = v
+    neg = False
+    m = _MONEY_PARENS_RE.match(v.strip())
+    if m:  # (123.45) accounting negative
+        v = m.group(1)
+        neg = True
+    v2 = v.replace("$", "").replace(",", "").replace(" ", "").strip()
+    try:
+        num = float(v2)
+    except ValueError:
+        return raw, []
+    if neg:
+        num = -abs(num)
+    out = ("%.2f" % num).rstrip("0").rstrip(".") if "." in ("%.2f" % num) else str(int(num))
+    out = "%.2f" % num
+    if out != raw:
+        rules.append("money-normalize")
+    return out, rules
+
+
+def _excel_serial_to_iso(n: float) -> Optional[str]:
+    # Excel serial: 1 = 1900-01-01, with the well-known 1900 leap bug (>59).
+    if not (20000 <= n <= 60000):  # ~1954..2064, the plausible claims window
+        return None
+    from datetime import date, timedelta
+    base = date(1899, 12, 30)
+    try:
+        return (base + timedelta(days=int(n))).isoformat()
+    except (OverflowError, ValueError):
+        return None
+
+
+_DATE_ISO_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})")
+_DATE_US_RE = re.compile(r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{2,4})$")
+
+
+def _clean_date_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    s = v.strip()
+    if _DATE_ISO_RE.match(s):
+        return s[:10], ([] if s[:10] == v else ["date-iso-trim"])
+    # Excel serial number.
+    try:
+        n = float(s)
+        iso = _excel_serial_to_iso(n)
+        if iso:
+            return iso, ["date-excel-serial"]
+    except ValueError:
+        pass
+    m = _DATE_US_RE.match(s)
+    if m:
+        mo, da, yr = m.group(1), m.group(2), m.group(3)
+        if len(yr) == 2:
+            yr = ("20" + yr) if int(yr) < 50 else ("19" + yr)
+        try:
+            from datetime import date as _d
+            iso = _d(int(yr), int(mo), int(da)).isoformat()
+            return iso, ["date-us-to-iso"]
+        except ValueError:
+            return v, []
+    return v, []
+
+
+def _clean_state_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    up = v.strip().upper()
+    if up in _STATE_CODES:
+        return up, ([] if up == v else ["state-upper"])
+    low = v.strip().lower()
+    if low in _STATE_NAMES:
+        return _STATE_NAMES[low], ["state-name-to-code"]
+    return v, []
+
+
+def _clean_zip_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    m = _EXCEL_FLOAT_RE.match(v.strip())
+    s = m.group(1) if m else v.strip()
+    # zip+4 → keep 5; short zip → pad leading zeros (Excel drops them).
+    digits = "".join(ch for ch in s if ch.isdigit())
+    if 1 <= len(digits) < 5:
+        return digits.zfill(5), ["zip-pad"]
+    if len(digits) == 9:
+        return digits[:5] + "-" + digits[5:], (["zip5+4"] if v != digits[:5] + "-" + digits[5:] else [])
+    if digits and digits != v:
+        return digits, ["zip-clean"]
+    return v, []
+
+
+def _clean_hcpcs_cell(v: str) -> Tuple[str, List[str]]:
+    if v == "":
+        return v, []
+    up = v.strip().upper()
+    return up, ([] if up == v else ["hcpcs-upper"])
 
 ProgressCb = Callable[[str, float], None]
 
@@ -118,6 +310,8 @@ class CleanResult:
     # Per-column tallies: col -> {"valid","blank","malformed","checksum","cells"}
     column_stats: Dict[str, Dict[str, int]] = field(default_factory=dict)
     n_cells_trimmed: int = 0
+    # Deterministic normalization fixes applied, rule → count of cells changed.
+    repairs: Dict[str, int] = field(default_factory=dict)
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -183,6 +377,8 @@ class CleanResult:
             "rows_out": self.n_rows_out,
             "duplicates_removed": self.n_dupes_removed,
             "cells_trimmed": self.n_cells_trimmed,
+            "repairs": dict(self.repairs),
+            "repairs_total": sum(self.repairs.values()),
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
             "npi_cells": cells,
@@ -227,9 +423,19 @@ def _sniff_delimiter(sample: str) -> str:
 _FORMULA_LEAD = ("=", "+", "-", "@", "\t", "\r")
 
 
+_NUMERIC_RE = re.compile(r"^[+-]?\.?\d[\d,]*\.?\d*$")
+
+
 def _defang_cell(value: str) -> str:
-    """Prefix a lone quote when a CSV cell would otherwise start a formula."""
+    """Prefix a lone quote when a CSV cell would otherwise start a formula.
+
+    Pure numbers (including a leading ``-``/``+``/``.`` on a value like
+    ``-50.00``) are left alone — Excel reads them as numbers, not formulas —
+    so normalized money keeps its natural form.
+    """
     if value and value[0] in _FORMULA_LEAD:
+        if value[0] in "+-." and _NUMERIC_RE.match(value):
+            return value
         return "'" + value
     return value
 
@@ -395,6 +601,17 @@ def clean_bytes(
     state_idx = _detect_one(headers, _STATE_HINTS)
     ndc_idx = _detect_one(headers, _NDC_HINTS)
     drug_idx = _detect_one(headers, _DRUG_HINTS)
+    # Column-role sets for the normalization pass (by header hint).
+    npi_set = set(npi_idx)
+    money_set = {i for i, h in enumerate(headers)
+                 if any(x in _norm_key(h) for x in _MONEY_HINTS)}
+    date_set = {i for i, h in enumerate(headers)
+                if any(x in _norm_key(h) for x in _DATE_HINTS)}
+    zip_set = {i for i, h in enumerate(headers)
+               if any(x in _norm_key(h) for x in _ZIP_HINTS)}
+    hcpcs_set = {i for i, h in enumerate(headers)
+                 if any(x in _norm_key(h) for x in _HCPCS_HINTS)}
+    state_set = {i for i in ([state_idx] if state_idx is not None else [])}
 
     # User column-mapping overrides (canonical role → header) win over
     # auto-detection. Only roles the stdlib path acts on are honored here; the
@@ -441,13 +658,30 @@ def clean_bytes(
             row = row + [""] * (ncols - len(row))
         elif len(row) > ncols:
             row = row[:ncols]
-        # Trim surrounding whitespace on every cell.
+        # Deterministic normalization pass on every cell: generic cleanups
+        # (whitespace, mojibake, null-tokens, Excel apostrophe) plus per-role
+        # fixes (NPI, money, date, state, zip, HCPCS). Each fix is tallied.
         new_row = []
-        for cell in row:
+        for ci, cell in enumerate(row):
             stripped = cell.strip()
             if stripped != cell:
                 res.n_cells_trimmed += 1
-            new_row.append(stripped)
+            val, hits = _clean_generic(stripped)
+            if ci in npi_set:
+                val, r = _clean_npi_cell(val); hits += r
+            elif ci in money_set:
+                val, r = _clean_money_cell(val); hits += r
+            elif ci in date_set:
+                val, r = _clean_date_cell(val); hits += r
+            elif ci in state_set:
+                val, r = _clean_state_cell(val); hits += r
+            elif ci in zip_set:
+                val, r = _clean_zip_cell(val); hits += r
+            elif ci in hcpcs_set:
+                val, r = _clean_hcpcs_cell(val); hits += r
+            for rule in hits:
+                res.repairs[rule] = res.repairs.get(rule, 0) + 1
+            new_row.append(val)
         # Tally NPI health per detected column.
         for i in npi_idx:
             cstat = res.column_stats[headers[i]]
