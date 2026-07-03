@@ -655,6 +655,12 @@ class TestNpiCleanerHttp(unittest.TestCase):
                     page = r.read().decode()
                 self.assertIn("an-fieldlist", page)
                 self.assertIn(f"/npi-cleaner/data/", page)
+                # enhanced analytics: stat tiles, quick views, chart modes
+                self.assertIn("an-tiles", page)
+                self.assertIn("Quick views", page)
+                self.assertIn('value="heatmap"', page)
+                self.assertIn('value="scatter"', page)
+                self.assertIn("% of total", page)
                 # unknown job → graceful "expired" page (still 200)
                 with _u.urlopen(
                     f"http://127.0.0.1:{port}/npi-cleaner/analyze/deadbeef"

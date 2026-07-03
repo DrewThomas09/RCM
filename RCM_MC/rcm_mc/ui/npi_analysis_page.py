@@ -69,6 +69,23 @@ table.an-ptbl{border-collapse:collapse;font-size:12.5px;width:100%}
 .an-legend .lg{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2,#4a5d57)}
 .an-legend .sw{width:11px;height:11px;border-radius:3px}
 .an-empty{color:var(--ink-2,#4a5d57);font-size:13px;padding:24px;text-align:center}
+.an-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:10px;margin-bottom:14px}
+.an-tile{border:1px solid var(--line,#d2ddd7);border-radius:12px;
+  background:var(--panel,#fbfdfc);padding:12px 14px}
+.an-tile .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-2,#4a5d57)}
+.an-tile .v{font-size:22px;font-weight:680;letter-spacing:-.02em;margin-top:3px;
+  font-variant-numeric:tabular-nums}
+.an-views{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.an-views-lbl{font-size:12px;color:var(--ink-2,#4a5d57);font-weight:600}
+.an-btn.vw{border-radius:20px;font-size:12px;padding:4px 11px}
+.an-ptbl th.k{cursor:default}
+.an-ptbl th.sortable{cursor:pointer}
+.an-ptbl th.sortable:hover{color:var(--green-deep,#0c7c66)}
+.an-ptbl th .arr{font-size:9px;margin-left:2px}
+.an-scatter-ctl{display:none;gap:10px;align-items:center}
+.an-scatter-ctl.on{display:flex}
 .an-tip{position:fixed;pointer-events:none;background:#11201c;color:#fff;
   font-size:11.5px;padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .1s;
   z-index:50;white-space:nowrap;font-family:ui-monospace,Menlo,monospace}
@@ -98,6 +115,16 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
   <div class="an-bar">
     <a class="an-back" href="/npi-cleaner">← Back to NPI Cleaner</a>
     <span class="an-meta" id="an-meta">Loading {safe_name}…</span>
+  </div>
+
+  <div class="an-tiles" id="an-tiles"></div>
+
+  <div class="an-views" id="an-views">
+    <span class="an-views-lbl">Quick views:</span>
+    <button class="an-btn vw" data-view="rows_by_billing">Claims by billing NPI</button>
+    <button class="an-btn vw" data-view="amt_by_state">Allowed $ by state</button>
+    <button class="an-btn vw" data-view="amt_by_hcpcs">Allowed $ by procedure</button>
+    <button class="an-btn vw" data-view="count_by_payer">Claims by payer</button>
   </div>
 
   <div class="an-grid">
@@ -131,6 +158,8 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
             <option value="bar">Grouped bar</option>
             <option value="stacked">Stacked bar</option>
             <option value="line">Line</option>
+            <option value="heatmap">Heatmap</option>
+            <option value="scatter">Scatter</option>
           </select></label>
         <label class="an-ctl">Top
           <select id="an-topn">
@@ -139,6 +168,12 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
             <option value="30">30 rows</option>
             <option value="0">All</option>
           </select></label>
+        <label class="an-ctl"><input type="checkbox" id="an-pct"> % of total</label>
+        <span class="an-scatter-ctl" id="an-scatter-ctl">
+          <label class="an-ctl">X <select id="an-sx"></select></label>
+          <label class="an-ctl">Y <select id="an-sy"></select></label>
+          <label class="an-ctl">Color <select id="an-scolor"></select></label>
+        </span>
         <div class="an-actions" style="margin:0">
           <button class="an-btn" id="an-reset">Reset</button>
           <button class="an-btn prim" id="an-dl">Download pivot CSV</button>
@@ -164,7 +199,8 @@ _EXTRA_JS = r"""
   var job=wrap.getAttribute("data-job"); if(!job) return;
 
   var DATA={columns:[],rows:[]}, NUM={}, state={rows:[],cols:[],val:null,filters:{},
-    agg:"count",chart:"bar",topn:12};
+    agg:"count",chart:"bar",topn:12,pct:false,sortCol:null,sortDir:-1,
+    sx:null,sy:null,scolor:null};
 
   function esc(s){var d=document.createElement("div");d.textContent=(s==null?"":s);return d.innerHTML;}
   function isNum(v){ if(v===""||v==null) return false; return !isNaN(parseFloat(v))&&isFinite(v.replace?v.replace(/[,$]/g,""):v); }
@@ -181,8 +217,60 @@ _EXTRA_JS = r"""
     // sensible defaults: first text col as Rows, count as value
     var firstText=j.columns.find(function(c,i){return !NUM[c];});
     if(firstText){ state.rows=[firstText]; }
-    renderFields(); renderZones(); recompute();
+    populateScatterSelects();
+    renderStats(); renderFields(); renderZones(); recompute();
   }).catch(function(){ $("an-meta").textContent="Could not load data."; });
+
+  function colIdxByHint(hints){
+    for(var h=0;h<hints.length;h++){
+      for(var i=0;i<DATA.columns.length;i++){
+        if(DATA.columns[i].toLowerCase().replace(/[^a-z0-9]/g,"").indexOf(hints[h])>=0)
+          return i;
+      }
+    }
+    return -1;
+  }
+  function distinctCount(ci){ if(ci<0)return null; var s={};
+    for(var i=0;i<DATA.rows.length;i++){var v=DATA.rows[i][ci];if(v!=="")s[v]=1;} return Object.keys(s).length; }
+  function sumCol(ci){ if(ci<0)return null; var t=0;
+    for(var i=0;i<DATA.rows.length;i++){t+=num(DATA.rows[i][ci]);} return t; }
+
+  function renderStats(){
+    var tiles=[["Rows", (DATA.total_rows||DATA.rows.length).toLocaleString()]];
+    var bi=colIdxByHint(["billingnpi","billnpi","npi"]);
+    var dc=distinctCount(bi); if(dc!=null)tiles.push(["Distinct NPIs", dc.toLocaleString()]);
+    var ai=colIdxByHint(["allowedamt","allowed","paidamt","chargeamt","billedamt"]);
+    var sm=sumCol(ai); if(sm!=null)tiles.push(["Total $ (allowed)", "$"+fmtNum(sm)]);
+    var si=colIdxByHint(["providerstate","state"]);
+    var sc=distinctCount(si); if(sc!=null)tiles.push(["States", sc.toLocaleString()]);
+    var hi=colIdxByHint(["hcpcs","cpt","proccode","procedurecode"]);
+    var hc=distinctCount(hi); if(hc!=null)tiles.push(["Procedures", hc.toLocaleString()]);
+    $("an-tiles").innerHTML=tiles.map(function(t){
+      return '<div class="an-tile"><div class="k">'+esc(t[0])+'</div><div class="v">'+esc(t[1])+'</div></div>';
+    }).join("");
+  }
+
+  function applyView(v){
+    function pick(hints){ var i=colIdxByHint(hints); return i>=0?DATA.columns[i]:null; }
+    state.rows=[]; state.cols=[]; state.val=null; state.filters={}; state.agg="count"; state.pct=false;
+    if(v==="rows_by_billing"){ var n=pick(["billingnpi","npi","billingname","provider"]); if(n)state.rows=[n]; }
+    else if(v==="amt_by_state"){ var s=pick(["providerstate","state"]); var a=pick(["allowedamt","allowed"]);
+      if(s)state.rows=[s]; if(a){state.val=a;state.agg="sum";} }
+    else if(v==="amt_by_hcpcs"){ var h=pick(["hcpcs","cpt","proccode"]); var a2=pick(["allowedamt","allowed"]);
+      if(h)state.rows=[h]; if(a2){state.val=a2;state.agg="sum";} }
+    else if(v==="count_by_payer"){ var p=pick(["payer","plan","insur"]); if(p)state.rows=[p]; }
+    $("an-pct").checked=false; renderZones(); recompute();
+  }
+
+  function populateScatterSelects(){
+    var nums=DATA.columns.filter(function(c){return NUM[c];});
+    var cats=DATA.columns.filter(function(c){return !NUM[c];});
+    function opts(list){ return list.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join(""); }
+    $("an-sx").innerHTML=opts(nums); $("an-sy").innerHTML=opts(nums);
+    $("an-scolor").innerHTML='<option value="">(none)</option>'+opts(cats);
+    if(nums.length){ state.sx=nums[0]; state.sy=nums[Math.min(1,nums.length-1)];
+      $("an-sx").value=state.sx; $("an-sy").value=state.sy; }
+  }
 
   function detectNumeric(){
     DATA.columns.forEach(function(c,ci){
@@ -298,33 +386,56 @@ _EXTRA_JS = r"""
     // sort rows by their total desc
     function rowTotal(rk){var t=aggInit(); cKeys.forEach(function(ck){var a=cells[rk+"||"+ck];
       if(a){t.n+=a.n;t.sum+=a.sum;t.min=Math.min(t.min,a.min);t.max=Math.max(t.max,a.max);}}); return aggVal(t);}
-    rKeys.sort(function(a,b){return (rowTotal(b)||0)-(rowTotal(a)||0);});
     cKeys.sort();
+    // Sort rows: by a clicked column, else by row total (desc).
+    function cellVal(rk,ck){ return aggVal(cells[rk+"||"+ck])||0; }
+    if(state.sortCol && state.sortCol!=="__total__" && cKeys.indexOf(state.sortCol)>=0){
+      rKeys.sort(function(a,b){return (cellVal(a,state.sortCol)-cellVal(b,state.sortCol))*state.sortDir;});
+    } else if(state.sortCol==="__row__"){
+      rKeys.sort(function(a,b){return a<b?state.sortDir:(a>b?-state.sortDir:0);});
+    } else {
+      rKeys.sort(function(a,b){return ((rowTotal(b)||0)-(rowTotal(a)||0))* (state.sortDir<0?1:-1);});
+    }
+    var grand=0; rKeys.forEach(function(rk){grand+=(rowTotal(rk)||0);});
     PIVOT={rKeys:rKeys,cKeys:cKeys,cells:cells,aggVal:aggVal,rowTotal:rowTotal,
-           singleCol:(colIdx<0)};
+           singleCol:(colIdx<0),grand:grand,cellVal:cellVal};
     renderTable(); renderChart();
   }
+
+  // Display transform: raw value, or % of grand total when the toggle is on.
+  function disp(v){ if(v==null)return "";
+    if(state.pct){ var g=(PIVOT&&PIVOT.grand)||0; return g?((v/g*100).toFixed(1)+"%"):"0%"; }
+    return fmtNum(v); }
 
   function renderTable(){
     if(!PIVOT||!PIVOT.rKeys.length){ $("an-ptbl").innerHTML='<div class="an-empty">No data for this pivot.</div>'; return; }
     var p=PIVOT, cols=p.cKeys, showTot=!p.singleCol;
-    var h='<table class="an-ptbl"><thead><tr><th class="k">'+esc(state.rows.join(" ▸ ")||"All")+'</th>';
-    cols.forEach(function(c){ h+='<th>'+esc(p.singleCol?aggLabel():c)+'</th>'; });
-    if(showTot)h+='<th class="tot">Total</th>';
+    function arr(key){ return state.sortCol===key?('<span class="arr">'+(state.sortDir<0?"▼":"▲")+'</span>'):''; }
+    var h='<table class="an-ptbl"><thead><tr>'+
+      '<th class="k sortable" data-sort="__row__">'+esc(state.rows.join(" ▸ ")||"All")+arr("__row__")+'</th>';
+    cols.forEach(function(c){ var lbl=p.singleCol?aggLabel():c;
+      h+='<th class="sortable" data-sort="'+esc(c)+'">'+esc(lbl)+arr(c)+'</th>'; });
+    if(showTot)h+='<th class="tot sortable" data-sort="__default__">Total'+
+      (state.sortCol==null||state.sortCol==="__default__"?'<span class="arr">▼</span>':'')+'</th>';
     h+='</tr></thead><tbody>';
     var colTot={}; cols.forEach(function(c){colTot[c]=0;}); var grand=0;
     p.rKeys.forEach(function(rk){
       h+='<tr><td class="k">'+esc(rk)+'</td>';
       cols.forEach(function(c){ var v=p.aggVal(p.cells[rk+"||"+c]);
-        colTot[c]+=(v||0); h+='<td>'+(v==null?"":fmtNum(v))+'</td>'; });
-      if(showTot){ var rt=p.rowTotal(rk); grand+=(rt||0); h+='<td class="tot">'+fmtNum(rt)+'</td>'; }
+        colTot[c]+=(v||0); h+='<td>'+disp(v)+'</td>'; });
+      if(showTot){ var rt=p.rowTotal(rk); grand+=(rt||0); h+='<td class="tot">'+disp(rt)+'</td>'; }
       h+='</tr>';
     });
     h+='<tr class="tot"><td class="k">Total</td>';
-    cols.forEach(function(c){ h+='<td>'+fmtNum(colTot[c])+'</td>'; });
-    if(showTot)h+='<td class="tot">'+fmtNum(grand)+'</td>';
+    cols.forEach(function(c){ h+='<td>'+disp(colTot[c])+'</td>'; });
+    if(showTot)h+='<td class="tot">'+disp(grand)+'</td>';
     h+='</tr></tbody></table>';
     $("an-ptbl").innerHTML=h;
+    $("an-ptbl").querySelectorAll("th.sortable").forEach(function(th){
+      th.addEventListener("click",function(){ var key=th.getAttribute("data-sort");
+        if(state.sortCol===key){ state.sortDir=-state.sortDir; } else { state.sortCol=key; state.sortDir=-1; }
+        recompute(); });
+    });
   }
   function aggLabel(){ return ({count:"Count",sum:"Sum",avg:"Average",min:"Min",max:"Max"})[state.agg]+
     (state.val?" of "+state.val:""); }
@@ -334,9 +445,84 @@ _EXTRA_JS = r"""
     dark=(t==="dark")||(t!=="light"&&dark);
     if(!dark)return PAL; var d=palDark(); return PAL.map(function(c){return d[c]||c;}); }
 
+  function bindTips(box){
+    var tip=$("an-tip");
+    box.querySelectorAll("[data-tip]").forEach(function(el){
+      el.addEventListener("mousemove",function(e){ tip.textContent=el.getAttribute("data-tip");
+        tip.style.left=(e.clientX+12)+"px"; tip.style.top=(e.clientY+12)+"px"; tip.style.opacity="1"; });
+      el.addEventListener("mouseleave",function(){ tip.style.opacity="0"; });
+    });
+  }
+
+  function renderScatter(){
+    var box=$("an-chart-box");
+    var xi=DATA.columns.indexOf(state.sx||$("an-sx").value);
+    var yi=DATA.columns.indexOf(state.sy||$("an-sy").value);
+    var col=$("an-scolor").value, coli=col?DATA.columns.indexOf(col):-1;
+    if(xi<0||yi<0){ box.innerHTML='<div class="an-empty">Pick two numeric fields for X and Y.</div>'; return; }
+    var pts=[]; var cats={}, catList=[];
+    for(var i=0;i<DATA.rows.length;i++){ var row=DATA.rows[i]; if(!passesFilters(row))continue;
+      var x=num(row[xi]), y=num(row[yi]); var c=coli>=0?String(row[coli]):"";
+      if(coli>=0 && !(c in cats)){ cats[c]=catList.length; catList.push(c); }
+      pts.push([x,y,c]); }
+    if(!pts.length){ box.innerHTML='<div class="an-empty">No points.</div>'; return; }
+    var xs=pts.map(function(p){return p[0];}), ys=pts.map(function(p){return p[1];});
+    var xmin=Math.min.apply(null,xs), xmax=Math.max.apply(null,xs);
+    var ymin=Math.min.apply(null,ys), ymax=Math.max.apply(null,ys);
+    if(xmax===xmin)xmax=xmin+1; if(ymax===ymin)ymax=ymin+1;
+    var pal=palette();
+    var W=Math.max(560,box.clientWidth-4),H=360,L=56,R=16,T=16,B=40, iw=W-L-R, ih=H-T-B;
+    function sx(v){return L+(v-xmin)/(xmax-xmin)*iw;} function sy(v){return T+ih-(v-ymin)/(ymax-ymin)*ih;}
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet">';
+    for(var t=0;t<=4;t++){ var gy=T+ih-(t/4)*ih, gv=ymin+(ymax-ymin)*t/4;
+      svg+='<line x1="'+L+'" y1="'+gy+'" x2="'+(W-R)+'" y2="'+gy+'" stroke="rgba(120,130,125,.15)"/>';
+      svg+='<text x="'+(L-6)+'" y="'+(gy+3)+'" text-anchor="end" font-size="10" fill="rgba(120,130,125,.9)">'+fmtNum(gv)+'</text>'; }
+    pts.slice(0,4000).forEach(function(pp){ var c=coli>=0?pal[cats[pp[2]]%pal.length]:pal[0];
+      svg+='<circle cx="'+sx(pp[0]).toFixed(1)+'" cy="'+sy(pp[1]).toFixed(1)+'" r="3.2" fill="'+c+
+        '" fill-opacity="0.6" data-tip="'+esc(state.sx+"="+fmtNum(pp[0])+", "+state.sy+"="+fmtNum(pp[1])+(pp[2]?" · "+pp[2]:""))+'"/>'; });
+    svg+='<text x="'+(L+iw/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="11" fill="var(--ink-2,#4a5d57)">'+esc(state.sx)+'</text>';
+    svg+='</svg>';
+    var legend='';
+    if(coli>=0 && catList.length>=2 && catList.length<=8){ legend='<div class="an-legend">'+catList.map(function(c,i){
+      return '<span class="lg"><span class="sw" style="background:'+pal[i%pal.length]+'"></span>'+esc(c)+'</span>';}).join("")+'</div>'; }
+    box.innerHTML='<div style="font-size:13px;font-weight:640;margin-bottom:6px">'+esc(state.sy)+' vs '+esc(state.sx)+
+      ' ('+pts.length.toLocaleString()+' points)</div>'+svg+legend;
+    bindTips(box);
+  }
+
+  function renderHeatmap(){
+    var box=$("an-chart-box"), p=PIVOT;
+    var rKeys=p.rKeys.slice(0, state.topn>0?state.topn:p.rKeys.length);
+    var cols=p.singleCol?[aggLabel()]:p.cKeys;
+    var maxV=0,minV=Infinity;
+    rKeys.forEach(function(rk){ (p.singleCol?["__val"]:p.cKeys).forEach(function(ck){
+      var v=p.aggVal(p.cells[rk+"||"+ck]); if(v!=null){maxV=Math.max(maxV,v);minV=Math.min(minV,v);} }); });
+    if(minV===Infinity)minV=0; maxV=maxV||1;
+    // sequential blue ramp (validated reference ramp)
+    var ramp=["#eef4fc","#cde2fb","#9ec5f4","#6da7ec","#3987e5","#256abf","#184f95"];
+    function color(v){ if(v==null)return "transparent"; var t=(v-minV)/((maxV-minV)||1);
+      var idx=Math.min(ramp.length-1, Math.floor(t*(ramp.length-1))); return ramp[idx]; }
+    var cw=Math.max(48, Math.min(120, (box.clientWidth-180)/cols.length));
+    var h='<div style="font-size:13px;font-weight:640;margin-bottom:6px">'+esc(aggLabel())+' heatmap</div>';
+    h+='<div style="overflow:auto"><table class="an-ptbl" style="border:0"><thead><tr><th class="k"></th>';
+    cols.forEach(function(c){ h+='<th>'+esc(p.singleCol?"":c)+'</th>'; });
+    h+='</tr></thead><tbody>';
+    rKeys.forEach(function(rk){ h+='<tr><td class="k">'+esc(rk)+'</td>';
+      (p.singleCol?["__val"]:p.cKeys).forEach(function(ck){ var v=p.aggVal(p.cells[rk+"||"+ck]);
+        var bg=color(v); var dark=v!=null&&(v-minV)/((maxV-minV)||1)>0.6;
+        h+='<td style="background:'+bg+';color:'+(dark?"#fff":"var(--ink)")+';text-align:center;min-width:'+cw+'px" '+
+          'data-tip="'+esc(rk+" · "+(p.singleCol?aggLabel():ck)+": "+fmtNum(v))+'">'+disp(v)+'</td>'; });
+      h+='</tr>'; });
+    h+='</tbody></table></div>';
+    box.innerHTML=h; bindTips(box);
+  }
+
   function renderChart(){
     var box=$("an-chart-box");
+    $("an-scatter-ctl").classList.toggle("on", state.chart==="scatter");
+    if(state.chart==="scatter"){ return renderScatter(); }
     if(!PIVOT||!PIVOT.rKeys.length){ box.innerHTML='<div class="an-empty">No chart.</div>'; return; }
+    if(state.chart==="heatmap"){ return renderHeatmap(); }
     var p=PIVOT, topn=state.topn>0?state.topn:p.rKeys.length;
     var rKeys=p.rKeys.slice(0,topn);
     var series=p.singleCol?[aggLabel()]:p.cKeys;
@@ -427,6 +613,11 @@ _EXTRA_JS = r"""
   $("an-agg").addEventListener("change",function(){ state.agg=$("an-agg").value; recompute(); });
   $("an-charttype").addEventListener("change",function(){ state.chart=$("an-charttype").value; renderChart(); });
   $("an-topn").addEventListener("change",function(){ state.topn=parseInt($("an-topn").value,10); renderChart(); });
+  $("an-pct").addEventListener("change",function(){ state.pct=$("an-pct").checked; renderTable(); renderChart(); });
+  ["an-sx","an-sy","an-scolor"].forEach(function(id){ $(id).addEventListener("change",function(){
+    state.sx=$("an-sx").value; state.sy=$("an-sy").value; state.scolor=$("an-scolor").value; renderChart(); }); });
+  document.querySelectorAll(".an-btn.vw").forEach(function(b){
+    b.addEventListener("click",function(){ applyView(b.getAttribute("data-view")); }); });
   $("an-reset").addEventListener("click",function(){ state.rows=[];state.cols=[];state.val=null;
     state.filters={};state.agg="count"; renderZones(); recompute(); });
   $("an-dl").addEventListener("click",function(){ var csv=pivotCSV();
