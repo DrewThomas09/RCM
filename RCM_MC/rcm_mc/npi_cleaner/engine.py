@@ -323,6 +323,41 @@ def _clean_taxonomy_cell(v: str) -> Tuple[str, List[str]]:
     return up, ([] if up == v else ["taxonomy-upper"])
 
 
+# Which hyphenated segment to zero-pad, by segment-length signature. Mirrors
+# npi_recovery.field_validators.normalize_ndc11 so verdicts match the package.
+_NDC_PAD_MAP = {(4, 4, 2): 0, (5, 3, 2): 1, (5, 4, 1): 2}
+
+
+def _clean_ndc_cell(v: str) -> Tuple[str, List[str]]:
+    """Normalize an NDC to the 11-digit billing form. Segment-aware padding of
+    hyphenated 10-digit forms (4-4-2 / 5-3-2 / 5-4-1 → 5-4-2). An unhyphenated
+    10-digit NDC is AMBIGUOUS (segmentation unknown) and left unchanged — the
+    caller flags it rather than guess a left-pad."""
+    if v == "":
+        return v, []
+    s = v.strip()
+    if "-" in s:
+        segs = s.split("-")
+        if len(segs) == 3 and all(seg.isdigit() for seg in segs):
+            lens = tuple(len(seg) for seg in segs)
+            if lens == (5, 4, 2):
+                out = "".join(segs)
+                return out, ([] if out == v else ["ndc-normalize-11"])
+            if lens in _NDC_PAD_MAP:
+                i = _NDC_PAD_MAP[lens]
+                segs = list(segs)
+                segs[i] = segs[i].zfill(len(segs[i]) + 1)
+                return "".join(segs), ["ndc-pad-11"]
+        digits = "".join(c for c in s if c.isdigit())
+        if len(digits) == 11:
+            return digits, (["ndc-normalize-11"] if digits != v else [])
+        return v, []
+    digits = "".join(c for c in s if c.isdigit())
+    if len(digits) == 11 and digits != v:
+        return digits, ["ndc-normalize-11"]
+    return v, []
+
+
 def _to_number(s: str) -> Optional[float]:
     """Parse a possibly-formatted numeric cell, or None."""
     if s is None or s == "":
@@ -729,6 +764,8 @@ def clean_bytes(
                  if any(x in _norm_key(h) for x in _PHONE_HINTS)}
     taxo_set = {i for i, h in enumerate(headers)
                 if any(x in _norm_key(h) for x in _TAXO_HINTS)}
+    ndc_norm_set = {i for i, h in enumerate(headers)
+                    if any(x in _norm_key(h) for x in _NDC_HINTS)}
     state_set = {i for i in ([state_idx] if state_idx is not None else [])}
     # Specific columns for cross-field sanity flags.
     allowed_i = _detect_one(headers, ("allowedamt", "allowed"))
@@ -820,12 +857,21 @@ def clean_bytes(
                 val, r = _clean_phone_cell(val); hits += r
             elif ci in taxo_set:
                 val, r = _clean_taxonomy_cell(val); hits += r
+            elif ci in ndc_norm_set:
+                val, r = _clean_ndc_cell(val); hits += r
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
             new_row.append(val)
         # Cross-field sanity flags (report-only) on the cleaned row.
         for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i, units_i):
             res.sanity[f] = res.sanity.get(f, 0) + 1
+        # NDC that couldn't be safely normalized (unhyphenated 10-digit).
+        for ci in ndc_norm_set:
+            if ci < len(new_row):
+                nd = new_row[ci]
+                if nd and nd.isdigit() and len(nd) == 10:
+                    res.sanity["ndc-ambiguous-10digit"] = \
+                        res.sanity.get("ndc-ambiguous-10digit", 0) + 1
         # Tally NPI health per detected column.
         for i in npi_idx:
             cstat = res.column_stats[headers[i]]

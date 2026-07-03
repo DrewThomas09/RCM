@@ -526,7 +526,9 @@ _EXTRA_JS = r"""
     "dx-decimal":"Inserted the ICD-10 decimal point (E1165 → E11.65)",
     "modifier-normalize":"Normalized claim-line modifiers (split · upper · dedup)",
     "phone-format":"Formatted phone/fax numbers",
-    "taxonomy-upper":"Upper-cased provider taxonomy codes"};
+    "taxonomy-upper":"Upper-cased provider taxonomy codes",
+    "ndc-pad-11":"Padded NDC to 11-digit billing format (segment-aware)",
+    "ndc-normalize-11":"Normalized NDC to 11-digit billing format"};
 
   function renderRepairs(repairs, total){
     var box=$("npi-repairs");
@@ -550,7 +552,8 @@ _EXTRA_JS = r"""
     "negative-paid":"Negative paid amount",
     "nonpositive-units":"Units ≤ 0",
     "fractional-units":"Fractional (non-integer) units",
-    "suspected-duplicate-claim":"Suspected duplicate claim (same provider · patient · date · code · amount)"};
+    "suspected-duplicate-claim":"Suspected duplicate claim (same provider · patient · date · code · amount)",
+    "ndc-ambiguous-10digit":"Ambiguous 10-digit NDC (segmentation unknown — verify at source)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];

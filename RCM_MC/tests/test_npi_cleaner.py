@@ -152,6 +152,32 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(sf.get("nonpositive-units"), 1)
         self.assertEqual(sf.get("fractional-units"), 1)
 
+    def test_ndc_11digit_normalization(self):
+        # Segment-aware padding must match the vendored normalize_ndc11 rule.
+        data = ("ClaimID,NDC\n"
+                "1,1234-5678-90\n"    # 4-4-2 → pad seg1
+                "2,12345-678-90\n"    # 5-3-2 → pad seg2
+                "3,00069015001\n"     # already 11 digits → unchanged
+                "4,1234567890\n").encode()  # 10-digit unhyphenated → ambiguous
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.repairs.get("ndc-pad-11"), 2)
+        self.assertEqual(res.sanity.get("ndc-ambiguous-10digit"), 1)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("01234567890", out)  # 1234-5678-90 padded
+        self.assertIn("12345067890", out)  # 12345-678-90 padded
+
+    def test_ndc_matches_package_rule(self):
+        try:
+            from rcm_mc.npi_cleaner.vendor_v49.npi_recovery import field_validators as FV
+        except Exception:
+            self.skipTest("vendored field_validators unavailable")
+        for c in ("1234-5678-90", "12345-678-90", "12345-6789-0",
+                  "0069-0150-01", "00069015001"):
+            mine, _ = engine._clean_ndc_cell(c)
+            pkg, _st = FV.normalize_ndc11(c)
+            self.assertEqual(mine, pkg, f"mismatch on {c}")
+
     def test_suspected_duplicate_claims(self):
         # Rows 1&2 share provider/patient/DOS/HCPCS/amount (diff ClaimID) → dup.
         # A 3rd row is an exact dup of row 1 (removed by exact dedup, not
