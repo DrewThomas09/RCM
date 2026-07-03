@@ -267,6 +267,7 @@ never blocks the fast results.">ⓘ</span></label>
         <tbody id="npi-col-rows"></tbody>
       </table>
       <div id="npi-repairs"></div>
+      <div id="npi-sanity"></div>
     </div>
 
     <div class="npi-panel" data-panel="issues">
@@ -421,6 +422,7 @@ _EXTRA_JS = r"""
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
     renderRepairs(s.repairs, s.repairs_total);
+    renderSanity(s.sanity);
 
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
@@ -537,6 +539,28 @@ _EXTRA_JS = r"""
       'to the cleaned file (originals were replaced in place).</div>';
     keys.forEach(function(k){
       html+=flagRow(REPAIR_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', repairs[k]);
+    });
+    box.innerHTML=html;
+  }
+
+  var SANITY_LABELS={
+    "allowed-exceeds-billed":"Allowed amount exceeds billed",
+    "paid-exceeds-allowed":"Paid amount exceeds allowed",
+    "negative-allowed":"Negative allowed amount",
+    "negative-paid":"Negative paid amount",
+    "nonpositive-units":"Units ≤ 0",
+    "fractional-units":"Fractional (non-integer) units"};
+  function renderSanity(sanity){
+    var box=$("npi-sanity");
+    var keys=sanity?Object.keys(sanity):[];
+    if(!keys.length){ box.innerHTML=""; return; }
+    keys.sort(function(a,b){return sanity[b]-sanity[a];});
+    var html='<div class="ck-section-header" style="margin-top:20px">'+
+      '<h3 style="margin:0">Data sanity flags</h3></div>'+
+      '<div class="npi-muted">Impossible cross-field values found (reported, not '+
+      'auto-changed — verify at the source).</div>';
+    keys.forEach(function(k){
+      html+=flagRow(SANITY_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', sanity[k]);
     });
     box.innerHTML=html;
   }

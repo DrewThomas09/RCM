@@ -322,6 +322,43 @@ def _clean_taxonomy_cell(v: str) -> Tuple[str, List[str]]:
     up = v.strip().upper()
     return up, ([] if up == v else ["taxonomy-upper"])
 
+
+def _to_number(s: str) -> Optional[float]:
+    """Parse a possibly-formatted numeric cell, or None."""
+    if s is None or s == "":
+        return None
+    t = str(s).replace("$", "").replace(",", "").strip()
+    m = _MONEY_PARENS_RE.match(t)
+    if m:
+        t = "-" + m.group(1)
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def _row_sanity_flags(row, allowed_i, billed_i, paid_i, units_i) -> List[str]:
+    """Cross-field impossibilities on a cleaned row (report-only)."""
+    flags: List[str] = []
+
+    def val(i):
+        return _to_number(row[i]) if (i is not None and i < len(row)) else None
+
+    a, b, p, u = val(allowed_i), val(billed_i), val(paid_i), val(units_i)
+    if a is not None and b is not None and a > b + 1e-6:
+        flags.append("allowed-exceeds-billed")
+    if p is not None and a is not None and p > a + 1e-6:
+        flags.append("paid-exceeds-allowed")
+    if a is not None and a < 0:
+        flags.append("negative-allowed")
+    if p is not None and p < 0:
+        flags.append("negative-paid")
+    if u is not None and u <= 0:
+        flags.append("nonpositive-units")
+    elif u is not None and abs(u - round(u)) > 1e-9:
+        flags.append("fractional-units")
+    return flags
+
 ProgressCb = Callable[[str, float], None]
 
 
@@ -380,6 +417,8 @@ class CleanResult:
     n_cells_trimmed: int = 0
     # Deterministic normalization fixes applied, rule → count of cells changed.
     repairs: Dict[str, int] = field(default_factory=dict)
+    # Cross-field data-sanity flags (not auto-fixed), rule → count of rows.
+    sanity: Dict[str, int] = field(default_factory=dict)
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -447,6 +486,7 @@ class CleanResult:
             "cells_trimmed": self.n_cells_trimmed,
             "repairs": dict(self.repairs),
             "repairs_total": sum(self.repairs.values()),
+            "sanity": dict(self.sanity),
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
             "npi_cells": cells,
@@ -690,6 +730,12 @@ def clean_bytes(
     taxo_set = {i for i, h in enumerate(headers)
                 if any(x in _norm_key(h) for x in _TAXO_HINTS)}
     state_set = {i for i in ([state_idx] if state_idx is not None else [])}
+    # Specific columns for cross-field sanity flags.
+    allowed_i = _detect_one(headers, ("allowedamt", "allowed"))
+    billed_i = _detect_one(headers, ("billedamt", "billed", "chargeamt",
+                                     "charge", "submittedamt"))
+    paid_i = _detect_one(headers, ("paidamt", "paymentamt", "planpaid", "paid"))
+    units_i = _detect_one(headers, ("units", "unit", "quantity", "qty", "srvccnt"))
 
     # User column-mapping overrides (canonical role → header) win over
     # auto-detection. Only roles the stdlib path acts on are honored here; the
@@ -770,6 +816,9 @@ def clean_bytes(
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
             new_row.append(val)
+        # Cross-field sanity flags (report-only) on the cleaned row.
+        for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i, units_i):
+            res.sanity[f] = res.sanity.get(f, 0) + 1
         # Tally NPI health per detected column.
         for i in npi_idx:
             cstat = res.column_stats[headers[i]]

@@ -138,6 +138,20 @@ class TestEngine(unittest.TestCase):
         self.assertIn("207Q00000X", out)         # taxonomy upper
         self.assertIn("2,25,", out)              # dedup 25;25 → 25
 
+    def test_cross_field_sanity_flags(self):
+        data = ("ClaimID,ChargeAmt,AllowedAmt,PaidAmt,Units\n"
+                "1,50,90,40,2\n"       # allowed > billed
+                "2,200,150,300,1\n"    # paid > allowed
+                "3,100,80,-5,0\n"      # negative paid + units<=0
+                "4,100,80,60,1.5\n").encode()  # fractional units
+        res = engine.clean_bytes(data, "x.csv")
+        sf = res.sanity
+        self.assertEqual(sf.get("allowed-exceeds-billed"), 1)
+        self.assertEqual(sf.get("paid-exceeds-allowed"), 1)
+        self.assertEqual(sf.get("negative-paid"), 1)
+        self.assertEqual(sf.get("nonpositive-units"), 1)
+        self.assertEqual(sf.get("fractional-units"), 1)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
