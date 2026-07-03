@@ -325,7 +325,10 @@ never blocks the fast results.">ⓘ</span></label>
     the CMS reference tables vendored with the package. Each issue is sized —
     rows, % of rows, dollar exposure, and a systematic-vs-random verdict — and
     every fixable row gets a suggested correction you can download as the
-    corrections companion. The full networked recovery pipeline
+    corrections companion. Extended anomaly screens add Benford first-digit
+    conformance on allowed amounts, rounding-pathology by group, per-unit rate
+    outliers, and billing-provider concentration (HHI). The full networked
+    recovery pipeline
     (<code>run_pipeline</code>, live NPPES/CMS Steps&nbsp;0–8) ships in the
     vendored package for batch/CLI use; see
     <code>rcm_mc/npi_cleaner/vendor_v49/README.md</code>.
@@ -546,6 +549,17 @@ _EXTRA_JS = r"""
         fmt(adv.suggestions_n)+' row-level suggested corrections available '+
         '(current → suggested, with provenance) — download the corrections '+
         'companion below.</div>';
+    }
+    var ext=adv.extended||[];
+    if(ext.length){
+      html+='<div style="margin:16px 0 4px;font-weight:640;font-size:13px">'+
+        'Extended anomaly screens</div>';
+      ext.forEach(function(e){
+        var bad=/(deviate|flag|highly)/i.test(e.value);
+        html+='<div class="npi-flag"><div class="lab">'+esc(e.label)+
+          '<small>'+esc(e.note)+'</small></div>'+
+          '<div class="cnt '+(bad?'hit':'')+'">'+esc(e.value)+'</div></div>';
+      });
     }
     html+='</div>';
     box.innerHTML=html;

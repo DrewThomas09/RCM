@@ -171,6 +171,21 @@ class TestVendorAdapter(unittest.TestCase):
             head = fh.readline()
         self.assertIn("suggested_value", head)
 
+    def test_extended_anomaly_screens(self):
+        # Enough rows for the Benford screen (needs >=100 amounts).
+        lines = ["BillingNPI,Payer,AllowedAmt"]
+        for i in range(150):
+            amt = 100 + (i * 37) % 900
+            lines.append(f"16799999{i%80:02d},PayerA,{amt}")
+        data = ("\n".join(lines) + "\n").encode()
+        res = self.va.run(data)
+        self.assertIsNotNone(res)
+        ext = res.get("extended", [])
+        keys = {e["key"] for e in ext}
+        # Benford + HHI should always be computable on this data.
+        self.assertIn("benford", keys)
+        self.assertIn("hhi", keys)
+
     def test_bundled_v49_sample_runs(self):
         from pathlib import Path
         sample = (Path(__import__("rcm_mc").__file__).parent / "npi_cleaner"

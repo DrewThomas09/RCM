@@ -213,4 +213,79 @@ def run(data: bytes, overrides: Optional[Dict[str, str]] = None) -> Optional[dic
         payload["cleaned_rows"] = int(cleaned.shape[0])
         payload["cleaned_cols"] = int(cleaned.shape[1])
 
+    # Extended anomaly screens — additional v49 modules not in clean_all's
+    # default set (Benford's law, per-unit rate outliers, rounding pathology,
+    # modifier economics, provider concentration). Each is guarded.
+    payload["extended"] = _extended_screens(std, mapping, pd)
+
     return payload
+
+
+def _extended_screens(std, mapping, pd) -> List[dict]:
+    """Run additional offline v49 anomaly modules; return a summary list."""
+    out: List[dict] = []
+    allowed = mapping.get("allowed_amt")
+    units = mapping.get("units")
+    if not allowed or allowed not in getattr(std, "columns", []):
+        return out
+    allowed_s = pd.to_numeric(std[allowed], errors="coerce")
+
+    def _add(key, label, value, note):
+        out.append({"key": key, "label": label, "value": value, "note": note})
+
+    # Benford's-law first-digit conformance on allowed amounts (fraud signal).
+    try:
+        from .vendor_v49.npi_recovery import distribution_screens as DS
+        bf = DS.benford_first_digit(allowed_s.dropna())
+        attrs = getattr(bf, "attrs", {})
+        if "chi_square" in attrs:
+            chi = float(attrs["chi_square"])
+            verdict = str(attrs.get("verdict", "")).split(":")[0].split("(")[0].strip().lower()
+            _add("benford", "Benford first-digit (allowed $)",
+                 f"χ²={chi:.1f} · {verdict or 'see note'}",
+                 str(attrs.get("note", "Leading-digit distribution vs Benford.")))
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Rounding pathology — an excess of round-dollar amounts by group.
+    try:
+        from .vendor_v49.npi_recovery import distribution_screens as DS
+        grp = mapping.get("payer") or mapping.get("billing_npi")
+        if grp and grp in std.columns:
+            rp = DS.rounding_pathology(std, allowed=allowed_s, group_col=grp)
+            if hasattr(rp, "columns") and "note" not in rp.columns and len(rp):
+                _add("rounding", "Rounding pathology",
+                     f"{len(rp)} group(s) flagged",
+                     "Groups with an implausible share of round-dollar amounts.")
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Per-unit rate outliers ($/unit far from the code's panel median).
+    try:
+        if units and units in std.columns:
+            from .vendor_v49.npi_recovery import unit_integrity as UI
+            ro = UI.rate_outlier_screen(std, allowed=allowed_s,
+                                        units=pd.to_numeric(std[units], errors="coerce"))
+            if hasattr(ro, "columns") and "row" in ro.columns and len(ro):
+                _add("rate_outlier", "Allowed-per-unit rate outliers",
+                     f"{len(ro)} lines flagged",
+                     "Lines whose $/unit is a large outlier vs the code median.")
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Provider concentration (HHI, 0–10000 DOJ scale) on allowed dollars.
+    try:
+        from .vendor_v49.npi_recovery import concentration as CC
+        bcol = mapping.get("billing_npi")
+        if bcol and bcol in std.columns:
+            by = std.assign(_a=allowed_s.fillna(0)).groupby(bcol)["_a"].sum()
+            hhi = CC.hhi(by)
+            band = ("highly concentrated" if hhi >= 2500 else
+                    "moderately concentrated" if hhi >= 1500 else "unconcentrated")
+            _add("hhi", "Billing-provider concentration (HHI)",
+                 f"{hhi:.0f} · {band}",
+                 "Herfindahl index (0–10000) of allowed $ across billing NPIs.")
+    except Exception:  # noqa: BLE001
+        pass
+
+    return out
