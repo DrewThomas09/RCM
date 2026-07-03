@@ -2747,9 +2747,39 @@ class RCMHandler(BaseHTTPRequestHandler):
         qs = urllib.parse.parse_qs(parsed.query)
         dedupe = (qs.get("dedupe") or ["1"])[0] != "0"
         enrich = (qs.get("enrich") or ["0"])[0] == "1"
+        # Column-mapping overrides arrive as a URL-encoded JSON object in the
+        # X-Overrides header (role -> header). Bad JSON is ignored → auto-detect.
+        overrides = None
+        raw_ov = self.headers.get("X-Overrides")
+        if raw_ov:
+            try:
+                import json as _json
+                parsed_ov = _json.loads(urllib.parse.unquote(raw_ov))
+                if isinstance(parsed_ov, dict):
+                    overrides = {str(k): str(v) for k, v in parsed_ov.items()
+                                 if v}
+            except Exception:  # noqa: BLE001
+                overrides = None
         job_id = engine.manager().submit(
-            raw, name, drop_duplicates=dedupe, enrich=enrich)
+            raw, name, drop_duplicates=dedupe, enrich=enrich,
+            overrides=overrides)
         return self._send_json({"job_id": job_id})
+
+    def _route_npi_cleaner_detect(self) -> None:
+        """Return the detected column→role mapping for the mapping editor."""
+        from .npi_cleaner import engine
+
+        raw = self._raw_post_body()
+        if not raw:
+            return self._send_json(
+                {"error": "Empty upload."}, status=HTTPStatus.BAD_REQUEST)
+        result = engine.detect_columns_preview(raw)
+        if result is None:
+            # Detector unavailable (no pandas) — tell the client to skip the
+            # confirm step and clean on auto-detection.
+            return self._send_json({"available": False})
+        result["available"] = True
+        return self._send_json(result)
 
     def _route_npi_cleaner_status(self, job_id: str) -> None:
         """Return JSON progress (and the scorecard once done) for a job."""
@@ -13864,6 +13894,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         # only that context — no mutation, no diligence model, no RAG.
         if path == "/api/guide/ask":
             return self._route_guide_ask()
+        if path == "/npi-cleaner/detect":
+            return self._route_npi_cleaner_detect()
         if path == "/npi-cleaner/upload":
             return self._route_npi_cleaner_upload(parsed)
         if path == "/diligence/snapshot":

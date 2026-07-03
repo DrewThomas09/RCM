@@ -65,9 +65,63 @@ def _num(v) -> Optional[float]:
         return None
 
 
-def run(data: bytes) -> Optional[dict]:
+# The column roles the mapping editor exposes, in display order — a curated
+# subset of the v49 canonical schema that the cleaner/connectors act on.
+EDITABLE_ROLES: List[tuple] = [
+    ("billing_npi", "Billing NPI"),
+    ("rendering_npi", "Rendering NPI"),
+    ("referring_npi", "Referring NPI"),
+    ("billing_name", "Billing / org name"),
+    ("state", "State"),
+    ("hcpcs", "Procedure (HCPCS/CPT)"),
+    ("ndc", "Drug NDC"),
+    ("drug_name", "Drug name"),
+    ("date_of_service", "Service date"),
+    ("allowed_amt", "Allowed $"),
+    ("billed_amt", "Billed $"),
+    ("paid_amt", "Paid $"),
+    ("units", "Units"),
+    ("days_supply", "Days supply"),
+    ("diagnosis", "Diagnosis (ICD-10)"),
+    ("modifiers", "Modifiers"),
+    ("payer", "Payer"),
+]
+
+
+def detect(data: bytes) -> Optional[dict]:
+    """Detect the column → canonical-role mapping for the mapping editor.
+
+    Returns ``{headers, mapping}`` (mapping = role→header or None) or ``None``
+    when the v49 detector is unavailable.
+    """
+    try:
+        from .vendor_v49.npi_recovery import schema
+    except Exception:  # noqa: BLE001
+        return None
+    try:
+        raw = _read_df(data)
+    except Exception:  # noqa: BLE001
+        return None
+    if raw is None or raw.shape[1] == 0:
+        return None
+    try:
+        mapping, _report = schema.detect_columns(raw)
+    except Exception:  # noqa: BLE001
+        return None
+    return {
+        "headers": [str(c) for c in raw.columns],
+        "mapping": {k: (str(v) if v else "") for k, v in mapping.items()},
+        "roles": [{"key": k, "label": lbl} for k, lbl in EDITABLE_ROLES],
+    }
+
+
+def run(data: bytes, overrides: Optional[Dict[str, str]] = None) -> Optional[dict]:
     """Run the real v49 deterministic engine. Returns a display payload plus a
-    capped ``suggestions_records`` companion, or ``None`` when unavailable."""
+    capped ``suggestions_records`` companion, or ``None`` when unavailable.
+
+    ``overrides`` maps canonical role → the header to use, letting the user
+    correct auto-detection from the mapping editor.
+    """
     try:
         import pandas as pd
         from .vendor_v49.npi_recovery import schema, clean_orchestrator as CO
@@ -81,8 +135,11 @@ def run(data: bytes) -> Optional[dict]:
     if raw is None or raw.shape[1] == 0 or len(raw) == 0:
         return None
 
+    # Only pass overrides whose target column actually exists.
+    ov = {k: v for k, v in (overrides or {}).items()
+          if v and v in raw.columns} or None
     try:
-        out = schema.standardize_any(raw)
+        out = schema.standardize_any(raw, ov)
         std = out[0] if isinstance(out, tuple) else out
         mapping = out[1] if isinstance(out, tuple) and len(out) > 1 else {}
     except Exception:  # noqa: BLE001
@@ -102,13 +159,23 @@ def run(data: bytes) -> Optional[dict]:
     payload["repairs"] = int(len(ledger)) if ledger is not None and hasattr(
         ledger, "__len__") else 0
 
-    # Screen flag counts (frames that carry a per-row "row" column).
+    # Screen flag counts (frames that carry a per-row "row" column), plus a
+    # capped sample of the actual offending rows per screen for drill-down.
     screens = res.get("screens", {}) or {}
-    payload["screens"] = {
-        name: int(len(frame))
-        for name, frame in screens.items()
-        if hasattr(frame, "columns") and "row" in getattr(frame, "columns", [])
-    }
+    payload["screens"] = {}
+    issue_rows: Dict[str, dict] = {}
+    for name, frame in screens.items():
+        cols = getattr(frame, "columns", [])
+        if not (hasattr(frame, "columns") and "row" in cols):
+            continue
+        payload["screens"][name] = int(len(frame))
+        show = [c for c in cols if c not in ("verdict",)][:8]
+        sample = []
+        for _, r in frame.head(15).iterrows():
+            sample.append({c: ("" if pd.isna(r[c]) else str(r[c])) for c in show})
+        if sample:
+            issue_rows[name] = {"columns": show, "rows": sample}
+    payload["issue_rows"] = issue_rows
 
     # Sized issues (the headline: rows, $ exposure, systematic verdict).
     issues: List[dict] = []

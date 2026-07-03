@@ -148,6 +148,22 @@ _EXTRA_CSS = r"""
 .npi-cat .c .o{font-size:11px;color:var(--ink-2,#4a5d57)}
 .npi-cat .c .free{color:var(--green-deep,#0c7c66)}
 .npi-muted{font-size:12.5px;color:var(--ink-2,#4a5d57);margin:14px 0}
+.npi-map{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:10px 16px;margin-top:6px}
+.npi-map .row{display:flex;flex-direction:column;gap:3px}
+.npi-map label{font-size:12px;font-weight:600;color:var(--ink,#11201c)}
+.npi-map select{padding:7px 9px;border:1px solid var(--line,#d2ddd7);
+  border-radius:8px;font-size:13px;background:var(--panel,#fbfdfc);color:var(--ink,#11201c)}
+.npi-map select.auto{color:var(--ink-2,#4a5d57)}
+.npi-map .row.set label{color:var(--green-deep,#0c7c66)}
+.npi-drill{cursor:pointer}
+.npi-drill:hover{background:color-mix(in srgb,var(--green-deep,#0c7c66) 4%,transparent)}
+.npi-drill td:first-child::before{content:"▸ ";color:var(--ink-2,#4a5d57);font-size:11px}
+.npi-drill.open td:first-child::before{content:"▾ "}
+.npi-drillrows{background:var(--paper,#f3f7f5)}
+.npi-drillrows table{width:100%;border-collapse:collapse;font-size:12px;margin:4px 0}
+.npi-drillrows th,.npi-drillrows td{padding:5px 8px;border-bottom:1px solid var(--line-soft,#e7eeea);text-align:left}
+.npi-drillrows th{font-size:10.5px;text-transform:uppercase;color:var(--ink-2,#4a5d57)}
 """
 
 
@@ -194,6 +210,16 @@ def _body() -> str:
 connectors. NPIs are verified against NPPES (active vs deactivated) and missing
 NPIs recovered from provider names; NDC and drug-name columns are resolved to
 RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></label>
+    </div>
+  </div>
+
+  <div id="npi-stage-mapping" class="npi-hidden">
+    <div class="ck-section-header"><h3 style="margin:0">Confirm columns</h3></div>
+    <div class="npi-muted" id="npi-map-file"></div>
+    <div class="npi-map" id="npi-map-grid"></div>
+    <div style="margin-top:18px">
+      <button class="npi-dl" id="npi-map-clean">Clean file →</button>
+      <button class="npi-again" id="npi-map-cancel">Cancel</button>
     </div>
   </div>
 
@@ -312,20 +338,21 @@ _EXTRA_JS = r"""
 (function(){
   var $ = function(id){ return document.getElementById(id); };
   var drop=$("npi-drop"), fileIn=$("npi-file");
-  var stUp=$("npi-stage-upload"), stPr=$("npi-stage-progress"),
+  var stUp=$("npi-stage-upload"), stMap=$("npi-stage-mapping"),
+      stPr=$("npi-stage-progress"),
       stErr=$("npi-stage-error"), stRes=$("npi-stage-result");
-  var poll=null;
+  var poll=null, currentFile=null, detectRoles=[];
 
   function show(el){ el.classList.remove("npi-hidden"); }
   function hide(el){ el.classList.add("npi-hidden"); }
   function reset(){
     if(poll){ clearInterval(poll); poll=null; }
-    hide(stPr); hide(stErr); hide(stRes); show(stUp);
-    fileIn.value="";
+    hide(stMap); hide(stPr); hide(stErr); hide(stRes); show(stUp);
+    fileIn.value=""; currentFile=null;
   }
   function fail(msg){
     if(poll){ clearInterval(poll); poll=null; }
-    hide(stUp); hide(stPr); hide(stRes);
+    hide(stUp); hide(stMap); hide(stPr); hide(stRes);
     $("npi-err-text").textContent = msg || "Something went wrong.";
     show(stErr);
   }
@@ -436,6 +463,19 @@ _EXTRA_JS = r"""
     return "$"+Math.round(v);
   }
 
+  function drillTable(drill){
+    var cols=drill.columns||[], rows=drill.rows||[];
+    var h='<table><thead><tr>';
+    cols.forEach(function(c){ h+='<th>'+esc(c.replace(/_/g," "))+'</th>'; });
+    h+='</tr></thead><tbody>';
+    rows.forEach(function(r){
+      h+='<tr>'; cols.forEach(function(c){ h+='<td>'+esc(r[c])+'</td>'; }); h+='</tr>';
+    });
+    h+='</tbody></table><div class="npi-muted" style="margin:2px 0">Showing up '+
+      'to 15 offending rows.</div>';
+    return h;
+  }
+
   function renderAdvanced(adv){
     var box=$("npi-advanced");
     if(!adv){ box.innerHTML=""; return; }
@@ -447,19 +487,26 @@ _EXTRA_JS = r"""
       '</div>';
 
     var issues=adv.issues||[];
+    var irows=adv.issue_rows||{};
     if(issues.length){
       html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
         '<th>Issue</th><th class="num">Rows</th><th class="num">% rows</th>'+
         '<th class="num">$ exposure</th><th>Signal</th></tr></thead><tbody>';
-      issues.forEach(function(it){
+      issues.forEach(function(it,ix){
         var sig=it.systematic||"";
         var tone=sig.indexOf("systematic")===0?"bad":
                  (sig.indexOf("random")===0?"":"warn");
-        html+='<tr><td>'+it.issue.replace(/_/g,' ')+'</td>'+
+        var drill=irows[it.issue];
+        html+='<tr class="'+(drill?'npi-drill':'')+'" data-drill="'+ix+'">'+
+          '<td>'+esc(it.issue.replace(/_/g,' '))+'</td>'+
           '<td class="num">'+fmt(it.rows)+'</td>'+
           '<td class="num">'+(it.pct_rows!=null?it.pct_rows.toFixed(1)+'%':'')+'</td>'+
           '<td class="num">'+dollars(it.dollars)+'</td>'+
-          '<td><span class="npi-sig '+tone+'">'+sig+'</span></td></tr>';
+          '<td><span class="npi-sig '+tone+'">'+esc(sig)+'</span></td></tr>';
+        if(drill){
+          html+='<tr class="npi-drillrows npi-hidden" data-drillrows="'+ix+'"><td colspan="5">'+
+            drillTable(drill)+'</td></tr>';
+        }
       });
       html+='</tbody></table>';
     }
@@ -602,13 +649,24 @@ _EXTRA_JS = r"""
   function initTabs(){
     if(window.__npiTabsInit) return; window.__npiTabsInit=true;
     document.addEventListener("click", function(e){
-      var t=e.target.closest ? e.target.closest(".npi-tab") : null;
-      if(!t) return;
-      var name=t.getAttribute("data-tab");
-      document.querySelectorAll(".npi-tab").forEach(function(b){
-        b.classList.toggle("is-active", b===t); });
-      document.querySelectorAll(".npi-panel").forEach(function(p){
-        p.classList.toggle("is-active", p.getAttribute("data-panel")===name); });
+      if(!e.target.closest) return;
+      var t=e.target.closest(".npi-tab");
+      if(t){
+        var name=t.getAttribute("data-tab");
+        document.querySelectorAll(".npi-tab").forEach(function(b){
+          b.classList.toggle("is-active", b===t); });
+        document.querySelectorAll(".npi-panel").forEach(function(p){
+          p.classList.toggle("is-active", p.getAttribute("data-panel")===name); });
+        return;
+      }
+      // Drill-down: clicking an issue row toggles its offending-rows table.
+      var d=e.target.closest(".npi-drill");
+      if(d){
+        var ix=d.getAttribute("data-drill");
+        var rows=document.querySelector('[data-drillrows="'+ix+'"]');
+        if(rows){ rows.classList.toggle("npi-hidden");
+          d.classList.toggle("open", !rows.classList.contains("npi-hidden")); }
+      }
     });
   }
 
@@ -631,21 +689,77 @@ _EXTRA_JS = r"""
     }, 400);
   }
 
-  function upload(file){
+  // Step 1 — a file is chosen: detect columns, then show the mapping editor.
+  function chooseFile(file){
     if(!file) return;
     if(file.size > 10*1024*1024){ fail("File is larger than 10 MB."); return; }
+    currentFile=file;
     hide(stUp); hide(stErr); hide(stRes); show(stPr);
-    $("npi-bar-fill").style.width="4%";
+    $("npi-bar-fill").style.width="3%";
+    $("npi-bar-msg").textContent="Reading columns from "+file.name+"…";
+    fetch("/npi-cleaner/detect", {
+      method:"POST", headers:{"X-Filename":encodeURIComponent(file.name)},
+      body:file
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(!j || !j.available || !j.headers){ upload(file, {}); return; }
+      renderMapping(file, j);
+      hide(stPr); show(stMap);
+    })
+    .catch(function(){ upload(file, {}); });  // detector down → clean directly
+  }
+
+  function renderMapping(file, det){
+    detectRoles = det.roles || [];
+    $("npi-map-file").textContent =
+      file.name+" — "+det.headers.length+" columns detected. Adjust any the "+
+      "auto-mapper got wrong, then clean.";
+    var opts = '<option value="">(auto / none)</option>' +
+      det.headers.map(function(h){
+        return '<option value="'+encodeURIComponent(h)+'">'+
+          h.replace(/</g,"&lt;")+'</option>'; }).join("");
+    var html="";
+    detectRoles.forEach(function(role){
+      var cur = det.mapping[role.key] || "";
+      html+='<div class="row'+(cur?' set':'')+'" data-role="'+role.key+'">'+
+        '<label>'+role.label+'</label>'+
+        '<select class="'+(cur?'':'auto')+'">'+opts+'</select></div>';
+    });
+    $("npi-map-grid").innerHTML=html;
+    // Pre-select detected values.
+    detectRoles.forEach(function(role){
+      var cur = det.mapping[role.key] || "";
+      var sel = $("npi-map-grid").querySelector('[data-role="'+role.key+'"] select');
+      if(sel && cur){ sel.value=encodeURIComponent(cur); }
+    });
+  }
+
+  function gatherOverrides(){
+    var ov={};
+    $("npi-map-grid").querySelectorAll(".row").forEach(function(row){
+      var key=row.getAttribute("data-role");
+      var sel=row.querySelector("select");
+      if(sel && sel.value){ ov[key]=decodeURIComponent(sel.value); }
+    });
+    return ov;
+  }
+
+  // Step 2 — clean the held file with the confirmed overrides.
+  function upload(file, overrides){
+    if(!file) return;
+    hide(stUp); hide(stMap); hide(stErr); hide(stRes); show(stPr);
+    $("npi-bar-fill").style.width="5%";
     $("npi-bar-msg").textContent="Uploading "+file.name+"…";
     var params=[];
     if(!$("npi-dedupe").checked) params.push("dedupe=0");
     if($("npi-enrich").checked) params.push("enrich=1");
     var qs = params.length ? "?"+params.join("&") : "";
-    fetch("/npi-cleaner/upload"+qs, {
-      method:"POST",
-      headers:{"X-Filename":encodeURIComponent(file.name)},
-      body:file
-    })
+    var headers={"X-Filename":encodeURIComponent(file.name)};
+    if(overrides && Object.keys(overrides).length){
+      headers["X-Overrides"]=encodeURIComponent(JSON.stringify(overrides));
+    }
+    fetch("/npi-cleaner/upload"+qs, {method:"POST", headers:headers, body:file})
     .then(function(r){ return r.json(); })
     .then(function(j){
       if(j.error){ fail(j.error); return; }
@@ -659,7 +773,7 @@ _EXTRA_JS = r"""
   drop.addEventListener("click", function(){ fileIn.click(); });
   drop.addEventListener("keydown", function(e){
     if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileIn.click(); } });
-  fileIn.addEventListener("change", function(){ upload(fileIn.files[0]); });
+  fileIn.addEventListener("change", function(){ chooseFile(fileIn.files[0]); });
   ["dragenter","dragover"].forEach(function(ev){
     drop.addEventListener(ev, function(e){ e.preventDefault();
       drop.classList.add("drag"); }); });
@@ -668,8 +782,11 @@ _EXTRA_JS = r"""
       drop.classList.remove("drag"); }); });
   drop.addEventListener("drop", function(e){
     var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    upload(f);
+    chooseFile(f);
   });
+  $("npi-map-clean").addEventListener("click", function(){
+    upload(currentFile, gatherOverrides()); });
+  $("npi-map-cancel").addEventListener("click", reset);
   $("npi-again").addEventListener("click", reset);
   $("npi-err-again").addEventListener("click", reset);
 })();

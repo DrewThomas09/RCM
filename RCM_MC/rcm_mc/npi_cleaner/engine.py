@@ -305,12 +305,27 @@ def _detect_one(headers: List[str], hints: tuple) -> Optional[int]:
 
 
 # -------------------------------------------------------------------- cleaner --
+def detect_columns_preview(data: bytes) -> Optional[Dict[str, object]]:
+    """Detect the column→role mapping for the pre-clean mapping editor.
+
+    Delegates to the v49 detector via ``vendor_adapter``; returns None when
+    pandas / the vendored engine is unavailable (the page then skips the
+    confirm step and cleans directly on auto-detection).
+    """
+    try:
+        from . import vendor_adapter
+        return vendor_adapter.detect(data)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def clean_bytes(
     data: bytes,
     src_name: str,
     *,
     drop_duplicates: bool = True,
     enrich: bool = False,
+    overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
 ) -> CleanResult:
     """Clean a delimited claims file given as raw bytes.
@@ -368,6 +383,36 @@ def clean_bytes(
     state_idx = _detect_one(headers, _STATE_HINTS)
     ndc_idx = _detect_one(headers, _NDC_HINTS)
     drug_idx = _detect_one(headers, _DRUG_HINTS)
+
+    # User column-mapping overrides (canonical role → header) win over
+    # auto-detection. Only roles the stdlib path acts on are honored here; the
+    # rest flow to the v49 engine via vendor_adapter.
+    if overrides:
+        hidx = {h: i for i, h in enumerate(headers)}
+
+        def _ov(role):
+            col = overrides.get(role)
+            return hidx.get(col) if col else None
+
+        _b = _ov("billing_npi")
+        if _b is not None:
+            billing_idx = _b
+            if _b not in npi_idx:
+                npi_idx = sorted(set(npi_idx) | {_b})
+                res.npi_columns = [headers[i] for i in npi_idx]
+            res.billing_column = headers[_b]
+        for role, setter in (("billing_name", "name"), ("state", "state"),
+                             ("ndc", "ndc"), ("drug_name", "drug")):
+            _i = _ov(role)
+            if _i is not None:
+                if setter == "name":
+                    name_idx = _i
+                elif setter == "state":
+                    state_idx = _i
+                elif setter == "ndc":
+                    ndc_idx = _i
+                elif setter == "drug":
+                    drug_idx = _i
 
     ncols = len(headers)
     for i in npi_idx:
@@ -444,7 +489,7 @@ def clean_bytes(
     cb("Running the v49 deterministic engine (repairs · screens · issues)", 0.82)
     try:
         from . import vendor_adapter
-        adv = vendor_adapter.run(data)
+        adv = vendor_adapter.run(data, overrides)
         if adv:
             # The full companion can be large — keep it out of the JSON the
             # browser polls; retain it for the CSV/workbook downloads and
@@ -639,7 +684,8 @@ class JobManager:
             self._jobs.pop(j.job_id, None)
 
     def submit(self, data: bytes, name: str, *,
-               drop_duplicates: bool = True, enrich: bool = False) -> str:
+               drop_duplicates: bool = True, enrich: bool = False,
+               overrides: Optional[Dict[str, str]] = None) -> str:
         job_id = uuid.uuid4().hex
         job = Job(job_id=job_id, name=name, created=time.time())
         with self._lock:
@@ -652,7 +698,7 @@ class JobManager:
             try:
                 job.result = clean_bytes(
                     data, name, drop_duplicates=drop_duplicates,
-                    enrich=enrich, progress=cb)
+                    enrich=enrich, overrides=overrides, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
             except Exception as exc:  # noqa: BLE001
                 traceback.print_exc()

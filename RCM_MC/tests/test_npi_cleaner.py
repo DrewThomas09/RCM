@@ -12,6 +12,7 @@ import tempfile
 import time
 import unittest
 import urllib.request as _u
+import urllib.parse as _up
 from unittest.mock import patch
 
 from rcm_mc.npi_cleaner import engine
@@ -426,6 +427,54 @@ class TestNpiCleanerHttp(unittest.TestCase):
                     self.assertIn("attachment", r.headers.get("Content-Disposition", ""))
                     out = r.read().decode()
                 self.assertIn("ClaimID,BillingNPI", out)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_detect_and_override_flow(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                csv = (
+                    "Claim,ProvID,OrgNm,St,AllowedAmt\n"
+                    f"1,{GOOD_A},Mercy,OH,80\n"
+                    "2,99999,Mercy,OH,40\n"
+                ).encode()
+                # detect returns headers + a role mapping
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/detect",
+                    data=csv, method="POST",
+                    headers={"X-Filename": "c.csv"})
+                with _u.urlopen(req) as r:
+                    det = json.loads(r.read().decode())
+                if not det.get("available"):
+                    self.skipTest("detector unavailable")
+                self.assertIn("ProvID", det["headers"])
+                self.assertTrue(any(role["key"] == "billing_npi"
+                                    for role in det["roles"]))
+
+                # upload with an explicit override → billing column honored
+                ov = json.dumps({"billing_npi": "ProvID", "state": "St"})
+                req2 = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv, method="POST",
+                    headers={"X-Filename": "c.csv",
+                             "X-Overrides": _up.quote(ov)})
+                with _u.urlopen(req2) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                sc = None
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        st = json.loads(r.read().decode())
+                    if st.get("done"):
+                        sc = st["scorecard"]
+                        break
+                    time.sleep(0.05)
+                self.assertIsNotNone(sc)
+                self.assertEqual(sc["billing_column"], "ProvID")
+                self.assertEqual(sc["billing_issues"], 1)  # the 99999
             finally:
                 server.shutdown()
                 server.server_close()
