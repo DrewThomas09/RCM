@@ -168,6 +168,7 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
             <option value="heatmap">Heatmap</option>
             <option value="scatter">Scatter</option>
             <option value="box">Box plot</option>
+            <option value="histogram">Histogram</option>
             <option value="correlation">Correlation matrix</option>
           </select></label>
         <label class="an-ctl">Top
@@ -729,6 +730,51 @@ _EXTRA_JS = r"""
     bindTips(box);
   }
 
+  function renderHistogram(){
+    var box=$("an-chart-box");
+    // Measure = the Values field when numeric, else the first numeric column.
+    var measure=(state.val&&NUM[state.val])?state.val:
+      DATA.columns.filter(function(c){return NUM[c];})[0];
+    if(!measure){ box.innerHTML='<div class="an-empty">No numeric measure '+
+      'available for a histogram.</div>'; return; }
+    var mi=DATA.columns.indexOf(measure), vals=[];
+    for(var i=0;i<DATA.rows.length;i++){ var row=DATA.rows[i]; if(!passesFilters(row))continue;
+      var mv=row[mi]; if(mv===""||mv==null||!isNum(mv))continue; vals.push(num(mv)); }
+    if(vals.length<2){ box.innerHTML='<div class="an-empty">Not enough numeric '+
+      'values for a histogram.</div>'; return; }
+    vals.sort(function(a,b){return a-b;});
+    var n=vals.length, mn=vals[0], mx=vals[n-1];
+    if(mx===mn){ box.innerHTML='<div class="an-empty">All values are '+fmtNum(mn)+
+      ' — nothing to distribute.</div>'; return; }
+    // Freedman–Diaconis bin width (robust to skew); Sturges fallback when IQR=0.
+    var q1=quantile(vals,0.25), q3=quantile(vals,0.75), iqr=q3-q1, bins;
+    if(iqr>0){ bins=Math.round((mx-mn)/(2*iqr/Math.pow(n,1/3))); }
+    else { bins=Math.ceil(Math.log2(n))+1; }
+    bins=Math.max(5, Math.min(60, bins||10));
+    var width=(mx-mn)/bins, counts=new Array(bins).fill(0);
+    for(i=0;i<n;i++){ var k=Math.floor((vals[i]-mn)/width); if(k>=bins)k=bins-1; if(k<0)k=0; counts[k]++; }
+    var maxC=Math.max.apply(null,counts)||1, pal=palette();
+    var W=Math.max(560,box.clientWidth-4),H=340,L=54,R=16,T=16,B=54,iw=W-L-R,ih=H-T-B;
+    function sy(v){return T+ih-(v/maxC)*ih;}
+    var bwid=iw/bins;
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet" font-family="Inter,system-ui,sans-serif">';
+    for(var t=0;t<=4;t++){ var gv=maxC*t/4, gy=sy(gv);
+      svg+='<line x1="'+L+'" y1="'+gy+'" x2="'+(W-R)+'" y2="'+gy+'" stroke="rgba(120,130,125,.18)"/>';
+      svg+='<text x="'+(L-6)+'" y="'+(gy+3)+'" text-anchor="end" font-size="10" fill="rgba(120,130,125,.9)">'+fmtNum(gv)+'</text>'; }
+    counts.forEach(function(c,bi){ var x0=L+bi*bwid, lo=mn+bi*width, hi=mn+(bi+1)*width, by=sy(c);
+      svg+='<rect x="'+(x0+0.5)+'" y="'+by+'" width="'+Math.max(1,bwid-1)+'" height="'+Math.max(0,(T+ih)-by)+
+        '" fill="'+pal[0]+'" fill-opacity="0.85" data-tip="'+
+        esc("["+fmtNum(lo)+", "+fmtNum(hi)+"): "+c.toLocaleString()+(c===1?" row":" rows"))+'"/>'; });
+    [0,0.5,1].forEach(function(f){ var xv=mn+(mx-mn)*f, xp=L+iw*f;
+      svg+='<text x="'+xp+'" y="'+(T+ih+16)+'" text-anchor="'+(f===0?"start":f===1?"end":"middle")+
+        '" font-size="10" fill="var(--ink-2,#4a5d57)">'+fmtNum(xv)+'</text>'; });
+    svg+='<line x1="'+L+'" y1="'+(T+ih)+'" x2="'+(W-R)+'" y2="'+(T+ih)+'" stroke="rgba(120,130,125,.5)"/>';
+    svg+='</svg>';
+    box.innerHTML='<div style="font-size:13px;font-weight:640;margin-bottom:6px">Distribution of '+
+      esc(measure)+' ('+n.toLocaleString()+' rows · '+bins+' bins)</div>'+svg;
+    bindTips(box);
+  }
+
   function renderHeatmap(){
     var box=$("an-chart-box"), p=PIVOT;
     var rKeys=p.rKeys.slice(0, state.topn>0?state.topn:p.rKeys.length);
@@ -762,6 +808,7 @@ _EXTRA_JS = r"""
     if(state.chart==="scatter"){ return renderScatter(); }
     if(state.chart==="correlation"){ return renderCorrelation(); }
     if(state.chart==="box"){ return renderBoxplot(); }
+    if(state.chart==="histogram"){ return renderHistogram(); }
     if(!PIVOT||!PIVOT.rKeys.length){ box.innerHTML='<div class="an-empty">No chart.</div>'; return; }
     if(state.chart==="heatmap"){ return renderHeatmap(); }
     var p=PIVOT, topn=state.topn>0?state.topn:p.rKeys.length;
