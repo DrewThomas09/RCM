@@ -62,6 +62,7 @@ Fifteen strategy documents written during the most recent autonomous-loop cycle.
 | [INTEGRATIONS_PLAN.md](INTEGRATIONS_PLAN.md) | **API + integrations** — public REST surface, Salesforce / Affinity / Slack hooks, ranked by customer pull |
 | [REGULATORY_ROADMAP.md](REGULATORY_ROADMAP.md) | **18-month regulatory calendar** — OPPS / LEAD / ILPA / CPOM rule changes, modeling implications, kill-switch updates |
 | [DATA_ACQUISITION_STRATEGY.md](DATA_ACQUISITION_STRATEGY.md) | **12-month data plan** — 13 candidate sources ranked by lift / effort, with refresh cadence + provenance posture |
+| [NON_PUBLIC_CMS_DATA_AND_API_INSPIRATION.md](NON_PUBLIC_CMS_DATA_AND_API_INSPIRATION.md) | **The rung past public data** — credentialed CMS microdata (LDS/RIF/CCW/CCLF), claims FHIR APIs (BCDA/DPC/AB2D/Blue Button), CMS-0057-F prior-auth mandates, and pure-Python OSS to reimplement (hccpy/hcuppy/drgpy). Backs the `/tools/nonpublic-cms` lab |
 | [LEARNING_LOOP.md](LEARNING_LOOP.md) | **Closed feedback loop** — predicted vs actual capture, calibration thresholds, model retraining cadence, fund-level shrinkage |
 | [V2_PLAN.md](V2_PLAN.md) | **What we'd do differently** if rebuilding today; applied incrementally — no big-bang rewrite |
 | [NEXT_CYCLE_PLAN.md](NEXT_CYCLE_PLAN.md) | **Top-5 features ranked** for the next short cycle (the input that fed the 6-month roadmap) |
