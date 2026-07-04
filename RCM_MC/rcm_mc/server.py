@@ -7026,6 +7026,51 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_text(
                 texas_metros_csv(),
                 content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/workforce":
+            # Workforce & demand heatmaps — employment-by-specialty
+            # (clinical roster + prescriber funnel) matrix heatmap and a
+            # true-geography county infusion-demand heatmap on the real
+            # Census Texas boundary.
+            from .ui.texas_infusion_workforce_page import (
+                render_texas_infusion_workforce_page,
+            )
+            return self._send_html(render_texas_infusion_workforce_page())
+        if path == "/diligence/texas-infusion/workforce.csv":
+            from .ui.texas_infusion_workforce_page import (
+                texas_workforce_csv,
+            )
+            return self._send_text(
+                texas_workforce_csv(),
+                content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/revenue":
+            # Code-level revenue build — CPT administration units ×
+            # Medicare rate, the therapy→CPT unit derivation, the
+            # buy-and-bill bridge, and the Texas competitor benchmark.
+            from .ui.texas_infusion_revenue_page import (
+                render_texas_infusion_revenue_page,
+            )
+            return self._send_html(render_texas_infusion_revenue_page())
+        if path == "/diligence/texas-infusion/revenue.csv":
+            from .ui.texas_infusion_revenue_page import texas_revenue_csv
+            return self._send_text(
+                texas_revenue_csv(),
+                content_type="text/csv; charset=utf-8")
+        if path == "/diligence/texas-infusion/jcode-benchmark":
+            # J-code commercial benchmark 2022-2026 — published
+            # commercial-as-%-of-Medicare multiples + the biosimilar-
+            # driven blended-ASP trajectory by HCPCS J-code.
+            from .ui.texas_infusion_jcode_benchmark_page import (
+                render_texas_infusion_jcode_benchmark_page,
+            )
+            return self._send_html(
+                render_texas_infusion_jcode_benchmark_page())
+        if path == "/diligence/texas-infusion/jcode-benchmark.csv":
+            from .ui.texas_infusion_jcode_benchmark_page import (
+                texas_jcode_benchmark_csv,
+            )
+            return self._send_text(
+                texas_jcode_benchmark_csv(),
+                content_type="text/csv; charset=utf-8")
         if path == "/diligence/texas-infusion-continued":
             # Texas infusion market part 2 — the per-claim / per-payer /
             # per-place grain: CPT rates by site + city, drug-dose

@@ -1558,5 +1558,47 @@ class PageRenderTests(unittest.TestCase):
         self.assertIn("/diligence/texas-infusion", routes)
 
 
+class EvolutionChartGraphTests(unittest.TestCase):
+    """The site-of-care stacked-area chart must carry a readable y-axis
+    (percent gridlines + labels) and an endpoint annotation for the
+    HOME+AIS destination share — the single number the chart exists to
+    communicate. A regression that dropped the axis context made the
+    flagship graph unreadable without hovering."""
+
+    def setUp(self):
+        self.a = build_texas_infusion_analysis()
+        from rcm_mc.ui.texas_infusion_page import _evolution_section
+        self.svg = _evolution_section(self.a)
+
+    def test_percent_gridline_labels_present(self):
+        for pct in ("0%", "25%", "50%", "75%", "100%"):
+            self.assertIn(f">{pct}</text>", self.svg, pct)
+
+    def test_endpoint_home_ais_share_annotated(self):
+        self.assertIn("home+AIS", self.svg)
+        ev = self.a["site_of_care_evolution"]["series"][-1]
+        end = round((ev["home"] + ev["ais"]) * 100)
+        self.assertIn(f"{end}%", self.svg)
+
+    def test_left_margin_widened_for_axis_labels(self):
+        # The viewBox must open to the left so the % labels are not
+        # clipped against the plot edge.
+        self.assertIn('viewBox="-10 -2 124 64"', self.svg)
+
+
+class HbarScaleAnchorTests(unittest.TestCase):
+    """Shared ranked horizontal-bar SVG must draw a zero-baseline and a
+    max-value gridline so bar lengths read against a fixed anchor."""
+
+    def test_baseline_and_max_gridline_drawn(self):
+        from rcm_mc.ui.texas_infusion_page import _hbar_svg
+        rows = [{"name": "A", "v": 10}, {"name": "B", "v": 4}]
+        svg = _hbar_svg(rows, label_key="name", value_key="v",
+                        value_fmt=lambda x: f"{x:.0f}", tone="#0b2341")
+        # Solid baseline at the bar origin + dashed max-value gridline.
+        self.assertIn('stroke-dasharray="2 2"', svg)
+        self.assertGreaterEqual(svg.count("<line"), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

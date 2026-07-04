@@ -377,10 +377,33 @@ def _evolution_section(a: Dict[str, Any]) -> str:
                      f'stroke="#fff" stroke-opacity="0.25" stroke-width="0.3"/>'
                      f'<text x="{x:.1f}" y="{H+4.5:.1f}" text-anchor="middle" '
                      f'font-size="3" fill="{_FAINT}">{s["year"]}</text>')
+    # Y-axis: percent gridlines + labels at 0/25/50/75/100% so a reader
+    # can read a share off the chart without hovering. Bands sum to 1.0,
+    # so fraction f maps to y = H * (1 - f).
+    yaxis = ""
+    for f in (0.0, 0.25, 0.50, 0.75, 1.0):
+        yy = H * (1 - f)
+        yaxis += (f'<line x1="0" y1="{yy:.1f}" x2="{W}" y2="{yy:.1f}" '
+                  f'stroke="#fff" stroke-opacity="0.18" stroke-width="0.3"/>'
+                  f'<text x="-1.5" y="{yy+1.1:.1f}" text-anchor="end" '
+                  f'font-size="3" fill="{_FAINT}">{f*100:.0f}%</text>')
+    # Endpoint annotation: the HOME+AIS destination share at the final
+    # year, the single number this chart exists to communicate.
+    _last = series[-1]
+    end_share = _last["home"] + _last["ais"]
+    end_label = (
+        f'<line x1="{W}" y1="{H*(1-end_share):.1f}" x2="{W+2}" '
+        f'y2="{H*(1-end_share):.1f}" stroke="{_POS}" stroke-width="0.5"/>'
+        f'<text x="{W+3:.1f}" y="{H*(1-end_share)+1.3:.1f}" '
+        f'text-anchor="start" font-size="3.4" font-weight="700" '
+        f'fill="{_POS}">{end_share*100:.0f}%</text>'
+        f'<text x="{W+3:.1f}" y="{H*(1-end_share)+5:.1f}" '
+        f'text-anchor="start" font-size="2.6" fill="{_FAINT}">'
+        f'home+AIS</text>')
     chart = (
-        f'<svg viewBox="0 -2 100 64" width="100%" height="240" '
+        f'<svg viewBox="-10 -2 124 64" width="100%" height="240" '
         f'role="img" aria-label="Site-of-care evolution" '
-        f'style="max-width:620px;">{bands_svg}{grid}</svg>')
+        f'style="max-width:680px;">{yaxis}{bands_svg}{grid}{end_label}</svg>')
     legend = " ".join(
         f'<span style="font-size:10.5px;color:{_DIM};margin-right:12px;">'
         f'<span style="display:inline-block;width:9px;height:9px;'
@@ -2502,6 +2525,14 @@ def _hbar_svg(rows: List[Dict[str, Any]], *, label_key: str,
     parts = [
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
         f'style="max-width:{width}px;display:block;" role="img">']
+    # Zero-baseline + max-value gridline so bar lengths read against a
+    # fixed scale anchor rather than floating in space.
+    parts.append(
+        f'<line x1="{label_w}" y1="{pad-2}" x2="{label_w}" '
+        f'y2="{height-pad+2}" stroke="#d6cfc0" stroke-width="1"/>'
+        f'<line x1="{label_w+bar_w}" y1="{pad-2}" x2="{label_w+bar_w}" '
+        f'y2="{height-pad+2}" stroke="#e4ddca" stroke-width="0.8" '
+        f'stroke-dasharray="2 2"/>')
     for i, r in enumerate(rows):
         y = pad + i * (row_h + gap)
         ty = y + row_h / 2 + 4
@@ -2939,7 +2970,20 @@ def render_texas_infusion_page(
            '<a class="ck-link" '
            'href="/diligence/texas-infusion/counties">County proximity '
            'workbench → all 254 counties · patient-to-clinic distance '
-           '· AIC whitespace</a></p>')
+           '· AIC whitespace</a>'
+           '<span style="color:var(--sc-text-faint,#8b94a0);"> &nbsp;·&nbsp; '
+           '</span><a class="ck-link" '
+           'href="/diligence/texas-infusion/workforce">Workforce &amp; '
+           'demand heatmaps → employment by specialty · county demand '
+           'heatmap</a>'
+           '<span style="color:var(--sc-text-faint,#8b94a0);"> &nbsp;·&nbsp; '
+           '</span><a class="ck-link" '
+           'href="/diligence/texas-infusion/revenue">Revenue build → CPT '
+           'units by code · competitor benchmark</a>'
+           '<span style="color:var(--sc-text-faint,#8b94a0);"> &nbsp;·&nbsp; '
+           '</span><a class="ck-link" '
+           'href="/diligence/texas-infusion/jcode-benchmark">J-code '
+           'commercial benchmark → 2022–2026 by code</a></p>')
         + _thesis_section(a)
 
         + ck_section_header("Market sizing — the driver chain",
