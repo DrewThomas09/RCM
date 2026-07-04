@@ -725,6 +725,64 @@ _SOURCES: List[DataSourceContext] = [
                     "economics."],
        provenance_notes="CMS Innovation Center (CMMI) public model listings.",
        source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    # ── Public healthcare API connectors (connectors/ estate) ───────
+    _s("cms_coverage_api", "CMS Medicare Coverage Database (Coverage API)",
+       "CMS Coverage API — national coverage determinations (NCD/NCA/CAL/"
+       "MEDCAC/technology assessments), local coverage (LCD/Proposed-LCD/"
+       "Articles), and the Medicare Administrative Contractor (MAC) directory.",
+       _T.PUBLIC_DATASET,
+       aliases=["cms coverage", "coverage api", "ncd", "lcd",
+                "medicare coverage database", "mcd", "national coverage",
+                "local coverage", "medicare administrative contractor", "mac"],
+       update_cadence="Live API; CMS posts coverage changes on a rolling basis.",
+       freshness_lag="Current at fetch.",
+       used_for=["Understanding Medicare Part B coverage policy for a "
+                 "procedure/DME/lab/injectable; contractor jurisdiction."],
+       related_routes=[],
+       strengths=["Authoritative federal coverage-policy source; live."],
+       limitations=["Part B coverage policy only — NOT Part A/C/D, not a "
+                    "specific claim's adjudication or a target's payer mix."],
+       provenance_notes="connectors/cms_coverage (api.coverage.cms.gov); "
+                        "canonical dim_coverage_document / dim_medicare_contractor.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("npi_registry_api", "NPI Registry (NPPES)",
+       "CMS NPPES National Provider Identifier registry — individual (NPI-1) "
+       "and organization (NPI-2) providers with taxonomies, practice "
+       "addresses, and NPI check-digit validation.",
+       _T.PUBLIC_DATASET,
+       aliases=["npi", "nppes", "npi registry", "national provider identifier",
+                "provider registry", "provider lookup", "taxonomy"],
+       update_cadence="Live API (NPPES updated daily).",
+       freshness_lag="Current at fetch; NPPES may lag real-world changes.",
+       used_for=["Provider identity / specialty / location lookup; building "
+                 "provider networks; verifying US credentials."],
+       related_routes=[],
+       strengths=["Authoritative US provider identifier registry; live."],
+       limitations=["An NPI does not confirm active licensure/credentialing; "
+                    "self-reported; US providers only."],
+       provenance_notes="connectors/npi_registry (npiregistry.cms.hhs.gov v2.1); "
+                        "canonical dim_provider / fact_provider_taxonomy / "
+                        "fact_provider_address.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
+    _s("icd10_codes_api", "ICD-10-CM / ICD-10-PCS Codes (NLM)",
+       "ICD-10-CM diagnosis codes and ICD-10-PCS inpatient procedure codes via "
+       "the NLM Clinical Tables API — code search, lookup, and category "
+       "hierarchy.",
+       _T.PUBLIC_DATASET,
+       aliases=["icd10", "icd-10", "icd10cm", "icd-10-cm", "icd10pcs",
+                "icd-10-pcs", "diagnosis code", "procedure code",
+                "clinical tables"],
+       update_cadence="Annual code-set releases (NLM Clinical Tables).",
+       freshness_lag="Tracks the published ICD-10 code-set year.",
+       used_for=["Resolving diagnosis/procedure codes to descriptions; "
+                 "code-category navigation; coding-quality context."],
+       related_routes=[],
+       strengths=["Authoritative, free, standardized US code sets."],
+       limitations=["Reference code set — not claims, utilization, or a "
+                    "target's coded case mix."],
+       provenance_notes="connectors/icd10 (clinicaltables.nlm.nih.gov); "
+                        "canonical dim_icd10_code.",
+       source_confidence=_DOCD, data_confidence=_PUB, ic_ready=False),
 ]
 
 DATA_SOURCE_REGISTRY: Dict[str, DataSourceContext] = {
