@@ -311,6 +311,39 @@ class TestEngine(unittest.TestCase):
         res = engine.clean_bytes(data, "y.csv")
         self.assertNotIn("money-unparseable", res.sanity)
 
+    def test_sex_invalid_flagged(self):
+        # Values that don't resolve to M/F/U via _clean_sex_cell are flagged;
+        # mapped variants (Male, 2, blank) are not.
+        data = (
+            "ClaimID,PatientSex\n"
+            "1,M\n"        # valid
+            "2,Male\n"     # → M → valid
+            "3,2\n"        # → F → valid
+            "4,\n"         # blank → not flagged
+            "5,X\n"        # unmapped → flagged
+            "6,3\n"        # unmapped digit → flagged
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("sex-invalid"), 2)
+
+    def test_taxonomy_malformed_flagged(self):
+        # NUCC taxonomy must be 10 alphanumeric chars; anything else flags.
+        data = (
+            "ClaimID,ProviderTaxonomy\n"
+            "1,207Q00000X\n"   # valid 10-char
+            "2,2085R0202X\n"   # valid 10-char
+            "3,207Q\n"         # too short → flagged
+            "4,207Q00000XX\n"  # 11 chars → flagged
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("taxonomy-malformed"), 2)
+
+    def test_value_domain_checks_need_columns(self):
+        data = ("ClaimID,Note\n1,hi\n").encode()
+        res = engine.clean_bytes(data, "y.csv")
+        self.assertNotIn("sex-invalid", res.sanity)
+        self.assertNotIn("taxonomy-malformed", res.sanity)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()

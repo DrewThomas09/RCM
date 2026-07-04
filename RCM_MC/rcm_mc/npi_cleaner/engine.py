@@ -456,6 +456,30 @@ def _clean_taxonomy_cell(v: str) -> Tuple[str, List[str]]:
     return up, ([] if up == v else ["taxonomy-upper"])
 
 
+# A NUCC taxonomy code is exactly 10 alphanumeric characters (the 10th is
+# usually "X", but not universally, so we only require the length/charset —
+# requiring a trailing X would false-flag legacy codes).
+_TAXONOMY_VALID_RE = re.compile(r"^[A-Z0-9]{10}$")
+_VALID_SEX = {"M", "F", "U"}
+
+
+def _taxonomy_malformed(v: str) -> bool:
+    s = v.strip().upper()
+    if not s:
+        return False
+    return _TAXONOMY_VALID_RE.match(s) is None
+
+
+def _sex_invalid(v: str) -> bool:
+    """True when a non-blank sex cell didn't resolve to M/F/U. ``_clean_sex_cell``
+    returns unmapped values unchanged with no repair, so a stray code (X, 3, N)
+    would otherwise pass through the sex column unflagged."""
+    s = v.strip().upper()
+    if not s:
+        return False
+    return s not in _VALID_SEX
+
+
 # Which hyphenated segment to zero-pad, by segment-length signature. Mirrors
 # npi_recovery.field_validators.normalize_ndc11 so verdicts match the package.
 _NDC_PAD_MAP = {(4, 4, 2): 0, (5, 3, 2): 1, (5, 4, 1): 2}
@@ -1134,6 +1158,14 @@ def clean_bytes(
                              for ci in money_set):
             res.sanity["money-unparseable"] = \
                 res.sanity.get("money-unparseable", 0) + 1
+        # Value-domain validity: sex not M/F/U, taxonomy not 10-char alnum.
+        if sex_set and any(ci < len(new_row) and _sex_invalid(new_row[ci])
+                           for ci in sex_set):
+            res.sanity["sex-invalid"] = res.sanity.get("sex-invalid", 0) + 1
+        if taxo_set and any(ci < len(new_row) and _taxonomy_malformed(new_row[ci])
+                            for ci in taxo_set):
+            res.sanity["taxonomy-malformed"] = \
+                res.sanity.get("taxonomy-malformed", 0) + 1
         # Tally NPI health per detected column.
         for i in npi_idx:
             cstat = res.column_stats[headers[i]]

@@ -582,7 +582,9 @@ _EXTRA_JS = r"""
     "zip-state-mismatch":"ZIP prefix disagrees with the state code (verify address at source)",
     "hcpcs-malformed":"Malformed HCPCS/CPT code (not 5 digits, letter+4 digits, or 4 digits+letter)",
     "icd10-malformed":"Malformed ICD-10 diagnosis code (bad shape)",
-    "money-unparseable":"Non-numeric value in an amount column (couldn't parse as money)"};
+    "money-unparseable":"Non-numeric value in an amount column (couldn't parse as money)",
+    "sex-invalid":"Invalid sex/gender value (didn't resolve to M/F/U)",
+    "taxonomy-malformed":"Malformed provider taxonomy code (not 10 alphanumeric characters)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
