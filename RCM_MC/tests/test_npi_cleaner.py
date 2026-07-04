@@ -504,6 +504,32 @@ class TestEngine(unittest.TestCase):
         self.assertTrue(any("Overall grade" in c for c in cells))
         self.assertTrue(any("Completeness" in c for c in cells))
 
+    def test_conflicting_amount_claims(self):
+        # Same who·when·what key billed at two different amounts → flagged.
+        # Equal-amount repeats are the suspected-duplicate signal, not this.
+        data = (
+            "ClaimID,BillingNPI,PatientID,DateOfService,HCPCS,BilledAmt\n"
+            f"1,{GOOD_B},P1,2024-03-01,99213,100\n"
+            f"2,{GOOD_B},P1,2024-03-01,99213,250\n"   # conflict with row 1
+            f"3,{GOOD_B},P2,2024-03-01,99213,100\n"   # different patient
+            f"4,{GOOD_B},P2,2024-03-01,99213,100\n"   # equal repeat, no conflict
+        ).encode()
+        res = engine.clean_bytes(data, "c.csv")
+        self.assertEqual(res.sanity.get("conflicting-amount-claim"), 1)
+
+    def test_carc_domain_and_top_denials(self):
+        # Valid CARCs (numeric, letter+digits, multi-code cells) pass; a
+        # non-CARC value flags. Top denial reasons are summarized.
+        data = ("ClaimID,DenialCode\n"
+                "1,16\n2,16\n3,\"16, 97\"\n4,B7\n5,PENDING\n").encode()
+        res = engine.clean_bytes(data, "d.csv")
+        self.assertEqual(res.sanity.get("carc-invalid"), 1)
+        self.assertIsNotNone(res.denials)
+        top = {d["code"]: d["count"] for d in res.denials["top"]}
+        self.assertEqual(top.get("16"), 3)
+        self.assertEqual(top.get("97"), 1)
+        self.assertEqual(top.get("B7"), 1)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()

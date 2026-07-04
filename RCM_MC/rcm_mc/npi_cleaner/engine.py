@@ -90,6 +90,12 @@ _DISCH_HINTS = ("dischargedate", "dischargedt", "dischdate")
 _PAYER_HINTS = ("payername", "payer", "payor", "insurancename",
                 "insurancecompany", "insurance", "carrier", "healthplan")
 
+# Claim adjustment / denial reason column (CARC). "denial" last — broadest.
+_CARC_HINTS = ("carc", "denialcode", "denialreason", "adjustmentreason",
+               "adjreason", "reasoncode", "denial")
+# A CARC is 1-3 digits or letter+1-2 digits (A1, B7, P1, W1 …).
+_CARC_VALID_RE = re.compile(r"^(\d{1,3}|[A-Z]\d{1,2})$")
+
 # The official CMS two-digit Place of Service code set. Report-only domain
 # check — a POS outside this list is a denial waiting to happen.
 _POS_VALID = {
@@ -799,6 +805,8 @@ class CleanResult:
     structure: Dict[str, object] = field(default_factory=dict)
     # Per-column fill rate (completeness profile): column → filled count + %.
     column_fill: List[Dict[str, object]] = field(default_factory=list)
+    # Top denial / adjustment reason codes (revenue-cycle visibility).
+    denials: Optional[Dict[str, object]] = None
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -859,14 +867,15 @@ class CleanResult:
     # CONSISTENCY (values that contradict each other). Drives the report card.
     _VALIDITY_RULES = ("hcpcs-malformed", "icd10-malformed", "money-unparseable",
                        "sex-invalid", "taxonomy-malformed", "pos-invalid",
-                       "revenue-code-malformed")
+                       "revenue-code-malformed", "carc-invalid")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
                           "fractional-units", "date-in-future", "date-stale",
                           "zip-state-mismatch", "service-before-birth",
                           "discharge-before-admit", "ndc-ambiguous-10digit",
-                          "charge-outlier", "jw-zero-units", "bilateral-units")
+                          "charge-outlier", "jw-zero-units", "bilateral-units",
+                          "conflicting-amount-claim")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -922,6 +931,7 @@ class CleanResult:
             "changes_logged": self.n_changes,
             "changelog_truncated": self.changelog_truncated,
             "fill_rates": self.column_fill,
+            "denials": self.denials,
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
             "npi_cells": cells,
@@ -1190,6 +1200,7 @@ def clean_bytes(
     admit_i = _detect_one(headers, _ADMIT_HINTS)
     disch_i = _detect_one(headers, _DISCH_HINTS)
     payer_i = _detect_one(headers, _PAYER_HINTS)
+    carc_i = _detect_one(headers, _CARC_HINTS)
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).date()
     # Ten-year staleness horizon for service dates — a DOS this old in a
@@ -1270,6 +1281,7 @@ def clean_bytes(
     # Accumulators for the post-loop analyses.
     _col_filled = [0] * ncols                     # empty-column detection
     _payer_raw: Dict[str, int] = {}               # payer variant clustering
+    _carc_counts: Dict[str, int] = {}             # top denial reasons
     _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
     _charge_i = billed_i if billed_i is not None else allowed_i
     _CHANGELOG_CAP = 20_000                       # keep the audit log bounded
@@ -1424,6 +1436,15 @@ def clean_bytes(
                 if "50" in _mods and _u_val is not None and _u_val > 1:
                     res.sanity["bilateral-units"] = \
                         res.sanity.get("bilateral-units", 0) + 1
+        # Denial / adjustment reason (CARC) domain validity. Cells may carry
+        # several codes ("16, 97") — every part must be a valid CARC shape.
+        if carc_i is not None and carc_i < len(new_row) and new_row[carc_i]:
+            _cparts = [p for p in re.split(r"[,;|\s]+",
+                                           new_row[carc_i].strip().upper()) if p]
+            if _cparts and any(_CARC_VALID_RE.match(p) is None
+                               for p in _cparts):
+                res.sanity["carc-invalid"] = \
+                    res.sanity.get("carc-invalid", 0) + 1
         # Chronology impossibilities. Normalized ISO dates compare correctly
         # as strings, so no re-parsing per row.
         if (dob_i is not None and dos_i is not None
@@ -1461,6 +1482,10 @@ def clean_bytes(
         if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
             _payer_raw[new_row[payer_i]] = \
                 _payer_raw.get(new_row[payer_i], 0) + 1
+        if carc_i is not None and carc_i < len(new_row) and new_row[carc_i]:
+            for _cp in re.split(r"[,;|\s]+", new_row[carc_i].strip().upper()):
+                if _cp:
+                    _carc_counts[_cp] = _carc_counts.get(_cp, 0) + 1
         if (_charge_i is not None and hcpcs_i is not None
                 and _charge_i < len(new_row) and hcpcs_i < len(new_row)):
             _amt = _to_number(new_row[_charge_i])
@@ -1496,6 +1521,37 @@ def clean_bytes(
                 _seen_keys.add(k)
         if _dup:
             res.sanity["suspected-duplicate-claim"] = _dup
+
+    # Conflicting-amount claims: the SAME who·when·what key billed at TWO OR
+    # MORE different amounts. Disjoint from suspected-duplicate-claim (which
+    # keys on the amount too) — this is the corrected-claim / re-bill signal.
+    _amt_key_idx = [i for i in (billing_idx, patient_i, dos_i, hcpcs_i)
+                    if i is not None]
+    if (_has_when and _has_who and _has_what and len(_amt_key_idx) >= 3
+            and _charge_i is not None):
+        _key_amts: Dict[str, set] = {}
+        _key_n: Dict[str, int] = {}
+        for r in cleaned:
+            parts = [r[i] for i in _amt_key_idx if i < len(r)]
+            if all(p == "" for p in parts):
+                continue
+            _amt = _to_number(r[_charge_i]) if _charge_i < len(r) else None
+            if _amt is None:
+                continue
+            k = "||".join(parts)
+            _key_amts.setdefault(k, set()).add(round(_amt, 2))
+            _key_n[k] = _key_n.get(k, 0) + 1
+        _conf = sum(_key_n[k] - 1 for k, amts in _key_amts.items()
+                    if len(amts) > 1)
+        if _conf:
+            res.sanity["conflicting-amount-claim"] = _conf
+
+    # Top denial / adjustment reasons (revenue-cycle visibility).
+    if _carc_counts and carc_i is not None:
+        _top = sorted(_carc_counts.items(), key=lambda kv: -kv[1])[:10]
+        res.denials = {"column": headers[carc_i],
+                       "distinct": len(_carc_counts),
+                       "top": [{"code": c, "count": n} for c, n in _top]}
 
     # Headered-but-empty columns — an extract/mapping defect worth surfacing.
     if res.n_rows_out:

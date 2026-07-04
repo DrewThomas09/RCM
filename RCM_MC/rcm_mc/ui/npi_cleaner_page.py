@@ -611,7 +611,9 @@ _EXTRA_JS = r"""
     "revenue-code-malformed":"Malformed revenue code (not 4 digits)",
     "charge-outlier":"Charge is a statistical outlier for its HCPCS code (beyond 3×IQR)",
     "jw-zero-units":"JW modifier (discarded drug) with no billed units",
-    "bilateral-units":"Bilateral modifier 50 with more than 1 unit (MUE guidance)"};
+    "bilateral-units":"Bilateral modifier 50 with more than 1 unit (MUE guidance)",
+    "conflicting-amount-claim":"Same provider · patient · date · code billed at different amounts (re-bill signal)",
+    "carc-invalid":"Invalid denial/adjustment reason code (not a CARC shape)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
@@ -715,6 +717,19 @@ _EXTRA_JS = r"""
         html+='<tr><td>'+esc(o.code)+'</td><td class="num">'+fmt(o.n)+
           '</td><td class="num">'+fmt(o.outliers)+'</td><td class="num">'+
           dollars(o.median)+'</td><td class="num">'+dollars(o.max)+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    // Top denial / adjustment reasons.
+    if(s.denials && s.denials.top && s.denials.top.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Top denial / adjustment reasons</h3></div>'+
+        '<div class="npi-muted">'+esc(s.denials.column)+' — '+fmt(s.denials.distinct)+
+        ' distinct codes. Highest-volume reasons below (CARC codes).</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Code</th><th class="num">Rows</th></tr></thead><tbody>';
+      s.denials.top.forEach(function(d){
+        html+='<tr><td>'+esc(d.code)+'</td><td class="num">'+fmt(d.count)+'</td></tr>';
       });
       html+='</tbody></table>';
     }
