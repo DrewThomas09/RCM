@@ -273,6 +273,7 @@ _SUB_NAV = {
         {"label": "J-Code Atlas",       "href": "/diligence/jcode-atlas"},
         {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
         {"label": "Advanced Analytics", "href": "/diligence/advanced-analytics"},
+        {"label": "Risk-Adj Benchmark", "href": "/diligence/risk-adjusted-benchmark"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
 }
@@ -7469,6 +7470,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "bridge-audit",  "title": "Bridge Audit",       "route": "/diligence/bridge-audit"},
     {"id": "payer-stress",  "title": "Payer Stress",       "route": "/diligence/payer-stress"},
     {"id": "advanced-analytics", "title": "Advanced Analytics", "route": "/diligence/advanced-analytics"},
+    {"id": "risk-adj-benchmark", "title": "Risk-Adjusted Benchmark", "route": "/diligence/risk-adjusted-benchmark"},
     {"id": "ic-packet",     "title": "IC Packet",          "route": "/diligence/ic-packet"},
     {"id": "engagements",   "title": "Engagements",        "route": "/engagements"},
     {"id": "sector-intel",  "title": "Sector Intelligence","route": "/sector-intelligence"},

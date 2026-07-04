@@ -4076,6 +4076,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         # Advanced Analytics — composed native analytics stack (demo).
         if path == "/diligence/advanced-analytics":
             return self._route_advanced_analytics_page()
+        # Risk-Adjusted Benchmarking — interactive CMS-HCC O/E benchmark.
+        if path == "/diligence/risk-adjusted-benchmark":
+            return self._route_risk_adjusted_benchmark_page()
         # HCRIS X-Ray — Medicare cost-report peer benchmarking.
         if path == "/diligence/hcris-xray":
             return self._route_hcris_xray_page()
@@ -10802,6 +10805,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             urllib.parse.urlparse(self.path).query,
         )
         self._send_html(render_advanced_analytics_page(qs=qs))
+
+    def _route_risk_adjusted_benchmark_page(self) -> None:
+        from .ui.risk_adjusted_benchmark_page import (
+            render_risk_adjusted_benchmark_page,
+        )
+        qs = urllib.parse.parse_qs(
+            urllib.parse.urlparse(self.path).query,
+        )
+        self._send_html(render_risk_adjusted_benchmark_page(qs=qs))
 
     # ── HCRIS Peer X-Ray ─────────────────────────────────────────────
 

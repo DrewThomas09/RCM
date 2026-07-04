@@ -151,6 +151,8 @@ The shipped marts compose: `risk_adjustment` produces per-unit O/E → `hierarch
 
 The facade is **surfaced in the UI** at `/diligence/advanced-analytics` (`rcm_mc/ui/advanced_analytics_page.py`), wired into the Diligence sub-nav and the Cmd+K palette. That page runs the facade on a fixed illustrative deal so partners can see the stack live and discover what each mart answers. The remaining step is **per-deal wiring** — feeding a real `DealAnalysisPacket` / CCD into the facade so the numbers are the target's, not the demo's; the page is structured so only the input-construction changes.
 
+The centerpiece mart also has a **standalone interactive surface** at `/diligence/risk-adjusted-benchmark` (`rcm_mc/ui/risk_adjusted_benchmark_page.py`): a partner enters the target's metric, panel RAF, and a peer cohort, and gets the live O/E verdict that separates the case-mix story from the operator story — no deal record or code required. It is read-only (GET form, shareable result URL) and degrades to a worked example on empty/invalid input, so it can never 500.
+
 ---
 
 ## 7. References
