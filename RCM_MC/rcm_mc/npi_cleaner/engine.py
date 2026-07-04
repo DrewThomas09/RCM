@@ -797,6 +797,8 @@ class CleanResult:
     payer_variants: Optional[Dict[str, object]] = None
     outliers: Optional[List[Dict[str, object]]] = None
     structure: Dict[str, object] = field(default_factory=dict)
+    # Per-column fill rate (completeness profile): column → filled count + %.
+    column_fill: List[Dict[str, object]] = field(default_factory=list)
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -864,7 +866,7 @@ class CleanResult:
                           "fractional-units", "date-in-future", "date-stale",
                           "zip-state-mismatch", "service-before-birth",
                           "discharge-before-admit", "ndc-ambiguous-10digit",
-                          "charge-outlier")
+                          "charge-outlier", "jw-zero-units", "bilateral-units")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -919,6 +921,7 @@ class CleanResult:
                                if self.changelog_path else None),
             "changes_logged": self.n_changes,
             "changelog_truncated": self.changelog_truncated,
+            "fill_rates": self.column_fill,
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
             "npi_cells": cells,
@@ -1403,6 +1406,24 @@ def clean_bytes(
         if pos_set and any(ci < len(new_row) and _pos_invalid(new_row[ci])
                            for ci in pos_set):
             res.sanity["pos-invalid"] = res.sanity.get("pos-invalid", 0) + 1
+        # Modifier↔units coding edits: a JW line (discarded drug) bills the
+        # wasted units so units must be positive, and a bilateral (50) line
+        # bills 1 unit per CMS MUE guidance. Modifiers were normalized to a
+        # comma-joined upper-case list by _clean_modifier_cell, so the split
+        # is reliable.
+        if mod_set and units_i is not None and units_i < len(new_row):
+            _mods: set = set()
+            for ci in mod_set:
+                if ci < len(new_row) and new_row[ci]:
+                    _mods.update(new_row[ci].split(","))
+            if _mods:
+                _u_val = _to_number(new_row[units_i])
+                if "JW" in _mods and (_u_val is None or _u_val <= 0):
+                    res.sanity["jw-zero-units"] = \
+                        res.sanity.get("jw-zero-units", 0) + 1
+                if "50" in _mods and _u_val is not None and _u_val > 1:
+                    res.sanity["bilateral-units"] = \
+                        res.sanity.get("bilateral-units", 0) + 1
         # Chronology impossibilities. Normalized ISO dates compare correctly
         # as strings, so no re-parsing per row.
         if (dob_i is not None and dos_i is not None
@@ -1481,6 +1502,14 @@ def clean_bytes(
         _empty = [headers[i] for i in range(ncols) if _col_filled[i] == 0]
         if _empty:
             res.structure["empty_columns"] = _empty
+        # Per-column completeness profile ("which fields are 60% blank").
+        # Denominator is rows IN: the cell counters run before the dedupe
+        # skip, so dividing by rows_out would exceed 100% on files with
+        # duplicates removed.
+        res.column_fill = [
+            {"column": headers[i], "filled": _col_filled[i],
+             "pct": round(100.0 * _col_filled[i] / max(res.n_rows_in, 1), 1)}
+            for i in range(ncols)]
 
     # Payer-name variant clustering (report-only). "BCBS", "Blue Cross of TX"
     # and "B.C.B.S." are the same payer spelled three ways — the single most

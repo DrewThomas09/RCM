@@ -59,6 +59,39 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
     ]
     sheets.append(Sheet("Scorecard", score_rows, col_widths=[26, 22]))
 
+    # ---- Quality report card (grade + dimensions + top findings) so the
+    #      shareable Excel deliverable carries the same verdict as the web UI.
+    q = sc.get("quality") or {}
+    dims = q.get("dimensions") or {}
+    quality_rows = [
+        _header(["Data-quality report card", ""]),
+        ["Overall grade", f"{q.get('letter', '—')} · {q.get('score', '—')}/100"],
+        ["Completeness %", dims.get("completeness", "—")],
+        ["Validity %", dims.get("validity", "—")],
+        ["Consistency %", dims.get("consistency", "—")],
+        ["Uniqueness %", dims.get("uniqueness", "—")],
+        ["Conformity %", dims.get("conformity", "—")],
+        ["Cells changed (audit trail)", sc.get("changes_logged", 0)],
+    ]
+    _sanity = sc.get("sanity") or {}
+    if _sanity:
+        quality_rows.append(_header(["Top findings", "Rows"]))
+        for rule, n in sorted(_sanity.items(), key=lambda kv: -kv[1])[:10]:
+            quality_rows.append([rule, n])
+    _payer = sc.get("payer") or {}
+    if _payer.get("multi_spelling"):
+        quality_rows.append(_header(["Payer spellings to reconcile", "Rows"]))
+        for c in _payer["multi_spelling"][:6]:
+            quality_rows.append(
+                [f"{c['canonical']} ({c['n_variants']} spellings)",
+                 c["total"]])
+    _fill = [f for f in (sc.get("fill_rates") or []) if f["pct"] < 100.0]
+    if _fill:
+        quality_rows.append(_header(["Columns with blanks", "% filled"]))
+        for f in sorted(_fill, key=lambda d: d["pct"])[:10]:
+            quality_rows.append([f["column"], f["pct"]])
+    sheets.append(Sheet("Quality", quality_rows, col_widths=[40, 18]))
+
     # ---- NPI health per column ----
     health = [_header(["Column", "Cells", "Valid", "Blank",
                        "Malformed", "Checksum fail"])]

@@ -609,7 +609,9 @@ _EXTRA_JS = r"""
     "date-stale":"Service date more than 10 years old (likely century/key error)",
     "pos-invalid":"Place of Service not in the CMS code set",
     "revenue-code-malformed":"Malformed revenue code (not 4 digits)",
-    "charge-outlier":"Charge is a statistical outlier for its HCPCS code (beyond 3×IQR)"};
+    "charge-outlier":"Charge is a statistical outlier for its HCPCS code (beyond 3×IQR)",
+    "jw-zero-units":"JW modifier (discarded drug) with no billed units",
+    "bilateral-units":"Bilateral modifier 50 with more than 1 unit (MUE guidance)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
@@ -659,6 +661,26 @@ _EXTRA_JS = r"""
         '<div class="npi-muted" style="width:280px;font-size:11.5px">'+lab[1]+'</div></div>';
     });
     html+='</div>';
+    // Per-column fill-rate profile: only columns with blanks, worst first.
+    var fills=(s.fill_rates||[]).filter(function(f){return f.pct<100;});
+    if(fills.length){
+      fills.sort(function(a,b){return a.pct-b.pct;});
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Columns with blanks</h3></div>'+
+        '<div class="npi-muted">Fill rate per column (only columns below 100% '+
+        'shown, emptiest first).</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Column</th><th class="num">Filled rows</th><th class="num">% filled</th>'+
+        '</tr></thead><tbody>';
+      fills.slice(0,12).forEach(function(f){
+        var t=f.pct>=90?'':(f.pct>=60?' style="color:#b8732a"':' style="color:#b5321e"');
+        html+='<tr><td>'+esc(f.column)+'</td><td class="num">'+fmt(f.filled)+
+          '</td><td class="num"'+t+'>'+f.pct.toFixed(1)+'%</td></tr>';
+      });
+      html+='</tbody></table>';
+      if(fills.length>12){ html+='<div class="npi-muted" style="margin-top:4px">'+
+        fmt(fills.length-12)+' more columns have blanks — see the .xlsx report.</div>'; }
+    }
     // Payer-name variant clusters.
     var p=s.payer;
     if(p && p.multi_spelling && p.multi_spelling.length){

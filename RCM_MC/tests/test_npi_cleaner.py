@@ -463,6 +463,47 @@ class TestEngine(unittest.TestCase):
             out = fh.read()
         self.assertIn("2024-03-04", out)   # date cleaner ran on it
 
+    def test_column_fill_rates(self):
+        # Per-column completeness profile: Note filled 1 of 4 rows = 25%.
+        # Denominator is rows IN, so pct never exceeds 100 even when exact
+        # duplicates are removed from the output.
+        data = ("ClaimID,Note\n1,a\n2,\n3,\n4,\n").encode()
+        res = engine.clean_bytes(data, "f.csv")
+        fills = {f["column"]: f for f in res.column_fill}
+        self.assertEqual(fills["ClaimID"]["pct"], 100.0)
+        self.assertEqual(fills["Note"]["pct"], 25.0)
+        dup = ("ClaimID,Note\n1,a\n1,a\n").encode()   # dedupe drops one row
+        rd = engine.clean_bytes(dup, "d.csv")
+        fd = {f["column"]: f for f in rd.column_fill}
+        self.assertLessEqual(fd["Note"]["pct"], 100.0)
+
+    def test_modifier_units_edits(self):
+        # JW (discarded drug) with 0 units and bilateral 50 with 2 units are
+        # both flagged; correct pairings are not.
+        data = ("ClaimID,HCPCS,Modifier,Units\n"
+                "1,J1885,JW,0\n"       # JW needs positive units → flag
+                "2,J1885,JW,2\n"       # fine
+                "3,99213,50,2\n"       # bilateral bills 1 unit → flag
+                "4,99213,50,1\n"       # fine
+                "5,99213,25,3\n").encode()  # unrelated modifier → fine
+        res = engine.clean_bytes(data, "m.csv")
+        self.assertEqual(res.sanity.get("jw-zero-units"), 1)
+        self.assertEqual(res.sanity.get("bilateral-units"), 1)
+
+    def test_workbook_quality_sheet(self):
+        data = ("ClaimID,BillingNPI,AllowedAmt\n"
+                f"1,{GOOD_B},100\n").encode()
+        res = engine.clean_bytes(data, "q.csv")
+        openpyxl = __import__("openpyxl")
+        from io import BytesIO
+        with open(res.workbook_path, "rb") as fh:
+            wb = openpyxl.load_workbook(BytesIO(fh.read()))
+        self.assertIn("Quality", wb.sheetnames)
+        ws = wb["Quality"]
+        cells = [str(c.value) for row in ws.iter_rows() for c in row if c.value]
+        self.assertTrue(any("Overall grade" in c for c in cells))
+        self.assertTrue(any("Completeness" in c for c in cells))
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
