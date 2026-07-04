@@ -190,6 +190,31 @@ def _clean_money_cell(v: str) -> Tuple[str, List[str]]:
     return out, rules
 
 
+def _money_unparseable(v: str) -> bool:
+    """True when a non-blank amount cell can't be read as a number.
+
+    Mirrors ``_clean_money_cell``'s parse ($, commas, spaces, accounting
+    parens) — that cleaner returns the cell unchanged with no repair when it
+    fails, so an unparseable amount (``pending``, ``1,2OO`` with a letter O, a
+    stray ``$``) would otherwise slip through the money column unflagged. Null
+    tokens are already blanked by ``_clean_generic`` before this runs, so a
+    blank never flags."""
+    s = v.strip()
+    if not s:
+        return False
+    m = _MONEY_PARENS_RE.match(s)
+    if m:
+        s = m.group(1)
+    s = s.replace("$", "").replace(",", "").replace(" ", "").strip()
+    if s == "":
+        return True
+    try:
+        float(s)
+        return False
+    except ValueError:
+        return True
+
+
 def _excel_serial_to_iso(n: float) -> Optional[str]:
     # Excel serial: 1 = 1900-01-01, with the well-known 1900 leap bug (>59).
     if not (20000 <= n <= 60000):  # ~1954..2064, the plausible claims window
@@ -1104,6 +1129,11 @@ def clean_bytes(
         if dx_set and any(ci < len(new_row) and _icd10_malformed(new_row[ci])
                           for ci in dx_set):
             res.sanity["icd10-malformed"] = res.sanity.get("icd10-malformed", 0) + 1
+        # Amount cell that survived cleaning but still isn't a number.
+        if money_set and any(ci < len(new_row) and _money_unparseable(new_row[ci])
+                             for ci in money_set):
+            res.sanity["money-unparseable"] = \
+                res.sanity.get("money-unparseable", 0) + 1
         # Tally NPI health per detected column.
         for i in npi_idx:
             cstat = res.column_stats[headers[i]]

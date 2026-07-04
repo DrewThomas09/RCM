@@ -290,6 +290,27 @@ class TestEngine(unittest.TestCase):
         self.assertNotIn("hcpcs-malformed", res.sanity)
         self.assertNotIn("icd10-malformed", res.sanity)
 
+    def test_money_unparseable_flagged(self):
+        # An amount cell that survives cleaning but isn't a number is flagged;
+        # normal / accounting-negative / $-and-comma values are not. A null
+        # token ("N/A") is blanked by generic cleaning first, so it never flags.
+        data = (
+            "ClaimID,AllowedAmt\n"
+            "1,100.00\n"       # clean number → ok
+            "2,\"$1,250.50\"\n"  # $ + comma → parses → ok
+            "3,(75.00)\n"      # accounting negative → parses → ok
+            "4,N/A\n"          # null token → blanked → not flagged
+            "5,pending\n"      # text in $ field → flagged
+            "6,\"1,2OO\"\n"    # letter O instead of zero → flagged
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("money-unparseable"), 2)
+
+    def test_money_unparseable_needs_money_column(self):
+        data = ("ClaimID,Note\n1,hello world\n").encode()
+        res = engine.clean_bytes(data, "y.csv")
+        self.assertNotIn("money-unparseable", res.sanity)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
