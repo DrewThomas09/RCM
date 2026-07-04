@@ -252,6 +252,8 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
   <div id="npi-stage-result" class="npi-hidden">
     <div class="npi-tabs" role="tablist">
       <button class="npi-tab is-active" data-tab="overview">Overview</button>
+      <button class="npi-tab" data-tab="quality">Quality
+        <span class="npi-tab-badge" id="tabbadge-quality"></span></button>
       <button class="npi-tab" data-tab="issues">Issues &amp; fixes
         <span class="npi-tab-badge" id="tabbadge-issues"></span></button>
       <button class="npi-tab" data-tab="connectors">Live connectors
@@ -275,6 +277,10 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
       </table>
       <div id="npi-repairs"></div>
       <div id="npi-sanity"></div>
+    </div>
+
+    <div class="npi-panel" data-panel="quality">
+      <div id="npi-quality"></div>
     </div>
 
     <div class="npi-panel" data-panel="issues">
@@ -305,6 +311,8 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
            style="margin-left:10px">⤓ Download report (.xlsx)</a>
         <a class="npi-dl npi-dl-alt" id="npi-dl-companion" href="#" download
            style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-changelog" href="#" download
+           style="margin-left:10px;display:none">⤓ Change log — audit trail (.csv)</a>
       </div>
       <div style="margin-top:16px">
         <button class="npi-again" id="npi-again">Clean another file</button>
@@ -431,6 +439,8 @@ _EXTRA_JS = r"""
     $("npi-col-rows").innerHTML=rows;
     renderRepairs(s.repairs, s.repairs_total);
     renderSanity(s.sanity);
+    renderQuality(s);
+    $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
 
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
@@ -463,6 +473,12 @@ _EXTRA_JS = r"""
       cbtn.setAttribute("download", s.companion_name);
       cbtn.style.display="";
     } else { cbtn.style.display="none"; }
+    var lbtn=$("npi-dl-changelog");
+    if(s.changelog_name){
+      lbtn.setAttribute("href", s.download+"?fmt=changelog");
+      lbtn.setAttribute("download", s.changelog_name);
+      lbtn.style.display="";
+    } else { lbtn.style.display="none"; }
 
     if(currentJobId){ $("npi-analyze").setAttribute("href",
       "/npi-cleaner/analyze/"+currentJobId); }
@@ -552,7 +568,9 @@ _EXTRA_JS = r"""
     "phone-format":"Formatted phone/fax numbers",
     "taxonomy-upper":"Upper-cased provider taxonomy codes",
     "ndc-pad-11":"Padded NDC to 11-digit billing format (segment-aware)",
-    "ndc-normalize-11":"Normalized NDC to 11-digit billing format"};
+    "ndc-normalize-11":"Normalized NDC to 11-digit billing format",
+    "revcode-pad":"Restored dropped leading zeros in revenue codes (450 → 0450)",
+    "pos-pad":"Zero-padded 1-digit Place of Service codes"};
 
   function renderRepairs(repairs, total){
     var box=$("npi-repairs");
@@ -584,7 +602,14 @@ _EXTRA_JS = r"""
     "icd10-malformed":"Malformed ICD-10 diagnosis code (bad shape)",
     "money-unparseable":"Non-numeric value in an amount column (couldn't parse as money)",
     "sex-invalid":"Invalid sex/gender value (didn't resolve to M/F/U)",
-    "taxonomy-malformed":"Malformed provider taxonomy code (not 10 alphanumeric characters)"};
+    "taxonomy-malformed":"Malformed provider taxonomy code (not 10 alphanumeric characters)",
+    "paid-exceeds-billed":"Paid amount exceeds billed",
+    "service-before-birth":"Service date before the patient's date of birth",
+    "discharge-before-admit":"Discharge date before the admission date",
+    "date-stale":"Service date more than 10 years old (likely century/key error)",
+    "pos-invalid":"Place of Service not in the CMS code set",
+    "revenue-code-malformed":"Malformed revenue code (not 4 digits)",
+    "charge-outlier":"Charge is a statistical outlier for its HCPCS code (beyond 3×IQR)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
@@ -597,6 +622,102 @@ _EXTRA_JS = r"""
     keys.forEach(function(k){
       html+=flagRow(SANITY_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', sanity[k]);
     });
+    box.innerHTML=html;
+  }
+
+  var DIM_LABELS={
+    completeness:["Completeness","filled cells / total cells"],
+    validity:["Validity","values that can be right (codes · amounts · IDs)"],
+    consistency:["Consistency","fields that agree with each other"],
+    uniqueness:["Uniqueness","free of duplicate rows and repeat claims"],
+    conformity:["Conformity","how little normalization the file needed"]};
+  function renderQuality(s){
+    var box=$("npi-quality"), q=s.quality;
+    if(!q){ box.innerHTML='<div class="npi-muted">No quality data.</div>'; return; }
+    var tone=q.score>=85?'var(--green-deep,#0c7c66)':
+             (q.score>=70?'#b8732a':'#b5321e');
+    var html='<div class="ck-section-header"><h3 style="margin:0">'+
+      'Data-quality report card</h3></div>'+
+      '<div class="npi-muted">Five-dimension grade computed from the counts '+
+      'on this page — every number is recomputable from the scorecard.</div>';
+    html+='<div class="npi-cards" style="margin-top:12px"><div class="npi-card">'+
+      '<div class="k">Overall grade</div><div class="v" style="color:'+tone+'">'+
+      q.letter+' · '+q.score+'</div></div></div>';
+    // Dimension bars.
+    html+='<div style="max-width:640px;margin-top:10px">';
+    Object.keys(DIM_LABELS).forEach(function(k){
+      var v=(q.dimensions&&q.dimensions[k]!=null)?q.dimensions[k]:0;
+      var lab=DIM_LABELS[k];
+      html+='<div style="display:flex;align-items:center;gap:10px;margin:7px 0">'+
+        '<div style="width:130px;font-size:12.5px;font-weight:640">'+lab[0]+'</div>'+
+        '<div style="flex:1;height:9px;border-radius:5px;background:'+
+        'color-mix(in srgb,var(--ink,#11201c) 8%,transparent);overflow:hidden">'+
+        '<div style="width:'+Math.max(2,Math.min(100,v))+'%;height:100%;background:'+
+        (v>=85?'var(--green,#0c7c66)':(v>=70?'#b8732a':'#b5321e'))+'"></div></div>'+
+        '<div class="num" style="width:52px;text-align:right;font-size:12.5px">'+
+        v.toFixed(1)+'%</div>'+
+        '<div class="npi-muted" style="width:280px;font-size:11.5px">'+lab[1]+'</div></div>';
+    });
+    html+='</div>';
+    // Payer-name variant clusters.
+    var p=s.payer;
+    if(p && p.multi_spelling && p.multi_spelling.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Payer spellings to reconcile</h3></div>'+
+        '<div class="npi-muted">'+esc(p.column)+' has '+fmt(p.distinct_raw)+
+        ' raw spellings across '+fmt(p.clusters)+' payer groups. Clusters below '+
+        'contain 2+ spellings of what looks like the same payer (reported only '+
+        '— nothing was rewritten).</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Payer group</th><th class="num">Rows</th><th>Spellings seen</th>'+
+        '</tr></thead><tbody>';
+      p.multi_spelling.forEach(function(c){
+        html+='<tr><td>'+esc(c.canonical)+'</td><td class="num">'+fmt(c.total)+
+          '</td><td>'+c.variants.map(function(v){
+            return esc(v.value)+' <span class="npi-muted">('+fmt(v.count)+')</span>';
+          }).join(' · ')+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    // Per-code charge outliers.
+    if(s.outliers && s.outliers.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Charge outliers by procedure code</h3></div>'+
+        '<div class="npi-muted">Charges beyond 3×IQR fences within their HCPCS '+
+        'code (codes seen 10+ times). Same quantile math as the box plot on '+
+        'the analysis page.</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>HCPCS</th><th class="num">Lines</th><th class="num">Outliers</th>'+
+        '<th class="num">Median</th><th class="num">Max seen</th></tr></thead><tbody>';
+      s.outliers.forEach(function(o){
+        html+='<tr><td>'+esc(o.code)+'</td><td class="num">'+fmt(o.n)+
+          '</td><td class="num">'+fmt(o.outliers)+'</td><td class="num">'+
+          dollars(o.median)+'</td><td class="num">'+dollars(o.max)+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    // Structural findings.
+    var st=s.structure;
+    if(st && (st.duplicate_headers || st.empty_columns)){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'File structure</h3></div>';
+      if(st.duplicate_headers){
+        html+='<div class="npi-warn" style="margin-top:6px">Duplicate column '+
+          'headers (mapping is ambiguous): '+
+          st.duplicate_headers.map(esc).join(', ')+'</div>';
+      }
+      if(st.empty_columns){
+        html+='<div class="npi-warn" style="margin-top:6px">Columns that are '+
+          '100% empty: '+st.empty_columns.map(esc).join(', ')+'</div>';
+      }
+    }
+    // Audit trail summary.
+    if(s.changes_logged){
+      html+='<div class="npi-muted" style="margin-top:18px">🧾 '+
+        fmt(s.changes_logged)+' cell'+(s.changes_logged===1?'':'s')+
+        ' changed in total — the full before/after audit trail is on the '+
+        'Downloads tab'+(s.changelog_truncated?' (log capped at 20,000 entries)':'')+'.</div>';
+    }
     box.innerHTML=html;
   }
 

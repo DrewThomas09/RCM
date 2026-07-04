@@ -82,6 +82,42 @@ _DX_HINTS = ("diagnosis", "diagnosiscode", "icd", "icd10", "dx", "dxcode")
 _MOD_HINTS = ("modifier", "modifiers", "mod1", "mod2", "hcpcsmodifier")
 _PHONE_HINTS = ("phone", "fax", "telephone", "phonenumber")
 _TAXO_HINTS = ("taxonomy", "taxonomycode", "providertaxonomy", "nucc")
+_REV_HINTS = ("revenuecode", "revcode", "revenuecd", "revcd")
+_ADMIT_HINTS = ("admitdate", "admissiondate", "admitdt")
+_DISCH_HINTS = ("dischargedate", "dischargedt", "dischdate")
+# Payer column, priority order — deliberately excludes bare "plan" (too many
+# false matches: planid, plan_year, careplan).
+_PAYER_HINTS = ("payername", "payer", "payor", "insurancename",
+                "insurancecompany", "insurance", "carrier", "healthplan")
+
+# The official CMS two-digit Place of Service code set. Report-only domain
+# check — a POS outside this list is a denial waiting to happen.
+_POS_VALID = {
+    "01", "02", "03", "04", "05", "06", "07", "08", "09", "10",
+    "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+    "21", "22", "23", "24", "25", "26", "27", "31", "32", "33",
+    "34", "41", "42", "49", "50", "51", "52", "53", "54", "55",
+    "56", "57", "58", "60", "61", "62", "65", "66", "71", "72",
+    "81", "99",
+}
+
+# Payer-family prefixes for variant clustering (report-only — cells are never
+# rewritten across brands). Matching is on the punctuation-stripped compact
+# uppercase key; startswith keeps "BCBS OF TEXAS" and "BCBSTX" together while
+# leaving unknown payers as their own normalized key.
+_PAYER_FAMILIES = (
+    ("BLUECROSS", "BLUE CROSS BLUE SHIELD"),
+    ("BCBS", "BLUE CROSS BLUE SHIELD"),
+    ("UNITEDHEALTH", "UNITEDHEALTHCARE"),
+    ("UHC", "UNITEDHEALTHCARE"),
+    ("AETNA", "AETNA"),
+    ("CIGNA", "CIGNA"),
+    ("HUMANA", "HUMANA"),
+    ("KAISER", "KAISER PERMANENTE"),
+    ("MEDICARE", "MEDICARE"),
+    ("MEDICAID", "MEDICAID"),
+    ("TRICARE", "TRICARE"),
+)
 
 # Tokens that mean "missing" and are normalized to a blank cell.
 _NULL_TOKENS = {"na", "n/a", "null", "none", "nan", "nil", "-", "--", "#n/a",
@@ -480,6 +516,72 @@ def _sex_invalid(v: str) -> bool:
     return s not in _VALID_SEX
 
 
+def _clean_revcode_cell(v: str) -> Tuple[str, List[str]]:
+    """Zero-pad a numeric UB-04 revenue code to 4 digits (Excel strips the
+    leading zero: 450 → 0450). Non-numeric / over-long values pass through
+    for the shape flag to catch."""
+    if v == "":
+        return v, []
+    s = v.strip()
+    if s.isdigit() and 1 <= len(s) < 4:
+        return s.zfill(4), ["revcode-pad"]
+    return s, ([] if s == v else [])
+
+
+def _revcode_malformed(v: str) -> bool:
+    s = v.strip()
+    if not s:
+        return False
+    return not (s.isdigit() and len(s) == 4)
+
+
+def _clean_pos_cell(v: str) -> Tuple[str, List[str]]:
+    """Zero-pad a 1-digit Place of Service (Excel again: 11 stays, 1 → 01)."""
+    if v == "":
+        return v, []
+    s = v.strip()
+    if s.isdigit() and len(s) == 1:
+        return s.zfill(2), ["pos-pad"]
+    return s, ([] if s == v else [])
+
+
+def _pos_invalid(v: str) -> bool:
+    """True when a non-blank POS cell isn't in the official CMS code set."""
+    s = v.strip()
+    if not s:
+        return False
+    return s not in _POS_VALID
+
+
+def _payer_key(v: str) -> str:
+    """Fold a payer name to a clustering key: uppercase, punctuation → space,
+    collapsed whitespace, then family-prefix aliasing (BCBS OF TX and
+    Blue Cross Texas land in the same cluster). Used for the report-only
+    variant analysis — the cell itself is never rewritten."""
+    k = re.sub(r"[^A-Z0-9 ]", " ", v.upper())
+    k = re.sub(r"\s+", " ", k).strip()
+    compact = k.replace(" ", "")
+    for tok, family in _PAYER_FAMILIES:
+        if compact.startswith(tok):
+            return family
+    return k
+
+
+def _quantile(sorted_vals: List[float], q: float) -> float:
+    """Linear-interpolation quantile (type-7, numpy's default) on a
+    pre-sorted ascending list. Mirrors the analysis page's JS helper so the
+    outlier fences here agree with the box-plot there."""
+    n = len(sorted_vals)
+    if n == 1:
+        return sorted_vals[0]
+    pos = (n - 1) * q
+    base = int(pos)
+    rest = pos - base
+    lo = sorted_vals[base]
+    hi = sorted_vals[base + 1] if base + 1 < n else sorted_vals[base]
+    return lo + rest * (hi - lo)
+
+
 # Which hyphenated segment to zero-pad, by segment-length signature. Mirrors
 # npi_recovery.field_validators.normalize_ndc11 so verdicts match the package.
 _NDC_PAD_MAP = {(4, 4, 2): 0, (5, 3, 2): 1, (5, 4, 1): 2}
@@ -603,6 +705,8 @@ def _row_sanity_flags(row, allowed_i, billed_i, paid_i, units_i) -> List[str]:
         flags.append("allowed-exceeds-billed")
     if p is not None and a is not None and p > a + 1e-6:
         flags.append("paid-exceeds-allowed")
+    if p is not None and b is not None and p > b + 1e-6:
+        flags.append("paid-exceeds-billed")
     if a is not None and a < 0:
         flags.append("negative-allowed")
     if p is not None and p < 0:
@@ -677,6 +781,22 @@ class CleanResult:
     deid_applied: bool = False
     deid_cells: int = 0
     deid_columns: List[str] = field(default_factory=list)
+    # Data-quality raw counters (drive the 0-100 report card).
+    n_cells_total: int = 0
+    n_cells_filled: int = 0
+    # Cell-level audit trail: every change the cleaner made, capped so a
+    # pathological file can't hold the log in memory. n_changes counts ALL
+    # changes even past the cap.
+    changelog: List[Tuple[int, str, str, str, str]] = field(default_factory=list)
+    n_changes: int = 0
+    changelog_truncated: bool = False
+    changelog_path: Optional[str] = None
+    changelog_name: str = "changelog.csv"
+    # Payer-name variant clusters (report-only), per-HCPCS charge outliers,
+    # and structural findings (duplicate headers / empty columns).
+    payer_variants: Optional[Dict[str, object]] = None
+    outliers: Optional[List[Dict[str, object]]] = None
+    structure: Dict[str, object] = field(default_factory=dict)
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -733,6 +853,50 @@ class CleanResult:
         c = self.column_stats.get(self.billing_column, {})
         return c.get("blank", 0) + c.get("malformed", 0) + c.get("checksum", 0)
 
+    # Sanity rules that speak to VALIDITY (a value that can't be right) vs
+    # CONSISTENCY (values that contradict each other). Drives the report card.
+    _VALIDITY_RULES = ("hcpcs-malformed", "icd10-malformed", "money-unparseable",
+                       "sex-invalid", "taxonomy-malformed", "pos-invalid",
+                       "revenue-code-malformed")
+    _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
+                          "paid-exceeds-billed", "negative-allowed",
+                          "negative-paid", "nonpositive-units",
+                          "fractional-units", "date-in-future", "date-stale",
+                          "zip-state-mismatch", "service-before-birth",
+                          "discharge-before-admit", "ndc-ambiguous-10digit",
+                          "charge-outlier")
+
+    def quality(self) -> Dict[str, object]:
+        """The 0-100 data-quality report card over the five classic DQ
+        dimensions. Each dimension is a 0-1 ratio; the score is a weighted
+        blend. Deliberately simple, deterministic math — a partner should be
+        able to recompute the grade from the visible counts."""
+        rows = max(self.n_rows_out, 1)
+        completeness = (self.n_cells_filled / self.n_cells_total
+                        if self.n_cells_total else 1.0)
+        npi_bad = self.total_issues - sum(
+            c.get("blank", 0) for c in self.column_stats.values())
+        validity_hits = sum(self.sanity.get(r, 0) for r in self._VALIDITY_RULES)
+        validity = max(0.0, 1.0 - min(1.0, (validity_hits + npi_bad) / rows))
+        consistency_hits = sum(self.sanity.get(r, 0)
+                               for r in self._CONSISTENCY_RULES)
+        consistency = max(0.0, 1.0 - min(1.0, consistency_hits / rows))
+        dup = self.n_dupes_removed + self.sanity.get(
+            "suspected-duplicate-claim", 0)
+        uniqueness = max(0.0, 1.0 - min(1.0, dup / max(self.n_rows_in, 1)))
+        conformity = max(0.0, 1.0 - min(1.0, sum(self.repairs.values())
+                                        / max(self.n_cells_filled, 1)))
+        dims = {"completeness": completeness, "validity": validity,
+                "consistency": consistency, "uniqueness": uniqueness,
+                "conformity": conformity}
+        score = round(100 * (0.25 * completeness + 0.25 * validity
+                             + 0.20 * consistency + 0.15 * uniqueness
+                             + 0.15 * conformity))
+        letter = ("A" if score >= 93 else "B" if score >= 85 else
+                  "C" if score >= 70 else "D" if score >= 55 else "F")
+        return {"score": score, "letter": letter,
+                "dimensions": {k: round(v * 100, 1) for k, v in dims.items()}}
+
     def as_scorecard(self) -> Dict[str, object]:
         cells = self.total_npi_cells
         valid = self.total_valid
@@ -747,6 +911,14 @@ class CleanResult:
             "sanity": dict(self.sanity),
             "deid": ({"cells": self.deid_cells,
                       "columns": self.deid_columns} if self.deid_applied else None),
+            "quality": self.quality(),
+            "payer": self.payer_variants,
+            "outliers": self.outliers,
+            "structure": self.structure or None,
+            "changelog_name": (self.changelog_name
+                               if self.changelog_path else None),
+            "changes_logged": self.n_changes,
+            "changelog_truncated": self.changelog_truncated,
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
             "npi_cells": cells,
@@ -976,6 +1148,11 @@ def clean_bytes(
                  if any(x in _norm_key(h) for x in _MONEY_HINTS)}
     date_set = {i for i, h in enumerate(headers)
                 if any(x in _norm_key(h) for x in _DATE_HINTS)}
+    # A date column always wins over money: "DischargeDate" contains the
+    # substring "charge", and without this a discharge-date column would be
+    # routed to the money cleaner (never date-normalized) and false-flagged
+    # as unparseable money.
+    money_set -= date_set
     zip_set = {i for i, h in enumerate(headers)
                if any(x in _norm_key(h) for x in _ZIP_HINTS)}
     hcpcs_set = {i for i, h in enumerate(headers)
@@ -993,12 +1170,28 @@ def clean_bytes(
     ndc_norm_set = {i for i, h in enumerate(headers)
                     if any(x in _norm_key(h) for x in _NDC_HINTS)}
     state_set = {i for i in ([state_idx] if state_idx is not None else [])}
+    rev_set = {i for i, h in enumerate(headers)
+               if any(x in _norm_key(h) for x in _REV_HINTS)}
+    # POS by exact "pos" key or the unambiguous long forms — bare substring
+    # "pos" would false-match deposits/positions.
+    pos_set = {i for i, h in enumerate(headers)
+               if _norm_key(h) == "pos" or "placeofservice" in _norm_key(h)
+               or "poscode" in _norm_key(h)}
     # Date columns that must never be in the future (service / birth / paid).
     past_date_cols = {i for i, h in enumerate(headers)
                       if any(x in _norm_key(h)
                              for x in (_SERVICE_DATE_HINTS + _DOB_HINTS))}
+    service_date_cols = {i for i, h in enumerate(headers)
+                         if any(x in _norm_key(h) for x in _SERVICE_DATE_HINTS)}
+    dob_i = _detect_one(headers, _DOB_HINTS)
+    admit_i = _detect_one(headers, _ADMIT_HINTS)
+    disch_i = _detect_one(headers, _DISCH_HINTS)
+    payer_i = _detect_one(headers, _PAYER_HINTS)
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).date()
+    # Ten-year staleness horizon for service dates — a DOS this old in a
+    # working claims extract is almost always a key-entry or century error.
+    _stale_cut = f"{_today.year - 10:04d}-01-01"
     # ZIP↔state consistency: pair same-entity state/zip columns and flag rows
     # whose ZIP3 prefix resolves to a different state than the state cell.
     zs_pairs = _zip_state_pairs(headers)
@@ -1062,6 +1255,22 @@ def clean_bytes(
         res.column_stats[headers[i]] = {
             "valid": 0, "blank": 0, "malformed": 0, "checksum": 0, "cells": 0}
 
+    # Structural hygiene before the row loop: a header that appears twice
+    # makes every downstream mapping ambiguous, so it's surfaced up front.
+    _hdr_counts: Dict[str, int] = {}
+    for h in headers:
+        _hdr_counts[h] = _hdr_counts.get(h, 0) + 1
+    _dup_headers = sorted(h for h, n in _hdr_counts.items() if n > 1 and h)
+    if _dup_headers:
+        res.structure["duplicate_headers"] = _dup_headers
+
+    # Accumulators for the post-loop analyses.
+    _col_filled = [0] * ncols                     # empty-column detection
+    _payer_raw: Dict[str, int] = {}               # payer variant clustering
+    _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
+    _charge_i = billed_i if billed_i is not None else allowed_i
+    _CHANGELOG_CAP = 20_000                       # keep the audit log bounded
+
     cb("Cleaning rows", 0.30)
     cleaned: List[List[str]] = []
     seen = set()
@@ -1105,8 +1314,28 @@ def clean_bytes(
                 val, r = _clean_taxonomy_cell(val); hits += r
             elif ci in ndc_norm_set:
                 val, r = _clean_ndc_cell(val); hits += r
+            elif ci in rev_set:
+                val, r = _clean_revcode_cell(val); hits += r
+            elif ci in pos_set:
+                val, r = _clean_pos_cell(val); hits += r
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
+            # Cell-level audit trail — recorded BEFORE de-identification so
+            # masked PHI never leaks into the change log. Capped; n_changes
+            # keeps the true total either way.
+            if val != cell:
+                res.n_changes += 1
+                if len(res.changelog) < _CHANGELOG_CAP:
+                    res.changelog.append(
+                        (ri + 1, headers[ci] if ci < ncols else str(ci),
+                         cell, val, ";".join(hits) or "trim"))
+                else:
+                    res.changelog_truncated = True
+            # Fill-rate counters for the data-quality report card.
+            res.n_cells_total += 1
+            if val != "":
+                res.n_cells_filled += 1
+                _col_filled[ci] += 1
             # PHI de-identification (opt-in) — applied last so the value that
             # lands in the output (and the pivot) is masked. Stable id hashing
             # keeps within-file referential integrity for counts/joins.
@@ -1166,6 +1395,36 @@ def clean_bytes(
                             for ci in taxo_set):
             res.sanity["taxonomy-malformed"] = \
                 res.sanity.get("taxonomy-malformed", 0) + 1
+        # Revenue-code / Place-of-Service domain validity (report-only).
+        if rev_set and any(ci < len(new_row) and _revcode_malformed(new_row[ci])
+                           for ci in rev_set):
+            res.sanity["revenue-code-malformed"] = \
+                res.sanity.get("revenue-code-malformed", 0) + 1
+        if pos_set and any(ci < len(new_row) and _pos_invalid(new_row[ci])
+                           for ci in pos_set):
+            res.sanity["pos-invalid"] = res.sanity.get("pos-invalid", 0) + 1
+        # Chronology impossibilities. Normalized ISO dates compare correctly
+        # as strings, so no re-parsing per row.
+        if (dob_i is not None and dos_i is not None
+                and dob_i < len(new_row) and dos_i < len(new_row)):
+            _dob, _dos = new_row[dob_i], new_row[dos_i]
+            if (_DATE_ISO_RE.match(_dob) and _DATE_ISO_RE.match(_dos)
+                    and _dos[:10] < _dob[:10]):
+                res.sanity["service-before-birth"] = \
+                    res.sanity.get("service-before-birth", 0) + 1
+        if (admit_i is not None and disch_i is not None
+                and admit_i < len(new_row) and disch_i < len(new_row)):
+            _adm, _dis = new_row[admit_i], new_row[disch_i]
+            if (_DATE_ISO_RE.match(_adm) and _DATE_ISO_RE.match(_dis)
+                    and _dis[:10] < _adm[:10]):
+                res.sanity["discharge-before-admit"] = \
+                    res.sanity.get("discharge-before-admit", 0) + 1
+        # Service date older than the 10-year horizon (likely century error).
+        if any(ci < len(new_row) and new_row[ci]
+               and _DATE_ISO_RE.match(new_row[ci])
+               and new_row[ci][:10] < _stale_cut
+               for ci in service_date_cols):
+            res.sanity["date-stale"] = res.sanity.get("date-stale", 0) + 1
         # Tally NPI health per detected column.
         for i in npi_idx:
             cstat = res.column_stats[headers[i]]
@@ -1177,6 +1436,16 @@ def clean_bytes(
                 res.n_dupes_removed += 1
                 continue
             seen.add(key)
+        # Kept-row accumulators for payer clustering and charge outliers.
+        if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
+            _payer_raw[new_row[payer_i]] = \
+                _payer_raw.get(new_row[payer_i], 0) + 1
+        if (_charge_i is not None and hcpcs_i is not None
+                and _charge_i < len(new_row) and hcpcs_i < len(new_row)):
+            _amt = _to_number(new_row[_charge_i])
+            _code = new_row[hcpcs_i]
+            if _amt is not None and _code:
+                _code_charges.setdefault(_code, []).append(_amt)
         cleaned.append(new_row)
         if ri % 500 == 0:
             cb("Cleaning rows", 0.30 + 0.55 * (ri / total))
@@ -1206,6 +1475,66 @@ def clean_bytes(
                 _seen_keys.add(k)
         if _dup:
             res.sanity["suspected-duplicate-claim"] = _dup
+
+    # Headered-but-empty columns — an extract/mapping defect worth surfacing.
+    if res.n_rows_out:
+        _empty = [headers[i] for i in range(ncols) if _col_filled[i] == 0]
+        if _empty:
+            res.structure["empty_columns"] = _empty
+
+    # Payer-name variant clustering (report-only). "BCBS", "Blue Cross of TX"
+    # and "B.C.B.S." are the same payer spelled three ways — the single most
+    # common grouping defect in real claims extracts. Cells are never
+    # rewritten; the clusters are reported for the user to reconcile.
+    if _payer_raw and payer_i is not None:
+        _clusters: Dict[str, Dict[str, int]] = {}
+        for raw, n in _payer_raw.items():
+            _clusters.setdefault(_payer_key(raw), {})[raw] = n
+        _multi = []
+        for canon, variants in _clusters.items():
+            if len(variants) >= 2:
+                _multi.append({
+                    "canonical": canon,
+                    "total": sum(variants.values()),
+                    "n_variants": len(variants),
+                    "variants": [
+                        {"value": v, "count": c} for v, c in
+                        sorted(variants.items(), key=lambda kv: -kv[1])[:6]],
+                })
+        _multi.sort(key=lambda d: -d["total"])
+        res.payer_variants = {
+            "column": headers[payer_i],
+            "distinct_raw": len(_payer_raw),
+            "clusters": len(_clusters),
+            "multi_spelling": _multi[:10],
+        }
+
+    # Statistical charge outliers per HCPCS code: values beyond 3×IQR fences
+    # (Tukey far-out) within codes seen ≥10 times. A $25,000 office visit is
+    # a data error or a story either way. Same type-7 quantile as the
+    # analysis page's box plot, so the two agree.
+    _out_total = 0
+    _out_detail: List[Dict[str, object]] = []
+    for _code, _vals in _code_charges.items():
+        if len(_vals) < 10:
+            continue
+        _vals.sort()
+        _q1, _q3 = _quantile(_vals, 0.25), _quantile(_vals, 0.75)
+        _iqr = _q3 - _q1
+        if _iqr <= 0:
+            continue
+        _lo, _hi = _q1 - 3 * _iqr, _q3 + 3 * _iqr
+        _n_out = sum(1 for v in _vals if v < _lo or v > _hi)
+        if _n_out:
+            _out_total += _n_out
+            _out_detail.append({
+                "code": _code, "n": len(_vals), "outliers": _n_out,
+                "median": round(_quantile(_vals, 0.5), 2),
+                "max": round(_vals[-1], 2)})
+    if _out_total:
+        res.sanity["charge-outlier"] = _out_total
+        _out_detail.sort(key=lambda d: -int(d["outliers"]))  # type: ignore[arg-type]
+        res.outliers = _out_detail[:8]
 
     # Optional live NPPES cross-check via the app's shared CMS connection.
     # Guarded end-to-end: any failure leaves res.nppes with a note and the
@@ -1408,6 +1737,23 @@ def _write_output(res: CleanResult, headers: List[str],
             for rec in res.suggestions_records:
                 writer.writerow([_defang_cell(str(rec.get(c, ""))) for c in cols])
         res.companion_path = str(comp_path)
+
+    # Cell-level audit trail: every change the cleaner made (row · column ·
+    # before → after · rule), as its own CSV download. De-id masking is
+    # deliberately absent — original PHI must never land in this file.
+    if res.changelog:
+        stem = res.out_name[:-len("_cleaned.csv")] if res.out_name.endswith(
+            "_cleaned.csv") else res.out_name.rsplit(".", 1)[0]
+        res.changelog_name = f"{stem or 'claims'}_changelog.csv"
+        log_path = WORKDIR / f"{token}_{res.changelog_name}"
+        with open(log_path, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.writer(fh)
+            writer.writerow(["row", "column", "before", "after", "rule"])
+            for row_i, col, before, after, rule in res.changelog:
+                writer.writerow([row_i, _defang_cell(col),
+                                 _defang_cell(before), _defang_cell(after),
+                                 rule])
+        res.changelog_path = str(log_path)
 
     # A styled multi-tab .xlsx workbook (Cleaned · issues · scorecard) via the
     # app's stdlib xlsx writer — no new dependency. Guarded: a workbook build

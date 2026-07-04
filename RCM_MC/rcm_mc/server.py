@@ -2818,6 +2818,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             src_path = job.result.companion_path
             fname = job.result.companion_name
             ctype = "text/csv; charset=utf-8"
+        elif fmt == "changelog":
+            src_path = job.result.changelog_path
+            fname = job.result.changelog_name
+            ctype = "text/csv; charset=utf-8"
         elif fmt == "deep":
             src_path = job.result.deep_workbook_path
             fname = job.result.deep_workbook_name

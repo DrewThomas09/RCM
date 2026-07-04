@@ -345,6 +345,124 @@ class TestEngine(unittest.TestCase):
         self.assertNotIn("sex-invalid", res.sanity)
         self.assertNotIn("taxonomy-malformed", res.sanity)
 
+    def test_quality_report_card(self):
+        # A clean file grades high; a dirty file grades lower, and every
+        # dimension is a recomputable 0-100 ratio.
+        clean = ("ClaimID,BillingNPI,AllowedAmt\n"
+                 f"1,{GOOD_B},100.00\n2,{GOOD_B},110.00\n").encode()
+        rc = engine.clean_bytes(clean, "clean.csv")
+        qc = rc.as_scorecard()["quality"]
+        self.assertGreaterEqual(qc["score"], 93)
+        self.assertEqual(qc["letter"], "A")
+        for dim in ("completeness", "validity", "consistency",
+                    "uniqueness", "conformity"):
+            self.assertIn(dim, qc["dimensions"])
+        dirty = ("ClaimID,BillingNPI,AllowedAmt,PatientSex\n"
+                 "1,123,garbage,X\n1,123,garbage,X\n2,,,\n").encode()
+        rd = engine.clean_bytes(dirty, "dirty.csv")
+        qd = rd.as_scorecard()["quality"]
+        self.assertLess(qd["score"], qc["score"])
+
+    def test_changelog_audit_trail(self):
+        # Every change lands in the change-log CSV as before → after + rule.
+        data = ("NPI,ChargeAmt,ServiceDate\n"
+                f"  {GOOD_A}  ,\"$1,250.50\",03/04/2024\n").encode()
+        res = engine.clean_bytes(data, "log.csv")
+        self.assertGreaterEqual(res.n_changes, 3)
+        self.assertIsNotNone(res.changelog_path)
+        with open(res.changelog_path, encoding="utf-8") as fh:
+            log = fh.read()
+        self.assertIn("before", log.splitlines()[0])
+        self.assertIn("1250.50", log)          # money after-value
+        self.assertIn("2024-03-04", log)       # date after-value
+        self.assertIn("date-us-to-iso", log)   # rule provenance
+
+    def test_changelog_never_contains_phi(self):
+        # De-id masking must NOT be recorded — originals would leak into the
+        # log. Only the pre-deid cleaning changes appear.
+        data = ("BillingNPI,PatientName,SSN\n"
+                f"  {GOOD_B} ,John Q Public,123-45-6789\n").encode()
+        res = engine.clean_bytes(data, "phi.csv", deid=True)
+        if res.changelog_path:
+            with open(res.changelog_path, encoding="utf-8") as fh:
+                log = fh.read()
+            self.assertNotIn("John Q Public", log)
+            self.assertNotIn("123-45-6789", log)
+
+    def test_payer_variant_clustering(self):
+        data = ("ClaimID,Payer\n"
+                "1,BCBS of Texas\n2,Blue Cross Blue Shield TX\n"
+                "3,B.C.B.S.\n4,Aetna\n5,AETNA INC\n6,Cigna\n").encode()
+        res = engine.clean_bytes(data, "p.csv")
+        pv = res.payer_variants
+        self.assertIsNotNone(pv)
+        self.assertEqual(pv["column"], "Payer")
+        self.assertEqual(pv["distinct_raw"], 6)
+        canon = {c["canonical"]: c for c in pv["multi_spelling"]}
+        self.assertIn("BLUE CROSS BLUE SHIELD", canon)
+        self.assertEqual(canon["BLUE CROSS BLUE SHIELD"]["n_variants"], 3)
+        self.assertIn("AETNA", canon)
+
+    def test_chronology_flags(self):
+        data = (
+            "ClaimID,PatientDOB,DateOfService,AdmitDate,DischargeDate\n"
+            "1,1990-01-01,1989-06-15,2024-03-01,2024-02-27\n"  # both wrong
+            "2,1980-05-14,2024-03-01,2024-03-01,2024-03-04\n"  # both fine
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("service-before-birth"), 1)
+        self.assertEqual(res.sanity.get("discharge-before-admit"), 1)
+
+    def test_paid_exceeds_billed_and_stale_date(self):
+        data = ("ClaimID,BilledAmt,PaidAmt,DateOfService\n"
+                "1,100,120,2024-03-01\n"      # paid > billed
+                "2,100,80,2001-05-05\n").encode()  # stale DOS
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("paid-exceeds-billed"), 1)
+        self.assertEqual(res.sanity.get("date-stale"), 1)
+
+    def test_pos_and_revenue_code(self):
+        data = ("ClaimID,POS,RevenueCode\n"
+                "1,11,450\n"      # POS valid; revcode padded to 0450
+                "2,1,0450\n"      # POS padded to 01 → valid
+                "3,77,ABC\n").encode()  # POS invalid; revcode malformed
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.repairs.get("revcode-pad"), 1)
+        self.assertEqual(res.repairs.get("pos-pad"), 1)
+        self.assertEqual(res.sanity.get("pos-invalid"), 1)
+        self.assertEqual(res.sanity.get("revenue-code-malformed"), 1)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("0450", out)
+
+    def test_charge_outliers_per_code(self):
+        rows = [f"{i},{GOOD_B},99213,{100 + i}" for i in range(12)]
+        rows.append(f"99,{GOOD_B},99213,9000")   # far-out charge
+        data = ("ClaimID,BillingNPI,HCPCS,BilledAmt\n"
+                + "\n".join(rows) + "\n").encode()
+        res = engine.clean_bytes(data, "o.csv")
+        self.assertEqual(res.sanity.get("charge-outlier"), 1)
+        self.assertEqual(res.outliers[0]["code"], "99213")
+        self.assertEqual(res.outliers[0]["outliers"], 1)
+
+    def test_structure_findings(self):
+        data = ("ClaimID,Note,Note,Empty\n"
+                "1,a,b,\n2,c,d,\n").encode()
+        res = engine.clean_bytes(data, "s.csv")
+        self.assertEqual(res.structure.get("duplicate_headers"), ["Note"])
+        self.assertEqual(res.structure.get("empty_columns"), ["Empty"])
+
+    def test_discharge_date_not_money(self):
+        # Regression: "DischargeDate" contains the substring "charge" and was
+        # routed to the money cleaner — never date-normalized and false-flagged
+        # as unparseable money. Date role must win.
+        data = ("ClaimID,DischargeDate\n1,03/04/2024\n").encode()
+        res = engine.clean_bytes(data, "d.csv")
+        self.assertNotIn("money-unparseable", res.sanity)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("2024-03-04", out)   # date cleaner ran on it
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
@@ -805,6 +923,40 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 self.assertIn('data-panel="connectors"', body)
                 self.assertIn("Connections available", body)
                 self.assertIn("Go online", body)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_changelog_download_route(self):
+        # ?fmt=changelog streams the audit trail once a job with changes ran.
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                csv_b = ("NPI,ChargeAmt\n"
+                         f"  {GOOD_A}  ,\"$1,250.50\"\n").encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "c.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                self.assertTrue(j["scorecard"]["changelog_name"])
+                self.assertIn("quality", j["scorecard"])
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                    "?fmt=changelog"
+                ) as r:
+                    body = r.read().decode()
+                self.assertIn("before", body.splitlines()[0])
+                self.assertIn("1250.50", body)
             finally:
                 server.shutdown()
                 server.server_close()
