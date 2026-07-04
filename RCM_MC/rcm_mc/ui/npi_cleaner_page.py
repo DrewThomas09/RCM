@@ -579,7 +579,9 @@ _EXTRA_JS = r"""
     "suspected-duplicate-claim":"Suspected duplicate claim (same provider · patient · date · code · amount)",
     "ndc-ambiguous-10digit":"Ambiguous 10-digit NDC (segmentation unknown — verify at source)",
     "date-in-future":"Impossible future date (service · birth · paid date after today)",
-    "zip-state-mismatch":"ZIP prefix disagrees with the state code (verify address at source)"};
+    "zip-state-mismatch":"ZIP prefix disagrees with the state code (verify address at source)",
+    "hcpcs-malformed":"Malformed HCPCS/CPT code (not 5 digits, letter+4 digits, or 4 digits+letter)",
+    "icd10-malformed":"Malformed ICD-10 diagnosis code (bad shape)"};
   function renderSanity(sanity){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];

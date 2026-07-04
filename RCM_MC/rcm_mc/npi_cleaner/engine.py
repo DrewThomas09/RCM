@@ -353,6 +353,33 @@ def _clean_sex_cell(v: str) -> Tuple[str, List[str]]:
 
 _ICD_SHAPE_RE = re.compile(r"^[A-Z][0-9][0-9A-Z]{1,5}$")
 
+# Well-formed code shapes for the report-only validity screens (not auto-fixed
+# — a bad shape is flagged, never guessed). A HCPCS/CPT base code is 5 digits
+# (CPT Cat I), a letter A–V + 4 digits (HCPCS Level II), or 4 digits + a letter
+# (CPT Cat II "F" / Cat III "T"). ICD-10-CM is letter · digit · alnum, then an
+# optional dotted 1–4-char subclass.
+_HCPCS_VALID_RE = re.compile(r"^(\d{5}|[A-V]\d{4}|\d{4}[A-Z])$")
+_ICD10_VALID_RE = re.compile(r"^[A-Z][0-9][0-9A-Z](\.[0-9A-Z]{1,4})?$")
+
+
+def _hcpcs_malformed(v: str) -> bool:
+    """True when a non-blank procedure code isn't a valid HCPCS/CPT shape.
+    A trailing modifier (``99213-25``/``J1885 59``) is stripped first so a
+    valid code with an appended modifier is not falsely flagged."""
+    s = v.strip().upper()
+    if not s:
+        return False
+    core = re.split(r"[-\s]", s, 1)[0]
+    return _HCPCS_VALID_RE.match(core) is None
+
+
+def _icd10_malformed(v: str) -> bool:
+    """True when a non-blank diagnosis code isn't a valid ICD-10-CM shape."""
+    s = v.strip().upper()
+    if not s:
+        return False
+    return _ICD10_VALID_RE.match(s) is None
+
 
 def _clean_dx_cell(v: str) -> Tuple[str, List[str]]:
     """Uppercase an ICD-10-CM code and insert the decimal after the 3rd
@@ -1069,6 +1096,14 @@ def clean_bytes(
                 if nd and nd.isdigit() and len(nd) == 10:
                     res.sanity["ndc-ambiguous-10digit"] = \
                         res.sanity.get("ndc-ambiguous-10digit", 0) + 1
+        # Code-shape validity (report-only, once per row) — malformed HCPCS/CPT
+        # and ICD-10 codes are a top denial driver.
+        if hcpcs_set and any(ci < len(new_row) and _hcpcs_malformed(new_row[ci])
+                             for ci in hcpcs_set):
+            res.sanity["hcpcs-malformed"] = res.sanity.get("hcpcs-malformed", 0) + 1
+        if dx_set and any(ci < len(new_row) and _icd10_malformed(new_row[ci])
+                          for ci in dx_set):
+            res.sanity["icd10-malformed"] = res.sanity.get("icd10-malformed", 0) + 1
         # Tally NPI health per detected column.
         for i in npi_idx:
             cstat = res.column_stats[headers[i]]

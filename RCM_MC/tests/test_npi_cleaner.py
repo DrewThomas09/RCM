@@ -254,6 +254,42 @@ class TestEngine(unittest.TestCase):
         res = engine.clean_bytes(data, "x.csv")
         self.assertNotIn("zip-state-mismatch", res.sanity)
 
+    def test_hcpcs_malformed_flagged(self):
+        # Valid: 5-digit CPT, letter+4 HCPCS, 4+letter Cat II; a valid code with
+        # an appended modifier must NOT flag. Malformed: 4 digits, 5 letters.
+        data = (
+            "ClaimID,HCPCS\n"
+            "1,99213\n"        # CPT Cat I → valid
+            "2,J1885\n"        # HCPCS Level II → valid
+            "3,0001F\n"        # CPT Cat II → valid
+            "4,99213-25\n"     # valid + modifier → valid (modifier stripped)
+            "5,9921\n"         # only 4 digits → malformed
+            "6,ABCDE\n"        # 5 letters → malformed
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("hcpcs-malformed"), 2)
+
+    def test_icd10_malformed_flagged(self):
+        # Valid: E11.65, I10 (3-char), U07.1 (COVID). Malformed: leading digit,
+        # too short.
+        data = (
+            "ClaimID,DiagnosisCode\n"
+            "1,E11.65\n"       # valid
+            "2,I10\n"          # valid 3-char
+            "3,U07.1\n"        # valid
+            "4,123.45\n"       # starts with a digit → malformed
+            "5,E1\n"           # too short → malformed
+        ).encode()
+        res = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(res.sanity.get("icd10-malformed"), 2)
+
+    def test_code_shape_checks_need_columns(self):
+        # Without HCPCS/diagnosis columns the checks must not run.
+        data = ("ClaimID,Note\n1,hello\n").encode()
+        res = engine.clean_bytes(data, "y.csv")
+        self.assertNotIn("hcpcs-malformed", res.sanity)
+        self.assertNotIn("icd10-malformed", res.sanity)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
