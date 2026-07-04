@@ -49,6 +49,12 @@ from .infra.rate_limit import RateLimiter
 _REFRESH_RATE_LIMITER = RateLimiter(max_hits=1, window_secs=3600)
 _DELETE_RATE_LIMITER = RateLimiter(max_hits=10, window_secs=3600)
 MAX_REQUEST_BYTES = 10_000_000  # 10 MB — rejects oversized POSTs early
+# The NPI-cleaner upload/detect endpoints stream a whole claims file (CSV /
+# Excel) as the request body, so they get a much larger ceiling than ordinary
+# JSON/form POSTs. Kept as its own constant so the 10 MB DoS guard still
+# applies to every other endpoint.
+NPI_UPLOAD_MAX_BYTES = 200_000_000  # 200 MB — claims-file uploads
+_LARGE_UPLOAD_PATHS = ("/npi-cleaner/upload", "/npi-cleaner/detect")
 
 import threading as _threading
 
@@ -13984,10 +13990,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.FORBIDDEN,
                 )
         content_length = int(self.headers.get("Content-Length") or 0)
-        if content_length > MAX_REQUEST_BYTES:
+        _max_bytes = (NPI_UPLOAD_MAX_BYTES if path in _LARGE_UPLOAD_PATHS
+                      else MAX_REQUEST_BYTES)
+        if content_length > _max_bytes:
             return self._send_json(
                 {"error": "payload too large",
-                 "max_bytes": MAX_REQUEST_BYTES},
+                 "max_bytes": _max_bytes},
                 status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
             )
         self._idempotency_key = self.headers.get("Idempotency-Key")
