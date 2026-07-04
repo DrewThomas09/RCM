@@ -5220,6 +5220,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             _sid = urllib.parse.unquote(
                 path[len("/tools/open-data/"):]).strip("/")
             return self._send_html(render_open_data_source(_sid))
+        # Internal non-public CMS + API lab (backend; not in the top nav).
+        if path == "/tools/nonpublic-cms":
+            from .ui.nonpublic_cms_lab_page import render_nonpublic_cms_lab
+            return self._send_html(render_nonpublic_cms_lab())
+        if path.startswith("/tools/nonpublic-cms/"):
+            from .ui.nonpublic_cms_lab_page import render_nonpublic_cms_source
+            _sid = urllib.parse.unquote(
+                path[len("/tools/nonpublic-cms/"):]).strip("/")
+            return self._send_html(render_nonpublic_cms_source(_sid))
         if path == "/comparables":
             _qs = urllib.parse.parse_qs(parsed.query)
             def _qf(k, default=None):
