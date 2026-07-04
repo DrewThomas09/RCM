@@ -196,7 +196,7 @@ def _body() -> str:
       <div class="cloud">⤒</div>
       <div class="big">Drag a claims file here</div>
       <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, or Excel (.xlsx) · up to 10&nbsp;MB ·
+        CSV, TSV, or Excel (.xlsx) · up to 200&nbsp;MB ·
         <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
     </div>
     <input type="file" id="npi-file" class="npi-hidden"

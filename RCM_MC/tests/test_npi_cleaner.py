@@ -13,6 +13,7 @@ import time
 import unittest
 import urllib.request as _u
 import urllib.parse as _up
+import urllib.error as _ue
 from unittest.mock import patch
 
 from rcm_mc.npi_cleaner import engine
@@ -804,6 +805,41 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 self.assertIn('data-panel="connectors"', body)
                 self.assertIn("Connections available", body)
                 self.assertIn("Go online", body)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_large_upload_accepted_others_capped(self):
+        # Claims uploads above the 10 MB global POST cap are accepted on the
+        # cleaner upload route (200 MB ceiling); every other POST stays capped.
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                header = b"ClaimID,BillingNPI\n"
+                row = b"1," + GOOD_B.encode() + b"\n"
+                big = header + row * ((11 * 1024 * 1024) // len(row) + 1)
+                self.assertGreater(len(big), 10_000_000)  # above the old cap
+                # Upload route accepts it → returns a job id.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=big, method="POST", headers={"X-Filename": "big.csv"})
+                with _u.urlopen(req) as r:
+                    self.assertIn("job_id", json.loads(r.read().decode()))
+                # An ordinary POST path still rejects the same oversized body.
+                # The guard rejects early on Content-Length and closes the
+                # socket, so the client sees either a clean 413 or a broken
+                # pipe mid-upload — both prove the body was refused (and the
+                # broken pipe is the desired don't-drain-the-body behavior).
+                req2 = _u.Request(
+                    f"http://127.0.0.1:{port}/__cap_probe__",
+                    data=big, method="POST")
+                try:
+                    _u.urlopen(req2)
+                    self.fail("expected rejection on a non-upload POST path")
+                except _u.HTTPError as exc:  # type: ignore[attr-defined]
+                    self.assertEqual(exc.code, 413)
+                except (_ue.URLError, ConnectionError):
+                    pass  # server closed the connection early — refused
             finally:
                 server.shutdown()
                 server.server_close()
