@@ -1,0 +1,16 @@
+hcpcs,drug_brand,molecule,route_note,macs,effective_date,source
+C9399,Abatacept (Orencia),abatacept,NOC / miscellaneous code; resolve drug by NDC before routing,"NGS,NORIDIAN_JE,WPS",2026-06-13,cms_live_2026-07-02
+J0129,Orencia SC / abatacept,abatacept,"JA=IV (Part B eligible), JB=SC (SAD); modifier decides","CGS,FCSO,NOVITAS,PALMETTO",2026-06-14,v39_baseline+cms_live_2026-07-02
+J0135,Humira / adalimumab,adalimumab,SUBCUTANEOUS self-injected biologic; SAD,"NGS,WPS,NOVITAS,FCSO,PALMETTO",2026-06-13,v39_baseline (past this live slice)
+J0139,Adalimumab,adalimumab,SUBCUTANEOUS self-administered; SAD,"NORIDIAN_JE,NORIDIAN_JF",2026-06-13,cms_live_2026-07-02
+J0801,Acthar Gel,corticotropin,"JA=IV, JB=SC self-administered (SAD)","CGS,FCSO,NOVITAS,PALMETTO",2026-06-14,v39_baseline+cms_live_2026-07-02
+J1438,Enbrel / etanercept,etanercept,SUBCUTANEOUS self-injected; SAD across all MACs,"NGS,WPS,CGS,NORIDIAN_JE,NORIDIAN_JF,NOVITAS,FCSO,PALMETTO",2026-06-13,v39_baseline (past this live slice)
+J3262,Actemra SC / tocilizumab,tocilizumab,"IV Part B eligible, SUBCUTANEOUS is SAD","FCSO,NOVITAS,PALMETTO",2026-06-15,v39_baseline+cms_live_2026-07-02
+J3357,Stelara / ustekinumab,ustekinumab,SUBCUTANEOUS self-administered; SAD incl. Novitas/TX,"NGS,WPS,CGS,NORIDIAN_JE,NORIDIAN_JF,NOVITAS,FCSO,PALMETTO",2026-06-13,v39_baseline (past this live slice)
+J3490,Tymlos / abaloparatide (unclassified),abaloparatide,SUBCUTANEOUS self-injected under NOC code; SAD,"CGS,FCSO,NOVITAS,PALMETTO,WPS",2026-06-14,v39_baseline+cms_live_2026-07-02
+J3590,Abatacept (Orencia),abatacept,NOC / miscellaneous code; resolve drug by NDC before routing,"CGS,NGS,NORIDIAN_JE,NORIDIAN_JF",2026-06-13,cms_live_2026-07-02
+J9216,Actimmune / interferon gamma-1b,interferon gamma-1b,SUBCUTANEOUS self-injected; SAD,"CGS,FCSO,NGS,NORIDIAN_JE,NORIDIAN_JF,NOVITAS,PALMETTO,WPS",2026-06-14,v39_baseline+cms_live_2026-07-02
+Q5121,Hadlima (adalimumab-bwwd),adalimumab,SUBCUTANEOUS biosimilar; SAD,"NGS,WPS,NOVITAS,FCSO,PALMETTO",2026-06-13,v39_baseline (past this live slice)
+Q5131,Idacio (adalimumab-aacf),adalimumab,SUBCUTANEOUS biosimilar; SAD,"NGS,WPS,NOVITAS,FCSO,PALMETTO",2026-06-13,v39_baseline (past this live slice)
+Q5145,Abrilada (adalimumab-afzb),adalimumab,SUBCUTANEOUS biosimilar; SAD,"FCSO,NGS,NORIDIAN_JE,NOVITAS,PALMETTO,WPS",2026-06-13,v39_baseline+cms_live_2026-07-02
+Q9999,Otulfi (ustekinumab-aauz),ustekinumab,SUBCUTANEOUS biosimilar; SAD,NGS,2026-06-13,v39_baseline+cms_live_2026-07-02

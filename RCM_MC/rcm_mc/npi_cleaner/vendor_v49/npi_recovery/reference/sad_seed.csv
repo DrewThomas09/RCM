@@ -1,0 +1,13 @@
+hcpcs,status,note,source
+J3490,noc,Unclassified drugs — drug identified by NDC not code; resolve before routing,CMS Coverage DB (NOC)
+J3590,noc,Unclassified biologics — drug identified by NDC not code; resolve before routing,CMS Coverage DB (NOC)
+C9399,noc,Unclassified drugs or biologicals — drug identified by NDC not code,CMS Coverage DB (NOC)
+J9999,noc,Not otherwise classified antineoplastic — resolve before routing,HCPCS (NOC)
+J7799,noc,NOC drugs other than inhalation — resolve before routing,HCPCS (NOC)
+J7999,noc,Compounded drug NOC — resolve before routing,HCPCS (NOC)
+J8499,noc,Prescription drug oral non-chemo NOC,HCPCS (NOC)
+J3357,sad,Ustekinumab (Stelara) subcutaneous — SAD across all MACs incl. Novitas/TX,CMS Coverage DB sad_exclusion_list (verified Jun 2026)
+J0135,sad,Adalimumab (Humira) — self-administered subcutaneous biologic,Curated (standard SAD)
+J1438,sad,Etanercept (Enbrel) — self-administered subcutaneous biologic,Curated (standard SAD)
+Q5121,sad,Adalimumab-bwwd (Hadlima) biosimilar — subcutaneous,Curated (standard SAD)
+Q5131,sad,Adalimumab-aacf (Idacio) biosimilar — subcutaneous,Curated (standard SAD)

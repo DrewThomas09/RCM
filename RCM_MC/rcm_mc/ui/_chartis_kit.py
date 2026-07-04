@@ -7578,6 +7578,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "audit",         "title": "Audit Log",          "route": "/audit"},
     {"id": "users",         "title": "Users",              "route": "/users"},
     {"id": "import",        "title": "Import Deal",        "route": "/import"},
+    {"id": "npi-cleaner",   "title": "NPI Claims Cleaner", "route": "/npi-cleaner"},
     {"id": "exports",       "title": "Exports",            "route": "/exports"},
     {"id": "jobs",          "title": "Jobs",               "route": "/jobs"},
     {"id": "runs",          "title": "Run History",        "route": "/runs"},

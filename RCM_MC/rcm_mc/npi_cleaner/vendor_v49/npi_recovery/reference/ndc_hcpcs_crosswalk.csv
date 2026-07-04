@@ -1,0 +1,55 @@
+brand,ingredient,drug_class,hcpcs,per_unit_mg,benefit,route,source
+Gammagard Liquid,immune globulin,Immune globulin (IVIG/SCIG),J1569,500,both,IV/SC,HCPCS descriptor
+Gammagard S/D,immune globulin,Immune globulin (IVIG/SCIG),J1566,500,medical,IV,HCPCS descriptor
+Gamunex-C,immune globulin,Immune globulin (IVIG/SCIG),J1561,500,both,IV/SC,HCPCS descriptor
+Gammaked,immune globulin,Immune globulin (IVIG/SCIG),J1561,500,both,IV/SC,HCPCS descriptor
+Privigen,immune globulin,Immune globulin (IVIG/SCIG),J1459,500,medical,IV,HCPCS descriptor
+Flebogamma,immune globulin,Immune globulin (IVIG/SCIG),J1572,500,medical,IV,HCPCS descriptor
+Octagam,immune globulin,Immune globulin (IVIG/SCIG),J1568,500,medical,IV,HCPCS descriptor
+Panzyga,immune globulin,Immune globulin (IVIG/SCIG),J1576,500,medical,IV,HCPCS descriptor
+Bivigam,immune globulin,Immune globulin (IVIG/SCIG),J1556,500,medical,IV,HCPCS descriptor
+Asceniv,immune globulin,Immune globulin (IVIG/SCIG),J1554,500,medical,IV,HCPCS descriptor
+Gammaplex,immune globulin,Immune globulin (IVIG/SCIG),J1557,500,medical,IV,HCPCS descriptor
+Carimune,immune globulin,Immune globulin (IVIG/SCIG),J1566,500,medical,IV,HCPCS descriptor
+Hizentra,immune globulin,Immune globulin (IVIG/SCIG),J1559,100,pharmacy,SC,HCPCS descriptor
+Cuvitru,immune globulin,Immune globulin (IVIG/SCIG),J1555,100,pharmacy,SC,HCPCS descriptor
+Xembify,immune globulin,Immune globulin (IVIG/SCIG),J1558,100,pharmacy,SC,HCPCS descriptor
+Cutaquig,immune globulin,Immune globulin (IVIG/SCIG),J1551,100,pharmacy,SC,HCPCS descriptor
+HyQvia,immune globulin,Immune globulin (IVIG/SCIG),J1575,100,pharmacy,SC,HCPCS descriptor
+IVIG NOS,immune globulin,Immune globulin (IVIG/SCIG),J1599,500,both,IV/SC,HCPCS descriptor
+Stelara,ustekinumab,Ustekinumab (Stelara),J3357,1,both,SC/IV,HCPCS descriptor
+Stelara IV,ustekinumab,Ustekinumab (Stelara),J3358,1,medical,IV,HCPCS descriptor
+Wezlana,ustekinumab,Ustekinumab (Stelara),J3590,1,pharmacy,SC,biosimilar
+Selarsdi,ustekinumab,Ustekinumab (Stelara),J3590,1,pharmacy,SC,biosimilar
+Entyvio,vedolizumab,Vedolizumab (Entyvio),J3380,1,both,IV/SC,HCPCS descriptor
+Ocrevus,ocrelizumab,Ocrelizumab (Ocrevus),J2350,1,medical,IV,HCPCS descriptor
+Ocrevus Zunovo,ocrelizumab,Ocrelizumab (Ocrevus),J2350,1,pharmacy,SC,brand alias
+Vyvgart,efgartigimod,Efgartigimod (Vyvgart),J9332,2,medical,IV,HCPCS descriptor
+Vyvgart Hytrulo,efgartigimod,Efgartigimod (Vyvgart),J9333,1000,pharmacy,SC,brand alias
+Rystiggo,rozanolixizumab,Rozanolixizumab (Rystiggo),J9356,1,pharmacy,SC,brand alias
+Ultomiris,ravulizumab,Ravulizumab (Ultomiris),J1303,10,medical,IV,HCPCS descriptor
+Soliris,eculizumab,Eculizumab (Soliris),J1300,10,medical,IV,HCPCS descriptor
+Amvuttra,vutrisiran,Vutrisiran (Amvuttra),J0225,1,pharmacy,SC,brand alias
+Onpattro,patisiran,Patisiran (Onpattro),J0222,0.1,medical,IV,HCPCS descriptor
+Tepezza,teprotumumab,Teprotumumab (Tepezza),J3241,10,medical,IV,HCPCS descriptor
+Cutaquig,immune globulin,Immune globulin (IVIG/SCIG),J1551,100,pharmacy,SC,HCPCS descriptor
+Cubicin,daptomycin,Daptomycin (OPAT),J0878,1,both,IV,HCPCS descriptor
+Daptomycin,daptomycin,Daptomycin (OPAT),J0878,1,both,IV,HCPCS descriptor
+Remicade,infliximab,Infliximab,J1745,10,medical,IV,HCPCS descriptor
+Inflectra,infliximab,Infliximab,Q5103,10,medical,IV,HCPCS descriptor
+Avsola,infliximab,Infliximab,Q5121,10,medical,IV,HCPCS descriptor
+Krystexxa,pegloticase,Pegloticase (340B-sensitive),J2507,1,medical,IV,HCPCS descriptor
+Nucala,mepolizumab,Mepolizumab (Nucala),J2182,1,pharmacy,SC,HCPCS descriptor
+Fasenra,benralizumab,Benralizumab (Fasenra),J0517,1,pharmacy,SC,HCPCS descriptor
+Cinqair,reslizumab,Reslizumab (Cinqair),J2786,1,medical,IV,HCPCS descriptor
+Xolair,omalizumab,Omalizumab (Xolair),J2357,5,pharmacy,SC,HCPCS descriptor
+Dupixent,dupilumab,Dupilumab (Dupixent),J3590,1,pharmacy,SC,pharmacy-only
+Tysabri,natalizumab,Natalizumab (Tysabri),J2323,1,medical,IV,HCPCS descriptor
+Briumvi,ublituximab,Ublituximab (Briumvi),J2329,1,medical,IV,HCPCS descriptor
+Simponi Aria,golimumab,Golimumab (Simponi Aria),J1602,1,medical,IV,HCPCS descriptor
+Actemra,tocilizumab,Tocilizumab (Actemra),J3262,1,medical,IV,HCPCS descriptor
+Benlysta,belimumab,Belimumab (Benlysta),J0490,10,both,IV/SC,HCPCS descriptor
+Saphnelo,anifrolumab,Anifrolumab (Saphnelo),J0491,1,medical,IV,HCPCS descriptor
+Uplizna,inebilizumab,Inebilizumab (Uplizna),J1823,1,medical,IV,HCPCS descriptor
+Enspryng,satralizumab,Satralizumab (Enspryng),J2356,1,pharmacy,SC,brand alias
+Radicava,edaravone,Edaravone (Radicava),J1301,1,medical,IV,HCPCS descriptor

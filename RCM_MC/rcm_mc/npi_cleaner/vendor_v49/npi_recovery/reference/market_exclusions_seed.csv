@@ -1,0 +1,9 @@
+molecule_token,rationale,source
+pembrolizumab,"Buy-and-bill oncology delivered in hospital/clinic; essentially absent from home and AIC channel; national spend would dominate every mix chart",Market definition
+keytruda,"Buy-and-bill oncology delivered in hospital/clinic; essentially absent from home and AIC channel; national spend would dominate every mix chart",Market definition
+nivolumab,"Buy-and-bill oncology; out of the home/AIC infusion market",Market definition
+opdivo,"Buy-and-bill oncology; out of the home/AIC infusion market",Market definition
+atezolizumab,"Buy-and-bill oncology; out of the home/AIC infusion market",Market definition
+carboplatin,"Cytotoxic chemotherapy; hospital/clinic oncology, not home/AIC infusion",Market definition
+cisplatin,"Cytotoxic chemotherapy; hospital/clinic oncology, not home/AIC infusion",Market definition
+paclitaxel,"Cytotoxic chemotherapy; hospital/clinic oncology, not home/AIC infusion",Market definition

@@ -2723,6 +2723,175 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
+    # ─────────────────────────── NPI Claims Cleaner (/npi-cleaner) ──────────
+    def _route_npi_cleaner_upload(self, parsed) -> None:
+        """Accept a raw-body claims-file upload and start a cleaning job.
+
+        The page POSTs the file bytes directly (X-Filename header carries the
+        URL-encoded name) — no multipart parsing, matching the vendored
+        webapp's convention. Returns ``{"job_id": ...}`` for the client to
+        poll. The engine is stdlib-only; nothing is written to the DB.
+        """
+        from .npi_cleaner import engine
+
+        raw = self._raw_post_body()
+        if not raw:
+            return self._send_json(
+                {"error": "Empty upload — no file bytes received."},
+                status=HTTPStatus.BAD_REQUEST)
+        raw_name = self.headers.get("X-Filename", "claims.csv")
+        try:
+            name = urllib.parse.unquote(raw_name)
+        except Exception:  # noqa: BLE001
+            name = "claims.csv"
+        qs = urllib.parse.parse_qs(parsed.query)
+        dedupe = (qs.get("dedupe") or ["1"])[0] != "0"
+        enrich = (qs.get("enrich") or ["0"])[0] == "1"
+        deep = (qs.get("deep") or ["0"])[0] == "1"
+        deid = (qs.get("deid") or ["0"])[0] == "1"
+        # Column-mapping overrides arrive as a URL-encoded JSON object in the
+        # X-Overrides header (role -> header). Bad JSON is ignored → auto-detect.
+        overrides = None
+        raw_ov = self.headers.get("X-Overrides")
+        if raw_ov:
+            try:
+                import json as _json
+                parsed_ov = _json.loads(urllib.parse.unquote(raw_ov))
+                if isinstance(parsed_ov, dict):
+                    overrides = {str(k): str(v) for k, v in parsed_ov.items()
+                                 if v}
+            except Exception:  # noqa: BLE001
+                overrides = None
+        job_id = engine.manager().submit(
+            raw, name, drop_duplicates=dedupe, enrich=enrich, deep=deep,
+            overrides=overrides, deid=deid)
+        return self._send_json({"job_id": job_id})
+
+    def _route_npi_cleaner_detect(self) -> None:
+        """Return the detected column→role mapping for the mapping editor."""
+        from .npi_cleaner import engine
+
+        raw = self._raw_post_body()
+        if not raw:
+            return self._send_json(
+                {"error": "Empty upload."}, status=HTTPStatus.BAD_REQUEST)
+        result = engine.detect_columns_preview(raw)
+        if result is None:
+            # Detector unavailable (no pandas) — tell the client to skip the
+            # confirm step and clean on auto-detection.
+            return self._send_json({"available": False})
+        result["available"] = True
+        return self._send_json(result)
+
+    def _route_npi_cleaner_status(self, job_id: str) -> None:
+        """Return JSON progress (and the scorecard once done) for a job."""
+        from .npi_cleaner import engine
+
+        job = engine.manager().get(job_id)
+        if job is None:
+            return self._send_json(
+                {"error": "Job not found (server may have restarted)."},
+                status=HTTPStatus.NOT_FOUND)
+        return self._send_json(job.status_dict())
+
+    def _route_npi_cleaner_download(self, job_id: str, qs: dict) -> None:
+        """Stream the cleaned CSV, or the .xlsx workbook when ?fmt=xlsx."""
+        from .npi_cleaner import engine
+
+        job = engine.manager().get(job_id)
+        if job is None or job.result is None:
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        fmt = (qs.get("fmt") or [""])[0]
+        if fmt == "xlsx":
+            src_path = job.result.workbook_path
+            fname = job.result.workbook_name
+            ctype = ("application/vnd.openxmlformats-officedocument."
+                     "spreadsheetml.sheet")
+        elif fmt == "companion":
+            src_path = job.result.companion_path
+            fname = job.result.companion_name
+            ctype = "text/csv; charset=utf-8"
+        elif fmt == "deep":
+            src_path = job.result.deep_workbook_path
+            fname = job.result.deep_workbook_name
+            ctype = ("application/vnd.openxmlformats-officedocument."
+                     "spreadsheetml.sheet")
+        else:
+            src_path = job.result.out_path
+            fname = job.result.out_name
+            ctype = "text/csv; charset=utf-8"
+        if not src_path:
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        try:
+            with open(src_path, "rb") as fh:
+                data = fh.read()
+        except OSError:
+            self.send_error(HTTPStatus.NOT_FOUND)
+            return
+        safe_name = fname.replace('"', "")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header(
+            "Content-Disposition", f'attachment; filename="{safe_name}"')
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _route_npi_cleaner_analyze(self, job_id: str) -> None:
+        """Render the pivot/analysis page for a finished cleaning job."""
+        from .npi_cleaner import engine
+        from .ui.npi_analysis_page import render_npi_analysis
+
+        job = engine.manager().get(job_id)
+        ok = bool(job and job.result and job.result.out_path)
+        return self._send_html(render_npi_analysis(
+            job_id, available=ok,
+            src_name=(job.result.out_name if ok else "")))
+
+    def _route_npi_cleaner_data(self, job_id: str) -> None:
+        """Return the cleaned rows as JSON for the client-side pivot (capped)."""
+        import csv as _csv
+        from .npi_cleaner import engine
+
+        job = engine.manager().get(job_id)
+        if job is None or job.result is None or not job.result.out_path:
+            return self._send_json(
+                {"error": "Job not found (server may have restarted)."},
+                status=HTTPStatus.NOT_FOUND)
+        cap = 20000
+        try:
+            with open(job.result.out_path, newline="", encoding="utf-8") as fh:
+                reader = _csv.reader(fh)
+                rows = list(reader)
+        except OSError:
+            return self._send_json({"error": "cleaned data unavailable"},
+                                   status=HTTPStatus.NOT_FOUND)
+        if not rows:
+            return self._send_json({"columns": [], "rows": [], "truncated": False})
+        columns = rows[0]
+        body = rows[1:cap + 1]
+        return self._send_json({
+            "columns": columns, "rows": body,
+            "truncated": len(rows) - 1 > cap,
+            "total_rows": len(rows) - 1,
+        })
+
+    def _route_npi_cleaner_sample(self) -> None:
+        """Serve a small illustrative claims CSV so a partner can try the tool
+        in one click without hunting for a file."""
+        from .npi_cleaner import engine
+
+        data = engine.sample_csv().encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/csv; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header(
+            "Content-Disposition", 'attachment; filename="sample_claims.csv"')
+        self.end_headers()
+        self.wfile.write(data)
+
     def _send_file(self, abs_path: str, *, cache_control: Optional[str] = None) -> None:
         """Serve a static file from ``self.config.outdir``. Guarded against
         path-traversal by requiring the resolved path to live inside outdir.
@@ -3535,6 +3704,30 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.portfolio_risk_scan_page import render_portfolio_risk_scan
             return self._send_html(render_portfolio_risk_scan(
                 self.config.db_path))
+        if path == "/npi-cleaner":
+            # NPI Claims Cleaner (TOOLS). Drag-and-drop data-hygiene utility:
+            # Luhn-validate NPIs, de-dupe rows, trim whitespace, flag missing
+            # billing NPIs, hand back a cleaned CSV. Stdlib-only engine
+            # (rcm_mc/npi_cleaner/engine.py). Exempt from the
+            # DealAnalysisPacket invariant like /import — a stateless utility,
+            # not analytical output about a deal.
+            from .ui.npi_cleaner_page import render_npi_cleaner
+            return self._send_html(render_npi_cleaner())
+        if path.startswith("/npi-cleaner/status/"):
+            return self._route_npi_cleaner_status(
+                path[len("/npi-cleaner/status/"):].strip("/"))
+        if path.startswith("/npi-cleaner/download/"):
+            return self._route_npi_cleaner_download(
+                path[len("/npi-cleaner/download/"):].strip("/"),
+                urllib.parse.parse_qs(parsed.query))
+        if path == "/npi-cleaner/sample":
+            return self._route_npi_cleaner_sample()
+        if path.startswith("/npi-cleaner/analyze/"):
+            return self._route_npi_cleaner_analyze(
+                path[len("/npi-cleaner/analyze/"):].strip("/"))
+        if path.startswith("/npi-cleaner/data/"):
+            return self._route_npi_cleaner_data(
+                path[len("/npi-cleaner/data/"):].strip("/"))
         if path == "/import":
             from .ui.quick_import import render_quick_import
             _imp_qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -13711,6 +13904,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             path in self._CSRF_EXEMPT_POSTS
             or path.startswith("/hospital/")
             or path.startswith("/quick-import")
+            or path.startswith("/npi-cleaner")
             or path.startswith("/new-deal")
             or path.startswith("/data-room/")
             or path.startswith("/pipeline/")
@@ -13752,6 +13946,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         # only that context — no mutation, no diligence model, no RAG.
         if path == "/api/guide/ask":
             return self._route_guide_ask()
+        if path == "/npi-cleaner/detect":
+            return self._route_npi_cleaner_detect()
+        if path == "/npi-cleaner/upload":
+            return self._route_npi_cleaner_upload(parsed)
         if path == "/diligence/snapshot":
             return self._route_diligence_snapshot_post()
         if path == "/rxnorm/seed":

@@ -1,0 +1,15 @@
+"""npi_recovery — recover missing billing-provider NPIs in a commercial claims
+panel using live CMS + NPPES public data.
+
+Public entry points:
+    run_pipeline(input_path, ...) -> Result   # the whole pipeline (Steps 0-8)
+    write_report(result, out_path)            # render the multi-tab workbook
+"""
+
+from .pipeline import Result, run_pipeline
+from .report import write_report
+from .entity import make_crosswalk, hhi_entity_vs_raw
+
+__all__ = ["run_pipeline", "write_report", "Result",
+           "make_crosswalk", "hhi_entity_vs_raw"]
+__version__ = "49.0.0"
