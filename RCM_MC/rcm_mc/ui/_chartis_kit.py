@@ -260,6 +260,7 @@ _SUB_NAV = {
     "diligence": [
         {"label": "Deal Profile",       "href": "/diligence/deal"},
         {"label": "CDD Hub",            "href": "/cdd"},
+        {"label": "CDD Tools",          "href": "/cdd/tools"},
         {"label": "Ingestion",          "href": "/diligence/ingest"},
         {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
         {"label": "CMS X-Ray",          "href": "/diligence/xray"},

@@ -6996,6 +6996,25 @@ class RCMHandler(BaseHTTPRequestHandler):
             # mapped onto the desk's surfaces.
             from .ui.cdd_hub_page import render_cdd_hub
             return self._send_html(render_cdd_hub())
+        if path == "/cdd/tools.csv":
+            from .ui.cdd_tools_page import cdd_tools_index_csv
+            return self._send_text(
+                cdd_tools_index_csv(),
+                content_type="text/csv; charset=utf-8")
+        if path == "/api/cdd/tools":
+            # Machine-readable catalog twin of /cdd/tools.
+            from .ui.cdd_tools_page import cdd_tools_catalog
+            return self._send_json({"tools": cdd_tools_catalog()})
+        if path.startswith("/cdd/tools/"):
+            # One tool's demo exhibit drilled down: rendered for the partner
+            # (default) or internal (?internal=1) audience. The exact
+            # /cdd/tools index (render_cdd_tools) is handled above.
+            from .ui.cdd_tools_page import render_cdd_tool_detail
+            _ct_fid = urllib.parse.unquote(path[len("/cdd/tools/"):]).strip("/")
+            _ct_qs = urllib.parse.parse_qs(parsed.query)
+            _ct_qp = {k: v[0] for k, v in _ct_qs.items() if v}
+            return self._send_html(
+                render_cdd_tool_detail(_ct_fid, _ct_qp))
         if path == "/payer-system":
             # US payer-system exhibits deck — MA bid/benchmark/rebate, star
             # QBP sensitivity, Part D IRA redesign, and the ACA APTC cliff
