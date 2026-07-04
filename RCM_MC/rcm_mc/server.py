@@ -2809,6 +2809,47 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         fmt = (qs.get("fmt") or [""])[0]
+        if fmt == "worklist":
+            # Per-rule worklist: just the flagged rows, as an actionable CSV.
+            rule = (qs.get("rule") or [""])[0]
+            idxs = set(job.result.flag_rows.get(rule) or [])
+            if not idxs or not job.result.out_path:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            import csv as _csv
+            import io as _io
+            buf = _io.StringIO()
+            w = _csv.writer(buf)
+            try:
+                with open(job.result.out_path, encoding="utf-8") as fh:
+                    r = _csv.reader(fh)
+                    hdr = next(r, None)
+                    if hdr:
+                        w.writerow(["_row"] + hdr)
+                    for i, row in enumerate(r, start=1):
+                        if i in idxs:
+                            w.writerow([i] + row)
+            except OSError:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            data = buf.getvalue().encode("utf-8")
+            safe_rule = "".join(c for c in rule if c.isalnum() or c == "-")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             f'attachment; filename="worklist_{safe_rule}.csv"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if fmt == "exec":
+            # Executive one-pager (self-contained printable HTML).
+            from datetime import datetime as _edt, timezone as _etz
+            from .npi_cleaner.exec_report import build_exec_report
+            html_doc = build_exec_report(
+                job.result.as_scorecard(), job.name,
+                _edt.now(_etz.utc).strftime("%Y-%m-%d %H:%M UTC"))
+            return self._send_html(html_doc)
         if fmt == "xlsx":
             src_path = job.result.workbook_path
             fname = job.result.workbook_name
@@ -3732,6 +3773,21 @@ class RCMHandler(BaseHTTPRequestHandler):
                 urllib.parse.parse_qs(parsed.query))
         if path == "/npi-cleaner/sample":
             return self._route_npi_cleaner_sample()
+        if path == "/npi-cleaner/history":
+            from .ui.npi_history_page import render_npi_history
+            return self._send_html(render_npi_history())
+        if path == "/npi-cleaner/api/history":
+            from .npi_cleaner import history as _nc_history
+            return self._send_json({"runs": _nc_history.list_runs(50)})
+        if path == "/npi-cleaner/api/history/compare":
+            from .npi_cleaner import history as _nc_history
+            _cq = urllib.parse.parse_qs(parsed.query)
+            _cmp = _nc_history.compare_runs(
+                (_cq.get("a") or [""])[0], (_cq.get("b") or [""])[0])
+            return self._send_json(_cmp or {"error": "run not found"})
+        if path == "/npi-cleaner/api/rules":
+            from .npi_cleaner import rules as _nc_rules
+            return self._send_json({"rules": _nc_rules.catalog()})
         if path.startswith("/npi-cleaner/analyze/"):
             return self._route_npi_cleaner_analyze(
                 path[len("/npi-cleaner/analyze/"):].strip("/"))

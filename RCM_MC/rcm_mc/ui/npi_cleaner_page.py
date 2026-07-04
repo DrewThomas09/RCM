@@ -302,8 +302,12 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
       <div style="margin-top:4px;margin-bottom:14px">
         <a class="npi-dl" id="npi-analyze" href="#"
            style="background:var(--ink,#11201c)">📊 Open pivot analysis →</a>
-        <span class="npi-muted" style="margin-left:10px">Build pivot tables and
-          charts from the cleaned data — like a mini Tableau.</span>
+        <a class="npi-dl npi-dl-alt" id="npi-exec" href="#" target="_blank"
+           style="margin-left:10px">🖨 Executive report</a>
+        <a class="npi-dl npi-dl-alt" href="/npi-cleaner/history"
+           style="margin-left:10px">📈 Run history</a>
+        <span class="npi-muted" style="margin-left:10px">Pivot analysis, a
+          print-ready DQ one-pager, and quality tracked across runs.</span>
       </div>
       <div style="margin-top:8px">
         <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
@@ -437,8 +441,9 @@ _EXTRA_JS = r"""
     if(!rows){ rows='<tr><td colspan="7" style="color:var(--ink-2)">'+
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
+    (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
     renderRepairs(s.repairs, s.repairs_total);
-    renderSanity(s.sanity);
+    renderSanity(s.sanity, s.worklists, s.download);
     renderQuality(s);
     $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
 
@@ -481,7 +486,9 @@ _EXTRA_JS = r"""
     } else { lbtn.style.display="none"; }
 
     if(currentJobId){ $("npi-analyze").setAttribute("href",
-      "/npi-cleaner/analyze/"+currentJobId); }
+      "/npi-cleaner/analyze/"+currentJobId);
+      $("npi-exec").setAttribute("href",
+      "/npi-cleaner/download/"+currentJobId+"?fmt=exec"); }
 
     var rn=$("npi-recovered-note");
     if(s.recovered_written>0){
@@ -614,17 +621,40 @@ _EXTRA_JS = r"""
     "bilateral-units":"Bilateral modifier 50 with more than 1 unit (MUE guidance)",
     "conflicting-amount-claim":"Same provider · patient · date · code billed at different amounts (re-bill signal)",
     "carc-invalid":"Invalid denial/adjustment reason code (not a CARC shape)"};
-  function renderSanity(sanity){
+  var RULE_INFO={};
+  function sevChip(sev){
+    var c=sev==="critical"?"#b5321e":(sev==="warning"?"#b8732a":"#5b6770");
+    return '<span style="display:inline-block;font-size:10px;font-weight:700;'+
+      'text-transform:uppercase;letter-spacing:.05em;color:#fff;background:'+c+
+      ';border-radius:4px;padding:1px 6px;margin-right:6px;vertical-align:middle">'+
+      sev+'</span>';
+  }
+  function renderSanity(sanity, worklists, dl){
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
     if(!keys.length){ box.innerHTML=""; return; }
-    keys.sort(function(a,b){return sanity[b]-sanity[a];});
+    var rank={critical:0,warning:1,info:2};
+    keys.sort(function(a,b){
+      var ra=rank[(RULE_INFO[a]||{}).severity]!=null?rank[(RULE_INFO[a]||{}).severity]:3,
+          rb=rank[(RULE_INFO[b]||{}).severity]!=null?rank[(RULE_INFO[b]||{}).severity]:3;
+      return ra!==rb ? ra-rb : sanity[b]-sanity[a];
+    });
     var html='<div class="ck-section-header" style="margin-top:20px">'+
       '<h3 style="margin:0">Data sanity flags</h3></div>'+
-      '<div class="npi-muted">Impossible cross-field values found (reported, not '+
-      'auto-changed — verify at the source).</div>';
+      '<div class="npi-muted">Findings are reported, never auto-changed — '+
+      'each has a per-rule worklist download of just the flagged rows.</div>';
     keys.forEach(function(k){
-      html+=flagRow(SANITY_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', sanity[k]);
+      var info=RULE_INFO[k]||{};
+      var label=(info.title||SANITY_LABELS[k]||k);
+      var sub=sevChip(info.severity||"info")+'<span class="npi-pill">'+k+'</span>'+
+        (info.remediation?('<br><span class="npi-muted">'+esc(info.remediation)+
+        '</span>'):'');
+      if(worklists && worklists[k] && dl){
+        sub+=' <a href="'+dl+'?fmt=worklist&rule='+encodeURIComponent(k)+
+          '" download style="font-size:11.5px">⤓ worklist ('+
+          fmt(worklists[k])+' rows)</a>';
+      }
+      html+=flagRow(label, sub, sanity[k]);
     });
     box.innerHTML=html;
   }

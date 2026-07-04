@@ -90,6 +90,12 @@ _DISCH_HINTS = ("dischargedate", "dischargedt", "dischdate")
 _PAYER_HINTS = ("payername", "payer", "payor", "insurancename",
                 "insurancecompany", "insurance", "carrier", "healthplan")
 
+_TOB_HINTS = ("typeofbill", "tobcode", "billtype", "tob")
+_DISCH_STATUS_HINTS = ("dischargestatus", "patientdischargestatus",
+                       "dischargedisposition", "patientstatus")
+_ADMIT_TYPE_HINTS = ("admissiontype", "admittype")
+_SUBMIT_HINTS = ("receiveddate", "submissiondate", "submitdate",
+                 "filedate", "receiptdate", "datereceived")
 # Claim adjustment / denial reason column (CARC). "denial" last — broadest.
 _CARC_HINTS = ("carc", "denialcode", "denialreason", "adjustmentreason",
                "adjreason", "reasoncode", "denial")
@@ -723,6 +729,15 @@ def _row_sanity_flags(row, allowed_i, billed_i, paid_i, units_i) -> List[str]:
         flags.append("fractional-units")
     return flags
 
+def _rule_catalog() -> List[Dict[str, str]]:
+    """Rule registry for the UI/report — lazy so engine import stays cheap."""
+    try:
+        from . import rules as _rules
+        return _rules.catalog()
+    except Exception:  # noqa: BLE001
+        return []
+
+
 ProgressCb = Callable[[str, float], None]
 
 
@@ -807,6 +822,9 @@ class CleanResult:
     column_fill: List[Dict[str, object]] = field(default_factory=list)
     # Top denial / adjustment reason codes (revenue-cycle visibility).
     denials: Optional[Dict[str, object]] = None
+    # Worklists: rule → 1-based OUTPUT row indices that fired it (capped per
+    # rule) so flagged rows can be exported as actionable per-rule CSVs.
+    flag_rows: Dict[str, List[int]] = field(default_factory=dict)
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -932,6 +950,8 @@ class CleanResult:
             "changelog_truncated": self.changelog_truncated,
             "fill_rates": self.column_fill,
             "denials": self.denials,
+            "worklists": {k: len(v) for k, v in self.flag_rows.items()},
+            "rule_catalog": _rule_catalog(),
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
             "npi_cells": cells,
@@ -1201,6 +1221,19 @@ def clean_bytes(
     disch_i = _detect_one(headers, _DISCH_HINTS)
     payer_i = _detect_one(headers, _PAYER_HINTS)
     carc_i = _detect_one(headers, _CARC_HINTS)
+    tob_i = _detect_one(headers, _TOB_HINTS)
+    dstat_i = _detect_one(headers, _DISCH_STATUS_HINTS)
+    # "DischargeStatus" contains the substring "charge" — without this it
+    # would be routed to the money cleaner ("01" → "1.00") and every status
+    # false-flagged. Same class of bug as DischargeDate vs the date role.
+    if dstat_i is not None:
+        money_set.discard(dstat_i)
+    atype_i = _detect_one(headers, _ADMIT_TYPE_HINTS)
+    submit_i = _detect_one(headers, _SUBMIT_HINTS)
+    try:
+        from . import refdata as _rd
+    except Exception:  # noqa: BLE001 — refdata missing → those checks off
+        _rd = None
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).date()
     # Ten-year staleness horizon for service dates — a DOS this old in a
@@ -1285,6 +1318,8 @@ def clean_bytes(
     _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
     _charge_i = billed_i if billed_i is not None else allowed_i
     _CHANGELOG_CAP = 20_000                       # keep the audit log bounded
+    _WORKLIST_CAP = 500                           # rows captured per rule
+    _wl_open = True                               # stop copying once all full
 
     cb("Cleaning rows", 0.30)
     cleaned: List[List[str]] = []
@@ -1360,6 +1395,9 @@ def clean_bytes(
                     res.deid_cells += 1
                 val = masked
             new_row.append(val)
+        # Snapshot for worklist row-capture: any rule whose count rises
+        # during this row's checks fired on this row.
+        _sanity_pre = dict(res.sanity) if _wl_open else None
         # Cross-field sanity flags (report-only) on the cleaned row.
         for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i, units_i):
             res.sanity[f] = res.sanity.get(f, 0) + 1
@@ -1445,6 +1483,44 @@ def clean_bytes(
                                for p in _cparts):
                 res.sanity["carc-invalid"] = \
                     res.sanity.get("carc-invalid", 0) + 1
+        # Institutional-claim domains (UB-04): Type of Bill, discharge
+        # status, admission type — clearinghouse front-door edits.
+        if _rd is not None:
+            if (tob_i is not None and tob_i < len(new_row)
+                    and _rd.tob_invalid(new_row[tob_i])):
+                res.sanity["tob-malformed"] = \
+                    res.sanity.get("tob-malformed", 0) + 1
+            if (dstat_i is not None and dstat_i < len(new_row)
+                    and _rd.discharge_status_invalid(new_row[dstat_i])):
+                res.sanity["discharge-status-invalid"] = \
+                    res.sanity.get("discharge-status-invalid", 0) + 1
+            if (atype_i is not None and atype_i < len(new_row)
+                    and _rd.admission_type_invalid(new_row[atype_i])):
+                res.sanity["admission-type-invalid"] = \
+                    res.sanity.get("admission-type-invalid", 0) + 1
+            # Unknown (but well-formed) modifiers — typo signal.
+            if mod_set:
+                for ci in mod_set:
+                    if ci < len(new_row) and new_row[ci] and any(
+                            _rd.modifier_unknown(m)
+                            for m in new_row[ci].split(",")):
+                        res.sanity["modifier-unknown"] = \
+                            res.sanity.get("modifier-unknown", 0) + 1
+                        break
+        # Timely-filing risk: >365 days between service and received dates.
+        if (submit_i is not None and dos_i is not None
+                and submit_i < len(new_row) and dos_i < len(new_row)):
+            _sv, _rv = new_row[dos_i], new_row[submit_i]
+            if _DATE_ISO_RE.match(_sv) and _DATE_ISO_RE.match(_rv):
+                try:
+                    from datetime import date as _d2
+                    _delta = (_d2.fromisoformat(_rv[:10])
+                              - _d2.fromisoformat(_sv[:10])).days
+                    if _delta > 365:
+                        res.sanity["timely-filing-risk"] = \
+                            res.sanity.get("timely-filing-risk", 0) + 1
+                except ValueError:
+                    pass
         # Chronology impossibilities. Normalized ISO dates compare correctly
         # as strings, so no re-parsing per row.
         if (dob_i is not None and dos_i is not None
@@ -1493,6 +1569,18 @@ def clean_bytes(
             if _amt is not None and _code:
                 _code_charges.setdefault(_code, []).append(_amt)
         cleaned.append(new_row)
+        # Worklist capture: rules that fired this row → this OUTPUT row index.
+        if _wl_open and _sanity_pre is not None:
+            _all_full = True
+            for _rk, _rv2 in res.sanity.items():
+                if _rv2 > _sanity_pre.get(_rk, 0):
+                    _lst = res.flag_rows.setdefault(_rk, [])
+                    if len(_lst) < _WORKLIST_CAP:
+                        _lst.append(len(cleaned))
+                if len(res.flag_rows.get(_rk, ())) < _WORKLIST_CAP:
+                    _all_full = False
+            if res.flag_rows and _all_full:
+                _wl_open = False
         if ri % 500 == 0:
             cb("Cleaning rows", 0.30 + 0.55 * (ri / total))
 
@@ -1701,6 +1789,13 @@ def clean_bytes(
         except Exception as exc:  # noqa: BLE001
             res.deep = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
+    # Longitudinal observability: aggregate summary only, never PHI, and
+    # guarded so history storage can never fail the cleaning job.
+    try:
+        from . import history as _history
+        _history.record_run(res.as_scorecard(), src_name)
+    except Exception:  # noqa: BLE001
+        pass
     cb("Done", 1.0)
     return res
 

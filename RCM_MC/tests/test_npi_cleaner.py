@@ -530,6 +530,128 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(top.get("97"), 1)
         self.assertEqual(top.get("B7"), 1)
 
+    def test_refdata_catalogs(self):
+        from rcm_mc.npi_cleaner import refdata as rd
+        self.assertEqual(rd.pos_name("11"), "Office")
+        self.assertEqual(rd.pos_name("1"), "Pharmacy")     # 1-digit keying
+        self.assertIn("Blood", rd.revenue_category("0380") or "")
+        self.assertIsNotNone(rd.carc_description("197"))
+        self.assertIsNotNone(rd.rarc_description("N115"))
+        self.assertEqual(rd.modifier_meaning("JW"),
+                         "Drug amount discarded / not administered")
+        self.assertFalse(rd.tob_invalid("0111"))   # hospital, final claim
+        self.assertFalse(rd.tob_invalid("131"))    # 3-digit keying
+        self.assertTrue(rd.tob_invalid("999"))     # facility type 9 invalid
+        self.assertTrue(rd.tob_invalid("11"))      # too short
+        self.assertFalse(rd.discharge_status_invalid("01"))
+        self.assertFalse(rd.discharge_status_invalid("1"))  # zero-stripped
+        self.assertTrue(rd.discharge_status_invalid("XX"))
+        self.assertTrue(rd.modifier_unknown("ZQ"))
+        self.assertFalse(rd.modifier_unknown("25"))
+
+    def test_rule_registry(self):
+        from rcm_mc.npi_cleaner import rules
+        cat = rules.catalog()
+        self.assertGreater(len(cat), 50)
+        ids = {r["id"] for r in cat}
+        # Every engine sanity/repair key that exists today must be described.
+        for must in ("hcpcs-malformed", "money-unparseable", "charge-outlier",
+                     "revcode-pad", "tob-malformed", "timely-filing-risk",
+                     "service-before-birth", "conflicting-amount-claim"):
+            self.assertIn(must, ids)
+        d = rules.describe("pos-invalid")
+        self.assertEqual(d["severity"], "critical")
+        self.assertTrue(d["remediation"])
+        # Unknown rules degrade gracefully (renderer never breaks).
+        self.assertEqual(rules.describe("brand-new-rule")["title"],
+                         "brand-new-rule")
+
+    def test_institutional_domain_flags(self):
+        data = (
+            "ClaimID,TypeOfBill,DischargeStatus,AdmissionType\n"
+            "1,0111,01,1\n"       # all valid
+            "2,999,XX,7\n"        # all invalid
+        ).encode()
+        res = engine.clean_bytes(data, "inst.csv")
+        self.assertEqual(res.sanity.get("tob-malformed"), 1)
+        self.assertEqual(res.sanity.get("discharge-status-invalid"), 1)
+        self.assertEqual(res.sanity.get("admission-type-invalid"), 1)
+
+    def test_discharge_status_not_money(self):
+        # "DischargeStatus" contains "charge" — must not be routed to the
+        # money cleaner ("01" → "1.00") and false-flagged. Sibling of the
+        # DischargeDate/date-role regression.
+        data = ("ClaimID,DischargeStatus\n1,01\n2,30\n").encode()
+        res = engine.clean_bytes(data, "ds.csv")
+        self.assertNotIn("discharge-status-invalid", res.sanity)
+        self.assertNotIn("money-unparseable", res.sanity)
+        with open(res.out_path, encoding="utf-8") as fh:
+            self.assertIn("01", fh.read())
+
+    def test_modifier_unknown_and_timely_filing(self):
+        data = (
+            "ClaimID,Modifier,Units,DateOfService,ReceivedDate\n"
+            "1,ZQ,1,2024-01-01,2024-02-01\n"     # unknown modifier
+            "2,25,1,2024-01-01,2025-06-01\n"     # 517 days → filing risk
+            "3,50,1,2024-01-01,2024-06-01\n"     # fine
+        ).encode()
+        res = engine.clean_bytes(data, "mt.csv")
+        self.assertEqual(res.sanity.get("modifier-unknown"), 1)
+        self.assertEqual(res.sanity.get("timely-filing-risk"), 1)
+
+    def test_worklist_row_capture(self):
+        data = ("ClaimID,HCPCS\n"
+                "1,99213\n2,BAD!!\n3,99214\n4,WRONG\n").encode()
+        res = engine.clean_bytes(data, "wl.csv")
+        # Output rows 2 and 4 carry the malformed codes.
+        self.assertEqual(res.flag_rows.get("hcpcs-malformed"), [2, 4])
+        sc = res.as_scorecard()
+        self.assertEqual(sc["worklists"]["hcpcs-malformed"], 2)
+        self.assertEqual(len(sc["rule_catalog"]), 58)
+
+    def test_run_history_record_and_compare(self):
+        from rcm_mc.npi_cleaner import history
+        good = ("ClaimID,BillingNPI\n" f"1,{GOOD_B}\n").encode()
+        bad = ("ClaimID,BillingNPI,HCPCS\n1,123,BAD!!\n").encode()
+        r1 = engine.clean_bytes(good, "hist_good.csv")
+        r2 = engine.clean_bytes(bad, "hist_bad.csv")
+        runs = history.list_runs(10)
+        names = [r["file_name"] for r in runs]
+        self.assertIn("hist_good.csv", names)
+        self.assertIn("hist_bad.csv", names)
+        a = next(r for r in runs if r["file_name"] == "hist_good.csv")
+        b = next(r for r in runs if r["file_name"] == "hist_bad.csv")
+        cmp_ = history.compare_runs(a["run_id"], b["run_id"])
+        self.assertIsNotNone(cmp_)
+        self.assertLess(cmp_["score_delta"], 0)   # bad file scores lower
+        rules_moved = {d["rule"] for d in cmp_["rule_delta"]}
+        self.assertIn("hcpcs-malformed", rules_moved)
+
+    def test_exec_report_builds(self):
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        res = engine.clean_bytes(engine.sample_csv().encode(), "s.csv")
+        html_doc = build_exec_report(res.as_scorecard(), "s.csv",
+                                     "2026-01-01 00:00 UTC")
+        self.assertIn("Claims data-quality report", html_doc)
+        self.assertIn("Quality dimensions", html_doc)
+        self.assertIn("Findings", html_doc)
+
+    def test_cli_batch_mode(self):
+        from rcm_mc.npi_cleaner.cli import main as cli_main
+        with tempfile.TemporaryDirectory() as tmp:
+            srcp = os.path.join(tmp, "in.csv")
+            with open(srcp, "w", encoding="utf-8") as fh:
+                fh.write(f"ClaimID,BillingNPI\n1, {GOOD_B} \n")
+            rc = cli_main([srcp, "--outdir", tmp])
+            self.assertEqual(rc, 0)
+            self.assertTrue(os.path.exists(
+                os.path.join(tmp, "in_cleaned.csv")))
+            # Quality gate: a clean file passes 90, nothing passes 101.
+            self.assertEqual(cli_main([srcp, "--outdir", tmp,
+                                       "--min-score", "90"]), 0)
+            self.assertEqual(cli_main([srcp, "--outdir", tmp,
+                                       "--min-score", "101"]), 1)
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
@@ -1024,6 +1146,57 @@ class TestNpiCleanerHttp(unittest.TestCase):
                     body = r.read().decode()
                 self.assertIn("before", body.splitlines()[0])
                 self.assertIn("1250.50", body)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_worklist_exec_history_rules_routes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                csv_b = ("ClaimID,HCPCS\n1,99213\n2,BAD!!\n").encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "w.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                # Worklist: just the flagged row, with a _row column.
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                    "?fmt=worklist&rule=hcpcs-malformed"
+                ) as r:
+                    wl = r.read().decode()
+                self.assertIn("_row", wl.splitlines()[0])
+                self.assertIn("BAD!!", wl)
+                self.assertNotIn("99213", wl)      # unflagged row excluded
+                # Executive report renders.
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                    "?fmt=exec"
+                ) as r:
+                    self.assertIn("Claims data-quality report",
+                                  r.read().decode())
+                # History page + API + rules API.
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/history") as r:
+                    self.assertIn("Quality-score trend", r.read().decode())
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/history") as r:
+                    runs = json.loads(r.read().decode())["runs"]
+                self.assertTrue(any(x["file_name"] == "w.csv" for x in runs))
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/rules") as r:
+                    self.assertGreater(
+                        len(json.loads(r.read().decode())["rules"]), 50)
             finally:
                 server.shutdown()
                 server.server_close()

@@ -1786,6 +1786,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     if first == "taxonomy":
         from .taxonomy.cli import main as taxonomy_main
         return taxonomy_main(argv[1:], prog="rcm-mc taxonomy")
+    if first == "npi-clean":
+        from .npi_cleaner.cli import main as npi_clean_main
+        return npi_clean_main(argv[1:], prog="rcm-mc npi-clean")
 
     # Back-compat: flat-form flag at position 1 → treat as `run`.
     # (Nearly every existing script uses this form.)
