@@ -34,6 +34,11 @@ _SERVER = _ROOT / "rcm_mc" / "server.py"
 
 _TIER_USE = {"green": 3.0, "navy": 2.0, "data_required": 1.5, "yellow": 1.0, "red": 0.0}
 _CORE_SECTIONS = {"source", "diligence", "portfolio", "pipeline"}
+# Nav sections that own a /best/<section> catalog + a sub-nav bar. A page the
+# ranker can place into one of these is browsable; anything else stays in
+# `uncategorized`, which no catalog renders. Mirrors _CORPUS_NAV keys.
+_NAV_SECTIONS = {"home", "source", "pipeline", "diligence",
+                 "library", "research", "portfolio"}
 # Shared chrome/kit modules are not "pages" — exclude so they don't rank.
 _EXCLUDE_MODULES = {"_chartis_kit", "_ui_kit", "_web_components", "brand",
                     "_html_polish", "_workbook_style", "csv_to_html",
@@ -175,6 +180,18 @@ def build_rankings():
         from rcm_mc.ui._chartis_kit import _resolve_sub_section
     except Exception:  # noqa: BLE001
         _resolve_sub_section = lambda r: "uncategorized"  # noqa: E731
+    # The hand-curated _SUB_SECTION_MAP doesn't list every route, so
+    # _resolve_sub_section returns None for ~200 pages → they'd land in
+    # `uncategorized`, which NO /best/<section> renders (the section-resolution
+    # gap; docs/GHOST_PAGE_MIGRATION_PLAN.md Wave 1). Fall back to
+    # server._heuristic_section, the URL/name classifier that already places
+    # most of them. Keep only its nav-section verdicts so internal/admin/
+    # download routes (it returns "more"/"other") stay out of the catalogs.
+    try:
+        from rcm_mc.server import RCMHandler
+        _heuristic = RCMHandler._heuristic_section
+    except Exception:  # noqa: BLE001
+        _heuristic = lambda r: ""  # noqa: E731
 
     rmap = _route_module_map()
     rows = []
@@ -185,7 +202,10 @@ def build_rankings():
         if loc == 0:
             continue
         tier = classify_surface(route).get("tier", "yellow")
-        section = _resolve_sub_section(route) or "uncategorized"
+        section = _resolve_sub_section(route)
+        if not section or section == "uncategorized":
+            h = _heuristic(route)
+            section = h if h in _NAV_SECTIONS else "uncategorized"
         tested = _has_test(stem)
         effort = _effort_score(loc, tested)
         useful = _usefulness_score(tier, section, src_purpose, real)

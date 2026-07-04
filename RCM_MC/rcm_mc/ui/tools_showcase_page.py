@@ -95,13 +95,32 @@ def _row(r: Dict) -> str:
     )
 
 
-def _section(key: str, label: str, rows: List[Dict]) -> str:
+def _section(key: str, label: str, rows: List[Dict],
+             seen_labels: "set | None" = None) -> str:
     # Ranked order (best-first), but the score itself is never shown.
     # curate_rows drops internal routes, sentinel "All X →" rows, and
     # alias duplicates — a partner-facing catalog shows each real
     # destination exactly once (see _surface_visibility).
     from ._surface_visibility import curate_rows
     rows = curate_rows(sorted(rows, key=lambda r: -r.get("total", 0.0)))
+    if seen_labels is not None:
+        # Global de-dup across workspaces: curate_rows only de-dups WITHIN a
+        # section, but a destination can live in two (e.g. "Benchmarks" in
+        # both Diligence and Library; "Exit Timing" once Wave 2 surfaced the
+        # bare /exit-timing alongside /diligence/exit-timing). Carry a shared
+        # label set so the first workspace to show a label keeps it — the
+        # _WORKSPACES order puts the canonical/flagship section first.
+        kept = []
+        for r in rows:
+            lab = str(r.get("label", "")).strip().lower()
+            if lab and lab in seen_labels:
+                continue
+            if lab:
+                seen_labels.add(lab)
+            kept.append(r)
+        rows = kept
+    if not rows:
+        return ""  # emptied by global de-dup — don't render a bare header
     body = "".join(_row(r) for r in rows)
     return (
         f'<section class="tx-sec"><div class="tx-sec-head">'
@@ -161,10 +180,13 @@ def render_tools_showcase(total_surfaces: int = 0) -> str:
     )
 
     sections = []
+    seen_labels: set = set()
     for key, label in _WORKSPACES:
         rows = ranks.get(key, [])
         if rows:
-            sections.append(_section(key, label, rows))
+            sec = _section(key, label, rows, seen_labels)
+            if sec:
+                sections.append(sec)
 
     all_bar = (
         '<div class="tx-allbar"><span>Looking for an admin page or a rarely-used '
