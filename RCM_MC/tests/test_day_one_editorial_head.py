@@ -102,7 +102,9 @@ class DayOneEditorialHeadTests(unittest.TestCase):
         # The shell auto-inject path was triggered by the previous
         # ck_section_intro. With the strict head in place, no
         # ck-section-intro should appear in the masthead zone.
-        head_zone = self.html[: self.html.find("The Monday brief") + 80]
+        # Panel title is weekday-aware ("The Monday brief" only on
+        # Mondays) — anchor the head zone on the first Vol marker.
+        head_zone = self.html[: self.html.find('class="do-vol"') + 80]
         self.assertNotIn('class="ck-section-intro"', head_zone)
 
 
