@@ -41,7 +41,11 @@ class TestDealLibraryPage(unittest.TestCase):
     def test_empty_state_when_no_data(self):
         html = render_deal_library(self.store, {})
         self.assertIn("Deal Library is empty", html)
-        self.assertIn("ingest_deal_library_exports", html)
+        # partner-facing copy: admin ingest step, no script paths /
+        # directory names leaked into the rendered page
+        self.assertIn("platform administrator", html)
+        self.assertNotIn("ingest_deal_library_exports", html)
+        self.assertNotIn("data/vendor/deal_library", html)
         # honest: no fabricated rows
         self.assertNotIn("ck-pager", html)
 

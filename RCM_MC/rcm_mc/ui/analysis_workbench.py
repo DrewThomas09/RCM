@@ -922,6 +922,115 @@ def _esc(s: Any) -> str:
     return html.escape("" if s is None else str(s))
 
 
+def _metric_display_name(metric_key: str) -> str:
+    """Partner-facing label for a metric key.
+
+    Registry ``display_name`` when the key is known; otherwise the raw
+    key with underscores replaced so snake_case never reaches the page.
+    """
+    key = str(metric_key or "")
+    try:
+        from ..analysis.completeness import RCM_METRIC_REGISTRY
+        name = (RCM_METRIC_REGISTRY.get(key) or {}).get("display_name")
+    except Exception:  # noqa: BLE001
+        name = None
+    return name or key.replace("_", " ")
+
+
+def _fmt_metric_value(v: Optional[float], unit: str) -> str:
+    """Unit-aware metric formatter shared by the Current column and the
+    P25/P50/P75 benchmark columns, so ``14.2%`` never sits next to a
+    bare ``5.2`` in the same row."""
+    if v is None:
+        return "—"
+    if unit == "pct":
+        return _fmt_pct(v)
+    if unit == "days":
+        try:
+            return f"{float(v):.1f}d"
+        except (TypeError, ValueError):
+            return "—"
+    if unit == "dollars":
+        return _fmt_money(v)
+    return _fmt_num(v, dp=2)
+
+
+def _looks_internal_reason(reason: str) -> bool:
+    """True when a packet section ``reason`` looks like a raw exception
+    (repr / traceback) rather than partner-readable copy. Visual review
+    caught ``Top-level YAML must be a dict, got <class 'NoneType'>``
+    printed verbatim on the Monte Carlo empty state."""
+    r = str(reason or "")
+    return any(tok in r for tok in ("<class", "Traceback", "Error("))
+
+
+#: Provenance node ``source`` values → partner-facing labels. Enum
+#: values from rcm_mc/provenance/tracker.py Source plus the ad-hoc
+#: builder strings in rcm_mc/provenance/graph.py.
+_PROV_SOURCE_LABELS = {
+    "USER_INPUT": "User input",
+    "HCRIS": "HCRIS",
+    "IRS990": "IRS Form 990",
+    "CARE_COMPARE": "Care Compare",
+    "CCD": "Claims dataset",
+    "CCD_DERIVED": "Derived (claims dataset)",
+    "CALCULATED": "Derived",
+    "AGGREGATED": "Cohort aggregate",
+    "OBSERVED": "User input",
+    "SOURCE": "External source",
+    "PREDICTED": "Predicted",
+    "REGRESSION_PREDICTED": "Predicted (regression)",
+    "ridge_regression": "Predicted (ridge regression)",
+    "BENCHMARK": "Benchmark",
+    "BENCHMARK_MEDIAN": "Benchmark",
+    "MONTE_CARLO_P50": "Monte Carlo",
+    "monte_carlo": "Monte Carlo",
+    "rcm_ebitda_bridge": "Derived (EBITDA bridge)",
+    "comparable_finder": "Comparable cohort",
+    "moderate_tier_recommendation": "Benchmark target (moderate tier)",
+    "UNKNOWN": "Unknown",
+}
+
+
+def _prov_source_label(source: Any) -> str:
+    s = str(source or "").strip()
+    if not s:
+        return "Unknown"
+    if s in _PROV_SOURCE_LABELS:
+        return _PROV_SOURCE_LABELS[s]
+    words = s.replace("_", " ").strip()
+    return words[:1].upper() + words[1:]
+
+
+def _prov_detail_redundant(source: Any, detail: Any) -> bool:
+    """True when ``source_detail`` merely restates the source (e.g.
+    detail ``Provided by USER_INPUT`` on a USER_INPUT node) and would
+    read as duplication on the provenance row."""
+    def _norm(x: Any) -> str:
+        return " ".join(str(x or "").lower().replace("_", " ").split())
+    d, s = _norm(detail), _norm(source)
+    if not d:
+        return True
+    return d in (s, f"provided by {s}", f"from {s}")
+
+
+def _humanize_trigger(trigger: str) -> str:
+    """Turn a machine trigger pattern (``missing:avoidable_denial_pct``,
+    ``ar_over_90_pct=22.4%``) into partner-readable copy using registry
+    display names."""
+    t = str(trigger or "").strip()
+    if not t:
+        return t
+    if t.startswith("missing:"):
+        return f"missing {_metric_display_name(t.split(':', 1)[1])}"
+    if "=" in t:
+        key, _, val = t.partition("=")
+        return f"{_metric_display_name(key.strip())} = {val.strip()}"
+    if "_" in t:
+        return _metric_display_name(t)
+    return t
+
+
 # ── Section renderers ────────────────────────────────────────────────
 
 def _render_header(packet: DealAnalysisPacket) -> str:
@@ -934,7 +1043,14 @@ def _render_header(packet: DealAnalysisPacket) -> str:
     to a subtle utility row below.
     """
     grade = packet.completeness.grade or "—"
-    as_of = packet.as_of.isoformat() if packet.as_of else "current"
+    # No explicit as-of date → show the packet build date rather than
+    # the literal word "current" (visual-review defect: "AS OF current").
+    if packet.as_of:
+        as_of = packet.as_of.isoformat()
+    elif getattr(packet, "generated_at", None):
+        as_of = packet.generated_at.date().isoformat()
+    else:
+        as_of = "latest"
     cov = _fmt_pct(packet.completeness.coverage_pct * 100)
     freshness = "fresh" if not packet.completeness.stale_fields else \
                 f"{len(packet.completeness.stale_fields)} stale"
@@ -1070,7 +1186,7 @@ def _hero_kpi_strip(packet: DealAnalysisPacket) -> str:
         (moic_str,   "BASE MOIC",        "5-year hold",              moic_tone),
         (irr_str,    "BASE IRR",         "Gross, levered",           irr_tone),
         (cov_str,    "COVENANT HEADROOM","Risk-flag derived",        cov_tone),
-        (verdict,    "PARTNER VERDICT",  "Heuristic-fired",          verdict_tone),
+        (verdict,    "PARTNER VERDICT",  "Rules-based",              verdict_tone),
         (str(hs),    "HEALTH SCORE",     "Completeness proxy",       hs_tone),
     ]
     cells = "".join(
@@ -1213,17 +1329,30 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     )
     if _bridge_ran:
         hero_html = f'<div class="hero-number pos">{_fmt_money(total_impact)}</div>'
+        # Caption interpolates the real current → target EBITDA rather
+        # than printing the literal template words.
+        hero_caption = (
+            f'<div class="dim" style="font-size:11px;margin-top:4px;">'
+            f'{_fmt_money(_bridge.current_ebitda)} → '
+            f'{_fmt_money(_bridge.target_ebitda)} (moderate tier)</div>'
+        )
     else:
-        _why = _esc(getattr(_bridge, "reason", "") or
-                    "bridge inputs incomplete — upload RCM metrics")
+        _why = (getattr(_bridge, "reason", "") or
+                "bridge inputs incomplete — upload RCM metrics").rstrip(".")
+        # Sentence case, em-dash join; "yet" only where it reads
+        # naturally ("no revenue baseline yet").
+        _yet = " yet" if _why.lower().startswith("no ") else ""
         hero_html = ('<div class="hero-number dim">—</div>'
                      f'<div class="dim" style="font-size:10.5px;">'
-                     f'not computed: {_why}</div>')
+                     f'Not computed — {_esc(_why)}{_yet}.</div>')
+        # No numbers to caption — hide the current → target line
+        # entirely instead of rendering placeholder words.
+        hero_caption = ""
     ev_at_multiple = _bridge.ev_impact_at_multiple or {}
     ev_bits = " · ".join(
         f'<span class="dim">{k}</span> {_fmt_money(v)}'
         for k, v in list(ev_at_multiple.items())[:3]
-    ) or '<span class="dim">no EV computed</span>'
+    ) or '<span class="dim">No EV computed yet.</span>'
 
     # Returns distribution (MOIC) mini-summary if MC available.
     mc = packet.simulation
@@ -1292,9 +1421,7 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
           <div class="wb-card">
             <div class="kpi-label">EBITDA Opportunity</div>
             {hero_html}
-            <div class="dim" style="font-size:11px;margin-top:4px;">
-              current → target (moderate tier)
-            </div>
+            {hero_caption}
             <div style="margin-top:10px;font-size:12px;">{ev_bits}</div>
           </div>
           <div class="wb-card">
@@ -1518,12 +1645,7 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
                         cell_class = "pos" if better else "neg"
                 except (TypeError, ValueError):
                     delta = None
-            value_fmt = (
-                _fmt_pct(pm.value) if unit == "pct"
-                else (f"{pm.value:.1f}d" if unit == "days"
-                      else (_fmt_money(pm.value) if unit == "dollars"
-                            else _fmt_num(pm.value, dp=2)))
-            )
+            value_fmt = _fmt_metric_value(pm.value, unit)
             src_icon = _SOURCE_ICON.get(pm.source, "·")
             quality = pm.quality or ""
             conf_bar = _quality_bar(quality)
@@ -1581,15 +1703,16 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
             # variant that fires today from real predictor paths;
             # Tier 1 / Tier 3 wait on the orchestrator-emit refactor.
             chip_html = ck_prediction_chip(pm)
+            metric_label = meta.get("display_name") or metric_key
             parts.append(
                 '<tr>'
-                f'<td><a href="#prov-{_esc(metric_key)}" class="dim" style="text-decoration:none;">{_esc(metric_key)}</a>{anomaly_html}{trend_html}</td>'
+                f'<td><a href="#prov-{_esc(metric_key)}" class="dim" style="text-decoration:none;" title="{_esc(metric_key)}">{_esc(metric_label)}</a>{anomaly_html}{trend_html}</td>'
                 f'<td class="num {cell_class}">{value_fmt}{chip_html}</td>'
                 f'<td class="center" title="{_esc(pm.source.value)}">'
                 f'<span role="img" aria-label="{_esc(pm.source.value)}">{src_icon}</span></td>'
-                f'<td class="num dim">{_fmt_num(p25, dp=1) if p25 is not None else "—"}</td>'
-                f'<td class="num dim">{_fmt_num(p50, dp=1) if p50 is not None else "—"}</td>'
-                f'<td class="num dim">{_fmt_num(p75, dp=1) if p75 is not None else "—"}</td>'
+                f'<td class="num dim">{_fmt_metric_value(p25, unit)}</td>'
+                f'<td class="num dim">{_fmt_metric_value(p50, unit)}</td>'
+                f'<td class="num dim">{_fmt_metric_value(p75, unit)}</td>'
                 f'<td class="num {cell_class}">{_fmt_signed_pct(delta) if delta is not None else "—"}</td>'
                 f'<td>{conf_bar}{alpha_html}</td>'
                 '</tr>'
@@ -1632,6 +1755,11 @@ def _render_payer_heatmap(packet: DealAnalysisPacket) -> str:
         ("Commercial", "denial_rate_commercial"),
         ("Medicaid", "denial_rate_medicaid"),
     ]
+    # All-null payer set → four em-dash cells with no explanation reads
+    # as a broken grid. Render the page's standard empty-state line.
+    if all(packet.rcm_profile.get(k) is None for _, k in payers):
+        return ('<div class="dim">No payer-level data uploaded yet — '
+                'add payer mix to the deal profile.</div>')
     cells = []
     for label, metric_key in payers:
         pm = packet.rcm_profile.get(metric_key)
@@ -1857,7 +1985,13 @@ def _render_tornado(br) -> str:
 def _render_mc(packet: DealAnalysisPacket) -> str:
     mc = packet.simulation
     if mc is None or mc.status != SectionStatus.OK:
-        reason = mc.reason if mc else "simulation not run"
+        reason = (mc.reason if mc else "") or "simulation not run"
+        # Packet failures store the raw exception text (e.g. "Top-level
+        # YAML must be a dict, got <class 'NoneType'>"). Never show a
+        # partner an exception repr — map it to actionable plain copy.
+        if _looks_internal_reason(reason):
+            reason = ("Simulation inputs not configured yet — set "
+                      "actuals/benchmark paths on the deal page.")
         return f"""
         <div class="wb-tab-panel" data-panel="mc">
           <div class="wb-card">
@@ -2462,7 +2596,9 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
         ear = _fmt_money(rf.ebitda_at_risk) if rf.ebitda_at_risk else ""
         ear_line = (f'<div class="dim" style="font-size:11px;">EBITDA at risk: '
                     f'<span class="num">{ear}</span></div>') if ear else ""
-        triggers = ", ".join(rf.trigger_metrics or []) or (rf.trigger_metric or "")
+        trigger_keys = list(rf.trigger_metrics or []) or (
+            [rf.trigger_metric] if rf.trigger_metric else [])
+        triggers = ", ".join(_metric_display_name(k) for k in trigger_keys)
         risk_html.append(
             f'<div class="risk-card severity-{sev}">'
             f'<span class="wb-badge wb-badge-{sev.lower()}">{sev}</span> '
@@ -2497,9 +2633,9 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
         dq_by_priority.setdefault(pri, []).append(
             f'<div class="dq-card">'
             f'<span class="dq-priority dq-{pri}">{pri}</span>'
-            f'<span class="wb-badge wb-badge-low" style="margin-right:6px;">{_esc(q.category or "—")}</span>'
+            f'<span class="wb-badge wb-badge-low" style="margin-right:6px;">{_esc((q.category or "—").replace("_", " "))}</span>'
             f'<div style="margin-top:4px;">{_esc(q.question)}{source_chip}</div>'
-            + (f'<div class="dim" style="font-size:11px;margin-top:3px;">Trigger: {_esc(q.trigger or q.trigger_reason)}</div>'
+            + (f'<div class="dim" style="font-size:11px;margin-top:3px;">Trigger: {_esc(_humanize_trigger(q.trigger) or q.trigger_reason)}</div>'
                if (q.trigger or q.trigger_reason) else "")
             + '</div>'
         )
@@ -2553,13 +2689,23 @@ def _render_provenance(packet: DealAnalysisPacket) -> str:
             continue
         rows = []
         for nid, node in sorted(nodes, key=lambda t: t[0]):
+            # Humanize the node id: drop the group prefix (already the
+            # section heading) and use the registry display name when
+            # the remainder is a known metric key.
+            metric_part = nid.split(":", 1)[1] if ":" in nid else nid
+            node_label = _metric_display_name(metric_part)
+            source_label = _prov_source_label(node.source)
+            # source_detail that just restates the source ("Provided by
+            # USER_INPUT") is noise — suppress it.
+            detail = ("" if _prov_detail_redundant(node.source, node.source_detail)
+                      else node.source_detail)
             rows.append(
                 f'<div class="prov-row" id="prov-{_esc(nid)}">'
-                f'<div><span class="dim">{_esc(nid)}</span></div>'
+                f'<div><span class="dim" title="{_esc(nid)}">{_esc(node_label)}</span></div>'
                 f'<div class="num">{_fmt_num(node.value, dp=2)}</div>'
-                f'<div class="dim">{_esc(node.source)} · conf '
+                f'<div class="dim">{_esc(source_label)} · conf '
                 f'<span class="num">{node.confidence:.2f}</span>'
-                + (f' · {_esc(node.source_detail)}' if node.source_detail else "")
+                + (f' · {_esc(detail)}' if detail else "")
                 + '</div></div>'
             )
         blocks.append(

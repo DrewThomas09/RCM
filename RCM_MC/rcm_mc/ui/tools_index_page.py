@@ -98,7 +98,8 @@ def _card(tool: Dict, *, show_section: str = "") -> str:
     )
 
 
-def _section(sec: Dict, idx: int, *, dense: bool, show_section: bool) -> str:
+def _section(sec: Dict, idx: int, *, dense: bool, show_section: bool,
+             anchor: str = "") -> str:
     """A section bar + its card grid. ``sec`` = {id,label,blurb,route,tools}."""
     tools = sec.get("tools") or []
     label = sec.get("label") or sec.get("id") or ""
@@ -120,7 +121,8 @@ def _section(sec: Dict, idx: int, *, dense: bool, show_section: bool) -> str:
     cards = "".join(_card(t, show_section=(label if show_section else ""))
                     for t in tools)
     return (
-        f'<section class="ti-section" data-section="{_esc(sec.get("id", ""))}" '
+        f'<section class="ti-section" id="{_esc(anchor)}" '
+        f'data-section="{_esc(sec.get("id", ""))}" '
         f'data-total="{len(tools)}">'
         '<div class="ti-sec-bar">'
         f'<div class="ti-sec-num">{idx:02d} / {_esc(label)}</div>'
@@ -135,13 +137,27 @@ def _section(sec: Dict, idx: int, *, dense: bool, show_section: bool) -> str:
 
 def _view(view_id: str, sections: Sequence[Dict], *, dense: bool,
           show_section: bool, hidden: bool) -> str:
+    live = [s for s in sections if s.get("tools")]
+    # Jump rail: one chip per section so a partner can hop straight to a
+    # workspace instead of scrolling the whole grid.
+    jump = (
+        '<nav class="ti-jump" aria-label="Jump to section">'
+        + "".join(
+            f'<a href="#{view_id}-{_esc(s.get("id", ""))}">'
+            f'{_esc(s.get("label") or s.get("id") or "")}'
+            f'<b>{len(s.get("tools") or [])}</b></a>'
+            for s in live
+        )
+        + '</nav>'
+    )
     body = "".join(
-        _section(s, i + 1, dense=dense, show_section=show_section)
-        for i, s in enumerate(sections) if (s.get("tools"))
+        _section(s, i + 1, dense=dense, show_section=show_section,
+                 anchor=f'{view_id}-{s.get("id", "")}')
+        for i, s in enumerate(live)
     )
     cls = "ti-main mode-index" if dense else "ti-main"
     hid = " hidden" if hidden else ""
-    return (f'<div class="{cls}{hid}" data-view="{view_id}">{body}'
+    return (f'<div class="{cls}{hid}" data-view="{view_id}">{jump}{body}'
             '<div class="ti-empty hidden" data-empty>'
             '<h3>No tools match your filter</h3>'
             '<p>Try a shorter query, switch the status filter, or clear '
@@ -198,10 +214,16 @@ def render_tools_index(
     index: List[Dict],
     total_ws: int,
     total_idx: int,
+    initial_view: str = "workspace",
 ) -> str:
     """Assemble the full Tools page: sticky controls + masthead + legend +
     both views + footer. ``workspaces`` and ``index`` are lists of section
-    dicts (see ``_section``)."""
+    dicts (see ``_section``). ``initial_view`` ("workspace" | "index")
+    picks which view is visible on load so ``/tools?view=all`` deep-links
+    the Full A–Z view."""
+    if initial_view not in ("workspace", "index"):
+        initial_view = "workspace"
+    on_idx = initial_view == "index"
     legend_chips = "".join(
         f'<button type="button" class="ti-chip" data-status-chip="{sid}" '
         f'aria-pressed="false">'
@@ -211,11 +233,29 @@ def render_tools_index(
         for sid, label in _STATUS_FULL
     )
     ws_view = _view("workspace", workspaces, dense=False,
-                    show_section=False, hidden=False)
+                    show_section=False, hidden=on_idx)
     idx_view = _view("index", index, dense=True,
-                     show_section=True, hidden=True)
+                     show_section=True, hidden=not on_idx)
+    if on_idx:
+        eyebrow0 = "Platform index"
+        headline0 = 'Tools — <em>full A–Z</em>.'
+        standfirst0 = ('Every surface in the product, grouped into buckets. '
+                       'Every route is reachable from here.')
+        foot_toggle0 = '← Back to grouped view'
+        foot_count0 = (f'{total_idx} tools · '
+                       f'{len([s for s in index if s.get("tools")])} buckets')
+    else:
+        eyebrow0 = "Everything you can do"
+        headline0 = 'Every tool, <em>on one page</em>.'
+        standfirst0 = ('Browse every PEdesk tool, grouped by workspace. '
+                       'Click any card to open it. Press <em>⌘K</em> to '
+                       'search the full set.')
+        foot_toggle0 = 'Full A–Z index →'
+        foot_count0 = (f'{total_ws} tools · '
+                       f'{len([s for s in workspaces if s.get("tools")])} '
+                       'workspaces')
     body = (
-        '<div class="ti-page" data-mode="workspace">'
+        f'<div class="ti-page" data-mode="{initial_view}">'
         # ── sticky controls: search + view toggle ──
         '<div class="ti-controls">'
         '<div class="ti-controls-inner">'
@@ -230,21 +270,21 @@ def render_tools_index(
         '<span data-ti-countlabel>tools</span></span>'
         '</label>'
         '<div class="ti-tabs" role="tablist">'
-        '<button type="button" class="ti-tab on" data-view-btn="workspace" '
-        'role="tab" aria-selected="true">By workspace</button>'
-        '<button type="button" class="ti-tab" data-view-btn="index" '
-        'role="tab" aria-selected="false">Full A–Z</button>'
+        f'<button type="button" class="ti-tab{"" if on_idx else " on"}" '
+        f'data-view-btn="workspace" role="tab" '
+        f'aria-selected="{"false" if on_idx else "true"}">By workspace</button>'
+        f'<button type="button" class="ti-tab{" on" if on_idx else ""}" '
+        f'data-view-btn="index" role="tab" '
+        f'aria-selected="{"true" if on_idx else "false"}">Full A–Z</button>'
         '</div>'
         '</div></div>'
         # ── masthead + legend ──
         '<header class="ti-mast">'
         '<div class="ti-mast-l">'
         '<div class="ti-eyebrow"><span class="ti-eyebrow-dot"></span>'
-        '<span data-ti-eyebrow>Everything you can do</span></div>'
-        '<h1 data-ti-headline>Every tool, <em>on one page</em>.</h1>'
-        '<p class="ti-standfirst" data-ti-standfirst>Browse every PEdesk tool, '
-        'grouped by workspace. Click any card to open it. Press <em>⌘K</em> to '
-        'search the full set.</p>'
+        f'<span data-ti-eyebrow>{eyebrow0}</span></div>'
+        f'<h1 data-ti-headline>{headline0}</h1>'
+        f'<p class="ti-standfirst" data-ti-standfirst>{standfirst0}</p>'
         f'{_readiness_bar(index)}'
         '</div>'
         '<div class="ti-legend">'
@@ -255,7 +295,7 @@ def render_tools_index(
         f'{ws_view}{idx_view}'
         # ── footer ──
         '<footer class="ti-foot">'
-        f'<span data-ti-footcount>{total_ws} tools · {len([s for s in workspaces if s.get("tools")])} workspaces</span>'
+        f'<span data-ti-footcount>{foot_count0}</span>'
         # Discreet entry to the backend open-data integrations lab (internal,
         # WIP — deliberately not promoted as a front-facing tool).
         '<a href="/tools/open-data" style="font-family:var(--sc-mono);'
@@ -266,7 +306,7 @@ def render_tools_index(
         'font-size:10px;letter-spacing:.08em;text-transform:uppercase;'
         'color:var(--sc-text-faint,#7a8699);text-decoration:none">'
         'Internal · non-public CMS lab →</a>'
-        '<span class="ti-foot-cta" data-ti-foot-toggle>Full A–Z index →</span>'
+        f'<span class="ti-foot-cta" data-ti-foot-toggle>{foot_toggle0}</span>'
         '</footer>'
         '</div>'
     )
@@ -355,6 +395,22 @@ _TOOLS_CSS = """
 .ti-clear:hover{color:var(--ti-green-deep);}
 /* sections */
 .ti-main{max-width:var(--ti-max);margin:0 auto;}
+/* The inactive view MUST collapse — without this rule both views render
+   stacked (199 cards twice = 398 on one page), which read as "double
+   counting" and made the page ~23k px tall. */
+.ti-main.hidden{display:none;}
+/* jump rail — hop straight to a workspace/bucket without scrolling */
+.ti-jump{display:flex;flex-wrap:wrap;gap:8px;padding:18px 0 0;}
+.ti-jump.hidden{display:none;}
+.ti-jump a{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;
+  background:var(--ti-paper);border:1px solid var(--ti-rule);
+  font-family:var(--sc-mono,monospace);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ti-ink2);text-decoration:none;
+  transition:border-color .12s,background .12s,color .12s;}
+.ti-jump a b{color:var(--ti-green);font-weight:500;}
+.ti-jump a:hover{border-color:var(--ti-ink);color:var(--ti-ink);}
+/* anchor lands below the sticky topbar + controls, not underneath them */
+.ti-section{scroll-margin-top:120px;}
 /* data-readiness summary bar (masthead) */
 .ti-readiness{margin-top:20px;max-width:540px;}
 .ti-rb-cap{font-family:var(--sc-mono,monospace);font-size:10px;letter-spacing:.16em;
@@ -492,7 +548,7 @@ _TOOLS_JS = """
   var eyebrow=page.querySelector('[data-ti-eyebrow]');
   var standfirst=page.querySelector('[data-ti-standfirst]');
   var footToggle=page.querySelector('[data-ti-foot-toggle]');
-  var mode='workspace', q='', statusFilter=null;
+  var mode=page.getAttribute('data-mode')||'workspace', q='', statusFilter=null;
 
   function mains(){return page.querySelectorAll('.ti-main');}
   function activeMain(){return page.querySelector('.ti-main[data-view="'+mode+'"]');}
@@ -516,10 +572,6 @@ _TOOLS_JS = """
     var chipCounts={live:0,computed:0,needs:0,illustrative:0};
     main.querySelectorAll('.ti-section').forEach(function(sec){
       var shown=0;
-      sec.querySelectorAll('.ti-card').forEach(function(card){
-        var st=card.getAttribute('data-status');
-        chipCounts[st]=(chipCounts[st]||0); // ensure key
-      });
       sec.querySelectorAll('.ti-card').forEach(function(card){
         var hay=card.getAttribute('data-search')||'';
         var st=card.getAttribute('data-status');
@@ -545,6 +597,8 @@ _TOOLS_JS = """
     if(countLabel) countLabel.textContent=(q||statusFilter)?'matched':'tools';
     var filterActive=!!q||!!statusFilter;
     if(clearEl) clearEl.classList.toggle('hidden',!filterActive);
+    var jump=main.querySelector('.ti-jump');
+    if(jump) jump.classList.toggle('hidden',filterActive);
     var emptyEl=main.querySelector('[data-empty]');
     if(emptyEl) emptyEl.classList.toggle('hidden',visible>0);
     if(footCount){
@@ -558,6 +612,11 @@ _TOOLS_JS = """
   function setMode(m){
     if(m===mode) return;
     mode=m; q=''; statusFilter=null;
+    page.setAttribute('data-mode',m);
+    // keep the URL shareable: /tools?view=all deep-links the A–Z view
+    if(window.history&&history.replaceState){
+      history.replaceState(null,'',m==='index'?'/tools?view=all':'/tools');
+    }
     if(search) search.value='';
     mains().forEach(function(el){el.classList.toggle('hidden',el.getAttribute('data-view')!==m);});
     page.querySelectorAll('[data-view-btn]').forEach(function(b){

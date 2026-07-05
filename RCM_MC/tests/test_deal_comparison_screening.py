@@ -107,7 +107,28 @@ class TestComparison(unittest.TestCase):
     def test_dimensions_present(self):
         html = render_comparison([_packet()])
         self.assertIn("EBITDA impact", html)
-        self.assertIn("denial_rate", html)
+        # Dimension rows carry editorial display labels, never raw
+        # snake_case metric keys ("denial_rate" et al.).
+        self.assertIn("Initial Denial Rate", html)
+        self.assertIn("Days in A/R", html)
+        self.assertNotIn("<strong>denial_rate</strong>", html)
+
+    def test_unit_aware_formatting(self):
+        # Percent metrics render 1dp + "%" (house style), never a bare
+        # unit-blind "12.00"; A/R days render as a plain integer; EBITDA
+        # impact renders financial 2dp in $M, and a deal with no bridge
+        # shows an em-dash — never a fabricated "0.00".
+        html = render_comparison([_packet(denial=12.0)])
+        self.assertIn("12.0%", html)
+        self.assertNotIn("12.00", html)
+        self.assertIn("$8.00M", html)
+        p = _packet("d2", "NoBridge")
+        p.ebitda_bridge = None
+        html2 = render_comparison([p])
+        self.assertIn(
+            "<tr><td><strong>EBITDA impact</strong></td>"
+            '<td class="num">—</td></tr>', html2)
+        self.assertNotIn("$0.00M", html2)
 
     def test_peer_percentile_chips_rank_against_whole_book(self):
         # P4: the compared deal's KPIs carry a percentile-vs-portfolio
@@ -128,7 +149,10 @@ class TestComparison(unittest.TestCase):
         self.assertNotIn("vs portfolio deals", html)
         thin = {"denial_rate": [5, 6, 7]}
         html2 = render_comparison([_packet()], peer_dists=thin)
-        self.assertIn("peer set too small (n=3)", html2)
+        # Sentence-cased on this page, and delivered via the KPI tile's
+        # ``sub`` slot so it sits on its own line under the big number
+        # instead of wrapping awkwardly against it.
+        self.assertIn("Peer set too small (n=3)", html2)
 
 
 # ── Screening ─────────────────────────────────────────────────────
@@ -350,11 +374,29 @@ class RadarAxisLabelTests(unittest.TestCase):
     that overflowed the 300-wide SVG viewBox and rendered clipped ('net
     coll', 'x index'). Concise labels + a padded viewBox keep them inside."""
 
-    def _radar(self):
+    @staticmethod
+    def _full_packet(did, name, denial):
+        # All six radar metrics populated — axes with no data across
+        # every compared deal are (correctly) dropped from the chart,
+        # so label assertions need real values.
         from rcm_mc.analysis.packet import DealAnalysisPacket
+        vals = {
+            "denial_rate": denial, "days_in_ar": 48.0,
+            "net_collection_rate": 91.8, "cost_to_collect": 3.2,
+            "clean_claim_rate": 88.0, "case_mix_index": 1.4,
+        }
+        return DealAnalysisPacket(
+            deal_id=did, deal_name=name,
+            rcm_profile={
+                k: ProfileMetric(value=v, source=MetricSource.OBSERVED)
+                for k, v in vals.items()
+            },
+        )
+
+    def _radar(self):
         from rcm_mc.ui.deal_comparison import _render_radar
-        a = DealAnalysisPacket(deal_id="a", deal_name="Alpha")
-        b = DealAnalysisPacket(deal_id="b", deal_name="Bravo")
+        a = self._full_packet("a", "Alpha", 14.2)
+        b = self._full_packet("b", "Bravo", 9.1)
         return _render_radar([a, b])
 
     def test_concise_labels_used_not_verbose(self):
@@ -368,3 +410,49 @@ class RadarAxisLabelTests(unittest.TestCase):
         svg = self._radar()
         # widened/offset viewBox so edge labels aren't clipped at x=0/300
         self.assertIn('viewBox="-55 -10 410 320"', svg)
+
+    def test_grid_frame_rendered(self):
+        # The radar carries its own frame: 6 axis spokes plus two
+        # reference rings (dashed 50%, solid 100%) — without them the
+        # bare polygons read as a rendering bug.
+        svg = self._radar()
+        self.assertEqual(svg.count("<line "), 6)
+        self.assertIn('stroke-dasharray="3 3"', svg)
+        self.assertGreaterEqual(svg.count("<polygon"), 4)  # 2 rings + 2 deals
+
+    def test_fixed_benchmark_normalization_not_minmax(self):
+        # Two deals differing only in denial rate must NOT be pinned at
+        # centre/rim (the old min-max-of-2 behavior): 14.2 and 9.1 both
+        # sit at intermediate radii of the fixed 0-30% benchmark range.
+        svg = self._radar()
+        import re
+        polys = re.findall(r'<polygon points="([^"]+)"[^>]*fill-opacity',
+                           svg)
+        self.assertEqual(len(polys), 2)
+        # First point of each deal polygon is the denial_rate vertex
+        # (top axis, x=150): y = 150 - frac*120.
+        y_a = float(polys[0].split()[0].split(",")[1])
+        y_b = float(polys[1].split()[0].split(",")[1])
+        self.assertAlmostEqual(y_a, 150 - (14.2 / 30.0) * 120, delta=0.2)
+        self.assertAlmostEqual(y_b, 150 - (9.1 / 30.0) * 120, delta=0.2)
+
+    def test_axes_without_data_are_dropped(self):
+        # A metric no compared deal reports must not render an axis at
+        # a fabricated midpoint — it disappears from the chart.
+        from rcm_mc.analysis.packet import DealAnalysisPacket
+        from rcm_mc.ui.deal_comparison import _render_radar
+        a = DealAnalysisPacket(deal_id="a", deal_name="Alpha", rcm_profile={
+            "denial_rate": ProfileMetric(
+                value=12.0, source=MetricSource.OBSERVED),
+            "days_in_ar": ProfileMetric(
+                value=50.0, source=MetricSource.OBSERVED),
+        })
+        svg = _render_radar([a])
+        self.assertNotIn(">CMI<", svg)
+        self.assertNotIn(">Net coll.<", svg)
+        self.assertIn(">Denial<", svg)
+        # No packets with data at all → honest placeholder, not a chart.
+        empty = _render_radar([DealAnalysisPacket(deal_id="e",
+                                                  deal_name="Empty")])
+        self.assertNotIn("<svg", empty)
+        self.assertIn("No profile metrics", empty)

@@ -20,16 +20,25 @@ from ..analysis.packet import DealAnalysisPacket
 
 # ── Comparison ────────────────────────────────────────────────────
 
+# Each dimension: (display label, unit kind for _fmt, extractor).
+# Labels are the editorial names (mirroring metric_glossary), never
+# raw snake_case keys; kinds drive unit-aware formatting so a denial
+# rate reads "14.2%" (percent, 1dp per house style) instead of a
+# bare "14.20", and EBITDA impact reads "$8.00M" instead of "0.00".
 _COMPARE_DIMENSIONS = [
-    ("Completeness", lambda p: p.completeness.grade if p.completeness else "—"),
-    ("EBITDA impact", lambda p: p.ebitda_bridge.total_ebitda_impact if p.ebitda_bridge else 0),
-    ("denial_rate", lambda p: _pm_val(p, "denial_rate")),
-    ("days_in_ar", lambda p: _pm_val(p, "days_in_ar")),
-    ("net_collection_rate", lambda p: _pm_val(p, "net_collection_rate")),
-    ("cost_to_collect", lambda p: _pm_val(p, "cost_to_collect")),
-    ("clean_claim_rate", lambda p: _pm_val(p, "clean_claim_rate")),
-    ("case_mix_index", lambda p: _pm_val(p, "case_mix_index")),
-    ("Risk count", lambda p: len(p.risk_flags or [])),
+    ("Completeness", "text",
+     lambda p: p.completeness.grade if p.completeness else "—"),
+    # No bridge → None → "—". The old `else 0` rendered a fabricated
+    # "EBITDA impact 0.00" for deals whose bridge simply hadn't run.
+    ("EBITDA impact", "money",
+     lambda p: p.ebitda_bridge.total_ebitda_impact if p.ebitda_bridge else None),
+    ("Initial Denial Rate", "pct", lambda p: _pm_val(p, "denial_rate")),
+    ("Days in A/R", "days", lambda p: _pm_val(p, "days_in_ar")),
+    ("Net Collection Rate", "pct", lambda p: _pm_val(p, "net_collection_rate")),
+    ("Cost to Collect", "pct", lambda p: _pm_val(p, "cost_to_collect")),
+    ("Clean Claim Rate", "pct", lambda p: _pm_val(p, "clean_claim_rate")),
+    ("Case Mix Index", "ratio", lambda p: _pm_val(p, "case_mix_index")),
+    ("Risk count", "int", lambda p: len(p.risk_flags or [])),
 ]
 
 _RADAR_METRICS = [
@@ -50,6 +59,25 @@ _RADAR_AXIS_LABELS = {
     "case_mix_index": "CMI",
 }
 
+# Fixed benchmark range per radar axis, (lo, hi) → normalized 0–1.
+# Normalizing against the min/max of the 2-3 compared deals pinned one
+# deal at the centre and another at the rim on EVERY axis (misleading
+# spikes for what were often near-identical values), and an axis missing
+# from all deals silently plotted everything at 0.5. These ranges bracket
+# the values the page actually renders — the rate metrics are percent
+# points (a 14.2% denial rate is stored as 14.2), days_in_ar is days,
+# CMI is the CMS case-mix ratio — spanning best-in-class to distressed:
+#   denial 0–30% · A/R 20–90d · net collection 80–100% ·
+#   cost to collect 1–6% · clean claim 70–100% · CMI 0.8–2.2
+_RADAR_RANGES = {
+    "denial_rate": (0.0, 30.0),
+    "days_in_ar": (20.0, 90.0),
+    "net_collection_rate": (80.0, 100.0),
+    "cost_to_collect": (1.0, 6.0),
+    "clean_claim_rate": (70.0, 100.0),
+    "case_mix_index": (0.8, 2.2),
+}
+
 # Editorial categorical series colors (one per compared deal) —
 # navy / teal / amber / red, distinct but on-palette.
 _PALETTE = ["#0b2341", "#1F7A75", "#b8732a", "#b5321e"]
@@ -64,37 +92,88 @@ def _esc(s: Any) -> str:
     return html.escape("" if s is None else str(s))
 
 
-def _fmt(v: Any) -> str:
+def _fmt(v: Any, kind: str = "auto") -> str:
+    """Unit-aware formatter keyed by the dimension's ``kind``.
+
+    House style (CLAUDE.md): percentages 1dp with the % sign, financial
+    figures 2dp in $M, ratios (CMI) 2dp plain, day/risk counts as plain
+    integers. The old unit-blind float branch rendered "14.20" for a
+    denial rate and "0.00" for a missing EBITDA bridge.
+    """
     if v is None:
         return "—"
+    if kind == "pct":
+        return f"{float(v):,.1f}%"
+    if kind == "days":
+        return f"{float(v):,.0f}"
+    if kind == "ratio":
+        return f"{float(v):,.2f}"
+    if kind == "money":
+        return f"${float(v) / 1e6:,.2f}M"
+    if kind == "int":
+        return f"{int(v):,}"
     if isinstance(v, float):
         if abs(v) >= 1e6:
-            return f"${v / 1e6:,.1f}M"
+            return f"${v / 1e6:,.2f}M"
         return f"{v:,.2f}"
     return str(v)
 
 
 def _render_radar(packets: List[DealAnalysisPacket]) -> str:
-    """Overlapping radar polygons — one per deal, 6 axes."""
+    """Overlapping radar polygons — one per deal, one axis per metric.
+
+    Each axis is normalized against its FIXED ``_RADAR_RANGES`` benchmark
+    band (clamped 0–1), never against the min/max of the compared deals
+    — see the comment on ``_RADAR_RANGES`` for the incident that drove
+    this. Axes that no compared deal reports are dropped entirely; a
+    deal missing a metric on an axis that others do report plots at the
+    centre (no data → no radius), never at a fabricated midpoint.
+    Spokes, two reference rings (50% / 100% of range) and axis labels
+    give the polygons a visible frame. Inline SVG, no external refs.
+    """
     if not packets:
         return ""
-    n_axes = len(_RADAR_METRICS)
+    # Only chart axes where at least one compared deal has data.
+    axes = [m for m in _RADAR_METRICS
+            if any(_pm_val(p, m) is not None for p in packets)]
+    if not axes:
+        return ('<p style="color:var(--cad-text3,#7a8699);text-align:center;">'
+                'No profile metrics available to chart for these deals.</p>')
+    n_axes = len(axes)
     cx, cy, radius = 150, 150, 120
     angle_step = 2 * math.pi / n_axes
+    grid_stroke = "#d6cfc0"  # parchment border tone — quiet, behind data
 
-    # Collect values per metric across all deals to normalize 0–1.
-    all_vals: Dict[str, List[float]] = {m: [] for m in _RADAR_METRICS}
-    for p in packets:
-        for m in _RADAR_METRICS:
-            v = _pm_val(p, m)
-            if v is not None:
-                all_vals[m].append(v)
-    mins = {m: min(vs) if vs else 0 for m, vs in all_vals.items()}
-    maxs = {m: max(vs) if vs else 1 for m, vs in all_vals.items()}
+    def _point(i: int, frac: float) -> "tuple[float, float]":
+        angle = -math.pi / 2 + i * angle_step
+        return (cx + frac * radius * math.cos(angle),
+                cy + frac * radius * math.sin(angle))
+
+    # Reference rings at 50% and 100% of each axis' benchmark range,
+    # drawn as polygons through the axis points so the frame reads as
+    # the radar's own geometry (a circle lies off-vertex for n<6 axes).
+    grid = ""
+    for ring_frac in (0.5, 1.0):
+        ring_pts = " ".join(
+            f"{x:.1f},{y:.1f}" for x, y in
+            (_point(i, ring_frac) for i in range(n_axes)))
+        grid += (
+            f'<polygon points="{ring_pts}" fill="none" '
+            f'stroke="{grid_stroke}" stroke-width="1"'
+            + (' stroke-dasharray="3 3"' if ring_frac < 1 else "")
+            + '/>'
+        )
+    # Axis spokes, centre to rim.
+    for i in range(n_axes):
+        ex, ey = _point(i, 1.0)
+        grid += (
+            f'<line x1="{cx}" y1="{cy}" x2="{ex:.1f}" y2="{ey:.1f}" '
+            f'stroke="{grid_stroke}" stroke-width="1"/>'
+        )
 
     # Axis labels.
     labels = ""
-    for i, m in enumerate(_RADAR_METRICS):
+    for i, m in enumerate(axes):
         angle = -math.pi / 2 + i * angle_step
         lx = cx + (radius + 18) * math.cos(angle)
         ly = cy + (radius + 18) * math.sin(angle)
@@ -110,19 +189,19 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
             f'</text>'
         )
 
-    # Polygons.
+    # Polygons — one per deal, benchmark-normalized and clamped.
     polygons = ""
     for idx, p in enumerate(packets):
         color = _PALETTE[idx % len(_PALETTE)]
         pts: List[str] = []
-        for i, m in enumerate(_RADAR_METRICS):
+        for i, m in enumerate(axes):
             v = _pm_val(p, m)
-            lo, hi = mins[m], maxs[m]
-            frac = ((v - lo) / (hi - lo)) if v is not None and hi > lo else 0.5
-            angle = -math.pi / 2 + i * angle_step
-            r = frac * radius
-            px = cx + r * math.cos(angle)
-            py = cy + r * math.sin(angle)
+            lo, hi = _RADAR_RANGES.get(m, (0.0, 1.0))
+            if v is None:
+                frac = 0.0
+            else:
+                frac = max(0.0, min(1.0, (v - lo) / (hi - lo)))
+            px, py = _point(i, frac)
             pts.append(f"{px:.1f},{py:.1f}")
         polygons += (
             f'<polygon points="{" ".join(pts)}" '
@@ -135,7 +214,7 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
     return (
         f'<svg viewBox="-55 -10 410 320" width="360" height="300" '
         f'style="display:block;margin:0 auto;">'
-        f'{labels}{polygons}</svg>'
+        f'{grid}{labels}{polygons}</svg>'
     )
 
 
@@ -163,7 +242,15 @@ def render_comparison(packets: List[DealAnalysisPacket],
         chip = ck_peer_percentile(
             v, dist, peer_label="portfolio deals",
             higher_is_better=higher_is_better)
-        return f'<div style="margin-top:2px;">{chip}</div>' if chip else ""
+        if not chip:
+            return ""
+        # Sentence-case the thin-book honesty note ("peer set too small
+        # (n=5)") — as a lowercase fragment it read as a wrapped
+        # continuation of the big KPI number. The chip goes into the
+        # tile's ``sub`` slot (its own block line under the value), so
+        # it never wraps against the number inside the flex value row.
+        chip = chip.replace(">peer set too small", ">Peer set too small")
+        return f'<div style="display:block;margin-top:2px;">{chip}</div>'
 
     if not packets:
         body = (
@@ -187,11 +274,11 @@ def render_comparison(packets: List[DealAnalysisPacket],
         for p in packets
     )
     rows_html: List[str] = []
-    for dim_name, fn in _COMPARE_DIMENSIONS:
+    for dim_name, kind, fn in _COMPARE_DIMENSIONS:
         cells: List[str] = []
         for p in packets:
             v = fn(p)
-            cells.append(f'<td class="num">{_fmt(v)}</td>')
+            cells.append(f'<td class="num">{_fmt(v, kind)}</td>')
         rows_html.append(
             f"<tr><td><strong>{_esc(dim_name)}</strong></td>"
             + "".join(cells) + "</tr>"
@@ -224,8 +311,9 @@ def render_comparison(packets: List[DealAnalysisPacket],
             '<div class="ck-kpi-strip">'
             + ck_kpi_block(
                 "Denial Rate",
-                _fmt(dr) + _pct_chip("denial_rate", dr,
-                                     higher_is_better=False),
+                _fmt(dr, "pct"),
+                sub=_pct_chip("denial_rate", dr,
+                              higher_is_better=False),
                 help={
                     "definition": (
                         "Initial-denial rate as a share of total "
@@ -239,8 +327,9 @@ def render_comparison(packets: List[DealAnalysisPacket],
             )
             + ck_kpi_block(
                 "AR Days",
-                _fmt(ar) + _pct_chip("days_in_ar", ar,
-                                     higher_is_better=False),
+                _fmt(ar, "days"),
+                sub=_pct_chip("days_in_ar", ar,
+                              higher_is_better=False),
                 help={
                     "definition": (
                         "Days in accounts receivable. PE healthcare "
@@ -444,9 +533,13 @@ def render_screen_page(
         ("rev_per_bed", "Revenue per bed (lowest first)"),
     ]
     sort_select = (
-        f'<div><label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
+        # min-width on the grid cell (grid-column:1/-1 lets it take a full
+        # row when the auto-fit columns are narrow) so options like
+        # "Margin (most distressed first)" render untruncated.
+        f'<div style="grid-column:1/-1;min-width:220px;max-width:320px;">'
+        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
         f'Sort by</label>'
-        f'<select name="sort" aria-label="Sort by" style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
+        f'<select name="sort" aria-label="Sort by" style="width:100%;min-width:220px;padding:7px 10px;border:1px solid var(--cad-border);'
         f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;">'
         + "".join(
             f'<option value="{v}"{" selected" if v == sort_val else ""}>{_esc(lbl)}</option>'
@@ -477,13 +570,27 @@ def render_screen_page(
     _range_keys = ("min_beds", "max_beds", "min_revenue", "max_revenue",
                    "min_margin", "max_margin", "max_medicaid", "min_medicare",
                    "state")
+    def _range_chip(label: str, lo, hi, fmt) -> str:
+        # One-sided bounds read as "≥ floor" / "≤ ceiling" — never a
+        # fake infinity endpoint like "NPR $15M–$∞M" or "Margin −∞%–3%".
+        if lo and hi:
+            return _chip(f"{label} {fmt(lo)}–{fmt(hi)}")
+        if lo:
+            return _chip(f"{label} ≥ {fmt(lo)}")
+        return _chip(f"{label} ≤ {fmt(hi)}")
+
     chips = []
     if filters.get("min_beds") or filters.get("max_beds"):
-        chips.append(_chip(f"Beds {filters.get('min_beds') or '0'}–{filters.get('max_beds') or '∞'}"))
+        chips.append(_range_chip(
+            "Beds", filters.get("min_beds"), filters.get("max_beds"), str))
     if filters.get("min_revenue") or filters.get("max_revenue"):
-        chips.append(_chip(f"NPR ${filters.get('min_revenue') or '0'}M–${filters.get('max_revenue') or '∞'}M"))
+        chips.append(_range_chip(
+            "NPR", filters.get("min_revenue"), filters.get("max_revenue"),
+            lambda v: f"${v}M"))
     if filters.get("min_margin") or filters.get("max_margin"):
-        chips.append(_chip(f"Margin {filters.get('min_margin') or '−∞'}%–{filters.get('max_margin') or '∞'}%"))
+        chips.append(_range_chip(
+            "Margin", filters.get("min_margin"), filters.get("max_margin"),
+            lambda v: f"{v}%"))
     if filters.get("max_medicaid"):
         chips.append(_chip(f"Medicaid ≤{filters['max_medicaid']}%"))
     if filters.get("min_medicare"):
@@ -540,7 +647,14 @@ def render_screen_page(
                         f'incomplete or aggregated opex; review before relying on it.">'
                         f'{margin:.1%} &#9888;</td>'
                     )
-            rpb_str = f'${rpb/1e3:,.0f}K' if rpb else '&mdash;'
+            # Roll to millions at ≥$1M (financial 2dp) so a rev/bed of
+            # 3.47e6 reads "$3.47M", never "$3,467K"; keep K below $1M.
+            if not rpb:
+                rpb_str = '&mdash;'
+            elif rpb >= 1e6:
+                rpb_str = f'${rpb/1e6:,.2f}M'
+            else:
+                rpb_str = f'${rpb/1e3:,.0f}K'
             rows_html += (
                 f'<tr>'
                 f'<td><a href="/hospital/{ccn}" style="font-weight:500;">{name}</a></td>'

@@ -100,6 +100,11 @@ _DAY_ONE_STYLES = """
   font-size: 14px; line-height: 1.5;
   color: var(--sc-text, #1a2332);
 }
+.do-alert-detail {
+  font-family: "Source Serif 4", serif; font-style: italic;
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--sc-text-dim, #37495e);
+}
 .do-quiet {
   font-family: "Source Serif 4", serif; font-style: italic;
   font-size: 14px; color: var(--sc-text-dim, #37495e);
@@ -185,8 +190,11 @@ def _alerts_section(alerts: List[Dict[str, Any]]) -> str:
     """Section I — anything firing this morning?"""
     if alerts:
         rows = []
-        # Take top 3 by severity for the Monday brief
+        # Take top 3 by severity for the brief. Live severities are
+        # "red" | "amber" | "info" (alerts.Alert); the legacy
+        # critical/high/medium vocabulary is kept for compatibility.
         sev_order = {
+            "red": 0, "amber": 1,
             "critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4,
         }
         sorted_alerts = sorted(
@@ -194,15 +202,19 @@ def _alerts_section(alerts: List[Dict[str, Any]]) -> str:
             key=lambda a: sev_order.get(a.get("severity", "info"), 5),
         )[:3]
         for a in sorted_alerts:
+            sev = str(a.get("severity", "info")).lower()
             tone = (
-                "critical" if a.get("severity") == "critical"
-                else "negative" if a.get("severity") == "high"
-                else "warning" if a.get("severity") == "medium"
+                "negative" if sev in ("red", "critical", "high")
+                else "warning" if sev in ("amber", "medium", "warning")
                 else "neutral"
             )
-            badge = ck_signal_badge(
-                str(a.get("severity", "info")).upper(),
-                tone=tone,
+            badge = ck_signal_badge(sev.upper(), tone=tone)
+            title = str(a.get("message", "") or "")
+            detail = str(a.get("detail", "") or "")
+            detail_html = (
+                f'<div class="do-alert-detail">'
+                f'{_html.escape(detail)}</div>'
+                if detail else ""
             )
             rows.append(
                 '<li class="do-alert-row">'
@@ -210,7 +222,7 @@ def _alerts_section(alerts: List[Dict[str, Any]]) -> str:
                 f'{_html.escape(str(a.get("deal_id", "—")))}'
                 f' {badge}</div>'
                 f'<div class="do-alert-msg">'
-                f'{_html.escape(str(a.get("message", "")))}</div>'
+                f'{_html.escape(title)}{detail_html}</div>'
                 '</li>'
             )
         body_html = (
@@ -696,7 +708,9 @@ def render_day_one(store: Any) -> str:
             + _recent_section()
             + _activity_section(activity, recent_packets)
             + _journey_section(),
-            title="The Monday brief",
+            # Weekday-aware — the eyebrow already says "<WEEKDAY> BRIEF",
+            # so a hardcoded "Monday" read wrong six days a week.
+            title=f"The {weekday} brief",
         )
         + next_up
     )

@@ -49,7 +49,7 @@ def render_data_explorer(
         {
             "name": "CMS Care Compare",
             "provider": "CMS Hospital Compare",
-            "records": sources_status.get("care_compare_count", "Available"),
+            "records": sources_status.get("care_compare_count", ""),
             "description": "Hospital quality ratings: overall star rating (1-5), "
                            "readmission rates, mortality rates, patient experience (HCAHPS), "
                            "value-based purchasing scores, and hospital-acquired condition scores.",
@@ -62,7 +62,7 @@ def render_data_explorer(
         {
             "name": "Medicare Utilization",
             "provider": "CMS Inpatient Hospital Utilization",
-            "records": sources_status.get("utilization_count", "Available"),
+            "records": sources_status.get("utilization_count", ""),
             "description": "Medicare inpatient utilization by DRG: discharges, covered days, "
                            "charges, and payments. Identifies which procedures generate the most "
                            "volume and revenue at each hospital.",
@@ -132,9 +132,16 @@ def render_data_explorer(
             f'</div>'
             f'<div style="display:flex;gap:6px;align-items:center;">'
             f'<span class="cad-badge {status_cls}">{status_label}</span>'
-            f'<span class="cad-mono" style="font-size:11px;color:{PALETTE["text_secondary"]};">'
-            f'{s["records"]}</span>'
-            f'</div></div>'
+            # Only render the records annotation when it adds information
+            # beyond the status chip — a blank/duplicate value used to
+            # read as "AVAILABLE Available".
+            + (f'<span class="cad-mono" style="font-size:11px;'
+               f'color:{PALETTE["text_secondary"]};">'
+               f'{s["records"]}</span>'
+               if str(s["records"]).strip()
+               and str(s["records"]).lower() != status_label.lower()
+               else '')
+            + f'</div></div>'
             f'<p style="font-size:12.5px;color:{PALETTE["text_secondary"]};line-height:1.6;margin-bottom:8px;">'
             f'{html.escape(s["description"])}</p>'
             f'<div style="display:flex;gap:16px;font-size:11px;color:{PALETTE["text_muted"]};margin-bottom:8px;">'

@@ -338,7 +338,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         # removed spec-forbidden `border-left:3px solid` accent on
         # the active row (depth is now by background-tone only).
         '.ck-funnel-head{display:grid;'
-        'grid-template-columns:230px 1fr 56px 60px 64px 64px;'
+        'grid-template-columns:minmax(120px,230px) 1fr 56px 60px 64px 64px;'
         'align-items:end;gap:18px;padding:6px 8px;'
         'border-bottom:1px solid var(--ink-deep,#0e1a29);'
         'font-family:var(--sc-mono,monospace);font-size:9.5px;'
@@ -346,7 +346,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         'color:var(--muted,#7a8595);}'
         '.ck-funnel-head .h-num{text-align:right;}'
         '.ck-funnel-row{display:grid;'
-        'grid-template-columns:230px 1fr 56px 60px 64px 64px;'
+        'grid-template-columns:minmax(120px,230px) 1fr 56px 60px 64px 64px;'
         'align-items:center;gap:18px;padding:12px 8px;'
         'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
         'text-decoration:none;color:inherit;cursor:pointer;'
@@ -668,9 +668,14 @@ border-radius:2px;transition:background 0.12s;}
     back_to_top = ck_back_to_top_button()
     body = (
         pp_styles + title_block + explainer_html + actions_row + kpis
-        + '<div class="pp-grid">'
-        + f'<div>{funnel}<span id="pp-saved"></span>{search_section}</div>'
-        + f'<div>{activity_section}</div></div>'
+        # Single column when there's no activity panel — an empty right
+        # cell squeezed the funnel to half width and clipped its last
+        # column ("Stalled" read as "Sta…").
+        + ('<div class="pp-grid">'
+           f'<div>{funnel}<span id="pp-saved"></span>{search_section}</div>'
+           f'<div>{activity_section}</div></div>'
+           if activity_section else
+           f'<div>{funnel}<span id="pp-saved"></span>{search_section}</div>')
         + f'<span id="pp-deals"></span>{pipeline_table}{next_up}{nav}{back_to_top}'
     )
 

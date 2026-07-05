@@ -116,18 +116,19 @@ def render_insights_page(db_path: str) -> str:
             f'font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;'
             f'letter-spacing:0.04em;">#{i+1}</span>'
         )
+        # Partner-facing label, not the raw enum ("covenant_tripped"
+        # → "Covenant tripped").
+        kind_label = kind.replace("_", " ").strip().capitalize()
         kind_chip = (
             f'<span style="display:inline-block;padding:1px 8px;'
             f'background:rgba(0,0,0,0.05);color:{fg};border-radius:9999px;'
             f'font-size:10px;font-family:var(--sc-mono,monospace);'
-            f'text-transform:uppercase;letter-spacing:0.05em;">'
-            f'{_html.escape(kind)}</span>'
+            f'letter-spacing:0.05em;">'
+            f'{_html.escape(kind_label)}</span>'
         )
-        score_chip = (
-            f'<span style="font-size:10px;color:{fg};opacity:0.65;'
-            f'font-variant-numeric:tabular-nums;font-family:var(--sc-mono,monospace);">'
-            f'priority {int(ins.get("score", 0))}</span>'
-        )
+        # The raw internal priority score ("priority 100") read as
+        # dev debug output; the #rank chip already conveys ordering.
+        score_chip = ""
 
         cards.append(
             # 2026-05-28 batch 40 · Tier-4 trope removal — cap radius

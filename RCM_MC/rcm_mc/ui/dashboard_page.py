@@ -506,7 +506,7 @@ def _covenant_insights(
         out.append({
             "kind": "covenant_tripped",
             "headline": f"Covenant TRIPPED on {t['name']}",
-            "body": (f"Deal {t['deal_id']} is over its leverage cap: "
+            "body": (f"{t['name']} is over its leverage cap: "
                      f"action today. {rest}".strip()),
             "href": f"/deal/{t['deal_id']}",
             "tone": "alert",
@@ -546,7 +546,7 @@ def _health_distribution_insights(
             "kind": "single_worst_deal",
             "headline": (f"{worst['name']} health score is "
                          f"{worst['score']} ({worst.get('band') or 'poor'})"),
-            "body": (f"{worst['deal_id']} is the weakest deal in the "
+            "body": (f"{worst['name']} is the weakest deal in the "
                      f"portfolio: drill into the deal page to see "
                      f"which components are dragging the score."),
             "href": f"/deal/{worst['deal_id']}",

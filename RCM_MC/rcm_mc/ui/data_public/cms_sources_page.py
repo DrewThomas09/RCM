@@ -162,59 +162,6 @@ def _source_table(sources: List[Dict[str, Any]]) -> str:
 </div>"""
 
 
-def _api_client_docs() -> str:
-    return """
-<div class="ck-panel">
-  <div class="ck-panel-title">CMS API Client — Quick Reference</div>
-  <div style="padding:14px 16px;">
-    <div class="ck-section-label" style="margin-bottom:8px;">Python Usage</div>
-    <!-- 2026-05-28 batch 34 · Tier-4 trope removal — strip 3px brand stripe -->
-    <pre style="background:#FAF7F0;border:1px solid #D6CFC0;border-radius:2px;padding:12px 14px;
-                font-family:var(--ck-mono);font-size:11px;color:#1a2332;overflow-x:auto;
-                white-space:pre;line-height:1.6;">
-<span style="color:#5C6878"># rcm_mc/data_public/cms_api_client.py</span>
-from rcm_mc.data_public.cms_api_client import fetch_pages, fetch_provider_utilization
-
-<span style="color:#5C6878"># Low-level: fetch raw paginated JSON</span>
-rows = fetch_pages(
-    "https://data.cms.gov/data-api/v1/dataset/9552/data",
-    limit=5000,
-    max_pages=3,
-    retry_count=3,
-)
-
-<span style="color:#5C6878"># High-level: physician utilization with normalization</span>
-providers = fetch_provider_utilization(
-    state="TX",
-    specialty="Cardiology",
-    year=2022,
-    max_pages=5,
-)
-<span style="color:#5C6878"># → List[Dict] with: npi, provider_name, state, specialty,
-#   total_services, total_beneficiaries, total_payment</span>
-
-<span style="color:#5C6878"># Winsorize heavy-tailed payment columns</span>
-from rcm_mc.data_public.cms_api_client import winsorize_column
-clean = winsorize_column([col for col in payments], upper_quantile=0.95)
-    </pre>
-    <div style="margin-top:12px;">
-      <div class="ck-section-label" style="margin-bottom:6px;">Key Functions</div>
-      <table class="ck-table" style="width:auto;min-width:600px;">
-        <thead><tr><th style="width:220px">Function</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td class="mono">fetch_pages(endpoint, ...)</td><td class="dim">Raw paginated fetch with retry. Returns List[Dict].</td></tr>
-          <tr style="background:var(--sc-bone)"><td class="mono">fetch_provider_utilization(state, specialty, year, ...)</td><td class="dim">Physician utilization, filtered and normalized.</td></tr>
-          <tr><td class="mono">fetch_geographic_variation(state, ...)</td><td class="dim">Geographic variation dataset for regional benchmarking.</td></tr>
-          <tr style="background:var(--sc-bone)"><td class="mono">normalize_row(row)</td><td class="dim">Map CMS column names → internal canonical names.</td></tr>
-          <tr><td class="mono">winsorize_column(values, upper_quantile)</td><td class="dim">Clip heavy tails for comparability analysis.</td></tr>
-          <tr style="background:var(--sc-bone)"><td class="mono">safe_float(value, default)</td><td class="dim">Null-safe numeric coercion from CMS string fields.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>"""
-
-
 def _integration_panel() -> str:
     return """
 <div class="ck-panel">
@@ -225,17 +172,17 @@ def _integration_panel() -> str:
       <div style="background:var(--ck-panel-alt);padding:10px 12px;">
         <div style="font-family:var(--ck-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ck-text-faint);margin-bottom:6px;">Market Structure</div>
         <div style="font-size:11px;color:var(--ck-text);">HHI / CR3 / CR5 concentration by state-specialty. Feeds white-space scoring and M&amp;A opportunity ranking.</div>
-        <div style="margin-top:6px;font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-accent);">→ market_concentration.py</div>
+        <div style="margin-top:6px;font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-accent);">→ Market Concentration</div>
       </div>
       <div style="background:var(--ck-panel-alt);padding:10px 12px;">
         <div style="font-family:var(--ck-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ck-text-faint);margin-bottom:6px;">Provider Regime</div>
         <div style="font-size:11px;color:var(--ck-text);">Classify providers as durable_growth / steady / stagnant / declining using multi-year payment trends.</div>
-        <div style="margin-top:6px;font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-accent);">→ regime_classifier.py</div>
+        <div style="margin-top:6px;font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-accent);">→ Provider Regime Classification</div>
       </div>
       <div style="background:var(--ck-panel-alt);padding:10px 12px;">
         <div style="font-family:var(--ck-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ck-text-faint);margin-bottom:6px;">Consensus Ranking</div>
         <div style="font-size:11px;color:var(--ck-text);">Blended opportunity rank across volume, payment, regime, and investability lenses for target screening.</div>
-        <div style="margin-top:6px;font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-accent);">→ cms_provider_ranking.py</div>
+        <div style="margin-top:6px;font-family:var(--ck-mono);font-size:9.5px;color:var(--ck-accent);">→ Provider Opportunity Ranking</div>
       </div>
     </div>
   </div>
@@ -256,8 +203,8 @@ def render_cms_sources() -> str:
     )
 
     # B11 — pure addition. Pre-fix this page had NO h1 at all
-    # (no inline .ck-page-h1, no ck_page_title). The three
-    # ck_section_header calls below (DATA SOURCES / API CLIENT /
+    # (no inline .ck-page-h1, no ck_page_title). The
+    # ck_section_header calls below (DATA SOURCES /
     # ANALYTICS INTEGRATION) are legitimate within-page section
     # dividers, not de-facto titles — they stay. Adding ck_page_title
     # at top gives partners landing on /cms-sources an editorial
@@ -269,8 +216,7 @@ def render_cms_sources() -> str:
         eyebrow="CMS DATA SOURCES",
         meta=(
             f"{len(_CMS_SOURCES)} datasets registered · "
-            f"{active_count} live API endpoints · "
-            f"stdlib-only client"
+            f"{active_count} live API endpoints"
         ),
     )
     body = (
@@ -278,9 +224,7 @@ def render_cms_sources() -> str:
         + kpis
         + ck_section_header("DATA SOURCES", "CMS Open Data endpoints powering corpus analytics")
         + _source_table(_CMS_SOURCES)
-        + ck_section_header("API CLIENT", "rcm_mc/data_public/cms_api_client.py")
-        + _api_client_docs()
-        + ck_section_header("ANALYTICS INTEGRATION", "how CMS data feeds corpus modules")
+        + ck_section_header("ANALYTICS INTEGRATION", "how CMS data feeds corpus analytics")
         + _integration_panel()
     )
 
@@ -292,7 +236,7 @@ def render_cms_sources() -> str:
         body,
         title="CMS Data Sources",
         active_nav="/cms-sources",
-        subtitle=f"{len(_CMS_SOURCES)} datasets registered · {active_count} live API endpoints · stdlib-only client",
+        subtitle=f"Live CMS Open Data endpoints · {len(_CMS_SOURCES)} datasets registered · {active_count} live APIs",
         editorial_intro={
             "eyebrow": "CMS DATA SOURCES",
             "headline": "What the cms data sources reveals on this deal.",

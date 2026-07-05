@@ -208,11 +208,17 @@ def _load_alerts(
         return []
     out = []
     for a in alerts[:limit]:
+        # Alert carries title + detail (see alerts.Alert) — there is no
+        # `message` attribute, so the old getattr(a, "message", "")
+        # rendered every alert row as an empty line.
+        title = getattr(a, "title", "") or ""
+        detail = getattr(a, "detail", "") or ""
         out.append({
             "deal_id": getattr(a, "deal_id", "—"),
             "kind": getattr(a, "kind", "—"),
             "severity": getattr(a, "severity", "info"),
-            "message": getattr(a, "message", ""),
+            "message": title,
+            "detail": detail,
         })
     return out
 
@@ -416,11 +422,15 @@ def _alerts_section(
             '<p class="ck-section-body cad-pos">All clear.</p>',
             title="Key alerts",
         )
+    # Live severities are "red" | "amber" | "info" (alerts.Alert); the
+    # legacy critical/high/medium vocabulary is kept for callers that
+    # still pass it.
     n_critical = sum(1 for a in alerts
                      if str(a.get("severity")
                             ).lower()
-                     in ("critical", "high"))
+                     in ("red", "critical", "high"))
     sev_tone_map = {
+        "red": "negative", "amber": "warning",
         "critical": "negative", "high": "negative",
         "medium": "warning", "warning": "warning",
         "low": "neutral", "info": "neutral",

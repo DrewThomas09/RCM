@@ -80,6 +80,51 @@ def _ap_head(
         '</header>'
     )
 
+# Partner-facing display names for metric keys. The naive
+# .replace("_", " ").title() path yields "Ebitda Margin" / "Days In Ar" /
+# "Cost To Collect"; this map fixes casing and punctuation for the keys
+# that appear on the analytics pages. Unknown keys fall back to .title().
+_METRIC_DISPLAY_NAMES: Dict[str, str] = {
+    "ebitda_margin":              "EBITDA Margin",
+    "days_in_ar":                 "Days in A/R",
+    "cost_to_collect":            "Cost to Collect",
+    "clean_claim_rate":           "Clean Claim Rate",
+    "denial_rate":                "Initial Denial Rate",
+    "initial_denial_rate":        "Initial Denial Rate",
+    "write_off_pct":              "Write-off %",
+    "final_writeoff_rate":        "Write-off %",
+    "net_collection_rate":        "Net Collection Rate",
+    "collection_rate":            "Net Collection Rate",
+    "denial_overturn_rate":       "Denial Overturn Rate",
+    "first_pass_resolution":      "First-Pass Resolution",
+    "first_pass_resolution_rate": "First-Pass Resolution Rate",
+}
+
+
+def _metric_display_name(key: Any) -> str:
+    """Human label for a metric key, with a .title() fallback."""
+    k = str(key or "")
+    return _METRIC_DISPLAY_NAMES.get(k, k.replace("_", " ").title())
+
+
+# Metrics whose P50 snapshots are stored as fractions (0.072 = 7.2%)
+# rather than points. Render these ×100 with 1dp so the table values
+# read in the same units as the pp drift column.
+_FRACTION_SCALED_METRICS = frozenset({"ebitda_margin"})
+
+
+def _fmt_drift_p50(value: Any, metric_key: Any) -> str:
+    """Format a benchmark P50 for the drift table (percent-scale for
+    fraction-stored metrics, plain 2dp otherwise)."""
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    if str(metric_key or "") in _FRACTION_SCALED_METRICS:
+        return f"{f * 100:.1f}%"
+    return f"{f:.2f}"
+
+
 _BENCH_EXPLAINER_CSS = """
 .ck-be-explainer{font-family:var(--sc-serif);font-size:15px;line-height:1.6;
 color:var(--sc-text-dim);max-width:68ch;
@@ -114,7 +159,7 @@ def _benchmark_drift_chart(drifts: List[Dict[str, Any]],
         except (TypeError, ValueError):
             continue
         items.append({
-            "metric": str(d.get("metric_key", "")).replace("_", " ").title(),
+            "metric": _metric_display_name(d.get("metric_key", "")),
             "drift": drift,
             "direction": str(d.get("direction", "stable")),
         })
@@ -124,7 +169,10 @@ def _benchmark_drift_chart(drifts: List[Dict[str, Any]],
     items.sort(key=lambda i: -i["drift"])
     max_abs = max((abs(i["drift"]) for i in items), default=1) or 1
 
-    pad_l, pad_r, pad_t, pad_b = 18, 18, 28, 38
+    # 50px side pads leave room for the "+X.XXpp" value labels that sit
+    # just outside each bar end — at 18px the max-width bar's label
+    # clipped at the SVG edge (e.g. "-1.90pp" rendered as "0pp").
+    pad_l, pad_r, pad_t, pad_b = 50, 50, 28, 38
     plot_w = width - pad_l - pad_r
     plot_h = height - pad_t - pad_b
     n = len(items)
@@ -635,7 +683,8 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
     improving = 0
     declining = 0
     for d in drifts:
-        metric = html.escape(str(d.get("metric_key", "")).replace("_", " ").title())
+        metric_key = d.get("metric_key", "")
+        metric = html.escape(_metric_display_name(metric_key))
         current = d.get("current_p50", 0)
         prior = d.get("prior_p50", 0)
         drift = d.get("drift_pp", 0)
@@ -652,8 +701,8 @@ def render_benchmark_drift(drifts: List[Dict[str, Any]]) -> str:
         rows += (
             f'<tr>'
             f'<td><strong>{metric}</strong></td>'
-            f'<td class="num">{float(prior):.2f}</td>'
-            f'<td class="num">{float(current):.2f}</td>'
+            f'<td class="num">{_fmt_drift_p50(prior, metric_key)}</td>'
+            f'<td class="num">{_fmt_drift_p50(current, metric_key)}</td>'
             f'<td class="num {drift_cls}">{float(drift):+.2f}pp</td>'
             f'<td><span class="cad-badge {dir_cls}">{html.escape(direction.replace("_", " ").title())}</span></td>'
             f'</tr>'
@@ -732,7 +781,7 @@ def render_predicted_vs_actual(deal_id: str, deal_name: str,
 
     rows = ""
     for c in comparisons:
-        metric = html.escape(str(c.get("metric_key", "")).replace("_", " ").title())
+        metric = html.escape(_metric_display_name(c.get("metric_key", "")))
         predicted = c.get("predicted_at_diligence", 0)
         actual = c.get("actual_now", 0)
         variance = c.get("variance_pct", 0)

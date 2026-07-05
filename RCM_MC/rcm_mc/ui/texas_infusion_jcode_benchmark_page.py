@@ -129,7 +129,8 @@ def _heat_legend() -> str:
         f'background:{grad};border:1px solid #d6cfc0;display:inline-block;">'
         '</span><span>premium</span></span> · '
         f'<span style="color:{_NEG};">red Δ</span> = biosimilar erosion, '
-        f'<span style="color:{_POS};">green Δ</span> = supply-driven rise.')
+        f'<span style="color:{_POS};">green Δ</span> = supply-driven rise.'
+        '</div>')
 
 
 def _multiple_table(bench: dict) -> str:

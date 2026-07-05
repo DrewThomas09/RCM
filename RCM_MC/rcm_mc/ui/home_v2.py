@@ -340,9 +340,8 @@ def render_home(
     # Today's-Brief auto-derivation — every value pulled from the
     # live ``deals`` frame. When a needed field is absent we honestly
     # show "—" rather than fabricate.
-    from datetime import datetime as _dt, timezone as _tz
+    from datetime import datetime as _dt
     n_deals = len(deals) if deals is not None else 0
-    today = _dt.now(_tz.utc).date()
 
     # Tile 1 — portfolio NPR total
     if not deals.empty and "net_revenue" in deals.columns:
@@ -387,21 +386,33 @@ def render_home(
     # Tile 3 — stalled deals (no activity in 30 days). Same
     # 30-day threshold as the /pipeline stalled column for
     # cross-page consistency.
+    #
+    # Staleness is measured against the portfolio's own most recent
+    # activity (max updated_at — the frame's as-of date), NOT the wall
+    # clock. Comparing to datetime.now() counted EVERY deal as stalled
+    # once the data itself was more than 30 days old (e.g. a snapshot
+    # loaded from disk), inflating the tile to the full deal count —
+    # a fake signal, not a real one. Anchored to the as-of date, the
+    # tile honestly reports which deals had gone 30+ days without
+    # activity as of the portfolio's latest update; on a live store
+    # the freshest updated_at IS "now", so the two anchors agree.
+    _activity_dates = []
     if not deals.empty and "updated_at" in deals.columns:
-        stalled = 0
         for _, _row in deals.iterrows():
             _ref = str(_row.get("updated_at") or "")[:10]
             if not _ref:
                 continue
             try:
-                _d = _dt.strptime(_ref, "%Y-%m-%d").date()
-                if (today - _d).days > 30:
-                    stalled += 1
+                _activity_dates.append(_dt.strptime(_ref, "%Y-%m-%d").date())
             except (TypeError, ValueError):
                 continue
+    if _activity_dates:
+        _as_of = max(_activity_dates)
+        stalled = sum(1 for _d in _activity_dates if (_as_of - _d).days > 30)
         stalled_val = str(stalled)
         stalled_sub = (
-            f"deal{'s' if stalled != 1 else ''} with no activity in 30 days"
+            f"deal{'s' if stalled != 1 else ''} with no activity in the "
+            "30 days up to the latest portfolio update"
         )
         stalled_cls = "bad" if stalled > 0 else "good"
     else:

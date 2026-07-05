@@ -194,9 +194,9 @@ def render_escalations(
             headline=f"No red alerts open ≥ {min_days} days.",
             body=(
                 "Escalations show red-severity alerts whose first "
-                "sighting is older than the threshold. History is "
-                "built up on every /alerts call — narrow the "
-                "threshold above to look further back."
+                "sighting is older than the threshold. History "
+                "accrues each time alerts are evaluated — narrow "
+                "the threshold above to look further back."
             ),
             cta_text="View live alerts",
             cta_href="/alerts",
@@ -259,7 +259,7 @@ def render_escalations(
         name="q",
         initial="",
         label="Search",
-        placeholder="(future: filter by deal name, alert title)",
+        placeholder="Filter by deal name or alert title",
         extra_hidden={"min_days": str(min_days)},
     )
 
@@ -269,7 +269,7 @@ def render_escalations(
         eyebrow="ESCALATIONS",
         title="Escalations",
         meta=(
-            f"RED ALERTS · OPEN > {min_days} DAYS · OLDEST FIRST"
+            f"RED ALERTS · OPEN ≥ {min_days} DAYS · OLDEST FIRST"
         ),
         lede_italic_phrase=(
             "The red alerts the clock is running on."

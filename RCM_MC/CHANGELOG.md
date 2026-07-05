@@ -1,5 +1,82 @@
 # Changelog
 
+## Unreleased (2026-07-05) — UI polish loop: alert rows, chart-label fixes, dev-copy sweep
+
+Two review passes over ~60 partner-facing routes (screenshot-driven,
+three parallel reviewers per pass), fixes landed in seven slices.
+
+- **HIGH**: Day One + morning-dashboard alert rows rendered empty —
+  the loader read a nonexistent `message` attribute off
+  `alerts.Alert` (which carries `title`/`detail`), and the severity
+  maps checked critical/high/medium against live red/amber/info
+  values. Rows now show headline + detail with correct badge tones.
+- **HIGH**: /rcm-benchmarks chart labels were 100× off — `_fmt_value`
+  formatted stored fractions without ×100 ("0.1%" beside a table
+  showing 11.0%). Charts, tooltips, and gridlines now agree with the
+  tables.
+- **HIGH**: /payer-stress rendered eight identical scenarios (0.000×
+  deltas) with no explanation. The payer-mix regressions genuinely
+  carry no signal (R² ≤ 0.0016; bootstrap sign-flips), so the R²
+  gate stays — but the page now says so: weak-signal banner,
+  "no signal" cells, dash KPI tiles, documented R² floor.
+- **MEDIUM**: Command Center KPI cards tile cleanly (uniform 4x1 —
+  the 5x2 hero + 4/3 mix left dead holes in the 12-col grid);
+  /diligence/risk-workbench no longer stacks a double masthead
+  (auto-h1 backstop fired over an as_subhead hero).
+- **MEDIUM**: dev-facing copy removed from partner pages:
+  /cms-sources Python API-client docs, /deal-library "run
+  scripts/ingest…" empty state, /escalations "(future: …)"
+  placeholder + "/alerts call", market-intel Yahoo-Finance note,
+  rxnorm "a row, not code" captions, risk-workbench "(Prompts G-O)".
+- **MEDIUM**: honest-data fixes: market-intel earnings estimates roll
+  forward (no more "next expected" dates in the past), /market-data
+  state map legend names the HCRIS metric instead of "portfolio
+  exposure", insights prose names deals instead of internal ids.
+- **LOW**: formatting sweep — activity feed KPIs ($13.00M, not
+  ebitda=13000000.0), lp-update change labels, "$26.0B" style on
+  healthcare verticals, "21.4M" volumes on radiology atlas,
+  -$0.12 EPS, 1dp HCAHPS, thousands separators on Analysis Hub,
+  ck_bar_row label track 120→200px (unclips labels platform-wide),
+  ck-table styling on /deadlines + /cohorts, /cohorts moved off the
+  legacy shell, weekday-aware Day One brief title, screen filter
+  chips drop ∞ endpoints, drift-chart label clipping, deal-name
+  truncation and SVG label collisions on portfolio monitor.
+
+## Unreleased (2026-07-05) — Tools index: double-render fix, dedup, ?view=all deep link, jump rails
+
+- **HIGH**: /tools no longer renders both views stacked. The inactive
+  view carried class `hidden` but no `.ti-main.hidden{display:none}`
+  rule existed, so the workspace grid AND the Full A–Z grid were both
+  visible — every tool appeared twice (398 cards on a ~23k-px page),
+  which read as double counting. One CSS rule collapses the inactive
+  view; regression-tested in `test_tools_index_cards.py`.
+- **HIGH**: De-duplicated the tools card grid (199 → 187 cards):
+  `/diligence/comparable-outcomes`, `/diligence/regulatory-calendar`
+  (same renderer + params as their bare Research routes) and
+  `/market-data/map` (same combined handler as `/market-data`) are now
+  safe-merged into their canonical cards; POST-only
+  `/npi-cleaner/{detect,upload}` no longer render as dead 404 tiles
+  (fixes `test_every_az_card_returns_200`); byte-serving downloads
+  (`/npi-cleaner/sample`, `/rxnorm/export.csv`, the five
+  `/diligence/texas-infusion/*.csv`) come off the grid — the owning
+  pages carry the download buttons.
+- **MEDIUM**: `/tools?view=all` now opens the Full A–Z view
+  server-side (the dispatch previously ignored the query and always
+  landed on the workspace view, leaving the tools-showcase link
+  broken); the client toggle keeps the URL in sync so the view is
+  shareable. Removed the unreachable legacy `_route_tools_index_full`
+  handler it superseded.
+- **MEDIUM**: Jump rails on both /tools views — one chip per
+  workspace/bucket (with counts) so partners hop straight to a section
+  instead of scrolling ~190 cards; rails hide while a search/status
+  filter is active.
+- **MEDIUM**: Fixed unclosed `<div>` in the Texas-infusion J-code
+  benchmark heat legend that nested the "J-code reference" and
+  "Methodology & evidence" panels inside the heatmap panel body.
+- **LOW**: NPI Cleaner / Claims Analysis pages no longer print their
+  own source-file path in the masthead (`code=` debug kicker removed);
+  the engine source note is rewritten in partner language.
+
 ## v1.1.0 (2026-05-17) — Ridge predictor: per-cohort α tuning + diagnostic chips
 
 The ridge regression predictor moves from a fixed demo-grade penalty

@@ -118,6 +118,58 @@ class ServerConfig:
     auth_pass: Optional[str] = None
 
 
+# ── Small partner-facing formatting helpers ────────────────────────────────
+
+def _fmt_ts_min(v: Any) -> str:
+    """Render a stored timestamp as ``YYYY-MM-DD HH:MM`` for partner-facing
+    HTML — strips seconds and replaces the ISO ``T`` separator with a space.
+
+    Accepts ISO strings (``2026-05-01T09:30:12``), SQLite datetimes with a
+    space separator, and anything ``str()``-able; empty/None → "".
+    """
+    if v is None:
+        return ""
+    return str(v)[:16].replace("T", " ")
+
+
+# Partner-facing labels for the quarterly-variance KPI keys
+# (:data:`rcm_mc.pe.hold_tracking.TRACKED_KPIS` plus legacy aliases).
+_KPI_LABELS: Dict[str, str] = {
+    "ebitda": "EBITDA",
+    "net_patient_revenue": "Net patient revenue",
+    "net_revenue": "Net revenue",
+    "idr_blended": "Initial denial rate (blended)",
+    "fwr_blended": "Final write-off rate (blended)",
+    "dar_clean_days": "Days A/R (clean claims)",
+}
+
+
+def _kpi_label(kpi: Any) -> str:
+    """Partner label for a variance-table KPI key ("ebitda" → "EBITDA")."""
+    key = str(kpi or "")
+    label = _KPI_LABELS.get(key.lower())
+    if label:
+        return label
+    # Unknown key — degrade gracefully: underscores to spaces, sentence case.
+    words = key.replace("_", " ").strip()
+    return words[:1].upper() + words[1:] if words else ""
+
+
+# Partner-facing subtext for the deal-page health tile, keyed off the
+# internal band token from :mod:`rcm_mc.deals.health_score`.
+_HEALTH_BAND_LABELS: Dict[str, str] = {
+    "red": "Red — needs attention",
+    "amber": "Amber — watch",
+    "green": "Green — healthy",
+}
+
+
+def _plural(n: int, singular: str, plural: Optional[str] = None) -> str:
+    """``"1 entry"`` / ``"3 entries"`` — count with a grammatical unit."""
+    unit = singular if n == 1 else (plural or singular + "s")
+    return f"{n} {unit}"
+
+
 # ── HTML page builders (dynamic = rebuilt per request) ─────────────────────
 
 def _render_dashboard(config: ServerConfig) -> str:
@@ -299,16 +351,20 @@ def _render_deal_rerun(store: PortfolioStore, deal_id: str) -> str:
         actual = html.escape(inputs["actual_path"])
         bench = html.escape(inputs["benchmark_path"])
         base = html.escape(inputs.get("outdir_base") or "")
+        # Header shows only the file basenames — the full absolute paths
+        # are operator plumbing and live in the "change paths" form below.
+        actual_name = html.escape(os.path.basename(inputs["actual_path"]))
+        bench_name = html.escape(os.path.basename(inputs["benchmark_path"]))
         return f"""
         {rerun_css}
         <section class="cad-card ck-deal-rerun-card">
           <div class="ck-deal-rerun-head">
             <h2>Rerun simulation</h2>
-            <span class="ck-deal-rerun-meta">{actual} · {bench}</span>
+            <span class="ck-deal-rerun-meta">{actual_name} · {bench_name}</span>
           </div>
           <form class="ck-deal-rerun-form" method="POST"
                 action="/api/deals/{qd}/rerun">
-            <label>n_sims
+            <label>Simulations
               <input type="number" name="n_sims" value="5000" min="100">
             </label>
             <label>seed
@@ -479,7 +535,7 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
       <header class="ck-deal-deadlines-head">
         <h2>Deadlines</h2>
         <span class="ck-deal-deadlines-meta">
-          {len(df)} entries · <a href="/deadlines">all deadlines →</a>
+          {_plural(len(df), "entry", "entries")} · <a href="/deadlines">all deadlines →</a>
         </span>
       </header>
       {list_html}
@@ -607,7 +663,7 @@ def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
       <header class="ck-deal-alerts-head">
         <h2>Active alerts</h2>
         <span class="ck-deal-alerts-meta">
-          {len(alerts)} entries · <a href="/alerts">all alerts →</a>
+          {_plural(len(alerts), "entry", "entries")} · <a href="/alerts">all alerts →</a>
         </span>
       </header>
       <ul class="ck-deal-alerts-list">{"".join(rows)}</ul>
@@ -718,7 +774,8 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         return (
             f'<span style="color:{color};font-family:var(--sc-mono,monospace);'
             f'font-weight:700;font-size:10.5px;letter-spacing:0.08em;'
-            f'text-transform:uppercase;">{html.escape(str(sev))}</span>'
+            f'text-transform:uppercase;">'
+            f'{html.escape(str(sev).replace("_", " "))}</span>'
         )
 
     # Snapshot audit trail — oldest→newest, inline table
@@ -748,7 +805,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         trail_rows.append(
             f"<tr>"
             f'<td class="ck-deal-mono">'
-            f'{html.escape(str(r.get("created_at") or "")[:19])}</td>'
+            f'{html.escape(_fmt_ts_min(r.get("created_at")))}</td>'
             f"<td>{html.escape(str(r.get('stage') or '?')).title()}</td>"
             f"<td class='r ck-deal-mono'>{moic}</td>"
             f"<td class='r ck-deal-mono'>{irr}</td>"
@@ -771,7 +828,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
                 f"<tr>"
                 f'<td class="ck-deal-mono">'
                 f'{html.escape(str(r.get("quarter") or ""))}</td>'
-                f"<td>{html.escape(str(r.get('kpi') or ''))}</td>"
+                f"<td>{html.escape(_kpi_label(r.get('kpi')))}</td>"
                 f"<td class='r ck-deal-mono'>{_fmt_kpi_val(r.get('kpi'), r.get('actual'))}</td>"
                 f"<td class='r ck-deal-mono'>{_fmt_kpi_val(r.get('kpi'), r.get('plan'))}</td>"
                 f"<td class='r ck-deal-mono'>{varp_str}</td>"
@@ -944,7 +1001,8 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
         + ck_kpi_block(
             "Health", health_value,
-            sub=f'{html.escape(health["band"])} band',
+            sub=html.escape(_HEALTH_BAND_LABELS.get(
+                str(health["band"]).lower(), str(health["band"]))),
         )
         + ck_kpi_block(
             "Stage", html.escape(str(stage)).title(),
@@ -1040,7 +1098,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     <section class="cad-card ck-deal-section">
       <header class="ck-deal-section-head">
         <h2>Snapshot audit trail</h2>
-        <span class="ck-deal-section-count">{len(snaps)} entries</span>
+        <span class="ck-deal-section-count">{_plural(len(snaps), "entry", "entries")}</span>
       </header>
       <table class="ck-deal-table">
         <thead><tr>
@@ -1058,7 +1116,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
       '<section class="cad-card ck-deal-section">'
       '<header class="ck-deal-section-head">'
       '<h2>Quarterly variance</h2>'
-      f'<span class="ck-deal-section-count">{len(var_df)} rows</span>'
+      f'<span class="ck-deal-section-count">{_plural(len(var_df), "row")}</span>'
       '</header>'
       '<table class="ck-deal-table"><thead><tr>'
       '<th>Quarter</th><th>KPI</th>'
@@ -1073,7 +1131,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
       '<section class="cad-card ck-deal-section">'
       '<header class="ck-deal-section-head">'
       '<h2>Initiative attribution</h2>'
-      f'<span class="ck-deal-section-count">{len(init_df)} initiatives</span>'
+      f'<span class="ck-deal-section-count">{_plural(len(init_df), "initiative")}</span>'
       '</header>'
       '<table class="ck-deal-table"><thead><tr>'
       '<th>Initiative</th><th class="r">Cum. actual</th>'
@@ -1217,7 +1275,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
     items_html: list = []
     for _, r in notes_df.iterrows():
         author = r.get("author") or "—"
-        ts = str(r.get("created_at") or "")[:19]
+        ts = _fmt_ts_min(r.get("created_at"))
         body_text = str(r.get("body") or "")
         # Preserve analyst-typed newlines as <br>; escape everything else
         escaped = html.escape(body_text).replace("\n", "<br>")
@@ -1271,7 +1329,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
             note_id = int(r.get("note_id") or 0)
             body_txt = str(r.get("body") or "")[:140]
             author_txt = str(r.get("author") or "—")
-            deleted_ts = str(r.get("deleted_at") or "")[:19]
+            deleted_ts = _fmt_ts_min(r.get("deleted_at"))
             trash_items.append(
                 f'<li style="padding: 0.5rem 0; '
                 f'border-bottom: 1px solid var(--border); '
@@ -1374,7 +1432,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
     <section class="cad-card ck-deal-notes-card">
       <header class="ck-deal-notes-head">
         <h2>Notes</h2>
-        <span class="ck-deal-notes-count">{len(notes_df)} entries</span>
+        <span class="ck-deal-notes-count">{_plural(len(notes_df), "entry", "entries")}</span>
       </header>
       {note_list}
       <form class="ck-deal-note-form" method="POST" action="/api/deals/{qd}/notes">
@@ -5517,7 +5575,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 exit_multiple=_qfloat("exit_multiple"),
             ))
         if path == "/tools":
-            return self._route_tools_index()
+            # ?view=all deep-links the Full A–Z view (legacy links from the
+            # tools showcase used this query; it used to silently fall back
+            # to the workspace view because the dispatch ignored the query).
+            _tv = urllib.parse.parse_qs(parsed.query).get("view", [""])[0]
+            return self._route_tools_index(
+                initial_view="index" if _tv in ("all", "index") else "workspace")
         # Internal open-data integrations lab (backend; not in the top nav).
         if path == "/tools/open-data":
             from .ui.open_data_lab_page import render_open_data_lab
@@ -8009,7 +8072,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     rid = r.get("run_id", "")
                     did = html.escape(str(r.get("deal_id", "")))
                     scenario = html.escape(str(r.get("scenario", "")))
-                    created = html.escape(str(r.get("created_at", ""))[:19])
+                    created = html.escape(_fmt_ts_min(r.get("created_at", "")))
                     notes = html.escape(str(r.get("notes", ""))[:80])
                     rows_html += (
                         f'<tr><td class="num">{rid}</td>'
@@ -16033,7 +16096,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             sections.append(
                 f'<div class="card" style="border-left: 3px solid var(--red-text);">'
                 f'<h2 style="margin-top: 0;">Overdue ({len(od)})</h2>'
-                f'<table><thead><tr><th>Status</th><th>Deal</th>'
+                f'<table class="ck-table"><thead><tr><th>Status</th><th>Deal</th>'
                 f'<th>Task</th><th>Owner</th><th>Due</th><th></th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
@@ -16048,7 +16111,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="card">'
                 f'<h2 style="margin-top: 0;">Upcoming '
                 f'(next {days_ahead} days, {len(up)})</h2>'
-                f'<table><thead><tr><th>Status</th><th>Deal</th>'
+                f'<table class="ck-table"><thead><tr><th>Status</th><th>Deal</th>'
                 f'<th>Task</th><th>Owner</th><th>Due</th><th></th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
@@ -16238,7 +16301,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="card">'
                 f'<h2>Deals owned by <code>{html.escape(owner)}</code> '
                 f'({len(dids)})</h2>'
-                f'<table><thead><tr>'
+                f'<table class="ck-table"><thead><tr>'
                 f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
                 f'<th>MOIC</th><th>IRR</th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
@@ -16773,13 +16836,26 @@ class RCMHandler(BaseHTTPRequestHandler):
                 '</section>'
             )
         else:
+            # Partner-facing labels — the raw snake_case enums
+            # ("new_deal", "covenant_degrade") read as internals in a
+            # document billed as partner-ready.
+            _change_labels = {
+                "new_deal": "New deal",
+                "covenant_degrade": "Covenant degraded",
+                "covenant_improve": "Covenant improved",
+                "stage_change": "Stage change",
+                "health_change": "Health change",
+            }
             act_rows = []
             for _, r in events_df.head(30).iterrows():
+                _ct = str(r["change_type"])
+                _ct_label = _change_labels.get(
+                    _ct, _ct.replace("_", " ").capitalize())
                 act_rows.append(
                     "<tr>"
                     f'<td class="ck-lp-mono">{html.escape(str(r["timestamp"])[:10])}</td>'
                     f'<td>{_deal_link(str(r["deal_id"]))}</td>'
-                    f'<td>{html.escape(str(r["change_type"]))}</td>'
+                    f'<td>{html.escape(_ct_label)}</td>'
                     f'<td class="ck-lp-detail">{html.escape(str(r["detail"]))}</td>'
                     "</tr>"
                 )
@@ -17032,7 +17108,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'deals that actually contributed to the weighted average '
                 f'(those with MOIC + IRR + EV recorded).'
                 f'</p>'
-                f'<table><thead><tr>'
+                f'<table class="ck-table"><thead><tr>'
                 f'<th>Tag</th><th>Deals</th><th>Avg health</th>'
                 f'<th>W. MOIC</th><th>W. IRR</th>'
                 f'<th>Trips</th><th>Tight</th><th>Concerning</th>'
@@ -17040,10 +17116,23 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
 
-        self._send_html(shell(
-            body=body, title="Cohorts",
-            subtitle="Portfolio rollup by tag",
-            back_href="/",
+        # Editorial chrome to match the rest of the platform (was the
+        # legacy bare shell with an orphan subtitle + back link).
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, ck_page_actions,
+        )
+        n_cohorts = 0 if df.empty else len(df)
+        title_block = ck_page_title(
+            "Cohorts", eyebrow="PORTFOLIO",
+            meta=f"ROLLUP BY TAG · {n_cohorts} COHORT"
+                 f"{'' if n_cohorts == 1 else 'S'}",
+        )
+        page = (
+            f'<div class="ck-page-wrap">{title_block}{body}</div>'
+            + ck_page_actions()
+        )
+        self._send_html(chartis_shell(
+            page, title="Cohorts", active_nav="portfolio",
         ))
 
     def _route_cohort_detail(self, tag: str) -> None:
@@ -17086,16 +17175,29 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="card">'
                 f'<h2>Deals tagged <code>{html.escape(tag)}</code> '
                 f'({len(df)})</h2>'
-                f'<table><thead><tr>'
+                f'<table class="ck-table"><thead><tr>'
                 f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
                 f'<th>MOIC</th><th>IRR</th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
 
-        self._send_html(shell(
-            body=body, title=f"Cohort: {tag}",
-            subtitle=f"Deals in cohort {tag!r}",
-            back_href="/cohorts",
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, ck_page_actions,
+        )
+        n_members = 0 if df.empty else len(df)
+        title_block = ck_page_title(
+            f"Cohort · {tag}", eyebrow="PORTFOLIO / COHORTS",
+            meta=f"{n_members} DEAL{'' if n_members == 1 else 'S'} TAGGED",
+        )
+        page = (
+            f'<div class="ck-page-wrap">{title_block}'
+            f'<p style="margin:0 0 14px;"><a href="/cohorts" '
+            f'class="ck-link">&larr; All cohorts</a></p>'
+            f'{body}</div>'
+            + ck_page_actions()
+        )
+        self._send_html(chartis_shell(
+            page, title=f"Cohort: {tag}", active_nav="portfolio",
         ))
 
     def _route_escalations(self) -> None:
@@ -17181,7 +17283,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f"<td>{html.escape(params.get('outdir') or '—')}</td>"
                 f"<td class='num'>{params.get('n_sims') or '—'}</td>"
                 f"<td class='num'>{duration}</td>"
-                f"<td class='muted'>{html.escape(str(j.created_at)[:19])}</td>"
+                f"<td class='muted'>{html.escape(_fmt_ts_min(j.created_at))}</td>"
                 f"</tr>"
             )
         jobs_table = (
@@ -17331,9 +17433,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         <div class="card">
           <h2>Status: <span class="badge {cls}">{label}</span></h2>
           <p class="muted">
-            Created {html.escape(str(job.created_at)[:19])}
-            {f"· Started {html.escape(str(job.started_at)[:19])}" if job.started_at else ""}
-            {f"· Finished {html.escape(str(job.finished_at)[:19])}" if job.finished_at else ""}
+            Created {html.escape(_fmt_ts_min(job.created_at))}
+            {f"· Started {html.escape(_fmt_ts_min(job.started_at))}" if job.started_at else ""}
+            {f"· Finished {html.escape(_fmt_ts_min(job.finished_at))}" if job.finished_at else ""}
           </p>
           <p><a href="/jobs">← All jobs</a></p>
         </div>
@@ -17430,7 +17532,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
 
         def _fmt_ts(v):
-            return html.escape(str(v)[:19]) if v else "—"
+            return html.escape(_fmt_ts_min(v)) if v else "—"
 
         stats_rows = "".join(
             f'<tr><td><code>{tbl}</code></td>'
@@ -17752,10 +17854,31 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "LIMIT ?", (limit,),
             ).fetchall():
                 import json as _json
+
+                def _fmt_kpi(k, v):
+                    # Partner-facing formatting — the raw key=value dump
+                    # rendered "ebitda=13000000.0".
+                    label = str(k).replace("_", " ")
+                    try:
+                        f = float(v)
+                    except (TypeError, ValueError):
+                        return f"{label} {v}"
+                    kl = str(k).lower()
+                    if any(t in kl for t in ("ebitda", "revenue", "npsr",
+                                             "cash", "capex", "debt")):
+                        if abs(f) >= 1e6:
+                            return f"{label} ${f / 1e6:,.2f}M"
+                        return f"{label} ${f:,.2f}"
+                    if "rate" in kl or "pct" in kl or "margin" in kl:
+                        return f"{label} {f * 100 if abs(f) <= 1 else f:.1f}%"
+                    if f == int(f):
+                        return f"{label} {int(f):,}"
+                    return f"{label} {f:,.2f}"
+
                 try:
                     kpis = _json.loads(r["kpis_json"] or "{}")
-                    summary = ", ".join(
-                        f"{k}={v}" for k, v in list(kpis.items())[:3]
+                    summary = " · ".join(
+                        _fmt_kpi(k, v) for k, v in list(kpis.items())[:3]
                     )
                 except (ValueError, TypeError):
                     summary = ""
@@ -17782,7 +17905,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         items_html = []
         for e in events:
             cls, label = kind_badge.get(e["kind"], ("badge-muted", "EVENT"))
-            ts_short = str(e["ts"] or "")[:19]
+            # "2026-07-05 14:53" — the raw ISO 'T' + seconds read like a log
+            ts_short = str(e["ts"] or "")[:16].replace("T", " ")
             did = str(e["deal_id"] or "")
             items_html.append(
                 f'<li style="padding: 0.75rem 0; '
@@ -18255,7 +18379,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     did = str(r.get("deal_id") or "")
                     snippet = body_text[:240]
                     more = "…" if len(body_text) > 240 else ""
-                    when = html.escape(str(r.get("created_at") or "")[:19])
+                    when = html.escape(_fmt_ts_min(r.get("created_at")))
                     note_hits.append(
                         '<li class="ck-search-hit">'
                         f'<div class="ck-search-hit-title">{_deal_link(did)}'
@@ -18581,7 +18705,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f"<td><span class='badge badge-blue'>"
                 f"{html.escape(str(r['role']))}</span></td>"
                 f"<td class='muted' style='font-size: 0.8rem;'>"
-                f"{html.escape(str(r['created_at'])[:19])}</td>"
+                f"{html.escape(_fmt_ts_min(r['created_at']))}</td>"
                 f"</tr>"
                 for _, r in users_df.iterrows()
             )
@@ -18616,12 +18740,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 a_rows.append(
                     f"<tr>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['acked_at'])[:19])}</td>"
+                    f"{html.escape(_fmt_ts_min(r['acked_at']))}</td>"
                     f"<td><strong>{html.escape(acker)}</strong></td>"
                     f"<td><a href='/deal/{urllib.parse.quote(did)}' "
                     f"style='color: var(--accent); font-weight: 600; "
                     f"text-decoration: none;'>{html.escape(did)}</a></td>"
-                    f"<td>{html.escape(str(r['kind']))}</td>"
+                    f"<td>{html.escape(str(r['kind']).replace('_', ' '))}</td>"
                     f"<td>{snooze_cell}</td>"
                     f"<td class='muted' style='font-size: 0.85rem;'>"
                     f"{html.escape(str(r.get('note') or ''))}</td>"
@@ -18657,7 +18781,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 o_rows.append(
                     f"<tr>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['assigned_at'])[:19])}</td>"
+                    f"{html.escape(_fmt_ts_min(r['assigned_at']))}</td>"
                     f"<td><strong>{html.escape(str(r['owner']))}</strong></td>"
                     f"<td><a href='/deal/{urllib.parse.quote(did)}' "
                     f"style='color: var(--accent); font-weight: 600; "
@@ -18684,18 +18808,34 @@ class RCMHandler(BaseHTTPRequestHandler):
                 '<p class="muted">Nothing logged yet.</p></div>'
             )
         else:
+            def _human_action(code: str) -> str:
+                # "view.sensitive" / "login.success" → "View sensitive" /
+                # "Login success" — partners read words, not event codes.
+                words = code.replace(".", " ").replace("_", " ").strip()
+                return words[:1].upper() + words[1:] if words else ""
+
+            def _human_detail_key(k: str) -> str:
+                # "client_ip" → "client IP"; generic keys just lose their
+                # underscores. Acronyms a partner recognises stay uppercase.
+                words = str(k).replace("_", " ").split()
+                return " ".join(
+                    w.upper() if w.lower() in ("ip", "id", "url", "ua")
+                    else w for w in words
+                )
+
             e_rows = []
             for _, r in events_df.iterrows():
                 detail = r.get("detail") or {}
                 detail_txt = " ".join(
-                    f"{k}={v}" for k, v in (detail or {}).items()
+                    f"{_human_detail_key(k)} {v}"
+                    for k, v in (detail or {}).items()
                 ) if isinstance(detail, dict) else ""
                 e_rows.append(
                     f"<tr>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['at'])[:19])}</td>"
+                    f"{html.escape(_fmt_ts_min(r['at']))}</td>"
                     f"<td><strong>{html.escape(str(r['actor']))}</strong></td>"
-                    f"<td><code>{html.escape(str(r['action']))}</code></td>"
+                    f"<td><code>{html.escape(_human_action(str(r['action'])))}</code></td>"
                     f"<td>{html.escape(str(r['target'] or ''))}</td>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
                     f"{html.escape(detail_txt)}</td>"
@@ -21376,20 +21516,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "max-age=31536000; includeSubDomains",
             )
 
-    def _route_tools_index(self) -> None:
+    def _route_tools_index(self, *, initial_view: str = "workspace") -> None:
         """GET /tools — editorial card-grid index (design handoff · Card Grid).
 
         Two views in one page (client-side toggle): **By workspace** and
-        **Full A–Z**. The A–Z is the completeness contract — EVERY discovered
-        route renders as a card (guarded by tests); a safety-net bucket means
-        a route can never be dropped on the floor. Data is assembled live from
-        the route registry, the Cmd-K palette (titles), surface_status
-        (honest status), and the page-context registry (descriptions)."""
+        **Full A–Z**. ``?view=all`` deep-links the A–Z view. The A–Z is the
+        completeness contract — EVERY discovered route renders as a card
+        (guarded by tests); a safety-net bucket means a route can never be
+        dropped on the floor. Data is assembled live from the route registry,
+        the Cmd-K palette (titles), surface_status (honest status), and the
+        page-context registry (descriptions)."""
         from .ui.tools_index_page import render_tools_index
         workspaces, index, total_ws, total_idx = self._build_tools_index_data()
         return self._send_html(render_tools_index(
             workspaces=workspaces, index=index,
             total_ws=total_ws, total_idx=total_idx,
+            initial_view=initial_view,
         ))
 
     @classmethod
@@ -21539,184 +21681,6 @@ class RCMHandler(BaseHTTPRequestHandler):
         total_ws = sum(len(s["tools"]) for s in workspaces)
         return workspaces, index, total_ws, total_idx
 
-    def _route_tools_index_full(self) -> None:
-        """GET /tools?view=all — full platform tool index grouped by section.
-
-        Discoverability fallback for partners who haven't learned the
-        Cmd+K palette yet. Lists *every* GET-renderable route in
-        server.py, not just the curated Cmd+K palette — earlier the
-        page only surfaced ``_DEFAULT_PALETTE_MODULES`` (71 entries)
-        while server.py actually serves ~355 user-facing routes, so
-        partners had no way to find pages that hadn't been wired into
-        the palette (and we couldn't review a buggy surface popping
-        up mid-flow). Auto-discovery runs once per request against
-        the cached source text — cheap (~ms) and means a new route
-        appears on /tools the moment its handler ships.
-
-        The palette still wins for *titles* (so the curated tools
-        keep their hand-written labels); orphan routes get a
-        slug-derived title and a heuristic section assignment so
-        nothing is dropped on the floor.
-        """
-        from .ui._chartis_kit import (
-            chartis_shell, ck_page_title, _DEFAULT_PALETTE_MODULES,
-            _resolve_sub_section,
-        )
-        section_labels = {
-            "home":      "Home & Operations",
-            "pipeline":  "Pipeline & Sourcing",
-            "diligence": "Diligence Workspace",
-            "library":   "Library & Reference",
-            "research":  "Research & Backtesting",
-            "portfolio": "Portfolio & LP",
-            "other":     "Admin & System",
-            "more":      "More Surfaces",
-        }
-        # 1. Auto-discover every route handler in this module so the
-        #    catalog stays in sync with server.py without manual
-        #    curation. Cached on the class so we only read+parse
-        #    once per process.
-        discovered = self._discover_all_routes()
-        # 2. Build per-route metadata: prefer palette title (curated)
-        #    over auto-slug. Track which routes were palette-defined
-        #    so we can show curated entries first within a section.
-        palette_by_route = {m["route"]: m for m in _DEFAULT_PALETTE_MODULES}
-        entries_by_route: Dict[str, Dict[str, str]] = {}
-        # Seed with palette so any palette route appears even if it
-        # isn't a literal `path == "/foo"` (e.g. /my/AT which is
-        # under a startswith handler).
-        for m in _DEFAULT_PALETTE_MODULES:
-            entries_by_route[m["route"]] = {
-                "route": m["route"],
-                "title": m["title"],
-                "curated": True,
-            }
-        for route in discovered:
-            if route in entries_by_route:
-                continue
-            entries_by_route[route] = {
-                "route": route,
-                "title": self._title_from_route(route),
-                "curated": False,
-            }
-        # 3. Classify each route into a section — palette assignment
-        #    via _resolve_sub_section first, then URL-prefix +
-        #    name-pattern heuristics for the orphans.
-        sections: Dict[str, List[Dict[str, str]]] = {
-            k: [] for k in section_labels
-        }
-        for route, meta in entries_by_route.items():
-            sec = (_resolve_sub_section(route)
-                   or self._heuristic_section(route))
-            sections.setdefault(sec, []).append(meta)
-        # 4. Render each section in canonical order; curated
-        #    entries first, then alpha by title.
-        cards = []
-        order = ["home", "pipeline", "diligence", "library",
-                 "research", "portfolio", "other", "more"]
-        total = 0
-        for sec in order:
-            entries = sections.get(sec, [])
-            if not entries:
-                continue
-            entries.sort(
-                key=lambda e: (0 if e["curated"] else 1,
-                               e["title"].lower())
-            )
-            rows = []
-            for m in entries:
-                badge = "" if m["curated"] else (
-                    '<span class="ck-tool-orphan-badge" '
-                    'title="Auto-discovered route — not yet in the '
-                    'curated palette. Title generated from the URL '
-                    'slug.">auto</span>'
-                )
-                from .diligence.surface_status import status_dot
-                rows.append(
-                    f'<a href="{html.escape(m["route"], quote=True)}" '
-                    'class="ck-tool-row">'
-                    f'<span class="ck-tool-title">'
-                    f'{status_dot(m["route"])}{html.escape(m["title"])}{badge}</span>'
-                    f'<span class="ck-tool-route">'
-                    f'{html.escape(m["route"])}</span>'
-                    '</a>'
-                )
-            cards.append(
-                '<section class="cad-card ck-tool-card">'
-                '<header class="ck-tool-card-head">'
-                f'<h2>{html.escape(section_labels.get(sec, sec.title()))}</h2>'
-                f'<span class="ck-tool-card-count">{len(entries)} tools</span>'
-                '</header>'
-                f'<div class="ck-tool-list">{"".join(rows)}</div>'
-                '</section>'
-            )
-            total += len(entries)
-
-        title_html = ck_page_title(
-            "Tools — full index",
-            eyebrow="PLATFORM INDEX",
-            meta=(
-                f"{total} surfaces · "
-                "press Cmd+K anywhere to jump to one"
-            ),
-        )
-        back_link = (
-            '<div style="margin:0 0 16px;font-family:var(--sc-mono,monospace);'
-            'font-size:12px;"><a href="/tools" style="color:var(--sc-teal,#155752);'
-            'text-decoration:none;font-weight:600;">&larr; Back to the best tools'
-            '</a></div>'
-        )
-        page_css = (
-            '<style>'
-            '.ck-tool-card{padding:22px 26px;margin:0 0 20px;}'
-            '.ck-tool-card-head{display:flex;align-items:baseline;'
-            'justify-content:space-between;gap:12px;margin:0 0 14px;}'
-            '.ck-tool-card-head h2{font-family:var(--sc-serif,Georgia,serif);'
-            'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
-            'margin:0;letter-spacing:-0.01em;}'
-            '.ck-tool-card-count{font-family:var(--sc-mono,monospace);'
-            'font-size:11px;color:var(--sc-text-faint,#7a8699);'
-            'letter-spacing:0.08em;text-transform:uppercase;}'
-            '.ck-tool-list{display:grid;'
-            'grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
-            'gap:0;border-top:1px solid var(--sc-rule,#d6cfc0);}'
-            '.ck-tool-row{display:flex;align-items:baseline;'
-            'justify-content:space-between;gap:18px;padding:11px 14px;'
-            'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
-            'text-decoration:none;color:var(--sc-text,#1a2332);'
-            'font-family:var(--sc-sans,Inter,sans-serif);font-size:13.5px;}'
-            '.ck-tool-row:hover{background:var(--sc-bone,#ece5d6);}'
-            '.ck-tool-title{font-weight:600;color:var(--sc-navy,#0b2341);}'
-            '.ck-tool-route{font-family:var(--sc-mono,monospace);'
-            'font-size:11px;color:var(--sc-text-faint,#7a8699);}'
-            '.ck-tool-orphan-badge{display:inline-block;margin-left:8px;'
-            'padding:1px 6px;font-family:var(--sc-mono,monospace);'
-            'font-size:9px;font-weight:600;letter-spacing:0.08em;'
-            'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);'
-            'background:var(--sc-parchment,#f2ede3);'
-            'border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;}'
-            '</style>'
-        )
-        # Status legend (matches the circle on each tool — see
-        # diligence/surface_status.py).
-        _dot = ('display:inline-block;width:8px;height:8px;border-radius:50%;'
-                'margin-right:5px;vertical-align:middle')
-        legend = (
-            '<div style="display:flex;flex-wrap:wrap;gap:16px;margin:0 0 18px;'
-            'font-family:var(--sc-mono,monospace);font-size:11px;'
-            'color:var(--sc-text-dim,#465366)">'
-            f'<span><span style="{_dot};background:#0a8a5f"></span>LIVE — real data</span>'
-            f'<span><span style="{_dot};background:#0b2341"></span>Diligence calculator (your inputs)</span>'
-            f'<span><span style="{_dot};background:#b8842e"></span>Illustrative seed-corpus data</span>'
-            f'<span><span style="{_dot};background:#b5321e"></span>Synthetic / hardcoded</span>'
-            '</div>')
-        body = f"{title_html}{back_link}{page_css}{legend}{''.join(cards)}"
-        self._send_html(chartis_shell(
-            body, "Tools",
-            active_nav="/tools",
-            subtitle=f"All {total} platform surfaces",
-        ))
-
     # Cache for the discovered route list — server.py source is read
     # once on first /tools hit and the parsed result is kept on the
     # handler class so subsequent requests are O(1).
@@ -21738,9 +21702,18 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/state-profile.csv", "/state-peers.csv", "/county-explorer.csv",
         "/metro-markets.csv", "/verified-deals.csv",
         "/demo/download/kkr-deals.csv", "/demo/download/kkr-deals.json",
+        "/npi-cleaner/sample",  # sample-CSV download on /npi-cleaner
+        "/rxnorm/export.csv",   # CSV export of /rxnorm
+        "/diligence/texas-infusion/counties.csv",
+        "/diligence/texas-infusion/metros.csv",
+        "/diligence/texas-infusion/workforce.csv",
+        "/diligence/texas-infusion/revenue.csv",
+        "/diligence/texas-infusion/jcode-benchmark.csv",
         # Trailing-slash duplicate of /market-data — same renderer; the
-        # slashless route is the canonical card.
-        "/market-data/",
+        # slashless route is the canonical card. /market-data/map is the
+        # same combined handler too (server dispatch ORs all three paths),
+        # so its card duplicated the /market-data one.
+        "/market-data/", "/market-data/map",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
@@ -21751,6 +21724,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # POST/control endpoints that 404 on a bare GET — were carded as
         # dead A-Z tiles (test_every_az_card_returns_200).
         "/app/cards", "/demo/load", "/demo/unload",
+        "/npi-cleaner/detect", "/npi-cleaner/upload",
         "/pipeline/stage",  # POST-only handler — /pipeline/stage/<ccn>
         # Routes that require a path parameter; bare slug 404s
         "/hospital", "/deal", "/initiative", "/owner", "/cohort",
@@ -21768,6 +21742,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/portfolio-analytics",   # 301 → /deal-corpus-analytics (renamed)
         "/deals-library",         # 301 → /library (renamed)
         "/deals",                 # 301 → /pipeline (renamed)
+        # Same-renderer duplicates of the bare Research routes — the
+        # /diligence/-prefixed paths call the exact same render_* with the
+        # same query params, so carding both showed the one page twice
+        # under two de-collided names.
+        "/diligence/comparable-outcomes",   # = /comparable-outcomes
+        "/diligence/regulatory-calendar",   # = /regulatory-calendar
         # Audit-window action endpoints (token-gated / redirect), not pages.
         "/audit/enter", "/audit/exit",
         # Cookie set/clear action — 303s back to `return=`, never renders.
@@ -21801,7 +21781,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/corpus-ic-memo", "/covenant-headroom", "/covenant-monitor", "/cyber-risk",
         "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
         "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-search",
-        "/deal-sourcing", "/deals-library", "/debt-financing", "/debt-service",
+        "/deal-sourcing", "/debt-financing", "/debt-service",
         "/demand-forecast", "/denovo-expansion", "/digital-front-door", "/diligence-vendors",
         "/diligence/cliff-calendar", "/diligence/pe-library", "/diligence/pe-reference", "/diligence/physician-attrition",
         "/direct-employer", "/direct-lending", "/dividend-recap", "/dpi-tracker",
@@ -21820,7 +21800,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/payer-concentration", "/payer-contracts", "/payer-intel", "/payer-intelligence",
         "/payer-rate-trends", "/payer-shift", "/peer-transactions", "/peer-valuation",
         "/phys-comp-plan", "/physician-labor", "/physician-productivity", "/platform-maturity",
-        "/pmi-integration", "/pmi-playbook", "/portfolio-analytics", "/portfolio-optimizer",
+        "/pmi-integration", "/pmi-playbook", "/portfolio-optimizer",
         "/portfolio-sim", "/provider-network", "/provider-retention", "/qoe-analyzer",
         "/quality-scorecard", "/rcm-red-flags", "/real-estate", "/redflag-scanner",
         "/ref-pricing", "/refi-optimizer", "/regulatory-risk", "/reinvestment",

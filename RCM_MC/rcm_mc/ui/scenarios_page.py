@@ -31,6 +31,7 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         shock_desc = ", ".join(shock_parts) if shock_parts else "—"
         rows_html += (
             f'<tr><td><code style="font-size:11px;background:{PALETTE["bg_tertiary"]};'
+            f'border:1px solid {PALETTE["border"]};'
             f'padding:2px 6px;border-radius:3px;">{sid}</code></td>'
             f'<td>{name}</td>'
             f'<td style="font-size:12px;">{shock_desc}</td></tr>'

@@ -12136,6 +12136,831 @@ for _c in _MANUAL:
             _c.primary_purpose = _new_pp
 
 
+# ── 2026-07-05: Guide contexts for the 13 live /tools pages that were
+#    Guide-blind (test_guide_context_sufficiency::EveryLivePageHasGuideContext
+#    guards this). Descriptions are sourced from each page's renderer
+#    module docstring — nothing invented. This block also carries the
+#    forward wiring for the three connector-estate API sources added by
+#    commit 2e3548e (cms_coverage_api, npi_registry_api,
+#    icd10_codes_api) to their owning pages, so they are no longer
+#    orphans in DATA_SOURCE_REGISTRY. Placed BEFORE the PR #1326
+#    related_routes back-fill loop so each API source's related_routes
+#    picks up its consuming pages. ──
+_MANUAL.extend([
+    _ctx(
+        "/benchmark-reference", "US Healthcare Benchmarking Reference",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="The granular benchmark-data layer: six "
+        "chart-ready data domains (quality-measure weights, procedure/"
+        "code frequency, physician compensation & productivity, hospital "
+        "cost structure, disease prevalence, utilization/spending) "
+        "populated with current published national figures, each row "
+        "carrying its named primary source.",
+        primary_purpose="Give the deal team the measure-level / "
+        "code-level / productivity-level reference numbers that sit "
+        "beneath the vertical and payer-economics analytics — published "
+        "national benchmarks with named sources, not corpus modeling.",
+        intended_users=["Deal team anchoring an analysis to a published "
+                        "national reference figure."],
+        common_questions=[
+            "Where do these benchmark figures come from?",
+            "Which quality measures carry the most Star / HEDIS weight?",
+            "What are typical physician compensation and productivity "
+            "benchmarks by specialty?",
+            "How is a typical hospital's cost structure split?",
+            "Why doesn't this page carry the illustrative-corpus banner?",
+        ],
+        inputs=["None interactive — the page renders the committed "
+                "benchmark-reference dataset (optional query params "
+                "select the view)."],
+        outputs=["Six domain sections with per-row figures, a source "
+                 "column with an access flag (free / proprietary / "
+                 "estimate) per row, vintage-year tags, and a caveats "
+                 "panel."],
+        key_metrics=["Quality-measure weights", "Procedure/code frequency",
+                     "Physician compensation & productivity benchmarks",
+                     "Hospital cost-structure shares",
+                     "Disease prevalence", "Utilization & spending"],
+        data_sources=["Published national references with named primary "
+                      "sources per row: CMS, MGMA, AAMC, SEER/ACS, "
+                      "CDC/NCHS, KFF, Kaufman Hall, AHA, MedPAC, NCQA "
+                      "(rcm_mc/data_public/benchmark_reference.py)."],
+        model_logic_summary="No modeling — the page renders published "
+        "reference figures as committed; every row carries a source and "
+        "an access flag, and numbers are tagged to a measurement / "
+        "vintage year because Star weights, HEDIS sets and penalty "
+        "pools change annually.",
+        why_it_matters="Benchmark anchoring is where a CDD number gets "
+        "credibility — this page gives the traceable published figure "
+        "instead of a modeled one.",
+        diligence_use_cases=["Sourcing a citable national benchmark for "
+                             "an IC memo or CDD exhibit.",
+                             "Sanity-checking a target's compensation, "
+                             "cost-structure, or utilization claims."],
+        interpretation_guidance=[
+            "Check each row's vintage year — Star weights, HEDIS sets "
+            "and penalty pools change annually.",
+            "Rows flagged 'proprietary' or 'estimate' summarize a "
+            "source's headline figure; verify against the licensed "
+            "release before IC use.",
+        ],
+        limitations=["National reference figures, not the target's own "
+                     "data — local and specialty variation is large.",
+                     "Static committed dataset; refreshed with releases, "
+                     "not live."],
+        related_routes=["/cdd/tools", "/specialty-benchmarks",
+                        "/benchmarks", "/metric-glossary"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/cdd/tools", "CDD Analytics Engines",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The CDD analytics-engines catalog — renders "
+        "every registered rcm_mc.cdd exhibit (TAM/SAM, PVM bridge, payer "
+        "mix, HCC/RAF, profit-pool exhibits, the benchmarking reference "
+        "layer, platform bolsters) in the partner-safe view, so the "
+        "whole engine registry is browsable in the app.",
+        primary_purpose="Make the rcm_mc.cdd engine registry itself "
+        "browsable — before this page an associate could run the "
+        "engines only from the CLI (python -m rcm_mc.cdd).",
+        intended_users=["Associates and partners browsing which CDD "
+                        "analytics engines exist and what each renders."],
+        common_questions=[
+            "Which CDD analytics engines are available?",
+            "What does each engine's exhibit look like?",
+            "How is this different from the /cdd hub?",
+            "Why do the cards show the partner view only?",
+            "Can I run these engines from the CLI as well?",
+        ],
+        inputs=["None interactive — the page enumerates every feature "
+                "registered in rcm_mc.cdd.registry."],
+        outputs=["One card per registered engine rendering its "
+                 "partner-mode exhibit (internal_mode=False), rendered "
+                 "defensively so one broken engine cannot blank the "
+                 "catalog."],
+        key_metrics=["Registered engines rendered",
+                     "Per-exhibit headline series (varies by engine)"],
+        data_sources=["Each engine's own registered data — a mix of "
+                      "published reference cuts and illustrative books; "
+                      "provenance is stated per exhibit."],
+        model_logic_summary="Pure catalog render over the rcm_mc.cdd "
+        "registry using the audience-aware Exhibit contract: every card "
+        "shows the partner view, so assumption nodes and internal-only "
+        "series never reach this surface. The math lives in each "
+        "engine's module, not in this page.",
+        why_it_matters="A CDD engine nobody can find is a CDD engine "
+        "nobody uses — this is the discoverability surface for the "
+        "whole analytics catalog.",
+        diligence_use_cases=["Finding the right registered exhibit for "
+                             "a CDD deck before rebuilding it by hand."],
+        interpretation_guidance=[
+            "Each card is the registered, golden-tested exhibit — what "
+            "you see is exactly what the engine produces in partner "
+            "mode.",
+            "Per-exhibit provenance and flags live on the card; check "
+            "them before lifting a number into a memo.",
+        ],
+        limitations=["Partner view only — internal assumption nodes are "
+                     "deliberately not rendered here.",
+                     "Catalog of worked exhibits, not a per-deal run on "
+                     "your target's data."],
+        related_routes=["/cdd", "/diligence/cdd-scope", "/payer-system",
+                        "/benchmark-reference"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.MIXED,
+    ),
+    _ctx(
+        "/diligence/advanced-analytics", "Advanced Analytics",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Read-only editorial surface over the native "
+        "advanced-analytics stack (diligence.advanced_analytics): runs "
+        "the composition facade on a small, deterministic, clearly-"
+        "labelled illustrative deal and shows the rolled-up "
+        "EBITDA-at-risk, the citation-keyed findings (one line per "
+        "mart), and an explainer of what each mart answers.",
+        primary_purpose="Make the advanced-analytics mart stack "
+        "partner-visible and discoverable with a live worked example — "
+        "the map of what each mart answers, before per-deal wiring.",
+        intended_users=["Deal team discovering what the advanced-"
+                        "analytics marts can answer."],
+        common_questions=[
+            "What do the advanced-analytics marts each answer?",
+            "Is the EBITDA-at-risk number real or illustrative?",
+            "How is the rolled-up EBITDA-at-risk computed?",
+            "Can I run this against a specific deal yet?",
+            "Where do the citation keys on each finding point?",
+        ],
+        inputs=["None interactive — the facade runs on a fixed, "
+                "deterministic illustrative deal so the page always "
+                "renders."],
+        outputs=["Rolled-up EBITDA-at-risk with the count of marts that "
+                 "ran, a citation-keyed findings list (one line per "
+                 "mart), and a per-mart explainer."],
+        key_metrics=["EBITDA-at-risk (illustrative roll-up)",
+                     "Marts run", "Findings per mart"],
+        data_sources=["A deterministic illustrative deal fed through "
+                      "the diligence.advanced_analytics composition "
+                      "facade — ILLUSTRATIVE, clearly labelled."],
+        model_logic_summary="Runs the diligence.advanced_analytics "
+        "composition facade over the illustrative deal; each mart "
+        "contributes findings and the page rolls up the EBITDA-at-risk "
+        "across the marts that ran. Deliberately NOT wired to a "
+        "specific deal's DealAnalysisPacket yet.",
+        why_it_matters="Gives partners the map of the native analytics "
+        "stack plus a live demo, so the marts get used when the "
+        "per-deal wiring lands.",
+        diligence_use_cases=["Scoping which marts to point at a real "
+                             "deal's data in diligence."],
+        interpretation_guidance=[
+            "Every number on this page is from the labelled "
+            "illustrative deal — treat it as a worked example of the "
+            "method, never as target evidence.",
+            "Use the per-mart explainers to decide which questions the "
+            "stack can answer for your deal.",
+        ],
+        limitations=["Illustrative-deal demo only — per-deal wiring "
+                     "(feeding a real CCD into the facade) is the "
+                     "follow-up, not on this page."],
+        related_routes=["/diligence/xray", "/diligence/bear-case",
+                        "/diligence/pe-tool"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.DEMO_OR_FIXTURE,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/jcode-benchmark",
+        "Texas Infusion · J-code Commercial Benchmark",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The commercial buy-and-bill benchmark by "
+        "HCPCS J-code across the 2022-2026 hold window: published "
+        "commercial-as-%-of-Medicare multiples plus a J-code × year "
+        "heatmap of the biosimilar-driven blended-ASP trajectory.",
+        primary_purpose="Anchor what commercial payers pay relative to "
+        "Medicare ASP for the infusion J-codes, and show how biosimilar "
+        "entry bends the blended-ASP trajectory over the hold.",
+        intended_users=["Deal team underwriting commercial buy-and-bill "
+                        "economics on an infusion platform."],
+        common_questions=[
+            "What multiple of Medicare do commercial payers pay per "
+            "J-code?",
+            "How does biosimilar entry bend blended ASP over 2022-2026?",
+            "Is any commercial-claims dollar fabricated here?",
+            "Which J-codes face the steepest ASP erosion?",
+            "Can I export this benchmark as CSV?",
+        ],
+        inputs=["None interactive — renders from the committed "
+                "rcm_mc.diligence.jcode_commercial_benchmark module."],
+        outputs=["Published commercial-as-%-of-Medicare multiples, a "
+                 "J-code × year blended-ASP heatmap, and a CSV export "
+                 "at /diligence/texas-infusion/jcode-benchmark.csv."],
+        key_metrics=["Commercial-as-%-of-Medicare multiple by J-code",
+                     "Blended-ASP trajectory by J-code × year"],
+        data_sources=["Public anchors only (published multiples + ASP "
+                      "trajectories). Merative MarketScan — the licensed "
+                      "commercial-claims source — is NOT vendored, and "
+                      "no commercial-claims dollar is fabricated."],
+        model_logic_summary="Renders published benchmark multiples and "
+        "the biosimilar-driven blended-ASP trajectory from "
+        "rcm_mc.diligence.jcode_commercial_benchmark; no claims-level "
+        "modeling happens on this page.",
+        why_it_matters="Commercial-vs-Medicare spread per J-code is the "
+        "revenue wedge of a buy-and-bill infusion thesis — the "
+        "benchmark decides how much of the book's margin is rate-driven.",
+        diligence_use_cases=["Underwriting commercial rate assumptions "
+                             "in an infusion revenue model.",
+                             "Stress-testing ASP-erosion exposure from "
+                             "biosimilar entry."],
+        interpretation_guidance=[
+            "Multiples are published benchmarks, not the target's "
+            "contracted rates — reconcile against the data room's payer "
+            "contracts.",
+            "Blended-ASP erosion is drug-mix dependent; reweight by the "
+            "target's actual J-code mix.",
+        ],
+        limitations=["Public anchors only — no licensed commercial-"
+                     "claims data behind the multiples.",
+                     "Benchmark-level, not target-contract-level."],
+        related_routes=["/diligence/texas-infusion",
+                        "/diligence/texas-infusion/revenue",
+                        "/diligence/texas-infusion-continued"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/revenue",
+        "Texas Infusion · Revenue Build",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="The data-room reconciliation: revenue rebuilt "
+        "bottom-up from CPT administration units × the Medicare rate, "
+        "the therapy-by-therapy unit derivation, the buy-and-bill "
+        "bridge to platform gross, and the Texas competitor benchmark "
+        "(operator shares + HHI + channel map).",
+        primary_purpose="Rebuild the platform's revenue from code-level "
+        "first principles so the deal team can reconcile the data room's "
+        "top-line instead of taking it on faith.",
+        intended_users=["Deal team reconciling an infusion platform's "
+                        "revenue in diligence."],
+        common_questions=[
+            "How is the code-level revenue build derived?",
+            "How do therapy volumes map to CPT administration units?",
+            "What does the buy-and-bill bridge add on top of "
+            "administration revenue?",
+            "How concentrated is the Texas competitor field?",
+            "Can I export the revenue build as CSV?",
+        ],
+        inputs=["None interactive — renders straight from "
+                "rcm_mc.diligence.texas_infusion_revenue; nothing is "
+                "typed in."],
+        outputs=["CPT-level revenue build (units × Medicare rate), the "
+                 "therapy→CPT unit derivation, the buy-and-bill bridge "
+                 "to platform gross, the Texas competitor benchmark "
+                 "(shares, HHI, channel map), and a CSV export at "
+                 "/diligence/texas-infusion/revenue.csv."],
+        key_metrics=["CPT administration units", "Medicare rate per code",
+                     "Buy-and-bill drug gross", "Competitor HHI",
+                     "Operator share"],
+        data_sources=["Committed public anchors in "
+                      "rcm_mc.diligence.texas_infusion_revenue: CPT "
+                      "units × Medicare rates, plus the Texas operator "
+                      "benchmark."],
+        model_logic_summary="Revenue = Σ(CPT administration units × the "
+        "Medicare rate per code), with therapy volumes derived into CPT "
+        "units therapy by therapy; the buy-and-bill bridge layers drug "
+        "revenue over administration revenue to reach platform gross; "
+        "competitor concentration is a share-based HHI.",
+        why_it_matters="A bottom-up code-level rebuild is the strongest "
+        "cross-check on a CIM's revenue claim — it exposes what mix and "
+        "rate assumptions the top-line quietly embeds.",
+        diligence_use_cases=["Reconciling data-room revenue against an "
+                             "independent code-level build.",
+                             "Framing competitive intensity for the "
+                             "Texas market section of the CDD."],
+        interpretation_guidance=[
+            "The build prices at Medicare rates — commercial books "
+            "scale by the J-code benchmark multiples, not 1.0x.",
+            "HHI is computed over the benchmarked operator set; small "
+            "operators below the radar make true concentration lower.",
+        ],
+        limitations=["Public-anchor build, not the target's actual "
+                     "claims; reconcile against data-room detail.",
+                     "Medicare-rate-priced baseline; commercial uplift "
+                     "lives on the J-code benchmark page."],
+        related_routes=["/diligence/texas-infusion",
+                        "/diligence/texas-infusion/jcode-benchmark",
+                        "/diligence/texas-infusion/counties"],
+        metric_ids=["hhi"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/diligence/texas-infusion/workforce",
+        "Texas Infusion · Workforce & Demand Heatmaps",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="Two heatmaps for underwriting a Texas AIC + "
+        "home-infusion platform: an employment-by-specialty matrix "
+        "(clinical roster + prescriber funnel scored on AIC fit, "
+        "home-infusion fit, demand pull and hiring scarcity, with Texas "
+        "headcounts) and a true-geography county infusion-demand "
+        "heatmap on the real Census Texas boundary.",
+        primary_purpose="Read the two workforce questions an infusion "
+        "underwrite turns on: which specialties staff and feed the "
+        "platform (and how scarce they are), and where county-level "
+        "infusion demand actually sits.",
+        intended_users=["Deal team underwriting staffing and referral "
+                        "supply for a Texas infusion platform."],
+        common_questions=[
+            "Which specialties staff an infusion platform and which "
+            "prescribers feed it?",
+            "How scarce is each role in the Texas hiring market?",
+            "Which Texas counties have the highest infusion demand per "
+            "100k?",
+            "How are the AIC-fit and demand-pull scores assigned?",
+            "Can I export the workforce data as CSV?",
+        ],
+        inputs=["None interactive — renders straight from "
+                "rcm_mc.diligence.texas_infusion_workforce; nothing is "
+                "typed in."],
+        outputs=["An employment-by-specialty matrix heatmap (AIC fit, "
+                 "home-infusion fit, demand pull, hiring scarcity, Texas "
+                 "headcount), a county demand heatmap with every "
+                 "geocoded-facility county plotted at its real centroid "
+                 "coloured by infusion-patients-per-100k, and a CSV "
+                 "export at /diligence/texas-infusion/workforce.csv."],
+        key_metrics=["Texas headcount by specialty", "Hiring scarcity",
+                     "AIC / home-infusion fit scores",
+                     "Infusion patients per 100k by county"],
+        data_sources=["Committed public anchors in "
+                      "rcm_mc.diligence.texas_infusion_workforce "
+                      "(employment-by-specialty roster + county demand "
+                      "on the real Census Texas boundary)."],
+        model_logic_summary="Matrix heatmap scores each clinical / "
+        "prescriber specialty on AIC fit, home-infusion fit, demand "
+        "pull and hiring scarcity alongside the Texas headcount; the "
+        "county heatmap plots geocoded-facility counties at their real "
+        "centroids coloured by infusion-patients-per-100k.",
+        why_it_matters="Infusion platforms live or die on nurse/"
+        "pharmacist supply and prescriber referral flow — the heatmaps "
+        "show both against real Texas geography.",
+        diligence_use_cases=["Staffing-risk and referral-funnel framing "
+                             "in an infusion CDD.",
+                             "Pairing demand geography with the county "
+                             "proximity whitespace screen."],
+        interpretation_guidance=[
+            "Fit / scarcity scores are curated ordinal reads, not "
+            "regression outputs — use them to rank, not to price.",
+            "County demand shows only counties with a geocoded "
+            "facility; blank counties mean no geocoded site, not zero "
+            "demand.",
+        ],
+        limitations=["Curated scoring over public anchors, not a "
+                     "payroll- or claims-derived measure.",
+                     "County coverage limited to geocoded facilities."],
+        related_routes=["/diligence/texas-infusion",
+                        "/diligence/texas-infusion/counties",
+                        "/diligence/texas-infusion/revenue"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/healthcare-verticals", "Healthcare Verticals 2025-2026",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A grouped index of 17 specialized / adjacent "
+        "/ emerging US healthcare verticals rendered as an editorial "
+        "dossier, with per-vertical detail pages carrying FY/CY2026 "
+        "payment economics, unit economics, market structure, workforce "
+        "and provenance.",
+        primary_purpose="Give the deal team a vertical-by-vertical "
+        "reference read (payment economics, market structure, "
+        "workforce) for the healthcare sub-sectors a thesis might "
+        "touch, from public-source synthesis.",
+        intended_users=["Deal team orienting on an unfamiliar "
+                        "healthcare vertical before a CDD."],
+        common_questions=[
+            "Which healthcare verticals does the bundle cover?",
+            "What are a vertical's FY/CY2026 payment economics?",
+            "Where does the verticals data come from?",
+            "Is this IBISWorld-licensed or provider-specific data?",
+            "How is this different from /verticals and "
+            "/healthcare-verticals-reference?",
+        ],
+        inputs=["None on the index; per-vertical detail pages take the "
+                "vertical id in the path."],
+        outputs=["A grouped 17-vertical index plus per-vertical detail "
+                 "surfaces with 2026 payment economics, unit economics, "
+                 "market structure, workforce, and per-row provenance."],
+        key_metrics=["FY/CY2026 payment updates by vertical",
+                     "Cross-vertical unit economics",
+                     "Market structure & workforce reads"],
+        data_sources=["PUBLIC_SOURCE_SYNTHESIS loaded from "
+                      "rcm_mc.data.healthcare_verticals (committed CSV/"
+                      "JSON/MD bundle): CMS rules, MedPAC, NIC MAP, "
+                      "USRDS, SAMHSA, HRSA, CDC ART, PHI — NOT licensed "
+                      "IBISWorld and NOT provider-specific."],
+        model_logic_summary="No modeling — renders the committed "
+        "public-source-synthesis bundle; every row carries source + "
+        "confidence and ranges stay ranges. No runtime network.",
+        why_it_matters="Vertical orientation is the first hour of any "
+        "new-sector CDD — this concentrates the 2026 payment and "
+        "structure reads with provenance attached.",
+        diligence_use_cases=["First-pass sector orientation before a "
+                             "vertical-specific CDD.",
+                             "Cross-vertical comparison when screening "
+                             "adjacent theses."],
+        interpretation_guidance=[
+            "Synthesis of public sources, not provider-level data — "
+            "use for orientation and framing, not target underwriting.",
+            "Ranges are deliberate: where sources disagree, the bundle "
+            "keeps the range rather than picking a point.",
+        ],
+        limitations=["Public-source synthesis, not licensed market "
+                     "research or target data.",
+                     "Committed bundle vintage (2025-2026 rules) — "
+                     "verify against the current rule cycle."],
+        related_routes=["/healthcare-verticals/unit-economics",
+                        "/healthcare-verticals-reference", "/verticals"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/healthcare-verticals-reference",
+        "US Healthcare Verticals (Narrative Reference)",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="The narrative per-vertical operational / "
+        "clinical / epidemiological reference — code fingerprints, "
+        "payment systems, facility and workforce counts, access, "
+        "benchmarks and data sources — rendered in-app from the "
+        "vendored docs/HEALTHCARE_VERTICALS_REFERENCE.md.",
+        primary_purpose="Let partners read the granular verticals "
+        "reference document in the app instead of opening the markdown "
+        "file — the prose companion to the data-driven "
+        "/healthcare-verticals surface.",
+        intended_users=["Deal team reading up on a vertical's "
+                        "operational and clinical mechanics."],
+        common_questions=[
+            "What does the verticals reference document cover?",
+            "How is this different from /healthcare-verticals?",
+            "What are a vertical's code fingerprints and payment "
+            "system?",
+            "Where do the facility and workforce counts come from?",
+            "Is this page live data or a static document?",
+        ],
+        inputs=["None — the page reads the vendored markdown at request "
+                "time; no network, no DB."],
+        outputs=["The full reference document as editorial HTML "
+                 "(headings, bullets, numbered lists) inside "
+                 "chartis_shell."],
+        key_metrics=["Per-vertical code fingerprints", "Payment systems",
+                     "Facility / workforce counts", "Access benchmarks"],
+        data_sources=["The vendored docs/HEALTHCARE_VERTICALS_REFERENCE"
+                      ".md — a static domain-reference document with its "
+                      "sources cited in the text."],
+        model_logic_summary="No modeling — converts the vendored "
+        "markdown (ATX headings, bold, bullets, numbered lists) to "
+        "editorial HTML at request time. Static content; exempt from "
+        "the DealAnalysisPacket invariant like /methodology.",
+        why_it_matters="The prose reference explains the WHY behind the "
+        "verticals dataset — payment mechanics and operational context "
+        "a table can't carry.",
+        diligence_use_cases=["Reading into a vertical's payment system "
+                             "and operational mechanics before expert "
+                             "calls."],
+        interpretation_guidance=[
+            "This is the narrative companion — for the chart-ready "
+            "2026-rate dataset use /healthcare-verticals.",
+            "Counts and benchmarks are as-published in the vendored "
+            "document; check its cited vintages.",
+        ],
+        limitations=["Static vendored document — updates only when the "
+                     "vendored markdown is refreshed."],
+        related_routes=["/healthcare-verticals", "/verticals",
+                        "/methodology"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/healthcare-verticals/unit-economics",
+        "Healthcare Verticals · Cross-Vertical Unit Economics",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The cross-vertical unit-economics cut of the "
+        "17-vertical 2025-2026 bundle — per-unit revenue and margin "
+        "structure compared across verticals on one surface, every row "
+        "with source + confidence.",
+        primary_purpose="Compare how the healthcare verticals make "
+        "money per unit — the side-by-side unit-economics read that "
+        "individual vertical pages can't give.",
+        intended_users=["Deal team comparing vertical economics when "
+                        "screening or benchmarking a thesis."],
+        common_questions=[
+            "How do unit economics compare across the 17 verticals?",
+            "What is the per-unit revenue basis for each vertical?",
+            "Where do the unit-economics figures come from?",
+            "How confident is each row?",
+            "How does this relate to the per-deal /unit-economics page?",
+        ],
+        inputs=["None interactive — renders the unit-economics table "
+                "from the committed verticals bundle."],
+        outputs=["A cross-vertical unit-economics comparison table with "
+                 "per-row source and confidence flags."],
+        key_metrics=["Per-unit revenue by vertical",
+                     "Unit-margin structure by vertical"],
+        data_sources=["The same PUBLIC_SOURCE_SYNTHESIS bundle as "
+                      "/healthcare-verticals (rcm_mc.data."
+                      "healthcare_verticals): CMS rules, MedPAC, NIC "
+                      "MAP, USRDS, SAMHSA, HRSA, CDC ART, PHI."],
+        model_logic_summary="No modeling — renders the bundle's "
+        "cross-vertical unit-economics artifact; ranges stay ranges and "
+        "every row carries source + confidence.",
+        why_it_matters="Unit economics decide which vertical's growth "
+        "actually converts to margin — the cross-vertical read frames "
+        "that before any target-level work.",
+        diligence_use_cases=["Screening verticals by unit-economics "
+                             "attractiveness.",
+                             "Benchmarking a target's claimed unit "
+                             "economics against its vertical's range."],
+        interpretation_guidance=[
+            "Vertical-level synthesis, not a specific operator's P&L — "
+            "operator mix and payer mix move real economics widely "
+            "within a vertical.",
+            "For a specific deal's unit economics use /unit-economics; "
+            "this page is the sector reference.",
+        ],
+        limitations=["Public-source synthesis at vertical grain; not "
+                     "provider-specific.",
+                     "Committed 2025-2026 vintage."],
+        related_routes=["/healthcare-verticals", "/unit-economics",
+                        "/healthcare-verticals-reference"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/npi-cleaner", "NPI Claims Cleaner",
+        category=PageContextCategory.ADMIN_SYSTEM,
+        short_description="A drag-and-drop data-hygiene utility: runs a "
+        "claims file through the offline NPI cleaner — Luhn-validate "
+        "every NPI, de-duplicate exact rows, trim whitespace, flag "
+        "missing / malformed / checksum-failing billing NPIs — and "
+        "hands back a cleaned CSV plus a scorecard.",
+        primary_purpose="Clean a claims file's NPI hygiene before it "
+        "feeds any analysis — validation, de-duplication and flags in "
+        "one upload → progress → download loop.",
+        intended_users=["Associates prepping a claims extract before "
+                        "loading it into an analysis."],
+        common_questions=[
+            "What does the NPI cleaner check and fix?",
+            "How does the NPI checksum (Luhn) validation work?",
+            "Does my file leave the machine?",
+            "What is the optional NPPES cross-check?",
+            "Where do I download the cleaned CSV and scorecard?",
+        ],
+        inputs=["An uploaded claims file (drag-and-drop; raw body POST "
+                "to /npi-cleaner/upload); optionally the NPPES "
+                "cross-check checkbox."],
+        outputs=["A cleaned CSV plus a scorecard (validated / deduped / "
+                 "trimmed / flagged rows), with live progress via "
+                 "/npi-cleaner/status/<job_id> and download via "
+                 "/npi-cleaner/download/<job_id>."],
+        key_metrics=["NPIs validated (Luhn)", "Exact-duplicate rows "
+                     "removed", "Missing / malformed billing-NPI flags"],
+        data_sources=["Your uploaded claims file, processed by the "
+                      "stdlib-only rcm_mc.npi_cleaner.engine — offline "
+                      "by default; the opt-in NPPES verify/recover "
+                      "cross-check uses the app's shared NPPES registry "
+                      "client (nppes_bridge)."],
+        model_logic_summary="Deterministic hygiene passes: Luhn check-"
+        "digit validation over the 80840 NPI prefix, exact-row "
+        "de-duplication, whitespace trimming, and missing/malformed "
+        "billing-NPI flagging. The opt-in NPPES cross-check looks "
+        "distinct NPIs up in the registry to verify and recover "
+        "candidates; it is fully guarded so the offline cleaner never "
+        "depends on it.",
+        why_it_matters="Dirty NPIs silently corrupt every downstream "
+        "provider join — cleaning at the door is cheaper than "
+        "debugging analyses later.",
+        diligence_use_cases=["Prepping a data-room claims extract "
+                             "before provider-level analysis."],
+        interpretation_guidance=[
+            "A Luhn-valid NPI is format-valid, not proof the provider "
+            "exists or is credentialed — use the NPPES cross-check for "
+            "registry presence.",
+            "De-duplication removes exact duplicate rows only; near-"
+            "duplicates pass through.",
+        ],
+        limitations=["Stateless utility — jobs are not persisted as "
+                     "deal analytics (exempt from the "
+                     "DealAnalysisPacket invariant, like /import).",
+                     "NPPES cross-check is opt-in and requires the "
+                     "registry connection to be available."],
+        related_routes=["/import", "/data-quality", "/tools"],
+        data_source_ids=["npi_registry_api"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/payer-system", "US Payer-System Exhibits",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The four payer-economics CDD exhibits from "
+        "the 2025-2026 US payer reference on one page: MA bid / "
+        "benchmark / rebate mechanics, star-rating QBP sensitivity, the "
+        "Part D IRA redesign, and the ACA enhanced-APTC cliff — each "
+        "rendered in partner mode with sourced footnotes and a "
+        "reconciliation badge.",
+        primary_purpose="Explain the 2025-2026 US payer-economics "
+        "mechanics that move healthcare revenue models — MA bidding, "
+        "QBP stars, Part D redesign, APTC subsidies — as tested, "
+        "sourced exhibits.",
+        intended_users=["Deal team framing payer-policy exposure in a "
+                        "CDD."],
+        common_questions=[
+            "How do MA bid, benchmark and rebate mechanics work?",
+            "How sensitive is a plan's QBP to its star rating?",
+            "What does the Part D IRA redesign change?",
+            "What happens at the ACA enhanced-APTC cliff?",
+            "Are these exhibits recomputed on this page?",
+        ],
+        inputs=["None interactive — the page runs the four registered "
+                "exhibits (NEW-27 through NEW-30) in partner mode."],
+        outputs=["Four exhibit sections, each with its headline series "
+                 "as a Chartis SVG, the sourced footnote, diligence "
+                 "flags, and the reconciliation badge that proves the "
+                 "numbers tie out."],
+        key_metrics=["MA bid / benchmark / rebate mechanics",
+                     "Star-rating QBP sensitivity",
+                     "Part D IRA redesign liability shares",
+                     "ACA enhanced-APTC cliff"],
+        data_sources=["The 2025-2026 US payer reference report behind "
+                      "the four registered rcm_mc.cdd exhibits; each "
+                      "section carries its sourced footnote."],
+        model_logic_summary="Render-only surface: the math lives in "
+        "rcm_mc.cdd and is exercised by the golden tests; the page "
+        "calls the registry so what it shows is exactly the registered, "
+        "tested exhibit. No data is recomputed here and no LLM is on "
+        "any path.",
+        why_it_matters="Payer-policy mechanics (MA rebates, stars, IRA, "
+        "APTC) are the macro levers under most healthcare revenue "
+        "theses — partners need the mechanics, sourced, in one place.",
+        diligence_use_cases=["Payer-policy exposure framing in a CDD.",
+                             "Explaining MA / Part D / ACA mechanics in "
+                             "an IC discussion."],
+        interpretation_guidance=[
+            "These are 2025-2026 rule mechanics, not a specific plan's "
+            "or target's economics — apply the target's own mix.",
+            "The reconciliation badge means the exhibit's numbers tie "
+            "out internally, not that they predict future rulemaking.",
+        ],
+        limitations=["Rule-vintage specific (2025-2026); re-verify after "
+                     "each rate notice / rule cycle.",
+                     "Sector mechanics, not target-level modeling."],
+        related_routes=["/rate-environment", "/ma-penetration",
+                        "/payer-intelligence", "/cdd/tools"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/radiology-imaging", "Radiology & Diagnostic Imaging Atlas",
+        category=PageContextCategory.DILIGENCE_WORKSPACE,
+        short_description="A single reference surface for underwriting "
+        "a radiology / imaging-center platform: the CMS claims atlas "
+        "(radiology CPT/HCPCS with approximate CY2025 PFS economics and "
+        "the global / professional-26 / technical-TC split), mammography "
+        "& breast imaging, the CMS coverage-connection loop (live NCD / "
+        "LCD IDs), MAC payer jurisdictions, state- and county-level "
+        "data including payer mix, the big freestanding operators, the "
+        "AI-implementation landscape, and recent macro factors.",
+        primary_purpose="Fuse the five normally-separate data layers a "
+        "partner needs to underwrite an outpatient imaging platform — "
+        "codes & rates, breast imaging, coverage policy, MAC geography, "
+        "and market structure — into one atlas.",
+        intended_users=["Deal team underwriting a radiology / imaging-"
+                        "center (IDTF) platform."],
+        common_questions=[
+            "Which CPT/HCPCS codes does a freestanding imaging center "
+            "bill, and at what Medicare allowables?",
+            "What is the professional (26) vs technical (TC) split and "
+            "why does it matter?",
+            "Which NCDs / LCDs govern imaging coverage?",
+            "Which MAC prices Part-B imaging claims in a given state?",
+            "Who are the big freestanding imaging operators and how "
+            "are they owned?",
+        ],
+        inputs=["Optional query params selecting the view; the data is "
+                "the committed rcm_mc.data_public.radiology_imaging "
+                "atlas."],
+        outputs=["The radiology CPT/HCPCS atlas with CY2025 allowables "
+                 "and 26/TC splits, mammography / DBT adoption and MQSA "
+                 "counts, one connection record per tracked NCD/LCD "
+                 "with real CMS document IDs and links, the seven-MAC "
+                 "jurisdiction map, state/county density + payer-mix "
+                 "tables, operator profiles, the AI landscape, and "
+                 "macro factors."],
+        key_metrics=["CY2025 Medicare national allowable per code",
+                     "Professional-26 / technical-TC split",
+                     "DBT (3D) adoption", "MQSA facility counts",
+                     "Imaging-center density and payer mix by geography"],
+        data_sources=["Honest split stated on-page: NCD/LCD document "
+                      "IDs, display IDs, effective dates and the MAC "
+                      "roster are real values from the CMS Coverage API "
+                      "(api.coverage.cms.gov); CY2025 PFS allowables "
+                      "are approximate national averages (actual paid "
+                      "amounts are GPCI-localized); market/operator "
+                      "figures are published estimates."],
+        model_logic_summary="Reference atlas, not a model: the coverage "
+        "section loops over an imaging-coverage topic registry and "
+        "materialises one connection record per live NCD/LCD tracked "
+        "(CT 220.1, MRI 220.2, LDCT lung screen 210.14, PET-FDG "
+        "220.6.17, the CGS breast-imaging LCD L33950, the CCTA family, "
+        "…) with the real CMS Coverage API values, linking straight to "
+        "the source policy.",
+        why_it_matters="Imaging platform underwriting turns on the "
+        "reads-vs-scans P&L (26/TC split), coverage policy and MAC "
+        "geography — this page puts the whole stack on one surface.",
+        diligence_use_cases=["Underwriting an imaging-center roll-up's "
+                             "rate and coverage exposure.",
+                             "Mapping which MAC and which NCDs/LCDs "
+                             "govern a target's footprint."],
+        interpretation_guidance=[
+            "PFS allowables are approximate national averages — actual "
+            "payment is GPCI-localized by locality.",
+            "Coverage records are the tracked policy set, not an "
+            "exhaustive LCD inventory for every MAC.",
+        ],
+        limitations=["Committed atlas (CY2025 vintage), not a live "
+                     "claims feed; refresh with the fee-schedule cycle.",
+                     "Operator and market figures are published "
+                     "estimates, not audited financials."],
+        related_routes=["/msa-concentration", "/healthcare-verticals",
+                        "/verticals", "/benchmark-reference"],
+        data_source_ids=["cms_coverage_api"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/tools/nonpublic-cms", "Non-Public CMS + API Lab",
+        category=PageContextCategory.ADMIN_SYSTEM,
+        short_description="Internal staging surface over the "
+        "nonpublic_cms_registry: the credentialed CMS microdata "
+        "programs (ResDAC/CCW, LDS, RIF, CCLF), CMS FHIR APIs (Blue "
+        "Button 2.0, BCDA, DPC, AB2D), interoperability mandates, "
+        "open-source claims algorithms, and the live public API "
+        "connectors (NPPES NPI Registry, CMS Coverage API, ICD-10 code "
+        "service) — every screen badged work-in-progress.",
+        primary_purpose="Track and stage the data-upgrade path PAST the "
+        "free public data the product ships on — before anything "
+        "graduates to a front-facing feature.",
+        intended_users=["Internal team planning data-access upgrades; "
+                        "reachable by direct URL, deliberately not in "
+                        "the top nav."],
+        common_questions=[
+            "Which credentialed CMS data programs are being tracked?",
+            "Which live public APIs are already reachable and wired?",
+            "What would each program add over the free public data?",
+            "What do the access / cost / granularity columns mean?",
+            "Does this page fetch anything live?",
+        ],
+        inputs=["None — pure presentation over "
+                "rcm_mc.data_public.nonpublic_cms_registry; the per-"
+                "source detail view takes the registry id in the path."],
+        outputs=["A categorized registry of programs / APIs / mandates "
+                 "/ algorithms with access, cost, granularity, "
+                 "relevance and integration status per entry, plus a "
+                 "per-source detail screen."],
+        key_metrics=["Registry entries tracked", "Access tier per entry",
+                     "Integration status (reachable / api-client / "
+                     "staged)"],
+        data_sources=["The committed nonpublic_cms_registry metadata; "
+                      "the live-API entries document the NPPES NPI "
+                      "Registry, CMS Coverage API and ICD-10 code "
+                      "service connectors (connectors/ estate) that the "
+                      "clients fetch from where credentials / outbound "
+                      "access exist."],
+        model_logic_summary="No modeling and no network calls on this "
+        "page — pure presentation over the registry; the connectors "
+        "that actually fetch live where credentials / outbound access "
+        "exist.",
+        why_it_matters="The upgrade path from free public data to "
+        "credentialed microdata is a roadmap decision — this surface "
+        "keeps it tracked and honest before anything ships.",
+        diligence_use_cases=["Internal planning of which data access "
+                             "to pursue for a repeatable diligence "
+                             "capability."],
+        interpretation_guidance=[
+            "Everything here is staging metadata, badged WIP — not a "
+            "partner-facing data product.",
+            "'Reachable' on a live-API entry means the connector "
+            "verified access, not that a page ships on it yet.",
+        ],
+        limitations=["Internal, work-in-progress surface; not in the "
+                     "top nav by design.",
+                     "Registry metadata only — no live fetches happen "
+                     "on this page."],
+        related_routes=["/cms-data-browser", "/cms-sources", "/tools"],
+        data_source_ids=["cms_coverage_api", "npi_registry_api",
+                         "icd10_codes_api"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+])
+
+
 # 2026-05-31 (PR #1326): Back-fill data_source.related_routes from
 # the final PageContext data_source_ids — runs LAST after every
 # forward page→source wiring loop (_DATA_SOURCE_LINK_PATCHES,

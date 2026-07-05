@@ -202,6 +202,81 @@ class RenderStructure(unittest.TestCase):
         self.assertIn("data-status=", self.html)
         self.assertIn("data-route=", self.html)
 
+    def test_inactive_view_actually_collapses(self):
+        # Regression: the inactive view carries class "hidden", but no
+        # `.ti-main.hidden{display:none}` rule existed — so BOTH views
+        # rendered stacked (199 cards twice = 398 on one ~23k-px page),
+        # which read as double counting on /tools.
+        self.assertIn(".ti-main.hidden{display:none;}", self.html)
+        self.assertIn('class="ti-main mode-index hidden"', self.html)
+        self.assertNotIn('class="ti-main hidden"', self.html)
+
+    def test_each_view_has_a_jump_rail(self):
+        # One chip per section so partners can hop to a workspace/bucket
+        # without scrolling the whole grid.
+        ws, index, _, _ = _data()
+        rails = re.findall(r'<nav class="ti-jump"', self.html)
+        self.assertEqual(len(rails), 2)
+        for sec in ws:
+            self.assertIn(f'href="#workspace-{sec["id"]}"', self.html)
+        for sec in index:
+            self.assertIn(f'href="#index-{sec["id"]}"', self.html)
+
+
+class DeepLinkView(unittest.TestCase):
+    def test_initial_view_index_renders_az_visible(self):
+        # /tools?view=all must land on the Full A–Z view server-side —
+        # previously the dispatch ignored the query and silently fell back
+        # to the workspace view.
+        ws, index, tw, ti = _data()
+        html = render_tools_index(workspaces=ws, index=index,
+                                  total_ws=tw, total_idx=ti,
+                                  initial_view="index")
+        self.assertIn('data-mode="index"', html)
+        self.assertIn('class="ti-main hidden"', html)          # workspace off
+        self.assertIn('class="ti-main mode-index"', html)      # A–Z on
+        self.assertNotIn('class="ti-main mode-index hidden"', html)
+        self.assertIn("full A–Z", html)
+
+    def test_bogus_initial_view_falls_back_to_workspace(self):
+        ws, index, tw, ti = _data()
+        html = render_tools_index(workspaces=ws, index=index,
+                                  total_ws=tw, total_idx=ti,
+                                  initial_view="nonsense")
+        self.assertIn('data-mode="workspace"', html)
+
+
+class NoDoubleCounting(unittest.TestCase):
+    def test_same_renderer_aliases_are_not_carded_twice(self):
+        # These /diligence/-prefixed routes call the exact same render_*
+        # with the same query params as their bare Research counterparts —
+        # carding both showed one page twice under two de-collided names.
+        ws, index, _, _ = _data()
+        az = {t["path"] for sec in index for t in sec["tools"]}
+        for alias, canonical in (
+            ("/diligence/comparable-outcomes", "/comparable-outcomes"),
+            ("/diligence/regulatory-calendar", "/regulatory-calendar"),
+            ("/market-data/map", "/market-data"),
+        ):
+            self.assertNotIn(alias, az, f"{alias} duplicates {canonical}")
+            self.assertIn(canonical, az, f"canonical {canonical} missing")
+
+    def test_download_and_post_only_endpoints_are_not_carded(self):
+        # Byte-serving downloads and POST-only handlers are not pages —
+        # carding them produced dead/duplicate tiles.
+        ws, index, _, _ = _data()
+        az = {t["path"] for sec in index for t in sec["tools"]}
+        for r in ("/npi-cleaner/detect", "/npi-cleaner/upload",
+                  "/npi-cleaner/sample", "/rxnorm/export.csv",
+                  "/diligence/texas-infusion/counties.csv",
+                  "/diligence/texas-infusion/metros.csv",
+                  "/diligence/texas-infusion/workforce.csv",
+                  "/diligence/texas-infusion/revenue.csv",
+                  "/diligence/texas-infusion/jcode-benchmark.csv"):
+            self.assertNotIn(r, az, f"non-page endpoint carded: {r}")
+        self.assertIn("/npi-cleaner", az)
+        self.assertIn("/diligence/texas-infusion/jcode-benchmark", az)
+
 
 if __name__ == "__main__":
     unittest.main()

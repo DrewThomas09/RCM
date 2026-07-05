@@ -163,6 +163,7 @@ def ck_bar_chart(
         f'<line x1="{L:.1f}" y1="{T + ploth:.1f}" x2="{W - R:.1f}" '
         f'y2="{T + ploth:.1f}" stroke="{_RULE}" stroke-width="1"/>',
     ]
+    val_label_ys: List[float] = []
     for i, (label, val, tone) in enumerate(pts):
         cx = L + band * i + band / 2.0
         bh = bar_h(val)
@@ -175,6 +176,7 @@ def ck_bar_chart(
             f'{_html.escape(fmt(val))}</title></rect>'
         )
         # value on top
+        val_label_ys.append(by - 6)
         parts.append(
             f'<text x="{cx:.1f}" y="{by - 6:.1f}" text-anchor="middle" '
             f'font-family="{_MONO}" font-size="10.5" font-weight="600" '
@@ -198,8 +200,17 @@ def ck_bar_chart(
             f'<line x1="{L:.1f}" y1="{ry:.1f}" x2="{W - R:.1f}" y2="{ry:.1f}" '
             f'stroke="{_FAINT}" stroke-width="1" stroke-dasharray="4 3"/>'
         )
+        # Collision handling: when a bar tops out near the reference value,
+        # its value label (at bar-top − 6) and the reference label (at
+        # line − 4) land on the same y and overprint each other (e.g. FL
+        # "$69,898" over "U.S. $73,045"). If any bar's value label sits
+        # within ~12px of the reference label, drop the reference label
+        # below the dashed line instead.
+        ref_ty = ry - 4
+        if any(abs(ref_ty - vy) < 12 for vy in val_label_ys):
+            ref_ty = ry + 10
         parts.append(
-            f'<text x="{W - R:.1f}" y="{ry - 4:.1f}" text-anchor="end" '
+            f'<text x="{W - R:.1f}" y="{ref_ty:.1f}" text-anchor="end" '
             f'font-family="{_MONO}" font-size="8.5" fill="{_FAINT}">'
             f'{_html.escape(ref_label)} {_html.escape(fmt(ref_v))}</text>'
         )

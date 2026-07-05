@@ -119,7 +119,9 @@ APP_GRID_CSS = """
 .cc-body-scroll::-webkit-scrollbar-thumb{background:var(--cc-rule);border-radius:4px;}
 /* KPI */
 .cc-kpi{font-family:var(--cc-serif);font-size:36px;color:var(--cc-ink);line-height:1;}
-.cc-kpi-hero{font-size:96px;}
+/* Hero numeral sized for a single-row card — 96px forced the old 2-row
+   hero card whose extra row was mostly dead space. */
+.cc-kpi-hero{font-size:56px;}
 .cc-kpi-em{font-style:italic;color:var(--cc-green);}
 .cc-kpi-x{font-family:var(--cc-mono);font-size:18px;color:var(--cc-muted);}
 .cc-kpi-of{font-family:var(--cc-mono);font-size:13px;color:var(--cc-muted);margin-left:8px;}
@@ -467,15 +469,20 @@ def render_app_grid(
     # ck_cards_hidden cookie reference these ids). _CARD_ORDER below is the
     # canonical render order.
     built: Dict[str, str] = {}
+    # Six KPI cards at a uniform 4x1 → two clean rows of three. The old
+    # 5x2 hero + 4/3-wide mix couldn't tile the 12-col grid (row 2 had 7
+    # free columns against 4+4 cards), which left dead holes under the
+    # Risk card and to the right of Covenant headroom. The MOIC card
+    # keeps its hero numeral via cc-kpi-hero styling instead of extra rows.
     built["moic"] = _kpi_card(tag="Fund return", color="green", title="Weighted MOIC",
                               em="MOIC", value=moic_v, sub="equity-weighted",
-                              span="cc-5x2", hero=True, idx=1)
+                              span="cc-4x1", hero=True, idx=1)
     built["irr"] = _kpi_card(tag="Return", color="ink", title="Weighted IRR",
                              em="IRR", value=irr_v, sub="equity-weighted",
                              span="cc-4x1", idx=2)
     built["covenants"] = _kpi_card(tag="Risk", color="amber", title="Covenants at risk",
                                    em="risk", value=cov_v, sub=cov_sub,
-                                   span="cc-3x1", idx=3)
+                                   span="cc-4x1", idx=3)
     # Capital deployed: total entry EV across sized deals (real; honest
     # empty when no deal carries an entry EV yet).
     built["days_cash"] = _kpi_card(

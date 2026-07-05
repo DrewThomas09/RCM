@@ -230,7 +230,10 @@ def _segment_metric_charts(benchmarks: Dict[str, Any]) -> str:
 
         def _fmt_value(v: float) -> str:
             if is_pct:
-                return f"{v:.1f}%"
+                # Benchmarks are stored as fractions (0.11 = 11%); scale
+                # ×100 so chart labels/gridlines agree with the tables,
+                # which format through _sanity.render_number.
+                return f"{v*100:.1f}%"
             if unit == "days":
                 return f"{v:.0f}d"
             return f"{v:.2f}"
@@ -345,14 +348,16 @@ def _cross_segment_table(benchmarks: Dict[str, Any]) -> str:
     """Wide table with segments as rows and metric P50s as columns — the
     "how do segments compare" read. Only P50s to keep density manageable.
     """
+    # Direction hint abbreviated to an arrow (full text in title=
+    # tooltip) — the long "(lo good)" spans used to truncate the last
+    # column header at the card edge.
     headers = "".join(
-        f'<th class="num">{_html.escape(name)}'
-        + (
-            f' <span style="color:{P["text_faint"]};font-size:8px;">(lo good)</span>'
-            if inv else
-            f' <span style="color:{P["text_faint"]};font-size:8px;">(hi good)</span>'
-        )
-        + f'</th>'
+        f'<th class="num" title="{_html.escape(name)} — '
+        f'{"lower is better" if inv else "higher is better"}">'
+        f'{_html.escape(name)}'
+        f' <span style="color:{P["text_faint"]};font-size:9px;">'
+        f'{"&darr;" if inv else "&uarr;"}</span>'
+        f'</th>'
         for _, name, _, inv, _ in _METRICS
     )
     rows = []
@@ -367,7 +372,7 @@ def _cross_segment_table(benchmarks: Dict[str, Any]) -> str:
         rows.append(
             f'<tr>'
             f'<td style="color:{P["text"]};font-family:var(--ck-mono);'
-            f'font-size:11px;font-weight:600;">'
+            f'font-size:11px;font-weight:600;white-space:nowrap;">'
             f'<a href="#seg-{_html.escape(seg_key)}" style="color:{P["accent"]};'
             f'text-decoration:none;">{_html.escape(str(b.label))}</a>'
             f'</td>'
@@ -474,7 +479,6 @@ def render_rcm_benchmarks(
     cross_panel = small_panel(
         f"Cross-segment P50 comparison · {n_segments} segments",
         cross_chart + _cross_segment_table(benchmarks),
-        code="XCS",
     )
 
     segments_html = "".join(
@@ -482,10 +486,7 @@ def render_rcm_benchmarks(
     )
     segments_panel = (
         f'<div class="ck-panel">'
-        f'<div class="ck-panel-title">Per-segment P25/P50/P75 bands '
-        f'<span style="font-family:var(--ck-mono);font-size:9px;'
-        f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
-        f'SEG</span></div>'
+        f'<div class="ck-panel-title">Per-segment P25/P50/P75 bands</div>'
         f'<div style="padding:14px 18px;">{segments_html}</div>'
         f'</div>'
     )

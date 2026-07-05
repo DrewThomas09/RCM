@@ -15,7 +15,7 @@ from rcm_mc.ui._chartis_kit import (
 )
 
 
-def _scenario_table(scenarios: list) -> str:
+def _scenario_table(scenarios: list, signal_weak: bool = False) -> str:
     rows = []
     for s in scenarios:
         delta = s.moic_delta
@@ -24,13 +24,18 @@ def _scenario_table(scenarios: list) -> str:
 
         if is_base:
             delta_html = '<span class="mn" style="color:var(--ck-text-dim)">baseline</span>'
+        elif signal_weak:
+            # Regression gate collapsed every scenario to the corpus P50
+            # — render an honest "no signal" instead of a red 0.00×
+            # that looks like a broken calculation.
+            delta_html = '<span class="mn" style="color:var(--ck-text-dim)">no signal</span>'
         elif delta > 0:
-            delta_html = f'<span class="mn pos">+{delta:.3f}×</span>'
+            delta_html = f'<span class="mn pos">+{delta:.2f}×</span>'
         else:
-            delta_html = f'<span class="mn neg">{delta:.3f}×</span>'
+            delta_html = f'<span class="mn neg">{delta:.2f}×</span>'
 
         pct = s.pct_impact
-        if is_base:
+        if is_base or signal_weak:
             pct_html = '—'
         elif pct > 0:
             pct_html = f'<span class="mn pos">+{pct:.1f}%</span>'
@@ -293,32 +298,61 @@ def render_payer_stress(params: Dict[str, str]) -> str:
         )
         + ck_kpi_block(
             "Worst Scenario",
-            f'<span class="mn neg">{worst.moic_delta:+.3f}×</span>' if worst else "—",
-            _html.escape(worst.label) if worst else "",
+            f'<span class="mn neg">{worst.moic_delta:+.2f}×</span>'
+            if worst and not result.signal_weak else "—",
+            "regression signal too weak" if result.signal_weak
+            else (_html.escape(worst.label) if worst else ""),
         )
         + ck_kpi_block(
             "Best Scenario",
-            f'<span class="mn pos">{best.moic_delta:+.3f}×</span>' if best else "—",
-            _html.escape(best.label) if best else "",
+            f'<span class="mn pos">{best.moic_delta:+.2f}×</span>'
+            if best and not result.signal_weak else "—",
+            "regression signal too weak" if result.signal_weak
+            else (_html.escape(best.label) if best else ""),
         )
         + "</div>"
     )
 
     chart = _waterfall_svg(result.scenarios)
-    scen_table = _scenario_table(result.scenarios)
+    scen_table = _scenario_table(result.scenarios, signal_weak=result.signal_weak)
     reg_table = _reg_table(result)
+
+    # Honest empty-signal state. When no payer regression clears the
+    # R² floor, every scenario collapses to the corpus P50 by design
+    # (deltas of 0.00× everywhere) — say so explicitly instead of
+    # letting identical rows read as a broken calculator.
+    weak_note = ""
+    if result.signal_weak:
+        weak_note = (
+            '<div class="ck-panel" style="border-left:3px solid '
+            f'{P["warning"]};padding:10px 14px;margin-bottom:16px;'
+            'font-size:12px;color:var(--ck-text-dim)">'
+            '<strong style="color:var(--ck-text)">Regression signal too '
+            'weak — scenarios not differentiated in this corpus.</strong> '
+            f'No payer-mix regression clears R² 0.01 (best: '
+            f'{result.max_r2:.4f} across {result.n_corpus_peers} peers), '
+            'so payer-share slopes are statistically indistinguishable '
+            'from zero. Rather than fabricate sensitivity from noise, '
+            'every scenario reports the corpus P50 MOIC '
+            f'({(result.corpus_p50 or 0):.2f}×) and a 0.00× delta. '
+            'Use the scenario shifts as a checklist, not a forecast.'
+            '</div>'
+        )
 
     body = f"""
 {_payer_slider_form(params)}
 {kpi_grid}
 {ck_section_header("Scenario MOIC Impact", f"{result.n_corpus_peers} peer deals · payer regression-calibrated")}
+{weak_note}
 <div style="overflow-x:auto;margin-bottom:24px">{chart}</div>
 <div style="overflow-x:auto;margin-bottom:24px">{scen_table}</div>
 {ck_section_header("Regression Coefficients", "Payer share vs. realized MOIC — corpus OLS")}
 <div style="overflow-x:auto">{reg_table}</div>
 <p style="font-size:11px;color:var(--ck-text-faint);margin-top:12px">
   Note: MOIC estimates are linear approximations from corpus regression.
-  R² &lt; 0.10 indicates weak explanatory power — treat as directional, not predictive.
+  Regressions with R² ≤ 0.01 are excluded from the estimate (the scenario
+  falls back to the corpus P50); R² &lt; 0.10 is weak explanatory power —
+  treat as directional, not predictive.
   Corpus data: seed deals only, pre-2023 vintages.
 </p>
 """
