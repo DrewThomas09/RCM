@@ -375,6 +375,7 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
         <a class="npi-dl npi-dl-alt" id="npi-dl-bundle" href="#" download
            style="margin-left:10px">⤓ Everything (.zip)</a>
       </div>
+      <div id="npi-reconcile" style="margin-top:16px"></div>
       <div style="margin-top:16px">
         <button class="npi-again" id="npi-again">Clean another file</button>
       </div>
@@ -501,6 +502,8 @@ _EXTRA_JS = r"""
     (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
     renderRepairs(s.repairs, s.repairs_total, s.credentials, s.specialties,
                   s.claims);
+    rememberJob(currentJobId, s.out_name||"run");
+    renderReconcile(s);
     renderSanity(s.sanity, s.worklists, s.download, s.accepted_rules||[]);
     renderQuality(s);
     $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
@@ -1182,6 +1185,108 @@ _EXTRA_JS = r"""
           d.classList.toggle("open", !rows.classList.contains("npi-hidden")); }
       }
     });
+  }
+
+  // ---- 837↔835 reconciliation: remember recent runs in THIS browser so
+  // a claims run can be matched against its remittance run by claim id.
+  function recentJobs(){
+    try{ return JSON.parse(localStorage.getItem("npi_recent_jobs"))||[]; }
+    catch(e){ return []; }
+  }
+  function rememberJob(id, name){
+    if(!id) return;
+    var list=recentJobs().filter(function(j){ return j.id!==id; });
+    list.unshift({id:id, name:name||"run", ts:Date.now()});
+    try{ localStorage.setItem("npi_recent_jobs",
+      JSON.stringify(list.slice(0,10))); }catch(e){}
+  }
+  function renderReconcile(s){
+    var box=$("npi-reconcile");
+    var others=recentJobs().filter(function(j){ return j.id!==currentJobId; });
+    if(!others.length){
+      box.innerHTML='<div class="npi-muted">Clean the matching remittance '+
+        '(835) or claims (837) file next and a <strong>reconcile</strong> '+
+        'option will appear here.</div>';
+      return;
+    }
+    var isRemit=(s.delimiter||"").indexOf("835")>=0;
+    box.innerHTML='<div class="ck-section-header"><h3 style="margin:0">'+
+      'Reconcile against an earlier run</h3></div>'+
+      '<div class="npi-muted">Match claims to remittance on claim id: '+
+      'unpaid claims, paid-vs-billed variance, denial mix.</div>'+
+      '<div style="margin-top:8px">'+
+      '<select id="npi-rec-other" style="font-size:12.5px;max-width:260px">'+
+      others.map(function(j){
+        return '<option value="'+esc(j.id)+'">'+esc(j.name)+'</option>';
+      }).join("")+'</select> '+
+      '<label class="npi-muted" style="margin-left:8px">'+
+      '<input type="checkbox" id="npi-rec-remit"'+(isRemit?' checked':'')+
+      '> this run is the remittance (835) side</label> '+
+      '<button type="button" class="npi-dl" id="npi-rec-go" '+
+      'style="font-size:12.5px;padding:5px 12px;margin-left:8px">'+
+      'Reconcile</button></div><div id="npi-rec-out" '+
+      'style="margin-top:10px"></div>';
+    $("npi-rec-go").addEventListener("click", function(){
+      var other=$("npi-rec-other").value;
+      var thisIsRemit=$("npi-rec-remit").checked;
+      var body=thisIsRemit?{a:other, b:currentJobId}
+                          :{a:currentJobId, b:other};
+      $("npi-rec-out").innerHTML='<div class="npi-muted">Matching…</div>';
+      fetch("/npi-cleaner/api/reconcile", {method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body)})
+      .then(function(r){ return r.json(); })
+      .then(renderReconResult)
+      .catch(function(){ $("npi-rec-out").innerHTML=
+        '<div class="npi-err">Reconcile failed.</div>'; });
+    });
+  }
+  function renderReconResult(r){
+    var out=$("npi-rec-out");
+    if(r.error){ out.innerHTML='<div class="npi-err">'+esc(r.error)+
+      '</div>'; return; }
+    var h='<div style="font-size:13px;margin-bottom:6px"><strong>'+
+      fmt(r.matched)+'</strong> of '+fmt(r.claims_a)+' claims matched ('+
+      r.match_rate_pct+'%) · <strong>'+fmt(r.unpaid_count)+
+      '</strong> with no remittance · billed $'+fmt(r.billed_matched)+
+      ' vs paid $'+fmt(r.paid_matched)+' on matched claims (variance $'+
+      fmt(r.variance_total)+')'+
+      (r.orphan_remits_count?(' · '+fmt(r.orphan_remits_count)+
+      ' remit claim(s) not in the claims run'):'')+'</div>';
+    if(r.unpaid && r.unpaid.length){
+      h+='<div style="font-weight:640;font-size:12.5px;margin-top:6px">'+
+        'Claims with no remittance (top by billed)</div>'+
+        '<table class="npi-tbl"><thead><tr><th>Claim</th>'+
+        '<th class="num">Billed</th><th class="num">Lines</th></tr></thead>'+
+        '<tbody>'+r.unpaid.slice(0,8).map(function(u){
+          return '<tr><td>'+esc(u.claim)+'</td><td class="num">$'+
+            fmt(u.billed)+'</td><td class="num">'+fmt(u.lines)+'</td></tr>';
+        }).join("")+'</tbody></table>';
+    }
+    if(r.top_variance && r.top_variance.length){
+      h+='<div style="font-weight:640;font-size:12.5px;margin-top:10px">'+
+        'Largest paid-vs-billed variance (matched claims)</div>'+
+        '<table class="npi-tbl"><thead><tr><th>Claim</th>'+
+        '<th class="num">Billed</th><th class="num">Paid</th>'+
+        '<th class="num">Δ</th><th>CARCs</th></tr></thead><tbody>'+
+        r.top_variance.slice(0,8).map(function(v){
+          return '<tr><td>'+esc(v.claim)+'</td><td class="num">$'+
+            fmt(v.billed)+'</td><td class="num">$'+fmt(v.paid)+
+            '</td><td class="num">$'+fmt(v.delta)+'</td><td>'+
+            (v.carcs||[]).map(esc).join(", ")+'</td></tr>';
+        }).join("")+'</tbody></table>';
+    }
+    if(r.denials && r.denials.length){
+      h+='<div style="font-weight:640;font-size:12.5px;margin-top:10px">'+
+        'Denial mix (remit side)</div><div style="margin-top:6px">'+
+        r.denials.map(function(d){
+          return '<span class="npi-pill" style="margin:0 6px 6px 0;'+
+            'display:inline-block" title="'+esc(d.action||"")+'">'+
+            esc(d.code)+' · '+fmt(d.claims)+
+            (d.category?(' ('+esc(d.category)+')'):'')+'</span>';
+        }).join("")+'</div>';
+    }
+    out.innerHTML=h;
   }
 
   function watch(jobId){

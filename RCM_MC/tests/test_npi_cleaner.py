@@ -1550,6 +1550,99 @@ class TestDupWindowAndRollup(unittest.TestCase):
         self.assertIn("Claim rollup", html_out)
 
 
+class TestReconcile(unittest.TestCase):
+    """837↔835 reconciliation: match a claims run against its remittance
+    on claim id — unpaid claims, paid-vs-billed variance, denial mix."""
+
+    def test_reconcile_pure(self):
+        from rcm_mc.npi_cleaner.reconcile import reconcile
+        ha = ["ClaimID", "BilledAmt"]
+        ra = [["C1", "100"], ["C1", "50"], ["C2", "300"], ["C3", "75"]]
+        hb = ["ClaimID", "PaidAmt", "DenialCodes"]
+        rb = [["C1", "120", "45"], ["C2", "0", "29"], ["C9", "40", ""]]
+        rep = reconcile(ha, ra, hb, rb)
+        self.assertEqual(rep["claims_a"], 3)
+        self.assertEqual(rep["matched"], 2)
+        self.assertEqual(rep["match_rate_pct"], 66.7)
+        self.assertEqual(rep["unpaid_count"], 1)
+        self.assertEqual(rep["unpaid"][0]["claim"], "C3")
+        self.assertEqual(rep["orphan_remits_count"], 1)
+        self.assertEqual(rep["billed_matched"], 450.0)  # C1 150 + C2 300
+        self.assertEqual(rep["paid_matched"], 120.0)
+        self.assertEqual(rep["variance_total"], 330.0)
+        # C2 is the biggest variance (300 billed, 0 paid, CARC 29).
+        self.assertEqual(rep["top_variance"][0]["claim"], "C2")
+        self.assertIn("29", rep["top_variance"][0]["carcs"])
+        den = {d["code"]: d for d in rep["denials"]}
+        self.assertEqual(den["29"]["category"], "preventable")
+        # Missing claim-id column → clear error, not a crash.
+        bad = reconcile(["A"], [["1"]], hb, rb)
+        self.assertIn("claim-id", bad["error"])
+
+    def test_reconcile_http_837_vs_835(self):
+        # The 837P and 835 fixtures share ACCT001/ACCT002 — a real
+        # claims-vs-remit pair, end to end through the server.
+        import socket as _socket
+        import threading
+        from rcm_mc.server import build_server
+        with tempfile.TemporaryDirectory() as tmp:
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                def _run(payload, name):
+                    req = _u.Request(
+                        f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                        data=payload, method="POST",
+                        headers={"X-Filename": name})
+                    with _u.urlopen(req) as r:
+                        jid = json.loads(r.read().decode())["job_id"]
+                    for _ in range(50):
+                        with _u.urlopen(
+                            f"http://127.0.0.1:{port}"
+                            f"/npi-cleaner/status/{jid}") as r:
+                            if json.loads(r.read().decode()).get("done"):
+                                return jid
+                        time.sleep(0.05)
+                    return jid
+                a = _run(_X12_837P, "claims.837")
+                b = _run(_X12_835, "remit.835")
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/reconcile",
+                    data=json.dumps({"a": a, "b": b}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    rep = json.loads(r.read().decode())
+                self.assertEqual(rep["claims_a"], 2)
+                self.assertEqual(rep["matched"], 2)
+                self.assertEqual(rep["match_rate_pct"], 100.0)
+                self.assertEqual(rep["unpaid_count"], 0)
+                den_codes = {d["code"] for d in rep["denials"]}
+                self.assertIn("45", den_codes)
+                self.assertIn("29", den_codes)
+                # Unknown job → 404 with a JSON error.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/reconcile",
+                    data=json.dumps({"a": "nope", "b": b}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json"})
+                try:
+                    _u.urlopen(req)
+                    self.fail("expected 404")
+                except _u.HTTPError as exc:
+                    self.assertEqual(exc.code, 404)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+
 class TestDenialPlaybookTrendsDictionary(unittest.TestCase):
     """Batch 13: playbook-enriched denials, trend alerts vs the previous
     run, and the PHI-safe data dictionary."""

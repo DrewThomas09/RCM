@@ -645,6 +645,21 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Sanitized stored mapping"}},
             },
         },
+        "/npi-cleaner/api/reconcile": {
+            "post": {
+                "summary": "Reconcile two runs on claim id (claims vs remittance)",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object", "properties": {
+                        "a": {"type": "string",
+                              "description": "job id of the claims (837) run"},
+                        "b": {"type": "string",
+                              "description": "job id of the remittance (835) run"},
+                    }}}}},
+                "responses": {"200": {"description":
+                    "Unpaid claims, paid-vs-billed variance, denial mix"}},
+            },
+        },
         "/npi-cleaner/api/history": {
             "get": {
                 "summary": "Cleaning run history (aggregate scorecards, no PHI)",

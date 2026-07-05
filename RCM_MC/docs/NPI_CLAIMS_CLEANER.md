@@ -95,6 +95,15 @@ Separators come from the ISA envelope per spec and the normal pipeline
 runs unchanged. Any other transaction set (999/270/276) produces a
 precise warning instead of an empty result.
 
+## 837↔835 reconciliation
+
+`POST /npi-cleaner/api/reconcile` with `{"a": <claims job id>, "b":
+<remittance job id>}` matches two completed runs on claim id and
+reports: claims with **no remittance at all**, paid-vs-billed variance
+per matched claim (with each claim's CARCs), orphan remits, and the
+playbook-enriched denial mix. The results panel offers the same match
+against any recent run cleaned in the same browser.
+
 ## Run history
 
 `/npi-cleaner/history` — every run records **aggregate counts only**

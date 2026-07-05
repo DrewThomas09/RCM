@@ -14221,6 +14221,43 @@ class RCMHandler(BaseHTTPRequestHandler):
                 body = {}
             ok = _nc_mappings.delete_mapping(str(body.get("name") or ""))
             return self._send_json({"ok": ok})
+        if path == "/npi-cleaner/api/reconcile":
+            # Match two completed runs on claim id: {"a": job_id (claims),
+            # "b": job_id (remittance)} → unpaid / variance / denial mix.
+            from .npi_cleaner import engine as _nc_engine
+            from .npi_cleaner import reconcile as _nc_reconcile
+            import csv as _rcsv
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                body = {}
+
+            def _load(job_id):
+                job = _nc_engine.manager().get(str(job_id or ""))
+                if job is None or job.result is None \
+                        or not job.result.out_path:
+                    return None
+                try:
+                    with open(job.result.out_path,
+                              encoding="utf-8") as fh:
+                        rd = _rcsv.reader(fh)
+                        hdr = next(rd, None) or []
+                        return hdr, list(rd)
+                except OSError:
+                    return None
+
+            side_a = _load(body.get("a"))
+            side_b = _load(body.get("b"))
+            if side_a is None or side_b is None:
+                return self._send_json(
+                    {"error": "unknown or expired job id"},
+                    status=HTTPStatus.NOT_FOUND)
+            rep = _nc_reconcile.reconcile(side_a[0], side_a[1],
+                                          side_b[0], side_b[1])
+            status = (HTTPStatus.BAD_REQUEST if rep.get("error")
+                      else HTTPStatus.OK)
+            return self._send_json(rep, status=status)
         if path == "/npi-cleaner/api/clean":
             # Synchronous programmatic clean: raw CSV body (global 10 MB POST
             # cap applies — use /npi-cleaner/upload for big files) → full
