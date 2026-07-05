@@ -15566,7 +15566,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             sections.append(
                 f'<div class="card" style="border-left: 3px solid var(--red-text);">'
                 f'<h2 style="margin-top: 0;">Overdue ({len(od)})</h2>'
-                f'<table><thead><tr><th>Status</th><th>Deal</th>'
+                f'<table class="ck-table"><thead><tr><th>Status</th><th>Deal</th>'
                 f'<th>Task</th><th>Owner</th><th>Due</th><th></th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
@@ -15581,7 +15581,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="card">'
                 f'<h2 style="margin-top: 0;">Upcoming '
                 f'(next {days_ahead} days, {len(up)})</h2>'
-                f'<table><thead><tr><th>Status</th><th>Deal</th>'
+                f'<table class="ck-table"><thead><tr><th>Status</th><th>Deal</th>'
                 f'<th>Task</th><th>Owner</th><th>Due</th><th></th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
@@ -15771,7 +15771,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="card">'
                 f'<h2>Deals owned by <code>{html.escape(owner)}</code> '
                 f'({len(dids)})</h2>'
-                f'<table><thead><tr>'
+                f'<table class="ck-table"><thead><tr>'
                 f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
                 f'<th>MOIC</th><th>IRR</th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
@@ -16306,13 +16306,26 @@ class RCMHandler(BaseHTTPRequestHandler):
                 '</section>'
             )
         else:
+            # Partner-facing labels — the raw snake_case enums
+            # ("new_deal", "covenant_degrade") read as internals in a
+            # document billed as partner-ready.
+            _change_labels = {
+                "new_deal": "New deal",
+                "covenant_degrade": "Covenant degraded",
+                "covenant_improve": "Covenant improved",
+                "stage_change": "Stage change",
+                "health_change": "Health change",
+            }
             act_rows = []
             for _, r in events_df.head(30).iterrows():
+                _ct = str(r["change_type"])
+                _ct_label = _change_labels.get(
+                    _ct, _ct.replace("_", " ").capitalize())
                 act_rows.append(
                     "<tr>"
                     f'<td class="ck-lp-mono">{html.escape(str(r["timestamp"])[:10])}</td>'
                     f'<td>{_deal_link(str(r["deal_id"]))}</td>'
-                    f'<td>{html.escape(str(r["change_type"]))}</td>'
+                    f'<td>{html.escape(_ct_label)}</td>'
                     f'<td class="ck-lp-detail">{html.escape(str(r["detail"]))}</td>'
                     "</tr>"
                 )
@@ -16565,7 +16578,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'deals that actually contributed to the weighted average '
                 f'(those with MOIC + IRR + EV recorded).'
                 f'</p>'
-                f'<table><thead><tr>'
+                f'<table class="ck-table"><thead><tr>'
                 f'<th>Tag</th><th>Deals</th><th>Avg health</th>'
                 f'<th>W. MOIC</th><th>W. IRR</th>'
                 f'<th>Trips</th><th>Tight</th><th>Concerning</th>'
@@ -16573,10 +16586,23 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
 
-        self._send_html(shell(
-            body=body, title="Cohorts",
-            subtitle="Portfolio rollup by tag",
-            back_href="/",
+        # Editorial chrome to match the rest of the platform (was the
+        # legacy bare shell with an orphan subtitle + back link).
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, ck_page_actions,
+        )
+        n_cohorts = 0 if df.empty else len(df)
+        title_block = ck_page_title(
+            "Cohorts", eyebrow="PORTFOLIO",
+            meta=f"ROLLUP BY TAG · {n_cohorts} COHORT"
+                 f"{'' if n_cohorts == 1 else 'S'}",
+        )
+        page = (
+            f'<div class="ck-page-wrap">{title_block}{body}</div>'
+            + ck_page_actions()
+        )
+        self._send_html(chartis_shell(
+            page, title="Cohorts", active_nav="portfolio",
         ))
 
     def _route_cohort_detail(self, tag: str) -> None:
@@ -16619,16 +16645,29 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f'<div class="card">'
                 f'<h2>Deals tagged <code>{html.escape(tag)}</code> '
                 f'({len(df)})</h2>'
-                f'<table><thead><tr>'
+                f'<table class="ck-table"><thead><tr>'
                 f'<th>Deal</th><th>Health</th><th>Stage</th><th>Covenant</th>'
                 f'<th>MOIC</th><th>IRR</th>'
                 f'</tr></thead><tbody>{"".join(rows)}</tbody></table></div>'
             )
 
-        self._send_html(shell(
-            body=body, title=f"Cohort: {tag}",
-            subtitle=f"Deals in cohort {tag!r}",
-            back_href="/cohorts",
+        from .ui._chartis_kit import (
+            chartis_shell, ck_page_title, ck_page_actions,
+        )
+        n_members = 0 if df.empty else len(df)
+        title_block = ck_page_title(
+            f"Cohort · {tag}", eyebrow="PORTFOLIO / COHORTS",
+            meta=f"{n_members} DEAL{'' if n_members == 1 else 'S'} TAGGED",
+        )
+        page = (
+            f'<div class="ck-page-wrap">{title_block}'
+            f'<p style="margin:0 0 14px;"><a href="/cohorts" '
+            f'class="ck-link">&larr; All cohorts</a></p>'
+            f'{body}</div>'
+            + ck_page_actions()
+        )
+        self._send_html(chartis_shell(
+            page, title=f"Cohort: {tag}", active_nav="portfolio",
         ))
 
     def _route_escalations(self) -> None:
@@ -17285,10 +17324,31 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "LIMIT ?", (limit,),
             ).fetchall():
                 import json as _json
+
+                def _fmt_kpi(k, v):
+                    # Partner-facing formatting — the raw key=value dump
+                    # rendered "ebitda=13000000.0".
+                    label = str(k).replace("_", " ")
+                    try:
+                        f = float(v)
+                    except (TypeError, ValueError):
+                        return f"{label} {v}"
+                    kl = str(k).lower()
+                    if any(t in kl for t in ("ebitda", "revenue", "npsr",
+                                             "cash", "capex", "debt")):
+                        if abs(f) >= 1e6:
+                            return f"{label} ${f / 1e6:,.2f}M"
+                        return f"{label} ${f:,.2f}"
+                    if "rate" in kl or "pct" in kl or "margin" in kl:
+                        return f"{label} {f * 100 if abs(f) <= 1 else f:.1f}%"
+                    if f == int(f):
+                        return f"{label} {int(f):,}"
+                    return f"{label} {f:,.2f}"
+
                 try:
                     kpis = _json.loads(r["kpis_json"] or "{}")
-                    summary = ", ".join(
-                        f"{k}={v}" for k, v in list(kpis.items())[:3]
+                    summary = " · ".join(
+                        _fmt_kpi(k, v) for k, v in list(kpis.items())[:3]
                     )
                 except (ValueError, TypeError):
                     summary = ""
@@ -17315,7 +17375,8 @@ class RCMHandler(BaseHTTPRequestHandler):
         items_html = []
         for e in events:
             cls, label = kind_badge.get(e["kind"], ("badge-muted", "EVENT"))
-            ts_short = str(e["ts"] or "")[:19]
+            # "2026-07-05 14:53" — the raw ISO 'T' + seconds read like a log
+            ts_short = str(e["ts"] or "")[:16].replace("T", " ")
             did = str(e["deal_id"] or "")
             items_html.append(
                 f'<li style="padding: 0.75rem 0; '

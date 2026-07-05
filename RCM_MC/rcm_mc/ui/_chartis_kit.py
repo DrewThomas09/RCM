@@ -9076,7 +9076,12 @@ _CSS_INLINE_FALLBACK = """
      composite value like "3.34x · 29% IRR · 4 deals" used to stack vertically
      into an unreadable column. Short numeric values still sit at 48px so rows
      stay aligned. */
-  .ck-bar-row { display:grid; grid-template-columns:120px minmax(48px,max-content) 1fr 56px;
+  /* Label track is 200px (was 120px) — the narrow track clipped nearly
+     every editorial label ("Patient experie…", "DRG 871 · Septi…") on
+     the pages using this primitive. Fixed width (not fit-content) so
+     every row's bar starts at the same x and lengths stay comparable. */
+  .ck-bar-row { display:grid;
+    grid-template-columns:200px minmax(48px,max-content) 1fr 56px;
     gap:10px; align-items:center; padding:5px 0; font-size:12px;
     font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
   .ck-bar-row-label { color:var(--sc-text-dim); overflow:hidden;
