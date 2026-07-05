@@ -137,14 +137,14 @@ _PER_DEAL_ROUTES: List[Dict[str, str]] = [
         "module": "partner_review.partner_review",
         "desc": "Full IC verdict: recommendation, partner-voice narrative, "
                 "reasonableness bands, heuristic hits, supplemental healthcare "
-                "checks, Claude look, and secondary analytics.",
+                "checks, AI review, and secondary analytics.",
     },
     {
         "suffix": "red-flags",
         "module": "red_flags + reasonableness",
         "desc": "Focused view: critical/high severity heuristic hits plus "
                 "band violations (OUT_OF_BAND + IMPLAUSIBLE), supplemental "
-                "healthcare signals, and Claude status.",
+                "healthcare signals, and AI review status.",
     },
     {
         "suffix": "archetype",

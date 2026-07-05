@@ -182,7 +182,7 @@ def _claude_review_panel(review: Any) -> str:
     status = str(claude.get("status") or "not_configured")
     color = _CLAUDE_STATUS_COLORS.get(status, P["text_faint"])
     status_label = status.replace("_", " ").upper()
-    summary = str(claude.get("summary") or "Claude review not available.").strip()
+    summary = str(claude.get("summary") or "AI review not available.").strip()
     model = str(claude.get("model") or "fallback")
     confirmed = [str(x) for x in list(claude.get("confirmed_points") or []) if str(x).strip()]
     concerns = [str(x) for x in list(claude.get("concerns") or []) if str(x).strip()]
@@ -205,7 +205,7 @@ def _claude_review_panel(review: Any) -> str:
 
     return (
         f'<div class="ck-panel">'
-        f'<div class="ck-panel-title">Claude Look '
+        f'<div class="ck-panel-title">AI review '
         f'<span style="font-family:var(--ck-mono);font-size:9px;'
         f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
         f'CLD</span></div>'
@@ -233,7 +233,7 @@ def _supplemental_review_section(review: Any) -> str:
         f'<div id="supplemental-review">'
         + ck_section_header(
             "SUPPLEMENTAL REVIEW SIGNALS",
-            "additive healthcare checks + Claude confirmation",
+            "additive healthcare checks + AI confirmation",
             count=total_hits,
         )
         + f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'

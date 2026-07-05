@@ -128,7 +128,7 @@ def _features_card() -> str:
         f'border-radius:3px;padding:14px 16px;">'
         f'<div style="font-family:var(--ck-mono);font-size:10px;'
         f'letter-spacing:0.12em;color:{P["text_faint"]};margin-bottom:10px;">'
-        f'FEATURES THAT USE CLAUDE</div>'
+        f'AI-ASSISTED FEATURES</div>'
         f'<table class="ck-table">'
         f'<thead><tr>'
         f'<th style="text-align:left;">Feature</th>'
@@ -187,6 +187,15 @@ def _models_table(active_id: Optional[str]) -> str:
 def _setup_instructions() -> str:
     # 2026-05-28 batch 31 · Tier-4 trope removal — drops decorative
     # 3px accent stripe; caps radius at 2px.
+    #
+    # Admin setup (intentionally NOT rendered — this settings page is
+    # partner-reachable, so shell-level detail stays out of the UI):
+    #   1. Get an API key from https://console.anthropic.com/
+    #   2. Export it before launching the server:
+    #        export ANTHROPIC_API_KEY="sk-ant-…"
+    #        .venv/bin/python seekingchartis.py --port 8090
+    #   3. Reload this page — the status badge flips to CONNECTED and
+    #      the key fingerprint shows at the top of the panel.
     return (
         f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
         f'border-radius:2px;'
@@ -194,22 +203,9 @@ def _setup_instructions() -> str:
         f'<div style="font-family:var(--ck-mono);font-size:10px;'
         f'letter-spacing:0.12em;color:{P["text_faint"]};margin-bottom:10px;">'
         f'HOW TO CONNECT</div>'
-        f'<ol style="color:{P["text"]};font-size:12px;line-height:1.7;'
-        f'padding-left:18px;margin:0 0 8px;">'
-        f'<li>Get an API key from '
-        f'<a href="https://console.anthropic.com/" target="_blank" '
-        f'rel="noopener" style="color:{P["accent"]};">console.anthropic.com</a>.</li>'
-        f'<li>Export it in the shell before launching the server:'
-        f'<pre style="background:{P["panel_alt"]};border:1px solid {P["border"]};'
-        f'border-radius:2px;padding:8px 10px;margin:6px 0;'
-        f'font-family:var(--ck-mono);font-size:11px;'
-        f'color:{P["accent"]};overflow-x:auto;">'
-        f'export ANTHROPIC_API_KEY="sk-ant-…"\n'
-        f'.venv/bin/python seekingchartis.py --port 8090'
-        f'</pre></li>'
-        f'<li>Reload this page. The status badge will flip to CONNECTED '
-        f'and the key fingerprint will show at the top of this panel.</li>'
-        f'</ol>'
+        f'<div style="color:{P["text"]};font-size:12px;line-height:1.7;'
+        f'margin:0 0 8px;">'
+        f'AI features are configured by your administrator.</div>'
         f'<div style="color:{P["text_faint"]};font-size:10.5px;'
         f'line-height:1.55;margin-top:6px;">'
         f'The key is read from process env only: never stored on disk '

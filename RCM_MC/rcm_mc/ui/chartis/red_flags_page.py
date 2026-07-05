@@ -206,10 +206,10 @@ def _claude_status_card(review: Any) -> str:
     status = str(claude.get("status") or "not_configured")
     color = _CLAUDE_STATUS_COLORS.get(status, P["text_faint"])
     status_label = status.replace("_", " ").upper()
-    summary = str(claude.get("summary") or "Claude review not available.")
+    summary = str(claude.get("summary") or "AI review not available.")
     return (
         f'<div class="ck-panel">'
-        f'<div class="ck-panel-title">Claude Look '
+        f'<div class="ck-panel-title">AI review '
         f'<span style="font-family:var(--ck-mono);font-size:9px;'
         f'letter-spacing:0.12em;color:{P["text_faint"]};margin-left:8px;">'
         f'CLD</span></div>'
@@ -581,7 +581,7 @@ def render_red_flags(
         + _category_severity_svg(review)
         + ck_section_header(
             "ADDITIONAL SIGNALS",
-            "supplemental healthcare checks and Claude confirmation",
+            "supplemental healthcare checks and AI confirmation",
         )
         + _healthcare_signal_card(review)
         + _claude_status_card(review)
