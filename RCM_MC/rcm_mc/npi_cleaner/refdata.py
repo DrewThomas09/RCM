@@ -1381,3 +1381,114 @@ TIMELY_FILING_DAYS: Dict[str, int] = {
 def timely_filing_days(payer_family: str) -> Optional[int]:
     """Days-from-DOS filing limit for a payer family key, if published."""
     return TIMELY_FILING_DAYS.get(payer_family.strip().upper())
+
+
+def tob_facility_class(v: str) -> Optional[Tuple[str, str]]:
+    """(facility type, bill classification) digits of a Type of Bill, or
+    None when the value isn't a plausible TOB. Accepts the 4-digit
+    leading-zero keying like tob_invalid does."""
+    s = v.strip()
+    if len(s) == 4 and s.startswith("0"):
+        s = s[1:]
+    if len(s) != 3 or not s.isdigit():
+        return None
+    return s[0], s[1]
+
+
+# --------------------------------------------------------------------------
+# NUCC provider-taxonomy specialties — display names for the specialty-mix
+# report. Deliberately the high-volume subset (~70 of ~870 NUCC codes):
+# membership is NOT a validity domain (never flag a code for being absent
+# here), it only names the codes a claims file actually contains.
+# --------------------------------------------------------------------------
+TAXONOMY_SPECIALTIES: Dict[str, str] = {
+    # Physicians (Allopathic & Osteopathic)
+    "207K00000X": "Allergy & Immunology",
+    "207L00000X": "Anesthesiology",
+    "207N00000X": "Dermatology",
+    "207P00000X": "Emergency Medicine",
+    "207Q00000X": "Family Medicine",
+    "207R00000X": "Internal Medicine",
+    "207RC0000X": "Cardiovascular Disease",
+    "207RE0101X": "Endocrinology, Diabetes & Metabolism",
+    "207RG0100X": "Gastroenterology",
+    "207RG0300X": "Geriatric Medicine",
+    "207RH0003X": "Hematology & Oncology",
+    "207RI0011X": "Interventional Cardiology",
+    "207RI0200X": "Infectious Disease",
+    "207RN0300X": "Nephrology",
+    "207RP1001X": "Pulmonary Disease",
+    "207RR0500X": "Rheumatology",
+    "207RX0202X": "Medical Oncology",
+    "207T00000X": "Neurological Surgery",
+    "207U00000X": "Nuclear Medicine",
+    "207V00000X": "Obstetrics & Gynecology",
+    "207W00000X": "Ophthalmology",
+    "207X00000X": "Orthopaedic Surgery",
+    "207Y00000X": "Otolaryngology",
+    "207ZP0102X": "Anatomic & Clinical Pathology",
+    "208000000X": "Pediatrics",
+    "208100000X": "Physical Medicine & Rehabilitation",
+    "208200000X": "Plastic Surgery",
+    "208600000X": "Surgery (General)",
+    "208800000X": "Urology",
+    "208C00000X": "Colon & Rectal Surgery",
+    "208D00000X": "General Practice",
+    "208G00000X": "Thoracic Surgery",
+    "208M00000X": "Hospitalist",
+    "208VP0000X": "Pain Medicine",
+    "2084N0400X": "Neurology",
+    "2084P0800X": "Psychiatry",
+    "2085R0001X": "Radiation Oncology",
+    "2085R0202X": "Diagnostic Radiology",
+    # Advanced practice + nursing
+    "363A00000X": "Physician Assistant",
+    "363AM0700X": "Physician Assistant — Medical",
+    "363AS0400X": "Physician Assistant — Surgical",
+    "363L00000X": "Nurse Practitioner",
+    "363LF0000X": "Nurse Practitioner — Family",
+    "363LA2200X": "Nurse Practitioner — Adult Health",
+    "363LP0808X": "Nurse Practitioner — Psychiatric/Mental Health",
+    "364S00000X": "Clinical Nurse Specialist",
+    "367500000X": "Certified Registered Nurse Anesthetist",
+    "367A00000X": "Advanced Practice Midwife",
+    "163W00000X": "Registered Nurse",
+    "164W00000X": "Licensed Practical Nurse",
+    # Behavioral health
+    "103T00000X": "Psychologist",
+    "1041C0700X": "Clinical Social Worker",
+    "101YM0800X": "Counselor — Mental Health",
+    "106H00000X": "Marriage & Family Therapist",
+    # Other practitioners
+    "111N00000X": "Chiropractor",
+    "122300000X": "Dentist",
+    "1223G0001X": "Dentist — General Practice",
+    "1223O0200X": "Oral & Maxillofacial Surgery",
+    "133V00000X": "Registered Dietitian",
+    "152W00000X": "Optometrist",
+    "183500000X": "Pharmacist",
+    "213E00000X": "Podiatrist",
+    "225100000X": "Physical Therapist",
+    "225X00000X": "Occupational Therapist",
+    "231H00000X": "Audiologist",
+    "235Z00000X": "Speech-Language Pathologist",
+    # Facilities / suppliers
+    "261Q00000X": "Clinic/Center",
+    "261QU0200X": "Clinic/Center — Urgent Care",
+    "282N00000X": "General Acute Care Hospital",
+    "282NC0060X": "Critical Access Hospital",
+    "283Q00000X": "Psychiatric Hospital",
+    "283X00000X": "Rehabilitation Hospital",
+    "291U00000X": "Clinical Medical Laboratory",
+    "314000000X": "Skilled Nursing Facility",
+    "332B00000X": "DME & Medical Supplies",
+    "333600000X": "Pharmacy",
+    "3336C0003X": "Community/Retail Pharmacy",
+    "341600000X": "Ambulance",
+    "251E00000X": "Home Health Agency",
+    "251G00000X": "Hospice, Community Based",
+}
+
+
+def taxonomy_specialty(code: str) -> Optional[str]:
+    return TAXONOMY_SPECIALTIES.get(code.strip().upper())

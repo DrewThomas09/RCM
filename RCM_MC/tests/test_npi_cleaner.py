@@ -643,6 +643,48 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(refdata.timely_filing_days("MEDICARE"), 365)
         self.assertIsNone(refdata.timely_filing_days("SOME TINY TPA"))
 
+    def test_revenue_tob_mismatch(self):
+        # Room & board (0120) on hospital OUTPATIENT 0131 → flag; the same
+        # revenue on inpatient 0111 is fine; ancillary 0450 on outpatient
+        # is fine. Row 4: clinic TOB (0731) with ICU revenue → flag.
+        data = ("ClaimID,TypeOfBill,RevenueCode\n"
+                "1,0131,0120\n"
+                "2,0111,0120\n"
+                "3,0131,0450\n"
+                "4,0731,0200\n").encode()
+        res = engine.clean_bytes(data, "tobrev.csv")
+        self.assertEqual(res.sanity.get("revenue-tob-mismatch"), 2)
+        from rcm_mc.npi_cleaner import refdata
+        self.assertEqual(refdata.tob_facility_class("0131"), ("1", "3"))
+        self.assertEqual(refdata.tob_facility_class("131"), ("1", "3"))
+        self.assertIsNone(refdata.tob_facility_class("13"))
+
+    def test_specialty_mix_from_taxonomy(self):
+        data = ("ClaimID,TaxonomyCode\n"
+                "1,207q00000x\n"          # lower-case → upper repair, counted
+                "2,207Q00000X\n"
+                "3,363L00000X\n"
+                "4,BADCODE\n").encode()   # malformed → not counted
+        res = engine.clean_bytes(data, "tax.csv")
+        sc = res.as_scorecard()
+        specs = {s["code"]: s for s in (sc["specialties"] or [])}
+        self.assertEqual(specs["207Q00000X"]["n"], 2)
+        self.assertEqual(specs["207Q00000X"]["name"], "Family Medicine")
+        self.assertEqual(specs["363L00000X"]["name"], "Nurse Practitioner")
+        self.assertNotIn("BADCODE", specs)
+
+    def test_exec_report_credential_and_specialty_sections(self):
+        data = ("RenderingProviderName,TaxonomyCode\n"
+                "\"SMITH, JOHN, MD\",207Q00000X\n").encode()
+        res = engine.clean_bytes(data, "er.csv")
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        html_out = build_exec_report(res.as_scorecard(), "er.csv",
+                                     "2026-01-01T00:00:00+00:00")
+        self.assertIn("Credential mix", html_out)
+        self.assertIn("Doctor of Medicine", html_out)
+        self.assertIn("Specialty mix", html_out)
+        self.assertIn("Family Medicine", html_out)
+
     def test_worklist_row_capture(self):
         data = ("ClaimID,HCPCS\n"
                 "1,99213\n2,BAD!!\n3,99214\n4,WRONG\n").encode()

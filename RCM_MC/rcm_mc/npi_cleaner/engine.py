@@ -948,6 +948,9 @@ class CleanResult:
     # Credential tokens parsed from provider-name columns (MD, NP, PA …) →
     # count of cells carrying each. Report-only; counted per input row.
     credentials: Dict[str, int] = field(default_factory=dict)
+    # Specialty mix: top taxonomy codes on kept rows with NUCC display
+    # names where known. Report-only.
+    specialties: List[Dict[str, object]] = field(default_factory=list)
     # Profile applied to this run (see profiles.py): accepted rules still
     # report but don't count against the grade.
     accepted_rules: List[str] = field(default_factory=list)
@@ -1024,7 +1027,8 @@ class CleanResult:
                           "discharge-before-admit", "ndc-ambiguous-10digit",
                           "charge-outlier", "jw-zero-units", "bilateral-units",
                           "conflicting-amount-claim",
-                          "anesthesia-units-implausible")
+                          "anesthesia-units-implausible",
+                          "revenue-tob-mismatch")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1087,6 +1091,7 @@ class CleanResult:
             "fill_rates": self.column_fill,
             "denials": self.denials,
             "credentials": self.credentials or None,
+            "specialties": self.specialties or None,
             "worklists": {k: len(v) for k, v in self.flag_rows.items()},
             "accepted_rules": self.accepted_rules,
             "profile": self.profile_name,
@@ -1480,6 +1485,7 @@ def clean_bytes(
     _payer_raw: Dict[str, int] = {}               # payer variant clustering
     _carc_counts: Dict[str, int] = {}             # top denial reasons
     _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
+    _taxo_counts: Dict[str, int] = {}             # taxonomy → specialty mix
     _charge_i = billed_i if billed_i is not None else allowed_i
     _CHANGELOG_CAP = 20_000                       # keep the audit log bounded
     _WORKLIST_CAP = 500                           # rows captured per rule
@@ -1685,6 +1691,25 @@ def clean_bytes(
                     and _rd.admission_type_invalid(new_row[atype_i])):
                 res.sanity["admission-type-invalid"] = \
                     res.sanity.get("admission-type-invalid", 0) + 1
+            # Accommodation (room & board / ICU, revenue 0100-0219) revenue
+            # on an OUTPATIENT bill type — hospital outpatient 013x/014x,
+            # clinic 07xx, ASC 083x. Inpatient room charges can't ride an
+            # outpatient claim; this is a front-door clearinghouse edit.
+            if (tob_i is not None and tob_i < len(new_row)
+                    and new_row[tob_i] and rev_set):
+                _fc = _rd.tob_facility_class(new_row[tob_i])
+                if _fc is not None and (
+                        _fc[0] == "7"
+                        or (_fc[0] == "1" and _fc[1] in ("3", "4"))
+                        or (_fc[0] == "8" and _fc[1] == "3")):
+                    for _rci in rev_set:
+                        _rv2 = (new_row[_rci]
+                                if _rci < len(new_row) else "")
+                        if (_rv2 and _rv2.isdigit() and len(_rv2) == 4
+                                and "0100" <= _rv2 <= "0219"):
+                            res.sanity["revenue-tob-mismatch"] = \
+                                res.sanity.get("revenue-tob-mismatch", 0) + 1
+                            break
             # Unknown (but well-formed) modifiers — typo signal.
             if mod_set:
                 for ci in mod_set:
@@ -1785,6 +1810,13 @@ def clean_bytes(
             else:
                 _seen_fold.add(_fold)
         # Kept-row accumulators for payer clustering and charge outliers.
+        # Taxonomy → specialty mix: count well-formed codes on kept rows
+        # (capped distinct codes so a garbage column can't grow the dict).
+        for _ti in taxo_set:
+            _tv = new_row[_ti] if _ti < len(new_row) else ""
+            if _tv and not _taxonomy_malformed(_tv) and (
+                    _tv in _taxo_counts or len(_taxo_counts) < 300):
+                _taxo_counts[_tv] = _taxo_counts.get(_tv, 0) + 1
         if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
             _payer_raw[new_row[payer_i]] = \
                 _payer_raw.get(new_row[payer_i], 0) + 1
@@ -1870,6 +1902,16 @@ def clean_bytes(
         res.denials = {"column": headers[carc_i],
                        "distinct": len(_carc_counts),
                        "top": [{"code": c, "count": n} for c, n in _top]}
+
+    # Specialty mix from taxonomy codes on kept rows. Names come from the
+    # NUCC display catalog; codes outside it still report (name None) —
+    # catalog membership is deliberately NOT a validity domain.
+    if _taxo_counts:
+        _tops = sorted(_taxo_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+        res.specialties = [
+            {"code": c, "n": n,
+             "name": (_rd.taxonomy_specialty(c) if _rd is not None else None)}
+            for c, n in _tops[:15]]
 
     # Headered-but-empty columns — an extract/mapping defect worth surfacing.
     if res.n_rows_out:

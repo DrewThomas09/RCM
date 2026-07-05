@@ -346,6 +346,14 @@ _RULES: List[Rule] = [
          "off the DRG — a bad one misprices or denies the whole stay.",
          "Correct the DRG at the source; check for truncation or a grouper "
          "export issue.", "validity"),
+    Rule("revenue-tob-mismatch", "flag", "warning", "Coding",
+         "Room & board revenue on an outpatient bill",
+         "An accommodation revenue code (0100-0219 — room & board, ICU, "
+         "CCU) appears on an outpatient type of bill (hospital outpatient "
+         "013x/014x, clinic 07xx, ASC 083x). Inpatient room charges can't "
+         "ride an outpatient claim.",
+         "Check whether the claim should be inpatient (wrong TOB) or the "
+         "revenue code is a keying error.", "consistency"),
     Rule("anesthesia-units-implausible", "flag", "warning", "Coding",
          "Implausible anesthesia units",
          "An anesthesia line (CPT 00100-01999) bills more than 24 hours' "

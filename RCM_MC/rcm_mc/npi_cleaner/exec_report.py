@@ -144,6 +144,35 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                          f"<td class='num'>{int(d['count']):,}</td></tr>")
         parts.append("</table>")
 
+    # Who is in this file — credential + specialty mix (report-only).
+    creds: Dict[str, int] = dict(sc.get("credentials") or {})
+    if creds:
+        try:
+            from . import refdata as _rd2
+        except Exception:  # noqa: BLE001
+            _rd2 = None
+        parts.append("<h2>Credential mix</h2><table>"
+                     "<tr><th>Credential</th><th>Meaning</th>"
+                     "<th class='num'>Cells</th></tr>")
+        for c, n in sorted(creds.items(), key=lambda kv: -kv[1])[:10]:
+            meaning = (_rd2.credential_meaning(c) if _rd2 else None) or ""
+            parts.append(f"<tr><td>{_esc(c)}</td>"
+                         f"<td class='small'>{_esc(meaning)}</td>"
+                         f"<td class='num'>{int(n):,}</td></tr>")
+        parts.append("</table>")
+
+    specs = sc.get("specialties") or []
+    if specs:
+        parts.append("<h2>Specialty mix (provider taxonomy)</h2><table>"
+                     "<tr><th>Taxonomy</th><th>Specialty</th>"
+                     "<th class='num'>Rows</th></tr>")
+        for s in specs[:10]:
+            parts.append(
+                f"<tr><td>{_esc(s.get('code'))}</td>"
+                f"<td class='small'>{_esc(s.get('name') or '—')}</td>"
+                f"<td class='num'>{int(s.get('n') or 0):,}</td></tr>")
+        parts.append("</table>")
+
     # Emptiest columns.
     fills = [f for f in (sc.get("fill_rates") or [])
              if float(f.get("pct", 100)) < 100.0]

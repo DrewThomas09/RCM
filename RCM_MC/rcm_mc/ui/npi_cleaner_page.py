@@ -482,7 +482,7 @@ _EXTRA_JS = r"""
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
     (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
-    renderRepairs(s.repairs, s.repairs_total, s.credentials);
+    renderRepairs(s.repairs, s.repairs_total, s.credentials, s.specialties);
     renderSanity(s.sanity, s.worklists, s.download, s.accepted_rules||[]);
     renderQuality(s);
     $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
@@ -621,11 +621,12 @@ _EXTRA_JS = r"""
     "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)",
     "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)"};
 
-  function renderRepairs(repairs, total, credentials){
+  function renderRepairs(repairs, total, credentials, specialties){
     var box=$("npi-repairs");
     var keys=repairs?Object.keys(repairs):[];
     var ckeys=credentials?Object.keys(credentials):[];
-    if(!keys.length && !ckeys.length){ box.innerHTML=""; return; }
+    var specs=specialties||[];
+    if(!keys.length && !ckeys.length && !specs.length){ box.innerHTML=""; return; }
     var html="";
     if(keys.length){
       keys.sort(function(a,b){return repairs[b]-repairs[a];});
@@ -646,6 +647,16 @@ _EXTRA_JS = r"""
         ckeys.map(function(k){
           return '<span class="npi-pill" style="margin:0 6px 6px 0;display:inline-block">'+
             esc(k)+' · '+fmt(credentials[k])+'</span>';
+        }).join("")+'</div>';
+    }
+    if(specs.length){
+      html+='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Specialty mix</h3></div>'+
+        '<div class="npi-muted">Top provider taxonomy codes on the cleaned rows '+
+        '(NUCC display names where known).</div><div style="margin-top:8px">'+
+        specs.map(function(s){
+          return '<span class="npi-pill" style="margin:0 6px 6px 0;display:inline-block">'+
+            esc(s.name||s.code)+' · '+fmt(s.n)+'</span>';
         }).join("")+'</div>';
     }
     box.innerHTML=html;
@@ -684,7 +695,8 @@ _EXTRA_JS = r"""
     "conflicting-amount-claim":"Same provider · patient · date · code billed at different amounts (re-bill signal)",
     "carc-invalid":"Invalid denial/adjustment reason code (not a CARC shape)",
     "drg-malformed":"Malformed MS-DRG (not a 3-digit code 001-999)",
-    "anesthesia-units-implausible":"Anesthesia line billing more than 24 hours of time units"};
+    "anesthesia-units-implausible":"Anesthesia line billing more than 24 hours of time units",
+    "revenue-tob-mismatch":"Room &amp; board revenue code on an outpatient type of bill"};
   var RULE_INFO={};
   function sevChip(sev){
     var c=sev==="critical"?"#b5321e":(sev==="warning"?"#b8732a":"#5b6770");
