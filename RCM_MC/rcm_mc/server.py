@@ -2802,12 +2802,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         if _x12.looks_like_x12(raw):
             return self._send_json({"available": False})
         # A zip batch has many files with many layouts — the single-file
-        # mapping editor doesn't apply, clean directly. An over-cap zip
-        # also skips mapping; the upload path produces the clear warning.
-        try:
-            if engine.zip_batch_members(raw) is not None:
-                return self._send_json({"available": False})
-        except ValueError:
+        # mapping editor doesn't apply, clean directly. Metadata-only
+        # probe: the old full-extraction check decompressed up to 200 MB
+        # twice per upload flow just to compute this boolean.
+        if engine.zip_batch_probe(raw):
             return self._send_json({"available": False})
         result = engine.detect_columns_preview(raw)
         if result is None:
@@ -2987,7 +2985,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         else:
             src_path = job.result.out_path
             fname = job.result.out_name
-            ctype = "text/csv; charset=utf-8"
+            # A zip-batch run's primary output is an archive of cleaned
+            # files — serving it as text/csv mangled it for clients that
+            # honor Content-Type over the filename.
+            ctype = ("application/zip" if fname.endswith(".zip")
+                     else "text/csv; charset=utf-8")
         if not src_path:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
@@ -3012,7 +3014,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .ui.npi_analysis_page import render_npi_analysis
 
         job = engine.manager().get(job_id)
-        ok = bool(job and job.result and job.result.out_path)
+        # A zip-batch run's output is an archive, not a table — the pivot
+        # (and its /data feed) only works on single-file runs.
+        ok = bool(job and job.result and job.result.out_path
+                  and not job.result.out_name.endswith(".zip"))
         return self._send_html(render_npi_analysis(
             job_id, available=ok,
             src_name=(job.result.out_name if ok else "")))
@@ -3023,7 +3028,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .npi_cleaner import engine
 
         job = engine.manager().get(job_id)
-        if job is None or job.result is None or not job.result.out_path:
+        if (job is None or job.result is None or not job.result.out_path
+                or job.result.out_name.endswith(".zip")):
+            # Batch outputs are archives — reading one as CSV raised a 500.
             return self._send_json(
                 {"error": "Job not found (server may have restarted)."},
                 status=HTTPStatus.NOT_FOUND)
@@ -3032,7 +3039,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             with open(job.result.out_path, newline="", encoding="utf-8") as fh:
                 reader = _csv.reader(fh)
                 rows = list(reader)
-        except OSError:
+        except (OSError, UnicodeDecodeError, _csv.Error):
             return self._send_json({"error": "cleaned data unavailable"},
                                    status=HTTPStatus.NOT_FOUND)
         if not rows:
@@ -14290,15 +14297,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             def _load(job_id):
                 job = _nc_engine.manager().get(str(job_id or ""))
                 if job is None or job.result is None \
-                        or not job.result.out_path:
-                    return None
+                        or not job.result.out_path \
+                        or job.result.out_name.endswith(".zip"):
+                    return None      # batch archives can't reconcile as CSV
                 try:
                     with open(job.result.out_path,
                               encoding="utf-8") as fh:
                         rd = _rcsv.reader(fh)
                         hdr = next(rd, None) or []
                         return hdr, list(rd)
-                except OSError:
+                except (OSError, UnicodeDecodeError, _rcsv.Error):
                     return None
 
             side_a = _load(body.get("a"))

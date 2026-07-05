@@ -122,7 +122,9 @@ def save_profile(name: str, config: Dict[str, object]) -> Dict[str, object]:
 
 def get_profile(name: str) -> Optional[Dict[str, object]]:
     """Load a profile's config (with its name injected) or None."""
-    name = (name or "").strip()
+    # Same normalization as save_profile — a 70-char name saves under its
+    # 64-char truncation, so lookups must truncate too or never find it.
+    name = (name or "").strip()[:64]
     if not name:
         return None
     try:
@@ -166,7 +168,7 @@ def list_profiles() -> List[Dict[str, object]]:
 def delete_profile(name: str) -> bool:
     with _LOCK, _conn() as con:
         cur = con.execute("DELETE FROM profiles WHERE name = ?",
-                          ((name or "").strip(),))
+                          ((name or "").strip()[:64],))
         return cur.rowcount > 0
 
 

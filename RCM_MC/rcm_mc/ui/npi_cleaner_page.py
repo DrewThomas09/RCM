@@ -463,6 +463,9 @@ _EXTRA_JS = r"""
     show(stErr);
   }
   function fmt(n){ return (n==null?0:n).toLocaleString(); }
+  // Financial figures render with exactly 2 decimals per house style.
+  function money(n){ return "$"+Number(n==null?0:n).toLocaleString(
+    undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
   function healthClass(pct){ return pct>=99?"good":(pct>=90?"warn":"bad"); }
 
@@ -508,8 +511,7 @@ _EXTRA_JS = r"""
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
     (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
-    renderRepairs(s.repairs, s.repairs_total, s.credentials, s.specialties,
-                  s.claims);
+    renderRepairs(s);
     rememberJob(currentJobId, s.out_name||"run");
     renderReconcile(s);
     renderSanity(s.sanity, s.worklists, s.download, s.accepted_rules||[]);
@@ -659,7 +661,12 @@ _EXTRA_JS = r"""
     "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)",
     "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)"};
 
-  function renderRepairs(repairs, total, credentials, specialties, claims){
+  // Takes the scorecard like its siblings (renderQuality/renderReconcile):
+  // at 5 positional params, two of which shared a shape, a silent swap at
+  // the call site would have rendered credential tallies as repair rules.
+  function renderRepairs(s){
+    var repairs=s.repairs, total=s.repairs_total, credentials=s.credentials,
+        specialties=s.specialties, claims=s.claims;
     var box=$("npi-repairs");
     var keys=repairs?Object.keys(repairs):[];
     var ckeys=credentials?Object.keys(credentials):[];
@@ -673,8 +680,8 @@ _EXTRA_JS = r"""
         '<div class="npi-muted">'+fmt(claims.n_claims)+' distinct claims ('+
         esc(claims.column)+') · '+claims.avg_lines+' lines/claim avg · '+
         fmt(claims.max_lines)+' max'+
-        (claims.charge?(' · per-claim charge $'+
-          fmt(claims.charge.median)+' median / $'+fmt(claims.charge.max)+
+        (claims.charge?(' · per-claim charge '+
+          money(claims.charge.median)+' median / '+money(claims.charge.max)+
           ' max'):'')+
         (claims.truncated?' · (rollup capped at 50,000 claims)':'')+
         '</div>';
@@ -1096,7 +1103,11 @@ _EXTRA_JS = r"""
     box.innerHTML=html;
   }
 
-  function esc(s){ var d=document.createElement("div"); d.textContent=(s==null?"":s); return d.innerHTML; }
+  // Entity-escape INCLUDING quotes — names (profiles, templates, files)
+  // land in attribute contexts, and the textContent trick left " alone.
+  function esc(s){ return String(s==null?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 
   function renderSuggestions(adv){
     var box=$("npi-suggestions");
@@ -1299,9 +1310,9 @@ _EXTRA_JS = r"""
     var h='<div style="font-size:13px;margin-bottom:6px"><strong>'+
       fmt(r.matched)+'</strong> of '+fmt(r.claims_a)+' claims matched ('+
       r.match_rate_pct+'%) · <strong>'+fmt(r.unpaid_count)+
-      '</strong> with no remittance · billed $'+fmt(r.billed_matched)+
-      ' vs paid $'+fmt(r.paid_matched)+' on matched claims (variance $'+
-      fmt(r.variance_total)+')'+
+      '</strong> with no remittance · billed '+money(r.billed_matched)+
+      ' vs paid '+money(r.paid_matched)+' on matched claims (variance '+
+      money(r.variance_total)+')'+
       (r.orphan_remits_count?(' · '+fmt(r.orphan_remits_count)+
       ' remit claim(s) not in the claims run'):'')+'</div>';
     if(r.unpaid && r.unpaid.length){
@@ -1310,8 +1321,8 @@ _EXTRA_JS = r"""
         '<table class="npi-tbl"><thead><tr><th>Claim</th>'+
         '<th class="num">Billed</th><th class="num">Lines</th></tr></thead>'+
         '<tbody>'+r.unpaid.slice(0,8).map(function(u){
-          return '<tr><td>'+esc(u.claim)+'</td><td class="num">$'+
-            fmt(u.billed)+'</td><td class="num">'+fmt(u.lines)+'</td></tr>';
+          return '<tr><td>'+esc(u.claim)+'</td><td class="num">'+
+            money(u.billed)+'</td><td class="num">'+fmt(u.lines)+'</td></tr>';
         }).join("")+'</tbody></table>';
     }
     if(r.top_variance && r.top_variance.length){
@@ -1321,9 +1332,9 @@ _EXTRA_JS = r"""
         '<th class="num">Billed</th><th class="num">Paid</th>'+
         '<th class="num">Δ</th><th>CARCs</th></tr></thead><tbody>'+
         r.top_variance.slice(0,8).map(function(v){
-          return '<tr><td>'+esc(v.claim)+'</td><td class="num">$'+
-            fmt(v.billed)+'</td><td class="num">$'+fmt(v.paid)+
-            '</td><td class="num">$'+fmt(v.delta)+'</td><td>'+
+          return '<tr><td>'+esc(v.claim)+'</td><td class="num">'+
+            money(v.billed)+'</td><td class="num">'+money(v.paid)+
+            '</td><td class="num">'+money(v.delta)+'</td><td>'+
             (v.carcs||[]).map(esc).join(", ")+'</td></tr>';
         }).join("")+'</tbody></table>';
     }
@@ -1363,7 +1374,7 @@ _EXTRA_JS = r"""
   // Step 1 — a file is chosen: detect columns, then show the mapping editor.
   function chooseFile(file){
     if(!file) return;
-    if(file.size > 200*1024*1024){ fail("File is larger than 200 MB."); return; }
+    if(file.size > 200*1000*1000){ fail("File is larger than 200 MB."); return; }
     currentFile=file;
     hide(stUp); hide(stErr); hide(stRes); show(stPr);
     $("npi-bar-fill").style.width="3%";

@@ -67,23 +67,36 @@ _PNAME_HINTS = ("providername", "physicianname", "renderingname",
                 "providerfirst", "providerlast", "doctorname")
 _PNAME_EXCLUDE = ("organization", "org", "facility", "practice", "group",
                   "patient", "payer", "member", "subscriber", "insur")
-_STATE_HINTS = ("providerstate", "billingstate", "state", "provstate", "st")
+# "st" is exact-match only (see _detect_state): as a substring it matched
+# ClaimStatus on 835 tables and fed a claim-status digit to NPPES as the
+# state.
+_STATE_HINTS = ("providerstate", "billingstate", "state", "provstate")
 # Columns carrying a drug identifier, for the RxNorm / openFDA connectors.
 _NDC_HINTS = ("ndc11", "ndc", "drugndc", "ndccode")
 _DRUG_HINTS = ("drugname", "drug", "productname", "medication", "labelname")
 # Roles for the deterministic normalization pass.
 _MONEY_HINTS = ("allowedamt", "allowed", "paidamt", "paid", "billedamt",
                 "billed", "chargeamt", "charge", "amount", "cost", "fee")
+# Headers that CONTAIN a money hint but are not money — verified corruption
+# without this: "CostCenter" matched "cost" and cost-center code "0100" was
+# rewritten to "100.00"; "ChargeDescription"/"FeeScheduleName" false-flagged
+# money-unparseable on every row. Same class as the DischargeDate incident.
+_MONEY_EXCLUDE = ("description", "desc", "center", "centre", "code", "name",
+                  "note", "comment", "schedule", "flag", "type", "status",
+                  "reason")
 _DATE_HINTS = ("dateofservice", "servicedate", "dos", "paiddate", "date",
                "dob", "birthdate", "fromdate", "thrudate")
 # Date roles that can NEVER legitimately be in the future — a service was
 # rendered, a patient was born, a claim was adjudicated. Used to flag
 # future-dated rows. Deliberately excludes generic "date"/coverage-end/
 # authorization-expiry columns, which CAN be future.
+# Deliberately excludes "paiddate": 835 remits stamp the payer's production
+# date on every row, and forward-dated scheduled payments are legitimate —
+# flagging them tanked the consistency grade on ordinary ERAs.
 _SERVICE_DATE_HINTS = ("dateofservice", "servicedate", "svcdate", "dos",
                        "fromdate", "thrudate", "servicefromdate",
                        "servicetodate", "admitdate", "admissiondate",
-                       "dischargedate", "paiddate", "adjudicationdate")
+                       "dischargedate", "adjudicationdate")
 _DOB_HINTS = ("dateofbirth", "dob", "birthdate", "birthdt", "patientdob")
 _ZIP_HINTS = ("zip", "postalcode", "postal")
 _HCPCS_HINTS = ("hcpcs", "cpt", "proccode", "procedurecode")
@@ -660,7 +673,9 @@ def _clean_provider_name_cell(v: str) -> Tuple[str, List[str], List[str]]:
     up_toks = [t for t in
                (t.replace(".", "") for t in re.split(r"[ ,;/]+", v.upper()))
                if t]
-    creds = [c for c in dict.fromkeys(up_toks) if c in _CREDENTIALS]
+    # Credentials never lead a name — "DO, HANH" / "PA, MINH" are
+    # surnames (Do, Pa), not a Doctor of Osteopathy or a PA.
+    creds = [c for c in dict.fromkeys(up_toks[1:]) if c in _CREDENTIALS]
     if any(t in _ORG_NAME_TOKENS for t in up_toks):
         return v, [], []
     if any(ch.isdigit() for ch in v):
@@ -668,17 +683,19 @@ def _clean_provider_name_cell(v: str) -> Tuple[str, List[str], List[str]]:
     if not any(ch.isalpha() for ch in v) or v not in (v.upper(), v.lower()):
         return v, [], creds
     out = []
+    _widx = 0
     for piece in re.split(r"([ ,;/]+)", v):
         if not piece or piece[0] in " ,;/":
             out.append(piece)
             continue
         plain = piece.replace(".", "").upper()
-        if plain in _CREDENTIALS:
+        if _widx > 0 and plain in _CREDENTIALS:
             out.append(plain)                       # "m.d." → "MD"
-        elif plain in _NAME_SUFFIXES:
+        elif _widx > 0 and plain in _NAME_SUFFIXES:
             out.append(_NAME_SUFFIXES[plain])
         else:
             out.append(_recase_name_word(piece))
+        _widx += 1
     new = "".join(out)
     if new != v:
         return new, ["provider-name-format"], creds
@@ -1034,7 +1051,9 @@ class CleanResult:
                        "revenue-code-malformed", "carc-invalid",
                        "mbi-malformed", "condition-code-malformed",
                        "occurrence-code-malformed", "value-code-malformed",
-                       "drg-malformed")
+                       "drg-malformed", "tob-malformed",
+                       "discharge-status-invalid", "admission-type-invalid",
+                       "modifier-unknown")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1044,7 +1063,7 @@ class CleanResult:
                           "charge-outlier", "jw-zero-units", "bilateral-units",
                           "conflicting-amount-claim",
                           "anesthesia-units-implausible",
-                          "revenue-tob-mismatch")
+                          "revenue-tob-mismatch", "timely-filing-risk")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1190,6 +1209,26 @@ def _defang_cell(value: str) -> str:
 # the declared sizes before any read, and again with a hard cap while
 # decompressing, because central-directory sizes can lie.
 _BATCH_MAX_UNCOMPRESSED = 200 * 1024 * 1024
+
+
+def zip_batch_probe(data: bytes) -> bool:
+    """Metadata-only "is this a zip batch?" — names and declared sizes,
+    never member decompression. The detect route needs only the boolean
+    and was paying full extraction (twice, with the upload) to get it."""
+    if data[:4] != b"PK\x03\x04":
+        return False
+    import zipfile as _zf
+    try:
+        names = _zf.ZipFile(io.BytesIO(data)).namelist()
+    except Exception:  # noqa: BLE001
+        return False
+    if "[Content_Types].xml" in names:
+        return False
+    return any(not n.endswith("/") and not n.startswith("__MACOSX")
+               and n.rsplit("/", 1)[-1][:1] != "."
+               and n.lower().endswith((".csv", ".tsv", ".txt", ".837",
+                                       ".835", ".edi", ".x12"))
+               for n in names)
 
 
 def zip_batch_members(data: bytes) -> Optional[List[Tuple[str, bytes]]]:
@@ -1451,12 +1490,20 @@ def clean_bytes(
 
     name_idx = _detect_one(headers, _NAME_HINTS)
     state_idx = _detect_one(headers, _STATE_HINTS)
+    if state_idx is None:
+        # Bare "St" headers exist in the wild but "st" as a SUBSTRING hint
+        # matched ClaimStatus/PostDate-style columns — exact key only.
+        for _i0, _h0 in enumerate(headers):
+            if _norm_key(_h0) == "st":
+                state_idx = _i0
+                break
     ndc_idx = _detect_one(headers, _NDC_HINTS)
     drug_idx = _detect_one(headers, _DRUG_HINTS)
     # Column-role sets for the normalization pass (by header hint).
     npi_set = set(npi_idx)
     money_set = {i for i, h in enumerate(headers)
-                 if any(x in _norm_key(h) for x in _MONEY_HINTS)}
+                 if any(x in _norm_key(h) for x in _MONEY_HINTS)
+                 and not any(x in _norm_key(h) for x in _MONEY_EXCLUDE)}
     date_set = {i for i, h in enumerate(headers)
                 if any(x in _norm_key(h) for x in _DATE_HINTS)}
     # A date column always wins over money: "DischargeDate" contains the
@@ -1631,7 +1678,6 @@ def clean_bytes(
     _charge_i = billed_i if billed_i is not None else allowed_i
     _CHANGELOG_CAP = 20_000                       # keep the audit log bounded
     _WORKLIST_CAP = 500                           # rows captured per rule
-    _wl_open = True                               # stop copying once all full
 
     cb("Cleaning rows", 0.30)
     cleaned: List[List[str]] = []
@@ -1942,15 +1988,19 @@ def clean_bytes(
                 res.n_dupes_removed += 1
                 continue
             seen.add(key)
-            # Near-duplicate (report-only, row kept): identical after case
-            # folding + whitespace collapse — "SMITH" vs "Smith" rows that
-            # exact dedupe correctly leaves alone but a human would merge.
-            _fold = tuple(" ".join(c.split()).casefold() for c in new_row)
-            if _fold in _seen_fold:
-                res.sanity["near-duplicate-row"] = \
-                    res.sanity.get("near-duplicate-row", 0) + 1
-            else:
-                _seen_fold.add(_fold)
+        # Near-duplicate (report-only, row kept): identical after case
+        # folding + whitespace collapse — "SMITH" vs "Smith" rows a human
+        # would merge. Runs regardless of dedupe mode: with dedupe off,
+        # exact repeats ARE kept near-duplicates worth surfacing. Stored
+        # as a hash — it's only a membership probe for a counter, and
+        # keeping folded copies of every row doubled peak memory at scale.
+        _fold_h = hash(tuple(" ".join(c.split()).casefold()
+                             for c in new_row))
+        if _fold_h in _seen_fold:
+            res.sanity["near-duplicate-row"] = \
+                res.sanity.get("near-duplicate-row", 0) + 1
+        else:
+            _seen_fold.add(_fold_h)
         # Kept-row accumulators for payer clustering and charge outliers.
         # Taxonomy → specialty mix: count well-formed codes on kept rows
         # (capped distinct codes so a garbage column can't grow the dict).
@@ -2010,17 +2060,13 @@ def clean_bytes(
         # per-payer quality split ("which payer's feed is dirtiest").
         _fired = {_rk for _rk, _rv2 in res.sanity.items()
                   if _rv2 > _sanity_pre.get(_rk, 0)}
-        if _wl_open:
-            _all_full = True
-            for _rk in res.sanity:
-                if _rk in _fired:
-                    _lst = res.flag_rows.setdefault(_rk, [])
-                    if len(_lst) < _WORKLIST_CAP:
-                        _lst.append(len(cleaned))
-                if len(res.flag_rows.get(_rk, ())) < _WORKLIST_CAP:
-                    _all_full = False
-            if res.flag_rows and _all_full:
-                _wl_open = False
+        # Per-rule cap only — an earlier global shut-off (_wl_open) meant a
+        # rule first firing late in the file got a sanity count but ZERO
+        # worklist rows once every rule seen so far was full.
+        for _rk in _fired:
+            _lst = res.flag_rows.setdefault(_rk, [])
+            if len(_lst) < _WORKLIST_CAP:
+                _lst.append(len(cleaned))
         if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
             _fam2 = _payer_key(new_row[payer_i])
             _pq = _payer_q.get(_fam2)
@@ -2192,24 +2238,30 @@ def clean_bytes(
     if _svc_seen and _dup_window > 0:
         from datetime import date as _dd
         _dup_rows: set = set()
+        # Group by UNIQUE date first: a key repeated heavily on one date
+        # (interface replays) made the old pairwise loop O(k²) with two
+        # date parses per pair — hours of post-loop work on a big file.
+        # Unique dates per key are bounded (~365/yr), each parsed once.
         for _entries in _svc_seen.values():
             if len(_entries) < 2:
                 continue
-            _entries.sort()
-            for _i1 in range(len(_entries) - 1):
-                _d1, _r1 = _entries[_i1]
-                for _i2 in range(_i1 + 1, len(_entries)):
-                    _d2, _r2 = _entries[_i2]
-                    try:
-                        _delta = (_dd.fromisoformat(_d2)
-                                  - _dd.fromisoformat(_d1)).days
-                    except ValueError:
-                        break
-                    if _delta > _dup_window:
-                        break               # sorted → nothing closer follows
-                    if _delta > 0:
-                        _dup_rows.add(_r1)
-                        _dup_rows.add(_r2)
+            _by_date: Dict[str, List[int]] = {}
+            for _d1, _r1 in _entries:
+                _by_date.setdefault(_d1, []).append(_r1)
+            if len(_by_date) < 2:
+                continue        # same-date repeats belong to the dup-claim rules
+            _dates = sorted(_by_date)
+            try:
+                _ords = [_dd.fromisoformat(_d1).toordinal()
+                         for _d1 in _dates]
+            except ValueError:
+                continue
+            for _i1 in range(len(_dates) - 1):
+                for _i2 in range(_i1 + 1, len(_dates)):
+                    if _ords[_i2] - _ords[_i1] > _dup_window:
+                        break   # dates unique + sorted → nothing closer follows
+                    _dup_rows.update(_by_date[_dates[_i1]])
+                    _dup_rows.update(_by_date[_dates[_i2]])
         if _dup_rows:
             res.sanity["possible-duplicate-service"] = len(_dup_rows)
             res.flag_rows["possible-duplicate-service"] = \
@@ -2447,9 +2499,18 @@ def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
                           "repairs": sum(sub.repairs.values()),
                           "findings": sum(sub.sanity.values())})
         res.warnings.extend(f"{name}: {w}" for w in sub.warnings)
+        # De-id confirmation must survive the merge — a masked batch that
+        # reports deid: null tells the user redaction did NOT happen.
+        if sub.deid_applied:
+            res.deid_applied = True
+            res.deid_cells += sub.deid_cells
+            for _dc in sub.deid_columns:
+                if _dc not in res.deid_columns:
+                    res.deid_columns.append(_dc)
     res.warnings.insert(0, (
         f"Batch mode: {n} file(s) cleaned from the zip — per-file grades "
-        "on the Quality tab; the download is a zip of the cleaned files."))
+        "on the Quality tab; the download is a zip of the cleaned files. "
+        "NPPES verification and deep recovery are skipped in batch mode."))
     out_path = WORKDIR / f"{uuid.uuid4().hex}_batch.zip"
     with _zf.ZipFile(out_path, "w", _zf.ZIP_DEFLATED) as z:
         for name, sub in subs:

@@ -92,8 +92,11 @@ _BODY = """
 (function(){
   "use strict";
   function $(id){ return document.getElementById(id); }
-  function esc(s){ var d=document.createElement("div");
-    d.textContent=(s==null?"":s); return d.innerHTML; }
+  // Entity-escape INCLUDING quotes — file names render into attribute
+  // contexts (checkbox data-run, option values).
+  function esc(s){ return String(s==null?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
   function fmt(n){ return (n==null?0:n).toLocaleString(); }
   function when(ts){ var d=new Date(ts*1000);
     return d.toISOString().slice(0,16).replace("T"," "); }

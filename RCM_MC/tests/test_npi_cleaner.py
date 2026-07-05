@@ -764,8 +764,15 @@ class TestEngine(unittest.TestCase):
                 "accepted_rules": ["date-stale"],
                 "thresholds": {"timely_filing_days": 30, "stale_years": 2,
                                "outlier_iqr_mult": 3.0}}
+        # Clean padding rows keep the consistency ratio off its 0 floor —
+        # timely-filing-risk now (correctly) feeds the grade, and with a
+        # single row both variants saturated at 0.
+        from datetime import date as _d, timedelta as _td
+        _dos = (_d.today() - _td(days=10)).isoformat()
+        _rcv = (_d.today() - _td(days=5)).isoformat()
+        _pad = "".join(f"{i},25,1,{_dos},{_rcv}\n" for i in range(2, 5))
         data = ("ClaimID,Modifier,Units,DateOfService,ReceivedDate\n"
-                "1,ZQ,1,2023-01-01,2024-03-01\n").encode()
+                "1,ZQ,1,2023-01-01,2024-03-01\n" + _pad).encode()
         res = engine.clean_bytes(data, "prof.csv", profile=prof)
         sc = res.as_scorecard()
         self.assertNotIn("modifier-unknown", sc["sanity"])   # disabled
@@ -1548,6 +1555,192 @@ class TestDupWindowAndRollup(unittest.TestCase):
         html_out = build_exec_report(res.as_scorecard(), "roll.csv",
                                      "2026-01-01T00:00:00+00:00")
         self.assertIn("Claim rollup", html_out)
+
+
+class TestReviewFixes(unittest.TestCase):
+    """Regression tests for the batch-18 full-diff review findings."""
+
+    def test_money_hint_exclusions(self):
+        # "CostCenter" matched the "cost" hint and code 0100 was rewritten
+        # to 100.00; description/name columns false-flagged unparseable.
+        data = ("CostCenter,ChargeDescription,FeeScheduleName,PaidAmt\n"
+                "0100,Office visit,Standard,\"$1,250.50\"\n").encode()
+        res = engine.clean_bytes(data, "cc.csv")
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("0100", out)                 # cost center preserved
+        self.assertIn("1250.50", out)              # real money still cleaned
+        self.assertIsNone(res.sanity.get("money-unparseable"))
+
+    def test_institutional_rules_hit_the_grade(self):
+        # tob-malformed (critical) fired but never fed the validity
+        # dimension — an all-bad-TOB file still graded A.
+        data = ("ClaimID,TypeOfBill\n1,ABC\n2,XYZ\n").encode()
+        res = engine.clean_bytes(data, "tob.csv")
+        self.assertEqual(res.sanity.get("tob-malformed"), 2)
+        self.assertLess(res.quality()["dimensions"]["validity"], 100.0)
+        self.assertIn("timely-filing-risk", engine.CleanResult._CONSISTENCY_RULES)
+
+    def test_worklist_captures_late_first_firing_rule(self):
+        # Old _wl_open shut off capture globally once every rule seen so
+        # far was full; a rule first firing later got zero worklist rows.
+        rows = ["ClaimID,DateOfService,HCPCS"]
+        for i in range(520):                        # fills date-stale's 500 cap
+            rows.append(f"{i},1990-01-01,99213")
+        rows.append("bad,2024-01-01,BAD!!")         # first hcpcs hit, row 521
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "wl.csv")
+        self.assertEqual(len(res.flag_rows["date-stale"]), 500)
+        self.assertEqual(res.flag_rows.get("hcpcs-malformed"), [521])
+
+    def test_835_line_level_service_dates(self):
+        from rcm_mc.npi_cleaner import x12
+        era = ("ISA*00*          *00*          *ZZ*P              *ZZ*R    "
+               "          *240215*0800*^*00501*000000009*0*P*:~"
+               "GS*HP*P*R*20240215*0800*9*X*005010X221A1~ST*835*0009~"
+               "N1*PR*AETNA~N1*PE*ACME CLINIC*XX*1497758544~"
+               "CLP*C1*1*225*180*20*12*ICN1~"
+               "SVC*HC:99213*100*80~DTM*472*20250101~"
+               "SVC*HC:93000*125*100~DTM*472*20250215~"
+               "SE*10*0009~").encode()
+        h, rows = x12.x835_to_table(era)
+        d0, d1 = dict(zip(h, rows[0])), dict(zip(h, rows[1]))
+        self.assertEqual(d0["DateOfService"], "2025-01-01")
+        self.assertEqual(d1["DateOfService"], "2025-02-15")  # not line 1's
+
+    def test_835_role_detection(self):
+        # name → PayeeName (the provider), never PayerName; ClaimStatus is
+        # NOT a state column (the bare "st" substring hint did that).
+        from rcm_mc.npi_cleaner import x12
+        h = x12.HEADERS_835
+        self.assertEqual(h[engine._detect_one(h, engine._NAME_HINTS)],
+                         "PayeeName")
+        self.assertIsNone(engine._detect_one(h, engine._STATE_HINTS))
+        # PaidDate is no longer a never-in-future column: payers stamp
+        # forward-dated production dates on ordinary ERAs.
+        self.assertNotIn("paiddate", engine._SERVICE_DATE_HINTS)
+
+    def test_credential_surname_not_miscounted(self):
+        # "DO, HANH" is the surname Do, not a Doctor of Osteopathy.
+        got, hits, creds = engine._clean_provider_name_cell("DO, HANH")
+        self.assertEqual(got, "Do, Hanh")
+        self.assertEqual(creds, [])
+        got2, _, creds2 = engine._clean_provider_name_cell("PA, MINH")
+        self.assertEqual(got2, "Pa, Minh")
+        self.assertEqual(creds2, [])
+        # Trailing credentials still parse.
+        _, _, creds3 = engine._clean_provider_name_cell("SMITH, JOHN, DO")
+        self.assertEqual(creds3, ["DO"])
+
+    def test_profile_mapping_long_name_roundtrip(self):
+        # save truncated names to 64 chars but get/delete didn't — a
+        # 70-char name saved fine and was never findable again.
+        import uuid as _uuid
+        from rcm_mc.npi_cleaner import mappings, profiles
+        long_name = "p" * 60 + _uuid.uuid4().hex[:10]      # 70 chars
+        profiles.save_profile(long_name, {"thresholds": {"stale_years": 5}})
+        try:
+            self.assertIsNotNone(profiles.get_profile(long_name))
+        finally:
+            self.assertTrue(profiles.delete_profile(long_name))
+        long_map = "m" * 60 + _uuid.uuid4().hex[:10]
+        mappings.save_mapping(long_map, {"billing_npi": "X"})
+        try:
+            self.assertIsNotNone(mappings.get_mapping(long_map))
+        finally:
+            self.assertTrue(mappings.delete_mapping(long_map))
+
+    def test_batch_deid_and_probe(self):
+        import io as _io
+        import zipfile as _zf
+        buf = _io.BytesIO()
+        with _zf.ZipFile(buf, "w") as z:
+            z.writestr("a.csv", "PatientName,NPI\nJohn Doe,1497758544\n")
+        data = buf.getvalue()
+        # Metadata-only probe agrees with the extracting detector.
+        self.assertTrue(engine.zip_batch_probe(data))
+        self.assertFalse(engine.zip_batch_probe(b"NPI\n1\n"))
+        # De-id status must survive the batch merge.
+        res = engine.clean_bytes(data, "b.zip", deid=True)
+        sc = res.as_scorecard()
+        self.assertIsNotNone(sc["deid"])
+        self.assertGreater(sc["deid"]["cells"], 0)
+
+    def test_near_duplicate_without_dedupe(self):
+        # The near-dup screen was silently disabled under --no-dedupe —
+        # exactly the mode where the kept variants matter most.
+        data = ("ID,Name\n1,Hello World\n1,HELLO   world\n").encode()
+        res = engine.clean_bytes(data, "nd.csv", drop_duplicates=False)
+        self.assertEqual(res.sanity.get("near-duplicate-row"), 1)
+
+    def test_dup_window_same_date_not_flagged(self):
+        # Same-date repeats belong to the duplicate-claim rules; the
+        # window scan only flags DIFFERENT dates within the window (and
+        # no longer does O(k²) pair parsing on same-date pileups).
+        data = ("PatientID,BillingNPI,HCPCS,DateOfService,Units\n"
+                f"P1,{GOOD_A},99213,2024-01-01,1\n"
+                f"P1,{GOOD_A},99213,2024-01-01,2\n"
+                f"P1,{GOOD_A},99213,2024-01-01,3\n").encode()
+        res = engine.clean_bytes(data, "sd.csv")
+        self.assertIsNone(res.sanity.get("possible-duplicate-service"))
+
+    def test_datetime64_series_keeps_already_date(self):
+        # The unique-value memo must not change datetime64 semantics.
+        import pandas as pd
+        from rcm_mc.npi_cleaner.vendor_v49.npi_recovery import (
+            field_validators as fv)
+        s = pd.Series(pd.to_datetime(["2024-01-01", None, "2024-02-02"]))
+        out = fv.validate_date_series(s, now="2026-01-01")
+        self.assertEqual(out["status"].iloc[0], "ALREADY_DATE")
+        self.assertFalse(out["unparseable"].iloc[0])
+
+    def test_batch_download_ctype_and_data_route(self):
+        # Batch output is a ZIP: the default download must say so, and
+        # the pivot /data feed must 404 instead of parsing zip bytes.
+        import io as _io
+        import socket as _socket
+        import threading
+        import zipfile as _zf
+        from rcm_mc.server import build_server
+        buf = _io.BytesIO()
+        with _zf.ZipFile(buf, "w") as z:
+            z.writestr("a.csv", "NPI\n1497758544\n")
+            z.writestr("b.csv", "ClaimID,HCPCS\n1,99213\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=buf.getvalue(), method="POST",
+                    headers={"X-Filename": "sites.zip"})
+                with _u.urlopen(req) as r:
+                    jid = json.loads(r.read().decode())["job_id"]
+                for _ in range(80):
+                    with _u.urlopen(f"http://127.0.0.1:{port}"
+                                    f"/npi-cleaner/status/{jid}") as r:
+                        if json.loads(r.read().decode()).get("done"):
+                            break
+                    time.sleep(0.05)
+                with _u.urlopen(f"http://127.0.0.1:{port}"
+                                f"/npi-cleaner/download/{jid}") as r:
+                    self.assertEqual(r.headers.get("Content-Type"),
+                                     "application/zip")
+                try:
+                    _u.urlopen(f"http://127.0.0.1:{port}"
+                               f"/npi-cleaner/data/{jid}")
+                    self.fail("expected 404 for batch pivot data")
+                except _u.HTTPError as exc:
+                    self.assertEqual(exc.code, 404)
+            finally:
+                server.shutdown()
+                server.server_close()
 
 
 class TestConsolidation(unittest.TestCase):

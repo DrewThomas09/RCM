@@ -211,9 +211,13 @@ def x12_to_table(data: bytes) -> Optional[Tuple[List[str], List[List[str]]]]:
 # analytics + CARC catalog) plus a per-row audit string with group codes
 # and dollar amounts (CO-45:12.50 …).
 # ---------------------------------------------------------------------------
+# PayeeName precedes PayerName deliberately: the engine's generic "name"
+# hint takes the FIRST matching column for NPPES recovery, and the payee
+# IS the provider — with payer first, recovery queried NPPES with the
+# insurance company's name.
 HEADERS_835: List[str] = [
-    "ClaimID", "PayerClaimID", "ClaimStatus", "PayerName", "PayeeName",
-    "PayeeNPI", "PatientName", "DateOfService", "PaidDate", "RevenueCode",
+    "ClaimID", "PayerClaimID", "ClaimStatus", "PayeeName", "PayeeNPI",
+    "PayerName", "PatientName", "DateOfService", "PaidDate", "RevenueCode",
     "HCPCS", "Modifiers", "Units", "BilledAmt", "PaidAmt", "PatientResp",
     "DenialCodes", "AdjustmentDetail",
 ]
@@ -245,9 +249,10 @@ def x835_to_table(data: bytes) -> Optional[Tuple[List[str], List[List[str]]]]:
         detail = clp_adjs + list(line.get("adjs") or [])
         return [
             clp.get("claim_id", ""), clp.get("payer_icn", ""),
-            clp.get("status", ""), env.get("payer", ""),
-            env.get("payee", ""), env.get("payee_npi", ""),
-            clp.get("patient", ""), clp.get("dos", ""),
+            clp.get("status", ""), env.get("payee", ""),
+            env.get("payee_npi", ""), env.get("payer", ""),
+            clp.get("patient", ""),
+            str(line.get("dos") or clp.get("dos", "")),
             env.get("paid_date", ""), str(line.get("rev", "")),
             str(line.get("hcpcs", "")), str(line.get("mods", "")),
             str(line.get("units", "")),
@@ -289,7 +294,9 @@ def x835_to_table(data: bytes) -> Optional[Tuple[List[str], List[List[str]]]]:
             when = _date_iso(seg[2])
             if seg[1] == "405":                    # production date
                 env.setdefault("paid_date", when)
-            elif seg[1] in ("232", "472"):         # statement/service date
+            elif seg[1] == "472" and svc is not None:
+                svc["dos"] = when                  # per-line service date
+            elif seg[1] in ("232", "472"):         # claim statement date
                 if clp:
                     clp.setdefault("dos", when)
         elif tag == "CLP" and len(seg) > 4:

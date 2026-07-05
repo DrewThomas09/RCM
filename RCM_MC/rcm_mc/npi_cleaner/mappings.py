@@ -87,7 +87,8 @@ def save_mapping(name: str, mapping: Dict[str, object]) -> Dict[str, str]:
 
 
 def get_mapping(name: str) -> Optional[Dict[str, str]]:
-    name = (name or "").strip()
+    # Same normalization as save_mapping (see profiles.get_profile).
+    name = (name or "").strip()[:64]
     if not name:
         return None
     try:
@@ -127,7 +128,7 @@ def list_mappings() -> List[Dict[str, object]]:
 def delete_mapping(name: str) -> bool:
     with _LOCK, _conn() as con:
         cur = con.execute("DELETE FROM mappings WHERE name = ?",
-                          ((name or "").strip(),))
+                          ((name or "").strip()[:64],))
         return cur.rowcount > 0
 
 
