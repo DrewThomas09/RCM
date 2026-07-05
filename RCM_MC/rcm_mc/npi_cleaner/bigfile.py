@@ -202,6 +202,10 @@ def _clean_csv_stream(
                 "File appears to be empty — no header row found.")
             header = None
         bytes_done = len(header) if header else 0
+        # One digest set shared by every chunk → duplicates die across
+        # chunk boundaries too. Growth is capped inside the engine
+        # (_STREAM_SEEN_CAP); saturation is surfaced as a warning below.
+        stream_seen: set = set()
 
         while header is not None:
             chunk: List[bytes] = []
@@ -222,7 +226,8 @@ def _clean_csv_stream(
             sub = clean_bytes(
                 header + b"".join(chunk), src_name,
                 drop_duplicates=drop_duplicates, deid=deid,
-                profile=profile, overrides=overrides, _stream_chunk=True)
+                profile=profile, overrides=overrides, _stream_chunk=True,
+                _stream_seen=(stream_seen if drop_duplicates else None))
             payload = sub.chunk_payload
             if payload is None:
                 # The chunk took an error path inside clean_bytes (garbage
@@ -323,15 +328,22 @@ def _clean_csv_stream(
              "pct": round(100.0 * n / max(res.n_rows_in, 1), 1)}
             for col, n in fill_counts.items()]
     if chunk_i:
+        from .engine import _STREAM_SEEN_CAP
+        if len(stream_seen) >= _STREAM_SEEN_CAP:
+            res.warnings.append(
+                f"Duplicate tracking capped at {_STREAM_SEEN_CAP:,} "
+                "distinct rows — rows first seen after the cap aren't "
+                "tracked, so their later duplicates may remain.")
         res.warnings.insert(0, (
             f"Streaming mode: {size / 1e9:.1f} GB file cleaned in "
-            f"{chunk_i} chunk(s) with bounded memory. Duplicate removal "
-            "runs within each chunk; NPPES verification, deep recovery, "
-            "the suggestions companion, the xlsx workbook and whole-file "
-            "analytics (payer clusters, charge outliers, claim rollup, "
-            "dictionary, population marts) are skipped in this mode. The "
-            "grade, repairs, findings, change log and worklists cover "
-            "every row."))
+            f"{chunk_i} chunk(s) with bounded memory. Exact duplicates "
+            "are removed across the whole file (bounded digest set); "
+            "NPPES verification, deep recovery, the suggestions "
+            "companion, the xlsx workbook and whole-file analytics "
+            "(payer clusters, charge outliers, claim rollup, dictionary, "
+            "population marts) are skipped in this mode. The grade, "
+            "repairs, findings, change log and worklists cover every "
+            "row."))
         # One history record for the whole run — the chunks recorded
         # nothing.
         try:

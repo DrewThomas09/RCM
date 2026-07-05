@@ -1244,7 +1244,11 @@ _EXTRA_JS = r"""
     if(pop.volume){
       h+=popHead("Volume integrity (data loss over time)",
         "Rows, charges and patients by service month — a cliff usually "+
-        "means a missing extract, not real utilization.");
+        "means a missing extract, not real utilization."+
+        (pop.volume.median_observed_pmpm != null
+          ? " Median observed PMPM (charges per patient with claims that "+
+            "month): $"+fmt(pop.volume.median_observed_pmpm)+"."
+          : ""));
       (pop.volume.alerts||[]).forEach(function(a){
         h+='<div class="npi-warn">'+esc(a)+'</div>';
       });

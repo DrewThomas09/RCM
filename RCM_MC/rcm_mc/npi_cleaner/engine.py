@@ -768,6 +768,11 @@ def _clean_ndc_cell(v: str) -> Tuple[str, List[str]]:
 
 import hashlib
 
+# Distinct-row digests tracked for cross-chunk dedupe on a streamed run
+# (bigfile.py). 2M ints is ~100 MB peak — bounded, honest: past the cap,
+# NEW distinct rows stop being tracked and the run says so.
+_STREAM_SEEN_CAP = 2_000_000
+
 
 def _phi_kind(hn: str) -> Optional[str]:
     """Classify a header (folded key) as a patient-PHI field, or None.
@@ -1438,6 +1443,7 @@ def clean_bytes(
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
     _stream_chunk: bool = False,
+    _stream_seen: Optional[set] = None,
 ) -> CleanResult:
     """Clean a delimited claims file given as raw bytes.
 
@@ -1451,6 +1457,11 @@ def clean_bytes(
     and per-run side effects that belong to the WHOLE file — history record,
     trend alerts, the pandas suggestions companion — are skipped so a 10 GB
     upload doesn't record 200 history rows for one run.
+
+    ``_stream_seen`` is the streamer's SHARED duplicate-tracking set: when
+    given, exact-dup membership uses compact row digests in that set instead
+    of full-tuple keys in a per-call set, so duplicates die across chunk
+    boundaries too. The caller bounds its growth (see bigfile.py).
     """
     def cb(msg: str, frac: float) -> None:
         if progress:
@@ -2013,11 +2024,24 @@ def clean_bytes(
             cstat["cells"] += 1
             cstat[classify_npi(new_row[i])] += 1
         if drop_duplicates:
-            key = tuple(new_row)
-            if key in seen:
-                res.n_dupes_removed += 1
-                continue
-            seen.add(key)
+            if _stream_seen is not None:
+                # Streaming mode: membership lives in the caller's shared
+                # set as a 96-bit digest — cross-chunk dedupe in bounded
+                # memory (collision odds are negligible at claims scale).
+                _dk = int.from_bytes(
+                    hashlib.blake2b("\x1f".join(new_row).encode("utf-8"),
+                                    digest_size=12).digest(), "big")
+                if _dk in _stream_seen:
+                    res.n_dupes_removed += 1
+                    continue
+                if len(_stream_seen) < _STREAM_SEEN_CAP:
+                    _stream_seen.add(_dk)
+            else:
+                key = tuple(new_row)
+                if key in seen:
+                    res.n_dupes_removed += 1
+                    continue
+                seen.add(key)
         # Near-duplicate (report-only, row kept): identical after case
         # folding + whitespace collapse — "SMITH" vs "Smith" rows a human
         # would merge. Runs regardless of dedupe mode: with dedupe off,

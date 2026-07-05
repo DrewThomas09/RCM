@@ -3072,6 +3072,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                 if r.dictionary:
                     z.writestr("data_dictionary.csv",
                                engine.dictionary_csv(r))
+                if r.population:
+                    from .npi_cleaner import analytics as _nc_an
+                    _enc_csv = _nc_an.encounters_csv(r.population)
+                    if _enc_csv:
+                        z.writestr("encounters.csv", _enc_csv)
                 # Worklists: one pass over the cleaned file, split by rule.
                 if r.flag_rows and r.out_path:
                     _want = {}          # row index → rules that flagged it

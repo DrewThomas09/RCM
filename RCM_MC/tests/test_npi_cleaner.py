@@ -3563,5 +3563,148 @@ class TestPopulationAnalytics(unittest.TestCase):
                 server.server_close()
 
 
+class TestPhase2(unittest.TestCase):
+    """Batch 22: cross-chunk dedupe on streamed runs, observed PMPM in the
+    volume mart, encounters.csv in bundles, Population in the exec report."""
+
+    def test_streamed_dedupe_crosses_chunk_boundaries(self):
+        from rcm_mc.npi_cleaner import bigfile
+        rows = ["ClaimID,BillingProviderNPI,ChargeAmt"]
+        # The same row appears at the very start and near the very end —
+        # guaranteed different chunks under a tiny chunk target.
+        dup = f"DUP,{GOOD_A},420"
+        rows.append(dup)
+        rows += [f"{i},{GOOD_B},100" for i in range(1, 300)]
+        rows.append(dup)
+        data = ("\n".join(rows) + "\n").encode()
+        ref = engine.clean_bytes(data, "x.csv")
+        self.assertEqual(ref.n_dupes_removed, 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "x.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 512), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 1024):
+                res = bigfile.clean_path(p, "x.csv")
+        self.assertGreater(len([w for w in res.warnings
+                                if "chunk(s)" in w]), 0)
+        self.assertEqual(res.n_dupes_removed, 1)
+        self.assertEqual(res.n_rows_out, ref.n_rows_out)
+        # And the duplicate row appears exactly once in the output.
+        with open(res.out_path, encoding="utf-8") as fh:
+            body = fh.read()
+        self.assertEqual(body.count(f"DUP,{GOOD_A}"), 1)
+
+    def test_streamed_dedupe_cap_is_surfaced(self):
+        from rcm_mc.npi_cleaner import bigfile
+        rows = ["ClaimID,BillingProviderNPI"]
+        rows += [f"{i},{GOOD_A}" for i in range(1, 200)]
+        data = ("\n".join(rows) + "\n").encode()
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "c.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 256), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 512), \
+                    patch.object(engine, "_STREAM_SEEN_CAP", 10):
+                res = bigfile.clean_path(p, "c.csv")
+        self.assertTrue(any("Duplicate tracking capped" in w
+                            for w in res.warnings), res.warnings)
+
+    def test_observed_pmpm_in_volume_mart(self):
+        csv_rows = ["PatientID,ChargeAmt,DateOfService"]
+        # Jan: 2 patients, $300 total → PMPM 150. Feb: 1 patient, $80.
+        csv_rows += ["P1,100,2024-01-05", "P2,200,2024-01-09",
+                     "P1,80,2024-02-10"]
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "pmpm.csv")
+        vol = (res.population or {}).get("volume")
+        self.assertIsNotNone(vol)
+        jan, feb = vol["months"][0], vol["months"][1]
+        self.assertEqual(jan["observed_pmpm"], 150.0)
+        self.assertEqual(feb["observed_pmpm"], 80.0)
+        self.assertEqual(vol["median_observed_pmpm"], 150.0)
+
+    def test_exec_report_population_section(self):
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        csv_rows = ["PatientID,TypeOfBill,HCPCS,DiagnosisCode,ChargeAmt,"
+                    "DateOfService"]
+        csv_rows += [f"P{i},0131,99213,E11.65,100,2024-0{1 + i % 6}-10"
+                     for i in range(1, 40)]
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "er.csv")
+        html = build_exec_report(res.as_scorecard(), "er.csv", "now")
+        self.assertIn("Population profile", html)
+        self.assertIn("Care setting", html)
+        self.assertIn("Diabetes", html)
+        self.assertIn("median observed PMPM", html)
+
+    def test_bundles_carry_encounters_csv(self):
+        # CLI --bundle path.
+        import contextlib
+        import io as _io
+        import zipfile as _zf
+        from rcm_mc.npi_cleaner import cli as nc_cli
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, "in.csv")
+            with open(src, "w", encoding="utf-8") as fh:
+                fh.write("PatientID,HCPCS,DateOfService\n"
+                         "P1,99213,2024-01-05\nP2,99214,2024-01-06\n")
+            out = _io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = nc_cli.main([src, "--bundle", "--json",
+                                  "--outdir", tmp])
+            self.assertEqual(rc, 0)
+            with _zf.ZipFile(os.path.join(tmp, "in_bundle.zip")) as z:
+                self.assertIn("encounters.csv", z.namelist())
+                enc = z.read("encounters.csv").decode()
+            self.assertIn("encounter,patient,category", enc)
+
+        # HTTP ?fmt=bundle path.
+        with tempfile.TemporaryDirectory() as tmp:
+            import socket as _socket
+            import threading
+            from rcm_mc.server import build_server
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                csv_b = ("PatientID,HCPCS,DateOfService\n"
+                         "P1,99213,2024-01-05\n").encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "b.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(100):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}"
+                        f"/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                    "?fmt=bundle"
+                ) as r:
+                    blob = r.read()
+                import io as _io2
+                import zipfile as _zf2
+                with _zf2.ZipFile(_io2.BytesIO(blob)) as z:
+                    self.assertIn("encounters.csv", z.namelist())
+            finally:
+                server.shutdown()
+                server.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()

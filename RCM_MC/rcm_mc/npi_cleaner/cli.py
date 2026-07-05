@@ -111,6 +111,11 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                        json.dumps(sc, indent=2, default=str))
             if res.dictionary:
                 z.writestr("data_dictionary.csv", engine.dictionary_csv(res))
+            if res.population:
+                from . import analytics as _analytics
+                enc_csv = _analytics.encounters_csv(res.population)
+                if enc_csv:
+                    z.writestr("encounters.csv", enc_csv)
             if res.flag_rows and res.out_path \
                     and res.out_name.endswith(".csv"):
                 want: dict = {}

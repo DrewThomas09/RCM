@@ -156,6 +156,9 @@ under `population`:
 - **Volume integrity ("data loss over time")** — rows/charges/patients
   by service month with cliff detection: an interior month under 40% of
   its trailing median is almost always a missing extract, and says so.
+  Each month also carries **observed PMPM** (charges per patient with
+  claims that month — labeled "observed" because there is no
+  eligibility denominator), plus the median across months.
 - **E&M coding intensity** — each provider's established-visit mix
   (99211–99215) vs the file's own mix (national Medicare mix shown for
   context); providers coding materially hotter surface as a
@@ -182,12 +185,17 @@ the file with `npi_cleaner/bigfile.py`:
 - Change-log rows stream to the master audit CSV with **global** row
   indices; worklist row indices are offset to the merged output, so
   per-rule and per-payer downloads slice the right rows.
-- Scope (surfaced as warnings on the run): duplicate removal is
-  per-chunk (adjacent dupes — the common real case — still die); online
-  modes, the suggestions companion, the xlsx workbook and whole-table
-  analytics (payer clusters, outliers, claim rollup, dictionary) are
-  skipped. The grade itself is exact — all five score dimensions come
-  from summed counters. One history record for the whole run.
+- **Exact duplicates die across the whole file**, not just within a
+  chunk: chunks share one bounded digest set (96-bit row digests,
+  capped at 2M distinct rows ≈ 100 MB peak). If a file has more
+  distinct rows than the cap, tracking stops there and the run says so
+  in a warning — bounded memory stays honest.
+- Scope (surfaced as warnings on the run): online modes, the
+  suggestions companion, the xlsx workbook and whole-table analytics
+  (payer clusters, outliers, claim rollup, dictionary, population
+  marts) are skipped. The grade itself is exact — all five score
+  dimensions come from summed counters. One history record for the
+  whole run.
 - Non-splittable formats (xlsx / zip / X12) keep the 200 MB in-memory
   ceiling; past it the run returns instructions to export CSV instead
   of an OOM. The `rcm-mc npi-clean` CLI routes through the same

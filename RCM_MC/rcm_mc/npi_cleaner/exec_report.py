@@ -153,6 +153,55 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                          f"<td class='small'>{_esc(_pb)}</td></tr>")
         parts.append("</table>")
 
+    # Population marts (analytics.py) — what the file MEANS: care-setting
+    # mix, visit counts, readmissions, condition burden, data-loss alerts.
+    pop = sc.get("population") or {}
+    if pop:
+        parts.append("<h2>Population profile</h2>")
+        mix = pop.get("service_mix") or {}
+        cats = mix.get("categories") or []
+        if cats:
+            parts.append("<table><tr><th>Care setting</th>"
+                         "<th class='num'>Lines</th>"
+                         "<th class='num'>% of file</th>"
+                         "<th class='num'>Charges</th></tr>")
+            for c in cats[:8]:
+                parts.append(
+                    f"<tr><td>{_esc(c['category'])} — "
+                    f"<span class='small'>{_esc(c['subcategory'])}</span>"
+                    f"</td><td class='num'>{int(c['rows']):,}</td>"
+                    f"<td class='num'>{c['pct']}%</td>"
+                    f"<td class='num'>${float(c['charges']):,.2f}</td></tr>")
+            parts.append("</table>")
+        bits: List[str] = []
+        enc = pop.get("encounters") or {}
+        if enc:
+            bits.append(f"{int(enc.get('n_encounters') or 0):,} encounters "
+                        f"across {int(enc.get('n_patients') or 0):,} "
+                        "patients")
+            readm = enc.get("readmissions") or {}
+            if readm:
+                bits.append(
+                    f"30-day inpatient readmissions: "
+                    f"{int(readm.get('readmissions_30d') or 0):,} of "
+                    f"{int(readm.get('inpatient_stays') or 0):,} stays "
+                    f"({readm.get('rate_pct')}%)")
+        vol = pop.get("volume") or {}
+        if vol.get("median_observed_pmpm") is not None:
+            bits.append("median observed PMPM "
+                        f"${float(vol['median_observed_pmpm']):,.2f}")
+        if bits:
+            parts.append(f"<p class='small'>{_esc(' · '.join(bits))}</p>")
+        for a in (vol.get("alerts") or [])[:4]:
+            parts.append(f"<p class='small sev-critical'>⚠ {_esc(a)}</p>")
+        cond = pop.get("conditions") or {}
+        prev = cond.get("prevalence") or []
+        if prev:
+            top_c = " · ".join(
+                f"{_esc(p['condition'])} {p['pct']}%" for p in prev[:6])
+            parts.append(f"<p class='small'><strong>Chronic conditions "
+                         f"(prevalence):</strong> {top_c}</p>")
+
     # Who is in this file — credential + specialty mix (report-only).
     creds: Dict[str, int] = dict(sc.get("credentials") or {})
     if creds:
