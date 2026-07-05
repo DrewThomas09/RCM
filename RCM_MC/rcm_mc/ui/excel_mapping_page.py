@@ -624,11 +624,10 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
         + '<div style="font-size:12px;color:#465366;line-height:1.7;">'
           '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
           'font-weight:700;margin-bottom:4px;">HOW TO USE</div>'
-          '<p><strong>In Python:</strong> edit '
-          '<code>DEFAULT_STATE_VALUES</code> and the three '
-          '<code>DEFAULT_*_COLOR</code> constants in '
-          '<code>excel_mapping_page.py</code>.</p>'
-          '<p style="margin-top:6px;"><strong>In the page:</strong> pick '
+          # Admin note: the map can also be driven from Python by editing
+          # DEFAULT_STATE_VALUES and the three DEFAULT_*_COLOR constants
+          # in excel_mapping_page.py.
+          '<p><strong>In the page:</strong> pick '
           'the three colours, optionally set the low/mid/high value '
           'domain (blank = auto from your data) and a map title, and '
           'paste <code>STATE&nbsp;VALUE</code> rows from Excel. The '

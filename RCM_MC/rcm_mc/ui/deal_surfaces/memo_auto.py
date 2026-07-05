@@ -120,10 +120,8 @@ def _hero(n_sections: int, n_warnings: int) -> str:
         f'gap:12px;margin:0;">{cells}</dl>'
         '<p style="font-family:var(--sc-mono);font-size:10px;letter-spacing:.1em;'
         'color:#6a7480;margin:10px 0 0;">'
-        'EVERY SECTION SHIPS WITH THE "UNVERIFIED" BADGE BY DEFAULT. THE '
-        'WARNING COUNT EQUALS THE NUMBER OF SECTIONS A FACT-CHECK SERVICE '
-        'WOULD NEED TO CONFIRM &mdash; THAT SERVICE ISN\'T WIRED YET, SO '
-        'TREAT THIS MEMO AS SCAFFOLDING, NOT A FINISHED DOCUMENT.</p>'
+        'Each section is marked Unverified until reviewed &mdash; treat this '
+        'draft as a starting point for the IC memo.</p>'
     )
 
 
@@ -280,10 +278,6 @@ def _cross_links(ccn: str) -> str:
         '<div style="font-family:var(--sc-serif);font-size:15px;color:#6a7480;">'
         'Download JSON (template vars)</div></div>'
         '</div>'
-        '<p style="font-family:var(--sc-mono);font-size:10px;letter-spacing:.1em;'
-        'color:#6a7480;margin:10px 0 0;">'
-        'JSON DOWNLOAD NEEDS A SERVER EXPORT ENDPOINT &mdash; LANDS WHEN THE '
-        'EXPORT PIPELINE FROM THE IC MEMO PHASE IS WIRED.</p>'
     )
 
 

@@ -476,7 +476,7 @@ def _claude_review_panel(review: Any) -> str:
     status = str(claude.get("status") or "not_configured")
     color = _CLAUDE_STATUS_COLORS.get(status, P["text_faint"])
     status_label = status.replace("_", " ").upper()
-    summary = str(claude.get("summary") or "Claude review not available.").strip()
+    summary = str(claude.get("summary") or "AI review not available.").strip()
     model = str(claude.get("model") or "fallback")
     latency = claude.get("latency_ms")
     cost = claude.get("cost_usd_estimate")
@@ -716,7 +716,7 @@ def render_partner_review(
         code="HCX",
     )
     claude_section = _panel(
-        "Claude Look",
+        "AI review",
         _claude_review_panel(review),
         code="CLD",
     )

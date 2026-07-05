@@ -656,7 +656,7 @@ def _payer_table(report: PayerStressReport) -> str:
         name="payer_stress_detail",
         caption=(
             "Sortable by any column · each row one payer · "
-            "rate moves shown as cumulative 5-year · CSV export wired"
+            "rate moves shown as cumulative 5-year · CSV export available"
         ),
     )
 

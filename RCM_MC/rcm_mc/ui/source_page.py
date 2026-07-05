@@ -97,11 +97,12 @@ def render_source_page(
     theses_value = ck_provenance_tooltip(
         "Theses in library",
         ck_fmt_num(n_theses),
+        # Admin note: add new theses by extending
+        # rcm_mc/analysis/deal_sourcer.py::THESIS_LIBRARY — the page picks
+        # them up automatically.
         explainer=(
             "Curated investment theses with target-profile "
-            "definitions. Add new theses by extending "
-            "rcm_mc/analysis/deal_sourcer.py::THESIS_LIBRARY - "
-            "the page picks them up automatically."
+            "definitions."
         ),
         inject_css=False,
     )

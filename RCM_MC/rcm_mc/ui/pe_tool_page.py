@@ -186,7 +186,7 @@ def run_review_tool(slug: str, review: Any) -> Tuple[str, Optional[str]]:
     """Run a registered review-driven tool. Returns (markdown, error)."""
     spec = PE_TOOL_REGISTRY.get(slug)
     if spec is None:
-        return "", f"Tool '{slug}' is not yet wired for inline run."
+        return "", f"Tool '{slug}' does not yet support inline runs."
     try:
         mod = importlib.import_module(f"..pe_intelligence.{slug}", __package__)
         render = getattr(mod, spec["render"])

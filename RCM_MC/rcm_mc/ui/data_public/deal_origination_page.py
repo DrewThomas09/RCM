@@ -262,15 +262,17 @@ def render_deal_origination(params: dict = None) -> str:
             "eyebrow": "DEAL ORIGINATION",
             "headline": "The deal-flow control panel for Monday morning.",
             "italic_word": "control",
+            # Admin note: pipeline/banker/whitespace/velocity tables are
+            # seed data in data_public/deal_origination.py — swap the
+            # _build_* helpers for CRM reads to make them live.
             "body": (
                 "Active pipeline by stage and probability, banker "
                 "relationship scorecard, sector whitespace, win/loss "
                 "diagnosis, and screened→diligenced→LOI→close velocity. "
                 "Use it to decide where origination effort goes this "
-                "quarter. Pipeline / banker / whitespace / velocity "
-                "tables are seed data in data_public/deal_origination.py "
-                "— swap _build_* for CRM reads to make live. Corpus "
-                "Deals is the only live KPI."
+                "quarter. Pipeline, banker, whitespace, and velocity "
+                "tables show illustrative sample data; Corpus Deals is "
+                "the only live metric."
             ),
         },
     )

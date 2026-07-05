@@ -734,8 +734,8 @@ def _covenant_detail_table(res: CovenantStressResult) -> str:
         name="covenant_stress_detail",
         caption=(
             "Green/amber/red cells reflect PE-bank underwriting "
-            "thresholds: click any column to sort, CSV exports "
-            "auto-wired."
+            "thresholds: click any column to sort, CSV export "
+            "available."
         ),
     )
 

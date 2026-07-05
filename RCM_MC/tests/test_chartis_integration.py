@@ -178,7 +178,7 @@ class TestChartisPerDealRoutes(unittest.TestCase):
                 self.assertIn("testdeal", body)
                 self.assertIn("Red Flags", body)
                 self.assertIn("Supplemental Healthcare Signals", body)
-                self.assertIn("Claude Look", body)
+                self.assertIn("AI review", body)
 
     def test_red_flags_handles_missing_deal_without_500(self):
         with tempfile.TemporaryDirectory() as tmp, _ServerHarness(tmp) as srv:
@@ -271,7 +271,7 @@ class TestChartisPhase2BRoutes(unittest.TestCase):
             expect_substrings=(
                 "SUPPLEMENTAL REVIEW SIGNALS",
                 "Supplemental Healthcare Checks",
-                "Claude Look",
+                "AI review",
                 "IC-READY PACKET",
                 "IC Memo",
             ),

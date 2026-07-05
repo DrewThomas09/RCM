@@ -1182,7 +1182,7 @@ def render_regulatory_calendar_page(
         table_headers, table_rows,
         sort_keys=table_sort_keys,
         name=f"regulatory_events_{target_name.replace(' ', '_')}",
-        caption="Click any column header to sort · filter box at top · CSV export auto-wired",
+        caption="Click any column header to sort · filter box at top · CSV export available",
     )
 
     events_panel = (

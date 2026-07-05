@@ -103,11 +103,13 @@ def _methodology(s: dict[str, Any]) -> str:
         "<strong>gazetteer mode</strong> — cross-county distances are "
         "exact haversine from each county's Census internal point to the "
         "nearest geocoded facility." if mode == "gazetteer" else
+        # Admin note: run scripts/ingest_county_gazetteer.py once (network
+        # required) to upgrade every distance to exact geometry; the page
+        # states the switch automatically.
         "<strong>model mode</strong> — the Census county-point file is "
         "not vendored, so cross-county legs use the documented spatial "
-        "formula. Run <code>scripts/ingest_county_gazetteer.py</code> "
-        "once (network required) to upgrade every distance to exact "
-        "geometry; this page will state the switch automatically.")
+        "formula. County-level distances use estimated values until "
+        "additional public datasets are loaded.")
     return ck_panel(
         '<div class="ck-section-body" style="font-size:13px;'
         'line-height:1.55;">'
@@ -143,9 +145,11 @@ def _methodology(s: dict[str, Any]) -> str:
         'split inside each county is the sub-county lever in the model '
         '(real ACS shares). Member-county metro drilldowns live on the '
         'main Texas Infusion page. Census-tract disease prevalence '
-        '(CDC PLACES) is not vendored — '
-        '<code>scripts/ingest_cdc_places.py</code> adds it when run '
-        'with network access (DATA REQUIRED until then).</p>'
+        '(CDC PLACES) is not vendored — county-level prevalence uses '
+        'estimated values until additional public datasets are '
+        'loaded.</p>'
+        # Admin note: scripts/ingest_cdc_places.py adds census-tract CDC
+        # PLACES prevalence when run with network access.
         '</div>',
         title="Methodology & evidence classes",
     )
@@ -387,9 +391,11 @@ def _state_context_panel(ctx: dict[str, Any]) -> str:
             f' diabetes {pl["diabetes_pct"]:.1f}%, obesity '
             f'{pl["obesity_pct"]:.1f}%, fair/poor health '
             f'{pl["fair_poor_health_pct"]:.1f}%, uninsured 18-64 '
-            f'{pl["uninsured_18_64_pct"]:.1f}% — state level; county/'
-            'tract rates need scripts/ingest_cdc_places.py (DATA '
-            'REQUIRED).')
+            f'{pl["uninsured_18_64_pct"]:.1f}% — state level; county '
+            'and tract prevalence use estimated values until additional '
+            'public datasets are loaded.')
+        # Admin note: county/tract rates come from
+        # scripts/ingest_cdc_places.py (network required).
     hp = ctx.get("hpsa")
     if hp:
         bits.append(

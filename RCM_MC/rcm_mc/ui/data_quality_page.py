@@ -305,7 +305,7 @@ def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
         '<strong style="color:var(--sc-negative,#b5321e);">STALE</strong> '
         '(&gt;3). HCRIS reads CURRENT NORMAL because its ~18-month publication '
         'lag is expected, not staleness.</p>',
-        title="Wired sources — live stats")
+        title="Connected sources — live stats")
 
     # ── gap census (reuse the registry the red dots map to) ──
     gap_rows = ""
@@ -369,13 +369,13 @@ def render_data_quality(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'color:var(--sc-text-dim,#6a7480);">Catalogued in '
         'rcm_mc/data/vendor/source_registry.csv with vintages — the named '
         'wiring backlog, not hidden gaps.</p>',
-        title=f"Registered, not yet wired ({len(unwired)})")
+        title=f"Registered, not yet connected ({len(unwired)})")
 
     kpis = (
         '<div class="ck-kpi-grid">'
-        + ck_kpi_block("Wired sources", f"{n_sources_ok}/{len(WIRED)}")
+        + ck_kpi_block("Connected sources", f"{n_sources_ok}/{len(WIRED)}")
         + ck_kpi_block("Live rows served", f"{total_rows:,}")
-        + ck_kpi_block("Registered (unwired)", f"{len(unwired)}")
+        + ck_kpi_block("Registered (not yet connected)", f"{len(unwired)}")
         + '</div>')
 
     body = (

@@ -131,12 +131,13 @@ _JUMP_SECTIONS = (
 def render_healthcare_verticals_reference() -> str:
     """GET /healthcare-verticals-reference — full HTML via chartis_shell."""
     if not DOC_PATH.is_file():
+        # Admin note: this page renders
+        # RCM_MC/docs/HEALTHCARE_VERTICALS_REFERENCE.md, which ships with
+        # the repository under RCM_MC/docs/.
         body = (
             '<section style="max-width:62rem;">'
-            "<h2>Reference missing</h2>"
-            "<p><code>docs/HEALTHCARE_VERTICALS_REFERENCE.md</code> is not "
-            "present in this deployment. It ships with the repository under "
-            "<code>RCM_MC/docs/</code>.</p>"
+            "<h2>Reference unavailable</h2>"
+            "<p>Reference content is unavailable in this deployment.</p>"
             "</section>"
         )
         return chartis_shell(

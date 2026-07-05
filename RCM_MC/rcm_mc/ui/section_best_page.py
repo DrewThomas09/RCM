@@ -131,10 +131,11 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
         )
     else:
         meta = "NO TOOLS YET"
+        # Admin note: run `python scripts/rank_surfaces.py` to refresh the
+        # ranking manifest, then reload this page.
         lede_html = (
             f'<em>Nothing ranked for {_h.escape(title)} yet.</em> '
-            'Run <code>python scripts/rank_surfaces.py</code> to refresh '
-            'the manifest, then reload this page.'
+            'No ranked pages are available for this section yet.'
         )
 
     head = (
@@ -155,10 +156,10 @@ def render_section_best(section: str, qs: Optional[Dict] = None) -> str:
 
     if not rows:
         body = head + ck_panel(
-            f'<p class="ck-section-body">No ranked surfaces for '
-            f'"{_h.escape(title)}" yet. Run '
-            '<code>python scripts/rank_surfaces.py</code> to refresh '
-            'the manifest.</p>',
+            # Admin note: run `python scripts/rank_surfaces.py` to refresh
+            # the ranking manifest.
+            '<p class="ck-section-body">No ranked pages are available for '
+            'this section yet.</p>',
             title="Nothing ranked",
         )
         return chartis_shell(

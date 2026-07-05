@@ -493,7 +493,7 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
     <strong>RxNorm / RxNav</strong> and <strong>openFDA</strong>
     (<code>data_public.public_api_clients</code>) resolve NDC and drug-name
     columns to normalized RxCUI concepts and drug labels. The tab also lists
-    every public-data source wired into the platform (NPPES, OIG LEIE, RxNav,
+    every public-data source connected to the platform (NPPES, OIG LEIE, RxNav,
     openFDA, DailyMed, HRSA, Census, ClinicalTrials, and more) that can be
     enabled for enrichment. All lookups are de-duplicated, capped per run and
     cached; if the network is unavailable the connectors simply no-op and the
@@ -1414,7 +1414,7 @@ _EXTRA_JS = r"""
     if(!cat || !cat.length){ box.innerHTML=""; return; }
     var html='<div class="ck-section-header" style="margin-top:22px">'+
       '<h3 style="margin:0">Connections available</h3></div>'+
-      '<div class="npi-muted">'+cat.length+' public-data sources are wired into '+
+      '<div class="npi-muted">'+cat.length+' public-data sources are connected to '+
       'PE&nbsp;Desk and can be enabled for enrichment.</div><div class="npi-cat">';
     cat.forEach(function(s){
       var free=(s.cost||"").indexOf("free")===0;

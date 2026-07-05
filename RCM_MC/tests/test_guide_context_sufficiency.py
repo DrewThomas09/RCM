@@ -70,8 +70,8 @@ class EveryLivePageHasGuideContext(unittest.TestCase):
 
     def test_no_live_tools_page_is_guide_blind(self):
         from rcm_mc.server import RCMHandler
-        ws, index, _, _ = RCMHandler._build_tools_index_data()
-        routes = sorted({t["path"] for sec in index for t in sec["tools"]})
+        ws, _total = RCMHandler._build_tools_index_data()
+        routes = sorted({t["path"] for sec in ws for t in sec["tools"]})
         blind = [r for r in routes
                  if build_guide_context_packet(r).page_context is None]
         self.assertEqual(blind, [],
