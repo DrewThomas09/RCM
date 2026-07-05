@@ -1190,10 +1190,13 @@ def render_risk_workbench(
 ) -> str:
     # 2026-05-28 batch 20 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
-    # as_subhead=True: this page also renders a top-of-body
-    # ck_page_title (the H1). The editorial deck is the section
-    # head under that H1 — render as H2 so the page satisfies the
-    # One-H1 invariant (audit 2026-05-29).
+    # This editorial head IS the page's one masthead (H1). The
+    # top-of-body ck_page_title it used to sit under was dropped
+    # (see the note in the non-print body below), so as_subhead
+    # must stay off: with no <h1> in the body, chartis_shell's
+    # auto-h1 backstop injected a second full masthead above the
+    # activation panel — the stacked double-masthead defect
+    # (visual review 2026-07-05).
     hero = _RW_CSS + ck_editorial_head(
         eyebrow="DILIGENCE · REGULATORY",
         title="Regulatory Risk Workbench",
@@ -1203,12 +1206,11 @@ def render_risk_workbench(
         ),
         lede_italic_phrase="Nine engines, one panorama.",
         lede_body=(
-            "Live panels for the 9 Tier-1/2/3 diligence subpackages "
-            "(Prompts G-O). Each panel runs its engine against the "
+            "Live panels for the 9 Tier-1/2/3 diligence subpackages. "
+            "Each panel runs its engine against the "
             "supplied inputs; panels without inputs render "
             "'not supplied' rather than fabricating numbers."
         ),
-        as_subhead=True,
     ) + ck_panel(
         '<p class="ck-section-body">'
         '<strong>How to read these panels:</strong> '
@@ -1287,7 +1289,25 @@ def render_risk_workbench(
             # ck_page_title("Risk Workbench") used to stack directly above it,
             # duplicating the title ("Risk Workbench" + "Regulatory Risk
             # Workbench") — the "multiple titles" problem. Dropped.
+            # The data-needed activation panel renders BELOW the head —
+            # prepending it before the hero pushed the body's h1 late and
+            # tripped the shell's auto-h1 backstop into a double masthead.
             hero
+            + data_required_panel(
+                P, title="Risk Workbench",
+                needed=[
+                    ("risk", "risk / regulatory item"),
+                    ("category", "tier 1-3 / cyber / labor / quality"),
+                    ("likelihood", "high / med / low"),
+                    ("impact", "high / med / low"),
+                    ("owner", "owner"),
+                    ("mitigation", "mitigation"),
+                ],
+                template="risk_register_template.csv",
+                request_from="Deal team / risk owners",
+                activates=("the nine-panel risk panorama from your "
+                           "deal's real risk inputs"),
+            )
             + print_cta
             + summary_strip
             + ck_section_header(
@@ -1320,8 +1340,7 @@ def render_risk_workbench(
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
     return chartis_shell(
-        data_required_panel(P, title="Risk Workbench", needed=[("risk","risk / regulatory item"),("category","tier 1-3 / cyber / labor / quality"),("likelihood","high / med / low"),("impact","high / med / low"),("owner","owner"),("mitigation","mitigation")], template="risk_register_template.csv", request_from="Deal team / risk owners", activates="the nine-panel risk panorama from your deal's real risk inputs")
-        + body, "RCM Diligence · Risk Workbench",
+        body, "RCM Diligence · Risk Workbench",
         subtitle="Tier 1-3 + Counterfactual Advisor",
     )
 

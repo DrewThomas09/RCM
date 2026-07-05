@@ -12,6 +12,17 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 
+# Minimum per-payer R² for a regression to participate in the MOIC
+# estimate. Audited 2026-07-05 against the full 509-deal corpus: all
+# three payer regressions land at R² 0.0001–0.0016 with t-stats of
+# 0.2–0.9 (Medicare's slope sign flips in ~50% of bootstrap resamples)
+# — statistically indistinguishable from zero. Applying those slopes
+# would fabricate scenario sensitivity, so the gate stays and the
+# result carries an explicit ``signal_weak`` flag the UI must surface
+# instead of silently rendering identical scenario rows.
+R2_FLOOR = 0.01
+
+
 def _load_corpus() -> List[Dict[str, Any]]:
     from rcm_mc.data_public.deals_corpus import _SEED_DEALS
     from rcm_mc.data_public.extended_seed import EXTENDED_SEED_DEALS
@@ -141,6 +152,13 @@ class PayerStressResult:
     n_corpus_peers: int
     corpus_p50: Optional[float]
     sector_filter: str
+    # True when no payer regression clears R2_FLOOR: every scenario
+    # collapses to the corpus P50 and deltas are all zero BY DESIGN
+    # (the alternative is fabricating sensitivity from noise slopes).
+    # UI surfaces must render an explicit "signal too weak" state
+    # rather than identical-looking rows.
+    signal_weak: bool = False
+    max_r2: float = 0.0
 
 
 def compute_payer_stress(
@@ -203,14 +221,17 @@ def compute_payer_stress(
     all_moics = sorted([_moic(d) for d in peers if _moic(d) is not None])
     corpus_p50 = _percentile(all_moics, 0.50) or 2.5
 
-    # Weighted blend of individual predictions
+    # Weighted blend of individual predictions. Each payer regression
+    # only participates when it clears R2_FLOOR — see the constant's
+    # docstring for why sub-floor slopes are treated as noise rather
+    # than applied "directionally".
     def _predict(c: float, m: float, mc: float) -> float:
-        pred_c = comm_reg.slope * c + comm_reg.intercept if comm_reg.r2 > 0.01 else corpus_p50
-        pred_m = mcare_reg.slope * m + mcare_reg.intercept if mcare_reg.r2 > 0.01 else corpus_p50
-        pred_mc = mcaid_reg.slope * mc + mcaid_reg.intercept if mcaid_reg.r2 > 0.01 else corpus_p50
+        pred_c = comm_reg.slope * c + comm_reg.intercept if comm_reg.r2 > R2_FLOOR else corpus_p50
+        pred_m = mcare_reg.slope * m + mcare_reg.intercept if mcare_reg.r2 > R2_FLOOR else corpus_p50
+        pred_mc = mcaid_reg.slope * mc + mcaid_reg.intercept if mcaid_reg.r2 > R2_FLOOR else corpus_p50
         # Weight by R²
         total_r2 = comm_reg.r2 + mcare_reg.r2 + mcaid_reg.r2
-        if total_r2 < 0.01:
+        if total_r2 < R2_FLOOR:
             return corpus_p50
         wc = comm_reg.r2 / total_r2
         wm = mcare_reg.r2 / total_r2
@@ -284,6 +305,7 @@ def compute_payer_stress(
         ),
     ]
 
+    max_r2 = max(comm_reg.r2, mcare_reg.r2, mcaid_reg.r2)
     return PayerStressResult(
         base_comm=base_comm,
         base_mcare=base_mcare,
@@ -296,4 +318,6 @@ def compute_payer_stress(
         n_corpus_peers=len(peers),
         corpus_p50=corpus_p50,
         sector_filter=sector,
+        signal_weak=max_r2 <= R2_FLOOR,
+        max_r2=max_r2,
     )
