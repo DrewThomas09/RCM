@@ -970,6 +970,13 @@ class TestEngine(unittest.TestCase):
         wb = openpyxl.load_workbook(res.workbook_path)
         self.assertIn("Scorecard", wb.sheetnames)
         self.assertIn("Cleaned data", wb.sheetnames)
+        # Executive summary is the FIRST tab — the page a VP opens to.
+        self.assertEqual(wb.sheetnames[0], "Summary")
+        cells = [str(c.value) for row in wb["Summary"].iter_rows()
+                 for c in row if c.value is not None]
+        joined = " | ".join(cells)
+        self.assertIn("Grade", joined)
+        self.assertIn("Deterministic fixes applied", joined)
 
     def test_sample_csv_cleans(self):
         res = engine.clean_bytes(engine.sample_csv().encode(), "sample.csv")
@@ -1322,6 +1329,121 @@ class TestNppesBridge(unittest.TestCase):
         self.assertEqual(out.count(GOOD_A), 2)
 
 
+_X12_837P = (
+    "ISA*00*          *00*          *ZZ*SUBMITTER      *ZZ*RECEIVER       "
+    "*240110*1200*^*00501*000000001*0*P*:~"
+    "GS*HC*SUB*REC*20240110*1200*1*X*005010X222A1~"
+    "ST*837*0001*005010X222A1~"
+    "BHT*0019*00*1*20240110*1200*CH~"
+    "NM1*85*2*ACME FAMILY CLINIC*****XX*1497758544~"
+    "NM1*IL*1*DOE*JANE****MI*MBR123~"
+    "NM1*PR*2*UNITEDHEALTHCARE*****PI*87726~"
+    "CLM*ACCT001*225***11:B:1*Y*A*Y*Y~"
+    "HI*ABK:E1165~"
+    "NM1*82*1*SMITH*JOHN****XX*1234567893~"
+    "LX*1~"
+    "SV1*HC:99213:25*100*UN*1*11~"
+    "DTP*472*D8*20240110~"
+    "LX*2~"
+    "SV1*HC:93000*125*UN*1~"
+    "DTP*472*D8*20240110~"
+    "CLM*ACCT002*80***11:B:1*Y*A*Y*Y~"
+    "HI*ABK:I10~"
+    "LX*1~"
+    "SV1*HC:99212*80*UN*1~"
+    "DTP*472*D8*20240111~"
+    "SE*20*0001~GE*1*1~IEA*1*000000001~").encode()
+
+_X12_837I = (
+    "ISA*00*          *00*          *ZZ*S              *ZZ*R              "
+    "*240110*1200*^*00501*000000002*0*P*:~"
+    "GS*HC*S*R*20240110*1200*2*X*005010X223A2~"
+    "ST*837*0002*005010X223A2~"
+    "NM1*85*2*MERCY HOSPITAL*****XX*1497758544~"
+    "NM1*IL*1*ROE*MARY****MI*M2~"
+    "NM1*PR*2*MEDICARE~"
+    "CLM*IP001*2500***13:A:1~"
+    "DTP*434*RD8*20240101-20240103~"
+    "HI*ABK:A419~"
+    "NM1*71*1*JONES*SAM****XX*1234567893~"
+    "LX*1~"
+    "SV2*0450*HC:99284*250*UN*1~"
+    "LX*2~"
+    "SV2*0120**2250*UN*3~"
+    "SE*14*0002~GE*1*2~IEA*1*000000002~").encode()
+
+
+class TestX12(unittest.TestCase):
+    """X12 837 ingestion — the native claims wire format, flattened to one
+    row per service line and fed through the normal pipeline."""
+
+    def test_detection(self):
+        from rcm_mc.npi_cleaner import x12
+        self.assertTrue(x12.looks_like_x12(_X12_837P))
+        self.assertFalse(x12.looks_like_x12(b"NPI,Name\n123,ACME\n"))
+        # A CSV whose first header starts with ISA must not be mistaken.
+        self.assertFalse(x12.looks_like_x12(b"ISAN,Other\n1,2\n"))
+
+    def test_837p_flatten(self):
+        from rcm_mc.npi_cleaner import x12
+        h, rows = x12.x12_to_table(_X12_837P)
+        self.assertEqual(len(rows), 3)          # 2 lines + 1 line
+        r0 = dict(zip(h, rows[0]))
+        self.assertEqual(r0["BillingNPI"], "1497758544")
+        self.assertEqual(r0["RenderingNPI"], "1234567893")
+        self.assertEqual(r0["HCPCS"], "99213")
+        self.assertEqual(r0["Modifiers"], "25")
+        self.assertEqual(r0["DateOfService"], "2024-01-10")
+        self.assertEqual(r0["PlaceOfService"], "11")
+        self.assertEqual(r0["DiagnosisCode"], "E1165")
+        self.assertEqual(r0["PayerName"], "UNITEDHEALTHCARE")
+        # Rendering NPI must NOT leak from claim 1 into claim 2.
+        r2 = dict(zip(h, rows[2]))
+        self.assertEqual(r2["ClaimID"], "ACCT002")
+        self.assertEqual(r2["RenderingNPI"], "")
+
+    def test_837i_flatten(self):
+        from rcm_mc.npi_cleaner import x12
+        h, rows = x12.x12_to_table(_X12_837I)
+        i0 = dict(zip(h, rows[0]))
+        self.assertEqual(i0["TypeOfBill"], "131")   # facility 13 + freq 1
+        self.assertEqual(i0["RevenueCode"], "0450")
+        self.assertEqual(i0["AttendingNPI"], "1234567893")
+        self.assertEqual(i0["DateOfService"], "2024-01-01")  # RD8 start
+        i1 = dict(zip(h, rows[1]))
+        self.assertEqual(i1["RevenueCode"], "0120")
+        self.assertEqual(i1["Units"], "3")
+
+    def test_837_through_engine(self):
+        res = engine.clean_bytes(_X12_837P, "claims.837")
+        sc = res.as_scorecard()
+        self.assertEqual(sc["delimiter"], "X12 837 (EDI)")
+        self.assertEqual(sc["rows_in"], 3)
+        self.assertIn("BillingNPI", sc["npi_columns"])
+        self.assertIn("RenderingNPI", sc["npi_columns"])
+        # 1234567893 fails the NPI Luhn check → flagged, not silently kept.
+        self.assertGreater(sc["npi_issues"], 0)
+        # ICD-10 decimal repair fires on the flattened dx (E1165 → E11.65).
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("E11.65", out)
+
+    def test_837_deid_masks_patient(self):
+        res = engine.clean_bytes(_X12_837P, "claims.837", deid=True)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertNotIn("DOE, JANE", out)      # patient masked
+        self.assertIn("ACME FAMILY CLINIC", out)  # provider kept
+
+    def test_non_837_x12_precise_warning(self):
+        ack = (_X12_837P[:106]
+               + b"GS*FA*S*R*20240110*1200*3*X*005010X231A1~"
+                 b"ST*999*0001~AK1*HC*1~SE*3*0001~")
+        res = engine.clean_bytes(ack, "ack.999")
+        self.assertTrue(any("no 837 claim" in w for w in res.warnings))
+        self.assertEqual(res.n_rows_in, 0)
+
+
 class TestMappingTemplates(unittest.TestCase):
     """Named column-mapping templates (mappings.py) — map a source system
     once, reuse per upload via X-Mapping."""
@@ -1474,6 +1596,78 @@ class TestNpiCleanerHttp(unittest.TestCase):
             finally:
                 server.shutdown()
                 server.server_close()
+
+    def test_bundle_download_route(self):
+        # ?fmt=bundle → one zip with the cleaned file, workbook, exec
+        # report, scorecard JSON, and per-rule worklists.
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                csv_b = ("ClaimID,HCPCS\n1,99213\n2,BAD!!\n").encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "b.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                    "?fmt=bundle"
+                ) as r:
+                    self.assertEqual(
+                        r.headers.get("Content-Type"), "application/zip")
+                    blob = r.read()
+                import io as _io
+                import zipfile as _zf
+                with _zf.ZipFile(_io.BytesIO(blob)) as z:
+                    names = z.namelist()
+                    self.assertIn("exec_report.html", names)
+                    self.assertIn("scorecard.json", names)
+                    self.assertIn(j["scorecard"]["out_name"], names)
+                    self.assertIn("worklists/hcpcs-malformed.csv", names)
+                    wl = z.read("worklists/hcpcs-malformed.csv").decode()
+                    self.assertIn("BAD!!", wl)
+                    sc_j = json.loads(z.read("scorecard.json").decode())
+                    self.assertIn("quality", sc_j)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_cli_profile_and_mapping_flags(self):
+        import uuid as _uuid
+        from rcm_mc.npi_cleaner import cli as nc_cli
+        from rcm_mc.npi_cleaner import mappings
+        tpl = f"cli-{_uuid.uuid4().hex[:8]}"
+        mappings.save_mapping(tpl, {"billing_npi": "Prov_Billing_Num"})
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                src = os.path.join(tmp, "in.csv")
+                with open(src, "w", encoding="utf-8") as fh:
+                    fh.write(f"ClaimID,Prov_Billing_Num\n1,{GOOD_A}\n")
+                import contextlib
+                import io as _io
+                out = _io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    rc = nc_cli.main([src, "--mapping", tpl, "--json",
+                                      "--outdir", tmp])
+                self.assertEqual(rc, 0)
+                sc = json.loads(out.getvalue())
+                self.assertEqual(sc["billing_column"], "Prov_Billing_Num")
+                # Unknown names exit 2 with a clear error, not a traceback.
+                self.assertEqual(
+                    nc_cli.main([src, "--mapping", "no-such-tpl"]), 2)
+                self.assertEqual(
+                    nc_cli.main([src, "--profile", "no-such-prof"]), 2)
+        finally:
+            mappings.delete_mapping(tpl)
 
     def test_openapi_documents_npi_cleaner(self):
         from rcm_mc.infra.openapi import get_openapi_spec

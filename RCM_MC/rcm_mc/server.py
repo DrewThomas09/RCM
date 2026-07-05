@@ -2796,6 +2796,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if not raw:
             return self._send_json(
                 {"error": "Empty upload."}, status=HTTPStatus.BAD_REQUEST)
+        # X12 837 uploads have a fixed, engine-defined layout — the column
+        # mapping editor doesn't apply, so skip straight to cleaning.
+        from .npi_cleaner import x12 as _x12
+        if _x12.looks_like_x12(raw):
+            return self._send_json({"available": False})
         result = engine.detect_columns_preview(raw)
         if result is None:
             # Detector unavailable (no pandas) — tell the client to skip the
@@ -2865,6 +2870,70 @@ class RCMHandler(BaseHTTPRequestHandler):
                 job.result.as_scorecard(), job.name,
                 _edt.now(_etz.utc).strftime("%Y-%m-%d %H:%M UTC"))
             return self._send_html(html_doc)
+        if fmt == "bundle":
+            # Everything in one zip: cleaned file, workbook, change log,
+            # corrections, exec report, scorecard JSON, per-rule worklists.
+            # The artifact a team attaches to the ticket for the source
+            # system — no chasing five separate downloads.
+            import csv as _csv
+            import io as _io
+            import json as _bjson
+            import zipfile as _zf
+            from datetime import datetime as _bdt, timezone as _btz
+            from .npi_cleaner.exec_report import build_exec_report
+            r = job.result
+            buf = _io.BytesIO()
+            with _zf.ZipFile(buf, "w", _zf.ZIP_DEFLATED) as z:
+                for p, n in ((r.out_path, r.out_name),
+                             (r.workbook_path, r.workbook_name),
+                             (r.changelog_path, r.changelog_name),
+                             (r.companion_path, r.companion_name)):
+                    if p:
+                        try:
+                            z.write(p, n)
+                        except OSError:
+                            pass
+                sc_b = r.as_scorecard()
+                z.writestr("exec_report.html", build_exec_report(
+                    sc_b, job.name,
+                    _bdt.now(_btz.utc).strftime("%Y-%m-%d %H:%M UTC")))
+                z.writestr("scorecard.json",
+                           _bjson.dumps(sc_b, indent=2, default=str))
+                # Worklists: one pass over the cleaned file, split by rule.
+                if r.flag_rows and r.out_path:
+                    _want = {}          # row index → rules that flagged it
+                    for rule, idxs in r.flag_rows.items():
+                        for i in idxs:
+                            _want.setdefault(i, []).append(rule)
+                    _sinks = {rule: _io.StringIO()
+                              for rule in r.flag_rows if r.flag_rows[rule]}
+                    _writers = {k: _csv.writer(v) for k, v in _sinks.items()}
+                    try:
+                        with open(r.out_path, encoding="utf-8") as fh:
+                            rd = _csv.reader(fh)
+                            hdr = next(rd, None)
+                            if hdr:
+                                for w in _writers.values():
+                                    w.writerow(["_row"] + hdr)
+                            for i, row in enumerate(rd, start=1):
+                                for rule in _want.get(i, ()):
+                                    _writers[rule].writerow([i] + row)
+                        for rule, sink in _sinks.items():
+                            safe = "".join(c for c in rule
+                                           if c.isalnum() or c == "-")
+                            z.writestr(f"worklists/{safe}.csv",
+                                       sink.getvalue())
+                    except OSError:
+                        pass
+            data = buf.getvalue()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/zip")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="npi_clean_bundle.zip"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if fmt == "xlsx":
             src_path = job.result.workbook_path
             fname = job.result.workbook_name

@@ -1105,7 +1105,8 @@ class CleanResult:
             "health_pct": health,
             "column_stats": self.column_stats,
             "delimiter": {",": "comma", "\t": "tab", ";": "semicolon",
-                          "|": "pipe", "xlsx": "xlsx (Excel)"}.get(
+                          "|": "pipe", "xlsx": "xlsx (Excel)",
+                          "x12": "X12 837 (EDI)"}.get(
                               self.delimiter, self.delimiter),
             "out_name": self.out_name,
             "workbook_name": self.workbook_name if self.workbook_path else None,
@@ -1197,6 +1198,12 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str]:
     if _looks_like_xlsx(data):
         headers, body = _read_xlsx(data)
         return headers, body, "xlsx"
+    from . import x12 as _x12
+    if _x12.looks_like_x12(data):
+        parsed = _x12.x12_to_table(data)
+        if parsed is not None:
+            return parsed[0], parsed[1], "x12"
+        return [], [], "x12"          # X12 but not 837 — precise warning later
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -1300,6 +1307,15 @@ def clean_bytes(
         return _res
     res = CleanResult(delimiter=delim, headers=headers)
     res.n_rows_in = len(rows)
+    if not headers and delim == "x12":
+        res.warnings.append(
+            "This is an X12 interchange but it contains no 837 claim (CLM) "
+            "segments — an 835 remittance, 999 acknowledgment, or 270/276 "
+            "inquiry can't be cleaned as claims.")
+        res.out_name = _out_name(src_name)
+        _write_output(res, headers, [])
+        cb("Done", 1.0)
+        return res
     if not headers:
         res.warnings.append("File appears to be empty — no header row found.")
         res.out_name = _out_name(src_name)

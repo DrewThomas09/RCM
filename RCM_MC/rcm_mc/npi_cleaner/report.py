@@ -39,9 +39,50 @@ def _header(cells: List[str]):
 def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
     """Assemble the report workbook bytes from a CleanResult + cleaned table."""
     sheets: List[Sheet] = []
-
-    # ---- Scorecard (first, so it opens on the summary) ----
     sc = res.as_scorecard()
+
+    # ---- Executive summary (first tab — the page a VP actually reads;
+    #      mirrors the ?fmt=exec one-pager so the emailed .xlsx carries
+    #      the same verdict + remediation as the web report). ----
+    _q0 = sc.get("quality") or {}
+    exec_rows = [
+        _header(["NPI Claims Cleaner — executive summary", ""]),
+        ["Grade", f"{_q0.get('letter', '—')} ({_q0.get('score', '—')}/100)"],
+        ["Rows", f"{res.n_rows_in} in → {res.n_rows_out} out"],
+        ["Duplicates removed", res.n_dupes_removed],
+        ["Deterministic fixes applied", sum(res.repairs.values())],
+        ["Rows flagged (all findings)",
+         sum((sc.get("sanity") or {}).values())],
+        ["Source format", sc["delimiter"]],
+    ]
+    _sn0 = sc.get("sanity") or {}
+    if _sn0:
+        exec_rows.append(_header(["Top findings", "Rows"]))
+        try:
+            from . import rules as _rules_mod
+        except Exception:  # noqa: BLE001 — registry missing → raw ids
+            _rules_mod = None
+        for rule, n in sorted(_sn0.items(), key=lambda kv: -kv[1])[:8]:
+            info = _rules_mod.describe(rule) if _rules_mod else {}
+            title = info.get("title") or rule
+            sev = info.get("severity") or ""
+            exec_rows.append([f"{title}" + (f"  [{sev}]" if sev else ""), n])
+            rem = (info.get("remediation") or "").strip()
+            if rem:
+                exec_rows.append(["    → " + rem[:140], ""])
+    _creds0 = sc.get("credentials") or {}
+    if _creds0:
+        exec_rows.append(_header(["Credential mix", "Cells"]))
+        for c, n in sorted(_creds0.items(), key=lambda kv: -kv[1])[:8]:
+            exec_rows.append([c, n])
+    _specs0 = sc.get("specialties") or []
+    if _specs0:
+        exec_rows.append(_header(["Specialty mix", "Rows"]))
+        for s in _specs0[:8]:
+            exec_rows.append([s.get("name") or s.get("code"), s.get("n")])
+    sheets.append(Sheet("Summary", exec_rows, col_widths=[56, 16]))
+
+    # ---- Scorecard ----
     score_rows = [
         _header(["Metric", "Value"]),
         ["Rows in", res.n_rows_in],

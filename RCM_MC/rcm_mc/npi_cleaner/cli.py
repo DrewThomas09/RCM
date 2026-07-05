@@ -22,7 +22,13 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
         prog=prog,
         description="Clean a claims file offline (CSV/TSV/XLSX) — same "
                     "engine as /npi-cleaner, batch-friendly.")
-    ap.add_argument("file", help="claims file to clean (.csv/.tsv/.xlsx)")
+    ap.add_argument("file",
+                    help="claims file to clean (.csv/.tsv/.xlsx/.837 X12)")
+    ap.add_argument("--profile", default=None, metavar="NAME",
+                    help="apply a saved cleaning profile (rule suite + "
+                         "thresholds) by name")
+    ap.add_argument("--mapping", default=None, metavar="NAME",
+                    help="apply a saved column-mapping template by name")
     ap.add_argument("--no-dedupe", action="store_true",
                     help="keep exact-duplicate rows")
     ap.add_argument("--deid", action="store_true",
@@ -42,9 +48,25 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
         return 2
 
     from . import engine
+    prof_cfg = None
+    if args.profile:
+        from . import profiles as _profiles
+        prof_cfg = _profiles.get_profile(args.profile)
+        if prof_cfg is None:
+            sys.stderr.write(f"error: no such profile: {args.profile}\n")
+            return 2
+    overrides = None
+    if args.mapping:
+        from . import mappings as _mappings
+        overrides = _mappings.get_mapping(args.mapping)
+        if overrides is None:
+            sys.stderr.write(
+                f"error: no such mapping template: {args.mapping}\n")
+            return 2
     res = engine.clean_bytes(src.read_bytes(), src.name,
                              drop_duplicates=not args.no_dedupe,
-                             deid=args.deid)
+                             deid=args.deid, profile=prof_cfg,
+                             overrides=overrides)
     sc = res.as_scorecard()
 
     outdir = Path(args.outdir) if args.outdir else src.parent

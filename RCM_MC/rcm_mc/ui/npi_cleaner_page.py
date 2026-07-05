@@ -196,11 +196,11 @@ def _body() -> str:
       <div class="cloud">⤒</div>
       <div class="big">Drag a claims file here</div>
       <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, or Excel (.xlsx) · up to 200&nbsp;MB ·
+        CSV, TSV, Excel (.xlsx), or X12 837 (.837/.edi) · up to 200&nbsp;MB ·
         <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
     </div>
     <input type="file" id="npi-file" class="npi-hidden"
-           accept=".csv,.tsv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+           accept=".csv,.tsv,.txt,.xlsx,.837,.edi,.x12,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <div class="npi-opts">
       <label><input type="checkbox" id="npi-dedupe" checked>
         Remove exact-duplicate rows</label>
@@ -367,6 +367,8 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
            style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
         <a class="npi-dl npi-dl-alt" id="npi-dl-changelog" href="#" download
            style="margin-left:10px;display:none">⤓ Change log — audit trail (.csv)</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-bundle" href="#" download
+           style="margin-left:10px">⤓ Everything (.zip)</a>
       </div>
       <div style="margin-top:16px">
         <button class="npi-again" id="npi-again">Clean another file</button>
@@ -534,6 +536,9 @@ _EXTRA_JS = r"""
       lbtn.setAttribute("download", s.changelog_name);
       lbtn.style.display="";
     } else { lbtn.style.display="none"; }
+    var bbtn=$("npi-dl-bundle");
+    bbtn.setAttribute("href", s.download+"?fmt=bundle");
+    bbtn.setAttribute("download", "npi_clean_bundle.zip");
 
     if(currentJobId){ $("npi-analyze").setAttribute("href",
       "/npi-cleaner/analyze/"+currentJobId);
@@ -1154,7 +1159,7 @@ _EXTRA_JS = r"""
   // Step 1 — a file is chosen: detect columns, then show the mapping editor.
   function chooseFile(file){
     if(!file) return;
-    if(file.size > 10*1024*1024){ fail("File is larger than 10 MB."); return; }
+    if(file.size > 200*1024*1024){ fail("File is larger than 200 MB."); return; }
     currentFile=file;
     hide(stUp); hide(stErr); hide(stRes); show(stPr);
     $("npi-bar-fill").style.width="3%";
@@ -1288,7 +1293,7 @@ _EXTRA_JS = r"""
       if(!j.job_id){ fail("Upload did not return a job id."); return; }
       watch(j.job_id);
     })
-    .catch(function(e){ fail("Upload failed. Is the file under 10 MB?"); });
+    .catch(function(e){ fail("Upload failed. Is the file under 200 MB?"); });
   }
 
   initTabs();
