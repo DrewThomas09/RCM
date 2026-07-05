@@ -1066,7 +1066,8 @@ class CleanResult:
                        "occurrence-code-malformed", "value-code-malformed",
                        "drg-malformed", "tob-malformed",
                        "discharge-status-invalid", "admission-type-invalid",
-                       "modifier-unknown")
+                       "modifier-unknown", "icd10-unknown-code",
+                       "hcpcs-unknown-code")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1618,6 +1619,18 @@ def clean_bytes(
         from . import refdata as _rd
     except Exception:  # noqa: BLE001 — refdata missing → those checks off
         _rd = None
+    # Reference-data packs (refdata_packs.py): the FULL public code sets,
+    # loaded once per run when the user has pulled them. None → the
+    # corresponding pack-gated checks simply stay off; nothing about the
+    # zero-setup path changes.
+    _icd_pack = _hcpcs_pack = _leie_pack = None
+    try:
+        from . import refdata_packs as _packs
+        _icd_pack = _packs.icd10_codes()
+        _hcpcs_pack = _packs.hcpcs_codes()
+        _leie_pack = _packs.leie_npis()
+    except Exception:  # noqa: BLE001 — packs never block cleaning
+        pass
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).date()
     # Profile-tunable thresholds (see profiles.py) with safe defaults.
@@ -1996,6 +2009,36 @@ def clean_bytes(
                 if _parts2 and any(_rd.ub_code_malformed(p)
                                    for p in _parts2):
                     res.sanity[_rule2] = res.sanity.get(_rule2, 0) + 1
+        # Pack-gated validity: codes that pass every SHAPE check but do
+        # not exist in the authoritative set (counted once per row, like
+        # the other row-level flags). Off until the pack is pulled.
+        if _icd_pack is not None and dx_set:
+            for _dxi in dx_set:
+                _dxv = new_row[_dxi] if _dxi < len(new_row) else ""
+                _dxn = _dxv.strip().upper().replace(".", "")
+                if (_dxn and not _icd10_malformed(_dxv)
+                        and _dxn not in _icd_pack):
+                    res.sanity["icd10-unknown-code"] = \
+                        res.sanity.get("icd10-unknown-code", 0) + 1
+                    break
+        if _hcpcs_pack is not None and hcpcs_set:
+            for _hxi in hcpcs_set:
+                _hxv = (new_row[_hxi] if _hxi < len(new_row) else "").strip()
+                _hxv = _hxv.upper()
+                # Level II only: letter + 4 digits. Numeric CPT-4 codes
+                # are AMA-licensed — shape-checked elsewhere, never
+                # membership-checked here.
+                if (len(_hxv) == 5 and _hxv[0].isalpha()
+                        and _hxv[1:].isdigit() and _hxv not in _hcpcs_pack):
+                    res.sanity["hcpcs-unknown-code"] = \
+                        res.sanity.get("hcpcs-unknown-code", 0) + 1
+                    break
+        if (_leie_pack is not None and billing_idx is not None
+                and billing_idx < len(new_row)):
+            _bnd = "".join(c for c in new_row[billing_idx] if c.isdigit())
+            if len(_bnd) == 10 and _bnd in _leie_pack:
+                res.sanity["leie-excluded-npi"] = \
+                    res.sanity.get("leie-excluded-npi", 0) + 1
         # Chronology impossibilities. Normalized ISO dates compare correctly
         # as strings, so no re-parsing per row.
         if (dob_i is not None and dos_i is not None

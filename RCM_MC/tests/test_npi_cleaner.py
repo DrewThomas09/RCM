@@ -3706,5 +3706,218 @@ class TestPhase2(unittest.TestCase):
                 server.server_close()
 
 
+
+class TestRefdataPacks(unittest.TestCase):
+    """Reference-data packs: pull the real public code sets (NUCC / CMS /
+    OIG), store with provenance, and light up pack-gated checks. All
+    tests run offline against fixture payloads via a mocked opener."""
+
+    def setUp(self):
+        import rcm_mc.npi_cleaner.refdata_packs as packs
+        self.packs = packs
+        self.tmp = tempfile.TemporaryDirectory()
+        self.db = os.path.join(self.tmp.name, "refpacks.sqlite3")
+        self.p_db = patch.object(packs, "_DB_PATH",
+                                 __import__("pathlib").Path(self.db))
+        self.p_db.start()
+        packs._CACHE.clear()
+
+    def tearDown(self):
+        self.p_db.stop()
+        self.packs._CACHE.clear()
+        self.tmp.cleanup()
+
+    class _Resp:
+        def __init__(self, payload):
+            self._buf = __import__("io").BytesIO(payload)
+
+        def read(self, n=-1):
+            return self._buf.read(n)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def _opener(self, by_url):
+        resp_cls = self._Resp
+
+        def open_(req, timeout=0):
+            url = req.full_url
+            payload = by_url.get(url)
+            if payload is None:
+                raise OSError(f"blocked: {url}")
+            return resp_cls(payload)
+        return open_
+
+    def _taxonomy_csv(self):
+        return ("Code,Grouping,Classification,Specialization,Definition\n"
+                "207X00000X,Allopathic & Osteopathic Physicians,"
+                "Orthopaedic Surgery,,d\n"
+                "207XS0114X,Allopathic & Osteopathic Physicians,"
+                "Orthopaedic Surgery,Adult Reconstructive Orthopaedic "
+                "Surgery,d\n").encode()
+
+    def _icd_zip(self):
+        import io as _io
+        import zipfile as _zf
+        buf = _io.BytesIO()
+        with _zf.ZipFile(buf, "w") as z:
+            z.writestr("icd10cm_codes_2026.txt",
+                       "E1165   Type 2 diabetes mellitus with hyperglycemia\n"
+                       "I10     Essential (primary) hypertension\n")
+        return buf.getvalue()
+
+    def _leie_csv(self):
+        return ("LASTNAME,FIRSTNAME,EXCLTYPE,NPI,EXCLDATE\n"
+                f"DOE,JOHN,1128a1,{GOOD_A},20240101\n"
+                "EMPTY,NONE,1128a1,0000000000,20240101\n").encode()
+
+    def test_pull_installs_with_provenance_and_url_fallback(self):
+        urls = self.packs._nucc_urls()
+        # First candidate 404s, second succeeds — the puller walks on.
+        opener = self._opener({urls[1]: self._taxonomy_csv()})
+        info = self.packs.pull("taxonomy", opener=opener)
+        self.assertEqual(info["rows"], 2)
+        self.assertEqual(info["source"], urls[1])
+        st = {p["id"]: p for p in self.packs.status()}
+        self.assertTrue(st["taxonomy"]["installed"])
+        self.assertEqual(st["taxonomy"]["rows"], 2)
+        self.assertTrue(st["taxonomy"]["sha256"])
+        self.assertFalse(st["leie"]["installed"])
+        # The pack now answers lookups the curated subset can't.
+        from rcm_mc.npi_cleaner import refdata
+        self.assertIn("Adult Reconstructive",
+                      refdata.taxonomy_specialty("207XS0114X"))
+
+    def test_unknown_pack_and_dead_urls_raise_readably(self):
+        with self.assertRaises(ValueError):
+            self.packs.pull("nope", opener=self._opener({}))
+        with self.assertRaises(ValueError) as ctx:
+            self.packs.pull("leie", opener=self._opener({}))
+        self.assertIn("NPI_REFPACK_URL_LEIE", str(ctx.exception))
+
+    def test_icd10_pack_gates_unknown_code_flag(self):
+        url = "https://x.test/icd.zip"
+        self.packs.pull("icd10cm", opener=self._opener(
+            {url: self._icd_zip()}), url=url)
+        csv_rows = ["ClaimID,DiagnosisCode",
+                    "1,E11.65",   # known (dot stripped)
+                    "2,E11.9",    # shaped fine, NOT in the pack
+                    "3,NOTACODE"]  # malformed → shape flag, not unknown
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "dx.csv")
+        self.assertEqual(res.sanity.get("icd10-unknown-code"), 1)
+        self.assertIn("icd10-unknown-code", res.flag_rows)
+        # Without the pack the flag never fires.
+        self.packs._CACHE.clear()
+        with patch.object(self.packs, "icd10_codes", lambda: None):
+            res2 = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                      "dx.csv")
+        self.assertNotIn("icd10-unknown-code", res2.sanity)
+
+    def test_leie_pack_screens_offline_and_feeds_compliance(self):
+        url = "https://x.test/leie.csv"
+        self.packs.pull("leie", opener=self._opener(
+            {url: self._leie_csv()}), url=url)
+        csv_rows = ["ClaimID,BillingProviderNPI",
+                    f"1,{GOOD_A}", f"2,{GOOD_B}"]
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "leie.csv")
+        self.assertEqual(res.sanity.get("leie-excluded-npi"), 1)
+        # Compliance screen falls back to the pack with no env/path.
+        from rcm_mc.npi_cleaner import compliance
+        env = dict(os.environ)
+        os.environ.pop("RCM_MC_LEIE_CSV", None)
+        try:
+            out = compliance.screen_leie([GOOD_A, GOOD_B])
+        finally:
+            os.environ.update(env)
+        self.assertTrue(out["available"])
+        self.assertEqual(out["excluded"], 1)
+        self.assertIn("reference pack", out["source"])
+
+    def test_refdata_routes_and_cli_status(self):
+        import contextlib
+        import io as _io
+        from rcm_mc.npi_cleaner import cli as nc_cli
+        out = _io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = nc_cli.main(["--refdata-status"])
+        self.assertEqual(rc, 0)
+        self.assertIn("taxonomy", out.getvalue())
+        self.assertIn("not installed", out.getvalue())
+
+        with tempfile.TemporaryDirectory() as tmp:
+            import socket as _socket
+            import threading
+            from rcm_mc.server import build_server
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/refdata"
+                ) as r:
+                    j = json.loads(r.read().decode())
+                ids = {p["id"] for p in j["packs"]}
+                self.assertEqual(ids, {"taxonomy", "icd10cm", "hcpcs",
+                                       "leie"})
+                # Bad pack name → 400, not a silent thread.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}"
+                    "/npi-cleaner/api/refdata/pull",
+                    data=json.dumps({"pack": "bogus"}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json"})
+                try:
+                    _u.urlopen(req)
+                    self.fail("expected 400")
+                except _ue.HTTPError as e:
+                    self.assertEqual(e.code, 400)
+                # A real pack pulls in the background (pull mocked).
+                with patch.object(self.packs, "pull",
+                                  lambda pid, **kw: {"rows": 1,
+                                                     "source": "t",
+                                                     "sha256": "x",
+                                                     "pack": pid}):
+                    req = _u.Request(
+                        f"http://127.0.0.1:{port}"
+                        "/npi-cleaner/api/refdata/pull",
+                        data=json.dumps({"pack": "taxonomy"}).encode(),
+                        method="POST",
+                        headers={"Content-Type": "application/json"})
+                    with _u.urlopen(req) as r:
+                        j = json.loads(r.read().decode())
+                    self.assertEqual(j["pulling"], ["taxonomy"])
+                    for _ in range(100):
+                        state = self.packs._PULLS.get("taxonomy", {})
+                        if state.get("state") == "done":
+                            break
+                        time.sleep(0.02)
+                    self.assertEqual(state.get("state"), "done")
+            finally:
+                self.packs._PULLS.clear()
+                server.shutdown()
+                server.server_close()
+
+    def test_hcpcs_parser_keeps_level_ii_only(self):
+        raw = ("J1100 Injection dexamethasone sodium phosphate 1 mg\n"
+               "99213 OFFICE VISIT EST LOW MDM\n"
+               "A0428 Ambulance service BLS non-emergency\n").encode()
+        rows = dict(self.packs._parse_hcpcs(raw))
+        self.assertIn("J1100", rows)
+        self.assertIn("A0428", rows)
+        self.assertNotIn("99213", rows)  # CPT-4 never stored
+
+
 if __name__ == "__main__":
     unittest.main()
+

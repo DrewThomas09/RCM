@@ -78,15 +78,30 @@ def screen_leie(npis: List[str], *, leie_path: Optional[str] = None) -> dict:
         "available": False, "checked": 0, "excluded": 0,
         "matches": [], "note": "",
     }
-    if not path or not Path(path).exists():
-        out["note"] = ("No LEIE dataset loaded. Download the monthly LEIE CSV "
-                       "from oig.hhs.gov and set RCM_MC_LEIE_CSV to enable "
-                       "excluded-provider screening.")
-        return out
-    excluded = _leie_npi_set(path)
+    excluded: Optional[set] = None
+    if path and Path(path).exists():
+        excluded = _leie_npi_set(path)
+        if excluded is None:
+            out["note"] = ("LEIE dataset could not be read (expected a CSV "
+                           "with an NPI column).")
+            return out
+    else:
+        # No file configured — fall back to the pulled reference pack
+        # (Reference data packs → leie), which is how most deployments
+        # should run this now: one click, refreshed monthly, no env var.
+        try:
+            from . import refdata_packs as _packs
+            pack = _packs.leie_npis()
+            if pack is not None:
+                excluded = set(pack)
+                out["source"] = ("HHS OIG LEIE (installed reference pack)")
+        except Exception:  # noqa: BLE001
+            excluded = None
     if excluded is None:
-        out["note"] = ("LEIE dataset could not be read (expected a CSV with an "
-                       "NPI column).")
+        out["note"] = ("No LEIE dataset loaded. Pull the leie reference "
+                       "pack (Reference data packs on the cleaner page, or "
+                       "rcm-mc npi-clean --refdata-pull leie), or set "
+                       "RCM_MC_LEIE_CSV to a downloaded UPDATED.csv.")
         return out
     out["available"] = True
     distinct, _trunc = _distinct_npis(npis, 10_000)

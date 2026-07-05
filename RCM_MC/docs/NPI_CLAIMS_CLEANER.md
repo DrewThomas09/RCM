@@ -168,6 +168,34 @@ Everything is guarded (a mart failure never blocks cleaning), computed
 post-de-identification (stable tokens keep grouping intact), and skipped
 in 10 GB streaming mode (whole-table by nature — the warning says so).
 
+## Reference data packs — pull the real code sets
+
+The curated catalogs in `refdata.py` grade files out of the box with
+zero setup. The authoritative public sets are one pull away
+(`refdata_packs.py`) — from the card on the cleaner page, from
+`POST /npi-cleaner/api/refdata/pull {"pack": "all"}`, or from cron:
+
+```
+rcm-mc npi-clean --refdata-pull all     # needs outbound HTTPS
+rcm-mc npi-clean --refdata-status
+```
+
+| Pack | Source | What installing it enables |
+|---|---|---|
+| `taxonomy` | NUCC taxonomy CSV (~870 codes) | Full specialty display names in the specialty mix |
+| `icd10cm` | CMS/CDC ICD-10-CM code file (~74k) | `icd10-unknown-code` — shaped-but-nonexistent diagnoses (graded, validity) |
+| `hcpcs` | CMS HCPCS Level II quarterly (~8k) | `hcpcs-unknown-code` for letter-led codes (CPT-4 is AMA-licensed — shape-checked only, never stored) |
+| `leie` | OIG exclusion list (monthly CSV) | `leie-excluded-npi` — **automatic offline excluded-provider screening on every run** (critical severity; no env var, no online mode). The compliance panel's LEIE screen also reads the pack when no `RCM_MC_LEIE_CSV` is set |
+
+Each pack records provenance (source URL, fetch time, row count,
+SHA-256) in a dedicated WORKDIR SQLite file; URLs roll with CMS/NUCC
+release patterns (candidates tried newest-first) and every pack accepts
+an `NPI_REFPACK_URL_<ID>` override for mirrors or pinned versions.
+Pack-gated rules are OFF until the pack is installed — nothing about
+the zero-setup path changes. Licensing stays explicit: NUCC, ICD-10-CM
+and LEIE are public; CPT-4 and the full X12 CARC/RARC lists are
+licensed and remain curated subsets.
+
 ## Huge files (up to 10 GB, streamed)
 
 CSV/TSV uploads are accepted up to **10 GB**. Bodies above ~32 MB never
@@ -272,9 +300,11 @@ rcm-mc npi-clean sites.zip  --bundle            # batch a zip of extracts
 ```
 rcm_mc/npi_cleaner/
 ├── engine.py       cleaning engine: repairs, flags, scorecard, jobs
-├── rules.py        declarative registry (69 rules)
+├── rules.py        declarative registry (72 rules)
 ├── refdata.py      claims reference catalogs (POS/TOB/CARC/RARC/
 │                   chronic-condition groups/…)
+├── refdata_packs.py pull-and-install public code sets (NUCC taxonomy,
+│                   ICD-10-CM, HCPCS II, OIG LEIE) with provenance
 ├── analytics.py    population marts: service mix, encounters,
 │                   conditions, volume integrity, coding intensity
 ├── bigfile.py      10 GB streamed cleaning (chunk + merge)

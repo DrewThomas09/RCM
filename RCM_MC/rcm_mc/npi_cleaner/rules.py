@@ -213,6 +213,30 @@ _RULES: List[Rule] = [
          "A well-formed 2-character modifier that isn't in the standard "
          "catalog — often a typo (Q6 vs 06), sometimes payer-proprietary.",
          "Verify against the payer companion guide.", "validity"),
+    Rule("icd10-unknown-code", "flag", "warning", "Coding",
+         "Diagnosis code not in ICD-10-CM",
+         "A diagnosis that is shaped correctly but does not exist in the "
+         "ICD-10-CM code set. Runs only when the icd10cm reference pack "
+         "is installed (pull it under Reference data packs).",
+         "Usually a keyed digit or a retired code — verify against the "
+         "current code set.", "validity"),
+    Rule("hcpcs-unknown-code", "flag", "warning", "Coding",
+         "HCPCS Level II code not in the set",
+         "A letter-led procedure code (A–V + 4 digits) that does not "
+         "exist in the CMS HCPCS Level II file. Runs only when the hcpcs "
+         "pack is installed. Numeric CPT-4 codes are AMA-licensed and are "
+         "shape-checked only.",
+         "Verify against the current quarterly HCPCS release.",
+         "validity"),
+    Rule("leie-excluded-npi", "flag", "critical", "Compliance",
+         "Billing NPI on the OIG exclusion list",
+         "The billing provider appears on the OIG List of Excluded "
+         "Individuals/Entities — claims involving excluded providers are "
+         "direct fraud exposure. Runs automatically and offline on every "
+         "run once the leie pack is installed (refresh monthly).",
+         "Stop billing immediately and escalate to compliance counsel; "
+         "verify the match on the OIG site (NPI-level match).",
+         "validity"),
 
     # --------------------------------------------------- flags: consistency --
     Rule("allowed-exceeds-billed", "flag", "critical", "Amounts",

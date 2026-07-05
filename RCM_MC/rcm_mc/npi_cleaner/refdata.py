@@ -1491,6 +1491,16 @@ TAXONOMY_SPECIALTIES: Dict[str, str] = {
 
 
 def taxonomy_specialty(code: str) -> Optional[str]:
+    # Full NUCC catalog when the reference pack is installed; the curated
+    # high-volume subset otherwise. Pack lookup is guarded — a broken
+    # pack store must never take specialty names down with it.
+    try:
+        from . import refdata_packs as _packs
+        name = _packs.taxonomy_display(code)
+        if name:
+            return name
+    except Exception:  # noqa: BLE001
+        pass
     return TAXONOMY_SPECIALTIES.get(code.strip().upper())
 
 

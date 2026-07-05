@@ -4072,6 +4072,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_json(
                 {"requests": _nc_wishlist.list_requests(_status),
                  "categories": list(_nc_wishlist.CATEGORIES)})
+        if path == "/npi-cleaner/api/refdata":
+            # Reference-data packs: installed state + provenance per pack,
+            # plus any in-flight pull.
+            from .npi_cleaner import refdata_packs as _nc_packs
+            return self._send_json({"packs": _nc_packs.status()})
         if path in ("/npi-cleaner/api/profiles/export",
                     "/npi-cleaner/api/mappings/export"):
             # Portable JSON download so teams can share suites/templates
@@ -14453,6 +14458,27 @@ class RCMHandler(BaseHTTPRequestHandler):
                 return self._send_json({"error": "id (int) required"},
                                        status=HTTPStatus.BAD_REQUEST)
             return self._send_json({"ok": _nc_wishlist.delete_request(rid)})
+        if path == "/npi-cleaner/api/refdata/pull":
+            # Pull one pack (or every pack) in the background:
+            # {"pack": "leie" | "all"}. Progress via GET …/api/refdata.
+            from .npi_cleaner import refdata_packs as _nc_packs
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                body = {}
+            want = str((body or {}).get("pack") or "").strip().lower()
+            ids = (list(_nc_packs.PACKS) if want == "all"
+                   else [want] if want in _nc_packs.PACKS else [])
+            if not ids:
+                return self._send_json(
+                    {"error": "pack must be one of: "
+                              + ", ".join(sorted(_nc_packs.PACKS))
+                              + ", or 'all'"},
+                    status=HTTPStatus.BAD_REQUEST)
+            for pid in ids:
+                _nc_packs.pull_async(pid)
+            return self._send_json({"ok": True, "pulling": ids})
         if path == "/npi-cleaner/api/mappings":
             # Save a named mapping template: {"name": ..., "mapping": {...}}.
             from .npi_cleaner import mappings as _nc_mappings

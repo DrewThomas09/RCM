@@ -438,6 +438,21 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
     <div id="npi-wish-list" style="margin-top:10px"></div>
   </div>
 
+  <div id="npi-refdata" style="border:1px solid var(--line,#d2ddd7);
+      border-radius:8px;padding:16px;margin-top:14px">
+    <div style="font-size:14px;font-weight:640;margin-bottom:4px">
+      Reference data packs — pull the real code sets</div>
+    <div class="npi-muted" style="font-size:12.5px;margin-bottom:10px">
+      The cleaner grades files out of the box with curated catalogs. Pull
+      the authoritative public sets to go further: the full NUCC taxonomy,
+      the complete ICD-10-CM and HCPCS Level II code sets (activates
+      shaped-but-nonexistent-code flags), and the OIG exclusion list
+      (activates automatic offline excluded-provider screening on every
+      run). Downloads run on this server from nucc.org / cms.gov /
+      oig.hhs.gov; each pack records its source, row count and SHA-256.</div>
+    <div id="npi-refdata-list"><span class="npi-muted">Loading…</span></div>
+  </div>
+
   <div class="npi-note">
     <strong>What "cleaned" means.</strong> An NPI is <em>valid</em> when it is
     exactly 10 digits and passes the Luhn check over the constant prefix
@@ -1775,6 +1790,65 @@ _EXTRA_JS = r"""
     .catch(function(){ msg.textContent="Could not reach the server."; });
   });
   loadWishlist();
+
+  // ---- Reference data packs: status + one-click pulls ----
+  var refdataTimer=null;
+  function loadRefdata(){
+    fetch("/npi-cleaner/api/refdata").then(function(r){ return r.json(); })
+      .then(function(j){
+        var box=$("npi-refdata-list"); if(!box) return;
+        var packs=j.packs||[];
+        var pulling=false;
+        var h='<table class="npi-tbl"><thead><tr><th>Pack</th>'+
+          '<th>Status</th><th>Enables</th><th></th></tr></thead><tbody>';
+        packs.forEach(function(p){
+          var st;
+          if(p.pull && p.pull.state==="pulling"){
+            st='<span class="npi-sig warn">pulling… </span>'; pulling=true;
+          } else if(p.pull && p.pull.state==="error"){
+            st='<span class="npi-sig bad" title="'+esc(p.pull.note)+
+               '">pull failed</span>';
+          } else if(p.installed){
+            var d=p.fetched?new Date(p.fetched*1000)
+              .toISOString().slice(0,10):"";
+            st='<span class="npi-sig" style="color:var(--green-deep,'+
+               '#0c7c66);font-weight:600">'+fmt(p.rows)+' rows · '+
+               esc(d)+'</span>';
+          } else {
+            st='<span class="npi-muted">not installed</span>';
+          }
+          h+='<tr><td><strong>'+esc(p.title)+'</strong><br>'+
+            '<span class="npi-muted" style="font-size:11px">'+
+            esc(p.license)+'</span></td>'+
+            '<td>'+st+'</td>'+
+            '<td class="npi-muted" style="font-size:12px">'+
+            esc(p.enables)+'</td>'+
+            '<td><button class="npi-again npi-ref-pull" data-pack="'+
+            esc(p.id)+'">'+(p.installed?"refresh":"pull")+
+            '</button></td></tr>';
+        });
+        h+='</tbody></table>'+
+          '<div style="margin-top:8px"><button class="npi-again" '+
+          'id="npi-ref-pull-all">Pull everything</button></div>';
+        box.innerHTML=h;
+        function startPull(pack){
+          fetch("/npi-cleaner/api/refdata/pull", {method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({pack:pack})})
+          .then(function(){ loadRefdata(); }).catch(function(){});
+        }
+        box.querySelectorAll(".npi-ref-pull").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            startPull(this.getAttribute("data-pack")); });
+        });
+        var allBtn=$("npi-ref-pull-all");
+        if(allBtn){ allBtn.addEventListener("click", function(){
+          startPull("all"); }); }
+        if(refdataTimer){ clearTimeout(refdataTimer); refdataTimer=null; }
+        if(pulling){ refdataTimer=setTimeout(loadRefdata, 2500); }
+      }).catch(function(){});
+  }
+  loadRefdata();
 
   initTabs();
   drop.addEventListener("click", function(){ fileIn.click(); });
