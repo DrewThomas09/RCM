@@ -1022,6 +1022,10 @@ class CleanResult:
     deep: Optional[Dict[str, object]] = None
     deep_workbook_path: Optional[str] = None
     deep_workbook_name: str = "recovered.xlsx"
+    # Streaming-chunk handoff (see bigfile.py): the cleaned table is returned
+    # in memory instead of written to WORKDIR so the streamer can append it
+    # to ONE master output file. Never set on a normal run.
+    chunk_payload: Optional[Tuple[List[str], List[List[str]]]] = None
 
     @property
     def total_npi_cells(self) -> int:
@@ -1414,6 +1418,7 @@ def clean_bytes(
     profile: Optional[Dict[str, object]] = None,
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
+    _stream_chunk: bool = False,
 ) -> CleanResult:
     """Clean a delimited claims file given as raw bytes.
 
@@ -1421,6 +1426,12 @@ def clean_bytes(
     against the live NPPES registry and rows with a missing/bad billing NPI but
     a provider name are run through NPPES recovery — both via the app's shared
     CMS connection (``nppes_bridge``), fully guarded.
+
+    ``_stream_chunk`` is the internal huge-file mode (bigfile.py): the cleaned
+    table is handed back on ``res.chunk_payload`` instead of written to disk,
+    and per-run side effects that belong to the WHOLE file — history record,
+    trend alerts, the pandas suggestions companion — are skipped so a 10 GB
+    upload doesn't record 200 history rows for one run.
     """
     def cb(msg: str, frac: float) -> None:
         if progress:
@@ -2404,23 +2415,34 @@ def clean_bytes(
     # consistency + dedup screens when pandas and the modules are available.
     # Guarded end-to-end — any failure just leaves res.advanced None and the
     # stdlib results stand on their own.
-    cb("Running the v49 deterministic engine (repairs · screens · issues)", 0.82)
-    try:
-        from . import vendor_adapter
-        adv = vendor_adapter.run(data, overrides)
-        if adv:
-            # The full companion can be large — keep it out of the JSON the
-            # browser polls; retain it for the CSV/workbook downloads and
-            # expose only a small preview inline.
-            res.suggestions_records = adv.pop("suggestions_records", []) or []
-            adv["suggestions_sample"] = res.suggestions_records[:25]
-        res.advanced = adv
-    except Exception:  # noqa: BLE001
+    if _stream_chunk:
+        # Chunk mode: the pandas suggestions pass would re-run per chunk and
+        # produce row indices no one can offset reliably — skipped, matching
+        # zip-batch mode's "no fan-out" rule.
         res.advanced = None
+    else:
+        cb("Running the v49 deterministic engine (repairs · screens · issues)",
+           0.82)
+        try:
+            from . import vendor_adapter
+            adv = vendor_adapter.run(data, overrides)
+            if adv:
+                # The full companion can be large — keep it out of the JSON
+                # the browser polls; retain it for the CSV/workbook downloads
+                # and expose only a small preview inline.
+                res.suggestions_records = adv.pop(
+                    "suggestions_records", []) or []
+                adv["suggestions_sample"] = res.suggestions_records[:25]
+            res.advanced = adv
+        except Exception:  # noqa: BLE001
+            res.advanced = None
 
     cb("Writing cleaned file", 0.90)
     res.out_name = _out_name(src_name)
-    _write_output(res, headers, cleaned)
+    if _stream_chunk:
+        res.chunk_payload = (headers, cleaned)
+    else:
+        _write_output(res, headers, cleaned)
 
     # Deep recovery — the full networked v49 pipeline, opt-in, guarded, with
     # its own timeout. Runs last so the fast deterministic results are already
@@ -2450,14 +2472,16 @@ def clean_bytes(
     # Longitudinal observability: aggregate summary only, never PHI, and
     # guarded so history storage can never fail the cleaning job. Trend
     # alerts compare against the PREVIOUS run of this file, so they must
-    # be computed before this run is recorded.
-    try:
-        from . import history as _history
-        res.trend_alerts = _history.trend_alerts(res.as_scorecard(),
-                                                 src_name)
-        _history.record_run(res.as_scorecard(), src_name)
-    except Exception:  # noqa: BLE001
-        pass
+    # be computed before this run is recorded. A streaming chunk is not a
+    # run — bigfile.py records the merged result once.
+    if not _stream_chunk:
+        try:
+            from . import history as _history
+            res.trend_alerts = _history.trend_alerts(res.as_scorecard(),
+                                                     src_name)
+            _history.record_run(res.as_scorecard(), src_name)
+        except Exception:  # noqa: BLE001
+            pass
     cb("Done", 1.0)
     return res
 
@@ -2697,6 +2721,11 @@ def _write_output(res: CleanResult, headers: List[str],
 
 
 # ------------------------------------------------------------- job management --
+class JobCancelled(Exception):
+    """Raised inside a job's progress callback when the user cancels — the
+    only sanctioned way to stop a multi-hour streaming run mid-flight."""
+
+
 @dataclass
 class Job:
     job_id: str
@@ -2707,12 +2736,20 @@ class Job:
     error: Optional[str] = None
     result: Optional[CleanResult] = None
     created: float = 0.0
+    cancelled: bool = False
 
     def status_dict(self) -> Dict[str, object]:
         d: Dict[str, object] = {
             "job_id": self.job_id, "frac": round(self.frac, 3),
             "msg": self.msg, "done": self.done, "error": self.error,
         }
+        # A 10 GB job runs for hours — the page needs "how much longer",
+        # not just a percentage. Linear projection over elapsed/frac is
+        # honest enough once real work is under way.
+        if not self.done and self.created and self.frac >= 0.03:
+            elapsed = max(0.0, time.time() - self.created)
+            d["elapsed_secs"] = round(elapsed)
+            d["eta_secs"] = round(elapsed * (1.0 - self.frac) / self.frac)
         if self.result is not None:
             d["scorecard"] = self.result.as_scorecard()
             d["download"] = f"/npi-cleaner/download/{self.job_id}"
@@ -2750,6 +2787,8 @@ class JobManager:
 
         def _run() -> None:
             def cb(msg: str, frac: float) -> None:
+                if job.cancelled:
+                    raise JobCancelled()
                 job.msg, job.frac = msg, float(frac)
             try:
                 job.result = clean_bytes(
@@ -2757,6 +2796,9 @@ class JobManager:
                     enrich=enrich, deep=deep, deid=deid,
                     overrides=overrides, profile=profile, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
+            except JobCancelled:
+                job.error = "Cancelled by user."
+                job.msg, job.done = "Cancelled", True
             except Exception as exc:  # noqa: BLE001
                 traceback.print_exc()
                 job.error = f"{type(exc).__name__}: {exc}"
@@ -2764,6 +2806,62 @@ class JobManager:
 
         threading.Thread(target=_run, daemon=True).start()
         return job_id
+
+    def submit_path(self, path: str, name: str, *,
+                    drop_duplicates: bool = True, enrich: bool = False,
+                    deep: bool = False, deid: bool = False,
+                    overrides: Optional[Dict[str, str]] = None,
+                    profile: Optional[Dict[str, object]] = None,
+                    cleanup: bool = True) -> str:
+        """Start a cleaning job over a file already ON DISK (a spooled
+        upload). Huge files stream through bigfile.clean_path in bounded
+        memory instead of being read whole; the spool file is removed when
+        the job finishes either way (``cleanup``)."""
+        job_id = uuid.uuid4().hex
+        job = Job(job_id=job_id, name=name, created=time.time())
+        with self._lock:
+            self._jobs[job_id] = job
+            self._evict()
+
+        def _run() -> None:
+            def cb(msg: str, frac: float) -> None:
+                if job.cancelled:
+                    raise JobCancelled()
+                job.msg, job.frac = msg, float(frac)
+            try:
+                from . import bigfile
+                job.result = bigfile.clean_path(
+                    path, name, drop_duplicates=drop_duplicates,
+                    enrich=enrich, deep=deep, deid=deid,
+                    overrides=overrides, profile=profile, progress=cb)
+                job.frac, job.msg, job.done = 1.0, "Done", True
+            except JobCancelled:
+                job.error = "Cancelled by user."
+                job.msg, job.done = "Cancelled", True
+            except Exception as exc:  # noqa: BLE001
+                traceback.print_exc()
+                job.error = f"{type(exc).__name__}: {exc}"
+                job.done = True
+            finally:
+                if cleanup:
+                    try:
+                        Path(path).unlink(missing_ok=True)
+                    except OSError:
+                        pass
+
+        threading.Thread(target=_run, daemon=True).start()
+        return job_id
+
+    def cancel(self, job_id: str) -> bool:
+        """Flag a running job for cancellation. The worker notices at its
+        next progress tick (between chunks on a streaming run) — there is
+        no thread kill, so partial artifacts are cleaned up normally."""
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None or job.done:
+                return False
+            job.cancelled = True
+            return True
 
     def get(self, job_id: str) -> Optional[Job]:
         with self._lock:

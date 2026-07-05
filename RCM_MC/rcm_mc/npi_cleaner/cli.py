@@ -68,7 +68,11 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
             sys.stderr.write(
                 f"error: no such mapping template: {args.mapping}\n")
             return 2
-    res = engine.clean_bytes(src.read_bytes(), src.name,
+    # clean_path handles both sizes: small files take the normal in-memory
+    # pipeline, huge ones stream in bounded-memory chunks (bigfile.py) —
+    # the cron door accepts the same 10 GB extracts the web door does.
+    from . import bigfile
+    res = bigfile.clean_path(str(src), src.name,
                              drop_duplicates=not args.no_dedupe,
                              deid=args.deid, profile=prof_cfg,
                              overrides=overrides)

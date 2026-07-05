@@ -664,8 +664,22 @@ _SPEC: Dict[str, Any] = {
                 ],
                 "requestBody": {"content": {"application/octet-stream": {
                     "schema": {"type": "string", "format": "binary",
-                               "description": "CSV/TSV/XLSX, X12 837/835, or zip batch (≤200 MB)"}}}},
+                               "description": "CSV/TSV up to 10 GB (bodies "
+                               "above ~32 MB spool to disk and clean in "
+                               "streamed chunks); XLSX, X12 837/835 and zip "
+                               "batches up to 200 MB"}}}},
                 "responses": {"200": {"description": "{job_id}"}},
+            },
+        },
+        "/npi-cleaner/cancel/{job_id}": {
+            "post": {
+                "summary": "Cancel a running cleaning job (cooperative — "
+                           "the worker stops at its next progress tick)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [{"name": "job_id", "in": "path",
+                                "required": True,
+                                "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "{ok}"}},
             },
         },
         "/npi-cleaner/status/{job_id}": {
@@ -762,6 +776,48 @@ _SPEC: Dict[str, Any] = {
                 ],
                 "responses": {"200": {"description": "Comparison payload"}},
             },
+        },
+        "/npi-cleaner/api/wishlist": {
+            "get": {
+                "summary": "List feature requests (\"missing something?\" backlog)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "status", "in": "query",
+                     "schema": {"type": "string",
+                                "enum": ["open", "planned", "shipped",
+                                         "declined"]}},
+                ],
+                "responses": {"200": {"description": "{requests, categories}"}},
+            },
+            "post": {
+                "summary": "Log a feature request (check/field/payer/format)",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object",
+                               "required": ["title"],
+                               "properties": {
+                                   "category": {"type": "string",
+                                                "enum": ["rule", "field",
+                                                         "payer", "format",
+                                                         "integration",
+                                                         "other"]},
+                                   "title": {"type": "string",
+                                             "maxLength": 120},
+                                   "details": {"type": "string",
+                                               "maxLength": 2000},
+                               }}}}},
+                "responses": {"200": {"description": "{ok, request}"}},
+            },
+        },
+        "/npi-cleaner/api/wishlist/status": {
+            "post": {"summary": "Move a wishlist request through the backlog",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "{ok}"}}},
+        },
+        "/npi-cleaner/api/wishlist/delete": {
+            "post": {"summary": "Delete a wishlist request by id",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "{ok}"}}},
         },
     },
     "tags": [

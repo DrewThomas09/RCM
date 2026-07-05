@@ -55,6 +55,13 @@ MAX_REQUEST_BYTES = 10_000_000  # 10 MB — rejects oversized POSTs early
 # applies to every other endpoint.
 NPI_UPLOAD_MAX_BYTES = 200_000_000  # 200 MB — claims-file uploads
 _LARGE_UPLOAD_PATHS = ("/npi-cleaner/upload", "/npi-cleaner/detect")
+# The upload endpoint itself goes far higher: bodies above the spool
+# threshold stream straight to disk (never into memory) and huge files
+# clean in bounded-memory chunks (npi_cleaner.bigfile) — a 10 GB extract
+# is a valid, hours-long job. Detect keeps the 200 MB in-memory ceiling
+# because column preview parses the body.
+NPI_UPLOAD_STREAM_MAX_BYTES = 10_000_000_000  # 10 GB — streamed uploads
+_NPI_SPOOL_THRESHOLD_BYTES = 32_000_000  # bodies above this spool to disk
 
 import threading as _threading
 
@@ -2730,21 +2737,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.wfile.write(encoded)
 
     # ─────────────────────────── NPI Claims Cleaner (/npi-cleaner) ──────────
-    def _route_npi_cleaner_upload(self, parsed) -> None:
-        """Accept a raw-body claims-file upload and start a cleaning job.
-
-        The page POSTs the file bytes directly (X-Filename header carries the
-        URL-encoded name) — no multipart parsing, matching the vendored
-        webapp's convention. Returns ``{"job_id": ...}`` for the client to
-        poll. The engine is stdlib-only; nothing is written to the DB.
-        """
-        from .npi_cleaner import engine
-
-        raw = self._raw_post_body()
-        if not raw:
-            return self._send_json(
-                {"error": "Empty upload — no file bytes received."},
-                status=HTTPStatus.BAD_REQUEST)
+    def _npi_upload_options(self, parsed):
+        """Parse the shared upload knobs (name, toggles, mapping, profile)
+        from the request. Used by both the in-memory and the spooled-to-disk
+        upload paths so a 10 GB file honours the same options a 10 KB one
+        does."""
         raw_name = self.headers.get("X-Filename", "claims.csv")
         try:
             name = urllib.parse.unquote(raw_name)
@@ -2783,9 +2780,79 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .npi_cleaner import profiles as _nc_profiles
             _prof_cfg = _nc_profiles.get_profile(
                 urllib.parse.unquote(_prof_name))
+        return {"name": name, "drop_duplicates": dedupe, "enrich": enrich,
+                "deep": deep, "deid": deid, "overrides": overrides,
+                "profile": _prof_cfg}
+
+    def _spool_upload_body(self, length: int):
+        """Stream the request body to a temp file in the cleaner's WORKDIR
+        in 4 MB blocks — a 10 GB upload must never pass through memory.
+        Returns the spool path, or None when the client hung up early (the
+        partial file is removed)."""
+        from .npi_cleaner.engine import WORKDIR
+        import uuid as _uuid
+        updir = WORKDIR / "uploads"
+        updir.mkdir(parents=True, exist_ok=True)
+        spool = updir / f"upload_{_uuid.uuid4().hex}.spool"
+        remaining = length
+        try:
+            with open(spool, "wb") as fh:
+                while remaining > 0:
+                    block = self.rfile.read(min(4 * 1024 * 1024, remaining))
+                    if not block:
+                        break
+                    fh.write(block)
+                    remaining -= len(block)
+        except OSError:
+            spool.unlink(missing_ok=True)
+            return None
+        if remaining > 0:
+            spool.unlink(missing_ok=True)
+            return None
+        return str(spool)
+
+    def _route_npi_cleaner_upload(self, parsed) -> None:
+        """Accept a raw-body claims-file upload and start a cleaning job.
+
+        The page POSTs the file bytes directly (X-Filename header carries the
+        URL-encoded name) — no multipart parsing, matching the vendored
+        webapp's convention. Returns ``{"job_id": ...}`` for the client to
+        poll. The engine is stdlib-only; nothing is written to the DB.
+
+        Bodies above the spool threshold stream to disk and the job cleans
+        the file in bounded-memory chunks (npi_cleaner.bigfile) — this is
+        the 10 GB path, expected to run for hours.
+        """
+        from .npi_cleaner import engine
+
+        content_length = int(self.headers.get("Content-Length") or 0)
+        if content_length > _NPI_SPOOL_THRESHOLD_BYTES:
+            opts = self._npi_upload_options(parsed)
+            spool = self._spool_upload_body(content_length)
+            if spool is None:
+                return self._send_json(
+                    {"error": "Upload interrupted — the full file did not "
+                              "arrive. Please retry."},
+                    status=HTTPStatus.BAD_REQUEST)
+            job_id = engine.manager().submit_path(
+                spool, opts["name"],
+                drop_duplicates=opts["drop_duplicates"],
+                enrich=opts["enrich"], deep=opts["deep"],
+                overrides=opts["overrides"], deid=opts["deid"],
+                profile=opts["profile"])
+            return self._send_json({"job_id": job_id})
+
+        raw = self._raw_post_body()
+        if not raw:
+            return self._send_json(
+                {"error": "Empty upload — no file bytes received."},
+                status=HTTPStatus.BAD_REQUEST)
+        opts = self._npi_upload_options(parsed)
         job_id = engine.manager().submit(
-            raw, name, drop_duplicates=dedupe, enrich=enrich, deep=deep,
-            overrides=overrides, deid=deid, profile=_prof_cfg)
+            raw, opts["name"], drop_duplicates=opts["drop_duplicates"],
+            enrich=opts["enrich"], deep=opts["deep"],
+            overrides=opts["overrides"], deid=opts["deid"],
+            profile=opts["profile"])
         return self._send_json({"job_id": job_id})
 
     def _route_npi_cleaner_detect(self) -> None:
@@ -3917,6 +3984,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/npi-cleaner/api/mappings":
             from .npi_cleaner import mappings as _nc_mappings
             return self._send_json({"mappings": _nc_mappings.list_mappings()})
+        if path == "/npi-cleaner/api/wishlist":
+            from .npi_cleaner import wishlist as _nc_wishlist
+            _wq = urllib.parse.parse_qs(parsed.query)
+            _status = (_wq.get("status") or [None])[0]
+            return self._send_json(
+                {"requests": _nc_wishlist.list_requests(_status),
+                 "categories": list(_nc_wishlist.CATEGORIES)})
         if path in ("/npi-cleaner/api/profiles/export",
                     "/npi-cleaner/api/mappings/export"):
             # Portable JSON download so teams can share suites/templates
@@ -14199,7 +14273,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.FORBIDDEN,
                 )
         content_length = int(self.headers.get("Content-Length") or 0)
-        _max_bytes = (NPI_UPLOAD_MAX_BYTES if path in _LARGE_UPLOAD_PATHS
+        _max_bytes = (NPI_UPLOAD_STREAM_MAX_BYTES
+                      if path == "/npi-cleaner/upload"
+                      else NPI_UPLOAD_MAX_BYTES
+                      if path in _LARGE_UPLOAD_PATHS
                       else MAX_REQUEST_BYTES)
         if content_length > _max_bytes:
             return self._send_json(
@@ -14221,6 +14298,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_npi_cleaner_detect()
         if path == "/npi-cleaner/upload":
             return self._route_npi_cleaner_upload(parsed)
+        if path.startswith("/npi-cleaner/cancel/"):
+            # Stop a running job (a 10 GB streaming run is hours — the
+            # user must be able to bail out). Cooperative: the worker
+            # notices at its next progress tick.
+            from .npi_cleaner import engine as _nc_engine
+            _cjid = path[len("/npi-cleaner/cancel/"):].strip("/")
+            return self._send_json(
+                {"ok": _nc_engine.manager().cancel(_cjid)})
         if path == "/npi-cleaner/api/profiles":
             # Save a named cleaning profile: {"name": ..., "config": {...}}.
             from .npi_cleaner import profiles as _nc_profiles
@@ -14242,6 +14327,46 @@ class RCMHandler(BaseHTTPRequestHandler):
                 body = {}
             ok = _nc_profiles.delete_profile(str(body.get("name") or ""))
             return self._send_json({"ok": ok})
+        if path == "/npi-cleaner/api/wishlist":
+            # Log a "missing something?" request:
+            # {"category": ..., "title": ..., "details": ...}.
+            from .npi_cleaner import wishlist as _nc_wishlist
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                if not isinstance(body, dict):
+                    raise ValueError("body must be a JSON object")
+                rec = _nc_wishlist.add_request(
+                    str(body.get("category") or ""),
+                    str(body.get("title") or ""),
+                    str(body.get("details") or ""))
+            except (ValueError, TypeError) as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": True, "request": rec})
+        if path == "/npi-cleaner/api/wishlist/status":
+            # Move a request through the backlog:
+            # {"id": N, "status": "open"|"planned"|"shipped"|"declined"}.
+            from .npi_cleaner import wishlist as _nc_wishlist
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                rid = int(body.get("id"))
+            except (ValueError, TypeError):
+                return self._send_json({"error": "id (int) required"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            ok = _nc_wishlist.set_status(rid, str(body.get("status") or ""))
+            return self._send_json({"ok": ok})
+        if path == "/npi-cleaner/api/wishlist/delete":
+            from .npi_cleaner import wishlist as _nc_wishlist
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                rid = int(body.get("id"))
+            except (ValueError, TypeError):
+                return self._send_json({"error": "id (int) required"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": _nc_wishlist.delete_request(rid)})
         if path == "/npi-cleaner/api/mappings":
             # Save a named mapping template: {"name": ..., "mapping": {...}}.
             from .npi_cleaner import mappings as _nc_mappings

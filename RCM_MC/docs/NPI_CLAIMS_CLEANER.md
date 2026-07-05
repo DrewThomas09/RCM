@@ -113,6 +113,51 @@ precise warning instead of an empty result.
   JSON (`/api/profiles/export|import`, `/api/mappings/export|import`);
   every import re-passes the save-time sanitizer.
 
+## Huge files (up to 10 GB, streamed)
+
+CSV/TSV uploads are accepted up to **10 GB**. Bodies above ~32 MB never
+pass through memory — the server spools them to disk and the job cleans
+the file with `npi_cleaner/bigfile.py`:
+
+- The file is read as complete records (quote-aware, so embedded
+  newlines never split a row) and grouped into ~48 MB chunks; every
+  chunk runs the **exact same deterministic pipeline** as a normal
+  upload, and chunk results merge the way zip-batch results do (summed
+  counters, one blended grade). Cleaned rows append to one master
+  output CSV as they are produced, so memory stays bounded by the chunk
+  size no matter the input — a 10 GB file is simply many hours of
+  chunks, and the job's progress reports per-chunk (% of file).
+- Change-log rows stream to the master audit CSV with **global** row
+  indices; worklist row indices are offset to the merged output, so
+  per-rule and per-payer downloads slice the right rows.
+- Scope (surfaced as warnings on the run): duplicate removal is
+  per-chunk (adjacent dupes — the common real case — still die); online
+  modes, the suggestions companion, the xlsx workbook and whole-table
+  analytics (payer clusters, outliers, claim rollup, dictionary) are
+  skipped. The grade itself is exact — all five score dimensions come
+  from summed counters. One history record for the whole run.
+- Non-splittable formats (xlsx / zip / X12) keep the 200 MB in-memory
+  ceiling; past it the run returns instructions to export CSV instead
+  of an OOM. The `rcm-mc npi-clean` CLI routes through the same
+  `clean_path`, so cron gets the 10 GB door too.
+- **Long-run ergonomics**: job status carries `elapsed_secs`/`eta_secs`
+  (linear projection once real work is under way) and the page shows
+  "about Nh remaining"; `POST /npi-cleaner/cancel/<job_id>` cancels a
+  running job cooperatively — the worker stops at its next progress
+  tick (between chunks on a streaming run), no thread kill.
+
+## Wishlist ("missing something?")
+
+The page carries a request card: category (rule / field / payer /
+format / integration / other), one-line title, optional details.
+Requests persist to a dedicated WORKDIR SQLite file (config text only,
+never claim data, length-capped) and move through a backlog
+(open → planned → shipped/declined) — `GET/POST
+/npi-cleaner/api/wishlist`, `POST …/wishlist/status`, `POST
+…/wishlist/delete`. The run-history page carries the triage table
+(change status, delete). This is the front door for feeding the
+cleaner's improvement loop with what real feeds actually need.
+
 ## 837↔835 reconciliation
 
 `POST /npi-cleaner/api/reconcile` with `{"a": <claims job id>, "b":

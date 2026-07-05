@@ -2958,5 +2958,435 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 server.server_close()
 
 
+class TestBigFileStreaming(unittest.TestCase):
+    """Chunked streaming (bigfile.py): a file above the threshold cleans in
+    bounded-memory chunks and merges to the SAME numbers the in-memory
+    pipeline produces. Thresholds are patched tiny so a kilobyte fixture
+    exercises the multi-chunk path."""
+
+    def _fixture(self, n_rows: int = 400) -> bytes:
+        # Dirty on purpose: a whitespace NPI (repair), formatted money
+        # (repair), one adjacent exact-duplicate pair at the START (same
+        # chunk under any boundary), and a future service date on the LAST
+        # row so worklist/changelog offsets past chunk 1 are proven global.
+        rows = ["ClaimID,BillingProviderNPI,ChargeAmt,DateOfService"]
+        rows.append(f"1, {GOOD_A} ,\"$1,250.50\",2024-02-11")
+        rows.append(f"1, {GOOD_A} ,\"$1,250.50\",2024-02-11")  # exact dup
+        for i in range(2, n_rows - 1):
+            rows.append(f"{i},{GOOD_B},420,2024-03-0{1 + i % 9}")
+        rows.append(f"{n_rows},{GOOD_A},99,2099-01-01")  # future date, last
+        return ("\n".join(rows) + "\n").encode()
+
+    def test_stream_matches_in_memory(self):
+        from rcm_mc.npi_cleaner import bigfile
+        data = self._fixture()
+        ref = engine.clean_bytes(data, "big.csv")
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "big.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 512), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 2048):
+                res = bigfile.clean_path(p, "big.csv")
+
+        # Multi-chunk actually happened.
+        self.assertTrue(any("Streaming mode" in w and "chunk" in w
+                            for w in res.warnings), res.warnings[:2])
+        # Core numbers identical to the one-shot pipeline: every counter is
+        # a per-row/per-cell sum and the only duplicate pair is adjacent.
+        self.assertEqual(res.n_rows_in, ref.n_rows_in)
+        self.assertEqual(res.n_rows_out, ref.n_rows_out)
+        self.assertEqual(res.n_dupes_removed, 1)
+        self.assertEqual(res.repairs, ref.repairs)
+        self.assertEqual(res.sanity, ref.sanity)
+        self.assertEqual(res.n_changes, ref.n_changes)
+        self.assertEqual(res.n_cells_total, ref.n_cells_total)
+        self.assertEqual(res.n_cells_filled, ref.n_cells_filled)
+        self.assertEqual(res.column_stats, ref.column_stats)
+        self.assertEqual(res.quality()["score"], ref.quality()["score"])
+        # Worklist indices are OUTPUT-global: the future-date row is the
+        # very last output row, far past chunk 1.
+        self.assertEqual(res.flag_rows.get("date-in-future"),
+                         ref.flag_rows.get("date-in-future"))
+        self.assertEqual(res.flag_rows["date-in-future"][-1],
+                         res.n_rows_out)
+
+        # The master output: one header + every cleaned row, cells cleaned.
+        with open(res.out_path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+        self.assertEqual(len(lines), 1 + res.n_rows_out)
+        self.assertEqual(lines[0].split(",")[1], "BillingProviderNPI")
+        self.assertIn(f"1,{GOOD_A},1250.50,2024-02-11", lines[1])
+
+        # The master changelog: global INPUT row indices, including one on
+        # the last input row's chunk-2+ territory.
+        self.assertTrue(res.changelog_path)
+        with open(res.changelog_path, encoding="utf-8") as fh:
+            log_lines = fh.read().splitlines()
+        self.assertEqual(len(log_lines) - 1, ref.n_changes)
+        max_row = max(int(ln.split(",")[0]) for ln in log_lines[1:])
+        self.assertLessEqual(max_row, res.n_rows_in)
+        self.assertGreater(max_row, 100)  # offsets applied past chunk 1
+
+    def test_quoted_newlines_never_split_a_record(self):
+        from rcm_mc.npi_cleaner import bigfile
+        rows = ["ClaimID,Note,BillingProviderNPI"]
+        for i in range(1, 201):
+            rows.append(f'{i},"line one\nline two",{GOOD_A}')
+        data = ("\n".join(rows) + "\n").encode()
+        ref = engine.clean_bytes(data, "q.csv")
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "q.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 256), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 1024):
+                res = bigfile.clean_path(p, "q.csv")
+        self.assertEqual(res.n_rows_in, ref.n_rows_in)
+        self.assertEqual(res.n_rows_out, ref.n_rows_out)
+
+    def test_small_file_delegates_to_in_memory_pipeline(self):
+        from rcm_mc.npi_cleaner import bigfile
+        data = engine.sample_csv().encode()
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "s.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            res = bigfile.clean_path(p, "s.csv")
+        ref = engine.clean_bytes(data, "s.csv")
+        self.assertEqual(res.n_rows_out, ref.n_rows_out)
+        # Full artifact set — small files keep the workbook et al.
+        self.assertTrue(res.workbook_path)
+
+    def test_huge_non_splittable_format_gets_instructions(self):
+        from rcm_mc.npi_cleaner import bigfile
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "w.xlsx")
+            with open(p, "wb") as fh:
+                fh.write(b"PK\x03\x04" + b"\x00" * 500)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 64), \
+                    patch.object(bigfile, "_FORMAT_INMEM_MAX_BYTES", 128):
+                res = bigfile.clean_path(p, "w.xlsx")
+        self.assertEqual(res.n_rows_out, 0)
+        self.assertTrue(any("can't be split" in w for w in res.warnings),
+                        res.warnings)
+
+    def test_stream_chunk_mode_skips_run_side_effects(self):
+        # A chunk hands the table back in memory: no output files, no
+        # history record for the chunk itself.
+        from rcm_mc.npi_cleaner import history as _history
+        before = len(_history.list_runs(500))
+        res = engine.clean_bytes(engine.sample_csv().encode(), "chunk.csv",
+                                 _stream_chunk=True)
+        self.assertIsNotNone(res.chunk_payload)
+        headers, cleaned = res.chunk_payload
+        self.assertEqual(len(cleaned), res.n_rows_out)
+        self.assertIsNone(res.out_path)
+        self.assertIsNone(res.workbook_path)
+        self.assertEqual(len(_history.list_runs(500)), before)
+
+
+class TestWishlist(unittest.TestCase):
+    """The "missing something?" backlog: store roundtrip + HTTP routes."""
+
+    def test_store_roundtrip_and_caps(self):
+        from rcm_mc.npi_cleaner import wishlist
+        import uuid as _uuid
+        marker = _uuid.uuid4().hex[:12]
+        rec = wishlist.add_request("payer", f"Add Elevance family {marker}",
+                                   "BCBS of GA rebranded")
+        try:
+            self.assertEqual(rec["status"], "open")
+            self.assertEqual(rec["category"], "payer")
+            listed = wishlist.list_requests()
+            mine = [r for r in listed if marker in str(r["title"])]
+            self.assertEqual(len(mine), 1)
+            # Status lifecycle; unknown statuses refused.
+            self.assertTrue(wishlist.set_status(rec["id"], "planned"))
+            self.assertFalse(wishlist.set_status(rec["id"], "hacked"))
+            planned = wishlist.list_requests("planned")
+            self.assertTrue(any(r["id"] == rec["id"] for r in planned))
+            # Caps: hostile title/category can't grow the store or invent
+            # categories.
+            big = wishlist.add_request("<script>", "x" * 5000, "y" * 90000)
+            try:
+                self.assertEqual(big["category"], "other")
+                self.assertEqual(len(big["title"]), 120)
+                self.assertEqual(len(big["details"]), 2000)
+            finally:
+                wishlist.delete_request(big["id"])
+            with self.assertRaises(ValueError):
+                wishlist.add_request("rule", "   ")
+        finally:
+            self.assertTrue(wishlist.delete_request(rec["id"]))
+
+    def test_wishlist_http_routes(self):
+        import uuid as _uuid
+        marker = _uuid.uuid4().hex[:12]
+        with tempfile.TemporaryDirectory() as tmp:
+            import socket as _socket
+            import threading
+            from rcm_mc.server import build_server
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            rid = None
+            try:
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/wishlist",
+                    data=json.dumps({
+                        "category": "rule",
+                        "title": f"Flag CLIA-required labs {marker}",
+                        "details": "HCPCS 8xxxx without a CLIA number",
+                    }).encode(), method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    j = json.loads(r.read().decode())
+                self.assertTrue(j["ok"])
+                rid = j["request"]["id"]
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/wishlist"
+                ) as r:
+                    listed = json.loads(r.read().decode())
+                self.assertIn("categories", listed)
+                self.assertTrue(any(marker in q["title"]
+                                    for q in listed["requests"]))
+                # Bad body → 400, not a 500.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/wishlist",
+                    data=json.dumps({"title": ""}).encode(), method="POST",
+                    headers={"Content-Type": "application/json"})
+                try:
+                    _u.urlopen(req)
+                    self.fail("expected 400")
+                except _ue.HTTPError as e:
+                    self.assertEqual(e.code, 400)
+                # Move through the backlog, then delete.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}"
+                    "/npi-cleaner/api/wishlist/status",
+                    data=json.dumps({"id": rid,
+                                     "status": "shipped"}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    self.assertTrue(json.loads(r.read().decode())["ok"])
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}"
+                    "/npi-cleaner/api/wishlist/delete",
+                    data=json.dumps({"id": rid}).encode(), method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    self.assertTrue(json.loads(r.read().decode())["ok"])
+                rid = None
+            finally:
+                if rid is not None:
+                    from rcm_mc.npi_cleaner import wishlist
+                    wishlist.delete_request(rid)
+                server.shutdown()
+                server.server_close()
+
+    def test_page_carries_wishlist_card_and_10gb_copy(self):
+        from rcm_mc.ui.npi_cleaner_page import render_npi_cleaner
+        body = render_npi_cleaner()
+        self.assertIn("npi-wishlist", body)
+        self.assertIn("Missing something?", body)
+        self.assertIn("/npi-cleaner/api/wishlist", body)
+        self.assertIn("10&nbsp;GB", body)
+
+
+class TestSpooledUploadHttp(unittest.TestCase):
+    def test_large_body_spools_to_disk_and_streams(self):
+        # Force the spool path (threshold 1 KB) AND the chunked streaming
+        # path (tiny bigfile thresholds): the full 10 GB flow, end to end,
+        # on a small fixture.
+        import rcm_mc.server as _srv
+        from rcm_mc.npi_cleaner import bigfile
+        rows = ["ClaimID,BillingProviderNPI,ChargeAmt"]
+        rows += [f"{i}, {GOOD_A} ,420" for i in range(1, 301)]
+        csv_b = ("\n".join(rows) + "\n").encode()
+        self.assertGreater(len(csv_b), 1024)
+        with tempfile.TemporaryDirectory() as tmp:
+            import socket as _socket
+            import threading
+            from rcm_mc.server import build_server
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                with patch.object(_srv, "_NPI_SPOOL_THRESHOLD_BYTES", 1024), \
+                        patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 512), \
+                        patch.object(bigfile, "CHUNK_TARGET_BYTES", 2048):
+                    req = _u.Request(
+                        f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                        data=csv_b, method="POST",
+                        headers={"X-Filename": "spool.csv"})
+                    with _u.urlopen(req) as r:
+                        job_id = json.loads(r.read().decode())["job_id"]
+                    for _ in range(100):
+                        with _u.urlopen(
+                            f"http://127.0.0.1:{port}"
+                            f"/npi-cleaner/status/{job_id}"
+                        ) as r:
+                            j = json.loads(r.read().decode())
+                            if j.get("done"):
+                                break
+                        time.sleep(0.05)
+                self.assertTrue(j.get("done"), j)
+                self.assertNotIn("error", {k: v for k, v in j.items()
+                                           if v is not None})
+                sc = j["scorecard"]
+                self.assertEqual(sc["rows_in"], 300)
+                self.assertEqual(sc["rows_out"], 300)
+                self.assertTrue(any("Streaming mode" in w
+                                    for w in sc["warnings"]))
+                # The money-normalize repair (420 → 420.00) ran on every
+                # row across every chunk.
+                self.assertGreaterEqual(sc["repairs_total"], 300)
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                ) as r:
+                    body = r.read().decode()
+                self.assertEqual(len(body.splitlines()), 301)
+                self.assertIn(f"1,{GOOD_A},420", body)
+                # The spool file is removed once the job finishes.
+                from rcm_mc.npi_cleaner.engine import WORKDIR
+                updir = WORKDIR / "uploads"
+                leftovers = (list(updir.glob("upload_*.spool"))
+                             if updir.exists() else [])
+                self.assertEqual(leftovers, [])
+            finally:
+                server.shutdown()
+                server.server_close()
+
+
+class TestJobEtaAndCancel(unittest.TestCase):
+    """Long-run ergonomics: ETA projection in job status and cooperative
+    cancellation — the difference between a 12-hour job being a feature
+    and a liability."""
+
+    def test_eta_projection(self):
+        job = engine.Job(job_id="x", name="f.csv",
+                         created=time.time() - 100, frac=0.5)
+        d = job.status_dict()
+        self.assertAlmostEqual(d["eta_secs"], 100, delta=15)
+        self.assertGreaterEqual(d["elapsed_secs"], 85)
+        # No projection before real work starts, none once done.
+        early = engine.Job(job_id="y", name="f.csv",
+                           created=time.time(), frac=0.01)
+        self.assertNotIn("eta_secs", early.status_dict())
+        done = engine.Job(job_id="z", name="f.csv",
+                          created=time.time() - 100, frac=1.0, done=True)
+        self.assertNotIn("eta_secs", done.status_dict())
+
+    def test_cancel_stops_a_running_job(self):
+        mgr = engine.JobManager()
+
+        def slow_clean(data, name, **kw):
+            cbf = kw.get("progress")
+            for i in range(200):
+                cbf(f"step {i}", i / 200.0)
+                time.sleep(0.01)
+            return engine.CleanResult()
+
+        with patch.object(engine, "clean_bytes", slow_clean):
+            jid = mgr.submit(b"x", "slow.csv")
+            time.sleep(0.15)
+            self.assertTrue(mgr.cancel(jid))
+            job = mgr.get(jid)
+            for _ in range(200):
+                if job.done:
+                    break
+                time.sleep(0.02)
+        self.assertTrue(job.done)
+        self.assertEqual(job.msg, "Cancelled")
+        self.assertIn("Cancelled", job.error)
+        self.assertIsNone(job.result)
+        # Cancelling a finished job is a refused no-op.
+        self.assertFalse(mgr.cancel(jid))
+        self.assertFalse(mgr.cancel("no-such-job"))
+
+    def test_cancel_route_over_http(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            import socket as _socket
+            import threading
+            from rcm_mc.server import build_server
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+
+            def slow_clean(data, name, **kw):
+                cbf = kw.get("progress")
+                for i in range(300):
+                    cbf(f"step {i}", i / 300.0)
+                    time.sleep(0.01)
+                return engine.CleanResult()
+
+            try:
+                with patch.object(engine, "clean_bytes", slow_clean):
+                    req = _u.Request(
+                        f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                        data=b"ClaimID\n1\n", method="POST",
+                        headers={"X-Filename": "slow.csv"})
+                    with _u.urlopen(req) as r:
+                        job_id = json.loads(r.read().decode())["job_id"]
+                    time.sleep(0.15)
+                    req = _u.Request(
+                        f"http://127.0.0.1:{port}"
+                        f"/npi-cleaner/cancel/{job_id}",
+                        data=b"", method="POST")
+                    with _u.urlopen(req) as r:
+                        self.assertTrue(json.loads(r.read().decode())["ok"])
+                    for _ in range(200):
+                        with _u.urlopen(
+                            f"http://127.0.0.1:{port}"
+                            f"/npi-cleaner/status/{job_id}"
+                        ) as r:
+                            j = json.loads(r.read().decode())
+                            if j.get("done"):
+                                break
+                        time.sleep(0.02)
+                self.assertTrue(j["done"])
+                self.assertIn("Cancelled", j["error"])
+                # Cancelling again → refused.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/cancel/{job_id}",
+                    data=b"", method="POST")
+                with _u.urlopen(req) as r:
+                    self.assertFalse(json.loads(r.read().decode())["ok"])
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_pages_carry_cancel_eta_and_backlog_ui(self):
+        from rcm_mc.ui.npi_cleaner_page import render_npi_cleaner
+        from rcm_mc.ui.npi_history_page import render_npi_history
+        cleaner = render_npi_cleaner()
+        self.assertIn("npi-cancel", cleaner)
+        self.assertIn("npi-bar-eta", cleaner)
+        self.assertIn("/npi-cleaner/cancel/", cleaner)
+        history = render_npi_history()
+        self.assertIn("nh-wish-box", history)
+        self.assertIn("/npi-cleaner/api/wishlist/status", history)
+
+
 if __name__ == "__main__":
     unittest.main()

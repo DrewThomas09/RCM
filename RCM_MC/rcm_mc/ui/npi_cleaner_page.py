@@ -197,7 +197,9 @@ def _body() -> str:
       <div class="big">Drag a claims file here</div>
       <div class="small">or <span class="pick">choose a file</span> —
         CSV, TSV, Excel (.xlsx), X12 837/835 (.837/.835/.edi), or a
-        <strong>.zip of files</strong> · up to 200&nbsp;MB ·
+        <strong>.zip of files</strong> · CSV/TSV up to
+        <strong>10&nbsp;GB</strong> (streamed in chunks; multi-hour jobs
+        are fine), other formats up to 200&nbsp;MB ·
         <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
     </div>
     <input type="file" id="npi-file" class="npi-hidden"
@@ -302,6 +304,9 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
     <div class="npi-prog">
       <div class="npi-bar"><i id="npi-bar-fill"></i></div>
       <div class="npi-msg" id="npi-bar-msg">Uploading…</div>
+      <div class="npi-msg npi-muted" id="npi-bar-eta"></div>
+      <button type="button" class="npi-again npi-hidden" id="npi-cancel"
+              style="margin-top:10px">Cancel this run</button>
     </div>
   </div>
 
@@ -388,6 +393,37 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
         <button class="npi-again" id="npi-again">Clean another file</button>
       </div>
     </div>
+  </div>
+
+  <div id="npi-wishlist" style="border:1px solid var(--line,#d2ddd7);
+      border-radius:8px;padding:16px;margin-top:22px">
+    <div style="font-size:14px;font-weight:640;margin-bottom:4px">
+      Missing something? Tell us and we'll build it.</div>
+    <div class="npi-muted" style="font-size:12.5px;margin-bottom:10px">
+      A check your compliance team needs, a payer we don't recognize, a
+      field the detector misses, a file format we don't read — log it here.
+      Requests go on the cleaner's build backlog and get filled in.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="npi-wish-cat" style="font-size:12.5px;padding:4px 6px">
+        <option value="rule">New check / rule</option>
+        <option value="field">Field / column type</option>
+        <option value="payer">Payer</option>
+        <option value="format">File format</option>
+        <option value="integration">Integration / connector</option>
+        <option value="other">Something else</option>
+      </select>
+      <input id="npi-wish-title" placeholder="one-line summary (required)"
+             maxlength="120" style="flex:1;min-width:220px;font-size:12.5px;
+             padding:4px 8px">
+      <button type="button" class="npi-again" id="npi-wish-add">Request</button>
+    </div>
+    <textarea id="npi-wish-details" rows="2" maxlength="2000"
+      placeholder="details (optional): what the data looks like, what you expect the cleaner to do"
+      style="width:100%;margin-top:8px;font-size:12.5px;padding:6px 8px;
+      box-sizing:border-box"></textarea>
+    <div id="npi-wish-msg" class="npi-muted"
+         style="font-size:12px;margin-top:6px"></div>
+    <div id="npi-wish-list" style="margin-top:10px"></div>
   </div>
 
   <div class="npi-note">
@@ -1351,18 +1387,32 @@ _EXTRA_JS = r"""
     out.innerHTML=h;
   }
 
+  function fmtDur(s){
+    if(s == null || s < 0) return "";
+    if(s < 90) return Math.max(1, Math.round(s))+"s";
+    if(s < 5400) return Math.round(s/60)+" min";
+    return Math.floor(s/3600)+"h "+Math.round((s%3600)/60)+"m";
+  }
+
   function watch(jobId){
     currentJobId=jobId;
+    show($("npi-cancel"));
     poll=setInterval(function(){
       fetch("/npi-cleaner/status/"+jobId, {headers:{"Accept":"application/json"}})
         .then(function(r){ return r.json(); })
         .then(function(j){
-          if(j.error){ fail(j.error); return; }
+          if(j.error){ hide($("npi-cancel")); fail(j.error); return; }
           $("npi-bar-fill").style.width=Math.round((j.frac||0)*100)+"%";
           $("npi-bar-msg").textContent=(j.msg||"Working")+" — "+
             Math.round((j.frac||0)*100)+"%";
+          $("npi-bar-eta").textContent = (j.eta_secs != null)
+            ? "elapsed "+fmtDur(j.elapsed_secs)+
+              " · about "+fmtDur(j.eta_secs)+" remaining"
+            : "";
           if(j.done){
             clearInterval(poll); poll=null;
+            hide($("npi-cancel"));
+            $("npi-bar-eta").textContent="";
             if(j.scorecard){ render(Object.assign(j.scorecard,{download:j.download})); }
             else { fail("Cleaning finished without a result."); }
           }
@@ -1370,13 +1420,27 @@ _EXTRA_JS = r"""
         .catch(function(e){ fail("Lost connection to the server."); });
     }, 400);
   }
+  $("npi-cancel").addEventListener("click", function(){
+    if(!currentJobId) return;
+    var btn=this; btn.disabled=true;
+    fetch("/npi-cleaner/cancel/"+currentJobId, {method:"POST"})
+      .then(function(r){ return r.json(); })
+      .then(function(){ btn.disabled=false; })
+      .catch(function(){ btn.disabled=false; });
+  });
 
   // Step 1 — a file is chosen: detect columns, then show the mapping editor.
   function chooseFile(file){
     if(!file) return;
-    if(file.size > 200*1000*1000){ fail("File is larger than 200 MB."); return; }
+    if(file.size > 10*1000*1000*1000){
+      fail("File is larger than 10 GB. Split the extract and upload the "+
+           "pieces, or run it through the rcm-mc npi-clean CLI."); return; }
     currentFile=file;
     hide(stUp); hide(stErr); hide(stRes); show(stPr);
+    // Above the detect ceiling the server cleans in streaming chunks and
+    // the column preview can't parse the body — skip the mapping step and
+    // go straight to the (long-running) clean.
+    if(file.size > 200*1000*1000){ upload(file, {}); return; }
     $("npi-bar-fill").style.width="3%";
     $("npi-bar-msg").textContent="Reading columns from "+file.name+"…";
     fetch("/npi-cleaner/detect", {
@@ -1487,7 +1551,11 @@ _EXTRA_JS = r"""
     if(!file) return;
     hide(stUp); hide(stMap); hide(stErr); hide(stRes); show(stPr);
     $("npi-bar-fill").style.width="5%";
-    $("npi-bar-msg").textContent="Uploading "+file.name+"…";
+    $("npi-bar-msg").textContent = (file.size > 200*1000*1000)
+      ? "Uploading "+file.name+" ("+(file.size/1e9).toFixed(1)+" GB — "+
+        "streaming mode; a multi-GB file can take hours. Keep this tab "+
+        "open or note the URL; the job keeps running on the server)…"
+      : "Uploading "+file.name+"…";
     var params=[];
     if(!$("npi-dedupe").checked) params.push("dedupe=0");
     if($("npi-enrich").checked) params.push("enrich=1");
@@ -1508,8 +1576,55 @@ _EXTRA_JS = r"""
       if(!j.job_id){ fail("Upload did not return a job id."); return; }
       watch(j.job_id);
     })
-    .catch(function(e){ fail("Upload failed. Is the file under 200 MB?"); });
+    .catch(function(e){ fail("Upload failed. Is the file under 10 GB, and "+
+      "is the connection stable enough to send it?"); });
   }
+
+  // ---- Wishlist: "missing something? tell us and we'll fill it in" ----
+  function loadWishlist(){
+    fetch("/npi-cleaner/api/wishlist").then(function(r){ return r.json(); })
+      .then(function(j){
+        var box=$("npi-wish-list"); if(!box) return;
+        var reqs=j.requests||[];
+        if(!reqs.length){ box.innerHTML=""; return; }
+        var chip=function(s){
+          var c=s==="shipped"?"#0a8a5f":s==="planned"?"#b8732a":
+                s==="declined"?"#8a8f98":"#155752";
+          return '<span style="color:'+c+';font-weight:600">'+esc(s)+
+            '</span>'; };
+        box.innerHTML=
+          '<div style="font-size:12.5px;font-weight:640;margin-bottom:4px">'+
+          'Requested ('+reqs.length+')</div>'+
+          reqs.slice(0,8).map(function(q){
+            return '<div style="font-size:12.5px;padding:3px 0;'+
+              'border-top:1px solid var(--line,#e4e9e6)">'+
+              '<span class="npi-muted">['+esc(q.category)+']</span> '+
+              esc(q.title)+' — '+chip(q.status)+'</div>';
+          }).join("")+
+          (reqs.length>8
+            ? '<div class="npi-muted" style="font-size:12px;padding-top:3px">'+
+              '…and '+(reqs.length-8)+' more</div>'
+            : '');
+      }).catch(function(){});
+  }
+  $("npi-wish-add").addEventListener("click", function(){
+    var t=$("npi-wish-title").value.trim(), msg=$("npi-wish-msg");
+    if(!t){ msg.textContent="Give the request a one-line summary first.";
+            return; }
+    fetch("/npi-cleaner/api/wishlist", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({category:$("npi-wish-cat").value, title:t,
+                           details:$("npi-wish-details").value})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j.error){ msg.textContent=j.error; return; }
+      msg.textContent="Logged — it’s on the build backlog.";
+      $("npi-wish-title").value=""; $("npi-wish-details").value="";
+      loadWishlist();
+    })
+    .catch(function(){ msg.textContent="Could not reach the server."; });
+  });
+  loadWishlist();
 
   initTabs();
   drop.addEventListener("click", function(){ fileIn.click(); });

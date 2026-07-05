@@ -86,6 +86,15 @@ _BODY = """
       Run comparison</div>
     <div id="nh-cmp-body"></div>
   </div>
+
+  <div class="nh-trend" id="nh-wishlist">
+    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
+      Build backlog — "missing something?" requests</div>
+    <div class="nh-muted" style="margin-bottom:8px">Everything users asked
+    the cleaner to add (from the card on the cleaner page). Triage here:
+    open → planned → shipped / declined.</div>
+    <div id="nh-wish-box"><div class="nh-empty">Loading…</div></div>
+  </div>
 </div>
 
 <script>
@@ -283,6 +292,56 @@ _BODY = """
       .then(function(r){ return r.json(); })
       .then(function(j){ if(!j.error) renderCompare(j); });
   });
+
+  // ---- Wishlist triage: move requests through the build backlog ----
+  var WISH_STATUSES=["open","planned","shipped","declined"];
+  function loadWishlist(){
+    fetch("/npi-cleaner/api/wishlist").then(function(r){ return r.json(); })
+      .then(function(j){
+        var box=$("nh-wish-box"), reqs=j.requests||[];
+        if(!reqs.length){
+          box.innerHTML='<div class="nh-empty">No requests yet — the card '+
+            'on the cleaner page feeds this backlog.</div>';
+          return;
+        }
+        var h='<table class="nh-tbl"><thead><tr><th>When</th>'+
+          '<th>Category</th><th>Request</th><th>Details</th>'+
+          '<th>Status</th><th></th></tr></thead><tbody>';
+        reqs.forEach(function(q){
+          var opts=WISH_STATUSES.map(function(s){
+            return '<option value="'+s+'"'+(s===q.status?' selected':'')+
+              '>'+s+'</option>'; }).join("");
+          h+='<tr><td>'+when(q.created)+'</td><td>'+esc(q.category)+
+            '</td><td>'+esc(q.title)+'</td><td class="nh-muted">'+
+            esc(q.details)+'</td><td><select class="nh-btn nh-wish-status" '+
+            'data-id="'+q.id+'">'+opts+'</select></td>'+
+            '<td><button class="nh-btn nh-wish-del" data-id="'+q.id+
+            '">delete</button></td></tr>';
+        });
+        h+='</tbody></table>';
+        box.innerHTML=h;
+        box.querySelectorAll(".nh-wish-status").forEach(function(sel){
+          sel.addEventListener("change", function(){
+            fetch("/npi-cleaner/api/wishlist/status", {method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({id:+this.getAttribute("data-id"),
+                                   status:this.value})})
+              .then(function(){ loadWishlist(); }).catch(function(){});
+          });
+        });
+        box.querySelectorAll(".nh-wish-del").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            fetch("/npi-cleaner/api/wishlist/delete", {method:"POST",
+              headers:{"Content-Type":"application/json"},
+              body:JSON.stringify({id:+this.getAttribute("data-id")})})
+              .then(function(){ loadWishlist(); }).catch(function(){});
+          });
+        });
+      })
+      .catch(function(){ $("nh-wish-box").innerHTML=
+        '<div class="nh-empty">Could not load the backlog.</div>'; });
+  }
+  loadWishlist();
 
   fetch("/npi-cleaner/api/history").then(function(r){ return r.json(); })
     .then(function(j){ RUNS=j.runs||[]; renderTrend(); renderDims();
