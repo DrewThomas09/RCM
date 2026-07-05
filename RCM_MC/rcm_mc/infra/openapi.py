@@ -645,6 +645,26 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Sanitized stored mapping"}},
             },
         },
+        "/npi-cleaner/api/profiles/export": {
+            "get": {"summary": "Download every cleaning profile as portable JSON",
+                    "tags": ["Claims Cleaner"],
+                    "responses": {"200": {"description": "Profiles payload"}}},
+        },
+        "/npi-cleaner/api/profiles/import": {
+            "post": {"summary": "Import a profiles export (re-sanitized on save)",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "Imported count + errors"}}},
+        },
+        "/npi-cleaner/api/mappings/export": {
+            "get": {"summary": "Download every mapping template as portable JSON",
+                    "tags": ["Claims Cleaner"],
+                    "responses": {"200": {"description": "Mappings payload"}}},
+        },
+        "/npi-cleaner/api/mappings/import": {
+            "post": {"summary": "Import a mappings export (re-sanitized on save)",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "Imported count + errors"}}},
+        },
         "/npi-cleaner/api/reconcile": {
             "post": {
                 "summary": "Reconcile two runs on claim id (claims vs remittance)",

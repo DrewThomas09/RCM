@@ -170,6 +170,22 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                          f"<td class='num'>{int(n):,}</td></tr>")
         parts.append("</table>")
 
+    pq = sc.get("payer_quality") or []
+    if pq:
+        parts.append("<h2>Quality by payer</h2><table>"
+                     "<tr><th>Payer</th><th class='num'>Rows</th>"
+                     "<th class='num'>Flagged</th><th class='num'>Clean %"
+                     "</th><th>Top rules</th></tr>")
+        for p in pq[:10]:
+            rules_txt = ", ".join(
+                f"{t['rule']} ({t['n']})" for t in (p.get("top_rules") or []))
+            parts.append(f"<tr><td>{_esc(p['payer'])}</td>"
+                         f"<td class='num'>{int(p['rows']):,}</td>"
+                         f"<td class='num'>{int(p['flagged']):,}</td>"
+                         f"<td class='num'>{p['clean_pct']}%</td>"
+                         f"<td class='small'>{_esc(rules_txt)}</td></tr>")
+        parts.append("</table>")
+
     claims = sc.get("claims") or {}
     if claims.get("n_claims"):
         ch = claims.get("charge") or {}

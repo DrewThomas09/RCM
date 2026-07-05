@@ -1550,6 +1550,113 @@ class TestDupWindowAndRollup(unittest.TestCase):
         self.assertIn("Claim rollup", html_out)
 
 
+class TestPayerQualityAndPortableSuites(unittest.TestCase):
+    """Batch 14: per-payer quality split + portable profiles/mappings."""
+
+    def test_payer_quality_split(self):
+        data = ("PayerName,HCPCS\n"
+                "UnitedHealthcare,99213\n"
+                "UHC,BAD!!\n"          # UHC + UnitedHealthcare = one family
+                "Aetna,99214\n"
+                "Aetna,99215\n").encode()
+        res = engine.clean_bytes(data, "pq.csv")
+        pq = {p["payer"]: p for p in res.as_scorecard()["payer_quality"]}
+        self.assertEqual(pq["UNITEDHEALTHCARE"]["rows"], 2)
+        self.assertEqual(pq["UNITEDHEALTHCARE"]["flagged"], 1)
+        self.assertEqual(pq["UNITEDHEALTHCARE"]["clean_pct"], 50.0)
+        self.assertEqual(pq["UNITEDHEALTHCARE"]["top_rules"][0]["rule"],
+                         "hcpcs-malformed")
+        self.assertEqual(pq["AETNA"]["clean_pct"], 100.0)
+        # The refactored per-row capture still feeds worklists.
+        self.assertEqual(res.flag_rows["hcpcs-malformed"], [2])
+        # No payer column → no split, not a crash.
+        res2 = engine.clean_bytes(b"HCPCS\n99213\n", "n.csv")
+        self.assertIsNone(res2.as_scorecard()["payer_quality"])
+        # Exec report renders the payer table.
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        html_out = build_exec_report(res.as_scorecard(), "pq.csv",
+                                     "2026-01-01T00:00:00+00:00")
+        self.assertIn("Quality by payer", html_out)
+
+    def test_profiles_export_import_roundtrip(self):
+        import uuid as _uuid
+        from rcm_mc.npi_cleaner import profiles
+        pn = f"exp-{_uuid.uuid4().hex[:8]}"
+        profiles.save_profile(pn, {"accepted_rules": ["charge-outlier"],
+                                   "thresholds": {"timely_filing_days": 90}})
+        try:
+            mine = [p for p in profiles.export_all()["profiles"]
+                    if p["name"] == pn]
+            self.assertEqual(
+                mine[0]["config"]["thresholds"]["timely_filing_days"], 90)
+            profiles.delete_profile(pn)
+            rep = profiles.import_all({"profiles": mine})
+            self.assertEqual(rep["imported"], 1)
+            self.assertEqual(profiles.get_profile(pn)["accepted_rules"],
+                             ["charge-outlier"])
+            with self.assertRaises(ValueError):
+                profiles.import_all({"wrong": []})
+        finally:
+            profiles.delete_profile(pn)
+
+    def test_mappings_export_import_roundtrip(self):
+        import uuid as _uuid
+        from rcm_mc.npi_cleaner import mappings
+        mn = f"map-{_uuid.uuid4().hex[:8]}"
+        mappings.save_mapping(mn, {"billing_npi": "Col A"})
+        try:
+            mine = [m for m in mappings.export_all()["mappings"]
+                    if m["name"] == mn]
+            mappings.delete_mapping(mn)
+            rep = mappings.import_all({"mappings": mine})
+            self.assertEqual(rep["imported"], 1)
+            self.assertEqual(mappings.get_mapping(mn),
+                             {"billing_npi": "Col A"})
+        finally:
+            mappings.delete_mapping(mn)
+
+    def test_export_import_http_routes(self):
+        import socket as _socket
+        import threading
+        import uuid as _uuid
+        from rcm_mc.server import build_server
+        from rcm_mc.npi_cleaner import profiles
+        pn = f"http-{_uuid.uuid4().hex[:8]}"
+        with tempfile.TemporaryDirectory() as tmp:
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                profiles.save_profile(pn, {"thresholds":
+                                           {"stale_years": 5}})
+                with _u.urlopen(f"http://127.0.0.1:{port}"
+                                "/npi-cleaner/api/profiles/export") as r:
+                    self.assertIn("attachment",
+                                  r.headers.get("Content-Disposition", ""))
+                    exported = json.loads(r.read().decode())
+                self.assertTrue(any(p["name"] == pn
+                                    for p in exported["profiles"]))
+                profiles.delete_profile(pn)
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/profiles/import",
+                    data=json.dumps(exported).encode(), method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    rep = json.loads(r.read().decode())
+                self.assertGreaterEqual(rep["imported"], 1)
+                self.assertIsNotNone(profiles.get_profile(pn))
+            finally:
+                profiles.delete_profile(pn)
+                server.shutdown()
+                server.server_close()
+
+
 class TestReconcile(unittest.TestCase):
     """837↔835 reconciliation: match a claims run against its remittance
     on claim id — unpaid claims, paid-vs-billed variance, denial mix."""

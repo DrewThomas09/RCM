@@ -954,6 +954,9 @@ class CleanResult:
     # Claim rollup (when a claim-id column exists): claim count, lines per
     # claim, per-claim charge distribution. Report-only.
     claims: Optional[Dict[str, object]] = None
+    # Per-payer quality split: rows / flagged / clean % / top rules for
+    # the top payer families. Report-only.
+    payer_quality: List[Dict[str, object]] = field(default_factory=list)
     # Regression warnings vs the previous run of the same file (history).
     trend_alerts: List[str] = field(default_factory=list)
     # Data dictionary: per column — detected role, fill %, distinct count,
@@ -1102,6 +1105,7 @@ class CleanResult:
             "credentials": self.credentials or None,
             "specialties": self.specialties or None,
             "claims": self.claims,
+            "payer_quality": self.payer_quality or None,
             "trend_alerts": self.trend_alerts or None,
             "dictionary": self.dictionary or None,
             "worklists": {k: len(v) for k, v in self.flag_rows.items()},
@@ -1521,6 +1525,7 @@ def clean_bytes(
     _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
     _taxo_counts: Dict[str, int] = {}             # taxonomy → specialty mix
     _svc_seen: Dict[tuple, List[tuple]] = {}      # dup-service window scan
+    _payer_q: Dict[str, Dict] = {}                # per-payer quality split
     _claim_agg: Dict[str, List[float]] = {}       # claim rollup [lines, charge]
     _claim_trunc = False
     _CLAIM_CAP = 50_000                           # distinct claims tracked
@@ -1612,9 +1617,9 @@ def clean_bytes(
                     res.deid_cells += 1
                 val = masked
             new_row.append(val)
-        # Snapshot for worklist row-capture: any rule whose count rises
-        # during this row's checks fired on this row.
-        _sanity_pre = dict(res.sanity) if _wl_open else None
+        # Snapshot for worklist row-capture AND per-payer quality: any rule
+        # whose count rises during this row's checks fired on this row.
+        _sanity_pre = dict(res.sanity)
         # Cross-field sanity flags (report-only) on the cleaned row.
         for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i, units_i):
             res.sanity[f] = res.sanity.get(f, 0) + 1
@@ -1904,11 +1909,14 @@ def clean_bytes(
             if _amt is not None and _code:
                 _code_charges.setdefault(_code, []).append(_amt)
         cleaned.append(new_row)
-        # Worklist capture: rules that fired this row → this OUTPUT row index.
-        if _wl_open and _sanity_pre is not None:
+        # Rules that fired on this row → worklist row indices and the
+        # per-payer quality split ("which payer's feed is dirtiest").
+        _fired = {_rk for _rk, _rv2 in res.sanity.items()
+                  if _rv2 > _sanity_pre.get(_rk, 0)}
+        if _wl_open:
             _all_full = True
-            for _rk, _rv2 in res.sanity.items():
-                if _rv2 > _sanity_pre.get(_rk, 0):
+            for _rk in res.sanity:
+                if _rk in _fired:
                     _lst = res.flag_rows.setdefault(_rk, [])
                     if len(_lst) < _WORKLIST_CAP:
                         _lst.append(len(cleaned))
@@ -1916,6 +1924,17 @@ def clean_bytes(
                     _all_full = False
             if res.flag_rows and _all_full:
                 _wl_open = False
+        if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
+            _fam2 = _payer_key(new_row[payer_i])
+            _pq = _payer_q.get(_fam2)
+            if _pq is None and len(_payer_q) < 50:
+                _pq = _payer_q[_fam2] = {"rows": 0, "flagged": 0, "rules": {}}
+            if _pq is not None:
+                _pq["rows"] += 1
+                if _fired:
+                    _pq["flagged"] += 1
+                    for _rk in _fired:
+                        _pq["rules"][_rk] = _pq["rules"].get(_rk, 0) + 1
         if ri % 500 == 0:
             cb("Cleaning rows", 0.30 + 0.55 * (ri / total))
 
@@ -2047,6 +2066,22 @@ def clean_bytes(
                 "fill_pct": round(100 * _col_filled[_ci4] / _base, 1),
                 "distinct": len(_ds4) if len(_ds4) <= 1000 else None,
                 "samples": _samples,
+            })
+
+    # Per-payer quality: which payer's feed is dirtiest — rows, share of
+    # rows with at least one finding, and each payer's top rules. Top 10
+    # payer families by volume (capped 50 tracked).
+    if _payer_q:
+        _tops_p = sorted(_payer_q.items(), key=lambda kv: -kv[1]["rows"])[:10]
+        for _fam2, _pq in _tops_p:
+            _tr = sorted(_pq["rules"].items(), key=lambda kv: -kv[1])[:3]
+            res.payer_quality.append({
+                "payer": _fam2,
+                "rows": _pq["rows"],
+                "flagged": _pq["flagged"],
+                "clean_pct": round(
+                    100 * (1 - _pq["flagged"] / _pq["rows"]), 1),
+                "top_rules": [{"rule": r, "n": n} for r, n in _tr],
             })
 
     # Possible duplicate service: same patient + provider + code within the

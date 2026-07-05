@@ -3895,6 +3895,26 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/npi-cleaner/api/mappings":
             from .npi_cleaner import mappings as _nc_mappings
             return self._send_json({"mappings": _nc_mappings.list_mappings()})
+        if path in ("/npi-cleaner/api/profiles/export",
+                    "/npi-cleaner/api/mappings/export"):
+            # Portable JSON download so teams can share suites/templates
+            # across instances (re-sanitized on import).
+            import json as _json
+            if "profiles" in path:
+                from .npi_cleaner import profiles as _nc_p
+                payload, fname = _nc_p.export_all(), "npi_profiles.json"
+            else:
+                from .npi_cleaner import mappings as _nc_m
+                payload, fname = _nc_m.export_all(), "npi_mappings.json"
+            data = _json.dumps(payload, indent=2).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Disposition",
+                             f'attachment; filename="{fname}"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if path.startswith("/npi-cleaner/analyze/"):
             return self._route_npi_cleaner_analyze(
                 path[len("/npi-cleaner/analyze/"):].strip("/"))
@@ -14221,6 +14241,25 @@ class RCMHandler(BaseHTTPRequestHandler):
                 body = {}
             ok = _nc_mappings.delete_mapping(str(body.get("name") or ""))
             return self._send_json({"ok": ok})
+        if path in ("/npi-cleaner/api/profiles/import",
+                    "/npi-cleaner/api/mappings/import"):
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                return self._send_json({"error": "invalid JSON"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            try:
+                if "profiles" in path:
+                    from .npi_cleaner import profiles as _nc_p
+                    rep = _nc_p.import_all(body)
+                else:
+                    from .npi_cleaner import mappings as _nc_m
+                    rep = _nc_m.import_all(body)
+            except ValueError as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json(rep)
         if path == "/npi-cleaner/api/reconcile":
             # Match two completed runs on claim id: {"a": job_id (claims),
             # "b": job_id (remittance)} → unpaid / variance / denial mix.

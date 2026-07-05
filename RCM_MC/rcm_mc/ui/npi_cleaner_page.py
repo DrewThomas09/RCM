@@ -265,6 +265,13 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
         <button type="button" class="npi-dl" id="npi-prof-save"
           style="font-size:12.5px;padding:6px 14px">Save profile</button>
         <button type="button" class="npi-again" id="npi-prof-close">close</button>
+        <a class="npi-again" href="/npi-cleaner/api/profiles/export" download
+           style="margin-left:12px;text-decoration:none;display:inline-block">
+          export all</a>
+        <button type="button" class="npi-again" id="npi-prof-import">
+          import…</button>
+        <input type="file" id="npi-prof-import-file" class="npi-hidden"
+               accept=".json,application/json">
       </div>
       <div class="npi-muted" id="npi-prof-msg" style="margin-top:6px"></div>
     </div>
@@ -908,6 +915,28 @@ _EXTRA_JS = r"""
       });
       html+='</tbody></table>';
     }
+    // Per-payer quality split — which payer's feed is dirtiest.
+    if(s.payer_quality && s.payer_quality.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Quality by payer</h3></div>'+
+        '<div class="npi-muted">Share of each payer&#39;s rows with at '+
+        'least one finding, and that payer&#39;s top rules.</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Payer</th><th class="num">Rows</th><th class="num">Flagged</th>'+
+        '<th class="num">Clean %</th><th>Top rules</th></tr></thead><tbody>';
+      s.payer_quality.forEach(function(p){
+        var tone=p.clean_pct>=90?'var(--green-deep,#0c7c66)':
+                 (p.clean_pct>=70?'#b8732a':'#b5321e');
+        html+='<tr><td>'+esc(p.payer)+'</td><td class="num">'+fmt(p.rows)+
+          '</td><td class="num">'+fmt(p.flagged)+'</td>'+
+          '<td class="num" style="color:'+tone+';font-weight:640">'+
+          p.clean_pct+'%</td><td style="font-size:12px">'+
+          (p.top_rules||[]).map(function(t){
+            return esc(t.rule)+' ('+fmt(t.n)+')';
+          }).join(", ")+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
     // Structural findings.
     var st=s.structure;
     if(st && (st.duplicate_headers || st.empty_columns)){
@@ -1518,6 +1547,32 @@ _EXTRA_JS = r"""
         var sel=$("npi-profile"); if(sel && j.ok){ sel.value=name; }
       }).catch(function(){ $("npi-prof-msg").textContent="Save failed."; });
   }); }
+  var pimp=$("npi-prof-import"), pimpFile=$("npi-prof-import-file");
+  if(pimp && pimpFile){
+    pimp.addEventListener("click", function(){ pimpFile.click(); });
+    pimpFile.addEventListener("change", function(){
+      var f=pimpFile.files[0]; if(!f) return;
+      var rd=new FileReader();
+      rd.onload=function(){
+        var body;
+        try{ body=JSON.parse(rd.result); }
+        catch(e){ $("npi-prof-msg").textContent="Not valid JSON."; return; }
+        fetch("/npi-cleaner/api/profiles/import", {method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(body)})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          $("npi-prof-msg").textContent = j.error ? j.error :
+            ("Imported "+j.imported+" profile(s)"+
+             (j.errors&&j.errors.length?(" · "+j.errors.length+" skipped"):"")+".");
+          loadProfiles();
+        })
+        .catch(function(){ $("npi-prof-msg").textContent="Import failed."; });
+        pimpFile.value="";
+      };
+      rd.readAsText(f);
+    });
+  }
   loadProfiles();
 
   ["dragenter","dragover"].forEach(function(ev){

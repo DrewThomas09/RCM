@@ -129,3 +129,28 @@ def delete_mapping(name: str) -> bool:
         cur = con.execute("DELETE FROM mappings WHERE name = ?",
                           ((name or "").strip(),))
         return cur.rowcount > 0
+
+
+def export_all() -> Dict[str, object]:
+    """Portable JSON of every mapping template (see profiles.export_all)."""
+    return {"version": 1,
+            "mappings": [{"name": m["name"], "mapping": m["mapping"]}
+                         for m in list_mappings()]}
+
+
+def import_all(payload: Dict[str, object]) -> Dict[str, object]:
+    """Import an export_all() payload; every entry re-passes the
+    sanitizer exactly like a fresh save."""
+    maps = payload.get("mappings") if isinstance(payload, dict) else None
+    if not isinstance(maps, list):
+        raise ValueError('expected {"mappings": [{"name", "mapping"}, …]}')
+    imported, errors = 0, []
+    for m in maps[:100]:
+        if not isinstance(m, dict):
+            continue
+        try:
+            save_mapping(str(m.get("name") or ""), m.get("mapping") or {})
+            imported += 1
+        except (ValueError, TypeError) as exc:
+            errors.append(f"{m.get('name')}: {exc}")
+    return {"imported": imported, "errors": errors}

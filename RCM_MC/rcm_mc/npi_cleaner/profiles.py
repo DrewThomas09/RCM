@@ -168,3 +168,33 @@ def delete_profile(name: str) -> bool:
         cur = con.execute("DELETE FROM profiles WHERE name = ?",
                           ((name or "").strip(),))
         return cur.rowcount > 0
+
+
+def export_all() -> Dict[str, object]:
+    """Portable JSON of every profile — teams share suites across
+    instances by downloading this and importing it elsewhere."""
+    return {"version": 1,
+            "profiles": [{"name": p["name"],
+                          "config": {"disabled_rules": p["disabled_rules"],
+                                     "accepted_rules": p["accepted_rules"],
+                                     "thresholds": p["thresholds"]}}
+                         for p in list_profiles()]}
+
+
+def import_all(payload: Dict[str, object]) -> Dict[str, object]:
+    """Import an export_all() payload. Each profile passes through the
+    same sanitizer as a fresh save — a hand-edited or hostile file can't
+    smuggle unknown rules or out-of-range thresholds."""
+    profs = payload.get("profiles") if isinstance(payload, dict) else None
+    if not isinstance(profs, list):
+        raise ValueError('expected {"profiles": [{"name", "config"}, …]}')
+    imported, errors = 0, []
+    for p in profs[:100]:
+        if not isinstance(p, dict):
+            continue
+        try:
+            save_profile(str(p.get("name") or ""), p.get("config") or {})
+            imported += 1
+        except (ValueError, TypeError) as exc:
+            errors.append(f"{p.get('name')}: {exc}")
+    return {"imported": imported, "errors": errors}
