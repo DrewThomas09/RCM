@@ -8,7 +8,7 @@ executive report, and a full cell-level audit trail. Everything runs
 locally — no claim data ever leaves the server, and nothing is written to
 the app database.
 
-The design borrows deliberately from three product families:
+The design borrows deliberately from four product families:
 
 - **Great Expectations / Informatica** — a declarative rule registry
   where every check is a first-class object with severity, remediation
@@ -20,6 +20,24 @@ The design borrows deliberately from three product families:
 - **Data observability (Monte Carlo, Bigeye)** — run history that trends
   quality across uploads, per-rule and per-dimension, so a team can see
   whether a feed is getting better after a source fix.
+- **Claims analytics frameworks (The Tuva Project)** — the layer beyond
+  validation: service-category grouping, encounter construction,
+  chronic-condition prevalence, data-loss-over-time detection,
+  readmissions, coding-intensity screens.
+
+**How this compares to Tuva.** Tuva is a dbt package: to use it you need
+a warehouse (Snowflake/BigQuery/Databricks/…), a dbt project, an
+input-layer mapping exercise, and an orchestrated pipeline. This tool
+computes the same *class* of output — groupers, condition prevalence,
+volume integrity, readmissions — in the **same pass as cleaning**, on a
+drag-and-drop file, with zero infrastructure, plus everything Tuva
+doesn't do at all: deterministic cell repairs with a full audit trail,
+NPI Luhn verification and NPPES recovery, X12 837/835 native intake,
+837↔835 reconciliation, PHI de-identification, a CI-gateable CLI, and a
+10 GB streaming mode. Tuva's terminology depth (full code sets, CMS-HCC
+risk, quality measures) is deeper; this tool's *time-to-first-answer* —
+minutes from file to grade, worklists and population profile — is what a
+diligence or RCM ops team actually needs first.
 
 ## What a run produces
 
@@ -112,6 +130,40 @@ precise warning instead of an empty result.
 - **Portable suites**: profiles and mapping templates export/import as
   JSON (`/api/profiles/export|import`, `/api/mappings/export|import`);
   every import re-passes the save-time sanitizer.
+
+## Population analytics (the Tuva-class layer)
+
+Report-only marts computed offline from the cleaned table in the same
+run — rendered on the **Population** tab and carried in the scorecard
+under `population`:
+
+- **Service-category mix** — every line classified by the
+  institutional-first ladder (Type of Bill → revenue code → place of
+  service → HCPCS range) into Inpatient / Outpatient (ED, dialysis,
+  ambulatory surgery, therapies…) / Office / Ancillary (lab, imaging,
+  DME, ambulance) / Pharmacy / Behavioral health / Home health /
+  Hospice, with an explicit Unclassified rate.
+- **Encounters** — lines grouped into visits: same patient, same
+  setting, service dates chaining with gaps ≤ 1 day (inpatient spans
+  widen to admit→discharge). Per-setting counts, lines-per-visit,
+  charges, and a one-row-per-encounter CSV (`?fmt=encounters`).
+- **30-day readmissions** — an inpatient encounter starting 1–30 days
+  after the patient's previous inpatient discharge.
+- **Chronic-condition prevalence** — CCW-style ICD-10 prefix groups
+  (25 conditions: diabetes, CKD, CHF, COPD, depression, cancer…) with
+  per-patient multimorbidity (0/1/2/3+). Reporting only — membership is
+  never a validity flag.
+- **Volume integrity ("data loss over time")** — rows/charges/patients
+  by service month with cliff detection: an interior month under 40% of
+  its trailing median is almost always a missing extract, and says so.
+- **E&M coding intensity** — each provider's established-visit mix
+  (99211–99215) vs the file's own mix (national Medicare mix shown for
+  context); providers coding materially hotter surface as a
+  documentation-review starting point.
+
+Everything is guarded (a mart failure never blocks cleaning), computed
+post-de-identification (stable tokens keep grouping intact), and skipped
+in 10 GB streaming mode (whole-table by nature — the warning says so).
 
 ## Huge files (up to 10 GB, streamed)
 
@@ -212,9 +264,14 @@ rcm-mc npi-clean sites.zip  --bundle            # batch a zip of extracts
 ```
 rcm_mc/npi_cleaner/
 ├── engine.py       cleaning engine: repairs, flags, scorecard, jobs
-├── rules.py        declarative registry (68 rules)
-├── refdata.py      claims reference catalogs (POS/TOB/CARC/RARC/…)
-├── x12.py          837P/837I EDI → service-line table
+├── rules.py        declarative registry (69 rules)
+├── refdata.py      claims reference catalogs (POS/TOB/CARC/RARC/
+│                   chronic-condition groups/…)
+├── analytics.py    population marts: service mix, encounters,
+│                   conditions, volume integrity, coding intensity
+├── bigfile.py      10 GB streamed cleaning (chunk + merge)
+├── wishlist.py     "missing something?" request backlog (SQLite)
+├── x12.py          837P/837I/835 EDI → service-line table
 ├── profiles.py     named rule suites (SQLite, config only)
 ├── mappings.py     named column-mapping templates (SQLite, config only)
 ├── history.py      run-history observability (SQLite, aggregates only)
@@ -225,6 +282,7 @@ rcm_mc/ui/npi_cleaner_page.py    the /npi-cleaner page
 rcm_mc/ui/npi_history_page.py    the /npi-cleaner/history page
 ```
 
-Tests: `tests/test_npi_cleaner.py` (130+ tests — every repair and flag
+Tests: `tests/test_npi_cleaner.py` (175+ tests — every repair and flag
 exercised with valid/invalid/skip cases, HTTP end-to-end through a real
-server, PHI-absence assertions, CLI gate, X12 round-trips).
+server, PHI-absence assertions, CLI gate, X12 round-trips, streaming
+equality, population-mart matrices).

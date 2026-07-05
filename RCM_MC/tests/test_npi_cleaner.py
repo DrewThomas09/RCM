@@ -3388,5 +3388,180 @@ class TestJobEtaAndCancel(unittest.TestCase):
         self.assertIn("/npi-cleaner/api/wishlist/status", history)
 
 
+class TestPopulationAnalytics(unittest.TestCase):
+    """The Tuva-class marts (analytics.py): service mix, encounters,
+    chronic conditions, volume integrity, readmissions, coding intensity —
+    computed offline from the cleaned table, report-only."""
+
+    def test_classify_line_ladder(self):
+        from rcm_mc.npi_cleaner.analytics import classify_line
+        # TOB decides first (inpatient acute).
+        self.assertEqual(classify_line("0120", "0111", "", "99231"),
+                         ("Inpatient", "Acute inpatient"))
+        # ED wins inside an outpatient TOB via revenue 045x.
+        self.assertEqual(classify_line("0450", "0131", "", ""),
+                         ("Outpatient", "Emergency department"))
+        # SNF by TOB facility digit 2.
+        self.assertEqual(classify_line("", "0211", "", "")[0], "Inpatient")
+        # Professional office E&M by POS 11 + code.
+        self.assertEqual(classify_line("", "", "11", "99214"),
+                         ("Office", "Office visit (E&M)"))
+        # HCPCS ranges when nothing else is present.
+        self.assertEqual(classify_line("", "", "", "80053"),
+                         ("Ancillary", "Laboratory"))
+        self.assertEqual(classify_line("", "", "", "72148"),
+                         ("Ancillary", "Imaging"))
+        self.assertEqual(classify_line("", "", "", "J1100"),
+                         ("Pharmacy", "Drugs (J-codes)"))
+        self.assertEqual(classify_line("", "", "", ""),
+                         ("Unclassified", "Unclassified"))
+
+    def test_encounters_group_and_readmit_window(self):
+        csv_rows = ["PatientID,TypeOfBill,RevenueCode,HCPCS,ChargeAmt,"
+                    "DateOfService,AdmitDate,DischargeDate"]
+        # One stay: two lines inside the admit→discharge span.
+        csv_rows.append("P1,0111,0120,99231,5000,2024-01-05,"
+                        "2024-01-03,2024-01-08")
+        csv_rows.append("P1,0111,0250,J1100,300,2024-01-06,"
+                        "2024-01-03,2024-01-08")
+        # Readmit 10 days after discharge (counts).
+        csv_rows.append("P1,0111,0120,99232,7000,2024-01-18,"
+                        "2024-01-18,2024-01-22")
+        # Next stay 45 days later (does NOT count).
+        csv_rows.append("P1,0111,0120,99232,7000,2024-03-08,"
+                        "2024-03-08,2024-03-10")
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "enc.csv")
+        enc = (res.population or {}).get("encounters")
+        self.assertIsNotNone(enc)
+        self.assertEqual(enc["n_encounters"], 3)  # 2 lines merged into stay 1
+        r = enc["readmissions"]
+        self.assertEqual(r["inpatient_stays"], 3)
+        self.assertEqual(r["readmissions_30d"], 1)
+
+    def test_conditions_prevalence_and_multimorbidity(self):
+        csv_rows = ["PatientID,DiagnosisCode,HCPCS"]
+        csv_rows += ["P1,E11.65,99213", "P1,I10,99213", "P1,N18.3,99213",
+                     "P2,J45.909,99213", "P3,,99213"]
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "dx.csv")
+        cond = (res.population or {}).get("conditions")
+        self.assertIsNotNone(cond)
+        by_name = {p["condition"]: p for p in cond["prevalence"]}
+        self.assertEqual(by_name["Diabetes"]["patients"], 1)
+        self.assertEqual(by_name["Asthma"]["patients"], 1)
+        # P1 carries 3 conditions, P2 one. (P3 has no dx → not in the
+        # per-patient grouping at all.)
+        self.assertEqual(cond["multimorbidity"]["3+"], 1)
+        self.assertEqual(cond["multimorbidity"]["1"], 1)
+
+    def test_volume_cliff_detection(self):
+        csv_rows = ["ClaimID,DateOfService,ChargeAmt"]
+        n = 0
+        for m, count in enumerate((100, 100, 100, 10, 100, 100), start=1):
+            for i in range(count):
+                n += 1
+                csv_rows.append(f"{n},2024-0{m}-15,100")
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "vol.csv")
+        vol = (res.population or {}).get("volume")
+        self.assertIsNotNone(vol)
+        self.assertEqual(len(vol["months"]), 6)
+        self.assertEqual(len(vol["alerts"]), 1)
+        self.assertIn("2024-04", vol["alerts"][0])
+
+    def test_coding_intensity_flags_hot_provider(self):
+        csv_rows = ["BillingProviderNPI,HCPCS,DateOfService"]
+        csv_rows += [f"{GOOD_A},99215,2024-01-02"] * 25   # all level 5
+        csv_rows += [f"{GOOD_B},99213,2024-01-02"] * 100  # all level 3
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "em.csv", drop_duplicates=False)
+        ci = (res.population or {}).get("coding_intensity")
+        self.assertIsNotNone(ci)
+        self.assertEqual(ci["established_visits"], 125)
+        outlier_npis = [o["npi"] for o in ci["outliers"]]
+        self.assertIn(GOOD_A, outlier_npis)
+        self.assertNotIn(GOOD_B, outlier_npis)
+        self.assertIn("99214", ci["national_mix"])
+
+    def test_scorecard_excludes_encounter_records(self):
+        csv_rows = ["PatientID,HCPCS,DateOfService",
+                    "P1,99213,2024-01-05", "P2,99213,2024-01-06"]
+        res = engine.clean_bytes(("\n".join(csv_rows) + "\n").encode(),
+                                 "sc.csv")
+        sc = res.as_scorecard()
+        self.assertIsNotNone(sc["population"])
+        self.assertNotIn("records", sc["population"]["encounters"])
+        # The full records stay on the result for the CSV download.
+        self.assertTrue(res.population["encounters"]["records"])
+        from rcm_mc.npi_cleaner import analytics
+        text = analytics.encounters_csv(res.population)
+        self.assertTrue(text.startswith("encounter,patient,category"))
+        self.assertEqual(len(text.splitlines()), 3)
+
+    def test_streaming_runs_skip_population(self):
+        from rcm_mc.npi_cleaner import bigfile
+        rows = ["PatientID,HCPCS,DateOfService"]
+        rows += [f"P{i},99213,2024-01-0{1 + i % 9}" for i in range(1, 200)]
+        data = ("\n".join(rows) + "\n").encode()
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "s.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 512), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 1024):
+                res = bigfile.clean_path(p, "s.csv")
+        self.assertIsNone(res.population)
+        self.assertTrue(any("population marts" in w for w in res.warnings))
+
+    def test_population_tab_and_encounters_route(self):
+        from rcm_mc.ui.npi_cleaner_page import render_npi_cleaner
+        body = render_npi_cleaner()
+        self.assertIn('data-panel="population"', body)
+        self.assertIn("fmt=encounters", body)
+        with tempfile.TemporaryDirectory() as tmp:
+            import socket as _socket
+            import threading
+            from rcm_mc.server import build_server
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                csv_b = ("PatientID,HCPCS,DateOfService\n"
+                         "P1,99213,2024-01-05\nP2,99214,2024-01-06\n"
+                         ).encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "e.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(100):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}"
+                        f"/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                self.assertIn("population", j["scorecard"])
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                    "?fmt=encounters"
+                ) as r:
+                    text = r.read().decode()
+                self.assertIn("encounter,patient,category", text)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()

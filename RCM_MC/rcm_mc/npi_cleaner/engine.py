@@ -1026,6 +1026,10 @@ class CleanResult:
     # in memory instead of written to WORKDIR so the streamer can append it
     # to ONE master output file. Never set on a normal run.
     chunk_payload: Optional[Tuple[List[str], List[List[str]]]] = None
+    # Population analytics (analytics.py): service mix, encounters,
+    # chronic-condition prevalence, volume integrity, readmissions, coding
+    # intensity. Report-only; None when the columns aren't there.
+    population: Optional[Dict[str, object]] = None
 
     @property
     def total_npi_cells(self) -> int:
@@ -1106,6 +1110,20 @@ class CleanResult:
         return {"score": score, "letter": letter,
                 "dimensions": {k: round(v * 100, 1) for k, v in dims.items()}}
 
+    def _population_public(self) -> Optional[Dict[str, object]]:
+        """Population marts minus the per-encounter records — the browser
+        polls the scorecard, and 200k encounter rows belong in the CSV
+        download, not the status JSON."""
+        if not self.population:
+            return None
+        pub = dict(self.population)
+        enc = pub.get("encounters")
+        if isinstance(enc, dict):
+            enc = dict(enc)
+            enc.pop("records", None)
+            pub["encounters"] = enc
+        return pub
+
     def as_scorecard(self) -> Dict[str, object]:
         cells = self.total_npi_cells
         valid = self.total_valid
@@ -1133,6 +1151,7 @@ class CleanResult:
             "credentials": self.credentials or None,
             "specialties": self.specialties or None,
             "claims": self.claims,
+            "population": self._population_public(),
             "payer_quality": self.payer_quality or None,
             "payer_worklists": ({k: len(v) for k, v
                                  in self.payer_flag_rows.items()} or None),
@@ -2367,6 +2386,24 @@ def clean_bytes(
         res.sanity["charge-outlier"] = _out_total
         _out_detail.sort(key=lambda d: -int(d["outliers"]))  # type: ignore[arg-type]
         res.outliers = _out_detail[:8]
+
+    # Population analytics — the Tuva-class marts (service mix, encounters,
+    # chronic conditions, volume integrity, readmissions, coding intensity).
+    # Whole-table by nature, so streaming chunks skip it; report-only and
+    # guarded so a mart failure never blocks the cleaning result.
+    if not _stream_chunk and res.n_rows_out:
+        cb("Population analytics (service mix · encounters · conditions)",
+           0.56)
+        try:
+            from . import analytics as _analytics
+            res.population = _analytics.build(headers, cleaned, {
+                "rev_set": rev_set, "tob_i": tob_i, "pos_set": pos_set,
+                "hcpcs_i": hcpcs_i, "billed_i": billed_i, "dx_set": dx_set,
+                "patient_i": patient_i, "dos_i": dos_i, "admit_i": admit_i,
+                "disch_i": disch_i, "billing_idx": billing_idx,
+            })
+        except Exception:  # noqa: BLE001 — analytics never block cleaning
+            res.population = None
 
     # Optional live NPPES cross-check via the app's shared CMS connection.
     # Guarded end-to-end: any failure leaves res.nppes with a note and the

@@ -2964,6 +2964,24 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(data)
             return
+        if fmt == "encounters":
+            # Encounter roll-up (analytics.py): one row per grouped visit —
+            # patient, category, date span, lines, charges.
+            from .npi_cleaner import analytics as _nc_analytics
+            csv_text = _nc_analytics.encounters_csv(
+                job.result.population or {})
+            if not csv_text:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            data = csv_text.encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="encounters.csv"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if fmt == "bundle":
             # Everything in one zip: cleaned file, workbook, change log,
             # corrections, exec report, scorecard JSON, per-rule worklists.

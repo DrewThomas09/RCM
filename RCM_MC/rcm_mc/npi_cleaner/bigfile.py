@@ -329,8 +329,9 @@ def _clean_csv_stream(
             "runs within each chunk; NPPES verification, deep recovery, "
             "the suggestions companion, the xlsx workbook and whole-file "
             "analytics (payer clusters, charge outliers, claim rollup, "
-            "dictionary) are skipped in this mode. The grade, repairs, "
-            "findings, change log and worklists cover every row."))
+            "dictionary, population marts) are skipped in this mode. The "
+            "grade, repairs, findings, change log and worklists cover "
+            "every row."))
         # One history record for the whole run — the chunks recorded
         # nothing.
         try:

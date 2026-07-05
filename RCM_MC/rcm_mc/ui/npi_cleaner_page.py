@@ -322,6 +322,8 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
         <span class="npi-tab-badge" id="tabbadge-quality"></span></button>
       <button class="npi-tab" data-tab="issues">Issues &amp; fixes
         <span class="npi-tab-badge" id="tabbadge-issues"></span></button>
+      <button class="npi-tab" data-tab="population">Population
+        <span class="npi-tab-badge" id="tabbadge-pop"></span></button>
       <button class="npi-tab" data-tab="connectors">Live connectors
         <span class="npi-tab-badge" id="tabbadge-conn"></span></button>
       <button class="npi-tab" data-tab="downloads">Downloads</button>
@@ -352,6 +354,16 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
     <div class="npi-panel" data-panel="issues">
       <div id="npi-advanced"></div>
       <div id="npi-suggestions"></div>
+    </div>
+
+    <div class="npi-panel" data-panel="population">
+      <div class="npi-muted" style="font-size:12.5px;margin-bottom:10px">
+        What the file <em>means</em>, not just whether it's clean: where care
+        happened, how lines group into visits, what conditions the population
+        carries, whether any month of data is missing, and who codes hotter
+        than the file. Computed offline from the cleaned table — the class of
+        output Tuva-style pipelines need a warehouse for.</div>
+      <div id="npi-pop"></div>
     </div>
 
     <div class="npi-panel" data-panel="connectors">
@@ -556,6 +568,9 @@ _EXTRA_JS = r"""
 
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
+    renderPopulation(s.population, s.download);
+    $("tabbadge-pop").textContent = s.population
+      ? String(Object.keys(s.population).length) : "";
     renderDeep(s.deep, s.download, s.deep_workbook_name);
     renderCompliance(s.compliance);
     renderNppes(s.nppes);
@@ -1144,6 +1159,137 @@ _EXTRA_JS = r"""
   function esc(s){ return String(s==null?"":s)
     .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
     .replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+  function popHead(t, sub){
+    return '<div class="ck-section-header" style="margin-top:18px">'+
+      '<h3 style="margin:0">'+t+'</h3></div>'+
+      (sub?'<div class="npi-muted" style="font-size:12px;margin:4px 0 8px">'+
+        sub+'</div>':'');
+  }
+
+  function renderPopulation(pop, download){
+    var box=$("npi-pop");
+    if(!pop){
+      box.innerHTML='<div class="npi-muted">No population marts for this '+
+        'run — they need service/claim columns (revenue code, type of '+
+        'bill, POS, HCPCS, patient id, service dates, diagnoses). '+
+        'Streaming (10 GB) runs skip them by design.</div>';
+      return;
+    }
+    var h="";
+    if(pop.service_mix){
+      h+=popHead("Service-category mix", "Every line classified by the "+
+        "institutional-first ladder (type of bill → revenue code → place "+
+        "of service → HCPCS range). Unclassified: "+
+        esc(pop.service_mix.unclassified_pct)+"%.");
+      h+='<table class="npi-tbl"><thead><tr><th>Category</th>'+
+        '<th>Subcategory</th><th class="num">Lines</th>'+
+        '<th class="num">% of file</th><th class="num">Charges</th>'+
+        '</tr></thead><tbody>';
+      pop.service_mix.categories.slice(0,14).forEach(function(c){
+        h+='<tr><td>'+esc(c.category)+'</td><td>'+esc(c.subcategory)+
+          '</td><td class="num">'+fmt(c.rows)+'</td><td class="num">'+
+          esc(c.pct)+'%</td><td class="num">$'+fmt(c.charges)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+    }
+    if(pop.encounters){
+      var e=pop.encounters;
+      h+=popHead("Encounters", fmt(e.n_encounters)+" visits grouped from "+
+        fmt(e.n_patients)+" patients (same patient, same setting, service "+
+        "dates chaining with gaps ≤ 1 day"+
+        (e.records_truncated?"; download capped":"")+").");
+      h+='<table class="npi-tbl"><thead><tr><th>Setting</th>'+
+        '<th class="num">Encounters</th><th class="num">Avg lines</th>'+
+        '<th class="num">Charges</th></tr></thead><tbody>';
+      (e.by_category||[]).forEach(function(c){
+        h+='<tr><td>'+esc(c.category)+'</td><td class="num">'+
+          fmt(c.encounters)+'</td><td class="num">'+esc(c.avg_lines)+
+          '</td><td class="num">$'+fmt(c.charges)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      if(e.readmissions){
+        var r=e.readmissions;
+        h+='<div style="margin-top:8px;font-size:12.5px">30-day inpatient '+
+          'readmissions: <strong>'+fmt(r.readmissions_30d)+'</strong> of '+
+          fmt(r.inpatient_stays)+' stays ('+esc(r.rate_pct)+'%).</div>';
+      }
+      h+='<div style="margin-top:8px"><a class="npi-dl npi-dl-alt" '+
+        'href="'+esc(download)+'?fmt=encounters" download>⤓ Encounters '+
+        'roll-up (.csv)</a></div>';
+    }
+    if(pop.conditions){
+      var c0=pop.conditions;
+      h+=popHead("Chronic-condition prevalence",
+        (c0.patient_grouping?fmt(c0.patients)+" distinct patients":
+         "no patient column — per-row counts")+
+        " · CCW-style ICD-10 prefix groups; reporting only, never a flag.");
+      h+='<table class="npi-tbl"><thead><tr><th>Condition</th>'+
+        '<th class="num">Patients</th><th class="num">Prevalence</th>'+
+        '<th class="num">Rows</th></tr></thead><tbody>';
+      c0.prevalence.slice(0,12).forEach(function(p){
+        h+='<tr><td>'+esc(p.condition)+'</td><td class="num">'+
+          fmt(p.patients)+'</td><td class="num">'+esc(p.pct)+
+          '%</td><td class="num">'+fmt(p.rows)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      if(c0.multimorbidity){
+        var mm=c0.multimorbidity;
+        h+='<div style="margin-top:6px;font-size:12.5px" class="npi-muted">'+
+          'Conditions per patient — 0: '+fmt(mm["0"])+' · 1: '+
+          fmt(mm["1"])+' · 2: '+fmt(mm["2"])+' · 3+: '+fmt(mm["3+"])+
+          '</div>';
+      }
+    }
+    if(pop.volume){
+      h+=popHead("Volume integrity (data loss over time)",
+        "Rows, charges and patients by service month — a cliff usually "+
+        "means a missing extract, not real utilization.");
+      (pop.volume.alerts||[]).forEach(function(a){
+        h+='<div class="npi-warn">'+esc(a)+'</div>';
+      });
+      var months=pop.volume.months||[];
+      var maxR=1;
+      months.forEach(function(m){ if(m.rows>maxR) maxR=m.rows; });
+      h+='<div style="display:flex;align-items:flex-end;gap:3px;'+
+        'height:80px;margin-top:8px">';
+      months.slice(-36).forEach(function(m){
+        var pct=Math.max(3, Math.round(100*m.rows/maxR));
+        h+='<div title="'+esc(m.month)+': '+fmt(m.rows)+' rows" '+
+          'style="flex:1;background:var(--green-deep,#0c7c66);'+
+          'opacity:.75;height:'+pct+'%"></div>';
+      });
+      h+='</div><div class="npi-muted" style="font-size:11px;'+
+        'margin-top:2px">'+esc(months.length?months[0].month:"")+
+        ' → '+esc(months.length?months[months.length-1].month:"")+'</div>';
+    }
+    if(pop.coding_intensity){
+      var ci=pop.coding_intensity;
+      h+=popHead("E&amp;M coding intensity",
+        fmt(ci.established_visits)+" established office visits "+
+        "(99211–99215) · file average level "+esc(ci.file_avg_level)+
+        " · "+fmt(ci.providers_rated)+" providers with ≥ 20 visits rated "+
+        "against the file's own mix.");
+      if(ci.outliers && ci.outliers.length){
+        h+='<table class="npi-tbl"><thead><tr><th>Billing NPI</th>'+
+          '<th class="num">Visits</th><th class="num">Avg level</th>'+
+          '<th class="num">Level 4–5 share</th></tr></thead><tbody>';
+        ci.outliers.forEach(function(o){
+          h+='<tr><td>'+esc(o.npi)+'</td><td class="num">'+fmt(o.visits)+
+            '</td><td class="num">'+esc(o.avg_level)+
+            '</td><td class="num">'+esc(o.level_4_5_pct)+'%</td></tr>';
+        });
+        h+='</tbody></table><div class="npi-muted" style="font-size:12px;'+
+          'margin-top:4px">High-intensity coders vs this file’s mix — '+
+          'a documentation-review starting point, not an accusation.</div>';
+      } else {
+        h+='<div class="npi-muted">No provider codes materially hotter '+
+          'than the file’s own mix.</div>';
+      }
+    }
+    box.innerHTML = h ||
+      '<div class="npi-muted">Not enough claim columns for any mart.</div>';
+  }
 
   function renderSuggestions(adv){
     var box=$("npi-suggestions");

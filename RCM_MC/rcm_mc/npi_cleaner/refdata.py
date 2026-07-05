@@ -1572,3 +1572,69 @@ CARC_PLAYBOOK: Dict[str, Dict[str, str]] = {
 
 def carc_playbook(code: str) -> Optional[Dict[str, str]]:
     return CARC_PLAYBOOK.get(code.strip().upper())
+
+# --------------------------------------------------------------------------
+# Chronic-condition registry — CCW-inspired ICD-10-CM prefix groups for the
+# population-prevalence report (analytics.py). Prefix membership is a
+# REPORTING domain, not a validity domain: a code outside every group is
+# simply "no chronic flag", never an error. Prefixes are matched on the
+# first 3 (occasionally 4) characters after stripping the dot, so E11.65,
+# E1165 and E11 all land in Diabetes.
+# --------------------------------------------------------------------------
+CHRONIC_CONDITIONS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    ("Diabetes", ("E08", "E09", "E10", "E11", "E13")),
+    ("Hypertension", ("I10", "I11", "I12", "I13", "I15", "I16")),
+    ("Hyperlipidemia", ("E78",)),
+    ("Chronic kidney disease", ("N18",)),
+    ("Heart failure", ("I50",)),
+    ("Ischemic heart disease", ("I20", "I21", "I22", "I23", "I24", "I25")),
+    ("Atrial fibrillation", ("I48",)),
+    ("Stroke / TIA", ("I63", "G45")),
+    ("COPD", ("J43", "J44")),
+    ("Asthma", ("J45",)),
+    ("Depression", ("F32", "F33")),
+    ("Anxiety disorders", ("F41",)),
+    ("Alzheimer's / dementia", ("G30", "F01", "F02", "F03")),
+    ("Osteoarthritis", ("M15", "M16", "M17", "M18", "M19")),
+    ("Rheumatoid arthritis", ("M05", "M06")),
+    ("Osteoporosis", ("M81",)),
+    ("Cancer (any site)", ("C",)),
+    ("Obesity", ("E66",)),
+    ("Chronic liver disease", ("K70", "K71", "K72", "K73", "K74",
+                               "K75", "K76", "K77", "B18")),
+    ("Hypothyroidism", ("E03",)),
+    ("Anemia", ("D50", "D51", "D52", "D53", "D55", "D56", "D57",
+                "D58", "D59", "D60", "D61", "D62", "D63", "D64")),
+    ("Opioid use disorder", ("F11",)),
+    ("Alcohol use disorder", ("F10",)),
+    ("Tobacco use", ("F17",)),
+    ("HIV", ("B20",)),
+)
+
+
+def chronic_conditions_for(dx: str) -> List[str]:
+    """Chronic-condition group names an ICD-10-CM code falls into (usually
+    zero or one; a handful of codes hit two)."""
+    s = dx.strip().upper().replace(".", "")
+    if not s:
+        return []
+    out = []
+    for name, prefixes in CHRONIC_CONDITIONS:
+        for p in prefixes:
+            if s.startswith(p):
+                out.append(name)
+                break
+    return out
+
+
+# --------------------------------------------------------------------------
+# National E&M level mix — the CY2022 Medicare Part B distribution of
+# established-patient office-visit levels (99211–99215), rounded. Used ONLY
+# as a soft baseline in the coding-intensity screen (a provider is compared
+# against the FILE's own mix first; this national mix is displayed for
+# context). Not a validity domain.
+# --------------------------------------------------------------------------
+EM_ESTABLISHED_NATIONAL_MIX: Dict[str, float] = {
+    "99211": 0.02, "99212": 0.08, "99213": 0.34,
+    "99214": 0.45, "99215": 0.11,
+}
