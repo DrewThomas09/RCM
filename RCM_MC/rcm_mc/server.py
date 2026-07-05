@@ -5566,12 +5566,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 exit_multiple=_qfloat("exit_multiple"),
             ))
         if path == "/tools":
-            # ?view=all deep-links the Full A–Z view (legacy links from the
-            # tools showcase used this query; it used to silently fall back
-            # to the workspace view because the dispatch ignored the query).
+            # ?view=compact deep-links the compact density (legacy
+            # ?view=all links from the tools showcase map there too).
             _tv = urllib.parse.parse_qs(parsed.query).get("view", [""])[0]
             return self._route_tools_index(
-                initial_view="index" if _tv in ("all", "index") else "workspace")
+                initial_view="compact" if _tv in ("compact", "all", "index")
+                else "detailed")
         # Internal open-data integrations lab (backend; not in the top nav).
         if path == "/tools/open-data":
             from .ui.open_data_lab_page import render_open_data_lab
@@ -21507,33 +21507,34 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "max-age=31536000; includeSubDomains",
             )
 
-    def _route_tools_index(self, *, initial_view: str = "workspace") -> None:
-        """GET /tools — editorial card-grid index (design handoff · Card Grid).
+    def _route_tools_index(self, *, initial_view: str = "detailed") -> None:
+        """GET /tools — editorial card-grid index, ONE grouping.
 
-        Two views in one page (client-side toggle): **By workspace** and
-        **Full A–Z**. ``?view=all`` deep-links the A–Z view. The A–Z is the
-        completeness contract — EVERY discovered route renders as a card
-        (guarded by tests); a safety-net bucket means a route can never be
-        dropped on the floor. Data is assembled live from the route registry,
-        the Cmd-K palette (titles), surface_status (honest status), and the
-        page-context registry (descriptions)."""
+        Every tool appears exactly once, grouped by workspace (the same
+        sections as the top nav). A pure-CSS density toggle (Detailed /
+        Compact; ``?view=compact`` deep-links it, legacy ``?view=all``
+        accepted) replaces the old second "Full A–Z" grouping — two
+        near-identical bucket schemes of the same 186 tools read as
+        double counting and made the page twice as heavy. Completeness
+        contract unchanged: EVERY discovered route renders as a card
+        (guarded by tests); the Operations safety-net bucket means a
+        route can never be dropped on the floor."""
         from .ui.tools_index_page import render_tools_index
-        workspaces, index, total_ws, total_idx = self._build_tools_index_data()
+        workspaces, total = self._build_tools_index_data()
         return self._send_html(render_tools_index(
-            workspaces=workspaces, index=index,
-            total_ws=total_ws, total_idx=total_idx,
+            workspaces=workspaces, total=total,
             initial_view=initial_view,
         ))
 
     @classmethod
     def _build_tools_index_data(cls):
-        """Assemble (workspaces, index, total_ws, total_idx) for the Tools page.
+        """Assemble (workspaces, total) for the Tools page.
 
-        Pulls from the live registry — never hard-coded. Every discovered route
-        (plus curated palette routes) is placed into exactly one A–Z bucket and
-        one workspace bucket; unrecognised routes fall to a safety-net bucket
-        ('More Surfaces' / 'Operations') so nothing is lost (no ghost pages).
-        A classmethod so the completeness tests can call it without a live
+        Pulls from the live registry — never hard-coded. Every discovered
+        route (plus curated palette routes) is placed into exactly one
+        workspace bucket; unrecognised routes fall to the Operations
+        safety-net bucket so nothing is lost (no ghost pages). A
+        classmethod so the completeness tests can call it without a live
         socket."""
         from .ui._chartis_kit import (
             _DEFAULT_PALETTE_MODULES, _resolve_sub_section,
@@ -21611,22 +21612,6 @@ class RCMHandler(BaseHTTPRequestHandler):
             return {"name": title_map[route], "path": route, "status": status,
                     "desc": desc, "auto": route not in palette_by_route}
 
-        # ── A–Z organizational buckets (handoff names) ──
-        org_order = ["home", "pipeline", "diligence", "library",
-                     "research", "portfolio", "other", "more"]
-        org_labels = {
-            "home": "Home & Operations", "pipeline": "Pipeline & Sourcing",
-            "diligence": "Diligence Workspace", "library": "Library & Reference",
-            "research": "Research & Backtesting", "portfolio": "Portfolio & LP",
-            "other": "Admin & System", "more": "More Surfaces",
-        }
-
-        def _org(route):
-            sec = _resolve_sub_section(route) or cls._heuristic_section(route)
-            if sec == "source":
-                sec = "pipeline"          # "Pipeline & Sourcing" holds Source
-            return sec if sec in org_order else "more"   # safety net
-
         # ── Workspace buckets (the nav tabs + an Operations catch-all) ──
         ws_order = ["home", "source", "pipeline", "diligence", "library",
                     "research", "portfolio", "operations"]
@@ -21641,22 +21626,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                 sec = "operations"
             return sec if sec in ws_order else "operations"   # safety net
 
-        org_groups = {k: [] for k in org_order}
         ws_groups = {k: [] for k in ws_order}
         for route in all_routes:
-            m = _meta(route)
-            org_groups[_org(route)].append(m)
-            ws_groups[_ws(route)].append(m)
+            ws_groups[_ws(route)].append(_meta(route))
 
         def _sorted(tools):
             # curated (non-auto) first, then alphabetical — matches handoff.
             return sorted(tools, key=lambda t: (1 if t["auto"] else 0,
                                                 t["name"].lower()))
 
-        index = [
-            {"id": k, "label": org_labels[k], "tools": _sorted(org_groups[k])}
-            for k in org_order if org_groups[k]
-        ]
         workspaces = []
         for k in ws_order:
             if not ws_groups[k]:
@@ -21668,9 +21646,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "route": feat.get("href", ""),
                 "tools": _sorted(ws_groups[k]),
             })
-        total_idx = sum(len(s["tools"]) for s in index)
-        total_ws = sum(len(s["tools"]) for s in workspaces)
-        return workspaces, index, total_ws, total_idx
+        total = sum(len(s["tools"]) for s in workspaces)
+        return workspaces, total
 
     # Cache for the discovered route list — server.py source is read
     # once on first /tools hit and the parsed result is kept on the
