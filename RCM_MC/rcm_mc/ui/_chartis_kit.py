@@ -1106,6 +1106,15 @@ _DATA_UNIVERSE = {
     "user-supplied": ("USER-SUPPLIED DATA", "deals",
                        "Renders the data you paste/type — example values are "
                        "placeholders, not a data claim."),
+    # Healthcare Verticals reference bundle: synthesized from public sources
+    # (CMS rules, MedPAC, NIC MAP, USRDS, SAMHSA, HRSA, CDC ART, PHI) —
+    # deliberately distinct from the licensed-* chips so the licensing
+    # boundary is never blurred.
+    "public-source-synthesis": ("PUBLIC-SOURCE SYNTHESIS", "ref",
+                       "Synthesized from public sources (CMS rules, MedPAC, "
+                       "USRDS, SAMHSA, HRSA, CDC, and similar) — not licensed "
+                       "data and not provider-specific; each row carries its "
+                       "own source and confidence."),
 }
 
 
@@ -9131,21 +9140,16 @@ _CSS_INLINE_FALLBACK = """
    * Mirror of the block in static/v3/chartis.css so a11y affordances
    * survive even when static serving isn't wired up. Only .cta-btn
    * carried a focus ring before; every other interactive element gave
-   * no visible focus indicator (WCAG 2.4.7 gap on every page). */
+   * no visible focus indicator (WCAG 2.4.7 gap on every page).
+   * Skip-link styles deliberately live in _SKIP_LINK_CSS (gated on
+   * show_chrome with the link itself) — bare login/forgot pages must
+   * not mention the skip link at all. */
   a:focus-visible, button:focus-visible, input:focus-visible,
   select:focus-visible, textarea:focus-visible, summary:focus-visible,
   [tabindex]:focus-visible {
     outline: 2px solid var(--sc-teal, #155752);
     outline-offset: 2px; border-radius: 1px;
   }
-  .ck-skip-link {
-    position: absolute; left: -9999px; top: 0; z-index: 1000;
-    background: var(--sc-ink, #0F1C2E); color: var(--sc-paper, #FAF7F0);
-    padding: 9px 16px; font-family: var(--sc-sans, Inter), sans-serif;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; text-decoration: none;
-  }
-  .ck-skip-link:focus { left: 8px; top: 8px; }
   /* The skip target receives programmatic focus; don't ring the whole
    * main region (tabindex=-1 makes it focusable so the skip link lands). */
   #ck-main:focus { outline: none; }

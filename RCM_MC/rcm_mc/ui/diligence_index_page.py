@@ -219,6 +219,11 @@ _PILLARS: List[Mapping[str, object]] = [
             {"href": "/diligence/pe-reference",
              "label": "Reference Libraries",
              "blurb": "Historical failures, partner traps, archetypes, more."},
+            {"href": "/diligence/advanced-analytics",
+             "label": "Advanced Analytics",
+             "blurb": "Native analytics marts (risk adjustment, DiD, "
+                      "survival, episodes) on an illustrative worked "
+                      "example."},
             {"href": "/diligence/questions",
              "label": "Questions Ledger",
              "blurb": "Open diligence questions across the portfolio."},
