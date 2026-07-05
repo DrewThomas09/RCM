@@ -281,6 +281,15 @@ _RULES: List[Rule] = [
          "Distinct rows sharing provider · patient · date · code · amount.",
          "Review for double billing; confirm before deleting anything.",
          "uniqueness"),
+    Rule("possible-duplicate-service", "flag", "warning", "Duplicates",
+         "Possible duplicate service",
+         "The same patient, provider, and procedure code appears again "
+         "within the duplicate window (default 3 days, profile-tunable) on "
+         "a DIFFERENT date. Same-date repeats are covered by the "
+         "duplicate-claim rules; this catches the re-bill-two-days-later "
+         "pattern payers deny as duplicate.",
+         "Check whether the second line is a corrected re-bill (needs the "
+         "right frequency code) or a true duplicate.", "uniqueness"),
     Rule("conflicting-amount-claim", "flag", "warning", "Duplicates",
          "Conflicting amounts on same claim key",
          "The same provider · patient · date · code appears with different "

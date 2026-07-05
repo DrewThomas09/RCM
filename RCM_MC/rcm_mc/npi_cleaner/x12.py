@@ -204,6 +204,135 @@ def x12_to_table(data: bytes) -> Optional[Tuple[List[str], List[List[str]]]]:
     return list(HEADERS), rows
 
 
+# ---------------------------------------------------------------------------
+# 835 remittance (ERA) — the payer's answer to the 837. One row per service
+# line (SVC) or per claim payment (CLP) when a claim has no line detail.
+# CAS adjustments flatten to a CARC list (feeds the existing denial
+# analytics + CARC catalog) plus a per-row audit string with group codes
+# and dollar amounts (CO-45:12.50 …).
+# ---------------------------------------------------------------------------
+HEADERS_835: List[str] = [
+    "ClaimID", "PayerClaimID", "ClaimStatus", "PayerName", "PayeeName",
+    "PayeeNPI", "PatientName", "DateOfService", "PaidDate", "RevenueCode",
+    "HCPCS", "Modifiers", "Units", "BilledAmt", "PaidAmt", "PatientResp",
+    "DenialCodes", "AdjustmentDetail",
+]
+
+
+def x835_to_table(data: bytes) -> Optional[Tuple[List[str], List[List[str]]]]:
+    """Flatten an 835 interchange to (HEADERS_835, rows). None when the
+    file carries no CLP segments (it's some other transaction set)."""
+    text = data.decode("latin-1", errors="replace").lstrip()
+    if not text.startswith("ISA"):
+        return None
+    elem, comp, term = _separators(text)
+    segs = []
+    for raw_seg in text.split(term):
+        s = raw_seg.strip("\r\n ")
+        if s:
+            segs.append(s.split(elem))
+
+    rows: List[List[str]] = []
+    env: Dict[str, str] = {}      # payer / payee / paid-date context
+    clp: Dict[str, str] = {}      # current claim payment
+    clp_adjs: List[str] = []      # claim-level CAS audit strings
+    clp_carcs: List[str] = []     # claim-level CARC codes
+    svc: Optional[Dict[str, object]] = None   # carries its own CAS lists
+    clp_lines = 0
+
+    def _row835(line: Dict[str, object]) -> List[str]:
+        codes = clp_carcs + list(line.get("carcs") or [])
+        detail = clp_adjs + list(line.get("adjs") or [])
+        return [
+            clp.get("claim_id", ""), clp.get("payer_icn", ""),
+            clp.get("status", ""), env.get("payer", ""),
+            env.get("payee", ""), env.get("payee_npi", ""),
+            clp.get("patient", ""), clp.get("dos", ""),
+            env.get("paid_date", ""), str(line.get("rev", "")),
+            str(line.get("hcpcs", "")), str(line.get("mods", "")),
+            str(line.get("units", "")),
+            str(line.get("billed") or clp.get("billed", "")),
+            str(line.get("paid") or clp.get("paid", "")),
+            clp.get("pt_resp", ""),
+            ", ".join(dict.fromkeys(codes)),
+            "; ".join(detail),
+        ]
+
+    def flush_svc() -> None:
+        nonlocal svc, clp_lines
+        if svc is None:
+            return
+        rows.append(_row835(svc))
+        clp_lines += 1
+        svc = None
+
+    def flush_clp() -> None:
+        nonlocal clp, clp_adjs, clp_carcs, clp_lines
+        flush_svc()
+        if clp and clp_lines == 0:
+            rows.append(_row835({}))
+        clp = {}
+        clp_adjs = []
+        clp_carcs = []
+        clp_lines = 0
+
+    for seg in segs:
+        tag = seg[0].upper()
+        if tag == "N1" and len(seg) > 2:
+            if seg[1] == "PR":
+                env["payer"] = seg[2]
+            elif seg[1] == "PE":
+                env["payee"] = seg[2]
+                if len(seg) > 4 and seg[3] == "XX":
+                    env["payee_npi"] = seg[4]
+        elif tag == "DTM" and len(seg) > 2:
+            when = _date_iso(seg[2])
+            if seg[1] == "405":                    # production date
+                env.setdefault("paid_date", when)
+            elif seg[1] in ("232", "472"):         # statement/service date
+                if clp:
+                    clp.setdefault("dos", when)
+        elif tag == "CLP" and len(seg) > 4:
+            flush_clp()
+            clp = {"claim_id": seg[1], "status": seg[2],
+                   "billed": seg[3], "paid": seg[4],
+                   "pt_resp": seg[5] if len(seg) > 5 else "",
+                   "payer_icn": seg[7] if len(seg) > 7 else ""}
+        elif tag == "NM1" and len(seg) > 3 and clp:
+            if seg[1] == "QC" and (seg[2] if len(seg) > 2 else "") == "1":
+                first = seg[4] if len(seg) > 4 else ""
+                clp["patient"] = (f"{seg[3]}, {first}" if first else seg[3])
+        elif tag == "CAS" and len(seg) > 3 and clp:
+            group = seg[1]
+            _c_sink = (svc["carcs"] if svc is not None else clp_carcs)
+            _a_sink = (svc["adjs"] if svc is not None else clp_adjs)
+            i = 2
+            while i + 1 < len(seg):
+                reason, amount = seg[i], seg[i + 1]
+                if reason:
+                    _c_sink.append(reason)
+                    _a_sink.append(f"{group}-{reason}:{amount or '0'}")
+                i += 3                              # (reason, amt, qty) triplets
+        elif tag == "SVC" and len(seg) > 3:
+            flush_svc()
+            parts = seg[1].split(comp) if seg[1] else []
+            code = parts[1] if len(parts) > 1 else (parts[0] if parts else "")
+            mods = [p for p in parts[2:6] if len(p) == 2 and p.isalnum()]
+            rev = seg[4] if len(seg) > 4 else ""
+            svc = {"hcpcs": code, "mods": ",".join(mods),
+                   "billed": seg[2], "paid": seg[3],
+                   "rev": rev if (rev.isdigit() and len(rev) == 4) else "",
+                   "units": seg[5] if len(seg) > 5 else "",
+                   "carcs": [], "adjs": []}
+        elif tag in ("SE", "ST"):
+            flush_clp()
+
+    flush_clp()
+    if not rows:
+        return None
+    return list(HEADERS_835), rows
+
+
 def _row(ctx: Dict[str, str], claim: Dict[str, str],
          line: Dict[str, str]) -> List[str]:
     return [

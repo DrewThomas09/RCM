@@ -951,6 +951,9 @@ class CleanResult:
     # Specialty mix: top taxonomy codes on kept rows with NUCC display
     # names where known. Report-only.
     specialties: List[Dict[str, object]] = field(default_factory=list)
+    # Claim rollup (when a claim-id column exists): claim count, lines per
+    # claim, per-claim charge distribution. Report-only.
+    claims: Optional[Dict[str, object]] = None
     # Profile applied to this run (see profiles.py): accepted rules still
     # report but don't count against the grade.
     accepted_rules: List[str] = field(default_factory=list)
@@ -1051,7 +1054,8 @@ class CleanResult:
         consistency = max(0.0, 1.0 - min(1.0, consistency_hits / rows))
         dup = (self.n_dupes_removed
                + self.sanity.get("suspected-duplicate-claim", 0)
-               + self.sanity.get("near-duplicate-row", 0))
+               + self.sanity.get("near-duplicate-row", 0)
+               + self.sanity.get("possible-duplicate-service", 0))
         uniqueness = max(0.0, 1.0 - min(1.0, dup / max(self.n_rows_in, 1)))
         conformity = max(0.0, 1.0 - min(1.0, sum(self.repairs.values())
                                         / max(self.n_cells_filled, 1)))
@@ -1092,6 +1096,7 @@ class CleanResult:
             "denials": self.denials,
             "credentials": self.credentials or None,
             "specialties": self.specialties or None,
+            "claims": self.claims,
             "worklists": {k: len(v) for k, v in self.flag_rows.items()},
             "accepted_rules": self.accepted_rules,
             "profile": self.profile_name,
@@ -1106,7 +1111,8 @@ class CleanResult:
             "column_stats": self.column_stats,
             "delimiter": {",": "comma", "\t": "tab", ";": "semicolon",
                           "|": "pipe", "xlsx": "xlsx (Excel)",
-                          "x12": "X12 837 (EDI)"}.get(
+                          "x12": "X12 837 (EDI)",
+                          "x835": "X12 835 (ERA)"}.get(
                               self.delimiter, self.delimiter),
             "out_name": self.out_name,
             "workbook_name": self.workbook_name if self.workbook_path else None,
@@ -1203,7 +1209,10 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str]:
         parsed = _x12.x12_to_table(data)
         if parsed is not None:
             return parsed[0], parsed[1], "x12"
-        return [], [], "x12"          # X12 but not 837 — precise warning later
+        parsed = _x12.x835_to_table(data)
+        if parsed is not None:
+            return parsed[0], parsed[1], "x835"
+        return [], [], "x12"          # X12 but not 837/835 — warning later
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -1310,8 +1319,8 @@ def clean_bytes(
     if not headers and delim == "x12":
         res.warnings.append(
             "This is an X12 interchange but it contains no 837 claim (CLM) "
-            "segments — an 835 remittance, 999 acknowledgment, or 270/276 "
-            "inquiry can't be cleaned as claims.")
+            "or 835 payment (CLP) segments — a 999 acknowledgment or "
+            "270/276 inquiry can't be cleaned as claims.")
         res.out_name = _out_name(src_name)
         _write_output(res, headers, [])
         cb("Done", 1.0)
@@ -1421,6 +1430,7 @@ def clean_bytes(
     _stale_years = int(_thr.get("stale_years", 10) or 10)
     _timely_days = int(_thr.get("timely_filing_days", 365) or 365)
     _iqr_mult = float(_thr.get("outlier_iqr_mult", 3.0) or 3.0)
+    _dup_window = int(_thr.get("dup_window_days", 3) or 3)
     # Staleness horizon for service dates — a DOS this old in a working
     # claims extract is almost always a key-entry or century error.
     _stale_cut = f"{_today.year - _stale_years:04d}-01-01"
@@ -1502,6 +1512,12 @@ def clean_bytes(
     _carc_counts: Dict[str, int] = {}             # top denial reasons
     _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
     _taxo_counts: Dict[str, int] = {}             # taxonomy → specialty mix
+    _svc_seen: Dict[tuple, List[tuple]] = {}      # dup-service window scan
+    _claim_agg: Dict[str, List[float]] = {}       # claim rollup [lines, charge]
+    _claim_trunc = False
+    _CLAIM_CAP = 50_000                           # distinct claims tracked
+    claim_i = _detect_one(headers, ("claimid", "claimnumber", "claimno",
+                                    "patientcontrolnumber", "icn", "dcn"))
     _charge_i = billed_i if billed_i is not None else allowed_i
     _CHANGELOG_CAP = 20_000                       # keep the audit log bounded
     _WORKLIST_CAP = 500                           # rows captured per rule
@@ -1833,6 +1849,31 @@ def clean_bytes(
             if _tv and not _taxonomy_malformed(_tv) and (
                     _tv in _taxo_counts or len(_taxo_counts) < 300):
                 _taxo_counts[_tv] = _taxo_counts.get(_tv, 0) + 1
+        # Duplicate-service window scan: same patient + provider + code on
+        # kept rows, dates compared post-loop against the profile window.
+        if (patient_i is not None and hcpcs_i is not None
+                and dos_i is not None and billing_idx is not None
+                and max(patient_i, hcpcs_i, dos_i, billing_idx) < len(new_row)):
+            _pt, _hc = new_row[patient_i], new_row[hcpcs_i]
+            _np2, _ds2 = new_row[billing_idx], new_row[dos_i]
+            if _pt and _hc and _np2 and _DATE_ISO_RE.match(_ds2):
+                _svc_seen.setdefault((_pt, _np2, _hc), []).append(
+                    (_ds2[:10], len(cleaned) + 1))
+        # Claim rollup: lines + charge per claim id (bounded distinct set).
+        if claim_i is not None and claim_i < len(new_row) and new_row[claim_i]:
+            _cid = new_row[claim_i]
+            _agg = _claim_agg.get(_cid)
+            if _agg is None:
+                if len(_claim_agg) >= _CLAIM_CAP:
+                    _claim_trunc = True
+                else:
+                    _agg = _claim_agg[_cid] = [0, 0.0]
+            if _agg is not None:
+                _agg[0] += 1
+                if _charge_i is not None and _charge_i < len(new_row):
+                    _cv = _to_number(new_row[_charge_i])
+                    if _cv is not None:
+                        _agg[1] += _cv
         if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
             _payer_raw[new_row[payer_i]] = \
                 _payer_raw.get(new_row[payer_i], 0) + 1
@@ -1928,6 +1969,57 @@ def clean_bytes(
             {"code": c, "n": n,
              "name": (_rd.taxonomy_specialty(c) if _rd is not None else None)}
             for c, n in _tops[:15]]
+
+    # Possible duplicate service: same patient + provider + code within the
+    # profile window (default 3 days) on DIFFERENT dates. Same-date repeats
+    # already belong to suspected-duplicate-claim / conflicting-amount.
+    if _svc_seen and _dup_window > 0:
+        from datetime import date as _dd
+        _dup_rows: set = set()
+        for _entries in _svc_seen.values():
+            if len(_entries) < 2:
+                continue
+            _entries.sort()
+            for _i1 in range(len(_entries) - 1):
+                _d1, _r1 = _entries[_i1]
+                for _i2 in range(_i1 + 1, len(_entries)):
+                    _d2, _r2 = _entries[_i2]
+                    try:
+                        _delta = (_dd.fromisoformat(_d2)
+                                  - _dd.fromisoformat(_d1)).days
+                    except ValueError:
+                        break
+                    if _delta > _dup_window:
+                        break               # sorted → nothing closer follows
+                    if _delta > 0:
+                        _dup_rows.add(_r1)
+                        _dup_rows.add(_r2)
+        if _dup_rows:
+            res.sanity["possible-duplicate-service"] = len(_dup_rows)
+            res.flag_rows["possible-duplicate-service"] = \
+                sorted(_dup_rows)[:_WORKLIST_CAP]
+
+    # Claim rollup — the claim-level shape of a line-level file: how many
+    # claims, how deep, and how the money distributes per claim.
+    if _claim_agg:
+        _lines = [int(a[0]) for a in _claim_agg.values()]
+        _charges = sorted(a[1] for a in _claim_agg.values()
+                          if a[1] > 0)
+        _n_claims = len(_claim_agg)
+        res.claims = {
+            "column": headers[claim_i],
+            "n_claims": _n_claims,
+            "avg_lines": round(sum(_lines) / _n_claims, 2),
+            "max_lines": max(_lines),
+            "truncated": _claim_trunc,
+        }
+        if _charges:
+            res.claims["charge"] = {
+                "min": round(_charges[0], 2),
+                "median": round(_quantile(_charges, 0.5), 2),
+                "mean": round(sum(_charges) / len(_charges), 2),
+                "max": round(_charges[-1], 2),
+            }
 
     # Headered-but-empty columns — an extract/mapping defect worth surfacing.
     if res.n_rows_out:

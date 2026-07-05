@@ -46,6 +46,7 @@ _DEFAULT_THRESHOLDS = {
     "timely_filing_days": 365,
     "stale_years": 10,
     "outlier_iqr_mult": 3.0,
+    "dup_window_days": 3,
 }
 
 
@@ -91,6 +92,11 @@ def _sanitize(config: Dict[str, object]) -> Dict[str, object]:
             m = float(thr_in.get("outlier_iqr_mult",
                                  thr["outlier_iqr_mult"]))
             thr["outlier_iqr_mult"] = max(1.5, min(10.0, m))
+        except (TypeError, ValueError):
+            pass
+        try:
+            w = int(thr_in.get("dup_window_days", thr["dup_window_days"]))
+            thr["dup_window_days"] = max(1, min(30, w))
         except (TypeError, ValueError):
             pass
 

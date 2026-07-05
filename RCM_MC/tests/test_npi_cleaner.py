@@ -1444,6 +1444,112 @@ class TestX12(unittest.TestCase):
         self.assertEqual(res.n_rows_in, 0)
 
 
+_X12_835 = (
+    "ISA*00*          *00*          *ZZ*PAYER          *ZZ*PROVIDER       "
+    "*240215*0800*^*00501*000000003*0*P*:~"
+    "GS*HP*PAYER*PROV*20240215*0800*3*X*005010X221A1~"
+    "ST*835*0003~"
+    "BPR*I*330*C*ACH*CCP~"
+    "TRN*1*CHK12345*1512345678~"
+    "DTM*405*20240215~"
+    "N1*PR*UNITEDHEALTHCARE~"
+    "N1*PE*ACME FAMILY CLINIC*XX*1497758544~"
+    "CLP*ACCT001*1*225*180*20*12*UHC-ICN-1~"
+    "NM1*QC*1*DOE*JANE~"
+    "DTM*232*20240110~"
+    "SVC*HC:99213:25*100*80~"
+    "CAS*CO*45*15~"
+    "CAS*PR*3*5~"
+    "SVC*HC:93000*125*100~"
+    "CAS*CO*45*25~"
+    "CLP*ACCT002*4*80*0*0*12*UHC-ICN-2~"
+    "NM1*QC*1*ROE*MARY~"
+    "DTM*232*20240111~"
+    "CAS*CO*29*80~"
+    "SE*20*0003~GE*1*3~IEA*1*000000003~").encode()
+
+
+class TestX835(unittest.TestCase):
+    """X12 835 remittance ingestion — CLP/SVC/CAS flattened to one row per
+    paid service line, CARCs feeding the existing denial analytics."""
+
+    def test_835_flatten(self):
+        from rcm_mc.npi_cleaner import x12
+        h, rows = x12.x835_to_table(_X12_835)
+        self.assertEqual(len(rows), 3)
+        r0 = dict(zip(h, rows[0]))
+        self.assertEqual(r0["ClaimID"], "ACCT001")
+        self.assertEqual(r0["HCPCS"], "99213")
+        self.assertEqual((r0["BilledAmt"], r0["PaidAmt"]), ("100", "80"))
+        # Line-level CAS attaches to ITS line only — no cross-line leak.
+        self.assertEqual(r0["DenialCodes"], "45, 3")
+        self.assertIn("CO-45:15", r0["AdjustmentDetail"])
+        r1 = dict(zip(h, rows[1]))
+        self.assertEqual(r1["DenialCodes"], "45")
+        # A denied claim with no SVC detail still emits a claim-level row.
+        r2 = dict(zip(h, rows[2]))
+        self.assertEqual(r2["ClaimStatus"], "4")
+        self.assertEqual(r2["DenialCodes"], "29")
+        self.assertEqual(r0["PayeeNPI"], "1497758544")
+        self.assertEqual(r0["PaidDate"], "2024-02-15")
+        self.assertEqual(r0["DateOfService"], "2024-01-10")
+        # An 837 is not an 835 and vice versa.
+        self.assertIsNone(x12.x835_to_table(_X12_837P))
+        self.assertIsNone(x12.x12_to_table(_X12_835))
+
+    def test_835_through_engine(self):
+        res = engine.clean_bytes(_X12_835, "remit.835")
+        sc = res.as_scorecard()
+        self.assertEqual(sc["delimiter"], "X12 835 (ERA)")
+        # CARCs land in the denial analytics with catalog-known code 45
+        # (charges exceed fee schedule) on top.
+        self.assertTrue(sc["denials"])
+        self.assertEqual(sc["denials"]["top"][0]["code"], "45")
+        # Claim rollup rides the ClaimID column automatically.
+        self.assertEqual(sc["claims"]["n_claims"], 2)
+
+
+class TestDupWindowAndRollup(unittest.TestCase):
+    def test_possible_duplicate_service_window(self):
+        data = ("PatientID,BillingNPI,HCPCS,DateOfService\n"
+                f"P1,{GOOD_A},99213,2024-01-01\n"
+                f"P1,{GOOD_A},99213,2024-01-03\n"   # 2 days → both flagged
+                f"P2,{GOOD_A},99214,2024-01-01\n"
+                f"P2,{GOOD_A},99214,2024-01-20\n").encode()  # 19 days → no
+        res = engine.clean_bytes(data, "dup.csv")
+        self.assertEqual(res.sanity.get("possible-duplicate-service"), 2)
+        self.assertEqual(res.flag_rows["possible-duplicate-service"], [1, 2])
+        # The window is a profile threshold: at 1 day nothing matches.
+        res2 = engine.clean_bytes(
+            data, "dup.csv", profile={"thresholds": {"dup_window_days": 1}})
+        self.assertIsNone(res2.sanity.get("possible-duplicate-service"))
+        # And it participates in the uniqueness dimension + registry.
+        from rcm_mc.npi_cleaner import rules, profiles
+        self.assertEqual(rules.describe("possible-duplicate-service")
+                         ["dimension"], "uniqueness")
+        cfg = profiles._sanitize({"thresholds": {"dup_window_days": 99}})
+        self.assertEqual(cfg["thresholds"]["dup_window_days"], 30)
+
+    def test_claim_rollup(self):
+        data = ("ClaimID,BilledAmt\nC1,100\nC1,50\nC2,300\n").encode()
+        res = engine.clean_bytes(data, "roll.csv")
+        c = res.as_scorecard()["claims"]
+        self.assertEqual(c["n_claims"], 2)
+        self.assertEqual(c["avg_lines"], 1.5)
+        self.assertEqual(c["max_lines"], 2)
+        self.assertEqual(c["charge"]["median"], 225.0)
+        self.assertEqual(c["charge"]["max"], 300.0)
+        self.assertFalse(c["truncated"])
+        # No claim-id column → no rollup, not a crash.
+        res2 = engine.clean_bytes(b"NPI,Amt\n123,5\n", "n.csv")
+        self.assertIsNone(res2.as_scorecard()["claims"])
+        # Rollup + exec report render together.
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        html_out = build_exec_report(res.as_scorecard(), "roll.csv",
+                                     "2026-01-01T00:00:00+00:00")
+        self.assertIn("Claim rollup", html_out)
+
+
 class TestMappingTemplates(unittest.TestCase):
     """Named column-mapping templates (mappings.py) — map a source system
     once, reuse per upload via X-Mapping."""

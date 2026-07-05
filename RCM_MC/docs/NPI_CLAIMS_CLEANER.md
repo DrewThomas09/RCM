@@ -78,15 +78,22 @@ description, remediation, and dimension.
 Both persist in dedicated SQLite files under the cleaner's WORKDIR —
 configuration only, never claim rows.
 
-## X12 837 ingestion
+## X12 837 + 835 ingestion
 
-`rcm_mc/npi_cleaner/x12.py` reads native 837P/837I EDI directly:
-separators come from the ISA envelope per spec, claims flatten to one
-row per service line (ClaimID, payer, billing/rendering/attending NPI,
-patient, DOS, POS / TOB, revenue code, HCPCS + modifiers, diagnosis,
-units, charge), and the normal pipeline runs unchanged. A non-837
-interchange (835/999/270) produces a precise warning instead of an
-empty result.
+`rcm_mc/npi_cleaner/x12.py` reads native EDI directly:
+
+- **837P/837I claims** flatten to one row per service line (ClaimID,
+  payer, billing/rendering/attending NPI, patient, DOS, POS / TOB,
+  revenue code, HCPCS + modifiers, diagnosis, units, charge).
+- **835 remittances (ERA)** flatten to one row per paid service line
+  (claim status, billed/paid/patient-responsibility, CARC denial codes
+  from CAS adjustments with group codes and amounts) — the CARCs feed
+  the existing denial analytics and catalog, and the paid-vs-billed
+  screens run automatically.
+
+Separators come from the ISA envelope per spec and the normal pipeline
+runs unchanged. Any other transaction set (999/270/276) produces a
+precise warning instead of an empty result.
 
 ## Run history
 

@@ -161,6 +161,24 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                          f"<td class='num'>{int(n):,}</td></tr>")
         parts.append("</table>")
 
+    claims = sc.get("claims") or {}
+    if claims.get("n_claims"):
+        ch = claims.get("charge") or {}
+        parts.append("<h2>Claim rollup</h2><table>"
+                     "<tr><th>Metric</th><th class='num'>Value</th></tr>"
+                     f"<tr><td>Distinct claims ({_esc(claims.get('column'))})"
+                     f"</td><td class='num'>{int(claims['n_claims']):,}"
+                     "</td></tr>"
+                     f"<tr><td>Lines per claim (avg / max)</td>"
+                     f"<td class='num'>{claims.get('avg_lines')} / "
+                     f"{claims.get('max_lines')}</td></tr>")
+        if ch:
+            parts.append(
+                f"<tr><td>Per-claim charge (median / mean / max)</td>"
+                f"<td class='num'>${ch.get('median'):,.2f} / "
+                f"${ch.get('mean'):,.2f} / ${ch.get('max'):,.2f}</td></tr>")
+        parts.append("</table>")
+
     specs = sc.get("specialties") or []
     if specs:
         parts.append("<h2>Specialty mix (provider taxonomy)</h2><table>"

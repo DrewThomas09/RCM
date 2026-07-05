@@ -196,11 +196,11 @@ def _body() -> str:
       <div class="cloud">⤒</div>
       <div class="big">Drag a claims file here</div>
       <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, Excel (.xlsx), or X12 837 (.837/.edi) · up to 200&nbsp;MB ·
+        CSV, TSV, Excel (.xlsx), or X12 837/835 (.837/.835/.edi) · up to 200&nbsp;MB ·
         <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
     </div>
     <input type="file" id="npi-file" class="npi-hidden"
-           accept=".csv,.tsv,.txt,.xlsx,.837,.edi,.x12,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+           accept=".csv,.tsv,.txt,.xlsx,.837,.835,.edi,.x12,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <div class="npi-opts">
       <label><input type="checkbox" id="npi-dedupe" checked>
         Remove exact-duplicate rows</label>
@@ -252,6 +252,9 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
         <label class="npi-muted">outlier fence (×IQR)
           <input id="npi-prof-iqr" type="number" value="3" min="1.5"
                  max="10" step="0.5" style="width:60px;font-size:12.5px"></label>
+        <label class="npi-muted">dup window (days)
+          <input id="npi-prof-dupwin" type="number" value="3" min="1"
+                 max="30" style="width:55px;font-size:12.5px"></label>
       </div>
       <div class="npi-muted" style="margin-top:8px">Per rule: leave
         <em>on</em>, mark <em>accepted</em> (reported, not graded), or
@@ -494,7 +497,8 @@ _EXTRA_JS = r"""
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
     (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
-    renderRepairs(s.repairs, s.repairs_total, s.credentials, s.specialties);
+    renderRepairs(s.repairs, s.repairs_total, s.credentials, s.specialties,
+                  s.claims);
     renderSanity(s.sanity, s.worklists, s.download, s.accepted_rules||[]);
     renderQuality(s);
     $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
@@ -636,12 +640,26 @@ _EXTRA_JS = r"""
     "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)",
     "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)"};
 
-  function renderRepairs(repairs, total, credentials, specialties){
+  function renderRepairs(repairs, total, credentials, specialties, claims){
     var box=$("npi-repairs");
     var keys=repairs?Object.keys(repairs):[];
     var ckeys=credentials?Object.keys(credentials):[];
     var specs=specialties||[];
-    if(!keys.length && !ckeys.length && !specs.length){ box.innerHTML=""; return; }
+    if(!keys.length && !ckeys.length && !specs.length && !claims){
+      box.innerHTML=""; return; }
+    var claimsHtml="";
+    if(claims && claims.n_claims){
+      claimsHtml='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Claim rollup</h3></div>'+
+        '<div class="npi-muted">'+fmt(claims.n_claims)+' distinct claims ('+
+        esc(claims.column)+') · '+claims.avg_lines+' lines/claim avg · '+
+        fmt(claims.max_lines)+' max'+
+        (claims.charge?(' · per-claim charge $'+
+          fmt(claims.charge.median)+' median / $'+fmt(claims.charge.max)+
+          ' max'):'')+
+        (claims.truncated?' · (rollup capped at 50,000 claims)':'')+
+        '</div>';
+    }
     var html="";
     if(keys.length){
       keys.sort(function(a,b){return repairs[b]-repairs[a];});
@@ -674,7 +692,7 @@ _EXTRA_JS = r"""
             esc(s.name||s.code)+' · '+fmt(s.n)+'</span>';
         }).join("")+'</div>';
     }
-    box.innerHTML=html;
+    box.innerHTML=html+claimsHtml;
   }
 
   var SANITY_LABELS={
@@ -711,7 +729,8 @@ _EXTRA_JS = r"""
     "carc-invalid":"Invalid denial/adjustment reason code (not a CARC shape)",
     "drg-malformed":"Malformed MS-DRG (not a 3-digit code 001-999)",
     "anesthesia-units-implausible":"Anesthesia line billing more than 24 hours of time units",
-    "revenue-tob-mismatch":"Room &amp; board revenue code on an outpatient type of bill"};
+    "revenue-tob-mismatch":"Room &amp; board revenue code on an outpatient type of bill",
+    "possible-duplicate-service":"Same patient · provider · code again within the duplicate window"};
   var RULE_INFO={};
   function sevChip(sev){
     var c=sev==="critical"?"#b5321e":(sev==="warning"?"#b8732a":"#5b6770");
@@ -1351,7 +1370,8 @@ _EXTRA_JS = r"""
     var cfg={disabled_rules:disabled, accepted_rules:accepted,
       thresholds:{timely_filing_days:parseInt($("npi-prof-timely").value,10)||365,
                   stale_years:parseInt($("npi-prof-stale").value,10)||10,
-                  outlier_iqr_mult:parseFloat($("npi-prof-iqr").value)||3}};
+                  outlier_iqr_mult:parseFloat($("npi-prof-iqr").value)||3,
+                  dup_window_days:parseInt($("npi-prof-dupwin").value,10)||3}};
     fetch("/npi-cleaner/api/profiles", {method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({name:name, config:cfg})})

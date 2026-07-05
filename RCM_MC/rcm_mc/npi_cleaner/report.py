@@ -55,6 +55,11 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
          sum((sc.get("sanity") or {}).values())],
         ["Source format", sc["delimiter"]],
     ]
+    _clm0 = sc.get("claims") or {}
+    if _clm0.get("n_claims"):
+        exec_rows.append(
+            ["Distinct claims",
+             f"{_clm0['n_claims']:,} · {_clm0.get('avg_lines')} lines/claim"])
     _sn0 = sc.get("sanity") or {}
     if _sn0:
         exec_rows.append(_header(["Top findings", "Rows"]))
