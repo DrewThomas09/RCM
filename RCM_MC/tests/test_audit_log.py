@@ -180,7 +180,9 @@ class TestHandlerEmissions(unittest.TestCase):
                 with _u.urlopen(f"http://127.0.0.1:{port}/audit") as r:
                     body = r.read().decode()
                     self.assertIn("Audit events", body)
-                    self.assertIn("alert.ack", body)
+                    # Action codes are humanized for partners:
+                    # "alert.ack" renders as "Alert ack".
+                    self.assertIn("Alert ack", body)
                     self.assertIn("ccf", body)
             finally:
                 server.shutdown(); server.server_close()

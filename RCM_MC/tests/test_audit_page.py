@@ -94,7 +94,8 @@ class TestAuditPage(unittest.TestCase):
                     body = r.read().decode()
                     self.assertIn("Recent acks (1)", body)
                     self.assertIn("ack test", body)
-                    self.assertIn("covenant_tripped", body)
+                    # Kind is rendered with underscores replaced by spaces
+                    self.assertIn("covenant tripped", body)
             finally:
                 server.shutdown(); server.server_close()
 

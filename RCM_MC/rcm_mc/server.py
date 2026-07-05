@@ -111,6 +111,58 @@ class ServerConfig:
     auth_pass: Optional[str] = None
 
 
+# ── Small partner-facing formatting helpers ────────────────────────────────
+
+def _fmt_ts_min(v: Any) -> str:
+    """Render a stored timestamp as ``YYYY-MM-DD HH:MM`` for partner-facing
+    HTML — strips seconds and replaces the ISO ``T`` separator with a space.
+
+    Accepts ISO strings (``2026-05-01T09:30:12``), SQLite datetimes with a
+    space separator, and anything ``str()``-able; empty/None → "".
+    """
+    if v is None:
+        return ""
+    return str(v)[:16].replace("T", " ")
+
+
+# Partner-facing labels for the quarterly-variance KPI keys
+# (:data:`rcm_mc.pe.hold_tracking.TRACKED_KPIS` plus legacy aliases).
+_KPI_LABELS: Dict[str, str] = {
+    "ebitda": "EBITDA",
+    "net_patient_revenue": "Net patient revenue",
+    "net_revenue": "Net revenue",
+    "idr_blended": "Initial denial rate (blended)",
+    "fwr_blended": "Final write-off rate (blended)",
+    "dar_clean_days": "Days A/R (clean claims)",
+}
+
+
+def _kpi_label(kpi: Any) -> str:
+    """Partner label for a variance-table KPI key ("ebitda" → "EBITDA")."""
+    key = str(kpi or "")
+    label = _KPI_LABELS.get(key.lower())
+    if label:
+        return label
+    # Unknown key — degrade gracefully: underscores to spaces, sentence case.
+    words = key.replace("_", " ").strip()
+    return words[:1].upper() + words[1:] if words else ""
+
+
+# Partner-facing subtext for the deal-page health tile, keyed off the
+# internal band token from :mod:`rcm_mc.deals.health_score`.
+_HEALTH_BAND_LABELS: Dict[str, str] = {
+    "red": "Red — needs attention",
+    "amber": "Amber — watch",
+    "green": "Green — healthy",
+}
+
+
+def _plural(n: int, singular: str, plural: Optional[str] = None) -> str:
+    """``"1 entry"`` / ``"3 entries"`` — count with a grammatical unit."""
+    unit = singular if n == 1 else (plural or singular + "s")
+    return f"{n} {unit}"
+
+
 # ── HTML page builders (dynamic = rebuilt per request) ─────────────────────
 
 def _render_dashboard(config: ServerConfig) -> str:
@@ -292,16 +344,20 @@ def _render_deal_rerun(store: PortfolioStore, deal_id: str) -> str:
         actual = html.escape(inputs["actual_path"])
         bench = html.escape(inputs["benchmark_path"])
         base = html.escape(inputs.get("outdir_base") or "")
+        # Header shows only the file basenames — the full absolute paths
+        # are operator plumbing and live in the "change paths" form below.
+        actual_name = html.escape(os.path.basename(inputs["actual_path"]))
+        bench_name = html.escape(os.path.basename(inputs["benchmark_path"]))
         return f"""
         {rerun_css}
         <section class="cad-card ck-deal-rerun-card">
           <div class="ck-deal-rerun-head">
             <h2>Rerun simulation</h2>
-            <span class="ck-deal-rerun-meta">{actual} · {bench}</span>
+            <span class="ck-deal-rerun-meta">{actual_name} · {bench_name}</span>
           </div>
           <form class="ck-deal-rerun-form" method="POST"
                 action="/api/deals/{qd}/rerun">
-            <label>n_sims
+            <label>Simulations
               <input type="number" name="n_sims" value="5000" min="100">
             </label>
             <label>seed
@@ -472,7 +528,7 @@ def _render_deal_deadlines(store: PortfolioStore, deal_id: str) -> str:
       <header class="ck-deal-deadlines-head">
         <h2>Deadlines</h2>
         <span class="ck-deal-deadlines-meta">
-          {len(df)} entries · <a href="/deadlines">all deadlines →</a>
+          {_plural(len(df), "entry", "entries")} · <a href="/deadlines">all deadlines →</a>
         </span>
       </header>
       {list_html}
@@ -600,7 +656,7 @@ def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
       <header class="ck-deal-alerts-head">
         <h2>Active alerts</h2>
         <span class="ck-deal-alerts-meta">
-          {len(alerts)} entries · <a href="/alerts">all alerts →</a>
+          {_plural(len(alerts), "entry", "entries")} · <a href="/alerts">all alerts →</a>
         </span>
       </header>
       <ul class="ck-deal-alerts-list">{"".join(rows)}</ul>
@@ -711,7 +767,8 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         return (
             f'<span style="color:{color};font-family:var(--sc-mono,monospace);'
             f'font-weight:700;font-size:10.5px;letter-spacing:0.08em;'
-            f'text-transform:uppercase;">{html.escape(str(sev))}</span>'
+            f'text-transform:uppercase;">'
+            f'{html.escape(str(sev).replace("_", " "))}</span>'
         )
 
     # Snapshot audit trail — oldest→newest, inline table
@@ -741,7 +798,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         trail_rows.append(
             f"<tr>"
             f'<td class="ck-deal-mono">'
-            f'{html.escape(str(r.get("created_at") or "")[:19])}</td>'
+            f'{html.escape(_fmt_ts_min(r.get("created_at")))}</td>'
             f"<td>{html.escape(str(r.get('stage') or '?')).title()}</td>"
             f"<td class='r ck-deal-mono'>{moic}</td>"
             f"<td class='r ck-deal-mono'>{irr}</td>"
@@ -764,7 +821,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
                 f"<tr>"
                 f'<td class="ck-deal-mono">'
                 f'{html.escape(str(r.get("quarter") or ""))}</td>'
-                f"<td>{html.escape(str(r.get('kpi') or ''))}</td>"
+                f"<td>{html.escape(_kpi_label(r.get('kpi')))}</td>"
                 f"<td class='r ck-deal-mono'>{_fmt_kpi_val(r.get('kpi'), r.get('actual'))}</td>"
                 f"<td class='r ck-deal-mono'>{_fmt_kpi_val(r.get('kpi'), r.get('plan'))}</td>"
                 f"<td class='r ck-deal-mono'>{varp_str}</td>"
@@ -937,7 +994,8 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
         + ck_kpi_block(
             "Health", health_value,
-            sub=f'{html.escape(health["band"])} band',
+            sub=html.escape(_HEALTH_BAND_LABELS.get(
+                str(health["band"]).lower(), str(health["band"]))),
         )
         + ck_kpi_block(
             "Stage", html.escape(str(stage)).title(),
@@ -1033,7 +1091,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     <section class="cad-card ck-deal-section">
       <header class="ck-deal-section-head">
         <h2>Snapshot audit trail</h2>
-        <span class="ck-deal-section-count">{len(snaps)} entries</span>
+        <span class="ck-deal-section-count">{_plural(len(snaps), "entry", "entries")}</span>
       </header>
       <table class="ck-deal-table">
         <thead><tr>
@@ -1051,7 +1109,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
       '<section class="cad-card ck-deal-section">'
       '<header class="ck-deal-section-head">'
       '<h2>Quarterly variance</h2>'
-      f'<span class="ck-deal-section-count">{len(var_df)} rows</span>'
+      f'<span class="ck-deal-section-count">{_plural(len(var_df), "row")}</span>'
       '</header>'
       '<table class="ck-deal-table"><thead><tr>'
       '<th>Quarter</th><th>KPI</th>'
@@ -1066,7 +1124,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
       '<section class="cad-card ck-deal-section">'
       '<header class="ck-deal-section-head">'
       '<h2>Initiative attribution</h2>'
-      f'<span class="ck-deal-section-count">{len(init_df)} initiatives</span>'
+      f'<span class="ck-deal-section-count">{_plural(len(init_df), "initiative")}</span>'
       '</header>'
       '<table class="ck-deal-table"><thead><tr>'
       '<th>Initiative</th><th class="r">Cum. actual</th>'
@@ -1210,7 +1268,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
     items_html: list = []
     for _, r in notes_df.iterrows():
         author = r.get("author") or "—"
-        ts = str(r.get("created_at") or "")[:19]
+        ts = _fmt_ts_min(r.get("created_at"))
         body_text = str(r.get("body") or "")
         # Preserve analyst-typed newlines as <br>; escape everything else
         escaped = html.escape(body_text).replace("\n", "<br>")
@@ -1264,7 +1322,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
             note_id = int(r.get("note_id") or 0)
             body_txt = str(r.get("body") or "")[:140]
             author_txt = str(r.get("author") or "—")
-            deleted_ts = str(r.get("deleted_at") or "")[:19]
+            deleted_ts = _fmt_ts_min(r.get("deleted_at"))
             trash_items.append(
                 f'<li style="padding: 0.5rem 0; '
                 f'border-bottom: 1px solid var(--border); '
@@ -1367,7 +1425,7 @@ def _render_deal_notes(store: PortfolioStore, deal_id: str) -> str:
     <section class="cad-card ck-deal-notes-card">
       <header class="ck-deal-notes-head">
         <h2>Notes</h2>
-        <span class="ck-deal-notes-count">{len(notes_df)} entries</span>
+        <span class="ck-deal-notes-count">{_plural(len(notes_df), "entry", "entries")}</span>
       </header>
       {note_list}
       <form class="ck-deal-note-form" method="POST" action="/api/deals/{qd}/notes">
@@ -7713,7 +7771,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     rid = r.get("run_id", "")
                     did = html.escape(str(r.get("deal_id", "")))
                     scenario = html.escape(str(r.get("scenario", "")))
-                    created = html.escape(str(r.get("created_at", ""))[:19])
+                    created = html.escape(_fmt_ts_min(r.get("created_at", "")))
                     notes = html.escape(str(r.get("notes", ""))[:80])
                     rows_html += (
                         f'<tr><td class="num">{rid}</td>'
@@ -16753,7 +16811,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f"<td>{html.escape(params.get('outdir') or '—')}</td>"
                 f"<td class='num'>{params.get('n_sims') or '—'}</td>"
                 f"<td class='num'>{duration}</td>"
-                f"<td class='muted'>{html.escape(str(j.created_at)[:19])}</td>"
+                f"<td class='muted'>{html.escape(_fmt_ts_min(j.created_at))}</td>"
                 f"</tr>"
             )
         jobs_table = (
@@ -16903,9 +16961,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         <div class="card">
           <h2>Status: <span class="badge {cls}">{label}</span></h2>
           <p class="muted">
-            Created {html.escape(str(job.created_at)[:19])}
-            {f"· Started {html.escape(str(job.started_at)[:19])}" if job.started_at else ""}
-            {f"· Finished {html.escape(str(job.finished_at)[:19])}" if job.finished_at else ""}
+            Created {html.escape(_fmt_ts_min(job.created_at))}
+            {f"· Started {html.escape(_fmt_ts_min(job.started_at))}" if job.started_at else ""}
+            {f"· Finished {html.escape(_fmt_ts_min(job.finished_at))}" if job.finished_at else ""}
           </p>
           <p><a href="/jobs">← All jobs</a></p>
         </div>
@@ -17002,7 +17060,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         )
 
         def _fmt_ts(v):
-            return html.escape(str(v)[:19]) if v else "—"
+            return html.escape(_fmt_ts_min(v)) if v else "—"
 
         stats_rows = "".join(
             f'<tr><td><code>{tbl}</code></td>'
@@ -17849,7 +17907,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     did = str(r.get("deal_id") or "")
                     snippet = body_text[:240]
                     more = "…" if len(body_text) > 240 else ""
-                    when = html.escape(str(r.get("created_at") or "")[:19])
+                    when = html.escape(_fmt_ts_min(r.get("created_at")))
                     note_hits.append(
                         '<li class="ck-search-hit">'
                         f'<div class="ck-search-hit-title">{_deal_link(did)}'
@@ -18175,7 +18233,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 f"<td><span class='badge badge-blue'>"
                 f"{html.escape(str(r['role']))}</span></td>"
                 f"<td class='muted' style='font-size: 0.8rem;'>"
-                f"{html.escape(str(r['created_at'])[:19])}</td>"
+                f"{html.escape(_fmt_ts_min(r['created_at']))}</td>"
                 f"</tr>"
                 for _, r in users_df.iterrows()
             )
@@ -18210,12 +18268,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 a_rows.append(
                     f"<tr>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['acked_at'])[:19])}</td>"
+                    f"{html.escape(_fmt_ts_min(r['acked_at']))}</td>"
                     f"<td><strong>{html.escape(acker)}</strong></td>"
                     f"<td><a href='/deal/{urllib.parse.quote(did)}' "
                     f"style='color: var(--accent); font-weight: 600; "
                     f"text-decoration: none;'>{html.escape(did)}</a></td>"
-                    f"<td>{html.escape(str(r['kind']))}</td>"
+                    f"<td>{html.escape(str(r['kind']).replace('_', ' '))}</td>"
                     f"<td>{snooze_cell}</td>"
                     f"<td class='muted' style='font-size: 0.85rem;'>"
                     f"{html.escape(str(r.get('note') or ''))}</td>"
@@ -18251,7 +18309,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 o_rows.append(
                     f"<tr>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['assigned_at'])[:19])}</td>"
+                    f"{html.escape(_fmt_ts_min(r['assigned_at']))}</td>"
                     f"<td><strong>{html.escape(str(r['owner']))}</strong></td>"
                     f"<td><a href='/deal/{urllib.parse.quote(did)}' "
                     f"style='color: var(--accent); font-weight: 600; "
@@ -18278,18 +18336,34 @@ class RCMHandler(BaseHTTPRequestHandler):
                 '<p class="muted">Nothing logged yet.</p></div>'
             )
         else:
+            def _human_action(code: str) -> str:
+                # "view.sensitive" / "login.success" → "View sensitive" /
+                # "Login success" — partners read words, not event codes.
+                words = code.replace(".", " ").replace("_", " ").strip()
+                return words[:1].upper() + words[1:] if words else ""
+
+            def _human_detail_key(k: str) -> str:
+                # "client_ip" → "client IP"; generic keys just lose their
+                # underscores. Acronyms a partner recognises stay uppercase.
+                words = str(k).replace("_", " ").split()
+                return " ".join(
+                    w.upper() if w.lower() in ("ip", "id", "url", "ua")
+                    else w for w in words
+                )
+
             e_rows = []
             for _, r in events_df.iterrows():
                 detail = r.get("detail") or {}
                 detail_txt = " ".join(
-                    f"{k}={v}" for k, v in (detail or {}).items()
+                    f"{_human_detail_key(k)} {v}"
+                    for k, v in (detail or {}).items()
                 ) if isinstance(detail, dict) else ""
                 e_rows.append(
                     f"<tr>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
-                    f"{html.escape(str(r['at'])[:19])}</td>"
+                    f"{html.escape(_fmt_ts_min(r['at']))}</td>"
                     f"<td><strong>{html.escape(str(r['actor']))}</strong></td>"
-                    f"<td><code>{html.escape(str(r['action']))}</code></td>"
+                    f"<td><code>{html.escape(_human_action(str(r['action'])))}</code></td>"
                     f"<td>{html.escape(str(r['target'] or ''))}</td>"
                     f"<td class='muted' style='font-size: 0.8rem;'>"
                     f"{html.escape(detail_txt)}</td>"
