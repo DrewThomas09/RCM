@@ -366,5 +366,4 @@ def render_npi_history() -> str:
         breadcrumbs=[("Tools", None), ("NPI Cleaner", "/npi-cleaner"),
                      ("Run history", None)],
         extra_css=_CSS,
-        code="rcm_mc/ui/npi_history_page.py",
     )

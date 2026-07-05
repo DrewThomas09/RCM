@@ -167,5 +167,80 @@ class ChartisShellLegacySectionIntroAutoTitleTests(unittest.TestCase):
         self.assertEqual(html.count('class="ck-page-title"'), 1)
 
 
+class ChartisShellDebugCodeTests(unittest.TestCase):
+    """The ``code=`` kwarg must never leak into partner HTML.
+
+    The old implementation emitted ``<div class="ck-debug-code">[TAG]
+    </div>`` — and no CSS rule for .ck-debug-code existed anywhere, so
+    the bracket tag rendered as visible plain text at the top of ~45
+    pages ("[FIT]", "[ERR]", even a literal source-file path on
+    /npi-cleaner/history). The kwarg stays accepted for the ~175
+    existing call sites, but nothing may be rendered from it.
+    """
+
+    def test_code_kwarg_is_accepted_but_not_rendered(self):
+        html = chartis_shell("<p>body</p>", title="X", code="FIT")
+        self.assertNotIn("ck-debug-code", html)
+        self.assertNotIn("[FIT]", html)
+        # The page itself still renders normally.
+        self.assertIn("<p>body</p>", html)
+
+    def test_source_path_code_not_rendered(self):
+        # Regression for /npi-cleaner/history, which passed its own
+        # source path as code= and showed it to partners.
+        html = chartis_shell(
+            "<p>x</p>", title="X",
+            code="rcm_mc/ui/npi_history_page.py",
+        )
+        self.assertNotIn("npi_history_page.py", html)
+        self.assertNotIn("ck-debug-code", html)
+
+    def test_npi_history_page_shows_no_source_path(self):
+        from rcm_mc.ui.npi_history_page import render_npi_history
+        html = render_npi_history()
+        self.assertNotIn("[rcm_mc/ui/npi_history_page.py]", html)
+        self.assertNotIn("ck-debug-code", html)
+
+
+class PaletteVisibilityPolicyTests(unittest.TestCase):
+    """The Cmd-K palette must not contradict _surface_visibility.
+
+    /cli-runs and /demo are classified internal (INTERNAL_ROUTES);
+    /tools/open-data is the internal open-data lab ("internal, backend
+    Tools-tab surface only"). None of them may be offered as partner
+    jump targets. Admin product surfaces (Audit Chain, Data Source
+    Admin) stay — they are not in INTERNAL_ROUTES.
+    """
+
+    def test_internal_routes_absent_from_palette(self):
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        for internal in ("/cli-runs", "/demo", "/tools/open-data"):
+            self.assertNotIn(internal, routes,
+                             msg=f"internal route {internal} leaked "
+                                 f"into the Cmd-K palette")
+
+    def test_admin_product_surfaces_kept(self):
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
+        self.assertIn("/admin/audit-chain", routes)
+        self.assertIn("/admin/data-sources", routes)
+
+    def test_palette_agrees_with_surface_visibility(self):
+        # Systemic guard: nothing classified internal by the
+        # visibility registry may appear in the palette, with the one
+        # documented exception of /users (rank-4 note: "admin pages
+        # keep their user-menu links") — pinned separately so a new
+        # internal route can't silently ship a palette entry.
+        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+        from rcm_mc.ui._surface_visibility import is_internal
+        leaked = sorted(
+            m["route"] for m in _DEFAULT_PALETTE_MODULES
+            if is_internal(m["route"]) and m["route"] != "/users"
+        )
+        self.assertEqual(leaked, [],
+                         msg=f"internal routes in palette: {leaked}")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -7602,11 +7602,15 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "settings-ai",   "title": "AI Settings",        "route": "/settings/ai"},
     {"id": "settings-ws",   "title": "Workspace Settings", "route": "/settings/workspace"},
     {"id": "team",          "title": "Team",               "route": "/team"},
-    {"id": "cli-runs",      "title": "CLI Runs",           "route": "/cli-runs"},
+    # Internal surfaces stay OUT of the palette — keep this consistent
+    # with _surface_visibility.INTERNAL_ROUTES ("/cli-runs" and "/demo"
+    # are classified internal there) plus the internal open-data lab
+    # (/tools/open-data — "internal, backend Tools-tab surface only",
+    # never a partner destination). Audit Chain and Data Source Admin
+    # remain: they are admin product surfaces, not internal/debug ones
+    # (they are NOT in INTERNAL_ROUTES).
     {"id": "audit-chain",   "title": "Audit Chain",        "route": "/admin/audit-chain"},
     {"id": "data-source-admin", "title": "Data Source Admin", "route": "/admin/data-sources"},
-    {"id": "open-data-lab", "title": "Open Data Lab",      "route": "/tools/open-data"},
-    {"id": "demo-mode",     "title": "Demo Mode",          "route": "/demo"},
     {"id": "ops-status",    "title": "Ops Status",         "route": "/ops"},
 ]
 
@@ -11909,7 +11913,10 @@ def chartis_shell(
                                   # 500 with "missing positional argument"
     active_nav: Optional[str] = None,
     breadcrumbs: Optional[Sequence[Mapping[str, str]]] = None,
-    code: Optional[str] = None,           # e.g. "[EBT-07]" for debug overlay
+    code: Optional[str] = None,           # legacy debug-overlay tag — accepted
+                                          # but NOT rendered (see debug_tag
+                                          # note below); .ck-debug-code had no
+                                          # CSS and leaked as visible text
     user_initials: str = "AT",
     include_palette: bool = True,
     palette_modules: Optional[Iterable[Mapping[str, str]]] = None,
@@ -11990,7 +11997,13 @@ def chartis_shell(
         # re-enumerate the palette.
         modules_to_use = palette_modules or _DEFAULT_PALETTE_MODULES
         palette_html = ck_command_palette(modules_to_use)
-    debug_tag = f'<div class="ck-debug-code">[{_esc(code)}]</div>' if code else ""
+    # ``code=`` is accepted for backward compatibility but no longer
+    # rendered. The old ``.ck-debug-code`` div had no CSS rule anywhere,
+    # so the bracket tag ("[FIT]", "[ERR]", even a source-file path)
+    # rendered as visible plain text at the top of ~45 partner pages —
+    # a debug affordance leaking into partner HTML. Callers keep
+    # passing code= harmlessly; nothing is emitted.
+    debug_tag = ""
     # show_chrome=False: bare pages (login / forgot) without topnav
     chrome_html = (
         f"{_topbar(active_nav, user_initials)}"
