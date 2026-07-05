@@ -198,6 +198,15 @@ def _regression_section(stats: List[Dict[str, Any]]) -> str:
         ss_tot = np.sum((y - y.mean()) ** 2)
         r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
+        # Display names for regression variables — raw field names run
+        # through .title() leak junk like "Hhi" / "Medicare Pct".
+        _feat_labels = {
+            "hospitals": "Hospitals",
+            "avg_beds": "Avg Beds",
+            "hhi": "HHI",
+            "medicare_pct": "Medicare %",
+            "medicaid_pct": "Medicaid %",
+        }
         coef_rows = ""
         for i, feat in enumerate(available):
             coef = beta[i + 1]
@@ -207,7 +216,7 @@ def _regression_section(stats: List[Dict[str, Any]]) -> str:
             coef_cls = "cad-pos" if coef > 0 else "cad-neg"
             coef_rows += (
                 f'<tr>'
-                f'<td>{html.escape(feat.replace("_", " ").title())}</td>'
+                f'<td>{html.escape(_feat_labels.get(feat, feat.replace("_", " ").title()))}</td>'
                 f'<td class="num {coef_cls}"><strong>{direction}{coef:.4f}</strong></td>'
                 f'<td><div class="md-coef-track">'
                 f'<div class="md-coef-fill" style="width:{bar_width:.0f}%;'
@@ -253,7 +262,7 @@ def _kpi_summary(stats: List[Dict[str, Any]]) -> str:
         + ck_kpi_block("Total Hospitals (HCRIS)", f"{total_hospitals:,}")
         + ck_kpi_block("Total Licensed Beds", f"{total_beds:,}")
         + ck_kpi_block(
-            "Total Net Patient Revenue", f"${total_rev/1e12:.1f}T",
+            "Total Net Patient Revenue", f"${total_rev/1e12:.2f}T",
             help={
                 "definition": (
                     "Aggregate net patient revenue across every "
@@ -458,6 +467,17 @@ def render_market_data(
                 _state_vals, metric_label=_mlabel, value_format=_vfmt,
                 state_link_template="/market-data/state/{state}",
                 empty_message="No state-level HCRIS data available yet.",
+                # Relabel the portfolio-map defaults: this map shades an
+                # HCRIS market metric, not portfolio exposure.
+                map_title=f"United States — {_mlabel} by state",
+                exposure_label=f"{_mlabel} (low → high)",
+                caveat_text=(
+                    "Approximate geographic SVG map (Albers projection of US "
+                    "Census state boundaries, public domain). State shading "
+                    f"reflects per-state {_mlabel} aggregated from CMS HCRIS "
+                    "hospital cost reports. This is not a precise coastline "
+                    "or facility-location map."
+                ),
             )
             + '<p style="font-size:11px;color:var(--sc-text-dim);margin:8px 0 0;">'
             'Real US state map shaded by the metric. '

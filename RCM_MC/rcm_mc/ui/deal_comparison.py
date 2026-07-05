@@ -444,9 +444,13 @@ def render_screen_page(
         ("rev_per_bed", "Revenue per bed (lowest first)"),
     ]
     sort_select = (
-        f'<div><label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
+        # min-width on the grid cell (grid-column:1/-1 lets it take a full
+        # row when the auto-fit columns are narrow) so options like
+        # "Margin (most distressed first)" render untruncated.
+        f'<div style="grid-column:1/-1;min-width:220px;max-width:320px;">'
+        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
         f'Sort by</label>'
-        f'<select name="sort" aria-label="Sort by" style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
+        f'<select name="sort" aria-label="Sort by" style="width:100%;min-width:220px;padding:7px 10px;border:1px solid var(--cad-border);'
         f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;">'
         + "".join(
             f'<option value="{v}"{" selected" if v == sort_val else ""}>{_esc(lbl)}</option>'
@@ -477,13 +481,27 @@ def render_screen_page(
     _range_keys = ("min_beds", "max_beds", "min_revenue", "max_revenue",
                    "min_margin", "max_margin", "max_medicaid", "min_medicare",
                    "state")
+    def _range_chip(label: str, lo, hi, fmt) -> str:
+        # One-sided bounds read as "≥ floor" / "≤ ceiling" — never a
+        # fake infinity endpoint like "NPR $15M–$∞M" or "Margin −∞%–3%".
+        if lo and hi:
+            return _chip(f"{label} {fmt(lo)}–{fmt(hi)}")
+        if lo:
+            return _chip(f"{label} ≥ {fmt(lo)}")
+        return _chip(f"{label} ≤ {fmt(hi)}")
+
     chips = []
     if filters.get("min_beds") or filters.get("max_beds"):
-        chips.append(_chip(f"Beds {filters.get('min_beds') or '0'}–{filters.get('max_beds') or '∞'}"))
+        chips.append(_range_chip(
+            "Beds", filters.get("min_beds"), filters.get("max_beds"), str))
     if filters.get("min_revenue") or filters.get("max_revenue"):
-        chips.append(_chip(f"NPR ${filters.get('min_revenue') or '0'}M–${filters.get('max_revenue') or '∞'}M"))
+        chips.append(_range_chip(
+            "NPR", filters.get("min_revenue"), filters.get("max_revenue"),
+            lambda v: f"${v}M"))
     if filters.get("min_margin") or filters.get("max_margin"):
-        chips.append(_chip(f"Margin {filters.get('min_margin') or '−∞'}%–{filters.get('max_margin') or '∞'}%"))
+        chips.append(_range_chip(
+            "Margin", filters.get("min_margin"), filters.get("max_margin"),
+            lambda v: f"{v}%"))
     if filters.get("max_medicaid"):
         chips.append(_chip(f"Medicaid ≤{filters['max_medicaid']}%"))
     if filters.get("min_medicare"):
@@ -540,7 +558,14 @@ def render_screen_page(
                         f'incomplete or aggregated opex; review before relying on it.">'
                         f'{margin:.1%} &#9888;</td>'
                     )
-            rpb_str = f'${rpb/1e3:,.0f}K' if rpb else '&mdash;'
+            # Roll to millions at ≥$1M (financial 2dp) so a rev/bed of
+            # 3.47e6 reads "$3.47M", never "$3,467K"; keep K below $1M.
+            if not rpb:
+                rpb_str = '&mdash;'
+            elif rpb >= 1e6:
+                rpb_str = f'${rpb/1e6:,.2f}M'
+            else:
+                rpb_str = f'${rpb/1e3:,.0f}K'
             rows_html += (
                 f'<tr>'
                 f'<td><a href="/hospital/{ccn}" style="font-weight:500;">{name}</a></td>'
