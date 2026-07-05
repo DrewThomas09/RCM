@@ -1550,6 +1550,120 @@ class TestDupWindowAndRollup(unittest.TestCase):
         self.assertIn("Claim rollup", html_out)
 
 
+class TestZipBatchAndPayerWorklist(unittest.TestCase):
+    """Batch 15: multi-file zip batch upload + per-payer worklists."""
+
+    def _zip(self, entries):
+        import io as _io
+        import zipfile as _zf
+        buf = _io.BytesIO()
+        with _zf.ZipFile(buf, "w") as z:
+            for name, text in entries:
+                z.writestr(name, text)
+        return buf.getvalue()
+
+    def test_zip_batch_detection(self):
+        data = self._zip([("a.csv", "NPI\n1\n"),
+                          ("notes/readme.md", "skip"),
+                          ("__MACOSX/j.csv", "skip"),
+                          (".hidden.csv", "skip")])
+        members = engine.zip_batch_members(data)
+        self.assertEqual([m[0] for m in members], ["a.csv"])
+        # An xlsx is also a zip — must NOT be treated as a batch.
+        openpyxl = __import__("openpyxl")
+        from io import BytesIO
+        wb = openpyxl.Workbook()
+        wb.active.append(["NPI"])
+        xb = BytesIO()
+        wb.save(xb)
+        self.assertIsNone(engine.zip_batch_members(xb.getvalue()))
+        self.assertIsNone(engine.zip_batch_members(b"NPI\n1\n"))
+        self.assertIsNone(engine.zip_batch_members(
+            self._zip([("only.md", "no claim files")])))
+
+    def test_zip_batch_clean(self):
+        data = self._zip([
+            ("siteA.csv", f"NPI,ChargeAmt\n{GOOD_A},\"$100.00\"\n99999,50\n"),
+            ("siteB.csv", "ClaimID,HCPCS\n1,99213\n2,BAD!!\n")])
+        res = engine.clean_bytes(data, "sites.zip")
+        sc = res.as_scorecard()
+        self.assertEqual(sc["delimiter"], "zip batch")
+        self.assertEqual(len(sc["batch"]), 2)
+        self.assertEqual(sc["rows_in"], 4)
+        by_file = {b["file"]: b for b in sc["batch"]}
+        self.assertEqual(by_file["siteB.csv"]["findings"], 1)
+        self.assertGreater(by_file["siteA.csv"]["repairs"], 0)
+        # Merged counters: the hcpcs flag from siteB is in the parent.
+        self.assertEqual(sc["sanity"].get("hcpcs-malformed"), 1)
+        # Output is a zip of the cleaned member files.
+        import io as _io
+        import zipfile as _zf
+        self.assertTrue(res.out_name.endswith("_cleaned.zip"))
+        with _zf.ZipFile(res.out_path) as z:
+            self.assertEqual(len(z.namelist()), 2)
+            inner = z.read(z.namelist()[0]).decode()
+        self.assertIn(",", inner)
+
+    def test_payer_worklist_route(self):
+        import socket as _socket
+        import threading
+        from rcm_mc.server import build_server
+        with tempfile.TemporaryDirectory() as tmp:
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                csv_b = ("PayerName,HCPCS\nUHC,BAD!!\nUHC,99213\n"
+                         "Aetna,99214\n").encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "pw.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(f"http://127.0.0.1:{port}"
+                                    f"/npi-cleaner/status/{job_id}") as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                self.assertEqual(j["scorecard"]["payer_worklists"],
+                                 {"UNITEDHEALTHCARE": 1})
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/download/{job_id}"
+                    "?fmt=worklist&payer=UNITEDHEALTHCARE"
+                ) as r:
+                    body = r.read().decode()
+                self.assertIn("BAD!!", body)
+                self.assertNotIn("99214", body)   # Aetna row excluded
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_date_memo_speedup_still_correct(self):
+        # The unique-value memo in the v49 date validator must not change
+        # results: repeated + distinct + bad dates all classify the same.
+        import pandas as pd
+        from rcm_mc.npi_cleaner.vendor_v49.npi_recovery import (
+            field_validators as fv)
+        s = pd.Series(["2024-01-01", "2024-01-01", "01/15/2024",
+                       "20240116", "not-a-date", None, "45000"])
+        out = fv.validate_date_series(s, now="2026-01-01")
+        self.assertEqual(list(out["status"])[:2], ["ISO", "ISO"])
+        self.assertEqual(out["status"].iloc[2], "US_SLASH")
+        self.assertEqual(out["status"].iloc[3], "COMPACT")
+        self.assertTrue(out["unparseable"].iloc[4])
+        self.assertEqual(out["status"].iloc[5], "BLANK")
+        self.assertTrue(out["excel_serial"].iloc[6])
+
+
 class TestPayerQualityAndPortableSuites(unittest.TestCase):
     """Batch 14: per-payer quality split + portable profiles/mappings."""
 

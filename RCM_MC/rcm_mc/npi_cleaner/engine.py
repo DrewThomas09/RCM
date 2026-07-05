@@ -957,6 +957,11 @@ class CleanResult:
     # Per-payer quality split: rows / flagged / clean % / top rules for
     # the top payer families. Report-only.
     payer_quality: List[Dict[str, object]] = field(default_factory=list)
+    # Flagged OUTPUT row indices per payer family (capped) — powers the
+    # per-payer worklist download (?fmt=worklist&payer=FAMILY).
+    payer_flag_rows: Dict[str, List[int]] = field(default_factory=dict)
+    # Zip batch mode: per-file summaries (grade, rows, repairs, findings).
+    batch: List[Dict[str, object]] = field(default_factory=list)
     # Regression warnings vs the previous run of the same file (history).
     trend_alerts: List[str] = field(default_factory=list)
     # Data dictionary: per column — detected role, fill %, distinct count,
@@ -1106,6 +1111,9 @@ class CleanResult:
             "specialties": self.specialties or None,
             "claims": self.claims,
             "payer_quality": self.payer_quality or None,
+            "payer_worklists": ({k: len(v) for k, v
+                                 in self.payer_flag_rows.items()} or None),
+            "batch": self.batch or None,
             "trend_alerts": self.trend_alerts or None,
             "dictionary": self.dictionary or None,
             "worklists": {k: len(v) for k, v in self.flag_rows.items()},
@@ -1123,7 +1131,8 @@ class CleanResult:
             "delimiter": {",": "comma", "\t": "tab", ";": "semicolon",
                           "|": "pipe", "xlsx": "xlsx (Excel)",
                           "x12": "X12 837 (EDI)",
-                          "x835": "X12 835 (ERA)"}.get(
+                          "x835": "X12 835 (ERA)",
+                          "zip": "zip batch"}.get(
                               self.delimiter, self.delimiter),
             "out_name": self.out_name,
             "workbook_name": self.workbook_name if self.workbook_path else None,
@@ -1173,6 +1182,40 @@ def _defang_cell(value: str) -> str:
             return value
         return "'" + value
     return value
+
+
+def zip_batch_members(data: bytes) -> Optional[List[Tuple[str, bytes]]]:
+    """Members of a multi-file zip batch, or None when this isn't one.
+
+    An .xlsx is ALSO a zip — the tell is ``[Content_Types].xml`` in the
+    archive root, so that (and any other Office package) is excluded
+    before the cheaper suffix scan. Only claim-shaped members count;
+    directory entries and macOS resource forks are skipped."""
+    if data[:4] != b"PK\x03\x04":
+        return None
+    import zipfile as _zf
+    try:
+        zf = _zf.ZipFile(io.BytesIO(data))
+        names = zf.namelist()
+    except Exception:  # noqa: BLE001 — truncated/hostile zip → not a batch
+        return None
+    if "[Content_Types].xml" in names:
+        return None                       # Office package (xlsx/docx/…)
+    members = [n for n in names
+               if not n.endswith("/")
+               and not n.startswith("__MACOSX")
+               and n.rsplit("/", 1)[-1][:1] != "."
+               and n.lower().endswith((".csv", ".tsv", ".txt", ".837",
+                                       ".835", ".edi", ".x12"))]
+    if not members:
+        return None
+    out = []
+    for n in sorted(members)[:50]:        # bounded fan-out per upload
+        try:
+            out.append((n.rsplit("/", 1)[-1], zf.read(n)))
+        except Exception:  # noqa: BLE001 — skip the unreadable member
+            continue
+    return out or None
 
 
 def _looks_like_xlsx(data: bytes) -> bool:
@@ -1304,6 +1347,11 @@ def clean_bytes(
             progress(msg, frac)
 
     cb("Reading file", 0.05)
+    _members = zip_batch_members(data)
+    if _members is not None:
+        return _clean_batch(_members, src_name,
+                            drop_duplicates=drop_duplicates, deid=deid,
+                            profile=profile, cb=cb)
     try:
         headers, rows, delim = _read_table(data)
     except ImportError:
@@ -1933,6 +1981,9 @@ def clean_bytes(
                 _pq["rows"] += 1
                 if _fired:
                     _pq["flagged"] += 1
+                    _ri = _pq.setdefault("rows_idx", [])
+                    if len(_ri) < _WORKLIST_CAP:
+                        _ri.append(len(cleaned))
                     for _rk in _fired:
                         _pq["rules"][_rk] = _pq["rules"].get(_rk, 0) + 1
         if ri % 500 == 0:
@@ -2083,6 +2134,8 @@ def clean_bytes(
                     100 * (1 - _pq["flagged"] / _pq["rows"]), 1),
                 "top_rules": [{"rule": r, "n": n} for r, n in _tr],
             })
+            if _pq.get("rows_idx"):
+                res.payer_flag_rows[_fam2] = _pq["rows_idx"]
 
     # Possible duplicate service: same patient + provider + code within the
     # profile window (default 3 days) on DIFFERENT dates. Same-date repeats
@@ -2303,6 +2356,65 @@ def clean_bytes(
                                                  src_name)
         _history.record_run(res.as_scorecard(), src_name)
     except Exception:  # noqa: BLE001
+        pass
+    cb("Done", 1.0)
+    return res
+
+
+def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
+                 cb) -> "CleanResult":
+    """Clean every member of a zip batch and merge into one parent result.
+
+    Each file runs through the full single-file pipeline (its own history
+    record included); the parent carries summed counters so the report
+    card blends all rows, plus per-file grades in ``batch``. Online modes
+    (enrich/deep) are deliberately off in batch — one upload must not fan
+    out into N network sweeps.
+    """
+    import zipfile as _zf
+    res = CleanResult(delimiter="zip", headers=[])
+    subs = []
+    n = len(members)
+    for i, (name, blob) in enumerate(members):
+        cb(f"Cleaning {name} ({i + 1}/{n})", 0.05 + 0.85 * (i / max(n, 1)))
+        sub = clean_bytes(blob, name, drop_duplicates=drop_duplicates,
+                          deid=deid, profile=profile)
+        subs.append((name, sub))
+        res.n_rows_in += sub.n_rows_in
+        res.n_rows_out += sub.n_rows_out
+        res.n_dupes_removed += sub.n_dupes_removed
+        res.n_cells_trimmed += sub.n_cells_trimmed
+        res.n_changes += sub.n_changes
+        res.n_cells_total += sub.n_cells_total
+        res.n_cells_filled += sub.n_cells_filled
+        for k, v in sub.repairs.items():
+            res.repairs[k] = res.repairs.get(k, 0) + v
+        for k, v in sub.sanity.items():
+            res.sanity[k] = res.sanity.get(k, 0) + v
+        q = sub.quality()
+        res.batch.append({"file": name, "rows_in": sub.n_rows_in,
+                          "rows_out": sub.n_rows_out,
+                          "score": q["score"], "letter": q["letter"],
+                          "repairs": sum(sub.repairs.values()),
+                          "findings": sum(sub.sanity.values())})
+        res.warnings.extend(f"{name}: {w}" for w in sub.warnings)
+    res.warnings.insert(0, (
+        f"Batch mode: {n} file(s) cleaned from the zip — per-file grades "
+        "on the Quality tab; the download is a zip of the cleaned files."))
+    out_path = WORKDIR / f"{uuid.uuid4().hex}_batch.zip"
+    with _zf.ZipFile(out_path, "w", _zf.ZIP_DEFLATED) as z:
+        for name, sub in subs:
+            if sub.out_path:
+                z.write(sub.out_path, sub.out_name)
+    res.out_path = str(out_path)
+    _stem = Path(src_name).stem or "batch"
+    res.out_name = f"{_stem}_cleaned.zip"
+    try:
+        from . import history as _history
+        res.trend_alerts = _history.trend_alerts(res.as_scorecard(),
+                                                 src_name)
+        _history.record_run(res.as_scorecard(), src_name)
+    except Exception:  # noqa: BLE001 — observability never blocks cleaning
         pass
     cb("Done", 1.0)
     return res

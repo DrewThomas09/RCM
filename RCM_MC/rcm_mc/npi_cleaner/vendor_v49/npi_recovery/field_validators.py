@@ -137,7 +137,16 @@ def parse_date_multi(v):
 
 def validate_date_series(s: pd.Series, *, now=None) -> pd.DataFrame:
     now = pd.Timestamp(now) if now is not None else pd.Timestamp.today().normalize()
-    pairs = s.map(parse_date_multi)
+    # Parse each DISTINCT value once, then broadcast. Claims files repeat
+    # dates massively (a year of service dates ≈ a few hundred distinct
+    # values across 100k+ rows), and parse_date_multi tries several
+    # strptime formats plus a pandas fallback per call — parsing per cell
+    # instead of per distinct value dominated whole-file profile time.
+    try:
+        uniq = {v: parse_date_multi(v) for v in pd.unique(s)}
+        pairs = s.map(uniq)
+    except TypeError:      # unhashable cell values → per-cell fallback
+        pairs = s.map(parse_date_multi)
     ts = pd.Series([p[0] for p in pairs], index=s.index)
     status = pd.Series([p[1] for p in pairs], index=s.index)
     return pd.DataFrame({"parsed": ts, "status": status,

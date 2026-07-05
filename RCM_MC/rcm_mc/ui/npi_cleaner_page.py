@@ -196,11 +196,12 @@ def _body() -> str:
       <div class="cloud">⤒</div>
       <div class="big">Drag a claims file here</div>
       <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, Excel (.xlsx), or X12 837/835 (.837/.835/.edi) · up to 200&nbsp;MB ·
+        CSV, TSV, Excel (.xlsx), X12 837/835 (.837/.835/.edi), or a
+        <strong>.zip of files</strong> · up to 200&nbsp;MB ·
         <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
     </div>
     <input type="file" id="npi-file" class="npi-hidden"
-           accept=".csv,.tsv,.txt,.xlsx,.837,.835,.edi,.x12,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+           accept=".csv,.tsv,.txt,.xlsx,.837,.835,.edi,.x12,.zip,text/csv,text/plain,application/zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <div class="npi-opts">
       <label><input type="checkbox" id="npi-dedupe" checked>
         Remove exact-duplicate rows</label>
@@ -813,6 +814,24 @@ _EXTRA_JS = r"""
         s.trend_alerts.map(function(a){ return '<li>'+esc(a)+'</li>'; })
         .join("")+'</ul></div>';
     }
+    // Zip batch: per-file grades (the card above blends all rows).
+    if(s.batch && s.batch.length){
+      html+='<div class="ck-section-header" style="margin-top:14px">'+
+        '<h3 style="margin:0">Batch files</h3></div>'+
+        '<div class="npi-muted">Each file was cleaned separately; the '+
+        'grade above blends all rows across the batch.</div>'+
+        '<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>File</th><th class="num">Rows in</th><th class="num">Rows out</th>'+
+        '<th class="num">Repairs</th><th class="num">Findings</th>'+
+        '<th class="num">Grade</th></tr></thead><tbody>'+
+        s.batch.map(function(b){
+          return '<tr><td>'+esc(b.file)+'</td><td class="num">'+
+            fmt(b.rows_in)+'</td><td class="num">'+fmt(b.rows_out)+
+            '</td><td class="num">'+fmt(b.repairs)+'</td><td class="num">'+
+            fmt(b.findings)+'</td><td class="num">'+esc(b.letter)+' · '+
+            b.score+'</td></tr>';
+        }).join("")+'</tbody></table>';
+    }
     html+='<div class="npi-cards" style="margin-top:12px"><div class="npi-card">'+
       '<div class="k">Overall grade</div><div class="v" style="color:'+tone+'">'+
       q.letter+' · '+q.score+'</div></div></div>';
@@ -927,13 +946,16 @@ _EXTRA_JS = r"""
       s.payer_quality.forEach(function(p){
         var tone=p.clean_pct>=90?'var(--green-deep,#0c7c66)':
                  (p.clean_pct>=70?'#b8732a':'#b5321e');
+        var wl=(p.flagged>0 && s.download)?(' · <a href="'+s.download+
+          '?fmt=worklist&payer='+encodeURIComponent(p.payer)+
+          '" download>worklist</a>'):'';
         html+='<tr><td>'+esc(p.payer)+'</td><td class="num">'+fmt(p.rows)+
           '</td><td class="num">'+fmt(p.flagged)+'</td>'+
           '<td class="num" style="color:'+tone+';font-weight:640">'+
           p.clean_pct+'%</td><td style="font-size:12px">'+
           (p.top_rules||[]).map(function(t){
             return esc(t.rule)+' ('+fmt(t.n)+')';
-          }).join(", ")+'</td></tr>';
+          }).join(", ")+wl+'</td></tr>';
       });
       html+='</tbody></table>';
     }

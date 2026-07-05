@@ -2801,6 +2801,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .npi_cleaner import x12 as _x12
         if _x12.looks_like_x12(raw):
             return self._send_json({"available": False})
+        # A zip batch has many files with many layouts — the single-file
+        # mapping editor doesn't apply, clean directly.
+        if engine.zip_batch_members(raw) is not None:
+            return self._send_json({"available": False})
         result = engine.detect_columns_preview(raw)
         if result is None:
             # Detector unavailable (no pandas) — tell the client to skip the
@@ -2830,9 +2834,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             return
         fmt = (qs.get("fmt") or [""])[0]
         if fmt == "worklist":
-            # Per-rule worklist: just the flagged rows, as an actionable CSV.
+            # Per-rule (or per-payer) worklist: just the flagged rows, as
+            # an actionable CSV.
             rule = (qs.get("rule") or [""])[0]
-            idxs = set(job.result.flag_rows.get(rule) or [])
+            payer = (qs.get("payer") or [""])[0]
+            if payer:
+                idxs = set(job.result.payer_flag_rows.get(
+                    payer.strip().upper()) or [])
+                rule = f"payer_{payer}"
+            else:
+                idxs = set(job.result.flag_rows.get(rule) or [])
             if not idxs or not job.result.out_path:
                 self.send_error(HTTPStatus.NOT_FOUND)
                 return
