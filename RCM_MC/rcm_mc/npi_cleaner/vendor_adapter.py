@@ -48,7 +48,15 @@ def available() -> bool:
 def _read_df(data: bytes):
     import pandas as pd
     if data[:4] == b"PK\x03\x04":  # xlsx
-        return pd.read_excel(io.BytesIO(data), dtype=str)
+        # Read the SAME sheet the stdlib pipeline picks
+        # (engine._xlsx_best_sheet): vendor extracts lead with cover
+        # sheets, and pandas' default of sheet 0 made the mapping editor
+        # detect a 3-column 'Detail' tab while the real table sat on a
+        # later 'DATA' tab.
+        from .engine import _xlsx_best_sheet
+        sheet = _xlsx_best_sheet(data)
+        return pd.read_excel(io.BytesIO(data), dtype=str,
+                             sheet_name=sheet if sheet is not None else 0)
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -108,11 +116,22 @@ def detect(data: bytes) -> Optional[dict]:
         mapping, _report = schema.detect_columns(raw)
     except Exception:  # noqa: BLE001
         return None
-    return {
+    out = {
         "headers": [str(c) for c in raw.columns],
         "mapping": {k: (str(v) if v else "") for k, v in mapping.items()},
         "roles": [{"key": k, "label": lbl} for k, lbl in EDITABLE_ROLES],
     }
+    if data[:4] == b"PK\x03\x04":
+        # Tell the mapping editor which worksheet is being mapped so a
+        # multi-sheet workbook is never a silent guess.
+        try:
+            from .engine import _xlsx_best_sheet
+            sheet = _xlsx_best_sheet(data)
+            if sheet:
+                out["sheet"] = sheet
+        except Exception:  # noqa: BLE001
+            pass
+    return out
 
 
 def run(data: bytes, overrides: Optional[Dict[str, str]] = None) -> Optional[dict]:

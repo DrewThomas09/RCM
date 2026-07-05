@@ -3918,6 +3918,68 @@ class TestRefdataPacks(unittest.TestCase):
         self.assertNotIn("99213", rows)  # CPT-4 never stored
 
 
+class TestMultiSheetWorkbooks(unittest.TestCase):
+    """Vendor extracts lead with a cover/'Detail' sheet; the claims table
+    sits on a later tab. Reading sheet 0 silently cleaned a 3-column
+    cover page while a 13M-cell 'DATA' tab sat ignored — the reader now
+    picks the data-bearing sheet everywhere (stdlib + pandas paths) and
+    says which sheets it skipped."""
+
+    def _workbook(self):
+        import io as _io
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws1 = wb.active
+        ws1.title = "Detail"
+        ws1.append(["Extract", "Vendor", "Date"])
+        ws1.append(["Infusion TX", "Komodo", "2026-06-18"])
+        ws2 = wb.create_sheet("DATA")
+        ws2.append(["SERVICE_YEAR", "STATE", "ZIP3", "COUNTY",
+                    "BILLING_PROVIDER_NPI", "BILLING_PROVIDER_NAME",
+                    "ENTITY_TYPE"])
+        for i in range(120):
+            ws2.append([2025, "TX", 760 + i % 40, "TARRANT", GOOD_A,
+                        f"Hospital {i}", "ORGANIZATION"])
+        wb.create_sheet("Sheet2")  # empty trailing tab
+        buf = _io.BytesIO()
+        wb.save(buf)
+        return buf.getvalue()
+
+    def test_clean_reads_the_data_sheet_not_the_cover(self):
+        data = self._workbook()
+        res = engine.clean_bytes(data, "extract.xlsx")
+        self.assertEqual(res.n_rows_in, 120)
+        self.assertEqual(res.billing_column, "BILLING_PROVIDER_NPI")
+        note = [w for w in res.warnings if "Workbook has 3 sheets" in w]
+        self.assertEqual(len(note), 1, res.warnings)
+        self.assertIn("'DATA'", note[0])
+        self.assertIn("'Detail'", note[0])
+        self.assertIn("empty", note[0])
+
+    def test_detect_maps_the_data_sheet_and_names_it(self):
+        det = engine.detect_columns_preview(self._workbook())
+        if det is None:  # pandas unavailable → detector legitimately off
+            self.skipTest("v49 detector unavailable")
+        self.assertEqual(len(det["headers"]), 7)
+        self.assertEqual(det.get("sheet"), "DATA")
+        self.assertEqual(det["mapping"].get("billing_npi"),
+                         "BILLING_PROVIDER_NPI")
+
+    def test_single_sheet_workbook_gets_no_note(self):
+        import io as _io
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.append(["NPI"])
+        ws.append([GOOD_A])
+        buf = _io.BytesIO()
+        wb.save(buf)
+        res = engine.clean_bytes(buf.getvalue(), "one.xlsx")
+        self.assertEqual(res.n_rows_in, 1)
+        self.assertFalse([w for w in res.warnings if "Workbook has" in w])
+
+
 if __name__ == "__main__":
     unittest.main()
+
 

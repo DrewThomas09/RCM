@@ -1627,7 +1627,8 @@ _EXTRA_JS = r"""
   function renderMapping(file, det){
     detectRoles = det.roles || [];
     $("npi-map-file").textContent =
-      file.name+" — "+det.headers.length+" columns detected. Adjust any the "+
+      file.name+(det.sheet?" — sheet “"+det.sheet+"”":"")+
+      " — "+det.headers.length+" columns detected. Adjust any the "+
       "auto-mapper got wrong, then clean.";
     var opts = '<option value="">(auto / none)</option>' +
       det.headers.map(function(h){

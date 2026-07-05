@@ -1333,8 +1333,65 @@ def _looks_like_xlsx(data: bytes) -> bool:
     return data[:4] == b"PK\x03\x04"
 
 
-def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]]]:
-    """Read the first worksheet of an .xlsx via openpyxl (read-only mode).
+def _pick_xlsx_sheet(wb) -> Tuple[str, List[Tuple[str, int, int]]]:
+    """Choose the worksheet that actually holds the claims table.
+
+    Vendor extracts routinely lead with a cover/'Detail'/notes sheet; the
+    real data lives on a later tab and is, by far, the sheet with the
+    most populated cells. Reading only the first sheet silently cleaned
+    a 3-column cover page while a 13M-cell 'DATA' tab sat ignored — the
+    incident this function exists for. Scored from declared dimensions
+    plus a 50-row sample scan (a sheet with a stale/absent dimension
+    record still registers), so huge sheets aren't fully parsed twice.
+
+    Returns (chosen sheet name, [(name, est_rows, est_cols), …]).
+    """
+    stats: List[Tuple[str, int, int]] = []
+    for name in wb.sheetnames:
+        ws = wb[name]
+        sampled = 0
+        max_seen_cols = 0
+        for i, r in enumerate(ws.iter_rows(values_only=True)):
+            if i >= 50:
+                break
+            if r and any(c is not None and str(c).strip() for c in r):
+                sampled += 1
+                max_seen_cols = max(
+                    max_seen_cols,
+                    sum(1 for c in r if c is not None and str(c).strip()))
+        if sampled == 0:
+            stats.append((name, 0, 0))
+            continue
+        est_rows = max(int(ws.max_row or 0), sampled)
+        est_cols = max(int(ws.max_column or 0), max_seen_cols)
+        stats.append((name, est_rows, est_cols))
+    best = max(stats, key=lambda t: t[1] * max(t[2], 1))
+    return best[0], stats
+
+
+def _xlsx_best_sheet(data: bytes) -> Optional[str]:
+    """The chosen sheet name for a workbook's raw bytes, or None when the
+    workbook can't be inspected. Shared with the pandas paths
+    (vendor_adapter) so the mapping editor, the v49 engine and the stdlib
+    pipeline all read the SAME sheet."""
+    try:
+        from openpyxl import load_workbook
+        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        try:
+            name, _stats = _pick_xlsx_sheet(wb)
+        finally:
+            wb.close()
+        return name
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]],
+                                     Optional[str]]:
+    """Read the data-bearing worksheet of an .xlsx via openpyxl
+    (read-only mode) — see _pick_xlsx_sheet for how it's chosen. Returns
+    (headers, rows, note); the note names the sheet used and the sheets
+    skipped whenever the workbook has more than one non-empty sheet.
 
     Raises if openpyxl is unavailable or the workbook is unreadable — the
     caller turns that into a friendly warning telling the user to export CSV.
@@ -1343,7 +1400,8 @@ def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]]]:
 
     wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
     try:
-        ws = wb[wb.sheetnames[0]]
+        sheet_name, stats = _pick_xlsx_sheet(wb)
+        ws = wb[sheet_name]
         rows: List[List[str]] = []
         for r in ws.iter_rows(values_only=True):
             if r is None:
@@ -1353,29 +1411,41 @@ def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]]]:
                 rows.append(cells)
     finally:
         wb.close()
+    note = None
+    others = [(n, er, ec) for n, er, ec in stats if n != sheet_name]
+    if others:
+        skipped = ", ".join(
+            (f"'{n}' ({er:,}×{ec})" if er else f"'{n}' (empty)")
+            for n, er, ec in others)
+        note = (f"Workbook has {len(stats)} sheets — cleaned "
+                f"'{sheet_name}' ({max(len(rows) - 1, 0):,} data rows, the "
+                f"largest table). Skipped: {skipped}. If a different sheet "
+                "is the one you meant, export it as CSV and re-upload.")
     if not rows:
-        return [], []
+        return [], [], note
     headers = [h.strip() for h in rows[0]]
-    return headers, rows[1:]
+    return headers, rows[1:], note
 
 
-def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str]:
-    """Decode bytes → (headers, rows, format). Handles CSV/TSV and .xlsx.
-
-    ``format`` is the delimiter for text files, or ``"xlsx"`` for spreadsheets.
+def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
+                                      Optional[str]]:
+    """Decode bytes → (headers, rows, format, note). Handles CSV/TSV and
+    .xlsx. ``format`` is the delimiter for text files, or ``"xlsx"`` for
+    spreadsheets; ``note`` is a user-facing remark about how the file was
+    read (today: which worksheet a multi-sheet workbook was read from).
     """
     if _looks_like_xlsx(data):
-        headers, body = _read_xlsx(data)
-        return headers, body, "xlsx"
+        headers, body, note = _read_xlsx(data)
+        return headers, body, "xlsx", note
     from . import x12 as _x12
     if _x12.looks_like_x12(data):
         parsed = _x12.x12_to_table(data)
         if parsed is not None:
-            return parsed[0], parsed[1], "x12"
+            return parsed[0], parsed[1], "x12", None
         parsed = _x12.x835_to_table(data)
         if parsed is not None:
-            return parsed[0], parsed[1], "x835"
-        return [], [], "x12"          # X12 but not 837/835 — warning later
+            return parsed[0], parsed[1], "x835", None
+        return [], [], "x12", None    # X12 but not 837/835 — warning later
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -1385,10 +1455,10 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str]:
     reader = csv.reader(io.StringIO(text), delimiter=delim)
     all_rows = [r for r in reader if r != []]
     if not all_rows:
-        return [], [], delim
+        return [], [], delim, None
     headers = [h.strip() for h in all_rows[0]]
     body = all_rows[1:]
-    return headers, body, delim
+    return headers, body, delim, None
 
 
 def _detect_npi_columns(headers: List[str]) -> Tuple[List[int], Optional[int]]:
@@ -1483,9 +1553,8 @@ def clean_bytes(
                             drop_duplicates=drop_duplicates, deid=deid,
                             profile=profile, cb=cb)
     try:
-        headers, rows, delim = _read_table(data)
+        headers, rows, delim, _read_note = _read_table(data)
     except ImportError:
-        headers, rows, delim = [], [], "xlsx"
         _res = CleanResult(delimiter="xlsx", headers=[])
         _res.warnings.append(
             "This looks like an .xlsx file but the Excel reader isn't "
@@ -1505,6 +1574,10 @@ def clean_bytes(
         return _res
     res = CleanResult(delimiter=delim, headers=headers)
     res.n_rows_in = len(rows)
+    if _read_note:
+        # e.g. "Workbook has 3 sheets — cleaned 'DATA' …". A user staring
+        # at a wrong-sheet result must be able to see which tab was read.
+        res.warnings.append(_read_note)
     if not headers and delim == "x12":
         res.warnings.append(
             "This is an X12 interchange but it contains no 837 claim (CLM) "
