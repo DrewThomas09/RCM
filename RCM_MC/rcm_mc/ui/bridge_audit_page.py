@@ -493,7 +493,7 @@ def _per_lever_table(report: BridgeAuditReport) -> str:
         name="bridge_audit_per_lever",
         caption=(
             "Each row one lever · color-coded by audit verdict · "
-            "click any column to sort · CSV export auto-wired"
+            "click any column to sort · CSV export available"
         ),
     )
 

@@ -48,7 +48,7 @@ _CATEGORY_ORDER = [
     ("compliance", "Compliance & conflict"),
     ("market", "Market & demographic"),
     ("ma", "Medicare Advantage"),
-    ("internal", "Internal load logs"),
+    ("internal", "Data load history"),
 ]
 
 

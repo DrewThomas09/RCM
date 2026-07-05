@@ -981,7 +981,7 @@ def render_radiology_imaging(params: dict = None) -> str:
         f"${r.market_size_bn:,.1f}B market",
         delta=f"{r.freestanding_centers:,} freestanding centers · ~4.6% volume CAGR (2018-24)",
         opportunity=f"~5,800 centers still independent — the roll-up runway",
-        target=f"{r.cms_connections} live CMS coverage connections wired ({r.ncd_count} national NCDs + {r.lcd_count} local LCDs)",
+        target=f"{r.cms_connections} live CMS coverage sources connected ({r.ncd_count} national NCDs + {r.lcd_count} local LCDs)",
         tone="teal",
     )
 

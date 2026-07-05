@@ -2400,7 +2400,9 @@ def _render_recent_results_section(db_path: str) -> str:
 
 def _render_system_status_section(db_path: str,
                                   started_at: Optional[datetime]) -> str:
-    items: List[tuple[str, str, str]] = []  # (label, level, value)
+    # (label, level, value[, tooltip]) — optional 4th element renders as a
+    # title attribute on the card for admin-level detail.
+    items: List[tuple] = []
 
     # Version
     try:
@@ -2429,11 +2431,11 @@ def _render_system_status_section(db_path: str,
         from ..infra.migrations import _MIGRATIONS
         total = len(_MIGRATIONS)
         if len(applied) >= total:
-            items.append(("Migrations", "ok",
-                          f"{len(applied)}/{total} applied"))
+            items.append(("Database schema", "ok", "up to date",
+                          f"{len(applied)}/{total} migrations applied"))
         else:
-            items.append(("Migrations", "stale",
-                          f"{len(applied)}/{total} applied"))
+            items.append(("Database schema", "stale", "update pending",
+                          f"{len(applied)}/{total} migrations applied"))
     except Exception as exc:  # noqa: BLE001
         items.append(("DB", "cold", f"error: {type(exc).__name__}"))
 
@@ -2456,10 +2458,13 @@ def _render_system_status_section(db_path: str,
 
     from . import _web_components as _wc
     cards = []
-    for label, level, value in items:
+    for item in items:
+        label, level, value = item[0], item[1], item[2]
+        tip = item[3] if len(item) > 3 else ""
+        tip_attr = f' title="{_html.escape(tip)}"' if tip else ""
         # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
         cards.append(
-            f'<div style="background:#FAF7F0;border:1px solid #D6CFC0;'
+            f'<div{tip_attr} style="background:#FAF7F0;border:1px solid #D6CFC0;'
             f'border-radius:2px;padding:10px 12px;min-width:140px;'
             f'flex:1 1 140px;">'
             f'<div style="font-size:11px;color:#5C6878;text-transform:uppercase;'

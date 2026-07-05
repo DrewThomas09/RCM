@@ -36,7 +36,7 @@ class DataQualityNumbersTests(unittest.TestCase):
         self.assertIn(f'{top["gaps"]:,}', self.html)
 
     def test_unwired_catalog_present(self):
-        self.assertIn("Registered, not yet wired", self.html)
+        self.assertIn("Registered, not yet connected", self.html)
         self.assertIn("source_registry.csv", self.html)
 
     def test_no_loader_failures_on_healthy_tree(self):

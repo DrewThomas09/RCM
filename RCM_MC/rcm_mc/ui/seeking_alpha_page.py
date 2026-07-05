@@ -428,7 +428,7 @@ def _category_multiple_table(
         name="public_comp_category_bands",
         caption=(
             "Public-comp category bands: median EV/EBITDA by "
-            "sub-sector, sortable · CSV export wired"
+            "sub-sector, sortable · CSV export available"
         ),
     )
 

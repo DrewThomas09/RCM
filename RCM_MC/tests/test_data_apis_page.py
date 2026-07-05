@@ -22,9 +22,9 @@ class PageRenderTests(unittest.TestCase):
 
     def test_has_two_professional_charts(self):
         h = render_data_apis_page({})
-        # Coverage-by-question + wired-vs-registered roadmap.
+        # Coverage-by-question + available-vs-planned roadmap.
         self.assertGreaterEqual(h.count("<svg"), 2)
-        self.assertIn("wired in-repo vs", h.lower())
+        self.assertIn("available now vs", h.lower())
 
     def test_every_source_appears(self):
         import html

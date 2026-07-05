@@ -50,16 +50,16 @@ _SECTORS: List[Tuple[str, str, str, str, List[Tuple[str, str]]]] = [
      "Medicare-certified LTCHs + discharge-to-community, readmission, spending, "
      "and bed counts. Very small universe (~320). CMS public data.",
      [("LTCH screener", "/long-term-care-hospital")]),
-    ("Outpatient / ASC", "roadmap", "Phase 3",
+    ("Outpatient / ASC", "roadmap", "Planned",
      "Medicare proxy (Part B + OPPS + ASC quality). Commercial volume "
      "unobserved; the public ASC quality file lacks county/ownership.",
      []),
-    ("Physician Groups", "roadmap", "Phase 3",
+    ("Physician Groups", "roadmap", "Planned",
      "Provider universe (NPPES) + Medicare Part B volume proxy.", []),
-    ("Dental / DSO", "roadmap", "Phase 4",
+    ("Dental / DSO", "roadmap", "Planned",
      "Provider-supply only (NPPES + HPSA). Routine commercial dental revenue "
      "not observable in CMS data.", []),
-    ("Infusion / DME", "roadmap", "Phase 5",
+    ("Infusion / DME", "roadmap", "Planned",
      "Supplier universe + drug/service-mix proxy (NPPES + DMEPOS + Part B "
      "J-codes). Not full revenue.", []),
 ]

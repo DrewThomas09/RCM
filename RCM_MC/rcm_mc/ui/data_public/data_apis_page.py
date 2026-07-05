@@ -62,10 +62,10 @@ def _wiring_chart() -> str:
         wired = sum(1 for s in members if s.is_wired)
         registered = sum(1 for s in members if not s.is_wired)
         rows.append((short, [wired, registered]))
-    table = {"headers": ["Diligence question", "Wired in-repo", "Registered"],
+    table = {"headers": ["Diligence question", "Available now", "Planned"],
              "rows": rows}
     opts = {
-        "title": "Data layer: wired in-repo vs. still to build",
+        "title": "Data layer: available now vs. planned",
         "subtitle": "Live client or vendored snapshot vs. cataloged-only",
         "palette": "Navy–Teal", "suffix": "", "show_values": True,
         "legend": True, "width_px": 920,
@@ -194,7 +194,7 @@ def render_data_apis_page(qs: "Optional[Dict[str, Any]]" = None) -> str:
         + ck_kpi_block("Diligence questions",
                        f'<span class="mn">{summ["categories"]}</span>',
                        "coverage areas")
-        + ck_kpi_block("Wired in-repo",
+        + ck_kpi_block("Available now",
                        f'<span class="mn pos">{summ["wired"]}</span>',
                        "live client or vendored")
         + ck_kpi_block("No key needed",
@@ -205,11 +205,11 @@ def render_data_apis_page(qs: "Optional[Dict[str, Any]]" = None) -> str:
     intro = (
         '<p style="font-size:12.5px;color:#56606f;max-width:880px;'
         'margin:6px 0 0;">The free, API-accessible public healthcare data worth '
-        'wiring into diligence, organized by the question each source answers. '
-        'Status is honest about what runs in this repo today: '
+        'using in diligence, organized by the question each source answers. '
+        'Status is honest about what is available today: '
         '<b>live client</b> hits the API directly, <b>vendored offline</b> reads '
         'a committed build-time snapshot, <b>registered</b> is cataloged but not '
-        'yet wired. NPPES is CMS-operated but listed here as the provider '
+        'yet connected. NPPES is CMS-operated but listed here as the provider '
         'universe every build starts from.</p>')
 
     chart = (f'<div style="margin:16px 0;text-align:center;">'

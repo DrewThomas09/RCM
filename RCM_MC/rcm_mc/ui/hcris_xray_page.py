@@ -1203,7 +1203,7 @@ def _peer_table(peers: List[PeerMatch]) -> str:
         name="hcris_peer_roster",
         caption=(
             "Peer roster · sorted by feature distance (closest "
-            "match first) · CSV export wired"
+            "match first) · CSV export available"
         ),
     )
 
