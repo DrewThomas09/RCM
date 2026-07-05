@@ -134,14 +134,23 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
             from . import refdata as _rd
         except Exception:  # noqa: BLE001
             _rd = None
+        _ppct = denials.get("preventable_pct")
+        if _ppct is not None:
+            parts.append(f"<p class='small'><strong>{_ppct}% of the "
+                         "classified denial volume was preventable</strong> "
+                         "by a pre-submission screen.</p>")
         parts.append("<h2>Top denial / adjustment reasons</h2><table>"
                      "<tr><th>Code</th><th>Meaning</th>"
-                     "<th class='num'>Rows</th></tr>")
+                     "<th class='num'>Rows</th><th>Playbook</th></tr>")
         for d in top[:10]:
             desc = (_rd.carc_description(str(d["code"])) if _rd else None) or ""
+            _pb = ""
+            if d.get("category"):
+                _pb = f"[{d['category']}] {d.get('action', '')}"
             parts.append(f"<tr><td>{_esc(d['code'])}</td>"
                          f"<td class='small'>{_esc(desc)}</td>"
-                         f"<td class='num'>{int(d['count']):,}</td></tr>")
+                         f"<td class='num'>{int(d['count']):,}</td>"
+                         f"<td class='small'>{_esc(_pb)}</td></tr>")
         parts.append("</table>")
 
     # Who is in this file — credential + specialty mix (report-only).

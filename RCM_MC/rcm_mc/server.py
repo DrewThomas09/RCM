@@ -2870,6 +2870,20 @@ class RCMHandler(BaseHTTPRequestHandler):
                 job.result.as_scorecard(), job.name,
                 _edt.now(_etz.utc).strftime("%Y-%m-%d %H:%M UTC"))
             return self._send_html(html_doc)
+        if fmt == "dictionary":
+            # Per-column data dictionary: role, fill %, distinct, samples.
+            if not job.result.dictionary:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            data = engine.dictionary_csv(job.result).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="data_dictionary.csv"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if fmt == "bundle":
             # Everything in one zip: cleaned file, workbook, change log,
             # corrections, exec report, scorecard JSON, per-rule worklists.
@@ -2899,6 +2913,9 @@ class RCMHandler(BaseHTTPRequestHandler):
                     _bdt.now(_btz.utc).strftime("%Y-%m-%d %H:%M UTC")))
                 z.writestr("scorecard.json",
                            _bjson.dumps(sc_b, indent=2, default=str))
+                if r.dictionary:
+                    z.writestr("data_dictionary.csv",
+                               engine.dictionary_csv(r))
                 # Worklists: one pass over the cleaned file, split by rule.
                 if r.flag_rows and r.out_path:
                     _want = {}          # row index → rules that flagged it

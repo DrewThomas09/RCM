@@ -370,6 +370,8 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
            style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
         <a class="npi-dl npi-dl-alt" id="npi-dl-changelog" href="#" download
            style="margin-left:10px;display:none">⤓ Change log — audit trail (.csv)</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-dict" href="#" download
+           style="margin-left:10px;display:none">⤓ Data dictionary (.csv)</a>
         <a class="npi-dl npi-dl-alt" id="npi-dl-bundle" href="#" download
            style="margin-left:10px">⤓ Everything (.zip)</a>
       </div>
@@ -543,6 +545,12 @@ _EXTRA_JS = r"""
     var bbtn=$("npi-dl-bundle");
     bbtn.setAttribute("href", s.download+"?fmt=bundle");
     bbtn.setAttribute("download", "npi_clean_bundle.zip");
+    var dbtn=$("npi-dl-dict");
+    if(s.dictionary && s.dictionary.length){
+      dbtn.setAttribute("href", s.download+"?fmt=dictionary");
+      dbtn.setAttribute("download", "data_dictionary.csv");
+      dbtn.style.display="";
+    } else { dbtn.style.display="none"; }
 
     if(currentJobId){ $("npi-analyze").setAttribute("href",
       "/npi-cleaner/analyze/"+currentJobId);
@@ -787,6 +795,14 @@ _EXTRA_JS = r"""
       'Data-quality report card</h3></div>'+
       '<div class="npi-muted">Five-dimension grade computed from the counts '+
       'on this page — every number is recomputable from the scorecard.</div>';
+    // Trend alerts: regressions vs the previous run of this same file.
+    if(s.trend_alerts && s.trend_alerts.length){
+      html+='<div class="npi-warn" style="margin-top:10px"><strong>'+
+        'Changed since the last run of this file:</strong><ul style='+
+        '"margin:6px 0 0 18px;padding:0">'+
+        s.trend_alerts.map(function(a){ return '<li>'+esc(a)+'</li>'; })
+        .join("")+'</ul></div>';
+    }
     html+='<div class="npi-cards" style="margin-top:12px"><div class="npi-card">'+
       '<div class="k">Overall grade</div><div class="v" style="color:'+tone+'">'+
       q.letter+' · '+q.score+'</div></div></div>';
@@ -868,11 +884,24 @@ _EXTRA_JS = r"""
       html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
         'Top denial / adjustment reasons</h3></div>'+
         '<div class="npi-muted">'+esc(s.denials.column)+' — '+fmt(s.denials.distinct)+
-        ' distinct codes. Highest-volume reasons below (CARC codes).</div>';
+        ' distinct codes. Highest-volume reasons below (CARC codes).'+
+        (s.denials.preventable_pct!=null?(' <strong>'+s.denials.preventable_pct+
+        '% of the classified volume was preventable</strong> by a '+
+        'pre-submission screen.'):'')+'</div>';
       html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
-        '<th>Code</th><th class="num">Rows</th></tr></thead><tbody>';
+        '<th>Code</th><th class="num">Rows</th><th>Playbook</th><th>What to do</th>'+
+        '</tr></thead><tbody>';
+      var CAT_COLOR={preventable:'#b5321e',process:'#b8732a',
+        contractual:'#5b6770','patient-responsibility':'#5b6770'};
       s.denials.top.forEach(function(d){
-        html+='<tr><td>'+esc(d.code)+'</td><td class="num">'+fmt(d.count)+'</td></tr>';
+        var cat=d.category?('<span style="display:inline-block;font-size:10px;'+
+          'font-weight:700;text-transform:uppercase;letter-spacing:.05em;'+
+          'color:#fff;background:'+(CAT_COLOR[d.category]||'#5b6770')+
+          ';border-radius:4px;padding:1px 7px">'+esc(d.category)+'</span>'):'';
+        var act=d.action?esc(d.action)+(d.linked_rule?(' <span class="npi-pill">'+
+          esc(d.linked_rule)+'</span>'):''):'';
+        html+='<tr><td>'+esc(d.code)+'</td><td class="num">'+fmt(d.count)+
+          '</td><td>'+cat+'</td><td style="font-size:12px">'+act+'</td></tr>';
       });
       html+='</tbody></table>';
     }

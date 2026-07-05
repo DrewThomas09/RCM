@@ -954,6 +954,11 @@ class CleanResult:
     # Claim rollup (when a claim-id column exists): claim count, lines per
     # claim, per-claim charge distribution. Report-only.
     claims: Optional[Dict[str, object]] = None
+    # Regression warnings vs the previous run of the same file (history).
+    trend_alerts: List[str] = field(default_factory=list)
+    # Data dictionary: per column — detected role, fill %, distinct count,
+    # PHI-safe sample values. Exported via ?fmt=dictionary.
+    dictionary: List[Dict[str, object]] = field(default_factory=list)
     # Profile applied to this run (see profiles.py): accepted rules still
     # report but don't count against the grade.
     accepted_rules: List[str] = field(default_factory=list)
@@ -1097,6 +1102,8 @@ class CleanResult:
             "credentials": self.credentials or None,
             "specialties": self.specialties or None,
             "claims": self.claims,
+            "trend_alerts": self.trend_alerts or None,
+            "dictionary": self.dictionary or None,
             "worklists": {k: len(v) for k, v in self.flag_rows.items()},
             "accepted_rules": self.accepted_rules,
             "profile": self.profile_name,
@@ -1508,6 +1515,7 @@ def clean_bytes(
 
     # Accumulators for the post-loop analyses.
     _col_filled = [0] * ncols                     # empty-column detection
+    _col_distinct = [set() for _ in range(ncols)]  # dictionary (capped 1000)
     _payer_raw: Dict[str, int] = {}               # payer variant clustering
     _carc_counts: Dict[str, int] = {}             # top denial reasons
     _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
@@ -1874,6 +1882,14 @@ def clean_bytes(
                     _cv = _to_number(new_row[_charge_i])
                     if _cv is not None:
                         _agg[1] += _cv
+        # Distinct-value tracking for the data dictionary (capped per
+        # column so an ID column can't hold millions of strings).
+        for _ci4 in range(min(len(new_row), ncols)):
+            _cv4 = new_row[_ci4]
+            if _cv4:
+                _ds4 = _col_distinct[_ci4]
+                if len(_ds4) <= 1000:
+                    _ds4.add(_cv4)
         if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
             _payer_raw[new_row[payer_i]] = \
                 _payer_raw.get(new_row[payer_i], 0) + 1
@@ -1953,12 +1969,34 @@ def clean_bytes(
         if _conf:
             res.sanity["conflicting-amount-claim"] = _conf
 
-    # Top denial / adjustment reasons (revenue-cycle visibility).
+    # Top denial / adjustment reasons (revenue-cycle visibility), enriched
+    # with the playbook: category (preventable / process / contractual /
+    # patient-responsibility), the upstream screen that catches it, and
+    # what to do. preventable_pct answers "how much of this denial volume
+    # was catchable before submission?".
     if _carc_counts and carc_i is not None:
         _top = sorted(_carc_counts.items(), key=lambda kv: -kv[1])[:10]
+        _top_entries = []
+        for _c, _n in _top:
+            _e: Dict[str, object] = {"code": _c, "count": _n}
+            _pb = _rd.carc_playbook(_c) if _rd is not None else None
+            if _pb:
+                _e["category"] = _pb["category"]
+                _e["linked_rule"] = _pb["rule"]
+                _e["action"] = _pb["action"]
+            _top_entries.append(_e)
+        _prev_n = _known_n = 0
+        for _c, _n in _carc_counts.items():
+            _pb = _rd.carc_playbook(_c) if _rd is not None else None
+            if _pb:
+                _known_n += _n
+                if _pb["category"] == "preventable":
+                    _prev_n += _n
         res.denials = {"column": headers[carc_i],
                        "distinct": len(_carc_counts),
-                       "top": [{"code": c, "count": n} for c, n in _top]}
+                       "top": _top_entries}
+        if _known_n:
+            res.denials["preventable_pct"] = round(100 * _prev_n / _known_n, 1)
 
     # Specialty mix from taxonomy codes on kept rows. Names come from the
     # NUCC display catalog; codes outside it still report (name None) —
@@ -1969,6 +2007,47 @@ def clean_bytes(
             {"code": c, "n": n,
              "name": (_rd.taxonomy_specialty(c) if _rd is not None else None)}
             for c, n in _tops[:15]]
+
+    # Data dictionary: what each column IS (detected role), how filled it
+    # is, and what its values look like. PHI-safe: patient-identifier
+    # columns never expose raw samples unless de-id already masked them.
+    if headers:
+        _role_of: Dict[int, str] = {}
+        for _rset, _rname in (
+                (npi_set, "npi"), (money_set, "money"), (date_set, "date"),
+                (state_set, "state"), (zip_set, "zip"),
+                (hcpcs_set, "hcpcs/cpt"), (sex_set, "sex"),
+                (dx_set, "diagnosis"), (mod_set, "modifier"),
+                (phone_set, "phone"), (taxo_set, "taxonomy"),
+                (ndc_norm_set, "ndc"), (rev_set, "revenue-code"),
+                (pos_set, "place-of-service"), (drg_set, "drg"),
+                (pname_set, "provider-name")):
+            for _ci4 in _rset:
+                _role_of.setdefault(_ci4, _rname)
+        for _ci4, _rname in (
+                (payer_i, "payer"), (carc_i, "carc/denial"),
+                (tob_i, "type-of-bill"), (dstat_i, "discharge-status"),
+                (atype_i, "admission-type"), (member_i, "member-id"),
+                (patient_i, "patient-id"), (claim_i, "claim-id"),
+                (units_i, "units")):
+            if _ci4 is not None:
+                _role_of.setdefault(_ci4, _rname)
+        _base = max(res.n_rows_in, 1)
+        for _ci4, _h4 in enumerate(headers):
+            _phi_k = _phi_kind(_norm_key(_h4))
+            _ds4 = _col_distinct[_ci4]
+            if _phi_k and not deid:
+                _samples = ["(redacted — patient identifier)"]
+            else:
+                _samples = sorted(_ds4)[:3]
+            res.dictionary.append({
+                "column": _h4,
+                "role": (_role_of.get(_ci4)
+                         or (f"patient-phi:{_phi_k}" if _phi_k else "")),
+                "fill_pct": round(100 * _col_filled[_ci4] / _base, 1),
+                "distinct": len(_ds4) if len(_ds4) <= 1000 else None,
+                "samples": _samples,
+            })
 
     # Possible duplicate service: same patient + provider + code within the
     # profile window (default 3 days) on DIFFERENT dates. Same-date repeats
@@ -2180,14 +2259,32 @@ def clean_bytes(
                         else None)
 
     # Longitudinal observability: aggregate summary only, never PHI, and
-    # guarded so history storage can never fail the cleaning job.
+    # guarded so history storage can never fail the cleaning job. Trend
+    # alerts compare against the PREVIOUS run of this file, so they must
+    # be computed before this run is recorded.
     try:
         from . import history as _history
+        res.trend_alerts = _history.trend_alerts(res.as_scorecard(),
+                                                 src_name)
         _history.record_run(res.as_scorecard(), src_name)
     except Exception:  # noqa: BLE001
         pass
     cb("Done", 1.0)
     return res
+
+
+def dictionary_csv(result: "CleanResult") -> str:
+    """The data dictionary as CSV text — one row per column. Shared by the
+    ?fmt=dictionary download and the everything-bundle."""
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["column", "detected_role", "fill_pct", "distinct_values",
+                "sample_values"])
+    for e in result.dictionary:
+        w.writerow([e["column"], e["role"], e["fill_pct"],
+                    e["distinct"] if e["distinct"] is not None else "1000+",
+                    " | ".join(str(s) for s in e["samples"])])
+    return buf.getvalue()
 
 
 def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):

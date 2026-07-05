@@ -1492,3 +1492,83 @@ TAXONOMY_SPECIALTIES: Dict[str, str] = {
 
 def taxonomy_specialty(code: str) -> Optional[str]:
     return TAXONOMY_SPECIALTIES.get(code.strip().upper())
+
+
+# --------------------------------------------------------------------------
+# Denial playbook — what a team can actually DO about the highest-volume
+# CARCs, and which of the cleaner's own upstream screens would have caught
+# the defect before submission. Categories:
+#   * preventable             — a pre-submission data screen catches it
+#   * process                 — a front-end workflow fix (eligibility,
+#                               auth, payer routing), not a data repair
+#   * contractual             — expected adjudication math, not a defect
+#   * patient-responsibility  — deductible / coinsurance / copay
+# Only high-volume codes with defensible guidance are listed; unknown
+# codes simply render without playbook columns.
+# --------------------------------------------------------------------------
+CARC_PLAYBOOK: Dict[str, Dict[str, str]] = {
+    "1": {"category": "patient-responsibility", "rule": "",
+          "action": "Deductible — bill patient/secondary; quote eligibility "
+                    "at scheduling."},
+    "2": {"category": "patient-responsibility", "rule": "",
+          "action": "Coinsurance — patient share per plan; verify at "
+                    "registration."},
+    "3": {"category": "patient-responsibility", "rule": "",
+          "action": "Copay — collect at point of service."},
+    "4": {"category": "preventable", "rule": "modifier-unknown",
+          "action": "Modifier inconsistent with the procedure — run coding "
+                    "edits before submission."},
+    "11": {"category": "preventable", "rule": "icd10-malformed",
+           "action": "Diagnosis inconsistent with the procedure — validate "
+                     "dx↔procedure pairing before billing."},
+    "16": {"category": "preventable", "rule": "null-token",
+           "action": "Claim lacks information — completeness screens catch "
+                     "empty required fields pre-submission."},
+    "18": {"category": "preventable", "rule": "possible-duplicate-service",
+           "action": "Exact duplicate — run the duplicate screens before "
+                     "rebilling."},
+    "22": {"category": "process", "rule": "",
+           "action": "May be covered by another payer — verify COB order at "
+                     "registration."},
+    "23": {"category": "process", "rule": "",
+           "action": "Prior payer adjudication impact — post primary EOB "
+                     "before billing secondary."},
+    "27": {"category": "process", "rule": "",
+           "action": "Coverage terminated — eligibility check on the date "
+                     "of service."},
+    "29": {"category": "preventable", "rule": "timely-filing-risk",
+           "action": "Filing limit expired — the timely-filing screen flags "
+                     "aging claims while they can still be filed."},
+    "45": {"category": "contractual", "rule": "charge-outlier",
+           "action": "Charge exceeds fee schedule — expected contractual "
+                     "write-down; outlier screens catch chargemaster "
+                     "errors behind unusual spreads."},
+    "50": {"category": "process", "rule": "",
+           "action": "Not deemed medically necessary — check LCD/NCD "
+                     "criteria and diagnosis support before submission."},
+    "59": {"category": "preventable", "rule": "",
+           "action": "Multiple-procedure/bundling reduction — review NCCI "
+                     "bundling before billing components separately."},
+    "96": {"category": "process", "rule": "",
+           "action": "Non-covered charge — verify benefits; obtain an ABN "
+                     "where applicable."},
+    "97": {"category": "preventable", "rule": "",
+           "action": "Bundled into another paid service (NCCI PTP) — don't "
+                     "bill components separately."},
+    "109": {"category": "process", "rule": "",
+            "action": "Not covered by this payer — route the claim to the "
+                      "correct plan."},
+    "151": {"category": "preventable", "rule": "anesthesia-units-implausible",
+            "action": "Units exceed what documentation supports — unit "
+                      "screens catch keying errors before submission."},
+    "197": {"category": "process", "rule": "",
+            "action": "Missing precertification/authorization — front-end "
+                      "auth workflow."},
+    "B7": {"category": "process", "rule": "",
+           "action": "Provider not certified/eligible on this date — check "
+                     "enrollment (PECOS) before scheduling."},
+}
+
+
+def carc_playbook(code: str) -> Optional[Dict[str, str]]:
+    return CARC_PLAYBOOK.get(code.strip().upper())

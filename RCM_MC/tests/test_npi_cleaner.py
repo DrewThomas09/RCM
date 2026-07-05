@@ -1550,6 +1550,104 @@ class TestDupWindowAndRollup(unittest.TestCase):
         self.assertIn("Claim rollup", html_out)
 
 
+class TestDenialPlaybookTrendsDictionary(unittest.TestCase):
+    """Batch 13: playbook-enriched denials, trend alerts vs the previous
+    run, and the PHI-safe data dictionary."""
+
+    def test_denial_playbook_enrichment(self):
+        data = ("ClaimID,DenialCode,BilledAmt,PaidAmt\n"
+                "1,45,100,80\n2,45,90,70\n3,29,50,0\n"
+                "4,16,60,0\n5,1,70,50\n").encode()
+        sc = engine.clean_bytes(data, "den.csv").as_scorecard()
+        top = {e["code"]: e for e in sc["denials"]["top"]}
+        self.assertEqual(top["45"]["category"], "contractual")
+        self.assertEqual(top["29"]["category"], "preventable")
+        self.assertEqual(top["29"]["linked_rule"], "timely-filing-risk")
+        self.assertEqual(top["1"]["category"], "patient-responsibility")
+        # 29 + 16 preventable out of 5 classified mentions → 40%.
+        self.assertEqual(sc["denials"]["preventable_pct"], 40.0)
+        from rcm_mc.npi_cleaner import refdata
+        self.assertIsNone(refdata.carc_playbook("999"))
+        # Exec report renders the playbook column + preventable line.
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        html_out = build_exec_report(sc, "den.csv",
+                                     "2026-01-01T00:00:00+00:00")
+        self.assertIn("preventable", html_out)
+        self.assertIn("timely-filing", html_out)
+
+    def test_trend_alerts_vs_previous_run(self):
+        import uuid as _uuid
+        fname = f"trend-{_uuid.uuid4().hex[:8]}.csv"
+        good = ("ClaimID,HCPCS\n"
+                + "".join(f"{i},99213\n" for i in range(50))).encode()
+        bad = ("ClaimID,HCPCS\n"
+               + "".join(f"{i},BAD!!\n" for i in range(50))).encode()
+        r1 = engine.clean_bytes(good, fname)
+        self.assertEqual(r1.trend_alerts, [])   # first run: no baseline
+        r2 = engine.clean_bytes(bad, fname)
+        self.assertTrue(any("hcpcs-malformed" in a for a in r2.trend_alerts))
+        self.assertTrue(any("score dropped" in a.lower()
+                            for a in r2.trend_alerts))
+        self.assertIn("trend_alerts", r2.as_scorecard())
+
+    def test_data_dictionary(self):
+        data = ("ClaimID,DenialCode,BilledAmt\n1,45,100\n2,29,50\n").encode()
+        res = engine.clean_bytes(data, "dict.csv")
+        dic = {e["column"]: e for e in res.as_scorecard()["dictionary"]}
+        self.assertEqual(dic["DenialCode"]["role"], "carc/denial")
+        self.assertEqual(dic["BilledAmt"]["role"], "money")
+        self.assertEqual(dic["ClaimID"]["role"], "claim-id")
+        self.assertEqual(dic["BilledAmt"]["fill_pct"], 100.0)
+        self.assertEqual(dic["ClaimID"]["distinct"], 2)
+        text = engine.dictionary_csv(res)
+        self.assertIn("detected_role", text)
+        # PHI columns never leak raw samples into the dictionary.
+        res2 = engine.clean_bytes(
+            b"PatientName,NPI\nJohn Doe,1497758544\n", "p.csv")
+        dic2 = {e["column"]: e
+                for e in res2.as_scorecard()["dictionary"]}
+        self.assertEqual(dic2["PatientName"]["samples"],
+                         ["(redacted — patient identifier)"])
+        self.assertNotIn("John Doe", engine.dictionary_csv(res2))
+
+    def test_dictionary_download_route(self):
+        # Exercised through the running server via the download route.
+        import socket as _socket
+        import threading
+        from rcm_mc.server import build_server
+        with tempfile.TemporaryDirectory() as tmp:
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            try:
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=b"ClaimID,HCPCS\n1,99213\n", method="POST",
+                    headers={"X-Filename": "d.csv"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(f"http://127.0.0.1:{port}"
+                                    f"/npi-cleaner/status/{job_id}") as r:
+                        if json.loads(r.read().decode()).get("done"):
+                            break
+                    time.sleep(0.05)
+                with _u.urlopen(f"http://127.0.0.1:{port}/npi-cleaner"
+                                f"/download/{job_id}?fmt=dictionary") as r:
+                    body = r.read().decode()
+                self.assertIn("detected_role", body)
+                self.assertIn("hcpcs/cpt", body)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+
 class TestMappingTemplates(unittest.TestCase):
     """Named column-mapping templates (mappings.py) — map a source system
     once, reuse per upload via X-Mapping."""

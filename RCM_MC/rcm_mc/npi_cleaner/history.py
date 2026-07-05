@@ -101,6 +101,51 @@ def list_runs(limit: int = 50) -> List[Dict[str, object]]:
     return out
 
 
+def latest_run_for(file_name: str) -> Optional[Dict[str, object]]:
+    """Most recent recorded run of the SAME file name — the baseline for
+    trend alerts. Exact-name matching is deliberate: a team re-uploading
+    nightly extracts keeps the name stable, and a fuzzy match would
+    compare unrelated files."""
+    try:
+        with _LOCK, _conn() as con:
+            r = con.execute(
+                "SELECT score, sanity, ts FROM runs WHERE file_name = ?"
+                " ORDER BY ts DESC LIMIT 1", (file_name,)).fetchone()
+    except Exception:  # noqa: BLE001
+        return None
+    if r is None:
+        return None
+    return {"score": r[0], "sanity": json.loads(r[1] or "{}"), "ts": r[2]}
+
+
+def trend_alerts(scorecard: Dict[str, object], file_name: str) -> List[str]:
+    """Regression warnings vs the previous run of this file: a score drop,
+    a rule count doubling, or a sizeable brand-new finding. Called BEFORE
+    the current run is recorded so it never compares a run to itself."""
+    prev = latest_run_for(file_name)
+    if not prev:
+        return []
+    alerts: List[str] = []
+    q = scorecard.get("quality") or {}
+    score = int(q.get("score") or 0)
+    prev_score = int(prev.get("score") or 0)
+    if prev_score - score >= 5:
+        alerts.append(f"Quality score dropped {prev_score} → {score} vs "
+                      "the previous run of this file.")
+    prev_san = prev.get("sanity") or {}
+    cur_san = scorecard.get("sanity") or {}
+    for rule in sorted(cur_san):
+        n = int(cur_san.get(rule) or 0)
+        p = int(prev_san.get(rule, 0))
+        if p > 0 and n >= 10 and n >= 2 * p:
+            alerts.append(f"'{rule}' jumped {p} → {n} rows vs the "
+                          "previous run.")
+        elif p == 0 and n >= 25:
+            alerts.append(f"'{rule}' is new since the previous run "
+                          f"({n} rows).")
+    return alerts[:8]
+
+
 def get_run(run_id: str) -> Optional[Dict[str, object]]:
     try:
         with _LOCK, _conn() as con:
