@@ -180,6 +180,6 @@ rcm_mc/ui/npi_cleaner_page.py    the /npi-cleaner page
 rcm_mc/ui/npi_history_page.py    the /npi-cleaner/history page
 ```
 
-Tests: `tests/test_npi_cleaner.py` (111 tests — every repair and flag
+Tests: `tests/test_npi_cleaner.py` (130+ tests — every repair and flag
 exercised with valid/invalid/skip cases, HTTP end-to-end through a real
 server, PHI-absence assertions, CLI gate, X12 round-trips).

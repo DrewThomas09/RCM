@@ -1550,6 +1550,130 @@ class TestDupWindowAndRollup(unittest.TestCase):
         self.assertIn("Claim rollup", html_out)
 
 
+class TestConsolidation(unittest.TestCase):
+    """Merge-confidence checks: registry↔engine consistency, OpenAPI
+    coverage of every API route, and the full golden-path walkthrough."""
+
+    def test_registry_engine_consistency(self):
+        # Every sanity key the engine can emit exists in the registry, and
+        # every registry id appears in the engine source (no dead entries).
+        import inspect
+        import re as _re
+        from rcm_mc.npi_cleaner import rules
+        src = inspect.getsource(engine)
+        emitted = set(_re.findall(r'res\.sanity\[\s*"([a-z0-9-]+)"', src))
+        # These three are emitted through a loop variable, not a literal.
+        emitted |= {"condition-code-malformed", "occurrence-code-malformed",
+                    "value-code-malformed"}
+        known = {r.id for r in rules.all_rules()}
+        self.assertEqual(sorted(emitted - known), [],
+                         "engine emits sanity keys missing from rules.py")
+        dead = [i for i in sorted(known) if f'"{i}"' not in src]
+        self.assertEqual(dead, [],
+                         "rules.py ids never emitted by the engine")
+
+    def test_openapi_covers_all_api_routes(self):
+        # Every /npi-cleaner/api/* route literal in server.py must be a
+        # documented path, plus the async upload/status/download pipeline.
+        import re as _re
+        import rcm_mc.server as _srv
+        from rcm_mc.infra.openapi import get_openapi_spec
+        src = open(_srv.__file__, encoding="utf-8").read()
+        routes = set(_re.findall(r'"(/npi-cleaner/api/[a-z/]+)"', src))
+        self.assertTrue(routes)
+        spec = set(get_openapi_spec()["paths"])
+        missing = sorted(r for r in routes if r not in spec)
+        self.assertEqual(missing, [])
+        for core in ("/npi-cleaner/upload", "/npi-cleaner/status/{job_id}",
+                     "/npi-cleaner/download/{job_id}"):
+            self.assertIn(core, spec)
+
+    def test_golden_path_walkthrough(self):
+        # The whole platform in one pass against a real server: clean an
+        # 837, pull the bundle, reconcile against its 835, see both runs
+        # in history, and get a trend alert on a worse re-upload.
+        import io as _io
+        import socket as _socket
+        import threading
+        import uuid as _uuid
+        import zipfile as _zf
+        from rcm_mc.server import build_server
+        tag = _uuid.uuid4().hex[:8]
+        with tempfile.TemporaryDirectory() as tmp:
+            s = _socket.socket()
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+            s.close()
+            server, _ = build_server(port=port,
+                                     db_path=os.path.join(tmp, "p.db"))
+            t = threading.Thread(target=server.serve_forever, daemon=True)
+            t.start()
+            time.sleep(0.05)
+            base = f"http://127.0.0.1:{port}"
+
+            def run(payload, name):
+                req = _u.Request(f"{base}/npi-cleaner/upload", data=payload,
+                                 method="POST",
+                                 headers={"X-Filename": name})
+                with _u.urlopen(req) as r:
+                    jid = json.loads(r.read().decode())["job_id"]
+                for _ in range(80):
+                    with _u.urlopen(f"{base}/npi-cleaner/status/{jid}") as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            return jid, j["scorecard"]
+                    time.sleep(0.05)
+                self.fail("job never finished")
+
+            try:
+                # 1. Clean the 837 — grade, claim rollup, dictionary.
+                a, sc_a = run(_X12_837P, f"claims-{tag}.837")
+                self.assertEqual(sc_a["delimiter"], "X12 837 (EDI)")
+                self.assertIn("quality", sc_a)
+                self.assertEqual(sc_a["claims"]["n_claims"], 2)
+                self.assertTrue(sc_a["dictionary"])
+                # 2. Everything-bundle carries every artifact.
+                with _u.urlopen(f"{base}/npi-cleaner/download/{a}"
+                                "?fmt=bundle") as r:
+                    blob = r.read()
+                with _zf.ZipFile(_io.BytesIO(blob)) as z:
+                    names = z.namelist()
+                for expected in ("exec_report.html", "scorecard.json",
+                                 "data_dictionary.csv"):
+                    self.assertIn(expected, names)
+                # 3. Clean its 835 and reconcile — full match.
+                b, sc_b = run(_X12_835, f"remit-{tag}.835")
+                self.assertEqual(sc_b["delimiter"], "X12 835 (ERA)")
+                req = _u.Request(
+                    f"{base}/npi-cleaner/api/reconcile",
+                    data=json.dumps({"a": a, "b": b}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    rec = json.loads(r.read().decode())
+                self.assertEqual(rec["matched"], 2)
+                self.assertEqual(rec["match_rate_pct"], 100.0)
+                # 4. History recorded both runs.
+                with _u.urlopen(f"{base}/npi-cleaner/api/history") as r:
+                    runs = json.loads(r.read().decode())["runs"]
+                seen = {x["file_name"] for x in runs}
+                self.assertIn(f"claims-{tag}.837", seen)
+                self.assertIn(f"remit-{tag}.835", seen)
+                # 5. A worse re-upload of the same file trips trend alerts.
+                good = ("ClaimID,HCPCS\n"
+                        + "".join(f"{i},99213\n" for i in range(40))).encode()
+                bad = ("ClaimID,HCPCS\n"
+                       + "".join(f"{i},BAD!!\n" for i in range(40))).encode()
+                run(good, f"nightly-{tag}.csv")
+                _, sc_bad = run(bad, f"nightly-{tag}.csv")
+                self.assertTrue(sc_bad["trend_alerts"])
+                self.assertTrue(any("hcpcs-malformed" in x
+                                    for x in sc_bad["trend_alerts"]))
+            finally:
+                server.shutdown()
+                server.server_close()
+
+
 class TestHardening(unittest.TestCase):
     """Adversarial inputs must degrade to a warning, never crash or OOM."""
 
