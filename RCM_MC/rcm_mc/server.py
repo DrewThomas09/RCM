@@ -6528,8 +6528,8 @@ class RCMHandler(BaseHTTPRequestHandler):
                 )
             elif _ai_key:
                 _ai_sub = (
-                    "Claude-backed IC memos, document QA, multi-turn chat "
-                    "(legacy fallback). Click to see call volume, cost, model."
+                    "AI-backed IC memos, document QA, multi-turn chat. "
+                    "Click to see call volume, cost, model."
                 )
             else:
                 _ai_sub = (
@@ -13110,10 +13110,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ai.claude_reviewer import build_claude_review
             review.claude_review = build_claude_review(review, store=store)
         except Exception as exc:  # noqa: BLE001
+            # Log the real exception; never render a Python repr to the
+            # partner (the old copy printed exc!r on the review page).
+            logger.debug("AI review failed: %r", exc)
             review.claude_review = {
                 "reviewer": "claude",
                 "status": "failed",
-                "summary": f"Claude review unavailable: {exc!r}",
+                "summary": "AI review is unavailable right now.",
                 "confirmed_points": [],
                 "concerns": [],
             }
