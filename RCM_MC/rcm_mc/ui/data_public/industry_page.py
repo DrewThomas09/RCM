@@ -65,6 +65,22 @@ _LICENSE_CHIP = (
 )
 
 
+# Report titles arrive pre-truncated from the licensed-report ingest
+# ("Primary Care Doctors in"). Page-level stopgap: map the known
+# truncated titles to their canonical report names at render time,
+# falling back to the stored title, until the ingest is re-run.
+_CANONICAL_TITLES = {
+    "Healthcare and Social": "Healthcare and Social Assistance in the US",
+    "Primary Care Doctors in": "Primary Care Doctors in the US",
+    "Specialist Doctors in the": "Specialist Doctors in the US",
+    "Emergency & Other": "Emergency & Other Outpatient Care Centers in the US",
+}
+
+
+def _full_title(title: str) -> str:
+    return _CANONICAL_TITLES.get(title, title)
+
+
 def _tag_chip(tag: str) -> str:
     return (f'<span style="display:inline-block;background:{P["panel_alt"]};'
             f'color:{P["text_dim"]};font-size:9px;font-weight:600;letter-spacing:0.05em;'
@@ -96,7 +112,7 @@ def render_industry_index(params: dict = None) -> str:
             f'<tr style="border-bottom:1px solid {P["border"]}">'
             f'<td style="padding:10px 12px"><a href="/industry/{_html.escape(r["slug"])}" '
             f'style="color:{P["accent"]};font-weight:600;text-decoration:none">'
-            f'{_html.escape(r["title"])}</a></td>'
+            f'{_html.escape(_full_title(r["title"]))}</a></td>'
             f'<td style="padding:10px 12px;font-family:JetBrains Mono,monospace;font-size:11px;color:{P["text_dim"]}">{_html.escape(str(r.get("naics_code","")))}</td>'
             f'<td style="padding:10px 12px;font-size:11px;color:{P["text_dim"]}">{_html.escape(r.get("publication_date",""))}</td>'
             f'<td style="padding:10px 12px;font-size:11px;color:{P["text_dim"]}">{conns} public-data links</td>'
@@ -141,7 +157,7 @@ def render_industry(slug: str, params: dict = None) -> str:
         return chartis_shell(body, "Industry", active_nav="/industry")
 
     iid = r["industry_id"]
-    attribution = f'{_ii.ATTRIBUTION}, {r["report_title"]}, {r.get("publication_date","")}.'
+    attribution = f'{_ii.ATTRIBUTION}, {_full_title(r["report_title"])}, {r.get("publication_date","")}.'
     cell = f"background:{P['panel']};border:1px solid {P['border']};padding:16px;margin-bottom:16px"
     h3 = f"font-family:var(--sc-sans);font-size:11px;font-weight:600;letter-spacing:0.08em;color:{P['text_dim']};text-transform:uppercase;margin-bottom:10px"
     # Reading prose (definitions, narrative) uses the editorial serif body
@@ -255,8 +271,8 @@ def render_industry(slug: str, params: dict = None) -> str:
             op_panel = ""
 
     body = (
-        ck_page_title(r["title"], eyebrow="INDUSTRY",
-                      meta=f'NAICS {r.get("naics_code","")} · {r.get("report_title","")} · {r.get("publication_date","")}')
+        ck_page_title(_full_title(r["title"]), eyebrow="INDUSTRY",
+                      meta=f'NAICS {r.get("naics_code","")} · {_full_title(r.get("report_title",""))} · {r.get("publication_date","")}')
         + ck_source_purpose(
             purpose="Frame this industry for diligence: market size, mix, drivers, "
                     "cost structure — then validate against real public data.",
@@ -269,7 +285,7 @@ def render_industry(slug: str, params: dict = None) -> str:
         + f'color:{P["accent"]};font-size:12px;font-weight:600;text-decoration:none">'
         + f'Generate PEdesk brief &rarr;</a></p>'
         + kpi_block + def_panel + seg_panel + drv_panel + bm_panel + op_panel + conn_panel + q_panel)
-    return chartis_shell(body, r["title"], active_nav="/industry")
+    return chartis_shell(body, _full_title(r["title"]), active_nav="/industry")
 
 
 # ── PEdesk industry brief builder — /industry/<slug>/brief ──────────────────
@@ -291,7 +307,7 @@ def render_industry_brief(slug: str, params: dict = None) -> str:
     bms = _ii.load_industry_benchmarks(iid)
     qs = _ii.load_industry_questions(iid)
     conns = _CONNECTIONS.get(slug, [])
-    attribution = f'{_ii.ATTRIBUTION}, {r["report_title"]}, {r.get("publication_date","")}.'
+    attribution = f'{_ii.ATTRIBUTION}, {_full_title(r["report_title"])}, {r.get("publication_date","")}.'
 
     sec = f"margin:0 0 18px"
     # Numbered section labels stay in the sans eyebrow idiom; the brief's
@@ -356,7 +372,7 @@ def render_industry_brief(slug: str, params: dict = None) -> str:
                  f'CIVHC / FDA where linked. PEdesk analysis is non-verbatim.</p>')
 
     body = (
-        ck_page_title(f'{r["title"]} — PEdesk Brief', eyebrow="INDUSTRY BRIEF",
+        ck_page_title(f'{_full_title(r["title"])} — PEdesk Brief', eyebrow="INDUSTRY BRIEF",
                       meta=f'NAICS {r.get("naics_code","")} · {r.get("publication_date","")} · '
                            f'<a href="/industry/{_html.escape(slug)}" style="color:inherit">full dossier</a>')
         + ck_source_purpose(
@@ -371,4 +387,4 @@ def render_industry_brief(slug: str, params: dict = None) -> str:
     # + Back-to-top affordances. Idempotent JS guards.
     from .._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
-    return chartis_shell(body, f'{r["title"]} Brief', active_nav="/industry")
+    return chartis_shell(body, f'{_full_title(r["title"])} Brief', active_nav="/industry")

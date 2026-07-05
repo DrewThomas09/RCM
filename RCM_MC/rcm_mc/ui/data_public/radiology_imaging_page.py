@@ -88,7 +88,13 @@ def _modality_chart(items) -> str:
         by_mod[c.modality] += c.annual_medicare_vol_k
     total = sum(by_mod.values()) or 1.0
     ranked = sorted(by_mod.items(), key=lambda kv: kv[1], reverse=True)
-    rows = [ck_bar_row(m, f"{v:,.0f}k", v / total * 100.0, tone=_modality_tone(m)) for m, v in ranked]
+    # Values are in thousands — collapse to millions above 1,000 so a
+    # partner never reads "21,440k" (thousands of thousands).
+    rows = [
+        ck_bar_row(m, f"{v/1000:.1f}M" if v >= 1000 else f"{v:,.0f}k",
+                   v / total * 100.0, tone=_modality_tone(m))
+        for m, v in ranked
+    ]
     return (
         '<div style="margin-bottom:14px">' + "".join(rows) +
         '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'

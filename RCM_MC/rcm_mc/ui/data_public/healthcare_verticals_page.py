@@ -39,7 +39,7 @@ def _conf_chip(conf: str) -> str:
 
 
 def _fmt_size(v: str, unit: str) -> str:
-    """Market-size cell: $M collapses to $bn above 1,000; counts get commas."""
+    """Market-size cell: $M collapses to $B/$T above 1,000; counts get commas."""
     try:
         n = float(v)
     except (TypeError, ValueError):
@@ -47,7 +47,12 @@ def _fmt_size(v: str, unit: str) -> str:
     u = (unit or "").strip()
     if u.startswith("USD millions"):
         tail = u[len("USD millions"):].strip()
-        body = f"${n/1000:,.2f}bn" if n >= 1000 else f"${n:,.0f}M"
+        if n >= 1_000_000:
+            body = f"${n/1_000_000:,.1f}T"
+        elif n >= 1000:
+            body = f"${n/1000:,.1f}B"
+        else:
+            body = f"${n:,.0f}M"
         return f"{body} {_html.escape(tail)}".strip()
     return f"{n:,.0f} {_html.escape(u)}".strip()
 
@@ -313,11 +318,14 @@ def render_vertical_intel(vertical_id: str, params: dict = None) -> str:
 
 
 def _fmt_usd(n: float) -> str:
-    """Editorial currency, 2dp per house style. Collapses to M/bn for the
-    large end (gene therapy, trial costs) so the cross-vertical table stays
-    readable across five orders of magnitude."""
+    """Editorial currency. Collapses to M/B/T for the large end (gene
+    therapy, trial costs) so the cross-vertical table stays readable
+    across five orders of magnitude; billions+ use the house "$26.0B"
+    style (1dp, uppercase suffix)."""
+    if n >= 1e12:
+        return f"${n/1e12:,.1f}T"
     if n >= 1e9:
-        return f"${n/1e9:,.2f}bn"
+        return f"${n/1e9:,.1f}B"
     if n >= 1e6:
         return f"${n/1e6:,.2f}M"
     if n >= 1e4:

@@ -67,6 +67,35 @@ def _subvertical_of(category: Optional[str]) -> Tuple[str, int]:
     return _SUBVERTICAL.get(category or "", ("Other operators", 9))
 
 
+# Initialisms/tickers that must stay uppercase when an enum-ish code is
+# humanized for partner display ("MA_RISK_PRIMARY_CARE" → "MA Risk
+# Primary Care", tag "nsa" → "NSA").
+_ACRONYMS = frozenset({
+    "asc", "bcbs", "cms", "doj", "dso", "dme", "eps", "esrd", "fca",
+    "ftc", "gi", "hsr", "ma", "mpt", "msa", "nsa", "opps", "reit",
+    "uhg", "usap", "us",
+    # public tickers that appear as news tags
+    "hca", "thc", "cyh", "uhs", "ehc", "ardt", "sgry", "prva",
+})
+
+
+def _humanize_enum(raw: str) -> str:
+    """Partner-facing label for a snake_case / UPPER_SNAKE code:
+    underscores become spaces, words title-case, known acronyms and
+    tickers stay uppercase ("AMBULATORY_SURGERY" → "Ambulatory
+    Surgery", "site_neutral" → "Site Neutral")."""
+    words = []
+    for w in raw.replace("_", " ").split():
+        lw = w.lower()
+        if lw in _ACRONYMS:
+            words.append(lw.upper())
+        elif lw == "and":
+            words.append("and")
+        else:
+            words.append(lw.capitalize())
+    return " ".join(words)
+
+
 def _hhi(values: List[float]) -> float:
     """Herfindahl–Hirschman Index over a set of revenue figures, on the
     0–10,000 merger-review scale. >2,500 reads as highly concentrated;
@@ -305,8 +334,8 @@ def _hero(category: Optional[str], specialty: Optional[str]) -> str:
         if sent:
             sub_parts.append(f"Sector sentiment: {html.escape(sent)}")
     sub = " · ".join(sub_parts) if sub_parts else (
-        "Public-market overlay. Refresh the curated content YAMLs "
-        "quarterly from primary filings."
+        "Public-market overlay, curated quarterly from primary "
+        "filings."
     )
     # 2026-05-28 batch 20 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head
@@ -653,7 +682,7 @@ def _news_section(
     rows = []
     for it in items:
         tag_html = "".join(
-            f'<span class="mi-tag">{html.escape(t)}</span>'
+            f'<span class="mi-tag">{html.escape(_humanize_enum(t))}</span>'
             for t in it.tags
         )
         sent_cls = {
@@ -665,7 +694,7 @@ def _news_section(
             '<div class="mi-news-body">'
             f'<div class="ck-eyebrow">{html.escape(it.date)} · '
             f'{html.escape(it.source)}'
-            f'{(" · " + html.escape(it.specialty)) if it.specialty else ""}</div>'
+            f'{(" · " + html.escape(_humanize_enum(it.specialty))) if it.specialty else ""}</div>'
             f'<a href="{html.escape(it.url)}" target="_blank" rel="noopener" '
             f'class="mi-news-title">{html.escape(it.title)}</a>'
             f'<div class="mi-news-tags">{tag_html}</div>'
@@ -685,10 +714,10 @@ def _earnings_calendar_section() -> str:
     earnings_latest disclosures. Each ticker's next expected
     reporting date is heuristically estimated as last_reported +
     90 days (standard quarterly cadence)."""
-    from datetime import date, datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     comps = list_companies()
     rows: List[Dict[str, Any]] = []
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     for c in comps:
         el = c.earnings_latest
         if el is None or not el.reported_on:
@@ -699,9 +728,13 @@ def _earnings_calendar_section() -> str:
             ).date()
         except (ValueError, TypeError):
             continue
-        # Next-quarterly estimate: 90d after last report. Real feed
-        # would replace this with consensus reporting calendar.
+        # Next-quarterly estimate: 90d after last report, rolled
+        # forward in 90d increments so the estimate is always a
+        # genuine future date (stale reports otherwise showed
+        # past-due dates for every row).
         next_expected = reported + timedelta(days=90)
+        while next_expected < today:
+            next_expected += timedelta(days=90)
         days_to = (next_expected - today).days
         rows.append({
             "ticker": c.ticker, "name": c.name,
@@ -764,9 +797,15 @@ def _earnings_calendar_section() -> str:
             f'\'JetBrains Mono\',monospace;font-weight:600;">'
             f'{html.escape(days_label)}</span>'
         )
+        # Sign before the currency symbol ("-$0.12", never "$-0.12").
+        eps = r["last_eps_reported"]
+        eps_txt = (
+            (f"-${abs(eps):.2f}" if eps < 0 else f"${eps:.2f}")
+            if eps else "—"
+        )
         table_rows.append([
             r["ticker"], r["name"], r["last_period"],
-            f"${r['last_eps_reported']:.2f}" if r["last_eps_reported"] else "—",
+            eps_txt,
             surprise_html,
             r["next_expected"],
             days_html,
@@ -797,10 +836,10 @@ def _earnings_calendar_section() -> str:
         )
     return ck_panel(
         '<p class="ck-section-body">'
-        "Derived from each ticker's most recent earnings report + "
-        'standard 90-day quarterly cadence. Real data-vendor / '
-        'Yahoo Finance feed would replace the estimate with '
-        'consensus-published dates.</p>'
+        'Estimated from the last reported quarter + standard '
+        '90-day quarterly cadence — not consensus-published '
+        'dates. Confirm exact print dates before pricing '
+        'decisions.</p>'
         f'{imminent_html}{table}',
         title="Earnings calendar · next expected reporting dates",
     )
