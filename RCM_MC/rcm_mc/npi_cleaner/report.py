@@ -75,6 +75,12 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
             rem = (info.get("remediation") or "").strip()
             if rem:
                 exec_rows.append(["    → " + rem[:140], ""])
+    _pq0 = sc.get("payer_quality") or []
+    if _pq0:
+        exec_rows.append(_header(["Quality by payer", "Clean %"]))
+        for p in _pq0[:8]:
+            exec_rows.append([f"{p['payer']} ({p['rows']:,} rows)",
+                              f"{p['clean_pct']}%"])
     _creds0 = sc.get("credentials") or {}
     if _creds0:
         exec_rows.append(_header(["Credential mix", "Cells"]))

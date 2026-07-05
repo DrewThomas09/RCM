@@ -1184,35 +1184,76 @@ def _defang_cell(value: str) -> str:
     return value
 
 
+# A zip bomb defeats the HTTP upload cap because that cap sees COMPRESSED
+# bytes: a ~200 KB archive of zeros expands to gigabytes and OOM-kills the
+# process (reproduced before this guard existed). Enforced twice — from
+# the declared sizes before any read, and again with a hard cap while
+# decompressing, because central-directory sizes can lie.
+_BATCH_MAX_UNCOMPRESSED = 200 * 1024 * 1024
+
+
 def zip_batch_members(data: bytes) -> Optional[List[Tuple[str, bytes]]]:
     """Members of a multi-file zip batch, or None when this isn't one.
 
     An .xlsx is ALSO a zip — the tell is ``[Content_Types].xml`` in the
     archive root, so that (and any other Office package) is excluded
     before the cheaper suffix scan. Only claim-shaped members count;
-    directory entries and macOS resource forks are skipped."""
+    directory entries and macOS resource forks are skipped.
+
+    Raises ``ValueError`` when the archive IS a batch but expands past
+    the uncompressed cap — the caller turns that into a clear warning
+    instead of sniffing the zip as CSV garbage."""
     if data[:4] != b"PK\x03\x04":
         return None
     import zipfile as _zf
     try:
         zf = _zf.ZipFile(io.BytesIO(data))
-        names = zf.namelist()
+        infos = zf.infolist()
     except Exception:  # noqa: BLE001 — truncated/hostile zip → not a batch
         return None
+    names = [i.filename for i in infos]
     if "[Content_Types].xml" in names:
         return None                       # Office package (xlsx/docx/…)
-    members = [n for n in names
-               if not n.endswith("/")
-               and not n.startswith("__MACOSX")
-               and n.rsplit("/", 1)[-1][:1] != "."
-               and n.lower().endswith((".csv", ".tsv", ".txt", ".837",
-                                       ".835", ".edi", ".x12"))]
+    members = [i for i in infos
+               if not i.filename.endswith("/")
+               and not i.filename.startswith("__MACOSX")
+               and i.filename.rsplit("/", 1)[-1][:1] != "."
+               and i.filename.lower().endswith(
+                   (".csv", ".tsv", ".txt", ".837", ".835", ".edi", ".x12"))]
     if not members:
         return None
+    members = sorted(members, key=lambda i: i.filename)[:50]
+    declared = sum(max(i.file_size, 0) for i in members)
+    if declared > _BATCH_MAX_UNCOMPRESSED:
+        raise ValueError(
+            f"This zip declares {declared / 1e6:,.0f} MB of uncompressed "
+            f"data — the batch limit is "
+            f"{_BATCH_MAX_UNCOMPRESSED / 1e6:,.0f} MB total. Split the "
+            "archive and upload in parts.")
     out = []
-    for n in sorted(members)[:50]:        # bounded fan-out per upload
+    budget = _BATCH_MAX_UNCOMPRESSED
+    for info in members:
         try:
-            out.append((n.rsplit("/", 1)[-1], zf.read(n)))
+            # Chunked read with a hard cap: declared sizes can be forged,
+            # so never trust file_size alone.
+            chunks = []
+            got = 0
+            with zf.open(info) as fh:
+                while True:
+                    chunk = fh.read(1 << 20)
+                    if not chunk:
+                        break
+                    got += len(chunk)
+                    if got > budget:
+                        raise ValueError(
+                            "A zip member expanded past its declared size "
+                            "beyond the batch limit — refusing to "
+                            "decompress further.")
+                    chunks.append(chunk)
+            budget -= got
+            out.append((info.filename.rsplit("/", 1)[-1], b"".join(chunks)))
+        except ValueError:
+            raise
         except Exception:  # noqa: BLE001 — skip the unreadable member
             continue
     return out or None
@@ -1347,7 +1388,15 @@ def clean_bytes(
             progress(msg, frac)
 
     cb("Reading file", 0.05)
-    _members = zip_batch_members(data)
+    try:
+        _members = zip_batch_members(data)
+    except ValueError as _zexc:
+        _res = CleanResult(delimiter="zip", headers=[])
+        _res.warnings.append(str(_zexc))
+        _res.out_name = _out_name(src_name)
+        _write_output(_res, [], [])
+        cb("Done", 1.0)
+        return _res
     if _members is not None:
         return _clean_batch(_members, src_name,
                             drop_duplicates=drop_duplicates, deid=deid,

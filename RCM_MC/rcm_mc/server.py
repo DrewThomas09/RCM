@@ -2802,8 +2802,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if _x12.looks_like_x12(raw):
             return self._send_json({"available": False})
         # A zip batch has many files with many layouts — the single-file
-        # mapping editor doesn't apply, clean directly.
-        if engine.zip_batch_members(raw) is not None:
+        # mapping editor doesn't apply, clean directly. An over-cap zip
+        # also skips mapping; the upload path produces the clear warning.
+        try:
+            if engine.zip_batch_members(raw) is not None:
+                return self._send_json({"available": False})
+        except ValueError:
             return self._send_json({"available": False})
         result = engine.detect_columns_preview(raw)
         if result is None:

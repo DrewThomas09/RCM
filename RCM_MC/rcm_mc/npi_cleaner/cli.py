@@ -23,7 +23,8 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
         description="Clean a claims file offline (CSV/TSV/XLSX) — same "
                     "engine as /npi-cleaner, batch-friendly.")
     ap.add_argument("file",
-                    help="claims file to clean (.csv/.tsv/.xlsx/.837 X12)")
+                    help="claims file to clean (.csv/.tsv/.xlsx, X12 "
+                         ".837/.835, or a .zip batch of files)")
     ap.add_argument("--profile", default=None, metavar="NAME",
                     help="apply a saved cleaning profile (rule suite + "
                          "thresholds) by name")
@@ -40,6 +41,10 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                     help="exit 1 if the quality score is below N (CI gate)")
     ap.add_argument("--outdir", default=None,
                     help="directory for outputs (default: beside the input)")
+    ap.add_argument("--bundle", action="store_true",
+                    help="also write <stem>_bundle.zip with every artifact "
+                         "(cleaned file, workbook, change log, exec report, "
+                         "scorecard JSON, data dictionary, worklists)")
     args = ap.parse_args(argv)
 
     src = Path(args.file)
@@ -80,6 +85,51 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
             dest = outdir / name
             shutil.copyfile(path, dest)
             written.append(str(dest))
+
+    if args.bundle:
+        import csv as _csvm
+        import io as _iom
+        import zipfile as _zfm
+        from datetime import datetime, timezone
+        from .exec_report import build_exec_report
+        bpath = outdir / (src.stem + "_bundle.zip")
+        with _zfm.ZipFile(bpath, "w", _zfm.ZIP_DEFLATED) as z:
+            for path, name_ in ((res.out_path, res.out_name),
+                                (res.workbook_path, res.workbook_name),
+                                (res.changelog_path, res.changelog_name),
+                                (res.companion_path, res.companion_name)):
+                if path:
+                    z.write(path, name_)
+            z.writestr("exec_report.html", build_exec_report(
+                sc, src.name,
+                datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")))
+            z.writestr("scorecard.json",
+                       json.dumps(sc, indent=2, default=str))
+            if res.dictionary:
+                z.writestr("data_dictionary.csv", engine.dictionary_csv(res))
+            if res.flag_rows and res.out_path \
+                    and res.out_name.endswith(".csv"):
+                want: dict = {}
+                for rule, idxs in res.flag_rows.items():
+                    for i2 in idxs:
+                        want.setdefault(i2, []).append(rule)
+                sinks = {rule: _iom.StringIO()
+                         for rule, idxs in res.flag_rows.items() if idxs}
+                writers = {k: _csvm.writer(v) for k, v in sinks.items()}
+                with open(res.out_path, encoding="utf-8") as fh:
+                    rd = _csvm.reader(fh)
+                    hdr = next(rd, None)
+                    if hdr:
+                        for w_ in writers.values():
+                            w_.writerow(["_row"] + hdr)
+                    for i2, row in enumerate(rd, start=1):
+                        for rule in want.get(i2, ()):
+                            writers[rule].writerow([i2] + row)
+                for rule, sink in sinks.items():
+                    safe = "".join(c for c in rule
+                                   if c.isalnum() or c == "-")
+                    z.writestr(f"worklists/{safe}.csv", sink.getvalue())
+        written.append(str(bpath))
 
     if args.json:
         sc["written"] = written

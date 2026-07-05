@@ -1550,6 +1550,91 @@ class TestDupWindowAndRollup(unittest.TestCase):
         self.assertIn("Claim rollup", html_out)
 
 
+class TestHardening(unittest.TestCase):
+    """Adversarial inputs must degrade to a warning, never crash or OOM."""
+
+    def test_zip_bomb_rejected_by_declared_size(self):
+        # A tiny compressed archive declaring more than the uncompressed
+        # cap is rejected BEFORE any decompression. The cap is lowered for
+        # the test so the fixture stays small.
+        import io as _io
+        import zipfile as _zf
+        buf = _io.BytesIO()
+        with _zf.ZipFile(buf, "w", _zf.ZIP_DEFLATED) as z:
+            z.writestr("bomb.csv", "0,0\n" * 700_000)   # ~2.8 MB declared
+        data = buf.getvalue()
+        old = engine._BATCH_MAX_UNCOMPRESSED
+        engine._BATCH_MAX_UNCOMPRESSED = 1 * 1024 * 1024
+        try:
+            with self.assertRaises(ValueError):
+                engine.zip_batch_members(data)
+            res = engine.clean_bytes(data, "bomb.zip")
+            self.assertTrue(any("batch limit" in w for w in res.warnings))
+            self.assertEqual(res.n_rows_in, 0)
+        finally:
+            engine._BATCH_MAX_UNCOMPRESSED = old
+
+    def test_adversarial_inputs_never_crash(self):
+        import io as _io
+        import zipfile as _zf
+        buf = _io.BytesIO()
+        with _zf.ZipFile(buf, "w") as z:
+            z.writestr("a.csv", "NPI\n1\n" * 100)
+        cases = {
+            "truncated.zip": buf.getvalue()[:60],
+            "quotes.csv": b'NPI,Name\n123,"unclosed\n456,ok\n',
+            "one-col.csv": b"NPI\n1497758544\n99999\n",
+            "header-only.csv": b"NPI,Name\n",
+            "empty.csv": b"",
+            "garbage.bin": bytes(range(256)) * 10,
+            "nulls.csv": b"NPI,Na\x00me\n123,\x00x\n",
+            "long-line.csv": b"NPI\n" + b"9" * 5_000_000 + b"\n",
+            "x12-junk.837": b"ISA*junk",
+            "ragged.csv": b"A,B,C\n1\n1,2,3,4,5,6\n",
+        }
+        for name, data in cases.items():
+            res = engine.clean_bytes(data, name)   # must not raise
+            self.assertIsNotNone(res.out_name, name)
+
+    def test_cli_zip_batch_and_bundle(self):
+        import contextlib
+        import io as _io
+        import zipfile as _zf
+        from rcm_mc.npi_cleaner import cli as nc_cli
+        with tempfile.TemporaryDirectory() as tmp:
+            src = os.path.join(tmp, "sites.zip")
+            buf = _io.BytesIO()
+            with _zf.ZipFile(buf, "w") as z:
+                z.writestr("a.csv", f"NPI,ChargeAmt\n{GOOD_A},\"$1,0\"\n")
+                z.writestr("b.csv", "ClaimID,HCPCS\n1,BAD!!\n")
+            with open(src, "wb") as fh:
+                fh.write(buf.getvalue())
+            out = _io.StringIO()
+            with contextlib.redirect_stdout(out):
+                rc = nc_cli.main([src, "--json", "--outdir", tmp])
+            self.assertEqual(rc, 0)
+            sc = json.loads(out.getvalue())
+            self.assertEqual(len(sc["batch"]), 2)
+            self.assertEqual(sc["delimiter"], "zip batch")
+            # --bundle on a plain CSV writes the everything-zip locally.
+            src2 = os.path.join(tmp, "in.csv")
+            with open(src2, "w", encoding="utf-8") as fh:
+                fh.write("ClaimID,HCPCS\n1,99213\n2,BAD!!\n")
+            out2 = _io.StringIO()
+            with contextlib.redirect_stdout(out2):
+                rc2 = nc_cli.main([src2, "--bundle", "--json",
+                                   "--outdir", tmp])
+            self.assertEqual(rc2, 0)
+            bundle = os.path.join(tmp, "in_bundle.zip")
+            self.assertTrue(os.path.exists(bundle))
+            with _zf.ZipFile(bundle) as z:
+                names = z.namelist()
+            self.assertIn("exec_report.html", names)
+            self.assertIn("scorecard.json", names)
+            self.assertIn("data_dictionary.csv", names)
+            self.assertIn("worklists/hcpcs-malformed.csv", names)
+
+
 class TestZipBatchAndPayerWorklist(unittest.TestCase):
     """Batch 15: multi-file zip batch upload + per-payer worklists."""
 

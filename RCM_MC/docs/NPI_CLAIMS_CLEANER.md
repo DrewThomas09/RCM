@@ -1,11 +1,12 @@
 # NPI Claims Cleaner — enterprise claims data-quality platform
 
 `/npi-cleaner` is a self-contained claims data-quality tool inside RCM-MC:
-drop a claims extract (CSV / TSV / XLSX) **or a raw X12 837 EDI file** and
-get back a cleaned file, a 0–100 quality grade, actionable per-rule
-worklists, a printable executive report, and a full cell-level audit
-trail. Everything runs locally — no claim data ever leaves the server,
-and nothing is written to the app database.
+drop a claims extract (CSV / TSV / XLSX), **a raw X12 837 or 835 EDI
+file**, or **a .zip batch of files** and get back a cleaned file, a 0–100
+quality grade, actionable per-rule and per-payer worklists, a printable
+executive report, and a full cell-level audit trail. Everything runs
+locally — no claim data ever leaves the server, and nothing is written to
+the app database.
 
 The design borrows deliberately from three product families:
 
@@ -28,6 +29,8 @@ The design borrows deliberately from three product families:
 | Report workbook — opens on an **executive Summary tab** (grade, top findings + remediation, credential/specialty mix), plus Scorecard, Quality, NPI health, per-rule **WL worklist tabs**, cleaned data | `?fmt=xlsx` |
 | Cell-level change log (every original → cleaned value; recorded before de-identification so PHI never leaks into it) | `?fmt=changelog` |
 | Per-rule worklist CSVs (just the flagged rows, with row numbers) | `?fmt=worklist&rule=<id>` |
+| Per-payer worklist CSVs (one payer family's flagged rows) | `?fmt=worklist&payer=<FAMILY>` |
+| Data dictionary (per-column role, fill %, distinct, PHI-safe samples) | `?fmt=dictionary` |
 | Printable executive one-pager | `?fmt=exec` |
 | **Everything at once** — one zip with all of the above + `scorecard.json` | `?fmt=bundle` |
 
@@ -95,6 +98,21 @@ Separators come from the ISA envelope per spec and the normal pipeline
 runs unchanged. Any other transaction set (999/270/276) produces a
 precise warning instead of an empty result.
 
+## Zip batches, payer split, portable suites
+
+- **Zip batch**: a `.zip` of claim files cleans every member through the
+  full pipeline — per-file grades on the Quality tab, one blended report
+  card, and a zip of cleaned files as the download. An `.xlsx` (also a
+  zip) is distinguished by `[Content_Types].xml`; junk entries are
+  skipped; total **uncompressed** size is capped so a zip bomb can't
+  defeat the upload limit.
+- **Quality by payer**: findings split by payer family (spelling
+  variants fold together) — rows, flagged share, clean %, top rules per
+  payer, each with its own worklist download.
+- **Portable suites**: profiles and mapping templates export/import as
+  JSON (`/api/profiles/export|import`, `/api/mappings/export|import`);
+  every import re-passes the save-time sanitizer.
+
 ## 837↔835 reconciliation
 
 `POST /npi-cleaner/api/reconcile` with `{"a": <claims job id>, "b":
@@ -138,8 +156,10 @@ CLI (cron/CI door — same engine, same artifacts):
 ```
 rcm-mc npi-clean claims.csv [--profile P] [--mapping M] [--deid]
                             [--no-dedupe] [--json] [--outdir DIR]
+                            [--bundle]          # <stem>_bundle.zip of all artifacts
                             [--min-score N]     # exit 1 below N → CI gate
 rcm-mc npi-clean claims.837 --min-score 80
+rcm-mc npi-clean sites.zip  --bundle            # batch a zip of extracts
 ```
 
 ## Module map
