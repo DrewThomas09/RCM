@@ -196,11 +196,14 @@ def _body() -> str:
       <div class="cloud">⤒</div>
       <div class="big">Drag a claims file here</div>
       <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, or Excel (.xlsx) · up to 200&nbsp;MB ·
+        CSV, TSV, Excel (.xlsx), X12 837/835 (.837/.835/.edi), or a
+        <strong>.zip of files</strong> · CSV/TSV up to
+        <strong>10&nbsp;GB</strong> (streamed in chunks; multi-hour jobs
+        are fine), other formats up to 200&nbsp;MB ·
         <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
     </div>
     <input type="file" id="npi-file" class="npi-hidden"
-           accept=".csv,.tsv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+           accept=".csv,.tsv,.txt,.xlsx,.837,.835,.edi,.x12,.zip,text/csv,text/plain,application/zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <div class="npi-opts">
       <label><input type="checkbox" id="npi-dedupe" checked>
         Remove exact-duplicate rows</label>
@@ -224,12 +227,72 @@ patient name/address/phone/email and SSN are redacted, DOB is reduced to year,
 ZIP to its first three digits, and MRN/account numbers are replaced with a
 stable per-run token (same value → same token, so rows still link). Provider
 NPI and provider name are always kept intact — NPI recovery depends on them.">ⓘ</span></label>
+      <label style="margin-left:2px">Cleaning profile
+        <select id="npi-profile" style="margin-left:6px;font-size:12.5px">
+          <option value="">(default rules)</option>
+        </select>
+        <button type="button" class="npi-again" id="npi-profile-new"
+                style="margin-left:6px">manage…</button>
+        <span class="npi-hint" title="Named rule suites: disable rules that
+don't apply to this feed, mark known issues as accepted (still reported,
+no longer graded), and tune thresholds (timely-filing days, stale-date
+horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
+      </label>
+    </div>
+    <div id="npi-profile-editor" class="npi-hidden" style="border:1px solid
+      var(--line,#d2ddd7);border-radius:8px;padding:14px;margin-top:10px">
+      <div style="font-size:13px;font-weight:640;margin-bottom:8px">
+        Cleaning profiles</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input id="npi-prof-name" placeholder="profile name"
+               style="font-size:12.5px;padding:4px 8px">
+        <label class="npi-muted">timely-filing days
+          <input id="npi-prof-timely" type="number" value="365" min="30"
+                 max="1095" style="width:70px;font-size:12.5px"></label>
+        <label class="npi-muted">stale after (years)
+          <input id="npi-prof-stale" type="number" value="10" min="1"
+                 max="50" style="width:55px;font-size:12.5px"></label>
+        <label class="npi-muted">outlier fence (×IQR)
+          <input id="npi-prof-iqr" type="number" value="3" min="1.5"
+                 max="10" step="0.5" style="width:60px;font-size:12.5px"></label>
+        <label class="npi-muted">dup window (days)
+          <input id="npi-prof-dupwin" type="number" value="3" min="1"
+                 max="30" style="width:55px;font-size:12.5px"></label>
+      </div>
+      <div class="npi-muted" style="margin-top:8px">Per rule: leave
+        <em>on</em>, mark <em>accepted</em> (reported, not graded), or
+        <em>off</em> (not checked at all).</div>
+      <div id="npi-prof-rules" style="max-height:260px;overflow:auto;
+        margin-top:6px;font-size:12px;columns:2;column-gap:24px"></div>
+      <div style="margin-top:10px">
+        <button type="button" class="npi-dl" id="npi-prof-save"
+          style="font-size:12.5px;padding:6px 14px">Save profile</button>
+        <button type="button" class="npi-again" id="npi-prof-close">close</button>
+        <a class="npi-again" href="/npi-cleaner/api/profiles/export" download
+           style="margin-left:12px;text-decoration:none;display:inline-block">
+          export all</a>
+        <button type="button" class="npi-again" id="npi-prof-import">
+          import…</button>
+        <input type="file" id="npi-prof-import-file" class="npi-hidden"
+               accept=".json,application/json">
+      </div>
+      <div class="npi-muted" id="npi-prof-msg" style="margin-top:6px"></div>
     </div>
   </div>
 
   <div id="npi-stage-mapping" class="npi-hidden">
     <div class="ck-section-header"><h3 style="margin:0">Confirm columns</h3></div>
     <div class="npi-muted" id="npi-map-file"></div>
+    <div style="margin:10px 0 4px">
+      <label class="npi-muted" for="npi-map-tpl">Mapping template:</label>
+      <select id="npi-map-tpl" style="font-size:12.5px;max-width:220px">
+        <option value="">(none)</option></select>
+      <input id="npi-map-tpl-name" placeholder="save as… e.g. Epic extract"
+        style="font-size:12.5px;max-width:200px;margin-left:10px">
+      <button type="button" class="npi-again" id="npi-map-tpl-save"
+        style="font-size:12px">Save template</button>
+      <span class="npi-muted" id="npi-map-tpl-msg"></span>
+    </div>
     <div class="npi-map" id="npi-map-grid"></div>
     <div style="margin-top:18px">
       <button class="npi-dl" id="npi-map-clean">Clean file →</button>
@@ -241,6 +304,9 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
     <div class="npi-prog">
       <div class="npi-bar"><i id="npi-bar-fill"></i></div>
       <div class="npi-msg" id="npi-bar-msg">Uploading…</div>
+      <div class="npi-msg npi-muted" id="npi-bar-eta"></div>
+      <button type="button" class="npi-again npi-hidden" id="npi-cancel"
+              style="margin-top:10px">Cancel this run</button>
     </div>
   </div>
 
@@ -252,8 +318,12 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
   <div id="npi-stage-result" class="npi-hidden">
     <div class="npi-tabs" role="tablist">
       <button class="npi-tab is-active" data-tab="overview">Overview</button>
+      <button class="npi-tab" data-tab="quality">Quality
+        <span class="npi-tab-badge" id="tabbadge-quality"></span></button>
       <button class="npi-tab" data-tab="issues">Issues &amp; fixes
         <span class="npi-tab-badge" id="tabbadge-issues"></span></button>
+      <button class="npi-tab" data-tab="population">Population
+        <span class="npi-tab-badge" id="tabbadge-pop"></span></button>
       <button class="npi-tab" data-tab="connectors">Live connectors
         <span class="npi-tab-badge" id="tabbadge-conn"></span></button>
       <button class="npi-tab" data-tab="downloads">Downloads</button>
@@ -277,9 +347,23 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
       <div id="npi-sanity"></div>
     </div>
 
+    <div class="npi-panel" data-panel="quality">
+      <div id="npi-quality"></div>
+    </div>
+
     <div class="npi-panel" data-panel="issues">
       <div id="npi-advanced"></div>
       <div id="npi-suggestions"></div>
+    </div>
+
+    <div class="npi-panel" data-panel="population">
+      <div class="npi-muted" style="font-size:12.5px;margin-bottom:10px">
+        What the file <em>means</em>, not just whether it's clean: where care
+        happened, how lines group into visits, what conditions the population
+        carries, whether any month of data is missing, and who codes hotter
+        than the file. Computed offline from the cleaned table — the class of
+        output Tuva-style pipelines need a warehouse for.</div>
+      <div id="npi-pop"></div>
     </div>
 
     <div class="npi-panel" data-panel="connectors">
@@ -296,8 +380,12 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
       <div style="margin-top:4px;margin-bottom:14px">
         <a class="npi-dl" id="npi-analyze" href="#"
            style="background:var(--ink,#11201c)">📊 Open pivot analysis →</a>
-        <span class="npi-muted" style="margin-left:10px">Build pivot tables and
-          charts from the cleaned data — like a mini Tableau.</span>
+        <a class="npi-dl npi-dl-alt" id="npi-exec" href="#" target="_blank"
+           style="margin-left:10px">🖨 Executive report</a>
+        <a class="npi-dl npi-dl-alt" href="/npi-cleaner/history"
+           style="margin-left:10px">📈 Run history</a>
+        <span class="npi-muted" style="margin-left:10px">Pivot analysis, a
+          print-ready DQ one-pager, and quality tracked across runs.</span>
       </div>
       <div style="margin-top:8px">
         <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
@@ -305,11 +393,49 @@ NPI and provider name are always kept intact — NPI recovery depends on them.">
            style="margin-left:10px">⤓ Download report (.xlsx)</a>
         <a class="npi-dl npi-dl-alt" id="npi-dl-companion" href="#" download
            style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-changelog" href="#" download
+           style="margin-left:10px;display:none">⤓ Change log — audit trail (.csv)</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-dict" href="#" download
+           style="margin-left:10px;display:none">⤓ Data dictionary (.csv)</a>
+        <a class="npi-dl npi-dl-alt" id="npi-dl-bundle" href="#" download
+           style="margin-left:10px">⤓ Everything (.zip)</a>
       </div>
+      <div id="npi-reconcile" style="margin-top:16px"></div>
       <div style="margin-top:16px">
         <button class="npi-again" id="npi-again">Clean another file</button>
       </div>
     </div>
+  </div>
+
+  <div id="npi-wishlist" style="border:1px solid var(--line,#d2ddd7);
+      border-radius:8px;padding:16px;margin-top:22px">
+    <div style="font-size:14px;font-weight:640;margin-bottom:4px">
+      Missing something? Tell us and we'll build it.</div>
+    <div class="npi-muted" style="font-size:12.5px;margin-bottom:10px">
+      A check your compliance team needs, a payer we don't recognize, a
+      field the detector misses, a file format we don't read — log it here.
+      Requests go on the cleaner's build backlog and get filled in.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="npi-wish-cat" style="font-size:12.5px;padding:4px 6px">
+        <option value="rule">New check / rule</option>
+        <option value="field">Field / column type</option>
+        <option value="payer">Payer</option>
+        <option value="format">File format</option>
+        <option value="integration">Integration / connector</option>
+        <option value="other">Something else</option>
+      </select>
+      <input id="npi-wish-title" placeholder="one-line summary (required)"
+             maxlength="120" style="flex:1;min-width:220px;font-size:12.5px;
+             padding:4px 8px">
+      <button type="button" class="npi-again" id="npi-wish-add">Request</button>
+    </div>
+    <textarea id="npi-wish-details" rows="2" maxlength="2000"
+      placeholder="details (optional): what the data looks like, what you expect the cleaner to do"
+      style="width:100%;margin-top:8px;font-size:12.5px;padding:6px 8px;
+      box-sizing:border-box"></textarea>
+    <div id="npi-wish-msg" class="npi-muted"
+         style="font-size:12px;margin-top:6px"></div>
+    <div id="npi-wish-list" style="margin-top:10px"></div>
   </div>
 
   <div class="npi-note">
@@ -385,6 +511,9 @@ _EXTRA_JS = r"""
     show(stErr);
   }
   function fmt(n){ return (n==null?0:n).toLocaleString(); }
+  // Financial figures render with exactly 2 decimals per house style.
+  function money(n){ return "$"+Number(n==null?0:n).toLocaleString(
+    undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
   function healthClass(pct){ return pct>=99?"good":(pct>=90?"warn":"bad"); }
 
@@ -429,11 +558,19 @@ _EXTRA_JS = r"""
     if(!rows){ rows='<tr><td colspan="7" style="color:var(--ink-2)">'+
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
-    renderRepairs(s.repairs, s.repairs_total);
-    renderSanity(s.sanity);
+    (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
+    renderRepairs(s);
+    rememberJob(currentJobId, s.out_name||"run");
+    renderReconcile(s);
+    renderSanity(s.sanity, s.worklists, s.download, s.accepted_rules||[]);
+    renderQuality(s);
+    $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
 
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
+    renderPopulation(s.population, s.download);
+    $("tabbadge-pop").textContent = s.population
+      ? String(Object.keys(s.population).length) : "";
     renderDeep(s.deep, s.download, s.deep_workbook_name);
     renderCompliance(s.compliance);
     renderNppes(s.nppes);
@@ -463,9 +600,26 @@ _EXTRA_JS = r"""
       cbtn.setAttribute("download", s.companion_name);
       cbtn.style.display="";
     } else { cbtn.style.display="none"; }
+    var lbtn=$("npi-dl-changelog");
+    if(s.changelog_name){
+      lbtn.setAttribute("href", s.download+"?fmt=changelog");
+      lbtn.setAttribute("download", s.changelog_name);
+      lbtn.style.display="";
+    } else { lbtn.style.display="none"; }
+    var bbtn=$("npi-dl-bundle");
+    bbtn.setAttribute("href", s.download+"?fmt=bundle");
+    bbtn.setAttribute("download", "npi_clean_bundle.zip");
+    var dbtn=$("npi-dl-dict");
+    if(s.dictionary && s.dictionary.length){
+      dbtn.setAttribute("href", s.download+"?fmt=dictionary");
+      dbtn.setAttribute("download", "data_dictionary.csv");
+      dbtn.style.display="";
+    } else { dbtn.style.display="none"; }
 
     if(currentJobId){ $("npi-analyze").setAttribute("href",
-      "/npi-cleaner/analyze/"+currentJobId); }
+      "/npi-cleaner/analyze/"+currentJobId);
+      $("npi-exec").setAttribute("href",
+      "/npi-cleaner/download/"+currentJobId+"?fmt=exec"); }
 
     var rn=$("npi-recovered-note");
     if(s.recovered_written>0){
@@ -552,21 +706,70 @@ _EXTRA_JS = r"""
     "phone-format":"Formatted phone/fax numbers",
     "taxonomy-upper":"Upper-cased provider taxonomy codes",
     "ndc-pad-11":"Padded NDC to 11-digit billing format (segment-aware)",
-    "ndc-normalize-11":"Normalized NDC to 11-digit billing format"};
+    "ndc-normalize-11":"Normalized NDC to 11-digit billing format",
+    "revcode-pad":"Restored dropped leading zeros in revenue codes (450 → 0450)",
+    "pos-pad":"Zero-padded 1-digit Place of Service codes",
+    "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)",
+    "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)"};
 
-  function renderRepairs(repairs, total){
+  // Takes the scorecard like its siblings (renderQuality/renderReconcile):
+  // at 5 positional params, two of which shared a shape, a silent swap at
+  // the call site would have rendered credential tallies as repair rules.
+  function renderRepairs(s){
+    var repairs=s.repairs, total=s.repairs_total, credentials=s.credentials,
+        specialties=s.specialties, claims=s.claims;
     var box=$("npi-repairs");
     var keys=repairs?Object.keys(repairs):[];
-    if(!keys.length){ box.innerHTML=""; return; }
-    keys.sort(function(a,b){return repairs[b]-repairs[a];});
-    var html='<div class="ck-section-header" style="margin-top:20px">'+
-      '<h3 style="margin:0">Cleaning fixes applied</h3></div>'+
-      '<div class="npi-muted">'+fmt(total)+' deterministic normalizations written '+
-      'to the cleaned file (originals were replaced in place).</div>';
-    keys.forEach(function(k){
-      html+=flagRow(REPAIR_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', repairs[k]);
-    });
-    box.innerHTML=html;
+    var ckeys=credentials?Object.keys(credentials):[];
+    var specs=specialties||[];
+    if(!keys.length && !ckeys.length && !specs.length && !claims){
+      box.innerHTML=""; return; }
+    var claimsHtml="";
+    if(claims && claims.n_claims){
+      claimsHtml='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Claim rollup</h3></div>'+
+        '<div class="npi-muted">'+fmt(claims.n_claims)+' distinct claims ('+
+        esc(claims.column)+') · '+claims.avg_lines+' lines/claim avg · '+
+        fmt(claims.max_lines)+' max'+
+        (claims.charge?(' · per-claim charge '+
+          money(claims.charge.median)+' median / '+money(claims.charge.max)+
+          ' max'):'')+
+        (claims.truncated?' · (rollup capped at 50,000 claims)':'')+
+        '</div>';
+    }
+    var html="";
+    if(keys.length){
+      keys.sort(function(a,b){return repairs[b]-repairs[a];});
+      html+='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Cleaning fixes applied</h3></div>'+
+        '<div class="npi-muted">'+fmt(total)+' deterministic normalizations written '+
+        'to the cleaned file (originals were replaced in place).</div>';
+      keys.forEach(function(k){
+        html+=flagRow(REPAIR_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', repairs[k]);
+      });
+    }
+    if(ckeys.length){
+      ckeys.sort(function(a,b){return credentials[b]-credentials[a];});
+      html+='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Credential mix</h3></div>'+
+        '<div class="npi-muted">Clinical credentials parsed from provider-name '+
+        'columns (cells naming each credential).</div><div style="margin-top:8px">'+
+        ckeys.map(function(k){
+          return '<span class="npi-pill" style="margin:0 6px 6px 0;display:inline-block">'+
+            esc(k)+' · '+fmt(credentials[k])+'</span>';
+        }).join("")+'</div>';
+    }
+    if(specs.length){
+      html+='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Specialty mix</h3></div>'+
+        '<div class="npi-muted">Top provider taxonomy codes on the cleaned rows '+
+        '(NUCC display names where known).</div><div style="margin-top:8px">'+
+        specs.map(function(s){
+          return '<span class="npi-pill" style="margin:0 6px 6px 0;display:inline-block">'+
+            esc(s.name||s.code)+' · '+fmt(s.n)+'</span>';
+        }).join("")+'</div>';
+    }
+    box.innerHTML=html+claimsHtml;
   }
 
   var SANITY_LABELS={
@@ -584,19 +787,258 @@ _EXTRA_JS = r"""
     "icd10-malformed":"Malformed ICD-10 diagnosis code (bad shape)",
     "money-unparseable":"Non-numeric value in an amount column (couldn't parse as money)",
     "sex-invalid":"Invalid sex/gender value (didn't resolve to M/F/U)",
-    "taxonomy-malformed":"Malformed provider taxonomy code (not 10 alphanumeric characters)"};
-  function renderSanity(sanity){
+    "taxonomy-malformed":"Malformed provider taxonomy code (not 10 alphanumeric characters)",
+    "paid-exceeds-billed":"Paid amount exceeds billed",
+    "service-before-birth":"Service date before the patient's date of birth",
+    "discharge-before-admit":"Discharge date before the admission date",
+    "date-stale":"Service date more than 10 years old (likely century/key error)",
+    "pos-invalid":"Place of Service not in the CMS code set",
+    "revenue-code-malformed":"Malformed revenue code (not 4 digits)",
+    "charge-outlier":"Charge is a statistical outlier for its HCPCS code (beyond 3×IQR)",
+    "mbi-malformed":"Malformed Medicare MBI (member ID fails the MBI position rules)",
+    "condition-code-malformed":"Malformed UB-04 condition code (not 2 alphanumerics)",
+    "occurrence-code-malformed":"Malformed UB-04 occurrence code (not 2 alphanumerics)",
+    "value-code-malformed":"Malformed UB-04 value code (not 2 alphanumerics)",
+    "near-duplicate-row":"Near-duplicate row (identical after case/space folding)",
+    "jw-zero-units":"JW modifier (discarded drug) with no billed units",
+    "bilateral-units":"Bilateral modifier 50 with more than 1 unit (MUE guidance)",
+    "conflicting-amount-claim":"Same provider · patient · date · code billed at different amounts (re-bill signal)",
+    "carc-invalid":"Invalid denial/adjustment reason code (not a CARC shape)",
+    "drg-malformed":"Malformed MS-DRG (not a 3-digit code 001-999)",
+    "anesthesia-units-implausible":"Anesthesia line billing more than 24 hours of time units",
+    "revenue-tob-mismatch":"Room &amp; board revenue code on an outpatient type of bill",
+    "possible-duplicate-service":"Same patient · provider · code again within the duplicate window"};
+  var RULE_INFO={};
+  function sevChip(sev){
+    var c=sev==="critical"?"#b5321e":(sev==="warning"?"#b8732a":"#5b6770");
+    return '<span style="display:inline-block;font-size:10px;font-weight:700;'+
+      'text-transform:uppercase;letter-spacing:.05em;color:#fff;background:'+c+
+      ';border-radius:4px;padding:1px 6px;margin-right:6px;vertical-align:middle">'+
+      sev+'</span>';
+  }
+  function renderSanity(sanity, worklists, dl, accepted){
+    var acc={}; (accepted||[]).forEach(function(a){acc[a]=1;});
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
     if(!keys.length){ box.innerHTML=""; return; }
-    keys.sort(function(a,b){return sanity[b]-sanity[a];});
+    var rank={critical:0,warning:1,info:2};
+    keys.sort(function(a,b){
+      var ra=rank[(RULE_INFO[a]||{}).severity]!=null?rank[(RULE_INFO[a]||{}).severity]:3,
+          rb=rank[(RULE_INFO[b]||{}).severity]!=null?rank[(RULE_INFO[b]||{}).severity]:3;
+      return ra!==rb ? ra-rb : sanity[b]-sanity[a];
+    });
     var html='<div class="ck-section-header" style="margin-top:20px">'+
       '<h3 style="margin:0">Data sanity flags</h3></div>'+
-      '<div class="npi-muted">Impossible cross-field values found (reported, not '+
-      'auto-changed — verify at the source).</div>';
+      '<div class="npi-muted">Findings are reported, never auto-changed — '+
+      'each has a per-rule worklist download of just the flagged rows.</div>';
     keys.forEach(function(k){
-      html+=flagRow(SANITY_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', sanity[k]);
+      var info=RULE_INFO[k]||{};
+      var label=(info.title||SANITY_LABELS[k]||k);
+      if(acc[k]){ label='<span style="opacity:.55">'+label+
+        ' <em style="font-size:11px">(accepted — not graded)</em></span>'; }
+      var sub=sevChip(info.severity||"info")+'<span class="npi-pill">'+k+'</span>'+
+        (info.remediation?('<br><span class="npi-muted">'+esc(info.remediation)+
+        '</span>'):'');
+      if(worklists && worklists[k] && dl){
+        sub+=' <a href="'+dl+'?fmt=worklist&rule='+encodeURIComponent(k)+
+          '" download style="font-size:11.5px">⤓ worklist ('+
+          fmt(worklists[k])+' rows)</a>';
+      }
+      html+=flagRow(label, sub, sanity[k]);
     });
+    box.innerHTML=html;
+  }
+
+  var DIM_LABELS={
+    completeness:["Completeness","filled cells / total cells"],
+    validity:["Validity","values that can be right (codes · amounts · IDs)"],
+    consistency:["Consistency","fields that agree with each other"],
+    uniqueness:["Uniqueness","free of duplicate rows and repeat claims"],
+    conformity:["Conformity","how little normalization the file needed"]};
+  function renderQuality(s){
+    var box=$("npi-quality"), q=s.quality;
+    if(!q){ box.innerHTML='<div class="npi-muted">No quality data.</div>'; return; }
+    var tone=q.score>=85?'var(--green-deep,#0c7c66)':
+             (q.score>=70?'#b8732a':'#b5321e');
+    var html='<div class="ck-section-header"><h3 style="margin:0">'+
+      'Data-quality report card</h3></div>'+
+      '<div class="npi-muted">Five-dimension grade computed from the counts '+
+      'on this page — every number is recomputable from the scorecard.</div>';
+    // Trend alerts: regressions vs the previous run of this same file.
+    if(s.trend_alerts && s.trend_alerts.length){
+      html+='<div class="npi-warn" style="margin-top:10px"><strong>'+
+        'Changed since the last run of this file:</strong><ul style='+
+        '"margin:6px 0 0 18px;padding:0">'+
+        s.trend_alerts.map(function(a){ return '<li>'+esc(a)+'</li>'; })
+        .join("")+'</ul></div>';
+    }
+    // Zip batch: per-file grades (the card above blends all rows).
+    if(s.batch && s.batch.length){
+      html+='<div class="ck-section-header" style="margin-top:14px">'+
+        '<h3 style="margin:0">Batch files</h3></div>'+
+        '<div class="npi-muted">Each file was cleaned separately; the '+
+        'grade above blends all rows across the batch.</div>'+
+        '<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>File</th><th class="num">Rows in</th><th class="num">Rows out</th>'+
+        '<th class="num">Repairs</th><th class="num">Findings</th>'+
+        '<th class="num">Grade</th></tr></thead><tbody>'+
+        s.batch.map(function(b){
+          return '<tr><td>'+esc(b.file)+'</td><td class="num">'+
+            fmt(b.rows_in)+'</td><td class="num">'+fmt(b.rows_out)+
+            '</td><td class="num">'+fmt(b.repairs)+'</td><td class="num">'+
+            fmt(b.findings)+'</td><td class="num">'+esc(b.letter)+' · '+
+            b.score+'</td></tr>';
+        }).join("")+'</tbody></table>';
+    }
+    html+='<div class="npi-cards" style="margin-top:12px"><div class="npi-card">'+
+      '<div class="k">Overall grade</div><div class="v" style="color:'+tone+'">'+
+      q.letter+' · '+q.score+'</div></div></div>';
+    // Dimension bars.
+    html+='<div style="max-width:640px;margin-top:10px">';
+    Object.keys(DIM_LABELS).forEach(function(k){
+      var v=(q.dimensions&&q.dimensions[k]!=null)?q.dimensions[k]:0;
+      var lab=DIM_LABELS[k];
+      html+='<div style="display:flex;align-items:center;gap:10px;margin:7px 0">'+
+        '<div style="width:130px;font-size:12.5px;font-weight:640">'+lab[0]+'</div>'+
+        '<div style="flex:1;height:9px;border-radius:5px;background:'+
+        'color-mix(in srgb,var(--ink,#11201c) 8%,transparent);overflow:hidden">'+
+        '<div style="width:'+Math.max(2,Math.min(100,v))+'%;height:100%;background:'+
+        (v>=85?'var(--green,#0c7c66)':(v>=70?'#b8732a':'#b5321e'))+'"></div></div>'+
+        '<div class="num" style="width:52px;text-align:right;font-size:12.5px">'+
+        v.toFixed(1)+'%</div>'+
+        '<div class="npi-muted" style="width:280px;font-size:11.5px">'+lab[1]+'</div></div>';
+    });
+    html+='</div>';
+    // Per-column fill-rate profile: only columns with blanks, worst first.
+    var fills=(s.fill_rates||[]).filter(function(f){return f.pct<100;});
+    if(fills.length){
+      fills.sort(function(a,b){return a.pct-b.pct;});
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Columns with blanks</h3></div>'+
+        '<div class="npi-muted">Fill rate per column (only columns below 100% '+
+        'shown, emptiest first).</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Column</th><th class="num">Filled rows</th><th class="num">% filled</th>'+
+        '</tr></thead><tbody>';
+      fills.slice(0,12).forEach(function(f){
+        var t=f.pct>=90?'':(f.pct>=60?' style="color:#b8732a"':' style="color:#b5321e"');
+        html+='<tr><td>'+esc(f.column)+'</td><td class="num">'+fmt(f.filled)+
+          '</td><td class="num"'+t+'>'+f.pct.toFixed(1)+'%</td></tr>';
+      });
+      html+='</tbody></table>';
+      if(fills.length>12){ html+='<div class="npi-muted" style="margin-top:4px">'+
+        fmt(fills.length-12)+' more columns have blanks — see the .xlsx report.</div>'; }
+    }
+    // Payer-name variant clusters.
+    var p=s.payer;
+    if(p && p.multi_spelling && p.multi_spelling.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Payer spellings to reconcile</h3></div>'+
+        '<div class="npi-muted">'+esc(p.column)+' has '+fmt(p.distinct_raw)+
+        ' raw spellings across '+fmt(p.clusters)+' payer groups. Clusters below '+
+        'contain 2+ spellings of what looks like the same payer (reported only '+
+        '— nothing was rewritten).</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Payer group</th><th class="num">Rows</th><th>Spellings seen</th>'+
+        '</tr></thead><tbody>';
+      p.multi_spelling.forEach(function(c){
+        html+='<tr><td>'+esc(c.canonical)+'</td><td class="num">'+fmt(c.total)+
+          '</td><td>'+c.variants.map(function(v){
+            return esc(v.value)+' <span class="npi-muted">('+fmt(v.count)+')</span>';
+          }).join(' · ')+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    // Per-code charge outliers.
+    if(s.outliers && s.outliers.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Charge outliers by procedure code</h3></div>'+
+        '<div class="npi-muted">Charges beyond 3×IQR fences within their HCPCS '+
+        'code (codes seen 10+ times). Same quantile math as the box plot on '+
+        'the analysis page.</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>HCPCS</th><th class="num">Lines</th><th class="num">Outliers</th>'+
+        '<th class="num">Median</th><th class="num">Max seen</th></tr></thead><tbody>';
+      s.outliers.forEach(function(o){
+        html+='<tr><td>'+esc(o.code)+'</td><td class="num">'+fmt(o.n)+
+          '</td><td class="num">'+fmt(o.outliers)+'</td><td class="num">'+
+          dollars(o.median)+'</td><td class="num">'+dollars(o.max)+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    // Top denial / adjustment reasons.
+    if(s.denials && s.denials.top && s.denials.top.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Top denial / adjustment reasons</h3></div>'+
+        '<div class="npi-muted">'+esc(s.denials.column)+' — '+fmt(s.denials.distinct)+
+        ' distinct codes. Highest-volume reasons below (CARC codes).'+
+        (s.denials.preventable_pct!=null?(' <strong>'+s.denials.preventable_pct+
+        '% of the classified volume was preventable</strong> by a '+
+        'pre-submission screen.'):'')+'</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Code</th><th class="num">Rows</th><th>Playbook</th><th>What to do</th>'+
+        '</tr></thead><tbody>';
+      var CAT_COLOR={preventable:'#b5321e',process:'#b8732a',
+        contractual:'#5b6770','patient-responsibility':'#5b6770'};
+      s.denials.top.forEach(function(d){
+        var cat=d.category?('<span style="display:inline-block;font-size:10px;'+
+          'font-weight:700;text-transform:uppercase;letter-spacing:.05em;'+
+          'color:#fff;background:'+(CAT_COLOR[d.category]||'#5b6770')+
+          ';border-radius:4px;padding:1px 7px">'+esc(d.category)+'</span>'):'';
+        var act=d.action?esc(d.action)+(d.linked_rule?(' <span class="npi-pill">'+
+          esc(d.linked_rule)+'</span>'):''):'';
+        html+='<tr><td>'+esc(d.code)+'</td><td class="num">'+fmt(d.count)+
+          '</td><td>'+cat+'</td><td style="font-size:12px">'+act+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    // Per-payer quality split — which payer's feed is dirtiest.
+    if(s.payer_quality && s.payer_quality.length){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'Quality by payer</h3></div>'+
+        '<div class="npi-muted">Share of each payer&#39;s rows with at '+
+        'least one finding, and that payer&#39;s top rules.</div>';
+      html+='<table class="npi-tbl" style="margin-top:8px"><thead><tr>'+
+        '<th>Payer</th><th class="num">Rows</th><th class="num">Flagged</th>'+
+        '<th class="num">Clean %</th><th>Top rules</th></tr></thead><tbody>';
+      s.payer_quality.forEach(function(p){
+        var tone=p.clean_pct>=90?'var(--green-deep,#0c7c66)':
+                 (p.clean_pct>=70?'#b8732a':'#b5321e');
+        var wl=(p.flagged>0 && s.download)?(' · <a href="'+s.download+
+          '?fmt=worklist&payer='+encodeURIComponent(p.payer)+
+          '" download>worklist</a>'):'';
+        html+='<tr><td>'+esc(p.payer)+'</td><td class="num">'+fmt(p.rows)+
+          '</td><td class="num">'+fmt(p.flagged)+'</td>'+
+          '<td class="num" style="color:'+tone+';font-weight:640">'+
+          p.clean_pct+'%</td><td style="font-size:12px">'+
+          (p.top_rules||[]).map(function(t){
+            return esc(t.rule)+' ('+fmt(t.n)+')';
+          }).join(", ")+wl+'</td></tr>';
+      });
+      html+='</tbody></table>';
+    }
+    // Structural findings.
+    var st=s.structure;
+    if(st && (st.duplicate_headers || st.empty_columns)){
+      html+='<div class="ck-section-header" style="margin-top:22px"><h3 style="margin:0">'+
+        'File structure</h3></div>';
+      if(st.duplicate_headers){
+        html+='<div class="npi-warn" style="margin-top:6px">Duplicate column '+
+          'headers (mapping is ambiguous): '+
+          st.duplicate_headers.map(esc).join(', ')+'</div>';
+      }
+      if(st.empty_columns){
+        html+='<div class="npi-warn" style="margin-top:6px">Columns that are '+
+          '100% empty: '+st.empty_columns.map(esc).join(', ')+'</div>';
+      }
+    }
+    // Audit trail summary.
+    if(s.changes_logged){
+      html+='<div class="npi-muted" style="margin-top:18px">🧾 '+
+        fmt(s.changes_logged)+' cell'+(s.changes_logged===1?'':'s')+
+        ' changed in total — the full before/after audit trail is on the '+
+        'Downloads tab'+(s.changelog_truncated?' (log capped at 20,000 entries)':'')+'.</div>';
+    }
     box.innerHTML=html;
   }
 
@@ -712,7 +1154,142 @@ _EXTRA_JS = r"""
     box.innerHTML=html;
   }
 
-  function esc(s){ var d=document.createElement("div"); d.textContent=(s==null?"":s); return d.innerHTML; }
+  // Entity-escape INCLUDING quotes — names (profiles, templates, files)
+  // land in attribute contexts, and the textContent trick left " alone.
+  function esc(s){ return String(s==null?"":s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+  function popHead(t, sub){
+    return '<div class="ck-section-header" style="margin-top:18px">'+
+      '<h3 style="margin:0">'+t+'</h3></div>'+
+      (sub?'<div class="npi-muted" style="font-size:12px;margin:4px 0 8px">'+
+        sub+'</div>':'');
+  }
+
+  function renderPopulation(pop, download){
+    var box=$("npi-pop");
+    if(!pop){
+      box.innerHTML='<div class="npi-muted">No population marts for this '+
+        'run — they need service/claim columns (revenue code, type of '+
+        'bill, POS, HCPCS, patient id, service dates, diagnoses). '+
+        'Streaming (10 GB) runs skip them by design.</div>';
+      return;
+    }
+    var h="";
+    if(pop.service_mix){
+      h+=popHead("Service-category mix", "Every line classified by the "+
+        "institutional-first ladder (type of bill → revenue code → place "+
+        "of service → HCPCS range). Unclassified: "+
+        esc(pop.service_mix.unclassified_pct)+"%.");
+      h+='<table class="npi-tbl"><thead><tr><th>Category</th>'+
+        '<th>Subcategory</th><th class="num">Lines</th>'+
+        '<th class="num">% of file</th><th class="num">Charges</th>'+
+        '</tr></thead><tbody>';
+      pop.service_mix.categories.slice(0,14).forEach(function(c){
+        h+='<tr><td>'+esc(c.category)+'</td><td>'+esc(c.subcategory)+
+          '</td><td class="num">'+fmt(c.rows)+'</td><td class="num">'+
+          esc(c.pct)+'%</td><td class="num">$'+fmt(c.charges)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+    }
+    if(pop.encounters){
+      var e=pop.encounters;
+      h+=popHead("Encounters", fmt(e.n_encounters)+" visits grouped from "+
+        fmt(e.n_patients)+" patients (same patient, same setting, service "+
+        "dates chaining with gaps ≤ 1 day"+
+        (e.records_truncated?"; download capped":"")+").");
+      h+='<table class="npi-tbl"><thead><tr><th>Setting</th>'+
+        '<th class="num">Encounters</th><th class="num">Avg lines</th>'+
+        '<th class="num">Charges</th></tr></thead><tbody>';
+      (e.by_category||[]).forEach(function(c){
+        h+='<tr><td>'+esc(c.category)+'</td><td class="num">'+
+          fmt(c.encounters)+'</td><td class="num">'+esc(c.avg_lines)+
+          '</td><td class="num">$'+fmt(c.charges)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      if(e.readmissions){
+        var r=e.readmissions;
+        h+='<div style="margin-top:8px;font-size:12.5px">30-day inpatient '+
+          'readmissions: <strong>'+fmt(r.readmissions_30d)+'</strong> of '+
+          fmt(r.inpatient_stays)+' stays ('+esc(r.rate_pct)+'%).</div>';
+      }
+      h+='<div style="margin-top:8px"><a class="npi-dl npi-dl-alt" '+
+        'href="'+esc(download)+'?fmt=encounters" download>⤓ Encounters '+
+        'roll-up (.csv)</a></div>';
+    }
+    if(pop.conditions){
+      var c0=pop.conditions;
+      h+=popHead("Chronic-condition prevalence",
+        (c0.patient_grouping?fmt(c0.patients)+" distinct patients":
+         "no patient column — per-row counts")+
+        " · CCW-style ICD-10 prefix groups; reporting only, never a flag.");
+      h+='<table class="npi-tbl"><thead><tr><th>Condition</th>'+
+        '<th class="num">Patients</th><th class="num">Prevalence</th>'+
+        '<th class="num">Rows</th></tr></thead><tbody>';
+      c0.prevalence.slice(0,12).forEach(function(p){
+        h+='<tr><td>'+esc(p.condition)+'</td><td class="num">'+
+          fmt(p.patients)+'</td><td class="num">'+esc(p.pct)+
+          '%</td><td class="num">'+fmt(p.rows)+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      if(c0.multimorbidity){
+        var mm=c0.multimorbidity;
+        h+='<div style="margin-top:6px;font-size:12.5px" class="npi-muted">'+
+          'Conditions per patient — 0: '+fmt(mm["0"])+' · 1: '+
+          fmt(mm["1"])+' · 2: '+fmt(mm["2"])+' · 3+: '+fmt(mm["3+"])+
+          '</div>';
+      }
+    }
+    if(pop.volume){
+      h+=popHead("Volume integrity (data loss over time)",
+        "Rows, charges and patients by service month — a cliff usually "+
+        "means a missing extract, not real utilization.");
+      (pop.volume.alerts||[]).forEach(function(a){
+        h+='<div class="npi-warn">'+esc(a)+'</div>';
+      });
+      var months=pop.volume.months||[];
+      var maxR=1;
+      months.forEach(function(m){ if(m.rows>maxR) maxR=m.rows; });
+      h+='<div style="display:flex;align-items:flex-end;gap:3px;'+
+        'height:80px;margin-top:8px">';
+      months.slice(-36).forEach(function(m){
+        var pct=Math.max(3, Math.round(100*m.rows/maxR));
+        h+='<div title="'+esc(m.month)+': '+fmt(m.rows)+' rows" '+
+          'style="flex:1;background:var(--green-deep,#0c7c66);'+
+          'opacity:.75;height:'+pct+'%"></div>';
+      });
+      h+='</div><div class="npi-muted" style="font-size:11px;'+
+        'margin-top:2px">'+esc(months.length?months[0].month:"")+
+        ' → '+esc(months.length?months[months.length-1].month:"")+'</div>';
+    }
+    if(pop.coding_intensity){
+      var ci=pop.coding_intensity;
+      h+=popHead("E&amp;M coding intensity",
+        fmt(ci.established_visits)+" established office visits "+
+        "(99211–99215) · file average level "+esc(ci.file_avg_level)+
+        " · "+fmt(ci.providers_rated)+" providers with ≥ 20 visits rated "+
+        "against the file's own mix.");
+      if(ci.outliers && ci.outliers.length){
+        h+='<table class="npi-tbl"><thead><tr><th>Billing NPI</th>'+
+          '<th class="num">Visits</th><th class="num">Avg level</th>'+
+          '<th class="num">Level 4–5 share</th></tr></thead><tbody>';
+        ci.outliers.forEach(function(o){
+          h+='<tr><td>'+esc(o.npi)+'</td><td class="num">'+fmt(o.visits)+
+            '</td><td class="num">'+esc(o.avg_level)+
+            '</td><td class="num">'+esc(o.level_4_5_pct)+'%</td></tr>';
+        });
+        h+='</tbody></table><div class="npi-muted" style="font-size:12px;'+
+          'margin-top:4px">High-intensity coders vs this file’s mix — '+
+          'a documentation-review starting point, not an accusation.</div>';
+      } else {
+        h+='<div class="npi-muted">No provider codes materially hotter '+
+          'than the file’s own mix.</div>';
+      }
+    }
+    box.innerHTML = h ||
+      '<div class="npi-muted">Not enough claim columns for any mart.</div>';
+  }
 
   function renderSuggestions(adv){
     var box=$("npi-suggestions");
@@ -854,18 +1431,134 @@ _EXTRA_JS = r"""
     });
   }
 
+  // ---- 837↔835 reconciliation: remember recent runs in THIS browser so
+  // a claims run can be matched against its remittance run by claim id.
+  function recentJobs(){
+    try{ return JSON.parse(localStorage.getItem("npi_recent_jobs"))||[]; }
+    catch(e){ return []; }
+  }
+  function rememberJob(id, name){
+    if(!id) return;
+    var list=recentJobs().filter(function(j){ return j.id!==id; });
+    list.unshift({id:id, name:name||"run", ts:Date.now()});
+    try{ localStorage.setItem("npi_recent_jobs",
+      JSON.stringify(list.slice(0,10))); }catch(e){}
+  }
+  function renderReconcile(s){
+    var box=$("npi-reconcile");
+    var others=recentJobs().filter(function(j){ return j.id!==currentJobId; });
+    if(!others.length){
+      box.innerHTML='<div class="npi-muted">Clean the matching remittance '+
+        '(835) or claims (837) file next and a <strong>reconcile</strong> '+
+        'option will appear here.</div>';
+      return;
+    }
+    var isRemit=(s.delimiter||"").indexOf("835")>=0;
+    box.innerHTML='<div class="ck-section-header"><h3 style="margin:0">'+
+      'Reconcile against an earlier run</h3></div>'+
+      '<div class="npi-muted">Match claims to remittance on claim id: '+
+      'unpaid claims, paid-vs-billed variance, denial mix.</div>'+
+      '<div style="margin-top:8px">'+
+      '<select id="npi-rec-other" style="font-size:12.5px;max-width:260px">'+
+      others.map(function(j){
+        return '<option value="'+esc(j.id)+'">'+esc(j.name)+'</option>';
+      }).join("")+'</select> '+
+      '<label class="npi-muted" style="margin-left:8px">'+
+      '<input type="checkbox" id="npi-rec-remit"'+(isRemit?' checked':'')+
+      '> this run is the remittance (835) side</label> '+
+      '<button type="button" class="npi-dl" id="npi-rec-go" '+
+      'style="font-size:12.5px;padding:5px 12px;margin-left:8px">'+
+      'Reconcile</button></div><div id="npi-rec-out" '+
+      'style="margin-top:10px"></div>';
+    $("npi-rec-go").addEventListener("click", function(){
+      var other=$("npi-rec-other").value;
+      var thisIsRemit=$("npi-rec-remit").checked;
+      var body=thisIsRemit?{a:other, b:currentJobId}
+                          :{a:currentJobId, b:other};
+      $("npi-rec-out").innerHTML='<div class="npi-muted">Matching…</div>';
+      fetch("/npi-cleaner/api/reconcile", {method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body)})
+      .then(function(r){ return r.json(); })
+      .then(renderReconResult)
+      .catch(function(){ $("npi-rec-out").innerHTML=
+        '<div class="npi-err">Reconcile failed.</div>'; });
+    });
+  }
+  function renderReconResult(r){
+    var out=$("npi-rec-out");
+    if(r.error){ out.innerHTML='<div class="npi-err">'+esc(r.error)+
+      '</div>'; return; }
+    var h='<div style="font-size:13px;margin-bottom:6px"><strong>'+
+      fmt(r.matched)+'</strong> of '+fmt(r.claims_a)+' claims matched ('+
+      r.match_rate_pct+'%) · <strong>'+fmt(r.unpaid_count)+
+      '</strong> with no remittance · billed '+money(r.billed_matched)+
+      ' vs paid '+money(r.paid_matched)+' on matched claims (variance '+
+      money(r.variance_total)+')'+
+      (r.orphan_remits_count?(' · '+fmt(r.orphan_remits_count)+
+      ' remit claim(s) not in the claims run'):'')+'</div>';
+    if(r.unpaid && r.unpaid.length){
+      h+='<div style="font-weight:640;font-size:12.5px;margin-top:6px">'+
+        'Claims with no remittance (top by billed)</div>'+
+        '<table class="npi-tbl"><thead><tr><th>Claim</th>'+
+        '<th class="num">Billed</th><th class="num">Lines</th></tr></thead>'+
+        '<tbody>'+r.unpaid.slice(0,8).map(function(u){
+          return '<tr><td>'+esc(u.claim)+'</td><td class="num">'+
+            money(u.billed)+'</td><td class="num">'+fmt(u.lines)+'</td></tr>';
+        }).join("")+'</tbody></table>';
+    }
+    if(r.top_variance && r.top_variance.length){
+      h+='<div style="font-weight:640;font-size:12.5px;margin-top:10px">'+
+        'Largest paid-vs-billed variance (matched claims)</div>'+
+        '<table class="npi-tbl"><thead><tr><th>Claim</th>'+
+        '<th class="num">Billed</th><th class="num">Paid</th>'+
+        '<th class="num">Δ</th><th>CARCs</th></tr></thead><tbody>'+
+        r.top_variance.slice(0,8).map(function(v){
+          return '<tr><td>'+esc(v.claim)+'</td><td class="num">'+
+            money(v.billed)+'</td><td class="num">'+money(v.paid)+
+            '</td><td class="num">'+money(v.delta)+'</td><td>'+
+            (v.carcs||[]).map(esc).join(", ")+'</td></tr>';
+        }).join("")+'</tbody></table>';
+    }
+    if(r.denials && r.denials.length){
+      h+='<div style="font-weight:640;font-size:12.5px;margin-top:10px">'+
+        'Denial mix (remit side)</div><div style="margin-top:6px">'+
+        r.denials.map(function(d){
+          return '<span class="npi-pill" style="margin:0 6px 6px 0;'+
+            'display:inline-block" title="'+esc(d.action||"")+'">'+
+            esc(d.code)+' · '+fmt(d.claims)+
+            (d.category?(' ('+esc(d.category)+')'):'')+'</span>';
+        }).join("")+'</div>';
+    }
+    out.innerHTML=h;
+  }
+
+  function fmtDur(s){
+    if(s == null || s < 0) return "";
+    if(s < 90) return Math.max(1, Math.round(s))+"s";
+    if(s < 5400) return Math.round(s/60)+" min";
+    return Math.floor(s/3600)+"h "+Math.round((s%3600)/60)+"m";
+  }
+
   function watch(jobId){
     currentJobId=jobId;
+    show($("npi-cancel"));
     poll=setInterval(function(){
       fetch("/npi-cleaner/status/"+jobId, {headers:{"Accept":"application/json"}})
         .then(function(r){ return r.json(); })
         .then(function(j){
-          if(j.error){ fail(j.error); return; }
+          if(j.error){ hide($("npi-cancel")); fail(j.error); return; }
           $("npi-bar-fill").style.width=Math.round((j.frac||0)*100)+"%";
           $("npi-bar-msg").textContent=(j.msg||"Working")+" — "+
             Math.round((j.frac||0)*100)+"%";
+          $("npi-bar-eta").textContent = (j.eta_secs != null)
+            ? "elapsed "+fmtDur(j.elapsed_secs)+
+              " · about "+fmtDur(j.eta_secs)+" remaining"
+            : "";
           if(j.done){
             clearInterval(poll); poll=null;
+            hide($("npi-cancel"));
+            $("npi-bar-eta").textContent="";
             if(j.scorecard){ render(Object.assign(j.scorecard,{download:j.download})); }
             else { fail("Cleaning finished without a result."); }
           }
@@ -873,13 +1566,27 @@ _EXTRA_JS = r"""
         .catch(function(e){ fail("Lost connection to the server."); });
     }, 400);
   }
+  $("npi-cancel").addEventListener("click", function(){
+    if(!currentJobId) return;
+    var btn=this; btn.disabled=true;
+    fetch("/npi-cleaner/cancel/"+currentJobId, {method:"POST"})
+      .then(function(r){ return r.json(); })
+      .then(function(){ btn.disabled=false; })
+      .catch(function(){ btn.disabled=false; });
+  });
 
   // Step 1 — a file is chosen: detect columns, then show the mapping editor.
   function chooseFile(file){
     if(!file) return;
-    if(file.size > 10*1024*1024){ fail("File is larger than 10 MB."); return; }
+    if(file.size > 10*1000*1000*1000){
+      fail("File is larger than 10 GB. Split the extract and upload the "+
+           "pieces, or run it through the rcm-mc npi-clean CLI."); return; }
     currentFile=file;
     hide(stUp); hide(stErr); hide(stRes); show(stPr);
+    // Above the detect ceiling the server cleans in streaming chunks and
+    // the column preview can't parse the body — skip the mapping step and
+    // go straight to the (long-running) clean.
+    if(file.size > 200*1000*1000){ upload(file, {}); return; }
     $("npi-bar-fill").style.width="3%";
     $("npi-bar-msg").textContent="Reading columns from "+file.name+"…";
     fetch("/npi-cleaner/detect", {
@@ -890,6 +1597,9 @@ _EXTRA_JS = r"""
     .then(function(j){
       if(!j || !j.available || !j.headers){ upload(file, {}); return; }
       renderMapping(file, j);
+      $("npi-map-tpl-msg").textContent="";
+      $("npi-map-tpl").value="";
+      loadMapTemplates();
       hide(stPr); show(stMap);
     })
     .catch(function(){ upload(file, {}); });  // detector down → clean directly
@@ -930,12 +1640,68 @@ _EXTRA_JS = r"""
     return ov;
   }
 
+  // ---- Mapping templates: map a source system once, reuse per upload ----
+  var MAPTPLS=[];
+  function loadMapTemplates(){
+    fetch("/npi-cleaner/api/mappings").then(function(r){ return r.json(); })
+      .then(function(j){
+        MAPTPLS=j.mappings||[];
+        var sel=$("npi-map-tpl"); if(!sel) return;
+        sel.innerHTML='<option value="">(none)</option>'+
+          MAPTPLS.map(function(m){
+            return '<option value="'+esc(m.name)+'">'+esc(m.name)+
+              ' ('+m.roles+' roles)</option>'; }).join("");
+      }).catch(function(){});
+  }
+  function applyMapTemplate(name){
+    var tpl=null;
+    MAPTPLS.forEach(function(m){ if(m.name===name) tpl=m; });
+    if(!tpl) return;
+    var applied=0;
+    Object.keys(tpl.mapping).forEach(function(role){
+      var row=$("npi-map-grid").querySelector('[data-role="'+role+'"]');
+      if(!row) return;                         // role not in this detector
+      var sel=row.querySelector("select");
+      var want=encodeURIComponent(tpl.mapping[role]);
+      for(var i=0;i<sel.options.length;i++){
+        if(sel.options[i].value===want){ sel.value=want; applied++; break; }
+      }                                        // header absent → left as-is
+    });
+    $("npi-map-tpl-msg").textContent=applied+
+      " column"+(applied===1?"":"s")+" applied from “"+name+"”.";
+  }
+  $("npi-map-tpl").addEventListener("change", function(){
+    if(this.value) applyMapTemplate(this.value);
+  });
+  $("npi-map-tpl-save").addEventListener("click", function(){
+    var name=$("npi-map-tpl-name").value.trim();
+    var msg=$("npi-map-tpl-msg");
+    if(!name){ msg.textContent="Name the template first."; return; }
+    var ov=gatherOverrides();
+    if(!Object.keys(ov).length){
+      msg.textContent="Pick at least one column before saving."; return; }
+    fetch("/npi-cleaner/api/mappings", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:name, mapping:ov})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j.error){ msg.textContent=j.error; return; }
+      msg.textContent="Saved “"+name+"”.";
+      loadMapTemplates();
+    })
+    .catch(function(){ msg.textContent="Save failed."; });
+  });
+
   // Step 2 — clean the held file with the confirmed overrides.
   function upload(file, overrides){
     if(!file) return;
     hide(stUp); hide(stMap); hide(stErr); hide(stRes); show(stPr);
     $("npi-bar-fill").style.width="5%";
-    $("npi-bar-msg").textContent="Uploading "+file.name+"…";
+    $("npi-bar-msg").textContent = (file.size > 200*1000*1000)
+      ? "Uploading "+file.name+" ("+(file.size/1e9).toFixed(1)+" GB — "+
+        "streaming mode; a multi-GB file can take hours. Keep this tab "+
+        "open or note the URL; the job keeps running on the server)…"
+      : "Uploading "+file.name+"…";
     var params=[];
     if(!$("npi-dedupe").checked) params.push("dedupe=0");
     if($("npi-enrich").checked) params.push("enrich=1");
@@ -943,6 +1709,9 @@ _EXTRA_JS = r"""
     if($("npi-deid").checked) params.push("deid=1");
     var qs = params.length ? "?"+params.join("&") : "";
     var headers={"X-Filename":encodeURIComponent(file.name)};
+    var profSel=$("npi-profile");
+    if(profSel && profSel.value){
+      headers["X-Profile"]=encodeURIComponent(profSel.value); }
     if(overrides && Object.keys(overrides).length){
       headers["X-Overrides"]=encodeURIComponent(JSON.stringify(overrides));
     }
@@ -953,14 +1722,153 @@ _EXTRA_JS = r"""
       if(!j.job_id){ fail("Upload did not return a job id."); return; }
       watch(j.job_id);
     })
-    .catch(function(e){ fail("Upload failed. Is the file under 10 MB?"); });
+    .catch(function(e){ fail("Upload failed. Is the file under 10 GB, and "+
+      "is the connection stable enough to send it?"); });
   }
+
+  // ---- Wishlist: "missing something? tell us and we'll fill it in" ----
+  function loadWishlist(){
+    fetch("/npi-cleaner/api/wishlist").then(function(r){ return r.json(); })
+      .then(function(j){
+        var box=$("npi-wish-list"); if(!box) return;
+        var reqs=j.requests||[];
+        if(!reqs.length){ box.innerHTML=""; return; }
+        var chip=function(s){
+          var c=s==="shipped"?"#0a8a5f":s==="planned"?"#b8732a":
+                s==="declined"?"#8a8f98":"#155752";
+          return '<span style="color:'+c+';font-weight:600">'+esc(s)+
+            '</span>'; };
+        box.innerHTML=
+          '<div style="font-size:12.5px;font-weight:640;margin-bottom:4px">'+
+          'Requested ('+reqs.length+')</div>'+
+          reqs.slice(0,8).map(function(q){
+            return '<div style="font-size:12.5px;padding:3px 0;'+
+              'border-top:1px solid var(--line,#e4e9e6)">'+
+              '<span class="npi-muted">['+esc(q.category)+']</span> '+
+              esc(q.title)+' — '+chip(q.status)+'</div>';
+          }).join("")+
+          (reqs.length>8
+            ? '<div class="npi-muted" style="font-size:12px;padding-top:3px">'+
+              '…and '+(reqs.length-8)+' more</div>'
+            : '');
+      }).catch(function(){});
+  }
+  $("npi-wish-add").addEventListener("click", function(){
+    var t=$("npi-wish-title").value.trim(), msg=$("npi-wish-msg");
+    if(!t){ msg.textContent="Give the request a one-line summary first.";
+            return; }
+    fetch("/npi-cleaner/api/wishlist", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({category:$("npi-wish-cat").value, title:t,
+                           details:$("npi-wish-details").value})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j.error){ msg.textContent=j.error; return; }
+      msg.textContent="Logged — it’s on the build backlog.";
+      $("npi-wish-title").value=""; $("npi-wish-details").value="";
+      loadWishlist();
+    })
+    .catch(function(){ msg.textContent="Could not reach the server."; });
+  });
+  loadWishlist();
 
   initTabs();
   drop.addEventListener("click", function(){ fileIn.click(); });
   drop.addEventListener("keydown", function(e){
     if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileIn.click(); } });
   fileIn.addEventListener("change", function(){ chooseFile(fileIn.files[0]); });
+  // ---- Cleaning profiles ----
+  function loadProfiles(){
+    fetch("/npi-cleaner/api/profiles").then(function(r){return r.json();})
+      .then(function(j){
+        var sel=$("npi-profile"); if(!sel) return;
+        var cur=sel.value;
+        sel.innerHTML='<option value="">(default rules)</option>'+
+          (j.profiles||[]).map(function(p){
+            return '<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';
+          }).join("");
+        sel.value=cur;
+      }).catch(function(){});
+  }
+  function buildProfRules(){
+    fetch("/npi-cleaner/api/rules").then(function(r){return r.json();})
+      .then(function(j){
+        var flags=(j.rules||[]).filter(function(r){return r.kind==="flag";});
+        $("npi-prof-rules").innerHTML=flags.map(function(r){
+          return '<div style="break-inside:avoid;margin-bottom:3px" '+
+            'title="'+esc(r.description)+'">'+
+            '<select data-rule="'+esc(r.id)+'" style="font-size:11px">'+
+            '<option value="on">on</option>'+
+            '<option value="accepted">accepted</option>'+
+            '<option value="off">off</option></select> '+
+            esc(r.title)+'</div>';
+        }).join("");
+      }).catch(function(){});
+  }
+  var pbtn=$("npi-profile-new");
+  if(pbtn){ pbtn.addEventListener("click", function(){
+    var ed=$("npi-profile-editor");
+    ed.classList.toggle("npi-hidden");
+    if(!ed.classList.contains("npi-hidden") &&
+       !$("npi-prof-rules").innerHTML){ buildProfRules(); }
+  }); }
+  var pclose=$("npi-prof-close");
+  if(pclose){ pclose.addEventListener("click", function(){
+    $("npi-profile-editor").classList.add("npi-hidden"); }); }
+  var psave=$("npi-prof-save");
+  if(psave){ psave.addEventListener("click", function(){
+    var name=($("npi-prof-name").value||"").trim();
+    if(!name){ $("npi-prof-msg").textContent="Give the profile a name."; return; }
+    var disabled=[], accepted=[];
+    $("npi-prof-rules").querySelectorAll("select[data-rule]").forEach(function(s){
+      if(s.value==="off") disabled.push(s.getAttribute("data-rule"));
+      if(s.value==="accepted") accepted.push(s.getAttribute("data-rule"));
+    });
+    var cfg={disabled_rules:disabled, accepted_rules:accepted,
+      thresholds:{timely_filing_days:parseInt($("npi-prof-timely").value,10)||365,
+                  stale_years:parseInt($("npi-prof-stale").value,10)||10,
+                  outlier_iqr_mult:parseFloat($("npi-prof-iqr").value)||3,
+                  dup_window_days:parseInt($("npi-prof-dupwin").value,10)||3}};
+    fetch("/npi-cleaner/api/profiles", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:name, config:cfg})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        $("npi-prof-msg").textContent = j.ok ?
+          ('Saved "'+name+'" — select it above for the next upload.') :
+          (j.error||"Save failed.");
+        loadProfiles();
+        var sel=$("npi-profile"); if(sel && j.ok){ sel.value=name; }
+      }).catch(function(){ $("npi-prof-msg").textContent="Save failed."; });
+  }); }
+  var pimp=$("npi-prof-import"), pimpFile=$("npi-prof-import-file");
+  if(pimp && pimpFile){
+    pimp.addEventListener("click", function(){ pimpFile.click(); });
+    pimpFile.addEventListener("change", function(){
+      var f=pimpFile.files[0]; if(!f) return;
+      var rd=new FileReader();
+      rd.onload=function(){
+        var body;
+        try{ body=JSON.parse(rd.result); }
+        catch(e){ $("npi-prof-msg").textContent="Not valid JSON."; return; }
+        fetch("/npi-cleaner/api/profiles/import", {method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(body)})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          $("npi-prof-msg").textContent = j.error ? j.error :
+            ("Imported "+j.imported+" profile(s)"+
+             (j.errors&&j.errors.length?(" · "+j.errors.length+" skipped"):"")+".");
+          loadProfiles();
+        })
+        .catch(function(){ $("npi-prof-msg").textContent="Import failed."; });
+        pimpFile.value="";
+      };
+      rd.readAsText(f);
+    });
+  }
+  loadProfiles();
+
   ["dragenter","dragover"].forEach(function(ev){
     drop.addEventListener(ev, function(e){ e.preventDefault();
       drop.classList.add("drag"); }); });

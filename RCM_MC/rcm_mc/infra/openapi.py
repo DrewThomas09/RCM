@@ -587,6 +587,239 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Deal rows with metric columns"}},
             },
         },
+        "/npi-cleaner/api/clean": {
+            "post": {
+                "summary": "Clean a claims CSV synchronously (scorecard JSON)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "profile", "in": "query",
+                     "schema": {"type": "string"},
+                     "description": "Named cleaning profile to apply"},
+                ],
+                "requestBody": {"content": {"text/csv": {
+                    "schema": {"type": "string", "format": "binary"}}}},
+                "responses": {"200": {"description":
+                    "Full data-quality scorecard (grade, repairs, flags, "
+                    "worklists, credential/specialty mix)"}},
+            },
+        },
+        "/npi-cleaner/api/rules": {
+            "get": {
+                "summary": "Rule registry: every repair + flag with severity and remediation",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Array of rule objects"}},
+            },
+        },
+        "/npi-cleaner/api/profiles": {
+            "get": {
+                "summary": "List cleaning profiles (rule suites + thresholds)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Array of profiles"}},
+            },
+            "post": {
+                "summary": "Create or update a cleaning profile",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object", "properties": {
+                        "name": {"type": "string"},
+                        "config": {"type": "object"},
+                    }}}}},
+                "responses": {"200": {"description": "Sanitized stored config"}},
+            },
+        },
+        "/npi-cleaner/api/mappings": {
+            "get": {
+                "summary": "List column-mapping templates (per source system)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Array of templates"}},
+            },
+            "post": {
+                "summary": "Create or update a mapping template",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object", "properties": {
+                        "name": {"type": "string"},
+                        "mapping": {"type": "object",
+                                    "description": "role -> source column header"},
+                    }}}}},
+                "responses": {"200": {"description": "Sanitized stored mapping"}},
+            },
+        },
+        "/npi-cleaner/upload": {
+            "post": {
+                "summary": "Upload a claims file for async cleaning (returns job id)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "dedupe", "in": "query", "schema": {"type": "string", "enum": ["0", "1"]}},
+                    {"name": "enrich", "in": "query", "schema": {"type": "string", "enum": ["0", "1"]}},
+                    {"name": "deep", "in": "query", "schema": {"type": "string", "enum": ["0", "1"]}},
+                    {"name": "deid", "in": "query", "schema": {"type": "string", "enum": ["0", "1"]}},
+                    {"name": "X-Filename", "in": "header", "schema": {"type": "string"}},
+                    {"name": "X-Profile", "in": "header", "schema": {"type": "string"},
+                     "description": "Named cleaning profile"},
+                    {"name": "X-Mapping", "in": "header", "schema": {"type": "string"},
+                     "description": "Named column-mapping template"},
+                    {"name": "X-Overrides", "in": "header", "schema": {"type": "string"},
+                     "description": "URL-encoded JSON role→header map (wins over X-Mapping)"},
+                ],
+                "requestBody": {"content": {"application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary",
+                               "description": "CSV/TSV up to 10 GB (bodies "
+                               "above ~32 MB spool to disk and clean in "
+                               "streamed chunks); XLSX, X12 837/835 and zip "
+                               "batches up to 200 MB"}}}},
+                "responses": {"200": {"description": "{job_id}"}},
+            },
+        },
+        "/npi-cleaner/cancel/{job_id}": {
+            "post": {
+                "summary": "Cancel a running cleaning job (cooperative — "
+                           "the worker stops at its next progress tick)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [{"name": "job_id", "in": "path",
+                                "required": True,
+                                "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "{ok}"}},
+            },
+        },
+        "/npi-cleaner/status/{job_id}": {
+            "get": {
+                "summary": "Poll job progress; scorecard included when done",
+                "tags": ["Claims Cleaner"],
+                "parameters": [{"name": "job_id", "in": "path", "required": True,
+                                "schema": {"type": "string"}}],
+                "responses": {"200": {"description": "{frac, msg, done, scorecard?}"}},
+            },
+        },
+        "/npi-cleaner/download/{job_id}": {
+            "get": {
+                "summary": "Download a run artifact (cleaned file by default)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "job_id", "in": "path", "required": True,
+                     "schema": {"type": "string"}},
+                    {"name": "fmt", "in": "query",
+                     "schema": {"type": "string",
+                                "enum": ["xlsx", "changelog", "companion",
+                                         "worklist", "exec", "bundle",
+                                         "dictionary", "encounters",
+                                         "deep"]},
+                     "description": "Artifact type; omit for the cleaned file"},
+                    {"name": "rule", "in": "query", "schema": {"type": "string"},
+                     "description": "Rule id (fmt=worklist)"},
+                    {"name": "payer", "in": "query", "schema": {"type": "string"},
+                     "description": "Payer family (fmt=worklist)"},
+                ],
+                "responses": {"200": {"description": "The artifact stream"}},
+            },
+        },
+        "/npi-cleaner/api/profiles/delete": {
+            "post": {"summary": "Delete a cleaning profile by name",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "{ok}"}}},
+        },
+        "/npi-cleaner/api/mappings/delete": {
+            "post": {"summary": "Delete a mapping template by name",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "{ok}"}}},
+        },
+        "/npi-cleaner/api/profiles/export": {
+            "get": {"summary": "Download every cleaning profile as portable JSON",
+                    "tags": ["Claims Cleaner"],
+                    "responses": {"200": {"description": "Profiles payload"}}},
+        },
+        "/npi-cleaner/api/profiles/import": {
+            "post": {"summary": "Import a profiles export (re-sanitized on save)",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "Imported count + errors"}}},
+        },
+        "/npi-cleaner/api/mappings/export": {
+            "get": {"summary": "Download every mapping template as portable JSON",
+                    "tags": ["Claims Cleaner"],
+                    "responses": {"200": {"description": "Mappings payload"}}},
+        },
+        "/npi-cleaner/api/mappings/import": {
+            "post": {"summary": "Import a mappings export (re-sanitized on save)",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "Imported count + errors"}}},
+        },
+        "/npi-cleaner/api/reconcile": {
+            "post": {
+                "summary": "Reconcile two runs on claim id (claims vs remittance)",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object", "properties": {
+                        "a": {"type": "string",
+                              "description": "job id of the claims (837) run"},
+                        "b": {"type": "string",
+                              "description": "job id of the remittance (835) run"},
+                    }}}}},
+                "responses": {"200": {"description":
+                    "Unpaid claims, paid-vs-billed variance, denial mix"}},
+            },
+        },
+        "/npi-cleaner/api/history": {
+            "get": {
+                "summary": "Cleaning run history (aggregate scorecards, no PHI)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Recent runs with scores"}},
+            },
+        },
+        "/npi-cleaner/api/history/compare": {
+            "get": {
+                "summary": "Run-vs-run delta (score + per-rule flag changes)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "a", "in": "query", "required": True,
+                     "schema": {"type": "string"}},
+                    {"name": "b", "in": "query", "required": True,
+                     "schema": {"type": "string"}},
+                ],
+                "responses": {"200": {"description": "Comparison payload"}},
+            },
+        },
+        "/npi-cleaner/api/wishlist": {
+            "get": {
+                "summary": "List feature requests (\"missing something?\" backlog)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "status", "in": "query",
+                     "schema": {"type": "string",
+                                "enum": ["open", "planned", "shipped",
+                                         "declined"]}},
+                ],
+                "responses": {"200": {"description": "{requests, categories}"}},
+            },
+            "post": {
+                "summary": "Log a feature request (check/field/payer/format)",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object",
+                               "required": ["title"],
+                               "properties": {
+                                   "category": {"type": "string",
+                                                "enum": ["rule", "field",
+                                                         "payer", "format",
+                                                         "integration",
+                                                         "other"]},
+                                   "title": {"type": "string",
+                                             "maxLength": 120},
+                                   "details": {"type": "string",
+                                               "maxLength": 2000},
+                               }}}}},
+                "responses": {"200": {"description": "{ok, request}"}},
+            },
+        },
+        "/npi-cleaner/api/wishlist/status": {
+            "post": {"summary": "Move a wishlist request through the backlog",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "{ok}"}}},
+        },
+        "/npi-cleaner/api/wishlist/delete": {
+            "post": {"summary": "Delete a wishlist request by id",
+                     "tags": ["Claims Cleaner"],
+                     "responses": {"200": {"description": "{ok}"}}},
+        },
     },
     "tags": [
         {"name": "Deals", "description": "Deal CRUD, lifecycle, validation, completeness, search, PATCH"},
@@ -600,6 +833,9 @@ _SPEC: Dict[str, Any] = {
         {"name": "Search", "description": "Cross-deal search"},
         {"name": "Settings", "description": "Automations, custom metrics, webhooks"},
         {"name": "Infrastructure", "description": "Health, readiness, metrics, alerts"},
+        {"name": "Claims Cleaner", "description":
+            "NPI claims data-quality platform: clean, rules, profiles, "
+            "mapping templates, run history"},
     ],
 }
 

@@ -55,6 +55,13 @@ MAX_REQUEST_BYTES = 10_000_000  # 10 MB — rejects oversized POSTs early
 # applies to every other endpoint.
 NPI_UPLOAD_MAX_BYTES = 200_000_000  # 200 MB — claims-file uploads
 _LARGE_UPLOAD_PATHS = ("/npi-cleaner/upload", "/npi-cleaner/detect")
+# The upload endpoint itself goes far higher: bodies above the spool
+# threshold stream straight to disk (never into memory) and huge files
+# clean in bounded-memory chunks (npi_cleaner.bigfile) — a 10 GB extract
+# is a valid, hours-long job. Detect keeps the 200 MB in-memory ceiling
+# because column preview parses the body.
+NPI_UPLOAD_STREAM_MAX_BYTES = 10_000_000_000  # 10 GB — streamed uploads
+_NPI_SPOOL_THRESHOLD_BYTES = 32_000_000  # bodies above this spool to disk
 
 import threading as _threading
 
@@ -2730,21 +2737,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         self.wfile.write(encoded)
 
     # ─────────────────────────── NPI Claims Cleaner (/npi-cleaner) ──────────
-    def _route_npi_cleaner_upload(self, parsed) -> None:
-        """Accept a raw-body claims-file upload and start a cleaning job.
-
-        The page POSTs the file bytes directly (X-Filename header carries the
-        URL-encoded name) — no multipart parsing, matching the vendored
-        webapp's convention. Returns ``{"job_id": ...}`` for the client to
-        poll. The engine is stdlib-only; nothing is written to the DB.
-        """
-        from .npi_cleaner import engine
-
-        raw = self._raw_post_body()
-        if not raw:
-            return self._send_json(
-                {"error": "Empty upload — no file bytes received."},
-                status=HTTPStatus.BAD_REQUEST)
+    def _npi_upload_options(self, parsed):
+        """Parse the shared upload knobs (name, toggles, mapping, profile)
+        from the request. Used by both the in-memory and the spooled-to-disk
+        upload paths so a 10 GB file honours the same options a 10 KB one
+        does."""
         raw_name = self.headers.get("X-Filename", "claims.csv")
         try:
             name = urllib.parse.unquote(raw_name)
@@ -2768,9 +2765,94 @@ class RCMHandler(BaseHTTPRequestHandler):
                                  if v}
             except Exception:  # noqa: BLE001
                 overrides = None
+        # A saved mapping template (X-Mapping: template name) supplies the
+        # overrides when the user didn't hand-edit the mapping this upload —
+        # explicit X-Overrides always wins over the template.
+        if overrides is None:
+            _map_name = self.headers.get("X-Mapping")
+            if _map_name:
+                from .npi_cleaner import mappings as _nc_mappings
+                overrides = _nc_mappings.get_mapping(
+                    urllib.parse.unquote(_map_name))
+        _prof_cfg = None
+        _prof_name = self.headers.get("X-Profile")
+        if _prof_name:
+            from .npi_cleaner import profiles as _nc_profiles
+            _prof_cfg = _nc_profiles.get_profile(
+                urllib.parse.unquote(_prof_name))
+        return {"name": name, "drop_duplicates": dedupe, "enrich": enrich,
+                "deep": deep, "deid": deid, "overrides": overrides,
+                "profile": _prof_cfg}
+
+    def _spool_upload_body(self, length: int):
+        """Stream the request body to a temp file in the cleaner's WORKDIR
+        in 4 MB blocks — a 10 GB upload must never pass through memory.
+        Returns the spool path, or None when the client hung up early (the
+        partial file is removed)."""
+        from .npi_cleaner.engine import WORKDIR
+        import uuid as _uuid
+        updir = WORKDIR / "uploads"
+        updir.mkdir(parents=True, exist_ok=True)
+        spool = updir / f"upload_{_uuid.uuid4().hex}.spool"
+        remaining = length
+        try:
+            with open(spool, "wb") as fh:
+                while remaining > 0:
+                    block = self.rfile.read(min(4 * 1024 * 1024, remaining))
+                    if not block:
+                        break
+                    fh.write(block)
+                    remaining -= len(block)
+        except OSError:
+            spool.unlink(missing_ok=True)
+            return None
+        if remaining > 0:
+            spool.unlink(missing_ok=True)
+            return None
+        return str(spool)
+
+    def _route_npi_cleaner_upload(self, parsed) -> None:
+        """Accept a raw-body claims-file upload and start a cleaning job.
+
+        The page POSTs the file bytes directly (X-Filename header carries the
+        URL-encoded name) — no multipart parsing, matching the vendored
+        webapp's convention. Returns ``{"job_id": ...}`` for the client to
+        poll. The engine is stdlib-only; nothing is written to the DB.
+
+        Bodies above the spool threshold stream to disk and the job cleans
+        the file in bounded-memory chunks (npi_cleaner.bigfile) — this is
+        the 10 GB path, expected to run for hours.
+        """
+        from .npi_cleaner import engine
+
+        content_length = int(self.headers.get("Content-Length") or 0)
+        if content_length > _NPI_SPOOL_THRESHOLD_BYTES:
+            opts = self._npi_upload_options(parsed)
+            spool = self._spool_upload_body(content_length)
+            if spool is None:
+                return self._send_json(
+                    {"error": "Upload interrupted — the full file did not "
+                              "arrive. Please retry."},
+                    status=HTTPStatus.BAD_REQUEST)
+            job_id = engine.manager().submit_path(
+                spool, opts["name"],
+                drop_duplicates=opts["drop_duplicates"],
+                enrich=opts["enrich"], deep=opts["deep"],
+                overrides=opts["overrides"], deid=opts["deid"],
+                profile=opts["profile"])
+            return self._send_json({"job_id": job_id})
+
+        raw = self._raw_post_body()
+        if not raw:
+            return self._send_json(
+                {"error": "Empty upload — no file bytes received."},
+                status=HTTPStatus.BAD_REQUEST)
+        opts = self._npi_upload_options(parsed)
         job_id = engine.manager().submit(
-            raw, name, drop_duplicates=dedupe, enrich=enrich, deep=deep,
-            overrides=overrides, deid=deid)
+            raw, opts["name"], drop_duplicates=opts["drop_duplicates"],
+            enrich=opts["enrich"], deep=opts["deep"],
+            overrides=opts["overrides"], deid=opts["deid"],
+            profile=opts["profile"])
         return self._send_json({"job_id": job_id})
 
     def _route_npi_cleaner_detect(self) -> None:
@@ -2781,6 +2863,17 @@ class RCMHandler(BaseHTTPRequestHandler):
         if not raw:
             return self._send_json(
                 {"error": "Empty upload."}, status=HTTPStatus.BAD_REQUEST)
+        # X12 837 uploads have a fixed, engine-defined layout — the column
+        # mapping editor doesn't apply, so skip straight to cleaning.
+        from .npi_cleaner import x12 as _x12
+        if _x12.looks_like_x12(raw):
+            return self._send_json({"available": False})
+        # A zip batch has many files with many layouts — the single-file
+        # mapping editor doesn't apply, clean directly. Metadata-only
+        # probe: the old full-extraction check decompressed up to 200 MB
+        # twice per upload flow just to compute this boolean.
+        if engine.zip_batch_probe(raw):
+            return self._send_json({"available": False})
         result = engine.detect_columns_preview(raw)
         if result is None:
             # Detector unavailable (no pandas) — tell the client to skip the
@@ -2809,6 +2902,153 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         fmt = (qs.get("fmt") or [""])[0]
+        if fmt == "worklist":
+            # Per-rule (or per-payer) worklist: just the flagged rows, as
+            # an actionable CSV.
+            rule = (qs.get("rule") or [""])[0]
+            payer = (qs.get("payer") or [""])[0]
+            if payer:
+                idxs = set(job.result.payer_flag_rows.get(
+                    payer.strip().upper()) or [])
+                rule = f"payer_{payer}"
+            else:
+                idxs = set(job.result.flag_rows.get(rule) or [])
+            if not idxs or not job.result.out_path:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            import csv as _csv
+            import io as _io
+            buf = _io.StringIO()
+            w = _csv.writer(buf)
+            try:
+                with open(job.result.out_path, encoding="utf-8") as fh:
+                    r = _csv.reader(fh)
+                    hdr = next(r, None)
+                    if hdr:
+                        w.writerow(["_row"] + hdr)
+                    for i, row in enumerate(r, start=1):
+                        if i in idxs:
+                            w.writerow([i] + row)
+            except OSError:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            data = buf.getvalue().encode("utf-8")
+            safe_rule = "".join(c for c in rule if c.isalnum() or c == "-")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             f'attachment; filename="worklist_{safe_rule}.csv"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if fmt == "exec":
+            # Executive one-pager (self-contained printable HTML).
+            from datetime import datetime as _edt, timezone as _etz
+            from .npi_cleaner.exec_report import build_exec_report
+            html_doc = build_exec_report(
+                job.result.as_scorecard(), job.name,
+                _edt.now(_etz.utc).strftime("%Y-%m-%d %H:%M UTC"))
+            return self._send_html(html_doc)
+        if fmt == "dictionary":
+            # Per-column data dictionary: role, fill %, distinct, samples.
+            if not job.result.dictionary:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            data = engine.dictionary_csv(job.result).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="data_dictionary.csv"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if fmt == "encounters":
+            # Encounter roll-up (analytics.py): one row per grouped visit —
+            # patient, category, date span, lines, charges.
+            from .npi_cleaner import analytics as _nc_analytics
+            csv_text = _nc_analytics.encounters_csv(
+                job.result.population or {})
+            if not csv_text:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            data = csv_text.encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="encounters.csv"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if fmt == "bundle":
+            # Everything in one zip: cleaned file, workbook, change log,
+            # corrections, exec report, scorecard JSON, per-rule worklists.
+            # The artifact a team attaches to the ticket for the source
+            # system — no chasing five separate downloads.
+            import csv as _csv
+            import io as _io
+            import json as _bjson
+            import zipfile as _zf
+            from datetime import datetime as _bdt, timezone as _btz
+            from .npi_cleaner.exec_report import build_exec_report
+            r = job.result
+            buf = _io.BytesIO()
+            with _zf.ZipFile(buf, "w", _zf.ZIP_DEFLATED) as z:
+                for p, n in ((r.out_path, r.out_name),
+                             (r.workbook_path, r.workbook_name),
+                             (r.changelog_path, r.changelog_name),
+                             (r.companion_path, r.companion_name)):
+                    if p:
+                        try:
+                            z.write(p, n)
+                        except OSError:
+                            pass
+                sc_b = r.as_scorecard()
+                z.writestr("exec_report.html", build_exec_report(
+                    sc_b, job.name,
+                    _bdt.now(_btz.utc).strftime("%Y-%m-%d %H:%M UTC")))
+                z.writestr("scorecard.json",
+                           _bjson.dumps(sc_b, indent=2, default=str))
+                if r.dictionary:
+                    z.writestr("data_dictionary.csv",
+                               engine.dictionary_csv(r))
+                # Worklists: one pass over the cleaned file, split by rule.
+                if r.flag_rows and r.out_path:
+                    _want = {}          # row index → rules that flagged it
+                    for rule, idxs in r.flag_rows.items():
+                        for i in idxs:
+                            _want.setdefault(i, []).append(rule)
+                    _sinks = {rule: _io.StringIO()
+                              for rule in r.flag_rows if r.flag_rows[rule]}
+                    _writers = {k: _csv.writer(v) for k, v in _sinks.items()}
+                    try:
+                        with open(r.out_path, encoding="utf-8") as fh:
+                            rd = _csv.reader(fh)
+                            hdr = next(rd, None)
+                            if hdr:
+                                for w in _writers.values():
+                                    w.writerow(["_row"] + hdr)
+                            for i, row in enumerate(rd, start=1):
+                                for rule in _want.get(i, ()):
+                                    _writers[rule].writerow([i] + row)
+                        for rule, sink in _sinks.items():
+                            safe = "".join(c for c in rule
+                                           if c.isalnum() or c == "-")
+                            z.writestr(f"worklists/{safe}.csv",
+                                       sink.getvalue())
+                    except OSError:
+                        pass
+            data = buf.getvalue()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/zip")
+            self.send_header("Content-Disposition",
+                             'attachment; filename="npi_clean_bundle.zip"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if fmt == "xlsx":
             src_path = job.result.workbook_path
             fname = job.result.workbook_name
@@ -2818,6 +3058,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             src_path = job.result.companion_path
             fname = job.result.companion_name
             ctype = "text/csv; charset=utf-8"
+        elif fmt == "changelog":
+            src_path = job.result.changelog_path
+            fname = job.result.changelog_name
+            ctype = "text/csv; charset=utf-8"
         elif fmt == "deep":
             src_path = job.result.deep_workbook_path
             fname = job.result.deep_workbook_name
@@ -2826,7 +3070,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         else:
             src_path = job.result.out_path
             fname = job.result.out_name
-            ctype = "text/csv; charset=utf-8"
+            # A zip-batch run's primary output is an archive of cleaned
+            # files — serving it as text/csv mangled it for clients that
+            # honor Content-Type over the filename.
+            ctype = ("application/zip" if fname.endswith(".zip")
+                     else "text/csv; charset=utf-8")
         if not src_path:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
@@ -2851,7 +3099,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .ui.npi_analysis_page import render_npi_analysis
 
         job = engine.manager().get(job_id)
-        ok = bool(job and job.result and job.result.out_path)
+        # A zip-batch run's output is an archive, not a table — the pivot
+        # (and its /data feed) only works on single-file runs.
+        ok = bool(job and job.result and job.result.out_path
+                  and not job.result.out_name.endswith(".zip"))
         return self._send_html(render_npi_analysis(
             job_id, available=ok,
             src_name=(job.result.out_name if ok else "")))
@@ -2862,7 +3113,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .npi_cleaner import engine
 
         job = engine.manager().get(job_id)
-        if job is None or job.result is None or not job.result.out_path:
+        if (job is None or job.result is None or not job.result.out_path
+                or job.result.out_name.endswith(".zip")):
+            # Batch outputs are archives — reading one as CSV raised a 500.
             return self._send_json(
                 {"error": "Job not found (server may have restarted)."},
                 status=HTTPStatus.NOT_FOUND)
@@ -2871,7 +3124,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             with open(job.result.out_path, newline="", encoding="utf-8") as fh:
                 reader = _csv.reader(fh)
                 rows = list(reader)
-        except OSError:
+        except (OSError, UnicodeDecodeError, _csv.Error):
             return self._send_json({"error": "cleaned data unavailable"},
                                    status=HTTPStatus.NOT_FOUND)
         if not rows:
@@ -3728,6 +3981,54 @@ class RCMHandler(BaseHTTPRequestHandler):
                 urllib.parse.parse_qs(parsed.query))
         if path == "/npi-cleaner/sample":
             return self._route_npi_cleaner_sample()
+        if path == "/npi-cleaner/history":
+            from .ui.npi_history_page import render_npi_history
+            return self._send_html(render_npi_history())
+        if path == "/npi-cleaner/api/history":
+            from .npi_cleaner import history as _nc_history
+            return self._send_json({"runs": _nc_history.list_runs(50)})
+        if path == "/npi-cleaner/api/history/compare":
+            from .npi_cleaner import history as _nc_history
+            _cq = urllib.parse.parse_qs(parsed.query)
+            _cmp = _nc_history.compare_runs(
+                (_cq.get("a") or [""])[0], (_cq.get("b") or [""])[0])
+            return self._send_json(_cmp or {"error": "run not found"})
+        if path == "/npi-cleaner/api/rules":
+            from .npi_cleaner import rules as _nc_rules
+            return self._send_json({"rules": _nc_rules.catalog()})
+        if path == "/npi-cleaner/api/profiles":
+            from .npi_cleaner import profiles as _nc_profiles
+            return self._send_json({"profiles": _nc_profiles.list_profiles()})
+        if path == "/npi-cleaner/api/mappings":
+            from .npi_cleaner import mappings as _nc_mappings
+            return self._send_json({"mappings": _nc_mappings.list_mappings()})
+        if path == "/npi-cleaner/api/wishlist":
+            from .npi_cleaner import wishlist as _nc_wishlist
+            _wq = urllib.parse.parse_qs(parsed.query)
+            _status = (_wq.get("status") or [None])[0]
+            return self._send_json(
+                {"requests": _nc_wishlist.list_requests(_status),
+                 "categories": list(_nc_wishlist.CATEGORIES)})
+        if path in ("/npi-cleaner/api/profiles/export",
+                    "/npi-cleaner/api/mappings/export"):
+            # Portable JSON download so teams can share suites/templates
+            # across instances (re-sanitized on import).
+            import json as _json
+            if "profiles" in path:
+                from .npi_cleaner import profiles as _nc_p
+                payload, fname = _nc_p.export_all(), "npi_profiles.json"
+            else:
+                from .npi_cleaner import mappings as _nc_m
+                payload, fname = _nc_m.export_all(), "npi_mappings.json"
+            data = _json.dumps(payload, indent=2).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Disposition",
+                             f'attachment; filename="{fname}"')
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if path.startswith("/npi-cleaner/analyze/"):
             return self._route_npi_cleaner_analyze(
                 path[len("/npi-cleaner/analyze/"):].strip("/"))
@@ -13990,7 +14291,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.FORBIDDEN,
                 )
         content_length = int(self.headers.get("Content-Length") or 0)
-        _max_bytes = (NPI_UPLOAD_MAX_BYTES if path in _LARGE_UPLOAD_PATHS
+        _max_bytes = (NPI_UPLOAD_STREAM_MAX_BYTES
+                      if path == "/npi-cleaner/upload"
+                      else NPI_UPLOAD_MAX_BYTES
+                      if path in _LARGE_UPLOAD_PATHS
                       else MAX_REQUEST_BYTES)
         if content_length > _max_bytes:
             return self._send_json(
@@ -14012,6 +14316,174 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_npi_cleaner_detect()
         if path == "/npi-cleaner/upload":
             return self._route_npi_cleaner_upload(parsed)
+        if path.startswith("/npi-cleaner/cancel/"):
+            # Stop a running job (a 10 GB streaming run is hours — the
+            # user must be able to bail out). Cooperative: the worker
+            # notices at its next progress tick.
+            from .npi_cleaner import engine as _nc_engine
+            _cjid = path[len("/npi-cleaner/cancel/"):].strip("/")
+            return self._send_json(
+                {"ok": _nc_engine.manager().cancel(_cjid)})
+        if path == "/npi-cleaner/api/profiles":
+            # Save a named cleaning profile: {"name": ..., "config": {...}}.
+            from .npi_cleaner import profiles as _nc_profiles
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                name = str(body.get("name") or "")
+                cfg = _nc_profiles.save_profile(name, body.get("config") or {})
+            except (ValueError, TypeError) as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": True, "name": name, "config": cfg})
+        if path == "/npi-cleaner/api/profiles/delete":
+            from .npi_cleaner import profiles as _nc_profiles
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                body = {}
+            ok = _nc_profiles.delete_profile(str(body.get("name") or ""))
+            return self._send_json({"ok": ok})
+        if path == "/npi-cleaner/api/wishlist":
+            # Log a "missing something?" request:
+            # {"category": ..., "title": ..., "details": ...}.
+            from .npi_cleaner import wishlist as _nc_wishlist
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                if not isinstance(body, dict):
+                    raise ValueError("body must be a JSON object")
+                rec = _nc_wishlist.add_request(
+                    str(body.get("category") or ""),
+                    str(body.get("title") or ""),
+                    str(body.get("details") or ""))
+            except (ValueError, TypeError) as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": True, "request": rec})
+        if path == "/npi-cleaner/api/wishlist/status":
+            # Move a request through the backlog:
+            # {"id": N, "status": "open"|"planned"|"shipped"|"declined"}.
+            from .npi_cleaner import wishlist as _nc_wishlist
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                rid = int(body.get("id"))
+            except (ValueError, TypeError):
+                return self._send_json({"error": "id (int) required"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            ok = _nc_wishlist.set_status(rid, str(body.get("status") or ""))
+            return self._send_json({"ok": ok})
+        if path == "/npi-cleaner/api/wishlist/delete":
+            from .npi_cleaner import wishlist as _nc_wishlist
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                rid = int(body.get("id"))
+            except (ValueError, TypeError):
+                return self._send_json({"error": "id (int) required"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": _nc_wishlist.delete_request(rid)})
+        if path == "/npi-cleaner/api/mappings":
+            # Save a named mapping template: {"name": ..., "mapping": {...}}.
+            from .npi_cleaner import mappings as _nc_mappings
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                name = str(body.get("name") or "")
+                m = _nc_mappings.save_mapping(name, body.get("mapping") or {})
+            except (ValueError, TypeError) as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": True, "name": name, "mapping": m})
+        if path == "/npi-cleaner/api/mappings/delete":
+            from .npi_cleaner import mappings as _nc_mappings
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                body = {}
+            ok = _nc_mappings.delete_mapping(str(body.get("name") or ""))
+            return self._send_json({"ok": ok})
+        if path in ("/npi-cleaner/api/profiles/import",
+                    "/npi-cleaner/api/mappings/import"):
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                return self._send_json({"error": "invalid JSON"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            try:
+                if "profiles" in path:
+                    from .npi_cleaner import profiles as _nc_p
+                    rep = _nc_p.import_all(body)
+                else:
+                    from .npi_cleaner import mappings as _nc_m
+                    rep = _nc_m.import_all(body)
+            except ValueError as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json(rep)
+        if path == "/npi-cleaner/api/reconcile":
+            # Match two completed runs on claim id: {"a": job_id (claims),
+            # "b": job_id (remittance)} → unpaid / variance / denial mix.
+            from .npi_cleaner import engine as _nc_engine
+            from .npi_cleaner import reconcile as _nc_reconcile
+            import csv as _rcsv
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                body = {}
+
+            def _load(job_id):
+                job = _nc_engine.manager().get(str(job_id or ""))
+                if job is None or job.result is None \
+                        or not job.result.out_path \
+                        or job.result.out_name.endswith(".zip"):
+                    return None      # batch archives can't reconcile as CSV
+                try:
+                    with open(job.result.out_path,
+                              encoding="utf-8") as fh:
+                        rd = _rcsv.reader(fh)
+                        hdr = next(rd, None) or []
+                        return hdr, list(rd)
+                except (OSError, UnicodeDecodeError, _rcsv.Error):
+                    return None
+
+            side_a = _load(body.get("a"))
+            side_b = _load(body.get("b"))
+            if side_a is None or side_b is None:
+                return self._send_json(
+                    {"error": "unknown or expired job id"},
+                    status=HTTPStatus.NOT_FOUND)
+            rep = _nc_reconcile.reconcile(side_a[0], side_a[1],
+                                          side_b[0], side_b[1])
+            status = (HTTPStatus.BAD_REQUEST if rep.get("error")
+                      else HTTPStatus.OK)
+            return self._send_json(rep, status=status)
+        if path == "/npi-cleaner/api/clean":
+            # Synchronous programmatic clean: raw CSV body (global 10 MB POST
+            # cap applies — use /npi-cleaner/upload for big files) → full
+            # scorecard JSON, no job polling. ?profile=<name> optional.
+            from .npi_cleaner import engine as _nc_engine
+            from .npi_cleaner import profiles as _nc_profiles
+            raw = self._raw_post_body()
+            if not raw:
+                return self._send_json({"error": "empty body"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            _qs2 = urllib.parse.parse_qs(parsed.query)
+            _pn = (_qs2.get("profile") or [""])[0]
+            _pcfg = _nc_profiles.get_profile(_pn) if _pn else None
+            _fname = urllib.parse.unquote(
+                self.headers.get("X-Filename", "claims.csv"))
+            _resx = _nc_engine.clean_bytes(
+                raw, _fname,
+                drop_duplicates=(_qs2.get("dedupe") or ["1"])[0] != "0",
+                deid=(_qs2.get("deid") or ["0"])[0] == "1",
+                profile=_pcfg)
+            return self._send_json(_resx.as_scorecard())
         if path == "/diligence/snapshot":
             return self._route_diligence_snapshot_post()
         if path == "/rxnorm/seed":

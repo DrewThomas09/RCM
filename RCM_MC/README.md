@@ -135,6 +135,7 @@ Every layer calls down, never up. The store is the only module that touches the 
 - **Developer guide**: [readME/03_Developer_Guide.md](readME/03_Developer_Guide.md)
 - **API reference**: [readME/01_API_Reference.md](readME/01_API_Reference.md)
 - **Architecture deep-dive**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **NPI Claims Cleaner (claims data-quality platform)**: [docs/NPI_CLAIMS_CLEANER.md](docs/NPI_CLAIMS_CLEANER.md)
 - **6-month product roadmap**: [docs/PRODUCT_ROADMAP_6MO.md](docs/PRODUCT_ROADMAP_6MO.md)
 - **Beta program design**: [docs/BETA_PROGRAM_PLAN.md](docs/BETA_PROGRAM_PLAN.md)
 - **Strategy index (15 docs)**: [docs/README.md](docs/README.md)

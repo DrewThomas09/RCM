@@ -1,0 +1,1640 @@
+"""Claims reference catalogs — the domain tables an enterprise scrubber
+ships with.
+
+Clearinghouses (Availity, Waystar, the former Change Healthcare) differ from
+a generic CSV cleaner precisely here: they know what a Place of Service *is*,
+what discharge status 30 *means*, and why CARC 197 keeps showing up. These
+catalogs power (a) named validity checks in the engine and (b) human-readable
+descriptions in the UI, the executive report, and the Excel workbook.
+
+Everything in this module is static public CMS/X12 reference data — no PHI,
+no network. Descriptions are abbreviated for display; they are lookup aids,
+not payer-contract language.
+"""
+from __future__ import annotations
+
+from typing import Dict, Optional, Tuple
+
+# --------------------------------------------------------------------------
+# Place of Service (CMS POS code set) — code → short name.
+# --------------------------------------------------------------------------
+POS_NAMES: Dict[str, str] = {
+    "01": "Pharmacy",
+    "02": "Telehealth (other than patient's home)",
+    "03": "School",
+    "04": "Homeless shelter",
+    "05": "IHS free-standing facility",
+    "06": "IHS provider-based facility",
+    "07": "Tribal 638 free-standing facility",
+    "08": "Tribal 638 provider-based facility",
+    "09": "Prison / correctional facility",
+    "10": "Telehealth in patient's home",
+    "11": "Office",
+    "12": "Home",
+    "13": "Assisted living facility",
+    "14": "Group home",
+    "15": "Mobile unit",
+    "16": "Temporary lodging",
+    "17": "Walk-in retail health clinic",
+    "18": "Place of employment / worksite",
+    "19": "Off-campus outpatient hospital",
+    "20": "Urgent care facility",
+    "21": "Inpatient hospital",
+    "22": "On-campus outpatient hospital",
+    "23": "Emergency room — hospital",
+    "24": "Ambulatory surgical center",
+    "25": "Birthing center",
+    "26": "Military treatment facility",
+    "27": "Outreach site / street",
+    "31": "Skilled nursing facility",
+    "32": "Nursing facility",
+    "33": "Custodial care facility",
+    "34": "Hospice",
+    "41": "Ambulance — land",
+    "42": "Ambulance — air or water",
+    "49": "Independent clinic",
+    "50": "Federally qualified health center",
+    "51": "Inpatient psychiatric facility",
+    "52": "Psychiatric facility — partial hospitalization",
+    "53": "Community mental health center",
+    "54": "Intermediate care facility / IID",
+    "55": "Residential substance abuse treatment facility",
+    "56": "Psychiatric residential treatment center",
+    "57": "Non-residential substance abuse treatment facility",
+    "58": "Non-residential opioid treatment facility",
+    "60": "Mass immunization center",
+    "61": "Comprehensive inpatient rehabilitation facility",
+    "62": "Comprehensive outpatient rehabilitation facility",
+    "65": "End-stage renal disease treatment facility",
+    "66": "Programs of all-inclusive care for the elderly (PACE)",
+    "71": "State or local public health clinic",
+    "72": "Rural health clinic",
+    "81": "Independent laboratory",
+    "99": "Other place of service",
+}
+
+# --------------------------------------------------------------------------
+# Patient Discharge Status (UB-04 / NUBC) — code → short name. The codes a
+# working claims extract actually carries; 30 (still a patient) on a final
+# bill and 20 (expired) with later activity are classic integrity findings.
+# --------------------------------------------------------------------------
+DISCHARGE_STATUS: Dict[str, str] = {
+    "01": "Discharged to home / self care",
+    "02": "Transferred to short-term general hospital",
+    "03": "Transferred to SNF (Medicare certified)",
+    "04": "Transferred to ICF",
+    "05": "Transferred to designated cancer center / children's hospital",
+    "06": "Discharged to home under organized home health service",
+    "07": "Left against medical advice",
+    "09": "Admitted as inpatient to this hospital",
+    "20": "Expired",
+    "21": "Discharged/transferred to court/law enforcement",
+    "30": "Still a patient",
+    "40": "Expired at home (hospice)",
+    "41": "Expired in a medical facility (hospice)",
+    "42": "Expired — place unknown (hospice)",
+    "43": "Discharged/transferred to federal health care facility",
+    "50": "Discharged to hospice — home",
+    "51": "Discharged to hospice — medical facility",
+    "61": "Discharged/transferred to swing bed",
+    "62": "Discharged/transferred to inpatient rehabilitation facility",
+    "63": "Discharged/transferred to long-term care hospital",
+    "64": "Discharged/transferred to nursing facility (Medicaid certified)",
+    "65": "Discharged/transferred to psychiatric hospital/unit",
+    "66": "Discharged/transferred to critical access hospital",
+    "69": "Discharged/transferred to designated disaster alternative site",
+    "70": "Discharged/transferred to other type of institution",
+    "81": "Discharged to home — planned readmission",
+    "82": "Transferred to short-term hospital — planned readmission",
+    "83": "Transferred to SNF — planned readmission",
+    "84": "Transferred to ICF — planned readmission",
+    "85": "Transferred to cancer center — planned readmission",
+    "86": "Discharged to home health — planned readmission",
+    "87": "Transferred to court/law enforcement — planned readmission",
+    "88": "Transferred to federal facility — planned readmission",
+    "89": "Transferred to swing bed — planned readmission",
+    "90": "Transferred to IRF — planned readmission",
+    "91": "Transferred to LTCH — planned readmission",
+    "92": "Transferred to Medicaid nursing facility — planned readmission",
+    "93": "Transferred to psychiatric facility — planned readmission",
+    "94": "Transferred to critical access hospital — planned readmission",
+    "95": "Discharged/transferred to another type — planned readmission",
+}
+
+# --------------------------------------------------------------------------
+# Admission Type (UB-04 FL14) and Admission Source (FL15) — small domains
+# that are wrong surprisingly often.
+# --------------------------------------------------------------------------
+ADMISSION_TYPE: Dict[str, str] = {
+    "1": "Emergency",
+    "2": "Urgent",
+    "3": "Elective",
+    "4": "Newborn",
+    "5": "Trauma",
+    "9": "Information not available",
+}
+
+ADMISSION_SOURCE: Dict[str, str] = {
+    "1": "Non-health care facility (physician referral)",
+    "2": "Clinic referral",
+    "4": "Transfer from a hospital",
+    "5": "Transfer from SNF or ICF",
+    "6": "Transfer from another health care facility",
+    "8": "Court / law enforcement",
+    "9": "Information not available",
+    "D": "Transfer within this hospital (separate claim)",
+    "E": "Transfer from ambulatory surgery center",
+    "F": "Transfer from hospice",
+}
+
+# --------------------------------------------------------------------------
+# Type of Bill (UB-04 FL4, NUBC). A TOB is 3 digits (often keyed with a
+# leading zero as 4). digit1 = facility type, digit2 = bill classification,
+# digit3 = frequency. Validating the parts catches far more than a length
+# check.
+# --------------------------------------------------------------------------
+TOB_FACILITY: Dict[str, str] = {
+    "1": "Hospital",
+    "2": "Skilled nursing facility",
+    "3": "Home health",
+    "4": "Religious non-medical (hospital)",
+    "5": "Religious non-medical (extended care)",
+    "6": "Intermediate care",
+    "7": "Clinic / special facility",
+    "8": "Special facility (hospice, ASC, etc.)",
+}
+
+TOB_FREQUENCY: Dict[str, str] = {
+    "0": "Non-payment / zero claim",
+    "1": "Admit-through-discharge claim",
+    "2": "Interim — first claim",
+    "3": "Interim — continuing claim",
+    "4": "Interim — last claim",
+    "5": "Late charge only",
+    "7": "Replacement of prior claim",
+    "8": "Void / cancel of prior claim",
+    "9": "Final claim (encounter)",
+}
+
+
+def tob_invalid(v: str) -> bool:
+    """True when a non-blank Type of Bill isn't a valid NUBC shape.
+
+    Accepts the 3-digit form and the common 4-digit leading-zero keying.
+    Validates facility type (digit 1) and frequency (digit 3) against the
+    NUBC domains — classification (digit 2) varies by facility type, so
+    only its digit-ness is enforced."""
+    s = v.strip()
+    if not s:
+        return False
+    if len(s) == 4 and s.startswith("0"):
+        s = s[1:]
+    if len(s) != 3 or not s.isdigit():
+        return True
+    return s[0] not in TOB_FACILITY or s[2] not in TOB_FREQUENCY
+
+
+# --------------------------------------------------------------------------
+# Claim Adjustment Reason Codes (CARC, X12) — the codes that explain every
+# adjusted dollar. Descriptions for the codes that dominate real denial
+# volumes; the shape check in the engine covers the rest.
+# --------------------------------------------------------------------------
+CARC_DESCRIPTIONS: Dict[str, str] = {
+    "1": "Deductible amount",
+    "2": "Coinsurance amount",
+    "3": "Co-payment amount",
+    "4": "Procedure code inconsistent with modifier used",
+    "5": "Procedure code inconsistent with place of service",
+    "6": "Procedure code inconsistent with patient's age",
+    "7": "Procedure code inconsistent with patient's gender",
+    "8": "Procedure code inconsistent with provider type/specialty",
+    "9": "Diagnosis inconsistent with patient's age",
+    "10": "Diagnosis inconsistent with patient's gender",
+    "11": "Diagnosis inconsistent with procedure",
+    "12": "Diagnosis inconsistent with provider type",
+    "13": "Date of death precedes date of service",
+    "14": "Date of birth follows date of service",
+    "15": "Authorization number missing/invalid",
+    "16": "Claim lacks information or has submission error",
+    "18": "Exact duplicate claim/service",
+    "19": "Work-related injury — liability of worker's comp carrier",
+    "20": "Injury covered by liability carrier",
+    "21": "Injury covered by no-fault carrier",
+    "22": "Care may be covered by another payer per coordination of benefits",
+    "23": "Impact of prior payer(s) adjudication",
+    "24": "Charges covered under capitation agreement / managed care plan",
+    "26": "Expenses incurred prior to coverage",
+    "27": "Expenses incurred after coverage terminated",
+    "29": "Time limit for filing has expired",
+    "31": "Patient cannot be identified as our insured",
+    "32": "Our records indicate patient is not an eligible dependent",
+    "33": "Insured has no dependent coverage",
+    "34": "Insured has no coverage for newborns",
+    "35": "Lifetime benefit maximum has been reached",
+    "39": "Services denied at the time authorization was requested",
+    "40": "Charges do not meet qualifications for emergent/urgent care",
+    "44": "Prompt-pay discount",
+    "45": "Charge exceeds fee schedule / maximum allowable",
+    "49": "Non-covered routine/preventive exam",
+    "50": "Non-covered — not deemed a medical necessity",
+    "51": "Non-covered — pre-existing condition",
+    "53": "Services by an immediate relative not covered",
+    "54": "Multiple physicians/assistants not covered",
+    "55": "Procedure/treatment deemed experimental/investigational",
+    "56": "Procedure/treatment not proven effective",
+    "58": "Treatment rendered in inappropriate/invalid place of service",
+    "59": "Processed based on multiple/concurrent procedure rules",
+    "60": "Outpatient services not covered when performed within period of inpatient services",
+    "61": "Adjusted for failure to obtain second surgical opinion",
+    "66": "Blood deductible",
+    "69": "Day outlier amount",
+    "70": "Cost outlier — adjustment",
+    "74": "Indirect medical education adjustment",
+    "75": "Direct medical education adjustment",
+    "76": "Disproportionate share adjustment",
+    "78": "Non-covered days / room charge adjustment",
+    "85": "Patient interest adjustment",
+    "89": "Professional fees removed from charges",
+    "90": "Ingredient cost adjustment",
+    "91": "Dispensing fee adjustment",
+    "94": "Processed in excess of charges",
+    "95": "Plan procedures not followed",
+    "96": "Non-covered charge(s)",
+    "97": "Included in payment/allowance for another service already adjudicated",
+    "100": "Payment made to patient/insured/responsible party",
+    "101": "Predetermination — anticipated payment upon completion",
+    "102": "Major medical adjustment",
+    "103": "Provider promotional discount",
+    "104": "Managed care withholding",
+    "105": "Tax withholding",
+    "106": "Patient payment option/election not in effect",
+    "107": "Related/qualifying claim/service not identified on this claim",
+    "108": "Rent/purchase guidelines not met",
+    "109": "Not covered by this payer/contractor — send to correct payer",
+    "110": "Billing date predates service date",
+    "111": "Not covered unless provider accepts assignment",
+    "112": "Service not furnished directly by provider",
+    "114": "Procedure/product not approved by the FDA",
+    "115": "Procedure postponed, canceled, or delayed",
+    "116": "Advance indemnification notice signed",
+    "117": "Transportation only covered to the closest facility",
+    "118": "ESRD network support adjustment",
+    "119": "Benefit maximum for this time period/occurrence reached",
+    "121": "Indemnification adjustment",
+    "122": "Psychiatric reduction",
+    "125": "Submission/billing error",
+    "128": "Newborn services on mother's claim",
+    "129": "Prior processing information incorrect",
+    "130": "Claim submission fee",
+    "131": "Claim-specific negotiated discount",
+    "132": "Prearranged demonstration project adjustment",
+    "133": "The disposition of this service is pending further review",
+    "134": "Technical fees removed from charges",
+    "135": "Interim bills cannot be processed",
+    "136": "Failure to follow prior payer's coverage rules",
+    "137": "Regulatory surcharges/assessments/health-related taxes",
+    "139": "Contracted funding agreement adjustment",
+    "140": "Patient/insured health identification number and name mismatch",
+    "142": "Monthly Medicaid patient liability amount",
+    "143": "Portion of payment deferred",
+    "144": "Incentive adjustment (preferred product/service)",
+    "146": "Diagnosis was invalid for the date(s) of service reported",
+    "147": "Provider contracted/negotiated rate expired or not on file",
+    "148": "Information from another provider not provided/insufficient",
+    "149": "Lifetime benefit maximum reached for this service/benefit",
+    "150": "Payer deems information does not support this level of service",
+    "151": "Information does not support this many/frequency of services",
+    "152": "Information does not support this length of service",
+    "153": "Information does not support this dosage",
+    "154": "Information does not support this day's supply",
+    "155": "Patient refused the service/procedure",
+    "157": "Service provided as a result of an act of war",
+    "158": "Service provided outside the United States",
+    "159": "Service provided as a result of terrorism",
+    "160": "Injury/illness the result of an activity that is a benefit exclusion",
+    "163": "Attachment referenced on the claim was not received",
+    "164": "Attachment referenced was not received in a timely fashion",
+    "166": "Services submitted after this payer's responsibility ended",
+    "167": "Diagnosis(es) not covered",
+    "169": "Alternate benefit has been provided",
+    "170": "Payment denied for services by this type of provider",
+    "171": "Payment denied for services by this type of provider in this type of facility",
+    "172": "Payment adjusted for services by a provider of this specialty",
+    "173": "Service was not prescribed by a physician",
+    "174": "Service not prescribed prior to delivery",
+    "175": "Prescription is incomplete",
+    "176": "Prescription is not current",
+    "177": "Patient has not met the required eligibility requirements",
+    "178": "Patient has not met the required spend-down requirements",
+    "179": "Patient has not met the required waiting requirements",
+    "180": "Patient has not met the required residency requirements",
+    "181": "Procedure code was invalid on the date of service",
+    "182": "Procedure modifier was invalid on the date of service",
+    "183": "Referring provider not eligible to refer this service",
+    "184": "Prescribing/ordering provider not eligible to prescribe/order",
+    "185": "Rendering provider not eligible to perform the service billed",
+    "186": "Level-of-care change adjustment",
+    "187": "Consumer spending account payments",
+    "188": "Product/procedure only covered when used per FDA recommendations",
+    "189": "'Not otherwise classified' code billed when a specific code exists",
+    "190": "Payment included in allowance for a demonstration project",
+    "192": "Non-standard adjustment code from paper remittance",
+    "193": "Original payment decision upheld on review",
+    "194": "Anesthesia performed by the operating physician",
+    "195": "Refund issued to an erroneous priority payer",
+    "197": "Precertification/authorization/notification absent",
+    "198": "Precertification/authorization exceeded",
+    "199": "Revenue code and procedure code do not match",
+    "200": "Expenses incurred during lapse in coverage",
+    "201": "Patient is responsible (workers' comp claim)",
+    "202": "Non-covered personal comfort or convenience services",
+    "203": "Discontinued or reduced service",
+    "204": "Service/equipment/drug not covered under the patient's current benefit plan",
+    "205": "Pharmacy discount card processing fee",
+    "206": "NPI missing",
+    "207": "NPI invalid format",
+    "208": "NPI not matched",
+    "209": "Per regulatory or other agreement, provider may not collect from patient",
+    "210": "Pre-certification not received in a timely fashion",
+    "211": "NDC not eligible for rebate — not covered",
+    "212": "Administrative surcharges not covered",
+    "213": "Non-compliance with the physician self-referral prohibition",
+    "215": "Based on subrogation of a third-party settlement",
+    "216": "Based on the findings of a review organization",
+    "219": "Based on extent of injury",
+    "222": "Exceeds contracted maximum number of hours/days/units",
+    "223": "Mandated federal/state/local adjustment",
+    "224": "Patient identified as participating in demonstration/pilot",
+    "225": "Penalty/interest assessed against provider",
+    "226": "Information requested from the billing/rendering provider not provided",
+    "227": "Information requested from the patient/insured not provided",
+    "228": "Denied because rendered by an excluded/debarred provider",
+    "229": "Partial charge amount not considered under Medicare Part B demand bill",
+    "231": "Mutually exclusive procedures cannot be done on the same day/setting",
+    "232": "Institutional transfer amount",
+    "233": "Services/charges related to treatment of a hospital-acquired condition",
+    "234": "Procedure not paid separately",
+    "235": "Sales tax",
+    "236": "Procedure(s) inconsistent with another procedure per coding guidelines (NCCI)",
+    "237": "Legislated/regulatory penalty",
+    "238": "Claim spans eligible and ineligible periods of coverage",
+    "239": "Claim adjudicated as one claim with a previously submitted claim",
+    "240": "Fee arrangement adjustment",
+    "242": "Services not provided by network/primary care providers",
+    "243": "Services not authorized by network/primary care providers",
+    "245": "Provider performance program withhold",
+    "246": "Non-payable code for reporting only",
+    "247": "Deductible for professional service in facility claim",
+    "248": "Coinsurance for professional service in facility claim",
+    "249": "Copayment for professional service in facility claim",
+    "252": "An attachment/other documentation is required to adjudicate",
+    "253": "Sequestration — reduction in federal payment",
+    "254": "Institutional claim missing HIPPS/rate code",
+    "256": "Service not payable per managed care contract",
+    "257": "The disposition of the claim/service is undetermined during the premium grace period",
+    "258": "Claim/service not covered when patient is in custody",
+    "259": "Additional payment for dispensing supplies",
+    "260": "Processed under a hospice arrangement",
+    "261": "The procedure or service is inconsistent with the patient's history",
+    "262": "Adjustment for administrative cost",
+    "263": "Adjustment for compound preparation cost",
+    "264": "Adjustment for delivery cost",
+    "265": "Adjustment for postage cost",
+    "266": "Adjustment for shipping cost",
+    "269": "Anesthesia not covered for this service/procedure",
+    "270": "Claim received by the medical plan but benefits not available under this plan",
+    "271": "Prior contractual reductions related to a current payment",
+    "272": "Coverage/program guidelines not met",
+    "273": "Coverage/program guidelines exceeded",
+    "274": "Fee/service not payable per patient care coordination arrangement",
+    "275": "Prior payer's (or payers') patient responsibility not covered",
+    "276": "Services denied by the prior payer(s) not covered by this payer",
+    "277": "The disposition is undetermined during the premium grace period (exchange)",
+    "278": "Performance program proficiency requirements not met",
+    "279": "Services not provided by preferred network providers",
+    "280": "Claim received by the medical plan but benefits are available under the dental plan",
+    "281": "Deductible based on regulatory requirement",
+    "282": "The procedure/revenue code is inconsistent with the type of bill",
+    "283": "Attending provider not eligible to provide direction of care",
+    "284": "Precertification/authorization/notification does not apply to the billed services",
+    "285": "Appeal procedures not followed",
+    "286": "Appeal time limits not met",
+    "287": "Referral exceeded",
+    "288": "Referral absent",
+    "289": "Services considered under the dental plan — benefits not available",
+    "290": "Claim received by the dental plan but benefits are available under the medical plan",
+    "297": "Claim received by the medical plan but benefits are available under the vision plan",
+    "299": "The billing provider is not eligible to receive payment for the service billed",
+    "A1": "Claim/service denied — at least one remark code must be provided",
+    "A5": "Medicare claim PPS capital cost outlier amount",
+    "A6": "Prior hospitalization or 30-day transfer requirement not met",
+    "A8": "Ungroupable DRG",
+    "B1": "Non-covered visits",
+    "B4": "Late filing penalty",
+    "B7": "Provider not certified/eligible to be paid for this service on this date",
+    "B8": "Alternative services were available and should have been utilized",
+    "B9": "Patient is enrolled in a hospice",
+    "B10": "Allowed amount reduced — component of the basic service",
+    "B11": "Claim/service transferred to the proper payer/processor",
+    "B12": "Services not documented in patient's medical records",
+    "B13": "Previously paid — this is a duplicate payment",
+    "B14": "Only one visit/consultation per physician per day is covered",
+    "B15": "Service/procedure requires a qualifying service not received/adjudicated",
+    "B16": "'New patient' qualifications not met",
+    "B20": "Procedure/service partially or fully furnished by another provider",
+    "B22": "Adjustment based on the diagnosis",
+    "B23": "Procedure billed not authorized per your CLIA proficiency test",
+    "P1": "State-mandated requirement for property and casualty",
+    "P2": "Not a work-related injury/illness — not liability of workers' comp",
+    "W1": "Workers' comp state fee schedule adjustment",
+    "Y1": "Payer refund due to overpayment",
+    "Y2": "Payer refund amount — not our patient",
+    "Y3": "Additional payment made on an appeal/reconsideration",
+}
+
+
+def carc_description(code: str) -> Optional[str]:
+    return CARC_DESCRIPTIONS.get(code.strip().upper())
+
+
+# --------------------------------------------------------------------------
+# Remittance Advice Remark Codes (RARC) — the companion detail codes. The
+# high-volume subset; shape validation ("M"/"N"/"MA" + digits) covers form.
+# --------------------------------------------------------------------------
+RARC_DESCRIPTIONS: Dict[str, str] = {
+    "M1": "X-ray not taken within the past 12 months or near enough to treatment start",
+    "M2": "Not paid separately when the patient is an inpatient",
+    "M3": "Equipment is the same or similar to equipment already being used",
+    "M4": "Alert: this is the last monthly installment payment for this durable medical equipment",
+    "M7": "No rental payments after the item is purchased / reasonable useful lifetime reached",
+    "M10": "Equipment purchases limited to the first or tenth month of medical necessity",
+    "M11": "DME, orthotics and prosthetics must be billed to the DME carrier",
+    "M12": "Diagnostic tests performed by an outside physician/supplier — anti-markup applies",
+    "M13": "Only one initial visit is covered per specialty per medical group",
+    "M14": "No separate payment for an injection administered during an office visit",
+    "M15": "Separately billed services/tests bundled as they are considered components",
+    "M16": "Alert: see our web site/mailings for more information on this policy",
+    "M20": "Missing/incomplete/invalid HCPCS",
+    "M21": "Missing/incomplete/invalid place of residence for this service",
+    "M22": "Missing/incomplete/invalid number of miles traveled",
+    "M23": "Missing invoice",
+    "M24": "Missing/incomplete/invalid number of doses per vial",
+    "M25": "Information furnished does not substantiate the need for this level of service",
+    "M26": "Information furnished does not substantiate the need for this level of service (2)",
+    "M27": "Patient has been relieved of liability of payment for these items/services",
+    "M29": "Missing operative note/report",
+    "M30": "Missing pathology report",
+    "M31": "Missing radiology report",
+    "M32": "Alert: this is a conditional payment",
+    "M36": "This is the 11th rental month — purchase decision required",
+    "M37": "Not covered when the patient is under age 35",
+    "M38": "Patient is liable — notice of non-coverage was given",
+    "M39": "Alert: ABN signed but does not meet requirements",
+    "M40": "Claim must be assigned and must be filed by the practitioner's employer",
+    "M41": "We do not pay for this as the patient has no legal obligation to pay",
+    "M42": "The medical necessity form must be personally signed by the attending physician",
+    "M44": "Missing/incomplete/invalid condition code",
+    "M45": "Missing/incomplete/invalid occurrence code(s)",
+    "M46": "Missing/incomplete/invalid occurrence span code(s)",
+    "M47": "Missing/incomplete/invalid internal or document control number",
+    "M49": "Missing/incomplete/invalid value code(s) or amount(s)",
+    "M50": "Missing/incomplete/invalid revenue code(s)",
+    "M51": "Missing/incomplete/invalid procedure code(s)",
+    "M52": "Missing/incomplete/invalid 'from' date(s) of service",
+    "M53": "Missing/incomplete/invalid days or units of service",
+    "M54": "Missing/incomplete/invalid total charges",
+    "M55": "We do not pay for self-administered anti-emetic drugs not administered with a covered oral anti-cancer drug",
+    "M56": "Missing/incomplete/invalid payer identifier",
+    "M59": "Missing/incomplete/invalid 'to' date(s) of service",
+    "M60": "Missing certificate of medical necessity",
+    "M61": "We cannot pay for this as the approval period for the FDA clinical trial has expired",
+    "M62": "Missing/incomplete/invalid treatment authorization code",
+    "M64": "Missing/incomplete/invalid other diagnosis",
+    "M65": "One interpreting physician charge can be submitted per claim when a purchased diagnostic test is indicated",
+    "M66": "Test component was billed — professional component reported separately",
+    "M67": "Missing/incomplete/invalid other procedure code(s)",
+    "M69": "Paid at the regular rate as you did not submit documentation to justify the modified procedure code",
+    "M70": "Alert: NDC code submitted for this service was translated to a HCPCS code",
+    "M71": "Total payment reduced due to overlap of tests billed",
+    "M73": "The HPSA/Physician Scarcity bonus can only be paid on the professional component",
+    "M74": "This service does not qualify for a HPSA/PSA bonus payment",
+    "M75": "Multiple automated multichannel tests performed on the same day combined",
+    "M76": "Missing/incomplete/invalid diagnosis or condition",
+    "M77": "Missing/incomplete/invalid place of service",
+    "M79": "Missing/incomplete/invalid charge",
+    "M80": "Not covered when performed during the same session/date as a previously processed service",
+    "M81": "You are required to code to the highest level of specificity",
+    "M82": "Service is not covered when the patient is under age 50",
+    "M83": "Service is not covered unless the patient is classified as at high risk",
+    "M84": "Medical code sets used must be the codes in effect at the time of service",
+    "M85": "Subjected to review of physician evaluation and management services",
+    "M86": "Service denied — payment already made for same/similar procedure within set time frame",
+    "M87": "Claim/service(s) subjected to CFO-CAP prepayment review",
+    "M89": "Not covered more than once under age 40",
+    "M90": "Not covered more than once in a 12 month period",
+    "M97": "Not paid to practitioner when provided to a patient in this place of service",
+    "M99": "Missing/incomplete/invalid universal product number/serial number",
+    "MA01": "Alert: you may appeal this decision",
+    "MA02": "Alert: you may appeal this decision (party to redetermination)",
+    "MA04": "Secondary payment cannot be considered without the identity of/payment information from the primary payer",
+    "MA07": "Alert: the claim information has also been forwarded to Medicaid for review",
+    "MA08": "Alert: claim information was not forwarded because the supplemental coverage is not with a Medigap plan",
+    "MA09": "Claim submitted as unassigned but processed as assigned per the Medicare participation agreement",
+    "MA10": "Alert: the patient's payment was in excess of the amount owed — refund the excess",
+    "MA13": "Alert: you may be subject to penalties if you bill the patient for amounts not reported with the PR group code",
+    "MA15": "Alert: your claim has been separated to expedite handling",
+    "MA18": "Alert: the claim information is also being forwarded to the patient's supplemental insurer",
+    "MA19": "Alert: information was not sent to the Medigap insurer due to incorrect/invalid information",
+    "MA27": "Missing/incomplete/invalid entitlement number or name shown on the claim",
+    "MA28": "Alert: receipt of this notice by a physician who did not accept assignment is for information only",
+    "MA30": "Missing/incomplete/invalid type of bill",
+    "MA31": "Missing/incomplete/invalid beginning and ending dates of the period billed",
+    "MA32": "Missing/incomplete/invalid number of covered days during the billing period",
+    "MA33": "Missing/incomplete/invalid non-covered days during the billing period",
+    "MA36": "Missing/incomplete/invalid patient name",
+    "MA37": "Missing/incomplete/invalid patient's address",
+    "MA39": "Missing/incomplete/invalid gender",
+    "MA40": "Missing/incomplete/invalid admission date",
+    "MA41": "Missing/incomplete/invalid admission type",
+    "MA42": "Missing/incomplete/invalid admission source",
+    "MA43": "Missing/incomplete/invalid patient status",
+    "MA58": "Missing/incomplete/invalid release of information indicator",
+    "MA61": "Missing/incomplete/invalid social security number",
+    "MA63": "Missing/incomplete/invalid principal diagnosis",
+    "MA64": "Our records indicate the patient has other insurance primary to Medicare — submit to primary first",
+    "MA65": "Missing/incomplete/invalid admitting diagnosis",
+    "MA66": "Missing/incomplete/invalid principal procedure code",
+    "MA67": "Correction to a prior claim",
+    "MA68": "Alert: we did not crossover this claim because the secondary insurance information was incomplete",
+    "MA69": "Missing/incomplete/invalid remarks",
+    "MA76": "Missing/incomplete/invalid provider identifier for home health agency or hospice",
+    "MA79": "Billed in excess of interim rate",
+    "MA81": "Missing/incomplete/invalid provider/supplier signature",
+    "MA83": "Did not indicate whether we are the primary or secondary payer",
+    "MA92": "Missing plan information for other insurance",
+    "MA97": "Missing/incomplete/invalid Medicare managed care demonstration contract number",
+    "MA100": "Missing/incomplete/invalid date of current illness or symptoms",
+    "MA103": "Hemophilia add-on",
+    "MA106": "PIP (Periodic Interim Payment) claim",
+    "MA107": "Paper claim contains more than three separate data items in field 19",
+    "MA108": "Paper claim contains more than one data item in field 23",
+    "MA110": "Missing/incomplete/invalid information on whether the diagnostic test(s) were performed by an outside entity",
+    "MA111": "Missing/incomplete/invalid purchase price of the test(s) and/or the performing laboratory's name and address",
+    "MA112": "Missing/incomplete/invalid group practice information",
+    "MA113": "Incomplete/invalid taxpayer identification number (TIN)",
+    "MA114": "Missing/incomplete/invalid information on where the services were furnished",
+    "MA115": "Missing/incomplete/invalid physical location (name and address or PIN) where the service(s) were rendered",
+    "MA116": "Did not complete the statement 'Homebound' on the claim",
+    "MA117": "This claim has been assessed a $1.00 user fee",
+    "MA118": "No Medicare payment issued for this claim (coinsurance/deductible are due)",
+    "MA120": "Missing/incomplete/invalid CLIA certification number",
+    "MA121": "Missing/incomplete/invalid x-ray date",
+    "MA122": "Missing/incomplete/invalid initial treatment date",
+    "MA123": "Your center was not selected to participate in this study",
+    "MA125": "Per legislation governing this program, payment constitutes payment in full",
+    "MA126": "Pancreas transplant not covered unless kidney transplant performed",
+    "MA128": "Missing/incomplete/invalid FDA approval number",
+    "MA130": "Your claim contains incomplete and/or invalid information — no appeal rights (correct and resubmit)",
+    "MA131": "Physician already paid for services in conjunction with this demonstration claim",
+    "MA132": "Adjustment to the pre-demonstration rate",
+    "MA133": "Claim overlaps inpatient stay — rebill only those services rendered outside the inpatient stay",
+    "MA134": "Missing/incomplete/invalid provider number of the facility where the patient resides",
+    "N1": "Alert: you may appeal this decision (see remittance)",
+    "N2": "This allowance has been made in accordance with the most appropriate course of treatment provision of the plan",
+    "N3": "Missing consent form",
+    "N4": "Missing/incomplete/invalid prior insurance carrier(s) EOB",
+    "N5": "EOB received from previous payer — claim not on file",
+    "N6": "Under FEHB law, the provider may only bill the enrollee the difference between the plan allowance and the billed amount",
+    "N8": "Crossover claim denied by previous payer and complete claim data not forwarded",
+    "N9": "Adjustment represents the estimated amount a previous payer may pay",
+    "N10": "Adjustment based on the findings of a review organization",
+    "N11": "Denial reversed because of medical review",
+    "N12": "Policy provides coverage supplemental to Medicare — patient not enrolled in Part B, so the plan pays as primary",
+    "N15": "Services for a newborn must be billed separately",
+    "N16": "Family/member out-of-pocket maximum has been met — payment based on a higher percentage",
+    "N19": "Procedure code incidental to primary procedure",
+    "N20": "Service not payable with other service rendered on the same date",
+    "N21": "Alert: your line item has been separated into multiple lines to expedite handling",
+    "N22": "Alert: this procedure code was added/changed because it more accurately describes the services rendered",
+    "N23": "Alert: patient liability may be affected due to coordination of benefits with other carriers",
+    "N24": "Missing/incomplete/invalid electronic funds transfer (EFT) banking information",
+    "N25": "This company has been contracted by your benefit plan to provide administrative claims payment services only",
+    "N26": "Missing itemized bill/statement",
+    "N27": "Missing/incomplete/invalid treatment number",
+    "N28": "Consent form requirements not fulfilled",
+    "N30": "Patient ineligible for this service",
+    "N31": "Missing/incomplete/invalid prescribing provider identifier",
+    "N32": "Claim must be submitted by the provider who rendered the service",
+    "N33": "No record of health check prior to initiation of treatment",
+    "N34": "Incorrect claim form/format for this service",
+    "N35": "Program integrity/utilization review decision",
+    "N36": "Claim must meet primary payer's processing requirements before we can consider payment",
+    "N37": "Missing/incomplete/invalid tooth number/letter",
+    "N39": "Procedure code is not compatible with tooth number/letter",
+    "N45": "Payment based on authorized amount",
+    "N46": "Missing/incomplete/invalid admission hour",
+    "N47": "Claim conflicts with another inpatient stay",
+    "N48": "Claim information does not agree with information received from other insurance carrier",
+    "N49": "Court ordered coverage information needs validation",
+    "N50": "Missing/incomplete/invalid discharge information",
+    "N51": "Electronic interchange agreement not on file for provider/submitter",
+    "N52": "Patient not enrolled in the billing provider's managed care plan",
+    "N53": "Missing/incomplete/invalid point of pick-up address",
+    "N54": "Claim information is inconsistent with pre-certified/authorized services",
+    "N55": "Procedures for billing with group/referring/performing providers were not followed",
+    "N56": "Procedure code billed is not correct/valid for the services billed or the date of service billed",
+    "N57": "Missing/incomplete/invalid prescribing date",
+    "N58": "Missing/incomplete/invalid patient liability amount",
+    "N59": "Alert: please refer to your provider manual for additional program and provider information",
+    "N61": "Rebill services on separate claims",
+    "N62": "Dates of service span multiple rate periods — resubmit separate claims",
+    "N63": "Rebill services on separate claim lines",
+    "N64": "The 'from' and 'to' dates must be different",
+    "N65": "Procedure code or procedure rate count cannot be determined/was not on file for the date of service/provider",
+    "N67": "Professional provider services not paid separately — included in facility payment (bill facility)",
+    "N68": "Prior payment being cancelled as we were subsequently notified this patient was covered by a demonstration project",
+    "N69": "Alert: PPS code changed by claims processing system",
+    "N70": "Consolidated billing and payment applies",
+    "N71": "Your unassigned claim for a drug/biological/clinical diagnostic laboratory services was processed as an assigned claim",
+    "N72": "PPS code changed by medical reviewers",
+    "N74": "Resubmit with multiple claims, each claim covering services provided in only one calendar month",
+    "N75": "Missing/incomplete/invalid tooth surface information",
+    "N76": "Missing/incomplete/invalid number of riders",
+    "N77": "Missing/incomplete/invalid designated provider number",
+    "N78": "The necessary components of the child and teen checkup (EPSDT) were not completed",
+    "N79": "Service billed is not compatible with patient location information",
+    "N80": "Missing/incomplete/invalid prenatal screening information",
+    "N81": "Procedure billed is not compatible with tooth surface code",
+    "N82": "Provider must accept insurance payment as payment in full when a third party payer contract specifies full reimbursement",
+    "N83": "No appeal rights — adjudicative decision based on the provisions of a demonstration project",
+    "N84": "Alert: further installment payments are forthcoming",
+    "N85": "Alert: this is the final installment payment",
+    "N86": "A failed trial of pelvic muscle exercise training is required before a biofeedback claim is considered",
+    "N87": "Home use of biofeedback therapy is not covered",
+    "N88": "Alert: this payment is being made conditionally — an HHA episode of care notice has been filed",
+    "N89": "Alert: payment information is being forwarded to more than one other payer",
+    "N90": "Covered only when performed by the attending physician",
+    "N91": "Services not included in the appeal review",
+    "N92": "This facility is not certified for digital mammography",
+    "N93": "A separate claim must be submitted for each place of service",
+    "N94": "Claim/service denied — claim lacks a necessary revenue code",
+    "N95": "This provider type/specialty may not bill this service",
+    "N96": "Patient must be refractory to conventional therapy to be considered eligible",
+    "N97": "Patients with stress incontinence/stress-induced urinary loss are not eligible for this item",
+    "N98": "Patient must have had a successful test stimulation to support subsequent implantation",
+    "N99": "Patient must be able to demonstrate adequate ability to record voiding diary data",
+    "N100": "PPS code corrected during adjudication",
+    "N102": "This claim has been denied without reviewing the medical/dental record — requested records not received",
+    "N103": "Records indicate this patient was a prisoner/in custody when the service was rendered",
+    "N104": "Claim not payable in this jurisdiction area — send to the correct Medicare contractor",
+    "N105": "This is a misdirected claim/service for an RRB beneficiary — submit to Palmetto GBA",
+    "N106": "Payment for services furnished to SNF inpatients can only be made to the SNF (consolidated billing)",
+    "N107": "Services furnished to CAH inpatients can only be paid to the hospital",
+    "N108": "Missing/incomplete/invalid upgrade information",
+    "N109": "Alert: claim/service selected for complex review",
+    "N110": "This facility is not certified for film mammography",
+    "N111": "No appeal right except duplicate claim/service issue",
+    "N112": "Patient does not reside in a HPSA/PSA area",
+    "N113": "Only one initial visit is covered per physician, group practice or provider",
+    "N114": "During the transition to the ambulance fee schedule, payment is based on a blended rate",
+    "N115": "Decision based on a Local Coverage Determination (LCD)",
+    "N116": "Alert: this payment is being made conditionally because the service was provided in the home",
+    "N117": "Service is paid only once in a patient's lifetime",
+    "N118": "Service is not paid if billed more than once every 28 days",
+    "N119": "Service is not paid if billed once every 28 days and the patient has spent 5+ consecutive days in any inpatient/SNF setting",
+    "N120": "Payment is subject to home health prospective payment system partial episode payment adjustment",
+    "N121": "Medicare Part B does not pay for items/services provided by this type of practitioner for SNF inpatients in a covered Part A stay",
+    "N122": "Add-on code cannot be billed by itself",
+    "N123": "Alert: this is a split service — a portion is considered under the demonstration",
+    "N124": "Payment reflects the correct code",
+    "N125": "Payment information will be forwarded when claim development is complete",
+    "N126": "Social Security records indicate this individual was a prisoner — no payment while in custody",
+    "N127": "This is a misdirected claim for a United Mine Workers of America beneficiary",
+    "N128": "This amount represents the prior to coverage portion of the allowance",
+    "N129": "Not eligible due to the patient's age",
+    "N130": "Consult plan benefit documents/guidelines for information about restrictions",
+    "N131": "Total payments under multiple contracts cannot exceed the allowance for this service",
+    "N132": "Alert: payments will cease for services rendered by this US Government-debarred/excluded provider",
+    "N133": "Alert: services for predetermination and services requesting payment are being processed separately",
+    "N134": "Alert: this represents your scheduled payment for this service",
+    "N135": "Record fees are the patient's responsibility and limited to the specified co-payment",
+    "N136": "Alert: to obtain information on the process to file an appeal, contact the insurer",
+    "N137": "Alert: the provider acting on the member's behalf may file an appeal",
+    "N138": "Alert: in the event you disagree with this decision, you may contest it (see instructions)",
+    "N139": "Alert: contested decision procedures information",
+    "N140": "Alert: you have not been designated as an authorized OTC network pharmacy",
+    "N141": "The patient was not residing in a State-designated shortage area",
+    "N142": "The original claim was denied — resubmit a new claim, not a replacement claim",
+    "N143": "The patient was not in a hospice program during all or part of the service dates billed",
+    "N144": "The rate changed during the dates of service billed",
+    "N146": "Missing screening document",
+    "N147": "Long-term care case mix or per diem rate cannot be determined",
+    "N148": "Missing/incomplete/invalid date of last menstrual period",
+    "N149": "Rebill all applicable services on a single claim",
+    "N150": "Missing/incomplete/invalid model number",
+    "N151": "Telephone contact services will not be paid until the face-to-face contact requirement has been met",
+    "N152": "Missing/incomplete/invalid replacement claim information",
+    "N153": "Missing/incomplete/invalid room and board rate",
+    "N154": "Alert: this payment was delayed for correction of provider's mailing address",
+    "N155": "Alert: our records do not indicate that other insurance is on file",
+    "N156": "Alert: the patient is responsible for the difference between the approved treatment and the elective treatment",
+}
+
+
+def rarc_description(code: str) -> Optional[str]:
+    return RARC_DESCRIPTIONS.get(code.strip().upper())
+
+
+# --------------------------------------------------------------------------
+# Revenue-center categories (UB-04 revenue codes, NUBC). Ranges → category
+# names; a named category in a drill-down beats a bare 4-digit code.
+# --------------------------------------------------------------------------
+REVENUE_CATEGORIES: Tuple[Tuple[int, int, str], ...] = (
+    (100, 169, "Room & board"),
+    (170, 179, "Nursery"),
+    (180, 189, "Leave of absence"),
+    (190, 199, "Subacute care"),
+    (200, 209, "Intensive care"),
+    (210, 219, "Coronary care"),
+    (220, 229, "Special charges"),
+    (230, 239, "Incremental nursing care"),
+    (240, 249, "All-inclusive ancillary"),
+    (250, 259, "Pharmacy"),
+    (260, 269, "IV therapy"),
+    (270, 279, "Medical/surgical supplies"),
+    (280, 289, "Oncology"),
+    (290, 299, "DME"),
+    (300, 319, "Laboratory"),
+    (320, 329, "Radiology — diagnostic"),
+    (330, 339, "Radiology — therapeutic / chemo administration"),
+    (340, 349, "Nuclear medicine"),
+    (350, 359, "CT scan"),
+    (360, 369, "Operating room"),
+    (370, 379, "Anesthesia"),
+    (380, 389, "Blood & blood products"),
+    (390, 399, "Blood storage & processing"),
+    (400, 409, "Other imaging (mammography, ultrasound)"),
+    (410, 419, "Respiratory services"),
+    (420, 429, "Physical therapy"),
+    (430, 439, "Occupational therapy"),
+    (440, 449, "Speech therapy"),
+    (450, 459, "Emergency room"),
+    (460, 469, "Pulmonary function"),
+    (470, 479, "Audiology"),
+    (480, 489, "Cardiology"),
+    (490, 499, "Ambulatory surgical care"),
+    (500, 509, "Outpatient services"),
+    (510, 529, "Clinic / freestanding clinic"),
+    (530, 539, "Osteopathic services"),
+    (540, 549, "Ambulance"),
+    (550, 559, "Skilled nursing"),
+    (560, 569, "Home health — medical social services"),
+    (570, 609, "Home health services"),
+    (610, 619, "MRI"),
+    (620, 624, "Med/surg supplies — extension"),
+    (630, 639, "Pharmacy — extension (specific drugs)"),
+    (640, 649, "Home IV therapy"),
+    (650, 659, "Hospice"),
+    (660, 669, "Respite care"),
+    (670, 679, "Outpatient special residence"),
+    (680, 689, "Trauma response"),
+    (700, 709, "Cast room"),
+    (710, 719, "Recovery room"),
+    (720, 729, "Labor & delivery"),
+    (730, 739, "EKG/ECG"),
+    (740, 749, "EEG"),
+    (750, 759, "Gastro-intestinal services"),
+    (760, 769, "Treatment/observation room"),
+    (770, 779, "Preventive care services"),
+    (780, 789, "Telemedicine"),
+    (790, 799, "Extra-corporeal shock wave therapy"),
+    (800, 809, "Renal dialysis — inpatient"),
+    (810, 819, "Acquisition of body components"),
+    (820, 829, "Hemodialysis — outpatient/home"),
+    (830, 839, "Peritoneal dialysis"),
+    (840, 849, "CAPD"),
+    (850, 859, "CCPD"),
+    (880, 889, "Miscellaneous dialysis"),
+    (900, 909, "Behavioral health treatments"),
+    (910, 919, "Behavioral health — extension"),
+    (920, 929, "Other diagnostic services"),
+    (930, 939, "Medical rehabilitation day program"),
+    (940, 949, "Other therapeutic services"),
+    (960, 969, "Professional fees"),
+    (970, 979, "Professional fees — extension"),
+    (980, 989, "Professional fees — extension 2"),
+    (990, 999, "Patient convenience items"),
+)
+
+
+def revenue_category(code: str) -> Optional[str]:
+    """Category name for a (possibly 3-digit) UB-04 revenue code."""
+    s = code.strip()
+    if not s.isdigit():
+        return None
+    n = int(s)
+    for lo, hi, name in REVENUE_CATEGORIES:
+        if lo <= n <= hi:
+            return name
+    return None
+
+
+# --------------------------------------------------------------------------
+# Common claim-line modifiers — code → short meaning. Used to (a) describe
+# modifiers in drill-downs and (b) flag modifiers outside the known set +
+# not letter/digit pairs (typo signal, report-only).
+# --------------------------------------------------------------------------
+MODIFIER_MEANINGS: Dict[str, str] = {
+    "22": "Increased procedural services",
+    "23": "Unusual anesthesia",
+    "24": "Unrelated E/M during post-op period",
+    "25": "Significant, separately identifiable E/M same day",
+    "26": "Professional component",
+    "27": "Multiple outpatient E/M same date",
+    "32": "Mandated services",
+    "33": "Preventive service",
+    "47": "Anesthesia by surgeon",
+    "50": "Bilateral procedure",
+    "51": "Multiple procedures",
+    "52": "Reduced services",
+    "53": "Discontinued procedure",
+    "54": "Surgical care only",
+    "55": "Postoperative management only",
+    "56": "Preoperative management only",
+    "57": "Decision for surgery",
+    "58": "Staged/related procedure during post-op period",
+    "59": "Distinct procedural service",
+    "62": "Two surgeons",
+    "63": "Procedure on infants < 4 kg",
+    "66": "Surgical team",
+    "76": "Repeat procedure by same physician",
+    "77": "Repeat procedure by another physician",
+    "78": "Unplanned return to OR during post-op period",
+    "79": "Unrelated procedure during post-op period",
+    "80": "Assistant surgeon",
+    "81": "Minimum assistant surgeon",
+    "82": "Assistant surgeon (no qualified resident)",
+    "90": "Reference (outside) laboratory",
+    "91": "Repeat clinical diagnostic lab test",
+    "92": "Alternative laboratory platform testing",
+    "95": "Synchronous telemedicine service",
+    "96": "Habilitative services",
+    "97": "Rehabilitative services",
+    "99": "Multiple modifiers",
+    "AA": "Anesthesia personally performed by anesthesiologist",
+    "AD": "Medical supervision, >4 concurrent anesthesia procedures",
+    "AS": "PA/NP/CNS assistant at surgery",
+    "AT": "Acute treatment (chiropractic)",
+    "CR": "Catastrophe/disaster related",
+    "CS": "Cost-sharing waived (specified COVID-19 testing)",
+    "E1": "Upper left eyelid",
+    "E2": "Lower left eyelid",
+    "E3": "Upper right eyelid",
+    "E4": "Lower right eyelid",
+    "F1": "Left hand, second digit",
+    "F2": "Left hand, third digit",
+    "F3": "Left hand, fourth digit",
+    "F4": "Left hand, fifth digit",
+    "F5": "Right hand, thumb",
+    "F6": "Right hand, second digit",
+    "F7": "Right hand, third digit",
+    "F8": "Right hand, fourth digit",
+    "F9": "Right hand, fifth digit",
+    "FA": "Left hand, thumb",
+    "GA": "ABN on file — waiver of liability statement issued",
+    "GC": "Service performed in part by resident under teaching physician",
+    "GE": "Service performed by resident under primary care exception",
+    "GN": "Services under an outpatient speech-language pathology plan",
+    "GO": "Services under an outpatient occupational therapy plan",
+    "GP": "Services under an outpatient physical therapy plan",
+    "GQ": "Asynchronous telecommunications system",
+    "GT": "Interactive audio and video telecommunication",
+    "GV": "Attending physician not employed by hospice",
+    "GW": "Service not related to the hospice patient's terminal condition",
+    "GY": "Statutorily excluded item/service",
+    "GZ": "Item/service expected to be denied as not reasonable and necessary",
+    "JW": "Drug amount discarded / not administered",
+    "JZ": "Zero drug amount discarded / not administered",
+    "KX": "Requirements specified in the medical policy have been met",
+    "LC": "Left circumflex coronary artery",
+    "LD": "Left anterior descending coronary artery",
+    "LM": "Left main coronary artery",
+    "LT": "Left side",
+    "PO": "Excepted service — off-campus provider-based department",
+    "PN": "Non-excepted service — off-campus provider-based department",
+    "Q5": "Service furnished under a reciprocal billing arrangement",
+    "Q6": "Service furnished under fee-for-time compensation arrangement",
+    "QK": "Medical direction of 2-4 concurrent anesthesia procedures",
+    "QS": "Monitored anesthesia care",
+    "QW": "CLIA-waived test",
+    "QX": "CRNA service with medical direction by a physician",
+    "QY": "Medical direction of one CRNA by an anesthesiologist",
+    "QZ": "CRNA service without medical direction",
+    "RC": "Right coronary artery",
+    "RI": "Ramus intermedius coronary artery",
+    "RT": "Right side",
+    "SA": "Nurse practitioner rendering in collaboration with physician",
+    "SB": "Nurse midwife",
+    "T1": "Left foot, second digit",
+    "T2": "Left foot, third digit",
+    "T3": "Left foot, fourth digit",
+    "T4": "Left foot, fifth digit",
+    "T5": "Right foot, great toe",
+    "T6": "Right foot, second digit",
+    "T7": "Right foot, third digit",
+    "T8": "Right foot, fourth digit",
+    "T9": "Right foot, fifth digit",
+    "TA": "Left foot, great toe",
+    "TC": "Technical component",
+    "U1": "Medicaid level of care 1 (state defined)",
+    "U2": "Medicaid level of care 2 (state defined)",
+    "U3": "Medicaid level of care 3 (state defined)",
+    "U4": "Medicaid level of care 4 (state defined)",
+    "U5": "Medicaid level of care 5 (state defined)",
+    "U6": "Medicaid level of care 6 (state defined)",
+    "U7": "Medicaid level of care 7 (state defined)",
+    "U8": "Medicaid level of care 8 (state defined)",
+    "U9": "Medicaid level of care 9 (state defined)",
+    "UA": "Medicaid level of care 10 (state defined)",
+    "UB": "Medicaid level of care 11 (state defined)",
+    "UC": "Medicaid level of care 12 (state defined)",
+    "UD": "Medicaid level of care 13 (state defined)",
+    "UN": "Two patients served",
+    "UP": "Three patients served",
+    "UQ": "Four patients served",
+    "UR": "Five patients served",
+    "US": "Six or more patients served",
+    "XE": "Separate encounter (NCCI-associated)",
+    "XP": "Separate practitioner (NCCI-associated)",
+    "XS": "Separate structure/organ (NCCI-associated)",
+    "XU": "Unusual non-overlapping service (NCCI-associated)",
+}
+
+
+def modifier_meaning(code: str) -> Optional[str]:
+    return MODIFIER_MEANINGS.get(code.strip().upper())
+
+
+def modifier_unknown(code: str) -> bool:
+    """True when a 2-char modifier is well-formed but NOT in the known
+    catalog — a typo signal, kept report-only because payers do define
+    proprietary modifiers. Malformed shapes are caught upstream by the
+    modifier normalizer (which drops non-2-char tokens)."""
+    c = code.strip().upper()
+    if len(c) != 2 or not c.isalnum():
+        return False   # shape problems are a different rule
+    return c not in MODIFIER_MEANINGS
+
+
+def discharge_status_invalid(v: str) -> bool:
+    """True when a non-blank patient discharge status isn't an NUBC code.
+    Accepts 1-digit keying of 2-digit codes (Excel strips the zero)."""
+    s = v.strip()
+    if not s:
+        return False
+    if s.isdigit() and len(s) == 1:
+        s = s.zfill(2)
+    return s not in DISCHARGE_STATUS
+
+
+def admission_type_invalid(v: str) -> bool:
+    s = v.strip()
+    if not s:
+        return False
+    return s not in ADMISSION_TYPE
+
+
+def pos_name(code: str) -> Optional[str]:
+    return POS_NAMES.get(code.strip().zfill(2) if code.strip().isdigit()
+                         and len(code.strip()) == 1 else code.strip())
+
+
+# --------------------------------------------------------------------------
+# Medicare Beneficiary Identifier (MBI). 11 characters with strict position
+# classes — C A AN N A AN N A A N N — where letters NEVER include
+# S, L, O, I, B, Z (chosen so an MBI can't be misread). Deterministic, so a
+# malformed MBI on a Medicare line is a guaranteed rejection.
+# --------------------------------------------------------------------------
+import re as _re
+
+_MBI_LETTER = "AC-HJKMNP-RT-Y"          # A-Z minus S L O I B Z
+MBI_RE = _re.compile(
+    "^[1-9]"                             # 1: digit 1-9
+    f"[{_MBI_LETTER}]"                   # 2: letter
+    f"[0-9{_MBI_LETTER}]"                # 3: letter or digit
+    "[0-9]"                              # 4: digit
+    f"[{_MBI_LETTER}]"                   # 5: letter
+    f"[0-9{_MBI_LETTER}]"                # 6: letter or digit
+    "[0-9]"                              # 7: digit
+    f"[{_MBI_LETTER}]{{2}}"              # 8-9: letters
+    "[0-9]{2}$"                          # 10-11: digits
+)
+
+
+def mbi_malformed(v: str) -> bool:
+    """True when a non-blank Medicare member ID isn't a valid MBI shape.
+    Hyphens/spaces are stripped first (MBIs are often keyed 1EG4-TE5-MK73)."""
+    s = v.strip().upper().replace("-", "").replace(" ", "")
+    if not s:
+        return False
+    return MBI_RE.match(s) is None
+
+
+# --------------------------------------------------------------------------
+# UB-04 Condition codes (FL18-28, NUBC) — the high-volume subset.
+# --------------------------------------------------------------------------
+CONDITION_CODES: Dict[str, str] = {
+    "01": "Military service related",
+    "02": "Condition is employment related",
+    "03": "Patient covered by insurance not reflected here",
+    "04": "Information-only bill (HMO enrollee)",
+    "05": "Lien has been filed",
+    "06": "ESRD patient in first 30 months of entitlement",
+    "07": "Treatment of non-terminal condition for hospice patient",
+    "08": "Beneficiary would not provide information concerning other insurance",
+    "09": "Neither patient nor spouse is employed",
+    "10": "Patient and/or spouse is employed but no EGHP coverage",
+    "11": "Disabled beneficiary but no large group health plan",
+    "15": "Clean claim delayed in CMS processing system",
+    "17": "Patient is homeless",
+    "18": "Maiden name retained",
+    "19": "Child retains mother's name",
+    "20": "Beneficiary requested billing",
+    "21": "Billing for denial notice",
+    "26": "VA-eligible patient chooses Medicare-certified facility",
+    "28": "Patient and/or spouse's EGHP is secondary to Medicare",
+    "29": "Disabled beneficiary and/or family member's LGHP is secondary",
+    "30": "Qualifying clinical trial",
+    "31": "Patient is a full-time day student",
+    "38": "Semi-private room not available",
+    "39": "Private room medically necessary",
+    "40": "Same-day transfer",
+    "41": "Partial hospitalization",
+    "42": "Continuing care not related to inpatient admission",
+    "43": "Continuing care not provided within prescribed post-discharge window",
+    "44": "Inpatient admission changed to outpatient",
+    "45": "Ambiguous gender category",
+    "46": "Non-availability statement on file",
+    "49": "Product replacement within product lifecycle",
+    "50": "Product replacement for known recall of a product",
+    "51": "Attestation of unrelated outpatient non-diagnostic services",
+    "53": "Initial placement of a medical device provided as part of a clinical trial",
+    "54": "No skilled home health visits in billing period",
+    "55": "SNF bed not available",
+    "56": "Medical appropriateness",
+    "57": "SNF readmission",
+    "58": "Terminated Medicare Advantage enrollee",
+    "59": "Non-primary ESRD facility",
+    "60": "Operating cost day outlier",
+    "61": "Operating cost outlier",
+    "66": "Provider does not wish cost outlier payment",
+    "67": "Beneficiary elects not to use lifetime reserve days",
+    "68": "Beneficiary elects to use lifetime reserve days",
+    "69": "IME/DGME/N&AH payment only",
+    "70": "Self-administered anemia management drug",
+    "71": "Full care in unit (dialysis)",
+    "72": "Self-care in unit (dialysis)",
+    "73": "Self-care in training (dialysis)",
+    "74": "Home dialysis",
+    "76": "Back-up in-facility dialysis",
+    "77": "Provider accepts payment by a primary payer as payment in full",
+    "78": "New coverage not implemented by HMO",
+    "79": "CORF services provided offsite",
+    "80": "Home dialysis — nursing facility",
+    "81": "C-sections/inductions performed at <39 weeks — medical necessity",
+    "82": "C-sections/inductions performed at <39 weeks — elective",
+    "83": "C-sections/inductions performed at 39 weeks or greater",
+    "84": "Dialysis for acute kidney injury",
+    "90": "Service provided as part of an expanded-access approval",
+    "91": "Emergency room services provided as part of an EMTALA screen",
+    "A1": "EPSDT/CHAP service",
+    "A2": "Physically handicapped children's program",
+    "A3": "Special federal funding",
+    "A4": "Family planning",
+    "A5": "Disability",
+    "A6": "Vaccines/Medicare 100% payment",
+    "A9": "Second opinion surgery",
+    "AA": "Abortion — rape",
+    "AB": "Abortion — incest",
+    "AD": "Abortion — life of mother",
+    "AI": "Sterilization",
+    "AJ": "Payer responsible for co-payment",
+    "AK": "Air ambulance required",
+    "AL": "Specialized treatment/bed unavailable — alternate facility",
+    "AM": "Non-emergency medically necessary stretcher transport",
+    "AN": "Preadmission screening not required",
+    "B1": "Beneficiary is ineligible for demonstration program",
+    "B2": "Critical access hospital ambulance attestation",
+    "B3": "Pregnancy indicator",
+    "B4": "Admission unrelated to discharge on same day",
+    "D0": "Changes to service dates",
+    "D1": "Changes to charges",
+    "D2": "Changes to revenue/HCPCS codes",
+    "D3": "Second or subsequent interim PPS bill",
+    "D4": "Changes in ICD codes",
+    "D5": "Cancel to correct HICN or provider ID",
+    "D6": "Cancel only to repay a duplicate or OIG overpayment",
+    "D7": "Change to make Medicare the secondary payer",
+    "D8": "Change to make Medicare the primary payer",
+    "D9": "Any other change",
+    "DR": "Disaster related",
+    "E0": "Change in patient status",
+    "G0": "Distinct medical visit",
+    "H0": "Delayed filing — statement of intent submitted",
+    "W2": "Duplicate of original bill",
+}
+
+# --------------------------------------------------------------------------
+# UB-04 Occurrence codes (FL31-34) — the high-volume subset.
+# --------------------------------------------------------------------------
+OCCURRENCE_CODES: Dict[str, str] = {
+    "01": "Accident/medical coverage",
+    "02": "No-fault insurance involved",
+    "03": "Accident/tort liability",
+    "04": "Accident/employment related",
+    "05": "Accident/no medical or liability coverage",
+    "06": "Crime victim",
+    "09": "Start of infertility treatment cycle",
+    "10": "Last menstrual period",
+    "11": "Onset of symptoms/illness",
+    "16": "Date of last therapy",
+    "17": "Date occupational therapy plan established/reviewed",
+    "18": "Date of retirement (patient/beneficiary)",
+    "19": "Date of retirement (spouse)",
+    "20": "Date guarantee of payment began",
+    "21": "Date UR notice received",
+    "22": "Date active care ended",
+    "24": "Date insurance denied",
+    "25": "Date benefits terminated by primary payer",
+    "26": "Date SNF bed became available",
+    "27": "Date of hospice certification/re-certification",
+    "28": "Date comprehensive outpatient rehab plan established/reviewed",
+    "29": "Date outpatient physical therapy plan established/reviewed",
+    "30": "Date outpatient speech pathology plan established/reviewed",
+    "31": "Date beneficiary notified of intent to bill (accommodations)",
+    "32": "Date beneficiary notified of intent to bill (procedures/treatments)",
+    "33": "First day of Medicare coordination period (ESRD)",
+    "34": "Date of election of extended care facilities",
+    "35": "Date treatment started for physical therapy",
+    "36": "Date of inpatient hospital discharge (covered transplant)",
+    "37": "Date of inpatient hospital discharge (non-covered transplant)",
+    "38": "Date treatment started for home IV therapy",
+    "39": "Date discharged on continuous course of IV therapy",
+    "40": "Scheduled date of admission",
+    "41": "Date of first test for pre-admission testing",
+    "42": "Date of discharge (hospice)",
+    "43": "Scheduled date of canceled surgery",
+    "44": "Date treatment started for occupational therapy",
+    "45": "Date treatment started for speech therapy",
+    "46": "Date treatment started for cardiac rehab",
+    "47": "Date cost outlier status begins",
+    "50": "Date lien released",
+    "51": "Date treatment started for psychiatric care",
+    "54": "Date of onset of hemodialysis",
+    "55": "Date of death",
+    "A1": "Birth date — insured A",
+    "A2": "Effective date — insured A policy",
+    "A3": "Benefits exhausted (payer A)",
+    "A4": "Split bill date",
+    "B1": "Birth date — insured B",
+    "B2": "Effective date — insured B policy",
+    "B3": "Benefits exhausted (payer B)",
+    "C1": "Birth date — insured C",
+    "C2": "Effective date — insured C policy",
+    "C3": "Benefits exhausted (payer C)",
+}
+
+# --------------------------------------------------------------------------
+# UB-04 Value codes (FL39-41) — the high-volume subset.
+# --------------------------------------------------------------------------
+VALUE_CODES: Dict[str, str] = {
+    "01": "Most common semi-private room rate",
+    "02": "Hospital has no semi-private rooms",
+    "04": "Inpatient professional component charges combined billed",
+    "05": "Professional component included in charges",
+    "06": "Medicare blood deductible",
+    "08": "Medicare lifetime reserve amount (first year)",
+    "09": "Medicare coinsurance amount (first year)",
+    "10": "Medicare lifetime reserve amount (second year)",
+    "11": "Medicare coinsurance amount (second year)",
+    "12": "Working aged beneficiary/spouse with EGHP",
+    "13": "ESRD beneficiary in Medicare coordination period with EGHP",
+    "14": "No-fault, including auto/other",
+    "15": "Worker's compensation",
+    "16": "PHS or other federal agency",
+    "21": "Catastrophic (Medicaid)",
+    "22": "Surplus (Medicaid)",
+    "23": "Recurring monthly income (Medicaid)",
+    "24": "Medicaid rate code",
+    "30": "Preadmission testing",
+    "31": "Patient liability amount",
+    "32": "Multiple patient ambulance transport",
+    "37": "Pints of blood furnished",
+    "38": "Blood deductible pints",
+    "39": "Pints of blood replaced",
+    "40": "New coverage not implemented by HMO (inpatient only)",
+    "41": "Black lung",
+    "42": "VA",
+    "43": "Disabled beneficiary under 65 with LGHP",
+    "44": "Amount provider agreed to accept from primary payer",
+    "45": "Accident hour",
+    "46": "Number of grace days",
+    "47": "Any liability insurance",
+    "48": "Hemoglobin reading",
+    "49": "Hematocrit reading",
+    "50": "Physical therapy visits",
+    "51": "Occupational therapy visits",
+    "52": "Speech therapy visits",
+    "53": "Cardiac rehab visits",
+    "54": "Newborn birth weight in grams",
+    "55": "Eligibility threshold for charity care",
+    "56": "Skilled nurse — home visit hours",
+    "57": "Home health aide — home visit hours",
+    "58": "Arterial blood gas",
+    "59": "Oxygen saturation",
+    "60": "HHA branch MSA",
+    "61": "Location where service is furnished (HHA/hospice)",
+    "66": "Medicaid spend-down amount",
+    "68": "EPO — drug",
+    "80": "Covered days",
+    "81": "Non-covered days",
+    "82": "Co-insurance days",
+    "83": "Lifetime reserve days",
+    "A0": "Special ZIP code reporting",
+    "A1": "Deductible payer A",
+    "A2": "Coinsurance payer A",
+    "A3": "Estimated responsibility payer A",
+    "B1": "Deductible payer B",
+    "B2": "Coinsurance payer B",
+    "B3": "Estimated responsibility payer B",
+    "C1": "Deductible payer C",
+    "C2": "Coinsurance payer C",
+    "C3": "Estimated responsibility payer C",
+    "D3": "Patient estimated responsibility",
+    "FC": "Patient paid amount",
+}
+
+_UB_CODE_RE = _re.compile(r"^[A-Z0-9]{2}$")
+
+
+def ub_code_malformed(v: str) -> bool:
+    """Shape check for UB-04 condition/occurrence/value codes: exactly two
+    alphanumeric characters. Catalog membership is deliberately NOT required
+    — payers define proprietary codes — so this only catches keying damage
+    (1-char, 3-char, punctuation)."""
+    s = v.strip().upper()
+    if not s:
+        return False
+    return _UB_CODE_RE.match(s) is None
+
+
+def condition_code_meaning(code: str) -> Optional[str]:
+    return CONDITION_CODES.get(code.strip().upper().zfill(2))
+
+
+def occurrence_code_meaning(code: str) -> Optional[str]:
+    return OCCURRENCE_CODES.get(code.strip().upper().zfill(2))
+
+
+def value_code_meaning(code: str) -> Optional[str]:
+    return VALUE_CODES.get(code.strip().upper().zfill(2))
+
+
+# --------------------------------------------------------------------------
+# Clinical credentials — display meanings for the credential-mix report.
+# The parse set lives in engine._CREDENTIALS (hot loop); a test asserts the
+# two stay identical so a credential can't be parsed without a meaning here.
+# --------------------------------------------------------------------------
+CREDENTIALS: Dict[str, str] = {
+    "MD": "Doctor of Medicine",
+    "DO": "Doctor of Osteopathic Medicine",
+    "MBBS": "Bachelor of Medicine, Bachelor of Surgery",
+    "NP": "Nurse Practitioner",
+    "PA": "Physician Assistant",
+    "PAC": "Physician Assistant - Certified",
+    "PA-C": "Physician Assistant - Certified",
+    "APRN": "Advanced Practice Registered Nurse",
+    "ARNP": "Advanced Registered Nurse Practitioner",
+    "FNP": "Family Nurse Practitioner",
+    "CRNA": "Certified Registered Nurse Anesthetist",
+    "CNM": "Certified Nurse Midwife",
+    "CNS": "Clinical Nurse Specialist",
+    "RN": "Registered Nurse",
+    "LPN": "Licensed Practical Nurse",
+    "LVN": "Licensed Vocational Nurse",
+    "DDS": "Doctor of Dental Surgery",
+    "DMD": "Doctor of Dental Medicine",
+    "DPM": "Doctor of Podiatric Medicine",
+    "OD": "Doctor of Optometry",
+    "AUD": "Doctor of Audiology",
+    "PHD": "Doctor of Philosophy",
+    "PSYD": "Doctor of Psychology",
+    "DC": "Doctor of Chiropractic",
+    "PT": "Physical Therapist",
+    "DPT": "Doctor of Physical Therapy",
+    "OT": "Occupational Therapist",
+    "OTR": "Occupational Therapist, Registered",
+    "SLP": "Speech-Language Pathologist",
+    "RD": "Registered Dietitian",
+    "RDN": "Registered Dietitian Nutritionist",
+    "PHARMD": "Doctor of Pharmacy",
+    "RPH": "Registered Pharmacist",
+    "LCSW": "Licensed Clinical Social Worker",
+    "LMSW": "Licensed Master Social Worker",
+    "LMFT": "Licensed Marriage and Family Therapist",
+    "LPC": "Licensed Professional Counselor",
+    "BCBA": "Board Certified Behavior Analyst",
+    "MPH": "Master of Public Health",
+    "MSN": "Master of Science in Nursing",
+    "BSN": "Bachelor of Science in Nursing",
+    "FACS": "Fellow, American College of Surgeons",
+    "FACP": "Fellow, American College of Physicians",
+    "FAAP": "Fellow, American Academy of Pediatrics",
+}
+
+
+def credential_meaning(code: str) -> Optional[str]:
+    return CREDENTIALS.get(code.strip().upper().replace(".", ""))
+
+
+# --------------------------------------------------------------------------
+# Timely-filing limits by payer FAMILY (engine._payer_key output), in days
+# from date of service. Contracts vary — these are the widely published
+# defaults (Medicare: 12 months by statute; most commercial plans: 90-180
+# days). Used when a payer column exists on the row; the profile threshold
+# remains the fallback for unknown payers. Deliberately conservative — a
+# LONGER limit than a specific contract only under-flags, never over-flags.
+# --------------------------------------------------------------------------
+TIMELY_FILING_DAYS: Dict[str, int] = {
+    "MEDICARE": 365,
+    "MEDICAID": 180,
+    "TRICARE": 365,
+    "UNITEDHEALTHCARE": 90,
+    "AETNA": 120,
+    "CIGNA": 90,
+    "HUMANA": 90,
+    "BLUE CROSS BLUE SHIELD": 180,
+    "KAISER PERMANENTE": 180,
+}
+
+
+def timely_filing_days(payer_family: str) -> Optional[int]:
+    """Days-from-DOS filing limit for a payer family key, if published."""
+    return TIMELY_FILING_DAYS.get(payer_family.strip().upper())
+
+
+def tob_facility_class(v: str) -> Optional[Tuple[str, str]]:
+    """(facility type, bill classification) digits of a Type of Bill, or
+    None when the value isn't a plausible TOB. Accepts the 4-digit
+    leading-zero keying like tob_invalid does."""
+    s = v.strip()
+    if len(s) == 4 and s.startswith("0"):
+        s = s[1:]
+    if len(s) != 3 or not s.isdigit():
+        return None
+    return s[0], s[1]
+
+
+# --------------------------------------------------------------------------
+# NUCC provider-taxonomy specialties — display names for the specialty-mix
+# report. Deliberately the high-volume subset (~70 of ~870 NUCC codes):
+# membership is NOT a validity domain (never flag a code for being absent
+# here), it only names the codes a claims file actually contains.
+# --------------------------------------------------------------------------
+TAXONOMY_SPECIALTIES: Dict[str, str] = {
+    # Physicians (Allopathic & Osteopathic)
+    "207K00000X": "Allergy & Immunology",
+    "207L00000X": "Anesthesiology",
+    "207N00000X": "Dermatology",
+    "207P00000X": "Emergency Medicine",
+    "207Q00000X": "Family Medicine",
+    "207R00000X": "Internal Medicine",
+    "207RC0000X": "Cardiovascular Disease",
+    "207RE0101X": "Endocrinology, Diabetes & Metabolism",
+    "207RG0100X": "Gastroenterology",
+    "207RG0300X": "Geriatric Medicine",
+    "207RH0003X": "Hematology & Oncology",
+    "207RI0011X": "Interventional Cardiology",
+    "207RI0200X": "Infectious Disease",
+    "207RN0300X": "Nephrology",
+    "207RP1001X": "Pulmonary Disease",
+    "207RR0500X": "Rheumatology",
+    "207RX0202X": "Medical Oncology",
+    "207T00000X": "Neurological Surgery",
+    "207U00000X": "Nuclear Medicine",
+    "207V00000X": "Obstetrics & Gynecology",
+    "207W00000X": "Ophthalmology",
+    "207X00000X": "Orthopaedic Surgery",
+    "207Y00000X": "Otolaryngology",
+    "207ZP0102X": "Anatomic & Clinical Pathology",
+    "208000000X": "Pediatrics",
+    "208100000X": "Physical Medicine & Rehabilitation",
+    "208200000X": "Plastic Surgery",
+    "208600000X": "Surgery (General)",
+    "208800000X": "Urology",
+    "208C00000X": "Colon & Rectal Surgery",
+    "208D00000X": "General Practice",
+    "208G00000X": "Thoracic Surgery",
+    "208M00000X": "Hospitalist",
+    "208VP0000X": "Pain Medicine",
+    "2084N0400X": "Neurology",
+    "2084P0800X": "Psychiatry",
+    "2085R0001X": "Radiation Oncology",
+    "2085R0202X": "Diagnostic Radiology",
+    # Advanced practice + nursing
+    "363A00000X": "Physician Assistant",
+    "363AM0700X": "Physician Assistant — Medical",
+    "363AS0400X": "Physician Assistant — Surgical",
+    "363L00000X": "Nurse Practitioner",
+    "363LF0000X": "Nurse Practitioner — Family",
+    "363LA2200X": "Nurse Practitioner — Adult Health",
+    "363LP0808X": "Nurse Practitioner — Psychiatric/Mental Health",
+    "364S00000X": "Clinical Nurse Specialist",
+    "367500000X": "Certified Registered Nurse Anesthetist",
+    "367A00000X": "Advanced Practice Midwife",
+    "163W00000X": "Registered Nurse",
+    "164W00000X": "Licensed Practical Nurse",
+    # Behavioral health
+    "103T00000X": "Psychologist",
+    "1041C0700X": "Clinical Social Worker",
+    "101YM0800X": "Counselor — Mental Health",
+    "106H00000X": "Marriage & Family Therapist",
+    # Other practitioners
+    "111N00000X": "Chiropractor",
+    "122300000X": "Dentist",
+    "1223G0001X": "Dentist — General Practice",
+    "1223O0200X": "Oral & Maxillofacial Surgery",
+    "133V00000X": "Registered Dietitian",
+    "152W00000X": "Optometrist",
+    "183500000X": "Pharmacist",
+    "213E00000X": "Podiatrist",
+    "225100000X": "Physical Therapist",
+    "225X00000X": "Occupational Therapist",
+    "231H00000X": "Audiologist",
+    "235Z00000X": "Speech-Language Pathologist",
+    # Facilities / suppliers
+    "261Q00000X": "Clinic/Center",
+    "261QU0200X": "Clinic/Center — Urgent Care",
+    "282N00000X": "General Acute Care Hospital",
+    "282NC0060X": "Critical Access Hospital",
+    "283Q00000X": "Psychiatric Hospital",
+    "283X00000X": "Rehabilitation Hospital",
+    "291U00000X": "Clinical Medical Laboratory",
+    "314000000X": "Skilled Nursing Facility",
+    "332B00000X": "DME & Medical Supplies",
+    "333600000X": "Pharmacy",
+    "3336C0003X": "Community/Retail Pharmacy",
+    "341600000X": "Ambulance",
+    "251E00000X": "Home Health Agency",
+    "251G00000X": "Hospice, Community Based",
+}
+
+
+def taxonomy_specialty(code: str) -> Optional[str]:
+    return TAXONOMY_SPECIALTIES.get(code.strip().upper())
+
+
+# --------------------------------------------------------------------------
+# Denial playbook — what a team can actually DO about the highest-volume
+# CARCs, and which of the cleaner's own upstream screens would have caught
+# the defect before submission. Categories:
+#   * preventable             — a pre-submission data screen catches it
+#   * process                 — a front-end workflow fix (eligibility,
+#                               auth, payer routing), not a data repair
+#   * contractual             — expected adjudication math, not a defect
+#   * patient-responsibility  — deductible / coinsurance / copay
+# Only high-volume codes with defensible guidance are listed; unknown
+# codes simply render without playbook columns.
+# --------------------------------------------------------------------------
+CARC_PLAYBOOK: Dict[str, Dict[str, str]] = {
+    "1": {"category": "patient-responsibility", "rule": "",
+          "action": "Deductible — bill patient/secondary; quote eligibility "
+                    "at scheduling."},
+    "2": {"category": "patient-responsibility", "rule": "",
+          "action": "Coinsurance — patient share per plan; verify at "
+                    "registration."},
+    "3": {"category": "patient-responsibility", "rule": "",
+          "action": "Copay — collect at point of service."},
+    "4": {"category": "preventable", "rule": "modifier-unknown",
+          "action": "Modifier inconsistent with the procedure — run coding "
+                    "edits before submission."},
+    "11": {"category": "preventable", "rule": "icd10-malformed",
+           "action": "Diagnosis inconsistent with the procedure — validate "
+                     "dx↔procedure pairing before billing."},
+    "16": {"category": "preventable", "rule": "null-token",
+           "action": "Claim lacks information — completeness screens catch "
+                     "empty required fields pre-submission."},
+    "18": {"category": "preventable", "rule": "possible-duplicate-service",
+           "action": "Exact duplicate — run the duplicate screens before "
+                     "rebilling."},
+    "22": {"category": "process", "rule": "",
+           "action": "May be covered by another payer — verify COB order at "
+                     "registration."},
+    "23": {"category": "process", "rule": "",
+           "action": "Prior payer adjudication impact — post primary EOB "
+                     "before billing secondary."},
+    "27": {"category": "process", "rule": "",
+           "action": "Coverage terminated — eligibility check on the date "
+                     "of service."},
+    "29": {"category": "preventable", "rule": "timely-filing-risk",
+           "action": "Filing limit expired — the timely-filing screen flags "
+                     "aging claims while they can still be filed."},
+    "45": {"category": "contractual", "rule": "charge-outlier",
+           "action": "Charge exceeds fee schedule — expected contractual "
+                     "write-down; outlier screens catch chargemaster "
+                     "errors behind unusual spreads."},
+    "50": {"category": "process", "rule": "",
+           "action": "Not deemed medically necessary — check LCD/NCD "
+                     "criteria and diagnosis support before submission."},
+    "59": {"category": "preventable", "rule": "",
+           "action": "Multiple-procedure/bundling reduction — review NCCI "
+                     "bundling before billing components separately."},
+    "96": {"category": "process", "rule": "",
+           "action": "Non-covered charge — verify benefits; obtain an ABN "
+                     "where applicable."},
+    "97": {"category": "preventable", "rule": "",
+           "action": "Bundled into another paid service (NCCI PTP) — don't "
+                     "bill components separately."},
+    "109": {"category": "process", "rule": "",
+            "action": "Not covered by this payer — route the claim to the "
+                      "correct plan."},
+    "151": {"category": "preventable", "rule": "anesthesia-units-implausible",
+            "action": "Units exceed what documentation supports — unit "
+                      "screens catch keying errors before submission."},
+    "197": {"category": "process", "rule": "",
+            "action": "Missing precertification/authorization — front-end "
+                      "auth workflow."},
+    "B7": {"category": "process", "rule": "",
+           "action": "Provider not certified/eligible on this date — check "
+                     "enrollment (PECOS) before scheduling."},
+}
+
+
+def carc_playbook(code: str) -> Optional[Dict[str, str]]:
+    return CARC_PLAYBOOK.get(code.strip().upper())
+
+# --------------------------------------------------------------------------
+# Chronic-condition registry — CCW-inspired ICD-10-CM prefix groups for the
+# population-prevalence report (analytics.py). Prefix membership is a
+# REPORTING domain, not a validity domain: a code outside every group is
+# simply "no chronic flag", never an error. Prefixes are matched on the
+# first 3 (occasionally 4) characters after stripping the dot, so E11.65,
+# E1165 and E11 all land in Diabetes.
+# --------------------------------------------------------------------------
+CHRONIC_CONDITIONS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
+    ("Diabetes", ("E08", "E09", "E10", "E11", "E13")),
+    ("Hypertension", ("I10", "I11", "I12", "I13", "I15", "I16")),
+    ("Hyperlipidemia", ("E78",)),
+    ("Chronic kidney disease", ("N18",)),
+    ("Heart failure", ("I50",)),
+    ("Ischemic heart disease", ("I20", "I21", "I22", "I23", "I24", "I25")),
+    ("Atrial fibrillation", ("I48",)),
+    ("Stroke / TIA", ("I63", "G45")),
+    ("COPD", ("J43", "J44")),
+    ("Asthma", ("J45",)),
+    ("Depression", ("F32", "F33")),
+    ("Anxiety disorders", ("F41",)),
+    ("Alzheimer's / dementia", ("G30", "F01", "F02", "F03")),
+    ("Osteoarthritis", ("M15", "M16", "M17", "M18", "M19")),
+    ("Rheumatoid arthritis", ("M05", "M06")),
+    ("Osteoporosis", ("M81",)),
+    ("Cancer (any site)", ("C",)),
+    ("Obesity", ("E66",)),
+    ("Chronic liver disease", ("K70", "K71", "K72", "K73", "K74",
+                               "K75", "K76", "K77", "B18")),
+    ("Hypothyroidism", ("E03",)),
+    ("Anemia", ("D50", "D51", "D52", "D53", "D55", "D56", "D57",
+                "D58", "D59", "D60", "D61", "D62", "D63", "D64")),
+    ("Opioid use disorder", ("F11",)),
+    ("Alcohol use disorder", ("F10",)),
+    ("Tobacco use", ("F17",)),
+    ("HIV", ("B20",)),
+)
+
+
+def chronic_conditions_for(dx: str) -> List[str]:
+    """Chronic-condition group names an ICD-10-CM code falls into (usually
+    zero or one; a handful of codes hit two)."""
+    s = dx.strip().upper().replace(".", "")
+    if not s:
+        return []
+    out = []
+    for name, prefixes in CHRONIC_CONDITIONS:
+        for p in prefixes:
+            if s.startswith(p):
+                out.append(name)
+                break
+    return out
+
+
+# --------------------------------------------------------------------------
+# National E&M level mix — the CY2022 Medicare Part B distribution of
+# established-patient office-visit levels (99211–99215), rounded. Used ONLY
+# as a soft baseline in the coding-intensity screen (a provider is compared
+# against the FILE's own mix first; this national mix is displayed for
+# context). Not a validity domain.
+# --------------------------------------------------------------------------
+EM_ESTABLISHED_NATIONAL_MIX: Dict[str, float] = {
+    "99211": 0.02, "99212": 0.08, "99213": 0.34,
+    "99214": 0.45, "99215": 0.11,
+}
