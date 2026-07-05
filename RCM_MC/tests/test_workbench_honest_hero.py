@@ -29,7 +29,9 @@ class HonestHeroTests(unittest.TestCase):
         b = EBITDABridgeResult(status=SectionStatus.SKIPPED,
                                reason="no revenue baseline")
         h = self._render(_shell_packet(b))
-        self.assertIn("not computed: no revenue baseline", h)
+        # Copy is sentence-cased for partners (visual-review fix):
+        # "Not computed — no revenue baseline yet."
+        self.assertIn("Not computed — no revenue baseline yet.", h)
         self.assertNotIn('class="hero-number pos">$0<', h)
 
     def test_ok_bridge_with_no_impacts_still_dashes(self):
@@ -37,7 +39,7 @@ class HonestHeroTests(unittest.TestCase):
         b = EBITDABridgeResult(status=SectionStatus.OK,
                                total_ebitda_impact=0.0)
         h = self._render(_shell_packet(b))
-        self.assertIn("not computed", h)
+        self.assertIn("Not computed", h)
 
 
 if __name__ == "__main__":
