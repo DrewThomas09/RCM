@@ -1322,6 +1322,38 @@ class TestNppesBridge(unittest.TestCase):
         self.assertEqual(out.count(GOOD_A), 2)
 
 
+class TestMappingTemplates(unittest.TestCase):
+    """Named column-mapping templates (mappings.py) — map a source system
+    once, reuse per upload via X-Mapping."""
+
+    def test_save_sanitize_get_delete(self):
+        import uuid as _uuid
+        from rcm_mc.npi_cleaner import mappings
+        name = f"tpl-{_uuid.uuid4().hex[:8]}"
+        stored = mappings.save_mapping(name, {
+            "billing_npi": "Prov_Billing_Num",
+            "BAD ROLE!": "X",                      # bad role token → dropped
+            "state": "",                           # empty header → dropped
+            "drug_name": "Y" * 500,                # over-long header → dropped
+            "custom_role_9": "SrcCol",             # unknown roles pass through
+        })
+        self.assertEqual(stored, {"billing_npi": "Prov_Billing_Num",
+                                  "custom_role_9": "SrcCol"})
+        got = mappings.get_mapping(name)
+        self.assertEqual(got["billing_npi"], "Prov_Billing_Num")
+        listed = {m["name"]: m for m in mappings.list_mappings()}
+        self.assertIn(name, listed)
+        self.assertEqual(listed[name]["roles"], 2)
+        self.assertTrue(mappings.delete_mapping(name))
+        self.assertIsNone(mappings.get_mapping(name))
+        # A template that sanitizes to nothing is rejected outright.
+        with self.assertRaises(ValueError):
+            mappings.save_mapping(f"tpl-{_uuid.uuid4().hex[:8]}",
+                                  {"BAD!": "x"})
+        with self.assertRaises(ValueError):
+            mappings.save_mapping("", {"billing_npi": "A"})
+
+
 class TestNpiCleanerHttp(unittest.TestCase):
     def _start(self, tmp):
         import socket as _socket
@@ -1389,6 +1421,68 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
+    def test_mapping_template_routes_and_x_mapping_upload(self):
+        # Save a template over HTTP, then upload with X-Mapping and confirm
+        # the template's billing_npi role is honored — "Prov_Billing_Num"
+        # has no "npi" in it, so auto-detection alone would miss it.
+        import uuid as _uuid
+        tpl = f"epic-{_uuid.uuid4().hex[:8]}"
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/mappings",
+                    data=json.dumps({"name": tpl, "mapping": {
+                        "billing_npi": "Prov_Billing_Num"}}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    saved = json.loads(r.read().decode())
+                self.assertTrue(saved["ok"])
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/mappings") as r:
+                    listed = json.loads(r.read().decode())["mappings"]
+                self.assertTrue(any(m["name"] == tpl for m in listed))
+
+                csv_b = ("ClaimID,Prov_Billing_Num\n"
+                         f"1,{GOOD_A}\n2,99999\n").encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "m.csv", "X-Mapping": tpl})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                sc = j["scorecard"]
+                self.assertEqual(sc["billing_column"], "Prov_Billing_Num")
+                self.assertIn("Prov_Billing_Num", sc["npi_columns"])
+
+                # Delete route cleans up; the template disappears from list.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/mappings/delete",
+                    data=json.dumps({"name": tpl}).encode(), method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    self.assertTrue(json.loads(r.read().decode())["ok"])
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_openapi_documents_npi_cleaner(self):
+        from rcm_mc.infra.openapi import get_openapi_spec
+        paths = get_openapi_spec()["paths"]
+        for p in ("/npi-cleaner/api/clean", "/npi-cleaner/api/rules",
+                  "/npi-cleaner/api/profiles", "/npi-cleaner/api/mappings",
+                  "/npi-cleaner/api/history"):
+            self.assertIn(p, paths)
+
     def test_worklist_exec_history_rules_routes(self):
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
@@ -1431,6 +1525,8 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 self.assertIn("Quality-score trend", _hist_html)
                 self.assertIn("Per-rule trend", _hist_html)
                 self.assertIn("nh-rule-box", _hist_html)
+                self.assertIn("Dimension trends", _hist_html)
+                self.assertIn("nh-dims-box", _hist_html)
                 with _u.urlopen(
                     f"http://127.0.0.1:{port}/npi-cleaner/api/history") as r:
                     runs = json.loads(r.read().decode())["runs"]

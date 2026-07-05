@@ -49,6 +49,14 @@ _BODY = """
 
   <div class="nh-trend">
     <div style="font-size:13px;font-weight:640;margin-bottom:6px">
+      Dimension trends</div>
+    <div class="nh-muted" style="margin-bottom:8px">Each quality dimension
+    across runs — which lever is moving the grade.</div>
+    <div id="nh-dims-box"><div class="nh-empty">Loading…</div></div>
+  </div>
+
+  <div class="nh-trend">
+    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
       Per-rule trend</div>
     <div class="nh-muted" style="margin-bottom:8px">Is a specific problem
     (bad codes, future dates, dupes …) getting better or worse across runs?
@@ -118,6 +126,51 @@ _BODY = """
         '</title></circle>'; });
     svg+='</svg>';
     box.innerHTML=svg;
+  }
+
+  var DIMS=["completeness","validity","consistency","uniqueness","conformity"];
+
+  function renderDims(){
+    var box=$("nh-dims-box");
+    if(RUNS.length<2){
+      box.innerHTML='<div class="nh-muted">Run the cleaner at least twice '+
+        'to see dimension trends.</div>';
+      return;
+    }
+    var pts=RUNS.slice().reverse();   // oldest → newest
+    var html="";
+    DIMS.forEach(function(dim){
+      var vals=pts.map(function(r){
+        var v=(r.dimensions||{})[dim];
+        return (typeof v==="number")?v:null;
+      });
+      var W=240, H=34, P=3, n=vals.length;
+      function sx(i){ return P+(n===1?(W-2*P)/2:(i/(n-1))*(W-2*P)); }
+      function sy(v){ return P+(H-2*P)-(v/100)*(H-2*P); }
+      var d="", started=false;
+      vals.forEach(function(v,i){
+        if(v==null) return;
+        d+=(started?"L":"M")+sx(i).toFixed(1)+" "+sy(v).toFixed(1)+" ";
+        started=true;
+      });
+      var last=null;
+      for(var i=vals.length-1;i>=0;i--){
+        if(vals[i]!=null){ last=vals[i]; break; } }
+      html+='<div style="display:flex;align-items:center;gap:10px;'+
+        'margin:3px 0">'+
+        '<span style="width:110px;font-size:11px;text-transform:uppercase;'+
+        'letter-spacing:.04em;color:var(--ink-2,#4a5d57)">'+dim+'</span>'+
+        '<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" '+
+        'style="max-width:60%">'+
+        '<line x1="'+P+'" y1="'+sy(100)+'" x2="'+(W-P)+'" y2="'+sy(100)+
+        '" stroke="rgba(120,130,125,.15)"/>'+
+        (d?'<path d="'+d.trim()+'" fill="none" stroke="#0c7c66" '+
+        'stroke-width="1.6"/>':"")+
+        '</svg>'+
+        '<span class="num" style="font-size:12px;font-variant-numeric:'+
+        'tabular-nums">'+(last==null?"—":last.toFixed(1))+'</span></div>';
+    });
+    box.innerHTML=html;
   }
 
   function renderRulePicker(){
@@ -229,8 +282,8 @@ _BODY = """
   });
 
   fetch("/npi-cleaner/api/history").then(function(r){ return r.json(); })
-    .then(function(j){ RUNS=j.runs||[]; renderTrend(); renderRulePicker();
-      renderRows(); })
+    .then(function(j){ RUNS=j.runs||[]; renderTrend(); renderDims();
+      renderRulePicker(); renderRows(); })
     .catch(function(){ $("nh-rows").innerHTML=
       '<tr><td colspan="9" class="nh-empty">Could not load history.</td></tr>'; });
 })();

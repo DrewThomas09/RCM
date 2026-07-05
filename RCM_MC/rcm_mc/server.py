@@ -2768,6 +2768,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                                  if v}
             except Exception:  # noqa: BLE001
                 overrides = None
+        # A saved mapping template (X-Mapping: template name) supplies the
+        # overrides when the user didn't hand-edit the mapping this upload —
+        # explicit X-Overrides always wins over the template.
+        if overrides is None:
+            _map_name = self.headers.get("X-Mapping")
+            if _map_name:
+                from .npi_cleaner import mappings as _nc_mappings
+                overrides = _nc_mappings.get_mapping(
+                    urllib.parse.unquote(_map_name))
         _prof_cfg = None
         _prof_name = self.headers.get("X-Profile")
         if _prof_name:
@@ -3797,6 +3806,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/npi-cleaner/api/profiles":
             from .npi_cleaner import profiles as _nc_profiles
             return self._send_json({"profiles": _nc_profiles.list_profiles()})
+        if path == "/npi-cleaner/api/mappings":
+            from .npi_cleaner import mappings as _nc_mappings
+            return self._send_json({"mappings": _nc_mappings.list_mappings()})
         if path.startswith("/npi-cleaner/analyze/"):
             return self._route_npi_cleaner_analyze(
                 path[len("/npi-cleaner/analyze/"):].strip("/"))
@@ -14101,6 +14113,27 @@ class RCMHandler(BaseHTTPRequestHandler):
             except ValueError:
                 body = {}
             ok = _nc_profiles.delete_profile(str(body.get("name") or ""))
+            return self._send_json({"ok": ok})
+        if path == "/npi-cleaner/api/mappings":
+            # Save a named mapping template: {"name": ..., "mapping": {...}}.
+            from .npi_cleaner import mappings as _nc_mappings
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                name = str(body.get("name") or "")
+                m = _nc_mappings.save_mapping(name, body.get("mapping") or {})
+            except (ValueError, TypeError) as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": True, "name": name, "mapping": m})
+        if path == "/npi-cleaner/api/mappings/delete":
+            from .npi_cleaner import mappings as _nc_mappings
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                body = {}
+            ok = _nc_mappings.delete_mapping(str(body.get("name") or ""))
             return self._send_json({"ok": ok})
         if path == "/npi-cleaner/api/clean":
             # Synchronous programmatic clean: raw CSV body (global 10 MB POST

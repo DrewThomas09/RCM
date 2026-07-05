@@ -270,6 +270,16 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
   <div id="npi-stage-mapping" class="npi-hidden">
     <div class="ck-section-header"><h3 style="margin:0">Confirm columns</h3></div>
     <div class="npi-muted" id="npi-map-file"></div>
+    <div style="margin:10px 0 4px">
+      <label class="npi-muted" for="npi-map-tpl">Mapping template:</label>
+      <select id="npi-map-tpl" style="font-size:12.5px;max-width:220px">
+        <option value="">(none)</option></select>
+      <input id="npi-map-tpl-name" placeholder="save as… e.g. Epic extract"
+        style="font-size:12.5px;max-width:200px;margin-left:10px">
+      <button type="button" class="npi-again" id="npi-map-tpl-save"
+        style="font-size:12px">Save template</button>
+      <span class="npi-muted" id="npi-map-tpl-msg"></span>
+    </div>
     <div class="npi-map" id="npi-map-grid"></div>
     <div style="margin-top:18px">
       <button class="npi-dl" id="npi-map-clean">Clean file →</button>
@@ -1157,6 +1167,9 @@ _EXTRA_JS = r"""
     .then(function(j){
       if(!j || !j.available || !j.headers){ upload(file, {}); return; }
       renderMapping(file, j);
+      $("npi-map-tpl-msg").textContent="";
+      $("npi-map-tpl").value="";
+      loadMapTemplates();
       hide(stPr); show(stMap);
     })
     .catch(function(){ upload(file, {}); });  // detector down → clean directly
@@ -1196,6 +1209,58 @@ _EXTRA_JS = r"""
     });
     return ov;
   }
+
+  // ---- Mapping templates: map a source system once, reuse per upload ----
+  var MAPTPLS=[];
+  function loadMapTemplates(){
+    fetch("/npi-cleaner/api/mappings").then(function(r){ return r.json(); })
+      .then(function(j){
+        MAPTPLS=j.mappings||[];
+        var sel=$("npi-map-tpl"); if(!sel) return;
+        sel.innerHTML='<option value="">(none)</option>'+
+          MAPTPLS.map(function(m){
+            return '<option value="'+esc(m.name)+'">'+esc(m.name)+
+              ' ('+m.roles+' roles)</option>'; }).join("");
+      }).catch(function(){});
+  }
+  function applyMapTemplate(name){
+    var tpl=null;
+    MAPTPLS.forEach(function(m){ if(m.name===name) tpl=m; });
+    if(!tpl) return;
+    var applied=0;
+    Object.keys(tpl.mapping).forEach(function(role){
+      var row=$("npi-map-grid").querySelector('[data-role="'+role+'"]');
+      if(!row) return;                         // role not in this detector
+      var sel=row.querySelector("select");
+      var want=encodeURIComponent(tpl.mapping[role]);
+      for(var i=0;i<sel.options.length;i++){
+        if(sel.options[i].value===want){ sel.value=want; applied++; break; }
+      }                                        // header absent → left as-is
+    });
+    $("npi-map-tpl-msg").textContent=applied+
+      " column"+(applied===1?"":"s")+" applied from “"+name+"”.";
+  }
+  $("npi-map-tpl").addEventListener("change", function(){
+    if(this.value) applyMapTemplate(this.value);
+  });
+  $("npi-map-tpl-save").addEventListener("click", function(){
+    var name=$("npi-map-tpl-name").value.trim();
+    var msg=$("npi-map-tpl-msg");
+    if(!name){ msg.textContent="Name the template first."; return; }
+    var ov=gatherOverrides();
+    if(!Object.keys(ov).length){
+      msg.textContent="Pick at least one column before saving."; return; }
+    fetch("/npi-cleaner/api/mappings", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:name, mapping:ov})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if(j.error){ msg.textContent=j.error; return; }
+      msg.textContent="Saved “"+name+"”.";
+      loadMapTemplates();
+    })
+    .catch(function(){ msg.textContent="Save failed."; });
+  });
 
   // Step 2 — clean the held file with the confirmed overrides.
   function upload(file, overrides){

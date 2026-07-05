@@ -587,6 +587,84 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "Deal rows with metric columns"}},
             },
         },
+        "/npi-cleaner/api/clean": {
+            "post": {
+                "summary": "Clean a claims CSV synchronously (scorecard JSON)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "profile", "in": "query",
+                     "schema": {"type": "string"},
+                     "description": "Named cleaning profile to apply"},
+                ],
+                "requestBody": {"content": {"text/csv": {
+                    "schema": {"type": "string", "format": "binary"}}}},
+                "responses": {"200": {"description":
+                    "Full data-quality scorecard (grade, repairs, flags, "
+                    "worklists, credential/specialty mix)"}},
+            },
+        },
+        "/npi-cleaner/api/rules": {
+            "get": {
+                "summary": "Rule registry: every repair + flag with severity and remediation",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Array of rule objects"}},
+            },
+        },
+        "/npi-cleaner/api/profiles": {
+            "get": {
+                "summary": "List cleaning profiles (rule suites + thresholds)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Array of profiles"}},
+            },
+            "post": {
+                "summary": "Create or update a cleaning profile",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object", "properties": {
+                        "name": {"type": "string"},
+                        "config": {"type": "object"},
+                    }}}}},
+                "responses": {"200": {"description": "Sanitized stored config"}},
+            },
+        },
+        "/npi-cleaner/api/mappings": {
+            "get": {
+                "summary": "List column-mapping templates (per source system)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Array of templates"}},
+            },
+            "post": {
+                "summary": "Create or update a mapping template",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object", "properties": {
+                        "name": {"type": "string"},
+                        "mapping": {"type": "object",
+                                    "description": "role -> source column header"},
+                    }}}}},
+                "responses": {"200": {"description": "Sanitized stored mapping"}},
+            },
+        },
+        "/npi-cleaner/api/history": {
+            "get": {
+                "summary": "Cleaning run history (aggregate scorecards, no PHI)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "Recent runs with scores"}},
+            },
+        },
+        "/npi-cleaner/api/history/compare": {
+            "get": {
+                "summary": "Run-vs-run delta (score + per-rule flag changes)",
+                "tags": ["Claims Cleaner"],
+                "parameters": [
+                    {"name": "a", "in": "query", "required": True,
+                     "schema": {"type": "string"}},
+                    {"name": "b", "in": "query", "required": True,
+                     "schema": {"type": "string"}},
+                ],
+                "responses": {"200": {"description": "Comparison payload"}},
+            },
+        },
     },
     "tags": [
         {"name": "Deals", "description": "Deal CRUD, lifecycle, validation, completeness, search, PATCH"},
@@ -600,6 +678,9 @@ _SPEC: Dict[str, Any] = {
         {"name": "Search", "description": "Cross-deal search"},
         {"name": "Settings", "description": "Automations, custom metrics, webhooks"},
         {"name": "Infrastructure", "description": "Health, readiness, metrics, alerts"},
+        {"name": "Claims Cleaner", "description":
+            "NPI claims data-quality platform: clean, rules, profiles, "
+            "mapping templates, run history"},
     ],
 }
 
