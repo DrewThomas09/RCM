@@ -17,6 +17,7 @@ from rcm_mc.ui._chartis_kit import (
     ck_data_cell,
     ck_kpi_block,
     ck_page_actions,
+    ck_source_purpose,
     ck_value_anchor,
 )
 
@@ -1100,8 +1101,26 @@ def render_radiology_imaging(params: dict = None) -> str:
         f'/payer-intelligence (payer mix), /ai-operating-model (AI portfolio).</div>'
     )
 
+    # Honest data-source disclosure (audited by
+    # scripts/audit_page_data_sources.py): the page fuses LIVE public
+    # data (CMS Coverage API NCD/LCD IDs + MAC roster, vendored ACS
+    # county base) with sourced estimates (PFS national averages, FDA
+    # MQSA counts, public filings) — a mixed universe, labelled per
+    # section by the _note()/footer strips below.
+    source_header = ck_source_purpose(
+        purpose=("Underwrite a radiology / imaging-center platform from "
+                 "the CMS claims atlas, coverage loop, payer geography, "
+                 "operators and AI landscape in one surface."),
+        universe="mixed", confidence="derived",
+        source=("CMS Coverage API (NCD/LCD IDs, MAC roster — vendored "
+                "snapshot) · approx CY2025 PFS national averages · FDA "
+                "MQSA · vendored ACS county base · public filings and "
+                "reporting (sourced estimates, labelled per section)"),
+        next_action="Check each section's provenance note before relying on a figure")
+
     body = f"""
 <div class="ck-page-wrap">
+  {source_header}
   <div class="ck-kpi-grid" style="margin-bottom:20px">{kpi_strip}</div>
   {value_anchor}
   {_section("CMS Claims Atlas — Radiology CPT/HCPCS (approx CY2025 PFS · global = prof + tech)", _modality_chart(r.cpt_codes) + _cpt_table(r.cpt_codes))}

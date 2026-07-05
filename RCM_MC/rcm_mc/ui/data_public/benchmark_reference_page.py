@@ -16,7 +16,7 @@ import html as _html
 
 from rcm_mc.ui._chartis_kit import (
     P, chartis_shell, ck_bar_row, ck_data_cell, ck_kpi_block,
-    ck_page_actions, ck_page_title, ck_value_anchor,
+    ck_page_actions, ck_page_title, ck_source_purpose, ck_value_anchor,
 )
 
 _ACCESS_TONE = {"free": P["positive"], "proprietary": P["warning"], "estimate": P["text_dim"]}
@@ -299,9 +299,26 @@ def render_benchmark_reference(params: dict = None) -> str:
               f"MedPAC · NCQA) · figures tagged to measurement/vintage year"),
     )
 
+    # Honest data-source disclosure (audited by
+    # scripts/audit_page_data_sources.py): these are PUBLISHED national
+    # reference figures with named primary sources — not the illustrative
+    # seed corpus — so the page carries a source/purpose header rather
+    # than the blanket ck_illustrative_note banner.
+    source_header = ck_source_purpose(
+        purpose=("Ground charting and deal benchmarking in published "
+                 "national reference figures rather than modeled outputs "
+                 "over the seed corpus."),
+        universe="research", confidence="derived",
+        source=("Published national benchmarks — CMS · MGMA · AAMC · "
+                "SEER/ACS · CDC/NCHS · KFF · Kaufman Hall · AHA · MedPAC · "
+                "NCQA — each row carries its named source, access flag and "
+                "measurement/vintage year"),
+        next_action="Read the caveats panel before charting any figure")
+
     body = f"""
 <div class="ck-page-wrap">
   {page_title}
+  {source_header}
   <div style="background:{panel};border:1px solid {border};border-left:3px solid {acc};padding:12px 16px;margin-bottom:16px;font-size:11px;color:{text_dim}">
     <b style="color:{text};font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:0.08em">REFERENCE DATA · NAMED PRIMARY SOURCES</b><br>
     These are published national benchmark figures with named sources — not modeled outputs over the seed corpus. Each row carries its source and an access flag
