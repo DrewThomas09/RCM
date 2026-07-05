@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased (2026-07-05) — Tools index: double-render fix, dedup, ?view=all deep link, jump rails
+
+- **HIGH**: /tools no longer renders both views stacked. The inactive
+  view carried class `hidden` but no `.ti-main.hidden{display:none}`
+  rule existed, so the workspace grid AND the Full A–Z grid were both
+  visible — every tool appeared twice (398 cards on a ~23k-px page),
+  which read as double counting. One CSS rule collapses the inactive
+  view; regression-tested in `test_tools_index_cards.py`.
+- **HIGH**: De-duplicated the tools card grid (199 → 187 cards):
+  `/diligence/comparable-outcomes`, `/diligence/regulatory-calendar`
+  (same renderer + params as their bare Research routes) and
+  `/market-data/map` (same combined handler as `/market-data`) are now
+  safe-merged into their canonical cards; POST-only
+  `/npi-cleaner/{detect,upload}` no longer render as dead 404 tiles
+  (fixes `test_every_az_card_returns_200`); byte-serving downloads
+  (`/npi-cleaner/sample`, `/rxnorm/export.csv`, the five
+  `/diligence/texas-infusion/*.csv`) come off the grid — the owning
+  pages carry the download buttons.
+- **MEDIUM**: `/tools?view=all` now opens the Full A–Z view
+  server-side (the dispatch previously ignored the query and always
+  landed on the workspace view, leaving the tools-showcase link
+  broken); the client toggle keeps the URL in sync so the view is
+  shareable. Removed the unreachable legacy `_route_tools_index_full`
+  handler it superseded.
+- **MEDIUM**: Jump rails on both /tools views — one chip per
+  workspace/bucket (with counts) so partners hop straight to a section
+  instead of scrolling ~190 cards; rails hide while a search/status
+  filter is active.
+- **MEDIUM**: Fixed unclosed `<div>` in the Texas-infusion J-code
+  benchmark heat legend that nested the "J-code reference" and
+  "Methodology & evidence" panels inside the heatmap panel body.
+- **LOW**: NPI Cleaner / Claims Analysis pages no longer print their
+  own source-file path in the masthead (`code=` debug kicker removed);
+  the engine source note is rewritten in partner language.
+
 ## v1.1.0 (2026-05-17) — Ridge predictor: per-cohort α tuning + diagnostic chips
 
 The ridge regression predictor moves from a fixed demo-grade penalty

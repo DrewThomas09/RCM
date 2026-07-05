@@ -5216,7 +5216,12 @@ class RCMHandler(BaseHTTPRequestHandler):
                 exit_multiple=_qfloat("exit_multiple"),
             ))
         if path == "/tools":
-            return self._route_tools_index()
+            # ?view=all deep-links the Full A–Z view (legacy links from the
+            # tools showcase used this query; it used to silently fall back
+            # to the workspace view because the dispatch ignored the query).
+            _tv = urllib.parse.parse_qs(parsed.query).get("view", [""])[0]
+            return self._route_tools_index(
+                initial_view="index" if _tv in ("all", "index") else "workspace")
         # Internal open-data integrations lab (backend; not in the top nav).
         if path == "/tools/open-data":
             from .ui.open_data_lab_page import render_open_data_lab
@@ -20904,20 +20909,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "max-age=31536000; includeSubDomains",
             )
 
-    def _route_tools_index(self) -> None:
+    def _route_tools_index(self, *, initial_view: str = "workspace") -> None:
         """GET /tools — editorial card-grid index (design handoff · Card Grid).
 
         Two views in one page (client-side toggle): **By workspace** and
-        **Full A–Z**. The A–Z is the completeness contract — EVERY discovered
-        route renders as a card (guarded by tests); a safety-net bucket means
-        a route can never be dropped on the floor. Data is assembled live from
-        the route registry, the Cmd-K palette (titles), surface_status
-        (honest status), and the page-context registry (descriptions)."""
+        **Full A–Z**. ``?view=all`` deep-links the A–Z view. The A–Z is the
+        completeness contract — EVERY discovered route renders as a card
+        (guarded by tests); a safety-net bucket means a route can never be
+        dropped on the floor. Data is assembled live from the route registry,
+        the Cmd-K palette (titles), surface_status (honest status), and the
+        page-context registry (descriptions)."""
         from .ui.tools_index_page import render_tools_index
         workspaces, index, total_ws, total_idx = self._build_tools_index_data()
         return self._send_html(render_tools_index(
             workspaces=workspaces, index=index,
             total_ws=total_ws, total_idx=total_idx,
+            initial_view=initial_view,
         ))
 
     @classmethod
@@ -21067,184 +21074,6 @@ class RCMHandler(BaseHTTPRequestHandler):
         total_ws = sum(len(s["tools"]) for s in workspaces)
         return workspaces, index, total_ws, total_idx
 
-    def _route_tools_index_full(self) -> None:
-        """GET /tools?view=all — full platform tool index grouped by section.
-
-        Discoverability fallback for partners who haven't learned the
-        Cmd+K palette yet. Lists *every* GET-renderable route in
-        server.py, not just the curated Cmd+K palette — earlier the
-        page only surfaced ``_DEFAULT_PALETTE_MODULES`` (71 entries)
-        while server.py actually serves ~355 user-facing routes, so
-        partners had no way to find pages that hadn't been wired into
-        the palette (and we couldn't review a buggy surface popping
-        up mid-flow). Auto-discovery runs once per request against
-        the cached source text — cheap (~ms) and means a new route
-        appears on /tools the moment its handler ships.
-
-        The palette still wins for *titles* (so the curated tools
-        keep their hand-written labels); orphan routes get a
-        slug-derived title and a heuristic section assignment so
-        nothing is dropped on the floor.
-        """
-        from .ui._chartis_kit import (
-            chartis_shell, ck_page_title, _DEFAULT_PALETTE_MODULES,
-            _resolve_sub_section,
-        )
-        section_labels = {
-            "home":      "Home & Operations",
-            "pipeline":  "Pipeline & Sourcing",
-            "diligence": "Diligence Workspace",
-            "library":   "Library & Reference",
-            "research":  "Research & Backtesting",
-            "portfolio": "Portfolio & LP",
-            "other":     "Admin & System",
-            "more":      "More Surfaces",
-        }
-        # 1. Auto-discover every route handler in this module so the
-        #    catalog stays in sync with server.py without manual
-        #    curation. Cached on the class so we only read+parse
-        #    once per process.
-        discovered = self._discover_all_routes()
-        # 2. Build per-route metadata: prefer palette title (curated)
-        #    over auto-slug. Track which routes were palette-defined
-        #    so we can show curated entries first within a section.
-        palette_by_route = {m["route"]: m for m in _DEFAULT_PALETTE_MODULES}
-        entries_by_route: Dict[str, Dict[str, str]] = {}
-        # Seed with palette so any palette route appears even if it
-        # isn't a literal `path == "/foo"` (e.g. /my/AT which is
-        # under a startswith handler).
-        for m in _DEFAULT_PALETTE_MODULES:
-            entries_by_route[m["route"]] = {
-                "route": m["route"],
-                "title": m["title"],
-                "curated": True,
-            }
-        for route in discovered:
-            if route in entries_by_route:
-                continue
-            entries_by_route[route] = {
-                "route": route,
-                "title": self._title_from_route(route),
-                "curated": False,
-            }
-        # 3. Classify each route into a section — palette assignment
-        #    via _resolve_sub_section first, then URL-prefix +
-        #    name-pattern heuristics for the orphans.
-        sections: Dict[str, List[Dict[str, str]]] = {
-            k: [] for k in section_labels
-        }
-        for route, meta in entries_by_route.items():
-            sec = (_resolve_sub_section(route)
-                   or self._heuristic_section(route))
-            sections.setdefault(sec, []).append(meta)
-        # 4. Render each section in canonical order; curated
-        #    entries first, then alpha by title.
-        cards = []
-        order = ["home", "pipeline", "diligence", "library",
-                 "research", "portfolio", "other", "more"]
-        total = 0
-        for sec in order:
-            entries = sections.get(sec, [])
-            if not entries:
-                continue
-            entries.sort(
-                key=lambda e: (0 if e["curated"] else 1,
-                               e["title"].lower())
-            )
-            rows = []
-            for m in entries:
-                badge = "" if m["curated"] else (
-                    '<span class="ck-tool-orphan-badge" '
-                    'title="Auto-discovered route — not yet in the '
-                    'curated palette. Title generated from the URL '
-                    'slug.">auto</span>'
-                )
-                from .diligence.surface_status import status_dot
-                rows.append(
-                    f'<a href="{html.escape(m["route"], quote=True)}" '
-                    'class="ck-tool-row">'
-                    f'<span class="ck-tool-title">'
-                    f'{status_dot(m["route"])}{html.escape(m["title"])}{badge}</span>'
-                    f'<span class="ck-tool-route">'
-                    f'{html.escape(m["route"])}</span>'
-                    '</a>'
-                )
-            cards.append(
-                '<section class="cad-card ck-tool-card">'
-                '<header class="ck-tool-card-head">'
-                f'<h2>{html.escape(section_labels.get(sec, sec.title()))}</h2>'
-                f'<span class="ck-tool-card-count">{len(entries)} tools</span>'
-                '</header>'
-                f'<div class="ck-tool-list">{"".join(rows)}</div>'
-                '</section>'
-            )
-            total += len(entries)
-
-        title_html = ck_page_title(
-            "Tools — full index",
-            eyebrow="PLATFORM INDEX",
-            meta=(
-                f"{total} surfaces · "
-                "press Cmd+K anywhere to jump to one"
-            ),
-        )
-        back_link = (
-            '<div style="margin:0 0 16px;font-family:var(--sc-mono,monospace);'
-            'font-size:12px;"><a href="/tools" style="color:var(--sc-teal,#155752);'
-            'text-decoration:none;font-weight:600;">&larr; Back to the best tools'
-            '</a></div>'
-        )
-        page_css = (
-            '<style>'
-            '.ck-tool-card{padding:22px 26px;margin:0 0 20px;}'
-            '.ck-tool-card-head{display:flex;align-items:baseline;'
-            'justify-content:space-between;gap:12px;margin:0 0 14px;}'
-            '.ck-tool-card-head h2{font-family:var(--sc-serif,Georgia,serif);'
-            'font-weight:500;font-size:20px;color:var(--sc-navy,#0b2341);'
-            'margin:0;letter-spacing:-0.01em;}'
-            '.ck-tool-card-count{font-family:var(--sc-mono,monospace);'
-            'font-size:11px;color:var(--sc-text-faint,#7a8699);'
-            'letter-spacing:0.08em;text-transform:uppercase;}'
-            '.ck-tool-list{display:grid;'
-            'grid-template-columns:repeat(auto-fit,minmax(320px,1fr));'
-            'gap:0;border-top:1px solid var(--sc-rule,#d6cfc0);}'
-            '.ck-tool-row{display:flex;align-items:baseline;'
-            'justify-content:space-between;gap:18px;padding:11px 14px;'
-            'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
-            'text-decoration:none;color:var(--sc-text,#1a2332);'
-            'font-family:var(--sc-sans,Inter,sans-serif);font-size:13.5px;}'
-            '.ck-tool-row:hover{background:var(--sc-bone,#ece5d6);}'
-            '.ck-tool-title{font-weight:600;color:var(--sc-navy,#0b2341);}'
-            '.ck-tool-route{font-family:var(--sc-mono,monospace);'
-            'font-size:11px;color:var(--sc-text-faint,#7a8699);}'
-            '.ck-tool-orphan-badge{display:inline-block;margin-left:8px;'
-            'padding:1px 6px;font-family:var(--sc-mono,monospace);'
-            'font-size:9px;font-weight:600;letter-spacing:0.08em;'
-            'text-transform:uppercase;color:var(--sc-text-faint,#7a8699);'
-            'background:var(--sc-parchment,#f2ede3);'
-            'border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;}'
-            '</style>'
-        )
-        # Status legend (matches the circle on each tool — see
-        # diligence/surface_status.py).
-        _dot = ('display:inline-block;width:8px;height:8px;border-radius:50%;'
-                'margin-right:5px;vertical-align:middle')
-        legend = (
-            '<div style="display:flex;flex-wrap:wrap;gap:16px;margin:0 0 18px;'
-            'font-family:var(--sc-mono,monospace);font-size:11px;'
-            'color:var(--sc-text-dim,#465366)">'
-            f'<span><span style="{_dot};background:#0a8a5f"></span>LIVE — real data</span>'
-            f'<span><span style="{_dot};background:#0b2341"></span>Diligence calculator (your inputs)</span>'
-            f'<span><span style="{_dot};background:#b8842e"></span>Illustrative seed-corpus data</span>'
-            f'<span><span style="{_dot};background:#b5321e"></span>Synthetic / hardcoded</span>'
-            '</div>')
-        body = f"{title_html}{back_link}{page_css}{legend}{''.join(cards)}"
-        self._send_html(chartis_shell(
-            body, "Tools",
-            active_nav="/tools",
-            subtitle=f"All {total} platform surfaces",
-        ))
-
     # Cache for the discovered route list — server.py source is read
     # once on first /tools hit and the parsed result is kept on the
     # handler class so subsequent requests are O(1).
@@ -21266,9 +21095,18 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/state-profile.csv", "/state-peers.csv", "/county-explorer.csv",
         "/metro-markets.csv", "/verified-deals.csv",
         "/demo/download/kkr-deals.csv", "/demo/download/kkr-deals.json",
+        "/npi-cleaner/sample",  # sample-CSV download on /npi-cleaner
+        "/rxnorm/export.csv",   # CSV export of /rxnorm
+        "/diligence/texas-infusion/counties.csv",
+        "/diligence/texas-infusion/metros.csv",
+        "/diligence/texas-infusion/workforce.csv",
+        "/diligence/texas-infusion/revenue.csv",
+        "/diligence/texas-infusion/jcode-benchmark.csv",
         # Trailing-slash duplicate of /market-data — same renderer; the
-        # slashless route is the canonical card.
-        "/market-data/",
+        # slashless route is the canonical card. /market-data/map is the
+        # same combined handler too (server dispatch ORs all three paths),
+        # so its card duplicated the /market-data one.
+        "/market-data/", "/market-data/map",
         # Form/POST-only handlers (no GET render)
         "/team/comment", "/engagements/create", "/pipeline/add",
         "/pipeline/save-search", "/new-deal/manual", "/new-deal/upload",
@@ -21279,6 +21117,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         # POST/control endpoints that 404 on a bare GET — were carded as
         # dead A-Z tiles (test_every_az_card_returns_200).
         "/app/cards", "/demo/load", "/demo/unload",
+        "/npi-cleaner/detect", "/npi-cleaner/upload",
         "/pipeline/stage",  # POST-only handler — /pipeline/stage/<ccn>
         # Routes that require a path parameter; bare slug 404s
         "/hospital", "/deal", "/initiative", "/owner", "/cohort",
@@ -21296,6 +21135,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/portfolio-analytics",   # 301 → /deal-corpus-analytics (renamed)
         "/deals-library",         # 301 → /library (renamed)
         "/deals",                 # 301 → /pipeline (renamed)
+        # Same-renderer duplicates of the bare Research routes — the
+        # /diligence/-prefixed paths call the exact same render_* with the
+        # same query params, so carding both showed the one page twice
+        # under two de-collided names.
+        "/diligence/comparable-outcomes",   # = /comparable-outcomes
+        "/diligence/regulatory-calendar",   # = /regulatory-calendar
         # Audit-window action endpoints (token-gated / redirect), not pages.
         "/audit/enter", "/audit/exit",
         # Cookie set/clear action — 303s back to `return=`, never renders.
@@ -21329,7 +21174,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/corpus-ic-memo", "/covenant-headroom", "/covenant-monitor", "/cyber-risk",
         "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
         "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-search",
-        "/deal-sourcing", "/deals-library", "/debt-financing", "/debt-service",
+        "/deal-sourcing", "/debt-financing", "/debt-service",
         "/demand-forecast", "/denovo-expansion", "/digital-front-door", "/diligence-vendors",
         "/diligence/cliff-calendar", "/diligence/pe-library", "/diligence/pe-reference", "/diligence/physician-attrition",
         "/direct-employer", "/direct-lending", "/dividend-recap", "/dpi-tracker",
@@ -21348,7 +21193,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/payer-concentration", "/payer-contracts", "/payer-intel", "/payer-intelligence",
         "/payer-rate-trends", "/payer-shift", "/peer-transactions", "/peer-valuation",
         "/phys-comp-plan", "/physician-labor", "/physician-productivity", "/platform-maturity",
-        "/pmi-integration", "/pmi-playbook", "/portfolio-analytics", "/portfolio-optimizer",
+        "/pmi-integration", "/pmi-playbook", "/portfolio-optimizer",
         "/portfolio-sim", "/provider-network", "/provider-retention", "/qoe-analyzer",
         "/quality-scorecard", "/rcm-red-flags", "/real-estate", "/redflag-scanner",
         "/ref-pricing", "/refi-optimizer", "/regulatory-risk", "/reinvestment",

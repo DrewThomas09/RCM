@@ -938,5 +938,4 @@ def render_npi_analysis(job_id: str, *, available: bool = True,
                      ("Analysis", None)],
         extra_css=_EXTRA_CSS,
         extra_js=_EXTRA_JS,
-        code="rcm_mc/ui/npi_analysis_page.py",
     )

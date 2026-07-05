@@ -79,6 +79,23 @@ class BenchmarkPageTests(unittest.TestCase):
         h = render_texas_infusion_jcode_benchmark_page()
         self.assertIn("not commercial-claims", h)
 
+    def test_heat_legend_div_is_balanced(self):
+        # Regression: _heat_legend() opened a <div> it never closed, so the
+        # browser's recovery nested the "J-code reference" and "Methodology"
+        # panels inside the heatmap panel body.
+        from rcm_mc.ui.texas_infusion_jcode_benchmark_page import _heat_legend
+        legend = _heat_legend()
+        self.assertEqual(legend.count("<div"), legend.count("</div>"),
+                         "unbalanced <div> in heat legend")
+        from rcm_mc.ui.texas_infusion_jcode_benchmark_page import (
+            render_texas_infusion_jcode_benchmark_page)
+        body = render_texas_infusion_jcode_benchmark_page()
+        # strip script/style blocks (they legitimately contain markup-ish text)
+        import re as _re
+        stripped = _re.sub(r"(?s)<(script|style)\b.*?</\1>", "", body)
+        self.assertEqual(stripped.count("<div"), stripped.count("</div>"),
+                         "unbalanced <div> on the rendered page")
+
     def test_route_registered_in_palette(self):
         from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
         routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}

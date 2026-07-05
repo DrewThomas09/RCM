@@ -180,9 +180,9 @@ def _body() -> str:
             "Processed in memory — nothing is stored, and nothing leaves the "
             "server unless you opt into the live NPPES cross-check."),
         source_note=(
-            "Engine: rcm_mc/npi_cleaner/engine.py (stdlib) + the complete "
-            "NPI_Recovery_and_Cleaner v49 deterministic engine "
-            "(clean_orchestrator.clean_all) on CMS reference tables."),
+            "Deterministic v49 cleaning engine validated against CMS "
+            "reference tables. Runs entirely on this server — no data "
+            "leaves unless the live NPPES cross-check is enabled."),
         actions_html=ck_page_actions(glossary=False, methodology=False),
         show_legend=False,
     )
@@ -989,5 +989,4 @@ def render_npi_cleaner() -> str:
         breadcrumbs=[("Tools", None), ("NPI Cleaner", None)],
         extra_css=_EXTRA_CSS,
         extra_js=_EXTRA_JS,
-        code="rcm_mc/ui/npi_cleaner_page.py",
     )
