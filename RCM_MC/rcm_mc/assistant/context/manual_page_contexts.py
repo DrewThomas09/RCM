@@ -10256,18 +10256,6 @@ _BATCH8_SYSTEM = [
       "How is tamper-evidence implemented — hash chain, signatures?",
       "What gets logged vs not logged?",
       "How does this differ from /audit?"]),
-    ("/v3-status", _SYS, "Build / phase status page (v3 milestone tracking).",
-     ["What's the v3 status?",
-      "What shipped in this phase?",
-      "What is the v3 migration in PE Desk's history?",
-      "Is this an internal dev page or partner-facing?",
-      "How does v3 status differ from v5 status?"]),
-    ("/v5-status", _SYS, "Build / phase status page (v5 milestone tracking).",
-     ["What's the v5 status?",
-      "What shipped in this phase?",
-      "What is the v5 migration in PE Desk's history?",
-      "Is this an internal dev page or partner-facing?",
-      "Where can I see overall completion progress?"]),
     ("/guide/context-debug", _SYS, "Debug view of the Guide's own page-context "
      "packet for a route — what the assistant knows about a page.",
      ["What context does the Guide have for this page?",
@@ -10343,8 +10331,6 @@ _BATCH8_SIBLINGS = {
     "/global-search": ["/search", "/deal-search"],
     "/query": ["/global-search", "/search", "/admin/audit-chain"],
     "/admin/audit-chain": ["/audit", "/users", "/ops", "/settings"],
-    "/v3-status": ["/v5-status", "/ops", "/tools"],
-    "/v5-status": ["/v3-status", "/ops", "/tools"],
     "/guide/context-debug": ["/settings/ai", "/module-index", "/tools"],
     "/team": ["/users", "/audit", "/app"],
     "/news": ["/insights", "/sector-momentum", "/portfolio"],
@@ -12752,6 +12738,54 @@ _MANUAL.extend([
                      "registry connection to be available."],
         related_routes=["/import", "/data-quality", "/tools"],
         data_source_ids=["npi_registry_api"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.USER_ENTERED_DATA,
+    ),
+    _ctx(
+        "/npi-cleaner/history", "NPI Cleaner \u00b7 Run History",
+        category=PageContextCategory.ADMIN_SYSTEM,
+        short_description="Longitudinal view of past NPI-cleaner runs: "
+        "the quality-score trend, a runs table with per-run scorecard "
+        "grades, and a run-vs-run compare for checking whether a feed "
+        "improved after a source fix.",
+        primary_purpose="Track claims-feed hygiene over time and "
+        "verify that upstream fixes actually moved the quality score.",
+        intended_users=["Associates monitoring a recurring claims feed "
+                        "across successive extracts."],
+        common_questions=[
+            "Did the feed get better after the source fix?",
+            "What was the quality grade on the last run?",
+            "How do two runs compare rule-by-rule?",
+            "Is any PHI stored in the run history?",
+            "Where do I run a new cleaning pass?",
+        ],
+        inputs=["Aggregate scorecards persisted by previous "
+                "/npi-cleaner runs (counts only \u2014 no row-level data)."],
+        outputs=["Quality-score trend, runs table with grades, and a "
+                 "side-by-side run comparison."],
+        key_metrics=["Quality score / grade per run",
+                     "Rows cleaned / flagged per run",
+                     "Run-over-run delta"],
+        data_sources=["The cleaner's own run-history store (aggregate "
+                      "counts only, no PHI)."],
+        model_logic_summary="Pure observability over persisted "
+        "scorecard aggregates \u2014 no new computation beyond deltas "
+        "between runs.",
+        why_it_matters="A one-off clean proves nothing about a feed; "
+        "the trend across runs is what shows whether data quality is "
+        "actually improving.",
+        diligence_use_cases=["Demonstrating claims-feed remediation "
+                             "progress across successive data-room "
+                             "drops."],
+        interpretation_guidance=[
+            "Scores compare like-for-like only when the same rule set "
+            "ran on both runs \u2014 check the rule count before reading a "
+            "delta as improvement.",
+        ],
+        limitations=["Aggregates only \u2014 the underlying rows are never "
+                     "persisted, so drill-down requires re-running the "
+                     "cleaner on the file."],
+        related_routes=["/npi-cleaner", "/data-quality", "/tools"],
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.USER_ENTERED_DATA,
     ),

@@ -32,8 +32,8 @@ class CurateRowsTests(unittest.TestCase):
 
     def test_is_internal_covers_auth_admin_debug_and_artifacts(self):
         from rcm_mc.ui._surface_visibility import is_internal
-        for route in ("/login", "/forgot", "/demo", "/users", "/v3-status",
-                      "/v5-status", "/cli-runs", "/pricing-power.xlsx"):
+        for route in ("/login", "/forgot", "/demo", "/users",
+                      "/cli-runs", "/pricing-power.xlsx"):
             self.assertTrue(is_internal(route), route)
         for route in ("/diligence/hcris-xray", "/pipeline", "/notes"):
             self.assertFalse(is_internal(route), route)
@@ -41,7 +41,7 @@ class CurateRowsTests(unittest.TestCase):
 
 class ListingSurfacesTests(unittest.TestCase):
     _INTERNAL_SAMPLE = ("/login", "/forgot", "/demo", "/users",
-                        "/v3-status", "/v5-status", "/cli-runs")
+                        "/cli-runs")
 
     def test_tools_showcase_shows_each_destination_once_no_internal(self):
         from rcm_mc.ui.tools_showcase_page import render_tools_showcase

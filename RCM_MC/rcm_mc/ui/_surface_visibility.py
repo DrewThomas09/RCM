@@ -34,8 +34,6 @@ INTERNAL_ROUTES = frozenset({
     "/forgot",      # auth plumbing
     "/demo",        # seeded demo launcher, not a partner destination
     "/users",       # admin — linked from the user-menu "Admin" item instead
-    "/v3-status",   # build/migration status, debug surface
-    "/v5-status",   # build/migration status, debug surface
     "/cli-runs",    # CLI run log, debug surface
 })
 

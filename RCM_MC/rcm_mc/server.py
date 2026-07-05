@@ -3879,20 +3879,11 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/guide/context-debug":
             return self._route_guide_context_debug(parsed)
 
-        if path == "/v3-status":
-            # Internal campaign-progress dashboard. Reads
-            # docs/V3_ROUTE_INVENTORY.md and renders the compliance
-            # counts via chartis_shell. Documented exception to the
-            # DealAnalysisPacket invariant — it is metadata about the
-            # migration, not analytical content about a deal.
-            from .ui.v3_status_page import render_v3_status
-            return self._send_html(render_v3_status())
-        if path == "/v5-status":
-            # v5 campaign twin of /v3-status: reads docs/V5_ROUTE_INVENTORY.md
-            # (``python3 RCM_MC/tools/v3_route_inventory.py --v5``). Same
-            # DealAnalysisPacket exemption as /v3-status.
-            from .ui.v5_status_page import render_v5_status
-            return self._send_html(render_v5_status())
+        # /v3-status and /v5-status (internal migration-campaign
+        # dashboards) were removed 2026-07-05 — they read as build
+        # notes, not product, and confused client-facing demos. The
+        # route inventories remain available via
+        # ``RCM_MC/tools/v3_route_inventory.py`` for contributors.
         if path == "/healthcare-verticals-reference":
             # Library domain-reference page. Renders the vendored
             # docs/HEALTHCARE_VERTICALS_REFERENCE.md via chartis_shell.
@@ -21856,8 +21847,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             # (still reachable by direct URL / palette / in-page links).
             if r in cls._TOOLS_ILLUSTRATIVE_ROUTES:
                 continue
+            # "/api/" anywhere in the path — feature-scoped JSON/POST
+            # endpoints (e.g. /npi-cleaner/api/*) are not pages; carding
+            # them produced dead "Npi Cleaner · API · …" tiles.
             if r.startswith(("/api/", "/static/", "/oauth/",
-                             "/.well-known/")):
+                             "/.well-known/")) or "/api/" in r:
                 continue
             if r in {"/favicon.ico", "/robots.txt", "/healthz",
                      "/manifest.json", "/sw.js", "/openapi.json",
@@ -21939,7 +21933,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         ):
             return "pipeline"
         if r.startswith("/admin/") or r.startswith("/settings") or r in (
-            "/jobs", "/runs", "/cli-runs", "/v3-status", "/v5-status",
+            "/jobs", "/runs", "/cli-runs",
             "/exports", "/outputs", "/team", "/users", "/audit",
             "/variance",
         ):

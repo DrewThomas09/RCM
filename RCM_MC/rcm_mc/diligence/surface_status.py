@@ -72,7 +72,7 @@ _GREEN = frozenset({
     "/diligence/sponsor-detail", "/diligence/synthesis/",
     # admin / system (real status)
     "/audit", "/users", "/settings", "/settings/ai", "/settings/workspace",
-    "/runs", "/jobs", "/cli-runs", "/v3-status", "/v5-status", "/variance",
+    "/runs", "/jobs", "/cli-runs", "/variance",
     "/team", "/admin/audit-chain", "/admin/data-sources", "/calibration",
     "/calibrate", "/ready", "/model-validation", "/guide/context-debug",
     "/news", "/research",

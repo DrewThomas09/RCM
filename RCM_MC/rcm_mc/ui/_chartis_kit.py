@@ -531,6 +531,7 @@ def _ranked_subnav_items(sect: str):
 # items so each link reads like a real destination, not a bare label). Kept
 # separate from _SUB_NAV so that structure stays untouched.
 _NAV_DESC = {
+    "/npi-cleaner/history": "Past cleaning runs — scorecards, deltas, exec report",
     "/app": "Glance-level morning brief", "/my/AT": "Your owned deals & pulse",
     "/alerts": "Fire / ack / snooze lifecycle", "/escalations": "What needs a partner",
     "/watchlist": "Starred deals to track",

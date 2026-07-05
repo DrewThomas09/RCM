@@ -47,6 +47,7 @@ TITLE_OVERRIDES = {
     "/diligence-checklist": "Checklist Dashboard",   # vs deal /diligence/checklist
     "/payer-stress": "Payer-Mix Stress",             # vs deal /diligence/payer-stress
     "/value-creation": "Value Creation Tracker",     # vs deal /diligence/value
+    "/npi-cleaner/history": "NPI Cleaner · Run History",  # slug-derived read as "Npi"
 }
 
 _STATUS_LABEL = {
