@@ -22,9 +22,17 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
         prog=prog,
         description="Clean a claims file offline (CSV/TSV/XLSX) — same "
                     "engine as /npi-cleaner, batch-friendly.")
-    ap.add_argument("file",
+    ap.add_argument("file", nargs="?", default=None,
                     help="claims file to clean (.csv/.tsv/.xlsx, X12 "
-                         ".837/.835, or a .zip batch of files)")
+                         ".837/.835, or a .zip batch of files); optional "
+                         "when using --refdata-status/--refdata-pull")
+    ap.add_argument("--refdata-status", action="store_true",
+                    help="show reference-data pack status (installed, "
+                         "rows, source) and exit")
+    ap.add_argument("--refdata-pull", default=None, metavar="PACK",
+                    help="download and install a reference pack "
+                         "(taxonomy|icd10cm|hcpcs|leie|all), then exit; "
+                         "needs outbound HTTPS to the public source")
     ap.add_argument("--profile", default=None, metavar="NAME",
                     help="apply a saved cleaning profile (rule suite + "
                          "thresholds) by name")
@@ -47,6 +55,33 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                          "scorecard JSON, data dictionary, worklists)")
     args = ap.parse_args(argv)
 
+    if args.refdata_status or args.refdata_pull:
+        from . import refdata_packs as _packs
+        if args.refdata_pull:
+            ids = (list(_packs.PACKS) if args.refdata_pull == "all"
+                   else [args.refdata_pull])
+            rc = 0
+            for pid in ids:
+                try:
+                    info = _packs.pull(pid)
+                    sys.stdout.write(
+                        f"{pid}: {info['rows']:,} rows from "
+                        f"{info['source']}\n")
+                except ValueError as exc:
+                    sys.stderr.write(f"{pid}: {exc}\n")
+                    rc = 1
+            if rc:
+                return rc
+        for p in _packs.status():
+            state = (f"{p['rows']:,} rows · "
+                     f"{p.get('source', '')}" if p["installed"]
+                     else "not installed")
+            sys.stdout.write(f"{p['id']:10s} {state}\n")
+        return 0
+
+    if not args.file:
+        ap.error("a claims file is required (or use --refdata-status / "
+                 "--refdata-pull)")
     src = Path(args.file)
     if not src.is_file():
         sys.stderr.write(f"error: no such file: {src}\n")
@@ -111,6 +146,11 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                        json.dumps(sc, indent=2, default=str))
             if res.dictionary:
                 z.writestr("data_dictionary.csv", engine.dictionary_csv(res))
+            if res.population:
+                from . import analytics as _analytics
+                enc_csv = _analytics.encounters_csv(res.population)
+                if enc_csv:
+                    z.writestr("encounters.csv", enc_csv)
             if res.flag_rows and res.out_path \
                     and res.out_name.endswith(".csv"):
                 want: dict = {}

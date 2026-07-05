@@ -768,6 +768,11 @@ def _clean_ndc_cell(v: str) -> Tuple[str, List[str]]:
 
 import hashlib
 
+# Distinct-row digests tracked for cross-chunk dedupe on a streamed run
+# (bigfile.py). 2M ints is ~100 MB peak — bounded, honest: past the cap,
+# NEW distinct rows stop being tracked and the run says so.
+_STREAM_SEEN_CAP = 2_000_000
+
 
 def _phi_kind(hn: str) -> Optional[str]:
     """Classify a header (folded key) as a patient-PHI field, or None.
@@ -1061,7 +1066,8 @@ class CleanResult:
                        "occurrence-code-malformed", "value-code-malformed",
                        "drg-malformed", "tob-malformed",
                        "discharge-status-invalid", "admission-type-invalid",
-                       "modifier-unknown")
+                       "modifier-unknown", "icd10-unknown-code",
+                       "hcpcs-unknown-code")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1327,8 +1333,65 @@ def _looks_like_xlsx(data: bytes) -> bool:
     return data[:4] == b"PK\x03\x04"
 
 
-def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]]]:
-    """Read the first worksheet of an .xlsx via openpyxl (read-only mode).
+def _pick_xlsx_sheet(wb) -> Tuple[str, List[Tuple[str, int, int]]]:
+    """Choose the worksheet that actually holds the claims table.
+
+    Vendor extracts routinely lead with a cover/'Detail'/notes sheet; the
+    real data lives on a later tab and is, by far, the sheet with the
+    most populated cells. Reading only the first sheet silently cleaned
+    a 3-column cover page while a 13M-cell 'DATA' tab sat ignored — the
+    incident this function exists for. Scored from declared dimensions
+    plus a 50-row sample scan (a sheet with a stale/absent dimension
+    record still registers), so huge sheets aren't fully parsed twice.
+
+    Returns (chosen sheet name, [(name, est_rows, est_cols), …]).
+    """
+    stats: List[Tuple[str, int, int]] = []
+    for name in wb.sheetnames:
+        ws = wb[name]
+        sampled = 0
+        max_seen_cols = 0
+        for i, r in enumerate(ws.iter_rows(values_only=True)):
+            if i >= 50:
+                break
+            if r and any(c is not None and str(c).strip() for c in r):
+                sampled += 1
+                max_seen_cols = max(
+                    max_seen_cols,
+                    sum(1 for c in r if c is not None and str(c).strip()))
+        if sampled == 0:
+            stats.append((name, 0, 0))
+            continue
+        est_rows = max(int(ws.max_row or 0), sampled)
+        est_cols = max(int(ws.max_column or 0), max_seen_cols)
+        stats.append((name, est_rows, est_cols))
+    best = max(stats, key=lambda t: t[1] * max(t[2], 1))
+    return best[0], stats
+
+
+def _xlsx_best_sheet(data: bytes) -> Optional[str]:
+    """The chosen sheet name for a workbook's raw bytes, or None when the
+    workbook can't be inspected. Shared with the pandas paths
+    (vendor_adapter) so the mapping editor, the v49 engine and the stdlib
+    pipeline all read the SAME sheet."""
+    try:
+        from openpyxl import load_workbook
+        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
+        try:
+            name, _stats = _pick_xlsx_sheet(wb)
+        finally:
+            wb.close()
+        return name
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]],
+                                     Optional[str]]:
+    """Read the data-bearing worksheet of an .xlsx via openpyxl
+    (read-only mode) — see _pick_xlsx_sheet for how it's chosen. Returns
+    (headers, rows, note); the note names the sheet used and the sheets
+    skipped whenever the workbook has more than one non-empty sheet.
 
     Raises if openpyxl is unavailable or the workbook is unreadable — the
     caller turns that into a friendly warning telling the user to export CSV.
@@ -1337,7 +1400,8 @@ def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]]]:
 
     wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
     try:
-        ws = wb[wb.sheetnames[0]]
+        sheet_name, stats = _pick_xlsx_sheet(wb)
+        ws = wb[sheet_name]
         rows: List[List[str]] = []
         for r in ws.iter_rows(values_only=True):
             if r is None:
@@ -1347,29 +1411,41 @@ def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]]]:
                 rows.append(cells)
     finally:
         wb.close()
+    note = None
+    others = [(n, er, ec) for n, er, ec in stats if n != sheet_name]
+    if others:
+        skipped = ", ".join(
+            (f"'{n}' ({er:,}×{ec})" if er else f"'{n}' (empty)")
+            for n, er, ec in others)
+        note = (f"Workbook has {len(stats)} sheets — cleaned "
+                f"'{sheet_name}' ({max(len(rows) - 1, 0):,} data rows, the "
+                f"largest table). Skipped: {skipped}. If a different sheet "
+                "is the one you meant, export it as CSV and re-upload.")
     if not rows:
-        return [], []
+        return [], [], note
     headers = [h.strip() for h in rows[0]]
-    return headers, rows[1:]
+    return headers, rows[1:], note
 
 
-def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str]:
-    """Decode bytes → (headers, rows, format). Handles CSV/TSV and .xlsx.
-
-    ``format`` is the delimiter for text files, or ``"xlsx"`` for spreadsheets.
+def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
+                                      Optional[str]]:
+    """Decode bytes → (headers, rows, format, note). Handles CSV/TSV and
+    .xlsx. ``format`` is the delimiter for text files, or ``"xlsx"`` for
+    spreadsheets; ``note`` is a user-facing remark about how the file was
+    read (today: which worksheet a multi-sheet workbook was read from).
     """
     if _looks_like_xlsx(data):
-        headers, body = _read_xlsx(data)
-        return headers, body, "xlsx"
+        headers, body, note = _read_xlsx(data)
+        return headers, body, "xlsx", note
     from . import x12 as _x12
     if _x12.looks_like_x12(data):
         parsed = _x12.x12_to_table(data)
         if parsed is not None:
-            return parsed[0], parsed[1], "x12"
+            return parsed[0], parsed[1], "x12", None
         parsed = _x12.x835_to_table(data)
         if parsed is not None:
-            return parsed[0], parsed[1], "x835"
-        return [], [], "x12"          # X12 but not 837/835 — warning later
+            return parsed[0], parsed[1], "x835", None
+        return [], [], "x12", None    # X12 but not 837/835 — warning later
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -1379,10 +1455,10 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str]:
     reader = csv.reader(io.StringIO(text), delimiter=delim)
     all_rows = [r for r in reader if r != []]
     if not all_rows:
-        return [], [], delim
+        return [], [], delim, None
     headers = [h.strip() for h in all_rows[0]]
     body = all_rows[1:]
-    return headers, body, delim
+    return headers, body, delim, None
 
 
 def _detect_npi_columns(headers: List[str]) -> Tuple[List[int], Optional[int]]:
@@ -1438,6 +1514,7 @@ def clean_bytes(
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
     _stream_chunk: bool = False,
+    _stream_seen: Optional[set] = None,
 ) -> CleanResult:
     """Clean a delimited claims file given as raw bytes.
 
@@ -1451,6 +1528,11 @@ def clean_bytes(
     and per-run side effects that belong to the WHOLE file — history record,
     trend alerts, the pandas suggestions companion — are skipped so a 10 GB
     upload doesn't record 200 history rows for one run.
+
+    ``_stream_seen`` is the streamer's SHARED duplicate-tracking set: when
+    given, exact-dup membership uses compact row digests in that set instead
+    of full-tuple keys in a per-call set, so duplicates die across chunk
+    boundaries too. The caller bounds its growth (see bigfile.py).
     """
     def cb(msg: str, frac: float) -> None:
         if progress:
@@ -1471,9 +1553,8 @@ def clean_bytes(
                             drop_duplicates=drop_duplicates, deid=deid,
                             profile=profile, cb=cb)
     try:
-        headers, rows, delim = _read_table(data)
+        headers, rows, delim, _read_note = _read_table(data)
     except ImportError:
-        headers, rows, delim = [], [], "xlsx"
         _res = CleanResult(delimiter="xlsx", headers=[])
         _res.warnings.append(
             "This looks like an .xlsx file but the Excel reader isn't "
@@ -1493,6 +1574,10 @@ def clean_bytes(
         return _res
     res = CleanResult(delimiter=delim, headers=headers)
     res.n_rows_in = len(rows)
+    if _read_note:
+        # e.g. "Workbook has 3 sheets — cleaned 'DATA' …". A user staring
+        # at a wrong-sheet result must be able to see which tab was read.
+        res.warnings.append(_read_note)
     if not headers and delim == "x12":
         res.warnings.append(
             "This is an X12 interchange but it contains no 837 claim (CLM) "
@@ -1607,6 +1692,18 @@ def clean_bytes(
         from . import refdata as _rd
     except Exception:  # noqa: BLE001 — refdata missing → those checks off
         _rd = None
+    # Reference-data packs (refdata_packs.py): the FULL public code sets,
+    # loaded once per run when the user has pulled them. None → the
+    # corresponding pack-gated checks simply stay off; nothing about the
+    # zero-setup path changes.
+    _icd_pack = _hcpcs_pack = _leie_pack = None
+    try:
+        from . import refdata_packs as _packs
+        _icd_pack = _packs.icd10_codes()
+        _hcpcs_pack = _packs.hcpcs_codes()
+        _leie_pack = _packs.leie_npis()
+    except Exception:  # noqa: BLE001 — packs never block cleaning
+        pass
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).date()
     # Profile-tunable thresholds (see profiles.py) with safe defaults.
@@ -1985,6 +2082,36 @@ def clean_bytes(
                 if _parts2 and any(_rd.ub_code_malformed(p)
                                    for p in _parts2):
                     res.sanity[_rule2] = res.sanity.get(_rule2, 0) + 1
+        # Pack-gated validity: codes that pass every SHAPE check but do
+        # not exist in the authoritative set (counted once per row, like
+        # the other row-level flags). Off until the pack is pulled.
+        if _icd_pack is not None and dx_set:
+            for _dxi in dx_set:
+                _dxv = new_row[_dxi] if _dxi < len(new_row) else ""
+                _dxn = _dxv.strip().upper().replace(".", "")
+                if (_dxn and not _icd10_malformed(_dxv)
+                        and _dxn not in _icd_pack):
+                    res.sanity["icd10-unknown-code"] = \
+                        res.sanity.get("icd10-unknown-code", 0) + 1
+                    break
+        if _hcpcs_pack is not None and hcpcs_set:
+            for _hxi in hcpcs_set:
+                _hxv = (new_row[_hxi] if _hxi < len(new_row) else "").strip()
+                _hxv = _hxv.upper()
+                # Level II only: letter + 4 digits. Numeric CPT-4 codes
+                # are AMA-licensed — shape-checked elsewhere, never
+                # membership-checked here.
+                if (len(_hxv) == 5 and _hxv[0].isalpha()
+                        and _hxv[1:].isdigit() and _hxv not in _hcpcs_pack):
+                    res.sanity["hcpcs-unknown-code"] = \
+                        res.sanity.get("hcpcs-unknown-code", 0) + 1
+                    break
+        if (_leie_pack is not None and billing_idx is not None
+                and billing_idx < len(new_row)):
+            _bnd = "".join(c for c in new_row[billing_idx] if c.isdigit())
+            if len(_bnd) == 10 and _bnd in _leie_pack:
+                res.sanity["leie-excluded-npi"] = \
+                    res.sanity.get("leie-excluded-npi", 0) + 1
         # Chronology impossibilities. Normalized ISO dates compare correctly
         # as strings, so no re-parsing per row.
         if (dob_i is not None and dos_i is not None
@@ -2013,11 +2140,24 @@ def clean_bytes(
             cstat["cells"] += 1
             cstat[classify_npi(new_row[i])] += 1
         if drop_duplicates:
-            key = tuple(new_row)
-            if key in seen:
-                res.n_dupes_removed += 1
-                continue
-            seen.add(key)
+            if _stream_seen is not None:
+                # Streaming mode: membership lives in the caller's shared
+                # set as a 96-bit digest — cross-chunk dedupe in bounded
+                # memory (collision odds are negligible at claims scale).
+                _dk = int.from_bytes(
+                    hashlib.blake2b("\x1f".join(new_row).encode("utf-8"),
+                                    digest_size=12).digest(), "big")
+                if _dk in _stream_seen:
+                    res.n_dupes_removed += 1
+                    continue
+                if len(_stream_seen) < _STREAM_SEEN_CAP:
+                    _stream_seen.add(_dk)
+            else:
+                key = tuple(new_row)
+                if key in seen:
+                    res.n_dupes_removed += 1
+                    continue
+                seen.add(key)
         # Near-duplicate (report-only, row kept): identical after case
         # folding + whitespace collapse — "SMITH" vs "Smith" rows a human
         # would merge. Runs regardless of dedupe mode: with dedupe off,

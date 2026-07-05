@@ -156,6 +156,9 @@ under `population`:
 - **Volume integrity ("data loss over time")** — rows/charges/patients
   by service month with cliff detection: an interior month under 40% of
   its trailing median is almost always a missing extract, and says so.
+  Each month also carries **observed PMPM** (charges per patient with
+  claims that month — labeled "observed" because there is no
+  eligibility denominator), plus the median across months.
 - **E&M coding intensity** — each provider's established-visit mix
   (99211–99215) vs the file's own mix (national Medicare mix shown for
   context); providers coding materially hotter surface as a
@@ -164,6 +167,34 @@ under `population`:
 Everything is guarded (a mart failure never blocks cleaning), computed
 post-de-identification (stable tokens keep grouping intact), and skipped
 in 10 GB streaming mode (whole-table by nature — the warning says so).
+
+## Reference data packs — pull the real code sets
+
+The curated catalogs in `refdata.py` grade files out of the box with
+zero setup. The authoritative public sets are one pull away
+(`refdata_packs.py`) — from the card on the cleaner page, from
+`POST /npi-cleaner/api/refdata/pull {"pack": "all"}`, or from cron:
+
+```
+rcm-mc npi-clean --refdata-pull all     # needs outbound HTTPS
+rcm-mc npi-clean --refdata-status
+```
+
+| Pack | Source | What installing it enables |
+|---|---|---|
+| `taxonomy` | NUCC taxonomy CSV (~870 codes) | Full specialty display names in the specialty mix |
+| `icd10cm` | CMS/CDC ICD-10-CM code file (~74k) | `icd10-unknown-code` — shaped-but-nonexistent diagnoses (graded, validity) |
+| `hcpcs` | CMS HCPCS Level II quarterly (~8k) | `hcpcs-unknown-code` for letter-led codes (CPT-4 is AMA-licensed — shape-checked only, never stored) |
+| `leie` | OIG exclusion list (monthly CSV) | `leie-excluded-npi` — **automatic offline excluded-provider screening on every run** (critical severity; no env var, no online mode). The compliance panel's LEIE screen also reads the pack when no `RCM_MC_LEIE_CSV` is set |
+
+Each pack records provenance (source URL, fetch time, row count,
+SHA-256) in a dedicated WORKDIR SQLite file; URLs roll with CMS/NUCC
+release patterns (candidates tried newest-first) and every pack accepts
+an `NPI_REFPACK_URL_<ID>` override for mirrors or pinned versions.
+Pack-gated rules are OFF until the pack is installed — nothing about
+the zero-setup path changes. Licensing stays explicit: NUCC, ICD-10-CM
+and LEIE are public; CPT-4 and the full X12 CARC/RARC lists are
+licensed and remain curated subsets.
 
 ## Huge files (up to 10 GB, streamed)
 
@@ -182,12 +213,17 @@ the file with `npi_cleaner/bigfile.py`:
 - Change-log rows stream to the master audit CSV with **global** row
   indices; worklist row indices are offset to the merged output, so
   per-rule and per-payer downloads slice the right rows.
-- Scope (surfaced as warnings on the run): duplicate removal is
-  per-chunk (adjacent dupes — the common real case — still die); online
-  modes, the suggestions companion, the xlsx workbook and whole-table
-  analytics (payer clusters, outliers, claim rollup, dictionary) are
-  skipped. The grade itself is exact — all five score dimensions come
-  from summed counters. One history record for the whole run.
+- **Exact duplicates die across the whole file**, not just within a
+  chunk: chunks share one bounded digest set (96-bit row digests,
+  capped at 2M distinct rows ≈ 100 MB peak). If a file has more
+  distinct rows than the cap, tracking stops there and the run says so
+  in a warning — bounded memory stays honest.
+- Scope (surfaced as warnings on the run): online modes, the
+  suggestions companion, the xlsx workbook and whole-table analytics
+  (payer clusters, outliers, claim rollup, dictionary, population
+  marts) are skipped. The grade itself is exact — all five score
+  dimensions come from summed counters. One history record for the
+  whole run.
 - Non-splittable formats (xlsx / zip / X12) keep the 200 MB in-memory
   ceiling; past it the run returns instructions to export CSV instead
   of an OOM. The `rcm-mc npi-clean` CLI routes through the same
@@ -264,9 +300,11 @@ rcm-mc npi-clean sites.zip  --bundle            # batch a zip of extracts
 ```
 rcm_mc/npi_cleaner/
 ├── engine.py       cleaning engine: repairs, flags, scorecard, jobs
-├── rules.py        declarative registry (69 rules)
+├── rules.py        declarative registry (72 rules)
 ├── refdata.py      claims reference catalogs (POS/TOB/CARC/RARC/
 │                   chronic-condition groups/…)
+├── refdata_packs.py pull-and-install public code sets (NUCC taxonomy,
+│                   ICD-10-CM, HCPCS II, OIG LEIE) with provenance
 ├── analytics.py    population marts: service mix, encounters,
 │                   conditions, volume integrity, coding intensity
 ├── bigfile.py      10 GB streamed cleaning (chunk + merge)

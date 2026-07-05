@@ -378,9 +378,15 @@ def _volume(rows, dos_i, billed_i, patient_i) -> Optional[Dict[str, object]]:
                 agg[2].add(row[patient_i])
     if len(months) < 2:
         return None
+    # Observed per-patient-per-month charge — the PMPM proxy a payer-side
+    # analyst reaches for first. "Observed" because the denominator is
+    # patients WITH claims that month, not an eligibility member count
+    # (there is no eligibility file here), so it reads high vs true PMPM.
     series = [{"month": m, "rows": int(a[0]),
                "charges": round(a[1], 2),
-               "patients": (len(a[2]) if patient_i is not None else None)}
+               "patients": (len(a[2]) if patient_i is not None else None),
+               "observed_pmpm": (round(a[1] / len(a[2]), 2)
+                                 if a[2] else None)}
               for m, a in sorted(months.items())]
 
     # Data-loss detection: an interior month at < 40% of the median of its
@@ -395,7 +401,11 @@ def _volume(rows, dos_i, billed_i, patient_i) -> Optional[Dict[str, object]]:
                 f"{series[i]['month']}: {counts[i]:,} rows vs a trailing "
                 f"median of {prior:,} — looks like missing data, not a "
                 "real volume drop.")
-    return {"months": series, "alerts": alerts}
+    pmpms = sorted(s["observed_pmpm"] for s in series
+                   if s["observed_pmpm"] is not None)
+    median_pmpm = (round(pmpms[len(pmpms) // 2], 2) if pmpms else None)
+    return {"months": series, "alerts": alerts,
+            "median_observed_pmpm": median_pmpm}
 
 
 # --------------------------------------------------------- coding intensity --

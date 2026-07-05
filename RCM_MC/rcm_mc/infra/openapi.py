@@ -815,6 +815,26 @@ _SPEC: Dict[str, Any] = {
                      "tags": ["Claims Cleaner"],
                      "responses": {"200": {"description": "{ok}"}}},
         },
+        "/npi-cleaner/api/refdata": {
+            "get": {
+                "summary": "Reference-data packs: installed state + "
+                           "provenance (source URL, rows, sha256, fetched)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "{packs: [...]}"}},
+            },
+        },
+        "/npi-cleaner/api/refdata/pull": {
+            "post": {
+                "summary": "Pull a reference pack from its public source "
+                           "(taxonomy | icd10cm | hcpcs | leie | all)",
+                "tags": ["Claims Cleaner"],
+                "requestBody": {"content": {"application/json": {
+                    "schema": {"type": "object", "required": ["pack"],
+                               "properties": {"pack": {"type": "string"}}},
+                }}},
+                "responses": {"200": {"description": "{ok, pulling}"}},
+            },
+        },
         "/npi-cleaner/api/wishlist/delete": {
             "post": {"summary": "Delete a wishlist request by id",
                      "tags": ["Claims Cleaner"],
