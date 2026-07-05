@@ -1007,3 +1007,294 @@ def admission_type_invalid(v: str) -> bool:
 def pos_name(code: str) -> Optional[str]:
     return POS_NAMES.get(code.strip().zfill(2) if code.strip().isdigit()
                          and len(code.strip()) == 1 else code.strip())
+
+
+# --------------------------------------------------------------------------
+# Medicare Beneficiary Identifier (MBI). 11 characters with strict position
+# classes — C A AN N A AN N A A N N — where letters NEVER include
+# S, L, O, I, B, Z (chosen so an MBI can't be misread). Deterministic, so a
+# malformed MBI on a Medicare line is a guaranteed rejection.
+# --------------------------------------------------------------------------
+import re as _re
+
+_MBI_LETTER = "AC-HJKMNP-RT-Y"          # A-Z minus S L O I B Z
+MBI_RE = _re.compile(
+    "^[1-9]"                             # 1: digit 1-9
+    f"[{_MBI_LETTER}]"                   # 2: letter
+    f"[0-9{_MBI_LETTER}]"                # 3: letter or digit
+    "[0-9]"                              # 4: digit
+    f"[{_MBI_LETTER}]"                   # 5: letter
+    f"[0-9{_MBI_LETTER}]"                # 6: letter or digit
+    "[0-9]"                              # 7: digit
+    f"[{_MBI_LETTER}]{{2}}"              # 8-9: letters
+    "[0-9]{2}$"                          # 10-11: digits
+)
+
+
+def mbi_malformed(v: str) -> bool:
+    """True when a non-blank Medicare member ID isn't a valid MBI shape.
+    Hyphens/spaces are stripped first (MBIs are often keyed 1EG4-TE5-MK73)."""
+    s = v.strip().upper().replace("-", "").replace(" ", "")
+    if not s:
+        return False
+    return MBI_RE.match(s) is None
+
+
+# --------------------------------------------------------------------------
+# UB-04 Condition codes (FL18-28, NUBC) — the high-volume subset.
+# --------------------------------------------------------------------------
+CONDITION_CODES: Dict[str, str] = {
+    "01": "Military service related",
+    "02": "Condition is employment related",
+    "03": "Patient covered by insurance not reflected here",
+    "04": "Information-only bill (HMO enrollee)",
+    "05": "Lien has been filed",
+    "06": "ESRD patient in first 30 months of entitlement",
+    "07": "Treatment of non-terminal condition for hospice patient",
+    "08": "Beneficiary would not provide information concerning other insurance",
+    "09": "Neither patient nor spouse is employed",
+    "10": "Patient and/or spouse is employed but no EGHP coverage",
+    "11": "Disabled beneficiary but no large group health plan",
+    "15": "Clean claim delayed in CMS processing system",
+    "17": "Patient is homeless",
+    "18": "Maiden name retained",
+    "19": "Child retains mother's name",
+    "20": "Beneficiary requested billing",
+    "21": "Billing for denial notice",
+    "26": "VA-eligible patient chooses Medicare-certified facility",
+    "28": "Patient and/or spouse's EGHP is secondary to Medicare",
+    "29": "Disabled beneficiary and/or family member's LGHP is secondary",
+    "30": "Qualifying clinical trial",
+    "31": "Patient is a full-time day student",
+    "38": "Semi-private room not available",
+    "39": "Private room medically necessary",
+    "40": "Same-day transfer",
+    "41": "Partial hospitalization",
+    "42": "Continuing care not related to inpatient admission",
+    "43": "Continuing care not provided within prescribed post-discharge window",
+    "44": "Inpatient admission changed to outpatient",
+    "45": "Ambiguous gender category",
+    "46": "Non-availability statement on file",
+    "49": "Product replacement within product lifecycle",
+    "50": "Product replacement for known recall of a product",
+    "51": "Attestation of unrelated outpatient non-diagnostic services",
+    "53": "Initial placement of a medical device provided as part of a clinical trial",
+    "54": "No skilled home health visits in billing period",
+    "55": "SNF bed not available",
+    "56": "Medical appropriateness",
+    "57": "SNF readmission",
+    "58": "Terminated Medicare Advantage enrollee",
+    "59": "Non-primary ESRD facility",
+    "60": "Operating cost day outlier",
+    "61": "Operating cost outlier",
+    "66": "Provider does not wish cost outlier payment",
+    "67": "Beneficiary elects not to use lifetime reserve days",
+    "68": "Beneficiary elects to use lifetime reserve days",
+    "69": "IME/DGME/N&AH payment only",
+    "70": "Self-administered anemia management drug",
+    "71": "Full care in unit (dialysis)",
+    "72": "Self-care in unit (dialysis)",
+    "73": "Self-care in training (dialysis)",
+    "74": "Home dialysis",
+    "76": "Back-up in-facility dialysis",
+    "77": "Provider accepts payment by a primary payer as payment in full",
+    "78": "New coverage not implemented by HMO",
+    "79": "CORF services provided offsite",
+    "80": "Home dialysis — nursing facility",
+    "81": "C-sections/inductions performed at <39 weeks — medical necessity",
+    "82": "C-sections/inductions performed at <39 weeks — elective",
+    "83": "C-sections/inductions performed at 39 weeks or greater",
+    "84": "Dialysis for acute kidney injury",
+    "90": "Service provided as part of an expanded-access approval",
+    "91": "Emergency room services provided as part of an EMTALA screen",
+    "A1": "EPSDT/CHAP service",
+    "A2": "Physically handicapped children's program",
+    "A3": "Special federal funding",
+    "A4": "Family planning",
+    "A5": "Disability",
+    "A6": "Vaccines/Medicare 100% payment",
+    "A9": "Second opinion surgery",
+    "AA": "Abortion — rape",
+    "AB": "Abortion — incest",
+    "AD": "Abortion — life of mother",
+    "AI": "Sterilization",
+    "AJ": "Payer responsible for co-payment",
+    "AK": "Air ambulance required",
+    "AL": "Specialized treatment/bed unavailable — alternate facility",
+    "AM": "Non-emergency medically necessary stretcher transport",
+    "AN": "Preadmission screening not required",
+    "B1": "Beneficiary is ineligible for demonstration program",
+    "B2": "Critical access hospital ambulance attestation",
+    "B3": "Pregnancy indicator",
+    "B4": "Admission unrelated to discharge on same day",
+    "D0": "Changes to service dates",
+    "D1": "Changes to charges",
+    "D2": "Changes to revenue/HCPCS codes",
+    "D3": "Second or subsequent interim PPS bill",
+    "D4": "Changes in ICD codes",
+    "D5": "Cancel to correct HICN or provider ID",
+    "D6": "Cancel only to repay a duplicate or OIG overpayment",
+    "D7": "Change to make Medicare the secondary payer",
+    "D8": "Change to make Medicare the primary payer",
+    "D9": "Any other change",
+    "DR": "Disaster related",
+    "E0": "Change in patient status",
+    "G0": "Distinct medical visit",
+    "H0": "Delayed filing — statement of intent submitted",
+    "W2": "Duplicate of original bill",
+}
+
+# --------------------------------------------------------------------------
+# UB-04 Occurrence codes (FL31-34) — the high-volume subset.
+# --------------------------------------------------------------------------
+OCCURRENCE_CODES: Dict[str, str] = {
+    "01": "Accident/medical coverage",
+    "02": "No-fault insurance involved",
+    "03": "Accident/tort liability",
+    "04": "Accident/employment related",
+    "05": "Accident/no medical or liability coverage",
+    "06": "Crime victim",
+    "09": "Start of infertility treatment cycle",
+    "10": "Last menstrual period",
+    "11": "Onset of symptoms/illness",
+    "16": "Date of last therapy",
+    "17": "Date occupational therapy plan established/reviewed",
+    "18": "Date of retirement (patient/beneficiary)",
+    "19": "Date of retirement (spouse)",
+    "20": "Date guarantee of payment began",
+    "21": "Date UR notice received",
+    "22": "Date active care ended",
+    "24": "Date insurance denied",
+    "25": "Date benefits terminated by primary payer",
+    "26": "Date SNF bed became available",
+    "27": "Date of hospice certification/re-certification",
+    "28": "Date comprehensive outpatient rehab plan established/reviewed",
+    "29": "Date outpatient physical therapy plan established/reviewed",
+    "30": "Date outpatient speech pathology plan established/reviewed",
+    "31": "Date beneficiary notified of intent to bill (accommodations)",
+    "32": "Date beneficiary notified of intent to bill (procedures/treatments)",
+    "33": "First day of Medicare coordination period (ESRD)",
+    "34": "Date of election of extended care facilities",
+    "35": "Date treatment started for physical therapy",
+    "36": "Date of inpatient hospital discharge (covered transplant)",
+    "37": "Date of inpatient hospital discharge (non-covered transplant)",
+    "38": "Date treatment started for home IV therapy",
+    "39": "Date discharged on continuous course of IV therapy",
+    "40": "Scheduled date of admission",
+    "41": "Date of first test for pre-admission testing",
+    "42": "Date of discharge (hospice)",
+    "43": "Scheduled date of canceled surgery",
+    "44": "Date treatment started for occupational therapy",
+    "45": "Date treatment started for speech therapy",
+    "46": "Date treatment started for cardiac rehab",
+    "47": "Date cost outlier status begins",
+    "50": "Date lien released",
+    "51": "Date treatment started for psychiatric care",
+    "54": "Date of onset of hemodialysis",
+    "55": "Date of death",
+    "A1": "Birth date — insured A",
+    "A2": "Effective date — insured A policy",
+    "A3": "Benefits exhausted (payer A)",
+    "A4": "Split bill date",
+    "B1": "Birth date — insured B",
+    "B2": "Effective date — insured B policy",
+    "B3": "Benefits exhausted (payer B)",
+    "C1": "Birth date — insured C",
+    "C2": "Effective date — insured C policy",
+    "C3": "Benefits exhausted (payer C)",
+}
+
+# --------------------------------------------------------------------------
+# UB-04 Value codes (FL39-41) — the high-volume subset.
+# --------------------------------------------------------------------------
+VALUE_CODES: Dict[str, str] = {
+    "01": "Most common semi-private room rate",
+    "02": "Hospital has no semi-private rooms",
+    "04": "Inpatient professional component charges combined billed",
+    "05": "Professional component included in charges",
+    "06": "Medicare blood deductible",
+    "08": "Medicare lifetime reserve amount (first year)",
+    "09": "Medicare coinsurance amount (first year)",
+    "10": "Medicare lifetime reserve amount (second year)",
+    "11": "Medicare coinsurance amount (second year)",
+    "12": "Working aged beneficiary/spouse with EGHP",
+    "13": "ESRD beneficiary in Medicare coordination period with EGHP",
+    "14": "No-fault, including auto/other",
+    "15": "Worker's compensation",
+    "16": "PHS or other federal agency",
+    "21": "Catastrophic (Medicaid)",
+    "22": "Surplus (Medicaid)",
+    "23": "Recurring monthly income (Medicaid)",
+    "24": "Medicaid rate code",
+    "30": "Preadmission testing",
+    "31": "Patient liability amount",
+    "32": "Multiple patient ambulance transport",
+    "37": "Pints of blood furnished",
+    "38": "Blood deductible pints",
+    "39": "Pints of blood replaced",
+    "40": "New coverage not implemented by HMO (inpatient only)",
+    "41": "Black lung",
+    "42": "VA",
+    "43": "Disabled beneficiary under 65 with LGHP",
+    "44": "Amount provider agreed to accept from primary payer",
+    "45": "Accident hour",
+    "46": "Number of grace days",
+    "47": "Any liability insurance",
+    "48": "Hemoglobin reading",
+    "49": "Hematocrit reading",
+    "50": "Physical therapy visits",
+    "51": "Occupational therapy visits",
+    "52": "Speech therapy visits",
+    "53": "Cardiac rehab visits",
+    "54": "Newborn birth weight in grams",
+    "55": "Eligibility threshold for charity care",
+    "56": "Skilled nurse — home visit hours",
+    "57": "Home health aide — home visit hours",
+    "58": "Arterial blood gas",
+    "59": "Oxygen saturation",
+    "60": "HHA branch MSA",
+    "61": "Location where service is furnished (HHA/hospice)",
+    "66": "Medicaid spend-down amount",
+    "68": "EPO — drug",
+    "80": "Covered days",
+    "81": "Non-covered days",
+    "82": "Co-insurance days",
+    "83": "Lifetime reserve days",
+    "A0": "Special ZIP code reporting",
+    "A1": "Deductible payer A",
+    "A2": "Coinsurance payer A",
+    "A3": "Estimated responsibility payer A",
+    "B1": "Deductible payer B",
+    "B2": "Coinsurance payer B",
+    "B3": "Estimated responsibility payer B",
+    "C1": "Deductible payer C",
+    "C2": "Coinsurance payer C",
+    "C3": "Estimated responsibility payer C",
+    "D3": "Patient estimated responsibility",
+    "FC": "Patient paid amount",
+}
+
+_UB_CODE_RE = _re.compile(r"^[A-Z0-9]{2}$")
+
+
+def ub_code_malformed(v: str) -> bool:
+    """Shape check for UB-04 condition/occurrence/value codes: exactly two
+    alphanumeric characters. Catalog membership is deliberately NOT required
+    — payers define proprietary codes — so this only catches keying damage
+    (1-char, 3-char, punctuation)."""
+    s = v.strip().upper()
+    if not s:
+        return False
+    return _UB_CODE_RE.match(s) is None
+
+
+def condition_code_meaning(code: str) -> Optional[str]:
+    return CONDITION_CODES.get(code.strip().upper().zfill(2))
+
+
+def occurrence_code_meaning(code: str) -> Optional[str]:
+    return OCCURRENCE_CODES.get(code.strip().upper().zfill(2))
+
+
+def value_code_meaning(code: str) -> Optional[str]:
+    return VALUE_CODES.get(code.strip().upper().zfill(2))

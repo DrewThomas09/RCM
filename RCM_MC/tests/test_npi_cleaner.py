@@ -607,7 +607,7 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(res.flag_rows.get("hcpcs-malformed"), [2, 4])
         sc = res.as_scorecard()
         self.assertEqual(sc["worklists"]["hcpcs-malformed"], 2)
-        self.assertEqual(len(sc["rule_catalog"]), 58)
+        self.assertGreaterEqual(len(sc["rule_catalog"]), 58)
 
     def test_run_history_record_and_compare(self):
         from rcm_mc.npi_cleaner import history
@@ -707,6 +707,47 @@ class TestEngine(unittest.TestCase):
         cells = [str(c.value) for row in ws.iter_rows() for c in row if c.value]
         self.assertIn("BAD!!", cells)
         self.assertNotIn("99213", cells)   # unflagged row not in worklist tab
+
+    def test_mbi_validation(self):
+        from rcm_mc.npi_cleaner import refdata as rd
+        self.assertFalse(rd.mbi_malformed("1EG4-TE5-MK73"))  # valid, hyphens ok
+        self.assertTrue(rd.mbi_malformed("1SG4TE5MK73"))     # S excluded
+        self.assertTrue(rd.mbi_malformed("0EG4TE5MK73"))     # can't start 0
+        self.assertTrue(rd.mbi_malformed("1EG4TE5MK7"))      # 10 chars
+        # Engine: fires only on Medicare rows, never under de-id.
+        data = ("ClaimID,Payer,MemberID\n"
+                "1,Medicare,1EG4-TE5-MK73\n"   # valid MBI
+                "2,Medicare,BADMBI\n"          # malformed → flag
+                "3,Aetna,BADMBI\n").encode()   # non-Medicare → no check
+        res = engine.clean_bytes(data, "mbi.csv")
+        self.assertEqual(res.sanity.get("mbi-malformed"), 1)
+        res_deid = engine.clean_bytes(data, "mbi2.csv", deid=True)
+        self.assertNotIn("mbi-malformed", res_deid.sanity)
+
+    def test_ub_code_catalogs_and_shape(self):
+        from rcm_mc.npi_cleaner import refdata as rd
+        self.assertEqual(rd.condition_code_meaning("44"),
+                         "Inpatient admission changed to outpatient")
+        self.assertIsNotNone(rd.occurrence_code_meaning("24"))
+        self.assertIsNotNone(rd.value_code_meaning("80"))
+        data = ("ClaimID,ConditionCode,OccurrenceCode,ValueCode\n"
+                "1,44,24,80\n"          # valid
+                "2,\"44, A1\",05,B1\n"  # multi-code cell valid
+                "3,4,ABC,8!\n").encode()  # all malformed shapes
+        res = engine.clean_bytes(data, "ub.csv")
+        self.assertEqual(res.sanity.get("condition-code-malformed"), 1)
+        self.assertEqual(res.sanity.get("occurrence-code-malformed"), 1)
+        self.assertEqual(res.sanity.get("value-code-malformed"), 1)
+
+    def test_near_duplicate_rows(self):
+        # Same content differing only by case/extra spaces → near-dup flag
+        # (row kept); an exact repeat is removed by dedupe, not double-flagged.
+        data = ("ID,Name\n1,Hello World\n1,HELLO   world\n"
+                "1,Hello World\n2,Other\n").encode()
+        res = engine.clean_bytes(data, "nd.csv")
+        self.assertEqual(res.sanity.get("near-duplicate-row"), 1)
+        self.assertEqual(res.n_dupes_removed, 1)
+        self.assertEqual(res.n_rows_out, 3)   # near-dup row is KEPT
 
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.

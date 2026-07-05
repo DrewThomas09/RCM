@@ -91,6 +91,12 @@ _PAYER_HINTS = ("payername", "payer", "payor", "insurancename",
                 "insurancecompany", "insurance", "carrier", "healthplan")
 
 _TOB_HINTS = ("typeofbill", "tobcode", "billtype", "tob")
+_MEMBER_HINTS = ("mbi", "medicareid", "medicarenumber", "memberid",
+                 "subscriberid", "insuredid", "beneficiaryid", "beneid",
+                 "hicn", "hic")
+_COND_HINTS = ("conditioncode", "conditioncodes", "condcode")
+_OCC_HINTS = ("occurrencecode", "occurrencecodes", "occcode")
+_VALUE_HINTS = ("valuecode", "valuecodes", "valcode")
 _DISCH_STATUS_HINTS = ("dischargestatus", "patientdischargestatus",
                        "dischargedisposition", "patientstatus")
 _ADMIT_TYPE_HINTS = ("admissiontype", "admittype")
@@ -889,7 +895,9 @@ class CleanResult:
     # CONSISTENCY (values that contradict each other). Drives the report card.
     _VALIDITY_RULES = ("hcpcs-malformed", "icd10-malformed", "money-unparseable",
                        "sex-invalid", "taxonomy-malformed", "pos-invalid",
-                       "revenue-code-malformed", "carc-invalid")
+                       "revenue-code-malformed", "carc-invalid",
+                       "mbi-malformed", "condition-code-malformed",
+                       "occurrence-code-malformed", "value-code-malformed")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -918,8 +926,9 @@ class CleanResult:
                                for r in self._CONSISTENCY_RULES
                                if r not in _accepted)
         consistency = max(0.0, 1.0 - min(1.0, consistency_hits / rows))
-        dup = self.n_dupes_removed + self.sanity.get(
-            "suspected-duplicate-claim", 0)
+        dup = (self.n_dupes_removed
+               + self.sanity.get("suspected-duplicate-claim", 0)
+               + self.sanity.get("near-duplicate-row", 0))
         uniqueness = max(0.0, 1.0 - min(1.0, dup / max(self.n_rows_in, 1)))
         conformity = max(0.0, 1.0 - min(1.0, sum(self.repairs.values())
                                         / max(self.n_cells_filled, 1)))
@@ -1241,6 +1250,10 @@ def clean_bytes(
         money_set.discard(dstat_i)
     atype_i = _detect_one(headers, _ADMIT_TYPE_HINTS)
     submit_i = _detect_one(headers, _SUBMIT_HINTS)
+    member_i = _detect_one(headers, _MEMBER_HINTS)
+    cond_i = _detect_one(headers, _COND_HINTS)
+    occ_i = _detect_one(headers, _OCC_HINTS)
+    valc_i = _detect_one(headers, _VALUE_HINTS)
     try:
         from . import refdata as _rd
     except Exception:  # noqa: BLE001 — refdata missing → those checks off
@@ -1341,6 +1354,7 @@ def clean_bytes(
     cb("Cleaning rows", 0.30)
     cleaned: List[List[str]] = []
     seen = set()
+    _seen_fold = set()   # case/whitespace-folded keys → near-dup signal
     total = max(len(rows), 1)
     for ri, row in enumerate(rows):
         # Pad / trim ragged rows to the header width.
@@ -1538,6 +1552,31 @@ def clean_bytes(
                             res.sanity.get("timely-filing-risk", 0) + 1
                 except ValueError:
                     pass
+        # Medicare MBI shape — only when the payer on THIS row is Medicare
+        # (family key), and never under de-identification (member IDs are
+        # hashed to PT-… tokens which would all false-flag).
+        if (_rd is not None and not deid and member_i is not None
+                and payer_i is not None
+                and member_i < len(new_row) and payer_i < len(new_row)
+                and new_row[member_i] and new_row[payer_i]
+                and _payer_key(new_row[payer_i]) == "MEDICARE"
+                and _rd.mbi_malformed(new_row[member_i])):
+            res.sanity["mbi-malformed"] = \
+                res.sanity.get("mbi-malformed", 0) + 1
+        # UB-04 condition / occurrence / value code shape (multi-code cells
+        # split like modifiers; catalog membership NOT required — payers
+        # define proprietary codes, so only keying damage flags).
+        if _rd is not None:
+            for _ci2, _rule2 in ((cond_i, "condition-code-malformed"),
+                                 (occ_i, "occurrence-code-malformed"),
+                                 (valc_i, "value-code-malformed")):
+                if _ci2 is None or _ci2 >= len(new_row) or not new_row[_ci2]:
+                    continue
+                _parts2 = [p for p in re.split(r"[,;|\s]+",
+                                               new_row[_ci2].strip()) if p]
+                if _parts2 and any(_rd.ub_code_malformed(p)
+                                   for p in _parts2):
+                    res.sanity[_rule2] = res.sanity.get(_rule2, 0) + 1
         # Chronology impossibilities. Normalized ISO dates compare correctly
         # as strings, so no re-parsing per row.
         if (dob_i is not None and dos_i is not None
@@ -1571,6 +1610,15 @@ def clean_bytes(
                 res.n_dupes_removed += 1
                 continue
             seen.add(key)
+            # Near-duplicate (report-only, row kept): identical after case
+            # folding + whitespace collapse — "SMITH" vs "Smith" rows that
+            # exact dedupe correctly leaves alone but a human would merge.
+            _fold = tuple(" ".join(c.split()).casefold() for c in new_row)
+            if _fold in _seen_fold:
+                res.sanity["near-duplicate-row"] = \
+                    res.sanity.get("near-duplicate-row", 0) + 1
+            else:
+                _seen_fold.add(_fold)
         # Kept-row accumulators for payer clustering and charge outliers.
         if payer_i is not None and payer_i < len(new_row) and new_row[payer_i]:
             _payer_raw[new_row[payer_i]] = \
