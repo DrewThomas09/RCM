@@ -163,6 +163,7 @@ def _health_trend_svg(histories: Dict[str, list]) -> str:
             f'letter-spacing="1" fill="#9b9382">{band_lbl}</text>'
         )
     max_n = max(len(pts) for _, pts in series)
+    label_specs = []  # (label_y, x, tone, text) — placed after the loop
     for si, (name, pts) in enumerate(series):
         tone = tones[si % len(tones)]
         # X positions: evenly spaced by observation index, right-aligned
@@ -185,9 +186,20 @@ def _health_trend_svg(histories: Dict[str, list]) -> str:
             f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="3" fill="{tone}"/>'
         )
         short = name if len(name) <= 16 else name[:15] + "…"
+        label_specs.append(
+            (ly + 3, lx, tone, f"{_html.escape(short)} {pts[-1][1]}"))
+    # End-of-line labels collide when final scores are close (e.g. 100
+    # vs 97): sort by y and push any label within 12px of the previous
+    # one down so every deal name stays legible.
+    label_specs.sort(key=lambda s: s[0])
+    prev_y = None
+    for ty, lx, tone, text in label_specs:
+        if prev_y is not None and ty - prev_y < 12:
+            ty = prev_y + 12
+        prev_y = ty
         parts.append(
-            f'<text x="{lx + 6:.1f}" y="{ly + 3:.1f}" font-size="9" '
-            f'fill="{tone}">{_html.escape(short)} {pts[-1][1]}</text>'
+            f'<text x="{lx + 6:.1f}" y="{ty:.1f}" font-size="9" '
+            f'fill="{tone}">{text}</text>'
         )
     parts.append("</svg>")
     caption_bits = [
@@ -361,9 +373,9 @@ def render_portfolio_monitor(store: Any) -> str:
             f"{'S' if n_alerts != 1 else ''}"
         ),
         lede_body=(
-            f"{n_deals} active deals · {n_with_actuals} with quarterly "
-            f"actuals · {green} green / {amber} amber / {red} red · "
-            f"{n_alerts} open alerts."
+            "The daily read on every held deal: actual vs plan, health "
+            "trajectory, and the early warnings that deserve a partner's "
+            "attention before the next quarterly close."
         ),
     )
     kpis = (
@@ -451,7 +463,7 @@ def render_portfolio_monitor(store: Any) -> str:
                 f'<span class="pm-alert-sev {sev_cls}">{_html.escape(sev)}</span>'
                 f'<a href="/deal/{_html.escape(did)}" class="ck-link pm-alert-name" '
                 f'title="{_html.escape(name)}">'
-                f'<strong>{_html.escape(name if len(name) <= 20 else name[:19] + "…")}</strong></a>'
+                f'<strong>{_html.escape(name if len(name) <= 40 else name[:39] + "…")}</strong></a>'
                 f'<span class="pm-alert-msg">{_html.escape(str(ar[3] or "")[:80])}</span>'
                 '</div>'
             )
@@ -462,7 +474,9 @@ def render_portfolio_monitor(store: Any) -> str:
     # ── Deal monitoring table ──
     deal_rows = ""
     for did, ddata in sorted(deal_map.items(), key=lambda x: x[1].get("name", "")):
-        name = _html.escape(ddata["name"][:25])
+        full_name = ddata["name"]
+        name = _html.escape(
+            full_name if len(full_name) <= 40 else full_name[:39] + "…")
         profile = ddata["profile"]
 
         # Health
@@ -496,10 +510,17 @@ def render_portfolio_monitor(store: Any) -> str:
             else:
                 variance_html = f'{_fm(ebitda_actual)}'
 
-        # Stage
+        # Stage — same uppercase chip /portfolio uses, not raw
+        # lowercase text.
         stage = ""
         if ddata["latest_snapshot"]:
-            stage = _html.escape(str(ddata["latest_snapshot"]["stage"] or "")[:12])
+            stage_raw = _html.escape(
+                str(ddata["latest_snapshot"]["stage"] or "")[:12])
+            if stage_raw:
+                stage = (
+                    f'<span class="cad-badge cad-badge-muted">'
+                    f'{stage_raw}</span>'
+                )
 
         # Alert count
         n_deal_alerts = len(ddata["alerts"])
@@ -636,7 +657,7 @@ def render_portfolio_monitor(store: Any) -> str:
                 '<div class="pm-warn-row">'
                 f'<span class="pm-warn-sev {sev_cls}">●</span>'
                 f'<span class="pm-warn-name" title="{_html.escape(name)}">'
-                f'<strong>{_html.escape(name if len(name) <= 20 else name[:19] + "…")}</strong></span>'
+                f'<strong>{_html.escape(name if len(name) <= 40 else name[:39] + "…")}</strong></span>'
                 f'<span>{_html.escape(msg)}</span>'
                 '</div>'
             )
