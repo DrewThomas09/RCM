@@ -1355,3 +1355,29 @@ CREDENTIALS: Dict[str, str] = {
 
 def credential_meaning(code: str) -> Optional[str]:
     return CREDENTIALS.get(code.strip().upper().replace(".", ""))
+
+
+# --------------------------------------------------------------------------
+# Timely-filing limits by payer FAMILY (engine._payer_key output), in days
+# from date of service. Contracts vary — these are the widely published
+# defaults (Medicare: 12 months by statute; most commercial plans: 90-180
+# days). Used when a payer column exists on the row; the profile threshold
+# remains the fallback for unknown payers. Deliberately conservative — a
+# LONGER limit than a specific contract only under-flags, never over-flags.
+# --------------------------------------------------------------------------
+TIMELY_FILING_DAYS: Dict[str, int] = {
+    "MEDICARE": 365,
+    "MEDICAID": 180,
+    "TRICARE": 365,
+    "UNITEDHEALTHCARE": 90,
+    "AETNA": 120,
+    "CIGNA": 90,
+    "HUMANA": 90,
+    "BLUE CROSS BLUE SHIELD": 180,
+    "KAISER PERMANENTE": 180,
+}
+
+
+def timely_filing_days(payer_family: str) -> Optional[int]:
+    """Days-from-DOS filing limit for a payer family key, if published."""
+    return TIMELY_FILING_DAYS.get(payer_family.strip().upper())

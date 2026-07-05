@@ -618,7 +618,8 @@ _EXTRA_JS = r"""
     "ndc-normalize-11":"Normalized NDC to 11-digit billing format",
     "revcode-pad":"Restored dropped leading zeros in revenue codes (450 → 0450)",
     "pos-pad":"Zero-padded 1-digit Place of Service codes",
-    "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)"};
+    "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)",
+    "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)"};
 
   function renderRepairs(repairs, total, credentials){
     var box=$("npi-repairs");
@@ -681,7 +682,9 @@ _EXTRA_JS = r"""
     "jw-zero-units":"JW modifier (discarded drug) with no billed units",
     "bilateral-units":"Bilateral modifier 50 with more than 1 unit (MUE guidance)",
     "conflicting-amount-claim":"Same provider · patient · date · code billed at different amounts (re-bill signal)",
-    "carc-invalid":"Invalid denial/adjustment reason code (not a CARC shape)"};
+    "carc-invalid":"Invalid denial/adjustment reason code (not a CARC shape)",
+    "drg-malformed":"Malformed MS-DRG (not a 3-digit code 001-999)",
+    "anesthesia-units-implausible":"Anesthesia line billing more than 24 hours of time units"};
   var RULE_INFO={};
   function sevChip(sev){
     var c=sev==="critical"?"#b5321e":(sev==="warning"?"#b8732a":"#5b6770");

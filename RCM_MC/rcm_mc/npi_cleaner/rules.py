@@ -329,10 +329,30 @@ _RULES: List[Rule] = [
          "Standardize casing at the source and re-extract.", "uniqueness"),
     Rule("timely-filing-risk", "flag", "warning", "Dates",
          "Timely-filing risk",
-         "More than 365 days between service and submission/received "
-         "dates — most payers' filing limit.",
-         "Check payer-specific limits; write off or appeal as applicable.",
-         "consistency"),
+         "Days between service and submission/received dates exceed the "
+         "filing limit. When the row names a payer with a published limit "
+         "(Medicare 365, most commercial 90-180) that limit applies; "
+         "unknown payers use the profile threshold (default 365).",
+         "Check the payer contract's limit; write off or appeal as "
+         "applicable.", "consistency"),
+    Rule("drg-pad", "repair", "warning", "Coding",
+         "DRG zeros restored",
+         "Numeric MS-DRGs shorter than 3 digits zero-padded (87 → 087) — "
+         "Excel strips the leading zero.",
+         "Format DRG columns as text before Excel.", "validity"),
+    Rule("drg-malformed", "flag", "critical", "Coding",
+         "Malformed DRG",
+         "MS-DRG isn't a 3-digit code 001-999. Institutional claims price "
+         "off the DRG — a bad one misprices or denies the whole stay.",
+         "Correct the DRG at the source; check for truncation or a grouper "
+         "export issue.", "validity"),
+    Rule("anesthesia-units-implausible", "flag", "warning", "Coding",
+         "Implausible anesthesia units",
+         "An anesthesia line (CPT 00100-01999) bills more than 24 hours' "
+         "worth of time units (1,440). That's a keying error or a column "
+         "shift, not a marathon case.",
+         "Verify the units against the anesthesia record; check for an "
+         "extra digit or minutes-vs-units confusion.", "consistency"),
 ]
 
 _BY_ID: Dict[str, Rule] = {r.id: r for r in _RULES}

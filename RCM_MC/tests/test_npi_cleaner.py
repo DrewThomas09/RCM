@@ -599,6 +599,50 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(res.sanity.get("modifier-unknown"), 1)
         self.assertEqual(res.sanity.get("timely-filing-risk"), 1)
 
+    def test_drg_pad_and_malformed(self):
+        # Excel-stripped DRG zeros restored (87 → 087); bad shapes flagged.
+        data = ("ClaimID,MSDRG\n"
+                "1,87\n"        # → 087 (pad repair)
+                "2,470\n"       # valid, untouched
+                "3,1234\n"      # 4 digits → malformed
+                "4,ABC\n"       # non-numeric → malformed
+                "5,000\n").encode()   # 000 is never assigned → malformed
+        res = engine.clean_bytes(data, "drg.csv")
+        self.assertEqual(res.repairs.get("drg-pad"), 1)
+        self.assertEqual(res.sanity.get("drg-malformed"), 3)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("087", out)
+        self.assertIn("470", out)
+        # A header merely CONTAINING "drg" must not be treated as a DRG
+        # column ("DrGroup" was the false-match risk).
+        data2 = ("ClaimID,DrGroupNote\n1,87\n").encode()
+        res2 = engine.clean_bytes(data2, "drg2.csv")
+        self.assertIsNone(res2.repairs.get("drg-pad"))
+        self.assertIsNone(res2.sanity.get("drg-malformed"))
+
+    def test_anesthesia_units_implausible(self):
+        data = ("ClaimID,HCPCS,Units\n"
+                "1,00840,1500\n"     # anesthesia, >1440 → flag
+                "2,00840,90\n"       # anesthesia, plausible
+                "3,99213,2000\n").encode()   # not anesthesia → no flag
+        res = engine.clean_bytes(data, "anes.csv")
+        self.assertEqual(res.sanity.get("anesthesia-units-implausible"), 1)
+
+    def test_timely_filing_per_payer_limit(self):
+        # 120 days DOS→received: over UnitedHealthcare's 90-day limit,
+        # inside Medicare's 365 — the payer on the ROW decides.
+        data = ("ClaimID,PayerName,DateOfService,ReceivedDate\n"
+                "1,UnitedHealthcare,2024-01-01,2024-04-30\n"
+                "2,Medicare,2024-01-01,2024-04-30\n"
+                "3,Some Tiny TPA,2024-01-01,2024-04-30\n").encode()
+        res = engine.clean_bytes(data, "tf.csv")
+        # Only the UHC row breaches: unknown payer falls back to 365.
+        self.assertEqual(res.sanity.get("timely-filing-risk"), 1)
+        from rcm_mc.npi_cleaner import refdata
+        self.assertEqual(refdata.timely_filing_days("MEDICARE"), 365)
+        self.assertIsNone(refdata.timely_filing_days("SOME TINY TPA"))
+
     def test_worklist_row_capture(self):
         data = ("ClaimID,HCPCS\n"
                 "1,99213\n2,BAD!!\n3,99214\n4,WRONG\n").encode()

@@ -581,6 +581,26 @@ def _pos_invalid(v: str) -> bool:
     return s not in _POS_VALID
 
 
+def _clean_drg_cell(v: str) -> Tuple[str, List[str]]:
+    """Zero-pad a numeric MS-DRG to 3 digits (Excel strips leading zeros:
+    87 → 087). Non-numeric / over-long values pass through for the shape
+    flag to catch."""
+    if v == "":
+        return v, []
+    s = v.strip()
+    if s.isdigit() and 1 <= len(s) < 3:
+        return s.zfill(3), ["drg-pad"]
+    return s, ([] if s == v else [])
+
+
+def _drg_malformed(v: str) -> bool:
+    """MS-DRG is exactly 3 digits, 001-999 (000 is not assigned)."""
+    s = v.strip()
+    if not s:
+        return False
+    return not (s.isdigit() and len(s) == 3 and s != "000")
+
+
 # Clinical credentials recognized at the end of a person provider name.
 # Parsed (period-insensitively: "M.D." → MD) for the credential-mix report
 # and kept uppercase during re-casing. Mirrored by refdata.CREDENTIALS,
@@ -994,7 +1014,8 @@ class CleanResult:
                        "sex-invalid", "taxonomy-malformed", "pos-invalid",
                        "revenue-code-malformed", "carc-invalid",
                        "mbi-malformed", "condition-code-malformed",
-                       "occurrence-code-malformed", "value-code-malformed")
+                       "occurrence-code-malformed", "value-code-malformed",
+                       "drg-malformed")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1002,7 +1023,8 @@ class CleanResult:
                           "zip-state-mismatch", "service-before-birth",
                           "discharge-before-admit", "ndc-ambiguous-10digit",
                           "charge-outlier", "jw-zero-units", "bilateral-units",
-                          "conflicting-amount-claim")
+                          "conflicting-amount-claim",
+                          "anesthesia-units-implausible")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1328,6 +1350,12 @@ def clean_bytes(
     pos_set = {i for i, h in enumerate(headers)
                if _norm_key(h) == "pos" or "placeofservice" in _norm_key(h)
                or "poscode" in _norm_key(h)}
+    # DRG columns by exact/suffix match — bare substring "drg" would false-
+    # match headers like "DrGroup", so the key must BE drg, END with drg
+    # (MSDRG, FinalDRG), or carry the unambiguous long forms.
+    drg_set = {i for i, h in enumerate(headers)
+               if _norm_key(h) == "drg" or _norm_key(h).endswith("drg")
+               or "msdrg" in _norm_key(h) or "drgcode" in _norm_key(h)}
     # Person provider-name columns for the re-case + credential parse. Any
     # role already claimed above wins — a header like "RenderingProviderNPI"
     # must stay with the NPI cleaner.
@@ -1505,6 +1533,8 @@ def clean_bytes(
                 val, r = _clean_revcode_cell(val); hits += r
             elif ci in pos_set:
                 val, r = _clean_pos_cell(val); hits += r
+            elif ci in drg_set:
+                val, r = _clean_drg_cell(val); hits += r
             elif ci in pname_set:
                 val, r, _crd = _clean_provider_name_cell(val); hits += r
                 for _c in _crd:
@@ -1597,6 +1627,10 @@ def clean_bytes(
         if pos_set and any(ci < len(new_row) and _pos_invalid(new_row[ci])
                            for ci in pos_set):
             res.sanity["pos-invalid"] = res.sanity.get("pos-invalid", 0) + 1
+        if drg_set and any(ci < len(new_row) and _drg_malformed(new_row[ci])
+                           for ci in drg_set):
+            res.sanity["drg-malformed"] = \
+                res.sanity.get("drg-malformed", 0) + 1
         # Modifier↔units coding edits: a JW line (discarded drug) bills the
         # wasted units so units must be positive, and a bilateral (50) line
         # bills 1 unit per CMS MUE guidance. Modifiers were normalized to a
@@ -1615,6 +1649,18 @@ def clean_bytes(
                 if "50" in _mods and _u_val is not None and _u_val > 1:
                     res.sanity["bilateral-units"] = \
                         res.sanity.get("bilateral-units", 0) + 1
+        # Anesthesia lines (CPT 00100-01999) bill time units — more than 24
+        # hours' worth of minutes on one line is a keying error (extra digit,
+        # column shift), not a marathon case.
+        if (hcpcs_i is not None and units_i is not None
+                and hcpcs_i < len(new_row) and units_i < len(new_row)):
+            _ac = new_row[hcpcs_i]
+            if (len(_ac) == 5 and _ac.isdigit()
+                    and "00100" <= _ac <= "01999"):
+                _au = _to_number(new_row[units_i])
+                if _au is not None and _au > 24 * 60:
+                    res.sanity["anesthesia-units-implausible"] = \
+                        res.sanity.get("anesthesia-units-implausible", 0) + 1
         # Denial / adjustment reason (CARC) domain validity. Cells may carry
         # several codes ("16, 97") — every part must be a valid CARC shape.
         if carc_i is not None and carc_i < len(new_row) and new_row[carc_i]:
@@ -1648,16 +1694,25 @@ def clean_bytes(
                         res.sanity["modifier-unknown"] = \
                             res.sanity.get("modifier-unknown", 0) + 1
                         break
-        # Timely-filing risk: >365 days between service and received dates.
+        # Timely-filing risk: days between service and received dates over
+        # the limit. When the row names a payer with a published limit
+        # (Medicare 365, most commercial 90-180 — see refdata), that limit
+        # applies; the profile threshold covers unknown payers.
         if (submit_i is not None and dos_i is not None
                 and submit_i < len(new_row) and dos_i < len(new_row)):
             _sv, _rv = new_row[dos_i], new_row[submit_i]
             if _DATE_ISO_RE.match(_sv) and _DATE_ISO_RE.match(_rv):
+                _tf_limit = _timely_days
+                if (_rd is not None and payer_i is not None
+                        and payer_i < len(new_row) and new_row[payer_i]):
+                    _pd = _rd.timely_filing_days(_payer_key(new_row[payer_i]))
+                    if _pd is not None:
+                        _tf_limit = _pd
                 try:
                     from datetime import date as _d2
                     _delta = (_d2.fromisoformat(_rv[:10])
                               - _d2.fromisoformat(_sv[:10])).days
-                    if _delta > _timely_days:
+                    if _delta > _tf_limit:
                         res.sanity["timely-filing-risk"] = \
                             res.sanity.get("timely-filing-risk", 0) + 1
                 except ValueError:
