@@ -2768,9 +2768,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                                  if v}
             except Exception:  # noqa: BLE001
                 overrides = None
+        _prof_cfg = None
+        _prof_name = self.headers.get("X-Profile")
+        if _prof_name:
+            from .npi_cleaner import profiles as _nc_profiles
+            _prof_cfg = _nc_profiles.get_profile(
+                urllib.parse.unquote(_prof_name))
         job_id = engine.manager().submit(
             raw, name, drop_duplicates=dedupe, enrich=enrich, deep=deep,
-            overrides=overrides, deid=deid)
+            overrides=overrides, deid=deid, profile=_prof_cfg)
         return self._send_json({"job_id": job_id})
 
     def _route_npi_cleaner_detect(self) -> None:
@@ -3788,6 +3794,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/npi-cleaner/api/rules":
             from .npi_cleaner import rules as _nc_rules
             return self._send_json({"rules": _nc_rules.catalog()})
+        if path == "/npi-cleaner/api/profiles":
+            from .npi_cleaner import profiles as _nc_profiles
+            return self._send_json({"profiles": _nc_profiles.list_profiles()})
         if path.startswith("/npi-cleaner/analyze/"):
             return self._route_npi_cleaner_analyze(
                 path[len("/npi-cleaner/analyze/"):].strip("/"))
@@ -14072,6 +14081,48 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._route_npi_cleaner_detect()
         if path == "/npi-cleaner/upload":
             return self._route_npi_cleaner_upload(parsed)
+        if path == "/npi-cleaner/api/profiles":
+            # Save a named cleaning profile: {"name": ..., "config": {...}}.
+            from .npi_cleaner import profiles as _nc_profiles
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+                name = str(body.get("name") or "")
+                cfg = _nc_profiles.save_profile(name, body.get("config") or {})
+            except (ValueError, TypeError) as exc:
+                return self._send_json({"error": str(exc)},
+                                       status=HTTPStatus.BAD_REQUEST)
+            return self._send_json({"ok": True, "name": name, "config": cfg})
+        if path == "/npi-cleaner/api/profiles/delete":
+            from .npi_cleaner import profiles as _nc_profiles
+            import json as _json
+            try:
+                body = _json.loads(self._raw_post_body().decode("utf-8"))
+            except ValueError:
+                body = {}
+            ok = _nc_profiles.delete_profile(str(body.get("name") or ""))
+            return self._send_json({"ok": ok})
+        if path == "/npi-cleaner/api/clean":
+            # Synchronous programmatic clean: raw CSV body (global 10 MB POST
+            # cap applies — use /npi-cleaner/upload for big files) → full
+            # scorecard JSON, no job polling. ?profile=<name> optional.
+            from .npi_cleaner import engine as _nc_engine
+            from .npi_cleaner import profiles as _nc_profiles
+            raw = self._raw_post_body()
+            if not raw:
+                return self._send_json({"error": "empty body"},
+                                       status=HTTPStatus.BAD_REQUEST)
+            _qs2 = urllib.parse.parse_qs(parsed.query)
+            _pn = (_qs2.get("profile") or [""])[0]
+            _pcfg = _nc_profiles.get_profile(_pn) if _pn else None
+            _fname = urllib.parse.unquote(
+                self.headers.get("X-Filename", "claims.csv"))
+            _resx = _nc_engine.clean_bytes(
+                raw, _fname,
+                drop_duplicates=(_qs2.get("dedupe") or ["1"])[0] != "0",
+                deid=(_qs2.get("deid") or ["0"])[0] == "1",
+                profile=_pcfg)
+            return self._send_json(_resx.as_scorecard())
         if path == "/diligence/snapshot":
             return self._route_diligence_snapshot_post()
         if path == "/rxnorm/seed":

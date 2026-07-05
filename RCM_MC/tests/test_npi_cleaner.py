@@ -652,6 +652,62 @@ class TestEngine(unittest.TestCase):
             self.assertEqual(cli_main([srcp, "--outdir", tmp,
                                        "--min-score", "101"]), 1)
 
+    def test_profiles_module(self):
+        from rcm_mc.npi_cleaner import profiles
+        cfg = profiles.save_profile("t-suite", {
+            "disabled_rules": ["modifier-unknown", "not-a-real-rule"],
+            "accepted_rules": ["date-stale"],
+            "thresholds": {"timely_filing_days": 5,      # clamped to 30
+                           "stale_years": 2,
+                           "outlier_iqr_mult": 99}})     # clamped to 10
+        self.assertEqual(cfg["disabled_rules"], ["modifier-unknown"])
+        self.assertEqual(cfg["thresholds"]["timely_filing_days"], 30)
+        self.assertEqual(cfg["thresholds"]["outlier_iqr_mult"], 10.0)
+        loaded = profiles.get_profile("t-suite")
+        self.assertEqual(loaded["name"], "t-suite")
+        names = [p["name"] for p in profiles.list_profiles()]
+        self.assertIn("t-suite", names)
+        self.assertTrue(profiles.delete_profile("t-suite"))
+        self.assertIsNone(profiles.get_profile("t-suite"))
+
+    def test_profile_applied_to_run(self):
+        # Thresholds honored, disabled rule absent, accepted rule reported
+        # but excluded from the grade.
+        prof = {"name": "px",
+                "disabled_rules": ["modifier-unknown"],
+                "accepted_rules": ["date-stale"],
+                "thresholds": {"timely_filing_days": 30, "stale_years": 2,
+                               "outlier_iqr_mult": 3.0}}
+        data = ("ClaimID,Modifier,Units,DateOfService,ReceivedDate\n"
+                "1,ZQ,1,2023-01-01,2024-03-01\n").encode()
+        res = engine.clean_bytes(data, "prof.csv", profile=prof)
+        sc = res.as_scorecard()
+        self.assertNotIn("modifier-unknown", sc["sanity"])   # disabled
+        self.assertIn("date-stale", sc["sanity"])            # 2y horizon hit
+        self.assertIn("timely-filing-risk", sc["sanity"])    # 30d limit hit
+        self.assertEqual(sc["accepted_rules"], ["date-stale"])
+        self.assertEqual(sc["profile"], "px")
+        # Without the acceptance the same file grades lower on consistency.
+        res2 = engine.clean_bytes(data, "prof2.csv", profile={
+            "thresholds": prof["thresholds"]})
+        c_acc = res.quality()["dimensions"]["consistency"]
+        c_raw = res2.quality()["dimensions"]["consistency"]
+        self.assertGreater(c_acc, c_raw)
+
+    def test_workbook_worklist_sheets(self):
+        data = ("ClaimID,HCPCS\n1,99213\n2,BAD!!\n").encode()
+        res = engine.clean_bytes(data, "wlx.csv")
+        openpyxl = __import__("openpyxl")
+        from io import BytesIO
+        with open(res.workbook_path, "rb") as fh:
+            wb = openpyxl.load_workbook(BytesIO(fh.read()))
+        wl_sheets = [s for s in wb.sheetnames if s.startswith("WL ")]
+        self.assertTrue(wl_sheets)
+        ws = wb[wl_sheets[0]]
+        cells = [str(c.value) for row in ws.iter_rows() for c in row if c.value]
+        self.assertIn("BAD!!", cells)
+        self.assertNotIn("99213", cells)   # unflagged row not in worklist tab
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
@@ -1197,6 +1253,66 @@ class TestNpiCleanerHttp(unittest.TestCase):
                     f"http://127.0.0.1:{port}/npi-cleaner/api/rules") as r:
                     self.assertGreater(
                         len(json.loads(r.read().decode())["rules"]), 50)
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_profiles_api_and_sync_clean(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server, port = self._start(tmp)
+            try:
+                # Save a profile over the API.
+                body = json.dumps({"name": "http-prof", "config": {
+                    "accepted_rules": ["date-stale"],
+                    "thresholds": {"stale_years": 2}}}).encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/profiles",
+                    data=body, method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    self.assertTrue(json.loads(r.read().decode())["ok"])
+                with _u.urlopen(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/profiles") as r:
+                    names = [p["name"] for p in
+                             json.loads(r.read().decode())["profiles"]]
+                self.assertIn("http-prof", names)
+                # Async upload honors X-Profile.
+                csv_b = ("ClaimID,DateOfService\n1,2023-01-01\n").encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/upload",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "p.csv", "X-Profile": "http-prof"})
+                with _u.urlopen(req) as r:
+                    job_id = json.loads(r.read().decode())["job_id"]
+                for _ in range(50):
+                    with _u.urlopen(
+                        f"http://127.0.0.1:{port}/npi-cleaner/status/{job_id}"
+                    ) as r:
+                        j = json.loads(r.read().decode())
+                        if j.get("done"):
+                            break
+                    time.sleep(0.05)
+                self.assertEqual(j["scorecard"]["profile"], "http-prof")
+                self.assertIn("date-stale", j["scorecard"]["sanity"])
+                self.assertIn("date-stale", j["scorecard"]["accepted_rules"])
+                # Synchronous API clean with the same profile.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/clean"
+                    "?profile=http-prof",
+                    data=csv_b, method="POST",
+                    headers={"X-Filename": "sync.csv"})
+                with _u.urlopen(req) as r:
+                    sc = json.loads(r.read().decode())
+                self.assertIn("quality", sc)
+                self.assertEqual(sc["profile"], "http-prof")
+                # Cleanup.
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/npi-cleaner/api/profiles/delete",
+                    data=json.dumps({"name": "http-prof"}).encode(),
+                    method="POST",
+                    headers={"Content-Type": "application/json"})
+                with _u.urlopen(req) as r:
+                    self.assertTrue(json.loads(r.read().decode())["ok"])
             finally:
                 server.shutdown()
                 server.server_close()

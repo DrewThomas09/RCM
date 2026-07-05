@@ -825,6 +825,10 @@ class CleanResult:
     # Worklists: rule → 1-based OUTPUT row indices that fired it (capped per
     # rule) so flagged rows can be exported as actionable per-rule CSVs.
     flag_rows: Dict[str, List[int]] = field(default_factory=dict)
+    # Profile applied to this run (see profiles.py): accepted rules still
+    # report but don't count against the grade.
+    accepted_rules: List[str] = field(default_factory=list)
+    profile_name: Optional[str] = None
     delimiter: str = ","
     headers: List[str] = field(default_factory=list)
     out_path: Optional[str] = None
@@ -905,10 +909,14 @@ class CleanResult:
                         if self.n_cells_total else 1.0)
         npi_bad = self.total_issues - sum(
             c.get("blank", 0) for c in self.column_stats.values())
-        validity_hits = sum(self.sanity.get(r, 0) for r in self._VALIDITY_RULES)
+        _accepted = set(self.accepted_rules)
+        validity_hits = sum(self.sanity.get(r, 0)
+                            for r in self._VALIDITY_RULES
+                            if r not in _accepted)
         validity = max(0.0, 1.0 - min(1.0, (validity_hits + npi_bad) / rows))
         consistency_hits = sum(self.sanity.get(r, 0)
-                               for r in self._CONSISTENCY_RULES)
+                               for r in self._CONSISTENCY_RULES
+                               if r not in _accepted)
         consistency = max(0.0, 1.0 - min(1.0, consistency_hits / rows))
         dup = self.n_dupes_removed + self.sanity.get(
             "suspected-duplicate-claim", 0)
@@ -951,6 +959,8 @@ class CleanResult:
             "fill_rates": self.column_fill,
             "denials": self.denials,
             "worklists": {k: len(v) for k, v in self.flag_rows.items()},
+            "accepted_rules": self.accepted_rules,
+            "profile": self.profile_name,
             "rule_catalog": _rule_catalog(),
             "npi_columns": self.npi_columns,
             "billing_column": self.billing_column,
@@ -1117,6 +1127,7 @@ def clean_bytes(
     enrich: bool = False,
     deep: bool = False,
     deid: bool = False,
+    profile: Optional[Dict[str, object]] = None,
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
 ) -> CleanResult:
@@ -1236,9 +1247,15 @@ def clean_bytes(
         _rd = None
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).date()
-    # Ten-year staleness horizon for service dates — a DOS this old in a
-    # working claims extract is almost always a key-entry or century error.
-    _stale_cut = f"{_today.year - 10:04d}-01-01"
+    # Profile-tunable thresholds (see profiles.py) with safe defaults.
+    _prof = profile or {}
+    _thr = _prof.get("thresholds") or {}
+    _stale_years = int(_thr.get("stale_years", 10) or 10)
+    _timely_days = int(_thr.get("timely_filing_days", 365) or 365)
+    _iqr_mult = float(_thr.get("outlier_iqr_mult", 3.0) or 3.0)
+    # Staleness horizon for service dates — a DOS this old in a working
+    # claims extract is almost always a key-entry or century error.
+    _stale_cut = f"{_today.year - _stale_years:04d}-01-01"
     # ZIP↔state consistency: pair same-entity state/zip columns and flag rows
     # whose ZIP3 prefix resolves to a different state than the state cell.
     zs_pairs = _zip_state_pairs(headers)
@@ -1516,7 +1533,7 @@ def clean_bytes(
                     from datetime import date as _d2
                     _delta = (_d2.fromisoformat(_rv[:10])
                               - _d2.fromisoformat(_sv[:10])).days
-                    if _delta > 365:
+                    if _delta > _timely_days:
                         res.sanity["timely-filing-risk"] = \
                             res.sanity.get("timely-filing-risk", 0) + 1
                 except ValueError:
@@ -1696,7 +1713,7 @@ def clean_bytes(
         _iqr = _q3 - _q1
         if _iqr <= 0:
             continue
-        _lo, _hi = _q1 - 3 * _iqr, _q3 + 3 * _iqr
+        _lo, _hi = (_q1 - _iqr_mult * _iqr, _q3 + _iqr_mult * _iqr)
         _n_out = sum(1 for v in _vals if v < _lo or v > _hi)
         if _n_out:
             _out_total += _n_out
@@ -1788,6 +1805,16 @@ def clean_bytes(
                     "workbook_name", "recovered.xlsx")
         except Exception as exc:  # noqa: BLE001
             res.deep = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+    # Profile post-processing: disabled flags vanish entirely;
+    # accepted flags stay visible but stop counting against the grade.
+    _disabled = set(_prof.get("disabled_rules") or [])
+    for _dr in _disabled:
+        res.sanity.pop(_dr, None)
+        res.flag_rows.pop(_dr, None)
+    res.accepted_rules = sorted(set(_prof.get("accepted_rules") or []))
+    res.profile_name = (str(_prof.get("name")) if _prof.get("name")
+                        else None)
 
     # Longitudinal observability: aggregate summary only, never PHI, and
     # guarded so history storage can never fail the cleaning job.
@@ -1996,7 +2023,8 @@ class JobManager:
     def submit(self, data: bytes, name: str, *,
                drop_duplicates: bool = True, enrich: bool = False,
                deep: bool = False, deid: bool = False,
-               overrides: Optional[Dict[str, str]] = None) -> str:
+               overrides: Optional[Dict[str, str]] = None,
+               profile: Optional[Dict[str, object]] = None) -> str:
         job_id = uuid.uuid4().hex
         job = Job(job_id=job_id, name=name, created=time.time())
         with self._lock:
@@ -2010,7 +2038,7 @@ class JobManager:
                 job.result = clean_bytes(
                     data, name, drop_duplicates=drop_duplicates,
                     enrich=enrich, deep=deep, deid=deid,
-                    overrides=overrides, progress=cb)
+                    overrides=overrides, profile=profile, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
             except Exception as exc:  # noqa: BLE001
                 traceback.print_exc()

@@ -224,6 +224,46 @@ patient name/address/phone/email and SSN are redacted, DOB is reduced to year,
 ZIP to its first three digits, and MRN/account numbers are replaced with a
 stable per-run token (same value → same token, so rows still link). Provider
 NPI and provider name are always kept intact — NPI recovery depends on them.">ⓘ</span></label>
+      <label style="margin-left:2px">Cleaning profile
+        <select id="npi-profile" style="margin-left:6px;font-size:12.5px">
+          <option value="">(default rules)</option>
+        </select>
+        <button type="button" class="npi-again" id="npi-profile-new"
+                style="margin-left:6px">manage…</button>
+        <span class="npi-hint" title="Named rule suites: disable rules that
+don't apply to this feed, mark known issues as accepted (still reported,
+no longer graded), and tune thresholds (timely-filing days, stale-date
+horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
+      </label>
+    </div>
+    <div id="npi-profile-editor" class="npi-hidden" style="border:1px solid
+      var(--line,#d2ddd7);border-radius:8px;padding:14px;margin-top:10px">
+      <div style="font-size:13px;font-weight:640;margin-bottom:8px">
+        Cleaning profiles</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input id="npi-prof-name" placeholder="profile name"
+               style="font-size:12.5px;padding:4px 8px">
+        <label class="npi-muted">timely-filing days
+          <input id="npi-prof-timely" type="number" value="365" min="30"
+                 max="1095" style="width:70px;font-size:12.5px"></label>
+        <label class="npi-muted">stale after (years)
+          <input id="npi-prof-stale" type="number" value="10" min="1"
+                 max="50" style="width:55px;font-size:12.5px"></label>
+        <label class="npi-muted">outlier fence (×IQR)
+          <input id="npi-prof-iqr" type="number" value="3" min="1.5"
+                 max="10" step="0.5" style="width:60px;font-size:12.5px"></label>
+      </div>
+      <div class="npi-muted" style="margin-top:8px">Per rule: leave
+        <em>on</em>, mark <em>accepted</em> (reported, not graded), or
+        <em>off</em> (not checked at all).</div>
+      <div id="npi-prof-rules" style="max-height:260px;overflow:auto;
+        margin-top:6px;font-size:12px;columns:2;column-gap:24px"></div>
+      <div style="margin-top:10px">
+        <button type="button" class="npi-dl" id="npi-prof-save"
+          style="font-size:12.5px;padding:6px 14px">Save profile</button>
+        <button type="button" class="npi-again" id="npi-prof-close">close</button>
+      </div>
+      <div class="npi-muted" id="npi-prof-msg" style="margin-top:6px"></div>
     </div>
   </div>
 
@@ -443,7 +483,7 @@ _EXTRA_JS = r"""
     $("npi-col-rows").innerHTML=rows;
     (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
     renderRepairs(s.repairs, s.repairs_total);
-    renderSanity(s.sanity, s.worklists, s.download);
+    renderSanity(s.sanity, s.worklists, s.download, s.accepted_rules||[]);
     renderQuality(s);
     $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
 
@@ -629,7 +669,8 @@ _EXTRA_JS = r"""
       ';border-radius:4px;padding:1px 6px;margin-right:6px;vertical-align:middle">'+
       sev+'</span>';
   }
-  function renderSanity(sanity, worklists, dl){
+  function renderSanity(sanity, worklists, dl, accepted){
+    var acc={}; (accepted||[]).forEach(function(a){acc[a]=1;});
     var box=$("npi-sanity");
     var keys=sanity?Object.keys(sanity):[];
     if(!keys.length){ box.innerHTML=""; return; }
@@ -646,6 +687,8 @@ _EXTRA_JS = r"""
     keys.forEach(function(k){
       var info=RULE_INFO[k]||{};
       var label=(info.title||SANITY_LABELS[k]||k);
+      if(acc[k]){ label='<span style="opacity:.55">'+label+
+        ' <em style="font-size:11px">(accepted — not graded)</em></span>'; }
       var sub=sevChip(info.severity||"info")+'<span class="npi-pill">'+k+'</span>'+
         (info.remediation?('<br><span class="npi-muted">'+esc(info.remediation)+
         '</span>'):'');
@@ -1131,6 +1174,9 @@ _EXTRA_JS = r"""
     if($("npi-deid").checked) params.push("deid=1");
     var qs = params.length ? "?"+params.join("&") : "";
     var headers={"X-Filename":encodeURIComponent(file.name)};
+    var profSel=$("npi-profile");
+    if(profSel && profSel.value){
+      headers["X-Profile"]=encodeURIComponent(profSel.value); }
     if(overrides && Object.keys(overrides).length){
       headers["X-Overrides"]=encodeURIComponent(JSON.stringify(overrides));
     }
@@ -1149,6 +1195,71 @@ _EXTRA_JS = r"""
   drop.addEventListener("keydown", function(e){
     if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileIn.click(); } });
   fileIn.addEventListener("change", function(){ chooseFile(fileIn.files[0]); });
+  // ---- Cleaning profiles ----
+  function loadProfiles(){
+    fetch("/npi-cleaner/api/profiles").then(function(r){return r.json();})
+      .then(function(j){
+        var sel=$("npi-profile"); if(!sel) return;
+        var cur=sel.value;
+        sel.innerHTML='<option value="">(default rules)</option>'+
+          (j.profiles||[]).map(function(p){
+            return '<option value="'+esc(p.name)+'">'+esc(p.name)+'</option>';
+          }).join("");
+        sel.value=cur;
+      }).catch(function(){});
+  }
+  function buildProfRules(){
+    fetch("/npi-cleaner/api/rules").then(function(r){return r.json();})
+      .then(function(j){
+        var flags=(j.rules||[]).filter(function(r){return r.kind==="flag";});
+        $("npi-prof-rules").innerHTML=flags.map(function(r){
+          return '<div style="break-inside:avoid;margin-bottom:3px" '+
+            'title="'+esc(r.description)+'">'+
+            '<select data-rule="'+esc(r.id)+'" style="font-size:11px">'+
+            '<option value="on">on</option>'+
+            '<option value="accepted">accepted</option>'+
+            '<option value="off">off</option></select> '+
+            esc(r.title)+'</div>';
+        }).join("");
+      }).catch(function(){});
+  }
+  var pbtn=$("npi-profile-new");
+  if(pbtn){ pbtn.addEventListener("click", function(){
+    var ed=$("npi-profile-editor");
+    ed.classList.toggle("npi-hidden");
+    if(!ed.classList.contains("npi-hidden") &&
+       !$("npi-prof-rules").innerHTML){ buildProfRules(); }
+  }); }
+  var pclose=$("npi-prof-close");
+  if(pclose){ pclose.addEventListener("click", function(){
+    $("npi-profile-editor").classList.add("npi-hidden"); }); }
+  var psave=$("npi-prof-save");
+  if(psave){ psave.addEventListener("click", function(){
+    var name=($("npi-prof-name").value||"").trim();
+    if(!name){ $("npi-prof-msg").textContent="Give the profile a name."; return; }
+    var disabled=[], accepted=[];
+    $("npi-prof-rules").querySelectorAll("select[data-rule]").forEach(function(s){
+      if(s.value==="off") disabled.push(s.getAttribute("data-rule"));
+      if(s.value==="accepted") accepted.push(s.getAttribute("data-rule"));
+    });
+    var cfg={disabled_rules:disabled, accepted_rules:accepted,
+      thresholds:{timely_filing_days:parseInt($("npi-prof-timely").value,10)||365,
+                  stale_years:parseInt($("npi-prof-stale").value,10)||10,
+                  outlier_iqr_mult:parseFloat($("npi-prof-iqr").value)||3}};
+    fetch("/npi-cleaner/api/profiles", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:name, config:cfg})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        $("npi-prof-msg").textContent = j.ok ?
+          ('Saved "'+name+'" — select it above for the next upload.') :
+          (j.error||"Save failed.");
+        loadProfiles();
+        var sel=$("npi-profile"); if(sel && j.ok){ sel.value=name; }
+      }).catch(function(){ $("npi-prof-msg").textContent="Save failed."; });
+  }); }
+  loadProfiles();
+
   ["dragenter","dragover"].forEach(function(ev){
     drop.addEventListener(ev, function(e){ e.preventDefault();
       drop.classList.add("drag"); }); });

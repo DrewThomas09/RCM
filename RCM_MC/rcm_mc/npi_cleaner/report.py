@@ -129,6 +129,20 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
         sheets.append(Sheet("Suggested fixes", fix_rows,
                             col_widths=[12] * min(len(cols), 12)))
 
+    # ---- Per-rule worklist tabs: just the flagged rows, ready to hand to
+    #      the source-system owner (top 5 rules, 200 rows each). ----
+    flag_rows = getattr(res, "flag_rows", None) or {}
+    for rule, idxs in sorted(flag_rows.items(),
+                             key=lambda kv: -len(kv[1]))[:5]:
+        idx_set = set(idxs[:200])
+        wl = [_header(["_row"] + list(headers))]
+        for i, r in enumerate(rows, start=1):
+            if i in idx_set:
+                wl.append([i] + list(r))
+        if len(wl) > 1:
+            sheets.append(Sheet(("WL " + rule)[:28], wl,
+                                col_widths=[7] + [14] * min(len(headers), 11)))
+
     # ---- NPPES verify + recover (only when it ran) ----
     nppes = res.nppes or {}
     if nppes.get("verify") or nppes.get("recover"):
