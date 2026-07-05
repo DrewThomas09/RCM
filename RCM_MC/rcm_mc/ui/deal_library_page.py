@@ -260,11 +260,15 @@ def render_deal_library(store: Any, params: Optional[Dict[str, str]] = None) -> 
     )
 
     if not total:
+        # Admin note (not rendered): populating this page is an operator
+        # step — drop Capital IQ screening exports into
+        # data/vendor/deal_library/ and run
+        # scripts/ingest_deal_library_exports.py.
         empty = ck_empty_state(
             "Deal Library is empty",
-            "No licensed export has been ingested yet. Drop your Capital IQ "
-            "screening exports into data/vendor/deal_library/ and run "
-            "scripts/ingest_deal_library_exports.py, then reload.",
+            "No licensed market-data export has been ingested yet. Loading "
+            "Capital IQ / HCPEA exports is an administrator step — ask your "
+            "platform administrator to ingest them, then reload this page.",
         )
         return chartis_shell(title + purpose_hdr + not_note + empty,
                              title="Deal Library", active_nav="/deal-library")

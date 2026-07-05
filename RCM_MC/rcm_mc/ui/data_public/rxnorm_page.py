@@ -405,8 +405,9 @@ def _seed_prompt(csrf_hint: bool = True) -> str:
         '<div style="font-family:var(--sc-serif,serif);font-size:16px;color:#0b2341;">'
         'No RxNorm data loaded yet</div>'
         '<div style="font-size:12.5px;color:#6a7480;margin:6px 0 12px;">'
-        'Populate the crosswalk, concepts, relationships and drug classes from '
-        'the committed offline seed (no network) to explore the surface.</div>'
+        'The RxNorm reference tables haven&rsquo;t been loaded yet &mdash; '
+        'populate them from the bundled offline seed (no network required) '
+        'to explore the drug ontology, NDC crosswalk and drug classes.</div>'
         '<form method="post" action="/rxnorm/seed">'
         '<button type="submit" style="padding:8px 18px;background:#155752;'
         'color:#fff;border:none;border-radius:3px;font-size:13px;cursor:pointer;">'
@@ -575,7 +576,8 @@ def render_rxnorm_page(store: Any, params: Optional[Dict[str, str]] = None) -> s
         body = ('<div class="ck-page-wrap" style="max-width:1040px;margin:0 auto;">'
                 + title + kpis + _seed_prompt()
                 + _section("Datasets (registry)",
-                           "declarative rows — adding a dataset is a row, not code")
+                           "every reference dataset behind this page — source "
+                   "endpoint, refresh cadence and join keys")
                 + _registry_table() + '</div>')
         return chartis_shell(body, "Drug reference & NDC crosswalk",
                              active_nav="/research",
@@ -602,7 +604,8 @@ def render_rxnorm_page(store: Any, params: Optional[Dict[str, str]] = None) -> s
         + _dataset_browser(store, dataset or "rxnorm_concepts", ds_sort,
                            ds_desc, ds_page)
         + _section("Datasets (registry)",
-                   "declarative rows — adding a dataset is a row, not code")
+                   "every reference dataset behind this page — source "
+                   "endpoint, refresh cadence and join keys")
         + _registry_table()
         + '</div>'
     )

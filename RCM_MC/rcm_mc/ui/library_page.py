@@ -26,8 +26,8 @@ _LIBRARY_SECTIONS = [
                 "description": "5-year discounted cash flow with WACC sensitivity matrix",
                 "endpoint": "/api/deals/{deal_id}/dcf",
                 "doc": "Projects free cash flow using deal profile inputs. Builds a WACC x terminal "
-                       "growth sensitivity table. Requires: net_revenue, ebitda_margin, capex_pct, "
-                       "working_capital_change.",
+                       "growth sensitivity table. Requires: net revenue, EBITDA margin, capex %, "
+                       "working-capital change.",
                 "badge": "Financial Model",
             },
             {
@@ -45,7 +45,7 @@ _LIBRARY_SECTIONS = [
                 "endpoint": "/api/deals/{deal_id}/financials",
                 "doc": "Reconstructs full financial statements from HCRIS cost report data and "
                        "deal profile. Every line item tagged with source provenance (HCRIS, "
-                       "deal_profile, benchmark, computed).",
+                       "deal profile, benchmark, computed).",
                 "badge": "Financial Model",
             },
             {
