@@ -57,6 +57,16 @@ _NAME_HINTS = (
     "organizationname", "orgname", "providername", "billingprovidername",
     "facilityname", "practicename", "provider", "name",
 )
+# PERSON provider-name columns for the re-case + credential-parse repair.
+# Deliberately narrower than _NAME_HINTS (which also feeds NPPES lookups):
+# re-casing must never touch an organization-name column, so org-flavored
+# headers are excluded outright and org-looking VALUES (LLC, CLINIC …) are
+# skipped again per cell inside the cleaner.
+_PNAME_HINTS = ("providername", "physicianname", "renderingname",
+                "attendingname", "referringname", "servicingname",
+                "providerfirst", "providerlast", "doctorname")
+_PNAME_EXCLUDE = ("organization", "org", "facility", "practice", "group",
+                  "patient", "payer", "member", "subscriber", "insur")
 _STATE_HINTS = ("providerstate", "billingstate", "state", "provstate", "st")
 # Columns carrying a drug identifier, for the RxNorm / openFDA connectors.
 _NDC_HINTS = ("ndc11", "ndc", "drugndc", "ndccode")
@@ -571,6 +581,90 @@ def _pos_invalid(v: str) -> bool:
     return s not in _POS_VALID
 
 
+# Clinical credentials recognized at the end of a person provider name.
+# Parsed (period-insensitively: "M.D." → MD) for the credential-mix report
+# and kept uppercase during re-casing. Mirrored by refdata.CREDENTIALS,
+# which carries the display meanings — a test keeps the two sets in sync.
+_CREDENTIALS = frozenset((
+    "MD", "DO", "MBBS", "NP", "PA", "PAC", "PA-C", "APRN", "ARNP", "FNP",
+    "CRNA", "CNM", "CNS", "RN", "LPN", "LVN", "DDS", "DMD", "DPM", "OD",
+    "AUD", "PHD", "PSYD", "DC", "PT", "DPT", "OT", "OTR", "SLP", "RD",
+    "RDN", "PHARMD", "RPH", "LCSW", "LMSW", "LMFT", "LPC", "BCBA", "MPH",
+    "MSN", "BSN", "FACS", "FACP", "FAAP",
+))
+# Generational suffixes keep canonical casing rather than plain title case.
+_NAME_SUFFIXES = {"JR": "Jr", "SR": "Sr", "II": "II", "III": "III",
+                  "IV": "IV"}
+# A value containing any of these words is a billing ENTITY, not a person —
+# "SMITH FAMILY CLINIC LLC" can land in a provider-name column and must
+# pass through untouched (re-casing an org name is always wrong).
+_ORG_NAME_TOKENS = frozenset((
+    "INC", "LLC", "PLLC", "LLP", "LTD", "CORP", "CORPORATION", "PC", "PLC",
+    "HOSPITAL", "HOSP", "CENTER", "CTR", "CLINIC", "ASSOCIATES", "ASSOC",
+    "GROUP", "GRP", "PARTNERS", "LABORATORY", "LABORATORIES", "LAB", "LABS",
+    "PHARMACY", "HEALTHCARE", "MEDICAL", "SERVICES", "SVCS", "SYSTEM",
+    "SYSTEMS", "INSTITUTE", "FOUNDATION", "UNIVERSITY", "COLLEGE", "DEPT",
+    "DEPARTMENT", "AGENCY", "IMAGING", "RADIOLOGY",
+))
+
+
+def _recase_name_word(w: str) -> str:
+    """Proper-case one name token: single letters stay capital (initials),
+    Mc gets its second cap (MCDONALD → McDonald), and apostrophe/hyphen
+    parts re-case independently (O'BRIEN → O'Brien, SMITH-JONES →
+    Smith-Jones). Deliberately no Mac- rule — Macias/Mackey/Macon would be
+    corrupted far more often than MacDonald would be helped."""
+    out = []
+    for p in re.split(r"([\-'’])", w):
+        if p in ("-", "'", "’"):
+            out.append(p)
+        elif len(p) <= 1:
+            out.append(p.upper())
+        elif len(p) > 2 and p[:2].upper() == "MC":
+            out.append("Mc" + p[2].upper() + p[3:].lower())
+        else:
+            out.append(p[0].upper() + p[1:].lower())
+    return "".join(out)
+
+
+def _clean_provider_name_cell(v: str) -> Tuple[str, List[str], List[str]]:
+    """Re-case a shouting/whispering person name and parse credentials.
+
+    Returns ``(value, rules_hit, credentials_seen)``. The re-case fires
+    ONLY when the whole cell is upper- or lower-case — mixed case means a
+    human already curated it — and never when the value looks like an
+    organization or contains digits. Credentials are reported either way.
+    """
+    if not v:
+        return v, [], []
+    up_toks = [t for t in
+               (t.replace(".", "") for t in re.split(r"[ ,;/]+", v.upper()))
+               if t]
+    creds = [c for c in dict.fromkeys(up_toks) if c in _CREDENTIALS]
+    if any(t in _ORG_NAME_TOKENS for t in up_toks):
+        return v, [], []
+    if any(ch.isdigit() for ch in v):
+        return v, [], creds
+    if not any(ch.isalpha() for ch in v) or v not in (v.upper(), v.lower()):
+        return v, [], creds
+    out = []
+    for piece in re.split(r"([ ,;/]+)", v):
+        if not piece or piece[0] in " ,;/":
+            out.append(piece)
+            continue
+        plain = piece.replace(".", "").upper()
+        if plain in _CREDENTIALS:
+            out.append(plain)                       # "m.d." → "MD"
+        elif plain in _NAME_SUFFIXES:
+            out.append(_NAME_SUFFIXES[plain])
+        else:
+            out.append(_recase_name_word(piece))
+    new = "".join(out)
+    if new != v:
+        return new, ["provider-name-format"], creds
+    return v, [], creds
+
+
 def _payer_key(v: str) -> str:
     """Fold a payer name to a clustering key: uppercase, punctuation → space,
     collapsed whitespace, then family-prefix aliasing (BCBS OF TX and
@@ -831,6 +925,9 @@ class CleanResult:
     # Worklists: rule → 1-based OUTPUT row indices that fired it (capped per
     # rule) so flagged rows can be exported as actionable per-rule CSVs.
     flag_rows: Dict[str, List[int]] = field(default_factory=dict)
+    # Credential tokens parsed from provider-name columns (MD, NP, PA …) →
+    # count of cells carrying each. Report-only; counted per input row.
+    credentials: Dict[str, int] = field(default_factory=dict)
     # Profile applied to this run (see profiles.py): accepted rules still
     # report but don't count against the grade.
     accepted_rules: List[str] = field(default_factory=list)
@@ -967,6 +1064,7 @@ class CleanResult:
             "changelog_truncated": self.changelog_truncated,
             "fill_rates": self.column_fill,
             "denials": self.denials,
+            "credentials": self.credentials or None,
             "worklists": {k: len(v) for k, v in self.flag_rows.items()},
             "accepted_rules": self.accepted_rules,
             "profile": self.profile_name,
@@ -1230,6 +1328,14 @@ def clean_bytes(
     pos_set = {i for i, h in enumerate(headers)
                if _norm_key(h) == "pos" or "placeofservice" in _norm_key(h)
                or "poscode" in _norm_key(h)}
+    # Person provider-name columns for the re-case + credential parse. Any
+    # role already claimed above wins — a header like "RenderingProviderNPI"
+    # must stay with the NPI cleaner.
+    pname_set = {i for i, h in enumerate(headers)
+                 if any(x in _norm_key(h) for x in _PNAME_HINTS)
+                 and not any(x in _norm_key(h) for x in _PNAME_EXCLUDE)}
+    pname_set -= (npi_set | money_set | date_set | zip_set | phone_set
+                  | taxo_set)
     # Date columns that must never be in the future (service / birth / paid).
     past_date_cols = {i for i, h in enumerate(headers)
                       if any(x in _norm_key(h)
@@ -1399,6 +1505,10 @@ def clean_bytes(
                 val, r = _clean_revcode_cell(val); hits += r
             elif ci in pos_set:
                 val, r = _clean_pos_cell(val); hits += r
+            elif ci in pname_set:
+                val, r, _crd = _clean_provider_name_cell(val); hits += r
+                for _c in _crd:
+                    res.credentials[_c] = res.credentials.get(_c, 0) + 1
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
             # Cell-level audit trail — recorded BEFORE de-identification so

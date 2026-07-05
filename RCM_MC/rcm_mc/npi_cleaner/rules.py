@@ -143,6 +143,15 @@ _RULES: List[Rule] = [
     Rule("pos-pad", "repair", "info", "Coding",
          "POS zero-padded", "1-digit Place of Service padded (1 → 01).",
          "None needed.", "conformity"),
+    Rule("provider-name-format", "repair", "info", "Identifiers",
+         "Provider name re-cased",
+         "An all-caps or all-lowercase PERSON name in a provider-name "
+         "column was converted to standard casing (SMITH, JOHN A, MD → "
+         "Smith, John A, MD). Mc/O'/hyphenated surnames keep their inner "
+         "capitals, credential tokens (MD, DO, NP …) stay uppercase, and "
+         "organization names (LLC, CLINIC, HOSPITAL …) are never touched.",
+         "None needed — cosmetic normalization; the change log holds every "
+         "original value.", "conformity"),
 
     # ------------------------------------------------------ flags: validity --
     Rule("hcpcs-malformed", "flag", "critical", "Coding",

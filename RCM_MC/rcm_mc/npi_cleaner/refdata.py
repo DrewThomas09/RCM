@@ -1298,3 +1298,60 @@ def occurrence_code_meaning(code: str) -> Optional[str]:
 
 def value_code_meaning(code: str) -> Optional[str]:
     return VALUE_CODES.get(code.strip().upper().zfill(2))
+
+
+# --------------------------------------------------------------------------
+# Clinical credentials — display meanings for the credential-mix report.
+# The parse set lives in engine._CREDENTIALS (hot loop); a test asserts the
+# two stay identical so a credential can't be parsed without a meaning here.
+# --------------------------------------------------------------------------
+CREDENTIALS: Dict[str, str] = {
+    "MD": "Doctor of Medicine",
+    "DO": "Doctor of Osteopathic Medicine",
+    "MBBS": "Bachelor of Medicine, Bachelor of Surgery",
+    "NP": "Nurse Practitioner",
+    "PA": "Physician Assistant",
+    "PAC": "Physician Assistant - Certified",
+    "PA-C": "Physician Assistant - Certified",
+    "APRN": "Advanced Practice Registered Nurse",
+    "ARNP": "Advanced Registered Nurse Practitioner",
+    "FNP": "Family Nurse Practitioner",
+    "CRNA": "Certified Registered Nurse Anesthetist",
+    "CNM": "Certified Nurse Midwife",
+    "CNS": "Clinical Nurse Specialist",
+    "RN": "Registered Nurse",
+    "LPN": "Licensed Practical Nurse",
+    "LVN": "Licensed Vocational Nurse",
+    "DDS": "Doctor of Dental Surgery",
+    "DMD": "Doctor of Dental Medicine",
+    "DPM": "Doctor of Podiatric Medicine",
+    "OD": "Doctor of Optometry",
+    "AUD": "Doctor of Audiology",
+    "PHD": "Doctor of Philosophy",
+    "PSYD": "Doctor of Psychology",
+    "DC": "Doctor of Chiropractic",
+    "PT": "Physical Therapist",
+    "DPT": "Doctor of Physical Therapy",
+    "OT": "Occupational Therapist",
+    "OTR": "Occupational Therapist, Registered",
+    "SLP": "Speech-Language Pathologist",
+    "RD": "Registered Dietitian",
+    "RDN": "Registered Dietitian Nutritionist",
+    "PHARMD": "Doctor of Pharmacy",
+    "RPH": "Registered Pharmacist",
+    "LCSW": "Licensed Clinical Social Worker",
+    "LMSW": "Licensed Master Social Worker",
+    "LMFT": "Licensed Marriage and Family Therapist",
+    "LPC": "Licensed Professional Counselor",
+    "BCBA": "Board Certified Behavior Analyst",
+    "MPH": "Master of Public Health",
+    "MSN": "Master of Science in Nursing",
+    "BSN": "Bachelor of Science in Nursing",
+    "FACS": "Fellow, American College of Surgeons",
+    "FACP": "Fellow, American College of Physicians",
+    "FAAP": "Fellow, American Academy of Pediatrics",
+}
+
+
+def credential_meaning(code: str) -> Optional[str]:
+    return CREDENTIALS.get(code.strip().upper().replace(".", ""))

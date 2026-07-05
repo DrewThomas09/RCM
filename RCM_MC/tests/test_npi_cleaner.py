@@ -749,6 +749,62 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(res.n_dupes_removed, 1)
         self.assertEqual(res.n_rows_out, 3)   # near-dup row is KEPT
 
+    def test_provider_name_recase_unit(self):
+        # Shouting person names get standard casing with Mc/O'/hyphen
+        # handling; credentials stay uppercase; suffixes keep canon form.
+        c = engine._clean_provider_name_cell
+        for src, want, creds in (
+            ("SMITH, JOHN A, MD", "Smith, John A, MD", ["MD"]),
+            ("O'BRIEN-SMITH, MARY, NP", "O'Brien-Smith, Mary, NP", ["NP"]),
+            ("MCDONALD, RONALD, DO", "McDonald, Ronald, DO", ["DO"]),
+            # No Mac- rule on purpose: Macias must NOT become MacIas.
+            ("MACIAS, JOSE, M.D.", "Macias, Jose, MD", ["MD"]),
+            ("smith, jane, pa-c", "Smith, Jane, PA-C", ["PA-C"]),
+            ("SMITH JR, WILLIAM, DDS", "Smith Jr, William, DDS", ["DDS"]),
+        ):
+            got, hits, seen = c(src)
+            self.assertEqual(got, want)
+            self.assertEqual(hits, ["provider-name-format"])
+            self.assertEqual(seen, creds)
+        # Mixed case = already curated → untouched, credentials still parsed.
+        got, hits, seen = c("Smith, John, MD")
+        self.assertEqual((got, hits, seen), ("Smith, John, MD", [], ["MD"]))
+        # An org name in a provider-name column must pass through untouched.
+        for org in ("SMITH FAMILY CLINIC LLC", "MERCY HOSPITAL",
+                    "ACME MEDICAL GROUP INC"):
+            got, hits, seen = c(org)
+            self.assertEqual((got, hits, seen), (org, [], []))
+        # Digits mean an ID crept in — never re-case those.
+        self.assertEqual(c("SMITH 12345"), ("SMITH 12345", [], []))
+
+    def test_provider_name_engine_and_credentials(self):
+        # End to end: the provider-name column is re-cased, the org-name
+        # column is untouched, and the credential mix lands in the scorecard.
+        data = ("RenderingProviderName,OrganizationName,BilledAmt\n"
+                "\"SMITH, JOHN A, MD\",MERCY HOSPITAL INC,100\n"
+                "\"O'BRIEN, MARY, NP\",MERCY HOSPITAL INC,200\n").encode()
+        res = engine.clean_bytes(data, "prov.csv")
+        self.assertEqual(res.repairs.get("provider-name-format"), 2)
+        sc = res.as_scorecard()
+        self.assertEqual(sc["credentials"], {"MD": 1, "NP": 1})
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        self.assertIn("Smith, John A, MD", out)
+        self.assertIn("O'Brien, Mary, NP", out)
+        self.assertIn("MERCY HOSPITAL INC", out)   # org column untouched
+        from rcm_mc.npi_cleaner import rules
+        self.assertEqual(rules.describe("provider-name-format")["kind"],
+                         "repair")
+
+    def test_credential_catalog_in_sync(self):
+        # Every credential the engine can parse must have a display meaning
+        # in refdata (and vice versa) — the two sets are maintained together.
+        from rcm_mc.npi_cleaner import refdata
+        self.assertEqual(set(engine._CREDENTIALS), set(refdata.CREDENTIALS))
+        self.assertEqual(refdata.credential_meaning("m.d."),
+                         "Doctor of Medicine")
+        self.assertIsNone(refdata.credential_meaning("XYZ"))
+
     def test_formula_injection_defanged(self):
         # A cell that would start an Excel formula must be neutralized in CSV.
         data = ("NPI,Note\n" + GOOD_A + ",=SUM(A1:A9)\n").encode()
@@ -1285,7 +1341,10 @@ class TestNpiCleanerHttp(unittest.TestCase):
                 # History page + API + rules API.
                 with _u.urlopen(
                     f"http://127.0.0.1:{port}/npi-cleaner/history") as r:
-                    self.assertIn("Quality-score trend", r.read().decode())
+                    _hist_html = r.read().decode()
+                self.assertIn("Quality-score trend", _hist_html)
+                self.assertIn("Per-rule trend", _hist_html)
+                self.assertIn("nh-rule-box", _hist_html)
                 with _u.urlopen(
                     f"http://127.0.0.1:{port}/npi-cleaner/api/history") as r:
                     runs = json.loads(r.read().decode())["runs"]

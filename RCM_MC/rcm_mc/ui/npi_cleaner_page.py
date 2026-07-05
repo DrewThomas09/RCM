@@ -482,7 +482,7 @@ _EXTRA_JS = r"""
       'No NPI column detected in this file.</td></tr>'; }
     $("npi-col-rows").innerHTML=rows;
     (s.rule_catalog||[]).forEach(function(r){ RULE_INFO[r.id]=r; });
-    renderRepairs(s.repairs, s.repairs_total);
+    renderRepairs(s.repairs, s.repairs_total, s.credentials);
     renderSanity(s.sanity, s.worklists, s.download, s.accepted_rules||[]);
     renderQuality(s);
     $("tabbadge-quality").textContent = (s.quality&&s.quality.letter)||"";
@@ -617,20 +617,36 @@ _EXTRA_JS = r"""
     "ndc-pad-11":"Padded NDC to 11-digit billing format (segment-aware)",
     "ndc-normalize-11":"Normalized NDC to 11-digit billing format",
     "revcode-pad":"Restored dropped leading zeros in revenue codes (450 → 0450)",
-    "pos-pad":"Zero-padded 1-digit Place of Service codes"};
+    "pos-pad":"Zero-padded 1-digit Place of Service codes",
+    "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)"};
 
-  function renderRepairs(repairs, total){
+  function renderRepairs(repairs, total, credentials){
     var box=$("npi-repairs");
     var keys=repairs?Object.keys(repairs):[];
-    if(!keys.length){ box.innerHTML=""; return; }
-    keys.sort(function(a,b){return repairs[b]-repairs[a];});
-    var html='<div class="ck-section-header" style="margin-top:20px">'+
-      '<h3 style="margin:0">Cleaning fixes applied</h3></div>'+
-      '<div class="npi-muted">'+fmt(total)+' deterministic normalizations written '+
-      'to the cleaned file (originals were replaced in place).</div>';
-    keys.forEach(function(k){
-      html+=flagRow(REPAIR_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', repairs[k]);
-    });
+    var ckeys=credentials?Object.keys(credentials):[];
+    if(!keys.length && !ckeys.length){ box.innerHTML=""; return; }
+    var html="";
+    if(keys.length){
+      keys.sort(function(a,b){return repairs[b]-repairs[a];});
+      html+='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Cleaning fixes applied</h3></div>'+
+        '<div class="npi-muted">'+fmt(total)+' deterministic normalizations written '+
+        'to the cleaned file (originals were replaced in place).</div>';
+      keys.forEach(function(k){
+        html+=flagRow(REPAIR_LABELS[k]||k, '<span class="npi-pill">'+k+'</span>', repairs[k]);
+      });
+    }
+    if(ckeys.length){
+      ckeys.sort(function(a,b){return credentials[b]-credentials[a];});
+      html+='<div class="ck-section-header" style="margin-top:20px">'+
+        '<h3 style="margin:0">Credential mix</h3></div>'+
+        '<div class="npi-muted">Clinical credentials parsed from provider-name '+
+        'columns (cells naming each credential).</div><div style="margin-top:8px">'+
+        ckeys.map(function(k){
+          return '<span class="npi-pill" style="margin:0 6px 6px 0;display:inline-block">'+
+            esc(k)+' · '+fmt(credentials[k])+'</span>';
+        }).join("")+'</div>';
+    }
     box.innerHTML=html;
   }
 

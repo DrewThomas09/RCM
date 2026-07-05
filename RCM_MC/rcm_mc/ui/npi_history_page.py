@@ -47,6 +47,16 @@ _BODY = """
     <div id="nh-trend-box"><div class="nh-empty">Loading…</div></div>
   </div>
 
+  <div class="nh-trend">
+    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
+      Per-rule trend</div>
+    <div class="nh-muted" style="margin-bottom:8px">Is a specific problem
+    (bad codes, future dates, dupes …) getting better or worse across runs?
+    <select id="nh-rule" class="nh-btn" style="margin-left:8px;max-width:320px">
+    </select></div>
+    <div id="nh-rule-box"><div class="nh-empty">Loading…</div></div>
+  </div>
+
   <table class="nh-tbl">
     <thead><tr>
       <th></th><th>When</th><th>File</th><th class="num">Rows in</th>
@@ -108,6 +118,52 @@ _BODY = """
         '</title></circle>'; });
     svg+='</svg>';
     box.innerHTML=svg;
+  }
+
+  function renderRulePicker(){
+    var sel=$("nh-rule"), box=$("nh-rule-box");
+    var keys={}, list;
+    RUNS.forEach(function(r){
+      Object.keys(r.sanity||{}).forEach(function(k){ keys[k]=1; }); });
+    list=Object.keys(keys).sort();
+    if(RUNS.length<2 || !list.length){
+      sel.style.display="none";
+      box.innerHTML='<div class="nh-muted">Run the cleaner at least twice '+
+        '(with findings) to trend a rule.</div>';
+      return;
+    }
+    sel.innerHTML=list.map(function(k){
+      return '<option value="'+esc(k)+'">'+esc(k)+'</option>'; }).join("");
+    sel.addEventListener("change", function(){ renderRuleTrend(sel.value); });
+    renderRuleTrend(list[0]);
+  }
+
+  function renderRuleTrend(rule){
+    var box=$("nh-rule-box");
+    var pts=RUNS.slice().reverse().map(function(r){   // oldest → newest
+      return {v:(r.sanity||{})[rule]||0, f:r.file_name}; });
+    var max=1;
+    pts.forEach(function(p){ if(p.v>max) max=p.v; });
+    var W=Math.max(560, box.clientWidth-8), H=120, L=34, R=10, T=10, B=10;
+    var iw=W-L-R, ih=H-T-B, n=pts.length;
+    var bw=Math.min(38, (iw/n)*0.6);
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" '+
+      'preserveAspectRatio="xMidYMid meet">';
+    [0,max].forEach(function(g){
+      var y=T+ih-(g/max)*ih;
+      svg+='<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+
+        '" stroke="rgba(120,130,125,.18)"/>'+
+        '<text x="'+(L-5)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" '+
+        'fill="rgba(120,130,125,.9)">'+g+'</text>'; });
+    pts.forEach(function(p,i){
+      var cx=L+(n===1?iw/2:(i/(n-1))*iw), h=(p.v/max)*ih;
+      svg+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(T+ih-h).toFixed(1)+
+        '" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" '+
+        'fill="#b8732a" opacity=".85"><title>'+esc(p.f)+' — '+p.v+
+        '</title></rect>'; });
+    svg+='</svg>';
+    box.innerHTML=svg+'<div class="nh-muted" style="margin-top:4px">Rows '+
+      'flagged by <b>'+esc(rule)+'</b> per run (oldest → newest).</div>';
   }
 
   function renderRows(){
@@ -173,7 +229,8 @@ _BODY = """
   });
 
   fetch("/npi-cleaner/api/history").then(function(r){ return r.json(); })
-    .then(function(j){ RUNS=j.runs||[]; renderTrend(); renderRows(); })
+    .then(function(j){ RUNS=j.runs||[]; renderTrend(); renderRulePicker();
+      renderRows(); })
     .catch(function(){ $("nh-rows").innerHTML=
       '<tr><td colspan="9" class="nh-empty">Could not load history.</td></tr>'; });
 })();
