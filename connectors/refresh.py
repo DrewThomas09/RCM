@@ -35,6 +35,10 @@ from ._spi import CONNECTOR_NAMES
 # than --db FILE. The earlier four slices predate the --db convention.
 _ROOT_STYLE = {"openfda", "cms_coverage", "npi_registry", "icd10", "hrsa_data"}
 
+# Connectors that declare --db on each subcommand instead of the top-level
+# parser; their storage flag must FOLLOW the verb or argparse rejects it.
+_SUBCMD_DB_STYLE = {"cms_open_data", "open_payments"}
+
 # ``quick`` argv suffixes per connector, run in order after
 # ``python -m connectors.<name>.cli [--db …|--root …]``. Every entry is a
 # catalog sync or a page-capped slice of a flagship dataset. census_acs is
@@ -203,12 +207,19 @@ def refresh(db_dir: str, *, quick: bool = True,
     ``runner`` is injectable for tests (same signature as
     ``subprocess.run``); default is the real thing.
     """
+    import os
     run = runner or subprocess.run
+    os.makedirs(db_dir, exist_ok=True)  # sqlite cannot create parent dirs
     report = RefreshReport(db_dir=db_dir)
     for name, steps in plan(quick=quick, connectors=connectors).items():
         storage = _storage_argv(name, db_dir)
         for argv in steps:
-            full = [sys.executable, "-m", f"connectors.{name}.cli", *storage, *argv]
+            if name in _SUBCMD_DB_STYLE:
+                full = [sys.executable, "-m", f"connectors.{name}.cli",
+                        *argv, *storage]
+            else:
+                full = [sys.executable, "-m", f"connectors.{name}.cli",
+                        *storage, *argv]
             t0 = time.monotonic()
             try:
                 proc = run(full, capture_output=True, text=True,

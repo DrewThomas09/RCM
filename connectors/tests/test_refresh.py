@@ -60,12 +60,28 @@ class RefreshRunTests(unittest.TestCase):
             return _FakeProc()
 
         report = refresh_mod.refresh(
-            "var/t", connectors=["open_payments"], runner=runner)
+            "var/t", connectors=["medicaid_data"], runner=runner)
         self.assertTrue(report.ok)
-        self.assertEqual(len(calls), 3)  # discover + 2 fetches
+        self.assertEqual(len(calls), 4)  # discover + 3 fetches
         head = calls[0][:5]
         self.assertEqual(head[1:5], [
-            "-m", "connectors.open_payments.cli", "--db", "var/t/open_payments.db"])
+            "-m", "connectors.medicaid_data.cli", "--db", "var/t/medicaid_data.db"])
+
+    def test_subcommand_db_style_places_storage_after_the_verb(self):
+        # cms_open_data and open_payments declare --db per-subcommand;
+        # putting it before the verb makes argparse reject the invocation
+        # (the exact failure the first live sweep hit).
+        calls = []
+
+        def runner(argv, **kw):
+            calls.append(argv)
+            return _FakeProc()
+
+        refresh_mod.refresh("var/t", connectors=["open_payments"], runner=runner)
+        for argv in calls:
+            verb_at = 3  # [python, -m, module, verb, ...]
+            self.assertNotEqual(argv[verb_at], "--db")
+            self.assertEqual(argv[-2:], ["--db", "var/t/open_payments.db"])
 
     def test_a_failing_step_is_recorded_and_the_sweep_continues(self):
         def runner(argv, **kw):
