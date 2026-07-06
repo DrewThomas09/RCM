@@ -211,6 +211,10 @@ def _clean_csv_stream(
         # chunk boundaries too. Growth is capped inside the engine
         # (_STREAM_SEEN_CAP); saturation is surfaced as a warning below.
         stream_seen: set = set()
+        # Master-changelog sink health: once a write fails, the sink goes
+        # quiet and the run finishes with changelog_truncated instead of
+        # dying mid-flight.
+        sink_state = {"failed": False}
 
         while header is not None:
             chunk: List[bytes] = []
@@ -232,15 +236,24 @@ def _clean_csv_stream(
             # (with the input-row offset applied) — the audit CSV stays
             # complete no matter how many cells a 10M-row run changes,
             # and no chunk ever holds more than the preview in memory.
+            # The sink MUST NOT raise: a disk error on the audit log
+            # would otherwise abort an hours-long cleaning run — the
+            # right outcome is a truncated-log flag, not a dead job.
             _off = rows_in_offset
             _sunk = [0]
 
             def _sink(entry, _off=_off, _sunk=_sunk):
-                ri0, col0, before0, after0, rule0 = entry
-                log_writer.writerow(
-                    [ri0 + _off, _defang_cell(col0), _defang_cell(before0),
-                     _defang_cell(after0), rule0])
-                _sunk[0] += 1
+                if sink_state["failed"]:
+                    return
+                try:
+                    ri0, col0, before0, after0, rule0 = entry
+                    log_writer.writerow(
+                        [ri0 + _off, _defang_cell(col0),
+                         _defang_cell(before0), _defang_cell(after0),
+                         rule0])
+                    _sunk[0] += 1
+                except OSError:
+                    sink_state["failed"] = True
 
             sub = clean_bytes(
                 header + b"".join(chunk), src_name,
@@ -312,8 +325,7 @@ def _clean_csv_stream(
                     break
                 res.changelog.append((ri + rows_in_offset, col,
                                       before, after, rule))
-            if sub.changelog_truncated:
-                # Only a sink failure inside the engine can set this now.
+            if sub.changelog_truncated or sink_state["failed"]:
                 res.changelog_truncated = True
 
             # Worklists: chunk indices are 1-based OUTPUT rows — offset by

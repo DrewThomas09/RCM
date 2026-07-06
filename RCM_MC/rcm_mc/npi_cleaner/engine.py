@@ -1896,6 +1896,7 @@ def clean_bytes(
     # guard owns the temp file and self-cleans if the run dies early
     # (cancel / exception) — see _ChangelogSpill.
     _spill = _ChangelogSpill()
+    _phi_log_skipped = 0
 
     cb("Cleaning rows", 0.30)
     cleaned: List[List[str]] = []
@@ -1953,32 +1954,40 @@ def clean_bytes(
                     res.credentials[_c] = res.credentials.get(_c, 0) + 1
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
-            # Cell-level audit trail — recorded BEFORE de-identification so
-            # masked PHI never leaks into the change log. The first
-            # _CHANGELOG_PREVIEW entries stay in memory for the UI; the
-            # rest go to the caller's sink (streaming chunks) or spill to
-            # disk, so the changelog FILE is complete at any scale.
+            # Cell-level audit trail. On a de-identified run, changes in
+            # patient-identifier columns are COUNTED but never logged —
+            # the change log is a downloadable artifact, and its
+            # before-values would hand back exactly the PHI the user
+            # asked to remove (the old 20k cap bounded that exposure by
+            # accident; uncapped it would be the whole file). Everything
+            # else: first _CHANGELOG_PREVIEW entries stay in memory for
+            # the UI; the rest go to the caller's sink (streaming chunks)
+            # or spill to disk, so the FILE is complete at any scale.
             if val != cell:
                 res.n_changes += 1
-                _entry = (ri + 1, headers[ci] if ci < ncols else str(ci),
-                          cell, val, ";".join(hits) or "trim")
-                if _changelog_sink is not None:
-                    _changelog_sink(_entry)
-                    if len(res.changelog) < _CHANGELOG_PREVIEW:
-                        res.changelog.append(_entry)
-                elif len(res.changelog) < _CHANGELOG_PREVIEW:
-                    res.changelog.append(_entry)
-                elif _stream_chunk:
-                    # Chunk without a sink (direct callers): no file will
-                    # be written, so spilling would only leak temp files.
-                    res.changelog_truncated = True
+                if phi_cols and ci in phi_cols:
+                    _phi_log_skipped += 1
                 else:
-                    _spill.write(
-                        [_entry[0], _defang_cell(_entry[1]),
-                         _defang_cell(_entry[2]),
-                         _defang_cell(_entry[3]), _entry[4]])
-                    if _spill.failed:
+                    _entry = (ri + 1,
+                              headers[ci] if ci < ncols else str(ci),
+                              cell, val, ";".join(hits) or "trim")
+                    if _changelog_sink is not None:
+                        _changelog_sink(_entry)
+                        if len(res.changelog) < _CHANGELOG_PREVIEW:
+                            res.changelog.append(_entry)
+                    elif len(res.changelog) < _CHANGELOG_PREVIEW:
+                        res.changelog.append(_entry)
+                    elif _stream_chunk:
+                        # Chunk without a sink (direct callers): no file
+                        # will be written; spilling would leak temp files.
                         res.changelog_truncated = True
+                    else:
+                        _spill.write(
+                            [_entry[0], _defang_cell(_entry[1]),
+                             _defang_cell(_entry[2]),
+                             _defang_cell(_entry[3]), _entry[4]])
+                        if _spill.failed:
+                            res.changelog_truncated = True
             # Fill-rate counters for the data-quality report card.
             res.n_cells_total += 1
             if val != "":
@@ -2368,6 +2377,12 @@ def clean_bytes(
         # finalizer keeps covering the window between here and there, so
         # a cancel/crash in enrich/vendor code can't orphan the file.
         res.changelog_spill = _spill
+    if _phi_log_skipped:
+        res.warnings.append(
+            f"De-identification is on: {_phi_log_skipped:,} change(s) in "
+            "patient-identifier columns are counted but omitted from the "
+            "change log — the audit trail must not carry the unmasked "
+            "values you asked to remove.")
     res.n_rows_out = len(cleaned)
 
     # Suspected duplicate CLAIMS — distinct rows (already past exact-row dedup)
@@ -2978,8 +2993,10 @@ def _write_output(res: CleanResult, headers: List[str],
         res.companion_path = str(comp_path)
 
     # Cell-level audit trail: every change the cleaner made (row · column ·
-    # before → after · rule), as its own CSV download. De-id masking is
-    # deliberately absent — original PHI must never land in this file.
+    # before → after · rule), as its own CSV download. On de-identified
+    # runs, patient-identifier columns never reach this file at all
+    # (skipped at log time) — the artifact must stay as clean as the
+    # output the user asked for.
     # res.changelog holds the first _CHANGELOG_PREVIEW entries; anything
     # past that was spilled to disk during the row loop and is appended
     # here in BINARY mode — text mode's universal-newline translation

@@ -4123,8 +4123,42 @@ class TestSpillGuard(unittest.TestCase):
         self.assertFalse(p.exists())
 
 
+class TestPhiSafeChangelog(unittest.TestCase):
+    """On a de-identified run the changelog artifact must not carry the
+    raw patient identifiers the user asked to remove — previously the
+    before-values landed in the file (bounded only by the old 20k cap)."""
+
+    def test_deid_changelog_carries_no_raw_phi(self):
+        rows = ["ClaimID,PatientName,PatientDOB,BillingProviderNPI"]
+        rows += [f"{i}, John Q Secret ,1961-04-0{1 + i % 9}, {GOOD_A} "
+                 for i in range(1, 120)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "phi.csv", deid=True)
+        self.assertTrue(res.deid_applied)
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertNotIn("Secret", log)      # raw name never logged
+        self.assertNotIn("1961-04", log)     # raw DOB never logged
+        self.assertIn(GOOD_A, log)           # provider trims still audited
+        self.assertTrue(any("omitted from the change log" in w
+                            for w in res.warnings))
+        # And the cleaned output is masked, as before.
+        out = open(res.out_path, encoding="utf-8").read()
+        self.assertNotIn("Secret", out)
+
+    def test_non_deid_runs_log_everything(self):
+        rows = ["ClaimID,PatientName,BillingProviderNPI",
+                f"1, John Q Public , {GOOD_A} "]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "nophi.csv")
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertIn("John Q Public", log)  # trim logged with before-value
+        self.assertFalse(any("omitted from the change log" in w
+                             for w in res.warnings))
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

@@ -153,9 +153,12 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                     z.writestr("encounters.csv", enc_csv)
             if res.flag_rows and res.out_path \
                     and res.out_name.endswith(".csv"):
+                # Bounded per rule inside the bundle (mirrors the server
+                # bundle): 70 rules × 50k rows of StringIO is GBs.
+                _WL_BUNDLE_ROWS = 5000
                 want: dict = {}
                 for rule, idxs in res.flag_rows.items():
-                    for i2 in idxs:
+                    for i2 in idxs[:_WL_BUNDLE_ROWS]:
                         want.setdefault(i2, []).append(rule)
                 sinks = {rule: _iom.StringIO()
                          for rule, idxs in res.flag_rows.items() if idxs}
