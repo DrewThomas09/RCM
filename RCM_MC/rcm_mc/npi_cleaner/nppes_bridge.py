@@ -97,13 +97,26 @@ def verify_npis(npis: List[str], *, cap: int = _MAX_VERIFY) -> Dict[str, object]
                 "state": prov.state,
             }
     out["records"] = records
-    parts = [f"{out['checked']} NPIs verified against the live NPPES registry"]
+    _checked = int(out["checked"])
+    _errs = int(out["errors"])
+    if seen and _checked == 0 and _errs:
+        # Every lookup failed: this is a connectivity/outage signature, not a
+        # data problem. Say so plainly so the panel reads "couldn't reach
+        # NPPES" instead of an alarming "0 verified, N errors" — offline
+        # cleaning already stands on its own.
+        out["degraded"] = True
+        out["note"] = (
+            f"Could not reach the live NPPES registry — all {_errs} NPI "
+            "lookups failed (network/connectivity). Present NPIs were not "
+            "verified; offline cleaning is unaffected.")
+        return out
+    parts = [f"{_checked} NPIs verified against the live NPPES registry"]
     if out["not_found"]:
         parts.append(f"{out['not_found']} not found (unassigned or deactivated)")
     if out["capped"]:
         parts.append(f"checked the first {cap} distinct NPIs")
-    if out["errors"]:
-        parts.append(f"{out['errors']} lookup errors")
+    if _errs:
+        parts.append(f"{_errs} lookup errors (skipped; the rest verified)")
     out["note"] = "; ".join(parts) + "."
     return out
 
@@ -124,7 +137,8 @@ def recover_candidates(
     raises.
     """
     out: Dict[str, object] = {
-        "searched": 0, "resolved": 0, "capped": False, "matches": [], "note": "",
+        "searched": 0, "resolved": 0, "errors": 0, "capped": False,
+        "matches": [], "note": "",
     }
     try:
         from ..data_public import nppes_api_client as nppes
@@ -159,6 +173,10 @@ def recover_candidates(
             results = nppes.search_by_organization(
                 search_term, state=q["state"], limit=5)
         except Exception:  # noqa: BLE001
+            # A failed search was previously silent — the count of names
+            # "searched" simply didn't advance, so a network outage looked
+            # like "nothing to recover". Count it so partial success is legible.
+            out["errors"] = int(out["errors"]) + 1
             continue
         out["searched"] = int(out["searched"]) + 1
         cands = [{"npi": p.npi, "name": p.name, "state": p.state} for p in results[:3]]
@@ -169,8 +187,19 @@ def recover_candidates(
             "candidates": cands,
         })
     out["matches"] = matches
-    parts = [f"{out['searched']} provider names searched in NPPES",
+    _searched = int(out["searched"])
+    _errs = int(out["errors"])
+    if distinct and _searched == 0 and _errs:
+        out["degraded"] = True
+        out["note"] = (
+            f"Could not reach the live NPPES registry — all {_errs} provider "
+            "searches failed (network/connectivity). No NPIs were recovered; "
+            "offline cleaning is unaffected.")
+        return out
+    parts = [f"{_searched} provider names searched in NPPES",
              f"{out['resolved']} resolved to at least one candidate NPI"]
+    if _errs:
+        parts.append(f"{_errs} searches failed (skipped)")
     if out["capped"]:
         parts.append(f"searched the first {cap} distinct names")
     out["note"] = "; ".join(parts) + "."

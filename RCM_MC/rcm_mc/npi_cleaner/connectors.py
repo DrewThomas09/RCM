@@ -203,12 +203,18 @@ def resolve_drugs(
             else:
                 unresolved += 1
         queried = len(ndc_list) + len(name_list) + len(hcpcs_list)
-        note = (f"{resolved} of {queried} distinct drug values "
-                "resolved to an RxNorm concept")
-        if ndc_trunc or name_trunc or hcpcs_trunc:
-            note += f" (capped at {rxnorm_cap} each)"
-        if errors:
-            note += f"; {errors} lookup errors"
+        if queried and errors == queried:
+            # Every lookup failed → connectivity/outage, not unresolvable
+            # inputs. Say so plainly instead of "0 of N resolved".
+            note = (f"Could not reach RxNorm/RxNav — all {errors} drug "
+                    "lookups failed (network/connectivity)")
+        else:
+            note = (f"{resolved} of {queried} distinct drug values "
+                    "resolved to an RxNorm concept")
+            if ndc_trunc or name_trunc or hcpcs_trunc:
+                note += f" (capped at {rxnorm_cap} each)"
+            if errors:
+                note += f"; {errors} lookup errors (skipped)"
         results.append({
             "id": "rxnorm", "label": "RxNorm / RxNav",
             "source": "rxnav.nlm.nih.gov via data_public.public_api_clients",
@@ -241,11 +247,15 @@ def resolve_drugs(
                         "generic": rec.get("generic_name", ""),
                         "labeler": rec.get("labeler_name", ""),
                     })
-        note = f"{labeled} of {len(ofda_list)} NDCs matched an openFDA label"
-        if ofda_trunc:
-            note += f" (capped at {openfda_cap})"
-        if errors:
-            note += f"; {errors} lookup errors"
+        if ofda_list and errors == len(ofda_list):
+            note = (f"Could not reach openFDA — all {errors} NDC lookups "
+                    "failed (network/connectivity)")
+        else:
+            note = f"{labeled} of {len(ofda_list)} NDCs matched an openFDA label"
+            if ofda_trunc:
+                note += f" (capped at {openfda_cap})"
+            if errors:
+                note += f"; {errors} lookup errors (skipped)"
         results.append({
             "id": "openfda", "label": "openFDA drug label",
             "source": "api.fda.gov via data_public.public_api_clients",

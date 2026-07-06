@@ -25,30 +25,118 @@ from ._chartis_kit import chartis_shell, ck_editorial_head, ck_page_actions
 
 _EXTRA_CSS = r"""
 .npi-wrap{max-width:920px;margin:0 auto}
+/* ============ Upload stage — the first impression ============ */
 .npi-drop{
-  border:2px dashed var(--line,#c9d6d0); border-radius:16px;
-  background:var(--panel,#fbfdfc); padding:44px 28px; text-align:center;
-  cursor:pointer; transition:border-color .15s ease, background .15s ease;
+  position:relative;
+  border:1.5px dashed var(--line,#c9d6d0); border-radius:18px;
+  background:
+    radial-gradient(130% 150% at 50% 0%,
+      color-mix(in srgb,var(--green-deep,#0c7c66) 4%,transparent), transparent 58%),
+    var(--panel,#fbfdfc);
+  padding:42px 28px; text-align:center; cursor:pointer;
+  transition:border-color .16s ease, background .16s ease,
+    box-shadow .16s ease, transform .16s ease;
 }
 .npi-drop:hover,.npi-drop.drag{
   border-color:var(--green-deep,#0c7c66);
-  background:color-mix(in srgb, var(--green-deep,#0c7c66) 5%, transparent);
+  background:
+    radial-gradient(130% 150% at 50% 0%,
+      color-mix(in srgb,var(--green-deep,#0c7c66) 9%,transparent), transparent 60%),
+    var(--panel,#fbfdfc);
+  box-shadow:0 8px 26px -14px color-mix(in srgb,var(--green-deep,#0c7c66) 60%,transparent);
 }
-.npi-drop .cloud{font-size:34px;line-height:1;margin-bottom:10px}
-.npi-drop .big{font-size:17px;font-weight:640;letter-spacing:-.01em}
-.npi-drop .small{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:6px}
-.npi-drop .pick{color:var(--green-deep,#0c7c66);text-decoration:underline;font-weight:600}
-.npi-opts{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;
-  margin:16px 0 4px;font-size:13px;color:var(--ink-2,#4a5d57)}
-.npi-opts label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.npi-drop.drag{border-style:solid; transform:translateY(-1px)}
+.npi-drop:focus-visible{outline:2px solid var(--green-deep,#0c7c66);outline-offset:3px}
+.npi-drop .cloud{
+  width:60px;height:60px;margin:0 auto 15px;border-radius:17px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:31px;line-height:1;color:var(--green-deep,#0c7c66);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 11%,transparent);
+  transition:transform .16s ease, background .16s ease;
+}
+.npi-drop:hover .cloud,.npi-drop.drag .cloud{
+  transform:translateY(-2px);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 17%,transparent);
+}
+.npi-drop .big{font-size:18px;font-weight:660;letter-spacing:-.01em;color:var(--ink,#11201c)}
+.npi-drop .small{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:8px;
+  line-height:1.6;max-width:400px;margin-left:auto;margin-right:auto}
+.npi-drop .pick{color:var(--green-deep,#0c7c66);text-decoration:underline;
+  text-underline-offset:2px;font-weight:600}
+/* accepted-format chips + sample link, sat calmly below the drop zone */
+.npi-formats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  align-items:center;margin-top:12px;font-size:11.5px;color:var(--ink-2,#4a5d57)}
+.npi-formats .fchip{display:inline-block;padding:2px 9px;border-radius:20px;
+  background:color-mix(in srgb,var(--ink,#11201c) 5%,transparent);
+  border:1px solid var(--line-soft,#e7eeea);font-weight:600;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.01em}
+.npi-samplerow{text-align:center;margin-top:12px;font-size:12.5px;color:var(--ink-2,#4a5d57)}
+.npi-samplerow a{color:var(--green-deep,#0c7c66);font-weight:600;
+  text-decoration:underline;text-underline-offset:2px}
+/* Options — grouped, legible, calm */
+.npi-optbox{margin-top:18px;border:1px solid var(--line,#d2ddd7);border-radius:14px;
+  background:var(--panel,#fbfdfc);padding:6px 6px 8px}
+.npi-optbox > .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  padding:11px 12px 5px}
+.npi-optbox > .hd .t{font-size:11px;font-weight:680;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-2,#4a5d57)}
+.npi-optbox > .hd .s{font-size:12px;color:var(--ink-2,#4a5d57)}
+.npi-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));
+  gap:5px;margin:0;font-size:13px;color:var(--ink,#11201c)}
+.npi-opts .npi-opt{display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+  padding:11px 12px;border-radius:11px;border:1px solid transparent;
+  transition:background .14s ease, border-color .14s ease}
+.npi-opts .npi-opt:hover{background:color-mix(in srgb,var(--green-deep,#0c7c66) 5%,transparent)}
+.npi-opts .npi-opt input[type=checkbox]{margin-top:1px;flex:none;
+  width:16px;height:16px;cursor:pointer;accent-color:var(--green-deep,#0c7c66)}
+.npi-opts .npi-opt:has(input:checked){
+  border-color:color-mix(in srgb,var(--green-deep,#0c7c66) 34%,transparent);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 6%,transparent)}
+.npi-opt-t{display:block;font-weight:600;font-size:13px;color:var(--ink,#11201c);line-height:1.35}
+.npi-opt-d{display:block;font-size:11.5px;color:var(--ink-2,#4a5d57);margin-top:3px;line-height:1.5}
+.npi-optprofile{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px;margin-top:3px;border-top:1px solid var(--line-soft,#e7eeea)}
+.npi-optprofile > .lab{font-weight:600;font-size:13px;color:var(--ink,#11201c)}
 .npi-hidden{display:none !important}
-.npi-prog{margin-top:22px}
-.npi-bar{height:10px;border-radius:6px;background:var(--line-soft,#e7eeea);overflow:hidden}
-.npi-bar > i{display:block;height:100%;width:0;border-radius:6px;
+/* ============ Processing stage — make progress feel alive ============ */
+.npi-prog{margin-top:22px;border:1px solid var(--line,#d2ddd7);border-radius:14px;
+  background:var(--panel,#fbfdfc);padding:20px 22px}
+.npi-prog-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.npi-spin{width:20px;height:20px;flex:none;border-radius:50%;
+  border:2.5px solid color-mix(in srgb,var(--green-deep,#0c7c66) 22%,transparent);
+  border-top-color:var(--green-deep,#0c7c66);animation:npi-spin .8s linear infinite}
+@keyframes npi-spin{to{transform:rotate(360deg)}}
+.npi-prog-title{font-size:15px;font-weight:640;letter-spacing:-.01em;color:var(--ink,#11201c)}
+.npi-bar{position:relative;height:12px;border-radius:8px;
+  background:var(--line-soft,#e7eeea);overflow:hidden}
+.npi-bar > i{position:relative;display:block;height:100%;width:0;border-radius:8px;
   background:linear-gradient(90deg,var(--green,#0c7c66),var(--green-deep,#075a4a));
-  transition:width .25s ease}
-.npi-msg{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:8px;
+  transition:width .3s ease;overflow:hidden}
+.npi-bar > i::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,
+    color-mix(in srgb,#ffffff 55%,transparent),transparent);
+  transform:translateX(-100%);animation:npi-sheen 1.5s ease-in-out infinite}
+@keyframes npi-sheen{to{transform:translateX(100%)}}
+.npi-msg{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:10px;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.npi-prog-note{font-size:12px;color:var(--ink-2,#4a5d57);margin-top:13px;
+  padding-top:12px;border-top:1px solid var(--line-soft,#e7eeea);line-height:1.55}
+/* ============ Error stage — clear + recoverable, not alarming ============ */
+.npi-errbox{display:flex;gap:14px;align-items:flex-start;margin-top:22px;
+  border:1px solid color-mix(in srgb,#b06a00 30%,var(--line,#d2ddd7));
+  border-left:3px solid #b06a00;border-radius:14px;
+  background:color-mix(in srgb,#b06a00 5%,var(--panel,#fbfdfc));padding:18px 20px}
+.npi-erb-icon{width:34px;height:34px;flex:none;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;
+  color:#b06a00;background:color-mix(in srgb,#b06a00 14%,transparent)}
+.npi-erb-body{flex:1;min-width:0}
+.npi-erb-title{font-size:15px;font-weight:660;color:var(--ink,#11201c);letter-spacing:-.01em}
+.npi-erb-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.npi-erb-actions .npi-dl{margin-top:0}
+@media (prefers-reduced-motion:reduce){
+  .npi-bar > i::after{animation:none;display:none}
+  .npi-spin{animation:none}
+}
 .npi-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:12px;margin:22px 0}
 .npi-card{border:1px solid var(--line,#d2ddd7);border-radius:12px;
@@ -85,6 +173,8 @@ _EXTRA_CSS = r"""
   cursor:pointer;text-decoration:underline;background:none;border:0;padding:0}
 .npi-err{border:1px solid #e2b8ae;background:#fbf1ee;color:#8a2a17;
   border-radius:10px;padding:12px 14px;font-size:13px;margin-top:16px}
+.npi-erb-detail{font-size:13px;color:var(--ink-2,#4a5d57);margin-top:5px;
+  line-height:1.55;word-break:break-word}
 .npi-warn{border:1px solid #e8d8ac;background:#fbf7ea;color:#7a5a12;
   border-radius:10px;padding:10px 14px;font-size:12.5px;margin-top:12px}
 .npi-note{font-size:12px;color:var(--ink-2,#4a5d57);margin-top:26px;
@@ -269,50 +359,71 @@ def _body() -> str:
     <div class="npi-drop" id="npi-drop" tabindex="0" role="button"
          aria-label="Upload a claims file">
       <div class="cloud">⤒</div>
-      <div class="big">Drag a claims file here</div>
-      <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, Excel (.xlsx), X12 837/835 (.837/.835/.edi), or a
-        <strong>.zip of files</strong> · CSV/TSV up to
-        <strong>10&nbsp;GB</strong> (streamed in chunks; multi-hour jobs
-        are fine), other formats up to 200&nbsp;MB ·
-        <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
+      <div class="big">Drop a claims file to clean it</div>
+      <div class="small">Drag it here, or <span class="pick">choose a file</span>.
+        Processed in memory — nothing is stored.</div>
+      <div class="npi-formats">
+        <span class="fchip">CSV</span><span class="fchip">TSV</span>
+        <span class="fchip">.xlsx</span><span class="fchip">837 / 835</span>
+        <span class="fchip">.edi</span><span class="fchip">.zip</span>
+        <span>CSV/TSV to <strong>10&nbsp;GB</strong> · others to 200&nbsp;MB</span>
+      </div>
     </div>
+    <div class="npi-samplerow">New here?
+      <a href="/npi-cleaner/sample" download>Try a sample file</a> —
+      no upload needed.</div>
     <input type="file" id="npi-file" class="npi-hidden"
            accept=".csv,.tsv,.txt,.xlsx,.837,.835,.edi,.x12,.zip,text/csv,text/plain,application/zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-    <div class="npi-opts">
-      <label><input type="checkbox" id="npi-dedupe" checked>
-        Remove exact-duplicate rows</label>
-      <label><input type="checkbox" id="npi-enrich">
-        Go online — verify &amp; recover NPIs, resolve drugs (NPPES · RxNorm · openFDA)
-        <span class="npi-hint" title="Uses PE Desk's own live public-data
+    <div class="npi-optbox">
+      <div class="hd"><span class="t">Options</span>
+        <span class="s">Sensible defaults — adjust before you upload.</span></div>
+      <div class="npi-opts">
+        <label class="npi-opt"><input type="checkbox" id="npi-dedupe" checked>
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">Remove exact-duplicate rows</span>
+            <span class="npi-opt-d">Drop byte-identical duplicate rows; every
+              other row is preserved as-is.</span></span></label>
+        <label class="npi-opt"><input type="checkbox" id="npi-enrich">
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">Go online — verify &amp; recover NPIs
+              <span class="npi-hint" title="Uses PE Desk's own live public-data
 connectors. NPIs are verified against NPPES (active vs deactivated) and missing
 NPIs recovered from provider names; NDC and drug-name columns are resolved to
-RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></label>
-      <label><input type="checkbox" id="npi-deep">
-        Deep recovery — full v49 pipeline (networked, slower)
-        <span class="npi-hint" title="Runs the complete Steps 0-8 recovery
+RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></span>
+            <span class="npi-opt-d">Cross-check against NPPES, recover missing
+              billing NPIs, resolve drugs (RxNorm · openFDA).</span></span></label>
+        <label class="npi-opt"><input type="checkbox" id="npi-deep">
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">Deep recovery — full v49 pipeline
+              <span class="npi-hint" title="Runs the complete Steps 0-8 recovery
 pipeline: live NPPES enrichment, CMS billers, Open Payments, 340B, entity
 resolution and statistical fill, then a multi-tab Excel report. Needs outbound
 network access and can take minutes; runs in the background with a timeout and
-never blocks the fast results.">ⓘ</span></label>
-      <label><input type="checkbox" id="npi-deid">
-        De-identify patient PHI in the export
-        <span class="npi-hint" title="Masks patient-scoped identifiers only —
+never blocks the fast results.">ⓘ</span></span>
+            <span class="npi-opt-d">Networked Steps&nbsp;0–8 recovery; runs in
+              the background and never blocks the fast results.</span></span></label>
+        <label class="npi-opt"><input type="checkbox" id="npi-deid">
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">De-identify patient PHI
+              <span class="npi-hint" title="Masks patient-scoped identifiers only —
 patient name/address/phone/email and SSN are redacted, DOB is reduced to year,
 ZIP to its first three digits, and MRN/account numbers are replaced with a
 stable per-run token (same value → same token, so rows still link). Provider
-NPI and provider name are always kept intact — NPI recovery depends on them.">ⓘ</span></label>
-      <label style="margin-left:2px">Cleaning profile
-        <select id="npi-profile" style="margin-left:6px;font-size:12.5px">
+NPI and provider name are always kept intact — NPI recovery depends on them.">ⓘ</span></span>
+            <span class="npi-opt-d">Mask patient identifiers in the export;
+              provider NPI &amp; name are kept intact.</span></span></label>
+      </div>
+      <div class="npi-optprofile">
+        <span class="lab">Cleaning profile</span>
+        <select id="npi-profile" style="font-size:12.5px">
           <option value="">(default rules)</option>
         </select>
-        <button type="button" class="npi-again" id="npi-profile-new"
-                style="margin-left:6px">manage…</button>
+        <button type="button" class="npi-again" id="npi-profile-new">manage…</button>
         <span class="npi-hint" title="Named rule suites: disable rules that
 don't apply to this feed, mark known issues as accepted (still reported,
 no longer graded), and tune thresholds (timely-filing days, stale-date
 horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
-      </label>
+      </div>
     </div>
     <div id="npi-profile-editor" class="npi-hidden" style="border:1px solid
       var(--line,#d2ddd7);border-radius:8px;padding:14px;margin-top:10px">
@@ -377,17 +488,34 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
 
   <div id="npi-stage-progress" class="npi-hidden">
     <div class="npi-prog">
+      <div class="npi-prog-head">
+        <span class="npi-spin" aria-hidden="true"></span>
+        <span class="npi-prog-title">Cleaning your file…</span>
+      </div>
       <div class="npi-bar"><i id="npi-bar-fill"></i></div>
       <div class="npi-msg" id="npi-bar-msg">Uploading…</div>
       <div class="npi-msg npi-muted" id="npi-bar-eta"></div>
+      <div class="npi-prog-note">The job runs on the server, so you can keep
+        working — leave this tab open to watch progress. Large files can take a
+        while; the bar and estimate update live.</div>
       <button type="button" class="npi-again npi-hidden" id="npi-cancel"
               style="margin-top:10px">Cancel this run</button>
     </div>
   </div>
 
   <div id="npi-stage-error" class="npi-hidden">
-    <div class="npi-err" id="npi-err-text"></div>
-    <button class="npi-again" id="npi-err-again">Try another file</button>
+    <div class="npi-errbox">
+      <div class="npi-erb-icon" aria-hidden="true">!</div>
+      <div class="npi-erb-body">
+        <div class="npi-erb-title">This file couldn't be cleaned</div>
+        <div class="npi-erb-detail" id="npi-err-text"></div>
+        <div class="npi-erb-actions">
+          <button class="npi-dl" id="npi-err-again">Try another file</button>
+          <a class="npi-again" href="/npi-cleaner/sample" download>or start
+            with a sample</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="npi-stage-result" class="npi-hidden">

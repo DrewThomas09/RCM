@@ -4603,6 +4603,165 @@ class TestFlagColumnAndJcodeConnectors(unittest.TestCase):
         self.assertIn("renderConnectorPlan(s.connector_plan)", body)
 
 
+class TestPopulationAmountFallback(unittest.TestCase):
+    """The Population/analytics charge role must find an amount column even
+    when the header is nonstandard — billed → allowed → paid → any money
+    header → value-based sniff — while a genuinely amount-less (or
+    de-identified) file stays $0 and the deterministic cleaning pass is
+    untouched."""
+
+    def _charges(self, res):
+        """Total charges the service-mix mart summed for this run."""
+        sm = (res.population or {}).get("service_mix") or {}
+        return sum(c.get("charges", 0.0) for c in sm.get("categories", []))
+
+    def test_allowed_only_header_yields_nonzero_volume(self):
+        # No billed/charge column — only LINE_ALLOWED. Analytics must fall back
+        # to the allowed amount so Population volume is non-zero.
+        rows = ["PatientID,HCPCS,DateOfService,LINE_ALLOWED"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{100 + i}.00"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "a.csv")
+        self.assertGreater(self._charges(res), 0.0)
+        vol = (res.population or {}).get("volume") or {}
+        self.assertGreater(sum(m["charges"] for m in vol.get("months", [])),
+                           0.0)
+
+    def test_total_paid_amt_header_yields_nonzero_volume(self):
+        rows = ["PatientID,HCPCS,DateOfService,TOTAL_PAID_AMT"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{50 + i}.00"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "p.csv")
+        self.assertGreater(self._charges(res), 0.0)
+
+    def test_value_sniff_adopts_money_shaped_nonstandard_header(self):
+        # A header no money hint matches ("NET_SVC_VAL"), but the column is
+        # clearly money (decimal cents). Value-based sniff must adopt it for
+        # the analytics amount role only.
+        rows = ["PatientID,HCPCS,DateOfService,NET_SVC_VAL"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{200 + i}.50"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "v.csv")
+        self.assertGreater(self._charges(res), 0.0)
+        self.assertEqual(res.structure.get("population_amount_column"),
+                         "NET_SVC_VAL")
+
+    def test_value_sniff_does_not_invent_money_from_units(self):
+        # Amount-less file: the only extra numeric column is bare-integer
+        # units. Sniff must NOT adopt it — charges stay $0.
+        rows = ["PatientID,HCPCS,DateOfService,Units"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{(i % 3) + 1}"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "u.csv")
+        self.assertEqual(self._charges(res), 0.0)
+        self.assertIsNone(res.structure.get("population_amount_column"))
+
+    def test_sniff_helper_skips_claimed_and_bare_integers(self):
+        headers = ["Units", "NET_SVC_VAL"]
+        rows = [[str((i % 3) + 1), f"{200 + i}.50"] for i in range(20)]
+        # Units column (index 0) is claimed → never adopted; the money-shaped
+        # NET_SVC_VAL (index 1) wins.
+        self.assertEqual(
+            engine._sniff_amount_column(headers, rows, claimed={0}), 1)
+        # If the money column is also claimed, nothing qualifies.
+        self.assertIsNone(
+            engine._sniff_amount_column(headers, rows, claimed={0, 1}))
+        # A bare-integer-only file invents nothing.
+        int_rows = [[str(i), str(i * 2)] for i in range(20)]
+        self.assertIsNone(
+            engine._sniff_amount_column(["A", "B"], int_rows, claimed=set()))
+
+    def test_amount_fallback_does_not_touch_cleaning_money_set(self):
+        # The sniffed column must NOT be money-normalized or money-unparseable
+        # checked by the deterministic pass — only fed to analytics.
+        rows = ["ClaimID,BillingNPI,HCPCS,DateOfService,NET_SVC_VAL"]
+        rows += [f"{i},{GOOD_A},99213,2024-01-15,{1000 + i}.5"
+                 for i in range(10)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "m.csv")
+        # The sniffed column feeds analytics only.
+        self.assertEqual(res.structure.get("population_amount_column"),
+                         "NET_SVC_VAL")
+        self.assertNotIn("money-unparseable", res.sanity)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        # The money cleaner would rewrite "1000.5" → "1000.50"; because the
+        # column is NOT in money_set, the cleaning pass left it verbatim.
+        self.assertIn(",1000.5\n", out)
+        self.assertNotIn("1000.50", out)
+
+
+class TestConnectorsDegradeLegibly(unittest.TestCase):
+    """A total network outage must read as "couldn't reach X" with legible
+    counts, never throw into the pipeline, and never look like a data
+    problem."""
+
+    def test_verify_npis_all_fail_reads_as_outage(self):
+        from rcm_mc.npi_cleaner import nppes_bridge as NB
+        if not NB.available():
+            self.skipTest("nppes client unavailable")
+        import unittest.mock as mock
+        with mock.patch(
+                "rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                side_effect=OSError("connection refused")):
+            out = NB.verify_npis([GOOD_A, GOOD_B])
+        self.assertTrue(out.get("degraded"))
+        self.assertEqual(out["checked"], 0)
+        self.assertEqual(out["errors"], 2)
+        self.assertIn("could not reach", out["note"].lower())
+
+    def test_verify_npis_partial_failure_counts_both(self):
+        from rcm_mc.npi_cleaner import nppes_bridge as NB
+        if not NB.available():
+            self.skipTest("nppes client unavailable")
+        import unittest.mock as mock
+        calls = {"n": 0}
+
+        def flaky(npi):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise OSError("timeout")
+            return None  # not found
+
+        with mock.patch(
+                "rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                side_effect=flaky):
+            out = NB.verify_npis([GOOD_A, GOOD_B])
+        self.assertFalse(out.get("degraded"))
+        self.assertEqual(out["errors"], 1)
+        self.assertEqual(out["checked"], 1)
+        self.assertIn("lookup error", out["note"].lower())
+
+    def test_recover_candidates_counts_search_errors(self):
+        from rcm_mc.npi_cleaner import nppes_bridge as NB
+        if not NB.available():
+            self.skipTest("nppes client unavailable")
+        import unittest.mock as mock
+        with mock.patch(
+                "rcm_mc.data_public.nppes_api_client.search_by_organization",
+                side_effect=OSError("connection refused")):
+            out = NB.recover_candidates(
+                [{"row": "1", "name": "Mercy General Hospital", "state": "OH"}])
+        self.assertTrue(out.get("degraded"))
+        self.assertEqual(out["searched"], 0)
+        self.assertEqual(out["errors"], 1)
+        self.assertIn("could not reach", out["note"].lower())
+
+    def test_resolve_drugs_all_fail_reads_as_outage(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        if not C.available():
+            self.skipTest("public_api_clients unavailable")
+
+        def opener(url, headers, timeout_s):
+            raise OSError("connection refused")
+
+        res = C.resolve_drugs(["00006-4171-01"], [], hcpcs=["J1745"],
+                              opener=opener)
+        by_id = {r["id"]: r for r in res}
+        self.assertIn("rxnorm", by_id)
+        self.assertEqual(by_id["rxnorm"]["resolved"], 0)
+        self.assertIn("could not reach", by_id["rxnorm"]["note"].lower())
+
+
 if __name__ == "__main__":
     unittest.main()
 

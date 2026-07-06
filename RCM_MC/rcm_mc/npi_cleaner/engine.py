@@ -1693,6 +1693,115 @@ def _detect_one(headers: List[str], hints: tuple) -> Optional[int]:
     return None
 
 
+# How many rows the value-based amount sniffer reads. Bounded so the fallback
+# stays cheap at 10M-row scale (sample, never full-scan).
+_AMOUNT_SNIFF_SAMPLE = 4000
+
+
+def _sniff_amount_column(
+    headers: List[str], rows: List[List[str]], claimed: set, *,
+    sample: int = _AMOUNT_SNIFF_SAMPLE,
+) -> Optional[int]:
+    """Find the column most likely to hold claim AMOUNTS by value, for the
+    Population/analytics charge role ONLY — used as a last resort when no
+    billed/allowed/paid/other money header was detected (e.g. a charge column
+    named ``NET_SVC_VAL`` that no header hint matches).
+
+    Deliberately conservative so it never *invents* money:
+
+      * A candidate must be predominantly parseable as money (``_to_number``
+        over a bounded sample) AND carry monetary evidence — decimal cents on
+        a real share of cells, or a ``$``/thousands-grouped format. A bare
+        integer column (units, counts, ages, sequence numbers, numeric codes)
+        therefore does NOT qualify, and a de-identified extract whose amounts
+        were stripped keeps the role empty (charges stay ``$0``).
+      * Columns already claimed by any other role (NPI / date / zip / phone /
+        HCPCS / dx / modifier / taxonomy / NDC / revenue / POS / DRG / state /
+        units / patient / member / claim / …) are never adopted — ``claimed``
+        carries every such index.
+
+    Returns the winning column index, or ``None`` when nothing qualifies.
+    NEVER feeds the deterministic cleaning pass (money_set / date_set / the
+    money-unparseable screen) — the caller uses it for analytics only.
+    """
+    ncols = len(headers)
+    best: Optional[int] = None
+    best_score: Optional[tuple] = None
+    for ci in range(ncols):
+        if ci in claimed:
+            continue
+        nonblank = money = decimal = nonzero = 0
+        total_abs = 0.0
+        for n, row in enumerate(rows):
+            if n >= sample:
+                break
+            if ci >= len(row):
+                continue
+            cell = row[ci].strip()
+            if not cell:
+                continue
+            nonblank += 1
+            num = _to_number(cell)
+            if num is None:
+                continue
+            money += 1
+            if "." in cell or "$" in cell or "," in cell:
+                decimal += 1
+            if abs(num) > 1e-9:
+                nonzero += 1
+                total_abs += abs(num)
+        if nonblank < 3 or money == 0:
+            continue
+        money_frac = money / nonblank
+        decimal_frac = decimal / nonblank
+        # Predominantly money-shaped, with real monetary formatting evidence,
+        # and not an all-zero column (which would add nothing anyway).
+        if money_frac < 0.9 or decimal_frac < 0.3 or nonzero == 0:
+            continue
+        mean_abs = total_abs / nonzero
+        score = (round(money_frac, 3), round(decimal_frac, 3), mean_abs)
+        if best_score is None or score > best_score:
+            best_score = score
+            best = ci
+    return best
+
+
+def _analytics_amount_col(
+    headers: List[str], rows: List[List[str]], *,
+    billed_i: Optional[int], allowed_i: Optional[int], paid_i: Optional[int],
+    money_set: set, claimed: set,
+) -> Optional[int]:
+    """Pick the single amount column the Population/analytics marts sum for
+    charges. Priority: billed → allowed → paid (header-detected) → any other
+    header-detected money column (``amount``/``cost``/``fee``-flavored) →
+    value-based sniff over unclaimed columns.
+
+    Report-only: the returned index feeds ONLY analytics; it never changes the
+    deterministic cleaning money_set/date_set or any existing behavior. The
+    value sniff runs only when NO money header matched, so a genuinely
+    amount-less (or de-identified) file yields ``None`` and charges stay ``$0``.
+    """
+    for i in (billed_i, allowed_i, paid_i):
+        if i is not None:
+            return i
+    if money_set:
+        # A money header exists but none of the billed/allowed/paid roles
+        # matched (e.g. "NetAmount", "ServiceFee"). Prefer the most charge-like
+        # by header wording so the marts sum a gross figure when there is one.
+        _pri = ("charge", "billed", "gross", "total", "amount", "cost", "fee",
+                "allowed", "paid")
+
+        def _rank(idx: int) -> tuple:
+            k = _norm_key(headers[idx])
+            for r, tok in enumerate(_pri):
+                if tok in k:
+                    return (r, idx)
+            return (len(_pri), idx)
+
+        return min(money_set, key=_rank)
+    return _sniff_amount_column(headers, rows, claimed)
+
+
 # -------------------------------------------------------------------- cleaner --
 def detect_columns_preview(data: bytes) -> Optional[Dict[str, object]]:
     """Detect the column→role mapping for the pre-clean mapping editor.
@@ -2868,9 +2977,32 @@ def clean_bytes(
            0.56)
         try:
             from . import analytics as _analytics
+            # Amount column the marts sum for charges. Header-detected
+            # billed/allowed/paid win; failing those, any money-header or a
+            # value-based sniff feeds ONLY analytics (never the cleaning pass)
+            # so a charge column with a nonstandard header still yields
+            # non-zero Population volume instead of a misleading $0.
+            _claimed_cols: set = set()
+            for _rs in (npi_set, money_set, date_set, zip_set, phone_set,
+                        hcpcs_set, dx_set, mod_set, taxo_set, ndc_norm_set,
+                        sex_set, rev_set, pos_set, drg_set, state_set,
+                        pname_set):
+                _claimed_cols |= _rs
+            for _ix in (units_i, patient_i, member_i, claim_i, dos_i, todate_i,
+                        dob_i, admit_i, disch_i, submit_i, payer_i, carc_i,
+                        tob_i, dstat_i, atype_i, asrc_i, cond_i, occ_i, valc_i,
+                        name_idx, ndc_idx, drug_idx, billing_idx, hcpcs_i,
+                        allowed_i, billed_i, paid_i):
+                if _ix is not None:
+                    _claimed_cols.add(_ix)
+            _amount_i = _analytics_amount_col(
+                headers, cleaned, billed_i=billed_i, allowed_i=allowed_i,
+                paid_i=paid_i, money_set=money_set, claimed=_claimed_cols)
+            if _amount_i is not None and _amount_i != billed_i:
+                res.structure["population_amount_column"] = headers[_amount_i]
             res.population = _analytics.build(headers, cleaned, {
                 "rev_set": rev_set, "tob_i": tob_i, "pos_set": pos_set,
-                "hcpcs_i": hcpcs_i, "billed_i": billed_i, "dx_set": dx_set,
+                "hcpcs_i": hcpcs_i, "billed_i": _amount_i, "dx_set": dx_set,
                 "patient_i": patient_i, "dos_i": dos_i, "admit_i": admit_i,
                 "disch_i": disch_i, "billing_idx": billing_idx,
             })
