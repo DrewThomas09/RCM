@@ -42,6 +42,13 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                     help="keep exact-duplicate rows")
     ap.add_argument("--deid", action="store_true",
                     help="de-identify patient PHI in the output")
+    ap.add_argument("--enrich", action="store_true",
+                    help="go online: verify & recover NPIs against NPPES, "
+                         "fill blank provider fields, resolve drugs "
+                         "(needs outbound network)")
+    ap.add_argument("--deep", action="store_true",
+                    help="deep recovery — the full networked v49 pipeline "
+                         "(implies --enrich; slower, needs network)")
     ap.add_argument("--json", action="store_true",
                     help="print the full scorecard as JSON instead of the "
                          "human summary")
@@ -110,7 +117,9 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
     res = bigfile.clean_path(str(src), src.name,
                              drop_duplicates=not args.no_dedupe,
                              deid=args.deid, profile=prof_cfg,
-                             overrides=overrides)
+                             overrides=overrides,
+                             enrich=args.enrich or args.deep,
+                             deep=args.deep)
     sc = res.as_scorecard()
 
     outdir = Path(args.outdir) if args.outdir else src.parent

@@ -69,7 +69,7 @@ Five classic DQ dimensions, each a recomputable ratio, blended
 
 ## Rules
 
-76 registered rules (`rcm_mc/npi_cleaner/rules.py`), two kinds:
+81 registered rules (`rcm_mc/npi_cleaner/rules.py`), two kinds:
 
 - **Repairs** — deterministic, safe-by-construction normalizations the
   cleaner applies (NPI Excel-float damage, date → ISO, money
@@ -293,6 +293,7 @@ CLI (cron/CI door — same engine, same artifacts):
 
 ```
 rcm-mc npi-clean claims.csv [--profile P] [--mapping M] [--deid]
+                            [--enrich] [--deep]  # online NPPES/drug/deep
                             [--no-dedupe] [--json] [--outdir DIR]
                             [--bundle]          # <stem>_bundle.zip of all artifacts
                             [--min-score N]     # exit 1 below N → CI gate
@@ -305,7 +306,7 @@ rcm-mc npi-clean sites.zip  --bundle            # batch a zip of extracts
 ```
 rcm_mc/npi_cleaner/
 ├── engine.py       cleaning engine: repairs, flags, scorecard, jobs
-├── rules.py        declarative registry (76 rules)
+├── rules.py        declarative registry (81 rules)
 ├── connectors.py   live public-data catalog + drug resolve (wired flags)
 ├── nppes_bridge.py NPPES verify / recover / fill (shared CMS client)
 ├── compliance.py   OIG LEIE (offline pack) + PECOS (stdlib urllib)

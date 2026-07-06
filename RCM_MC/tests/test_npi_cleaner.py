@@ -4467,8 +4467,32 @@ class TestBacklogAnalyticsSurfacing(unittest.TestCase):
         self.assertIn("em_avg_level", pop)
 
 
+class TestBacklogCliAndFillEdges(unittest.TestCase):
+    def test_state_from_zip_reaches_bare_st_header(self):
+        rows = ["ClaimID,Zip,St", "1,75201,", "2,10001,NY"]
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "st.csv")
+        self.assertEqual(res.repairs.get("state-from-zip"), 1)
+        out = open(res.out_path, encoding="utf-8").read().splitlines()
+        self.assertEqual(out[1].split(",")[2], "TX")
+
+    def test_cli_accepts_enrich_and_deep_flags(self):
+        import contextlib
+        import io as _io
+        from rcm_mc.npi_cleaner import cli as nc_cli
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "c.csv")
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write(f"NPI\n{GOOD_A}\n")
+            out = _io.StringIO()
+            with contextlib.redirect_stdout(out):
+                # --enrich with no network must not crash (guarded).
+                rc = nc_cli.main([p, "--enrich", "--json", "--outdir", tmp])
+            self.assertEqual(rc, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

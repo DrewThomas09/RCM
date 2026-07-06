@@ -375,7 +375,10 @@ def _zip_state_pairs(headers: List[str]) -> List[Tuple[int, int]]:
     states, zips = [], []
     for i, h in enumerate(headers):
         k = _norm_key(h)
-        if "state" in k or "province" in k:
+        # Bare "St" is a real state header in the wild; match it by exact
+        # key (a substring "st" would grab ClaimStatus/PostDate), same as
+        # the primary state detector, so state-from-zip fill reaches it.
+        if "state" in k or "province" in k or k == "st":
             states.append((i, _entity(k, ("state", "province"))))
         if any(x in k for x in ("zipcode", "zip", "postalcode", "postal")):
             zips.append((i, _entity(k, ("zipcode", "zip", "postalcode",
