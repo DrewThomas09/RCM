@@ -17,7 +17,7 @@ This replaces the slice of healthcare diligence that firms typically outsource t
 | **See the architecture visually** | [ARCHITECTURE_MAP.md](ARCHITECTURE_MAP.md) — 8 Mermaid diagrams (GitHub-rendered) |
 | **Read a module's methodology** | [§6 — Module methodology](#6-module-methodology) — each links to its per-module README |
 | **Audit a number's provenance** | [METRIC_PROVENANCE.md](RCM_MC/docs/METRIC_PROVENANCE.md) · [BENCHMARK_SOURCES.md](RCM_MC/docs/BENCHMARK_SOURCES.md) |
-| **Query public healthcare data (CMS, Medicaid, CDC, HRSA, NIH, …)** | [connectors/README.md](connectors/README.md) — 15 stdlib-only connectors, 151 registered datasets + 5 full open-data catalogs behind one `/v1` surface · seed with `python -m connectors.cli refresh --db var/connectors` · browse in-app at `/connector-estate` · one-input market brief at `/market-scan` |
+| **Query public healthcare data (CMS, Medicaid, CDC, HHS, HRSA, NIH, …)** | [connectors/README.md](connectors/README.md) — 16 stdlib-only connectors, 189 registered datasets + 6 full open-data catalogs (~25,000 datasets discoverable) behind one `/v1` surface · seed with `python -m connectors.cli refresh --db var/connectors` · browse in-app at `/connector-estate` · one-input market brief at `/market-scan` |
 | **Read the PE heuristics rulebook** | [PE_HEURISTICS.md](RCM_MC/docs/PE_HEURISTICS.md) — 275+ named partner rules |
 | **See the 6-month roadmap** | [PRODUCT_ROADMAP_6MO.md](RCM_MC/docs/PRODUCT_ROADMAP_6MO.md) — quarter-by-quarter ship plan |
 | **See the beta program** | [BETA_PROGRAM_PLAN.md](RCM_MC/docs/BETA_PROGRAM_PLAN.md) — 3-cohort validation structure |

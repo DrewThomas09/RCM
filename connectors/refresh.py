@@ -95,8 +95,12 @@ _QUICK_PLAN: Dict[str, List[List[str]]] = {
     "cdc_data": [
         ["discover"],
         ["fetch", "--dataset", "places_county", "--max-pages", "2"],
+        ["fetch", "--dataset", "places_county_ckd", "--max-pages", "2"],
         ["fetch", "--dataset", "vsrr_drug_overdose", "--max-pages", "1"],
         ["fetch", "--dataset", "nchs_leading_causes", "--max-pages", "1"],
+        ["fetch", "--dataset", "flu_vaccination_coverage", "--max-pages", "1"],
+        ["fetch", "--dataset", "stroke_mortality_county", "--max-pages", "2"],
+        ["fetch", "--dataset", "infant_mortality_state", "--max-pages", "1"],
     ],
     "hrsa_data": [
         ["fetch", "--dataset", "hpsa_primary_care", "--max-rows", "5000"],
@@ -118,6 +122,12 @@ _QUICK_PLAN: Dict[str, List[List[str]]] = {
          "--max-rows", "5000"],
         ["fetch", "--dataset", "industry_area", "--industry", "622",
          "--max-rows", "5000"],
+    ],
+    "healthdata_gov": [
+        ["discover"],
+        ["fetch", "--dataset", "hospital_ids"],
+        ["fetch", "--dataset", "hospital_capacity_state_ts", "--max-pages", "2"],
+        ["fetch", "--dataset", "community_profile_county", "--max-pages", "2"],
     ],
 }
 

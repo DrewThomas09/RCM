@@ -232,6 +232,24 @@ _SOURCES: List[ApiSource] = [
         explore_route="/connector-estate?connector=cdc_data",
     ),
     ApiSource(
+        id="healthdata_gov", name="healthdata.gov (HHS meta-catalog)",
+        operator="HHS", category="volume_outcomes",
+        base_url="https://healthdata.gov",
+        docs_url="https://dev.socrata.com",
+        access="key-optional",
+        rate_limit="throttled without app token; higher with free token",
+        formats="JSON (SODA)", cost="free-key", status="live-client",
+        records="23,080-dataset HHS catalog · hospital capacity, PCR testing, "
+                "county community profiles, HHS-ID-to-CCN crosswalk",
+        client_module="connectors.healthdata_gov",
+        answers="What does the whole Department of Health publish, and what "
+                "did facility-level hospital utilization look like over time?",
+        why="One catalog over every HHS agency's open data plus the HHS "
+            "Protect hospital-capacity archive — facility-week utilization "
+            "history joins to CCN for demand and capacity work.",
+        explore_route="/connector-estate?connector=healthdata_gov",
+    ),
+    ApiSource(
         id="hcupnet", name="AHRQ HCUPnet", operator="AHRQ (HCUP)",
         category="volume_outcomes",
         base_url="https://datatools.ahrq.gov/hcupnet",

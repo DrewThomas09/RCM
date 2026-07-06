@@ -36,8 +36,9 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 | Census ACS | `connectors/census_acs` | ACS 5-year — county/state/CBSA demographic profiles (population, 65+, income, poverty, uninsured); requires free `CENSUS_API_KEY` | `api.census.gov/data` | 3 |
 | OIG LEIE | `connectors/oig_leie` | HHS OIG exclusion list — full database + monthly supplements + reinstatements, NPI-joinable compliance screening | `oig.hhs.gov` | 3 |
 | BLS QCEW | `connectors/bls_qcew` | Quarterly Census of Employment & Wages — healthcare employment, wages, location quotients by county/MSA x NAICS | `data.bls.gov/cew` | 2 |
+| healthdata.gov | `connectors/healthdata_gov` | HHS-wide Socrata meta-catalog (23,080 datasets, native-vs-mirror discriminated) + HHS Protect hospital capacity (facility 1.05M rows + state daily), PCR testing, county community profiles, therapeutics locator, HHS-ID↔CCN crosswalk, school modalities, policy orders | `healthdata.gov` | 10 |
 
-**179 registered datasets across 15 connectors** — plus five full open-data
+**189 registered datasets across 16 connectors** — plus five full open-data
 catalogs synced as first-class tables (data.cms.gov 158, Provider Data
 Catalog 234, Open Payments 74, data.medicaid.gov 541, Healthcare.gov 337,
 data.cdc.gov ~1,500), each with a generic fetched-rows slot so **any**
