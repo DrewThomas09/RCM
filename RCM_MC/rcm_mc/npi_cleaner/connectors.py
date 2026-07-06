@@ -37,8 +37,22 @@ def available() -> bool:
         return False
 
 
+# Sources that actually DO something in a cleaning run today. NPPES,
+# RxNorm and openFDA fire in enrich mode (see engine._enrich_via_nppes +
+# connectors.resolve_drugs); OIG LEIE screens offline once its pack is
+# installed; PECOS runs behind the deep flag. Everything else in the
+# catalog is reachable elsewhere in PE Desk but is NOT wired to a claims
+# clean — the panel used to imply all of them were, which is misleading
+# on a compliance-adjacent surface.
+_CLEANING_WIRED = frozenset({
+    "nppes", "rxnorm", "rxnav", "openfda", "oig_leie", "pecos",
+})
+
+
 def catalog() -> List[dict]:
-    """Every public-data source PE Desk can reach, for the connections panel."""
+    """Every public-data source PE Desk can reach, for the connections
+    panel. ``cleaning_wired`` is the honest per-source claim for THIS
+    tool; ``is_wired`` is the platform-wide "has a client" flag."""
     try:
         from ..data_public import public_api_catalog as cat
     except Exception:  # noqa: BLE001
@@ -47,9 +61,16 @@ def catalog() -> List[dict]:
     for s in cat.all_sources():
         out.append({
             "id": s.id, "name": s.name, "operator": s.operator,
-            "category": getattr(s, "category", ""), "cost": getattr(s, "cost", ""),
+            "category": getattr(s, "category", ""),
+            "cost": getattr(s, "cost", ""),
             "docs_url": getattr(s, "docs_url", ""),
+            "status": getattr(s, "status", ""),
+            "is_wired": bool(getattr(s, "is_wired", False)),
+            "cleaning_wired": s.id in _CLEANING_WIRED,
         })
+    # Wired-for-cleaning first, then alphabetical — the sources that act
+    # on a run should lead the panel.
+    out.sort(key=lambda d: (not d["cleaning_wired"], d["name"].lower()))
     return out
 
 

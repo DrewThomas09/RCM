@@ -144,6 +144,8 @@ _EXTRA_CSS = r"""
   gap:8px;margin-top:10px}
 .npi-cat .c{border:1px solid var(--line-soft,#e7eeea);border-radius:9px;
   padding:8px 11px;background:var(--panel,#fbfdfc)}
+.npi-cat .c.on{border-color:color-mix(in srgb,var(--green-deep,#0c7c66) 45%,transparent);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 5%,transparent)}
 .npi-cat .c .n{font-size:12.5px;font-weight:600}
 .npi-cat .c .o{font-size:11px;color:var(--ink-2,#4a5d57)}
 .npi-cat .c .free{color:var(--green-deep,#0c7c66)}
@@ -725,7 +727,11 @@ _EXTRA_JS = r"""
     "revcode-pad":"Restored dropped leading zeros in revenue codes (450 → 0450)",
     "pos-pad":"Zero-padded 1-digit Place of Service codes",
     "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)",
-    "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)"};
+    "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)",
+    "state-from-zip":"Filled blank state from the ZIP code (deterministic ZIP3→state)",
+    "name-from-nppes":"Filled blank provider name from the verified NPI's NPPES record",
+    "state-from-nppes":"Filled blank state from the verified NPI's NPPES record",
+    "taxonomy-from-nppes":"Filled blank taxonomy from the verified NPI's NPPES record"};
 
   // Takes the scorecard like its siblings (renderQuality/renderReconcile):
   // at 5 positional params, two of which shared a shape, a silent swap at
@@ -1152,6 +1158,40 @@ _EXTRA_JS = r"""
         '<div class="v '+((v.not_found||0)>0?'bad':'good')+'">'+
         fmt(v.not_found)+'</div></div></div>';
     if(v.note){ html+='<div class="npi-nppes-note">'+v.note+'</div>'; }
+    if(n.filled_from_nppes){
+      html+='<div class="npi-recovered">✎ Filled '+fmt(n.filled_from_nppes)+
+        ' blank provider name / state / taxonomy cell'+
+        (n.filled_from_nppes===1?'':'s')+' from verified NPPES records — '+
+        'audited in the change log.</div>';
+    }
+
+    // Per-NPI verdicts — the records were always fetched; now the user can
+    // see WHICH NPIs are active, not found, or errored (not just counts).
+    var recs=v.records||{};
+    var keys=Object.keys(recs);
+    if(keys.length){
+      var flagged=keys.filter(function(k){
+        return recs[k].status!=="active"; });
+      var show=flagged.length?flagged:keys;   // lead with the problems
+      show=show.slice(0,60);
+      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
+        'NPI verdicts'+(flagged.length?' — '+flagged.length+
+        ' need attention':'')+'</div>'+
+        '<table class="npi-tbl"><thead><tr><th>NPI</th><th>Status</th>'+
+        '<th>Name</th><th>Taxonomy</th><th>State</th></tr></thead><tbody>';
+      show.forEach(function(k){
+        var rc=recs[k], bad=rc.status!=="active";
+        html+='<tr><td class="'+(bad?'billing':'')+'">'+esc(k)+'</td>'+
+          '<td><span class="npi-sig '+(bad?'bad':'')+'">'+esc(rc.status)+
+          '</span></td><td>'+esc(rc.name||'')+'</td><td>'+
+          esc(rc.taxonomy||'')+'</td><td>'+esc(rc.state||'')+'</td></tr>';
+      });
+      html+='</tbody></table>';
+      if(show.length<keys.length){
+        html+='<div class="npi-muted" style="font-size:11px">Showing '+
+          show.length+' of '+keys.length+' verified NPIs.</div>';
+      }
+    }
 
     var r=n.recover||{};
     var matches=(r.matches||[]).filter(function(m){
@@ -1358,6 +1398,23 @@ _EXTRA_JS = r"""
         html+='<div class="nt" style="color:#a8331f">Excluded NPIs: '+
           c.matches.slice(0,8).map(function(m){return esc(m.npi);}).join(", ")+'</div>';
       }
+      // PECOS per-NPI enrollment/opt-out verdicts — fetched all along,
+      // now shown: enrollment gaps and opt-outs are the actionable rows.
+      if(c.rows && c.rows.length){
+        html+='<table class="npi-tbl" style="margin-top:6px"><thead><tr>'+
+          '<th>Billing NPI</th><th>Enrolled</th><th>Provider type</th>'+
+          '<th>Opted out</th></tr></thead><tbody>';
+        c.rows.forEach(function(rw){
+          var bad=!rw.enrolled||rw.opted_out;
+          html+='<tr><td class="'+(bad?'billing':'')+'">'+esc(rw.npi)+
+            '</td><td><span class="npi-sig '+(rw.enrolled?'':'bad')+'">'+
+            (rw.enrolled?'yes':'no')+'</span></td><td>'+
+            esc(rw.provider_type||'')+'</td><td>'+
+            (rw.opted_out?'<span class="npi-sig bad">yes</span>':'no')+
+            '</td></tr>';
+        });
+        html+='</tbody></table>';
+      }
       html+='<div class="nt">'+esc(c.note||"")+'</div></div>';
     });
     box.innerHTML=html;
@@ -1416,15 +1473,28 @@ _EXTRA_JS = r"""
   function renderCatalog(cat){
     var box=$("npi-catalog");
     if(!cat || !cat.length){ box.innerHTML=""; return; }
+    var wired=cat.filter(function(s){ return s.cleaning_wired; }).length;
     var html='<div class="ck-section-header" style="margin-top:22px">'+
       '<h3 style="margin:0">Connections available</h3></div>'+
-      '<div class="npi-muted">'+cat.length+' public-data sources are connected to '+
-      'PE&nbsp;Desk and can be enabled for enrichment.</div><div class="npi-cat">';
+      '<div class="npi-muted"><strong>'+wired+'</strong> source'+
+      (wired===1?"":"s")+' act on a cleaning run (enrich / deep / '+
+      'reference packs); the other '+(cat.length-wired)+' are reachable '+
+      'elsewhere in PE&nbsp;Desk and can be wired here on request '+
+      '(use the "missing something?" card).</div><div class="npi-cat">';
     cat.forEach(function(s){
       var free=(s.cost||"").indexOf("free")===0;
-      html+='<div class="c"><div class="n">'+esc(s.name)+'</div>'+
+      var badge=s.cleaning_wired
+        ? '<span class="npi-badge">wired for cleaning</span>'
+        : '';
+      var doc=s.docs_url
+        ? ' · <a href="'+esc(s.docs_url)+'" target="_blank" '+
+          'rel="noopener">docs</a>'
+        : '';
+      html+='<div class="c'+(s.cleaning_wired?' on':'')+'">'+
+        '<div class="n">'+esc(s.name)+badge+'</div>'+
         '<div class="o">'+esc(s.operator||"")+
-        ' · <span class="'+(free?"free":"")+'">'+esc(s.cost||"")+'</span></div></div>';
+        ' · <span class="'+(free?"free":"")+'">'+esc(s.cost||"")+
+        '</span>'+doc+'</div></div>';
     });
     html+='</div>';
     box.innerHTML=html;

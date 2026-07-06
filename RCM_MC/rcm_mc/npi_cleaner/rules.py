@@ -107,6 +107,26 @@ _RULES: List[Rule] = [
          "excluded). Fully audited in the change log.",
          "Capture state at intake; the fill closes the gap downstream.",
          "completeness"),
+    Rule("name-from-nppes", "repair", "info", "Provider",
+         "Blank provider name filled from NPPES",
+         "A blank provider-name cell next to a verified (active) billing "
+         "NPI is filled with that NPI's canonical NPPES record name. "
+         "Online enrich mode only; blanks-only, never overwrites.",
+         "The registry is the source of truth for provider names.",
+         "completeness"),
+    Rule("state-from-nppes", "repair", "info", "Provider",
+         "Blank state filled from NPPES",
+         "A blank state cell next to a verified (active) billing NPI is "
+         "filled from that NPI's NPPES practice-location state. Online "
+         "enrich mode only; blanks-only.",
+         "Capture practice state at intake.", "completeness"),
+    Rule("taxonomy-from-nppes", "repair", "info", "Provider",
+         "Blank taxonomy filled from NPPES",
+         "A blank taxonomy cell next to a verified (active) billing NPI "
+         "is filled with that NPI's primary NPPES taxonomy. Online enrich "
+         "mode only; blanks-only.",
+         "Taxonomy drives the specialty mix — filling it improves it.",
+         "completeness"),
     Rule("zip5+4", "repair", "info", "Geography",
          "ZIP+4 formatted", "9-digit ZIPs formatted 12345-6789.",
          "None needed.", "conformity"),

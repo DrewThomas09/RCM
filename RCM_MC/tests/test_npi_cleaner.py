@@ -4194,8 +4194,84 @@ class TestDeterministicFills(unittest.TestCase):
         self.assertEqual(body.count(",TX"), 300)
 
 
+class TestNppesFillAndCatalog(unittest.TestCase):
+    """Verified NPPES records now (a) fill blank provider name/state/
+    taxonomy and (b) surface per-NPI verdicts; the catalog panel tells
+    the truth about which sources act on a run."""
+
+    def _providers(self):
+        from rcm_mc.data_public.nppes_api_client import NppesProvider
+        return NppesProvider
+
+    def test_blank_provider_fields_filled_from_verified_npi(self):
+        NppesProvider = self._providers()
+
+        def fake_fetch(npi, **kw):
+            if npi == GOOD_B:
+                return NppesProvider(
+                    npi=npi, entity_type=2, name="MERCY GENERAL HOSPITAL",
+                    organization_name="MERCY GENERAL HOSPITAL",
+                    taxonomy_code="282N00000X",
+                    taxonomy_label="General Acute Care Hospital",
+                    state="OH")
+            return None
+
+        data = ("ClaimID,BillingProviderNPI,OrganizationName,"
+                "ProviderState,TaxonomyCode\n"
+                f"1,{GOOD_B},,,\n"            # all three blank -> filled
+                f"2,{GOOD_B},Keep This Name,OH,282N00000X\n"  # present -> kept
+                ).encode()
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                   fake_fetch):
+            res = engine.clean_bytes(data, "fill.csv", enrich=True)
+        self.assertEqual(res.nppes.get("filled_from_nppes"), 3)
+        self.assertEqual(res.repairs.get("name-from-nppes"), 1)
+        self.assertEqual(res.repairs.get("state-from-nppes"), 1)
+        self.assertEqual(res.repairs.get("taxonomy-from-nppes"), 1)
+        out = open(res.out_path, encoding="utf-8").read().splitlines()
+        self.assertIn("MERCY GENERAL HOSPITAL", out[1])
+        self.assertIn("OH", out[1])
+        # Row 2's existing values are never overwritten.
+        self.assertIn("Keep This Name", out[2])
+        # Audited.
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertIn("name-from-nppes", log)
+        # Per-NPI verdicts present in the scorecard for the UI table.
+        recs = res.as_scorecard()["nppes"]["verify"]["records"]
+        self.assertIn(GOOD_B, recs)
+        self.assertEqual(recs[GOOD_B]["status"], "active")
+
+    def test_fill_never_touches_provider_when_npi_not_active(self):
+        def fake_fetch(npi, **kw):
+            return None  # nothing verifies
+
+        data = (f"BillingProviderNPI,OrganizationName,ProviderState\n"
+                f"{GOOD_B},,\n").encode()
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                   fake_fetch):
+            res = engine.clean_bytes(data, "nf.csv", enrich=True)
+        self.assertEqual(res.nppes.get("filled_from_nppes"), 0)
+        self.assertNotIn("name-from-nppes", res.repairs)
+
+    def test_catalog_marks_cleaning_wired_sources(self):
+        from rcm_mc.npi_cleaner import connectors
+        cat = connectors.catalog()
+        if not cat:
+            self.skipTest("public_api_catalog unavailable")
+        wired = [c for c in cat if c.get("cleaning_wired")]
+        ids = {c["id"] for c in wired}
+        # The sources that actually act on a cleaning run.
+        self.assertTrue({"nppes", "openfda"} & ids)
+        self.assertTrue(all("is_wired" in c and "status" in c for c in cat))
+        # Wired sources sort to the front.
+        self.assertTrue(cat[0].get("cleaning_wired"))
+        # And there are genuinely-unwired catalog entries (honest split).
+        self.assertTrue(any(not c.get("cleaning_wired") for c in cat))
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

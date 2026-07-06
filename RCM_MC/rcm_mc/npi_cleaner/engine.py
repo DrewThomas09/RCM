@@ -2707,8 +2707,20 @@ def clean_bytes(
     if enrich:
         cb("Verifying NPIs against the live NPPES registry", 0.58)
         try:
-            res.nppes, res.recovered_rows = _enrich_via_nppes(
-                cleaned, npi_idx, billing_idx, name_idx, state_idx)
+            _taxo_idx = min(taxo_set) if taxo_set else None
+            res.nppes, res.recovered_rows, _nppes_fills = _enrich_via_nppes(
+                cleaned, npi_idx, billing_idx, name_idx, state_idx,
+                taxo_idx=_taxo_idx, headers=headers)
+            # Record the blanks NPPES filled: audited in the change log,
+            # counted as repairs, credited to completeness. Bounded (≤ the
+            # verify NPI cap), so appending to the preview list is safe.
+            for _fe in _nppes_fills:
+                _rule = _fe[4]
+                res.repairs[_rule] = res.repairs.get(_rule, 0) + 1
+                res.n_changes += 1
+                res.n_cells_filled += 1
+                if len(res.changelog) < _CHANGELOG_PREVIEW:
+                    res.changelog.append(_fe)
         except Exception as exc:  # noqa: BLE001
             res.nppes = {"error": f"{type(exc).__name__}: {exc}"}
         # Drug connectors (RxNorm / openFDA) + the available-source catalog.
@@ -2901,15 +2913,23 @@ def dictionary_csv(result: "CleanResult") -> str:
     return buf.getvalue()
 
 
-def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
+def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx,
+                      taxo_idx=None, headers=None):
     """Run NPPES verify + recover over the cleaned rows via nppes_bridge.
 
-    Returns the combined ``{"verify": ..., "recover": ...}`` payload, or a
-    ``{"note": ...}`` when the bridge is unavailable.
+    Returns ``(payload, recovered_rows, fills)`` where ``fills`` is a list
+    of ``(row_1based, column_header, before, after, rule)`` — blank
+    provider name / state / taxonomy cells filled from the AUTHORITATIVE
+    NPPES record of a verified (active) billing NPI. Provider identifiers
+    are never PHI, the fill is deterministic (one canonical record per
+    NPI) and non-destructive (blanks only), so it is safe and audited —
+    the same contract as the recovered-NPI write-back and state-from-zip.
+    ``fills`` is empty when the bridge is unavailable.
     """
     from . import nppes_bridge
     if not nppes_bridge.available():
-        return ({"note": "NPPES connection unavailable in this deployment."}, {})
+        return ({"note": "NPPES connection unavailable in this deployment."},
+                {}, [])
 
     # Distinct NPIs across every detected NPI column, for verification.
     all_npis: List[str] = []
@@ -2918,6 +2938,36 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
             if i < len(row):
                 all_npis.append(row[i])
     verify = nppes_bridge.verify_npis(all_npis)
+
+    # Fill blank name / state / taxonomy from the verified billing NPI's
+    # canonical record. Bounded by verify's distinct-NPI cap (≤40) and
+    # blanks-only, so it can't rewrite anyone's data or run away.
+    fills: List[Tuple[int, str, str, str, str]] = []
+    _recs = (verify.get("records") or {}) if isinstance(verify, dict) else {}
+    if billing_idx is not None and _recs:
+        _fill_cols = []  # (col_index, record_key, rule_id)
+        if name_idx is not None:
+            _fill_cols.append((name_idx, "name", "name-from-nppes"))
+        if state_idx is not None:
+            _fill_cols.append((state_idx, "state", "state-from-nppes"))
+        if taxo_idx is not None:
+            _fill_cols.append((taxo_idx, "taxonomy", "taxonomy-from-nppes"))
+        for ridx, row in enumerate(cleaned):
+            if billing_idx >= len(row):
+                continue
+            rec = _recs.get(_digits(row[billing_idx]))
+            if not rec or rec.get("status") != "active":
+                continue
+            for _ci, _key, _rule in _fill_cols:
+                if _ci >= len(row) or row[_ci].strip():
+                    continue  # blanks only — never overwrite
+                _new = str(rec.get(_key) or "").strip()
+                if not _new:
+                    continue
+                _col = (headers[_ci] if headers and _ci < len(headers)
+                        else str(_ci))
+                fills.append((ridx + 1, _col, "", _new, _rule))
+                row[_ci] = _new
 
     # Recovery queries: rows whose billing NPI is not valid but which carry a
     # provider name (+ state) we can search on. Track which rows each query
@@ -2957,8 +3007,9 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
 
     payload = {"verify": verify, "recover": recover,
                "recovered_written": len(recovered_rows),
+               "filled_from_nppes": len(fills),
                "source": "NPPES via rcm_mc.data_public.nppes_api_client"}
-    return payload, recovered_rows
+    return payload, recovered_rows, fills
 
 
 def sample_csv() -> str:
