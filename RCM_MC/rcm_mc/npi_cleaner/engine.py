@@ -67,6 +67,11 @@ _NPI_MODIFIER_TOKENS = frozenset({
 # A "billing" NPI is the one that must be present for a claim to be payable —
 # missing values here are the headline recovery target.
 _BILLING_HINTS = ("billing", "billingprovider", "pay")
+# Ordering / referring provider NPI columns — a distinct eligibility concern
+# (CMS PECOS ordering/referring enrollment) screened separately from billing.
+_ORDER_REFER_HINTS = ("ordering", "referring", "orderprov", "referprov",
+                      "orderingprovider", "referringprovider", "orderphys",
+                      "referphys")
 
 # Columns that carry a provider / organization name, used to recover a missing
 # NPI by searching NPPES. Order = priority.
@@ -968,8 +973,13 @@ def _to_number(s: str) -> Optional[float]:
         return None
 
 
-def _row_sanity_flags(row, allowed_i, billed_i, paid_i, units_i) -> List[str]:
-    """Cross-field impossibilities on a cleaned row (report-only)."""
+def _row_sanity_flags(row, allowed_i, billed_i, paid_i, units_i,
+                      high_units: int = 0) -> List[str]:
+    """Cross-field impossibilities on a cleaned row (report-only).
+
+    ``high_units`` (>0) turns on an MUE-style over-utilization flag for a
+    units-per-line ceiling — opt-in via the profile because no ceiling is
+    universal across procedures."""
     flags: List[str] = []
 
     def val(i):
@@ -990,6 +1000,8 @@ def _row_sanity_flags(row, allowed_i, billed_i, paid_i, units_i) -> List[str]:
         flags.append("nonpositive-units")
     elif u is not None and abs(u - round(u)) > 1e-9:
         flags.append("fractional-units")
+    if high_units > 0 and u is not None and u > high_units:
+        flags.append("units-exceed-threshold")
     return flags
 
 def _rule_catalog() -> List[Dict[str, str]]:
@@ -1154,6 +1166,11 @@ class CleanResult:
     # Compliance screens (OIG LEIE + Medicare PECOS). None unless online. See
     # compliance.py.
     compliance: Optional[List[Dict[str, object]]] = None
+    # Ordering/referring provider NPI columns detected, and their NPPES
+    # active-status screen (enrich mode) — a claim can deny when the ordering
+    # or referring provider isn't a valid, active/enrolled provider.
+    order_referring_columns: List[str] = field(default_factory=list)
+    order_referring: Optional[Dict[str, object]] = None
     # Deep recovery (full v49 run_pipeline) result. None unless deep mode ran.
     deep: Optional[Dict[str, object]] = None
     deep_workbook_path: Optional[str] = None
@@ -1210,7 +1227,8 @@ class CleanResult:
                           "conflicting-amount-claim",
                           "anesthesia-units-implausible",
                           "revenue-tob-mismatch", "timely-filing-risk",
-                          "service-date-order", "discharge-status-final-bill")
+                          "service-date-order", "discharge-status-final-bill",
+                          "units-exceed-threshold")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1327,6 +1345,8 @@ class CleanResult:
             "catalog": self.catalog,
             "connector_plan": self.connector_plan,
             "compliance": self.compliance,
+            "order_referring": self.order_referring,
+            "order_referring_columns": self.order_referring_columns or None,
             "deep": self.deep,
             "deep_workbook_name": (self.deep_workbook_name
                                    if self.deep_workbook_path else None),
@@ -1915,6 +1935,14 @@ def clean_bytes(
     npi_idx, billing_idx = _detect_npi_columns(headers)
     res.npi_columns = [headers[i] for i in npi_idx]
     res.billing_column = headers[billing_idx] if billing_idx is not None else None
+    # Ordering / referring provider NPI columns among the detected NPI columns.
+    # CMS denies claims whose ordering/referring provider isn't a valid, active
+    # (PECOS-enrolled) provider, so these get their own eligibility screen —
+    # not just the billing NPI.
+    order_refer_idx = [i for i in npi_idx
+                       if any(h in _norm_key(headers[i])
+                              for h in _ORDER_REFER_HINTS)]
+    res.order_referring_columns = [headers[i] for i in order_refer_idx]
     if not npi_idx:
         res.warnings.append(
             "No NPI column detected (looked for headers containing 'NPI'). "
@@ -2041,6 +2069,13 @@ def clean_bytes(
     _timely_days = int(_thr.get("timely_filing_days", 365) or 365)
     _iqr_mult = float(_thr.get("outlier_iqr_mult", 3.0) or 3.0)
     _dup_window = int(_thr.get("dup_window_days", 3) or 3)
+    _future_grace = int(_thr.get("future_grace_days", 0) or 0)
+    _high_units = int(_thr.get("high_units_threshold", 0) or 0)
+    _readmit_window = int(_thr.get("readmit_window_days", 30) or 30)
+    # Future-date grace: a service date this many days past today is still OK
+    # (near-future scheduled visits); beyond it flags. 0 = flag past today.
+    from datetime import timedelta as _timedelta
+    _future_cut = _today + _timedelta(days=_future_grace)
     # Staleness horizon for service dates — a DOS this old in a working
     # claims extract is almost always a key-entry or century error.
     _stale_cut = f"{_today.year - _stale_years:04d}-01-01"
@@ -2246,11 +2281,13 @@ def clean_bytes(
         # whose count rises during this row's checks fired on this row.
         _sanity_pre = dict(res.sanity)
         # Cross-field sanity flags (report-only) on the cleaned row.
-        for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i, units_i):
+        for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i,
+                                   units_i, high_units=_high_units):
             res.sanity[f] = res.sanity.get(f, 0) + 1
         # Impossible future date on a service/birth/paid column (counted once
-        # per row, like the other row-level sanity flags).
-        if any(ci < len(new_row) and _date_after(new_row[ci], _today)
+        # per row, like the other row-level sanity flags). A profile can allow
+        # a grace window for near-future scheduled dates.
+        if any(ci < len(new_row) and _date_after(new_row[ci], _future_cut)
                for ci in past_date_cols):
             res.sanity["date-in-future"] = res.sanity.get("date-in-future", 0) + 1
         # ZIP prefix disagrees with the same-entity state cell (counted
@@ -3005,6 +3042,7 @@ def clean_bytes(
                 "hcpcs_i": hcpcs_i, "billed_i": _amount_i, "dx_set": dx_set,
                 "patient_i": patient_i, "dos_i": dos_i, "admit_i": admit_i,
                 "disch_i": disch_i, "billing_idx": billing_idx,
+                "readmit_window": _readmit_window,
             })
         except Exception:  # noqa: BLE001 — analytics never block cleaning
             res.population = None
@@ -3083,6 +3121,21 @@ def clean_bytes(
             if ndcs or drugs or _jcodes:
                 res.connectors = connectors.resolve_drugs(
                     ndcs, drugs, hcpcs=_jcodes)
+                # Deterministic blanks-only drug fills from the resolved
+                # concepts (drug-name ← NDC/J-code, and NDC ← name/J-code when
+                # unambiguous). Audited + graded exactly like the NPPES fills.
+                _rx = next((c for c in res.connectors
+                            if c.get("id") == "rxnorm"), None)
+                if _rx and _rx.get("concepts"):
+                    for _fe in _apply_drug_fills(cleaned, headers, drug_idx,
+                                                 ndc_idx, hcpcs_i,
+                                                 _rx["concepts"]):
+                        _rule = _fe[4]
+                        res.repairs[_rule] = res.repairs.get(_rule, 0) + 1
+                        res.n_changes += 1
+                        res.n_cells_filled += 1
+                        if len(res.changelog) < _CHANGELOG_PREVIEW:
+                            res.changelog.append(_fe)
             else:
                 res.connectors = []
         except Exception as exc:  # noqa: BLE001
@@ -3102,6 +3155,30 @@ def clean_bytes(
         except Exception as exc:  # noqa: BLE001
             res.compliance = [{"id": "error",
                                "note": f"{type(exc).__name__}: {exc}"}]
+        # Ordering / referring provider eligibility — verify those NPIs are
+        # active in NPPES (a deactivated ordering/referring provider is a
+        # frequent, avoidable denial). Bounded + guarded like the rest.
+        if order_refer_idx:
+            cb("Screening ordering / referring provider NPIs", 0.78)
+            try:
+                from . import nppes_bridge as _nb
+                _or_npis = [row[i] for i in order_refer_idx
+                            for row in cleaned if i < len(row) and row[i]]
+                _orv = _nb.verify_npis(_or_npis)
+                _recs = _orv.get("records") or {}
+                _deact = sum(1 for r in _recs.values()
+                             if r.get("status") == "not_found")
+                res.order_referring = {
+                    "columns": res.order_referring_columns,
+                    "checked": _orv.get("checked", 0),
+                    "active": _orv.get("active", 0),
+                    "not_found": _deact,
+                    "errors": _orv.get("errors", 0),
+                    "degraded": bool(_orv.get("degraded")),
+                    "note": _orv.get("note", ""),
+                }
+            except Exception as exc:  # noqa: BLE001
+                res.order_referring = {"error": f"{type(exc).__name__}: {exc}"}
 
     # Real vendored-engine pass: run the actual v48 field_validators +
     # consistency + dedup screens when pandas and the modules are available.
@@ -3174,8 +3251,49 @@ def clean_bytes(
             _history.record_run(res.as_scorecard(), src_name)
         except Exception:  # noqa: BLE001
             pass
+        _autofile_gaps(res)
     cb("Done", 1.0)
     return res
+
+
+def _autofile_gaps(res: "CleanResult") -> None:
+    """File machine-detected capability gaps onto the wishlist (source='auto',
+    deduped by title) so patterns the cleaner can't yet handle surface on the
+    build backlog instead of vanishing. Guarded end-to-end and generic-titled
+    (no filename/PHI) so it can never block a run or leak claim data. Runs once
+    per completed run, beside history recording."""
+    try:
+        gaps: List[Dict[str, str]] = []
+        if not res.npi_columns:
+            gaps.append({
+                "category": "field",
+                "title": "Detector found no NPI column in an upload",
+                "details": "A cleaned file had no header the NPI detector "
+                           "recognized. The NPI header hints may need "
+                           "extending for this source system."})
+        rows_out = res.n_rows_out or 0
+        # A high unknown-code rate (only possible when the matching reference
+        # pack is installed) points at a stale/incomplete pack, not dirty data.
+        if rows_out >= 200:
+            for rule, label in (("hcpcs-unknown-code", "HCPCS"),
+                                ("icd10-unknown-code", "ICD-10-CM"),
+                                ("taxonomy-unknown-code", "NUCC taxonomy")):
+                n = int(res.sanity.get(rule) or 0)
+                if n and n / rows_out >= 0.05:
+                    gaps.append({
+                        "category": "integration",
+                        "title": f"High {label} unknown-code rate — "
+                                 "reference pack may be stale",
+                        "details": f"{label} codes are failing the installed "
+                                   "reference set at a high rate; refreshing "
+                                   "the pack may resolve it."})
+        if not gaps:
+            return
+        from . import wishlist as _wishlist
+        for g in gaps:
+            _wishlist.auto_file(g["category"], g["title"], g["details"])
+    except Exception:  # noqa: BLE001 — auto-file never blocks a run
+        pass
 
 
 def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
@@ -3242,6 +3360,7 @@ def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
         _history.record_run(res.as_scorecard(), src_name)
     except Exception:  # noqa: BLE001 — observability never blocks cleaning
         pass
+    _autofile_gaps(res)
     cb("Done", 1.0)
     return res
 
@@ -3258,6 +3377,61 @@ def dictionary_csv(result: "CleanResult") -> str:
                     e["distinct"] if e["distinct"] is not None else "1000+",
                     " | ".join(str(s) for s in e["samples"])])
     return buf.getvalue()
+
+
+def _apply_drug_fills(cleaned, headers, drug_idx, ndc_idx, hcpcs_i, concepts):
+    """Blanks-only, audited drug fills from resolved RxNorm concepts.
+
+    Two safe directions: (1) a blank drug-name filled from the row's NDC or
+    J-code concept (a code maps to exactly one ingredient — unambiguous);
+    (2) a blank NDC filled from the row's drug-name / J-code concept ONLY when
+    that concept resolves to a single NDC (otherwise ambiguous, skipped).
+    Mirrors the NPPES fill contract: returns ``(row_1based, col, "", new,
+    rule)`` tuples and mutates the cleaned rows in place. Never overwrites a
+    populated cell."""
+    fills: List[Tuple[int, str, str, str, str]] = []
+    if not concepts:
+        return fills
+    from . import connectors as _conn
+    ndc_c = concepts.get("ndc") or {}
+    name_c = concepts.get("name") or {}
+    hcpcs_c = concepts.get("hcpcs") or {}
+
+    def _col(ci):
+        return headers[ci] if headers and ci < len(headers) else str(ci)
+
+    for ridx, row in enumerate(cleaned):
+        # (1) blank drug-name ← NDC concept, else J-code concept
+        if (drug_idx is not None and drug_idx < len(row)
+                and not row[drug_idx].strip()):
+            name = ""
+            if ndc_idx is not None and ndc_idx < len(row) and row[ndc_idx].strip():
+                c = ndc_c.get(_conn._fold_drug_key(row[ndc_idx], "ndc"))
+                name = (c or {}).get("name", "")
+            if not name and hcpcs_i is not None and hcpcs_i < len(row):
+                jk = _conn._fold_drug_key(row[hcpcs_i], "hcpcs")
+                if _JCODE_RE.match(jk):
+                    name = (hcpcs_c.get(jk) or {}).get("name", "")
+            if name:
+                fills.append((ridx + 1, _col(drug_idx), "", name,
+                              "drug-name-from-code"))
+                row[drug_idx] = name
+        # (2) blank NDC ← drug-name / J-code concept, only when unambiguous
+        if (ndc_idx is not None and ndc_idx < len(row)
+                and not row[ndc_idx].strip()):
+            src = None
+            if drug_idx is not None and drug_idx < len(row) and row[drug_idx].strip():
+                src = name_c.get(_conn._fold_drug_key(row[drug_idx], "name"))
+            if src is None and hcpcs_i is not None and hcpcs_i < len(row):
+                jk = _conn._fold_drug_key(row[hcpcs_i], "hcpcs")
+                if _JCODE_RE.match(jk):
+                    src = hcpcs_c.get(jk)
+            ndcs = (src or {}).get("ndcs") or []
+            if len(ndcs) == 1 and str(ndcs[0]).strip():
+                fills.append((ridx + 1, _col(ndc_idx), "", str(ndcs[0]),
+                              "ndc-from-drug"))
+                row[ndc_idx] = str(ndcs[0])
+    return fills
 
 
 def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx,

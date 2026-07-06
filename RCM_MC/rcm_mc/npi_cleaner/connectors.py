@@ -144,6 +144,18 @@ def plan(signals: Dict[str, object]) -> List[dict]:
     return out
 
 
+def _fold_drug_key(value: str, by: str) -> str:
+    """Fold a drug identifier to a match key so a row's cell resolves to the
+    resolved concept regardless of surface form: NDC → digits only, HCPCS/
+    J-code → uppercase alphanumerics, drug name → case/space-folded."""
+    v = str(value or "")
+    if by == "ndc":
+        return "".join(c for c in v if c.isdigit())
+    if by == "hcpcs":
+        return "".join(c for c in v.upper() if c.isalnum())
+    return " ".join(v.split()).casefold()
+
+
 def _distinct(values: List[str], cap: int) -> tuple:
     """Distinct non-empty, order-preserving, with a truncation flag."""
     seen: List[str] = []
@@ -184,6 +196,10 @@ def resolve_drugs(
     if ndc_list or name_list or hcpcs_list:
         resolved, unresolved, sample = 0, 0, []
         errors = 0
+        # Normalized concept map for deterministic blanks-only fills back on
+        # the engine: keyed by folded value so a row's cell matches regardless
+        # of NDC punctuation / J-code case / drug-name spacing.
+        concepts: Dict[str, dict] = {"ndc": {}, "name": {}, "hcpcs": {}}
         for value, by, kind in (
                 [(v, "ndc", "NDC") for v in ndc_list]
                 + [(v, "name", "name") for v in name_list]
@@ -195,6 +211,12 @@ def resolve_drugs(
                 continue
             if concept:
                 resolved += 1
+                ckey = _fold_drug_key(value, by)
+                if ckey:
+                    concepts[by][ckey] = {
+                        "name": concept.get("name", ""),
+                        "ndcs": list(concept.get("ndcs", []) or []),
+                        "rxcui": concept.get("rxcui", "")}
                 if len(sample) < 12:
                     sample.append({"input": value, "kind": kind,
                                    "rxcui": concept.get("rxcui", ""),
@@ -221,6 +243,7 @@ def resolve_drugs(
             "queried": queried,
             "resolved": resolved, "unresolved": unresolved,
             "sample": sample, "note": note + ".",
+            "concepts": concepts,
         })
 
     # ---- openFDA: NDC → drug label (brand / generic / labeler) ----

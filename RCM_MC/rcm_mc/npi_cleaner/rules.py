@@ -127,6 +127,20 @@ _RULES: List[Rule] = [
          "mode only; blanks-only.",
          "Taxonomy drives the specialty mix — filling it improves it.",
          "completeness"),
+    Rule("drug-name-from-code", "repair", "info", "Drug",
+         "Blank drug name filled from NDC / J-code",
+         "A blank drug-name cell is filled with the RxNorm ingredient the "
+         "row's NDC or HCPCS J-code resolves to (a code maps to one "
+         "ingredient). Online enrich mode only; blanks-only.",
+         "Improves drug-level analytics without touching the code.",
+         "completeness"),
+    Rule("ndc-from-drug", "repair", "info", "Drug",
+         "Blank NDC filled from drug / J-code",
+         "A blank NDC cell is filled from the row's drug-name or J-code "
+         "concept ONLY when that concept resolves to a single NDC "
+         "(unambiguous). Online enrich mode only; blanks-only.",
+         "Skipped when the concept spans many NDCs.",
+         "completeness"),
     Rule("zip5+4", "repair", "info", "Geography",
          "ZIP+4 formatted", "9-digit ZIPs formatted 12345-6789.",
          "None needed.", "conformity"),
@@ -331,6 +345,11 @@ _RULES: List[Rule] = [
          "Non-integer units — legitimate for anesthesia time/drugs, a "
          "defect for most E/M and procedure lines.",
          "Verify by code family.", "consistency"),
+    Rule("units-exceed-threshold", "flag", "warning", "Units",
+         "Units over the configured ceiling",
+         "Service units exceed the profile's high-units threshold — an "
+         "MUE-style over-utilization signal. Off unless a threshold is set.",
+         "Review against the code's Medically Unlikely Edit.", "consistency"),
     Rule("date-in-future", "flag", "critical", "Dates",
          "Impossible future date",
          "A service/birth/paid date after today.",

@@ -185,6 +185,16 @@ rcm-mc npi-clean --refdata-pull all     # needs outbound HTTPS
 rcm-mc npi-clean --refdata-status
 ```
 
+The same CLI also manages the config stores the web page owns, for
+scripting/cron parity (all honor `--json`):
+
+```
+rcm-mc npi-clean --list-profiles                 # + --show-profile/--delete-profile NAME
+rcm-mc npi-clean --list-mappings                 # + --show-mapping/--delete-mapping NAME
+rcm-mc npi-clean --history 20                     # + --show-run ID / --compare-runs A B
+rcm-mc npi-clean --wishlist open                  # + --wishlist-add / --wishlist-status / --wishlist-delete
+```
+
 | Pack | Source | What installing it enables |
 |---|---|---|
 | `taxonomy` | NUCC taxonomy CSV (~870 codes) | Full specialty display names in the specialty mix |
@@ -250,6 +260,28 @@ never claim data, length-capped) and move through a backlog
 …/wishlist/delete`. The run-history page carries the triage table
 (change status, delete). This is the front door for feeding the
 cleaner's improvement loop with what real feeds actually need.
+
+The engine also **auto-files** gaps it hits — a file with no detectable
+NPI column, or a high unknown-code rate against an installed reference
+pack — as `source='auto'` entries, deduplicated by title so a recurring
+gap doesn't pile up and kept separable from human requests. Guarded and
+generic-titled (no filename/PHI), filed once per run beside the history
+record.
+
+## Provider eligibility, drug fills, and tunable thresholds
+
+- **Ordering / referring eligibility** — ordering/referring provider NPI
+  columns get their own NPPES active-status screen (a deactivated
+  ordering/referring provider is a common, avoidable denial), reported
+  separately from the billing NPI on the Live-connectors tab.
+- **Drug-name ⇄ NDC fills** (enrich mode, blanks-only, audited, graded) —
+  a blank drug name is filled from the RxNorm concept the row's NDC or
+  HCPCS **J-code** resolves to; a blank NDC is filled from the row's
+  drug/J-code concept only when it maps to a single NDC.
+- **Profile thresholds** now also cover `future_grace_days` (grace on the
+  impossible-future-date flag), `high_units_threshold` (opt-in MUE-style
+  over-utilization flag, `units-exceed-threshold`), and
+  `readmit_window_days` (readmission window for the population analytics).
 
 ## 837↔835 reconciliation
 

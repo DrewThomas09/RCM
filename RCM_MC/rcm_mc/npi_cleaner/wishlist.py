@@ -50,6 +50,15 @@ def _conn() -> sqlite3.Connection:
     con = sqlite3.connect(_DB_PATH)
     con.execute("PRAGMA busy_timeout = 5000")
     con.executescript(_SCHEMA)
+    # Migration: where a request came from — 'user' (typed on the page) vs
+    # 'auto' (filed by the engine when it hit a gap it couldn't handle). Kept
+    # separable so machine-detected gaps don't drown the human request list.
+    # Idempotent: ADD COLUMN raises on an existing column, swallowed.
+    try:
+        con.execute("ALTER TABLE wishlist ADD COLUMN source TEXT "
+                    "NOT NULL DEFAULT 'user'")
+    except sqlite3.OperationalError:
+        pass
     return con
 
 
@@ -75,24 +84,57 @@ def add_request(category: str, title: str,
             "title": title, "details": details, "status": "open"}
 
 
+def auto_file(category: str, title: str,
+              details: str = "") -> Optional[Dict[str, object]]:
+    """File a machine-detected gap (source='auto'), deduplicated by title so
+    the same gap hitting on every upload doesn't pile up. Returns the new row,
+    or None when an auto entry with that title already exists (any status) or
+    on any store error — auto-filing must never break a cleaning run."""
+    title = " ".join(str(title or "").split())[:_TITLE_MAX]
+    if not title:
+        return None
+    category = str(category or "").strip().lower()
+    if category not in CATEGORIES:
+        category = "other"
+    details = str(details or "").strip()[:_DETAILS_MAX]
+    now = time.time()
+    try:
+        with _LOCK, _conn() as con:
+            dup = con.execute(
+                "SELECT id FROM wishlist WHERE source = 'auto' AND title = ? "
+                "LIMIT 1", (title,)).fetchone()
+            if dup is not None:
+                return None
+            cur = con.execute(
+                "INSERT INTO wishlist (created, category, title, details,"
+                " status, source) VALUES (?,?,?,?, 'open', 'auto')",
+                (now, category, title, details))
+            rid = int(cur.lastrowid or 0)
+    except Exception:  # noqa: BLE001 — auto-file never blocks cleaning
+        return None
+    return {"id": rid, "created": now, "category": category, "title": title,
+            "details": details, "status": "open", "source": "auto"}
+
+
 def list_requests(status: Optional[str] = None) -> List[Dict[str, object]]:
     """Newest first, bounded. ``status`` filters when given."""
     try:
         with _LOCK, _conn() as con:
             if status and status in _STATUSES:
                 rows = con.execute(
-                    "SELECT id, created, category, title, details, status "
-                    "FROM wishlist WHERE status = ? "
+                    "SELECT id, created, category, title, details, status,"
+                    " source FROM wishlist WHERE status = ? "
                     "ORDER BY id DESC LIMIT ?", (status, _LIST_MAX)).fetchall()
             else:
                 rows = con.execute(
-                    "SELECT id, created, category, title, details, status "
-                    "FROM wishlist ORDER BY id DESC LIMIT ?",
+                    "SELECT id, created, category, title, details, status,"
+                    " source FROM wishlist ORDER BY id DESC LIMIT ?",
                     (_LIST_MAX,)).fetchall()
     except Exception:  # noqa: BLE001 — a broken store must not 500 the page
         return []
     return [{"id": r[0], "created": r[1], "category": r[2],
-             "title": r[3], "details": r[4], "status": r[5]} for r in rows]
+             "title": r[3], "details": r[4], "status": r[5],
+             "source": (r[6] if len(r) > 6 else "user")} for r in rows]
 
 
 def set_status(request_id: int, status: str) -> bool:

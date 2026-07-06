@@ -200,7 +200,8 @@ def _service_mix(rows, rev_i, tob_i, pos_i, hcpcs_i,
 # ------------------------------------------------------------- encounters --
 def _build_encounters(rows, patient_i, dos_i, admit_i, disch_i,
                       rev_i, tob_i, pos_i, hcpcs_i, billed_i,
-                      cap: int = 200_000) -> Optional[Dict[str, object]]:
+                      cap: int = 200_000,
+                      readmit_window: int = 30) -> Optional[Dict[str, object]]:
     """Group lines → encounters: per patient, same top category, service
     dates chaining with gaps ≤ 1 day. Inpatient lines widen the window to
     admit→discharge when those dates parse."""
@@ -283,7 +284,8 @@ def _build_encounters(rows, patient_i, dos_i, admit_i, disch_i,
                     "end": cur[2].isoformat(),
                     "lines": cur[3], "charges": round(cur[4], 2)})
 
-    # 30-day readmissions over the inpatient spans just built.
+    # N-day readmissions over the inpatient spans just built (window is
+    # profile-tunable — CMS uses 30, some programs 60/90).
     readmit = None
     index_stays = sum(len(v) for v in inpatient_spans.values())
     if index_stays:
@@ -292,10 +294,11 @@ def _build_encounters(rows, patient_i, dos_i, admit_i, disch_i,
             spans.sort()
             for i in range(1, len(spans)):
                 gap = (spans[i][0] - spans[i - 1][1]).days
-                if 1 <= gap <= 30:
+                if 1 <= gap <= readmit_window:
                     n_readmit += 1
         readmit = {"inpatient_stays": index_stays,
                    "readmissions_30d": n_readmit,
+                   "window_days": readmit_window,
                    "rate_pct": round(100.0 * n_readmit
                                      / max(index_stays, 1), 1)}
 
@@ -488,7 +491,9 @@ def build(headers: List[str], rows: List[List[str]], idx: Dict[str, object],
     enc = _build_encounters(rows, idx.get("patient_i"), idx.get("dos_i"),
                             idx.get("admit_i"), idx.get("disch_i"),
                             rev_i, idx.get("tob_i"), pos_i,
-                            idx.get("hcpcs_i"), idx.get("billed_i"))
+                            idx.get("hcpcs_i"), idx.get("billed_i"),
+                            readmit_window=int(
+                                idx.get("readmit_window") or 30))
     if enc:
         out["encounters"] = enc
     cond = _conditions(rows, sorted(dx_set), idx.get("patient_i"))
