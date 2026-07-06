@@ -22199,6 +22199,19 @@ def build_server(
         _sys.stderr.write(f"[rcm-mc] WARNING: DB self-test failed: {_exc}\n")
         _sys.stderr.flush()
 
+    # Warm the connectors-estate bridge while the process is still
+    # single-threaded. The bridge's first load briefly swaps
+    # sys.modules/sys.path (see rcm_mc/data_public/connector_estate.py);
+    # doing it here — before ThreadingHTTPServer spawns handler threads —
+    # closes that swap window for request traffic. The estate is
+    # optional (wheel installs don't ship it) and every bridge call
+    # degrades gracefully, so a failed warmup must never block boot.
+    try:
+        from .data_public.connector_estate import warm_up as _estate_warm_up
+        _estate_warm_up()
+    except Exception:  # noqa: BLE001 — estate is optional; never block boot
+        pass
+
     server = ThreadingHTTPServer((host, port), RCMHandler)
     server.timeout = 300
     RCMHandler.timeout = 120

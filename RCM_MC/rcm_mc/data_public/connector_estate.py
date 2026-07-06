@@ -40,7 +40,22 @@ inside a save/swap/restore of ``sys.modules``/``sys.path``: the estate
 loads eagerly (its registry imports every connector at import time),
 this module keeps direct references to the loaded module objects, and
 the interpreter state is restored so the in-app package keeps working.
-Neither package ever sees the other.
+
+That swap is NOT invisible to other threads. While it is in flight,
+``sys.modules["connectors"]`` briefly names the estate, so a concurrent
+``import connectors.nppes`` on another thread can bind the wrong
+package or raise ``ModuleNotFoundError``. The real contract is:
+
+* the swap runs at most once per resolved root, and the server triggers
+  it via :func:`warm_up` during single-threaded boot — before
+  ``ThreadingHTTPServer`` starts serving — so request traffic only ever
+  hits the cache and never touches interpreter state;
+* a failed load is negatively cached per root (:func:`load_failure` /
+  :func:`reset_for_tests`), so a broken estate cannot re-open the swap
+  window on every request;
+* mixed-import CLI/test usage stays safe because those contexts are
+  single-threaded: the swap begins and ends inside one call, with no
+  concurrent importer around to observe it.
 """
 from __future__ import annotations
 
@@ -54,6 +69,12 @@ from typing import Any
 # Lazy singleton: (resolved_root, registry_module, spi_module).
 # Cached per resolved root so an env repoint invalidates the handles.
 _HANDLES: tuple[str, Any, Any] | None = None
+# Negative cache: (resolved_root, "ExcType: message") for a root that
+# resolved but failed to import. Without it, every bridge call on a
+# broken estate re-runs the full sys.modules swap under the global lock
+# — the exact window warm_up() exists to close. Cleared when the
+# resolved root changes (env repoint) or via reset_for_tests().
+_LOAD_FAILURE: tuple[str, str] | None = None
 _LOAD_LOCK = threading.RLock()
 
 
@@ -94,15 +115,22 @@ def _load() -> tuple[str, Any, Any] | None:
 
     See the module docstring for why this swaps ``sys.modules`` instead
     of doing a plain import: the top-level name ``connectors`` is also
-    used by an in-app RCM_MC package, and the two must coexist.
+    used by an in-app RCM_MC package, and the two must coexist. Success
+    AND failure are both cached per resolved root, so the swap runs at
+    most once per root — :func:`warm_up` relies on that to keep the swap
+    out of multi-threaded request handling.
     """
-    global _HANDLES
+    global _HANDLES, _LOAD_FAILURE
     root = repo_root()
     if root is None:
         return None
     with _LOAD_LOCK:
         if _HANDLES is not None and _HANDLES[0] == root:
             return _HANDLES
+        if _LOAD_FAILURE is not None:
+            if _LOAD_FAILURE[0] == root:
+                return None  # known-broken root: fail fast, no swap
+            _LOAD_FAILURE = None  # root repointed — retry the new root
         existing = sys.modules.get("connectors")
         if existing is not None and _owns_name(existing, root):
             # The estate already owns the name (e.g. a process started
@@ -110,7 +138,8 @@ def _load() -> tuple[str, Any, Any] | None:
             try:
                 registry = importlib.import_module("connectors.registry")
                 spi = importlib.import_module("connectors._spi")
-            except Exception:
+            except Exception as exc:
+                _LOAD_FAILURE = (root, f"{type(exc).__name__}: {exc}")
                 return None
             _HANDLES = (root, registry, spi)
             return _HANDLES
@@ -126,7 +155,8 @@ def _load() -> tuple[str, Any, Any] | None:
             spi = importlib.import_module("connectors._spi")
             _HANDLES = (root, registry, spi)
             return _HANDLES
-        except Exception:
+        except Exception as exc:
+            _LOAD_FAILURE = (root, f"{type(exc).__name__}: {exc}")
             return None
         finally:
             # Drop every estate name and put back whatever was there so
@@ -142,8 +172,54 @@ def _load() -> tuple[str, Any, Any] | None:
 
 
 def estate_available() -> bool:
-    """True when the repo-root connector estate is importable."""
+    """True when the repo-root connector estate is importable.
+
+    Answered from the caches after the first attempt per root — a
+    known-broken root returns False without re-running the import swap.
+    """
     return _load() is not None
+
+
+def warm_up() -> bool:
+    """Trigger the one-time estate load; True when the estate is usable.
+
+    Called from ``rcm_mc.server.build_server()`` while the process is
+    still single-threaded: the first load swaps ``sys.modules`` /
+    ``sys.path`` (see module docstring), and doing that before the
+    ThreadingHTTPServer spawns handler threads means request traffic can
+    never observe the swap window. Idempotent — every later call is a
+    cache hit that leaves interpreter state untouched.
+    """
+    return _load() is not None
+
+
+def load_failure() -> str | None:
+    """``"ExcType: message"`` for the current root's cached failed load.
+
+    ``None`` when the estate loaded, was never attempted, or the root
+    has been repointed since the failure. Lets callers say *why* the
+    estate is down without re-running the import.
+    """
+    root = repo_root()
+    if root is None:
+        return None
+    with _LOAD_LOCK:
+        if _LOAD_FAILURE is not None and _LOAD_FAILURE[0] == root:
+            return _LOAD_FAILURE[1]
+    return None
+
+
+def reset_for_tests() -> None:
+    """Drop the cached handles AND the negative cache (test seam).
+
+    Production never needs this: an ``RCM_MC_CONNECTORS_ROOT`` repoint
+    already invalidates both caches because they key on the resolved
+    root. Tests use it to re-exercise the load path deterministically.
+    """
+    global _HANDLES, _LOAD_FAILURE
+    with _LOAD_LOCK:
+        _HANDLES = None
+        _LOAD_FAILURE = None
 
 
 def estate_catalog() -> dict[str, Any]:
@@ -399,7 +475,16 @@ def ingested_counts() -> dict[str, int]:
 
 
 def dataset_ingested_count(dataset_id: str) -> int | None:
-    """Rows in the dataset's target table, or ``None`` when not ingested."""
+    """Rows ingested for ONE dataset, or ``None`` when not ingested.
+
+    Shared-table datasets (the estate's documented pattern — e.g. the
+    per-year medicaid NADAC/SDUD slices, bls_qcew slices) pin a registry
+    ``source_filter`` that ingest mirrors into the table's
+    ``source_endpoint`` column. Counting must apply the same slice the
+    estate's query engine does, or every year-slice would report the
+    whole table's rows. Datasets without a filter (or whose table has no
+    ``source_endpoint`` column) keep the plain full-table count.
+    """
     h = _load()
     if h is None:
         return None
@@ -411,8 +496,15 @@ def dataset_ingested_count(dataset_id: str) -> int | None:
         row = adapter.by_dataset_id().get(dataset_id)
         if row is None:
             return None
+        source_filter = getattr(row, "source_filter", "") or ""
+        tdef = getattr(adapter.tables_mod, "TABLES", {}).get(row.target_table)
         store = adapter.open_store(_db_path(owner))
         try:
+            if (source_filter and tdef is not None
+                    and "source_endpoint" in tdef.columns):
+                return int(store.count(row.target_table,
+                                       "source_endpoint = ?",
+                                       (source_filter,)))
             return int(store.count(row.target_table))
         finally:
             store.close()

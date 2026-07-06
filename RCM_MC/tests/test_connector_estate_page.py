@@ -9,6 +9,10 @@ reaches the app only through the read-only bridge
     results) when it is absent or not ingested;
   - owner resolution works for a dataset from every connector;
   - limits are clamped; sample queries never create stray db files;
+  - warm_up() is idempotent, runs during build_server(), and closes the
+    sys.modules swap window (a bounded stress loop pins the race fix);
+  - a broken estate root is negatively cached — no swap re-runs per call;
+  - shared-table datasets report source_filter-sliced ingested counts;
   - the /connector-estate route serves every view over real HTTP;
   - the unavailable-estate path renders an editorial empty state, not a 500.
 
@@ -19,9 +23,13 @@ suite stays order-independent.
 """
 from __future__ import annotations
 
+import importlib
 import os
 import socket
+import sys
 import tempfile
+import threading
+import time
 import unittest
 from contextlib import closing
 
@@ -109,6 +117,185 @@ class BridgeAvailabilityTests(_EnvGuard):
             self.assertEqual(est.ingested_counts(), {})
 
 
+class BridgeWarmupRaceTests(_EnvGuard):
+    """Regression: the load-time sys.modules swap raced other threads.
+
+    Before the fix, hammering bridge calls while another thread imported
+    the in-app ``connectors.nppes`` reproduced 60k+ violations (estate
+    bound under the in-app name, or ModuleNotFoundError) in ~2 seconds.
+    warm_up() moves the swap into single-threaded server boot and the
+    handle cache keeps every later call off interpreter state — so zero
+    observations in the same bounded loop is a meaningful assertion.
+    """
+
+    def test_warm_up_is_idempotent(self):
+        self.assertTrue(est.warm_up())
+        handles = est._HANDLES
+        self.assertIsNotNone(handles)
+        self.assertTrue(est.warm_up())
+        self.assertIs(est._HANDLES, handles)  # cache hit, not a reload
+
+    def test_build_server_warms_the_bridge_before_serving(self):
+        # The boot path must warm the bridge while still single-threaded:
+        # build (but never start) a server from a cold bridge and assert
+        # the handles already exist before any request could be served.
+        from rcm_mc.server import build_server
+        est.reset_for_tests()
+        self.assertIsNone(est._HANDLES)
+        with tempfile.TemporaryDirectory() as tmp:
+            with closing(socket.socket()) as s:
+                s.bind(("127.0.0.1", 0))
+                port = s.getsockname()[1]
+            srv, _ = build_server(port=port,
+                                  db_path=os.path.join(tmp, "p.db"),
+                                  host="127.0.0.1")
+            try:
+                self.assertIsNotNone(est._HANDLES)
+            finally:
+                srv.server_close()
+
+    def test_no_estate_leak_under_concurrent_inapp_imports(self):
+        self.assertTrue(est.warm_up())
+        root = est.repo_root()
+        self.assertIsNotNone(root)
+        estate_prefix = os.path.join(os.path.abspath(root),
+                                     "connectors") + os.sep
+        saved = {k: v for k, v in sys.modules.items()
+                 if k == "connectors" or k.startswith("connectors.")}
+        stop = threading.Event()
+        violations: list[str] = []
+
+        def hammer():
+            while not stop.is_set():
+                est.estate_available()
+                est.connectors_summary()
+                est.dataset_owner("icd10_cm")
+
+        def importer():
+            while not stop.is_set():
+                sys.modules.pop("connectors.nppes", None)
+                sys.modules.pop("connectors", None)
+                try:
+                    mod = importlib.import_module("connectors.nppes")
+                except Exception as exc:
+                    # Not just ModuleNotFoundError: the swap deleting
+                    # sys.modules entries mid-import also surfaces as a
+                    # raw KeyError('connectors') from the import
+                    # machinery. Catch broadly or a regression would
+                    # kill this thread silently and pass vacuously.
+                    violations.append(
+                        f"in-app import raised: "
+                        f"{type(exc).__name__}: {exc}")
+                    continue
+                mod_file = os.path.abspath(
+                    getattr(mod, "__file__", "") or "")
+                if mod_file.startswith(estate_prefix):
+                    violations.append(
+                        f"estate leaked under in-app name: {mod_file}")
+
+        threads = [threading.Thread(target=hammer, daemon=True)
+                   for _ in range(4)]
+        threads.append(threading.Thread(target=importer, daemon=True))
+        try:
+            for t in threads:
+                t.start()
+            time.sleep(2.0)
+        finally:
+            stop.set()
+            for t in threads:
+                t.join(timeout=10)
+            # Restore the exact pre-test module state so later suites
+            # (the NPPES CI gate) see the in-app package untouched.
+            for k in [k for k in sys.modules
+                      if k == "connectors" or k.startswith("connectors.")]:
+                del sys.modules[k]
+            sys.modules.update(saved)
+        self.assertEqual(
+            violations[:5], [],
+            f"{len(violations)} cross-package import violations observed")
+
+
+class BridgeNegativeCacheTests(_EnvGuard):
+    """Regression: a failed estate load was never cached, so every bridge
+    call re-ran the full sys.modules swap (the race window) while holding
+    the global lock. The failure must be cached per resolved root, be
+    cleared by an RCM_MC_CONNECTORS_ROOT repoint, and be clearable via
+    reset_for_tests().
+    """
+
+    def setUp(self):
+        super().setUp()
+        est.reset_for_tests()
+
+    def tearDown(self):
+        est.reset_for_tests()
+        super().tearDown()
+
+    @staticmethod
+    def _make_broken_root(tmp: str) -> None:
+        """A root that RESOLVES (has connectors/_spi.py) but fails import.
+
+        The broken __init__ appends one byte to attempts.log per import
+        attempt — the counter that proves the negative cache short-
+        circuits the retry.
+        """
+        pkg = os.path.join(tmp, "connectors")
+        os.makedirs(pkg, exist_ok=True)
+        with open(os.path.join(pkg, "_spi.py"), "w") as fh:
+            fh.write("")
+        with open(os.path.join(pkg, "__init__.py"), "w") as fh:
+            fh.write(
+                "import os\n"
+                "_log = os.path.join(os.path.dirname(__file__),"
+                " 'attempts.log')\n"
+                "with open(_log, 'a') as fh:\n"
+                "    fh.write('x')\n"
+                "raise RuntimeError('estate deliberately broken')\n")
+
+    @staticmethod
+    def _attempts(root: str) -> int:
+        path = os.path.join(root, "connectors", "attempts.log")
+        if not os.path.isfile(path):
+            return 0
+        with open(path) as fh:
+            return len(fh.read())
+
+    def test_failed_load_is_cached_and_cleared_on_repoint(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._make_broken_root(tmp)
+            os.environ["RCM_MC_CONNECTORS_ROOT"] = tmp
+            self.assertFalse(est.estate_available())
+            self.assertEqual(self._attempts(tmp), 1)
+            # Repeat calls answer from the negative cache — no re-import,
+            # no sys.modules swap, still gracefully degraded.
+            self.assertFalse(est.estate_available())
+            self.assertEqual(est.all_datasets(), [])
+            self.assertEqual(est.ingested_counts(), {})
+            self.assertEqual(self._attempts(tmp), 1)
+            # The exception summary is preserved for diagnostics.
+            failure = est.load_failure()
+            self.assertIsNotNone(failure)
+            self.assertIn("RuntimeError", failure)
+            self.assertIn("estate deliberately broken", failure)
+            # reset_for_tests() clears the negative cache → one retry.
+            est.reset_for_tests()
+            self.assertFalse(est.estate_available())
+            self.assertEqual(self._attempts(tmp), 2)
+            # Repointing to the real estate bypasses AND clears the
+            # cached failure...
+            os.environ.pop("RCM_MC_CONNECTORS_ROOT", None)
+            self.assertTrue(est.estate_available())
+            self.assertIsNone(est.load_failure())
+            # ...so pointing back at the broken root retries it fresh.
+            os.environ["RCM_MC_CONNECTORS_ROOT"] = tmp
+            self.assertFalse(est.estate_available())
+            self.assertEqual(self._attempts(tmp), 3)
+
+    def test_load_failure_is_none_on_healthy_estate(self):
+        self.assertTrue(est.estate_available())
+        self.assertIsNone(est.load_failure())
+
+
 class BridgeQueryTests(_EnvGuard):
     def setUp(self):
         super().setUp()
@@ -185,6 +372,59 @@ class BridgeQueryTests(_EnvGuard):
         self.assertEqual(est.dataset_ingested_count("icd10_cm"), 2)
         agg = est.aggregate("icd10_cm", "code_type", limit=5)
         self.assertEqual(agg.get("rows"), [{"code_type": "cm", "count": 2}])
+
+    def test_shared_table_counts_respect_source_filter(self):
+        # medicaid NADAC: per-year datasets share ONE physical table,
+        # sliced by source_endpoint (the estate's documented shared-table
+        # pattern). The per-dataset ingested count must count only its
+        # slice — before the fix every year-slice reported the whole
+        # table (5 here).
+        row_2026 = est.dataset_row("medicaid_data_nadac_2026")
+        row_2025 = est.dataset_row("medicaid_data_nadac_2025")
+        self.assertIsNotNone(row_2026)
+        self.assertIsNotNone(row_2025)
+        self.assertEqual(row_2026["target_table"], row_2025["target_table"])
+        self.assertNotEqual(row_2026["source_filter"],
+                            row_2025["source_filter"])
+        adapter = est.adapter_for("medicaid_data")
+        self.assertIsNotNone(adapter)
+        store = adapter.open_store(
+            os.path.join(self._tmp.name, "medicaid_data.db"))
+
+        def _row(key, ndc, as_of, src):
+            return {"nadac_key": key, "ndc": ndc, "as_of_date": as_of,
+                    "effective_date": as_of, "nadac_per_unit": "1.00",
+                    "source_endpoint": src}
+
+        try:
+            store.upsert(row_2026["target_table"], [
+                _row("26a", "00000000001", "2026-01-07",
+                     row_2026["source_filter"]),
+                _row("26b", "00000000002", "2026-01-07",
+                     row_2026["source_filter"]),
+                _row("25a", "00000000001", "2025-06-04",
+                     row_2025["source_filter"]),
+                _row("25b", "00000000002", "2025-06-04",
+                     row_2025["source_filter"]),
+                _row("25c", "00000000003", "2025-06-04",
+                     row_2025["source_filter"]),
+            ])
+        finally:
+            store.close()
+        self.assertEqual(
+            est.dataset_ingested_count("medicaid_data_nadac_2026"), 2)
+        self.assertEqual(
+            est.dataset_ingested_count("medicaid_data_nadac_2025"), 3)
+        # The connector-level rollup still counts the whole table once.
+        self.assertEqual(est.ingested_counts().get("medicaid_data"), 5)
+        # And the estate-page detail view's LOCAL STORE section renders
+        # the slice count, not the shared table's total. (The page-title
+        # meta still says "5 rows ingested locally" — that one is the
+        # estate-wide rollup and stays a whole-table sum by design.)
+        from rcm_mc.ui.data_public.connector_estate_page import render_connector_estate
+        h = render_connector_estate({"dataset": "medicaid_data_nadac_2026"})
+        self.assertIn("2 rows ingested · first 10 shown", h)
+        self.assertNotIn("5 rows ingested · first 10 shown", h)
 
 
 class PageRenderTests(_EnvGuard):
