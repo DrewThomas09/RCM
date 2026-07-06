@@ -45,7 +45,6 @@ _SUBCMD_DB_STYLE = {"cms_open_data", "open_payments"}
 # marked optional: api.census.gov requires CENSUS_API_KEY for data pulls,
 # so without the env var those steps fail and are reported, not fatal.
 _QUICK_PLAN: Dict[str, List[List[str]]] = {
-    "cms_coverage": [["discover"]],
     "cms_open_data": [
         ["discover"],
         ["fetch", "--dataset", "geo_variation_state_county", "--max-pages", "2"],
@@ -141,9 +140,10 @@ _FULL_OVERRIDES: Dict[str, List[List[str]]] = {
 }
 
 # Connectors with no unattended ingest in the plan (their ingest verbs need
-# domain arguments — search terms, NPI lists, code ranges). They stay
+# domain arguments — search terms, NPI lists, code ranges — and
+# cms_coverage's ``discover`` is informational, not an ingest). They stay
 # manual; see each README.
-UNPLANNED: tuple = ("openfda", "npi_registry", "icd10")
+UNPLANNED: tuple = ("openfda", "cms_coverage", "npi_registry", "icd10")
 
 _STEP_TIMEOUT_S = 600
 
@@ -195,7 +195,10 @@ def plan(quick: bool = True,
 
 def _storage_argv(name: str, db_dir: str) -> List[str]:
     if name in _ROOT_STYLE:
-        return ["--root", f"{db_dir.rstrip('/')}/{name}"]
+        # --root connectors write {root}/{name}.db themselves; pointing root
+        # at db_dir keeps every db at {db_dir}/{name}.db — the exact layout
+        # the unified server's open_stores() expects.
+        return ["--root", db_dir.rstrip("/")]
     return ["--db", f"{db_dir.rstrip('/')}/{name}.db"]
 
 

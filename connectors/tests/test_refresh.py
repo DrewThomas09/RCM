@@ -40,8 +40,10 @@ class ArgvTests(unittest.TestCase):
     def test_db_style_and_root_style_storage_flags(self):
         self.assertEqual(refresh_mod._storage_argv("cms_open_data", "var/x"),
                          ["--db", "var/x/cms_open_data.db"])
+        # --root connectors write {root}/{name}.db themselves, so root IS the
+        # db dir — that keeps every db at {db_dir}/{name}.db for open_stores.
         self.assertEqual(refresh_mod._storage_argv("hrsa_data", "var/x/"),
-                         ["--root", "var/x/hrsa_data"])
+                         ["--root", "var/x"])
 
 
 class _FakeProc:
