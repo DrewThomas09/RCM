@@ -56,6 +56,20 @@ def _cmd_serve(args: argparse.Namespace) -> int:  # pragma: no cover
     return 0
 
 
+def _cmd_refresh(args: argparse.Namespace) -> int:
+    from . import refresh as refresh_mod
+    names = args.connector or None
+    if args.dry_run:
+        for name, steps in refresh_mod.plan(quick=not args.full,
+                                            connectors=names).items():
+            for argv in steps:
+                print(f"{name:16} {' '.join(argv)}")
+        return 0
+    report = refresh_mod.refresh(args.db, quick=not args.full, connectors=names)
+    print(report.summary())
+    return 0 if report.ok else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="connectors", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -77,6 +91,19 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--host", default="127.0.0.1")
     sp.add_argument("--port", type=int, default=8100)
     sp.set_defaults(func=_cmd_serve)
+
+    sp = sub.add_parser(
+        "refresh",
+        help="ingest a polite slice of every connector into a db dir")
+    sp.add_argument("--db", required=True,
+                    help="directory for per-connector DBs (e.g. var/connectors)")
+    sp.add_argument("--connector", action="append",
+                    help="limit to one connector (repeatable)")
+    sp.add_argument("--full", action="store_true",
+                    help="widen page caps (still never unbounded pulls)")
+    sp.add_argument("--dry-run", action="store_true",
+                    help="print the planned CLI invocations without running")
+    sp.set_defaults(func=_cmd_refresh)
     return p
 
 
