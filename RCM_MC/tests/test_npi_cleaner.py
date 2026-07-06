@@ -4592,6 +4592,16 @@ class TestFlagColumnAndJcodeConnectors(unittest.TestCase):
         self.assertEqual(by_id["rxnorm"]["sample"][0]["kind"], "J-code")
         self.assertEqual(by_id["rxnorm"]["sample"][0]["name"], "infliximab")
 
+    def test_page_wires_connector_plan_panel(self):
+        # Locks the Live-connectors coverage panel wiring so a future UI edit
+        # can't silently drop the "N of M connectors apply" explainer that the
+        # engine's connector_plan feeds.
+        from rcm_mc.ui.npi_cleaner_page import render_npi_cleaner
+        body = render_npi_cleaner()
+        self.assertIn('id="npi-conn-plan"', body)
+        self.assertIn("renderConnectorPlan", body)
+        self.assertIn("renderConnectorPlan(s.connector_plan)", body)
+
 
 if __name__ == "__main__":
     unittest.main()
