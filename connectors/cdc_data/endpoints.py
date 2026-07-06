@@ -404,6 +404,342 @@ _CURATED: List[EndpointSpec] = [
         join_keys=("jurisdiction_of_occurrence",),
         refresh_cadence="monthly",
     ),
+    # ── 2026-07 catalog curation sweep (all 4x4 ids verified live
+    #    2026-07-06; every columns tuple is the authoritative
+    #    /api/views/{id}.json field list, every pk verified unique on a
+    #    real 2,000-row pull). One dataset per analytic category the
+    #    healthcare-market analysis needs and the existing curation lacked.
+    #    Categories with NO clean natural-key dataset on the domain (CDC
+    #    SVI, STI/HIV, alcohol, healthcare-associated infections) are
+    #    documented as skips in the README sweep note, not curated. ──
+
+    # natality — county grain, combined-year vintages (56,466 rows).
+    EndpointSpec(
+        key="teen_birth_county",
+        resource_id="3h58-x6cd",
+        kind="curated",
+        target_table="cdc_teen_birth_county",
+        title=("NCHS - Teen Birth Rates for Age Group 15-19 in the United "
+               "States by County"),
+        columns=(
+            "year", "state", "county", "state_fips_code", "county_fips_code",
+            "combined_fips_code", "birth_rate", "lower_confidence_limit",
+            "upper_confidence_limit",
+        ),
+        # combined_fips_code is the 5-digit county FIPS; each county has one
+        # rate per (combined) year vintage.
+        pk_fields=("combined_fips_code", "year"),
+        date_field="year",
+        join_keys=("combined_fips_code",),
+        refresh_cadence="annual",
+    ),
+    # natality (provisional) — national quarterly birth indicators (900).
+    EndpointSpec(
+        key="vsrr_birth_indicators",
+        resource_id="76vv-a7x8",
+        kind="curated",
+        target_table="cdc_vsrr_birth_indicators",
+        title=("NCHS - VSRR Quarterly provisional estimates for selected "
+               "birth indicators"),
+        columns=(
+            "year_and_quarter", "topic", "topic_subgroup", "indicator",
+            "race_ethnicity", "rate", "unit", "significant",
+        ),
+        pk_fields=("year_and_quarter", "topic_subgroup", "indicator",
+                   "race_ethnicity"),
+        date_field="year_and_quarter",
+        join_keys=("indicator",),
+        refresh_cadence="quarterly",
+    ),
+    # maternal/infant — infant mortality by state (DQS, 1,710 rows). Live
+    # field "group" is an SQL keyword → column group_field (see flatten).
+    EndpointSpec(
+        key="infant_mortality_state",
+        resource_id="pjb2-jvdr",
+        kind="curated",
+        target_table="cdc_infant_mortality_state",
+        title=("DQS Infant mortality rates, by race and Hispanic origin of "
+               "mother, state, and territory"),
+        columns=(
+            "topic", "subtopic", "subtopic_id", "classification",
+            "classification_id", "group_field", "group_id", "group_order",
+            "subgroup", "subgroup_id", "subgroup_order", "estimate_type",
+            "estimate_type_id", "time_period", "time_period_id", "estimate",
+            "standard_error", "estimate_lci", "estimate_uci", "flag",
+            "footnote_id_list", "state_fips",
+        ),
+        pk_fields=("state_fips", "group_field", "subgroup_id", "subtopic_id",
+                   "time_period_id", "estimate_type_id"),
+        date_field="time_period",
+        join_keys=("state_fips",),
+        refresh_cadence="annual",
+    ),
+    # maternal — provisional maternal mortality (840). Live "group" → group_field.
+    EndpointSpec(
+        key="vsrr_maternal_death",
+        resource_id="e2d5-ggg7",
+        kind="curated",
+        target_table="cdc_vsrr_maternal_death",
+        title="VSRR Provisional Maternal Death Counts and Rates",
+        columns=(
+            "data_as_of", "jurisdiction", "group_field", "subgroup",
+            "year_of_death", "month_of_death", "time_period",
+            "month_ending_date", "maternal_deaths", "live_births",
+            "maternal_mortality_rate", "footnote",
+        ),
+        pk_fields=("jurisdiction", "group_field", "subgroup", "year_of_death",
+                   "month_of_death", "time_period"),
+        date_field="month_ending_date",
+        join_keys=("jurisdiction",),
+        refresh_cadence="monthly",
+    ),
+    # immunization (flu) — coverage for all ages, state/region/national
+    # over many seasons (235,381 rows → smaller page like BRFSS).
+    EndpointSpec(
+        key="flu_vaccination_coverage",
+        resource_id="vh55-3he6",
+        kind="curated",
+        target_table="cdc_flu_vaccination_coverage",
+        title="Influenza Vaccination Coverage for All Ages (6+ Months)",
+        columns=(
+            "vaccine", "geography_type", "geography", "fips", "year_season",
+            "month", "dimension_type", "dimension", "coverage_estimate",
+            "_95_ci", "population_sample_size",
+        ),
+        pk_fields=("fips", "vaccine", "year_season", "month",
+                   "dimension_type", "dimension"),
+        date_field="year_season",
+        join_keys=("fips",),
+        refresh_cadence="monthly",
+        page_size=500,
+    ),
+    # immunization (childhood) — kindergarten coverage + exemptions by
+    # state and school year (8,166 rows).
+    EndpointSpec(
+        key="kindergarten_vaccination",
+        resource_id="ijqb-a7ye",
+        kind="curated",
+        target_table="cdc_kindergarten_vaccination",
+        title="Vaccination Coverage and Exemptions among Kindergartners",
+        columns=(
+            "vaccine", "dose", "geography_type", "geography", "year_season",
+            "coverage_estimate", "population_sample_size", "percent_surveyed",
+            "foot_notes", "number_of_exemptions", "survey_type",
+        ),
+        pk_fields=("geography", "year_season", "vaccine", "dose",
+                   "survey_type"),
+        date_field="year_season",
+        join_keys=("geography",),
+        refresh_cadence="annual",
+    ),
+    # tobacco — smoking-attributable mortality by state (SAMMEC, 312 rows).
+    EndpointSpec(
+        key="smoking_attributable_mortality",
+        resource_id="4yyu-3s69",
+        kind="curated",
+        target_table="cdc_smoking_attributable_mortality",
+        title=("Smoking-Attributable Mortality, Morbidity, and Economic "
+               "Costs (SAMMEC) - Smoking-Attributable Mortality"),
+        columns=(
+            "year", "locationabbr", "locationdesc", "datasource", "topictype",
+            "topicdesc", "measuredesc", "data_value_unit", "data_value_type",
+            "data_value", "data_value_footnote_symbol", "data_value_footnote",
+            "sex", "geolocation", "topictypeid", "topicid", "measureid",
+            "submeasureid", "displayorder",
+        ),
+        pk_fields=("locationabbr", "year", "measureid", "submeasureid", "sex"),
+        date_field="year",
+        join_keys=("locationabbr",),
+        refresh_cadence="annual",
+    ),
+    # obesity/nutrition/physical activity — NPAO's own BRFSS cut with
+    # clean topic/stratification ids (110,880 rows → smaller page).
+    EndpointSpec(
+        key="npao_brfss",
+        resource_id="hn4x-zwk7",
+        kind="curated",
+        target_table="cdc_npao_brfss",
+        title=("Nutrition, Physical Activity, and Obesity - Behavioral Risk "
+               "Factor Surveillance System"),
+        columns=(
+            "yearstart", "yearend", "locationabbr", "locationdesc",
+            "datasource", "class", "topic", "question", "data_value_unit",
+            "data_value_type", "data_value", "data_value_alt",
+            "data_value_footnote_symbol", "data_value_footnote",
+            "low_confidence_limit", "high_confidence_limit", "sample_size",
+            "total", "age_years", "education", "sex", "income",
+            "race_ethnicity", "geolocation", "classid", "topicid",
+            "questionid", "datavaluetypeid", "locationid",
+            "stratificationcategory1", "stratification1",
+            "stratificationcategoryid1", "stratificationid1",
+        ),
+        pk_fields=("locationabbr", "yearstart", "yearend", "questionid",
+                   "stratificationid1", "datavaluetypeid"),
+        date_field="yearend",
+        join_keys=("locationabbr",),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
+    # suicide/violence — injury, overdose & violence rates by county
+    # (132,000 rows → smaller page). intent covers suicide/homicide/etc.
+    EndpointSpec(
+        key="injury_violence_county",
+        resource_id="psx4-wq38",
+        kind="curated",
+        target_table="cdc_injury_violence_county",
+        title="Mapping Injury, Overdose, and Violence - County",
+        columns=(
+            "geoid", "name", "st_geoid", "st_name", "intent", "period",
+            "count_sup", "rate", "rate_m", "rate_m_ci", "data_as_of",
+            "ttm_date_range",
+        ),
+        # geoid is the 5-digit county FIPS; one rate per (intent, period).
+        pk_fields=("geoid", "intent", "period"),
+        date_field="period",
+        join_keys=("geoid",),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
+    # disability — DHDS disability status & type prevalence by state (3,592).
+    EndpointSpec(
+        key="disability_dhds",
+        resource_id="s2qv-b27b",
+        kind="curated",
+        target_table="cdc_disability_dhds",
+        title="DHDS - Prevalence of Disability Status and Types",
+        columns=(
+            "year", "locationabbr", "locationdesc", "datasource", "category",
+            "indicator", "response", "data_value_unit", "data_value_type",
+            "data_value", "data_value_alt", "data_value_footnote_symbol",
+            "data_value_footnote", "low_confidence_limit",
+            "high_confidence_limit", "number", "weightednumber",
+            "stratificationcategory1", "stratification1",
+            "stratificationcategory2", "stratification2", "categoryid",
+            "indicatorid", "locationid", "responseid", "datavaluetypeid",
+            "stratificationcategoryid1", "stratificationid1",
+            "stratificationcategoryid2", "stratificationid2",
+        ),
+        pk_fields=("locationabbr", "indicatorid", "responseid",
+                   "stratificationid1", "year"),
+        date_field="year",
+        join_keys=("locationabbr",),
+        refresh_cadence="annual",
+    ),
+    # environmental health (air quality) — daily county PM2.5, 2001-2022
+    # (24.9M rows — the biggest on the domain, so smaller page + the
+    # standard 5-page default keeps an accidental pull tiny). countyfips is
+    # the WITHIN-STATE code, so the key needs statefips too.
+    EndpointSpec(
+        key="pm25_county",
+        resource_id="53mz-4zqd",
+        kind="curated",
+        target_table="cdc_pm25_county",
+        title="Daily County-Level PM2.5 Concentrations 2001-2022",
+        columns=(
+            "year", "date", "statefips", "countyfips", "pm25_max_pred",
+            "pm25_med_pred", "pm25_mean_pred", "pm25_pop_pred",
+        ),
+        pk_fields=("statefips", "countyfips", "date"),
+        date_field="date",
+        join_keys=("statefips", "countyfips"),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
+    # cardiovascular — stroke mortality by county (78,792 rows → smaller
+    # page). Distinct topic/dataset from the curated heart-disease table.
+    EndpointSpec(
+        key="stroke_mortality_county",
+        resource_id="cpdh-8cna",
+        kind="curated",
+        target_table="cdc_stroke_mortality_county",
+        title=("Stroke Mortality Data Among US Adults (35+) by "
+               "State/Territory and County - 2021-2023"),
+        columns=(
+            "year", "locationabbr", "locationdesc", "geographiclevel",
+            "datasource", "class", "topic", "data_value", "data_value_unit",
+            "data_value_type", "data_value_footnote_symbol",
+            "data_value_footnote", "stratificationcategory1",
+            "stratification1", "stratificationcategory2", "stratification2",
+            "topicid", "locationid", "y_lat", "x_lon",
+        ),
+        pk_fields=("locationid", "year", "stratification1", "stratification2"),
+        date_field="year",
+        join_keys=("locationid",),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
+    # diabetes — USDSS state burden/magnitude indicators (114,275 rows →
+    # smaller page). Distinct source from BRFSS/CDI diabetes slices.
+    EndpointSpec(
+        key="diabetes_state_burden",
+        resource_id="b559-sbez",
+        kind="curated",
+        target_table="cdc_diabetes_state_burden",
+        title="USDSS State Burden/Magnitude Diabetes Indicators",
+        columns=(
+            "state", "year", "topic", "indicator", "unit", "estimate",
+            "seestimate", "lowerlimit", "upperlimit", "estimatefootnote",
+            "datasource", "population", "age", "race", "sex", "education",
+            "other_stratification",
+        ),
+        pk_fields=("state", "year", "topic", "indicator", "age", "race",
+                   "sex", "education"),
+        date_field="year",
+        join_keys=("state",),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
+    # oral health — NOHSS adult indicators by state (31,542 rows → smaller
+    # page). BRFSS-style break-out structure.
+    EndpointSpec(
+        key="oral_health_adults",
+        resource_id="jz6n-v26y",
+        kind="curated",
+        target_table="cdc_oral_health_adults",
+        title="NOHSS Adult Indicators",
+        columns=(
+            "year", "locationabbr", "locationdesc", "category", "indicator",
+            "response", "datasource", "data_value_unit", "data_value_type",
+            "data_value", "data_value_footnote_symbol", "data_value_footnote",
+            "high_confidence_interval", "low_confidence_interval",
+            "samplesize", "break_out", "locationid", "geolocation",
+            "sortusfirst", "break_out_category", "break_out_id",
+            "sortbreakoutid", "indicatorid",
+        ),
+        pk_fields=("locationabbr", "year", "indicatorid", "break_out_id",
+                   "response"),
+        date_field="year",
+        join_keys=("locationabbr",),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
+    # healthy aging / dementia — Alzheimer's & Healthy Aging indicators by
+    # state (284,142 rows → smaller page). Aging burden the estate lacked.
+    EndpointSpec(
+        key="alzheimers_aging",
+        resource_id="hfr9-rurv",
+        kind="curated",
+        target_table="cdc_alzheimers_aging",
+        title="Alzheimer's Disease and Healthy Aging Data",
+        columns=(
+            "rowid", "yearstart", "yearend", "locationabbr", "locationdesc",
+            "datasource", "class", "topic", "question", "data_value_unit",
+            "datavaluetypeid", "data_value_type", "data_value",
+            "data_value_alt", "data_value_footnote_symbol",
+            "data_value_footnote", "low_confidence_limit",
+            "high_confidence_limit", "stratificationcategory1",
+            "stratification1", "stratificationcategory2", "stratification2",
+            "geolocation", "classid", "topicid", "questionid", "locationid",
+            "stratificationcategoryid1", "stratificationid1",
+            "stratificationcategoryid2", "stratificationid2",
+        ),
+        pk_fields=("locationabbr", "yearstart", "yearend", "questionid",
+                   "stratificationid1", "stratificationid2", "datavaluetypeid"),
+        date_field="yearend",
+        join_keys=("locationabbr",),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
 ]
 
 # ── the generic on-demand escape hatch ────────────────────────────────

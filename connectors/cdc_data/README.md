@@ -2,9 +2,10 @@
 
 Self-contained, **stdlib-only** connector over the CDC's Socrata open-data
 domain. It connects the **entire catalog** (~1,500 datasets), promotes
-twelve flagship datasets to first-class canonical tables, and keeps every
-other 4x4 reachable through a generic on-demand rows table — all behind the
-same `/v1` contract as the rest of the RCM connector estate.
+**twenty-seven** flagship datasets to first-class canonical tables, and
+keeps every other 4x4 reachable through a generic on-demand rows table —
+all behind the same `/v1` contract as the rest of the RCM connector
+estate.
 
 ```
 endpoints ─▶ transport ─▶ connector.discover()/fetch()/fetch_dataset() ─▶ raw rows
@@ -45,7 +46,13 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch()/fetch_dataset() �
   are conservative defaults, **not** a documented Socrata contract —
   verify at dev.socrata.com before a bulk run.
 
-## Datasets (14 registry rows)
+## Datasets (29 registry rows)
+
+The first 14 are the original curation; the 15 below the divider are the
+**2026-07 catalog curation sweep** (see the sweep note further down). Every
+4x4 was verified live on 2026-07-06 and every natural key was confirmed
+unique on a real ≥2,000-row pull (the biggest four also confirmed by a
+full drain that ingested every row without key collapse).
 
 | dataset_id | 4x4 | target table | grain / natural key |
 |---|---|---|---|
@@ -63,6 +70,33 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch()/fetch_dataset() �
 | `cdc_data_drug_poisoning_county` | `rpvx-m2md` | `cdc_drug_poisoning_county` | `fips:year` |
 | `cdc_data_heart_disease_mortality_county` | `th8y-thx5` | `cdc_heart_disease_mortality` | `fips:year:sex:race` |
 | `cdc_data_fetched_rows` | any | `cdc_data_rows` | generic pull: `{dataset_key}:{row_idx}` |
+| — *2026-07 sweep* — | | | |
+| `cdc_data_teen_birth_county` | `3h58-x6cd` | `cdc_teen_birth_county` | **natality** — teen (15-19) birth rate by county: `combined_fips(5-digit):year` (56,466 rows) |
+| `cdc_data_vsrr_birth_indicators` | `76vv-a7x8` | `cdc_vsrr_birth_indicators` | **natality (provisional)** — national quarterly birth indicators: `year_quarter:topic_subgroup:indicator:race` (900) |
+| `cdc_data_infant_mortality_state` | `pjb2-jvdr` | `cdc_infant_mortality_state` | **infant mortality** — by state/race (DQS): `state_fips:group:subgroup:subtopic:period:est_type` (1,710) |
+| `cdc_data_vsrr_maternal_death` | `e2d5-ggg7` | `cdc_vsrr_maternal_death` | **maternal mortality** — provisional counts/rates: `jurisdiction:group:subgroup:year:month:period` (840) |
+| `cdc_data_flu_vaccination_coverage` | `vh55-3he6` | `cdc_flu_vaccination_coverage` | **immunization (flu)** — coverage all ages: `fips:vaccine:season:month:dim_type:dim` (235,381) |
+| `cdc_data_kindergarten_vaccination` | `ijqb-a7ye` | `cdc_kindergarten_vaccination` | **immunization (childhood)** — kindergarten coverage/exemptions: `state:season:vaccine:dose:survey` (8,166) |
+| `cdc_data_smoking_attributable_mortality` | `4yyu-3s69` | `cdc_smoking_attributable_mortality` | **tobacco** — SAMMEC smoking-attributable deaths by state: `state:year:measure:submeasure:sex` (312) |
+| `cdc_data_npao_brfss` | `hn4x-zwk7` | `cdc_npao_brfss` | **obesity/nutrition/PA** — NPAO's BRFSS cut: `state:yearstart:yearend:question:strat:valuetype` (110,880) |
+| `cdc_data_injury_violence_county` | `psx4-wq38` | `cdc_injury_violence_county` | **suicide/violence** — injury/overdose/violence rates by county: `geoid(5-digit):intent:period` (132,000) |
+| `cdc_data_disability_dhds` | `s2qv-b27b` | `cdc_disability_dhds` | **disability** — DHDS status/type prevalence by state: `state:indicator:response:strat:year` (3,592) |
+| `cdc_data_pm25_county` | `53mz-4zqd` | `cdc_pm25_county` | **environmental (air)** — daily county PM2.5 2001-2022: `statefips:countyfips:date` (24.9M) |
+| `cdc_data_stroke_mortality_county` | `cpdh-8cna` | `cdc_stroke_mortality_county` | **cardiovascular** — stroke mortality 35+ by county: `fips:year:strat1:strat2` (78,792) |
+| `cdc_data_diabetes_state_burden` | `b559-sbez` | `cdc_diabetes_state_burden` | **diabetes** — USDSS state burden indicators: `state:year:topic:indicator:age:race:sex:education` (114,275) |
+| `cdc_data_oral_health_adults` | `jz6n-v26y` | `cdc_oral_health_adults` | **oral health** — NOHSS adult indicators by state: `state:year:indicator:break_out:response` (31,542) |
+| `cdc_data_alzheimers_aging` | `hfr9-rurv` | `cdc_alzheimers_aging` | **healthy aging/dementia** — Alzheimer's & Healthy Aging by state: `state:yearstart:yearend:question:strat1:strat2:valuetype` (284,142) |
+
+The six datasets over ~100k rows (`flu_vaccination_coverage`, `npao_brfss`,
+`injury_violence_county`, `pm25_county`, `diabetes_state_burden`,
+`alzheimers_aging`) default to a smaller 500-row page like BRFSS, so an
+accidental "fetch" under the default 5-page cap stays a modest pull. Two
+sweep datasets carry a live `group` field (an SQL keyword) that the
+documented normalizer renames to `group_field`
+(`infant_mortality_state`, `vsrr_maternal_death`). Three sweep county
+tables (`teen_birth_county`, `stroke_mortality_county`,
+`injury_violence_county`) key on the same 5-digit FIPS as PLACES and are
+folded into the `county-health` lookup.
 
 Assignment-id corrections found during live verification: `pj7m-y5uh` is
 *not* the Chronic Disease Indicators (it is "Provisional COVID-19 Deaths:
@@ -130,6 +164,47 @@ field colliding with an SQL keyword gets a `_field` suffix (live `group`
 → column `group_field`) because the uniform query engine interpolates
 whitelisted identifiers bare. Everything is stored TEXT (`geolocation`
 and `tags` as JSON); only `row_idx` is INTEGER.
+
+## 2026-07 catalog curation sweep
+
+A category-by-category pass over the whole synced catalog (1,508 datasets,
+verified live 2026-07-06) added the 15 datasets below the divider in the
+table above — one clean state/county multi-year dataset per health-analysis
+category the earlier curation lacked. Selection bar: the 4x4 must return
+real rows via SODA (not an empty data-lens/map view), carry a natural key
+proven unique on a live pull, and prefer a state/county grain with a
+multi-year time series. Anything duplicating an already-curated grain was
+skipped.
+
+**Category coverage map** (category → curated dataset_id, or documented skip):
+
+| category | outcome |
+|---|---|
+| natality / births | `cdc_data_teen_birth_county` (`3h58-x6cd`, county) + `cdc_data_vsrr_birth_indicators` (`76vv-a7x8`, national quarterly) |
+| immunization — flu | `cdc_data_flu_vaccination_coverage` (`vh55-3he6`) |
+| immunization — childhood | `cdc_data_kindergarten_vaccination` (`ijqb-a7ye`) |
+| tobacco use | `cdc_data_smoking_attributable_mortality` (`4yyu-3s69`, SAMMEC) |
+| obesity / nutrition / physical activity | `cdc_data_npao_brfss` (`hn4x-zwk7`) |
+| maternal / infant health | `cdc_data_infant_mortality_state` (`pjb2-jvdr`) + `cdc_data_vsrr_maternal_death` (`e2d5-ggg7`) |
+| suicide / violence | `cdc_data_injury_violence_county` (`psx4-wq38`, county; `intent` = suicide/homicide/…) |
+| disability | `cdc_data_disability_dhds` (`s2qv-b27b`) |
+| environmental health (air quality) | `cdc_data_pm25_county` (`53mz-4zqd`, daily county PM2.5) |
+| cardiovascular (stroke) | `cdc_data_stroke_mortality_county` (`cpdh-8cna`) — distinct topic from the curated heart-disease table |
+| diabetes | `cdc_data_diabetes_state_burden` (`b559-sbez`, USDSS) — distinct source from BRFSS/CDI |
+| oral health | `cdc_data_oral_health_adults` (`jz6n-v26y`, NOHSS) |
+| healthy aging / dementia | `cdc_data_alzheimers_aging` (`hfr9-rurv`) |
+| **social vulnerability (CDC SVI)** | **SKIP — not queryable.** The only SVI 4x4 on the domain, `ypqf-r5qs` ("Social Vulnerability Index"), is a **data-lens/map view whose SODA endpoint returns empty `{}` rows** for every record despite a `count(*)` of 3,142 (verified live: `/api/views/ypqf-r5qs.json` exposes zero columns). The only other SVI hit, `9hdi-ekmb`, is *Provisional COVID-19 Deaths by County SVI* — COVID mortality bucketed by SVI quartile (780 rows), not a county SVI index. The authoritative CDC/ATSDR SVI is distributed off-Socrata (svi.cdc.gov CSV/shapefile); no clean county-SVI natural-key dataset exists on data.cdc.gov. |
+| **STI / HIV surveillance** | **SKIP — no clean grain.** The only STI data on the domain is the **NNDSS notifiable-disease tables** (e.g. `5egk-p6rd` "Table II. Chlamydia to Coccidioidomycosis"): wide, one-4x4-per-year-vintage, multiple conditions per table, column names with the year baked in (`chlamydia_..._cum_2017`) — not a single clean multi-year STI series. HIV/STD surveillance proper (AtlasPlus) lives on gis.cdc.gov, off this domain. Any NNDSS table is still reachable via the generic escape hatch (`fetch --dataset 5egk-p6rd`). |
+| **alcohol** | **SKIP — duplicate/absent.** No standalone clean alcohol dataset (CDC's ARDI is off-Socrata). Alcohol is already curated: `cdc_data_chronic_disease_indicators` carries the `Alcohol` topic, `cdc_data_brfss_prevalence` carries binge drinking, and alcohol-induced deaths sit in the mortality tables. Curating another would duplicate an existing grain. |
+| **healthcare-associated infections** | **SKIP — no geographic key.** The domain's only HAI data is the **HAICViz dashboard-backing aggregates** (`abgz-qs4g` C. diff, `34p9-h4us` candidemia, …): columns `topic/series/viewby/value/yearname` — chart series with **no state/county FIPS grain**. There is **no** NHSN standardized-infection-ratio (CLABSI/CAUTI/MRSA/C.diff SIR) dataset on data.cdc.gov (searched `standardized infection ratio`/`clabsi`/`central line`/`bloodstream` → 0 hits); the NHSN datasets present are weekly *respiratory* hospital admissions, not HAI SIRs. Reachable via generic fetch if the aggregate is wanted. |
+
+Other grains deliberately **not** promoted (would duplicate existing
+curated tables or add no clean key): the DQS / GIS-friendly / ZCTA / place
+/ census-tract PLACES re-cuts, the older BRFSS vintages and SMART
+metro-area cuts, the per-year PRAMStat maternal files (2000-2011, one 4x4
+each), and the county/tract *ozone* twin of PM2.5 (`3vxk-q2jk`, same schema
+and grain as the curated PM2.5 table — one air-quality pollutant is
+enough). All remain reachable through the generic `cdc_data_rows` table.
 
 ## Usage
 

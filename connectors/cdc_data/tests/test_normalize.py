@@ -5,8 +5,9 @@ from ..endpoints import get_endpoint
 from ..flatten import to_column, to_snake
 from ..normalize import normalize, normalize_generic
 from .fakes import (catalog_items, ckd_places_rows, heart_disease_rows,
-                    monthly_deaths_rows, places_rows, provisional_deaths_rows,
-                    vsrr_rows)
+                    infant_mortality_rows, maternal_death_rows,
+                    monthly_deaths_rows, places_rows, pm25_county_rows,
+                    provisional_deaths_rows, teen_birth_rows, vsrr_rows)
 
 
 class CatalogNormalizeTests(unittest.TestCase):
@@ -110,6 +111,46 @@ class CuratedNormalizeTests(unittest.TestCase):
         self.assertEqual(rows[0]["record_key"], "United States:2020:1")
         self.assertEqual(rows[0]["nephritis_nephrotic_syndrome"], "4886")
         self.assertEqual(rows[1]["record_key"], "United States:2020:2")
+
+    # ── 2026-07 sweep additions ──────────────────────────────────────
+    def test_teen_birth_keys_on_5digit_county_fips(self):
+        res = normalize(get_endpoint("teen_birth_county"), teen_birth_rows())
+        rows = res.rows["cdc_teen_birth_county"]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["record_key"], "01001:2020")
+        self.assertEqual(rows[1]["record_key"], "01001:2019")
+        self.assertEqual(rows[0]["birth_rate"], "22.1")
+        self.assertEqual(res.unmapped, {})   # every live field is mapped
+
+    def test_infant_mortality_renames_group_keyword(self):
+        res = normalize(get_endpoint("infant_mortality_state"),
+                        infant_mortality_rows())
+        rows = res.rows["cdc_infant_mortality_state"]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["group_field"], "Total")
+        self.assertNotIn("group", rows[0])
+        self.assertEqual(rows[0]["record_key"], "01:Total:SG1:SUB1:TP2021:ET1")
+        self.assertEqual(rows[1]["record_key"], "01:Race:SG2:SUB1:TP2021:ET1")
+
+    def test_maternal_death_renames_group_keyword(self):
+        res = normalize(get_endpoint("vsrr_maternal_death"),
+                        maternal_death_rows())
+        rows = res.rows["cdc_vsrr_maternal_death"]
+        self.assertEqual(rows[0]["group_field"], "Total")
+        self.assertNotIn("group", rows[0])
+        self.assertEqual(
+            rows[0]["record_key"],
+            "United States:Total:All:2023:December:12 month-ending")
+
+    def test_pm25_key_includes_statefips_so_county_codes_dont_collide(self):
+        # Two rows share countyfips "1" on the same date but differ by
+        # statefips — the composed key must keep them apart.
+        res = normalize(get_endpoint("pm25_county"), pm25_county_rows())
+        rows = res.rows["cdc_pm25_county"]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["record_key"], "1:1:01JAN2001")
+        self.assertEqual(rows[1]["record_key"], "4:1:01JAN2001")
+        self.assertNotEqual(rows[0]["record_key"], rows[1]["record_key"])
 
 
 class GenericNormalizeTests(unittest.TestCase):

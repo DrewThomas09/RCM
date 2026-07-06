@@ -14,7 +14,11 @@ company, document, contractor, provider, taxonomy, code, category):
                   the county's NCHS drug-poisoning and heart-disease
                   mortality slices when ingested (all three tables key
                   counties by the same FIPS), plus the county's Chronic
-                  Kidney Disease prevalence. NOTE: PLACES county data
+                  Kidney Disease prevalence, plus (2026-07 sweep) the
+                  county's stroke mortality, teen birth rate, and
+                  injury/overdose/violence rates — every one of these
+                  curated county tables keys on the same 5-digit FIPS.
+                  NOTE: PLACES county data
                   carries CKD prevalence under **measureid ``KIDNEY``**
                   ("Chronic kidney disease among adults aged >=18 years"),
                   but the measure was DROPPED from the 2024/2025 releases —
@@ -68,9 +72,27 @@ def lookup_county_health(store: CdcDataStore, fips: str) -> Dict[str, Any]:
         store,
         "SELECT * FROM cdc_places_county_ckd WHERE locationid = ? "
         "ORDER BY datavaluetypeid LIMIT ?", (code, _MORTALITY_LIMIT))
+    # 2026-07 sweep: three more curated county tables key by the same
+    # 5-digit FIPS (stroke mortality, teen birth, injury/overdose/violence).
+    stroke = _rows(
+        store,
+        "SELECT * FROM cdc_stroke_mortality_county WHERE locationid = ? "
+        "ORDER BY year DESC LIMIT ?", (code, _MORTALITY_LIMIT))
+    teen_birth = _rows(
+        store,
+        "SELECT * FROM cdc_teen_birth_county WHERE combined_fips_code = ? "
+        "ORDER BY year DESC LIMIT ?", (code, _MORTALITY_LIMIT))
+    injury_violence = _rows(
+        store,
+        "SELECT * FROM cdc_injury_violence_county WHERE geoid = ? "
+        "ORDER BY intent, period LIMIT ?", (code, _MORTALITY_LIMIT))
     if county is None and ckd:
         county = ckd[0]["locationname"]
         state = ckd[0]["stateabbr"]
+    if county is None and stroke:
+        county, state = stroke[0]["locationdesc"], stroke[0]["locationabbr"]
+    if county is None and teen_birth:
+        county, state = teen_birth[0]["county"], teen_birth[0]["state"]
     return {
         "fips": code,
         "county": county,
@@ -79,6 +101,10 @@ def lookup_county_health(store: CdcDataStore, fips: str) -> Dict[str, Any]:
         "chronic_kidney_disease": {"count": len(ckd), "rows": ckd},
         "drug_poisoning": {"count": len(drug), "rows": drug},
         "heart_disease_mortality": {"count": len(heart), "rows": heart},
+        "stroke_mortality": {"count": len(stroke), "rows": stroke},
+        "teen_birth": {"count": len(teen_birth), "rows": teen_birth},
+        "injury_overdose_violence": {"count": len(injury_violence),
+                                     "rows": injury_violence},
     }
 
 

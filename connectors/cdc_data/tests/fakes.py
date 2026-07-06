@@ -295,6 +295,77 @@ def monthly_deaths_rows() -> List[Dict[str, Any]]:
     ]
 
 
+def teen_birth_rows() -> List[Dict[str, Any]]:
+    """NCHS teen-birth-by-county rows (3h58-x6cd shape). combined_fips_code
+    is the 5-digit county FIPS the key composes on."""
+    return [
+        {"year": "2020", "state": "Alabama", "county": "Autauga",
+         "state_fips_code": "1", "county_fips_code": "1",
+         "combined_fips_code": "01001", "birth_rate": "22.1",
+         "lower_confidence_limit": "17.8", "upper_confidence_limit": "27.2"},
+        {"year": "2019", "state": "Alabama", "county": "Autauga",
+         "state_fips_code": "1", "county_fips_code": "1",
+         "combined_fips_code": "01001", "birth_rate": "24.5",
+         "lower_confidence_limit": "19.9", "upper_confidence_limit": "29.8"},
+    ]
+
+
+def infant_mortality_rows() -> List[Dict[str, Any]]:
+    """DQS infant-mortality rows (pjb2-jvdr shape). Live ``group`` is an SQL
+    keyword the normalizer renames to group_field."""
+    return [
+        {"topic": "Infant mortality", "subtopic": "By race and Hispanic origin",
+         "subtopic_id": "SUB1", "classification": "All races",
+         "classification_id": "C1", "group": "Total",
+         "group_id": "G1", "subgroup": "All",
+         "subgroup_id": "SG1", "estimate_type": "Rate",
+         "estimate_type_id": "ET1", "time_period": "2021",
+         "time_period_id": "TP2021", "estimate": "5.4",
+         "state_fips": "01"},
+        {"topic": "Infant mortality", "subtopic": "By race and Hispanic origin",
+         "subtopic_id": "SUB1", "classification": "Black",
+         "classification_id": "C2", "group": "Race",
+         "group_id": "G2", "subgroup": "Non-Hispanic Black",
+         "subgroup_id": "SG2", "estimate_type": "Rate",
+         "estimate_type_id": "ET1", "time_period": "2021",
+         "time_period_id": "TP2021", "estimate": "10.9",
+         "state_fips": "01"},
+    ]
+
+
+def maternal_death_rows() -> List[Dict[str, Any]]:
+    """VSRR maternal-death rows (e2d5-ggg7 shape; live ``group`` keyword)."""
+    return [
+        {"data_as_of": "2026-04-22T00:00:00.000", "jurisdiction": "United States",
+         "group": "Total", "subgroup": "All", "year_of_death": "2023",
+         "month_of_death": "December", "time_period": "12 month-ending",
+         "month_ending_date": "2023-12-31T00:00:00.000",
+         "maternal_deaths": "817", "live_births": "3591328",
+         "maternal_mortality_rate": "22.8"},
+        {"data_as_of": "2026-04-22T00:00:00.000", "jurisdiction": "United States",
+         "group": "Race", "subgroup": "Non-Hispanic Black", "year_of_death": "2023",
+         "month_of_death": "December", "time_period": "12 month-ending",
+         "month_ending_date": "2023-12-31T00:00:00.000",
+         "maternal_deaths": "202", "live_births": "500000",
+         "maternal_mortality_rate": "40.4"},
+    ]
+
+
+def pm25_county_rows() -> List[Dict[str, Any]]:
+    """Daily county PM2.5 rows (53mz-4zqd shape). countyfips is the
+    within-state code, so the key needs statefips too."""
+    return [
+        {"year": "2001", "date": "01JAN2001", "statefips": "1", "countyfips": "1",
+         "pm25_max_pred": "10.66", "pm25_med_pred": "10.26",
+         "pm25_mean_pred": "10.13", "pm25_pop_pred": "10.18"},
+        # Same county code, different STATE — must not collide with the row
+        # above (this is why statefips is in the key).
+        {"year": "2001", "date": "01JAN2001", "statefips": "4", "countyfips": "1",
+         "pm25_max_pred": "6.10", "pm25_med_pred": "5.80",
+         "pm25_mean_pred": "5.77", "pm25_pop_pred": "5.79"},
+    ]
+
+
 def generic_rows(n: int = 3) -> List[Dict[str, Any]]:
     """Rows for an arbitrary uncurated 4x4 (shape doesn't matter — that's
     the point of the generic table)."""
