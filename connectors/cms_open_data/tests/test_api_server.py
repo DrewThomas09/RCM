@@ -52,6 +52,38 @@ def _seed(store):
          "ROLE CODE - OWNER": "35", "ASSOCIATION DATE - OWNER": "2025-03-01",
          "ROLE TEXT - OWNER": "5% OR GREATER INDIRECT OWNERSHIP INTEREST"}]))
 
+    # Both Provider of Services files (live row shapes, trimmed): the
+    # facility-universe lookup aggregates the two per state.
+    spec = get_endpoint("pos_qies")
+    store.upsert(spec.target_table, normalize_curated(spec, [
+        {"PRVDR_NUM": "010001", "PRVDR_CTGRY_CD": "01",
+         "PRVDR_CTGRY_SBTYP_CD": "01", "STATE_CD": "AL",
+         "FAC_NAME": "SOUTHEAST HEALTH MEDICAL CENTER",
+         "PGM_TRMNTN_CD": "00", "CRTFCTN_DT": "20171005"},
+        {"PRVDR_NUM": "010005", "PRVDR_CTGRY_CD": "01",
+         "PRVDR_CTGRY_SBTYP_CD": "01", "STATE_CD": "AL",
+         "FAC_NAME": "CLOSED HOSPITAL", "PGM_TRMNTN_CD": "07",
+         "CRTFCTN_DT": "19850101"},
+        {"PRVDR_NUM": "013800", "PRVDR_CTGRY_CD": "21",
+         "PRVDR_CTGRY_SBTYP_CD": "01", "STATE_CD": "AL",
+         "FAC_NAME": "HAPPI HEALTH", "PGM_TRMNTN_CD": "00",
+         "CRTFCTN_DT": "20200110"},
+        {"PRVDR_NUM": "440001", "PRVDR_CTGRY_CD": "01",
+         "PRVDR_CTGRY_SBTYP_CD": "01", "STATE_CD": "TN",
+         "FAC_NAME": "TENNESSEE HOSPITAL", "PGM_TRMNTN_CD": "00",
+         "CRTFCTN_DT": "20100101"}]))
+
+    spec = get_endpoint("pos_internet_qies")
+    store.upsert(spec.target_table, normalize_curated(spec, [
+        {"prvdr_num": "012500", "prvdr_type_id": "7",
+         "prvdr_sbtyp_id": "56", "state_cd": "AL",
+         "fac_name": "BMA SCOTTSBORO DIALYSIS CENTER",
+         "pgm_trmntn_cd": "00", "crtfctn_dt": "2021-09-14"},
+        {"prvdr_num": "017000", "prvdr_type_id": "3",
+         "prvdr_sbtyp_id": "Not Applicable", "state_cd": "AL",
+         "fac_name": "DIMACARE HOME HEALTH AGENCY INC",
+         "pgm_trmntn_cd": "00", "crtfctn_dt": "2023-05-01"}]))
+
     store.upsert("cms_open_data_rows", normalize_generic(
         "hospital_provider_cost_report", cost_rows()))
 
@@ -81,7 +113,7 @@ class ApiServerTests(unittest.TestCase):
     def test_datasets_auto_exposed_from_registry(self):
         status, body = self._get("/v1/datasets")
         self.assertEqual(status, 200)
-        self.assertEqual(len(body["datasets"]), 45)
+        self.assertEqual(len(body["datasets"]), 55)
         ids = {d["dataset_id"] for d in body["datasets"]}
         self.assertIn("cms_open_data_catalog", ids)
         self.assertIn("cms_open_data_mup_physician_by_provider", ids)
@@ -158,6 +190,29 @@ class ApiServerTests(unittest.TestCase):
         self.assertEqual(body["curated"]["rows"], 2)
         self.assertEqual(body["generic_rows"], 2)
         self.assertTrue(body["ingested"])
+
+    def test_lookup_facility_universe_route(self):
+        status, body = self._get("/v1/lookup/facility-universe/al")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["state"], "AL")   # normalized to upper-case
+        self.assertEqual(body["count"], 5)      # TN hospital excluded
+        self.assertEqual(body["active"], 4)     # terminated one excluded
+        qies = {r["prvdr_ctgry_cd"]: r for r in body["qies"]}
+        self.assertEqual(qies["01"]["facilities"], 2)
+        self.assertEqual(qies["01"]["active"], 1)
+        self.assertEqual(qies["01"]["category"], "Hospital")
+        self.assertEqual(qies["21"]["category"],
+                         "Federally Qualified Health Center")
+        iqies = {r["prvdr_type_id"]: r for r in body["internet_qies"]}
+        self.assertEqual(iqies["7"]["category"], "ESRD Facility (dialysis)")
+        self.assertEqual(iqies["3"]["facilities"], 1)
+
+    def test_lookup_facility_universe_empty_state(self):
+        status, body = self._get("/v1/lookup/facility-universe/AK")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["count"], 0)
+        self.assertEqual(body["qies"], [])
+        self.assertEqual(body["internet_qies"], [])
 
     def test_lookup_cms_dataset_by_curated_key(self):
         status, body = self._get("/v1/lookup/cms-dataset/hospital_cost_report")

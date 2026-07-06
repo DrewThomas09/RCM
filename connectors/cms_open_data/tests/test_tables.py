@@ -8,7 +8,7 @@ from .fakes import catalog_doc, cost_rows, phys_rows
 
 class SchemaTests(unittest.TestCase):
     def test_every_endpoint_has_a_table_with_meta_columns(self):
-        self.assertEqual(len(TABLES), 45)   # catalog + 43 curated + rows
+        self.assertEqual(len(TABLES), 55)   # catalog + 53 curated + rows
         for spec in ENDPOINTS.values():
             tdef = TABLES[spec.target_table]
             self.assertEqual(tdef.columns[0], tdef.pk)

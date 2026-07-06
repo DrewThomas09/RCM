@@ -12,7 +12,8 @@ discover() ─▶ catalog (158 datasets)      fetch(dataset) ─▶ normalize �
                     │                                                            │
                     └──▶ UUID re-resolution                            registry ─▶ /v1/query/{dataset}
                                                                                   /v1/lookup/practice|prescriber|
-                                                                                  facility-cost|ownership|cms-dataset
+                                                                                  facility-cost|ownership|cms-dataset|
+                                                                                  facility-universe
 ```
 
 Three layers make "every dataset connected" true:
@@ -22,7 +23,7 @@ Three layers make "every dataset connected" true:
    (158 at snapshot time) with title, description, themes, periodicity,
    modified date, temporal coverage, latest data-api URL + UUID, landing
    page, data dictionary and contact.
-2. **43 curated flagships** — each a first-class registry row with its own
+2. **53 curated flagships** — each a first-class registry row with its own
    canonical table whose columns were snapshotted from **live API samples**
    (size=5 probes, 2026-07-06) and snake_cased with the deterministic
    `normalize._snake` (lowercase; non-alphanumeric runs → `_`; no
@@ -43,10 +44,10 @@ Three layers make "every dataset connected" true:
 | `transport.py` | Throttled JSON transport: 429/`Retry-After`/5xx backoff + jitter, 404→empty (rotated UUIDs), injectable opener. |
 | `connector.py` | `discover()` / `fetch()` / `fetch_dataset()` / `refresh()` — absorbs the API's `size`/`offset` paging; UUID re-resolution from the synced catalog. |
 | `normalize.py` | `_snake` (THE name contract) + catalog/curated/generic mappers; composed `row_key` / `dataset_key`. |
-| `tables.py` | `TABLES` (45 defs derived from the endpoint specs) + SQLite store with idempotent upsert. |
+| `tables.py` | `TABLES` (55 defs derived from the endpoint specs) + SQLite store with idempotent upsert. |
 | `registry.py` | Declarative `source=cms_open_data` registry rows (one per dataset). |
 | `query.py` | The `/v1/query` engine: uniform filter / select / sort / paginate **+ `aggregate()` group-by/count** (copied from cms_coverage). |
-| `lookup.py` | Five enriched `/v1/lookup` fan-outs + router-agnostic handler map. |
+| `lookup.py` | Six enriched `/v1/lookup` fan-outs + router-agnostic handler map. |
 | `api_server.py` | Standalone stdlib `http.server` `/v1` surface (auto-exposes every registry dataset + the lookup handlers). |
 | `cli.py` | `python -m connectors.cms_open_data.cli …` |
 
@@ -80,7 +81,7 @@ GET https://data.cms.gov/data-api/v1/dataset/{uuid}/data/stats       # {found_ro
 ## Datasets
 
 `cms_open_data_catalog` (the catalog itself) + `cms_open_data_fetched_rows`
-(the generic store) + 43 curated flagships (live `total_rows` at snapshot
+(the generic store) + 53 curated flagships (live `total_rows` at snapshot
 time; the dataset_id prefix `cms_open_data_` is left off the keys below):
 
 | key | title | live rows | cadence |
@@ -128,10 +129,44 @@ time; the dataset_id prefix `cms_open_data_` is left off the keys below):
 | `rhc_enrollments` | Rural Health Clinic Enrollments | 5,530 | quarterly |
 | `ltc_facility_characteristics` | Long-Term Care Facility Characteristics | 14,701 | quarterly |
 | `acos` | Accountable Care Organizations | 511 | annual |
+| `dialysis_facilities` | Medicare Dialysis Facilities | 12,456,456 | annual |
+| `esrd_agg_group_performance` | ESRD Facility Aggregation Group Performance | 433 | semiannual |
+| `cec_model_data` | Comprehensive ESRD Care Model Data | 37 | annual |
+| `home_infusion_therapy_providers` | Home Infusion Therapy Providers | 1,882 | biweekly |
+| `pos_qies` | Provider of Services File - QIES | 44,429 | quarterly |
+| `pos_internet_qies` | Provider of Services File - Internet QIES | 77,283 | quarterly |
+| `pos_clinical_labs` | Provider of Services File - Clinical Laboratories | 676,051 | quarterly |
+| `physician_supplier_procedure_summary` | Physician/Supplier Procedure Summary | 14,377,293 | annual |
+| `rbcs` | Restructured BETOS Classification System (HCPCS→RBCS) | 18,882 | annual |
+| `asm_participants` | Ambulatory Specialty Model Participants | 6,637 | annual |
 
-> "Medicare Geographic Variation - by Hospital Referral Region" was on
-> the wishlist but is **ZIP-download only** in data.json (no API
-> distribution — the data-api 404s for it), so it is catalog-only here.
+> "Medicare Geographic Variation - by Hospital Referral Region" and
+> "Kidney Care Choices Model" were on the wishlist but are
+> **ZIP-download only** in data.json (no API distribution — the data-api
+> cannot serve them; re-verified live 2026-07-06), so both are
+> catalog-only here.
+
+Dataset notes (live probes, 2026-07-06):
+
+* `dialysis_facilities` is long-format: one row per facility × measure ×
+  year (keyed `CCN:year:Measure_ID`), hence the 12.4M rows.
+* The certified-facility universe is split across TWO Provider of
+  Services files: legacy **QIES** carries hospitals, RHCs, FQHCs, CMHCs
+  and PRTFs (`PRVDR_CTGRY_CD` = 01/06/12/19/21 live); **Internet QIES**
+  (iQIES, different schema — 182 lowercase columns vs QIES's 473
+  UPPERCASE, so it gets its own table, not a shared slice) carries HHAs,
+  SNF/NFs, hospices, ASCs, ESRD facilities, CORFs, OPTs, portable x-ray
+  and OPOs under its own `prvdr_type_id` scheme. Both retain terminated
+  providers — filter `pgm_trmntn_cd = '00'` for active ones. Both
+  default to `size=500` pages (wide rows).
+* `physician_supplier_procedure_summary` (PSPS) is a 14.4M-row claims
+  summary keyed by the full 8-dim grain (HCPCS × modifiers × specialty ×
+  carrier × locality × type/place of service). Small `size=500` default;
+  pull it filter-driven (e.g. `--filter HCPCS_CD=99213`), not wholesale.
+* `rbcs` is the HCPCS→RBCS crosswalk; assignment history rows mean a
+  HCPCS code can appear more than once (keyed through
+  `RBCS_Analysis_Start/End_Dt`; `rbcs_latest_assignment = '1'` marks the
+  current assignment).
 
 ## Canonical tables
 
@@ -170,7 +205,7 @@ python -m connectors.cms_open_data.cli fetch \
 python -m connectors.cms_open_data.cli query cms_open_data_part_b_spending_by_drug \
     --filter hcpcs_cd=90371 --select hcpcs_cd,brnd_name,tot_spndng_2023 --db ./cms.db
 
-# Serve the /v1 surface (auto-exposes all 45 registry datasets)
+# Serve the /v1 surface (auto-exposes all 55 registry datasets)
 python -m connectors.cms_open_data.cli serve --db ./cms.db --port 8103
 #   GET /v1/datasets
 #   GET /v1/query/cms_open_data_acos?aco_service_area__like=%CA%
@@ -180,6 +215,7 @@ python -m connectors.cms_open_data.cli serve --db ./cms.db --port 8103
 #   GET /v1/lookup/facility-cost/110130       (HCRIS across hospital/SNF/HHA)
 #   GET /v1/lookup/ownership/440058           (PECOS owners via CCN or enrollment id)
 #   GET /v1/lookup/cms-dataset/hospital_provider_cost_report
+#   GET /v1/lookup/facility-universe/AL       (POS QIES+iQIES counts by category)
 ```
 
 ## Tests

@@ -1,7 +1,7 @@
 """Enriched lookup handlers for the CMS Open Data slice.
 
-Five domain nouns, none taken by other connectors (taken: drug, device,
-company, document, contractor, provider, taxonomy, code, category):
+Six domain nouns, none taken by other connectors (checked against every
+``lookup.py`` in the estate, 2026-07-06):
 
     /v1/lookup/practice/{npi}        — a practitioner's Medicare practice
                                        profile (utilization/payment) plus
@@ -15,6 +15,11 @@ company, document, contractor, provider, taxonomy, code, category):
                                        enrollment id or a hospital CCN
     /v1/lookup/cms-dataset/{key}     — a catalog entry + what of it is
                                        already ingested locally
+    /v1/lookup/facility-universe/{state}
+                                     — certified-facility counts by
+                                       provider category for one state,
+                                       aggregated over both Provider of
+                                       Services files (QIES + iQIES)
 
 They fan one key out across the canonical tables to return the full
 picture in one call. Provided as **plain callables** plus a
@@ -191,6 +196,72 @@ def lookup_cms_dataset(store: CmsOpenDataStore, dataset_key: str
     }
 
 
+# Provider category labels for the two Provider of Services files.
+# VERIFIED from live samples (facility names per code, 2026-07-06): the
+# legacy QIES file carries hospitals + the clinic categories; everything
+# certified through iQIES (post-2023) lands in the Internet QIES file
+# under its own type-id scheme. Unknown codes pass through label-less
+# rather than guessing.
+_POS_QIES_CATEGORIES: Dict[str, str] = {
+    "01": "Hospital",
+    "06": "Psychiatric Residential Treatment Facility",
+    "12": "Rural Health Clinic",
+    "19": "Community Mental Health Center",
+    "21": "Federally Qualified Health Center",
+}
+
+_POS_IQIES_TYPES: Dict[str, str] = {
+    "3": "Home Health Agency",
+    "5": "Portable X-Ray Supplier",
+    "6": "Comprehensive Outpatient Rehabilitation Facility",
+    "7": "ESRD Facility (dialysis)",
+    "8": "ICF/IID",
+    "10": "Outpatient Physical Therapy/Speech Pathology",
+    "11": "Ambulatory Surgical Center",
+    "12": "Hospice",
+    "13": "Organ Procurement Organization",
+    "20": "Skilled Nursing Facility / Nursing Facility",
+}
+
+
+def lookup_facility_universe(store: CmsOpenDataStore, state: str
+                             ) -> Dict[str, Any]:
+    """Certified-facility counts by provider category for one state.
+
+    Aggregates BOTH Provider of Services files — the legacy QIES file
+    (hospitals, RHCs, FQHCs, CMHCs, PRTFs) and the Internet QIES file
+    (HHAs, SNF/NFs, hospices, ASCs, ESRD, CORFs, OPTs, OPOs, …) — because
+    together they are the certified-facility universe. ``facilities``
+    counts every record (the files retain terminated providers);
+    ``active`` counts rows whose program termination code is ``00``
+    (active). Served straight from the ingested tables, no API calls.
+    """
+    key = str(state).strip().upper()
+    qies = _rows(
+        store,
+        "SELECT prvdr_ctgry_cd, COUNT(*) AS facilities, "
+        "SUM(CASE WHEN pgm_trmntn_cd = '00' THEN 1 ELSE 0 END) AS active "
+        "FROM cms_open_data_pos_qies WHERE state_cd = ? "
+        "GROUP BY prvdr_ctgry_cd ORDER BY facilities DESC", (key,))
+    for r in qies:
+        r["category"] = _POS_QIES_CATEGORIES.get(str(r["prvdr_ctgry_cd"]), "")
+    iqies = _rows(
+        store,
+        "SELECT prvdr_type_id, COUNT(*) AS facilities, "
+        "SUM(CASE WHEN pgm_trmntn_cd = '00' THEN 1 ELSE 0 END) AS active "
+        "FROM cms_open_data_pos_internet_qies WHERE state_cd = ? "
+        "GROUP BY prvdr_type_id ORDER BY facilities DESC", (key,))
+    for r in iqies:
+        r["category"] = _POS_IQIES_TYPES.get(str(r["prvdr_type_id"]), "")
+    return {
+        "state": key,
+        "qies": qies,
+        "internet_qies": iqies,
+        "count": sum(int(r["facilities"] or 0) for r in qies + iqies),
+        "active": sum(int(r["active"] or 0) for r in qies + iqies),
+    }
+
+
 # ── router-agnostic plugin surface ────────────────────────────────────
 def v1_handlers(store: CmsOpenDataStore) -> Dict[str, Callable[[str], Dict[str, Any]]]:
     """Return ``{route_template: handler}`` for plugin registration.
@@ -214,6 +285,8 @@ def v1_handlers(store: CmsOpenDataStore) -> Dict[str, Callable[[str], Dict[str, 
             lambda key: lookup_ownership(store, key),
         "/v1/lookup/cms-dataset/{dataset_key}":
             lambda key: lookup_cms_dataset(store, key),
+        "/v1/lookup/facility-universe/{state}":
+            lambda state: lookup_facility_universe(store, state),
     }
 
 

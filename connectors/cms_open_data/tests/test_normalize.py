@@ -121,6 +121,37 @@ class CuratedNormalizeTests(unittest.TestCase):
         self.assertEqual(rows[0]["row_key"],
                          "geo_variation_state_county:2014:National::All")
 
+    def test_psps_composed_key_tolerates_empty_modifier(self):
+        # The PSPS grain is the full 8-dim summary key; the second
+        # modifier is usually empty and must stay a stable key segment.
+        spec = get_endpoint("physician_supplier_procedure_summary")
+        raw = {"HCPCS_CD": "3072F", "HCPCS_INITIAL_MODIFIER_CD": "GY",
+               "HCPCS_SECOND_MODIFIER_CD": "", "PROVIDER_SPEC_CD": "18",
+               "CARRIER_NUM": "07102", "PRICING_LOCALITY_CD": "13",
+               "TYPE_OF_SERVICE_CD": "1", "PLACE_OF_SERVICE_CD": "22",
+               "PSPS_SUBMITTED_SERVICE_CNT": "62"}
+        rows = normalize_curated(spec, [raw])
+        self.assertEqual(
+            rows[0]["row_key"],
+            "physician_supplier_procedure_summary:3072F:GY::18:07102:13:1:22")
+        self.assertEqual(rows[0]["psps_submitted_service_cnt"], "62")
+
+    def test_pos_files_key_by_provider_number_in_both_casings(self):
+        # QIES ships UPPERCASE originals, Internet QIES lowercase — the
+        # same _snake contract lands both on their snapshotted columns.
+        qies = get_endpoint("pos_qies")
+        rows = normalize_curated(qies, [
+            {"PRVDR_NUM": "010001", "PRVDR_CTGRY_CD": "01",
+             "STATE_CD": "AL", "PGM_TRMNTN_CD": "00"}])
+        self.assertEqual(rows[0]["row_key"], "pos_qies:010001")
+        self.assertEqual(rows[0]["prvdr_ctgry_cd"], "01")
+        iqies = get_endpoint("pos_internet_qies")
+        rows = normalize_curated(iqies, [
+            {"prvdr_num": "687123", "prvdr_type_id": "3",
+             "state_cd": "FL", "pgm_trmntn_cd": "00"}])
+        self.assertEqual(rows[0]["row_key"], "pos_internet_qies:687123")
+        self.assertEqual(rows[0]["prvdr_type_id"], "3")
+
     def test_all_empty_natural_key_is_skipped(self):
         spec = get_endpoint("mup_physician_by_provider")
         self.assertEqual(normalize_curated(spec, [{"Tot_Benes": "1"}]), [])

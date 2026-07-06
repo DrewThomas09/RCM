@@ -11,7 +11,7 @@ column names, snake_cased):
   cms_open_data_rows    — the generic on-demand store for any other
                           catalog dataset, keyed ``{dataset_key}:{row_idx}``.
 
-Deriving ``TABLES`` from the endpoint specs (instead of hand-writing 45
+Deriving ``TABLES`` from the endpoint specs (instead of hand-writing 55
 literals) keeps endpoints.py the single generated source of truth for
 the live schema snapshot; the resulting dict has exactly the same shape
 as ``cms_coverage.tables.TABLES``.
@@ -106,6 +106,12 @@ _INDEXES: Tuple[Tuple[str, str, str], ...] = (
     ("ix_cod_ffs_npi", "cms_open_data_ffs_provider_enrollment", "npi"),
     ("ix_cod_optout_npi", "cms_open_data_opt_out_affidavits", "npi"),
     ("ix_cod_ordref_npi", "cms_open_data_order_and_referring", "npi"),
+    ("ix_cod_pos_qies_state", "cms_open_data_pos_qies", "state_cd"),
+    ("ix_cod_pos_iqies_state", "cms_open_data_pos_internet_qies", "state_cd"),
+    ("ix_cod_dialysis_ccn", "cms_open_data_dialysis_facilities", "ccn"),
+    ("ix_cod_psps_hcpcs",
+     "cms_open_data_physician_supplier_procedure_summary", "hcpcs_cd"),
+    ("ix_cod_rbcs_hcpcs", "cms_open_data_rbcs", "hcpcs_cd"),
 )
 
 
