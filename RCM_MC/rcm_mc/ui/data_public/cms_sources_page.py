@@ -189,6 +189,79 @@ def _integration_panel() -> str:
 </div>"""
 
 
+# CMS-family connectors in the repo-root estate, in display order. The
+# static registry above stays for provenance (hand-curated context per
+# endpoint); this section shows what is *actually registered and
+# queryable* through the connector estate right now.
+_ESTATE_CMS_CONNECTORS = (
+    "cms_open_data", "provider_data", "open_payments",
+    "medicaid_data", "cms_coverage",
+)
+
+
+def _estate_section() -> str:
+    """Live registry rows for the CMS-family estate connectors.
+
+    Rendered from the read-only bridge so the page keeps working (with an
+    honest note) on deployments without the repo-root estate.
+    """
+    from rcm_mc.data_public import connector_estate as _estate
+    from rcm_mc.ui._chartis_kit import ck_section_header
+
+    header = ck_section_header(
+        "ESTATE CONNECTORS",
+        "live registry — CMS-family connectors in the repo-root estate")
+    if not _estate.estate_available():
+        return header + (
+            '<div class="ck-panel"><div style="padding:14px 16px;font-size:11.5px;'
+            'color:var(--ck-text-dim);white-space:normal;">The repo-root '
+            '<code>connectors/</code> estate is not present on this deployment, '
+            'so live CMS registry rows cannot be listed. Check out the full '
+            'repository and run <code>python -m connectors.cli refresh '
+            '--db var/connectors</code> to enable it.</div></div>')
+
+    rows = [r for r in _estate.all_datasets()
+            if r.get("connector") in _ESTATE_CMS_CONNECTORS]
+    order = {n: i for i, n in enumerate(_ESTATE_CMS_CONNECTORS)}
+    rows.sort(key=lambda r: (order.get(r.get("connector"), 99),
+                             r.get("dataset_id", "")))
+    trs = []
+    for i, r in enumerate(rows):
+        stripe = ' style="background:var(--sc-bone)"' if i % 2 == 0 else ""
+        did = r.get("dataset_id", "")
+        link = (f'<a href="/connector-estate?dataset={_html.escape(did)}" '
+                f'style="font-family:var(--ck-mono);font-size:10.5px;'
+                f'color:var(--ck-accent);">{_html.escape(did)}</a>')
+        trs.append(
+            f'<tr{stripe}>'
+            f'<td class="mono dim" style="padding:6px 10px;font-size:10px;">'
+            f'{_html.escape(r.get("connector", ""))}</td>'
+            f'<td style="padding:6px 10px;">{link}</td>'
+            f'<td class="dim" style="padding:6px 10px;font-size:10.5px;">'
+            f'{_html.escape(r.get("refresh_cadence", ""))}</td>'
+            f'<td class="mono dim" style="padding:6px 10px;font-size:10px;">'
+            f'{_html.escape(r.get("target_table", ""))}</td>'
+            '</tr>')
+    n_conn = len({r.get("connector") for r in rows})
+    return header + f"""
+<div class="ck-panel">
+  <div class="ck-panel-title">Connector Estate — CMS family ({n_conn} connectors · {len(rows)} datasets)</div>
+  <div style="padding:8px 16px 4px;font-size:11px;color:var(--ck-text-dim);white-space:normal;">
+    Every row is queryable through the uniform surface — browse it on
+    <a href="/connector-estate" style="color:var(--ck-accent);">/connector-estate</a>
+    or serve it with <code>python -m connectors.cli serve --db var/connectors</code>.
+  </div>
+  <div class="ck-table-wrap">
+    <table class="ck-table">
+      <thead>
+        <tr><th>Connector</th><th>Dataset ID</th><th>Cadence</th><th>Target Table</th></tr>
+      </thead>
+      <tbody>{''.join(trs)}</tbody>
+    </table>
+  </div>
+</div>"""
+
+
 def render_cms_sources() -> str:
     from rcm_mc.ui._chartis_kit import chartis_shell, ck_kpi_block, ck_page_title, ck_section_header
 
@@ -226,6 +299,7 @@ def render_cms_sources() -> str:
         + _source_table(_CMS_SOURCES)
         + ck_section_header("ANALYTICS INTEGRATION", "how CMS data feeds corpus analytics")
         + _integration_panel()
+        + _estate_section()
     )
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

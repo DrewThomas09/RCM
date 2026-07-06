@@ -17,6 +17,13 @@ Status taxonomy (honest about what actually runs in-repo today):
                  offline snapshot (no runtime network); the API is the source.
   registered   – cataloged + linked here; no in-repo client/loader yet.
 
+Estate connectors: sources whose ``client_module`` starts with
+``connectors.`` are served by the repo-root connector estate (13 stdlib
+connectors, one uniform /v1 query surface — see ``connector_estate.py``
+and the /connector-estate page). They count as live-client; the estate is
+optional at runtime (wheel installs don't ship the repo root), which is
+why the module path is dotted rather than an in-package file path.
+
 Cost taxonomy:
   free            – fully free, key optional or none.
   free-key        – free but an API key (no charge) raises rate limits.
@@ -101,11 +108,11 @@ _SOURCES: List[ApiSource] = [
         access="none", rate_limit="~200 results/request; 503 under load",
         formats="JSON", cost="free", status="live-client",
         records="7M+ providers & facilities",
-        client_module="rcm_mc/data_public/nppes_api_client.py",
+        client_module="connectors.npi_registry",
         answers="Who are the providers/competitors in a target's geography?",
         why="Canonical list of every US provider and facility — the starting "
             "point for counting competitors and building a specialty TAM.",
-        explore_route="/further-analysis?dataset=provider_supply",
+        explore_route="/connector-estate?connector=npi_registry",
     ),
     ApiSource(
         id="oig_leie", name="OIG LEIE (exclusions)",
@@ -140,15 +147,90 @@ _SOURCES: List[ApiSource] = [
         base_url="https://data.hrsa.gov/api",
         docs_url="https://data.hrsa.gov/data/about",
         access="none", rate_limit="public; courtesy throttle",
-        formats="JSON/OData", cost="free", status="vendored",
-        client_module="rcm_mc/data/hrsa_data.py",
+        formats="JSON/OData", cost="free", status="live-client",
+        client_module="connectors.hrsa_data",
         answers="Where are the underserved markets and reimbursement-uplift angles?",
         why="FQHCs/health centers, HPSA/MUA-MUP shortage designations, and the "
             "Area Health Resource Files — site-of-care expansion theses.",
-        explore_route="/further-analysis?dataset=hrsa_shortage",
+        explore_route="/connector-estate?connector=hrsa_data",
     ),
 
     # ── Volume, utilization & outcomes ───────────────────────────────────
+    ApiSource(
+        id="cms_open_data", name="CMS Open Data (data.cms.gov)",
+        operator="CMS", category="volume_outcomes",
+        base_url="https://data.cms.gov/data-api",
+        docs_url="https://data.cms.gov/api-docs",
+        access="none", rate_limit="public; courtesy throttle",
+        formats="JSON", cost="free", status="live-client",
+        records="158-dataset catalog · 45 curated estate datasets",
+        client_module="connectors.cms_open_data",
+        answers="What are Medicare utilization, payment and cost-report facts "
+                "by provider and geography?",
+        why="Provider-level Medicare utilization & payment, Part B/D drug "
+            "spending, geographic variation, HCRIS cost reports and PECOS "
+            "ownership — the claims-adjacent core of any provider CDD.",
+        explore_route="/connector-estate?connector=cms_open_data",
+    ),
+    ApiSource(
+        id="provider_data", name="CMS Provider Data Catalog (Care Compare)",
+        operator="CMS", category="volume_outcomes",
+        base_url="https://data.cms.gov/provider-data",
+        docs_url="https://data.cms.gov/provider-data/docs",
+        access="none", rate_limit="public; courtesy throttle",
+        formats="JSON", cost="free", status="live-client",
+        records="234-dataset catalog · 20 curated estate datasets",
+        client_module="connectors.provider_data",
+        answers="How do target facilities score on stars, quality and "
+                "patient experience?",
+        why="The Care Compare quality universe — hospital stars/HCAHPS, "
+            "nursing-home 5-star and penalties, home health, hospice, "
+            "dialysis, clinicians — quality diligence for any facility roll-up.",
+        explore_route="/connector-estate?connector=provider_data",
+    ),
+    ApiSource(
+        id="cms_coverage", name="CMS Medicare Coverage Database (MCD)",
+        operator="CMS", category="volume_outcomes",
+        base_url="https://api.coverage.cms.gov",
+        docs_url="https://www.cms.gov/medicare-coverage-database",
+        access="none", rate_limit="public; courtesy throttle",
+        formats="JSON", cost="free", status="live-client",
+        records="9 estate datasets — NCD/LCD/articles/MAC contractors",
+        client_module="connectors.cms_coverage",
+        answers="Is a service or device covered by Medicare, and under "
+                "which NCD/LCD?",
+        why="National + local coverage determinations and the MAC contractor "
+            "map — reimbursement-risk screening for procedure-driven targets.",
+        explore_route="/connector-estate?connector=cms_coverage",
+    ),
+    ApiSource(
+        id="icd10", name="ICD-10-CM / PCS (NLM Clinical Tables)",
+        operator="NLM", category="volume_outcomes",
+        base_url="https://clinicaltables.nlm.nih.gov/api",
+        docs_url="https://clinicaltables.nlm.nih.gov/apidoc/icd10cm/v3/doc.html",
+        access="none", rate_limit="public; courtesy throttle",
+        formats="JSON", cost="free", status="live-client",
+        client_module="connectors.icd10",
+        answers="How do I search and resolve diagnosis / procedure codes?",
+        why="Canonical ICD-10-CM/PCS code search — the code spine that joins "
+            "claims volume, coverage policy and quality data in one grammar.",
+        explore_route="/connector-estate?connector=icd10",
+    ),
+    ApiSource(
+        id="cdc_data", name="CDC Open Data (data.cdc.gov)",
+        operator="CDC", category="volume_outcomes",
+        base_url="https://data.cdc.gov",
+        docs_url="https://dev.socrata.com",
+        access="key-optional",
+        rate_limit="throttled without app token; higher with free token",
+        formats="JSON (SODA)", cost="free-key", status="live-client",
+        records="~1,500-dataset catalog · PLACES, mortality, BRFSS, overdose",
+        client_module="connectors.cdc_data",
+        answers="What is disease prevalence and mortality by county?",
+        why="PLACES county-level prevalence, provisional mortality and BRFSS "
+            "risk factors — the demand/severity layer under market sizing.",
+        explore_route="/connector-estate?connector=cdc_data",
+    ),
     ApiSource(
         id="hcupnet", name="AHRQ HCUPnet", operator="AHRQ (HCUP)",
         category="volume_outcomes",
@@ -182,12 +264,13 @@ _SOURCES: List[ApiSource] = [
         docs_url="https://open.fda.gov/apis/",
         access="key-optional", rate_limit="240/min, 1k/day no key; "
             "240/min, 120k/day with free key",
-        formats="JSON", cost="free-key", status="vendored",
-        client_module="rcm_mc/data/drug_shortage_data.py",
+        formats="JSON", cost="free-key", status="live-client",
+        records="12 estate datasets — NDC, labels, FAERS, recalls, 510(k), PMA, MAUDE, UDI",
+        client_module="connectors.openfda",
         answers="What is a device/drug target's regulatory moat and competitive set?",
         why="510(k)/PMA/UDI/recalls/MAUDE for devices; NDC/labeling/recalls/FAERS "
             "for drugs — map clearances and adverse-event exposure.",
-        explore_route="/further-analysis?dataset=drug_shortages",
+        explore_route="/connector-estate?connector=openfda",
     ),
     ApiSource(
         id="rxnorm", name="NLM RxNorm (RxNav)", operator="NLM",
@@ -227,6 +310,24 @@ _SOURCES: List[ApiSource] = [
         explore_route="/further-analysis?dataset=clinical_trial_phase",
     ),
 
+    # ── Drugs & devices (estate) ─────────────────────────────────────────
+    ApiSource(
+        id="medicaid_data", name="Medicaid Open Data (data.medicaid.gov)",
+        operator="CMS (Medicaid)", category="drugs_devices",
+        base_url="https://data.medicaid.gov/api",
+        docs_url="https://data.medicaid.gov/about",
+        access="none", rate_limit="public; courtesy throttle",
+        formats="JSON", cost="free", status="live-client",
+        records="541-dataset catalog · NADAC, state drug utilization, enrollment",
+        client_module="connectors.medicaid_data",
+        answers="What do drugs actually cost (NADAC) and how do states "
+                "utilize and rebate them?",
+        why="NADAC acquisition costs, State Drug Utilization, rebate products "
+            "and managed-care enrollment — pharmacy economics and Medicaid "
+            "exposure in one place.",
+        explore_route="/connector-estate?connector=medicaid_data",
+    ),
+
     # ── Financials ───────────────────────────────────────────────────────
     ApiSource(
         id="propublica_990", name="ProPublica Nonprofit Explorer",
@@ -264,6 +365,36 @@ _SOURCES: List[ApiSource] = [
             "revenue concentration.",
     ),
 
+    ApiSource(
+        id="open_payments", name="CMS Open Payments (Sunshine Act)",
+        operator="CMS", category="financials",
+        base_url="https://openpaymentsdata.cms.gov/api",
+        docs_url="https://openpaymentsdata.cms.gov/about/api",
+        access="none", rate_limit="public; courtesy throttle",
+        formats="JSON", cost="free", status="live-client",
+        records="74-dataset catalog · PY2024 general/research/ownership",
+        client_module="connectors.open_payments",
+        answers="What industry money flows to the target's physicians?",
+        why="Manufacturer-to-physician payments and ownership interests — "
+            "conflict screening and pharma-alignment mapping for acquisitions.",
+        explore_route="/connector-estate?connector=open_payments",
+    ),
+    ApiSource(
+        id="nih_reporter", name="NIH RePORTER v2",
+        operator="NIH", category="financials",
+        base_url="https://api.reporter.nih.gov/v2",
+        docs_url="https://api.reporter.nih.gov",
+        access="none", rate_limit="POST JSON; ~1 req/sec courtesy",
+        formats="JSON", cost="free", status="live-client",
+        records="funded projects + linked publications",
+        client_module="connectors.nih_reporter",
+        answers="What NIH grant funding flows to a target or its "
+                "site investigators?",
+        why="Funded projects and linked publications — research-revenue "
+            "exposure and KOL mapping for academic-adjacent assets.",
+        explore_route="/connector-estate?connector=nih_reporter",
+    ),
+
     # ── Demographics, payer mix & labor ──────────────────────────────────
     ApiSource(
         id="census_acs", name="Census ACS (5-year)", operator="US Census Bureau",
@@ -271,12 +402,12 @@ _SOURCES: List[ApiSource] = [
         base_url="https://api.census.gov/data/{year}/acs/acs5",
         docs_url="https://www.census.gov/data/developers/data-sets/acs-5year.html",
         access="key-required", rate_limit="500/day without key; higher with key",
-        formats="JSON", cost="free-key", status="vendored",
-        client_module="rcm_mc/data/census_demographics.py",
+        formats="JSON", cost="free-key", status="live-client",
+        client_module="connectors.census_acs",
         answers="What is the population, income and demand profile of a market?",
         why="County/ZIP population, age and income — drives demand and "
             "catchment modeling.",
-        explore_route="/further-analysis?dataset=state_demographics",
+        explore_route="/connector-estate?connector=census_acs",
     ),
     ApiSource(
         id="census_sahie", name="Census SAHIE", operator="US Census Bureau",
@@ -300,6 +431,23 @@ _SOURCES: List[ApiSource] = [
         answers="What are clinical wage assumptions by occupation and metro?",
         why="Occupational Employment & Wage Statistics — labor-cost assumptions "
             "for the operating model.",
+    ),
+
+    ApiSource(
+        id="healthcare_gov", name="Healthcare.gov Marketplace PUFs",
+        operator="CMS (Marketplace)", category="demographics_labor",
+        base_url="https://data.healthcare.gov/api",
+        docs_url="https://data.healthcare.gov/about",
+        access="none", rate_limit="public; courtesy throttle",
+        formats="JSON", cost="free", status="live-client",
+        records="337-dataset catalog · PY2026 QHP plan/benefit/rate PUFs",
+        client_module="connectors.healthcare_gov",
+        answers="What do marketplace plans, benefits and rates look like "
+                "in a county?",
+        why="QHP plan attributes, benefits & cost sharing and rates by "
+            "county — exchange payer-mix and premium modeling for "
+            "ambulatory targets.",
+        explore_route="/connector-estate?connector=healthcare_gov",
     ),
 
     # ── Behavioral health & global ───────────────────────────────────────

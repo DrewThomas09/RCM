@@ -4805,6 +4805,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.cms_data_browser_page import render_cms_data_browser
             return self._send_html(render_cms_data_browser(_qp))
+        if path == "/connector-estate":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.connector_estate_page import render_connector_estate
+            return self._send_html(render_connector_estate(_qp))
         if path == "/radiology-imaging":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

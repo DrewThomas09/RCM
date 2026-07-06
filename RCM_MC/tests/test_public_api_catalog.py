@@ -46,8 +46,24 @@ class CatalogIntegrityTests(unittest.TestCase):
         import os
         root = os.path.dirname(os.path.dirname(os.path.abspath(cat.__file__)))
         root = os.path.dirname(root)  # repo root above rcm_mc/
+        # Estate-backed sources name a dotted repo-root package
+        # (connectors.<pkg>) rather than an in-package file path; resolve
+        # those against the estate root found by the bridge. When the
+        # estate is absent (wheel install) the dotted path is still the
+        # honest pointer — skip the on-disk check only in that case.
+        from rcm_mc.data_public import connector_estate as est
+        estate_root = est.repo_root()
         for s in cat.wired_sources():
             self.assertTrue(s.client_module, f"{s.id} wired but no module")
+            if s.client_module.startswith("connectors."):
+                if estate_root is None:
+                    continue
+                pkg_dir = os.path.join(
+                    estate_root, *s.client_module.split("."))
+                self.assertTrue(os.path.isdir(pkg_dir),
+                                f"{s.id} estate package {s.client_module} "
+                                f"not found under {estate_root}")
+                continue
             path = os.path.join(root, s.client_module)
             self.assertTrue(os.path.exists(path),
                             f"{s.id} module {s.client_module} not found")
