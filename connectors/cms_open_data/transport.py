@@ -29,6 +29,7 @@ the rest of RCM-MC's public-data clients follow.
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
 import time
@@ -140,14 +141,24 @@ class CmsOpenDataTransport:
 
     def _backoff_seconds(self, attempt: int, resp: Optional[RawResponse],
                          rand: Callable[[], float]) -> float:
-        """Retry-After wins; otherwise exponential backoff with full jitter."""
+        """Retry-After wins; otherwise exponential backoff with full jitter.
+
+        Parsed defensively: a finite numeric ``Retry-After`` clamps to
+        ``[0, backoff_cap_s]`` — a negative value must never reach
+        ``time.sleep()``, where it would raise ``ValueError`` and abort
+        the retry loop. Non-numeric values (HTTP-date form, garbage) and
+        non-finite floats (``nan``/``inf`` parse but break ``sleep``)
+        fall back to the exponential backoff schedule.
+        """
         if resp is not None:
             ra = resp.header("retry-after")
             if ra:
                 try:
-                    return min(float(ra), self.backoff_cap_s)
+                    ra_s = float(ra)
                 except ValueError:
-                    pass  # HTTP-date form is rare here; fall through
+                    ra_s = None  # HTTP-date/garbage → backoff schedule
+                if ra_s is not None and math.isfinite(ra_s):
+                    return min(max(0.0, ra_s), self.backoff_cap_s)
         ceiling = min(self.backoff_cap_s, self.backoff_base_s * (2 ** attempt))
         return ceiling * rand()  # full jitter in [0, ceiling)
 

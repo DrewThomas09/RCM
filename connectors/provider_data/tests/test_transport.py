@@ -46,6 +46,25 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(payload["results"][0]["facility_id"], "010000")
         self.assertIn(2.0, sleeps)  # Retry-After respected
 
+    def test_429_negative_or_garbage_retry_after_still_retries(self):
+        # Buggy/hostile servers send negative, non-finite, or HTTP-date
+        # Retry-After values. None may reach time.sleep() unclamped —
+        # sleep(-5) raises ValueError and would abort the retry loop.
+        fake = FakeProviderData().add("xubh-q36u", hospital_rows(1))
+        fake.transients[0] = (429, {"retry-after": "-5"})
+        fake.transients[1] = (429, {"retry-after": "nan"})
+        fake.transients[2] = (429, {"retry-after": "Wed, 21 Oct 2026 07:28:00 GMT"})
+        sleeps = []
+        t = self._transport()
+        payload = t.get_json(
+            _HOSPITAL_PATH, {"limit": 10, "offset": 0}, opener=fake,
+            sleep=sleeps.append, now=lambda: 0.0, rand=lambda: 0.25)
+        self.assertEqual(payload["results"][0]["facility_id"], "010000")
+        self.assertEqual(len(fake.calls), 4)  # three 429s, then success
+        # Negative clamps to 0.0; nan / HTTP-date fall back to the jittered
+        # backoff schedule (ceilings 2s, 4s at rand()=0.25 → 0.5s, 1.0s).
+        self.assertEqual(sleeps, [0.0, 0.5, 1.0])
+
     def test_5xx_exhausts_and_raises(self):
         fake = FakeProviderData().add("xubh-q36u", hospital_rows(1))
         for i in range(10):
