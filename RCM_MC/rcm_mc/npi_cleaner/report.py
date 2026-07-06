@@ -25,9 +25,10 @@ from typing import List
 
 from ..exports.xlsx_writer import Sheet, write_xlsx
 
-# Cap the data sheet so the workbook stays small; the CSV download always has
-# the complete cleaned dataset.
-_MAX_DATA_ROWS = 5000
+# Cap the workbook's data sheets — Excel itself stops at 1,048,576 rows
+# and a multi-GB xlsx helps no one; a note row states the truncation and
+# the CSV download always has the complete cleaned dataset.
+_MAX_DATA_ROWS = 100_000
 
 _H = "header"  # header style id in xlsx_writer
 

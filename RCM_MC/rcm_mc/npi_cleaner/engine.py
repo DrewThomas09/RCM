@@ -773,6 +773,21 @@ import hashlib
 # NEW distinct rows stop being tracked and the run says so.
 _STREAM_SEEN_CAP = 2_000_000
 
+# Change-log entries kept IN MEMORY on the result (UI preview + workbook
+# Issues context). The change-log FILE is never capped: entries past this
+# preview spill straight to disk during the row loop, so a 10M-row run
+# gets a complete audit trail without holding it in RAM. The old design
+# capped the file itself at this number — users with big files got a
+# silently truncated audit CSV.
+_CHANGELOG_PREVIEW = 20_000
+# Flagged OUTPUT rows captured per rule (and per payer family) for the
+# worklist downloads. 500 was actionable-list sized; at 10M-row scale a
+# single rule can legitimately fire on hundreds of thousands of rows and
+# a 500-row worklist reads as data loss. 50k ints per rule keeps worst-
+# case memory bounded (~70 rules × 50k × 28B ≈ 100 MB absolute worst)
+# while the sanity counters always report the TRUE totals.
+_WORKLIST_CAP = 50_000
+
 
 def _phi_kind(hn: str) -> Optional[str]:
     """Classify a header (folded key) as a patient-PHI field, or None.
@@ -955,6 +970,10 @@ class CleanResult:
     changelog_truncated: bool = False
     changelog_path: Optional[str] = None
     changelog_name: str = "changelog.csv"
+    # Disk spill of change-log entries past the in-memory preview
+    # (_CHANGELOG_PREVIEW); consumed and deleted by _write_output so the
+    # changelog CSV is complete no matter how many cells changed.
+    changelog_spill_path: Optional[str] = None
     # Payer-name variant clusters (report-only), per-HCPCS charge outliers,
     # and structural findings (duplicate headers / empty columns).
     payer_variants: Optional[Dict[str, object]] = None
@@ -1515,6 +1534,8 @@ def clean_bytes(
     progress: Optional[ProgressCb] = None,
     _stream_chunk: bool = False,
     _stream_seen: Optional[set] = None,
+    _changelog_sink: Optional[Callable[[Tuple[int, str, str, str, str]],
+                                       None]] = None,
 ) -> CleanResult:
     """Clean a delimited claims file given as raw bytes.
 
@@ -1803,8 +1824,13 @@ def clean_bytes(
     claim_i = _detect_one(headers, ("claimid", "claimnumber", "claimno",
                                     "patientcontrolnumber", "icn", "dcn"))
     _charge_i = billed_i if billed_i is not None else allowed_i
-    _CHANGELOG_CAP = 20_000                       # keep the audit log bounded
-    _WORKLIST_CAP = 500                           # rows captured per rule
+    # Change-log spill: entries past the in-memory preview stream to a
+    # temp CSV so the audit-trail FILE is complete at any scale. Opened
+    # lazily — small files never touch the disk twice.
+    _spill_fh = None
+    _spill_writer = None
+    _spill_path: Optional[Path] = None
+    _spill_failed = False
 
     cb("Cleaning rows", 0.30)
     cleaned: List[List[str]] = []
@@ -1863,16 +1889,42 @@ def clean_bytes(
             for rule in hits:
                 res.repairs[rule] = res.repairs.get(rule, 0) + 1
             # Cell-level audit trail — recorded BEFORE de-identification so
-            # masked PHI never leaks into the change log. Capped; n_changes
-            # keeps the true total either way.
+            # masked PHI never leaks into the change log. The first
+            # _CHANGELOG_PREVIEW entries stay in memory for the UI; the
+            # rest go to the caller's sink (streaming chunks) or spill to
+            # disk, so the changelog FILE is complete at any scale.
             if val != cell:
                 res.n_changes += 1
-                if len(res.changelog) < _CHANGELOG_CAP:
-                    res.changelog.append(
-                        (ri + 1, headers[ci] if ci < ncols else str(ci),
-                         cell, val, ";".join(hits) or "trim"))
-                else:
+                _entry = (ri + 1, headers[ci] if ci < ncols else str(ci),
+                          cell, val, ";".join(hits) or "trim")
+                if _changelog_sink is not None:
+                    _changelog_sink(_entry)
+                    if len(res.changelog) < _CHANGELOG_PREVIEW:
+                        res.changelog.append(_entry)
+                elif len(res.changelog) < _CHANGELOG_PREVIEW:
+                    res.changelog.append(_entry)
+                elif _stream_chunk:
+                    # Chunk without a sink (direct callers): no file will
+                    # be written, so spilling would only leak temp files.
                     res.changelog_truncated = True
+                elif not _spill_failed:
+                    try:
+                        if _spill_writer is None:
+                            WORKDIR.mkdir(parents=True, exist_ok=True)
+                            _spill_path = (WORKDIR /
+                                           f"spill_{uuid.uuid4().hex}.csv")
+                            _spill_fh = open(_spill_path, "w", newline="",
+                                             encoding="utf-8")
+                            _spill_writer = csv.writer(_spill_fh)
+                        _spill_writer.writerow(
+                            [_entry[0], _defang_cell(_entry[1]),
+                             _defang_cell(_entry[2]),
+                             _defang_cell(_entry[3]), _entry[4]])
+                    except OSError:
+                        # Disk over quota mid-run: the file stays truncated
+                        # at what was captured; the flag says so honestly.
+                        _spill_failed = True
+                        res.changelog_truncated = True
             # Fill-rate counters for the data-quality report card.
             res.n_cells_total += 1
             if val != "":
@@ -2254,6 +2306,14 @@ def clean_bytes(
         if ri % 500 == 0:
             cb("Cleaning rows", 0.30 + 0.55 * (ri / total))
 
+    if _spill_fh is not None:
+        try:
+            _spill_fh.close()
+        except OSError:
+            _spill_failed = True
+            res.changelog_truncated = True
+        if not _spill_failed and _spill_path is not None:
+            res.changelog_spill_path = str(_spill_path)
     res.n_rows_out = len(cleaned)
 
     # Suspected duplicate CLAIMS — distinct rows (already past exact-row dedup)
@@ -2866,6 +2926,9 @@ def _write_output(res: CleanResult, headers: List[str],
     # Cell-level audit trail: every change the cleaner made (row · column ·
     # before → after · rule), as its own CSV download. De-id masking is
     # deliberately absent — original PHI must never land in this file.
+    # res.changelog holds the first _CHANGELOG_PREVIEW entries; anything
+    # past that was spilled to disk during the row loop and is appended
+    # here byte-for-byte, so the FILE is complete at any scale.
     if res.changelog:
         stem = res.out_name[:-len("_cleaned.csv")] if res.out_name.endswith(
             "_cleaned.csv") else res.out_name.rsplit(".", 1)[0]
@@ -2878,6 +2941,21 @@ def _write_output(res: CleanResult, headers: List[str],
                 writer.writerow([row_i, _defang_cell(col),
                                  _defang_cell(before), _defang_cell(after),
                                  rule])
+            if res.changelog_spill_path:
+                try:
+                    fh.flush()
+                    with open(res.changelog_spill_path,
+                              encoding="utf-8") as spill:
+                        while True:
+                            block = spill.read(1 << 20)
+                            if not block:
+                                break
+                            fh.write(block)
+                except OSError:
+                    res.changelog_truncated = True
+        if res.changelog_spill_path:
+            Path(res.changelog_spill_path).unlink(missing_ok=True)
+            res.changelog_spill_path = None
         res.changelog_path = str(log_path)
 
     # A styled multi-tab .xlsx workbook (Cleaned · issues · scorecard) via the

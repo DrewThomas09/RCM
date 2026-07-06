@@ -1584,11 +1584,15 @@ class TestReviewFixes(unittest.TestCase):
     def test_worklist_captures_late_first_firing_rule(self):
         # Old _wl_open shut off capture globally once every rule seen so
         # far was full; a rule first firing later got zero worklist rows.
+        # The cap is patched down so the cap-full path is exercised
+        # without a 50k-row fixture (the production cap is 50,000).
         rows = ["ClaimID,DateOfService,HCPCS"]
-        for i in range(520):                        # fills date-stale's 500 cap
+        for i in range(520):                     # fills date-stale's cap
             rows.append(f"{i},1990-01-01,99213")
-        rows.append("bad,2024-01-01,BAD!!")         # first hcpcs hit, row 521
-        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "wl.csv")
+        rows.append("bad,2024-01-01,BAD!!")      # first hcpcs hit, row 521
+        with patch.object(engine, "_WORKLIST_CAP", 500):
+            res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                     "wl.csv")
         self.assertEqual(len(res.flag_rows["date-stale"]), 500)
         self.assertEqual(res.flag_rows.get("hcpcs-malformed"), [521])
 
@@ -3979,7 +3983,80 @@ class TestMultiSheetWorkbooks(unittest.TestCase):
         self.assertFalse([w for w in res.warnings if "Workbook has" in w])
 
 
+class TestUncappedOutputs(unittest.TestCase):
+    """The audit-trail FILE and the worklists must scale with the data.
+    The old design capped the changelog CSV at 20,000 entries and every
+    worklist at 500 rows — a 10M-row run got a silently truncated audit
+    trail. Now: the in-memory preview stays capped, entries past it
+    spill to disk (in-memory path) or stream through the master-file
+    sink (chunked path), and the CSV is complete at any scale."""
+
+    def _dirty(self, n):
+        rows = ["ClaimID,BillingProviderNPI,ChargeAmt"]
+        rows += [f"{i}, {GOOD_A} ,420" for i in range(1, n + 1)]
+        return ("\n".join(rows) + "\n").encode()
+
+    def test_changelog_file_is_complete_past_the_preview(self):
+        # 2 changes per row (NPI trim + money normalize) with a tiny
+        # preview → the file must still carry every entry, in order.
+        data = self._dirty(300)
+        with patch.object(engine, "_CHANGELOG_PREVIEW", 50):
+            res = engine.clean_bytes(data, "spill.csv")
+        self.assertEqual(res.n_changes, 600)
+        self.assertEqual(len(res.changelog), 50)
+        self.assertFalse(res.changelog_truncated)
+        self.assertIsNone(res.changelog_spill_path)  # consumed + deleted
+        with open(res.changelog_path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+        self.assertEqual(len(lines) - 1, 600)
+        # Ordering survives the spill boundary: row indices ascend.
+        idxs = [int(ln.split(",")[0]) for ln in lines[1:]]
+        self.assertEqual(idxs, sorted(idxs))
+        self.assertEqual(idxs[-1], 300)
+
+    def test_streamed_changelog_file_is_complete_across_chunks(self):
+        from rcm_mc.npi_cleaner import bigfile
+        data = self._dirty(400)
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "s.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 512), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 2048), \
+                    patch.object(engine, "_CHANGELOG_PREVIEW", 50):
+                res = bigfile.clean_path(p, "s.csv")
+        self.assertEqual(res.n_changes, 800)
+        self.assertFalse(res.changelog_truncated)
+        with open(res.changelog_path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+        self.assertEqual(len(lines) - 1, 800)
+        # Row indices are file-global (max == rows in), not chunk-local.
+        idxs = [int(ln.split(",")[0]) for ln in lines[1:]]
+        self.assertEqual(max(idxs), 400)
+        self.assertEqual(len(res.changelog), 50)  # preview stays bounded
+
+    def test_worklists_capture_past_the_old_500_cap(self):
+        rows = ["ClaimID,DateOfService"]
+        rows += [f"{i},2099-01-01" for i in range(1, 1201)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "wl.csv")
+        self.assertEqual(res.sanity["date-in-future"], 1200)
+        self.assertEqual(len(res.flag_rows["date-in-future"]), 1200)
+        self.assertEqual(engine._WORKLIST_CAP, 50_000)
+
+    def test_cleaned_csv_has_no_row_cap(self):
+        # The primary artifact was never capped — pin that with a run
+        # bigger than every preview/list bound in one pass.
+        data = self._dirty(25_000)
+        res = engine.clean_bytes(data, "big.csv")
+        with open(res.out_path, encoding="utf-8") as fh:
+            n = sum(1 for _ in fh)
+        self.assertEqual(n - 1, 25_000)
+        self.assertEqual(res.n_rows_out, 25_000)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 

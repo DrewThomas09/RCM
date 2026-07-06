@@ -31,8 +31,9 @@ import math
 from typing import Dict, List, Optional
 
 # Cap the corrections companion so a pathological file can't produce a
-# multi-hundred-MB export; the count is always reported in full.
-_MAX_SUGGESTIONS = 5000
+# runaway export; the count is always reported in full and the cap is
+# sized for real large files, not just demos.
+_MAX_SUGGESTIONS = 50_000
 
 
 def available() -> bool:

@@ -1047,12 +1047,16 @@ _EXTRA_JS = r"""
           '100% empty: '+st.empty_columns.map(esc).join(', ')+'</div>';
       }
     }
-    // Audit trail summary.
+    // Audit trail summary. The change-log CSV is complete at any scale
+    // (entries spill to disk during the run); truncated now only means
+    // the server hit a disk error mid-spill.
     if(s.changes_logged){
       html+='<div class="npi-muted" style="margin-top:18px">🧾 '+
         fmt(s.changes_logged)+' cell'+(s.changes_logged===1?'':'s')+
         ' changed in total — the full before/after audit trail is on the '+
-        'Downloads tab'+(s.changelog_truncated?' (log capped at 20,000 entries)':'')+'.</div>';
+        'Downloads tab'+(s.changelog_truncated
+          ?' (⚠ log incomplete — the server ran out of disk while writing it)'
+          :'')+'.</div>';
     }
     box.innerHTML=html;
   }
