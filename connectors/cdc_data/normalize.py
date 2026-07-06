@@ -92,7 +92,7 @@ def _catalog_row(rec: Dict[str, Any], res: NormalizeResult,
     res.note_unmapped(unmapped_keys(rec, _CATALOG_KNOWN))
 
 
-# ── curated mapper (spec-driven, one code path for all ten) ───────────
+# ── curated mapper (spec-driven, one code path for all curated specs) ──
 def _curated_row(rec: Dict[str, Any], res: NormalizeResult,
                  spec: EndpointSpec) -> None:
     # Live field names → canonical column names through the documented

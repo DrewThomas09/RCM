@@ -4,8 +4,9 @@ import unittest
 from ..endpoints import get_endpoint
 from ..flatten import to_column, to_snake
 from ..normalize import normalize, normalize_generic
-from .fakes import (catalog_items, heart_disease_rows, places_rows,
-                    provisional_deaths_rows, vsrr_rows)
+from .fakes import (catalog_items, ckd_places_rows, heart_disease_rows,
+                    monthly_deaths_rows, places_rows, provisional_deaths_rows,
+                    vsrr_rows)
 
 
 class CatalogNormalizeTests(unittest.TestCase):
@@ -87,6 +88,28 @@ class CuratedNormalizeTests(unittest.TestCase):
         row = res.rows["cdc_heart_disease_mortality"][0]
         self.assertEqual(row["record_key"], "01073:2022:Overall:Overall")
         self.assertEqual(row["geographiclevel"], "County")
+
+    def test_ckd_places_mapper_keys_county_ckd_prevalence(self):
+        # County CKD prevalence: measureid is always KIDNEY, so the two
+        # data_value_type slices of a county key separately.
+        res = normalize(get_endpoint("places_county_ckd"), ckd_places_rows())
+        rows = res.rows["cdc_places_county_ckd"]
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[0]["record_key"], "AL:01073:KIDNEY:CrdPrv")
+        self.assertEqual(rows[1]["record_key"], "AL:01073:KIDNEY:AgeAdjPrv")
+        self.assertEqual(rows[0]["measureid"], "KIDNEY")
+        self.assertEqual(rows[0]["data_value"], "3.4")
+        self.assertEqual(rows[0]["source_endpoint"], "places_county_ckd")
+
+    def test_monthly_deaths_mapper_carries_kidney_column(self):
+        # Nephritis/nephrotic syndrome is the national kidney-deaths column.
+        res = normalize(get_endpoint("monthly_deaths_select_causes"),
+                        monthly_deaths_rows())
+        rows = res.rows["cdc_monthly_deaths_select_causes"]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["record_key"], "United States:2020:1")
+        self.assertEqual(rows[0]["nephritis_nephrotic_syndrome"], "4886")
+        self.assertEqual(rows[1]["record_key"], "United States:2020:2")
 
 
 class GenericNormalizeTests(unittest.TestCase):

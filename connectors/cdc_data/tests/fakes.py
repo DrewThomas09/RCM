@@ -230,6 +230,71 @@ def heart_disease_rows() -> List[Dict[str, Any]]:
     ]
 
 
+def ckd_places_rows() -> List[Dict[str, Any]]:
+    """PLACES county CKD rows (h3ej-a9ec shape; measureid=KIDNEY only, the
+    measure-pinned curated slice). Note: no totalpop18plus in this vintage,
+    and nulls omitted per Socrata."""
+    return [
+        {
+            "year": "2021", "stateabbr": "AL", "statedesc": "Alabama",
+            "locationname": "Jefferson", "datasource": "BRFSS",
+            "category": "Health Outcomes",
+            "measure": "Chronic kidney disease among adults aged >=18 years",
+            "data_value_unit": "%", "data_value_type": "Crude prevalence",
+            "data_value": "3.4", "low_confidence_limit": "3.1",
+            "high_confidence_limit": "3.7", "totalpopulation": "658573",
+            "locationid": "01073", "categoryid": "HLTHOUT",
+            "measureid": "KIDNEY", "datavaluetypeid": "CrdPrv",
+            "short_question_text": "Chronic Kidney Disease",
+            "geolocation": {"type": "Point",
+                            "coordinates": [-86.8904, 33.5453]},
+        },
+        {
+            "year": "2021", "stateabbr": "AL", "statedesc": "Alabama",
+            "locationname": "Jefferson", "datasource": "BRFSS",
+            "category": "Health Outcomes",
+            "measure": "Chronic kidney disease among adults aged >=18 years",
+            "data_value_unit": "%",
+            "data_value_type": "Age-adjusted prevalence",
+            "data_value": "3.1", "locationid": "01073",
+            "categoryid": "HLTHOUT", "measureid": "KIDNEY",
+            "datavaluetypeid": "AgeAdjPrv",
+            "short_question_text": "Chronic Kidney Disease",
+        },
+        {
+            "year": "2021", "stateabbr": "LA", "statedesc": "Louisiana",
+            "locationname": "Ouachita", "datasource": "BRFSS",
+            "category": "Health Outcomes",
+            "measure": "Chronic kidney disease among adults aged >=18 years",
+            "data_value_unit": "%", "data_value_type": "Crude prevalence",
+            "data_value": "3.6", "locationid": "22073",
+            "categoryid": "HLTHOUT", "measureid": "KIDNEY",
+            "datavaluetypeid": "CrdPrv",
+            "short_question_text": "Chronic Kidney Disease"},
+    ]
+
+
+def monthly_deaths_rows() -> List[Dict[str, Any]]:
+    """Monthly select-causes death rows (9dzk-mvmi shape). The
+    nephritis_nephrotic_syndrome column is national kidney-disease deaths."""
+    return [
+        {"data_as_of": "2024-01-14T00:00:00.000",
+         "start_date": "2020-01-01T00:00:00.000",
+         "end_date": "2020-01-31T00:00:00.000",
+         "jurisdiction_of_occurrence": "United States",
+         "year": "2020", "month": "1", "all_cause": "264681",
+         "natural_cause": "245479", "nephritis_nephrotic_syndrome": "4886",
+         "diseases_of_heart": "58254", "diabetes_mellitus": "7104"},
+        {"data_as_of": "2024-01-14T00:00:00.000",
+         "start_date": "2020-02-01T00:00:00.000",
+         "end_date": "2020-02-29T00:00:00.000",
+         "jurisdiction_of_occurrence": "United States",
+         "year": "2020", "month": "2", "all_cause": "244966",
+         "natural_cause": "226893", "nephritis_nephrotic_syndrome": "4507",
+         "diseases_of_heart": "54357", "diabetes_mellitus": "6789"},
+    ]
+
+
 def generic_rows(n: int = 3) -> List[Dict[str, Any]]:
     """Rows for an arbitrary uncurated 4x4 (shape doesn't matter — that's
     the point of the generic table)."""

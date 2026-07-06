@@ -5,11 +5,12 @@ from ..connector import CdcDataConnector, DEFAULT_MAX_PAGES
 from ..endpoints import get_endpoint
 from ..tables import CdcDataStore
 from ..transport import CdcSodaTransport
-from .fakes import (CATALOG_PATH, FakeCdcData, catalog_items, generic_rows,
-                    leading_causes_rows, places_rows)
+from .fakes import (CATALOG_PATH, FakeCdcData, catalog_items, ckd_places_rows,
+                    generic_rows, leading_causes_rows, places_rows)
 
 _PLACES_PATH = "/resource/swc5-untb.json"
 _CAUSES_PATH = "/resource/bi63-dtpu.json"
+_CKD_PATH = "/resource/h3ej-a9ec.json"
 
 
 def _connector():
@@ -84,6 +85,20 @@ class FetchTests(unittest.TestCase):
         res = _connector().fetch("nchs_leading_causes", opener=fake, page_size=1)
         self.assertEqual(res.pages, DEFAULT_MAX_PAGES)
         self.assertEqual(len(res.rows), DEFAULT_MAX_PAGES)
+
+    def test_fetch_ckd_pins_measure_via_default_params(self):
+        # The CKD dataset pins default_params={"measureid": "KIDNEY"} so
+        # the canonical table is county CKD prevalence only. A stray
+        # non-KIDNEY row served on the same 4x4 must be filtered out.
+        served = ckd_places_rows() + [
+            {"stateabbr": "AL", "locationid": "01073", "measureid": "DIABETES",
+             "datavaluetypeid": "CrdPrv", "data_value": "13.0"}]
+        fake = FakeCdcData().add(_CKD_PATH, served)
+        res = _connector().fetch("places_county_ckd", opener=fake)
+        self.assertEqual(len(res.rows), 3)   # DIABETES row filtered by the pin
+        qs = parse_qs(urlparse(fake.calls[0]).query)
+        self.assertEqual(qs["measureid"], ["KIDNEY"])
+        self.assertTrue(all(r["measureid"] == "KIDNEY" for r in res.rows))
 
     def test_fetch_dataset_pulls_arbitrary_4x4(self):
         fake = FakeCdcData().add("/resource/zzzz-9999.json", generic_rows(3))

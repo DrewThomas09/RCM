@@ -1,9 +1,9 @@
 """Canonical data.cdc.gov tables + an idempotent SQLite store.
 
-Twelve normalization targets — one catalog table, ten curated dataset
-tables whose columns are live-sampled snapshots of the real Socrata
-field names (see :mod:`connectors.cdc_data.endpoints`), and one generic
-JSON-blob table so ANY 4x4 on the domain stays queryable:
+Fourteen normalization targets — one catalog table, twelve curated
+dataset tables whose columns are live-sampled snapshots of the real
+Socrata field names (see :mod:`connectors.cdc_data.endpoints`), and one
+generic JSON-blob table so ANY 4x4 on the domain stays queryable:
 
   cdc_data_catalog     — every dataset on data.cdc.gov, keyed by 4x4 id.
   cdc_places_county …  — curated tables, keyed by a composed natural key
@@ -131,6 +131,10 @@ class CdcDataStore:
                     "ON cdc_places_county(stateabbr)")
         cur.execute("CREATE INDEX IF NOT EXISTS ix_places_measure "
                     "ON cdc_places_county(measureid)")
+        # County CKD prevalence (PLACES 2023 KIDNEY measure) keyed by FIPS
+        # for the county-health lookup.
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_ckd_fips "
+                    "ON cdc_places_county_ckd(locationid)")
         cur.execute("CREATE INDEX IF NOT EXISTS ix_rows_dataset "
                     "ON cdc_data_rows(dataset_key)")
         self.conn.commit()

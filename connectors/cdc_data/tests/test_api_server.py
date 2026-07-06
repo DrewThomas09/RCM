@@ -15,7 +15,8 @@ from ..endpoints import ENDPOINTS
 from ..normalize import normalize, normalize_generic
 from ..endpoints import get_endpoint
 from ..tables import CdcDataStore
-from .fakes import catalog_items, drug_poisoning_rows, heart_disease_rows, places_rows
+from .fakes import (catalog_items, ckd_places_rows, drug_poisoning_rows,
+                    heart_disease_rows, places_rows)
 
 
 class ApiServerTests(unittest.TestCase):
@@ -33,6 +34,10 @@ class ApiServerTests(unittest.TestCase):
             "cdc_heart_disease_mortality",
             normalize(get_endpoint("heart_disease_mortality_county"),
                       heart_disease_rows()).rows["cdc_heart_disease_mortality"])
+        self.store.upsert(
+            "cdc_places_county_ckd",
+            normalize(get_endpoint("places_county_ckd"),
+                      ckd_places_rows()).rows["cdc_places_county_ckd"])
         cat = catalog_items(2)
         cat[0]["id"] = "swc5-untb"     # so the lookup can see a curated match
         self.store.upsert(
@@ -95,6 +100,10 @@ class ApiServerTests(unittest.TestCase):
         self.assertEqual(body["county"], "Jefferson")
         self.assertEqual(body["state"], "AL")
         self.assertEqual(body["places"]["count"], 1)
+        # County CKD prevalence (2 data_value_type slices for 01073).
+        self.assertEqual(body["chronic_kidney_disease"]["count"], 2)
+        self.assertEqual(
+            body["chronic_kidney_disease"]["rows"][0]["measureid"], "KIDNEY")
         # NCHS drug-poisoning stores FIPS unpadded; the lookup bridges that.
         self.assertEqual(body["drug_poisoning"]["count"], 1)
         self.assertEqual(body["heart_disease_mortality"]["count"], 1)

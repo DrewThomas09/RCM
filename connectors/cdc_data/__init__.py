@@ -2,7 +2,7 @@
 
 This package is the self-contained CDC open-data workstream: connector,
 declarative registry rows, normalized canonical tables (the full
-data.cdc.gov catalog + ten curated flagship datasets + a generic
+data.cdc.gov catalog + twelve curated flagship datasets + a generic
 any-4x4 rows table), a ``/v1/query`` engine + two ``/v1/lookup``
 handlers, and a standalone stdlib HTTP surface.
 

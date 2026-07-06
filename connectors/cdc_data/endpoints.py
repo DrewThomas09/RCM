@@ -336,6 +336,74 @@ _CURATED: List[EndpointSpec] = [
         join_keys=("locationid",),
         refresh_cadence="annual",
     ),
+    # ── kidney-disease surveillance coverage (verified live 2026-07-06) ──
+    # data.cdc.gov has NO standalone "Chronic Kidney Disease Surveillance
+    # System" Socrata dataset — ckd.cdc.gov is a web app, and the USRDS
+    # ESRD linkage (jmgj-74h4) is 403/restricted. The premier CKD state
+    # indicator (incidence of treated end-stage kidney disease, 52
+    # jurisdictions, 2019-2022) already lives inside the curated CDI
+    # dataset above (hksd-2xuw, topic="Chronic Kidney Disease"); see the
+    # README for the slice. The two datasets below add the county
+    # prevalence + national mortality grains CDI doesn't carry.
+    EndpointSpec(
+        key="places_county_ckd",
+        resource_id="h3ej-a9ec",   # PLACES county 2023 release
+        kind="curated",
+        target_table="cdc_places_county_ckd",
+        title=("PLACES: Local Data for Better Health, County Data 2023 "
+               "release — Chronic Kidney Disease measure (measureid KIDNEY)"),
+        # The KIDNEY measure ("Chronic kidney disease among adults aged
+        # >=18 years") was DROPPED from PLACES' 2024 and 2025 county
+        # releases — the currently-curated places_county (swc5-untb, 2025
+        # release) no longer carries it. h3ej-a9ec (2023 release) is the
+        # most recent PLACES county vintage that still does (6,154 KIDNEY
+        # rows live: ~3,077 counties x CrdPrv + AgeAdjPrv, year 2021). Note
+        # this vintage's schema has no totalpop18plus column (swc5-untb
+        # does). default_params pins the measure so this canonical table is
+        # county CKD prevalence only.
+        columns=(
+            "year", "stateabbr", "statedesc", "locationname", "datasource",
+            "category", "measure", "data_value_unit", "data_value_type",
+            "data_value", "data_value_footnote_symbol", "data_value_footnote",
+            "low_confidence_limit", "high_confidence_limit", "totalpopulation",
+            "locationid", "categoryid", "measureid", "datavaluetypeid",
+            "short_question_text", "geolocation",
+        ),
+        pk_fields=("stateabbr", "locationid", "measureid", "datavaluetypeid"),
+        date_field="year",
+        join_keys=("stateabbr", "locationid"),
+        refresh_cadence="annual",
+        default_params={"measureid": "KIDNEY"},
+    ),
+    EndpointSpec(
+        key="monthly_deaths_select_causes",
+        resource_id="9dzk-mvmi",
+        kind="curated",
+        target_table="cdc_monthly_deaths_select_causes",
+        title="Monthly Provisional Counts of Deaths by Select Causes, 2020-2023",
+        # National (jurisdiction_of_occurrence="United States") monthly
+        # counts, 2020-2023 (45 rows live). Kidney-disease mortality is the
+        # first-class column nephritis_nephrotic_syndrome (Nephritis,
+        # nephrotic syndrome and nephrosis) — a clean national
+        # kidney-deaths-over-time series alongside the other select causes.
+        columns=(
+            "data_as_of", "start_date", "end_date", "jurisdiction_of_occurrence",
+            "year", "month", "all_cause", "natural_cause", "septicemia",
+            "malignant_neoplasms", "diabetes_mellitus", "alzheimer_disease",
+            "influenza_and_pneumonia", "chronic_lower_respiratory",
+            "other_diseases_of_respiratory", "nephritis_nephrotic_syndrome",
+            "symptoms_signs_and_abnormal", "diseases_of_heart",
+            "cerebrovascular_diseases", "accidents_unintentional",
+            "motor_vehicle_accidents", "intentional_self_harm_suicide",
+            "assault_homicide", "drug_overdose", "covid_19_multiple_cause_of",
+            "covid_19_underlying_cause", "flag_accid", "flag_mva", "flag_suic",
+            "flag_homic", "flag_drugod",
+        ),
+        pk_fields=("jurisdiction_of_occurrence", "year", "month"),
+        date_field="end_date",
+        join_keys=("jurisdiction_of_occurrence",),
+        refresh_cadence="monthly",
+    ),
 ]
 
 # ── the generic on-demand escape hatch ────────────────────────────────

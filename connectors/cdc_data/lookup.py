@@ -13,7 +13,15 @@ company, document, contractor, provider, taxonomy, code, category):
   county-health — every PLACES measure for a 5-digit county FIPS, plus
                   the county's NCHS drug-poisoning and heart-disease
                   mortality slices when ingested (all three tables key
-                  counties by the same FIPS).
+                  counties by the same FIPS), plus the county's Chronic
+                  Kidney Disease prevalence. NOTE: PLACES county data
+                  carries CKD prevalence under **measureid ``KIDNEY``**
+                  ("Chronic kidney disease among adults aged >=18 years"),
+                  but the measure was DROPPED from the 2024/2025 releases —
+                  the current curated ``cdc_places_county`` (swc5-untb,
+                  2025) has no KIDNEY rows, so the CKD section here reads
+                  from ``cdc_places_county_ckd`` (the 2023 release,
+                  h3ej-a9ec, pinned to measureid=KIDNEY).
   cdc-dataset   — a catalog row for any 4x4 id, plus whether it is one of
                   this connector's curated datasets and how many generic
                   rows have been pulled for it.
@@ -53,11 +61,22 @@ def lookup_county_health(store: CdcDataStore, fips: str) -> Dict[str, Any]:
         store,
         "SELECT * FROM cdc_heart_disease_mortality WHERE locationid = ? "
         "ORDER BY year DESC LIMIT ?", (code, _MORTALITY_LIMIT))
+    # Chronic Kidney Disease prevalence (PLACES 2023 KIDNEY measure): the
+    # current curated PLACES release dropped it, so it lives in its own
+    # measure-pinned table keyed by the same 5-digit county FIPS.
+    ckd = _rows(
+        store,
+        "SELECT * FROM cdc_places_county_ckd WHERE locationid = ? "
+        "ORDER BY datavaluetypeid LIMIT ?", (code, _MORTALITY_LIMIT))
+    if county is None and ckd:
+        county = ckd[0]["locationname"]
+        state = ckd[0]["stateabbr"]
     return {
         "fips": code,
         "county": county,
         "state": state,
         "places": {"count": len(places), "measures": places},
+        "chronic_kidney_disease": {"count": len(ckd), "rows": ckd},
         "drug_poisoning": {"count": len(drug), "rows": drug},
         "heart_disease_mortality": {"count": len(heart), "rows": heart},
     }
