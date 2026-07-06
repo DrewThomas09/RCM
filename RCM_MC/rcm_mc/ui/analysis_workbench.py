@@ -40,7 +40,15 @@ from ..analysis.packet import (
 # Module-level import (not call-time) because the chip helper is used
 # on hot render paths (metric table, risk flags, diligence questions)
 # where a function-scope import would re-resolve on every row.
-from ._chartis_kit import ck_aggregate, ck_json_for_script, ck_prediction_chip
+from ._chartis_kit import (
+    ck_aggregate,
+    ck_empty_state,
+    ck_fmt_percent,
+    ck_json_for_script,
+    ck_prediction_chip,
+    ck_provenance_tooltip,
+    ck_signal_badge,
+)
 
 
 # ── Palette & CSS ────────────────────────────────────────────────────
@@ -53,6 +61,25 @@ from ._chartis_kit import ck_aggregate, ck_json_for_script, ck_prediction_chip
 # ``PALETTE['panel']`` / ``PALETTE['accent']`` / etc. reference in
 # the ~2k-line renderer below flips with the flag unchanged.
 from .brand import PALETTE  # noqa: F401  (used by _WORKBENCH_CSS below)
+
+
+def _rgba(hex_color: str, alpha: float) -> str:
+    """Low-alpha tint derived from a PALETTE hex.
+
+    Facelift rule: every soft badge/heatmap background must be a tint
+    of the SAME semantic hex its foreground uses (positive / warning /
+    negative / critical from ``brand.PALETTE``) — never a hardcoded
+    Tailwind-era RGB. Deriving the tint here keeps the whole family
+    flag-aware (legacy vs editorial palette) for free.
+    """
+    h = str(hex_color or "").lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    try:
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:  # malformed token — fall back to ink
+        r, g, b = 22, 38, 58
+    return f"rgba({r},{g},{b},{alpha:g})"
 
 
 _WORKBENCH_CSS = f"""
@@ -71,7 +98,9 @@ _WORKBENCH_CSS = f"""
   --wb-accent: {PALETTE['accent']};
 }}
 
-* {{ box-sizing: border-box; }}
+/* Scoped to the workbench — the old universal selector leaked
+   box-sizing into shell chrome outside this page's root div. */
+.analysis-workbench, .analysis-workbench * {{ box-sizing: border-box; }}
 body.analysis-workbench {{
   margin: 0; padding: 0;
   background: var(--wb-bg);
@@ -128,6 +157,62 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .wb-hero-eyebrow::before {{
   content: ""; width: 28px; height: 2px; background: var(--sc-teal, var(--sc-teal-deep, #155752)); display: inline-block;
+}}
+/* SET ACTIVE — a real feature, styled as a quiet chip instead of an
+   inline-styled micro-link jammed into the eyebrow. */
+.analysis-workbench .wb-set-active {{
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: .10em; font-weight: 600;
+  color: rgba(250, 247, 240, 0.75);
+  border: 1px solid rgba(250, 247, 240, 0.30);
+  border-radius: 2px; padding: 2px 7px; text-decoration: none;
+}}
+.analysis-workbench .wb-set-active:hover {{
+  color: var(--sc-on-navy, #f2ede3);
+  border-color: rgba(250, 247, 240, 0.65);
+}}
+
+/* Editorial deck — the v5 head cadence continues on parchment below
+   the navy deal strip: italic-first-phrase serif lede, mono source
+   note, 4-dot status legend (mirrors ck_editorial_head anatomy,
+   mapped onto the workbench --wb-* token layer). */
+.analysis-workbench .wb-deck {{
+  max-width: 1720px; margin: 0 auto;
+  padding: 1.1rem 2rem 1.15rem;
+}}
+.analysis-workbench .wb-lede {{
+  font-family: "Source Serif 4", Georgia, serif;
+  font-style: italic; font-size: 16px; line-height: 1.6;
+  color: var(--wb-text); max-width: 72ch; margin: 0 0 .7rem;
+}}
+.analysis-workbench .wb-lede em {{
+  color: var(--wb-accent); font-style: italic;
+}}
+.analysis-workbench .wb-source-note {{
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--wb-text-faint); margin: 0 0 .8rem;
+}}
+.analysis-workbench .wb-legend {{
+  display: flex; gap: 22px; flex-wrap: wrap; list-style: none;
+  margin: 0; padding: 0;
+  font-family: "Inter Tight", "Inter", sans-serif; font-size: 12px;
+  color: var(--wb-text-dim);
+}}
+.analysis-workbench .wb-legend li {{ display: flex; align-items: center; }}
+.analysis-workbench .wb-legend .wb-dot {{
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block; margin-right: 9px;
+}}
+.analysis-workbench .wb-legend .wb-dot.live {{ background: var(--wb-positive); }}
+.analysis-workbench .wb-legend .wb-dot.computed {{ background: var(--wb-text); }}
+.analysis-workbench .wb-legend .wb-dot.needs {{ background: var(--wb-negative); }}
+.analysis-workbench .wb-legend .wb-dot.illustrative {{ background: var(--wb-warning); }}
+
+/* Keyboard focus — one shared rule for the whole workbench (the page
+   previously suppressed outlines and defined zero :focus-visible). */
+.analysis-workbench :is(button, a, input, summary, select, textarea):focus-visible {{
+  outline: 2px solid var(--wb-accent); outline-offset: 2px;
 }}
 .analysis-workbench .wb-hero-row {{
   display: grid; grid-template-columns: 1fr auto;
@@ -219,20 +304,27 @@ body.analysis-workbench {{
   .wb-btn:not(.wb-btn-warn):not(.wb-btn-danger):hover {{
   background: var(--wb-accent);
   border-color: var(--wb-accent);
-  color: #FAF7F0;
+  color: var(--sc-on-navy, #f2ede3);
 }}
-.analysis-workbench .wb-btn-warn {{ color: #B7791F !important; border-color: #B7791F !important; }}
-.analysis-workbench .wb-btn-danger {{ color: #A53A2D !important; border-color: #A53A2D !important; }}
+/* Semantic warn/danger recolored to the house palette (was ad-hoc
+   #B7791F/#A53A2D with !important). Specificity beats the utility-row
+   teal rule via the :not() guards above, so no !important needed. */
+.analysis-workbench .wb-btn-warn {{ color: {PALETTE['warning']}; border-color: {PALETTE['warning']}; }}
+.analysis-workbench .wb-btn-danger {{ color: {PALETTE['negative']}; border-color: {PALETTE['negative']}; }}
+.analysis-workbench .wb-btn.wb-btn-warn:hover {{ background: {_rgba(PALETTE['warning'], 0.10)}; }}
+.analysis-workbench .wb-btn.wb-btn-danger:hover {{ background: {_rgba(PALETTE['negative'], 0.10)}; }}
 
-/* 6-card hero KPI strip — overview tab top */
+/* 6-card hero KPI strip — overview tab top. Tone colors come from the
+   semantic palette; borders from the --wb token layer (was hardcoded
+   #3F7D4D/#B7791F/#A53A2D + #BFB6A2/#D6CFC0). */
 .analysis-workbench .wb-hero-kpi {{
   display: grid; grid-template-columns: repeat(6, 1fr); gap: 0;
-  background: #FFFFFF; border: 1px solid #BFB6A2;
+  background: var(--wb-panel); border: 1px solid {PALETTE['border_light']};
   margin: 1.5rem 0 2rem 0;
 }}
 .analysis-workbench .wb-hero-card {{
   padding: 1.4rem 1.25rem 1.25rem;
-  border-right: 1px solid #D6CFC0;
+  border-right: 1px solid var(--wb-border);
 }}
 .analysis-workbench .wb-hero-card:last-child {{ border-right: none; }}
 .analysis-workbench .wb-hc-value {{
@@ -242,16 +334,16 @@ body.analysis-workbench {{
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }}
-.analysis-workbench .wb-hero-card.tone-green .wb-hc-value {{ color: #3F7D4D; }}
-.analysis-workbench .wb-hero-card.tone-amber .wb-hc-value {{ color: #B7791F; }}
-.analysis-workbench .wb-hero-card.tone-red .wb-hc-value {{ color: #A53A2D; }}
+.analysis-workbench .wb-hero-card.tone-green .wb-hc-value {{ color: {PALETTE['positive']}; }}
+.analysis-workbench .wb-hero-card.tone-amber .wb-hc-value {{ color: {PALETTE['warning']}; }}
+.analysis-workbench .wb-hero-card.tone-red .wb-hc-value {{ color: {PALETTE['negative']}; }}
 .analysis-workbench .wb-hc-label {{
   font-family: "Inter", sans-serif; font-size: .68rem; font-weight: 600;
-  letter-spacing: .14em; text-transform: uppercase; color: #5C6878;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--wb-text-dim);
   margin-top: .55rem;
 }}
 .analysis-workbench .wb-hc-sub {{
-  font-family: "Inter", sans-serif; font-size: .72rem; color: #8A92A0;
+  font-family: "Inter", sans-serif; font-size: .72rem; color: var(--wb-text-faint);
   margin-top: .35rem; font-style: italic;
 }}
 
@@ -297,33 +389,16 @@ body.analysis-workbench {{
   font-size: .82rem; color: var(--sc-on-navy, #f2ede3); font-weight: 600;
   font-variant-numeric: tabular-nums;
 }}
+/* Verdict keeps cream text (contrast on navy); an 8px semantic dot
+   carries the tone instead of a low-contrast alpha-tinted color. */
+.analysis-workbench .wb-pr-dot {{
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 7px; vertical-align: baseline;
+}}
+.analysis-workbench .wb-pr-dot.tone-green {{ background: {PALETTE['positive']}; }}
+.analysis-workbench .wb-pr-dot.tone-amber {{ background: {PALETTE['warning']}; }}
+.analysis-workbench .wb-pr-dot.tone-red {{ background: {PALETTE['negative']}; }}
 
-/* Legacy header rules kept for any pages still using .wb-header */
-.analysis-workbench .wb-header {{
-  position: sticky; top: 0; z-index: 20;
-  background: var(--wb-panel);
-  border-bottom: 1px solid var(--wb-border);
-  padding: 10px 16px;
-}}
-.analysis-workbench .wb-header-row {{
-  display: flex; align-items: center; gap: 16px;
-}}
-.analysis-workbench .wb-deal-name {{
-  font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
-  color: var(--wb-text);
-}}
-.analysis-workbench .wb-breadcrumb {{
-  font-size: 11px; color: var(--wb-text-dim);
-  text-transform: uppercase; letter-spacing: 0.06em;
-  margin-bottom: 4px;
-}}
-.analysis-workbench .wb-breadcrumb a {{
-  color: var(--wb-text-dim); text-decoration: none;
-}}
-.analysis-workbench .wb-breadcrumb a:hover {{ color: var(--wb-text); }}
-.analysis-workbench .wb-action-bar {{
-  margin-left: auto; display: flex; gap: 6px;
-}}
 .analysis-workbench .wb-btn {{
   background: var(--wb-panel-alt);
   border: 1px solid var(--wb-border);
@@ -343,34 +418,44 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .wb-btn-primary {{
   background: var(--wb-accent); border-color: var(--wb-accent);
-  color: #FAF7F0;
+  color: var(--sc-on-navy, #f2ede3);
 }}
 .analysis-workbench .wb-btn-primary:hover {{
-  background: #1F7A75; border-color: #1F7A75;
+  /* #1F7A75 is the canonical editorial chart teal (README palette) —
+     one step brighter than the deep-teal accent for hover states. */
+  background: var(--sc-teal-bright, #1F7A75);
+  border-color: var(--sc-teal-bright, #1F7A75);
 }}
 
-/* Tab nav */
+/* Tab nav — the six-tab masthead of the flagship page. Sticky offset
+   58px matches the shell topbar height (.ck-subnav uses the same). */
 .analysis-workbench .wb-tabs {{
   position: sticky; top: 58px; z-index: 15;
   background: var(--wb-bg);
   border-bottom: 1px solid var(--wb-border);
-  display: flex; gap: 2px; padding: 0 16px;
+  display: flex; gap: 4px; padding: 0 2rem;
 }}
 .analysis-workbench .wb-tab {{
   background: transparent; border: none; color: var(--wb-text-dim);
-  padding: 10px 14px;
-  font-family: "Inter Tight", "Inter", sans-serif;
-  font-size: 11px; font-weight: 600; cursor: pointer;
-  border-bottom: 2px solid transparent;
-  text-transform: uppercase; letter-spacing: 0.14em;
+  padding: 13px 15px 11px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px; font-weight: 600; cursor: pointer;
+  border-bottom: 3px solid transparent;
+  text-transform: uppercase; letter-spacing: 0.12em;
   transition: color .15s ease, border-bottom-color .15s ease;
 }}
 .analysis-workbench .wb-tab:hover {{ color: var(--wb-accent); }}
 .analysis-workbench .wb-tab.active {{
-  color: var(--wb-text); border-bottom-color: var(--wb-accent);
+  color: var(--wb-accent); border-bottom-color: var(--wb-accent);
   font-weight: 700;
 }}
-.analysis-workbench .wb-tab-panel {{ display: none; padding: 14px 16px; }}
+.analysis-workbench .wb-tab:focus-visible {{
+  outline: 2px solid var(--wb-accent); outline-offset: -2px;
+}}
+.analysis-workbench .wb-tab-panel {{
+  display: none; padding: 20px 2rem 14px;
+  max-width: 1720px; margin: 0 auto;
+}}
 .analysis-workbench .wb-tab-panel.active {{ display: block; }}
 
 /* Cards / panels */
@@ -383,7 +468,7 @@ body.analysis-workbench {{
   transition: border-color .18s ease, box-shadow .18s ease;
 }}
 .analysis-workbench .wb-card:hover {{
-  border-color: #BFB6A2;
+  border-color: {PALETTE['border_light']};
   box-shadow: 0 2px 6px -3px rgba(15,28,46,.08);
 }}
 .analysis-workbench .wb-card-title {{
@@ -408,29 +493,42 @@ body.analysis-workbench {{
   letter-spacing: 0.06em; text-transform: uppercase;
 }}
 .analysis-workbench .wb-badge-critical {{
-  background: rgba(220,38,38,0.18); color: {PALETTE['critical']};
+  background: {_rgba(PALETTE['critical'], 0.10)}; color: {PALETTE['critical']};
 }}
 .analysis-workbench .wb-badge-high {{
-  background: rgba(245,158,11,0.18); color: {PALETTE['high']};
+  background: {_rgba(PALETTE['high'], 0.10)}; color: {PALETTE['high']};
 }}
 .analysis-workbench .wb-badge-medium {{
-  background: rgba(234,179,8,0.14); color: {PALETTE['medium']};
+  background: {_rgba(PALETTE['medium'], 0.10)}; color: {PALETTE['medium']};
 }}
 .analysis-workbench .wb-badge-low {{
-  background: rgba(100,116,139,0.14); color: {PALETTE['low']};
+  background: {_rgba(PALETTE['low'], 0.12)}; color: {PALETTE['low']};
 }}
 .analysis-workbench .wb-badge-grade-A {{
-  background: rgba(16,185,129,0.18); color: {PALETTE['positive']};
+  background: {_rgba(PALETTE['positive'], 0.12)}; color: {PALETTE['positive']};
 }}
 .analysis-workbench .wb-badge-grade-B {{
-  background: rgba(59,130,246,0.18); color: {PALETTE['accent']};
+  background: {_rgba(PALETTE['accent'], 0.12)}; color: {PALETTE['accent']};
 }}
 .analysis-workbench .wb-badge-grade-C {{
-  background: rgba(245,158,11,0.18); color: {PALETTE['high']};
+  background: {_rgba(PALETTE['high'], 0.10)}; color: {PALETTE['high']};
 }}
 .analysis-workbench .wb-badge-grade-D {{
-  background: rgba(220,38,38,0.18); color: {PALETTE['critical']};
+  background: {_rgba(PALETTE['critical'], 0.10)}; color: {PALETTE['critical']};
 }}
+
+/* Source chips — typographic replacement for the emoji source column
+   (OBS / PRED / BMK letter tags), same idiom as ck_basis_badge. */
+.analysis-workbench .wb-src-chip {{
+  display: inline-block; padding: 1px 5px; border-radius: 2px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 8.5px; font-weight: 600; letter-spacing: 0.08em;
+  border: 1px solid currentColor; cursor: help;
+}}
+.analysis-workbench .wb-src-chip.src-observed {{ color: var(--wb-accent); }}
+.analysis-workbench .wb-src-chip.src-predicted {{ color: var(--wb-warning); }}
+.analysis-workbench .wb-src-chip.src-benchmark {{ color: var(--wb-text-dim); }}
+.analysis-workbench .wb-src-chip.src-unknown {{ color: var(--wb-text-faint); }}
 
 /* Tables */
 .analysis-workbench table.wb-table {{
@@ -446,6 +544,13 @@ body.analysis-workbench {{
   font-size: 10px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.10em;
 }}
+/* Numeric headers align with their right-aligned data columns; the
+   30+-row profile table gets a sticky head under the tab bar
+   (58px shell chrome + ~42px tab bar). */
+.analysis-workbench .wb-table th.num {{ text-align: right; }}
+.analysis-workbench .wb-table thead th {{
+  position: sticky; top: 100px; z-index: 5;
+}}
 .analysis-workbench .wb-table td {{
   padding: 6px 10px;
   border-bottom: 1px solid var(--wb-border);
@@ -453,9 +558,10 @@ body.analysis-workbench {{
 .analysis-workbench .wb-table tbody tr:nth-child(even) {{
   background: var(--wb-panel-alt);
 }}
-.analysis-workbench .wb-table tbody tr:hover {{ background: var(--wb-border); }}
+.analysis-workbench .wb-table tbody tr:hover {{ background: {_rgba(PALETTE['accent'], 0.06)}; }}
 .analysis-workbench .wb-table td.num {{ text-align: right; }}
 .analysis-workbench .wb-table td.center {{ text-align: center; }}
+.analysis-workbench .wb-table-narrow {{ max-width: 420px; }}
 .analysis-workbench .wb-group-header td {{
   background: var(--wb-bg);
   color: var(--wb-text-dim);
@@ -469,12 +575,72 @@ body.analysis-workbench {{
 .analysis-workbench .neg {{ color: var(--wb-negative); }}
 .analysis-workbench .warn {{ color: var(--wb-warning); }}
 .analysis-workbench .dim {{ color: var(--wb-text-dim); }}
-.analysis-workbench .hero-number {{ font-size: 28px; font-weight: 700; }}
+.analysis-workbench .hero-number {{ font-size: 32px; font-weight: 700; }}
 .analysis-workbench .kpi-value {{ font-size: 20px; font-weight: 600; }}
 .analysis-workbench .kpi-label {{
   font-size: 10px; color: var(--wb-text-dim);
   text-transform: uppercase; letter-spacing: 0.06em;
 }}
+.analysis-workbench .hero-caption {{ font-size: 11px; margin-top: 4px; }}
+.analysis-workbench .hero-why {{ font-size: 10.5px; }}
+.analysis-workbench .wb-ev-line {{ margin-top: 10px; font-size: 12px; }}
+
+/* Small copy utilities — replace the page's ad-hoc style= attributes */
+.analysis-workbench .wb-note {{ font-size: 11px; }}
+.analysis-workbench .wb-note-sm {{ font-size: 10.5px; }}
+.analysis-workbench .wb-center-note {{
+  text-align: center; font-size: 11px; max-width: 640px;
+  margin: 10px auto 0;
+}}
+.analysis-workbench .wb-mt {{ margin-top: 10px; }}
+.analysis-workbench .wb-flex-row {{ display: flex; gap: 14px; align-items: center; }}
+.analysis-workbench .wb-chip-row {{ display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }}
+.analysis-workbench .wb-list {{ padding-left: 20px; margin: 4px 0; }}
+.analysis-workbench .wb-card-subtitle {{ margin-top: 12px; }}
+.analysis-workbench .wb-spacer {{ flex: 1; }}
+.analysis-workbench .wb-inline-form {{ display: inline; }}
+.analysis-workbench code.mono {{ font-family: "JetBrains Mono", monospace; }}
+
+/* Confidence bar — width + text label + title/aria (was width-only) */
+.analysis-workbench .wb-qbar {{
+  display: inline-block; width: 64px; height: 6px;
+  background: var(--wb-border); vertical-align: middle;
+}}
+.analysis-workbench .wb-qbar > span {{ display: block; height: 6px; }}
+.analysis-workbench .wb-qbar.q-high > span {{ width: 60px; background: var(--wb-positive); }}
+.analysis-workbench .wb-qbar.q-medium > span {{ width: 40px; background: var(--wb-warning); }}
+.analysis-workbench .wb-qbar.q-low > span {{ width: 20px; background: var(--wb-negative); }}
+.analysis-workbench .wb-qbar.q-none > span {{ width: 10px; background: var(--wb-text-faint); }}
+.analysis-workbench .wb-qbar-label {{
+  font-family: "JetBrains Mono", monospace; font-size: 9.5px;
+  color: var(--wb-text-faint); margin-left: 6px; vertical-align: middle;
+}}
+
+/* Trend arrows (profile table) */
+.analysis-workbench .wb-trend {{ margin-left: 6px; }}
+.analysis-workbench .wb-trend.trend-up {{ color: var(--wb-positive); }}
+.analysis-workbench .wb-trend.trend-down {{ color: var(--wb-negative); }}
+.analysis-workbench .wb-trend.trend-flat {{ color: var(--wb-text-faint); }}
+.analysis-workbench .wb-anomaly {{ margin-left: 4px; cursor: help; }}
+.analysis-workbench .wb-anomaly.sev-critical {{ color: {PALETTE['critical']}; }}
+.analysis-workbench .wb-anomaly.sev-high {{ color: {PALETTE['high']}; }}
+.analysis-workbench .wb-anomaly.sev-medium {{ color: {PALETTE['medium']}; }}
+.analysis-workbench .wb-anomaly.sev-low {{ color: {PALETTE['low']}; }}
+.analysis-workbench .wb-metric-link {{ text-decoration: none; }}
+.analysis-workbench .wb-spark {{ vertical-align: middle; margin-left: 4px; }}
+
+/* Next-actions — numbered editorial list (emoji bullets removed) */
+.analysis-workbench .wb-actions {{ display: flex; flex-direction: column; gap: 10px; font-size: 12px; }}
+.analysis-workbench .wb-action {{ display: flex; gap: 10px; align-items: baseline; }}
+.analysis-workbench .wb-action-n {{
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  font-weight: 700; color: var(--wb-accent);
+  border: 1px solid var(--wb-accent); border-radius: 50%;
+  width: 18px; height: 18px; line-height: 16px; text-align: center;
+  flex-shrink: 0;
+}}
+.analysis-workbench .wb-action a {{ color: var(--wb-accent); font-weight: 600; }}
+.analysis-workbench .wb-action-ok {{ color: var(--wb-positive); font-size: 12px; }}
 
 /* Radial progress (completeness) */
 .analysis-workbench .radial {{
@@ -489,13 +655,18 @@ body.analysis-workbench {{
   font-size: 18px; font-weight: 700;
 }}
 
-/* Waterfall */
+/* Waterfall — right-aligned labels against the bars, a zero-axis rule
+   on the left edge of every track, mono right-aligned values. */
 .analysis-workbench .waterfall {{ display: flex; flex-direction: column; gap: 2px; }}
 .analysis-workbench .wf-row {{
   display: grid; grid-template-columns: 160px 1fr 110px;
   gap: 8px; align-items: center;
   padding: 4px 0; font-size: 12px;
 }}
+.analysis-workbench .wf-row > div:first-child {{
+  text-align: right; color: var(--wb-text-dim);
+}}
+.analysis-workbench .wf-row > div:last-child {{ text-align: right; }}
 .analysis-workbench .wf-bar {{
   height: 16px; border-radius: 2px;
   background: var(--wb-accent);
@@ -503,10 +674,19 @@ body.analysis-workbench {{
 .analysis-workbench .wf-bar.pos {{ background: var(--wb-positive); }}
 .analysis-workbench .wf-bar.neg {{ background: var(--wb-negative); }}
 .analysis-workbench .wf-bar.anchor {{ background: var(--wb-text-dim); }}
-.analysis-workbench .wf-track {{ position: relative; height: 16px; background: var(--wb-panel-alt); }}
+.analysis-workbench .wf-track {{
+  position: relative; height: 16px; background: var(--wb-panel-alt);
+  border-left: 2px solid var(--wb-text-faint);
+}}
 .analysis-workbench .wf-track .wf-bar {{
   position: absolute; top: 0;
 }}
+.analysis-workbench .wb-bridge-status {{
+  min-height: 16px; font-size: 11px; margin-top: 6px;
+  font-family: "JetBrains Mono", monospace; color: var(--wb-text-faint);
+}}
+.analysis-workbench #wb-waterfall {{ transition: opacity .15s ease; }}
+.analysis-workbench .wb-preset-row {{ margin-bottom: 8px; }}
 
 /* Sliders */
 .analysis-workbench .slider-row {{
@@ -527,6 +707,7 @@ body.analysis-workbench {{
 
 /* Histogram (inline SVG wrapper) */
 .analysis-workbench .histo svg {{ display: block; width: 100%; height: auto; }}
+.analysis-workbench .histo svg.wb-histo-svg {{ height: 160px; }}
 
 /* Tornado */
 .analysis-workbench .tornado-row {{
@@ -534,26 +715,57 @@ body.analysis-workbench {{
   gap: 8px; padding: 3px 0; font-size: 12px;
   align-items: center;
 }}
+.analysis-workbench .tornado-row > div:first-child {{
+  text-align: right; color: var(--wb-text-dim);
+}}
+.analysis-workbench .tornado-row > .num {{ text-align: right; }}
 .analysis-workbench .tornado-bar {{
   height: 14px; background: var(--wb-accent); border-radius: 2px;
 }}
+.analysis-workbench .tornado-bar.pos {{ background: var(--wb-positive); }}
+.analysis-workbench .tornado-bar.neg {{ background: var(--wb-negative); }}
+.analysis-workbench .tornado-bar.share {{ background: var(--wb-neutral); }}
 
-/* Risk cards */
+/* Chart honesty caption — mono uppercase, muted (kit chart idiom) */
+.analysis-workbench .wb-chart-caption {{
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: .10em; text-transform: uppercase;
+  color: var(--wb-text-faint); margin-top: 6px;
+}}
+
+/* Risk cards — severity chip + serif-weight title on the top row with
+   the EBITDA-at-risk figure right-aligned in mono (the number a
+   partner scans for, promoted from an 11px footnote). */
 .analysis-workbench .risk-card {{
   border-left: 3px solid var(--wb-accent);
-  padding: 8px 12px; margin-bottom: 6px;
+  padding: 10px 12px; margin-bottom: 8px;
   background: var(--wb-panel);
+  border-top: 1px solid var(--wb-border);
+  border-right: 1px solid var(--wb-border);
+  border-bottom: 1px solid var(--wb-border);
 }}
 .analysis-workbench .risk-card.severity-CRITICAL {{ border-left-color: {PALETTE['critical']}; }}
 .analysis-workbench .risk-card.severity-HIGH {{ border-left-color: {PALETTE['high']}; }}
 .analysis-workbench .risk-card.severity-MEDIUM {{ border-left-color: {PALETTE['medium']}; }}
 .analysis-workbench .risk-card.severity-LOW {{ border-left-color: {PALETTE['low']}; }}
-.analysis-workbench .risk-title {{ font-weight: 600; font-size: 13px; }}
+.analysis-workbench .risk-head {{
+  display: flex; align-items: baseline; gap: 8px;
+}}
+.analysis-workbench .risk-title {{ font-weight: 600; font-size: 13.5px; flex: 1; }}
+.analysis-workbench .risk-ear {{
+  font-family: "JetBrains Mono", monospace; font-size: 12px;
+  font-weight: 600; white-space: nowrap; text-align: right;
+}}
+.analysis-workbench .risk-ear .k {{
+  font-size: 9px; color: var(--wb-text-faint); font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase; margin-right: 5px;
+}}
 .analysis-workbench .risk-detail {{ font-size: 12px; color: var(--wb-text-dim); margin-top: 3px; }}
+.analysis-workbench .risk-trigger {{ font-size: 11px; margin-top: 3px; }}
 
 /* Diligence question */
 .analysis-workbench .dq-card {{
-  padding: 8px 12px; margin-bottom: 6px;
+  padding: 9px 12px; margin-bottom: 6px;
   background: var(--wb-panel-alt);
   border: 1px solid var(--wb-border);
   border-radius: 2px;
@@ -564,30 +776,48 @@ body.analysis-workbench {{
   font-family: "JetBrains Mono", monospace;
   font-size: 10px; font-weight: 700;
 }}
-.analysis-workbench .dq-P0 {{ background: rgba(220,38,38,0.18); color: {PALETTE['critical']}; }}
-.analysis-workbench .dq-P1 {{ background: rgba(245,158,11,0.18); color: {PALETTE['high']}; }}
-.analysis-workbench .dq-P2 {{ background: rgba(100,116,139,0.14); color: {PALETTE['low']}; }}
+.analysis-workbench .dq-P0 {{ background: {_rgba(PALETTE['critical'], 0.10)}; color: {PALETTE['critical']}; }}
+.analysis-workbench .dq-P1 {{ background: {_rgba(PALETTE['high'], 0.10)}; color: {PALETTE['high']}; }}
+.analysis-workbench .dq-P2 {{ background: {_rgba(PALETTE['low'], 0.12)}; color: {PALETTE['low']}; }}
+.analysis-workbench .dq-cat {{
+  display: inline-block; padding: 1px 6px; border-radius: 2px;
+  font-family: "JetBrains Mono", monospace; font-size: 9.5px;
+  font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--wb-text-faint); border: 1px solid var(--wb-border);
+}}
+.analysis-workbench .dq-question {{ margin-top: 5px; }}
+.analysis-workbench .dq-trigger {{ font-size: 11px; margin-top: 3px; }}
+.analysis-workbench .dq-group-head {{
+  font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--wb-text-dim); margin: 16px 0 6px;
+  padding-bottom: 4px; border-bottom: 1px solid var(--wb-border);
+}}
+.analysis-workbench .dq-group-head:first-child {{ margin-top: 4px; }}
 
 /* Provenance list */
 .analysis-workbench .prov-row {{
-  display: grid; grid-template-columns: 220px 120px 1fr;
+  display: grid; grid-template-columns: 240px 110px 1fr;
   gap: 8px; padding: 6px 0;
   border-bottom: 1px solid var(--wb-border); font-size: 12px;
 }}
-.analysis-workbench .prov-source-icon {{
-  display: inline-block; width: 18px; text-align: center;
-  margin-right: 4px;
-}}
+.analysis-workbench .prov-row > .num {{ text-align: right; }}
+.analysis-workbench .wb-prov-group {{ margin-top: 6px; }}
 
 /* Heatmap */
 .analysis-workbench .heatmap {{
   display: grid; gap: 2px;
   font-family: "JetBrains Mono", monospace; font-size: 11px;
 }}
+.analysis-workbench .heatmap-payer {{ grid-template-columns: repeat(4, 1fr); }}
 .analysis-workbench .heatmap-cell {{
   padding: 6px 10px; text-align: center;
   background: var(--wb-panel-alt);
 }}
+.analysis-workbench .heatmap-cell .hm-label {{ font-size: 10px; color: var(--wb-text-dim); }}
+.analysis-workbench .heatmap-cell.hm-good {{ background: {_rgba(PALETTE['positive'], 0.12)}; color: {PALETTE['positive']}; }}
+.analysis-workbench .heatmap-cell.hm-warn {{ background: {_rgba(PALETTE['warning'], 0.10)}; color: {PALETTE['warning']}; }}
+.analysis-workbench .heatmap-cell.hm-bad {{ background: {_rgba(PALETTE['negative'], 0.10)}; color: {PALETTE['negative']}; }}
 .analysis-workbench details summary {{ cursor: pointer; padding: 4px 0; }}
 
 /* Scenarios tab — side-by-side cards + pairwise matrix + overlay */
@@ -658,10 +888,10 @@ body.analysis-workbench {{
   color: var(--wb-text-faint);
 }}
 .analysis-workbench .pairwise-matrix td.pw-high {{
-  background: rgba(16,185,129,0.18); color: var(--wb-positive);
+  background: {_rgba(PALETTE['positive'], 0.12)}; color: var(--wb-positive);
 }}
 .analysis-workbench .pairwise-matrix td.pw-low {{
-  background: rgba(239,68,68,0.18); color: var(--wb-negative);
+  background: {_rgba(PALETTE['negative'], 0.10)}; color: var(--wb-negative);
 }}
 .analysis-workbench .scenario-overlay-svg {{
   width: 100%; height: 200px; display: block;
@@ -669,9 +899,23 @@ body.analysis-workbench {{
   border: 1px solid var(--wb-border);
 }}
 .analysis-workbench .scenario-empty {{
-  padding: 24px; text-align: center;
-  color: var(--wb-text-dim); font-size: 13px;
+  padding: 28px 24px; text-align: center;
+  color: var(--wb-text-dim); font-size: 14px;
+  font-family: "Source Serif 4", Georgia, serif;
+  border: 1px dashed var(--wb-border); border-radius: 2px;
+  background: var(--wb-panel);
 }}
+/* Overlay legend — classes replace the inline-styled span chain */
+.analysis-workbench .wb-overlay-legend {{ margin-top: 6px; font-size: 11px; }}
+.analysis-workbench .wb-rationale {{ margin-top: 8px; font-size: 12px; }}
+.analysis-workbench .wb-btn-right {{ float: right; }}
+.analysis-workbench .wb-reg-card {{ margin-bottom: 14px; }}
+.analysis-workbench .wb-reg-narrative {{ font-size: 12px; line-height: 1.5; }}
+.analysis-workbench .wb-overlay-legend .scenario-legend-item {{
+  display: inline-flex; align-items: center; gap: 4px; margin-right: 12px;
+}}
+.analysis-workbench .wb-overlay-legend .scenario-swatch {{ opacity: 0.7; }}
+.analysis-workbench .histo svg {{ border: 1px solid var(--wb-border); }}
 .analysis-workbench .scenario-add-form {{
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   padding: 12px; background: var(--wb-panel-alt);
@@ -704,7 +948,7 @@ body.analysis-workbench {{
   background: var(--wb-panel); border-left: 1px solid var(--wb-border);
   z-index: 50; padding: 20px; overflow-y: auto;
   transition: right 0.25s ease-in-out;
-  box-shadow: -4px 0 16px rgba(0,0,0,0.3);
+  box-shadow: -4px 0 16px rgba(15,28,46,0.18);
 }}
 .analysis-workbench .wb-explain-panel.open {{ right: 0; }}
 .analysis-workbench .wb-explain-panel .ep-close {{
@@ -731,19 +975,29 @@ body.analysis-workbench {{
 }}
 .analysis-workbench [data-explain] {{ cursor: pointer; }}
 .analysis-workbench [data-explain]:hover {{ text-decoration: underline; }}
+.analysis-workbench .wb-explain-panel .ep-source-chip {{
+  background: var(--sc-navy, #0b2341); color: var(--sc-on-navy, #f2ede3);
+  padding: 2px 8px; border-radius: 3px; font-size: 11px;
+}}
+.analysis-workbench .wb-explain-panel .ep-value {{ font-size: 18px; }}
+.analysis-workbench .wb-explain-panel .ep-quote {{ font-style: italic; }}
+.analysis-workbench .wb-explain-panel .ep-label.wb-mt6 {{ margin-top: 6px; }}
 
 /* ── Prompt 56: Mobile-responsive breakpoints ────────────────── */
 @media (max-width: 768px) {{
-  .analysis-workbench .wb-tabs {{ flex-wrap: wrap; gap: 2px; }}
+  .analysis-workbench .wb-tabs {{ flex-wrap: wrap; gap: 2px; padding: 0 12px; }}
   .analysis-workbench .wb-tab {{ font-size: 10px; padding: 6px 8px; }}
-  .analysis-workbench .wb-header-row {{ flex-wrap: wrap; gap: 8px; }}
-  .analysis-workbench .wb-deal-name {{ font-size: 16px; }}
+  .analysis-workbench .wb-tab-panel {{ padding: 14px 12px; }}
+  .analysis-workbench .wb-hero-inner,
+  .analysis-workbench .wb-utility-inner,
+  .analysis-workbench .wb-deck {{ padding: 0 12px; }}
+  .analysis-workbench .wb-hero-kpi {{ grid-template-columns: repeat(2, 1fr); }}
+  .analysis-workbench .wb-hero-card {{ border-bottom: 1px solid var(--wb-border); }}
   .analysis-workbench .wb-grid {{ grid-template-columns: 1fr; }}
   .analysis-workbench .wb-grid-5050 {{ grid-template-columns: 1fr; }}
   .analysis-workbench .wb-table {{ font-size: 11px; display: block; overflow-x: auto; }}
   .analysis-workbench .scenario-grid {{ grid-template-columns: 1fr; }}
   .analysis-workbench .hero-number {{ font-size: 28px; }}
-  .analysis-workbench .wb-action-bar {{ flex-wrap: wrap; }}
   .analysis-workbench input.wb-slider {{ min-height: 48px; }}
 }}
 @media (min-width: 769px) and (max-width: 1024px) {{
@@ -754,25 +1008,25 @@ body.analysis-workbench {{
 /* ── Print-friendly stylesheet ────────────────────────────────── */
 @media print {{
   body {{ background: white !important; color: black !important; padding: 0 !important; }}
-  nav, .wb-action-bar, .wb-tabs, .skip-link, footer,
+  nav, .wb-tabs, .skip-link, footer,
   .breadcrumb, button, .wb-explain-panel {{ display: none !important; }}
   .analysis-workbench {{
     background: white !important; color: black !important;
     border: none !important; box-shadow: none !important;
   }}
-  .analysis-workbench .wb-section {{ display: block !important; page-break-inside: avoid; }}
   .analysis-workbench .wb-card {{
     background: white !important; border: 1px solid #ccc !important;
     box-shadow: none !important; break-inside: avoid;
   }}
-  .analysis-workbench .wb-deal-name {{ color: black !important; }}
   .analysis-workbench .wb-grid {{ grid-template-columns: 1fr 1fr; }}
   .analysis-workbench .hero-number {{ color: black !important; }}
   table {{ border-collapse: collapse; }}
   th {{ background: #f0f0f0 !important; color: black !important; }}
   td, th {{ border: 1px solid #ccc !important; }}
   a {{ color: black !important; text-decoration: underline; }}
-  a[href]:after {{ content: " (" attr(href) ")"; font-size: 0.8em; color: #666; }}
+  /* Print URLs only for real external/route links — a printed
+     "(#prov-denial_rate)" after every internal anchor is noise. */
+  a[href]:not([href^="#"]):after {{ content: " (" attr(href) ")"; font-size: 0.8em; color: #666; }}
 }}
 
 /* ── Analyst Override / Assumptions tab ── */
@@ -796,19 +1050,29 @@ body.analysis-workbench {{
   padding-bottom: 4px; border-bottom: 1px solid var(--wb-border);
 }}
 .analysis-workbench .ov-row {{
-  display: grid; grid-template-columns: 260px 1fr 90px 90px 1fr;
+  display: grid; grid-template-columns: minmax(200px, 260px) 1fr 90px 90px 1fr;
   gap: 6px; align-items: center;
   padding: 5px 0; border-bottom: 1px solid var(--wb-panel-alt);
   font-size: 12px;
 }}
+.analysis-workbench .ov-family {{
+  font-family: "JetBrains Mono", monospace; font-size: 9.5px;
+  font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--wb-text-faint); margin: 10px 0 2px;
+}}
+.analysis-workbench .ov-hint {{
+  margin-top: 6px; font-size: 11px; color: var(--wb-text-faint);
+}}
+.analysis-workbench .ov-rebuild-btn {{ padding: 2px 8px; }}
+.analysis-workbench .ov-label {{ font-size: 12px; color: var(--wb-text); }}
 .analysis-workbench .ov-row-head {{
   font-size: 10px; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.05em; color: var(--wb-text-faint);
   border-bottom: 1px solid var(--wb-border) !important;
 }}
 .analysis-workbench .ov-key {{
-  font-family: "JetBrains Mono", monospace; font-size: 11px;
-  color: var(--wb-text); min-width: 0; overflow-wrap: anywhere;
+  font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+  color: var(--wb-text-dim); min-width: 0; overflow-wrap: anywhere;
 }}
 .analysis-workbench .ov-model-val {{
   color: var(--wb-text-dim); font-family: "JetBrains Mono", monospace;
@@ -819,7 +1083,7 @@ body.analysis-workbench {{
   font-size: 11px; font-weight: 600;
 }}
 .analysis-workbench .ov-badge-a {{
-  display: inline-block; background: rgba(47,179,173,0.15);
+  display: inline-block; background: {_rgba(PALETTE['accent'], 0.12)};
   color: var(--wb-accent); border-radius: 3px;
   padding: 1px 6px; font-size: 10px; font-weight: 700;
   letter-spacing: 0.05em;
@@ -830,7 +1094,8 @@ body.analysis-workbench {{
   color: var(--wb-text); font-family: "JetBrains Mono", monospace;
 }}
 .analysis-workbench .ov-input:focus {{
-  border-color: var(--wb-accent); outline: none;
+  border-color: var(--wb-accent);
+  outline: 1px solid var(--wb-accent); outline-offset: 0;
 }}
 .analysis-workbench .ov-reason {{
   width: 100%; padding: 4px 6px; border: 1px solid var(--wb-border);
@@ -859,7 +1124,7 @@ body.analysis-workbench {{
   color: var(--wb-text); font-family: "JetBrains Mono", monospace;
 }}
 .analysis-workbench .ov-bridge-banner {{
-  background: rgba(47,179,173,0.07);
+  background: {_rgba(PALETTE['accent'], 0.07)};
   border-left: 3px solid var(--wb-accent);
   padding: 6px 10px; margin-bottom: 10px;
   font-size: 11px; color: var(--wb-text-dim);
@@ -953,6 +1218,32 @@ def _fmt_metric_value(v: Optional[float], unit: str) -> str:
     if unit == "dollars":
         return _fmt_money(v)
     return _fmt_num(v, dp=2)
+
+
+def _fmt_signed_delta(delta: Optional[float], unit: str) -> str:
+    """Unit-aware signed delta for the profile table's ``Δ vs P50``.
+
+    The previous renderer piped every raw unit delta through
+    ``_fmt_signed_pct``, so a 10-day A/R gap printed as ``+10.0%`` —
+    actively misleading on the partner's core table. Percentage-point
+    metrics render ``+4.1 pp``, day metrics ``+10.0d``, dollar metrics
+    a signed money string, anything else a signed 2dp number.
+    """
+    if delta is None:
+        return "—"
+    try:
+        d = float(delta)
+    except (TypeError, ValueError):
+        return "—"
+    sign = "+" if d > 0 else ""
+    if unit == "pct":
+        return f"{sign}{d:.1f} pp"
+    if unit == "days":
+        return f"{sign}{d:.1f}d"
+    if unit == "dollars":
+        money = _fmt_money(abs(d))
+        return f"-{money}" if d < 0 else f"+{money}"
+    return f"{d:+.2f}"
 
 
 def _looks_internal_reason(reason: str) -> bool:
@@ -1051,14 +1342,17 @@ def _render_header(packet: DealAnalysisPacket) -> str:
         as_of = packet.generated_at.date().isoformat()
     else:
         as_of = "latest"
-    cov = _fmt_pct(packet.completeness.coverage_pct * 100)
+    cov = ck_fmt_percent(packet.completeness.coverage_pct)
     freshness = "fresh" if not packet.completeness.stale_fields else \
                 f"{len(packet.completeness.stale_fields)} stale"
     deal_id_upper = (packet.deal_id or "").upper()
+    n_prov = len((packet.provenance.nodes or {})
+                 if getattr(packet, "provenance", None) else {})
+    prov_bit = f" · {n_prov} provenance nodes" if n_prov else ""
     return f"""
     <div class="wb-hero">
       <div class="wb-hero-inner">
-        <div class="wb-hero-eyebrow">DEAL WORKBENCH &nbsp;·&nbsp; {_esc(deal_id_upper)} &nbsp;·&nbsp; <a class="ck-link" style="font-size:10px;letter-spacing:0.04em;" href="/deal-context?set={_esc(packet.deal_id)}&return=/deal/{_esc(packet.deal_id)}" title="Carry this deal as ambient context — module links in the bar open pre-scoped to it.">SET ACTIVE</a></div>
+        <div class="wb-hero-eyebrow">DEAL WORKBENCH &nbsp;·&nbsp; {_esc(deal_id_upper)} &nbsp;·&nbsp; <a class="wb-set-active" href="/deal-context?set={_esc(packet.deal_id)}&return=/deal/{_esc(packet.deal_id)}" title="Carry this deal as ambient context — module links in the bar open pre-scoped to it.">SET ACTIVE</a></div>
         <div class="wb-hero-row">
           <div class="wb-hero-name-block">
             <h1 class="wb-hero-name">{_esc(packet.deal_name or packet.deal_id)}</h1>
@@ -1073,7 +1367,7 @@ def _render_header(packet: DealAnalysisPacket) -> str:
             </div>
           </div>
           <div class="wb-hero-cta">
-            <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" style="display:inline;">
+            <form method="POST" action="/api/analysis/{_esc(packet.deal_id)}/rebuild" class="wb-inline-form">
               <button class="wb-cta-primary" type="submit">REBUILD &nbsp;→</button>
             </form>
             <a class="wb-cta-ghost" href="/api/deals/{_esc(packet.deal_id)}/package">EXPORT ZIP</a>
@@ -1087,7 +1381,7 @@ def _render_header(packet: DealAnalysisPacket) -> str:
           <a href="/home">home</a> &nbsp;›&nbsp;
           <a href="/analysis">analysis</a> &nbsp;›&nbsp;
           <a href="/deal/{_esc(packet.deal_id)}">{_esc(packet.deal_name or packet.deal_id)}</a>
-          &nbsp;›&nbsp; <span class="here">analysis</span>
+          &nbsp;›&nbsp; <span class="here">workbench</span>
         </div>
         <div class="wb-utility-actions">
           <a class="wb-btn" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
@@ -1095,8 +1389,8 @@ def _render_header(packet: DealAnalysisPacket) -> str:
           <a class="wb-btn" href="/models/financials/{_esc(packet.deal_id)}">Financials</a>
           <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}">JSON</a>
           <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Diligence CSV</a>
-          <span style="flex:1;"></span>
-          <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" style="display:inline;">
+          <span class="wb-spacer"></span>
+          <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" class="wb-inline-form">
             <button class="wb-btn wb-btn-warn" type="submit"
                     onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
                     aria-label="Archive this deal">Archive</button>
@@ -1106,6 +1400,19 @@ def _render_header(packet: DealAnalysisPacket) -> str:
                   aria-label="Permanently delete this deal">Delete</button>
         </div>
       </div>
+    </div>
+    <div class="wb-deck">
+      <p class="wb-lede"><em>Six tabs, one packet.</em> Every number on
+      this page renders from the same deal-analysis packet — overview,
+      profile, bridge, simulation, risk and provenance can never
+      disagree, and every figure traces back to its source.</p>
+      <p class="wb-source-note">Source: deal analysis packet · as of {_esc(as_of)}{_esc(prov_bit)}</p>
+      <ul class="wb-legend">
+        <li><span class="wb-dot live"></span>Live data</li>
+        <li><span class="wb-dot computed"></span>Computed</li>
+        <li><span class="wb-dot needs"></span>Needs data</li>
+        <li><span class="wb-dot illustrative"></span>Illustrative</li>
+      </ul>
     </div>
     """
 
@@ -1123,25 +1430,31 @@ def _render_tab_nav(override_count: int = 0) -> str:
         ("assumptions",  ov_label),
     ]
     buttons = "\n".join(
-        f'<button class="wb-tab{" active" if i == 0 else ""}" data-tab="{k}">{v}</button>'
+        f'<button class="wb-tab{" active" if i == 0 else ""}" data-tab="{k}"'
+        f' role="tab" aria-selected="{"true" if i == 0 else "false"}">{v}</button>'
         for i, (k, v) in enumerate(tabs)
     )
-    return f'<div class="wb-tabs">{buttons}</div>'
+    return f'<div class="wb-tabs" role="tablist" aria-label="Workbench sections">{buttons}</div>'
 
 
 # Overview --------------------------------------------------------------
 
 def _hero_kpi_strip(packet: DealAnalysisPacket) -> str:
-    """6-card hero KPI strip — matches the design-handoff reference.
+    """6-card hero KPI strip — the Overview tab's masthead numbers.
 
-    Cards: ENTRY MULTIPLE / BASE MOIC / BASE IRR / COVENANT HEADROOM /
-    PARTNER VERDICT / HEALTH SCORE. Data is pulled from the packet where
-    available; missing values render "—" (honest partial wiring rule).
-    Tones (green / amber / red) signal at-a-glance status.
+    Cards: ENTRY MULTIPLE / BASE MOIC / BASE IRR / COVENANT FLAGS /
+    PARTNER VERDICT / METRICS OBSERVED. Data is pulled from the packet
+    where available; missing values render "—" (honest partial wiring
+    rule). Tones (green / amber / red) signal at-a-glance status.
+    Facelift notes: the old "COVENANT HEADROOM" card showed a flag
+    COUNT labelled as headroom (a partner reads headroom as a ratio)
+    and "HEALTH SCORE" was the third rendering of coverage_pct on one
+    tab — both renamed to what they actually are. Key derivations get
+    an explain-this-number hover (ck_provenance_tooltip).
     """
-    # Entry multiple — from bridge if present
+    # Entry multiple — from bridge if present (multiples: 2dp + "x")
     em = getattr(packet.ebitda_bridge, "entry_multiple", None) if packet.ebitda_bridge else None
-    em_str = f"{float(em):.1f}x" if em is not None else "—"
+    em_str = _fmt_moic(float(em)) if em is not None else "—"
     # Base MOIC / IRR — from simulation P50
     moic = irr = None
     moic_tone = irr_tone = ""
@@ -1153,9 +1466,9 @@ def _hero_kpi_strip(packet: DealAnalysisPacket) -> str:
             moic_tone = "green" if moic >= 2.5 else "amber" if moic >= 2.0 else "red"
         if irr is not None:
             irr_tone = "green" if irr >= 0.20 else "amber" if irr >= 0.15 else "red"
-    moic_str = f"{moic:.2f}x" if moic is not None else "—"
-    irr_str = f"{irr * 100:.1f}%" if irr is not None else "—"
-    # Covenant headroom — derived from risk flags (lower = tighter)
+    moic_str = _fmt_moic(moic) if moic is not None else "—"
+    irr_str = ck_fmt_percent(irr) if irr is not None else "—"
+    # Covenant flags — count of covenant-mentioning risk flags
     cov_warns = sum(
         1 for rf in (packet.risk_flags or [])
         if "covenant" in (rf.title or "").lower() or "covenant" in (rf.detail or "").lower()
@@ -1177,21 +1490,53 @@ def _hero_kpi_strip(packet: DealAnalysisPacket) -> str:
         verdict, verdict_tone = "CAUTION", "amber"
     else:
         verdict, verdict_tone = "PROCEED", "green"
-    # Health score — coverage_pct as a proxy (0-100)
-    hs = int(round((packet.completeness.coverage_pct or 0.0) * 100))
-    hs_tone = "green" if hs >= 75 else "amber" if hs >= 50 else "red"
+    # Metrics observed — a real packet stat (replaces "HEALTH SCORE",
+    # which duplicated COVERAGE under a third name).
+    obs = packet.completeness.observed_count or 0
+    total = packet.completeness.total_metrics or 0
+    obs_str = f"{obs}/{total}" if total else "—"
+    cov_pct = float(packet.completeness.coverage_pct or 0.0)
+    obs_tone = "green" if cov_pct >= 0.75 else "amber" if cov_pct >= 0.50 else "red"
+
+    moic_html = ck_provenance_tooltip(
+        "Base MOIC", _esc(moic_str),
+        explainer="P50 of the Monte Carlo MOIC distribution — the "
+                  "median simulated multiple on invested capital, not "
+                  "a point estimate.",
+    )
+    irr_html = ck_provenance_tooltip(
+        "Base IRR", _esc(irr_str),
+        explainer="P50 of the Monte Carlo IRR distribution (gross, "
+                  "levered) across all simulated trajectories.",
+        inject_css=False,
+    )
+    verdict_html = ck_provenance_tooltip(
+        "Partner verdict", _esc(verdict),
+        explainer="Rules-based screen: HOLD when any CRITICAL risk "
+                  "flag fired; CAUTION when more than one HIGH flag "
+                  "fired; PROCEED otherwise. A triage signal, not a "
+                  "recommendation.",
+        inject_css=False,
+    )
+    flags_html = ck_provenance_tooltip(
+        "Covenant flags", _esc(cov_str),
+        explainer="Count of risk-scan flags that mention covenants. "
+                  "Zero flags means none fired — not that headroom "
+                  "was measured.",
+        inject_css=False,
+    )
 
     cards = [
-        (em_str,     "ENTRY MULTIPLE",   "EBITDA · base case",       ""),
-        (moic_str,   "BASE MOIC",        "5-year hold",              moic_tone),
-        (irr_str,    "BASE IRR",         "Gross, levered",           irr_tone),
-        (cov_str,    "COVENANT HEADROOM","Risk-flag derived",        cov_tone),
-        (verdict,    "PARTNER VERDICT",  "Rules-based",              verdict_tone),
-        (str(hs),    "HEALTH SCORE",     "Completeness proxy",       hs_tone),
+        (_esc(em_str), "ENTRY MULTIPLE",   "EBITDA · base case",     ""),
+        (moic_html,    "BASE MOIC",        "5-year hold",            moic_tone),
+        (irr_html,     "BASE IRR",         "Gross, levered",         irr_tone),
+        (flags_html,   "COVENANT FLAGS",   "From risk scan",         cov_tone),
+        (verdict_html, "PARTNER VERDICT",  "Rules-based screen",     verdict_tone),
+        (_esc(obs_str),"METRICS OBSERVED", "Of registry",            obs_tone),
     ]
     cells = "".join(
         f'<div class="wb-hero-card{" tone-" + tone if tone else ""}">'
-        f'<div class="wb-hc-value">{_esc(value)}</div>'
+        f'<div class="wb-hc-value">{value}</div>'
         f'<div class="wb-hc-label">{_esc(label)}</div>'
         f'<div class="wb-hc-sub">{_esc(sub)}</div>'
         f'</div>'
@@ -1215,7 +1560,7 @@ def _partner_review_band(packet: DealAnalysisPacket) -> str:
         if (rf.severity.value if hasattr(rf.severity, "value") else str(rf.severity)) == "CRITICAL"
     )
     cov = packet.completeness.coverage_pct or 0.0
-    confidence = max(0.0, min(1.0, cov)) if cov else 0.0
+    coverage = max(0.0, min(1.0, cov)) if cov else 0.0
     # Pick one of three review variants based on data quality
     if not packet.risk_flags or len(packet.risk_flags) < 2:
         review = (
@@ -1224,7 +1569,7 @@ def _partner_review_band(packet: DealAnalysisPacket) -> str:
             "moving the deal forward: partner-level signal is light."
         )
         verdict_label = "MORE DATA NEEDED"
-        verdict_tone = "rgba(183,121,31,0.85)"  # amber
+        verdict_tone = "tone-amber"
     elif crit > 0:
         review = (
             f"Critical risk flags present ({crit}); thesis "
@@ -1233,7 +1578,7 @@ def _partner_review_band(packet: DealAnalysisPacket) -> str:
             "is high: recommend HOLD pending additional evidence."
         )
         verdict_label = "HOLD"
-        verdict_tone = "rgba(165,58,45,0.85)"  # red
+        verdict_tone = "tone-red"
     else:
         review = (
             "Thesis validated against the corpus: bridge components "
@@ -1243,21 +1588,24 @@ def _partner_review_band(packet: DealAnalysisPacket) -> str:
             "follow-ups during the first 100 days."
         )
         verdict_label = "PROCEED WITH CAVEATS"
-        verdict_tone = "rgba(63,125,77,0.85)"  # green
+        verdict_tone = "tone-green"
+    # The label was "CONFIDENCE" printing coverage_pct verbatim — a
+    # fabricated confidence number. It IS coverage, so say COVERAGE
+    # and format it as the percentage it is.
     return (
         '<div class="wb-partner-review">'
         '<div class="wb-pr-inner">'
         '<div class="wb-pr-eyebrow">PARTNER REVIEW &nbsp;·&nbsp; AUTO-GENERATED</div>'
-        f'<p class="wb-pr-quote">"{_esc(review)}"</p>'
+        f'<p class="wb-pr-quote">{_esc(review)}</p>'
         '<div class="wb-pr-meta">'
         f'<span class="wb-pr-meta-item"><span class="m-key">VERDICT</span>'
-        f'<span class="m-val" style="color:{verdict_tone};">{_esc(verdict_label)}</span></span>'
+        f'<span class="m-val"><span class="wb-pr-dot {verdict_tone}"></span>{_esc(verdict_label)}</span></span>'
         f'<span class="wb-pr-meta-item"><span class="m-key">HEURISTICS FIRED</span>'
         f'<span class="m-val">{heuristics}</span></span>'
         f'<span class="wb-pr-meta-item"><span class="m-key">CRITICAL</span>'
         f'<span class="m-val">{crit}</span></span>'
-        f'<span class="wb-pr-meta-item"><span class="m-key">CONFIDENCE</span>'
-        f'<span class="m-val">{confidence:.2f}</span></span>'
+        f'<span class="wb-pr-meta-item"><span class="m-key">COVERAGE</span>'
+        f'<span class="m-val">{ck_fmt_percent(coverage)}</span></span>'
         '</div>'
         '</div>'
         '</div>'
@@ -1302,7 +1650,8 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
             f'<li><span class="wb-badge wb-badge-{sev.lower()}">{sev}</span> '
             f'{_esc(rf.title or rf.detail[:80])}{source_chip}</li>'
         )
-    findings_html = "\n".join(key_findings) or '<li class="dim">no risk flags</li>'
+    findings_html = ("\n".join(key_findings)
+                     or '<li class="dim">No risk flags fired on this packet.</li>')
 
     peers = packet.comparables.peers if packet.comparables else []
     top_peer = peers[0] if peers else None
@@ -1315,7 +1664,8 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
                if top_peer else "")
         )
     else:
-        comp_summary = '<span class="dim">no comparable set available</span>'
+        comp_summary = ('<span class="dim">No comparable set available yet — '
+                        'add bed count and payer mix to unlock peers.</span>')
 
     # Hero number — EBITDA total impact from bridge. A green "$0" when the
     # bridge couldn't actually run (no levers contributed / section not OK)
@@ -1332,7 +1682,7 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
         # Caption interpolates the real current → target EBITDA rather
         # than printing the literal template words.
         hero_caption = (
-            f'<div class="dim" style="font-size:11px;margin-top:4px;">'
+            f'<div class="dim hero-caption">'
             f'{_fmt_money(_bridge.current_ebitda)} → '
             f'{_fmt_money(_bridge.target_ebitda)} (moderate tier)</div>'
         )
@@ -1343,7 +1693,7 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
         # naturally ("no revenue baseline yet").
         _yet = " yet" if _why.lower().startswith("no ") else ""
         hero_html = ('<div class="hero-number dim">—</div>'
-                     f'<div class="dim" style="font-size:10.5px;">'
+                     f'<div class="dim hero-why">'
                      f'Not computed — {_esc(_why)}{_yet}.</div>')
         # No numbers to caption — hide the current → target line
         # entirely instead of rendering placeholder words.
@@ -1373,7 +1723,7 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     risk_badges = " ".join(
         f'<span class="wb-badge wb-badge-{sev.lower()}">{sev}: {n}</span>'
         for sev, n in sev_counts.items() if n > 0
-    ) or '<span class="dim">no risk flags</span>'
+    ) or '<span class="dim">No risk flags fired.</span>'
 
     # Radial progress SVG.
     radius = 40
@@ -1398,19 +1748,19 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
         <div>
           <div class="wb-card">
             <div class="wb-card-title">Completeness</div>
-            <div style="display:flex;gap:14px;align-items:center;">
+            <div class="wb-flex-row">
               <div class="radial">{radial_svg}{radial_label}</div>
               <div>
                 <div class="kpi-value">{packet.completeness.observed_count}/{packet.completeness.total_metrics}</div>
                 <div class="kpi-label">metrics observed · grade {packet.completeness.grade or "—"}</div>
               </div>
             </div>
-            <div class="wb-card-title" style="margin-top:12px;">Top missing metrics (by EBITDA sensitivity)</div>
-            <ol style="padding-left:20px; margin:4px 0;">{missing_html}</ol>
+            <div class="wb-card-title wb-card-subtitle">Top missing metrics (by EBITDA sensitivity)</div>
+            <ol class="wb-list">{missing_html}</ol>
           </div>
           <div class="wb-card">
             <div class="wb-card-title">Key Findings</div>
-            <ul style="padding-left:18px; margin:4px 0;">{findings_html}</ul>
+            <ul class="wb-list">{findings_html}</ul>
           </div>
           <div class="wb-card">
             <div class="wb-card-title">Comparable Set</div>
@@ -1422,7 +1772,7 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
             <div class="kpi-label">EBITDA Opportunity</div>
             {hero_html}
             {hero_caption}
-            <div style="margin-top:10px;font-size:12px;">{ev_bits}</div>
+            <div class="wb-ev-line">{ev_bits}</div>
           </div>
           <div class="wb-card">
             <div class="wb-card-title">Returns</div>
@@ -1441,11 +1791,17 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
 
 # RCM Profile -----------------------------------------------------------
 
-_SOURCE_ICON = {
-    MetricSource.OBSERVED:  "👤",
-    MetricSource.PREDICTED: "🔮",
-    MetricSource.BENCHMARK: "📊",
-    MetricSource.UNKNOWN:   "·",
+# Typographic source tags — (chip text, tone class, plain meaning).
+# Replaces the emoji encoding (👤/🔮/📊) whose meaning lived only in a
+# title attribute; mirrors the ck_basis_badge letter-chip idiom.
+_SOURCE_TAG = {
+    MetricSource.OBSERVED:  ("OBS", "src-observed",
+                             "Observed — partner-entered deal data"),
+    MetricSource.PREDICTED: ("PRED", "src-predicted",
+                             "Predicted — model estimate, not a filing"),
+    MetricSource.BENCHMARK: ("BMK", "src-benchmark",
+                             "Benchmark — cohort value, not deal data"),
+    MetricSource.UNKNOWN:   ("—", "src-unknown", "Source unknown"),
 }
 
 
@@ -1470,7 +1826,7 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
     grade = getattr(packet.completeness, "grade", "") or ""
     if grade in ("C", "D") or not grade:
         actions.append(
-            f'<div>📊 <strong>Upload more data</strong>: completeness is '
+            f'<div><strong>Upload more data</strong>: completeness is '
             f'{grade or "?"}, which limits prediction accuracy. '
             f'<a href="/new-deal/step3?deal_id={deal_id}">Upload files →</a></div>'
         )
@@ -1481,9 +1837,10 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
         if (rf.severity.value if hasattr(rf.severity, "value") else str(rf.severity)) == "CRITICAL"
     )
     if critical_count > 0:
+        plural = "risks" if critical_count != 1 else "risk"
         actions.append(
-            f'<div>🔴 <strong>Review {critical_count} critical risk(s)</strong>: '
-            f'click the Risk & Diligence tab to see details and address '
+            f'<div><strong>Review {critical_count} critical {plural}</strong>: '
+            f'open the Risk &amp; Diligence tab to see details and address '
             f'the top-priority flags.</div>'
         )
 
@@ -1494,32 +1851,31 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
         not in ("OK",)
     ):
         actions.append(
-            f'<div>🎲 <strong>Run Monte Carlo</strong>: no simulation on '
+            f'<div><strong>Run Monte Carlo</strong>: no simulation on '
             f'this analysis yet. '
-            f'<a href="/api/analysis/{deal_id}/simulate/v2" '
-            f'style="color:{PALETTE["accent"]};">Run now →</a></div>'
+            f'<a href="/api/analysis/{deal_id}/simulate/v2">Run now →</a></div>'
         )
 
     # Missing diligence questions answered → export package.
     if packet.diligence_questions and not actions:
         actions.append(
-            f'<div>📦 <strong>Generate IC package</strong>: analysis is '
+            f'<div><strong>Generate IC package</strong>: analysis is '
             f'complete. '
-            f'<a href="/api/analysis/{deal_id}/export?format=package" '
-            f'style="color:{PALETTE["accent"]};">Export →</a></div>'
+            f'<a href="/api/analysis/{deal_id}/export?format=package">Export →</a></div>'
         )
 
     if not actions:
-        actions.append(
-            '<div style="color:#0a8a5f;">✓ <strong>Looking good</strong>: '
-            'completeness, risks, and simulation are all in order.</div>'
+        body = ('<div class="wb-action-ok"><strong>Looking good</strong>: '
+                'completeness, risks, and simulation are all in order.</div>')
+    else:
+        body = "\n".join(
+            f'<div class="wb-action"><span class="wb-action-n">{i}</span>{a}</div>'
+            for i, a in enumerate(actions[:3], start=1)
         )
-
-    body = "\n".join(actions[:3])
     return f"""
     <div class="wb-card">
-      <div class="wb-card-title">What Should I Do Next?</div>
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">{body}</div>
+      <div class="wb-card-title">Next actions</div>
+      <div class="wb-actions">{body}</div>
     </div>
     """
 
@@ -1551,6 +1907,10 @@ def _render_trend_cell(forecast: Dict[str, Any]) -> str:
         "improving": PALETTE["positive"],
         "deteriorating": PALETTE["negative"],
     }.get(direction, PALETTE["text_faint"])
+    trend_cls = {
+        "improving": "trend-up",
+        "deteriorating": "trend-down",
+    }.get(direction, "trend-flat")
     tooltip = (
         f"{direction}, {slope:+.3f}/period across {n} periods"
     )
@@ -1580,7 +1940,7 @@ def _render_trend_cell(forecast: Dict[str, Any]) -> str:
             dashed_pts = f"{last_hist_pt} {fut_pts}".strip() if fut_vals else ""
             sparkline = (
                 f'<svg viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
-                f'style="vertical-align:middle;margin-left:4px;">'
+                f'class="wb-spark" aria-hidden="true">'
                 f'<polyline points="{hist_pts}" fill="none" '
                 f'stroke="{color}" stroke-width="1.2"/>'
                 + (f'<polyline points="{dashed_pts}" fill="none" '
@@ -1590,7 +1950,7 @@ def _render_trend_cell(forecast: Dict[str, Any]) -> str:
             )
 
     return (
-        f'<span class="dim" style="margin-left:6px;color:{color};" '
+        f'<span class="wb-trend {trend_cls}" '
         f'title="{_esc(tooltip)}">{arrow}</span>{sparkline}'
     )
 
@@ -1612,7 +1972,7 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
     parts: List[str] = []
     parts.append(
         '<table class="wb-table"><thead><tr>'
-        '<th>Metric</th><th>Current</th><th class="center">Src</th>'
+        '<th>Metric</th><th class="num">Current</th><th class="center">Source</th>'
         '<th class="num">P25</th><th class="num">P50</th><th class="num">P75</th>'
         '<th class="num">Δ vs P50</th><th>Confidence</th>'
         '</tr></thead><tbody>'
@@ -1646,7 +2006,8 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
                 except (TypeError, ValueError):
                     delta = None
             value_fmt = _fmt_metric_value(pm.value, unit)
-            src_icon = _SOURCE_ICON.get(pm.source, "·")
+            src_tag, src_cls, src_meaning = _SOURCE_TAG.get(
+                pm.source, ("—", "src-unknown", "Source unknown"))
             quality = pm.quality or ""
             conf_bar = _quality_bar(quality)
             # B.1 — α-disclosure for cohort-tuned ridge fits. Renders
@@ -1670,7 +2031,7 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
             # fit. Model-quality guidance only — does not change the value.
             if getattr(pm, "log_transform_suggested", False):
                 alpha_html += (
-                    f'<span class="ck-cohort-alpha" style="margin-left:4px;" '
+                    f'<span class="ck-cohort-alpha" '
                     f'title="Target is right-skewed and strictly positive, so a log/Box-Cox '
                     f'transform would likely stabilize variance and improve the fit. '
                     f'Model-quality advisory; the predicted value is unchanged.">log?</span>'
@@ -1685,13 +2046,13 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
             for a in (packet.completeness.anomalies or []):
                 if a.get("metric_key") != metric_key:
                     continue
-                tone = {
-                    "CRITICAL": PALETTE["critical"],
-                    "HIGH": PALETTE["high"],
-                    "MEDIUM": PALETTE["medium"],
-                }.get(a.get("severity", "MEDIUM"), PALETTE["low"])
+                sev_cls = {
+                    "CRITICAL": "sev-critical",
+                    "HIGH": "sev-high",
+                    "MEDIUM": "sev-medium",
+                }.get(a.get("severity", "MEDIUM"), "sev-low")
                 anomaly_html = (
-                    f'<span style="color:{tone};margin-left:4px;" '
+                    f'<span class="wb-anomaly {sev_cls}" '
                     f'title="{_esc(a.get("explanation") or "")}">⚠</span>'
                 )
                 break
@@ -1706,14 +2067,14 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
             metric_label = meta.get("display_name") or metric_key
             parts.append(
                 '<tr>'
-                f'<td><a href="#prov-{_esc(metric_key)}" class="dim" style="text-decoration:none;" title="{_esc(metric_key)}">{_esc(metric_label)}</a>{anomaly_html}{trend_html}</td>'
+                f'<td><a href="#prov-{_esc(metric_key)}" class="dim wb-metric-link" title="{_esc(metric_key)}">{_esc(metric_label)}</a>{anomaly_html}{trend_html}</td>'
                 f'<td class="num {cell_class}">{value_fmt}{chip_html}</td>'
-                f'<td class="center" title="{_esc(pm.source.value)}">'
-                f'<span role="img" aria-label="{_esc(pm.source.value)}">{src_icon}</span></td>'
+                f'<td class="center" title="{_esc(src_meaning)}">'
+                f'<span class="wb-src-chip {src_cls}" role="img" aria-label="{_esc(pm.source.value)}">{_esc(src_tag)}</span></td>'
                 f'<td class="num dim">{_fmt_metric_value(p25, unit)}</td>'
                 f'<td class="num dim">{_fmt_metric_value(p50, unit)}</td>'
                 f'<td class="num dim">{_fmt_metric_value(p75, unit)}</td>'
-                f'<td class="num {cell_class}">{_fmt_signed_pct(delta) if delta is not None else "—"}</td>'
+                f'<td class="num {cell_class}">{_fmt_signed_delta(delta, unit) if delta is not None else "—"}</td>'
                 f'<td>{conf_bar}{alpha_html}</td>'
                 '</tr>'
             )
@@ -1737,13 +2098,21 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
 
 
 def _quality_bar(q: str) -> str:
-    colors = {"high": PALETTE["positive"], "medium": PALETTE["warning"], "low": PALETTE["negative"]}
-    w = {"high": 60, "medium": 40, "low": 20}.get(q, 10)
-    c = colors.get(q, PALETTE["text_faint"])
+    """Confidence bar + text label.
+
+    The bar used to be width-only encoding — invisible to screen
+    readers and ambiguous to everyone ("is 40px good?"). It now
+    carries a mono text label, a title, and an aria-label alongside
+    the width cue; tone classes live in the page CSS.
+    """
+    level = q if q in ("high", "medium", "low") else ""
+    cls = f"q-{level}" if level else "q-none"
+    label = level or "n/a"
+    desc = f"Confidence: {label}"
     return (
-        f'<div style="display:inline-block;width:64px;background:{PALETTE["border"]};'
-        f'height:6px;vertical-align:middle;">'
-        f'<div style="width:{w}px;height:6px;background:{c};"></div></div>'
+        f'<span class="wb-qbar {cls}" role="img" aria-label="{_esc(desc)}" '
+        f'title="{_esc(desc)}"><span></span></span>'
+        f'<span class="wb-qbar-label">{_esc(label)}</span>'
     )
 
 
@@ -1765,24 +2134,24 @@ def _render_payer_heatmap(packet: DealAnalysisPacket) -> str:
         pm = packet.rcm_profile.get(metric_key)
         if pm is None:
             val_html = '<span class="dim">—</span>'
-            cell_style = f"background:{PALETTE['panel_alt']};"
+            tone_cls = ""
         else:
             v = float(pm.value)
             # Color scale: green if <5, amber if <10, red otherwise.
             if v < 5.0:
-                cell_style = f"background:rgba(16,185,129,0.18);color:{PALETTE['positive']};"
+                tone_cls = " hm-good"
             elif v < 10.0:
-                cell_style = f"background:rgba(245,158,11,0.18);color:{PALETTE['warning']};"
+                tone_cls = " hm-warn"
             else:
-                cell_style = f"background:rgba(239,68,68,0.18);color:{PALETTE['negative']};"
+                tone_cls = " hm-bad"
             val_html = f'<span class="num">{_fmt_pct(v)}</span>'
         cells.append(
-            f'<div class="heatmap-cell" style="{cell_style}">'
-            f'<div style="font-size:10px;color:{PALETTE["text_dim"]};">{_esc(label)}</div>'
+            f'<div class="heatmap-cell{tone_cls}">'
+            f'<div class="hm-label">{_esc(label)}</div>'
             f'{val_html}</div>'
         )
     return (
-        '<div class="heatmap" style="grid-template-columns:repeat(4,1fr);">'
+        '<div class="heatmap heatmap-payer">'
         + "".join(cells)
         + "</div>"
     )
@@ -1793,36 +2162,38 @@ def _render_payer_heatmap(packet: DealAnalysisPacket) -> str:
 def _render_bridge(packet: DealAnalysisPacket) -> str:
     br = packet.ebitda_bridge
     if br.status != SectionStatus.OK or not br.per_metric_impacts:
+        empty = ck_empty_state(
+            "The bridge has nothing to build from yet.",
+            "The EBITDA bridge needs a revenue baseline plus at least "
+            "one RCM metric to model improvements against. Open Ingest "
+            "and attach a Canonical Claims Dataset, or upload "
+            "management-reported quarterly actuals on the deal page.",
+            eyebrow="EBITDA BRIDGE",
+            icon="≡",
+            cta_label="Open Ingest",
+            cta_href="/diligence/ingest",
+        )
         return f"""
         <div class="wb-tab-panel" data-panel="bridge">
-          <div class="wb-card">
-            <div class="wb-card-title">EBITDA bridge</div>
-            <p class="dim" style="margin:0 0 8px;">
-              The EBITDA bridge needs a revenue baseline + at least one
-              RCM metric to model improvements against. This deal has
-              none yet.
-            </p>
-            <p class="dim" style="margin:0 0 12px;">
-              <strong>To populate this tab:</strong> open
-              <a href="/diligence/ingest" class="wb-link">Ingest</a> and
-              attach a Canonical Claims Dataset, or upload management-
-              reported quarterly actuals on the
-              <a href="/deal/{_esc(packet.deal_id)}" class="wb-link">deal page</a>.
-            </p>
-            <p class="dim" style="margin:0;font-size:11px;">
-              Reason: {_esc(br.reason or "no impacts computed")}
-            </p>
-          </div>
+          {empty}
+          <p class="dim wb-center-note">
+            Or upload actuals on the
+            <a href="/deal/{_esc(packet.deal_id)}">deal page</a>.
+            &nbsp;·&nbsp; Reason: {_esc(br.reason or "no impacts computed")}
+          </p>
         </div>
         """
 
-    # Sliders (left)
+    # Sliders (left) — labels use registry display names; the raw
+    # metric key stays in data-metric / ids for the slider JS.
     slider_rows = []
     assumptions_payload: List[Dict[str, Any]] = []
+    label_map: Dict[str, str] = {}
     for imp in br.per_metric_impacts:
         # Range and step inferred from metric type.
         lo, hi, step = _slider_range(imp.metric_key, imp.current_value, imp.target_value)
         slider_id = f"slider-{imp.metric_key}"
+        label_map[imp.metric_key] = _metric_display_name(imp.metric_key)
         assumptions_payload.append({
             "metric": imp.metric_key,
             "current": imp.current_value,
@@ -1831,11 +2202,12 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
         })
         slider_rows.append(
             f'<div class="slider-row" data-metric="{_esc(imp.metric_key)}">'
-            f'<div class="slider-label">{_esc(imp.metric_key)}</div>'
+            f'<div class="slider-label" title="{_esc(imp.metric_key)}">{_esc(label_map[imp.metric_key])}</div>'
             f'<input type="range" class="wb-slider" id="{slider_id}" '
             f'min="{lo}" max="{hi}" step="{step}" value="{imp.target_value}" '
             f'data-current="{imp.current_value}" data-target="{imp.target_value}" '
-            f'data-metric="{_esc(imp.metric_key)}">'
+            f'data-metric="{_esc(imp.metric_key)}" '
+            f'aria-label="Target for {_esc(label_map[imp.metric_key])}">'
             f'<div class="slider-target" id="{slider_id}-val">{imp.target_value:.2f}</div>'
             f'<div class="slider-delta dim" id="{slider_id}-delta">—</div>'
             f'</div>'
@@ -1859,10 +2231,13 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
         summary_line += f"Enterprise value uplift: {ev_bits}."
 
     # JSON bootstrap for slider JS. We POST this exact shape to
-    # /api/analysis/<deal_id>/bridge when sliders move.
+    # /api/analysis/<deal_id>/bridge when sliders move. ``labels``
+    # lets the JS re-render print display names instead of raw
+    # metric keys (the API response only carries keys).
     bootstrap = json.dumps({
         "deal_id": packet.deal_id,
         "assumptions": assumptions_payload,
+        "labels": label_map,
     })
 
     bridge_overrides = {
@@ -1887,7 +2262,7 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
       <div class="wb-grid-5050">
         <div class="wb-card">
           <div class="wb-card-title">Target sliders</div>
-          <div style="margin-bottom:8px;">
+          <div class="wb-preset-row">
             <button class="wb-btn" data-preset="conservative">Conservative</button>
             <button class="wb-btn" data-preset="moderate">Moderate</button>
             <button class="wb-btn" data-preset="aggressive">Aggressive</button>
@@ -1898,6 +2273,7 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
         <div class="wb-card">
           <div class="wb-card-title">Waterfall</div>
           <div id="wb-waterfall">{waterfall}</div>
+          <div class="wb-bridge-status" id="wb-bridge-status" aria-live="polite"></div>
         </div>
       </div>
       <div class="wb-card">
@@ -1933,7 +2309,10 @@ def _slider_range(metric: str, current: float, target: float) -> tuple:
 
 
 def _render_waterfall(br) -> str:
-    # Find max abs width for scaling.
+    # Find max abs width for scaling. Lever rows use registry display
+    # names; the JS re-render resolves the same names via the
+    # bootstrap ``labels`` map so a slider drag never flips the
+    # waterfall back to snake_case keys.
     rows = []
     steps = []
     running = float(br.current_ebitda)
@@ -1941,7 +2320,7 @@ def _render_waterfall(br) -> str:
     for imp in br.per_metric_impacts:
         running += imp.ebitda_impact
         kind = "pos" if imp.ebitda_impact >= 0 else "neg"
-        steps.append((imp.metric_key, imp.ebitda_impact, kind))
+        steps.append((_metric_display_name(imp.metric_key), imp.ebitda_impact, kind))
     steps.append(("Target EBITDA", br.target_ebitda, "anchor"))
 
     max_abs = max((abs(v) for _, v, _ in steps if v), default=1.0)
@@ -1953,7 +2332,7 @@ def _render_waterfall(br) -> str:
             f'<div class="wf-track">'
             f'<div class="wf-bar {kind}" style="width:{bar_pct:.1f}%"></div>'
             f'</div>'
-            f'<div class="num" style="text-align:right;">{_fmt_money(val)}</div>'
+            f'<div class="num">{_fmt_money(val)}</div>'
             f'</div>'
         )
     return f'<div class="waterfall">{"".join(rows)}</div>'
@@ -1963,7 +2342,8 @@ def _render_tornado(br) -> str:
     impacts = [(imp.metric_key, imp.ebitda_impact) for imp in br.per_metric_impacts]
     impacts.sort(key=lambda r: abs(r[1]), reverse=True)
     if not impacts:
-        return '<div class="dim">no impacts</div>'
+        return ('<div class="dim">No impacts computed yet — '
+                'set metric targets to size the levers.</div>')
     max_abs = max(abs(v) for _, v in impacts) or 1.0
     rows = []
     for metric, val in impacts:
@@ -1971,10 +2351,9 @@ def _render_tornado(br) -> str:
         cls = "pos" if val >= 0 else "neg"
         rows.append(
             f'<div class="tornado-row">'
-            f'<div>{_esc(metric)}</div>'
-            f'<div class="tornado-bar {cls}" style="width:{width:.1f}%;background:'
-            f'{PALETTE["positive"] if val >= 0 else PALETTE["negative"]};"></div>'
-            f'<div class="num {cls}" style="text-align:right;">{_fmt_money(val)}</div>'
+            f'<div title="{_esc(metric)}">{_esc(_metric_display_name(metric))}</div>'
+            f'<div class="tornado-bar {cls}" style="width:{width:.1f}%;"></div>'
+            f'<div class="num {cls}">{_fmt_money(val)}</div>'
             f'</div>'
         )
     return "".join(rows)
@@ -1992,33 +2371,31 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
         if _looks_internal_reason(reason):
             reason = ("Simulation inputs not configured yet — set "
                       "actuals/benchmark paths on the deal page.")
+        empty = ck_empty_state(
+            "Monte Carlo has not run on this packet.",
+            "The simulation draws thousands of EBITDA-improvement "
+            "trajectories to give a P10 / P50 / P90 band instead of a "
+            "single point estimate. Click REBUILD at the top of the "
+            "workbench to refresh the packet with simulation enabled.",
+            eyebrow="MONTE CARLO",
+            icon="∿",
+            cta_label="Open the deal page",
+            cta_href=f"/deal/{packet.deal_id}",
+        )
         return f"""
         <div class="wb-tab-panel" data-panel="mc">
-          <div class="wb-card">
-            <div class="wb-card-title">Monte Carlo</div>
-            <p class="dim" style="margin:0 0 8px;">
-              Monte Carlo runs N simulated trajectories of EBITDA
-              improvement to give the partner a P10 / P50 / P90 band
-              instead of a single point estimate.
-            </p>
-            <p class="dim" style="margin:0 0 12px;">
-              <strong>To populate this tab:</strong> click
-              <strong>REBUILD</strong> at the top of the workbench, or
-              run <code style="font-family:'JetBrains Mono',monospace;">
-              rcm-mc analysis {_esc(packet.deal_id)}</code> from the
-              CLI to refresh the packet with simulation enabled.
-            </p>
-            <p class="dim" style="margin:0;font-size:11px;">
-              Reason: {_esc(reason)}
-            </p>
-          </div>
+          {empty}
+          <p class="dim wb-center-note">
+            CLI alternative: <code class="mono">rcm-mc analysis {_esc(packet.deal_id)}</code>
+            &nbsp;·&nbsp; Reason: {_esc(reason)}
+          </p>
         </div>
         """
 
     uplift = mc.ebitda_uplift
     histo_svg = _render_histogram_svg(uplift)
     stats = (
-        f'<table class="wb-table" style="max-width:420px;">'
+        f'<table class="wb-table wb-table-narrow">'
         f'<tbody>'
         + "".join(
             f'<tr><td class="dim">{label}</td><td class="num">{_fmt_money(val)}</td></tr>'
@@ -2052,13 +2429,14 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
             pct = (share / total) * 100.0
             var_rows.append(
                 f'<div class="tornado-row">'
-                f'<div>{_esc(metric)}</div>'
-                f'<div class="tornado-bar" style="width:{pct:.1f}%;'
-                f'background:{PALETTE["neutral"]};"></div>'
+                f'<div title="{_esc(metric)}">{_esc(_metric_display_name(metric))}</div>'
+                f'<div class="tornado-bar share" style="width:{pct:.1f}%;"></div>'
                 f'<div class="num">{pct:.1f}%</div>'
                 f'</div>'
             )
-    var_html = "".join(var_rows) or '<div class="dim">no variance decomposition</div>'
+    var_html = "".join(var_rows) or (
+        '<div class="dim">No variance decomposition available — '
+        'rerun the simulation to attribute spread to levers.</div>')
 
     n_sims = mc.n_sims or 0
     conv = mc.convergence_check or {}
@@ -2066,8 +2444,9 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
     return f"""
     <div class="wb-tab-panel" data-panel="mc">
       <div class="wb-card">
-        <div class="wb-card-title">EBITDA impact distribution ({n_sims:,} sims · {conv_status})</div>
+        <div class="wb-card-title">EBITDA impact — percentile band ({n_sims:,} sims · {conv_status})</div>
         <div class="histo">{histo_svg}</div>
+        <div class="wb-chart-caption">Shape approximated from P10–P90 percentiles — not raw draws</div>
       </div>
       <div class="wb-grid-5050">
         <div class="wb-card">
@@ -2096,7 +2475,8 @@ def _render_histogram_svg(ps: PercentileSet) -> str:
     p50 = float(ps.p50 or 0.0)
     p90 = float(ps.p90 or 0.0)
     if p10 == 0 and p50 == 0 and p90 == 0:
-        return '<div class="dim" style="padding:12px;">no distribution data</div>'
+        return ('<div class="dim wb-center-note">No distribution data — '
+                'the simulation produced a degenerate zero-width band.</div>')
     span = max(p90 - p10, 1.0)
     width, height = 720, 160
     xs = [p10, ps.p25 or (p10 + 0.25 * span), p50, ps.p75 or (p50 + 0.25 * span), p90]
@@ -2117,9 +2497,6 @@ def _render_histogram_svg(ps: PercentileSet) -> str:
     for i in range(n_bars):
         pos = (i + 0.5) / n_bars
         # Triangular "density": peak near P50, tails to P10 / P90.
-        anchor_idx = min(len(x_pct) - 1,
-                         max(0, next((k for k, v in enumerate(x_pct)
-                                       if v > pos), len(x_pct) - 1) - 1))
         density = 1.0 - abs(pos - x_pct[2]) * 1.6  # peak at P50
         density = max(0.1, min(1.0, density))
         bar_h = density * (height - 40)
@@ -2132,7 +2509,8 @@ def _render_histogram_svg(ps: PercentileSet) -> str:
         )
     return (
         f'<svg viewBox="0 0 {width} {height}" preserveAspectRatio="none" '
-        f'style="width:100%;height:160px;">'
+        f'class="wb-histo-svg" role="img" '
+        f'aria-label="EBITDA impact percentile band, P10 {_fmt_money(p10)} to P90 {_fmt_money(p90)}">'
         f'<rect x="0" y="0" width="{width}" height="{height}" fill="{PALETTE["panel_alt"]}"/>'
         f'{bars}{lines}'
         f'</svg>'
@@ -2285,7 +2663,8 @@ def _render_pairwise_matrix(
     em-dash to avoid implying a winner over itself. Cells above 60%
     are green-tinted; below 40% red-tinted."""
     if not names or not pairwise:
-        return '<div class="dim">no pairwise comparison yet</div>'
+        return ('<div class="dim">No pairwise comparison yet — '
+                'add a second scenario to rank them head-to-head.</div>')
 
     header_cells = "".join(f'<th>{_esc(n)}</th>' for n in names)
     rows: List[str] = []
@@ -2386,13 +2765,11 @@ def _render_scenario_overlay_svg(
             f'stroke="{color}" stroke-opacity="0.85" stroke-width="1.2"/>'
         )
         legend_bits.append(
-            f'<span style="display:inline-flex;align-items:center;gap:4px;'
-            f'margin-right:12px;"><span style="display:inline-block;'
-            f'width:10px;height:10px;background:{color};opacity:0.7;">'
-            f'</span>{_esc(name)}</span>'
+            f'<span class="scenario-legend-item scenario-palette-{idx % len(_SCENARIO_PALETTE_COLORS)}">'
+            f'<span class="scenario-swatch"></span>{_esc(name)}</span>'
         )
     legend = (
-        f'<div style="margin-top:6px;font-size:11px;">{"".join(legend_bits)}</div>'
+        f'<div class="wb-overlay-legend">{"".join(legend_bits)}</div>'
     )
     axis = (
         f'<line x1="20" x2="{width - 20}" y1="{height - 20}" '
@@ -2449,7 +2826,7 @@ def _render_scenarios(packet: DealAnalysisPacket) -> str:
     # Pairwise + rationale ------------------------------------------
     pairwise_html = _render_pairwise_matrix(names, pairwise)
     rationale_html = (
-        f'<div class="dim" style="margin-top:8px;font-size:12px;">'
+        f'<div class="dim wb-rationale">'
         f'{_esc(rationale)}</div>' if rationale else ''
     )
 
@@ -2483,6 +2860,7 @@ def _render_scenarios(packet: DealAnalysisPacket) -> str:
         'data-scenario-submit>Run scenario</button>'
         '<button class="wb-btn" type="button" data-scenario-cancel>'
         'Cancel</button>'
+        '<span class="ov-feedback" id="scenario-run-feedback"></span>'
         '</div>'
     )
     form_html = (
@@ -2497,8 +2875,8 @@ def _render_scenarios(packet: DealAnalysisPacket) -> str:
       <div class="wb-card">
         <div class="wb-card-title">
           Scenario comparison
-          <button class="wb-btn" type="button"
-                  data-scenario-trigger style="float:right;">
+          <button class="wb-btn wb-btn-right" type="button"
+                  data-scenario-trigger>
             + Add Scenario
           </button>
         </div>
@@ -2572,13 +2950,13 @@ def _render_regulatory_card(packet: DealAnalysisPacket) -> str:
     narrative = _esc(ctx.get("narrative") or "")
     state = _esc(ctx.get("state") or "")
     return f"""
-    <div class="wb-card" style="margin-bottom:14px;">
+    <div class="wb-card wb-reg-card">
       <div class="wb-card-title">Regulatory Environment — {state}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+      <div class="wb-chip-row">
         {con_badge}{medicaid_badge}{medicaid_risk_badge}{market_badge}
       </div>
-      <div class="dim" style="font-size:12px;line-height:1.5;">
-        {narrative or '<span class="dim">(no narrative available)</span>'}
+      <div class="dim wb-reg-narrative">
+        {narrative or '<span class="dim">No regulatory narrative available for this state.</span>'}
       </div>
     </div>
     """
@@ -2589,27 +2967,33 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
     # above the flag/questions grid when the packet has a state.
     regulatory_card = _render_regulatory_card(packet)
 
-    # Risk flags (left).
+    # Risk flags (left). The EBITDA-at-risk figure — the money number a
+    # partner scans for — is promoted to a right-aligned mono figure on
+    # the card's top row instead of an 11px footnote.
     risk_html = []
     for rf in packet.risk_flags:
         sev = rf.severity.value if hasattr(rf.severity, "value") else str(rf.severity)
         ear = _fmt_money(rf.ebitda_at_risk) if rf.ebitda_at_risk else ""
-        ear_line = (f'<div class="dim" style="font-size:11px;">EBITDA at risk: '
-                    f'<span class="num">{ear}</span></div>') if ear else ""
+        ear_html = (f'<span class="risk-ear neg"><span class="k">EBITDA at risk</span>'
+                    f'{ear}</span>') if ear else ""
         trigger_keys = list(rf.trigger_metrics or []) or (
             [rf.trigger_metric] if rf.trigger_metric else [])
         triggers = ", ".join(_metric_display_name(k) for k in trigger_keys)
         risk_html.append(
             f'<div class="risk-card severity-{sev}">'
+            f'<div class="risk-head">'
             f'<span class="wb-badge wb-badge-{sev.lower()}">{sev}</span> '
             f'<span class="risk-title">{_esc(rf.title or "flag")}</span>'
+            f'{ear_html}'
+            f'</div>'
             f'<div class="risk-detail">{_esc(rf.detail or rf.explanation)}</div>'
-            f'{ear_line}'
-            + (f'<div class="dim" style="font-size:11px;">Trigger: {_esc(triggers)}</div>'
+            + (f'<div class="dim risk-trigger">Trigger: {_esc(triggers)}</div>'
                if triggers else "")
             + '</div>'
         )
-    risk_block = "\n".join(risk_html) or '<div class="dim">no risk flags</div>'
+    risk_block = "\n".join(risk_html) or (
+        '<div class="dim">No risk flags fired on this packet — '
+        'the risk scan found nothing above threshold.</div>')
 
     # Diligence questions (right).
     dq_by_priority: Dict[str, List[str]] = {"P0": [], "P1": [], "P2": []}
@@ -2633,20 +3017,24 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
         dq_by_priority.setdefault(pri, []).append(
             f'<div class="dq-card">'
             f'<span class="dq-priority dq-{pri}">{pri}</span>'
-            f'<span class="wb-badge wb-badge-low" style="margin-right:6px;">{_esc((q.category or "—").replace("_", " "))}</span>'
-            f'<div style="margin-top:4px;">{_esc(q.question)}{source_chip}</div>'
-            + (f'<div class="dim" style="font-size:11px;margin-top:3px;">Trigger: {_esc(_humanize_trigger(q.trigger) or q.trigger_reason)}</div>'
+            f'<span class="dq-cat">{_esc((q.category or "—").replace("_", " "))}</span>'
+            f'<div class="dq-question">{_esc(q.question)}{source_chip}</div>'
+            + (f'<div class="dim dq-trigger">Trigger: {_esc(_humanize_trigger(q.trigger) or q.trigger_reason)}</div>'
                if (q.trigger or q.trigger_reason) else "")
             + '</div>'
         )
     dq_html = ""
     for pri in ("P0", "P1", "P2"):
         if dq_by_priority[pri]:
+            n_q = len(dq_by_priority[pri])
+            noun = "questions" if n_q != 1 else "question"
             dq_html += (
-                f'<div class="wb-card-title" style="margin-top:8px;">{pri} · {len(dq_by_priority[pri])} questions</div>'
+                f'<div class="dq-group-head">{pri} · {n_q} {noun}</div>'
                 + "\n".join(dq_by_priority[pri])
             )
-    dq_block = dq_html or '<div class="dim">no diligence questions</div>'
+    dq_block = dq_html or (
+        '<div class="dim">No diligence questions generated — '
+        'questions appear as metrics land and flags fire.</div>')
 
     return f"""
     <div class="wb-tab-panel" data-panel="risk">
@@ -2662,8 +3050,8 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
           <div class="wb-card">
             <div class="wb-card-title">Diligence questions ({len(packet.diligence_questions)})</div>
             {dq_block}
-            <div style="margin-top:10px;">
-              <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Export JSON</a>
+            <div class="wb-mt">
+              <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Export questions (JSON)</a>
             </div>
           </div>
         </div>
@@ -2674,7 +3062,25 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
 
 # Provenance tab --------------------------------------------------------
 
+#: Node-id prefix → partner-facing group heading (was raw uppercase
+#: prefixes like "OBSERVED (12)" / "MC (3)").
+_PROV_GROUP_LABELS = {
+    "observed": "Observed inputs",
+    "predicted": "Predicted",
+    "bridge": "Bridge outputs",
+    "comparables": "Comparable cohort",
+    "mc": "Monte Carlo",
+    "target": "Targets",
+    "profile": "Profile",
+    "other": "Other",
+}
+
+
 def _render_provenance(packet: DealAnalysisPacket) -> str:
+    try:
+        from ..analysis.completeness import RCM_METRIC_REGISTRY
+    except Exception:  # noqa: BLE001
+        RCM_METRIC_REGISTRY = {}
     # Group nodes by prefix so the tree view matches the rich-graph
     # builder's ID scheme.
     groups: Dict[str, List[Any]] = {}
@@ -2694,25 +3100,35 @@ def _render_provenance(packet: DealAnalysisPacket) -> str:
             # the remainder is a known metric key.
             metric_part = nid.split(":", 1)[1] if ":" in nid else nid
             node_label = _metric_display_name(metric_part)
+            # Unit-aware value where the node id resolves to a known
+            # registry metric (was a bare unit-less 2dp number).
+            unit = (RCM_METRIC_REGISTRY.get(metric_part) or {}).get("unit")
+            value_str = (_fmt_metric_value(node.value, unit)
+                         if unit else _fmt_num(node.value, dp=2))
             source_label = _prov_source_label(node.source)
             # source_detail that just restates the source ("Provided by
             # USER_INPUT") is noise — suppress it.
             detail = ("" if _prov_detail_redundant(node.source, node.source_detail)
                       else node.source_detail)
+            conf_str = ck_fmt_percent(node.confidence, precision=0)
             rows.append(
                 f'<div class="prov-row" id="prov-{_esc(nid)}">'
                 f'<div><span class="dim" title="{_esc(nid)}">{_esc(node_label)}</span></div>'
-                f'<div class="num">{_fmt_num(node.value, dp=2)}</div>'
+                f'<div class="num">{value_str}</div>'
                 f'<div class="dim">{_esc(source_label)} · conf '
-                f'<span class="num">{node.confidence:.2f}</span>'
+                f'<span class="num">{conf_str}</span>'
                 + (f' · {_esc(detail)}' if detail else "")
                 + '</div></div>'
             )
+        group_label = _PROV_GROUP_LABELS.get(prefix, prefix.title())
         blocks.append(
-            f'<details open><summary class="wb-card-title">{prefix.upper()} ({len(nodes)})</summary>'
+            f'<details open class="wb-prov-group">'
+            f'<summary class="wb-card-title">{_esc(group_label)} ({len(nodes)})</summary>'
             f'{"".join(rows)}</details>'
         )
-    body = "\n".join(blocks) or '<div class="dim">no provenance captured</div>'
+    body = "\n".join(blocks) or (
+        '<div class="dim">No provenance captured — rebuild the packet '
+        'to record the lineage of every number.</div>')
     return f"""
     <div class="wb-tab-panel" data-panel="provenance">
       <div class="wb-card">
@@ -2778,12 +3194,13 @@ def _ov_row(key: str, label: str, unit: str,
     return (
         f'<div class="ov-row" data-ov-row="{_esc(full_key)}">'
         f'<div class="ov-key">{_esc(full_key)}</div>'
-        f'<div class="dim" style="font-size:11px;">{_esc(label)}</div>'
+        f'<div class="ov-label">{_esc(label)}</div>'
         f'<div>{active_cell}</div>'
         f'<div>{clear_btn}</div>'
         f'<div>'
         f'<input class="ov-input" type="text" placeholder="{_esc(unit or "value")}" '
-        f'data-ov-key="{_esc(full_key)}">'
+        f'data-ov-key="{_esc(full_key)}" '
+        f'aria-label="Override {_esc(label)}">'
         f'</div>'
         f'</div>'
     )
@@ -2800,7 +3217,7 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
             f'<div class="ov-banner">'
             f'<strong>{n_ov} analyst override{"s" if n_ov != 1 else ""} active.</strong> '
             f'Rebuild the analysis packet for overrides to take effect: '
-            f'<a href="/api/analysis/{deal_id}" class="wb-btn" style="padding:2px 8px;">'
+            f'<a href="/api/analysis/{deal_id}" class="wb-btn ov-rebuild-btn">'
             f'Rebuild →</a></div>'
         )
 
@@ -2816,11 +3233,14 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
     )
 
     # ── Ramp curves ───────────────────────────────────────────────
+    # Family subheads break the 15-row wall into 5 scannable groups.
     ramp_rows = hdr
     for fam in _RAMP_FAMILIES:
+        fam_label = fam.replace("_", " ")
+        ramp_rows += f'<div class="ov-family">{_esc(fam_label)}</div>'
         for fld, flabel in _RAMP_FIELDS:
             key = f"ramp.{fam}.{fld}"
-            ramp_rows += _ov_row(key, f"{fam} · {flabel}", "months", overrides)
+            ramp_rows += _ov_row(key, f"{fam_label} · {flabel}", "months", overrides)
 
     # ── Payer mix ─────────────────────────────────────────────────
     payer_rows = hdr + "".join(
@@ -2872,7 +3292,7 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
         <div class="ov-section-title">Bridge assumptions</div>
         <div class="ov-feedback" id="ov-bridge-feedback"></div>
         {bridge_rows}
-        <div style="margin-top:6px;font-size:11px;color:var(--wb-text-faint);">
+        <div class="ov-hint">
           Edit a value then press Enter or Tab to commit.
         </div>
       </div>
@@ -2880,11 +3300,17 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
         <div class="ov-section-title">Ramp curves (months)</div>
         <div class="ov-feedback" id="ov-ramp-feedback"></div>
         {ramp_rows}
+        <div class="ov-hint">
+          Edit a value then press Enter or Tab to commit.
+        </div>
       </div>
       <div class="wb-card ov-section">
         <div class="ov-section-title">Payer mix (share 0–1)</div>
         <div class="ov-feedback" id="ov-payer-feedback"></div>
         {payer_rows}
+        <div class="ov-hint">
+          Edit a value then press Enter or Tab to commit.
+        </div>
       </div>
       <div class="wb-card ov-section">
         <div class="ov-section-title">Metric targets</div>
@@ -2903,16 +3329,29 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
 
 _WORKBENCH_JS = r"""
 (function(){
-  // Tab switching
+  // Tab switching — active class + aria-selected + URL hash so a
+  // reload / shared link lands on the same tab ("#tab-<key>"; the
+  // prefix avoids colliding with the #prov-<metric> anchors).
   const tabs = document.querySelectorAll('.analysis-workbench .wb-tab');
   const panels = document.querySelectorAll('.analysis-workbench .wb-tab-panel');
-  tabs.forEach(t => t.addEventListener('click', () => {
+  function activateTab(t, pushHash) {
     const k = t.dataset.tab;
     tabs.forEach(x => x.classList.toggle('active', x === t));
+    tabs.forEach(x => x.setAttribute('aria-selected', x === t ? 'true' : 'false'));
     panels.forEach(p => p.classList.toggle('active', p.dataset.panel === k));
-  }));
+    if (pushHash) {
+      try { history.replaceState(null, '', '#tab-' + k); } catch (_) {}
+    }
+  }
+  tabs.forEach(t => t.addEventListener('click', () => activateTab(t, true)));
+  const hashMatch = (location.hash || '').match(/^#tab-([a-z]+)$/);
+  if (hashMatch) {
+    const initial = document.querySelector(
+      '.analysis-workbench .wb-tab[data-tab="' + hashMatch[1] + '"]');
+    if (initial) activateTab(initial, false);
+  }
 
-  // Keyboard shortcuts: 1-7 switch tabs, Alt+← / Alt+→ prev/next
+  // Keyboard shortcuts: number keys switch tabs, Alt+← / Alt+→ prev/next
   const tabKeys = Array.from(tabs);
   document.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -2931,7 +3370,8 @@ _WORKBENCH_JS = r"""
       e.preventDefault();
     }
     if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
-      alert('Keyboard shortcuts:\\n1-7: Switch tabs\\nAlt+←/→: Prev/next tab');
+      alert('Keyboard shortcuts:\\n1-' + tabKeys.length +
+            ': Switch tabs\\nAlt+←/→: Prev/next tab');
       e.preventDefault();
     }
   });
@@ -2945,6 +3385,10 @@ _WORKBENCH_JS = r"""
   const dealId = payload.deal_id;
   const assumptions = new Map();
   for (const a of payload.assumptions) assumptions.set(a.metric, a);
+  // metric key → display name (server-provided) so the re-rendered
+  // waterfall matches the server-rendered one instead of flipping
+  // back to snake_case keys after the first slider drag.
+  const metricLabels = payload.labels || {};
 
   function fmtMoney(v){
     if (v == null) return '—';
@@ -2963,7 +3407,7 @@ _WORKBENCH_JS = r"""
     let running = bridge.current_ebitda || 0;
     steps.push({label:'Current EBITDA', value: running, kind:'anchor'});
     for (const imp of bridge.per_metric_impacts) {
-      steps.push({label: imp.metric_key,
+      steps.push({label: metricLabels[imp.metric_key] || imp.metric_key,
                   value: imp.ebitda_impact,
                   kind: imp.ebitda_impact >= 0 ? 'pos' : 'neg'});
       running += imp.ebitda_impact;
@@ -2977,7 +3421,7 @@ _WORKBENCH_JS = r"""
           '<div>' + s.label + '</div>' +
           '<div class="wf-track"><div class="wf-bar ' + s.kind +
           '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
-          '<div class="num" style="text-align:right;">' + fmtMoney(s.value) + '</div>' +
+          '<div class="num">' + fmtMoney(s.value) + '</div>' +
           '</div>';
       }).join('') + '</div>';
     const summary = document.getElementById('wb-bridge-summary');
@@ -2992,6 +3436,10 @@ _WORKBENCH_JS = r"""
   }
 
   let debounceTimer = null;
+  function bridgeStatus(msg){
+    const el = document.getElementById('wb-bridge-status');
+    if (el) el.textContent = msg || '';
+  }
   function postBridge(){
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -3000,14 +3448,24 @@ _WORKBENCH_JS = r"""
         const el = document.getElementById('slider-' + metric);
         if (el) targets[metric] = parseFloat(el.value);
       });
+      const wf = document.getElementById('wb-waterfall');
+      if (wf) wf.style.opacity = '0.55';
+      bridgeStatus('Recomputing…');
       fetch('/api/analysis/' + encodeURIComponent(dealId) + '/bridge', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({targets: targets, financials: {}})
       })
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d && d.bridge) renderWaterfall(d.bridge); })
-        .catch(() => {});
+        .then(d => {
+          if (wf) wf.style.opacity = '';
+          if (d && d.bridge) { renderWaterfall(d.bridge); bridgeStatus(''); }
+          else { bridgeStatus('Recompute failed — showing last result'); }
+        })
+        .catch(() => {
+          if (wf) wf.style.opacity = '';
+          bridgeStatus('Recompute failed — showing last result');
+        });
     }, 300);
   }
 
@@ -3095,6 +3553,8 @@ _WORKBENCH_JS = r"""
         });
         submit.disabled = true;
         submit.textContent = 'Running…';
+        const runFeedback = document.getElementById('scenario-run-feedback');
+        if (runFeedback) { runFeedback.textContent = ''; runFeedback.className = 'ov-feedback'; }
         fetch('/api/analysis/' + encodeURIComponent(dealForScenarios)
               + '/simulate/compare', {
           method: 'POST',
@@ -3109,6 +3569,10 @@ _WORKBENCH_JS = r"""
           .catch(() => {
             submit.disabled = false;
             submit.textContent = 'Run scenario';
+            if (runFeedback) {
+              runFeedback.textContent = 'Scenario run failed — check the inputs and try again.';
+              runFeedback.className = 'ov-feedback err';
+            }
           });
       });
     }
@@ -3181,25 +3645,37 @@ _EXPLAIN_JS = r"""
     return'$'+Math.round(v).toLocaleString();
   }
 
+  function showPanel(){
+    panel.classList.add('open');
+    // Focus management: land on the close button so Escape / Enter
+    // dismisses without a mouse trip.
+    if (closeBtn) closeBtn.focus();
+  }
+
   function open(metric){
     var d = data[metric];
-    if(!d){titleEl.textContent=metric;bodyEl.innerHTML='<div class="dim">No data for this metric.</div>';panel.classList.add('open');return;}
+    if(!d){titleEl.textContent=metric;bodyEl.innerHTML='<div class="dim">No data for this metric.</div>';showPanel();return;}
     titleEl.textContent = d.display_name || metric;
     var pct = d.percentile != null ? (d.percentile*100).toFixed(0)+'th' : '—';
     var barPct = d.percentile != null ? Math.round(d.percentile*100) : 50;
     var barColor = barPct > 70 ? '#0a8a5f' : (barPct < 30 ? '#b5321e' : '#b8732a');
     bodyEl.innerHTML =
-      '<div class="ep-section"><div class="ep-label">Source</div><span style="background:#0b2341;color:#f2ede3;padding:2px 8px;border-radius:3px;font-size:11px;">'+d.source+'</span></div>'+
-      '<div class="ep-section"><div class="ep-label">Current value</div><div class="num" style="font-size:18px;">'+d.value.toFixed(2)+'</div></div>'+
+      '<div class="ep-section"><div class="ep-label">Source</div><span class="ep-source-chip">'+d.source+'</span></div>'+
+      '<div class="ep-section"><div class="ep-label">Current value</div><div class="num ep-value">'+d.value.toFixed(2)+'</div></div>'+
       '<div class="ep-section"><div class="ep-label">Benchmark P50</div><div>'+(d.benchmark_p50!=null?d.benchmark_p50.toFixed(1):'—')+'</div>'+
-      '<div class="ep-label" style="margin-top:6px;">Percentile rank: '+pct+'</div>'+
+      '<div class="ep-label wb-mt6">Percentile rank: '+pct+'</div>'+
       '<div class="ep-bar"><div style="width:'+barPct+'%;background:'+barColor+';"></div></div></div>'+
       '<div class="ep-section"><div class="ep-label">EBITDA sensitivity</div><div>#'+(d.ebitda_sensitivity_rank||'—')+' · impact '+fmtMoney(d.ebitda_impact)+'</div></div>'+
-      (d.diligence_question ? '<div class="ep-section"><div class="ep-label">Diligence question</div><div style="font-style:italic;">'+d.diligence_question+'</div></div>' : '');
-    panel.classList.add('open');
+      (d.diligence_question ? '<div class="ep-section"><div class="ep-label">Diligence question</div><div class="ep-quote">'+d.diligence_question+'</div></div>' : '');
+    showPanel();
   }
 
   if(closeBtn) closeBtn.addEventListener('click', function(){ panel.classList.remove('open'); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && panel && panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    }
+  });
   document.addEventListener('click', function(e){
     var el = e.target.closest('[data-explain]');
     if(!el) return;
@@ -3361,31 +3837,15 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     override_count = len(packet.analyst_overrides or {})
     header = _render_header(packet)
     nav = _render_tab_nav(override_count)
-    # B.1 — calibration-in-progress banner. Auto-removes after the
-    # one-week observation window (review-pushback Decision 3:
-    # partner-perception safeguard for the placeholder thresholds in
-    # rcm_mc/analysis/thresholds.py — distribution-preserving
-    # recalibration runs after a week of production observation, at
-    # which point the badge auto-vanishes and updated thresholds
-    # land in a follow-up PR). Same transparency-as-safeguard pattern
-    # as the α-disclosure on the metric cells.
-    from datetime import date
-    calibration_banner = ""
-    if date.today() < date(2026, 5, 25):
-        calibration_banner = (
-            '<div style="margin:8px 0 14px 0;padding:10px 14px;'
-            'background:#fff8e1;border:1px solid #b8732a;'
-            'border-left:3px solid #b8732a;border-radius:2px;'
-            'font-family:var(--sc-mono,monospace);font-size:11px;'
-            'color:#5c3a0d;line-height:1.5;">'
-            '<strong>Methodology calibration in progress.</strong> '
-            "Quality labels may shift slightly while thresholds tune "
-            "to the new R² distribution. Updated thresholds land "
-            'week of 2026-05-25. <a href="/methodology" '
-            'style="color:#b8732a;text-decoration:underline;">'
-            'See the methodology update →</a>'
-            '</div>'
-        )
+    # NOTE: the B.1 calibration-in-progress banner (gated on
+    # date.today() < 2026-05-25) expired and was removed in the
+    # 2026-07 facelift — it had been rendering nothing while still
+    # shipping dead markup + ad-hoc hex styling.
+    #
+    # The partner-review band renders AFTER every tab panel: it is
+    # not itself a tab panel (it shows on every tab by design), and
+    # placing it before the Assumptions panel put a full-width navy
+    # band between the tab bar and that tab's own content.
     body_inner = (
         _render_overview(packet)
         + _render_rcm_profile(packet)
@@ -3394,8 +3854,8 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         + _render_scenarios(packet)
         + _render_risk_diligence(packet)
         + _render_provenance(packet)
-        + _partner_review_band(packet)
         + _render_assumptions(packet)
+        + _partner_review_band(packet)
     )
     # Prompt 32: build the explain-panel data blob + the empty panel div.
     explain_data = _build_explain_data(packet)
@@ -3415,7 +3875,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
         italic_word="profile",
     )
     shell_body = (
-        f'<div class="analysis-workbench">{header}{calibration_banner}'
+        f'<div class="analysis-workbench">{header}'
         f'{nav}{body_inner}{explain_panel}</div>{next_up}'
     )
     return chartis_shell(
