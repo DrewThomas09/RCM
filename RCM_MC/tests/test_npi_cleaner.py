@@ -4269,8 +4269,111 @@ class TestNppesFillAndCatalog(unittest.TestCase):
         self.assertTrue(any(not c.get("cleaning_wired") for c in cat))
 
 
+class TestStdlibPecos(unittest.TestCase):
+    """PECOS enrollment/opt-out over pure urllib — the vendored client
+    hard-required `requests`, so the screen was dead on every compliant
+    install. Catalog-driven URL resolution; injectable opener."""
+
+    def _client(self, catalog, responder):
+        import io as _io
+        import json as _json
+        from rcm_mc.data_public.cms_pecos_client import (
+            CmsPecosClient, CATALOG_URL)
+
+        class _Resp:
+            def __init__(self, payload):
+                self._b = _json.dumps(payload).encode()
+
+            def read(self):
+                return self._b
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def opener(req, timeout=0):
+            url = req.full_url
+            if url == CATALOG_URL:
+                return _Resp(catalog)
+            return _Resp(responder(url))
+        return CmsPecosClient(opener=opener)
+
+    def _catalog(self):
+        from rcm_mc.data_public.cms_pecos_client import DATASET_TITLES
+        return {"dataset": [
+            {"title": DATASET_TITLES["provider_enrollment"],
+             "distribution": [{"format": "API", "description": "latest",
+                               "accessURL": "https://x/enroll"}]},
+            {"title": DATASET_TITLES["opt_out"],
+             "distribution": [{"format": "API", "description": "latest",
+                               "accessURL": "https://x/optout"}]},
+        ]}
+
+    def test_enrollment_and_optout_lookups(self):
+        def responder(url):
+            if url.startswith("https://x/enroll"):
+                return [{"NPI": GOOD_A, "PROVIDER_TYPE_DESC": "Hospital",
+                         "ORG_NAME": "MERCY", "STATE_CD": "OH"}]
+            if url.startswith("https://x/optout"):
+                return []  # not opted out
+            raise OSError(url)
+        c = self._client(self._catalog(), responder)
+        enr = c.enrollment_lookup(GOOD_A)
+        self.assertTrue(enr["enrolled"])
+        self.assertEqual(enr["provider_type"], "Hospital")
+        self.assertFalse(c.opt_out_lookup(GOOD_A)["opted_out"])
+        self.assertEqual(c.enrollment_lookup("123"), {})  # bad NPI, no call
+
+    def test_not_enrolled_and_opted_out(self):
+        def responder(url):
+            if url.startswith("https://x/enroll"):
+                return []  # not in the enrollment file
+            if url.startswith("https://x/optout"):
+                return [{"NPI": GOOD_B, "Specialty": "Dermatology",
+                         "Optout Effective Date": "2020-01-01"}]
+            raise OSError(url)
+        c = self._client(self._catalog(), responder)
+        self.assertFalse(c.enrollment_lookup(GOOD_B)["enrolled"])
+        oo = c.opt_out_lookup(GOOD_B)
+        self.assertTrue(oo["opted_out"])
+        self.assertEqual(oo["optout_specialty"], "Dermatology")
+
+    def test_screen_cms_uses_stdlib_client_rows(self):
+        from rcm_mc.npi_cleaner import compliance
+
+        def responder(url):
+            if url.startswith("https://x/enroll"):
+                return []  # GOOD_A not enrolled → flagged
+            return []
+        c = self._client(self._catalog(), responder)
+        out = compliance.screen_cms([GOOD_A], cms_client=c)
+        self.assertEqual(out["checked"], 1)
+        self.assertEqual(out["not_enrolled"], 1)
+        self.assertEqual(out["rows"][0]["npi"], GOOD_A)
+        self.assertFalse(out["rows"][0]["enrolled"])
+
+    def test_build_cms_client_falls_back_to_stdlib(self):
+        # With requests absent (the compliant norm), the builder must
+        # still return a working client, not None.
+        from rcm_mc.npi_cleaner import compliance
+        from rcm_mc.data_public.cms_pecos_client import CmsPecosClient
+        import builtins
+        real_import = builtins.__import__
+
+        def no_requests(name, *a, **k):
+            if name == "requests":
+                raise ImportError("no requests in this deployment")
+            return real_import(name, *a, **k)
+        with patch.object(builtins, "__import__", no_requests):
+            client = compliance._build_cms_client()
+        self.assertIsInstance(client, CmsPecosClient)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

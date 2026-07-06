@@ -118,12 +118,22 @@ def screen_leie(npis: List[str], *, leie_path: Optional[str] = None) -> dict:
 
 # -------------------------------------------------------------- Medicare PECOS --
 def _build_cms_client():
-    """Construct a v49 CMSClient with a short per-request timeout, or None."""
+    """A CMS PECOS client with a short per-request timeout, or None.
+
+    Prefers the vendored v49 CMSClient when ``requests`` is installed;
+    otherwise falls back to the stdlib urllib client — which is the norm,
+    since the platform ships stdlib + pandas/numpy/openpyxl only and the
+    PECOS screen was permanently dead without this fallback."""
     try:
         import requests  # noqa: F401
         from .vendor_v49.npi_recovery import clients
         cache = clients.DiskCache("/tmp/npi_cleaner_cms_cache")
         return clients.CMSClient(cache, timeout=_CMS_REQ_TIMEOUT)
+    except Exception:  # noqa: BLE001 — no requests → stdlib fallback
+        pass
+    try:
+        from ..data_public.cms_pecos_client import CmsPecosClient
+        return CmsPecosClient(timeout=_CMS_REQ_TIMEOUT)
     except Exception:  # noqa: BLE001
         return None
 

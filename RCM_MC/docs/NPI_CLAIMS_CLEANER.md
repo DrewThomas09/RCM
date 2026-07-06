@@ -69,13 +69,18 @@ Five classic DQ dimensions, each a recomputable ratio, blended
 
 ## Rules
 
-68 registered rules (`rcm_mc/npi_cleaner/rules.py`), two kinds:
+76 registered rules (`rcm_mc/npi_cleaner/rules.py`), two kinds:
 
 - **Repairs** — deterministic, safe-by-construction normalizations the
   cleaner applies (NPI Excel-float damage, date → ISO, money
   normalization, ZIP/revenue/DRG/POS zero-pads, ICD-10 decimal insertion,
-  provider-name re-casing …). Fully audited in the change log; can never
-  be disabled by a profile.
+  provider-name re-casing …), plus **deterministic fills** of blank cells
+  from truth the cleaner already trusts: `state-from-zip` (blank state ←
+  ZIP3→state map) and, in online enrich mode, `name/state/taxonomy-from-nppes`
+  (blank provider fields ← the verified NPI's canonical NPPES record).
+  Fills are blanks-only, never overwrite, fully audited in the change
+  log, and graded under completeness; repairs can never be disabled by a
+  profile.
 - **Flags** — report-only findings (never auto-fixed): code-shape and
   domain screens, cross-field contradictions, charge outliers (3×IQR per
   HCPCS), timely-filing risk with **per-payer limits**, MUE-style unit
@@ -300,7 +305,10 @@ rcm-mc npi-clean sites.zip  --bundle            # batch a zip of extracts
 ```
 rcm_mc/npi_cleaner/
 ├── engine.py       cleaning engine: repairs, flags, scorecard, jobs
-├── rules.py        declarative registry (72 rules)
+├── rules.py        declarative registry (76 rules)
+├── connectors.py   live public-data catalog + drug resolve (wired flags)
+├── nppes_bridge.py NPPES verify / recover / fill (shared CMS client)
+├── compliance.py   OIG LEIE (offline pack) + PECOS (stdlib urllib)
 ├── refdata.py      claims reference catalogs (POS/TOB/CARC/RARC/
 │                   chronic-condition groups/…)
 ├── refdata_packs.py pull-and-install public code sets (NUCC taxonomy,
