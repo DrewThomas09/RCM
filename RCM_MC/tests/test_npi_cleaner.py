@@ -4005,7 +4005,7 @@ class TestUncappedOutputs(unittest.TestCase):
         self.assertEqual(res.n_changes, 600)
         self.assertEqual(len(res.changelog), 50)
         self.assertFalse(res.changelog_truncated)
-        self.assertIsNone(res.changelog_spill_path)  # consumed + deleted
+        self.assertIsNone(res.changelog_spill)  # consumed + discarded
         with open(res.changelog_path, encoding="utf-8") as fh:
             lines = fh.read().splitlines()
         self.assertEqual(len(lines) - 1, 600)
@@ -4055,8 +4055,77 @@ class TestUncappedOutputs(unittest.TestCase):
         self.assertEqual(res.n_rows_out, 25_000)
 
 
+class TestSpillGuard(unittest.TestCase):
+    """Adversarial-review regressions for the changelog spill: the temp
+    file holds PRE-de-id values, so it must never be orphaned by a
+    cancelled/failed run, and the stitched CSV must be byte-exact."""
+
+    def _dirty(self, extra_last=None, n=400):
+        rows = ["ClaimID,Note,BillingProviderNPI"]
+        rows += [f"{i},x, {GOOD_A} " for i in range(1, n)]
+        if extra_last:
+            rows.append(extra_last)
+        return ("\n".join(rows) + "\n").encode()
+
+    def test_cancel_mid_run_orphans_no_spill_files(self):
+        import gc
+        import glob
+        before = set(glob.glob("/tmp/npi_cleaner_web/spill_*.csv"))
+
+        class Boom(Exception):
+            pass
+
+        def cb(msg, frac):
+            if frac > 0.86:  # after the row loop, before _write_output
+                raise Boom()
+
+        with patch.object(engine, "_CHANGELOG_PREVIEW", 10):
+            with self.assertRaises(Boom):
+                engine.clean_bytes(self._dirty(), "cancel.csv",
+                                   progress=cb)
+        gc.collect()
+        after = set(glob.glob("/tmp/npi_cleaner_web/spill_*.csv"))
+        self.assertEqual(sorted(after - before), [])
+
+    def test_multiline_cell_survives_spill_byte_for_byte(self):
+        # Universal-newline reads rewrote CR/LF inside quoted cells when
+        # the spill was stitched back; the append is binary now.
+        last = '400,"123 Main St\r\nSuite 4, rear   ", ' + GOOD_A + " "
+        with patch.object(engine, "_CHANGELOG_PREVIEW", 10):
+            res = engine.clean_bytes(self._dirty(extra_last=last),
+                                     "crlf.csv")
+        raw = open(res.changelog_path, "rb").read()
+        self.assertIn(b"St\r\nSuite", raw)
+        import csv as _csv
+        import io as _io
+        recs = list(_csv.reader(_io.StringIO(raw.decode("utf-8"),
+                                             newline="")))
+        self.assertEqual(len(recs) - 1, res.n_changes)
+        self.assertTrue(any("\r\n" in (r[2] if len(r) > 2 else "")
+                            for r in recs[1:]))
+
+    def test_spill_write_failure_discards_partial_and_flags(self):
+        g = engine._ChangelogSpill()
+        g.write([1, "c", "b", "a", "trim"])
+        self.assertIsNotNone(g.path)
+        p = g.path
+        # Sabotage the handle so the next write raises OSError.
+        g.fh.close()
+        g.fh = None
+
+        class _BoomWriter:
+            def writerow(self, row):
+                raise OSError("disk full")
+        g.writer = _BoomWriter()
+        g.write([2, "c", "b", "a", "trim"])
+        self.assertTrue(g.failed)
+        self.assertIsNone(g.path)
+        self.assertFalse(p.exists())
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

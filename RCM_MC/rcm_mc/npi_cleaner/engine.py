@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import csv
 import io
+import shutil
 import re
 import threading
 import time
@@ -780,6 +781,71 @@ _STREAM_SEEN_CAP = 2_000_000
 # capped the file itself at this number — users with big files got a
 # silently truncated audit CSV.
 _CHANGELOG_PREVIEW = 20_000
+
+
+class _ChangelogSpill:
+    """Disk spill for change-log entries past the in-memory preview.
+
+    Owns its temp file for the WHOLE run: if the run dies before
+    _write_output consumes the spill — user cancel (JobCancelled rides
+    the progress callback), a network error in enrich mode, disk full —
+    the finalizer closes the handle and unlinks the file. The spill
+    holds PRE-de-identification cell values, so an orphaned copy in
+    WORKDIR would be unmasked PHI sitting in /tmp; cleanup cannot
+    depend on the happy path reaching _write_output.
+    """
+
+    def __init__(self) -> None:
+        self.fh = None
+        self.writer = None
+        self.path: Optional[Path] = None
+        self.failed = False
+
+    def write(self, row: List[object]) -> None:
+        if self.failed:
+            return
+        try:
+            if self.writer is None:
+                WORKDIR.mkdir(parents=True, exist_ok=True)
+                self.path = WORKDIR / f"spill_{uuid.uuid4().hex}.csv"
+                self.fh = open(self.path, "w", newline="",
+                               encoding="utf-8")
+                self.writer = csv.writer(self.fh)
+            self.writer.writerow(row)
+        except OSError:
+            # Disk over quota mid-run: drop the partial file so a broken
+            # half-spill never masquerades as a complete audit trail.
+            self.failed = True
+            self.discard()
+
+    def close(self) -> None:
+        """Flush + close the write handle, keeping the file for
+        _write_output to consume. A close failure counts as a spill
+        failure (the tail of the file may be missing)."""
+        if self.fh is not None and not self.fh.closed:
+            try:
+                self.fh.close()
+            except OSError:
+                self.failed = True
+        if self.failed:
+            self.discard()
+
+    def discard(self) -> None:
+        if self.fh is not None and not self.fh.closed:
+            try:
+                self.fh.close()
+            except OSError:
+                pass
+        self.fh = None
+        self.writer = None
+        if self.path is not None:
+            try:
+                Path(self.path).unlink(missing_ok=True)
+            except OSError:
+                pass
+        self.path = None
+
+    __del__ = discard
 # Flagged OUTPUT rows captured per rule (and per payer family) for the
 # worklist downloads. 500 was actionable-list sized; at 10M-row scale a
 # single rule can legitimately fire on hundreds of thousands of rows and
@@ -971,9 +1037,10 @@ class CleanResult:
     changelog_path: Optional[str] = None
     changelog_name: str = "changelog.csv"
     # Disk spill of change-log entries past the in-memory preview
-    # (_CHANGELOG_PREVIEW); consumed and deleted by _write_output so the
-    # changelog CSV is complete no matter how many cells changed.
-    changelog_spill_path: Optional[str] = None
+    # (_CHANGELOG_PREVIEW): a _ChangelogSpill guard that owns the temp
+    # file. Consumed and discarded by _write_output; self-cleans via its
+    # finalizer if the run dies first (the spill holds pre-de-id values).
+    changelog_spill: Optional[object] = None
     # Payer-name variant clusters (report-only), per-HCPCS charge outliers,
     # and structural findings (duplicate headers / empty columns).
     payer_variants: Optional[Dict[str, object]] = None
@@ -1825,12 +1892,10 @@ def clean_bytes(
                                     "patientcontrolnumber", "icn", "dcn"))
     _charge_i = billed_i if billed_i is not None else allowed_i
     # Change-log spill: entries past the in-memory preview stream to a
-    # temp CSV so the audit-trail FILE is complete at any scale. Opened
-    # lazily — small files never touch the disk twice.
-    _spill_fh = None
-    _spill_writer = None
-    _spill_path: Optional[Path] = None
-    _spill_failed = False
+    # temp CSV so the audit-trail FILE is complete at any scale. The
+    # guard owns the temp file and self-cleans if the run dies early
+    # (cancel / exception) — see _ChangelogSpill.
+    _spill = _ChangelogSpill()
 
     cb("Cleaning rows", 0.30)
     cleaned: List[List[str]] = []
@@ -1907,23 +1972,12 @@ def clean_bytes(
                     # Chunk without a sink (direct callers): no file will
                     # be written, so spilling would only leak temp files.
                     res.changelog_truncated = True
-                elif not _spill_failed:
-                    try:
-                        if _spill_writer is None:
-                            WORKDIR.mkdir(parents=True, exist_ok=True)
-                            _spill_path = (WORKDIR /
-                                           f"spill_{uuid.uuid4().hex}.csv")
-                            _spill_fh = open(_spill_path, "w", newline="",
-                                             encoding="utf-8")
-                            _spill_writer = csv.writer(_spill_fh)
-                        _spill_writer.writerow(
-                            [_entry[0], _defang_cell(_entry[1]),
-                             _defang_cell(_entry[2]),
-                             _defang_cell(_entry[3]), _entry[4]])
-                    except OSError:
-                        # Disk over quota mid-run: the file stays truncated
-                        # at what was captured; the flag says so honestly.
-                        _spill_failed = True
+                else:
+                    _spill.write(
+                        [_entry[0], _defang_cell(_entry[1]),
+                         _defang_cell(_entry[2]),
+                         _defang_cell(_entry[3]), _entry[4]])
+                    if _spill.failed:
                         res.changelog_truncated = True
             # Fill-rate counters for the data-quality report card.
             res.n_cells_total += 1
@@ -2306,14 +2360,14 @@ def clean_bytes(
         if ri % 500 == 0:
             cb("Cleaning rows", 0.30 + 0.55 * (ri / total))
 
-    if _spill_fh is not None:
-        try:
-            _spill_fh.close()
-        except OSError:
-            _spill_failed = True
-            res.changelog_truncated = True
-        if not _spill_failed and _spill_path is not None:
-            res.changelog_spill_path = str(_spill_path)
+    _spill.close()
+    if _spill.failed:
+        res.changelog_truncated = True
+    elif _spill.path is not None:
+        # Hand the GUARD to _write_output (not a bare path): the guard's
+        # finalizer keeps covering the window between here and there, so
+        # a cancel/crash in enrich/vendor code can't orphan the file.
+        res.changelog_spill = _spill
     res.n_rows_out = len(cleaned)
 
     # Suspected duplicate CLAIMS — distinct rows (already past exact-row dedup)
@@ -2928,7 +2982,9 @@ def _write_output(res: CleanResult, headers: List[str],
     # deliberately absent — original PHI must never land in this file.
     # res.changelog holds the first _CHANGELOG_PREVIEW entries; anything
     # past that was spilled to disk during the row loop and is appended
-    # here byte-for-byte, so the FILE is complete at any scale.
+    # here in BINARY mode — text mode's universal-newline translation
+    # would rewrite CR/LF inside quoted cells (multiline addresses) and
+    # make identical inputs read differently across the preview boundary.
     if res.changelog:
         stem = res.out_name[:-len("_cleaned.csv")] if res.out_name.endswith(
             "_cleaned.csv") else res.out_name.rsplit(".", 1)[0]
@@ -2941,21 +2997,18 @@ def _write_output(res: CleanResult, headers: List[str],
                 writer.writerow([row_i, _defang_cell(col),
                                  _defang_cell(before), _defang_cell(after),
                                  rule])
-            if res.changelog_spill_path:
-                try:
-                    fh.flush()
-                    with open(res.changelog_spill_path,
-                              encoding="utf-8") as spill:
-                        while True:
-                            block = spill.read(1 << 20)
-                            if not block:
-                                break
-                            fh.write(block)
-                except OSError:
-                    res.changelog_truncated = True
-        if res.changelog_spill_path:
-            Path(res.changelog_spill_path).unlink(missing_ok=True)
-            res.changelog_spill_path = None
+        spill = res.changelog_spill
+        if spill is not None:
+            try:
+                if getattr(spill, "path", None):
+                    with open(log_path, "ab") as out_b, \
+                            open(spill.path, "rb") as in_b:
+                        shutil.copyfileobj(in_b, out_b, 1 << 20)
+            except OSError:
+                res.changelog_truncated = True
+            finally:
+                spill.discard()
+                res.changelog_spill = None
         res.changelog_path = str(log_path)
 
     # A styled multi-tab .xlsx workbook (Cleaned · issues · scorecard) via the
