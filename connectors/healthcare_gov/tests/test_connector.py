@@ -135,6 +135,33 @@ class ConnectorTests(unittest.TestCase):
         self.assertEqual(store.count("healthcare_gov_rows"), 3)
         store.close()
 
+    def test_refresh_dataset_signs_keys_with_the_filter_slice(self):
+        # Two refreshes of one dataset under different conditions must
+        # coexist — the params are forwarded to generic_rows as the
+        # slice signature (same contract as the other DKAN connectors).
+        fake = FakeHealthcareGov().add_datastore("e4rr-zk4i", _rates(2))
+        store = HealthcareGovStore(":memory:")
+        conn = _connector()
+        conn.refresh_dataset(store, "e4rr-zk4i", opener=fake)
+        conn.refresh_dataset(store, "e4rr-zk4i", {"statecode": "AK"},
+                             opener=fake)
+        conn.refresh_dataset(store, "e4rr-zk4i", {"statecode": "TX"},
+                             opener=fake)
+        self.assertEqual(store.count("healthcare_gov_rows"), 6)
+        keys = [r["row_key"] for r in store.fetchall(
+            "SELECT row_key FROM healthcare_gov_rows ORDER BY row_key")]
+        # One unfiltered slice (no signature segment) + two signed slices.
+        unsigned = [k for k in keys if k.count(":") == 1]
+        signed = [k for k in keys if k.count(":") == 2]
+        self.assertEqual(len(unsigned), 2)
+        self.assertEqual(len(signed), 4)
+        self.assertEqual(len({k.split(":")[1] for k in signed}), 2)
+        # Re-running a filtered slice stays idempotent.
+        conn.refresh_dataset(store, "e4rr-zk4i", {"statecode": "TX"},
+                             opener=fake)
+        self.assertEqual(store.count("healthcare_gov_rows"), 6)
+        store.close()
+
 
 if __name__ == "__main__":
     unittest.main()

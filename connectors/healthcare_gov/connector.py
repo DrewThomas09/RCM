@@ -249,7 +249,11 @@ class HealthcareGovConnector:
         step = self.fetch_dataset(identifier, params, opener=opener,
                                   max_pages=max_pages, page_size=page_size,
                                   start_offset=start_offset)
-        rows = generic_rows(step.endpoint, step.rows, start_idx=start_offset)
+        # Sign the keys with the filter slice so refreshes of one dataset
+        # under different conditions coexist (same contract as the other
+        # DKAN connectors' generic rows).
+        rows = generic_rows(step.endpoint, step.rows, start_idx=start_offset,
+                            slice_params=params)
         upserted = store.upsert("healthcare_gov_rows", rows)
         return {
             "dataset_id": "healthcare_gov_fetched_rows",
