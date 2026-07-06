@@ -30,6 +30,7 @@ CONNECTOR_NAMES: Tuple[str, ...] = (
     "openfda", "cms_coverage", "npi_registry", "icd10",
     "cms_open_data", "provider_data", "open_payments", "medicaid_data",
     "healthcare_gov", "cdc_data", "hrsa_data", "nih_reporter", "census_acs",
+    "oig_leie", "bls_qcew",
 )
 
 # Human labels for the estate view. Descriptive only.
@@ -47,6 +48,8 @@ CONNECTOR_LABELS: Dict[str, str] = {
     "hrsa_data": "HRSA (HPSA shortage areas + health centers)",
     "nih_reporter": "NIH RePORTER (grants + publications)",
     "census_acs": "US Census ACS 5-year (demographics)",
+    "oig_leie": "HHS OIG LEIE (exclusion list)",
+    "bls_qcew": "BLS QCEW (healthcare employment + wages)",
 }
 
 # Query-string key aliases: a lookup handler parameter name that is exposed

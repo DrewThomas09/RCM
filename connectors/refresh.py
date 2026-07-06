@@ -98,6 +98,15 @@ _QUICK_PLAN: Dict[str, List[List[str]]] = {
         ["fetch", "--dataset", "state_profile", "--year", "2023"],
         ["fetch", "--dataset", "county_profile", "--year", "2023"],
     ],
+    "oig_leie": [
+        ["fetch", "--dataset", "exclusions", "--max-rows", "5000"],
+    ],
+    "bls_qcew": [
+        ["fetch", "--dataset", "industry_area", "--industry", "62",
+         "--max-rows", "5000"],
+        ["fetch", "--dataset", "industry_area", "--industry", "622",
+         "--max-rows", "5000"],
+    ],
 }
 
 # Steps widened (not unbounded) by --full: bigger page caps on the slices.
@@ -136,6 +145,10 @@ _FULL_OVERRIDES: Dict[str, List[List[str]]] = {
         ["fetch", "--dataset", "hpsa_mental_health", "--full"],
         ["fetch", "--dataset", "mua", "--full"],
         ["fetch", "--dataset", "health_center_sites", "--full"],
+    ],
+    "oig_leie": [
+        ["fetch", "--dataset", "exclusions", "--full"],
+        ["fetch", "--dataset", "reinstatements"],
     ],
 }
 

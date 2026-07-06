@@ -34,8 +34,10 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 | HRSA | `connectors/hrsa_data` | HRSA data downloads — HPSA shortage areas (primary care/dental/mental health), MUA/P, health-center sites | `data.hrsa.gov` | 5 |
 | NIH RePORTER | `connectors/nih_reporter` | NIH RePORTER v2 (POST JSON) — funded projects + linked publications | `api.reporter.nih.gov` | 2 |
 | Census ACS | `connectors/census_acs` | ACS 5-year — county/state/CBSA demographic profiles (population, 65+, income, poverty, uninsured); requires free `CENSUS_API_KEY` | `api.census.gov/data` | 3 |
+| OIG LEIE | `connectors/oig_leie` | HHS OIG exclusion list — full database + monthly supplements + reinstatements, NPI-joinable compliance screening | `oig.hhs.gov` | 3 |
+| BLS QCEW | `connectors/bls_qcew` | Quarterly Census of Employment & Wages — healthcare employment, wages, location quotients by county/MSA x NAICS | `data.bls.gov/cew` | 2 |
 
-**146 registered datasets across 13 connectors** — plus five full open-data
+**151 registered datasets across 15 connectors** — plus five full open-data
 catalogs synced as first-class tables (data.cms.gov 158, Provider Data
 Catalog 234, Open Payments 74, data.medicaid.gov 541, Healthcare.gov 337,
 data.cdc.gov ~1,500), each with a generic fetched-rows slot so **any**
