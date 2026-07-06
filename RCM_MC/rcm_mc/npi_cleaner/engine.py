@@ -48,6 +48,22 @@ _NPI_HINTS = (
     "npi", "billingnpi", "renderingnpi", "referringnpi", "providernpi",
     "attendingnpi", "billingprovidernpi", "facilitynpi", "servicingnpi",
 )
+# Tokens that mark a column as a DERIVED ATTRIBUTE OF an NPI — a boolean flag,
+# a status, a type, a name, a date — rather than a column that HOLDS the NPI
+# value itself. A real 600k-row extract carried "OPTIONCARE_NPI_FLAG" (a Y/N
+# flag): it contains "npi", was scored as 600k malformed NPIs, and tanked the
+# Validity dimension to 0.0%. "NPI Number"/"NPI_ID"/"NPI Code" are deliberately
+# NOT excluded — those DO hold the identifier; only clearly-derived companions
+# are dropped. Tokens are matched against split header words (see
+# ``_header_tokens``); the suffix fallback (len ≥ 4) handles delimiter-free
+# blobs like "OPTIONCARENPIFLAG".
+_NPI_MODIFIER_TOKENS = frozenset({
+    "flag", "flg", "indicator", "ind", "status", "stat",
+    "valid", "validity", "validated", "verify", "verified", "verification",
+    "match", "matched", "type", "typ", "kind", "category", "cat",
+    "desc", "description", "name", "count", "cnt", "date", "dt",
+    "reason", "qual", "qualifier", "present", "missing", "exists",
+})
 # A "billing" NPI is the one that must be present for a claim to be payable —
 # missing values here are the headline recovery target.
 _BILLING_HINTS = ("billing", "billingprovider", "pay")
@@ -375,7 +391,10 @@ def _zip_state_pairs(headers: List[str]) -> List[Tuple[int, int]]:
     states, zips = [], []
     for i, h in enumerate(headers):
         k = _norm_key(h)
-        if "state" in k or "province" in k:
+        # Bare "St" is a real state header in the wild; match it by exact
+        # key (a substring "st" would grab ClaimStatus/PostDate), same as
+        # the primary state detector, so state-from-zip fill reaches it.
+        if "state" in k or "province" in k or k == "st":
             states.append((i, _entity(k, ("state", "province"))))
         if any(x in k for x in ("zipcode", "zip", "postalcode", "postal")):
             zips.append((i, _entity(k, ("zipcode", "zip", "postalcode",
@@ -767,6 +786,27 @@ def _clean_ndc_cell(v: str) -> Tuple[str, List[str]]:
     return v, []
 
 
+def _ndc_malformed(v: str) -> bool:
+    """True when a present NDC can't be a valid drug code: not 10 or 11
+    digits after stripping separators, or a 3-part hyphenated form whose
+    segment lengths aren't a known NDC layout. 10-digit is valid (just
+    segmentation-ambiguous, flagged separately); blank passes."""
+    s = v.strip()
+    if not s:
+        return False
+    if "-" in s:
+        segs = s.split("-")
+        if len(segs) == 3 and all(seg.isdigit() for seg in segs):
+            lens = tuple(len(seg) for seg in segs)
+            return lens != (5, 4, 2) and lens not in _NDC_PAD_MAP
+        # A hyphenated value that isn't a clean 3-part numeric NDC.
+        digits = "".join(c for c in s if c.isdigit())
+        return len(digits) not in (10, 11)
+    digits = "".join(c for c in s if c.isdigit())
+    # A pure-digit NDC must be 10 or 11; anything else is keying damage.
+    return (not s.replace(" ", "").isdigit()) or len(digits) not in (10, 11)
+
+
 import hashlib
 
 # Distinct-row digests tracked for cross-chunk dedupe on a streamed run
@@ -1106,6 +1146,11 @@ class CleanResult:
     # catalog. None unless online mode ran. See connectors.py.
     connectors: Optional[List[Dict[str, object]]] = None
     catalog: Optional[List[Dict[str, object]]] = None
+    # Per-connector recommendation for THIS file (which sources apply + why),
+    # computed from the detected columns even on an offline run so the panel
+    # can explain "2 of 20 used" instead of looking broken. See
+    # connectors.plan().
+    connector_plan: Optional[List[Dict[str, object]]] = None
     # Compliance screens (OIG LEIE + Medicare PECOS). None unless online. See
     # compliance.py.
     compliance: Optional[List[Dict[str, object]]] = None
@@ -1153,7 +1198,8 @@ class CleanResult:
                        "drg-malformed", "tob-malformed",
                        "discharge-status-invalid", "admission-type-invalid",
                        "modifier-unknown", "icd10-unknown-code",
-                       "hcpcs-unknown-code")
+                       "hcpcs-unknown-code", "admission-source-invalid",
+                       "ndc-malformed", "taxonomy-unknown-code")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1163,7 +1209,8 @@ class CleanResult:
                           "charge-outlier", "jw-zero-units", "bilateral-units",
                           "conflicting-amount-claim",
                           "anesthesia-units-implausible",
-                          "revenue-tob-mismatch", "timely-filing-risk")
+                          "revenue-tob-mismatch", "timely-filing-risk",
+                          "service-date-order", "discharge-status-final-bill")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1278,6 +1325,7 @@ class CleanResult:
             "nppes": self.nppes,
             "connectors": self.connectors,
             "catalog": self.catalog,
+            "connector_plan": self.connector_plan,
             "compliance": self.compliance,
             "deep": self.deep,
             "deep_workbook_name": (self.deep_workbook_name
@@ -1547,20 +1595,92 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
     return headers, body, delim, None
 
 
+def _header_tokens(header: str) -> List[str]:
+    """Split a header into lowercase word tokens across delimiters, camelCase,
+    and letter↔digit boundaries so ``OptionCareNPIFlag`` and
+    ``OPTIONCARE_NPI_FLAG`` both surface a ``flag`` token. Used to tell an NPI
+    VALUE column from a derived NPI flag/status column."""
+    if not header:
+        return []
+    s = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", header)          # camelCase
+    s = re.sub(r"(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])", " ", s)
+    return [p.lower() for p in re.split(r"[^A-Za-z0-9]+", s) if p]
+
+
+def _is_npi_modifier_column(header: str, key: str) -> bool:
+    """True when a header that mentions "npi" is actually a derived companion
+    (a flag/status/type/name/date) rather than a column holding the NPI value.
+    Prevents boolean/indicator columns from being scored as malformed NPIs."""
+    toks = _header_tokens(header)
+    if any(t in _NPI_MODIFIER_TOKENS for t in toks):
+        return True
+    # Delimiter-free blob (e.g. "OPTIONCARENPIFLAG" → one token): fall back to
+    # a suffix test with tokens long enough to be unambiguous.
+    if len(toks) <= 1:
+        for t in _NPI_MODIFIER_TOKENS:
+            if len(t) >= 4 and key.endswith(t):
+                return True
+    return False
+
+
 def _detect_npi_columns(headers: List[str]) -> Tuple[List[int], Optional[int]]:
-    """Return (indices of NPI columns, index of the billing NPI column or None)."""
+    """Return (indices of NPI columns, index of the billing NPI column or None).
+
+    A header must both mention "npi" AND not be a derived NPI companion
+    (``*_NPI_FLAG``, ``NPI_Status``, ``NPI_Type`` …) — see
+    ``_is_npi_modifier_column``. Without that guard a Y/N flag column was
+    scored as 600k malformed NPIs and drove Validity to 0% on a real file."""
     npi_idx: List[int] = []
     billing_idx: Optional[int] = None
     for i, h in enumerate(headers):
         key = _norm_key(h)
-        if any(hint in key for hint in _NPI_HINTS) or key == "npi":
-            npi_idx.append(i)
-            if billing_idx is None and any(b in key for b in _BILLING_HINTS):
-                billing_idx = i
+        if not (any(hint in key for hint in _NPI_HINTS) or key == "npi"):
+            continue
+        if _is_npi_modifier_column(h, key):
+            continue
+        npi_idx.append(i)
+        if billing_idx is None and any(b in key for b in _BILLING_HINTS):
+            billing_idx = i
     # No explicit billing column? Treat the first NPI column as billing.
     if billing_idx is None and npi_idx:
         billing_idx = npi_idx[0]
     return npi_idx, billing_idx
+
+
+# HCPCS Level II drug code ("J-code", e.g. J1745 = infliximab). These live in
+# the procedure/HCPCS column and ARE drug identifiers even when a file carries
+# no NDC and no free-text drug name — the signal that an infusion-pharmacy or
+# oncology extract needs the drug connectors.
+_JCODE_RE = re.compile(r"^J\d{4}$")
+
+
+def _jcode_stats(rows: List[List[str]], hcpcs_idx: Optional[int], *,
+                 scan_cap: int = 50000, distinct_cap: int = 400
+                 ) -> Tuple[float, List[str]]:
+    """(% of populated HCPCS cells that are J-codes over a bounded scan,
+    distinct J-codes for the RxNorm crosswalk). Bounded so a 10M-row file
+    can't turn connector planning into a full extra pass."""
+    if hcpcs_idx is None:
+        return 0.0, []
+    seen: List[str] = []
+    seen_set: set = set()
+    populated = jcount = 0
+    for n, row in enumerate(rows):
+        if n >= scan_cap:
+            break
+        if hcpcs_idx >= len(row):
+            continue
+        val = (row[hcpcs_idx] or "").strip().upper()
+        if not val:
+            continue
+        populated += 1
+        if _JCODE_RE.match(val):
+            jcount += 1
+            if val not in seen_set and len(seen) < distinct_cap:
+                seen_set.add(val)
+                seen.append(val)
+    pct = (100.0 * jcount / populated) if populated else 0.0
+    return pct, seen
 
 
 def _detect_one(headers: List[str], hints: tuple) -> Optional[int]:
@@ -1571,6 +1691,115 @@ def _detect_one(headers: List[str], hints: tuple) -> Optional[int]:
             if hint in k:
                 return i
     return None
+
+
+# How many rows the value-based amount sniffer reads. Bounded so the fallback
+# stays cheap at 10M-row scale (sample, never full-scan).
+_AMOUNT_SNIFF_SAMPLE = 4000
+
+
+def _sniff_amount_column(
+    headers: List[str], rows: List[List[str]], claimed: set, *,
+    sample: int = _AMOUNT_SNIFF_SAMPLE,
+) -> Optional[int]:
+    """Find the column most likely to hold claim AMOUNTS by value, for the
+    Population/analytics charge role ONLY — used as a last resort when no
+    billed/allowed/paid/other money header was detected (e.g. a charge column
+    named ``NET_SVC_VAL`` that no header hint matches).
+
+    Deliberately conservative so it never *invents* money:
+
+      * A candidate must be predominantly parseable as money (``_to_number``
+        over a bounded sample) AND carry monetary evidence — decimal cents on
+        a real share of cells, or a ``$``/thousands-grouped format. A bare
+        integer column (units, counts, ages, sequence numbers, numeric codes)
+        therefore does NOT qualify, and a de-identified extract whose amounts
+        were stripped keeps the role empty (charges stay ``$0``).
+      * Columns already claimed by any other role (NPI / date / zip / phone /
+        HCPCS / dx / modifier / taxonomy / NDC / revenue / POS / DRG / state /
+        units / patient / member / claim / …) are never adopted — ``claimed``
+        carries every such index.
+
+    Returns the winning column index, or ``None`` when nothing qualifies.
+    NEVER feeds the deterministic cleaning pass (money_set / date_set / the
+    money-unparseable screen) — the caller uses it for analytics only.
+    """
+    ncols = len(headers)
+    best: Optional[int] = None
+    best_score: Optional[tuple] = None
+    for ci in range(ncols):
+        if ci in claimed:
+            continue
+        nonblank = money = decimal = nonzero = 0
+        total_abs = 0.0
+        for n, row in enumerate(rows):
+            if n >= sample:
+                break
+            if ci >= len(row):
+                continue
+            cell = row[ci].strip()
+            if not cell:
+                continue
+            nonblank += 1
+            num = _to_number(cell)
+            if num is None:
+                continue
+            money += 1
+            if "." in cell or "$" in cell or "," in cell:
+                decimal += 1
+            if abs(num) > 1e-9:
+                nonzero += 1
+                total_abs += abs(num)
+        if nonblank < 3 or money == 0:
+            continue
+        money_frac = money / nonblank
+        decimal_frac = decimal / nonblank
+        # Predominantly money-shaped, with real monetary formatting evidence,
+        # and not an all-zero column (which would add nothing anyway).
+        if money_frac < 0.9 or decimal_frac < 0.3 or nonzero == 0:
+            continue
+        mean_abs = total_abs / nonzero
+        score = (round(money_frac, 3), round(decimal_frac, 3), mean_abs)
+        if best_score is None or score > best_score:
+            best_score = score
+            best = ci
+    return best
+
+
+def _analytics_amount_col(
+    headers: List[str], rows: List[List[str]], *,
+    billed_i: Optional[int], allowed_i: Optional[int], paid_i: Optional[int],
+    money_set: set, claimed: set,
+) -> Optional[int]:
+    """Pick the single amount column the Population/analytics marts sum for
+    charges. Priority: billed → allowed → paid (header-detected) → any other
+    header-detected money column (``amount``/``cost``/``fee``-flavored) →
+    value-based sniff over unclaimed columns.
+
+    Report-only: the returned index feeds ONLY analytics; it never changes the
+    deterministic cleaning money_set/date_set or any existing behavior. The
+    value sniff runs only when NO money header matched, so a genuinely
+    amount-less (or de-identified) file yields ``None`` and charges stay ``$0``.
+    """
+    for i in (billed_i, allowed_i, paid_i):
+        if i is not None:
+            return i
+    if money_set:
+        # A money header exists but none of the billed/allowed/paid roles
+        # matched (e.g. "NetAmount", "ServiceFee"). Prefer the most charge-like
+        # by header wording so the marts sum a gross figure when there is one.
+        _pri = ("charge", "billed", "gross", "total", "amount", "cost", "fee",
+                "allowed", "paid")
+
+        def _rank(idx: int) -> tuple:
+            k = _norm_key(headers[idx])
+            for r, tok in enumerate(_pri):
+                if tok in k:
+                    return (r, idx)
+            return (len(_pri), idx)
+
+        return min(money_set, key=_rank)
+    return _sniff_amount_column(headers, rows, claimed)
 
 
 # -------------------------------------------------------------------- cleaner --
@@ -1771,6 +2000,16 @@ def clean_bytes(
     if dstat_i is not None:
         money_set.discard(dstat_i)
     atype_i = _detect_one(headers, _ADMIT_TYPE_HINTS)
+    asrc_i = _detect_one(headers, ("admissionsource", "admitsource",
+                                   "pointoforigin", "sourceofadmission",
+                                   "admsrc", "priorityvisittype"))
+    # Service thru / to date — pairs with dos_i (from date) for the
+    # from>thru ordering screen. Exact/suffix hints only so it never
+    # steals the from-date column.
+    todate_i = _detect_one(headers, ("servicetodate", "thrudate",
+                                     "todate", "servicethrudate",
+                                     "dateofservicethru", "dosthru",
+                                     "statementthrudate"))
     submit_i = _detect_one(headers, _SUBMIT_HINTS)
     member_i = _detect_one(headers, _MEMBER_HINTS)
     cond_i = _detect_one(headers, _COND_HINTS)
@@ -1784,12 +2023,13 @@ def clean_bytes(
     # loaded once per run when the user has pulled them. None → the
     # corresponding pack-gated checks simply stay off; nothing about the
     # zero-setup path changes.
-    _icd_pack = _hcpcs_pack = _leie_pack = None
+    _icd_pack = _hcpcs_pack = _leie_pack = _taxo_pack = None
     try:
         from . import refdata_packs as _packs
         _icd_pack = _packs.icd10_codes()
         _hcpcs_pack = _packs.hcpcs_codes()
         _leie_pack = _packs.leie_npis()
+        _taxo_pack = _packs.taxonomy_codes()
     except Exception:  # noqa: BLE001 — packs never block cleaning
         pass
     from datetime import datetime as _dt, timezone as _tz
@@ -2148,6 +2388,23 @@ def clean_bytes(
                     and _rd.admission_type_invalid(new_row[atype_i])):
                 res.sanity["admission-type-invalid"] = \
                     res.sanity.get("admission-type-invalid", 0) + 1
+            if (asrc_i is not None and asrc_i < len(new_row)
+                    and _rd.admission_source_invalid(new_row[asrc_i])):
+                res.sanity["admission-source-invalid"] = \
+                    res.sanity.get("admission-source-invalid", 0) + 1
+            # Discharge status 30 ("still a patient") on a FINAL bill — the
+            # TOB frequency digit 1 (admit-through-discharge) or 4 (last
+            # interim) says the stay is closed, so the patient can't still
+            # be admitted. Classic NUBC contradiction.
+            if (tob_i is not None and dstat_i is not None
+                    and tob_i < len(new_row) and dstat_i < len(new_row)):
+                _fc2 = _rd.tob_facility_class(new_row[tob_i])
+                _ds = new_row[dstat_i].strip().lstrip("0") or "0"
+                _tob_raw = new_row[tob_i].strip()
+                _freq = _tob_raw[-1] if len(_tob_raw) >= 3 else ""
+                if _fc2 is not None and _ds == "30" and _freq in ("1", "4"):
+                    res.sanity["discharge-status-final-bill"] = \
+                        res.sanity.get("discharge-status-final-bill", 0) + 1
             # Accommodation (room & board / ICU, revenue 0100-0219) revenue
             # on an OUTPATIENT bill type — hospital outpatient 013x/014x,
             # clinic 07xx, ASC 083x. Inpatient room charges can't ride an
@@ -2176,6 +2433,34 @@ def clean_bytes(
                         res.sanity["modifier-unknown"] = \
                             res.sanity.get("modifier-unknown", 0) + 1
                         break
+        # Malformed NDC — a drug code that can't be 10/11 digits (keying
+        # damage the normalizer couldn't fix). Uses the engine's own helper,
+        # so it runs independent of the refdata (_rd) guard.
+        if ndc_norm_set:
+            for _ni in ndc_norm_set:
+                if _ni < len(new_row) and _ndc_malformed(new_row[_ni]):
+                    res.sanity["ndc-malformed"] = \
+                        res.sanity.get("ndc-malformed", 0) + 1
+                    break
+        # Service from-date after thru-date — an impossible span.
+        if (dos_i is not None and todate_i is not None
+                and dos_i < len(new_row) and todate_i < len(new_row)):
+            _fd, _td = new_row[dos_i], new_row[todate_i]
+            if (_DATE_ISO_RE.match(_fd) and _DATE_ISO_RE.match(_td)
+                    and _fd[:10] > _td[:10]):
+                res.sanity["service-date-order"] = \
+                    res.sanity.get("service-date-order", 0) + 1
+        # Taxonomy code not in the full NUCC set — pack-gated, same as
+        # icd10/hcpcs unknown-code (off until the taxonomy pack is pulled).
+        if _taxo_pack is not None and taxo_set:
+            for _txi in taxo_set:
+                _txu = (new_row[_txi] if _txi < len(new_row)
+                        else "").strip().upper()
+                if (len(_txu) == 10 and _txu.isalnum()
+                        and _txu not in _taxo_pack):
+                    res.sanity["taxonomy-unknown-code"] = \
+                        res.sanity.get("taxonomy-unknown-code", 0) + 1
+                    break
         # Timely-filing risk: days between service and received dates over
         # the limit. When the row names a payer with a published limit
         # (Medicare 365, most commercial 90-180 — see refdata), that limit
@@ -2692,14 +2977,72 @@ def clean_bytes(
            0.56)
         try:
             from . import analytics as _analytics
+            # Amount column the marts sum for charges. Header-detected
+            # billed/allowed/paid win; failing those, any money-header or a
+            # value-based sniff feeds ONLY analytics (never the cleaning pass)
+            # so a charge column with a nonstandard header still yields
+            # non-zero Population volume instead of a misleading $0.
+            _claimed_cols: set = set()
+            for _rs in (npi_set, money_set, date_set, zip_set, phone_set,
+                        hcpcs_set, dx_set, mod_set, taxo_set, ndc_norm_set,
+                        sex_set, rev_set, pos_set, drg_set, state_set,
+                        pname_set):
+                _claimed_cols |= _rs
+            for _ix in (units_i, patient_i, member_i, claim_i, dos_i, todate_i,
+                        dob_i, admit_i, disch_i, submit_i, payer_i, carc_i,
+                        tob_i, dstat_i, atype_i, asrc_i, cond_i, occ_i, valc_i,
+                        name_idx, ndc_idx, drug_idx, billing_idx, hcpcs_i,
+                        allowed_i, billed_i, paid_i):
+                if _ix is not None:
+                    _claimed_cols.add(_ix)
+            _amount_i = _analytics_amount_col(
+                headers, cleaned, billed_i=billed_i, allowed_i=allowed_i,
+                paid_i=paid_i, money_set=money_set, claimed=_claimed_cols)
+            if _amount_i is not None and _amount_i != billed_i:
+                res.structure["population_amount_column"] = headers[_amount_i]
             res.population = _analytics.build(headers, cleaned, {
                 "rev_set": rev_set, "tob_i": tob_i, "pos_set": pos_set,
-                "hcpcs_i": hcpcs_i, "billed_i": billed_i, "dx_set": dx_set,
+                "hcpcs_i": hcpcs_i, "billed_i": _amount_i, "dx_set": dx_set,
                 "patient_i": patient_i, "dos_i": dos_i, "admit_i": admit_i,
                 "disch_i": disch_i, "billing_idx": billing_idx,
             })
         except Exception:  # noqa: BLE001 — analytics never block cleaning
             res.population = None
+
+    # Connector recommendation — computed from THIS file's detected columns
+    # even on an offline run, so the Live-connectors panel can explain which
+    # of the catalog apply and why ("openFDA — no NDC/J-code column here")
+    # instead of a run looking broken when it lights only 2 sources. J-codes
+    # are the load-bearing signal for infusion/oncology extracts that have no
+    # NDC column: they still obviously need drug matching.
+    _jcode_pct, _jcodes = _jcode_stats(cleaned, hcpcs_i)
+    try:
+        _bstat = (res.column_stats.get(headers[billing_idx])
+                  if billing_idx is not None
+                  and billing_idx < len(headers) else None) or {}
+        _bcells = int(_bstat.get("cells") or 0)
+        _bmiss = (int(_bstat.get("blank") or 0)
+                  + int(_bstat.get("malformed") or 0)
+                  + int(_bstat.get("checksum") or 0))
+        _blank_npi_pct = (100.0 * _bmiss / _bcells) if _bcells else 0.0
+    except Exception:  # noqa: BLE001
+        _blank_npi_pct = 0.0
+    try:
+        from . import connectors as _conn
+        res.connector_plan = _conn.plan({
+            "has_npi": bool(npi_idx),
+            "has_billing": billing_idx is not None,
+            "blank_npi_pct": _blank_npi_pct,
+            "has_ndc": ndc_idx is not None,
+            "has_drug_name": drug_idx is not None,
+            "jcode_pct": _jcode_pct,
+            "has_hcpcs": hcpcs_i is not None,
+            "has_dx": bool(dx_set),
+            "has_taxonomy": bool(taxo_set),
+            "rows": res.n_rows_out,
+        })
+    except Exception:  # noqa: BLE001 — planning never blocks cleaning
+        res.connector_plan = None
 
     # Optional live NPPES cross-check via the app's shared CMS connection.
     # Guarded end-to-end: any failure leaves res.nppes with a note and the
@@ -2707,8 +3050,20 @@ def clean_bytes(
     if enrich:
         cb("Verifying NPIs against the live NPPES registry", 0.58)
         try:
-            res.nppes, res.recovered_rows = _enrich_via_nppes(
-                cleaned, npi_idx, billing_idx, name_idx, state_idx)
+            _taxo_idx = min(taxo_set) if taxo_set else None
+            res.nppes, res.recovered_rows, _nppes_fills = _enrich_via_nppes(
+                cleaned, npi_idx, billing_idx, name_idx, state_idx,
+                taxo_idx=_taxo_idx, headers=headers)
+            # Record the blanks NPPES filled: audited in the change log,
+            # counted as repairs, credited to completeness. Bounded (≤ the
+            # verify NPI cap), so appending to the preview list is safe.
+            for _fe in _nppes_fills:
+                _rule = _fe[4]
+                res.repairs[_rule] = res.repairs.get(_rule, 0) + 1
+                res.n_changes += 1
+                res.n_cells_filled += 1
+                if len(res.changelog) < _CHANGELOG_PREVIEW:
+                    res.changelog.append(_fe)
         except Exception as exc:  # noqa: BLE001
             res.nppes = {"error": f"{type(exc).__name__}: {exc}"}
         # Drug connectors (RxNorm / openFDA) + the available-source catalog.
@@ -2722,8 +3077,12 @@ def clean_bytes(
             drugs = ([row[drug_idx] for row in cleaned
                       if drug_idx is not None and drug_idx < len(row)]
                      if drug_idx is not None else [])
-            if ndcs or drugs:
-                res.connectors = connectors.resolve_drugs(ndcs, drugs)
+            # J-codes (HCPCS drug codes) resolve via RxNav's HCPCS crosswalk —
+            # the path that lets an all-J-code infusion file light up RxNorm
+            # with no NDC/drug-name column present.
+            if ndcs or drugs or _jcodes:
+                res.connectors = connectors.resolve_drugs(
+                    ndcs, drugs, hcpcs=_jcodes)
             else:
                 res.connectors = []
         except Exception as exc:  # noqa: BLE001
@@ -2901,15 +3260,23 @@ def dictionary_csv(result: "CleanResult") -> str:
     return buf.getvalue()
 
 
-def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
+def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx,
+                      taxo_idx=None, headers=None):
     """Run NPPES verify + recover over the cleaned rows via nppes_bridge.
 
-    Returns the combined ``{"verify": ..., "recover": ...}`` payload, or a
-    ``{"note": ...}`` when the bridge is unavailable.
+    Returns ``(payload, recovered_rows, fills)`` where ``fills`` is a list
+    of ``(row_1based, column_header, before, after, rule)`` — blank
+    provider name / state / taxonomy cells filled from the AUTHORITATIVE
+    NPPES record of a verified (active) billing NPI. Provider identifiers
+    are never PHI, the fill is deterministic (one canonical record per
+    NPI) and non-destructive (blanks only), so it is safe and audited —
+    the same contract as the recovered-NPI write-back and state-from-zip.
+    ``fills`` is empty when the bridge is unavailable.
     """
     from . import nppes_bridge
     if not nppes_bridge.available():
-        return ({"note": "NPPES connection unavailable in this deployment."}, {})
+        return ({"note": "NPPES connection unavailable in this deployment."},
+                {}, [])
 
     # Distinct NPIs across every detected NPI column, for verification.
     all_npis: List[str] = []
@@ -2918,6 +3285,36 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
             if i < len(row):
                 all_npis.append(row[i])
     verify = nppes_bridge.verify_npis(all_npis)
+
+    # Fill blank name / state / taxonomy from the verified billing NPI's
+    # canonical record. Bounded by verify's distinct-NPI cap (≤40) and
+    # blanks-only, so it can't rewrite anyone's data or run away.
+    fills: List[Tuple[int, str, str, str, str]] = []
+    _recs = (verify.get("records") or {}) if isinstance(verify, dict) else {}
+    if billing_idx is not None and _recs:
+        _fill_cols = []  # (col_index, record_key, rule_id)
+        if name_idx is not None:
+            _fill_cols.append((name_idx, "name", "name-from-nppes"))
+        if state_idx is not None:
+            _fill_cols.append((state_idx, "state", "state-from-nppes"))
+        if taxo_idx is not None:
+            _fill_cols.append((taxo_idx, "taxonomy", "taxonomy-from-nppes"))
+        for ridx, row in enumerate(cleaned):
+            if billing_idx >= len(row):
+                continue
+            rec = _recs.get(_digits(row[billing_idx]))
+            if not rec or rec.get("status") != "active":
+                continue
+            for _ci, _key, _rule in _fill_cols:
+                if _ci >= len(row) or row[_ci].strip():
+                    continue  # blanks only — never overwrite
+                _new = str(rec.get(_key) or "").strip()
+                if not _new:
+                    continue
+                _col = (headers[_ci] if headers and _ci < len(headers)
+                        else str(_ci))
+                fills.append((ridx + 1, _col, "", _new, _rule))
+                row[_ci] = _new
 
     # Recovery queries: rows whose billing NPI is not valid but which carry a
     # provider name (+ state) we can search on. Track which rows each query
@@ -2957,8 +3354,9 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx):
 
     payload = {"verify": verify, "recover": recover,
                "recovered_written": len(recovered_rows),
+               "filled_from_nppes": len(fills),
                "source": "NPPES via rcm_mc.data_public.nppes_api_client"}
-    return payload, recovered_rows
+    return payload, recovered_rows, fills
 
 
 def sample_csv() -> str:

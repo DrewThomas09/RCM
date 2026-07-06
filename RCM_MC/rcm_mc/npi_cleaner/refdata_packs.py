@@ -405,6 +405,8 @@ _CACHE_LOCK = threading.Lock()
 def _invalidate_cache(pack_id: str) -> None:
     with _CACHE_LOCK:
         _CACHE.pop(pack_id, None)
+        if pack_id == "taxonomy":
+            _CACHE.pop("taxonomy_codes", None)
 
 
 def _load_set(pack_id: str, table: str) -> Optional[frozenset]:
@@ -440,6 +442,29 @@ def hcpcs_codes() -> Optional[frozenset]:
 
 def leie_npis() -> Optional[frozenset]:
     return _load_set("leie", "pack_leie")
+
+
+def taxonomy_codes() -> Optional[frozenset]:
+    """The full NUCC taxonomy code set (for the taxonomy-unknown-code
+    membership check), or None when the pack isn't installed."""
+    with _CACHE_LOCK:
+        if "taxonomy_codes" in _CACHE:
+            return _CACHE["taxonomy_codes"]  # type: ignore[return-value]
+    if not _DB_PATH.exists():
+        return None
+    try:
+        with _LOCK, _conn() as con:
+            has = con.execute(
+                "SELECT 1 FROM pack_meta WHERE pack = 'taxonomy'").fetchone()
+            if not has:
+                return None
+            vals = frozenset(
+                r[0] for r in con.execute("SELECT code FROM pack_taxonomy"))
+    except Exception:  # noqa: BLE001
+        return None
+    with _CACHE_LOCK:
+        _CACHE["taxonomy_codes"] = vals
+    return vals
 
 
 def taxonomy_display(code: str) -> Optional[str]:

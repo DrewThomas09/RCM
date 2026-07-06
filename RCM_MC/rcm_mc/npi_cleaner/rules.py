@@ -107,6 +107,26 @@ _RULES: List[Rule] = [
          "excluded). Fully audited in the change log.",
          "Capture state at intake; the fill closes the gap downstream.",
          "completeness"),
+    Rule("name-from-nppes", "repair", "info", "Provider",
+         "Blank provider name filled from NPPES",
+         "A blank provider-name cell next to a verified (active) billing "
+         "NPI is filled with that NPI's canonical NPPES record name. "
+         "Online enrich mode only; blanks-only, never overwrites.",
+         "The registry is the source of truth for provider names.",
+         "completeness"),
+    Rule("state-from-nppes", "repair", "info", "Provider",
+         "Blank state filled from NPPES",
+         "A blank state cell next to a verified (active) billing NPI is "
+         "filled from that NPI's NPPES practice-location state. Online "
+         "enrich mode only; blanks-only.",
+         "Capture practice state at intake.", "completeness"),
+    Rule("taxonomy-from-nppes", "repair", "info", "Provider",
+         "Blank taxonomy filled from NPPES",
+         "A blank taxonomy cell next to a verified (active) billing NPI "
+         "is filled with that NPI's primary NPPES taxonomy. Online enrich "
+         "mode only; blanks-only.",
+         "Taxonomy drives the specialty mix — filling it improves it.",
+         "completeness"),
     Rule("zip5+4", "repair", "info", "Geography",
          "ZIP+4 formatted", "9-digit ZIPs formatted 12345-6789.",
          "None needed.", "conformity"),
@@ -245,6 +265,39 @@ _RULES: List[Rule] = [
          "Stop billing immediately and escalate to compliance counsel; "
          "verify the match on the OIG site (NPI-level match).",
          "validity"),
+    Rule("admission-source-invalid", "flag", "warning", "Coding",
+         "Invalid admission source",
+         "Admission source / point-of-origin (UB-04 FL15) isn't in the "
+         "NUBC domain (1,2,4,5,6,8,9,D,E,F).",
+         "Map the source system's local point-of-origin codes.",
+         "validity"),
+    Rule("ndc-malformed", "flag", "warning", "Drugs",
+         "Malformed NDC",
+         "A drug code that can't be a valid NDC — not 10 or 11 digits "
+         "after stripping separators, or a hyphenated form with segment "
+         "lengths outside the known 5-4-2 / 4-4-2 / 5-3-2 / 5-4-1 layouts.",
+         "Re-export the NDC column as text; verify against the drug file.",
+         "validity"),
+    Rule("taxonomy-unknown-code", "flag", "warning", "Provider",
+         "Taxonomy not in the NUCC set",
+         "A 10-character taxonomy code that isn't in the NUCC taxonomy "
+         "code set. Runs only when the taxonomy reference pack is "
+         "installed (pull it under Reference data packs).",
+         "Verify against the current NUCC taxonomy release.", "validity"),
+    Rule("service-date-order", "flag", "warning", "Dates",
+         "Service from-date after thru-date",
+         "The service (statement) from-date is later than its thru-date — "
+         "an impossible span, usually a column swap or keying error.",
+         "Check the extract's date column order at source.",
+         "consistency"),
+    Rule("discharge-status-final-bill", "flag", "warning", "Coding",
+         "“Still a patient” on a final bill",
+         "Discharge status 30 (still a patient) on a bill whose Type-of-"
+         "Bill frequency digit says the stay is closed (1 admit-through-"
+         "discharge, or 4 last interim) — the patient can't still be "
+         "admitted on a final claim.",
+         "Correct the discharge status or the bill frequency at source.",
+         "consistency"),
 
     # --------------------------------------------------- flags: consistency --
     Rule("allowed-exceeds-billed", "flag", "critical", "Amounts",

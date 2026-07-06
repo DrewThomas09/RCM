@@ -997,6 +997,15 @@ def discharge_status_invalid(v: str) -> bool:
     return s not in DISCHARGE_STATUS
 
 
+def admission_source_invalid(v: str) -> bool:
+    """True when a present admission-source (UB-04 FL15 point-of-origin)
+    value isn't in the NUBC domain. Blank passes (report-only screen)."""
+    s = v.strip().upper()
+    if not s:
+        return False
+    return s not in ADMISSION_SOURCE
+
+
 def admission_type_invalid(v: str) -> bool:
     s = v.strip()
     if not s:

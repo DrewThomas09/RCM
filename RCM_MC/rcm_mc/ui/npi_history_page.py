@@ -9,90 +9,135 @@ from __future__ import annotations
 from ._chartis_kit import chartis_shell, ck_page_title
 
 _CSS = """
-.nh-wrap{max-width:1100px}
-.nh-trend{background:var(--panel,#fff);border:1px solid var(--line,#d2ddd7);
-  border-radius:10px;padding:18px 20px;margin:14px 0}
-.nh-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
-.nh-tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
-  color:var(--ink-2,#4a5d57);text-align:left;padding:6px 8px;
-  border-bottom:1px solid var(--line,#d2ddd7)}
-.nh-tbl td{padding:7px 8px;border-bottom:1px solid
-  color-mix(in srgb,var(--line,#d2ddd7) 55%,transparent)}
-.nh-tbl .num{text-align:right;font-variant-numeric:tabular-nums}
-.nh-grade{font-weight:700}
-.nh-grade.A,.nh-grade.B{color:var(--green-deep,#0c7c66)}
-.nh-grade.C{color:#b8732a}
-.nh-grade.D,.nh-grade.F{color:#b5321e}
-.nh-cmp{background:var(--panel,#fff);border:1px solid var(--line,#d2ddd7);
-  border-radius:10px;padding:18px 20px;margin:16px 0;display:none}
+.nh-wrap{max-width:1080px;margin:0 auto}
+.nh-lede{color:var(--ink-2,#4a5d57);font-size:13px;line-height:1.6;
+  max-width:680px;margin:2px 0 6px}
+/* ============ Analytics cards ============ */
+.nh-trend,.nh-cmp{background:var(--panel,#fbfdfc);
+  border:1px solid var(--line,#d2ddd7);border-radius:14px;
+  padding:18px 20px;margin:16px 0}
+.nh-cmp{display:none}
 .nh-cmp.on{display:block}
-.nh-muted{color:var(--ink-2,#4a5d57);font-size:12.5px}
-.nh-btn{border:1px solid var(--line,#d2ddd7);background:var(--panel,#fff);
-  border-radius:7px;padding:5px 12px;font-size:12.5px;cursor:pointer}
-.nh-btn.prim{background:var(--green-deep,#0c7c66);color:#fff;border:0}
+.nh-hd{font-size:14px;font-weight:660;letter-spacing:-.01em;
+  color:var(--ink,#11201c);margin-bottom:4px}
+.nh-sub{font-size:12.5px;color:var(--ink-2,#4a5d57);line-height:1.55;
+  margin:0 0 12px}
+.nh-muted{color:var(--ink-2,#4a5d57);font-size:12.5px;line-height:1.55}
+/* ============ Per-rule control row ============ */
+.nh-ctl{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:2px 0 12px}
+.nh-ctl-lbl{font-size:11px;font-weight:680;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-2,#4a5d57)}
+/* ============ Runs table ============ */
+.nh-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.nh-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+.nh-tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-2,#4a5d57);font-weight:640;text-align:left;padding:9px 10px;
+  border-bottom:1px solid var(--line,#d2ddd7);white-space:nowrap}
+.nh-tbl td{padding:9px 10px;color:var(--ink,#11201c);
+  border-bottom:1px solid var(--line-soft,#e7eeea)}
+.nh-tbl .num{text-align:right;font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.nh-tbl tbody tr:nth-child(even){
+  background:color-mix(in srgb,var(--ink,#11201c) 2.5%,transparent)}
+.nh-tbl tbody tr:hover{
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 6%,transparent)}
+.nh-tbl tbody tr:has(.nh-empty):hover{background:transparent}
+.nh-tbl input[type=checkbox]{width:15px;height:15px;cursor:pointer;
+  accent-color:var(--green-deep,#0c7c66);vertical-align:middle}
+.nh-grade{font-weight:700;font-variant-numeric:tabular-nums}
+.nh-grade.A,.nh-grade.B{color:var(--green-deep,#0c7c66)}
+.nh-grade.C{color:#b06a00}
+.nh-grade.D,.nh-grade.F{color:#a8331f}
+/* injected comparison / wishlist tables can scroll on narrow viewports */
+#nh-cmp-body,#nh-wish-box{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* ============ Buttons + selects ============ */
+.nh-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.nh-btn{display:inline-flex;align-items:center;gap:6px;font-family:inherit;
+  border:1px solid var(--line,#d2ddd7);background:var(--panel,#fbfdfc);
+  color:var(--ink,#11201c);border-radius:9px;padding:7px 14px;
+  font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:background .14s ease,border-color .14s ease,color .14s ease}
+.nh-btn:hover{border-color:color-mix(in srgb,var(--green-deep,#0c7c66) 40%,var(--line,#d2ddd7));
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 5%,transparent)}
+.nh-btn:focus-visible{outline:2px solid var(--green-deep,#0c7c66);outline-offset:2px}
+.nh-btn:disabled{opacity:.5;cursor:not-allowed}
+.nh-btn.prim{background:var(--green-deep,#0c7c66);color:#fff;border-color:transparent;
+  font-weight:640}
+.nh-btn.prim:hover{background:var(--green,#075a4a);color:#fff}
+.nh-btn.prim:disabled:hover{background:var(--green-deep,#0c7c66)}
+select.nh-btn{padding:7px 11px;max-width:340px}
+/* ============ Deltas + empty ============ */
 .nh-delta-up{color:var(--green-deep,#0c7c66);font-weight:640}
-.nh-delta-down{color:#b5321e;font-weight:640}
-.nh-empty{padding:40px;text-align:center;color:var(--ink-2,#4a5d57)}
+.nh-delta-down{color:#a8331f;font-weight:640}
+.nh-cmp-lede{margin-bottom:10px;font-size:13px;color:var(--ink,#11201c);line-height:1.5}
+.nh-empty{padding:34px 20px;text-align:center;color:var(--ink-2,#4a5d57);font-size:13px}
+@media (max-width:640px){
+  .nh-trend,.nh-cmp{padding:16px 15px}
+}
 """
 
 _BODY = """
 <div class="nh-wrap">
   {page_title}
-  <div class="nh-muted">Every cleaning run records its aggregate scorecard
-  (counts only — no claim rows, no PHI). Pick two runs to compare.</div>
+  <p class="nh-lede">Every cleaning run records its aggregate scorecard
+  (counts only — no claim rows, no PHI). Pick two runs below to compare.</p>
 
   <div class="nh-trend">
-    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
-      Quality-score trend</div>
+    <div class="nh-hd">Quality-score trend</div>
+    <div class="nh-sub">Overall grade across every run, oldest to newest.</div>
     <div id="nh-trend-box"><div class="nh-empty">Loading…</div></div>
   </div>
 
   <div class="nh-trend">
-    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
-      Dimension trends</div>
-    <div class="nh-muted" style="margin-bottom:8px">Each quality dimension
-    across runs — which lever is moving the grade.</div>
+    <div class="nh-hd">Dimension trends</div>
+    <div class="nh-sub">Each quality dimension across runs — which lever is
+    moving the grade.</div>
     <div id="nh-dims-box"><div class="nh-empty">Loading…</div></div>
   </div>
 
   <div class="nh-trend">
-    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
-      Per-rule trend</div>
-    <div class="nh-muted" style="margin-bottom:8px">Is a specific problem
-    (bad codes, future dates, dupes …) getting better or worse across runs?
-    <select id="nh-rule" class="nh-btn" style="margin-left:8px;max-width:320px">
-    </select></div>
+    <div class="nh-hd">Per-rule trend</div>
+    <div class="nh-sub">Is a specific problem (bad codes, future dates,
+    dupes …) getting better or worse across runs?</div>
+    <div class="nh-ctl">
+      <label class="nh-ctl-lbl" for="nh-rule">Rule</label>
+      <select id="nh-rule" class="nh-btn"></select>
+    </div>
     <div id="nh-rule-box"><div class="nh-empty">Loading…</div></div>
   </div>
 
-  <table class="nh-tbl">
-    <thead><tr>
-      <th></th><th>When</th><th>File</th><th class="num">Rows in</th>
-      <th class="num">Rows out</th><th class="num">Dupes</th>
-      <th class="num">Changes</th><th class="num">Score</th><th>Grade</th>
-    </tr></thead>
-    <tbody id="nh-rows"><tr><td colspan="9" class="nh-empty">Loading…</td></tr>
-    </tbody>
-  </table>
-  <div style="margin-top:12px">
-    <button class="nh-btn prim" id="nh-compare" disabled>
-      Compare selected runs</button>
-    <a class="nh-btn" href="/npi-cleaner" style="text-decoration:none;
-       display:inline-block;margin-left:8px">← Back to the cleaner</a>
+  <div class="nh-trend">
+    <div class="nh-hd">All runs</div>
+    <div class="nh-sub">Tick two runs, then compare them side by side.</div>
+    <div class="nh-scroll">
+      <table class="nh-tbl">
+        <thead><tr>
+          <th></th><th>When</th><th>File</th><th class="num">Rows in</th>
+          <th class="num">Rows out</th><th class="num">Dupes</th>
+          <th class="num">Changes</th><th class="num">Score</th><th>Grade</th>
+        </tr></thead>
+        <tbody id="nh-rows">
+          <tr><td colspan="9" class="nh-empty">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nh-actions">
+      <button class="nh-btn prim" id="nh-compare" disabled>
+        Compare selected runs</button>
+      <a class="nh-btn" href="/npi-cleaner">← Back to the cleaner</a>
+    </div>
   </div>
 
   <div class="nh-cmp" id="nh-cmp">
-    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
-      Run comparison</div>
+    <div class="nh-hd">Run comparison</div>
     <div id="nh-cmp-body"></div>
   </div>
 
   <div class="nh-trend" id="nh-wishlist">
-    <div style="font-size:13px;font-weight:640;margin-bottom:6px">
-      Build backlog — "missing something?" requests</div>
-    <div class="nh-muted" style="margin-bottom:8px">Everything users asked
-    the cleaner to add (from the card on the cleaner page). Triage here:
-    open → planned → shipped / declined.</div>
+    <div class="nh-hd">Build backlog — "missing something?" requests</div>
+    <div class="nh-sub">Everything users asked the cleaner to add (from the
+    card on the cleaner page). Triage here: open → planned →
+    shipped / declined.</div>
     <div id="nh-wish-box"><div class="nh-empty">Loading…</div></div>
   </div>
 </div>
@@ -131,10 +176,10 @@ _BODY = """
     var d=pts.map(function(p,i){
       return (i?"L":"M")+sx(i).toFixed(1)+" "+sy(p.score).toFixed(1);
     }).join(" ");
-    svg+='<path d="'+d+'" fill="none" stroke="#2a78d6" stroke-width="2"/>';
+    svg+='<path d="'+d+'" fill="none" stroke="#0c7c66" stroke-width="2"/>';
     pts.forEach(function(p,i){
       svg+='<circle cx="'+sx(i).toFixed(1)+'" cy="'+sy(p.score).toFixed(1)+
-        '" r="3.4" fill="#2a78d6"><title>'+esc(p.file_name)+' — '+p.score+
+        '" r="3.4" fill="#0c7c66"><title>'+esc(p.file_name)+' — '+p.score+
         '</title></circle>'; });
     svg+='</svg>';
     box.innerHTML=svg;
@@ -193,6 +238,7 @@ _BODY = """
     list=Object.keys(keys).sort();
     if(RUNS.length<2 || !list.length){
       sel.style.display="none";
+      var ctl=sel.closest(".nh-ctl"); if(ctl) ctl.style.display="none";
       box.innerHTML='<div class="nh-muted">Run the cleaner at least twice '+
         '(with findings) to trend a rule.</div>';
       return;
@@ -224,7 +270,7 @@ _BODY = """
       var cx=L+(n===1?iw/2:(i/(n-1))*iw), h=(p.v/max)*ih;
       svg+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(T+ih-h).toFixed(1)+
         '" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" '+
-        'fill="#b8732a" opacity=".85"><title>'+esc(p.f)+' — '+p.v+
+        'fill="#b06a00" opacity=".85"><title>'+esc(p.f)+' — '+p.v+
         '</title></rect>'; });
     svg+='</svg>';
     box.innerHTML=svg+'<div class="nh-muted" style="margin-top:4px">Rows '+
@@ -262,7 +308,7 @@ _BODY = """
   function renderCompare(c){
     var box=$("nh-cmp"), body=$("nh-cmp-body");
     var up=c.score_delta>=0;
-    var h='<div style="margin-bottom:8px">'+esc(c.a.file_name)+' ('+c.a.score+
+    var h='<div class="nh-cmp-lede">'+esc(c.a.file_name)+' ('+c.a.score+
       ') → '+esc(c.b.file_name)+' ('+c.b.score+') · '+
       '<span class="'+(up?'nh-delta-up':'nh-delta-down')+'">'+
       (up?'+':'')+c.score_delta+' points</span></div>';

@@ -4194,8 +4194,581 @@ class TestDeterministicFills(unittest.TestCase):
         self.assertEqual(body.count(",TX"), 300)
 
 
+class TestNppesFillAndCatalog(unittest.TestCase):
+    """Verified NPPES records now (a) fill blank provider name/state/
+    taxonomy and (b) surface per-NPI verdicts; the catalog panel tells
+    the truth about which sources act on a run."""
+
+    def _providers(self):
+        from rcm_mc.data_public.nppes_api_client import NppesProvider
+        return NppesProvider
+
+    def test_blank_provider_fields_filled_from_verified_npi(self):
+        NppesProvider = self._providers()
+
+        def fake_fetch(npi, **kw):
+            if npi == GOOD_B:
+                return NppesProvider(
+                    npi=npi, entity_type=2, name="MERCY GENERAL HOSPITAL",
+                    organization_name="MERCY GENERAL HOSPITAL",
+                    taxonomy_code="282N00000X",
+                    taxonomy_label="General Acute Care Hospital",
+                    state="OH")
+            return None
+
+        data = ("ClaimID,BillingProviderNPI,OrganizationName,"
+                "ProviderState,TaxonomyCode\n"
+                f"1,{GOOD_B},,,\n"            # all three blank -> filled
+                f"2,{GOOD_B},Keep This Name,OH,282N00000X\n"  # present -> kept
+                ).encode()
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                   fake_fetch):
+            res = engine.clean_bytes(data, "fill.csv", enrich=True)
+        self.assertEqual(res.nppes.get("filled_from_nppes"), 3)
+        self.assertEqual(res.repairs.get("name-from-nppes"), 1)
+        self.assertEqual(res.repairs.get("state-from-nppes"), 1)
+        self.assertEqual(res.repairs.get("taxonomy-from-nppes"), 1)
+        out = open(res.out_path, encoding="utf-8").read().splitlines()
+        self.assertIn("MERCY GENERAL HOSPITAL", out[1])
+        self.assertIn("OH", out[1])
+        # Row 2's existing values are never overwritten.
+        self.assertIn("Keep This Name", out[2])
+        # Audited.
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertIn("name-from-nppes", log)
+        # Per-NPI verdicts present in the scorecard for the UI table.
+        recs = res.as_scorecard()["nppes"]["verify"]["records"]
+        self.assertIn(GOOD_B, recs)
+        self.assertEqual(recs[GOOD_B]["status"], "active")
+
+    def test_fill_never_touches_provider_when_npi_not_active(self):
+        def fake_fetch(npi, **kw):
+            return None  # nothing verifies
+
+        data = (f"BillingProviderNPI,OrganizationName,ProviderState\n"
+                f"{GOOD_B},,\n").encode()
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                   fake_fetch):
+            res = engine.clean_bytes(data, "nf.csv", enrich=True)
+        self.assertEqual(res.nppes.get("filled_from_nppes"), 0)
+        self.assertNotIn("name-from-nppes", res.repairs)
+
+    def test_catalog_marks_cleaning_wired_sources(self):
+        from rcm_mc.npi_cleaner import connectors
+        cat = connectors.catalog()
+        if not cat:
+            self.skipTest("public_api_catalog unavailable")
+        wired = [c for c in cat if c.get("cleaning_wired")]
+        ids = {c["id"] for c in wired}
+        # The sources that actually act on a cleaning run.
+        self.assertTrue({"nppes", "openfda"} & ids)
+        self.assertTrue(all("is_wired" in c and "status" in c for c in cat))
+        # Wired sources sort to the front.
+        self.assertTrue(cat[0].get("cleaning_wired"))
+        # And there are genuinely-unwired catalog entries (honest split).
+        self.assertTrue(any(not c.get("cleaning_wired") for c in cat))
+
+
+class TestStdlibPecos(unittest.TestCase):
+    """PECOS enrollment/opt-out over pure urllib — the vendored client
+    hard-required `requests`, so the screen was dead on every compliant
+    install. Catalog-driven URL resolution; injectable opener."""
+
+    def _client(self, catalog, responder):
+        import io as _io
+        import json as _json
+        from rcm_mc.data_public.cms_pecos_client import (
+            CmsPecosClient, CATALOG_URL)
+
+        class _Resp:
+            def __init__(self, payload):
+                self._b = _json.dumps(payload).encode()
+
+            def read(self):
+                return self._b
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def opener(req, timeout=0):
+            url = req.full_url
+            if url == CATALOG_URL:
+                return _Resp(catalog)
+            return _Resp(responder(url))
+        return CmsPecosClient(opener=opener)
+
+    def _catalog(self):
+        from rcm_mc.data_public.cms_pecos_client import DATASET_TITLES
+        return {"dataset": [
+            {"title": DATASET_TITLES["provider_enrollment"],
+             "distribution": [{"format": "API", "description": "latest",
+                               "accessURL": "https://x/enroll"}]},
+            {"title": DATASET_TITLES["opt_out"],
+             "distribution": [{"format": "API", "description": "latest",
+                               "accessURL": "https://x/optout"}]},
+        ]}
+
+    def test_enrollment_and_optout_lookups(self):
+        def responder(url):
+            if url.startswith("https://x/enroll"):
+                return [{"NPI": GOOD_A, "PROVIDER_TYPE_DESC": "Hospital",
+                         "ORG_NAME": "MERCY", "STATE_CD": "OH"}]
+            if url.startswith("https://x/optout"):
+                return []  # not opted out
+            raise OSError(url)
+        c = self._client(self._catalog(), responder)
+        enr = c.enrollment_lookup(GOOD_A)
+        self.assertTrue(enr["enrolled"])
+        self.assertEqual(enr["provider_type"], "Hospital")
+        self.assertFalse(c.opt_out_lookup(GOOD_A)["opted_out"])
+        self.assertEqual(c.enrollment_lookup("123"), {})  # bad NPI, no call
+
+    def test_not_enrolled_and_opted_out(self):
+        def responder(url):
+            if url.startswith("https://x/enroll"):
+                return []  # not in the enrollment file
+            if url.startswith("https://x/optout"):
+                return [{"NPI": GOOD_B, "Specialty": "Dermatology",
+                         "Optout Effective Date": "2020-01-01"}]
+            raise OSError(url)
+        c = self._client(self._catalog(), responder)
+        self.assertFalse(c.enrollment_lookup(GOOD_B)["enrolled"])
+        oo = c.opt_out_lookup(GOOD_B)
+        self.assertTrue(oo["opted_out"])
+        self.assertEqual(oo["optout_specialty"], "Dermatology")
+
+    def test_screen_cms_uses_stdlib_client_rows(self):
+        from rcm_mc.npi_cleaner import compliance
+
+        def responder(url):
+            if url.startswith("https://x/enroll"):
+                return []  # GOOD_A not enrolled → flagged
+            return []
+        c = self._client(self._catalog(), responder)
+        out = compliance.screen_cms([GOOD_A], cms_client=c)
+        self.assertEqual(out["checked"], 1)
+        self.assertEqual(out["not_enrolled"], 1)
+        self.assertEqual(out["rows"][0]["npi"], GOOD_A)
+        self.assertFalse(out["rows"][0]["enrolled"])
+
+    def test_build_cms_client_falls_back_to_stdlib(self):
+        # With requests absent (the compliant norm), the builder must
+        # still return a working client, not None.
+        from rcm_mc.npi_cleaner import compliance
+        from rcm_mc.data_public.cms_pecos_client import CmsPecosClient
+        import builtins
+        real_import = builtins.__import__
+
+        def no_requests(name, *a, **k):
+            if name == "requests":
+                raise ImportError("no requests in this deployment")
+            return real_import(name, *a, **k)
+        with patch.object(builtins, "__import__", no_requests):
+            client = compliance._build_cms_client()
+        self.assertIsInstance(client, CmsPecosClient)
+
+
+class TestBacklogCleaningChecks(unittest.TestCase):
+    """New scrubber checks from the gap-sweep cleaning lens."""
+
+    def test_service_date_order(self):
+        rows = ["ClaimID,DateOfService,ServiceToDate",
+                "1,2024-03-10,2024-03-05",   # from > thru
+                "2,2024-03-01,2024-03-05"]   # ok
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "d.csv")
+        self.assertEqual(res.sanity.get("service-date-order"), 1)
+
+    def test_ndc_malformed(self):
+        rows = ["ClaimID,NDC11",
+                "1,ABC",              # junk
+                "2,00093-1234-56",    # valid 5-4-2
+                "3,00093123456",      # valid 11-digit
+                "4,123"]              # too short
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "n.csv")
+        self.assertEqual(res.sanity.get("ndc-malformed"), 2)
+
+    def test_admission_source_invalid(self):
+        rows = ["ClaimID,AdmissionSource", "1,7", "2,1"]  # 7 not in domain
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "a.csv")
+        self.assertEqual(res.sanity.get("admission-source-invalid"), 1)
+
+    def test_discharge_status_final_bill(self):
+        rows = ["ClaimID,TypeOfBill,DischargeStatus",
+                "1,0111,30",   # freq 1 (final) + still-a-patient → flag
+                "2,0113,30",   # freq 3 (interim) + 30 → OK, still admitted
+                "3,0111,01"]   # discharged home → OK
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "s.csv")
+        self.assertEqual(res.sanity.get("discharge-status-final-bill"), 1)
+
+    def test_taxonomy_unknown_code_pack_gated(self):
+        from rcm_mc.npi_cleaner import refdata_packs
+        rows = ["ClaimID,TaxonomyCode", "1,207Q00000X", "2,999X99999X"]
+        # Off without the pack.
+        with patch.object(refdata_packs, "taxonomy_codes", lambda: None):
+            res = engine.clean_bytes(("\n".join(rows)+"\n").encode(),
+                                     "t.csv")
+        self.assertNotIn("taxonomy-unknown-code", res.sanity)
+        # On with a pack that knows only the real code.
+        with patch.object(refdata_packs, "taxonomy_codes",
+                          lambda: frozenset({"207Q00000X"})):
+            res2 = engine.clean_bytes(("\n".join(rows)+"\n").encode(),
+                                      "t.csv")
+        self.assertEqual(res2.sanity.get("taxonomy-unknown-code"), 1)
+
+
+class TestBacklogAnalyticsSurfacing(unittest.TestCase):
+    """Population marts now reach the workbook, the exec one-pager, and
+    the run-history record (so they trend)."""
+
+    def _pop_data(self):
+        rows = ["ClaimID,PatientID,BillingProviderNPI,TypeOfBill,HCPCS,"
+                "DiagnosisCode,ChargeAmt,DateOfService"]
+        rows += [f"{i},P{i%20},{GOOD_A},0131,99215,E11.65,200,"
+                 f"2024-0{1+i%6}-10" for i in range(1, 60)]
+        return ("\n".join(rows)+"\n").encode()
+
+    def test_workbook_has_population_sheet(self):
+        from rcm_mc.npi_cleaner import report
+        res = engine.clean_bytes(self._pop_data(), "p.csv")
+        self.assertIsNotNone(res.population)
+        wb = report.build_workbook(res, res.headers, [])
+        self.assertGreater(len(wb), 0)  # builds without error
+        # openpyxl can read the sheet names back.
+        import io as _io
+        try:
+            from openpyxl import load_workbook
+        except Exception:
+            self.skipTest("openpyxl unavailable")
+        names = load_workbook(_io.BytesIO(wb)).sheetnames
+        self.assertIn("Population", names)
+
+    def test_exec_report_has_coding_intensity(self):
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        # 59 established visits by one NPI → coding_intensity present.
+        res = engine.clean_bytes(self._pop_data(), "p.csv")
+        self.assertIsNotNone(res.population.get("coding_intensity"))
+        html = build_exec_report(res.as_scorecard(), "p.csv", "now")
+        self.assertIn("coding intensity", html)
+
+    def test_history_records_population_metrics(self):
+        import rcm_mc.npi_cleaner.history as h
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(h, "_DB_PATH", Path(tmp) / "hist.sqlite3"):
+                res = engine.clean_bytes(self._pop_data(), "p.csv")
+                h.record_run(res.as_scorecard(), "p.csv")
+                run = h.list_runs()[0]
+        pop = run["population"]
+        self.assertIn("n_encounters", pop)
+        self.assertIn("median_observed_pmpm", pop)
+        self.assertIn("em_avg_level", pop)
+
+
+class TestBacklogCliAndFillEdges(unittest.TestCase):
+    def test_state_from_zip_reaches_bare_st_header(self):
+        rows = ["ClaimID,Zip,St", "1,75201,", "2,10001,NY"]
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "st.csv")
+        self.assertEqual(res.repairs.get("state-from-zip"), 1)
+        out = open(res.out_path, encoding="utf-8").read().splitlines()
+        self.assertEqual(out[1].split(",")[2], "TX")
+
+    def test_cli_accepts_enrich_and_deep_flags(self):
+        import contextlib
+        import io as _io
+        from rcm_mc.npi_cleaner import cli as nc_cli
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "c.csv")
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write(f"NPI\n{GOOD_A}\n")
+            out = _io.StringIO()
+            with contextlib.redirect_stdout(out):
+                # --enrich with no network must not crash (guarded).
+                rc = nc_cli.main([p, "--enrich", "--json", "--outdir", tmp])
+            self.assertEqual(rc, 0)
+
+
+class TestFlagColumnAndJcodeConnectors(unittest.TestCase):
+    """Real-file regressions: a ``*_NPI_FLAG`` column must not be scored as
+    NPIs (Validity 0% bug), and a J-code-dominant file must light up the drug
+    connectors + a connector plan even with no NDC/drug-name column."""
+
+    def test_flag_column_excluded_from_npi_detection(self):
+        cols = ["BILLING_PROVIDER_NPI", "OPTIONCARE_NPI_FLAG",
+                "RENDERING_NPI", "NPI_Status", "NPI Number"]
+        npi_idx, billing = engine._detect_npi_columns(cols)
+        got = {cols[i] for i in npi_idx}
+        self.assertIn("BILLING_PROVIDER_NPI", got)
+        self.assertIn("RENDERING_NPI", got)
+        self.assertIn("NPI Number", got)          # identifier, not a modifier
+        self.assertNotIn("OPTIONCARE_NPI_FLAG", got)
+        self.assertNotIn("NPI_Status", got)
+        self.assertEqual(cols[billing], "BILLING_PROVIDER_NPI")
+
+    def test_flag_column_blob_suffix_fallback(self):
+        # No delimiters: "OPTIONCARENPIFLAG" must still be rejected.
+        npi_idx, _ = engine._detect_npi_columns(["OPTIONCARENPIFLAG",
+                                                 "BILLINGNPI"])
+        self.assertEqual(npi_idx, [1])
+
+    def test_flag_column_no_longer_tanks_validity(self):
+        # A flag column full of Y/N used to score as malformed NPIs → 0%.
+        rows = ["BillingNPI,OptionCare_NPI_Flag"]
+        rows += [f"{GOOD_A},Y" for _ in range(20)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "f.csv")
+        self.assertEqual(res.npi_columns, ["BillingNPI"])
+        sc = res.as_scorecard()
+        validity = (sc.get("quality") or {}).get("dimensions", {}).get(
+            "validity")
+        # With the flag excluded, validity is healthy, not zero.
+        self.assertIsNotNone(validity)
+        self.assertGreater(validity, 50.0)
+
+    def test_jcode_stats(self):
+        rows = [["J1745"], ["J1745"], ["99213"], ["J9299"], [""]]
+        pct, jc = engine._jcode_stats(rows, 0)
+        self.assertAlmostEqual(pct, 75.0, places=1)
+        self.assertEqual(set(jc), {"J1745", "J9299"})
+        self.assertEqual((0.0, []), engine._jcode_stats(rows, None))
+
+    def test_connector_plan_drug_dominant_file(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        plan = C.plan({"has_npi": True, "has_billing": True,
+                       "blank_npi_pct": 16.0, "jcode_pct": 96.0,
+                       "has_hcpcs": True})
+        applies = {p["id"]: p["applies"] for p in plan}
+        self.assertTrue(applies["rxnorm"])
+        self.assertTrue(applies["openfda"])
+        self.assertTrue(applies["nppes"])
+        self.assertTrue(applies["oig_leie"])
+        # NPPES reason surfaces the blank-recovery rationale.
+        nppes = next(p for p in plan if p["id"] == "nppes")
+        self.assertIn("blank", nppes["reason"].lower())
+
+    def test_connector_plan_non_drug_file_marks_drug_connectors_idle(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        plan = C.plan({"has_npi": True, "has_billing": True,
+                       "blank_npi_pct": 0.0})
+        applies = {p["id"]: p["applies"] for p in plan}
+        self.assertFalse(applies["rxnorm"])
+        self.assertFalse(applies["openfda"])
+        rx = next(p for p in plan if p["id"] == "rxnorm")
+        self.assertIn("No NDC", rx["reason"])
+
+    def test_engine_records_connector_plan_offline(self):
+        # The plan is computed even without enrich so the UI can explain
+        # coverage. J-code file → drug connectors flagged applicable.
+        rows = ["BillingNPI,HCPCS"]
+        rows += [f"{GOOD_A},J1745" for _ in range(10)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "j.csv")
+        sc = res.as_scorecard()
+        plan = sc.get("connector_plan")
+        self.assertTrue(plan)
+        applies = {p["id"]: p["applies"] for p in plan}
+        self.assertTrue(applies["rxnorm"])
+
+    def test_resolve_drugs_resolves_jcodes_via_hcpcs(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        if not C.available():
+            self.skipTest("public_api_clients unavailable")
+
+        def opener(url, headers, timeout_s):
+            if "idtype=HCPCS" in url:
+                return json.dumps(
+                    {"idGroup": {"rxnormId": ["1657973"]}}).encode()
+            if "/properties.json" in url:
+                return json.dumps(
+                    {"properties": {"name": "infliximab", "tty": "IN"}}).encode()
+            if "/ndcs.json" in url:
+                return json.dumps({"ndcGroup": {"ndcList": {}}}).encode()
+            return b"{}"
+
+        res = C.resolve_drugs([], [], hcpcs=["J1745"], opener=opener)
+        by_id = {r["id"]: r for r in res}
+        self.assertIn("rxnorm", by_id)
+        self.assertEqual(by_id["rxnorm"]["resolved"], 1)
+        self.assertEqual(by_id["rxnorm"]["sample"][0]["kind"], "J-code")
+        self.assertEqual(by_id["rxnorm"]["sample"][0]["name"], "infliximab")
+
+    def test_page_wires_connector_plan_panel(self):
+        # Locks the Live-connectors coverage panel wiring so a future UI edit
+        # can't silently drop the "N of M connectors apply" explainer that the
+        # engine's connector_plan feeds.
+        from rcm_mc.ui.npi_cleaner_page import render_npi_cleaner
+        body = render_npi_cleaner()
+        self.assertIn('id="npi-conn-plan"', body)
+        self.assertIn("renderConnectorPlan", body)
+        self.assertIn("renderConnectorPlan(s.connector_plan)", body)
+
+
+class TestPopulationAmountFallback(unittest.TestCase):
+    """The Population/analytics charge role must find an amount column even
+    when the header is nonstandard — billed → allowed → paid → any money
+    header → value-based sniff — while a genuinely amount-less (or
+    de-identified) file stays $0 and the deterministic cleaning pass is
+    untouched."""
+
+    def _charges(self, res):
+        """Total charges the service-mix mart summed for this run."""
+        sm = (res.population or {}).get("service_mix") or {}
+        return sum(c.get("charges", 0.0) for c in sm.get("categories", []))
+
+    def test_allowed_only_header_yields_nonzero_volume(self):
+        # No billed/charge column — only LINE_ALLOWED. Analytics must fall back
+        # to the allowed amount so Population volume is non-zero.
+        rows = ["PatientID,HCPCS,DateOfService,LINE_ALLOWED"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{100 + i}.00"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "a.csv")
+        self.assertGreater(self._charges(res), 0.0)
+        vol = (res.population or {}).get("volume") or {}
+        self.assertGreater(sum(m["charges"] for m in vol.get("months", [])),
+                           0.0)
+
+    def test_total_paid_amt_header_yields_nonzero_volume(self):
+        rows = ["PatientID,HCPCS,DateOfService,TOTAL_PAID_AMT"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{50 + i}.00"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "p.csv")
+        self.assertGreater(self._charges(res), 0.0)
+
+    def test_value_sniff_adopts_money_shaped_nonstandard_header(self):
+        # A header no money hint matches ("NET_SVC_VAL"), but the column is
+        # clearly money (decimal cents). Value-based sniff must adopt it for
+        # the analytics amount role only.
+        rows = ["PatientID,HCPCS,DateOfService,NET_SVC_VAL"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{200 + i}.50"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "v.csv")
+        self.assertGreater(self._charges(res), 0.0)
+        self.assertEqual(res.structure.get("population_amount_column"),
+                         "NET_SVC_VAL")
+
+    def test_value_sniff_does_not_invent_money_from_units(self):
+        # Amount-less file: the only extra numeric column is bare-integer
+        # units. Sniff must NOT adopt it — charges stay $0.
+        rows = ["PatientID,HCPCS,DateOfService,Units"]
+        rows += [f"P{i},99213,2024-0{(i % 6) + 1}-15,{(i % 3) + 1}"
+                 for i in range(30)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "u.csv")
+        self.assertEqual(self._charges(res), 0.0)
+        self.assertIsNone(res.structure.get("population_amount_column"))
+
+    def test_sniff_helper_skips_claimed_and_bare_integers(self):
+        headers = ["Units", "NET_SVC_VAL"]
+        rows = [[str((i % 3) + 1), f"{200 + i}.50"] for i in range(20)]
+        # Units column (index 0) is claimed → never adopted; the money-shaped
+        # NET_SVC_VAL (index 1) wins.
+        self.assertEqual(
+            engine._sniff_amount_column(headers, rows, claimed={0}), 1)
+        # If the money column is also claimed, nothing qualifies.
+        self.assertIsNone(
+            engine._sniff_amount_column(headers, rows, claimed={0, 1}))
+        # A bare-integer-only file invents nothing.
+        int_rows = [[str(i), str(i * 2)] for i in range(20)]
+        self.assertIsNone(
+            engine._sniff_amount_column(["A", "B"], int_rows, claimed=set()))
+
+    def test_amount_fallback_does_not_touch_cleaning_money_set(self):
+        # The sniffed column must NOT be money-normalized or money-unparseable
+        # checked by the deterministic pass — only fed to analytics.
+        rows = ["ClaimID,BillingNPI,HCPCS,DateOfService,NET_SVC_VAL"]
+        rows += [f"{i},{GOOD_A},99213,2024-01-15,{1000 + i}.5"
+                 for i in range(10)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "m.csv")
+        # The sniffed column feeds analytics only.
+        self.assertEqual(res.structure.get("population_amount_column"),
+                         "NET_SVC_VAL")
+        self.assertNotIn("money-unparseable", res.sanity)
+        with open(res.out_path, encoding="utf-8") as fh:
+            out = fh.read()
+        # The money cleaner would rewrite "1000.5" → "1000.50"; because the
+        # column is NOT in money_set, the cleaning pass left it verbatim.
+        self.assertIn(",1000.5\n", out)
+        self.assertNotIn("1000.50", out)
+
+
+class TestConnectorsDegradeLegibly(unittest.TestCase):
+    """A total network outage must read as "couldn't reach X" with legible
+    counts, never throw into the pipeline, and never look like a data
+    problem."""
+
+    def test_verify_npis_all_fail_reads_as_outage(self):
+        from rcm_mc.npi_cleaner import nppes_bridge as NB
+        if not NB.available():
+            self.skipTest("nppes client unavailable")
+        import unittest.mock as mock
+        with mock.patch(
+                "rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                side_effect=OSError("connection refused")):
+            out = NB.verify_npis([GOOD_A, GOOD_B])
+        self.assertTrue(out.get("degraded"))
+        self.assertEqual(out["checked"], 0)
+        self.assertEqual(out["errors"], 2)
+        self.assertIn("could not reach", out["note"].lower())
+
+    def test_verify_npis_partial_failure_counts_both(self):
+        from rcm_mc.npi_cleaner import nppes_bridge as NB
+        if not NB.available():
+            self.skipTest("nppes client unavailable")
+        import unittest.mock as mock
+        calls = {"n": 0}
+
+        def flaky(npi):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise OSError("timeout")
+            return None  # not found
+
+        with mock.patch(
+                "rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                side_effect=flaky):
+            out = NB.verify_npis([GOOD_A, GOOD_B])
+        self.assertFalse(out.get("degraded"))
+        self.assertEqual(out["errors"], 1)
+        self.assertEqual(out["checked"], 1)
+        self.assertIn("lookup error", out["note"].lower())
+
+    def test_recover_candidates_counts_search_errors(self):
+        from rcm_mc.npi_cleaner import nppes_bridge as NB
+        if not NB.available():
+            self.skipTest("nppes client unavailable")
+        import unittest.mock as mock
+        with mock.patch(
+                "rcm_mc.data_public.nppes_api_client.search_by_organization",
+                side_effect=OSError("connection refused")):
+            out = NB.recover_candidates(
+                [{"row": "1", "name": "Mercy General Hospital", "state": "OH"}])
+        self.assertTrue(out.get("degraded"))
+        self.assertEqual(out["searched"], 0)
+        self.assertEqual(out["errors"], 1)
+        self.assertIn("could not reach", out["note"].lower())
+
+    def test_resolve_drugs_all_fail_reads_as_outage(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        if not C.available():
+            self.skipTest("public_api_clients unavailable")
+
+        def opener(url, headers, timeout_s):
+            raise OSError("connection refused")
+
+        res = C.resolve_drugs(["00006-4171-01"], [], hcpcs=["J1745"],
+                              opener=opener)
+        by_id = {r["id"]: r for r in res}
+        self.assertIn("rxnorm", by_id)
+        self.assertEqual(by_id["rxnorm"]["resolved"], 0)
+        self.assertIn("could not reach", by_id["rxnorm"]["note"].lower())
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+
+
+
 
 
 

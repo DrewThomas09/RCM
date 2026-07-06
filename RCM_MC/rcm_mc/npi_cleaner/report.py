@@ -145,6 +145,55 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
             quality_rows.append([f["column"], f["pct"]])
     sheets.append(Sheet("Quality", quality_rows, col_widths=[40, 18]))
 
+    # ---- Population marts (analytics.py) — the Tuva-class output in the
+    #      shareable workbook, not just the web Population tab. ----
+    _pop = sc.get("population") or {}
+    if _pop:
+        pop_rows: List[List[object]] = []
+        _mix = _pop.get("service_mix") or {}
+        if _mix.get("categories"):
+            pop_rows.append(_header(["Care setting", "Lines", "% of file",
+                                     "Charges"]))
+            for c in _mix["categories"][:16]:
+                pop_rows.append([f"{c['category']} — {c['subcategory']}",
+                                 c["rows"], f"{c['pct']}%",
+                                 round(float(c["charges"]), 2)])
+        _enc = _pop.get("encounters") or {}
+        if _enc:
+            pop_rows.append(_header(["Encounters", ""]))
+            pop_rows.append(["Total encounters", _enc.get("n_encounters", 0)])
+            pop_rows.append(["Distinct patients", _enc.get("n_patients", 0)])
+            _rd0 = _enc.get("readmissions") or {}
+            if _rd0:
+                pop_rows.append(
+                    ["30-day readmissions",
+                     f"{_rd0.get('readmissions_30d', 0)} of "
+                     f"{_rd0.get('inpatient_stays', 0)} "
+                     f"({_rd0.get('rate_pct')}%)"])
+        _vol = _pop.get("volume") or {}
+        if _vol.get("median_observed_pmpm") is not None:
+            pop_rows.append(["Median observed PMPM",
+                             round(float(_vol["median_observed_pmpm"]), 2)])
+        _ci = _pop.get("coding_intensity") or {}
+        if _ci:
+            pop_rows.append(_header(["E&M coding intensity", ""]))
+            pop_rows.append(["Established visits (99211-15)",
+                             _ci.get("established_visits", 0)])
+            pop_rows.append(["File average level",
+                             _ci.get("file_avg_level", "—")])
+            if _ci.get("outliers"):
+                pop_rows.append(_header(["High-intensity NPI", "Avg level"]))
+                for o in _ci["outliers"][:10]:
+                    pop_rows.append([o["npi"], o["avg_level"]])
+        _cond = _pop.get("conditions") or {}
+        if _cond.get("prevalence"):
+            pop_rows.append(_header(["Chronic condition", "Prevalence %"]))
+            for p in _cond["prevalence"][:12]:
+                pop_rows.append([p["condition"], f"{p['pct']}%"])
+        if pop_rows:
+            sheets.append(Sheet("Population", pop_rows,
+                                col_widths=[42, 14, 12, 14]))
+
     # ---- NPI health per column ----
     health = [_header(["Column", "Cells", "Valid", "Blank",
                        "Malformed", "Checksum fail"])]

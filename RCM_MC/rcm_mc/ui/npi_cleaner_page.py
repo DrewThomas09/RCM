@@ -25,30 +25,118 @@ from ._chartis_kit import chartis_shell, ck_editorial_head, ck_page_actions
 
 _EXTRA_CSS = r"""
 .npi-wrap{max-width:920px;margin:0 auto}
+/* ============ Upload stage — the first impression ============ */
 .npi-drop{
-  border:2px dashed var(--line,#c9d6d0); border-radius:16px;
-  background:var(--panel,#fbfdfc); padding:44px 28px; text-align:center;
-  cursor:pointer; transition:border-color .15s ease, background .15s ease;
+  position:relative;
+  border:1.5px dashed var(--line,#c9d6d0); border-radius:18px;
+  background:
+    radial-gradient(130% 150% at 50% 0%,
+      color-mix(in srgb,var(--green-deep,#0c7c66) 4%,transparent), transparent 58%),
+    var(--panel,#fbfdfc);
+  padding:42px 28px; text-align:center; cursor:pointer;
+  transition:border-color .16s ease, background .16s ease,
+    box-shadow .16s ease, transform .16s ease;
 }
 .npi-drop:hover,.npi-drop.drag{
   border-color:var(--green-deep,#0c7c66);
-  background:color-mix(in srgb, var(--green-deep,#0c7c66) 5%, transparent);
+  background:
+    radial-gradient(130% 150% at 50% 0%,
+      color-mix(in srgb,var(--green-deep,#0c7c66) 9%,transparent), transparent 60%),
+    var(--panel,#fbfdfc);
+  box-shadow:0 8px 26px -14px color-mix(in srgb,var(--green-deep,#0c7c66) 60%,transparent);
 }
-.npi-drop .cloud{font-size:34px;line-height:1;margin-bottom:10px}
-.npi-drop .big{font-size:17px;font-weight:640;letter-spacing:-.01em}
-.npi-drop .small{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:6px}
-.npi-drop .pick{color:var(--green-deep,#0c7c66);text-decoration:underline;font-weight:600}
-.npi-opts{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;
-  margin:16px 0 4px;font-size:13px;color:var(--ink-2,#4a5d57)}
-.npi-opts label{display:flex;align-items:center;gap:7px;cursor:pointer}
+.npi-drop.drag{border-style:solid; transform:translateY(-1px)}
+.npi-drop:focus-visible{outline:2px solid var(--green-deep,#0c7c66);outline-offset:3px}
+.npi-drop .cloud{
+  width:60px;height:60px;margin:0 auto 15px;border-radius:17px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:31px;line-height:1;color:var(--green-deep,#0c7c66);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 11%,transparent);
+  transition:transform .16s ease, background .16s ease;
+}
+.npi-drop:hover .cloud,.npi-drop.drag .cloud{
+  transform:translateY(-2px);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 17%,transparent);
+}
+.npi-drop .big{font-size:18px;font-weight:660;letter-spacing:-.01em;color:var(--ink,#11201c)}
+.npi-drop .small{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:8px;
+  line-height:1.6;max-width:400px;margin-left:auto;margin-right:auto}
+.npi-drop .pick{color:var(--green-deep,#0c7c66);text-decoration:underline;
+  text-underline-offset:2px;font-weight:600}
+/* accepted-format chips + sample link, sat calmly below the drop zone */
+.npi-formats{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  align-items:center;margin-top:12px;font-size:11.5px;color:var(--ink-2,#4a5d57)}
+.npi-formats .fchip{display:inline-block;padding:2px 9px;border-radius:20px;
+  background:color-mix(in srgb,var(--ink,#11201c) 5%,transparent);
+  border:1px solid var(--line-soft,#e7eeea);font-weight:600;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.01em}
+.npi-samplerow{text-align:center;margin-top:12px;font-size:12.5px;color:var(--ink-2,#4a5d57)}
+.npi-samplerow a{color:var(--green-deep,#0c7c66);font-weight:600;
+  text-decoration:underline;text-underline-offset:2px}
+/* Options — grouped, legible, calm */
+.npi-optbox{margin-top:18px;border:1px solid var(--line,#d2ddd7);border-radius:14px;
+  background:var(--panel,#fbfdfc);padding:6px 6px 8px}
+.npi-optbox > .hd{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  padding:11px 12px 5px}
+.npi-optbox > .hd .t{font-size:11px;font-weight:680;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-2,#4a5d57)}
+.npi-optbox > .hd .s{font-size:12px;color:var(--ink-2,#4a5d57)}
+.npi-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));
+  gap:5px;margin:0;font-size:13px;color:var(--ink,#11201c)}
+.npi-opts .npi-opt{display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+  padding:11px 12px;border-radius:11px;border:1px solid transparent;
+  transition:background .14s ease, border-color .14s ease}
+.npi-opts .npi-opt:hover{background:color-mix(in srgb,var(--green-deep,#0c7c66) 5%,transparent)}
+.npi-opts .npi-opt input[type=checkbox]{margin-top:1px;flex:none;
+  width:16px;height:16px;cursor:pointer;accent-color:var(--green-deep,#0c7c66)}
+.npi-opts .npi-opt:has(input:checked){
+  border-color:color-mix(in srgb,var(--green-deep,#0c7c66) 34%,transparent);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 6%,transparent)}
+.npi-opt-t{display:block;font-weight:600;font-size:13px;color:var(--ink,#11201c);line-height:1.35}
+.npi-opt-d{display:block;font-size:11.5px;color:var(--ink-2,#4a5d57);margin-top:3px;line-height:1.5}
+.npi-optprofile{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:12px;margin-top:3px;border-top:1px solid var(--line-soft,#e7eeea)}
+.npi-optprofile > .lab{font-weight:600;font-size:13px;color:var(--ink,#11201c)}
 .npi-hidden{display:none !important}
-.npi-prog{margin-top:22px}
-.npi-bar{height:10px;border-radius:6px;background:var(--line-soft,#e7eeea);overflow:hidden}
-.npi-bar > i{display:block;height:100%;width:0;border-radius:6px;
+/* ============ Processing stage — make progress feel alive ============ */
+.npi-prog{margin-top:22px;border:1px solid var(--line,#d2ddd7);border-radius:14px;
+  background:var(--panel,#fbfdfc);padding:20px 22px}
+.npi-prog-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.npi-spin{width:20px;height:20px;flex:none;border-radius:50%;
+  border:2.5px solid color-mix(in srgb,var(--green-deep,#0c7c66) 22%,transparent);
+  border-top-color:var(--green-deep,#0c7c66);animation:npi-spin .8s linear infinite}
+@keyframes npi-spin{to{transform:rotate(360deg)}}
+.npi-prog-title{font-size:15px;font-weight:640;letter-spacing:-.01em;color:var(--ink,#11201c)}
+.npi-bar{position:relative;height:12px;border-radius:8px;
+  background:var(--line-soft,#e7eeea);overflow:hidden}
+.npi-bar > i{position:relative;display:block;height:100%;width:0;border-radius:8px;
   background:linear-gradient(90deg,var(--green,#0c7c66),var(--green-deep,#075a4a));
-  transition:width .25s ease}
-.npi-msg{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:8px;
+  transition:width .3s ease;overflow:hidden}
+.npi-bar > i::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,
+    color-mix(in srgb,#ffffff 55%,transparent),transparent);
+  transform:translateX(-100%);animation:npi-sheen 1.5s ease-in-out infinite}
+@keyframes npi-sheen{to{transform:translateX(100%)}}
+.npi-msg{font-size:12.5px;color:var(--ink-2,#4a5d57);margin-top:10px;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.npi-prog-note{font-size:12px;color:var(--ink-2,#4a5d57);margin-top:13px;
+  padding-top:12px;border-top:1px solid var(--line-soft,#e7eeea);line-height:1.55}
+/* ============ Error stage — clear + recoverable, not alarming ============ */
+.npi-errbox{display:flex;gap:14px;align-items:flex-start;margin-top:22px;
+  border:1px solid color-mix(in srgb,#b06a00 30%,var(--line,#d2ddd7));
+  border-left:3px solid #b06a00;border-radius:14px;
+  background:color-mix(in srgb,#b06a00 5%,var(--panel,#fbfdfc));padding:18px 20px}
+.npi-erb-icon{width:34px;height:34px;flex:none;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;
+  color:#b06a00;background:color-mix(in srgb,#b06a00 14%,transparent)}
+.npi-erb-body{flex:1;min-width:0}
+.npi-erb-title{font-size:15px;font-weight:660;color:var(--ink,#11201c);letter-spacing:-.01em}
+.npi-erb-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.npi-erb-actions .npi-dl{margin-top:0}
+@media (prefers-reduced-motion:reduce){
+  .npi-bar > i::after{animation:none;display:none}
+  .npi-spin{animation:none}
+}
 .npi-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
   gap:12px;margin:22px 0}
 .npi-card{border:1px solid var(--line,#d2ddd7);border-radius:12px;
@@ -85,6 +173,8 @@ _EXTRA_CSS = r"""
   cursor:pointer;text-decoration:underline;background:none;border:0;padding:0}
 .npi-err{border:1px solid #e2b8ae;background:#fbf1ee;color:#8a2a17;
   border-radius:10px;padding:12px 14px;font-size:13px;margin-top:16px}
+.npi-erb-detail{font-size:13px;color:var(--ink-2,#4a5d57);margin-top:5px;
+  line-height:1.55;word-break:break-word}
 .npi-warn{border:1px solid #e8d8ac;background:#fbf7ea;color:#7a5a12;
   border-radius:10px;padding:10px 14px;font-size:12.5px;margin-top:12px}
 .npi-note{font-size:12px;color:var(--ink-2,#4a5d57);margin-top:26px;
@@ -144,6 +234,8 @@ _EXTRA_CSS = r"""
   gap:8px;margin-top:10px}
 .npi-cat .c{border:1px solid var(--line-soft,#e7eeea);border-radius:9px;
   padding:8px 11px;background:var(--panel,#fbfdfc)}
+.npi-cat .c.on{border-color:color-mix(in srgb,var(--green-deep,#0c7c66) 45%,transparent);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 5%,transparent)}
 .npi-cat .c .n{font-size:12.5px;font-weight:600}
 .npi-cat .c .o{font-size:11px;color:var(--ink-2,#4a5d57)}
 .npi-cat .c .free{color:var(--green-deep,#0c7c66)}
@@ -164,6 +256,79 @@ _EXTRA_CSS = r"""
 .npi-drillrows table{width:100%;border-collapse:collapse;font-size:12px;margin:4px 0}
 .npi-drillrows th,.npi-drillrows td{padding:5px 8px;border-bottom:1px solid var(--line-soft,#e7eeea);text-align:left}
 .npi-drillrows th{font-size:10.5px;text-transform:uppercase;color:var(--ink-2,#4a5d57)}
+
+/* ============ Output results rework ============ */
+.npi-card{transition:border-color .15s ease, box-shadow .15s ease}
+.npi-card:hover{border-color:color-mix(in srgb,var(--green-deep,#0c7c66) 38%,var(--line,#d2ddd7));
+  box-shadow:0 1px 4px color-mix(in srgb,var(--green-deep,#0c7c66) 10%,transparent)}
+.npi-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* zebra + hover for every result table (drill-expansion rows excluded) */
+.npi-tbl tbody tr:not(.npi-drillrows):nth-child(even){
+  background:color-mix(in srgb,var(--ink,#11201c) 2.5%,transparent)}
+.npi-tbl tbody tr:not(.npi-drillrows):hover{
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 6%,transparent)}
+.npi-tbl th.num,.npi-tbl td.num{font-variant-numeric:tabular-nums}
+/* inline per-column health bar (Overview) */
+.npi-hbar{display:inline-flex;align-items:center;gap:8px;justify-content:flex-end}
+.npi-hbar .track{width:56px;height:6px;border-radius:4px;flex:none;overflow:hidden;
+  background:color-mix(in srgb,var(--ink,#11201c) 9%,transparent)}
+.npi-hbar .track > i{display:block;height:100%;border-radius:4px}
+.npi-hbar .track > i.good{background:var(--green-deep,#0c7c66)}
+.npi-hbar .track > i.warn{background:#b06a00}
+.npi-hbar .track > i.bad{background:#a8331f}
+.npi-hbar .pct{min-width:42px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.npi-hbar .pct.good{color:var(--green-deep,#0c7c66)}
+.npi-hbar .pct.warn{color:#b06a00}
+.npi-hbar .pct.bad{color:#a8331f}
+/* Quality: overall-grade block + dimension bars */
+.npi-grade{display:inline-flex;align-items:center;gap:16px;margin-top:12px;
+  border:1px solid var(--line,#d2ddd7);border-radius:14px;padding:14px 22px;
+  background:var(--panel,#fbfdfc)}
+.npi-grade .letter{font-size:38px;font-weight:720;line-height:1;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums}
+.npi-grade .meta{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-2,#4a5d57);line-height:1.5}
+.npi-grade .meta b{display:block;font-size:22px;font-weight:700;letter-spacing:-.01em;
+  text-transform:none;font-variant-numeric:tabular-nums}
+.npi-dim{display:flex;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap}
+.npi-dim .dl{width:130px;font-size:12.5px;font-weight:640}
+.npi-dim .dtrack{flex:1;min-width:120px;height:10px;border-radius:6px;overflow:hidden;
+  background:color-mix(in srgb,var(--ink,#11201c) 8%,transparent)}
+.npi-dim .dtrack > i{display:block;height:100%;border-radius:6px}
+.npi-dim .dv{width:56px;text-align:right;font-size:12.5px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.npi-dim .dd{flex:1;min-width:170px;font-size:11.5px;color:var(--ink-2,#4a5d57)}
+/* Downloads: grouped action bars */
+.npi-dlgroup{border:1px solid var(--line-soft,#e7eeea);border-radius:12px;
+  padding:14px 16px;margin-top:12px;background:var(--panel,#fbfdfc)}
+.npi-dlgroup > .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-2,#4a5d57);font-weight:640;margin-bottom:10px}
+.npi-dlbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.npi-dlbar .npi-dl{margin-top:0}
+/* Live-connector coverage plan (connector_plan) */
+.npi-plan{border:1px solid var(--line,#d2ddd7);border-radius:12px;overflow:hidden;
+  background:var(--panel,#fbfdfc);margin-bottom:14px}
+.npi-plan-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--line-soft,#e7eeea)}
+.npi-plan-head .t{font-weight:660;font-size:14px}
+.npi-plan-head .n{font-size:12px;color:var(--ink-2,#4a5d57);font-variant-numeric:tabular-nums}
+.npi-plan-head .n b{color:var(--green-deep,#0c7c66);font-weight:700}
+.npi-plan-row{display:grid;grid-template-columns:minmax(130px,1.1fr) auto minmax(0,2fr);
+  gap:12px;align-items:center;padding:10px 16px;
+  border-top:1px solid var(--line-soft,#e7eeea)}
+.npi-plan-row.idle{opacity:.6}
+.npi-plan-row .nm{font-size:13px;font-weight:600}
+.npi-plan-row .rs{font-size:12px;color:var(--ink-2,#4a5d57);line-height:1.45}
+.npi-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:2px 10px;border-radius:20px;white-space:nowrap;justify-self:start}
+.npi-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.npi-chip.on{color:var(--green-deep,#0c7c66);
+  background:color-mix(in srgb,var(--green-deep,#0c7c66) 13%,transparent)}
+.npi-chip.off{color:var(--ink-2,#4a5d57);
+  background:color-mix(in srgb,var(--ink,#11201c) 6%,transparent)}
+@media (max-width:560px){
+  .npi-plan-row{grid-template-columns:1fr;gap:5px}
+}
 """
 
 
@@ -194,50 +359,71 @@ def _body() -> str:
     <div class="npi-drop" id="npi-drop" tabindex="0" role="button"
          aria-label="Upload a claims file">
       <div class="cloud">⤒</div>
-      <div class="big">Drag a claims file here</div>
-      <div class="small">or <span class="pick">choose a file</span> —
-        CSV, TSV, Excel (.xlsx), X12 837/835 (.837/.835/.edi), or a
-        <strong>.zip of files</strong> · CSV/TSV up to
-        <strong>10&nbsp;GB</strong> (streamed in chunks; multi-hour jobs
-        are fine), other formats up to 200&nbsp;MB ·
-        <a href="/npi-cleaner/sample" class="pick" download>try a sample file</a></div>
+      <div class="big">Drop a claims file to clean it</div>
+      <div class="small">Drag it here, or <span class="pick">choose a file</span>.
+        Processed in memory — nothing is stored.</div>
+      <div class="npi-formats">
+        <span class="fchip">CSV</span><span class="fchip">TSV</span>
+        <span class="fchip">.xlsx</span><span class="fchip">837 / 835</span>
+        <span class="fchip">.edi</span><span class="fchip">.zip</span>
+        <span>CSV/TSV to <strong>10&nbsp;GB</strong> · others to 200&nbsp;MB</span>
+      </div>
     </div>
+    <div class="npi-samplerow">New here?
+      <a href="/npi-cleaner/sample" download>Try a sample file</a> —
+      no upload needed.</div>
     <input type="file" id="npi-file" class="npi-hidden"
            accept=".csv,.tsv,.txt,.xlsx,.837,.835,.edi,.x12,.zip,text/csv,text/plain,application/zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-    <div class="npi-opts">
-      <label><input type="checkbox" id="npi-dedupe" checked>
-        Remove exact-duplicate rows</label>
-      <label><input type="checkbox" id="npi-enrich">
-        Go online — verify &amp; recover NPIs, resolve drugs (NPPES · RxNorm · openFDA)
-        <span class="npi-hint" title="Uses PE Desk's own live public-data
+    <div class="npi-optbox">
+      <div class="hd"><span class="t">Options</span>
+        <span class="s">Sensible defaults — adjust before you upload.</span></div>
+      <div class="npi-opts">
+        <label class="npi-opt"><input type="checkbox" id="npi-dedupe" checked>
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">Remove exact-duplicate rows</span>
+            <span class="npi-opt-d">Drop byte-identical duplicate rows; every
+              other row is preserved as-is.</span></span></label>
+        <label class="npi-opt"><input type="checkbox" id="npi-enrich">
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">Go online — verify &amp; recover NPIs
+              <span class="npi-hint" title="Uses PE Desk's own live public-data
 connectors. NPIs are verified against NPPES (active vs deactivated) and missing
 NPIs recovered from provider names; NDC and drug-name columns are resolved to
-RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></label>
-      <label><input type="checkbox" id="npi-deep">
-        Deep recovery — full v49 pipeline (networked, slower)
-        <span class="npi-hint" title="Runs the complete Steps 0-8 recovery
+RxNorm concepts and openFDA labels. Bounded, cached, opt-in.">ⓘ</span></span>
+            <span class="npi-opt-d">Cross-check against NPPES, recover missing
+              billing NPIs, resolve drugs (RxNorm · openFDA).</span></span></label>
+        <label class="npi-opt"><input type="checkbox" id="npi-deep">
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">Deep recovery — full v49 pipeline
+              <span class="npi-hint" title="Runs the complete Steps 0-8 recovery
 pipeline: live NPPES enrichment, CMS billers, Open Payments, 340B, entity
 resolution and statistical fill, then a multi-tab Excel report. Needs outbound
 network access and can take minutes; runs in the background with a timeout and
-never blocks the fast results.">ⓘ</span></label>
-      <label><input type="checkbox" id="npi-deid">
-        De-identify patient PHI in the export
-        <span class="npi-hint" title="Masks patient-scoped identifiers only —
+never blocks the fast results.">ⓘ</span></span>
+            <span class="npi-opt-d">Networked Steps&nbsp;0–8 recovery; runs in
+              the background and never blocks the fast results.</span></span></label>
+        <label class="npi-opt"><input type="checkbox" id="npi-deid">
+          <span class="npi-opt-body">
+            <span class="npi-opt-t">De-identify patient PHI
+              <span class="npi-hint" title="Masks patient-scoped identifiers only —
 patient name/address/phone/email and SSN are redacted, DOB is reduced to year,
 ZIP to its first three digits, and MRN/account numbers are replaced with a
 stable per-run token (same value → same token, so rows still link). Provider
-NPI and provider name are always kept intact — NPI recovery depends on them.">ⓘ</span></label>
-      <label style="margin-left:2px">Cleaning profile
-        <select id="npi-profile" style="margin-left:6px;font-size:12.5px">
+NPI and provider name are always kept intact — NPI recovery depends on them.">ⓘ</span></span>
+            <span class="npi-opt-d">Mask patient identifiers in the export;
+              provider NPI &amp; name are kept intact.</span></span></label>
+      </div>
+      <div class="npi-optprofile">
+        <span class="lab">Cleaning profile</span>
+        <select id="npi-profile" style="font-size:12.5px">
           <option value="">(default rules)</option>
         </select>
-        <button type="button" class="npi-again" id="npi-profile-new"
-                style="margin-left:6px">manage…</button>
+        <button type="button" class="npi-again" id="npi-profile-new">manage…</button>
         <span class="npi-hint" title="Named rule suites: disable rules that
 don't apply to this feed, mark known issues as accepted (still reported,
 no longer graded), and tune thresholds (timely-filing days, stale-date
 horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
-      </label>
+      </div>
     </div>
     <div id="npi-profile-editor" class="npi-hidden" style="border:1px solid
       var(--line,#d2ddd7);border-radius:8px;padding:14px;margin-top:10px">
@@ -302,17 +488,34 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
 
   <div id="npi-stage-progress" class="npi-hidden">
     <div class="npi-prog">
+      <div class="npi-prog-head">
+        <span class="npi-spin" aria-hidden="true"></span>
+        <span class="npi-prog-title">Cleaning your file…</span>
+      </div>
       <div class="npi-bar"><i id="npi-bar-fill"></i></div>
       <div class="npi-msg" id="npi-bar-msg">Uploading…</div>
       <div class="npi-msg npi-muted" id="npi-bar-eta"></div>
+      <div class="npi-prog-note">The job runs on the server, so you can keep
+        working — leave this tab open to watch progress. Large files can take a
+        while; the bar and estimate update live.</div>
       <button type="button" class="npi-again npi-hidden" id="npi-cancel"
               style="margin-top:10px">Cancel this run</button>
     </div>
   </div>
 
   <div id="npi-stage-error" class="npi-hidden">
-    <div class="npi-err" id="npi-err-text"></div>
-    <button class="npi-again" id="npi-err-again">Try another file</button>
+    <div class="npi-errbox">
+      <div class="npi-erb-icon" aria-hidden="true">!</div>
+      <div class="npi-erb-body">
+        <div class="npi-erb-title">This file couldn't be cleaned</div>
+        <div class="npi-erb-detail" id="npi-err-text"></div>
+        <div class="npi-erb-actions">
+          <button class="npi-dl" id="npi-err-again">Try another file</button>
+          <a class="npi-again" href="/npi-cleaner/sample" download>or start
+            with a sample</a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div id="npi-stage-result" class="npi-hidden">
@@ -335,6 +538,7 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
       <div class="ck-section-header" style="margin-top:8px">
         <h3 style="margin:0">Per-column NPI health</h3>
       </div>
+      <div class="npi-scroll">
       <table class="npi-tbl">
         <thead><tr>
           <th>Column</th><th class="num">Cells</th><th class="num">Valid</th>
@@ -343,6 +547,7 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
         </tr></thead>
         <tbody id="npi-col-rows"></tbody>
       </table>
+      </div>
       <div id="npi-repairs"></div>
       <div id="npi-sanity"></div>
     </div>
@@ -367,6 +572,7 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
     </div>
 
     <div class="npi-panel" data-panel="connectors">
+      <div id="npi-conn-plan"></div>
       <div id="npi-deep"></div>
       <div id="npi-compliance"></div>
       <div id="npi-nppes"></div>
@@ -377,28 +583,34 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
     <div class="npi-panel" data-panel="downloads">
       <div id="npi-recovered-note"></div>
       <div id="npi-deid-note"></div>
-      <div style="margin-top:4px;margin-bottom:14px">
-        <a class="npi-dl" id="npi-analyze" href="#"
-           style="background:var(--ink,#11201c)">📊 Open pivot analysis →</a>
-        <a class="npi-dl npi-dl-alt" id="npi-exec" href="#" target="_blank"
-           style="margin-left:10px">🖨 Executive report</a>
-        <a class="npi-dl npi-dl-alt" href="/npi-cleaner/history"
-           style="margin-left:10px">📈 Run history</a>
-        <span class="npi-muted" style="margin-left:10px">Pivot analysis, a
-          print-ready DQ one-pager, and quality tracked across runs.</span>
+      <div class="npi-dlgroup">
+        <div class="lbl">Analyze &amp; report</div>
+        <div class="npi-dlbar">
+          <a class="npi-dl" id="npi-analyze" href="#"
+             style="background:var(--ink,#11201c)">📊 Open pivot analysis →</a>
+          <a class="npi-dl npi-dl-alt" id="npi-exec" href="#" target="_blank">
+            🖨 Executive report</a>
+          <a class="npi-dl npi-dl-alt" href="/npi-cleaner/history">
+            📈 Run history</a>
+        </div>
+        <div class="npi-muted" style="margin-top:10px">Pivot analysis, a
+          print-ready DQ one-pager, and quality tracked across runs.</div>
       </div>
-      <div style="margin-top:8px">
-        <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
-        <a class="npi-dl npi-dl-alt" id="npi-dl-xlsx" href="#" download
-           style="margin-left:10px">⤓ Download report (.xlsx)</a>
-        <a class="npi-dl npi-dl-alt" id="npi-dl-companion" href="#" download
-           style="margin-left:10px;display:none">⤓ Corrections companion (.csv)</a>
-        <a class="npi-dl npi-dl-alt" id="npi-dl-changelog" href="#" download
-           style="margin-left:10px;display:none">⤓ Change log — audit trail (.csv)</a>
-        <a class="npi-dl npi-dl-alt" id="npi-dl-dict" href="#" download
-           style="margin-left:10px;display:none">⤓ Data dictionary (.csv)</a>
-        <a class="npi-dl npi-dl-alt" id="npi-dl-bundle" href="#" download
-           style="margin-left:10px">⤓ Everything (.zip)</a>
+      <div class="npi-dlgroup">
+        <div class="lbl">Download files</div>
+        <div class="npi-dlbar">
+          <a class="npi-dl" id="npi-dl" href="#" download>⤓ Download cleaned CSV</a>
+          <a class="npi-dl npi-dl-alt" id="npi-dl-xlsx" href="#" download>
+            ⤓ Download report (.xlsx)</a>
+          <a class="npi-dl npi-dl-alt" id="npi-dl-companion" href="#" download
+             style="display:none">⤓ Corrections companion (.csv)</a>
+          <a class="npi-dl npi-dl-alt" id="npi-dl-changelog" href="#" download
+             style="display:none">⤓ Change log — audit trail (.csv)</a>
+          <a class="npi-dl npi-dl-alt" id="npi-dl-dict" href="#" download
+             style="display:none">⤓ Data dictionary (.csv)</a>
+          <a class="npi-dl npi-dl-alt" id="npi-dl-bundle" href="#" download>
+            ⤓ Everything (.zip)</a>
+        </div>
       </div>
       <div id="npi-reconcile" style="margin-top:16px"></div>
       <div style="margin-top:16px">
@@ -560,15 +772,19 @@ _EXTRA_JS = r"""
     Object.keys(cs).forEach(function(col){
       var c=cs[col]; var cells=c.cells||0;
       var pct=cells?Math.round(1000*c.valid/cells)/10:0;
+      var hc=healthClass(pct);
       var isBilling=(col===s.billing_column);
-      rows+='<tr><td class="'+(isBilling?'billing':'')+'">'+col+
+      rows+='<tr><td class="'+(isBilling?'billing':'')+'">'+esc(col)+
         (isBilling?'<span class="npi-badge">billing</span>':'')+'</td>'+
         '<td class="num">'+fmt(cells)+'</td>'+
         '<td class="num">'+fmt(c.valid)+'</td>'+
         '<td class="num">'+fmt(c.blank)+'</td>'+
         '<td class="num">'+fmt(c.malformed)+'</td>'+
         '<td class="num">'+fmt(c.checksum)+'</td>'+
-        '<td class="num">'+pct+'%</td></tr>';
+        '<td class="num"><span class="npi-hbar">'+
+          '<span class="track"><i class="'+hc+'" style="width:'+
+          Math.max(2,Math.min(100,pct))+'%"></i></span>'+
+          '<span class="pct '+hc+'">'+pct+'%</span></span></td></tr>';
     });
     if(!rows){ rows='<tr><td colspan="7" style="color:var(--ink-2)">'+
       'No NPI column detected in this file.</td></tr>'; }
@@ -586,6 +802,7 @@ _EXTRA_JS = r"""
     renderPopulation(s.population, s.download);
     $("tabbadge-pop").textContent = s.population
       ? String(Object.keys(s.population).length) : "";
+    renderConnectorPlan(s.connector_plan);
     renderDeep(s.deep, s.download, s.deep_workbook_name);
     renderCompliance(s.compliance);
     renderNppes(s.nppes);
@@ -685,13 +902,13 @@ _EXTRA_JS = r"""
 
   function drillTable(drill){
     var cols=drill.columns||[], rows=drill.rows||[];
-    var h='<table><thead><tr>';
+    var h='<div class="npi-scroll"><table><thead><tr>';
     cols.forEach(function(c){ h+='<th>'+esc(c.replace(/_/g," "))+'</th>'; });
     h+='</tr></thead><tbody>';
     rows.forEach(function(r){
       h+='<tr>'; cols.forEach(function(c){ h+='<td>'+esc(r[c])+'</td>'; }); h+='</tr>';
     });
-    h+='</tbody></table><div class="npi-muted" style="margin:2px 0">Showing up '+
+    h+='</tbody></table></div><div class="npi-muted" style="margin:2px 0">Showing up '+
       'to 15 offending rows.</div>';
     return h;
   }
@@ -725,7 +942,11 @@ _EXTRA_JS = r"""
     "revcode-pad":"Restored dropped leading zeros in revenue codes (450 → 0450)",
     "pos-pad":"Zero-padded 1-digit Place of Service codes",
     "provider-name-format":"Re-cased provider names (SMITH, JOHN A, MD → Smith, John A, MD)",
-    "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)"};
+    "drg-pad":"Restored dropped leading zeros in MS-DRGs (87 → 087)",
+    "state-from-zip":"Filled blank state from the ZIP code (deterministic ZIP3→state)",
+    "name-from-nppes":"Filled blank provider name from the verified NPI's NPPES record",
+    "state-from-nppes":"Filled blank state from the verified NPI's NPPES record",
+    "taxonomy-from-nppes":"Filled blank taxonomy from the verified NPI's NPPES record"};
 
   // Takes the scorecard like its siblings (renderQuality/renderReconcile):
   // at 5 positional params, two of which shared a shape, a silent swap at
@@ -905,23 +1126,20 @@ _EXTRA_JS = r"""
             b.score+'</td></tr>';
         }).join("")+'</tbody></table>';
     }
-    html+='<div class="npi-cards" style="margin-top:12px"><div class="npi-card">'+
-      '<div class="k">Overall grade</div><div class="v" style="color:'+tone+'">'+
-      q.letter+' · '+q.score+'</div></div></div>';
+    html+='<div class="npi-grade"><span class="letter" style="color:'+tone+
+      '">'+esc(q.letter)+'</span><span class="meta">overall grade'+
+      '<b style="color:'+tone+'">'+q.score+' / 100</b></span></div>';
     // Dimension bars.
-    html+='<div style="max-width:640px;margin-top:10px">';
+    html+='<div style="max-width:660px;margin-top:14px">';
     Object.keys(DIM_LABELS).forEach(function(k){
       var v=(q.dimensions&&q.dimensions[k]!=null)?q.dimensions[k]:0;
       var lab=DIM_LABELS[k];
-      html+='<div style="display:flex;align-items:center;gap:10px;margin:7px 0">'+
-        '<div style="width:130px;font-size:12.5px;font-weight:640">'+lab[0]+'</div>'+
-        '<div style="flex:1;height:9px;border-radius:5px;background:'+
-        'color-mix(in srgb,var(--ink,#11201c) 8%,transparent);overflow:hidden">'+
-        '<div style="width:'+Math.max(2,Math.min(100,v))+'%;height:100%;background:'+
-        (v>=85?'var(--green,#0c7c66)':(v>=70?'#b8732a':'#b5321e'))+'"></div></div>'+
-        '<div class="num" style="width:52px;text-align:right;font-size:12.5px">'+
-        v.toFixed(1)+'%</div>'+
-        '<div class="npi-muted" style="width:280px;font-size:11.5px">'+lab[1]+'</div></div>';
+      var col=v>=85?'var(--green-deep,#0c7c66)':(v>=70?'#b8732a':'#b5321e');
+      html+='<div class="npi-dim"><span class="dl">'+lab[0]+'</span>'+
+        '<span class="dtrack"><i style="width:'+Math.max(2,Math.min(100,v))+
+        '%;background:'+col+'"></i></span>'+
+        '<span class="dv" style="color:'+col+'">'+v.toFixed(1)+'%</span>'+
+        '<span class="dd">'+lab[1]+'</span></div>';
     });
     html+='</div>';
     // Per-column fill-rate profile: only columns with blanks, worst first.
@@ -1152,6 +1370,40 @@ _EXTRA_JS = r"""
         '<div class="v '+((v.not_found||0)>0?'bad':'good')+'">'+
         fmt(v.not_found)+'</div></div></div>';
     if(v.note){ html+='<div class="npi-nppes-note">'+v.note+'</div>'; }
+    if(n.filled_from_nppes){
+      html+='<div class="npi-recovered">✎ Filled '+fmt(n.filled_from_nppes)+
+        ' blank provider name / state / taxonomy cell'+
+        (n.filled_from_nppes===1?'':'s')+' from verified NPPES records — '+
+        'audited in the change log.</div>';
+    }
+
+    // Per-NPI verdicts — the records were always fetched; now the user can
+    // see WHICH NPIs are active, not found, or errored (not just counts).
+    var recs=v.records||{};
+    var keys=Object.keys(recs);
+    if(keys.length){
+      var flagged=keys.filter(function(k){
+        return recs[k].status!=="active"; });
+      var show=flagged.length?flagged:keys;   // lead with the problems
+      show=show.slice(0,60);
+      html+='<div style="margin:14px 0 4px;font-weight:640;font-size:13px">'+
+        'NPI verdicts'+(flagged.length?' — '+flagged.length+
+        ' need attention':'')+'</div>'+
+        '<table class="npi-tbl"><thead><tr><th>NPI</th><th>Status</th>'+
+        '<th>Name</th><th>Taxonomy</th><th>State</th></tr></thead><tbody>';
+      show.forEach(function(k){
+        var rc=recs[k], bad=rc.status!=="active";
+        html+='<tr><td class="'+(bad?'billing':'')+'">'+esc(k)+'</td>'+
+          '<td><span class="npi-sig '+(bad?'bad':'')+'">'+esc(rc.status)+
+          '</span></td><td>'+esc(rc.name||'')+'</td><td>'+
+          esc(rc.taxonomy||'')+'</td><td>'+esc(rc.state||'')+'</td></tr>';
+      });
+      html+='</tbody></table>';
+      if(show.length<keys.length){
+        html+='<div class="npi-muted" style="font-size:11px">Showing '+
+          show.length+' of '+keys.length+' verified NPIs.</div>';
+      }
+    }
 
     var r=n.recover||{};
     var matches=(r.matches||[]).filter(function(m){
@@ -1358,6 +1610,23 @@ _EXTRA_JS = r"""
         html+='<div class="nt" style="color:#a8331f">Excluded NPIs: '+
           c.matches.slice(0,8).map(function(m){return esc(m.npi);}).join(", ")+'</div>';
       }
+      // PECOS per-NPI enrollment/opt-out verdicts — fetched all along,
+      // now shown: enrollment gaps and opt-outs are the actionable rows.
+      if(c.rows && c.rows.length){
+        html+='<table class="npi-tbl" style="margin-top:6px"><thead><tr>'+
+          '<th>Billing NPI</th><th>Enrolled</th><th>Provider type</th>'+
+          '<th>Opted out</th></tr></thead><tbody>';
+        c.rows.forEach(function(rw){
+          var bad=!rw.enrolled||rw.opted_out;
+          html+='<tr><td class="'+(bad?'billing':'')+'">'+esc(rw.npi)+
+            '</td><td><span class="npi-sig '+(rw.enrolled?'':'bad')+'">'+
+            (rw.enrolled?'yes':'no')+'</span></td><td>'+
+            esc(rw.provider_type||'')+'</td><td>'+
+            (rw.opted_out?'<span class="npi-sig bad">yes</span>':'no')+
+            '</td></tr>';
+        });
+        html+='</tbody></table>';
+      }
       html+='<div class="nt">'+esc(c.note||"")+'</div></div>';
     });
     box.innerHTML=html;
@@ -1380,6 +1649,37 @@ _EXTRA_JS = r"""
       html+='<div class="npi-warn" style="margin-top:6px">'+esc(deep.error||
         "Deep recovery did not complete.")+'</div>';
     }
+    html+='</div>';
+    box.innerHTML=html;
+  }
+
+  // Connector coverage plan — the engine decides, per file, which of its
+  // ~20 public-data connectors actually apply (a claims-only file with no
+  // drug columns won't touch RxNorm/openFDA). Rendering the full roster with
+  // an explicit apply/idle verdict + reason turns "2 of 20 ran" from looking
+  // broken into a legible explanation of exactly which sources fire and why.
+  var PLAN_MODE={offline:"offline pass", network:"live network",
+    deep:"deep pipeline"};
+  function renderConnectorPlan(plan){
+    var box=$("npi-conn-plan");
+    if(!box){ return; }
+    if(!plan || !plan.length){ box.innerHTML=""; return; }
+    var applies=plan.filter(function(c){ return c && c.applies; }).length;
+    var html='<div class="npi-plan"><div class="npi-plan-head">'+
+      '<span class="t">Connector coverage for this file</span>'+
+      '<span class="n"><b>'+fmt(applies)+'</b> of '+fmt(plan.length)+
+      ' apply</span></div>';
+    plan.forEach(function(c){
+      c=c||{};
+      var on=!!c.applies;
+      var mode=PLAN_MODE[c.mode]||c.mode||"";
+      var chip=on
+        ? '<span class="npi-chip on">will run'+(mode?' · '+esc(mode):'')+'</span>'
+        : '<span class="npi-chip off">not applicable</span>';
+      html+='<div class="npi-plan-row'+(on?'':' idle')+'">'+
+        '<span class="nm">'+esc(c.name||c.id||"")+'</span>'+chip+
+        '<span class="rs">'+esc(c.reason||"")+'</span></div>';
+    });
     html+='</div>';
     box.innerHTML=html;
   }
@@ -1416,15 +1716,28 @@ _EXTRA_JS = r"""
   function renderCatalog(cat){
     var box=$("npi-catalog");
     if(!cat || !cat.length){ box.innerHTML=""; return; }
+    var wired=cat.filter(function(s){ return s.cleaning_wired; }).length;
     var html='<div class="ck-section-header" style="margin-top:22px">'+
       '<h3 style="margin:0">Connections available</h3></div>'+
-      '<div class="npi-muted">'+cat.length+' public-data sources are connected to '+
-      'PE&nbsp;Desk and can be enabled for enrichment.</div><div class="npi-cat">';
+      '<div class="npi-muted"><strong>'+wired+'</strong> source'+
+      (wired===1?"":"s")+' act on a cleaning run (enrich / deep / '+
+      'reference packs); the other '+(cat.length-wired)+' are reachable '+
+      'elsewhere in PE&nbsp;Desk and can be wired here on request '+
+      '(use the "missing something?" card).</div><div class="npi-cat">';
     cat.forEach(function(s){
       var free=(s.cost||"").indexOf("free")===0;
-      html+='<div class="c"><div class="n">'+esc(s.name)+'</div>'+
+      var badge=s.cleaning_wired
+        ? '<span class="npi-badge">wired for cleaning</span>'
+        : '';
+      var doc=s.docs_url
+        ? ' · <a href="'+esc(s.docs_url)+'" target="_blank" '+
+          'rel="noopener">docs</a>'
+        : '';
+      html+='<div class="c'+(s.cleaning_wired?' on':'')+'">'+
+        '<div class="n">'+esc(s.name)+badge+'</div>'+
         '<div class="o">'+esc(s.operator||"")+
-        ' · <span class="'+(free?"free":"")+'">'+esc(s.cost||"")+'</span></div></div>';
+        ' · <span class="'+(free?"free":"")+'">'+esc(s.cost||"")+
+        '</span>'+doc+'</div></div>';
     });
     html+='</div>';
     box.innerHTML=html;

@@ -51,7 +51,40 @@ def _conn() -> sqlite3.Connection:
     con = sqlite3.connect(_DB_PATH)
     con.execute("PRAGMA busy_timeout = 5000")
     con.executescript(_SCHEMA)
+    # Migration: population metrics (PMPM / readmit / encounters / top
+    # setting) so those trend across runs like the quality dimensions.
+    # Idempotent — ADD COLUMN raises on an existing column, swallowed.
+    try:
+        con.execute("ALTER TABLE runs ADD COLUMN population TEXT")
+    except sqlite3.OperationalError:
+        pass
     return con
+
+
+def _population_metrics(scorecard: Dict[str, object]) -> Dict[str, object]:
+    """Flatten the trendable population numbers from a scorecard —
+    aggregate only, no claim rows, no PHI (same discipline as the rest of
+    history)."""
+    pop = scorecard.get("population") or {}
+    out: Dict[str, object] = {}
+    enc = pop.get("encounters") or {}
+    if enc:
+        out["n_encounters"] = enc.get("n_encounters")
+        rd = enc.get("readmissions") or {}
+        if rd:
+            out["readmit_rate_pct"] = rd.get("rate_pct")
+    vol = pop.get("volume") or {}
+    if vol.get("median_observed_pmpm") is not None:
+        out["median_observed_pmpm"] = vol.get("median_observed_pmpm")
+    mix = pop.get("service_mix") or {}
+    cats = mix.get("categories") or []
+    if cats:
+        out["top_setting"] = cats[0].get("category")
+        out["top_setting_pct"] = cats[0].get("pct")
+    ci = pop.get("coding_intensity") or {}
+    if ci.get("file_avg_level") is not None:
+        out["em_avg_level"] = ci.get("file_avg_level")
+    return out
 
 
 def record_run(scorecard: Dict[str, object], file_name: str) -> str:
@@ -63,8 +96,9 @@ def record_run(scorecard: Dict[str, object], file_name: str) -> str:
         with _LOCK, _conn() as con:
             con.execute(
                 "INSERT INTO runs (run_id, ts, file_name, rows_in, rows_out,"
-                " dupes, score, letter, dimensions, repairs, sanity, changes)"
-                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                " dupes, score, letter, dimensions, repairs, sanity, changes,"
+                " population)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (run_id, time.time(), file_name,
                  int(scorecard.get("rows_in") or 0),
                  int(scorecard.get("rows_out") or 0),
@@ -73,7 +107,8 @@ def record_run(scorecard: Dict[str, object], file_name: str) -> str:
                  json.dumps(q.get("dimensions") or {}),
                  json.dumps(scorecard.get("repairs") or {}),
                  json.dumps(scorecard.get("sanity") or {}),
-                 int(scorecard.get("changes_logged") or 0)))
+                 int(scorecard.get("changes_logged") or 0),
+                 json.dumps(_population_metrics(scorecard))))
     except Exception:  # noqa: BLE001 — observability never blocks cleaning
         return ""
     return run_id
@@ -84,7 +119,7 @@ def list_runs(limit: int = 50) -> List[Dict[str, object]]:
         with _LOCK, _conn() as con:
             rows = con.execute(
                 "SELECT run_id, ts, file_name, rows_in, rows_out, dupes,"
-                " score, letter, dimensions, sanity, changes"
+                " score, letter, dimensions, sanity, changes, population"
                 " FROM runs ORDER BY ts DESC LIMIT ?", (limit,)).fetchall()
     except Exception:  # noqa: BLE001
         return []
@@ -97,6 +132,7 @@ def list_runs(limit: int = 50) -> List[Dict[str, object]]:
             "dimensions": json.loads(r[8] or "{}"),
             "sanity": json.loads(r[9] or "{}"),
             "changes": r[10],
+            "population": json.loads(r[11] or "{}") if len(r) > 11 else {},
         })
     return out
 
