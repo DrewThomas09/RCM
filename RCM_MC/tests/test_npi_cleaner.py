@@ -4490,6 +4490,109 @@ class TestBacklogCliAndFillEdges(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
+class TestFlagColumnAndJcodeConnectors(unittest.TestCase):
+    """Real-file regressions: a ``*_NPI_FLAG`` column must not be scored as
+    NPIs (Validity 0% bug), and a J-code-dominant file must light up the drug
+    connectors + a connector plan even with no NDC/drug-name column."""
+
+    def test_flag_column_excluded_from_npi_detection(self):
+        cols = ["BILLING_PROVIDER_NPI", "OPTIONCARE_NPI_FLAG",
+                "RENDERING_NPI", "NPI_Status", "NPI Number"]
+        npi_idx, billing = engine._detect_npi_columns(cols)
+        got = {cols[i] for i in npi_idx}
+        self.assertIn("BILLING_PROVIDER_NPI", got)
+        self.assertIn("RENDERING_NPI", got)
+        self.assertIn("NPI Number", got)          # identifier, not a modifier
+        self.assertNotIn("OPTIONCARE_NPI_FLAG", got)
+        self.assertNotIn("NPI_Status", got)
+        self.assertEqual(cols[billing], "BILLING_PROVIDER_NPI")
+
+    def test_flag_column_blob_suffix_fallback(self):
+        # No delimiters: "OPTIONCARENPIFLAG" must still be rejected.
+        npi_idx, _ = engine._detect_npi_columns(["OPTIONCARENPIFLAG",
+                                                 "BILLINGNPI"])
+        self.assertEqual(npi_idx, [1])
+
+    def test_flag_column_no_longer_tanks_validity(self):
+        # A flag column full of Y/N used to score as malformed NPIs → 0%.
+        rows = ["BillingNPI,OptionCare_NPI_Flag"]
+        rows += [f"{GOOD_A},Y" for _ in range(20)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "f.csv")
+        self.assertEqual(res.npi_columns, ["BillingNPI"])
+        sc = res.as_scorecard()
+        validity = (sc.get("quality") or {}).get("dimensions", {}).get(
+            "validity")
+        # With the flag excluded, validity is healthy, not zero.
+        self.assertIsNotNone(validity)
+        self.assertGreater(validity, 50.0)
+
+    def test_jcode_stats(self):
+        rows = [["J1745"], ["J1745"], ["99213"], ["J9299"], [""]]
+        pct, jc = engine._jcode_stats(rows, 0)
+        self.assertAlmostEqual(pct, 75.0, places=1)
+        self.assertEqual(set(jc), {"J1745", "J9299"})
+        self.assertEqual((0.0, []), engine._jcode_stats(rows, None))
+
+    def test_connector_plan_drug_dominant_file(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        plan = C.plan({"has_npi": True, "has_billing": True,
+                       "blank_npi_pct": 16.0, "jcode_pct": 96.0,
+                       "has_hcpcs": True})
+        applies = {p["id"]: p["applies"] for p in plan}
+        self.assertTrue(applies["rxnorm"])
+        self.assertTrue(applies["openfda"])
+        self.assertTrue(applies["nppes"])
+        self.assertTrue(applies["oig_leie"])
+        # NPPES reason surfaces the blank-recovery rationale.
+        nppes = next(p for p in plan if p["id"] == "nppes")
+        self.assertIn("blank", nppes["reason"].lower())
+
+    def test_connector_plan_non_drug_file_marks_drug_connectors_idle(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        plan = C.plan({"has_npi": True, "has_billing": True,
+                       "blank_npi_pct": 0.0})
+        applies = {p["id"]: p["applies"] for p in plan}
+        self.assertFalse(applies["rxnorm"])
+        self.assertFalse(applies["openfda"])
+        rx = next(p for p in plan if p["id"] == "rxnorm")
+        self.assertIn("No NDC", rx["reason"])
+
+    def test_engine_records_connector_plan_offline(self):
+        # The plan is computed even without enrich so the UI can explain
+        # coverage. J-code file → drug connectors flagged applicable.
+        rows = ["BillingNPI,HCPCS"]
+        rows += [f"{GOOD_A},J1745" for _ in range(10)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "j.csv")
+        sc = res.as_scorecard()
+        plan = sc.get("connector_plan")
+        self.assertTrue(plan)
+        applies = {p["id"]: p["applies"] for p in plan}
+        self.assertTrue(applies["rxnorm"])
+
+    def test_resolve_drugs_resolves_jcodes_via_hcpcs(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        if not C.available():
+            self.skipTest("public_api_clients unavailable")
+
+        def opener(url, headers, timeout_s):
+            if "idtype=HCPCS" in url:
+                return json.dumps(
+                    {"idGroup": {"rxnormId": ["1657973"]}}).encode()
+            if "/properties.json" in url:
+                return json.dumps(
+                    {"properties": {"name": "infliximab", "tty": "IN"}}).encode()
+            if "/ndcs.json" in url:
+                return json.dumps({"ndcGroup": {"ndcList": {}}}).encode()
+            return b"{}"
+
+        res = C.resolve_drugs([], [], hcpcs=["J1745"], opener=opener)
+        by_id = {r["id"]: r for r in res}
+        self.assertIn("rxnorm", by_id)
+        self.assertEqual(by_id["rxnorm"]["resolved"], 1)
+        self.assertEqual(by_id["rxnorm"]["sample"][0]["kind"], "J-code")
+        self.assertEqual(by_id["rxnorm"]["sample"][0]["name"], "infliximab")
+
+
 if __name__ == "__main__":
     unittest.main()
 

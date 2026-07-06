@@ -306,6 +306,29 @@ def rxnorm_ndc_to_rxcui(ndc: str, *, opener: Optional[Opener] = None) -> List[st
     return list(grp.get("rxnormId", []) or [])
 
 
+def rxnorm_hcpcs_request(hcpcs: str) -> ApiRequest:
+    """HCPCS code -> RxCUI via the RxNav id crosswalk (``idtype=HCPCS``).
+
+    HCPCS is a source vocabulary inside RxNorm, so a J-code (injectable /
+    infusion drug, e.g. ``J1745`` infliximab) resolves to a normalized drug
+    concept with no NDC or free-text name in the file — the join that lets a
+    J-code-dominant claims extract (infusion pharmacy, oncology) light up the
+    drug connectors it obviously needs."""
+    code = "".join(ch for ch in str(hcpcs or "").upper()
+                   if ch.isalnum())
+    return ApiRequest(url=f"{_RXNORM_BASE}/rxcui.json",
+                      params={"idtype": "HCPCS", "id": code})
+
+
+def rxnorm_hcpcs_to_rxcui(hcpcs: str, *, opener: Optional[Opener] = None
+                          ) -> List[str]:
+    req = rxnorm_hcpcs_request(hcpcs)
+    client = HttpJsonClient(base_url=_RXNORM_BASE, min_interval_s=0.05)
+    payload = client.get_json("/rxcui.json", req.params, opener=opener)
+    grp = (payload or {}).get("idGroup", {}) if isinstance(payload, dict) else {}
+    return list(grp.get("rxnormId", []) or [])
+
+
 def rxnorm_ndcs_request(rxcui: str) -> ApiRequest:
     """RxCUI -> the NDCs that map to it (``/rxcui/{rxcui}/ndcs.json``)."""
     digits = "".join(ch for ch in str(rxcui) if ch.isdigit())
@@ -342,12 +365,16 @@ def rxnorm_normalize(value: str, *, by: str = "name",
     ``{rxcui, name, tty, ndcs}``. Returns ``{}`` (not a fabricated concept)
     when nothing resolves — the caller must treat an empty dict as unmatched.
 
-    ``by`` is ``"name"`` or ``"ndc"``. One concept is returned (the first
-    RxCUI); ambiguity is the caller's to resolve from the raw id list if it
-    needs every candidate.
+    ``by`` is ``"name"``, ``"ndc"``, or ``"hcpcs"`` (J-code / HCPCS drug
+    code). One concept is returned (the first RxCUI); ambiguity is the
+    caller's to resolve from the raw id list if it needs every candidate.
     """
-    rxcuis = (rxnorm_ndc_to_rxcui(value, opener=opener) if by == "ndc"
-              else rxnorm_rxcui(value, opener=opener))
+    if by == "ndc":
+        rxcuis = rxnorm_ndc_to_rxcui(value, opener=opener)
+    elif by == "hcpcs":
+        rxcuis = rxnorm_hcpcs_to_rxcui(value, opener=opener)
+    else:
+        rxcuis = rxnorm_rxcui(value, opener=opener)
     if not rxcuis:
         return {}
     rxcui = str(rxcuis[0])

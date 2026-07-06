@@ -48,6 +48,22 @@ _NPI_HINTS = (
     "npi", "billingnpi", "renderingnpi", "referringnpi", "providernpi",
     "attendingnpi", "billingprovidernpi", "facilitynpi", "servicingnpi",
 )
+# Tokens that mark a column as a DERIVED ATTRIBUTE OF an NPI — a boolean flag,
+# a status, a type, a name, a date — rather than a column that HOLDS the NPI
+# value itself. A real 600k-row extract carried "OPTIONCARE_NPI_FLAG" (a Y/N
+# flag): it contains "npi", was scored as 600k malformed NPIs, and tanked the
+# Validity dimension to 0.0%. "NPI Number"/"NPI_ID"/"NPI Code" are deliberately
+# NOT excluded — those DO hold the identifier; only clearly-derived companions
+# are dropped. Tokens are matched against split header words (see
+# ``_header_tokens``); the suffix fallback (len ≥ 4) handles delimiter-free
+# blobs like "OPTIONCARENPIFLAG".
+_NPI_MODIFIER_TOKENS = frozenset({
+    "flag", "flg", "indicator", "ind", "status", "stat",
+    "valid", "validity", "validated", "verify", "verified", "verification",
+    "match", "matched", "type", "typ", "kind", "category", "cat",
+    "desc", "description", "name", "count", "cnt", "date", "dt",
+    "reason", "qual", "qualifier", "present", "missing", "exists",
+})
 # A "billing" NPI is the one that must be present for a claim to be payable —
 # missing values here are the headline recovery target.
 _BILLING_HINTS = ("billing", "billingprovider", "pay")
@@ -1130,6 +1146,11 @@ class CleanResult:
     # catalog. None unless online mode ran. See connectors.py.
     connectors: Optional[List[Dict[str, object]]] = None
     catalog: Optional[List[Dict[str, object]]] = None
+    # Per-connector recommendation for THIS file (which sources apply + why),
+    # computed from the detected columns even on an offline run so the panel
+    # can explain "2 of 20 used" instead of looking broken. See
+    # connectors.plan().
+    connector_plan: Optional[List[Dict[str, object]]] = None
     # Compliance screens (OIG LEIE + Medicare PECOS). None unless online. See
     # compliance.py.
     compliance: Optional[List[Dict[str, object]]] = None
@@ -1304,6 +1325,7 @@ class CleanResult:
             "nppes": self.nppes,
             "connectors": self.connectors,
             "catalog": self.catalog,
+            "connector_plan": self.connector_plan,
             "compliance": self.compliance,
             "deep": self.deep,
             "deep_workbook_name": (self.deep_workbook_name
@@ -1573,20 +1595,92 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
     return headers, body, delim, None
 
 
+def _header_tokens(header: str) -> List[str]:
+    """Split a header into lowercase word tokens across delimiters, camelCase,
+    and letter↔digit boundaries so ``OptionCareNPIFlag`` and
+    ``OPTIONCARE_NPI_FLAG`` both surface a ``flag`` token. Used to tell an NPI
+    VALUE column from a derived NPI flag/status column."""
+    if not header:
+        return []
+    s = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", header)          # camelCase
+    s = re.sub(r"(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])", " ", s)
+    return [p.lower() for p in re.split(r"[^A-Za-z0-9]+", s) if p]
+
+
+def _is_npi_modifier_column(header: str, key: str) -> bool:
+    """True when a header that mentions "npi" is actually a derived companion
+    (a flag/status/type/name/date) rather than a column holding the NPI value.
+    Prevents boolean/indicator columns from being scored as malformed NPIs."""
+    toks = _header_tokens(header)
+    if any(t in _NPI_MODIFIER_TOKENS for t in toks):
+        return True
+    # Delimiter-free blob (e.g. "OPTIONCARENPIFLAG" → one token): fall back to
+    # a suffix test with tokens long enough to be unambiguous.
+    if len(toks) <= 1:
+        for t in _NPI_MODIFIER_TOKENS:
+            if len(t) >= 4 and key.endswith(t):
+                return True
+    return False
+
+
 def _detect_npi_columns(headers: List[str]) -> Tuple[List[int], Optional[int]]:
-    """Return (indices of NPI columns, index of the billing NPI column or None)."""
+    """Return (indices of NPI columns, index of the billing NPI column or None).
+
+    A header must both mention "npi" AND not be a derived NPI companion
+    (``*_NPI_FLAG``, ``NPI_Status``, ``NPI_Type`` …) — see
+    ``_is_npi_modifier_column``. Without that guard a Y/N flag column was
+    scored as 600k malformed NPIs and drove Validity to 0% on a real file."""
     npi_idx: List[int] = []
     billing_idx: Optional[int] = None
     for i, h in enumerate(headers):
         key = _norm_key(h)
-        if any(hint in key for hint in _NPI_HINTS) or key == "npi":
-            npi_idx.append(i)
-            if billing_idx is None and any(b in key for b in _BILLING_HINTS):
-                billing_idx = i
+        if not (any(hint in key for hint in _NPI_HINTS) or key == "npi"):
+            continue
+        if _is_npi_modifier_column(h, key):
+            continue
+        npi_idx.append(i)
+        if billing_idx is None and any(b in key for b in _BILLING_HINTS):
+            billing_idx = i
     # No explicit billing column? Treat the first NPI column as billing.
     if billing_idx is None and npi_idx:
         billing_idx = npi_idx[0]
     return npi_idx, billing_idx
+
+
+# HCPCS Level II drug code ("J-code", e.g. J1745 = infliximab). These live in
+# the procedure/HCPCS column and ARE drug identifiers even when a file carries
+# no NDC and no free-text drug name — the signal that an infusion-pharmacy or
+# oncology extract needs the drug connectors.
+_JCODE_RE = re.compile(r"^J\d{4}$")
+
+
+def _jcode_stats(rows: List[List[str]], hcpcs_idx: Optional[int], *,
+                 scan_cap: int = 50000, distinct_cap: int = 400
+                 ) -> Tuple[float, List[str]]:
+    """(% of populated HCPCS cells that are J-codes over a bounded scan,
+    distinct J-codes for the RxNorm crosswalk). Bounded so a 10M-row file
+    can't turn connector planning into a full extra pass."""
+    if hcpcs_idx is None:
+        return 0.0, []
+    seen: List[str] = []
+    seen_set: set = set()
+    populated = jcount = 0
+    for n, row in enumerate(rows):
+        if n >= scan_cap:
+            break
+        if hcpcs_idx >= len(row):
+            continue
+        val = (row[hcpcs_idx] or "").strip().upper()
+        if not val:
+            continue
+        populated += 1
+        if _JCODE_RE.match(val):
+            jcount += 1
+            if val not in seen_set and len(seen) < distinct_cap:
+                seen_set.add(val)
+                seen.append(val)
+    pct = (100.0 * jcount / populated) if populated else 0.0
+    return pct, seen
 
 
 def _detect_one(headers: List[str], hints: tuple) -> Optional[int]:
@@ -2783,6 +2877,41 @@ def clean_bytes(
         except Exception:  # noqa: BLE001 — analytics never block cleaning
             res.population = None
 
+    # Connector recommendation — computed from THIS file's detected columns
+    # even on an offline run, so the Live-connectors panel can explain which
+    # of the catalog apply and why ("openFDA — no NDC/J-code column here")
+    # instead of a run looking broken when it lights only 2 sources. J-codes
+    # are the load-bearing signal for infusion/oncology extracts that have no
+    # NDC column: they still obviously need drug matching.
+    _jcode_pct, _jcodes = _jcode_stats(cleaned, hcpcs_i)
+    try:
+        _bstat = (res.column_stats.get(headers[billing_idx])
+                  if billing_idx is not None
+                  and billing_idx < len(headers) else None) or {}
+        _bcells = int(_bstat.get("cells") or 0)
+        _bmiss = (int(_bstat.get("blank") or 0)
+                  + int(_bstat.get("malformed") or 0)
+                  + int(_bstat.get("checksum") or 0))
+        _blank_npi_pct = (100.0 * _bmiss / _bcells) if _bcells else 0.0
+    except Exception:  # noqa: BLE001
+        _blank_npi_pct = 0.0
+    try:
+        from . import connectors as _conn
+        res.connector_plan = _conn.plan({
+            "has_npi": bool(npi_idx),
+            "has_billing": billing_idx is not None,
+            "blank_npi_pct": _blank_npi_pct,
+            "has_ndc": ndc_idx is not None,
+            "has_drug_name": drug_idx is not None,
+            "jcode_pct": _jcode_pct,
+            "has_hcpcs": hcpcs_i is not None,
+            "has_dx": bool(dx_set),
+            "has_taxonomy": bool(taxo_set),
+            "rows": res.n_rows_out,
+        })
+    except Exception:  # noqa: BLE001 — planning never blocks cleaning
+        res.connector_plan = None
+
     # Optional live NPPES cross-check via the app's shared CMS connection.
     # Guarded end-to-end: any failure leaves res.nppes with a note and the
     # offline results stand.
@@ -2816,8 +2945,12 @@ def clean_bytes(
             drugs = ([row[drug_idx] for row in cleaned
                       if drug_idx is not None and drug_idx < len(row)]
                      if drug_idx is not None else [])
-            if ndcs or drugs:
-                res.connectors = connectors.resolve_drugs(ndcs, drugs)
+            # J-codes (HCPCS drug codes) resolve via RxNav's HCPCS crosswalk —
+            # the path that lets an all-J-code infusion file light up RxNorm
+            # with no NDC/drug-name column present.
+            if ndcs or drugs or _jcodes:
+                res.connectors = connectors.resolve_drugs(
+                    ndcs, drugs, hcpcs=_jcodes)
             else:
                 res.connectors = []
         except Exception as exc:  # noqa: BLE001
