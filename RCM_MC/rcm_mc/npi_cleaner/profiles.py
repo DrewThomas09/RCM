@@ -47,6 +47,15 @@ _DEFAULT_THRESHOLDS = {
     "stale_years": 10,
     "outlier_iqr_mult": 3.0,
     "dup_window_days": 3,
+    # Grace on the "impossible future date" flag — some feeds legitimately
+    # carry near-future scheduled dates; 0 = flag anything past today.
+    "future_grace_days": 0,
+    # Units-per-line ceiling for the report-only over-utilization flag
+    # (MUE-style). 0 = off (no file has a universal ceiling, so opt-in).
+    "high_units_threshold": 0,
+    # Readmission window for the population analytics (an inpatient bounce-
+    # back within N days of discharge). CMS uses 30; some programs use 60/90.
+    "readmit_window_days": 30,
 }
 
 
@@ -97,6 +106,23 @@ def _sanitize(config: Dict[str, object]) -> Dict[str, object]:
         try:
             w = int(thr_in.get("dup_window_days", thr["dup_window_days"]))
             thr["dup_window_days"] = max(1, min(30, w))
+        except (TypeError, ValueError):
+            pass
+        try:
+            g = int(thr_in.get("future_grace_days", thr["future_grace_days"]))
+            thr["future_grace_days"] = max(0, min(90, g))
+        except (TypeError, ValueError):
+            pass
+        try:
+            hu = int(thr_in.get("high_units_threshold",
+                                thr["high_units_threshold"]))
+            thr["high_units_threshold"] = max(0, min(100000, hu))
+        except (TypeError, ValueError):
+            pass
+        try:
+            rw = int(thr_in.get("readmit_window_days",
+                                thr["readmit_window_days"]))
+            thr["readmit_window_days"] = max(1, min(365, rw))
         except (TypeError, ValueError):
             pass
 

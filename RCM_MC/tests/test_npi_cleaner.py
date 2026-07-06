@@ -4762,6 +4762,160 @@ class TestConnectorsDegradeLegibly(unittest.TestCase):
         self.assertIn("could not reach", by_id["rxnorm"]["note"].lower())
 
 
+class TestBacklogFinish(unittest.TestCase):
+    """Residual backlog, fleshed out: profile thresholds, wishlist auto-file,
+    drug-name/NDC fills, and the ordering/referring eligibility screen."""
+
+    def test_future_grace_threshold(self):
+        import datetime
+        from rcm_mc.npi_cleaner import profiles
+        fut = (datetime.date.today() + datetime.timedelta(days=5)).isoformat()
+        data = (f"DOS\n{fut}\n").encode()
+        self.assertEqual(engine.clean_bytes(data, "d.csv").sanity.get(
+            "date-in-future"), 1)
+        prof = profiles._sanitize({"thresholds": {"future_grace_days": 10}})
+        self.assertIsNone(engine.clean_bytes(
+            data, "d.csv", profile=prof).sanity.get("date-in-future"))
+
+    def test_high_units_threshold(self):
+        from rcm_mc.npi_cleaner import profiles
+        prof = profiles._sanitize(
+            {"thresholds": {"high_units_threshold": 50}})
+        r = engine.clean_bytes("Units\n99\n2\n".encode(), "u.csv",
+                               profile=prof)
+        self.assertEqual(r.sanity.get("units-exceed-threshold"), 1)
+        self.assertIsNone(engine.clean_bytes(
+            "Units\n99\n".encode(), "u.csv").sanity.get(
+                "units-exceed-threshold"))
+
+    def test_thresholds_clamped_and_registered(self):
+        from rcm_mc.npi_cleaner import profiles, rules
+        thr = profiles._sanitize({"thresholds": {
+            "future_grace_days": 9999, "readmit_window_days": 0,
+            "high_units_threshold": -5}})["thresholds"]
+        self.assertEqual(thr["future_grace_days"], 90)
+        self.assertEqual(thr["readmit_window_days"], 1)
+        self.assertEqual(thr["high_units_threshold"], 0)
+        self.assertIn("units-exceed-threshold",
+                      {r.id for r in rules.all_rules()})
+
+    def test_wishlist_auto_file_dedups(self):
+        from rcm_mc.npi_cleaner import wishlist
+        t = "UNITTEST auto gap " + GOOD_A
+        first = wishlist.auto_file("field", t, "detail")
+        self.assertIsNotNone(first)
+        self.assertEqual(first["source"], "auto")
+        self.assertIsNone(wishlist.auto_file("field", t, "detail"))
+        got = [r for r in wishlist.list_requests() if r["title"] == t]
+        self.assertEqual(len(got), 1)
+        self.assertEqual(got[0]["source"], "auto")
+        wishlist.delete_request(first["id"])
+
+    def test_no_npi_column_autofiles_gap(self):
+        from rcm_mc.npi_cleaner import wishlist
+        engine.clean_bytes("Amount\n10.00\n".encode(), "nonpi.csv")
+        autos = [r for r in wishlist.list_requests()
+                 if r.get("source") == "auto"
+                 and "no NPI column" in r["title"]]
+        self.assertTrue(autos)
+
+    def test_apply_drug_fills_blanks_only(self):
+        headers = ["NDC", "DrugName", "HCPCS"]
+        rows = [["0093-1049-01", "", "J1745"],
+                ["", "", "J1745"],
+                ["", "GAMUNEX", "J1569"],
+                ["00002-1234-01", "KEEPME", "J9299"]]
+        concepts = {
+            "ndc": {"0093104901": {"name": "metformin",
+                                   "ndcs": ["0093-1049-01"]}},
+            "name": {"gamunex": {"name": "ivig",
+                                 "ndcs": ["13533-0800-71"]}},
+            "hcpcs": {"J1745": {"name": "infliximab", "ndcs": ["a", "b"]}}}
+        fills = engine._apply_drug_fills(rows, headers, 1, 0, 2, concepts)
+        hit = {f[4] for f in fills}
+        self.assertEqual(rows[0][1], "metformin")
+        self.assertEqual(rows[1][1], "infliximab")
+        self.assertEqual(rows[2][0], "13533-0800-71")
+        self.assertEqual(rows[3][1], "KEEPME")
+        self.assertIn("drug-name-from-code", hit)
+        self.assertIn("ndc-from-drug", hit)
+
+    def test_resolve_drugs_returns_concept_map(self):
+        from rcm_mc.npi_cleaner import connectors as C
+        if not C.available():
+            self.skipTest("public_api_clients unavailable")
+
+        def opener(url, headers, timeout_s):
+            if "idtype=HCPCS" in url:
+                return json.dumps(
+                    {"idGroup": {"rxnormId": ["1657973"]}}).encode()
+            if "/properties.json" in url:
+                return json.dumps(
+                    {"properties": {"name": "infliximab",
+                                    "tty": "IN"}}).encode()
+            if "/ndcs.json" in url:
+                return json.dumps(
+                    {"ndcGroup": {"ndcList":
+                                  {"ndc": ["00006-0123-45"]}}}).encode()
+            return b"{}"
+
+        res = C.resolve_drugs([], [], hcpcs=["J1745"], opener=opener)
+        rx = next(r for r in res if r["id"] == "rxnorm")
+        self.assertEqual(rx["concepts"]["hcpcs"]["J1745"]["name"],
+                         "infliximab")
+
+    def test_engine_applies_drug_fills_in_enrich(self):
+        from rcm_mc.npi_cleaner import connectors as C
+
+        def fake_resolve(ndcs, drugs, **kw):
+            return [{"id": "rxnorm", "queried": 1, "resolved": 1,
+                     "unresolved": 0, "sample": [], "note": "ok",
+                     "concepts": {"ndc": {}, "name": {},
+                                  "hcpcs": {"J1745": {"name": "infliximab",
+                                                      "ndcs": ["a", "b"]}}}}]
+
+        def fake_fetch(npi, **kw):
+            return None
+
+        data = (f"BillingNPI,DrugName,HCPCS\n{GOOD_A},,J1745\n").encode()
+        with patch.object(C, "resolve_drugs", fake_resolve), \
+             patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                   fake_fetch):
+            res = engine.clean_bytes(data, "d.csv", enrich=True)
+        self.assertEqual(res.repairs.get("drug-name-from-code"), 1)
+        self.assertIn("infliximab",
+                      open(res.out_path, encoding="utf-8").read())
+
+    def test_order_referring_screen(self):
+        from rcm_mc.npi_cleaner import connectors as C
+
+        class P:
+            name = "DR REFER"; entity_type = "1"
+            taxonomy_label = "Internal Medicine"
+            taxonomy_code = "207R00000X"; state = "TX"
+
+        def fake_fetch(npi, **kw):
+            return P() if npi == GOOD_A else None
+
+        data = (f"BillingNPI,ReferringNPI\n{GOOD_A},{GOOD_A}\n"
+                f"{GOOD_A},9999999999\n").encode()
+        with patch("rcm_mc.data_public.nppes_api_client.fetch_by_npi",
+                   fake_fetch), \
+             patch.object(C, "resolve_drugs", lambda *a, **k: []):
+            res = engine.clean_bytes(data, "or.csv", enrich=True)
+        self.assertEqual(res.order_referring_columns, ["ReferringNPI"])
+        o = res.order_referring
+        self.assertEqual(o["active"], 1)
+        self.assertEqual(o["not_found"], 1)
+        self.assertEqual(res.as_scorecard()["order_referring"], o)
+
+    def test_page_wires_order_referring(self):
+        from rcm_mc.ui.npi_cleaner_page import render_npi_cleaner
+        body = render_npi_cleaner()
+        self.assertIn('id="npi-order-referring"', body)
+        self.assertIn("renderOrderReferring(s.order_referring)", body)
+
+
 if __name__ == "__main__":
     unittest.main()
 

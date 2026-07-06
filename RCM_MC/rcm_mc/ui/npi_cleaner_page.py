@@ -575,6 +575,7 @@ horizon, outlier fence). Stored on the server; pick one per upload.">ⓘ</span>
       <div id="npi-conn-plan"></div>
       <div id="npi-deep"></div>
       <div id="npi-compliance"></div>
+      <div id="npi-order-referring"></div>
       <div id="npi-nppes"></div>
       <div id="npi-connectors"></div>
       <div id="npi-catalog"></div>
@@ -805,6 +806,7 @@ _EXTRA_JS = r"""
     renderConnectorPlan(s.connector_plan);
     renderDeep(s.deep, s.download, s.deep_workbook_name);
     renderCompliance(s.compliance);
+    renderOrderReferring(s.order_referring);
     renderNppes(s.nppes);
     renderConnectors(s.connectors);
     renderCatalog(s.catalog);
@@ -1629,6 +1631,28 @@ _EXTRA_JS = r"""
       }
       html+='<div class="nt">'+esc(c.note||"")+'</div></div>';
     });
+    box.innerHTML=html;
+  }
+
+  // Ordering / referring provider eligibility — a claim denies when that
+  // provider isn't active/enrolled, so it gets its own line, separate from
+  // the billing NPI screens.
+  function renderOrderReferring(o){
+    var box=$("npi-order-referring");
+    if(!box) return;
+    if(!o || (o.checked==null && !o.error && !o.note)){ box.innerHTML=""; return; }
+    var cols=(o.columns||[]).map(esc).join(", ");
+    var html='<div class="ck-section-header" style="margin-top:20px">'+
+      '<h3 style="margin:0">Ordering / referring provider eligibility</h3></div>';
+    if(o.error){ box.innerHTML=html+'<div class="npi-err">'+esc(o.error)+
+      '</div>'; return; }
+    var bad=(o.not_found||0);
+    html+='<div class="npi-conn"><div class="top">'+
+      '<span class="nm">'+(cols||'Ordering/referring NPI')+'</span>'+
+      '<span class="cnt '+(bad?'':'')+'">'+fmt(o.active||0)+' active · '+
+      fmt(bad)+' not found</span></div>'+
+      '<div class="nt">'+esc(o.note||('Checked '+fmt(o.checked||0)+
+      ' distinct ordering/referring NPIs against NPPES.'))+'</div></div>';
     box.innerHTML=html;
   }
 

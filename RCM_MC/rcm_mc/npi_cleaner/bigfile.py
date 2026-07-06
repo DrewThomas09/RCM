@@ -383,5 +383,9 @@ def _clean_csv_stream(
             _history.record_run(res.as_scorecard(), src_name)
         except Exception:  # noqa: BLE001 — observability never blocks
             pass
+        try:
+            _engine._autofile_gaps(res)
+        except Exception:  # noqa: BLE001
+            pass
     cb("Done", 1.0)
     return res
