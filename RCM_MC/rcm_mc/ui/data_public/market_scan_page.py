@@ -8,7 +8,7 @@ connector estate (read through the read-only bridge
 ``import connectors``, because that top-level name belongs to the
 in-app NPPES package).
 
-Nine sections, each fed by one estate connector:
+Eleven sections, each fed by one or more estate connectors:
 
   1. Demographics & payor context .... census_acs
   2. Population health burden ........ cdc_data (PLACES county)
@@ -20,6 +20,13 @@ Nine sections, each fed by one estate connector:
   7. Research footprint .............. nih_reporter (projects)
   8. Compliance exposure ............. oig_leie (LEIE exclusions)
   9. Healthcare labor market ......... bls_qcew (QCEW wages/employment)
+ 10. Kidney & dialysis market ........ cdc_data (PLACES 2023 county CKD)
+                                       + provider_data (dialysis facilities,
+                                       state/national averages, ESRD QIP
+                                       TPS, ICH-CAHPS state/national)
+ 11. Outpatient facility universe .... cms_open_data (both POS files,
+                                       home infusion) + provider_data
+                                       (ASC quality, DMEPOS suppliers)
 
 Every section degrades independently: when its store/table has no rows
 for the chosen state it renders a "not ingested" note carrying the exact
@@ -123,6 +130,83 @@ _QCEW_INDUSTRIES = {
     "622": "Hospitals (NAICS 622)",
     "623": "Nursing & residential care (NAICS 623)",
 }
+
+# Provider-category glosses for the two Provider of Services files,
+# mirroring the estate's /v1/lookup/facility-universe/{state} handler
+# (connectors/cms_open_data/lookup.py — labels verified there against
+# live samples 2026-07-06). Hospitals + the clinic categories live in
+# the legacy QIES file; everything certified through iQIES (post-2023:
+# HHA / SNF / hospice / ASC / ESRD, …) lands in the Internet QIES file
+# under its own type-id scheme. Unknown codes render code-labelled
+# rather than guessed.
+_POS_QIES_CATEGORIES = {
+    "01": "Hospital",
+    "06": "Psychiatric Residential Treatment Facility",
+    "12": "Rural Health Clinic",
+    "19": "Community Mental Health Center",
+    "21": "Federally Qualified Health Center",
+}
+
+_POS_IQIES_TYPES = {
+    "3": "Home Health Agency",
+    "5": "Portable X-Ray Supplier",
+    "6": "Comprehensive Outpatient Rehabilitation Facility",
+    "7": "ESRD Facility (dialysis)",
+    "8": "ICF/IID",
+    "10": "Outpatient Physical Therapy/Speech Pathology",
+    "11": "Ambulatory Surgical Center",
+    "12": "Hospice",
+    "13": "Organ Procurement Organization",
+    "20": "Skilled Nursing Facility / Nursing Facility",
+}
+
+# State-vs-national comparison columns for the two dialysis averages
+# files. Some measures share a column name across both files, others
+# suffix _state / _us — pairs verified against the live schemas in
+# connectors/provider_data/tables.py (2fpu-cgbb / 2rkq-ygai).
+_DIALYSIS_VS_NATIONAL = [
+    ("Adult HD patients with Kt/V ≥ 1.2",
+     "percentage_of_adult_hd_patients_with_ktv12",
+     "percentage_of_adult_hd_patients_with_ktv12"),
+    ("Adult PD patients with Kt/V ≥ 1.7",
+     "percentage_of_adult_pd_patients_with_ktv17",
+     "percentage_of_adult_pd_patients_with_ktv17"),
+    ("Long-term catheter in use (90+ days)",
+     "percentage_of_adult_patients_with_long_term_catheter_in_use",
+     "percentage_of_adult_patients_with_long_term_catheter_in_use"),
+    ("Patients with hemoglobin < 10 g/dL",
+     "percentage_of_patients_with_hgb10_gdl_state",
+     "percentage_of_patients_with_hgb10_gdl_us"),
+]
+
+# ICH-CAHPS linearized composite scores (0-100), same column names in
+# the state (hanv-ru8h) and national (utgq-v46w) files.
+_ICH_CAHPS_MEASURES = [
+    ("Nephrologists' communication & caring",
+     "linearized_score_of_nephrologists_communication_and_caring"),
+    ("Quality of dialysis center care & operations",
+     "linearized_score_of_quality_of_dialysis_center_care_and_ope_92e9"),
+    ("Rating of the nephrologist",
+     "linearized_score_of_rating_of_the_nephrologist"),
+    ("Rating of the dialysis center staff",
+     "linearized_score_of_rating_of_the_dialysis_center_staff"),
+    ("Rating of the dialysis facility",
+     "linearized_score_of_rating_of_the_dialysis_facility"),
+]
+
+# ASC quality measures worth a state-vs-national read (percent-valued;
+# the ASC-1..4 per-1,000 event rates are deliberately excluded so the
+# whole table formats as house-style percentages).
+_ASC_MEASURES = [
+    ("ASC-9 Endoscopy — appropriate colonoscopy follow-up",
+     "avg_asc9_state_rate", "avg_asc9_nat_rate"),
+    ("ASC-11 Cataracts — improved visual function",
+     "avg_asc11_state_rate", "avg_asc11_nat_rate"),
+    ("ASC-13 Normothermia outcome",
+     "avg_asc13_state_rate", "avg_asc13_nat_rate"),
+    ("ASC-14 Unplanned anterior vitrectomy",
+     "avg_asc14_state_rate", "avg_asc14_nat_rate"),
+]
 
 
 # ── tiny formatting/parsing helpers ─────────────────────────────────────
@@ -274,6 +358,30 @@ def _query(dataset_id: str, filters: dict[str, Any] | None = None,
         return list(res.rows)
     except Exception:
         return []
+    finally:
+        with contextlib.suppress(Exception):
+            store.close()
+
+
+def _total(dataset_id: str, filters: dict[str, Any] | None = None) -> int:
+    """Exact matching-row count for one dataset (0 on any absence).
+
+    The bounded ``_query`` caps rows at 1000 — fine for mixes and
+    rankings, but it understates headline counts (a big state's DMEPOS
+    supplier file runs to thousands). ``QueryResult.total`` is the true
+    COUNT(*) under the same whitelisted filters, at the cost of one
+    LIMIT-1 probe.
+    """
+    owner = _estate.dataset_owner(dataset_id)
+    handle = _estate.open_store(owner) if owner else None
+    if handle is None:
+        return 0
+    adapter, store = handle
+    try:
+        return int(adapter.query(store, dataset_id, filters=filters or {},
+                                 limit=1).total)
+    except Exception:
+        return 0
     finally:
         with contextlib.suppress(Exception):
             store.close()
@@ -642,9 +750,11 @@ def _star_mix(dataset_id: str, rating_col: str, state_col_value: str,
         return ""
     by_rating: dict[str, int] = {}
     for r in rows:
-        key = str(r.get(rating_col) or "").strip() or "Not rated"
-        if key not in {"1", "2", "3", "4", "5"}:
-            key = "Not rated / n.a."
+        # Ratings arrive as "5" (hospital/SNF files) or "5.0" (dialysis
+        # five_star) — normalize numerically, never string-match.
+        num = _f(r.get(rating_col))
+        key = (str(int(num)) if num is not None and num.is_integer()
+               and 1.0 <= num <= 5.0 else "Not rated / n.a.")
         by_rating[key] = by_rating.get(key, 0) + int(r.get("count") or 0)
     total = sum(by_rating.values())
     rated = [(k, by_rating[k]) for k in ("5", "4", "3", "2", "1")
@@ -945,6 +1055,370 @@ def _sec_labor(state: str, fips: str, n_rows: int) -> str:
     return "".join(parts)
 
 
+# ── section 10: kidney & dialysis market ────────────────────────────────
+
+
+def _sec_kidney_dialysis(state: str, county: str, n_rows: int) -> str:
+    parts = [ck_section_header("Kidney & dialysis market",
+                               eyebrow="10 · WHERE KIDNEYS FAIL")]
+    inner: list[str] = []
+
+    # 10a — county CKD prevalence. Pinned to the PLACES 2023 county
+    # release (h3ej-a9ec): measureid KIDNEY was dropped from the 2024 and
+    # 2025 releases, so the currently-curated places_county no longer
+    # carries it. The dataset's default_params pin the measure at fetch
+    # time — every ingested row is already CKD-only.
+    ckd_filters: dict[str, Any] = {"stateabbr": state,
+                                   "data_value_type": "Age-adjusted prevalence"}
+    county_scope = bool(county)
+    if county:
+        ckd_filters["locationid"] = county
+    ckd = _query("cdc_data_places_county_ckd", ckd_filters, limit=1000)
+    if not ckd and county:
+        # County slice may simply not be ingested — fall back to the state.
+        county_scope = False
+        ckd = _query("cdc_data_places_county_ckd",
+                     {"stateabbr": state,
+                      "data_value_type": "Age-adjusted prevalence"},
+                     limit=1000)
+    if ckd:
+        vals = [(str(r.get("locationname") or ""), v)
+                for r in ckd
+                if (v := _f(r.get("data_value"))) is not None]
+        vals.sort(key=lambda t: t[1], reverse=True)
+        year = max(str(r.get("year") or "") for r in ckd)
+        mean = (sum(v for _, v in vals) / len(vals)) if vals else None
+        head = (f"CKD prevalence — county {county}" if county_scope
+                else f"Worst {min(n_rows, len(vals))} counties by CKD prevalence")
+        inner.append(
+            f'<div style="margin:0 0 4px;font-size:11px;font-weight:700;">'
+            f'{_e(head)}'
+            + (f' · state mean {mean:.1f}% across {len(vals)} counties'
+               if mean is not None and not county_scope else "")
+            + "</div>")
+        inner.append(_bars(
+            [(name, f"{v:.1f}%", v) for name, v in vals[:n_rows]],
+            tone="warning"))
+        inner.append(
+            '<div style="font-size:10px;color:var(--ck-text-faint,#8b94a0);'
+            'margin-top:6px;font-family:var(--ck-mono,monospace);">'
+            f'Age-adjusted prevalence, adults 18+ · PLACES 2023 release '
+            f'(measureid KIDNEY) · {_e(year)} estimates</div>')
+    else:
+        inner.append(_not_ingested(
+            f"CDC PLACES county CKD prevalence for {state}", [
+                ("python3 -m connectors.cdc_data.cli --db var/connectors/cdc_data.db "
+                 f"fetch --dataset places_county_ckd --filter stateabbr={state} "
+                 "--max-pages 2"),
+            ],
+            note="Pinned to the PLACES 2023 county release (h3ej-a9ec) — the last "
+                 "vintage carrying measureid KIDNEY; the fetch pins the measure "
+                 "automatically."))
+
+    # 10b — dialysis capacity + star/ownership mix (Care Compare listing).
+    fac = _query("provider_data_dialysis_facilities", {"state": state},
+                 limit=1000)
+    fac_cli = ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+               f"fetch --dataset dialysis_facilities --state {state} --max-pages 2")
+    if fac:
+        n_fac = _total("provider_data_dialysis_facilities",
+                       {"state": state}) or len(fac)
+        stations = sum(int(v) for v in
+                       (_f(r.get("of_dialysis_stations")) for r in fac) if v)
+        profit = sum(1 for r in fac
+                     if str(r.get("profit_or_nonprofit") or "").strip().lower()
+                     == "profit")
+        by_chain: dict[str, int] = {}
+        for r in fac:
+            chain = str(r.get("chain_organization") or "").strip() or "Unknown"
+            by_chain[chain] = by_chain.get(chain, 0) + 1
+        chains = sorted(by_chain.items(), key=lambda kv: kv[1],
+                        reverse=True)[:n_rows]
+        inner.append(
+            '<div class="ck-kpi-grid" style="margin-top:12px;">'
+            + ck_kpi_block("Dialysis facilities",
+                           f'<span class="mn">{n_fac:,}</span>',
+                           "Care Compare certified facilities")
+            + ck_kpi_block("Dialysis stations",
+                           f'<span class="mn">{stations:,}</span>',
+                           "in-center hemodialysis capacity")
+            + ck_kpi_block("For-profit share",
+                           f'<span class="mn">{profit / len(fac) * 100.0:.1f}%</span>',
+                           f"of {len(fac):,} facilities")
+            + "</div>")
+        inner.append(_star_mix("provider_data_dialysis_facilities", "five_star",
+                               state, "Dialysis facility five-star mix", "teal"))
+        inner.append(
+            f'<div style="margin:12px 0 4px;font-size:11px;font-weight:700;">'
+            f'Top {len(chains)} chains by facility count</div>')
+        inner.append(_bars(
+            [(chain, f"{n:,}", float(n)) for chain, n in chains], tone="navy"))
+    else:
+        inner.append(_not_ingested(
+            f"Dialysis facility listing for {state}", [fac_cli]))
+
+    # 10c — ESRD QIP total performance score distribution (PY2026 files).
+    tps = _query("provider_data_esrd_qip_tps", {"state": state}, limit=1000)
+    if tps:
+        scores = sorted(v for r in tps
+                        if (v := _f(r.get("total_performance_score"))) is not None)
+        no_score = len(tps) - len(scores)
+        st_avg = _f(tps[0].get("state_average_total_performance_score"))
+        nat_avg = _f(tps[0].get("national_average_total_performance_score"))
+        items = []
+        for label, lo, hi in (("TPS 80-100", 80.0, 100.5), ("TPS 60-79", 60.0, 80.0),
+                              ("TPS 40-59", 40.0, 60.0), ("TPS 20-39", 20.0, 40.0),
+                              ("TPS 0-19", 0.0, 20.0)):
+            n = sum(1 for v in scores if lo <= v < hi)
+            if n:
+                items.append((label, f"{n:,}", float(n)))
+        if no_score:
+            items.append(("No score", f"{no_score:,}", float(no_score)))
+        median = scores[len(scores) // 2] if scores else None
+        inner.append(
+            f'<div style="margin:12px 0 4px;font-size:11px;font-weight:700;">'
+            f'ESRD QIP total performance scores · PY2026 · '
+            f'{len(tps):,} facilities'
+            + (f' · median {median:.0f}' if median is not None else "")
+            + "</div>")
+        inner.append(_bars(items, tone="teal"))
+        if st_avg is not None and nat_avg is not None:
+            inner.append(
+                '<div style="font-size:10px;color:var(--ck-text-faint,#8b94a0);'
+                'margin-top:6px;font-family:var(--ck-mono,monospace);">'
+                f'{_e(state)} average {st_avg:.0f} vs national {nat_avg:.0f}'
+                "</div>")
+    else:
+        inner.append(_not_ingested(
+            f"ESRD QIP total performance scores for {state}", [
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 f"fetch --dataset esrd_qip_tps --state {state} --max-pages 2"),
+            ]))
+
+    # 10d — clinical care + patient experience, state vs national.
+    st_rows = _query("provider_data_dialysis_state_averages",
+                     {"state": state}, limit=10)
+    nat_rows = _query("provider_data_dialysis_national_averages", {}, limit=10)
+    if st_rows and nat_rows:
+        srow, nrow = st_rows[0], nat_rows[0]
+        inner.append(
+            f'<div style="margin:12px 0 4px;font-size:11px;font-weight:700;">'
+            f'Dialysis clinical care — {_e(state)} vs national</div>')
+        inner.append(_table(
+            ["Measure", state, "National"],
+            [[_e(label), _pct(srow.get(sc)), _pct(nrow.get(nc))]
+             for label, sc, nc in _DIALYSIS_VS_NATIONAL]))
+    else:
+        inner.append(_not_ingested(
+            f"Dialysis state/national averages for {state}", [
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 f"fetch --dataset dialysis_state_averages --state {state}"),
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 "fetch --dataset dialysis_national_averages"),
+            ]))
+    ich_st = _query("provider_data_ich_cahps_state", {"state": state}, limit=10)
+    ich_nat = _query("provider_data_ich_cahps_national", {}, limit=10)
+    if ich_st and ich_nat:
+        srow, nrow = ich_st[0], ich_nat[0]
+        rows = [[_e(label), _num(srow.get(col)), _num(nrow.get(col))]
+                for label, col in _ICH_CAHPS_MEASURES]
+        rows.append(["Survey response rate",
+                     _pct(srow.get("survey_response_rate")),
+                     _pct(nrow.get("survey_response_rate"))])
+        inner.append(
+            f'<div style="margin:12px 0 4px;font-size:11px;font-weight:700;">'
+            f'Patient experience — ICH-CAHPS linearized scores (0-100), '
+            f'{_e(state)} vs national</div>')
+        inner.append(_table(["Measure", state, "National"], rows))
+    else:
+        inner.append(_not_ingested(
+            f"ICH-CAHPS patient survey averages for {state}", [
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 f"fetch --dataset ich_cahps_state --state {state}"),
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 "fetch --dataset ich_cahps_national"),
+            ]))
+    parts.append(_panel("".join(inner)))
+    parts.append(_source_line([
+        "cdc_data_places_county_ckd", "provider_data_dialysis_facilities",
+        "provider_data_dialysis_state_averages",
+        "provider_data_dialysis_national_averages", "provider_data_esrd_qip_tps",
+        "provider_data_ich_cahps_state", "provider_data_ich_cahps_national"]))
+    return "".join(parts)
+
+
+# ── section 11: outpatient facility universe ────────────────────────────
+
+
+def _pos_universe(dataset_id: str, code_col: str, labels: dict[str, str],
+                  file_label: str, state: str
+                  ) -> list[tuple[str, str, int, int]]:
+    """(category, file, records, active) for one Provider of Services file.
+
+    Mirrors the estate's /v1/lookup/facility-universe/{state} aggregation
+    (connectors/cms_open_data/lookup.py) through the bridge's aggregate:
+    every record counts — the POS files retain terminated providers —
+    and "active" is the ``pgm_trmntn_cd = '00'`` slice.
+    """
+    agg = _estate.aggregate(dataset_id, code_col,
+                            filters={"state_cd": state}, limit=100)
+    rows = agg.get("rows") or []
+    if not rows:
+        return []
+    active_agg = _estate.aggregate(
+        dataset_id, code_col,
+        filters={"state_cd": state, "pgm_trmntn_cd": "00"}, limit=100)
+    active = {str(r.get(code_col) or ""): int(r.get("count") or 0)
+              for r in (active_agg.get("rows") or [])}
+    out = []
+    for r in rows:
+        code = str(r.get(code_col) or "")
+        label = labels.get(code) or f"{file_label} category {code}"
+        out.append((label, file_label, int(r.get("count") or 0),
+                    active.get(code, 0)))
+    return out
+
+
+def _sec_outpatient_universe(state: str, n_rows: int) -> str:
+    parts = [ck_section_header("Outpatient facility universe",
+                               eyebrow="11 · WHERE OUTPATIENT CARE SITS")]
+    inner: list[str] = []
+
+    # 11a — certified-facility counts by category from BOTH POS files.
+    qies_cli = ("python3 -m connectors.cms_open_data.cli fetch --db var/connectors/cms_open_data.db "
+                f"--dataset pos_qies --filter STATE_CD={state} --size 2000 --max-pages 2")
+    iqies_cli = ("python3 -m connectors.cms_open_data.cli fetch --db var/connectors/cms_open_data.db "
+                 f"--dataset pos_internet_qies --filter state_cd={state} --size 2000 --max-pages 5")
+    qies = _pos_universe("cms_open_data_pos_qies", "prvdr_ctgry_cd",
+                         _POS_QIES_CATEGORIES, "QIES", state)
+    iqies = _pos_universe("cms_open_data_pos_internet_qies", "prvdr_type_id",
+                          _POS_IQIES_TYPES, "iQIES", state)
+    if qies or iqies:
+        ranked = sorted(qies + iqies, key=lambda t: t[2], reverse=True)
+        total = sum(t[2] for t in ranked)
+        active = sum(t[3] for t in ranked)
+        inner.append(
+            '<div class="ck-kpi-grid">'
+            + ck_kpi_block("Certified facility records",
+                           f'<span class="mn">{total:,}</span>',
+                           "both Provider of Services files · terminated retained")
+            + ck_kpi_block("Active certifications",
+                           f'<span class="mn">{active:,}</span>',
+                           (f"{active / total * 100.0:.1f}% of records"
+                            if total else ""))
+            + "</div>")
+        inner.append(
+            '<div style="margin:10px 0 4px;font-size:11px;font-weight:700;">'
+            "Certified facilities by provider category</div>")
+        inner.append(_table(
+            ["Provider category", "POS file", "Records", "Active"],
+            [[_e(label), _mono(file_label), f"{records:,}", f"{act:,}"]
+             for label, file_label, records, act in ranked]))
+        if not qies:
+            inner.append(_not_ingested(
+                f"POS QIES file (hospitals / RHC / FQHC / CMHC) for {state}",
+                [qies_cli],
+                note="The legacy QIES file's API columns are UPPER_CASE — "
+                     "filter on STATE_CD."))
+        if not iqies:
+            inner.append(_not_ingested(
+                f"POS Internet QIES file (HHA / SNF / hospice / ASC / ESRD) "
+                f"for {state}", [iqies_cli],
+                note="The iQIES file's API columns are lower_case — "
+                     "filter on state_cd."))
+    else:
+        inner.append(_not_ingested(
+            f"Provider of Services files for {state}", [qies_cli, iqies_cli],
+            note="Hospitals, RHCs, FQHCs and CMHCs live in the legacy QIES "
+                 "file (UPPER_CASE columns, filter STATE_CD); HHAs, SNFs, "
+                 "hospices, ASCs and ESRD facilities in the Internet QIES "
+                 "file (lower_case columns, filter state_cd)."))
+
+    # 11b — ASC quality, state vs national (latest ingested year).
+    asc_st = _query("provider_data_asc_quality_state", {"state": state},
+                    limit=100)
+    asc_nat = _query("provider_data_asc_quality_national", {}, limit=100)
+    if asc_st and asc_nat:
+        srow = max(asc_st, key=lambda r: str(r.get("year") or ""))
+        year = str(srow.get("year") or "")
+        nrow = next((r for r in asc_nat if str(r.get("year") or "") == year),
+                    max(asc_nat, key=lambda r: str(r.get("year") or "")))
+        inner.append(
+            f'<div style="margin:12px 0 4px;font-size:11px;font-weight:700;">'
+            f'ASC quality measures — {_e(state)} vs national · {_e(year)}</div>')
+        inner.append(_table(
+            ["Measure", f"{state} avg", "National avg"],
+            [[_e(label), _pct(srow.get(sc)), _pct(nrow.get(nc))]
+             for label, sc, nc in _ASC_MEASURES]))
+    else:
+        inner.append(_not_ingested(
+            f"ASC quality state/national averages for {state}", [
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 f"fetch --dataset asc_quality_state --state {state}"),
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 "fetch --dataset asc_quality_national"),
+            ]))
+
+    # 11c — Medicare DMEPOS suppliers (directory grain: one row per
+    # supplier location; the state column is practicestate).
+    n_dme = _total("provider_data_medical_equipment_suppliers",
+                   {"practicestate": state})
+    if n_dme:
+        agg = _estate.aggregate("provider_data_medical_equipment_suppliers",
+                                "practicecity",
+                                filters={"practicestate": state}, limit=100)
+        cities = [(str(r.get("practicecity") or "").strip() or "Unknown",
+                   int(r.get("count") or 0))
+                  for r in (agg.get("rows") or [])][:n_rows]
+        inner.append(
+            f'<div style="margin:12px 0 4px;font-size:11px;font-weight:700;">'
+            f'Medicare DMEPOS suppliers · {n_dme:,} in {_e(state)} · '
+            f'top {len(cities)} cities</div>')
+        inner.append(_bars(
+            [(city, f"{n:,}", float(n)) for city, n in cities], tone="navy"))
+    else:
+        inner.append(_not_ingested(
+            f"Medical equipment suppliers for {state}", [
+                ("python3 -m connectors.provider_data.cli --db var/connectors/provider_data.db "
+                 f"fetch --dataset medical_equipment_suppliers "
+                 f"--filter practicestate={state} --page-size 1500 --max-pages 3"),
+            ],
+            note="The DMEPOS supplier directory's state column is practicestate "
+                 "(no bare state column)."))
+
+    # 11d — home infusion therapy providers (PECOS enrollment slice).
+    n_hit = _total("cms_open_data_home_infusion_therapy_providers",
+                   {"state": state})
+    if n_hit:
+        agg = _estate.aggregate("cms_open_data_home_infusion_therapy_providers",
+                                "city", filters={"state": state}, limit=100)
+        cities = [(str(r.get("city") or "").strip() or "Unknown",
+                   int(r.get("count") or 0))
+                  for r in (agg.get("rows") or [])][:n_rows]
+        inner.append(
+            f'<div style="margin:12px 0 4px;font-size:11px;font-weight:700;">'
+            f'Home infusion therapy providers · {n_hit:,} enrolled in '
+            f'{_e(state)}</div>')
+        inner.append(_bars(
+            [(city, f"{n:,}", float(n)) for city, n in cities], tone="teal"))
+    else:
+        inner.append(_not_ingested(
+            f"Home infusion therapy providers for {state}", [
+                ("python3 -m connectors.cms_open_data.cli fetch --db var/connectors/cms_open_data.db "
+                 f"--dataset home_infusion_therapy_providers --filter State={state} "
+                 "--max-pages 1"),
+            ],
+            note="Fetch-time filters use the API's original Title-Case "
+                 "column names (State)."))
+    parts.append(_panel("".join(inner)))
+    parts.append(_source_line([
+        "cms_open_data_pos_qies", "cms_open_data_pos_internet_qies",
+        "provider_data_asc_quality_state", "provider_data_asc_quality_national",
+        "provider_data_medical_equipment_suppliers",
+        "cms_open_data_home_infusion_therapy_providers"]))
+    return "".join(parts)
+
+
 # ── controls + page assembly ────────────────────────────────────────────
 
 
@@ -1021,6 +1495,8 @@ def render_market_scan(params: dict[str, Any] | None = None) -> str:
         _sec_research(state, n_orgs),
         _sec_compliance(state, n_rows),
         _sec_labor(state, fips, n_rows),
+        _sec_kidney_dialysis(state, county, n_rows),
+        _sec_outpatient_universe(state, n_rows),
     ]
     body = (ck_page_title("Market Scan", eyebrow="Research · Public Data",
                           meta=meta)

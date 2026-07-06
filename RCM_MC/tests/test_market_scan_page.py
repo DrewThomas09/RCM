@@ -1,7 +1,9 @@
 """Market Scan page — /market-scan, fed by the connector estate bridge.
 
-The scan stitches nine estate datasets into one state-level brief. These
-tests pin the three load-bearing behaviours:
+The scan stitches eleven sections of estate datasets into one
+state-level brief (nine original sections plus the round-3 kidney &
+dialysis market and outpatient facility universe). These tests pin the
+three load-bearing behaviours:
 
   - with tiny seeded stores (built through the connectors' own tables
     modules, pointed at a temp dir via RCM_MC_CONNECTORS_DB) every
@@ -40,6 +42,8 @@ _SECTION_TITLES = (
     "Research footprint",
     "Compliance exposure",
     "Healthcare labor market",
+    "Kidney &amp; dialysis market",
+    "Outpatient facility universe",
 )
 
 # One CLI module per section's empty-state one-liner (flags live in the
@@ -252,6 +256,159 @@ def _seed_estate(db_dir: str) -> None:
          "excldate": "2025-05-20", "source_endpoint": oig_sf},
     ])
 
+    # ── round-3 seeds: kidney & dialysis market (section 10) ──────────
+    ckd_sf = _sf("cdc_data_places_county_ckd")
+    upsert("cdc_data", "cdc_places_county_ckd", [
+        {"record_key": "tx:48201:KIDNEY:AgeAdjPrv", "stateabbr": "TX",
+         "locationname": "Harris", "locationid": "48201",
+         "measureid": "KIDNEY",
+         "measure": "Chronic kidney disease among adults aged >=18 years",
+         "data_value_type": "Age-adjusted prevalence",
+         "datavaluetypeid": "AgeAdjPrv", "data_value": "3.1",
+         "year": "2021", "source_endpoint": ckd_sf},
+        {"record_key": "tx:48113:KIDNEY:AgeAdjPrv", "stateabbr": "TX",
+         "locationname": "Dallas", "locationid": "48113",
+         "measureid": "KIDNEY",
+         "measure": "Chronic kidney disease among adults aged >=18 years",
+         "data_value_type": "Age-adjusted prevalence",
+         "datavaluetypeid": "AgeAdjPrv", "data_value": "2.9",
+         "year": "2021", "source_endpoint": ckd_sf},
+        # Crude-prevalence twin proves the page pins the age-adjusted
+        # slice rather than averaging both value types together.
+        {"record_key": "tx:48201:KIDNEY:CrdPrv", "stateabbr": "TX",
+         "locationname": "Harris", "locationid": "48201",
+         "measureid": "KIDNEY",
+         "measure": "Chronic kidney disease among adults aged >=18 years",
+         "data_value_type": "Crude prevalence",
+         "datavaluetypeid": "CrdPrv", "data_value": "9.9",
+         "year": "2021", "source_endpoint": ckd_sf},
+    ])
+
+    dial_sf = _sf("provider_data_dialysis_facilities")
+    upsert("provider_data", "dialysis_facilities", [
+        {"record_key": "452301", "cms_certification_number_ccn": "452301",
+         "facility_name": "GULF COAST DIALYSIS", "state": "TX",
+         "citytown": "HOUSTON", "five_star": "4.0",
+         "profit_or_nonprofit": "Profit", "chain_organization": "DaVita",
+         "of_dialysis_stations": "24", "source_endpoint": dial_sf},
+        {"record_key": "452302", "cms_certification_number_ccn": "452302",
+         "facility_name": "HILL COUNTRY KIDNEY CENTER", "state": "TX",
+         "citytown": "AUSTIN", "five_star": "2.0",
+         "profit_or_nonprofit": "Non-profit",
+         "chain_organization": "Fresenius Medical Care",
+         "of_dialysis_stations": "16", "source_endpoint": dial_sf},
+    ])
+    tps_sf = _sf("provider_data_esrd_qip_tps")
+    upsert("provider_data", "esrd_qip_tps", [
+        {"record_key": "452301", "cms_certification_number_ccn": "452301",
+         "facility_name": "GULF COAST DIALYSIS", "state": "TX",
+         "total_performance_score": "62",
+         "state_average_total_performance_score": "54",
+         "national_average_total_performance_score": "54",
+         "payment_reduction_percentage": "0.0%", "source_endpoint": tps_sf},
+        {"record_key": "452302", "cms_certification_number_ccn": "452302",
+         "facility_name": "HILL COUNTRY KIDNEY CENTER", "state": "TX",
+         "total_performance_score": "38",
+         "state_average_total_performance_score": "54",
+         "national_average_total_performance_score": "54",
+         "payment_reduction_percentage": "1.0%", "source_endpoint": tps_sf},
+    ])
+    upsert("provider_data", "dialysis_state_averages", [
+        {"record_key": "TX", "state": "TX",
+         "percentage_of_adult_hd_patients_with_ktv12": "97.0",
+         "percentage_of_adult_pd_patients_with_ktv17": "89.0",
+         "percentage_of_adult_patients_with_long_term_catheter_in_use": "16.0",
+         "percentage_of_patients_with_hgb10_gdl_state": "11.0",
+         "source_endpoint": _sf("provider_data_dialysis_state_averages")}])
+    upsert("provider_data", "dialysis_national_averages", [
+        {"record_key": "NATION", "country": "NATION",
+         "percentage_of_adult_hd_patients_with_ktv12": "96.0",
+         "percentage_of_adult_pd_patients_with_ktv17": "88.0",
+         "percentage_of_adult_patients_with_long_term_catheter_in_use": "19.0",
+         "percentage_of_patients_with_hgb10_gdl_us": "12.0",
+         "source_endpoint": _sf("provider_data_dialysis_national_averages")}])
+    upsert("provider_data", "ich_cahps_state", [
+        {"record_key": "TX", "state": "TX",
+         "linearized_score_of_nephrologists_communication_and_caring": "81.0",
+         "linearized_score_of_quality_of_dialysis_center_care_and_ope_92e9":
+             "80.0",
+         "linearized_score_of_rating_of_the_nephrologist": "84.0",
+         "linearized_score_of_rating_of_the_dialysis_center_staff": "87.0",
+         "linearized_score_of_rating_of_the_dialysis_facility": "88.0",
+         "survey_response_rate": "21.0",
+         "source_endpoint": _sf("provider_data_ich_cahps_state")}])
+    upsert("provider_data", "ich_cahps_national", [
+        {"record_key": "NATION", "country": "NATION",
+         "linearized_score_of_nephrologists_communication_and_caring": "81.0",
+         "linearized_score_of_quality_of_dialysis_center_care_and_ope_92e9":
+             "81.0",
+         "linearized_score_of_rating_of_the_nephrologist": "84.0",
+         "linearized_score_of_rating_of_the_dialysis_center_staff": "87.0",
+         "linearized_score_of_rating_of_the_dialysis_facility": "88.0",
+         "survey_response_rate": "24.0",
+         "source_endpoint": _sf("provider_data_ich_cahps_national")}])
+
+    # ── round-3 seeds: outpatient facility universe (section 11) ──────
+    qies_sf = _sf("cms_open_data_pos_qies")
+    upsert("cms_open_data", "cms_open_data_pos_qies", [
+        {"row_key": "450001", "prvdr_num": "450001",
+         "fac_name": "HOUSTON GENERAL", "prvdr_ctgry_cd": "01",
+         "pgm_trmntn_cd": "00", "state_cd": "TX", "city_name": "HOUSTON",
+         "source_endpoint": qies_sf},
+        {"row_key": "451302", "prvdr_num": "451302",
+         "fac_name": "HILL COUNTRY RHC", "prvdr_ctgry_cd": "12",
+         "pgm_trmntn_cd": "01", "state_cd": "TX", "city_name": "MARBLE FALLS",
+         "source_endpoint": qies_sf},
+        {"row_key": "450990", "prvdr_num": "450990",
+         "fac_name": "GULF COAST COMMUNITY HEALTH", "prvdr_ctgry_cd": "21",
+         "pgm_trmntn_cd": "00", "state_cd": "TX", "city_name": "GALVESTON",
+         "source_endpoint": qies_sf},
+    ])
+    iqies_sf = _sf("cms_open_data_pos_internet_qies")
+    upsert("cms_open_data", "cms_open_data_pos_internet_qies", [
+        {"row_key": "457501", "prvdr_num": "457501",
+         "fac_name": "BLUEBONNET HOME HEALTH", "prvdr_type_id": "3",
+         "pgm_trmntn_cd": "00", "state_cd": "TX", "city_name": "AUSTIN",
+         "source_endpoint": iqies_sf},
+        {"row_key": "455001", "prvdr_num": "455001",
+         "fac_name": "BLUEBONNET CARE CENTER", "prvdr_type_id": "20",
+         "pgm_trmntn_cd": "00", "state_cd": "TX", "city_name": "AUSTIN",
+         "source_endpoint": iqies_sf},
+        {"row_key": "672001", "prvdr_num": "672001",
+         "fac_name": "GULF COAST DIALYSIS", "prvdr_type_id": "7",
+         "pgm_trmntn_cd": "00", "state_cd": "TX", "city_name": "HOUSTON",
+         "source_endpoint": iqies_sf},
+        {"row_key": "459901", "prvdr_num": "459901",
+         "fac_name": "LONGHORN SURGERY CENTER", "prvdr_type_id": "11",
+         "pgm_trmntn_cd": "01", "state_cd": "TX", "city_name": "DALLAS",
+         "source_endpoint": iqies_sf},
+    ])
+    upsert("provider_data", "asc_quality_state", [
+        {"record_key": "TX:2024", "state": "TX", "year": "2024",
+         "avg_asc9_state_rate": "77.58", "avg_asc11_state_rate": "99.40",
+         "avg_asc13_state_rate": "90.66", "avg_asc14_state_rate": "0.462",
+         "source_endpoint": _sf("provider_data_asc_quality_state")}])
+    upsert("provider_data", "asc_quality_national", [
+        {"record_key": "2024", "year": "2024",
+         "avg_asc9_nat_rate": "76.95", "avg_asc11_nat_rate": "86.52",
+         "avg_asc13_nat_rate": "85.97", "avg_asc14_nat_rate": "0.312",
+         "source_endpoint": _sf("provider_data_asc_quality_national")}])
+    mes_sf = _sf("provider_data_medical_equipment_suppliers")
+    upsert("provider_data", "medical_equipment_suppliers", [
+        {"record_key": "1001", "provider_id": "1001",
+         "businessname": "LONE STAR HOME MEDICAL", "practicecity": "HOUSTON",
+         "practicestate": "TX", "source_endpoint": mes_sf},
+        {"record_key": "1002", "provider_id": "1002",
+         "businessname": "ALAMO DME SUPPLY", "practicecity": "SAN ANTONIO",
+         "practicestate": "TX", "source_endpoint": mes_sf},
+    ])
+    upsert("cms_open_data", "cms_open_data_home_infusion_therapy_providers", [
+        {"row_key": "O20201116001628:75201", "enrollment_id": "O20201116001628",
+         "legal_business_name": "TEXAS INFUSION PARTNERS", "city": "DALLAS",
+         "state": "TX", "zip_code": "75201",
+         "source_endpoint":
+             _sf("cms_open_data_home_infusion_therapy_providers")}])
+
     qcew_sf = _sf("bls_qcew_industry_area")
     upsert("bls_qcew", "qcew_industry_area", [
         {"qcew_key": "48000:622:5:2025:4", "area_fips": "48000",
@@ -302,6 +459,24 @@ class SeededRenderTests(_EnvGuard):
         self.assertIn("1128a1", h)                     # 8 exclusion statute
         self.assertIn("Hospitals (NAICS 622)", h)      # 9 QCEW industry
         self.assertIn("$1,602.00", h)                  # 9 weekly wage 2dp
+        # Section 10 — kidney & dialysis market.
+        self.assertIn("state mean 3.0% across 2 counties", h)  # AgeAdjPrv only
+        self.assertIn("measureid KIDNEY", h)           # 10 pinned release note
+        self.assertIn("Dialysis facility five-star mix", h)
+        self.assertIn("DaVita", h)                     # 10 chain bar
+        self.assertIn("ESRD QIP total performance scores", h)
+        self.assertIn("TX average 54 vs national 54", h)
+        self.assertIn("Kt/V", h)                       # 10 clinical vs national
+        self.assertIn("Rating of the dialysis facility", h)  # 10 ICH-CAHPS
+        # Section 11 — outpatient facility universe.
+        self.assertIn("Federally Qualified Health Center", h)  # QIES category
+        self.assertIn("Ambulatory Surgical Center", h)         # iQIES type
+        self.assertIn("ASC-11 Cataracts", h)
+        self.assertIn("99.4%", h)                      # ASC state avg 1dp
+        self.assertIn("86.5%", h)                      # ASC national avg 1dp
+        self.assertIn("Medicare DMEPOS suppliers", h)
+        self.assertIn("SAN ANTONIO", h)                # DME city bar
+        self.assertIn("Home infusion therapy providers", h)
 
     def test_percentages_are_1dp_and_money_2dp(self):
         h = render_market_scan({"state": "TX"})
@@ -318,7 +493,19 @@ class SeededRenderTests(_EnvGuard):
                 "provider_data_hospital_general",
                 "open_payments_state_payment_totals",
                 "nih_reporter_projects", "oig_leie_exclusions",
-                "bls_qcew_industry_area"):
+                "bls_qcew_industry_area",
+                "cdc_data_places_county_ckd",
+                "provider_data_dialysis_facilities",
+                "provider_data_dialysis_state_averages",
+                "provider_data_dialysis_national_averages",
+                "provider_data_esrd_qip_tps",
+                "provider_data_ich_cahps_state",
+                "provider_data_ich_cahps_national",
+                "cms_open_data_pos_qies", "cms_open_data_pos_internet_qies",
+                "provider_data_asc_quality_state",
+                "provider_data_asc_quality_national",
+                "provider_data_medical_equipment_suppliers",
+                "cms_open_data_home_infusion_therapy_providers"):
             self.assertIn(f"/connector-estate?dataset={dataset_id}", h)
 
     def test_county_focus_scopes_sections(self):
@@ -326,6 +513,8 @@ class SeededRenderTests(_EnvGuard):
         self.assertIn("County focus", h)
         self.assertIn("Harris", h)
         self.assertIn("county 48201", h)  # page meta carries the scope
+        # Section 10's CKD block scopes to the county too.
+        self.assertIn("CKD prevalence — county 48201", h)
 
     def test_bogus_county_is_dropped(self):
         for bogus in ("482", "abcde", "12345", "48201; DROP", "99999"):
@@ -384,6 +573,19 @@ class EmptyStoreTests(_EnvGuard):
         self.assertIn("--filter stateabbr=OH", h)
         self.assertIn("--state OH", h)
         self.assertIn("--filter state=OH", h)
+        # Round-3 sections: each dataset's real filter column, verified
+        # against live API samples (POS QIES is UPPER_CASE, iQIES is
+        # lower_case, home infusion is Title Case, DMEPOS has no bare
+        # state column).
+        self.assertIn("--dataset places_county_ckd --filter stateabbr=OH", h)
+        self.assertIn("--dataset dialysis_facilities --state OH", h)
+        self.assertIn("--dataset esrd_qip_tps --state OH", h)
+        self.assertIn("--dataset ich_cahps_state --state OH", h)
+        self.assertIn("--filter STATE_CD=OH", h)
+        self.assertIn("--filter state_cd=OH", h)
+        self.assertIn("--dataset asc_quality_state --state OH", h)
+        self.assertIn("--filter practicestate=OH", h)
+        self.assertIn("--filter State=OH", h)
 
 
 class UnavailableEstateTests(_EnvGuard):
